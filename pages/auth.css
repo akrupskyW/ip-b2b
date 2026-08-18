@@ -763,15 +763,16 @@ html.dark .chat-input-rail { background: transparent; border-top-color: transpar
 .sc-input-row { display: flex; gap: 8px; align-items: center; }
 .fl-input-wrap {
   /* Light tint of the brand blue (--primary #25507C) — matches the app's
-     composer background (10%, one step deeper than the chat-tint wash). */
-  position: relative; flex: 1; background: color-mix(in srgb, var(--primary) 10%, #fff); border: 1px solid var(--border-strong);
+     composer background (10%, one step deeper than the chat-tint wash).
+     Stroke is a light brand wash (not --border-strong) so the pill stays airy. */
+  position: relative; flex: 1; background: color-mix(in srgb, var(--primary) 10%, #fff); border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
   border-radius: var(--radius-pill); padding: 4px 4px 4px 14px; min-height: 40px;
   display: flex; align-items: center; gap: 4px;
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 /* Dark mode: a brightened brand-blue tint (not the neutral white overlay) so
    the composer stands out as a blue surface against the navy card. */
-html.dark .fl-input-wrap { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); border-color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 28%, transparent); }
+html.dark .fl-input-wrap { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); border-color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 22%, transparent); }
 .fl-input-wrap:focus-within { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
 
 /* ===== Living sheen stroke — a shiny brand-blue gradient that travels around
@@ -788,9 +789,8 @@ html.dark .fl-input-wrap { background: color-mix(in srgb, var(--primary-bright, 
   border-radius: inherit;
   padding: 1px;
   pointer-events: none;
-  /* Broad, gently-graduated sweep: never fully transparent (keeps a low brand
-     tint all the way round so it melts into the base stroke) and the specular
-     highlight fans out over a wide arc rather than a hard glint. */
+  /* Broad, gently-graduated sweep: a low brand tint all the way round so it
+     melts into the base stroke, with a specular highlight that travels. */
   background: conic-gradient(from var(--wise-sheen-angle),
     color-mix(in srgb, var(--primary) 14%, transparent) 0deg,
     color-mix(in srgb, var(--primary) 24%, transparent) 45deg,

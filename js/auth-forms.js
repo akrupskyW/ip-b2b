@@ -188,7 +188,15 @@
   var validEmail = function (v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v).trim()); };
 
   function landing() { return (Auth && Auth.landingUrl && Auth.landingUrl()) || 'product-comparison.html'; }
-  function goLanding() { window.location.href = landing(); }
+  /* Tell the app shell this is a fresh sign-in so the WISEowl walkthrough
+     can pop if the user hasn't finished it yet. */
+  function markWalkthroughFresh() {
+    try { sessionStorage.setItem('wise-walkthrough-fresh', '1'); } catch (_) {}
+  }
+  function goLanding() {
+    markWalkthroughFresh();
+    window.location.href = landing();
+  }
 
   /* When the page is loaded as a preview (e.g. the All Modules rail embeds every
      screen in a live iframe), it should render itself in place — not bounce to
@@ -261,6 +269,7 @@
     var demo = $('#demo-btn');
     if (demo) demo.addEventListener('click', function () {
       Auth.login({ email: (Auth && Auth.DEMO_EMAIL) || 'demo@wisealliance.com', name: 'Demo User' });
+      markWalkthroughFresh();
       window.location.href = 'wiseai.html';
     });
 

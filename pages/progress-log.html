@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Never serve a stale snapshot of this journal — every reload / hot reload
+       must re-evaluate counts, filters, and the timeline from the current LOG. -->
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
   <title>WISE · Progress Log</title>
   <!-- Auth: redirect to sign-in if there is no session, then load the auth API. -->
   <script src="../js/auth-guard.js"></script>
@@ -75,6 +79,29 @@
     .pl-chat { flex: 0 0 var(--chat-pane-w, 380px); width: var(--chat-pane-w, 380px); background: var(--bg); }
     .pl-chat.panel-wide { flex-basis: 580px; width: 580px; }
     .pl-chat.panel-triple { flex-basis: 760px; width: 760px; }
+    /* Floated ⋯ + width sit above the welcome overlay (z-index 10) and blend
+       into the chat surface, matching wiseai.html. */
+    html.header-float .pl-chat .chat-topbar { z-index: 12 !important; }
+    html.header-float #pl-chat.sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-more-btn,
+    html.header-float #pl-chat.sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn {
+      background: var(--bg);
+    }
+    html.dark.header-float #pl-chat.sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-more-btn,
+    html.dark.header-float #pl-chat.sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn {
+      background: #1A2339;
+    }
+    html.chat-tint:not(.dark).header-float #pl-chat.sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-more-btn,
+    html.chat-tint:not(.dark).header-float #pl-chat.sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn {
+      background: color-mix(in srgb, var(--primary) 5%, #fff);
+    }
+    html.dark.chat-tint.header-float #pl-chat.sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-more-btn,
+    html.dark.chat-tint.header-float #pl-chat.sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn {
+      background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339);
+    }
+    #pl-chat.sc-card .chat-topbar > .sc-topbar-controls .panel-more-btn:hover,
+    #pl-chat.sc-card .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn:hover { background: var(--surface-3); }
+    #pl-chat.sc-card .chat-topbar > .sc-topbar-controls .panel-more-btn.is-open,
+    #pl-chat.sc-card .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn.is-on { background: color-mix(in srgb, var(--primary) 16%, var(--surface-2)); }
     /* Progress log board — the flexible filler beside the chat. */
     .pl-log { flex: 1 1 auto; min-width: 520px; }
     .pl-log.panel-wide { min-width: 720px; }
@@ -90,22 +117,24 @@
     /* ── Scrolling body ── */
     .pl-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 4px 26px 22px; }
 
-    /* ── Toolbar + canonical search (mirrors reformulation's .rf-search) ── */
+    /* ── Toolbar + canonical search (mirrors reformulation's .rf-search) ──
+       Search fills the row; Re-evaluate sits to its right and writes notes
+       for every page/day. No in-search page picker. */
     .pl-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 0 2px; }
     .pl-search-inline { position: relative; display: inline-flex; align-items: center; flex: 1 1 auto; min-width: 200px; }
-    .pl-search-inline > .material-symbols-outlined { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-subtle); pointer-events: none; }
     .pl-search {
-      width: 100%; height: 38px; box-sizing: border-box; padding: 0 40px 0 42px;
+      width: 100%; height: 38px; box-sizing: border-box; padding: 0 16px;
       font-family: inherit; font-size: 0.8125rem; color: var(--text);
       background: var(--surface-2); border: 1px solid var(--border-strong);
       border-radius: var(--radius-pill, 9999px); outline: none;
       transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
     }
+    .pl-search-inline.has-query .pl-search { padding-right: 40px; }
     html.dark .pl-search { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
     .pl-search::placeholder { color: color-mix(in srgb, var(--text-subtle) 55%, transparent); font-style: italic; }
     .pl-search:focus { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
     .pl-search-clear {
-      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%); z-index: 1;
       width: 28px; height: 28px; border-radius: 50%; display: none;
       align-items: center; justify-content: center;
       border: 0; background: transparent; color: var(--text-subtle); cursor: pointer;
@@ -114,27 +143,16 @@
     .pl-search-inline.has-query .pl-search-clear { display: inline-flex; }
     .pl-search-clear:hover { background: var(--surface-3); color: var(--text); }
     html.dark .pl-search-clear:hover { background: rgba(255,255,255,0.08); }
-    .pl-search-clear .material-symbols-outlined { font-size: 17px; }
-    /* Page picker — the toolbar's trailing action (mirrors .rf-change-btn chrome). */
-    .pl-select {
-      flex: 0 0 auto; height: 38px; box-sizing: border-box; padding: 0 34px 0 15px;
-      font-family: inherit; font-weight: 700; font-size: 12px; color: var(--text-muted);
-      appearance: none; border-radius: 9999px; cursor: pointer;
-      border: 1px solid var(--border-strong); background-color: var(--surface-2);
-      background-image: linear-gradient(45deg, transparent 50%, var(--text-subtle) 50%), linear-gradient(135deg, var(--text-subtle) 50%, transparent 50%);
-      background-position: right 16px center, right 11px center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
-      transition: background .16s, color .16s, border-color .16s;
+    .pl-search-clear-x { font-size: 18px; line-height: 1; font-weight: 400; }
+    .pl-review-btn {
+      flex: 0 0 auto; height: 38px; padding: 0 16px;
+      box-shadow: 0 4px 12px rgba(37, 80, 124, 0.25);
     }
-    html.dark .pl-select { background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
-    .pl-select:hover { color: var(--text); border-color: var(--primary); }
-    /* View toggle — canonical segmented control (mirrors .rf-basis). */
-    .pl-seg { display: inline-flex; gap: 3px; padding: 3px; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 9999px; flex: 0 0 auto; }
-    html.dark .pl-seg { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
-    .pl-seg-btn { display: inline-flex; align-items: center; gap: 5px; font-family: inherit; font-weight: 700; font-size: 11.5px; color: var(--text-muted); background: transparent; border: 0; border-radius: 9999px; padding: 6px 12px; cursor: pointer; transition: background .16s, color .16s; }
-    .pl-seg-btn:hover:not(.is-active) { color: var(--text); }
-    .pl-seg-btn.is-active { background: var(--primary); color: #fff; box-shadow: var(--shadow-1); }
-    html.dark .pl-seg-btn.is-active { background: var(--primary-bright, #8B9FAF); color: var(--surface); }
-    .pl-seg-btn .material-symbols-outlined { font-size: 15px; }
+    .pl-review-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(37, 80, 124, 0.3); }
+    .pl-review-btn:disabled { opacity: 0.7; cursor: progress; }
+    .pl-review-btn.is-busy .material-symbols-outlined { animation: pl-spin .8s linear infinite; }
+    .pl-review-btn.is-done { background: var(--sec-green); border-color: var(--sec-green); box-shadow: 0 4px 12px rgba(50, 169, 102, 0.28); }
+    @keyframes pl-spin { to { transform: rotate(360deg); } }
 
     /* ── Scorecards — the canonical clickable stat card (mirrors .rf-stat).
        Summary cards are read-outs; category cards double as list filters.
@@ -159,7 +177,6 @@
     .pl-stat:disabled:hover { transform: none; box-shadow: var(--shadow-1); border-color: var(--border); }
     .pl-stat-num { display: inline-flex; align-items: center; gap: 1px; font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text); font-variant-numeric: tabular-nums; }
     .pl-stat-label { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
-    .pl-stat-label .material-symbols-outlined { font-size: 13px; line-height: 1; width: 14px; height: 14px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
     .pl-stat-sub { font-size: 10px; color: var(--text-subtle); margin-top: 1px; }
     .pl-stat--good .pl-stat-num { color: var(--sec-green); }
     .pl-stat--alert .pl-stat-num { color: var(--sec-red); }
@@ -173,17 +190,9 @@
       display: flex; align-items: center; gap: 11px; flex-wrap: wrap;
       padding-bottom: 12px; margin-bottom: 14px; border-bottom: 1px solid var(--border); cursor: pointer;
     }
-    /* Fully circular day marker (allowed by the icon rule) around a glyph. */
-    .pl-day-dot {
-      width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%;
-      display: grid; place-items: center; color: var(--primary-ink, var(--primary));
-      background: var(--primary-soft); border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
-    }
-    html.dark .pl-day-dot { color: var(--primary-bright, #8B9FAF); }
-    .pl-day-dot .material-symbols-outlined { font-size: 19px; }
     .pl-day-titles { min-width: 0; flex: 1; }
-    .pl-day-date { font-size: 1.02rem; font-weight: 800; letter-spacing: -0.01em; display: flex; align-items: baseline; gap: 8px; }
-    .pl-day-rel { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-subtle); }
+    .pl-day-date { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.02rem; font-weight: 800; letter-spacing: -0.01em; display: flex; align-items: baseline; gap: 8px; }
+    .pl-day-rel { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-subtle); font-family: 'WISE Digits', 'DM Sans', system-ui, sans-serif; }
     .pl-day-summary { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
     .pl-day-tally { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .pl-tally-pill {
@@ -191,61 +200,107 @@
       font-size: 10.5px; font-weight: 700; background: var(--surface-2); border: 1px solid var(--border);
     }
     html.dark .pl-tally-pill { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
-    .pl-tally-pill .material-symbols-outlined { font-size: 13px; }
-    /* Per-day "copy the whole day" control — bare icon, circular hover only
-       (no rounded-square backdrop, per the icon rule). */
     .pl-day-copy {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 28px; height: 28px; border-radius: 50%;
+      height: 28px; padding: 0 10px; border-radius: 9999px;
       border: 0; background: transparent; color: var(--text-subtle); cursor: pointer;
+      font-family: inherit; font-size: 11px; font-weight: 700;
       transition: background .15s ease, color .15s ease;
     }
     .pl-day-copy:hover { background: var(--surface-2); color: var(--text); }
     html.dark .pl-day-copy:hover { background: rgba(255,255,255,0.08); }
     .pl-day-copy:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
     .pl-day-copy.is-copied { color: var(--sec-green); }
-    .pl-day-copy .material-symbols-outlined { font-size: 16px; }
-    .pl-collapse-ic { transition: transform .2s; color: var(--text-subtle); }
-    .pl-day.is-collapsed .pl-collapse-ic { transform: rotate(-90deg); }
     .pl-day.is-collapsed .pl-day-body { display: none; }
 
-    /* Rows (default) vs cards view — toggled by a class on #pl-timeline. */
-    .pl-day-body { display: grid; grid-template-columns: 1fr; gap: 14px; }
-    #pl-timeline.pl-view-cards .pl-day-body { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
-    /* In rows view each page spans the row and its category columns flow across it. */
-    #pl-timeline.pl-view-rows .pl-pcard-cats { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 2px 22px; align-items: start; }
+    /* One container per day: notes + every page live inside a single card. */
+    .pl-day-body { display: flex; flex-direction: column; gap: 0; }
+    .pl-day-card {
+      padding: 18px 18px 10px; border-radius: var(--r-md, 16px);
+      background: var(--surface-2); border: 1px solid var(--border);
+    }
+    html.dark .pl-day-card { background: rgba(255,255,255,0.03); }
+    .pl-day-card .pl-notes { border-bottom-color: var(--border); }
 
-    /* ── Page card ── */
-    .pl-pcard { padding: 16px 16px 6px; border-radius: var(--r-md, 16px); background: var(--surface-2); border: 1px solid var(--border); }
-    html.dark .pl-pcard { background: rgba(255,255,255,0.03); }
-    .pl-pcard.is-new { border-color: color-mix(in srgb, var(--sec-green) 55%, var(--border)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sec-green) 12%, transparent); }
-    .pl-pcard-head { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 11px; }
-    .pl-pcard-mark { color: var(--primary-ink, var(--primary)); flex-shrink: 0; margin-top: 1px; }
-    html.dark .pl-pcard-mark { color: var(--primary-bright, #8B9FAF); }
-    .pl-pcard-mark .material-symbols-outlined { font-size: 19px; }
+    /* ── Page block (inside the day container) ── */
+    .pl-pcard { padding: 16px 0 8px; }
+    .pl-pcard + .pl-pcard { border-top: 1px solid var(--border); }
+    .pl-pcard-head { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 10px; }
     .pl-pcard-meta { min-width: 0; flex: 1; }
-    .pl-pcard-name { font-size: 14px; font-weight: 800; letter-spacing: -0.01em; word-break: break-word; }
+    .pl-pcard-name { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; word-break: break-word; color: var(--text); }
     .pl-pcard-path { font-size: 10.5px; color: var(--text-subtle); font-family: 'Courier New', monospace; margin-top: 1px; }
-    .pl-pcard-new { display: inline-flex; align-items: center; gap: 3px; margin-left: auto; flex-shrink: 0; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--sec-green); }
-    .pl-pcard-new .material-symbols-outlined { font-size: 13px; }
+    .pl-pcard-new { display: inline-flex; align-items: center; margin-left: auto; flex-shrink: 0; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--sec-green); }
 
-    /* ── Category block (brand primary accent only) ── */
-    .pl-cat-block { margin-bottom: 12px; }
-    .pl-cat-block-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
-    .pl-cat-block-head .material-symbols-outlined { font-size: 15px; color: var(--primary-ink, var(--primary)); }
-    html.dark .pl-cat-block-head .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
+    /* Categories + bullets flow left-to-right in one block — not side-by-side columns. */
+    .pl-pcard-cats { display: flex; flex-direction: column; gap: 8px; }
+    .pl-cat-block { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin: 0; }
+    .pl-cat-block-head { display: flex; align-items: baseline; gap: 5px; flex: 0 0 auto; }
     .pl-cat-block-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-subtle); }
     .pl-cat-block-count { font-size: 10px; font-weight: 700; color: var(--text-subtle); font-variant-numeric: tabular-nums; }
-    .pl-cat-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
-    .pl-cat-list li { position: relative; padding-left: 15px; font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
-    .pl-cat-list li::before { content: ""; position: absolute; left: 2px; top: 8px; width: 5px; height: 5px; border-radius: 50%; background: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); }
+    .pl-cat-list { list-style: none; margin: 0; padding: 0; display: block; flex: 1 1 200px; min-width: 0; line-height: 1.55; }
+    .pl-cat-list li { display: inline; font-size: 12.5px; color: var(--text-muted); }
+    .pl-cat-list li::before { content: "•"; margin: 0 0.4em 0 0.05em; color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); }
+    .pl-cat-list li:first-child::before { margin-left: 0; }
+    .pl-cat-list li + li { margin-left: 0.85em; }
     .pl-cat-list mark { background: color-mix(in srgb, var(--primary) 24%, transparent); color: inherit; border-radius: 3px; padding: 0 2px; }
 
     /* ── Empty state ── */
     .pl-empty { margin-top: 26px; padding: 40px 22px; text-align: center; border-radius: var(--r-md, 16px); border: 1px dashed var(--border-strong); color: var(--text-muted); }
-    .pl-empty .material-symbols-outlined { font-size: 32px; color: var(--text-subtle); }
-    .pl-empty-title { font-size: 14px; font-weight: 700; margin-top: 8px; color: var(--text); }
+    .pl-empty-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 14px; font-weight: 700; color: var(--text); }
     .pl-empty-note { font-size: 12px; margin-top: 3px; }
+
+    /* ── Personal notes — same language as chat turn notes + admin Save / Cancel ── */
+    .pl-notes { margin: 0 0 10px; padding: 0 0 12px; border-bottom: 1px dashed var(--border); grid-column: 1 / -1; }
+    .pl-notes.is-empty { padding-bottom: 4px; margin-bottom: 6px; border-bottom: 0; }
+    .pl-notes.is-empty .pl-note-add { margin-top: 0; }
+    .pl-notes-head { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+    .pl-notes-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 0.95rem; color: var(--text); letter-spacing: -.01em; }
+    .pl-notes-count { font-size: 10px; font-weight: 700; color: var(--text-subtle); font-variant-numeric: tabular-nums; }
+    .pl-notes-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+    .pl-note {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 8px 10px; border-radius: 10px;
+      background: color-mix(in srgb, var(--ter-amber-10) 100%, transparent);
+      border: 1px solid color-mix(in srgb, #E0A100 30%, transparent);
+    }
+    html.dark .pl-note { background: color-mix(in srgb, #E0A100 14%, transparent); border-color: color-mix(in srgb, #E0A100 32%, transparent); }
+    .pl-note-body { flex: 1 1 auto; min-width: 0; }
+    .pl-note-text { font-size: 12.5px; line-height: 1.45; color: var(--text); white-space: pre-wrap; word-break: break-word; }
+    .pl-note-text mark { background: color-mix(in srgb, var(--primary) 24%, transparent); color: inherit; border-radius: 3px; padding: 0 2px; }
+    .pl-note-meta { font-size: 10.5px; color: var(--text-subtle); margin-top: 3px; }
+    .pl-note-edit {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 28px; padding: 0 8px; border-radius: 9999px; flex-shrink: 0;
+      border: 0; background: transparent; color: var(--text-subtle); cursor: pointer;
+      font-family: inherit; font-size: 11px; font-weight: 700;
+      transition: background .15s ease, color .15s ease;
+    }
+    .pl-note-edit:hover { background: var(--surface-2); color: var(--text); }
+    html.dark .pl-note-edit:hover { background: rgba(255,255,255,0.08); }
+    .pl-note-edit:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+    .pl-note-edit.is-on { color: var(--primary-ink, var(--primary)); }
+    .pl-note-add {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-top: 8px; padding: 6px 12px;
+      font-family: inherit; font-weight: 700; font-size: 12px;
+      color: var(--text-muted); background: transparent;
+      border: 1px dashed var(--border-strong); border-radius: 9999px;
+      cursor: pointer; transition: background .16s, color .16s, border-color .16s;
+    }
+    .pl-note-add:hover { color: var(--text); border-color: var(--primary); background: var(--surface-2); }
+    html.dark .pl-note-add:hover { background: rgba(255,255,255,0.05); }
+    .pl-note-add:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+    .pl-note-composer { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+    .pl-note-input {
+      width: 100%; box-sizing: border-box; min-height: 74px; padding: 10px 14px;
+      font-family: inherit; font-size: 0.8125rem; line-height: 1.45; color: var(--text);
+      background: var(--surface-2); border: 1px solid var(--border-strong);
+      border-radius: 10px; outline: none; resize: vertical;
+    }
+    html.dark .pl-note-input { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    .pl-note-input:focus { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
+    .pl-note-input::placeholder { color: color-mix(in srgb, var(--text-subtle) 55%, transparent); font-style: italic; }
+    .pl-note-actions { display: flex; justify-content: flex-end; gap: 8px; }
 
     /* Module three-dot menu reuses the shared .topbar-popover / .panel-more-* chrome. */
     .pl-log .panel-more-wrap { position: relative; }
@@ -276,7 +331,7 @@
     </div>
 
     <!-- Chat + Progress Log board share the shell's "modules" grid area. -->
-    <div id="modules-row">
+    <div id="modules-row" class="modules-sticky">
 
       <!-- ═══════════ 1 · WISEcodeAI chat — the ONE shared chat module ═══════════ -->
       <main class="pl-card pl-chat" id="pl-chat"></main>
@@ -286,12 +341,15 @@
         <header class="pl-head">
           <div class="pl-head-titles">
             <h2 class="pl-head-title">Progress Log</h2>
-            <p class="pl-head-meta" id="pl-head-meta">Day-by-day build journal · by page, by category</p>
+            <p class="pl-head-meta" id="pl-head-meta">Day-by-day build journal · re-evaluates every hour</p>
           </div>
           <div class="pl-head-controls">
             <div class="panel-more-wrap" id="pl-menu-wrap">
               <button type="button" id="pl-menu-btn" class="panel-more-btn" onclick="plToggleModuleMenu(event)" title="Module options" aria-haspopup="menu" aria-expanded="false" aria-controls="pl-menu" aria-label="Module options"><span class="material-symbols-outlined">more_vert</span></button>
               <div id="pl-menu" class="topbar-popover hidden" role="menu">
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="plReevaluateNow(); plCloseModuleMenu()"><span class="material-symbols-outlined topbar-menu-icon">autorenew</span><span>Re-evaluate now</span></button>
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="plAddNote(); plCloseModuleMenu()"><span class="material-symbols-outlined topbar-menu-icon">edit_note</span><span>Add a note</span></button>
+                <div class="topbar-menu-divider"></div>
                 <button type="button" class="topbar-menu-item" role="menuitem" onclick="plExpandAll(); plCloseModuleMenu()"><span class="material-symbols-outlined topbar-menu-icon">unfold_more</span><span>Expand all days</span></button>
                 <button type="button" class="topbar-menu-item" role="menuitem" onclick="plCollapseAll(); plCloseModuleMenu()"><span class="material-symbols-outlined topbar-menu-icon">unfold_less</span><span>Collapse all days</span></button>
                 <div class="topbar-menu-divider"></div>
@@ -304,15 +362,13 @@
         <div class="pl-body">
           <div class="pl-toolbar">
             <div class="pl-search-inline" id="pl-search-wrap">
-              <span class="material-symbols-outlined" aria-hidden="true">search</span>
               <input type="text" class="pl-search" id="pl-search-input" placeholder="Search entries, pages, components…" aria-label="Search the progress log" autocomplete="off" />
-              <button type="button" class="pl-search-clear" id="pl-search-clear" title="Clear search" aria-label="Clear search"><span class="material-symbols-outlined">close</span></button>
+              <button type="button" class="pl-search-clear" id="pl-search-clear" title="Clear search" aria-label="Clear search"><span class="pl-search-clear-x" aria-hidden="true">×</span></button>
             </div>
-            <select class="pl-select" id="pl-page-filter" aria-label="Filter by page"></select>
-            <div class="pl-seg" id="pl-view-toggle" role="group" aria-label="View as rows or cards">
-              <button type="button" class="pl-seg-btn is-active" data-view="rows" aria-pressed="true" title="View as rows"><span class="material-symbols-outlined" aria-hidden="true">table_rows</span>Rows</button>
-              <button type="button" class="pl-seg-btn" data-view="cards" aria-pressed="false" title="View as cards"><span class="material-symbols-outlined" aria-hidden="true">grid_view</span>Cards</button>
-            </div>
+            <button type="button" class="adm-btn adm-btn--primary pl-review-btn" id="pl-eval-btn" title="Evaluate every page and update the notes">
+              <span class="material-symbols-outlined" aria-hidden="true">autorenew</span>
+              <span class="pl-review-btn-label">Re-evaluate</span>
+            </button>
           </div>
           <!-- Read-out summary scorecards -->
           <div class="pl-stats" id="pl-summary" aria-label="Summary"></div>
@@ -470,6 +526,7 @@
       const CATS = [
         { id: 'components',   label: 'Components',   icon: 'widgets' },
         { id: 'features',     label: 'Features',     icon: 'bolt' },
+        { id: 'logic',        label: 'Logic',        icon: 'memory' },
         { id: 'ux',           label: 'UX & UI',      icon: 'palette' },
         { id: 'changes',      label: 'Changes',      icon: 'edit' },
         { id: 'improvements', label: 'Improvements', icon: 'trending_up' },
@@ -478,51 +535,111 @@
       ];
       const CAT_BY_ID = Object.fromEntries(CATS.map((c) => [c.id, c]));
 
-      /* ── The log. Newest day first. Each entry is a page touched that day. ── */
+      /* ── The log. Newest day first. Each entry is a page touched that day.
+         LOG_STAMP is bumped whenever this journal is rewritten. The board
+         polls it every hour (and on tab-focus after an hour) and reloads
+         when the stamp has moved, so an open tab never shows a stale day. ── */
+      const LOG_STAMP = '2026-08-18T15:35:00.000Z';
       const LOG = [
         {
-          date: '2026-08-17', rel: 'Monday',
-          summary: 'Dev-handoff catalog on All Modules, deeper View Product, a full set of admin-gated Appearance & chat controls to explore, and project-wide conventions + lint tooling.',
+          date: '2026-08-18', rel: 'Tuesday',
+          summary: 'WISEowl first-login walkthrough, Crawl · Walk · Run rewrite, chat elevation, and a shared five-stop chart palette — this journal now re-evaluates itself every hour.',
           entries: [
+            { page: 'WISEowl walkthrough', path: 'owl-walkthrough.js', isNew: true,
+              components: ['A docked-module tour that reuses the same History / “What can I ask?” card shell, so the owl lives in the product instead of a separate missions layout'],
+              features: [
+                'Seven chapters that walk the real pages — Meet the owl, Chat, Portfolio, Compare, Verification, Studio, You & the org — with Next taking you onto the actual screen, not a mockup',
+                'Opens on its own after sign-in, or the first time you land on a chapter you have not finished; ?walkthrough=1 forces it for QA and ?walkthrough=0 keeps it quiet',
+                'Replay from Help or Preferences; skip a group, jump with chips, or leave and come back — progress, snooze, and resume stay on this device',
+              ],
+              logic: [
+                'Progress is stored as wise-walkthrough (versioned); a fresh sign-in sets wise-walkthrough-fresh in sessionStorage so the first app screen opens the tour',
+                'Loaded once from the shared nav on every logged-in page, self-guarded so it never double-mounts',
+              ],
+              ux: ['Chips for every chapter, skip-without-losing-progress, and copy that talks like the owl — no boxed icon tiles, no separate missions UI'] },
+            { page: 'Help', path: 'help.html',
+              features: ['A “Replay the WISEowl walkthrough” support row and a matching intent chip, plus a getting-started FAQ that points at Help, Preferences, and ?walkthrough=1'],
+              logic: ['Replay waits for wise:walkthrough-ready if the owl script has not finished loading, then calls WiseWalkthrough.open({ force: true })'] },
+            { page: 'Preferences', path: 'preferences.html',
+              features: ['Workspace row “WISEowl walkthrough” with a Replay tour button that reopens the grouped tour of the real pages'],
+              logic: ['Same ready-event wait as Help, so Replay works even if the owl script is still arriving'] },
+            { page: 'WISEcodeAI', path: 'wiseai.html',
+              features: ['Chat-module elevation — Little min, Above high, or 3D — an admin three-dot control that every chat surface follows from one localStorage key (default Above high)'],
+              logic: ['Elevation broadcasts on wise:chat-elev so every open chat stays in lockstep; comparison tables always pin the YOU / primary entity as the leftmost column before ranking the rest'],
+              ux: ['Composer pill uses a light brand-wash stroke (not the heavy border) with a living sheen that travels the edge in both themes'] },
+            { page: 'Progress Log', path: 'progress-log.html',
+              features: ['Hourly auto-reevaluation: the open tab cache-busts its own source, reloads when the journal stamp moves, and otherwise refreshes counts and relative times'],
+              logic: ['Polling pauses while the tab is hidden, skips a reload if a note composer is open, and the three-dot menu can force a check immediately'],
+              ux: ['One container per day with the page title and file name, then category bullets in a single horizontal flow — no icons on the board, empty categories omitted'] },
+            { page: 'Appearance & Admin', path: '(appearance popover · every page)',
+              ux: ['Shared hover/focus tooltips (data-tip) on appearance controls, anchored above the trigger — never directly below — and re-anchored when a toggle adds height (e.g. the jam strip)'],
+              logic: ['tipAttrs() writes the tooltip copy once so every admin row and toggle uses the same lir-tooltip card'] },
+            { page: 'Platform-wide', path: '(all pages)',
+              components: [
+                'Five-stop monochromatic chart-status scale in wise.css (excellent → good → okay → fair → poor), with a lifted azure ramp in dark mode so the stops stay distinct on navy',
+                'Crawl · Walk · Run floating segmented control on every pages/*.html — Crawl, Walk, Run — ON by default in Run',
+              ],
+              features: ['wise-theme and chat-theme stay in lockstep so a page that used to write only one key can no longer desync light/dark'],
+              logic: [
+                'Crawl hides every chat surface and takes it out of the a11y tree (inert + aria-hidden), then grows remaining modules to fill the row; Walk keeps chips and four-tier widths but locks the composer; Run docks the composer and focuses the real textarea',
+                'Pane-resize measures each module’s four-tier widths in place (panel-* vs pane-* class families) and walks only from the current tier to the snapped one, never cycling every width',
+              ],
+              ux: ['Dashboard, Non-UPF, AI Dashboard, and Analytics Types charts all read --chart-status-* instead of mixed greens, so one hue family in both themes'] },
+            { page: 'Product Portfolio', path: 'product-portfolio.html',
+              logic: ['Ranked and pending columns always put the YOU / primary entity first, then the rest of the ranking'],
+              ux: ['Pill controls and a single UI type size, with card corners from the shared scorecard cycle — no leftover 16px carousel gutter'] },
+            { page: 'Product Comparison', path: 'product-comparison.html',
+              logic: ['Same YOU / primary-leftmost ordering as Portfolio, so the two boards read as one comparison language'],
+              ux: ['Pill controls and UI type aligned with wiseai.html so the comparison chrome is not a second design'] },
+            { page: 'Marketing Assets', path: 'marketing-assets.html',
+              ux: ['Asset preview is a full-viewport modal (no inset card, no leftover rounded dialog) so the artwork is the thing you look at'] },
+            { page: 'AI Dashboard', path: 'ai-dashboard.html',
+              ux: ['Chart series use the shared chart-status tokens, inheriting the lifted dark-mode stops from wise.css'] },
+            { page: 'Analytics Types', path: 'analytics-types.html',
+              ux: ['Canonical five-tier WISE status scale on the chart catalog — one navy family, so the rosette stays on-brand in both themes'] },
+          ],
+        },
+        {
+          date: '2026-08-17', rel: 'Monday',
+          summary: 'Personal notes on the Progress Log, a dev-handoff catalog on All Modules, deeper View Product, admin-gated Appearance & chat controls, and project-wide conventions + lint tooling.',
+          entries: [
+            { page: 'Progress Log', path: 'progress-log.html',
+              features: ['Personal notes on each day — add, edit, and save observations alongside the build journal, persisted in localStorage on this device'],
+              ux: ['Notes reuse the shared composer, sticky-note card, and Save / Cancel controls already used on chat turns, so there is no second pattern to learn'] },
             { page: 'All Modules', path: 'all-modules.html',
-              components: ['Dev-ready component catalog: buttons, cards, tables, chips, modals, toasts, scorecards, library folders, avatars, composer', 'Typography + design-token specimens', 'Icon inventory browser', 'Motion catalog + streaming-trace demo'],
-              features: ['Per-component dev-ready toggles so engineering can claim components one by one', 'Parent/child readiness rollups showing handoff progress at a glance', 'Jump-to-source links from each catalog entry', 'Downloadable chart & report design rules (.md)'],
-              logic: ['Dev-ready tree builder with persisted ready-state', 'Deduplication grouping repeated components into canonical entries', 'Automated icon scanning keeping the inventory in sync'] },
+              components: [
+                'Dev-ready catalog of the real UI pieces: buttons, admin buttons, cards, tables, chips, modals, toasts, scorecards, library folders, avatars, and the chat composer',
+                'Typography specimens (DM Sans, Noto Serif, mono) and live design-token chips',
+                'Icon inventory browser kept in sync with a scan of the codebase',
+                'Motion catalog plus a streaming-trace (helix) demo',
+              ],
+              features: [
+                'Per-component “dev-ready” toggles so engineering can claim pieces one by one, with parent/child rollups of handoff progress',
+                'Jump-to-source links from each catalog entry, and downloadable chart & report design rules (.md)',
+              ],
+              logic: ['Dev-ready tree builder with persisted ready-state, de-duplication of repeated components into canonical entries, and automated icon scanning'] },
             { page: 'View Product', path: 'view-product.html',
-              components: ['Deeper detail layout with dedicated score, ingredient, and imagery sections'],
-              ux: ['Refined ingredient & score tooltips'],
-              improvements: ['Wired into the real product photo library'] },
+              components: ['Dedicated score, ingredient, and imagery sections in the detail layout — no longer a single stacked dump of the product card'],
+              ux: ['Ingredient and score tooltips from the shared lir-tooltip card, anchored above the trigger'],
+              improvements: ['Product photography wired to the real Helix photo library instead of placeholders'] },
             { page: 'WISEcodeAI', path: 'wiseai.html',
               features: [
-                'Admin-gated chat three-dot controls, shared by every chat module across the app',
-                'Turns — inspect every turn and fork a new conversation from any point',
-                'Overview cards toggle — show or hide the welcome scorecards',
-                'Intent-chips toggle — show or hide the suggested-question chips',
-                'Compact spacing for a denser transcript',
-                'Brand AI text — recolor the assistant’s replies in the brand ink, app-wide',
-                'Input glow — a living sheen stroke that travels the composer',
-                'Background animation with an opacity slider and three styles (Helix · Stamp · Orbit)',
-                'Response-streaming detail (Full · Steps · Final)',
-                'History & Projects drawer plus a Connect-a-data-source panel',
+                'Admin-gated three-dot controls, identical on every chat module: Turns (inspect and fork from any point), overview-cards toggle, intent-chips toggle, compact spacing, brand AI text, input glow, background animation (Helix · Stamp · Orbit with an opacity slider), streaming detail (Full · Steps · Final)',
+                'History & Projects drawer — drag a conversation onto a project, or drop one chat on another to file it — plus a Connect-a-data-source panel',
               ],
-              improvements: ['Refined chat behavior and response pacing'] },
+              logic: ['Chat-history rows are draggable into projects; filter counts stay reconciled with the visible list'],
+              ux: ['Response pacing and streaming refined so the composer never yanks the viewport while a long answer arrives'] },
             { page: 'Appearance & Admin', path: '(appearance popover · every page)',
               features: [
-                'Admin-gated controls in the shared Appearance popover — badged and identical on every page',
-                'Pivot Navigation — swing the nav rail up into a horizontal top bar',
-                'Blue chat surface — tint the chat pane in the brand blue',
-                'Activity strip — a landmark rail pinned to the chat’s left or right edge',
-                'Jam strip — an in-popover music player with transport, a live equalizer, and a track picker',
-                'Crawl · Walk · Run — step the whole experience between guided and expert',
-                'Module spacing — set the gap between modules (S · M · L · XL)',
-                'Full bleed — take nav, chat, and right modules edge-to-edge, with live color pickers, preset themes, and right-module behavior (Drawer · Flat · Hidden)',
+                'Admin-gated controls, badged and identical on every page: Pivot Navigation, blue chat surface, activity strip (left or right), jam strip (transport + live equalizer + track picker), Crawl · Walk · Run, module spacing (S · M · L · XL)',
+                'Full bleed — nav, chat, and right modules edge-to-edge, with live color pickers, preset themes, and right-module behavior (Drawer · Flat · Hidden)',
               ],
-              ux: ['Admin destinations grouped in the popover: Accessibility review (with a live pass/warn/fail verdict), All modules, and this Progress log'] },
+              ux: ['Admin destinations grouped in the popover: Accessibility review (live pass/warn/fail), All modules, and this Progress log'] },
             { page: 'Platform-wide', path: '(all pages)',
-              logic: ['Normalized topbar + appearance controls so every page renders identical header/theme controls', 'Lint tooling for JavaScript, CSS, and HTML'],
-              components: ['Cursor rules: canonical page structure, chat-module parity, dark-mode parity, count-up, scorecard/popover conventions, serif headlines'],
-              features: ['Skills: chat-module audit, new-page-from-canonical, propagate-across-pages, visual-verify'],
-              deletions: ['Removed the legacy wise_ip3 landing page and its dead links'] },
+              components: ['Cursor rules that every new page has to follow: canonical shell from wiseai.html, chat-module parity, dark-mode parity, count-up, scorecard/popover conventions, serif headlines, no rounded-square icon tiles'],
+              features: ['Agent skills for the same conventions: chat-module audit, new-page-from-canonical, propagate-across-pages, visual-verify'],
+              logic: ['Topbar and appearance controls normalized so every page mounts the same header/theme wiring; ESLint, Stylelint, and HTMLHint added as the lint set'],
+              deletions: ['Removed the legacy wise_ip3.html landing page and the dead links that pointed at it'] },
           ],
         },
         {
@@ -530,14 +647,27 @@
           summary: 'Add Product reworked into a conversational flow; site-wide count-up, welcome orbit, and mobile nav.',
           entries: [
             { page: 'Add Product', path: 'add-product.html',
-              components: ['Nutrition facts entry panels (multiple pack formats + sizes)', 'Photo capture modal', 'Assistant side panel with inline field editors and a live activity log'],
-              features: ['Conversational, assistant-guided product entry', '“What can I ask” guide with example prompts that animate in letter by letter'],
-              logic: ['Streaming + shimmer states while the AI processes', 'Field-level capture tracking that feeds the activity log'] },
+              components: [
+                'Live Nutrition Facts panel for the base product and each pack format (size, image, UPC, servings, serving size, calories) that you can edit in place',
+                'Photo-capture modal and an assistant side panel with inline field editors plus a live activity log of what has been captured',
+              ],
+              features: [
+                'Conversational entry: chat collects the fields, the NFP card is the source of truth, and nothing commits until Save to Portfolio',
+                '“What can I ask?” guide whose example prompts animate in letter by letter with a staggered gold shimmer',
+              ],
+              logic: ['Streaming and shimmer states while the assistant processes; field-level capture tracking feeds the activity log so the right-hand panel always matches the chat'] },
             { page: 'Platform-wide', path: '(all pages)',
-              components: ['count-up-all.js — universal scorecard count-up', 'chat-ask.js — shared ask-suggestions component', 'mobile-nav.js — small-screen nav with an animated slide-in drawer'],
-              features: ['welcome-orbit.js — animated capability orbit on the chat welcome', 'ask-catalog.js — catalog-specific ask suggestions'],
-              ux: ['Layout refinements across product, dashboard, and studio pages'],
-              logic: ['no-icon-tile hook + rule enforcing no rounded-square icon backdrops'] },
+              components: [
+                'count-up-all.js — every scorecard numeral counts up on first view, on card click, and when the number changes (opt-out with .no-countup)',
+                'chat-ask.js — shared “What can I ask?” overlay that can break out as a sticky drawer to the right of chat',
+                'mobile-nav.js — at ≤768px the nav collapses to a floating owl + expand control; expand slides the full nav in over a scrim',
+              ],
+              features: [
+                'welcome-orbit.js — the chat welcome owl becomes a node network (gold / blue / white in dark mode) instead of concentric pulse rings',
+                'ask-catalog.js — catalog-specific ask suggestions for bulk-import surfaces',
+              ],
+              logic: ['no-icon-tile hook + Cursor rule: icons never sit on a rounded-square badge — circle or no backdrop'],
+              ux: ['Product, dashboard, and studio pages share the same module padding and chat-column width so a layout pass does not fork per page'] },
           ],
         },
         {
@@ -545,12 +675,12 @@
           summary: 'New Add Catalog bulk-import page, 100+ real product photos, and responsive tables.',
           entries: [
             { page: 'Add Catalog', path: 'add-catalog.html', isNew: true,
-              components: ['New guided, multi-step bulk catalog import page'],
-              features: ['End-to-end import demoed with a real brand catalog'] },
+              components: ['Guided multi-step bulk import: send a CSV of up to 500 products, match columns, list rows to fix, then verify ingredients in one pass — nothing imports until you say go'],
+              features: ['End-to-end import walked with a real Flax4Life catalog so the demo is a real brand file, not sample rows'] },
             { page: 'Platform-wide', path: '(all pages)',
-              components: ['100+ real product photos (Helix set) + a fetch script'],
-              features: ['responsive-tables.js — data tables reflow for phones and tablets'],
-              improvements: ['WISEcodeAI chat + all-modules overhaul; extended appearance & topbar'] },
+              components: ['100+ real Helix product photos plus the fetch script that keeps the set current'],
+              features: ['responsive-tables.js — data tables reflow for phones and tablets instead of horizontal-scroll-only'],
+              improvements: ['WISEcodeAI chat and All Modules overhauled; appearance popover and topbar extended so the new pages inherit the same chrome'] },
           ],
         },
         {
@@ -558,11 +688,14 @@
           summary: 'Conversation Library folders and expanded chat activity + sticky audit tooling.',
           entries: [
             { page: 'Conversation Library', path: 'conversation-library.html',
-              features: ['Color-coded folders: drag cards in, or drop one card on another to create a folder', 'Rename, recolor, and dissolve folders'],
-              logic: ['Filter counts reconciled so numbers always match the visible cards'] },
+              features: [
+                'Color-coded folders: drag a card onto a folder to file it, or drop one card on another to start a folder on the spot',
+                'Rename, recolor, and dissolve folders without losing the chats inside',
+              ],
+              logic: ['Filter counts are reconciled against the visible cards, so a scorecard number always matches what is on screen'] },
             { page: 'All Modules', path: 'all-modules.html',
-              components: ['Expanded chat activity strip'],
-              logic: ['Sticky-module audit tooling (audit script + corner-case repro)'] },
+              components: ['Expanded chat activity strip — the same landmark rail used beside chat, documented in the catalog'],
+              logic: ['Sticky-module audit script plus a corner-case repro so tucked drawers can be checked without walking every page by hand'] },
           ],
         },
         {
@@ -570,15 +703,19 @@
           summary: 'Sticky modules and user avatars roll out platform-wide; AI Dashboard and Profile expand.',
           entries: [
             { page: 'Platform-wide', path: '(all pages)',
-              components: ['sticky-modules.js — tuck any side panel behind the chat like a drawer', 'user-avatar.js — the avatar follows the user into every chat'],
-              features: ['code-stats tooling + dataset'] },
+              components: [
+                'sticky-modules.js — any module to the right of chat tucks behind it like a drawer (always on; the old sticky toggle is gone). The ⋯ menu on those modules is Share, Copy link, and Export',
+                'user-avatar.js — one store for the signed-in photo (upload or URL) that the nav chip and every chat “you” bubble read; clearing it falls back to initials',
+              ],
+              features: ['code-stats tooling and dataset (scan script + JSON) so All Modules can show live size/complexity numbers'] },
             { page: 'AI Dashboard', path: 'ai-dashboard.html',
-              improvements: ['Rebuilt into the standard product shell with brand-palette charts + an embedded assistant'] },
+              components: ['Standard product shell — nav, topbar, and an embedded WISEcodeAI chat — replacing the old standalone dashboard page'],
+              ux: ['Charts redrawn on the brand palette so the operations view reads as part of the family, not a third-party embed'] },
             { page: 'Profile', path: 'profile.html',
-              features: ['Upload a profile photo or pick from ready-made avatar patterns'] },
+              features: ['Upload a profile photo from disk or pick a ready-made avatar pattern; the choice is what user-avatar.js then shows in nav and chat'] },
             { page: 'WISEcodeAI', path: 'wiseai.html',
-              features: ['Expanded chat interactions + shared styles'],
-              deletions: ['Removed the dev-only seed harness (__seed.html)'] },
+              features: ['Expanded in-chat interactions (activity strip, history, turns) and the shared wiseai-chat.css surface they all sit on'],
+              deletions: ['Removed the dev-only seed harness (pages/__seed.html)'] },
           ],
         },
         {
@@ -586,12 +723,13 @@
           summary: 'Crawl · Walk · Run toggle, a major All Modules expansion, and a site-wide polish pass.',
           entries: [
             { page: 'Platform-wide', path: '(all pages)',
-              components: ['cwr-toggle.js — Crawl · Walk · Run experience toggle'],
-              ux: ['Site-wide visual polish across nearly every page'] },
+              components: ['cwr-toggle.js — floating Crawl · Walk · Run control, persisted in localStorage and applied as a class on <html> so every page shares one mode'],
+              ux: ['Site-wide visual polish: product, comparison, wiseai, and marketing pages brought onto the same type, spacing, and chrome'] },
             { page: 'All Modules', path: 'all-modules.html',
-              features: ['Major expansion of the module directory (component / typography / token / icon / motion catalogs)'] },
+              features: ['Module directory expanded into live catalogs — components, typography, tokens, icons, and motion — so handoff is a page, not a slide'],
+              components: ['First cut of the component / token / icon / motion galleries that Monday then marked up as dev-ready'] },
             { page: 'App Vision Deck', path: 'app-vision-deck.html',
-              improvements: ['Reworked slides, including the dev-handoff “release blocks” story'] },
+              improvements: ['Slides reworked around the dev-handoff “release blocks” story so the deck matches what All Modules actually shows'] },
           ],
         },
       ];
@@ -607,13 +745,38 @@
         return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
       }
 
+      /* ── Personal notes (persisted locally — same sticky-note idea as chat turns) ── */
+      const NOTES_KEY = 'wise-progress-log-notes';
+      function loadNotes() {
+        try {
+          const raw = JSON.parse(localStorage.getItem(NOTES_KEY) || '[]');
+          return Array.isArray(raw) ? raw.filter((n) => n && n.id && n.day && typeof n.text === 'string') : [];
+        } catch (_) { return []; }
+      }
+      function persistNotes() {
+        try { localStorage.setItem(NOTES_KEY, JSON.stringify(notes)); } catch (_) {}
+      }
+      function nid() { return 'n_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7); }
+      function notesForDay(iso) { return notes.filter((n) => n.day === iso); }
+      function relTime(iso) {
+        const t = Date.parse(iso);
+        if (!t) return '';
+        const s = (Date.now() - t) / 1000;
+        if (s < 45) return 'Just now';
+        if (s < 3600) return Math.max(1, Math.round(s / 60)) + ' min ago';
+        if (s < 86400) return Math.max(1, Math.round(s / 3600)) + 'h ago';
+        return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      }
+      let notes = loadNotes();
+      /* { day, id: string|null, text } — id is null when composing a new note. */
+      let noteEditor = null;
+
       /* ── State ──
          catFilter is single-select (null = all categories), so the category
          scorecards read like the app's other .rf-stat filter cards. */
       let catFilter = null;
       let pageFilter = '__all';
       let searchTerm = '';
-      let view = 'rows'; // 'rows' (default) | 'cards'
       const collapsed = new Set();
 
       /* ── Renderers ── */
@@ -624,9 +787,8 @@
       function statHtml(o) {
         const cls = ['pl-stat', o.tone ? 'pl-stat--' + o.tone : '', o.active ? 'is-active' : ''].filter(Boolean).join(' ');
         const attrs = o.cat ? ` data-cat="${o.cat}" aria-pressed="${o.active ? 'true' : 'false'}"` : ' disabled';
-        const icon = o.icon ? `<span class="material-symbols-outlined" aria-hidden="true">${o.icon}</span>` : '';
         const sub = o.sub ? `<span class="pl-stat-sub">${o.sub}</span>` : '';
-        return `<button type="button" class="${cls}"${attrs}><span class="pl-stat-num" data-countup>${o.num}</span><span class="pl-stat-label">${icon}${o.label}</span>${sub}</button>`;
+        return `<button type="button" class="${cls}"${attrs}><span class="pl-stat-num" data-countup>${o.num}</span><span class="pl-stat-label">${o.label}</span>${sub}</button>`;
       }
 
       function computeTotals() {
@@ -638,29 +800,26 @@
       }
       function renderSummary() {
         const { pages, total } = computeTotals();
+        const used = CATS.filter((c) => catTotals[c.id] > 0).length;
         document.getElementById('pl-summary').innerHTML = [
           statHtml({ num: LOG.length, label: 'Days logged', sub: `${LOG[LOG.length - 1].rel} → ${LOG[0].rel}` }),
           statHtml({ num: pages, label: 'Surfaces', sub: 'pages &amp; platform' }),
-          statHtml({ num: total, label: 'Entries', sub: `${CATS.length} categories` }),
+          statHtml({ num: total, label: 'Entries', sub: `${used} ${used === 1 ? 'category' : 'categories'}` }),
+          statHtml({ num: notes.length, label: 'Your notes', sub: notes.length ? 'saved on this device' : 'tap Add a note' }),
         ].join('');
       }
       /* Brand-only tones: Improvements reads as the brand green, Deletions as the
          brand red. Everything else stays neutral — no invented colours. */
       const CAT_TONE = { improvements: 'good', deletions: 'alert' };
       function renderCatStats() {
-        document.getElementById('pl-cat-stats').innerHTML = CATS.map((c) => statHtml({
-          num: catTotals[c.id], label: c.label, icon: c.icon, cat: c.id,
-          tone: CAT_TONE[c.id], active: catFilter === c.id,
-        })).join('');
-      }
-
-      function renderPageFilter() {
-        const pages = [];
-        const seen = new Set();
-        LOG.forEach((day) => day.entries.forEach((e) => { if (!seen.has(e.page)) { seen.add(e.page); pages.push(e.page); } }));
-        pages.sort((a, b) => a.localeCompare(b));
-        document.getElementById('pl-page-filter').innerHTML = `<option value="__all">All pages</option>` +
-          pages.map((p) => `<option value="${esc(p)}">${esc(p)}</option>`).join('');
+        /* Skip categories with nothing logged — a 0 card is noise, not a filter. */
+        if (catFilter && !(catTotals[catFilter] > 0)) catFilter = null;
+        document.getElementById('pl-cat-stats').innerHTML = CATS
+          .filter((c) => catTotals[c.id] > 0)
+          .map((c) => statHtml({
+            num: catTotals[c.id], label: c.label, cat: c.id,
+            tone: CAT_TONE[c.id], active: catFilter === c.id,
+          })).join('');
       }
 
       function highlight(text) {
@@ -674,13 +833,58 @@
         const hay = (entry.page + ' ' + entry.path + ' ' + entryItems(entry).map((i) => i.text).join(' ')).toLowerCase();
         return hay.includes(searchTerm);
       }
+      function notesMatchSearch(iso) {
+        const list = notesForDay(iso);
+        if (!searchTerm) return list.length > 0;
+        return list.some((n) => n.text.toLowerCase().includes(searchTerm));
+      }
+
+      function renderNoteCard(n) {
+        const when = relTime(n.updatedAt || n.createdAt);
+        const bits = [n.kind === 'eval' ? (n.scope === 'journal' ? 'All pages' : 'Evaluated') : '', when].filter(Boolean);
+        return `
+          <li class="pl-note" data-note-id="${esc(n.id)}">
+            <div class="pl-note-body">
+              <div class="pl-note-text">${highlight(n.text)}</div>
+              ${bits.length ? `<div class="pl-note-meta">${esc(bits.join(' · '))}</div>` : ''}
+            </div>
+            <button type="button" class="pl-note-edit" data-note-edit="${esc(n.id)}" data-note-day="${esc(n.day)}" title="Edit note" aria-label="Edit note">Edit</button>
+          </li>`;
+      }
+      function renderComposer(dayIso) {
+        const isEdit = !!(noteEditor && noteEditor.id);
+        const val = noteEditor && noteEditor.day === dayIso ? noteEditor.text : '';
+        return `
+          <div class="pl-note-composer">
+            <label class="adm-field-label" for="pl-note-input-${esc(dayIso)}">${isEdit ? 'Edit note' : 'Your note'}</label>
+            <textarea id="pl-note-input-${esc(dayIso)}" class="pl-note-input" rows="3" placeholder="Capture a decision, a question, or an observation…" aria-label="${isEdit ? 'Edit note' : 'Add a note'}">${esc(val)}</textarea>
+            <div class="pl-note-actions">
+              <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" data-note-cancel>Cancel</button>
+              <button type="button" class="adm-btn adm-btn--primary adm-btn--sm" data-note-save>Save</button>
+            </div>
+          </div>`;
+      }
+      function renderNotesBlock(dayIso) {
+        const list = notesForDay(dayIso);
+        const editing = noteEditor && noteEditor.day === dayIso;
+        const editingId = editing ? noteEditor.id : null;
+        const cards = list.filter((n) => n.id !== editingId).map(renderNoteCard).join('');
+        const head = list.length ? `
+          <div class="pl-notes-head">
+            <span class="pl-notes-title">Notes</span>
+            <span class="pl-notes-count">${list.length}</span>
+          </div>` : '';
+        const composer = editing ? renderComposer(dayIso) : '';
+        const addBtn = editing ? '' : `<button type="button" class="pl-note-add" data-note-add="${esc(dayIso)}">Add a note</button>`;
+        const empty = !list.length && !editing;
+        return `<div class="pl-notes${empty ? ' is-empty' : ''}" data-notes-day="${esc(dayIso)}">${head}${cards ? `<ul class="pl-notes-list">${cards}</ul>` : ''}${composer}${addBtn}</div>`;
+      }
 
       function renderCatBlock(cat, items) {
         const c = CAT_BY_ID[cat];
         return `
           <div class="pl-cat-block">
             <div class="pl-cat-block-head">
-              <span class="material-symbols-outlined" aria-hidden="true">${c.icon}</span>
               <span class="pl-cat-block-label">${c.label}</span>
               <span class="pl-cat-block-count">${items.length}</span>
             </div>
@@ -695,12 +899,11 @@
         return `
           <article class="pl-pcard${entry.isNew ? ' is-new' : ''}">
             <div class="pl-pcard-head">
-              <span class="pl-pcard-mark" aria-hidden="true"><span class="material-symbols-outlined">${entry.isNew ? 'note_add' : 'description'}</span></span>
               <div class="pl-pcard-meta">
                 <div class="pl-pcard-name">${esc(entry.page)}</div>
                 <div class="pl-pcard-path">${esc(entry.path)}</div>
               </div>
-              ${entry.isNew ? '<span class="pl-pcard-new"><span class="material-symbols-outlined">fiber_new</span>New</span>' : ''}
+              ${entry.isNew ? '<span class="pl-pcard-new">New</span>' : ''}
             </div>
             <div class="pl-pcard-cats">${blocks}</div>
           </article>`;
@@ -708,61 +911,294 @@
 
       function renderTimeline() {
         const root = document.getElementById('pl-timeline');
-        root.classList.toggle('pl-view-rows', view === 'rows');
-        root.classList.toggle('pl-view-cards', view === 'cards');
         let html = '';
         let visible = 0;
+        let visibleNotes = 0;
         LOG.forEach((day) => {
           const entries = day.entries.filter((e) => (pageFilter === '__all' || e.page === pageFilter) && matchesSearch(e));
           const cards = entries.map(renderPageCard).filter(Boolean);
-          if (!cards.length) return;
+          const editingHere = !!(noteEditor && noteEditor.day === day.date);
+          const notesHit = notesMatchSearch(day.date);
+          const showNotesOnly = !catFilter && pageFilter === '__all' && (notesHit || editingHere);
+          if (!cards.length && !showNotesOnly && !editingHere) return;
           visible += cards.length;
+          visibleNotes += notesForDay(day.date).length;
           const tally = {};
           entries.forEach((e) => entryItems(e).forEach((it) => { if (!catFilter || it.cat === catFilter) tally[it.cat] = (tally[it.cat] || 0) + 1; }));
-          const tallyPills = CATS.filter((c) => tally[c.id]).map((c) => `<span class="pl-tally-pill" title="${c.label}"><span class="material-symbols-outlined">${c.icon}</span>${tally[c.id]}</span>`).join('');
+          const noteN = notesForDay(day.date).length;
+          const tallyPills = CATS.filter((c) => tally[c.id]).map((c) => `<span class="pl-tally-pill" title="${c.label}">${esc(c.label)} ${tally[c.id]}</span>`).join('') +
+            (noteN ? `<span class="pl-tally-pill" title="Notes">Notes ${noteN}</span>` : '');
           const isCollapsed = collapsed.has(day.date);
+          const dayInner = `${renderNotesBlock(day.date)}${cards.join('')}`;
           html += `
             <section class="pl-day${isCollapsed ? ' is-collapsed' : ''}" id="pl-day-${day.date}">
               <div class="pl-day-head" data-day="${day.date}" role="button" tabindex="0" aria-expanded="${!isCollapsed}">
-                <span class="pl-day-dot" aria-hidden="true"><span class="material-symbols-outlined">event</span></span>
                 <div class="pl-day-titles">
                   <div class="pl-day-date">${fmtDate(day.date)} <span class="pl-day-rel">${day.rel}</span></div>
                   <div class="pl-day-summary">${esc(day.summary)}</div>
                 </div>
-                <div class="pl-day-tally">${tallyPills}<button type="button" class="pl-day-copy" data-copy-day="${day.date}" title="Copy this day's work" aria-label="Copy ${esc(fmtDate(day.date))}'s work"><span class="material-symbols-outlined" aria-hidden="true">content_copy</span></button><span class="material-symbols-outlined pl-collapse-ic" aria-hidden="true">expand_more</span></div>
+                <div class="pl-day-tally">${tallyPills}<button type="button" class="pl-day-copy" data-copy-day="${day.date}" title="Copy this day's work" aria-label="Copy ${esc(fmtDate(day.date))}'s work">Copy</button></div>
               </div>
-              <div class="pl-day-body">${cards.join('')}</div>
+              <div class="pl-day-body"><div class="pl-day-card">${dayInner}</div></div>
             </section>`;
         });
-        root.innerHTML = visible ? html : `
+        root.innerHTML = html ? html : `
           <div class="pl-empty">
-            <span class="material-symbols-outlined" aria-hidden="true">search_off</span>
             <div class="pl-empty-title">Nothing matches those filters</div>
-            <div class="pl-empty-note">Clear the search, deselect the category scorecard, or pick a different page.</div>
+            <div class="pl-empty-note">Clear the search or deselect the category scorecard.</div>
           </div>`;
 
         const note = document.getElementById('pl-filter-note');
         const parts = [`${visible} page ${visible === 1 ? 'entry' : 'entries'} shown`];
+        if (visibleNotes) parts.push(`${visibleNotes} ${visibleNotes === 1 ? 'note' : 'notes'}`);
         if (catFilter) parts.push(`category: ${CAT_BY_ID[catFilter].label}`);
         if (pageFilter !== '__all') parts.push(`page: ${pageFilter}`);
         if (searchTerm) parts.push(`search: “${searchTerm}”`);
         note.textContent = parts.join(' · ');
+        restoreNoteComposer();
       }
 
-      function renderAll() { renderSummary(); renderCatStats(); renderPageFilter(); renderTimeline(); }
+      /* ── Re-evaluate: walk every page, then upsert notes below ──
+         Personal notes (no kind) are left alone. Each day gets one eval
+         note; the newest day also gets a journal-wide note. Click again
+         updates those notes instead of stacking duplicates. */
+      function oxford(items) {
+        const list = (items || []).filter(Boolean);
+        if (!list.length) return '';
+        if (list.length === 1) return list[0];
+        if (list.length === 2) return list[0] + ' and ' + list[1];
+        return list.slice(0, -1).join(', ') + ', and ' + list[list.length - 1];
+      }
+      function dayCounts(day) {
+        const cats = {};
+        let n = 0;
+        day.entries.forEach((e) => entryItems(e).forEach((it) => { n++; cats[it.cat] = (cats[it.cat] || 0) + 1; }));
+        return { n, cats };
+      }
+      function firstClause(text, max = 88) {
+        let t = String(text || '').trim().replace(/[.;]+$/, '');
+        const dash = t.split(' — ')[0].trim();
+        if (dash.length >= 16 && dash.length <= max) t = dash;
+        if (t.length > max) {
+          const cut = t.slice(0, max);
+          const sp = cut.lastIndexOf(' ');
+          t = (sp > 40 ? cut.slice(0, sp) : cut).replace(/[.,;:]+$/, '') + '…';
+        }
+        return t;
+      }
+      function pageEvalSentence(entry) {
+        const first = CATS.map((c) => (Array.isArray(entry[c.id]) && entry[c.id][0]) || null).find(Boolean);
+        const clause = first ? firstClause(first) : '';
+        const name = entry.page + (entry.isNew ? ' (new)' : '');
+        if (!clause) return name + ' progressed.';
+        return name + ' — ' + clause.charAt(0).toLowerCase() + clause.slice(1) + '.';
+      }
+      function dayEvalNote(day) {
+        const { n, cats } = dayCounts(day);
+        const pages = day.entries;
+        const lead = pages.slice(0, 5).map(pageEvalSentence);
+        const more = pages.slice(5).map((e) => e.page);
+        const heavy = CATS.filter((c) => cats[c.id]).sort((a, b) => cats[b.id] - cats[a.id]).slice(0, 3);
+        const parts = [
+          'Evaluated ' + pages.length + (pages.length === 1 ? ' page' : ' pages') + ' on ' + fmtDate(day.date) + '.',
+          ...lead,
+        ];
+        if (more.length) parts.push('Also progressed ' + oxford(more) + '.');
+        parts.push(
+          n + (n === 1 ? ' entry' : ' entries')
+          + (heavy.length ? ', heaviest in ' + oxford(heavy.map((c) => c.label)) : '')
+          + '.'
+        );
+        return parts.join(' ');
+      }
+      function journalEvalNote() {
+        const oldest = LOG[LOG.length - 1];
+        const newest = LOG[0];
+        const pages = new Set();
+        const news = [];
+        let total = 0;
+        LOG.forEach((d) => d.entries.forEach((e) => {
+          pages.add(e.page);
+          if (e.isNew) news.push(e.page);
+          total += entryItems(e).length;
+        }));
+        const parts = [
+          'Evaluated all ' + pages.size + ' pages across ' + LOG.length + ' days, from ' + fmtDate(oldest.date) + ' through ' + fmtDate(newest.date) + '.',
+        ];
+        if (news.length) parts.push('New surfaces: ' + oxford(news) + '.');
+        parts.push('The board holds ' + total + ' entries.');
+        return parts.join(' ');
+      }
+      function upsertEvalNote(dayIso, text, scope) {
+        const now = new Date().toISOString();
+        const existing = notes.find((n) => n.day === dayIso && n.kind === 'eval' && n.scope === scope);
+        if (existing) {
+          existing.text = text;
+          existing.updatedAt = now;
+          existing.stamp = LOG_STAMP;
+          notes = [existing, ...notes.filter((n) => n.id !== existing.id)];
+        } else {
+          notes.unshift({
+            id: nid(), day: dayIso, text, kind: 'eval', scope,
+            stamp: LOG_STAMP, createdAt: now, updatedAt: now,
+          });
+        }
+      }
+      function evaluateAllPages() {
+        notes = loadNotes();
+        LOG.forEach((day) => upsertEvalNote(day.date, dayEvalNote(day), 'day'));
+        upsertEvalNote(LOG[0].date, journalEvalNote(), 'journal');
+        persistNotes();
+        collapsed.clear();
+        lastEvalAt = Date.now();
+        renderAll();
+        updateEvalMeta();
+        const first = document.querySelector('#pl-day-' + LOG[0].date + ' .pl-notes');
+        if (first) first.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      function renderAll() { renderSummary(); renderCatStats(); renderTimeline(); }
+
+      /* Full re-evaluation from the current LOG + persisted notes.
+         Called on every boot and again whenever the page is restored from
+         bfcache / a hot-reload that didn't remount the module (pageshow).
+         `reset` wipes filters, search, and collapse so a restored snapshot
+         never shows a stale filtered board. */
+      function reevaluate({ reset = false } = {}) {
+        notes = loadNotes();
+        if (reset) {
+          catFilter = null;
+          pageFilter = '__all';
+          searchTerm = '';
+          collapsed.clear();
+          noteEditor = null;
+          noteWantFocus = false;
+          if (searchInput) searchInput.value = '';
+          syncSearchWrap();
+        }
+        renderAll();
+      }
+      window.plReevaluate = (opts) => reevaluate(opts || {});
+
+      /* ── Hourly auto-reevaluation ──
+         Every hour (and when the tab comes back after an hour) we cache-bust
+         fetch this page, compare LOG_STAMP, and reload if the journal was
+         rewritten. If the stamp is unchanged we still reevaluate() so notes
+         and relative times stay current. Polling pauses while the tab is
+         hidden. Skip a reload if a note composer is open. */
+      const HOUR_MS = 60 * 60 * 1000;
+      let lastEvalAt = Date.now();
+      let hourlyTimer = null;
+      function fmtClock(ts) {
+        return new Date(ts).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+      }
+      function updateEvalMeta() {
+        const el = document.getElementById('pl-head-meta');
+        if (!el) return;
+        const remaining = Math.max(0, (lastEvalAt + HOUR_MS) - Date.now());
+        const mins = Math.round(remaining / 60000);
+        const nextLabel = mins <= 0 ? 'due now' : (mins === 1 ? 'in 1 min' : 'in ' + mins + ' min');
+        el.textContent = 'Last evaluated ' + fmtClock(lastEvalAt) + ' · next check ' + nextLabel;
+      }
+      async function pollLog() {
+        if (noteEditor) { updateEvalMeta(); return; }
+        lastEvalAt = Date.now();
+        try {
+          const url = location.pathname.split('?')[0] + '?pl=' + Date.now();
+          const res = await fetch(url, { cache: 'no-store' });
+          if (res.ok) {
+            const text = await res.text();
+            const m = text.match(/const LOG_STAMP = '([^']+)'/);
+            if (m && m[1] !== LOG_STAMP) {
+              location.reload();
+              return;
+            }
+          }
+        } catch (_) { /* file:// or offline — stay on the in-memory LOG */ }
+        reevaluate();
+        updateEvalMeta();
+      }
+      function startHourlyPoll() {
+        if (hourlyTimer) return;
+        hourlyTimer = setInterval(() => { if (!document.hidden) pollLog(); }, HOUR_MS);
+        setInterval(updateEvalMeta, 60000);
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden && (Date.now() - lastEvalAt) >= HOUR_MS) pollLog();
+          else updateEvalMeta();
+        });
+      }
+      window.plReevaluateNow = () => { pollLog(); };
 
       /* ── Filter API (also driven by the chat) ── */
       function syncSearchWrap() {
         const wrap = document.getElementById('pl-search-wrap');
-        if (wrap) wrap.classList.toggle('has-query', !!searchTerm);
+        if (!wrap) return;
+        wrap.classList.toggle('has-query', !!searchTerm);
       }
       function setSearch(v) { searchTerm = String(v || '').trim().toLowerCase(); const inp = document.getElementById('pl-search-input'); if (inp) inp.value = v || ''; syncSearchWrap(); renderTimeline(); }
-      function setPage(p) { pageFilter = p || '__all'; const sel = document.getElementById('pl-page-filter'); if (sel) sel.value = pageFilter; renderTimeline(); }
+      function setPage(p) { pageFilter = p || '__all'; renderTimeline(); }
       function setCatOnly(catId) { catFilter = catId; renderCatStats(); renderTimeline(); }
       function focusDay(iso) { collapsed.clear(); LOG.forEach((d) => { if (d.date !== iso) collapsed.add(d.date); }); renderTimeline(); const el = document.getElementById('pl-day-' + iso); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
       window.plExpandAll = () => { collapsed.clear(); renderTimeline(); };
       window.plCollapseAll = () => { LOG.forEach((d) => collapsed.add(d.date)); renderTimeline(); };
-      window.plResetFilters = () => { catFilter = null; pageFilter = '__all'; searchTerm = ''; collapsed.clear(); const inp = document.getElementById('pl-search-input'); if (inp) inp.value = ''; const sel = document.getElementById('pl-page-filter'); if (sel) sel.value = '__all'; syncSearchWrap(); renderCatStats(); renderTimeline(); };
+      window.plResetFilters = () => { catFilter = null; pageFilter = '__all'; searchTerm = ''; collapsed.clear(); const inp = document.getElementById('pl-search-input'); if (inp) inp.value = ''; syncSearchWrap(); renderCatStats(); renderTimeline(); };
+      window.plEvaluatePages = () => evaluateAllPages();
+
+      /* ── Note editor ── */
+      let noteWantFocus = false;
+      function restoreNoteComposer() {
+        if (!noteEditor || !noteWantFocus) return;
+        const ta = document.getElementById('pl-note-input-' + noteEditor.day);
+        if (!ta) return;
+        ta.focus();
+        try { ta.setSelectionRange(ta.value.length, ta.value.length); } catch (_) {}
+      }
+      function openNoteEditor(dayIso, id) {
+        const existing = id ? notes.find((n) => n.id === id) : null;
+        noteEditor = { day: dayIso, id: existing ? existing.id : null, text: existing ? existing.text : '' };
+        noteWantFocus = true;
+        collapsed.delete(dayIso);
+        renderTimeline();
+        const ta = document.getElementById('pl-note-input-' + dayIso);
+        if (ta) ta.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      function cancelNoteEditor() {
+        if (!noteEditor) return;
+        noteEditor = null;
+        noteWantFocus = false;
+        renderTimeline();
+      }
+      function commitNote() {
+        if (!noteEditor) return;
+        const val = String(noteEditor.text || '').trim();
+        if (noteEditor.id) {
+          if (!val) notes = notes.filter((n) => n.id !== noteEditor.id);
+          else {
+            const n = notes.find((x) => x.id === noteEditor.id);
+            if (n) { n.text = val; n.updatedAt = new Date().toISOString(); }
+          }
+        } else if (val) {
+          const now = new Date().toISOString();
+          notes.unshift({ id: nid(), day: noteEditor.day, text: val, createdAt: now, updatedAt: now });
+        }
+        noteEditor = null;
+        noteWantFocus = false;
+        persistNotes();
+        renderSummary();
+        renderTimeline();
+      }
+      function addNoteToDay(dayIso, text) {
+        const val = String(text || '').trim();
+        if (!val) return false;
+        const now = new Date().toISOString();
+        notes.unshift({ id: nid(), day: dayIso, text: val, createdAt: now, updatedAt: now });
+        persistNotes();
+        collapsed.delete(dayIso);
+        renderSummary();
+        renderTimeline();
+        return true;
+      }
+      window.plAddNote = () => { openNoteEditor(LOG[0].date, null); };
 
       /* ── Module three-dot menu ── */
       window.plCloseModuleMenu = function () {
@@ -780,7 +1216,11 @@
         if (willOpen) { m.classList.remove('hidden'); document.getElementById('pl-menu-btn')?.setAttribute('aria-expanded', 'true'); }
       };
       document.addEventListener('click', (e) => { if (!e.target.closest('#pl-menu-wrap')) window.plCloseModuleMenu(); });
-      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') window.plCloseModuleMenu(); });
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        window.plCloseModuleMenu();
+        if (noteEditor) { e.preventDefault(); cancelNoteEditor(); }
+      });
 
       /* ── Board interactions ── */
       let searchDebounce;
@@ -791,18 +1231,37 @@
         searchDebounce = setTimeout(() => { searchTerm = v; syncSearchWrap(); renderTimeline(); }, 120);
       });
       document.getElementById('pl-search-clear').addEventListener('click', () => { setSearch(''); searchInput.focus(); });
-      document.getElementById('pl-page-filter').addEventListener('change', (e) => { pageFilter = e.target.value; renderTimeline(); });
-      document.getElementById('pl-view-toggle').addEventListener('click', (e) => {
-        const btn = e.target.closest('[data-view]');
+      searchInput.addEventListener('focus', () => { noteWantFocus = false; });
+      (function wireEvalBtn() {
+        const btn = document.getElementById('pl-eval-btn');
         if (!btn) return;
-        view = btn.dataset.view;
-        document.querySelectorAll('#pl-view-toggle .pl-seg-btn').forEach((b) => {
-          const on = b === btn;
-          b.classList.toggle('is-active', on);
-          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        const icon = btn.querySelector('.material-symbols-outlined');
+        const label = btn.querySelector('.pl-review-btn-label');
+        btn.addEventListener('click', () => {
+          if (btn.disabled) return;
+          btn.disabled = true;
+          btn.classList.add('is-busy');
+          btn.classList.remove('is-done');
+          if (icon) icon.textContent = 'autorenew';
+          if (label) label.textContent = 'Evaluating…';
+          btn.setAttribute('aria-busy', 'true');
+          window.setTimeout(() => {
+            evaluateAllPages();
+            pollLog();
+            btn.classList.remove('is-busy');
+            btn.classList.add('is-done');
+            if (icon) icon.textContent = 'check';
+            if (label) label.textContent = 'Updated';
+            btn.removeAttribute('aria-busy');
+            btn.disabled = false;
+            window.setTimeout(() => {
+              btn.classList.remove('is-done');
+              if (icon) icon.textContent = 'autorenew';
+              if (label) label.textContent = 'Re-evaluate';
+            }, 1600);
+          }, 280);
         });
-        renderTimeline();
-      });
+      })();
       /* Category scorecards are single-select filters: tap to isolate, tap the
          active one again to clear back to all. */
       document.getElementById('pl-cat-stats').addEventListener('click', (e) => {
@@ -831,21 +1290,26 @@
           });
           lines.push('');
         });
+        const dayNotes = notesForDay(day.date);
+        if (dayNotes.length) {
+          lines.push('Notes:');
+          dayNotes.forEach((n) => lines.push(`  - ${n.text}`));
+          lines.push('');
+        }
         return lines.join('\n').trim() + '\n';
       }
       function flashCopy(btn) {
         if (!btn) return;
-        const ic = btn.querySelector('.material-symbols-outlined');
         if (btn.dataset.flashing) return;
         btn.dataset.flashing = '1';
         btn.classList.add('is-copied');
-        const prevIc = ic ? ic.textContent : '';
+        const prevLabel = btn.textContent;
         const prevTitle = btn.title;
-        if (ic) ic.textContent = 'check';
+        btn.textContent = 'Copied';
         btn.title = 'Copied!';
         setTimeout(() => {
           btn.classList.remove('is-copied');
-          if (ic) ic.textContent = prevIc;
+          btn.textContent = prevLabel;
           btn.title = prevTitle;
           delete btn.dataset.flashing;
         }, 1200);
@@ -880,11 +1344,37 @@
       }
 
       timelineEl.addEventListener('click', (e) => {
+        const addBtn = e.target.closest('[data-note-add]');
+        if (addBtn) { e.stopPropagation(); openNoteEditor(addBtn.dataset.noteAdd, null); return; }
+        const editBtn = e.target.closest('[data-note-edit]');
+        if (editBtn) { e.stopPropagation(); openNoteEditor(editBtn.dataset.noteDay, editBtn.dataset.noteEdit); return; }
+        if (e.target.closest('[data-note-save]')) { e.stopPropagation(); commitNote(); return; }
+        if (e.target.closest('[data-note-cancel]')) { e.stopPropagation(); cancelNoteEditor(); return; }
+        if (e.target.closest('.pl-notes')) { e.stopPropagation(); return; }
         const copyBtn = e.target.closest('[data-copy-day]');
         if (copyBtn) { e.stopPropagation(); copyDay(copyBtn.dataset.copyDay, copyBtn); return; }
         const head = e.target.closest('[data-day]'); if (head) toggleDay(head);
       });
-      timelineEl.addEventListener('keydown', (e) => { if (e.key !== 'Enter' && e.key !== ' ') return; const head = e.target.closest('[data-day]'); if (!head) return; if (e.target.closest('[data-copy-day]')) return; e.preventDefault(); toggleDay(head); });
+      timelineEl.addEventListener('input', (e) => {
+        if (!e.target.classList.contains('pl-note-input') || !noteEditor) return;
+        noteEditor.text = e.target.value;
+      });
+      timelineEl.addEventListener('focusin', (e) => {
+        if (e.target.classList.contains('pl-note-input')) noteWantFocus = true;
+      });
+      timelineEl.addEventListener('keydown', (e) => {
+        if (e.target.classList.contains('pl-note-input')) {
+          if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cancelNoteEditor(); return; }
+          if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); commitNote(); return; }
+          return;
+        }
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const head = e.target.closest('[data-day]');
+        if (!head) return;
+        if (e.target.closest('[data-copy-day], .pl-notes')) return;
+        e.preventDefault();
+        toggleDay(head);
+      });
 
       /* ── Width toggle — canonical four-step cycle via the shared pane-width helper ── */
       const CANON_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
@@ -935,6 +1425,7 @@
         { intent: 'pl:components', label: 'New components', icon: 'widgets' },
         { intent: 'pl:features', label: 'New features', icon: 'bolt' },
         { intent: 'pl:newpages', label: 'New pages', icon: 'note_add' },
+        { intent: 'pl:notes', label: 'My notes', icon: 'edit_note' },
         { intent: 'pl:busiest', label: 'Busiest day', icon: 'trending_up' },
         { intent: 'pl:deletions', label: 'What was removed?', icon: 'delete' },
       ];
@@ -949,6 +1440,12 @@
           setSearch('');
           return `<b>${news.length}</b> new page${news.length === 1 ? '' : 's'} in this window:<ul class="sc-reply-list">${news.map((n) => `<li><b>${esc(n.page)}</b> <span style="opacity:.7">(${esc(n.path)})</span> — ${fmtDate(n.date)}</li>`).join('')}</ul>`;
         },
+        'pl:notes': () => {
+          if (!notes.length) return 'You have no notes yet. Tap <b>Add a note</b> on any day — same Save / Cancel composer as the rest of the app. You can also type <b>note:</b> followed by your text.';
+          const items = notes.slice(0, 8).map((n) => `<li><b>${fmtDate(n.day)}</b> — ${esc(n.text)}</li>`).join('');
+          const more = notes.length > 8 ? `<li>+ ${notes.length - 8} more…</li>` : '';
+          return `You have <b>${notes.length}</b> note${notes.length === 1 ? '' : 's'} on this log.<ul class="sc-reply-list">${items}${more}</ul>`;
+        },
         'pl:busiest': () => {
           let best = null, bestN = -1;
           LOG.forEach((d) => { let n = 0; d.entries.forEach((e) => { n += entryItems(e).length; }); if (n > bestN) { bestN = n; best = d; } });
@@ -958,9 +1455,20 @@
         'pl:deletions': () => { setCatOnly('deletions'); return `Removals in this window:${catItemsHtml('deletions')}`; },
       };
 
-      /* Free-text: route to a page, a category, or an overview. */
+      /* Free-text: save a note, or route to a page, a category, or an overview. */
+      function tryChatNote(text) {
+        const m = String(text || '').match(/^(?:note:|add (?:a )?note[:\s]+)\s*([\s\S]+)$/i);
+        if (!m) return null;
+        const day = LOG[0].date;
+        addNoteToDay(day, m[1]);
+        focusDay(day);
+        return `Saved that note on <b>${fmtDate(day)}</b>. It uses the same sticky-note card as chat turns — one pattern, everywhere.`;
+      }
       function reply(text) {
+        const saved = tryChatNote(text);
+        if (saved) return saved;
         const t = String(text || '').toLowerCase();
+        if (/\b(my notes|show notes|list notes)\b/.test(t)) return INTENT_REPLIES['pl:notes']();
         const pageHit = [...new Set(LOG.flatMap((d) => d.entries.map((e) => e.page)))].find((p) => t.includes(p.toLowerCase()));
         if (pageHit) {
           setPage(pageHit);
@@ -975,11 +1483,26 @@
         if (/new page/.test(t)) return INTENT_REPLIES['pl:newpages']();
         const days = LOG.length, pages = new Set(); let total = 0;
         LOG.forEach((d) => d.entries.forEach((e) => { pages.add(e.page); total += entryItems(e).length; }));
-        return `This log covers <b>${days} days</b>, <b>${pages.size} surfaces</b> and <b>${total} entries</b>. Ask about a page (e.g. “Add Product”), a category (components, features, logic, UX, changes, improvements, updates, deletions), or tap a chip below.`;
+        return `This log covers <b>${days} days</b>, <b>${pages.size} surfaces</b> and <b>${total} entries</b>. It re-evaluates itself every hour. Ask about a page (e.g. “Add Product”), a category (components, features, logic, UX, changes, improvements, updates, deletions), add a note with “note: …”, or tap a chip below.`;
       }
 
-      /* ═══════════ Boot — mount the ONE shared WISEcodeAI chat ═══════════ */
-      renderAll();
+      /* ═══════════ Boot — evaluate the log, then mount the ONE shared chat ═══════════ */
+      reevaluate();
+      updateEvalMeta();
+      startHourlyPoll();
+
+      /* Re-evaluate on every restore. A normal load remounts this module (hot
+         reload included) and `reevaluate()` above already ran. A bfcache
+         restore (`pageshow` + persisted) keeps the old heap, so we reset
+         filters and rebuild from the current LOG + notes. The first pageshow
+         of a remount is skipped so we don't double-paint on boot. */
+      let plDidShow = false;
+      window.addEventListener('pageshow', (e) => {
+        if (!plDidShow) { plDidShow = true; if (!e.persisted) return; }
+        reevaluate({ reset: !!e.persisted });
+        lastEvalAt = Date.now();
+        updateEvalMeta();
+      });
 
       chat = mountWISEcodeAIChat(document.getElementById('pl-chat'), {
         title: 'WISEcodeAI\u2122',
@@ -1032,6 +1555,9 @@
   </script>
   <script src="../js/table-pagination.js" defer></script>
   <script src="../js/responsive-tables.js" defer></script>
+  <!-- LiveReload (dev_server.py) — a save anywhere under pages/ or js/ remounts
+       this journal so reevaluate() runs against the current LOG. -->
+  <script src="/livereload.js?snipver=1"></script>
   <!-- App-wide "Sticky module" toggle for every module right of the chat. -->
   <script defer src="../js/sticky-modules.js"></script>
   <script defer src="../js/count-up-all.js"></script>

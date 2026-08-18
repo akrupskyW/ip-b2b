@@ -59,6 +59,9 @@ import {
   applySharpEdges,
   getBrandStyle,
   applyBrandStyle,
+  isAdminControlsOn,
+  applyAdminControls,
+  syncThemeKeys,
 } from './topbar.js';
 import {
   isJamStripOn,
@@ -87,10 +90,11 @@ import {
  * @param {boolean} [admin]   Trail the row with a pink "Admin" badge (same badge
  *                            the Accessibility review / All modules rows carry),
  *                            marking the toggle as an admin-only capability.
+ * @param {string} [tip]     Hover/focus tooltip. Defaults to the visible label.
  */
-function toggleRow(dataAttr, on, label, admin = false) {
+function toggleRow(dataAttr, on, label, admin = false, tip = '') {
   const badge = admin ? '<span class="wise-popover-badge">Admin</span>' : '';
-  return `<div class="wise-popover-item wise-toggle-item${on ? ' is-on' : ''}" ${dataAttr} role="switch" aria-checked="${on ? 'true' : 'false'}">
+  return `<div class="wise-popover-item wise-toggle-item${on ? ' is-on' : ''}" ${dataAttr} role="switch" aria-checked="${on ? 'true' : 'false'}"${tipAttrs(tip || label)}>
       <span class="material-symbols-outlined wise-toggle-ico">${on ? 'toggle_on' : 'toggle_off'}</span>${label}${badge}
     </div>`;
 }
@@ -104,20 +108,36 @@ function toggleRow(dataAttr, on, label, admin = false) {
 function jamEscape(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
+
+/** Escape a string for use inside a double-quoted HTML attribute. */
+function escAttr(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;');
+}
+
+/** `data-tip` + `title` so the shared #lir-tooltip card can label a control,
+    and a native title remains as a fallback before the JS tooltip is ready. */
+function tipAttrs(text) {
+  const t = escAttr(text);
+  return t ? ` data-tip="${t}" title="${t}"` : '';
+}
 function jamPlayerSection() {
-  if (!isJamStripOn()) return '';
+  if (!isAdminControlsOn() || !isJamStripOn()) return '';
   const playing = isJamPlaying();
   const curId = currentJamSongId();
   const curLabel = currentJamSongLabel();
   const bars = Array.from({ length: 16 }, () => '<span></span>').join('');
   const songs = JAM_SONGS.map(
-    (s) => `<button type="button" class="jam-pop-song${s.id === curId ? ' is-active' : ''}" data-jam-song="${s.id}" aria-pressed="${s.id === curId ? 'true' : 'false'}">${jamEscape(s.label)}</button>`
+    (s) => `<button type="button" class="jam-pop-song${s.id === curId ? ' is-active' : ''}" data-jam-song="${s.id}" aria-pressed="${s.id === curId ? 'true' : 'false'}"${tipAttrs(s.label)}>${jamEscape(s.label)}</button>`
   ).join('');
   const nowText = playing && curLabel ? jamEscape(curLabel) : 'Pick a track to play';
+  const playTip = playing ? 'Pause' : 'Play';
   return `
     <div class="jam-pop${playing ? ' is-playing' : ''}">
       <div class="jam-pop-head">
-        <button type="button" class="jam-pop-play" data-jam-play aria-label="${playing ? 'Pause' : 'Play'}">
+        <button type="button" class="jam-pop-play" data-jam-play aria-label="${playTip}"${tipAttrs(playTip)}>
           <span class="material-symbols-outlined">${playing ? 'pause' : 'play_arrow'}</span>
         </button>
         <div class="jam-pop-now">
@@ -144,7 +164,10 @@ function syncJamPop(root) {
 
   const playBtn = pop.querySelector('[data-jam-play]');
   if (playBtn) {
-    playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    const playTip = playing ? 'Pause' : 'Play';
+    playBtn.setAttribute('aria-label', playTip);
+    playBtn.setAttribute('data-tip', playTip);
+    playBtn.setAttribute('title', playTip);
     const icon = playBtn.querySelector('.material-symbols-outlined');
     if (icon) icon.textContent = playing ? 'pause' : 'play_arrow';
   }
@@ -160,10 +183,16 @@ function syncJamPop(root) {
   return true;
 }
 
+/** Omit admin-only markup when the master Admin-controls toggle is off, so
+    the popover lays out as if those rows were never in the menu. */
+function adminOnly(html) {
+  return isAdminControlsOn() ? html : '';
+}
+
 /** "Pivot Navigation" row — only for shells whose nav rail can pivot to the top. */
 function pivotSection(showPivot, isPivoted) {
-  if (!showPivot) return '';
-  return toggleRow('data-pivot="1"', isPivoted, 'Pivot Navigation', true);
+  if (!showPivot || !isAdminControlsOn()) return '';
+  return toggleRow('data-pivot="1"', isPivoted, 'Pivot Navigation', true, 'Move the navigation to a horizontal top bar');
 }
 
 /** "Colorblind type" segmented control — only revealed once the colorblind
@@ -175,11 +204,11 @@ function colorblindTypeSection() {
   const active = getColorblindMode();
   const btns = COLORBLIND_MODES.map(
     (m) =>
-      `<button type="button" class="fz-btn${m.id === active ? ' fz-active' : ''}" data-cbtype="${m.id}" title="${m.label}" aria-label="${m.label}" aria-pressed="${m.id === active ? 'true' : 'false'}">${m.short}</button>`
+      `<button type="button" class="fz-btn${m.id === active ? ' fz-active' : ''}" data-cbtype="${m.id}" aria-label="${m.label}" aria-pressed="${m.id === active ? 'true' : 'false'}"${tipAttrs(m.label)}>${m.short}</button>`
   ).join('');
   return `
     <div class="fz-row cb-type-row">
-      <span class="fz-row-label">CVD type</span>
+      <span class="fz-row-label"${tipAttrs('Color-vision deficiency type')}>CVD type</span>
       <div class="fz-btns" role="group" aria-label="Color-vision deficiency type">${btns}</div>
     </div>`;
 }
@@ -190,22 +219,23 @@ function colorblindTypeSection() {
     that wireAppearancePopover() turns into the matching mod-gap-<size> class on
     <html>. Clicking the active step again clears back to the default row gap. */
 function moduleGapSection() {
+  if (!isAdminControlsOn()) return '';
   const active = getModuleGap();
   const opts = [
-    { id: 'sm', label: 'S' },
-    { id: 'md', label: 'M' },
-    { id: 'lg', label: 'L' },
-    { id: 'xl', label: 'XL' },
+    { id: 'sm', label: 'S', tip: 'Small gap (12px)' },
+    { id: 'md', label: 'M', tip: 'Medium gap (24px)' },
+    { id: 'lg', label: 'L', tip: 'Large gap (36px)' },
+    { id: 'xl', label: 'XL', tip: 'Extra-large gap (48px)' },
   ];
   const btns = opts
     .map(
       (o) =>
-        `<button type="button" class="mg-seg-btn${o.id === active ? ' is-active' : ''}" data-mg="${o.id}" aria-pressed="${o.id === active ? 'true' : 'false'}">${o.label}</button>`
+        `<button type="button" class="mg-seg-btn${o.id === active ? ' is-active' : ''}" data-mg="${o.id}" aria-pressed="${o.id === active ? 'true' : 'false'}"${tipAttrs(o.tip)}>${o.label}</button>`
     )
     .join('');
   return `
     <div class="mg-size">
-      <span class="mg-size-label">Module spacing<span class="wise-popover-badge">Admin</span></span>
+      <span class="mg-size-label"${tipAttrs('Gap between modules')}>Module spacing<span class="wise-popover-badge">Admin</span></span>
       <div class="mg-seg" role="group" aria-label="Module spacing">${btns}</div>
     </div>`;
 }
@@ -235,12 +265,13 @@ function a11yVerdictClass() {
     amber warn / red fail) so it signals how well the app scores, not just that
     it's an admin surface. */
 function accessibilityReviewSection() {
+  if (!isAdminControlsOn()) return '';
   let href = 'pages/accessibility-review.html';
   try {
     if (location.pathname.indexOf('/pages/') !== -1) href = 'accessibility-review.html';
   } catch (e) { /* non-browser context — keep the default */ }
   return `
-    <a class="wise-popover-item" href="${href}" data-pop-action="a11y-review">
+    <a class="wise-popover-item" href="${href}" data-pop-action="a11y-review"${tipAttrs('Open the WCAG accessibility audit')}>
       <span class="material-symbols-outlined">accessibility_new</span>Accessibility review
       <span class="wise-popover-badge${a11yVerdictClass()}">Admin</span>
       <span class="wise-popover-ext material-symbols-outlined" aria-hidden="true">arrow_outward</span>
@@ -253,12 +284,13 @@ function accessibilityReviewSection() {
     lives in pages/, so app shells (already in pages/) link to it directly while
     a root shell reaches it through pages/. */
 function allModulesSection() {
+  if (!isAdminControlsOn()) return '';
   let href = 'pages/all-modules.html';
   try {
     if (location.pathname.indexOf('/pages/') !== -1) href = 'all-modules.html';
   } catch (e) { /* non-browser context — keep the default */ }
   return `
-    <a class="wise-popover-item" href="${href}" data-pop-action="all-modules">
+    <a class="wise-popover-item" href="${href}" data-pop-action="all-modules"${tipAttrs('Open the module directory and icon inventory')}>
       <span class="material-symbols-outlined">widgets</span>All modules
       <span class="wise-popover-badge">Admin</span>
       <span class="wise-popover-ext material-symbols-outlined" aria-hidden="true">arrow_outward</span>
@@ -272,12 +304,13 @@ function allModulesSection() {
     same way — the page lives in pages/, so app shells (already in pages/) link to
     it directly while a root shell reaches it through pages/. */
 function progressLogSection() {
+  if (!isAdminControlsOn()) return '';
   let href = 'pages/progress-log.html';
   try {
     if (location.pathname.indexOf('/pages/') !== -1) href = 'progress-log.html';
   } catch (e) { /* non-browser context — keep the default */ }
   return `
-    <a class="wise-popover-item" href="${href}" data-pop-action="progress-log">
+    <a class="wise-popover-item" href="${href}" data-pop-action="progress-log"${tipAttrs('Open the day-by-day progress log')}>
       <span class="material-symbols-outlined">timeline</span>Progress log
       <span class="wise-popover-badge">Admin</span>
       <span class="wise-popover-ext material-symbols-outlined" aria-hidden="true">arrow_outward</span>
@@ -291,23 +324,24 @@ function progressLogSection() {
     WISE wordmark untouched (see applyBrandStyle / BRAND_CSS in topbar.js). A
     neutral segmented control (same skin as Text size), each button carrying a
     `data-brandstyle` id that wireAppearancePopover() feeds to applyBrandStyle().
-    Clicking "Default" clears back to the flat surfaces. The surrounding
-    "Surfaces" group heading + card is supplied by apGroup(). */
+    Clicking "Default" clears back to the flat surfaces. Admin-only (badge +
+    hidden when Admin controls is off). */
 function brandingSection() {
+  if (!isAdminControlsOn()) return '';
   const active = getBrandStyle();
   const opts = [
-    { id: '', label: 'Default' },
-    { id: 'inset', label: 'Style 1' },
+    { id: '', label: 'Default', tip: 'Flat surfaces' },
+    { id: 'inset', label: 'Style 1', tip: 'Inset surfaces with hairline borders' },
   ];
   const btns = opts
     .map(
       (o) =>
-        `<button type="button" class="fz-seg-btn${o.id === active ? ' is-active' : ''}" data-brandstyle="${o.id}" aria-pressed="${o.id === active ? 'true' : 'false'}">${o.label}</button>`
+        `<button type="button" class="fz-seg-btn${o.id === active ? ' is-active' : ''}" data-brandstyle="${o.id}" aria-pressed="${o.id === active ? 'true' : 'false'}"${tipAttrs(o.tip)}>${o.label}</button>`
     )
     .join('');
   return `
     <div class="fz-size brand-style-row">
-      <span class="fz-size-label">Surface style</span>
+      <span class="fz-size-label"${tipAttrs('How module surfaces are drawn')}>Surface style<span class="wise-popover-badge">Admin</span></span>
       <div class="fz-seg" role="group" aria-label="Surface style">${btns}</div>
     </div>`;
 }
@@ -316,13 +350,18 @@ function brandingSection() {
     the "Accessibility" group card alongside the color controls. */
 function textSizeSection() {
   const fz = getStoredFontSize();
-  const sizes = { sm: 'S', md: 'M', lg: 'L', xl: 'XL' };
+  const sizes = {
+    sm: { short: 'S', tip: 'Small text' },
+    md: { short: 'M', tip: 'Medium text' },
+    lg: { short: 'L', tip: 'Large text' },
+    xl: { short: 'XL', tip: 'Extra-large text' },
+  };
   return `
     <div class="fz-size">
-      <span class="fz-size-label">Text size</span>
+      <span class="fz-size-label"${tipAttrs('Text size')}>Text size</span>
       <div class="fz-seg" role="group" aria-label="Text size">
         ${Object.keys(sizes)
-          .map((s) => `<button type="button" class="fz-seg-btn${fz === s ? ' is-active' : ''}" data-fz="${s}" aria-pressed="${fz === s ? 'true' : 'false'}">${sizes[s]}</button>`)
+          .map((s) => `<button type="button" class="fz-seg-btn${fz === s ? ' is-active' : ''}" data-fz="${s}" aria-pressed="${fz === s ? 'true' : 'false'}"${tipAttrs(sizes[s].tip)}>${sizes[s].short}</button>`)
           .join('')}
       </div>
     </div>`;
@@ -331,10 +370,11 @@ function textSizeSection() {
 /** Light / dark theme row. Extracted so it can sit inside the "Experience"
     group card. Keys off data-pop-action="theme" (handled by the shell). */
 function themeSection(isDark) {
+  const tip = isDark ? 'Switch to Light mode' : 'Switch to Dark mode';
   return `
-    <div class="wise-popover-item" data-pop-action="theme">
+    <div class="wise-popover-item" data-pop-action="theme"${tipAttrs(tip)}>
       <span class="material-symbols-outlined js-theme-icon">${isDark ? 'light_mode' : 'dark_mode'}</span>
-      <span class="js-theme-label">${isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}</span>
+      <span class="js-theme-label">${tip}</span>
     </div>`;
 }
 
@@ -351,8 +391,8 @@ function fbColorRow(kind, label, value, fallback) {
   const hex = /^#[0-9a-fA-F]{6}$/.test(value || '') ? value : fallback;
   return `
     <div class="fb-color-row">
-      <span class="fb-color-label">${label}</span>
-      <input type="color" class="fb-color-input" data-fbcolor="${kind}" value="${hex}" aria-label="${label} colour">
+      <span class="fb-color-label"${tipAttrs(label)}>${label}</span>
+      <input type="color" class="fb-color-input" data-fbcolor="${kind}" value="${hex}" aria-label="${label} colour"${tipAttrs(label)}>
     </div>`;
 }
 function fullBleedOptionsSection() {
@@ -360,18 +400,23 @@ function fullBleedOptionsSection() {
   const mode = getRightModuleMode();
   const theme = getFullBleedTheme();
 
+  const rmodTips = {
+    '': 'Tuck the right module as a drawer',
+    flat: 'Flatten the right module into a full-height column',
+    hidden: 'Hide the right module',
+  };
   const modeBtns = RMOD_MODES.map(
     (m) =>
-      `<button type="button" class="fz-seg-btn${m.id === mode ? ' is-active' : ''}" data-rmodmode="${m.id}" aria-pressed="${m.id === mode ? 'true' : 'false'}">${m.label}</button>`
+      `<button type="button" class="fz-seg-btn${m.id === mode ? ' is-active' : ''}" data-rmodmode="${m.id}" aria-pressed="${m.id === mode ? 'true' : 'false'}"${tipAttrs(rmodTips[m.id] || m.label)}>${m.label}</button>`
   ).join('');
 
   const presetBtns = FB_PRESETS.map((p) => {
     const sw = `--sw-nav:${p.nav};--sw-chat:${p.chat};--sw-rmod:${p.rmod}`;
-    return `<button type="button" class="fb-preset-btn${p.id === theme ? ' is-active' : ''}" data-fbpreset="${p.id}" aria-pressed="${p.id === theme ? 'true' : 'false'}">
+    return `<button type="button" class="fb-preset-btn${p.id === theme ? ' is-active' : ''}" data-fbpreset="${p.id}" aria-pressed="${p.id === theme ? 'true' : 'false'}"${tipAttrs('Apply the ' + p.label + ' color theme')}>
         <span class="fb-preset-sw" style="${sw}" aria-hidden="true"></span>${p.label}
       </button>`;
   }).join('');
-  const resetBtn = `<button type="button" class="fb-preset-btn${theme ? '' : ' is-active'}" data-fbpreset="" aria-pressed="${theme ? 'false' : 'true'}">Default</button>`;
+  const resetBtn = `<button type="button" class="fb-preset-btn${theme ? '' : ' is-active'}" data-fbpreset="" aria-pressed="${theme ? 'false' : 'true'}"${tipAttrs('Reset full-bleed colors to default')}>Default</button>`;
 
   return `
     <div class="fb-opts" role="group" aria-label="Full bleed options">
@@ -379,11 +424,11 @@ function fullBleedOptionsSection() {
       ${fbColorRow('chat', 'Chat window background', getChatBg(), '#ffffff')}
       ${fbColorRow('rmod', 'Right module background', getRightModuleBg(), '#f4f2ea')}
       <div class="fz-size fb-rmod-mode">
-        <span class="fz-size-label">Right module<span class="wise-popover-badge">Admin</span></span>
+        <span class="fz-size-label"${tipAttrs('How the module to the right of chat behaves')}>Right module</span>
         <div class="fz-seg" role="group" aria-label="Right module behaviour">${modeBtns}</div>
       </div>
       <div class="fb-presets">
-        <span class="fb-preset-label">Preset themes</span>
+        <span class="fb-preset-label"${tipAttrs('Apply a named color theme to all full-bleed surfaces')}>Preset themes</span>
         <div class="fb-preset-btns" role="group" aria-label="Preset themes">${presetBtns}${resetBtn}</div>
       </div>
     </div>`;
@@ -433,33 +478,34 @@ export function buildAppearanceBody({
   return `
     ${apGroup('Layout', `
       ${pivotSection(showPivot, isPivoted)}
-      ${toggleRow('data-minimal="1"', isMinimalUiOn(), 'Minimal UI')}
-      ${toggleRow('data-iconrail="1"', isIconRailOn(), 'Icons only')}
-      ${toggleRow('data-sharpedges="1"', isSharpEdgesOn(), 'Sharper edges')}
+      ${toggleRow('data-minimal="1"', isMinimalUiOn(), 'Minimal UI', false, 'Show only the logo, Appearance, and your profile')}
+      ${toggleRow('data-iconrail="1"', isIconRailOn(), 'Icons only', false, 'Collapse the navigation to icons')}
+      ${adminOnly(toggleRow('data-sharpedges="1"', isSharpEdgesOn(), 'Sharper edges', true, 'Use tighter, less-rounded corners'))}
     `)}
     ${apGroup('Full bleed', `
-      ${toggleRow('data-fullbleed="1"', isFullBleedOn(), 'Full bleed')}
-      ${fullBleedOptionsSection()}
+      ${adminOnly(toggleRow('data-fullbleed="1"', isFullBleedOn(), 'Full bleed', true, 'Stretch surfaces edge-to-edge'))}
+      ${adminOnly(fullBleedOptionsSection())}
     `)}
     ${apGroup('Chat', `
-      ${toggleRow('data-chattint="1"', isChatTintOn(), 'Blue chat surface', true)}
-      ${toggleRow('data-activitystrip="1"', isActivityStripOn(), 'Activity strip', true)}
+      ${adminOnly(toggleRow('data-chattint="1"', isChatTintOn(), 'Blue chat surface', true, 'Tint the chat surface with brand blue'))}
+      ${adminOnly(toggleRow('data-activitystrip="1"', isActivityStripOn(), 'Activity strip', true, 'Show the live activity strip on the chat edge'))}
     `)}
     ${apGroup('Sound', `
-      ${toggleRow('data-jam="1"', isJamStripOn(), 'Jam strip', true)}
+      ${adminOnly(toggleRow('data-jam="1"', isJamStripOn(), 'Jam strip', true, 'Show the music player in the navigation'))}
       ${jamPlayerSection()}
     `)}
     ${apGroup('Accessibility', `
-      ${toggleRow('data-colorblind="1"', isColorblindOn(), 'Accessible colors')}
+      ${toggleRow('data-colorblind="1"', isColorblindOn(), 'Accessible colors', false, 'Use a color-vision-safe palette')}
       ${colorblindTypeSection()}
       ${textSizeSection()}
       ${themeSection(isDark)}
-      ${brandingSection()}
+      ${adminOnly(brandingSection())}
     `)}
     ${apGroup('Experience', `
-      ${toggleRow('data-cwrui="1"', isCwrUiOn(), 'Crawl · Walk · Run', true)}
+      ${adminOnly(toggleRow('data-cwrui="1"', isCwrUiOn(), 'Crawl · Walk · Run', true, 'Show the Crawl · Walk · Run switch — Crawl fills SaaS, Walk opens chat, Run unlocks the composer'))}
     `)}
     ${apGroup('Admin', `
+      ${toggleRow('data-adminui="1"', isAdminControlsOn(), 'Admin controls', false, 'Show or hide admin-only settings')}
       ${accessibilityReviewSection()}
       ${allModulesSection()}
       ${progressLogSection()}
@@ -574,6 +620,7 @@ export function wireAppearancePopover(pop, ctx = {}) {
     if (within('[data-cwrui]'))       { ev.stopPropagation(); applyCwrUi(!isCwrUiOn());          render(); return; }
     if (within('[data-colorblind]'))  { ev.stopPropagation(); applyColorblind(!isColorblindOn());  render(); return; }
     if (within('[data-sharpedges]'))  { ev.stopPropagation(); applySharpEdges(!isSharpEdgesOn());  render(); return; }
+    if (within('[data-adminui]'))     { ev.stopPropagation(); applyAdminControls(!isAdminControlsOn()); render(); return; }
 
     /* In-popover Jam player transport + track picker. Update the player in
        place (not a full re-render) so the song list keeps its scroll position
@@ -614,10 +661,17 @@ export function wireAppearancePopover(pop, ctx = {}) {
     /* CVD-type buttons are handled by topbar.js's global capture-phase handler
        (it runs before this bubble handler and stops propagation), so we never
        reach here for them — but guard anyway so a stray click can't close us. */
-    if (within('.fz-btn[data-cbtype]')) { ev.stopPropagation(); return; }
+    if (within('[data-cbtype]')) { ev.stopPropagation(); return; }
 
-    /* Light / dark theme. */
-    if (within('[data-pop-action="theme"]')) { ev.stopPropagation(); ctx.toggleTheme?.(); render(); return; }
+    /* Light / dark theme. The shell flips the class; we always write both
+       storage keys afterwards so the next page boots the same theme. */
+    if (within('[data-pop-action="theme"]')) {
+      ev.stopPropagation();
+      ctx.toggleTheme?.();
+      syncThemeKeys();
+      render();
+      return;
+    }
 
     /* The accessibility-review, all-modules and progress-log rows are real
        links — let the click navigate. */

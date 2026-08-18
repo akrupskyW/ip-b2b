@@ -79,7 +79,7 @@ const PORTFOLIO_RAIL_HTML = `
     <nav id="pf-module-rail" class="pf-module-rail" aria-label="Portfolio module shortcuts"></nav>
     <div class="lir-spacer" aria-hidden="true"></div>
     <div class="lir-layout-group" role="group" aria-label="Appearance">
-      <button type="button" class="lir-btn lir-layout-btn" id="lir-layout-btn" data-tip="Appearance" title="Appearance" aria-label="Appearance settings" aria-haspopup="true" aria-expanded="false">
+      <button type="button" class="lir-btn lir-layout-btn" id="lir-layout-btn" data-tip="Appearance settings" title="Appearance settings" aria-label="Appearance settings" aria-haspopup="true" aria-expanded="false">
         <span class="material-symbols-outlined">crossword</span>
         <span class="lir-label">Appearance</span>
       </button>
@@ -242,7 +242,7 @@ export function mountMenuFooter({
      modify, guide, and individuate the main modules and panes app-wide, so it
      is always rendered regardless of caller options. */
   const appearanceHtml = `
-      <button type="button" class="menu-nav-item menu-footer-layout" id="menu-footer-layout-btn" title="Appearance" aria-label="Appearance settings">
+      <button type="button" class="menu-nav-item menu-footer-layout" id="menu-footer-layout-btn" data-tip="Appearance settings" title="Appearance settings" aria-label="Appearance settings">
         <span class="menu-nav-icon"><span class="material-symbols-outlined">crossword</span></span>
         <span class="menu-nav-label">Appearance</span>
       </button>`;
@@ -310,12 +310,26 @@ export function positionPopoverInMenuPanel(pop, anchor) {
   let top = anchorRect.top - ph - 8;
   if (top < 8) top = anchorRect.bottom + 8;
   if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
-  pop.style.left = Math.max(8, left) + 'px';
-  pop.style.top = Math.max(8, Math.min(top, window.innerHeight - ph - 8)) + 'px';
+  placeFixedInViewport(pop, Math.max(8, left), Math.max(8, Math.min(top, window.innerHeight - ph - 8)));
   /* Remember how to re-place this popover so a later re-render (e.g. turning on
      the Jam strip or Full bleed reveals extra rows and makes it taller) can snap
      it back inside the viewport instead of overflowing off its old anchor. */
   pop.__reposition = () => positionPopoverInMenuPanel(pop, anchor);
+}
+
+/** Pin a position:fixed popover to viewport (left, top), compensating for any
+    ancestor that establishes a containing block (filter / transform / etc.).
+    Same origin-probe as js/popover-layer.js, so Appearance stays on its
+    trigger whether Accessible colors is on or off. */
+function placeFixedInViewport(el, left, top) {
+  if (!el) return;
+  el.style.right = 'auto';
+  el.style.bottom = 'auto';
+  el.style.left = '0px';
+  el.style.top = '0px';
+  const origin = el.getBoundingClientRect();
+  el.style.left = `${Math.round(left - origin.left)}px`;
+  el.style.top = `${Math.round(top - origin.top)}px`;
 }
 
 /** Position a .wise-popover for a top-bar anchor (below the trigger). */
@@ -325,10 +339,21 @@ export function positionPopoverForTopbar(pop, anchor) {
   const rect = anchor.getBoundingClientRect();
   const pw = pop.offsetWidth || 240;
   const left = Math.max(8, Math.min(rect.right - pw, window.innerWidth - pw - 8));
-  pop.style.left = left + 'px';
-  pop.style.top = (rect.bottom + 8) + 'px';
+  placeFixedInViewport(pop, left, rect.bottom + 8);
   /* Same as above — keep a way to re-place after the body grows/shrinks. */
   pop.__reposition = () => positionPopoverForTopbar(pop, anchor);
+}
+
+/** Keep both theme keys in lockstep. Pages used to write only `wise-theme` or
+    only `chat-theme`, so toggling Light/Dark in the Appearance popover on one
+    page could restore the opposite theme on the next. */
+export function syncThemeKeys() {
+  if (typeof document === 'undefined') return;
+  const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+  try {
+    localStorage.setItem('wise-theme', theme);
+    localStorage.setItem('chat-theme', theme);
+  } catch {}
 }
 
 /* Minimal UI — collapse the navigation to just the logo, the crossword
@@ -696,16 +721,16 @@ export function restoreChatTint() {
 }
 
 /* Crawl · Walk · Run — the floating rollout-mode switch pinned to the right
-   edge of every page (js/cwr-toggle.js). Hidden by default; this Appearance
-   toggle reveals it. Driven by a `cwr-ui-on` class on <html> — cwr-toggle.js
-   gates BOTH the widget and the crawl/walk mode CSS on that class, so turning
-   this off also suspends any chat-hiding the mode was doing (the stored mode
-   itself is kept for when the switch comes back on). */
+   edge of every page (js/cwr-toggle.js). Shown by default (mode: Run); this
+   Appearance toggle hides it. Driven by a `cwr-ui-on` class on <html> —
+   cwr-toggle.js gates BOTH the widget and the crawl/walk mode CSS on that
+   class, so turning this off also suspends any chat-hiding the mode was
+   doing (the stored mode is kept for when the switch comes back on). */
 const CWR_UI_KEY = 'wise-cwr-ui';
 
-/** True when the floating Crawl · Walk · Run switch is shown. Defaults OFF. */
+/** True when the floating Crawl · Walk · Run switch is shown. Defaults ON. */
 export function isCwrUiOn() {
-  try { return localStorage.getItem(CWR_UI_KEY) === '1'; } catch { return false; }
+  try { return localStorage.getItem(CWR_UI_KEY) !== '0'; } catch { return true; }
 }
 
 /** Toggle the cwr-ui-on class on <html> and persist it. */
@@ -833,14 +858,22 @@ html.colorblind.cb-tritan.dark {
 /* The palette overrides above keep semantic status colors distinct, but on a
    given screen those chips may be sparse — so the effect can look invisible.
    To make colorblind mode unmistakable AND genuinely useful, we ALSO run the
-   whole app through a per-type daltonization (color-correction) filter. These
-   matrices are grayscale-preserving (each row sums to 1), so text and neutral
-   backgrounds are untouched while saturated reds/greens/blues visibly shift
-   apart along each type's confusion axis. Applied to <body>; the page root
-   doesn't scroll, so fixed-position popovers/docks keep their coordinates. */
-html.colorblind.cb-deuter body { filter: url(#wise-cb-deuter); }
-html.colorblind.cb-protan body { filter: url(#wise-cb-protan); }
-html.colorblind.cb-tritan body { filter: url(#wise-cb-tritan); }`;
+   app chrome through a per-type daltonization (color-correction) filter.
+   Matrices are grayscale-preserving (each row sums to 1), so text and neutral
+   backgrounds are untouched while saturated reds/greens/blues shift apart.
+
+   Applied to the shell wraps — NEVER to <body>. A filter on body creates a
+   containing block for position:fixed, which threw the Appearance / user
+   popovers (appended to body) off their anchors and could leave the chat
+   elevation + opposite-color rim flattened after switching back to the
+   proper palette (the filter stuck on body). Shell-scoped filters keep
+   viewport-fixed popovers honest, and html:not(.colorblind) force-clears
+   any leftover so toggling Accessible colors off always restores. */
+html.colorblind.cb-deuter :is(#chat-shell-wrap, #agent-shell-wrap) { filter: url(#wise-cb-deuter); }
+html.colorblind.cb-protan :is(#chat-shell-wrap, #agent-shell-wrap) { filter: url(#wise-cb-protan); }
+html.colorblind.cb-tritan :is(#chat-shell-wrap, #agent-shell-wrap) { filter: url(#wise-cb-tritan); }
+html:not(.colorblind) body,
+html:not(.colorblind) :is(#chat-shell-wrap, #agent-shell-wrap) { filter: none; }`;
 
 /* Daltonization (2·Identity − simulation) matrices, per CVD type. Rows are
    R'/G'/B' as functions of R,G,B; each sums to 1 so grays map to themselves. */
@@ -854,14 +887,18 @@ const COLORBLIND_FILTER_MATRICES = {
     '1.05 -0.05 0 0 0  0 1.567 -0.567 0 0  0 -0.475 1.475 0 0  0 0 0 1 0',
 };
 
-/** Inject the colorblind palette stylesheet once (idempotent). */
+/** Inject (or refresh) the colorblind palette stylesheet. Refreshing the
+    textContent means a later toggle always uses the current rules — so
+    switching back to the proper palette cannot keep a stale body-filter. */
 function ensureColorblindStyle() {
   if (typeof document === 'undefined') return;
-  if (document.getElementById(COLORBLIND_STYLE_ID)) return;
-  const style = document.createElement('style');
-  style.id = COLORBLIND_STYLE_ID;
-  style.textContent = COLORBLIND_CSS;
-  (document.head || document.documentElement).appendChild(style);
+  let style = document.getElementById(COLORBLIND_STYLE_ID);
+  if (!style) {
+    style = document.createElement('style');
+    style.id = COLORBLIND_STYLE_ID;
+    (document.head || document.documentElement).appendChild(style);
+  }
+  if (style.textContent !== COLORBLIND_CSS) style.textContent = COLORBLIND_CSS;
 }
 
 /** Inject the SVG <filter> definitions the palette CSS references, once. */
@@ -907,14 +944,40 @@ function applyColorblindModeClass(modeId) {
   COLORBLIND_CLASSES.forEach((cls) => root.classList.toggle(cls, cls === active.class));
 }
 
+/** Drop every colorblind class and any inline filter a prior pass left on the
+    body / shell so the proper palette, shadows and chat rim come back in full. */
+function clearColorblindSurfaceFilters() {
+  if (typeof document === 'undefined') return;
+  const nodes = [
+    document.body,
+    document.getElementById('chat-shell-wrap'),
+    document.getElementById('agent-shell-wrap'),
+  ];
+  nodes.forEach((el) => {
+    if (!el) return;
+    el.style.filter = 'none';
+    void el.offsetWidth;
+    el.style.removeProperty('filter');
+  });
+}
+
 /** Toggle the colorblind class on <html> and persist it, applying the chosen
     CVD-type palette. Each Appearance popover reads isColorblindOn() /
-    getColorblindMode() to render its own state. */
+    getColorblindMode() to render its own state. Turning OFF removes the
+    cb-* type classes too — leaving them on after a toggle-off used to keep
+    leftover filter/token state from fully reverting to the proper colors. */
 export function applyColorblind(on) {
   ensureColorblindStyle();
   ensureColorblindFilters();
-  applyColorblindModeClass(getColorblindMode());
-  document.documentElement.classList.toggle('colorblind', !!on);
+  const root = document.documentElement;
+  if (on) {
+    applyColorblindModeClass(getColorblindMode());
+    root.classList.add('colorblind');
+  } else {
+    root.classList.remove('colorblind');
+    COLORBLIND_CLASSES.forEach((cls) => root.classList.remove(cls));
+    clearColorblindSurfaceFilters();
+  }
   try { localStorage.setItem(COLORBLIND_KEY, on ? '1' : '0'); } catch {}
   try {
     document.dispatchEvent(new CustomEvent('wise:colorblind', {
@@ -953,8 +1016,9 @@ export function restoreColorblind() {
    which additionally gets tighter corners, a thinner hairline border and a
    ~30% lighter surface so the rail reads crisp and light in this mode. Driven
    by a `sharp-edges` class on <html> (paired with `dark` for the dark variant);
-   persisted across navigation. */
-const EDGES_KEY = 'wise-sharp-edges';
+   persisted across navigation. Defaults OFF — v2 of the storage key so a
+   previously-saved ON does not keep the treatment on. */
+const EDGES_KEY = 'wise-sharp-edges-v2';
 const EDGES_STYLE_ID = 'wise-sharp-edges-style';
 
 const EDGES_CSS = `
@@ -1141,6 +1205,31 @@ export function restoreBrandStyle() {
   applyBrandStyle(getBrandStyle());
 }
 
+/* Admin controls — a master gate in the Appearance popover. When off, every
+   Admin-badged row is omitted from the menu (not disabled, not greyed) so the
+   popover lays out as if those controls were never there. The features
+   themselves keep whatever state they already had. Defaults ON so the current
+   admin-rich menu is unchanged until someone turns it off. */
+const ADMIN_UI_KEY = 'wise-admin-ui';
+
+/** True when admin-only Appearance rows should be shown. */
+export function isAdminControlsOn() {
+  try { return localStorage.getItem(ADMIN_UI_KEY) !== '0'; } catch { return true; }
+}
+
+/** Persist whether admin-only Appearance rows are shown. */
+export function applyAdminControls(on) {
+  try { localStorage.setItem(ADMIN_UI_KEY, on ? '1' : '0'); } catch {}
+  try {
+    document.dispatchEvent(new CustomEvent('wise:admin-ui', { detail: { on: !!on } }));
+  } catch {}
+}
+
+/** Restore is a no-op on the document — this flag only affects the popover. */
+export function restoreAdminControls() {
+  applyAdminControls(isAdminControlsOn());
+}
+
 /** Wire menu-footer controls — dispatch events so each page opens its own in-panel popover. */
 export function wireMenuFooter() {
   const footerLayout = document.getElementById('menu-footer-layout-btn');
@@ -1196,15 +1285,16 @@ function wireColorblindTypePicker() {
   document.addEventListener(
     'click',
     (e) => {
-      const btn = e.target?.closest?.('.fz-btn[data-cbtype]');
-      if (!btn) return;
+      const btn = e.target?.closest?.('[data-cbtype]');
+      if (!btn || btn.closest?.('[data-popover-static]')) return;
       e.stopPropagation();
       e.preventDefault();
       setColorblindMode(btn.dataset.cbtype);
-      const group = btn.closest('.fz-btns');
-      group?.querySelectorAll('.fz-btn[data-cbtype]').forEach((b) => {
+      const group = btn.closest('.fz-btns, .fz-seg, [role="group"]');
+      group?.querySelectorAll('[data-cbtype]').forEach((b) => {
         const on = b === btn;
         b.classList.toggle('fz-active', on);
+        b.classList.toggle('is-active', on);
         b.setAttribute('aria-pressed', on ? 'true' : 'false');
       });
     },
@@ -1225,6 +1315,7 @@ if (typeof document !== 'undefined') {
     restoreColorblind();
     restoreSharpEdges();
     restoreBrandStyle();
+    restoreAdminControls();
     const inner = document.querySelector('#menu-panel .menu-inner');
     if (!inner) return;
     const footer = inner.querySelector('.menu-footer');

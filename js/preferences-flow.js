@@ -172,6 +172,13 @@ function paint() {
               ${['United States', 'European Union', 'United Kingdom', 'Canada', 'Australia'].map((r) => `<option value="${esc(r)}"${r === p.region ? ' selected' : ''}>${esc(r)}</option>`).join('')}
             </select>
           </div>
+          <div class="wmod-row">
+            <div class="wmod-row-body">
+              <div class="wmod-row-label">WISEowl walkthrough</div>
+              <div class="wmod-row-sub">Replay the grouped tour of the workspace</div>
+            </div>
+            <button type="button" class="wmod-btn wmod-btn--ghost" data-prefs-tour>Replay tour</button>
+          </div>
         </div>
       </section>
 
@@ -198,6 +205,14 @@ export function renderPreferences(mainEl) {
 
     const step = e.target.closest('[data-prefs-ts-step]');
     if (step) { bumpTextSize(parseInt(step.dataset.prefsTsStep, 10)); return; }
+
+    const tour = e.target.closest('[data-prefs-tour]');
+    if (tour) {
+      const open = () => window.WiseWalkthrough?.open({ force: true });
+      if (window.WiseWalkthrough && typeof window.WiseWalkthrough.open === 'function') open();
+      else document.addEventListener('wise:walkthrough-ready', open, { once: true });
+      return;
+    }
   });
 
   mainEl.addEventListener('change', (e) => {

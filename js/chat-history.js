@@ -38,6 +38,7 @@
       '.wch-scrim.wch-open{display:block;animation:wchFade .28s ease both;}',
       '@keyframes wchFade{from{opacity:0}to{opacity:1}}',
       '.wch-sidebar{position:absolute;top:0;bottom:0;left:0;width:300px;max-width:86%;z-index:60;display:none;flex-direction:column;',
+        '--wch-tree:color-mix(in srgb,var(--text-subtle,#8B9FAF) 52%,transparent);--wch-tree-bg:var(--card,var(--surface,#0F1830));',
         'background:var(--card,var(--surface,#0F1830));color:var(--text,#C5CFD7);',
         'border-right:1px solid rgba(255,255,255,0.10);box-shadow:10px 0 34px rgba(0,0,0,0.34);}',
       '.wch-sidebar.wch-right{left:auto;right:0;border-right:0;border-left:1px solid rgba(255,255,255,0.10);box-shadow:-10px 0 34px rgba(0,0,0,0.34);}',
@@ -51,7 +52,8 @@
       '@keyframes wchOutR{from{opacity:1;transform:none}to{opacity:0;transform:translateX(16px)}}',
       '.wch-scrim.wch-closing{display:block;animation:wchFadeOut .26s ease both;}',
       '@keyframes wchFadeOut{from{opacity:1}to{opacity:0}}',
-      'html:not(.dark) .wch-sidebar{background:#fff;color:#1F2733;border-color:rgba(0,0,0,0.08);box-shadow:10px 0 34px rgba(20,30,60,0.12);}',
+      'html:not(.dark) .wch-sidebar{background:#fff;color:#1F2733;border-color:rgba(0,0,0,0.08);box-shadow:10px 0 34px rgba(20,30,60,0.12);--wch-tree-bg:#fff;}',
+      'html.dark .wch-sidebar{--wch-tree:rgba(255,255,255,0.20);}',
       'html:not(.dark) .wch-sidebar.wch-right{box-shadow:-10px 0 34px rgba(20,30,60,0.12);}',
       '.wch-head{display:flex;align-items:center;gap:8px;padding:14px 12px 12px 16px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.08);}',
       'html:not(.dark) .wch-head{border-bottom-color:rgba(0,0,0,0.07);}',
@@ -78,7 +80,7 @@
          precedes the title and a single-line preview beneath streams the answer
          one line at a time (word-by-word), so several chats can be seen running
          at once. */
-      '.wch-live-dot{display:inline-block;flex:0 0 auto;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:middle;background:#12B981;box-shadow:0 0 0 0 rgba(18,185,129,0.28);animation:wchLive 2.6s ease-in-out infinite;}',
+      '.wch-live-dot{display:inline-block;flex:0 0 auto;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:middle;background:#12B981;box-shadow:0 0 0 0 rgba(18,185,129,0.28);animation:wchLive 2.6s ease-in-out infinite;position:relative;z-index:2;}',
       '@keyframes wchLive{0%{box-shadow:0 0 0 0 rgba(18,185,129,0.28);opacity:.75}50%{box-shadow:0 0 0 5px rgba(18,185,129,0);opacity:1}100%{box-shadow:0 0 0 0 rgba(18,185,129,0);opacity:.75}}',
       /* Preview stays 11px and always reserves two lines of height (min-height =
          2 × line-height) so the row never grows or jumps as the streamed line
@@ -186,9 +188,9 @@
       '@keyframes wchDockIn{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}',
       '@media (prefers-reduced-motion:reduce){.wch-sidebar.wch-docked.wch-anim{transition:none;}}',
       /* ── Icon-rail (minimized) mode ──────────────────────────────────────────
-         Collapses the docked module to a slim column of icons + project dots,
-         like the primary nav collapsing away its labels. The width itself is
-         pinned inline (applyDockWidth); these rules strip the labels and centre
+         Collapses the docked module to a slim column of icons + project folder
+         glyphs, like the primary nav collapsing away its labels. The width itself
+         is pinned inline (applyDockWidth); these rules strip the labels and centre
          what remains. Head padding/justify use !important to beat host pages that
          re-dress the docked head via an #id-scoped selector. */
       '.wch-sidebar.wch-rail .wch-head{padding:14px 0 12px !important;justify-content:center !important;align-items:center !important;}',
@@ -204,10 +206,13 @@
       '.wch-sidebar.wch-rail .wch-list{padding:2px 6px 12px;}',
       '.wch-sidebar.wch-rail .wch-projects-head{display:none;}',
       '.wch-sidebar.wch-rail .wch-group,.wch-sidebar.wch-rail .wch-empty,.wch-sidebar.wch-rail .wch-project-empty{display:none;}',
-      '.wch-sidebar.wch-rail .wch-proj-toggle,.wch-sidebar.wch-rail .wch-proj-name,.wch-sidebar.wch-rail .wch-proj-count,.wch-sidebar.wch-rail .wch-proj-menu{display:none;}',
+      '.wch-sidebar.wch-rail .wch-proj-name,.wch-sidebar.wch-rail .wch-proj-count,.wch-sidebar.wch-rail .wch-proj-menu{display:none;}',
       '.wch-sidebar.wch-rail .wch-project-head{justify-content:center;padding:8px 0;gap:0;}',
-      '.wch-sidebar.wch-rail .wch-proj-dot{width:12px;height:12px;}',
+      '.wch-sidebar.wch-rail .wch-proj-toggle{display:flex;width:22px;height:22px;}',
+      '.wch-sidebar.wch-rail .wch-proj-toggle::after{display:none;}',
+      '.wch-sidebar.wch-rail .wch-proj-toggle .material-symbols-outlined{font-size:20px;}',
       '.wch-sidebar.wch-rail .wch-project-body{padding-left:0;}',
+      '.wch-sidebar.wch-rail .wch-project-body::before,.wch-sidebar.wch-rail .wch-project-body > .wch-item::before,.wch-sidebar.wch-rail .wch-project-body > .wch-project-empty::before,.wch-sidebar.wch-rail .wch-project-body > .wch-proj-edit::before{display:none;}',
       '.wch-sidebar.wch-rail .wch-item{padding:0;margin:4px auto;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;}',
       '.wch-sidebar.wch-rail .wch-item-title,.wch-sidebar.wch-rail .wch-item-meta,.wch-sidebar.wch-rail .wch-item-stream,.wch-sidebar.wch-rail .wch-item-actions,.wch-sidebar.wch-rail .wch-del{display:none;}',
       '.wch-sidebar.wch-rail .wch-item::before{content:"forum";font-family:"Material Symbols Outlined";font-size:19px;opacity:.6;line-height:1;}',
@@ -246,25 +251,36 @@
       '.wch-proj-add:hover{background:rgba(255,255,255,0.10);opacity:1;color:var(--primary-ink,var(--primary,#2F6DF6));}',
       'html:not(.dark) .wch-proj-add:hover{background:rgba(0,0,0,0.06);}',
       '.wch-proj-add .material-symbols-outlined{font-size:18px;}',
-      /* A single project block. */
-      '.wch-project{border-radius:10px;margin:1px 0;}',
+      /* A single project block — same row language as Library's folder panel
+         (.lib-fp-folder): colored folder / folder_open icon + name + count +
+         hover ⋯. Nested chats indent under a tree spine. */
+      '.wch-project{position:relative;border-radius:10px;margin:1px 0;overflow:visible;}',
       '.wch-project.wch-drop-on{background:color-mix(in srgb,var(--primary,#2F6DF6) 14%,transparent);outline:1px dashed color-mix(in srgb,var(--primary,#2F6DF6) 55%,transparent);}',
-      '.wch-project-head{position:relative;display:flex;align-items:center;gap:6px;padding:8px 34px 8px 6px;border-radius:10px;cursor:pointer;}',
+      '.wch-project-head{position:relative;z-index:1;display:flex;align-items:center;gap:6px;padding:8px 34px 8px 6px;border-radius:10px;cursor:pointer;}',
       '.wch-project-head:hover{background:rgba(255,255,255,0.06);}',
       'html:not(.dark) .wch-project-head:hover{background:rgba(20,40,80,0.05);}',
-      '.wch-proj-toggle{width:22px;height:22px;flex:0 0 auto;border:0;border-radius:6px;background:transparent;color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.7;}',
-      '.wch-proj-toggle .material-symbols-outlined{font-size:18px;transition:transform .18s ease;}',
-      '.wch-project.wch-collapsed .wch-proj-toggle .material-symbols-outlined{transform:rotate(-90deg);}',
+      '.wch-proj-toggle{position:relative;z-index:2;width:22px;height:22px;flex:0 0 auto;border:0;border-radius:0;background:transparent;color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;}',
+      /* Opaque plug so the spine meets the folder midpoint without showing through the glyph. */
+      '.wch-proj-toggle::after{content:"";position:absolute;left:50%;top:50%;width:7px;height:14px;transform:translate(-50%,-50%);background:currentColor;pointer-events:none;}',
+      '.wch-proj-toggle .material-symbols-outlined{position:relative;z-index:1;font-size:18px;line-height:1;font-variation-settings:"FILL" 1,"wght" 400,"GRAD" 0,"opsz" 20;}',
       '.wch-proj-dot{flex:0 0 auto;width:9px;height:9px;border-radius:50%;background:currentColor;}',
       '.wch-proj-name{flex:1;min-width:0;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
       '.wch-proj-count{flex:0 0 auto;font-size:11px;font-weight:600;opacity:.55;padding:0 4px;}',
       '.wch-proj-menu{position:absolute;top:50%;right:6px;transform:translateY(-50%);width:24px;height:24px;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer;display:none;align-items:center;justify-content:center;opacity:.6;}',
-      '.wch-project-head:hover .wch-proj-menu{display:flex;}',
+      '.wch-project-head:hover .wch-proj-menu,.wch-project-head:focus-within .wch-proj-menu{display:flex;}',
       '.wch-proj-menu:hover{background:rgba(255,255,255,0.12);opacity:1;}',
       'html:not(.dark) .wch-proj-menu:hover{background:rgba(0,0,0,0.08);}',
       '.wch-proj-menu .material-symbols-outlined{font-size:16px;}',
-      '.wch-project-body{padding-left:8px;}',
+      /* Tree lines — a spine sized to the last child’s elbow (--wch-tree-end,
+         set after render) plus an L-elbow drawn as one bordered corner so the
+         angle always meets. No background-mask: that was covering the join. */
+      '.wch-project-body{position:relative;padding-left:22px;--wch-tree-end:16px;--wch-tree-radius:8px;}',
       '.wch-project.wch-collapsed .wch-project-body{display:none;}',
+      '.wch-sidebar:not(.wch-rail) .wch-project:not(.wch-collapsed) > .wch-project-body:not(:empty)::before{content:"";position:absolute;z-index:0;left:16px;top:-19px;width:1px;height:calc(19px + var(--wch-tree-end) - var(--wch-tree-radius));background:var(--wch-tree);pointer-events:none;}',
+      '.wch-project-body > .wch-item,.wch-project-body > .wch-project-empty,.wch-project-body > .wch-proj-edit{position:relative;}',
+      '.wch-sidebar:not(.wch-rail) .wch-project-body > .wch-item::before,.wch-sidebar:not(.wch-rail) .wch-project-body > .wch-project-empty::before,.wch-sidebar:not(.wch-rail) .wch-project-body > .wch-proj-edit::before{content:"";position:absolute;z-index:0;left:-6px;width:var(--wch-elbow-w,18px);top:0;height:var(--wch-elbow-h,16px);border:0;border-left:1px solid var(--wch-tree);border-bottom:1px solid var(--wch-tree);border-bottom-left-radius:var(--wch-tree-radius);box-sizing:border-box;background:transparent;pointer-events:none;}',
+      '.wch-sidebar:not(.wch-rail) .wch-project-body > .wch-project-empty::before{height:12px;width:18px;}',
+      '.wch-sidebar:not(.wch-rail) .wch-project-body > .wch-proj-edit::before{height:18px;width:18px;}',
       '.wch-project-empty{font-size:11px;opacity:.5;padding:4px 12px 8px 20px;}',
       /* Inline name editor (create + rename). */
       '.wch-proj-edit{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:6px 8px 6px 8px;}',
@@ -325,6 +341,7 @@
          pages that carry their own copies (wiseai.html) simply agree with
          these. The chat root is tagged `.wch-chat-anchor` by its host. */
       '#modules-row .wch-sidebar.wch-docked{background:var(--surface,#fff);color:var(--text,inherit);border:1px solid var(--border,rgba(0,0,0,0.08));',
+        '--wch-tree-bg:var(--surface,#fff);',
         'box-shadow:var(--shadow-card,0 12px 32px rgba(20,30,60,0.12));border-radius:16px;overflow:hidden;flex-shrink:0;position:relative;z-index:1;',
         'align-self:center;height:calc(100% - 30px);}',
       '#modules-row .wch-sidebar.wch-docked .wch-head{padding:18px 14px 16px 24px;border-bottom:1px solid var(--border,rgba(0,0,0,0.08));align-items:flex-start;}',
@@ -341,7 +358,7 @@
          one module OUT of the tuck: it keeps the free-standing card look, so
          every :not(.wch-unsticky) below is what actually performs the tuck.
          Mirrors the same guards in pages/wiseai.html\'s own copy. */
-      '#modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-unsticky){z-index:1;background:var(--surface-2,var(--surface,#fff));box-shadow:none;align-self:center;height:calc(100% - 30px);}',
+      '#modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-unsticky){z-index:1;background:var(--surface-2,var(--surface,#fff));--wch-tree-bg:var(--surface-2,var(--surface,#fff));box-shadow:none;align-self:center;height:calc(100% - 30px);}',
       /* History (left of chat): flush + tucked under the chat\'s LEFT edge. */
       '#modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-right):not(.wch-unsticky){margin-right:calc(-14px - var(--modules-gap, 8px));padding-right:14px;',
         'border-top-right-radius:0;border-bottom-right-radius:0;border-right:0;animation:wchStickySlideL .42s cubic-bezier(.34,1.45,.64,1) both;}',
@@ -460,6 +477,7 @@
     });
     document.addEventListener('focusout', hide);
     document.addEventListener('click', hide, true);
+    document.addEventListener('dragstart', hide, true);
     window.addEventListener('scroll', hide, true);
     window.addEventListener('resize', hide);
   }
@@ -985,6 +1003,38 @@
       '</div>';
     }
 
+    /* Size each project’s tree spine and L-elbows. Elbows are measured to the
+       live-dot (or title) center so the horizontal runs into that circle. */
+    function layoutProjectTrees() {
+      if (railMode) return;
+      listEl.querySelectorAll('.wch-project-body').forEach(function (body) {
+        var kids = body.children;
+        var i;
+        for (i = 0; i < kids.length; i++) {
+          var el = kids[i];
+          if (!el.classList.contains('wch-item')) continue;
+          var target = el.querySelector('.wch-live-dot') || el.querySelector('.wch-item-title');
+          if (!target) continue;
+          var elRect = el.getBoundingClientRect();
+          var tRect = target.getBoundingClientRect();
+          if (!elRect.height || !tRect.height) continue;
+          var y = tRect.top + tRect.height / 2 - elRect.top;
+          var w = tRect.left + tRect.width / 2 - (elRect.left - 6) + 3;
+          if (y > 4) el.style.setProperty('--wch-elbow-h', Math.round(y) + 'px');
+          if (w > 10) el.style.setProperty('--wch-elbow-w', Math.round(w) + 'px');
+        }
+        var last = body.lastElementChild;
+        if (!last) return;
+        var elbow = parseFloat(getComputedStyle(last).getPropertyValue('--wch-elbow-h'));
+        if (!elbow) {
+          elbow = 16;
+          if (last.classList.contains('wch-project-empty')) elbow = 12;
+          else if (last.classList.contains('wch-proj-edit')) elbow = 18;
+        }
+        body.style.setProperty('--wch-tree-end', (last.offsetTop + elbow) + 'px');
+      });
+    }
+
     function render() {
       var q = query.trim().toLowerCase();
       var filtering = !!(q || mcpOnly);
@@ -1016,8 +1066,7 @@
           html += projEditRowHtml(p.name, p.id);
         } else {
           html += '<div class="wch-project-head" data-proj-head="' + esc(p.id) + '" role="button" tabindex="0" aria-expanded="' + (collapsed ? 'false' : 'true') + '"' + (railMode ? ' data-tip="' + esc(p.name) + '"' : '') + '>' +
-            '<button type="button" class="wch-proj-toggle" data-proj-toggle="' + esc(p.id) + '" tabindex="-1" aria-label="Expand or collapse project"><span class="material-symbols-outlined">expand_more</span></button>' +
-            '<span class="wch-proj-dot" style="color:' + esc(p.color) + '"></span>' +
+            '<button type="button" class="wch-proj-toggle" data-proj-toggle="' + esc(p.id) + '" tabindex="-1" aria-label="Expand or collapse project" style="color:' + esc(p.color) + '"><span class="material-symbols-outlined">' + (collapsed ? 'folder' : 'folder_open') + '</span></button>' +
             '<span class="wch-proj-name">' + esc(p.name) + '</span>' +
             '<span class="wch-proj-count">' + kids.length + '</span>' +
             '<button type="button" class="wch-proj-menu" data-proj-menu="' + esc(p.id) + '" title="Project options" aria-label="Project options"><span class="material-symbols-outlined">more_horiz</span></button>' +
@@ -1067,6 +1116,7 @@
       }
 
       listEl.innerHTML = html;
+      layoutProjectTrees();
 
       /* Focus any open inline name editor (create / rename). */
       var editInput = listEl.querySelector('.wch-proj-edit-input');
@@ -1208,7 +1258,7 @@
       infoEl.style.top = Math.round(top) + 'px';
     }
     function showInfo(row) {
-      if (railMode) return;
+      if (railMode || dragItemId) return;
       var id = row.getAttribute('data-wch-id');
       if (!id) return;
       var it = findItem(id);
@@ -1228,10 +1278,16 @@
     }
     listEl.addEventListener('mouseover', function (e) {
       var row = e.target.closest('.wch-item[data-wch-id]');
-      if (!row || railMode) return;
+      if (!row || railMode || dragItemId) return;
       if (row.getAttribute('data-wch-id') === infoForId) return;
       clearTimeout(infoTimer);
       infoTimer = setTimeout(function () { showInfo(row); }, 240);
+    });
+    /* The instant the grip is pressed, drop the hover card so it does not
+       sit over drop targets while the user starts dragging. */
+    listEl.addEventListener('pointerdown', function (e) {
+      if (e.button != null && e.button !== 0) return;
+      if (e.target.closest && e.target.closest('.wch-drag-handle')) hideInfo();
     });
     listEl.addEventListener('mouseout', function (e) {
       var row = e.target.closest('.wch-item[data-wch-id]');
@@ -1507,6 +1563,7 @@
       if (railMode) { e.preventDefault(); return; }
       var item = e.target.closest('.wch-item');
       if (!item) return;
+      hideInfo();
       dragItemId = item.getAttribute('data-wch-id');
       item.classList.add('wch-dragging');
       try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragItemId); } catch (_) {}
@@ -1853,8 +1910,8 @@
     if (searchInput) searchInput.addEventListener('input', function () { applyQuery(searchInput.value); });
     if (searchClear) searchClear.addEventListener('click', clearQuery);
     listEl.addEventListener('click', function (e) {
-      /* Icon-rail: everything is collapsed to an icon, so clicking a project dot
-         or a conversation icon opens a popover with the actions (rename/delete,
+      /* Icon-rail: everything is collapsed to an icon, so clicking a project
+         folder or a conversation icon opens a popover with the actions (rename/delete,
          open/move/delete) rather than the inline hover controls. */
       if (railMode) {
         /* Minimized: a click anywhere on the rail simply MAXIMIZES the panel —

@@ -8851,10 +8851,17 @@
       const rankable = ents.filter(e => !pendingSet.has(e.id));
       const pendingEnts = ents.filter(e => pendingSet.has(e.id));
 
-      /* Display order: overall score descending (primary keeps its true rank). */
+      /* Display order: YOU/primary is always the leftmost column so the
+         head-to-head reads as "your food vs the field". Rank numbers still
+         follow overall score (primary keeps its true rank). Other scored
+         columns keep score order to the right; pending entrants stay at
+         the end until a recalculate. */
       const ranked = rankable.slice().sort((a, b) => (b.na ? -1 : cmpScoreFor(b, 'wisescore')) - (a.na ? -1 : cmpScoreFor(a, 'wisescore')));
       const rankOf = new Map(ranked.map((e, i) => [e.id, i + 1]));
-      const ordered = ranked.concat(pendingEnts);
+      const primaryEnt = rankable.find(e => e.primary) || pendingEnts.find(e => e.primary);
+      const restRanked = ranked.filter(e => e !== primaryEnt);
+      const restPending = pendingEnts.filter(e => e !== primaryEnt);
+      const ordered = (primaryEnt ? [primaryEnt] : []).concat(restRanked, restPending);
 
       /* Guiding Stars reuses the SAME board UI (header tiles + metric rows).
          It only swaps WISEscore for the star rating on the tiles and renders
@@ -9304,7 +9311,7 @@
           compareState.shown = [prim.id];
           renderCompare();
           scrollPanelIntoView('compare-panel');
-          addWISEcodeAIMessage('You’re set up as <strong>Amy’s Kitchen</strong>, so I’ve loaded <strong>your</strong> food on the right — WISEscore, UPF, GRAS, ingredient and protein quality are all populated. When you’re ready, <strong>add a competitor</strong> to build the head-to-head — use the chip below or the <strong>Add</strong> button on the board.', { source: false });
+          addWISEcodeAIMessage('You’re set up as <strong>Amy’s Kitchen</strong>, so I’ve loaded <strong>your</strong> food on the left — WISEscore, UPF, GRAS, ingredient and protein quality are all populated. When you’re ready, <strong>add a competitor</strong> to build the head-to-head — use the chip below or the <strong>Add</strong> button on the board.', { source: false });
           cmpOfferFollowChips();
         }, 650);
       });

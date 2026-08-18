@@ -9,14 +9,17 @@
      the cursor becomes a col-resize. Drag it to any width; the neighbouring pane
      grows/shrinks to match the direction you drag.
    • THE FOUR-TIER RULE: any module that carries the canonical width changer
-     (.panel-width-toggle-btn — everything except Navigation and the minimized
-     History rail) may only REST at one of the four preset widths: single,
-     double, triple, or fill. A drag on such a module is a live preview; on
-     release it SNAPS to whichever tier is closest to the dragged width, by
-     driving the module's own width button (so the page's exact tier classes,
-     icon state and persistence all apply). Dragged pixel widths are never
-     saved or restored for these modules — dragging can never overrule the
-     preset system.
+     (.panel-width-toggle-btn — the width icon in the module's top-right)
+     may only REST at one of the four preset widths: single, double, triple,
+     or fill. Those four settings are the width changer's limits. A drag on
+     such a module is a live preview only; on release it SNAPS to whichever
+     of those four limits is closest to the dragged width. The width changer
+     is then walked from its CURRENT tier to the snapped one (zero clicks
+     when they already match) — it is never cycled through every tier, so a
+     drag cannot wipe the user's setting and force them to start over.
+     Dragged pixel widths are never saved or restored for these modules, and
+     a click on the width icon always releases any leftover drag pin so the
+     changer stays in charge.
    • Only modules WITHOUT a width changer keep free-form widths, remembered
      per-page in localStorage. Double-click a handle to reset the two panes it
      sits between.
@@ -328,51 +331,68 @@
     return window.WPaneWidth.clamp(window.WPaneWidth.tierOfEl(el));
   }
 
-  /* Snap a just-dragged pane onto the canonical four-tier width scale
-     (single / double / triple / fill). We drive the pane's OWN width button —
-     cycling it through every tier while measuring the pane's real width at
-     each — then keep clicking until the pane rests at whichever tier came
-     closest to the dragged width. Going through the page's native control
-     (the same trick js/default-fill.js uses) inherits the page's exact tier
-     classes, icon/pressed state AND its persistence, so we never guess at
-     class names and the snapped tier survives a reload. All the clicks run
-     synchronously inside this one task, so the user only ever sees the final
-     tier painted. Never saves a pixel width: for these modules the four
-     presets are the only widths that exist. */
-  function snapToTier(row, el, btn) {
-    var W = window.WPaneWidth;
-    if (!W) { var w0 = rectW(el); pin(el, w0); saveWidth(keyOf(row, el), w0); return; }
+  /* Which class family this module uses (panel-* vs pane-*). Result panes on
+     wiseai.html carry data-pane-width / .wa-pane; everything else is panel-*. */
+  function classAlias(el, btn) {
+    if (btn && btn.hasAttribute && btn.hasAttribute('data-pane-width')) return 'pane';
+    if (el && el.classList &&
+        (el.classList.contains('wa-pane') ||
+         el.classList.contains('pane-wide') ||
+         el.classList.contains('pane-triple') ||
+         el.classList.contains('pane-fill'))) return 'pane';
+    return 'panel';
+  }
 
-    var target = rectW(el);              // the width the user dragged to
+  /* Measure the pane at every tier by applying the shared classes in place —
+     never by clicking the width button. Clicking through the cycle was wiping
+     the user's setting (and its persistence) on every drag release, so they
+     had to start the width changer over from single. Layout is forced by
+     getBoundingClientRect; nothing paints until this task ends. */
+  function measureTierWidths(el, btn) {
+    var W = window.WPaneWidth;
+    var alias = classAlias(el, btn);
+    var current = W.tierOfEl(el);
+    var widths = [];
+    for (var t = 0; t < W.TIERS; t++) {
+      W.applyClasses(el, t, alias);
+      widths[t] = rectW(el);
+    }
+    W.applyClasses(el, current, alias);
+    return widths;
+  }
+
+  /* Snap a just-dragged pane onto the canonical four-tier width scale
+     (single / double / triple / fill). Pixel pins are released first so the
+     width changer's CSS limits size the pane again. We measure each tier by
+     applying classes (not by clicking), pick the closest to the dragged
+     width, then walk the module's OWN width button from its current tier to
+     that one — zero clicks when they already match, never a full lap. Going
+     through the native control inherits the page's icon / pressed state and
+     persistence. Never saves a pixel width: for these modules the four
+     presets are the only widths that exist. */
+  function snapToTier(row, el, btn, targetW) {
+    var W = window.WPaneWidth;
+    if (!W) { var w0 = targetW != null ? targetW : rectW(el); pin(el, w0); saveWidth(keyOf(row, el), w0); return; }
+
+    var target = targetW != null ? targetW : rectW(el);
     clearWidth(keyOf(row, el));          // dragged pixel widths are never kept
     clearInline(el);                     // release the pin → preset classes size it
     el.style.setProperty('transition', 'none', 'important');
 
-    // Measure the pane's real width at every tier by cycling its own button.
-    // Bail the moment a click stops advancing the reported tier, so a control
-    // we can't read never gets clicked forever.
-    var widths = [];
-    var tier = tierOf(el, btn);
-    widths[tier] = rectW(el);
-    for (var i = 1; i < W.TIERS; i++) {
-      btn.click();
-      var t = tierOf(el, btn);
-      if (t === tier) break;             // no forward progress — stop
-      tier = t;
-      widths[tier] = rectW(el);
-    }
-
-    // Pick the tier whose width is closest to the dragged width.
-    var best = tier, bd = Infinity;
+    var widths = measureTierWidths(el, btn);
+    var best = 0, bd = Infinity;
     for (var k = 0; k < W.TIERS; k++) {
       if (widths[k] == null) continue;
       var d = Math.abs(widths[k] - target);
       if (d < bd) { bd = d; best = k; }
     }
 
-    // Click on around the cycle until the pane rests at the best tier (guarded
-    // the same way: a click that doesn't move the tier ends the loop).
-    for (var g = 0; g < W.TIERS && tier !== best; g++) {
+    // Walk forward from the current tier to `best` only. A click that does
+    // not advance the reported tier ends the loop so a stuck control can
+    // never be clicked forever.
+    var tier = tierOf(el, btn);
+    var hops = (best - tier + W.TIERS) % W.TIERS;
+    for (var g = 0; g < hops; g++) {
       btn.click();
       var now = tierOf(el, btn);
       if (now === tier) break;
@@ -491,15 +511,25 @@
       } else {
         keep = isFill(target) ? [] : [target];
       }
-      keep.forEach(function (el) {
-        var btn = widthBtnOf(el, row);
+      // Capture drag-end widths BEFORE releasing pins — once a neighbour
+      // unpins, getBoundingClientRect no longer reflects what the user
+      // dragged to. Width-changer panes then drop their pins together so
+      // measuring one isn't distorted by the other's leftover pin.
+      var snapJobs = keep.map(function (el) {
+        return { el: el, btn: widthBtnOf(el, row), w: rectW(el) };
+      });
+      snapJobs.forEach(function (job) {
+        if (!job.btn) return;
+        clearWidth(keyOf(row, job.el));
+        clearInline(job.el);
+      });
+      snapJobs.forEach(function (job) {
         // Four-tier rule: a module with its own width changer snaps to the
         // nearest preset (single/double/triple/fill) instead of keeping the
         // free dragged width — dragging must never overrule the presets.
-        if (btn) { snapToTier(row, el, btn); return; }
-        var w = rectW(el);
-        pin(el, w);
-        saveWidth(keyOf(row, el), w);
+        if (job.btn) { snapToTier(row, job.el, job.btn, job.w); return; }
+        pin(job.el, job.w);
+        saveWidth(keyOf(row, job.el), job.w);
       });
 
       layout(entry);
@@ -656,6 +686,8 @@
       '.modules-row>*:has(.pf-rowmenu-pop:not([hidden])),' +
       '#modules-row>*:has(.pf-filter-pop:not([hidden])),' +
       '.modules-row>*:has(.pf-filter-pop:not([hidden])),' +
+      '#modules-row>*:has(.lib-filter-pop:not([hidden])),' +
+      '.modules-row>*:has(.lib-filter-pop:not([hidden])),' +
       '#modules-row>*:has(.pf-gs-infopop:not([hidden])),' +
       '.modules-row>*:has(.pf-gs-infopop:not([hidden]))' +
       '{z-index:500 !important;position:relative;}';
@@ -678,6 +710,22 @@
 
   window.addEventListener('resize', schedule);
   window.addEventListener('scroll', schedule, true);
+
+  // Width changer always wins: a click on the top-right width icon releases
+  // any leftover drag pin on that module BEFORE the page's own handler
+  // advances the tier. Without this, an inline !important pin from a drag
+  // out-specs the preset classes and the changer looks dead until the user
+  // cycles all the way around (or resets).
+  document.addEventListener('click', function (e) {
+    var btn = e.target && e.target.closest && e.target.closest('.panel-width-toggle-btn');
+    if (!btn) return;
+    var row = btn.closest('#modules-row, .modules-row');
+    if (!row) return;
+    var el = moduleRootOfBtn(btn, row);
+    if (!el) return;
+    clearWidth(keyOf(row, el));
+    clearInline(el);
+  }, true);
 
   // Safety net for stale handle positions: whenever the cursor is over a managed
   // row, keep the handles chasing the live seams (rAF-coalesced, so it's cheap).

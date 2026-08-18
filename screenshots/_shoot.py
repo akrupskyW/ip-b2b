@@ -62,6 +62,7 @@ PAGES = [
     "pages/studio-ai.html",
     "pages/all-modules.html",
     "pages/progress-log.html",
+    "pages/accessibility-review.html",
     # Account / support
     "pages/profile.html",
     "pages/invoices.html",
@@ -86,6 +87,10 @@ try {
   }));
   localStorage.setItem('wise-theme', %(theme)r);
   localStorage.setItem('chat-theme', %(theme)r);
+  localStorage.setItem('wise-walkthrough', JSON.stringify({
+    v: 1, completed: true, dismissed: true, doneSteps: ['*'],
+    skippedGroups: [], screensSeen: {'*': true}, cursor: ''
+  }));
 } catch (e) {}
 """ % {"theme": THEME}
 
@@ -132,7 +137,7 @@ FORCE_REVEAL = """() => {
 # Chat hosts — same set as js/sticky-modules.js CHAT_SEL. After the page has
 # loaded at the initial viewport, pin the left chat to that height so growing
 # the viewport (to reveal the full right-hand module) does not stretch it.
-CHAT_HOST = "#wa-chat,#rf-chat,#sa-chat,#aid-chat,#pl-chat,.ap-chat,#gs-chat,#chat-shell,#wiseai-dock-panel,.sticky-chat"
+CHAT_HOST = "#wa-chat,#rf-chat,#sa-chat,#aid-chat,#pl-chat,#ar-chat,.ap-chat,#gs-chat,#chat-shell,#wiseai-dock-panel,.sticky-chat"
 
 PIN_CHAT = f"""() => {{
   document.querySelectorAll({CHAT_HOST!r}).forEach(el => {{
@@ -307,7 +312,7 @@ def shoot(page, rel, out_name):
         if last_delta is not None and delta >= last_delta - 4:
             # Not shrinking (a fixed-height pane) — one targeted expand, then stop.
             page.evaluate("""() => {
-              const chatHost = el => el.closest && el.closest('#wa-chat,#rf-chat,#sa-chat,#aid-chat,.ap-chat,#gs-chat,#chat-shell,#wiseai-dock-panel,.sticky-chat');
+              const chatHost = el => el.closest && el.closest('#wa-chat,#rf-chat,#sa-chat,#aid-chat,#pl-chat,#ar-chat,.ap-chat,#gs-chat,#chat-shell,#wiseai-dock-panel,.sticky-chat');
               document.querySelectorAll('*').forEach(el => {
                 if (chatHost(el)) return;
                 const cs = getComputedStyle(el);

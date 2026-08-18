@@ -108,6 +108,16 @@
   --ter-violet: #25507C;
   --ter-cyan: #25507C;
 
+  /* Monochromatic chart-status scale — five tints of brand navy/azure, best →
+     worst. Every chart fill (donut slice, bar, gauge, radar vertex) uses these
+     stops so a score’s color is identical everywhere it appears. */
+  --chart-status-excellent: #8AADC9;
+  --chart-status-good: #5B8FBE;
+  --chart-status-okay: var(--primary);
+  --chart-status-fair: #1A3A5C;
+  --chart-status-poor: #0E2238;
+  --chart-mono: var(--chart-status-okay);
+
   /* AAA-safe ink for semantic colors used as TEXT on their own light tints.
      The vibrant --sec-green / --ter-amber / --sec-red read below 7:1 as small
      text, so badges, deltas and status labels use these darker shades while
@@ -132,6 +142,20 @@
   --shadow-1: 0 1px 2px rgba(17,24,39,.04), 0 1px 3px rgba(17,24,39,.04);
   --shadow-2: 0 1px 2px rgba(17,24,39,.04), 0 8px 24px rgba(17,24,39,.06);
   --shadow-card: var(--shadow-2);
+  /* AI Chat module elevation — default "Above high" so the chat sits above
+     every other module card. Admin three-dot control steps Little min / High / 3D.
+     --chat-elev-gutter is the bottom shadow room inside #modules-row (overflow-x:auto
+     forces overflow-y to clip, so the drop-shadow must paint into padding). */
+  --chat-elev: 0 4px 16px rgba(17, 24, 39, 0.10), 0 18px 44px rgba(17, 24, 39, 0.14);
+  --chat-elev-gutter: 48px;
+  /* Brand-navy lip on the chat module (.sc-card) — a step lighter than 40%
+     so the edge reads without a charcoal outline. */
+  --chat-rim-color: color-mix(in srgb, #05141C 28%, transparent);
+  --chat-rim:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.82),
+    inset -1px -1px 0 rgba(5, 20, 28, 0.14),
+    inset 0 1px 0 color-mix(in srgb, #05141C 10%, #ffffff),
+    inset 0 -1px 0 color-mix(in srgb, #05141C 14%, #000000);
 
   --modules-bottom-pad: 12px;
   --fs-ui: 0.75rem;
@@ -175,6 +199,14 @@ html.dark {
      same invisibility — brighten them like the other dark accents. */
   --ter-violet: var(--primary-bright);
   --ter-cyan: var(--primary-bright);
+
+  /* Lifted azure ramp so the five status stops stay distinct on navy. */
+  --chart-status-excellent: #C5D6EA;
+  --chart-status-good: #8BB4D6;
+  --chart-status-okay: #5A8BB8;
+  --chart-status-fair: #3E7CB1;
+  --chart-status-poor: #25507C;
+  --chart-mono: var(--chart-status-okay);
   /* Brand-blue borders on dark: --primary (#25507C) is nearly invisible over
      navy, so tint from --primary-bright to keep borders on-brand yet visible. */
   --border: color-mix(in srgb, var(--primary-bright) 18%, transparent);
@@ -189,6 +221,15 @@ html.dark {
   --shadow-1: 0 1px 2px rgba(0,0,0,.4);
   --shadow-2: 0 4px 12px rgba(0,0,0,.35), 0 12px 32px rgba(0,0,0,.35);
   --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.35);
+  --chat-elev: 0 8px 28px rgba(0, 0, 0, 0.48), 0 24px 64px rgba(0, 0, 0, 0.46);
+  --chat-elev-gutter: 56px;
+  /* Muted brand lip on navy — cream at 48% read as a bright outline. */
+  --chat-rim-color: color-mix(in srgb, var(--primary-bright) 22%, transparent);
+  --chat-rim:
+    inset 1px 1px 0 rgba(249, 248, 243, 0.10),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 color-mix(in srgb, var(--primary-bright) 16%, transparent),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.28);
 }
 
 * { box-sizing: border-box; }
@@ -270,6 +311,15 @@ body:has(.menu-brand-integrated) {
 #agent-shell-wrap.menu-brand-integrated:has(#menu-panel.mp-rail:not(.mp-pivot)) #menu-panel,
 #chat-shell-wrap.menu-brand-integrated:has(#menu-panel.mp-rail:not(.mp-pivot)) #menu-panel {
   margin-left: calc(var(--nav-rail-gap, 2px) - var(--modules-bottom-pad, 12px));
+}
+/* The chat-elevation gutter (padding-left/right: 10px on #modules-row) is for
+   card-shadow room. In the collapsed rail that extra LEFT pad sits in the
+   empty cream between the icons and the first module, so the right of the
+   nav reads ~10px wider than the left (page-edge → icons). Drop it so both
+   sides keep only --nav-rail-gap. Right pad stays — that's the window edge. */
+html:not(.full-bleed):not(.brand-inset) #agent-shell-wrap.menu-brand-integrated:has(#menu-panel.mp-rail:not(.mp-pivot)) #modules-row,
+html:not(.full-bleed):not(.brand-inset) #chat-shell-wrap.menu-brand-integrated:has(#menu-panel.mp-rail:not(.mp-pivot)) #modules-row {
+  padding-left: 0;
 }
 
 /* ===== TOP BAR ===== */
@@ -538,6 +588,15 @@ body:has(.menu-brand-integrated) {
 }
 #lir-tooltip.lir-tip-right.lir-tip-visible {
   transform: translateY(-50%) translateX(0);
+}
+/* Appearance popover controls + the crossword trigger — float ABOVE the
+   target (same rule as the appearance popover itself). `top` is the point
+   just above the control; translateY(-100%) sits the card on that point. */
+#lir-tooltip.lir-tip-above {
+  transform: translateX(-50%) translateY(calc(-100% + 4px));
+}
+#lir-tooltip.lir-tip-above.lir-tip-visible {
+  transform: translateX(-50%) translateY(-100%);
 }
 
 .sc-topbar-titles .topbar-title {
@@ -1086,6 +1145,8 @@ html.dark .wise-pop-vline { background: rgba(255,255,255,0.08); }
   padding: 8px 14px 10px;
 }
 .fz-size-label {
+  display: flex;
+  align-items: center;
   font-size: 11px;
   letter-spacing: 0.12em;
   font-weight: 600;
@@ -1474,25 +1535,53 @@ html.mod-gap-xl #modules-row { gap: var(--modules-gap) !important; }
   padding-left: 14px;                 /* keep content clear of the tucked edge */
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
+  /* Match the inner card's open (right) corners so this fill doesn't sit as a
+     square behind a 16px radius and read as a background that got "cut off". */
+  border-top-right-radius: var(--r-md, 16px);
+  border-bottom-right-radius: var(--r-md, 16px);
   border-left: 0;
   animation: stickySlideRight .42s cubic-bezier(.34, 1.45, .64, 1) both;
 }
 /* Wrapper-based boards (product-portfolio / product-comparison: the
-   #portfolio-panel / #compare-panel / #workflow-panel / launch-report asides)
-   are bare flex wrappers — their card frame (radius, border, shadow) lives on
-   an INNER .panel-inner / .*-inner element. The drawer rules above square the
-   WRAPPER's left corners, which is a no-op there, so the inner card kept its
-   rounded left corners, left border and drop shadow and read as a floating
-   card peeking out from behind the chat instead of a flush tucked drawer —
-   inconsistent with the direct-card modules (reformulation, wiseai panes).
-   Square the inner card's chat-facing edge too. (!important because some
-   pages restate the inner frame with !important id-level rules.) */
+   #portfolio-panel / #compare-panel / #workflow-panel / launch-report asides,
+   plus add-product's #nfp-panel / .vf-progress-pane) are bare flex wrappers —
+   their card frame (radius, border, shadow) lives on an INNER .panel-inner /
+   .*-inner element. The drawer rules above square the WRAPPER's left corners,
+   which is a no-op there, so the inner card kept its rounded left corners, left
+   border and drop shadow and read as a floating card peeking out from behind
+   the chat instead of a flush tucked drawer — inconsistent with the direct-card
+   modules (reformulation, wiseai panes). Square the inner card's chat-facing
+   edge too. (!important because some pages restate the inner frame with
+   !important id-level rules.) */
 #modules-row .sticky-mod.is-sticky > .panel-inner,
 #modules-row .sticky-mod.is-sticky > [class*="-inner"] {
   border-top-left-radius: 0 !important;
   border-bottom-left-radius: 0 !important;
+  border-top-right-radius: var(--r-md, 16px) !important;
+  border-bottom-right-radius: var(--r-md, 16px) !important;
   border-left: 0 !important;
   box-shadow: none !important;
+}
+/* The wrapper's full-box `background: var(--surface-2)` is the drawer fill for
+   DIRECT-card modules (the element IS the card). On wrapper-based modules that
+   same fill sat as a SQUARE behind the inner card's rounded right corners and
+   showed through as a cut-off halo. Drop the wrapper fill there and paint the
+   14px tuck strip only, so the inner card's radius meets the page background. */
+#modules-row .sticky-mod.is-sticky:has(> .panel-inner),
+#modules-row .sticky-mod.is-sticky:has(> [class*="-inner"]) {
+  background: transparent;
+}
+#modules-row .sticky-mod.is-sticky:has(> .panel-inner)::before,
+#modules-row .sticky-mod.is-sticky:has(> [class*="-inner"])::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 14px;
+  background: var(--surface-2);
+  pointer-events: none;
+  z-index: 0;
 }
 /* When a module's menu popover is open, keep it tucked BELOW the chat so the
    drawer never pops on top of the chat card while its menu is showing. */
@@ -1796,6 +1885,11 @@ html.dark #menu-panel .menu-inner {
   letter-spacing: 0;
   vertical-align: super;
   margin-left: 1px;
+  /* Cancel Tailwind Preflight (`sup { line-height:0; position:relative;
+     top:-0.5em }`) so the TM occupies the same line box as wiseai.html. */
+  position: static;
+  top: auto;
+  line-height: 1;
 }
 
 /* Navigation header — hidden when the brand strip carries the logo. Tight
@@ -2892,8 +2986,13 @@ html.dark .menu-nav .menu-nav-group[data-open="true"] > .menu-nav-product .menu-
               min-width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-#menu-panel.mp-rail:not(.mp-pivot).mp-open { width: 54px; min-width: 54px; }
-#menu-panel.mp-rail:not(.mp-pivot) .menu-inner { width: 54px; }
+#menu-panel.mp-rail:not(.mp-pivot).mp-open {
+  width: 54px;
+  min-width: 54px;
+  max-width: 54px;
+  overflow-x: hidden;
+}
+#menu-panel.mp-rail:not(.mp-pivot) .menu-inner { width: 54px; max-width: 54px; }
 
 /* "Icons only" (Appearance) doesn't just drop the labels — per the Appearance
    model it strips the nav module's background CONTAINER too, so the icon rail
@@ -2966,19 +3065,14 @@ html.dark .menu-nav .menu-nav-group[data-open="true"] > .menu-nav-product .menu-
      the extra top air + the bottom air are trimmed to tighten the rail. */
   padding: calc(3px + 32px) 5px 6px;
 }
-/* Collapsed to the bare icon rail, the body must NOT reserve a right-side
-   scrollbar gutter: that space (which appears whenever the OS shows scrollbars
-   always, or on overflow) shrinks the content box on the RIGHT only, shifting
-   the centered icons left and giving them uneven left/right padding. With the
-   background container removed by "Icons only", that asymmetry is now visible.
-   Hide the scrollbar so the icons stay symmetrically centered; the rail still
-   scrolls on overflow. `scrollbar-gutter: stable both-edges` is the belt-and-
-   suspenders guard: if a browser/OS still lays out a scrollbar gutter despite
-   the hide, it is reserved on BOTH edges so the icons stay centered instead of
-   drifting left. */
+/* Collapsed rail: never reserve a scrollbar gutter. A classic-OS gutter (or
+   `scrollbar-gutter: stable`) eats space on the RIGHT only — or, in a grid
+   `auto` column, inflates the whole nav — so the icons read left of center
+   with extra cream between them and the first module. Hide the bar; the
+   rail still scrolls. */
 #menu-panel.mp-rail .menu-panel-body {
   scrollbar-width: none;
-  scrollbar-gutter: stable both-edges;
+  scrollbar-gutter: auto;
 }
 #menu-panel.mp-rail .menu-panel-body::-webkit-scrollbar { width: 0; display: none; }
 #menu-panel.mp-rail .menu-nav-label,
@@ -3620,7 +3714,8 @@ html.dark.chat-tint.header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-
    AND clickable on top of the welcome screen, in every theme. */
 html.header-float .wiseai-dock .chat-topbar,
 html.header-float #pf-chat-panel .chat-topbar,
-html.header-float #wiseai-dock-panel .chat-topbar {
+html.header-float #wiseai-dock-panel .chat-topbar,
+html.header-float .sc-card .chat-topbar {
   z-index: 12 !important;
 }
 html.header-float .vs-header > *:not(button) {
@@ -3756,20 +3851,22 @@ html.full-bleed #modules-row .sticky-mod.is-sticky > [class*="-inner"] {
    remap --primary (it's also used as a solid fill, e.g. the jam-strip play
    button and send buttons); icon/hover accents are handled explicitly below. */
 
+/* Chat hosts — every chat module in the app (keep in sync with
+   js/sticky-modules.js CHAT_SEL). Used so a preset paints the same surfaces
+   on wiseai, add-product, portfolio, dashboard, admin pages, etc. */
 /* DARK-scheme token palette (light body ink on a dark surface). */
 html.full-bleed:not(.dark):not(.fb-nav-tint) #menu-panel,
 html.full-bleed.fb-nav-dark #menu-panel,
-html.full-bleed.fb-chat-dark .sc-card,
-html.full-bleed.fb-chat-dark #wa-chat,
-html.full-bleed.fb-chat-dark #rf-chat,
-html.full-bleed.fb-chat-dark #sa-chat,
-html.full-bleed.fb-chat-dark #aid-chat,
-html.full-bleed.fb-chat-dark .ap-chat,
-html.full-bleed.fb-chat-dark #gs-chat,
-html.full-bleed.fb-chat-dark #chat-shell,
-html.full-bleed.fb-chat-dark #pf-chat-panel,
-html.full-bleed.fb-chat-dark #wiseai-dock-panel,
-html.full-bleed.fb-rmod-dark #modules-row .sticky-mod {
+html.full-bleed.fb-chat-dark :is(
+  .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
+  #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
+  #pf-chat-panel, #wiseai-dock-panel
+),
+html.full-bleed.fb-rmod-dark #modules-row > :not(:is(
+  .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
+  #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
+  #pf-chat-panel, #wiseai-dock-panel, .sticky-chat
+)):not([class*="scrim"]):not([class*="resize"]):not([class*="handle"]):not([class*="grip"]) {
   --text: #F3F4F6;
   --text-muted: #BCC6D3;
   --text-subtle: #B1BAC7;
@@ -3787,17 +3884,16 @@ html.full-bleed.fb-rmod-dark #modules-row .sticky-mod {
 /* LIGHT-scheme token palette (dark body ink on a light surface). */
 html.full-bleed.dark:not(.fb-nav-tint) #menu-panel,
 html.full-bleed.fb-nav-light #menu-panel,
-html.full-bleed.fb-chat-light .sc-card,
-html.full-bleed.fb-chat-light #wa-chat,
-html.full-bleed.fb-chat-light #rf-chat,
-html.full-bleed.fb-chat-light #sa-chat,
-html.full-bleed.fb-chat-light #aid-chat,
-html.full-bleed.fb-chat-light .ap-chat,
-html.full-bleed.fb-chat-light #gs-chat,
-html.full-bleed.fb-chat-light #chat-shell,
-html.full-bleed.fb-chat-light #pf-chat-panel,
-html.full-bleed.fb-chat-light #wiseai-dock-panel,
-html.full-bleed.fb-rmod-light #modules-row .sticky-mod {
+html.full-bleed.fb-chat-light :is(
+  .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
+  #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
+  #pf-chat-panel, #wiseai-dock-panel
+),
+html.full-bleed.fb-rmod-light #modules-row > :not(:is(
+  .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
+  #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
+  #pf-chat-panel, #wiseai-dock-panel, .sticky-chat
+)):not([class*="scrim"]):not([class*="resize"]):not([class*="handle"]):not([class*="grip"]) {
   --text: #111827;
   --text-muted: #444B55;
   --text-subtle: #474E58;
@@ -3893,69 +3989,118 @@ html.full-bleed.dark.fb-nav-tint #menu-panel .menu-footer {
 /* ---- Chat window colour ----
    Re-point the surface tokens (so nested panes inherit the chosen colour) and
    paint the card + its inner surfaces + overlays. Text/chip inks come from the
-   scheme palette above. */
-html.full-bleed.fb-chat-tint .sc-card,
-html.full-bleed.fb-chat-tint #wa-chat,
-html.full-bleed.fb-chat-tint #rf-chat,
-html.full-bleed.fb-chat-tint #sa-chat,
-html.full-bleed.fb-chat-tint #aid-chat,
-html.full-bleed.fb-chat-tint .ap-chat,
-html.full-bleed.fb-chat-tint #gs-chat,
-html.full-bleed.fb-chat-tint #chat-shell,
-html.full-bleed.fb-chat-tint #pf-chat-panel,
-html.full-bleed.fb-chat-tint #wiseai-dock-panel {
+   scheme palette above. Also remaps --bg so welcome/settings overlays, header
+   float backings, and anything else that paints from --bg follow the preset
+   instead of the page linen / hardcoded navy. */
+html.full-bleed.fb-chat-tint :is(
+  .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
+  #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
+  #pf-chat-panel, #wiseai-dock-panel
+) {
+  --bg: var(--fb-chat-bg);
   --surface: var(--fb-chat-bg);
   --surface-2: var(--fb-chat-bg);
   --surface-3: color-mix(in srgb, var(--fb-chat-fg, #16233B) 8%, var(--fb-chat-bg));
 }
-html.full-bleed.fb-chat-tint .sc-card,
-html.full-bleed.fb-chat-tint .chat-messages-area,
-html.full-bleed.fb-chat-tint .chat-input-rail,
-html.full-bleed.fb-chat-tint .sc-welcome,
-html.full-bleed.fb-chat-tint .sc-settings,
-html.full-bleed.fb-chat-tint #wa-chat,
-html.full-bleed.fb-chat-tint #rf-chat,
-html.full-bleed.fb-chat-tint #sa-chat,
-html.full-bleed.fb-chat-tint #aid-chat,
-html.full-bleed.fb-chat-tint .ap-chat,
-html.full-bleed.fb-chat-tint #gs-chat,
-html.full-bleed.fb-chat-tint #chat-shell,
-html.full-bleed.fb-chat-tint #pf-chat-panel,
-html.full-bleed.fb-chat-tint #wiseai-dock-panel {
+html.full-bleed.fb-chat-tint :is(
+  .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
+  #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
+  #pf-chat-panel, #wiseai-dock-panel,
+  .chat-messages-area, .chat-input-rail, .sc-welcome, .sc-settings, .chat-topbar
+) {
   background: var(--fb-chat-bg) !important;
   color: var(--fb-chat-fg, #16233B);
 }
+/* Composer + intent-chip fades stay on hardcoded brand-blue / navy washes
+   (chat-tint). When a preset is on, restain them from the chat surface so the
+   welcome, input, and carousel edges actually change with the theme. */
+html.full-bleed.fb-chat-tint .fl-input-wrap {
+  background: color-mix(in srgb, var(--fb-chat-fg, #16233B) 10%, var(--fb-chat-bg)) !important;
+  border-color: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 22%, transparent) !important;
+}
+html.full-bleed.fb-chat-tint .ws-intent-chip,
+html.full-bleed.fb-chat-tint .chip {
+  background: color-mix(in srgb, var(--fb-chat-fg, #16233B) 10%, var(--fb-chat-bg));
+  border-color: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 28%, transparent);
+  color: var(--fb-chat-fg, #16233B);
+}
+html.full-bleed.fb-chat-tint .ws-scorecards-wrap::before,
+html.full-bleed.fb-chat-tint .ws-chips-wrap::before {
+  background: linear-gradient(to right, var(--fb-chat-bg) 0%, transparent 100%) !important;
+}
+html.full-bleed.fb-chat-tint .ws-scorecards-wrap::after,
+html.full-bleed.fb-chat-tint .ws-chips-wrap::after {
+  background: linear-gradient(to left, var(--fb-chat-bg) 0%, transparent 100%) !important;
+}
+html.full-bleed.fb-chat-tint.header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-more-btn,
+html.full-bleed.fb-chat-tint.header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn {
+  background: var(--fb-chat-bg) !important;
+}
 
-/* ---- Right-of-chat module colour ---- */
-html.full-bleed.fb-rmod-tint #modules-row .sticky-mod {
+/* ---- Right-of-chat module colour ----
+   Paint EVERY non-chat sibling in #modules-row (wiseai panes, progress
+   trackers, dashboard cards, History / Turns, agent-main, portfolio panels),
+   not just modules that happen to carry .sticky-mod. Chrome (resize handles,
+   scrims) is skipped. */
+html.full-bleed.fb-rmod-tint #modules-row > :not(:is(
+  .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
+  #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
+  #pf-chat-panel, #wiseai-dock-panel, .sticky-chat
+)):not([class*="scrim"]):not([class*="resize"]):not([class*="handle"]):not([class*="grip"]) {
+  --bg: var(--fb-rmod-bg);
   --surface: var(--fb-rmod-bg);
   --surface-2: var(--fb-rmod-bg);
   --surface-3: color-mix(in srgb, var(--fb-rmod-fg, #16233B) 8%, var(--fb-rmod-bg));
-}
-html.full-bleed.fb-rmod-tint #modules-row .sticky-mod,
-html.full-bleed.fb-rmod-tint #modules-row .sticky-mod > .panel-inner,
-html.full-bleed.fb-rmod-tint #modules-row .sticky-mod > [class*="-inner"],
-html.full-bleed.fb-rmod-tint #modules-row .sticky-mod .panel-inner {
   background: var(--fb-rmod-bg) !important;
   color: var(--fb-rmod-fg, #16233B);
+}
+html.full-bleed.fb-rmod-tint #modules-row > :not(:is(
+  .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
+  #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
+  #pf-chat-panel, #wiseai-dock-panel, .sticky-chat
+)):not([class*="scrim"]):not([class*="resize"]):not([class*="handle"]):not([class*="grip"]) :is(
+  .panel-inner, [class*="-inner"], .wa-pane-top, .wa-pane-body, .wch-head,
+  .agent-main-inner, .pf-module-inner, .vf-progress-pane, .gv-progress-pane
+) {
+  background: var(--fb-rmod-bg) !important;
+  color: var(--fb-rmod-fg, #16233B);
+}
+/* Scorecards / stat tiles that hard-code navy or the chat-tint wash. */
+html.full-bleed.fb-rmod-tint #modules-row :is(
+  .wa-stat, .dash-report-stat, .vf-stat, .gv-stat, .adm-vf-stat, .wmod-stat, .mi-stat
+) {
+  background: var(--fb-rmod-bg) !important;
 }
 
 /* ===== Full bleed ▸ right-module functionality =============================
    The Full bleed section also switches how right-of-chat modules BEHAVE:
    'drawer' (default tuck), 'flat' (a full-height column flush beside the chat)
    or 'hidden'. Driven by an `rmod-<mode>` class on <html> (applyRightModuleMode
-   in topbar.js), also gated on full bleed so it's part of the same feature. */
-html.full-bleed.rmod-flat #modules-row .sticky-mod.is-sticky {
+   in topbar.js), also gated on full bleed so it's part of the same feature.
+   Targets every sibling AFTER the chat (History is inserted BEFORE the chat
+   and must stay visible). */
+html.full-bleed.rmod-flat #modules-row > :is(
+  .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
+  #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
+  #pf-chat-panel, #wiseai-dock-panel, .sticky-chat
+) ~ :not([class*="scrim"]):not([class*="resize"]):not([class*="handle"]):not([class*="grip"]) {
   margin-left: 0 !important;
   padding-left: 0 !important;
   border-left: 1px solid var(--border) !important;
   z-index: 1 !important;
 }
-html.full-bleed.rmod-flat #modules-row .sticky-mod.is-sticky > .panel-inner,
-html.full-bleed.rmod-flat #modules-row .sticky-mod.is-sticky > [class*="-inner"] {
+html.full-bleed.rmod-flat #modules-row > :is(
+  .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
+  #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
+  #pf-chat-panel, #wiseai-dock-panel, .sticky-chat
+) ~ :not([class*="scrim"]):not([class*="resize"]):not([class*="handle"]):not([class*="grip"]) > :is(.panel-inner, [class*="-inner"]) {
   border-left: 1px solid var(--border) !important;
 }
-html.full-bleed.rmod-hidden #modules-row .sticky-mod {
+html.full-bleed.rmod-hidden #modules-row > :is(
+  .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
+  #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
+  #pf-chat-panel, #wiseai-dock-panel, .sticky-chat
+) ~ :not([class*="scrim"]):not([class*="resize"]):not([class*="handle"]):not([class*="grip"]) {
   display: none !important;
 }
 
@@ -4464,9 +4609,9 @@ html.dark .ag-toast { background: #1A2339; border-color: rgba(37, 80, 124,0.3); 
   flex-direction: column;
   overflow: hidden;
   border-radius: var(--r-md);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--chat-rim), var(--chat-elev, var(--shadow-card));
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--chat-rim-color, var(--border));
   position: relative;
   font-size: var(--fs-ui);
   --chat-line-height: 1.6;
@@ -4474,8 +4619,78 @@ html.dark .ag-toast { background: #1A2339; border-color: rgba(37, 80, 124,0.3); 
 }
 html.dark .sc-card {
   background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
-  border-color: rgba(37, 80, 124, 0.18);
-  box-shadow: 0 4px 56px rgba(0, 0, 0, 0.5), inset 1px 0 0 rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  border-color: var(--chat-rim-color, var(--border));
+  box-shadow: var(--chat-rim), var(--chat-elev);
+}
+
+/* ── Chat module elevation (Admin · three-dot menu) ────────────────────────
+   The AI Chat container is the one module that sits ABOVE everything else.
+   Default = "Above high". The three-dot Admin control steps:
+     Little min  — matches the other module cards
+     Above high  — default; deeper drop so the chat reads in front
+     3D          — layered physical shadow + a slight float so the shadow
+                   reads all the way around the card
+   Scoped off full-bleed / brand-inset, which flatten or invert elevation. */
+html.chat-elev-min {
+  --chat-elev: var(--shadow-card);
+  --chat-elev-gutter: 16px;
+}
+html.dark.chat-elev-min {
+  --chat-elev: 0 2px 8px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+html.chat-elev-3d {
+  --chat-elev:
+    0 1px 1px rgba(15, 23, 42, 0.06),
+    0 3px 6px rgba(15, 23, 42, 0.07),
+    0 10px 20px rgba(15, 23, 42, 0.10),
+    0 24px 48px rgba(15, 23, 42, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.70);
+  --chat-elev-gutter: 64px;
+}
+html.dark.chat-elev-3d {
+  --chat-elev:
+    0 1px 2px rgba(0, 0, 0, 0.40),
+    0 4px 10px rgba(0, 0, 0, 0.36),
+    0 14px 28px rgba(0, 0, 0, 0.42),
+    0 32px 64px rgba(0, 0, 0, 0.52),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --chat-elev-gutter: 72px;
+}
+html:not(.full-bleed):not(.brand-inset) :is(.sc-card, .wa-chat, .ap-chat, .rf-chat, .sa-chat, .gs-chat, .aid-chat, #chat-shell, #wiseai-panel, #wiseai-dock-panel, #pf-chat-panel) {
+  position: relative;
+  z-index: 2;
+  border: 1px solid var(--chat-rim-color, var(--border));
+  box-shadow: var(--chat-rim), var(--chat-elev);
+}
+html.chat-elev-min:not(.full-bleed):not(.brand-inset) :is(.sc-card, .wa-chat, .ap-chat, .rf-chat, .sa-chat, .gs-chat, .aid-chat, #chat-shell, #wiseai-panel, #wiseai-dock-panel, #pf-chat-panel) {
+  z-index: 1;
+}
+html.chat-elev-3d:not(.full-bleed):not(.brand-inset) #modules-row > :is(.sc-card, .wa-chat, .ap-chat, .rf-chat, .sa-chat, .gs-chat, .aid-chat, #chat-shell, #wiseai-panel, #wiseai-dock-panel, #pf-chat-panel) {
+  z-index: 4;
+}
+/* Bottom shadow gutter. overflow-x:auto on #modules-row forces overflow-y to
+   clip, so the chat drop-shadow was shearing off flush with the card's bottom
+   edge. Pad the row by the current elevation's gutter so the shadow paints
+   inside the clip box, then pull the row back with a matching negative margin
+   and give <body> the same bottom inset — the card stays aligned with the nav,
+   and the shadow hangs into the page padding instead of being cropped. */
+html:not(.full-bleed):not(.brand-inset) body {
+  padding-bottom: max(var(--modules-bottom-pad, 12px), var(--chat-elev-gutter, 48px));
+}
+html:not(.full-bleed):not(.brand-inset) #modules-row,
+html:not(.full-bleed):not(.brand-inset) .menu-brand-integrated #modules-row,
+html:not(.full-bleed):not(.brand-inset) #chat-shell-wrap.menu-brand-integrated #modules-row,
+html:not(.full-bleed):not(.brand-inset) #agent-shell-wrap.menu-brand-integrated #modules-row {
+  padding-bottom: var(--chat-elev-gutter, 48px);
+  padding-left: 10px;
+  padding-right: 10px;
+  margin-bottom: calc(-1 * var(--chat-elev-gutter, 48px));
+  /* Base #modules-row { max-height: 100% } caps the border box to the grid
+     cell, which ate the negative-margin expansion and left the gutter inside
+     the cell (chat shorter than the nav, shadow still sheared). Allow the row
+     to grow by the gutter so the card stays nav-height and the shadow hangs
+     into the body inset. */
+  max-height: calc(100% + var(--chat-elev-gutter, 48px));
 }
 
 /* ===== Topbar (60px) — verbatim from ai-chat.html .chat-topbar ===== */
@@ -4984,15 +5199,16 @@ html.dark .chat-input-rail { background: transparent; border-top-color: transpar
 .fl-input-wrap {
   /* Light tint of the brand blue (--primary #25507C) — a step deeper than the
      chat-tint container wash (5%) so the composer reads as its own blue
-     surface inside the tinted card. */
-  position: relative; flex: 1; background: color-mix(in srgb, var(--primary) 10%, #fff); border: 1px solid var(--border-strong);
+     surface inside the tinted card. Stroke is a light brand wash (not
+     --border-strong) so the pill stays airy against the welcome surface. */
+  position: relative; flex: 1; background: color-mix(in srgb, var(--primary) 10%, #fff); border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
   border-radius: var(--radius-pill); padding: 0 6px 0 14px; min-height: 40px;
   display: flex; align-items: center; gap: 4px;
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 /* Dark mode: a brightened brand-blue tint (not the neutral white overlay) so
    the composer stands out as a blue surface against the navy card. */
-html.dark .fl-input-wrap { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); border-color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 28%, transparent); }
+html.dark .fl-input-wrap { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); border-color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 22%, transparent); }
 .fl-input-wrap:focus-within { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
 
 /* ===== Living sheen stroke — a shiny brand-blue gradient that travels around
@@ -5012,9 +5228,8 @@ html.dark .fl-input-wrap { background: color-mix(in srgb, var(--primary-bright, 
   border-radius: inherit;
   padding: 1px;
   pointer-events: none;
-  /* Broad, gently-graduated sweep: never fully transparent (keeps a low brand
-     tint all the way round so it melts into the base stroke) and the specular
-     highlight fans out over a wide arc rather than a hard glint. */
+  /* Broad, gently-graduated sweep: a low brand tint all the way round so it
+     melts into the base stroke, with a specular highlight that travels. */
   background: conic-gradient(from var(--wise-sheen-angle),
     color-mix(in srgb, var(--primary) 14%, transparent) 0deg,
     color-mix(in srgb, var(--primary) 24%, transparent) 45deg,
@@ -6243,8 +6458,6 @@ body[data-product-id="dashboard"] .agent-main-scroll {
    through the shimmer pieces regardless of per-element colours. */
 .dash.is-skeleton,
 .dash.is-skeleton * { color: transparent !important; }
-.dash.is-skeleton .dash-score-toast > * { visibility: hidden; }
-
 /* Shared shimmer sweep for every placeholder piece. */
 .dash.is-skeleton .dash-count-up,
 .dash.is-skeleton .dash-pct,
@@ -6266,7 +6479,6 @@ body[data-product-id="dashboard"] .agent-main-scroll {
 .dash.is-skeleton .dash-metric-track,
 .dash.is-skeleton .dash-ws-health-track,
 .dash.is-skeleton .dash-pillar-track,
-.dash.is-skeleton .dash-score-toast,
 .dash.is-skeleton .dash-donut::after {
   color: transparent !important;
   border-color: transparent !important;
@@ -6288,7 +6500,6 @@ body[data-product-id="dashboard"] .agent-main-scroll {
 .dash.is-skeleton .dash-card-title,
 .dash.is-skeleton .dash-section-title { min-height: 1.1em; }
 .dash.is-skeleton .dash-pillars-intro { min-height: 2.4em; }
-.dash.is-skeleton .dash-score-toast { min-height: 96px; }
 
 /* The donut becomes a shimmering disc sized to its real footprint. */
 .dash.is-skeleton .dash-donut { position: relative; }
@@ -6307,6 +6518,7 @@ body[data-product-id="dashboard"] .agent-main-scroll {
 .dash.is-skeleton .dash-stamp-icon,
 .dash.is-skeleton .dash-kebab-wrap,
 .dash.is-skeleton .dash-brand-toggle,
+.dash.is-skeleton .dash-btn-pulse,
 .dash.is-skeleton .dash-dot,
 .dash.is-skeleton .dash-claim-divider,
 .dash.is-skeleton .dash-metric-fill,
@@ -6350,7 +6562,6 @@ body[data-product-id="dashboard"] .agent-main-scroll {
   .dash.is-skeleton .dash-metric-track,
   .dash.is-skeleton .dash-ws-health-track,
   .dash.is-skeleton .dash-pillar-track,
-  .dash.is-skeleton .dash-score-toast,
   .dash.is-skeleton .dash-donut::after { animation: none; }
 }
 @keyframes dashReveal {
@@ -7031,96 +7242,41 @@ html.dark .dash-top5-hero-claim .dash-stamp-icon.dash-stamp-num { text-shadow: 0
    (big number + rating badge + note) while sitting inline in the claim row. */
 .dash-claim-score { display: flex; flex-direction: column; align-items: flex-start; position: relative; }
 
-/* Claim column that hosts a floating nudge toast — establishes the positioning
-   context so the absolutely-placed toast pops over this column. */
-.dash-claim-col--nudge { position: relative; }
-
-/* Nudge toast — pops up just over the column it belongs to (e.g. the "products
-   qualify" count) to push the next action. Small × dismisses it for the current
-   view; it is not persisted, so it returns on reload. */
-.dash-score-toast {
+/* Attention pulse on the Non-UPF / GRAS verification buttons — a small red
+   dot at the top-right of the pill, with a slow expanding ring. */
+.dash-btn:has(.dash-btn-pulse) { position: relative; }
+.dash-btn-pulse {
   position: absolute;
-  left: -6px;
-  right: -6px;
-  bottom: calc(100% - 6px);
-  z-index: 6;
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, var(--primary, #25507C) 0%, #336699 100%);
-  color: #fff;
-  box-shadow: 0 14px 34px rgba(37, 80, 124, 0.4), 0 4px 10px rgba(0, 0, 0, 0.16);
-  animation:
-    dash-score-toast-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both,
-    dash-score-toast-float 3.6s ease-in-out 0.32s infinite;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e11d48;
+  box-shadow: 0 0 0 1.5px #fff;
+  pointer-events: none;
 }
-.dash-score-toast::after {
+html.dark .dash-btn-pulse { box-shadow: 0 0 0 1.5px var(--surface, #1a1a1a); }
+.dash-btn-pulse::after {
   content: "";
   position: absolute;
-  bottom: -7px;
-  left: 28px;
-  width: 14px;
-  height: 14px;
-  background: #336699;
-  transform: rotate(45deg);
-  border-radius: 0 0 3px 0;
-}
-.dash-score-toast-icon { display: inline-flex; flex-shrink: 0; margin-top: 1px; }
-.dash-score-toast-icon .material-symbols-outlined { font-size: 20px; color: #fff; }
-.dash-score-toast-body { min-width: 0; }
-.dash-score-toast-title { font-size: 0.875rem; font-weight: 700; line-height: 1.25; padding-right: 18px; }
-.dash-score-toast-text {
-  margin: 3px 0 0;
-  font-size: 0.78rem;
-  line-height: 1.4;
-  color: rgba(255, 255, 255, 0.92);
-}
-.dash-score-toast-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 9px;
-  padding: 0;
-  background: none;
-  border: none;
-  font-family: inherit;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #fff;
-  cursor: pointer;
-}
-.dash-score-toast-link .material-symbols-outlined { font-size: 15px; }
-.dash-score-toast-link-arrow { transition: transform 0.15s ease; }
-.dash-score-toast-link { transition: color 0.15s ease; }
-.dash-score-toast-link:hover { text-decoration: none; color: rgba(255, 255, 255, 0.78); }
-.dash-score-toast-link:hover .dash-score-toast-link-arrow { transform: translate(2px, -2px); }
-
-.dash-score-toast-close {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  padding: 0;
-  border: none;
+  inset: -1px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
-  cursor: pointer;
-  transition: background 0.15s ease;
+  background: #e11d48;
+  animation: dash-btn-pulse-ring 2.2s ease-out infinite;
 }
-.dash-score-toast-close:hover { background: rgba(255, 255, 255, 0.32); }
-.dash-score-toast-close .material-symbols-outlined { font-size: 13px; }
+@keyframes dash-btn-pulse-ring {
+  0% { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-btn-pulse::after { animation: none; }
+}
+/* Kept for analytics-types.html's .pmx-fix-toast, which reuses these names. */
 @keyframes dash-score-toast-in {
   from { opacity: 0; transform: translateY(8px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
-/* Gentle, slow bob with a soft shadow that breathes as it floats. */
 @keyframes dash-score-toast-float {
   0%, 100% {
     transform: translateY(0);
@@ -7130,9 +7286,6 @@ html.dark .dash-top5-hero-claim .dash-stamp-icon.dash-stamp-num { text-shadow: 0
     transform: translateY(-11px);
     box-shadow: 0 28px 52px rgba(37, 80, 124, 0.32), 0 12px 22px rgba(0, 0, 0, 0.13);
   }
-}
-@media (prefers-reduced-motion: reduce) {
-  .dash-score-toast { animation: dash-score-toast-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
 }
 /* Match the 10px top offset on the discovered / claimed number rows so all
    three big scores share the same baseline. */
@@ -7254,6 +7407,145 @@ html.dark .dash-text-link:hover { color: #fff; }
   height: 100%;
   border-radius: var(--radius-pill);
   background: linear-gradient(90deg, #25507C, var(--primary));
+}
+
+/* ===== Chart breathing sheen — a super-slow monochromatic gradient that
+   drifts across every chart fill (bars, gauges, donut rings, radar, chat
+   viz). The sheen is an overlay so existing entrance animations (width/
+   height grow, donut sweep) keep running underneath. ===== */
+@keyframes wise-chart-breathe {
+  0%, 100% { background-position: 8% 42%; opacity: 0.16; }
+  50%      { background-position: 92% 58%; opacity: 0.48; }
+}
+@keyframes wise-chart-breathe-svg {
+  0%, 100% { filter: brightness(0.94) saturate(1.06); }
+  50%      { filter: brightness(1.16) saturate(1.22); }
+}
+.dash-metric-fill,
+.dash-bar-fill,
+.dash-hbar-seg,
+.dash-hbar-fill,
+.dash-ws-health-fill,
+.dash-seg-piece,
+.dash-gras-bar-fill,
+.adm-bar-fill,
+.adm-vrow-bar span,
+.sc-hbar-fill,
+.sc-col-bar,
+.sc-donut,
+.aid-hbar-fill,
+.aid-util-fill,
+.pscale-col,
+.pmx-cell {
+  position: relative;
+}
+.dash-metric-fill::after,
+.dash-bar-fill::after,
+.dash-hbar-seg::after,
+.dash-hbar-fill::after,
+.dash-ws-health-fill::after,
+.dash-seg-piece::after,
+.dash-gras-bar-fill::after,
+.adm-bar-fill::after,
+.adm-vrow-bar span::after,
+.sc-hbar-fill::after,
+.sc-col-bar::after,
+.sc-donut::after,
+.aid-hbar-fill::after,
+.aid-util-fill::after,
+.pscale-col::after,
+.pmx-cell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(
+    125deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.0) 38%,
+    rgba(5, 20, 28, 0.32) 68%,
+    rgba(255, 255, 255, 0.22) 100%
+  );
+  background-size: 280% 280%;
+  mix-blend-mode: overlay;
+  animation: wise-chart-breathe 42s ease-in-out infinite;
+}
+/* Stagger so neighbouring bars don't pulse in lockstep. */
+.adm-bar:nth-child(even) .adm-bar-fill::after,
+.adm-vrow:nth-child(even) .adm-vrow-bar span::after,
+.dash-metric-item:nth-child(even) .dash-metric-fill::after,
+.dash-hbar:nth-child(even) .dash-hbar-seg::after,
+.dash-ing-row:nth-child(even) .dash-metric-fill::after,
+.aid-hbar-row:nth-child(even) .aid-hbar-fill::after,
+.pscale-col:nth-child(even)::after,
+.pmx-cell:nth-child(even)::after {
+  animation-delay: -14s;
+}
+.adm-bar:nth-child(3n) .adm-bar-fill::after,
+.adm-vrow:nth-child(3n) .adm-vrow-bar span::after,
+.dash-metric-item:nth-child(3n) .dash-metric-fill::after,
+.aid-hbar-row:nth-child(3n) .aid-hbar-fill::after,
+.pscale-col:nth-child(3n)::after {
+  animation-delay: -28s;
+}
+/* Numbers / hole sit above the sheen. */
+.dash-ws-health-num,
+.adm-bar-val,
+.sc-donut-hole { position: relative; z-index: 1; }
+
+/* SVG fills (donut arcs, radar poly/dots, scatter, AI-dashboard paths) —
+   a matching brightness breathe, paused on hover so the existing emphasis
+   filter can take over. Track arcs (the unfilled remainder) stay still. */
+.dash-donut-arc:not(.dash-donut-arc--track),
+.adm-donut-arc,
+.dash-radar-poly,
+.dash-radar-dot,
+.dash-scatter-dot,
+.aid-chart path[fill]:not([fill="none"]),
+.aid-chart path[stroke]:not([stroke="none"]),
+.aid-donut-wrap path,
+.aid-spark path {
+  animation: wise-chart-breathe-svg 42s ease-in-out infinite;
+}
+.dash-donut-svg:hover .dash-donut-arc,
+.adm-donut-svg:hover .adm-donut-arc,
+.dash-radar:hover .dash-radar-poly,
+.dash-radar:hover .dash-radar-dot,
+.dash-scatter-plot:hover .dash-scatter-dot {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-metric-fill::after,
+  .dash-bar-fill::after,
+  .dash-hbar-seg::after,
+  .dash-hbar-fill::after,
+  .dash-ws-health-fill::after,
+  .dash-seg-piece::after,
+  .dash-gras-bar-fill::after,
+  .adm-bar-fill::after,
+  .adm-vrow-bar span::after,
+  .sc-hbar-fill::after,
+  .sc-col-bar::after,
+  .sc-donut::after,
+  .aid-hbar-fill::after,
+  .aid-util-fill::after,
+  .pscale-col::after,
+  .pmx-cell::after {
+    animation: none;
+    opacity: 0.45;
+    background-position: 50% 50%;
+  }
+  .dash-donut-arc:not(.dash-donut-arc--track),
+  .adm-donut-arc,
+  .dash-radar-poly,
+  .dash-radar-dot,
+  .dash-scatter-dot,
+  .aid-chart path[fill]:not([fill="none"]),
+  .aid-donut-wrap path {
+    animation: none;
+  }
 }
 .dash-progress-note { margin: 10px 0 0; font-size: 0.75rem; color: var(--text-muted); }
 
@@ -7409,11 +7701,11 @@ html.dark .dash-status-tip {
   line-height: 1.35;
   color: var(--text-muted);
 }
-.dash-status-tip-dot--excellent { background: var(--sec-green, #32A966); }
-.dash-status-tip-dot--good { background: #7DC470; }
-.dash-status-tip-dot--okay { background: var(--ter-amber, #FFC434); }
-.dash-status-tip-dot--fair { background: #D27326; }
-.dash-status-tip-dot--poor { background: var(--sec-red, #DC3038); }
+.dash-status-tip-dot--excellent { background: var(--chart-status-excellent); }
+.dash-status-tip-dot--good { background: var(--chart-status-good); }
+.dash-status-tip-dot--okay { background: var(--chart-status-okay); }
+.dash-status-tip-dot--fair { background: var(--chart-status-fair); }
+.dash-status-tip-dot--poor { background: var(--chart-status-poor); }
 
 /* The Portfolio Analysis section is the last block on the page, so its status
    popover would open downward off the bottom of the scroll area and get
@@ -7644,8 +7936,8 @@ html.dark .dash-donut-center::before {
   line-height: 1;
   letter-spacing: -0.03em;
 }
-.dash-donut-num.is-green { color: var(--sec-green); }
-.dash-donut-num.is-teal { color: var(--ter-cyan); }
+.dash-donut-num.is-green { color: var(--chart-status-excellent); }
+.dash-donut-num.is-teal { color: var(--chart-status-excellent); }
 .dash-donut-label { font-size: 0.8125rem; font-weight: 700; color: var(--text); margin-top: 3px; }
 .dash-donut-sub { font-size: 0.68rem; line-height: 1.25; color: var(--text-muted); }
 
@@ -9109,7 +9401,7 @@ html.dark .dash-pillar-card-head .dash-stamp-icon:hover {
   .dash-claim .dash-progress-pct > .dash-stamp-icon { top: 1.7rem; }
 }
 /* ...and once the column reaches phone width the claim/score cards can no
-   longer sit side by side, so they stack into a single column (the toast-topped
+   longer sit side by side, so they stack into a single column (the
    "products qualify" cards read full-width instead of overflowing). The
    wide/desktop layout stays a 1×4 row and tablet a 2-up grid. The WISEscore
    split stacks to one column too. */
@@ -9119,18 +9411,6 @@ html.dark .dash-pillar-card-head .dash-stamp-icon:hover {
   .dash-pillars-cta-btn { white-space: normal; text-align: center; }
   .dash-claim-divider,
   .dash-wisescore .dash-claim-divider { display: none; }
-
-  /* Stacked column: the nudge toast can't float above a neighbouring column
-     anymore, so drop it into normal flow above its card content (full width,
-     no wobble) instead of overlapping the card above. */
-  .dash-claim-col--nudge .dash-score-toast {
-    position: static;
-    left: auto;
-    right: auto;
-    bottom: auto;
-    margin: 0 0 16px;
-    animation: dash-score-toast-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
 
   /* Single-pane: caption drops below the big number; multi-column keeps side-by-side.
      Stacked vertically the 32px side-by-side gap reads as too much air, so tighten it. */
@@ -9213,9 +9493,9 @@ html.dark .dash-pillar-card-head .dash-stamp-icon:hover {
   inset: 0;
   z-index: 1000;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
   background: rgba(6, 12, 22, 0.55);
   -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
@@ -9226,16 +9506,18 @@ html.dark .dash-pillar-card-head .dash-stamp-icon:hover {
 .dash-modal-scrim.is-open { opacity: 1; pointer-events: auto; }
 .dash-modal {
   width: 100%;
-  max-width: 480px;
-  max-height: calc(100vh - 48px);
-  overflow-y: auto;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  min-height: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  border-radius: var(--r-lg);
+  border-radius: 0;
   background: var(--surface);
-  border: 1px solid var(--border);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
-  transform: translateY(10px) scale(0.98);
+  border: 0;
+  box-shadow: none;
+  transform: translateY(8px);
   transition: transform 0.2s ease;
 }
 .dash-modal-scrim.is-open .dash-modal { transform: none; }
@@ -9246,6 +9528,7 @@ html.dark .dash-modal { background: #14242f; border-color: rgba(255, 255, 255, 0
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  flex-shrink: 0;
   padding: 20px 22px 0;
 }
 .dash-modal-eyebrow {
@@ -9278,7 +9561,7 @@ html.dark .dash-modal-eyebrow { color: var(--primary-bright); }
 }
 .dash-modal-close:hover { background: var(--surface-2); color: var(--text); }
 .dash-modal-close .material-symbols-outlined { font-size: 20px; }
-.dash-modal-body { display: flex; flex-direction: column; gap: 14px; padding: 18px 22px; }
+.dash-modal-body { display: flex; flex-direction: column; gap: 14px; padding: 18px 22px; flex: 1; min-height: 0; overflow-y: auto; }
 
 .dash-banner-preview {
   position: relative;
@@ -9378,6 +9661,7 @@ html.dark .dash-banner-url { background: rgba(255, 255, 255, 0.03); }
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-shrink: 0;
   padding: 16px 22px;
   border-top: 1px solid var(--border);
 }
@@ -9387,7 +9671,7 @@ html.dark .dash-modal-foot { border-color: rgba(255, 255, 255, 0.08); }
 /* =============================================================
    Full report modal — UPF / GRAS "View full report"
 ============================================================= */
-.dash-modal--report { max-width: 640px; }
+.dash-modal--report { max-width: none; }
 .dash-report-summary {
   margin: 0;
   font-size: 0.95rem;
@@ -10267,9 +10551,9 @@ html.dark .vf-select-el {
   inset: 0;
   z-index: 4000;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
   background: color-mix(in srgb, #05141c 55%, transparent);
   opacity: 0;
   transition: opacity 0.2s ease;
@@ -10277,17 +10561,22 @@ html.dark .vf-select-el {
 .vf-modal-overlay.is-open { opacity: 1; }
 .vf-modal {
   position: relative;
-  width: min(520px, 100%);
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  min-height: 0;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow-3);
-  padding: 34px 34px 26px;
-  text-align: center;
-  transform: translateY(10px) scale(0.98);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 34px 40px 26px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(8px);
   transition: transform 0.2s ease;
 }
-.vf-modal-overlay.is-open .vf-modal { transform: translateY(0) scale(1); }
+.vf-modal-overlay.is-open .vf-modal { transform: none; }
 .vf-modal-x {
   position: absolute; top: 14px; right: 14px;
   width: 30px; height: 30px; border: 0; background: transparent;
@@ -10313,7 +10602,7 @@ html.dark .vf-select-el {
   line-height: 1.5;
   margin-bottom: 22px;
 }
-.vf-modal-actions { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.vf-modal-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: auto; }
 .vf-modal-btn {
   padding: 10px 22px;
   border-radius: 999px;
@@ -11274,7 +11563,7 @@ html.dark .adm-rowmenu-item--danger .material-symbols-outlined { color: #FF9E96;
 .adm-donut-center::before { content: ""; position: absolute; inset: 0; margin: auto; width: 76%; height: 76%; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 8px 20px rgba(8, 15, 26, 0.20), 0 3px 8px rgba(8, 15, 26, 0.14); z-index: 0; }
 html.dark .adm-donut-center::before { background: #14242f; border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5), 0 3px 8px rgba(0, 0, 0, 0.4); }
 .adm-donut-center > * { position: relative; z-index: 1; max-width: 120px; }
-.adm-donut-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 2.1rem; font-weight: 800; line-height: 1; letter-spacing: -0.02em; color: var(--sec-green); }
+.adm-donut-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 2.1rem; font-weight: 800; line-height: 1; letter-spacing: -0.02em; color: var(--chart-status-excellent, var(--ter-cyan)); }
 .adm-donut-label { font-size: 0.8125rem; font-weight: 700; color: var(--text); margin-top: 3px; }
 .adm-donut-sub { font-size: 0.68rem; line-height: 1.25; color: var(--text-muted); }
 
@@ -11386,9 +11675,10 @@ html.dark .adm-util-ic { color: #93C5FD; }
 .adm-toast .material-symbols-outlined { font-size: 17px; }
 
 /* ---- Modal (shared across the admin modules) ----------------------- */
-.adm-modal-scrim { position: fixed; inset: 0; z-index: 2200; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(15, 26, 33, 0.42); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); opacity: 0; transition: opacity 0.2s ease; }
+.adm-modal-scrim { position: fixed; inset: 0; z-index: 2200; display: flex; align-items: stretch; justify-content: stretch; padding: 0; background: rgba(15, 26, 33, 0.42); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); opacity: 0; transition: opacity 0.2s ease; }
 .adm-modal-scrim.is-open { opacity: 1; }
 .adm-modal { position: relative; width: 100%; max-width: 520px; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 18px; box-shadow: var(--shadow-card, 0 24px 60px rgba(0,0,0,0.28)); transform: translateY(10px) scale(0.98); transition: transform 0.22s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.adm-modal-scrim .adm-modal { width: 100%; height: 100%; max-width: none; min-height: 0; border-radius: 0; border: 0; box-shadow: none; display: flex; flex-direction: column; overflow: hidden; transform: translateY(8px); }
 .adm-modal-scrim.is-open .adm-modal { transform: none; }
 html.dark .adm-modal { background: #14242f; border-color: rgba(255,255,255,0.08); }
 .adm-modal-x { position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 9px; background: transparent; color: var(--text-subtle); cursor: pointer; }
@@ -11401,6 +11691,7 @@ html.dark .adm-modal-eyebrow { color: var(--primary-bright, #7FB0E0); }
 .adm-modal-title { margin: 6px 0 0; font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.28rem; font-weight: 800; color: var(--text); }
 .adm-modal-sub { margin: 6px 0 0; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
 .adm-modal-body { display: flex; flex-direction: column; gap: 12px; padding: 16px 24px 24px; }
+.adm-modal-scrim .adm-modal-body { flex: 1; min-height: 0; overflow-y: auto; }
 
 /* Duplicate-flow option cards. */
 .adm-dup-opt { display: flex; align-items: flex-start; gap: 14px; width: 100%; box-sizing: border-box; padding: 16px; border: 1px solid var(--border-strong); border-radius: 14px; background: var(--surface-2); font: inherit; text-align: left; cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease; }
@@ -12384,9 +12675,9 @@ html.dark .wmod-step { background: rgba(255,255,255,0.05); }
 .wmod-empty .material-symbols-outlined { font-size: 42px; color: var(--text-subtle); }
 
 /* ── Modal ── */
-.wmod-modal-overlay { position: fixed; inset: 0; z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 24px; background: color-mix(in srgb, #0b1220 55%, transparent); backdrop-filter: blur(2px); opacity: 0; transition: opacity 0.18s ease; }
+.wmod-modal-overlay { position: fixed; inset: 0; z-index: 3000; display: flex; align-items: stretch; justify-content: stretch; padding: 0; background: color-mix(in srgb, #0b1220 55%, transparent); backdrop-filter: blur(2px); opacity: 0; transition: opacity 0.18s ease; }
 .wmod-modal-overlay.is-in { opacity: 1; }
-.wmod-modal { width: 100%; max-width: 460px; background: var(--surface); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow-3, 0 24px 60px rgba(0,0,0,0.32)); padding: 24px; transform: translateY(8px) scale(0.98); transition: transform 0.18s ease; }
+.wmod-modal { width: 100%; height: 100%; max-width: none; min-height: 0; background: var(--surface); border: 0; border-radius: 0; box-shadow: none; padding: 28px 32px; display: flex; flex-direction: column; transform: translateY(8px); transition: transform 0.18s ease; }
 .wmod-modal-overlay.is-in .wmod-modal { transform: none; }
 .wmod-modal-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.25rem; font-weight: 800; color: var(--text); margin: 0 0 6px; letter-spacing: -0.01em; }
 .wmod-modal-sub { font-size: 0.85rem; color: var(--text-muted); margin: 0 0 18px; line-height: 1.5; }
@@ -12395,7 +12686,7 @@ html.dark .wmod-step { background: rgba(255,255,255,0.05); }
 .wmod-input { height: 40px; box-sizing: border-box; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text); font-family: inherit; font-size: 0.9rem; outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
 html.dark .wmod-input { background: rgba(255,255,255,0.05); }
 .wmod-input:focus { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
-.wmod-modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+.wmod-modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: auto; padding-top: 22px; }
 .wmod-secret { display: flex; align-items: center; gap: 8px; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 10px; padding: 10px 12px; }
 html.dark .wmod-secret { background: rgba(0,0,0,0.25); }
 .wmod-secret code { font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.82rem; color: var(--text); word-break: break-all; flex: 1; }
@@ -12405,3 +12696,127 @@ html.dark .wmod-secret { background: rgba(0,0,0,0.25); }
 .wmod-toast { display: inline-flex; align-items: center; gap: 9px; padding: 11px 18px; border-radius: 999px; background: var(--text); color: var(--bg); font-size: 0.8rem; font-weight: 600; box-shadow: var(--shadow-3); opacity: 0; transform: translateY(8px); transition: opacity 0.25s ease, transform 0.25s ease; }
 .wmod-toast.is-in { opacity: 1; transform: none; }
 .wmod-toast .material-symbols-outlined { font-size: 17px; }
+
+/* WISEowl walkthrough — docked module on the real page
+   Shell is .wch-sidebar.wch-docked (same card as History / What can I ask). */
+#modules-row .owt-mod.wch-sidebar.wch-docked {
+  flex: 0 0 360px;
+  width: 360px;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+}
+body > .owt-mod.wch-sidebar.wch-docked {
+  position: fixed;
+  top: 88px;
+  right: 20px;
+  width: 360px;
+  height: min(72vh, 640px);
+  z-index: 80;
+  background: var(--surface, #fff);
+  color: var(--text, inherit);
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+  box-shadow: var(--shadow-card, 0 12px 32px rgba(20, 30, 60, 0.12));
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.owt-mod .owt-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 16px 14px;
+}
+.owt-mod .owt-copy {
+  margin: 0 0 12px;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+.owt-mod .owt-bullets {
+  margin: 0 0 14px;
+  padding: 0 0 0 1.1em;
+  color: var(--text);
+  font-size: 0.84rem;
+  line-height: 1.45;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.owt-mod .owt-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.owt-mod .owt-chips .chip { width: fit-content; max-width: 100%; }
+.owt-mod .owt-chips .chip[aria-current="true"] {
+  border-color: var(--primary);
+  color: var(--text);
+}
+.owt-mod .owt-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--border);
+}
+html.dark .owt-mod .owt-foot { border-color: rgba(255, 255, 255, 0.08); }
+.owt-mod .owt-foot-skip,
+.owt-mod .owt-foot-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.owt-mod .owt-foot-nav { justify-content: flex-end; }
+.owt-mod .owt-foot-skip .wmod-btn { height: 34px; padding: 0 12px; font-size: 0.75rem; font-weight: 600; }
+
+/* ===== Scorecard corners =================================================
+   Filter / metric scorecards are rectangles with shuffled corner radii —
+   never pills. A 6-step cycle so neighboring cards don't match. !important
+   beats leftover uniform radii on the same class (6px / 10px / 14px) and
+   any shell-wide button pill that forgot to exclude these tiles. */
+:is(
+  .pf-stat, .rf-stat, .wmod-stat, .pl-stat, .lib-stat, .mi-stat,
+  .adm-stat, .adm-vf-stat, .vf-stat, .gs-stat, .ib-stat,
+  .ak-stat, .ac-stat, .gv-stat, .sc-stat, .wa-stat, .wa-ref-stat
+) {
+  border-radius: 12px 4px 10px 6px !important;
+}
+:is(
+  .pf-stat, .rf-stat, .wmod-stat, .pl-stat, .lib-stat, .mi-stat,
+  .adm-stat, .adm-vf-stat, .vf-stat, .gs-stat, .ib-stat,
+  .ak-stat, .ac-stat, .gv-stat, .sc-stat, .wa-stat, .wa-ref-stat
+):nth-child(6n+2) {
+  border-radius: 4px 12px 6px 10px !important;
+}
+:is(
+  .pf-stat, .rf-stat, .wmod-stat, .pl-stat, .lib-stat, .mi-stat,
+  .adm-stat, .adm-vf-stat, .vf-stat, .gs-stat, .ib-stat,
+  .ak-stat, .ac-stat, .gv-stat, .sc-stat, .wa-stat, .wa-ref-stat
+):nth-child(6n+3) {
+  border-radius: 10px 6px 12px 4px !important;
+}
+:is(
+  .pf-stat, .rf-stat, .wmod-stat, .pl-stat, .lib-stat, .mi-stat,
+  .adm-stat, .adm-vf-stat, .vf-stat, .gs-stat, .ib-stat,
+  .ak-stat, .ac-stat, .gv-stat, .sc-stat, .wa-stat, .wa-ref-stat
+):nth-child(6n+4) {
+  border-radius: 6px 10px 4px 12px !important;
+}
+:is(
+  .pf-stat, .rf-stat, .wmod-stat, .pl-stat, .lib-stat, .mi-stat,
+  .adm-stat, .adm-vf-stat, .vf-stat, .gs-stat, .ib-stat,
+  .ak-stat, .ac-stat, .gv-stat, .sc-stat, .wa-stat, .wa-ref-stat
+):nth-child(6n+5) {
+  border-radius: 8px 4px 12px 6px !important;
+}
+:is(
+  .pf-stat, .rf-stat, .wmod-stat, .pl-stat, .lib-stat, .mi-stat,
+  .adm-stat, .adm-vf-stat, .vf-stat, .gs-stat, .ib-stat,
+  .ak-stat, .ac-stat, .gv-stat, .sc-stat, .wa-stat, .wa-ref-stat
+):nth-child(6n) {
+  border-radius: 4px 8px 10px 12px !important;
+}

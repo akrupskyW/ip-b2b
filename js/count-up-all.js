@@ -48,6 +48,7 @@
     ['.al-filter-count', '.al-filter'],
     ['.vf-stat-num', '.vf-stat'],
     ['.gv-stat-num', '.gv-stat'],
+    ['.ar-stat-num', '.ar-score'],
     ['[data-countup]', null],
   ];
   var NUM_SEL = ENTRIES.map(function (e) { return e[0]; }).join(',');

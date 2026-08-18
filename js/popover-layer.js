@@ -211,6 +211,9 @@
   }
   window.addEventListener('scroll', refresh, true);
   window.addEventListener('resize', refresh);
+  /* Accessible colors on/off changes whether a filter containing block exists.
+     Re-pin any open menus so they stay on their anchors in both palettes. */
+  document.addEventListener('wise:colorblind', refresh);
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', start);

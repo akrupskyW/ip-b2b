@@ -31,30 +31,28 @@
        Reuses the shared WISE palette + fonts from wise.css; everything
        bespoke here is prefixed `aid-`. No external chart library. */
 
-    /* Brand palette — mirrors analytics-types.html: everything is derived from the
-       WISE token palette (navy --primary + the green/amber/red status inks). The
-       multi-series charts read as one family — a navy→azure blue ramp for the
-       "neutral" series, then the semantic green / amber / warm-orange / red. */
+    /* Brand palette — mirrors analytics-types.html: every chart series is the
+       shared monochromatic status ramp (navy → azure). Semantic green / amber /
+       red stay on labels and deltas, never on chart fills. */
     :root {
-      --aid-blue:   var(--primary);       /* #25507C navy */
-      --aid-cyan:   #3E7CB1;              /* mid azure (brand blue family) */
-      --aid-violet: #6B93C4;              /* light azure (brand blue family) */
-      --aid-teal:   #2E9E5B;              /* green (Minimally-Processed tier) */
-      --aid-green:  var(--sec-green);     /* #32A966 */
-      --aid-gold:   var(--ter-amber);     /* #FFC434 */
-      --aid-pink:   #D27326;              /* warm orange (Fair tier) */
-      --aid-red:    var(--sec-red);       /* #DC3038 */
+      --aid-blue:   var(--chart-status-okay, var(--primary));
+      --aid-cyan:   var(--chart-status-good);
+      --aid-violet: var(--chart-status-excellent);
+      --aid-teal:   var(--chart-status-okay);
+      --aid-green:  var(--chart-status-excellent);
+      --aid-gold:   var(--chart-status-fair);
+      --aid-pink:   var(--chart-status-fair);
+      --aid-red:    var(--chart-status-poor);
       --aid-gap: 16px;
     }
-    /* Dark mode lifts the navy blue family so lines/bars keep contrast on navy,
-       exactly how analytics-types swaps --primary → --primary-bright in dark. */
+    /* Dark mode inherits the lifted --chart-status-* stops from wise.css. */
     html.dark {
-      --aid-blue:   var(--primary-bright, #8B9FAF);
-      --aid-cyan:   #6FA0D0;
-      --aid-violet: #A6C2E2;
-      --aid-teal:   #4FBE84;
-      --aid-green:  #4FBE84;
-      --aid-pink:   #E8965A;
+      --aid-blue:   var(--chart-status-okay);
+      --aid-cyan:   var(--chart-status-good);
+      --aid-violet: var(--chart-status-excellent);
+      --aid-teal:   var(--chart-status-okay);
+      --aid-green:  var(--chart-status-excellent);
+      --aid-pink:   var(--chart-status-fair);
     }
 
     * { box-sizing: border-box; }
@@ -120,7 +118,13 @@
        Its surface is the page --bg (not --surface) so the score/resource cards
        inside — which ARE --surface — read as raised cards, exactly like the
        analytics-types dashboard sits its cards on the app background. */
-    .aid-dash-card { flex: 1 1 auto; min-width: 320px; overflow-y: auto; background: var(--bg); container: aidpane / inline-size; }
+    .aid-dash-card {
+      flex: 1 1 auto; min-width: 320px; overflow-y: auto; background: var(--bg);
+      container: aidpane / inline-size;
+      /* Same ring-thickness token the dashboard health bars use for track height.
+         Without it, .dash-ws-health-track height is invalid and the bars vanish. */
+      --dash-donut-ring-h: calc(252px * 26 / 300);
+    }
 
     /* Module entrance — same staggered bounce every other WISE module uses. */
     .aid-chat { transform-origin: left center; animation: panelBounceLeft 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s both; }
@@ -144,7 +148,6 @@
     }
     html.dark .aid-brand-badge { color: var(--primary-bright, var(--primary)); }
     .aid-brand-badge .material-symbols-outlined { font-size: 30px; }
-    .aid-eyebrow { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-subtle); }
     .aid-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.1; margin: 2px 0 0; }
     .aid-top-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
@@ -159,14 +162,18 @@
     html.dark .aid-btn:hover { background: rgba(255,255,255,0.05); }
     .aid-btn .material-symbols-outlined { font-size: 18px; }
 
-    /* ── Cards ── */
+    /* ── Cards — same radius + elevation as analytics-types .att-card ── */
     .aid-card {
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--r-md, 16px); box-shadow: var(--shadow-1);
+      border-radius: var(--r-md, 16px); box-shadow: var(--shadow-card);
       padding: 18px;
     }
     .aid-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-    .aid-card-title { font-size: 0.92rem; font-weight: 700; color: var(--text); margin: 0; }
+    .aid-card-title {
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-size: 0.92rem; font-weight: 700; color: var(--text); margin: 0;
+      letter-spacing: -0.01em;
+    }
     .aid-card-sub { font-size: 0.75rem; color: var(--text-muted); margin: 2px 0 0; }
     .aid-legend { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
     .aid-leg { display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--text-muted); font-weight: 600; }
@@ -190,13 +197,13 @@
     .aid-spark { position: absolute; right: 12px; bottom: 10px; width: 82px; height: 30px; opacity: 0.9; }
 
     /* ── Connected-resources strip ── */
-    .aid-section-label { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); margin: 30px 0 12px; }
-    .aid-res-grid { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: var(--aid-gap); }
+    .aid-res-grid { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: var(--aid-gap); margin-top: 22px; }
+    .aid-table-card { margin-top: 22px; }
     .aid-res {
       display: flex; align-items: center; gap: 12px; padding: 14px;
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: 14px; box-shadow: var(--shadow-1);
-      transition: border-color .15s, transform .15s;
+      border-radius: var(--r-md, 16px); box-shadow: var(--shadow-card);
+      transition: border-color .15s, transform .15s, box-shadow .15s;
     }
     .aid-res:hover { border-color: var(--border-strong); transform: translateY(-1px); }
     .aid-res-ic { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: none !important; }
@@ -219,7 +226,7 @@
     html.dark .tone-gold  { color: #e6c67d; }
 
     /* ── Chart grid ── */
-    .aid-grid { display: grid; grid-template-columns: repeat(12, minmax(0,1fr)); gap: var(--aid-gap); align-items: stretch; }
+    .aid-grid { display: grid; grid-template-columns: repeat(12, minmax(0,1fr)); gap: var(--aid-gap); align-items: stretch; margin-top: 22px; }
     .col-8 { grid-column: span 8; }
     .col-6 { grid-column: span 6; }
     .col-5 { grid-column: span 5; }
@@ -227,27 +234,68 @@
     .col-7 { grid-column: span 7; }
     .col-12 { grid-column: span 12; }
 
-    /* SVG chart shells */
-    .aid-chart { width: 100%; display: block; }
+    /* SVG chart shells — overflow visible so drop-shadow elevation isn't clipped */
+    .aid-chart { width: 100%; display: block; overflow: visible; }
     .aid-axis-lbl { font-size: 10px; fill: var(--text-subtle); font-family: 'WISE Digits', 'DM Sans', sans-serif; }
     .aid-grid-line { stroke: var(--border); stroke-width: 1; }
 
-    /* Donut center label */
+    /* Elevation on chart fills — same petal/wedge lift as analytics-types .pa-wedge.
+       Applied on a <g> so the shared breathe filter on the path can still run. */
+    .aid-chart-elev {
+      filter: drop-shadow(0 3px 5px rgba(8, 15, 26, 0.22)) drop-shadow(0 1px 1.5px rgba(8, 15, 26, 0.16));
+    }
+    html.dark .aid-chart-elev {
+      filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5)) drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.4));
+    }
+
+    /* Donut — rounded-corner slices + raised center disc (analytics-types / dashboard). */
     .aid-donut-wrap { display: flex; align-items: center; gap: 18px; }
-    .aid-donut-center-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.4rem; }
+    .aid-donut {
+      position: relative;
+      flex-shrink: 0;
+      width: var(--aid-donut-size, 158px);
+      height: var(--aid-donut-size, 158px);
+    }
+    .aid-donut-svg { width: 100%; height: 100%; display: block; overflow: visible; }
+    .aid-donut-center {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; pointer-events: none; gap: 1px;
+    }
+    .aid-donut-center::before {
+      content: "";
+      position: absolute; inset: 0; margin: auto;
+      width: var(--aid-donut-hole, 64%);
+      height: var(--aid-donut-hole, 64%);
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 22px rgba(8, 15, 26, 0.22), 0 3px 8px rgba(8, 15, 26, 0.16);
+      z-index: 0;
+    }
+    html.dark .aid-donut-center::before {
+      background: #14242f;
+      border-color: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 12px 26px rgba(0, 0, 0, 0.5), 0 3px 8px rgba(0, 0, 0, 0.4);
+    }
+    .aid-donut-center > * { position: relative; z-index: 1; }
+    .aid-donut-center-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.4rem; line-height: 1; }
+    .aid-donut-center-sub { font-size: 0.66rem; color: var(--text-muted); font-weight: 600; }
     .aid-donut-legend { display: flex; flex-direction: column; gap: 9px; flex: 1; min-width: 0; }
     .aid-dl-row { display: flex; align-items: center; gap: 9px; font-size: 0.78rem; }
     .aid-dl-name { color: var(--text-muted); font-weight: 600; }
     .aid-dl-val { margin-left: auto; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
 
-    /* Horizontal bars (usage by user / skills) */
-    .aid-hbars { display: flex; flex-direction: column; gap: 12px; }
-    .aid-hbar-row { display: grid; grid-template-columns: 116px 1fr 54px; align-items: center; gap: 10px; }
-    .aid-hbar-name { font-size: 0.78rem; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .aid-hbar-track { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
-    html.dark .aid-hbar-track { background: rgba(255,255,255,0.06); }
-    .aid-hbar-fill { height: 100%; border-radius: 999px; }
-    .aid-hbar-val { font-size: 0.76rem; font-weight: 700; text-align: right; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    /* Health bars — reuse the shared WISE fat-pill track (.dash-ws-health-*). */
+    .aid-hbars { display: flex; flex-direction: column; gap: 16px; }
+    .aid-hbar-row { min-width: 0; cursor: pointer; }
+    .aid-hbar-name {
+      display: block; font-size: 0.82rem; font-weight: 700; color: var(--text);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      margin-bottom: 7px;
+    }
+    .aid-hbars .dash-ws-health-fill { min-width: 2.6rem; }
+    .aid-hbars .dash-ws-health-bar { cursor: pointer; }
 
     /* ── Table ── */
     /* Table — mirrors the shared WISE report table (.upf-table in
@@ -281,28 +329,19 @@
     html.dark .aid-pill { color: var(--primary-bright, var(--primary)); }
     .aid-pill .material-symbols-outlined { font-size: 13px; }
 
-    /* Utilization bar in-cell */
+    /* Utilization bar in-cell — must be block so width: N% actually paints. */
     .aid-util { display: flex; align-items: center; gap: 8px; }
     .aid-util-track { width: 70px; height: 7px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
     html.dark .aid-util-track { background: rgba(255,255,255,0.07); }
-    .aid-util-fill { height: 100%; border-radius: 999px; }
+    .aid-util-fill { display: block; height: 100%; border-radius: 999px; }
 
-    /* ── "Also worth tracking" (inferred gaps) ── */
-    .aid-gaps { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
-    .aid-gap-card { padding: 14px; border: 1px dashed var(--border-strong); border-radius: 13px; background: color-mix(in srgb, var(--primary) 4%, var(--surface)); }
-    .aid-gap-top { display: flex; align-items: center; gap: 9px; margin-bottom: 6px; }
-    .aid-gap-ic { display: inline-flex; align-items: center; justify-content: center; background: none !important; }
-    .aid-gap-ic .material-symbols-outlined { font-size: 20px; }
-    .aid-gap-name { font-size: 0.82rem; font-weight: 700; }
-    .aid-gap-desc { font-size: 0.74rem; line-height: 1.45; color: var(--text-muted); }
-
-    .aid-note { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; background: color-mix(in srgb, var(--ter-amber) 12%, transparent); border: 1px solid color-mix(in srgb, var(--ter-amber) 30%, transparent); margin-bottom: 16px; }
-    .aid-note .material-symbols-outlined { font-size: 19px; color: var(--ter-amber-text); flex-shrink: 0; }
-    html.dark .aid-note .material-symbols-outlined { color: #e6c67d; }
-    .aid-note-text { font-size: 0.8rem; line-height: 1.5; color: var(--text-muted); }
-    .aid-note-text b { color: var(--text); }
-
-    .aid-foot { margin-top: 34px; text-align: center; font-size: 0.74rem; color: var(--text-subtle); }
+    /* ── Cost / quality / reliability scorecards ── */
+    .aid-gaps { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: var(--aid-gap); margin-top: 22px; }
+    .aid-gaps .aid-kpi { min-height: 132px; }
+    .aid-gap-meta {
+      font-size: 0.72rem; color: var(--text-muted); font-weight: 600;
+      margin-top: 8px; line-height: 1.4; padding-right: 88px;
+    }
 
     /* ── Responsive ──
        The dashboard now lives in a resizable card beside the chat, so it reflows
@@ -382,12 +421,10 @@
     <section class="aid-kpis" id="aid-kpis"></section>
 
     <!-- ══ Connected resources ══ -->
-    <div class="aid-section-label">Connected in one place</div>
     <section class="aid-res-grid" id="aid-resources"></section>
 
     <!-- ══ Charts row 1 ══ -->
-    <div class="aid-section-label">Usage &amp; consumption</div>
-    <section class="aid-grid" style="margin-bottom: var(--aid-gap);">
+    <section class="aid-grid">
       <div class="aid-card col-8">
         <div class="aid-card-head">
           <div>
@@ -414,7 +451,7 @@
     </section>
 
     <!-- ══ Charts row 2 ══ -->
-    <section class="aid-grid" style="margin-bottom: var(--aid-gap);">
+    <section class="aid-grid">
       <div class="aid-card col-5">
         <div class="aid-card-head">
           <div>
@@ -445,7 +482,7 @@
     </section>
 
     <!-- ══ Requests by model ══ -->
-    <section class="aid-grid" style="margin-bottom: var(--aid-gap);">
+    <section class="aid-grid">
       <div class="aid-card col-7">
         <div class="aid-card-head">
           <div>
@@ -467,8 +504,7 @@
     </section>
 
     <!-- ══ Usage-by-user table ══ -->
-    <div class="aid-section-label">Per-user activity</div>
-    <section class="aid-card col-12" style="grid-column: span 12;">
+    <section class="aid-card aid-table-card col-12" style="grid-column: span 12;">
       <div class="aid-table-wrap">
         <table class="aid-table" id="aid-user-table">
           <thead>
@@ -487,21 +523,8 @@
       </div>
     </section>
 
-    <!-- ══ Inferred gaps ══ -->
-    <div class="aid-section-label">Also worth tracking (inferred gaps)</div>
-    <div class="aid-note">
-      <span class="material-symbols-outlined">lightbulb</span>
-      <div class="aid-note-text">
-        You asked for tokens, rules, skills, databases and sources — those are covered above. A complete
-        AI-ops view usually also watches the items below. <b>Add these to close the loop on cost, quality,
-        safety and reliability.</b>
-      </div>
-    </div>
+    <!-- ══ Cost, quality & reliability ══ -->
     <section class="aid-gaps" id="aid-gaps"></section>
-
-    <div class="aid-foot">
-      Demo data · WISEcodeAI AI Operations Dashboard · figures are illustrative and refresh with the selected range.
-    </div>
       </div><!-- /.aid-shell -->
       </section><!-- /#aid-dash-card -->
 
@@ -851,16 +874,42 @@
       { name: 'Rate limiting', val: 55, color: 'gold' },
     ];
 
-    var GAPS = [
-      { ic: 'savings', tone: 'tone-gold', name: 'Cost per user / team', desc: 'Attribute spend by user, team, and project to catch runaway usage before the invoice.' },
-      { ic: 'speed', tone: 'tone-teal', name: 'p95 / p99 latency', desc: 'Averages hide tail latency. Track percentiles per model + time-to-first-token.' },
-      { ic: 'bolt', tone: 'tone-cyan', name: 'Cache hit rate', desc: 'Prompt / embedding cache hits directly cut tokens and cost — surface the ratio.' },
-      { ic: 'fact_check', tone: 'tone-violet', name: 'Answer quality / evals', desc: 'Groundedness, hallucination rate, and eval scores so quality is measured, not assumed.' },
-      { ic: 'gpp_maybe', tone: 'tone-red', name: 'Guardrail violations', desc: 'Count + trend of blocked prompts, jailbreak attempts, and policy breaches.' },
-      { ic: 'schedule', tone: 'tone-blue', name: 'Data freshness / drift', desc: 'Last-sync age per source and index staleness so RAG never answers from stale data.' },
-      { ic: 'speed_camera', tone: 'tone-pink', name: 'Rate-limit headroom', desc: 'Per-key quota consumed vs. limit, with alerts before you hit 429s.' },
-      { ic: 'monitoring', tone: 'tone-green', name: 'Uptime / SLO', desc: 'Availability per model + provider and error budget burn for reliability targets.' },
-    ];
+    function gaps() {
+      var s = RANGE_SCALE[RANGE];
+      var users = Math.round(342 * Math.min(1, 0.55 + s * 0.45));
+      var spend = Math.round(6840 * s);
+      var perUser = spend / Math.max(1, users);
+      var violations = Math.round(142 * s);
+      var cache = RANGE === '24h' ? 71 : (RANGE === '7d' ? 69 : (RANGE === '90d' ? 64 : 67));
+      var grounded = RANGE === '24h' ? 95 : (RANGE === '7d' ? 94 : (RANGE === '90d' ? 93 : 94));
+      var hallu = RANGE === '24h' ? '0.9' : (RANGE === '7d' ? '1.1' : (RANGE === '90d' ? '1.4' : '1.2'));
+      var evalScore = RANGE === '24h' ? 89 : (RANGE === '7d' ? 88 : (RANGE === '90d' ? 86 : 87));
+      var p95 = RANGE === '24h' ? '1.28' : (RANGE === '7d' ? '1.36' : (RANGE === '90d' ? '1.51' : '1.42'));
+      var p99 = RANGE === '24h' ? '2.41' : (RANGE === '7d' ? '2.64' : (RANGE === '90d' ? '3.08' : '2.81'));
+      var ttft = RANGE === '24h' ? 162 : (RANGE === '7d' ? 174 : (RANGE === '90d' ? 198 : 186));
+      var freshness = RANGE === '24h' ? 4 : (RANGE === '7d' ? 8 : (RANGE === '90d' ? 16 : 12));
+      var headroom = RANGE === '24h' ? 81 : (RANGE === '7d' ? 76 : (RANGE === '90d' ? 61 : 73));
+      var uptime = RANGE === '24h' ? '100.00' : (RANGE === '7d' ? '99.98' : (RANGE === '90d' ? '99.91' : '99.94'));
+      var budgetBurn = RANGE === '24h' ? 2 : (RANGE === '7d' ? 6 : (RANGE === '90d' ? 41 : 18));
+      return [
+        { ic: 'savings', tone: 'tone-gold', name: 'Cost per user / team', val: '$' + perUser.toFixed(2), delta: 4, good: 'down', spark: 'gold',
+          meta: 'Eng ' + fmt.money(Math.round(2410 * s)) + ' · Product ' + fmt.money(Math.round(1840 * s)) + ' · Ops ' + fmt.money(Math.round(1220 * s)) },
+        { ic: 'speed', tone: 'tone-teal', name: 'p95 / p99 latency', val: p95 + '<small>s</small>', delta: -8, good: 'down', spark: 'teal',
+          meta: 'p99 ' + p99 + 's · TTFT ' + ttft + 'ms' },
+        { ic: 'bolt', tone: 'tone-cyan', name: 'Cache hit rate', val: cache + '<small>%</small>', delta: 5, spark: 'cyan',
+          meta: 'Prompt ' + (cache - 5) + '% · Embedding ' + Math.min(99, cache + 14) + '%' },
+        { ic: 'fact_check', tone: 'tone-violet', name: 'Answer quality / evals', val: grounded + '<small>%</small>', delta: 2, spark: 'violet',
+          meta: 'Hallucination ' + hallu + '% · eval score ' + evalScore },
+        { ic: 'gpp_maybe', tone: 'tone-red', name: 'Guardrail violations', val: String(violations), delta: -11, good: 'down', spark: 'red',
+          meta: Math.round(96 * s) + ' blocked · ' + Math.round(18 * s) + ' jailbreak · ' + Math.round(9 * s) + ' policy' },
+        { ic: 'schedule', tone: 'tone-blue', name: 'Data freshness / drift', val: freshness + '<small> min</small>', delta: -14, good: 'down', spark: 'blue',
+          meta: '2 of 38 sources stale · index 4.2h' },
+        { ic: 'speed_camera', tone: 'tone-pink', name: 'Rate-limit headroom', val: headroom + '<small>%</small>', delta: -6, good: 'up', spark: 'pink',
+          meta: '2 of 15 keys near limit · 0 at 429' },
+        { ic: 'monitoring', tone: 'tone-green', name: 'Uptime / SLO', val: uptime + '<small>%</small>', delta: RANGE === '24h' ? 0 : 0.02, unit: 'pp', spark: 'green',
+          meta: 'SLO 99.9% · error budget ' + budgetBurn + '% burned' },
+      ];
+    }
 
     /* ════════════════════ RENDERERS ════════════════════ */
 
@@ -878,7 +927,7 @@
         card.innerHTML =
           '<div class="aid-kpi-top"><span class="aid-kpi-ic ' + k.tone + '"><span class="material-symbols-outlined">' + k.ic + '</span></span>' +
           '<span class="aid-kpi-label">' + k.label + '</span></div>' +
-          '<div class="aid-kpi-val">' + k.val + '</div>' +
+          '<div class="aid-kpi-val" data-countup>' + k.val + '</div>' +
           '<span class="aid-delta ' + deltaCls + '"><span class="material-symbols-outlined">' + arrow + '</span>' +
           Math.abs(k.delta) + (k.unit || '%') + '</span>';
         var spark = seedSeries(16, 40, 26, i * 3 + 2);
@@ -955,8 +1004,10 @@
       defs.appendChild(gradient('aid-g-in', C.violet));
       svg.appendChild(defs);
 
-      svg.appendChild(el('path', { d: areaPath(stacked, input), fill: 'url(#aid-g-out)', opacity: '0.55' }));
-      svg.appendChild(el('path', { d: areaPath(input, zero), fill: 'url(#aid-g-in)', opacity: '0.65' }));
+      var elev = el('g', { class: 'aid-chart-elev' });
+      elev.appendChild(el('path', { d: areaPath(stacked, input), fill: 'url(#aid-g-out)', opacity: '0.55' }));
+      elev.appendChild(el('path', { d: areaPath(input, zero), fill: 'url(#aid-g-in)', opacity: '0.65' }));
+      svg.appendChild(elev);
 
       svg.appendChild(linePath(input, x, y, C.violet));
       svg.appendChild(linePath(stacked, x, y, C.cyan));
@@ -1001,58 +1052,141 @@
         ' L' + (x + w).toFixed(2) + ' ' + (y + h).toFixed(2) + ' Z';
     }
 
-    /* Donut chart — matches the shared WISE / analytics-types donut: each slice
-       is a FILLED annular-sector path with gently rounded corners and a small gap
-       between segments (not a hard butt-capped stroke ring). */
-    function polar(cx, cy, r, deg) {
-      var a = (deg - 90) * Math.PI / 180;
-      return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+    /* Donut — same rounded-corner annular sector as dashboard-home.js / analytics-types.
+       Paths live in un-rotated coords (0° = 3 o'clock); a rotate(-90) group puts
+       the first slice at 12 o'clock. `cr` is a gentle corner, not a half-circle cap. */
+    function polarPt(cx, cy, r, deg) {
+      var a = (deg * Math.PI) / 180;
+      return (cx + r * Math.cos(a)).toFixed(2) + ' ' + (cy + r * Math.sin(a)).toFixed(2);
     }
-    function annularSector(cx, cy, rO, rI, a0, a1) {
-      var large = (a1 - a0) > 180 ? 1 : 0;
-      var o0 = polar(cx, cy, rO, a0), o1 = polar(cx, cy, rO, a1);
-      var i1 = polar(cx, cy, rI, a1), i0 = polar(cx, cy, rI, a0);
-      return 'M' + o0[0].toFixed(2) + ' ' + o0[1].toFixed(2) +
-        ' A' + rO + ' ' + rO + ' 0 ' + large + ' 1 ' + o1[0].toFixed(2) + ' ' + o1[1].toFixed(2) +
-        ' L' + i1[0].toFixed(2) + ' ' + i1[1].toFixed(2) +
-        ' A' + rI + ' ' + rI + ' 0 ' + large + ' 0 ' + i0[0].toFixed(2) + ' ' + i0[1].toFixed(2) +
-        ' Z';
+    function roundedSector(cx, cy, ri, ro, a0, a1, cr) {
+      var spanRad = ((a1 - a0) * Math.PI) / 180;
+      var r = Math.max(0, Math.min(cr, (ro - ri) / 2, (ri * spanRad) / 2));
+      var offO = (r / ro) * (180 / Math.PI);
+      var offI = (r / ri) * (180 / Math.PI);
+      var big = a1 - offO - (a0 + offO) > 180 ? 1 : 0;
+      return [
+        'M ' + polarPt(cx, cy, ro, a0 + offO),
+        'A ' + ro + ' ' + ro + ' 0 ' + big + ' 1 ' + polarPt(cx, cy, ro, a1 - offO),
+        'A ' + r + ' ' + r + ' 0 0 1 ' + polarPt(cx, cy, ro - r, a1),
+        'L ' + polarPt(cx, cy, ri + r, a1),
+        'A ' + r + ' ' + r + ' 0 0 1 ' + polarPt(cx, cy, ri, a1 - offI),
+        'A ' + ri + ' ' + ri + ' 0 ' + big + ' 0 ' + polarPt(cx, cy, ri, a0 + offI),
+        'A ' + r + ' ' + r + ' 0 0 1 ' + polarPt(cx, cy, ri + r, a0),
+        'L ' + polarPt(cx, cy, ro - r, a0),
+        'A ' + r + ' ' + r + ' 0 0 1 ' + polarPt(cx, cy, ro, a0 + offO),
+        'Z',
+      ].join(' ');
     }
     function donut(segments, size, thickness, centerTop, centerBottom) {
       size = size || 150; thickness = thickness || 26;
       var cx = size / 2, cy = size / 2;
-      var rO = size / 2 - 2, rI = rO - thickness, rMid = (rO + rI) / 2;
+      var rMid = size / 2 - 4 - thickness / 2;
+      var ro = rMid + thickness / 2, ri = rMid - thickness / 2;
       var total = segments.reduce(function (a, s) { return a + s.val; }, 0) || 1;
-      var svg = el('svg', { viewBox: '0 0 ' + size + ' ' + size, width: size, height: size });
-      /* Subtle track behind the ring. */
-      svg.appendChild(el('circle', { cx: cx, cy: cy, r: rMid, fill: 'none', stroke: C.grid, 'stroke-width': thickness, opacity: '0.35' }));
-      var GAP = 3; /* degrees of breathing room between slices */
-      var angle = 0;
+      var circ = 2 * Math.PI * rMid;
+      var gapDeg = (11 / circ) * 360;
+      var minDeg = (4 / circ) * 360;
+      var cr = 7;
+      var svg = el('svg', {
+        class: 'aid-donut-svg dash-donut-svg',
+        viewBox: '0 0 ' + size + ' ' + size,
+        role: 'img',
+      });
+      var rot = el('g', { transform: 'rotate(-90 ' + cx + ' ' + cy + ')' });
+      var elev = el('g', { class: 'aid-chart-elev' });
+      var acc = 0;
       segments.forEach(function (s) {
-        var sweep = (s.val / total) * 360;
-        var a0 = angle + GAP / 2, a1 = angle + sweep - GAP / 2;
-        angle += sweep;
-        if (a1 <= a0) return;
+        if (s.val <= 0) return;
+        var startDeg = (acc / total) * 360;
+        var endDeg = ((acc + s.val) / total) * 360;
+        acc += s.val;
+        var a0 = startDeg + gapDeg / 2;
+        var a1 = endDeg - gapDeg / 2;
+        if (a1 - a0 < minDeg) {
+          var mid = (startDeg + endDeg) / 2;
+          a0 = mid - minDeg / 2;
+          a1 = mid + minDeg / 2;
+        }
         var col = C[s.color] || C.violet;
-        svg.appendChild(el('path', {
-          d: annularSector(cx, cy, rO, rI, a0, a1),
-          fill: col, stroke: col, 'stroke-width': '2',
-          'stroke-linejoin': 'round', 'fill-opacity': '0.94',
+        var d = roundedSector(cx, cy, ri, ro, a0, a1, cr);
+        elev.appendChild(el('path', {
+          class: 'dash-donut-arc',
+          d: '',
+          'data-full-d': d,
+          'data-a0': String(a0),
+          'data-a1': String(a1),
+          'data-ri': String(ri),
+          'data-ro': String(ro),
+          'data-cr': String(cr),
+          'data-cx': String(cx),
+          'data-cy': String(cy),
+          fill: col,
         }));
       });
+      rot.appendChild(elev);
+      svg.appendChild(rot);
+
       var wrap = document.createElement('div');
-      wrap.style.position = 'relative';
-      wrap.style.width = size + 'px';
-      wrap.style.height = size + 'px';
+      wrap.className = 'aid-donut';
+      wrap.style.setProperty('--aid-donut-size', size + 'px');
+      wrap.style.setProperty('--aid-donut-hole', Math.round((ri * 2 / size) * 100) + '%');
       wrap.appendChild(svg);
+      svg.addEventListener('pointerover', function (e) {
+        var arc = e.target.closest && e.target.closest('.dash-donut-arc');
+        svg.querySelectorAll('.dash-donut-arc').forEach(function (a) {
+          a.classList.toggle('is-hover', a === arc);
+        });
+      });
+      svg.addEventListener('pointerleave', function () {
+        svg.querySelectorAll('.dash-donut-arc').forEach(function (a) { a.classList.remove('is-hover'); });
+      });
       if (centerTop != null) {
         var c = document.createElement('div');
-        c.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;';
-        c.innerHTML = '<div class="aid-donut-center-num">' + centerTop + '</div>' +
-          (centerBottom ? '<div style="font-size:.66rem;color:var(--text-muted);font-weight:600;">' + centerBottom + '</div>' : '');
+        c.className = 'aid-donut-center';
+        c.innerHTML = '<div class="aid-donut-center-num" data-countup>' + centerTop + '</div>' +
+          (centerBottom ? '<div class="aid-donut-center-sub">' + centerBottom + '</div>' : '');
         wrap.appendChild(c);
       }
       return wrap;
+    }
+
+    function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+    function playDonutSweep(host, duration) {
+      duration = duration || 1400;
+      if (!host) return;
+      var arcs = host.querySelectorAll('.dash-donut-arc[data-full-d]');
+      if (!arcs.length) return;
+      var reduce = false;
+      try { reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+      if (reduce) {
+        arcs.forEach(function (arc) { arc.setAttribute('d', arc.getAttribute('data-full-d')); });
+        return;
+      }
+      var start = performance.now();
+      var tick = function (now) {
+        var t = easeOutCubic(Math.min(1, (now - start) / duration));
+        var sweep = t * 360;
+        arcs.forEach(function (arc) {
+          var fullD = arc.getAttribute('data-full-d');
+          var a0 = parseFloat(arc.getAttribute('data-a0'));
+          var a1 = parseFloat(arc.getAttribute('data-a1'));
+          if (!fullD || !isFinite(a0) || !isFinite(a1)) return;
+          if (sweep <= a0) { arc.setAttribute('d', ''); return; }
+          if (sweep >= a1) { arc.setAttribute('d', fullD); return; }
+          arc.setAttribute('d', roundedSector(
+            parseFloat(arc.getAttribute('data-cx')),
+            parseFloat(arc.getAttribute('data-cy')),
+            parseFloat(arc.getAttribute('data-ri')),
+            parseFloat(arc.getAttribute('data-ro')),
+            a0, sweep,
+            parseFloat(arc.getAttribute('data-cr'))
+          ));
+        });
+        if (t < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
     }
 
     function donutLegend(host, segments, unit) {
@@ -1085,19 +1219,45 @@
       donutLegend($('#aid-sources-legend'), SOURCES, 'count');
     }
 
-    /* Horizontal bars */
+    /* Health bars — shared WISE fat-pill track with the value inside the fill.
+       Width is relative to the row max so the longest bar reads as 100%. */
     function hbars(host, items, formatter) {
       host.innerHTML = '';
-      var max = Math.max.apply(null, items.map(function (i) { return i.val; }));
+      var max = Math.max.apply(null, items.map(function (i) { return i.val; })) || 1;
       items.forEach(function (it) {
         var row = document.createElement('div');
         row.className = 'aid-hbar-row';
-        var pct = (it.val / max) * 100;
+        var pct = Math.max(8, (it.val / max) * 100);
+        var color = C[it.color] || C.violet;
+        var label = formatter(it.val);
         row.innerHTML =
           '<span class="aid-hbar-name">' + it.name + '</span>' +
-          '<span class="aid-hbar-track"><span class="aid-hbar-fill" style="width:' + pct.toFixed(1) + '%;background:linear-gradient(90deg,' + (C[it.color] || C.violet) + ',' + (C[it.color] || C.violet) + 'cc)"></span></span>' +
-          '<span class="aid-hbar-val">' + formatter(it.val) + '</span>';
+          '<div class="dash-ws-health-bar dash-ws-health-bar--inline" role="group" aria-label="' + it.name + ' ' + label + '">' +
+            '<div class="dash-ws-health-track" style="--bar-color:' + color + '">' +
+              '<div class="dash-ws-health-fill dash-metric-fill" data-target-width="' + pct.toFixed(1) + '%" style="width:0%;background:' + color + '">' +
+                '<span class="dash-ws-health-num" data-countup>' + label + '</span>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
         host.appendChild(row);
+      });
+    }
+
+    function playHealthBars(host) {
+      if (!host) return;
+      var fills = host.querySelectorAll('.dash-ws-health-fill[data-target-width]');
+      var reduce = false;
+      try { reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+      fills.forEach(function (fill, i) {
+        var w = fill.getAttribute('data-target-width');
+        fill.style.width = '0%';
+        fill.classList.remove('is-chart-ready');
+        var go = function () {
+          fill.style.width = w;
+          fill.classList.add('is-chart-ready');
+        };
+        if (reduce) { go(); return; }
+        setTimeout(go, 50 + i * 80);
       });
     }
 
@@ -1131,7 +1291,9 @@
         lg.appendChild(el('stop', { offset: '100%', 'stop-color': C[d.color] || C.violet, 'stop-opacity': '0.55' }));
         defs.appendChild(lg);
         svg.appendChild(defs);
-        svg.appendChild(el('path', { d: topRoundedRect(bx, by, bwidth, bh, 5), fill: 'url(#' + defsId + ')' }));
+        var barG = el('g', { class: 'aid-chart-elev' });
+        barG.appendChild(el('path', { d: topRoundedRect(bx, by, bwidth, bh, 8), fill: 'url(#' + defsId + ')' }));
+        svg.appendChild(barG);
         var vlbl = el('text', { x: bx + bwidth / 2, y: by - 6, 'text-anchor': 'middle', class: 'aid-axis-lbl' });
         vlbl.textContent = fmt.compact(d.val);
         svg.appendChild(vlbl);
@@ -1168,15 +1330,33 @@
     function renderGaps() {
       var host = $('#aid-gaps');
       host.innerHTML = '';
-      GAPS.forEach(function (g) {
-        var d = document.createElement('div');
-        d.className = 'aid-gap-card';
-        d.innerHTML =
-          '<div class="aid-gap-top"><span class="aid-gap-ic ' + g.tone + '"><span class="material-symbols-outlined">' + g.ic + '</span></span>' +
-          '<span class="aid-gap-name">' + g.name + '</span></div>' +
-          '<div class="aid-gap-desc">' + g.desc + '</div>';
-        host.appendChild(d);
+      gaps().forEach(function (k, i) {
+        var good = k.good || 'up';
+        var dir = k.delta > 0 ? 'up' : (k.delta < 0 ? 'down' : 'flat');
+        var positive = (dir === good);
+        var deltaCls = dir === 'flat' ? 'flat' : (positive ? 'up' : 'down');
+        var arrow = dir === 'up' ? 'trending_up' : (dir === 'down' ? 'trending_down' : 'trending_flat');
+        var card = document.createElement('div');
+        card.className = 'aid-card aid-kpi';
+        card.innerHTML =
+          '<div class="aid-kpi-top"><span class="aid-kpi-ic ' + k.tone + '"><span class="material-symbols-outlined">' + k.ic + '</span></span>' +
+          '<span class="aid-kpi-label">' + k.name + '</span></div>' +
+          '<div class="aid-kpi-val" data-countup>' + k.val + '</div>' +
+          '<span class="aid-delta ' + deltaCls + '"><span class="material-symbols-outlined">' + arrow + '</span>' +
+          Math.abs(k.delta) + (k.unit || '%') + '</span>' +
+          (k.meta ? '<div class="aid-gap-meta">' + k.meta + '</div>' : '');
+        var spark = seedSeries(16, 40, 26, i * 5 + 11);
+        card.appendChild(sparkline(spark, C[k.spark] || C.violet));
+        host.appendChild(card);
       });
+    }
+
+    function playCharts() {
+      playDonutSweep($('#aid-workload-donut'));
+      playDonutSweep($('#aid-sources-donut'));
+      playHealthBars($('#aid-user-bars'));
+      playHealthBars($('#aid-skill-bars'));
+      playHealthBars($('#aid-rules-bars'));
     }
 
     function renderAll() {
@@ -1192,6 +1372,7 @@
       hbars($('#aid-rules-bars'), RULES, function (v) { return v + 'K'; });
       renderUserTable();
       renderGaps();
+      requestAnimationFrame(function () { requestAnimationFrame(playCharts); });
     }
 
     /* ── Range switch ── */
@@ -1207,6 +1388,21 @@
     /* Expose so the shared appearance/theme popover in the nav can re-tint the
        SVG charts when it flips light/dark. */
     window.aidRenderAll = renderAll;
+
+    /* Click a chart card to replay its entrance — same affordance as analytics-types. */
+    $('#aid-dash-card').addEventListener('click', function (e) {
+      var card = e.target.closest('.aid-card');
+      if (!card) return;
+      var donutHost = card.querySelector('.aid-donut');
+      if (donutHost) {
+        donutHost.querySelectorAll('.dash-donut-arc[data-full-d]').forEach(function (arc) {
+          arc.setAttribute('d', '');
+        });
+        playDonutSweep(card);
+      }
+      var bars = card.querySelector('.aid-hbars');
+      if (bars) playHealthBars(bars);
+    });
 
     renderAll();
     window.addEventListener('resize', function () { /* SVGs are responsive via viewBox; no-op */ });

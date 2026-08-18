@@ -263,6 +263,7 @@
       font-variant-numeric: tabular-nums; flex-shrink: 0;
     }
     .pmx-cell {
+      position: relative;
       border-radius: 5px; min-height: 30px;
       display: flex; align-items: center; justify-content: center;
       color: #fff; font-size: 11px; font-weight: 800;
@@ -270,6 +271,7 @@
       box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12);
       transition: transform .1s ease, box-shadow .1s ease, filter .1s ease;
     }
+    .pmx-cell > span { position: relative; z-index: 1; }
     /* Poor / fair cells host a floating fix nudge (mirrors aha.html's score toast). */
     .pmx-cell--fix {
       position: relative;
@@ -1179,10 +1181,12 @@
       isolation: isolate;
     }
     .pscale-col {
+      position: relative;
       display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
       gap: 7px; padding: 24px 16px 26px; min-height: 104px; text-align: center;
       color: #fff; background: var(--c, var(--primary));
     }
+    .pscale-col > * { position: relative; z-index: 1; }
     /* Thin separators between adjacent segments so the band still reads as a
        connected scale. */
     .pscale-col + .pscale-col { box-shadow: inset 1px 0 0 rgba(255, 255, 255, .18); }
@@ -2281,15 +2285,15 @@
         score: Math.round(s.r.reduce((a, i) => a + RATING_SCORE[i], 0) / s.r.length),
       }));
 
-      /* Canonical 5-tier WISE status scale — the exact colours the dashboard
-         status dots use (.dash-status-tip-dot--*). fill = cell colour, ink =
-         AAA-safe text colour on that fill. */
+      /* Canonical 5-tier WISE status scale — the shared monochromatic azure
+         ramp (.dash-status-tip-dot--* / --chart-status-*). fill = cell colour,
+         ink = AAA-safe text colour on that fill. */
       const TIERS = {
-        excellent: { label: 'Excellent', fill: '#32A966', ink: '#fff',     range: '80–100', desc: 'Top-tier on this metric — among the strongest products in the portfolio.' },
-        good:      { label: 'Good',      fill: '#7DC470', ink: '#14532D',  range: '60–79',  desc: 'Solid performance with only minor room to improve.' },
-        okay:      { label: 'OK',        fill: '#FFC434', ink: '#5A3A00',  range: '40–59',  desc: 'Middling — an acceptable result, but a clear opportunity to strengthen.' },
-        fair:      { label: 'Fair',      fill: '#D27326', ink: '#fff',     range: '20–39',  desc: 'Below par — this metric is weighing the product\'s overall score down.' },
-        poor:      { label: 'Poor',      fill: '#DC3038', ink: '#fff',     range: '0–19',   desc: 'Critical weakness — a priority fix that materially hurts this product.' },
+        excellent: { label: 'Excellent', fill: 'var(--chart-status-excellent)', ink: '#fff', range: '80–100', desc: 'Top-tier on this metric — among the strongest products in the portfolio.' },
+        good:      { label: 'Good',      fill: 'var(--chart-status-good)',      ink: '#fff', range: '60–79',  desc: 'Solid performance with only minor room to improve.' },
+        okay:      { label: 'OK',        fill: 'var(--chart-status-okay)',      ink: '#fff', range: '40–59',  desc: 'Middling — an acceptable result, but a clear opportunity to strengthen.' },
+        fair:      { label: 'Fair',      fill: 'var(--chart-status-fair)',      ink: '#fff', range: '20–39',  desc: 'Below par — this metric is weighing the product\'s overall score down.' },
+        poor:      { label: 'Poor',      fill: 'var(--chart-status-poor)',      ink: '#fff', range: '0–19',   desc: 'Critical weakness — a priority fix that materially hurts this product.' },
       };
 
       /* Per-metric reference data for the hover tooltip: the full name, which
@@ -3179,17 +3183,17 @@
     ===================================================================== */
     (function () {
       const COLS = [
-        { tier: 'Non-UPF Verified', cap: 'WISEcode Shield',        color: 'var(--primary)', verified: true,
+        { tier: 'Non-UPF Verified', cap: 'WISEcode Shield',        color: 'var(--chart-status-excellent)', verified: true,
           icon: 'verified',     desc: 'Passes the WISEcode Non-UPF algorithmic threshold and has completed the Verification Program.' },
-        { tier: 'Minimally',        cap: 'Processed',              color: '#2E9E5B',
+        { tier: 'Minimally',        cap: 'Processed',              color: 'var(--chart-status-good)',
           icon: 'eco',          desc: 'Whole foods cleaned, portioned, frozen, or dried. No added ingredients and no industrial transformation.' },
-        { tier: 'Lightly',          cap: 'Processed',              color: '#84B83C',
+        { tier: 'Lightly',          cap: 'Processed',              color: 'var(--chart-status-okay)',
           icon: 'blender',      desc: 'Simple physical methods — roasting, grinding, fermenting — using only culinary ingredients.' },
-        { tier: 'Moderately',       cap: 'Processed',              color: '#E9A91C',
+        { tier: 'Moderately',       cap: 'Processed',              color: 'var(--chart-status-fair)',
           icon: 'soup_kitchen', desc: 'Refined ingredients such as added salt, sugar, or oil. Processing stays recognizable and traditional.' },
-        { tier: 'Ultra',            cap: 'Processed',              color: '#E2742B',
+        { tier: 'Ultra',            cap: 'Processed',              color: 'var(--chart-status-poor)',
           icon: 'factory',      desc: 'Industrial formulations built from additives, emulsifiers, and ingredients rarely used in home kitchens.' },
-        { tier: 'Super-Ultra',      cap: 'Processed',              color: '#D23B33',
+        { tier: 'Super-Ultra',      cap: 'Processed',              color: 'color-mix(in srgb, var(--chart-status-poor) 72%, #05141C)',
           icon: 'science',      desc: 'Heavily engineered products dominated by cosmetic additives with little or no whole-food basis.' },
       ];
 
@@ -3806,14 +3810,13 @@
       const P = (deg, r) => [CX + r * Math.cos(rad(deg)), CY + r * Math.sin(rad(deg))];
       const f = (v) => Number(v).toFixed(1);
 
-      /* Each of the three pillars gets its own hue family so the rosette reads
-         as three distinct groups at a glance. Within a pillar the wedge shade
-         ramps with the metric's score (higher score → richer/darker), giving
-         variation between metrics without losing the pillar's identity. */
+      /* One hue family (brand navy) so the rosette stays on the shared
+         monochromatic status scale. Within a pillar the wedge shade ramps
+         with the metric's score (higher score → richer/darker). */
       const PILLAR_HUE = {
-        'Nutrient Quality':   { h: 146, s: 54, l: 43 },  /* --sec-green  #32A966 */
-        'Ingredient Quality': { h: 210, s: 54, l: 31 },  /* --primary    #25507C */
-        'Health Outcomes':    { h:  43, s: 100, l: 60 }, /* --ter-amber  #FFC434 */
+        'Nutrient Quality':   { h: 210, s: 48, l: 52 },
+        'Ingredient Quality': { h: 210, s: 54, l: 31 },
+        'Health Outcomes':    { h: 210, s: 50, l: 22 },
       };
       function pillarColor(group, value) {
         const base = PILLAR_HUE[group] || { h: 146, s: 54, l: 43 };
@@ -4358,11 +4361,11 @@
     ===================================================================== */
     (function () {
       const TIER = {
-        excellent: { label: 'Excellent', color: 'var(--sec-green)' },
-        good:      { label: 'Good',      color: '#7DC470' },
-        okay:      { label: 'OK',        color: 'var(--ter-amber)' },
-        fair:      { label: 'Fair',      color: '#D27326' },
-        poor:      { label: 'Poor',      color: 'var(--sec-red)' },
+        excellent: { label: 'Excellent', color: 'var(--chart-status-excellent)' },
+        good:      { label: 'Good',      color: 'var(--chart-status-good)' },
+        okay:      { label: 'OK',        color: 'var(--chart-status-okay)' },
+        fair:      { label: 'Fair',      color: 'var(--chart-status-fair)' },
+        poor:      { label: 'Poor',      color: 'var(--chart-status-poor)' },
       };
       const ORDER = ['excellent', 'good', 'okay', 'fair', 'poor'];
 

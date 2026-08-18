@@ -353,8 +353,10 @@
       text-decoration: none;
       cursor: pointer;
     }
-    /* Tagline rendered directly under the wordmark, right-aligned (desktop only). */
-    .topbar-tagline {
+    /* Tagline under the (hidden) top-bar wordmark only. The visible nav
+       brand strip uses wise.css `.menu-brand-logo .topbar-tagline` so it
+       stays identical to wiseai.html — do not let these leak into it. */
+    #topbar-row .topbar-tagline {
       font-size: 8px;
       font-weight: 500;
       letter-spacing: 0.14em;
@@ -364,7 +366,7 @@
       margin-top: 4px;
       white-space: nowrap;
     }
-    .topbar-tagline .tagline-tm {
+    #topbar-row .topbar-tagline .tagline-tm {
       font-size: 0.65em;
       letter-spacing: 0;
       vertical-align: super;
@@ -380,7 +382,7 @@
     @media (max-width: 1023px) {
       .topbar-logo svg.tl-full { display: none  !important; }
       .topbar-logo svg.tl-bug  { display: block !important; }
-      .topbar-tagline { display: none !important; }
+      #topbar-row .topbar-tagline { display: none !important; }
       #topbar-row { padding: 0 calc(1.5rem + 34px + 16px + 34px + 12px) 0 calc(62px + 54px + 16px); }
     }
     @media (max-width: 767px) {
@@ -403,7 +405,8 @@
          nav column's full height AND their drop-shadow renders into that gutter
          instead of being clipped flush at the card edge. Preserves the
          horizontal scroll (overflow-x:auto) that opening panes relies on. */
-      padding: 0 16px;
+      /* Shadow gutter matches wiseai.html (2px), not the old 16px carousel inset. */
+      padding: 0 2px;
       gap: 8px;
       scrollbar-gutter: stable;
     }
@@ -418,7 +421,7 @@
       align-self: stretch;
     }
     @media (min-width: 1280px) {
-      #modules-row { padding-left: 16px; padding-right: 16px; }
+      #modules-row { padding-left: 2px; padding-right: 2px; }
     }
     /* Thin, subtle horizontal scrollbar so the carousel doesn't clip panel content. */
     #modules-row::-webkit-scrollbar {
@@ -439,8 +442,11 @@
       scrollbar-color: color-mix(in srgb, var(--text-subtle) 35%, transparent) transparent;
     }
 
-    /* Pill controls + one UI font size inside the app chrome */
-    #chat-shell-wrap button,
+    /* Pill controls + one UI font size inside the app chrome.
+       The nav collapse toggle must keep the canonical 8px radius from
+       wise.css / wiseai.html — do not force it into a pill.
+       Scorecards (*-stat) keep their shuffled rectangle corners. */
+    #chat-shell-wrap button:not(.topbar-menu-toggle):not([class*="-stat"]):not(.ws-scorecard),
     #chat-shell-wrap input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
     #chat-shell-wrap select,
     #chat-shell-wrap textarea,
@@ -750,6 +756,8 @@
       align-self: stretch;
       height: 100%;
       max-height: 100%;
+      /* Beat Tailwind Preflight so brand + rows match wiseai.html. */
+      line-height: normal;
     }
     #menu-panel.mp-open {
       display: flex !important;
@@ -786,6 +794,7 @@
       box-shadow: var(--shadow-card);
       transform-origin: left center;
       font-size: var(--fs-ui);
+      line-height: normal;
     }
     #menu-panel.mp-open .menu-inner { animation: panelBounceLeft 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
     html.dark #menu-panel .menu-inner {
@@ -1968,7 +1977,7 @@
     .sc-cols { display: flex; align-items: flex-end; gap: 7px; height: 92px; padding-top: 6px; }
     .sc-col { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 5px; height: 100%; }
     .sc-col-bar { width: 100%; max-width: 26px; border-radius: 6px 6px 3px 3px; background: linear-gradient(180deg, var(--primary), color-mix(in srgb, var(--primary) 55%, var(--ter-cyan))); height: 0; animation: scColGrow 0.7s cubic-bezier(0.34,1.2,0.64,1) forwards; }
-    .sc-col.is-peak .sc-col-bar { background: linear-gradient(180deg, var(--sec-green), var(--ter-cyan)); }
+    .sc-col.is-peak .sc-col-bar { background: linear-gradient(180deg, var(--chart-status-excellent), var(--chart-status-okay)); }
     .sc-col-val { font-size: 0.625rem; font-weight: 800; color: var(--text); }
     .sc-col-label { font-size: 0.5625rem; font-weight: 600; color: var(--text-subtle); letter-spacing: 0.01em; }
 
@@ -5386,7 +5395,7 @@
       /* Light tint of the brand blue — matches the shared composer's 10% fill,
          a step deeper than the chat-tint container wash (5%). */
       background: color-mix(in srgb, var(--primary) 10%, #fff);
-      border: 1px solid var(--border-strong);
+      border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
       border-radius: var(--radius-pill);
       /* Padding intentionally omitted — the canonical stacked composer padding
          (wise.css `.fl-input-wrap--stacked`: 5px 8px 5px 6px) owns it so the pill
@@ -6412,7 +6421,7 @@
     }
     .fl-input-wrap {
       background: color-mix(in srgb, var(--primary) 10%, #fff);
-      border-color: var(--border-strong);
+      border-color: color-mix(in srgb, var(--primary) 18%, transparent);
     }
     /* Stacked composer (canonical WISEcodeAI rail): the "+" sits left, the database
        selector row sits atop the text input. Let wiseai-chat.css own the padding. */
@@ -7262,8 +7271,8 @@
       color: var(--text);
     }
 
-    /* Flat modules — no shadows on any module card inside the carousel/grid. */
-    #menu-panel .menu-inner,
+    /* Flat modules — no shadows on content cards inside the carousel/grid.
+       The primary nav keeps the canonical card shadow from wiseai.html. */
     #history-panel .panel-inner,
     #wiseai-panel .wiseai-inner,
     #upf-panel .upf-inner,
@@ -7768,9 +7777,7 @@
       font-family: inherit; text-align: center; cursor: pointer;
       transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
     }
-    /* Rectangular tiles, not pills — override the app-wide pill radius forced
-       on every button inside #chat-shell-wrap. */
-    #chat-shell-wrap .pf-stat { border-radius: 6px !important; }
+    /* Corners come from the shared scorecard cycle in wise.css — never pills. */
     /* Scorecard fill mirrors the chat module (.sc-card) across every theme. */
     html.dark .pf-stat { background: #1A2339; }
     html.chat-tint:not(.dark) .pf-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
@@ -8310,10 +8317,7 @@
       applyStoredTextSize();
     </script>
     <div id="topbar-row" hidden aria-hidden="true">
-      <button type="button" id="topbar-menu-toggle" class="lir-btn topbar-menu-toggle" data-tip="Menu" title="Collapse menu to icons" aria-label="Collapse menu to icons">
-        <span class="material-symbols-outlined">chevron_left</span>
-        <span class="lir-label">Menu</span>
-      </button>
+      <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-symbols-outlined">chevron_left</span></button>
       <div class="topbar-logo">
         <a href="product-comparison.html" aria-label="WISE home">
         <!-- Full wordmark — desktop -->
@@ -8852,7 +8856,7 @@
                 </div>
             </div>
             <!-- Heading -->
-            <h1 class="ws-heading">What can WISEcodeAI help with?</h1>
+            <h1 class="ws-heading">What can WISEcodeAI<span class="ws-tm">™</span> help with?</h1>
             <!-- Portfolio score cards — richer, actionable signals above the intent chips.
                  They scroll horizontally (there are always more than fit on screen), with a
                  prioritisation filter pinned to the far right of the section bar and a
@@ -10823,7 +10827,6 @@
       const expanded = force !== undefined ? !!force : panel.classList.contains('mp-rail');
       panel.classList.add('mp-open');
       panel.classList.toggle('mp-rail', !expanded);
-      syncLirBtn('topbar-menu-toggle', expanded);
     }
 
     function toggleHistoryPanel(options) {
@@ -11795,8 +11798,8 @@
       /* Remember the heading's plain text so a re-run starts clean (the typed
          reveal wraps each word in a span, which would otherwise compound). */
       if (heading) {
-        if (wiseaiWelcomeHeadingText == null) wiseaiWelcomeHeadingText = heading.textContent;
-        else heading.textContent = wiseaiWelcomeHeadingText;
+        if (wiseaiWelcomeHeadingText == null) wiseaiWelcomeHeadingText = heading.innerHTML;
+        else heading.innerHTML = wiseaiWelcomeHeadingText;
       }
       /* Hold every card + chip back (invisible, nudged right) until the text lands. */
       all.forEach(wiseaiPrimeRight);
@@ -12570,12 +12573,12 @@
         reply: 'Here are your top and bottom performers. <strong>3 UPCs</strong> sit below the NON-UPF line — fixing those would lift the portfolio average the most.',
         viz: () => vizCard('leaderboard', 'WISE Score by product', 'Top & bottom performers', null,
           vizBars([
-            { label: 'NS Almonds', val: 96, color: '#32A966' },
-            { label: 'NS Quinoa', val: 90, color: '#32A966' },
-            { label: 'NS Oats', val: 84, color: '#32A966' },
-            { label: 'Mixed Berry Granola', val: 54, color: '#FFC434' },
-            { label: 'NS Energy Drink', val: 38, color: '#D27326' },
-            { label: 'NS Bread', val: 31, color: '#D27326' },
+            { label: 'NS Almonds', val: 96, color: 'var(--chart-status-excellent)' },
+            { label: 'NS Quinoa', val: 90, color: 'var(--chart-status-excellent)' },
+            { label: 'NS Oats', val: 84, color: 'var(--chart-status-good)' },
+            { label: 'Mixed Berry Granola', val: 54, color: 'var(--chart-status-okay)' },
+            { label: 'NS Energy Drink', val: 38, color: 'var(--chart-status-fair)' },
+            { label: 'NS Bread', val: 31, color: 'var(--chart-status-poor)' },
           ], 100),
           { icon: 'flag', text: '3 UPCs below the NON-UPF line (70)' }),
         follow: ['flags', 'projectFix', 'statusMix'],
@@ -12587,11 +12590,11 @@
         reply: 'Across <strong>14 products</strong>, most cluster at the clean end — but <strong>4 UPCs</strong> land in Ultra / Super-Ultra and are pulling the average down.',
         viz: () => vizCard('bar_chart', 'UPF level breakdown', '14 products by NOVA / UPF level', null,
           vizBars([
-            { label: 'Minimal', val: 3, display: '3 UPCs', color: '#32A966' },
-            { label: 'Light', val: 4, display: '4 UPCs', color: '#7DC470' },
-            { label: 'Moderate', val: 3, display: '3 UPCs', color: '#FFC434' },
-            { label: 'Ultra', val: 2, display: '2 UPCs', color: '#D27326' },
-            { label: 'Super-Ultra', val: 2, display: '2 UPCs', color: '#DC3038' },
+            { label: 'Minimal', val: 3, display: '3 UPCs', color: 'var(--chart-status-excellent)' },
+            { label: 'Light', val: 4, display: '4 UPCs', color: 'var(--chart-status-good)' },
+            { label: 'Moderate', val: 3, display: '3 UPCs', color: 'var(--chart-status-okay)' },
+            { label: 'Ultra', val: 2, display: '2 UPCs', color: 'var(--chart-status-fair)' },
+            { label: 'Super-Ultra', val: 2, display: '2 UPCs', color: 'var(--chart-status-poor)' },
           ], 4),
           { icon: 'eco', text: '10 of 14 sit at Moderate or cleaner' }),
         follow: ['scoreByProduct', 'projectFix', 'flags'],
@@ -12604,8 +12607,8 @@
         viz: () => vizCard('flag', 'Additive flags by product', '3 flags · 2 products',
           '<span class="sc-viz-pill sc-viz-pill--warn"><span class="material-symbols-outlined">science</span>Review</span>',
           vizBars([
-            { label: 'Mixed Berry Granola', val: 2, display: '2 flags', color: 'var(--sec-red)' },
-            { label: 'NS Energy Drink', val: 1, display: '1 flag', color: 'var(--ter-amber)' },
+            { label: 'Mixed Berry Granola', val: 2, display: '2 flags', color: 'var(--chart-status-poor)' },
+            { label: 'NS Energy Drink', val: 1, display: '1 flag', color: 'var(--chart-status-fair)' },
           ], 2),
           { icon: 'lightbulb', text: 'HFCS · soybean oil · proprietary natural flavor' }),
         follow: ['suggestSwaps', 'projectFix', 'statusMix'],
@@ -12617,9 +12620,9 @@
         reply: '<strong>11 of 14</strong> products are verified. <strong>2</strong> are pre-qualified and ready to push through Confirm → Attest → Activate, and <strong>2</strong> verifications expire within six days.',
         viz: () => vizCard('donut_small', 'Verification status mix', '14 products', null,
           vizDonut([
-            { label: 'Verified', val: 11, color: 'var(--sec-green)' },
-            { label: 'Pre-qualified', val: 2, color: 'var(--ter-amber)' },
-            { label: 'Not qualified', val: 1, color: 'var(--sec-red)' },
+            { label: 'Verified', val: 11, color: 'var(--chart-status-excellent)' },
+            { label: 'Pre-qualified', val: 2, color: 'var(--chart-status-okay)' },
+            { label: 'Not qualified', val: 1, color: 'var(--chart-status-poor)' },
           ], '79%', 'VERIFIED'),
           { icon: 'schedule', text: '2 verifications expire within 6 days' }),
         follow: ['expiring', 'scoreByProduct', 'upfMix'],
@@ -12647,8 +12650,8 @@
         viz: () => vizCard('trending_up', 'Projected score after fixes', 'If you clear the flagged additives',
           '<span class="sc-viz-pill sc-viz-pill--up"><span class="material-symbols-outlined">arrow_upward</span>+6 pts</span>',
           vizBars([
-            { label: 'Today', val: 82, display: '82/100', color: '#32A966' },
-            { label: 'After reformulation', val: 88, display: '88/100', color: '#32A966' },
+            { label: 'Today', val: 82, display: '82/100', color: 'var(--chart-status-good)' },
+            { label: 'After reformulation', val: 88, display: '88/100', color: 'var(--chart-status-excellent)' },
           ], 100),
           { icon: 'eco', text: 'Moves all but one UPC above the NON-UPF line' }),
         follow: ['suggestSwaps', 'scoreTrend', 'statusMix'],
@@ -16349,10 +16352,17 @@
       const rankable = ents.filter(e => !pendingSet.has(e.id));
       const pendingEnts = ents.filter(e => pendingSet.has(e.id));
 
-      /* Display order: overall score descending (primary keeps its true rank). */
+      /* Display order: YOU/primary is always the leftmost column so the
+         head-to-head reads as "your food vs the field". Rank numbers still
+         follow overall score (primary keeps its true rank). Other scored
+         columns keep score order to the right; pending entrants stay at
+         the end until a recalculate. */
       const ranked = rankable.slice().sort((a, b) => (b.na ? -1 : cmpScoreFor(b, 'wisescore')) - (a.na ? -1 : cmpScoreFor(a, 'wisescore')));
       const rankOf = new Map(ranked.map((e, i) => [e.id, i + 1]));
-      const ordered = ranked.concat(pendingEnts);
+      const primaryEnt = rankable.find(e => e.primary) || pendingEnts.find(e => e.primary);
+      const restRanked = ranked.filter(e => e !== primaryEnt);
+      const restPending = pendingEnts.filter(e => e !== primaryEnt);
+      const ordered = (primaryEnt ? [primaryEnt] : []).concat(restRanked, restPending);
 
       /* ── Recalculate bar (pending changes / running recompute) ── */
       const noun = scope.noun;
@@ -16705,7 +16715,7 @@
           compareState.shown = [prim.id];
           renderCompare();
           scrollPanelIntoView('compare-panel');
-          addWISEcodeAIMessage('You’re set up as <strong>Amy’s Kitchen</strong>, so I’ve loaded <strong>your</strong> food on the right — WISEscore, UPF, GRAS, ingredient and protein quality are all populated. When you’re ready, <strong>add a competitor</strong> to build the head-to-head — use the chip below or the <strong>Add</strong> button on the board.', { source: false });
+          addWISEcodeAIMessage('You’re set up as <strong>Amy’s Kitchen</strong>, so I’ve loaded <strong>your</strong> food on the left — WISEscore, UPF, GRAS, ingredient and protein quality are all populated. When you’re ready, <strong>add a competitor</strong> to build the head-to-head — use the chip below or the <strong>Add</strong> button on the board.', { source: false });
           cmpOfferFollowChips();
         }, 650);
       });
@@ -18858,7 +18868,6 @@
     });
 
     /* Boot — sync rail icons and per-agent module visibility from initial state. */
-    syncLirBtn('topbar-menu-toggle', !document.getElementById('menu-panel')?.classList.contains('mp-rail'));
     syncLirBtn('lir-history-btn',  document.getElementById('history-panel')?.classList.contains('open'));
     syncLirBtn('lir-upf-btn',      document.getElementById('upf-panel')?.classList.contains('up-open'));
     syncLirBtn('lir-wiseai-btn',    document.getElementById('wiseai-panel')?.classList.contains('sp-open'));

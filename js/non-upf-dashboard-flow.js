@@ -14,21 +14,23 @@ function esc(s) {
     .replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/* Token-tracking chart colors (resolved live so they follow light/dark). */
+/* Token-tracking chart colors (resolved live so they follow light/dark).
+   All five stops are the shared monochromatic status scale. */
 function cssVar(name, fallback) {
   const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   return v || fallback;
 }
-const GREEN = () => cssVar('--sec-green', '#32A966');
-const RED = () => cssVar('--sec-red', '#DC3038');
-const AMBER = () => cssVar('--ter-amber', '#FFC434');
-const BLUE = () => cssVar('--primary', '#25507C');
-/* The two intermediate tiers of the canonical five-status palette (mirrors the
-   C palette in js/dashboard-home.js): a lighter "Good" green and a "Fair"
-   orange, so the processing spectrum runs green → light-green → amber → orange
-   → red, worst-to-best like every other status chart in the app. */
-const GREEN_LIGHT = () => '#7DC470';
-const ORANGE = () => '#D27326';
+const EXCELLENT = () => cssVar('--chart-status-excellent', '#6B93C4');
+const GOOD = () => cssVar('--chart-status-good', '#3E7CB1');
+const OKAY = () => cssVar('--chart-status-okay', '#25507C');
+const FAIR = () => cssVar('--chart-status-fair', '#1C3E60');
+const POOR = () => cssVar('--chart-status-poor', '#14293F');
+const GREEN = EXCELLENT;
+const GREEN_LIGHT = GOOD;
+const BLUE = OKAY;
+const AMBER = OKAY;
+const ORANGE = FAIR;
+const RED = POOR;
 
 /* ---- Portfolio split (donut) ---------------------------------------- */
 const PORTFOLIO = { nonUpf: 9, upf: 3 };

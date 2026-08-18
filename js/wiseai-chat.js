@@ -58,6 +58,85 @@ export const OWL_BUG = `<svg viewBox="0 0 193 100" fill="currentColor" xmlns="ht
    the marketing galaxy can reuse the exact same pulsating owl for its core. */
 export const OWL_MARK = `<svg viewBox="0 0 193 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z" fill="white"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z" fill="white"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z" fill="white"/></svg>`;
 
+/* Chat module elevation — Admin three-dot control. Shared app-wide (one key,
+   broadcast on wise:chat-elev) so every chat surface follows one choice.
+   Default is "Above high" so the AI Chat container sits above other modules. */
+const CHAT_ELEV_KEY = 'wise:chat-elev';
+const CHAT_ELEV_LEVELS = ['min', 'high', '3d'];
+const CHAT_ELEV_DEFAULT = 'high';
+const CHAT_ELEV_OPTS = [
+  { id: 'min', label: 'Little min', title: 'Little minimum' },
+  { id: 'high', label: 'Above high', title: 'Above high' },
+  { id: '3d', label: '3D', title: '3D' },
+];
+function readChatElev() {
+  try {
+    const s = localStorage.getItem(CHAT_ELEV_KEY);
+    if (CHAT_ELEV_LEVELS.includes(s)) return s;
+  } catch (_) {}
+  return CHAT_ELEV_DEFAULT;
+}
+function applyChatElev(level) {
+  if (typeof document === 'undefined') return;
+  const html = document.documentElement;
+  const next = CHAT_ELEV_LEVELS.includes(level) ? level : CHAT_ELEV_DEFAULT;
+  html.classList.remove('chat-elev-min', 'chat-elev-high', 'chat-elev-3d');
+  html.classList.add('chat-elev-' + next);
+}
+function setChatElev(level) {
+  const next = CHAT_ELEV_LEVELS.includes(level) ? level : CHAT_ELEV_DEFAULT;
+  try { localStorage.setItem(CHAT_ELEV_KEY, next); } catch (_) {}
+  applyChatElev(next);
+  try { document.dispatchEvent(new CustomEvent('wise:chat-elev', { detail: { level: next } })); } catch (_) {}
+}
+function chatElevControlHtml(active) {
+  const cur = CHAT_ELEV_LEVELS.includes(active) ? active : CHAT_ELEV_DEFAULT;
+  const btns = CHAT_ELEV_OPTS.map((o) =>
+    `<button type="button" class="sc-stream-seg-btn${o.id === cur ? ' is-on' : ''}" data-sc="elev" data-elev="${o.id}" role="radio" aria-checked="${o.id === cur ? 'true' : 'false'}" title="${o.title}" aria-label="${o.title}">${o.label}</button>`
+  ).join('');
+  return '<div class="sc-elev">'
+    + '<span class="sc-elev-label">Elevation<span class="topbar-menu-badge">Admin</span></span>'
+    + '<div class="sc-stream-seg sc-elev-seg" role="radiogroup" aria-label="Chat module elevation">'
+    + btns
+    + '</div></div>';
+}
+function injectChatElevControl(pop) {
+  if (!pop || pop.querySelector('.sc-elev')) return;
+  const html = chatElevControlHtml(readChatElev());
+  const bg = pop.querySelector('[data-sc="bg-anim"]');
+  const brand = pop.querySelector('[data-sc="brandtext"]');
+  const compact = pop.querySelector('[data-sc="compact"]');
+  if (bg) bg.insertAdjacentHTML('beforebegin', html);
+  else if (brand) brand.insertAdjacentHTML('afterend', html);
+  else if (compact) compact.insertAdjacentHTML('afterend', html);
+  else pop.insertAdjacentHTML('beforeend', html);
+}
+function syncChatElevControl(root) {
+  if (!root) return;
+  const cur = readChatElev();
+  root.querySelectorAll('[data-sc="elev"]').forEach((btn) => {
+    const on = btn.dataset.elev === cur;
+    btn.classList.toggle('is-on', on);
+    btn.setAttribute('aria-checked', on ? 'true' : 'false');
+  });
+}
+function wireChatElev(pop) {
+  if (!pop || pop.__wiseElevWired) return;
+  injectChatElevControl(pop);
+  applyChatElev(readChatElev());
+  pop.querySelectorAll('[data-sc="elev"]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const level = btn.dataset.elev;
+      if (CHAT_ELEV_LEVELS.includes(level)) setChatElev(level);
+    });
+  });
+  document.addEventListener('wise:chat-elev', () => syncChatElevControl(pop));
+  syncChatElevControl(pop);
+  pop.__wiseElevWired = true;
+}
+try { applyChatElev(readChatElev()); } catch (_) {}
+
 const DEFAULT_INTENTS = [
   { intent: 'customer_profile', label: 'Start New Verification', icon: 'add' },
   { intent: 'resume_prompt', label: 'Continue Existing', icon: 'play_circle' },
@@ -1320,22 +1399,22 @@ export function injectChatExtras() {
 
     /* Clickable attachment thumbnails + the full-size image lightbox they open. */
     .fl-attach-thumb { cursor: zoom-in; }
-    .wai-img-scrim { position: fixed; inset: 0; z-index: 4000; display: flex; align-items: center; justify-content: center;
-      padding: 32px; background: rgba(10,15,25,0.72); backdrop-filter: blur(3px);
+    .wai-img-scrim { position: fixed; inset: 0; z-index: 4000; display: flex; align-items: stretch; justify-content: stretch;
+      padding: 0; background: rgba(10,15,25,0.72); backdrop-filter: blur(3px);
       opacity: 0; transition: opacity .18s ease; }
     .wai-img-scrim.is-open { opacity: 1; }
-    .wai-img-modal { position: relative; max-width: min(880px, 92vw); max-height: 88vh; display: flex; flex-direction: column;
-      background: var(--surface, #fff); border: 1px solid var(--border-strong, rgba(0,0,0,.12)); border-radius: 16px;
-      box-shadow: 0 24px 60px rgba(0,0,0,0.4); overflow: hidden; transform: scale(.96); transition: transform .18s ease; }
-    .wai-img-scrim.is-open .wai-img-modal { transform: scale(1); }
+    .wai-img-modal { position: relative; width: 100%; height: 100%; max-width: none; max-height: none; display: flex; flex-direction: column;
+      background: var(--surface, #fff); border: 0; border-radius: 0;
+      box-shadow: none; overflow: hidden; transform: translateY(8px); transition: transform .18s ease; }
+    .wai-img-scrim.is-open .wai-img-modal { transform: none; }
     .wai-img-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border, rgba(0,0,0,.08)); }
     .wai-img-name { flex: 1 1 auto; min-width: 0; font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .wai-img-close { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex-shrink: 0;
       border: 0; border-radius: 50%; background: transparent; color: var(--text-subtle); cursor: pointer; transition: background .12s, color .12s; }
     .wai-img-close:hover { background: var(--surface-2); color: var(--text); }
     .wai-img-close .material-symbols-outlined { font-size: 20px; }
-    .wai-img-body { display: flex; align-items: center; justify-content: center; padding: 16px; overflow: auto; background: var(--surface-2, #f2f4f7); }
-    .wai-img-body img { max-width: 100%; max-height: calc(88vh - 62px); object-fit: contain; border-radius: 8px; display: block; }
+    .wai-img-body { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 16px; overflow: auto; background: var(--surface-2, #f2f4f7); }
+    .wai-img-body img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; display: block; }
 
     /* "Background animation" (Admin) — the welcome-only ambient canvas of a
        rotating food-item DNA/RNA helix. It sits above the card surface but below
@@ -1401,6 +1480,20 @@ export function injectChatExtras() {
     .sc-bganim-style .sc-stream-seg { margin-left: auto; }
     .sc-bganim-style.is-disabled { opacity: .45; pointer-events: none; }
 
+    /* Elevation — Admin segmented control in the Display group. Pink outline
+       matching Compact spacing / Module spacing so it reads as an admin pick. */
+    .sc-elev { display: flex; flex-direction: column; gap: 7px;
+      margin: 4px 12px 8px 42px; }
+    .sc-elev-label { display: flex; align-items: center; gap: 6px;
+      font-size: 10px; letter-spacing: 0.1em; font-weight: 700;
+      text-transform: uppercase; color: var(--text-muted); }
+    .sc-elev-label .topbar-menu-badge { margin-left: auto; }
+    .sc-elev-seg { border-color: rgb(219, 39, 119); }
+    .sc-elev-seg .sc-stream-seg-btn { border-left-color: color-mix(in srgb, rgb(219, 39, 119) 45%, transparent);
+      font-size: 10.5px; }
+    .sc-elev-seg .sc-stream-seg-btn:hover { background: color-mix(in srgb, rgb(219, 39, 119) 12%, transparent); color: var(--text); }
+    .sc-elev-seg .sc-stream-seg-btn.is-on { background: rgb(219, 39, 119); color: #fff; }
+
     /* ── Grouped, two-column three-dot menu ──────────────────────────────────
        The chat "More options" popover runs a long list of controls. Rather than
        one tall single column, its rows are bucketed into titled GROUP CARDS that
@@ -1448,6 +1541,7 @@ export function injectChatExtras() {
     .sc-menu-grouped .sc-bganim-style { margin: 0 12px 6px 14px; }
     .sc-menu-grouped .sc-bganim-playback { margin: 0 12px 4px 14px; }
     .sc-menu-grouped .sc-stream-detail { margin: 4px 12px 6px 14px; }
+    .sc-menu-grouped .sc-elev { margin: 4px 12px 6px 14px; }
     /* The Style + Strip-side segments stack their label above the control in the
        narrow column so the pills get the full width (matching Streaming detail). */
     .sc-menu-grouped .sc-bganim-style { flex-direction: column; align-items: stretch; gap: 6px; }
@@ -2079,7 +2173,8 @@ export function createHelixBgAnim(cfg) {
       const d = (n.z + 1) * 0.5;                               // 0 (far) → 1 (near)
       const size = prodSize * (0.74 + 0.54 * d) * breathe;     // near circles are larger
       const rad = size / 2;
-      if (n.owl) { drawOwl(n.x, n.y, size, n.alpha, n.alpha); continue; }
+      /* WISEcode owl bug is 20% larger than a product circle at the same depth. */
+      if (n.owl) { drawOwl(n.x, n.y, size * 1.2, n.alpha, n.alpha); continue; }
       if (!n.prod) continue;
       const im = images && images[n.prod.img];
       if (!im || !im.complete || !im.naturalWidth) continue;
@@ -2235,6 +2330,7 @@ const CHAT_MENU_GROUP_OF = {
   history: 'conversation', new: 'conversation', export: 'conversation', share: 'conversation', 'add-member': 'conversation',
   turns: 'data', outputs: 'data', connect: 'data', 'mcp-toggle': 'data', 'merge-panels': 'data', sticky: 'data',
   'toggle-cards': 'display', 'toggle-intent-chips': 'display', compact: 'display', brandtext: 'display', sheen: 'display',
+  elev: 'display',
   'bg-anim': 'background',
   'activity-strip': 'motion', 'stream-toggle': 'motion',
   close: 'danger',
@@ -3296,6 +3392,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-compact-item" data-sc="compact" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">density_small</span><span>Compact spacing</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-brandtext-item" data-sc="brandtext" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">format_color_text</span><span>Brand AI text</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-sheen-item" data-sc="sheen" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">auto_awesome</span><span>Input glow</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
+          ${chatElevControlHtml(readChatElev())}
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-bganim-item" data-sc="bg-anim" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">animation</span><span>Background animation</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
           <div class="sc-bganim-detail">
             <span class="sc-bganim-detail-label">Opacity</span>
@@ -5366,6 +5463,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     item.setAttribute('aria-checked', on ? 'true' : 'false');
   }
   document.addEventListener('wise:chat-sheen', syncSheenMenu);
+  document.addEventListener('wise:chat-elev', () => syncChatElevControl(rootEl));
   /* ── "Background animation" (Admin) engine ─────────────────────────────────
      A welcome-only ambient canvas: a DNA/RNA double helix whose two backbones +
      base-pair "rungs" are drawn in brand blue, chain-linking a run of OUR REAL
@@ -6968,6 +7066,13 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       try { document.dispatchEvent(new CustomEvent('wise:chat-sheen', { detail: { on } })); } catch (_) {}
       syncSheenMenu();
     }
+    else if (action === 'elev') {
+      /* Admin chat-container elevation: Little min / Above high / 3D. Persist +
+         broadcast so every chat module follows the one shared choice. Keep the
+         menu open so the segment reads back immediately. */
+      const level = item.dataset.elev;
+      if (CHAT_ELEV_LEVELS.includes(level)) setChatElev(level);
+    }
     else if (action === 'bg-anim') {
       /* Admin-only ambient backdrop for the welcome state. Flip the shared pref,
          persist + broadcast it; the wise:chat-bg-anim listener does the actual
@@ -7190,6 +7295,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   syncCompactMenu();
   syncBrandtextMenu();
   syncSheenMenu();
+  syncChatElevControl(rootEl);
   syncBgAnimMenu();
   syncStreamMenu();
   syncActivityStripMenu();
@@ -7277,6 +7383,11 @@ export function wireStandardChatMenu(cfg = {}) {
     try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
     catch (_) { return false; }
   })();
+
+  /* ── Chat module elevation — Admin Little min / Above high / 3D. Injected
+     into hand-rolled menus that predate the control; the shared template already
+     ships it. Persist + broadcast so every chat follows one preference. ── */
+  wireChatElev(pop);
 
   /* ── Compact spacing — app-wide <html>.chat-compact; ON by default, a
      stored '0' (explicitly turned off) wins. Same key/event as the shared

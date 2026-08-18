@@ -33,6 +33,7 @@ const FAQS = [
   { topic: 'api', q: 'Where do I find my API keys?', a: 'Open API keys from your profile menu or the Account section of the nav. You can create and revoke keys there, and view your usage and rate limits. A key\u2019s full value is shown only once, when you create it \u2014 copy it right away, because it can\u2019t be revealed again.' },
   { topic: 'account', q: 'How do I enable two-factor authentication?', a: 'Go to My profile → Security → Manage 2FA. We recommend an authenticator app over SMS.' },
   { topic: 'getting-started', q: 'How do I add products to my portfolio?', a: 'The Data Ingestion Agent accepts files, URLs, ERP exports, and product images. Start from Product Portfolio and choose Add products.' },
+  { topic: 'getting-started', q: 'How do I replay the WISEowl walkthrough?', a: 'Open Help → Replay the WISEowl walkthrough, or Preferences → Workspace → Replay tour. You can also add ?walkthrough=1 to any app URL. The owl remembers which groups you already finished.' },
 ];
 
 let hostEl = null;
@@ -116,6 +117,11 @@ function paint() {
       <section class="wmod-group" data-hc-anchor="support">
         <h2 class="wmod-group-title"><span class="material-symbols-outlined">support_agent</span>Still need help?</h2>
         <div class="wmod-card">
+          <button type="button" class="hc-support-row" data-hc-action="tour">
+            <span class="hc-support-ic"><span class="material-symbols-outlined">auto_awesome</span></span>
+            <span class="hc-support-body"><span class="hc-support-title">Replay the WISEowl walkthrough</span><span class="hc-support-desc">Tour the real pages, skip a group or go one by one</span></span>
+            <span class="material-symbols-outlined hc-support-arrow">chevron_right</span>
+          </button>
           <button type="button" class="hc-support-row" data-hc-action="chat">
             <span class="hc-support-ic"><span class="material-symbols-outlined">forum</span></span>
             <span class="hc-support-body"><span class="hc-support-title">Chat with WISEcodeAI</span><span class="hc-support-desc">Instant answers from the assistant</span></span>
@@ -180,6 +186,13 @@ function setTopic(t) {
 export function runHelpIntent(action) {
   switch (action) {
     case 'clear_search': query = ''; topicFilter = 'all'; paint(); break;
+    case 'tour':
+      if (window.WiseWalkthrough && typeof window.WiseWalkthrough.open === 'function') {
+        window.WiseWalkthrough.open({ force: true });
+      } else {
+        document.addEventListener('wise:walkthrough-ready', () => window.WiseWalkthrough?.open({ force: true }), { once: true });
+      }
+      break;
     case 'chat': document.getElementById('wiseai-dock-panel')?.querySelector('textarea, input')?.focus(); break;
     case 'email': window.location.href = 'mailto:support@wisecode.ai'; break;
     case 'docs': window.location.href = 'docs.html'; break;
@@ -205,18 +218,21 @@ export const HELP_WISEAI = {
   },
   intents: [
     { intent: 'getting_started', label: 'How do I get started?', icon: 'rocket_launch' },
+    { intent: 'walkthrough', label: 'Replay the walkthrough', icon: 'explore' },
     { intent: 'verification_help', label: 'Explain verification', icon: 'verified' },
     { intent: 'billing_help', label: 'Billing & invoices', icon: 'credit_card' },
     { intent: 'contact', label: 'Contact support', icon: 'support_agent' },
   ],
   intentReplies: {
     getting_started: 'To get started, add products with the <strong>Data Ingestion Agent</strong> (files, URLs, ERP exports or images), then run verification. I\u2019ve pulled the getting-started articles up for you.',
+    walkthrough: 'Opening the <strong>WISEowl walkthrough</strong> \u2014 I\u2019ll walk the real pages with you. Skip a group or go one by one; I\u2019ll remember what you\u2019ve already seen.',
     verification_help: '<strong>Non-UPF verification</strong> classifies finished products on the NOVA scale; <strong>GRAS verification</strong> documents ingredient-level safety. Filtered the help articles to verification.',
     billing_help: 'Invoices live under <strong>Organization → Invoices & Downloads</strong> and download as PDFs. I\u2019ve surfaced the billing FAQs.',
     contact: 'You can chat with me here for instant answers, email <strong>support@wisecode.ai</strong>, or read the docs. Scrolled you to the contact options.',
   },
   onIntent: (intent) => {
     if (intent === 'getting_started') { setTopic('getting-started'); return false; }
+    if (intent === 'walkthrough') { runHelpIntent('tour'); return false; }
     if (intent === 'verification_help') { setTopic('verification'); return false; }
     if (intent === 'billing_help') { setTopic('billing'); return false; }
     if (intent === 'contact') { runHelpIntent('support'); return false; }

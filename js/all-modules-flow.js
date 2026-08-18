@@ -1348,14 +1348,14 @@ const COMPONENTS = [
     demo: `
       <div style="max-width:320px;width:100%">
         <div class="dash-seg">
-          <span class="dash-seg-piece" style="width:56%;background:var(--sec-green)"></span>
-          <span class="dash-seg-piece" style="width:28%;background:var(--ter-amber)"></span>
-          <span class="dash-seg-piece" style="width:16%;background:var(--sec-red)"></span>
+          <span class="dash-seg-piece" style="width:56%;background:var(--chart-status-excellent)"></span>
+          <span class="dash-seg-piece" style="width:28%;background:var(--chart-status-okay)"></span>
+          <span class="dash-seg-piece" style="width:16%;background:var(--chart-status-poor)"></span>
         </div>
         <div class="dash-seg-tags">
-          <span class="dash-seg-tag"><span class="dash-dot" style="background:var(--sec-green)"></span>Non-UPF</span>
-          <span class="dash-seg-tag"><span class="dash-dot" style="background:var(--ter-amber)"></span>At risk</span>
-          <span class="dash-seg-tag"><span class="dash-dot" style="background:var(--sec-red)"></span>UPF</span>
+          <span class="dash-seg-tag"><span class="dash-dot" style="background:var(--chart-status-excellent)"></span>Non-UPF</span>
+          <span class="dash-seg-tag"><span class="dash-dot" style="background:var(--chart-status-okay)"></span>At risk</span>
+          <span class="dash-seg-tag"><span class="dash-dot" style="background:var(--chart-status-poor)"></span>UPF</span>
         </div>
       </div>`,
   },
@@ -1602,9 +1602,9 @@ const COMPONENTS = [
           <h4 class="adm-chart-title">Processing spectrum</h4>
           <div class="adm-chart-body">
             <div class="adm-bars" style="height:150px">
-              <div class="adm-bar"><div class="adm-bar-track"><div class="adm-bar-fill" style="height:72%;background:var(--sec-green)"><span class="adm-bar-val">54</span></div></div><span class="adm-bar-label">Minimally processed</span></div>
-              <div class="adm-bar"><div class="adm-bar-track"><div class="adm-bar-fill" style="height:48%;background:var(--ter-amber)"><span class="adm-bar-val">31</span></div></div><span class="adm-bar-label">Processed</span></div>
-              <div class="adm-bar"><div class="adm-bar-track"><div class="adm-bar-fill" style="height:34%;background:var(--sec-red)"><span class="adm-bar-val">18</span></div></div><span class="adm-bar-label">Ultra-processed</span></div>
+              <div class="adm-bar"><div class="adm-bar-track"><div class="adm-bar-fill" style="height:72%;background:var(--chart-status-excellent)"><span class="adm-bar-val">54</span></div></div><span class="adm-bar-label">Minimally processed</span></div>
+              <div class="adm-bar"><div class="adm-bar-track"><div class="adm-bar-fill" style="height:48%;background:var(--chart-status-okay)"><span class="adm-bar-val">31</span></div></div><span class="adm-bar-label">Processed</span></div>
+              <div class="adm-bar"><div class="adm-bar-track"><div class="adm-bar-fill" style="height:34%;background:var(--chart-status-poor)"><span class="adm-bar-val">18</span></div></div><span class="adm-bar-label">Ultra-processed</span></div>
             </div>
           </div>
         </div>
@@ -1612,13 +1612,13 @@ const COMPONENTS = [
           <h4 class="adm-chart-title">Verification status</h4>
           <div class="adm-chart-body">
             <div class="adm-vstatus">
-              <div class="adm-vrow"><span class="adm-vrow-ic material-symbols-outlined" style="color:var(--sec-green)">verified</span><div class="adm-vrow-main"><div class="adm-vrow-label">Verified</div><div class="adm-vrow-bar"><span style="width:62%;background:var(--sec-green)"></span></div></div><span class="adm-vrow-val">62</span></div>
-              <div class="adm-vrow"><span class="adm-vrow-ic material-symbols-outlined" style="color:var(--ter-amber-text)">pending</span><div class="adm-vrow-main"><div class="adm-vrow-label">Pending</div><div class="adm-vrow-bar"><span style="width:32%;background:var(--ter-amber)"></span></div></div><span class="adm-vrow-val">41</span></div>
-              <div class="adm-vrow"><span class="adm-vrow-ic material-symbols-outlined" style="color:var(--sec-red)">error</span><div class="adm-vrow-main"><div class="adm-vrow-label">At risk</div><div class="adm-vrow-bar"><span style="width:18%;background:var(--sec-red)"></span></div></div><span class="adm-vrow-val">25</span></div>
+              <div class="adm-vrow"><span class="adm-vrow-ic material-symbols-outlined" style="color:var(--chart-status-excellent)">verified</span><div class="adm-vrow-main"><div class="adm-vrow-label">Verified</div><div class="adm-vrow-bar"><span style="width:62%;background:var(--chart-status-excellent)"></span></div></div><span class="adm-vrow-val">62</span></div>
+              <div class="adm-vrow"><span class="adm-vrow-ic material-symbols-outlined" style="color:var(--chart-status-okay)">pending</span><div class="adm-vrow-main"><div class="adm-vrow-label">Pending</div><div class="adm-vrow-bar"><span style="width:32%;background:var(--chart-status-okay)"></span></div></div><span class="adm-vrow-val">41</span></div>
+              <div class="adm-vrow"><span class="adm-vrow-ic material-symbols-outlined" style="color:var(--chart-status-poor)">error</span><div class="adm-vrow-main"><div class="adm-vrow-label">At risk</div><div class="adm-vrow-bar"><span style="width:18%;background:var(--chart-status-poor)"></span></div></div><span class="adm-vrow-val">25</span></div>
             </div>
             <div class="adm-legend">
-              <div class="adm-legend-row"><span class="adm-legend-dot" style="background:var(--sec-green)"></span><span class="adm-legend-label">Non-UPF</span><span class="adm-legend-val">48%</span></div>
-              <div class="adm-legend-row"><span class="adm-legend-dot" style="background:var(--ter-amber)"></span><span class="adm-legend-label">At risk</span><span class="adm-legend-val">32%</span></div>
+              <div class="adm-legend-row"><span class="adm-legend-dot" style="background:var(--chart-status-excellent)"></span><span class="adm-legend-label">Non-UPF</span><span class="adm-legend-val">48%</span></div>
+              <div class="adm-legend-row"><span class="adm-legend-dot" style="background:var(--chart-status-okay)"></span><span class="adm-legend-label">At risk</span><span class="adm-legend-val">32%</span></div>
             </div>
           </div>
         </div>
@@ -1957,7 +1957,7 @@ const COMPONENTS = [
           </div>
           <div class="lib-cbody">
             <div class="lib-cname">Portfolio UPF</div>
-            <div class="lib-shared"><span class="material-symbols-outlined">person</span>Shared by ereyes@wisecode.ai</div>
+            <div class="lib-shared">Shared by ereyes@wisecode.ai</div>
             <div class="lib-cfoot"><span class="lib-date">Aug 6, 2026</span></div>
           </div>
         </a>
@@ -1968,7 +1968,7 @@ const COMPONENTS = [
     wide: true,
     cls: '.lib-fstat · .lib-fstat-add · .lib-fstat-unfile · .lib-folder-swatch · .lib-fdot',
     used: 'WISEcodeAI Library — folder row under the type/scope scorecards',
-    note: 'A folder is a scorecard dressed as a manila file: colored tab, count, and name. Click opens it. Hover ⋯ for Rename / Ungroup. <strong>New folder</strong> is the dashed tile on the left (inline name + color swatches). <strong>Remove from folder</strong> only appears while a filed card is dragging. Dropping one library card on another founds a folder — see Motion &amp; Resize.',
+    note: 'A folder is a scorecard dressed as a manila file: colored tab, count, and name. Click opens it. Hover ⋯ for Rename / New subfolder / Move into folder / Ungroup. Folders nest — drop a folder onto the centre of another to put it inside; left/right edges reorder siblings. <strong>New folder</strong> (or New subfolder, once you are inside) is the dashed tile on the left. Artifacts <strong>copy</strong> or <strong>link</strong> into any folder from the card ⋯ menu or from the drop chooser (Option copies, ⌘ links). <strong>Remove from folder</strong> only appears while a filed card is dragging. Dropping one library card on another founds a folder — see Motion &amp; Resize.',
     noteIcon: 'folder',
     demo: `
       <div class="dsc-lib-folders">
@@ -3168,9 +3168,9 @@ const MOTION_ITEMS = [
         <h4 class="adm-chart-title">Processing spectrum</h4>
         <div class="adm-chart-body">
           <div class="adm-bars" style="height:140px">
-            <div class="adm-bar"><div class="adm-bar-track"><div class="adm-bar-fill" data-h="72" style="height:72%;background:var(--sec-green)"><span class="adm-bar-val">54</span></div></div><span class="adm-bar-label">Minimally processed</span></div>
-            <div class="adm-bar"><div class="adm-bar-track"><div class="adm-bar-fill" data-h="48" style="height:48%;background:var(--ter-amber)"><span class="adm-bar-val">31</span></div></div><span class="adm-bar-label">Processed</span></div>
-            <div class="adm-bar"><div class="adm-bar-track"><div class="adm-bar-fill" data-h="34" style="height:34%;background:var(--sec-red)"><span class="adm-bar-val">18</span></div></div><span class="adm-bar-label">Ultra-processed</span></div>
+            <div class="adm-bar"><div class="adm-bar-track"><div class="adm-bar-fill" data-h="72" style="height:72%;background:var(--chart-status-excellent)"><span class="adm-bar-val">54</span></div></div><span class="adm-bar-label">Minimally processed</span></div>
+            <div class="adm-bar"><div class="adm-bar-track"><div class="adm-bar-fill" data-h="48" style="height:48%;background:var(--chart-status-okay)"><span class="adm-bar-val">31</span></div></div><span class="adm-bar-label">Processed</span></div>
+            <div class="adm-bar"><div class="adm-bar-track"><div class="adm-bar-fill" data-h="34" style="height:34%;background:var(--chart-status-poor)"><span class="adm-bar-val">18</span></div></div><span class="adm-bar-label">Ultra-processed</span></div>
           </div>
         </div>
       </div>
@@ -3332,7 +3332,7 @@ const MOTION_ITEMS = [
     id: 'file', group: 'drag', icon: 'create_new_folder', title: 'Drag to file',
     src: 'pages/conversation-library.html · js/chat-history.js',
     used: 'Conversation Library (drop a card on a folder / unfile tile) · History (drop a chat on a project or the ungrouped zone)',
-    lede: 'Drag a conversation onto an existing folder (Library) or project (History) to file it. While a filed card is dragging, a dashed “Remove from folder” tile appears. History also accepts a drop on the ungrouped zone to unfile. Dropping one Library card on another founds a new folder — that is the next card.',
+    lede: 'Drag a conversation onto an existing folder (Library) or project (History) to file it. In the Library a drop chooser lets you Move, Copy, or Link the artifact — Option copies, ⌘ links. While a filed card is dragging, a dashed “Remove from folder” tile appears. Drop a folder onto another folder to nest it. History also accepts a drop on the ungrouped zone to unfile. Dropping one Library card on another founds a new folder — that is the next card.',
     demo: `
       <div class="mi-motion-file" data-motion-file>
         <div class="mi-motion-file-cards">
@@ -5375,8 +5375,7 @@ function moduleStyles() {
     .dsc-demo .lib-thumb-badge .material-symbols-outlined { font-size: 12px !important; }
     .dsc-demo .lib-cbody { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px 13px; flex: 1; }
     .dsc-demo .lib-cname { font-size: 0.875rem; font-weight: 700; line-height: 1.3; color: var(--text); }
-    .dsc-demo .lib-shared { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-subtle); }
-    .dsc-demo .lib-shared .material-symbols-outlined { font-size: 14px !important; }
+    .dsc-demo .lib-shared { display: block; font-size: 0.75rem; line-height: 1.35; color: var(--text-subtle); overflow-wrap: anywhere; }
     .dsc-demo .lib-cfoot { margin-top: auto; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
     .dsc-demo .lib-date { font-size: 0.75rem; color: var(--text-subtle); }
     .dsc-demo .lib-counts { display: inline-flex; gap: 8px; }

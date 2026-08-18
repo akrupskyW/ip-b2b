@@ -98,6 +98,20 @@ import { initLirTooltip } from './lir-tooltip.js';
   } catch (_) {}
 })();
 
+/* Load the WISEowl first-login / first-screen walkthrough on every page that
+   renders the WISE nav. Self-guards; a no-op until the shell is in the DOM.
+   Replay from Help or Preferences via window.WiseWalkthrough.open(). */
+(function loadOwlWalkthrough() {
+  try {
+    if (typeof document === 'undefined' || window.__wiseOwlWalkthroughLoaded) return;
+    window.__wiseOwlWalkthroughLoaded = true;
+    var s = document.createElement('script');
+    s.src = new URL('./owl-walkthrough.js', import.meta.url).href;
+    s.defer = true;
+    (document.head || document.documentElement).appendChild(s);
+  } catch (_) {}
+})();
+
 /**
  * Single source of truth for the agent hierarchy and product navigation.
  *
@@ -494,7 +508,7 @@ export const WISE_APP_NAV = [
     id: 'wiseai',
     label: 'WISEcodeAI',
     icon: 'auto_awesome',
-    defaultOpen: false,
+    defaultOpen: true,
     children: [
       { id: 'wiseai-chat', label: 'Chat', icon: 'forum', slug: 'wiseai.html' },
       { id: 'library', label: 'Library', icon: 'auto_stories', slug: 'conversation-library.html' },
@@ -590,6 +604,17 @@ function formatProductNavLabel(label) {
   const parts = String(label).trim().split(/\s+/);
   if (parts.length < 2) return escAttr(label);
   return `${escAttr(parts[0])} ${escAttr(parts[1])}<sup class="tagline-tm">TM</sup>`;
+}
+
+/** Workspace (app) nav: WISEcodeAI is a trademarked product name, so it
+ *  carries the same small TM the product-nav labels use. Other rows stay
+ *  plain. */
+function formatAppNavLabel(label) {
+  const s = String(label);
+  if (s === 'WISEcodeAI' || s === 'WISEcode AI') {
+    return `${escAttr(s)}<sup class="tagline-tm">TM</sup>`;
+  }
+  return escAttr(s);
 }
 
 /* The whole app renders icons from the Material Symbols Outlined set, so every
@@ -872,6 +897,7 @@ const EXISTING_PAGES = new Set([
   'quick-invite.html',
   'user-management.html',
   'non-upf-dashboard.html',
+  'ai-dashboard.html',
   'audit-queue.html',
   'admin-utils.html',
   'all-modules.html',
@@ -892,7 +918,7 @@ function renderAppLocked(node, rowClass) {
   return `
     <div class="${rowClass} menu-nav-locked" data-nav-id="${escAttr(node.id)}" aria-disabled="true" title="Coming soon">
       <span class="${iconWrapCls}"><span class="${iconClassFor(node.icon)}">${escAttr(node.icon)}</span></span>
-      <span class="menu-nav-label">${escAttr(node.label)}</span>
+      <span class="menu-nav-label">${formatAppNavLabel(node.label)}</span>
       <span class="menu-nav-lock" aria-hidden="true"><span class="material-symbols-outlined">lock</span></span>
     </div>`;
 }
@@ -920,7 +946,7 @@ function renderAppItem(prefix, node, activeId) {
   return `
     <a class="menu-nav-item${isActive}" href="${escAttr(href)}" data-nav-id="${escAttr(node.id)}">
       <span class="menu-nav-icon"><span class="${iconClassFor(node.icon)}">${escAttr(node.icon)}</span></span>
-      <span class="menu-nav-label">${escAttr(node.label)}</span>
+      <span class="menu-nav-label">${formatAppNavLabel(node.label)}</span>
     </a>`;
 }
 
@@ -931,7 +957,7 @@ function renderAppSubitem(prefix, node, activeId) {
   return `
     <a class="menu-nav-subitem${isActive}" href="${escAttr(href)}" data-nav-id="${escAttr(node.id)}" data-depth="1">
       <span class="menu-nav-subicon"><span class="${iconClassFor(node.icon)}">${escAttr(node.icon)}</span></span>
-      <span class="menu-nav-label">${escAttr(node.label)}</span>
+      <span class="menu-nav-label">${formatAppNavLabel(node.label)}</span>
     </a>`;
 }
 
@@ -946,7 +972,7 @@ function renderAppGroup(prefix, node, activeId) {
     <div class="menu-nav-group" data-tier="admin" data-group="${escAttr(node.id)}" data-open="${isOpen ? 'true' : 'false'}">
       <a class="menu-nav-item menu-nav-toggle${isActive}" href="#" data-nav-id="${escAttr(node.id)}" data-toggle-group="${escAttr(node.id)}" data-toggle-only="true" role="button" aria-expanded="${isOpen ? 'true' : 'false'}" aria-controls="menu-nav-${escAttr(node.id)}">
         <span class="menu-nav-icon"><span class="${iconClassFor(node.icon)}">${escAttr(node.icon)}</span></span>
-        <span class="menu-nav-label">${escAttr(node.label)}</span>
+        <span class="menu-nav-label">${formatAppNavLabel(node.label)}</span>
         <button type="button" class="menu-nav-chevron-btn" data-toggle-group="${escAttr(node.id)}" aria-label="Toggle ${escAttr(node.label)}">
           <span class="menu-nav-chevron"><span class="material-symbols-outlined">expand_more</span></span>
         </button>

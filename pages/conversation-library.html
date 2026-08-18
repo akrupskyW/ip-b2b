@@ -71,7 +71,7 @@
        fill, strong border, primary focus ring, italic placeholder, leading
        search glyph affixed inside on the left. ---- */
     .lib-search-inline {
-      position: relative; display: inline-flex; align-items: center;
+      position: relative; z-index: 2; display: inline-flex; align-items: center;
       flex: 1 1 auto; min-width: 200px;
     }
     .lib-search-inline > .material-symbols-outlined {
@@ -116,7 +116,7 @@
     /* Popover spans the full width of the search field and lays every filter
        group out in its own responsive column. */
     .lib-filter-pop {
-      position: absolute; z-index: 60; top: calc(100% + 8px); left: 0; right: 0;
+      position: absolute; z-index: 80; top: calc(100% + 8px); left: 0; right: 0;
       max-height: min(70vh, 560px); overflow-y: auto;
       background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
       box-shadow: var(--shadow-2, 0 12px 32px rgba(0,0,0,0.18)); padding: 14px;
@@ -146,15 +146,31 @@
     html.dark .lib-fchip { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
     .lib-fchip .material-symbols-outlined { font-size: 13px !important; line-height: 1 !important; }
     .lib-fchip:hover { color: var(--text); border-color: var(--primary); }
+    html.dark .lib-fchip:hover { border-color: var(--primary-bright); }
     .lib-fchip.is-on { color: #fff; border-color: var(--primary); background: var(--primary); }
     .lib-fchip.is-on .material-symbols-outlined { color: #fff; }
+    /* html.dark .lib-fchip out-specs .lib-fchip.is-on, so selected fill never
+       painted in dark mode and chip clicks looked like a no-op. */
+    html.dark .lib-fchip.is-on,
+    html.dark .lib-fchip.is-on:hover {
+      color: #fff;
+      border-color: var(--primary);
+      background: var(--primary);
+    }
+    html.dark .lib-fchip.is-on .material-symbols-outlined { color: #fff; }
+    .lib-fchip:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+    }
+    html.dark .lib-fchip:focus-visible {
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-bright) 35%, transparent);
+    }
 
     /* ---- Toolbar (search bar row above the score cards) ---- */
     .lib-toolbar-bar {
       display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
       padding: 2px 0; margin-top: 22px;
     }
-
     /* ---- Score cards — the canonical portfolio at-a-glance stat tiles
        (.pf-stats / .pf-stat), reused here as scope + filed/unfiled toggles.
        Top row: All items / Shared with me / Shared by me. Second row:
@@ -201,7 +217,11 @@
       background: color-mix(in srgb, var(--primary) 10%, var(--surface));
       box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1);
     }
-    html.dark .lib-stat.is-active { background: color-mix(in srgb, var(--primary) 26%, transparent); }
+    html.dark .lib-stat.is-active {
+      border-color: var(--primary-bright);
+      background: color-mix(in srgb, var(--primary-bright) 18%, #1A2339);
+      box-shadow: inset 0 0 0 1px var(--primary-bright), var(--shadow-1);
+    }
     .lib-stat-num { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text); }
     .lib-stat-label { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
     .lib-stat-label .material-symbols-outlined {
@@ -230,6 +250,7 @@
       grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
     }
     .lib-card {
+      position: relative;
       display: flex; flex-direction: column;
       border-radius: 14px; overflow: hidden; text-decoration: none; color: inherit;
       border: 1px solid var(--border); background: var(--surface);
@@ -241,6 +262,33 @@
       border-color: color-mix(in srgb, var(--primary) 32%, var(--border));
     }
     a.lib-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+    /* Card ⋯ menu — circular, no boxed backdrop; same hover treatment as
+       folder tiles. Nested interactive is a span (cards are anchors). */
+    .lib-card-menu {
+      position: absolute; top: 6px; right: 6px; z-index: 3;
+      width: 24px; height: 24px; border-radius: 50%;
+      display: none; align-items: center; justify-content: center;
+      background: color-mix(in srgb, var(--surface) 88%, transparent);
+      backdrop-filter: blur(4px);
+      color: var(--text-subtle); cursor: pointer;
+      border: 1px solid var(--border);
+    }
+    .lib-card:hover .lib-card-menu,
+    .lib-card:focus-within .lib-card-menu,
+    .lib-card-menu.is-open { display: flex; }
+    .lib-card-menu:hover { background: var(--surface); color: var(--text); }
+    html.dark .lib-card-menu { background: color-mix(in srgb, #1A2339 82%, transparent); }
+    html.dark .lib-card-menu:hover { background: #1A2339; }
+    .lib-card-menu.is-open { color: var(--text); box-shadow: 0 0 0 2px var(--primary); }
+    .lib-card-menu .material-symbols-outlined { font-size: 16px !important; }
+
+    .lib-place { display: flex; flex-wrap: wrap; gap: 6px; }
+    .lib-place-tag {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 0.6875rem; font-weight: 700; color: var(--text-subtle);
+    }
+    .lib-place-tag .material-symbols-outlined { font-size: 13px !important; }
 
     /* ---- Preview thumb ---- */
     .lib-thumb {
@@ -289,10 +337,10 @@
       display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
     }
     .lib-shared {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 0.75rem; color: var(--text-subtle);
+      display: block;
+      font-size: 0.75rem; line-height: 1.35; color: var(--text-subtle);
+      overflow-wrap: anywhere;
     }
-    .lib-shared .material-symbols-outlined { font-size: 14px !important; }
     .lib-cfoot { margin-top: auto; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding-top: 2px; }
     .lib-date { font-size: 0.75rem; color: var(--text-subtle); align-self: flex-start; text-align: left; }
     .lib-counts { display: inline-flex; align-items: center; gap: 10px; }
@@ -304,13 +352,11 @@
 
     /* ===================================================================
        Folders — "special" score cards that sit in their own row below the
-       type + scope score cards. Each folder tile reuses the .lib-stat score
-       card look (count on top, dot + name below) and adds folder affordances:
-       click to open (filters the grid to that folder), a hover ⋯ menu
-       (rename / ungroup), an inline name editor with dot-color swatches, and
-       drag-and-drop filing (drop a card on a tile to file it, on the "Remove
-       from folder" tile to unfile). Dropping one card onto another founds a
-       new folder.
+       type + scope score cards. Folders nest (a folder may live inside
+       another). Each tile reuses the .lib-stat look and adds: click to open,
+       a hover ⋯ menu, an inline name editor, drag-and-drop filing, and
+       folder-on-folder nesting. Artifacts can be moved, copied, or linked
+       into any folder.
     =================================================================== */
     .lib-card.lib-dragging { opacity: .38; }
     .lib-card.lib-drop-target {
@@ -387,9 +433,11 @@
       display: none; align-items: center; justify-content: center;
     }
     .lib-fstat:hover .lib-fstat-menu,
-    .lib-fstat:focus-within .lib-fstat-menu { display: flex; }
+    .lib-fstat:focus-within .lib-fstat-menu,
+    .lib-fstat-menu.is-open { display: flex; }
     .lib-fstat-menu:hover { background: var(--surface-3); color: var(--text); }
     html.dark .lib-fstat-menu:hover { background: rgba(255,255,255,0.10); }
+    .lib-fstat-menu.is-open { color: var(--text); box-shadow: 0 0 0 2px var(--primary); }
     .lib-fstat-menu .material-symbols-outlined { font-size: 16px !important; }
 
     /* "New folder" + drag-only "Remove from folder" tiles — dashed, muted. */
@@ -416,12 +464,194 @@
     .lib-fstat-add:hover { border-color: var(--primary); color: var(--text); }
     .lib-fstat-add:hover .material-symbols-outlined { color: var(--primary); }
     html.dark .lib-fstat-add:hover .material-symbols-outlined { color: var(--primary-bright); }
-    /* The unfile tile only exists while a filed card is being dragged. */
+    /* Unfile / move-to-library tiles only exist while the matching drag is
+       in flight (a filed card, or a nested folder). */
     .lib-fstat-unfile { display: none; color: var(--primary); border-color: color-mix(in srgb, var(--primary) 45%, transparent); }
     html.dark .lib-fstat-unfile { color: var(--primary-bright); }
     .lib-fstat-unfile .material-symbols-outlined { color: currentColor; }
-    body.lib-drag-active .lib-fstat-unfile { display: flex; }
+    body.lib-drag-active .lib-fstat-unfile#lib-folders-unfile { display: flex; }
+    body.lib-folder-drag-out .lib-fstat-unfile#lib-folders-out { display: flex; }
     .lib-fstat-unfile.lib-drop-on { background: color-mix(in srgb, var(--primary) 12%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 26%, transparent); }
+
+    /* Breadcrumb — shown while a folder is open so nested folders can be
+       walked back up to the library root. Current crumb uses the brand serif. */
+    .lib-crumbs {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 2px;
+      padding: 0 2px 10px; margin-top: 2px;
+      font-size: 0.8125rem; font-weight: 600; color: var(--text-muted);
+    }
+    .lib-crumbs[hidden] { display: none; }
+    .lib-crumb {
+      border: 0; background: transparent; color: var(--primary); cursor: pointer;
+      font: inherit; font-weight: 700; padding: 2px 6px; border-radius: 6px;
+    }
+    html.dark .lib-crumb { color: var(--primary-bright); }
+    .lib-crumb:hover { background: var(--surface-3); color: var(--text); }
+    html.dark .lib-crumb:hover { background: rgba(255,255,255,0.08); }
+    .lib-crumb-sep { color: var(--text-subtle); padding: 0 2px; user-select: none; }
+    .lib-crumb-current {
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-weight: 700; color: var(--text); padding: 2px 6px;
+    }
+
+    /* ---- Board: side-panel folders (History-style) ⇄ large folder tiles ---- */
+    .lib-board { display: flex; align-items: flex-start; gap: 18px; }
+    .lib-board-main { flex: 1 1 0; min-width: 0; }
+    .lib-board[data-folder-view="tiles"] .lib-fp { display: none; }
+    .lib-board[data-folder-view="panel"] .lib-folders-tiles,
+    .lib-board[data-folder-view="panel"] .lib-tiles-only,
+    .lib-board[data-folder-view="panel"] .lib-crumbs { display: none; }
+
+    /* Folder side panel — same row language as History projects (.wch-project):
+       uppercase section label, circular add, colored folder icon + name +
+       count + hover ⋯. Nested folders indent inside .lib-fp-body. No card
+       chrome — the list sits on the module canvas. */
+    .lib-fp {
+      --lib-tree: color-mix(in srgb, var(--text-subtle) 52%, transparent);
+      --lib-fp-bg: var(--bg);
+      flex: 0 0 248px; width: 248px; box-sizing: border-box;
+      position: sticky; top: 0;
+      max-height: calc(100vh - 48px); overflow-y: auto;
+      padding: 0 8px 12px 0;
+      background: transparent; border: 0; box-shadow: none;
+    }
+    html.dark .lib-fp { --lib-tree: rgba(255,255,255,0.20); }
+
+    .lib-fp-folder { position: relative; margin: 1px 0; overflow: visible; }
+    .lib-fp-row, .lib-fp-all {
+      position: relative; z-index: 2; display: flex; align-items: center; gap: 6px;
+      padding: 8px 34px 8px 6px; border-radius: 0; cursor: pointer;
+      border: 0; background: transparent; width: 100%; box-sizing: border-box;
+      font: inherit; color: inherit; text-align: left; outline: none;
+    }
+    .lib-fp-row:hover, .lib-fp-all:hover,
+    .lib-fp-row:focus, .lib-fp-all:focus,
+    .lib-fp-row:focus-visible, .lib-fp-all:focus-visible { background: transparent; outline: none; }
+    html.dark .lib-fp-row:hover, html.dark .lib-fp-all:hover { background: transparent; }
+    .lib-fp-folder.is-active > .lib-fp-row,
+    .lib-fp-all.is-active { background: transparent; outline: none; }
+    .lib-fp-folder.is-active > .lib-fp-row .lib-fp-name,
+    .lib-fp-all.is-active .lib-fp-name { font-weight: 700; }
+    .lib-fp-row.lib-drop-on, .lib-fp-all.lib-drop-on, .lib-fp-unfile.lib-drop-on {
+      background: color-mix(in srgb, var(--primary) 14%, transparent);
+      outline: 1px dashed color-mix(in srgb, var(--primary) 55%, transparent);
+    }
+    .lib-fp-toggle {
+      position: relative; z-index: 3;
+      width: 22px; height: 22px; flex: 0 0 auto; border: 0; border-radius: 50%;
+      background: var(--lib-fp-bg); color: inherit; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .lib-fp-all .lib-fp-toggle { opacity: .7; }
+    .lib-fp-toggle .material-symbols-outlined { font-size: 18px !important; line-height: 1 !important; }
+    .lib-fp-row .lib-fp-toggle .material-symbols-outlined {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+    .lib-fp-dot {
+      flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%;
+      background: currentColor;
+    }
+    .lib-fp-name {
+      flex: 1; min-width: 0; font-size: 13px; font-weight: 400;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text);
+    }
+    .lib-fp-count {
+      flex: 0 0 auto; font-size: 11px; font-weight: 600;
+      opacity: .55; padding: 0 4px; color: var(--text);
+    }
+    .lib-fp-menu {
+      position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+      width: 24px; height: 24px; border: 0; border-radius: 50%;
+      background: transparent; color: var(--text-muted); cursor: pointer;
+      display: none; align-items: center; justify-content: center; opacity: .6;
+    }
+    .lib-fp-row:hover .lib-fp-menu, .lib-fp-row:focus-within .lib-fp-menu,
+    .lib-fp-menu.is-open { display: flex; }
+    .lib-fp-menu:hover { background: rgba(0,0,0,0.08); opacity: 1; color: var(--text); }
+    html.dark .lib-fp-menu:hover { background: rgba(255,255,255,0.12); }
+    .lib-fp-menu.is-open {
+      opacity: 1; color: var(--text);
+      box-shadow: 0 0 0 2px var(--primary);
+    }
+    .lib-fp-menu .material-symbols-outlined { font-size: 16px !important; }
+    /* Tree lines — vertical spine sized to the last *direct* child’s midline
+       so it reaches the last item. Horizontal ticks only; folder icons sit
+       above the lines (z-index + circular --lib-fp-bg mask). */
+    .lib-fp-body {
+      position: relative; z-index: 0; padding-left: 22px;
+      --lib-tree-end: 16px;
+    }
+    .lib-fp-folder.is-collapsed > .lib-fp-body { display: none; }
+    .lib-fp-folder:not(.is-collapsed) > .lib-fp-body:not(:empty)::before {
+      content: ""; position: absolute; z-index: 0;
+      left: 16px; top: -11px; width: 1px;
+      height: calc(11px + var(--lib-tree-end));
+      background: var(--lib-tree); pointer-events: none;
+    }
+    .lib-fp-body > .lib-fp-folder,
+    .lib-fp-body > .lib-fp-item,
+    .lib-fp-body > .lib-fp-empty,
+    .lib-fp-body > .lib-fp-edit,
+    .lib-fp-body > div:has(> .lib-fp-edit) { position: relative; }
+    .lib-fp-body > .lib-fp-folder > .lib-fp-row::before,
+    .lib-fp-body > .lib-fp-item::before,
+    .lib-fp-body > .lib-fp-empty::before,
+    .lib-fp-body > .lib-fp-edit::before,
+    .lib-fp-body > div:has(> .lib-fp-edit)::before {
+      content: ""; position: absolute; z-index: 0;
+      left: -6px; width: 14px; height: 1px; top: 50%;
+      transform: translateY(-50%);
+      background: var(--lib-tree); pointer-events: none;
+    }
+    .lib-fp-body > .lib-fp-folder > .lib-fp-row::before { top: 19px; transform: none; }
+    .lib-fp-empty { font-size: 11px; opacity: .5; padding: 4px 12px 8px 20px; color: var(--text-muted); }
+    .lib-fp-row.lib-folder-dragging { opacity: .4; }
+
+    /* Artifact rows — smaller than folder names; blue links (white in dark).
+       Overflow lives on the inner span so the tree tick isn’t clipped. */
+    .lib-fp-item {
+      position: relative; z-index: 0;
+      padding: 5px 10px 5px 12px; border-radius: 0; cursor: pointer; margin: 0;
+      font-size: 11px; font-weight: 400; line-height: 1.35; color: var(--primary);
+      background: transparent; outline: none; overflow: visible;
+    }
+    .lib-fp-item-txt {
+      display: block; min-width: 0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    html.dark .lib-fp-item { color: #fff; }
+    .lib-fp-item:hover { background: transparent; text-decoration: underline; }
+    .lib-fp-item:focus, .lib-fp-item:focus-visible { outline: none; background: transparent; }
+    .lib-fp-item.is-active {
+      background: transparent; outline: none;
+      font-weight: 700; text-decoration: none; color: var(--primary);
+    }
+    html.dark .lib-fp-item.is-active { color: #fff; }
+    .lib-fp-item.lib-dragging { opacity: .45; }
+
+    .lib-fp-unfile {
+      display: none; align-items: center; gap: 8px;
+      margin: 6px 4px 2px; padding: 8px 10px; border-radius: 10px;
+      border: 1px dashed color-mix(in srgb, var(--primary) 45%, transparent);
+      color: var(--primary); font-size: 12px; font-weight: 700;
+    }
+    html.dark .lib-fp-unfile { color: var(--primary-bright); }
+    .lib-fp-unfile .material-symbols-outlined { font-size: 18px !important; }
+    body.lib-drag-active .lib-fp-unfile#lib-fp-unfile { display: flex; }
+    body.lib-folder-drag-out .lib-fp-unfile#lib-fp-out { display: flex; }
+
+    /* Compact name editor inside the panel — History's .wch-proj-edit. */
+    .lib-fp-edit {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+      padding: 6px 8px;
+    }
+    .lib-fp-edit .lib-folder-edit-input { height: 30px; font-size: 13px; font-weight: 600; }
+    .lib-fp-edit .lib-folder-swatches { flex-basis: 100%; justify-content: flex-start; padding: 4px 2px 2px 17px; }
+
+    @media (max-width: 760px) {
+      .lib-board[data-folder-view="panel"] { flex-direction: column; }
+      .lib-fp { flex: none; width: 100%; max-height: 280px; position: static; }
+    }
 
     /* Inline name editor (create + rename) — the editing tile grows to two
        columns so the name input + color swatches have room. */
@@ -446,21 +676,75 @@
     .lib-folder-swatch:hover { transform: scale(1.25); }
     .lib-folder-swatch.is-sel { outline: 2px solid currentColor; outline-offset: 2px; }
 
-    /* Folder options popover (rename / ungroup) — mirrors .wch-pop. */
+    /* Action menus + destination pickers — match History .wch-pop. */
     .lib-pop {
-      position: fixed; z-index: 80; min-width: 180px; padding: 6px; border-radius: 12px;
-      background: var(--surface); color: var(--text); border: 1px solid var(--border);
-      box-shadow: var(--shadow-2, 0 14px 38px rgba(0,0,0,0.2));
+      position: fixed; z-index: 80; min-width: 210px; max-width: 260px; padding: 6px; border-radius: 12px;
+      background: var(--card, var(--surface, #0F1830)); color: var(--text, #C5CFD7);
+      border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 14px 38px rgba(0,0,0,0.42);
+    }
+    html:not(.dark) .lib-pop {
+      background: #fff; color: #1F2733;
+      border-color: rgba(0,0,0,0.10); box-shadow: 0 14px 38px rgba(20,30,60,0.18);
     }
     .lib-pop-item {
       display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px;
       border: 0; border-radius: 8px; background: transparent; color: inherit; cursor: pointer;
-      font: inherit; font-size: .8125rem; font-weight: 600; text-align: left;
+      font: inherit; font-size: 13px; text-align: left;
     }
-    .lib-pop-item:hover { background: var(--surface-2); }
-    html.dark .lib-pop-item:hover { background: rgba(255,255,255,0.08); }
-    .lib-pop-item .material-symbols-outlined { font-size: 17px !important; opacity: .8; }
-    .lib-pop-item--danger { color: var(--sec-red, #E5484D); }
+    .lib-pop-item:hover { background: rgba(255,255,255,0.08); }
+    html:not(.dark) .lib-pop-item:hover { background: rgba(20,40,80,0.06); }
+    .lib-pop-item .material-symbols-outlined { font-size: 17px !important; opacity: .8; flex: 0 0 auto; }
+    .lib-pop-item--danger { color: #E5484D; }
+    .lib-pop-head {
+      font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+      opacity: .5; color: inherit; padding: 6px 10px 4px;
+    }
+    .lib-pop-list { max-height: 220px; overflow-y: auto; }
+    .lib-pop-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lib-pop-div { height: 1px; margin: 5px 6px; background: rgba(255,255,255,0.10); }
+    html:not(.dark) .lib-pop-div { background: rgba(0,0,0,0.08); }
+    .lib-pop-item.is-current { color: var(--primary-ink, var(--primary, #2F6DF6)); font-weight: 600; }
+    .lib-pop-item .lib-fp-dot { width: 9px; height: 9px; }
+    .lib-pop-item.is-disabled { opacity: .4; pointer-events: none; }
+    .lib-pop-empty { padding: 6px 10px 8px; font-size: 13px; opacity: .5; }
+
+    /* Hover info card — match History .wch-info. Anchors above, else to the right. */
+    .lib-info {
+      position: fixed; z-index: 90; min-width: 196px; max-width: 264px; padding: 12px 14px; border-radius: 14px;
+      pointer-events: none;
+      opacity: 0; transform: translateY(5px) scale(.97); transform-origin: top left;
+      transition: opacity .14s ease, transform .14s ease;
+      background: var(--card, var(--surface, #0F1830)); color: var(--text, #C5CFD7);
+      border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 18px 44px rgba(0,0,0,0.46);
+    }
+    html:not(.dark) .lib-info {
+      background: #fff; color: #1F2733;
+      border-color: rgba(0,0,0,0.09); box-shadow: 0 18px 44px rgba(20,30,60,0.18);
+    }
+    .lib-info.is-vis { opacity: 1; transform: none; }
+    .lib-info-title {
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-weight: 700; font-size: 13.5px; line-height: 1.26; letter-spacing: -.01em; margin-bottom: 9px;
+    }
+    .lib-info-row { display: flex; align-items: center; gap: 9px; font-size: 12px; line-height: 1.5; opacity: .82; }
+    .lib-info-row + .lib-info-row { margin-top: 4px; }
+    .lib-info-row .material-symbols-outlined { font-size: 16px !important; opacity: .66; flex: 0 0 auto; }
+
+    /* Dark control tooltip — match History .wch-tip (sits above, caret down). */
+    .lib-tip {
+      position: fixed; z-index: 5000; pointer-events: none; max-width: 240px;
+      background: #1f2430; color: #fff;
+      font-size: 11.5px; font-weight: 600; line-height: 1.25; letter-spacing: 0.01em;
+      padding: 5px 9px; border-radius: 7px; white-space: nowrap;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.30); border: 1px solid rgba(255,255,255,0.08);
+      opacity: 0; transform: translate(-50%, calc(-100% - 4px)) scale(0.96); transform-origin: bottom center;
+      transition: opacity .12s ease, transform .12s ease;
+    }
+    .lib-tip.is-vis { opacity: 1; transform: translate(-50%, -100%) scale(1); }
+    .lib-tip::after {
+      content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+      border: 5px solid transparent; border-top-color: #1f2430;
+    }
 
     /* ===================================================================
        Workspace layout — mirror reports.html: the persistent WISEcodeAI chat
@@ -540,7 +824,7 @@
                   <div class="lib-title-row">
                     <h1 class="lib-title-main">WISEcodeAI Library</h1>
                   </div>
-                  <p class="lib-sub">Every report, dashboard, chat, and reference from your work, in one place. Drag a card onto a folder to file it — or onto another card to start a new folder.</p>
+                  <p class="lib-sub">Every report, dashboard, chat, and reference from your work, in one place. File, copy, or link items into any folder — drop a folder onto a folder to nest it.</p>
                 </div>
               </div>
 
@@ -558,6 +842,14 @@
                     <div class="lib-filter-pop-head">
                       <span class="lib-filter-pop-title">Filter library</span>
                       <button type="button" class="lib-filter-clear" id="lib-filter-clear">Clear all</button>
+                    </div>
+
+                    <div class="lib-filter-group">
+                      <div class="lib-filter-label">Layout</div>
+                      <div class="lib-filter-chips" id="lib-filter-layout" role="group" aria-label="Folder layout">
+                        <button type="button" class="lib-fchip is-on" data-lib-view="panel"><span class="material-symbols-outlined">view_sidebar</span>Side panel</button>
+                        <button type="button" class="lib-fchip" data-lib-view="tiles"><span class="material-symbols-outlined">grid_view</span>Large folders</button>
+                      </div>
                     </div>
 
                     <div class="lib-filter-group">
@@ -662,20 +954,24 @@
                 </div>
               </div>
 
-              <!-- ============ FOLDERS — "special" score cards ============
-                   A third score-card row below the type + scope rows. Each
-                   folder is a tile (count + colored dot + name) that opens the
-                   folder when clicked and accepts dropped cards. Tiles are
-                   rendered by JS into #lib-folders-row; the trailing "New
-                   folder" tile and the drag-only "Remove from folder" tile are
-                   part of the same row. -->
+              <!-- ============ FOLDERS + ITEMS ============
+                   Two layouts, toggled from the search filter:
+                   Side panel (default) — History-style folder tree on the left,
+                   artifact grid on the right.
+                   Large folders — the original score-card folder tiles above
+                   the grid. -->
               <div class="lib-board-divider"></div>
 
-              <div class="lib-stats-wrap">
+              <div class="lib-board" id="lib-board" data-folder-view="panel">
+                <aside class="lib-fp" id="lib-folder-panel" aria-label="Folders"></aside>
+                <div class="lib-board-main">
+              <nav class="lib-crumbs" id="lib-crumbs" hidden aria-label="Folder path"></nav>
+
+              <div class="lib-folders-tiles" id="lib-folders-tiles">
                 <div class="lib-stats-row lib-row-folders" id="lib-folders-row" role="group" aria-label="Folders"></div>
               </div>
 
-              <div class="lib-board-divider"></div>
+              <div class="lib-board-divider lib-tiles-only"></div>
 
               <!-- ============ ITEMS ============ -->
               <section aria-label="Library items">
@@ -740,7 +1036,7 @@
                       </div>
                       <div class="lib-cbody">
                         <div class="lib-cname">I want to test your ability to come up with codes…</div>
-                        <div class="lib-shared"><span class="material-symbols-outlined">person</span>Shared by ereyes@wisecode.ai · Aug 6</div>
+                        <div class="lib-shared">Shared by ereyes@wisecode.ai</div>
                         <div class="lib-cfoot">
                           <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">chat_bubble</span>4</span></span>
                           <span class="lib-date">Aug 5, 2026</span>
@@ -758,7 +1054,7 @@
                       </div>
                       <div class="lib-cbody">
                         <div class="lib-cname">can you remember things between conversations?</div>
-                        <div class="lib-shared"><span class="material-symbols-outlined">person</span>Shared by ereyes@wisecode.ai · Aug 5</div>
+                        <div class="lib-shared">Shared by ereyes@wisecode.ai</div>
                         <div class="lib-cfoot">
                           <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">chat_bubble</span>6</span></span>
                           <span class="lib-date">Aug 5, 2026</span>
@@ -790,7 +1086,7 @@
                       </div>
                       <div class="lib-cbody">
                         <div class="lib-cname">find foods whose ingredient list include the word natto</div>
-                        <div class="lib-shared"><span class="material-symbols-outlined">person</span>Shared by Tolga Erdogus · Aug 3</div>
+                        <div class="lib-shared">Shared by Tolga Erdogus</div>
                         <div class="lib-cfoot">
                           <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">chat_bubble</span>12</span></span>
                           <span class="lib-date">Aug 3, 2026</span>
@@ -808,7 +1104,7 @@
                       </div>
                       <div class="lib-cbody">
                         <div class="lib-cname">how many foods have full nfp15?</div>
-                        <div class="lib-shared"><span class="material-symbols-outlined">person</span>Shared by Tolga Erdogus · Aug 3</div>
+                        <div class="lib-shared">Shared by Tolga Erdogus</div>
                         <div class="lib-cfoot">
                           <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">chat_bubble</span>8</span></span>
                           <span class="lib-date">Aug 3, 2026</span>
@@ -826,7 +1122,7 @@
                       </div>
                       <div class="lib-cbody">
                         <div class="lib-cname">how many foods have full nfp15?</div>
-                        <div class="lib-shared"><span class="material-symbols-outlined">person</span>Shared by Tolga Erdogus · Aug 3</div>
+                        <div class="lib-shared">Shared by Tolga Erdogus</div>
                         <div class="lib-cfoot">
                           <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">chat_bubble</span>2</span></span>
                           <span class="lib-date">Aug 3, 2026</span>
@@ -908,6 +1204,8 @@
 
                   </div>
                 </section>
+                </div>
+              </div>
 
             </div>
           </div>
@@ -934,7 +1232,7 @@
       const statsWrap = document.querySelector('.lib-stats-wrap');
       if (!grid || !searchEl || !filterBtn || !filterPop) return;
 
-      const state = { q: '', type: 'all', shared: 'all', folder: 'all', sort: 'newest', openFolder: null };
+      const state = { q: '', type: 'all', shared: 'all', folder: 'all', sort: 'newest', openFolder: null, activeItem: null };
 
       // Snapshot each card's derived metadata once. Each card gets a stable
       // position-derived id (the shelf is static demo HTML) so folder
@@ -952,51 +1250,136 @@
           else if (badgeTxt.includes('reference')) type = 'ref';
         }
         const shared = el.querySelector('.lib-shared') ? 'with' : 'none';
-        const name = (el.querySelector('.lib-cname')?.textContent || '').toLowerCase();
-        const sharedTxt = (el.querySelector('.lib-shared')?.textContent || '').toLowerCase();
+        const titleTxt = (el.querySelector('.lib-cname')?.textContent || '').trim();
+        const sharedLabel = (el.querySelector('.lib-shared')?.textContent || '').trim();
+        const name = titleTxt.toLowerCase();
+        const sharedTxt = sharedLabel.toLowerCase();
         const dateTxt = el.querySelector('.lib-date')?.textContent || '';
         const time = Date.parse(dateTxt) || 0;
+        let msgCount = 0;
+        el.querySelectorAll('.lib-count').forEach((node) => {
+          const icon = (node.querySelector('.material-symbols-outlined')?.textContent || '').trim();
+          if (icon === 'chat_bubble') msgCount = parseInt((node.textContent || '').replace(/[^\d]/g, ''), 10) || 0;
+        });
         const id = 'item-' + i;
         el.dataset.libId = id;
         el.setAttribute('draggable', 'true');
-        return { el, id, type, shared, name, sharedTxt, dateTxt, time };
+        return { el, id, type, shared, name, titleTxt, sharedTxt, sharedLabel, dateTxt, time, msgCount };
       });
 
-      /* ---- Folder store — mirrors the History module's projects: a folder is
-         { id, name, color, ts, items:[cardIds] }, persisted so the collections
-         survive reloads. Same palette as History's project dots. ---- */
+      /* ---- Folder store — a folder is { id, name, color, ts, parentId,
+         items:[cardIds] }. Nested via parentId (null = library root). The same
+         card id may appear in several folders (a link); a copy is a new card
+         id cloned from a source artifact. Same palette as History's dots. ---- */
       const FOLDER_KEY = 'wise-lib-folders';
+      const COPIES_KEY = 'wise-lib-copies';
+      const VIEW_KEY = 'wise-lib-folder-view';
       const FOLDER_COLORS = ['#2F6DF6', '#12B981', '#F59E0B', '#EC4899', '#8B5CF6', '#06B6D4', '#EF4444', '#84CC16'];
       let folders = [];
+      let copies = [];
       let storedFolders = null;
       try { storedFolders = localStorage.getItem(FOLDER_KEY); } catch (_) {}
       try { folders = JSON.parse(storedFolders || '[]') || []; } catch (_) { folders = []; }
       folders = folders.filter((f) => f && f.id && Array.isArray(f.items));
+      folders.forEach((f) => { if (!f.parentId) f.parentId = null; });
+      try { copies = JSON.parse(localStorage.getItem(COPIES_KEY) || '[]') || []; } catch (_) { copies = []; }
+      copies = copies.filter((c) => c && c.id && c.sourceId);
+      let folderView = 'panel';
+      try {
+        const v = localStorage.getItem(VIEW_KEY);
+        if (v === 'tiles' || v === 'panel') folderView = v;
+      } catch (_) {}
       /* First-run seed — open with a few curated folders (like the History
          module seeds conversations) so the shelf never reads empty and the
          drag-to-file affordance is discoverable. Only when nothing has ever
          been stored; a user who ungroups everything stays folderless. */
       if (storedFolders === null) {
         folders = [
-          { id: 'seed-upf', name: 'UPF Stuff', color: '#2F6DF6', ts: Date.now() - 3 * 86400000, items: ['item-1', 'item-2', 'item-5', 'item-9'] },
-          { id: 'seed-demos', name: 'Demos', color: '#12B981', ts: Date.now() - 2 * 86400000, items: ['item-7', 'item-8'] },
-          { id: 'seed-reports', name: 'Impressive Reports', color: '#F59E0B', ts: Date.now() - 86400000, items: ['item-0', 'item-10'] }
+          { id: 'seed-upf', name: 'UPF Stuff', color: '#2F6DF6', ts: Date.now() - 3 * 86400000, parentId: null, items: ['item-1', 'item-2', 'item-5', 'item-9'] },
+          { id: 'seed-labels', name: 'Label scans', color: '#EC4899', ts: Date.now() - 3 * 86400000 + 1000, parentId: 'seed-upf', items: ['item-3'] },
+          { id: 'seed-demos', name: 'Demos', color: '#12B981', ts: Date.now() - 2 * 86400000, parentId: null, items: ['item-7', 'item-8'] },
+          { id: 'seed-reports', name: 'Impressive Reports', color: '#F59E0B', ts: Date.now() - 86400000, parentId: null, items: ['item-0', 'item-10'] }
         ].map((f) => ({ ...f, items: f.items.filter((id) => cardById(id)) }));
         try { localStorage.setItem(FOLDER_KEY, JSON.stringify(folders)); } catch (_) {}
       }
       /* Transient folder UI state (never persisted). */
       let editingFolder = null;   /* folder id currently shown as an inline name editor */
       let creatingFolder = false; /* the "new folder" inline editor row is shown */
+      let creatingParent = null;  /* parent id for a folder being created (null = root) */
       let pendingColor = null;    /* swatch picked while editing (applied on save) */
       let dragId = null;          /* card id currently being dragged */
-      let dragFolderId = null;    /* folder id currently being dragged (reorder) */
+      let dragFolderId = null;    /* folder id currently being dragged (reorder / nest) */
       let suppressClick = false;  /* swallow the click that trails a drag */
       let suppressFolderClick = false; /* swallow the click that trails a folder reorder drag */
 
       function saveFolders() { try { localStorage.setItem(FOLDER_KEY, JSON.stringify(folders)); } catch (_) {} }
+      function saveCopies() { try { localStorage.setItem(COPIES_KEY, JSON.stringify(copies)); } catch (_) {} }
       function findFolder(id) { return folders.find((f) => f.id === id) || null; }
-      function folderOf(cardId) { return folders.find((f) => f.items.includes(cardId)) || null; }
+      function foldersOf(cardId) { return folders.filter((f) => f.items.includes(cardId)); }
+      function folderOf(cardId) { return foldersOf(cardId)[0] || null; }
       function cardById(id) { return cards.find((c) => c.id === id) || null; }
+      function childrenOf(parentId) {
+        const p = parentId || null;
+        return folders.filter((f) => (f.parentId || null) === p);
+      }
+      function folderPath(id) {
+        const path = [];
+        let cur = findFolder(id);
+        const seen = new Set();
+        while (cur && !seen.has(cur.id)) {
+          seen.add(cur.id);
+          path.unshift(cur);
+          cur = cur.parentId ? findFolder(cur.parentId) : null;
+        }
+        return path;
+      }
+      function isSelfOrDescendant(ancestorId, id) {
+        if (!ancestorId || !id) return false;
+        if (ancestorId === id) return true;
+        let cur = findFolder(id);
+        const seen = new Set();
+        while (cur && cur.parentId && !seen.has(cur.id)) {
+          seen.add(cur.id);
+          if (cur.parentId === ancestorId) return true;
+          cur = findFolder(cur.parentId);
+        }
+        return false;
+      }
+      function folderTree(excludeId) {
+        const rows = [];
+        const walk = (parentId, depth) => {
+          childrenOf(parentId).forEach((f) => {
+            if (excludeId && isSelfOrDescendant(excludeId, f.id)) return;
+            rows.push({ f, depth });
+            walk(f.id, depth + 1);
+          });
+        };
+        walk(null, 0);
+        return rows;
+      }
+
+      /* Restore copied artifacts (cloned DOM cards) so membership in folders
+         survives reloads. Copies are applied in creation order so a copy-of-a
+         copy still finds its source. */
+      copies.forEach((cp) => {
+        if (cardById(cp.id)) return;
+        const src = cardById(cp.sourceId);
+        if (!src) return;
+        const el = src.el.cloneNode(true);
+        const staleMenu = el.querySelector('.lib-card-menu');
+        if (staleMenu) staleMenu.remove();
+        const stalePlace = el.querySelector('.lib-place');
+        if (stalePlace) stalePlace.remove();
+        el.dataset.libId = cp.id;
+        el.setAttribute('draggable', 'true');
+        grid.appendChild(el);
+        cards.push({
+          el, id: cp.id, type: src.type, shared: src.shared,
+          name: src.name, titleTxt: src.titleTxt, sharedTxt: src.sharedTxt, sharedLabel: src.sharedLabel,
+          dateTxt: src.dateTxt, time: src.time, msgCount: src.msgCount,
+          copyOf: cp.sourceId
+        });
+      });
 
       /* ---- Derived counts — every score-card number comes from the cards
          actually in the grid, so the tiles can never drift from the data. ---- */
@@ -1014,7 +1397,7 @@
          are dragged into and out of folders), so they get their own refresher
          that also repaints the two scope score cards. */
       function refreshFolderCounts() {
-        counts.folder.filed = cards.reduce((n, c) => n + (folderOf(c.id) ? 1 : 0), 0);
+        counts.folder.filed = cards.reduce((n, c) => n + (foldersOf(c.id).length ? 1 : 0), 0);
         counts.folder.unfiled = cards.length - counts.folder.filed;
         if (statsWrap) {
           statsWrap.querySelectorAll('.lib-stat[data-stat="folder"]').forEach((btn) => {
@@ -1072,7 +1455,8 @@
         if (!openF) state.openFolder = null;
 
         cards.forEach((c) => {
-          const fold = folderOf(c.id);
+          const folds = foldersOf(c.id);
+          const fold = folds[0];
           let ok = true;
           if (openF && !openF.items.includes(c.id)) ok = false;
           if (ok && state.type !== 'all' && c.type !== state.type) ok = false;
@@ -1080,9 +1464,10 @@
             if (state.shared === 'with' && c.shared !== 'with') ok = false;
             if (state.shared === 'by') ok = false; // demo data has none shared by me
           }
-          if (ok && state.folder !== 'all' && (fold ? 'filed' : 'unfiled') !== state.folder) ok = false;
+          if (ok && state.folder !== 'all' && (folds.length ? 'filed' : 'unfiled') !== state.folder) ok = false;
           if (ok && state.q) {
-            const hay = c.name + ' ' + c.sharedTxt + ' ' + c.type + ' ' + (fold ? fold.name.toLowerCase() : '');
+            const hay = c.name + ' ' + c.sharedTxt + ' ' + c.type + ' ' +
+              folds.map((f) => f.name.toLowerCase()).join(' ');
             if (!hay.includes(state.q)) ok = false;
           }
           c.el.style.display = ok ? '' : 'none';
@@ -1095,7 +1480,11 @@
         else if (state.sort === 'az') sorted.sort((a, b) => a.name.localeCompare(b.name));
         sorted.forEach((c) => grid.appendChild(c.el));
 
+        refreshCardChrome();
+        renderCrumbs();
         renderRail();
+        renderPanel();
+        syncFolderView();
         syncControls();
       }
 
@@ -1110,11 +1499,18 @@
       document.addEventListener('click', () => setPop(false));
       document.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape') return;
+        const hadPop = !!document.querySelector('.lib-pop');
+        const filterWasOpen = filterPop && !filterPop.hidden;
         setPop(false);
         closeFolderMenu();
-        /* Back out of an open folder (the inline rename editor swallows its
-           own Escape before it reaches here). */
-        if (state.openFolder && !editingFolder) { state.openFolder = null; apply(); }
+        /* Closing a menu / filter does not walk the folder tree. Walk up
+           one nested folder only when Escape wasn't already consumed. */
+        if (hadPop || filterWasOpen) return;
+        if (state.openFolder && !editingFolder && !creatingFolder) {
+          const f = findFolder(state.openFolder);
+          state.openFolder = (f && f.parentId) || null;
+          apply();
+        }
       });
 
       // Single-select funnel chip groups.
@@ -1195,17 +1591,122 @@
 
       /* =================================================================
          Folders — the interaction layer. Folders render as "special" score
-         cards in their own row below the type + scope score cards. A tile
-         opens its folder when clicked (filtering the grid), accepts dropped
-         cards to file them, carries a hover ⋯ menu (Rename / Ungroup) and an
-         inline name editor with color swatches. A "New folder" tile creates
-         one; a drag-only "Remove from folder" tile unfiles. Dropping one card
-         onto another founds a new folder.
+         cards in their own row. A tile opens its folder, accepts dropped
+         cards (move / copy / link), carries a hover ⋯ menu, and nests when
+         another folder is dropped onto its centre. Sibling tiles reorder
+         from the left/right edges. Artifacts copy or link into any folder
+         from the card ⋯ menu's folder picker.
          ================================================================= */
       const foldersRowEl = document.getElementById('lib-folders-row');
+      const crumbsEl = document.getElementById('lib-crumbs');
+      const panelEl = document.getElementById('lib-folder-panel');
+      const boardEl = document.getElementById('lib-board');
 
       function genFolderId() {
         return 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      }
+      function genCopyId() {
+        return 'copy-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      }
+      function escHtml(s) {
+        return String(s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function paintTypeCounts() {
+        if (!statsWrap) return;
+        statsWrap.querySelectorAll('.lib-stat').forEach((btn) => {
+          const stat = btn.dataset.stat, val = btn.dataset.val;
+          const n = counts[stat] ? counts[stat][val] : undefined;
+          const numEl = btn.querySelector('.lib-stat-num');
+          if (numEl && n != null) numEl.textContent = n;
+        });
+      }
+      function recountTypes() {
+        counts.type = { all: cards.length, report: 0, dashboard: 0, chat: 0, mcp: 0, ref: 0 };
+        counts.shared = { with: 0, by: 0 };
+        cards.forEach((c) => {
+          if (counts.type[c.type] != null) counts.type[c.type]++;
+          if (c.shared === 'with') counts.shared.with++;
+        });
+        paintTypeCounts();
+        refreshFolderCounts();
+      }
+
+      function ensureCardMenu(el) {
+        if (el.querySelector('.lib-card-menu')) return;
+        const btn = document.createElement('span');
+        btn.className = 'lib-card-menu';
+        btn.setAttribute('role', 'button');
+        btn.setAttribute('tabindex', '0');
+        btn.setAttribute('title', 'Item options');
+        btn.setAttribute('aria-label', 'Item options');
+        btn.innerHTML = '<span class="material-symbols-outlined">more_horiz</span>';
+        el.appendChild(btn);
+      }
+      cards.forEach((c) => ensureCardMenu(c.el));
+
+      function refreshCardChrome() {
+        cards.forEach((c) => {
+          const n = foldersOf(c.id).length;
+          const isCopy = !!c.copyOf || (c.id && c.id.indexOf('copy-') === 0);
+          let place = c.el.querySelector('.lib-place');
+          if (n < 2 && !isCopy) {
+            if (place) place.remove();
+            return;
+          }
+          if (!place) {
+            place = document.createElement('div');
+            place.className = 'lib-place';
+            const foot = c.el.querySelector('.lib-cfoot');
+            if (foot) foot.appendChild(place);
+            else c.el.appendChild(place);
+          }
+          let html = '';
+          if (isCopy) html += '<span class="lib-place-tag" title="Copy of another item"><span class="material-symbols-outlined">content_copy</span>Copy</span>';
+          if (n > 1) html += '<span class="lib-place-tag" title="Linked in ' + n + ' folders"><span class="material-symbols-outlined">link</span>Linked</span>';
+          place.innerHTML = html;
+        });
+      }
+
+      /* ---- Breadcrumb (Library › parent › current) ---- */
+      function renderCrumbs() {
+        if (!crumbsEl) return;
+        const openF = state.openFolder ? findFolder(state.openFolder) : null;
+        if (!openF) {
+          crumbsEl.hidden = true;
+          crumbsEl.innerHTML = '';
+          return;
+        }
+        crumbsEl.hidden = false;
+        const path = folderPath(openF.id);
+        let html = '<button type="button" class="lib-crumb" data-crumb="">Library</button>';
+        path.forEach((f, i) => {
+          html += '<span class="lib-crumb-sep" aria-hidden="true">›</span>';
+          if (i === path.length - 1) {
+            html += '<span class="lib-crumb-current"></span>';
+          } else {
+            html += '<button type="button" class="lib-crumb" data-crumb="' + f.id + '"></button>';
+          }
+        });
+        crumbsEl.innerHTML = html;
+        const nodes = crumbsEl.querySelectorAll('.lib-crumb[data-crumb], .lib-crumb-current');
+        path.forEach((f, i) => {
+          const el = nodes[i + 1];
+          if (el) el.textContent = f.name;
+        });
+      }
+      if (crumbsEl) {
+        crumbsEl.addEventListener('click', (e) => {
+          const btn = e.target.closest('.lib-crumb');
+          if (!btn) return;
+          const id = btn.dataset.crumb;
+          state.openFolder = id || null;
+          state.type = 'all'; state.shared = 'all'; state.folder = 'all';
+          apply();
+        });
       }
 
       /* ---- Inline editor markup for an editing tile (create + rename) ---- */
@@ -1224,6 +1725,8 @@
       /* ---- Folders row rendering (rebuilt on every apply) ---- */
       function renderRail() {
         if (!foldersRowEl) return;
+        if (folderView === 'panel') { foldersRowEl.innerHTML = ''; return; }
+        const visible = childrenOf(state.openFolder);
         let html = '';
         /* Leading tile: the "New folder" creator sits at the FAR LEFT. While
            creating, it becomes the inline editor in place. */
@@ -1231,12 +1734,13 @@
           html += '<div class="lib-stat lib-fstat is-editing lib-fstat-creating" style="--lib-folder-color:' +
             (pendingColor || FOLDER_COLORS[folders.length % FOLDER_COLORS.length]) + '">' + folderEditHtml(null) + '</div>';
         } else {
-          html += '<button type="button" class="lib-stat lib-fstat lib-fstat-add" id="lib-folders-add" title="New folder" aria-label="New folder">' +
+          const addLabel = state.openFolder ? 'New subfolder' : 'New folder';
+          html += '<button type="button" class="lib-stat lib-fstat lib-fstat-add" id="lib-folders-add" title="' + addLabel + '" aria-label="' + addLabel + '">' +
               '<span class="material-symbols-outlined">create_new_folder</span>' +
-              '<span class="lib-stat-label">New folder</span>' +
+              '<span class="lib-stat-label">' + addLabel + '</span>' +
             '</button>';
         }
-        folders.forEach((f) => {
+        visible.forEach((f) => {
           if (editingFolder === f.id) {
             html += '<div class="lib-stat lib-fstat is-editing" style="--lib-folder-color:' + (pendingColor || f.color) + '">' + folderEditHtml(f) + '</div>';
             return;
@@ -1249,22 +1753,130 @@
             '<span class="lib-stat-label"><span class="lib-fdot"></span><span class="lib-fstat-name"></span></span>' +
           '</button>';
         });
-        /* Trailing (drag-only) unfile tile. */
+        /* Trailing (drag-only) unfile / move-to-library tiles. */
         html += '<div class="lib-stat lib-fstat lib-fstat-unfile" id="lib-folders-unfile" aria-label="Remove from folder">' +
             '<span class="material-symbols-outlined">folder_off</span>' +
             '<span class="lib-stat-label">Remove from folder</span>' +
           '</div>';
+        html += '<div class="lib-stat lib-fstat lib-fstat-unfile" id="lib-folders-out" aria-label="Move folder to Library">' +
+            '<span class="material-symbols-outlined">drive_file_move</span>' +
+            '<span class="lib-stat-label">Move to Library</span>' +
+          '</div>';
         foldersRowEl.innerHTML = html;
-        /* Folder names via textContent (user input). */
         foldersRowEl.querySelectorAll('.lib-fstat[data-folder-id]').forEach((tile) => {
           const f = findFolder(tile.dataset.folderId);
           if (!f) return;
           const nameEl = tile.querySelector('.lib-fstat-name');
           if (nameEl) nameEl.textContent = f.name;
-          tile.setAttribute('aria-label', 'Open folder ' + f.name + ', ' + f.items.length + ' item' + (f.items.length === 1 ? '' : 's'));
+          const nestedN = childrenOf(f.id).length;
+          const bits = [f.items.length + ' item' + (f.items.length === 1 ? '' : 's')];
+          if (nestedN) bits.push(nestedN + ' folder' + (nestedN === 1 ? '' : 's'));
+          tile.setAttribute('aria-label', 'Open folder ' + f.name + ', ' + bits.join(', '));
         });
         const edit = foldersRowEl.querySelector('.lib-fstat-edit');
         if (edit) wireRowEditor(edit);
+      }
+
+      function panelEditHtml(f) {
+        return folderEditHtml(f).replace('class="lib-fstat-edit"', 'class="lib-fstat-edit lib-fp-edit"');
+      }
+
+      function syncFolderView() {
+        if (boardEl) boardEl.setAttribute('data-folder-view', folderView);
+        document.querySelectorAll('#lib-filter-layout .lib-fchip').forEach((b) => {
+          b.classList.toggle('is-on', b.dataset.libView === folderView);
+        });
+      }
+      function setFolderView(view) {
+        folderView = (view === 'tiles') ? 'tiles' : 'panel';
+        try { localStorage.setItem(VIEW_KEY, folderView); } catch (_) {}
+        apply();
+      }
+      document.getElementById('lib-filter-layout')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-lib-view]');
+        if (!btn) return;
+        setFolderView(btn.dataset.libView);
+      });
+
+      function renderPanelFolder(f) {
+        const kids = childrenOf(f.id);
+        const collapsed = !!f.collapsed;
+        const active = state.openFolder === f.id;
+        let html = '<div class="lib-fp-folder' + (collapsed ? ' is-collapsed' : '') + (active ? ' is-active' : '') + '" data-fp-folder="' + f.id + '">';
+        if (editingFolder === f.id) {
+          html += '<div style="--lib-folder-color:' + (pendingColor || f.color) + '">' + panelEditHtml(f) + '</div>';
+        } else {
+          html += '<div class="lib-fp-row" draggable="true" data-folder-id="' + f.id + '" role="button" tabindex="0" aria-expanded="' + (collapsed ? 'false' : 'true') + '">' +
+            '<button type="button" class="lib-fp-toggle" data-fp-toggle="' + f.id + '" tabindex="-1" aria-label="Expand or collapse folder" style="color:' + f.color + '"><span class="material-symbols-outlined">' + (collapsed ? 'folder' : 'folder_open') + '</span></button>' +
+            '<span class="lib-fp-name"></span>' +
+            '<span class="lib-fp-count">' + f.items.length + '</span>' +
+            '<span class="lib-fp-menu" data-frow-menu="' + f.id + '" role="button" tabindex="0" title="Folder options" aria-label="Folder options"><span class="material-symbols-outlined">more_horiz</span></span>' +
+          '</div>';
+        }
+        html += '<div class="lib-fp-body">';
+        if (creatingFolder && creatingParent === f.id) {
+          html += '<div style="--lib-folder-color:' + (pendingColor || FOLDER_COLORS[folders.length % FOLDER_COLORS.length]) + '">' + panelEditHtml(null) + '</div>';
+        }
+        kids.forEach((k) => { html += renderPanelFolder(k); });
+        f.items.forEach((id) => {
+          const c = cardById(id);
+          if (!c) return;
+          html += '<div class="lib-fp-item' + (state.activeItem === c.id ? ' is-active' : '') +
+            '" role="listitem" tabindex="0" draggable="true" data-fp-item="' + c.id + '" data-fp-item-folder="' + f.id + '"><span class="lib-fp-item-txt"></span></div>';
+        });
+        if (!kids.length && !f.items.length && creatingParent !== f.id) {
+          html += '<div class="lib-fp-empty">Empty — drop an item here.</div>';
+        }
+        html += '</div></div>';
+        return html;
+      }
+
+      function renderPanel() {
+        if (!panelEl) return;
+        if (folderView === 'tiles') { panelEl.innerHTML = ''; return; }
+        const allActive = !state.openFolder;
+        let html = '<button type="button" class="lib-fp-all' + (allActive ? ' is-active' : '') + '" id="lib-fp-all">' +
+          '<span class="lib-fp-toggle" aria-hidden="true"><span class="material-symbols-outlined">inventory_2</span></span>' +
+          '<span class="lib-fp-name">All items</span>' +
+          '<span class="lib-fp-count">' + cards.length + '</span></button>';
+        if (creatingFolder && !creatingParent) {
+          html += '<div style="--lib-folder-color:' + (pendingColor || FOLDER_COLORS[folders.length % FOLDER_COLORS.length]) + '">' + panelEditHtml(null) + '</div>';
+        }
+        childrenOf(null).forEach((f) => { html += renderPanelFolder(f); });
+        html += '<div class="lib-fp-unfile" id="lib-fp-unfile"><span class="material-symbols-outlined">folder_off</span>Remove from folder</div>';
+        html += '<div class="lib-fp-unfile" id="lib-fp-out"><span class="material-symbols-outlined">drive_file_move</span>Move to Library</div>';
+        panelEl.innerHTML = html;
+        panelEl.querySelectorAll('.lib-fp-row[data-folder-id]').forEach((row) => {
+          const f = findFolder(row.dataset.folderId);
+          const nameEl = row.querySelector('.lib-fp-name');
+          if (f && nameEl) nameEl.textContent = f.name;
+        });
+        panelEl.querySelectorAll('.lib-fp-item[data-fp-item]').forEach((row) => {
+          const c = cardById(row.dataset.fpItem);
+          const txt = row.querySelector('.lib-fp-item-txt') || row;
+          if (c) txt.textContent = c.titleTxt || c.name || 'Untitled';
+        });
+        panelEl.querySelectorAll('.lib-fstat-edit').forEach((edit) => wireRowEditor(edit));
+        layoutPanelTrees();
+      }
+
+      /* Size each folder’s spine to the last *direct* child’s elbow. Nested
+         folders use the folder row (not the expanded item list) so Apple’s
+         line stops at Impressive Reports instead of running through its items. */
+      function layoutPanelTrees() {
+        if (!panelEl) return;
+        panelEl.querySelectorAll('.lib-fp-body').forEach((body) => {
+          const last = body.lastElementChild;
+          if (!last) return;
+          let elbow;
+          if (last.classList.contains('lib-fp-folder')) {
+            const row = last.querySelector(':scope > .lib-fp-row');
+            elbow = row ? Math.round(row.offsetHeight / 2) : 19;
+          } else {
+            elbow = Math.max(1, Math.round(last.offsetHeight / 2));
+          }
+          body.style.setProperty('--lib-tree-end', (last.offsetTop + elbow) + 'px');
+        });
       }
 
       /* ---- Inline name editor (create + rename) ---- */
@@ -1278,12 +1890,15 @@
           input._done = true;
           if (target === 'new') {
             creatingFolder = false;
+            const parentId = creatingParent;
+            creatingParent = null;
             if (save && input.value.trim()) {
               folders.unshift({
                 id: genFolderId(),
                 name: input.value.trim(),
                 color: pendingColor || FOLDER_COLORS[folders.length % FOLDER_COLORS.length],
                 ts: Date.now(),
+                parentId: parentId,
                 items: []
               });
               saveFolders();
@@ -1307,9 +1922,6 @@
         });
         input.addEventListener('blur', () => commit(true));
         input.addEventListener('click', (e) => e.stopPropagation());
-        /* Swatches: mousedown is suppressed so picking a color doesn't blur
-           (and save-close) the input; the pick previews on the tile and
-           commits together with the name. */
         const tile = row.closest('.lib-fstat');
         row.querySelectorAll('.lib-folder-swatch').forEach((sw) => {
           sw.addEventListener('mousedown', (e) => e.preventDefault());
@@ -1324,44 +1936,414 @@
         try { input.focus(); input.select(); } catch (_) {}
       }
 
-      /* ---- Folder options popover (⋯ → Rename / Ungroup), as in History ---- */
+      /* ---- Popovers (folder ⋯, card ⋯, drop chooser, folder picker) ---- */
       let popMenuEl = null;
-      function closeFolderMenu() {
+      function closeFolderMenu() { closePop(); }
+      function closePop() {
+        if (popMenuEl && popMenuEl.__anchor) popMenuEl.__anchor.classList.remove('is-open');
         if (popMenuEl && popMenuEl.parentNode) popMenuEl.parentNode.removeChild(popMenuEl);
         popMenuEl = null;
-        document.removeEventListener('mousedown', onMenuOutside, true);
-        window.removeEventListener('scroll', closeFolderMenu, true);
-        window.removeEventListener('resize', closeFolderMenu);
+        document.removeEventListener('mousedown', onPopOutside, true);
+        document.removeEventListener('keydown', onPopKey, true);
+        window.removeEventListener('scroll', closePop, true);
+        window.removeEventListener('resize', closePop);
       }
-      function onMenuOutside(e) { if (popMenuEl && !popMenuEl.contains(e.target)) closeFolderMenu(); }
-      function openFolderMenu(f, anchor) {
-        closeFolderMenu();
+      function onPopOutside(e) {
+        if (!popMenuEl) return;
+        if (popMenuEl.contains(e.target)) return;
+        if (popMenuEl.__anchor && popMenuEl.__anchor.contains && popMenuEl.__anchor.contains(e.target)) return;
+        closePop();
+      }
+      function onPopKey(e) { if (e.key === 'Escape') { e.stopPropagation(); closePop(); } }
+      function visibleAnchor(anchor) {
+        if (!anchor || !anchor.getBoundingClientRect) return anchor;
+        const r = anchor.getBoundingClientRect();
+        if (r.width >= 1 && r.height >= 1) return anchor;
+        return anchor.closest('.lib-fp-row, [data-folder-id], .lib-folder, .lib-card') || anchor;
+      }
+      function placePop(anchor, mode) {
+        anchor = visibleAnchor(anchor);
+        const r = anchor.getBoundingClientRect();
+        const w = popMenuEl.offsetWidth;
+        const h = popMenuEl.offsetHeight;
+        let left, top;
+        if (mode === 'below') {
+          left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8));
+          top = r.bottom + 6;
+          if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 6);
+        } else {
+          left = r.right + 6;
+          if (left + w > window.innerWidth - 8) left = Math.max(8, r.left - w - 6);
+          top = r.top - h - 6;
+          if (top < 8) top = Math.min(r.top, window.innerHeight - h - 8);
+        }
+        if (top < 8) top = 8;
+        if (left < 8) left = 8;
+        if (top + h > window.innerHeight - 8) top = Math.max(8, window.innerHeight - h - 8);
+        popMenuEl.style.left = left + 'px';
+        popMenuEl.style.top = top + 'px';
+      }
+      function showPop(anchor, html, onReady, placeMode) {
+        hideInfo();
+        hideTip();
+        closePop();
         popMenuEl = document.createElement('div');
         popMenuEl.className = 'lib-pop';
         popMenuEl.setAttribute('role', 'menu');
-        popMenuEl.innerHTML =
-          '<button type="button" class="lib-pop-item" data-act="rename" role="menuitem"><span class="material-symbols-outlined">edit</span>Rename</button>' +
-          '<button type="button" class="lib-pop-item lib-pop-item--danger" data-act="ungroup" role="menuitem"><span class="material-symbols-outlined">folder_off</span>Ungroup folder</button>';
+        popMenuEl.__anchor = anchor;
+        popMenuEl.innerHTML = html;
         document.body.appendChild(popMenuEl);
+        if (anchor && anchor.classList) anchor.classList.add('is-open');
+        placePop(anchor, placeMode);
+        if (onReady) onReady(popMenuEl);
+        setTimeout(() => {
+          document.addEventListener('mousedown', onPopOutside, true);
+          document.addEventListener('keydown', onPopKey, true);
+          window.addEventListener('scroll', closePop, true);
+          window.addEventListener('resize', closePop);
+        }, 0);
+        return popMenuEl;
+      }
+
+      /* Dark control tooltip — History .wch-tip. */
+      const LIB_TIP_SEL = '.lib-fp-menu, .lib-fstat-menu, .lib-card-menu, .lib-filter-btn, .lib-fstat-add, .lib-place-tag, .lib-folder-swatch, [data-lib-tip]';
+      let tipEl = null;
+      let tipFor = null;
+      function ensureTip() {
+        if (tipEl) return;
+        tipEl = document.createElement('div');
+        tipEl.className = 'lib-tip';
+        tipEl.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(tipEl);
+      }
+      function tipText(el) {
+        if (el.hasAttribute('data-tip')) return el.getAttribute('data-tip');
+        if (el.hasAttribute('title')) {
+          const t = el.getAttribute('title');
+          el.setAttribute('data-lib-title', t);
+          el.removeAttribute('title');
+          return t;
+        }
+        if (el.hasAttribute('data-lib-title')) return el.getAttribute('data-lib-title');
+        return el.getAttribute('aria-label') || '';
+      }
+      function placeTip(el) {
+        const r = el.getBoundingClientRect();
+        tipEl.style.left = Math.round(r.left + r.width / 2) + 'px';
+        tipEl.style.top = Math.round(r.top - 8) + 'px';
+      }
+      function showTip(el) {
+        const label = tipText(el);
+        if (!label) return;
+        ensureTip();
+        tipFor = el;
+        tipEl.textContent = label;
+        placeTip(el);
+        void tipEl.offsetWidth;
+        tipEl.classList.add('is-vis');
+      }
+      function hideTip() {
+        if (tipFor && tipFor.hasAttribute('data-lib-title')) {
+          tipFor.setAttribute('title', tipFor.getAttribute('data-lib-title'));
+          tipFor.removeAttribute('data-lib-title');
+        }
+        tipFor = null;
+        if (tipEl) tipEl.classList.remove('is-vis');
+      }
+      function tipCandidate(node) {
+        return node && node.closest ? node.closest(LIB_TIP_SEL) : null;
+      }
+      document.addEventListener('mouseover', (e) => {
+        const el = tipCandidate(e.target);
+        if (!el || el === tipFor) return;
+        if (el.classList.contains('is-open')) return;
+        if (tipFor) hideTip();
+        showTip(el);
+      });
+      document.addEventListener('mouseout', (e) => {
+        if (!tipFor) return;
+        if ((e.target === tipFor || tipFor.contains(e.target)) && (!e.relatedTarget || !tipFor.contains(e.relatedTarget))) hideTip();
+      });
+      document.addEventListener('click', hideTip, true);
+      document.addEventListener('dragstart', hideTip, true);
+      window.addEventListener('scroll', hideTip, true);
+      window.addEventListener('resize', hideTip);
+
+      /* Hover info card — History .wch-info. */
+      const TYPE_META = {
+        chat: { icon: 'forum', label: 'Chat' },
+        dashboard: { icon: 'bar_chart', label: 'Dashboard' },
+        report: { icon: 'description', label: 'Report' },
+        mcp: { icon: 'dns', label: 'MCP' },
+        ref: { icon: 'menu_book', label: 'Reference' }
+      };
+      let infoEl = null;
+      let infoTimer = null;
+      let infoKey = null;
+      function ensureInfo() {
+        if (infoEl) return;
+        infoEl = document.createElement('div');
+        infoEl.className = 'lib-info';
+        infoEl.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(infoEl);
+      }
+      function infoHtmlCard(c) {
+        const meta = TYPE_META[c.type] || TYPE_META.chat;
+        let h = '<div class="lib-info-title">' + escHtml(c.titleTxt || c.name || 'Untitled') + '</div>';
+        h += '<div class="lib-info-row"><span class="material-symbols-outlined">' + meta.icon + '</span><span>' + escHtml(meta.label) + '</span></div>';
+        if (c.dateTxt) h += '<div class="lib-info-row"><span class="material-symbols-outlined">schedule</span><span>' + escHtml(c.dateTxt) + '</span></div>';
+        if (c.msgCount) {
+          const msgs = c.msgCount === 1 ? '1 message' : c.msgCount + ' messages';
+          h += '<div class="lib-info-row"><span class="material-symbols-outlined">forum</span><span>' + msgs + '</span></div>';
+        }
+        if (c.sharedLabel) h += '<div class="lib-info-row"><span class="material-symbols-outlined">share</span><span>' + escHtml(c.sharedLabel) + '</span></div>';
+        const hosted = foldersOf(c.id);
+        if (hosted.length) {
+          h += '<div class="lib-info-row"><span class="material-symbols-outlined">folder</span><span>' + escHtml(hosted.map((f) => f.name).join(', ')) + '</span></div>';
+        }
+        if (c.type === 'mcp') h += '<div class="lib-info-row"><span class="material-symbols-outlined">dns</span><span>Used the MCP server</span></div>';
+        return h;
+      }
+      function infoHtmlFolder(f) {
+        const n = f.items.length;
+        const items = n === 1 ? '1 item' : n + ' items';
+        let h = '<div class="lib-info-title">' + escHtml(f.name) + '</div>';
+        h += '<div class="lib-info-row"><span class="material-symbols-outlined">inventory_2</span><span>' + items + '</span></div>';
+        if (f.parentId) {
+          const p = findFolder(f.parentId);
+          if (p) h += '<div class="lib-info-row"><span class="material-symbols-outlined">subdirectory_arrow_right</span><span>In ' + escHtml(p.name) + '</span></div>';
+        }
+        return h;
+      }
+      function placeInfo(anchor) {
         const r = anchor.getBoundingClientRect();
-        let left = Math.max(8, Math.min(r.left, window.innerWidth - popMenuEl.offsetWidth - 8));
-        let top = r.bottom + 6;
-        if (top + popMenuEl.offsetHeight > window.innerHeight - 8) top = Math.max(8, r.top - popMenuEl.offsetHeight - 6);
-        popMenuEl.style.left = left + 'px';
-        popMenuEl.style.top = top + 'px';
-        popMenuEl.addEventListener('click', (e) => {
+        const pw = infoEl.offsetWidth, ph = infoEl.offsetHeight, m = 8;
+        let left, top;
+        if (r.top - ph - 8 >= m) {
+          left = r.left;
+          top = r.top - ph - 8;
+          infoEl.style.transformOrigin = 'top left';
+        } else {
+          left = r.right + 10;
+          top = r.top + r.height / 2 - ph / 2;
+          infoEl.style.transformOrigin = 'left center';
+        }
+        left = Math.max(m, Math.min(left, window.innerWidth - pw - m));
+        top = Math.max(m, Math.min(top, window.innerHeight - ph - m));
+        infoEl.style.left = Math.round(left) + 'px';
+        infoEl.style.top = Math.round(top) + 'px';
+      }
+      function showInfo(html, anchor, key) {
+        if (dragId || dragFolderId || popMenuEl) return;
+        ensureInfo();
+        infoKey = key;
+        infoEl.innerHTML = html;
+        infoEl.classList.remove('is-vis');
+        placeInfo(anchor);
+        void infoEl.offsetWidth;
+        infoEl.classList.add('is-vis');
+      }
+      function hideInfo() {
+        clearTimeout(infoTimer);
+        infoKey = null;
+        if (infoEl) infoEl.classList.remove('is-vis');
+      }
+      grid.addEventListener('mouseover', (e) => {
+        if (e.target.closest('.lib-card-menu')) { hideInfo(); return; }
+        const card = e.target.closest('.lib-card[data-lib-id]');
+        if (!card || dragId) return;
+        const id = card.dataset.libId;
+        if (infoKey === 'c:' + id) return;
+        const c = cardById(id);
+        if (!c) return;
+        clearTimeout(infoTimer);
+        infoTimer = setTimeout(() => showInfo(infoHtmlCard(c), card, 'c:' + id), 240);
+      });
+      grid.addEventListener('mouseout', (e) => {
+        const card = e.target.closest('.lib-card[data-lib-id]');
+        if (!card) return;
+        if (e.relatedTarget && card.contains(e.relatedTarget)) return;
+        hideInfo();
+      });
+      if (panelEl) {
+        panelEl.addEventListener('mouseover', (e) => {
+          if (e.target.closest('.lib-fp-menu, .lib-fp-toggle')) { hideInfo(); return; }
+          const item = e.target.closest('[data-fp-item]');
+          if (item) {
+            if (dragId) return;
+            const id = item.dataset.fpItem;
+            if (infoKey === 'c:' + id) return;
+            const c = cardById(id);
+            if (!c) return;
+            clearTimeout(infoTimer);
+            infoTimer = setTimeout(() => showInfo(infoHtmlCard(c), item, 'c:' + id), 240);
+            return;
+          }
+          const row = e.target.closest('.lib-fp-row[data-folder-id]');
+          if (!row || dragFolderId) return;
+          const id = row.dataset.folderId;
+          if (infoKey === 'f:' + id) return;
+          const f = findFolder(id);
+          if (!f) return;
+          clearTimeout(infoTimer);
+          infoTimer = setTimeout(() => showInfo(infoHtmlFolder(f), row, 'f:' + id), 240);
+        });
+        panelEl.addEventListener('mouseout', (e) => {
+          const item = e.target.closest('[data-fp-item]');
+          if (item) {
+            if (e.relatedTarget && item.contains(e.relatedTarget)) return;
+            hideInfo();
+            return;
+          }
+          const row = e.target.closest('.lib-fp-row[data-folder-id]');
+          if (!row) return;
+          if (e.relatedTarget && row.contains(e.relatedTarget)) return;
+          hideInfo();
+        });
+      }
+      grid.addEventListener('pointerdown', hideInfo);
+      if (panelEl) panelEl.addEventListener('pointerdown', hideInfo);
+      window.addEventListener('scroll', hideInfo, true);
+      window.addEventListener('resize', hideInfo);
+
+      function openFolderMenu(f, anchor) {
+        const nested = !!f.parentId;
+        showPop(anchor,
+          '<button type="button" class="lib-pop-item" data-act="rename" role="menuitem"><span class="material-symbols-outlined">edit</span><span class="lib-pop-name">Rename</span></button>' +
+          '<button type="button" class="lib-pop-item" data-act="subfolder" role="menuitem"><span class="material-symbols-outlined">create_new_folder</span><span class="lib-pop-name">New subfolder</span></button>' +
+          '<button type="button" class="lib-pop-item" data-act="moveinto" role="menuitem"><span class="material-symbols-outlined">drive_file_move</span><span class="lib-pop-name">Move into folder\u2026</span></button>' +
+          (nested ? '<button type="button" class="lib-pop-item" data-act="toroot" role="menuitem"><span class="material-symbols-outlined">folder_open</span><span class="lib-pop-name">Move to Library</span></button>' : '') +
+          '<button type="button" class="lib-pop-item lib-pop-item--danger" data-act="ungroup" role="menuitem"><span class="material-symbols-outlined">folder_off</span><span class="lib-pop-name">Ungroup folder</span></button>'
+        ).addEventListener('click', (e) => {
           const b = e.target.closest('[data-act]');
           if (!b) return;
           const act = b.dataset.act;
-          closeFolderMenu();
-          if (act === 'rename') { editingFolder = f.id; creatingFolder = false; pendingColor = f.color; apply(); }
+          closePop();
+          if (act === 'rename') { editingFolder = f.id; creatingFolder = false; creatingParent = null; pendingColor = f.color; apply(); }
+          else if (act === 'subfolder') {
+            f.collapsed = false;
+            state.openFolder = f.id;
+            creatingFolder = true;
+            creatingParent = f.id;
+            editingFolder = null;
+            pendingColor = null;
+            apply();
+          } else if (act === 'moveinto') {
+            openFolderPicker(anchor, 'Move into folder', {
+              excludeId: f.id,
+              currentIds: f.parentId ? [f.parentId] : [],
+              removeLabel: f.parentId ? 'Move to Library' : null,
+              onRemove: () => unnestFolder(f.id),
+              onNew: () => fileFolderIntoNew(f.id)
+            }, (destId) => nestFolder(f.id, destId));
+          }
+          else if (act === 'toroot') unnestFolder(f.id);
           else if (act === 'ungroup') ungroupFolder(f.id);
         });
-        setTimeout(() => {
-          document.addEventListener('mousedown', onMenuOutside, true);
-          window.addEventListener('scroll', closeFolderMenu, true);
-          window.addEventListener('resize', closeFolderMenu);
-        }, 0);
+      }
+
+      function openCardMenu(cardId, anchor) {
+        const inOpen = state.openFolder && findFolder(state.openFolder) && findFolder(state.openFolder).items.includes(cardId);
+        const hosted = foldersOf(cardId);
+        showPop(anchor,
+          '<button type="button" class="lib-pop-item" data-act="copy" role="menuitem"><span class="material-symbols-outlined">content_copy</span><span class="lib-pop-name">Copy to folder\u2026</span></button>' +
+          '<button type="button" class="lib-pop-item" data-act="link" role="menuitem"><span class="material-symbols-outlined">link</span><span class="lib-pop-name">Link to folder\u2026</span></button>' +
+          '<button type="button" class="lib-pop-item" data-act="move" role="menuitem"><span class="material-symbols-outlined">drive_file_move</span><span class="lib-pop-name">Move to folder\u2026</span></button>' +
+          (inOpen ? '<button type="button" class="lib-pop-item" data-act="unlink" role="menuitem"><span class="material-symbols-outlined">folder_off</span><span class="lib-pop-name">Remove from this folder</span></button>' : '')
+        ).addEventListener('click', (e) => {
+          const b = e.target.closest('[data-act]');
+          if (!b) return;
+          const act = b.dataset.act;
+          closePop();
+          if (act === 'copy') {
+            openFolderPicker(anchor, 'Copy to folder', {
+              onNew: () => fileCardIntoNew(cardId, 'copy')
+            }, (destId) => copyToFolder(cardId, destId));
+          } else if (act === 'link') {
+            openFolderPicker(anchor, 'Link to folder', {
+              currentIds: hosted.map((x) => x.id),
+              onNew: () => fileCardIntoNew(cardId, 'link')
+            }, (destId) => linkToFolder(cardId, destId));
+          } else if (act === 'move') {
+            openFolderPicker(anchor, 'Move to folder', {
+              currentIds: hosted.map((x) => x.id),
+              removeLabel: hosted.length ? 'Remove from folder' : null,
+              onRemove: () => unfileCard(cardId),
+              onNew: () => fileCardIntoNew(cardId, 'move')
+            }, (destId) => addToFolder(cardId, destId));
+          } else if (act === 'unlink' && state.openFolder) unlinkFromFolder(cardId, state.openFolder);
+        });
+      }
+
+      /* Destination picker — same layout as History's "Move to project" popover:
+         uppercase head, dotted list with a check on the current folder, optional
+         Remove, then a divider and New folder…. Nested folders stay indented. */
+      function openFolderPicker(anchor, title, opts, onPick) {
+        opts = opts || {};
+        const currentIds = opts.currentIds || [];
+        const rows = folderTree(opts.excludeId);
+        let html = '<div class="lib-pop-head">' + escHtml(title) + '</div><div class="lib-pop-list">';
+        if (!rows.length) {
+          html += '<div class="lib-pop-head" style="opacity:.5;font-weight:400;text-transform:none;letter-spacing:0">No folders yet.</div>';
+        } else {
+          rows.forEach(({ f, depth }) => {
+            const cur = currentIds.indexOf(f.id) !== -1;
+            html += '<button type="button" class="lib-pop-item' + (cur ? ' is-current' : '') + '" data-pick="' + f.id + '" role="menuitem" style="padding-left:' + (10 + depth * 14) + 'px">' +
+              '<span class="lib-fp-dot" style="color:' + f.color + '"></span>' +
+              '<span class="lib-pop-name">' + escHtml(f.name) + '</span>' +
+              (cur ? '<span class="material-symbols-outlined">check</span>' : '') +
+            '</button>';
+          });
+        }
+        if (opts.removeLabel) {
+          html += '<button type="button" class="lib-pop-item" data-pick-remove role="menuitem">' +
+            '<span class="material-symbols-outlined">remove_circle_outline</span><span class="lib-pop-name">' + escHtml(opts.removeLabel) + '</span></button>';
+        }
+        html += '</div><div class="lib-pop-div"></div>' +
+          '<button type="button" class="lib-pop-item" data-pick-new role="menuitem"><span class="material-symbols-outlined">create_new_folder</span><span class="lib-pop-name">New folder\u2026</span></button>';
+        const pop = showPop(anchor, html, null, 'below');
+        pop.addEventListener('click', (e) => {
+          if (e.target.closest('[data-pick-new]')) {
+            closePop();
+            if (opts.onNew) opts.onNew();
+            return;
+          }
+          if (e.target.closest('[data-pick-remove]')) {
+            closePop();
+            if (opts.onRemove) opts.onRemove();
+            return;
+          }
+          const b = e.target.closest('[data-pick]');
+          if (!b) return;
+          closePop();
+          onPick(b.dataset.pick);
+        });
+      }
+
+      function openDropChooser(anchor, cardId, folderId) {
+        const dest = findFolder(folderId);
+        if (!dest) return;
+        const already = dest.items.includes(cardId);
+        showPop(anchor,
+          '<div class="lib-pop-head">Add to ' + escHtml(dest.name) + '</div>' +
+          (already ? '' : '<button type="button" class="lib-pop-item" data-act="move" role="menuitem"><span class="material-symbols-outlined">drive_file_move</span><span class="lib-pop-name">Move</span></button>') +
+          '<button type="button" class="lib-pop-item" data-act="copy" role="menuitem"><span class="material-symbols-outlined">content_copy</span><span class="lib-pop-name">Copy</span></button>' +
+          (already ? '' : '<button type="button" class="lib-pop-item" data-act="link" role="menuitem"><span class="material-symbols-outlined">link</span><span class="lib-pop-name">Link</span></button>')
+        ).addEventListener('click', (e) => {
+          const b = e.target.closest('[data-act]');
+          if (!b) return;
+          const act = b.dataset.act;
+          closePop();
+          if (act === 'move') addToFolder(cardId, folderId);
+          else if (act === 'copy') copyToFolder(cardId, folderId);
+          else if (act === 'link') linkToFolder(cardId, folderId);
+        });
+      }
+
+      function dropMode(e) {
+        if (e.altKey) return 'copy';
+        if (e.metaKey || e.ctrlKey) return 'link';
+        return null;
       }
 
       /* ---- Folder operations ---- */
@@ -1371,14 +2353,52 @@
           if (i !== -1) f.items.splice(i, 1);
         });
       }
-      /* Card-on-card: found a new folder holding both, then open its inline
-         rename editor on the fresh tile. */
+      function unlinkFromFolder(cardId, folderId) {
+        const f = findFolder(folderId);
+        if (!f) return;
+        const i = f.items.indexOf(cardId);
+        if (i !== -1) f.items.splice(i, 1);
+        saveFolders();
+        refreshFolderCounts();
+        apply();
+      }
+      function makeEmptyFolder(parentId) {
+        const f = {
+          id: genFolderId(),
+          name: 'New folder',
+          color: FOLDER_COLORS[folders.length % FOLDER_COLORS.length],
+          ts: Date.now(),
+          parentId: parentId || null,
+          items: []
+        };
+        folders.unshift(f);
+        return f;
+      }
+      function beginRenameFolder(f) {
+        editingFolder = f.id;
+        pendingColor = f.color;
+        creatingFolder = false;
+        creatingParent = null;
+      }
+      function fileCardIntoNew(cardId, mode) {
+        const nf = makeEmptyFolder(null);
+        beginRenameFolder(nf);
+        if (mode === 'copy') copyToFolder(cardId, nf.id);
+        else if (mode === 'link') linkToFolder(cardId, nf.id);
+        else addToFolder(cardId, nf.id);
+      }
+      function fileFolderIntoNew(srcId) {
+        const nf = makeEmptyFolder(null);
+        beginRenameFolder(nf);
+        nestFolder(srcId, nf.id);
+      }
       function createFolder(ids) {
         const f = {
           id: genFolderId(),
           name: 'New folder',
           color: FOLDER_COLORS[folders.length % FOLDER_COLORS.length],
           ts: Date.now(),
+          parentId: state.openFolder || null,
           items: []
         };
         ids.forEach((id) => { removeFromAnyFolder(id); f.items.push(id); });
@@ -1386,29 +2406,99 @@
         saveFolders();
         editingFolder = f.id;
         creatingFolder = false;
+        creatingParent = null;
         pendingColor = f.color;
         refreshFolderCounts();
         apply();
       }
       function addToFolder(cardId, folderId) {
         const f = findFolder(folderId);
-        if (!f || f.items.includes(cardId)) return;
+        if (!f) return;
         removeFromAnyFolder(cardId);
         f.items.push(cardId);
         saveFolders();
         refreshFolderCounts();
         apply();
       }
-      function unfileCard(cardId) {
-        removeFromAnyFolder(cardId);
+      function linkToFolder(cardId, folderId) {
+        const f = findFolder(folderId);
+        if (!f || f.items.includes(cardId)) return;
+        f.items.push(cardId);
         saveFolders();
         refreshFolderCounts();
         apply();
       }
-      /* Ungroup: delete the folder; its cards return to the shelf untouched. */
+      function cloneCard(sourceId) {
+        const src = cardById(sourceId);
+        if (!src) return null;
+        const id = genCopyId();
+        const el = src.el.cloneNode(true);
+        const staleMenu = el.querySelector('.lib-card-menu');
+        if (staleMenu) staleMenu.remove();
+        const stalePlace = el.querySelector('.lib-place');
+        if (stalePlace) stalePlace.remove();
+        el.dataset.libId = id;
+        el.setAttribute('draggable', 'true');
+        grid.appendChild(el);
+        const copy = {
+          el, id, type: src.type, shared: src.shared,
+          name: src.name, titleTxt: src.titleTxt, sharedTxt: src.sharedTxt, sharedLabel: src.sharedLabel,
+          dateTxt: src.dateTxt, time: src.time, msgCount: src.msgCount,
+          copyOf: sourceId
+        };
+        cards.push(copy);
+        copies.push({ id, sourceId });
+        saveCopies();
+        ensureCardMenu(el);
+        recountTypes();
+        return copy;
+      }
+      function copyToFolder(cardId, folderId) {
+        const f = findFolder(folderId);
+        if (!f) return;
+        const copy = cloneCard(cardId);
+        if (!copy) return;
+        f.items.push(copy.id);
+        saveFolders();
+        refreshFolderCounts();
+        apply();
+      }
+      function unfileCard(cardId) {
+        if (state.openFolder) unlinkFromFolder(cardId, state.openFolder);
+        else {
+          removeFromAnyFolder(cardId);
+          saveFolders();
+          refreshFolderCounts();
+          apply();
+        }
+      }
+      function nestFolder(srcId, destId) {
+        if (!srcId || !destId || srcId === destId) return;
+        if (isSelfOrDescendant(srcId, destId)) return;
+        const src = findFolder(srcId);
+        const dest = findFolder(destId);
+        if (!src || !dest) return;
+        src.parentId = destId;
+        dest.collapsed = false;
+        saveFolders();
+        apply();
+      }
+      function unnestFolder(srcId) {
+        const src = findFolder(srcId);
+        if (!src) return;
+        src.parentId = null;
+        saveFolders();
+        apply();
+      }
       function ungroupFolder(id) {
-        folders = folders.filter((f) => f.id !== id);
-        if (state.openFolder === id) state.openFolder = null;
+        const f = findFolder(id);
+        if (!f) return;
+        /* Promote the folder itself to the library root. Nested children and
+           filed items travel with it — ungroup must not delete the folder. */
+        f.parentId = null;
+        folders = folders.filter((x) => x.id !== id);
+        folders.unshift(f);
+        state.openFolder = null;
         if (editingFolder === id) { editingFolder = null; pendingColor = null; }
         saveFolders();
         refreshFolderCounts();
@@ -1416,11 +2506,10 @@
       }
       function openFolderView(id) {
         state.openFolder = id;
-        /* A folder is a scope of its own — clear the score-card dimensions so
-           the grid shows the whole folder. Search stays applied. */
         state.type = 'all'; state.shared = 'all'; state.folder = 'all';
         editingFolder = null;
         creatingFolder = false;
+        creatingParent = null;
         pendingColor = null;
         apply();
       }
@@ -1431,6 +2520,7 @@
         if (e.target.closest('.lib-fstat-edit')) return;
         if (e.target.closest('#lib-folders-add')) {
           creatingFolder = true;
+          creatingParent = state.openFolder || null;
           editingFolder = null;
           pendingColor = null;
           apply();
@@ -1454,29 +2544,97 @@
           const f = findFolder(menuBtn.dataset.frowMenu);
           if (f) openFolderMenu(f, menuBtn);
         }
-        /* Folder tiles are <button>s, so Enter/Space fire click natively. */
       });
 
-      /* Swallow the phantom click that trails a drag so it doesn't follow
-         the card's link. */
+      if (panelEl) {
+        panelEl.addEventListener('click', (e) => {
+          if (suppressFolderClick) { e.preventDefault(); e.stopPropagation(); return; }
+          if (e.target.closest('.lib-fstat-edit')) return;
+          const toggle = e.target.closest('[data-fp-toggle]');
+          if (toggle) {
+            e.preventDefault(); e.stopPropagation();
+            const f = findFolder(toggle.dataset.fpToggle);
+            if (f) { f.collapsed = !f.collapsed; saveFolders(); apply(); }
+            return;
+          }
+          const menuBtn = e.target.closest('[data-frow-menu]');
+          if (menuBtn) {
+            e.stopPropagation(); e.preventDefault();
+            const f = findFolder(menuBtn.dataset.frowMenu);
+            if (f) openFolderMenu(f, menuBtn);
+            return;
+          }
+          if (e.target.closest('#lib-fp-all')) {
+            state.openFolder = null;
+            state.activeItem = null;
+            apply();
+            return;
+          }
+          const item = e.target.closest('[data-fp-item]');
+          if (item) {
+            state.activeItem = item.dataset.fpItem;
+            openFolderView(item.dataset.fpItemFolder);
+            const card = cardById(state.activeItem);
+            if (card && card.el && card.el.scrollIntoView) {
+              card.el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+            return;
+          }
+          const row = e.target.closest('.lib-fp-row[data-folder-id]');
+          if (row) {
+            state.activeItem = null;
+            const f = findFolder(row.dataset.folderId);
+            if (f) f.collapsed = false;
+            openFolderView(row.dataset.folderId);
+          }
+        });
+        panelEl.addEventListener('keydown', (e) => {
+          if (e.key !== 'Enter' && e.key !== ' ') return;
+          const menuBtn = e.target.closest('[data-frow-menu]');
+          if (menuBtn) {
+            e.preventDefault(); e.stopPropagation();
+            const f = findFolder(menuBtn.dataset.frowMenu);
+            if (f) openFolderMenu(f, menuBtn);
+          }
+        });
+      }
+
+      /* Card clicks: ⋯ menu (stop the card link) + swallow post-drag clicks. */
       grid.addEventListener('click', (e) => {
+        const menuBtn = e.target.closest('.lib-card-menu');
+        if (menuBtn) {
+          e.preventDefault(); e.stopPropagation();
+          const card = menuBtn.closest('.lib-card');
+          if (card && card.dataset.libId) openCardMenu(card.dataset.libId, menuBtn);
+          return;
+        }
         if (suppressClick && e.target.closest('.lib-card')) e.preventDefault();
+      });
+      grid.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const menuBtn = e.target.closest('.lib-card-menu');
+        if (!menuBtn) return;
+        e.preventDefault(); e.stopPropagation();
+        const card = menuBtn.closest('.lib-card');
+        if (card && card.dataset.libId) openCardMenu(card.dataset.libId, menuBtn);
       });
 
       /* ---- Drag & drop ---- */
       function clearDropHints() {
         grid.querySelectorAll('.lib-drop-target').forEach((el) => el.classList.remove('lib-drop-target'));
         foldersRowEl.querySelectorAll('.lib-drop-on').forEach((el) => el.classList.remove('lib-drop-on'));
+        if (panelEl) panelEl.querySelectorAll('.lib-drop-on').forEach((el) => el.classList.remove('lib-drop-on'));
       }
       grid.addEventListener('dragstart', (e) => {
+        if (e.target.closest('.lib-card-menu')) { e.preventDefault(); return; }
         const card = e.target.closest('.lib-card');
         if (!card || !card.dataset.libId) return;
         dragId = card.dataset.libId;
+        hideInfo();
+        hideTip();
         card.classList.add('lib-dragging');
-        /* Reveal the "Remove from folder" tile only when a filed card is in
-           flight (there's nothing to unfile otherwise). */
-        if (folderOf(dragId)) document.body.classList.add('lib-drag-active');
-        try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragId); } catch (_) {}
+        if (foldersOf(dragId).length) document.body.classList.add('lib-drag-active');
+        try { e.dataTransfer.effectAllowed = 'copyMove'; e.dataTransfer.setData('text/plain', dragId); } catch (_) {}
       });
       grid.addEventListener('dragend', () => {
         dragId = null;
@@ -1486,8 +2644,6 @@
         suppressClick = true;
         setTimeout(() => { suppressClick = false; }, 250);
       });
-      /* Grid targets: another card → found a new folder together (or join the
-         target card's folder if it already has one). */
       function gridDropTarget(e) {
         const card = e.target.closest('.lib-card');
         if (card && card.dataset.libId && card.dataset.libId !== dragId) return card;
@@ -1498,7 +2654,7 @@
         const t = gridDropTarget(e);
         if (!t) { clearDropHints(); return; }
         e.preventDefault();
-        try { e.dataTransfer.dropEffect = 'move'; } catch (_) {}
+        try { e.dataTransfer.dropEffect = dropMode(e) === 'copy' ? 'copy' : 'move'; } catch (_) {}
         clearDropHints();
         t.classList.add('lib-drop-target');
       });
@@ -1520,8 +2676,6 @@
         if (tf) addToFolder(id, tf.id);
         else createFolder([targetId, id]);
       });
-      /* Folders-row targets: folder tiles file the card; the unfile tile
-         removes it. */
       function folderRowDropTarget(e) {
         const tile = e.target.closest('.lib-fstat[data-folder-id]');
         if (tile) return tile;
@@ -1532,12 +2686,12 @@
         const t = folderRowDropTarget(e);
         if (!t) { clearDropHints(); return; }
         e.preventDefault();
-        try { e.dataTransfer.dropEffect = 'move'; } catch (_) {}
+        try { e.dataTransfer.dropEffect = dropMode(e) === 'copy' ? 'copy' : 'move'; } catch (_) {}
         clearDropHints();
         t.classList.add('lib-drop-on');
       });
       foldersRowEl.addEventListener('dragleave', (e) => {
-        const t = e.target.closest('.lib-fstat[data-folder-id], #lib-folders-unfile');
+        const t = e.target.closest('.lib-fstat[data-folder-id], #lib-folders-unfile, #lib-folders-out');
         if (t && !t.contains(e.relatedTarget)) t.classList.remove('lib-drop-on');
       });
       foldersRowEl.addEventListener('drop', (e) => {
@@ -1546,16 +2700,20 @@
         if (!t) return;
         e.preventDefault();
         const id = dragId;
+        const mode = dropMode(e);
+        const tile = t;
         dragId = null;
         document.body.classList.remove('lib-drag-active');
         clearDropHints();
-        if (t.id === 'lib-folders-unfile') unfileCard(id);
-        else addToFolder(id, t.dataset.folderId);
+        if (tile.id === 'lib-folders-unfile') { unfileCard(id); return; }
+        const folderId = tile.dataset.folderId;
+        if (mode === 'copy') copyToFolder(id, folderId);
+        else if (mode === 'link') linkToFolder(id, folderId);
+        else openDropChooser(tile, id, folderId);
       });
 
-      /* ---- Folder reordering — grab a folder tile and drop it in a new slot
-         among the other folders. Uses its own drag channel (dragFolderId) so it
-         never collides with the card-filing drag above (which uses dragId). ---- */
+      /* ---- Folder reordering + nesting. Left/right edge of a sibling tile
+         reorders; dropping on the centre nests the dragged folder inside. ---- */
       function clearReorderHints() {
         foldersRowEl.querySelectorAll('.lib-reorder-before, .lib-reorder-after')
           .forEach((el) => el.classList.remove('lib-reorder-before', 'lib-reorder-after'));
@@ -1564,6 +2722,14 @@
         const tile = e.target.closest('.lib-fstat[data-folder-id]');
         if (!tile || tile.dataset.folderId === dragFolderId) return null;
         return tile;
+      }
+      function folderDropKind(e, tile) {
+        const r = tile.getBoundingClientRect();
+        const x = e.clientX - r.left;
+        const edge = Math.max(18, r.width * 0.22);
+        if (x < edge) return 'before';
+        if (x > r.width - edge) return 'after';
+        return 'nest';
       }
       function moveFolder(srcId, targetId, before) {
         const from = folders.findIndex((f) => f.id === srcId);
@@ -1576,46 +2742,163 @@
         apply();
       }
       foldersRowEl.addEventListener('dragstart', (e) => {
+        if (e.target.closest('[data-frow-menu]')) { e.preventDefault(); return; }
         const tile = e.target.closest('.lib-fstat[data-folder-id]');
         if (!tile) return;
         dragFolderId = tile.dataset.folderId;
         tile.classList.add('lib-folder-dragging');
+        const f = findFolder(dragFolderId);
+        if (f && f.parentId) document.body.classList.add('lib-folder-drag-out');
         try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', 'folder:' + dragFolderId); } catch (_) {}
       });
       foldersRowEl.addEventListener('dragover', (e) => {
         if (!dragFolderId) return;
         clearReorderHints();
+        const out = e.target.closest('#lib-folders-out');
+        if (out) {
+          e.preventDefault();
+          try { e.dataTransfer.dropEffect = 'move'; } catch (_) {}
+          foldersRowEl.querySelectorAll('.lib-drop-on').forEach((el) => el.classList.remove('lib-drop-on'));
+          out.classList.add('lib-drop-on');
+          return;
+        }
         const tile = folderReorderTarget(e);
         if (!tile) return;
         e.preventDefault();
         try { e.dataTransfer.dropEffect = 'move'; } catch (_) {}
-        const r = tile.getBoundingClientRect();
-        const before = e.clientX < r.left + r.width / 2;
-        tile.classList.add(before ? 'lib-reorder-before' : 'lib-reorder-after');
+        foldersRowEl.querySelectorAll('.lib-drop-on').forEach((el) => el.classList.remove('lib-drop-on'));
+        const kind = folderDropKind(e, tile);
+        if (kind === 'nest') tile.classList.add('lib-drop-on');
+        else tile.classList.add(kind === 'before' ? 'lib-reorder-before' : 'lib-reorder-after');
       });
       foldersRowEl.addEventListener('drop', (e) => {
         if (!dragFolderId) return;
-        const tile = folderReorderTarget(e);
         const src = dragFolderId;
+        const out = e.target.closest('#lib-folders-out');
+        const tile = folderReorderTarget(e);
         dragFolderId = null;
+        document.body.classList.remove('lib-folder-drag-out');
         clearReorderHints();
+        foldersRowEl.querySelectorAll('.lib-drop-on').forEach((el) => el.classList.remove('lib-drop-on'));
         suppressFolderClick = true;
         setTimeout(() => { suppressFolderClick = false; }, 250);
+        if (out) { e.preventDefault(); unnestFolder(src); return; }
         if (!tile) return;
         e.preventDefault();
-        const r = tile.getBoundingClientRect();
-        const before = e.clientX < r.left + r.width / 2;
-        moveFolder(src, tile.dataset.folderId, before);
+        const kind = folderDropKind(e, tile);
+        if (kind === 'nest') nestFolder(src, tile.dataset.folderId);
+        else moveFolder(src, tile.dataset.folderId, kind === 'before');
       });
       foldersRowEl.addEventListener('dragend', () => {
         if (!dragFolderId && !foldersRowEl.querySelector('.lib-folder-dragging')) return;
         dragFolderId = null;
+        document.body.classList.remove('lib-folder-drag-out');
         clearReorderHints();
         foldersRowEl.querySelectorAll('.lib-folder-dragging')
           .forEach((el) => el.classList.remove('lib-folder-dragging'));
+        foldersRowEl.querySelectorAll('.lib-drop-on').forEach((el) => el.classList.remove('lib-drop-on'));
         suppressFolderClick = true;
         setTimeout(() => { suppressFolderClick = false; }, 250);
       });
+
+      /* Side-panel drag: drop a card on a folder row to file/copy/link; drop
+         a folder on a folder to nest; drop on All items / Move to Library to
+         unnest. */
+      if (panelEl) {
+        function panelCardTarget(e) {
+          const row = e.target.closest('.lib-fp-row[data-folder-id]');
+          if (row) return row;
+          return e.target.closest('#lib-fp-unfile, #lib-fp-all');
+        }
+        panelEl.addEventListener('dragover', (e) => {
+          if (!dragId) return;
+          const t = panelCardTarget(e);
+          if (!t) { clearDropHints(); return; }
+          e.preventDefault();
+          try { e.dataTransfer.dropEffect = dropMode(e) === 'copy' ? 'copy' : 'move'; } catch (_) {}
+          clearDropHints();
+          t.classList.add('lib-drop-on');
+        });
+        panelEl.addEventListener('drop', (e) => {
+          if (!dragId) return;
+          const t = panelCardTarget(e);
+          if (!t) return;
+          e.preventDefault();
+          const id = dragId;
+          const mode = dropMode(e);
+          dragId = null;
+          document.body.classList.remove('lib-drag-active');
+          clearDropHints();
+          if (t.id === 'lib-fp-unfile' || t.id === 'lib-fp-all') { unfileCard(id); return; }
+          const folderId = t.dataset.folderId;
+          if (mode === 'copy') copyToFolder(id, folderId);
+          else if (mode === 'link') linkToFolder(id, folderId);
+          else openDropChooser(t, id, folderId);
+        });
+        panelEl.addEventListener('dragstart', (e) => {
+          if (e.target.closest('[data-frow-menu], [data-fp-toggle]')) { e.preventDefault(); return; }
+          const item = e.target.closest('[data-fp-item]');
+          if (item) {
+            dragId = item.dataset.fpItem;
+            hideInfo();
+            hideTip();
+            item.classList.add('lib-dragging');
+            if (foldersOf(dragId).length) document.body.classList.add('lib-drag-active');
+            try { e.dataTransfer.effectAllowed = 'copyMove'; e.dataTransfer.setData('text/plain', dragId); } catch (_) {}
+            return;
+          }
+          const row = e.target.closest('.lib-fp-row[data-folder-id]');
+          if (!row) return;
+          dragFolderId = row.dataset.folderId;
+          row.classList.add('lib-folder-dragging');
+          const f = findFolder(dragFolderId);
+          if (f && f.parentId) document.body.classList.add('lib-folder-drag-out');
+          try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', 'folder:' + dragFolderId); } catch (_) {}
+        });
+        panelEl.addEventListener('dragover', (e) => {
+          if (!dragFolderId) return;
+          const out = e.target.closest('#lib-fp-out, #lib-fp-all');
+          if (out) {
+            e.preventDefault();
+            try { e.dataTransfer.dropEffect = 'move'; } catch (_) {}
+            panelEl.querySelectorAll('.lib-drop-on').forEach((el) => el.classList.remove('lib-drop-on'));
+            out.classList.add('lib-drop-on');
+            return;
+          }
+          const row = e.target.closest('.lib-fp-row[data-folder-id]');
+          if (!row || row.dataset.folderId === dragFolderId) return;
+          e.preventDefault();
+          try { e.dataTransfer.dropEffect = 'move'; } catch (_) {}
+          panelEl.querySelectorAll('.lib-drop-on').forEach((el) => el.classList.remove('lib-drop-on'));
+          row.classList.add('lib-drop-on');
+        });
+        panelEl.addEventListener('drop', (e) => {
+          if (!dragFolderId) return;
+          const src = dragFolderId;
+          const out = e.target.closest('#lib-fp-out, #lib-fp-all');
+          const row = e.target.closest('.lib-fp-row[data-folder-id]');
+          dragFolderId = null;
+          document.body.classList.remove('lib-folder-drag-out');
+          panelEl.querySelectorAll('.lib-drop-on').forEach((el) => el.classList.remove('lib-drop-on'));
+          suppressFolderClick = true;
+          setTimeout(() => { suppressFolderClick = false; }, 250);
+          if (out) { e.preventDefault(); unnestFolder(src); return; }
+          if (!row || row.dataset.folderId === src) return;
+          e.preventDefault();
+          nestFolder(src, row.dataset.folderId);
+        });
+        panelEl.addEventListener('dragend', () => {
+          dragFolderId = null;
+          dragId = null;
+          document.body.classList.remove('lib-folder-drag-out');
+          document.body.classList.remove('lib-drag-active');
+          panelEl.querySelectorAll('.lib-folder-dragging, .lib-fp-item.lib-dragging')
+            .forEach((el) => el.classList.remove('lib-folder-dragging', 'lib-dragging'));
+          panelEl.querySelectorAll('.lib-drop-on').forEach((el) => el.classList.remove('lib-drop-on'));
+          suppressFolderClick = true;
+          setTimeout(() => { suppressFolderClick = false; }, 250);
+        });
+      }
 
       apply();
     })();

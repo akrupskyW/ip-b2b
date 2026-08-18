@@ -14,17 +14,34 @@
  */
 
 /* Every icon-only control that lost its caption gets the same instant floating
-   tooltip: the top-bar rail buttons, the menu collapse toggle, and the
-   per-module header toggles (move-side / double-width / close). They expose
-   their name via `data-tip`, `aria-label`, or `title`. */
+   tooltip: the top-bar rail buttons, the menu collapse toggle, the per-module
+   header toggles (move-side / double-width / close), the Appearance trigger in
+   the primary nav, and every labelled control inside the Appearance popover.
+   They expose their name via `data-tip`, `aria-label`, or `title`. */
 const TOOLTIP_SELECTOR =
   '.lir-btn, .topbar-menu-toggle, .panel-flip-btn, .panel-width-toggle-btn, ' +
-  '.panel-more-btn, .panel-close-btn, .panel-ctrl-btn, .wiseai-dock-flip, .dash-term';
+  '.panel-more-btn, .panel-close-btn, .panel-ctrl-btn, .wiseai-dock-flip, .dash-term, ' +
+  '.topbar-appearance-btn, #menu-footer-layout-btn, ' +
+  '.wise-popover--appearance [data-tip]';
 
 /* The History / Turns modules (`.wch-sidebar`) run their own dark tooltip in
-   chat-history.js, so we stand down for their controls to avoid a double tip. */
+   chat-history.js, so we stand down for their controls to avoid a double tip.
+   Collapsed / pivoted nav rows already get `#menu-rail-tip` — don't stack a
+   second card on the Appearance footer button in those states. */
 function ownedElsewhere(btn) {
-  return !!(btn.closest && btn.closest('.wch-sidebar'));
+  if (btn.closest && btn.closest('.wch-sidebar')) return true;
+  if (btn.id === 'menu-footer-layout-btn' &&
+      btn.closest('#menu-panel.mp-rail, #menu-panel.mp-pivot')) {
+    return true;
+  }
+  return false;
+}
+
+function isAppearanceTrigger(btn) {
+  return btn.id === 'menu-footer-layout-btn' ||
+    btn.id === 'topbar-appearance-btn' ||
+    btn.classList.contains('topbar-appearance-btn') ||
+    btn.classList.contains('lir-layout-btn');
 }
 
 function labelFor(btn) {
@@ -66,14 +83,30 @@ export function initLirTooltip() {
     tip.textContent = label;
     const r = btn.getBoundingClientRect();
     /* Vertical left-nav collapse chevron — float the label to the right of the
-       icon, matching the other collapsed-rail row tooltips. Pivot (horizontal)
-       bar keeps the default below placement. */
+       icon, matching the other collapsed-rail row tooltips. Appearance controls
+       and the crossword trigger sit above / to the right of their target
+       (never below), matching the appearance popover itself. Everything else
+       keeps the default below placement. */
     const tipRight = btn.classList.contains('topbar-menu-toggle') &&
       !btn.closest('.mp-pivot');
-    tip.classList.toggle('lir-tip-right', tipRight);
+    const preferAbove = !!(btn.closest('.wise-popover--appearance') || isAppearanceTrigger(btn));
+    tip.classList.remove('lir-tip-right', 'lir-tip-above');
     if (tipRight) {
+      tip.classList.add('lir-tip-right');
       tip.style.top = `${Math.round(r.top + r.height / 2)}px`;
       tip.style.left = `${Math.round(r.right + 10)}px`;
+    } else if (preferAbove) {
+      if (r.top > 40) {
+        tip.classList.add('lir-tip-above');
+        tip.style.top = `${Math.round(r.top - 8)}px`;
+        const half = tip.offsetWidth / 2;
+        const cx = Math.round(r.left + r.width / 2);
+        tip.style.left = `${Math.round(Math.max(half + 8, Math.min(cx, window.innerWidth - half - 8)))}px`;
+      } else {
+        tip.classList.add('lir-tip-right');
+        tip.style.top = `${Math.round(r.top + r.height / 2)}px`;
+        tip.style.left = `${Math.round(r.right + 10)}px`;
+      }
     } else {
       tip.style.top = `${Math.round(r.bottom + 8)}px`;
       tip.style.left = `${Math.round(r.left + r.width / 2)}px`;
@@ -89,7 +122,7 @@ export function initLirTooltip() {
       current.removeAttribute('data-lir-title');
     }
     current = null;
-    tip.classList.remove('lir-tip-visible', 'lir-tip-right');
+    tip.classList.remove('lir-tip-visible', 'lir-tip-right', 'lir-tip-above');
   }
 
   document.addEventListener('mouseover', (e) => {
