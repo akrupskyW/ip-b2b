@@ -400,7 +400,7 @@
       #modules-row .wch-sidebar.wch-docked.wch-dock-conceal { animation: none !important; }
     }
 
-    .wa-pane-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 20px 24px 28px; }
+    .wa-pane-body { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; padding: 20px 24px 28px; }
     .wa-pane-body > .wa-block { animation: waBlockIn .34s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
     @keyframes waBlockIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
@@ -1248,12 +1248,38 @@
       color: var(--text-subtle); font-variant-numeric: tabular-nums;
     }
 
-    /* ── Chart takeover (inside the right sticky output module) ───────────────
-       Each chart block in an artifact pane wears a top-right icon that puts its
-       host sticky module at fill width so it takes over the modules row. Inline
-       expand inside the transcript chip is intentionally gone. */
+    /* ── Chart expand (inside the right sticky output module) ─────────────────
+       Each chart block wears a top-right icon that puts its host module into
+       true full-screen inside the modules row: chat and every other sibling
+       hide, and this pane fills the workspace. Inline expand in the transcript
+       chip is gone. */
     .wa-pane-body > .wa-block:has(> .wa-chart-card) { position: relative; }
-    .wa-chart-takeover-btn {
+    #modules-row.output-fs > .wa-chat,
+    #modules-row.output-fs > .wch-sidebar,
+    #modules-row.output-fs > .wa-pane:not(.pane-fs) {
+      display: none !important;
+    }
+    #modules-row.output-fs > .wa-pane.pane-fs.is-open {
+      flex: 1 1 auto !important;
+      width: auto !important;
+      min-width: 0;
+      /* Float as a free-standing card over the row — not a sticky drawer.
+         The 15px inset on every side keeps all four 16px corners visible
+         (the row clips overflow-y). */
+      height: calc(100% - 30px) !important;
+      align-self: center !important;
+      margin: 0 !important;
+      padding-left: 0 !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 16px !important;
+      background: var(--surface) !important;
+      box-shadow: var(--shadow-card) !important;
+      z-index: 20 !important;
+    }
+    #modules-row.output-fs > .wa-pane.pane-fs.is-sticky .wa-pane-top {
+      background: var(--surface);
+    }
+    .wa-chart-expand-btn {
       position: absolute; top: 10px; right: 10px; z-index: 4;
       display: inline-flex; align-items: center; justify-content: center;
       width: 28px; height: 28px; padding: 0; border-radius: 50%;
@@ -1262,15 +1288,15 @@
       cursor: pointer; transition: color .15s ease, background .15s ease, border-color .15s ease, opacity .15s ease;
       opacity: .72;
     }
-    .wa-pane-body > .wa-block:has(> .wa-chart-card):hover .wa-chart-takeover-btn,
-    .wa-chart-takeover-btn:focus-visible { opacity: 1; }
-    html.dark .wa-chart-takeover-btn { background: #1A2339; border-color: rgba(37,80,124,0.32); box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
-    .wa-chart-takeover-btn:hover { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); background: color-mix(in srgb, var(--primary) 10%, var(--surface)); }
-    .wa-chart-takeover-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-    .wa-chart-takeover-btn .material-symbols-outlined { font-size: 16px !important; }
-    html.dark .wa-chart-takeover-btn:hover { color: var(--primary-bright, #8B9FAF); background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, #1A2339); }
-    .wa-chart-takeover-btn.is-on { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); opacity: 1; }
-    html.dark .wa-chart-takeover-btn.is-on { color: var(--primary-bright, #8B9FAF); }
+    .wa-pane-body > .wa-block:has(> .wa-chart-card):hover .wa-chart-expand-btn,
+    .wa-chart-expand-btn:focus-visible { opacity: 1; }
+    html.dark .wa-chart-expand-btn { background: #1A2339; border-color: rgba(37,80,124,0.32); box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+    .wa-chart-expand-btn:hover { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); background: color-mix(in srgb, var(--primary) 10%, var(--surface)); }
+    .wa-chart-expand-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .wa-chart-expand-btn .material-symbols-outlined { font-size: 16px !important; }
+    html.dark .wa-chart-expand-btn:hover { color: var(--primary-bright, #8B9FAF); background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, #1A2339); }
+    .wa-chart-expand-btn.is-on { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); opacity: 1; }
+    html.dark .wa-chart-expand-btn.is-on { color: var(--primary-bright, #8B9FAF); }
 
     /* ═══════════ Versioned output — stacked thumbnails ═══════════
        When an output has been redone, its chip shows every version as a
@@ -3520,7 +3546,7 @@
         }
       }
       updatePaneVer(dest);
-      ensureChartTakeoverBtns(paneBody[dest]);
+      ensureChartExpandBtns(paneBody[dest]);
     }
 
     /* ── Pane carousel: horizontal thumbnail rail + one-at-a-time output ──
@@ -3785,7 +3811,8 @@
           if (paneTrack[grp]) { paneTrack[grp].innerHTML = ''; paneTrack[grp].classList.remove('is-on', 'is-min'); }
           if (paneNavBtns[grp]) paneNavBtns[grp].innerHTML = '';
           if (paneCount[grp]) paneCount[grp].innerHTML = '';
-          paneEl[grp]?.classList.remove('is-open', 'pane-wide', 'pane-triple', 'pane-fill');
+          paneEl[grp]?.classList.remove('is-open', 'pane-wide', 'pane-triple', 'pane-fill', 'pane-fs');
+          document.getElementById('modules-row')?.classList.remove('output-fs');
           const wb = document.querySelector(`[data-pane-width="${grp}"]`);
           if (wb) syncPaneWidthBtn(wb, 0);
         });
@@ -3809,7 +3836,8 @@
         if (paneTrack.unified) { paneTrack.unified.innerHTML = ''; paneTrack.unified.classList.remove('is-on', 'is-min', 'is-grouped', 'is-stacked'); }
         if (paneNavBtns.unified) paneNavBtns.unified.innerHTML = '';
         if (paneCount.unified) paneCount.unified.innerHTML = '';
-        paneEl.unified.classList.remove('is-open', 'pane-wide', 'pane-triple', 'pane-fill');
+        paneEl.unified.classList.remove('is-open', 'pane-wide', 'pane-triple', 'pane-fill', 'pane-fs');
+        document.getElementById('modules-row')?.classList.remove('output-fs');
         const uwb = document.querySelector('[data-pane-width="unified"]');
         if (uwb) syncPaneWidthBtn(uwb, 0);
         /* Re-open each source pane that regained content + rebuild its rail. */
@@ -3881,7 +3909,11 @@
 
     function closePane(which) {
       const el = paneEl[which];
-      if (el) el.classList.remove('is-open', 'pane-wide', 'pane-triple', 'pane-fill');
+      if (el) {
+        const wasFs = paneIsFs(el);
+        el.classList.remove('is-open', 'pane-wide', 'pane-triple', 'pane-fill', 'pane-fs');
+        if (wasFs) document.getElementById('modules-row')?.classList.remove('output-fs');
+      }
       if (which === 'unified') closeTitledropPop();
       if (paneBody[which]) { paneBody[which].innerHTML = ''; paneBody[which].classList.remove('is-carousel'); }
       if (paneTrack[which]) { paneTrack[which].innerHTML = ''; paneTrack[which].classList.remove('is-on', 'is-min', 'is-grouped', 'is-stacked'); }
@@ -3959,7 +3991,6 @@
         applyPaneWidth(el, next);
         syncPaneWidthBtn(btn, next);
         recomputeSoloPaneWidth();
-        syncChartTakeoverBtns(which);
       });
     });
     /* The Guiding Stars view is an admin-gated toggle that lives in the module's
@@ -5683,7 +5714,7 @@
       /* The timestamp + version no longer live inside the chip — they render in
          the turn's meta row below it (see decorateSurfaceMeta). The chip keeps
          only the thumbnail + title; charts no longer expand inline here — use
-         the takeover icon on the chart in the right sticky module instead. */
+         the expand icon on the chart in the right sticky module instead. */
       return `<div class="sc-surface-slot">
           <div class="sc-surface-card" role="button" tabindex="0" data-surface="${blockId}" data-activity="output" aria-label="Open “${esc(title)}” in the ${esc(paneName)} panel — version ${version}${count > 1 ? ` of ${count}` : ''}, ${esc(time)}">
             <div class="sc-surface-head">
@@ -5934,54 +5965,62 @@
       return dest;
     }
 
-    /* Put a right sticky output module at fill width so it takes over the row. */
-    function takeoverPane(which) {
+    /* Put the host artifacts module into full screen inside the modules row
+       (chat and sibling modules hide). The chart itself is not restyled. */
+    function paneWhichFromEl(el) {
+      if (!el) return null;
+      if (el.id === 'wa-visuals') return 'visuals';
+      if (el.id === 'wa-results') return 'results';
+      if (el.id === 'wa-unified') return 'unified';
+      return el.dataset.origin || null;
+    }
+    function paneIsFs(el) {
+      return !!(el && el.classList.contains('pane-fs'));
+    }
+    function syncChartExpandBtns(root) {
+      const scope = root || document;
+      scope.querySelectorAll('.wa-chart-expand-btn').forEach((btn) => {
+        const pane = btn.closest('.wa-pane');
+        const on = paneIsFs(pane);
+        btn.classList.toggle('is-on', on);
+        const ic = btn.querySelector('.material-symbols-outlined');
+        if (ic) ic.textContent = on ? 'close_fullscreen' : 'open_in_full';
+        btn.title = on ? 'Restore module' : 'Expand module to full screen';
+        btn.setAttribute('aria-label', on ? 'Restore module' : 'Expand output module to full screen');
+      });
+    }
+    function applyPaneFs(el, on) {
+      const row = document.getElementById('modules-row');
+      ['results', 'visuals', 'unified'].forEach((k) => {
+        if (paneEl[k] && paneEl[k] !== el) paneEl[k].classList.remove('pane-fs');
+      });
+      if (el) el.classList.toggle('pane-fs', !!on);
+      if (row) row.classList.toggle('output-fs', !!(el && on));
+      syncChartExpandBtns();
+    }
+    function togglePaneFs(which) {
       const dest = mergedMode ? 'unified' : which;
       const el = paneEl[dest];
       if (!el) return;
       if (!el.classList.contains('is-open')) el.classList.add('is-open');
-      const atFill = paneWidthTier(el) >= 3;
-      const next = atFill ? 0 : 3;
-      applyPaneWidth(el, next);
-      const wb = document.querySelector(`[data-pane-width="${dest}"]`);
-      if (wb) syncPaneWidthBtn(wb, next);
-      recomputeSoloPaneWidth();
-      syncChartTakeoverBtns(dest);
+      applyPaneFs(el, !paneIsFs(el));
     }
 
     /* Top-right open_in_full control on every chart block inside a pane. */
-    function ensureChartTakeoverBtns(root) {
+    function ensureChartExpandBtns(root) {
       if (!root) return;
       root.querySelectorAll('.wa-block:has(> .wa-chart-card)').forEach((block) => {
-        if (block.querySelector(':scope > .wa-chart-takeover-btn')) return;
-        const pane = block.closest('.wa-pane');
-        const which = pane?.id === 'wa-visuals' ? 'visuals'
-          : pane?.id === 'wa-results' ? 'results'
-          : pane?.id === 'wa-unified' ? 'unified'
-          : (block.dataset.origin || 'visuals');
+        if (block.querySelector(':scope > .wa-chart-expand-btn')) return;
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'wa-chart-takeover-btn';
-        btn.setAttribute('data-pane-takeover', which);
-        btn.setAttribute('aria-label', 'Expand output module to fill the screen');
-        btn.title = 'Expand module';
+        btn.className = 'wa-chart-expand-btn';
+        btn.setAttribute('data-chart-expand', '');
+        btn.setAttribute('aria-label', 'Expand output module to full screen');
+        btn.title = 'Expand module to full screen';
         btn.innerHTML = '<span class="material-symbols-outlined">open_in_full</span>';
         block.insertBefore(btn, block.firstChild);
       });
-      ['results', 'visuals', 'unified'].forEach(syncChartTakeoverBtns);
-    }
-
-    function syncChartTakeoverBtns(which) {
-      const el = paneEl[which];
-      if (!el) return;
-      const on = paneWidthTier(el) >= 3;
-      el.querySelectorAll('.wa-chart-takeover-btn').forEach((btn) => {
-        btn.classList.toggle('is-on', on);
-        const ic = btn.querySelector('.material-symbols-outlined');
-        if (ic) ic.textContent = on ? 'close_fullscreen' : 'open_in_full';
-        btn.title = on ? 'Restore module width' : 'Expand module';
-        btn.setAttribute('aria-label', on ? 'Restore output module width' : 'Expand output module to fill the screen');
-      });
+      syncChartExpandBtns(root);
     }
 
     /* Flag the active version thumbnail in the stack so the chip and pane agree. */
@@ -6044,7 +6083,7 @@
       updatePaneVer(dest);
       /* Remember the shown version so a later card-body tap reopens the same one. */
       SURFACED[blockId].html = tagged;
-      ensureChartTakeoverBtns(body);
+      ensureChartExpandBtns(body);
     }
 
     /* When a turn surfaces data, open/refresh the right panes shortly after the
@@ -6615,13 +6654,15 @@
         reopenSurface(card.getAttribute('data-surface'));
       });
 
-      /* Chart takeover icons live in the right sticky panes (not the transcript). */
+      /* Chart expand icons live in the right sticky panes (not the transcript). */
       document.getElementById('modules-row')?.addEventListener('click', (e) => {
-        const btn = e.target.closest('[data-pane-takeover]');
+        const btn = e.target.closest('[data-chart-expand]');
         if (!btn) return;
         e.preventDefault();
         e.stopPropagation();
-        takeoverPane(btn.getAttribute('data-pane-takeover'));
+        const pane = btn.closest('.wa-pane');
+        const which = paneWhichFromEl(pane) || (mergedMode ? 'unified' : 'visuals');
+        togglePaneFs(which);
       });
 
       /* History is toggled from the chat's own three-dot menu — inject the entry

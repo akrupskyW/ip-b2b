@@ -508,6 +508,8 @@
        chrome — the list sits on the module canvas. */
     .lib-fp {
       --lib-tree: color-mix(in srgb, var(--text-subtle) 52%, transparent);
+      /* Mask must match the painted canvas under the list: cream --bg in light,
+         the #1A2339 module fill in dark ( --bg is a darker navy and halos). */
       --lib-fp-bg: var(--bg);
       flex: 0 0 248px; width: 248px; box-sizing: border-box;
       position: sticky; top: 0;
@@ -515,7 +517,10 @@
       padding: 0 8px 12px 0;
       background: transparent; border: 0; box-shadow: none;
     }
-    html.dark .lib-fp { --lib-tree: rgba(255,255,255,0.20); }
+    html.dark .lib-fp {
+      --lib-tree: rgba(255,255,255,0.20);
+      --lib-fp-bg: #1A2339;
+    }
 
     .lib-fp-folder { position: relative; margin: 1px 0; overflow: visible; }
     .lib-fp-row, .lib-fp-all {

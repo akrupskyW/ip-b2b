@@ -4246,8 +4246,13 @@ function moduleStyles() {
       display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
       position: sticky; top: 0; z-index: 3;
       padding: 12px 0 6px;
-      background: linear-gradient(var(--bg, var(--surface)) 82%, transparent);
+      /* Solid module fill — not --bg. --bg is the page navy (#05141C) and the
+         old fade-to-transparent gradient read as a leftover strip behind the
+         search. Match .agent-main-inner so the sticky bar is the module. */
+      background: var(--surface);
     }
+    html.dark .mi-toolbar { background: #1A2339; }
+    html.full-bleed.fb-rmod-tint .mi-toolbar { background: var(--fb-rmod-bg); }
     .mi-search-inline {
       position: relative; display: inline-flex; align-items: center;
       flex: 1 1 auto; min-width: 220px;
@@ -4263,7 +4268,8 @@ function moduleStyles() {
       border-radius: 999px; outline: none;
       transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
     }
-    html.dark .mi-search { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    html.dark .mi-search { background: #1A2339; border-color: rgba(255,255,255,0.10); }
+    html.full-bleed.fb-rmod-tint .mi-search { background: var(--fb-rmod-bg); }
     .mi-search::placeholder { color: color-mix(in srgb, var(--text-subtle) 60%, transparent); font-style: italic; }
     .mi-search:focus {
       border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));

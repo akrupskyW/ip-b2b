@@ -102,8 +102,10 @@
     #pl-chat.sc-card .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn:hover { background: var(--surface-3); }
     #pl-chat.sc-card .chat-topbar > .sc-topbar-controls .panel-more-btn.is-open,
     #pl-chat.sc-card .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn.is-on { background: color-mix(in srgb, var(--primary) 16%, var(--surface-2)); }
-    /* Progress log board — the flexible filler beside the chat. */
-    .pl-log { flex: 1 1 auto; min-width: 520px; }
+    /* Progress log board — the flexible filler beside the chat.
+       The card itself scrolls so the serif header travels with the
+       journal (not a sticky bar above a separate .pl-body scroller). */
+    .pl-log { flex: 1 1 auto; min-width: 520px; overflow-x: hidden; overflow-y: auto; }
     .pl-log.panel-wide { min-width: 720px; }
     .pl-log.panel-triple { min-width: 900px; }
 
@@ -114,8 +116,8 @@
     .pl-head-meta { font-size: 11.5px; color: var(--text-muted); margin: 3px 0 0; line-height: 1.3; }
     .pl-head-controls { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
-    /* ── Scrolling body ── */
-    .pl-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 4px 26px 22px; }
+    /* ── Scrolling body — sizes to content; the .pl-log card is the scroller ── */
+    .pl-body { flex: 0 0 auto; min-height: auto; overflow: visible; padding: 4px 26px 22px; }
 
     /* ── Toolbar + canonical search (mirrors reformulation's .rf-search) ──
        Search fills the row; Re-evaluate sits to its right and writes notes
@@ -539,12 +541,31 @@
          LOG_STAMP is bumped whenever this journal is rewritten. The board
          polls it every hour (and on tab-focus after an hour) and reloads
          when the stamp has moved, so an open tab never shows a stale day. ── */
-      const LOG_STAMP = '2026-08-18T15:35:00.000Z';
+      const LOG_STAMP = '2026-08-18T23:20:00.000Z';
       const LOG = [
         {
           date: '2026-08-18', rel: 'Tuesday',
-          summary: 'WISEowl first-login walkthrough, Crawl · Walk · Run rewrite, chat elevation, and a shared five-stop chart palette — this journal now re-evaluates itself every hour.',
+          summary: 'Nested Conversation Library (move / copy / link), Accessibility Review as a live audit board, WISEowl walkthrough, Crawl · Walk · Run rewrite, History/Projects folder trees, and a shared five-stop chart palette — this journal now re-evaluates itself every hour.',
           entries: [
+            { page: 'Conversation Library', path: 'conversation-library.html',
+              components: [
+                'History-style folder side panel (colored folder icon, name, count, hover ⋯, tree spine with L-elbows) alongside the existing large folder tiles — Layout filter switches Side panel / Large folders',
+                'Breadcrumb trail while a nested folder is open, so you can walk back to the Library root',
+                'Card ⋯ menu (move / copy / link / remove) and Copy / Linked tags on artifacts that live in more than one place',
+              ],
+              features: [
+                'Folders nest — drop a folder onto a folder, or Move into folder… from the ⋯ menu; ungroup keeps the chats inside',
+                'Artifacts can be moved, copied, or linked into any folder (Option copies, ⌘ links); drag-only Remove from folder and Move to Library tiles appear while a filed card or nested folder is in flight',
+                'First-run seeded folders (UPF Stuff, Label scans, Demos, Impressive Reports) so the shelf is never empty and drag-to-file is discoverable',
+              ],
+              logic: [
+                'Folders persist parentId in wise-lib-folders; copies are a separate wise-lib-copies store so a linked original is not duplicated until you copy',
+                'Folder layout (panel vs tiles) is stored as wise-lib-folder-view; filter counts still reconcile against the visible cards',
+              ],
+              ux: [
+                'Dark-mode filter chips finally keep their selected fill (html.dark .lib-fchip no longer overrides .is-on), and active scorecards use the lifted primary-bright wash',
+                'Folder-panel mask uses the #1A2339 module fill in dark mode so the tree does not halo against the darker page navy',
+              ] },
             { page: 'WISEowl walkthrough', path: 'owl-walkthrough.js', isNew: true,
               components: ['A docked-module tour that reuses the same History / “What can I ask?” card shell, so the owl lives in the product instead of a separate missions layout'],
               features: [
@@ -564,13 +585,35 @@
               features: ['Workspace row “WISEowl walkthrough” with a Replay tour button that reopens the grouped tour of the real pages'],
               logic: ['Same ready-event wait as Help, so Replay works even if the owl script is still arriving'] },
             { page: 'WISEcodeAI', path: 'wiseai.html',
-              features: ['Chat-module elevation — Little min, Above high, or 3D — an admin three-dot control that every chat surface follows from one localStorage key (default Above high)'],
+              features: [
+                'Chat-module elevation — Little min, Above high, or 3D — an admin three-dot control that every chat surface follows from one localStorage key (default Above high)',
+                'History & Projects now speak the same folder language as the Conversation Library — colored folder / folder_open, name, count, and a tree spine with L-elbows under each project',
+              ],
               logic: ['Elevation broadcasts on wise:chat-elev so every open chat stays in lockstep; comparison tables always pin the YOU / primary entity as the leftmost column before ranking the rest'],
-              ux: ['Composer pill uses a light brand-wash stroke (not the heavy border) with a living sheen that travels the edge in both themes'] },
+              ux: ['Composer pill uses a light brand-wash stroke (not the heavy border) with a living sheen that travels the edge in both themes; history rows show a hover info card and a chat color dot'] },
+            { page: 'Accessibility Review', path: 'accessibility-review.html',
+              components: ['Rebuilt as the shared chat + sticky board shell (same frame as this Progress Log) — WISEcodeAI on the left, live WCAG audit on the right'],
+              features: [
+                'Fetches and grades every shipping HTML page against automated WCAG checks, then keeps re-checking so grades stay current as pages change',
+                'Audits every design token in wise.css against Level AAA contrast (7:1 normal / 4.5:1 large) using the WCAG relative-luminance formula',
+              ],
+              logic: ['Per-theme verdict is persisted so the Appearance popover badge can read pass / warn / fail without re-running the audit'],
+              ux: ['Three-dot jumps to summary, page grades, and findings; Re-evaluate against source re-reads wise.css'] },
+            { page: 'All Modules', path: 'all-modules.html',
+              features: [
+                'Drag-to-file and drag-to-found catalog entries updated for Library move / copy / link and folder-on-folder nesting',
+              ],
+              ux: ['Icon-inventory search toolbar sits on the module surface in both themes (solid --surface / #1A2339) — no leftover navy strip behind the sticky bar'] },
             { page: 'Progress Log', path: 'progress-log.html',
-              features: ['Hourly auto-reevaluation: the open tab cache-busts its own source, reloads when the journal stamp moves, and otherwise refreshes counts and relative times'],
+              features: [
+                'Hourly auto-reevaluation: the open tab cache-busts its own source, reloads when the journal stamp moves, and otherwise refreshes counts and relative times',
+                'Re-evaluate writes a note sentence for every page on the day — not the first five plus an “also progressed” list — so a large surface like Conversation Library cannot drop out of the digest',
+              ],
               logic: ['Polling pauses while the tab is hidden, skips a reload if a note composer is open, and the three-dot menu can force a check immediately'],
-              ux: ['One container per day with the page title and file name, then category bullets in a single horizontal flow — no icons on the board, empty categories omitted'] },
+              ux: [
+                'One container per day with the page title and file name, then category bullets in a single horizontal flow — no icons on the board, empty categories omitted',
+                'Module header (title, last-evaluated meta, ⋯ and width) scrolls with the journal instead of staying pinned above the board',
+              ] },
             { page: 'Appearance & Admin', path: '(appearance popover · every page)',
               ux: ['Shared hover/focus tooltips (data-tip) on appearance controls, anchored above the trigger — never directly below — and re-anchored when a toggle adds height (e.g. the jam strip)'],
               logic: ['tipAttrs() writes the tooltip copy once so every admin row and toggle uses the same lir-tooltip card'] },
@@ -594,6 +637,8 @@
             { page: 'Marketing Assets', path: 'marketing-assets.html',
               ux: ['Asset preview is a full-viewport modal (no inset card, no leftover rounded dialog) so the artwork is the thing you look at'] },
             { page: 'AI Dashboard', path: 'ai-dashboard.html',
+              components: ['Docked into the shared chat + module shell — WISEcodeAI on the left, AI Operations Dashboard on the right — replacing the leftover standalone layout'],
+              features: ['Time-range KPIs (24h / 7d / 30d / 90d), token consumption, workload, usage-by-user, skill invocations, data sources, model requests, and guardrails'],
               ux: ['Chart series use the shared chart-status tokens, inheriting the lifted dark-mode stops from wise.css'] },
             { page: 'Analytics Types', path: 'analytics-types.html',
               ux: ['Canonical five-tier WISE status scale on the chart catalog — one navy family, so the rosette stays on-brand in both themes'] },
@@ -996,14 +1041,12 @@
       function dayEvalNote(day) {
         const { n, cats } = dayCounts(day);
         const pages = day.entries;
-        const lead = pages.slice(0, 5).map(pageEvalSentence);
-        const more = pages.slice(5).map((e) => e.page);
+        const lead = pages.map(pageEvalSentence);
         const heavy = CATS.filter((c) => cats[c.id]).sort((a, b) => cats[b.id] - cats[a.id]).slice(0, 3);
         const parts = [
           'Evaluated ' + pages.length + (pages.length === 1 ? ' page' : ' pages') + ' on ' + fmtDate(day.date) + '.',
           ...lead,
         ];
-        if (more.length) parts.push('Also progressed ' + oxford(more) + '.');
         parts.push(
           n + (n === 1 ? ' entry' : ' entries')
           + (heavy.length ? ', heaviest in ' + oxford(heavy.map((c) => c.label)) : '')
