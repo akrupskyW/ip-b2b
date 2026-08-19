@@ -7255,7 +7255,9 @@
       max-height: 100%;
       gap: 8px;
     }
-    /* Empty right rail collapses cleanly so it doesn't add a phantom 8px gap. */
+    /* Empty rails collapse so they don't add a phantom 8px gap (the left
+       wrapper used to sit between the nav and the chat). */
+    #panels-row:not(.pr-has-panels),
     #panels-row-right:not(.pr-has-panels) { display: none; }
 
     /* Light-mode overrides for flip + layout */
@@ -11434,10 +11436,9 @@
     function closeSettings() { toggleSettingsPanel(false); }
     function closeNotifications() { toggleNotificationsPanel(false); }
 
-    function syncPanelsRowRight(panelsRight) {
-      const row = panelsRight || document.getElementById('panels-row-right');
-      if (!row) return;
-      const hasOpen = Array.from(row.children).some((el) => {
+    function rowHasOpenPanels(row) {
+      if (!row) return false;
+      return Array.from(row.children).some((el) => {
         if (el.id === 'intent-stack-column') return el.classList.contains('is-active');
         return el.classList.contains('open')      || /* history */
         el.classList.contains('up-open')   || /* UPF / PULSE */
@@ -11450,7 +11451,12 @@
         el.classList.contains('nfp-open')  ||
         el.classList.contains('ss-open');
       });
-      row.classList.toggle('pr-has-panels', hasOpen);
+    }
+    function syncPanelsRowRight(panelsRight) {
+      const right = panelsRight || document.getElementById('panels-row-right');
+      if (right) right.classList.toggle('pr-has-panels', rowHasOpenPanels(right));
+      const left = document.getElementById('panels-row');
+      if (left) left.classList.toggle('pr-has-panels', rowHasOpenPanels(left));
       syncReportMode();
     }
 

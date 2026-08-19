@@ -1068,8 +1068,7 @@
     .wa-bar-row { display: grid; grid-template-columns: 92px 1fr 44px; align-items: center; gap: 10px; }
     .wa-bar-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-align: right; }
     .wa-bar-track { height: 16px; border-radius: 9999px; background: var(--surface-3); overflow: hidden; }
-    .wa-bar-fill { height: 100%; border-radius: 9999px; background: var(--primary); }
-    html.dark .wa-bar-fill { background: var(--primary-bright, #8B9FAF); }
+    .wa-bar-fill { height: 100%; border-radius: 9999px; background: var(--chart-mono, var(--primary)); }
     .wa-bars-thin .wa-bar-track { height: 6px; }
     .wa-bar-val { font-size: 11.5px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
     /* Stacked score rows: name on its own line, bar + value beneath it so each
@@ -1250,35 +1249,65 @@
 
     /* ── Chart expand (inside the right sticky output module) ─────────────────
        Each chart block wears a top-right icon that puts its host module into
-       true full-screen inside the modules row: chat and every other sibling
-       hide, and this pane fills the workspace. Inline expand in the transcript
+       a viewport overlay: it sits over the primary nav and the rest of the
+       shell. Chat and sibling modules hide. Inline expand in the transcript
        chip is gone. */
     .wa-pane-body > .wa-block:has(> .wa-chart-card) { position: relative; }
+    #modules-row.output-fs {
+      z-index: 80;
+    }
+    html.output-fs #menu-panel {
+      z-index: 1 !important;
+    }
     #modules-row.output-fs > .wa-chat,
     #modules-row.output-fs > .wch-sidebar,
     #modules-row.output-fs > .wa-pane:not(.pane-fs) {
       display: none !important;
     }
     #modules-row.output-fs > .wa-pane.pane-fs.is-open {
-      flex: 1 1 auto !important;
+      position: fixed !important;
+      inset: var(--modules-bottom-pad, 12px) !important;
+      flex: none !important;
       width: auto !important;
+      height: auto !important;
       min-width: 0;
-      /* Float as a free-standing card over the row — not a sticky drawer.
-         The 15px inset on every side keeps all four 16px corners visible
-         (the row clips overflow-y). */
-      height: calc(100% - 30px) !important;
-      align-self: center !important;
+      align-self: auto !important;
       margin: 0 !important;
       padding-left: 0 !important;
       border: 1px solid var(--border) !important;
       border-radius: 16px !important;
       background: var(--surface) !important;
       box-shadow: var(--shadow-card) !important;
-      z-index: 20 !important;
+      z-index: 80 !important;
     }
     #modules-row.output-fs > .wa-pane.pane-fs.is-sticky .wa-pane-top {
       background: var(--surface);
     }
+    /* Full-screen chart: drop the 300px / 70% caps and grow the plot so it
+       reads as the hero of the overlay, not a leftover docked thumbnail. */
+    #modules-row.output-fs > .wa-pane.pane-fs .wa-pane-body > .wa-block:has(> .wa-chart-card) {
+      padding: 28px 36px 32px;
+    }
+    #modules-row.output-fs > .wa-pane.pane-fs .wa-chart-card svg {
+      max-width: none !important;
+      width: 100% !important;
+    }
+    #modules-row.output-fs > .wa-pane.pane-fs .wa-radar-wrap > div {
+      max-width: min(640px, 80%) !important;
+      width: min(640px, 80%) !important;
+    }
+    #modules-row.output-fs > .wa-pane.pane-fs .wa-bars { gap: 18px; }
+    #modules-row.output-fs > .wa-pane.pane-fs .wa-bar-row {
+      grid-template-columns: 168px 1fr 64px;
+      gap: 16px;
+    }
+    #modules-row.output-fs > .wa-pane.pane-fs .wa-bar-track { height: 28px; }
+    #modules-row.output-fs > .wa-pane.pane-fs .wa-bar-label { font-size: 14px; }
+    #modules-row.output-fs > .wa-pane.pane-fs .wa-bar-val { font-size: 16px; }
+    #modules-row.output-fs > .wa-pane.pane-fs .wa-scorebars { gap: 20px; }
+    #modules-row.output-fs > .wa-pane.pane-fs .wa-scorebar-name { font-size: 15px; }
+    #modules-row.output-fs > .wa-pane.pane-fs .wa-scorebar-line .wa-bar-track { height: 16px; }
+    #modules-row.output-fs > .wa-pane.pane-fs .wa-report-title.wa-chart-title { font-size: 1.85rem; }
     .wa-chart-expand-btn {
       position: absolute; top: 10px; right: 10px; z-index: 4;
       display: inline-flex; align-items: center; justify-content: center;
@@ -3812,7 +3841,7 @@
           if (paneNavBtns[grp]) paneNavBtns[grp].innerHTML = '';
           if (paneCount[grp]) paneCount[grp].innerHTML = '';
           paneEl[grp]?.classList.remove('is-open', 'pane-wide', 'pane-triple', 'pane-fill', 'pane-fs');
-          document.getElementById('modules-row')?.classList.remove('output-fs');
+          setOutputFsOn(false);
           const wb = document.querySelector(`[data-pane-width="${grp}"]`);
           if (wb) syncPaneWidthBtn(wb, 0);
         });
@@ -3837,7 +3866,7 @@
         if (paneNavBtns.unified) paneNavBtns.unified.innerHTML = '';
         if (paneCount.unified) paneCount.unified.innerHTML = '';
         paneEl.unified.classList.remove('is-open', 'pane-wide', 'pane-triple', 'pane-fill', 'pane-fs');
-        document.getElementById('modules-row')?.classList.remove('output-fs');
+        setOutputFsOn(false);
         const uwb = document.querySelector('[data-pane-width="unified"]');
         if (uwb) syncPaneWidthBtn(uwb, 0);
         /* Re-open each source pane that regained content + rebuild its rail. */
@@ -3912,7 +3941,7 @@
       if (el) {
         const wasFs = paneIsFs(el);
         el.classList.remove('is-open', 'pane-wide', 'pane-triple', 'pane-fill', 'pane-fs');
-        if (wasFs) document.getElementById('modules-row')?.classList.remove('output-fs');
+        if (wasFs) setOutputFsOn(false);
       }
       if (which === 'unified') closeTitledropPop();
       if (paneBody[which]) { paneBody[which].innerHTML = ''; paneBody[which].classList.remove('is-carousel'); }
@@ -5160,12 +5189,16 @@
 
     function distributionChart() {
       const buckets = [
-        ['90–100', 612], ['70–89', 548], ['50–69', 806], ['30–49', 574], ['0–29', 470],
+        ['90–100', 612, 'var(--chart-status-excellent)'],
+        ['70–89', 548, 'var(--chart-status-good)'],
+        ['50–69', 806, 'var(--chart-status-okay)'],
+        ['30–49', 574, 'var(--chart-status-fair)'],
+        ['0–29', 470, 'var(--chart-status-poor)'],
       ];
       const mx = Math.max(...buckets.map((b) => b[1]));
-      const bars = buckets.map(([lbl, v], i) => `<div class="wa-bar-row">
+      const bars = buckets.map(([lbl, v, col], i) => `<div class="wa-bar-row">
           <div class="wa-bar-label">${lbl}</div>
-          <div class="wa-bar-track"><div class="wa-bar-fill" style="width:${((v / mx) * 100).toFixed(0)}%;--i:${i}"></div></div>
+          <div class="wa-bar-track"><div class="wa-bar-fill" style="width:${((v / mx) * 100).toFixed(0)}%;background:${col};--i:${i}"></div></div>
           <div class="wa-bar-val">${v.toLocaleString()}</div>
         </div>`).join('');
       return `
@@ -5375,7 +5408,7 @@
       const mx = Math.max(...spec.drivers.map((d) => d[1]));
       const bars = spec.drivers.map(([lbl, val], i) => {
         const isFerment = /Fermented/.test(lbl);
-        const col = isFerment ? (v >= 2 ? 'var(--sec-green)' : 'var(--ter-amber)') : (i < 4 ? 'var(--sec-green)' : 'var(--primary)');
+        const col = isFerment ? (v >= 2 ? 'var(--sec-green)' : 'var(--ter-amber)') : (i < 4 ? 'var(--sec-green)' : 'var(--chart-mono, var(--primary))');
         return `<div class="wa-bar-row">
             <div class="wa-bar-label">${esc(lbl)}</div>
             <div class="wa-bar-track"><div class="wa-bar-fill" style="width:${((val / mx) * 100).toFixed(0)}%;background:${col};--i:${i}"></div></div>
@@ -5965,8 +5998,8 @@
       return dest;
     }
 
-    /* Put the host artifacts module into full screen inside the modules row
-       (chat and sibling modules hide). The chart itself is not restyled. */
+    /* Overlay the host artifacts module across the viewport (over the primary
+       nav). Chat and sibling modules hide; charts inside scale up. */
     function paneWhichFromEl(el) {
       if (!el) return null;
       if (el.id === 'wa-visuals') return 'visuals';
@@ -5989,13 +6022,16 @@
         btn.setAttribute('aria-label', on ? 'Restore module' : 'Expand output module to full screen');
       });
     }
+    function setOutputFsOn(on) {
+      document.getElementById('modules-row')?.classList.toggle('output-fs', !!on);
+      document.documentElement.classList.toggle('output-fs', !!on);
+    }
     function applyPaneFs(el, on) {
-      const row = document.getElementById('modules-row');
       ['results', 'visuals', 'unified'].forEach((k) => {
         if (paneEl[k] && paneEl[k] !== el) paneEl[k].classList.remove('pane-fs');
       });
       if (el) el.classList.toggle('pane-fs', !!on);
-      if (row) row.classList.toggle('output-fs', !!(el && on));
+      setOutputFsOn(!!(el && on));
       syncChartExpandBtns();
     }
     function togglePaneFs(which) {

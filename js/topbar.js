@@ -1159,7 +1159,7 @@ html.brand-inset.dark {
    they never picked up the token) onto the now-inset token, with a crisp brand
    border. Resolves to the light/dark inset stack automatically via the token.
    !important beats the base per-surface box-shadow/border rules on a tie. */
-html.brand-inset #modules-row > *,
+html.brand-inset #modules-row > *:not(#panels-row):not(#panels-row-right),
 html.brand-inset .sc-card,
 html.brand-inset .wa-pane,
 html.brand-inset .cmp-inner,
@@ -1167,6 +1167,41 @@ html.brand-inset .wise-popover,
 html.brand-inset .wise-card {
   border: 1px solid var(--border-strong) !important;
   box-shadow: var(--shadow-card) !important;
+}
+
+/* Layout-only rows (#panels-row / #panels-row-right on portfolio +
+   comparison) collapse to a 2px sliver when empty. The blanket child
+   rule above used to stroke that sliver and draw a stray vertical line
+   in the nav↔chat gutter. Keep them chrome-free. */
+html.brand-inset #modules-row > :is(#panels-row, #panels-row-right) {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Facing strokes across the nav↔content gutter. The nav's right
+   hairline and the leftmost module's left hairline sit ~12px apart
+   and read as a random divider. Keep every other Style 1 edge; drop
+   only the two that face each other. Rail mode already zeros the
+   whole nav border, so the nav rule is a no-op there. */
+html.brand-inset #menu-panel .menu-inner {
+  border-right-color: transparent !important;
+}
+/* Same :not(#id) pair as the shorthand above so this beats
+   the border shorthand !important on specificity, not source order. */
+html.brand-inset #modules-row > :is(
+  .wa-chat, .ap-chat, .rf-chat, .sa-chat, .gs-chat, .aid-chat, .pl-chat, .ar-chat,
+  #wa-chat, #rf-chat, #pl-chat, #gs-chat, #aid-chat, #ar-chat,
+  #chat-shell, #wiseai-dock-panel, #wiseai-panel, #pf-chat-panel
+):not(#panels-row):not(#panels-row-right) {
+  border-left-color: transparent !important;
+}
+/* Agent-overview pages with no left chat/dock: #agent-main faces the nav. */
+html.brand-inset #modules-row:not(:has(
+  #wiseai-dock-panel.wiseai-dock-open,
+  #chat-shell,
+  .wa-chat, .ap-chat, .rf-chat, .sa-chat, .gs-chat, .aid-chat, .pl-chat, .ar-chat
+)) > #agent-main:not(#panels-row):not(#panels-row-right) {
+  border-left-color: transparent !important;
 }`;
 
 /** Inject the branding-style stylesheet once (idempotent). */

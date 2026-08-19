@@ -478,6 +478,20 @@
        the full photo modal (upload / drag-drop / paste URL). */
     .nfp-hero-edit-tag { position: absolute; top: 8px; right: 8px; z-index: 3; display: inline-flex; align-items: center; gap: 6px; }
     .nfp-hero-edit-tag .nfp-hero-edit { position: static; top: auto; right: auto; }
+    /* Photo pencil + "Change" next to a set category — hidden until hover. */
+    .nfp-hero > .nfp-hero-edit,
+    .nfp-hero-edit-tag,
+    .nfp-cat-row:has(.nfp-cat-chip) .nfp-mini-btn {
+      opacity: 0; pointer-events: none; transition: opacity 0.12s ease;
+    }
+    .nfp-hero:hover > .nfp-hero-edit,
+    .nfp-hero:hover .nfp-hero-edit-tag,
+    .nfp-hero:focus-within > .nfp-hero-edit,
+    .nfp-hero:focus-within .nfp-hero-edit-tag,
+    .nfp-cat:hover .nfp-mini-btn,
+    .nfp-cat:focus-within .nfp-mini-btn {
+      opacity: 1; pointer-events: auto;
+    }
     .nfp-hero-edit-tag-label {
       font-size: 11px; font-weight: 600; line-height: 1; color: #fff;
       background: rgba(0,0,0,0.5); border-radius: 999px; padding: 5px 9px;
@@ -782,11 +796,27 @@
     .nfp-contains { padding: 6px 12px 8px; font-size: 0.66rem; color: #374151; }
 
     /* Editable affordance: any value the flow collects can be clicked to edit.
-       Applied on top of the label styles so the black-on-white label stays intact. */
-    .nfp-edit { cursor: text; border-radius: 3px; padding: 0 2px; transition: background 0.12s, box-shadow 0.12s; outline: none; }
-    .nfp-edit:hover { background: rgba(37,80,124,0.08); box-shadow: inset 0 0 0 1px rgba(37,80,124,0.25); }
+       Applied on top of the label styles so the black-on-white label stays intact.
+       Hover is a 1px underline that grows from the left — no wash, no box. */
+    .nfp-edit { position: relative; cursor: text; border-radius: 3px; padding: 0 2px; transition: background 0.12s, box-shadow 0.12s; outline: none; }
+    .nfp-edit::after {
+      content: ''; position: absolute; left: 2px; right: 2px; bottom: 0; height: 1px;
+      background: var(--primary); transform: scaleX(0); transform-origin: left;
+      transition: transform 0.15s ease; pointer-events: none;
+    }
+    .nfp-edit:hover::after { transform: scaleX(1); }
+    .nfp-edit:focus::after { transform: scaleX(0); }
     .nfp-edit:focus { background: #fff; box-shadow: inset 0 0 0 2px var(--primary); }
     .nfp-edit-empty { color: #9ca3af; font-style: italic; }
+    /* Pill-shaped name inputs keep their own border hover — no underline. */
+    .nfp-hero-name .nfp-edit::after,
+    .nfp-rcol-name .nfp-edit::after { content: none; }
+    @media (prefers-reduced-motion: reduce) {
+      .nfp-edit::after,
+      .nfp-hero > .nfp-hero-edit,
+      .nfp-hero-edit-tag,
+      .nfp-cat-row:has(.nfp-cat-chip) .nfp-mini-btn { transition: none; }
+    }
 
     /* Missing / error highlighting — a red field that needs attention, plus an
        inline note explaining why (e.g. "Unreadable — low resolution"). */
@@ -836,14 +866,11 @@
     }
     html.dark .nfp-contains { color: var(--text-muted); }
 
-    /* Inline edit affordance — the light-mode hover/focus wash is brand blue at
-       low alpha and vanishes on navy; brighten it and keep focused values light
-       (a white focus box would swallow the now-light label text). On-photo names
-       keep the light focus box + dark text since they sit over the photo. */
-    html.dark .nfp-edit:hover {
-      background: color-mix(in srgb, var(--primary-bright) 16%, transparent);
-      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary-bright) 38%, transparent);
-    }
+    /* Inline edit affordance — underline uses the bright primary on navy; keep
+       focused values light (a white focus box would swallow the now-light label
+       text). On-photo names keep the light focus box + dark text since they sit
+       over the photo. */
+    html.dark .nfp-edit::after { background: var(--primary-bright, var(--primary)); }
     html.dark .nfp-edit:focus {
       background: color-mix(in srgb, var(--text) 8%, transparent);
       box-shadow: inset 0 0 0 2px var(--primary-bright);

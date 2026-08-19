@@ -164,6 +164,7 @@
   let uploadContext = 'main';
   /* Progress module defaults to the minimal (collapsed) view; header button toggles it. */
   let progressMin = true;
+  let lastProgressPct = 0;
 
   /* ─────────────────────────── chat primitives ─────────────────────────── */
   /* Follow the conversation without losing the reader's place: advance the
@@ -1189,6 +1190,21 @@
     /* Re-apply the module's width tier after each re-render (the innerHTML wipe
        drops the width classes when collapsed and restores them when expanded). */
     applyProgressWidth();
+    /* The fill is recreated at its target width on every render, so kick it
+       from the previous pct (0 on first paint) to animate the bar. */
+    const fill = progressEl.querySelector('.vfp-progress-fill');
+    if (fill) {
+      const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduce) {
+        fill.style.width = pct + '%';
+      } else {
+        fill.style.width = lastProgressPct + '%';
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => { fill.style.width = pct + '%'; });
+        });
+      }
+      lastProgressPct = pct;
+    }
   }
 
   /* ── Progress module width changer (in the ⋯ menu) ──────────────────────

@@ -11,8 +11,8 @@
  *
  * Behaviour:
  *   - Click a folder row (or its chevron) to expand/collapse its nested table.
- *   - Sort by Name / Size / Date, ascending or descending (folders stay first).
- *   - "Expand all" / "Collapse all" opens or closes the entire tree at once.
+ *   - Sort by Name / Size / Date from the table column headers (folders stay first).
+ *   - Filters live in a tune icon inside the search pill (type + expand/collapse).
  *   - Preview (images + SVG) opens a lightbox; Download fires a confirmation.
  */
 
@@ -226,8 +226,19 @@ const state = {
   sortDir: 1,        // 1 asc, -1 desc
   open: new Set(),   // set of open folder path ids
   query: '',         // live search text (matches names at any depth)
-  typeFilter: null,  // null | 'image' | 'vector' | 'pdf' | 'doc' — score-card filter
+  typeFilter: null,  // null | 'image' | 'vector' | 'pdf' | 'doc' — score-card / popover filter
+  filterOpen: false, // in-search filter popover
 };
+
+const ARROW_SVG = '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+const TYPE_CHIP = [
+  { key: null,     label: 'All',      icon: 'apps' },
+  { key: 'image',  label: 'Images',   icon: 'image' },
+  { key: 'vector', label: 'Vectors',  icon: 'shape_line' },
+  { key: 'pdf',    label: 'PDFs',     icon: 'picture_as_pdf' },
+  { key: 'doc',    label: 'Documents', icon: 'article' },
+];
 
 /* Give every node a stable path id from the root, so open-state + node lookup
    survive re-renders. Files count too (used by the modal + downloads). */
@@ -238,6 +249,28 @@ function assignPaths(node, path = '') {
   }
 }
 assignPaths(TREE);
+
+/* Roll size + latest date up the tree so folders have real Size / Date cells
+   and can sort on those columns the same way files do. */
+function rollup(node) {
+  if (node.type === 'file') {
+    node._bytes = node.bytes || 0;
+    node._updated = node.updated || '';
+    return;
+  }
+  let bytes = 0;
+  let latest = '';
+  let latestTs = 0;
+  (node.children || []).forEach((c) => {
+    rollup(c);
+    bytes += c._bytes || 0;
+    const ts = Date.parse(c._updated) || 0;
+    if (ts >= latestTs) { latestTs = ts; latest = c._updated; }
+  });
+  node._bytes = bytes;
+  node._updated = latest;
+}
+rollup(TREE);
 
 /* Flat lookup so click handlers can resolve a node from its path id. */
 const NODE_BY_PATH = new Map();
@@ -261,16 +294,22 @@ function sortChildren(children) {
   const files = children.filter((c) => c.type === 'file');
 
   const byName = (a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }) * dir;
-  const bySize = (a, b) => ((a.bytes || 0) - (b.bytes || 0)) * dir;
-  const byDate = (a, b) => (Date.parse(a.updated) - Date.parse(b.updated)) * dir;
+  const bySize = (a, b) => ((a._bytes || 0) - (b._bytes || 0)) * dir;
+  const byDate = (a, b) => ((Date.parse(a._updated) || 0) - (Date.parse(b._updated) || 0)) * dir;
+  const cmp = state.sortKey === 'size' ? bySize : state.sortKey === 'date' ? byDate : byName;
 
-  const fileCmp = state.sortKey === 'size' ? bySize : state.sortKey === 'date' ? byDate : byName;
-
-  /* Folders have no size/date, so they always order by name (respecting the
-     ascending/descending toggle) and stay grouped above the files. */
-  folders.sort(byName);
-  files.sort(fileCmp);
+  /* Folders stay grouped above files; both groups honour the active column. */
+  folders.sort(cmp);
+  files.sort(cmp);
   return [...folders, ...files];
+}
+
+function fmtNodeBytes(node) {
+  if (node.type === 'folder' && !node._bytes) return '—';
+  return fmtBytes(node._bytes || 0);
+}
+function fmtNodeDate(node) {
+  return node._updated || '—';
 }
 
 /* ------------------------------------------------------------------ */
@@ -342,10 +381,41 @@ function countChildren(node) {
 /* Rendering — nested tables                                           */
 /* ------------------------------------------------------------------ */
 
+function renderThead() {
+  const th = (key, label, extraCls = '') => {
+    const active = state.sortKey === key;
+    const dir = active ? ` data-ma-dir="${state.sortDir === 1 ? 'asc' : 'desc'}"` : '';
+    return `<th class="ma-th ma-th--sortable ${extraCls}" role="columnheader" tabindex="0" data-ma-sort="${key}"${dir} aria-sort="${active ? (state.sortDir === 1 ? 'ascending' : 'descending') : 'none'}">${esc(label)}<span class="ma-sort-arrow">${ARROW_SVG}</span></th>`;
+  };
+  return `<tr>
+    <th class="ma-th ma-th-actions" scope="col" aria-label="Actions"></th>
+    ${th('name', 'Name')}
+    ${th('size', 'Size', 'ma-th-size ma-th--num')}
+    ${th('date', 'Date', 'ma-th-date')}
+  </tr>`;
+}
+
+function rowMenuItem(act, path, icon, label) {
+  return `<button type="button" class="ma-rowmenu-item" role="menuitem" data-ma-act="${esc(act)}" data-ma-path="${esc(path)}"><span class="material-symbols-outlined">${icon}</span>${esc(label)}</button>`;
+}
+
+function renderRowMenu(node, open) {
+  const items = node.type === 'folder'
+    ? rowMenuItem(open ? 'collapse' : 'expand', node._path, open ? 'unfold_less' : 'unfold_more', open ? 'Collapse' : 'Expand')
+    : [
+        fileMeta(node.name).previewable ? rowMenuItem('preview', node._path, 'visibility', 'Preview') : '',
+        rowMenuItem('download', node._path, 'download', 'Download'),
+      ].join('');
+  return `<div class="ma-rowmenu">
+    <button type="button" class="ma-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button>
+    <div class="ma-rowmenu-pop" role="menu" hidden>${items}</div>
+  </div>`;
+}
+
 function renderRows(children) {
   if (!children.length) {
     const msg = filtering() ? 'No assets match the current filter.' : 'This folder is empty.';
-    return `<tr><td colspan="3" class="ma-empty">${msg}</td></tr>`;
+    return `<tr><td colspan="4" class="ma-empty">${msg}</td></tr>`;
   }
   return sortChildren(children).map((node) =>
     node.type === 'folder' ? renderFolderRow(node) : renderFileRow(node)
@@ -358,21 +428,28 @@ function renderFolderRow(node) {
      manual open state. */
   const open = filtering() ? true : state.open.has(node._path);
   const nested = open
-    ? `<tr class="ma-nest-row"><td colspan="3">
+    ? `<tr class="ma-nest-row"><td colspan="4">
          <div class="ma-nest-cell"><div class="ma-nest-inner">
-           <table class="ma-table ma-table--nested"><tbody>${renderRows(visibleChildren(node))}</tbody></table>
+           <table class="ma-table ma-table--nested" data-no-sort><tbody>${renderRows(visibleChildren(node))}</tbody></table>
          </div></div>
        </td></tr>`
     : '';
   return `
     <tr class="ma-row ma-row--folder ${open ? 'is-open' : ''}" data-folder="${esc(node._path)}"
         role="button" tabindex="0" aria-expanded="${open}">
-      <td class="ma-cell-icon"><span class="ma-ic ma-ic--folder"><span class="material-symbols-outlined">${folderIcon(node.name)}</span></span></td>
+      <td class="ma-cell-actions">${renderRowMenu(node, open)}</td>
       <td class="ma-cell-main">
-        <span class="ma-name">${highlight(node.name)}</span>
-        <span class="ma-count-pill">${esc(countChildren(node))}</span>
+        <span class="ma-name-wrap">
+          <span class="ma-chevron"><span class="material-symbols-outlined">chevron_right</span></span>
+          <span class="ma-ic ma-ic--folder"><span class="material-symbols-outlined">${folderIcon(node.name)}</span></span>
+          <span class="ma-name-block">
+            <span class="ma-name">${highlight(node.name)}</span>
+            <span class="ma-count-pill">${esc(countChildren(node))}</span>
+          </span>
+        </span>
       </td>
-      <td class="ma-cell-actions"><span class="ma-chevron"><span class="material-symbols-outlined">chevron_right</span></span></td>
+      <td class="ma-cell-size">${esc(fmtNodeBytes(node))}</td>
+      <td class="ma-cell-date">${esc(fmtNodeDate(node))}</td>
     </tr>${nested}`;
 }
 
@@ -380,22 +457,19 @@ function renderFileRow(node) {
   const m = fileMeta(node.name);
   const icon = `<span class="ma-ic ${m.tone || ''}"><span class="material-symbols-outlined">${m.icon}</span></span>`;
   const warn = isImportant(node) ? ' ma-name--warn' : '';
-  const preview = m.previewable
-    ? `<button type="button" class="ma-btn ma-btn--ghost" data-preview="${esc(node._path)}"><span class="material-symbols-outlined">visibility</span><span>Preview</span></button>`
-    : '';
   return `
     <tr class="ma-row ma-row--file" data-file="${esc(node._path)}">
-      <td class="ma-cell-icon">${icon}</td>
+      <td class="ma-cell-actions">${renderRowMenu(node, false)}</td>
       <td class="ma-cell-main">
-        <div class="ma-name${warn}">${highlight(node.name)}</div>
-        <div class="ma-meta">${esc(fmtBytes(node.bytes))}<span class="ma-meta-dot">·</span>updated ${esc(node.updated)}</div>
-      </td>
-      <td class="ma-cell-actions">
-        <span class="ma-actions">
-          ${preview}
-          <button type="button" class="ma-btn ma-btn--primary" data-download="${esc(node._path)}"><span class="material-symbols-outlined">download</span><span>Download</span></button>
+        <span class="ma-name-wrap">
+          ${icon}
+          <span class="ma-name-block">
+            <span class="ma-name${warn}">${highlight(node.name)}</span>
+          </span>
         </span>
       </td>
+      <td class="ma-cell-size">${esc(fmtNodeBytes(node))}</td>
+      <td class="ma-cell-date">${esc(fmtNodeDate(node))}</td>
     </tr>`;
 }
 
@@ -417,10 +491,42 @@ function renderScorecards() {
   return `<div class="ma-scorecards" role="group" aria-label="Filter assets by file type">${cards}</div>`;
 }
 
+function typeChipHtml() {
+  return TYPE_CHIP.map((c) => {
+    const on = c.key == null ? !state.typeFilter : state.typeFilter === c.key;
+    const type = c.key == null ? 'all' : c.key;
+    return `<button type="button" class="ma-fchip${on ? ' is-on' : ''}" data-ma-type="${type}">
+      <span class="material-symbols-outlined">${c.icon}</span>${esc(c.label)}
+    </button>`;
+  }).join('');
+}
+
+function renderFilterPop() {
+  return `
+    <div class="ma-filter-pop" id="ma-filter-pop" role="dialog" aria-label="Filter assets"${state.filterOpen ? '' : ' hidden'}>
+      <div class="ma-filter-pop-head">
+        <span class="ma-filter-pop-title">Filters</span>
+        <button type="button" class="ma-filter-clear" id="ma-filter-clear">Clear all</button>
+      </div>
+      <div class="ma-filter-group">
+        <div class="ma-filter-label">Type</div>
+        <div class="ma-filter-chips" role="group" aria-label="Filter by file type">${typeChipHtml()}</div>
+      </div>
+      <div class="ma-filter-group">
+        <div class="ma-filter-label">Folders</div>
+        <div class="ma-filter-chips">
+          <button type="button" class="ma-fchip" id="ma-expand-toggle">
+            <span class="material-symbols-outlined">unfold_more</span><span id="ma-expand-label">Expand all</span>
+          </button>
+        </div>
+      </div>
+      <div class="ma-filter-pop-foot">
+        <button type="button" class="ma-btn ma-btn--primary ma-btn--sm" id="ma-filter-done">Done</button>
+      </div>
+    </div>`;
+}
+
 function renderShell() {
-  const descCls = state.sortDir === -1 ? ' is-desc' : '';
-  const segBtn = (key, label) =>
-    `<button type="button" class="ma-seg-btn${state.sortKey === key ? ' is-active' : ''}" data-sort="${key}">${label}</button>`;
   return `
     <header class="ma-head">
       <div class="ma-head-titles">
@@ -432,38 +538,28 @@ function renderShell() {
       <!-- Score cards: file-type totals for the library that also filter the
            table below (mirrors the product-portfolio score cards). -->
       ${renderScorecards()}
-      <!-- Search across every file + folder in the library, with the sort /
-           expand filters docked to its right (mirrors product-portfolio). -->
+      <!-- Search fills the row; a tune icon inside the pill opens the filter
+           popover (type + expand/collapse). Sort lives on the table headers. -->
       <div class="ma-toolbar">
         <div class="ma-search-inline">
           <span class="material-symbols-outlined">search</span>
           <input type="text" class="ma-search" id="ma-search" placeholder="Search all assets by name, type, or toolkit"
-                 autocomplete="off" spellcheck="false" aria-label="Search marketing assets" />
+                 autocomplete="off" spellcheck="false" aria-label="Search marketing assets" value="${esc(state.query)}" />
           <button type="button" class="ma-search-clear" id="ma-search-clear" aria-label="Clear search" hidden><span class="material-symbols-outlined">close</span></button>
-        </div>
-        <div class="ma-tools">
-          <div class="ma-seg" role="group" aria-label="Expand or collapse all folders">
-            <button type="button" class="ma-seg-btn" id="ma-expand-toggle">
-              <span class="material-symbols-outlined">unfold_more</span><span id="ma-expand-label">Expand all</span>
-            </button>
-          </div>
-          <div class="ma-sort">
-            <span class="ma-sort-label">Sort</span>
-            <div class="ma-seg" role="group" aria-label="Sort by">
-              ${segBtn('name', 'Name')}${segBtn('size', 'Size')}${segBtn('date', 'Date')}
-            </div>
-            <div class="ma-seg" role="group" aria-label="Sort direction">
-              <button type="button" class="ma-seg-btn ma-seg-btn--icon${descCls}" id="ma-sort-dir"
-                      title="Ascending — tap to reverse" aria-label="Toggle sort direction">
-                <span class="material-symbols-outlined">arrow_upward</span>
-              </button>
-            </div>
-          </div>
+          <button type="button" class="ma-filter-btn${typeActive() ? ' has-filters' : ''}${state.filterOpen ? ' is-active' : ''}" id="ma-filter-btn"
+                  aria-haspopup="dialog" aria-expanded="${state.filterOpen}" title="Filters" aria-label="Filters">
+            <span class="material-symbols-outlined">tune</span>
+            <span class="ma-filter-dot" aria-hidden="true"></span>
+          </button>
+          ${renderFilterPop()}
         </div>
       </div>
       <div class="ma-searchbar-meta" id="ma-search-meta" hidden></div>
       <div class="ma-card">
-        <table class="ma-table" id="ma-root-table"><tbody>${renderRows(visibleChildren(TREE))}</tbody></table>
+        <table class="ma-table" id="ma-root-table" data-no-sort>
+          <thead>${renderThead()}</thead>
+          <tbody>${renderRows(visibleChildren(TREE))}</tbody>
+        </table>
       </div>
     </div>`;
 }
@@ -644,7 +740,7 @@ function marketingReply(intent) {
           { node: fileByName('Shield Examples'), label: 'Download shield examples' },
         ]);
     case 'expand_all':
-      return 'Expanded the whole library so you can see every toolkit, folder and file at once. Use the Sort control to reorder by name, size, or date, or search to jump straight to a file.';
+      return 'Expanded the whole library so you can see every toolkit, folder and file at once. Click a column header to sort by name, size, or date, or search to jump straight to a file.';
     default:
       return '';
   }
@@ -666,10 +762,57 @@ function allFolderPaths() {
 }
 
 function repaint(host) {
-  const tbody = host.querySelector('#ma-root-table tbody');
-  if (tbody) tbody.innerHTML = renderRows(visibleChildren(TREE));
+  const table = host.querySelector('#ma-root-table');
+  if (table) {
+    const thead = table.querySelector('thead');
+    const tbody = table.querySelector('tbody');
+    if (thead) thead.innerHTML = renderThead();
+    if (tbody) tbody.innerHTML = renderRows(visibleChildren(TREE));
+  }
   syncExpandLabel(host);
+  syncFilterUi(host);
   updateSearchMeta(host);
+}
+
+function toggleSort(key) {
+  if (state.sortKey === key) state.sortDir *= -1;
+  else { state.sortKey = key; state.sortDir = 1; }
+}
+
+function setFilterOpen(host, open) {
+  state.filterOpen = open;
+  const pop = host.querySelector('#ma-filter-pop');
+  if (pop) pop.hidden = !open;
+  syncFilterUi(host);
+}
+
+function closeRowMenus(host, keep) {
+  if (!host) return;
+  host.querySelectorAll('.ma-rowmenu.is-open').forEach((menu) => {
+    if (menu === keep) return;
+    menu.classList.remove('is-open');
+    const btn = menu.querySelector('.ma-rowmenu-btn');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+    const pop = menu.querySelector('.ma-rowmenu-pop');
+    if (pop) pop.hidden = true;
+  });
+}
+
+function toggleFolder(host, path) {
+  if (state.open.has(path)) state.open.delete(path);
+  else state.open.add(path);
+  repaint(host);
+}
+
+function syncFilterUi(host) {
+  const btn = host.querySelector('#ma-filter-btn');
+  if (btn) {
+    btn.classList.toggle('has-filters', typeActive());
+    btn.classList.toggle('is-active', state.filterOpen);
+    btn.setAttribute('aria-expanded', String(state.filterOpen));
+  }
+  const chips = host.querySelector('#ma-filter-pop .ma-filter-chips[aria-label="Filter by file type"]');
+  if (chips) chips.innerHTML = typeChipHtml();
 }
 
 /* Reflect the active type filter on the score cards (which one reads pressed). */
@@ -721,63 +864,103 @@ export function renderMarketingAssets(host) {
   host.innerHTML = renderShell();
   syncExpandLabel(host);
   syncScorecards(host);
+  syncFilterUi(host);
   updateSearchMeta(host);
 
-  /* Row interactions — folder toggle + file preview/download. Event delegation
-     keeps a single listener live across every nested table re-render. */
+  /* Row + toolbar interactions. Event delegation stays live across nested
+     table re-renders. Filter / sort handlers run first so a click inside the
+     search pill or a column header never toggles a folder. */
   host.addEventListener('click', (e) => {
-    const previewBtn = e.target.closest('[data-preview]');
-    if (previewBtn) {
+    const sortH = e.target.closest('[data-ma-sort]');
+    if (sortH) {
       e.stopPropagation();
-      const node = NODE_BY_PATH.get(previewBtn.dataset.preview);
-      if (node) openPreview(node);
+      toggleSort(sortH.dataset.maSort);
+      repaint(host);
       return;
     }
-    const dlBtn = e.target.closest('[data-download]');
-    if (dlBtn) {
+    const filterBtn = e.target.closest('#ma-filter-btn');
+    if (filterBtn) {
       e.stopPropagation();
-      const node = NODE_BY_PATH.get(dlBtn.dataset.download);
-      if (node) download(node);
+      setFilterOpen(host, !state.filterOpen);
+      return;
+    }
+    const filterDone = e.target.closest('#ma-filter-done');
+    if (filterDone) {
+      e.stopPropagation();
+      setFilterOpen(host, false);
+      return;
+    }
+    const filterClear = e.target.closest('#ma-filter-clear');
+    if (filterClear) {
+      e.stopPropagation();
+      state.typeFilter = null;
+      syncScorecards(host);
+      repaint(host);
+      return;
+    }
+    const typeChip = e.target.closest('[data-ma-type]');
+    if (typeChip) {
+      e.stopPropagation();
+      const type = typeChip.dataset.maType;
+      state.typeFilter = (type === 'all' || state.typeFilter === type) ? null : type;
+      syncScorecards(host);
+      repaint(host);
+      return;
+    }
+    const expandBtn = e.target.closest('#ma-expand-toggle');
+    if (expandBtn) {
+      e.stopPropagation();
+      const all = allFolderPaths();
+      if (state.open.size >= all.length) state.open.clear();
+      else all.forEach((p) => state.open.add(p));
+      repaint(host);
+      return;
+    }
+    const menuBtn = e.target.closest('.ma-rowmenu-btn');
+    if (menuBtn) {
+      e.stopPropagation();
+      const menu = menuBtn.closest('.ma-rowmenu');
+      const open = !menu.classList.contains('is-open');
+      closeRowMenus(host, open ? menu : null);
+      menu.classList.toggle('is-open', open);
+      menuBtn.setAttribute('aria-expanded', String(open));
+      const pop = menu.querySelector('.ma-rowmenu-pop');
+      if (pop) pop.hidden = !open;
+      return;
+    }
+    const menuAct = e.target.closest('[data-ma-act]');
+    if (menuAct) {
+      e.stopPropagation();
+      closeRowMenus(host, null);
+      const node = NODE_BY_PATH.get(menuAct.dataset.maPath);
+      const act = menuAct.dataset.maAct;
+      if (act === 'preview' && node) openPreview(node);
+      else if (act === 'download' && node) download(node);
+      else if ((act === 'expand' || act === 'collapse') && node) toggleFolder(host, node._path);
+      return;
+    }
+    if (e.target.closest('.ma-rowmenu')) {
+      e.stopPropagation();
       return;
     }
     const folderRow = e.target.closest('.ma-row--folder');
-    if (folderRow) {
-      const p = folderRow.dataset.folder;
-      if (state.open.has(p)) state.open.delete(p);
-      else state.open.add(p);
-      repaint(host);
-    }
+    if (folderRow) toggleFolder(host, folderRow.dataset.folder);
   });
 
   host.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
+    const sortH = e.target.closest('[data-ma-sort]');
+    if (sortH) {
+      e.preventDefault();
+      toggleSort(sortH.dataset.maSort);
+      repaint(host);
+      return;
+    }
+    if (e.target.closest('.ma-rowmenu')) return;
     const folderRow = e.target.closest('.ma-row--folder');
     if (!folderRow) return;
     e.preventDefault();
-    const p = folderRow.dataset.folder;
-    if (state.open.has(p)) state.open.delete(p);
-    else state.open.add(p);
-    repaint(host);
-  });
-
-  /* Sort key — segmented pill (Name / Size / Date), the same control the
-     portfolio + compare boards use, so no new component is introduced. */
-  const sortSeg = host.querySelector('.ma-seg[aria-label="Sort by"]');
-  if (sortSeg) sortSeg.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-sort]');
-    if (!btn) return;
-    state.sortKey = btn.dataset.sort;
-    sortSeg.querySelectorAll('.ma-seg-btn').forEach((b) => b.classList.toggle('is-active', b === btn));
-    repaint(host);
-  });
-
-  const sortDir = host.querySelector('#ma-sort-dir');
-  if (sortDir) sortDir.addEventListener('click', () => {
-    state.sortDir *= -1;
-    const desc = state.sortDir === -1;
-    sortDir.classList.toggle('is-desc', desc);
-    sortDir.title = desc ? 'Descending — tap to reverse' : 'Ascending — tap to reverse';
-    repaint(host);
+    toggleFolder(host, folderRow.dataset.folder);
   });
 
   /* Score cards — click one to scope the table to that file type; click the
@@ -789,14 +972,6 @@ export function renderMarketingAssets(host) {
     const type = card.dataset.type;
     state.typeFilter = (type === 'all' || state.typeFilter === type) ? null : type;
     syncScorecards(host);
-    repaint(host);
-  });
-
-  const expandBtn = host.querySelector('#ma-expand-toggle');
-  if (expandBtn) expandBtn.addEventListener('click', () => {
-    const all = allFolderPaths();
-    if (state.open.size >= all.length) state.open.clear();
-    else all.forEach((p) => state.open.add(p));
     repaint(host);
   });
 
@@ -823,7 +998,12 @@ export function renderMarketingAssets(host) {
   window.__wiseMarketingIntent = (intent) => handleMarketingIntent(host, intent);
   window.__wiseMarketingReply = (intent) => marketingReply(intent);
 
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePreview(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (host.querySelector('.ma-rowmenu.is-open')) { closeRowMenus(host, null); return; }
+    if (state.filterOpen) { setFilterOpen(host, false); return; }
+    closePreview();
+  });
 }
 
 /* The WISEcodeAI dock lives in a separate part of the document (not inside `host`),
@@ -833,6 +1013,10 @@ let activeHost = null;
 if (typeof document !== 'undefined' && !window.__maReplyChipsWired) {
   window.__maReplyChipsWired = true;
   document.addEventListener('click', (e) => {
+    if (state.filterOpen && activeHost && !e.target.closest('.ma-search-inline')) {
+      setFilterOpen(activeHost, false);
+    }
+    if (activeHost && !e.target.closest('.ma-rowmenu')) closeRowMenus(activeHost, null);
     const chip = e.target.closest('.ma-do-chip[data-ma-do]');
     if (!chip) return;
     e.preventDefault();

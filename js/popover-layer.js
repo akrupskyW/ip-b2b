@@ -40,7 +40,9 @@
     '.fl-more-popover',
     '.fl-model-popover',
     '.pf-rowmenu-pop',
+    '.ma-rowmenu-pop',
     '.pf-filter-pop',
+    '.ma-filter-pop',
     '.pf-gs-infopop',
     '#lir-more-popover',
     /* Chat-module popovers anchored INSIDE the transcript. They're pinned

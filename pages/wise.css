@@ -1508,6 +1508,14 @@ html.mod-gap-xl #modules-row { gap: var(--modules-gap) !important; }
   max-height: 100%;
   align-self: stretch;
 }
+/* Portfolio / comparison wrap optional side modules in #panels-row (left of
+   chat) and #panels-row-right. When those wrappers are empty they still sit
+   in the flex row, so the 8px module gap reads as extra space between the
+   primary nav and the chat. Collapse them until a child panel is open. */
+#panels-row:not(.pr-has-panels),
+#panels-row-right:not(.pr-has-panels) {
+  display: none;
+}
 
 /* ── Generic "Sticky module" mode (app-wide) ──────────────────────────────
    Ported from the bespoke wiseai.html `.wa-pane.is-sticky` effect into a
@@ -10040,7 +10048,10 @@ html.dark .vf-stat--verified .vf-stat-label .material-symbols-outlined { color: 
 .vfp-progress-fill {
   height: 100%; border-radius: 999px;
   background: var(--vf-ink);
-  width: 0%; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 0%; transition: width 0.25s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vfp-progress-fill { transition: none; }
 }
 
 .vfp-steps { padding: 10px 14px 6px; display: flex; flex-direction: column; overflow-y: auto; flex: 1; }

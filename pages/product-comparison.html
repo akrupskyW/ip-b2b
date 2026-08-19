@@ -403,7 +403,8 @@
          nav column's full height AND their drop-shadow renders into that gutter
          instead of being clipped flush at the card edge. Preserves the
          horizontal scroll (overflow-x:auto) that opening panes relies on. */
-      padding: 0 16px;
+      /* Shadow gutter matches wiseai.html (2px), not the old 16px carousel inset. */
+      padding: 0 2px;
       gap: 8px;
       scrollbar-gutter: stable;
     }
@@ -418,7 +419,7 @@
       align-self: stretch;
     }
     @media (min-width: 1280px) {
-      #modules-row { padding-left: 16px; padding-right: 16px; }
+      #modules-row { padding-left: 2px; padding-right: 2px; }
     }
     /* Thin, subtle horizontal scrollbar so the carousel doesn't clip panel content. */
     #modules-row::-webkit-scrollbar {
@@ -7287,7 +7288,9 @@
       max-height: 100%;
       gap: 8px;
     }
-    /* Empty right rail collapses cleanly so it doesn't add a phantom 8px gap. */
+    /* Empty rails collapse so they don't add a phantom 8px gap (the left
+       wrapper used to sit between the nav and the chat). */
+    #panels-row:not(.pr-has-panels),
     #panels-row-right:not(.pr-has-panels) { display: none; }
 
     /* Light-mode overrides for flip + layout */
@@ -10182,10 +10185,9 @@
     function closeSettings() { toggleSettingsPanel(false); }
     function closeNotifications() { toggleNotificationsPanel(false); }
 
-    function syncPanelsRowRight(panelsRight) {
-      const row = panelsRight || document.getElementById('panels-row-right');
-      if (!row) return;
-      const hasOpen = Array.from(row.children).some((el) => {
+    function rowHasOpenPanels(row) {
+      if (!row) return false;
+      return Array.from(row.children).some((el) => {
         if (el.id === 'intent-stack-column') return el.classList.contains('is-active');
         return el.classList.contains('open')      || /* history */
         el.classList.contains('up-open')   || /* UPF / PULSE */
@@ -10198,7 +10200,12 @@
         el.classList.contains('nfp-open')  ||
         el.classList.contains('ss-open');
       });
-      row.classList.toggle('pr-has-panels', hasOpen);
+    }
+    function syncPanelsRowRight(panelsRight) {
+      const right = panelsRight || document.getElementById('panels-row-right');
+      if (right) right.classList.toggle('pr-has-panels', rowHasOpenPanels(right));
+      const left = document.getElementById('panels-row');
+      if (left) left.classList.toggle('pr-has-panels', rowHasOpenPanels(left));
       syncReportMode();
     }
 

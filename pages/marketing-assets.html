@@ -47,7 +47,7 @@
        full-height navigation rail (matches verification / gras-verification). */
     body[data-nav-id="marketing-assets"] #modules-row { margin-top: 0; }
 
-    /* ---------- Head (serif title + subtitle + sort) ---------- */
+    /* ---------- Head (serif title + subtitle) ---------- */
     .ma-head { padding: 26px 40px 0; }
     .ma-head-row {
       display: flex; align-items: flex-end; justify-content: space-between;
@@ -61,40 +61,10 @@
     }
     .ma-head-meta { font-size: 0.85rem; color: var(--text-muted); margin: 8px 0 0; max-width: 60ch; }
 
-    /* ---------- Sort + expand controls ----------
-       Reuses the app's segmented-pill control (identical to the portfolio
-       tabs + compare chart toggle: .pf-tabs / .pf-tab) so nothing new is
-       introduced — a rounded surface-2 track holding pill buttons, the active
-       one filled with --primary. */
-    .ma-tools { display: inline-flex; align-items: center; gap: 12px; padding-bottom: 4px; flex-wrap: wrap; }
-    .ma-sort { display: inline-flex; align-items: center; gap: 8px; }
-    .ma-sort-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 700; letter-spacing: 0.02em; }
-    .ma-seg {
-      display: inline-flex; align-items: center; gap: 2px; padding: 3px;
-      height: 38px; box-sizing: border-box;
-      background: var(--surface-2); border: 1px solid var(--border);
-      border-radius: 999px;
-    }
-    html.dark .ma-seg { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
-    .ma-seg-btn {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 6px 14px; height: 30px; box-sizing: border-box;
-      border-radius: 999px; border: none; cursor: pointer;
-      background: transparent; color: var(--text-muted);
-      font-family: inherit; font-size: 12px; font-weight: 600;
-      transition: background 0.2s ease, color 0.2s ease;
-    }
-    .ma-seg-btn:hover:not(.is-active) { color: var(--text); }
-    .ma-seg-btn.is-active { background: var(--primary); color: #fff; }
-    .ma-seg-btn .material-symbols-outlined { font-size: 16px; transition: transform 0.2s ease; }
-    .ma-seg-btn--icon { padding: 6px 10px; }
-    .ma-seg-btn--icon.is-desc .material-symbols-outlined { transform: rotate(180deg); }
-
-    /* ---------- Toolbar (search + filters) ----------
-       A search field that fills the row with the sort/expand filters docked to
-       its right — mirrors product-portfolio's .pf-toolbar. The input reuses the
-       canonical app field (surface-2 fill, strong border, primary focus ring,
-       italic placeholder), same as .pf-search / .vf-search. */
+    /* ---------- Toolbar (search + in-pill filter) ----------
+       One search field that fills the row. Filters live in a tune icon floated
+       to the right inside the pill (same shape as .pf-filter-btn / .adm-search-filter)
+       that opens a popover — never as a row of pills beside the search. */
     .ma-toolbar {
       display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
       margin-bottom: 14px;
@@ -105,7 +75,7 @@
       font-size: 18px; color: var(--text-subtle); pointer-events: none;
     }
     .ma-search {
-      width: 100%; height: 38px; box-sizing: border-box; padding: 0 40px 0 42px;
+      width: 100%; height: 38px; box-sizing: border-box; padding: 0 72px 0 42px;
       font-family: inherit; font-size: 0.8125rem; font-weight: 400; color: var(--text);
       background: var(--surface-2); border: 1px solid var(--border-strong);
       border-radius: var(--radius-pill, 999px); outline: none;
@@ -118,14 +88,71 @@
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
     }
     .ma-search-clear {
-      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      position: absolute; right: 38px; top: 50%; transform: translateY(-50%);
       display: inline-flex; align-items: center; justify-content: center;
       width: 24px; height: 24px; border-radius: 50%; border: 0; padding: 0;
       background: transparent; color: var(--text-subtle); cursor: pointer;
       transition: background 0.15s ease, color 0.15s ease;
     }
     .ma-search-clear:hover { background: var(--surface-3); color: var(--text); }
+    .ma-search-clear[hidden] { display: none; }
     .ma-search-clear .material-symbols-outlined { font-size: 16px; }
+
+    /* Funnel floated inside the right edge of the search field. */
+    .ma-filter-btn {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      width: 28px; height: 28px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: none; background: transparent; color: var(--text-subtle); cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .ma-filter-btn:hover, .ma-filter-btn.is-active { background: var(--surface-3); color: var(--text); }
+    html.dark .ma-filter-btn:hover, html.dark .ma-filter-btn.is-active { background: rgba(255,255,255,0.08); }
+    .ma-filter-btn .material-symbols-outlined { font-size: 18px !important; }
+    .ma-filter-btn.has-filters { color: var(--primary-ink, var(--primary)); }
+    html.dark .ma-filter-btn.has-filters { color: var(--primary-bright, #8B9FAF); }
+    .ma-filter-btn .ma-filter-dot {
+      position: absolute; top: 3px; right: 3px; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--primary); border: 1.5px solid var(--surface-2); display: none;
+    }
+    .ma-filter-btn.has-filters .ma-filter-dot { display: block; }
+
+    .ma-filter-pop {
+      position: absolute; z-index: 60; top: calc(100% + 8px); right: 0; width: 300px; max-width: 92vw;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      box-shadow: var(--shadow-2, 0 12px 32px rgba(0,0,0,0.18)); padding: 14px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .ma-filter-pop[hidden] { display: none; }
+    .ma-filter-pop-head { display: flex; align-items: center; justify-content: space-between; }
+    .ma-filter-pop-title { font-size: 13px; font-weight: 800; color: var(--text); }
+    .ma-filter-clear {
+      border: none; background: transparent; color: var(--primary-ink, var(--primary));
+      font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer;
+      padding: 2px 4px; border-radius: 6px;
+    }
+    .ma-filter-clear:hover { text-decoration: underline; }
+    html.dark .ma-filter-clear { color: var(--primary-bright, #8B9FAF); }
+    .ma-filter-label { font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); margin-bottom: 7px; }
+    .ma-filter-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .ma-fchip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 5px 11px; border-radius: 999px; cursor: pointer;
+      border: 1px solid var(--border-strong); background: var(--surface-2);
+      font-family: inherit; font-size: 11.5px; font-weight: 700; color: var(--text-muted);
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    html.dark .ma-fchip { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
+    .ma-fchip .material-symbols-outlined { font-size: 13px !important; line-height: 1 !important; }
+    .ma-fchip:hover { color: var(--text); border-color: var(--primary); }
+    .ma-fchip.is-on {
+      color: #fff; border-color: var(--primary); background: var(--primary);
+    }
+    .ma-fchip.is-on .material-symbols-outlined { color: #fff; }
+    html.dark .ma-fchip.is-on, html.dark .ma-fchip.is-on:hover {
+      color: #fff; border-color: var(--primary); background: var(--primary);
+    }
+    .ma-filter-pop-foot { display: flex; justify-content: flex-end; padding-top: 2px; }
     .ma-searchbar-meta {
       display: flex; align-items: center; gap: 6px;
       margin: -4px 2px 12px; font-size: 0.76rem; font-weight: 600; color: var(--text-muted);
@@ -204,12 +231,29 @@
       border-radius: var(--r-md);
       box-shadow: var(--shadow-1);
       padding: 8px;
-      overflow: hidden;
+      overflow: visible;
     }
 
     /* ---------- Nested tables ---------- */
-    .ma-table { width: 100%; border-collapse: collapse; }
+    .ma-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
     .ma-table--nested { border-top: 0; }
+    .ma-table thead th {
+      padding: 10px 14px; text-align: left; vertical-align: middle;
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-subtle); border-bottom: 1px solid var(--border);
+      background: var(--surface); white-space: nowrap;
+    }
+    .ma-th--sortable { cursor: pointer; user-select: none; }
+    .ma-th--sortable:hover { color: var(--text-muted); }
+    .ma-th--num { text-align: right; }
+    .ma-th--end { text-align: right; }
+    .ma-sort-arrow {
+      display: inline-flex; width: 12px; height: 12px; margin-left: 5px; vertical-align: middle;
+      opacity: 0.3; transition: opacity 0.12s ease, transform 0.12s ease;
+    }
+    .ma-sort-arrow svg { width: 12px; height: 12px; }
+    .ma-th--sortable[data-ma-dir="asc"] .ma-sort-arrow { opacity: 1; color: var(--primary-ink, var(--primary)); transform: rotate(180deg); }
+    .ma-th--sortable[data-ma-dir="desc"] .ma-sort-arrow { opacity: 1; color: var(--primary-ink, var(--primary)); }
     /* A folder's children live in a nested <table> dropped into a full-width
        cell — literal "tables within tables". Each level indents from the left
        and gains a soft guide rail so the hierarchy reads at a glance. */
@@ -240,7 +284,44 @@
     }
 
     .ma-cell-icon { width: 44px; }
-    .ma-cell-actions { width: 1%; white-space: nowrap; text-align: right; }
+    .ma-cell-size, .ma-th-size { width: 92px; }
+    .ma-cell-date, .ma-th-date { width: 128px; }
+    .ma-cell-actions, .ma-table thead th.ma-th-actions { width: 44px; padding-left: 8px; padding-right: 4px; }
+    .ma-cell-size { text-align: right; font-variant-numeric: tabular-nums; font-size: 0.8rem; color: var(--text-muted); }
+    .ma-cell-date { font-size: 0.8rem; color: var(--text-muted); }
+    .ma-cell-actions { white-space: nowrap; text-align: center; }
+
+    /* Leading ⋮ actions — same shell as .pf-rowmenu / .adm-rowmenu. The
+       popover opens to the right of the icon (never directly below). */
+    .ma-rowmenu { position: relative; display: inline-flex; }
+    .ma-rowmenu-btn {
+      width: 30px; height: 30px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid transparent; background: transparent; color: var(--text-subtle);
+      cursor: pointer; overflow: hidden; transition: background 0.15s ease, color 0.15s ease;
+    }
+    .ma-rowmenu-btn:hover, .ma-rowmenu.is-open .ma-rowmenu-btn { background: var(--surface-2); color: var(--text); }
+    html.dark .ma-rowmenu-btn:hover, html.dark .ma-rowmenu.is-open .ma-rowmenu-btn { background: rgba(255,255,255,0.06); }
+    .ma-rowmenu-btn .material-symbols-outlined { font-size: 18px !important; line-height: 1; }
+    .ma-rowmenu-pop {
+      position: absolute; z-index: 40; top: 0; left: calc(100% + 4px); min-width: 188px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      box-shadow: var(--shadow-2, 0 12px 32px rgba(0,0,0,0.18)); padding: 6px;
+    }
+    .ma-rowmenu-pop[hidden] { display: none; }
+    .ma-rowmenu-item {
+      width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+      border: none; background: transparent; cursor: pointer; border-radius: 8px;
+      font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--text); text-align: left;
+    }
+    .ma-rowmenu-item:hover { background: var(--surface-2); }
+    html.dark .ma-rowmenu-item:hover { background: rgba(255,255,255,0.06); }
+    .ma-rowmenu-item .material-symbols-outlined {
+      font-size: 16px !important; line-height: 1 !important; color: var(--text-subtle);
+      width: 18px; height: 18px; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .ma-rowmenu-item:hover .material-symbols-outlined { color: var(--primary-ink, var(--primary)); }
 
     /* File-type / folder icon — the glyph only, no background square. Each icon
        is chosen from the row's own label (a shield, an envelope, a package…),
@@ -256,6 +337,8 @@
     .ma-ic--doc .material-symbols-outlined { color: var(--text-subtle); }
 
     /* Name + meta cell */
+    .ma-name-wrap { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .ma-name-block { min-width: 0; }
     .ma-name { font-size: 0.9rem; font-weight: 600; color: var(--text); line-height: 1.25; }
     .ma-row--folder .ma-name { font-weight: 700; }
     .ma-meta { font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; }
@@ -270,13 +353,13 @@
     html.dark .ma-count-pill { background: rgba(255,255,255,0.05); }
     .ma-name--warn { color: var(--sec-red-text); }
 
-    /* Chevron for folders */
+    /* Disclosure caret on folder names — not an action, just open/closed state. */
     .ma-chevron {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 30px; height: 30px; color: var(--text-subtle);
+      width: 18px; height: 18px; flex-shrink: 0; color: var(--text-subtle);
       transition: transform 0.2s ease;
     }
-    .ma-chevron .material-symbols-outlined { font-size: 22px; }
+    .ma-chevron .material-symbols-outlined { font-size: 18px; }
     .ma-row--folder.is-open .ma-chevron { transform: rotate(90deg); color: var(--primary); }
     html.dark .ma-row--folder.is-open .ma-chevron { color: var(--primary-bright, #8B9FAF); }
 
@@ -290,6 +373,7 @@
     }
     .ma-btn .material-symbols-outlined { font-size: 16px; }
     .ma-btn:active { transform: translateY(1px); }
+    .ma-btn--sm { height: 30px; padding: 0 12px; font-size: 0.72rem; }
     .ma-btn--primary { background: var(--primary); color: #fff; box-shadow: var(--shadow-1); }
     .ma-btn--primary:hover { filter: brightness(1.08); }
     .ma-btn--ghost {

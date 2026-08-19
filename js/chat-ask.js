@@ -3,9 +3,11 @@
  *
  * The in-chat overlay (same .wch-sidebar shell as History / Connect a data
  * source) that lists THIS surface's prompts as insertable cards. The header's
- * ⋯ "Break out as a side module" detaches it into a sticky drawer to the
- * RIGHT of the chat — a real flex sibling in #modules-row, dressed by the
- * shared .wch-sidebar.wch-docked rules from chat-history.js.
+ * ⋯ "Break out as a side module" detaches it into a sticky drawer in
+ * #modules-row. When an artifact / output pane is already open, the drawer
+ * attaches to the FAR RIGHT of that pane (tucking behind it) rather than
+ * wedging in between the chat and the output. Dressed by the shared
+ * .wch-sidebar.wch-docked rules from chat-history.js.
  *
  * Works both as a classic <script src> (attaches window.WiseChatAsk) and as a
  * side-effect ES import (`import './chat-ask.js'` then read window.WiseChatAsk).
@@ -13,7 +15,8 @@
  *   const ask = window.WiseChatAsk.mount({
  *     host:        '.ap-chat-body',     // overlay lives inside the chat body
  *     container:   '#modules-row',      // breakout target
- *     anchor:      '.ap-chat',          // docks right after this sibling
+ *     anchor:      '.ap-chat',          // fallback sibling when no output pane is open
+ *     farRight:    true,                // dock after open output panes (default)
  *     getSuggestions: () => [{ title, icon, cards:[{ title, desc, ask, icon, intent }] }],
  *     onAsk: (text, intent) => { ... },
  *     onInsert: (text) => { ... },
@@ -94,6 +97,7 @@
     var catalog = opts.catalog && Array.isArray(opts.catalog.sections) && opts.catalog.sections.length
       ? opts.catalog : null;
     var breakoutWidth = opts.breakoutWidth || 360;
+    var farRight = opts.farRight !== false;
     var askSticky = opts.stickyDefault !== false;
     var askDocked = false;
     var askQuery = '';
@@ -282,6 +286,35 @@
       updateBreakBtn();
     }
 
+    /* Last artifact / output pane in the modules row. Closed panes are
+       `display:none` so they take no visual space, but keeping the ask
+       module AFTER their DOM slots means a later-opened output still lands
+       to the LEFT of the catalog (attached to the output's far right). */
+    function lastOutputPane(container) {
+      if (!container || !container.querySelectorAll) return null;
+      var panes = container.querySelectorAll(':scope > .wa-pane');
+      return panes.length ? panes[panes.length - 1] : null;
+    }
+
+    function placeDocked(container, anchor) {
+      var after = null;
+      if (farRight) {
+        after = lastOutputPane(container);
+        if (!after) {
+          container.appendChild(askPanel);
+          return;
+        }
+      } else if (anchor && anchor.parentElement === container) {
+        after = anchor;
+      }
+      if (after && after.parentElement === container) {
+        if (after.nextSibling) container.insertBefore(askPanel, after.nextSibling);
+        else container.appendChild(askPanel);
+      } else {
+        container.appendChild(askPanel);
+      }
+    }
+
     function setDocked(on) {
       askDocked = !!on;
       clearTimeout(askCloseTimer);
@@ -292,10 +325,7 @@
         var container = resolve(opts.container);
         var anchor = resolve(opts.anchor) || resolve(opts.chatEl);
         if (!container && anchor) container = anchor.parentElement;
-        if (container) {
-          if (anchor && anchor.parentElement === container && anchor.nextSibling) container.insertBefore(askPanel, anchor.nextSibling);
-          else container.appendChild(askPanel);
-        }
+        if (container) placeDocked(container, anchor);
         askPanel.classList.add('wch-docked');
         askPanel.style.flex = '0 0 ' + breakoutWidth + 'px';
         askPanel.style.width = breakoutWidth + 'px';
