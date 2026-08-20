@@ -354,8 +354,9 @@ export function syncThemeKeys() {
     localStorage.setItem('wise-theme', theme);
     localStorage.setItem('chat-theme', theme);
   } catch {}
-  /* Default full-bleed surfaces swap with the theme (navy+gold / linen chat
-     in light; linen nav / deep chat in dark). Named presets keep their hex. */
+  /* Default full-bleed surfaces swap with the theme (navy+gold nav in light;
+     linen nav in dark). Chat stays on the contained blue tint. Named presets
+     keep their hex. */
   refreshFullBleedDefaultTheme();
 }
 
@@ -462,16 +463,41 @@ export function restoreHeaderFloat() {
    it) so every module — the nav rail, WISEcodeAI, and every content module alike —
    fills the full height of the screen while staying switchable from the rail.
    Driven by a `full-bleed` class on <html> so it reaches every module on every
-   page; persisted so it survives navigation. */
-const FULL_BLEED_KEY = 'wise-full-bleed';
+   page; persisted so it survives navigation.
 
-/** True when full-bleed (containerless modules) was last left on. */
-export function isFullBleedOn() {
-  try { return localStorage.getItem(FULL_BLEED_KEY) === '1'; } catch { return false; }
+   The two Appearance rows are mutually exclusive modes stored in one key
+   (`wise-fb-mode`): `'chat'` (default — stretch only the chat), `'all'`
+   (stretch every module), or `'off'`. Chat-only still sets `full-bleed` +
+   `fb-chat-only` so existing CSS applies. Keep the resolver in sync with
+   the FOUC guard in js/text-size-fouc.js. */
+const FULL_BLEED_KEY = 'wise-full-bleed';
+const FB_CHAT_ONLY_KEY = 'wise-fb-chat-only';
+const FB_MODE_KEY = 'wise-fb-mode';
+
+/** Resolve the active full-bleed mode. Unset → `'chat'` so every page
+    opens with Chat-only full bleed. The two legacy flags are only used to
+    preserve an explicit "everything bleed" choice from before this key. */
+function resolveFullBleedMode() {
+  try {
+    const mode = localStorage.getItem(FB_MODE_KEY);
+    if (mode === 'chat' || mode === 'all' || mode === 'off') return mode;
+    const everything = localStorage.getItem(FULL_BLEED_KEY) === '1';
+    const chatOnly = localStorage.getItem(FB_CHAT_ONLY_KEY);
+    if (everything && chatOnly === '0') return 'all';
+    return 'chat';
+  } catch {
+    return 'chat';
+  }
 }
 
-/** Toggle the full-bleed class on <html> and persist it. Each Appearance
-    popover reads isFullBleedOn() to render its own toggle state. */
+/** True when either full-bleed mode is active (everything or chat-only). */
+export function isFullBleedOn() {
+  return resolveFullBleedMode() !== 'off';
+}
+
+/** Toggle the full-bleed class on <html> and persist the legacy flag.
+    Mode changes go through applyFullBleedMode so the Appearance rows stay
+    in sync; this only paints the CSS class the layout rules key off. */
 export function applyFullBleed(on) {
   document.documentElement.classList.toggle('full-bleed', !!on);
   try { localStorage.setItem(FULL_BLEED_KEY, on ? '1' : '0'); } catch {}
@@ -480,31 +506,61 @@ export function applyFullBleed(on) {
   } catch {}
 }
 
-/** Restore the persisted full-bleed state onto the document (no popover needed). */
+/** Restore the persisted (or default chat-only) full-bleed mode onto the
+    document — no popover needed. */
 export function restoreFullBleed() {
-  applyFullBleed(isFullBleedOn());
+  applyFullBleedMode(resolveFullBleedMode());
+}
+
+/** True when Full bleed is stretching every module (not the Chat-only mode). */
+export function isFullBleedEverythingOn() {
+  return resolveFullBleedMode() === 'all';
+}
+
+/** True when the Chat-only full bleed mode is on. */
+export function isChatOnlyFullBleedOn() {
+  return resolveFullBleedMode() === 'chat';
+}
+
+/** Switch between the two mutually exclusive full-bleed modes:
+    `'all'` (every module), `'chat'` (chat only), or `''` / `'off'` (off).
+    Chat-only still sets `full-bleed` + `fb-chat-only` so existing CSS applies. */
+export function applyFullBleedMode(mode) {
+  const resolved = mode === 'all' || mode === 'chat' ? mode : 'off';
+  try { localStorage.setItem(FB_MODE_KEY, resolved); } catch {}
+  if (resolved === 'all') {
+    applyFullBleed(true);
+    applyFullBleedChatOnly(false);
+  } else if (resolved === 'chat') {
+    applyFullBleed(true);
+    applyFullBleedChatOnly(true);
+  } else {
+    applyFullBleed(false);
+    applyFullBleedChatOnly(false);
+  }
 }
 
 /* ── Full bleed ▸ surface customisation ──────────────────────────────────
    Sub-controls that live UNDER the Full bleed row in the Appearance popover
    (rendered only while full bleed is on, see js/appearance-menu.js). They let
-   an admin recolour the three surfaces that frame the workspace once modules
-   run edge-to-edge — the primary navigation background, the chat window, and
-   any module docked to the RIGHT of the chat — plus switch how those right
-   modules behave and drop in one of three preset themes that set all three
-   colours at once. Each colour is pushed onto <html> as a CSS custom property
-   plus a marker class; wise.css turns those into `!important` background
-   overrides GATED on `html.full-bleed`, so the customisation is genuinely part
-   of full bleed (it only shows while full bleed is on, and lifts the moment
-   it's switched off). Everything is persisted so it survives navigation and
-   applies on every page — the surfaces it targets (.menu-inner, the chat cards,
-   and .sticky-mod) exist app-wide. */
+   an admin recolour the surfaces that frame the workspace once modules run
+   edge-to-edge — the primary navigation, the chat window, any module docked
+   to the RIGHT of the chat, the output aside, and History — plus switch how
+   those right modules behave and drop in one of three preset themes that set
+   the colours at once. Each colour is pushed onto <html> as a CSS custom
+   property plus a marker class; wise.css turns those into `!important`
+   background overrides GATED on `html.full-bleed`, so the customisation is
+   genuinely part of full bleed (it only shows while full bleed is on, and
+   lifts the moment it's switched off). Everything is persisted so it survives
+   navigation and applies on every page — the surfaces it targets (.menu-inner,
+   the chat cards, .sticky-mod, .wa-pane, and History) exist app-wide. */
 const FB_NAV_BG_KEY = 'wise-fb-nav-bg';
 const FB_CHAT_BG_KEY = 'wise-fb-chat-bg';
 const FB_RMOD_BG_KEY = 'wise-fb-rmod-bg';
+const FB_ASIDE_BG_KEY = 'wise-fb-aside-bg';
+const FB_HIST_BG_KEY = 'wise-fb-hist-bg';
 const FB_RMOD_MODE_KEY = 'wise-fb-rmod-mode';
 const FB_THEME_KEY = 'wise-fb-theme';
-const FB_CHAT_ONLY_KEY = 'wise-fb-chat-only';
 const FB_THEME_DEFAULT = 'default';
 
 /** Three one-tap preset themes for the full-bleed surfaces. Each is a cohesive
@@ -564,7 +620,8 @@ function fbAutoFg(hex) { return fbLuminance(hex) > 0.45 ? '#16233B' : '#EAF1F9';
     own accent; hand-picked colours reuse the foreground) — plus the marker
     class AND a `fb-<prefix>-dark|light` scheme class so wise.css can flip the
     WHOLE token palette (labels, muted text, chip inks, borders) to match the
-    surface's lightness. Clearing removes all of it. `prefix` is nav|chat|rmod. */
+    surface's lightness. Clearing removes all of it. `prefix` is
+    nav|chat|rmod|aside|hist. */
 function fbSetSurface(prefix, color, accent) {
   const root = document.documentElement;
   const val = typeof color === 'string' ? color.trim() : '';
@@ -609,6 +666,29 @@ export function applyRightModuleBg(color, accent) {
   fbStore(FB_RMOD_BG_KEY, typeof color === 'string' ? color.trim() : '');
 }
 
+/** Output-aside / .wa-pane background colour ('' when unset). */
+export function getAsideBg() { return fbRead(FB_ASIDE_BG_KEY); }
+export function applyAsideBg(color, accent) {
+  fbSetSurface('aside', color, accent);
+  fbStore(FB_ASIDE_BG_KEY, typeof color === 'string' ? color.trim() : '');
+}
+
+/** History (left-of-chat .wch-sidebar) background colour ('' when unset). */
+export function getHistoryBg() { return fbRead(FB_HIST_BG_KEY); }
+export function applyHistoryBg(color, accent) {
+  fbSetSurface('hist', color, accent);
+  fbStore(FB_HIST_BG_KEY, typeof color === 'string' ? color.trim() : '');
+}
+
+/** Apply one full-bleed surface colour by picker kind. */
+export function applyFbColor(kind, color, accent) {
+  if (kind === 'nav') applyNavBg(color, accent);
+  else if (kind === 'chat') applyChatBg(color, accent);
+  else if (kind === 'rmod') applyRightModuleBg(color, accent);
+  else if (kind === 'aside') applyAsideBg(color, accent);
+  else if (kind === 'hist') applyHistoryBg(color, accent);
+}
+
 /** How right-of-chat modules behave in full bleed: 'drawer' (default tuck),
     'flat' (full-height column) or 'hidden'. Driven by an `rmod-<mode>` class. */
 export const RMOD_MODES = [
@@ -628,30 +708,37 @@ export function applyRightModuleMode(mode) {
   fbStore(FB_RMOD_MODE_KEY, valid ? mode : '');
 }
 
-/** Contrasting Default surfaces — navy + gold nav, warm linen chat, white
-    (or deep) output. The old "clear tints" Default left inverted-navy nav +
-    blue chat-tint + navy charts, which read as one hue. These swap with the
-    live light/dark theme so Default never paints a light linen chat onto a
-    dark page (or the reverse). */
+/** Contrasting Default surfaces — navy + gold nav and white (or deep) output.
+    Chat is left on the contained Blue chat surface (chat-tint) so full bleed
+    does not flatten it to linen/navy. These swap with the live light/dark
+    theme so Default never paints a light nav onto a dark page (or the reverse). */
 function fbDefaultSurfaces() {
   const dark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
   return dark
     ? {
         nav: '#F4F2EA', navAccent: '#8B5E12',
-        chat: '#0E1624', chatAccent: '#7DC470',
         rmod: '#1A2339', rmodAccent: '#E3C878',
       }
     : {
         nav: '#1C3E60', navAccent: '#E3C878',
-        chat: '#F9F8F3', chatAccent: '#2F6B4F',
         rmod: '#FFFFFF', rmodAccent: '#C45C26',
       };
+}
+/** Hex the contained chat actually paints — the Blue chat surface mix when
+    that toggle is on, otherwise the card surface. Used as the Appearance
+    picker fallback while Default has no custom chat colour. */
+export function getContainedChatBg() {
+  const dark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+  if (isChatTintOn()) return dark ? '#232D42' : '#F4F6F8';
+  return dark ? '#1A2339' : '#FFFFFF';
 }
 function applyDefaultFullBleedSurfaces() {
   const d = fbDefaultSurfaces();
   applyNavBg(d.nav, d.navAccent);
-  applyChatBg(d.chat, d.chatAccent);
+  applyChatBg('');
   applyRightModuleBg(d.rmod, d.rmodAccent);
+  applyAsideBg(d.rmod, d.rmodAccent);
+  applyHistoryBg(d.rmod, d.rmodAccent);
   fbStore(FB_THEME_KEY, FB_THEME_DEFAULT);
 }
 function getFullBleedThemeRaw() { return fbRead(FB_THEME_KEY); }
@@ -662,14 +749,23 @@ export function getFullBleedTheme() {
   if (v === FB_THEME_DEFAULT || v === '') return '';
   return FB_PRESETS.some((p) => p.id === v) ? v : '';
 }
+
+/** True only when the contrasting Default set is active — not a named preset
+    and not a hand-tweaked mix. The Appearance "Default" chip and "Reset colors"
+    use this so a custom swatch doesn't look like Default is still selected. */
+export function isFullBleedDefaultTheme() {
+  return getFullBleedThemeRaw() === FB_THEME_DEFAULT;
+}
 /** Apply a preset theme (sets all three surface colours at once), or pass ''
-    to restore the contrasting Default set (navy+gold / linen / white). */
+    to restore the contrasting Default set (navy+gold / contained chat / white). */
 export function applyFullBleedTheme(id) {
   const preset = FB_PRESETS.find((p) => p.id === id);
   if (preset) {
     applyNavBg(preset.nav, preset.navAccent);
     applyChatBg(preset.chat, preset.chatAccent);
     applyRightModuleBg(preset.rmod, preset.rmodAccent);
+    applyAsideBg(preset.aside || preset.rmod, preset.asideAccent || preset.rmodAccent);
+    applyHistoryBg(preset.hist || preset.rmod, preset.histAccent || preset.rmodAccent);
     fbStore(FB_THEME_KEY, preset.id);
   } else {
     applyDefaultFullBleedSurfaces();
@@ -687,11 +783,13 @@ export function refreshFullBleedDefaultTheme() {
 }
 
 /** Chat-only full bleed — stretch the chat module edge-to-edge and keep the
-    nav + every other module as contained cards. Driven by `fb-chat-only` on
-    <html>, gated in CSS on `html.full-bleed` so it only reads while full
-    bleed itself is on. */
+    nav + every other module as contained cards. A sibling of Full bleed in
+    the Appearance popover (mutually exclusive). Driven by `fb-chat-only` on
+    <html>, gated in CSS on `html.full-bleed` so the chat-only layout rules
+    still apply. Defaults ON — the contained-nav / stretched-chat look is
+    the standard; the Appearance toggle opts OUT. */
 export function isFullBleedChatOnly() {
-  try { return localStorage.getItem(FB_CHAT_ONLY_KEY) === '1'; } catch { return false; }
+  return resolveFullBleedMode() === 'chat';
 }
 export function applyFullBleedChatOnly(on) {
   document.documentElement.classList.toggle('fb-chat-only', !!on);
@@ -705,7 +803,8 @@ export function applyFullBleedChatOnly(on) {
     set; otherwise the individual hand-picked backgrounds are restored. */
 export function restoreFullBleedSurfaces() {
   const raw = getFullBleedThemeRaw();
-  if (raw === FB_THEME_DEFAULT || (raw === '' && !getNavBg() && !getChatBg() && !getRightModuleBg())) {
+  const noColors = !getNavBg() && !getChatBg() && !getRightModuleBg() && !getAsideBg() && !getHistoryBg();
+  if (raw === FB_THEME_DEFAULT || (raw === '' && noColors)) {
     applyDefaultFullBleedSurfaces();
   } else if (FB_PRESETS.some((p) => p.id === raw)) {
     applyFullBleedTheme(raw);
@@ -713,9 +812,10 @@ export function restoreFullBleedSurfaces() {
     applyNavBg(getNavBg());
     applyChatBg(getChatBg());
     applyRightModuleBg(getRightModuleBg());
+    applyAsideBg(getAsideBg() || getRightModuleBg());
+    applyHistoryBg(getHistoryBg() || getRightModuleBg());
   }
   applyRightModuleMode(getRightModuleMode());
-  applyFullBleedChatOnly(isFullBleedChatOnly());
 }
 
 /* Composer v2 — the redesigned chat-module input: one pill row with "+" far
@@ -1325,12 +1425,13 @@ export function restoreBrandStyle() {
   applyBrandStyle(getBrandStyle());
 }
 
-/* Admin controls — a master gate in the Appearance popover ONLY. When off,
-   every row in THAT popover that carries an Admin badge is omitted (not
-   disabled, not greyed), plus nested chrome that belongs to a badged parent
-   (Jam player, Full-bleed colour pickers). Everything else stays: unbadged
-   Appearance rows, the left-nav Admin section, chat ⋯ admin items, and the
-   live feature state of anything that was already on. Defaults ON. */
+/* Admin controls — a master gate shared by the Appearance popover AND the
+   chat ⋯ menu's nested Admin popover. When off, every row that carries an
+   Admin badge is omitted (Appearance) or hidden (chat ⋯), plus nested chrome
+   that belongs to a badged parent (Jam player, Full-bleed colour pickers,
+   background-animation sub-controls, Elevation). Everything else stays:
+   unbadged rows, the left-nav Admin section, and the live feature state of
+   anything that was already on. Defaults ON. */
 const ADMIN_UI_KEY = 'wise-admin-ui';
 
 /** True when admin-only Appearance rows should be shown. */

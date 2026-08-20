@@ -1253,6 +1253,12 @@ html.dark .wise-pop-vline { background: rgba(255,255,255,0.08); }
   border-radius: 10px;
   background: var(--surface-2);
 }
+/* Chat only: drop the darker primary left rail so the well matches the
+   contained-card look of every other module in that mode. */
+html.fb-chat-only .fb-opts,
+.fb-opts.is-chat-only {
+  border: 1px solid var(--border);
+}
 .fb-opts .wise-toggle-item {
   margin: 0;
   width: 100%;
@@ -1267,6 +1273,12 @@ html.dark .wise-pop-vline { background: rgba(255,255,255,0.08); }
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  cursor: pointer;
+  /* Chromium won't open <input type="color"> inside CSS columns unless the
+     control is promoted off the column fragmentation context. */
+  transform: translateZ(0);
+  position: relative;
+  z-index: 1;
 }
 .fb-color-label {
   font-size: 11px;
@@ -1289,6 +1301,22 @@ html.dark .wise-pop-vline { background: rgba(255,255,255,0.08); }
 .fb-color-input::-webkit-color-swatch-wrapper { padding: 0; }
 .fb-color-input::-webkit-color-swatch { border: 0; border-radius: 5px; }
 .fb-color-input::-moz-color-swatch { border: 0; border-radius: 5px; }
+.fb-color-reset {
+  align-self: flex-start;
+  margin: 1px 0 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--primary);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.3;
+  cursor: pointer;
+}
+.fb-color-reset:hover { color: var(--text); text-decoration: underline; }
+html.dark .fb-color-reset { color: var(--primary-bright, #8B9FAF); }
+html.dark .fb-color-reset:hover { color: var(--text); }
 .fb-preset-label {
   display: block;
   font-size: 10px;
@@ -3878,11 +3906,11 @@ html.full-bleed:not(.fb-chat-only) #modules-row .wa-pane.is-open > .wa-pane-body
   border-radius: 0 !important;
 }
 
-/* ===== Full bleed ▸ Chat only ==============================================
-   Appearance ▸ Full bleed ▸ "Chat only": nav, output, History, and every
-   other module use the SAME frame, colours, elevation and drawer inset as
-   when full bleed is off. Only the chat host stays edge-to-edge — it breaks
-   out of the restored 12px page pad so it still reaches the window. */
+/* ===== Full bleed ▸ Chat-only ==============================================
+   Appearance ▸ Full bleed ▸ "Chat-only full bleed" (a sibling of Full bleed,
+   mutually exclusive): nav, output, History, and every other module keep
+   their contained-card frame AND their default colours. Only the chat host
+   stretches and accepts the Chat window colour picker. */
 html.full-bleed.fb-chat-only :is(
   .sc-card, .wa-chat, #wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
@@ -3897,6 +3925,23 @@ html.full-bleed.fb-chat-only :is(
   height: calc(100% + var(--modules-bottom-pad, 12px) + var(--chat-elev-gutter, 48px)) !important;
   max-height: none !important;
   align-self: stretch !important;
+}
+
+/* History can still live INSIDE the tinted chat host (in-chat overlay on
+   wiseai.html). Chat-tint remaps --surface on #wa-chat, and the sidebar
+   inherits it. Pin History back to the page tokens so Chat-only never
+   recolours that module. Turns (.wch-right) is a different surface. */
+html.full-bleed.fb-chat-only .wch-sidebar:not(.wch-right) {
+  --bg: #F9F8F3;
+  --surface: #FFFFFF;
+  --surface-2: #F4F2EA;
+  --wch-tree-bg: #FFFFFF;
+}
+html.dark.full-bleed.fb-chat-only .wch-sidebar:not(.wch-right) {
+  --bg: #05141C;
+  --surface: #0D1B24;
+  --surface-2: #112633;
+  --wch-tree-bg: #0D1B24;
 }
 
 /* ===== Full bleed ▸ surface colours (Appearance popover sub-controls) =======
@@ -3920,8 +3965,10 @@ html.full-bleed.fb-chat-only :is(
    A custom colour (or a preset) adds `.fb-nav-tint` / `.fb-chat-tint` /
    `.fb-rmod-tint` and supplies BOTH a background (--fb-*-bg) and a matching
    foreground ink (--fb-*-ink, chosen for contrast by js/topbar.js), so every
-   surface stays legible. All of it is gated on `html.full-bleed`, so the
-   treatment is genuinely PART of full bleed and lifts the moment it's off. */
+   surface stays legible. Nav / right-module / aside / History paints are
+   gated on `html.full-bleed:not(.fb-chat-only)` so Chat-only full bleed
+   never recolours those cards. Chat tints stay on `html.full-bleed` so they
+   still apply in Chat-only. */
 
 /* ------------------------------------------------------------------------
    SCHEME PALETTES. A tinted surface is classed by js/topbar.js as `fb-<s>-dark`
@@ -3939,7 +3986,7 @@ html.full-bleed.fb-chat-only :is(
 /* DARK-scheme token palette (light body ink on a dark surface). */
 html.full-bleed:not(.fb-chat-only):not(.dark):not(.fb-nav-tint) #menu-panel,
 html.full-bleed:not(.fb-chat-only).fb-nav-dark #menu-panel,
-html.full-bleed:not(.fb-chat-only).fb-chat-dark :is(
+html.full-bleed.fb-chat-dark :is(
   .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
   #pf-chat-panel, #wiseai-dock-panel
@@ -3947,8 +3994,10 @@ html.full-bleed:not(.fb-chat-only).fb-chat-dark :is(
 html.full-bleed:not(.fb-chat-only).fb-rmod-dark #modules-row > :not(:is(
   .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
-  #pf-chat-panel, #wiseai-dock-panel, .sticky-chat
-)):not([class*="scrim"]):not([class*="resize"]):not([class*="handle"]):not([class*="grip"]) {
+  #pf-chat-panel, #wiseai-dock-panel, .sticky-chat, .wa-pane
+)):not(.wch-sidebar:not(.wch-right)):not([class*="scrim"]):not([class*="resize"]):not([class*="handle"]):not([class*="grip"]),
+html.full-bleed:not(.fb-chat-only).fb-aside-dark #modules-row .wa-pane,
+html.full-bleed:not(.fb-chat-only).fb-hist-dark #modules-row .wch-sidebar:not(.wch-right) {
   --text: #F3F4F6;
   --text-muted: #BCC6D3;
   --text-subtle: #B1BAC7;
@@ -3966,7 +4015,7 @@ html.full-bleed:not(.fb-chat-only).fb-rmod-dark #modules-row > :not(:is(
 /* LIGHT-scheme token palette (dark body ink on a light surface). */
 html.full-bleed:not(.fb-chat-only).dark:not(.fb-nav-tint) #menu-panel,
 html.full-bleed:not(.fb-chat-only).fb-nav-light #menu-panel,
-html.full-bleed:not(.fb-chat-only).fb-chat-light :is(
+html.full-bleed.fb-chat-light :is(
   .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
   #pf-chat-panel, #wiseai-dock-panel
@@ -3974,8 +4023,10 @@ html.full-bleed:not(.fb-chat-only).fb-chat-light :is(
 html.full-bleed:not(.fb-chat-only).fb-rmod-light #modules-row > :not(:is(
   .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
-  #pf-chat-panel, #wiseai-dock-panel, .sticky-chat
-)):not([class*="scrim"]):not([class*="resize"]):not([class*="handle"]):not([class*="grip"]) {
+  #pf-chat-panel, #wiseai-dock-panel, .sticky-chat, .wa-pane
+)):not(.wch-sidebar:not(.wch-right)):not([class*="scrim"]):not([class*="resize"]):not([class*="handle"]):not([class*="grip"]),
+html.full-bleed:not(.fb-chat-only).fb-aside-light #modules-row .wa-pane,
+html.full-bleed:not(.fb-chat-only).fb-hist-light #modules-row .wch-sidebar:not(.wch-right) {
   --text: #111827;
   --text-muted: #444B55;
   --text-subtle: #474E58;
@@ -4083,7 +4134,7 @@ html.full-bleed:not(.fb-chat-only).dark.fb-nav-tint #menu-panel .menu-footer {
    scheme palette above. Also remaps --bg so welcome/settings overlays, header
    float backings, and anything else that paints from --bg follow the preset
    instead of the page linen / hardcoded navy. */
-html.full-bleed:not(.fb-chat-only).fb-chat-tint :is(
+html.full-bleed.fb-chat-tint :is(
   .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
   #pf-chat-panel, #wiseai-dock-panel
@@ -4096,98 +4147,112 @@ html.full-bleed:not(.fb-chat-only).fb-chat-tint :is(
   --primary-soft: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 16%, transparent);
   --border-strong: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 28%, transparent);
 }
-html.full-bleed:not(.fb-chat-only).fb-chat-tint :is(
+html.full-bleed.fb-chat-tint :is(
   .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
   #pf-chat-panel, #wiseai-dock-panel,
   .chat-messages-area, .chat-input-rail, .sc-welcome, .sc-settings, .chat-topbar
 ) {
+  background-color: var(--fb-chat-bg) !important;
+  background-image: none !important;
   background: var(--fb-chat-bg) !important;
   color: var(--fb-chat-fg, #16233B);
+}
+/* Beat page-level .wa-chat { background: var(--bg) }, .sc-card { background:
+   var(--surface) }, and html.dark .sc-card's navy gradient — those otherwise
+   keep painting the Default linen/navy after a hand-picked colour lands. */
+html.full-bleed.fb-chat-tint #wa-chat.wa-chat,
+html.full-bleed.fb-chat-tint #wa-chat.sc-card,
+html.full-bleed.fb-chat-tint.dark .sc-card,
+html.full-bleed.fb-chat-tint.chat-tint .sc-card,
+html.full-bleed.fb-chat-tint.chat-tint .wa-chat {
+  background-color: var(--fb-chat-bg) !important;
+  background-image: none !important;
+  background: var(--fb-chat-bg) !important;
 }
 /* Composer + intent-chip fades stay on hardcoded brand-blue / navy washes
    (chat-tint). When a preset is on, restain them from the chat surface so the
    welcome, input, and carousel edges actually change with the theme. */
-html.full-bleed:not(.fb-chat-only).fb-chat-tint .fl-input-wrap {
+html.full-bleed.fb-chat-tint .fl-input-wrap {
   background: color-mix(in srgb, var(--fb-chat-fg, #16233B) 10%, var(--fb-chat-bg)) !important;
   border-color: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 22%, transparent) !important;
 }
-html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-intent-chip,
-html.full-bleed:not(.fb-chat-only).fb-chat-tint .chip {
+html.full-bleed.fb-chat-tint .ws-intent-chip,
+html.full-bleed.fb-chat-tint .chip {
   background: color-mix(in srgb, var(--fb-chat-fg, #16233B) 10%, var(--fb-chat-bg));
   border-color: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 28%, transparent);
   color: var(--fb-chat-fg, #16233B);
 }
 /* Intent-chip icons stay gold (chat-module-parity). Hover wash + ring follow
    the surface accent so Default (green chat / gold icons) is not leftover navy. */
-html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-intent-chip > .material-symbols-outlined {
+html.full-bleed.fb-chat-tint .ws-intent-chip > .material-symbols-outlined {
   color: var(--ter-amber, #E3C878) !important;
 }
-html.full-bleed:not(.fb-chat-only).fb-chat-tint .chip:hover,
-html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-intent-chip:hover {
+html.full-bleed.fb-chat-tint .chip:hover,
+html.full-bleed.fb-chat-tint .ws-intent-chip:hover {
   background: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 16%, var(--fb-chat-bg)) !important;
   border-color: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 48%, transparent) !important;
   color: var(--fb-chat-fg, #16233B);
 }
-html.full-bleed:not(.fb-chat-only).fb-chat-tint .chip.ws-intent-chip--askhelp:hover {
+html.full-bleed.fb-chat-tint .chip.ws-intent-chip--askhelp:hover {
   background: color-mix(in srgb, var(--ter-amber, #FFC434) 18%, var(--fb-chat-bg)) !important;
   border-color: var(--ter-amber, #FFC434) !important;
   color: color-mix(in srgb, var(--ter-amber, #FFC434) 50%, #000);
 }
-html.full-bleed:not(.fb-chat-only).dark.fb-chat-tint .chip.ws-intent-chip--askhelp:hover {
+html.full-bleed.dark.fb-chat-tint .chip.ws-intent-chip--askhelp:hover {
   color: var(--ter-amber, #FFC434);
 }
-html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-intent-chip.is-used,
-html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-intent-chip.is-used:hover {
+html.full-bleed.fb-chat-tint .ws-intent-chip.is-used,
+html.full-bleed.fb-chat-tint .ws-intent-chip.is-used:hover {
   background: color-mix(in srgb, var(--fb-chat-fg, #16233B) 8%, var(--fb-chat-bg)) !important;
   border-color: color-mix(in srgb, var(--fb-chat-fg, #16233B) 18%, transparent) !important;
 }
-html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-scorecard:hover,
-html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-scorecard--intro:hover,
-html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-scorecard--wiseai:hover {
+html.full-bleed.fb-chat-tint .ws-scorecard:hover,
+html.full-bleed.fb-chat-tint .ws-scorecard--intro:hover,
+html.full-bleed.fb-chat-tint .ws-scorecard--wiseai:hover {
   background: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 14%, var(--fb-chat-bg)) !important;
   border-color: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 50%, transparent) !important;
   box-shadow: 0 6px 18px color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 16%, transparent);
 }
-html.full-bleed:not(.fb-chat-only).fb-chat-tint .fl-input-wrap:focus-within {
+html.full-bleed.fb-chat-tint .fl-input-wrap:focus-within {
   border-color: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 55%, transparent) !important;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 18%, transparent) !important;
 }
-html.full-bleed:not(.fb-chat-only).fb-chat-tint .sc-send:hover,
-html.full-bleed:not(.fb-chat-only).fb-chat-tint .sc-send:focus-visible {
+html.full-bleed.fb-chat-tint .sc-send:hover,
+html.full-bleed.fb-chat-tint .sc-send:focus-visible {
   background: color-mix(in srgb, var(--fb-chat-accent, var(--primary)) 82%, #000) !important;
   color: #fff;
 }
-html.full-bleed:not(.fb-chat-only).fb-chat-tint :is(
+html.full-bleed.fb-chat-tint :is(
   .panel-more-btn, .panel-width-toggle-btn, .panel-close-btn, .panel-ctrl-btn,
   .sc-topbar-controls button, .fl-plus, .fl-model-btn
 ):hover {
   background: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 14%, var(--fb-chat-bg)) !important;
   color: var(--fb-chat-accent, var(--fb-chat-fg, #16233B));
 }
-html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-scorecards-wrap::before,
-html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-chips-wrap::before {
+html.full-bleed.fb-chat-tint .ws-scorecards-wrap::before,
+html.full-bleed.fb-chat-tint .ws-chips-wrap::before {
   background: linear-gradient(to right, var(--fb-chat-bg) 0%, transparent 100%) !important;
 }
-html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-scorecards-wrap::after,
-html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-chips-wrap::after {
+html.full-bleed.fb-chat-tint .ws-scorecards-wrap::after,
+html.full-bleed.fb-chat-tint .ws-chips-wrap::after {
   background: linear-gradient(to left, var(--fb-chat-bg) 0%, transparent 100%) !important;
 }
-html.full-bleed:not(.fb-chat-only).fb-chat-tint.header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-more-btn,
-html.full-bleed:not(.fb-chat-only).fb-chat-tint.header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn {
+html.full-bleed.fb-chat-tint.header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-more-btn,
+html.full-bleed.fb-chat-tint.header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn {
   background: var(--fb-chat-bg) !important;
 }
 
 /* ---- Right-of-chat module colour ----
-   Paint EVERY non-chat sibling in #modules-row (wiseai panes, progress
-   trackers, dashboard cards, History / Turns, agent-main, portfolio panels),
-   not just modules that happen to carry .sticky-mod. Chrome (resize handles,
-   scrims) is skipped. */
+   Paint non-chat siblings in #modules-row (progress trackers, dashboard cards,
+   Turns, agent-main, portfolio panels) EXCEPT the output aside (.wa-pane) and
+   History (left-of-chat .wch-sidebar), which have their own pickers. Chrome
+   (resize handles, scrims) is skipped. */
 html.full-bleed:not(.fb-chat-only).fb-rmod-tint #modules-row > :not(:is(
   .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
-  #pf-chat-panel, #wiseai-dock-panel, .sticky-chat
-)):not([class*="scrim"]):not([class*="resize"]):not([class*="handle"]):not([class*="grip"]) {
+  #pf-chat-panel, #wiseai-dock-panel, .sticky-chat, .wa-pane
+)):not(.wch-sidebar:not(.wch-right)):not([class*="scrim"]):not([class*="resize"]):not([class*="handle"]):not([class*="grip"]) {
   --bg: var(--fb-rmod-bg);
   --surface: var(--fb-rmod-bg);
   --surface-2: var(--fb-rmod-bg);
@@ -4201,9 +4266,9 @@ html.full-bleed:not(.fb-chat-only).fb-rmod-tint #modules-row > :not(:is(
 html.full-bleed:not(.fb-chat-only).fb-rmod-tint #modules-row > :not(:is(
   .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
-  #pf-chat-panel, #wiseai-dock-panel, .sticky-chat
-)):not([class*="scrim"]):not([class*="resize"]):not([class*="handle"]):not([class*="grip"]) :is(
-  .panel-inner, [class*="-inner"], .wa-pane-top, .wa-pane-body, .wch-head,
+  #pf-chat-panel, #wiseai-dock-panel, .sticky-chat, .wa-pane
+)):not(.wch-sidebar:not(.wch-right)):not([class*="scrim"]):not([class*="resize"]):not([class*="handle"]):not([class*="grip"]) :is(
+  .panel-inner, [class*="-inner"], .wch-head,
   .agent-main-inner, .pf-module-inner, .vf-progress-pane, .gv-progress-pane
 ) {
   background: var(--fb-rmod-bg) !important;
@@ -4222,6 +4287,40 @@ html.full-bleed:not(.fb-chat-only).fb-rmod-tint #modules-row :is(
   background: color-mix(in srgb, var(--fb-rmod-accent, var(--fb-rmod-fg, #16233B)) 14%, var(--fb-rmod-bg)) !important;
   border-color: color-mix(in srgb, var(--fb-rmod-accent, var(--fb-rmod-fg, #16233B)) 40%, transparent);
   color: var(--fb-rmod-fg, #16233B);
+}
+
+/* ---- Output aside colour (.wa-pane) ---- */
+html.full-bleed:not(.fb-chat-only).fb-aside-tint #modules-row .wa-pane {
+  --bg: var(--fb-aside-bg);
+  --surface: var(--fb-aside-bg);
+  --surface-2: var(--fb-aside-bg);
+  --surface-3: color-mix(in srgb, var(--fb-aside-fg, #16233B) 8%, var(--fb-aside-bg));
+  --primary-ink: var(--fb-aside-accent, var(--fb-aside-fg, #16233B));
+  --primary-soft: color-mix(in srgb, var(--fb-aside-accent, var(--fb-aside-fg, #16233B)) 16%, transparent);
+  --border-strong: color-mix(in srgb, var(--fb-aside-accent, var(--fb-aside-fg, #16233B)) 28%, transparent);
+  background: var(--fb-aside-bg) !important;
+  color: var(--fb-aside-fg, #16233B);
+}
+html.full-bleed:not(.fb-chat-only).fb-aside-tint #modules-row .wa-pane :is(.wa-pane-top, .wa-pane-body, .panel-inner) {
+  background: var(--fb-aside-bg) !important;
+  color: var(--fb-aside-fg, #16233B);
+}
+
+/* ---- History colour (left-of-chat .wch-sidebar) ----
+   Beats the injected chat-history.js surface fills with !important. */
+html.full-bleed:not(.fb-chat-only).fb-hist-tint #modules-row .wch-sidebar:not(.wch-right),
+html.full-bleed:not(.fb-chat-only).fb-hist-tint #modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-right) {
+  --bg: var(--fb-hist-bg);
+  --surface: var(--fb-hist-bg);
+  --surface-2: var(--fb-hist-bg);
+  --wch-tree-bg: var(--fb-hist-bg);
+  --primary-ink: var(--fb-hist-accent, var(--fb-hist-fg, #16233B));
+  background: var(--fb-hist-bg) !important;
+  color: var(--fb-hist-fg, #16233B);
+}
+html.full-bleed:not(.fb-chat-only).fb-hist-tint #modules-row .wch-sidebar:not(.wch-right) :is(.wch-head, .wch-list, .wch-search) {
+  background: var(--fb-hist-bg) !important;
+  color: var(--fb-hist-fg, #16233B);
 }
 
 /* ===== Full bleed ▸ right-module functionality =============================
@@ -4948,7 +5047,11 @@ html:not(.dark) .sc-topbar-titles .topbar-title { color: var(--text); }
 }
 
 /* ===== Body (messages + welcome overlay) ===== */
-.sc-body { position: relative; flex: 1 1 0%; min-height: 0; display: flex; overflow: hidden; }
+.sc-body { position: relative; flex: 1 1 0%; min-height: 0; display: flex; overflow: hidden;
+  /* Query the body width (≈ chat pane width) so single-pane (380px) can cap
+     welcome chips at three rows without putting container-type on .sc-card
+     (that would trap position:fixed popovers). */
+  container-type: inline-size; container-name: sc-chat-body; }
 .chat-messages-area {
   /* Transcript width cap (single · double · triple): however wide the chat
      MODULE grows — up to the full width of the browser when it's the only pane
@@ -5054,15 +5157,20 @@ html.dark .sc-avatar-wiseai { background: #fff; color: #141414; }
   /* Bottom-anchored so the welcome (owl → heading → chips) sits just above the
      input rail and reads like the rest of the chat — content flowing UP from the
      bottom, not stacked at the top with dead space below. `safe` flips back to
-     top-alignment the moment the content is taller than the dock, and overflow-y
-     lets you scroll up to the logo — otherwise a short dock would clip it behind
-     the input rail. Applies to every WISEcodeAI surface. */
-  justify-content: safe flex-end; overflow-y: auto;
+     top-alignment the moment the content is taller than the dock. The 3-row
+     chip layout is driven by a container query on `.sc-body` (the chat pane
+     width), not this overlay. Applies to every WISEcodeAI surface. */
+  justify-content: safe flex-end; overflow-x: hidden; overflow-y: auto;
   padding: 2rem; font-size: var(--fs-ui);
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 html.dark .sc-welcome { background: transparent; }
 .sc-welcome.sc-hidden { opacity: 0; transform: translateY(8px); pointer-events: none; }
+/* Owl, copy, and large cards stay put. Small intent chips wrap in place on a
+   full-size chat; in the single-pane (narrow) dock they cap at three rows. */
+.sc-welcome > .ws-heading,
+.sc-welcome > .ws-sub,
+.sc-welcome > .ws-scorecards-section { flex-shrink: 0; }
 
 .ws-logo-wrap { position: relative; width: 72px; height: 72px; margin-bottom: 1.75rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
 .ws-pulse-ring {
@@ -5140,6 +5248,40 @@ html.dark .ws-logo-wrap .ws-pulse-ring { --ws-track: rgba(174, 200, 237, 0.55); 
 .ws-count { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; font-family: ui-monospace, "SF Mono", "SFMono-Regular", "Roboto Mono", Menlo, Consolas, monospace; }
 .ws-chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 100%; width: 100%; margin-bottom: 2rem; }
 .ws-chips .chip { width: fit-content; max-width: 100%; flex: 0 0 auto; }
+/* Welcome intent chips. Full-size chat: wrap and show every chip. Single pane
+   (the 380px dock, below the double-width 580px tier): cap at THREE wrapping
+   rows and scroll extra chips vertically — never a one-line horizontal carousel. */
+.sc-welcome > .ws-chips-scroll {
+  --ws-chip-h: 28px;
+  --ws-chip-gap: 10px;
+  flex: 0 0 auto;
+  align-self: stretch;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 4px 2px;
+  overflow-x: hidden;
+  overflow-y: visible;
+}
+.sc-welcome > .ws-chips-scroll > .ws-chips {
+  margin-bottom: 0;
+  width: 100%;
+  max-width: none;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.sc-welcome > .ws-chips-scroll > .ws-chips .chip { max-width: 100%; }
+@container sc-chat-body (max-width: 32.5rem) {
+  .ws-chips-scroll {
+    flex: 0 1 auto;
+    min-height: 0;
+    max-height: calc(var(--ws-chip-h) * 3 + var(--ws-chip-gap) * 2 + 8px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+}
 /* Intent chips, carousel variant — a single horizontal row with left/right
    controls + edge fades (mirrors ai-chat.html), so every module-shortcut chip
    stays reachable inside the narrower dock. */
@@ -5221,7 +5363,7 @@ html.dark .sc-open-chip-ic { color: var(--primary-bright, #8B9FAF); }
    horizontal, snap-scrolling row of cards with floating scroll controls and
    soft edge fades. Two variants (intro / wiseai) carry a sleeker tinted backdrop
    so they read as orientation rather than data. */
-.sc-welcome--cards { justify-content: safe flex-end; overflow-y: auto; padding-top: 1.75rem; }
+.sc-welcome--cards { justify-content: safe flex-end; overflow-x: hidden; overflow-y: auto; padding-top: 1.75rem; }
 .ws-scorecards-section { width: 100%; max-width: 100%; margin: 0 0 1.5rem; }
 /* Overview cards hidden (three-dot menu → "Overview cards" switch off) — drop
    the large "at a glance" card rail from the welcome; everything else stays. */
@@ -5229,6 +5371,7 @@ html.dark .sc-open-chip-ic { color: var(--primary-bright, #8B9FAF); }
 /* Intent chips hidden (three-dot menu → "Intent chips" switch off) — drop the small
    suggested-action chips right below the overview cards on the welcome; the
    overview cards and everything else stay. */
+.sc-intent-chips-hidden .sc-welcome .ws-chips-scroll,
 .sc-intent-chips-hidden .sc-welcome .ws-chips-wrap,
 .sc-intent-chips-hidden .sc-welcome > .ws-chips { display: none; }
 .ws-scorecards-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
@@ -12966,6 +13109,17 @@ html.dark .wmod-secret { background: rgba(0,0,0,0.25); }
 .wmod-toast.is-in { opacity: 1; transform: none; }
 .wmod-toast .material-symbols-outlined { font-size: 17px; }
 
+/* Turns / walkthrough: a real left edge when an output pane is also open.
+   Sticky tuck otherwise strips border-left so the drawer can sit flush to chat. */
+#modules-row:has(.wa-pane.is-open) .wch-sidebar.wch-docked.wch-right,
+#modules-row.modules-sticky:has(.wa-pane.is-open) .wch-sidebar.wch-docked.wch-right:not(.wch-unsticky) {
+  border-left: 1px solid var(--border-strong, var(--border, rgba(0, 0, 0, 0.18))) !important;
+}
+html.dark #modules-row:has(.wa-pane.is-open) .wch-sidebar.wch-docked.wch-right,
+html.dark #modules-row.modules-sticky:has(.wa-pane.is-open) .wch-sidebar.wch-docked.wch-right:not(.wch-unsticky) {
+  border-left-color: rgba(255, 255, 255, 0.22) !important;
+}
+
 /* WISEowl walkthrough — docked module on the real page
    Shell is .wch-sidebar.wch-docked (same card as History / What can I ask). */
 #modules-row .owt-mod.wch-sidebar.wch-docked {
@@ -12991,56 +13145,119 @@ body > .owt-mod.wch-sidebar.wch-docked {
   display: flex;
   flex-direction: column;
 }
+.owt-mod .wch-controls .panel-more-wrap { margin-left: 0; }
+.owt-mod .wch-head-title {
+  display: block;
+  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-size: 1.28rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: var(--text);
+}
+.owt-mod .owt-mast {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 8px;
+}
+.owt-mod .owt-kicker {
+  margin: 0;
+  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+.owt-mod .owt-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  padding: 8px 14px 10px 24px;
+  border-bottom: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+}
+html.dark .owt-mod .owt-nav { border-bottom-color: rgba(255, 255, 255, 0.08); }
+.owt-mod .owt-nav-skips,
+.owt-mod .owt-nav-move {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.owt-mod .owt-nav-sep {
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  opacity: 0.7;
+}
+.owt-mod .owt-nav-link {
+  display: inline;
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  background: none !important;
+  box-shadow: none;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text-muted) !important;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.owt-mod .owt-nav-link:hover { color: var(--text) !important; }
+.owt-mod .owt-nav-link:disabled { opacity: 0.38; cursor: default; }
+.owt-mod .owt-nav-link--next { color: var(--text) !important; font-weight: 800; }
+.owt-mod .owt-nav-link:focus-visible { text-decoration: underline; }
 .owt-mod .owt-body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 4px 16px 14px;
+  padding: 14px 16px 18px 24px;
 }
-.owt-mod .owt-copy {
+.owt-mod .owt-copy,
+.owt-mod .owt-bullets,
+.owt-mod .owt-bullets li {
   margin: 0 0 12px;
   font-size: 0.86rem;
   line-height: 1.55;
-  color: var(--text-muted);
+  color: var(--text);
+  opacity: 1;
 }
 .owt-mod .owt-bullets {
+  display: block;
+  list-style: disc;
   margin: 0 0 14px;
-  padding: 0 0 0 1.1em;
-  color: var(--text);
-  font-size: 0.84rem;
-  line-height: 1.45;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  padding: 0 0 0 1.15em;
 }
-.owt-mod .owt-chips {
+.owt-mod .owt-bullets li { margin: 0 0 6px; }
+.owt-mod .owt-chips.ws-chips {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-start !important;
+  align-content: flex-start;
   gap: 6px;
+  width: 100%;
+  margin: 0;
+  text-align: left;
 }
 .owt-mod .owt-chips .chip { width: fit-content; max-width: 100%; }
 .owt-mod .owt-chips .chip[aria-current="true"] {
   border-color: var(--primary);
   color: var(--text);
 }
-.owt-mod .owt-foot {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex-shrink: 0;
-  padding: 12px 14px 14px;
-  border-top: 1px solid var(--border);
-}
-html.dark .owt-mod .owt-foot { border-color: rgba(255, 255, 255, 0.08); }
-.owt-mod .owt-foot-skip,
-.owt-mod .owt-foot-nav {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.owt-mod .owt-foot-nav { justify-content: flex-end; }
-.owt-mod .owt-foot-skip .wmod-btn { height: 34px; padding: 0 12px; font-size: 0.75rem; font-weight: 600; }
 
 /* ===== Scorecard corners =================================================
    Filter / metric scorecards are rectangles with shuffled corner radii —

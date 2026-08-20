@@ -280,6 +280,7 @@
 
     /* ===== WALK — chat on, composer gone, four-tier widths stay fluid ===== */
     'html.cwr-ui-on.cwr-walk .chat-input-rail { display: none !important; }',
+    'html.cwr-ui-on.cwr-walk .sc-intent-chips-hidden .sc-welcome .ws-chips-scroll { display: block !important; }',
     'html.cwr-ui-on.cwr-walk .sc-intent-chips-hidden .sc-welcome .ws-chips-wrap,',
     'html.cwr-ui-on.cwr-walk .sc-intent-chips-hidden .sc-welcome > .ws-chips { display: flex !important; }',
     'html.cwr-ui-on.cwr-walk .sc-body,',

@@ -475,9 +475,73 @@
   var cursorId = '';
   var screenIntro = false;
   var lastFocus = null;
+  var widthTier = 0;
+  var WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
+  var WIDTH_TITLES = [
+    'Width (single) — tap to widen',
+    'Width (double) — tap to widen',
+    'Width (triple) — tap to widen',
+    'Width (fill) — tap to reset'
+  ];
 
   function hostRow() {
     return document.getElementById('modules-row');
+  }
+
+  function applyWidth() {
+    var aside = els && els.root;
+    if (!aside) return;
+    var base = 360;
+    var tiers = [base, Math.round(base * 1.5), base * 2];
+    try {
+      window.WisePaneResize && window.WisePaneResize.release && window.WisePaneResize.release([aside]);
+    } catch (e) {}
+    if (window.WPaneWidth) {
+      window.WPaneWidth.applyClasses(aside, widthTier, 'panel');
+      window.WPaneWidth.syncButton(els.widthBtn, widthTier);
+    }
+    if (widthTier >= 3) {
+      aside.style.setProperty('flex', '1000 1 auto', 'important');
+      aside.style.setProperty('width', 'auto', 'important');
+      aside.style.setProperty('max-width', 'none', 'important');
+    } else {
+      var w = tiers[widthTier] || base;
+      aside.style.setProperty('flex', '0 0 ' + w + 'px', 'important');
+      aside.style.setProperty('width', w + 'px', 'important');
+      aside.style.setProperty('max-width', 'none', 'important');
+    }
+    var btn = els.widthBtn;
+    if (btn && !window.WPaneWidth) {
+      btn.classList.toggle('is-on', widthTier >= 1);
+      btn.setAttribute('aria-pressed', widthTier >= 1 ? 'true' : 'false');
+      btn.title = WIDTH_TITLES[widthTier];
+      var ic = btn.querySelector('.material-symbols-outlined');
+      if (ic) ic.textContent = WIDTH_ICONS[widthTier];
+    }
+  }
+
+  function closeMore() {
+    if (!els || !els.morePop || !els.moreBtn) return;
+    els.morePop.classList.add('hidden');
+    els.moreBtn.classList.remove('is-open');
+    els.moreBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  function placeMorePop() {
+    var pop = els.morePop;
+    var btn = els.moreBtn;
+    if (!pop || !btn) return;
+    if (pop.parentElement !== document.body) document.body.appendChild(pop);
+    pop.style.position = 'fixed';
+    pop.style.zIndex = '3000';
+    var w = pop.offsetWidth || 240;
+    var h = pop.offsetHeight || 80;
+    var r = btn.getBoundingClientRect();
+    var top = r.top - h - 6;
+    if (top < 6) top = r.top;
+    pop.style.top = Math.max(6, top) + 'px';
+    pop.style.left = Math.max(6, Math.min(r.right - w, window.innerWidth - w - 6)) + 'px';
+    pop.style.right = 'auto';
   }
 
   function ensure() {
@@ -488,37 +552,81 @@
     aside.setAttribute('aria-labelledby', 'owt-title');
     aside.innerHTML =
       '<div class="wch-head">' +
-        '<span class="wch-head-title" id="owt-title">WISEowl walkthrough</span>' +
+        '<div class="owt-mast">' +
+          '<span class="wch-head-title" id="owt-title">WISEowl walkthrough</span>' +
+          '<p class="owt-kicker" id="owt-kicker"></p>' +
+        '</div>' +
         '<div class="wch-controls">' +
-          '<button type="button" class="wch-close" data-owt="snooze" title="Skip for now" aria-label="Skip for now">' +
-            '<span class="material-symbols-outlined">close</span>' +
+          '<div class="panel-more-wrap owt-more-wrap">' +
+            '<button type="button" class="panel-more-btn owt-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options">' +
+              '<span class="material-symbols-outlined">more_vert</span>' +
+            '</button>' +
+            '<div class="topbar-popover hidden owt-more-pop" role="menu">' +
+              '<button type="button" class="topbar-menu-item topbar-menu-item--danger" data-owt="snooze">' +
+                '<span class="material-symbols-outlined topbar-menu-icon">close</span>' +
+                '<span>Close pane</span>' +
+              '</button>' +
+            '</div>' +
+          '</div>' +
+          '<button type="button" class="panel-width-toggle-btn owt-width-btn" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Walkthrough module width">' +
+            '<span class="material-symbols-outlined">width_normal</span>' +
           '</button>' +
         '</div>' +
       '</div>' +
-      '<div class="owt-body" data-owt="body"></div>' +
-      '<div class="owt-foot">' +
-        '<div class="owt-foot-skip">' +
-          '<button type="button" class="wmod-btn wmod-btn--ghost" data-owt="skip-group">Skip this group</button>' +
-          '<button type="button" class="wmod-btn wmod-btn--ghost" data-owt="skip-rest">Skip remaining</button>' +
+      '<nav class="owt-nav" aria-label="Walkthrough steps">' +
+        '<div class="owt-nav-skips">' +
+          '<button type="button" class="owt-nav-link" data-owt="skip-group">Skip this group</button>' +
+          '<span class="owt-nav-sep" aria-hidden="true">\u00b7</span>' +
+          '<button type="button" class="owt-nav-link" data-owt="skip-rest">Skip remaining</button>' +
         '</div>' +
-        '<div class="owt-foot-nav">' +
-          '<button type="button" class="wmod-btn wmod-btn--ghost" data-owt="back">Back</button>' +
-          '<button type="button" class="wmod-btn wmod-btn--primary" data-owt="next">Next</button>' +
+        '<div class="owt-nav-move">' +
+          '<button type="button" class="owt-nav-link" data-owt="back">Back</button>' +
+          '<button type="button" class="owt-nav-link owt-nav-link--next" data-owt="next">Next</button>' +
         '</div>' +
-      '</div>';
+      '</nav>' +
+      '<div class="owt-body" data-owt="body"></div>';
     var row = hostRow();
     if (row) row.appendChild(aside);
     else document.body.appendChild(aside);
     els = {
       root: aside,
       title: aside.querySelector('#owt-title'),
+      kicker: aside.querySelector('#owt-kicker'),
       body: aside.querySelector('[data-owt="body"]'),
       back: aside.querySelector('[data-owt="back"]'),
       next: aside.querySelector('[data-owt="next"]'),
-      skipGroup: aside.querySelector('[data-owt="skip-group"]')
+      skipGroup: aside.querySelector('[data-owt="skip-group"]'),
+      moreWrap: aside.querySelector('.owt-more-wrap'),
+      moreBtn: aside.querySelector('.owt-more-btn'),
+      morePop: aside.querySelector('.owt-more-pop'),
+      widthBtn: aside.querySelector('.owt-width-btn')
     };
     aside.addEventListener('click', onClick);
     document.addEventListener('keydown', onKey);
+    if (els.widthBtn) {
+      els.widthBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        widthTier = (widthTier + 1) % 4;
+        applyWidth();
+      });
+    }
+    if (els.moreBtn && els.morePop) {
+      els.moreBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var willOpen = els.morePop.classList.contains('hidden');
+        els.morePop.classList.toggle('hidden', !willOpen);
+        els.moreBtn.classList.toggle('is-open', willOpen);
+        els.moreBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        if (willOpen) placeMorePop();
+      });
+      els.morePop.addEventListener('click', onClick);
+      document.addEventListener('click', function (e) {
+        if (!els || !els.morePop || els.morePop.classList.contains('hidden')) return;
+        if (els.moreWrap.contains(e.target) || els.morePop.contains(e.target)) return;
+        closeMore();
+      });
+    }
+    applyWidth();
     return els;
   }
 
@@ -551,6 +659,11 @@
     var isFirst = cur.index === 0;
 
     e.title.textContent = s.title;
+    e.kicker.textContent =
+      (screenIntro ? 'First time here \u00b7 ' : '') +
+      cur.group.label +
+      ' \u00b7 step ' + (cur.groupIndex + 1) + ' of ' + cur.group.steps.length +
+      ' \u00b7 ' + ov.done + ' of ' + ov.total;
 
     var chips = GROUPS.map(function (g) {
       var gs2 = groupStats(st, g);
@@ -572,12 +685,6 @@
     }).join('');
 
     e.body.innerHTML =
-      '<p class="wch-ask-intro">' +
-        (screenIntro ? 'First time here \u00b7 ' : '') +
-        esc(cur.group.label) +
-        ' \u00b7 step ' + (cur.groupIndex + 1) + ' of ' + cur.group.steps.length +
-        ' \u00b7 ' + ov.done + ' of ' + ov.total +
-      '</p>' +
       (s.body ? '<p class="owt-copy">' + s.body + '</p>' : '') +
       (bullets ? '<ul class="owt-bullets">' + bullets + '</ul>' : '') +
       '<div class="owt-chips ws-chips" role="navigation" aria-label="Walkthrough groups">' + chips + '</div>';
@@ -695,13 +802,12 @@
     els.root.hidden = false;
     els.root.classList.remove('wch-docked-hidden');
     markScreenSeen();
-    requestAnimationFrame(function () {
-      try { els.next.focus(); } catch (e) {}
-    });
   }
 
   function close(finished) {
     if (!els || !els.root) return;
+    closeMore();
+    if (els.morePop && els.morePop.parentNode === document.body) els.morePop.remove();
     els.root.hidden = true;
     els.root.classList.add('wch-docked-hidden');
     if (els.root.parentNode) els.root.parentNode.removeChild(els.root);

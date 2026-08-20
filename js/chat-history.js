@@ -355,6 +355,9 @@
       /* Turns (right of chat): flush + tucked under the chat\'s RIGHT edge. */
       '#modules-row.modules-sticky .wch-sidebar.wch-docked.wch-right:not(.wch-unsticky){margin-left:calc(-14px - var(--modules-gap, 8px));padding-left:14px;',
         'border-top-left-radius:0;border-bottom-left-radius:0;border-left:0;animation:wchStickySlideR .42s cubic-bezier(.34,1.45,.64,1) both;}',
+      '#modules-row:has(.wa-pane.is-open) .wch-sidebar.wch-docked.wch-right,',
+      '#modules-row.modules-sticky:has(.wa-pane.is-open) .wch-sidebar.wch-docked.wch-right:not(.wch-unsticky){border-left:1px solid var(--border-strong,var(--border,rgba(0,0,0,0.14)));}',
+      'html.dark #modules-row:has(.wa-pane.is-open) .wch-sidebar.wch-docked.wch-right{border-left-color:rgba(255,255,255,0.16);}',
       '@keyframes wchStickySlideL{from{transform:translateX(26px);opacity:.35}to{transform:none;opacity:1}}',
       '@keyframes wchStickySlideR{from{transform:translateX(-26px);opacity:.35}to{transform:none;opacity:1}}',
       /* Docked-module popovers portal to <body>, so the module never needs

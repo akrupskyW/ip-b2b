@@ -37,11 +37,12 @@
       '.wch-ask-empty{padding:18px 16px;color:var(--text-muted);font-size:13.5px;line-height:1.5;}',
       '.wch-ask-intro{margin:2px 16px 8px;font-size:13px;line-height:1.5;opacity:.82;}',
       '.wch-ask-list{flex:1;overflow-y:auto;padding:4px 10px 14px;}',
-      '.wch-ask-group{margin:8px 0 4px;}',
-      '.wch-ask-group+.wch-ask-group{margin-top:16px;}',
-      '.wch-ask-group-title{display:flex;align-items:center;gap:8px;padding:2px 6px 8px;font-size:14px;font-weight:700;color:var(--text);}',
-      '.wch-ask-group-title .material-symbols-outlined{font-size:18px;opacity:.9;}',
-      '.wch-ask-cards{display:flex;flex-direction:column;gap:6px;}',
+      '.wch-ask-group{margin:0;padding:10px 0 6px;}',
+      '.wch-ask-group+.wch-ask-group{margin-top:8px;padding-top:28px;border-top:1px solid rgba(20,40,80,0.10);}',
+      'html.dark .wch-ask-group+.wch-ask-group{border-top-color:rgba(255,255,255,0.10);}',
+      '.wch-ask-group-title{display:flex;align-items:center;gap:8px;padding:4px 6px 8px;font-family:"WISE Digits","Noto Serif",Georgia,serif;font-size:1.12rem;font-weight:800;letter-spacing:-.01em;line-height:1.2;color:var(--text);}',
+      '.wch-ask-group-title .material-symbols-outlined{font-size:20px;opacity:.9;}',
+      '.wch-ask-cards{display:flex;flex-direction:column;gap:18px;}',
       '.wch-ask-card{position:relative;display:flex;align-items:flex-start;gap:11px;width:100%;padding:11px 12px;border:1px solid rgba(255,255,255,0.09);background:rgba(255,255,255,0.02);border-radius:12px;cursor:pointer;text-align:left;color:inherit;font-family:inherit;}',
       'html:not(.dark) .wch-ask-card{border-color:rgba(20,40,80,0.10);background:rgba(20,40,80,0.015);}',
       '.wch-ask-ico{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;margin-top:1px;background:none;color:var(--primary-ink,var(--primary,#2F6DF6));}',
@@ -51,19 +52,29 @@
       '.wch-ask-card-desc{font-size:13px;line-height:1.45;opacity:.8;}',
       '.wch-ask-insert{position:absolute;top:9px;right:9px;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border:0;background:none;color:var(--text-muted);cursor:pointer;opacity:0;}',
       '.wch-ask-card:hover .wch-ask-insert,.wch-ask-card:focus-within .wch-ask-insert{opacity:.7;}',
-      '.wch-ask-search{display:flex;align-items:center;gap:8px;margin:0 12px 8px;padding:0 14px;height:38px;border:1px solid rgba(20,40,80,0.10);border-radius:999px;background:rgba(20,40,80,0.04);}',
-      'html.dark .wch-ask-search{border-color:rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);}',
-      '.wch-ask-search-input{flex:1 1 auto;min-width:0;border:0;outline:0;background:none;color:inherit;font-family:inherit;font-size:13.5px;}',
-      '.wch-ask-search-clear{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border:0;border-radius:50%;background:transparent;color:var(--text-muted);cursor:pointer;}',
+      '.wch-ask-search{position:relative;display:flex;align-items:center;margin:0 12px 8px;flex-shrink:0;}',
+      '.wch-ask-search > .material-symbols-outlined{position:absolute;left:11px;font-size:18px;opacity:.5;pointer-events:none;}',
+      '.wch-ask-search-input{width:100%;height:38px;box-sizing:border-box;padding:0 32px 0 36px;border-radius:999px;font:inherit;font-size:13.5px;color:inherit;outline:none;background:rgba(20,40,80,0.04);border:1px solid rgba(20,40,80,0.10);transition:border-color .15s ease,box-shadow .15s ease;}',
+      'html.dark .wch-ask-search-input{background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.12);}',
+      '.wch-ask-search-input::placeholder{color:var(--text-subtle);opacity:.8;}',
+      '.wch-ask-search-input:focus,.wch-ask-search:focus-within .wch-ask-search-input{border-color:var(--primary,#2F6DF6);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary,#2F6DF6) 18%,transparent);}',
+      '.wch-ask-search-clear{position:absolute;right:8px;width:22px;height:22px;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer;display:none;align-items:center;justify-content:center;opacity:.6;}',
+      '.wch-ask-search-clear:hover{background:rgba(20,40,80,0.08);opacity:1;}',
+      'html.dark .wch-ask-search-clear:hover{background:rgba(255,255,255,0.12);}',
+      '.wch-ask-search-clear .material-symbols-outlined{font-size:16px;}',
+      '.wch-ask-search.has-q .wch-ask-search-clear{display:flex;}',
       '.wch-ask-panel .wch-head-title{font-family:"WISE Digits","Noto Serif",Georgia,serif;font-weight:800;font-size:1.2rem;letter-spacing:-.01em;line-height:1.16;}',
       '.wch-ask-panel .wch-head-title .material-symbols-outlined{display:none;}',
-      '.wch-ask-filters{display:flex;flex-wrap:wrap;gap:6px;margin:0 12px 10px;}',
+      '.wch-ask-toolbar{flex-shrink:0;display:flex;flex-direction:column;gap:8px;margin:0 12px 8px;}',
+      '.wch-ask-sort{display:flex;flex-wrap:wrap;align-items:center;gap:6px;}',
+      '.wch-ask-filters{display:flex;flex-wrap:wrap;gap:6px;}',
       '.wch-ask-filter{border:1px solid var(--border-strong);background:color-mix(in srgb,var(--primary) 10%,#fff);color:var(--text-muted);border-radius:999px;padding:5px 13px;font-family:inherit;font-size:12.5px;font-weight:500;cursor:pointer;}',
       '.wch-ask-filter:hover{background:color-mix(in srgb,var(--primary) 16%,#fff);border-color:color-mix(in srgb,var(--primary) 40%,var(--border-strong));color:var(--text);}',
       'html.dark .wch-ask-filter{background:color-mix(in srgb,var(--primary-bright,#8B9FAF) 14%,transparent);border-color:var(--primary);}',
       '.wch-ask-filter.is-active{background:var(--primary,#2F6DF6);border-color:var(--primary,#2F6DF6);color:#fff;font-weight:600;}',
+      '.wch-ask-filter.is-empty{opacity:.45;}',
       '.wch-ask-insert .material-symbols-outlined,.wch-ask-prompt-btn .material-symbols-outlined{font-variation-settings:"FILL" 1;}',
-      '.wch-ask-cap{border:1px solid rgba(255,255,255,0.09);background:rgba(255,255,255,0.02);border-radius:12px;padding:12px 13px 11px;}',
+      '.wch-ask-cap{border:0;background:none;border-radius:0;padding:2px 6px 0;cursor:pointer;}',
       '.wch-ask-prompt{position:relative;display:flex;align-items:center;gap:8px;width:100%;padding:7px 9px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);border-radius:9px;cursor:pointer;text-align:left;color:inherit;font-family:inherit;}',
       '.wch-sidebar.wch-ask-panel.wch-docked .wch-ask-list{padding-bottom:18px;}'
     ].join('');
@@ -102,6 +113,7 @@
     var askDocked = false;
     var askQuery = '';
     var askSection = 'all';
+    var askSort = 'catalog';
     var askCloseTimer = null;
     var askConcealTimer = null;
     var askRevealTimer = null;
@@ -121,6 +133,9 @@
           '<div class="panel-more-wrap wch-ask-more-wrap">' +
             '<button type="button" class="panel-more-btn wch-ask-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>' +
             '<div class="topbar-popover hidden wch-ask-more-pop" role="menu">' +
+              '<button type="button" class="topbar-menu-item" data-ask-act="sort-catalog"><span class="material-symbols-outlined topbar-menu-icon">reorder</span><span>Catalog order</span></button>' +
+              '<button type="button" class="topbar-menu-item" data-ask-act="sort-az"><span class="material-symbols-outlined topbar-menu-icon">sort_by_alpha</span><span>Sort A\u2013Z</span></button>' +
+              '<div class="topbar-menu-divider"></div>' +
               '<button type="button" class="topbar-menu-item wch-ask-breakout" data-ask-act="breakout"><span class="material-symbols-outlined topbar-menu-icon">vertical_split</span><span class="wch-ask-breakout-label">Break out as a side module</span></button>' +
               '<div class="topbar-menu-divider"></div>' +
               '<button type="button" class="topbar-menu-item topbar-menu-item--danger" data-ask-act="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close pane</span></button>' +
@@ -132,7 +147,14 @@
       '<div class="wch-ask-search">' +
         '<span class="material-symbols-outlined">search</span>' +
         '<input type="text" class="wch-ask-search-input" placeholder="' + esc((catalog && catalog.searchPlaceholder) || 'Search prompts\u2026') + '" aria-label="Search prompts" autocomplete="off">' +
-        '<button type="button" class="wch-ask-search-clear" title="Clear search" aria-label="Clear search" hidden><span class="material-symbols-outlined">close</span></button>' +
+        '<button type="button" class="wch-ask-search-clear" title="Clear search" aria-label="Clear search"><span class="material-symbols-outlined">close</span></button>' +
+      '</div>' +
+      '<div class="wch-ask-toolbar">' +
+        '<div class="wch-ask-sort" role="group" aria-label="Sort prompts">' +
+          '<button type="button" class="wch-ask-filter is-active" data-ask-sort="catalog" aria-pressed="true">Catalog</button>' +
+          '<button type="button" class="wch-ask-filter" data-ask-sort="az" aria-pressed="false">A\u2013Z</button>' +
+        '</div>' +
+        '<div class="wch-ask-filters" role="group" aria-label="Filter by topic"></div>' +
       '</div>' +
       '<div class="wch-list wch-ask-list" role="list"></div>';
     host.appendChild(askScrim);
@@ -160,6 +182,7 @@
     }
 
     function capHtml(item, sectionIcon) {
+      var first = (item.prompts && item.prompts[0]) || '';
       var prompts = (item.prompts || []).map(function (p) {
         return '<button type="button" class="wch-ask-prompt" data-ask="' + esc(p) + '" title="Ask: ' + esc(p) + '">' +
           '<span class="wch-ask-prompt-text">' + esc(p) + '</span>' +
@@ -172,7 +195,7 @@
         ? '<div class="wch-ask-cap-tools"><b>Behind the scenes</b> ' + item.tools.map(function (t) { return '<code>' + esc(t) + '</code>'; }).join(' \u00B7 ') + '</div>'
         : '';
       var desc = item.desc ? '<span class="wch-ask-cap-desc">' + esc(item.desc) + '</span>' : '';
-      return '<div class="wch-ask-cap">' +
+      return '<div class="wch-ask-cap"' + (first ? ' data-ask="' + esc(first) + '" title="Ask: ' + esc(first) + '"' : '') + '>' +
         '<div class="wch-ask-cap-head">' +
           '<span class="wch-ask-cap-ico"><span class="material-symbols-outlined">' + esc(item.icon || sectionIcon || 'bolt') + '</span></span>' +
           '<span class="wch-ask-cap-titles"><span class="wch-ask-cap-title">' + esc(item.title || '') + '</span>' + desc + '</span>' +
@@ -182,26 +205,82 @@
       '</div>';
     }
 
+    function byTitle(a, b) {
+      return String((a && a.title) || '').localeCompare(String((b && b.title) || ''), undefined, { sensitivity: 'base' });
+    }
+
+    function hayOfItem(it) {
+      return [it.title, it.desc, (it.prompts || []).join(' '), (it.tools || []).join(' ')]
+        .filter(Boolean).join(' ').toLowerCase();
+    }
+
+    function matchItem(it, q) {
+      if (!q) return true;
+      return hayOfItem(it).indexOf(q) !== -1;
+    }
+
+    function sectionHeaderMatches(s, q) {
+      if (!q) return false;
+      return [s.title, s.desc, s.id].filter(Boolean).join(' ').toLowerCase().indexOf(q) !== -1;
+    }
+
+    function syncSearchChrome() {
+      var wrap = askPanel.querySelector('.wch-ask-search');
+      if (wrap) wrap.classList.toggle('has-q', !!(askQuery && String(askQuery).trim()));
+    }
+
+    function syncSortButtons() {
+      askPanel.querySelectorAll('[data-ask-sort]').forEach(function (btn) {
+        var on = (btn.getAttribute('data-ask-sort') || '') === askSort;
+        btn.classList.toggle('is-active', on);
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      if (askMorePop) {
+        askMorePop.querySelectorAll('[data-ask-act^="sort-"]').forEach(function (btn) {
+          var act = btn.getAttribute('data-ask-act');
+          var on = (act === 'sort-az' && askSort === 'az') || (act === 'sort-catalog' && askSort === 'catalog');
+          btn.classList.toggle('is-active', on);
+          btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+      }
+    }
+
+    function renderFilters() {
+      var bar = askPanel.querySelector('.wch-ask-filters');
+      if (!bar) return;
+      if (!catalog) { bar.innerHTML = ''; return; }
+      var q = (askQuery || '').trim().toLowerCase();
+      var sections = catalog.sections || [];
+      if (askSection !== 'all' && !sections.some(function (s) { return s.id === askSection; })) askSection = 'all';
+      var chips = ['<button type="button" class="wch-ask-filter' + (askSection === 'all' ? ' is-active' : '') +
+        '" data-section="all" aria-pressed="' + (askSection === 'all' ? 'true' : 'false') + '">All</button>'];
+      sections.forEach(function (s) {
+        var n = (s.items || []).filter(function (it) {
+          return sectionHeaderMatches(s, q) || matchItem(it, q);
+        }).length;
+        var empty = q && !n;
+        chips.push('<button type="button" class="wch-ask-filter' +
+          (askSection === s.id ? ' is-active' : '') + (empty ? ' is-empty' : '') +
+          '" data-section="' + esc(s.id) + '" aria-pressed="' + (askSection === s.id ? 'true' : 'false') + '"' +
+          (empty ? ' title="No matches in this topic"' : '') + '>' + esc(s.title) + '</button>');
+      });
+      bar.innerHTML = chips.join('');
+    }
+
     function renderCatalog() {
       var q = (askQuery || '').trim().toLowerCase();
-      var matchItem = function (it) {
-        if (!q) return true;
-        var hay = [it.title, it.desc, (it.prompts || []).join(' '), (it.tools || []).join(' ')]
-          .filter(Boolean).join(' ').toLowerCase();
-        return hay.indexOf(q) !== -1;
-      };
-      var sections = catalog.sections;
-      if (askSection !== 'all' && !sections.some(function (s) { return s.id === askSection; })) askSection = 'all';
-      var chips = ['<div class="wch-ask-filters">',
-        '<button type="button" class="wch-ask-filter' + (askSection === 'all' ? ' is-active' : '') + '" data-section="all">All</button>']
-        .concat(sections.map(function (s) {
-          return '<button type="button" class="wch-ask-filter' + (askSection === s.id ? ' is-active' : '') + '" data-section="' + esc(s.id) + '">' + esc(s.title) + '</button>';
-        }))
-        .concat('</div>').join('');
+      var sections = catalog.sections || [];
       var scoped = sections.filter(function (s) { return askSection === 'all' || s.id === askSection; });
       var groups = scoped
-        .map(function (s) { return { s: s, items: (s.items || []).filter(matchItem) }; })
+        .map(function (s) {
+          var items = sectionHeaderMatches(s, q) ? (s.items || []).slice() : (s.items || []).filter(function (it) { return matchItem(it, q); });
+          if (askSort === 'az') items = items.slice().sort(byTitle);
+          return { s: s, items: items };
+        })
         .filter(function (g) { return g.items.length; });
+      if (askSort === 'az') {
+        groups = groups.slice().sort(function (a, b) { return byTitle(a.s, b.s); });
+      }
       var body;
       if (!groups.length) {
         body = q
@@ -216,11 +295,14 @@
           '</div>';
         }).join('');
       }
-      askList.innerHTML = chips + body;
+      askList.innerHTML = body;
     }
 
     function renderList() {
       if (!askList) return;
+      syncSearchChrome();
+      syncSortButtons();
+      renderFilters();
       if (catalog) { renderCatalog(); return; }
       var groups = groupsOf();
       var q = (askQuery || '').trim().toLowerCase();
@@ -236,6 +318,11 @@
             };
           })
           .filter(function (g) { return g.cards.length; });
+      }
+      if (askSort === 'az') {
+        groups = groups.slice().sort(byTitle).map(function (g) {
+          return { title: g.title, icon: g.icon, cards: (g.cards || []).slice().sort(byTitle) };
+        });
       }
       if (!groupsOf().length) {
         askList.innerHTML = '<div class="wch-ask-empty">No suggestions on this page yet — just type a question in your own words and I\u2019ll route it to the right agents.</div>';
@@ -255,14 +342,24 @@
 
     function applyQuery(v) {
       askQuery = v || '';
-      var clr = askPanel.querySelector('.wch-ask-search-clear');
-      if (clr) clr.hidden = !askQuery;
+      syncSearchChrome();
       renderList();
     }
     function clearQuery() {
       var inp = askPanel.querySelector('.wch-ask-search-input');
       if (inp) { inp.value = ''; inp.focus(); }
       applyQuery('');
+    }
+    function setSort(mode) {
+      askSort = mode === 'az' ? 'az' : 'catalog';
+      syncSortButtons();
+      renderList();
+      if (askList) askList.scrollTop = 0;
+    }
+    function focusSearch() {
+      var inp = askPanel.querySelector('.wch-ask-search-input');
+      if (!inp) return;
+      setTimeout(function () { try { inp.focus(); } catch (_) {} }, 40);
     }
 
     function updateBreakBtn() {
@@ -369,7 +466,7 @@
     }
 
     function open() {
-      if (askDocked) { clearTimeout(askConcealTimer); renderList(); revealDocked(); return; }
+      if (askDocked) { clearTimeout(askConcealTimer); renderList(); revealDocked(); focusSearch(); return; }
       if (typeof opts.onBeforeOpen === 'function') {
         try { opts.onBeforeOpen(); } catch (_) {}
       }
@@ -380,6 +477,7 @@
       askPanel.classList.add('wch-open');
       askScrim.classList.add('wch-open');
       document.addEventListener('keydown', onKey);
+      focusSearch();
     }
 
     function close() {
@@ -436,8 +534,11 @@
         askMorePop.style.position = 'fixed';
         askMorePop.style.zIndex = '3000';
         var w = askMorePop.offsetWidth || 220;
+        var h = askMorePop.offsetHeight || 120;
         var r = askMoreBtn.getBoundingClientRect();
-        askMorePop.style.top = (r.bottom + 6) + 'px';
+        var top = r.top - h - 6;
+        if (top < 6) top = r.bottom + 6;
+        askMorePop.style.top = Math.max(6, top) + 'px';
         askMorePop.style.left = Math.max(6, Math.min(r.right - w, window.innerWidth - w - 6)) + 'px';
         askMorePop.style.right = 'auto';
       }
@@ -449,21 +550,46 @@
       closeMore();
       if (act === 'breakout') setDocked(!askDocked);
       else if (act === 'close') close();
+      else if (act === 'sort-az') setSort('az');
+      else if (act === 'sort-catalog') setSort('catalog');
     });
     document.addEventListener('click', function (e) {
       if (!askMorePop.classList.contains('hidden') && !askMoreWrap.contains(e.target) && !askMorePop.contains(e.target)) closeMore();
     });
 
+    var askSearchWrap = askPanel.querySelector('.wch-ask-search');
     var askSearchInput = askPanel.querySelector('.wch-ask-search-input');
     var askSearchClear = askPanel.querySelector('.wch-ask-search-clear');
-    if (askSearchInput) askSearchInput.addEventListener('input', function () { applyQuery(askSearchInput.value); });
-    if (askSearchClear) askSearchClear.addEventListener('click', clearQuery);
+    if (askSearchWrap) {
+      askSearchWrap.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+      askSearchWrap.addEventListener('click', function (e) {
+        if (e.target.closest('.wch-ask-search-clear')) return;
+        if (askSearchInput && e.target !== askSearchInput) askSearchInput.focus();
+      });
+    }
+    if (askSearchInput) {
+      askSearchInput.addEventListener('keydown', function (e) { e.stopPropagation(); });
+      askSearchInput.addEventListener('input', function () { applyQuery(askSearchInput.value); });
+    }
+    if (askSearchClear) askSearchClear.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      clearQuery();
+    });
 
+    askPanel.addEventListener('mousedown', function (e) { e.stopPropagation(); });
     askPanel.addEventListener('click', function (e) {
-      var filter = e.target.closest('.wch-ask-filter');
+      e.stopPropagation();
+      var sortBtn = e.target.closest('[data-ask-sort]');
+      if (sortBtn) {
+        setSort(sortBtn.getAttribute('data-ask-sort') || 'catalog');
+        return;
+      }
+      var filter = e.target.closest('.wch-ask-filter[data-section]');
       if (filter) {
         askSection = filter.getAttribute('data-section') || 'all';
         renderList();
+        if (askList) askList.scrollTop = 0;
         return;
       }
       var card = e.target.closest('[data-ask]');

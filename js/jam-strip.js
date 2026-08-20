@@ -28,7 +28,8 @@
  *
  * The strip mounts into #menu-panel .menu-inner and is CSS-gated so it
  * only shows when the panel is BOTH pivoted (horizontal top bar) and in
- * Minimal UI. Nothing autoplays — audio starts only on a click.
+ * Minimal UI. Turning the jam strip on from Appearance starts Tetris;
+ * other tracks start only on an explicit play / chip click.
  */
 
 /* ---- Note helpers -------------------------------------------------- */
@@ -223,6 +224,9 @@ const SONG_ORDER = [
   'imperial', 'seven', 'smoke', 'megalovania', 'pirates', 'takeonme',
   'rickroll',
 ];
+
+/** Default when the jam strip is switched on, or when nothing has been picked. */
+const DEFAULT_SONG_ID = 'tetris';
 
 /* ---- Iconic click stabs ---------------------------------------------- */
 /* Hand-picked micro-phrases — the instantly recognizable hook of each track,
@@ -518,7 +522,7 @@ function toggle(songId) {
   if (player.playing && (!songId || songId === player.songId)) {
     stop();
   } else {
-    play(songId || player.songId || SONG_ORDER[0]);
+    play(songId || player.songId || DEFAULT_SONG_ID);
   }
 }
 
@@ -542,7 +546,7 @@ export function onJamState(cb) {
 }
 /** Play a track (or resume the last), toggling it off if it's already playing. */
 export function toggleJam(songId) { toggle(songId); }
-export function playJam(songId) { play(songId || player.songId || SONG_ORDER[0]); }
+export function playJam(songId) { play(songId || player.songId || DEFAULT_SONG_ID); }
 export function stopJam() { stop(); }
 export function isJamPlaying() { return !!player.playing; }
 export function currentJamSongId() { return player.songId || null; }
@@ -624,17 +628,9 @@ function storedSongId() {
   } catch (_) { return null; }
 }
 
-/** Pick a random track from the library. Used to seed a fresh visit so the jam
-    strip doesn't always default to the same tune on load. */
-function randomSongId() {
-  return SONG_ORDER[Math.floor(Math.random() * SONG_ORDER.length)];
-}
-
 // Seed the in-memory choice: honour the user's last explicit pick if there is
-// one, otherwise start from a RANDOM track so a fresh load isn't always the
-// same tune. This seed is NOT persisted — only an actual play() writes the
-// choice — so an un-played visit re-randomizes on the next load.
-player.songId = storedSongId() || randomSongId();
+// one, otherwise Tetris — the track that starts when the jam strip is turned on.
+player.songId = storedSongId() || DEFAULT_SONG_ID;
 
 /** True only when the user explicitly turned the jam strip on (default off). */
 export function isJamStripOn() {
@@ -652,6 +648,8 @@ export function applyJamStrip(on, persist = true) {
   if (panel) panel.classList.toggle('jam-off', !on);
   if (persist) { try { localStorage.setItem(JAM_KEY, on ? '1' : '0'); } catch (_) {} }
   if (!on && player.playing) stop();
+  // User toggle only (`persist`): a restore on load must not autoplay.
+  if (on && persist) play(DEFAULT_SONG_ID);
 }
 
 /** Restore the persisted on/off state onto the panel (without persisting). */
@@ -754,7 +752,7 @@ function onGlobalButtonClick(ev) {
   if (now - lastStabAt < 120) return;
   lastStabAt = now;
 
-  playStab(player.songId || storedSongId() || SONG_ORDER[0], stabHash(el));
+  playStab(player.songId || storedSongId() || DEFAULT_SONG_ID, stabHash(el));
 }
 
 // Capture phase so stopPropagation() in feature code can't mute the fun.

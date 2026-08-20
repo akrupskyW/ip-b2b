@@ -18,7 +18,7 @@ import {
   setMenuPivot,
 } from './agent-menu.js';
 import { initLirTooltip } from './lir-tooltip.js';
-import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, applyFullBleed, isFullBleedOn, applyColorblind, isColorblindOn, pageAppearanceDefault } from './topbar.js';
+import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, restoreFullBleed, applyColorblind, isColorblindOn, pageAppearanceDefault } from './topbar.js';
 import { isJamStripOn, applyJamStrip } from './jam-strip.js';
 import { mountWISEcodeAIDock, setWISEcodeAIDockPosition, wiseaiDockMode, writeWISEcodeAIDockState, isWISEcodeAIClosed, restartWISEcodeAIChat, setWISEcodeAICollapsed } from './wiseai-dock.js';
 import { buildAppearanceBody, wireAppearancePopover, buildUserMenuBody, performSignOut } from './appearance-menu.js';
@@ -349,8 +349,10 @@ function collapseNavRail() {
 function applyBodyAppearanceDefaults() {
   const pivot = pageAppearanceDefault('defaultPivot');
   if (pivot !== null) setMenuPivot(pivot);
-  const fullBleed = pageAppearanceDefault('defaultFullBleed');
-  if (fullBleed !== null) applyFullBleed(fullBleed);
+  /* Chat-only full bleed is the app-wide default (js/topbar.js). Page-level
+     `data-default-full-bleed` used to call applyFullBleed() which persisted
+     globally and turned the chat stretch off after visiting Overview. */
+  restoreFullBleed();
   const header = pageAppearanceDefault('defaultHeader');
   if (header !== null) applyHeaderFloat(header);
   /* Pages can open with the nav collapsed to its icon rail by default via

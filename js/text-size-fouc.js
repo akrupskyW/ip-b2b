@@ -9,3 +9,24 @@
     document.documentElement.style.setProperty('--chat-line-height', String(lines[s]));
   } catch (_) {}
 })();
+
+/** FOUC guard — Chat-only full bleed is on by default. Keep in sync with
+    resolveFullBleedMode() in js/topbar.js so the first paint already has
+    `full-bleed` + `fb-chat-only` instead of flashing contained chat. */
+(function () {
+  try {
+    var mode = localStorage.getItem('wise-fb-mode');
+    if (mode !== 'chat' && mode !== 'all' && mode !== 'off') {
+      var everything = localStorage.getItem('wise-full-bleed') === '1';
+      var chatOnly = localStorage.getItem('wise-fb-chat-only');
+      mode = (everything && chatOnly === '0') ? 'all' : 'chat';
+    }
+    var root = document.documentElement;
+    if (mode === 'off') {
+      root.classList.remove('full-bleed', 'fb-chat-only');
+    } else {
+      root.classList.add('full-bleed');
+      root.classList.toggle('fb-chat-only', mode === 'chat');
+    }
+  } catch (_) {}
+})();

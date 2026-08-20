@@ -181,12 +181,20 @@
        these blocks width:100%, so on the full-width WISEcodeAI surface they stretch
        edge-to-edge and the cards left-float. Let the card cluster shrink to its
        content and center it (the welcome column is already align-items:center);
-       the max-width fits the full set on wide screens and caps + scrolls on
-       narrower ones. */
+       the max-width fits the full set on wide screens. Full-size chat shows
+       every chip; a single-pane dock wraps them into three rows inside
+       `.ws-chips-scroll` and scrolls extra chips vertically. */
     #wa-chat .sc-welcome > .ws-scorecards-section,
     #wa-chat .sc-welcome > .ws-chips-wrap,
     #wa-chat .sc-welcome > .ws-chips {
       width: auto;
+      max-width: min(100%, 1040px);
+      margin-left: auto;
+      margin-right: auto;
+    }
+    #wa-chat .sc-welcome > .ws-chips-scroll {
+      width: 100%;
+      min-width: 0;
       max-width: min(100%, 1040px);
       margin-left: auto;
       margin-right: auto;
@@ -355,6 +363,14 @@
       border-bottom-left-radius: 0;
       border-left: 0;
       animation: stickySlideRight .42s cubic-bezier(.34, 1.45, .64, 1) both;
+    }
+    /* Output pane + Turns / walkthrough: restore a vertical left edge. */
+    #modules-row:has(.wa-pane.is-open) .wch-sidebar.wch-docked.wch-right,
+    #modules-row.modules-sticky:has(.wa-pane.is-open) .wch-sidebar.wch-docked.wch-right:not(.wch-unsticky) {
+      border-left: 1px solid var(--border-strong, var(--border)) !important;
+    }
+    html.dark #modules-row:has(.wa-pane.is-open) .wch-sidebar.wch-docked.wch-right {
+      border-left-color: rgba(255, 255, 255, 0.22) !important;
     }
     /* Emerge from behind the chat: start mostly hidden under it, slide outward. */
     @keyframes stickySlideLeft  { from { transform: translateX(26px); opacity: .35; } to { transform: none; opacity: 1; } }
@@ -1478,10 +1494,12 @@
        the left, with the chart/result name to its right. Tapping it re-opens the
        full module. It's a <div role="button"> (not a <button>) so it can safely
        wrap the inner content of the surfaced view. */
+    .sc-surface-slot { display: block; min-width: 0; max-width: 100%; }
     .sc-surface-card {
-      position: relative;
-      display: inline-flex; flex-direction: column; align-items: stretch; width: auto; max-width: min(360px, 100%);
-      text-align: left; margin: 4px 0 0; padding: 6px;
+      position: relative; box-sizing: border-box;
+      display: flex; flex-direction: column; align-items: stretch;
+      width: 100%; max-width: min(360px, 100%); min-width: 0;
+      text-align: left; margin: 4px 0 0; padding: 6px 10px 6px 6px;
       /* Thin, light gold-yellow stroke so the output chips echo the amber
          activity-strip ticks on the chat's right edge — but the fill matches the
          chat container's own background so only the outline reads as gold. */
@@ -1489,8 +1507,9 @@
       border-radius: 12px; cursor: pointer; font-family: inherit;
       transition: border-color .15s ease, box-shadow .15s ease, transform .05s ease, max-width .35s ease;
     }
-    /* The chip's top row: thumbnail(s) + title. */
-    .sc-surface-head { display: flex; align-items: center; gap: 10px; }
+    /* The chip's top row: thumbnail(s) + title. min-width:0 so the title column
+       can shrink inside the docked chat instead of overflowing and clipping. */
+    .sc-surface-head { display: flex; align-items: center; gap: 10px; min-width: 0; width: 100%; }
     /* Dark chat card uses #1A2339 (not --surface), so match it here too. */
     html.dark .sc-surface-card { background: #1A2339; }
     html.dark.chat-tint .sc-surface-card { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
@@ -1510,7 +1529,20 @@
     /* Body column — the title now stacks above a small meta row (timestamp +
        version), so every output chip is time-stamped and versioned. */
     .sc-surface-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-    .sc-surface-title { min-width: 0; font-size: var(--fs-label); font-weight: 700; color: var(--text); line-height: 1.3; white-space: normal; overflow-wrap: anywhere; }
+    /* Two-line title: wrap at the middot (two <span>s) when present, otherwise
+       clamp a long single name to two lines so it never clips off the right. */
+    .sc-surface-title {
+      min-width: 0; font-size: var(--fs-label); font-weight: 700; color: var(--text);
+      line-height: 1.3; white-space: normal; overflow-wrap: anywhere; word-break: break-word;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    .sc-surface-title > span {
+      min-width: 0; display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1;
+      -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .sc-surface-title:not(:has(> span)) {
+      display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
     .sc-surface-stamp { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
     .sc-surface-time {
       display: inline-flex; align-items: center; gap: 3px;
@@ -1532,7 +1564,6 @@
     .sc-surface-ver-count { font-weight: 600; opacity: .85; }
 
     /* ── Surface chip meta (timestamp + version live in the turn's ⋯ menu) ── */
-    .sc-surface-slot { display: block; }
     .sc-surface-metabar { display: inline-flex; align-items: center; gap: 8px; }
     .sc-surface-ver-num {
       font-size: 10px; font-weight: 600; letter-spacing: .02em; white-space: nowrap;
@@ -7424,7 +7455,7 @@
        surfaced RESULTS move into the panes on the right. */
     const INTENTS = [
       { intent: 'topbrands', icon: 'leaderboard',   label: 'Top 3 brands · WISEscore \u2265 50', ask: 'Create a comparison chart of the top three brands with more than 50 UPCs that are in the top half of the WISE score.' },
-      { intent: 'kraft',   icon: 'inventory_2',     label: 'How many SKUs does Kraft have and what percent are ultra processed?', ask: 'How many SKUs does Kraft have and what percent are ultra processed?' },
+      { intent: 'kraft',   icon: 'inventory_2',     label: 'Kraft SKUs \u00b7 % UPF', ask: 'How many SKUs does Kraft have and what percent are ultra processed?' },
       { intent: 'sprouts', icon: 'storefront',      label: 'How many foods does Sprouts have?', ask: 'How many foods does the Sprouts retailer have?' },
       { intent: 'gras',    icon: 'verified',        label: 'How many ingredients have GRAS status?', ask: 'How many ingredients do we have some GRAS classification for?' },
       { intent: 'gras_upf', icon: 'gavel',          label: 'Summarize the GRAS + UPF announcement', ask: 'Summarize the Kennedy/Diamantas GRAS + UPF announcement' },
@@ -7741,6 +7772,14 @@
       const versions = Array.isArray(o.versions) ? o.versions : null;
       const count = versions ? versions.length : 1;
       const version = o.version || count;
+      const rawTitle = String(title == null ? '' : title).trim() || 'Output';
+      /* Compound names ("10 worst foods · gut & immune request") wrap at the
+         middot so the chip title always has two lines instead of running off
+         the right edge of the docked chat. */
+      const mid = rawTitle.indexOf(' · ');
+      const titleHtml = mid > 0
+        ? `<span>${esc(rawTitle.slice(0, mid))} ·</span><span>${esc(rawTitle.slice(mid + 3))}</span>`
+        : esc(rawTitle);
 
       let thumb;
       if (versions && versions.length > 1) {
@@ -7748,7 +7787,7 @@
         thumb = `<div class="sc-surface-stack">` + versions.map((entry, i) => {
           const isLatest = i === versions.length - 1;
           const vn = entry.version || (i + 1);
-          return `<div class="sc-surface-thumb ${isLatest ? 'is-latest' : 'is-old'}" role="button" tabindex="0" data-surface-ver="${blockId}" data-ver="${vn}" aria-label="Open version ${vn} of “${esc(title)}” in the ${esc(paneName)} panel" title="Open v${vn} in the ${esc(paneName)} panel">
+          return `<div class="sc-surface-thumb ${isLatest ? 'is-latest' : 'is-old'}" role="button" tabindex="0" data-surface-ver="${blockId}" data-ver="${vn}" aria-label="Open version ${vn} of “${esc(rawTitle)}” in the ${esc(paneName)} panel" title="Open v${vn} in the ${esc(paneName)} panel">
               <div class="sc-surface-thumb-inner">${entry.previewHtml}</div>
               <span class="sc-surface-vtag">v${vn}</span>
             </div>`;
@@ -7762,11 +7801,11 @@
          only the thumbnail + title; charts no longer expand inline here — use
          the expand icon on the chart in the right sticky module instead. */
       return `<div class="sc-surface-slot">
-          <div class="sc-surface-card" role="button" tabindex="0" data-surface="${blockId}" data-activity="output"${count > 1 ? ' data-activity-multi' : ''} aria-label="Open “${esc(title)}” in the ${esc(paneName)} panel — version ${version}${count > 1 ? ` of ${count}` : ''}, ${esc(time)}">
+          <div class="sc-surface-card" role="button" tabindex="0" data-surface="${blockId}" data-activity="output"${count > 1 ? ' data-activity-multi' : ''} aria-label="Open “${esc(rawTitle)}” in the ${esc(paneName)} panel — version ${version}${count > 1 ? ` of ${count}` : ''}, ${esc(time)}">
             <div class="sc-surface-head">
               ${thumb}
               <div class="sc-surface-body">
-                <div class="sc-surface-title">${esc(title)}</div>
+                <div class="sc-surface-title">${titleHtml}</div>
               </div>
             </div>
           </div>

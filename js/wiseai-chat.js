@@ -1369,12 +1369,15 @@ export function injectChatExtras() {
     .wch-ask-empty { padding: 18px 16px; color: var(--text-muted); font-size: 13.5px; line-height: 1.5; }
     .wch-ask-intro { margin: 2px 16px 8px; font-size: 13px; line-height: 1.5; opacity: .82; }
     .wch-ask-list { flex: 1; overflow-y: auto; padding: 4px 10px 14px; }
-    .wch-ask-group { margin: 8px 0 4px; }
-    .wch-ask-group + .wch-ask-group { margin-top: 16px; }
-    .wch-ask-group-title { display: flex; align-items: center; gap: 8px; padding: 2px 6px 8px;
-      font-size: 14px; font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--text); opacity: 1; }
-    .wch-ask-group-title .material-symbols-outlined { font-size: 18px; opacity: .9; }
-    .wch-ask-cards { display: flex; flex-direction: column; gap: 6px; }
+    .wch-ask-group { margin: 0; padding: 10px 0 6px; }
+    .wch-ask-group + .wch-ask-group { margin-top: 8px; padding-top: 28px;
+      border-top: 1px solid rgba(20,40,80,0.10); }
+    html.dark .wch-ask-group + .wch-ask-group { border-top-color: rgba(255,255,255,0.10); }
+    .wch-ask-group-title { display: flex; align-items: center; gap: 8px; padding: 4px 6px 8px;
+      font-family: "WISE Digits", "Noto Serif", Georgia, serif; font-size: 1.12rem; font-weight: 800;
+      letter-spacing: -.01em; line-height: 1.2; text-transform: none; color: var(--text); opacity: 1; }
+    .wch-ask-group-title .material-symbols-outlined { font-size: 20px; opacity: .9; }
+    .wch-ask-cards { display: flex; flex-direction: column; gap: 18px; }
 
     .wch-ask-card { position: relative; display: flex; align-items: flex-start; gap: 11px; width: 100%;
       padding: 11px 12px; border: 1px solid rgba(255,255,255,0.09); background: rgba(255,255,255,0.02);
@@ -1419,22 +1422,26 @@ export function injectChatExtras() {
     .wch-head-btn .material-symbols-outlined { font-size: 19px; }
 
     /* Search row — pinned above the prompt list so long libraries can be
-       filtered by keyword (mirrors the Turns module's search field). */
-    .wch-ask-search { display: flex; align-items: center; gap: 8px; margin: 0 12px 8px; padding: 0 14px;
-      height: 38px; border: 1px solid rgba(20,40,80,0.10); border-radius: 999px; background: rgba(20,40,80,0.04);
-      transition: border-color .15s ease, box-shadow .15s ease, background .15s ease; }
-    html.dark .wch-ask-search { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); }
-    .wch-ask-search:focus-within { border-color: var(--primary, #2F6DF6);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary, #2F6DF6) 18%, transparent); }
-    .wch-ask-search > .material-symbols-outlined { font-size: 18px; opacity: .55; }
-    .wch-ask-search-input { flex: 1 1 auto; min-width: 0; border: 0; outline: 0; background: none; color: inherit;
-      font-family: inherit; font-size: 13.5px; }
+       filtered by keyword (mirrors the Turns / History search field: icon
+       overlay with pointer-events:none, clear only when there is a query). */
+    .wch-ask-search { position: relative; display: flex; align-items: center; margin: 0 12px 8px; flex-shrink: 0; }
+    .wch-ask-search > .material-symbols-outlined { position: absolute; left: 11px; font-size: 18px; opacity: .5; pointer-events: none; }
+    .wch-ask-search-input { width: 100%; height: 38px; box-sizing: border-box; padding: 0 32px 0 36px;
+      border-radius: 999px; font: inherit; font-size: 13.5px; color: inherit; outline: none;
+      background: rgba(20,40,80,0.04); border: 1px solid rgba(20,40,80,0.10);
+      transition: border-color .15s ease, box-shadow .15s ease; }
+    html.dark .wch-ask-search-input { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
     .wch-ask-search-input::placeholder { color: var(--text-subtle); opacity: .8; }
-    .wch-ask-search-clear { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px;
-      border: 0; border-radius: 50%; background: transparent; color: var(--text-muted); cursor: pointer; opacity: .7; }
+    .wch-ask-search-input:focus, .wch-ask-search:focus-within .wch-ask-search-input {
+      border-color: var(--primary, #2F6DF6);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary, #2F6DF6) 18%, transparent); }
+    .wch-ask-search-clear { position: absolute; right: 8px; width: 22px; height: 22px;
+      border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer;
+      display: none; align-items: center; justify-content: center; opacity: .6; }
     .wch-ask-search-clear:hover { background: rgba(20,40,80,0.08); color: var(--text); opacity: 1; }
     html.dark .wch-ask-search-clear:hover { background: rgba(255,255,255,0.12); }
     .wch-ask-search-clear .material-symbols-outlined { font-size: 16px; }
+    .wch-ask-search.has-q .wch-ask-search-clear { display: flex; }
 
     /* "What can I ask?" header — serif title (like the docked module headers),
        and no leading icon in front of it. */
@@ -1455,8 +1462,11 @@ export function injectChatExtras() {
        tool footer. A row of filter chips above the list scopes to one section. */
     /* Filter chips read exactly like the transcript's intent chips (.chip /
        .ws-intent-chip): the composer's blue-tinted surface, --border-strong,
-       muted text, regular weight — never a bold white pill. */
-    .wch-ask-filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 12px 10px; }
+       muted text, regular weight — never a bold white pill. Pinned in the
+       toolbar (not inside the scrolling list) so search / tags / sort stay put. */
+    .wch-ask-toolbar { flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; margin: 0 12px 8px; }
+    .wch-ask-sort { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+    .wch-ask-filters { display: flex; flex-wrap: wrap; gap: 6px; }
     .wch-ask-filter { border: 1px solid var(--border-strong); background: color-mix(in srgb, var(--primary) 10%, #fff);
       color: var(--text-muted); border-radius: 999px; padding: 5px 13px; font-family: inherit;
       font-size: 12.5px; font-weight: 500; cursor: pointer; white-space: nowrap;
@@ -1469,12 +1479,14 @@ export function injectChatExtras() {
     .wch-ask-filter.is-active:hover { background: color-mix(in srgb, var(--primary) 90%, #000);
       border-color: color-mix(in srgb, var(--primary) 90%, #000); color: #fff; }
     html.dark .wch-ask-filter.is-active { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .wch-ask-filter.is-empty { opacity: .45; }
 
-    .wch-ask-group-desc { padding: 0 6px 10px; font-size: 13px; line-height: 1.5; opacity: .8; }
+    .wch-ask-group-desc { padding: 0 6px 12px; font-size: 13px; line-height: 1.5; opacity: .8; }
 
-    .wch-ask-cap { border: 1px solid rgba(255,255,255,0.09); background: rgba(255,255,255,0.02);
-      border-radius: 12px; padding: 12px 13px 11px; }
-    html:not(.dark) .wch-ask-cap { border-color: rgba(20,40,80,0.10); background: rgba(20,40,80,0.015); }
+    .wch-ask-cap { border: 0; background: none; border-radius: 0; padding: 2px 6px 0; cursor: pointer; }
+    html:not(.dark) .wch-ask-cap { border: 0; background: none; }
+    .wch-ask-cap:hover { background: none; border: 0; }
+    html:not(.dark) .wch-ask-cap:hover { background: none; border: 0; }
     .wch-ask-cap-head { display: flex; align-items: flex-start; gap: 11px; }
     .wch-ask-cap-ico { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
       margin-top: 1px; background: none; color: var(--primary-ink, var(--primary, #2F6DF6)); }
@@ -1483,7 +1495,7 @@ export function injectChatExtras() {
     .wch-ask-cap-title { font-size: 15px; font-weight: 650; line-height: 1.35; }
     .wch-ask-cap-desc { font-size: 13px; line-height: 1.48; opacity: .8; }
 
-    .wch-ask-prompts { display: flex; flex-direction: column; gap: 5px; margin: 9px 0 0; }
+    .wch-ask-prompts { display: flex; flex-direction: column; gap: 5px; margin: 10px 0 0; }
     .wch-ask-prompt { position: relative; display: flex; align-items: center; gap: 8px; width: 100%;
       padding: 7px 9px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02);
       border-radius: 9px; cursor: pointer; text-align: left; color: inherit; font-family: inherit;
@@ -1609,24 +1621,30 @@ export function injectChatExtras() {
     /* ── Grouped, two-column three-dot menu ──────────────────────────────────
        The chat "More options" popover runs a long list of controls. Rather than
        one tall single column, its rows are bucketed into titled GROUP CARDS that
-       flow through a responsive multi-column (masonry) layout — the exact pattern
-       as the primary-nav Appearance popover (.wise-popover--appearance): each
-       group is break-inside:avoid so a whole section (and its sub-controls) always
-       stays in ONE column, and column-width gives two columns on a wide popover
-       and collapses to one on a narrow/mobile clamp with no media query.
-       groupifyChatMenu() (js/wiseai-chat.js) reorganizes the flat rows into these
-       cards and tags the popover with .sc-menu-grouped. */
+       sit in two flex columns — Conversation/Data/Display on the left,
+       Background/Activity on the right. Flex (not CSS column-width) keeps
+       hit-testing honest: Chromium multi-column layouts often swallow clicks
+       in the second column. groupifyChatMenu() reorganizes the flat rows into
+       these cards and tags the popover with .sc-menu-grouped. */
     .topbar-popover.sc-menu-grouped {
       width: 470px; min-width: 0; max-width: calc(100vw - 24px);
-      padding: 8px; column-width: 216px; column-gap: 8px;
+      padding: 8px;
+      align-items: flex-start; gap: 8px;
       max-height: min(82vh, 640px); overflow: hidden auto;
+      pointer-events: auto;
     }
+    /* Flex only while shown — .sc-menu-grouped { display:flex } would tie
+       .topbar-popover.hidden { display:none } (same specificity, later sheet
+       wins) and the menu could never close after the first open. */
+    .topbar-popover.sc-menu-grouped:not(.hidden) {
+      display: flex; flex-direction: row; flex-wrap: wrap;
+    }
+    .topbar-popover.sc-menu-grouped.hidden { display: none; }
+    .sc-menu-col { flex: 1 1 216px; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
     .sc-menu-group {
-      break-inside: avoid; -webkit-column-break-inside: avoid; page-break-inside: avoid;
-      display: block; margin: 0 0 8px; padding: 2px 0 6px;
+      display: block; margin: 0; padding: 2px 0 6px;
       border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2);
     }
-    .sc-menu-group:last-child { margin-bottom: 0; }
     html.dark .sc-menu-group { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.09); }
     .sc-menu-group-head {
       padding: 8px 12px 4px; font-size: 11px; letter-spacing: 0.08em; font-weight: 700;
@@ -1660,6 +1678,80 @@ export function injectChatExtras() {
     .sc-menu-grouped .sc-bganim-style .sc-stream-seg { margin-left: 0; }
     .sc-menu-grouped .sc-bganim-playback { flex-direction: column; align-items: stretch; gap: 6px; }
     .sc-menu-grouped .sc-bganim-playback .sc-bganim-pp { margin-left: 0; justify-content: center; }
+
+    /* Nested Admin popover — a kebab in the grouped menu's top-right opens a
+       small card with the master "Admin controls" switch. Off hides every
+       Admin-badged row (and chrome that belongs to one) so the menu shows only
+       the real member-facing items. Trigger is a full circle, never a tile. */
+    .topbar-popover.sc-menu-grouped { position: relative; }
+    .sc-menu-admin-wrap { position: absolute; top: 4px; right: 4px; z-index: 3; }
+    .sc-menu-admin-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%;
+      background: transparent; color: var(--text-subtle); cursor: pointer;
+      opacity: 0.78; transition: background .15s ease, color .15s ease, opacity .15s ease;
+    }
+    .sc-menu-admin-btn .material-symbols-outlined { font-size: 18px !important; line-height: 1 !important; }
+    .sc-menu-admin-btn:hover { opacity: 1; color: var(--text); background: var(--surface-3); }
+    .sc-menu-admin-btn.is-open,
+    .sc-menu-admin-btn.is-admin-on { opacity: 1; color: rgb(219, 39, 119); }
+    .sc-menu-admin-btn.is-open { background: rgba(236, 72, 153, 0.14); }
+    html.dark .sc-menu-admin-btn:hover { background: rgba(255,255,255,0.07); }
+    html.dark .sc-menu-admin-btn.is-open { background: rgba(236, 72, 153, 0.18); }
+    .sc-menu-grouped > .sc-menu-col:last-child > .sc-menu-group:first-child > .sc-menu-group-head {
+      padding-right: 36px;
+    }
+    .sc-admin-pop {
+      position: fixed; min-width: 228px; padding: 6px; z-index: 2147483646;
+      background: var(--surface-2); border: 1px solid var(--border-strong);
+      border-radius: 14px; box-shadow: var(--shadow-card);
+    }
+    .sc-admin-pop.hidden { display: none; }
+    html.dark .sc-admin-pop {
+      background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+      border-color: rgba(37, 80, 124, 0.22);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    }
+    .sc-admin-pop::before, .sc-admin-pop::after { content: ''; position: absolute; pointer-events: none; }
+    .sc-admin-pop:not(.is-side)::before {
+      top: 100%; right: 10px; border: 6px solid transparent; border-top-color: var(--border-strong);
+    }
+    .sc-admin-pop:not(.is-side)::after {
+      top: 100%; right: 11px; transform: translateY(-1px);
+      border: 5px solid transparent; border-top-color: var(--surface-2);
+    }
+    html.dark .sc-admin-pop:not(.is-side)::after { border-top-color: #1A2339; }
+    .sc-admin-pop.is-side-left::before {
+      top: 50%; right: -6px; transform: translateY(-50%);
+      border: 6px solid transparent; border-left-color: var(--border-strong);
+    }
+    .sc-admin-pop.is-side-left::after {
+      top: 50%; right: -4px; transform: translateY(-50%);
+      border: 5px solid transparent; border-left-color: var(--surface-2);
+    }
+    html.dark .sc-admin-pop.is-side-left::after { border-left-color: #1A2339; }
+    .sc-admin-pop.is-side-right::before {
+      top: 50%; left: -6px; transform: translateY(-50%);
+      border: 6px solid transparent; border-right-color: var(--border-strong);
+    }
+    .sc-admin-pop.is-side-right::after {
+      top: 50%; left: -4px; transform: translateY(-50%);
+      border: 5px solid transparent; border-right-color: var(--surface-2);
+    }
+    html.dark .sc-admin-pop.is-side-right::after { border-right-color: #1A2339; }
+    .sc-admin-pop .topbar-menu-item { margin: 0; width: 100%; border-radius: 9px; padding: 6px 7px; gap: 6px; }
+    .sc-admin-pop .topbar-menu-icon { font-size: 17px !important; }
+    .topbar-popover.sc-menu-admin-off .topbar-menu-item--admin,
+    .topbar-popover.sc-menu-admin-off .topbar-menu-item:has(.topbar-menu-badge),
+    .topbar-popover.sc-menu-admin-off [data-admin-item],
+    .topbar-popover.sc-menu-admin-off .sc-elev,
+    .topbar-popover.sc-menu-admin-off .sc-bganim-detail,
+    .topbar-popover.sc-menu-admin-off .sc-bganim-style,
+    .topbar-popover.sc-menu-admin-off .sc-bganim-playback,
+    .topbar-popover.sc-menu-admin-off .topbar-menu-badge { display: none !important; }
+    .topbar-popover.sc-menu-grouped .sc-menu-group.is-empty,
+    .topbar-popover.sc-menu-grouped .sc-menu-col.is-empty { display: none !important; }
+    .topbar-popover.sc-menu-grouped.sc-menu-one-col { width: 250px; }
 
     /* Hover card for a product on the DNA field — our surface + tokens, round thumb,
        a caret aimed at the bug, and a brand-blue deep-link into the product's NFP. */
@@ -2422,10 +2514,14 @@ export function createOrbitBgAnim(cfg) {
 /* Grouped two-column three-dot menu (shared)                          */
 /* ------------------------------------------------------------------ */
 /* Reorganize a chat "More options" popover's flat row list into titled GROUP
-   CARDS that flow through a two-column masonry layout, matching the primary-nav
+   CARDS that flow through a two-column layout, matching the primary-nav
    Appearance popover. It MOVES the existing row nodes (never re-creates them) so
    every wired listener + captured reference stays valid, then tags the popover
-   with .sc-menu-grouped to switch on the column layout.
+   with .sc-menu-grouped.
+
+   Columns are REAL flex wrappers — not CSS `column-width`. Chromium's
+   multi-column hit-testing often maps a click in the right-hand column onto
+   empty space or a left-column row, which made every switch look dead.
 
    Rows are bucketed by their stable data-sc id; sub-control blocks (the opacity
    slider, style/playback segments, streaming detail, strip side) carry no data-sc
@@ -2433,6 +2529,7 @@ export function createOrbitBgAnim(cfg) {
    group. Unknown rows fall through to a "More" group so nothing is ever dropped.
    Idempotent — a second call is a no-op. */
 const CHAT_MENU_GROUP_ORDER = ['navigate', 'conversation', 'data', 'display', 'background', 'motion', 'more', 'danger'];
+const CHAT_MENU_COL1 = { navigate: 1, conversation: 1, data: 1, display: 1 };
 const CHAT_MENU_GROUP_TITLE = {
   navigate: 'Go to', conversation: 'Conversation', data: 'Data & agents',
   display: 'Display', background: 'Background', motion: 'Activity & streaming',
@@ -2462,8 +2559,217 @@ function chatMenuGroupKey(el) {
   } catch (_) {}
   return null;
 }
+
+/* ── Chat ⋯ nested Admin popover ───────────────────────────────────────────
+   A kebab in the grouped menu's top-right opens a small card with the same
+   master "Admin controls" switch the Appearance popover uses (wise-admin-ui).
+   Off hides every Admin-badged row and the chrome that belongs to one, so the
+   menu shows only member-facing items. The live feature state of anything
+   already on is left alone. */
+const CHAT_ADMIN_UI_KEY = 'wise-admin-ui';
+function isChatAdminUiOn() {
+  try { return localStorage.getItem(CHAT_ADMIN_UI_KEY) !== '0'; } catch (_) { return true; }
+}
+function applyChatAdminUi(on) {
+  try { localStorage.setItem(CHAT_ADMIN_UI_KEY, on ? '1' : '0'); } catch (_) {}
+  try { document.dispatchEvent(new CustomEvent('wise:admin-ui', { detail: { on: !!on } })); } catch (_) {}
+}
+function placeChatMenuAdminPop(btn, panel) {
+  if (!btn || !panel) return;
+  const r = btn.getBoundingClientRect();
+  const pw = panel.offsetWidth || 228;
+  const ph = panel.offsetHeight || 48;
+  const gap = 8;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  /* Prefer above the kebab; if that clips, sit to the right; if that clips,
+     sit to the left — never hang the card directly under the trigger. */
+  let top = r.top - ph - gap;
+  let left = r.right - pw;
+  let side = '';
+  if (top >= 8) {
+    left = Math.max(8, Math.min(left, vw - pw - 8));
+  } else {
+    top = r.top + (r.height - ph) / 2;
+    left = r.right + gap;
+    side = 'right';
+    if (left + pw > vw - 8) {
+      left = r.left - pw - gap;
+      side = 'left';
+    }
+    top = Math.max(8, Math.min(top, vh - ph - 8));
+    left = Math.max(8, Math.min(left, vw - pw - 8));
+  }
+  panel.style.position = 'fixed';
+  panel.style.left = Math.round(left) + 'px';
+  panel.style.top = Math.round(top) + 'px';
+  panel.style.right = 'auto';
+  panel.style.bottom = 'auto';
+  panel.style.zIndex = '2147483646';
+  panel.classList.toggle('is-side', !!side);
+  panel.classList.toggle('is-side-left', side === 'left');
+  panel.classList.toggle('is-side-right', side === 'right');
+}
+function closeChatMenuAdminPop(wrap) {
+  if (!wrap) return;
+  const btn = wrap.__adminBtn || wrap.querySelector('.sc-menu-admin-btn');
+  const panel = wrap.__adminPop;
+  if (panel) {
+    panel.classList.add('hidden');
+    panel.classList.remove('is-side', 'is-side-left', 'is-side-right');
+    if (wrap.isConnected && panel.parentElement !== wrap) wrap.appendChild(panel);
+  }
+  if (btn) {
+    btn.classList.remove('is-open');
+    btn.setAttribute('aria-expanded', 'false');
+  }
+}
+function isChatMenuAdminGated(el) {
+  if (!el || !el.classList) return false;
+  if (el.classList.contains('topbar-menu-item--admin') || el.classList.contains('sc-elev')) return true;
+  if (el.classList.contains('sc-bganim-detail') || el.classList.contains('sc-bganim-style') || el.classList.contains('sc-bganim-playback')) return true;
+  if (el.hasAttribute && el.hasAttribute('data-admin-item')) return true;
+  try {
+    if (el.classList.contains('topbar-menu-item') && el.querySelector('.topbar-menu-badge')) return true;
+  } catch (_) {}
+  return false;
+}
+function applyChatMenuAdminGate(pop) {
+  if (!pop) return;
+  const on = isChatAdminUiOn();
+  pop.classList.toggle('sc-menu-admin-off', !on);
+  const wrap = pop.querySelector('.sc-menu-admin-wrap');
+  const btn = wrap && (wrap.__adminBtn || wrap.querySelector('.sc-menu-admin-btn'));
+  if (btn) {
+    btn.classList.toggle('is-admin-on', on);
+    const tip = on
+      ? 'Admin controls on — hide admin items'
+      : 'Admin controls off — show admin items';
+    btn.setAttribute('aria-label', tip);
+    btn.setAttribute('title', tip);
+    btn.setAttribute('data-tip', tip);
+  }
+  const sw = wrap && wrap.__adminPop
+    ? wrap.__adminPop.querySelector('[data-adminui]')
+    : pop.querySelector('[data-adminui]');
+  if (sw) {
+    sw.classList.toggle('is-on', on);
+    sw.setAttribute('aria-checked', on ? 'true' : 'false');
+  }
+  pop.querySelectorAll('.sc-menu-group').forEach((g) => {
+    const keep = Array.from(g.children).some((c) => {
+      if (!c || !c.classList) return false;
+      if (c.classList.contains('sc-menu-group-head')) return false;
+      if (!on && isChatMenuAdminGated(c)) return false;
+      return true;
+    });
+    g.classList.toggle('is-empty', !keep);
+  });
+  pop.querySelectorAll('.sc-menu-col').forEach((col) => {
+    const keep = Array.from(col.children).some((g) => g && !g.classList.contains('is-empty'));
+    col.classList.toggle('is-empty', !keep);
+  });
+  const visibleCols = Array.from(pop.querySelectorAll('.sc-menu-col')).filter((c) => !c.classList.contains('is-empty'));
+  pop.classList.toggle('sc-menu-one-col', visibleCols.length < 2);
+}
+function ensureChatMenuAdminDocWire() {
+  if (typeof document === 'undefined' || document.__wiseChatAdminMenuWired) return;
+  document.__wiseChatAdminMenuWired = true;
+  document.addEventListener('wise:admin-ui', () => {
+    document.querySelectorAll('.topbar-popover.sc-menu-grouped').forEach(applyChatMenuAdminGate);
+  });
+  document.addEventListener('click', (e) => {
+    document.querySelectorAll('.sc-menu-admin-wrap').forEach((wrap) => {
+      const panel = wrap.__adminPop;
+      const t = e.target;
+      if (wrap.contains(t) || (panel && panel.contains(t))) return;
+      closeChatMenuAdminPop(wrap);
+    });
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    let closed = false;
+    document.querySelectorAll('.sc-menu-admin-btn.is-open').forEach((btn) => {
+      const wrap = btn.closest('.sc-menu-admin-wrap');
+      if (wrap) { closeChatMenuAdminPop(wrap); closed = true; }
+    });
+    if (closed) e.stopPropagation();
+  }, true);
+  const refreshOpen = () => {
+    document.querySelectorAll('.sc-menu-admin-btn.is-open').forEach((btn) => {
+      const wrap = btn.closest('.sc-menu-admin-wrap');
+      if (wrap && wrap.__adminPop && !wrap.__adminPop.classList.contains('hidden')) {
+        placeChatMenuAdminPop(btn, wrap.__adminPop);
+      }
+    });
+  };
+  window.addEventListener('resize', refreshOpen);
+  window.addEventListener('scroll', refreshOpen, true);
+}
+function mountChatMenuAdminPopover(pop) {
+  if (!pop) return;
+  ensureChatMenuAdminDocWire();
+  let wrap = pop.querySelector('.sc-menu-admin-wrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.className = 'sc-menu-admin-wrap';
+    wrap.innerHTML =
+      '<button type="button" class="sc-menu-admin-btn" aria-haspopup="menu" aria-expanded="false" title="Admin controls" data-tip="Admin controls">' +
+        '<span class="material-symbols-outlined">more_vert</span>' +
+      '</button>' +
+      '<div class="sc-admin-pop hidden" role="menu">' +
+        '<button type="button" class="topbar-menu-item sc-mcp-item" data-adminui="1" role="menuitemcheckbox" aria-checked="true">' +
+          '<span class="material-symbols-outlined topbar-menu-icon">admin_panel_settings</span>' +
+          '<span>Admin controls</span>' +
+          '<span class="sc-switch" aria-hidden="true"></span>' +
+        '</button>' +
+      '</div>';
+    pop.appendChild(wrap);
+  }
+  const btn = wrap.querySelector('.sc-menu-admin-btn');
+  const panel = wrap.querySelector('.sc-admin-pop') || wrap.__adminPop;
+  wrap.__adminBtn = btn;
+  wrap.__adminPop = panel;
+  if (wrap.dataset.wired === '1') {
+    applyChatMenuAdminGate(pop);
+    return;
+  }
+  wrap.dataset.wired = '1';
+  const openPanel = () => {
+    if (!panel) return;
+    if (panel.parentElement !== document.body) document.body.appendChild(panel);
+    panel.classList.remove('hidden');
+    btn.classList.add('is-open');
+    btn.setAttribute('aria-expanded', 'true');
+    placeChatMenuAdminPop(btn, panel);
+    requestAnimationFrame(() => placeChatMenuAdminPop(btn, panel));
+  };
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const willOpen = panel.classList.contains('hidden');
+    if (willOpen) openPanel();
+    else closeChatMenuAdminPop(wrap);
+  });
+  panel.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const row = e.target.closest('[data-adminui]');
+    if (!row) return;
+    applyChatAdminUi(!isChatAdminUiOn());
+    applyChatMenuAdminGate(pop);
+    if (!panel.classList.contains('hidden')) placeChatMenuAdminPop(btn, panel);
+  });
+  const mo = new MutationObserver(() => {
+    if (pop.classList.contains('hidden')) closeChatMenuAdminPop(wrap);
+  });
+  mo.observe(pop, { attributes: true, attributeFilter: ['class'] });
+  applyChatMenuAdminGate(pop);
+}
 export function groupifyChatMenu(pop) {
-  if (!pop || pop.dataset.scGrouped === '1') return;
+  if (!pop) return;
+  if (pop.dataset.scGrouped === '1') {
+    mountChatMenuAdminPopover(pop);
+    return;
+  }
   const kids = Array.from(pop.children);
   /* Only group a real flat menu (skip if it's empty or already sectioned). */
   if (!kids.some((el) => el.classList && el.classList.contains('topbar-menu-item'))) return;
@@ -2474,6 +2780,8 @@ export function groupifyChatMenu(pop) {
   kids.forEach((el) => {
     if (!el.classList) return;
     if (el.classList.contains('topbar-menu-divider')) return; // cards replace dividers
+    if (el.classList.contains('sc-menu-admin-wrap') || el.classList.contains('sc-admin-pop')) return;
+    if (el.classList.contains('sc-menu-col') || el.classList.contains('sc-menu-group')) return;
     if (el.classList.contains('topbar-menu-label') || el.hasAttribute('data-menulink')) {
       current = 'navigate'; push('navigate', el); return;
     }
@@ -2486,6 +2794,10 @@ export function groupifyChatMenu(pop) {
   });
 
   const frag = document.createDocumentFragment();
+  const col1 = document.createElement('div');
+  col1.className = 'sc-menu-col';
+  const col2 = document.createElement('div');
+  col2.className = 'sc-menu-col';
   CHAT_MENU_GROUP_ORDER.forEach((key) => {
     const nodes = buckets[key];
     if (!nodes || !nodes.length) return;
@@ -2499,11 +2811,14 @@ export function groupifyChatMenu(pop) {
       section.appendChild(head);
     }
     nodes.forEach((n) => section.appendChild(n));
-    frag.appendChild(section);
+    (CHAT_MENU_COL1[key] ? col1 : col2).appendChild(section);
   });
+  if (col1.childNodes.length) frag.appendChild(col1);
+  if (col2.childNodes.length) frag.appendChild(col2);
   pop.appendChild(frag);
   pop.classList.add('sc-menu-grouped');
   pop.dataset.scGrouped = '1';
+  mountChatMenuAdminPopover(pop);
 }
 
 function defaultReply(text, intent) {
@@ -3290,10 +3605,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       </div>`
     : '';
 
-  /* Intent chips ALWAYS render as a plain wrapped flex grid — the single-line
-     scrolling "carousel" variant (horizontal scroll row with chevron buttons +
-     edge fades) has been retired everywhere, so `opts.chipsFlow` is ignored on
-     purpose and no caller can bring the carousel back. */
+  /* Intent chips render as a wrapped flex grid (the chevron carousel is retired,
+     so `opts.chipsFlow` is ignored). Full-size chat shows every chip; a single-
+     pane dock caps the grid at three wrapping rows inside `.ws-chips-scroll`
+     and scrolls extra chips vertically. */
 
   const chipHoverStatus = (c) => {
     if (!c) return '';
@@ -3324,7 +3639,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   }).join('');
   let chipsHtml = buildChipsHtml();
 
-  const chipsContainerHtml = `<div class="ws-chips" id="${id}-chips" role="list" aria-label="Quick actions">${chipsHtml}</div>`;
+  const chipsContainerHtml = `<div class="ws-chips-scroll" id="${id}-chips-scroll"><div class="ws-chips" id="${id}-chips" role="list" aria-label="Quick actions">${chipsHtml}</div></div>`;
 
   /* Persistent intent-chip rail — an opt-in (`persistChips: true`) horizontal
      rail that stays docked above the input for the whole conversation, so every
@@ -3646,6 +3961,22 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   const countPill = rootEl.querySelector(`#${id}-count`);
   const activeLabel = rootEl.querySelector(`#${id}-ss-active`);
 
+  /* The three-dot menu (and the attach "+" popover) are portaled onto
+     <body> while open — js/popover-layer.js lifts `.topbar-popover` /
+     `.fl-more-popover` out of the chat card so overflow:hidden can't clip
+     them. Queries and click delegation MUST go through these nodes (or
+     document + a contains() check), not rootEl, or every switch looks
+     dead once the menu is showing. */
+  const menuRoot = () => document.getElementById(`${id}-more-pop`) || rootEl;
+  const menuSel = (sel) => {
+    const pop = document.getElementById(`${id}-more-pop`);
+    return (pop && pop.querySelector(sel)) || rootEl.querySelector(sel);
+  };
+  const menuSelAll = (sel) => {
+    const pop = document.getElementById(`${id}-more-pop`);
+    return pop ? pop.querySelectorAll(sel) : rootEl.querySelectorAll(sel);
+  };
+
   /* Follow the conversation without losing the reader's place. Advances the
      scroll toward the bottom, but never pushes the reader's latest message
      above the top of the viewport — a long answer stops there, so the reader
@@ -3812,7 +4143,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      row) — ON means the cards are shown. */
   function syncCards() {
     rootEl.classList.toggle('sc-cards-hidden', cardsHidden);
-    const item = rootEl.querySelector('[data-sc="toggle-cards"]');
+    const item = menuSel('[data-sc="toggle-cards"]');
     if (item) {
       item.classList.toggle('is-on', !cardsHidden);
       item.setAttribute('aria-checked', cardsHidden ? 'false' : 'true');
@@ -3824,7 +4155,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      The three-dot menu row is a switch — ON means the chips are shown. */
   function syncChips() {
     rootEl.classList.toggle('sc-intent-chips-hidden', chipsHidden);
-    const item = rootEl.querySelector('[data-sc="toggle-intent-chips"]');
+    const item = menuSel('[data-sc="toggle-intent-chips"]');
     if (item) {
       item.classList.toggle('is-on', !chipsHidden);
       item.setAttribute('aria-checked', chipsHidden ? 'false' : 'true');
@@ -5574,7 +5905,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     return turnsPanel.classList.contains('wch-open');
   }
   function syncTurnsMenu() {
-    const item = rootEl.querySelector('[data-sc="turns"]');
+    const item = menuSel('[data-sc="turns"]');
     if (!item) return;
     const on = isTurnsVisible();
     item.classList.toggle('is-on', on);
@@ -5592,7 +5923,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   /* Sync the History & Projects on/off switch (only present when the injected
      menu entry opts into the sc-mcp-item switch styling). */
   function syncHistoryMenu() {
-    const item = rootEl.querySelector('[data-sc="history"].sc-mcp-item');
+    const item = menuSel('[data-sc="history"].sc-mcp-item');
     if (!item) return;
     const on = isHistoryVisible();
     item.classList.toggle('is-on', on);
@@ -5602,7 +5933,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      Called on mount and whenever any module flips it (via the wise:chat-compact
      event), so every open chat's switch reflects the one shared setting. */
   function syncCompactMenu() {
-    const item = rootEl.querySelector('[data-sc="compact"]');
+    const item = menuSel('[data-sc="compact"]');
     if (!item) return;
     const on = document.documentElement.classList.contains('chat-compact');
     item.classList.toggle('is-on', on);
@@ -5613,7 +5944,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      Called on mount and whenever any module flips it (via the wise:chat-brandtext
      event), so every open chat's switch reflects the one shared setting. */
   function syncBrandtextMenu() {
-    const item = rootEl.querySelector('[data-sc="brandtext"]');
+    const item = menuSel('[data-sc="brandtext"]');
     if (!item) return;
     const on = document.documentElement.classList.contains('chat-brandtext');
     item.classList.toggle('is-on', on);
@@ -5624,14 +5955,14 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      class absent). Called on mount and whenever any module flips it (via the
      wise:chat-sheen event) so every open chat's switch reflects the one setting. */
   function syncSheenMenu() {
-    const item = rootEl.querySelector('[data-sc="sheen"]');
+    const item = menuSel('[data-sc="sheen"]');
     if (!item) return;
     const on = !document.documentElement.classList.contains('chat-sheen-off');
     item.classList.toggle('is-on', on);
     item.setAttribute('aria-checked', on ? 'true' : 'false');
   }
   document.addEventListener('wise:chat-sheen', syncSheenMenu);
-  document.addEventListener('wise:chat-elev', () => syncChatElevControl(rootEl));
+  document.addEventListener('wise:chat-elev', () => syncChatElevControl(menuRoot()));
   /* ── "Background animation" (Admin) engine ─────────────────────────────────
      A welcome-only ambient canvas: a DNA/RNA double helix whose two backbones +
      base-pair "rungs" are drawn in brand blue, chain-linking a run of OUR REAL
@@ -5690,34 +6021,34 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      so turning it on mid-conversation just arms it for the next welcome. Shared
      app-wide: the wise:chat-bg-anim broadcast keeps every mounted chat in step. */
   function syncBgAnimMenu() {
-    const item = rootEl.querySelector('[data-sc="bg-anim"]');
+    const item = menuSel('[data-sc="bg-anim"]');
     if (item) {
       item.classList.toggle('is-on', bgAnimOn);
       item.setAttribute('aria-checked', bgAnimOn ? 'true' : 'false');
     }
     /* The opacity slider (below the toggle) dims + locks while the animation is off. */
-    const detail = rootEl.querySelector('.sc-bganim-detail');
+    const detail = menuSel('.sc-bganim-detail');
     if (detail) detail.classList.toggle('is-disabled', !bgAnimOn);
     /* The style segment (Helix / Orbit) reflects the shared choice and stays
        ALWAYS interactive — even when the field is off — so it reads as a real,
        discoverable choice (picking a style turns the animation on, below). */
-    const styleRow = rootEl.querySelector('.sc-bganim-style');
+    const styleRow = menuSel('.sc-bganim-style');
     if (styleRow) styleRow.classList.remove('is-disabled');
-    rootEl.querySelectorAll('[data-sc="bg-anim-style"]').forEach((btn) => {
+    menuSelAll('[data-sc="bg-anim-style"]').forEach((btn) => {
       const on = btn.dataset.style === bgAnimStyle;
       btn.classList.toggle('is-on', on);
       btn.setAttribute('aria-checked', on ? 'true' : 'false');
     });
     const pct = Math.round(effectiveBgAnimOpacity() * 100);
-    const range = rootEl.querySelector('.sc-bganim-opacity');
+    const range = menuSel('.sc-bganim-opacity');
     if (range && document.activeElement !== range) range.value = String(pct);
-    const val = rootEl.querySelector('.sc-bganim-opacity-val');
+    const val = menuSel('.sc-bganim-opacity-val');
     if (val) val.textContent = pct + '%';
     /* The Play/Pause pill (below opacity) — dims + locks with the toggle, and its
        icon/label + aria reflect whether the field is currently frozen. */
-    const playback = rootEl.querySelector('.sc-bganim-playback');
+    const playback = menuSel('.sc-bganim-playback');
     if (playback) playback.classList.toggle('is-disabled', !bgAnimOn);
-    const ppBtn = rootEl.querySelector('[data-sc="bg-anim-playback"]');
+    const ppBtn = menuSel('[data-sc="bg-anim-playback"]');
     if (ppBtn) {
       ppBtn.classList.toggle('is-paused', bgAnimPaused);
       ppBtn.setAttribute('aria-pressed', bgAnimPaused ? 'true' : 'false');
@@ -5744,7 +6075,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       bgAnimOpacityUserSet = true;                 // an explicit drag overrides the pane-count default
       try { localStorage.setItem(BGANIM_OPACITY_KEY, String(pct)); } catch (_) {}
       try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-opacity', { detail: { opacity: bgAnimOpacity } })); } catch (_) {}
-      const val = rootEl.querySelector('.sc-bganim-opacity-val');
+      const val = menuSel('.sc-bganim-opacity-val');
       if (val) val.textContent = pct + '%';
       if (prefersReducedMotion && bgAnimOn) bgAnim.start();
     });
@@ -5792,18 +6123,18 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      wise:chat-stream-level), so every open chat's menu reflects the one shared
      setting. The segment dims while the master switch is off. */
   function syncStreamMenu() {
-    const tog = rootEl.querySelector('[data-sc="stream-toggle"]');
+    const tog = menuSel('[data-sc="stream-toggle"]');
     if (tog) {
       tog.classList.toggle('is-on', streamOn);
       tog.setAttribute('aria-checked', streamOn ? 'true' : 'false');
     }
-    const seg = rootEl.querySelector('.sc-stream-detail');
+    const seg = menuSel('.sc-stream-detail:not(.sc-actside-detail)');
     if (seg) seg.classList.toggle('is-disabled', !streamOn);
     /* Scope to the streaming-level buttons only — the menu now carries other
        segmented controls (background-animation style, activity-strip side) that
        share the .sc-stream-seg-btn look, and a bare class match would wrongly
        clear their active state. */
-    rootEl.querySelectorAll('[data-sc="stream-level"]').forEach((el) => {
+    menuSelAll('[data-sc="stream-level"]').forEach((el) => {
       const on = el.dataset.stream === streamLevel;
       el.classList.toggle('is-on', on);
       el.setAttribute('aria-checked', on ? 'true' : 'false');
@@ -5823,15 +6154,15 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      menu, another chat's menu, or the Appearance popover — all via the
      wise:activity-strip event). The side segment dims while the strip is off. */
   function syncActivityStripMenu() {
-    const item = rootEl.querySelector('[data-sc="activity-strip"]');
+    const item = menuSel('[data-sc="activity-strip"]');
     if (!item) return;
     const on = isActivityStripOn();
     item.classList.toggle('is-on', on);
     item.setAttribute('aria-checked', on ? 'true' : 'false');
-    const detail = rootEl.querySelector('.sc-actside-detail');
+    const detail = menuSel('.sc-actside-detail');
     if (detail) detail.classList.toggle('is-disabled', !on);
     const side = getActivityStripSide();
-    rootEl.querySelectorAll('[data-sc="activity-strip-side"]').forEach((el) => {
+    menuSelAll('[data-sc="activity-strip-side"]').forEach((el) => {
       const active = el.dataset.actside === side;
       el.classList.toggle('is-on', active);
       el.setAttribute('aria-checked', active ? 'true' : 'false');
@@ -6862,9 +7193,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     }
   }
 
-  /* Intent chips always render as a wrapped flex grid now — the single-line
-     scrolling carousel variant has been retired, so there is no chip scroll
-     logic to wire up here. */
+  /* Intent chips always render as a wrapped flex grid now — the chevron
+     carousel is retired. Full-size chat shows every chip; a single-pane dock
+     wraps them into three rows inside `.ws-chips-scroll`. */
 
   /* Persistent intent-chip rail — same horizontal scroll controls + edge fades
      as the welcome carousel. `refreshPersistChips` is exposed so hideWelcome can
@@ -7304,10 +7635,17 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     requestAnimationFrame(updateFade);
   }
 
-  /* Menu + chip actions */
-  rootEl.addEventListener('click', (e) => {
+  /* Menu + chip actions.
+     Bound on document (not rootEl) because the three-dot menu and the attach
+     popover portal to <body> while open. A rootEl listener would never see
+     those clicks. Scope with contains() so a second mounted chat doesn't
+     steal this instance's rows. */
+  document.addEventListener('click', (e) => {
     const item = e.target.closest('[data-sc]');
     if (!item) return;
+    const flPopEl = document.getElementById(`${id}-fl-pop`);
+    const ours = rootEl.contains(item) || morePop?.contains(item) || flPopEl?.contains(item);
+    if (!ours) return;
     const action = item.dataset.sc;
     if (action === 'add-member') {
       closeMore();
@@ -7626,7 +7964,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   syncCompactMenu();
   syncBrandtextMenu();
   syncSheenMenu();
-  syncChatElevControl(rootEl);
+  syncChatElevControl(menuRoot());
   syncBgAnimMenu();
   syncStreamMenu();
   syncActivityStripMenu();
@@ -7646,7 +7984,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   /* Sticky-modules toggle: reflect the initial state onto the switch and let the
      host apply the layout so a persisted preference survives reloads. */
   if (opts.stickyModules === true) {
-    const stickyItem = rootEl.querySelector('[data-sc="sticky"]');
+    const stickyItem = menuSel('[data-sc="sticky"]');
     if (stickyItem) {
       stickyItem.classList.toggle('is-on', stickyOn);
       stickyItem.setAttribute('aria-checked', stickyOn ? 'true' : 'false');
@@ -7658,7 +7996,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   /* Outputs & sources toggle: reflect the initial (off = shown) state onto the
      switch and let the host apply the matching visibility. */
   if (opts.outputsToggle === true) {
-    const outItem = rootEl.querySelector('[data-sc="outputs"]');
+    const outItem = menuSel('[data-sc="outputs"]');
     if (outItem) {
       outItem.classList.toggle('is-on', outputsHidden);
       outItem.setAttribute('aria-checked', outputsHidden ? 'true' : 'false');
