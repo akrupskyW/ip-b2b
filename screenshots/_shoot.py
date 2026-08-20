@@ -61,6 +61,7 @@ PAGES = [
     "pages/admin-utils.html",
     "pages/studio-ai.html",
     "pages/all-modules.html",
+    "pages/page-gallery.html",
     "pages/progress-log.html",
     "pages/accessibility-review.html",
     # Account / support
@@ -181,6 +182,16 @@ PAGE_AFTER_LOAD = {
         setTimeout(() => { obs.disconnect(); r(); }, 20000);
       });
       await new Promise(r => setTimeout(r, 1200));
+    }""",
+    "pages/page-gallery.html": """async () => {
+      await new Promise(r => {
+        const ok = () => document.querySelector('.pg-title') && document.querySelector('.pg-card');
+        if (ok()) return r();
+        const obs = new MutationObserver(() => { if (ok()) { obs.disconnect(); r(); } });
+        obs.observe(document.body, { childList: true, subtree: true });
+        setTimeout(() => { obs.disconnect(); r(); }, 15000);
+      });
+      await new Promise(r => setTimeout(r, 2000));
     }""",
     "pages/view-product.html": """async () => {
       await new Promise(r => {

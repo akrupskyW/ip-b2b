@@ -1028,11 +1028,11 @@
        window, keeping the surface + left/right borders + the row gutter.
        Mirrors the shared treatment (wise.css). */
     html.full-bleed .ap-chat,
-    html.full-bleed .nfp-inner,
-    html.full-bleed #ap-progress .vfp-inner {
+    html.full-bleed:not(.fb-chat-only) .nfp-inner,
+    html.full-bleed:not(.fb-chat-only) #ap-progress .vfp-inner {
       border-top: 0; border-bottom: 0; border-radius: 0; box-shadow: none; animation: none;
     }
-    html.full-bleed body { padding-top: 0; padding-bottom: 0; }
+    html.full-bleed:not(.fb-chat-only) body { padding-top: 0; padding-bottom: 0; }
 
     #modules-row.wide-chat .ap-chat { flex-basis: 520px; width: 520px; }
     /* Chat width toggle (matches the shared module's 3-step widen). */

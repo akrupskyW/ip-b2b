@@ -749,33 +749,12 @@
       return { force: true, step: resume };
     }
 
-    var st = readState();
-    if (st.completed) return null;
-
-    var snoozeVal = '';
-    try { snoozeVal = sessionStorage.getItem(SNOOZE_KEY) || ''; } catch (e) {}
-    var fresh = '';
-    try { fresh = sessionStorage.getItem(FRESH_KEY) || ''; } catch (e) {}
-
-    if (fresh) {
-      try { sessionStorage.removeItem(FRESH_KEY); } catch (e) {}
-      if (snoozeVal !== 'all') return { force: true };
-    }
-
-    if (snoozeVal === 'all') return null;
-
-    var page = currentPage();
-    var nav = currentNavId();
-    var gid = groupForPage(page, nav);
-
-    if (!st.doneSteps.length && !st.dismissed) {
-      return { force: true };
-    }
-
-    if (st.screensSeen[page]) return null;
-    if (!gid || gid === 'hello') return null;
-    if (isSkippedGroup(st, gid) || groupStats(st, groupById(gid)).complete) return null;
-    return { group: gid, screenIntro: true };
+    // Off by default: the walkthrough never auto-opens on sign-in or on the
+    // first visit to a screen. It only appears when the user turns the
+    // "Walkthrough" toggle on in the Appearance popover (or replays it from
+    // Help / Preferences) — plus the ?walkthrough=1 QA override and the
+    // cross-page resume, both handled above.
+    return null;
   }
 
   function boot() {

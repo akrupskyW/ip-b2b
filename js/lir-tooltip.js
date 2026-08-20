@@ -16,13 +16,15 @@
 /* Every icon-only control that lost its caption gets the same instant floating
    tooltip: the top-bar rail buttons, the menu collapse toggle, the per-module
    header toggles (move-side / double-width / close), the Appearance trigger in
-   the primary nav, and every labelled control inside the Appearance popover.
+   the primary nav, every labelled control inside the Appearance popover, and
+   the small intent chips in every chat module (hover status = the chip's ask).
    They expose their name via `data-tip`, `aria-label`, or `title`. */
 const TOOLTIP_SELECTOR =
   '.lir-btn, .topbar-menu-toggle, .panel-flip-btn, .panel-width-toggle-btn, ' +
   '.panel-more-btn, .panel-close-btn, .panel-ctrl-btn, .wiseai-dock-flip, .dash-term, ' +
   '.topbar-appearance-btn, #menu-footer-layout-btn, ' +
-  '.wise-popover--appearance [data-tip]';
+  '.wise-popover--appearance [data-tip], ' +
+  '.ws-intent-chip, .sc-reply-chips .chip, .sc-inline-chips .chip';
 
 /* The History / Turns modules (`.wch-sidebar`) run their own dark tooltip in
    chat-history.js, so we stand down for their controls to avoid a double tip.
@@ -68,6 +70,7 @@ export function initLirTooltip() {
   let current = null;
 
   function show(btn) {
+    if (btn.matches && btn.matches('.is-used, [aria-disabled="true"]')) return;
     const label = labelFor(btn);
     if (!label) return;
     current = btn;
@@ -89,7 +92,9 @@ export function initLirTooltip() {
        keeps the default below placement. */
     const tipRight = btn.classList.contains('topbar-menu-toggle') &&
       !btn.closest('.mp-pivot');
-    const preferAbove = !!(btn.closest('.wise-popover--appearance') || isAppearanceTrigger(btn));
+    const isIntentChip = !!(btn.matches && btn.matches('.ws-intent-chip, .sc-reply-chips .chip, .sc-inline-chips .chip'));
+    const preferAbove = !!(btn.closest('.wise-popover--appearance') || isAppearanceTrigger(btn) || isIntentChip);
+    tip.classList.toggle('lir-tip-wrap', isIntentChip);
     tip.classList.remove('lir-tip-right', 'lir-tip-above');
     if (tipRight) {
       tip.classList.add('lir-tip-right');
@@ -122,7 +127,7 @@ export function initLirTooltip() {
       current.removeAttribute('data-lir-title');
     }
     current = null;
-    tip.classList.remove('lir-tip-visible', 'lir-tip-right', 'lir-tip-above');
+    tip.classList.remove('lir-tip-visible', 'lir-tip-right', 'lir-tip-above', 'lir-tip-wrap');
   }
 
   document.addEventListener('mouseover', (e) => {

@@ -20,12 +20,20 @@ any chat surface, all others must still match.
 - **Intent chips** that are clickable, actionable, and each open a real
   transcript. The chip icon is **gold**, and the right-side text label animates
   like the reference.
+- **Every transcript ends on topic chips.** Regardless of which chat or
+  which answer just landed, the thread must close with intent chips related
+  to that transcript and topic — never a dead-end reply. Prefer the chip's
+  own `nextIntents` (or the host's `followups` map); otherwise pick leftover
+  unused chips from the current topic set, or score the surface's catalog
+  against the live thread. Hosts may still `setIntents()` to swap a curated
+  follow-up row. Mid-turn status cards (`trailChips: false`) are the only
+  exception — chips trail the actual answer, not the card.
 - **Streaming** word-by-word output. Do not regress to the old pulsating
   three-dot loader as the primary style.
 - **Helix animation** toggled ON by default at **20% opacity**.
-- **Lock icon** to the left of the input placeholder (e.g. "Type your
-  message" / "Ask WISEcode AI about any food"), with a hover popover whose text
-  is visible in both light and dark mode.
+- **Unlocked composer** — no lock icon, no readonly input. Typing is live.
+  Sending any distinctive word from an intent chip (label, ask, or intent id)
+  plays that chip's transcript, the same as clicking the chip.
 - Anything that happens in a related right-hand module (e.g. the Nutrition
   Facts panel on `add-product.html`) must be reflected in the chat as if the
   assistant did it.

@@ -607,10 +607,10 @@
        corner rounding, shadow + bounce-in) so it runs the full height of the
        window, keeping the surface + left/right borders + the row gutter.
        Mirrors the shared treatment (wise.css). */
-    html.full-bleed .rf-card {
+    html.full-bleed:not(.fb-chat-only) .rf-card {
       border-top: 0; border-bottom: 0; border-radius: 0; box-shadow: none; animation: none;
     }
-    html.full-bleed body { padding-top: 0; padding-bottom: 0; }
+    html.full-bleed:not(.fb-chat-only) body { padding-top: 0; padding-bottom: 0; }
 
     /* Narrow viewports: the base #modules-row already scrolls horizontally
        (matches wiseai.html); just keep the dashboard pane phone-usable. */
@@ -2002,8 +2002,6 @@
           heading: 'Which food are we reformulating?',
           sub: 'Pick a food and I\u2019ll load it into the studio — then we dial in the recipe together, live.',
           placeholder: 'Ask WISEcodeAI to reformulate this product\u2026',
-          placeholderLock: 'Not accessible at this moment',
-          placeholderLockSub: 'WISEcodeAI is coming soon',
           userInitials: 'AK',
           sourceLabel: '',
           statusLabel: 'WISEcodeAI is modeling',

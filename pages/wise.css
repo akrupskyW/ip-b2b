@@ -108,15 +108,16 @@
   --ter-violet: #25507C;
   --ter-cyan: #25507C;
 
-  /* Monochromatic chart-status scale — five tints of brand navy/azure, best →
-     worst. Every chart fill (donut slice, bar, gauge, radar vertex) uses these
-     stops so a score’s color is identical everywhere it appears. */
-  --chart-status-excellent: #8AADC9;
-  --chart-status-good: #5B8FBE;
-  --chart-status-okay: var(--primary);
-  --chart-status-fair: #1A3A5C;
-  --chart-status-poor: #0E2238;
-  --chart-mono: var(--chart-status-okay);
+  /* Chart-status scale — five semantic stops (best → worst). Every chart fill
+     (donut slice, bar, gauge, radar vertex) uses these so a score’s color is
+     identical everywhere it appears. --chart-mono is brand navy for chrome
+     that is not a status colour. */
+  --chart-status-excellent: var(--sec-green);
+  --chart-status-good: #7DC470;
+  --chart-status-okay: var(--ter-amber);
+  --chart-status-fair: #D27326;
+  --chart-status-poor: var(--sec-red);
+  --chart-mono: var(--primary);
 
   /* AAA-safe ink for semantic colors used as TEXT on their own light tints.
      The vibrant --sec-green / --ter-amber / --sec-red read below 7:1 as small
@@ -200,13 +201,14 @@ html.dark {
   --ter-violet: var(--primary-bright);
   --ter-cyan: var(--primary-bright);
 
-  /* Lifted azure ramp so the five status stops stay distinct on navy. */
-  --chart-status-excellent: #C5D6EA;
-  --chart-status-good: #8BB4D6;
-  --chart-status-okay: #5A8BB8;
-  --chart-status-fair: #3E7CB1;
-  --chart-status-poor: #25507C;
-  --chart-mono: var(--chart-status-okay);
+  /* Same semantic fills in dark — greens / ambers / reds stay readable on navy.
+     --chart-mono lifts to the bright brand accent for non-status chrome. */
+  --chart-status-excellent: var(--sec-green);
+  --chart-status-good: #7DC470;
+  --chart-status-okay: var(--ter-amber);
+  --chart-status-fair: #D27326;
+  --chart-status-poor: var(--sec-red);
+  --chart-mono: var(--primary-bright);
   /* Brand-blue borders on dark: --primary (#25507C) is nearly invisible over
      navy, so tint from --primary-bright to keep borders on-brand yet visible. */
   --border: color-mix(in srgb, var(--primary-bright) 18%, transparent);
@@ -318,7 +320,9 @@ body:has(.menu-brand-integrated) {
    nav reads ~10px wider than the left (page-edge → icons). Drop it so both
    sides keep only --nav-rail-gap. Right pad stays — that's the window edge. */
 html:not(.full-bleed):not(.brand-inset) #agent-shell-wrap.menu-brand-integrated:has(#menu-panel.mp-rail:not(.mp-pivot)) #modules-row,
-html:not(.full-bleed):not(.brand-inset) #chat-shell-wrap.menu-brand-integrated:has(#menu-panel.mp-rail:not(.mp-pivot)) #modules-row {
+html:not(.full-bleed):not(.brand-inset) #chat-shell-wrap.menu-brand-integrated:has(#menu-panel.mp-rail:not(.mp-pivot)) #modules-row,
+html.full-bleed.fb-chat-only:not(.brand-inset) #agent-shell-wrap.menu-brand-integrated:has(#menu-panel.mp-rail:not(.mp-pivot)) #modules-row,
+html.full-bleed.fb-chat-only:not(.brand-inset) #chat-shell-wrap.menu-brand-integrated:has(#menu-panel.mp-rail:not(.mp-pivot)) #modules-row {
   padding-left: 0;
 }
 
@@ -597,6 +601,15 @@ html:not(.full-bleed):not(.brand-inset) #chat-shell-wrap.menu-brand-integrated:h
 }
 #lir-tooltip.lir-tip-above.lir-tip-visible {
   transform: translateX(-50%) translateY(-100%);
+}
+/* Intent-chip hover status — the ask/description can be a short sentence, so
+   the card is allowed to wrap instead of stretching off-screen. */
+#lir-tooltip.lir-tip-wrap {
+  white-space: normal;
+  max-width: min(280px, calc(100vw - 24px));
+  text-align: left;
+  font-weight: 500;
+  line-height: 1.35;
 }
 
 .sc-topbar-titles .topbar-title {
@@ -1176,6 +1189,9 @@ html.dark .wise-pop-vline { background: rgba(255,255,255,0.08); }
 .fz-seg-btn:first-child { border-left: 0; }
 .fz-seg-btn:hover { background: var(--surface-3); color: var(--text); }
 .fz-seg-btn.is-active { background: var(--primary); color: #fff; }
+/* Surface style has three labels (Default / Style 1 / Style 2); keep them
+   on one line inside the connected pill. */
+.brand-style-row .fz-seg-btn { font-size: 11px; padding: 0 4px; white-space: nowrap; }
 
 /* Module-spacing block — admin-only segmented control (Small / Medium / Large)
    that steps the horizontal gap between modules in #modules-row. Mirrors the
@@ -1236,6 +1252,11 @@ html.dark .wise-pop-vline { background: rgba(255,255,255,0.08); }
   border-left: 2px solid var(--primary);
   border-radius: 10px;
   background: var(--surface-2);
+}
+.fb-opts .wise-toggle-item {
+  margin: 0;
+  width: 100%;
+  padding: 5px 4px;
 }
 /* Compact the sub-control labels so the whole section fits without wrapping. */
 .fb-opts .fz-size { gap: 5px; padding: 2px 0 0; }
@@ -3747,71 +3768,101 @@ html.header-float .vs-header > button {
    alerts rail, and the ai-chat side panels. Loaded on every page (shared) and
    mirrored by the bespoke wiseai.html panes, so full bleed reads identically
    everywhere. The modules stay switchable from the rail. */
-html.full-bleed .agent-main-inner,
-html.full-bleed .pf-module-inner,
-html.full-bleed .pf-history-inner,
-html.full-bleed #alerts-panel .alerts-inner,
-html.full-bleed #verification-sidebar .vs-inner,
-html.full-bleed #settings-screen .ss-inner,
-html.full-bleed .side-panel,
-html.full-bleed .menu-inner,
-html.full-bleed .sc-card {
+/* Chat hosts — keep in sync with js/sticky-modules.js CHAT_SEL plus the
+   shared .sc-card / .wa-chat / .sticky-chat aliases used on every shell. */
+html.full-bleed .sc-card,
+html.full-bleed .wa-chat,
+html.full-bleed #wa-chat,
+html.full-bleed #rf-chat,
+html.full-bleed #sa-chat,
+html.full-bleed #aid-chat,
+html.full-bleed #pl-chat,
+html.full-bleed #ar-chat,
+html.full-bleed .ap-chat,
+html.full-bleed #gs-chat,
+html.full-bleed #chat-shell,
+html.full-bleed #pf-chat-panel,
+html.full-bleed #wiseai-dock-panel,
+html.full-bleed .sticky-chat {
   border-top: 0 !important;
   border-bottom: 0 !important;
   border-radius: 0 !important;
   box-shadow: none !important;
   animation: none !important;
 }
-/* …and collapse every vertical gap so the modules run edge-to-edge from the
-   top of the browser window to the bottom: drop the shell's top/bottom body
-   padding, the gap under the top bar, and the modules row's top margin +
-   bottom padding. Horizontal spacing (rail column + side gutters) is kept so
-   the modules stay aligned with the rail. */
-html.full-bleed body {
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
+/* Nav + every non-chat module lose their frame too — unless Chat only is on,
+   which puts those surfaces back in contained cards (see fb-chat-only below). */
+html.full-bleed:not(.fb-chat-only) .agent-main-inner,
+html.full-bleed:not(.fb-chat-only) .pf-module-inner,
+html.full-bleed:not(.fb-chat-only) .pf-history-inner,
+html.full-bleed:not(.fb-chat-only) #alerts-panel .alerts-inner,
+html.full-bleed:not(.fb-chat-only) #verification-sidebar .vs-inner,
+html.full-bleed:not(.fb-chat-only) #settings-screen .ss-inner,
+html.full-bleed:not(.fb-chat-only) .side-panel,
+html.full-bleed:not(.fb-chat-only) .menu-inner,
+html.full-bleed:not(.fb-chat-only) .wa-pane,
+html.full-bleed:not(.fb-chat-only) .sa-panel {
+  border-top: 0 !important;
+  border-bottom: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  animation: none !important;
 }
-html.full-bleed #topbar-row,
-html.full-bleed .menu-brand-integrated #topbar-row {
+/* Collapse the page frame on every side so modules can reach the window
+   edges — not just top/bottom. The icon-rail's negative left margin (which
+   cancels the 12px body pad) must also lift, or the nav slides off-screen.
+   Chat only leaves this frame in place so nav + every other module read as
+   if full bleed were off. */
+html.full-bleed:not(.fb-chat-only) body,
+html.full-bleed:not(.fb-chat-only) body:has(.menu-brand-integrated) {
+  padding: 0 !important;
+}
+html.full-bleed:not(.fb-chat-only) #agent-shell-wrap.menu-brand-integrated:has(#menu-panel.mp-rail:not(.mp-pivot)) #menu-panel,
+html.full-bleed:not(.fb-chat-only) #chat-shell-wrap.menu-brand-integrated:has(#menu-panel.mp-rail:not(.mp-pivot)) #menu-panel {
+  margin-left: 0 !important;
+}
+html.full-bleed:not(.fb-chat-only) #topbar-row,
+html.full-bleed:not(.fb-chat-only) .menu-brand-integrated #topbar-row {
   margin-bottom: 0 !important;
 }
-html.full-bleed #modules-row,
-html.full-bleed .menu-brand-integrated #modules-row {
+html.full-bleed:not(.fb-chat-only) #modules-row,
+html.full-bleed:not(.fb-chat-only) .menu-brand-integrated #modules-row {
   margin-top: 0 !important;
-  padding-bottom: 0 !important;
+  padding: 0 !important;
+  scrollbar-gutter: auto;
 }
-/* Every module — including the nav rail and WISEcodeAI — now fills the full height
-   with no re-inset. The nav panel drops its vertical padding so .menu-inner
-   reaches both window edges, and the WISEcodeAI dock stretches top-to-bottom exactly
-   like every other module. */
-html.full-bleed .menu-brand-integrated #menu-panel {
+/* Nav rail fills the column — Chat only restores a carded inset below. */
+html.full-bleed:not(.fb-chat-only) .menu-brand-integrated #menu-panel {
   box-sizing: border-box !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
 }
-html.full-bleed #chat-shell,
-html.full-bleed #pf-chat-panel,
-html.full-bleed #wiseai-dock-panel {
+html.full-bleed:not(.fb-chat-only) #chat-shell,
+html.full-bleed:not(.fb-chat-only) #pf-chat-panel,
+html.full-bleed:not(.fb-chat-only) #wiseai-dock-panel,
+html.full-bleed:not(.fb-chat-only) .wa-chat,
+html.full-bleed:not(.fb-chat-only) #wa-chat,
+html.full-bleed:not(.fb-chat-only) .sc-card.sticky-chat {
   margin-top: 0 !important;
   margin-bottom: 0 !important;
   height: 100% !important;
   max-height: 100% !important;
   align-self: stretch !important;
 }
-/* …and open STICKY (drawer) modules top-to-bottom too. A module tucked to the
-   right of the chat normally reads as a shorter, vertically-centred drawer (see
-   `.sticky-mod.is-sticky` far above), but full bleed means EVERY module — the
-   sticky drawers and the nested progress trackers included — must run the full
-   height of the window. Stretch them back to full height and drop the drawer's
-   corner rounding + slide-in so they read edge-to-edge like every other module,
-   while KEEPING the tuck (negative margin) so the drawer relationship survives.
-   Higher-specificity (id + double class) so it beats the drawer rules and the
-   per-page `#modules-row #agent-main { height:100% }` overrides alike. */
-html.full-bleed #modules-row .sticky-mod.is-sticky,
-html.full-bleed #modules-row #agent-main.sticky-mod.is-sticky,
-html.full-bleed #modules-row .vf-progress-pane.sticky-mod.is-sticky,
-html.full-bleed #modules-row .gv-progress-pane.sticky-mod.is-sticky,
-html.full-bleed #modules-row.modules-sticky .wch-sidebar.wch-docked {
+/* Stretch EVERY module in the row — including wiseai's .wa-pane (which is
+   NOT a .sticky-mod; it uses its own .is-sticky drawer and a page-level
+   `height: calc(100% - 30px)` inset that previously survived full bleed).
+   Chrome (resize handles, scrims) is skipped. Chat-only keeps this stretch
+   on the chat host only. */
+html.full-bleed:not(.fb-chat-only) #modules-row > :not([class*="scrim"]):not([class*="resize"]):not([class*="handle"]):not([class*="grip"]),
+html.full-bleed:not(.fb-chat-only) #modules-row .sticky-mod.is-sticky,
+html.full-bleed:not(.fb-chat-only) #modules-row #agent-main.sticky-mod.is-sticky,
+html.full-bleed:not(.fb-chat-only) #modules-row .vf-progress-pane.sticky-mod.is-sticky,
+html.full-bleed:not(.fb-chat-only) #modules-row .gv-progress-pane.sticky-mod.is-sticky,
+html.full-bleed:not(.fb-chat-only) #modules-row .wa-pane.is-open,
+html.full-bleed:not(.fb-chat-only) #modules-row .wa-pane.is-open.is-sticky,
+html.full-bleed:not(.fb-chat-only) #modules-row .sa-panel,
+html.full-bleed:not(.fb-chat-only) #modules-row.modules-sticky .wch-sidebar.wch-docked {
   align-self: stretch !important;
   height: 100% !important;
   max-height: 100% !important;
@@ -3820,9 +3871,32 @@ html.full-bleed #modules-row.modules-sticky .wch-sidebar.wch-docked {
   border-radius: 0 !important;
   animation: none !important;
 }
-html.full-bleed #modules-row .sticky-mod.is-sticky > .panel-inner,
-html.full-bleed #modules-row .sticky-mod.is-sticky > [class*="-inner"] {
+html.full-bleed:not(.fb-chat-only) #modules-row .sticky-mod.is-sticky > .panel-inner,
+html.full-bleed:not(.fb-chat-only) #modules-row .sticky-mod.is-sticky > [class*="-inner"],
+html.full-bleed:not(.fb-chat-only) #modules-row .wa-pane.is-open > .wa-pane-top,
+html.full-bleed:not(.fb-chat-only) #modules-row .wa-pane.is-open > .wa-pane-body {
   border-radius: 0 !important;
+}
+
+/* ===== Full bleed ▸ Chat only ==============================================
+   Appearance ▸ Full bleed ▸ "Chat only": nav, output, History, and every
+   other module use the SAME frame, colours, elevation and drawer inset as
+   when full bleed is off. Only the chat host stays edge-to-edge — it breaks
+   out of the restored 12px page pad so it still reaches the window. */
+html.full-bleed.fb-chat-only :is(
+  .sc-card, .wa-chat, #wa-chat, #rf-chat, #sa-chat, #aid-chat,
+  #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
+  #pf-chat-panel, #wiseai-dock-panel, .sticky-chat
+) {
+  /* Fill the row's restored padding (top page-pad + bottom elevation
+     gutter). Negative margin into parent padding is NOT clipped by
+     #modules-row's overflow-y:hidden — extending outside the padding
+     box was, which left a 12px strip of page colour above the chat. */
+  margin-top: calc(-1 * var(--modules-bottom-pad, 12px)) !important;
+  margin-bottom: calc(-1 * var(--chat-elev-gutter, 48px)) !important;
+  height: calc(100% + var(--modules-bottom-pad, 12px) + var(--chat-elev-gutter, 48px)) !important;
+  max-height: none !important;
+  align-self: stretch !important;
 }
 
 /* ===== Full bleed ▸ surface colours (Appearance popover sub-controls) =======
@@ -3863,14 +3937,14 @@ html.full-bleed #modules-row .sticky-mod.is-sticky > [class*="-inner"] {
    js/sticky-modules.js CHAT_SEL). Used so a preset paints the same surfaces
    on wiseai, add-product, portfolio, dashboard, admin pages, etc. */
 /* DARK-scheme token palette (light body ink on a dark surface). */
-html.full-bleed:not(.dark):not(.fb-nav-tint) #menu-panel,
-html.full-bleed.fb-nav-dark #menu-panel,
-html.full-bleed.fb-chat-dark :is(
+html.full-bleed:not(.fb-chat-only):not(.dark):not(.fb-nav-tint) #menu-panel,
+html.full-bleed:not(.fb-chat-only).fb-nav-dark #menu-panel,
+html.full-bleed:not(.fb-chat-only).fb-chat-dark :is(
   .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
   #pf-chat-panel, #wiseai-dock-panel
 ),
-html.full-bleed.fb-rmod-dark #modules-row > :not(:is(
+html.full-bleed:not(.fb-chat-only).fb-rmod-dark #modules-row > :not(:is(
   .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
   #pf-chat-panel, #wiseai-dock-panel, .sticky-chat
@@ -3890,14 +3964,14 @@ html.full-bleed.fb-rmod-dark #modules-row > :not(:is(
   --sec-red-text: #FFE1DC;
 }
 /* LIGHT-scheme token palette (dark body ink on a light surface). */
-html.full-bleed.dark:not(.fb-nav-tint) #menu-panel,
-html.full-bleed.fb-nav-light #menu-panel,
-html.full-bleed.fb-chat-light :is(
+html.full-bleed:not(.fb-chat-only).dark:not(.fb-nav-tint) #menu-panel,
+html.full-bleed:not(.fb-chat-only).fb-nav-light #menu-panel,
+html.full-bleed:not(.fb-chat-only).fb-chat-light :is(
   .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
   #pf-chat-panel, #wiseai-dock-panel
 ),
-html.full-bleed.fb-rmod-light #modules-row > :not(:is(
+html.full-bleed:not(.fb-chat-only).fb-rmod-light #modules-row > :not(:is(
   .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
   #pf-chat-panel, #wiseai-dock-panel, .sticky-chat
@@ -3922,42 +3996,42 @@ html.full-bleed.fb-rmod-light #modules-row > :not(:is(
    palettes above already flipped the contents; here we set the panel gradient
    and the icon/hover accents the token palette can't (base rules colour those
    from --primary, which we don't remap). */
-html.full-bleed:not(.dark):not(.fb-nav-tint) #menu-panel .menu-inner {
+html.full-bleed:not(.fb-chat-only):not(.dark):not(.fb-nav-tint) #menu-panel .menu-inner {
   background: linear-gradient(165deg, #1C3E60 0%, #17324F 60%, #14293F 100%) !important;
   border: 1px solid rgba(157, 189, 228, 0.22) !important;
   box-shadow: 0 4px 40px rgba(10, 22, 38, 0.28) !important;
 }
-html.full-bleed:not(.dark):not(.fb-nav-tint) #menu-panel .menu-nav-icon .material-symbols-outlined,
-html.full-bleed:not(.dark):not(.fb-nav-tint) #menu-panel .menu-nav-item:hover,
-html.full-bleed:not(.dark):not(.fb-nav-tint) #menu-panel .menu-nav-item.is-active,
-html.full-bleed:not(.dark):not(.fb-nav-tint) #menu-panel .menu-nav-item.is-open,
-html.full-bleed:not(.dark):not(.fb-nav-tint) #menu-panel .menu-nav-chevron,
-html.full-bleed:not(.dark):not(.fb-nav-tint) #menu-panel .menu-nav-subitem.is-active .menu-nav-subicon {
-  color: #C9D8EC !important;
+html.full-bleed:not(.fb-chat-only):not(.dark):not(.fb-nav-tint) #menu-panel .menu-nav-icon .material-symbols-outlined,
+html.full-bleed:not(.fb-chat-only):not(.dark):not(.fb-nav-tint) #menu-panel .menu-nav-item:hover,
+html.full-bleed:not(.fb-chat-only):not(.dark):not(.fb-nav-tint) #menu-panel .menu-nav-item.is-active,
+html.full-bleed:not(.fb-chat-only):not(.dark):not(.fb-nav-tint) #menu-panel .menu-nav-item.is-open,
+html.full-bleed:not(.fb-chat-only):not(.dark):not(.fb-nav-tint) #menu-panel .menu-nav-chevron,
+html.full-bleed:not(.fb-chat-only):not(.dark):not(.fb-nav-tint) #menu-panel .menu-nav-subitem.is-active .menu-nav-subicon {
+  color: #E3C878 !important;
 }
 
-html.full-bleed.dark:not(.fb-nav-tint) #menu-panel .menu-inner {
+html.full-bleed:not(.fb-chat-only).dark:not(.fb-nav-tint) #menu-panel .menu-inner {
   background: linear-gradient(165deg, #FFFFFF 0%, #F9F8F3 100%) !important;
   border: 1px solid color-mix(in srgb, #25507C 16%, transparent) !important;
   box-shadow: 0 4px 40px rgba(10, 22, 38, 0.14) !important;
 }
 /* Dark mode hard-codes white hover/active fills + a white footer border (both
    invisible on the flipped white nav) — restate them as brand-blue. */
-html.full-bleed.dark:not(.fb-nav-tint) #menu-panel .menu-nav-item:hover,
-html.full-bleed.dark:not(.fb-nav-tint) #menu-panel .menu-nav-item.is-active,
-html.full-bleed.dark:not(.fb-nav-tint) #menu-panel .menu-nav-item.is-open,
-html.full-bleed.dark:not(.fb-nav-tint) #menu-panel .menu-nav-subitem:hover,
-html.full-bleed.dark:not(.fb-nav-tint) #menu-panel .menu-nav-group[data-open="true"] > .menu-nav-toggle,
-html.full-bleed.dark:not(.fb-nav-tint) #menu-panel .menu-nav-group[data-open="true"] > .menu-nav-product {
+html.full-bleed:not(.fb-chat-only).dark:not(.fb-nav-tint) #menu-panel .menu-nav-item:hover,
+html.full-bleed:not(.fb-chat-only).dark:not(.fb-nav-tint) #menu-panel .menu-nav-item.is-active,
+html.full-bleed:not(.fb-chat-only).dark:not(.fb-nav-tint) #menu-panel .menu-nav-item.is-open,
+html.full-bleed:not(.fb-chat-only).dark:not(.fb-nav-tint) #menu-panel .menu-nav-subitem:hover,
+html.full-bleed:not(.fb-chat-only).dark:not(.fb-nav-tint) #menu-panel .menu-nav-group[data-open="true"] > .menu-nav-toggle,
+html.full-bleed:not(.fb-chat-only).dark:not(.fb-nav-tint) #menu-panel .menu-nav-group[data-open="true"] > .menu-nav-product {
   background: rgba(37, 80, 124, 0.08) !important;
   color: #111827 !important;
 }
-html.full-bleed.dark:not(.fb-nav-tint) #menu-panel .menu-footer {
+html.full-bleed:not(.fb-chat-only).dark:not(.fb-nav-tint) #menu-panel .menu-footer {
   border-top-color: color-mix(in srgb, #25507C 16%, transparent) !important;
 }
 
 /* ---- Custom / preset NAV colour ---- */
-html.full-bleed.fb-nav-tint #menu-panel {
+html.full-bleed:not(.fb-chat-only).fb-nav-tint #menu-panel {
   --text: var(--fb-nav-fg, #EAF1F9);
   --text-muted: color-mix(in srgb, var(--fb-nav-fg, #EAF1F9) 78%, transparent);
   --text-subtle: color-mix(in srgb, var(--fb-nav-fg, #EAF1F9) 66%, transparent);
@@ -3967,30 +4041,39 @@ html.full-bleed.fb-nav-tint #menu-panel {
   --border: color-mix(in srgb, var(--fb-nav-fg, #EAF1F9) 24%, transparent);
   --border-strong: color-mix(in srgb, var(--fb-nav-fg, #EAF1F9) 38%, transparent);
 }
-html.full-bleed.fb-nav-tint #menu-panel .menu-inner {
+html.full-bleed:not(.fb-chat-only).fb-nav-tint #menu-panel .menu-inner {
   background: var(--fb-nav-bg) !important;
   border: 1px solid color-mix(in srgb, var(--fb-nav-fg, #EAF1F9) 22%, transparent) !important;
 }
 /* Icon + hover/active accents follow the picked accent (base rules use
    --primary, which we don't remap). */
-html.full-bleed.fb-nav-tint #menu-panel .menu-nav-icon .material-symbols-outlined,
-html.full-bleed.fb-nav-tint #menu-panel .menu-nav-item:hover,
-html.full-bleed.fb-nav-tint #menu-panel .menu-nav-item.is-active,
-html.full-bleed.fb-nav-tint #menu-panel .menu-nav-item.is-open,
-html.full-bleed.fb-nav-tint #menu-panel .menu-nav-chevron,
-html.full-bleed.fb-nav-tint #menu-panel .menu-nav-subitem.is-active .menu-nav-subicon {
+html.full-bleed:not(.fb-chat-only).fb-nav-tint #menu-panel .menu-nav-icon .material-symbols-outlined,
+html.full-bleed:not(.fb-chat-only).fb-nav-tint #menu-panel .menu-nav-item:hover,
+html.full-bleed:not(.fb-chat-only).fb-nav-tint #menu-panel .menu-nav-item.is-active,
+html.full-bleed:not(.fb-chat-only).fb-nav-tint #menu-panel .menu-nav-item.is-open,
+html.full-bleed:not(.fb-chat-only).fb-nav-tint #menu-panel .menu-nav-chevron,
+html.full-bleed:not(.fb-chat-only).fb-nav-tint #menu-panel .menu-nav-subitem.is-active .menu-nav-subicon {
   color: var(--fb-nav-accent, var(--fb-nav-fg, #EAF1F9)) !important;
 }
+html.full-bleed:not(.fb-chat-only).fb-nav-tint #menu-panel .menu-nav-item:hover,
+html.full-bleed:not(.fb-chat-only).fb-nav-tint #menu-panel .menu-nav-item.is-active,
+html.full-bleed:not(.fb-chat-only).fb-nav-tint #menu-panel .menu-nav-item.is-open,
+html.full-bleed:not(.fb-chat-only).fb-nav-tint #menu-panel .menu-nav-subitem:hover,
+html.full-bleed:not(.fb-chat-only).fb-nav-tint #menu-panel .menu-nav-group[data-open="true"] > .menu-nav-toggle,
+html.full-bleed:not(.fb-chat-only).fb-nav-tint #menu-panel .menu-nav-group[data-open="true"] > .menu-nav-product,
+html.full-bleed:not(.fb-chat-only).fb-nav-tint #menu-panel .menu-footer .menu-nav-item:hover {
+  background: color-mix(in srgb, var(--fb-nav-accent, var(--fb-nav-fg, #EAF1F9)) 14%, transparent) !important;
+}
 /* Neutralise dark mode's hard-coded white hover fills + footer border. */
-html.full-bleed.dark.fb-nav-tint #menu-panel .menu-nav-item:hover,
-html.full-bleed.dark.fb-nav-tint #menu-panel .menu-nav-item.is-active,
-html.full-bleed.dark.fb-nav-tint #menu-panel .menu-nav-item.is-open,
-html.full-bleed.dark.fb-nav-tint #menu-panel .menu-nav-subitem:hover,
-html.full-bleed.dark.fb-nav-tint #menu-panel .menu-nav-group[data-open="true"] > .menu-nav-toggle,
-html.full-bleed.dark.fb-nav-tint #menu-panel .menu-nav-group[data-open="true"] > .menu-nav-product {
+html.full-bleed:not(.fb-chat-only).dark.fb-nav-tint #menu-panel .menu-nav-item:hover,
+html.full-bleed:not(.fb-chat-only).dark.fb-nav-tint #menu-panel .menu-nav-item.is-active,
+html.full-bleed:not(.fb-chat-only).dark.fb-nav-tint #menu-panel .menu-nav-item.is-open,
+html.full-bleed:not(.fb-chat-only).dark.fb-nav-tint #menu-panel .menu-nav-subitem:hover,
+html.full-bleed:not(.fb-chat-only).dark.fb-nav-tint #menu-panel .menu-nav-group[data-open="true"] > .menu-nav-toggle,
+html.full-bleed:not(.fb-chat-only).dark.fb-nav-tint #menu-panel .menu-nav-group[data-open="true"] > .menu-nav-product {
   background: color-mix(in srgb, var(--fb-nav-fg, #EAF1F9) 12%, transparent) !important;
 }
-html.full-bleed.dark.fb-nav-tint #menu-panel .menu-footer {
+html.full-bleed:not(.fb-chat-only).dark.fb-nav-tint #menu-panel .menu-footer {
   border-top-color: color-mix(in srgb, var(--fb-nav-fg, #EAF1F9) 18%, transparent) !important;
 }
 
@@ -4000,7 +4083,7 @@ html.full-bleed.dark.fb-nav-tint #menu-panel .menu-footer {
    scheme palette above. Also remaps --bg so welcome/settings overlays, header
    float backings, and anything else that paints from --bg follow the preset
    instead of the page linen / hardcoded navy. */
-html.full-bleed.fb-chat-tint :is(
+html.full-bleed:not(.fb-chat-only).fb-chat-tint :is(
   .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
   #pf-chat-panel, #wiseai-dock-panel
@@ -4009,8 +4092,11 @@ html.full-bleed.fb-chat-tint :is(
   --surface: var(--fb-chat-bg);
   --surface-2: var(--fb-chat-bg);
   --surface-3: color-mix(in srgb, var(--fb-chat-fg, #16233B) 8%, var(--fb-chat-bg));
+  --primary-ink: var(--fb-chat-accent, var(--fb-chat-fg, #16233B));
+  --primary-soft: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 16%, transparent);
+  --border-strong: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 28%, transparent);
 }
-html.full-bleed.fb-chat-tint :is(
+html.full-bleed:not(.fb-chat-only).fb-chat-tint :is(
   .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
   #pf-chat-panel, #wiseai-dock-panel,
@@ -4022,26 +4108,73 @@ html.full-bleed.fb-chat-tint :is(
 /* Composer + intent-chip fades stay on hardcoded brand-blue / navy washes
    (chat-tint). When a preset is on, restain them from the chat surface so the
    welcome, input, and carousel edges actually change with the theme. */
-html.full-bleed.fb-chat-tint .fl-input-wrap {
+html.full-bleed:not(.fb-chat-only).fb-chat-tint .fl-input-wrap {
   background: color-mix(in srgb, var(--fb-chat-fg, #16233B) 10%, var(--fb-chat-bg)) !important;
   border-color: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 22%, transparent) !important;
 }
-html.full-bleed.fb-chat-tint .ws-intent-chip,
-html.full-bleed.fb-chat-tint .chip {
+html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-intent-chip,
+html.full-bleed:not(.fb-chat-only).fb-chat-tint .chip {
   background: color-mix(in srgb, var(--fb-chat-fg, #16233B) 10%, var(--fb-chat-bg));
   border-color: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 28%, transparent);
   color: var(--fb-chat-fg, #16233B);
 }
-html.full-bleed.fb-chat-tint .ws-scorecards-wrap::before,
-html.full-bleed.fb-chat-tint .ws-chips-wrap::before {
+/* Intent-chip icons stay gold (chat-module-parity). Hover wash + ring follow
+   the surface accent so Default (green chat / gold icons) is not leftover navy. */
+html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-intent-chip > .material-symbols-outlined {
+  color: var(--ter-amber, #E3C878) !important;
+}
+html.full-bleed:not(.fb-chat-only).fb-chat-tint .chip:hover,
+html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-intent-chip:hover {
+  background: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 16%, var(--fb-chat-bg)) !important;
+  border-color: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 48%, transparent) !important;
+  color: var(--fb-chat-fg, #16233B);
+}
+html.full-bleed:not(.fb-chat-only).fb-chat-tint .chip.ws-intent-chip--askhelp:hover {
+  background: color-mix(in srgb, var(--ter-amber, #FFC434) 18%, var(--fb-chat-bg)) !important;
+  border-color: var(--ter-amber, #FFC434) !important;
+  color: color-mix(in srgb, var(--ter-amber, #FFC434) 50%, #000);
+}
+html.full-bleed:not(.fb-chat-only).dark.fb-chat-tint .chip.ws-intent-chip--askhelp:hover {
+  color: var(--ter-amber, #FFC434);
+}
+html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-intent-chip.is-used,
+html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-intent-chip.is-used:hover {
+  background: color-mix(in srgb, var(--fb-chat-fg, #16233B) 8%, var(--fb-chat-bg)) !important;
+  border-color: color-mix(in srgb, var(--fb-chat-fg, #16233B) 18%, transparent) !important;
+}
+html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-scorecard:hover,
+html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-scorecard--intro:hover,
+html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-scorecard--wiseai:hover {
+  background: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 14%, var(--fb-chat-bg)) !important;
+  border-color: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 50%, transparent) !important;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 16%, transparent);
+}
+html.full-bleed:not(.fb-chat-only).fb-chat-tint .fl-input-wrap:focus-within {
+  border-color: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 55%, transparent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 18%, transparent) !important;
+}
+html.full-bleed:not(.fb-chat-only).fb-chat-tint .sc-send:hover,
+html.full-bleed:not(.fb-chat-only).fb-chat-tint .sc-send:focus-visible {
+  background: color-mix(in srgb, var(--fb-chat-accent, var(--primary)) 82%, #000) !important;
+  color: #fff;
+}
+html.full-bleed:not(.fb-chat-only).fb-chat-tint :is(
+  .panel-more-btn, .panel-width-toggle-btn, .panel-close-btn, .panel-ctrl-btn,
+  .sc-topbar-controls button, .fl-plus, .fl-model-btn
+):hover {
+  background: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 14%, var(--fb-chat-bg)) !important;
+  color: var(--fb-chat-accent, var(--fb-chat-fg, #16233B));
+}
+html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-scorecards-wrap::before,
+html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-chips-wrap::before {
   background: linear-gradient(to right, var(--fb-chat-bg) 0%, transparent 100%) !important;
 }
-html.full-bleed.fb-chat-tint .ws-scorecards-wrap::after,
-html.full-bleed.fb-chat-tint .ws-chips-wrap::after {
+html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-scorecards-wrap::after,
+html.full-bleed:not(.fb-chat-only).fb-chat-tint .ws-chips-wrap::after {
   background: linear-gradient(to left, var(--fb-chat-bg) 0%, transparent 100%) !important;
 }
-html.full-bleed.fb-chat-tint.header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-more-btn,
-html.full-bleed.fb-chat-tint.header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn {
+html.full-bleed:not(.fb-chat-only).fb-chat-tint.header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-more-btn,
+html.full-bleed:not(.fb-chat-only).fb-chat-tint.header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn {
   background: var(--fb-chat-bg) !important;
 }
 
@@ -4050,7 +4183,7 @@ html.full-bleed.fb-chat-tint.header-float .sc-card.sc-scrolled .chat-topbar > .s
    trackers, dashboard cards, History / Turns, agent-main, portfolio panels),
    not just modules that happen to carry .sticky-mod. Chrome (resize handles,
    scrims) is skipped. */
-html.full-bleed.fb-rmod-tint #modules-row > :not(:is(
+html.full-bleed:not(.fb-chat-only).fb-rmod-tint #modules-row > :not(:is(
   .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
   #pf-chat-panel, #wiseai-dock-panel, .sticky-chat
@@ -4059,10 +4192,13 @@ html.full-bleed.fb-rmod-tint #modules-row > :not(:is(
   --surface: var(--fb-rmod-bg);
   --surface-2: var(--fb-rmod-bg);
   --surface-3: color-mix(in srgb, var(--fb-rmod-fg, #16233B) 8%, var(--fb-rmod-bg));
+  --primary-ink: var(--fb-rmod-accent, var(--fb-rmod-fg, #16233B));
+  --primary-soft: color-mix(in srgb, var(--fb-rmod-accent, var(--fb-rmod-fg, #16233B)) 16%, transparent);
+  --border-strong: color-mix(in srgb, var(--fb-rmod-accent, var(--fb-rmod-fg, #16233B)) 28%, transparent);
   background: var(--fb-rmod-bg) !important;
   color: var(--fb-rmod-fg, #16233B);
 }
-html.full-bleed.fb-rmod-tint #modules-row > :not(:is(
+html.full-bleed:not(.fb-chat-only).fb-rmod-tint #modules-row > :not(:is(
   .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
   #pf-chat-panel, #wiseai-dock-panel, .sticky-chat
@@ -4074,10 +4210,18 @@ html.full-bleed.fb-rmod-tint #modules-row > :not(:is(
   color: var(--fb-rmod-fg, #16233B);
 }
 /* Scorecards / stat tiles that hard-code navy or the chat-tint wash. */
-html.full-bleed.fb-rmod-tint #modules-row :is(
+html.full-bleed:not(.fb-chat-only).fb-rmod-tint #modules-row :is(
   .wa-stat, .dash-report-stat, .vf-stat, .gv-stat, .adm-vf-stat, .wmod-stat, .mi-stat
 ) {
   background: var(--fb-rmod-bg) !important;
+}
+html.full-bleed:not(.fb-chat-only).fb-rmod-tint #modules-row :is(
+  .panel-more-btn, .panel-width-toggle-btn, .panel-close-btn, .panel-ctrl-btn,
+  .wa-pane-nav-arrow, .wa-pane-thumb-item, button.adm-btn, .chip
+):hover {
+  background: color-mix(in srgb, var(--fb-rmod-accent, var(--fb-rmod-fg, #16233B)) 14%, var(--fb-rmod-bg)) !important;
+  border-color: color-mix(in srgb, var(--fb-rmod-accent, var(--fb-rmod-fg, #16233B)) 40%, transparent);
+  color: var(--fb-rmod-fg, #16233B);
 }
 
 /* ===== Full bleed ▸ right-module functionality =============================
@@ -4087,7 +4231,7 @@ html.full-bleed.fb-rmod-tint #modules-row :is(
    in topbar.js), also gated on full bleed so it's part of the same feature.
    Targets every sibling AFTER the chat (History is inserted BEFORE the chat
    and must stay visible). */
-html.full-bleed.rmod-flat #modules-row > :is(
+html.full-bleed:not(.fb-chat-only).rmod-flat #modules-row > :is(
   .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
   #pf-chat-panel, #wiseai-dock-panel, .sticky-chat
@@ -4097,14 +4241,14 @@ html.full-bleed.rmod-flat #modules-row > :is(
   border-left: 1px solid var(--border) !important;
   z-index: 1 !important;
 }
-html.full-bleed.rmod-flat #modules-row > :is(
+html.full-bleed:not(.fb-chat-only).rmod-flat #modules-row > :is(
   .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
   #pf-chat-panel, #wiseai-dock-panel, .sticky-chat
 ) ~ :not([class*="scrim"]):not([class*="resize"]):not([class*="handle"]):not([class*="grip"]) > :is(.panel-inner, [class*="-inner"]) {
   border-left: 1px solid var(--border) !important;
 }
-html.full-bleed.rmod-hidden #modules-row > :is(
+html.full-bleed:not(.fb-chat-only).rmod-hidden #modules-row > :is(
   .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
   #pf-chat-panel, #wiseai-dock-panel, .sticky-chat
@@ -4682,13 +4826,18 @@ html.chat-elev-3d:not(.full-bleed):not(.brand-inset) #modules-row > :is(.sc-card
    inside the clip box, then pull the row back with a matching negative margin
    and give <body> the same bottom inset — the card stays aligned with the nav,
    and the shadow hangs into the page padding instead of being cropped. */
-html:not(.full-bleed):not(.brand-inset) body {
+html:not(.full-bleed):not(.brand-inset) body,
+html.full-bleed.fb-chat-only:not(.brand-inset) body {
   padding-bottom: max(var(--modules-bottom-pad, 12px), var(--chat-elev-gutter, 48px));
 }
 html:not(.full-bleed):not(.brand-inset) #modules-row,
 html:not(.full-bleed):not(.brand-inset) .menu-brand-integrated #modules-row,
 html:not(.full-bleed):not(.brand-inset) #chat-shell-wrap.menu-brand-integrated #modules-row,
-html:not(.full-bleed):not(.brand-inset) #agent-shell-wrap.menu-brand-integrated #modules-row {
+html:not(.full-bleed):not(.brand-inset) #agent-shell-wrap.menu-brand-integrated #modules-row,
+html.full-bleed.fb-chat-only:not(.brand-inset) #modules-row,
+html.full-bleed.fb-chat-only:not(.brand-inset) .menu-brand-integrated #modules-row,
+html.full-bleed.fb-chat-only:not(.brand-inset) #chat-shell-wrap.menu-brand-integrated #modules-row,
+html.full-bleed.fb-chat-only:not(.brand-inset) #agent-shell-wrap.menu-brand-integrated #modules-row {
   padding-bottom: var(--chat-elev-gutter, 48px);
   padding-left: 10px;
   padding-right: 10px;
@@ -4699,6 +4848,17 @@ html:not(.full-bleed):not(.brand-inset) #agent-shell-wrap.menu-brand-integrated 
      to grow by the gutter so the card stays nav-height and the shadow hangs
      into the body inset. */
   max-height: calc(100% + var(--chat-elev-gutter, 48px));
+}
+/* Chat only: lift the row through the 12px page pad and put that pad
+   INSIDE the row so the chat can fill it (overflow-y:hidden would clip a
+   negative margin that escaped the row). Nav stays in the body inset. */
+html.full-bleed.fb-chat-only:not(.brand-inset) #modules-row,
+html.full-bleed.fb-chat-only:not(.brand-inset) .menu-brand-integrated #modules-row,
+html.full-bleed.fb-chat-only:not(.brand-inset) #chat-shell-wrap.menu-brand-integrated #modules-row,
+html.full-bleed.fb-chat-only:not(.brand-inset) #agent-shell-wrap.menu-brand-integrated #modules-row {
+  padding-top: var(--modules-bottom-pad, 12px);
+  margin-top: calc(-1 * var(--modules-bottom-pad, 12px));
+  max-height: calc(100% + var(--modules-bottom-pad, 12px) + var(--chat-elev-gutter, 48px));
 }
 
 /* ===== Topbar (60px) — verbatim from ai-chat.html .chat-topbar ===== */
@@ -5017,10 +5177,10 @@ html.dark .sc-card .ws-chips-wrap::after { background: linear-gradient(to left, 
 .ws-chips-bar .ws-chips { margin-bottom: 0; padding: 2px 2px; }
 .ws-chips-bar::before, .ws-chips-bar::after { width: 20px; }
 
-/* Inline intent chips (opt-in via mountWISEcodeAIChat({ inlineChips:true })) — a
-   block of suggested actions that lives inside the transcript, trailing the
-   latest WISEcodeAI reply like a regular chat's suggested replies. Left-aligned and
-   indented to sit under the assistant's message body (avatar 30px + 12px gap). */
+/* Inline intent chips — ON by default. A block of suggested actions that lives
+   inside the transcript, trailing the latest WISEcodeAI reply like a regular
+   chat's suggested replies. Left-aligned and indented to sit under the
+   assistant's message body (avatar 30px + 12px gap). */
 .sc-inline-chips {
   display: flex; flex-wrap: wrap; gap: 8px;
   justify-content: flex-start;
@@ -5168,6 +5328,12 @@ html.dark .sc-card .ws-scorecards-wrap::after { background: linear-gradient(to l
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 .chip:hover { background: color-mix(in srgb, var(--primary) 16%, #fff); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
+html.dark .chip:hover,
+html.dark .ws-intent-chip:hover {
+  background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 22%, transparent);
+  border-color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 55%, var(--primary));
+  color: var(--text);
+}
 .chip .material-symbols-outlined { font-size: 13px !important; }
 /* Result / terminal chip (e.g. the "Done" chip that closes out a step) — a
    solid brand-blue pill so the conclusive action reads as the emphasized,
@@ -5898,7 +6064,13 @@ html.dark .sc-trust-badge .material-symbols-outlined { color: var(--primary-brig
   margin-top: 12px; margin-bottom: 8px;
 }
 .sc-line-you .sc-line-meta { justify-content: flex-start; }
-.sc-line-time { font-size: 0.625rem; font-weight: 500; color: var(--text-subtle); letter-spacing: 0.02em; }
+.sc-line-time { font-size: 0.625rem; font-weight: 500; letter-spacing: 0.02em;
+  cursor: pointer; user-select: none; text-decoration: none;
+  color: var(--primary-ink, var(--primary)); transition: color .14s ease; }
+.sc-line-time:hover { color: color-mix(in srgb, var(--primary) 62%, #fff); text-decoration: none; }
+html.dark .sc-line-time { color: var(--primary-bright, #8B9FAF); }
+html.dark .sc-line-time:hover { color: #AEC8ED; }
+.sc-line-time:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .sc-trust-chip {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 0.625rem; font-weight: 600; letter-spacing: 0.01em;
@@ -6466,6 +6638,7 @@ body[data-product-id="dashboard"] .agent-main-scroll {
    through the shimmer pieces regardless of per-element colours. */
 .dash.is-skeleton,
 .dash.is-skeleton * { color: transparent !important; }
+.dash.is-skeleton .dash-score-toast > * { visibility: hidden; }
 /* Shared shimmer sweep for every placeholder piece. */
 .dash.is-skeleton .dash-count-up,
 .dash.is-skeleton .dash-pct,
@@ -6487,6 +6660,7 @@ body[data-product-id="dashboard"] .agent-main-scroll {
 .dash.is-skeleton .dash-metric-track,
 .dash.is-skeleton .dash-ws-health-track,
 .dash.is-skeleton .dash-pillar-track,
+.dash.is-skeleton .dash-score-toast,
 .dash.is-skeleton .dash-donut::after {
   color: transparent !important;
   border-color: transparent !important;
@@ -6508,6 +6682,7 @@ body[data-product-id="dashboard"] .agent-main-scroll {
 .dash.is-skeleton .dash-card-title,
 .dash.is-skeleton .dash-section-title { min-height: 1.1em; }
 .dash.is-skeleton .dash-pillars-intro { min-height: 2.4em; }
+.dash.is-skeleton .dash-score-toast { min-height: 96px; }
 
 /* The donut becomes a shimmering disc sized to its real footprint. */
 .dash.is-skeleton .dash-donut { position: relative; }
@@ -6526,7 +6701,6 @@ body[data-product-id="dashboard"] .agent-main-scroll {
 .dash.is-skeleton .dash-stamp-icon,
 .dash.is-skeleton .dash-kebab-wrap,
 .dash.is-skeleton .dash-brand-toggle,
-.dash.is-skeleton .dash-btn-pulse,
 .dash.is-skeleton .dash-dot,
 .dash.is-skeleton .dash-claim-divider,
 .dash.is-skeleton .dash-metric-fill,
@@ -6570,6 +6744,7 @@ body[data-product-id="dashboard"] .agent-main-scroll {
   .dash.is-skeleton .dash-metric-track,
   .dash.is-skeleton .dash-ws-health-track,
   .dash.is-skeleton .dash-pillar-track,
+  .dash.is-skeleton .dash-score-toast,
   .dash.is-skeleton .dash-donut::after { animation: none; }
 }
 @keyframes dashReveal {
@@ -7250,37 +7425,102 @@ html.dark .dash-top5-hero-claim .dash-stamp-icon.dash-stamp-num { text-shadow: 0
    (big number + rating badge + note) while sitting inline in the claim row. */
 .dash-claim-score { display: flex; flex-direction: column; align-items: flex-start; position: relative; }
 
-/* Attention pulse on the Non-UPF / GRAS verification buttons — a small red
-   dot at the top-right of the pill, with a slow expanding ring. */
-.dash-btn:has(.dash-btn-pulse) { position: relative; }
-.dash-btn-pulse {
+/* Claim column that hosts a floating nudge toast — establishes the positioning
+   context so the absolutely-placed toast pops over this column. */
+.dash-claim-col--nudge { position: relative; }
+
+/* Nudge toast — pops up just over the column it belongs to (e.g. the "products
+   qualify" count) to push the next action. Small × dismisses it for the current
+   view; it is not persisted, so it returns on reload. */
+.dash-score-toast {
   position: absolute;
-  top: -2px;
-  right: -2px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #e11d48;
-  box-shadow: 0 0 0 1.5px #fff;
-  pointer-events: none;
+  left: -6px;
+  right: -6px;
+  bottom: calc(100% - 6px);
+  z-index: 6;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--primary, #25507C) 0%, #336699 100%);
+  color: #fff;
+  box-shadow: 0 14px 34px rgba(37, 80, 124, 0.4), 0 4px 10px rgba(0, 0, 0, 0.16);
+  animation:
+    dash-score-toast-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both,
+    dash-score-toast-float 3.6s ease-in-out 0.32s infinite;
 }
-html.dark .dash-btn-pulse { box-shadow: 0 0 0 1.5px var(--surface, #1a1a1a); }
-.dash-btn-pulse::after {
+.dash-score-toast::after {
   content: "";
   position: absolute;
-  inset: -1px;
+  bottom: -7px;
+  left: 28px;
+  width: 14px;
+  height: 14px;
+  background: #336699;
+  transform: rotate(45deg);
+  border-radius: 0 0 3px 0;
+}
+html.dark .dash-score-toast {
+  background: linear-gradient(135deg, #3E6A9A 0%, #5A8BB8 100%);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.35);
+}
+html.dark .dash-score-toast::after { background: #5A8BB8; }
+.dash-score-toast-icon { display: inline-flex; flex-shrink: 0; margin-top: 1px; }
+.dash-score-toast-icon .material-symbols-outlined { font-size: 20px; color: #fff; }
+.dash-score-toast-body { min-width: 0; }
+.dash-score-toast-title {
+  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.25;
+  padding-right: 18px;
+}
+.dash-score-toast-text {
+  margin: 3px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.92);
+}
+.dash-score-toast-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 9px;
+  padding: 0;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+}
+.dash-score-toast-link .material-symbols-outlined { font-size: 15px; }
+.dash-score-toast-link-arrow { transition: transform 0.15s ease; }
+.dash-score-toast-link { transition: color 0.15s ease; }
+.dash-score-toast-link:hover { text-decoration: none; color: rgba(255, 255, 255, 0.78); }
+.dash-score-toast-link:hover .dash-score-toast-link-arrow { transform: translate(2px, -2px); }
+
+.dash-score-toast-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
   border-radius: 50%;
-  background: #e11d48;
-  animation: dash-btn-pulse-ring 2.2s ease-out infinite;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease;
 }
-@keyframes dash-btn-pulse-ring {
-  0% { transform: scale(1); opacity: 0.55; }
-  100% { transform: scale(2.6); opacity: 0; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .dash-btn-pulse::after { animation: none; }
-}
-/* Kept for analytics-types.html's .pmx-fix-toast, which reuses these names. */
+.dash-score-toast-close:hover { background: rgba(255, 255, 255, 0.32); }
+.dash-score-toast-close .material-symbols-outlined { font-size: 13px; }
 @keyframes dash-score-toast-in {
   from { opacity: 0; transform: translateY(8px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
@@ -7294,6 +7534,9 @@ html.dark .dash-btn-pulse { box-shadow: 0 0 0 1.5px var(--surface, #1a1a1a); }
     transform: translateY(-11px);
     box-shadow: 0 28px 52px rgba(37, 80, 124, 0.32), 0 12px 22px rgba(0, 0, 0, 0.13);
   }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-score-toast { animation: dash-score-toast-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
 }
 /* Match the 10px top offset on the discovered / claimed number rows so all
    three big scores share the same baseline. */
@@ -7709,11 +7952,11 @@ html.dark .dash-status-tip {
   line-height: 1.35;
   color: var(--text-muted);
 }
-.dash-status-tip-dot--excellent { background: var(--chart-status-excellent); }
-.dash-status-tip-dot--good { background: var(--chart-status-good); }
-.dash-status-tip-dot--okay { background: var(--chart-status-okay); }
-.dash-status-tip-dot--fair { background: var(--chart-status-fair); }
-.dash-status-tip-dot--poor { background: var(--chart-status-poor); }
+.dash-status-tip-dot--excellent { background: var(--sec-green, #32A966); }
+.dash-status-tip-dot--good { background: #7DC470; }
+.dash-status-tip-dot--okay { background: var(--ter-amber, #FFC434); }
+.dash-status-tip-dot--fair { background: #D27326; }
+.dash-status-tip-dot--poor { background: var(--sec-red, #DC3038); }
 
 /* The Portfolio Analysis section is the last block on the page, so its status
    popover would open downward off the bottom of the scroll area and get
@@ -7877,8 +8120,10 @@ html.dark .dash-kebab-sep { background: rgba(255, 255, 255, 0.08); }
   flex-shrink: 0;
 }
 /* The single (levels-only) donut shares the exact dimensions of the double
-   donut and is swapped in when the health-status ring is toggled off. */
-.dash-donut-single { display: none; }
+   donut and is swapped in when the health-status ring is toggled off. Hide it
+   only inside a paired dash-donut-card — standalone single donuts (chat
+   outputs, compact category cards that render only a single ring) stay visible. */
+.dash-donut-card:not(.is-health-hidden) .dash-donut-single { display: none; }
 .dash-donut-card.is-health-hidden .dash-donut-double { display: none; }
 .dash-donut-card.is-health-hidden .dash-donut-single { display: block; }
 .dash-donut-card.is-health-hidden .dash-donut-legend-group--health { display: none; }
@@ -7944,8 +8189,8 @@ html.dark .dash-donut-center::before {
   line-height: 1;
   letter-spacing: -0.03em;
 }
-.dash-donut-num.is-green { color: var(--chart-status-excellent); }
-.dash-donut-num.is-teal { color: var(--chart-status-excellent); }
+.dash-donut-num.is-green { color: var(--sec-green); }
+.dash-donut-num.is-teal { color: var(--ter-cyan); }
 .dash-donut-label { font-size: 0.8125rem; font-weight: 700; color: var(--text); margin-top: 3px; }
 .dash-donut-sub { font-size: 0.68rem; line-height: 1.25; color: var(--text-muted); }
 
@@ -9409,7 +9654,7 @@ html.dark .dash-pillar-card-head .dash-stamp-icon:hover {
   .dash-claim .dash-progress-pct > .dash-stamp-icon { top: 1.7rem; }
 }
 /* ...and once the column reaches phone width the claim/score cards can no
-   longer sit side by side, so they stack into a single column (the
+   longer sit side by side, so they stack into a single column (the toast-topped
    "products qualify" cards read full-width instead of overflowing). The
    wide/desktop layout stays a 1×4 row and tablet a 2-up grid. The WISEscore
    split stacks to one column too. */
@@ -9419,6 +9664,18 @@ html.dark .dash-pillar-card-head .dash-stamp-icon:hover {
   .dash-pillars-cta-btn { white-space: normal; text-align: center; }
   .dash-claim-divider,
   .dash-wisescore .dash-claim-divider { display: none; }
+
+  /* Stacked column: the nudge toast can't float above a neighbouring column
+     anymore, so drop it into normal flow above its card content (full width,
+     no wobble) instead of overlapping the card above. */
+  .dash-claim-col--nudge .dash-score-toast {
+    position: static;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    margin: 0 0 16px;
+    animation: dash-score-toast-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
 
   /* Single-pane: caption drops below the big number; multi-column keeps side-by-side.
      Stacked vertically the 32px side-by-side gap reads as too much air, so tighten it. */
@@ -11541,6 +11798,7 @@ html.dark .adm-rowmenu-item:hover { background: rgba(255,255,255,0.06); }
 html.dark .adm-rowmenu-item--danger { color: #FF9E96; }
 .adm-rowmenu-item--danger .material-symbols-outlined { color: var(--sec-red); }
 html.dark .adm-rowmenu-item--danger .material-symbols-outlined { color: #FF9E96; }
+.adm-rowmenu-item:disabled { opacity: 0.4; pointer-events: none; cursor: default; }
 
 .adm-empty { padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 0.9rem; }
 
@@ -11574,7 +11832,7 @@ html.dark .adm-rowmenu-item--danger .material-symbols-outlined { color: #FF9E96;
 .adm-donut-center::before { content: ""; position: absolute; inset: 0; margin: auto; width: 76%; height: 76%; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 8px 20px rgba(8, 15, 26, 0.20), 0 3px 8px rgba(8, 15, 26, 0.14); z-index: 0; }
 html.dark .adm-donut-center::before { background: #14242f; border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5), 0 3px 8px rgba(0, 0, 0, 0.4); }
 .adm-donut-center > * { position: relative; z-index: 1; max-width: 120px; }
-.adm-donut-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 2.1rem; font-weight: 800; line-height: 1; letter-spacing: -0.02em; color: var(--chart-status-excellent, var(--ter-cyan)); }
+.adm-donut-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 2.1rem; font-weight: 800; line-height: 1; letter-spacing: -0.02em; color: var(--ter-cyan); }
 .adm-donut-label { font-size: 0.8125rem; font-weight: 700; color: var(--text); margin-top: 3px; }
 .adm-donut-sub { font-size: 0.68rem; line-height: 1.25; color: var(--text-muted); }
 

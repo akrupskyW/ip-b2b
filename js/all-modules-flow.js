@@ -38,6 +38,7 @@ import { ICON_INVENTORY } from './icon-inventory-data.js';
 import { CODE_STATS } from './code-stats-data.js';
 import { makeTraceHelix, measureTraceRungCentres, TRACE_STRAND_MARKUP } from './trace-helix.js';
 import { composerDbSelectorHtml, wireChatComposer, createHelixBgAnim } from './wiseai-chat.js';
+import { MODULE_SECTIONS, AREA_ICONS } from './module-directory-data.js';
 
 function esc(s) {
   return String(s == null ? '' : s)
@@ -48,138 +49,9 @@ function esc(s) {
     .replace(/>/g, '&gt;');
 }
 
-/* ------------------------------------------------------------------ */
-/* Module Directory data                                               */
-/*                                                                     */
-/* One explicit, curated map of EVERY module and screen in the app,    */
-/* grouped by product area. This is intentionally hand-maintained      */
-/* (rather than flattened off the left-rail nav model) for two         */
-/* reasons the nav model can't express:                                */
-/*   • Several pages host more than one module. The WISEcodeAI studio       */
-/*     (wiseai.html) hosts Chat, History, Data Sources and Turns as     */
-/*     distinct docked modules; the Reformulation page hosts both the   */
-/*     Reformulation Studio and the Reformulation Dashboard. Each gets  */
-/*     its own directory entry here (a `#hash` keeps them distinct and  */
-/*     still resolves to the real page).                                */
-/*   • The nav model listed some surfaces (e.g. My profile) in more     */
-/*     than one place, which surfaced as duplicate cards. Here every    */
-/*     module appears exactly once. A final href de-dup pass in         */
-/*     renderDirectory guards against any accidental repeat.            */
-/* Marketing pages sit at the repo root, one level up from pages/.      */
-const MODULE_SECTIONS = [
-  {
-    title: 'Workspace',
-    tone: 'workspace',
-    modules: [
-      { label: 'Overview', icon: 'space_dashboard', href: 'overview.html' },
-    ],
-  },
-  {
-    title: 'Portfolio',
-    tone: 'portfolio',
-    modules: [
-      { label: 'Product Portfolio', icon: 'handyman', href: 'product-portfolio.html' },
-      { label: 'Comparison', icon: 'compare', href: 'product-comparison.html' },
-      { label: 'NON-UPF Dashboard', icon: 'dashboard', href: 'non-upf-dashboard.html' },
-      { label: 'Marketing Assets', icon: 'photo_library', href: 'marketing-assets.html' },
-      { label: 'Add Product', icon: 'add_box', href: 'add-product.html' },
-      { label: 'View Product', icon: 'inventory_2', href: 'view-product.html' },
-    ],
-  },
-  {
-    title: 'WISEcodeAI Studio',
-    tone: 'ai',
-    modules: [
-      { label: 'Chat', icon: 'forum', href: 'wiseai.html' },
-      { label: 'History', icon: 'history', href: 'wiseai.html#history' },
-      { label: 'Data Sources', icon: 'hub', href: 'wiseai.html#data-sources' },
-      { label: 'Turns', icon: 'alt_route', href: 'wiseai.html#turns' },
-      { label: 'Library', icon: 'auto_stories', href: 'conversation-library.html' },
-      { label: 'Ingredient Browser', icon: 'science', href: 'ingredient-browser.html' },
-      { label: 'AI Dashboard', icon: 'space_dashboard', href: 'ai-dashboard.html' },
-      { label: 'Studio & AI', icon: 'auto_awesome', href: 'studio-ai.html' },
-    ],
-  },
-  {
-    title: 'Reformulation',
-    tone: 'reform',
-    modules: [
-      { label: 'Reformulation Studio', icon: 'auto_fix_high', href: 'reformulation.html' },
-      { label: 'Reformulation Dashboard', icon: 'monitoring', href: 'reformulation.html#dashboard' },
-    ],
-  },
-  {
-    title: 'Reports & Analytics',
-    tone: 'report',
-    /* app-vision-deck.html is a standalone pitch deck and is intentionally
-       omitted from this index (directory, rail preview, and screenshot export). */
-    modules: [
-      { label: 'Reports', icon: 'description', href: 'reports.html' },
-      { label: 'Guiding Stars Report', icon: 'star', href: 'report-guiding-stars.html' },
-      { label: 'Analytics Types', icon: 'insights', href: 'analytics-types.html' },
-    ],
-  },
-  {
-    title: 'Verification',
-    tone: 'verify',
-    modules: [
-      { label: 'Non-UPF Verification', icon: 'verified', href: 'verification.html' },
-      { label: 'GRAS Verification', icon: 'shield', href: 'gras-verification.html' },
-    ],
-  },
-  {
-    title: 'Admin',
-    tone: 'admin',
-    modules: [
-      { label: 'My profile', icon: 'account_circle', href: 'profile.html' },
-      { label: 'Invoices & Downloads', icon: 'receipt_long', href: 'invoices.html' },
-      { label: 'Organizations', icon: 'apartment', href: 'organizations.html' },
-      { label: 'Quick Invite', icon: 'bolt', href: 'quick-invite.html' },
-      { label: 'User Management', icon: 'group', href: 'user-management.html' },
-      { label: 'Audit Queue', icon: 'shield', href: 'audit-queue.html' },
-      { label: 'Admin Utils', icon: 'build', href: 'admin-utils.html' },
-      { label: 'Accessibility Review', icon: 'accessibility_new', href: 'accessibility-review.html', badge: 'Admin' },
-    ],
-  },
-  {
-    title: 'Account & Support',
-    tone: 'account',
-    modules: [
-      { label: 'Agents', icon: 'smart_toy', href: 'agents.html' },
-      { label: 'Alerts', icon: 'notifications', href: 'alerts.html' },
-      { label: 'Preferences', icon: 'tune', href: 'preferences.html' },
-      { label: 'API keys', icon: 'key', href: 'api-keys.html' },
-      { label: 'Help', icon: 'help', href: 'help.html' },
-      { label: 'Docs', icon: 'menu_book', href: 'docs.html' },
-    ],
-  },
-  {
-    title: 'Authentication',
-    tone: 'auth',
-    modules: [
-      { label: 'Log in', icon: 'login', href: 'login.html' },
-      { label: 'Create Account', icon: 'person_add', href: 'create-account.html' },
-      { label: 'Forgot Password', icon: 'lock_reset', href: 'forgot-password.html' },
-    ],
-  },
-  {
-    title: 'Marketing site',
-    tone: 'marketing',
-    modules: [
-      { label: 'Home', icon: 'home', href: '../index.html' },
-      { label: 'Products', icon: 'category', href: '../marketing-products.html' },
-      { label: 'Solutions', icon: 'lightbulb', href: '../marketing-solutions.html' },
-      { label: 'Pricing', icon: 'sell', href: '../marketing-pricing.html' },
-      { label: 'App', icon: 'phone_iphone', href: '../marketing-app.html' },
-      { label: 'Coach', icon: 'sports', href: '../marketing-coach.html' },
-      { label: 'Enterprise', icon: 'apartment', href: '../marketing-enterprise.html' },
-      { label: 'WISEcodeAI', icon: 'auto_awesome', href: '../marketing-wiseai.html' },
-      { label: 'GRAS', icon: 'verified', href: '../marketing-gras.html' },
-      { label: 'Non-UPF', icon: 'eco', href: '../marketing-nonupf.html' },
-      { label: 'Alliance', icon: 'handshake', href: '../marketing-alliance.html' },
-    ],
-  },
-];
+/* Module Directory catalog lives in js/module-directory-data.js so the
+   full-screen Page Gallery can render the same list without pulling this
+   file (and the chat module it imports) along with it. */
 
 function moduleCard(m) {
   const badge = m.badge ? `<span class="mi-card-badge">${esc(m.badge)}</span>` : '';
@@ -215,8 +87,32 @@ function previewSrc(href) {
   return `${path}${sep}preview=1${hash ? '#' + hash : ''}`;
 }
 
+function pageFileName(href) {
+  return String(href || '').split('#')[0].split('?')[0].split('/').pop();
+}
+
+/* Never live-preview these: all-modules would iframe itself (and spawn
+   another ~80 full app documents); the gallery is a viewer of this catalog. */
+const SKIP_PREVIEW_FILES = { 'all-modules.html': 1, 'page-gallery.html': 1 };
+
+function canLivePreview(href) {
+  return !SKIP_PREVIEW_FILES[pageFileName(href)];
+}
+
+/* Preview frames start with data-src only. Chrome ignores loading="lazy" on
+   iframes injected via innerHTML, so a real src here boots every screen in
+   the catalog on first paint — including this page, recursively. */
+function frameMarkup(src, title, extraAttrs) {
+  if (!src) {
+    return `<span class="mi-pane-skip">Live preview skipped — this screen would embed itself.</span>`;
+  }
+  const extra = extraAttrs ? ' ' + extraAttrs : '';
+  return `<iframe class="mi-pane-frame" data-src="${esc(src)}" title="${esc(title)}" loading="lazy" tabindex="-1" aria-hidden="true"${extra}></iframe>`;
+}
+
 function paneCard(m) {
   const search = `${m.label} ${m.href} ${m.group || ''} ${m.badge || ''}`.toLowerCase();
+  const src = canLivePreview(m.href) ? previewSrc(m.href) : '';
   return `
     <div class="mi-pane" data-pane data-href="${esc(m.href)}" data-search="${esc(search)}" data-area="${esc(m.area)}">
       <div class="mi-pane-head">
@@ -225,7 +121,7 @@ function paneCard(m) {
         <span class="mi-pane-area">${esc(m.areaTitle)}</span>
       </div>
       <a class="mi-pane-viewport" href="${esc(m.href)}" aria-label="Open ${esc(m.label)}">
-        <iframe class="mi-pane-frame" src="${esc(previewSrc(m.href))}" title="${esc(m.label)} preview" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+        ${frameMarkup(src, m.label + ' preview')}
         <span class="mi-pane-open material-symbols-outlined">open_in_new</span>
       </a>
     </div>`;
@@ -311,6 +207,8 @@ function moduleMoreItems(moduleId) {
     ];
   }
   return [
+    { action: 'dir-reeval', icon: 'autorenew', label: 'Re-evaluate pages' },
+    { action: 'dir-gallery', icon: 'browse_gallery', label: 'Open page gallery' },
     { action: 'dir-grid', icon: 'grid_view', label: 'Grid view' },
     { action: 'dir-rail', icon: 'view_column', label: 'Rail view' },
     { action: 'dir-clear', icon: 'restart_alt', label: 'Clear filters' },
@@ -331,20 +229,6 @@ function moduleControlsHTML(moduleId) {
       </div>
     </div>`;
 }
-
-/* Material icon per directory area, used on the segment scorecards. */
-const AREA_ICONS = {
-  workspace: 'workspaces',
-  portfolio: 'inventory_2',
-  ai: 'auto_awesome',
-  reform: 'auto_fix_high',
-  report: 'insights',
-  verify: 'verified',
-  admin: 'shield',
-  account: 'account_circle',
-  auth: 'lock',
-  marketing: 'campaign',
-};
 
 function directorySection(sec) {
   const { title, tone, modules } = sec;
@@ -408,6 +292,9 @@ function renderDirectory() {
           <button type="button" class="mi-view-btn" data-view="rail" aria-pressed="false"><span class="material-symbols-outlined">view_column</span>Rail</button>
         </div>
         <div class="mi-export" role="group" aria-label="Export screenshots">
+          <a class="mi-export-btn" data-page-gallery href="page-gallery.html" title="Open a full-screen live gallery of every unique page">
+            <span class="material-symbols-outlined">browse_gallery</span>Page gallery
+          </a>
           <button type="button" class="mi-export-btn" data-export="pages" title="Capture the full page (nav + top bar + content) for every unique screen and download them as a zipped folder">
             <span class="material-symbols-outlined">photo_library</span>Export page shots
           </button>
@@ -531,7 +418,7 @@ function tablePane(t) {
         <span class="mi-pane-area">${esc(t.areaTitle)}</span>
       </a>
       <div class="mi-pane-viewport">
-        <iframe class="mi-pane-frame" src="${esc(previewSrc(path))}" data-focus="${esc(t.selector)}" title="${esc(t.label)} table preview" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+        ${frameMarkup(previewSrc(path), t.label + ' table preview', `data-focus="${esc(t.selector)}"`)}
         <a class="mi-pane-hit" href="${esc(open)}" aria-label="Open ${esc(t.label)} on ${esc(page)}"></a>
         <span class="mi-pane-open material-symbols-outlined" aria-hidden="true">open_in_new</span>
       </div>
@@ -2613,6 +2500,11 @@ const INTENT_AUDIT = [
     label: 'WISEcodeAI (flagship)', icon: 'auto_awesome', href: 'wiseai.html', src: 'wiseai.html',
     note: 'The standalone WISEcodeAI conversation. Every chip posts its own scripted transcript (INTENT_REPLIES) and opens its result/visual panes via surface(intent) — including the deadpan “Cat food.” easter egg, which now opens a cat-food card, and “Is this list ultra-processed?”, which opens the WISEcode UPF framework pane.',
     chips: [
+      { i: 'topbrands',    label: 'Top 3 brands · WISEscore ≥ 50', t: true, l: true, does: 'Posts the top-half WISEscore brand comparison and opens the overview + bar chart panes.' },
+      { i: 'topbrands_counts', label: 'Show the exact counts',     t: true, l: true, does: 'Opens the exact-count table for the top three brands.' },
+      { i: 'topbrands_upf',    label: 'Break down by WISEcode UPF label', t: true, l: true, does: 'Opens the UPF-label split chart for those three brands.' },
+      { i: 'topbrands_top10',  label: 'Compare the top 10 brands',  t: true, l: true, does: 'Opens the top-10 brand comparison chart.' },
+      { i: 'topbrands_retail', label: 'Show the retailer breakdown', t: true, l: true, does: 'Opens the retailer breakdown of foods with WISEscore ≥ 50.' },
       { i: 'brisket',      label: 'Gut-healthy brisket recipe',    t: true, l: true, does: 'Posts the brisket recipe transcript and opens its result / recipe pane via surface(intent).' },
       { i: 'redochart',    label: 'Redo the gut-health chart',     t: true, l: true, does: 'Re-runs the gut-health chart and opens the chart pane.' },
       { i: 'upf',          label: 'Is this list ultra-processed?', t: true, l: true, does: 'Opens the WISEcode UPF framework pane and narrates whether the list is ultra-processed.' },
@@ -3892,7 +3784,74 @@ function moduleStyles() {
       font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
       margin: 0; font-size: 1.7rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
     }
-    .mi-hero-lede { font-size: 0.95rem; color: var(--text-muted); margin: 8px 0 0; max-width: 74ch; }
+    .mi-hero-row {
+      display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .mi-hero-lede { font-size: 0.95rem; color: var(--text-muted); margin: 0; max-width: 74ch; flex: 1 1 280px; }
+    .mi-hero-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
+
+    .mi-reeval-btn .material-symbols-outlined { font-size: 18px !important; }
+    .mi-reeval-btn:disabled { opacity: 0.7; cursor: progress; }
+    .mi-reeval-btn.is-busy .material-symbols-outlined { animation: mi-reeval-spin 0.8s linear infinite; }
+    .mi-reeval-btn.is-done {
+      background: var(--primary);
+      border-color: var(--primary);
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--primary) 32%, transparent);
+    }
+    html.dark .mi-reeval-btn.is-done {
+      color: #fff;
+      background: var(--primary);
+      box-shadow: 0 4px 14px color-mix(in srgb, var(--primary-bright, #8B9FAF) 40%, transparent);
+    }
+    @keyframes mi-reeval-spin { to { transform: rotate(360deg); } }
+
+    .mi-reeval-status {
+      margin: 4px 0 14px; padding: 12px 16px;
+      border-radius: 14px; border: 1px solid var(--border);
+      background: var(--surface-2); color: var(--text);
+      font-size: 0.8125rem; line-height: 1.5;
+    }
+    .mi-reeval-status.is-busy { color: var(--text-muted); }
+    .mi-reeval-status.is-ok {
+      background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+      border-color: color-mix(in srgb, var(--primary) 32%, var(--border));
+    }
+    html.dark .mi-reeval-status.is-ok {
+      background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 12%, var(--surface));
+      border-color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 32%, var(--border));
+    }
+    .mi-reeval-status.is-warn {
+      background: color-mix(in srgb, var(--ter-amber, #F5C434) 12%, var(--surface));
+      border-color: color-mix(in srgb, var(--ter-amber, #F5C434) 36%, var(--border));
+    }
+    .mi-reeval-status.is-err {
+      background: color-mix(in srgb, var(--ter-red, #dc2626) 8%, var(--surface));
+      border-color: color-mix(in srgb, var(--ter-red, #dc2626) 32%, var(--border));
+    }
+    .mi-reeval-status-head {
+      display: flex; align-items: flex-start; gap: 8px;
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-size: 0.95rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text);
+    }
+    .mi-reeval-status-head .material-symbols-outlined { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+    .mi-reeval-status.is-ok .mi-reeval-status-head .material-symbols-outlined { color: var(--primary); }
+    .mi-reeval-status.is-warn .mi-reeval-status-head .material-symbols-outlined { color: var(--ter-amber, #b45309); }
+    .mi-reeval-status.is-err .mi-reeval-status-head .material-symbols-outlined { color: var(--ter-red, #dc2626); }
+    .mi-reeval-status.is-busy .mi-reeval-status-head .material-symbols-outlined { color: var(--text-muted); }
+    html.dark .mi-reeval-status.is-ok .mi-reeval-status-head .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
+    html.dark .mi-reeval-status.is-warn .mi-reeval-status-head .material-symbols-outlined { color: #F5C434; }
+    html.dark .mi-reeval-status.is-err .mi-reeval-status-head .material-symbols-outlined { color: #fca5a5; }
+    .mi-reeval-status p { margin: 6px 0 0; color: var(--text-muted); }
+    .mi-reeval-status ul { margin: 8px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+    .mi-reeval-status li { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .mi-reeval-status a { color: var(--primary); font-weight: 700; text-decoration: none; }
+    html.dark .mi-reeval-status a { color: var(--primary-bright, #93C5FD); }
+    .mi-reeval-status a:hover { text-decoration: underline; }
+    .mi-reeval-status code {
+      font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.75rem;
+      color: var(--text-subtle);
+    }
 
     /* ---- View toggle (Grid ⇄ Carousel) ---- */
     .mi-view {
@@ -3922,6 +3881,7 @@ function moduleStyles() {
       border: 1px solid var(--border-strong); border-radius: 999px;
       background: var(--surface-2); cursor: pointer;
       font: inherit; font-size: 0.8125rem; font-weight: 700; color: var(--text);
+      text-decoration: none;
       transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
     }
     html.dark .mi-export-btn { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
@@ -4051,6 +4011,11 @@ function moduleStyles() {
       width: var(--frame-w); height: var(--frame-h);
       transform: scale(var(--pane-scale)); transform-origin: top left;
       pointer-events: none;
+    }
+    .mi-pane-skip {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      padding: 28px 22px; text-align: center; font-size: 0.75rem; font-weight: 600;
+      color: var(--text-muted); line-height: 1.45;
     }
     .mi-pane-hit { position: absolute; inset: 0; z-index: 2; text-decoration: none; }
     .mi-pane-open {
@@ -4252,7 +4217,7 @@ function moduleStyles() {
       background: var(--surface);
     }
     html.dark .mi-toolbar { background: #1A2339; }
-    html.full-bleed.fb-rmod-tint .mi-toolbar { background: var(--fb-rmod-bg); }
+    html.full-bleed:not(.fb-chat-only).fb-rmod-tint .mi-toolbar { background: var(--fb-rmod-bg); }
     .mi-search-inline {
       position: relative; display: inline-flex; align-items: center;
       flex: 1 1 auto; min-width: 220px;
@@ -4269,7 +4234,7 @@ function moduleStyles() {
       transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
     }
     html.dark .mi-search { background: #1A2339; border-color: rgba(255,255,255,0.10); }
-    html.full-bleed.fb-rmod-tint .mi-search { background: var(--fb-rmod-bg); }
+    html.full-bleed:not(.fb-chat-only).fb-rmod-tint .mi-search { background: var(--fb-rmod-bg); }
     .mi-search::placeholder { color: color-mix(in srgb, var(--text-subtle) 60%, transparent); font-style: italic; }
     .mi-search:focus {
       border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));
@@ -5476,9 +5441,18 @@ export function renderAllModules(mainEl) {
       <header class="mi-hero">
         <div class="mi-hero-text">
           <h1 class="mi-hero-title">All Modules</h1>
-          <p class="mi-hero-lede">Every module, component, icon, design token, animation and drag/resize interaction in the WISE app — indexed, rendered live, and one tap away.</p>
+          <div class="mi-hero-row">
+            <p class="mi-hero-lede">Every module, component, icon, design token, animation and drag/resize interaction in the WISE app — indexed, rendered live, and one tap away.</p>
+            <div class="mi-hero-actions">
+              <button type="button" class="adm-btn adm-btn--primary mi-reeval-btn" data-mi-reeval title="Fetch every HTML page and make sure the directory accounts for each one">
+                <span class="material-symbols-outlined" aria-hidden="true">autorenew</span>
+                <span data-mi-reeval-label>Re-evaluate</span>
+              </button>
+            </div>
+          </div>
         </div>
       </header>
+      <div class="mi-reeval-status" id="mi-reeval-status" hidden></div>
       ${renderSectionNav()}
       ${renderCodebase()}
       ${renderDirectory()}
@@ -5508,6 +5482,17 @@ export function renderAllModules(mainEl) {
   wireDevReady(mainEl);
   wireModuleControls(mainEl);
   wireLinkValidation(mainEl);
+  wirePageReeval(mainEl);
+
+  /* Deep link — `#mi-directory` (used by the Page Gallery close/back) opens
+     that section after the accordion has collapsed everything on load. */
+  const hashId = (location.hash || '').replace(/^#/, '');
+  if (hashId && ACC_SECTION_IDS.includes(hashId)) {
+    expandAccordionSection(mainEl, hashId);
+    requestAnimationFrame(() => {
+      document.getElementById(hashId)?.scrollIntoView({ block: 'start' });
+    });
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -5528,6 +5513,7 @@ const ACC_SECTION_IDS = ['mi-code', 'mi-directory', 'mi-tables', 'mi-intents', '
 function setSectionCollapsed(root, sec, collapsed) {
   sec.classList.toggle('is-collapsed', collapsed);
   sec.querySelector(':scope > .mi-module-head')?.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  if (!collapsed) observePreviewFrames(sec);
 }
 
 /* Open a section (used when the quick-nav or a WISEcodeAI chip jumps to it). */
@@ -5536,6 +5522,7 @@ function expandAccordionSection(root, id) {
   if (!sec || !sec.classList.contains('is-collapsed')) return;
   sec.classList.remove('is-collapsed');
   sec.querySelector(':scope > .mi-module-head')?.setAttribute('aria-expanded', 'true');
+  observePreviewFrames(sec);
 }
 
 function setupAccordion(root) {
@@ -5648,7 +5635,13 @@ function runModuleAction(root, action) {
   switch (action) {
     case 'dir-grid': click('[data-view="grid"]'); break;
     case 'dir-rail': click('[data-view="rail"]'); break;
+    case 'dir-gallery': {
+      const a = root.querySelector('[data-page-gallery]');
+      if (a && a.getAttribute('href')) location.assign(a.getAttribute('href'));
+      break;
+    }
     case 'dir-clear': clearInput('#mi-dir-search'); click('#mi-dir-stats [data-area="all"]'); break;
+    case 'dir-reeval': click('[data-mi-reeval]'); break;
     case 'ii-name': click('[data-ii-sort="name"]'); break;
     case 'ii-count': click('[data-ii-sort="count"]'); break;
     case 'ii-all': clearInput('#ii-search-input'); click('[data-ii-fam="all"]'); click('[data-ii-group="all"]'); break;
@@ -5802,7 +5795,12 @@ function setPaneBroken(pane, broken) {
        on recovery, or the pane stays blank forever even though the page is
        back. (previewSrc re-tags the URL so embedded-preview guards hold.) */
     if (frame && !frame.getAttribute('src')) {
-      frame.src = previewSrc(pane.getAttribute('data-href'));
+      const next = canLivePreview(pane.getAttribute('data-href'))
+        ? previewSrc(pane.getAttribute('data-href')) : '';
+      if (next) {
+        frame.setAttribute('data-src', next);
+        hydrateFrame(frame);
+      }
     }
   }
 }
@@ -5839,7 +5837,11 @@ async function runLinkValidation(root) {
 
 function wireLinkValidation(root) {
   linkValidationRoot = root;
-  runLinkValidation(root);
+  const start = () => {
+    if (linkValidationRoot && linkValidationRoot.isConnected) runLinkValidation(linkValidationRoot);
+  };
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(start, { timeout: 2500 });
+  else setTimeout(start, 600);
 
   /* Stay aware of URL / module changes without a reload: re-probe whenever the
      tab is brought back to the foreground. Guarded so it only ever wires once. */
@@ -5854,6 +5856,302 @@ function wireLinkValidation(root) {
     document.addEventListener('visibilitychange', () => { if (!document.hidden) revalidate(); });
     window.addEventListener('focus', revalidate);
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Re-evaluate — crawl every HTML page and make sure the directory     */
+/* accounts for each one. Discovers files from directory listings when */
+/* the server provides them, unions that with the curated catalog (and */
+/* the intentionally omitted pitch deck), probes each file live, then  */
+/* injects anything missing into an Unaccounted section so the index   */
+/* is complete for this session.                                       */
+/* ------------------------------------------------------------------ */
+
+const OMITTED_PAGES = {
+  'app-vision-deck.html': 'Standalone pitch deck — kept out of the module index on purpose.',
+  'page-gallery.html': 'Full-screen page gallery launched from the Module Directory — not a product module.',
+};
+
+function pagePathOnly(href) {
+  return String(href || '').split('#')[0].split('?')[0];
+}
+
+function canonicalPageHref(href) {
+  const path = pagePathOnly(href).replace(/^\.\//, '');
+  const name = path.split('/').filter(Boolean).pop() || '';
+  if (!/\.html$/i.test(name)) return '';
+  if (path.startsWith('../') || path.startsWith('/')) {
+    if (/\/pages\//.test(path)) return name;
+    return '../' + name;
+  }
+  return name;
+}
+
+function catalogPageSet() {
+  const set = new Set();
+  MODULE_SECTIONS.forEach((s) => s.modules.forEach((m) => {
+    const key = canonicalPageHref(m.href);
+    if (key) set.add(key);
+  }));
+  return set;
+}
+
+function catalogHrefList() {
+  const seen = new Set();
+  const out = [];
+  MODULE_SECTIONS.forEach((s) => s.modules.forEach((m) => {
+    const key = canonicalPageHref(m.href);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    out.push(pagePathOnly(m.href));
+  }));
+  return out;
+}
+
+function labelFromPath(href) {
+  const name = canonicalPageHref(href).replace(/^\.\.\//, '').replace(/\.html$/i, '');
+  return name.split(/[-_]+/).filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || href;
+}
+
+function titleFromHtml(text, fallback) {
+  const m = String(text || '').match(/<title[^>]*>([^<]+)<\/title>/i);
+  if (!m) return fallback;
+  return m[1].replace(/^WISE(?:codeAI)?\s*[·•\-–]\s*/i, '').trim() || fallback;
+}
+
+function isDirListing(html) {
+  return /Directory listing/i.test(html) || /<title>\s*Index of/i.test(html);
+}
+
+function hrefsFromListing(html, kind) {
+  const out = [];
+  const re = /href=["']([^"'#?]+?\.html)["']/gi;
+  let m;
+  while ((m = re.exec(html))) {
+    const name = m[1].split('/').pop();
+    if (!name || name.startsWith('_') || name.startsWith('.')) continue;
+    if (kind === 'pages') out.push(name);
+    else if (name === 'index.html' || name.startsWith('marketing-')) out.push('../' + name);
+  }
+  return out;
+}
+
+async function fetchText(url) {
+  const sep = url.includes('?') ? '&' : '?';
+  const res = await fetch(url + sep + 'mi=' + Date.now(), { cache: 'no-store' });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.text();
+}
+
+async function discoverHtmlPages() {
+  const found = new Set();
+  catalogHrefList().forEach((h) => found.add(canonicalPageHref(h)));
+  Object.keys(OMITTED_PAGES).forEach((h) => found.add(canonicalPageHref(h)));
+
+  const tryList = async (url, kind) => {
+    try {
+      const html = await fetchText(url);
+      if (!isDirListing(html)) return;
+      hrefsFromListing(html, kind).forEach((h) => found.add(canonicalPageHref(h)));
+    } catch (_) { /* listing not available (livereload 403, etc.) */ }
+  };
+  await Promise.all([
+    tryList(new URL('./', location.href).href, 'pages'),
+    tryList(new URL('../', location.href).href, 'root'),
+  ]);
+  return Array.from(found).filter(Boolean).sort();
+}
+
+async function probePage(href) {
+  try {
+    const sep = href.includes('?') ? '&' : '?';
+    const res = await fetch(href + sep + 'mi=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) return { href, ok: false };
+    const text = await res.text();
+    return { href, ok: true, title: titleFromHtml(text, labelFromPath(href)), size: text.length };
+  } catch (_) {
+    return { href, ok: false };
+  }
+}
+
+function ensureUnaccountedSection() {
+  let sec = MODULE_SECTIONS.find((s) => s.tone === 'unaccounted');
+  if (!sec) {
+    sec = { title: 'Unaccounted', tone: 'unaccounted', modules: [] };
+    MODULE_SECTIONS.push(sec);
+  }
+  return sec;
+}
+
+function refreshDirectoryCounts(root) {
+  const total = moduleTotal();
+  const allNum = root.querySelector('#mi-dir-stats [data-area="all"] .mi-stat-num');
+  if (allNum) allNum.textContent = String(total);
+  const jump = root.querySelector('.dsc-jump-tile[data-jump="mi-directory"] .dsc-jump-num');
+  if (jump) jump.textContent = String(total);
+  MODULE_SECTIONS.forEach((s) => {
+    const n = s.modules.length;
+    const count = root.querySelector(`.mi-dir-section[data-area="${s.tone}"] .mi-dir-count`);
+    if (count) count.textContent = String(n);
+    const stat = root.querySelector(`#mi-dir-stats [data-area="${s.tone}"] .mi-stat-num`);
+    if (stat) stat.textContent = String(n);
+  });
+}
+
+function injectUnaccounted(root, mod) {
+  const secData = ensureUnaccountedSection();
+  if (secData.modules.some((m) => canonicalPageHref(m.href) === canonicalPageHref(mod.href))) return;
+  secData.modules.push(mod);
+
+  const sectionsRoot = root.querySelector('#mi-dir-sections');
+  const stats = root.querySelector('#mi-dir-stats');
+  const railTrack = root.querySelector('#mi-rail-track');
+  if (!sectionsRoot) return;
+
+  let secEl = sectionsRoot.querySelector('.mi-dir-section[data-area="unaccounted"]');
+  if (!secEl) {
+    sectionsRoot.insertAdjacentHTML('afterbegin', directorySection(secData));
+    if (stats && !stats.querySelector('[data-area="unaccounted"]')) {
+      const wrap = document.createElement('div');
+      wrap.innerHTML = `<button type="button" class="mi-stat" data-area="unaccounted" aria-pressed="false">
+        <span class="mi-stat-num">${secData.modules.length}</span>
+        <span class="mi-stat-label"><span class="mi-stat-text">Unaccounted</span><span class="material-symbols-outlined">playlist_add</span></span>
+      </button>`;
+      const allBtn = stats.querySelector('[data-area="all"]');
+      const btn = wrap.firstElementChild;
+      if (allBtn && allBtn.nextSibling) stats.insertBefore(btn, allBtn.nextSibling);
+      else if (allBtn) allBtn.insertAdjacentElement('afterend', btn);
+      else stats.appendChild(btn);
+    }
+  } else {
+    const grid = secEl.querySelector('.mi-card-grid');
+    if (grid) grid.insertAdjacentHTML('beforeend', moduleCard(mod));
+  }
+
+  if (railTrack) {
+    railTrack.insertAdjacentHTML('beforeend', paneCard({ ...mod, area: 'unaccounted', areaTitle: 'Unaccounted' }));
+    observePreviewFrames(railTrack.lastElementChild);
+  }
+
+  refreshDirectoryCounts(root);
+}
+
+function setReevalStatus(root, kind, title, bodyHtml) {
+  const el = root.querySelector('#mi-reeval-status');
+  if (!el) return;
+  const icons = { busy: 'hourglass_top', ok: 'verified', warn: 'warning', err: 'error' };
+  el.hidden = false;
+  el.className = 'mi-reeval-status is-' + kind;
+  el.innerHTML = `<div class="mi-reeval-status-head"><span class="material-symbols-outlined">${icons[kind] || 'info'}</span><span>${esc(title)}</span></div>${bodyHtml || ''}`;
+}
+
+let reevalBusy = false;
+
+async function reevaluateAllPages(root) {
+  if (reevalBusy) return;
+  const btn = root.querySelector('[data-mi-reeval]');
+  const label = root.querySelector('[data-mi-reeval-label]');
+  if (location.protocol === 'file:') {
+    setReevalStatus(root, 'warn', 'Serve this page over http',
+      '<p>Live re-evaluate needs a local server so it can fetch sibling HTML files. Start <code>python3 -m http.server</code> or <code>python3 dev_server.py</code> and reload.</p>');
+    return;
+  }
+
+  reevalBusy = true;
+  if (btn) {
+    btn.disabled = true;
+    btn.classList.add('is-busy');
+    btn.classList.remove('is-done');
+    btn.setAttribute('aria-busy', 'true');
+  }
+  if (label) label.textContent = 'Re-evaluating…';
+  setReevalStatus(root, 'busy', 'Re-evaluating every HTML page',
+    '<p>Fetching the live file list and probing each page…</p>');
+
+  try {
+    const pages = await discoverHtmlPages();
+    const results = await Promise.all(pages.map(probePage));
+    const catalog = catalogPageSet();
+    const live = results.filter((r) => r.ok);
+    const unreachable = results.filter((r) => !r.ok);
+    const omitted = live.filter((r) => OMITTED_PAGES[canonicalPageHref(r.href)]);
+    const unaccounted = live.filter((r) => {
+      const key = canonicalPageHref(r.href);
+      return !catalog.has(key) && !OMITTED_PAGES[key];
+    });
+    const catalogMissing = unreachable.filter((r) => catalog.has(canonicalPageHref(r.href)));
+    const omittedMissing = unreachable.filter((r) => OMITTED_PAGES[canonicalPageHref(r.href)]);
+
+    unaccounted.forEach((r) => {
+      injectUnaccounted(root, {
+        label: r.title || labelFromPath(r.href),
+        icon: 'web',
+        href: r.href,
+        badge: 'New',
+      });
+    });
+
+    if (unaccounted.length || catalogMissing.length) {
+      expandAccordionSection(root, 'mi-directory');
+      runLinkValidation(root);
+    }
+
+    const accounted = live.length - omitted.length;
+    const gaps = unaccounted.length + catalogMissing.length + omittedMissing.length;
+    const kind = (catalogMissing.length || omittedMissing.length)
+      ? 'err'
+      : (unaccounted.length ? 'warn' : 'ok');
+    const title = !gaps
+      ? `All ${accounted} HTML pages are accounted for`
+      : (unaccounted.length && !catalogMissing.length
+        ? `Accounted for ${unaccounted.length} missing page${unaccounted.length === 1 ? '' : 's'}`
+        : `${gaps} page${gaps === 1 ? '' : 's'} need attention`);
+
+    const bits = [`<p>Probed <strong>${results.length}</strong> HTML files · <strong>${live.length}</strong> reachable · directory now holds <strong>${moduleTotal()}</strong> modules.</p>`];
+    if (unaccounted.length) {
+      bits.push('<ul>' + unaccounted.map((r) =>
+        `<li>Added <a href="${esc(r.href)}">${esc(r.title || labelFromPath(r.href))}</a> <code>${esc(r.href)}</code></li>`
+      ).join('') + '</ul>');
+    }
+    if (catalogMissing.length) {
+      bits.push('<p>Directory entries that did not resolve:</p><ul>' + catalogMissing.map((r) =>
+        `<li><code>${esc(r.href)}</code></li>`
+      ).join('') + '</ul>');
+    }
+    if (omitted.length) {
+      bits.push('<p>Intentionally omitted: ' + omitted.map((r) =>
+        `<code>${esc(canonicalPageHref(r.href))}</code>`
+      ).join(', ') + '.</p>');
+    }
+    if (omittedMissing.length) {
+      bits.push('<p>Omitted pages that are now unreachable: ' + omittedMissing.map((r) =>
+        `<code>${esc(r.href)}</code>`
+      ).join(', ') + '.</p>');
+    }
+    setReevalStatus(root, kind, title, bits.join(''));
+    if (btn && kind === 'ok') {
+      btn.classList.add('is-done');
+      setTimeout(() => btn.classList.remove('is-done'), 2200);
+    }
+  } catch (err) {
+    setReevalStatus(root, 'err', 'Re-evaluate failed', `<p>${esc(err.message || String(err))}</p>`);
+  } finally {
+    reevalBusy = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove('is-busy');
+      btn.removeAttribute('aria-busy');
+    }
+    if (label) label.textContent = 'Re-evaluate';
+  }
+}
+
+function wirePageReeval(root) {
+  const btn = root.querySelector('[data-mi-reeval]');
+  if (btn) btn.addEventListener('click', () => reevaluateAllPages(root));
+  /* Do not auto-run on load. Probing every HTML file (full body, cache-busted)
+     contends with first paint and is what the Re-evaluate button is for. */
 }
 
 /* Rail previews should show ONLY the module itself — not the repeated left nav,
@@ -5993,24 +6291,77 @@ function tryFocusFrameTable(frame, selector, attempt) {
   }
 }
 
-function wireRailFrames(root) {
-  root.querySelectorAll('.mi-pane-frame').forEach((f) => {
-    f.addEventListener('load', () => embedRailFrame(f));
-    // Handle the case where the frame finished loading before we attached.
-    try {
-      if (f.contentDocument && f.contentDocument.readyState === 'complete') embedRailFrame(f);
-    } catch (e) { /* not ready / cross-origin */ }
+function attachRailFrame(f) {
+  if (!f || f.dataset.miWired === '1') return;
+  f.dataset.miWired = '1';
+  f.addEventListener('load', () => embedRailFrame(f));
+  try {
+    if (f.contentDocument && f.contentDocument.readyState === 'complete') embedRailFrame(f);
+  } catch (e) { /* not ready / cross-origin */ }
 
-    /* Safety net for the Table Gallery loading shimmer: if isolation can't run
-       (cross-origin / file://) or the table never appears, clear the shimmer so
-       the pane doesn't animate forever. */
-    if (f.dataset.focus) {
-      const pane = f.closest('.mi-pane');
-      setTimeout(() => {
-        if (pane && !pane.classList.contains('is-focused')) pane.classList.add('is-unfocused');
-      }, 6000);
+  /* Safety net for the Table Gallery loading shimmer: if isolation can't run
+     (cross-origin / file://) or the table never appears, clear the shimmer so
+     the pane doesn't animate forever. */
+  if (f.dataset.focus) {
+    const pane = f.closest('.mi-pane');
+    setTimeout(() => {
+      if (pane && !pane.classList.contains('is-focused')) pane.classList.add('is-unfocused');
+    }, 6000);
+  }
+}
+
+function frameIsEligible(frame) {
+  if (!frame || !frame.isConnected) return false;
+  const pane = frame.closest('.mi-pane');
+  if (pane && pane.hidden) return false;
+  const rail = frame.closest('.mi-rail');
+  if (rail && rail.hidden) return false;
+  const mod = frame.closest('.mi-module');
+  if (mod && mod.classList.contains('is-collapsed')) return false;
+  return true;
+}
+
+function hydrateFrame(frame) {
+  if (!frame || frame.getAttribute('src')) return;
+  const src = frame.getAttribute('data-src');
+  if (!src) return;
+  if (!frameIsEligible(frame)) return;
+  frame.src = src;
+  attachRailFrame(frame);
+}
+
+let frameObserver = null;
+
+function ensureFrameObserver() {
+  if (frameObserver) return frameObserver;
+  frameObserver = new IntersectionObserver((entries) => {
+    entries.forEach((en) => {
+      if (!en.isIntersecting) return;
+      hydrateFrame(en.target);
+      frameObserver.unobserve(en.target);
+    });
+  }, { root: null, rootMargin: '280px 0px', threshold: 0.01 });
+  return frameObserver;
+}
+
+function observePreviewFrames(scope) {
+  const root = scope || document;
+  if (!root || !root.querySelectorAll) return;
+  const obs = ensureFrameObserver();
+  root.querySelectorAll('.mi-pane-frame[data-src]').forEach((f) => {
+    if (f.getAttribute('src')) {
+      obs.unobserve(f);
+      return;
     }
+    if (frameIsEligible(f)) obs.observe(f);
+    else obs.unobserve(f);
   });
+}
+
+function wireRailFrames(root) {
+  /* Frames start with data-src only. Hydrate when a section is actually
+     visible — otherwise first paint boots every screen in the catalog. */
+  observePreviewFrames(root);
 }
 
 /* The Grid ⇄ Rail toggle. Grid shows the grouped link sections; Rail swaps in
@@ -6033,6 +6384,7 @@ function wireView(root) {
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
     try { localStorage.setItem('mi-view', view); } catch (e) {}
+    observePreviewFrames(dir);
   };
 
   btns.forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
@@ -6052,16 +6404,11 @@ function wireDirectory(root) {
   const sectionsRoot = root.querySelector('#mi-dir-sections');
   if (!sectionsRoot) return;
 
-  const cards = Array.from(sectionsRoot.querySelectorAll('[data-mod-card]'));
-  const sections = Array.from(sectionsRoot.querySelectorAll('.mi-dir-section'));
-  /* Scope to the directory's own rail so the Table Gallery panes (which also
-     carry [data-pane] for link validation) aren't hidden by this filter. */
-  const panes = Array.from((root.querySelector('#mi-rail') || root).querySelectorAll('[data-pane]'));
   const railEmpty = root.querySelector('#mi-rail-empty');
   const state = { q: '', area: 'all' };
 
   const matches = (c) => {
-    const matchQ = !state.q || c.dataset.search.indexOf(state.q) !== -1;
+    const matchQ = !state.q || (c.dataset.search || '').indexOf(state.q) !== -1;
     const sec = c.closest('.mi-dir-section');
     const area = sec ? sec.dataset.area : c.dataset.area;
     const matchA = state.area === 'all' || area === state.area;
@@ -6069,18 +6416,20 @@ function wireDirectory(root) {
   };
 
   const apply = () => {
+    /* Re-query so cards/panes injected by Re-evaluate are included. */
+    const cards = Array.from(sectionsRoot.querySelectorAll('[data-mod-card]'));
+    const sections = Array.from(sectionsRoot.querySelectorAll('.mi-dir-section'));
+    const panes = Array.from((root.querySelector('#mi-rail') || root).querySelectorAll('[data-pane]'));
     let shown = 0;
     cards.forEach((c) => {
       const vis = matches(c);
       c.hidden = !vis;
       if (vis) shown++;
     });
-    // Collapse sections that have no visible cards under the current filter.
     sections.forEach((sec) => {
       const any = Array.from(sec.querySelectorAll('[data-mod-card]')).some((c) => !c.hidden);
       sec.hidden = !any;
     });
-    // The rail mirrors the same filter so both views stay in lock-step.
     panes.forEach((p) => { p.hidden = !matches(p); });
     if (emptyEl) emptyEl.hidden = shown !== 0;
     if (railEmpty) railEmpty.hidden = shown !== 0;

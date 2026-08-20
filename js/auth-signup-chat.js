@@ -41,6 +41,70 @@
     try { return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
     catch (_) { return ''; }
   }
+  function relativeLabel(ms) {
+    var t = Number(ms);
+    if (!isFinite(t)) return '';
+    var deltaMs = t - Date.now();
+    var absSec = Math.abs(deltaMs) / 1000;
+    var value, unit;
+    if (absSec < 45) return 'Just now';
+    if (absSec < 90) { value = deltaMs < 0 ? -1 : 1; unit = 'min'; }
+    else if (absSec < 3600) { value = Math.round(deltaMs / 60000); unit = 'min'; }
+    else if (absSec < 5400) { value = deltaMs < 0 ? -1 : 1; unit = 'hr'; }
+    else if (absSec < 86400) { value = Math.round(deltaMs / 3600000); unit = 'hr'; }
+    else if (absSec < 86400 * 1.5) { value = deltaMs < 0 ? -1 : 1; unit = 'd'; }
+    else if (absSec < 86400 * 7) { value = Math.round(deltaMs / 86400000); unit = 'd'; }
+    else if (absSec < 86400 * 30.5) { value = Math.round(deltaMs / (86400000 * 7)); unit = 'wk'; }
+    else if (absSec < 86400 * 365) { value = Math.round(deltaMs / (86400000 * 30.44)); unit = 'mo'; }
+    else { value = Math.round(deltaMs / (86400000 * 365.25)); unit = 'yr'; }
+    var n = Math.abs(value);
+    return value <= 0 ? n + ' ' + unit + ' ago' : 'in ' + n + ' ' + unit;
+  }
+  function stampMs(el) {
+    var raw = el.getAttribute('data-ts');
+    var n = raw != null && raw !== '' ? Number(raw) : NaN;
+    if (isFinite(n)) return n;
+    var clock = el.getAttribute('data-clock') || String(el.textContent || '').trim();
+    var parsed = Date.parse(new Date().toDateString() + ' ' + clock);
+    var ms = isFinite(parsed) ? parsed : Date.now();
+    if (ms > Date.now() + 120000) ms -= 86400000;
+    el.setAttribute('data-ts', String(ms));
+    if (!el.getAttribute('data-clock')) el.setAttribute('data-clock', nowLabel());
+    return ms;
+  }
+  function toggleLineTime(el) {
+    if (!el) return;
+    var ms = stampMs(el);
+    var showingRel = el.getAttribute('data-mode') === 'rel';
+    if (showingRel) {
+      var clock = el.getAttribute('data-clock') || nowLabel();
+      el.textContent = clock;
+      el.setAttribute('data-mode', 'clock');
+      el.setAttribute('title', 'Show time ago');
+    } else {
+      if (!el.getAttribute('data-clock')) el.setAttribute('data-clock', String(el.textContent || '').trim() || nowLabel());
+      var rel = relativeLabel(ms);
+      el.textContent = rel;
+      el.setAttribute('data-mode', 'rel');
+      el.setAttribute('title', 'Show time');
+    }
+  }
+  if (document.documentElement.dataset.scTimeWired !== '1') {
+    document.documentElement.dataset.scTimeWired = '1';
+    document.addEventListener('click', function (e) {
+      var el = e.target && e.target.closest && e.target.closest('.sc-line-time');
+      if (!el) return;
+      e.preventDefault();
+      toggleLineTime(el);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      var el = e.target && e.target.closest && e.target.closest('.sc-line-time');
+      if (!el) return;
+      e.preventDefault();
+      toggleLineTime(el);
+    });
+  }
   var validEmail = function (v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v).trim()); };
   var digits = function (v) { return String(v).replace(/\D/g, ''); };
 

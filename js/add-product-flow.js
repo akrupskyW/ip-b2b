@@ -275,7 +275,35 @@
       apRevealStaggered(chips, 90, 60, null);
     }));
   }
+  /* Rule: every reply ends on topic-related intent chips. Callers that omit
+     a row still get a current-step fallback so the transcript never dead-ends. */
+  function fallbackChips() {
+    const step = state.step || firstMissingStep() || 'save';
+    const chips = [];
+    const nextLabel = {
+      photo: 'Add a photo',
+      category: 'Pick a category',
+      ingredients: 'Add ingredients',
+      nutrition: 'Add Nutrition Facts',
+      allergens: 'Declare allergens',
+      upc: 'Add a UPC',
+      photos: 'Add more photos',
+      save: 'Save to Portfolio',
+    };
+    if (step && step !== state.step) {
+      chips.push({ label: nextLabel[step] || 'Continue', icon: 'arrow_forward', action: 'goto:' + step });
+    }
+    chips.push({ label: 'What can I ask?', icon: 'help', action: 'askHelp' });
+    if (state.step && state.step !== 'save') {
+      chips.push({ label: 'Skip this', icon: 'skip_next', action: 'skip:' + state.step });
+    }
+    if (step === 'save' || state.step === 'save') {
+      chips.push({ label: 'Save to Portfolio', icon: 'save', action: 'save', primary: true });
+    }
+    return chips;
+  }
   function addWISEcodeAI(html, chips) {
+    if (!chips || !chips.length) chips = fallbackChips();
     hideWelcome();
     const footer = `<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div>`;
     /* Insert the line WITHOUT its reply chips, type the reply in word-by-word,
@@ -2484,13 +2512,11 @@
     progressEl.setAttribute('data-pr-lock', '');
     try { window.WisePaneResize && window.WisePaneResize.release(progressEl); } catch (_) {}
 
-    // Welcome chips — plus the gold "What can I ask?" chip that always rides at
-    // the end of the set whenever the below-input link is shown (the standing
-    // affordance every WISEcodeAI surface carries).
+    // Welcome chips. The gold "What can I ask?" chip is hidden for now; the
+    // below-input gold link still opens the catalog panel.
     if (chipsStartEl) {
       chipsStartEl.innerHTML = WELCOME_CHIPS.map((c) =>
-        `<button type="button" class="chip ws-intent-chip" data-action="${esc(c.action)}"${c.arg != null ? ` data-arg="${esc(c.arg)}"` : ''}><span class="material-symbols-outlined">${esc(c.icon)}</span>${esc(c.label)}</button>`).join('')
-        + `<button type="button" class="chip ws-intent-chip ws-intent-chip--askhelp" data-action="askHelp" aria-label="What can I ask?"><span class="material-symbols-outlined">help</span><span class="sc-ask-shimmer" aria-hidden="true">${shimmerLetters('What can I ask?')}</span></button>`;
+        `<button type="button" class="chip ws-intent-chip" data-action="${esc(c.action)}"${c.arg != null ? ` data-arg="${esc(c.arg)}"` : ''}><span class="material-symbols-outlined">${esc(c.icon)}</span>${esc(c.label)}</button>`).join('');
     }
 
     // Play the welcome in: heading + sub type in word-by-word, then the intent

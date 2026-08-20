@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="../js/auth-guard.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WISE · Page gallery</title>
+  <script src="../js/text-size-fouc.js"></script>
+  <script>
+    /* FOUC guard — apply the persisted theme before first paint. Mirrors the
+       other app pages so the shell never flashes the wrong theme. */
+    (function () {
+      try {
+        var t = localStorage.getItem('wise-theme');
+        if (t !== 'light' && t !== 'dark') {
+          t = localStorage.getItem('chat-theme') === 'dark' ? 'dark' : 'light';
+        }
+        document.documentElement.classList.toggle('dark', t === 'dark');
+      } catch (e) { /* no saved theme: default light */ }
+    })();
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="wise.css" />
+  <style>
+    /* Full-screen gallery — no app chrome. Close / Escape returns to All Modules. */
+    html, body { height: 100%; margin: 0; overflow: hidden; }
+    body[data-page-gallery] {
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      color: var(--text);
+    }
+    #pg-root {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .pg-bar {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    html.dark .pg-bar { background: #1A2339; border-bottom-color: rgba(255,255,255,0.08); }
+    .pg-bar-text { min-width: 0; flex: 1 1 auto; }
+    .pg-title {
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+    .pg-lede {
+      margin: 4px 0 0;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+    .pg-count {
+      flex: 0 0 auto;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    /* Circular close — no rounded-square tile behind the icon. */
+    .pg-close {
+      flex: 0 0 auto;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--border-strong);
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      transition: border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    }
+    html.dark .pg-close { border-color: rgba(255,255,255,0.14); }
+    .pg-close .material-symbols-outlined { font-size: 22px !important; line-height: 1 !important; }
+    .pg-close:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      box-shadow: var(--shadow-1);
+    }
+    .pg-close:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+    }
+
+    .pg-scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+      padding: 22px 22px 48px;
+    }
+
+    .pg-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 18px 16px;
+    }
+    .pg-card {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-decoration: none;
+      color: inherit;
+      min-width: 0;
+      cursor: grab;
+    }
+    .pg-card:active { cursor: grabbing; }
+    .pg-card.is-dragging { opacity: 0.4; }
+    .pg-card.is-dragging .pg-card-viewport { transform: none; }
+    .pg-card-skip {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      padding: 24px 18px; text-align: center; font-size: 0.75rem; font-weight: 600;
+      color: var(--text-muted); line-height: 1.45;
+    }
+    .pg-card-viewport {
+      position: relative;
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      overflow: hidden;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--surface-2, var(--surface));
+      box-shadow: var(--shadow-1);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+    html.dark .pg-card-viewport { border-color: rgba(255,255,255,0.10); }
+    .pg-card.is-marketing .pg-card-viewport {
+      border-color: var(--ter-amber, #FFC434);
+    }
+    html.dark .pg-card.is-marketing .pg-card-viewport {
+      border-color: var(--ter-amber, #FFC434);
+    }
+    .pg-card:hover .pg-card-viewport {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-2);
+      border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+    }
+    .pg-card.is-marketing:hover .pg-card-viewport {
+      border-color: var(--ter-amber, #FFC434);
+    }
+    .pg-card-shot {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+      pointer-events: none;
+      transition: opacity 0.18s ease;
+    }
+    .pg-card.is-dimmed .pg-card-shot,
+    .pg-card.is-dimmed .pg-card-skip { opacity: 0.2; }
+    /* Circular eye toggle — no rounded-square tile behind the icon. */
+    .pg-card-eye {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      z-index: 3;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 1px solid var(--border-strong);
+      background: color-mix(in srgb, var(--surface) 88%, transparent);
+      color: var(--text);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      box-shadow: var(--shadow-1);
+      opacity: 0.92;
+      transition: border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+    }
+    html.dark .pg-card-eye {
+      border-color: rgba(255,255,255,0.16);
+      background: color-mix(in srgb, #1A2339 88%, transparent);
+    }
+    .pg-card-eye .material-symbols-outlined { font-size: 13px !important; line-height: 1 !important; }
+    .pg-card-eye:hover {
+      opacity: 1;
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .pg-card-eye[aria-pressed="true"] { color: var(--text-muted); }
+    .pg-card-eye:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+    }
+    .pg-card-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      padding: 0 2px;
+      min-width: 0;
+    }
+    .pg-card-name {
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-weight: 800;
+      font-size: 0.95rem;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pg-card:hover .pg-card-name { color: var(--primary-ink, var(--primary)); }
+    .pg-card-href {
+      font-size: 0.7rem;
+      color: var(--text-subtle);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+  </style>
+</head>
+<body data-page-gallery>
+  <div id="pg-root"></div>
+  <script type="module" src="../js/page-gallery.js"></script>
+</body>
+</html>

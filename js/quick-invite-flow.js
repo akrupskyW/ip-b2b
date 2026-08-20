@@ -2,9 +2,10 @@
  * Quick Invite — WISEcode Admin module.
  *
  * Rendered into #agent-main-scroll on quick-invite.html and paired with the
- * WISEcodeAI dock. A one-step org invite composer on top of a filterable Invite
- * History board — at-a-glance totals, status filter chips, a salesperson
- * filter, live search, and per-invite actions (copy link, resend, cancel).
+ * WISEcodeAI dock. A serif page header, at-a-glance status scorecards, a single
+ * search (name, email, org, salesperson, status) with an in-pill filter for
+ * salesperson + CSV export, and a history table whose first column is a
+ * three-dot menu (copy link, resend, cancel).
  *
  * Uses the shared, token-driven `adm-*` component set from wise.css.
  */
@@ -58,13 +59,13 @@ function whenTs(i) {
 const STATUS_ORDER = { pending: 0, sent: 1, accepted: 2, expired: 3, cancelled: 4 };
 
 const COLS = [
-  { key: 'name',   label: 'Invitee',      sortable: true,  value: (i) => i.name.toLowerCase(), type: 'text' },
-  { key: 'org',    label: 'Organization', sortable: true,  value: (i) => i.org.toLowerCase(),  type: 'text' },
-  { key: 'status', label: 'Status',       sortable: true,  value: (i) => STATUS_ORDER[i.status] ?? 9, type: 'num' },
-  { key: 'when',   label: 'Sent',         sortable: true,  value: (i) => whenTs(i), type: 'num' },
-  { key: 'actions', label: 'Actions',     sortable: false, end: true },
+  { key: 'actions', label: 'Actions',     sortable: false },
+  { key: 'name',    label: 'Invitee',     sortable: true,  value: (i) => i.name.toLowerCase(), type: 'text' },
+  { key: 'org',     label: 'Organization', sortable: true, value: (i) => i.org.toLowerCase(),  type: 'text' },
+  { key: 'status',  label: 'Status',      sortable: true,  value: (i) => STATUS_ORDER[i.status] ?? 9, type: 'num' },
+  { key: 'when',    label: 'Sent',        sortable: true,  value: (i) => whenTs(i), type: 'num' },
 ];
-const GRID_COLS = 'minmax(220px, 2.4fr) minmax(150px, 1.3fr) 118px minmax(150px, 1fr) 132px';
+const GRID_COLS = '72px minmax(220px, 2.4fr) minmax(150px, 1.3fr) 118px minmax(150px, 1fr)';
 
 function initials(name) {
   return String(name).trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
@@ -75,6 +76,8 @@ let activeStatus = null;
 let query = '';
 let salesperson = 'All salespeople';
 let sortKey = null, sortDir = 1;
+let filterOpen = false;
+let docListenersBound = false;
 
 /* ---- Chat bridge + toast -------------------------------------------- */
 let chatApi = null;
@@ -94,14 +97,44 @@ function toast(msg, icon = 'check') {
   setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
 }
 
+function haystack(i) {
+  const chip = STATUS_CHIP[i.status];
+  return `${i.name} ${i.email} ${i.org} ${i.status} ${chip ? chip.label : ''} ${i.by} ${i.when} ${i.day}`.toLowerCase();
+}
+
+function findInvite(org, email) {
+  return INVITES.find((i) => i.org === org && (!email || i.email === email)) || null;
+}
+
+function stampNow() {
+  const d = new Date();
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const h = d.getHours();
+  const mins = String(d.getMinutes()).padStart(2, '0');
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = (h % 12) || 12;
+  return {
+    when: `${months[d.getMonth()]} ${d.getDate()}, ${h12}:${mins} ${ampm}`,
+    day: `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`,
+  };
+}
+
+function inviteLink(org) {
+  return `https://app.wisecode.ai/invite/${encodeURIComponent(org)}`;
+}
+
 /* ==================================================================== */
 function filteredInvites() {
   return INVITES.filter((i) => {
     if (activeStatus && i.status !== activeStatus) return false;
     if (salesperson !== 'All salespeople' && i.by !== salesperson) return false;
-    if (query && !`${i.name} ${i.email} ${i.org}`.toLowerCase().includes(query)) return false;
+    if (query && !haystack(i).includes(query)) return false;
     return true;
   });
+}
+
+function activeFilterCount() {
+  return salesperson !== 'All salespeople' ? 1 : 0;
 }
 
 function theadHtml() {
@@ -114,11 +147,23 @@ function theadHtml() {
   }).join('');
 }
 
+function rowMenuHtml(i) {
+  const canCancel = i.status === 'sent' || i.status === 'pending';
+  const items = [
+    { action: 'copy',   icon: 'link',   label: 'Copy invite link' },
+    { action: 'resend', icon: 'send',   label: 'Resend invite', variant: 'primary' },
+    { action: 'cancel', icon: 'cancel', label: 'Cancel invite', variant: 'danger', disabled: !canCancel },
+  ].map((a) =>
+    `<button type="button" class="adm-rowmenu-item${a.variant ? ' adm-rowmenu-item--' + a.variant : ''}" role="menuitem" data-adm-action="${esc(a.action)}" data-adm-org="${esc(i.org)}" data-adm-email="${esc(i.email)}"${a.disabled ? ' disabled' : ''}><span class="material-symbols-outlined">${esc(a.icon)}</span>${esc(a.label)}</button>`
+  ).join('');
+  return `<div class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button><div class="adm-rowmenu-pop" role="menu" hidden>${items}</div></div>`;
+}
+
 function inviteRowHtml(i) {
   const chip = STATUS_CHIP[i.status];
-  const canCancel = i.status === 'sent' || i.status === 'pending';
   return `
-    <div class="adm-trow" data-adm-row="${esc(i.email)}">
+    <div class="adm-trow" data-adm-row="${esc(i.email)}" data-adm-org="${esc(i.org)}">
+      <span class="adm-td adm-td--actions">${rowMenuHtml(i)}</span>
       <span class="adm-td">
         <span class="adm-idcell">
           <span class="adm-avatar adm-avatar--round">${esc(initials(i.name))}</span>
@@ -134,13 +179,6 @@ function inviteRowHtml(i) {
         <span class="adm-idcell-body">
           <span class="adm-idcell-name" style="font-weight:600;font-size:0.8rem">${esc(i.when)}</span>
           <span class="adm-idcell-sub">by ${esc(i.by)}</span>
-        </span>
-      </span>
-      <span class="adm-td adm-td--end">
-        <span class="adm-actions">
-          <button type="button" class="adm-icon-btn" title="Copy invite link" data-adm-action="copy" data-adm-org="${esc(i.org)}"><span class="material-symbols-outlined">link</span></button>
-          <button type="button" class="adm-icon-btn adm-icon-btn--primary" title="Resend invite" data-adm-action="resend" data-adm-org="${esc(i.org)}"><span class="material-symbols-outlined">send</span></button>
-          <button type="button" class="adm-icon-btn adm-icon-btn--danger" title="Cancel invite" data-adm-action="cancel" data-adm-org="${esc(i.org)}"${canCancel ? '' : ' disabled style="opacity:.4;pointer-events:none"'}><span class="material-symbols-outlined">cancel</span></button>
         </span>
       </span>
     </div>`;
@@ -183,40 +221,43 @@ function statsHtml() {
   }).join('');
 }
 
+function filterPopHtml() {
+  return `
+    <div class="adm-filter-pop"${filterOpen ? '' : ' hidden'} data-adm-filter-pop>
+      <div class="adm-field">
+        <label class="adm-field-label" for="qi-salesperson">Salesperson</label>
+        <select id="qi-salesperson" class="adm-select" data-adm-salesperson aria-label="Filter by salesperson">
+          ${SALESPEOPLE.map((s) => `<option${s === salesperson ? ' selected' : ''}>${esc(s)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="adm-filter-pop-foot">
+        <button type="button" class="adm-filter-clear" data-adm-action="clear-filters">Clear all</button>
+        <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" data-adm-action="export"><span class="material-symbols-outlined">download</span>Export CSV</button>
+      </div>
+    </div>`;
+}
+
 function paint() {
   if (!hostEl) return;
   hostEl.innerHTML = `
-    <div class="adm-wrap">
-      <a class="adm-back" href="organizations.html"><span class="material-symbols-outlined">arrow_back</span>Back to Organizations</a>
-
-      <div class="adm-card adm-card--pad" style="max-width:520px;margin-bottom:26px">
-        <div class="adm-util-title" style="font-family:'WISE Digits', 'Noto Serif',Georgia,serif;font-size:1.15rem"><span class="material-symbols-outlined" style="color:var(--primary-ink, var(--primary))">bolt</span>Quick Invite</div>
-        <p class="adm-lede" style="margin:2px 0 16px">Find or create an org, activate it, and send the invite in one step.</p>
-        <div class="adm-field" style="min-width:0">
-          <label class="adm-field-label" for="qi-org">Organization</label>
-          <div class="adm-search-inline" style="min-width:0">
-            <span class="material-symbols-outlined">search</span>
-            <input type="text" id="qi-org" class="adm-search" data-adm-org-search placeholder="Search organizations by name…" aria-label="Search organizations by name" />
+    <div class="adm-wrap adm-wrap--wide">
+      <header class="adm-head">
+        <div class="adm-head-row">
+          <div>
+            <h1 class="adm-title">Quick Invite</h1>
           </div>
         </div>
-        <div id="qi-suggest" class="adm-qi-suggest" hidden></div>
-      </div>
+      </header>
 
-      <div class="adm-section-label"><span class="material-symbols-outlined">history</span>Invite History</div>
-      <p class="adm-lede" style="margin:-6px 2px 14px">Invitations across all organizations, most recent first.</p>
-
-      <div class="adm-stats" style="margin-bottom:14px">${statsHtml()}</div>
+      <div class="adm-stats" style="margin-bottom:16px">${statsHtml()}</div>
 
       <div class="adm-toolbar">
-        <div class="adm-search-inline">
+        <div class="adm-search-inline has-filter">
           <span class="material-symbols-outlined">search</span>
-          <input type="text" class="adm-search" data-adm-search placeholder="Search name, email, org…" aria-label="Search invites" value="${esc(query)}" />
+          <input type="text" class="adm-search" data-adm-search placeholder="Search name, email, organization…" aria-label="Search invites by name, email, or organization" value="${esc(query)}" />
+          <button type="button" class="adm-search-filter${activeFilterCount() ? ' has-dot' : ''}${filterOpen ? ' is-active' : ''}" data-adm-action="toggle-filters" aria-haspopup="true" aria-expanded="${filterOpen}" title="Filters" aria-label="Filters"><span class="material-symbols-outlined">tune</span></button>
+          ${filterPopHtml()}
         </div>
-        <select class="adm-select" data-adm-salesperson aria-label="Filter by salesperson">
-          ${SALESPEOPLE.map((s) => `<option${s === salesperson ? ' selected' : ''}>${esc(s)}</option>`).join('')}
-        </select>
-        <button type="button" class="adm-icon-btn" title="Refresh" data-adm-action="refresh"><span class="material-symbols-outlined">refresh</span></button>
-        <button type="button" class="adm-btn adm-btn--ghost" data-adm-action="export"><span class="material-symbols-outlined">download</span>Export CSV</button>
       </div>
 
       <div class="adm-card">
@@ -230,11 +271,24 @@ function paint() {
 function applyFilter() {
   const wrap = hostEl?.querySelector('[data-adm-history]');
   if (wrap) wrap.innerHTML = historyHtml();
-  hostEl?.querySelectorAll('[data-adm-filter]').forEach((b) => {
+  hostEl?.querySelectorAll('button[data-adm-filter]').forEach((b) => {
     const s = b.dataset.admFilter || null;
     b.classList.toggle('is-active', s === activeStatus);
     b.setAttribute('aria-pressed', s === activeStatus ? 'true' : 'false');
   });
+  syncFilterUi();
+}
+
+function syncFilterUi() {
+  if (!hostEl) return;
+  const btn = hostEl.querySelector('[data-adm-action="toggle-filters"]');
+  if (btn) {
+    btn.classList.toggle('has-dot', activeFilterCount() > 0);
+    btn.classList.toggle('is-active', filterOpen);
+    btn.setAttribute('aria-expanded', String(filterOpen));
+  }
+  const sel = hostEl.querySelector('[data-adm-salesperson]');
+  if (sel && sel.value !== salesperson) sel.value = salesperson;
 }
 
 export function setInviteFilter(status) { activeStatus = status || null; applyFilter(); }
@@ -246,32 +300,85 @@ function toggleSort(key) {
   applyFilter();
 }
 
-function suggestOrgs(text) {
-  const box = hostEl?.querySelector('#qi-suggest');
-  if (!box) return;
-  const t = text.trim().toLowerCase();
-  if (!t) { box.hidden = true; box.innerHTML = ''; return; }
-  const known = ['Z Crackers', 'Wai Lana Snacks', 'Snackios', "Abbot's Butcher", 'Vive Juicery', 'Applegate', 'Arti Bars', 'Artisan Tropic', 'Flax4Life', 'Goodles'];
-  const hits = known.filter((n) => n.toLowerCase().includes(t)).slice(0, 4);
-  box.hidden = false;
-  box.innerHTML = hits.length
-    ? hits.map((n) => `<button type="button" class="adm-qi-suggest-row" data-adm-action="pick-org" data-adm-org="${esc(n)}"><span class="adm-avatar">${esc(initials(n))}</span><span>${esc(n)}</span><span class="adm-idcell-sub" style="margin-left:auto">Send invite</span></button>`).join('')
-    : `<button type="button" class="adm-qi-suggest-row" data-adm-action="create-org" data-adm-org="${esc(text.trim())}"><span class="material-symbols-outlined" style="color:var(--primary-ink, var(--primary))">add_business</span><span>Create <strong>${esc(text.trim())}</strong></span><span class="adm-idcell-sub" style="margin-left:auto">New org</span></button>`;
+function setFilterOpen(open) {
+  filterOpen = open;
+  const pop = hostEl?.querySelector('[data-adm-filter-pop]');
+  if (pop) pop.hidden = !open;
+  syncFilterUi();
 }
 
-function runAction(action, org) {
+function clearFilters() {
+  salesperson = 'All salespeople';
+  applyFilter();
+}
+
+function closeRowMenus(keep) {
+  if (!hostEl) return;
+  hostEl.querySelectorAll('.adm-rowmenu.is-open').forEach((menu) => {
+    if (menu === keep) return;
+    menu.classList.remove('is-open');
+    const btn = menu.querySelector('.adm-rowmenu-btn');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+    const pop = menu.querySelector('.adm-rowmenu-pop');
+    if (pop) { pop.hidden = true; pop.style.cssText = ''; }
+  });
+}
+
+/* Anchor the menu to the button with fixed positioning so it can never be
+   clipped by the scrollable main pane. Opens to the right of the kebab, or
+   above when there isn't room — never parked directly under the trigger. */
+function placeRowMenu(menuBtn, pop) {
+  const PAD = 8;
+  pop.style.position = 'fixed';
+  pop.style.zIndex = '1000';
+  pop.style.visibility = 'hidden';
+  pop.style.right = 'auto';
+  pop.hidden = false;
+  const btnRect = menuBtn.getBoundingClientRect();
+  const w = pop.offsetWidth, h = pop.offsetHeight;
+  let left = btnRect.right + 4;
+  if (left + w > window.innerWidth - PAD) left = Math.max(PAD, btnRect.left - w - 4);
+  let top = btnRect.top - h - 4;
+  if (top < PAD) top = Math.min(btnRect.top, window.innerHeight - h - PAD);
+  top = Math.max(PAD, top);
+  pop.style.left = `${left}px`;
+  pop.style.top = `${top}px`;
+  pop.style.visibility = '';
+}
+
+function runAction(action, org, email) {
+  const row = org ? findInvite(org, email) : null;
   switch (action) {
-    case 'export': toast('Exporting invite history', 'download'); pushChat('Preparing a CSV of your <strong>invite history</strong> — it\u2019ll download shortly.'); break;
-    case 'refresh': toast('Refreshed invite history', 'refresh'); applyFilter(); break;
-    case 'copy': toast(`Invite link copied · ${org}`, 'link'); break;
-    case 'resend': toast(`Invite resent · ${org}`, 'send'); pushChat(`Resent the invitation for <strong>${esc(org)}</strong>. I\u2019ll flag it under <em>Need attention</em> if it isn\u2019t accepted within 7 days.`); break;
-    case 'cancel': toast(`Invite cancelled · ${org}`, 'cancel'); pushChat(`Cancelled the pending invite for <strong>${esc(org)}</strong>.`); break;
-    case 'pick-org':
-    case 'create-org':
-      toast(`Invite sent · ${org}`, 'send');
-      pushChat(`Activated <strong>${esc(org)}</strong> and sent the invitation in one step. You\u2019ll see it at the top of the history once it\u2019s delivered.`);
-      { const s = hostEl?.querySelector('[data-adm-org-search]'); if (s) s.value = ''; }
-      { const box = hostEl?.querySelector('#qi-suggest'); if (box) { box.hidden = true; box.innerHTML = ''; } }
+    case 'toggle-filters': setFilterOpen(!filterOpen); break;
+    case 'clear-filters': clearFilters(); break;
+    case 'export':
+      setFilterOpen(false);
+      toast('Exporting invite history', 'download');
+      pushChat('Preparing a CSV of your <strong>invite history</strong> — it\u2019ll download shortly.');
+      break;
+    case 'copy':
+      try { navigator.clipboard.writeText(inviteLink(org)); } catch (e) { /* clipboard unavailable */ }
+      toast(`Invite link copied · ${org}`, 'link');
+      pushChat(`Copied the invite link for <strong>${esc(org)}</strong>. Paste it into an email or Slack to send it on.`);
+      break;
+    case 'resend':
+      if (row) {
+        const stamp = stampNow();
+        row.status = 'sent';
+        row.when = stamp.when;
+        row.day = stamp.day;
+        applyFilter();
+      }
+      toast(`Invite resent · ${org}`, 'send');
+      pushChat(`Resent the invitation for <strong>${esc(org)}</strong>. I\u2019ll flag it under <em>Need attention</em> if it isn\u2019t accepted within 7 days.`);
+      break;
+    case 'cancel':
+      if (row && (row.status === 'sent' || row.status === 'pending')) {
+        row.status = 'cancelled';
+        applyFilter();
+      }
+      toast(`Invite cancelled · ${org}`, 'cancel');
+      pushChat(`Cancelled the pending invite for <strong>${esc(org)}</strong>.`);
       break;
     default: break;
   }
@@ -279,16 +386,34 @@ function runAction(action, org) {
 
 export function renderQuickInvite(mainEl) {
   hostEl = mainEl;
-  activeStatus = null; query = ''; salesperson = 'All salespeople'; sortKey = null; sortDir = 1;
+  activeStatus = null; query = ''; salesperson = 'All salespeople'; sortKey = null; sortDir = 1; filterOpen = false;
   paint();
 
   mainEl.addEventListener('click', (e) => {
+    const menuBtn = e.target.closest('.adm-rowmenu-btn');
+    if (menuBtn) {
+      const menu = menuBtn.closest('.adm-rowmenu');
+      const open = !menu.classList.contains('is-open');
+      closeRowMenus(open ? menu : null);
+      menu.classList.toggle('is-open', open);
+      menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      const pop = menu.querySelector('.adm-rowmenu-pop');
+      if (pop) {
+        if (open) placeRowMenu(menuBtn, pop);
+        else { pop.hidden = true; pop.style.cssText = ''; }
+      }
+      return;
+    }
     const sortH = e.target.closest('[data-adm-sort]');
     if (sortH) { toggleSort(sortH.dataset.admSort); return; }
-    const filter = e.target.closest('[data-adm-filter]');
+    const filter = e.target.closest('button[data-adm-filter]');
     if (filter) { const s = filter.dataset.admFilter || null; setInviteFilter(s && s === activeStatus ? null : s); return; }
     const act = e.target.closest('[data-adm-action]');
-    if (act) { runAction(act.dataset.admAction, act.dataset.admOrg || ''); return; }
+    if (act) {
+      if (act.disabled) return;
+      closeRowMenus(null);
+      runAction(act.dataset.admAction, act.dataset.admOrg || '', act.dataset.admEmail || '');
+    }
   });
   mainEl.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -297,8 +422,6 @@ export function renderQuickInvite(mainEl) {
     e.preventDefault(); toggleSort(sortH.dataset.admSort);
   });
   mainEl.addEventListener('input', (e) => {
-    const orgSearch = e.target.closest('[data-adm-org-search]');
-    if (orgSearch) { suggestOrgs(orgSearch.value); return; }
     const s = e.target.closest('[data-adm-search]');
     if (s) { query = s.value.trim().toLowerCase(); applyFilter(); }
   });
@@ -306,6 +429,23 @@ export function renderQuickInvite(mainEl) {
     const sp = e.target.closest('[data-adm-salesperson]');
     if (sp) { salesperson = sp.value; applyFilter(); }
   });
+
+  if (!docListenersBound) {
+    docListenersBound = true;
+    document.addEventListener('click', (e) => {
+      if (filterOpen && !e.target.closest('.adm-search-inline')) setFilterOpen(false);
+      if (!hostEl) return;
+      if (e.target.closest && e.target.closest('.adm-rowmenu')) return;
+      closeRowMenus(null);
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      setFilterOpen(false);
+      closeRowMenus(null);
+    });
+    window.addEventListener('scroll', () => closeRowMenus(null), { capture: true, passive: true });
+    window.addEventListener('resize', () => closeRowMenus(null));
+  }
 }
 
 /* ==================================================================== */

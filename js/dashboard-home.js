@@ -152,17 +152,19 @@ function cssUrl(url) {
   return `url('${String(url).replace(/'/g, '%27')}')`;
 }
 
-/* Palette for chart segments — the five-stop monochromatic status scale
-   (brand navy/azure). Resolves against shared CSS tokens so light/dark follow. */
+/* Palette for chart segments (resolves against shared CSS tokens). */
 const C = {
-  green: 'var(--chart-status-excellent)',
-  greenLight: 'var(--chart-status-good)',
-  teal: 'var(--chart-status-okay)',
-  /* Soft, same-hue complement used as the muted remainder in binary gauges. */
-  tealSoft: 'color-mix(in srgb, var(--chart-status-excellent) 55%, var(--surface))',
-  amber: 'var(--chart-status-okay)',
-  orange: 'var(--chart-status-fair)',
-  red: 'var(--chart-status-poor)',
+  green: 'var(--sec-green)',
+  /* A distinctly lighter shade of green — the "Good" tier and the second
+     processing level. */
+  greenLight: '#7DC470',
+  teal: 'var(--ter-cyan)',
+  /* Soft, same-hue blue used as the muted complement in the binary
+     health-status gauges. */
+  tealSoft: 'color-mix(in srgb, var(--ter-cyan) 50%, var(--surface))',
+  amber: 'var(--ter-amber)',
+  orange: '#D27326',
+  red: 'var(--sec-red)',
   ink: 'var(--text-subtle)',
   primary: 'var(--primary)',
 };
@@ -518,7 +520,7 @@ const STARS_BRAND_PAGE_SIZE = 20;
 /* ================================================================== */
 /* Guiding Stars dataset. Star ratings run 0–3 (0 = not rated up to    */
 /* 3 = best). Colors are drawn from the shared brand palette so the     */
-/* rating ramp reads bad → good along the monochromatic status scale.   */
+/* rating ramp reads bad → good: orange · amber · light-green · green.  */
 /* Content + chart types mirror the reference Guiding Stars dashboard;  */
 /* the styling, colors and UI are WISEcode's own.                        */
 /* ================================================================== */
@@ -1772,26 +1774,46 @@ function renderClaim(d) {
         <button class="dash-text-link dash-text-link--indent" type="button" data-dash-action="add-food"><span class="material-symbols-outlined">add</span>Add food</button>
       </div>
       <div class="dash-claim-divider"></div>
-      <div class="dash-claim-col">
+      <div class="dash-claim-col dash-claim-col--nudge">
+        ${u.nonCount > 0 ? `
+        <div class="dash-score-toast" role="status">
+          <span class="dash-score-toast-icon"><span class="material-symbols-outlined">verified</span></span>
+          <div class="dash-score-toast-body">
+            <div class="dash-score-toast-title">${u.nonCount} products are ready to verify</div>
+            <p class="dash-score-toast-text">Earn the Non&#8209;UPF verification shield on these products so they stand out on retail listings — it only takes a moment to start.</p>
+            <button class="dash-score-toast-link" type="button" data-dash-action="verify-upf">Start Non&#8209;UPF Verification<span class="material-symbols-outlined dash-score-toast-link-arrow">arrow_outward</span></button>
+          </div>
+          <button class="dash-score-toast-close" type="button" data-dash-action="dismiss-score-toast" aria-label="Dismiss"><span class="material-symbols-outlined">close</span></button>
+        </div>` : ''}
         <div class="dash-bignum-row">
           ${countUpMarkup(u.nonCount, { className: 'dash-bignum' })}
           <span class="dash-bignum-cap"><strong>Products Qualify</strong><br>for Non&#8209;UPF verification shield</span>
           ${stampIcon('Products Qualify')}
         </div>
         <div class="dash-btn-row">
-          <button class="dash-btn dash-btn--primary" type="button" data-dash-action="verify-upf"${u.nonCount > 0 ? ` aria-label="Start Non-UPF Verification — ${u.nonCount} products ready"` : ''}><span class="material-symbols-outlined">verified</span>Start Non&#8209;UPF Verification${u.nonCount > 0 ? '<span class="dash-btn-pulse" aria-hidden="true"></span>' : ''}</button>
+          <button class="dash-btn dash-btn--primary" type="button" data-dash-action="verify-upf"><span class="material-symbols-outlined">verified</span>Start Non&#8209;UPF Verification</button>
         </div>
         <button class="dash-text-link dash-text-link--indent" type="button" data-dash-action="nonupf-dashboard"><span class="material-symbols-outlined">dashboard</span>Non&#8209;UPF Dashboard</button>
       </div>
       <div class="dash-claim-divider"></div>
-      <div class="dash-claim-col">
+      <div class="dash-claim-col dash-claim-col--nudge">
+        ${d.gras.grasCount > 0 ? `
+        <div class="dash-score-toast" role="status">
+          <span class="dash-score-toast-icon"><span class="material-symbols-outlined">verified</span></span>
+          <div class="dash-score-toast-body">
+            <div class="dash-score-toast-title">${d.gras.grasCount} products are ready to verify</div>
+            <p class="dash-score-toast-text">Earn the GRAS verification shield on these products so their ingredient safety stands out on retail listings — it only takes a moment to start.</p>
+            <button class="dash-score-toast-link" type="button" data-dash-action="verify-gras">Start GRAS Verification<span class="material-symbols-outlined dash-score-toast-link-arrow">arrow_outward</span></button>
+          </div>
+          <button class="dash-score-toast-close" type="button" data-dash-action="dismiss-score-toast" aria-label="Dismiss"><span class="material-symbols-outlined">close</span></button>
+        </div>` : ''}
         <div class="dash-bignum-row">
           ${countUpMarkup(d.gras.grasCount, { className: 'dash-bignum' })}
           <span class="dash-bignum-cap"><strong>Products Qualify</strong><br>for GRAS verification shield</span>
           ${stampIcon('Products Qualify')}
         </div>
         <div class="dash-btn-row">
-          <button class="dash-btn dash-btn--primary" type="button" data-dash-action="verify-gras"${d.gras.grasCount > 0 ? ` aria-label="Start GRAS Verification — ${d.gras.grasCount} products ready"` : ''}><span class="material-symbols-outlined">verified</span>Start GRAS Verification${d.gras.grasCount > 0 ? '<span class="dash-btn-pulse" aria-hidden="true"></span>' : ''}</button>
+          <button class="dash-btn dash-btn--primary" type="button" data-dash-action="verify-gras"><span class="material-symbols-outlined">verified</span>Start GRAS Verification</button>
         </div>
       </div>
     </section>`;
@@ -1844,9 +1866,8 @@ function renderGras(d) {
 
 /* The five WISEscore status tiers — 20 points each (0–19 … 80–100). Single
    source of truth for the rating label, tier color, and the hover popover on
-   the status word in the pillars heading. The scale runs worst→best as a
-   monochromatic azure ramp: Poor (deep navy) · Fair · Okay · Good · Excellent
-   (light azure). */
+   the status word in the pillars heading. The scale runs worst→best:
+   Poor (red) · Fair (orange) · Okay (amber) · Good (light green) · Excellent (green). */
 const STATUS_TIERS = [
   { label: 'Excellent', min: 80, range: '80–100', tone: 'excellent', desc: 'Top-tier food quality — strong nutrition, clean ingredients, and healthy long-term outcomes.' },
   { label: 'Good', min: 60, range: '60–79', tone: 'good', desc: 'Solid, well-rounded products with only minor areas left to improve.' },
@@ -3049,6 +3070,13 @@ export function renderDashboardHome(host) {
           const shown = wrap.querySelector(showPillars ? '.dash-bd-donut--pillars' : '.dash-bd-donut--overall');
           reanimateDonutCard(shown);
         }
+        return;
+      }
+
+      /* Dismiss the celebratory WISEscore toast. Not persisted — it returns on
+         reload, and only disappears for the current view when closed. */
+      if (a === 'dismiss-score-toast') {
+        action.closest('.dash-score-toast')?.remove();
         return;
       }
 

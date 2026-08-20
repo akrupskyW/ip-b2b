@@ -4,7 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- Never serve a stale snapshot of this journal — every reload / hot reload
-       must re-evaluate counts, filters, and the timeline from the current LOG. -->
+       must re-evaluate counts, filters, and the timeline from the current LOG.
+       A Re-evaluate click and the start of a new local day both rewrite every
+       eval note, not just refresh the board. -->
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <title>WISE · Progress Log</title>
@@ -540,9 +542,157 @@
       /* ── The log. Newest day first. Each entry is a page touched that day.
          LOG_STAMP is bumped whenever this journal is rewritten. The board
          polls it every hour (and on tab-focus after an hour) and reloads
-         when the stamp has moved, so an open tab never shows a stale day. ── */
-      const LOG_STAMP = '2026-08-18T23:20:00.000Z';
+         when the stamp has moved. A new local day — or a Re-evaluate click —
+         always rewrites the eval note for every page on every day. ── */
+      const LOG_STAMP = '2026-08-19T23:45:00.000Z';
       const LOG = [
+        {
+          date: '2026-08-19', rel: 'Wednesday',
+          summary: 'WISEcodeAI grew a set of short intent chips with real chart and table artifacts; chat unlocked and every reply now ends on topic chips; Marketing Assets became a sortable file tree; dashboards got semantic status colors and floating verify toasts; Appearance gained Surface style plus a Walkthrough toggle; All Modules and this journal now crawl every HTML page on Re-evaluate.',
+          entries: [
+            { page: 'WISEcodeAI', path: 'wiseai.html',
+              features: [
+                'Short intent chips that play full transcripts: Sprouts food count (20,635, with the retailer logo next to the brand name), GRAS classification (8,658 ingredients — GRAS / Historical / Unclear / Unsafe), Kennedy/Diamantas GRAS + UPF announcement, energy drinks (artificial sweetener use vs UPF-tier, top 10 and bottom 10), protein-bar SKU count, and artificial sweeteners by PL level',
+                'Each of those chips opens a real right-hand artifact — chart, table, or references pane — not a dead-end reply',
+                'Follow-up chip rows after sweeteners (GRAS split, PL3 & PL4, classic synthetics, foods that use them, artificial vs natural) and after energy drinks (heatmap, by brand, sweeteners vs added sugar)',
+                'The gold “What can I ask?” chip is hidden for now; the below-input gold link still opens the catalog',
+              ],
+              components: [
+                'Artifact header is the output plus the count only — name, skewed numbers, and supporting copy live in the footer, so the headline is not repeated',
+                'In-table search filter inside the input (no leftover “Ingredients classified as artificial sweeteners” subhead)',
+                'Brand-name answers carry a small logo next to the name',
+              ],
+              ux: [
+                'Chart and table artifacts use the shared WISE controls — no leftover news chips, no left-border accent bars, no off-palette button skins',
+                'Icons on those artifacts sit bare — no rounded-square tiles behind them',
+              ] },
+            { page: 'Shared chat', path: 'wiseai-chat.js',
+              features: [
+                'Composer is unlocked — no lock icon, no readonly input. Typing is live',
+                'Sending any distinctive word from an intent chip (label, ask, or intent id) plays that chip’s transcript, the same as clicking the chip',
+                'Every transcript ends on topic chips related to that answer — never a dead-end reply. Prefers the chip’s nextIntents or the host’s followups map; otherwise leftover unused chips from the current set, or a scored catalog match',
+              ],
+              logic: [
+                'Mid-turn status cards pass trailChips: false so chips trail the actual answer, not the card',
+                'Hosts can still setIntents() to swap a curated follow-up row (sweeteners, energy drinks)',
+              ],
+              updates: [
+                'Chat-module-parity rule and the chat-module-audit skill now require trailing topic chips and the unlocked composer — lock-icon language is gone',
+              ] },
+            { page: 'Marketing Assets', path: 'marketing-assets.html',
+              components: [
+                'File tree is a real table: Name, Size, and Date as sortable column headers, with size and latest date rolled up so folders sort the same way files do',
+                'Row ⋯ menu (expand / collapse, preview, download) instead of stacked action buttons on every row',
+                'Tune-icon filter popover inside the search pill — type chips (All / Images / Vectors / PDFs / Documents) plus Expand all / Collapse all',
+              ],
+              features: [
+                '“What can I ask?” break-out docks to the far right of an open output pane, not wedged between chat and the artifact',
+              ],
+              ux: ['Folder chevron + icon sit with the name; empty rails no longer leave a phantom gutter'] },
+            { page: 'Conversation Library', path: 'conversation-library.html',
+              ux: [
+                'A linked artifact (the same card in more than one folder) shows a chain-link icon immediately left of the label — part of the name, no boxed backdrop',
+              ] },
+            { page: 'Add Product', path: 'add-product.html',
+              ux: [
+                'Nutrition Facts inline edit hover is a 1px underline that grows from the left — no wash, no box — and the bright primary in dark mode',
+                'Photo pencil, “Change”, and category mini-buttons stay hidden until the hero or category row is hovered or focused',
+                'Welcome “What can I ask?” chip hidden to match the other chats; the below-input gold link still opens the catalog',
+              ],
+              logic: [
+                'Every assistant reply now ends on step chips (continue, skip, save) so the guided flow cannot dead-end',
+              ] },
+            { page: 'View Product', path: 'view-product.html',
+              ux: [
+                'Same Nutrition Facts hover underline and hover-only photo / category edit controls as Add Product, so the two panels read as one editor',
+              ] },
+            { page: 'Product Portfolio', path: 'product-portfolio.html',
+              ux: [
+                'Empty left and right panel rails collapse so they no longer sit as a phantom gutter between nav and chat',
+                'Module-row shadow gutter is 2px, matching wiseai.html — not the old 16px carousel inset',
+                'Welcome “What can I ask?” chip hidden to match the other chats',
+              ] },
+            { page: 'Product Comparison', path: 'product-comparison.html',
+              ux: [
+                'Same empty-rail collapse and 2px module gutter as Portfolio, so the two boards share one chrome',
+              ] },
+            { page: 'Dashboard', path: 'overview.html',
+              components: [
+                'Floating verify toast above the Non-UPF and GRAS claim columns — serif title, count, short why, and a Start Verification link — instead of the blinking red notification dots on the buttons',
+              ],
+              ux: [
+                'Toast dismisses for the current view (×); it is not persisted, so it returns on reload',
+                'Chart fills are back on the semantic status scale (green / light-green / amber / orange / red) in both themes — not the leftover monochromatic navy ramp',
+              ],
+              deletions: ['Removed the pulsing red attention dots on the verification buttons'] },
+            { page: 'AI Dashboard', path: 'ai-dashboard.html',
+              ux: [
+                'Chart series use the brand navy→azure family plus semantic green / amber / orange / red, with lifted dark-mode stops — not the all-navy status ramp',
+              ],
+              features: ['Intent chips carry nextIntents so each answer trails related follow-ups'],
+              deletions: ['Removed the locked-composer placeholder copy'] },
+            { page: 'Analytics Types', path: 'analytics-types.html',
+              ux: [
+                'Five-tier status cells and the processing-tier columns use semantic fills again (Excellent green through Poor red; Non-UPF through Super-Ultra)',
+                'Rosette pillars are one hue each — Nutrient Quality green, Ingredient Quality navy, Health Outcomes amber — not a single navy family',
+              ] },
+            { page: 'Appearance & Admin', path: '(appearance popover · every page)',
+              features: [
+                'Walkthrough toggle — a plain (not admin) row that opens or hides the WISEowl sticky tour from any page; off by default, so the tour never auto-opens on sign-in',
+                'Surface style segmented control (admin): Default, Style 1 (inset stamp with hairline borders), Style 2 (no outer border on modules other than chat)',
+              ],
+              logic: [
+                'Style 2 (`brand-flush`) strips the card stroke from History, output panes, and other asides — the chat card keeps its Default rim',
+                'Style 1 (`brand-inset`) flips --shadow-* to inner deboss and firms the brand border; the chat keeps a full four-sided border, including the left edge',
+                'Persisted as wise-brand-style; the owl bug and wordmark are never restyled',
+              ] },
+            { page: 'WISEowl walkthrough', path: 'owl-walkthrough.js',
+              changes: [
+                'Auto-open on sign-in and first-visit-to-a-screen is off — the tour only appears from the Appearance Walkthrough toggle, Help / Preferences Replay, ?walkthrough=1, or a cross-page resume already in flight',
+              ] },
+            { page: 'All Modules', path: 'all-modules.html',
+              features: [
+                'Re-evaluate beside the hero description (and in the directory ⋯ menu) fetches every HTML page, checks the catalog, and reports accounted / missing / unreachable',
+                'A live page that is not in the directory is added to an Unaccounted section for that session; directory entries that 404 are listed in the same banner',
+              ],
+              updates: [
+                'Catalog now includes Add Catalog, All Modules, and Progress Log — three pages that lived on disk but were not indexed',
+              ],
+              logic: ['app-vision-deck.html is still omitted on purpose as a standalone pitch deck; Re-evaluate still probes it so a 404 is flagged'] },
+            { page: 'Progress Log', path: 'progress-log.html',
+              features: [
+                'Re-evaluate (toolbar and ⋯ menu) always rewrites the eval note for every page on every day — not a light refresh of counts',
+                'A new local day — midnight while the tab is open, or the first visit of the morning — re-runs that same full evaluation so yesterday’s digest cannot linger',
+                'Live crawl: Re-evaluate fetches and parses every pages/*.html, fingerprints size / modules / headings / chat / hash, and writes a crawl note of what actually changed on disk',
+              ],
+              logic: [
+                'Last-evaluated calendar day is persisted; hourly poll, tab-focus, and a midnight timer all check it and force evaluateAllPages() when the date has rolled',
+                'A journal stamp change still reloads, then boot re-evaluates because eval notes no longer match LOG_STAMP',
+              ] },
+            { page: 'Accessibility Review', path: 'accessibility-review.html',
+              features: ['Intent chips carry nextIntents so each audit answer trails related follow-ups'] },
+            { page: 'Studio & AI', path: 'studio-ai.html',
+              features: ['Intent chips carry nextIntents so Studio / waitlist / launch answers trail related follow-ups'],
+              deletions: ['Removed the locked-composer placeholder copy'] },
+            { page: 'GRAS Verification', path: 'gras-verification.html',
+              features: ['Verification chips carry nextIntents so the pathway (verify → documents → attestation → submit) cannot dead-end'] },
+            { page: 'NON-UPF Dashboard', path: 'non-upf-dashboard.html',
+              ux: [
+                'Token-tracking charts read the semantic palette again (green / light-green / amber / orange / red plus brand navy) instead of the leftover monochromatic navy stops',
+              ] },
+            { page: 'Reformulation', path: 'reformulation.html',
+              deletions: ['Removed the locked-composer placeholder copy'] },
+            { page: 'Platform-wide', path: '(all pages)',
+              components: [
+                'Chart-status tokens in wise.css restored to the semantic five-stop scale (Excellent green → Good light-green → Okay amber → Fair orange → Poor red) in both themes; --chart-mono stays brand navy for non-status chrome',
+              ],
+              features: [
+                'Inline intent chips are on by default, trailing the latest assistant reply',
+                '“What can I ask?” break-out docks after the last open output pane so an artifact stays between chat and the catalog',
+              ],
+              ux: ['Empty panel rails collapse on every chat+module shell so they cannot leave a leftover gutter'] },
+          ],
+        },
         {
           date: '2026-08-18', rel: 'Tuesday',
           summary: 'Nested Conversation Library (move / copy / link), Accessibility Review as a live audit board, WISEowl walkthrough, Crawl · Walk · Run rewrite, History/Projects folder trees, and a shared five-stop chart palette — this journal now re-evaluates itself every hour.',
@@ -792,6 +942,7 @@
 
       /* ── Personal notes (persisted locally — same sticky-note idea as chat turns) ── */
       const NOTES_KEY = 'wise-progress-log-notes';
+      const EVAL_META_KEY = 'wise-progress-log-eval-meta';
       function loadNotes() {
         try {
           const raw = JSON.parse(localStorage.getItem(NOTES_KEY) || '[]');
@@ -800,6 +951,30 @@
       }
       function persistNotes() {
         try { localStorage.setItem(NOTES_KEY, JSON.stringify(notes)); } catch (_) {}
+      }
+      function localDayIso(d = new Date()) {
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      }
+      function loadEvalMeta() {
+        try {
+          const raw = JSON.parse(localStorage.getItem(EVAL_META_KEY) || 'null');
+          if (raw && typeof raw.at === 'number' && typeof raw.day === 'string') return raw;
+        } catch (_) {}
+        return { at: 0, day: '' };
+      }
+      function persistEvalMeta() {
+        try { localStorage.setItem(EVAL_META_KEY, JSON.stringify({ at: lastEvalAt, day: lastEvalDay })); } catch (_) {}
+      }
+      const _evalMeta = loadEvalMeta();
+      let lastEvalAt = _evalMeta.at || 0;
+      let lastEvalDay = _evalMeta.day || '';
+      function isNewLocalDay() { return localDayIso() !== lastEvalDay; }
+      function evalNotesNeedRefresh() {
+        const evals = notes.filter((n) => n.kind === 'eval');
+        if (!evals.length) return true;
+        if (evals.some((n) => n.stamp !== LOG_STAMP)) return true;
+        const days = new Set(evals.filter((n) => n.scope === 'day').map((n) => n.day));
+        return LOG.some((d) => !days.has(d.date));
       }
       function nid() { return 'n_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7); }
       function notesForDay(iso) { return notes.filter((n) => n.day === iso); }
@@ -886,7 +1061,8 @@
 
       function renderNoteCard(n) {
         const when = relTime(n.updatedAt || n.createdAt);
-        const bits = [n.kind === 'eval' ? (n.scope === 'journal' ? 'All pages' : 'Evaluated') : '', when].filter(Boolean);
+        const evalLabel = n.scope === 'crawl' ? 'Live page crawl' : (n.scope === 'journal' ? 'All pages' : 'Evaluated');
+        const bits = [n.kind === 'eval' ? evalLabel : '', when].filter(Boolean);
         return `
           <li class="pl-note" data-note-id="${esc(n.id)}">
             <div class="pl-note-body">
@@ -1087,26 +1263,33 @@
           });
         }
       }
-      function evaluateAllPages() {
+      function evaluateAllPages({ scroll = true } = {}) {
         notes = loadNotes();
         LOG.forEach((day) => upsertEvalNote(day.date, dayEvalNote(day), 'day'));
         upsertEvalNote(LOG[0].date, journalEvalNote(), 'journal');
         persistNotes();
-        collapsed.clear();
+        if (scroll) collapsed.clear();
         lastEvalAt = Date.now();
+        lastEvalDay = localDayIso();
+        persistEvalMeta();
         renderAll();
         updateEvalMeta();
-        const first = document.querySelector('#pl-day-' + LOG[0].date + ' .pl-notes');
-        if (first) first.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (scroll) {
+          const first = document.querySelector('#pl-day-' + LOG[0].date + ' .pl-notes');
+          if (first) first.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+      function shouldEvaluateAll() {
+        return isNewLocalDay() || evalNotesNeedRefresh() || !lastEvalAt;
       }
 
       function renderAll() { renderSummary(); renderCatStats(); renderTimeline(); }
 
-      /* Full re-evaluation from the current LOG + persisted notes.
-         Called on every boot and again whenever the page is restored from
-         bfcache / a hot-reload that didn't remount the module (pageshow).
-         `reset` wipes filters, search, and collapse so a restored snapshot
-         never shows a stale filtered board. */
+      /* Paint the board from the current LOG + persisted notes. A full
+         evaluateAllPages() is a separate pass — boot / restore call that
+         when the local day rolled or eval notes are stale. `reset` wipes
+         filters, search, and collapse so a restored snapshot never shows
+         a stale filtered board. */
       function reevaluate({ reset = false } = {}) {
         notes = loadNotes();
         if (reset) {
@@ -1123,54 +1306,230 @@
       }
       window.plReevaluate = (opts) => reevaluate(opts || {});
 
-      /* ── Hourly auto-reevaluation ──
+      /* ── Live page crawl ──────────────────────────────────────────────
+         Re-evaluate does NOT just reflow the static LOG — it fetches every
+         page in the app, parses each one, and fingerprints it (size, module
+         count, headings, chat module, script includes, content hash). The
+         fingerprints are stored in localStorage; each crawl diffs against the
+         previous snapshot so the journal reports what actually changed on
+         disk (grown / shrank, modules added, chat added, new/unreachable
+         pages). The first crawl captures the baseline. This manifest is the
+         full set of pages/*.html — add new pages here so the crawl sees them. */
+      const CRAWL_KEY = 'wise-progress-log-crawl-v1';
+      const PAGES = [
+        'add-catalog.html', 'add-product.html', 'accessibility-review.html',
+        'admin-utils.html', 'agents.html', 'ai-dashboard.html', 'alerts.html',
+        'all-modules.html', 'analytics-types.html', 'api-keys.html',
+        'app-vision-deck.html', 'audit-queue.html', 'conversation-library.html',
+        'create-account.html', 'docs.html', 'forgot-password.html',
+        'gras-verification.html', 'help.html', 'ingredient-browser.html',
+        'invoices.html', 'login.html', 'marketing-assets.html',
+        'non-upf-dashboard.html', 'organizations.html', 'overview.html',
+        'preferences.html', 'product-comparison.html', 'product-portfolio.html',
+        'profile.html', 'progress-log.html', 'quick-invite.html',
+        'reformulation.html', 'report-guiding-stars.html', 'reports.html',
+        'studio-ai.html', 'user-management.html', 'verification.html',
+        'view-product.html', 'wiseai.html',
+      ];
+      let lastCrawlAt = 0;
+      let crawlBusy = false;
+
+      function hashStr(s) {
+        let h = 5381;
+        for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+        return (h >>> 0).toString(36);
+      }
+      function fmtBytes(n) {
+        if (n < 1024) return n + ' B';
+        if (n < 1024 * 1024) return (n / 1024).toFixed(n < 10240 ? 1 : 0) + ' KB';
+        return (n / (1024 * 1024)).toFixed(1) + ' MB';
+      }
+      function fingerprintDoc(path, text) {
+        let title = path, headings = 0, sections = 0, scripts = 0;
+        try {
+          const doc = new DOMParser().parseFromString(text, 'text/html');
+          title = (doc.querySelector('title') && doc.querySelector('title').textContent || path).trim();
+          headings = doc.querySelectorAll('h1, h2, h3').length;
+          sections = doc.querySelectorAll('section, article, [class*="module"], [class*="-card"]').length;
+          scripts = doc.querySelectorAll('script[src]').length;
+        } catch (_) {}
+        return {
+          path, title, headings, sections, scripts,
+          hasChat: /chat-shell-wrap|wiseai-chat|chat-topbar/.test(text),
+          size: text.length,
+          hash: hashStr(text),
+        };
+      }
+      async function crawlPage(path) {
+        try {
+          const res = await fetch(path + '?plc=' + Date.now(), { cache: 'no-store' });
+          if (!res.ok) return { path, missing: true };
+          return fingerprintDoc(path, await res.text());
+        } catch (_) { return { path, missing: true }; }
+      }
+      function crawlAllPages() { return Promise.all(PAGES.map(crawlPage)); }
+      function loadCrawlSnap() {
+        try {
+          const raw = JSON.parse(localStorage.getItem(CRAWL_KEY) || 'null');
+          if (raw && raw.pages && typeof raw.pages === 'object') return raw;
+        } catch (_) {}
+        return null;
+      }
+      function persistCrawlSnap(snap) {
+        try { localStorage.setItem(CRAWL_KEY, JSON.stringify(snap)); } catch (_) {}
+      }
+      function diffCrawl(prev, cur) {
+        const prevMap = (prev && prev.pages) || {};
+        const curMap = {};
+        cur.forEach((fp) => { if (!fp.missing) curMap[fp.path] = fp; });
+        const added = [], changed = [], unchanged = [], unreachable = [];
+        cur.forEach((fp) => {
+          if (fp.missing) { unreachable.push(fp.path); return; }
+          const before = prevMap[fp.path];
+          if (!before) added.push(fp);
+          else if (before.hash !== fp.hash) changed.push({ fp, before });
+          else unchanged.push(fp);
+        });
+        return { added, changed, unchanged, unreachable, curMap };
+      }
+      function describeChange(fp, before) {
+        const bits = [];
+        const dSize = fp.size - before.size;
+        if (dSize) bits.push((dSize > 0 ? 'grew ' : 'shrank ') + fmtBytes(Math.abs(dSize)));
+        const dSec = fp.sections - before.sections;
+        if (dSec) bits.push((dSec > 0 ? '+' : '') + dSec + (Math.abs(dSec) === 1 ? ' module' : ' modules'));
+        const dHead = fp.headings - before.headings;
+        if (dHead) bits.push((dHead > 0 ? '+' : '') + dHead + (Math.abs(dHead) === 1 ? ' heading' : ' headings'));
+        const dScr = fp.scripts - before.scripts;
+        if (dScr) bits.push((dScr > 0 ? '+' : '') + dScr + (Math.abs(dScr) === 1 ? ' script' : ' scripts'));
+        if (fp.hasChat !== before.hasChat) bits.push(fp.hasChat ? 'chat added' : 'chat removed');
+        return fp.path + ' — ' + (bits.length ? bits.join(', ') : 'content changed');
+      }
+      function crawlSummaryText(diff, cur, isBaseline) {
+        const read = cur.filter((f) => !f.missing).length;
+        if (isBaseline) {
+          const totalSize = cur.reduce((s, f) => s + (f.missing ? 0 : f.size), 0);
+          const totalMods = cur.reduce((s, f) => s + (f.missing ? 0 : f.sections), 0);
+          const parts = ['Live-crawled all ' + read + ' pages and captured the baseline — fetched and parsed each file ('
+            + fmtBytes(totalSize) + ', ' + totalMods + ' modules total). Future re-evaluations diff against this snapshot.'];
+          if (diff.unreachable.length) parts.push('Unreachable: ' + diff.unreachable.join(', ') + '.');
+          return parts.join(' ');
+        }
+        const parts = ['Live-crawled all ' + read + ' pages (fetched and parsed each file).'];
+        if (diff.changed.length) parts.push(diff.changed.length + (diff.changed.length === 1 ? ' page changed: ' : ' pages changed: ') + diff.changed.map((c) => describeChange(c.fp, c.before)).join('; ') + '.');
+        if (diff.added.length) parts.push('New since last crawl: ' + diff.added.map((f) => f.path).join(', ') + '.');
+        if (diff.unreachable.length) parts.push('Unreachable now: ' + diff.unreachable.join(', ') + '.');
+        if (!diff.changed.length && !diff.added.length && !diff.unreachable.length) parts.push('No page changed since the last crawl.');
+        return parts.join(' ');
+      }
+      function setCrawlBusyUi(on) {
+        const el = document.getElementById('pl-head-meta');
+        if (on && el) el.textContent = 'Crawling ' + PAGES.length + ' pages…';
+        else updateEvalMeta();
+      }
+      async function crawlAndReport({ scroll = false } = {}) {
+        if (crawlBusy) return;
+        crawlBusy = true;
+        setCrawlBusyUi(true);
+        try {
+          notes = loadNotes();
+          const cur = await crawlAllPages();
+          const prev = loadCrawlSnap();
+          const diff = diffCrawl(prev, cur);
+          upsertEvalNote(LOG[0].date, crawlSummaryText(diff, cur, !prev), 'crawl');
+          persistNotes();
+          persistCrawlSnap({ at: Date.now(), pages: diff.curMap });
+          lastCrawlAt = Date.now();
+          if (scroll) collapsed.delete(LOG[0].date);
+          renderAll();
+          if (scroll) {
+            const first = document.querySelector('#pl-day-' + LOG[0].date + ' .pl-notes');
+            if (first) first.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        } finally {
+          crawlBusy = false;
+          setCrawlBusyUi(false);
+        }
+      }
+      window.plCrawlNow = () => crawlAndReport({ scroll: true });
+
+      /* ── Hourly check + new-day full evaluation ──
          Every hour (and when the tab comes back after an hour) we cache-bust
          fetch this page, compare LOG_STAMP, and reload if the journal was
-         rewritten. If the stamp is unchanged we still reevaluate() so notes
-         and relative times stay current. Polling pauses while the tab is
-         hidden. Skip a reload if a note composer is open. */
+         rewritten. A Re-evaluate click, a new local day, a missing day-note,
+         or a stamp mismatch always rewrites every eval note. Polling pauses
+         while the tab is hidden. Auto-checks skip if a note composer is open;
+         a manual Re-evaluate does not. */
       const HOUR_MS = 60 * 60 * 1000;
-      let lastEvalAt = Date.now();
       let hourlyTimer = null;
+      let midnightTimer = null;
       function fmtClock(ts) {
+        if (!ts) return 'never';
         return new Date(ts).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
       }
       function updateEvalMeta() {
         const el = document.getElementById('pl-head-meta');
         if (!el) return;
+        if (!lastEvalAt) {
+          el.textContent = 'Not yet evaluated · re-evaluates at the start of each day';
+          return;
+        }
         const remaining = Math.max(0, (lastEvalAt + HOUR_MS) - Date.now());
         const mins = Math.round(remaining / 60000);
         const nextLabel = mins <= 0 ? 'due now' : (mins === 1 ? 'in 1 min' : 'in ' + mins + ' min');
         el.textContent = 'Last evaluated ' + fmtClock(lastEvalAt) + ' · next check ' + nextLabel;
       }
-      async function pollLog() {
-        if (noteEditor) { updateEvalMeta(); return; }
-        lastEvalAt = Date.now();
+      async function journalStampMoved() {
         try {
           const url = location.pathname.split('?')[0] + '?pl=' + Date.now();
           const res = await fetch(url, { cache: 'no-store' });
-          if (res.ok) {
-            const text = await res.text();
-            const m = text.match(/const LOG_STAMP = '([^']+)'/);
-            if (m && m[1] !== LOG_STAMP) {
-              location.reload();
-              return;
-            }
-          }
-        } catch (_) { /* file:// or offline — stay on the in-memory LOG */ }
-        reevaluate();
-        updateEvalMeta();
+          if (!res.ok) return false;
+          const text = await res.text();
+          const m = text.match(/const LOG_STAMP = '([^']+)'/);
+          return !!(m && m[1] !== LOG_STAMP);
+        } catch (_) { return false; }
+      }
+      async function pollLog({ evaluate = false } = {}) {
+        const wantEval = evaluate || shouldEvaluateAll();
+        if (noteEditor && !evaluate) { updateEvalMeta(); return; }
+        if (await journalStampMoved()) { location.reload(); return; }
+        if (wantEval) evaluateAllPages({ scroll: evaluate });
+        else {
+          lastEvalAt = Date.now();
+          persistEvalMeta();
+          reevaluate();
+          updateEvalMeta();
+        }
+      }
+      function msUntilNextLocalMidnight() {
+        const n = new Date();
+        return new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1).getTime() - n.getTime();
+      }
+      function scheduleMidnightEval() {
+        if (midnightTimer) clearTimeout(midnightTimer);
+        midnightTimer = setTimeout(() => {
+          midnightTimer = null;
+          if (!document.hidden) pollLog();
+          scheduleMidnightEval();
+        }, Math.max(250, msUntilNextLocalMidnight() + 250));
       }
       function startHourlyPoll() {
         if (hourlyTimer) return;
         hourlyTimer = setInterval(() => { if (!document.hidden) pollLog(); }, HOUR_MS);
         setInterval(updateEvalMeta, 60000);
         document.addEventListener('visibilitychange', () => {
-          if (!document.hidden && (Date.now() - lastEvalAt) >= HOUR_MS) pollLog();
+          if (document.hidden) { updateEvalMeta(); return; }
+          if (shouldEvaluateAll() || (Date.now() - lastEvalAt) >= HOUR_MS) pollLog();
           else updateEvalMeta();
         });
+        scheduleMidnightEval();
       }
-      window.plReevaluateNow = () => { pollLog(); };
+      async function runFullEval() {
+        evaluateAllPages({ scroll: false });
+        await crawlAndReport({ scroll: true });
+        if (await journalStampMoved()) location.reload();
+      }
+      window.plReevaluateNow = () => { runFullEval(); };
 
       /* ── Filter API (also driven by the chat) ── */
       function syncSearchWrap() {
@@ -1185,7 +1544,7 @@
       window.plExpandAll = () => { collapsed.clear(); renderTimeline(); };
       window.plCollapseAll = () => { LOG.forEach((d) => collapsed.add(d.date)); renderTimeline(); };
       window.plResetFilters = () => { catFilter = null; pageFilter = '__all'; searchTerm = ''; collapsed.clear(); const inp = document.getElementById('pl-search-input'); if (inp) inp.value = ''; syncSearchWrap(); renderCatStats(); renderTimeline(); };
-      window.plEvaluatePages = () => evaluateAllPages();
+      window.plEvaluatePages = () => evaluateAllPages({ scroll: true });
 
       /* ── Note editor ── */
       let noteWantFocus = false;
@@ -1210,6 +1569,7 @@
         noteEditor = null;
         noteWantFocus = false;
         renderTimeline();
+        if (shouldEvaluateAll()) pollLog();
       }
       function commitNote() {
         if (!noteEditor) return;
@@ -1227,8 +1587,8 @@
         noteEditor = null;
         noteWantFocus = false;
         persistNotes();
-        renderSummary();
-        renderTimeline();
+        if (shouldEvaluateAll()) pollLog();
+        else { renderSummary(); renderTimeline(); }
       }
       function addNoteToDay(dayIso, text) {
         const val = String(text || '').trim();
@@ -1280,29 +1640,26 @@
         if (!btn) return;
         const icon = btn.querySelector('.material-symbols-outlined');
         const label = btn.querySelector('.pl-review-btn-label');
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
           if (btn.disabled) return;
           btn.disabled = true;
           btn.classList.add('is-busy');
           btn.classList.remove('is-done');
           if (icon) icon.textContent = 'autorenew';
-          if (label) label.textContent = 'Evaluating…';
+          if (label) label.textContent = 'Crawling pages…';
           btn.setAttribute('aria-busy', 'true');
+          try { await runFullEval(); } catch (_) {}
+          btn.classList.remove('is-busy');
+          btn.classList.add('is-done');
+          if (icon) icon.textContent = 'check';
+          if (label) label.textContent = 'Updated';
+          btn.removeAttribute('aria-busy');
+          btn.disabled = false;
           window.setTimeout(() => {
-            evaluateAllPages();
-            pollLog();
-            btn.classList.remove('is-busy');
-            btn.classList.add('is-done');
-            if (icon) icon.textContent = 'check';
-            if (label) label.textContent = 'Updated';
-            btn.removeAttribute('aria-busy');
-            btn.disabled = false;
-            window.setTimeout(() => {
-              btn.classList.remove('is-done');
-              if (icon) icon.textContent = 'autorenew';
-              if (label) label.textContent = 'Re-evaluate';
-            }, 1600);
-          }, 280);
+            btn.classList.remove('is-done');
+            if (icon) icon.textContent = 'autorenew';
+            if (label) label.textContent = 'Re-evaluate';
+          }, 1600);
         });
       })();
       /* Category scorecards are single-select filters: tap to isolate, tap the
@@ -1464,13 +1821,13 @@
       }
 
       const INTENTS = [
-        { intent: 'pl:today', label: 'What shipped today?', icon: 'today' },
-        { intent: 'pl:components', label: 'New components', icon: 'widgets' },
-        { intent: 'pl:features', label: 'New features', icon: 'bolt' },
-        { intent: 'pl:newpages', label: 'New pages', icon: 'note_add' },
-        { intent: 'pl:notes', label: 'My notes', icon: 'edit_note' },
-        { intent: 'pl:busiest', label: 'Busiest day', icon: 'trending_up' },
-        { intent: 'pl:deletions', label: 'What was removed?', icon: 'delete' },
+        { intent: 'pl:today', label: 'What shipped today?', icon: 'today', nextIntents: ['pl:components', 'pl:features', 'pl:notes'] },
+        { intent: 'pl:components', label: 'New components', icon: 'widgets', nextIntents: ['pl:features', 'pl:newpages', 'pl:today'] },
+        { intent: 'pl:features', label: 'New features', icon: 'bolt', nextIntents: ['pl:components', 'pl:newpages', 'pl:today'] },
+        { intent: 'pl:newpages', label: 'New pages', icon: 'note_add', nextIntents: ['pl:features', 'pl:components', 'pl:today'] },
+        { intent: 'pl:notes', label: 'My notes', icon: 'edit_note', nextIntents: ['pl:today', 'pl:features'] },
+        { intent: 'pl:busiest', label: 'Busiest day', icon: 'trending_up', nextIntents: ['pl:today', 'pl:features', 'pl:deletions'] },
+        { intent: 'pl:deletions', label: 'What was removed?', icon: 'delete', nextIntents: ['pl:today', 'pl:features', 'pl:components'] },
       ];
       const INTENT_REPLIES = {
         'pl:today': () => { const d = LOG[0]; focusDay(d.date); return `Here's the latest — ${dayReplyHtml(d)}`; },
@@ -1530,21 +1887,24 @@
       }
 
       /* ═══════════ Boot — evaluate the log, then mount the ONE shared chat ═══════════ */
-      reevaluate();
-      updateEvalMeta();
+      if (shouldEvaluateAll()) evaluateAllPages({ scroll: false });
+      else { reevaluate(); updateEvalMeta(); }
       startHourlyPoll();
 
       /* Re-evaluate on every restore. A normal load remounts this module (hot
-         reload included) and `reevaluate()` above already ran. A bfcache
+         reload included) and the boot pass above already ran. A bfcache
          restore (`pageshow` + persisted) keeps the old heap, so we reset
-         filters and rebuild from the current LOG + notes. The first pageshow
-         of a remount is skipped so we don't double-paint on boot. */
+         filters and rebuild — and if the local day rolled while we were
+         away, we rewrite every eval note. The first pageshow of a remount
+         is skipped so we don't double-paint on boot. */
       let plDidShow = false;
       window.addEventListener('pageshow', (e) => {
         if (!plDidShow) { plDidShow = true; if (!e.persisted) return; }
-        reevaluate({ reset: !!e.persisted });
-        lastEvalAt = Date.now();
-        updateEvalMeta();
+        if (shouldEvaluateAll()) evaluateAllPages({ scroll: false });
+        else {
+          reevaluate({ reset: !!e.persisted });
+          updateEvalMeta();
+        }
       });
 
       chat = mountWISEcodeAIChat(document.getElementById('pl-chat'), {

@@ -354,6 +354,9 @@ export function syncThemeKeys() {
     localStorage.setItem('wise-theme', theme);
     localStorage.setItem('chat-theme', theme);
   } catch {}
+  /* Default full-bleed surfaces swap with the theme (navy+gold / linen chat
+     in light; linen nav / deep chat in dark). Named presets keep their hex. */
+  refreshFullBleedDefaultTheme();
 }
 
 /* Minimal UI — collapse the navigation to just the logo, the crossword
@@ -501,6 +504,8 @@ const FB_CHAT_BG_KEY = 'wise-fb-chat-bg';
 const FB_RMOD_BG_KEY = 'wise-fb-rmod-bg';
 const FB_RMOD_MODE_KEY = 'wise-fb-rmod-mode';
 const FB_THEME_KEY = 'wise-fb-theme';
+const FB_CHAT_ONLY_KEY = 'wise-fb-chat-only';
+const FB_THEME_DEFAULT = 'default';
 
 /** Three one-tap preset themes for the full-bleed surfaces. Each is a cohesive
     named look that sets the nav, chat and right-module backgrounds together
@@ -623,13 +628,42 @@ export function applyRightModuleMode(mode) {
   fbStore(FB_RMOD_MODE_KEY, valid ? mode : '');
 }
 
-/** The active preset theme id, or '' when the surfaces are custom / default. */
+/** Contrasting Default surfaces — navy + gold nav, warm linen chat, white
+    (or deep) output. The old "clear tints" Default left inverted-navy nav +
+    blue chat-tint + navy charts, which read as one hue. These swap with the
+    live light/dark theme so Default never paints a light linen chat onto a
+    dark page (or the reverse). */
+function fbDefaultSurfaces() {
+  const dark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+  return dark
+    ? {
+        nav: '#F4F2EA', navAccent: '#8B5E12',
+        chat: '#0E1624', chatAccent: '#7DC470',
+        rmod: '#1A2339', rmodAccent: '#E3C878',
+      }
+    : {
+        nav: '#1C3E60', navAccent: '#E3C878',
+        chat: '#F9F8F3', chatAccent: '#2F6B4F',
+        rmod: '#FFFFFF', rmodAccent: '#C45C26',
+      };
+}
+function applyDefaultFullBleedSurfaces() {
+  const d = fbDefaultSurfaces();
+  applyNavBg(d.nav, d.navAccent);
+  applyChatBg(d.chat, d.chatAccent);
+  applyRightModuleBg(d.rmod, d.rmodAccent);
+  fbStore(FB_THEME_KEY, FB_THEME_DEFAULT);
+}
+function getFullBleedThemeRaw() { return fbRead(FB_THEME_KEY); }
+
+/** The active named preset id, or '' when Default / a hand-tweaked set is on. */
 export function getFullBleedTheme() {
-  const v = fbRead(FB_THEME_KEY);
+  const v = getFullBleedThemeRaw();
+  if (v === FB_THEME_DEFAULT || v === '') return '';
   return FB_PRESETS.some((p) => p.id === v) ? v : '';
 }
 /** Apply a preset theme (sets all three surface colours at once), or pass ''
-    to clear the surfaces back to their defaults. */
+    to restore the contrasting Default set (navy+gold / linen / white). */
 export function applyFullBleedTheme(id) {
   const preset = FB_PRESETS.find((p) => p.id === id);
   if (preset) {
@@ -638,10 +672,7 @@ export function applyFullBleedTheme(id) {
     applyRightModuleBg(preset.rmod, preset.rmodAccent);
     fbStore(FB_THEME_KEY, preset.id);
   } else {
-    applyNavBg('');
-    applyChatBg('');
-    applyRightModuleBg('');
-    fbStore(FB_THEME_KEY, '');
+    applyDefaultFullBleedSurfaces();
   }
 }
 /** Forget the active-preset mark WITHOUT touching the colours — used when a
@@ -649,20 +680,42 @@ export function applyFullBleedTheme(id) {
     even though the other two surfaces still match it. */
 export function clearFullBleedThemeMark() { fbStore(FB_THEME_KEY, ''); }
 
+/** Re-paint Default surfaces after a light/dark flip. Named presets and
+    hand-tweaked colours stay put. */
+export function refreshFullBleedDefaultTheme() {
+  if (getFullBleedThemeRaw() === FB_THEME_DEFAULT) applyDefaultFullBleedSurfaces();
+}
+
+/** Chat-only full bleed — stretch the chat module edge-to-edge and keep the
+    nav + every other module as contained cards. Driven by `fb-chat-only` on
+    <html>, gated in CSS on `html.full-bleed` so it only reads while full
+    bleed itself is on. */
+export function isFullBleedChatOnly() {
+  try { return localStorage.getItem(FB_CHAT_ONLY_KEY) === '1'; } catch { return false; }
+}
+export function applyFullBleedChatOnly(on) {
+  document.documentElement.classList.toggle('fb-chat-only', !!on);
+  try { localStorage.setItem(FB_CHAT_ONLY_KEY, on ? '1' : '0'); } catch {}
+}
+
 /** Restore the persisted full-bleed surface colours + right-module behaviour
-    onto the document (no popover needed). If a named preset is active we replay
-    it so each surface gets its exact preset ink back; otherwise the individual
-    hand-picked backgrounds are restored (their ink re-derived by contrast). */
+    + chat-only scope onto the document (no popover needed). If a named preset
+    is active we replay it so each surface gets its exact preset ink back;
+    Default (or a first visit with no colours) applies the contrasting default
+    set; otherwise the individual hand-picked backgrounds are restored. */
 export function restoreFullBleedSurfaces() {
-  const theme = getFullBleedTheme();
-  if (theme) {
-    applyFullBleedTheme(theme);
+  const raw = getFullBleedThemeRaw();
+  if (raw === FB_THEME_DEFAULT || (raw === '' && !getNavBg() && !getChatBg() && !getRightModuleBg())) {
+    applyDefaultFullBleedSurfaces();
+  } else if (FB_PRESETS.some((p) => p.id === raw)) {
+    applyFullBleedTheme(raw);
   } else {
     applyNavBg(getNavBg());
     applyChatBg(getChatBg());
     applyRightModuleBg(getRightModuleBg());
   }
   applyRightModuleMode(getRightModuleMode());
+  applyFullBleedChatOnly(isFullBleedChatOnly());
 }
 
 /* Composer v2 — the redesigned chat-module input: one pill row with "+" far
@@ -1082,20 +1135,26 @@ export function restoreSharpEdges() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Branding style — "Style 1": a refined app-surface treatment.
+/* Branding style — "Style 1" (inset) and "Style 2" (flush asides).
 
    A per-app branding treatment chosen from the Appearance popover's "Branding"
-   section. "Style 1" deliberately DOES NOT touch the owl bug or WISE wordmark —
-   the brand mark stays exactly as drawn (its SVGs paint from currentColor, not
-   the surface tokens this treatment retunes). Instead it re-skins the app's
-   WORKING SURFACES: the module panels and chat panes in #modules-row, plus the
-   cards, inputs and popovers around them. It does this by retuning the shared
-   design tokens (--border / --border-strong and the --shadow-* scale) so every
-   surface that already consumes them picks up a crisper on-brand hairline and a
-   deeper, softer, layered elevation. Working through the tokens keeps the look
-   consistent on every page and means no single module is special-cased. Driven
-   by a `brand-inset` class on <html>; persisted across navigation. Default (no
-   class) keeps the standard surfaces. */
+   section. Neither style touches the owl bug or WISE wordmark — the brand mark
+   stays exactly as drawn (its SVGs paint from currentColor, not the surface
+   tokens this treatment retunes).
+
+   Style 1 re-skins WORKING SURFACES: the module panels and chat panes in
+   #modules-row, plus the cards, inputs and popovers around them. It retunes
+   the shared design tokens (--border / --border-strong and the --shadow-*
+   scale) so every surface that already consumes them picks up a crisper
+   on-brand hairline and a deeper, softer, layered elevation. Driven by a
+   `brand-inset` class on <html>.
+
+   Style 2 leaves those tokens alone and instead drops the outer card stroke
+   on every module EXCEPT the chat — History, output panes, Turns, and other
+   asides. The chat card keeps its Default rim and elevation, untouched.
+   Driven by a `brand-flush` class on <html>.
+
+   Persisted across navigation. Default (no class) keeps the standard surfaces. */
 const BRAND_KEY = 'wise-brand-style';
 const BRAND_STYLE_ID = 'wise-brand-style-el';
 
@@ -1178,30 +1237,46 @@ html.brand-inset #modules-row > :is(#panels-row, #panels-row-right) {
   box-shadow: none !important;
 }
 
-/* Facing strokes across the nav↔content gutter. The nav's right
-   hairline and the leftmost module's left hairline sit ~12px apart
-   and read as a random divider. Keep every other Style 1 edge; drop
-   only the two that face each other. Rail mode already zeros the
-   whole nav border, so the nav rule is a no-op there. */
+/* Facing stroke across the nav↔content gutter. The nav's right
+   hairline sits ~12px from the first module; drop only that nav
+   edge. The chat (and every other module) keeps a full Style 1
+   border on all four sides — including the left. Rail mode already
+   zeros the whole nav border, so the nav rule is a no-op there. */
 html.brand-inset #menu-panel .menu-inner {
   border-right-color: transparent !important;
 }
-/* Same :not(#id) pair as the shorthand above so this beats
-   the border shorthand !important on specificity, not source order. */
-html.brand-inset #modules-row > :is(
+
+/* ----------------------------------------------------------------------------
+   "Style 2" — Default surfaces, but every module OTHER THAN the chat sheds
+   its outer card stroke (and the drop shadow that reads as an edge).
+   The chat hosts listed in :is(...) — including the #wiseai-dock-panel
+   aside that IS the chat on overview/account pages — are never selected.
+   Overlay History (.wch-sidebar inside the chat) still flushes; it is not
+   the chat card. Internal header dividers stay. Wrapper-based output asides
+   paint the stroke on an inner .panel-inner / .*-inner — strip that too,
+   still never on a chat host.
+   ---------------------------------------------------------------------------- */
+html.brand-flush #modules-row > :not(:is(
+  #panels-row, #panels-row-right,
   .wa-chat, .ap-chat, .rf-chat, .sa-chat, .gs-chat, .aid-chat, .pl-chat, .ar-chat,
-  #wa-chat, #rf-chat, #pl-chat, #gs-chat, #aid-chat, #ar-chat,
+  .sc-card, .sticky-chat,
+  #wa-chat, #rf-chat, #sa-chat, #aid-chat, #pl-chat, #ar-chat, #gs-chat,
   #chat-shell, #wiseai-dock-panel, #wiseai-panel, #pf-chat-panel
-):not(#panels-row):not(#panels-row-right) {
-  border-left-color: transparent !important;
+)) {
+  border: 0 !important;
+  box-shadow: none !important;
 }
-/* Agent-overview pages with no left chat/dock: #agent-main faces the nav. */
-html.brand-inset #modules-row:not(:has(
-  #wiseai-dock-panel.wiseai-dock-open,
-  #chat-shell,
-  .wa-chat, .ap-chat, .rf-chat, .sa-chat, .gs-chat, .aid-chat, .pl-chat, .ar-chat
-)) > #agent-main:not(#panels-row):not(#panels-row-right) {
-  border-left-color: transparent !important;
+html.brand-flush #modules-row .wch-sidebar,
+html.brand-flush #modules-row .wa-pane,
+html.brand-flush #modules-row aside:not(:is(#wiseai-dock-panel, #mkt-chat-rail)),
+html.brand-flush .wch-sidebar {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+html.brand-flush #modules-row aside:not(:is(#wiseai-dock-panel, #mkt-chat-rail)) > .panel-inner,
+html.brand-flush #modules-row aside:not(:is(#wiseai-dock-panel, #mkt-chat-rail)) > [class*="-inner"] {
+  border: 0 !important;
+  box-shadow: none !important;
 }`;
 
 /** Inject the branding-style stylesheet once (idempotent). */
@@ -1214,9 +1289,13 @@ function ensureBrandStyle() {
   (document.head || document.documentElement).appendChild(style);
 }
 
-/** The active branding style: '' (default flat mark) or 'inset' ("Style 1"). */
+/** The active branding style: '' (default), 'inset' ("Style 1"), or 'flush' ("Style 2"). */
 export function getBrandStyle() {
-  try { return localStorage.getItem(BRAND_KEY) === 'inset' ? 'inset' : ''; } catch { return ''; }
+  try {
+    const v = localStorage.getItem(BRAND_KEY);
+    if (v === 'inset' || v === 'flush') return v;
+    return '';
+  } catch { return ''; }
 }
 
 /** True when the inset ("Style 1") branding treatment is on. */
@@ -1224,14 +1303,20 @@ export function isBrandInsetOn() {
   return getBrandStyle() === 'inset';
 }
 
-/** Apply a branding style ('' | 'inset'), toggle the class on <html>, persist. */
+/** True when the flush ("Style 2") branding treatment is on. */
+export function isBrandFlushOn() {
+  return getBrandStyle() === 'flush';
+}
+
+/** Apply a branding style ('' | 'inset' | 'flush'), toggle classes on <html>, persist. */
 export function applyBrandStyle(style) {
   ensureBrandStyle();
-  const inset = style === 'inset';
-  document.documentElement.classList.toggle('brand-inset', inset);
-  try { localStorage.setItem(BRAND_KEY, inset ? 'inset' : ''); } catch {}
+  const id = style === 'inset' || style === 'flush' ? style : '';
+  document.documentElement.classList.toggle('brand-inset', id === 'inset');
+  document.documentElement.classList.toggle('brand-flush', id === 'flush');
+  try { localStorage.setItem(BRAND_KEY, id); } catch {}
   try {
-    document.dispatchEvent(new CustomEvent('wise:brand-style', { detail: { style: inset ? 'inset' : '' } }));
+    document.dispatchEvent(new CustomEvent('wise:brand-style', { detail: { style: id } }));
   } catch {}
 }
 
@@ -1240,11 +1325,12 @@ export function restoreBrandStyle() {
   applyBrandStyle(getBrandStyle());
 }
 
-/* Admin controls — a master gate in the Appearance popover. When off, every
-   Admin-badged row is omitted from the menu (not disabled, not greyed) so the
-   popover lays out as if those controls were never there. The features
-   themselves keep whatever state they already had. Defaults ON so the current
-   admin-rich menu is unchanged until someone turns it off. */
+/* Admin controls — a master gate in the Appearance popover ONLY. When off,
+   every row in THAT popover that carries an Admin badge is omitted (not
+   disabled, not greyed), plus nested chrome that belongs to a badged parent
+   (Jam player, Full-bleed colour pickers). Everything else stays: unbadged
+   Appearance rows, the left-nav Admin section, chat ⋯ admin items, and the
+   live feature state of anything that was already on. Defaults ON. */
 const ADMIN_UI_KEY = 'wise-admin-ui';
 
 /** True when admin-only Appearance rows should be shown. */

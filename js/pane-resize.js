@@ -557,7 +557,7 @@
     handle.style.pointerEvents = 'none';
     var under = document.elementFromPoint(x, y);
     handle.style.pointerEvents = prev;
-    var tick = under && under.closest ? under.closest('.wa-activity-tick') : null;
+    var tick = under && under.closest ? under.closest('.wa-activity-tick, .wa-activity-tick-stack') : null;
     if (tick) tick.click();
   }
 

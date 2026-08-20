@@ -1990,11 +1990,11 @@ document.addEventListener('keydown', (e) => {
       }
 
       const INTENTS = [
-        { intent: 'ar:score', label: 'How are we scoring?', icon: 'summarize' },
-        { intent: 'ar:pages', label: 'Page grades', icon: 'grade' },
-        { intent: 'ar:contrast', label: 'Contrast issues', icon: 'contrast' },
-        { intent: 'ar:findings', label: 'Findings', icon: 'fact_check' },
-        { intent: 'ar:reeval', label: 'Re-evaluate tokens', icon: 'sync' },
+        { intent: 'ar:score', label: 'How are we scoring?', icon: 'summarize', nextIntents: ['ar:pages', 'ar:findings', 'ar:contrast'] },
+        { intent: 'ar:pages', label: 'Page grades', icon: 'grade', nextIntents: ['ar:score', 'ar:findings', 'ar:contrast'] },
+        { intent: 'ar:contrast', label: 'Contrast issues', icon: 'contrast', nextIntents: ['ar:findings', 'ar:score', 'ar:reeval'] },
+        { intent: 'ar:findings', label: 'Findings', icon: 'fact_check', nextIntents: ['ar:contrast', 'ar:pages', 'ar:score'] },
+        { intent: 'ar:reeval', label: 'Re-evaluate tokens', icon: 'sync', nextIntents: ['ar:score', 'ar:contrast', 'ar:findings'] },
       ];
       const INTENT_REPLIES = {
         'ar:score': () => { document.getElementById('summary')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return scoreLine(); },

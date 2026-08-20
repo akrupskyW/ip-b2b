@@ -4940,7 +4940,13 @@
     .sc-line-wiseai strong { color: var(--primary-ink, var(--primary)); font-weight: 700; }
 
     .sc-line-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 1px; }
-    .sc-line-time { font-size: 0.625rem; font-weight: 500; color: color-mix(in srgb, var(--text-subtle) 55%, transparent); letter-spacing: 0.02em; }
+    .sc-line-time { font-size: 0.625rem; font-weight: 500; letter-spacing: 0.02em;
+      cursor: pointer; user-select: none; text-decoration: none;
+      color: var(--primary-ink, var(--primary)); transition: color .14s ease; }
+    .sc-line-time:hover { color: color-mix(in srgb, var(--primary) 62%, #fff); text-decoration: none; }
+    html.dark .sc-line-time { color: var(--primary-bright, #8B9FAF); }
+    html.dark .sc-line-time:hover { color: #AEC8ED; }
+    .sc-line-time:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .sc-trust-chip {
       display: inline-flex; align-items: center; gap: 4px;
       font-size: 0.625rem; font-weight: 600; letter-spacing: 0.01em;
@@ -4969,15 +4975,17 @@
     .sc-fb-label { font-size: var(--fs-label); font-weight: 500; line-height: 1.25; color: var(--text-muted); margin-right: 2px; }
     .sc-fb-btn {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 22px; height: 22px; border-radius: 50%;
+      width: 16px; height: 16px; border-radius: 50%;
       border: 1px solid transparent; background: transparent;
-      color: var(--text-muted); cursor: pointer;
+      color: color-mix(in srgb, var(--text-muted) 62%, transparent); cursor: pointer;
       transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     }
-    .sc-fb-btn .material-symbols-outlined { font-size: 14px !important; }
+    html.dark .sc-fb-btn { color: color-mix(in srgb, var(--text-muted) 70%, transparent); }
+    .sc-fb-btn .material-symbols-outlined { font-size: 12px !important; font-variation-settings: 'FILL' 0; }
     .sc-fb-btn:hover { background: var(--surface-3); color: var(--text); }
     .sc-fb-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
     .sc-fb-btn.is-active { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .sc-fb-btn.is-active .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
     .sc-fb-thanks {
       display: inline-flex; align-items: center; gap: 5px;
       font-size: var(--fs-label); font-weight: 500; color: var(--primary-ink, var(--primary));
@@ -7012,19 +7020,19 @@
 
     /* 1) Collapse the outer window frame's top/bottom so the shell fills the full
        viewport height (side gutters stay so modules keep aligning with the rail). */
-    html.full-bleed body.ai-chat-page {
+    html.full-bleed:not(.fb-chat-only) body.ai-chat-page {
       padding-top: 0 !important;
       padding-bottom: 0 !important;
     }
     /* 2) Nav becomes a flush, full-height sidebar (undo the shared re-inset). */
-    html.full-bleed .menu-brand-integrated > #menu-panel {
+    html.full-bleed:not(.fb-chat-only) .menu-brand-integrated > #menu-panel {
       padding-top: 0 !important;
       padding-bottom: 0 !important;
     }
     /* 3) Chat + docked WISEcodeAI fill the full module height (undo the shared shorter
        / offset card so nothing floats with a top/bottom gap). */
-    html.full-bleed #chat-shell,
-    html.full-bleed #wiseai-dock-panel {
+    html.full-bleed:not(.fb-chat-only) #chat-shell,
+    html.full-bleed:not(.fb-chat-only) #wiseai-dock-panel {
       margin-top: 0 !important;
       margin-bottom: 0 !important;
       height: 100% !important;
@@ -7034,20 +7042,22 @@
     /* 4) Open every module top-to-bottom: drop its TOP + BOTTOM borders, corner
        rounding and drop shadow (keeping its surface + left/right borders) so the
        module runs the full height of the window — identical to every other shell.
-       Each module's frame lives on its inner element, so we target those. */
+       Each module's frame lives on its inner element, so we target those.
+       Chat-only keeps the chat host flat and leaves every other module carded. */
     html.full-bleed #chat-shell,
-    html.full-bleed #compare-panel .cmp-inner,
-    html.full-bleed #history-panel .panel-inner,
-    html.full-bleed .util-panel .panel-inner,
-    html.full-bleed #wiseai-panel .wiseai-inner,
-    html.full-bleed #upf-panel .upf-inner,
-    html.full-bleed #tier-panel .tier-inner,
-    html.full-bleed #shield-panel .shield-inner,
-    html.full-bleed #lens-panel .lens-inner,
-    html.full-bleed #vault-panel .vault-inner,
-    html.full-bleed #notif-panel .notif-inner,
-    html.full-bleed #settings-screen .ss-inner,
-    html.full-bleed #nfp-panel .nfp-inner {
+    html.full-bleed #wiseai-dock-panel,
+    html.full-bleed:not(.fb-chat-only) #compare-panel .cmp-inner,
+    html.full-bleed:not(.fb-chat-only) #history-panel .panel-inner,
+    html.full-bleed:not(.fb-chat-only) .util-panel .panel-inner,
+    html.full-bleed:not(.fb-chat-only) #wiseai-panel .wiseai-inner,
+    html.full-bleed:not(.fb-chat-only) #upf-panel .upf-inner,
+    html.full-bleed:not(.fb-chat-only) #tier-panel .tier-inner,
+    html.full-bleed:not(.fb-chat-only) #shield-panel .shield-inner,
+    html.full-bleed:not(.fb-chat-only) #lens-panel .lens-inner,
+    html.full-bleed:not(.fb-chat-only) #vault-panel .vault-inner,
+    html.full-bleed:not(.fb-chat-only) #notif-panel .notif-inner,
+    html.full-bleed:not(.fb-chat-only) #settings-screen .ss-inner,
+    html.full-bleed:not(.fb-chat-only) #nfp-panel .nfp-inner {
       border-top: 0 !important;
       border-bottom: 0 !important;
       box-shadow: none !important;
@@ -10710,8 +10720,8 @@
     function wiseaiCloseMoreMenus() {
       document.querySelectorAll('.sc-fb-menu:not([hidden])').forEach(function (m) {
         m.hidden = true;
-        var b = m.closest('.sc-fb-more-wrap');
-        b = b && b.querySelector('.sc-fb-more');
+        var wrap = m.closest('.sc-fb-more-wrap') || m.__fbWrap || m.__plHost;
+        var b = wrap && wrap.querySelector('.sc-fb-more');
         if (b) { b.setAttribute('aria-expanded', 'false'); b.classList.remove('is-on'); }
       });
     }
@@ -10805,10 +10815,12 @@
       var moreBtn = e.target.closest('.sc-fb-more');
       if (moreBtn) {
         var wrap = moreBtn.closest('.sc-fb-more-wrap');
-        var menu = wrap && wrap.querySelector('.sc-fb-menu');
+        var menu = wrap && (wrap.querySelector('.sc-fb-menu') || wrap._fbMenu);
         var willOpen = !!menu && menu.hidden;
         wiseaiCloseMoreMenus();
         if (menu) {
+          wrap._fbMenu = menu;
+          menu.__fbWrap = wrap;
           menu.hidden = !willOpen;
           moreBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
           moreBtn.classList.toggle('is-on', willOpen);
@@ -10827,7 +10839,7 @@
         return;
       }
       /* Outside click closes any open more-menu. */
-      if (!e.target.closest('.sc-fb-more-wrap')) wiseaiCloseMoreMenus();
+      if (!e.target.closest('.sc-fb-more-wrap, .sc-fb-menu')) wiseaiCloseMoreMenus();
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') wiseaiCloseMoreMenus(); });
 
@@ -10836,21 +10848,27 @@
        A short close delay bridges the gap to the floating menu so it never
        flickers shut while moving into it. */
     var wiseaiMoreCloseTimer = null;
+    function wiseaiIsMoreUi(node) {
+      return !!(node && node.closest && node.closest('.sc-fb-more-wrap, .sc-fb-menu'));
+    }
     document.addEventListener('mouseover', function (e) {
-      var wrap = e.target.closest('.sc-fb-more-wrap');
-      if (!wrap) return;
+      if (!wiseaiIsMoreUi(e.target)) return;
       clearTimeout(wiseaiMoreCloseTimer);
-      var menu = wrap.querySelector('.sc-fb-menu');
+      var wrap = e.target.closest('.sc-fb-more-wrap')
+        || (e.target.closest('.sc-fb-menu') && (e.target.closest('.sc-fb-menu').__fbWrap || e.target.closest('.sc-fb-menu').__plHost));
+      if (!wrap) return;
+      var menu = wrap.querySelector('.sc-fb-menu') || wrap._fbMenu;
       if (menu && menu.hidden) {
         wiseaiCloseMoreMenus();
+        wrap._fbMenu = menu;
+        menu.__fbWrap = wrap;
         menu.hidden = false;
         var b = wrap.querySelector('.sc-fb-more');
         if (b) { b.setAttribute('aria-expanded', 'true'); b.classList.add('is-on'); }
       }
     });
     document.addEventListener('mouseout', function (e) {
-      var wrap = e.target.closest('.sc-fb-more-wrap');
-      if (!wrap || wrap.contains(e.relatedTarget)) return;
+      if (!wiseaiIsMoreUi(e.target) || wiseaiIsMoreUi(e.relatedTarget)) return;
       clearTimeout(wiseaiMoreCloseTimer);
       wiseaiMoreCloseTimer = setTimeout(wiseaiCloseMoreMenus, 180);
     });

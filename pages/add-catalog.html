@@ -264,11 +264,11 @@
     html.header-float .ap-chat .chat-topbar { z-index: 12; }
 
     html.full-bleed .ap-chat,
-    html.full-bleed .ac-inner,
-    html.full-bleed #ap-progress .vfp-inner {
+    html.full-bleed:not(.fb-chat-only) .ac-inner,
+    html.full-bleed:not(.fb-chat-only) #ap-progress .vfp-inner {
       border-top: 0; border-bottom: 0; border-radius: 0; box-shadow: none; animation: none;
     }
-    html.full-bleed body { padding-top: 0; padding-bottom: 0; }
+    html.full-bleed:not(.fb-chat-only) body { padding-top: 0; padding-bottom: 0; }
 
     #modules-row.wide-chat .ap-chat { flex-basis: 520px; width: 520px; }
     .ap-chat.panel-wide { flex-basis: 560px; width: 560px; }

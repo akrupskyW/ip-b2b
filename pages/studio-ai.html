@@ -110,10 +110,10 @@
        window, while keeping the surface + left/right borders + the row gutter so
        the columns stay separated. Mirrors the shared treatment (wise.css). */
     html.full-bleed .sa-chat,
-    html.full-bleed .sa-panel {
+    html.full-bleed:not(.fb-chat-only) .sa-panel {
       border-top: 0; border-bottom: 0; border-radius: 0; box-shadow: none; animation: none;
     }
-    html.full-bleed body { padding-top: 0; padding-bottom: 0; }
+    html.full-bleed:not(.fb-chat-only) body { padding-top: 0; padding-bottom: 0; }
 
     /* ── Right "coming soon" module — fills remaining space, carded ── */
     .sa-panel {
@@ -496,10 +496,10 @@
 
     /* Page-specific content — the same template, Studio & AI's own copy. */
     const INTENTS = [
-      { intent: 'studio', icon: 'description', label: 'What is Studio?' },
-      { intent: 'ai', icon: 'auto_awesome', label: 'What can AI do?' },
-      { intent: 'join', icon: 'how_to_reg', label: 'Join the waitlist' },
-      { intent: 'launch', icon: 'schedule', label: 'When does it launch?' },
+      { intent: 'studio', icon: 'description', label: 'What is Studio?', nextIntents: ['ai', 'join', 'launch'] },
+      { intent: 'ai', icon: 'auto_awesome', label: 'What can AI do?', nextIntents: ['studio', 'join', 'launch'] },
+      { intent: 'join', icon: 'how_to_reg', label: 'Join the waitlist', nextIntents: ['launch', 'studio', 'ai'] },
+      { intent: 'launch', icon: 'schedule', label: 'When does it launch?', nextIntents: ['join', 'studio', 'ai'] },
     ];
 
     const INTENT_REPLIES = {
@@ -530,8 +530,6 @@
         heading: 'Studio & AI — now in private beta',
         sub: 'Studio turns your portfolio into verified, board-ready reports. AI lets you ask your verified data anything and build reports of your own.',
         placeholder: 'Ask about Studio & AI…',
-        placeholderLock: 'Not accessible at this moment',
-        placeholderLockSub: 'WISEcodeAI is coming soon',
         chipsFlow: 'wrap',
         inlineChips: true,
         sourceLabel: '',

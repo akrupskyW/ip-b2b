@@ -1,6 +1,6 @@
 ---
 name: chat-module-audit
-description: Audit every chat module in the app for feature parity with wiseai.html (three-dots, What-can-I-ask, intent chips, streaming, helix, lock icon, sticky history). Use when chat features have drifted or after changing shared chat code.
+description: Audit every chat module in the app for feature parity with wiseai.html (three-dots, What-can-I-ask, intent chips, streaming, helix, unlocked composer, sticky history). Use when chat features have drifted or after changing shared chat code.
 ---
 
 # Chat Module Audit
@@ -22,9 +22,10 @@ Search for the shared chat module usage across pages:
 - [ ] "What can I ask?" panel opens in-window and breaks out; headline is serif
 - [ ] Intent chips: clickable, actionable, each opens a real transcript
 - [ ] Intent chip icon is gold; right-side label animates
+- [ ] Every transcript / answer ends on related intent chips (never a dead end)
 - [ ] Streaming word-by-word output (not the old pulsating dots)
 - [ ] Helix animation ON by default at 20% opacity
-- [ ] Lock icon left of the input placeholder with hover popover (light + dark)
+- [ ] Composer unlocked (no lock icon / readonly); typing a chip word plays that transcript
 - [ ] Right-hand module actions reflected in the chat
 
 ## Procedure

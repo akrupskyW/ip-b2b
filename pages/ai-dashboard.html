@@ -31,28 +31,30 @@
        Reuses the shared WISE palette + fonts from wise.css; everything
        bespoke here is prefixed `aid-`. No external chart library. */
 
-    /* Brand palette — mirrors analytics-types.html: every chart series is the
-       shared monochromatic status ramp (navy → azure). Semantic green / amber /
-       red stay on labels and deltas, never on chart fills. */
+    /* Brand palette — mirrors analytics-types.html: everything is derived from the
+       WISE token palette (navy --primary + the green/amber/red status inks). The
+       multi-series charts read as one family — a navy→azure blue ramp for the
+       "neutral" series, then the semantic green / amber / warm-orange / red. */
     :root {
-      --aid-blue:   var(--chart-status-okay, var(--primary));
-      --aid-cyan:   var(--chart-status-good);
-      --aid-violet: var(--chart-status-excellent);
-      --aid-teal:   var(--chart-status-okay);
-      --aid-green:  var(--chart-status-excellent);
-      --aid-gold:   var(--chart-status-fair);
-      --aid-pink:   var(--chart-status-fair);
-      --aid-red:    var(--chart-status-poor);
+      --aid-blue:   var(--primary);       /* #25507C navy */
+      --aid-cyan:   #3E7CB1;              /* mid azure (brand blue family) */
+      --aid-violet: #6B93C4;              /* light azure (brand blue family) */
+      --aid-teal:   #2E9E5B;              /* green (Minimally-Processed tier) */
+      --aid-green:  var(--sec-green);     /* #32A966 */
+      --aid-gold:   var(--ter-amber);     /* #FFC434 */
+      --aid-pink:   #D27326;              /* warm orange (Fair tier) */
+      --aid-red:    var(--sec-red);       /* #DC3038 */
       --aid-gap: 16px;
     }
-    /* Dark mode inherits the lifted --chart-status-* stops from wise.css. */
+    /* Dark mode lifts the navy blue family so lines/bars keep contrast on navy,
+       exactly how analytics-types swaps --primary → --primary-bright in dark. */
     html.dark {
-      --aid-blue:   var(--chart-status-okay);
-      --aid-cyan:   var(--chart-status-good);
-      --aid-violet: var(--chart-status-excellent);
-      --aid-teal:   var(--chart-status-okay);
-      --aid-green:  var(--chart-status-excellent);
-      --aid-pink:   var(--chart-status-fair);
+      --aid-blue:   var(--primary-bright, #8B9FAF);
+      --aid-cyan:   #6FA0D0;
+      --aid-violet: #A6C2E2;
+      --aid-teal:   #4FBE84;
+      --aid-green:  #4FBE84;
+      --aid-pink:   #E8965A;
     }
 
     * { box-sizing: border-box; }
@@ -673,8 +675,6 @@
         heading: 'Ask about your AI platform',
         sub: 'Tokens, spend, models, skills, rules and sources — ask and I\u2019ll pull the numbers from the dashboard beside us.',
         placeholder: 'Ask WISEcodeAI about usage, cost or guardrails\u2026',
-        placeholderLock: 'Not accessible at this moment',
-        placeholderLockSub: 'WISEcodeAI is coming soon',
         userInitials: 'AK',
         statusLabel: 'WISEcodeAI is analyzing',
         chipsFlow: 'wrap',
@@ -696,11 +696,11 @@
         stickyModulesDefault: true,
         stickyModulesMenu: false,
         intents: [
-          { intent: 'spend_rise',    label: 'Why did spend rise this period?', icon: 'payments' },
-          { intent: 'top_model',     label: 'Which model drives the most tokens?', icon: 'network_intelligence' },
-          { intent: 'guardrails',    label: 'Show guardrail activity', icon: 'gavel' },
-          { intent: 'top_users',     label: 'Top users by consumption', icon: 'group' },
-          { intent: 'stale_sources', label: 'Any stale data sources?', icon: 'cloud_sync' },
+          { intent: 'spend_rise',    label: 'Why did spend rise this period?', icon: 'payments', nextIntents: ['top_model', 'top_users', 'guardrails'] },
+          { intent: 'top_model',     label: 'Which model drives the most tokens?', icon: 'network_intelligence', nextIntents: ['spend_rise', 'top_users', 'guardrails'] },
+          { intent: 'guardrails',    label: 'Show guardrail activity', icon: 'gavel', nextIntents: ['stale_sources', 'spend_rise', 'top_users'] },
+          { intent: 'top_users',     label: 'Top users by consumption', icon: 'group', nextIntents: ['spend_rise', 'top_model', 'guardrails'] },
+          { intent: 'stale_sources', label: 'Any stale data sources?', icon: 'cloud_sync', nextIntents: ['guardrails', 'spend_rise', 'top_users'] },
         ],
         /* Every chip carries its own scripted transcript (keyed by intent id) so a
            click always narrates something specific about the dashboard beside it,

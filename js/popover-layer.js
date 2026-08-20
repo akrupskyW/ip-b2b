@@ -10,12 +10,13 @@
    cut off — it can't sit on top of everything from inside a clipping/scroll
    container, and no single-axis CSS trick escapes it.
 
-   The fix: while a popover is OPEN, promote it to `position:fixed` pinned to the
-   exact spot it already occupies in-flow. Fixed positioning leaves every
-   ancestor's overflow/scroll context, so the menu floats above everything. The
-   node is NOT moved in the DOM — only its CSS position changes — so delegated
-   handlers, click-outside checks (`e.target.closest(...)`) and `:has()` styling
-   keep working unchanged. It reverts the instant the popover hides.
+   The fix: while a popover is OPEN, move it to `document.body` and pin it with
+   `position:fixed` at the spot it already occupies in-flow. Staying inside a
+   module (even as `position:fixed`) cannot beat a body-level overlay such as
+   the chat activity strip — `#wa-chat`'s own z-index is a stacking context,
+   so no in-module z-index escapes it. Portaling to `<body>` puts the menu in
+   the same layer as those overlays, above everything. A comment marker holds
+   its original DOM slot so it restores the instant it hides.
 
    Self-guarding + idempotent; a no-op on pages with no popovers. */
 (function () {
@@ -114,6 +115,18 @@
       zIndex: el.style.zIndex,
     };
 
+    /* Lift onto <body> so the menu competes with body-level overlays (the
+       activity-strip rail lives there at z-index 70) instead of remaining
+       trapped in the chat module's stacking context. A comment marker holds
+       the original slot for restore. */
+    el.__plHost = el.parentElement;
+    if (el.parentNode) {
+      var marker = document.createComment('wise-pl');
+      el.parentNode.insertBefore(marker, el);
+      el.__plMarker = marker;
+      document.body.appendChild(el);
+    }
+
     el.style.position = 'fixed';
     el.style.right = 'auto';
     el.style.bottom = 'auto';
@@ -161,6 +174,13 @@
     el.style.bottom = prev.bottom || '';
     el.style.margin = prev.margin || '';
     el.style.zIndex = prev.zIndex || '';
+    var marker = el.__plMarker;
+    if (marker && marker.parentNode) {
+      marker.parentNode.insertBefore(el, marker);
+      marker.parentNode.removeChild(marker);
+    }
+    delete el.__plMarker;
+    delete el.__plHost;
     delete el.__plAnchor;
     delete el.__plDX;
     delete el.__plDY;

@@ -652,10 +652,10 @@ html.dark .sc-card .ws-chips-wrap::after { background: linear-gradient(to left, 
 .ws-chips-bar .ws-chips { margin-bottom: 0; padding: 2px 2px; }
 .ws-chips-bar::before, .ws-chips-bar::after { width: 20px; }
 
-/* Inline intent chips (opt-in via mountWISEcodeAIChat({ inlineChips:true })) — a
-   block of suggested actions that lives inside the transcript, trailing the
-   latest WISEcodeAI reply like a regular chat's suggested replies. Left-aligned and
-   indented to sit under the assistant's message body (avatar 30px + 12px gap). */
+/* Inline intent chips — ON by default. A block of suggested actions that lives
+   inside the transcript, trailing the latest WISEcodeAI reply like a regular
+   chat's suggested replies. Left-aligned and indented to sit under the
+   assistant's message body (avatar 30px + 12px gap). */
 .sc-inline-chips {
   display: flex; flex-wrap: wrap; gap: 8px;
   justify-content: flex-start;
@@ -831,6 +831,12 @@ html.dark .ws-intent-chip > .material-symbols-outlined { color: var(--primary-br
    white-bordered pills on the navy chrome. */
 html.dark .chip { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); border-color: var(--primary); }
 html.dark .ws-intent-chip { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); border-color: var(--primary); }
+html.dark .chip:hover,
+html.dark .ws-intent-chip:hover {
+  background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 22%, transparent);
+  border-color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 55%, var(--primary));
+  color: var(--text);
+}
 /* Spent intent chip — once a chip has advanced the conversation you can't
    scroll a turn back to re-run it, so it reads dimmed/opaque and is inert:
    no pointer events, no hover lift, resting colours held. */
@@ -1504,7 +1510,13 @@ html.dark .sc-trust-badge .material-symbols-outlined { color: var(--primary-brig
   margin-top: 12px; margin-bottom: 8px;
 }
 .sc-line-you .sc-line-meta { justify-content: flex-start; }
-.sc-line-time { font-size: 0.625rem; font-weight: 500; color: var(--text-subtle); letter-spacing: 0.02em; }
+.sc-line-time { font-size: 0.625rem; font-weight: 500; letter-spacing: 0.02em;
+  cursor: pointer; user-select: none; text-decoration: none;
+  color: var(--primary-ink, var(--primary)); transition: color .14s ease; }
+.sc-line-time:hover { color: color-mix(in srgb, var(--primary) 62%, #fff); text-decoration: none; }
+html.dark .sc-line-time { color: var(--primary-bright, #8B9FAF); }
+html.dark .sc-line-time:hover { color: #AEC8ED; }
+.sc-line-time:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .sc-trust-chip {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 0.625rem; font-weight: 600; letter-spacing: 0.01em;

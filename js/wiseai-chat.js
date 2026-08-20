@@ -138,13 +138,13 @@ function wireChatElev(pop) {
 try { applyChatElev(readChatElev()); } catch (_) {}
 
 const DEFAULT_INTENTS = [
-  { intent: 'customer_profile', label: 'Start New Verification', icon: 'add' },
-  { intent: 'resume_prompt', label: 'Continue Existing', icon: 'play_circle' },
-  { intent: 'faq_intro', label: 'Ask a Question', icon: 'help_outline' },
+  { intent: 'customer_profile', label: 'Start New Verification', icon: 'add', nextIntents: ['resume_prompt', 'add_food_intro', 'faq_intro'] },
+  { intent: 'resume_prompt', label: 'Continue Existing', icon: 'play_circle', nextIntents: ['customer_profile', 'faq_intro', 'edit_food_select'] },
+  { intent: 'faq_intro', label: 'Ask a Question', icon: 'help_outline', nextIntents: ['registry_home', 'add_food_intro', 'customer_profile'] },
   { intent: 'choose_agents', label: 'Choose Agents', icon: 'smart_toy' },
-  { intent: 'registry_home', label: 'WISE Foods', icon: 'restaurant_menu' },
-  { intent: 'add_food_intro', label: 'Add a New Food', icon: 'add' },
-  { intent: 'edit_food_select', label: 'Edit an Existing Food', icon: 'edit_note' },
+  { intent: 'registry_home', label: 'WISE Foods', icon: 'restaurant_menu', nextIntents: ['add_food_intro', 'edit_food_select', 'faq_intro'] },
+  { intent: 'add_food_intro', label: 'Add a New Food', icon: 'add', nextIntents: ['registry_home', 'edit_food_select', 'faq_intro'] },
+  { intent: 'edit_food_select', label: 'Edit an Existing Food', icon: 'edit_note', nextIntents: ['registry_home', 'add_food_intro'] },
 ];
 
 /* Intent-keyed openers so a clicked chip ALWAYS continues the conversation with
@@ -331,11 +331,120 @@ function makeTurnId() {
 
 /* Short, locale-aware clock label (e.g. "9:42 AM") for message timestamps —
    a small accountability cue so every line is attributable to a moment. */
-function nowLabel() {
+function clockLabel(ms) {
   try {
-    return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    return new Date(ms == null ? Date.now() : ms).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   } catch (_) {
     return '';
+  }
+}
+function nowLabel() {
+  return clockLabel();
+}
+
+/* "3 min ago" / "2 hr ago" / "3 d ago" — click a transcript stamp to swap the
+   wall-clock for how long ago the turn landed. Short units only; never spell
+   out minutes/hours/days. */
+function relativeLabel(ms) {
+  const t = Number(ms);
+  if (!Number.isFinite(t)) return '';
+  const deltaMs = t - Date.now();
+  const absSec = Math.abs(deltaMs) / 1000;
+  let value;
+  let unit;
+  if (absSec < 45) return 'Just now';
+  if (absSec < 90) { value = deltaMs < 0 ? -1 : 1; unit = 'min'; }
+  else if (absSec < 3600) { value = Math.round(deltaMs / 60000); unit = 'min'; }
+  else if (absSec < 5400) { value = deltaMs < 0 ? -1 : 1; unit = 'hr'; }
+  else if (absSec < 86400) { value = Math.round(deltaMs / 3600000); unit = 'hr'; }
+  else if (absSec < 86400 * 1.5) { value = deltaMs < 0 ? -1 : 1; unit = 'd'; }
+  else if (absSec < 86400 * 7) { value = Math.round(deltaMs / 86400000); unit = 'd'; }
+  else if (absSec < 86400 * 30.5) { value = Math.round(deltaMs / (86400000 * 7)); unit = 'wk'; }
+  else if (absSec < 86400 * 365) { value = Math.round(deltaMs / (86400000 * 30.44)); unit = 'mo'; }
+  else { value = Math.round(deltaMs / (86400000 * 365.25)); unit = 'yr'; }
+  const n = Math.abs(value);
+  return value <= 0 ? `${n} ${unit} ago` : `in ${n} ${unit}`;
+}
+
+/* Parse a clock-only stamp ("9:42 AM") as today — used when restored HTML
+   predates data-ts. If that time is still in the future, treat it as yesterday. */
+function parseClockToMs(label) {
+  const text = String(label || '').trim();
+  if (!text) return Date.now();
+  const parsed = Date.parse(`${new Date().toDateString()} ${text}`);
+  if (!Number.isFinite(parsed)) return Date.now();
+  if (parsed > Date.now() + 120000) return parsed - 86400000;
+  return parsed;
+}
+
+function stampMs(el) {
+  const raw = el.getAttribute('data-ts');
+  const n = raw != null && raw !== '' ? Number(raw) : NaN;
+  if (Number.isFinite(n)) return n;
+  const clock = el.getAttribute('data-clock') || (el.textContent || '').trim();
+  const ms = parseClockToMs(clock);
+  el.setAttribute('data-ts', String(ms));
+  if (!el.getAttribute('data-clock')) el.setAttribute('data-clock', clockLabel(ms));
+  return ms;
+}
+
+function toggleLineTime(el) {
+  if (!el) return;
+  const ms = stampMs(el);
+  const showingRel = el.getAttribute('data-mode') === 'rel';
+  if (showingRel) {
+    const clock = el.getAttribute('data-clock') || clockLabel(ms);
+    el.textContent = clock;
+    el.setAttribute('data-mode', 'clock');
+    el.setAttribute('title', 'Show time ago');
+    el.setAttribute('aria-label', `Sent at ${clock}. Activate to show how long ago.`);
+  } else {
+    if (!el.getAttribute('data-clock')) {
+      el.setAttribute('data-clock', (el.textContent || '').trim() || clockLabel(ms));
+    }
+    const rel = relativeLabel(ms);
+    el.textContent = rel;
+    el.setAttribute('data-mode', 'rel');
+    el.setAttribute('title', 'Show time');
+    el.setAttribute('aria-label', `Sent ${rel}. Activate to show the time.`);
+  }
+}
+
+/* Markup for a clickable transcript stamp. Extra class (e.g. sc-fb-menu-time)
+   is appended as-is — callers pass a known token, never user input. */
+function timeStampHtml(ms, extraClass) {
+  const t = ms == null ? Date.now() : Number(ms);
+  const when = Number.isFinite(t) ? t : Date.now();
+  const clock = clockLabel(when);
+  const cls = extraClass ? `sc-line-time ${extraClass}` : 'sc-line-time';
+  return `<span class="${cls}" role="button" tabindex="0" data-ts="${when}" data-clock="${esc(clock)}" data-mode="clock" title="Show time ago" aria-label="Sent at ${esc(clock)}. Activate to show how long ago.">${esc(clock)}</span>`;
+}
+
+/* One document-level listener so EVERY chat surface that loads this module
+   (shared mount + hand-rolled transcripts that still emit .sc-line-time)
+   toggles clock ↔ relative on click / Enter / Space. */
+export function wireTranscriptTimes() {
+  if (typeof document === 'undefined' || document.documentElement.dataset.scTimeWired === '1') return;
+  document.documentElement.dataset.scTimeWired = '1';
+  document.addEventListener('click', (e) => {
+    const el = e.target && e.target.closest && e.target.closest('.sc-line-time');
+    if (!el) return;
+    e.preventDefault();
+    toggleLineTime(el);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const el = e.target && e.target.closest && e.target.closest('.sc-line-time');
+    if (!el) return;
+    e.preventDefault();
+    toggleLineTime(el);
+  });
+}
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', wireTranscriptTimes, { once: true });
+  } else {
+    wireTranscriptTimes();
   }
 }
 
@@ -675,7 +784,7 @@ export function wireChatComposer(railEl, opts = {}) {
     messages.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-you sc-line-event" data-activity="database" role="note" aria-label="${esc(prev ? `Switched database to ${next.name}` : `Set database to ${next.name}`)}">`
       + `<span class="sc-avatar sc-avatar-you" role="img" aria-label="You" data-initials="${esc(initials)}">${userAvatar}</span>`
-      + `<div class="sc-line-body">${body}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span><span class="sc-fb-id" data-tip="Turn ID" tabindex="0">#${esc(tid)}</span></div></div>`
+      + `<div class="sc-line-body">${body}<div class="sc-line-meta">${timeStampHtml()}<span class="sc-fb-id" data-tip="Turn ID" tabindex="0">#${esc(tid)}</span></div></div>`
       + `</div>`);
     messages.scrollTop = messages.scrollHeight;
   }
@@ -841,6 +950,7 @@ function openWiseImageModal(src, name) {
    shell already injected by chat-history.js). Injected from JS so it works on
    every host page regardless of which stylesheet variant it loads. */
 export function injectChatExtras() {
+  wireTranscriptTimes();
   if (typeof document === 'undefined' || document.getElementById('wiseai-chat-extras')) return;
   const css = `
     .ws-scorecard--locked { cursor: default; opacity: .7; }
@@ -909,7 +1019,7 @@ export function injectChatExtras() {
     .wch-conn-row.is-connected .wch-conn-cta { color: var(--sec-green-text, #2E7D32); }
 
     /* Feedback actions (copy / thumbs) sit INLINE, directly to the right of the
-       timestamp inside .sc-line-meta — small, filled glyphs. */
+       timestamp inside .sc-line-meta — quiet outlined glyphs at rest. */
     .sc-fb-wrap { margin: 0; align-self: center; flex: 1 1 auto; min-width: 0; }
     .sc-fb { display: flex; align-items: center; gap: 1px; width: 100%; }
     /* Three-dot ("more") control — sits directly to the RIGHT of thumbs-down
@@ -918,11 +1028,6 @@ export function injectChatExtras() {
        floating menu on click so the row itself stays down to copy / thumbs up /
        thumbs down. */
     .sc-fb-more-wrap { position: relative; display: inline-flex; padding-left: 2px; }
-    /* While this menu is open the body-level activity-strip rail tucks beneath
-       the chat module (see the body:has([hidden]-cleared .sc-fb-menu) rule in
-       js/chat-activity-strip.js), so the rail/ticks can never paint over the
-       popover — the chat's own low z-index means no in-module z-index could
-       beat the rail directly. */
     .sc-fb-menu { position: absolute; bottom: calc(100% + 8px); right: -4px; z-index: 80;
       display: inline-flex; align-items: center; gap: 2px; width: max-content;
       padding: 4px 7px; background: var(--surface); border: 1px solid var(--border-strong);
@@ -936,6 +1041,13 @@ export function injectChatExtras() {
     .sc-fb-menu[hidden] { display: none; }
     .sc-fb-menu-time { margin-right: 4px; padding-right: 6px; white-space: nowrap;
       border-right: 1px solid var(--border); }
+    .sc-line-time { cursor: pointer; user-select: none;
+      color: var(--primary-ink, var(--primary)); text-decoration: none;
+      transition: color .14s ease; }
+    .sc-line-time:hover { color: color-mix(in srgb, var(--primary) 62%, #fff); text-decoration: none; }
+    html.dark .sc-line-time { color: var(--primary-bright, #8B9FAF); }
+    html.dark .sc-line-time:hover { color: #AEC8ED; }
+    .sc-line-time:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .sc-fb-menu-actions { display: inline-flex; align-items: center; gap: 1px; }
     /* The three-dot "more" control reads as a proper round chip — its hover /
        open background is a full circle, never a rounded square. */
@@ -944,12 +1056,14 @@ export function injectChatExtras() {
     html.dark .sc-fb-more[aria-expanded="true"] { background: rgba(255,255,255,0.07); }
     .sc-fb-id { margin-left: 3px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em;
       color: var(--text-subtle); font-variant-numeric: tabular-nums; }
-    .sc-fb-btn { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px;
-      border: 0; border-radius: 50%; background: transparent; color: var(--text-subtle); cursor: pointer; padding: 0;
+    .sc-fb-btn { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px;
+      border: 0; border-radius: 50%; background: transparent;
+      color: color-mix(in srgb, var(--text-subtle) 62%, transparent); cursor: pointer; padding: 0;
       transition: background .14s ease, color .14s ease; }
+    html.dark .sc-fb-btn { color: color-mix(in srgb, var(--text-subtle) 70%, transparent); }
     .sc-fb-btn:hover { background: var(--surface-3); color: var(--text); }
     html.dark .sc-fb-btn:hover { background: rgba(255,255,255,0.07); }
-    .sc-fb-btn .material-symbols-outlined { font-size: 14px; font-variation-settings: 'FILL' 1; }
+    .sc-fb-btn .material-symbols-outlined { font-size: 12px; font-variation-settings: 'FILL' 0; }
     .sc-fb-btn.is-on { color: var(--primary-ink, var(--primary)); }
     .sc-fb-btn.is-on[data-fb="down"] { color: var(--sec-red-text); }
     .sc-fb-btn.is-on .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
@@ -972,8 +1086,6 @@ export function injectChatExtras() {
        chip + free-form panel opens rightward and can't clip off the left of the
        transcript — the thumbs sit close to the meta row's left edge. */
     .sc-fb-reasons { position: absolute; top: calc(100% + 8px); left: -6px;
-      /* The activity-strip rail tucks beneath the module while this is open —
-         see .sc-fb-menu. */
       z-index: 80; width: max-content; max-width: 260px; display: flex; flex-direction: column; gap: 8px;
       padding: 11px 12px; background: var(--surface); border: 1px solid var(--border-strong);
       border-radius: 12px; box-shadow: var(--shadow-3, var(--sc-shadow-pop)); }
@@ -2827,9 +2939,14 @@ let _seq = 0;
  *                          [{id,name,version,group,icon,color,bg,tagline,desc,tags,required,on}]
  *   heading      {string}  welcome heading (default 'What can WISEcodeAI help with?')
  *   sub          {string}  welcome subheading
- *   intents      {Array}   welcome intent chips [{intent,label,icon,ask?}] — `ask`
- *                          (optional) is the full question posted as the user's
- *                          line; the chip face still shows the shorter label
+ *   intents      {Array}   welcome intent chips [{intent,label,icon,ask?,nextIntents?}]
+ *                          — `ask` (optional) is the full question posted as
+ *                          the user's line; the chip face still shows the
+ *                          shorter label. `nextIntents` (ids or chip objects)
+ *                          is the topic-related row that trails that chip's
+ *                          answer so a transcript never dead-ends.
+ *   followups    {object}  intent-id → [ids|chips] map used when a chip has
+ *                          no `nextIntents` of its own
  *   intentReplies{object}  intent-id → reply (string|fn) so a clicked chip
  *                          always continues with an on-feature answer
  *   placeholder  {string}  input placeholder
@@ -2887,6 +3004,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      rather than advancing the thread (choose_agents, connect_source) are never
      marked spent. */
   const usedIntents = new Set();
+  /* Host setIntents() / applyTopicFollowups() already chose this turn's
+     trailing chips — addWISEcodeAI must not score-replace them. */
+  let skipAutoFollowups = false;
   const placeholder = opts.placeholder || 'Type your message';
   /* Opt-in lock glyph that sits inline with the placeholder text (only while the
      input is empty) to flag that the composer is "not accessible at this
@@ -2986,15 +3106,16 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   const askHelpLabel = opts.askHelpLabel || 'What can I ask?';
 
   /* Whenever the "What can I ask?" link is shown, a gold-bordered intent chip
-     with the same label ALWAYS rides along in the welcome chip set. Unlike the
+     with the same label can ride along in the welcome chip set. Unlike the
      link (which opens the side panel), clicking the chip starts a real chat
      turn: a page-specific transcript of everything you can ask on THIS surface,
      built from the surface's own quick-action chips (see askHelpReplyHtml).
-     Appended to every chip set — including runtime swaps via setIntents — and
-     never marked "spent", so it's a standing affordance like the link itself. */
+     Temporarily hidden — flip ASK_HELP_CHIP_ON to restore it on every mount
+     and setIntents swap. The below-input gold link is unaffected. */
   const ASK_HELP_INTENT = 'ask_help';
+  const ASK_HELP_CHIP_ON = false;
   const withAskHelpChip = (list) => {
-    if (!askHelpOn) return list;
+    if (!askHelpOn || !ASK_HELP_CHIP_ON) return list;
     if (list.some((c) => c && c.intent === ASK_HELP_INTENT)) return list;
     return list.concat({ intent: ASK_HELP_INTENT, label: askHelpLabel, icon: 'help', ask: askHelpLabel });
   };
@@ -3009,6 +3130,20 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     (list || []).forEach((c) => { if (c && c.intent) intentCatalog.set(c.intent, c); });
   }
   catalogize(intents);
+  function catalogizeNext(list) {
+    (list || []).forEach((c) => {
+      if (c && Array.isArray(c.nextIntents)) {
+        catalogize(c.nextIntents.filter((n) => n && typeof n === 'object'));
+      }
+    });
+  }
+  catalogizeNext(intents);
+  if (opts.followups && typeof opts.followups === 'object') {
+    Object.keys(opts.followups).forEach((k) => {
+      const list = opts.followups[k];
+      if (Array.isArray(list)) catalogize(list.filter((n) => n && typeof n === 'object'));
+    });
+  }
 
   /* ── "Open module" narration ──────────────────────────────────────────────
      Any WISEcodeAI reply that narrates opening a companion module ("Opened the
@@ -3160,6 +3295,16 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      edge fades) has been retired everywhere, so `opts.chipsFlow` is ignored on
      purpose and no caller can bring the carousel back. */
 
+  const chipHoverStatus = (c) => {
+    if (!c) return '';
+    const ask = String(c.ask || '').replace(/\s+/g, ' ').trim();
+    const label = String(c.label || '').replace(/\s+/g, ' ').trim();
+    const desc = String(c.desc || '').replace(/\s+/g, ' ').trim();
+    if (c.intent === ASK_HELP_INTENT) return ask || label || 'Open What can I ask?';
+    if (ask && ask.toLowerCase() !== label.toLowerCase()) return ask;
+    if (desc) return desc;
+    return label ? `Ask WISEcodeAI: ${label}` : '';
+  };
   const buildChipsHtml = () => intents.map((c, i) => {
     const spent = !!(c && c.intent && usedIntents.has(c.intent));
     /* The "What can I ask?" chip wears the gold border that pairs it with the
@@ -3172,8 +3317,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const labelHtml = isAsk
       ? `<span class="sc-ask-shimmer" aria-hidden="true">${shimmerLetters(c.label)}</span>`
       : esc(c.label);
-    const aria = isAsk ? ` aria-label="${esc(c.label)}"` : '';
-    return `<button type="button" class="chip ws-intent-chip${gold}${spent ? ' is-used' : ''}" data-intent="${i}"${aria}${spent ? ' aria-disabled="true" tabindex="-1"' : ''}><span class="material-symbols-outlined">${esc(c.icon || 'bolt')}</span>${labelHtml}</button>`;
+    const status = chipHoverStatus(c);
+    const tip = status ? ` data-tip="${esc(status)}" title="${esc(status)}"` : '';
+    const aria = isAsk ? ` aria-label="${esc(c.label)}"` : (status ? ` aria-label="${esc(status)}"` : '');
+    return `<button type="button" class="chip ws-intent-chip${gold}${spent ? ' is-used' : ''}" data-intent="${i}"${aria}${tip}${spent ? ' aria-disabled="true" tabindex="-1"' : ''}><span class="material-symbols-outlined">${esc(c.icon || 'bolt')}</span>${labelHtml}</button>`;
   }).join('');
   let chipsHtml = buildChipsHtml();
 
@@ -3618,12 +3765,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     renderActivity();
   }
 
-  /* Inline intent chips — an opt-in (`inlineChips: true`) block of suggested
-     actions that lives IN the transcript, trailing the latest WISEcodeAI turn, just
-     like a normal chat's suggested replies (NOT a docked bottom carousel). We
-     keep a single element and re-park it at the end of the thread after every
-     reply, and detach it while the user is typing / WISEcodeAI is thinking. */
-  const inlineChips = opts.inlineChips === true;
+  /* Inline intent chips — ON by default. Every transcript ends on suggested
+     actions that live IN the thread, trailing the latest WISEcodeAI turn (NOT a
+     docked bottom carousel). We keep a single element and re-park it at the
+     end of the thread after every reply, and detach it while the user is
+     typing / WISEcodeAI is thinking. Pass `inlineChips: false` to opt out. */
+  const inlineChips = opts.inlineChips !== false;
   let ichipsEl = null;
   function parkInlineChips(force) {
     if ((!inlineChips && !force) || !messages) return;
@@ -3639,6 +3786,16 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   }
   function detachInlineChips() {
     if (ichipsEl && ichipsEl.parentNode) ichipsEl.parentNode.removeChild(ichipsEl);
+  }
+  /* A later line (preview card, host chip row, bridged echo) can land AFTER
+     the chips were parked. Keep the topic chips as the last node in the
+     thread so every transcript still ends on them. */
+  if (messages) {
+    const chipEndObserver = new MutationObserver(() => {
+      if (!inlineChips || !ichipsEl || !ichipsEl.parentNode) return;
+      if (messages.lastElementChild !== ichipsEl) messages.appendChild(ichipsEl);
+    });
+    chipEndObserver.observe(messages, { childList: true });
   }
 
   /* Reflect the live agent roster into the topbar pill + panel header. */
@@ -3706,7 +3863,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     }
     const bodyText = text ? esc(text) : '';
     messages.insertAdjacentHTML('beforeend',
-      `<div class="sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You" data-initials="${esc(userInitials)}">${resolveUserAvatar()}</span><div class="sc-line-body">${attHtml}${bodyText}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div></div></div>`);
+      `<div class="sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You" data-initials="${esc(userInitials)}">${resolveUserAvatar()}</span><div class="sc-line-body">${attHtml}${bodyText}<div class="sc-line-meta">${timeStampHtml()}</div></div></div>`);
     scrollDown(true); /* fresh user action — always bring their message into view */
     refreshDockedTurns();
   }
@@ -3732,11 +3889,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
               </div>
             </div>`;
   }
-  function feedbackRowHtml(timeLabel) {
+  function feedbackRowHtml(timeMs) {
     const tid = makeTurnId();
     const upPop = reasonsPopoverHtml('up', accurateReasons, 'What was accurate?', 'What worked? (optional)');
     const downPop = reasonsPopoverHtml('down', feedbackReasons, 'What wasn\u2019t right?', 'Tell us more (optional)');
-    const time = timeLabel != null ? timeLabel : nowLabel();
+    const t = typeof timeMs === 'number' && Number.isFinite(timeMs) ? timeMs : Date.now();
     /* The timestamp and the turn controls (re-run / edit / fork + turn ID) no
        longer sit strewn across the meta row — they're tucked behind a single
        horizontal three-dot button floated to the far right of the thumbs, and
@@ -3759,7 +3916,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           <span class="sc-fb-more-wrap">
             <button type="button" class="sc-fb-btn sc-fb-more" data-fb-more aria-label="More actions" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">more_horiz</span></button>
             <div class="sc-fb-menu" role="menu" hidden>
-              <span class="sc-line-time sc-fb-menu-time">${esc(time)}</span>
+              ${timeStampHtml(t, 'sc-fb-menu-time')}
               <span class="sc-fb-menu-actions">
                 <button type="button" class="sc-fb-btn" data-fb="replay" data-tip="Re-run in new chat" aria-label="Re-run this prompt in a new conversation"><span class="material-symbols-outlined">auto_read_play</span></button>
                 <button type="button" class="sc-fb-btn" data-fb="edit" data-tip="Edit in new chat" aria-label="Edit this prompt in a new conversation"><span class="material-symbols-outlined">bubble</span></button>
@@ -4035,11 +4192,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     let src = meta.source !== undefined ? meta.source : sourceLabel;
     if (src !== false && !src) src = pickSourceName();
     if (src === false) src = '';
-    const timeLabel = nowLabel();
-    const fb = (feedbackEnabled && meta.feedback !== false) ? feedbackRowHtml(timeLabel) : '';
+    const timeMs = Date.now();
+    const fb = (feedbackEnabled && meta.feedback !== false) ? feedbackRowHtml(timeMs) : '';
     const footer = `<div class="sc-line-meta">${
       src ? `<span class="sc-trust-chip" title="WISEcodeAI™ cites where its answer comes from — ${esc(src)}"><span class="material-symbols-outlined">database</span>${esc(truncSourceName(src))}</span>` : ''
-    }${fb ? '' : `<span class="sc-line-time">${esc(timeLabel)}</span>`}${fb}</div>`;
+    }${fb ? '' : timeStampHtml(timeMs)}${fb}</div>`;
     messages.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body">${html}${footer}</div></div>`);
     const line = messages.lastElementChild; /* capture before chips re-park */
@@ -4053,6 +4210,13 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        answer, not to a card posted mid-thinking. Reduced-motion shows it whole. */
     const metaEl = body && body.querySelector('.sc-line-meta');
     const trailChips = meta.trailChips !== false;
+    /* Direct posts (connectors, announceRoute, feedback) still have to end on
+       related chips. respondWithTrace already applied them (and a host
+       setIntents() sets skipAutoFollowups so we don't overwrite a curated row). */
+    if (trailChips && !skipAutoFollowups && meta.followups !== false) {
+      applyTopicFollowups(meta.intent, html);
+    }
+    skipAutoFollowups = false;
     /* Fires once the whole line (text + meta + trailing chips) has settled, so a
        host can trail its OWN chips behind this specific answer (see revealChips).
        If this answer carries an "open module" marker and the surface asked for
@@ -4401,6 +4565,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const lineMeta = { ...meta, source: meta.source === false ? false : sourceName };
     delete lineMeta.traceText; delete lineMeta.milestones; delete lineMeta.intent; delete lineMeta.onTraceDone;
     const done = () => {
+      /* Park topic-related follow-up chips BEFORE the host's onReply so a
+         curated setIntents() can still override, and so the answer never
+         lands as a dead end. */
+      applyTopicFollowups(meta.intent, html, routeText);
       /* Host side-effects that render output (e.g. opening the result/visual
          panes) are deferred to here so they land WITH the answer, never during
          the thinking globs. */
@@ -5867,6 +6035,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        follow-up subset a restored History thread may have swapped in. */
     intents = sessionIntents.slice();
     usedIntents.clear();
+    skipAutoFollowups = false;
     renderChips();
     welcome?.classList.remove('sc-hidden');
     if (welcome) welcome.style.display = '';
@@ -5891,16 +6060,36 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (!v && !atts.length) return;
     input.value = '';
     clearAttachments();
+    /* Typing any distinctive word from an intent chip plays that chip's
+       transcript — same routing (reply, reasoning trace, host onReply/onIntent)
+       as clicking the chip. Attachments skip the shortcut so a file drop still
+       goes through the generic review path. */
+    const matched = v ? matchIntentFromText(v) : null;
+    if (matched && !atts.length) {
+      sendIntent(matched, v);
+      return;
+    }
     hideWelcome();
     addUser(v, atts);
     const noun = atts.length === 1 ? 'attachment' : 'attachments';
-    wiseaiRespond(v || `Reviewing ${atts.length} ${noun}`);
+    const prompt = v || `Reviewing ${atts.length} ${noun}`;
+    if (matched) {
+      const handled = opts.onIntent ? opts.onIntent(matched, prompt) : false;
+      markIntentUsed(matched);
+      closeAgents();
+      if (!handled) wiseaiRespond(prompt, matched);
+      return;
+    }
+    closeAgents();
+    wiseaiRespond(prompt);
   }
   /* Programmatically post a user message + WISEcodeAI reply (used by host modules
      to route a contextual question into the shared chat). */
   function ask(text) {
     const v = String(text || '').trim();
     if (!v) return;
+    const matched = matchIntentFromText(v);
+    if (matched) { sendIntent(matched, v); return; }
     closeAgents();
     hideWelcome();
     addUser(v);
@@ -5931,15 +6120,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      [{ role:'you'|'wiseai', text?, html?, source? }] — using the exact same
      line markup addUser/addWISEcodeAI emit, so seeded history threads restore into
      the chat looking indistinguishable from real ones. */
-  function seedClock(ts) {
-    try { return new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
-    catch (_) { return ''; }
-  }
   function buildSeedTranscript(turns, baseTs) {
     return (turns || []).map((t, i) => {
-      const clock = seedClock(baseTs + i * 60000);
+      const ts = (baseTs || Date.now()) + i * 60000;
       if (t.role === 'you') {
-        return `<div class="sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You" data-initials="${esc(userInitials)}">${resolveUserAvatar()}</span><div class="sc-line-body">${esc(t.text || '')}<div class="sc-line-meta"><span class="sc-line-time">${esc(clock)}</span></div></div></div>`;
+        return `<div class="sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You" data-initials="${esc(userInitials)}">${resolveUserAvatar()}</span><div class="sc-line-body">${esc(t.text || '')}<div class="sc-line-meta">${timeStampHtml(ts)}</div></div></div>`;
       }
       const body = t.html != null ? t.html : esc(t.text || '');
       /* Seeded history turns are grounded too — fall back to a connected source
@@ -5947,10 +6132,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       let src = t.source !== undefined ? t.source : sourceLabel;
       if (src !== false && !src) src = pickSourceName();
       if (src === false) src = '';
-      const fb = (feedbackEnabled && t.feedback !== false) ? feedbackRowHtml(clock) : '';
+      const fb = (feedbackEnabled && t.feedback !== false) ? feedbackRowHtml(ts) : '';
       const footer = `<div class="sc-line-meta">${
         src ? `<span class="sc-trust-chip" title="WISEcodeAI™ cites where its answer comes from — ${esc(src)}"><span class="material-symbols-outlined">database</span>${esc(truncSourceName(src))}</span>` : ''
-      }${fb ? '' : `<span class="sc-line-time">${esc(clock)}</span>`}${fb}</div>`;
+      }${fb ? '' : timeStampHtml(ts)}${fb}</div>`;
       return `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body">${body}${footer}</div></div>`;
     }).join('');
   }
@@ -6014,6 +6199,79 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     });
     return strong ? n : 0;
   }
+  /* Map a typed prompt onto an intent chip so sending "cookie" or "sprouts"
+     plays that chip's transcript. Stop-words are ignored; any remaining word
+     from a chip's label, ask, or intent id is enough to match, with longer
+     phrase hits and intent-id hits winning ties. */
+  function matchIntentFromText(text) {
+    const raw = String(text || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    if (!raw) return null;
+    const CONTROL = new Set([ASK_HELP_INTENT, 'choose_agents', 'connect_source']);
+    const STOP = new Set([
+      'the', 'and', 'for', 'with', 'this', 'that', 'from', 'what', 'whats', 'how',
+      'you', 'your', 'our', 'was', 'would', 'about', 'into', 'then', 'than', 'just',
+      'more', 'tell', 'show', 'make', 'made', 'me', 'a', 'an', 'of', 'in', 'on',
+      'is', 'it', 'to', 'do', 'does', 'we', 'have', 'has', 'vs', 'by', 'or', 'as',
+      'if', 'my', 'any', 'few', 'can', 'could', 'should', 'will', 'be', 'are', 'i',
+      'im', 'at', 'up', 'out', 'so', 'not', 'no', 'yes', 'side', 'new',
+    ]);
+    const tokenize = (s) => String(s || '').toLowerCase()
+      .replace(/[_/]+/g, ' ')
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter((w) => w.length > 1 && !STOP.has(w));
+    const query = tokenize(raw);
+    if (!query.length) return null;
+    const querySet = new Set(query);
+
+    const chips = [];
+    const seen = new Set();
+    const add = (c) => {
+      if (!c || !c.intent || CONTROL.has(c.intent) || seen.has(c.intent)) return;
+      seen.add(c.intent);
+      chips.push(c);
+    };
+    (intents || []).forEach(add);
+    (sessionIntents || []).forEach(add);
+    intentCatalog.forEach(add);
+
+    /* A typed line that is (or contains) a chip's own ask/label is the
+       strongest hit — play that transcript even if other chips share a word. */
+    let phraseHit = null;
+    let phraseLen = 0;
+    chips.forEach((c) => {
+      ['ask', 'label'].forEach((k) => {
+        const phrase = String(c[k] || '').replace(/\s+/g, ' ').trim().toLowerCase();
+        if (phrase.length < 4) return;
+        if (raw === phrase || raw.includes(phrase) || (raw.length >= 6 && phrase.includes(raw))) {
+          if (phrase.length > phraseLen) { phraseLen = phrase.length; phraseHit = c.intent; }
+        }
+      });
+    });
+    if (phraseHit) return phraseHit;
+
+    const wordHit = (qw, cw) => {
+      if (qw === cw) return qw.length >= 4 ? 3 : 2;
+      if (qw.length >= 4 && cw.length >= 4 && (cw.startsWith(qw) || qw.startsWith(cw))) return 2;
+      return 0;
+    };
+
+    let best = null;
+    let bestScore = 0;
+    chips.forEach((c) => {
+      const words = tokenize(`${c.ask || ''} ${c.label || ''} ${String(c.intent || '').replace(/_/g, ' ')}`);
+      let s = 0;
+      query.forEach((qw) => {
+        let local = 0;
+        words.forEach((cw) => { local = Math.max(local, wordHit(qw, cw)); });
+        s += local;
+      });
+      const id = String(c.intent || '').toLowerCase();
+      if (querySet.has(id) || raw.split(/\s+/).includes(id)) s += 4;
+      if (s > bestScore) { bestScore = s; best = c.intent; }
+    });
+    return bestScore > 0 ? best : null;
+  }
   function resolveFollowupIntents(item, html, title) {
     const named = Array.isArray(item && item.nextIntents) ? item.nextIntents : null;
     if (named && named.length) {
@@ -6030,6 +6288,62 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       .slice(0, 5)
       .map((x) => x.c);
   }
+  /* Rule: every transcript ends on intent chips related to that thread's
+     topic. Named nextIntents / opts.followups win; a curated in-flight set
+     keeps its unused siblings; otherwise score the catalog against the
+     live reply. Never leave the row empty. */
+  function unusedTopicChips(list) {
+    return (list || []).filter((c) => c && c.intent && !HISTORY_CONTROL.has(c.intent) && !usedIntents.has(c.intent));
+  }
+  function namedFollowupsFor(intent) {
+    if (!intent) return null;
+    const chip = chipByIntentId(intent);
+    const raw = (chip && Array.isArray(chip.nextIntents) && chip.nextIntents.length)
+      ? chip.nextIntents
+      : (opts.followups && Array.isArray(opts.followups[intent]) ? opts.followups[intent] : null);
+    if (!raw || !raw.length) return null;
+    const resolved = raw.map((n) => (n && typeof n === 'object') ? n : chipByIntentId(n))
+      .filter((c) => c && c.intent && !HISTORY_CONTROL.has(c.intent) && !usedIntents.has(c.intent));
+    return resolved.length ? resolved : null;
+  }
+  function isSessionChipSet() {
+    const ids = (list) => (list || [])
+      .filter((c) => c && c.intent && !HISTORY_CONTROL.has(c.intent))
+      .map((c) => c.intent).sort().join('\0');
+    return ids(intents) === ids(sessionIntents);
+  }
+  function applyTopicFollowups(intent, html, title, item) {
+    let named = null;
+    if (item && Array.isArray(item.nextIntents) && item.nextIntents.length) {
+      named = item.nextIntents.map((n) => (n && typeof n === 'object') ? n : chipByIntentId(n))
+        .filter((c) => c && c.intent && !HISTORY_CONTROL.has(c.intent) && !usedIntents.has(c.intent));
+      if (!named.length) named = null;
+    }
+    if (!named) named = namedFollowupsFor(intent);
+    let next = named;
+    if (!next && !isSessionChipSet()) {
+      const leftover = unusedTopicChips(intents);
+      if (leftover.length) next = leftover;
+    }
+    if (!next) {
+      const live = ((messages && messages.innerHTML) || '') + ' ' + (html || '');
+      const follow = resolveFollowupIntents(null, live, title || '');
+      next = follow.length ? follow : unusedTopicChips(sessionIntents).slice(0, 5);
+    }
+    if (!next || !next.length) {
+      next = unusedTopicChips(intents).slice(0, 5);
+    }
+    if (!next.length) {
+      intentCatalog.forEach((c) => {
+        if (c && c.intent && !HISTORY_CONTROL.has(c.intent) && !usedIntents.has(c.intent) && next.length < 5) next.push(c);
+      });
+    }
+    intents = withAskHelpChip(next);
+    catalogize(intents);
+    catalogizeNext(intents);
+    renderChips();
+    skipAutoFollowups = true;
+  }
   function applyHistoryRestore(item) {
     item = item || {};
     const html = (messages && messages.innerHTML) || item.html || '';
@@ -6038,12 +6352,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       ? item.usedIntents
       : inferUsedIntents(html);
     savedUsed.forEach((id) => { if (id && id !== ASK_HELP_INTENT) usedIntents.add(id); });
-    const follow = resolveFollowupIntents(item, html, item.title || '');
-    /* Follow-ups for THIS thread only. An empty related set still keeps the
-       standing "What can I ask?" chip so the transcript isn't a dead end. */
-    intents = withAskHelpChip(follow);
-    catalogize(intents);
-    renderChips();
+    applyTopicFollowups(null, html, item.title || '', item);
     parkInlineChips(true);
     if (ichipsEl && !prefersReducedMotion) {
       const chips = Array.from(ichipsEl.children);
@@ -6287,11 +6596,13 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const moreBtn = e.target.closest('.sc-fb-more');
     if (moreBtn) {
       const wrap = moreBtn.closest('.sc-fb-more-wrap');
-      const menu = wrap && wrap.querySelector('.sc-fb-menu');
+      const menu = menuOfWrap(wrap);
       const willOpen = !!menu && menu.hidden;
       /* Only one three-dot menu open at a time across the transcript. */
       closeMoreMenus();
       if (menu) {
+        wrap._fbMenu = menu;
+        menu.__fbWrap = wrap;
         menu.hidden = !willOpen;
         moreBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
       }
@@ -6375,46 +6686,64 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   /* Dismiss any open reason pop-over on an outside click or Escape, so it
      behaves like a proper floating menu instead of a pinned inline panel. */
   function closeReasonPopovers() {
-    messages?.querySelectorAll('.sc-fb-reasons:not([hidden])').forEach((pop) => {
+    document.querySelectorAll('.sc-fb-reasons:not([hidden])').forEach((pop) => {
       pop.hidden = true;
-      const btn = pop.closest('.sc-fb-down-wrap, .sc-fb-up-wrap')?.querySelector('.sc-fb-btn');
+      const host = pop.closest('.sc-fb-down-wrap, .sc-fb-up-wrap') || pop.__plHost;
+      const btn = host?.querySelector('.sc-fb-btn');
       if (btn) btn.setAttribute('aria-expanded', 'false');
     });
   }
   /* Collapse any open three-dot (timestamp + turn controls) menu. */
+  function menuOfWrap(wrap) {
+    if (!wrap) return null;
+    if (wrap._fbMenu && wrap._fbMenu.isConnected) return wrap._fbMenu;
+    const m = wrap.querySelector('.sc-fb-menu');
+    if (m) wrap._fbMenu = m;
+    return m || null;
+  }
+  function wrapOfMenu(menu) {
+    return (menu && (menu.closest('.sc-fb-more-wrap') || menu.__fbWrap || menu.__plHost)) || null;
+  }
+  function isMoreUi(node) {
+    return !!(node && node.closest && node.closest('.sc-fb-more-wrap, .sc-fb-menu'));
+  }
   function closeMoreMenus() {
-    messages?.querySelectorAll('.sc-fb-menu:not([hidden])').forEach((menu) => {
+    document.querySelectorAll('.sc-fb-menu:not([hidden])').forEach((menu) => {
       menu.hidden = true;
-      const btn = menu.closest('.sc-fb-more-wrap')?.querySelector('.sc-fb-more');
+      const btn = wrapOfMenu(menu)?.querySelector('.sc-fb-more');
       if (btn) btn.setAttribute('aria-expanded', 'false');
     });
   }
   document.addEventListener('click', (e) => {
-    if (!e.target.closest('.sc-fb-down-wrap, .sc-fb-up-wrap')) closeReasonPopovers();
+    if (!e.target.closest('.sc-fb-down-wrap, .sc-fb-up-wrap, .sc-fb-reasons')) closeReasonPopovers();
     /* Leave the menu open while interacting inside it (copy turn ID, etc.); a
        click that lands on the trigger is handled by its own toggle above. */
-    if (!e.target.closest('.sc-fb-more-wrap')) closeMoreMenus();
+    if (!e.target.closest('.sc-fb-more-wrap, .sc-fb-menu')) closeMoreMenus();
   });
   /* Hover-reveal for the three-dot menu — the timestamp + turn controls spill
      open as soon as the pointer lands on the "more" control (no tooltip, no
      click needed). A short close delay bridges the small gap between the
-     trigger and the floating menu so moving into it never flickers it shut. */
+     trigger and the floating menu so moving into it never flickers it shut.
+     The menu portals to <body> while open (js/popover-layer.js), so hover
+     tracking has to recognize both the wrap and the detached menu. */
   let scMoreCloseTimer = null;
-  messages?.addEventListener('mouseover', (e) => {
-    const wrap = e.target.closest('.sc-fb-more-wrap');
-    if (!wrap) return;
+  document.addEventListener('mouseover', (e) => {
+    if (!isMoreUi(e.target)) return;
     clearTimeout(scMoreCloseTimer);
-    const menu = wrap.querySelector('.sc-fb-menu');
+    const wrap = e.target.closest('.sc-fb-more-wrap') || wrapOfMenu(e.target.closest('.sc-fb-menu'));
+    if (!wrap || (messages && !messages.contains(wrap))) return;
+    const menu = menuOfWrap(wrap);
     if (menu && menu.hidden) {
       closeMoreMenus();
+      wrap._fbMenu = menu;
+      menu.__fbWrap = wrap;
       menu.hidden = false;
       const btn = wrap.querySelector('.sc-fb-more');
       if (btn) btn.setAttribute('aria-expanded', 'true');
     }
   });
-  messages?.addEventListener('mouseout', (e) => {
-    const wrap = e.target.closest('.sc-fb-more-wrap');
-    if (!wrap || wrap.contains(e.relatedTarget)) return;
+  document.addEventListener('mouseout', (e) => {
+    if (!isMoreUi(e.target) || isMoreUi(e.relatedTarget)) return;
     clearTimeout(scMoreCloseTimer);
     scMoreCloseTimer = setTimeout(closeMoreMenus, 180);
   });
@@ -6795,7 +7124,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     messages.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-you sc-line-event" data-activity="database" role="note" aria-label="${esc(prev ? `Switched database to ${next.name}` : `Set database to ${next.name}`)}">`
       + `<span class="sc-avatar sc-avatar-you" role="img" aria-label="You" data-initials="${esc(userInitials)}">${resolveUserAvatar()}</span>`
-      + `<div class="sc-line-body">${body}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span><span class="sc-fb-id" data-tip="Turn ID" tabindex="0">#${esc(tid)}</span></div></div>`
+      + `<div class="sc-line-body">${body}<div class="sc-line-meta">${timeStampHtml()}<span class="sc-fb-id" data-tip="Turn ID" tabindex="0">#${esc(tid)}</span></div></div>`
       + `</div>`);
     scrollDown(true); /* fresh user action — always bring the marker into view */
     refreshDockedTurns();
@@ -7257,7 +7586,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     /* A fresh contextual chip set is a clean slate — spent state doesn't carry
        across a swap (e.g. a marketing dock re-skinning per page). */
     usedIntents.clear();
+    catalogizeNext(intents);
     renderChips();
+    skipAutoFollowups = true;
   }
 
   /* Announce a context switch WITHOUT resetting the conversation: swap in the

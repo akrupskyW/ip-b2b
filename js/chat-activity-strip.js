@@ -32,7 +32,9 @@
  * a chat — no per-page stylesheet block is needed.
  *
  * Ticks are clickable: a click scrolls the transcript to the landmark and
- * flashes it. The pane-resize drag handle shares this edge, but because the rail
+ * flashes it. When an output has more than one version the tick is drawn as a
+ * pair stacked a few pixels apart — two tabs mean "more than one", never three
+ * or four. The pane-resize drag handle shares this edge, but because the rail
  * lives at the body level (above the drag overlay — see .wa-activity-strip
  * z-index in wiseai.html) with the rail itself pointer-events:none, only the
  * ticks intercept while the empty vertical space still falls through to the drag
@@ -249,6 +251,35 @@ function ensureActivityStripStyles() {
       right: 0;
     }
     .wa-activity-tick:hover { width: 14px; }
+    /* Multi-version landmark: two identical tabs stacked so close they read as
+       one unit. The second peeks ~4px below the first — a binary "more than
+       one" flag, never a count of three or four. */
+    .wa-activity-tick-stack {
+      position: absolute;
+      left: 0;
+      right: auto;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+    html.activity-strip-right .wa-activity-tick-stack {
+      left: auto;
+      right: 0;
+    }
+    .wa-activity-tick-stack .wa-activity-tick,
+    html.activity-strip-right .wa-activity-tick-stack .wa-activity-tick {
+      position: relative;
+      left: auto;
+      right: auto;
+      transform: none;
+      flex: 0 0 auto;
+    }
+    .wa-activity-tick-stack .wa-activity-tick:first-child { z-index: 1; }
+    .wa-activity-tick-stack .wa-activity-tick + .wa-activity-tick { margin-top: -9px; }
+    .wa-activity-tick-stack:hover .wa-activity-tick { width: 14px; }
+    .wa-activity-tick-stack:hover .wa-activity-tick-id { opacity: 0.9; }
     /* Turn-ID caption riding beside each tick in tiny type — always reads INTO
        the module, never off the rim. Hidden by default so the rail stays clean;
        it fades in only while its tick is hovered (see the :hover rule below). */
@@ -276,26 +307,6 @@ function ensureActivityStripStyles() {
       right: 100%;
       margin-left: 0;
       margin-right: 4px;
-    }
-    /* Popovers inside the chat must always layer ABOVE the rail. They can't do
-       it with their own z-index: the chat module is deliberately pinned LOW
-       (e.g. wiseai.html keeps #wa-chat at z-index 2–3 so the pane-resize
-       handles stay grabbable), which traps every popover inside its stacking
-       context beneath this body-level rail (z-index 70). So instead, while ANY
-       popover inside a chat is open, the rail tucks beneath the module
-       (z-index -1) and pops back the moment it closes. Each popover kind has
-       its own open marker: the three-dot .topbar-popover drops .hidden, the
-       composer's attach/model popovers gain .open, and a turn's feedback menus
-       clear [hidden]. (A bare [role=menu] test would misfire — the composer
-       popovers carry role=menu permanently and hide via display:none; static
-       demo popovers are excluded via data-popover-static, matching
-       pane-resize.js.) */
-    body:has(.topbar-popover:not(.hidden):not([data-popover-static])) .wa-activity-strip,
-    body:has(.fl-more-popover.open) .wa-activity-strip,
-    body:has(.fl-model-popover.open) .wa-activity-strip,
-    body:has(.sc-fb-menu:not([hidden])) .wa-activity-strip,
-    body:has(.sc-fb-reasons:not([hidden])) .wa-activity-strip {
-      z-index: -1;
     }
     /* Distinct hues per landmark type (retunable per theme/palette). */
     .wa-activity-tick--output   { background-color: var(--act-output, var(--ter-amber, #FFC434)); }
@@ -356,7 +367,7 @@ function buildStrip(state) {
     subtree: true,
     characterData: true,
     attributes: true,
-    attributeFilter: ['data-activity'],
+    attributeFilter: ['data-activity', 'data-activity-multi'],
   });
   /* Reflow (module resized/docked, width toggle) shifts every position. */
   if (typeof ResizeObserver === 'function') {
@@ -475,31 +486,47 @@ function refresh(state) {
     if (!isFinite(frac)) frac = 0;
     frac = Math.max(0, Math.min(1, frac));
 
-    const tick = document.createElement('span');
-    tick.className = `wa-activity-tick wa-activity-tick--${type}`;
-    tick.style.top = `${(EARMARK_INSET + frac * EARMARK_SPAN).toFixed(3)}%`;
-    tick.title = meta.label;
-    tick.addEventListener('click', (ev) => {
+    const top = `${(EARMARK_INSET + frac * EARMARK_SPAN).toFixed(3)}%`;
+    const turnId = turnIdFor(el);
+    const onClick = (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
       scrollToLandmark(messages, el);
-    });
+    };
+    /* More than one version on this output → two stacked tabs, never a count.
+       Flag comes from the chip (`data-activity-multi`) or the stacked thumbs. */
+    const multi = el.hasAttribute('data-activity-multi') || !!el.querySelector('.sc-surface-stack');
+    const host = multi ? document.createElement('span') : makeTickEl(type);
+    if (multi) {
+      host.className = 'wa-activity-tick-stack';
+      host.appendChild(makeTickEl(type));
+      host.appendChild(makeTickEl(type));
+      host.setAttribute('aria-label', `${meta.label}, more than one version`);
+    }
+    host.style.top = top;
+    host.title = multi ? `${meta.label} · more than one version` : meta.label;
+    host.addEventListener('click', onClick);
     /* Stamp the landmark's turn ID beside the tick in tiny type (to the right on
        the left rail, mirrored to the left on the right rail — pure CSS off the
        side class). Every landmark that carries an ID gets a label — WISEcodeAI
        answers and database-switch event lines alike (both stamp a `.sc-fb-id`);
        the rare line with no ID returns '' and gets no label. */
-    const turnId = turnIdFor(el);
     if (turnId) {
       const tag = document.createElement('span');
       tag.className = 'wa-activity-tick-id';
       tag.textContent = turnId;
-      tick.appendChild(tag);
+      host.appendChild(tag);
     }
-    frag.appendChild(tick);
+    frag.appendChild(host);
   });
 
   strip.replaceChildren(frag);
+}
+
+function makeTickEl(type) {
+  const tick = document.createElement('span');
+  tick.className = `wa-activity-tick wa-activity-tick--${type}`;
+  return tick;
 }
 
 /* The turn ID a landmark belongs to, as shown in the transcript (e.g. "#6d7a").

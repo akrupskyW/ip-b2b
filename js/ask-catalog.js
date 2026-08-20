@@ -67,7 +67,7 @@
               tools: ['amend_food_search'] },
             { title: 'Break the set down by a dimension', icon: 'bar_chart',
               desc: 'Get distributions, breakdowns, cross-tabs, heatmaps. Group by brand, retailer, category, or any published code \u2014 one dimension for a bar chart, two for a heatmap, three for small multiples.',
-              prompts: ['Break this down by brand, top 10', 'Show me UPF distribution across the top 5 retailers', 'Heatmap of UPF by retailer by category', "What's the average sodium per category?"],
+              prompts: ['Break this down by brand, top 10', 'Create a comparison chart of the top three brands with more than 50 UPCs that are in the top half of the WISE score.', 'Show me UPF distribution across the top 5 retailers', 'Heatmap of UPF by retailer by category', "What's the average sodium per category?"],
               tools: ['analyze_food_distribution'] },
             { title: 'Find statistical relationships between codes', icon: 'hub',
               desc: 'Ask how two code dimensions relate across your set \u2014 how often artificial colors co-occur with ultra-processed, how Clean Label tracks with Heart Health, etc. Returns a contingency table plus an effect-size statistic.',

@@ -864,8 +864,6 @@ function arrivedByNavigation() {
    automatically whenever a page passes scorecards / intents, and "History &
    Projects" is injected into the menu post-mount (injectWISEcodeAIHistoryMenuItem). */
 const WISEAI_DOCK_PARITY = {
-  placeholderLock: 'Not accessible at this moment',
-  placeholderLockSub: 'WISEcodeAI is coming soon',
   activity: true,
   turns: true,
   turnsSearch: true,
