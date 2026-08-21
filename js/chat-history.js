@@ -183,9 +183,8 @@
          glyphs, like the primary nav collapsing away its labels. The width itself
          is pinned inline (applyDockWidth); these rules strip the labels and centre
          what remains. Head padding/justify use !important to beat host pages that
-         re-dress the docked head via an #id-scoped selector. Top/bottom chrome is
-         kept tight so the collapsed rail hugs its icons instead of sitting in a
-         tall empty column. */
+         re-dress the docked head via an #id-scoped selector. Inner icon padding
+         stays tight; the docked module itself still uses the sticky drawer height. */
       '.wch-sidebar.wch-rail .wch-head{padding:4px 0 0 !important;justify-content:center !important;align-items:center !important;border-bottom:0 !important;}',
       '.wch-sidebar.wch-rail .wch-head-title{display:none;}',
       '.wch-sidebar.wch-rail .wch-width-btn{display:none;}',
@@ -340,9 +339,6 @@
         '--wch-tree-bg:var(--surface,#fff);',
         'box-shadow:var(--shadow-card,0 12px 32px rgba(20,30,60,0.12));border-radius:16px;overflow:hidden;flex-shrink:0;position:relative;z-index:1;',
         'align-self:center;height:calc(100% - 30px);}',
-      /* Collapsed rail: hug the icon stack and sit closer to the row edges
-         than the 15px drawer inset, so the module itself tightens. */
-      '#modules-row .wch-sidebar.wch-docked.wch-rail{height:auto;max-height:calc(100% - 16px);align-self:flex-start;}',
       '#modules-row .wch-sidebar.wch-docked .wch-head{padding:18px 14px 16px 24px;border-bottom:1px solid var(--border,rgba(0,0,0,0.08));align-items:flex-start;}',
       '#modules-row .wch-sidebar.wch-docked.wch-rail .wch-head{border-bottom:0;}',
       '#modules-row .wch-sidebar.wch-docked .wch-head-title{font-family:"WISE Digits","Noto Serif",Georgia,serif;font-weight:800;font-size:1.2rem;letter-spacing:-.01em;line-height:1.16;align-items:center;}',
@@ -359,7 +355,6 @@
          every :not(.wch-unsticky) below is what actually performs the tuck.
          Mirrors the same guards in pages/wiseai.html\'s own copy. */
       '#modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-unsticky){z-index:1;background:var(--surface-2,var(--surface,#fff));--wch-tree-bg:var(--surface-2,var(--surface,#fff));box-shadow:none;align-self:center;height:calc(100% - 30px);}',
-      '#modules-row.modules-sticky .wch-sidebar.wch-docked.wch-rail:not(.wch-unsticky){height:auto;max-height:calc(100% - 16px);align-self:flex-start;}',
       /* History (left of chat): flush + tucked under the chat\'s LEFT edge. */
       '#modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-right):not(.wch-unsticky){margin-right:calc(-14px - var(--modules-gap, 8px));padding-right:14px;',
         'border-top-right-radius:0;border-bottom-right-radius:0;border-right:0;animation:wchStickySlideL .42s cubic-bezier(.34,1.45,.64,1) both;}',

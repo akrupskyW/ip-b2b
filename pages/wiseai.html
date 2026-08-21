@@ -237,13 +237,6 @@
       align-self: center;
       height: calc(100% - 30px);
     }
-    /* Collapsed History rail hugs its icons instead of stretching the
-       15px-inset drawer height. */
-    #modules-row .wch-sidebar.wch-docked.wch-rail {
-      height: auto;
-      max-height: calc(100% - 16px);
-      align-self: flex-start;
-    }
 
     /* Pane top bar — the module HEADER, matching every other docked module
        (chat / History / Turns): the active output's serif title + meta line on
@@ -355,11 +348,6 @@
       box-shadow: none;
       align-self: center;
       height: calc(100% - 30px);
-    }
-    #modules-row.modules-sticky .wch-sidebar.wch-docked.wch-rail:not(.wch-unsticky) {
-      height: auto;
-      max-height: calc(100% - 16px);
-      align-self: flex-start;
     }
     /* History (left of chat): flush + tucked under the chat's LEFT edge. */
     #modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-right):not(.wch-unsticky) {
