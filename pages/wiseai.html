@@ -237,6 +237,13 @@
       align-self: center;
       height: calc(100% - 30px);
     }
+    /* Collapsed History rail hugs its icons instead of stretching the
+       15px-inset drawer height. */
+    #modules-row .wch-sidebar.wch-docked.wch-rail {
+      height: auto;
+      max-height: calc(100% - 16px);
+      align-self: flex-start;
+    }
 
     /* Pane top bar — the module HEADER, matching every other docked module
        (chat / History / Turns): the active output's serif title + meta line on
@@ -307,6 +314,9 @@
       border-bottom: 1px solid var(--border);
       align-items: flex-start;
     }
+    #modules-row .wch-sidebar.wch-docked.wch-rail .wch-head {
+      border-bottom: 0;
+    }
     #modules-row .wch-sidebar.wch-docked .wch-head-title {
       font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
       font-weight: 800;
@@ -345,6 +355,11 @@
       box-shadow: none;
       align-self: center;
       height: calc(100% - 30px);
+    }
+    #modules-row.modules-sticky .wch-sidebar.wch-docked.wch-rail:not(.wch-unsticky) {
+      height: auto;
+      max-height: calc(100% - 16px);
+      align-self: flex-start;
     }
     /* History (left of chat): flush + tucked under the chat's LEFT edge. */
     #modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-right):not(.wch-unsticky) {
@@ -1010,18 +1025,22 @@
 
     /* ── Ingredient-query table (WISEcode ingredient-browser artifact) ───── */
     .wa-ib-wrap { position: relative; }
-    .wa-ib-query { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .wa-ib-query { margin-bottom: 12px; }
     .wa-ib-count { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--sec-green-text); }
     .wa-ib-count .material-symbols-outlined { font-size: 16px; }
-    .wa-ib-edit { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 9999px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text-muted); font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: color .14s ease, border-color .14s ease; }
-    .wa-ib-edit .material-symbols-outlined { font-size: 16px; }
-    .wa-ib-edit:hover { color: var(--text); border-color: var(--primary); }
-    html.dark .wa-ib-edit { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
     .wa-ib { border: 1px solid var(--border); border-radius: 12px; background: var(--wa-tbl-bg, #fff); overflow-x: auto; }
     html.dark .wa-ib { --wa-tbl-bg: #1A2339; }
-    .wa-ib-head, .wa-ib-row { display: grid; align-items: center; gap: 10px; padding: 10px 14px; min-width: 620px; grid-template-columns: minmax(140px,1.7fr) minmax(78px,1fr) 42px 80px minmax(0,1.1fr) minmax(140px,1.9fr); }
+    .wa-ib-head, .wa-ib-row { display: grid; align-items: center; gap: 10px; padding: 10px 14px; min-width: 720px; grid-template-columns: minmax(150px,1.7fr) minmax(90px,1fr) 56px 92px minmax(120px,1.1fr) minmax(140px,1.9fr); }
     .wa-ib-head { border-bottom: 1px solid var(--border); }
-    .wa-ib-th { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-subtle); white-space: nowrap; }
+    .wa-ib-th { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-subtle); white-space: nowrap; background: none; border: 0; padding: 0; margin: 0; font-family: inherit; text-align: left; }
+    button.wa-ib-th { cursor: pointer; transition: color .14s; }
+    button.wa-ib-th:hover { color: var(--text); }
+    button.wa-ib-th:focus-visible { outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent); outline-offset: 3px; border-radius: 3px; }
+    .wa-ib-th.is-sorted { color: var(--primary); }
+    html.dark .wa-ib-th.is-sorted { color: var(--primary-bright, #8B9FAF); }
+    button.wa-ib-th:hover .wa-sort-ic { opacity: .6; }
+    .wa-ib-th.is-sorted .wa-sort-ic { opacity: 1; }
+    .wa-ib-th[data-wa-dir="asc"] .wa-sort-ic { transform: rotate(180deg); }
     .wa-ib-row { border-bottom: 1px solid var(--border); transition: background .14s ease; }
     .wa-ib-row:last-child { border-bottom: 0; }
     .wa-ib-row:hover { background: var(--surface-2); }
@@ -5934,10 +5953,15 @@
 
     function sweetPill(pl) { return `<span class="wa-ib-pill wa-ib-pl-${pl}">${pl}</span>`; }
     function sweetGras(g) { return `<span class="wa-ib-pill wa-ib-gras--${g === 'Unsafe' ? 'unsafe' : 'gras'}">${esc(g)}</span>`; }
+    const IB_CHEVRON = '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    function ibTh(key, label, sorted) {
+      const on = sorted === key;
+      return `<button type="button" class="wa-ib-th${on ? ' is-sorted' : ''}" data-sort="${key}"${on ? ' data-wa-dir="asc"' : ''} aria-sort="${on ? 'ascending' : 'none'}">${label}<span class="wa-sort-ic" aria-hidden="true">${IB_CHEVRON}</span></button>`;
+    }
     function sweetRow(d) {
       const flags = d.flags.map((f) => `<span class="wa-ib-tag">${esc(f)}</span>`).join('');
-      const search = `${d.name} ${d.cat} ${d.gras} pl${d.pl} ${d.flags.join(' ')}`.toLowerCase();
-      return `<div class="wa-ib-row" data-search="${esc(search)}" data-pl="${d.pl}" data-gras="${esc(d.gras)}" data-kind="${esc(d.kind)}" data-flags="${esc(d.flags.join('|').toLowerCase())}">
+      const search = `${d.name} ${d.cat} ${d.gras} ${d.usa} pl${d.pl} ${d.flags.join(' ')}`.toLowerCase();
+      return `<div class="wa-ib-row" data-search="${esc(search)}" data-name="${esc(d.name.toLowerCase())}" data-cat="${esc(d.cat)}" data-pl="${d.pl}" data-gras="${esc(d.gras)}" data-usa="${esc(d.usa)}" data-kind="${esc(d.kind)}" data-flags="${esc(d.flags.join('|').toLowerCase())}">
           <span class="wa-ib-td"><span class="wa-ib-name">${esc(d.name)}</span></span>
           <span class="wa-ib-td wa-ib-cat">${esc(d.cat)}</span>
           <span class="wa-ib-td">${sweetPill(d.pl)}</span>
@@ -5947,21 +5971,20 @@
         </div>`;
     }
     function sweetenersTableView(rows) {
-      rows = rows || SWEETENERS;
+      rows = (rows || SWEETENERS).slice().sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
       const body = rows.map(sweetRow).join('');
       return `
         <div class="wa-block">
           <div class="wa-ib-wrap">
             <div class="wa-ib-query">
               <div class="wa-ib-count"><span class="material-symbols-outlined">filter_alt</span><span class="wa-ib-count-n">${rows.length}</span>&nbsp;of ${SWEET_TOTAL} ingredients</div>
-              <button type="button" class="wa-ib-edit"><span class="material-symbols-outlined">tune</span>Edit this ingredient query</button>
             </div>
             <div class="wa-toolbar">
               <div class="wa-search-inline has-filter">
                 <span class="material-symbols-outlined">search</span>
                 <input type="text" class="wa-search wa-ib-search" placeholder="Filter these ingredients by name, category, or GRAS\u2026" aria-label="Filter these ingredients">
                 <button type="button" class="wa-ib-filter-btn" aria-haspopup="dialog" aria-expanded="false" title="Filter ingredients" aria-label="Filter ingredients">
-                  <span class="material-symbols-outlined">filter_alt</span>
+                  <span class="material-symbols-outlined">tune</span>
                   <span class="wa-ib-filter-dot" aria-hidden="true"></span>
                 </button>
                 <div class="wa-ib-filter-pop" role="dialog" aria-label="Filter ingredients" hidden>
@@ -6008,14 +6031,14 @@
                 </div>
               </div>
             </div>
-            <div class="wa-ib">
+            <div class="wa-ib" data-sort-col="name" data-sort-dir="asc">
               <div class="wa-ib-head">
-                <span class="wa-ib-th">Name</span>
-                <span class="wa-ib-th">Category</span>
-                <span class="wa-ib-th">PL</span>
-                <span class="wa-ib-th">GRAS</span>
-                <span class="wa-ib-th">US Allergen</span>
-                <span class="wa-ib-th">Flags</span>
+                ${ibTh('name', 'Name', 'name')}
+                ${ibTh('cat', 'Category')}
+                ${ibTh('pl', 'PL')}
+                ${ibTh('gras', 'GRAS')}
+                ${ibTh('usa', 'US Allergen')}
+                ${ibTh('flags', 'Flags')}
               </div>
               <div class="wa-ib-body">${body}</div>
               <div class="wa-ib-empty" hidden>No ingredients match your filter.</div>
@@ -7466,11 +7489,11 @@
       { intent: 'redochart', icon: 'refresh',       label: 'Redo the gut-health chart', ask: 'Redo the chart — promote sauerkraut and push the score higher' },
       { intent: 'upf',     icon: 'science',        label: 'Is this list ultra-processed?' },
       { intent: 'worst',   icon: 'trending_down',  label: 'Worst food in our database?' },
-      { intent: 'spider',  icon: 'radar',          label: 'Spider-chart the 10 worst foods' },
+      { intent: 'spider',  icon: 'radar',          label: 'Spider-chart the 10 worst foods', carryTopic: true },
       { intent: 'cupcake', icon: 'cake',           label: 'Tell me about the worst cupcake' },
       { intent: 'cookie',  icon: 'cookie',         label: 'Best cookie, least chocolate' },
-      { intent: 'compare', icon: 'compare_arrows', label: 'Compare products side by side' },
-      { intent: 'report',  icon: 'summarize',      label: 'Show me a pretty report' },
+      { intent: 'compare', icon: 'compare_arrows', label: 'Compare products side by side', carryTopic: true },
+      { intent: 'report',  icon: 'summarize',      label: 'Show me a pretty report', carryTopic: true },
       { intent: 'cat',     icon: 'pets',           label: 'If I identified as a cat\u2026', ask: 'If I told you that I identified as a cat, what type of food would you feed me?' },
       { intent: 'catnutrients', icon: 'menu_book', label: 'What nutrients do cats require?' },
     ];
@@ -7549,7 +7572,7 @@
     };
     attachNext('topbrands', TOPBRANDS_FOLLOWUPS);
     attachNext('kraft', KRAFT_FOLLOWUPS);
-    attachNext('sprouts', ['compare', 'report', 'proteinbars', 'gras']);
+    attachNext('sprouts', ['compare', 'report', 'topbrands']);
     attachNext('gras', ['gras_upf', 'sweeteners', 'compare']);
     attachNext('gras_upf', GRAS_FOLLOWUPS);
     attachNext('energy', ENERGY_FOLLOWUPS);
@@ -7557,26 +7580,212 @@
     attachNext('sweeteners', SWEET_FOLLOWUPS);
     attachNext('brisket', ['redochart', 'report', 'compare']);
     attachNext('redochart', ['report', 'compare', 'brisket']);
-    attachNext('upf', ['sweeteners', 'gras_upf', 'compare', 'worst']);
+    attachNext('upf', ['sweeteners', 'gras_upf', 'compare']);
     attachNext('worst', ['cupcake', 'spider', 'compare']);
     attachNext('spider', ['compare', 'report', 'worst']);
-    attachNext('cupcake', ['worst', 'compare', 'spider', 'report']);
+    attachNext('cupcake', ['worst', 'compare', 'spider']);
     attachNext('cookie', ['report', 'compare', 'worst']);
-    attachNext('compare', ['report', 'spider', 'cookie']);
-    attachNext('report', ['compare', 'spider', 'redochart']);
+    attachNext('compare', ['report', 'spider']);
+    attachNext('report', ['compare', 'spider']);
     attachNext('cat', ['catnutrients', 'compare']);
     attachNext('catnutrients', ['cat', 'compare', 'report']);
+
+    /* Generic follow-up chips (compare / report / spider) rewrite their face
+       and ask to stay on the previous turn's subject — so "Compare" after
+       Kraft is still about Kraft, not a random other product. */
+    const GENERIC_CHIP_COPY = {
+      compare: {
+        kraft:        { label: 'Compare Kraft vs Kraft Heinz', ask: 'Compare Kraft vs Kraft Heinz using the SKU counts we just ran' },
+        sprouts:      { label: 'Compare Sprouts products', ask: 'Compare a few Sprouts-carried products side by side' },
+        gras:         { label: 'Compare GRAS statuses', ask: 'Compare the GRAS statuses we just counted' },
+        gras_upf:     { label: 'Compare GRAS reform vs UPF definition', ask: 'Compare the GRAS proposal with the proposed UPF definition' },
+        energy:       { label: 'Compare sweeteners vs added sugar', ask: 'Compare artificial sweeteners vs added sugar in those energy drinks' },
+        proteinbars:  { label: 'Compare protein vs granola bars', ask: 'Compare protein bars vs granola bars' },
+        sweeteners:   { label: 'Compare artificial vs natural', ask: 'Compare those artificial sweeteners vs natural sweeteners by PL' },
+        topbrands:    { label: 'Compare the top 10 brands', ask: 'Compare the top 10 brands on that WISEscore cut' },
+        brisket:      { label: 'Compare the chart versions', ask: 'Compare the original brisket chart against the redone versions' },
+        upf:          { label: 'Compare UPF frameworks', ask: 'Compare WISEcode UPF with the proposed federal definition' },
+        worst:        { label: 'Compare the worst three', ask: 'Compare the three worst foods from that ranking side by side' },
+        cupcake:      { label: 'Compare other cupcakes', ask: 'Compare that cupcake with a few other bakery desserts' },
+        cookie:       { label: 'Compare the top cookies', ask: 'Compare the top chocolate-chip cookies side by side' },
+        cat:          { label: 'Compare wet vs dry cat food', ask: 'Compare wet vs dry cat food against those feline nutrient needs' },
+      },
+      report: {
+        kraft:        { label: 'Kraft UPF report', ask: 'Turn the Kraft SKU / UPF numbers into a report' },
+        sprouts:      { label: 'Sprouts catalog report', ask: 'Turn the Sprouts catalog count into a report' },
+        gras:         { label: 'GRAS classification report', ask: 'Turn the GRAS classification counts into a report' },
+        gras_upf:     { label: 'GRAS + UPF policy report', ask: 'Turn the GRAS + UPF announcement into a short report' },
+        energy:       { label: 'Energy-drink correlation report', ask: 'Turn the energy-drink sweetener correlation into a report' },
+        proteinbars:  { label: 'Protein-bar category report', ask: 'Turn the protein-bar SKU count into a report' },
+        sweeteners:   { label: 'Sweetener PL report', ask: 'Turn the artificial-sweetener PL split into a report' },
+        topbrands:    { label: 'Top-brands WISEscore report', ask: 'Turn the top-brands WISEscore comparison into a report' },
+        brisket:      { label: 'Gut-health brisket report', ask: 'Turn the brisket gut-health run into a report' },
+        upf:          { label: 'UPF evaluation report', ask: 'Turn the UPF evaluation into a report' },
+        worst:        { label: 'Worst-foods report', ask: 'Turn the worst-foods ranking into a report' },
+        cupcake:      { label: 'Cupcake detail report', ask: 'Turn that cupcake detail into a short report' },
+        cookie:       { label: 'Cookie ranking report', ask: 'Show me a pretty report \u2014 all the charts & trends' },
+        cat:          { label: 'Feline nutrition report', ask: 'Turn the feline nutrient list into a short report' },
+      },
+      spider: {
+        kraft:        { label: 'Spider-chart Kraft categories', ask: 'Spider-chart Kraft\u2019s top categories' },
+        sprouts:      { label: 'Spider-chart the Sprouts mix', ask: 'Spider-chart the Sprouts catalog mix' },
+        gras:         { label: 'Spider-chart GRAS statuses', ask: 'Spider-chart the GRAS classification split' },
+        gras_upf:     { label: 'Spider-chart the policy stack', ask: 'Spider-chart the GRAS + UPF policy pieces' },
+        energy:       { label: 'Heatmap the correlation', ask: 'Show the energy-drink sweetener correlation as a heatmap' },
+        proteinbars:  { label: 'Spider-chart protein-bar brands', ask: 'Spider-chart the top protein-bar brands' },
+        sweeteners:   { label: 'Spider-chart sweeteners by PL', ask: 'Spider-chart those sweeteners by PL level' },
+        topbrands:    { label: 'Spider-chart the top brands', ask: 'Spider-chart the top brands on that WISEscore cut' },
+        brisket:      { label: 'Spider-chart the score drivers', ask: 'Spider-chart the brisket gut-health score drivers' },
+        upf:          { label: 'Spider-chart UPF signals', ask: 'Spider-chart the main UPF classification signals' },
+        worst:        { label: 'Spider-chart the 10 worst foods', ask: 'Spider-chart the 10 worst foods by gut & immune health' },
+        cupcake:      { label: 'Spider-chart that cupcake', ask: 'Spider-chart that cupcake against nearby bakery desserts' },
+        cookie:       { label: 'Spider-chart the top cookies', ask: 'Spider-chart the top cookies on WISEscore vs chocolate load' },
+        cat:          { label: 'Spider-chart feline nutrients', ask: 'Spider-chart the essential feline nutrients' },
+      },
+    };
+    function topicOf(intent) {
+      if (!intent) return null;
+      const id = String(intent);
+      if (id === 'compare' || id === 'report' || id === 'spider') return null;
+      if (id.indexOf('kraft') === 0) return 'kraft';
+      if (id.indexOf('sweet') === 0) return 'sweeteners';
+      if (id.indexOf('energy') === 0) return 'energy';
+      if (id.indexOf('protein') === 0) return 'proteinbars';
+      if (id.indexOf('topbrands') === 0) return 'topbrands';
+      if (id === 'sprouts') return 'sprouts';
+      if (id === 'gras') return 'gras';
+      if (id === 'gras_upf' || id === 'gras_change' || id === 'gras_law' || id === 'upf_def' || id === 'fedreg_search') return 'gras_upf';
+      if (id === 'brisket' || id === 'redochart') return 'brisket';
+      if (id === 'upf') return 'upf';
+      if (id === 'worst' || id === 'cupcake' || id === 'cookie' || id === 'cat') return id;
+      if (id === 'catnutrients') return 'cat';
+      return id;
+    }
+    function contextualizeChip(chip, thread) {
+      if (!chip || !chip.intent || !thread || !thread.topic) return null;
+      const pack = GENERIC_CHIP_COPY[chip.intent];
+      if (pack && pack[thread.topic]) return pack[thread.topic];
+      if (chip.intent === 'topbrands' && thread.topic === 'sprouts') {
+        return {
+          label: 'Top brands across the registry',
+          ask: 'Widening out from Sprouts \u2014 which brands have the most foods in the top half of WISEscore?',
+        };
+      }
+      return null;
+    }
+    function prevTopicOf(ctx) {
+      if (!ctx) return null;
+      if (ctx.prev && ctx.prev.topic) return ctx.prev.topic;
+      if (ctx.topic && ctx.topic !== 'compare' && ctx.topic !== 'report' && ctx.topic !== 'spider') return ctx.topic;
+      return null;
+    }
+    function followOn(ctx, body) {
+      const prevQ = ctx && ctx.prev && ctx.prev.userText;
+      if (!prevQ) return body;
+      const short = prevQ.length > 90 ? prevQ.slice(0, 87) + '\u2026' : prevQ;
+      return `Following on from <em>\u201C${esc(short)}\u201D</em> \u2014 ${body}`;
+    }
+
+    const COMPARE_REPLY = 'I grabbed a few comparable products and put them head-to-head on the same board we use on the <strong>Product Comparison</strong> page.<br><br>Ranked by WISEscore, the <strong>Aloha Organic Protein Bar</strong> leads at <strong>84</strong> \u2014 the cleanest formulation, strongest on ingredient integrity and nutrient density. The <strong>Simple Truth Trail Mix</strong> (71) holds up on whole-food ingredients but loses ground on added sugar, and <strong>SkinnyPop Popcorn</strong> (63) trails mostly on nutrient density and gut-health signals.<br><br>Opened the full comparison in Results &amp; Details \u2014 tap any gauge or metric to replay it, and add more products to the board. \u2192';
+    const SPIDER_REPLY = 'I made the spider chart.<br><br>One important caveat: in the returned data for these 10 worst-WISEscore foods, every metric except <strong>WISEscore</strong> \u2014 <strong>Gut Health</strong>, <strong>Immune Support</strong>, <strong>Additive Load</strong> and <strong>Excellent Source</strong> \u2014 is missing across the set, so the visual is mostly showing their WISEscore spread plus the data-availability gap. That means there isn\u2019t enough returned score data here to meaningfully rank these ten by gut health or immune-support proxy yet.<br><br>Spider chart \u2192 Visuals · the 10-row table \u2192 Results &amp; Details';
+    const REPORT_REPLY = 'Done \u2014 I turned it into a full visual report with charts, ranked views, a candidate shortlist, and \u201ctrend-style\u201d slope visuals built from the current cookie ranking rather than invented time trends.<br><br>One thing to keep in mind: the result set still contains some clearly noisy / incomplete ingredient lists, so the shortlist is best read as strong candidates plus package-verification candidates, not as a perfect final answer from ingredients alone.';
+    const SWEETENERS_REPLY = 'Among the ingredients currently classified as <strong>Artificial Sweetener</strong>, the PL split is:'
+        + '<div class="wa-plsplit">'
+        + '<span class="wa-plsplit-item"><span class="wa-ib-pill wa-ib-pl-2">PL2</span><b>6</b></span>'
+        + '<span class="wa-plsplit-item"><span class="wa-ib-pill wa-ib-pl-3">PL3</span><b>9</b></span>'
+        + '<span class="wa-plsplit-item"><span class="wa-ib-pill wa-ib-pl-4">PL4</span><b>2</b></span>'
+        + '</div>'
+        + 'So this group skews mostly <strong>PL3</strong>, with a smaller PL2 tier and very few PL4 entries.<br><br>'
+        + 'Notably, this canon bucket includes some ingredients people wouldn\u2019t usually mean by \u201cartificial sweeteners\u201d in everyday language \u2014 for example stevia leaf extract, monk fruit extract/concentrate, erythritol, HFCS, and invert sugar are all in the same processed-category bucket here. If you want, I can narrow this to just the classic high-intensity synthetic sweeteners.<br><br>'
+        + 'Opened the ingredient query in Results &amp; Details \u2192';
+    const WORST_REPLY = 'The absolute bottom of the ranking right now is <strong>Member\u2019s Mark Christmas Gourmet Cupcakes, 8 Ct.</strong> with a WISEscore of <strong>0.06</strong>.<br><br>The bottom of the database is heavily dominated by decorated cakes, cupcakes, and dessert kits packed with multiple synthetic colors, emulsifiers, preservatives, refined oils, and sugar-heavy fillings. So the \u201cworst foods\u201d cluster is less about one weird outlier and more about a very consistent pattern of highly engineered bakery desserts.<br><br>Opened the full ranking in Results &amp; Details \u2192';
+    const CUPCAKE_REPLY = 'I couldn\u2019t fetch the full food-detail card for that cupcake because the detail lookup failed.<br><br>What I can confirm from the search result is that the worst-ranked cupcake is <strong>Member\u2019s Mark Christmas Gourmet Cupcakes, 8 Ct.</strong> with a WISEscore of <strong>0.06</strong>. Its ingredient list is extremely long and includes a dense mix of refined sugars and syrups, multiple refined oils, emulsifiers and stabilizers, artificial colors, and multiple preservatives.<br><br>That combination is why it surfaced at the very bottom of the ranking rather than just being \u201ca dessert.\u201d';
 
     const INTENT_REPLIES = {
       brisket: 'For a gut-health-maximized brisket, I\u2019d build it around these ingredients:<div class="wa-chiplist" style="margin:10px 0 12px">' + ['Beef brisket', 'Extra virgin olive oil', 'Onion', 'Garlic', 'Sauerkraut', 'Mushrooms', 'Carrots', 'Celery', 'Parsley', 'Thyme', 'Rosemary', 'Apple cider vinegar', 'Lemon juice', 'Tomato paste', 'Cocoa powder', 'Coffee', 'Black pepper', 'Sea salt'].map((n) => '<span class="wa-ce-ing">' + n + '</span>').join('') + '</div>I ran a brisket-style ingredient list through the <strong>Gut Health code evaluation</strong>, and this combination came out with a Gut Health score of <strong>64</strong>, which lands in <strong>Good</strong>.<br><br><strong>Why this works:</strong><ul style="margin:8px 0 0;padding-left:20px"><li><strong>Sauerkraut</strong> adds a fermented-food signal.</li><li>Onion, garlic, mushrooms, carrots, celery, parsley, thyme, rosemary &amp; tomato paste support the code\u2019s plant / polyphenol logic.</li><li>Extra virgin olive oil hits the healthy-oil bonus.</li><li>Cocoa powder &amp; coffee are both favored polyphenol-style ingredients in the code.</li><li>Avoiding nitrates / nitrites and highly processed add-ins helps protect the score.</li></ul><br>One nuance: in the run I tested, the <strong>fermented bonus didn\u2019t fully trigger</strong> because sauerkraut wasn\u2019t among the first few ingredients. To push the score even higher, make sauerkraut a more prominent ingredient in the dish.<br><br>Opened the <strong>code evaluation</strong> &amp; recipe report in Results &amp; Details, and the score-driver charts in Visuals \u2192',
       redochart: 'Redone \u2014 I rebuilt the <strong>Gut Health score-driver chart</strong> twice from the original run.<br><br><strong>v1</strong> was the first pass (score <strong>64</strong>, Good) with sauerkraut sitting last. <strong>v2</strong> promoted sauerkraut into the first four ingredients so the fermented bonus fully triggered (score <strong>78</strong>). This latest <strong>v3</strong> also concentrates the polyphenol groups \u2014 cocoa, coffee &amp; plants \u2014 landing the build at <strong>84</strong> (Excellent).<br><br>The output chip below keeps all three versions stacked \u2014 tap it to open the newest in Visuals, or hover to fan the earlier versions out. \u2192',
       upf: 'Paste the ingredient list and I\u2019ll evaluate it for <strong>WISEcode UPF</strong>. If you have them, include:<ul style="margin:8px 0 0;padding-left:20px"><li>Ingredients</li><li>Calories per serving (optional)</li><li>Added sugars per serving (optional)</li></ul>',
-      worst: 'The absolute bottom of the ranking right now is <strong>Member\u2019s Mark Christmas Gourmet Cupcakes, 8 Ct.</strong> with a WISEscore of <strong>0.06</strong>.<br><br>The bottom of the database is heavily dominated by decorated cakes, cupcakes, and dessert kits packed with multiple synthetic colors, emulsifiers, preservatives, refined oils, and sugar-heavy fillings. So the \u201cworst foods\u201d cluster is less about one weird outlier and more about a very consistent pattern of highly engineered bakery desserts.<br><br>Opened the full ranking in Results &amp; Details \u2192',
-      spider: 'I made the spider chart.<br><br>One important caveat: in the returned data for these 10 worst-WISEscore foods, every metric except <strong>WISEscore</strong> \u2014 <strong>Gut Health</strong>, <strong>Immune Support</strong>, <strong>Additive Load</strong> and <strong>Excellent Source</strong> \u2014 is missing across the set, so the visual is mostly showing their WISEscore spread plus the data-availability gap. That means there isn\u2019t enough returned score data here to meaningfully rank these ten by gut health or immune-support proxy yet.<br><br>Spider chart \u2192 Visuals · the 10-row table \u2192 Results &amp; Details',
-      cupcake: 'I couldn\u2019t fetch the full food-detail card for that cupcake because the detail lookup failed.<br><br>What I can confirm from the search result is that the worst-ranked cupcake is <strong>Member\u2019s Mark Christmas Gourmet Cupcakes, 8 Ct.</strong> with a WISEscore of <strong>0.06</strong>. Its ingredient list is extremely long and includes a dense mix of refined sugars and syrups, multiple refined oils, emulsifiers and stabilizers, artificial colors, and multiple preservatives.<br><br>That combination is why it surfaced at the very bottom of the ranking rather than just being \u201ca dessert.\u201d',
-      compare: 'I grabbed a few comparable products and put them head-to-head on the same board we use on the <strong>Product Comparison</strong> page.<br><br>Ranked by WISEscore, the <strong>Aloha Organic Protein Bar</strong> leads at <strong>84</strong> \u2014 the cleanest formulation, strongest on ingredient integrity and nutrient density. The <strong>Simple Truth Trail Mix</strong> (71) holds up on whole-food ingredients but loses ground on added sugar, and <strong>SkinnyPop Popcorn</strong> (63) trails mostly on nutrient density and gut-health signals.<br><br>Opened the full comparison in Results &amp; Details \u2014 tap any gauge or metric to replay it, and add more products to the board. \u2192',
+      worst: (text, intent, ctx) => {
+        const prev = prevTopicOf(ctx);
+        if (prev === 'cookie') return 'Flipping from the best cookies to the other end of the ranking \u2014 ' + WORST_REPLY;
+        if (prev === 'upf') return 'If you want the harshest ultra-processed examples in the registry \u2014 ' + WORST_REPLY;
+        if (prev === 'spider') return 'The spider was the shape of the tail; here is the ranking itself. ' + WORST_REPLY;
+        return WORST_REPLY;
+      },
+      spider: (text, intent, ctx) => {
+        const t = prevTopicOf(ctx);
+        const by = {
+          kraft: 'Spider-charted Kraft\u2019s category mix off the SKU counts we just ran \u2014 cheese, prepared meals and dressings dominate the spokes. Charted it in Visuals \u2192',
+          sprouts: 'Spider-charted the Sprouts catalog we just counted \u2014 brand mix, GRAS coverage and average WISEscore on the same axes. Charted it in Visuals \u2192',
+          gras: 'Spider-charted the GRAS split we just counted \u2014 GRAS / Historical / Unclear / Unsafe on the spokes. Charted it in Visuals \u2192',
+          energy: 'Turned that energy-drink correlation into a heatmap so the UPF-tier \u00d7 sweetener pattern is one glance. Charted it in Visuals \u2192',
+          proteinbars: 'Spider-charted the protein-bar brand shelf we just counted \u2014 Quest still dominates the spokes. Charted it in Visuals \u2192',
+          sweeteners: 'Spider-charted those artificial sweeteners by PL level, so the PL3 cluster is the obvious spoke. Charted it in Visuals \u2192',
+          topbrands: 'Spider-charted those top-half WISEscore brands so the count lead is on one set of axes. Charted it in Visuals \u2192',
+          brisket: 'Spider-charted the brisket gut-health drivers \u2014 fermented, plants, oil and polyphenols on the spokes. Charted it in Visuals \u2192',
+          cookie: 'Spider-charted the top chocolate-chip cookies on WISEscore vs where chocolate sits in the ingredient list. Charted it in Visuals \u2192',
+          cupcake: 'Spider-charted that cupcake against nearby bakery desserts \u2014 it still sits at the origin on every spoke we have data for. Charted it in Visuals \u2192',
+          cat: 'Spider-charted the essential feline nutrients \u2014 taurine, animal protein, preformed vitamin A, arachidonic acid, niacin. Charted it in Visuals \u2192',
+          upf: 'Spider-charted the main UPF signals \u2014 additives, sweeteners, refined oils \u2014 so you can see which ones drive the classification. Charted it in Visuals \u2192',
+        };
+        if (t && by[t]) return by[t];
+        if (t === 'worst' || !t) return SPIDER_REPLY;
+        return followOn(ctx, SPIDER_REPLY);
+      },
+      cupcake: (text, intent, ctx) => {
+        const prev = prevTopicOf(ctx);
+        if (prev === 'worst') return 'Drilling into that bottom-ranked cluster \u2014 ' + CUPCAKE_REPLY;
+        if (prev === 'cookie') return 'Cookies were the high end; the other side of bakery desserts is cupcakes. ' + CUPCAKE_REPLY;
+        return CUPCAKE_REPLY;
+      },
+      compare: (text, intent, ctx) => {
+        const t = prevTopicOf(ctx);
+        const by = {
+          kraft: () => INTENT_REPLIES.kraft_heinz,
+          sprouts: 'Taking the <strong>20,635 Sprouts</strong> foods we just counted, I lined a few Sprouts-carried products up on the same comparison board \u2014 a clean private-label olive oil against a Sprouts trail mix and a Sprouts sparkling water. Ranked by WISEscore so you can see how the retailer\u2019s own assortment actually splits.<br><br>Opened the comparison in Results &amp; Details \u2192',
+          gras: 'Lined the four GRAS statuses we just counted up side by side \u2014 GRAS, Historical, Unclear and Unsafe \u2014 so the 4,829 / 2,247 / 1,501 / 81 split is one glance.<br><br>Charted the comparison in Visuals \u2192',
+          gras_upf: 'Put the two policy moves we just summarized head-to-head: the mandatory GRAS notification vs the proposed federal UPF definition \u2014 what each changes, what each doesn\u2019t, and where they meet.<br><br>Opened the comparison in Results &amp; Details \u2192',
+          energy: () => INTENT_REPLIES.energy_sugar,
+          proteinbars: () => INTENT_REPLIES.protein_vs_granola,
+          sweeteners: () => INTENT_REPLIES.sweet_vs_natural,
+          topbrands: () => INTENT_REPLIES.topbrands_top10,
+          brisket: 'Compared the three Gut Health chart versions from that brisket run \u2014 v1 at <strong>64</strong> (sauerkraut last), v2 at <strong>78</strong> (fermented bonus on), v3 at <strong>84</strong> with the polyphenol groups concentrated.<br><br>The stacked versions are on the output chip \u2014 Visuals \u2192',
+          upf: 'Compared WISEcode\u2019s UPF tiers against the proposed federal definition we have so far. WISEcode is already scoring products; the federal definition is still in OMB review, so this is a framework-vs-framework read, not a product-by-product overlay yet.<br><br>Opened the comparison in Results &amp; Details \u2192',
+          worst: 'Took the bottom of that ranking and put the three worst foods head-to-head \u2014 Member\u2019s Mark Christmas Gourmet Cupcakes still leads (last) at <strong>0.06</strong>, with two neighboring decorated cakes right behind it. Same additive pattern on every column.<br><br>Opened the comparison in Results &amp; Details \u2192',
+          cupcake: 'Compared that cupcake with a couple of nearby bakery desserts on the same board. It still sits at the bottom: longer ingredient list, more synthetic colors, more emulsifiers.<br><br>Opened the comparison in Results &amp; Details \u2192',
+          cookie: 'Took the cookie ranking we just ran and put the three strongest \u201cleast chocolate\u201d candidates head-to-head \u2014 Paleo Vegan Chocolate Chip, Emmy\u2019s Organics Coconut, and Get Back To Human Grain-Free.<br><br>Opened the comparison in Results &amp; Details \u2192',
+          cat: 'Compared wet vs dry cat food against the feline nutrient needs we just walked through. Wet wins on moisture and typically on taurine density; dry wins on calorie density and shelf life \u2014 neither is a human WISEscore food.<br><br>Opened the comparison in Results &amp; Details \u2192',
+        };
+        if (t && by[t]) {
+          const v = by[t];
+          return typeof v === 'function' ? v() : v;
+        }
+        if (t) return followOn(ctx, COMPARE_REPLY);
+        return COMPARE_REPLY;
+      },
       cookie: 'I pulled the highest-WISEscore chocolate chip cookies first, but the result quality is noisy: several top rows have clearly broken or incomplete ingredient lists, so they don\u2019t really answer your \u201cleast amount of chocolate\u201d criterion reliably.<br><br>Among the credible top-scoring matches, the strongest candidates look like the ones where chocolate chips appear later in the ingredient list, which usually means less chocolate by weight. The cleanest examples near the top are <strong>Paleo, Vegan Chocolate Chip Cookie</strong> and <strong>Emmy\u2019s Organics Coconut Cookies</strong>. By contrast, products like the Overjoyed biscotti put chocolate ingredients much earlier and even add a drizzle, so they\u2019re clearly more chocolate-heavy.',
-      report: 'Done \u2014 I turned it into a full visual report with charts, ranked views, a candidate shortlist, and \u201ctrend-style\u201d slope visuals built from the current cookie ranking rather than invented time trends.<br><br>One thing to keep in mind: the result set still contains some clearly noisy / incomplete ingredient lists, so the shortlist is best read as strong candidates plus package-verification candidates, not as a perfect final answer from ingredients alone.',
+      report: (text, intent, ctx) => {
+        const t = prevTopicOf(ctx);
+        const by = {
+          kraft: 'Turned the Kraft SKU / UPF picture into a short report \u2014 <strong>1,874</strong> SKUs, <strong>46.9%</strong> UPF, concentrated in the middle of the WISEscore range, with prepared meals and dressings carrying most of the UPF load.<br><br>Opened the report in Results &amp; Details and the distribution charts in Visuals \u2192',
+          sprouts: 'Turned the Sprouts catalog count into a short report \u2014 <strong>20,635</strong> foods, <strong>1,240</strong> brands, average WISEscore <strong>61</strong>, <strong>96%</strong> GRAS-verified.<br><br>Opened the retailer summary in Results &amp; Details and the mix donuts in Visuals \u2192',
+          gras: 'Turned the GRAS classification counts into a short report \u2014 <strong>8,658</strong> ingredients: 4,829 GRAS, 2,247 Historical, 1,501 Unclear, 81 Unsafe.<br><br>Charted the distribution in Visuals \u2192',
+          gras_upf: 'Turned the Kennedy/Diamantas announcement into a one-pager \u2014 mandatory GRAS notification + the first proposed federal UPF definition, with the Federal Register docket attached.<br><br>Opened the report in Results &amp; Details \u2192',
+          energy: 'Turned the energy-drink sweetener correlation into a short report \u2014 <strong>7,701</strong> drinks, artificial sweeteners concentrated in Super Ultra-Processed, almost absent in Minimally Processed.<br><br>Opened the correlation chart + ranked table in Results &amp; Details \u2192',
+          proteinbars: 'Turned the protein-bar SKU count into a short report \u2014 <strong>3,334</strong> SKUs, about <strong>18%</strong> non-UPF, Quest leading the shelf.<br><br>Opened the category breakdown in Results &amp; Details \u2192',
+          sweeteners: 'Turned the artificial-sweetener PL split into a short report \u2014 6 PL2 / 9 PL3 / 2 PL4, with cyclamates the Unsafe outliers.<br><br>Opened the ingredient query in Results &amp; Details \u2192',
+          topbrands: 'Turned the top-half WISEscore brand comparison into a short report \u2014 the same three brands still lead, each well above the 50-food threshold.<br><br>Opened the overview in Results &amp; Details and the chart in Visuals \u2192',
+          brisket: 'Turned the Gut Health brisket run into a short report \u2014 original score <strong>64</strong>, then <strong>78</strong> once sauerkraut moved up, then <strong>84</strong> with the polyphenol groups concentrated.<br><br>Opened the recipe report in Results &amp; Details and the score-driver charts in Visuals \u2192',
+          upf: 'Turned the UPF evaluation into a short report \u2014 how WISEcode classifies a list, which signals it reads, and how that will line up against the proposed federal definition once it publishes.<br><br>Opened the evaluation in Results &amp; Details \u2192',
+          worst: 'Turned the worst-foods ranking into a short report \u2014 the tail is decorated cakes and dessert kits, not one weird outlier, with Member\u2019s Mark Christmas Gourmet Cupcakes at <strong>0.06</strong>.<br><br>Opened the ranking in Results &amp; Details \u2192',
+          cupcake: 'Turned that cupcake detail into a short report \u2014 the lookup failed on the full card, but the search result is enough to see why it sits at <strong>0.06</strong>.<br><br>Opened the detail in Results &amp; Details \u2192',
+          cat: 'Turned the feline nutrient list into a short report \u2014 obligate carnivore, taurine, animal protein, preformed vitamin A, arachidonic acid, niacin, with the peer-reviewed sources attached.<br><br>Opened the references in Results &amp; Details \u2192',
+          cookie: REPORT_REPLY,
+        };
+        if (t && by[t]) return by[t];
+        if (t) return followOn(ctx, REPORT_REPLY);
+        return REPORT_REPLY;
+      },
       cat: 'Cat food.',
       catnutrients: `Cats are <strong>obligate carnivores</strong>, so they need a nutrient profile built around animal-derived protein plus several nutrients they can\u2019t reliably make or get from plant precursors${catCite(1, 3, 5)}. The essentials the literature keeps flagging:`
         + `<ul style="margin:10px 0 4px;padding-left:20px">`
@@ -7605,14 +7814,20 @@
         + '<span class="wa-plsplit-item"><span class="wa-dot" style="background:var(--sec-red)"></span>Unsafe <b>81</b></span>'
         + '</div>'
         + '<br>Charted the full distribution in Visuals \u2192',
-      gras_upf: 'On <strong>Aug. 10</strong>, Secretary <strong>Robert F. Kennedy Jr.</strong> announced two linked food-policy moves (Acting FDA Commissioner <strong>Kyle Diamantas</strong> led the FDA side):'
+      gras_upf: (text, intent, ctx) => {
+        const prev = prevTopicOf(ctx);
+        const lead = prev === 'gras'
+          ? 'Those GRAS counts are about to sit under a new federal rule. '
+          : (prev === 'upf' ? 'That UPF question is exactly what the August announcement tried to settle. ' : '');
+        return lead + ('On <strong>Aug. 10</strong>, Secretary <strong>Robert F. Kennedy Jr.</strong> announced two linked food-policy moves (Acting FDA Commissioner <strong>Kyle Diamantas</strong> led the FDA side):'
         + '<ul style="margin:10px 0 4px;padding-left:20px">'
         + '<li><strong>GRAS reform:</strong> FDA proposed requiring companies to <strong>notify FDA</strong> when they conclude a substance is Generally Recognized as Safe (GRAS), rather than letting self-GRAS decisions stay outside mandatory FDA visibility.</li>'
         + '<li><strong>UPF definition:</strong> HHS and USDA sent the federal government\u2019s <strong>first proposed definition of ultra-processed foods (UPFs)</strong> for final review \u2014 intended to support future policy on labeling, school meals, hospital food, and nutrition education.</li>'
         + '</ul>'
         + 'The core message: HHS wants to close what Kennedy described as a <strong>self-GRAS loophole</strong> and create a <strong>standard federal UPF definition</strong> so policy and research use the same baseline. HHS framed both actions as part of the <strong>MAHA</strong> agenda and tied them to chronic-disease concerns.<br><br>'
         + 'I found <strong>two HHS press releases</strong> on this, including a later <strong>Aug. 12 \u201cWTAS\u201d</strong> recap that repeats the same substance. I did <strong>not</strong> find matching trade-press coverage in the ingested set, and I did <strong>not</strong> find an OIRA pipeline hit in the current ingested review window.'
-        + newsRefsMini('gras_announce'),
+        + newsRefsMini('gras_announce'));
+      },
       gras_change: 'The proposal turns today\u2019s <strong>voluntary</strong> GRAS notification into a <strong>mandatory</strong> one. Concretely:'
         + '<ul style="margin:10px 0 4px;padding-left:20px">'
         + '<li>It amends <strong>21 CFR parts 170 and 570</strong> so that anyone introducing a substance under the GRAS provision of <strong>\u00a7 201(s)</strong> must <strong>notify FDA of the basis</strong> for their GRAS conclusion \u2014 for <strong>human and animal food</strong>, including food-contact substances.</li>'
@@ -7643,15 +7858,13 @@
         + '</ul>'
         + 'This matches the two HHS press releases from the announcement \u2014 same substance, now with the docket you can comment on. Opened the notice in Results &amp; Details \u2192'
         + newsRefsMini('fedreg_gras'),
-      sweeteners: 'Among the ingredients currently classified as <strong>Artificial Sweetener</strong>, the PL split is:'
-        + '<div class="wa-plsplit">'
-        + '<span class="wa-plsplit-item"><span class="wa-ib-pill wa-ib-pl-2">PL2</span><b>6</b></span>'
-        + '<span class="wa-plsplit-item"><span class="wa-ib-pill wa-ib-pl-3">PL3</span><b>9</b></span>'
-        + '<span class="wa-plsplit-item"><span class="wa-ib-pill wa-ib-pl-4">PL4</span><b>2</b></span>'
-        + '</div>'
-        + 'So this group skews mostly <strong>PL3</strong>, with a smaller PL2 tier and very few PL4 entries.<br><br>'
-        + 'Notably, this canon bucket includes some ingredients people wouldn\u2019t usually mean by \u201cartificial sweeteners\u201d in everyday language \u2014 for example stevia leaf extract, monk fruit extract/concentrate, erythritol, HFCS, and invert sugar are all in the same processed-category bucket here. If you want, I can narrow this to just the classic high-intensity synthetic sweeteners.<br><br>'
-        + 'Opened the ingredient query in Results &amp; Details \u2192',
+      sweeteners: (text, intent, ctx) => {
+        const prev = prevTopicOf(ctx);
+        let lead = '';
+        if (prev === 'gras') lead = 'Narrowing those <strong>8,658</strong> GRAS-classified ingredients to the artificial-sweetener bucket \u2014 ';
+        else if (prev === 'upf') lead = 'Sweeteners are one of the strongest UPF signals, so I pulled the artificial-sweetener set next. ';
+        return lead + SWEETENERS_REPLY;
+      },
       sweet_gras: 'Broke the 17 down by GRAS status.<br><br>Fifteen are <strong>GRAS</strong> (Generally Recognized As Safe); the two outliers are the cyclamates \u2014 <strong>calcium cyclamate</strong> and <strong>sodium cyclamate</strong> \u2014 which come back <strong>Unsafe</strong> because cyclamate remains banned as a food additive in the US.<br><br>Charted the GRAS split in Visuals \u2192',
       sweet_pl34: 'Filtered the group to just <strong>PL3</strong> and <strong>PL4</strong> \u2014 that\u2019s <strong>11 of 17</strong> (9 PL3, 2 PL4). This is where the more heavily processed extracts and high-intensity synthetics concentrate; the PL2 tier (stevia leaf, monk fruit, the nutritive syrups) drops out.<br><br>Opened the filtered query in Results &amp; Details \u2192',
       sweet_classic: 'Narrowed to the <strong>classic high-intensity synthetic sweeteners</strong> only \u2014 the ones people usually mean by \u201cartificial sweeteners.\u201d That\u2019s <strong>9</strong>: acesulfame potassium, advantame, aspartame, calcium &amp; sodium saccharin, sucralose, neotame, and calcium &amp; sodium cyclamate.<br><br>Dropped the natural high-intensity extracts (stevia, monk fruit), the sugar alcohols (erythritol, maltitol) and the nutritive sugars (HFCS, invert &amp; fructose syrup). Opened the shortlist in Results &amp; Details \u2192',
@@ -7672,7 +7885,12 @@
       protein_vs_granola: 'Compared <strong>protein bars</strong> against <strong>granola bars</strong> head-to-head.<br><br>Protein bars edge out granola bars on average WISEscore (54 vs 47) and non-UPF share (18% vs 11%), and carry a touch less added sugar (9g vs 13g). Both categories, though, are dominated by ultra-processed formulations \u2014 neither is a clear "health food" by default.<br><br>Charted the comparison in Visuals \u2192',
       protein_top: 'Pulled a few of the <strong>highest-WISEscore</strong> protein bars.<br><br>The top of the ranking is led by whole-food bars \u2014 Allmax Hexapro, Aloha and GoMacro \u2014 that stay Minimally Processed and skip artificial sweeteners. The big-name isolate bars (Quest, ONE) score respectably on protein but drop once processing and sweeteners are counted.<br><br>Opened the ranked table + score chart in Results &amp; Details \u2192',
 
-      topbrands: 'I made the comparison chart.<br><br>One note: the available analysis could apply the <strong>top half of WISEscore</strong> filter, but \u201cbrands with more than 50 UPCs\u201d is a brand-level aggregate constraint that the food filter wouldn\u2019t express directly in the first pass. The chart therefore shows the top three brands by count of foods with WISEscore \u2265 50, and each returned brand is well above that 50-food threshold anyway.<br><br>Opened the overview in Results &amp; Details and the chart in Visuals \u2192',
+      topbrands: (text, intent, ctx) => {
+        const prev = prevTopicOf(ctx);
+        const body = 'I made the comparison chart.<br><br>One note: the available analysis could apply the <strong>top half of WISEscore</strong> filter, but \u201cbrands with more than 50 UPCs\u201d is a brand-level aggregate constraint that the food filter wouldn\u2019t express directly in the first pass. The chart therefore shows the top three brands by count of foods with WISEscore \u2265 50, and each returned brand is well above that 50-food threshold anyway.<br><br>Opened the overview in Results &amp; Details and the chart in Visuals \u2192';
+        if (prev === 'sprouts') return 'Widening out from the Sprouts catalog to the whole registry \u2014 ' + body;
+        return body;
+      },
       topbrands_counts: 'Exact counts for the three brands \u2014 FOOD TO LIVE combines the two case variants in the registry (FOOD TO LIVE + Food To Live).<br><br>Opened the count table in Results &amp; Details \u2192',
       topbrands_upf: 'Broke those three brands down by <strong>WISEcode UPF label</strong>. All three lean Minimally Processed \u2014 spice and bulk-ingredient catalogs \u2014 with only a thin Super Ultra-Processed tail.<br><br>Charted the split in Visuals \u2192',
       topbrands_top10: 'Widened the comparison to the <strong>top 10</strong> brands by foods with WISEscore \u2265 50. The same three still lead; the next seven are other bulk-ingredient and private-label catalogs.<br><br>Charted the top 10 in Visuals \u2192',
@@ -7681,41 +7899,52 @@
 
     const DEFAULT_REPLY = 'I\u2019m answering from your verified WISE Food data. Try one of the suggested prompts to walk through this conversation \u2014 as results come up, I\u2019ll open them in the Results &amp; Details and Visuals panes on the right.';
 
-    function reply(text, intent) {
-      if (intent && INTENT_REPLIES[intent] != null) return INTENT_REPLIES[intent];
+    function takeReply(key, text, intent, ctx) {
+      const r = INTENT_REPLIES[key];
+      if (r == null) return null;
+      return typeof r === 'function' ? r(text, intent || key, ctx) : r;
+    }
+    function replyHtml(key) {
+      return takeReply(key, '', key, null);
+    }
+    function reply(text, intent, ctx) {
+      if (intent) {
+        const hit = takeReply(intent, text, intent, ctx);
+        if (hit != null) return hit;
+      }
       const t = String(text || '').toLowerCase();
-      if (/kraft/.test(t) && /heinz/.test(t)) return INTENT_REPLIES.kraft_heinz;
-      if (/kraft/.test(t) && /(wisescore|wise\s*score)/.test(t)) return INTENT_REPLIES.kraft_wisescore;
-      if (/kraft/.test(t) && /categor/.test(t) && /(upf|ultra|processed)/.test(t)) return INTENT_REPLIES.kraft_upf_cat;
-      if (/kraft/.test(t) && /categor/.test(t)) return INTENT_REPLIES.kraft_cats;
-      if (/kraft/.test(t) && /(list|ultra-processed products)/.test(t)) return INTENT_REPLIES.kraft_upf_list;
-      if (/kraft/.test(t) && /(sku|how many|ultra|upf|processed|percent|%)/.test(t)) return INTENT_REPLIES.kraft;
-      if (/sprout/.test(t)) return INTENT_REPLIES.sprouts;
-      if (/gras/.test(t) && /(ingredient|classif|how many|status|breakdown)/.test(t)) return INTENT_REPLIES.gras;
-      if (/(kennedy|diamant|maha|announce)/.test(t) && /(gras|upf|ultra)/.test(t)) return INTENT_REPLIES.gras_upf;
-      if (/(federal register|fed\.?\s*reg|notice)/.test(t) && /gras/.test(t)) return INTENT_REPLIES.fedreg_search;
-      if (/(primary[- ]?law|statut|201\(s\)|section\s*201|\bs?\.?\s*409\b)/.test(t) && /gras/.test(t)) return INTENT_REPLIES.gras_law;
-      if (/(ultra[- ]?processed|upf)/.test(t) && /defin/.test(t)) return INTENT_REPLIES.upf_def;
-      if (/gras/.test(t) && /(proposal|propose|change|mandatory|notif|loophole|self[- ]?affirm)/.test(t)) return INTENT_REPLIES.gras_change;
-      if (/energy\s*drink/.test(t)) return INTENT_REPLIES.energy;
-      if (/protein[-\s]*bar|protein\s*&?\s*meal\s*bar/.test(t) && /(how many|sku|count|database)/.test(t)) return INTENT_REPLIES.proteinbars;
-      if (/(artificial\s+)?sweeten/.test(t) && /(pl|processing|level)/.test(t)) return INTENT_REPLIES.sweeteners;
-      if (/(exact counts|show the exact)/.test(t) && /brand/.test(t)) return INTENT_REPLIES.topbrands_counts;
-      if (/(upf label|wisecode upf)/.test(t) && /brand/.test(t)) return INTENT_REPLIES.topbrands_upf;
-      if (/top\s*10\s*brands/.test(t)) return INTENT_REPLIES.topbrands_top10;
-      if (/retailer/.test(t) && /(wisescore|top half|\u2265\s*50|>=\s*50|50 or higher)/.test(t)) return INTENT_REPLIES.topbrands_retail;
-      if (/(top\s*(three|3)\s*brands|more than 50 upc|top half of (the )?wise)/.test(t)) return INTENT_REPLIES.topbrands;
-      if (/cat/.test(t) && /(nutrient|require|taurine|amino|obligate|carnivore)/.test(t)) return INTENT_REPLIES.catnutrients;
-      if (/identif.*cat|cat.*(food|feed)|feed me|as a cat/.test(t)) return INTENT_REPLIES.cat;
-      if (/(redo|re-?do|regenerate|rebuild|update)/.test(t) && /(chart|graph|visual|driver)/.test(t)) return INTENT_REPLIES.redochart;
-      if (/brisket|recipe/.test(t)) return INTENT_REPLIES.brisket;
-      if (/ultra|upf|processed/.test(t)) return INTENT_REPLIES.upf;
-      if (/worst|bottom|lowest/.test(t)) return INTENT_REPLIES.worst;
-      if (/spider|radar|gut|immune/.test(t)) return INTENT_REPLIES.spider;
-      if (/cupcake|detail/.test(t)) return INTENT_REPLIES.cupcake;
-      if (/cookie|chocolate chip/.test(t)) return INTENT_REPLIES.cookie;
-      if (/compare|comparison|side by side|versus|vs\.?|head-to-head/.test(t)) return INTENT_REPLIES.compare;
-      if (/report|chart|graph|trend|pretty/.test(t)) return INTENT_REPLIES.report;
+      if (/kraft/.test(t) && /heinz/.test(t)) return takeReply('kraft_heinz', text, 'kraft_heinz', ctx);
+      if (/kraft/.test(t) && /(wisescore|wise\s*score)/.test(t)) return takeReply('kraft_wisescore', text, 'kraft_wisescore', ctx);
+      if (/kraft/.test(t) && /categor/.test(t) && /(upf|ultra|processed)/.test(t)) return takeReply('kraft_upf_cat', text, 'kraft_upf_cat', ctx);
+      if (/kraft/.test(t) && /categor/.test(t)) return takeReply('kraft_cats', text, 'kraft_cats', ctx);
+      if (/kraft/.test(t) && /(list|ultra-processed products)/.test(t)) return takeReply('kraft_upf_list', text, 'kraft_upf_list', ctx);
+      if (/kraft/.test(t) && /(sku|how many|ultra|upf|processed|percent|%)/.test(t)) return takeReply('kraft', text, 'kraft', ctx);
+      if (/sprout/.test(t)) return takeReply('sprouts', text, 'sprouts', ctx);
+      if (/gras/.test(t) && /(ingredient|classif|how many|status|breakdown)/.test(t)) return takeReply('gras', text, 'gras', ctx);
+      if (/(kennedy|diamant|maha|announce)/.test(t) && /(gras|upf|ultra)/.test(t)) return takeReply('gras_upf', text, 'gras_upf', ctx);
+      if (/(federal register|fed\.?\s*reg|notice)/.test(t) && /gras/.test(t)) return takeReply('fedreg_search', text, 'fedreg_search', ctx);
+      if (/(primary[- ]?law|statut|201\(s\)|section\s*201|\bs?\.?\s*409\b)/.test(t) && /gras/.test(t)) return takeReply('gras_law', text, 'gras_law', ctx);
+      if (/(ultra[- ]?processed|upf)/.test(t) && /defin/.test(t)) return takeReply('upf_def', text, 'upf_def', ctx);
+      if (/gras/.test(t) && /(proposal|propose|change|mandatory|notif|loophole|self[- ]?affirm)/.test(t)) return takeReply('gras_change', text, 'gras_change', ctx);
+      if (/energy\s*drink/.test(t)) return takeReply('energy', text, 'energy', ctx);
+      if (/protein[-\s]*bar|protein\s*&?\s*meal\s*bar/.test(t) && /(how many|sku|count|database)/.test(t)) return takeReply('proteinbars', text, 'proteinbars', ctx);
+      if (/(artificial\s+)?sweeten/.test(t) && /(pl|processing|level)/.test(t)) return takeReply('sweeteners', text, 'sweeteners', ctx);
+      if (/(exact counts|show the exact)/.test(t) && /brand/.test(t)) return takeReply('topbrands_counts', text, 'topbrands_counts', ctx);
+      if (/(upf label|wisecode upf)/.test(t) && /brand/.test(t)) return takeReply('topbrands_upf', text, 'topbrands_upf', ctx);
+      if (/top\s*10\s*brands/.test(t)) return takeReply('topbrands_top10', text, 'topbrands_top10', ctx);
+      if (/retailer/.test(t) && /(wisescore|top half|\u2265\s*50|>=\s*50|50 or higher)/.test(t)) return takeReply('topbrands_retail', text, 'topbrands_retail', ctx);
+      if (/(top\s*(three|3)\s*brands|more than 50 upc|top half of (the )?wise)/.test(t)) return takeReply('topbrands', text, 'topbrands', ctx);
+      if (/cat/.test(t) && /(nutrient|require|taurine|amino|obligate|carnivore)/.test(t)) return takeReply('catnutrients', text, 'catnutrients', ctx);
+      if (/identif.*cat|cat.*(food|feed)|feed me|as a cat/.test(t)) return takeReply('cat', text, 'cat', ctx);
+      if (/(redo|re-?do|regenerate|rebuild|update)/.test(t) && /(chart|graph|visual|driver)/.test(t)) return takeReply('redochart', text, 'redochart', ctx);
+      if (/brisket|recipe/.test(t)) return takeReply('brisket', text, 'brisket', ctx);
+      if (/ultra|upf|processed/.test(t)) return takeReply('upf', text, 'upf', ctx);
+      if (/worst|bottom|lowest/.test(t)) return takeReply('worst', text, 'worst', ctx);
+      if (/spider|radar|gut|immune/.test(t)) return takeReply('spider', text, 'spider', ctx);
+      if (/cupcake|detail/.test(t)) return takeReply('cupcake', text, 'cupcake', ctx);
+      if (/cookie|chocolate chip/.test(t)) return takeReply('cookie', text, 'cookie', ctx);
+      if (/compare|comparison|side by side|versus|vs\.?|head-to-head/.test(t)) return takeReply('compare', text, 'compare', ctx);
+      if (/report|chart|graph|trend|pretty/.test(t)) return takeReply('report', text, 'report', ctx);
       return DEFAULT_REPLY;
     }
 
@@ -8176,8 +8405,32 @@
     }
 
     /* When a turn surfaces data, open/refresh the right panes shortly after the
-       reply lands (so the transcript reads first, then the pane resolves). */
-    function surface(intent) {
+       reply lands (so the transcript reads first, then the pane resolves).
+       Generic follow-ups (compare / report / spider) reuse the previous
+       topic's artifacts so the pane matches the transcript. */
+    const COMPARE_SURFACE = {
+      kraft: 'kraft_heinz', sprouts: 'sprouts', gras: 'gras', gras_upf: 'upf_def',
+      energy: 'energy_sugar', proteinbars: 'protein_vs_granola', sweeteners: 'sweet_vs_natural',
+      topbrands: 'topbrands_top10', brisket: 'brisket', upf: 'upf',
+      worst: 'worst', cupcake: 'cupcake', cookie: 'cookie', cat: 'cat',
+    };
+    const REPORT_SURFACE = {
+      kraft: 'kraft', sprouts: 'sprouts', gras: 'gras', gras_upf: 'gras_upf',
+      energy: 'energy', proteinbars: 'proteinbars', sweeteners: 'sweeteners',
+      topbrands: 'topbrands', brisket: 'brisket', upf: 'upf',
+      worst: 'worst', cupcake: 'cupcake', cat: 'catnutrients',
+    };
+    const SPIDER_SURFACE = {
+      kraft: 'kraft_cats', sprouts: 'sprouts', gras: 'gras', gras_upf: 'upf_def',
+      energy: 'energy_heat', proteinbars: 'protein_brands', sweeteners: 'sweet_vs_natural',
+      topbrands: 'topbrands', brisket: 'brisket', upf: 'upf',
+      cupcake: 'cupcake', cookie: 'cookie', cat: 'catnutrients',
+    };
+    function surface(intent, ctx) {
+      const topic = ctx && ctx.topic;
+      if (intent === 'compare' && topic && COMPARE_SURFACE[topic]) intent = COMPARE_SURFACE[topic];
+      else if (intent === 'report' && topic && topic !== 'cookie' && REPORT_SURFACE[topic]) intent = REPORT_SURFACE[topic];
+      else if (intent === 'spider' && topic && topic !== 'worst' && SPIDER_SURFACE[topic]) intent = SPIDER_SURFACE[topic];
       setTimeout(() => {
         if (intent === 'brisket') {
           surfaceBlock('results', {
@@ -8742,6 +8995,36 @@
       const btn = wrap.querySelector('.wa-ib-filter-btn');
       if (btn) btn.classList.toggle('has-filters', ibFiltersActive(wrap));
     }
+    function applyIbSort(wrap, key, dir) {
+      const table = wrap && wrap.querySelector('.wa-ib');
+      const body = wrap && wrap.querySelector('.wa-ib-body');
+      if (!table || !body) return;
+      table.dataset.sortCol = key;
+      table.dataset.sortDir = dir;
+      wrap.querySelectorAll('.wa-ib-th[data-sort]').forEach((h) => {
+        const on = h.dataset.sort === key;
+        h.classList.toggle('is-sorted', on);
+        if (on) {
+          h.setAttribute('data-wa-dir', dir);
+          h.setAttribute('aria-sort', dir === 'asc' ? 'ascending' : 'descending');
+        } else {
+          h.removeAttribute('data-wa-dir');
+          h.setAttribute('aria-sort', 'none');
+        }
+      });
+      const rows = Array.from(body.querySelectorAll('.wa-ib-row'));
+      const numeric = key === 'pl';
+      rows.sort((a, b) => {
+        let av = a.dataset[key] || '';
+        let bv = b.dataset[key] || '';
+        let cmp;
+        if (numeric) cmp = (parseFloat(av) || 0) - (parseFloat(bv) || 0);
+        else cmp = String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: 'base' });
+        if (cmp) return dir === 'asc' ? cmp : -cmp;
+        return (a.dataset.name || '').localeCompare(b.dataset.name || '', undefined, { sensitivity: 'base' });
+      });
+      rows.forEach((r) => body.appendChild(r));
+    }
     function ibFilterHost(wrap) {
       return wrap && wrap.querySelector('.wa-search-inline.has-filter');
     }
@@ -8801,6 +9084,19 @@
       filterIbWrap(input.closest('.wa-ib-wrap'));
     });
     document.addEventListener('click', (e) => {
+      const th = e.target.closest && e.target.closest('button.wa-ib-th[data-sort]');
+      if (th) {
+        const wrap = th.closest('.wa-ib-wrap');
+        const table = wrap && wrap.querySelector('.wa-ib');
+        if (!wrap || !table) return;
+        const key = th.dataset.sort;
+        const dir = table.dataset.sortCol === key
+          ? (table.dataset.sortDir === 'asc' ? 'desc' : 'asc')
+          : 'asc';
+        applyIbSort(wrap, key, dir);
+        closeAllIbFilters();
+        return;
+      }
       const btn = e.target.closest && e.target.closest('.wa-ib-filter-btn');
       if (btn) {
         const wrap = btn.closest('.wa-ib-wrap');
@@ -8883,7 +9179,7 @@
       chat = mountWISEcodeAIChat(host, {
         askCatalog: ASK_CATALOG,
         title: 'WISEcodeAI\u2122',
-        heading: 'WISEcodeAI\u2122, the intelligence for Food Truth\u2122.',
+        heading: 'WISEcodeAI\u2122, empowering you with Food Truth\u2122.',
         sub: 'Search 989,342 foods, compare WISEscores, and turn any answer into a report — with results and visuals in their own panes.',
         subCounter: true,
         placeholder: 'Ask WISEcodeAI about any food\u2026',
@@ -8961,9 +9257,9 @@
             nextIntents: ['catnutrients', 'compare'],
             turns: [
               { role: 'you', text: 'If I told you that I identified as a cat, what type of food would you feed me?' },
-              { role: 'wiseai', html: INTENT_REPLIES.cat },
+              { role: 'wiseai', html: replyHtml('cat') },
               { role: 'you', text: 'What nutrients do cats require?' },
-              { role: 'wiseai', html: INTENT_REPLIES.catnutrients },
+              { role: 'wiseai', html: replyHtml('catnutrients') },
             ],
           },
           {
@@ -8973,7 +9269,7 @@
             nextIntents: ['redochart', 'report'],
             turns: [
               { role: 'you', text: 'If I was to make a brisket, what ingredients would give the best gut-health score?' },
-              { role: 'wiseai', html: INTENT_REPLIES.brisket },
+              { role: 'wiseai', html: replyHtml('brisket') },
             ],
           },
           {
@@ -8983,9 +9279,9 @@
             nextIntents: ['cupcake', 'spider'],
             turns: [
               { role: 'you', text: 'What\u2019s the worst food in our database?' },
-              { role: 'wiseai', html: INTENT_REPLIES.worst },
+              { role: 'wiseai', html: replyHtml('worst') },
               { role: 'you', text: 'Tell me more about the worst-ranked cupcake' },
-              { role: 'wiseai', html: INTENT_REPLIES.cupcake },
+              { role: 'wiseai', html: replyHtml('cupcake') },
             ],
           },
           {
@@ -8995,9 +9291,9 @@
             nextIntents: ['report', 'compare'],
             turns: [
               { role: 'you', text: 'Best chocolate chip cookie with the least chocolate' },
-              { role: 'wiseai', html: INTENT_REPLIES.cookie },
+              { role: 'wiseai', html: replyHtml('cookie') },
               { role: 'you', text: 'Show me a pretty report — all the charts & trends' },
-              { role: 'wiseai', html: INTENT_REPLIES.report },
+              { role: 'wiseai', html: replyHtml('report') },
             ],
           },
           {
@@ -9007,14 +9303,16 @@
             nextIntents: ['spider', 'compare', 'worst'],
             turns: [
               { role: 'you', text: 'Is this ingredient list ultra-processed?' },
-              { role: 'wiseai', html: INTENT_REPLIES.upf },
+              { role: 'wiseai', html: replyHtml('upf') },
               { role: 'you', text: 'Spider-chart the 10 worst foods by gut & immune health' },
-              { role: 'wiseai', html: INTENT_REPLIES.spider },
+              { role: 'wiseai', html: replyHtml('spider') },
             ],
           },
         ],
         intents: INTENTS,
         intentReplies: INTENT_REPLIES,
+        topicOf,
+        contextualizeChip,
         reply,
         /* Retailer & food-data sources WISEcodeAI can pull verified product data
            from. The docked below-input rail is dropped (connectorsRail:false);
@@ -9126,8 +9424,8 @@
         /* Fired once the reasoning trace completes, right as the answer lands.
            This is where the large output surfaces (result/visual panes + their
            inline transcript cards) so nothing renders until the glob is done. */
-        onReply(intent) {
-          surface(intent);
+        onReply(intent, text, ctx) {
+          surface(intent, ctx);
         },
         /* An answer's "Opened … in Results & Details / Visuals →" narration
            renders as a clickable chip; tapping it re-opens that pane's most

@@ -3929,8 +3929,10 @@ html.full-bleed.fb-chat-only :is(
 
 /* History can still live INSIDE the tinted chat host (in-chat overlay on
    wiseai.html). Chat-tint remaps --surface on #wa-chat, and the sidebar
-   inherits it. Pin History back to the page tokens so Chat-only never
-   recolours that module. Turns (.wch-right) is a different surface. */
+   inherits it. Pin docked / sibling History back to the page tokens so
+   Chat-only never recolours that contained module. A named chat preset
+   (below) restains the in-chat overlay so it stays on the same surface
+   as the rest of the chat. Turns (.wch-right) is a different surface. */
 html.full-bleed.fb-chat-only .wch-sidebar:not(.wch-right) {
   --bg: #F9F8F3;
   --surface: #FFFFFF;
@@ -4133,7 +4135,17 @@ html.full-bleed:not(.fb-chat-only).dark.fb-nav-tint #menu-panel .menu-footer {
    paint the card + its inner surfaces + overlays. Text/chip inks come from the
    scheme palette above. Also remaps --bg so welcome/settings overlays, header
    float backings, and anything else that paints from --bg follow the preset
-   instead of the page linen / hardcoded navy. */
+   instead of the page linen / hardcoded navy.
+
+   Chat-only full bleed uses this same block — nav / History / right-modules
+   stay contained, but EVERY container inside the chat (scorecards, chips,
+   composer, settings, topbar, helix cards) must follow the preset, in both
+   light and dark page themes.
+
+   IMPORTANT: never put IDs and classes in the same :is() when painting
+   overlays. :is() takes the specificity of its MOST specific argument, so
+   `#wa-chat` inside the list would make `.sc-welcome { background }` beat
+   the helix's transparent-welcome rule and hide the strand. */
 html.full-bleed.fb-chat-tint :is(
   .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
@@ -4141,22 +4153,52 @@ html.full-bleed.fb-chat-tint :is(
 ) {
   --bg: var(--fb-chat-bg);
   --surface: var(--fb-chat-bg);
-  --surface-2: var(--fb-chat-bg);
-  --surface-3: color-mix(in srgb, var(--fb-chat-fg, #16233B) 8%, var(--fb-chat-bg));
+  --surface-2: color-mix(in srgb, var(--fb-chat-fg, #16233B) 8%, var(--fb-chat-bg));
+  --surface-3: color-mix(in srgb, var(--fb-chat-fg, #16233B) 14%, var(--fb-chat-bg));
   --primary-ink: var(--fb-chat-accent, var(--fb-chat-fg, #16233B));
   --primary-soft: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 16%, transparent);
   --border-strong: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 28%, transparent);
 }
+/* Host cards only (IDs belong here). */
 html.full-bleed.fb-chat-tint :is(
   .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
-  #pf-chat-panel, #wiseai-dock-panel,
-  .chat-messages-area, .chat-input-rail, .sc-welcome, .sc-settings, .chat-topbar
+  #pf-chat-panel, #wiseai-dock-panel
 ) {
   background-color: var(--fb-chat-bg) !important;
   background-image: none !important;
   background: var(--fb-chat-bg) !important;
   color: var(--fb-chat-fg, #16233B);
+}
+/* Inner chrome — class-only :is(), so specificity cannot leak onto welcome. */
+html.full-bleed.fb-chat-tint :is(
+  .chat-messages-area, .chat-input-rail, .sc-settings, .chat-topbar
+) {
+  background-color: var(--fb-chat-bg) !important;
+  background-image: none !important;
+  background: var(--fb-chat-bg) !important;
+  color: var(--fb-chat-fg, #16233B);
+}
+/* Welcome overlay matches the preset unless the helix / orbit is live —
+   those need a transparent sheet so the canvas shows through (light AND
+   dark). Split from the host :is() so `#welcome-screen` cannot inflate
+   the scorecard/chip paint rules. */
+html.full-bleed.fb-chat-tint .sc-welcome,
+html.full-bleed.fb-chat-tint #welcome-screen {
+  background-color: var(--fb-chat-bg) !important;
+  background-image: none !important;
+  background: var(--fb-chat-bg) !important;
+  color: var(--fb-chat-fg, #16233B);
+}
+html.full-bleed.fb-chat-tint .sc-bganim-live .sc-welcome,
+html.full-bleed.fb-chat-tint .sc-bganim-live #welcome-screen,
+html.full-bleed.fb-chat-tint .sc-orbit-live .sc-welcome,
+html.full-bleed.fb-chat-tint .sc-orbit-live #welcome-screen,
+html.full-bleed.fb-chat-tint.chat-tint .sc-bganim-live #welcome-screen,
+html.full-bleed.fb-chat-tint.chat-tint .sc-orbit-live #welcome-screen {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
 }
 /* Beat page-level .wa-chat { background: var(--bg) }, .sc-card { background:
    var(--surface) }, and html.dark .sc-card's navy gradient — those otherwise
@@ -4165,21 +4207,34 @@ html.full-bleed.fb-chat-tint #wa-chat.wa-chat,
 html.full-bleed.fb-chat-tint #wa-chat.sc-card,
 html.full-bleed.fb-chat-tint.dark .sc-card,
 html.full-bleed.fb-chat-tint.chat-tint .sc-card,
-html.full-bleed.fb-chat-tint.chat-tint .wa-chat {
+html.full-bleed.fb-chat-tint.chat-tint .wa-chat,
+html.full-bleed.fb-chat-tint.chat-tint #chat-shell,
+html.full-bleed.fb-chat-tint.dark #chat-shell,
+html.full-bleed.fb-chat-tint.chat-tint #welcome-screen,
+html.full-bleed.fb-chat-tint.dark.chat-tint #chat-shell {
   background-color: var(--fb-chat-bg) !important;
   background-image: none !important;
   background: var(--fb-chat-bg) !important;
 }
-/* Composer + intent-chip fades stay on hardcoded brand-blue / navy washes
-   (chat-tint). When a preset is on, restain them from the chat surface so the
-   welcome, input, and carousel edges actually change with the theme. */
-html.full-bleed.fb-chat-tint .fl-input-wrap {
+/* Composer + intent chips + scorecards stay on hardcoded brand-blue / #fff
+   / navy washes (chat-tint + html.dark). Restain them from the chat surface
+   so Chat-only presets actually recolour the containers inside the window. */
+html.full-bleed.fb-chat-tint .fl-input-wrap,
+html.full-bleed.dark.fb-chat-tint .fl-input-wrap {
   background: color-mix(in srgb, var(--fb-chat-fg, #16233B) 10%, var(--fb-chat-bg)) !important;
   border-color: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 22%, transparent) !important;
 }
 html.full-bleed.fb-chat-tint .ws-intent-chip,
-html.full-bleed.fb-chat-tint .chip {
+html.full-bleed.fb-chat-tint .chip,
+html.full-bleed.dark.fb-chat-tint .ws-intent-chip,
+html.full-bleed.dark.fb-chat-tint .chip {
   background: color-mix(in srgb, var(--fb-chat-fg, #16233B) 10%, var(--fb-chat-bg));
+  border-color: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 28%, transparent);
+  color: var(--fb-chat-fg, #16233B);
+}
+html.full-bleed.fb-chat-tint .ws-scorecard,
+html.full-bleed.dark.fb-chat-tint .ws-scorecard {
+  background: color-mix(in srgb, var(--fb-chat-fg, #16233B) 10%, var(--fb-chat-bg)) !important;
   border-color: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 28%, transparent);
   color: var(--fb-chat-fg, #16233B);
 }
@@ -4241,6 +4296,65 @@ html.full-bleed.fb-chat-tint .ws-chips-wrap::after {
 html.full-bleed.fb-chat-tint.header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-more-btn,
 html.full-bleed.fb-chat-tint.header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn {
   background: var(--fb-chat-bg) !important;
+}
+
+/* Settings overlay + its header/body — html.dark hard-codes the navy gradient. */
+html.full-bleed.fb-chat-tint .sc-settings,
+html.full-bleed.dark.fb-chat-tint .sc-settings {
+  background: var(--fb-chat-bg) !important;
+}
+html.full-bleed.fb-chat-tint .sc-settings .ss-header,
+html.full-bleed.dark.fb-chat-tint .sc-settings .ss-header {
+  background: color-mix(in srgb, var(--fb-chat-fg, #16233B) 8%, var(--fb-chat-bg)) !important;
+  border-bottom-color: color-mix(in srgb, var(--fb-chat-fg, #16233B) 18%, transparent);
+}
+html.full-bleed.fb-chat-tint .sc-settings .ss-body,
+html.full-bleed.dark.fb-chat-tint .sc-settings .ss-body {
+  background: var(--fb-chat-bg) !important;
+}
+
+/* Helix product / fact cards + What-can-I-ask rows follow the chat surface
+   (html.dark / html:not(.dark) otherwise pin them to white or #1A2339). */
+html.full-bleed.fb-chat-tint .wch-helix-card,
+html.full-bleed.dark.fb-chat-tint .wch-helix-card {
+  background: var(--fb-chat-bg);
+  color: var(--fb-chat-fg, #16233B);
+  border-color: color-mix(in srgb, var(--fb-chat-fg, #16233B) 22%, transparent);
+}
+html.full-bleed.fb-chat-tint .wch-ask-card,
+html.full-bleed.dark.fb-chat-tint .wch-ask-card {
+  background: color-mix(in srgb, var(--fb-chat-fg, #16233B) 8%, var(--fb-chat-bg));
+  border-color: color-mix(in srgb, var(--fb-chat-fg, #16233B) 18%, transparent);
+  color: var(--fb-chat-fg, #16233B);
+}
+html.full-bleed.fb-chat-tint .wch-ask-card:hover,
+html.full-bleed.dark.fb-chat-tint .wch-ask-card:hover {
+  background: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 14%, var(--fb-chat-bg));
+  border-color: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 32%, transparent);
+}
+
+/* Owl chip follows the CHAT surface scheme, not the page theme — a light
+   preset on a dark page (or Cyberpunk on a light page) would otherwise
+   invert the bug into the window. */
+html.full-bleed.fb-chat-dark .sc-avatar-wiseai {
+  background: #fff;
+  color: #141414;
+}
+html.full-bleed.fb-chat-light .sc-avatar-wiseai {
+  background: #141414;
+  color: #fff;
+}
+
+/* In-chat History overlay (not the docked sibling card) follows the chat
+   preset so Chat-only doesn't leave a linen/navy panel on Cyberpunk. */
+html.full-bleed.fb-chat-only.fb-chat-tint :is(.sc-card, .wa-chat) .wch-sidebar:not(.wch-right):not(.wch-docked),
+html.full-bleed.dark.fb-chat-only.fb-chat-tint :is(.sc-card, .wa-chat) .wch-sidebar:not(.wch-right):not(.wch-docked) {
+  --bg: var(--fb-chat-bg);
+  --surface: var(--fb-chat-bg);
+  --surface-2: color-mix(in srgb, var(--fb-chat-fg, #16233B) 8%, var(--fb-chat-bg));
+  --wch-tree-bg: var(--fb-chat-bg);
+  background: var(--fb-chat-bg) !important;
+  color: var(--fb-chat-fg, #16233B) !important;
 }
 
 /* ---- Right-of-chat module colour ----

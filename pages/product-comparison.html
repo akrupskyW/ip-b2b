@@ -10647,10 +10647,10 @@
           '<div class="sc-fb-menu" role="menu" hidden>' +
             '<span class="sc-line-time sc-fb-menu-time">' + time + '</span>' +
             '<span class="sc-fb-menu-actions">' +
-              '<button type="button" class="sc-fb-btn" data-turnact="replay" title="Re-run in new chat" aria-label="Re-run this prompt in a new conversation"><span class="material-symbols-outlined">auto_read_play</span></button>' +
-              '<button type="button" class="sc-fb-btn" data-turnact="edit" title="Edit in new chat" aria-label="Edit this prompt in a new conversation"><span class="material-symbols-outlined">bubble</span></button>' +
-              '<button type="button" class="sc-fb-btn" data-turnact="turn" title="Fork a turn" aria-label="Fork a turn from here"><span class="material-symbols-outlined">alt_route</span></button>' +
-              '<span class="sc-fb-id" title="Turn ID" tabindex="0">#' + tid + '</span>' +
+              '<button type="button" class="sc-fb-btn" data-turnact="replay" data-tip="Re-run in new chat" title="Re-run in new chat" aria-label="Re-run this prompt in a new conversation"><span class="material-symbols-outlined">auto_read_play</span></button>' +
+              '<button type="button" class="sc-fb-btn" data-turnact="edit" data-tip="Edit in new chat" title="Edit in new chat" aria-label="Edit this prompt in a new conversation"><span class="material-symbols-outlined">bubble</span></button>' +
+              '<button type="button" class="sc-fb-btn" data-turnact="turn" data-tip="Fork a turn" title="Fork a turn" aria-label="Fork a turn from here"><span class="material-symbols-outlined">alt_route</span></button>' +
+              '<span class="sc-fb-id" data-tip="Turn ID" title="Turn ID" tabindex="0">#' + tid + '</span>' +
             '</span>' +
           '</div>' +
         '</span>' +
@@ -10747,6 +10747,14 @@
     }
     /* The user prompt that opened the turn a reply belongs to — walk back to the
        nearest non-event "you" line. */
+    function wiseaiLineOf(node) {
+      if (!node || !node.closest) return null;
+      var line = node.closest('.sc-line');
+      if (line) return line;
+      var menu = node.closest('.sc-fb-menu');
+      var wrap = menu && (menu.closest('.sc-fb-more-wrap') || menu.__fbWrap || menu.__plHost);
+      return wrap ? wrap.closest('.sc-line') : null;
+    }
     function wiseaiPromptForLine(line) {
       var n = line;
       while (n) {
@@ -10831,7 +10839,8 @@
       if (idEl) { wiseaiCopyText((idEl.textContent || '').trim(), idEl); return; }
       var act = e.target.closest('[data-turnact]');
       if (act) {
-        var line = act.closest('.sc-line');
+        var line = wiseaiLineOf(act);
+        if (!line) return;
         var kind = act.getAttribute('data-turnact');
         if (kind === 'turn') wiseaiForkFromLine(line);
         else if (kind === 'replay') wiseaiRerunFromLine(line, true);

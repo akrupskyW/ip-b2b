@@ -225,11 +225,10 @@
     #ar-audit .concerns.has-fail .concerns-head { background: var(--fail-bg); border-bottom-color: color-mix(in srgb, var(--fail) 22%, transparent); }
     #ar-audit .concerns.has-warn .concerns-head { background: var(--warn-bg); border-bottom-color: color-mix(in srgb, var(--warn) 22%, transparent); }
     #ar-audit .concerns.all-clear .concerns-head { background: var(--pass-bg); border-bottom: 0; }
-    #ar-audit .concerns-title { display: flex; align-items: center; gap: 8px; font-size: 0.9375rem; font-weight: 800; letter-spacing: -0.01em; }
-    #ar-audit .concerns-title .material-symbols-outlined { font-size: 20px; }
-    #ar-audit .concerns.has-fail .concerns-title, #ar-audit .concerns.has-fail .concerns-title .material-symbols-outlined { color: var(--fail); }
-    #ar-audit .concerns.has-warn .concerns-title, #ar-audit .concerns.has-warn .concerns-title .material-symbols-outlined { color: var(--warn); }
-    #ar-audit .concerns.all-clear .concerns-title, #ar-audit .concerns.all-clear .concerns-title .material-symbols-outlined { color: var(--pass); }
+    #ar-audit .concerns-title { font-size: 0.9375rem; font-weight: 800; letter-spacing: -0.01em; }
+    #ar-audit .concerns.has-fail .concerns-title { color: var(--fail); }
+    #ar-audit .concerns.has-warn .concerns-title { color: var(--warn); }
+    #ar-audit .concerns.all-clear .concerns-title { color: var(--pass); }
     #ar-audit .concerns-tally { display: flex; align-items: center; gap: 6px; margin-left: auto; flex-wrap: wrap; }
     #ar-audit .concerns-note { font-size: 0.75rem; color: var(--text-muted); width: 100%; margin-top: -2px; }
     #ar-audit .concern-list { list-style: none; margin: 0; padding: 0; }
@@ -266,14 +265,17 @@
     /* ── Section ── */
     #ar-audit section { margin-top: 48px; scroll-margin-top: 12px; }
     #ar-audit .section-head { margin-bottom: 18px; }
-    #ar-audit .section-kicker { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-subtle); }
     #ar-audit .section-head h2 {
       font-family: var(--module-title-family, 'WISE Digits', 'Noto Serif', Georgia, serif);
-      font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; margin: 6px 0 8px; display: flex; align-items: center; gap: 10px;
+      font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 8px;
     }
-    #ar-audit .section-head h2 .material-symbols-outlined { font-size: 24px; color: var(--primary); }
-    html.dark #ar-audit .section-head h2 .material-symbols-outlined { color: var(--primary-bright); }
     #ar-audit .section-head p { font-size: 0.9375rem; color: var(--text-muted); margin: 0; max-width: 800px; }
+    #ar-audit .spec-subhead {
+      font-family: var(--module-title-family, 'WISE Digits', 'Noto Serif', Georgia, serif);
+      font-size: 0.9375rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
+      margin: 6px 0 12px;
+    }
+    #ar-audit .spec-subhead-spaced { margin-top: 28px; }
 
     /* ── Badges ── */
     #ar-audit .badge {
@@ -333,9 +335,7 @@
       background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-1);
     }
     html.dark #ar-audit .card { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.06); }
-    #ar-audit .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-    #ar-audit .card-head .material-symbols-outlined { font-size: 20px; color: var(--primary); }
-    html.dark #ar-audit .card-head .material-symbols-outlined { color: var(--primary-bright); }
+    #ar-audit .card-head { margin-bottom: 8px; }
     #ar-audit .card h3 {
       font-family: var(--module-title-family, 'WISE Digits', 'Noto Serif', Georgia, serif);
       font-size: 0.9375rem; font-weight: 800; margin: 0;
@@ -344,10 +344,9 @@
     #ar-audit .card ul { margin: 8px 0 0; padding-left: 18px; }
     #ar-audit .card li { font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 5px; line-height: 1.5; }
     #ar-audit .callout {
-      display: flex; gap: 12px; padding: 16px 18px; border-radius: var(--r-md);
+      padding: 16px 18px; border-radius: var(--r-md);
       border: 1px solid var(--border); margin-top: 14px;
     }
-    #ar-audit .callout .material-symbols-outlined { flex-shrink: 0; font-size: 22px; }
     #ar-audit .callout-body { min-width: 0; }
     #ar-audit .callout-title {
       font-family: var(--module-title-family, 'WISE Digits', 'Noto Serif', Georgia, serif);
@@ -355,13 +354,13 @@
     }
     #ar-audit .callout-body p { font-size: 0.8125rem; margin: 0; line-height: 1.55; }
     #ar-audit .callout.warn { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn) 30%, transparent); }
-    #ar-audit .callout.warn .material-symbols-outlined, #ar-audit .callout.warn .callout-title { color: var(--warn); }
+    #ar-audit .callout.warn .callout-title { color: var(--warn); }
     #ar-audit .callout.warn p { color: color-mix(in srgb, var(--warn) 92%, var(--text)); }
     #ar-audit .callout.fail { background: var(--fail-bg); border-color: color-mix(in srgb, var(--fail) 30%, transparent); }
-    #ar-audit .callout.fail .material-symbols-outlined, #ar-audit .callout.fail .callout-title { color: var(--fail); }
+    #ar-audit .callout.fail .callout-title { color: var(--fail); }
     #ar-audit .callout.fail p { color: color-mix(in srgb, var(--fail) 92%, var(--text)); }
     #ar-audit .callout.pass { background: var(--pass-bg); border-color: color-mix(in srgb, var(--pass) 30%, transparent); }
-    #ar-audit .callout.pass .material-symbols-outlined, #ar-audit .callout.pass .callout-title { color: var(--pass); }
+    #ar-audit .callout.pass .callout-title { color: var(--pass); }
     #ar-audit .callout.pass p { color: color-mix(in srgb, var(--pass) 92%, var(--text)); }
 
     /* ── Type / spacing specimens ── */
@@ -580,8 +579,7 @@
   <!-- ===== Summary ===== -->
   <section id="summary">
     <div class="section-head">
-      <div class="section-kicker">At a glance</div>
-      <h2><span class="material-symbols-outlined">summarize</span>Conformance scorecard</h2>
+      <h2>Conformance scorecard</h2>
       <p>Live tallies for the current theme. Each text pairing is graded against <strong>AAA (7:1 normal / 4.5:1 large)</strong>, with the AA baseline (4.5:1 / 3:1) shown for reference.</p>
     </div>
     <div class="scorecard" id="scorecard"><!-- injected --></div>
@@ -594,8 +592,7 @@
   <!-- ===== Per-page audit ===== -->
   <section id="pages">
     <div class="section-head">
-      <div class="section-kicker">Live page audit</div>
-      <h2><span class="material-symbols-outlined">grade</span>HTML pages reviewed &amp; graded</h2>
+      <h2>HTML pages reviewed &amp; graded</h2>
       <p>Every shipping HTML page is fetched live and run through a set of automated WCAG checks
       (document language, page title, zoomable viewport, image alt text, accessible names on
       controls, labelled form fields, heading structure and landmarks). Each page gets a letter
@@ -612,8 +609,7 @@
   <!-- ===== Palette ===== -->
   <section id="palette">
     <div class="section-head">
-      <div class="section-kicker">Foundations</div>
-      <h2><span class="material-symbols-outlined">palette</span>Color palette</h2>
+      <h2>Color palette</h2>
       <p>Every surface, text and accent token for the active theme. The label chip shows the recommended text color where one applies.</p>
     </div>
     <div class="swatch-grid" id="swatchGrid"><!-- injected --></div>
@@ -622,8 +618,7 @@
   <!-- ===== Text contrast ===== -->
   <section id="contrast">
     <div class="section-head">
-      <div class="section-kicker">SC 1.4.6 (Enhanced)</div>
-      <h2><span class="material-symbols-outlined">contrast</span>Text contrast matrix</h2>
+      <h2>Text contrast matrix</h2>
       <p>Foreground text over the backgrounds it actually appears on. Ratios are computed live; semantic colors used as text are blended over their tinted badge background first. <strong>Normal text is graded at the AAA 7:1 threshold</strong>; large text at 4.5:1.</p>
     </div>
     <div class="table-wrap">
@@ -641,8 +636,7 @@
   <!-- ===== Non-text contrast ===== -->
   <section id="nontext">
     <div class="section-head">
-      <div class="section-kicker">SC 1.4.11</div>
-      <h2><span class="material-symbols-outlined">category</span>Non-text &amp; UI contrast</h2>
+      <h2>Non-text &amp; UI contrast</h2>
       <p>Borders, focus rings, icons and component boundaries must reach <strong>3:1</strong> against their adjacent color to be perceivable.</p>
     </div>
     <div class="table-wrap">
@@ -658,15 +652,13 @@
   <!-- ===== Typography ===== -->
   <section id="type">
     <div class="section-head">
-      <div class="section-kicker">SC 1.4.4 / 1.4.12</div>
-      <h2><span class="material-symbols-outlined">text_fields</span>Typography scale</h2>
+      <h2>Typography scale</h2>
       <p>The UI is set in <strong>DM Sans</strong>. The base UI size is small (<code>--fs-ui: 0.75rem</code> = 12px), which is the single biggest accessibility risk in the system — see findings.</p>
     </div>
     <div class="card" style="padding:22px 24px;">
       <div id="typeScale"><!-- injected --></div>
     </div>
     <div class="callout pass">
-      <span class="material-symbols-outlined">check</span>
       <div class="callout-body">
         <div class="callout-title">12px base is dense but fully zoomable to 200%</div>
         <p>WCAG has no hard minimum font size. The 12px (<code>--fs-ui</code>) and 11px (<code>--fs-label</code>) labels stay legible because their text colors now carry AAA-level contrast (≥7:1, see findings 1–2), and the text-scale control (<code>--wise-text-scale</code>) plus browser zoom both reach 200% without clipping — satisfying SC 1.4.4.</p>
@@ -677,30 +669,28 @@
   <!-- ===== Spacing & radius ===== -->
   <section id="spacing">
     <div class="section-head">
-      <div class="section-kicker">Foundations</div>
-      <h2><span class="material-symbols-outlined">space_bar</span>Spacing &amp; radius scale</h2>
+      <h2>Spacing &amp; radius scale</h2>
       <p>Radii tokens drive every card, pill and module. Spacing is applied ad-hoc (4 / 8 / 12 / 14 / 18 / 28 / 32px) rather than via named tokens.</p>
     </div>
-    <h3 style="font-size:0.8125rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-subtle);margin:6px 0 12px;">Corner radius tokens</h3>
+    <h3 class="spec-subhead">Corner radius tokens</h3>
     <div class="spec-grid" id="radiusGrid"><!-- injected --></div>
-    <h3 style="font-size:0.8125rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-subtle);margin:28px 0 12px;">Common spacing steps</h3>
+    <h3 class="spec-subhead spec-subhead-spaced">Common spacing steps</h3>
     <div class="spec-grid" id="spacingGrid"><!-- injected --></div>
   </section>
 
   <!-- ===== Targets & focus ===== -->
   <section id="targets">
     <div class="section-head">
-      <div class="section-kicker">SC 2.5.8 / 2.4.7 / 2.4.11</div>
-      <h2><span class="material-symbols-outlined">touch_app</span>Target size &amp; focus visibility</h2>
+      <h2>Target size &amp; focus visibility</h2>
       <p>WCAG 2.2 asks for <strong>24×24 CSS px</strong> minimum targets (AA) and a visible, sufficiently-contrasting focus indicator.</p>
     </div>
     <div class="cards">
       <div class="card">
-        <div class="card-head"><span class="material-symbols-outlined">touch_app</span><h3>Touch target sizes</h3></div>
+        <div class="card-head"><h3>Touch target sizes</h3></div>
         <ul id="targetList"><!-- injected --></ul>
       </div>
       <div class="card">
-        <div class="card-head"><span class="material-symbols-outlined">center_focus_strong</span><h3>Focus indicator</h3></div>
+        <div class="card-head"><h3>Focus indicator</h3></div>
         <p>The system uses <code>outline: 2px solid var(--primary)</code> with a 2px offset. Tab through the buttons below to verify it is visible in both themes.</p>
         <div class="focus-demo" style="margin-top:12px;">
           <button class="demo-btn primary" type="button">Primary action</button>
@@ -714,8 +704,7 @@
   <!-- ===== Findings ===== -->
   <section id="findings">
     <div class="section-head">
-      <div class="section-kicker">Verdict</div>
-      <h2><span class="material-symbols-outlined">fact_check</span>Findings &amp; recommendations</h2>
+      <h2>Findings &amp; recommendations</h2>
       <p>Prioritized issues found across both themes, with concrete fixes that keep the WISE look intact.</p>
     </div>
     <div id="findingsList"><!-- injected --></div>
@@ -1306,7 +1295,7 @@ function renderConcerns() {
   if (!fails.length && !warns.length) {
     el.className = 'concerns all-clear';
     el.innerHTML = '<div class="concerns-head">' +
-      '<div class="concerns-title"><span class="material-symbols-outlined">verified</span>Nothing in the red</div>' +
+      '<div class="concerns-title">Nothing in the red</div>' +
       '<div class="concerns-tally"><span class="badge pass"><span class="material-symbols-outlined">check</span>0 open concerns</span></div>' +
       '<div class="concerns-note">Every contrast pairing, page check, target and finding passes in the ' + theme +
       ' theme. Toggle the theme to re-run against the other palette.</div>' +
@@ -1320,7 +1309,7 @@ function renderConcerns() {
 
   el.className = 'concerns ' + (fails.length ? 'has-fail' : 'has-warn');
   el.innerHTML = '<div class="concerns-head">' +
-      '<div class="concerns-title"><span class="material-symbols-outlined">' + (fails.length ? 'report' : 'warning') + '</span>' +
+      '<div class="concerns-title">' +
         (fails.length ? 'In the red — fix first' : 'Worth a look') + '</div>' +
       '<div class="concerns-tally">' +
         (fails.length ? '<span class="badge fail"><span class="material-symbols-outlined">cancel</span>' + plural(fails.length, 'failure') + '</span>' : '') +
@@ -1380,27 +1369,27 @@ function renderTargets() {
 
 const FINDINGS = [
   {
-    sev: 'pass', icon: 'check',
+    sev: 'pass',
     title: '1 · AAA — quiet grays deepened to clear 7:1',
     body: 'The muted/subtle grays were AA-only (≈5–6:1). <code>--text-muted</code> is now <code>#444B55</code> (light) / <code>#BCC6D3</code> (dark) and <code>--text-subtle</code> is <code>#474E58</code> / <code>#B1BAC7</code>, so every caption, sub-label and table header clears the AAA 7:1 threshold on every surface — down to the darkest light tint (<code>surface-3</code> #EFEDE2) and the lightest navy (<code>surface-3</code> #15303F). Updated in <code>agent-page.css</code>, <code>index.html</code>, <code>ai-chat.html</code> and the inline mirror here.'
   },
   {
-    sev: 'pass', icon: 'check',
+    sev: 'pass',
     title: '2 · AAA — semantic ink on tints now 7:1',
     body: 'Badge / delta / status text on its own 16% tint sat at ~5–6:1 (AA). The light inks are deepened — <code>--sec-green-text #245E3B</code>, <code>--ter-amber-text #75360A</code>, <code>--sec-red-text #831F23</code>, <code>--ter-cyan-text #1A2339</code> — and the dark inks softened to pastels — <code>#B6C9BE</code>, <code>#D7BE91</code>, <code>#FFE1DC</code>, <code>#C5CFD7</code> — so each clears 7:1 over its tint while the tinted fills are kept.'
   },
   {
-    sev: 'pass', icon: 'check',
+    sev: 'pass',
     title: '3 · AAA — primary deepened for text AND buttons',
     body: 'A lighter primary previously left link text and white-on-primary buttons at ~5.9:1 (AA only). Primary is now <code>#25507C</code>, so primary link text clears 7:1 on <code>bg</code> (≈7.9:1) and white-on-primary buttons clear 7:1 too (≈8.3:1). The dark-theme <code>--primary-bright #8B9FAF</code> already runs ~9.7:1. The matching <code>rgba(37, 80, 124,…)</code> soft tints and JS chart/agent fallbacks were retokenized to follow.'
   },
   {
-    sev: 'pass', icon: 'check',
+    sev: 'pass',
     title: '4 · Targets padded to the 24px minimum',
     body: 'The 22×22px nav chevron is now 24×24px (WCAG 2.2 SC 2.5.8); pill/chip controls sit at ~27–31px. The 12px <code>--fs-ui</code> base stays intentional but is fully zoomable — <code>--wise-text-scale</code> and browser zoom both reach 200% without clipping, satisfying SC 1.4.4.'
   },
   {
-    sev: 'pass', icon: 'check',
+    sev: 'pass',
     title: 'Strengths — body text & focus',
     body: 'Core body text (<code>#111827</code> / <code>#F3F4F6</code>) is excellent (>14:1) in both themes. The 2px primary focus outline with 2px offset and all non-text/UI borders continue to clear the 3:1 SC 1.4.11 minimum. With the token updates above, every graded text pairing now reaches Level AAA.'
   }
@@ -1408,7 +1397,6 @@ const FINDINGS = [
 function renderFindings() {
   document.getElementById('findingsList').innerHTML = FINDINGS.map(f => `
     <div class="callout ${f.sev}">
-      <span class="material-symbols-outlined">${f.icon}</span>
       <div class="callout-body">
         <div class="callout-title">${f.title}</div>
         <p>${f.body}</p>

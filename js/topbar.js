@@ -643,6 +643,9 @@ function fbSetSurface(prefix, color, accent) {
     root.style.removeProperty('--fb-' + prefix + '-accent');
     root.classList.remove(tint, darkCls, lightCls);
   }
+  try {
+    document.dispatchEvent(new CustomEvent('wise:fb-surfaces', { detail: { prefix, on: !!val } }));
+  } catch {}
 }
 
 /** Primary-navigation background colour ('' when unset). */

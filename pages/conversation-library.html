@@ -579,18 +579,22 @@
       box-shadow: 0 0 0 2px var(--primary);
     }
     .lib-fp-menu .material-symbols-outlined { font-size: 16px !important; }
-    /* Tree lines — vertical spine sized to the last *direct* child’s midline
-       so it reaches the last item. Horizontal ticks only; folder icons sit
-       above the lines (z-index + circular --lib-fp-bg mask). */
+    /* Tree lines — History module language (js/chat-history.js): a spine from
+       the folder plus a rounded L-elbow on every child. The elbow is a
+       quarter-circle whose horizontal is measured to the live-dot / folder
+       icon (see layoutPanelTrees) so the line runs into that circle, which
+       paints on top. Folder icons sit above the lines (z-index + circular
+       --lib-fp-bg mask). */
     .lib-fp-body {
       position: relative; z-index: 0; padding-left: 22px;
       --lib-tree-end: 16px;
+      --lib-tree-radius: 10px;
     }
     .lib-fp-folder.is-collapsed > .lib-fp-body { display: none; }
     .lib-fp-folder:not(.is-collapsed) > .lib-fp-body:not(:empty)::before {
       content: ""; position: absolute; z-index: 0;
       left: 16px; top: -11px; width: 1px;
-      height: calc(11px + var(--lib-tree-end));
+      height: calc(11px + var(--lib-tree-end) - var(--lib-tree-radius) + 1px);
       background: var(--lib-tree); pointer-events: none;
     }
     .lib-fp-body > .lib-fp-folder,
@@ -604,11 +608,18 @@
     .lib-fp-body > .lib-fp-edit::before,
     .lib-fp-body > div:has(> .lib-fp-edit)::before {
       content: ""; position: absolute; z-index: 0;
-      left: -6px; width: 14px; height: 1px; top: 50%;
-      transform: translateY(-50%);
-      background: var(--lib-tree); pointer-events: none;
+      left: -6px;
+      width: var(--lib-elbow-w, 22px);
+      height: calc(var(--lib-tree-radius) + 6px);
+      top: calc(var(--lib-elbow-h, 16px) - var(--lib-tree-radius) - 6px);
+      border: 0;
+      border-left: 1px solid var(--lib-tree);
+      border-bottom: 1px solid var(--lib-tree);
+      border-bottom-left-radius: var(--lib-tree-radius);
+      box-sizing: border-box;
+      background: transparent;
+      pointer-events: none;
     }
-    .lib-fp-body > .lib-fp-folder > .lib-fp-row::before { top: 19px; transform: none; }
     .lib-fp-empty { font-size: 11px; opacity: .5; padding: 4px 12px 8px 20px; color: var(--text-muted); }
     .lib-fp-row.lib-folder-dragging { opacity: .4; }
 
@@ -619,9 +630,24 @@
     .lib-fp-item {
       position: relative; z-index: 0;
       display: flex; align-items: center; gap: 4px;
-      padding: 5px 10px 5px 12px; border-radius: 0; cursor: pointer; margin: 0;
+      padding: 4px 14px 4px 12px; border-radius: 0; cursor: pointer; margin: 0;
       font-size: 11px; font-weight: 400; line-height: 1.35; color: var(--primary);
       background: transparent; outline: none; overflow: visible;
+    }
+    /* Colored circle + ring — same leaf mark as History .wch-chat-dot so the
+       rounded elbow can run into the circle. */
+    .lib-fp-item-dot {
+      display: inline-block; flex: 0 0 auto; width: 7px; height: 7px;
+      border-radius: 50%; margin-right: 6px; vertical-align: middle;
+      background: currentColor; position: relative; z-index: 2;
+    }
+    .lib-fp-item-dot::after {
+      content: ""; position: absolute; inset: -3px; border-radius: 50%;
+      box-sizing: border-box; pointer-events: none;
+      border: 2px solid color-mix(in srgb, var(--text-subtle) 28%, transparent);
+    }
+    .lib-fp-item.is-active .lib-fp-item-dot::after {
+      border-color: color-mix(in srgb, var(--primary) 40%, transparent);
     }
     .lib-fp-item-link {
       flex: 0 0 auto; width: 13px; height: 13px;
@@ -784,10 +810,29 @@
       flex: 1 1 0%;
       min-width: 380px;
     }
-    .menu-brand-integrated #modules-row { margin-top: 0 !important; }
-    #modules-row { padding-bottom: 0 !important; margin-bottom: 0 !important; }
-    #modules-row #wiseai-dock-panel.wiseai-dock-open,
-    #modules-row #agent-main { height: 100% !important; max-height: 100% !important; align-self: stretch !important; }
+    /* Match chat + library to the nav rail height when Chat-only is NOT
+       stretching the chat through the page pad / elevation gutter. Those
+       !important zeros previously ran in every mode and blocked both Full
+       bleed (page frame never collapsed) and Chat-only (chat could not
+       grow through the 12px pad). */
+    html:not(.full-bleed) .menu-brand-integrated #modules-row,
+    html.full-bleed:not(.fb-chat-only) .menu-brand-integrated #modules-row {
+      margin-top: 0 !important;
+    }
+    html:not(.full-bleed) #modules-row,
+    html.full-bleed:not(.fb-chat-only) #modules-row {
+      padding-bottom: 0 !important;
+      margin-bottom: 0 !important;
+    }
+    /* Contained + Full bleed (everything): fill the row. Chat-only must not
+       pin the chat at height:100% — shared wise.css grows it through the pad. */
+    html:not(.fb-chat-only) #modules-row #wiseai-dock-panel.wiseai-dock-open,
+    html:not(.fb-chat-only) #modules-row #agent-main,
+    html.full-bleed.fb-chat-only #modules-row #agent-main {
+      height: 100% !important;
+      max-height: 100% !important;
+      align-self: stretch !important;
+    }
 
     /* Match the standard 12px shell inset every other module page uses (e.g.
        ai-dashboard.html: `body { padding: var(--modules-bottom-pad, 12px) }`).
@@ -795,6 +840,26 @@
        nav rail (and the whole shell) sat flush to the window's left edge instead
        of in the standard gutter, making this page's nav look mis-positioned. */
     body[data-nav-id="library"] { padding: var(--modules-bottom-pad, 12px); }
+
+    /* Full bleed (everything): shed the page frame so every module reaches
+       the window. Chat-only keeps this 12px inset so nav + Library stay cards. */
+    html.full-bleed:not(.fb-chat-only) body[data-nav-id="library"] {
+      padding: 0 !important;
+    }
+    html.full-bleed:not(.fb-chat-only) #modules-row #agent-main.sticky-mod.is-sticky {
+      height: 100% !important;
+      max-height: 100% !important;
+      align-self: stretch !important;
+    }
+    /* Chat-only: beat the two-id height pin so the chat can fill the row pad
+       the same way it does on wiseai.html. Library stays a contained card. */
+    html.full-bleed.fb-chat-only #modules-row #wiseai-dock-panel.wiseai-dock-open {
+      margin-top: calc(-1 * var(--modules-bottom-pad, 12px)) !important;
+      margin-bottom: calc(-1 * var(--chat-elev-gutter, 48px)) !important;
+      height: calc(100% + var(--modules-bottom-pad, 12px) + var(--chat-elev-gutter, 48px)) !important;
+      max-height: none !important;
+      align-self: stretch !important;
+    }
 
     /* The Library module owns its own scroll; collapse the separate 60px
        header bar to ZERO height so the serif masthead leads the scroll body —
@@ -1844,6 +1909,7 @@
             '" role="listitem" tabindex="0" draggable="true" data-fp-item="' + c.id +
             '" data-fp-item-folder="' + f.id + '"' +
             (linked ? ' title="Linked in ' + nFolders + ' folders"' : '') + '>' +
+            '<span class="lib-fp-item-dot" style="color:' + f.color + '" aria-hidden="true"></span>' +
             (linked ? '<span class="material-symbols-outlined lib-fp-item-link" aria-hidden="true">link</span>' : '') +
             '<span class="lib-fp-item-txt"></span></div>';
         });
@@ -1881,22 +1947,49 @@
         });
         panelEl.querySelectorAll('.lib-fstat-edit').forEach((edit) => wireRowEditor(edit));
         layoutPanelTrees();
+        requestAnimationFrame(layoutPanelTrees);
       }
 
-      /* Size each folder’s spine to the last *direct* child’s elbow. Nested
-         folders use the folder row (not the expanded item list) so Apple’s
-         line stops at Impressive Reports instead of running through its items. */
+      /* Size each folder’s spine and rounded elbows. The horizontal is
+         measured to the live-dot / folder icon (falling back to the title)
+         so it runs into that circle; the last child’s L-elbow uses the same
+         Y for its rounded corner. Nested folders use the folder row so the
+         parent spine stops at the nested folder instead of running through
+         its items — same as History layoutProjectTrees. */
       function layoutPanelTrees() {
         if (!panelEl) return;
         panelEl.querySelectorAll('.lib-fp-body').forEach((body) => {
+          const kids = body.children;
+          for (let i = 0; i < kids.length; i++) {
+            const el = kids[i];
+            const measureEl = el.classList.contains('lib-fp-folder')
+              ? (el.querySelector(':scope > .lib-fp-row') || el)
+              : el;
+            const target = measureEl.querySelector('.lib-fp-item-dot')
+              || measureEl.querySelector('.lib-fp-toggle')
+              || measureEl.querySelector('.lib-fp-dot')
+              || measureEl.querySelector('.lib-fp-item-txt')
+              || measureEl.querySelector('.lib-fp-name')
+              || measureEl.querySelector('.lib-folder-edit-input');
+            if (!target) continue;
+            const elRect = measureEl.getBoundingClientRect();
+            const tRect = target.getBoundingClientRect();
+            if (!elRect.height || !tRect.height) continue;
+            const y = tRect.top + tRect.height / 2 - elRect.top;
+            const w = tRect.left + tRect.width - 1 - (elRect.left - 6);
+            if (y > 4) measureEl.style.setProperty('--lib-elbow-h', Math.round(y) + 'px');
+            if (w > 10) measureEl.style.setProperty('--lib-elbow-w', Math.round(w) + 'px');
+          }
           const last = body.lastElementChild;
           if (!last) return;
-          let elbow;
-          if (last.classList.contains('lib-fp-folder')) {
-            const row = last.querySelector(':scope > .lib-fp-row');
-            elbow = row ? Math.round(row.offsetHeight / 2) : 19;
-          } else {
-            elbow = Math.max(1, Math.round(last.offsetHeight / 2));
+          const lastMeasure = last.classList.contains('lib-fp-folder')
+            ? (last.querySelector(':scope > .lib-fp-row') || last)
+            : last;
+          let elbow = parseFloat(getComputedStyle(lastMeasure).getPropertyValue('--lib-elbow-h'));
+          if (!elbow) {
+            elbow = last.classList.contains('lib-fp-folder')
+              ? (lastMeasure === last ? 19 : Math.round(lastMeasure.offsetHeight / 2))
+              : Math.max(1, Math.round(last.offsetHeight / 2));
           }
           body.style.setProperty('--lib-tree-end', (last.offsetTop + elbow) + 'px');
         });
@@ -2091,6 +2184,7 @@
       document.addEventListener('dragstart', hideTip, true);
       window.addEventListener('scroll', hideTip, true);
       window.addEventListener('resize', hideTip);
+      window.addEventListener('resize', layoutPanelTrees);
 
       /* Hover info card — History .wch-info. */
       const TYPE_META = {

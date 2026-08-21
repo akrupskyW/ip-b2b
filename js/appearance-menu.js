@@ -430,7 +430,8 @@ function themeSection(isDark) {
     once either mode is on. Full bleed exposes colour pickers for nav, chat,
     right module, aside, and History, plus the right-module behaviour control
     and presets. Chat-only only exposes the chat colour, Reset, and presets
-    (nav / History / right-module stay contained and unpainted). Colour pickers
+    (nav / History / right-module stay contained and unpainted); the preset
+    still paints every container inside the chat. Colour pickers
     key off `data-fbcolor`, the behaviour segmented control off `data-rmodmode`,
     and the presets off `data-fbpreset`; all handled in wireAppearancePopover().
     Renders nothing while both modes are off. */

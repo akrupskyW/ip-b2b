@@ -448,6 +448,98 @@ if (typeof document !== 'undefined') {
   }
 }
 
+/* Stylized hover/focus tooltip for per-answer action icons (.sc-fb-btn /
+   .sc-fb-id). The three-dot "more" menu portals onto <body> while open
+   (js/popover-layer.js), so these listeners MUST be document-level — a
+   mouseover bound to the transcript never sees the portaled icons. */
+const SC_TIP_SELECTOR = '.sc-fb-btn[data-tip], .sc-fb-id[data-tip], .sc-fb-menu [data-tip], .sc-fb-menu [title], .sc-fb-menu [data-sc-title]';
+let scTipEl = null;
+let scTipFor = null;
+let scTipFlashTimer = null;
+
+function scTipLabel(el) {
+  return (el.getAttribute('data-tip') || el.getAttribute('title') ||
+          el.getAttribute('data-sc-title') || '').trim();
+}
+
+function placeScTip(el, label) {
+  if (!scTipEl) return;
+  scTipEl.textContent = label;
+  const r = el.getBoundingClientRect();
+  scTipEl.style.left = `${Math.round(r.left + r.width / 2)}px`;
+  scTipEl.style.top = `${Math.round(r.top - 8)}px`;
+  scTipEl.offsetWidth; /* reflow so the enter transition plays */
+  scTipEl.classList.add('is-vis');
+}
+
+function showScTip(target) {
+  const label = scTipLabel(target);
+  if (!label) return;
+  scTipFor = target;
+  /* Suppress the native `title` bubble while the styled card is up. */
+  const nativeTitle = target.getAttribute('title');
+  if (nativeTitle != null) {
+    target.setAttribute('data-sc-title', nativeTitle);
+    target.removeAttribute('title');
+  }
+  placeScTip(target, label);
+}
+
+function hideScTip() {
+  if (scTipFor && scTipFor.hasAttribute('data-sc-title')) {
+    scTipFor.setAttribute('title', scTipFor.getAttribute('data-sc-title'));
+    scTipFor.removeAttribute('data-sc-title');
+  }
+  scTipFor = null;
+  if (scTipEl) scTipEl.classList.remove('is-vis');
+}
+
+/* Momentary confirmation toast reusing the tooltip card — used after a copy
+   so the acknowledgement lands right where the hover tip would sit. Deferred
+   a frame so it survives the click-driven hideScTip on the same gesture. */
+function flashScTip(target, label) {
+  if (!target) return;
+  requestAnimationFrame(() => {
+    scTipFor = null; /* not a hover tip — don't let mouseout dismiss it early */
+    placeScTip(target, label);
+    clearTimeout(scTipFlashTimer);
+    scTipFlashTimer = setTimeout(hideScTip, 1200);
+  });
+}
+
+export function wireAnswerTips() {
+  if (typeof document === 'undefined' || document.documentElement.dataset.scTipWired === '1') return;
+  document.documentElement.dataset.scTipWired = '1';
+  scTipEl = document.getElementById('sc-tip');
+  if (!scTipEl) {
+    scTipEl = document.createElement('div');
+    scTipEl.id = 'sc-tip';
+    scTipEl.className = 'sc-tip';
+    scTipEl.setAttribute('aria-hidden', 'true');
+    (document.body || document.documentElement).appendChild(scTipEl);
+  }
+  document.addEventListener('mouseover', (e) => {
+    const t = e.target.closest && e.target.closest(SC_TIP_SELECTOR);
+    if (t && t !== scTipFor) showScTip(t);
+  });
+  document.addEventListener('mouseout', (e) => {
+    const t = e.target.closest && e.target.closest(SC_TIP_SELECTOR);
+    /* Only dismiss the hover tip (scTipFor === t). A flash toast clears
+       scTipFor so moving the pointer after Copy doesn't kill "Copied!". */
+    if (t && t === scTipFor && !t.contains(e.relatedTarget)) hideScTip();
+  });
+  document.addEventListener('focusin', (e) => {
+    const t = e.target.closest && e.target.closest(SC_TIP_SELECTOR);
+    if (t) showScTip(t);
+  });
+  document.addEventListener('focusout', hideScTip);
+  document.addEventListener('click', (e) => {
+    if (e.target.closest && e.target.closest(SC_TIP_SELECTOR)) hideScTip();
+  });
+  window.addEventListener('scroll', hideScTip, true);
+  window.addEventListener('resize', hideScTip);
+}
+
 /* Standing reminder under the input that WISEcodeAI is an assistant, not the
    source of record — the single most important piece of AI trust microcopy. */
 const DEFAULT_DISCLAIMER = '';
@@ -951,6 +1043,7 @@ function openWiseImageModal(src, name) {
    every host page regardless of which stylesheet variant it loads. */
 export function injectChatExtras() {
   wireTranscriptTimes();
+  wireAnswerTips();
   if (typeof document === 'undefined' || document.getElementById('wiseai-chat-extras')) return;
   const css = `
     .ws-scorecard--locked { cursor: default; opacity: .7; }
@@ -1123,8 +1216,10 @@ export function injectChatExtras() {
     .sc-fb-id:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
 
     /* Stylized hover/focus tooltip for the answer-action icons — a small dark
-       card floated just above the control, captioned from its data-tip. */
-    .sc-tip { position: fixed; z-index: 2000; pointer-events: none; max-width: 220px;
+       card floated just above the control, captioned from its data-tip.
+       z-index sits above js/popover-layer.js (2147483000) so a tip on an icon
+       inside the portaled .sc-fb-menu still paints on top of that popover. */
+    .sc-tip { position: fixed; z-index: 2147483646; pointer-events: none; max-width: 220px;
       background: #1f2430; color: #fff; font-size: 11.5px; font-weight: 600; line-height: 1.25;
       letter-spacing: 0.01em; padding: 5px 9px; border-radius: 7px; white-space: nowrap;
       box-shadow: 0 8px 22px rgba(0,0,0,0.30); border: 1px solid rgba(255,255,255,0.08);
@@ -1552,9 +1647,18 @@ export function injectChatExtras() {
        html.chat-tint:not(.dark) #welcome-screen (product portfolio/comparison,
        an opaque 5%-blue wash with !important) — both rules carry !important,
        so only specificity decides, and without the boost the tint wash covers
-       the canvas and the strand never shows in the light blue-chat theme. */
+       the canvas and the strand never shows in the light blue-chat theme.
+       Full-bleed preset themes also paint .sc-welcome; include those
+       selectors so Cyberpunk / Sunset Green / Blue Sky cannot hide the helix
+       in light or dark. */
     .sc-bganim-live.sc-bganim-live.sc-bganim-live .sc-welcome,
-    .sc-bganim-live.sc-bganim-live.sc-bganim-live #welcome-screen { background: transparent !important; }
+    .sc-bganim-live.sc-bganim-live.sc-bganim-live #welcome-screen,
+    html.full-bleed.fb-chat-tint .sc-bganim-live .sc-welcome,
+    html.full-bleed.fb-chat-tint .sc-bganim-live #welcome-screen,
+    html.full-bleed.fb-chat-tint .sc-orbit-live .sc-welcome,
+    html.full-bleed.fb-chat-tint .sc-orbit-live #welcome-screen,
+    html.full-bleed.fb-chat-tint.chat-tint .sc-bganim-live #welcome-screen,
+    html.full-bleed.fb-chat-tint.chat-tint .sc-orbit-live #welcome-screen { background: transparent !important; }
 
     /* Opacity control that sits just under the "Background animation" toggle. Mirrors
        the streaming-detail sub-row; uses the admin pink accent to match the toggle. */
@@ -1753,47 +1857,64 @@ export function injectChatExtras() {
     .topbar-popover.sc-menu-grouped .sc-menu-col.is-empty { display: none !important; }
     .topbar-popover.sc-menu-grouped.sc-menu-one-col { width: 250px; }
 
-    /* Hover card for a product on the DNA field — our surface + tokens, round thumb,
-       a caret aimed at the bug, and a brand-blue deep-link into the product's NFP. */
-    .wch-food-card { position: absolute; z-index: 13; width: 340px; max-width: calc(100% - 16px);
+    /* Helix product card — most bugs open a food sheet (name/brand + View Details
+       into the NFP). A minority open a brand-insight or look-closer fact instead.
+       Never a status stamp (e.g. “NON-UPF” next to a photo). Same round thumb
+       covers the circle in both modes. */
+    .wch-helix-card { position: absolute; z-index: 13; width: 340px; max-width: calc(100% - 16px);
       padding: 18px; display: flex; flex-direction: column; gap: 16px; pointer-events: auto;
       background: var(--surface, #fff); border: 1px solid var(--border, rgba(15,30,55,.10));
       border-radius: 20px;
       box-shadow: 0 4px 10px rgba(10,20,40,.07), 0 26px 56px rgba(10,20,40,.26);
       font-size: 13px; color: var(--text); transform-origin: left center;
-      animation: wchFoodCardIn .24s cubic-bezier(.2,.9,.25,1.15) both; }
-    /* Truly hidden by default — an author display value would otherwise beat [hidden]. */
-    .wch-food-card[hidden] { display: none !important; }
-    .wch-food-card.is-left { transform-origin: right center; }
-    /* When the card opens leftward, mirror it so the thumbnail is the right edge that
-       covers the bug, and the copy + link fan out to the left. */
-    .wch-food-card.is-left .wch-food-card-top { flex-direction: row-reverse; }
-    .wch-food-card.is-left .wch-food-card-meta { text-align: right; }
-    .wch-food-card.is-left .wch-food-card-link { align-self: flex-start; }
-    @keyframes wchFoodCardIn {
+      animation: wchHelixCardIn .24s cubic-bezier(.2,.9,.25,1.15) both; }
+    .wch-helix-card.is-fact { width: 340px; padding: 18px; gap: 10px; }
+    .wch-helix-card[hidden] { display: none !important; }
+    html.dark .wch-helix-card {
+      background: var(--surface, #1A2339); border-color: rgba(255,255,255,.10);
+      box-shadow: 0 12px 40px rgba(0,0,0,.5); }
+    .wch-helix-card.is-left { transform-origin: right center; }
+    .wch-helix-card.is-left .wch-helix-card-top { flex-direction: row-reverse; }
+    .wch-helix-card.is-left .wch-helix-card-copy { text-align: right; }
+    .wch-helix-card.is-left .wch-helix-fact-body { text-align: right; }
+    .wch-helix-card.is-left .wch-helix-card-link { align-self: flex-start; }
+    .wch-helix-card.is-fact .wch-helix-card-top { align-items: flex-start; }
+    @keyframes wchHelixCardIn {
       0% { opacity: 0; transform: translateX(-6px) scale(.9); }
       60% { opacity: 1; }
       100% { opacity: 1; transform: none; } }
-    .wch-food-card.is-left { animation-name: wchFoodCardInL; }
-    @keyframes wchFoodCardInL {
+    .wch-helix-card.is-left { animation-name: wchHelixCardInL; }
+    @keyframes wchHelixCardInL {
       0% { opacity: 0; transform: translateX(6px) scale(.9); }
       60% { opacity: 1; }
       100% { opacity: 1; transform: none; } }
-    .wch-food-card-top { display: flex; align-items: center; gap: 15px; }
-    .wch-food-card-thumb { width: 68px; height: 68px; flex: 0 0 auto; border-radius: 50%; overflow: hidden;
+    .wch-helix-card-top { display: flex; align-items: center; gap: 14px; }
+    .wch-helix-card-thumb { width: 68px; height: 68px; flex: 0 0 auto; border-radius: 50%; overflow: hidden;
       border: 2px solid var(--primary); background: var(--surface-2, #f2f4f7);
       box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 12%, transparent); }
-    .wch-food-card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .wch-food-card-meta { display: flex; flex-direction: column; min-width: 0; gap: 5px; }
-    .wch-food-card-brand { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+    .wch-helix-card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .wch-helix-card-copy { display: flex; flex-direction: column; min-width: 0; gap: 5px; }
+    .wch-helix-card.is-food .wch-helix-fact-copy,
+    .wch-helix-card.is-food .wch-helix-fact-body,
+    .wch-helix-card.is-fact .wch-helix-food { display: none; }
+    .wch-helix-card.is-fact .wch-helix-card-link { display: none; }
+    .wch-helix-food { display: flex; flex-direction: column; min-width: 0; gap: 5px; }
+    .wch-helix-card-brand { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
       color: var(--primary); }
-    .wch-food-card-name { font-size: 17px; font-weight: 700; line-height: 1.25; color: var(--text); }
-    /* Plain text link, floated to the right, with an up-right arrow. */
-    .wch-food-card-link { align-self: flex-end; display: inline-flex; align-items: center; gap: 4px;
+    .wch-helix-card-name { font-size: 17px; font-weight: 700; line-height: 1.25; color: var(--text); }
+    .wch-helix-card-link { align-self: flex-end; display: inline-flex; align-items: center; gap: 4px;
       padding: 0; background: none; border: 0; box-shadow: none; text-decoration: none;
       font-weight: 700; font-size: 14px; color: var(--primary); transition: gap .12s ease; }
-    .wch-food-card-link:hover { text-decoration: underline; text-underline-offset: 2px; gap: 7px; }
-    .wch-food-card-link .material-symbols-outlined { font-size: 18px; }
+    .wch-helix-card-link:hover { text-decoration: underline; text-underline-offset: 2px; gap: 7px; }
+    .wch-helix-card-link .material-symbols-outlined { font-size: 18px; }
+    .wch-helix-fact-copy { display: flex; flex-direction: column; min-width: 0; gap: 5px; }
+    .wch-helix-fact-kicker { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+      color: var(--primary); }
+    .wch-helix-card[data-kind="look"] .wch-helix-fact-kicker { color: var(--ter-amber-text, #75360A); }
+    .wch-helix-fact-title { font-family: "WISE Digits", "Noto Serif", Georgia, serif; font-size: 16px;
+      font-weight: 800; line-height: 1.22; letter-spacing: -0.01em; color: var(--text); }
+    .wch-helix-fact-body { display: block; font-size: 12.5px; line-height: 1.45; color: var(--text-muted, #5b6578); }
+    html.dark .wch-helix-fact-body { color: var(--text-muted, #b7c0d0); }
   `;
   const style = document.createElement('style');
   style.id = 'wiseai-chat-extras';
@@ -1829,8 +1950,9 @@ export function createHelixBgAnim(cfg) {
      appears AT MOST ONCE on the strand (no repeats), so the pool is deliberately
      deep: our real demo-brand products plus a wide roster of recognizable market
      products (photos in assets/helix/, sourced from the Open Food Facts database).
-     `img` is relative to assets/; name/brand/upc feed the hover card + its
-     "Open Nutrition Facts" deep-link. */
+     `img` is relative to assets/; name/brand/upc feed the food card’s
+     “View Details” deep-link. A minority of bugs open a brand-insight or
+     look-closer fact instead of the product sheet — never a status stamp. */
   const PRODUCTS = [
     { img: 'portfolio/coconut_brownies.png', name: 'Toasted Coconut Brownies-12 ct', brand: 'Flax4Life', upc: '8 57287 00420 3' },
     { img: 'portfolio/chocolate_chip_muffins.png', name: 'Chocolate Chip Muffins-4 ct', brand: 'Flax4Life', upc: '0 65776 63152 0' },
@@ -1997,14 +2119,150 @@ export function createHelixBgAnim(cfg) {
     const j = Math.floor(Math.random() * (i + 1));
     const tmp = PRODUCTS[i]; PRODUCTS[i] = PRODUCTS[j]; PRODUCTS[j] = tmp;
   }
+
+  /* Insight cards that ride the helix instead of a product-identity sheet.
+     Brand notes stay on that brand’s products; look-closer reads stay on
+     the food they describe. No generic status labels. */
+  const F_BRAND = {
+    flax4life: [
+      { kind: 'brand', kicker: 'Brand insight', title: 'Flax is the start, not the verdict',
+        body: 'Flax4Life is a flax-forward bakery — muffins, brownies, granola. The seed is the idea; binders and sweeteners still decide Non-UPF.' },
+      { kind: 'brand', kicker: 'Brand insight', title: 'Twins already in the catalog',
+        body: 'Vegan and no-sugar-added muffins sit beside the original SKUs. That is a reformulation path, not a new brand to invent.' },
+      { kind: 'brand', kicker: 'Brand insight', title: '47 lookalikes on the shelf',
+        body: 'Public retail data shows 47 products that look like Flax4Life\'s. Claiming the real ones is how the portfolio score stays honest.' },
+      { kind: 'brand', kicker: 'Brand insight', title: 'Bakery is where risk concentrates',
+        body: 'Flax itself is a whole food. On this line, Non-UPF risk lives in gums, syrups, and flavor systems — not in the flax.' },
+      { kind: 'brand', kicker: 'Brand insight', title: 'One seed, two formats',
+        body: 'Toasted Coconut Brownies and Chunky Chocolate Granola share a seed-first idea and tell two different processing stories.' },
+    ],
+    'date better': [
+      { kind: 'brand', kicker: 'Brand insight', title: 'Sweetened with the fruit',
+        body: 'Date Better builds bars from dates, nuts, and seeds. A whole-food sweetener is one of the clearer Non-UPF tells.' },
+      { kind: 'brand', kicker: 'Brand insight', title: 'Short lists are easier to prove',
+        body: 'Bars and bites in this line stay close to kitchen ingredients — the kind of list verification can actually finish.' },
+    ],
+    'nutrient survival': [
+      { kind: 'brand', kicker: 'Brand insight', title: 'Dried is not the same as UPF',
+        body: 'Nutrient Survival is freeze-dried and powdered by design. The UPF question is what was added, not that water was removed.' },
+      { kind: 'brand', kicker: 'Brand insight', title: 'Safety still has to travel',
+        body: 'A powdered vitamin egg or milk can still read clean if every additive has a documented GRAS basis.' },
+    ],
+    'simple truth': [
+      { kind: 'brand', kicker: 'Brand insight', title: 'Organic is not Non-UPF',
+        body: 'Simple Truth is a private-label organic line. An organic toaster pastry can still be ultra-processed.' },
+      { kind: 'brand', kicker: 'Brand insight', title: 'The mixes are the easier wins',
+        body: 'Trail mixes and seed crackers in this line are the SKUs most likely to clear a Non-UPF screen.' },
+    ],
+    siete: [
+      { kind: 'brand', kicker: 'Brand insight', title: 'Grain-free ≠ Non-UPF',
+        body: 'Siete swaps the grain, not always the processing. Cassava still becomes a chip — a dietary claim is not a processing claim.' },
+    ],
+    'great value': [
+      { kind: 'look', kicker: 'Look closer', title: 'Store brand, same markers',
+        body: 'A private-label toaster pastry is usually a formulated product — frosting, filling, and a long marker list under a house name.' },
+    ],
+    chobani: [
+      { kind: 'look', kicker: 'Look closer', title: 'Yogurt until it is not',
+        body: 'Greek yogurt starts as milk plus cultures. Isolates, thickeners, and flavor bases are what push a cup across the UPF line.' },
+    ],
+    oatly: [
+      { kind: 'look', kicker: 'Look closer', title: 'Oats, then the formula',
+        body: 'Oat drinks can be oats and water — or oils, gums, and fortification systems. The list, not the grain, makes the call.' },
+    ],
+    quaker: [
+      { kind: 'look', kicker: 'Look closer', title: 'Plain oats are the baseline',
+        body: 'Old-fashioned oats are minimally processed. Flavor packets, isolates, and syrups are what turn oatmeal into a formula.' },
+    ],
+    'quaker oats': [
+      { kind: 'look', kicker: 'Look closer', title: 'Plain oats are the baseline',
+        body: 'Old-fashioned oats are minimally processed. Flavor packets, isolates, and syrups are what turn oatmeal into a formula.' },
+    ],
+    bragg: [
+      { kind: 'look', kicker: 'Look closer', title: 'A short, old list',
+        body: 'Apple cider vinegar is a fermented pantry staple. Short lists like this are the Non-UPF end of the helix.' },
+    ],
+  };
+  const F_LOOK = [
+    { test: /olive oil/i, kind: 'look', kicker: 'Look closer', title: 'Pressed, not formulated',
+      body: 'Extra-virgin olive oil is a single ingredient. That is the textbook Non-UPF pantry staple on this strand.' },
+    { test: /oat(s|meal|cakes|drink|milk)|porridge|weetabix/i, kind: 'look', kicker: 'Look closer', title: 'Oats stay simple until flavored',
+      body: 'Plain oats sit at the Non-UPF end. Flavor systems and isolates are what push a breakfast cup the other way.' },
+    { test: /yogurt|yoghurt/i, kind: 'look', kicker: 'Look closer', title: 'Cultures, then extras',
+      body: 'Yogurt is milk plus cultures — until thickeners, isolates, and flavor bases show up on the list.' },
+    { test: /water/i, kind: 'look', kicker: 'Look closer', title: 'As close as a product gets',
+      body: 'Bottled water is as Non-UPF as packaged food gets. It rides the helix so the contrast with formulated snacks is visible.' },
+    { test: /peanut butter|almond butter/i, kind: 'look', kicker: 'Look closer', title: 'Nuts — or a spread formula',
+      body: 'Nut butter is Non-UPF when it is nuts and salt. Sugar, oils, and emulsifiers change the call.' },
+    { test: /oreo|nutella|kinder|toblerone|chocolate orange|dairymilk/i, kind: 'look', kicker: 'Look closer', title: 'Confectionery is usually formulated',
+      body: 'Emulsifiers, isolates, and cosmetic extras are the UPF markers in a chocolate aisle — even on a familiar name.' },
+    { test: /ramen|instant noodle/i, kind: 'look', kicker: 'Look closer', title: 'A classic UPF pattern',
+      body: 'Instant noodles usually pair a fried cake with a flavor powder. That is the pattern Non-UPF is built to catch.' },
+    { test: /ketchup|mayonnaise|sandwich spread|pickle/i, kind: 'look', kicker: 'Look closer', title: 'Condiments live on the edge',
+      body: 'A short vinegar-and-tomato list and a formulated spread can share a shelf and not share a Non-UPF verdict.' },
+    { test: /bread|loaf|rolls|muffin(?!s-)|english muffin/i, kind: 'look', kicker: 'Look closer', title: 'Bread is a list, not a shape',
+      body: 'Flour, water, salt, and time can be Non-UPF. Dough conditioners and a long improver list are a different product.' },
+    { test: /coca cola|soda|squash/i, kind: 'look', kicker: 'Look closer', title: 'Zero sugar is not Non-UPF',
+      body: 'A formulated beverage can be calorie-free and still ultra-processed. Those are two different questions.' },
+    { test: /cheerios|cereal|coco pops|grape-nuts|granola bar/i, kind: 'look', kicker: 'Look closer', title: 'Breakfast is often a formula',
+      body: 'Extruded shapes, coatings, and fortification systems are why so many cereals land as ultra-processed.' },
+    { test: /tofu/i, kind: 'look', kicker: 'Look closer', title: 'A short soy list',
+      body: 'Silken tofu is typically soybeans, water, and a coagulant — a useful Non-UPF contrast to flavored soy snacks.' },
+  ];
+
+  function hashStr(s) {
+    let h = 2166136261;
+    const t = String(s || '');
+    for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  function normBrand(b) {
+    return String(b || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+  function pickFrom(list, h) {
+    return list && list.length ? list[h % list.length] : null;
+  }
+  function lookFactFor(p) {
+    const blob = ((p && p.name) || '') + ' ' + ((p && p.brand) || '');
+    for (let i = 0; i < F_LOOK.length; i++) {
+      if (F_LOOK[i].test.test(blob)) return F_LOOK[i];
+    }
+    return null;
+  }
+  /* A fact card must be a real note — kicker + title + body. A lone status
+     word next to the photo is not a card we show. */
+  function richFact(fact) {
+    if (!fact) return null;
+    const title = String(fact.title || '').trim();
+    const body = String(fact.body || '').trim();
+    if (!title || !body) return null;
+    if (/^(non-?upf|upf|gras)$/i.test(title)) return null;
+    return fact;
+  }
+  function factForProduct(p) {
+    if (!p) return null;
+    const brand = normBrand(p.brand);
+    const h = hashStr(p.img || p.name || '');
+    const brandFacts = F_BRAND[brand];
+    if (brandFacts) return richFact(pickFrom(brandFacts, h));
+    return richFact(lookFactFor(p));
+  }
+  /* Only about one in four products that *have* a real fact show it; the rest
+     (and every product without a fact) stay food sheets. */
+  function isFactProduct(p) {
+    if (!p || !factForProduct(p)) return false;
+    return (hashStr(p.img || p.name) % 4) === 0;
+  }
+
   let canvas = null, ctx = null, buf = null, bctx = null, raf = 0, ro = null, images = null, owlImg = null;
   let rgb = [37, 80, 124], w = 0, h = 0, dpr = 1, t0 = 0, running = false, paused = false;
-  /* Hover interaction state: the product circles' hit boxes from the last frame, the
-     currently hovered product, the branded info card, and the last pointer position
-     (body-relative) so the running frame loop can tell when the hovered circle has
-     travelled out from under the cursor. */
+  /* Hover-card state: last-frame hit boxes, the product the card is riding,
+     and pointer position so a hovered card can close when its circle travels
+     out from under the cursor. A card opens only when the pointer moves onto
+     a circle — never because a circle drifted under a still cursor. */
   let hitNodes = [], hoverImg = null, hoverX = -1, hoverY = -1;
   let lastT = 0, card = null, overCard = false, hideTimer = 0, ptrX = -1, ptrY = -1;
+  let hoverPinned = false;
 
   /* Resolve assets/ relative to THIS module so the photos load no matter how deep
      the host page sits; falls back to the project's ../assets convention. */
@@ -2077,13 +2335,23 @@ export function createHelixBgAnim(cfg) {
   }
 
   /* Read the live brand blue off the theme (bright variant in dark mode) so the
-     strands always track the palette; falls back to the canonical --primary. */
+     strands always track the palette; falls back to the canonical --primary.
+     When a full-bleed preset (or hand-picked chat colour) is on, use that
+     surface's accent so the helix stays visible on Cyberpunk / Sunset Green /
+     Blue Sky in both light and dark page themes. */
   function readColor() {
     let col = '#25507C';
     try {
-      const cs = getComputedStyle(document.documentElement);
-      const dark = document.documentElement.classList.contains('dark');
-      col = ((dark ? cs.getPropertyValue('--primary-bright') : cs.getPropertyValue('--primary')) || '').trim() || col;
+      const root = document.documentElement;
+      const cs = getComputedStyle(root);
+      if (root.classList.contains('fb-chat-tint')) {
+        col = (cs.getPropertyValue('--fb-chat-accent') || '').trim()
+          || (cs.getPropertyValue('--fb-chat-fg') || '').trim()
+          || col;
+      } else {
+        const dark = root.classList.contains('dark');
+        col = ((dark ? cs.getPropertyValue('--primary-bright') : cs.getPropertyValue('--primary')) || '').trim() || col;
+      }
     } catch (_) {}
     if (col[0] === '#') {
       let x = col.slice(1);
@@ -2110,30 +2378,37 @@ export function createHelixBgAnim(cfg) {
     buildCard(body);
     resize();
     try { ro = new ResizeObserver(resize); ro.observe(body); } catch (_) {}
-    /* Hover interaction — listen on the body so we get coordinates even though the
-       canvas sits behind the (transparent) welcome. Hovering DIRECTLY on a product
-       circle opens its card; the helix keeps travelling underneath, the card rides
-       its circle, and it closes once the pointer leaves both circle and card. */
+    /* Hover only — listen on the body so we get coordinates even though the
+       canvas sits behind the (transparent) welcome. Hovering a product circle
+       pins its card (food sheet, brand insight, or look-closer fact). */
     body.addEventListener('mousemove', onMove);
-    body.addEventListener('mouseleave', () => { if (!overCard) scheduleHide(); });
+    body.addEventListener('mouseleave', () => { if (hoverPinned && !overCard) scheduleHide(); });
   }
 
-  /* The branded hover card (our surface + tokens) with a thumbnail, name/brand and a
-     deep-link into the product's Nutrition Facts (NFP) view. */
+  /* Product or insight card: round thumb over the bug. Food mode is name/brand +
+     View Details; fact mode is a brand-insight or look-closer note (title + body). */
   function buildCard(body) {
     card = document.createElement('div');
-    card.className = 'wch-food-card';
+    card.className = 'wch-helix-card is-food';
     card.hidden = true;
     card.innerHTML =
-      '<div class="wch-food-card-top">' +
-        '<span class="wch-food-card-thumb"><img alt="" /></span>' +
-        '<span class="wch-food-card-meta"><span class="wch-food-card-brand"></span>' +
-        '<span class="wch-food-card-name"></span></span>' +
+      '<div class="wch-helix-card-top">' +
+        '<span class="wch-helix-card-thumb"><img alt="" /></span>' +
+        '<span class="wch-helix-card-copy">' +
+          '<span class="wch-helix-food"><span class="wch-helix-card-brand"></span>' +
+          '<span class="wch-helix-card-name"></span></span>' +
+          '<span class="wch-helix-fact-copy"><span class="wch-helix-fact-kicker"></span>' +
+          '<span class="wch-helix-fact-title"></span></span>' +
+        '</span>' +
       '</div>' +
-      '<a class="wch-food-card-link" href="#"><span>View Details</span>' +
+      '<span class="wch-helix-fact-body"></span>' +
+      '<a class="wch-helix-card-link" href="#"><span>View Details</span>' +
         '<span class="material-symbols-outlined">arrow_outward</span></a>';
     body.appendChild(card);
-    card.addEventListener('mouseenter', () => { overCard = true; if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; } });
+    card.addEventListener('mouseenter', () => {
+      overCard = true; hoverPinned = true;
+      if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
+    });
     card.addEventListener('mouseleave', () => { overCard = false; scheduleHide(); });
   }
 
@@ -2144,11 +2419,26 @@ export function createHelixBgAnim(cfg) {
     const pad = 2;
     for (let i = hitNodes.length - 1; i >= 0; i--) {
       const n = hitNodes[i];
-      const dx = mx - n.x, dy = my - n.y;
-      const rr = n.r + pad;
-      if (dx * dx + dy * dy <= rr * rr) return n;
+      if (insideNode(n, mx, my, pad)) return n;
     }
     return null;
+  }
+  function insideNode(n, x, y, pad) {
+    const dx = x - n.x, dy = y - n.y;
+    const rr = n.r + (pad || 0);
+    return dx * dx + dy * dy <= rr * rr;
+  }
+  /* Heading, chips, composer, menus — moving across those is not a helix hover. */
+  function eventOverChrome(e) {
+    const t = e && e.target;
+    if (!t || !t.closest) return false;
+    if (t.closest('.wch-helix-card')) return false;
+    return !!t.closest(
+      'button, a, input, textarea, select, .chip, .ws-heading, .ws-sub, ' +
+      '.ws-chips, .ws-chips-scroll, .ws-chips-wrap, .ws-scorecards-section, ' +
+      '.sc-input-row, .chat-input-rail, .sc-belowinput, .topbar-popover, ' +
+      '.wise-popover, .fl-more-popover, [role="menu"], .sc-ask-help'
+    );
   }
 
   function onMove(e) {
@@ -2157,15 +2447,39 @@ export function createHelixBgAnim(cfg) {
     if (!body) return;
     const rect = body.getBoundingClientRect();
     const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-    ptrX = mx; ptrY = my;                          // the frame loop re-checks this spot as circles travel
+    if (e.target && e.target.closest && e.target.closest('.wch-helix-card')) {
+      ptrX = mx; ptrY = my;
+      return;
+    }
+    if (eventOverChrome(e)) {
+      ptrX = mx; ptrY = my;
+      if (hoverPinned && !overCard) scheduleHide();
+      return;
+    }
+    const prevX = ptrX, prevY = ptrY;
+    ptrX = mx; ptrY = my;
     const hit = hitTest(mx, my);
     if (hit) {
-      body.style.cursor = 'pointer';                 // affordance: the bugs are interactive
-      if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
-      showCard(hit);
+      const same = !!(card && !card.hidden && hoverImg === hit.prod.img);
+      if (same) {
+        hoverPinned = true;
+        body.style.cursor = 'pointer';
+        if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
+        return;
+      }
+      /* First sample only records the pointer — a card must wait until the
+         pointer actually moves onto a circle (was outside, now inside). */
+      if (prevX >= 0 && !insideNode(hit, prevX, prevY, 2)) {
+        body.style.cursor = 'pointer';
+        hoverPinned = true;
+        if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
+        showCard(hit);
+      } else {
+        body.style.cursor = 'pointer';
+      }
     } else {
       body.style.cursor = '';
-      if (!overCard) scheduleHide();
+      if (hoverPinned && !overCard) scheduleHide();
     }
   }
 
@@ -2174,47 +2488,75 @@ export function createHelixBgAnim(cfg) {
     hideTimer = setTimeout(() => { hideTimer = 0; if (!overCard) hideCard(); }, 140);
   }
 
-  /* Fill + place the card beside the hovered product. The helix keeps running:
-     the frame loop re-anchors the card to its (moving) circle every frame. */
-  function showCard(node) {
+  /* Fill + place the card on a product. Most bugs get the food sheet + NFP
+     link; fact bugs get a brand-insight or look-closer note. `skipRedraw` is
+     set when we are already inside draw() so we do not recurse a second paint. */
+  function showCard(node, skipRedraw) {
     const p = node.prod;
     if (!p) return;
-    /* Same bug already open — the frame loop keeps the card glued to it. */
     if (hoverImg === p.img) return;
     hoverImg = p.img; hoverX = node.x; hoverY = node.y;
     if (card) {
+      const fact = isFactProduct(p) ? factForProduct(p) : null;
+      const asFact = !!(fact && fact.title && fact.body);
+      card.classList.toggle('is-fact', asFact);
+      card.classList.toggle('is-food', !asFact);
       const img = card.querySelector('img');
-      if (img) img.src = assetBase() + p.img;
-      const nm = card.querySelector('.wch-food-card-name');
-      if (nm) nm.textContent = p.name || '';
-      const br = card.querySelector('.wch-food-card-brand');
-      if (br) br.textContent = p.brand || '';
-      const link = card.querySelector('.wch-food-card-link');
-      if (link) link.setAttribute('href', nfpHref(p));
+      if (img) {
+        img.src = assetBase() + p.img;
+        img.alt = p.name || '';
+      }
+      if (asFact) {
+        card.setAttribute('data-kind', fact.kind || 'look');
+        const kicker = card.querySelector('.wch-helix-fact-kicker');
+        if (kicker) kicker.textContent = fact.kicker || 'Look closer';
+        const title = card.querySelector('.wch-helix-fact-title');
+        if (title) title.textContent = fact.title || '';
+        const bodyEl = card.querySelector('.wch-helix-fact-body');
+        if (bodyEl) bodyEl.textContent = fact.body || '';
+        const br = card.querySelector('.wch-helix-card-brand');
+        if (br) br.textContent = '';
+        const nm = card.querySelector('.wch-helix-card-name');
+        if (nm) nm.textContent = '';
+      } else {
+        card.removeAttribute('data-kind');
+        const br = card.querySelector('.wch-helix-card-brand');
+        if (br) br.textContent = p.brand || '';
+        const nm = card.querySelector('.wch-helix-card-name');
+        if (nm) nm.textContent = p.name || '';
+        const link = card.querySelector('.wch-helix-card-link');
+        if (link) link.setAttribute('href', nfpHref(p));
+        const kicker = card.querySelector('.wch-helix-fact-kicker');
+        if (kicker) kicker.textContent = '';
+        const title = card.querySelector('.wch-helix-fact-title');
+        if (title) title.textContent = '';
+        const bodyEl = card.querySelector('.wch-helix-fact-body');
+        if (bodyEl) bodyEl.textContent = '';
+      }
       card.hidden = false;
-      placeCard(node);                         // unhidden first so we can measure + pick a side
-      card.style.animation = 'none';           // restart the pop-in every time it appears
+      placeCard(node);
+      card.style.animation = 'none';
       void card.offsetWidth;
       card.style.animation = '';
     }
-    redraw();
+    if (!skipRedraw) redraw();
   }
 
-  /* Lay the card OVER the hovered bug — its round thumbnail sits exactly on top of the
-     circle so the product never reads twice — and let the rest of the card fan out to
-     whichever side has room (right by default, left when close to the right edge). The
-     layout mirrors so the thumbnail is always the edge that covers the bug. */
+  /* Lay the card OVER the product bug — its round thumbnail sits on the circle —
+     and fan the copy to the right (or left when the right edge is tight). */
   function placeCard(node) {
     if (!card) return;
     const body = canvas.parentElement;
-    const cw = card.offsetWidth || 340, ch = card.offsetHeight || 148;
+    const asFact = card.classList.contains('is-fact');
+    const cw = card.offsetWidth || 340;
+    const ch = card.offsetHeight || 148;
     const bw = body.clientWidth || w, bh = body.clientHeight || h;
-    const PAD = 18, THUMB = 68;                     // must track the card CSS
-    const anchor = PAD + THUMB / 2;                 // thumb centre offset from its edge
-    const toLeft = (node.x - anchor + cw + 8) > bw; // card would overflow the right edge
+    const PAD = 18, THUMB = 68;
+    const anchor = PAD + THUMB / 2;
+    const toLeft = (node.x - anchor + cw + 8) > bw;
     card.classList.toggle('is-left', toLeft);
     let x = toLeft ? (node.x - (cw - anchor)) : (node.x - anchor);
-    let y = node.y - anchor;                        // thumb sits over the bug vertically
+    let y = node.y - anchor;
     x = Math.max(8, Math.min(x, bw - cw - 8));
     y = Math.max(8, Math.min(y, bh - ch - 8));
     card.style.left = x + 'px';
@@ -2223,10 +2565,11 @@ export function createHelixBgAnim(cfg) {
 
   function hideCard() {
     hoverImg = null; hoverX = hoverY = -1;
+    hoverPinned = false;
     if (card) card.hidden = true;
     const body = canvas && canvas.parentElement;
     if (body) body.style.cursor = '';
-    if (!running) redraw();                       // reduced-motion still frame: drop the ring
+    if (!running) redraw();
   }
 
   /* Deep-link into the product's Nutrition Facts (NFP) view — mirrors the portfolio /
@@ -2274,6 +2617,7 @@ export function createHelixBgAnim(cfg) {
   function draw(t) {
     if (!ctx || !bctx || w < 2 || h < 2) return;
     lastT = t;                                                 // remember the last painted time (for redraw)
+    rgb = readColor();                                         // track preset / theme flips live
     const O = Math.max(0, Math.min(1, getOpacity())); // shared opacity control (pane-count default until user-set)
     /* Draw the whole field to an OFFSCREEN buffer at full strength — the opaque product
        discs hide the strand lines *inside* the buffer — then blit the buffer onto the
@@ -2394,10 +2738,9 @@ export function createHelixBgAnim(cfg) {
       }
       hitNodes.push({ x: n.x, y: n.y, r: rad, prod: n.prod });
     }
-    /* A shown card rides its (moving) circle: re-anchor it every frame, and once the
-       circle has travelled out from under the pointer — and the pointer isn't parked
-       on the card itself — let the debounced hide close it. Every product is unique
-       on the strand, so the image key finds the one hovered circle. */
+    /* A shown card rides its (moving) circle and closes once the pointer
+       leaves both circle and card — or if its product leaves the frame.
+       A circle drifting back under a parked cursor does not reopen it. */
     if (hoverImg) {
       let live = null;
       for (let i = hitNodes.length - 1; i >= 0; i--) {
@@ -2406,11 +2749,12 @@ export function createHelixBgAnim(cfg) {
       if (live) {
         hoverX = live.x; hoverY = live.y;
         if (card && !card.hidden) placeCard(live);
-        const dx = ptrX - live.x, dy = ptrY - live.y, rr = live.r + 2;
-        const onCircle = ptrX >= 0 && dx * dx + dy * dy <= rr * rr;
-        if (onCircle) { if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; } }
-        else if (!overCard && !hideTimer) scheduleHide();
-      } else if (!overCard && !hideTimer) scheduleHide();
+        if (!overCard && ptrX >= 0 && !insideNode(live, ptrX, ptrY, 2) && !hideTimer) {
+          scheduleHide();
+        }
+      } else if (!overCard && !hideTimer) {
+        scheduleHide();
+      }
     }
     /* Blit the finished (opaque) buffer onto the visible canvas at the field opacity. */
     ctx = mainCtx;
@@ -2480,12 +2824,24 @@ export function createHelixBgAnim(cfg) {
     running = false; paused = false;
     if (raf) { cancelAnimationFrame(raf); raf = 0; }
     if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
-    overCard = false; hoverImg = null; hoverX = hoverY = -1; ptrX = ptrY = -1;
+    overCard = false; hoverPinned = false; hoverImg = null; hoverX = hoverY = -1; ptrX = ptrY = -1;
     if (card) card.hidden = true;
     const cbody = canvas && canvas.parentElement;
     if (cbody) cbody.style.cursor = '';
     host.classList.remove('sc-bganim-live');
     if (ctx) ctx.clearRect(0, 0, w, h);
+  }
+
+  /* Preset / colour-picker changes while the field is paused (or on a still
+     reduced-motion frame) must restain the strand immediately. Running
+     frames already re-read in draw(). */
+  if (typeof document !== 'undefined' && !host.__fbHelixColorBound) {
+    host.__fbHelixColorBound = true;
+    document.addEventListener('wise:fb-surfaces', () => {
+      rgb = readColor();
+      if (!canvas || !ctx) return;
+      if (host.classList.contains('sc-bganim-live')) draw(lastT || 3);
+    });
   }
 
   return { start, stop, pause, resume };
@@ -3254,26 +3610,41 @@ let _seq = 0;
  *                          [{id,name,version,group,icon,color,bg,tagline,desc,tags,required,on}]
  *   heading      {string}  welcome heading (default 'What can WISEcodeAI help with?')
  *   sub          {string}  welcome subheading
- *   intents      {Array}   welcome intent chips [{intent,label,icon,ask?,nextIntents?}]
+ *   intents      {Array}   welcome intent chips [{intent,label,icon,ask?,nextIntents?,carryTopic?}]
  *                          — `ask` (optional) is the full question posted as
  *                          the user's line; the chip face still shows the
  *                          shorter label. `nextIntents` (ids or chip objects)
  *                          is the topic-related row that trails that chip's
  *                          answer so a transcript never dead-ends.
+ *                          `carryTopic` keeps the previous turn's topic so a
+ *                          generic follow-up (compare / report / spider) stays
+ *                          about what was just discussed.
  *   followups    {object}  intent-id → [ids|chips] map used when a chip has
  *                          no `nextIntents` of its own
  *   intentReplies{object}  intent-id → reply (string|fn) so a clicked chip
- *                          always continues with an on-feature answer
+ *                          always continues with an on-feature answer.
+ *                          Functions receive (text, intent, ctx) where ctx is
+ *                          { prev:{intent,topic,userText,html}, topic }.
+ *   topicOf      {fn}      (intent, prevCtx) => topic id — groups related
+ *                          chips (kraft_heinz → kraft) so follow-ups stay
+ *                          on the same subject
+ *   contextualizeChip {fn} (chip, thread) => {label?,ask?} — rewrite a
+ *                          follow-up chip so its face/ask match the last turn
+ *   carryTopic   {fn}      (intent, chip) => bool — extra carryTopic test
+ *                          when the chip itself isn't flagged
  *   placeholder  {string}  input placeholder
  *   flLabel      {string}  floating label text
  *   disclaimer   {string}  standing AI-limitations note under the input ('' hides)
  *   sourceLabel  {string}  grounding caption appended to each WISEcodeAI reply ('' hides)
  *   statusLabel  {string}  what WISEcodeAI is "doing" while the typing dots show
  *   onIntent     {fn}      (intent,label) => boolean — return true to suppress default reply
+ *   onReply      {fn}      (intent, text, ctx) — fires when the answer lands;
+ *                          ctx.topic is this turn's subject (previous topic
+ *                          when the chip carried it forward)
  *   onAddMember  {fn}      () => void — "Add team member to chat" popover item
  *   onHistory    {fn}      () => void — "History & Projects" popover item
  *   onToggleWidth{fn}      (isWide) => void — fired when the width toggle flips
- *   reply        {fn}      (text,intent) => html string for WISEcodeAI's response
+ *   reply        {fn}      (text, intent, ctx) => html string for WISEcodeAI's response
  * @returns {{ addUser, addWISEcodeAI, reset, root }}
  */
 export function mountWISEcodeAIChat(rootEl, opts = {}) {
@@ -3319,6 +3690,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      rather than advancing the thread (choose_agents, connect_source) are never
      marked spent. */
   const usedIntents = new Set();
+  /* Last completed turn — follow-up chips and their replies key off this so
+     "Compare" after Kraft is still about Kraft, not a random other product. */
+  let thread = { intent: null, topic: null, userText: '', html: '' };
   /* Host setIntents() / applyTopicFollowups() already chose this turn's
      trailing chips — addWISEcodeAI must not score-replace them. */
   let skipAutoFollowups = false;
@@ -3352,14 +3726,18 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   let intentReplies = opts.intentReplies && typeof opts.intentReplies === 'object' ? opts.intentReplies : null;
   const baseReply = typeof opts.reply === 'function' ? opts.reply : defaultReply;
   const reply = (text, intent) => {
+    const ctx = {
+      prev: threadCtx(),
+      topic: resolveTopic(intent),
+    };
     if (intent && intentReplies && intentReplies[intent] != null) {
       const r = intentReplies[intent];
-      return typeof r === 'function' ? r(text, intent) : r;
+      return typeof r === 'function' ? r(text, intent, ctx) : r;
     }
     /* The gold "What can I ask?" chip gets a built-in page-aware answer unless
        the host supplied its own via intentReplies.ask_help above. */
     if (intent === 'ask_help') return askHelpReplyHtml();
-    return baseReply(text, intent);
+    return baseReply(text, intent, ctx);
   };
 
   /* The transcript the gold "What can I ask?" chip produces — page-specific by
@@ -4913,13 +5291,20 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     /* Resolve the answer up front so the trace can narrate assembling the exact
        pieces it will contain — and so nothing (chart/table/report cards, source
        chips, suggested actions, or host-surfaced output panes) renders until the
-       whole trace has finished. */
+       whole trace has finished. Reply functions see the PREVIOUS turn; we
+       remember this one after, so follow-up chips trail the answer that just
+       landed. */
+    const prev = threadCtx();
     const baseHtml = reply(text, intent);
+    rememberTurn(intent, text, baseHtml);
     respondWithTrace(baseHtml, {
       traceText: text,
       intent,
       onTraceDone: () => {
-        if (typeof opts.onReply === 'function') { try { opts.onReply(intent, text); } catch (_) { /* host hook */ } }
+        if (typeof opts.onReply === 'function') {
+          try { opts.onReply(intent, text, { intent, topic: thread.topic, prev }); }
+          catch (_) { /* host hook */ }
+        }
       },
     });
   }
@@ -5440,6 +5825,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      branch icon) — resolve which turn owns the line, then reuse forkFromTurn. */
   function forkFromLine(line) {
     if (!line) return;
+    /* The more-menu is portaled onto <body>; close it first so popover-layer
+       can restore it before the transcript is rewritten underneath. */
+    closeMoreMenus();
     const turns = collectTurns();
     for (let i = 0; i < turns.length; i++) {
       const t = turns[i];
@@ -5456,6 +5844,14 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     for (const t of turns) {
       if (t.you === line || t.replies.indexOf(line) !== -1) return t.you ? lineText(t.you) : '';
     }
+    /* Fallback: walk back to the nearest user line if turn grouping missed. */
+    let n = line;
+    while (n) {
+      if (n.classList && n.classList.contains('sc-line-you') && !n.classList.contains('sc-line-event')) {
+        return lineText(n);
+      }
+      n = n.previousElementSibling;
+    }
     return '';
   }
 
@@ -5464,16 +5860,23 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      the composer so it can be edited before sending. The current thread is saved
      to History first, exactly like "Start new conversation". */
   function rerunFromLine(line, autoRun) {
+    closeMoreMenus();
     const text = promptForLine(line);
-    if (!text) return;
+    if (!text) {
+      const anchor = (line && line.querySelector('.sc-fb-more')) || line;
+      flashScTip(anchor, autoRun ? 'No prompt to re-run' : 'No prompt to edit');
+      return;
+    }
     if (chatHistory && chatHistory.startNew) chatHistory.startNew();
     else reset();
     if (autoRun) {
       ask(text);
     } else if (input) {
+      hideWelcome();
       input.value = text;
       input.focus();
       try { input.setSelectionRange(text.length, text.length); } catch (_) {}
+      input.dispatchEvent(new Event('input', { bubbles: true }));
     }
   }
 
@@ -6367,6 +6770,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     intents = sessionIntents.slice();
     usedIntents.clear();
     skipAutoFollowups = false;
+    clearThread();
     renderChips();
     welcome?.classList.remove('sc-hidden');
     if (welcome) welcome.style.display = '';
@@ -6506,6 +6910,67 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (!id) return null;
     return intentCatalog.get(id) || sessionIntents.find((c) => c && c.intent === id)
       || intents.find((c) => c && c.intent === id) || null;
+  }
+  function threadCtx() {
+    return { intent: thread.intent, topic: thread.topic, userText: thread.userText, html: thread.html };
+  }
+  function clearThread() {
+    thread = { intent: null, topic: null, userText: '', html: '' };
+  }
+  /* Generic follow-ups (compare / report / spider) keep talking about the
+     previous subject instead of becoming a new topic of their own. */
+  function intentCarriesTopic(intent) {
+    if (!intent) return false;
+    const chip = chipByIntentId(intent);
+    if (chip && chip.carryTopic === true) return true;
+    if (chip && chip.carryTopic === false) return false;
+    if (typeof opts.carryTopic === 'function') {
+      try { return !!opts.carryTopic(intent, chip); } catch (_) { return false; }
+    }
+    return intent === 'compare' || intent === 'report' || intent === 'spider';
+  }
+  function resolveTopic(intent) {
+    if (intentCarriesTopic(intent) && thread.topic) return thread.topic;
+    if (typeof opts.topicOf === 'function') {
+      try {
+        const t = opts.topicOf(intent, threadCtx());
+        if (t) return t;
+      } catch (_) { /* host hook */ }
+    }
+    return intent || thread.topic || null;
+  }
+  function rememberTurn(intent, userText, html) {
+    thread = {
+      intent: intent || null,
+      topic: resolveTopic(intent),
+      userText: userText || '',
+      html: html || '',
+    };
+  }
+  function cloneChip(c) {
+    if (!c) return null;
+    const out = Object.assign({}, c);
+    if (Array.isArray(c.nextIntents)) out.nextIntents = c.nextIntents.slice();
+    return out;
+  }
+  /* Rewrite a follow-up chip so its label/ask still read as a continuation of
+     the turn that just landed (host supplies the copy via contextualizeChip). */
+  function decorateChip(c) {
+    const copy = cloneChip(c);
+    if (!copy) return copy;
+    if (typeof opts.contextualizeChip === 'function' && (thread.topic || thread.userText)) {
+      try {
+        const extra = opts.contextualizeChip(copy, threadCtx());
+        if (extra && typeof extra === 'object') {
+          if (extra.label) copy.label = extra.label;
+          if (extra.ask) copy.ask = extra.ask;
+        }
+      } catch (_) { /* host hook */ }
+    }
+    return copy;
+  }
+  function decorateChips(list) {
+    return (list || []).map(decorateChip).filter((c) => c && c.intent);
   }
   function inferUsedIntents(html) {
     const users = historyUserLines(html);
@@ -6669,6 +7134,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
         if (c && c.intent && !HISTORY_CONTROL.has(c.intent) && !usedIntents.has(c.intent) && next.length < 5) next.push(c);
       });
     }
+    /* Clone + rewrite so a generic follow-up ("Compare", "Report") still
+       names the subject of the turn that just landed. */
+    next = decorateChips(next);
     intents = withAskHelpChip(next);
     catalogize(intents);
     catalogizeNext(intents);
@@ -6683,6 +7151,23 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       ? item.usedIntents
       : inferUsedIntents(html);
     savedUsed.forEach((id) => { if (id && id !== ASK_HELP_INTENT) usedIntents.add(id); });
+    /* Restore the conversation topic from the last specific (non-carry) intent
+       so a follow-up chip on a restored thread still continues that subject. */
+    let topicId = savedUsed.length ? savedUsed[savedUsed.length - 1] : null;
+    for (let i = savedUsed.length - 1; i >= 0; i--) {
+      if (!intentCarriesTopic(savedUsed[i])) { topicId = savedUsed[i]; break; }
+    }
+    let topic = topicId;
+    if (typeof opts.topicOf === 'function' && topicId) {
+      try { topic = opts.topicOf(topicId, {}) || topicId; } catch (_) { topic = topicId; }
+    }
+    const lastUser = historyUserLines(html);
+    thread = {
+      intent: savedUsed.length ? savedUsed[savedUsed.length - 1] : topicId,
+      topic: topic || null,
+      userText: lastUser.length ? lastUser[lastUser.length - 1] : (item.title || ''),
+      html,
+    };
     applyTopicFollowups(null, html, item.title || '', item);
     parkInlineChips(true);
     if (ichipsEl && !prefersReducedMotion) {
@@ -6923,7 +7408,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, done);
     else done();
   }
-  messages?.addEventListener('click', (e) => {
+  function onFbClick(e) {
     const moreBtn = e.target.closest('.sc-fb-more');
     if (moreBtn) {
       const wrap = moreBtn.closest('.sc-fb-more-wrap');
@@ -6946,8 +7431,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     }
     const fbBtn = e.target.closest('.sc-fb-btn');
     if (fbBtn) {
-      const wrap = fbBtn.closest('.sc-fb-wrap');
-      const line = fbBtn.closest('.sc-line');
+      const wrap = fbWrapOf(fbBtn);
+      const line = fbLineOf(fbBtn);
       if (!wrap || !line) return;
       const verdict = fbBtn.getAttribute('data-fb');
       if (verdict === 'copy') { copyAnswer(line, fbBtn); return; }
@@ -6982,7 +7467,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     }
     const sendBtn = e.target.closest('.sc-fb-send');
     if (sendBtn) {
-      const wrap = sendBtn.closest('.sc-fb-wrap');
+      const wrap = fbWrapOf(sendBtn);
       const pop = sendBtn.closest('.sc-fb-reasons');
       if (!wrap || !pop) return;
       const kind = sendBtn.getAttribute('data-fb-send');
@@ -7012,7 +7497,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
          instead of a lone "thanks" popping in the moment a chip is tapped. */
       reason.classList.toggle('is-on');
     }
-  });
+  }
+  messages?.addEventListener('click', onFbClick);
 
   /* Dismiss any open reason pop-over on an outside click or Escape, so it
      behaves like a proper floating menu instead of a pinned inline panel. */
@@ -7035,6 +7521,39 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   function wrapOfMenu(menu) {
     return (menu && (menu.closest('.sc-fb-more-wrap') || menu.__fbWrap || menu.__plHost)) || null;
   }
+  /* Resolve the feedback wrap / transcript line for a control that may have
+     been portaled onto <body> (js/popover-layer.js lifts `.sc-fb-menu` and
+     `.sc-fb-reasons` while they're open). Walk the portal host, not the live
+     parent, so replay / edit / fork / turn-id / reason chips still know which
+     turn they belong to. */
+  function fbWrapOf(node) {
+    if (!node || !node.closest) return null;
+    const direct = node.closest('.sc-fb-wrap');
+    if (direct) return direct;
+    const menu = node.closest('.sc-fb-menu');
+    if (menu) {
+      const more = wrapOfMenu(menu);
+      return more ? more.closest('.sc-fb-wrap') : null;
+    }
+    const reasons = node.closest('.sc-fb-reasons');
+    if (reasons) {
+      const host = reasons.closest('.sc-fb-down-wrap, .sc-fb-up-wrap') || reasons.__plHost;
+      return host ? host.closest('.sc-fb-wrap') : null;
+    }
+    return null;
+  }
+  function fbLineOf(node) {
+    if (!node || !node.closest) return null;
+    const line = node.closest('.sc-line');
+    if (line) return line;
+    const wrap = fbWrapOf(node);
+    return wrap ? wrap.closest('.sc-line') : null;
+  }
+  function isThisChatFb(node) {
+    if (!messages) return false;
+    const wrap = fbWrapOf(node);
+    return !!(wrap && messages.contains(wrap));
+  }
   function isMoreUi(node) {
     return !!(node && node.closest && node.closest('.sc-fb-more-wrap, .sc-fb-menu'));
   }
@@ -7046,6 +7565,13 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     });
   }
   document.addEventListener('click', (e) => {
+    /* Replay / edit / fork / turn-id live inside `.sc-fb-menu`, which portals
+       onto <body> while open — a listener on `messages` never sees those
+       clicks. Route them through the same handler, scoped to this chat. */
+    const portaled = e.target.closest('.sc-fb-menu, .sc-fb-reasons');
+    if (portaled && messages && !messages.contains(portaled) && isThisChatFb(e.target)) {
+      onFbClick(e);
+    }
     if (!e.target.closest('.sc-fb-down-wrap, .sc-fb-up-wrap, .sc-fb-reasons')) closeReasonPopovers();
     /* Leave the menu open while interacting inside it (copy turn ID, etc.); a
        click that lands on the trigger is handled by its own toggle above. */
@@ -7082,65 +7608,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (e.key === 'Escape') { closeReasonPopovers(); closeMoreMenus(); }
   });
 
-  /* Stylized hover/focus tooltip for the per-answer action icons. Reads its
-     short caption from `data-tip`, floats a dark card just above the control,
-     and is delegated on the messages area so it covers every rendered turn. */
-  const TIP_SELECTOR = '.sc-fb-btn[data-tip], .sc-fb-id[data-tip]';
-  let scTipEl = document.getElementById('sc-tip');
-  if (!scTipEl) {
-    scTipEl = document.createElement('div');
-    scTipEl.id = 'sc-tip';
-    scTipEl.className = 'sc-tip';
-    scTipEl.setAttribute('aria-hidden', 'true');
-    document.body.appendChild(scTipEl);
-  }
-  let scTipFor = null;
-  function showScTip(target) {
-    const label = target.getAttribute('data-tip');
-    if (!label) return;
-    scTipFor = target;
-    scTipEl.textContent = label;
-    const r = target.getBoundingClientRect();
-    scTipEl.style.left = `${Math.round(r.left + r.width / 2)}px`;
-    scTipEl.style.top = `${Math.round(r.top - 8)}px`;
-    scTipEl.offsetWidth; /* reflow so the enter transition plays */
-    scTipEl.classList.add('is-vis');
-  }
-  function hideScTip() { scTipFor = null; scTipEl.classList.remove('is-vis'); }
-  /* Momentary confirmation toast reusing the tooltip card — used after a copy
-     so the acknowledgement lands right where the hover tip would sit. Deferred
-     a frame so it survives the click-driven hideScTip on the same gesture. */
-  let scTipFlashTimer = null;
-  function flashScTip(target, label) {
-    if (!target) return;
-    requestAnimationFrame(() => {
-      scTipFor = null; /* not a hover tip — don't let mouseout dismiss it early */
-      scTipEl.textContent = label;
-      const r = target.getBoundingClientRect();
-      scTipEl.style.left = `${Math.round(r.left + r.width / 2)}px`;
-      scTipEl.style.top = `${Math.round(r.top - 8)}px`;
-      scTipEl.offsetWidth; /* reflow so the enter transition plays */
-      scTipEl.classList.add('is-vis');
-      clearTimeout(scTipFlashTimer);
-      scTipFlashTimer = setTimeout(hideScTip, 1200);
-    });
-  }
-  messages?.addEventListener('mouseover', (e) => {
-    const t = e.target.closest(TIP_SELECTOR);
-    if (t && t !== scTipFor) showScTip(t);
-  });
-  messages?.addEventListener('mouseout', (e) => {
-    const t = e.target.closest(TIP_SELECTOR);
-    if (t && !t.contains(e.relatedTarget)) hideScTip();
-  });
-  messages?.addEventListener('focusin', (e) => {
-    const t = e.target.closest(TIP_SELECTOR);
-    if (t) showScTip(t);
-  });
-  messages?.addEventListener('focusout', hideScTip);
-  messages?.addEventListener('click', hideScTip);
-  window.addEventListener('scroll', hideScTip, true);
-  window.addEventListener('resize', hideScTip);
+  /* Answer-action tooltips (copy / thumbs / the icons inside the three-dot
+     menu) are wired once at document level by wireAnswerTips() — the more-menu
+     portals onto <body>, so a listener on `messages` would miss those icons. */
 
   /* Persistent intent chips — same routing as the welcome chips, but always
      available beneath the thread so any conversational route stays one tap

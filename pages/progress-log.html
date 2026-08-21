@@ -5,8 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- Never serve a stale snapshot of this journal — every reload / hot reload
        must re-evaluate counts, filters, and the timeline from the current LOG.
-       A Re-evaluate click and the start of a new local day both rewrite every
-       eval note, not just refresh the board. -->
+       A new local day opens a live day at the top of the board. Eval notes and
+       crawls are today-only — they never rewrite earlier days or write a
+       journal-wide digest. Boot, the hourly poll, midnight, and Re-evaluate
+       crawl disk and rewrite today’s note only. -->
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <title>WISE · Progress Log</title>
@@ -540,12 +542,80 @@
       const CAT_BY_ID = Object.fromEntries(CATS.map((c) => [c.id, c]));
 
       /* ── The log. Newest day first. Each entry is a page touched that day.
-         LOG_STAMP is bumped whenever this journal is rewritten. The board
-         polls it every hour (and on tab-focus after an hour) and reloads
-         when the stamp has moved. A new local day — or a Re-evaluate click —
-         always rewrites the eval note for every page on every day. ── */
-      const LOG_STAMP = '2026-08-19T23:45:00.000Z';
-      const LOG = [
+         AUTHORED is the hand-written journal. LOG is the board: AUTHORED, plus
+         a live day prepended whenever today is not in AUTHORED. LOG_STAMP is
+         bumped whenever this file is rewritten; the board polls it every hour
+         (and on tab-focus after an hour) and reloads when the stamp has moved.
+         A new local day opens that live day so crawls and eval notes cannot
+         keep writing onto yesterday. ── */
+      const LOG_STAMP = '2026-08-21T00:25:00.000Z';
+      const AUTHORED = [
+        {
+          date: '2026-08-20', rel: 'Thursday',
+          summary: 'Follow-up chips continue the last turn; answer-action tooltips sit on the icon popover; Conversation Library tree lines match History; All Modules rail lists each module’s components with a synced Dev Ready toggle; this journal opens a live day at local midnight instead of restamping yesterday.',
+          entries: [
+            { page: 'WISEcodeAI', path: 'wiseai.html',
+              features: [
+                'Follow-up chips carry the last topic (carryTopic + contextualizeChip) so Compare / Report / Spider / worst-foods still read as a continuation of the answer that just landed',
+                'Artificial sweeteners table is a real sortable grid — column headers toggle sort, the search pill uses the tune-icon filter, and the leftover “Edit this ingredient query” button is gone',
+              ],
+              ux: [
+                'Hero line is “WISEcodeAI™, empowering you with Food Truth™.”',
+              ] },
+            { page: 'Shared chat', path: 'wiseai-chat.js',
+              features: [
+                'Per-answer action icons (copy / thumbs / replay / edit / fork) get a hover tooltip that sits on the popover — the same “popover on a popover” pattern as the rest of the app — plus a flash-confirm after copy',
+                'Last completed turn is remembered so nextIntents and host follow-ups continue that subject; a restored History thread still carries the topic',
+              ],
+              logic: [
+                'Hosts can decorate a follow-up chip’s label/ask via contextualizeChip and flag carryTopic so generic chips (Compare, Report, Spider) resolve against the live topic',
+                'Replay / edit / fork resolve the turn line from a detached ⋯ menu, not only from a node still inside the transcript',
+              ] },
+            { page: 'What can I ask?', path: 'chat-ask.js',
+              features: [
+                'Catalog search, sort, and section filters run inside the panel — type to narrow, sort A–Z, and the ⋯ menu stays in sync with the visible chips',
+              ] },
+            { page: 'Conversation Library', path: 'conversation-library.html',
+              ux: [
+                'Folder tree spine and rounded L-elbows match History — the horizontal is measured to the live-dot / folder icon, and a nested folder’s parent spine stops at that folder instead of running through its children',
+                'Full bleed (everything) sheds the page frame so modules reach the edge; Chat-only full bleed no longer leaves leftover top and bottom padding on the library',
+              ] },
+            { page: 'All Modules', path: 'all-modules.html',
+              features: [
+                'Under each rail module, a Components used list inverted from the Component Library catalog — every component that names that surface',
+                'Each row carries the same Dev Ready toggle id as the library card, so green / dev stays in sync across the rail and the catalog',
+              ],
+              logic: [
+                'Click a component name to jump to its library card; one delegated handler paints every copy of the toggle (rail, card, and late-injected panes)',
+              ] },
+            { page: 'Product Portfolio', path: 'product-portfolio.html',
+              ux: [
+                'Answer-action buttons carry data-tip so the shared icon tooltip works on replay / edit / fork and the turn id',
+              ] },
+            { page: 'Product Comparison', path: 'product-comparison.html',
+              ux: [
+                'Same data-tip answer actions and detached-menu turn-line lookup as Portfolio, so the two boards share one chrome',
+              ] },
+            { page: 'Appearance & Admin', path: '(appearance popover · every page)',
+              features: [
+                'Full bleed is two mutually exclusive modes — Chat-only (default) or everything — with extra surface colours for the output aside and History, plus a Default set that swaps with the theme',
+                'Colour swatches open a native picker without collapsing the multi-column popover; Admin on/off is one key shared with the chat ⋯ Admin popover',
+              ] },
+            { page: 'WISEowl walkthrough', path: 'owl-walkthrough.js',
+              components: [
+                'Walkthrough module gained the shared ⋯ menu and four-step width toggle, so it docks like every other right-of-chat module',
+              ] },
+            { page: 'Progress Log', path: 'progress-log.html',
+              features: [
+                'A new local day opens a live day at the top of the board — eval notes and crawls attach to today, not to the last authored date',
+                'Re-evaluate, boot, hourly poll, and midnight only rewrite today’s notes. They do not walk earlier days or write a journal-wide “across N days” digest',
+              ],
+              logic: [
+                'AUTHORED is the hand-written journal; LOG is AUTHORED plus a persisted live day when today is missing. The first visit of the morning, or midnight with the tab open, prepends today so yesterday’s digest cannot linger',
+                'Each day is self-contained: a stamp bump or Re-evaluate leaves earlier days alone. Crawl reports only files whose timestamp is today',
+              ] },
+          ],
+        },
         {
           date: '2026-08-19', rel: 'Wednesday',
           summary: 'WISEcodeAI grew a set of short intent chips with real chart and table artifacts; chat unlocked and every reply now ends on topic chips; Marketing Assets became a sortable file tree; dashboards got semantic status colors and floating verify toasts; Appearance gained Surface style plus a Walkthrough toggle; All Modules and this journal now crawl every HTML page on Re-evaluate.',
@@ -928,6 +998,8 @@
           ],
         },
       ];
+      let liveDay = null;
+      let LOG = AUTHORED;
 
       /* ── Derived helpers ── */
       function entryItems(entry) {
@@ -955,6 +1027,56 @@
       function localDayIso(d = new Date()) {
         return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
       }
+      function startOfLocalDay(d = new Date()) {
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      }
+      function weekdayRel(iso) {
+        const [y, m, d] = iso.split('-').map(Number);
+        return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'long' });
+      }
+      const LIVE_DAY_KEY = 'wise-progress-log-live-day-v1';
+      function emptyLiveDay(iso) {
+        return {
+          date: iso,
+          rel: weekdayRel(iso),
+          summary: 'No disk changes captured yet today — the live crawl will fill this in as files move.',
+          entries: [],
+          live: true,
+        };
+      }
+      function loadLiveDay() {
+        try {
+          const raw = JSON.parse(localStorage.getItem(LIVE_DAY_KEY) || 'null');
+          if (raw && typeof raw.date === 'string' && Array.isArray(raw.entries)) return raw;
+        } catch (_) {}
+        return null;
+      }
+      function persistLiveDay() {
+        if (!liveDay) return;
+        try { localStorage.setItem(LIVE_DAY_KEY, JSON.stringify(liveDay)); } catch (_) {}
+      }
+      function syncBoardLog() {
+        const today = localDayIso();
+        if (AUTHORED.some((d) => d.date === today)) {
+          liveDay = null;
+          LOG = AUTHORED;
+          return LOG;
+        }
+        const stored = loadLiveDay();
+        liveDay = (stored && stored.date === today) ? stored : emptyLiveDay(today);
+        if (!stored || stored.date !== today) persistLiveDay();
+        LOG = [liveDay, ...AUTHORED];
+        return LOG;
+      }
+      function dropJournalNotes() {
+        const before = notes.length;
+        notes = notes.filter((n) => !(n.kind === 'eval' && n.scope === 'journal'));
+        if (notes.length !== before) persistNotes();
+      }
+      function todayDay() {
+        const today = localDayIso();
+        return LOG.find((d) => d.date === today) || null;
+      }
       function loadEvalMeta() {
         try {
           const raw = JSON.parse(localStorage.getItem(EVAL_META_KEY) || 'null');
@@ -970,11 +1092,9 @@
       let lastEvalDay = _evalMeta.day || '';
       function isNewLocalDay() { return localDayIso() !== lastEvalDay; }
       function evalNotesNeedRefresh() {
-        const evals = notes.filter((n) => n.kind === 'eval');
-        if (!evals.length) return true;
-        if (evals.some((n) => n.stamp !== LOG_STAMP)) return true;
-        const days = new Set(evals.filter((n) => n.scope === 'day').map((n) => n.day));
-        return LOG.some((d) => !days.has(d.date));
+        const today = localDayIso();
+        const dayNote = notes.find((n) => n.kind === 'eval' && n.scope === 'day' && n.day === today);
+        return !dayNote || dayNote.stamp !== LOG_STAMP;
       }
       function nid() { return 'n_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7); }
       function notesForDay(iso) { return notes.filter((n) => n.day === iso); }
@@ -1179,10 +1299,11 @@
         restoreNoteComposer();
       }
 
-      /* ── Re-evaluate: walk every page, then upsert notes below ──
-         Personal notes (no kind) are left alone. Each day gets one eval
-         note; the newest day also gets a journal-wide note. Click again
-         updates those notes instead of stacking duplicates. */
+      /* ── Re-evaluate: today only ──
+         Personal notes (no kind) are left alone. Re-evaluate writes one
+         eval note for today. Earlier days are not rewritten. There is no
+         journal-wide “across N days” note. Click again updates today’s
+         note instead of stacking duplicates. */
       function oxford(items) {
         const list = (items || []).filter(Boolean);
         if (!list.length) return '';
@@ -1230,24 +1351,6 @@
         );
         return parts.join(' ');
       }
-      function journalEvalNote() {
-        const oldest = LOG[LOG.length - 1];
-        const newest = LOG[0];
-        const pages = new Set();
-        const news = [];
-        let total = 0;
-        LOG.forEach((d) => d.entries.forEach((e) => {
-          pages.add(e.page);
-          if (e.isNew) news.push(e.page);
-          total += entryItems(e).length;
-        }));
-        const parts = [
-          'Evaluated all ' + pages.size + ' pages across ' + LOG.length + ' days, from ' + fmtDate(oldest.date) + ' through ' + fmtDate(newest.date) + '.',
-        ];
-        if (news.length) parts.push('New surfaces: ' + oxford(news) + '.');
-        parts.push('The board holds ' + total + ' entries.');
-        return parts.join(' ');
-      }
       function upsertEvalNote(dayIso, text, scope) {
         const now = new Date().toISOString();
         const existing = notes.find((n) => n.day === dayIso && n.kind === 'eval' && n.scope === scope);
@@ -1264,9 +1367,11 @@
         }
       }
       function evaluateAllPages({ scroll = true } = {}) {
+        syncBoardLog();
         notes = loadNotes();
-        LOG.forEach((day) => upsertEvalNote(day.date, dayEvalNote(day), 'day'));
-        upsertEvalNote(LOG[0].date, journalEvalNote(), 'journal');
+        dropJournalNotes();
+        const day = todayDay();
+        if (day) upsertEvalNote(day.date, dayEvalNote(day), 'day');
         persistNotes();
         if (scroll) collapsed.clear();
         lastEvalAt = Date.now();
@@ -1274,8 +1379,8 @@
         persistEvalMeta();
         renderAll();
         updateEvalMeta();
-        if (scroll) {
-          const first = document.querySelector('#pl-day-' + LOG[0].date + ' .pl-notes');
+        if (scroll && day) {
+          const first = document.querySelector('#pl-day-' + day.date + ' .pl-notes');
           if (first) first.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       }
@@ -1291,6 +1396,7 @@
          filters, search, and collapse so a restored snapshot never shows
          a stale filtered board. */
       function reevaluate({ reset = false } = {}) {
+        syncBoardLog();
         notes = loadNotes();
         if (reset) {
           catFilter = null;
@@ -1314,7 +1420,8 @@
          previous snapshot so the journal reports what actually changed on
          disk (grown / shrank, modules added, chat added, new/unreachable
          pages). The first crawl captures the baseline. This manifest is the
-         full set of pages/*.html — add new pages here so the crawl sees them. */
+         full set of pages/*.html plus the shared JS the journal already tracks
+         — add new pages and scripts here so the crawl sees them. */
       const CRAWL_KEY = 'wise-progress-log-crawl-v1';
       const PAGES = [
         'add-catalog.html', 'add-product.html', 'accessibility-review.html',
@@ -1325,12 +1432,49 @@
         'gras-verification.html', 'help.html', 'ingredient-browser.html',
         'invoices.html', 'login.html', 'marketing-assets.html',
         'non-upf-dashboard.html', 'organizations.html', 'overview.html',
-        'preferences.html', 'product-comparison.html', 'product-portfolio.html',
-        'profile.html', 'progress-log.html', 'quick-invite.html',
-        'reformulation.html', 'report-guiding-stars.html', 'reports.html',
-        'studio-ai.html', 'user-management.html', 'verification.html',
-        'view-product.html', 'wiseai.html',
+        'page-gallery.html', 'preferences.html', 'product-comparison.html',
+        'product-portfolio.html', 'profile.html', 'progress-log.html',
+        'quick-invite.html', 'reformulation.html', 'report-guiding-stars.html',
+        'reports.html', 'studio-ai.html', 'user-management.html',
+        'verification.html', 'view-product.html', 'wiseai.html',
       ];
+      const CRAWL_SCRIPTS = [
+        '../js/wiseai-chat.js', '../js/all-modules-flow.js',
+        '../js/appearance-menu.js', '../js/topbar.js', '../js/owl-walkthrough.js',
+        '../js/chat-ask.js', '../js/chat-history.js', '../js/agent-menu.js',
+        'wise.css',
+      ];
+      const CRAWL_FILES = PAGES.concat(CRAWL_SCRIPTS);
+      const PATH_LABELS = {
+        'wiseai.html': 'WISEcodeAI',
+        'wiseai-chat.js': 'Shared chat',
+        '../js/wiseai-chat.js': 'Shared chat',
+        'all-modules.html': 'All Modules',
+        '../js/all-modules-flow.js': 'All Modules',
+        'conversation-library.html': 'Conversation Library',
+        'product-portfolio.html': 'Product Portfolio',
+        'product-comparison.html': 'Product Comparison',
+        'page-gallery.html': 'Page Gallery',
+        'progress-log.html': 'Progress Log',
+        'accessibility-review.html': 'Accessibility Review',
+        'add-product.html': 'Add Product',
+        'view-product.html': 'View Product',
+        'overview.html': 'Dashboard',
+        'ai-dashboard.html': 'AI Dashboard',
+        'analytics-types.html': 'Analytics Types',
+        'marketing-assets.html': 'Marketing Assets',
+        'gras-verification.html': 'GRAS Verification',
+        'non-upf-dashboard.html': 'NON-UPF Dashboard',
+        'reformulation.html': 'Reformulation',
+        'studio-ai.html': 'Studio & AI',
+        '../js/appearance-menu.js': 'Appearance & Admin',
+        '../js/topbar.js': 'Appearance & Admin',
+        '../js/owl-walkthrough.js': 'WISEowl walkthrough',
+        '../js/chat-ask.js': 'What can I ask?',
+        '../js/chat-history.js': 'History & Projects',
+        '../js/agent-menu.js': 'Primary navigation',
+        'wise.css': 'Platform-wide',
+      };
       let lastCrawlAt = 0;
       let crawlBusy = false;
 
@@ -1364,10 +1508,29 @@
         try {
           const res = await fetch(path + '?plc=' + Date.now(), { cache: 'no-store' });
           if (!res.ok) return { path, missing: true };
-          return fingerprintDoc(path, await res.text());
+          const fp = fingerprintDoc(path, await res.text());
+          const lm = res.headers.get('Last-Modified');
+          fp.mtime = lm ? Date.parse(lm) : 0;
+          return fp;
         } catch (_) { return { path, missing: true }; }
       }
-      function crawlAllPages() { return Promise.all(PAGES.map(crawlPage)); }
+      function crawlAllPages() { return Promise.all(CRAWL_FILES.map(crawlPage)); }
+      function displayPath(path) {
+        return String(path || '').replace(/^\.\.\//, '').replace(/^js\//, '');
+      }
+      function fileLabel(path, title) {
+        if (PATH_LABELS[path]) return PATH_LABELS[path];
+        const base = String(path || '').split('/').pop();
+        if (PATH_LABELS[base]) return PATH_LABELS[base];
+        for (const d of AUTHORED) {
+          for (const e of d.entries) {
+            if (e.path === path || e.path === base || e.path === displayPath(path)) return e.page;
+          }
+        }
+        const cleaned = String(title || '').replace(/^WISE\s*[·•]\s*/i, '').trim();
+        if (cleaned && cleaned !== path) return cleaned;
+        return displayPath(path);
+      }
       function loadCrawlSnap() {
         try {
           const raw = JSON.parse(localStorage.getItem(CRAWL_KEY) || 'null');
@@ -1377,6 +1540,70 @@
       }
       function persistCrawlSnap(snap) {
         try { localStorage.setItem(CRAWL_KEY, JSON.stringify(snap)); } catch (_) {}
+      }
+      function liveDaySummary(day) {
+        const names = (day.entries || []).map((e) => e.page);
+        if (!names.length) return 'No disk changes captured yet today — the live crawl will fill this in as files move.';
+        return 'Live crawl of today’s disk changes — ' + oxford(names) + '.';
+      }
+      function upsertLiveChange(path, title, cat, text, isNew) {
+        if (!liveDay) return false;
+        const disp = displayPath(path);
+        let entry = liveDay.entries.find((e) => e.path === path || e.path === disp);
+        if (!entry) {
+          entry = { page: fileLabel(path, title), path: disp };
+          if (isNew) entry.isNew = true;
+          liveDay.entries.push(entry);
+        }
+        const bucket = entry[cat] || (entry[cat] = []);
+        if (!bucket.includes(text)) bucket.push(text);
+        return true;
+      }
+      function touchedToday(fp) {
+        if (!fp || fp.missing) return false;
+        if (!fp.mtime) return true;
+        return fp.mtime >= startOfLocalDay();
+      }
+      function todayOnlyDiff(diff, firstSnap) {
+        return {
+          added: (diff.added || []).filter((fp) => {
+            if (!touchedToday(fp)) return false;
+            if (firstSnap && !fp.mtime) return false;
+            return true;
+          }),
+          changed: (diff.changed || []).filter((c) => touchedToday(c.fp)),
+          unchanged: diff.unchanged || [],
+          unreachable: diff.unreachable || [],
+          curMap: diff.curMap,
+        };
+      }
+      function applyDiffToToday(diff, cur, firstSnap) {
+        syncBoardLog();
+        if (!liveDay) return false;
+        const todays = todayOnlyDiff(diff, firstSnap);
+        let changed = false;
+        if (!firstSnap) todays.added.forEach((fp) => {
+          if (upsertLiveChange(fp.path, fp.title, 'features', 'New file on disk — first seen today.', true)) changed = true;
+        });
+        todays.changed.forEach(({ fp, before }) => {
+          const raw = describeChange(fp, before);
+          const bits = raw.replace(/^.* — /, '');
+          const text = bits.charAt(0).toUpperCase() + bits.slice(1) + (bits.endsWith('.') ? '' : '.');
+          if (upsertLiveChange(fp.path, fp.title, 'changes', text, false)) changed = true;
+        });
+        const start = startOfLocalDay();
+        (cur || []).forEach((fp) => {
+          if (fp.missing || !fp.mtime || fp.mtime < start) return;
+          const disp = displayPath(fp.path);
+          if (liveDay.entries.some((e) => e.path === fp.path || e.path === disp)) return;
+          if (upsertLiveChange(fp.path, fp.title, 'updates', 'Touched today (file timestamp).', false)) changed = true;
+        });
+        if (changed) {
+          liveDay.summary = liveDaySummary(liveDay);
+          persistLiveDay();
+          syncBoardLog();
+        }
+        return changed;
       }
       function diffCrawl(prev, cur) {
         const prevMap = (prev && prev.pages) || {};
@@ -1405,26 +1632,28 @@
         if (fp.hasChat !== before.hasChat) bits.push(fp.hasChat ? 'chat added' : 'chat removed');
         return fp.path + ' — ' + (bits.length ? bits.join(', ') : 'content changed');
       }
-      function crawlSummaryText(diff, cur, isBaseline) {
-        const read = cur.filter((f) => !f.missing).length;
-        if (isBaseline) {
-          const totalSize = cur.reduce((s, f) => s + (f.missing ? 0 : f.size), 0);
-          const totalMods = cur.reduce((s, f) => s + (f.missing ? 0 : f.sections), 0);
-          const parts = ['Live-crawled all ' + read + ' pages and captured the baseline — fetched and parsed each file ('
-            + fmtBytes(totalSize) + ', ' + totalMods + ' modules total). Future re-evaluations diff against this snapshot.'];
-          if (diff.unreachable.length) parts.push('Unreachable: ' + diff.unreachable.join(', ') + '.');
-          return parts.join(' ');
+      function crawlSummaryText(diff, firstSnap) {
+        const parts = [];
+        if (firstSnap) {
+          const touched = (diff.added || []).filter((fp) => fp.mtime && fp.mtime >= startOfLocalDay());
+          if (touched.length) parts.push(touched.length + (touched.length === 1 ? ' file touched today: ' : ' files touched today: ') + touched.map((f) => displayPath(f.path)).join(', ') + '.');
+          else parts.push('No files changed today.');
+        } else {
+          if (diff.changed.length) {
+            parts.push(diff.changed.length + (diff.changed.length === 1 ? ' file changed today: ' : ' files changed today: ')
+              + diff.changed.map((c) => describeChange(c.fp, c.before)).join('; ') + '.');
+          }
+          if (diff.added.length) {
+            parts.push('New today: ' + diff.added.map((f) => displayPath(f.path)).join(', ') + '.');
+          }
+          if (!diff.changed.length && !diff.added.length) parts.push('No files changed today.');
         }
-        const parts = ['Live-crawled all ' + read + ' pages (fetched and parsed each file).'];
-        if (diff.changed.length) parts.push(diff.changed.length + (diff.changed.length === 1 ? ' page changed: ' : ' pages changed: ') + diff.changed.map((c) => describeChange(c.fp, c.before)).join('; ') + '.');
-        if (diff.added.length) parts.push('New since last crawl: ' + diff.added.map((f) => f.path).join(', ') + '.');
-        if (diff.unreachable.length) parts.push('Unreachable now: ' + diff.unreachable.join(', ') + '.');
-        if (!diff.changed.length && !diff.added.length && !diff.unreachable.length) parts.push('No page changed since the last crawl.');
+        if (diff.unreachable.length) parts.push('Unreachable today: ' + diff.unreachable.map(displayPath).join(', ') + '.');
         return parts.join(' ');
       }
       function setCrawlBusyUi(on) {
         const el = document.getElementById('pl-head-meta');
-        if (on && el) el.textContent = 'Crawling ' + PAGES.length + ' pages…';
+        if (on && el) el.textContent = 'Crawling ' + CRAWL_FILES.length + ' files…';
         else updateEvalMeta();
       }
       async function crawlAndReport({ scroll = false } = {}) {
@@ -1432,18 +1661,37 @@
         crawlBusy = true;
         setCrawlBusyUi(true);
         try {
+          syncBoardLog();
           notes = loadNotes();
+          dropJournalNotes();
           const cur = await crawlAllPages();
           const prev = loadCrawlSnap();
-          const diff = diffCrawl(prev, cur);
-          upsertEvalNote(LOG[0].date, crawlSummaryText(diff, cur, !prev), 'crawl');
+          const firstSnap = !prev;
+          const raw = diffCrawl(prev, cur);
+          const diff = todayOnlyDiff(raw, firstSnap);
+          const todayIso = localDayIso();
+          const mutated = applyDiffToToday(diff, cur, firstSnap);
+          upsertEvalNote(todayIso, crawlSummaryText(diff, firstSnap), 'crawl');
+          if (mutated && liveDay) upsertEvalNote(todayIso, dayEvalNote(liveDay), 'day');
           persistNotes();
-          persistCrawlSnap({ at: Date.now(), pages: diff.curMap });
+          const prevHist = Array.isArray(prev && prev.history) ? prev.history : [];
+          persistCrawlSnap({
+            at: Date.now(),
+            day: todayIso,
+            pages: raw.curMap,
+            history: prevHist.concat([{
+              at: Date.now(),
+              day: todayIso,
+              changed: (diff.changed || []).map((c) => c.fp.path),
+              added: (diff.added || []).map((f) => f.path),
+            }]).slice(-20),
+          });
           lastCrawlAt = Date.now();
-          if (scroll) collapsed.delete(LOG[0].date);
+          if (scroll) collapsed.delete(todayIso);
           renderAll();
+          updateEvalMeta();
           if (scroll) {
-            const first = document.querySelector('#pl-day-' + LOG[0].date + ' .pl-notes');
+            const first = document.querySelector('#pl-day-' + todayIso + ' .pl-notes');
             if (first) first.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }
         } finally {
@@ -1456,8 +1704,9 @@
       /* ── Hourly check + new-day full evaluation ──
          Every hour (and when the tab comes back after an hour) we cache-bust
          fetch this page, compare LOG_STAMP, and reload if the journal was
-         rewritten. A Re-evaluate click, a new local day, a missing day-note,
-         or a stamp mismatch always rewrites every eval note. Polling pauses
+         rewritten. We also crawl disk so a save (or an overnight change) lands
+         on today. A Re-evaluate click, a new local day, a missing today-note,
+         or a stamp mismatch rewrites today’s eval note only. Polling pauses
          while the tab is hidden. Auto-checks skip if a note composer is open;
          a manual Re-evaluate does not. */
       const HOUR_MS = 60 * 60 * 1000;
@@ -1489,7 +1738,8 @@
           return !!(m && m[1] !== LOG_STAMP);
         } catch (_) { return false; }
       }
-      async function pollLog({ evaluate = false } = {}) {
+      async function pollLog({ evaluate = false, crawl = true } = {}) {
+        syncBoardLog();
         const wantEval = evaluate || shouldEvaluateAll();
         if (noteEditor && !evaluate) { updateEvalMeta(); return; }
         if (await journalStampMoved()) { location.reload(); return; }
@@ -1500,6 +1750,7 @@
           reevaluate();
           updateEvalMeta();
         }
+        if (crawl) await crawlAndReport({ scroll: evaluate });
       }
       function msUntilNextLocalMidnight() {
         const n = new Date();
@@ -1525,6 +1776,7 @@
         scheduleMidnightEval();
       }
       async function runFullEval() {
+        syncBoardLog();
         evaluateAllPages({ scroll: false });
         await crawlAndReport({ scroll: true });
         if (await journalStampMoved()) location.reload();
@@ -1569,7 +1821,7 @@
         noteEditor = null;
         noteWantFocus = false;
         renderTimeline();
-        if (shouldEvaluateAll()) pollLog();
+        if (shouldEvaluateAll()) pollLog({ crawl: false });
       }
       function commitNote() {
         if (!noteEditor) return;
@@ -1587,7 +1839,7 @@
         noteEditor = null;
         noteWantFocus = false;
         persistNotes();
-        if (shouldEvaluateAll()) pollLog();
+        if (shouldEvaluateAll()) pollLog({ crawl: false });
         else { renderSummary(); renderTimeline(); }
       }
       function addNoteToDay(dayIso, text) {
@@ -1887,9 +2139,13 @@
       }
 
       /* ═══════════ Boot — evaluate the log, then mount the ONE shared chat ═══════════ */
+      syncBoardLog();
+      dropJournalNotes();
+      lastCrawlAt = (loadCrawlSnap() || {}).at || 0;
       if (shouldEvaluateAll()) evaluateAllPages({ scroll: false });
       else { reevaluate(); updateEvalMeta(); }
       startHourlyPoll();
+      setTimeout(() => { crawlAndReport({ scroll: false }); }, 80);
 
       /* Re-evaluate on every restore. A normal load remounts this module (hot
          reload included) and the boot pass above already ran. A bfcache
@@ -1900,11 +2156,13 @@
       let plDidShow = false;
       window.addEventListener('pageshow', (e) => {
         if (!plDidShow) { plDidShow = true; if (!e.persisted) return; }
+        syncBoardLog();
         if (shouldEvaluateAll()) evaluateAllPages({ scroll: false });
         else {
           reevaluate({ reset: !!e.persisted });
           updateEvalMeta();
         }
+        crawlAndReport({ scroll: false });
       });
 
       chat = mountWISEcodeAIChat(document.getElementById('pl-chat'), {
@@ -1959,7 +2217,7 @@
   <script src="../js/table-pagination.js" defer></script>
   <script src="../js/responsive-tables.js" defer></script>
   <!-- LiveReload (dev_server.py) — a save anywhere under pages/ or js/ remounts
-       this journal so reevaluate() runs against the current LOG. -->
+       this journal so boot re-evaluates and crawls against the current LOG. -->
   <script src="/livereload.js?snipver=1"></script>
   <!-- App-wide "Sticky module" toggle for every module right of the chat. -->
   <script defer src="../js/sticky-modules.js"></script>

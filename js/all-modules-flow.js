@@ -111,7 +111,8 @@ function frameMarkup(src, title, extraAttrs) {
 }
 
 function paneCard(m) {
-  const search = `${m.label} ${m.href} ${m.group || ''} ${m.badge || ''}`.toLowerCase();
+  const comps = componentsUsedByModule(m);
+  const search = `${m.label} ${m.href} ${m.group || ''} ${m.badge || ''} ${comps.map((c) => c.name).join(' ')}`.toLowerCase();
   const src = canLivePreview(m.href) ? previewSrc(m.href) : '';
   return `
     <div class="mi-pane" data-pane data-href="${esc(m.href)}" data-search="${esc(search)}" data-area="${esc(m.area)}">
@@ -124,6 +125,7 @@ function paneCard(m) {
         ${frameMarkup(src, m.label + ' preview')}
         <span class="mi-pane-open material-symbols-outlined">open_in_new</span>
       </a>
+      ${paneCompsHTML(comps)}
     </div>`;
 }
 
@@ -1936,6 +1938,121 @@ const COMPONENTS = [
   },
 ];
 
+/* ------------------------------------------------------------------ */
+/* Invert COMPONENTS.used → modules in the directory rail.             */
+/*                                                                     */
+/* Each component already names the surfaces it appears on. The rail   */
+/* turns that prose into a per-module list, with the same Dev Ready    */
+/* toggle id as the Component Library card so the two stay in sync.    */
+/* ------------------------------------------------------------------ */
+
+const APP_DIR_TONES = new Set(['workspace', 'portfolio', 'ai', 'reform', 'report', 'verify', 'admin', 'account']);
+
+function compDomId(name) {
+  return 'dsc-comp-' + String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function dirModulesFlat() {
+  const out = [];
+  dedupedDirSections().forEach((s) => {
+    s.modules.forEach((m) => out.push({ ...m, area: s.tone, areaTitle: s.title }));
+  });
+  return out;
+}
+
+function appDirHrefs() {
+  return dirModulesFlat().filter((m) => APP_DIR_TONES.has(m.area)).map((m) => m.href);
+}
+
+/* Phrase → catalog hrefs, derived from the actual COMPONENTS.used strings
+   (not a parallel inventory). Longer / more specific phrases first. */
+const USED_HREF_RULES = [
+  { re: /non-upf dashboard/, hrefs: ['non-upf-dashboard.html'] },
+  { re: /product portfolio/, hrefs: ['product-portfolio.html'] },
+  { re: /conversation library|wisecodeai library/, hrefs: ['conversation-library.html'] },
+  { re: /guiding stars/, hrefs: ['report-guiding-stars.html'] },
+  { re: /analytics types/, hrefs: ['analytics-types.html'] },
+  { re: /ingredient browser/, hrefs: ['ingredient-browser.html'] },
+  { re: /ai dashboard/, hrefs: ['ai-dashboard.html'] },
+  { re: /studio\s*&\s*ai|studio&ai/, hrefs: ['studio-ai.html'] },
+  { re: /add product/, hrefs: ['add-product.html'] },
+  { re: /quick invite/, hrefs: ['quick-invite.html'] },
+  { re: /user management/, hrefs: ['user-management.html'] },
+  { re: /audit queue/, hrefs: ['audit-queue.html'] },
+  { re: /admin utils/, hrefs: ['admin-utils.html'] },
+  { re: /\borganizations\b/, hrefs: ['organizations.html'] },
+  { re: /\binvoices\b/, hrefs: ['invoices.html'] },
+  { re: /\bcomparison\b/, hrefs: ['product-comparison.html'] },
+  { re: /\boverview\b/, hrefs: ['overview.html'] },
+  { re: /reports\.html|\breports\b/, hrefs: ['reports.html'] },
+  { re: /\bverification\b/, hrefs: ['verification.html', 'gras-verification.html'] },
+  { re: /\bgras\b/, hrefs: ['gras-verification.html', 'verification.html'] },
+  { re: /\breformulation\b/, hrefs: ['reformulation.html', 'reformulation.html#dashboard'] },
+  { re: /wiseai\.html#history|wisecodeai history/, hrefs: ['wiseai.html#history'] },
+  { re: /studio chat|wisecodeai welcome|in-conversation reply|wisecodeai dock/, hrefs: ['wiseai.html'] },
+  { re: /\bauth\b|sign in|sign up|signup/, hrefs: ['login.html', 'create-account.html', 'forgot-password.html'] },
+  { re: /\balerts\b/, hrefs: ['alerts.html'] },
+  { re: /portfolio table|\.pf-stats|\.pf-rowmenu|portfolio \(\.pf/, hrefs: ['product-portfolio.html'] },
+];
+
+function hrefsForUsed(used) {
+  const t = String(used || '').toLowerCase().replace(/[—–]/g, ' ');
+  const hrefs = new Set();
+  const add = (list) => { (list || []).forEach((h) => hrefs.add(h)); };
+
+  if (/\bevery (app )?page\b|\bapp-wide\b|\bevery #modules-row page\b|\bagent shell\b/.test(t)) {
+    add(appDirHrefs());
+  }
+  if (/\bevery chat welcome\b|\bevery wisecodeai turn\b/.test(t)) {
+    add(appDirHrefs());
+  }
+  USED_HREF_RULES.forEach((rule) => {
+    if (rule.re.test(t)) add(rule.hrefs);
+  });
+  /* "Portfolio" as a listed surface, but not "portfolio composition strips". */
+  if (/\bportfolio\b/.test(t.replace(/portfolio composition/g, ''))) {
+    add(['product-portfolio.html']);
+  }
+  return hrefs;
+}
+
+let COMPS_BY_MODULE_HREF = null;
+let dscRevealAll = null;
+
+function rebuildModuleCompIndex() {
+  const map = new Map();
+  dirModulesFlat().forEach((m) => { if (!map.has(m.href)) map.set(m.href, []); });
+  COMPONENTS.forEach((c) => {
+    hrefsForUsed(c.used).forEach((href) => {
+      const list = map.get(href) || [];
+      if (!list.some((x) => x.name === c.name)) list.push(c);
+      map.set(href, list);
+    });
+  });
+  COMPS_BY_MODULE_HREF = map;
+}
+
+function componentsUsedByModule(m) {
+  if (!COMPS_BY_MODULE_HREF) rebuildModuleCompIndex();
+  return COMPS_BY_MODULE_HREF.get(m && m.href) || [];
+}
+
+function paneCompsHTML(comps) {
+  const n = (comps || []).length;
+  const rows = n
+    ? comps.map((c) => `
+        <li class="mi-pane-comp">
+          <a class="mi-pane-comp-link" href="#${esc(compDomId(c.name))}" data-jump-comp="${esc(c.name)}">${esc(c.name)}</a>
+          ${readyToggleHTML(c.name, c.name, { level: 'item', parent: 'mi-components' })}
+        </li>`).join('')
+    : '<li class="mi-pane-comp mi-pane-comp--empty">No catalogued components</li>';
+  return `
+    <div class="mi-pane-comps">
+      <div class="mi-pane-comps-head">Components used${n ? ` · ${n}` : ''}</div>
+      <ul class="mi-pane-comp-list">${rows}</ul>
+    </div>`;
+}
+
 /* Persist Dev Ready flags per component name. Missing keys default to off. */
 const DSC_READY_KEY = 'wise-dsc-dev-ready';
 
@@ -2080,7 +2197,7 @@ function componentCard(c, readyMap) {
       </div>`
     : '';
   return `
-    <div class="${cardCls}" data-ds-comp data-comp-name="${esc(c.name)}" data-cat="${esc(cat)}" data-search="${esc(search)}">
+    <div class="${cardCls}" id="${esc(compDomId(c.name))}" data-ds-comp data-comp-name="${esc(c.name)}" data-cat="${esc(cat)}" data-search="${esc(search)}">
       ${readyToggleHTML(c.name, c.name, { level: 'item', parent: 'mi-components' })}
       <div class="dsc-head">
         <span class="dsc-name">${esc(c.name)}</span>
@@ -3119,7 +3236,7 @@ const MOTION_ITEMS = [
     id: 'helix', group: 'anim', icon: 'genetics', title: 'Welcome helix', wide: true,
     src: 'js/wiseai-chat.js · createHelixBgAnim',
     used: 'Every chat welcome — ON by default at 20% opacity',
-    lede: 'The ambient DNA/RNA field behind the chat welcome. Product thumbnails travel the strand; hover a circle for its card. Default opacity is <strong>20%</strong> — drag the slider to change it (same control as the chat ⋯ menu). Honors pause and <code>prefers-reduced-motion</code>. The live field starts when this section opens.',
+    lede: 'The ambient DNA/RNA field behind the chat welcome. Product thumbnails travel the strand; move onto a circle for its food card (View Details opens the NFP). About one in four bugs that have a real note open a brand-insight or look-closer fact instead — never a status stamp, and never on their own: a popover opens only when the pointer enters a circle, not when a circle drifts under a still cursor. Default opacity is <strong>20%</strong> — drag the slider to change it (same control as the chat ⋯ menu). Honors pause and <code>prefers-reduced-motion</code>. The live field starts when this section opens.',
     demo: `
       <div class="mi-motion-helix sc-bganim-host" data-motion-helix>
         <div class="mi-motion-helix-stage" data-helix-body></div>
@@ -3462,6 +3579,8 @@ function wireMotion(root) {
     return 20;
   };
   let helixPct = readHelixPct();
+  let helixPaused = false;
+  let helix = null;
   const paintHelixOpacity = (pct, persist) => {
     helixPct = Math.max(10, Math.min(100, pct));
     if (helixRange) helixRange.value = String(helixPct);
@@ -3473,8 +3592,6 @@ function wireMotion(root) {
     if (reduced && helix) helix.start();
   };
   paintHelixOpacity(helixPct, false);
-  let helixPaused = false;
-  let helix = null;
   if (helixHost && helixBody) {
     helix = createHelixBgAnim({
       host: helixHost,
@@ -4027,6 +4144,43 @@ function moduleStyles() {
       pointer-events: none;
     }
     .mi-pane-viewport:hover .mi-pane-open { opacity: 1; transform: translateY(0); }
+
+    /* ---- Per-module component list under each rail pane ---- */
+    .mi-pane-comps {
+      display: flex; flex-direction: column; gap: 6px;
+      max-height: 260px; overflow: auto; scrollbar-width: thin;
+      padding: 10px 10px 8px; margin: 0 2px;
+      border: 1px solid var(--border); border-radius: 14px; background: var(--surface);
+      box-shadow: var(--shadow-1);
+    }
+    html.dark .mi-pane-comps { background: rgba(255,255,255,0.03); }
+    .mi-pane-comps-head {
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-size: 0.78rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text);
+      padding: 0 2px 4px;
+    }
+    .mi-pane-comp-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+    .mi-pane-comp {
+      display: flex; align-items: center; gap: 8px;
+      padding: 5px 0; border-bottom: 1px solid var(--border);
+    }
+    .mi-pane-comp:last-child { border-bottom: 0; }
+    .mi-pane-comp-link {
+      flex: 1 1 auto; min-width: 0;
+      font-size: 0.75rem; font-weight: 700; line-height: 1.3;
+      color: var(--text); text-decoration: none;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .mi-pane-comp-link:hover { color: var(--primary-ink, var(--primary)); text-decoration: underline; }
+    html.dark .mi-pane-comp-link:hover { color: var(--primary-bright, #93C5FD); }
+    .mi-pane-comp--empty { font-size: 0.72rem; font-weight: 600; color: var(--text-muted); border-bottom: 0; }
+    .mi-pane-comps .dsc-ready { padding: 0; flex: 0 0 auto; margin-left: auto; }
+    .mi-pane-comps .dash-brand-toggle { transform: scale(0.92); transform-origin: right center; }
+
+    .dsc-card.is-flash {
+      border-color: var(--sec-green, #32A966);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--sec-green, #32A966) 40%, transparent);
+    }
 
     /* ---- Table Gallery rail: landscape panes tuned for wide-and-short tables ---- */
     .mi-rail--tables {
@@ -4960,12 +5114,14 @@ function moduleStyles() {
     .mi-motion-card-head .dsc-ready--item,
     .mi-dir-head .dsc-ready--item,
     .ds-group-head .dsc-ready--item,
-    .ds-block-head .dsc-ready--item {
+    .ds-block-head .dsc-ready--item,
+    .mi-pane-comp .dsc-ready--item {
       padding: 0; margin-left: auto; flex: 0 0 auto; align-self: flex-start;
     }
     .mi-dir-head .dsc-ready--item,
     .ds-group-head .dsc-ready--item,
-    .ds-block-head .dsc-ready--item { align-self: center; }
+    .ds-block-head .dsc-ready--item,
+    .mi-pane-comp .dsc-ready--item { align-self: center; }
     /* The directory count badge no longer needs to push to the far right — the
        toggle owns the right edge now. */
     .mi-dir-head .mi-dir-count { margin-right: 0; }
@@ -5480,6 +5636,7 @@ export function renderAllModules(mainEl) {
   wireDesignSystem(mainEl);
   wireComponentLibrary(mainEl);
   wireDevReady(mainEl);
+  wirePaneCompJumps(mainEl);
   wireModuleControls(mainEl);
   wireLinkValidation(mainEl);
   wirePageReeval(mainEl);
@@ -5780,7 +5937,7 @@ function setPaneBroken(pane, broken) {
   pane.classList.toggle('mi-pane--broken', broken);
   const frame = pane.querySelector('.mi-pane-frame');
   const viewport = pane.querySelector('.mi-pane-viewport');
-  const links = pane.querySelectorAll('a[href]');
+    const links = pane.querySelectorAll('a[href]:not([data-jump-comp])');
   if (broken) {
     if (frame) frame.removeAttribute('src');
     if (viewport && !viewport.querySelector('.mi-pane-broken')) {
@@ -7065,6 +7222,20 @@ function wireComponentLibrary(root) {
     if (emptyEl) emptyEl.hidden = shown !== 0;
   };
 
+  dscRevealAll = () => {
+    state.q = '';
+    state.cat = 'all';
+    if (searchInput) searchInput.value = '';
+    if (stats) {
+      stats.querySelectorAll('[data-cat]').forEach((b) => {
+        const on = b.dataset.cat === 'all';
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    }
+    apply();
+  };
+
   if (searchInput) {
     searchInput.addEventListener('input', () => {
       state.q = searchInput.value.trim().toLowerCase();
@@ -7116,6 +7287,19 @@ function wireComponentLibrary(root) {
 /* back off, because a higher-level component is only ready for dev     */
 /* when all of its parts are.                                          */
 /* ------------------------------------------------------------------ */
+function paintItemReady(btn, on) {
+  btn.classList.toggle('is-on', !!on);
+  btn.setAttribute('aria-checked', on ? 'true' : 'false');
+}
+
+function syncItemReadyButtons(root, id, on) {
+  root.querySelectorAll('[data-dsc-ready]').forEach((b) => {
+    if (b.dataset.readyId === id && (b.dataset.readyLevel || 'item') === 'item') {
+      paintItemReady(b, on);
+    }
+  });
+}
+
 function wireDevReady(root) {
   const moduleBtn = (moduleId) =>
     Array.from(root.querySelectorAll('[data-dsc-ready][data-ready-level="module"]'))
@@ -7161,8 +7345,14 @@ function wireDevReady(root) {
     }
   }
 
-  root.querySelectorAll('[data-dsc-ready]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
+  /* One delegated handler so rail copies, library cards, and panes injected
+     by Re-evaluate all flip the same stored flag — and every matching switch
+     (green = Dev Ready) stays in sync. */
+  if (!root._dscReadyWired) {
+    root._dscReadyWired = true;
+    root.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-dsc-ready]');
+      if (!btn || !root.contains(btn)) return;
       e.stopPropagation();
       const id = btn.dataset.readyId;
       if (!id) return;
@@ -7176,21 +7366,50 @@ function wireDevReady(root) {
       }
 
       const next = btn.getAttribute('aria-checked') !== 'true';
-      btn.setAttribute('aria-checked', next ? 'true' : 'false');
-      btn.classList.toggle('is-on', next);
       const map = loadDscReadyMap();
       if (next) map[id] = true; else delete map[id];
       saveDscReadyMap(map);
+
+      if (level === 'item') syncItemReadyButtons(root, id, next);
+      else {
+        btn.setAttribute('aria-checked', next ? 'true' : 'false');
+        btn.classList.toggle('is-on', next);
+      }
 
       /* A flipped child re-scores its parent. */
       const parent = btn.dataset.readyParent;
       if (parent) refreshParent(parent);
     });
-  });
+  }
 
   /* Initial pass so every parent reflects its stored children (and can never
      start "on" while a part is still unfinished). */
   Object.keys(DEV_READY_CHILDREN).forEach(refreshParent);
+}
+
+function jumpToComponent(root, name) {
+  if (typeof dscRevealAll === 'function') dscRevealAll();
+  expandAccordionSection(root, 'mi-components');
+  const card = Array.from(root.querySelectorAll('[data-ds-comp]'))
+    .find((el) => el.dataset.compName === name);
+  if (!card) return;
+  card.classList.remove('is-flash');
+  void card.offsetWidth;
+  card.classList.add('is-flash');
+  requestAnimationFrame(() => {
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+}
+
+function wirePaneCompJumps(root) {
+  if (root._paneCompJumpsWired) return;
+  root._paneCompJumpsWired = true;
+  root.addEventListener('click', (e) => {
+    const a = e.target.closest('[data-jump-comp]');
+    if (!a || !root.contains(a)) return;
+    e.preventDefault();
+    jumpToComponent(root, a.getAttribute('data-jump-comp'));
+  });
 }
 
 /* WISEcodeAI dock config for this page — a light welcome that points at the four

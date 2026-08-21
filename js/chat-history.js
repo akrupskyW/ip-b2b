@@ -183,22 +183,28 @@
          glyphs, like the primary nav collapsing away its labels. The width itself
          is pinned inline (applyDockWidth); these rules strip the labels and centre
          what remains. Head padding/justify use !important to beat host pages that
-         re-dress the docked head via an #id-scoped selector. */
-      '.wch-sidebar.wch-rail .wch-head{padding:14px 0 12px !important;justify-content:center !important;align-items:center !important;}',
+         re-dress the docked head via an #id-scoped selector. Top/bottom chrome is
+         kept tight so the collapsed rail hugs its icons instead of sitting in a
+         tall empty column. */
+      '.wch-sidebar.wch-rail .wch-head{padding:4px 0 0 !important;justify-content:center !important;align-items:center !important;border-bottom:0 !important;}',
       '.wch-sidebar.wch-rail .wch-head-title{display:none;}',
       '.wch-sidebar.wch-rail .wch-width-btn{display:none;}',
       /* History module width changer is permanently removed — never render it. */
       '.wch-sidebar .wch-width-btn{display:none !important;}',
       '.wch-sidebar.wch-rail .wch-controls{margin:0;}',
+      '.wch-sidebar.wch-rail .wch-rail-btn{width:24px;height:24px;}',
+      '.wch-sidebar.wch-rail .wch-rail-btn .material-symbols-outlined{font-size:16px !important;}',
       '.wch-sidebar.wch-rail .wch-search{display:none;}',
-      '.wch-sidebar.wch-rail .wch-search-row{margin:10px auto;justify-content:center;}',
-      '.wch-sidebar.wch-rail .wch-new{width:40px;height:40px;}',
-      '.wch-sidebar.wch-rail .wch-new .material-symbols-outlined{font-size:20px;}',
-      '.wch-sidebar.wch-rail .wch-list{padding:2px 6px 12px;}',
+      '.wch-sidebar.wch-rail .wch-search-row{margin:2px auto 0;justify-content:center;}',
+      '.wch-sidebar.wch-rail .wch-new{width:32px;height:32px;}',
+      '.wch-sidebar.wch-rail .wch-new .material-symbols-outlined{font-size:18px;}',
+      '.wch-sidebar.wch-rail .wch-list{padding:0 4px 4px;flex:1 1 auto;min-height:0;scrollbar-width:none;}',
+      '.wch-sidebar.wch-rail .wch-list::-webkit-scrollbar{width:0;display:none;}',
+      '.wch-sidebar.wch-rail .wch-projects{margin:0;}',
       '.wch-sidebar.wch-rail .wch-projects-head{display:none;}',
       '.wch-sidebar.wch-rail .wch-group,.wch-sidebar.wch-rail .wch-empty,.wch-sidebar.wch-rail .wch-project-empty{display:none;}',
       '.wch-sidebar.wch-rail .wch-proj-name,.wch-sidebar.wch-rail .wch-proj-count,.wch-sidebar.wch-rail .wch-proj-menu{display:none;}',
-      '.wch-sidebar.wch-rail .wch-project-head{justify-content:center;padding:8px 0;gap:0;}',
+      '.wch-sidebar.wch-rail .wch-project-head{justify-content:center;padding:2px 0;gap:0;}',
       '.wch-sidebar.wch-rail .wch-proj-toggle{display:flex;width:22px;height:22px;}',
       '.wch-sidebar.wch-rail .wch-proj-toggle .material-symbols-outlined{font-size:20px;}',
       '.wch-sidebar.wch-rail .wch-project-body{padding-left:0;}',
@@ -206,7 +212,7 @@
          ::before — that’s the rail’s forum glyph. Elbows are already gated
          behind :not(.wch-rail), so they never apply here. */
       '.wch-sidebar.wch-rail .wch-project-body::before,.wch-sidebar.wch-rail .wch-project-body > .wch-project-empty::before,.wch-sidebar.wch-rail .wch-project-body > .wch-proj-edit::before{display:none;}',
-      '.wch-sidebar.wch-rail .wch-item{padding:0;margin:4px auto;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;}',
+      '.wch-sidebar.wch-rail .wch-item{padding:0;margin:1px auto;width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;}',
       '.wch-sidebar.wch-rail .wch-item-title,.wch-sidebar.wch-rail .wch-item-meta,.wch-sidebar.wch-rail .wch-chat-dot,.wch-sidebar.wch-rail .wch-item-actions,.wch-sidebar.wch-rail .wch-del{display:none;}',
       '.wch-sidebar.wch-rail .wch-item::before,.wch-sidebar.wch-rail .wch-project-body > .wch-item::before{content:"forum";font-family:"Material Symbols Outlined";font-size:19px;opacity:.6;line-height:1;display:block;width:19px;height:19px;font-variation-settings:"FILL" 0,"wght" 400,"GRAD" 0,"opsz" 20;}',
       '.wch-sidebar.wch-rail .wch-item.wch-active::before{opacity:1;color:var(--primary-ink,var(--primary,#2F6DF6));}',
@@ -334,7 +340,11 @@
         '--wch-tree-bg:var(--surface,#fff);',
         'box-shadow:var(--shadow-card,0 12px 32px rgba(20,30,60,0.12));border-radius:16px;overflow:hidden;flex-shrink:0;position:relative;z-index:1;',
         'align-self:center;height:calc(100% - 30px);}',
+      /* Collapsed rail: hug the icon stack and sit closer to the row edges
+         than the 15px drawer inset, so the module itself tightens. */
+      '#modules-row .wch-sidebar.wch-docked.wch-rail{height:auto;max-height:calc(100% - 16px);align-self:flex-start;}',
       '#modules-row .wch-sidebar.wch-docked .wch-head{padding:18px 14px 16px 24px;border-bottom:1px solid var(--border,rgba(0,0,0,0.08));align-items:flex-start;}',
+      '#modules-row .wch-sidebar.wch-docked.wch-rail .wch-head{border-bottom:0;}',
       '#modules-row .wch-sidebar.wch-docked .wch-head-title{font-family:"WISE Digits","Noto Serif",Georgia,serif;font-weight:800;font-size:1.2rem;letter-spacing:-.01em;line-height:1.16;align-items:center;}',
       '#modules-row .wch-sidebar.wch-docked .wch-head-title .material-symbols-outlined{display:none;}',
       '#modules-row .wch-sidebar.wch-docked .wch-controls{margin-top:1px;}',
@@ -349,6 +359,7 @@
          every :not(.wch-unsticky) below is what actually performs the tuck.
          Mirrors the same guards in pages/wiseai.html\'s own copy. */
       '#modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-unsticky){z-index:1;background:var(--surface-2,var(--surface,#fff));--wch-tree-bg:var(--surface-2,var(--surface,#fff));box-shadow:none;align-self:center;height:calc(100% - 30px);}',
+      '#modules-row.modules-sticky .wch-sidebar.wch-docked.wch-rail:not(.wch-unsticky){height:auto;max-height:calc(100% - 16px);align-self:flex-start;}',
       /* History (left of chat): flush + tucked under the chat\'s LEFT edge. */
       '#modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-right):not(.wch-unsticky){margin-right:calc(-14px - var(--modules-gap, 8px));padding-right:14px;',
         'border-top-right-radius:0;border-bottom-right-radius:0;border-right:0;animation:wchStickySlideL .42s cubic-bezier(.34,1.45,.64,1) both;}',
