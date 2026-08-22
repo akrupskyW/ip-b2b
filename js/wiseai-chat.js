@@ -1698,7 +1698,7 @@ export function injectChatExtras() {
        carries the owl instead. */
     .sc-bganim-live .ws-logo-wrap { display: none; }
 
-    /* "Style" segment (Helix / Orbit) — the second row under the Background
+    /* "Style" segment (Helix / Ten / Orbit) — the second row under the Background
        animation toggle that picks WHICH ambient field runs. Mirrors the streaming
        "detail" segment; dims + locks with the toggle like the opacity row. */
     .sc-bganim-style { display: flex; align-items: center; gap: 10px;
@@ -1706,6 +1706,7 @@ export function injectChatExtras() {
     .sc-bganim-style-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
       text-transform: uppercase; color: var(--text-muted); white-space: nowrap; }
     .sc-bganim-style .sc-stream-seg { margin-left: auto; }
+    .sc-bganim-style .sc-stream-seg-btn { font-size: 10.5px; }
     .sc-bganim-style.is-disabled { opacity: .45; pointer-events: none; }
 
     /* Elevation — Admin segmented control in the Display group. Pink outline
@@ -1937,7 +1938,10 @@ export function injectChatExtras() {
      isPaused      {fn}   () => whether the (shared) playback is paused —
                           when true the field freezes on its current frame
                           rather than advancing (the canvas stays visible)
-   Returns { start, stop, pause, resume }. */
+     getDensity    {fn}   () => 'full' (default roster) or 'ten' (same node
+                          density; ~10 foods swell a bit larger; every other
+                          circle is the WISE owl logo bug)
+   Returns { start, stop, pause, resume, redraw }. */
 export function createHelixBgAnim(cfg) {
   const host = cfg.host;
   const getBody = cfg.getBody;
@@ -1945,6 +1949,10 @@ export function createHelixBgAnim(cfg) {
   const reducedMotion = !!cfg.reducedMotion;
   const isOn = typeof cfg.isOn === 'function' ? cfg.isOn : () => true;
   const isPaused = typeof cfg.isPaused === 'function' ? cfg.isPaused : () => false;
+  const getDensity = () => {
+    const raw = typeof cfg.getDensity === 'function' ? cfg.getDensity() : cfg.density;
+    return (raw === 'ten' || raw === 'few') ? 'ten' : 'full';
+  };
   /* The foods strung along the helix, drawn as circular thumbnails — the same round
      product "bug" the app uses in its portfolio / comparison tables. Every product
      appears AT MOST ONCE on the strand (no repeats), so the pool is deliberately
@@ -2358,8 +2366,26 @@ export function createHelixBgAnim(cfg) {
     return (i % 3) !== 2;
   }
 
+  /* Evenly spaced indices in 0..total-1. Used by the "Ten" density so the
+     handful of products (and the leftover owl bugs) sit along the whole strand
+     instead of clustering on the first rungs. */
+  function pickEven(n, total) {
+    const out = [];
+    if (n <= 0 || total <= 0) return out;
+    if (n >= total) {
+      for (let i = 0; i < total; i++) out.push(i);
+      return out;
+    }
+    if (n === 1) return [Math.floor(total / 2)];
+    for (let k = 0; k < n; k++) out.push(Math.round(k * (total - 1) / (n - 1)));
+    return out;
+  }
+
   let canvas = null, ctx = null, buf = null, bctx = null, raf = 0, ro = null, images = null, owlImg = null;
   let rgb = [37, 80, 124], w = 0, h = 0, dpr = 1, t0 = 0, running = false, paused = false;
+  /* Track density flips so switching Helix → Ten mid-run still swells the
+     ten product bugs from "dot" size into the leftover node space. */
+  let densityNow = null, fewSince = 0;
   /* Hover-card state: last-frame hit boxes, the product the card is riding,
      and pointer position so a hovered card can close when its circle travels
      out from under the cursor. A card opens only when the pointer moves onto
@@ -2688,8 +2714,12 @@ export function createHelixBgAnim(cfg) {
   }
 
   /* Repaint the last-painted frame — used when the hover highlight changes while
-     the loop isn't running (the reduced-motion still frame). */
-  function redraw() { draw(lastT); }
+     the loop isn't running (the reduced-motion still frame), and when Helix ↔ Ten
+     flips density on a live field. */
+  function redraw() {
+    if (!canvas || !ctx) return;
+    draw(lastT || 3);
+  }
 
   function resize() {
     if (!canvas || !ctx) return;
@@ -2715,13 +2745,21 @@ export function createHelixBgAnim(cfg) {
      swaying axis that DESCENDS left→right (high on the left, low on the right); its
      loops TRAVEL end-to-end at a slow crawl (a moving twist, not an in-place spin).
      The helix EXPANDS AND CONTRACTS as a very slow wave that travels left→right — at
-     any instant one stretch is fattening while another is pinching in. The product
-     photos are drawn as identical, fixed-size circles (no per-item resizing); their
-     ring matches the strand stroke, and everything is scaled by the shared opacity. */
+     any instant one stretch is fattening while another is pinching in. In the full
+     roster, product photos are identical circles; in the "Ten" density the same
+     strand still carries every node — about ten foods swell a bit larger, and
+     every other circle is the WISE owl logo bug. Their ring matches the strand
+     stroke, and everything is scaled by the shared opacity. */
   function draw(t) {
     if (!ctx || !bctx || w < 2 || h < 2) return;
     lastT = t;                                                 // remember the last painted time (for redraw)
     rgb = readColor();                                         // track preset / theme flips live
+    const few = getDensity() === 'ten';
+    if (few && densityNow !== 'ten') fewSince = t;
+    densityNow = few ? 'ten' : 'full';
+    const grow = few
+      ? (1 - Math.pow(1 - Math.min(1, Math.max(0, t - fewSince) / 2.05), 3))
+      : 1;
     const O = Math.max(0, Math.min(1, getOpacity())); // shared opacity control (pane-count default until user-set)
     /* Draw the whole field to an OFFSCREEN buffer at full strength — the opaque product
        discs hide the strand lines *inside* the buffer — then blit the buffer onto the
@@ -2743,7 +2781,10 @@ export function createHelixBgAnim(cfg) {
        and closes its 3-D volume every once in a while, very very slowly. */
     const depth = 1 + 0.16 * Math.sin(t * 0.02) + 0.07 * Math.sin(t * 0.009 + 1.3);
     const ampBase = Math.min(h * 0.26, 120) * depth;
-    const prodSize = 34;                                       // base circle size (before depth + breath)
+    const dotSize = 34;                                        // base circle size (before depth + breath)
+    /* Ten-density foods start at the usual dot size and swell a bit larger so
+       they read among the full field of owl-bug circles. */
+    const prodSize = few ? (dotSize + 20 * grow) : dotSize;
     /* Expand ↔ contract as a slow wave travelling left→right along the strand. */
     const breathK = (Math.PI * 2 * 1.4) / L;                   // ~1.4 squeezes across the strand
     const breathSpeed = 0.11;                                  // how fast the wave crawls (very slow)
@@ -2803,20 +2844,43 @@ export function createHelixBgAnim(cfg) {
        centre owl's pulse. Combined with depth (near = bigger), the circles swell as they
        come to the FRONT of the helix and shrink as they swing to the back. */
     const breathe = 1 + 0.09 * Math.sin(t * 0.42);             // deep + slow, ~15s
+    /* Same node stride as the full helix — Ten keeps every circle on the
+       strand. Only ~10 of them are foods; every other circle is the WISE owl
+       logo bug. */
     const nodeEvery = Math.max(3, Math.round(48 / STEP));
     const nodes = [];
     /* Every food on the strand is UNIQUE: `pi` walks the (session-shuffled) pool
        once and never rewinds, so no product can appear twice in a frame. Should a
        huge canvas ever outrun the pool, the owl mark stands in — never a repeat. */
-    let ni = 0, pi = 0;
-    for (let i = 0; i <= N; i += nodeEvery) {
-      const owlA = (ni % 7 === 3), owlB = (ni % 7 === 0);
-      const a = A[i], b = B[i];
-      const pa = owlA ? null : PRODUCTS[pi++];
-      const pb = owlB ? null : PRODUCTS[pi++];
-      nodes.push({ x: a.x, y: a.y, z: a.z, alpha: a.alpha, owl: owlA || !pa, prod: pa || null });
-      nodes.push({ x: b.x, y: b.y, z: b.z, alpha: b.alpha, owl: owlB || !pb, prod: pb || null });
-      ni++;
+    if (few) {
+      const slots = [];
+      for (let i = 0; i <= N; i += nodeEvery) {
+        if (A[i]) slots.push(A[i]);
+        if (B[i]) slots.push(B[i]);
+      }
+      const wantProd = Math.min(10, slots.length);
+      const prodAt = new Set(pickEven(wantProd, slots.length));
+      let pi = 0;
+      for (let i = 0; i < slots.length; i++) {
+        const s = slots[i];
+        if (prodAt.has(i)) {
+          const p = PRODUCTS[pi++];
+          nodes.push({ x: s.x, y: s.y, z: s.z, alpha: s.alpha, owl: !p, prod: p || null });
+        } else {
+          nodes.push({ x: s.x, y: s.y, z: s.z, alpha: s.alpha, owl: true, prod: null });
+        }
+      }
+    } else {
+      let ni = 0, pi = 0;
+      for (let i = 0; i <= N; i += nodeEvery) {
+        const owlA = (ni % 7 === 3), owlB = (ni % 7 === 0);
+        const a = A[i], b = B[i];
+        const pa = owlA ? null : PRODUCTS[pi++];
+        const pb = owlB ? null : PRODUCTS[pi++];
+        nodes.push({ x: a.x, y: a.y, z: a.z, alpha: a.alpha, owl: owlA || !pa, prod: pa || null });
+        nodes.push({ x: b.x, y: b.y, z: b.z, alpha: b.alpha, owl: owlB || !pb, prod: pb || null });
+        ni++;
+      }
     }
     nodes.sort((p, q) => p.z - q.z);
     hitNodes = [];
@@ -2825,11 +2889,26 @@ export function createHelixBgAnim(cfg) {
       const d = (n.z + 1) * 0.5;                               // 0 (far) → 1 (near)
       const size = prodSize * (0.74 + 0.54 * d) * breathe;     // near circles are larger
       const rad = size / 2;
-      /* WISEcode owl bug is 20% larger than a product circle at the same depth. */
-      if (n.owl) { drawOwl(n.x, n.y, size * 1.2, n.alpha, n.alpha); continue; }
+      /* WISEcode owl bug is 20% larger than a product circle at the same depth.
+         In Ten density the owl stays at the original "dot" size so the ten
+         foods can swell a bit past the logo-bug field. */
+      if (n.owl) {
+        const owlSize = (few ? dotSize : prodSize) * (0.74 + 0.54 * d) * breathe;
+        drawOwl(n.x, n.y, owlSize * 1.2, n.alpha, n.alpha);
+        continue;
+      }
       if (!n.prod) continue;
       const im = images && images[n.prod.img];
-      if (!im || !im.complete || !im.naturalWidth) continue;
+      if (!im || !im.complete || !im.naturalWidth) {
+        /* Photo still loading — stand in with the owl bug so a Ten-density
+           slot never goes empty for a frame. The product paints on the next
+           frame once the image arrives. */
+        if (few) {
+          const owlSize = dotSize * (0.74 + 0.54 * d) * breathe;
+          drawOwl(n.x, n.y, owlSize * 1.2, n.alpha, n.alpha);
+        }
+        continue;
+      }
       const isHover = hoverImg && n.prod.img === hoverImg;
       drawBug(im, n.x, n.y, size, n.alpha);
       if (isHover) {
@@ -2948,7 +3027,7 @@ export function createHelixBgAnim(cfg) {
     });
   }
 
-  return { start, stop, pause, resume };
+  return { start, stop, pause, resume, redraw };
 }
 
 /* Third ambient style: the owl "orbit" constellation. Unlike helix this
@@ -4236,13 +4315,14 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   const BGANIM_PAUSED_KEY = 'wise:chat-bg-anim-paused';
   let bgAnimPaused = false;
   try { if (localStorage.getItem(BGANIM_PAUSED_KEY) === '1') bgAnimPaused = true; } catch (_) {}
-  /* Which background-animation STYLE runs — the food-DNA 'helix' (default) or
-     the owl 'orbit'. Shared APP-WIDE (one key, broadcast on
-     wise:chat-bg-anim-style) so every mounted chat's segment + live field follow
-     the one shared choice. A leftover 'stamp' preference (removed) falls back
-     to helix. */
+  /* Which background-animation STYLE runs — the food-DNA 'helix' (default),
+     the same helix with about ten products ('helix-ten'), or the owl 'orbit'.
+     Shared APP-WIDE (one key, broadcast on wise:chat-bg-anim-style) so every
+     mounted chat's segment + live field follow the one shared choice. A leftover
+     'stamp' preference (removed) falls back to helix. */
   const BGANIM_STYLE_KEY = 'wise:chat-bg-anim-style';
-  const BGANIM_STYLES = ['helix', 'orbit'];
+  const BGANIM_STYLES = ['helix', 'helix-ten', 'orbit'];
+  const isHelixStyle = (s) => s === 'helix' || s === 'helix-ten';
   let bgAnimStyle = 'helix';
   try {
     const s = localStorage.getItem(BGANIM_STYLE_KEY);
@@ -4347,6 +4427,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
             <span class="sc-bganim-style-label">Style</span>
             <div class="sc-stream-seg" role="radiogroup" aria-label="Background animation style">
               <button type="button" class="sc-stream-seg-btn is-on" data-sc="bg-anim-style" data-style="helix" role="radio" aria-checked="true" title="Food DNA helix" aria-label="Food DNA helix">Helix</button>
+              <button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="helix-ten" role="radio" aria-checked="false" title="Food DNA helix — about ten products" aria-label="Food DNA helix — about ten products">Ten</button>
               <button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="orbit" role="radio" aria-checked="false" title="Owl orbit constellation" aria-label="Owl orbit constellation">Orbit</button>
             </div>
           </div>
@@ -5008,7 +5089,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const timeMs = Date.now();
     const fb = (feedbackEnabled && meta.feedback !== false) ? feedbackRowHtml(timeMs) : '';
     const footer = `<div class="sc-line-meta">${
-      src ? `<span class="sc-trust-chip" title="WISEcodeAI™ cites where its answer comes from — ${esc(src)}"><span class="material-symbols-outlined">database</span>${esc(truncSourceName(src))}</span>` : ''
+      src ? `<span class="sc-trust-chip" title="${esc(src)}"><span class="material-symbols-outlined">database</span>${esc(truncSourceName(src))}</span>` : ''
     }${fb ? '' : timeStampHtml(timeMs)}${fb}</div>`;
     messages.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body">${html}${footer}</div></div>`);
@@ -5288,13 +5369,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     setTimeout(runMilestone, rnd(220, 520));
   }
 
-  /* The grounding chip names a data source, capped to 28 characters (long
-     enough for the full database / snapshot names shown in the input's
-     selector, e.g. "ALPHA snapshot \u2014 2026-Jul-29") so a long source never
-     blows out the meta row — anything longer is clipped with an ellipsis. */
+  /* The grounding chip names a data source, capped to 15 characters so a long
+     snapshot name never blows out the meta row. Anything longer is clipped
+     with an ellipsis; the chip's title attribute keeps the full name. */
   function truncSourceName(s) {
     const str = String(s == null ? '' : s);
-    return str.length > 28 ? str.slice(0, 28).trimEnd() + '\u2026' : str;
+    return str.length > 15 ? str.slice(0, 15).trimEnd() + '\u2026' : str;
   }
 
   /* The currently active database from the in-input selector. Declared here —
@@ -6486,9 +6566,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   /* The welcome-only ambient field. Helix and orbit share one facade so all the
      start/stop/pause/resume call sites below stay style-agnostic: the DNA/RNA
      product 'helix' (createHelixBgAnim — the SAME engine every other chat
-     surface uses) and the owl orbit (createOrbitBgAnim). Each engine
-     is built lazily the first time its style runs; switching style stops the old
-     field and (if the welcome is up) starts the new one in its place. */
+     surface uses; Helix and Ten are one engine with a density flip) and the
+     owl orbit (createOrbitBgAnim). Each engine is built lazily the first time
+     its style runs; switching style stops the old field and (if the welcome
+     is up) starts the new one in its place. Helix ↔ Ten stays on the same
+     canvas so the ten product bugs can swell into the leftover node space. */
   const bgAnimCommon = {
     host: rootEl,
     getBody: () => rootEl.querySelector('.sc-body'),
@@ -6496,30 +6578,40 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     reducedMotion: prefersReducedMotion,
     isOn: () => bgAnimOn,
     isPaused: () => bgAnimPaused,
+    getDensity: () => (bgAnimStyle === 'helix-ten' ? 'ten' : 'full'),
   };
   const bgAnimEngines = {};
+  const bgAnimEngineKey = (style) => (style === 'orbit' ? 'orbit' : 'helix');
   const bgAnimEngine = (style) => {
-    if (!bgAnimEngines[style]) {
-      bgAnimEngines[style] = style === 'orbit'
+    const key = bgAnimEngineKey(style);
+    if (!bgAnimEngines[key]) {
+      bgAnimEngines[key] = key === 'orbit'
           ? createOrbitBgAnim(bgAnimCommon)
           : createHelixBgAnim(bgAnimCommon);
     }
-    return bgAnimEngines[style];
+    return bgAnimEngines[key];
   };
   const bgAnim = {
     start() { bgAnimEngine(bgAnimStyle).start(); },
     stop() { Object.keys(bgAnimEngines).forEach((k) => bgAnimEngines[k].stop()); },
-    pause() { const e = bgAnimEngines[bgAnimStyle]; if (e && e.pause) e.pause(); },
-    resume() { const e = bgAnimEngines[bgAnimStyle]; if (e && e.resume) e.resume(); },
-    redraw() { const e = bgAnimEngines[bgAnimStyle]; if (e && e.redraw) e.redraw(); },
+    pause() { const e = bgAnimEngine(bgAnimStyle); if (e && e.pause) e.pause(); },
+    resume() { const e = bgAnimEngine(bgAnimStyle); if (e && e.resume) e.resume(); },
+    redraw() { const e = bgAnimEngine(bgAnimStyle); if (e && e.redraw) e.redraw(); },
     /* Swap the running style: stop whatever is live, then (if the welcome is up
-       and the field is on) start the newly-chosen style in its place. */
+       and the field is on) start the newly-chosen style in its place. Helix ↔
+       Ten is a density flip on the same engine — redraw so the ten products
+       can swell without tearing the strand down. */
     setStyle(style) {
       if (!BGANIM_STYLES.includes(style) || style === bgAnimStyle) return;
       const live = rootEl.classList.contains('sc-bganim-live')
         || rootEl.classList.contains('sc-orbit-live');
-      this.stop();
+      const sameHelix = isHelixStyle(style) && isHelixStyle(bgAnimStyle);
       bgAnimStyle = style;
+      if (sameHelix && live && bgAnimOn) {
+        const e = bgAnimEngines.helix;
+        if (e && e.redraw) { e.redraw(); return; }
+      }
+      this.stop();
       if (bgAnimOn && live) bgAnimEngine(bgAnimStyle).start();
     },
   };
@@ -6536,7 +6628,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     /* The opacity slider (below the toggle) dims + locks while the animation is off. */
     const detail = menuSel('.sc-bganim-detail');
     if (detail) detail.classList.toggle('is-disabled', !bgAnimOn);
-    /* The style segment (Helix / Orbit) reflects the shared choice and stays
+    /* The style segment (Helix / Ten / Orbit) reflects the shared choice and stays
        ALWAYS interactive — even when the field is off — so it reads as a real,
        discoverable choice (picking a style turns the animation on, below). */
     const styleRow = menuSel('.sc-bganim-style');
@@ -6615,7 +6707,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     syncBgAnimMenu();
     applyBgAnimPaused();
   });
-  /* Style segment (Helix / Orbit) — pick which ambient field runs. Persist +
+  /* Style segment (Helix / Ten / Orbit) — pick which ambient field runs. Persist +
      broadcast so every mounted chat swaps in lockstep; setStyle() hot-swaps a
      live field so the change is visible immediately without leaving the welcome. */
   document.addEventListener('wise:chat-bg-anim-style', (e) => {
@@ -6973,8 +7065,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       if (src === false) src = '';
       const fb = (feedbackEnabled && t.feedback !== false) ? feedbackRowHtml(ts) : '';
       const footer = `<div class="sc-line-meta">${
-        src ? `<span class="sc-trust-chip" title="WISEcodeAI™ cites where its answer comes from — ${esc(src)}"><span class="material-symbols-outlined">database</span>${esc(truncSourceName(src))}</span>` : ''
-      }${fb ? '' : timeStampHtml(ts)}${fb}</div>`;
+      src ? `<span class="sc-trust-chip" title="${esc(src)}"><span class="material-symbols-outlined">database</span>${esc(truncSourceName(src))}</span>` : ''
+    }${fb ? '' : timeStampHtml(ts)}${fb}</div>`;
       return `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body">${body}${footer}</div></div>`;
     }).join('');
   }
@@ -8324,10 +8416,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim', { detail: { on: bgAnimOn } })); } catch (_) {}
     }
     else if (action === 'bg-anim-style') {
-      /* Pick the ambient field's style (helix · orbit). Keep the menu open so the
-         segment selection reads back immediately; persist + broadcast so the
-         wise:chat-bg-anim-style listener swaps the live field here and on every
-         sibling chat. */
+      /* Pick the ambient field's style (helix · helix-ten · orbit). Keep the menu
+         open so the segment selection reads back immediately; persist + broadcast
+         so the wise:chat-bg-anim-style listener swaps the live field here and on
+         every sibling chat. */
       const s = item.dataset.style;
       if (BGANIM_STYLES.includes(s)) {
         if (s !== bgAnimStyle) {
@@ -8335,7 +8427,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-style', { detail: { style: s } })); } catch (_) {}
         }
         /* Picking a style is also the one-tap way to SEE it: if the field was
-           off, turn it on now so choosing "Orbit" (or "Helix") isn't a dead
+           off, turn it on now so choosing "Orbit" (or "Helix" / "Ten") isn't a dead
            control. Broadcast so every sibling chat + this menu's switch follow. */
         if (!bgAnimOn) {
           bgAnimOn = true;
@@ -8706,11 +8798,12 @@ export function wireStandardChatMenu(cfg = {}) {
   let bgPaused = false;
   try { if (localStorage.getItem(BGANIM_PAUSED_KEY) === '1') bgPaused = true; } catch (_) {}
   const effOpacity = () => (bgUserSet ? bgOpacity : 0.20);
-  /* Background-animation STYLE (helix · orbit) — shared app-wide, same key/event
-     as the mounted module so every surface swaps in lockstep. A leftover 'stamp'
-     preference (removed) falls back to helix. */
+  /* Background-animation STYLE (helix · helix-ten · orbit) — shared app-wide,
+     same key/event as the mounted module so every surface swaps in lockstep. A
+     leftover 'stamp' preference (removed) falls back to helix. */
   const BGANIM_STYLE_KEY = 'wise:chat-bg-anim-style';
-  const BGANIM_STYLES = ['helix', 'orbit'];
+  const BGANIM_STYLES = ['helix', 'helix-ten', 'orbit'];
+  const isHelixStyle = (s) => s === 'helix' || s === 'helix-ten';
   let bgStyle = 'helix';
   try {
     const s = localStorage.getItem(BGANIM_STYLE_KEY);
@@ -8719,9 +8812,10 @@ export function wireStandardChatMenu(cfg = {}) {
   } catch (_) {}
   /* Inline chats copied the menu markup before the Style row existed; inject it
      (before the playback row) so every hand-rolled surface gains the segment too,
-     keeping the whole app's chat menus identical. Helix and orbit ship here. */
+     keeping the whole app's chat menus identical. Helix, Ten, and orbit ship here. */
   const bgStyleSegHtml = ''
     + '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="helix" role="radio" aria-checked="false" title="Food DNA helix" aria-label="Food DNA helix">Helix</button>'
+    + '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="helix-ten" role="radio" aria-checked="false" title="Food DNA helix — about ten products" aria-label="Food DNA helix — about ten products">Ten</button>'
     + '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="orbit" role="radio" aria-checked="false" title="Owl orbit constellation" aria-label="Owl orbit constellation">Orbit</button>';
   const existingStyleRow = q('.sc-bganim-style');
   if (!existingStyleRow) {
@@ -8738,6 +8832,15 @@ export function wireStandardChatMenu(cfg = {}) {
     }
   } else {
     existingStyleRow.querySelectorAll('[data-style="stamp"]').forEach((el) => el.remove());
+    if (!existingStyleRow.querySelector('[data-style="helix-ten"]')) {
+      const helixBtn = existingStyleRow.querySelector('[data-style="helix"]');
+      const tenHtml = '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="helix-ten" role="radio" aria-checked="false" title="Food DNA helix — about ten products" aria-label="Food DNA helix — about ten products">Ten</button>';
+      if (helixBtn) helixBtn.insertAdjacentHTML('afterend', tenHtml);
+      else {
+        const seg = existingStyleRow.querySelector('.sc-stream-seg');
+        if (seg) seg.insertAdjacentHTML('afterbegin', tenHtml);
+      }
+    }
     if (!existingStyleRow.querySelector('[data-style="orbit"]')) {
       const seg = existingStyleRow.querySelector('.sc-stream-seg');
       if (seg) seg.insertAdjacentHTML('beforeend',
@@ -8749,12 +8852,15 @@ export function wireStandardChatMenu(cfg = {}) {
     && !welcomeEl.classList.contains('ws-hidden')
     && !welcomeEl.classList.contains('sc-hidden')
     && welcomeEl.style.display !== 'none');
-  /* One lazily-built engine per style, exposed through a small facade so the
-     start/stop below stay style-agnostic (mirrors the mounted module). */
+  /* One lazily-built engine per family (helix + helix-ten share a canvas;
+     orbit is its own), exposed through a small facade so the start/stop below
+     stay style-agnostic (mirrors the mounted module). */
   const bgEngines = {};
+  const bgEngineKey = (style) => (style === 'orbit' ? 'orbit' : 'helix');
   const bgEngine = (style) => {
     if (!cfg.bgAnim || !cfg.bgAnim.host || !cfg.bgAnim.getBody) return null;
-    if (!bgEngines[style]) {
+    const key = bgEngineKey(style);
+    if (!bgEngines[key]) {
       const common = {
         host: cfg.bgAnim.host,
         getBody: cfg.bgAnim.getBody,
@@ -8762,20 +8868,27 @@ export function wireStandardChatMenu(cfg = {}) {
         reducedMotion,
         isOn: () => bgOn,
         isPaused: () => bgPaused,
+        getDensity: () => (bgStyle === 'helix-ten' ? 'ten' : 'full'),
       };
-      bgEngines[style] = style === 'orbit'
+      bgEngines[key] = key === 'orbit'
           ? createOrbitBgAnim(common)
           : createHelixBgAnim(common);
     }
-    return bgEngines[style];
+    return bgEngines[key];
   };
   const stopAllBg = () => Object.keys(bgEngines).forEach((k) => bgEngines[k].stop());
   function maybeRunBgAnim() {
     if (!cfg.bgAnim || !cfg.bgAnim.host || !cfg.bgAnim.getBody) return;
     if (bgOn && welcomeVisible()) {
-      stopAllBg();
       const e = bgEngine(bgStyle);
-      if (e) e.start();
+      if (!e) return;
+      const liveHelix = cfg.bgAnim.host.classList.contains('sc-bganim-live');
+      if (liveHelix && isHelixStyle(bgStyle) && e.redraw) {
+        e.redraw();
+        return;
+      }
+      stopAllBg();
+      e.start();
     } else {
       stopAllBg();
     }
@@ -8815,7 +8928,7 @@ export function wireStandardChatMenu(cfg = {}) {
     }
   };
   const applyBgPaused = () => {
-    const e = bgEngines[bgStyle];
+    const e = bgEngines[bgEngineKey(bgStyle)];
     if (!e) return;
     if (bgPaused) e.pause(); else e.resume();
   };
@@ -8870,7 +8983,7 @@ export function wireStandardChatMenu(cfg = {}) {
           try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-style', { detail: { style: s } })); } catch (_) {}
         }
         /* Picking a style is also the one-tap way to SEE it: turn the field on
-           if it was off so "Orbit" (or "Helix") isn't a dead control. */
+           if it was off so "Orbit" (or "Helix" / "Ten") isn't a dead control. */
         if (!bgOn) {
           bgOn = true;
           try { localStorage.setItem(BGANIM_KEY, '1'); } catch (_) {}

@@ -242,7 +242,10 @@
        (chat / History / Turns): the active output's serif title + meta line on
        the LEFT, and the control cluster on the RIGHT (position counter, the
        prev/next buttons, then the three-dot menu + width changer). openPane()
-       and setPaneSlide() keep the title/meta in sync with the visible output. */
+       and setPaneSlide() keep the title/meta in sync with the visible output.
+       The merged Output pane is an exception: "Output" is a small eyebrow
+       above the count + chart name; the description sits to the right of
+       the count (see #wa-unified .wa-pane-mast below). */
     .wa-pane-top {
       display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
       padding: 16px 12px 14px 20px; flex-shrink: 0;
@@ -263,6 +266,46 @@
     }
     .wa-pane-meta { font-size: 12px; color: var(--text-muted); margin: 3px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .wa-pane-title:empty, .wa-pane-meta:empty { display: none; }
+    /* Merged Output pane: shared dash-eyebrow over the headline
+       (count + chart name + dropdown chevron). Version + description sit
+       on the next line, aligned under the title — not under the count. */
+    #wa-unified .wa-pane-mast {
+      display: flex; flex-direction: column; flex-wrap: nowrap;
+      align-items: stretch; gap: 2px;
+    }
+    #wa-unified .wa-pane-eyebrow { margin: 0; }
+    #wa-unified .wa-pane-mast-head {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      column-gap: 8px;
+      align-items: center;
+      min-width: 0;
+    }
+    #wa-unified .wa-pane-title { grid-column: 1; grid-row: 1; }
+    #wa-unified .wa-pane-mast-row {
+      grid-column: 2; grid-row: 1;
+      display: flex; flex-wrap: nowrap; align-items: center;
+      column-gap: 8px; width: auto; max-width: 100%; min-width: 0;
+      position: relative;
+    }
+    #wa-unified .wa-pane-name {
+      flex: 0 1 auto; min-width: 0; margin: 0;
+      font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+      font-weight: 800; font-size: 1.2rem; letter-spacing: -.01em; line-height: 1.16;
+      color: var(--text);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    #wa-unified .wa-pane-mast-sub {
+      grid-column: 2; grid-row: 2;
+      display: flex; flex-wrap: wrap; align-items: baseline;
+      column-gap: 8px; row-gap: 2px; min-width: 0; margin-top: 3px;
+    }
+    #wa-unified .wa-pane-ver { order: 0; }
+    #wa-unified .wa-pane-meta {
+      order: 1; flex: 1 1 8rem; min-width: 0; margin: 0;
+      font-size: 12.5px; font-style: italic; line-height: 1.35;
+    }
+    #wa-unified .wa-pane-name:empty { display: none; }
     /* Version badge in the pane masthead — mirrors the transcript card's
        "v1.0.2 · 3 versions" so the versioning on the mini cards stays in line
        with the output shown on the right. Hidden for unversioned outputs. */
@@ -457,7 +500,7 @@
 
     /* ── Header tally bounce ──
        When a NEW output lands in a pane, its header tally ticks up — "Result
-       2 / 3" becomes "/ 4" (or the merged masthead's "Output N / M"). Replay a
+       2 / 3" becomes "/ 4" (or the merged masthead's "N / M"). Replay a
        springy bounce + a brief color flash on it so the count going up reads
        like a score being scored. openPane() applies .is-bump on growth and
        clears it once the run finishes. */
@@ -673,24 +716,25 @@
 
     /* ── Admin: "Outputs dropdown" header mode (merged pane only) ──
        Toggled from the merged pane's three-dot menu (pink Admin switch). Hides
-       the chip carousel; the "Output N / M" masthead itself becomes a dropdown
+       the chip carousel; the count ("N / M") in the masthead becomes a dropdown
        that lists every output as a small preview + label row (click one to
        reveal it). The header prev/next left/right arrows stay visible so both
        nav affordances coexist. */
     #wa-unified.is-titledrop .wa-pane-nav-track { display: none !important; }
     #wa-unified.is-titledrop .wa-pane-nav-count { display: none !important; }
-    #wa-unified .wa-pane-mast { position: relative; }
-    #wa-unified.is-titledrop .wa-pane-title { cursor: pointer; user-select: none; }
-    #wa-unified.is-titledrop .wa-pane-title:hover { color: var(--primary-ink, var(--primary)); }
-    #wa-unified.is-titledrop .wa-pane-title::after {
+    #wa-unified.is-titledrop .wa-pane-mast-head { cursor: pointer; user-select: none; }
+    #wa-unified.is-titledrop .wa-pane-mast-head:hover .wa-pane-title,
+    #wa-unified.is-titledrop .wa-pane-mast-head:hover .wa-pane-name { color: var(--primary-ink, var(--primary)); }
+    #wa-unified.is-titledrop .wa-pane-mast-row::after {
       content: 'keyboard_arrow_down';
       font-family: 'Material Symbols Outlined';
-      font-weight: 400; font-size: 20px; line-height: 1;
-      display: inline-block; vertical-align: -4px; margin-left: 4px;
-      color: var(--text-muted);
+      font-weight: 400; font-size: 18px; line-height: 1;
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 1.2rem; margin: 0; color: var(--text-muted); order: 2; flex: 0 0 auto;
+      transform: translateY(-1px);
       transition: transform .15s ease;
     }
-    #wa-unified.is-titledrop .wa-pane-title.is-open::after { transform: rotate(180deg); }
+    #wa-unified.is-titledrop .wa-pane-mast-row.is-open::after { transform: translateY(-1px) rotate(180deg); }
     .wa-titledrop-pop {
       position: absolute; top: calc(100% + 6px); left: 0; z-index: 40;
       min-width: 250px; max-width: 330px; max-height: 340px; overflow-y: auto;
@@ -968,6 +1012,21 @@
     .wa-chiplist > .chip { cursor: default; }
     .wa-chiplist > .chip:hover { background: color-mix(in srgb, var(--primary) 10%, #fff); border-color: var(--border-strong); color: var(--text-muted); }
     html.dark .wa-chiplist > .chip:hover { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); border-color: var(--primary); }
+    /* UPF marker tags — compact, non-interactive, tinted. Not intent chips. */
+    .wa-upf-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+    .wa-upf-tag {
+      display: inline-flex; align-items: center;
+      padding: 2px 7px; border-radius: 999px;
+      font-size: 10px; font-weight: 700; line-height: 1.3;
+      pointer-events: none; user-select: none; cursor: default;
+    }
+    .wa-upf-tag[data-tone="red"] { background: var(--sec-red-10); color: var(--sec-red-text); }
+    .wa-upf-tag[data-tone="amber"] { background: var(--ter-amber-10); color: var(--ter-amber-text); }
+    .wa-upf-tag[data-tone="fair"] { background: color-mix(in srgb, var(--chart-status-fair) 16%, transparent); color: var(--ter-amber-text); }
+    .wa-upf-tag[data-tone="green"] { background: var(--sec-green-10); color: var(--sec-green-text); }
+    .wa-upf-tag[data-tone="blue"] { background: var(--primary-soft); color: var(--primary-ink, var(--primary)); }
+    html.dark .wa-upf-tag[data-tone="fair"] { color: var(--ter-amber-text); }
+    html.dark .wa-upf-tag[data-tone="blue"] { color: var(--primary-bright, #8B9FAF); }
 
     /* NOVA group rows — status lives in the numbered circle, never a left stripe. */
     .wa-nova-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
@@ -1171,25 +1230,18 @@
     .wa-ref-view:hover { color: var(--text); text-decoration: underline; }
     .wa-ref-view .material-symbols-outlined { font-size: 14px; }
 
-    /* Per-output title rendered INSIDE the block, sitting above its content
-       (score cards, tables, reference lists, …). It only shows in the merged
-       "Outputs" pane once it carousels (2+ outputs), where the masthead reads
-       "Output N / M" instead of the output's own name — so without this the
-       active output has no visible title above its score cards. Everywhere else
-       (the split panes, and the single-output merged pane) the masthead already
-       carries the title, so this copy stays hidden to avoid a duplicate. Blocks
-       that already lead with a prominent heading of their own never receive one. */
+    /* Per-output title rendered INSIDE the block. Hidden everywhere now: the
+       merged Output pane carries the name in its header masthead, and the
+       split panes already name the output in theirs. Kept in the DOM so
+       paneSlideLabel() can still read it as a fallback. */
     .wa-out-title { display: none; }
-    .wa-pane--unified .wa-pane-body.is-carousel .wa-out-title {
-      display: block;
-      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
-      font-weight: 900;
-      font-size: 1.4rem;
-      line-height: 1.15;
-      letter-spacing: -.015em;
-      color: var(--text);
-      margin: 0 0 16px;
-    }
+    /* Merged pane header now holds the chart/report name + description, so
+       hide the duplicate lead-in that used to sit directly above the body. */
+    .wa-pane--unified .wa-chart-head,
+    .wa-pane--unified .wa-block > .wa-report-title:first-child,
+    .wa-pane--unified .wa-block > .wa-report-title:first-child + .wa-kraft-sub,
+    .wa-pane--unified .wa-block > .wa-report-title:first-child + .wa-ov-lede,
+    .wa-pane--unified .wa-report-hero > .wa-report-title { display: none; }
 
     /* ── Report layout ── */
     .wa-report-hero { margin-bottom: 20px; }
@@ -1648,6 +1700,7 @@
     #modules-row.output-fs > .wa-pane.pane-fs .wa-scorebar-name { font-size: 15px; }
     #modules-row.output-fs > .wa-pane.pane-fs .wa-scorebar-line .wa-bar-track { height: 16px; }
     #modules-row.output-fs > .wa-pane.pane-fs .wa-report-title.wa-chart-title { font-size: 1.85rem; }
+    #modules-row.output-fs > .wa-pane.pane-fs .wa-pane-name { font-size: 1.7rem; }
     .wa-chart-expand-btn {
       position: absolute; top: 10px; right: 10px; z-index: 4;
       display: inline-flex; align-items: center; justify-content: center;
@@ -3515,9 +3568,17 @@
       <section class="wa-pane wa-pane--unified" id="wa-unified" aria-label="Outputs (merged)">
         <div class="wa-pane-top">
           <div class="wa-pane-mast">
-            <h2 class="wa-pane-title" id="wa-unified-title"></h2>
-            <p class="wa-pane-meta" id="wa-unified-meta"></p>
-            <span class="wa-pane-ver" id="wa-unified-ver" hidden></span>
+            <p class="wa-pane-eyebrow dash-eyebrow" id="wa-unified-eyebrow">Output</p>
+            <div class="wa-pane-mast-head">
+              <h2 class="wa-pane-title" id="wa-unified-title"></h2>
+              <div class="wa-pane-mast-row">
+                <h3 class="wa-pane-name" id="wa-unified-name"></h3>
+              </div>
+              <div class="wa-pane-mast-sub">
+                <span class="wa-pane-ver" id="wa-unified-ver" hidden></span>
+                <p class="wa-pane-meta" id="wa-unified-meta"></p>
+              </div>
+            </div>
           </div>
           <div class="wa-pane-top-right">
             <span class="wa-pane-nav-count" id="wa-unified-count" data-nav-count aria-live="polite"></span>
@@ -3905,6 +3966,7 @@
     });
     const paneTitle = { results: document.getElementById('wa-results-title'), visuals: document.getElementById('wa-visuals-title'), unified: document.getElementById('wa-unified-title') };
     const paneMeta = { results: document.getElementById('wa-results-meta'), visuals: document.getElementById('wa-visuals-meta'), unified: document.getElementById('wa-unified-meta') };
+    const paneName = { unified: document.getElementById('wa-unified-name') };
     const paneVer = { results: document.getElementById('wa-results-ver'), visuals: document.getElementById('wa-visuals-ver'), unified: document.getElementById('wa-unified-ver') };
     /* Mirror an output's version label ("v1.0.2 · 3 versions") into the pane
        masthead so the versioning on the transcript's mini cards stays in line
@@ -3930,8 +3992,8 @@
 
     /* Bounce the header tally when a NEW output lands. The separate panes carry
        it in the top-right counter ("Result N / M"); the merged pane's tally IS
-       its title masthead ("Output N / M"), which doubles as the counter in
-       titledrop mode too. Replays cleanly on back-to-back additions. */
+       the count under the "Output" eyebrow ("N / M"), which doubles as the
+       counter in titledrop mode too. Replays cleanly on back-to-back additions. */
     const paneBumpTimers = {};
     function bumpPaneTally(which) {
       const el = which === 'unified' ? paneTitle.unified : paneCount[which];
@@ -3952,14 +4014,11 @@
     const PANE_GROUP_LABEL = { results: 'Results & Details', visuals: 'Visuals' };
     const PANE_GROUP_ICON = { results: 'table_chart', visuals: 'insights' };
 
-    /* Ensure a surfaced output carries its own title INSIDE the block, sitting
-       above its content (score cards, tables, reference lists, …). The merged
-       "Outputs" pane's masthead only reads "Output N / M", so without this the
-       active output has no visible name above its score cards. Blocks that
-       already lead with a prominent heading of their own — reports
-       (.wa-report-title), detail heroes (.wa-dhero) and code-eval runs
-       (.wa-ce-head) — are left untouched. The heading is hidden by CSS in the
-       split panes, whose masthead already names the output. */
+    /* Stamp a fallback title onto blocks that don't already lead with a
+       heading, so paneSlideLabel() (and the merged header name) can read it.
+       Hidden in the pane — the masthead is what names the output. Blocks that
+       already lead with a report title, detail hero, or code-eval head are
+       left untouched. */
     function ensureBlockOutTitle(block, fallbackTitle) {
       if (!block || block.nodeType !== 1 || !block.classList.contains('wa-block')) return;
       if (block.querySelector('.wa-out-title')) return;
@@ -3985,8 +4044,13 @@
       const dest = routed ? 'unified' : which;
       const el = paneEl[dest];
       if (!el) return;
-      if (title != null && paneTitle[dest]) paneTitle[dest].textContent = title;
-      if (meta != null && paneMeta[dest]) paneMeta[dest].textContent = meta;
+      /* Split panes name the output in the masthead immediately. The merged
+         Output pane is synced by syncUnifiedMast() after the carousel refresh
+         (count + description + chart name under the "Output" eyebrow). */
+      if (dest !== 'unified') {
+        if (title != null && paneTitle[dest]) paneTitle[dest].textContent = title;
+        if (meta != null && paneMeta[dest]) paneMeta[dest].textContent = meta;
+      }
       const tallyBefore = paneBlocks(dest).length;
       let firstAdded = null;
       const addedBlocks = [];
@@ -4003,9 +4067,8 @@
           }
         }
       }
-      /* Give each freshly-added output its own in-content title (shown only in
-         the merged pane — see .wa-out-title), falling back to the title we're
-         opening with when the block wasn't tagged with a slide title. */
+      /* Stamp a fallback in-content title for label/header lookup when the
+         block wasn't tagged with a slide title. Hidden in the pane itself. */
       addedBlocks.forEach((b) => {
         ensureBlockOutTitle(b, title);
         waBootDashCharts(b);
@@ -4066,6 +4129,24 @@
       return Array.from(body.children).filter((n) => n.nodeType === 1 && n.classList.contains('wa-block'));
     }
 
+    /* Merged Output pane header: "Output" stays a static eyebrow; the count,
+       chart/report name, and description all track the visible slide. */
+    function syncUnifiedMast(idx) {
+      const blocks = paneBlocks('unified');
+      const nameEl = paneName.unified;
+      if (!blocks.length) {
+        if (paneTitle.unified) paneTitle.unified.textContent = '';
+        if (paneMeta.unified) paneMeta.unified.textContent = '';
+        if (nameEl) nameEl.textContent = '';
+        return;
+      }
+      idx = Math.max(0, Math.min(idx == null ? 0 : idx, blocks.length - 1));
+      const active = blocks[idx];
+      if (paneTitle.unified) paneTitle.unified.textContent = `${idx + 1} / ${blocks.length}`;
+      if (paneMeta.unified) paneMeta.unified.textContent = (active.dataset && active.dataset.slideMeta) || '';
+      if (nameEl) nameEl.textContent = paneSlideLabel(active, active.dataset.origin || 'results', idx);
+    }
+
     /* Sync the minimize/expand toggle (now a three-dot menu item) with the rail's
        current mode: swap its icon + label between minimize and expand. */
     function updateMinBtn(which) {
@@ -4099,18 +4180,15 @@
       idx = Math.max(0, Math.min(idx, blocks.length - 1));
       blocks.forEach((b, i) => b.classList.toggle('is-active', i === idx));
       if (paneBody[which]) paneBody[which].scrollTop = 0;
-      /* Keep the editorial masthead in sync with the visible output. In the
-         merged pane the HEADER masthead reads "Output N / M"; the active
-         output's own title renders inside the content itself. */
-      if (paneBody[which] && paneBody[which].classList.contains('is-carousel')) {
+      /* Keep the editorial masthead in sync with the visible output. The
+         merged pane always uses the Output eyebrow + count + name layout;
+         split panes name the output in the title when they're carouseling. */
+      if (which === 'unified') {
+        syncUnifiedMast(idx);
+      } else if (paneBody[which] && paneBody[which].classList.contains('is-carousel')) {
         const active = blocks[idx];
-        if (which === 'unified') {
-          if (paneTitle.unified) paneTitle.unified.textContent = `Output ${idx + 1} / ${blocks.length}`;
-          if (paneMeta.unified) paneMeta.unified.textContent = '';
-        } else {
-          if (paneTitle[which]) paneTitle[which].textContent = paneSlideLabel(active, which, idx);
-          if (paneMeta[which]) paneMeta[which].textContent = active.dataset.slideMeta || '';
-        }
+        if (paneTitle[which]) paneTitle[which].textContent = paneSlideLabel(active, which, idx);
+        if (paneMeta[which]) paneMeta[which].textContent = active.dataset.slideMeta || '';
       }
       if (animate) {
         const active = blocks[idx];
@@ -4126,8 +4204,8 @@
         if (scrollNav && items[idx]) items[idx].scrollIntoView({ block: 'nearest', inline: 'nearest' });
       }
       /* Position counter (e.g. "Chart 2 / 4") + prev/next availability. The
-         merged pane's TITLE already reads "Output N / M", so its top-right
-         counter stays empty to avoid saying it twice. */
+         merged pane already shows "N / M" under the Output eyebrow, so its
+         top-right counter stays empty to avoid saying it twice. */
       const noun = which === 'visuals' ? 'Chart' : which === 'unified' ? 'Output' : 'Result';
       const count = paneCount[which];
       if (count) count.innerHTML = which === 'unified' ? '' : `${noun} <b>${idx + 1}</b> / ${blocks.length}`;
@@ -4227,7 +4305,13 @@
         if (count) count.innerHTML = '';
         setPaneMinItemVisible(which, false);
         blocks.forEach((b) => b.classList.remove('is-active'));
-        if (blocks.length === 1) blocks[0].classList.add('is-active');
+        if (blocks.length === 1) {
+          blocks[0].classList.add('is-active');
+          syncUnifiedMast(0);
+          updatePaneVer(which);
+        } else {
+          syncUnifiedMast();
+        }
         return;
       }
       body.classList.add('is-carousel');
@@ -4517,10 +4601,10 @@
     }
     /* ── Admin: merged pane "Outputs dropdown" header ──
        Toggled from the merged pane's ⋯ menu (pink Admin switch). While ON the
-       chip carousel + header prev/next arrows are hidden entirely and the
-       "Output N / M" masthead becomes a dropdown: clicking it opens a list of
-       every output as a small preview + label; picking one reveals it below
-       (and jumps the transcript, same as the chips did). */
+       chip carousel is hidden and the count ("N / M") under the Output eyebrow
+       becomes a dropdown: clicking it opens a list of every output as a small
+       preview + label; picking one reveals it below (and jumps the transcript,
+       same as the chips did). */
     let unifiedTitleDrop = true;
     let titledropPop = null;
     function syncTitledropItem() {
@@ -4529,10 +4613,14 @@
       item.classList.toggle('is-on', unifiedTitleDrop);
       item.setAttribute('aria-checked', unifiedTitleDrop ? 'true' : 'false');
     }
+    function titledropTrigger() {
+      return paneEl.unified?.querySelector('.wa-pane-mast-row') || paneTitle.unified;
+    }
     function closeTitledropPop() {
       if (titledropPop) { titledropPop.remove(); titledropPop = null; }
-      paneTitle.unified?.classList.remove('is-open');
-      if (paneTitle.unified?.hasAttribute('aria-haspopup')) paneTitle.unified.setAttribute('aria-expanded', 'false');
+      const t = titledropTrigger();
+      t?.classList.remove('is-open');
+      if (t?.hasAttribute('aria-haspopup')) t.setAttribute('aria-expanded', 'false');
     }
     /* data-slide-ver is "v1.0.1 · 2 versions" on redone outputs — the dropdown
        only needs the version tag under the name so identical titles stay distinct. */
@@ -4543,7 +4631,8 @@
     }
     function openTitledropPop() {
       closeTitledropPop();
-      const mast = paneEl.unified?.querySelector('.wa-pane-mast');
+      const mast = paneEl.unified?.querySelector('.wa-pane-mast-row')
+        || paneEl.unified?.querySelector('.wa-pane-mast');
       const blocks = paneBlocks('unified');
       if (!mast || !blocks.length) return;
       const activeIdx = blocks.findIndex((b) => b.classList.contains('is-active'));
@@ -4583,13 +4672,14 @@
         pickItem(it);
       });
       mast.appendChild(titledropPop);
-      paneTitle.unified?.classList.add('is-open');
-      paneTitle.unified?.setAttribute('aria-expanded', 'true');
+      const trigger = titledropTrigger();
+      trigger?.classList.add('is-open');
+      trigger?.setAttribute('aria-expanded', 'true');
     }
     function setUnifiedTitleDrop(on) {
       unifiedTitleDrop = !!on;
       paneEl.unified?.classList.toggle('is-titledrop', unifiedTitleDrop);
-      const t = paneTitle.unified;
+      const t = titledropTrigger();
       if (t) {
         if (unifiedTitleDrop) {
           t.setAttribute('role', 'button');
@@ -4604,19 +4694,20 @@
       }
       syncTitledropItem();
     }
-    paneTitle.unified?.addEventListener('click', (e) => {
+    paneEl.unified?.querySelector('.wa-pane-mast-head')?.addEventListener('click', (e) => {
       if (!unifiedTitleDrop) return;
+      if (e.target.closest('.wa-titledrop-pop, .wa-pane-mast-sub')) return;
       e.stopPropagation();
       if (titledropPop) closeTitledropPop(); else openTitledropPop();
     });
-    paneTitle.unified?.addEventListener('keydown', (e) => {
+    paneEl.unified?.querySelector('.wa-pane-mast-row')?.addEventListener('keydown', (e) => {
       if (!unifiedTitleDrop || (e.key !== 'Enter' && e.key !== ' ')) return;
       e.preventDefault();
       if (titledropPop) closeTitledropPop(); else openTitledropPop();
     });
-    /* Default the "Outputs dropdown" admin toggle ON: the "Output N / M"
-       masthead becomes a dropdown. The prev/next left/right arrows stay visible
-       alongside it (see the .is-titledrop CSS), so both nav affordances coexist.
+    /* Default the "Outputs dropdown" admin toggle ON: the count under the
+       Output eyebrow becomes a dropdown. The prev/next left/right arrows stay
+       visible alongside it (see the .is-titledrop CSS), so both nav affordances coexist.
        Sync the pane class, title affordances & menu-item state to the flag. */
     setUnifiedTitleDrop(unifiedTitleDrop);
 
@@ -5485,6 +5576,7 @@
         { n: 4, tone: 'var(--sec-red)', name: 'Ultra-processed (UPF)', desc: 'Industrial formulations built mostly from extracted substances plus cosmetic additives.' },
       ];
       const markers = ['Added & free sugars', 'Refined / interesterified oils', 'Protein isolates', 'Emulsifiers', 'Artificial colors', 'Non-caloric sweeteners', 'Flavor enhancers', 'Thickeners & stabilizers', 'Bulking & anti-caking agents', 'Glazing & firming agents'];
+      const tones = ['red', 'amber', 'fair', 'green', 'blue'];
       return `
         <div class="wa-block">
           <div class="wa-notice"><span class="material-symbols-outlined">science</span><span>Paste an ingredient list into the chat and I\u2019ll classify it live. Here\u2019s the framework I use \u2014 <strong>WISEcode UPF</strong>, built on the NOVA scale.</span></div>
@@ -5497,7 +5589,7 @@
               </div>`).join('')}
           </div>
           <p class="wa-detail-sub" style="margin-top:16px">UPF markers I scan for (Group 4 signals)</p>
-          <div class="wa-chiplist">${markers.map((m) => `<span class="chip"><span class="material-symbols-outlined">flag</span>${esc(m)}</span>`).join('')}</div>
+          <div class="wa-upf-tags">${markers.map((m, i) => `<span class="wa-upf-tag" data-tone="${tones[i % tones.length]}">${esc(m)}</span>`).join('')}</div>
         </div>`;
     }
 

@@ -4950,10 +4950,11 @@
     .sc-trust-chip {
       display: inline-flex; align-items: center; gap: 4px;
       font-size: 0.625rem; font-weight: 600; letter-spacing: 0.01em;
-      color: color-mix(in srgb, var(--primary) 75%, var(--text-muted));
+      /* Same light blue as the streaming-trace glob / step keys. */
+      color: color-mix(in srgb, var(--primary, #25507C) 46%, #ffffff);
     }
     .sc-trust-chip .material-symbols-outlined { font-size: 12px !important; }
-    html.dark .sc-trust-chip { color: var(--primary-bright, #8B9FAF); }
+    html.dark .sc-trust-chip { color: #93B2DC; }
     /* WISEcodeAI answer meta — the action icons (copy / thumbs / more) hug the
        far LEFT of the row while the grounding source chip floats to the far RIGHT. */
     .sc-line-wiseai .sc-line-meta > .sc-fb-wrap,

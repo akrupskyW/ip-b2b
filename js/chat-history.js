@@ -320,9 +320,11 @@
       /* Icon-rail tooltip variant — styled to match a collapsed navigation
          module: a light surface card that floats to the RIGHT of the icon,
          vertically centred (not below it), with no arrow. Higher class-count
-         than the base rules so it always wins. */
+         than the base rules so it always wins. Chat / folder names wrap
+         inside the card instead of stretching past max-width on one line. */
       '.wch-tip.wch-tip--nav{background:var(--surface,#fff);color:var(--text,#1F2733);border:1px solid var(--border,rgba(0,0,0,0.10));',
-        'box-shadow:var(--shadow-card,0 8px 22px rgba(20,30,60,0.14));font-size:11px;font-weight:600;letter-spacing:0.01em;padding:5px 10px;border-radius:8px;',
+        'box-shadow:var(--shadow-card,0 8px 22px rgba(20,30,60,0.14));font-size:11px;font-weight:600;letter-spacing:0.01em;padding:6px 12px;border-radius:8px;',
+        'box-sizing:border-box;white-space:normal;overflow-wrap:break-word;word-break:break-word;max-width:min(280px,calc(100vw - 24px));line-height:1.35;text-align:left;',
         'transform:translate(-4px,-50%) scale(0.96);transform-origin:left center;}',
       '.wch-tip.wch-tip--nav.is-vis{transform:translate(0,-50%) scale(1);}',
       '.wch-tip.wch-tip--nav::after{display:none;}',
