@@ -3236,7 +3236,7 @@ const MOTION_ITEMS = [
     id: 'helix', group: 'anim', icon: 'genetics', title: 'Welcome helix', wide: true,
     src: 'js/wiseai-chat.js · createHelixBgAnim',
     used: 'Every chat welcome — ON by default at 20% opacity',
-    lede: 'The ambient DNA/RNA field behind the chat welcome. Product thumbnails travel the strand; move onto a circle for its food card (View Details opens the NFP). About one in four bugs that have a real note open a brand-insight or look-closer fact instead — never a status stamp, and never on their own: a popover opens only when the pointer enters a circle, not when a circle drifts under a still cursor. Default opacity is <strong>20%</strong> — drag the slider to change it (same control as the chat ⋯ menu). Honors pause and <code>prefers-reduced-motion</code>. The live field starts when this section opens.',
+    lede: 'The ambient DNA/RNA field behind the chat welcome. Product thumbnails travel the strand; move onto a circle for its card. Notes (brand insight or look-closer fact) are sprinkled two-of-three along the strand, mixed with food sheets — never a status stamp, and never on their own: a popover opens only when the pointer enters a circle. Default opacity is <strong>20%</strong> — drag the slider to change it (same control as the chat ⋯ menu). Honors pause and <code>prefers-reduced-motion</code>. The live field starts when this section opens.',
     demo: `
       <div class="mi-motion-helix sc-bganim-host" data-motion-helix>
         <div class="mi-motion-helix-stage" data-helix-body></div>

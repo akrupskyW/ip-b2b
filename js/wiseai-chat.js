@@ -1951,8 +1951,8 @@ export function createHelixBgAnim(cfg) {
      deep: our real demo-brand products plus a wide roster of recognizable market
      products (photos in assets/helix/, sourced from the Open Food Facts database).
      `img` is relative to assets/; name/brand/upc feed the food card’s
-     “View Details” deep-link. A minority of bugs open a brand-insight or
-     look-closer fact instead of the product sheet — never a status stamp. */
+     “View Details” deep-link. Brand-insight and look-closer notes are spread
+     along the strand (mixed with food sheets) — never a status stamp. */
   const PRODUCTS = [
     { img: 'portfolio/coconut_brownies.png', name: 'Toasted Coconut Brownies-12 ct', brand: 'Flax4Life', upc: '8 57287 00420 3' },
     { img: 'portfolio/chocolate_chip_muffins.png', name: 'Chocolate Chip Muffins-4 ct', brand: 'Flax4Life', upc: '0 65776 63152 0' },
@@ -2119,6 +2119,10 @@ export function createHelixBgAnim(cfg) {
     const j = Math.floor(Math.random() * (i + 1));
     const tmp = PRODUCTS[i]; PRODUCTS[i] = PRODUCTS[j]; PRODUCTS[j] = tmp;
   }
+  /* Strand index after the shuffle — used to sprinkle notes evenly along the
+     helix (two notes, then a food sheet, repeating) so they are not clustered. */
+  const STRAND_AT = new Map();
+  PRODUCTS.forEach((p, i) => { STRAND_AT.set(p, i); });
 
   /* Insight cards that ride the helix instead of a product-identity sheet.
      Brand notes stay on that brand’s products; look-closer reads stay on
@@ -2182,32 +2186,118 @@ export function createHelixBgAnim(cfg) {
       { kind: 'look', kicker: 'Look closer', title: 'A short, old list',
         body: 'Apple cider vinegar is a fermented pantry staple. Short lists like this are the Non-UPF end of the helix.' },
     ],
+    nabisco: [
+      { kind: 'brand', kicker: 'Brand insight', title: 'A cracker is a formula more often than not',
+        body: 'Nabisco’s familiar boxes — Ritz, cookies, grahams — usually start as flour and fat, then pick up emulsifiers and flavor systems. The list, not the logo, is the call.' },
+    ],
+    'kellogg s': [
+      { kind: 'brand', kicker: 'Brand insight', title: 'Breakfast shapes are engineered',
+        body: 'Kellogg’s cereals are extruded, coated, and fortified as a system. That is why so many SKUs in this aisle land as ultra-processed even when the grain on the box sounds simple.' },
+    ],
+    heinz: [
+      { kind: 'brand', kicker: 'Brand insight', title: 'Two condiments, two lists',
+        body: 'Heinz ketchup and a sandwich spread can share a brand and not share a processing story. One can stay close to tomato and vinegar; the other is usually a formula.' },
+    ],
+    kirkland: [
+      { kind: 'brand', kicker: 'Brand insight', title: 'Warehouse brand, same questions',
+        body: 'Kirkland’s line runs from water and nuts to peanut butter and granola. A house brand is not a processing claim — each SKU still has to clear the list.' },
+    ],
+    'kirkland signature': [
+      { kind: 'brand', kicker: 'Brand insight', title: 'Warehouse brand, same questions',
+        body: 'Kirkland’s line runs from water and nuts to peanut butter and granola. A house brand is not a processing claim — each SKU still has to clear the list.' },
+    ],
+    tesco: [
+      { kind: 'brand', kicker: 'Brand insight', title: 'Own-label bread is still a list',
+        body: 'Tesco Finest loaves can be a short bakery list or a long improver list. The store name does not decide Non-UPF — the ingredients do.' },
+    ],
+    'general mills': [
+      { kind: 'brand', kicker: 'Brand insight', title: 'The shape is the tell',
+        body: 'Cheerios and Honey Nut Cheerios share a grain and not a process. Extrusion, coating, and fortification are what turn oats into a cereal formula.' },
+    ],
+    cadbury: [
+      { kind: 'brand', kicker: 'Brand insight', title: 'Cocoa and confectionery are not the same',
+        body: 'Cadbury cocoa can be a short pantry list. Dairy Milk buttons are a formulated confection. Same brand, two processing stories.' },
+    ],
   };
   const F_LOOK = [
     { test: /olive oil/i, kind: 'look', kicker: 'Look closer', title: 'Pressed, not formulated',
       body: 'Extra-virgin olive oil is a single ingredient. That is the textbook Non-UPF pantry staple on this strand.' },
     { test: /oat(s|meal|cakes|drink|milk)|porridge|weetabix/i, kind: 'look', kicker: 'Look closer', title: 'Oats stay simple until flavored',
       body: 'Plain oats sit at the Non-UPF end. Flavor systems and isolates are what push a breakfast cup the other way.' },
-    { test: /yogurt|yoghurt/i, kind: 'look', kicker: 'Look closer', title: 'Cultures, then extras',
+    { test: /yogurt|yoghurt|hipro|light and free|light & free/i, kind: 'look', kicker: 'Look closer', title: 'Cultures, then extras',
       body: 'Yogurt is milk plus cultures — until thickeners, isolates, and flavor bases show up on the list.' },
+    { test: /coconut water/i, kind: 'look', kicker: 'Look closer', title: 'One ingredient, if it stays that way',
+      body: 'Coconut water can be just the liquid of the fruit. Added sugars, flavors, and preservatives are what turn a simple drink into a formula.' },
     { test: /water/i, kind: 'look', kicker: 'Look closer', title: 'As close as a product gets',
       body: 'Bottled water is as Non-UPF as packaged food gets. It rides the helix so the contrast with formulated snacks is visible.' },
     { test: /peanut butter|almond butter/i, kind: 'look', kicker: 'Look closer', title: 'Nuts — or a spread formula',
       body: 'Nut butter is Non-UPF when it is nuts and salt. Sugar, oils, and emulsifiers change the call.' },
-    { test: /oreo|nutella|kinder|toblerone|chocolate orange|dairymilk/i, kind: 'look', kicker: 'Look closer', title: 'Confectionery is usually formulated',
+    { test: /oreo|nutella|kinder|toblerone|chocolate orange|dairymilk|cioccolato|chocolove|napolitain/i, kind: 'look', kicker: 'Look closer', title: 'Confectionery is usually formulated',
       body: 'Emulsifiers, isolates, and cosmetic extras are the UPF markers in a chocolate aisle — even on a familiar name.' },
+    { test: /cocoa/i, kind: 'look', kicker: 'Look closer', title: 'Cocoa is a pantry staple until sweetened',
+      body: 'Unsweetened cocoa is typically one ingredient. Once sugar, lecithin, and flavors join it, you are looking at confectionery, not a pantry powder.' },
+    { test: /chocolate/i, kind: 'look', kicker: 'Look closer', title: 'A bar is a list, not a flavor',
+      body: 'Dark cooking chocolate can be short. A filled or flavored bar is usually emulsifiers, isolates, and extras — the UPF pattern in this aisle.' },
     { test: /ramen|instant noodle/i, kind: 'look', kicker: 'Look closer', title: 'A classic UPF pattern',
       body: 'Instant noodles usually pair a fried cake with a flavor powder. That is the pattern Non-UPF is built to catch.' },
-    { test: /ketchup|mayonnaise|sandwich spread|pickle/i, kind: 'look', kicker: 'Look closer', title: 'Condiments live on the edge',
+    { test: /ketchup|mayonnaise|sandwich spread|pickle|spreadable/i, kind: 'look', kicker: 'Look closer', title: 'Condiments live on the edge',
       body: 'A short vinegar-and-tomato list and a formulated spread can share a shelf and not share a Non-UPF verdict.' },
+    { test: /soy sauce|oyster sauce|bbq sauce|hot sauce|mustard|sennep/i, kind: 'look', kicker: 'Look closer', title: 'A sauce is only as short as its list',
+      body: 'Fermented soy or a chili mash can stay close to the kitchen. Thickeners, colors, and flavor systems are what push a bottle across the line.' },
     { test: /bread|loaf|rolls|muffin(?!s-)|english muffin/i, kind: 'look', kicker: 'Look closer', title: 'Bread is a list, not a shape',
       body: 'Flour, water, salt, and time can be Non-UPF. Dough conditioners and a long improver list are a different product.' },
     { test: /coca cola|soda|squash/i, kind: 'look', kicker: 'Look closer', title: 'Zero sugar is not Non-UPF',
       body: 'A formulated beverage can be calorie-free and still ultra-processed. Those are two different questions.' },
-    { test: /cheerios|cereal|coco pops|grape-nuts|granola bar/i, kind: 'look', kicker: 'Look closer', title: 'Breakfast is often a formula',
+    { test: /cheerios|cereal|coco pops|grape-nuts|granola bar|special flakes|all bran/i, kind: 'look', kicker: 'Look closer', title: 'Breakfast is often a formula',
       body: 'Extruded shapes, coatings, and fortification systems are why so many cereals land as ultra-processed.' },
+    { test: /granola/i, kind: 'look', kicker: 'Look closer', title: 'Clusters are a process',
+      body: 'Plain toasted grains can stay simple. Binding syrups, isolates, and flavor coats are what turn granola into a formulated cluster.' },
     { test: /tofu/i, kind: 'look', kicker: 'Look closer', title: 'A short soy list',
       body: 'Silken tofu is typically soybeans, water, and a coagulant — a useful Non-UPF contrast to flavored soy snacks.' },
+    { test: /ritz|cracker|goldfish|graham|rice cake/i, kind: 'look', kicker: 'Look closer', title: 'A snack is usually a formula',
+      body: 'Crackers and rice cakes often start as grain and fat, then pick up emulsifiers, flavors, and a long marker list. The box is not the verdict — the list is.' },
+    { test: /doritos|chips|popcorn|bruschette/i, kind: 'look', kicker: 'Look closer', title: 'The seasoning is the tell',
+      body: 'A chip or popcorn can be grain, oil, and salt — or a flavor dust of isolates, enhancers, and colors. The coating is usually where UPF hides.' },
+    { test: /pasta|spaghetti/i, kind: 'look', kicker: 'Look closer', title: 'Dry pasta is a short list',
+      body: 'Wheat and water (or egg) is a Non-UPF pantry staple. Filled, flavored, or instant pasta is a different product.' },
+    { test: /tea/i, kind: 'look', kicker: 'Look closer', title: 'Leaves, until they are not',
+      body: 'Tea can be just dried leaves. Flavor systems, sweeteners, and “instant” formats are what turn a brew into a formula.' },
+    { test: /sugar|cane sugar/i, kind: 'look', kicker: 'Look closer', title: 'A single-ingredient sweetener',
+      body: 'Raw cane sugar is one ingredient. It still has to be read as a sweetener in a recipe — but it is not an ultra-processed additive system.' },
+    { test: /sour cream/i, kind: 'look', kicker: 'Look closer', title: 'Cream, cultures, then extras',
+      body: 'Sour cream can be cream plus cultures. Stabilizers, gums, and fillers are what push a tub away from the dairy staple.' },
+    { test: /butter/i, kind: 'look', kicker: 'Look closer', title: 'Butter is short until it is a spread',
+      body: 'Salted butter is cream and salt. “Spreadable” blends add oils and emulsifiers — a different processing story under a dairy word.' },
+    { test: /\bmilk\b|uht/i, kind: 'look', kicker: 'Look closer', title: 'Milk until the list grows',
+      body: 'Dairy milk is a short list. Plant milks and “protein” shakes can be the grain — or oils, gums, and isolates. Read past the word milk.' },
+    { test: /protein|shake|orgain/i, kind: 'look', kicker: 'Look closer', title: 'A shake is a formula by design',
+      body: 'Protein powders and ready-to-drink shakes are isolates, flavors, and emulsifiers stacked on purpose. “Organic” or “superfoods” does not change the process.' },
+    { test: /fruit snack|fig bar/i, kind: 'look', kicker: 'Look closer', title: 'Fruit on the box is not the list',
+      body: 'A fruit snack can be fruit concentrate, sugars, and gelling systems. A fig bar can stay closer to fruit and grain — the ingredients decide.' },
+    { test: /olive/i, kind: 'look', kicker: 'Look closer', title: 'Olives are a pantry staple',
+      body: 'Pitted ripe olives are typically olives, water, and salt. That is the Non-UPF end of the snack aisle next to formulated chips.' },
+    { test: /marmalade|jam/i, kind: 'look', kicker: 'Look closer', title: 'Fruit plus sugar — or a set gel',
+      body: 'A traditional marmalade is fruit, sugar, and pectin. Colors, flavors, and gelling systems are what turn a jar into a formulated spread.' },
+    { test: /cheese/i, kind: 'look', kicker: 'Look closer', title: 'Cheese until it is processed',
+      body: 'A block of cheese is milk, cultures, salt, and time. Processed portions are emulsifying salts and a formula designed to melt on cue.' },
+    { test: /nugget/i, kind: 'look', kicker: 'Look closer', title: 'A nugget is a rebuild',
+      body: 'Chicken nuggets are typically a formed meat mash with coatings, binders, and flavor systems — a textbook ultra-processed pattern, even in a “better for you” box.' },
+    { test: /rice pudding|mousse|pudding/i, kind: 'look', kicker: 'Look closer', title: 'A dessert cup is usually set',
+      body: 'Rice pudding and mousse cups are typically starches, gums, and flavor bases designed to sit on a shelf. That is a different product from milk and rice at home.' },
+    { test: /microwave|pilau|basmati rice/i, kind: 'look', kicker: 'Look closer', title: 'Heat-and-eat is a process',
+      body: 'Microwave rice can be rice and water — or oils, flavors, and preservatives packed for the pouch. The convenience step is where the list grows.' },
+    { test: /tomato/i, kind: 'look', kicker: 'Look closer', title: 'Tomatoes, packed',
+      body: 'Diced tomatoes are usually tomatoes and juice (or a little salt). That is a useful Non-UPF contrast to a formulated sauce on the same shelf.' },
+    { test: /houmous|hummus/i, kind: 'look', kicker: 'Look closer', title: 'Chickpeas until the extras',
+      body: 'Hummus can be chickpeas, tahini, lemon, and oil. Stabilizers and preservatives are what turn a dip into a longer industrial list.' },
+    { test: /cashew|trail mix|nut & berry/i, kind: 'look', kicker: 'Look closer', title: 'Nuts are simple until coated',
+      body: 'Plain salted nuts and a nut-and-berry mix are among the clearer Non-UPF snacks. Yogurt coatings, flavors, and syrups change the call.' },
+    { test: /peas/i, kind: 'look', kicker: 'Look closer', title: 'A legume in a can',
+      body: 'Marrowfat peas are typically peas, water, and salt — a short list next to reconstituted meat and snack formulas on this strand.' },
+    { test: /cookie|biscuit|shortbread|belvita/i, kind: 'look', kicker: 'Look closer', title: 'A biscuit is often engineered',
+      body: 'Shortbread can be butter, flour, and sugar. Breakfast cookies and flavored biscuits usually add emulsifiers, syrups, and a long marker list.' },
+    { test: /vinegar/i, kind: 'look', kicker: 'Look closer', title: 'A short, old list',
+      body: 'Apple cider vinegar is a fermented pantry staple. Short lists like this are the Non-UPF end of the helix.' },
   ];
 
   function hashStr(s) {
@@ -2239,19 +2329,33 @@ export function createHelixBgAnim(cfg) {
     if (/^(non-?upf|upf|gras)$/i.test(title)) return null;
     return fact;
   }
+  const DEMO_BRAND = {
+    flax4life: 1, 'date better': 1, 'nutrient survival': 1, 'simple truth': 1, siete: 1
+  };
   function factForProduct(p) {
     if (!p) return null;
     const brand = normBrand(p.brand);
     const h = hashStr(p.img || p.name || '');
-    const brandFacts = F_BRAND[brand];
-    if (brandFacts) return richFact(pickFrom(brandFacts, h));
-    return richFact(lookFactFor(p));
+    /* Portfolio brands keep their own insight. Everyone else prefers a
+       look-closer that matches THIS food, then a brand note, then a short
+       fallback so note-slots along the strand are never empty. */
+    if (DEMO_BRAND[brand] && F_BRAND[brand]) return richFact(pickFrom(F_BRAND[brand], h));
+    const look = richFact(lookFactFor(p));
+    if (look) return look;
+    if (F_BRAND[brand]) return richFact(pickFrom(F_BRAND[brand], h));
+    return richFact({
+      kind: 'look', kicker: 'Look closer', title: 'The list is the verdict',
+      body: 'Every SKU on this strand is read the same way — ingredient by ingredient, not by the claim on the front of the pack.'
+    });
   }
-  /* Only about one in four products that *have* a real fact show it; the rest
-     (and every product without a fact) stay food sheets. */
+  /* Two of every three positions along the strand open a brand-insight or
+     look-closer note; the third stays a food sheet. That throws notes
+     throughout the helix instead of clustering them on a few brands. */
   function isFactProduct(p) {
     if (!p || !factForProduct(p)) return false;
-    return (hashStr(p.img || p.name) % 4) === 0;
+    const i = STRAND_AT.get(p);
+    if (i == null) return true;
+    return (i % 3) !== 2;
   }
 
   let canvas = null, ctx = null, buf = null, bctx = null, raf = 0, ro = null, images = null, owlImg = null;
