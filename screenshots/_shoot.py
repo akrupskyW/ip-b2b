@@ -154,11 +154,13 @@ PIN_CHAT = f"""() => {{
 
 # Largest vertical overflow across any non-chat scroll pane (and the document).
 # The left chat is pinned; the right-hand module drives viewport growth.
+# .nfp-sp-ingred is intentionally a fixed-height scroller (matches the
+# Nutrition Facts label) — growing the viewport must not try to unclip it.
 MAX_DELTA = f"""() => {{
-  const chatHost = el => el.closest && el.closest({CHAT_HOST!r});
+  const skip = el => el.closest && (el.closest({CHAT_HOST!r}) || el.closest('.nfp-sp-ingred'));
   let max = 0;
   document.querySelectorAll('*').forEach(el => {{
-    if (chatHost(el)) return;
+    if (skip(el)) return;
     const cs = getComputedStyle(el);
     if (/(auto|scroll)/.test(cs.overflowY)) {{
       const d = el.scrollHeight - el.clientHeight;
@@ -195,7 +197,7 @@ PAGE_AFTER_LOAD = {
     }""",
     "pages/view-product.html": """async () => {
       await new Promise(r => {
-        const ok = () => document.querySelector('.nfp-sp-strip, .nfp-cmp-grid');
+        const ok = () => document.querySelector('.nfp-sp-strip, .nfp-cmp-grid') && (document.querySelector('.nfp-cmp-grid') || document.querySelector('.nfp-ia, .nfp-ins .dash-claim, .dash-score-card'));
         if (ok()) return r();
         const obs = new MutationObserver(() => { if (ok()) { obs.disconnect(); r(); } });
         obs.observe(document.body, { childList: true, subtree: true });
@@ -323,9 +325,9 @@ def shoot(page, rel, out_name):
         if last_delta is not None and delta >= last_delta - 4:
             # Not shrinking (a fixed-height pane) — one targeted expand, then stop.
             page.evaluate("""() => {
-              const chatHost = el => el.closest && el.closest('#wa-chat,#rf-chat,#sa-chat,#aid-chat,#pl-chat,#ar-chat,.ap-chat,#gs-chat,#chat-shell,#wiseai-dock-panel,.sticky-chat');
+              const skip = el => el.closest && (el.closest('#wa-chat,#rf-chat,#sa-chat,#aid-chat,#pl-chat,#ar-chat,.ap-chat,#gs-chat,#chat-shell,#wiseai-dock-panel,.sticky-chat') || el.closest('.nfp-sp-ingred'));
               document.querySelectorAll('*').forEach(el => {
-                if (chatHost(el)) return;
+                if (skip(el)) return;
                 const cs = getComputedStyle(el);
                 if (/(auto|scroll)/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 4) {
                   el.style.setProperty('max-height','none','important');

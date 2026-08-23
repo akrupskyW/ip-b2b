@@ -59,6 +59,7 @@ export const MODULE_SECTIONS = [
     title: 'Reformulation',
     tone: 'reform',
     modules: [
+      { label: 'Reformulation Overview', icon: 'view_list', href: 'reformulation.html' },
       { label: 'Reformulation Studio', icon: 'auto_fix_high', href: 'reformulation.html' },
       { label: 'Reformulation Dashboard', icon: 'monitoring', href: 'reformulation.html#dashboard' },
     ],

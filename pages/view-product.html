@@ -121,10 +121,13 @@
     .ap-attach-pop .fl-more-sep { height: 1px; background: var(--border); margin: 4px 6px; }
 
     /* ── Product Details (NFP) module ──
-       Takes whatever width the chat and progress modules leave behind. min-width
-       stays 0 so it gives space back as the window narrows instead of pushing
-       the progress module past the (clipped) edge of the row. */
-    #nfp-panel { flex: 1 1 0%; width: auto; min-width: 0; display: flex; }
+       Four-tier width changer (single / double / triple / fill), same as every
+       other module. Fill (the default, via .panel-fill) absorbs leftover row
+       space; the narrower tiers are fixed. min-width stays 0 so a narrow
+       window can still shrink the pane instead of overflowing the row. */
+    #nfp-panel { flex: 0 0 520px; width: 520px; min-width: 0; display: flex; position: relative; z-index: 2; }
+    #nfp-panel.panel-wide { flex: 0 0 680px; width: 680px; }
+    #nfp-panel.panel-triple { flex: 0 0 860px; width: 860px; }
     .nfp-inner {
       display: flex; flex-direction: column; flex: 1; min-height: 0; width: 100%;
       border-radius: 16px; border: 1px solid var(--border);
@@ -134,7 +137,7 @@
        overview hero (.dash-hero): embossed WISE-bug watermark on primary blue,
        white title, and a small circular brand-logo badge on the right. */
     .nfp-panel-header {
-      position: relative; isolation: isolate; overflow: hidden;
+      position: relative; isolation: isolate; overflow: visible; z-index: 4;
       display: flex; align-items: center; gap: 11px; padding: 10px 14px;
       height: var(--panel-header-h); min-height: var(--panel-header-h);
       box-sizing: border-box; flex-shrink: 0;
@@ -171,43 +174,96 @@
     .nfp-brand-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .nfp-brand-logo-mono { font-weight: 800; font-size: 0.62rem; letter-spacing: -0.02em; color: var(--primary); }
 
-    /* Scrollable body — white background (faithful label). Also the query
-       container the single-pane split (.nfp-sp) responds to, so the two-column
-       layout tracks the module's own width rather than the viewport. */
-    .nfp-scroll-body { flex: 1 1 0%; overflow-y: auto; min-height: 0; background: var(--surface); padding-bottom: 56px; container-type: inline-size; container-name: nfp-body; }
+    /* Scrollable body — same --bg canvas as other right-of-chat modules
+       (.agent-main-scroll). The Nutrition Facts panel itself stays white.
+       Also the query container the single-pane split (.nfp-sp) responds to,
+       so the two-column layout tracks the module's own width rather than
+       the viewport. */
+    .nfp-scroll-body { flex: 1 1 0%; overflow-y: auto; min-height: 0; background: var(--bg); padding-bottom: 56px; container-type: size; container-name: nfp-body; }
+    html.dark .nfp-scroll-body { background: transparent; }
 
     /* ── Single-pane responsive split ──────────────────────────────────────
-       The default (non-toggled) Product Details body lays the product identity
-       — size picker, photo, category and UPC barcode — in a LEFT column and the
-       Nutrition Facts + ingredients in a RIGHT column once the module is wide
-       enough. Below the breakpoint (mobile / narrow module) the two blocks fall
-       back to a single stacked column. */
-    .nfp-sp > .nfp-sp-strip, .nfp-sp > .nfp-sp-media, .nfp-sp > .nfp-sp-facts { min-width: 0; }
+       Default: the three blocks (photo, Nutrition Facts, ingredients) stack.
+       Once the module is wide enough they sit as three drag-resizable
+       columns. The Product sizes strip always spans the full width on top. */
+    .nfp-sp {
+      display: flex; flex-direction: column;
+      --nfp-w-media: 0.2fr; --nfp-w-facts: 0.4fr; --nfp-w-ingred: 0.4fr;
+    }
+    .nfp-sp > .nfp-sp-strip, .nfp-sp > .nfp-sp-media, .nfp-sp > .nfp-sp-facts, .nfp-sp > .nfp-sp-ingred { min-width: 0; }
+    .nfp-sp-media { display: flex; flex-direction: column; padding: 0; --nfp-media-inline: 0px; }
+    .nfp-sp-media > .nfp-hero--rich {
+      width: 100%; max-width: none; margin-inline: var(--nfp-media-inline);
+      align-self: stretch; border-bottom: none; border-radius: 0;
+    }
+    .nfp-sp-media .nfp-hero-img {
+      width: 100%; min-width: 100%; height: 100%; left: 0; right: 0;
+      object-fit: cover; object-position: center;
+    }
+    .nfp-sp-facts, .nfp-sp-ingred { border-top: 1px solid var(--border); }
+    .nfp-sp-ingred {
+      padding: 4px 0 12px;
+      overflow-x: hidden;
+      overflow-y: scroll;
+      overscroll-behavior: contain;
+      box-sizing: border-box;
+      scrollbar-width: thin;
+      scrollbar-color: color-mix(in srgb, var(--text-subtle) 35%, transparent) transparent;
+    }
+    .nfp-sp-ingred.has-ia-h { height: var(--nfp-ia-h); max-height: var(--nfp-ia-h); }
+    .nfp-sp-ingred::-webkit-scrollbar { width: 8px; }
+    .nfp-sp-ingred::-webkit-scrollbar-track { background: transparent; }
+    .nfp-sp-ingred::-webkit-scrollbar-thumb {
+      background: color-mix(in srgb, var(--text-subtle) 35%, transparent);
+      border-radius: 8px;
+    }
+
+    /* Seam splitters — hidden while stacked. Same grip as js/pane-resize.js. */
+    .nfp-sp-split {
+      display: none; align-items: center; justify-content: center;
+      cursor: col-resize; touch-action: none; user-select: none; -webkit-user-select: none;
+      z-index: 2; outline: none;
+    }
+    .nfp-sp-split:focus-visible { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--primary) 45%, transparent); }
+    .nfp-sp-grip {
+      display: block; width: 6px; height: 40px; border-radius: 6px;
+      background: rgba(16,24,32,.78); border: 1px solid rgba(255,255,255,.6);
+      box-shadow: 0 2px 10px rgba(0,0,0,.45);
+      opacity: 0; transform: scaleY(.5); pointer-events: none;
+      transition: opacity .12s ease, transform .12s ease, width .12s, background .12s, border-color .12s;
+    }
+    .nfp-sp-split:hover .nfp-sp-grip,
+    .nfp-sp-split:focus-visible .nfp-sp-grip,
+    .nfp-sp-split.is-on .nfp-sp-grip { opacity: 1; transform: scaleY(1); }
+    .nfp-sp-split.is-on .nfp-sp-grip {
+      width: 8px; background: var(--primary); border-color: var(--primary);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 32%, transparent), 0 3px 14px rgba(0,0,0,.5);
+    }
+    html.dark .nfp-sp-grip { background: rgba(230,236,244,.88); border-color: rgba(16,24,32,.35); }
+    html.nfp-col-dragging, html.nfp-col-dragging * { cursor: col-resize !important; user-select: none !important; -webkit-user-select: none !important; }
+
     @container nfp-body (min-width: 640px) {
-      .nfp-sp { display: grid; grid-template-columns: minmax(300px, 44%) 1fr; }
-      /* The Product sizes strip spans both columns across the top. */
+      .nfp-sp {
+        display: grid; align-items: start;
+        grid-template-columns: minmax(120px, var(--nfp-w-media)) 16px minmax(200px, var(--nfp-w-facts)) 16px minmax(240px, var(--nfp-w-ingred));
+      }
       .nfp-sp-strip { grid-column: 1 / -1; }
-      /* Media column fills the full height of the (taller) facts column, and the
-         product photo stretches to fill it so the image background runs the whole
-         height rather than stopping at its fixed hero size. */
-      .nfp-sp-media { border-right: 1px solid var(--border); display: flex; flex-direction: column; }
-      .nfp-sp-media .nfp-hero--rich { flex: 1 1 auto; height: auto; min-height: 260px; }
-      /* With the tall photo, float the name / category / UPC group up into the
-         top half of the column instead of pinning it to the very bottom (leave
-         46px clear at the top for the "Product image" control). */
+      .nfp-sp-split { display: flex; align-self: stretch; }
+      .nfp-sp-facts, .nfp-sp-ingred { border-top: 0; border-left: 1px solid var(--border); }
+      .nfp-sp-ingred { padding: 12px 10px 8px 4px; }
+      .nfp-sp-ingred .nfp-ingred-wrap > *,
+      .nfp-sp-ingred .nfp-ia { max-width: none; margin-left: 0; margin-right: 0; }
+      /* Photo stays at about half the module body so the Non-UPF shield sits
+         directly underneath. */
+      .nfp-sp-media .nfp-hero--rich:not(.nfp-hero--empty) {
+        flex: 0 0 auto; height: 46cqh; max-height: 46cqh; min-height: 180px;
+      }
       .nfp-sp-media .nfp-hero--rich:not(.nfp-hero--empty) .nfp-hero-stack {
         top: 0; bottom: auto; padding-top: 46px;
       }
-      /* Re-weight the scrim so the darkening sits under that top group and fades
-         out toward the bottom, keeping the white name legible up top. */
       .nfp-sp-media .nfp-hero--rich:not(.nfp-hero--empty) .nfp-hero-scrim {
         background: linear-gradient(180deg, rgba(7,12,26,0.72) 0%, rgba(7,12,26,0.30) 42%, rgba(7,12,26,0) 72%);
       }
-      /* Give the facts column generous breathing room below the Contains line so
-         it (and, via the stretched grid row, the media/photo column) grows
-         taller — the ingredient panel's own background carries the extra space
-         so it reads as one continuous card rather than a floating gap. */
-      .nfp-sp-facts .nfp-ingred-wrap { padding-bottom: 150px; }
     }
 
     /* Hero image / uploader */
@@ -243,7 +299,7 @@
        stacked in one container on top of the image (single-pane). Before a
        photo exists the same stack sits on a light panel below the dropzone so
        every field stays visible and editable. ── */
-    .nfp-hero--rich { position: relative; overflow: hidden; height: 260px; background: #1A2339; border-bottom: 1px solid var(--border); }
+    .nfp-hero--rich { position: relative; overflow: hidden; height: 260px; background: #1A2339; border-bottom: none; }
     .nfp-hero--rich.nfp-hero--empty { height: auto; background: var(--surface-2); }
     .nfp-hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
     .nfp-hero-scrim { position: absolute; inset: 0; pointer-events: none;
@@ -589,7 +645,7 @@
     }
 
     /* Food Identity thumbs (multiple product images) */
-    .nfp-fi { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 14px 14px; }
+    .nfp-fi { background: transparent; border-bottom: 1px solid var(--border); padding: 14px 14px 14px; }
     .nfp-fi-header { display: flex; align-items: center; justify-content: flex-start; gap: 8px; margin-bottom: 4px; }
     .nfp-fi-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.375rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; color: var(--text); }
     /* Combined Product Images + Pack Formats — the two thumb groups share one
@@ -626,27 +682,18 @@
        A per-pack, editable Nutrition Facts panel (seeded from the base product)
        that appears for the currently-selected pack format. Reuses the label's
        .nfp-nf-* styling; the header names which pack is being edited. */
-    .nfp-pack-nf { background: var(--surface); border-top: 1px solid var(--border); padding: 4px 0 2px; }
+    .nfp-pack-nf { background: transparent; border-top: 1px solid var(--border); padding: 4px 0 2px; }
     .nfp-pack-nf-head { display: flex; align-items: flex-start; gap: 8px; padding: 10px 14px 2px; }
     .nfp-pack-nf-head > .material-symbols-outlined { font-size: 18px !important; color: var(--primary-ink, var(--primary)); margin-top: 1px; }
     .nfp-pack-nf-titles { min-width: 0; }
     .nfp-pack-nf-title { font-size: 0.72rem; font-weight: 800; color: var(--text); letter-spacing: -0.01em; }
     .nfp-pack-nf-sub { font-size: 0.62rem; color: var(--text-muted); margin-top: 1px; }
 
-    /* ── NFP width toggle + double-pane (wide) layout ─────────────────────
-       The header toggle widens the module and splits it into two panes:
-       LEFT = category + Nutrition Facts + ingredients/allergens (scrolls),
+    /* ── Double-pane (wide) layout — toggled from the ⋯ menu ───────────────
+       LEFT = category + Nutrition Facts + allergens/contains + ingredients (scrolls),
        RIGHT = the product photo filling a full-height column, with the image
-       gallery and the UPC barcode overlaid on the photo. */
-    .nfp-width-toggle {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0; padding: 0;
-      border: 1px solid rgba(255, 255, 255, 0.28); background: rgba(255, 255, 255, 0.12);
-      color: #fff; cursor: pointer; opacity: 0.9;
-      transition: background 0.15s ease, opacity 0.15s ease;
-    }
-    .nfp-width-toggle:hover, .nfp-width-toggle.is-on { opacity: 1; background: rgba(255, 255, 255, 0.24); }
-    .nfp-width-toggle .material-symbols-outlined { font-size: 18px !important; line-height: 1 !important; }
+       gallery and the UPC barcode overlaid on the photo. Module WIDTH is the
+       canonical .panel-width-toggle-btn in the header (four-tier cycle). */
 
     /* ── Compare view (⋯ menu → "Compare formats side by side") ─────────────
        Replaces the one-at-a-time Product Images / Pack Formats tab strip with a
@@ -779,21 +826,38 @@
     .nfp-nf-rule8 { height: 8px; background: #000; }
     .nfp-nf-no-b { border-bottom: none !important; }
     .nfp-nf-footer { border-top: 8px solid #000; padding: 3px 10px 5px; font-size: 0.56rem; color: #000; line-height: 1.45; }
-    /* Same readable column for the ingredient / allergen block, whose section
-       background still bleeds to the panel edges. */
+    /* Same readable column for ingredients (third column) and for the
+       allergen / contains block that now sits under Nutrition Facts. */
     .nfp-ingred-wrap > * { max-width: 460px; margin-left: auto; margin-right: auto; }
+    .nfp-decl-wrap {
+      width: calc(100% - 24px); max-width: 460px; margin: 0 auto 16px;
+      font-family: 'WISE Digits', 'DM Sans', system-ui, sans-serif;
+    }
 
-    /* Ingredient / allergen section */
-    .nfp-ingred-wrap { background: #fff; font-family: 'WISE Digits', 'DM Sans', system-ui, sans-serif; }
-    .nfp-ingred-body { padding: 8px 12px 9px; border-bottom: 1px solid #e5e7eb; }
-    .nfp-ingred-text { font-size: 0.68rem; line-height: 1.55; color: #111827; }
-    .nfp-ingred-label { font-weight: 900; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.02em; }
-    .nfp-allergen-wrap { padding: 8px 12px 10px; border-bottom: 1px solid #e5e7eb; }
+    /* Ingredients stay in their own column. Allergens + Contains sit under
+       the Nutrition Facts panel — both on the module --bg canvas (only the
+       Nutrition Facts label itself stays the white printed sheet). */
+    .nfp-ingred-wrap { background: transparent; font-family: 'WISE Digits', 'DM Sans', system-ui, sans-serif; }
+    .nfp-ingred-body { padding: 8px 12px 9px; }
+    .nfp-ingred-edit {
+      display: block; width: 100%; min-height: 0; height: auto; resize: none;
+      overflow: hidden;
+      box-sizing: border-box; margin: 0; padding: 10px 12px;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--surface); color: var(--text);
+      font-family: 'WISE Digits', 'DM Sans', system-ui, sans-serif;
+      font-size: 0.72rem; line-height: 1.55; outline: none;
+    }
+    .nfp-ingred-edit:focus {
+      box-shadow: inset 0 0 0 2px var(--primary); border-color: transparent;
+    }
+    .nfp-ingred-edit::placeholder { color: var(--text-subtle); font-style: italic; }
+    .nfp-allergen-wrap { padding: 2px 0 10px; border-bottom: 1px solid #e5e7eb; }
     .nfp-allergen-heading { font-size: 0.65rem; font-weight: 700; color: #535964; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
     .nfp-allergen-tags { display: flex; flex-wrap: wrap; gap: 5px; }
     .nfp-allergen-tag { font-size: 0.7rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px; background: #E2EEF7; color: #1A2339; border: 1px solid #C5CFD7; }
     .nfp-allergen-emoji { font-size: 0.95rem; line-height: 1; }
-    .nfp-contains { padding: 6px 12px 8px; font-size: 0.66rem; color: #374151; }
+    .nfp-contains { padding: 6px 0 8px; font-size: 0.66rem; color: #374151; }
 
     /* Editable affordance: any value the flow collects can be clicked to edit.
        Applied on top of the label styles so the black-on-white label stays intact.
@@ -854,11 +918,12 @@
       border-top-color: color-mix(in srgb, var(--text) 78%, transparent); color: var(--text-muted);
     }
 
-    /* Ingredient / allergen / contains block. */
-    html.dark .nfp-ingred-wrap { background: var(--surface); }
-    html.dark .nfp-ingred-body,
+    /* Ingredient block (third column) and allergen / contains (under NF). */
+    html.dark .nfp-ingred-wrap { background: transparent; }
     html.dark .nfp-allergen-wrap { border-bottom-color: var(--border); }
-    html.dark .nfp-ingred-text { color: var(--text); }
+    html.dark .nfp-ingred-edit {
+      background: color-mix(in srgb, #fff 3%, transparent); color: var(--text);
+    }
     html.dark .nfp-allergen-heading { color: var(--text-subtle); }
     html.dark .nfp-allergen-tag {
       background: var(--primary-soft); color: var(--text);
@@ -909,7 +974,7 @@
        pages/product-comparison.html, and reusing the debossed circular stamp
        scorecards from pages/analytics-types.html (.dash-stamp-icon). Content
        only from the reference; the styling is our own. */
-    .nfp-ins { background: var(--surface); border-top: 1px solid var(--border); padding: 16px 14px 22px; display: flex; flex-direction: column; gap: 14px; }
+    .nfp-ins { background: transparent; border-top: 1px solid var(--border); padding: 16px 14px 22px; display: flex; flex-direction: column; gap: 14px; }
 
     /* NEXT STEP banner — a soft primary-tinted panel (not the dark hero): an
        eyebrow, title, one-line rationale, a filled CTA and two quiet quick
@@ -939,41 +1004,147 @@
     }
     .nfp-ins-next-btn:hover { filter: brightness(1.07); text-decoration: none; }
     .nfp-ins-next-btn .material-symbols-outlined { font-size: 18px !important; }
+    /* Shield CTA under the product photo — stack in the narrower media column
+       so title, copy and button all fit, and never grow into the leftover
+       column height (that read as a gap under the image). */
+    .nfp-sp-media .nfp-ins-next {
+      flex: 0 0 auto; flex-direction: column; align-items: stretch;
+      justify-content: flex-start; width: auto; box-sizing: border-box;
+      margin: 10px var(--nfp-media-inline) 12px; padding: 12px 14px;
+      border-radius: 0;
+    }
+    .nfp-sp-media .nfp-ins-next-body { flex: 0 0 auto; }
+    .nfp-sp-media .nfp-ins-next-btn {
+      margin-left: 0; width: 100%; justify-content: center;
+    }
 
-    /* Scorecards — three stat cards in a row. Debossed circular stamp disc in
-       the brand ink (mirrors .dash-stamp-icon / .cmp-takeaway-ic). */
-    .nfp-ins-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); gap: 10px; align-items: stretch; }
-    .nfp-ins-card {
-      display: flex; flex-direction: column; gap: 0; padding: 13px 15px;
-      border-radius: 14px; background: var(--surface); border: 1px solid var(--border);
+    /* Score row — same .dash-claim band as overview's top scorecards. */
+    .nfp-ins .dash-claim {
+      grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr) 1px minmax(0, 1fr);
+      padding: 18px 8px 4px;
     }
-    .nfp-ins-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .nfp-ins-ic {
-      width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
-      display: inline-flex; align-items: center; justify-content: center; background: transparent;
-      border: 1.5px solid color-mix(in srgb, var(--primary) 14%, var(--surface-3));
-      color: color-mix(in srgb, var(--primary) 26%, var(--surface-3));
-      box-shadow: inset 0 1px 1px rgba(17,24,39,0.07), inset 0 -1px 0 rgba(255,255,255,0.55), 0 1px 0 rgba(255,255,255,0.6);
+    .nfp-ins .dash-bignum {
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
     }
-    .nfp-ins-ic .material-symbols-outlined { font-size: 17px !important; line-height: 1; color: inherit !important; font-variation-settings: 'FILL' 0, 'wght' 400, 'opsz' 20; }
-    html.dark .nfp-ins-ic {
-      border-color: color-mix(in srgb, #fff 9%, transparent);
-      color: color-mix(in srgb, var(--primary-bright) 58%, var(--surface-3));
-      box-shadow: inset 0 2px 3px rgba(0,0,0,0.5), inset 0 -1px 0 rgba(255,255,255,0.09), 0 1px 0 rgba(255,255,255,0.05);
+    .nfp-ins .dash-claim-col { cursor: pointer; }
+    @container nfp-body (max-width: 720px) {
+      .nfp-ins .dash-claim { grid-template-columns: 1fr; row-gap: 22px; }
+      .nfp-ins .dash-claim-divider { display: none; }
     }
-    .nfp-ins-lbl { font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); }
-    .nfp-ins-val { font-size: 1.55rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text); line-height: 1.12; margin-top: 10px; }
-    .nfp-ins-val--pos { color: var(--sec-green-text, var(--sec-green)); }
-    .nfp-ins-val small { font-size: 0.9rem; font-weight: 700; color: var(--text-muted); }
-    .nfp-ins-sub { font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; margin-top: 8px; }
-    .nfp-ins-link {
-      margin-top: auto; padding-top: 12px; align-self: flex-end;
-      display: inline-flex; align-items: center; gap: 5px;
-      font-size: 0.78rem; font-weight: 700; color: var(--primary-ink, var(--primary));
-      text-decoration: none; cursor: pointer;
+
+    /* Ingredient analysis — list + Parsed / Codes / Nutrients / Wise Code AI accordions. */
+    .nfp-ia { display: flex; flex-direction: column; gap: 8px; padding: 0 2px 8px; min-width: 0; }
+    .nfp-ia-sec {
+      border: 1px solid var(--border); border-radius: 12px; background: var(--surface);
+      overflow: hidden;
     }
-    .nfp-ins-link:hover { text-decoration: underline; }
-    .nfp-ins-link .material-symbols-outlined { font-size: 16px !important; }
+    html.dark .nfp-ia-sec { background: color-mix(in srgb, #fff 3%, transparent); }
+    .nfp-ia-head {
+      width: 100%; display: flex; align-items: center; gap: 8px;
+      padding: 10px 12px; border: 0; background: transparent; color: var(--text);
+      cursor: pointer; text-align: left;
+    }
+    .nfp-ia-head:hover { background: color-mix(in srgb, var(--primary) 6%, transparent); }
+    .nfp-ia-title {
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-size: 0.95rem; font-weight: 700; letter-spacing: -0.01em; flex: 1; min-width: 0;
+    }
+    .nfp-ia-chev {
+      font-size: 20px !important; color: var(--text-subtle); flex-shrink: 0;
+      transition: transform 0.18s ease;
+    }
+    .nfp-ia-sec.is-collapsed .nfp-ia-chev { transform: rotate(-90deg); }
+    .nfp-ia-body { padding: 0 12px 12px; min-width: 0; }
+    .nfp-ia-sec.is-collapsed .nfp-ia-body { display: none; }
+    .nfp-ia .nfp-ingred-wrap { max-width: none; }
+    .nfp-ia .nfp-ingred-body { padding: 0 0 10px; }
+    .nfp-ia .nfp-ingred-edit { min-height: 0; }
+    .nfp-ia-analyze {
+      width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      border: none; border-radius: 999px; padding: 9px 14px; cursor: pointer;
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 0.8rem; font-weight: 700;
+      background: var(--primary); color: #fff; transition: filter 0.15s, opacity 0.15s;
+    }
+    .nfp-ia-analyze:hover { filter: brightness(1.07); }
+    .nfp-ia-analyze:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.25); }
+    .nfp-ia-analyze .material-symbols-outlined { font-size: 17px !important; }
+    .nfp-ia-banner {
+      display: flex; align-items: flex-start; gap: 7px; padding: 8px 10px; margin-bottom: 8px;
+      border-radius: 10px; font-size: 0.7rem; line-height: 1.4; font-weight: 600;
+    }
+    .nfp-ia-banner .material-symbols-outlined { font-size: 16px !important; flex-shrink: 0; margin-top: 1px; }
+    .nfp-ia-banner--ok { background: var(--sec-green-10); color: var(--sec-green-text); }
+    .nfp-ia-banner--warn { background: var(--ter-amber-10); color: var(--ter-amber-text); }
+    .nfp-ia-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .nfp-ia-btn {
+      display: inline-flex; align-items: center; gap: 5px; border-radius: 999px;
+      padding: 5px 10px; font-size: 0.66rem; font-weight: 700; cursor: pointer;
+    }
+    .nfp-ia-btn--ghost { border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+    .nfp-ia-btn--ghost:hover { border-color: var(--primary); }
+    .nfp-ia-btn--ok { border: none; background: var(--sec-green); color: #fff; }
+    .nfp-ia-btn--ok:hover { filter: brightness(1.06); }
+    .nfp-ia-table { display: flex; flex-direction: column; min-width: 0; overflow-x: auto; }
+    .nfp-ia-th, .nfp-ia-row {
+      display: grid; gap: 8px; align-items: center; min-width: 220px;
+    }
+    .nfp-ia-table--parsed .nfp-ia-th,
+    .nfp-ia-table--parsed .nfp-ia-row { grid-template-columns: minmax(90px, 1.15fr) minmax(88px, 1fr); align-items: start; }
+    .nfp-ia-table--codes .nfp-ia-th,
+    .nfp-ia-table--codes .nfp-ia-row { grid-template-columns: minmax(90px, 1.3fr) minmax(88px, 1fr); align-items: start; }
+    .nfp-ia-table--nut .nfp-ia-th,
+    .nfp-ia-table--nut .nfp-ia-row { grid-template-columns: minmax(70px, 1.2fr) minmax(72px, 0.8fr) minmax(36px, 0.5fr); }
+    .nfp-ia-table--scout .nfp-ia-th,
+    .nfp-ia-table--scout .nfp-ia-row { grid-template-columns: minmax(64px, 1.1fr) minmax(56px, 0.9fr) minmax(72px, 1fr) minmax(52px, auto); align-items: start; }
+    .nfp-ia-th {
+      padding: 0 2px 6px; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--text-subtle); border-bottom: 1px solid var(--border);
+    }
+    .nfp-ia-row {
+      padding: 7px 2px; border-bottom: 1px solid var(--border); font-size: 0.68rem; color: var(--text);
+      animation: nfp-ia-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+      animation-delay: calc(var(--i, 0) * 38ms);
+    }
+    .nfp-ia-row:last-child { border-bottom: 0; }
+    .nfp-ia-scout-row.is-child .nfp-ia-td:first-child { padding-left: 12px; color: var(--text-muted); }
+    .nfp-ia-td { min-width: 0; overflow-wrap: anywhere; }
+    .nfp-ia-td--num { font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
+    .nfp-ia-td--amt { display: inline-flex; align-items: baseline; gap: 4px; }
+    .nfp-ia-unit { font-weight: 600; color: var(--text-muted); }
+    .nfp-ia-subcat { font-size: 0.62rem; color: var(--text-muted); overflow-wrap: anywhere; }
+    .nfp-ia-den { font-size: 0.58rem; font-weight: 600; color: var(--text-subtle); margin-left: 2px; }
+    .nfp-ia-empty { font-size: 0.7rem; color: var(--text-muted); font-style: italic; margin: 4px 0 0; }
+    .nfp-ia-pill {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 2px 8px; border-radius: 999px; font-size: 0.62rem; font-weight: 700; white-space: nowrap;
+    }
+    .nfp-ia-td--mapstack { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
+    .nfp-ia-mapped { font-weight: 700; letter-spacing: 0.01em; overflow-wrap: anywhere; }
+    .nfp-ia-pill--ok { background: var(--sec-green-10); color: var(--sec-green-text); }
+    .nfp-ia-pill--part, .nfp-ia-pill--warn { background: var(--ter-amber-10); color: var(--ter-amber-text); }
+    .nfp-ia-pill--bad { background: var(--sec-red-10); color: var(--sec-red-text); }
+    .nfp-ia-pill-wrap { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+    .nfp-ia-pill-ico { font-size: 15px !important; color: var(--text-subtle); }
+    .nfp-ia-confirm {
+      border: 0; background: transparent; color: var(--primary-ink, var(--primary));
+      font-size: 0.62rem; font-weight: 800; cursor: pointer; padding: 0; text-decoration: underline;
+    }
+    .nfp-ia-pl {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px; border-radius: 50%;
+      font-size: 0.62rem; font-weight: 800; color: #fff;
+    }
+    .nfp-ia-pl--1 { background: var(--sec-green); }
+    .nfp-ia-pl--2 { background: var(--ter-amber); color: #5A2D0A; }
+    .nfp-ia-pl--3 { background: var(--sec-red); }
+    @keyframes nfp-ia-in {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .nfp-ia-row { animation: none; }
+      .nfp-ia-chev { transition: none; }
+    }
 
     /* Save footer */
     .nfp-foot { flex-shrink: 0; border-top: 1px solid var(--border); background: color-mix(in srgb, var(--surface-2) 45%, transparent); padding: 10px 12px 12px; }
@@ -993,6 +1164,17 @@
     /* Progress module (shared .vf-progress-pane / vfp-* in wise.css). Always
        visible on this page — override the default hidden state. */
     #ap-progress { flex: 0 0 288px; width: 288px; align-self: stretch; min-height: 0; display: flex; }
+    /* Progress is a supporting drawer under Product Details. Restate the
+       shared sticky inset at #id so this page's align-self:stretch cannot
+       flatten it back into a same-plane column. */
+    #modules-row #nfp-panel.sticky-mod.is-sticky { z-index: 2; }
+    #modules-row #ap-progress.vf-progress-pane.sticky-mod.is-sticky {
+      z-index: 0;
+      height: calc(100% - 60px);
+      max-height: calc(100% - 60px);
+      align-self: center;
+      margin-left: calc(-14px - var(--modules-gap, 8px));
+    }
     /* The shared progress module paints completed step nodes, done icons and the
        progress bar with --vf-fill / --vf-ink. Those tokens are only defined for
        the verification page's body, so define them here — otherwise finished
@@ -1091,7 +1273,7 @@
                 <button type="button" class="topbar-menu-item" role="menuitem" data-ap="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
                 <div class="topbar-menu-divider"></div>
                 <!-- Standard app-wide rows — Compact spacing, Brand AI text,
-                     Background animation (+ opacity) and Response streaming
+                     Background animation (+ opacity, angle, scale) and Response streaming
                      (+ detail). Markup mirrors the shared module template;
                      behavior is wired by wireStandardChatMenu() from
                      js/wiseai-chat.js so every chat module runs the exact same
@@ -1103,6 +1285,16 @@
                   <span class="sc-bganim-detail-label">Opacity</span>
                   <input type="range" class="sc-bganim-opacity" min="10" max="100" step="5" value="30" aria-label="Background animation opacity">
                   <span class="sc-bganim-opacity-val">30%</span>
+                </div>
+                <div class="sc-bganim-detail sc-bganim-angle">
+                  <span class="sc-bganim-detail-label">Angle</span>
+                  <input type="range" class="sc-bganim-angle-range" min="-90" max="90" step="1" value="10" aria-label="Helix angle">
+                  <span class="sc-bganim-angle-val">10°</span>
+                </div>
+                <div class="sc-bganim-detail sc-bganim-scale">
+                  <span class="sc-bganim-detail-label">Scale</span>
+                  <input type="range" class="sc-bganim-scale-range" min="100" max="250" step="5" value="100" aria-label="Helix scale">
+                  <span class="sc-bganim-scale-val">100%</span>
                 </div>
                 <div class="sc-bganim-playback">
                   <span class="sc-bganim-playback-label">Playback</span>
@@ -1230,7 +1422,7 @@
       </main>
 
       <!-- Product Details (NFP) module -->
-      <aside id="nfp-panel" aria-label="Product Details">
+      <aside id="nfp-panel" class="panel-fill" aria-label="Product Details">
         <div class="nfp-inner">
           <div class="nfp-panel-header">
             <div class="nfp-banner-pattern" aria-hidden="true">
@@ -1240,8 +1432,14 @@
               <div class="nfp-banner-title">Product Details</div>
               <div class="nfp-banner-sub"><span id="nfp-brand-name">Flax4Life</span> · click any field to edit</div>
             </div>
-            <button type="button" class="nfp-width-toggle" id="nfp-width" aria-pressed="false" title="Widen to two panes" aria-label="Product Details width"><span class="material-symbols-outlined">width_normal</span></button>
             <span class="nfp-brand-logo" id="nfp-brand-logo" title="Flax4Life" aria-label="Flax4Life logo"><img src="../assets/brand-flax4life-logo.png" alt="" onerror="this.style.display='none';this.nextElementSibling.hidden=false"><span class="nfp-brand-logo-mono" hidden>F4L</span></span>
+            <div class="panel-controls">
+              <div class="panel-more-wrap" id="nfp-menu-wrap" data-sticky-menu="1">
+                <button type="button" class="panel-more-btn" id="nfp-menu-btn" title="Module options" aria-haspopup="menu" aria-expanded="false" aria-controls="nfp-menu" aria-label="Module options"><span class="material-symbols-outlined">more_vert</span></button>
+                <div class="topbar-popover hidden" id="nfp-menu" role="menu"></div>
+              </div>
+              <button type="button" class="panel-width-toggle-btn" id="nfp-width" aria-pressed="true" title="Width (fill) — tap to reset" aria-label="Product Details width"><span class="material-symbols-outlined">width_full</span></button>
+            </div>
           </div>
           <div class="nfp-scroll-body" id="nfp-body"><!-- rendered by add-product-flow.js --></div>
           <div class="nfp-foot">
@@ -1254,7 +1452,7 @@
            Sticky drawer (tucked behind Product Details, one level deeper) like
            every progress tracker app-wide; the ⋯ menu carries the Sticky toggle
            and a "Remove panel" option. -->
-      <aside id="ap-progress" class="vf-progress-pane" aria-label="Add product progress"><!-- rendered by add-product-flow.js --></aside>
+      <aside id="ap-progress" class="vf-progress-pane" data-pr-min="200" aria-label="Add product progress"><!-- rendered by add-product-flow.js --></aside>
     </div><!-- /#modules-row -->
   </div>
 

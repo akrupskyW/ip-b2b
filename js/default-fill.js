@@ -50,8 +50,8 @@
   /* The chat module inside a row. Prefer stable ids/classes; fall back to the
      mounted chat card (.sc-card) for pages that inject the chat via JS. */
   function findChat(row) {
-    return row.querySelector('#wa-chat, #chat-shell, #rf-chat') ||
-           row.querySelector('.wa-chat, .rf-chat, .sc-card');
+    return row.querySelector('#wa-chat, #chat-shell, #rf-chat, #gs-chat') ||
+           row.querySelector('.wa-chat, .rf-chat, .ap-chat, .sc-card');
   }
 
   /* Row containers whose direct children are first-class modules. Panels flipped
@@ -124,6 +124,10 @@
       var root = moduleRoot(btn, row);
       if (!root) continue;
       if (root === chat || chat.contains(root) || root.contains(chat)) continue;
+      /* Secondary sticky drawers (e.g. the generated Report pane) stay at
+         their CSS single width — they must read as a smaller module to the
+         right of Output, not a second fill column. */
+      if (root.id === 'wa-report' || root.hasAttribute('data-no-fill-default')) continue;
       if (!isVisible(root) || !isRightOfChat(root)) continue;
       if (root.dataset.fillDefaulted) continue;    // already defaulted this open
       // Mark before clicking so the mutations our click triggers don't re-enter.

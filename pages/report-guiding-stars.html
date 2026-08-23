@@ -405,7 +405,7 @@
                 <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="turns" role="menuitemcheckbox" aria-checked="false" onclick="toggleWISEcodeAITurnsModule(event)"><span class="material-symbols-outlined topbar-menu-icon">alt_route</span><span>Turns</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>
                 <div class="topbar-menu-divider"></div>
                 <!-- Standard app-wide rows — Compact spacing, Brand AI text,
-                     Background animation (+ opacity) and Response streaming
+                     Background animation (+ opacity, angle, scale) and Response streaming
                      (+ detail). Markup mirrors the shared module template;
                      behavior is wired by wireStandardChatMenu() from
                      js/wiseai-chat.js so every chat module runs the exact same
@@ -417,6 +417,16 @@
                   <span class="sc-bganim-detail-label">Opacity</span>
                   <input type="range" class="sc-bganim-opacity" min="10" max="100" step="5" value="30" aria-label="Background animation opacity">
                   <span class="sc-bganim-opacity-val">30%</span>
+                </div>
+                <div class="sc-bganim-detail sc-bganim-angle">
+                  <span class="sc-bganim-detail-label">Angle</span>
+                  <input type="range" class="sc-bganim-angle-range" min="-90" max="90" step="1" value="10" aria-label="Helix angle">
+                  <span class="sc-bganim-angle-val">10°</span>
+                </div>
+                <div class="sc-bganim-detail sc-bganim-scale">
+                  <span class="sc-bganim-detail-label">Scale</span>
+                  <input type="range" class="sc-bganim-scale-range" min="100" max="250" step="5" value="100" aria-label="Helix scale">
+                  <span class="sc-bganim-scale-val">100%</span>
                 </div>
                 <div class="sc-bganim-playback">
                   <span class="sc-bganim-playback-label">Playback</span>

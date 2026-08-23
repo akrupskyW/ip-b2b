@@ -280,6 +280,7 @@
       column-gap: 8px;
       align-items: center;
       min-width: 0;
+      position: relative;
     }
     #wa-unified .wa-pane-title { grid-column: 1; grid-row: 1; }
     #wa-unified .wa-pane-mast-row {
@@ -306,6 +307,74 @@
       font-size: 12.5px; font-style: italic; line-height: 1.35;
     }
     #wa-unified .wa-pane-name:empty { display: none; }
+
+    /* Report pane — same eyebrow + serif title mast as Output, with an
+       editable name so the generated report can be renamed in place. */
+    #wa-report .wa-pane-mast {
+      display: flex; flex-direction: column; flex-wrap: nowrap;
+      align-items: stretch; gap: 2px;
+    }
+    #wa-report .wa-pane-eyebrow { margin: 0; }
+    #wa-report .wa-pane-title {
+      cursor: text; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    #wa-report .wa-pane-title:empty { display: block; min-height: 1.2em; }
+    #wa-report .wa-pane-title:focus {
+      outline: none;
+      box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--primary) 55%, transparent);
+    }
+    /* Chart-count line is gone — the editable title is the only mast label. */
+    #wa-report .wa-pane-meta { display: none; }
+    /* Report is the secondary sticky drawer to the RIGHT of Output: narrower
+       than the output pane. Unlike Output (which tucks under chat), it must
+       keep a visible left seam so the two modules read as separate drawers. */
+    #wa-report.wa-pane.is-open {
+      flex: 0 0 340px !important;
+      width: 340px !important;
+      min-width: 280px !important;
+      max-width: 420px !important;
+    }
+    #wa-report.wa-pane.is-open.pane-wide { flex: 0 0 460px !important; width: 460px !important; max-width: 520px !important; }
+    #wa-report.wa-pane.is-open.pane-triple { flex: 0 0 580px !important; width: 580px !important; max-width: none !important; }
+    #wa-report.wa-pane.is-open.pane-fill { flex: 1 1 0% !important; width: auto !important; min-width: 400px !important; max-width: none !important; }
+    #modules-row #wa-unified.is-open.is-sticky,
+    #modules-row #wa-results.is-open.is-sticky,
+    #modules-row #wa-visuals.is-open.is-sticky { z-index: 2; }
+    /* Output sits ON TOP of Report: one right-edge seam (no second left
+       border on Report) and a little elevation so the drawer reads as
+       the layer underneath. */
+    #modules-row:has(#wa-report.is-open) #wa-unified.is-open.is-sticky,
+    #modules-row:has(#wa-report.is-open) #wa-results.is-open.is-sticky,
+    #modules-row:has(#wa-report.is-open) #wa-visuals.is-open.is-sticky {
+      /* Soft right-hand elevation only — a tight inner shadow sat next to
+         Output's own right border and read as a second seam. */
+      box-shadow: 18px 0 36px rgba(15, 23, 42, 0.18);
+    }
+    html.dark #modules-row:has(#wa-report.is-open) #wa-unified.is-open.is-sticky,
+    html.dark #modules-row:has(#wa-report.is-open) #wa-results.is-open.is-sticky,
+    html.dark #modules-row:has(#wa-report.is-open) #wa-visuals.is-open.is-sticky {
+      box-shadow: 18px 0 40px rgba(0, 0, 0, 0.5);
+    }
+    #modules-row #wa-report.wa-pane.is-open.is-sticky {
+      z-index: 1 !important;
+      /* One step shorter than Output so the taller pane overlaps it. */
+      height: calc(100% - 62px);
+      /* Same tuck as every other sticky drawer: slide under the neighbour,
+         drop the facing corners / left border so Output's right edge is
+         the only seam. */
+      margin-left: calc(-14px - var(--modules-gap, 8px));
+      padding-left: 14px;
+      border-left: 0 !important;
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+      box-shadow: none;
+      /* Paper white (or the dark-mode surface) — not the linen sticky fill. */
+      background: var(--surface) !important;
+    }
+    #modules-row #wa-report.is-sticky .wa-pane-top,
+    #wa-report .wa-pane-body {
+      background: var(--surface) !important;
+    }
     /* Version badge in the pane masthead — mirrors the transcript card's
        "v1.0.2 · 3 versions" so the versioning on the mini cards stays in line
        with the output shown on the right. Hidden for unversioned outputs. */
@@ -737,19 +806,35 @@
     #wa-unified.is-titledrop .wa-pane-mast-row.is-open::after { transform: translateY(-1px) rotate(180deg); }
     .wa-titledrop-pop {
       position: absolute; top: calc(100% + 6px); left: 0; z-index: 40;
-      min-width: 250px; max-width: 330px; max-height: 340px; overflow-y: auto;
+      box-sizing: border-box; min-width: 0; max-width: none;
+      max-height: min(420px, calc(100vh - 160px));
+      display: flex; flex-direction: column;
+      overflow: hidden;
       padding: 6px; background: var(--surface);
       border: 1px solid var(--border-strong); border-radius: 12px;
       box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
     }
-    html.dark .wa-titledrop-pop { background: #1A2339; }
+    html.dark .wa-titledrop-pop { background: #1A2339; box-shadow: 0 14px 36px rgba(0,0,0,0.5); }
+    .wa-titledrop-list {
+      flex: 1 1 auto; min-height: 0; overflow-y: auto;
+      display: flex; flex-direction: column;
+    }
     .wa-titledrop-item {
-      display: flex; align-items: center; gap: 10px; width: 100%;
+      display: grid;
+      grid-template-columns: 1.35em 40px minmax(0, 1fr) 28px;
+      align-items: center; gap: 8px; width: 100%;
       padding: 6px 8px; border-radius: 10px; cursor: pointer;
     }
     .wa-titledrop-item:hover { background: var(--surface-2); }
     .wa-titledrop-item:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
     .wa-titledrop-item.is-active { background: color-mix(in srgb, var(--primary) 10%, transparent); }
+    .wa-titledrop-num {
+      flex: 0 0 auto; min-width: 0;
+      font-size: 12.5px; font-weight: 800; line-height: 1;
+      font-variant-numeric: tabular-nums; text-align: center;
+      color: var(--text-muted);
+    }
+    .wa-titledrop-item.is-active .wa-titledrop-num { color: var(--primary-ink, var(--primary)); }
     .wa-titledrop-text {
       flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px;
     }
@@ -767,6 +852,88 @@
     }
     .wa-titledrop-item.is-active .wa-titledrop-ver { color: var(--primary-ink, var(--primary)); opacity: .78; }
     html.dark .wa-titledrop-ver { color: var(--text-muted); }
+    /* Plus / selected check — bare circular icon, no boxed backdrop. */
+    .wa-titledrop-plus {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%;
+      background: transparent; color: var(--text-muted); cursor: pointer;
+      transition: color .15s ease, background .15s ease;
+    }
+    .wa-titledrop-plus:hover { color: var(--primary-ink, var(--primary)); background: color-mix(in srgb, var(--primary) 12%, transparent); }
+    .wa-titledrop-plus:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .wa-titledrop-plus.is-on { color: var(--primary-ink, var(--primary)); background: color-mix(in srgb, var(--primary) 14%, transparent); }
+    html.dark .wa-titledrop-plus.is-on { color: var(--primary-bright, #8B9FAF); }
+    .wa-titledrop-plus .material-symbols-outlined { font-size: 20px; }
+    .wa-titledrop-foot {
+      flex: 0 0 auto; padding: 8px 6px 4px; margin-top: 2px;
+      border-top: 1px solid var(--border);
+    }
+    .wa-titledrop-foot[hidden] { display: none; }
+    .wa-titledrop-gen {
+      width: 100%;
+    }
+
+    /* ── Generated report items (stacked charts inside #wa-report) ── */
+    .wa-rpt-item + .wa-rpt-item { margin-top: 4px; padding-top: 22px; border-top: 1px solid var(--border); }
+    .wa-rpt-item-head {
+      display: flex; align-items: center; gap: 8px;
+      margin: 0 0 10px;
+    }
+    .wa-rpt-item-title {
+      flex: 1 1 auto; min-width: 0; margin: 0;
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-weight: 800; font-size: 1.05rem; line-height: 1.2; letter-spacing: -.01em;
+      color: var(--text); cursor: text;
+    }
+    .wa-rpt-item-title:focus {
+      outline: none;
+      box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--primary) 55%, transparent);
+    }
+    .wa-rpt-more { margin-left: auto; flex-shrink: 0; }
+    .wa-rpt-item-pop,
+    .wa-rpt-swap-pop {
+      position: fixed;
+      top: auto; right: auto; left: auto; bottom: auto;
+      z-index: 400;
+    }
+    .wa-rpt-swap-pop {
+      min-width: 260px; max-width: 320px;
+      max-height: min(420px, calc(100vh - 24px));
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      padding: 8px 6px 6px;
+      background: var(--surface);
+      border: 1px solid var(--border-strong); border-radius: 14px;
+      box-shadow: var(--shadow-card);
+    }
+    html.dark .wa-rpt-swap-pop { background: #1A2339; box-shadow: 0 14px 36px rgba(0,0,0,0.5); }
+    .wa-rpt-swap-head {
+      margin: 0 8px 8px;
+      font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+      font-size: 1.05rem; font-weight: 800; letter-spacing: -.01em; line-height: 1.2;
+      color: var(--text);
+    }
+    .wa-rpt-swap-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+    .wa-rpt-swap-item { grid-template-columns: 40px minmax(0, 1fr); }
+    .wa-rpt-swap-empty {
+      margin: 4px 8px 8px; font-size: 12.5px; color: var(--text-muted); line-height: 1.4;
+    }
+    .wa-rpt-note { margin: 14px 0 0; }
+    .wa-rpt-note-input.adm-input {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      height: 42px;
+      background: var(--surface);
+    }
+    html.dark .wa-rpt-note-input.adm-input { background: rgba(255,255,255,0.05); }
+    .wa-rpt-item-body { min-width: 0; }
+    .wa-rpt-item-body > .wa-block {
+      display: block !important;
+      margin: 0;
+      padding-top: 0;
+      border-top: 0;
+    }
 
     /* ── Admin: "Sticky module" mode (every result pane) ──
        Toggled from a pane's three-dot menu (pink Admin switch), ON by default on
@@ -1235,13 +1402,20 @@
        split panes already name the output in theirs. Kept in the DOM so
        paneSlideLabel() can still read it as a fallback. */
     .wa-out-title { display: none; }
-    /* Merged pane header now holds the chart/report name + description, so
-       hide the duplicate lead-in that used to sit directly above the body. */
-    .wa-pane--unified .wa-chart-head,
-    .wa-pane--unified .wa-block > .wa-report-title:first-child,
-    .wa-pane--unified .wa-block > .wa-report-title:first-child + .wa-kraft-sub,
-    .wa-pane--unified .wa-block > .wa-report-title:first-child + .wa-ov-lede,
-    .wa-pane--unified .wa-report-hero > .wa-report-title { display: none; }
+    /* Name + description live in the output header (count + chart name +
+       meta). Do not repeat them above charts, and drop the tiny captions
+       that used to trail tables. Per-card labels inside a plot (e.g. a
+       donut's own "1,240 brands" title) stay visible. */
+    .wa-pane-body .wa-chart-head,
+    .wa-pane-body .wa-kraft-share-head,
+    .wa-pane-body .wa-block > .wa-report-title,
+    .wa-pane-body .wa-block > .wa-kraft-sub,
+    .wa-pane-body .wa-block > .wa-ov-lede,
+    .wa-pane-body .wa-sprouts-mix > .wa-kraft-sub,
+    .wa-pane-body .wa-report-hero > .wa-report-title,
+    .wa-pane-body .wa-caption,
+    .wa-pane-body .wa-kraft-foot,
+    .wa-pane-body .wa-table-foot { display: none; }
 
     /* ── Report layout ── */
     .wa-report-hero { margin-bottom: 20px; }
@@ -1290,7 +1464,8 @@
     }
     html.chat-tint:not(.dark) .wa-pane-body .wa-chart-card { background: color-mix(in srgb, var(--primary) 5%, #fff); }
     html.dark.chat-tint .wa-pane-body .wa-chart-card { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
-    .wa-pane-body > .wa-block:has(> .wa-chart-card) {
+    .wa-pane-body > .wa-block:has(> .wa-chart-card),
+    #wa-report .wa-rpt-item-body > .wa-block:has(> .wa-chart-card) {
       background: transparent;
       border: 0;
       box-shadow: none;
@@ -1323,7 +1498,8 @@
       height: 138px;
     }
     .wa-pane-body .wa-sprouts-donut-card .dash-donut-num { font-size: 1.7rem; }
-    .wa-pane-body > .wa-block:has(.wa-sprouts-donuts) {
+    .wa-pane-body > .wa-block:has(.wa-sprouts-donuts),
+    #wa-report .wa-rpt-item-body > .wa-block:has(.wa-sprouts-donuts) {
       background: transparent;
       border: 0;
       box-shadow: none;
@@ -1387,20 +1563,24 @@
     .wa-kraft-foot { font-size: 11.5px; color: var(--text-subtle); margin: 14px 0 0; }
 
     /* ── Top-brands overview (WISEscore top half) ── */
-    .wa-pane-body > .wa-block.wa-ov {
+    .wa-pane-body > .wa-block.wa-ov,
+    #wa-report .wa-rpt-item-body > .wa-block.wa-ov {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--r-md, 16px);
       box-shadow: var(--shadow-1);
       padding: 22px 24px;
     }
-    html.dark .wa-pane-body > .wa-block.wa-ov {
+    html.dark .wa-pane-body > .wa-block.wa-ov,
+    html.dark #wa-report .wa-rpt-item-body > .wa-block.wa-ov {
       background: rgba(255, 255, 255, 0.025);
       border-color: rgba(255, 255, 255, 0.06);
       box-shadow: var(--shadow-card);
     }
-    html.chat-tint:not(.dark) .wa-pane-body > .wa-block.wa-ov { background: color-mix(in srgb, var(--primary) 5%, #fff); }
-    html.dark.chat-tint .wa-pane-body > .wa-block.wa-ov { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
+    html.chat-tint:not(.dark) .wa-pane-body > .wa-block.wa-ov,
+    html.chat-tint:not(.dark) #wa-report .wa-rpt-item-body > .wa-block.wa-ov { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+    html.dark.chat-tint .wa-pane-body > .wa-block.wa-ov,
+    html.dark.chat-tint #wa-report .wa-rpt-item-body > .wa-block.wa-ov { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
     .wa-ov-lede { font-size: 13px; line-height: 1.45; color: var(--text-muted); margin: 0 0 18px; }
     .wa-ov-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
     .wa-ov-kpi {
@@ -1470,7 +1650,8 @@
     @keyframes waGaugeSweep { from { stroke-dashoffset: var(--wa-gauge-c, 251); } to { stroke-dashoffset: var(--wa-off, 0); } }
     /* A carded chart is clickable as a whole; the code-eval gauge and the ported
        comparison spider / parallel plots carry their own hit surface. */
-    .wa-pane-body > .wa-block:has(> .wa-chart-card) { cursor: pointer; }
+    .wa-pane-body > .wa-block:has(> .wa-chart-card),
+    #wa-report .wa-rpt-item-body > .wa-block:has(> .wa-chart-card) { cursor: pointer; }
     .wa-ce-gauge { cursor: pointer; }
     .wa-pane-body .cmp-radar-canvas,
     .wa-pane-body .cmp-par-canvas { cursor: pointer; }
@@ -1641,7 +1822,8 @@
        a viewport overlay: it sits over the primary nav and the rest of the
        shell. Chat and sibling modules hide. Inline expand in the transcript
        chip is gone. */
-    .wa-pane-body > .wa-block:has(> .wa-chart-card) { position: relative; }
+    .wa-pane-body > .wa-block:has(> .wa-chart-card),
+    #wa-report .wa-rpt-item-body > .wa-block:has(> .wa-chart-card) { position: relative; }
     #modules-row.output-fs {
       z-index: 80;
     }
@@ -1701,8 +1883,15 @@
     #modules-row.output-fs > .wa-pane.pane-fs .wa-scorebar-line .wa-bar-track { height: 16px; }
     #modules-row.output-fs > .wa-pane.pane-fs .wa-report-title.wa-chart-title { font-size: 1.85rem; }
     #modules-row.output-fs > .wa-pane.pane-fs .wa-pane-name { font-size: 1.7rem; }
+    /* Expand control sits in a toolbar above the plot/table — top-right of
+       the output block, never inside the table. */
+    .wa-pane-body .wa-block:has(.wa-chart-card) { position: relative; }
+    .wa-chart-toolbar {
+      display: flex; justify-content: flex-end; align-items: center;
+      min-height: 28px; margin: 0 0 10px;
+    }
     .wa-chart-expand-btn {
-      position: absolute; top: 10px; right: 10px; z-index: 4;
+      position: relative; z-index: 4; flex: 0 0 auto;
       display: inline-flex; align-items: center; justify-content: center;
       width: 28px; height: 28px; padding: 0; border-radius: 50%;
       border: 1px solid var(--border); background: var(--surface); color: var(--text-subtle);
@@ -1710,7 +1899,7 @@
       cursor: pointer; transition: color .15s ease, background .15s ease, border-color .15s ease, opacity .15s ease;
       opacity: .72;
     }
-    .wa-pane-body .wa-chart-card:hover .wa-chart-expand-btn,
+    .wa-pane-body .wa-block:has(.wa-chart-card):hover .wa-chart-expand-btn,
     .wa-chart-expand-btn:focus-visible { opacity: 1; }
     html.dark .wa-chart-expand-btn { background: #1A2339; border-color: rgba(37,80,124,0.32); box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
     .wa-chart-expand-btn:hover { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); background: color-mix(in srgb, var(--primary) 10%, var(--surface)); }
@@ -2052,6 +2241,23 @@
     .wa-sh-share-act:hover { background: var(--surface-2); color: var(--text); }
     html.dark .wa-sh-share-act:hover { background: rgba(255,255,255,0.06); }
     .wa-sh-share-act .material-symbols-outlined { font-size: 17px; }
+
+    /* Report-hosted Share — same form, but it fills the report module instead
+       of sliding over the chat. Content (title + charts) is report-specific. */
+    #wa-report.wch-host { position: relative; }
+    #wa-report #wa-share-panel {
+      width: 100%;
+      max-width: none;
+      left: 0;
+      right: 0;
+      border-left: 0;
+      box-shadow: none;
+      background: var(--surface);
+    }
+    html.dark #wa-report #wa-share-panel { background: var(--surface); }
+    #wa-report #wa-share-panel .wa-sh-body { padding: 12px 14px 6px; }
+    #wa-report #wa-share-panel .wa-sh-foot { padding: 10px 14px 12px; }
+    #wa-report > .wch-scrim { display: none !important; }
 
     /* ===== PORTED COMPARE ENGINE CSS (from product-comparison.html) ===== */
     /* ── Competitive Comparison ("Compare Foods") module ─────────────────
@@ -3466,6 +3672,68 @@
     .cmp-gs-cell:focus-within .cmp-gs-cellchat { opacity: 0.9; }
     .cmp-gs-cellchat:hover { opacity: 1 !important; transform: scale(1.08); }
     .cmp-gs-cellchat:focus-visible { opacity: 1; outline: 2px solid var(--primary); outline-offset: 2px; }
+
+    /* Report → Export as PDF: print only the report on a white page. */
+    @media print {
+      *, *::before, *::after {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      html.wa-print-report,
+      html.wa-print-report body {
+        background: #fff !important;
+        height: auto !important;
+        overflow: visible !important;
+        padding: 0 !important;
+      }
+      html.wa-print-report #topbar-row,
+      html.wa-print-report #menu-panel,
+      html.wa-print-report #wa-chat,
+      html.wa-print-report #wa-unified,
+      html.wa-print-report #wa-results,
+      html.wa-print-report #wa-visuals,
+      html.wa-print-report .wch-sidebar,
+      html.wa-print-report #wa-share-panel,
+      html.wa-print-report .pr-overlay,
+      html.wa-print-report .cas-rail,
+      html.wa-print-report [data-owt],
+      html.wa-print-report #wa-report .wa-pane-controls,
+      html.wa-print-report #wa-report .wa-rpt-more,
+      html.wa-print-report #wa-report .wa-rpt-note {
+        display: none !important;
+      }
+      html.wa-print-report #chat-shell-wrap,
+      html.wa-print-report #modules-row {
+        display: block !important;
+        height: auto !important;
+        overflow: visible !important;
+        position: static !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        gap: 0 !important;
+      }
+      html.wa-print-report #wa-report.wa-pane,
+      html.wa-print-report #modules-row #wa-report.wa-pane.is-open.is-sticky {
+        display: flex !important;
+        position: static !important;
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background: #fff !important;
+      }
+      html.wa-print-report #wa-report .wa-pane-top,
+      html.wa-print-report #wa-report .wa-pane-body {
+        background: #fff !important;
+        overflow: visible !important;
+        height: auto !important;
+      }
+    }
   </style>
   <script src="../js/cwr-toggle.js"></script>
 </head>
@@ -3608,6 +3876,34 @@
         <div class="wa-pane-nav-track" id="wa-unified-track" role="tablist" aria-label="Merged outputs"></div>
         <div class="wa-pane-body" id="wa-unified-body"></div>
       </section>
+
+      <!-- 5 · Report pane — generated from plus-selected outputs in the
+           Output titledrop. Sits to the right of the Output module as the
+           next sticky drawer (Turns, if docked far-right, stays last). -->
+      <section class="wa-pane wa-pane--report" id="wa-report" aria-label="Report" data-no-fill-default>
+        <div class="wa-pane-top">
+          <div class="wa-pane-mast">
+            <p class="wa-pane-eyebrow dash-eyebrow" id="wa-report-eyebrow">Report</p>
+            <h2 class="wa-pane-title" id="wa-report-title" contenteditable="true" spellcheck="false" role="textbox" aria-label="Report name"></h2>
+            <p class="wa-pane-meta" id="wa-report-meta"></p>
+          </div>
+          <div class="wa-pane-top-right">
+            <div class="wa-pane-controls">
+              <div class="panel-more-wrap" data-pane-more="report">
+                <button type="button" class="panel-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>
+                <div class="topbar-popover hidden" role="menu">
+                  <button type="button" class="topbar-menu-item" data-pane-act="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
+                  <button type="button" class="topbar-menu-item" data-pane-act="export"><span class="material-symbols-outlined topbar-menu-icon">picture_as_pdf</span><span>Export as PDF</span></button>
+                  <div class="topbar-menu-divider"></div>
+                  <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-pane-act="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close pane</span></button>
+                </div>
+              </div>
+              <button type="button" class="panel-width-toggle-btn" data-pane-width="report" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Report pane width"><span class="material-symbols-outlined">width_normal</span></button>
+            </div>
+          </div>
+        </div>
+        <div class="wa-pane-body" id="wa-report-body"></div>
+      </section>
     </div><!-- /#modules-row -->
   </div>
 
@@ -3749,6 +4045,7 @@
        opening the Results & Details / Visuals panes as data surfaces. -->
   <script type="module">
     import { mountWISEcodeAIChat } from '../js/wiseai-chat.js';
+    import { saveGeneratedReport } from '../js/generated-reports.js';
 
     /* ═════════ Data (copy + rows lifted verbatim from the WISEcodeAI transcript) ═════════ */
     const WORST_FOODS = [
@@ -3803,8 +4100,8 @@
     const thumbSafe = (html) => String(html == null ? '' : html).replace(/\sid="cmp-[^"]*"/g, '');
 
     /* Result panes ------------------------------------------------------------ */
-    const paneEl = { results: document.getElementById('wa-results'), visuals: document.getElementById('wa-visuals'), unified: document.getElementById('wa-unified') };
-    const paneBody = { results: document.getElementById('wa-results-body'), visuals: document.getElementById('wa-visuals-body'), unified: document.getElementById('wa-unified-body') };
+    const paneEl = { results: document.getElementById('wa-results'), visuals: document.getElementById('wa-visuals'), unified: document.getElementById('wa-unified'), report: document.getElementById('wa-report') };
+    const paneBody = { results: document.getElementById('wa-results-body'), visuals: document.getElementById('wa-visuals-body'), unified: document.getElementById('wa-unified-body'), report: document.getElementById('wa-report-body') };
 
     /* ── Tap-to-replay for every output chart ─────────────────────────────────
        Mirrors the analytics dashboards: clicking any surfaced chart restarts its
@@ -3954,7 +4251,7 @@
       if (gauge) { waReplayCeGauge(gauge); return; }
       /* Below here the whole chart surface is the hit target, so keep real
          interactive controls (and the clickable preview chips) working. */
-      if (e.target.closest('a, button, [role="button"], input, select, textarea')) return;
+      if (e.target.closest('a, button, [role="button"], input, select, textarea, [contenteditable="true"]')) return;
       /* Prefer the individual chart card so a four-up donut row replays
          only the ring that was clicked, not every sibling. */
       const chartCard = e.target.closest('.wa-pane-body .wa-chart-card');
@@ -3964,8 +4261,8 @@
       const cmpPlot = e.target.closest('.wa-pane-body .cmp-radar-canvas, .wa-pane-body .cmp-par-canvas');
       if (cmpPlot) waReplayCmpPlot(cmpPlot);
     });
-    const paneTitle = { results: document.getElementById('wa-results-title'), visuals: document.getElementById('wa-visuals-title'), unified: document.getElementById('wa-unified-title') };
-    const paneMeta = { results: document.getElementById('wa-results-meta'), visuals: document.getElementById('wa-visuals-meta'), unified: document.getElementById('wa-unified-meta') };
+    const paneTitle = { results: document.getElementById('wa-results-title'), visuals: document.getElementById('wa-visuals-title'), unified: document.getElementById('wa-unified-title'), report: document.getElementById('wa-report-title') };
+    const paneMeta = { results: document.getElementById('wa-results-meta'), visuals: document.getElementById('wa-visuals-meta'), unified: document.getElementById('wa-unified-meta'), report: document.getElementById('wa-report-meta') };
     const paneName = { unified: document.getElementById('wa-unified-name') };
     const paneVer = { results: document.getElementById('wa-results-ver'), visuals: document.getElementById('wa-visuals-ver'), unified: document.getElementById('wa-unified-ver') };
     /* Mirror an output's version label ("v1.0.2 · 3 versions") into the pane
@@ -4430,6 +4727,7 @@
         paneEl.results,
         paneEl.visuals,
         paneEl.unified,
+        paneEl.report,
       ]);
       syncMergeMenu();
       recomputeSoloPaneWidth();
@@ -4441,7 +4739,7 @@
        Delegate both off the pane section so a single handler covers each. */
     Object.keys(paneEl).forEach((which) => {
       const el = paneEl[which];
-      if (!el) return;
+      if (!el || !paneTrack[which]) return;
       const curSlide = () => Number(paneTrack[which]?.querySelector('[data-slide].is-active')?.dataset.slide || 0);
       el.addEventListener('click', (e) => {
         const ctrl = e.target.closest('[data-nav]');
@@ -4491,6 +4789,10 @@
         if (wasFs) setOutputFsOn(false);
       }
       if (which === 'unified') closeTitledropPop();
+      if (which === 'report') {
+        closeReportItemMenus();
+        if (typeof shareContext !== 'undefined' && shareContext === 'report') closeShareModal();
+      }
       if (paneBody[which]) { paneBody[which].innerHTML = ''; paneBody[which].classList.remove('is-carousel'); }
       if (paneTrack[which]) { paneTrack[which].innerHTML = ''; paneTrack[which].classList.remove('is-on', 'is-min', 'is-grouped', 'is-stacked'); }
       if (paneNavBtns[which]) paneNavBtns[which].innerHTML = '';
@@ -4509,6 +4811,7 @@
         paneEl.results,
         paneEl.visuals,
         paneEl.unified,
+        paneEl.report,
       ]);
       recomputeSoloPaneWidth();
     }
@@ -4552,7 +4855,7 @@
     function recomputeSoloPaneWidth() {
       const row = document.getElementById('modules-row');
       if (!row) return;
-      const open = ['results', 'visuals', 'unified']
+      const open = ['results', 'visuals', 'unified', 'report']
         .filter((k) => paneEl[k] && paneEl[k].classList.contains('is-open'));
       const tier = open.length === 1 ? paneWidthTier(paneEl[open[0]]) : 0;
       if (tier >= 1) row.setAttribute('data-out-w', String(tier));
@@ -4607,6 +4910,11 @@
        same as the chips did). */
     let unifiedTitleDrop = true;
     let titledropPop = null;
+    /* Output ids picked via the plus column — survive open/close of the pop. */
+    const titledropSelected = new Set();
+    function titledropKey(block, i) {
+      return (block && block.dataset && block.dataset.blockId) || `idx:${i}`;
+    }
     function syncTitledropItem() {
       const item = paneEl.unified?.querySelector('[data-pane-act="titledrop"]');
       if (!item) return;
@@ -4616,11 +4924,36 @@
     function titledropTrigger() {
       return paneEl.unified?.querySelector('.wa-pane-mast-row') || paneTitle.unified;
     }
+    function titledropAnchor() {
+      /* Sit under the name+chevron row so the popover hangs off the headline
+         (not below the meta line). Width/left are measured to also cover the
+         counter to the left of this row. */
+      return paneEl.unified?.querySelector('.wa-pane-mast-row')
+        || paneEl.unified?.querySelector('.wa-pane-mast');
+    }
     function closeTitledropPop() {
       if (titledropPop) { titledropPop.remove(); titledropPop = null; }
       const t = titledropTrigger();
       t?.classList.remove('is-open');
       if (t?.hasAttribute('aria-haspopup')) t.setAttribute('aria-expanded', 'false');
+    }
+    /* Size the popover to the full header line: counter + name + chevron. */
+    function sizeTitledropPop() {
+      if (!titledropPop) return;
+      const row = titledropAnchor();
+      const title = paneTitle.unified;
+      const name = paneName.unified;
+      if (!row || !title) return;
+      const rowR = row.getBoundingClientRect();
+      const titleR = title.getBoundingClientRect();
+      const nameR = name && name.offsetWidth ? name.getBoundingClientRect() : titleR;
+      const chevron = 22;
+      const gap = 8;
+      const right = (name && name.textContent) ? nameR.right + gap + chevron : titleR.right + gap + chevron;
+      const left = titleR.left;
+      titledropPop.style.left = (left - rowR.left) + 'px';
+      titledropPop.style.width = Math.max(8, right - left) + 'px';
+      titledropPop.style.maxWidth = 'none';
     }
     /* data-slide-ver is "v1.0.1 · 2 versions" on redone outputs — the dropdown
        only needs the version tag under the name so identical titles stay distinct. */
@@ -4629,31 +4962,66 @@
       const m = raw.match(/^v\d+(?:\.\d+)*/);
       return m ? m[0] : raw.split('·')[0].trim();
     }
+    function syncTitledropFoot() {
+      if (!titledropPop) return;
+      const foot = titledropPop.querySelector('.wa-titledrop-foot');
+      const btn = titledropPop.querySelector('[data-td-report]');
+      const n = titledropSelected.size;
+      if (foot) foot.hidden = n < 1;
+      if (btn) btn.textContent = n > 1 ? `Generate Report (${n})` : 'Generate Report';
+      sizeTitledropPop();
+    }
+    function setTitledropPlus(btn, on) {
+      if (!btn) return;
+      btn.classList.toggle('is-on', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      const ic = btn.querySelector('.material-symbols-outlined');
+      if (ic) ic.textContent = on ? 'check' : 'add';
+      btn.title = on ? 'Remove from report' : 'Add to report';
+      btn.setAttribute('aria-label', on ? 'Remove from report' : 'Add to report');
+    }
+    function toggleTitledropPlus(idx) {
+      if (titledropSelected.has(idx)) titledropSelected.delete(idx);
+      else titledropSelected.add(idx);
+      const btn = titledropPop && titledropPop.querySelector(`[data-td-plus="${idx}"]`);
+      setTitledropPlus(btn, titledropSelected.has(idx));
+      syncTitledropFoot();
+    }
     function openTitledropPop() {
       closeTitledropPop();
-      const mast = paneEl.unified?.querySelector('.wa-pane-mast-row')
-        || paneEl.unified?.querySelector('.wa-pane-mast');
+      const mast = titledropAnchor();
       const blocks = paneBlocks('unified');
       if (!mast || !blocks.length) return;
       const activeIdx = blocks.findIndex((b) => b.classList.contains('is-active'));
       titledropPop = document.createElement('div');
       titledropPop.className = 'wa-titledrop-pop';
       titledropPop.setAttribute('role', 'listbox');
-      titledropPop.innerHTML = blocks.map((b, i) => {
+      const items = blocks.map((b, i) => {
         const label = paneSlideLabel(b, b.dataset.origin || 'results', i);
         const ver = titledropVerLabel(b);
         const bid = b.dataset.blockId || '';
         const title = ver ? `${label} (${ver})` : label;
+        const key = titledropKey(b, i);
+        const picked = titledropSelected.has(key);
         /* <div role="option"> (not <button>) so the inert preview clone — which
            may hold <button>/<input> controls — can nest safely. */
         return `<div class="wa-titledrop-item${i === activeIdx ? ' is-active' : ''}" data-slide="${i}"${bid ? ` data-block-id="${esc(bid)}"` : ''} role="option" tabindex="0" aria-selected="${i === activeIdx ? 'true' : 'false'}" title="${esc(title)}">
+          <span class="wa-titledrop-num">${i + 1}</span>
           <span class="wa-merge-chip-thumb"><span class="wa-merge-chip-thumb-inner" inert>${thumbSafe(b.innerHTML)}</span></span>
           <span class="wa-titledrop-text">
             <span class="wa-titledrop-label">${esc(label)}</span>
             ${ver ? `<span class="wa-titledrop-ver">${esc(ver)}</span>` : ''}
           </span>
+          <button type="button" class="wa-titledrop-plus${picked ? ' is-on' : ''}" data-td-plus="${esc(key)}" aria-pressed="${picked ? 'true' : 'false'}" title="${picked ? 'Remove from report' : 'Add to report'}" aria-label="${picked ? 'Remove from report' : 'Add to report'}">
+            <span class="material-symbols-outlined">${picked ? 'check' : 'add'}</span>
+          </button>
         </div>`;
       }).join('');
+      titledropPop.innerHTML =
+        `<div class="wa-titledrop-list">${items}</div>` +
+        `<div class="wa-titledrop-foot" hidden>` +
+          `<button type="button" class="adm-btn adm-btn--primary wa-titledrop-gen" data-td-report>Generate Report</button>` +
+        `</div>`;
       const pickItem = (it) => {
         setPaneSlide('unified', Number(it.dataset.slide), { animate: true });
         if (it.dataset.blockId) jumpTranscriptToBlock(it.dataset.blockId);
@@ -4661,10 +5029,22 @@
       };
       titledropPop.addEventListener('click', (e) => {
         e.stopPropagation();
+        const plus = e.target.closest('[data-td-plus]');
+        if (plus) {
+          e.preventDefault();
+          toggleTitledropPlus(plus.dataset.tdPlus);
+          return;
+        }
+        if (e.target.closest('[data-td-report]')) {
+          e.preventDefault();
+          generateReportFromTitledrop();
+          return;
+        }
         const it = e.target.closest('[data-slide]');
         if (it) pickItem(it);
       });
       titledropPop.addEventListener('keydown', (e) => {
+        if (e.target.closest('[data-td-plus], [data-td-report]')) return;
         if (e.key !== 'Enter' && e.key !== ' ') return;
         const it = e.target.closest('[data-slide]');
         if (!it) return;
@@ -4672,9 +5052,352 @@
         pickItem(it);
       });
       mast.appendChild(titledropPop);
+      syncTitledropFoot();
       const trigger = titledropTrigger();
       trigger?.classList.add('is-open');
       trigger?.setAttribute('aria-expanded', 'true');
+      requestAnimationFrame(sizeTitledropPop);
+    }
+
+    function nodesForReport(src, idx) {
+      const id = src && src.dataset && src.dataset.blockId;
+      const entry = id && SURFACED[id];
+      /* A painted live slide already has the full plot (SVG paths, bar fills).
+         Prefer that so the report isn't an empty card. Inactive / unbooted
+         slides fall back to the stored surface HTML (title + lede + plot). */
+      const liveHasPlot = !!(src && src.querySelector && src.querySelector(
+        'svg path, svg circle, svg polyline, .dash-donut-svg, .dash-ws-health-fill, .wa-bar-fill, .wa-kraft-tbl, table'
+      ));
+      const html = (liveHasPlot && src.outerHTML)
+        || (entry && entry.html)
+        || (src && src.outerHTML)
+        || '';
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      const nodes = Array.from(tmp.querySelectorAll(':scope > .wa-block'));
+      const list = nodes.length ? nodes : (src ? [src.cloneNode(true)] : []);
+      list.forEach((clone, n) => {
+        clone.classList.add('is-active');
+        clone.classList.remove('is-carousel');
+        clone.removeAttribute('data-slide-index');
+        clone.style.display = '';
+        clone.querySelectorAll('[id]').forEach((el, k) => {
+          el.id = `wa-rpt-${idx}-${n}-${k}-${el.id}`;
+        });
+        clone.querySelectorAll('[data-ready]').forEach((el) => el.removeAttribute('data-ready'));
+        clone.querySelectorAll('.wa-chart-expand-btn, .wa-chart-toolbar').forEach((el) => el.remove());
+      });
+      return list;
+    }
+    function bindEditableTitle(el, onCommit) {
+      if (!el) return;
+      el.dataset.orig = el.textContent || '';
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          el.textContent = el.dataset.orig || '';
+          el.blur();
+        }
+      });
+      el.addEventListener('blur', () => {
+        const next = (el.textContent || '').replace(/\s+/g, ' ').trim();
+        if (!next) {
+          el.textContent = el.dataset.orig || '';
+          return;
+        }
+        el.textContent = next;
+        el.dataset.orig = next;
+        if (onCommit) onCommit(next);
+      });
+    }
+    let rptSeq = 0;
+    let rptItemPop = null;
+    let rptSwapPop = null;
+    function exportReportPdf() {
+      if (!paneEl.report || !paneEl.report.classList.contains('is-open')) return;
+      document.documentElement.classList.add('wa-print-report');
+      const cleanup = () => document.documentElement.classList.remove('wa-print-report');
+      window.addEventListener('afterprint', cleanup, { once: true });
+      window.print();
+      setTimeout(cleanup, 2500);
+    }
+    function reportNameForCount(n) {
+      const words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
+        'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+      const word = (n >= 0 && n < words.length) ? words[n] : String(n);
+      return n === 1 ? word + ' output' : word + ' outputs';
+    }
+    function reportItemCount() {
+      return paneBody.report ? paneBody.report.querySelectorAll('.wa-rpt-item').length : 0;
+    }
+    function syncReportName() {
+      const el = paneTitle.report;
+      if (!el || el.dataset.userNamed === '1') return;
+      el.textContent = reportNameForCount(reportItemCount());
+      el.dataset.orig = el.textContent;
+    }
+    function reportCatalog() {
+      const catalog = [];
+      const seen = new Set();
+      const add = (which) => {
+        paneBlocks(which).forEach((block, i) => {
+          const key = titledropKey(block, i);
+          if (seen.has(key)) return;
+          seen.add(key);
+          catalog.push({ block, which, i, key });
+        });
+      };
+      if (paneBlocks('unified').length) add('unified');
+      else { add('results'); add('visuals'); }
+      return catalog;
+    }
+    function bootReportItemContent(item) {
+      waBootDashCharts(item);
+      item.querySelectorAll('.wa-chart-card, .wa-block').forEach((el) => waReplayChartCard(el));
+      item.querySelectorAll('.wa-tbl:not([data-ready])').forEach((tbl) => initTable(tbl));
+      item.querySelectorAll('.cmp-host:not([data-ready])').forEach((h) => bootCompareEngine(h));
+      requestAnimationFrame(() => {
+        waBootDashCharts(item);
+        item.querySelectorAll('.wa-chart-card, .wa-block').forEach((el) => waReplayChartCard(el));
+      });
+    }
+    function fillReportItem(item, src, catalogIdx) {
+      const title = paneSlideLabel(src, src.dataset.origin || 'results', Number(src.dataset.slideIndex) || catalogIdx);
+      item.dataset.rptSrc = titledropKey(src, catalogIdx);
+      const titleEl = item.querySelector('.wa-rpt-item-title');
+      if (titleEl) {
+        titleEl.textContent = title;
+        titleEl.dataset.orig = title;
+      }
+      const host = item.querySelector('.wa-rpt-item-body');
+      if (host) {
+        host.innerHTML = '';
+        nodesForReport(src, ++rptSeq).forEach((node) => host.appendChild(node));
+      }
+      bootReportItemContent(item);
+      persistGeneratedReport(false);
+    }
+    function placeReportPop(pop, btn) {
+      pop.style.visibility = 'hidden';
+      if (!pop.parentNode) document.body.appendChild(pop);
+      const r = btn.getBoundingClientRect();
+      const pw = pop.offsetWidth || 240;
+      const ph = pop.offsetHeight || 120;
+      let left = r.right - pw;
+      let top = r.top - ph - 8;
+      if (top < 8) {
+        if (r.right + 8 + pw <= window.innerWidth - 8) {
+          left = r.right + 8;
+          top = Math.max(8, Math.min(r.top, window.innerHeight - ph - 8));
+        } else {
+          top = 8;
+        }
+      }
+      if (left < 8) left = 8;
+      if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+      pop.style.left = left + 'px';
+      pop.style.top = top + 'px';
+      pop.style.visibility = '';
+      pop.classList.remove('hidden');
+    }
+    function closeReportItemMenus() {
+      document.querySelectorAll('.wa-rpt-more .panel-more-btn').forEach((b) => {
+        b.classList.remove('is-open');
+        b.setAttribute('aria-expanded', 'false');
+      });
+      if (rptItemPop) { rptItemPop.remove(); rptItemPop = null; }
+      if (rptSwapPop) { rptSwapPop.remove(); rptSwapPop = null; }
+    }
+    function startRenameReportItem(item) {
+      const title = item.querySelector('.wa-rpt-item-title');
+      if (!title) return;
+      title.focus();
+      const range = document.createRange();
+      range.selectNodeContents(title);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+    function deleteReportItem(item) {
+      if (!item) return;
+      item.remove();
+      if (!reportItemCount()) {
+        closePane('report');
+        return;
+      }
+      syncReportName();
+    }
+    function openReportSwapPop(item, btn) {
+      closeReportItemMenus();
+      btn.classList.add('is-open');
+      btn.setAttribute('aria-expanded', 'true');
+      const current = item.dataset.rptSrc || '';
+      const catalog = reportCatalog();
+      rptSwapPop = document.createElement('div');
+      rptSwapPop.className = 'wa-rpt-swap-pop';
+      rptSwapPop.setAttribute('role', 'listbox');
+      rptSwapPop.setAttribute('aria-label', 'Swap output');
+      const rows = catalog.map((entry) => {
+        const label = paneSlideLabel(entry.block, entry.which, entry.i);
+        const ver = titledropVerLabel(entry.block);
+        const on = entry.key === current;
+        return `<div class="wa-titledrop-item wa-rpt-swap-item${on ? ' is-active' : ''}" data-rpt-swap="${esc(entry.key)}" role="option" tabindex="0" aria-selected="${on ? 'true' : 'false'}" title="${esc(label)}">
+          <span class="wa-merge-chip-thumb"><span class="wa-merge-chip-thumb-inner" inert>${thumbSafe(entry.block.innerHTML)}</span></span>
+          <span class="wa-titledrop-text">
+            <span class="wa-titledrop-label">${esc(label)}</span>
+            ${ver ? `<span class="wa-titledrop-ver">${esc(ver)}</span>` : ''}
+          </span>
+        </div>`;
+      }).join('');
+      rptSwapPop.innerHTML =
+        `<p class="wa-rpt-swap-head">Swap output</p>` +
+        (rows
+          ? `<div class="wa-rpt-swap-list">${rows}</div>`
+          : `<p class="wa-rpt-swap-empty">No other outputs in this conversation.</p>`);
+      rptSwapPop.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const it = e.target.closest('[data-rpt-swap]');
+        if (!it) return;
+        const entry = catalog.find((c) => c.key === it.dataset.rptSwap);
+        if (entry && entry.key !== current) fillReportItem(item, entry.block, entry.i);
+        closeReportItemMenus();
+      });
+      document.body.appendChild(rptSwapPop);
+      placeReportPop(rptSwapPop, btn);
+    }
+    function openReportItemMenu(item, btn) {
+      closeReportItemMenus();
+      btn.classList.add('is-open');
+      btn.setAttribute('aria-expanded', 'true');
+      rptItemPop = document.createElement('div');
+      rptItemPop.className = 'topbar-popover wa-rpt-item-pop';
+      rptItemPop.setAttribute('role', 'menu');
+      rptItemPop.innerHTML =
+        `<button type="button" class="topbar-menu-item" data-rpt-act="rename"><span class="material-symbols-outlined topbar-menu-icon">edit</span><span>Rename</span></button>` +
+        `<button type="button" class="topbar-menu-item" data-rpt-act="swap"><span class="material-symbols-outlined topbar-menu-icon">swap_horiz</span><span>Swap output</span></button>` +
+        `<div class="topbar-menu-divider"></div>` +
+        `<button type="button" class="topbar-menu-item topbar-menu-item--danger" data-rpt-act="delete"><span class="material-symbols-outlined topbar-menu-icon">delete</span><span>Delete</span></button>`;
+      rptItemPop.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const act = e.target.closest('[data-rpt-act]')?.dataset.rptAct;
+        if (!act) return;
+        if (act === 'rename') { closeReportItemMenus(); startRenameReportItem(item); return; }
+        if (act === 'swap') { openReportSwapPop(item, btn); return; }
+        if (act === 'delete') { closeReportItemMenus(); deleteReportItem(item); }
+      });
+      document.body.appendChild(rptItemPop);
+      placeReportPop(rptItemPop, btn);
+    }
+    function wireReportItem(item) {
+      const title = item.querySelector('.wa-rpt-item-title');
+      bindEditableTitle(title, (next) => {
+        const block = item.querySelector('.wa-block');
+        if (block) block.dataset.slideTitle = next;
+        persistGeneratedReport(false);
+      });
+      const moreBtn = item.querySelector('[data-rpt-more] .panel-more-btn');
+      if (moreBtn) {
+        moreBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (moreBtn.classList.contains('is-open')) closeReportItemMenus();
+          else {
+            document.querySelectorAll('[data-pane-more] .topbar-popover').forEach((p) => p.classList.add('hidden'));
+            document.querySelectorAll('[data-pane-more] .panel-more-btn').forEach((b) => b.classList.remove('is-open'));
+            closeTitledropPop();
+            openReportItemMenu(item, moreBtn);
+          }
+        });
+      }
+      const inp = item.querySelector('.wa-rpt-note-input');
+      if (inp) {
+        inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
+      }
+    }
+    function createReportItem(src, i) {
+      const title = paneSlideLabel(src, src.dataset.origin || 'results', Number(src.dataset.slideIndex) || i);
+      const item = document.createElement('article');
+      item.className = 'wa-rpt-item';
+      item.dataset.rptSrc = titledropKey(src, i);
+      item.innerHTML =
+        `<header class="wa-rpt-item-head">` +
+          `<h3 class="wa-rpt-item-title" contenteditable="true" spellcheck="false" role="textbox" aria-label="Chart name">${esc(title)}</h3>` +
+          `<div class="panel-more-wrap wa-rpt-more" data-rpt-more>` +
+            `<button type="button" class="panel-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="Chart options">` +
+              `<span class="material-symbols-outlined">more_vert</span>` +
+            `</button>` +
+          `</div>` +
+        `</header>` +
+        `<div class="wa-rpt-item-body"></div>` +
+        `<div class="wa-rpt-note">` +
+          `<input type="text" class="adm-input wa-rpt-note-input" placeholder="Add an annotation…" aria-label="Annotation">` +
+        `</div>`;
+      const host = item.querySelector('.wa-rpt-item-body');
+      nodesForReport(src, ++rptSeq).forEach((node) => host.appendChild(node));
+      wireReportItem(item);
+      bootReportItemContent(item);
+      return item;
+    }
+    function snapshotGeneratedReport() {
+      const title = ((paneTitle.report && paneTitle.report.textContent) || '').trim()
+        || reportNameForCount(reportItemCount());
+      const items = paneBody.report
+        ? Array.from(paneBody.report.querySelectorAll('.wa-rpt-item')).map((item, i) =>
+            ((item.querySelector('.wa-rpt-item-title') || {}).textContent || '').trim() || ('Output ' + (i + 1)))
+        : [];
+      return { title, items, conversation: conversationTitle() };
+    }
+    function persistGeneratedReport(asNew) {
+      const el = paneEl.report;
+      if (!el || !paneBody.report) return;
+      const snap = snapshotGeneratedReport();
+      if (asNew) delete el.dataset.rptId;
+      const rec = saveGeneratedReport({
+        id: asNew ? undefined : el.dataset.rptId,
+        title: snap.title,
+        items: snap.items,
+        conversation: snap.conversation,
+      });
+      if (rec) el.dataset.rptId = rec.id;
+    }
+    function openReportPane(blocks) {
+      const el = paneEl.report;
+      const body = paneBody.report;
+      if (!el || !body || !blocks.length) return;
+      closeReportItemMenus();
+      body.innerHTML = '';
+      blocks.forEach((src, i) => body.appendChild(createReportItem(src, i)));
+      if (paneTitle.report) {
+        delete paneTitle.report.dataset.userNamed;
+        paneTitle.report.textContent = reportNameForCount(blocks.length);
+        paneTitle.report.dataset.orig = paneTitle.report.textContent;
+      }
+      if (paneMeta.report) paneMeta.report.textContent = '';
+      persistGeneratedReport(true);
+      if (!el.classList.contains('is-open')) {
+        el.classList.remove('is-open'); void el.offsetWidth;
+        el.classList.add('is-open');
+      }
+      /* Stay the smaller sticky drawer — never inherit Output's fill default. */
+      applyPaneWidth(el, 0);
+      const wb = document.querySelector('[data-pane-width="report"]');
+      if (wb) syncPaneWidthBtn(wb, 0);
+      setPaneSticky('report', true);
+      window.WisePaneResize?.release?.([
+        document.getElementById('wa-chat'),
+        paneEl.results,
+        paneEl.visuals,
+        paneEl.unified,
+        paneEl.report,
+      ]);
+      recomputeSoloPaneWidth();
+    }
+    function generateReportFromTitledrop() {
+      const blocks = paneBlocks('unified');
+      const picked = blocks.filter((b, i) => titledropSelected.has(titledropKey(b, i)));
+      if (!picked.length) return;
+      openReportPane(picked);
+      closeTitledropPop();
     }
     function setUnifiedTitleDrop(on) {
       unifiedTitleDrop = !!on;
@@ -4710,18 +5433,26 @@
        visible alongside it (see the .is-titledrop CSS), so both nav affordances coexist.
        Sync the pane class, title affordances & menu-item state to the flag. */
     setUnifiedTitleDrop(unifiedTitleDrop);
+    bindEditableTitle(paneTitle.report, () => {
+      if (paneTitle.report) paneTitle.report.dataset.userNamed = '1';
+      persistGeneratedReport(false);
+    });
+    window.addEventListener('resize', () => {
+      if (titledropPop) sizeTitledropPop();
+      closeReportItemMenus();
+    });
 
     /* ── Per-pane sticky mode (permanent) ──
        Sticky is now the ONLY module style: every pane tucks in behind the chat
        (and any pane to its left) off its right edge, exactly like the docked
        Turns module (see the .is-sticky CSS). There is no longer a toggle — it's
        applied once here and never turned off. */
-    const paneSticky = { results: true, visuals: true, unified: true };
+    const paneSticky = { results: true, visuals: true, unified: true, report: true };
     function setPaneSticky(which, on) {
       paneSticky[which] = !!on;
       paneEl[which]?.classList.toggle('is-sticky', paneSticky[which]);
     }
-    ['results', 'visuals', 'unified'].forEach((w) => setPaneSticky(w, paneSticky[w]));
+    ['results', 'visuals', 'unified', 'report'].forEach((w) => setPaneSticky(w, paneSticky[w]));
 
     document.querySelectorAll('[data-pane-more]').forEach((wrap) => {
       const btn = wrap.querySelector('.panel-more-btn');
@@ -4731,6 +5462,7 @@
         const open = pop.classList.contains('hidden');
         document.querySelectorAll('[data-pane-more] .topbar-popover').forEach((p) => p.classList.add('hidden'));
         document.querySelectorAll('[data-pane-more] .panel-more-btn').forEach((b) => b.classList.remove('is-open'));
+        closeReportItemMenus();
         pop.classList.toggle('hidden', !open);
         btn.classList.toggle('is-open', open);
         btn.setAttribute('aria-expanded', open ? 'true' : 'false');
@@ -4770,8 +5502,11 @@
         else if (act === 'split') applyMergeMode(false);
         else if (act === 'close') closePane(which);
         else if (act === 'export') {
-          const blob = new Blob(['WISEcodeAI export placeholder\n'], { type: 'text/plain' });
-          const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `wiseai-${which}.txt`; a.click();
+          if (which === 'report') exportReportPdf();
+          else {
+            const blob = new Blob(['WISEcodeAI export placeholder\n'], { type: 'text/plain' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `wiseai-${which}.txt`; a.click();
+          }
         } else if (act === 'share') {
           openShareModal(which);
         }
@@ -4781,17 +5516,20 @@
       document.querySelectorAll('[data-pane-more] .topbar-popover').forEach((p) => p.classList.add('hidden'));
       document.querySelectorAll('[data-pane-more] .panel-more-btn').forEach((b) => b.classList.remove('is-open'));
       closeTitledropPop();
+      closeReportItemMenus();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeReportItemMenus();
     });
 
     /* ══════════ Share side panel ══════════
-       Opened from the chat's ⋯ → Share (and any result pane's ⋯ → Share). Slides
-       in from the RIGHT over the chat, reusing the shared `.wch-sidebar` shell —
-       the exact same panel chrome + open/close animation as "Connect a data
-       source" — and the app's own `.adm-*` form controls (pill buttons included).
-       Invite brand-new users by email, search the people directory (matches
-       surface their address), share with the whole org, and attach individual
-       outputs from this conversation, each tagged by the pane it lives in. */
-    const PANE_SHARE_TAG = { results: 'Results', visuals: 'Visuals', unified: 'Output' };
+       Opened from the chat's ⋯ → Share (and any result pane's ⋯ → Share). From
+       chat / Output / Results / Visuals it slides in from the RIGHT over the
+       chat. From the Report module it mounts *inside* #wa-report — same form
+       and behaviour, but the title and the "individually" list are the report
+       name and its charts. Reuses the shared `.wch-sidebar` shell and `.adm-*`
+       form controls (pill buttons included). */
+    const PANE_SHARE_TAG = { results: 'Results', visuals: 'Visuals', unified: 'Output', report: 'Report' };
     /* Mock org directory. Entries without a `name` are addresses with no display
        name on file (shown by email, mirroring the reference design). */
     const SHARE_PEOPLE = [
@@ -4819,6 +5557,8 @@
     let shareSeq = 0;
     let shareActiveIdx = -1;              /* highlighted row in the people dropdown */
     let sharePanel = null, shareScrim = null, shareEls = null, shareCloseTimer = null, shareLastFocus = null;
+    let shareContext = 'chat';            /* 'chat' | 'report' — where the panel is hosted */
+    let shareHost = null;
 
     function fmtShareTime(ts) {
       const d = new Date(ts);
@@ -4858,13 +5598,31 @@
 
     function personLabel(p) { return p.name || p.email; }
 
-    /* Build the side panel once, inside the chat body (`.sc-body`) so it docks
-       over the transcript exactly like the connectors panel. */
-    function buildSharePanel() {
+    function shareChatHost() {
+      return host && (host.querySelector('.sc-body') || host);
+    }
+
+    function reportShareTitle() {
+      const t = (paneTitle.report && paneTitle.report.textContent || '').trim();
+      return t || 'Report';
+    }
+
+    /* Conversation outputs, or the charts currently stacked in the report. */
+    function currentShareOutputs() {
+      if (shareContext === 'report' && paneBody.report) {
+        return Array.from(paneBody.report.querySelectorAll('.wa-rpt-item')).map((item, i) => ({
+          blockId: item.dataset.rptSrc || ('rpt-' + i),
+          which: 'report',
+          title: ((item.querySelector('.wa-rpt-item-title') || {}).textContent || '').trim() || ('Output ' + (i + 1)),
+        }));
+      }
+      return manifestOutputs.slice();
+    }
+
+    /* Build the side panel once. Host is decided at open time: chat body for
+       conversation share, #wa-report when Share is opened from the report. */
+    function ensureSharePanel() {
       if (sharePanel) return;
-      const paneHost = host && (host.querySelector('.sc-body') || host);
-      if (!paneHost) return;
-      paneHost.classList.add('wch-host');
       shareScrim = document.createElement('div');
       shareScrim.className = 'wch-scrim';
       sharePanel = document.createElement('aside');
@@ -4888,7 +5646,7 @@
                 '<input type="text" id="wa-sh-people" class="wa-sh-chipinput" data-people placeholder="Search by name or email" autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list"></div>' +
               '<div class="wa-sh-menu" data-menu role="listbox" hidden></div></div>' +
             '<label class="wa-sh-check"><input type="checkbox" class="adm-check" data-org><span>Entire organization</span></label>' +
-            '<div class="adm-field" data-outwrap hidden><span class="adm-field-label">Also share individually</span>' +
+            '<div class="adm-field" data-outwrap hidden><span class="adm-field-label" data-outlabel>Also share individually</span>' +
               '<div class="wa-sh-outs" data-outs></div></div>' +
             '<div class="adm-field"><label class="adm-field-label" for="wa-sh-msg">Message</label>' +
               '<textarea id="wa-sh-msg" class="wa-sh-textarea" data-message rows="3" placeholder="Optional note, included in the invitation email"></textarea></div>' +
@@ -4906,18 +5664,37 @@
           '</div>' +
         '</div>' +
         '<div class="wa-sh-foot"><button type="button" class="adm-btn adm-btn--primary" data-create>Create share link</button></div>';
-      paneHost.appendChild(shareScrim);
-      paneHost.appendChild(sharePanel);
       const q = (s) => sharePanel.querySelector(s);
       shareEls = {
         sub: q('[data-sub]'), form: q('[data-form]'), done: q('[data-done]'),
         titleInput: q('[data-title]'), emailBox: q('[data-emailbox]'), emailInput: q('[data-email]'),
         peopleBox: q('[data-peoplebox]'), peopleInput: q('[data-people]'), peopleMenu: q('[data-menu]'),
         org: q('[data-org]'), outputsWrap: q('[data-outwrap]'), outputs: q('[data-outs]'),
+        outLabel: q('[data-outlabel]'),
         message: q('[data-message]'), create: q('[data-create]'), link: q('[data-link]'),
         copy: q('[data-copy]'), copyLabel: q('[data-copylabel]'), existing: q('[data-existing]'),
       };
       wireSharePanel();
+    }
+
+    function mountSharePanel(which) {
+      ensureSharePanel();
+      const inReport = which === 'report';
+      const paneHost = inReport ? paneEl.report : shareChatHost();
+      if (!paneHost || !sharePanel) return false;
+      if (shareHost && shareHost !== paneHost && shareHost === paneEl.report) {
+        shareHost.classList.remove('wch-host');
+      }
+      paneHost.classList.add('wch-host');
+      if (sharePanel.parentElement !== paneHost) {
+        paneHost.appendChild(shareScrim);
+        paneHost.appendChild(sharePanel);
+      }
+      sharePanel.classList.toggle('is-in-report', inReport);
+      shareScrim.classList.toggle('is-in-report', inReport);
+      shareHost = paneHost;
+      shareContext = inReport ? 'report' : 'chat';
+      return true;
     }
 
     function renderShareChips() {
@@ -4991,16 +5768,21 @@
 
     function renderShareOutputs() {
       if (!shareEls) return;
-      if (!manifestOutputs.length) {
+      const outs = currentShareOutputs();
+      if (shareEls.outLabel) {
+        shareEls.outLabel.textContent = shareContext === 'report' ? 'Charts in this report' : 'Also share individually';
+      }
+      if (!outs.length) {
         shareEls.outputsWrap.hidden = true;
         shareEls.outputs.innerHTML = '';
         return;
       }
       shareEls.outputsWrap.hidden = false;
-      shareEls.outputs.innerHTML = manifestOutputs.map((o) => {
+      const precheck = shareContext === 'report';
+      shareEls.outputs.innerHTML = outs.map((o) => {
         const tag = PANE_SHARE_TAG[o.which] || 'Output';
         return `<label class="wa-sh-out">
-          <input type="checkbox" class="adm-check" data-share-out="${o.blockId}">
+          <input type="checkbox" class="adm-check" data-share-out="${esc(o.blockId)}"${precheck ? ' checked' : ''}>
           <span class="wa-sh-out-tag">${esc(tag)}</span>
           <span class="wa-sh-out-name">${esc(o.title)}</span>
         </label>`;
@@ -5013,18 +5795,20 @@
       closeShareModal();
     }
 
-    function openShareModal(/* which */) {
-      buildSharePanel();
-      if (!sharePanel) return;
+    function openShareModal(which) {
+      if (!mountSharePanel(which)) return;
       shareLastFocus = document.activeElement;
       /* Never leave two chat overlays open at once. */
       try { chat && chat.closeConnectors && chat.closeConnectors(); } catch (_) {}
       try { chat && chat.closeTurns && chat.closeTurns(); } catch (_) {}
       shareRecipients.length = 0;
       shareActiveIdx = -1;
-      const title = conversationTitle();
+      const title = shareContext === 'report' ? reportShareTitle() : conversationTitle();
+      const n = shareContext === 'report' ? reportItemCount() : 0;
       shareEls.titleInput.value = title;
-      shareEls.sub.textContent = title;
+      shareEls.sub.textContent = shareContext === 'report'
+        ? (n === 1 ? '1 chart in this report' : n + ' charts in this report')
+        : title;
       shareEls.emailInput.value = '';
       shareEls.peopleInput.value = '';
       shareEls.org.checked = false;
@@ -5069,16 +5853,20 @@
 
       const org = shareEls.org.checked;
       const people = shareRecipients.map((r) => r.type === 'email' ? r.email : personLabel(r));
+      const catalog = currentShareOutputs();
       const outIds = Array.from(shareEls.outputs.querySelectorAll('[data-share-out]:checked')).map((c) => c.dataset.shareOut);
-      const outTitles = outIds.map((id) => (manifestOutputs.find((o) => o.blockId === id) || {}).title).filter(Boolean);
+      const outTitles = outIds.map((id) => (catalog.find((o) => o.blockId === id) || {}).title).filter(Boolean);
 
       const token = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6);
-      const url = `https://wi-alpha.wisecode.ai/share/${token}`;
+      const url = shareContext === 'report'
+        ? `https://wi-alpha.wisecode.ai/share/report/${token}`
+        : `https://wi-alpha.wisecode.ai/share/${token}`;
 
       /* Scope label for the "Existing shares" row. */
-      const scope = org ? 'entire organization'
+      const scopeBase = org ? 'entire organization'
         : people.length ? `${people.length} ${people.length === 1 ? 'person' : 'people'}`
         : 'link only';
+      const scope = shareContext === 'report' ? 'report · ' + scopeBase : scopeBase;
 
       shareEls.link.value = url;
       shareExisting.unshift({ id: ++shareSeq, time: Date.now(), scope, url, outputs: outTitles.length });
@@ -8366,6 +9154,7 @@
       if (el.id === 'wa-visuals') return 'visuals';
       if (el.id === 'wa-results') return 'results';
       if (el.id === 'wa-unified') return 'unified';
+      if (el.id === 'wa-report') return 'report';
       return el.dataset.origin || null;
     }
     function paneIsFs(el) {
@@ -8388,7 +9177,7 @@
       document.documentElement.classList.toggle('output-fs', !!on);
     }
     function applyPaneFs(el, on) {
-      ['results', 'visuals', 'unified'].forEach((k) => {
+      ['results', 'visuals', 'unified', 'report'].forEach((k) => {
         if (paneEl[k] && paneEl[k] !== el) paneEl[k].classList.remove('pane-fs');
       });
       if (el) el.classList.toggle('pane-fs', !!on);
@@ -8396,19 +9185,37 @@
       syncChartExpandBtns();
     }
     function togglePaneFs(which) {
-      const dest = mergedMode ? 'unified' : which;
+      const dest = which === 'report' ? 'report' : (mergedMode ? 'unified' : which);
       const el = paneEl[dest];
       if (!el) return;
       if (!el.classList.contains('is-open')) el.classList.add('is-open');
       applyPaneFs(el, !paneIsFs(el));
     }
 
-    /* Top-right open_in_full control on every chart card inside a pane. */
+    /* Top-right open_in_full control for each chart output — parked in a
+       toolbar on the block, above the card/table, never inside the table. */
     function ensureChartExpandBtns(root) {
       if (!root) return;
       root.querySelectorAll('.wa-chart-card').forEach((card) => {
         card.setAttribute('data-cu-card', '1');
-        if (card.querySelector(':scope > .wa-chart-expand-btn')) return;
+        card.querySelectorAll(':scope > .wa-chart-toolbar, :scope > .wa-chart-expand-btn').forEach((n) => n.remove());
+      });
+      root.querySelectorAll('.wa-block').forEach((block) => {
+        if (!block.querySelector('.wa-chart-card')) return;
+        let bar = block.querySelector(':scope > .wa-chart-toolbar');
+        if (!bar) {
+          bar = document.createElement('div');
+          bar.className = 'wa-chart-toolbar';
+          const card = block.querySelector('.wa-chart-card');
+          const overall = block.querySelector(':scope > .wa-kraft-overall');
+          const mix = block.querySelector(':scope > .wa-sprouts-mix');
+          let insertBefore = overall || mix || card;
+          while (insertBefore && insertBefore.parentElement && insertBefore.parentElement !== block) {
+            insertBefore = insertBefore.parentElement;
+          }
+          block.insertBefore(bar, insertBefore || block.firstElementChild);
+        }
+        if (bar.querySelector('.wa-chart-expand-btn')) return;
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'wa-chart-expand-btn';
@@ -8416,7 +9223,7 @@
         btn.setAttribute('aria-label', 'Expand output module to full screen');
         btn.title = 'Expand module to full screen';
         btn.innerHTML = '<span class="material-symbols-outlined">open_in_full</span>';
-        card.insertBefore(btn, card.firstChild);
+        bar.appendChild(btn);
       });
       syncChartExpandBtns(root);
     }

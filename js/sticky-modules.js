@@ -77,6 +77,7 @@
      first selector that matches inside the module wins; otherwise a generic
      list (below) is tried, then a floating top-right menu as a last resort. */
   var MENU_INTO = [
+    { sel: '#nfp-panel', into: '.nfp-panel-header .panel-controls' },
     { sel: '.aid-dash-card', into: '.aid-top-actions' },
     { sel: '.sa-panel', into: '.sa-panel-head' },
     { sel: '.vf-progress-pane', into: '.vfp-header' },
@@ -85,7 +86,8 @@
   var GENERIC_CONTROLS = [
     '.wa-pane-controls', '.rf-head-controls', '.panel-controls', '.wch-controls',
     '.aid-top-actions', '.sa-panel-head', '.vfp-header', '.gvp-header',
-    '[class*="head-controls"]', '[class*="top-actions"]', '.agent-main-header'
+    '[class*="head-controls"]', '[class*="top-actions"]', '.agent-main-header',
+    '.nfp-panel-header'
   ];
 
   var ACTION_ATTR = 'data-sticky-act';
@@ -350,6 +352,17 @@
     return wrap.querySelector('.topbar-popover');
   }
 
+  /* Drop one-shot entrance animations after they finish so a later reflow
+     (nav rail expand/collapse) cannot replay opacity-from keyframes. */
+  function settleAnim(el) {
+    if (!el || el.classList.contains('is-entered')) return;
+    var mark = function () { el.classList.add('is-entered'); };
+    el.addEventListener('animationend', function (e) {
+      if (e.target === el) mark();
+    }, { once: true });
+    setTimeout(mark, 800);
+  }
+
   /* GENERIC content module: drive `.sticky-mod` + `.is-sticky`. Sticky is now
      permanent, but the tuck is still suppressed while the module sits LEFT of
      the chat — e.g. after the WISEcodeAI dock's Appearance side-mode moves panes
@@ -361,7 +374,10 @@
       var row = getRow();
       chat = row ? row.querySelector(CHAT_SEL) : null;
     }
-    mod.classList.toggle('is-sticky', on && isRightOfChat(mod, chat));
+    var want = on && isRightOfChat(mod, chat);
+    if (!want) mod.classList.remove('is-entered');
+    mod.classList.toggle('is-sticky', want);
+    if (want) settleAnim(mod);
   }
 
   /* Re-apply the pref against the module's CURRENT side of the chat. Called on
@@ -372,7 +388,11 @@
     if (!mod.dataset.stickyPref) return;
     if (mod.querySelector(SELF_MANAGED_SEL)) return;
     var want = mod.dataset.stickyPref === 'on' && isRightOfChat(mod, chat);
-    if (mod.classList.contains('is-sticky') !== want) mod.classList.toggle('is-sticky', want);
+    if (mod.classList.contains('is-sticky') !== want) {
+      if (!want) mod.classList.remove('is-entered');
+      mod.classList.toggle('is-sticky', want);
+      if (want) settleAnim(mod);
+    }
   }
 
   /* DOCKED Turns sidebar: drive `.wch-unsticky` (ON = not unsticky) and make
@@ -479,7 +499,10 @@
   function scan() {
     var found = collectCandidates();
     if (!found) return;
-    found.mods.forEach(function (mod) { ensureToggle(mod, found.chat); });
+    found.mods.forEach(function (mod) {
+      ensureToggle(mod, found.chat);
+      if (mod.classList.contains('is-sticky')) settleAnim(mod);
+    });
   }
 
   var observer = null;
@@ -508,6 +531,10 @@
     if (!getRow()) return;
     scan();
     observe();
+    var inner = document.querySelector('.agent-main-inner');
+    if (inner) settleAnim(inner);
+    var menuInner = document.querySelector('#menu-panel.mp-open .menu-inner');
+    if (menuInner) settleAnim(menuInner);
   }
 
   if (document.readyState === 'loading') {

@@ -6,7 +6,8 @@
  *   import { makeTraceHelix, measureTraceRungCentres, TRACE_STRAND_MARKUP } from './trace-helix.js';
  */
 
-/* Strand rail markup: a 26px gutter host. A single .sc-trace-dna span carries
+/* Strand rail markup: a 20px gutter host, left-aligned under the
+   "Thinking" / "Worked for" label. A single .sc-trace-dna span carries
    the live SVG helix — it twists while thinking, then freezes aligned to the
    milestone rows and sweeps green top-to-bottom. */
 export const TRACE_STRAND_MARKUP = '<div class="sc-trace-strand" aria-hidden="true">'
@@ -40,7 +41,10 @@ function prefersReduced() {
 
    Returns raw <svg> markup for a .sc-trace-dna element's innerHTML. */
 export function scBuildHelixSVG(H, phase, rungsY, greenCount, uid) {
-  const W = 26, cx = W / 2, PERIOD = 36;
+  const W = 20, PERIOD = 36;
+  /* Axis sits left of center so the helix's left swell lines up with the
+     "Thinking" / "Worked for" label, instead of floating in the rail. */
+  const cx = 7;
   uid = uid || 'h';
   const h = Math.max(20, Math.round(H));
   const TWO_PI = Math.PI * 2;
@@ -66,7 +70,7 @@ export function scBuildHelixSVG(H, phase, rungsY, greenCount, uid) {
      toward the bottom (depth on descent), and a whisper of AXIS SWAY plus a
      NON-UNIFORM twist (turns subtly tighten and loosen along the length) break
      the mirror symmetry so no two turns are identical. */
-  const AMP_BASE = 6.1;
+  const AMP_BASE = 4.8;
   /* Breathing: a smaller, gentler swell than before — shallower depth over
      longer periods (wider, more gradual taper) that drifts down more slowly,
      so the diameter eases in and out rather than pumping. */

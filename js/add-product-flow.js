@@ -109,6 +109,12 @@
     saved: false,
     nfpWide: false,       // false = single pane; true = double-pane (photo column)
     nfpCompare: false,    // ⋯ menu → show every format side by side (compare matrix)
+    /* Ingredient analysis (third column). Accordions remember open/closed;
+       Analyze increments `iaTick` so row + score animations replay. */
+    iaOpen: { list: true, parsed: true, codes: true, nutrients: true, scout: true },
+    iaRan: false,
+    iaTick: 0,
+    iaConfirm: {},        // mapped-name → true once the user confirms a row
   };
 
   const ALLERGEN_EMOJI = {
@@ -748,19 +754,278 @@
     </div>`;
   }
 
+  /* ── Ingredient analysis (third column) ───────────────────────────────
+     Ingredient list + Analyze, then Parsed / Codes / Nutrients /
+     Wise Code AI as collapsible accordions. Analyze re-parses the live
+     list and replays the row + score animations. */
+  const IA_CATALOG = [
+    { keys: ['ground flaxseed', 'flaxseed', 'flax seed'], mapped: 'FLAXSEED', cat: 'Protein', sub: 'Nut & Seed', pl: 1, match: 'ok' },
+    { keys: ['cane sugar'], mapped: 'CANE SUGAR', cat: 'Sweetener', sub: 'Sugars', pl: 2, match: 'ok' },
+    { keys: ['egg whites', 'egg white'], mapped: 'EGG WHITE', cat: 'Protein', sub: 'Egg', pl: 1, match: 'ok' },
+    { keys: ['water'], mapped: 'WATER', cat: 'Water', sub: 'Water', pl: 1, match: 'ok' },
+    { keys: ['chocolate chips', 'chocolate chip'], mapped: 'CHOCOLATE CHIP', cat: 'Confection', sub: 'Chocolate', pl: 2, match: 'ok' },
+    { keys: ['unsweetened chocolate'], mapped: 'CHOCOLATE', cat: 'Confection', sub: 'Chocolate', pl: 1, match: 'ok' },
+    { keys: ['cocoa butter'], mapped: 'COCOA BUTTER', cat: 'Fat', sub: 'Cocoa', pl: 1, match: 'ok' },
+    { keys: ['canola oil', 'non-gmo expeller-pressed canola oil', 'non-gmo canola oil'], mapped: 'CANOLA OIL', cat: 'Fat', sub: 'Oil', pl: 2, match: 'ok' },
+    { keys: ['cocoa'], mapped: 'COCOA', cat: 'Flavor', sub: 'Cocoa', pl: 1, match: 'ok' },
+    { keys: ['baking soda', 'sodium bicarbonate'], mapped: 'SODIUM BICARBONATE', cat: 'Additive', sub: 'Leavening', pl: 2, match: 'ok' },
+    { keys: ['baking powder'], mapped: 'BAKING POWDER', cat: 'Additive', sub: 'Leavening', pl: 2, match: 'ok' },
+    { keys: ['sea salt', 'salt'], mapped: 'SEA SALT', cat: 'Mineral', sub: 'Salt', pl: 1, match: 'ok' },
+    { keys: ['xanthan gum'], mapped: 'XANTHAN GUM', cat: 'Additive', sub: 'Gum', pl: 2, match: 'part' },
+    { keys: ['natural flavor', 'natural flavour'], mapped: 'NATURAL FLAVOR', cat: 'Additive', sub: 'Flavor', pl: 2, match: 'bad' },
+    { keys: ['dates', 'organic dates', '100% organic dates'], mapped: 'DATES', cat: 'Fruit', sub: 'Stone Fruits', pl: 1, match: 'ok' },
+    { keys: ['almond', 'almonds'], mapped: 'ALMOND', cat: 'Protein', sub: 'Nut & Seed', pl: 1, match: 'ok' },
+    { keys: ['cashew', 'cashews'], mapped: 'CASHEW', cat: 'Protein', sub: 'Nut & Seed', pl: 1, match: 'ok' },
+    { keys: ['oat', 'oats'], mapped: 'OAT', cat: 'Grain', sub: 'Cereal', pl: 1, match: 'ok' },
+    { keys: ['orange juice powder'], mapped: 'ORANGE JUICE POWDER', cat: 'Fruit', sub: 'Citrus', pl: 2, match: 'ok' },
+    { keys: ['cinnamon'], mapped: 'CINNAMON', cat: 'Spice', sub: 'Bark', pl: 1, match: 'ok' },
+    { keys: ['turmeric'], mapped: 'TURMERIC', cat: 'Spice', sub: 'Root', pl: 1, match: 'ok' },
+    { keys: ['ginger'], mapped: 'GINGER', cat: 'Spice', sub: 'Root', pl: 1, match: 'ok' },
+    { keys: ['reishi extract'], mapped: 'REISHI', cat: 'Additive', sub: 'Extract', pl: 2, match: 'ok' },
+    { keys: ['lion\'s mane extract', 'lions mane extract'], mapped: 'LION\'S MANE', cat: 'Additive', sub: 'Extract', pl: 2, match: 'bad' },
+    { keys: ['ashwagandha extract'], mapped: 'ASHWAGANDHA', cat: 'Additive', sub: 'Extract', pl: 2, match: 'part' },
+  ];
+
+  function splitIngredientTokens(text) {
+    const parts = [];
+    let buf = '';
+    let depth = 0;
+    String(text || '').split('').forEach((ch) => {
+      if (ch === '(') { depth += 1; buf += ch; return; }
+      if (ch === ')') { depth = Math.max(0, depth - 1); buf += ch; return; }
+      if (ch === ',' && depth === 0) {
+        if (buf.trim()) parts.push(buf.trim());
+        buf = '';
+        return;
+      }
+      buf += ch;
+    });
+    if (buf.trim()) parts.push(buf.trim());
+    return parts;
+  }
+
+  function lookupIngredient(raw) {
+    const clean = String(raw || '').replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+    const key = clean.toLowerCase().replace(/^100%\s+/, '').replace(/^organic\s+/, '');
+    const hit = IA_CATALOG.find((c) => c.keys.some((k) => key === k || key.endsWith(' ' + k) || key.startsWith(k)));
+    if (hit) return { raw: clean || raw, mapped: hit.mapped, cat: hit.cat, sub: hit.sub, pl: hit.pl, match: hit.match };
+    const mapped = clean.toUpperCase() || String(raw || '').toUpperCase();
+    return { raw: clean || raw, mapped, cat: 'Ingredient', sub: 'Unclassified', pl: 2, match: 'ok' };
+  }
+
+  function parseIngredientTree(text) {
+    const rows = [];
+    splitIngredientTokens(text).forEach((token) => {
+      const m = token.match(/^(.*?)(?:\s*\((.*)\))\s*$/);
+      const parentRaw = m ? m[1].trim() : token;
+      const inner = m && m[2] ? m[2] : '';
+      const parent = lookupIngredient(parentRaw);
+      parent.children = inner ? splitIngredientTokens(inner).map((c) => lookupIngredient(c)) : [];
+      rows.push(parent);
+    });
+    return rows;
+  }
+
+  function flattenParsed(tree) {
+    const out = [];
+    tree.forEach((row) => {
+      out.push(row);
+      (row.children || []).forEach((c) => out.push(c));
+    });
+    return out;
+  }
+
+  function iaMatchOf(row) {
+    if (state.iaConfirm[row.mapped]) return 'ok';
+    return row.match || 'ok';
+  }
+
+  function iaMatchPill(match, mapped) {
+    if (match === 'ok') return `<span class="nfp-ia-pill nfp-ia-pill--ok">Matched</span>`;
+    if (match === 'part') {
+      return `<span class="nfp-ia-pill-wrap"><span class="nfp-ia-pill nfp-ia-pill--part">Partly</span>`
+        + `<button type="button" class="nfp-ia-confirm" data-nfp="ia-confirm" data-arg="${esc(mapped)}">Confirm</button></span>`;
+    }
+    return `<span class="nfp-ia-pill-wrap"><span class="nfp-ia-pill nfp-ia-pill--bad">Mismatch</span>`
+      + `<span class="material-symbols-outlined nfp-ia-pill-ico" aria-hidden="true">search</span></span>`;
+  }
+
+  function iaCurrentNf() {
+    if (state.view === 'pack' && state.packs.length) {
+      const i = Math.min(state.activePack, state.packs.length - 1);
+      const p = state.packs[i];
+      return (p && p.nf) || state.nf;
+    }
+    return state.nf;
+  }
+
+  function iaCodesRows() {
+    const declared = state.allergens.map((a) => String(a).toLowerCase());
+    const present = (name) => {
+      const n = name.toLowerCase();
+      return declared.some((d) => d === n || d.includes(n) || n.includes(d.replace(/s$/, '')));
+    };
+    const names = ['Eggs', 'Fish', 'Milk', 'Peanuts', 'Sesame', 'Shellfish', 'Soy', 'Tree Nuts', 'Wheat'];
+    const rows = [
+      { code: 'Allergens', interp: declared.length ? 'Present' : 'None', tone: declared.length ? 'bad' : 'ok', score: declared.length ? 0 : 100 },
+    ];
+    names.forEach((n) => {
+      const on = present(n);
+      rows.push({ code: n, interp: on ? 'Present' : 'None', tone: on ? 'bad' : 'ok', score: on ? 0 : 100 });
+    });
+    rows.push(
+      { code: 'California Assembly UPF', interp: 'Not UPF', tone: 'ok', score: 100 },
+      { code: 'Calorie Quality', interp: 'Ok', tone: 'warn', score: 58 },
+      { code: 'Carbohydrate Quality', interp: 'Excellent', tone: 'ok', score: 86 },
+      { code: 'Crown Label', interp: 'Poor', tone: 'bad', score: 18 },
+    );
+    return rows;
+  }
+
+  function iaNutrientRows() {
+    const nf = iaCurrentNf();
+    const rows = [];
+    const cal = String(nf.calories || '').replace(/[^\d.]/g, '');
+    if (cal) rows.push({ name: 'Energy', amt: cal, unit: 'kcal', dv: '—' });
+    NF_ROWS.concat(NF_MICRO).forEach((r) => {
+      const v = nf[r.key] || {};
+      const raw = String(v.amt || '').trim();
+      if (!raw) return;
+      const m = raw.match(/^([\d.]+)\s*(.*)$/);
+      rows.push({
+        name: NF_LABELS[r.key] || r.key,
+        amt: m ? m[1] : raw,
+        unit: m ? (m[2] || '') : '',
+        dv: v.dv || '—',
+      });
+    });
+    return rows;
+  }
+
+  function iaAccord(id, title, inner) {
+    const open = state.iaOpen[id] !== false;
+    return `<section class="nfp-ia-sec${open ? '' : ' is-collapsed'}" data-ia-sec="${id}">
+      <button type="button" class="nfp-ia-head" data-nfp="ia-toggle" data-arg="${id}" aria-expanded="${open ? 'true' : 'false'}">
+        <span class="nfp-ia-title">${title}</span>
+        <span class="material-symbols-outlined nfp-ia-chev" aria-hidden="true">expand_more</span>
+      </button>
+      <div class="nfp-ia-body">${inner}</div>
+    </section>`;
+  }
+
+  function parsedPanelHTML(tree) {
+    const flat = flattenParsed(tree);
+    const matches = flat.map(iaMatchOf);
+    const ok = matches.filter((m) => m === 'ok').length;
+    const part = matches.filter((m) => m === 'part').length;
+    const bad = matches.filter((m) => m === 'bad').length;
+    const pending = part + bad;
+    const banner = pending
+      ? `<div class="nfp-ia-banner nfp-ia-banner--warn"><span class="material-symbols-outlined">warning</span>${pending} mapping${pending === 1 ? '' : 's'} still need a review.</div>`
+      : `<div class="nfp-ia-banner nfp-ia-banner--ok"><span class="material-symbols-outlined">check_circle</span>All ingredients matched and waiting for your confirmation.</div>`;
+    const actions = `<div class="nfp-ia-actions">
+        <button type="button" class="nfp-ia-btn nfp-ia-btn--ghost" data-nfp="ia-review">${pending ? `Review ${pending} mapping${pending === 1 ? '' : 's'}` : 'Review mappings'}</button>
+        <button type="button" class="nfp-ia-btn nfp-ia-btn--ghost" data-nfp="ia-analyze">Re-analyze all ${flat.length}</button>
+        <button type="button" class="nfp-ia-btn nfp-ia-btn--ok" data-nfp="ia-confirm-all">Confirm ${ok} matched</button>
+      </div>`;
+    const rows = flat.map((row, i) => {
+      const match = iaMatchOf(row);
+      return `<div class="nfp-ia-row nfp-ia-parsed-row" style="--i:${i}" data-ia-match="${match}">
+        <div class="nfp-ia-td nfp-ia-td--ing">${esc(row.raw)}</div>
+        <div class="nfp-ia-td nfp-ia-td--mapstack">
+          <span class="nfp-ia-mapped">${esc(row.mapped)}</span>
+          ${iaMatchPill(match, row.mapped)}
+        </div>
+      </div>`;
+    }).join('');
+    return `${banner}${actions}
+      <div class="nfp-ia-table nfp-ia-table--parsed">
+        <div class="nfp-ia-th"><span>Ingredient</span><span>Mapped / Match</span></div>
+        ${rows}
+      </div>`;
+  }
+
+  function codesPanelHTML() {
+    const rows = iaCodesRows();
+    return `<div class="nfp-ia-table nfp-ia-table--codes">
+      <div class="nfp-ia-th nfp-ia-th--codes"><span>Code</span><span>Interpretation / Score</span></div>
+      ${rows.map((r, i) => `<div class="nfp-ia-row nfp-ia-code-row" style="--i:${i}">
+        <div class="nfp-ia-td">${esc(r.code)}</div>
+        <div class="nfp-ia-td nfp-ia-td--mapstack">
+          <span class="nfp-ia-pill nfp-ia-pill--${r.tone}">${esc(r.interp)}</span>
+          <span class="nfp-ia-td--num"><span class="nfp-ia-score" data-countup>${r.score}</span><span class="nfp-ia-den">/100</span></span>
+        </div>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  function nutrientsPanelHTML() {
+    const rows = iaNutrientRows();
+    if (!rows.length) {
+      return `<p class="nfp-ia-empty">Fill the Nutrition Facts to populate this table.</p>`;
+    }
+    return `<div class="nfp-ia-table nfp-ia-table--nut">
+      <div class="nfp-ia-th nfp-ia-th--nut"><span>Name</span><span>Amount</span><span>% DV</span></div>
+      ${rows.map((r, i) => `<div class="nfp-ia-row nfp-ia-nut-row" style="--i:${i}">
+        <div class="nfp-ia-td">${esc(r.name)}</div>
+        <div class="nfp-ia-td nfp-ia-td--num nfp-ia-td--amt"><span class="nfp-ia-score" data-countup>${esc(r.amt)}</span>${r.unit ? `<span class="nfp-ia-unit">${esc(r.unit)}</span>` : ''}</div>
+        <div class="nfp-ia-td">${esc(r.dv)}</div>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  function scoutPanelHTML(tree) {
+    const rows = [];
+    tree.forEach((row) => {
+      rows.push({ ...row, indent: 0 });
+      (row.children || []).forEach((c) => rows.push({ ...c, indent: 1 }));
+    });
+    return `<div class="nfp-ia-table nfp-ia-table--scout">
+      <div class="nfp-ia-th nfp-ia-th--scout"><span>Name / alt</span><span>Mapped to</span><span>Category / Sub-category</span><span>Process</span></div>
+      ${rows.map((r, i) => `<div class="nfp-ia-row nfp-ia-scout-row${r.indent ? ' is-child' : ''}" style="--i:${i}">
+        <div class="nfp-ia-td">${esc(r.raw)}</div>
+        <div class="nfp-ia-td">${esc(r.mapped)}</div>
+        <div class="nfp-ia-td nfp-ia-td--mapstack">
+          <span class="nfp-ia-mapped">${esc(r.cat)}</span>
+          ${r.sub ? `<span class="nfp-ia-subcat">${esc(r.sub)}</span>` : ''}
+        </div>
+        <div class="nfp-ia-td"><span class="nfp-ia-pl nfp-ia-pl--${r.pl}" title="Process level ${r.pl}">${r.pl}</span></div>
+      </div>`).join('')}
+    </div>`;
+  }
+
   function ingredientsHTML() {
     const err = state.errors.ingredients;
-    const ingredBody = state.ingredients
-      ? `<span class="nfp-ingred-label">Ingredients:</span> ${editSpan('ingredients', state.ingredients, '')}`
-      : `<span class="nfp-ingred-label">Ingredients:</span> ${editSpan('ingredients', '', 'Tap to add the ingredient list')} <span class="nfp-req">*</span>`;
+    const listInner = `<div class="nfp-ingred-wrap">
+      <div class="nfp-ingred-body${err ? ' nfp-block-err' : ''}">
+        <textarea class="nfp-ingred-edit" data-field="ingredients" rows="1" placeholder="Paste or type the ingredient list">${esc(state.ingredients)}</textarea>
+        ${err ? `<div class="nfp-field-note"><span class="material-symbols-outlined">error_outline</span>${esc(err)}</div>` : ''}
+      </div>
+      <button type="button" class="nfp-ia-analyze" data-nfp="ia-analyze"${state.ingredients ? '' : ' disabled'}>
+        <span class="material-symbols-outlined">science</span>Analyze Ingredients
+      </button>
+    </div>`;
+    const tree = parseIngredientTree(state.ingredients);
+    const analyzed = state.iaRan && tree.length;
+    const extras = analyzed
+      ? iaAccord('parsed', 'Parsed Ingredients', parsedPanelHTML(tree))
+        + iaAccord('codes', 'Codes', codesPanelHTML())
+        + iaAccord('nutrients', 'Nutrients', nutrientsPanelHTML())
+        + iaAccord('scout', 'Wise Code AI Engine Flavor Results', scoutPanelHTML(tree))
+      : '';
+    return `<div class="nfp-ia" data-ia-tick="${state.iaTick}">
+      ${iaAccord('list', 'Ingredient List', listInner)}
+      ${extras}
+    </div>`;
+  }
+
+  /* Allergens + Contains sit under the Nutrition Facts panel (facts column),
+     not with the ingredients list in the third column. */
+  function allergensHTML() {
     const allergTags = state.allergens.length
       ? state.allergens.map((a, i) => `<span class="nfp-allergen-tag"><span class="nfp-allergen-emoji">${allergenEmoji(a)}</span>${esc(a)} <span data-nfp="remove-allergen" data-arg="${i}" style="cursor:pointer;color:#9ca3af;margin-left:1px" title="Remove">×</span></span>`).join('')
       : '<span style="font-size:0.66rem;color:#9ca3af;font-style:italic">None declared yet</span>';
-    return `<div class="nfp-ingred-wrap">
-      <div class="nfp-ingred-body${err ? ' nfp-block-err' : ''}">
-        <p class="nfp-ingred-text">${ingredBody}</p>
-        ${err ? `<div class="nfp-field-note"><span class="material-symbols-outlined">error_outline</span>${esc(err)}</div>` : ''}
-      </div>
+    return `<div class="nfp-decl-wrap">
       <div class="nfp-allergen-wrap">
         <div class="nfp-allergen-heading">Allergens</div>
         <div class="nfp-allergen-tags">${allergTags}
@@ -955,60 +1220,69 @@
     </div>`;
   }
 
-  /* ── Product Insights row ──────────────────────────────────────────────
-     A summary strip shown below the product image + Nutrition Facts columns —
-     the same idea as the Key Takeaways row at the bottom of
-     pages/product-comparison.html. A "Next step" banner (earn the Non-UPF
-     shield) plus three scorecards: UPF verdict, GRAS status and WISEscore.
-     Content only from the product summary; styling is our own (.nfp-ins-* in
-     add-product.html, reusing the analytics-types debossed stamp discs). */
-  function insightsHTML() {
-    return `<div class="nfp-ins">
-      <div class="nfp-ins-next">
+  /* ── Product Insights ──────────────────────────────────────────────────
+     The Non-UPF shield CTA sits directly under the product photo in the
+     single-pane media column. The three scorecards (UPF / GRAS / WISEscore)
+     stay as a row below both columns — same idea as the Key Takeaways row
+     on pages/product-comparison.html. Styling is .nfp-ins-* (add-product /
+     view-product), reusing the analytics-types debossed stamp discs. */
+  function shieldHTML() {
+    return `<div class="nfp-ins-next">
         <span class="nfp-ins-next-ic" aria-hidden="true"><span class="material-symbols-outlined">gpp_good</span></span>
         <div class="nfp-ins-next-body">
           <div class="nfp-ins-next-title">Get the Non-UPF Shield</div>
           <div class="nfp-ins-next-desc">This product qualifies for Non-UPF verification. Earn the shield so it stands out on retail listings.</div>
         </div>
         <a class="nfp-ins-next-btn" href="non-upf-dashboard.html"><span class="material-symbols-outlined">gpp_good</span>Get the Non-UPF Shield</a>
-      </div>
-      <div class="nfp-ins-grid">
-        <div class="nfp-ins-card">
-          <div class="nfp-ins-head">
-            <span class="nfp-ins-lbl">UPF Verdict</span>
-            <span class="nfp-ins-ic" aria-hidden="true"><span class="material-symbols-outlined">science</span></span>
+      </div>`;
+  }
+  function insightsGridHTML() {
+    /* Same claim-row chrome as the top scorecards on overview.html
+       (.dash-claim / .dash-bignum / stamp discs) — no rating chips. */
+    const name = esc(state.productName || 'this product');
+    return `<section class="dash-claim nfp-ins-scores">
+        <div class="dash-claim-col">
+          <div class="dash-progress-pct">
+            <span class="dash-pct-wrap"><span class="dash-bignum" data-countup>100</span><span class="dash-pct">%</span></span>
+            <span class="dash-bignum-cap"><strong>Non-UPF</strong><br>Minimally processed · Qualifies for the verification shield</span>
+            <span class="dash-stamp-icon" aria-hidden="true"><span class="material-symbols-outlined">eco</span></span>
           </div>
-          <div class="nfp-ins-val nfp-ins-val--pos">Non-Ultra-Processed</div>
-          <div class="nfp-ins-sub">Minimally Processed</div>
-          <a class="nfp-ins-link" href="non-upf-dashboard.html">Full UPF report <span class="material-symbols-outlined">arrow_outward</span></a>
         </div>
-        <div class="nfp-ins-card">
-          <div class="nfp-ins-head">
-            <span class="nfp-ins-lbl">GRAS Status</span>
-            <span class="nfp-ins-ic" aria-hidden="true"><span class="material-symbols-outlined">biotech</span></span>
+        <div class="dash-claim-divider"></div>
+        <div class="dash-claim-col">
+          <div class="dash-progress-pct">
+            <span class="dash-pct-wrap"><span class="dash-bignum" data-countup>67</span><span class="dash-pct">%</span></span>
+            <span class="dash-bignum-cap"><strong>GRAS</strong><br>2 of 3 screened ingredients are GRAS · 1 flagged Unclear</span>
+            <span class="dash-stamp-icon" aria-hidden="true"><span class="material-symbols-outlined">biotech</span></span>
           </div>
-          <div class="nfp-ins-val">Unclear</div>
-          <div class="nfp-ins-sub">3 ingredients screened, 1 flagged.</div>
-          <a class="nfp-ins-link" href="gras-verification.html">Full GRAS report <span class="material-symbols-outlined">arrow_outward</span></a>
         </div>
-        <div class="nfp-ins-card">
-          <div class="nfp-ins-head">
-            <span class="nfp-ins-lbl">WISEscore</span>
-            <span class="nfp-ins-ic" aria-hidden="true"><span class="material-symbols-outlined">monitoring</span></span>
+        <div class="dash-claim-divider"></div>
+        <div class="dash-claim-col">
+          <div class="dash-bignum-row">
+            <span class="dash-bignum" data-countup>84</span>
+            <span class="dash-bignum-cap"><strong>WISEscore&#8482;</strong><br>for ${name}</span>
+            <span class="dash-stamp-icon" aria-hidden="true"><span class="material-symbols-outlined">verified</span></span>
           </div>
-          <div class="nfp-ins-val">84 <small>/ 100</small></div>
-          <div class="nfp-ins-sub">Excellent</div>
-          <a class="nfp-ins-link" href="analytics-types.html">Full Insights report <span class="material-symbols-outlined">arrow_outward</span></a>
         </div>
-      </div>
-    </div>`;
+      </section>`;
+  }
+  function insightsCardsHTML() {
+    return `<div class="nfp-ins">${insightsGridHTML()}</div>`;
+  }
+  function insightsHTML() {
+    return `<div class="nfp-ins">${shieldHTML()}${insightsGridHTML()}</div>`;
   }
 
-  /* Add the "Compare formats side by side" toggle to the Product Details module's
-     ⋯ menu. That menu is built by sticky-modules.js (Share / Copy link / Export)
-     and lives on #nfp-panel (a floating ⋯ pinned to the panel corner), created
-     asynchronously — so we inject once it exists, retrying + observing until then. */
-  function installCompareMenuItem() {
+  /* Product Details ⋯ menu lives in the header (.panel-controls). sticky-modules.js
+     injects Share / Copy link / Export into the same popover; we add the
+     layout rows (two-pane photo + compare formats) once it exists. */
+  function closeNfpMenu(pop) {
+    const wrap = pop && pop.closest('.panel-more-wrap, .pf-module-menu');
+    const btn = wrap && wrap.querySelector('.panel-more-btn, .pf-module-menu-btn');
+    if (pop) pop.classList.add('hidden');
+    if (btn) { btn.classList.remove('is-open'); btn.setAttribute('aria-expanded', 'false'); }
+  }
+  function installNfpLayoutMenuItems() {
     const panel = document.getElementById('nfp-panel');
     if (!panel) return;
     let done = false;
@@ -1019,25 +1293,37 @@
       if (pop.querySelector('#nfp-compare-item')) { done = true; return true; }
       pop.insertAdjacentHTML('beforeend',
         '<div class="topbar-menu-divider"></div>'
+        + '<button type="button" class="topbar-menu-item sc-mcp-item" id="nfp-twopane-item" role="menuitemcheckbox" aria-checked="false">'
+        + '<span class="material-symbols-outlined topbar-menu-icon">view_sidebar</span>'
+        + '<span>Two-pane photo layout</span>'
+        + '<span class="sc-switch" aria-hidden="true"></span>'
+        + '</button>'
         + '<button type="button" class="topbar-menu-item sc-mcp-item" id="nfp-compare-item" role="menuitemcheckbox" aria-checked="false">'
         + '<span class="material-symbols-outlined topbar-menu-icon">view_column</span>'
         + '<span>Compare formats side by side</span>'
         + '<span class="sc-switch" aria-hidden="true"></span>'
         + '</button>');
+      const two = pop.querySelector('#nfp-twopane-item');
       const item = pop.querySelector('#nfp-compare-item');
       const sync = () => {
+        two.classList.toggle('is-on', state.nfpWide);
+        two.setAttribute('aria-checked', state.nfpWide ? 'true' : 'false');
         item.classList.toggle('is-on', state.nfpCompare);
         item.setAttribute('aria-checked', state.nfpCompare ? 'true' : 'false');
       };
+      two.addEventListener('click', (e) => {
+        e.stopPropagation();
+        state.nfpWide = !state.nfpWide;
+        if (panel) panel.classList.toggle('nfp-wide', state.nfpWide);
+        sync();
+        closeNfpMenu(pop);
+        renderNFP();
+      });
       item.addEventListener('click', (e) => {
         e.stopPropagation();
         state.nfpCompare = !state.nfpCompare;
         sync();
-        /* Close the menu after toggling (mirrors sticky-modules' own closeMenu). */
-        const wrap = pop.closest('.panel-more-wrap, .pf-module-menu');
-        const btn = wrap && wrap.querySelector('.panel-more-btn, .pf-module-menu-btn');
-        pop.classList.add('hidden');
-        if (btn) { btn.classList.remove('is-open'); btn.setAttribute('aria-expanded', 'false'); }
+        closeNfpMenu(pop);
         renderNFP();
       });
       sync();
@@ -1051,6 +1337,200 @@
     const iv = setInterval(() => { if (tryInject() || ++tries > 60) clearInterval(iv); }, 120);
   }
 
+  function wireNfpModuleMenu() {
+    const wrap = document.getElementById('nfp-menu-wrap');
+    const btn = document.getElementById('nfp-menu-btn');
+    const pop = document.getElementById('nfp-menu');
+    if (!wrap || !btn || !pop || wrap.dataset.stickyMenuWired) return;
+    wrap.dataset.stickyMenuWired = '1';
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const opening = pop.classList.contains('hidden');
+      document.querySelectorAll('.panel-more-wrap[data-sticky-menu] .topbar-popover').forEach((p) => p.classList.add('hidden'));
+      document.querySelectorAll('.panel-more-wrap[data-sticky-menu] .panel-more-btn').forEach((b) => {
+        b.classList.remove('is-open');
+        b.setAttribute('aria-expanded', 'false');
+      });
+      pop.classList.toggle('hidden', !opening);
+      btn.classList.toggle('is-open', opening);
+      btn.setAttribute('aria-expanded', opening ? 'true' : 'false');
+    });
+    document.addEventListener('click', (e) => {
+      if (pop.classList.contains('hidden')) return;
+      if (wrap.contains(e.target)) return;
+      closeNfpMenu(pop);
+    });
+  }
+
+  /* ── Single-pane column resize ─────────────────────────────────────────
+     Three columns (photo · Nutrition Facts · ingredients) can be drag-resized
+     along the seams — same grip language as js/pane-resize.js. Widths are
+     remembered as fractions. Below the container-query breakpoint the
+     columns stack and the splitters hide, so a narrow module never traps
+     the user in three skinny panes. Double-click a seam to reset. */
+  const NFP_COL_KEY = 'wise-nfp-cols-v4';
+  const NFP_COL_BP = 640;
+  const NFP_COL_MIN = [120, 200, 240];
+  const NFP_COL_DEFAULT = [0.20, 0.40, 0.40];
+  function nfpColWide() { return !!(nfpBody && nfpBody.clientWidth >= NFP_COL_BP); }
+  function readNfpCols() {
+    try {
+      const o = JSON.parse(localStorage.getItem(NFP_COL_KEY) || 'null');
+      if (Array.isArray(o) && o.length === 3 && o.every((n) => typeof n === 'number' && n > 0)) return o;
+    } catch (_) {}
+    return NFP_COL_DEFAULT.slice();
+  }
+  function saveNfpCols(fr) {
+    try { localStorage.setItem(NFP_COL_KEY, JSON.stringify(fr)); } catch (_) {}
+  }
+  function applyNfpCols(sp, fr) {
+    if (!sp || !fr) return;
+    sp.style.setProperty('--nfp-w-media', fr[0] + 'fr');
+    sp.style.setProperty('--nfp-w-facts', fr[1] + 'fr');
+    sp.style.setProperty('--nfp-w-ingred', fr[2] + 'fr');
+  }
+  function nfpColEls(sp) {
+    return [
+      sp.querySelector('.nfp-sp-media'),
+      sp.querySelector('.nfp-sp-facts'),
+      sp.querySelector('.nfp-sp-ingred'),
+    ];
+  }
+  function nudgeNfpCols(sp, idx, dxPx) {
+    const cols = nfpColEls(sp);
+    if (!cols[0] || !cols[1] || !cols[2]) return;
+    const widths = cols.map((c) => c.getBoundingClientRect().width);
+    const next = widths.slice();
+    next[idx] = widths[idx] + dxPx;
+    next[idx + 1] = widths[idx + 1] - dxPx;
+    if (next[idx] < NFP_COL_MIN[idx]) {
+      next[idx + 1] -= (NFP_COL_MIN[idx] - next[idx]);
+      next[idx] = NFP_COL_MIN[idx];
+    }
+    if (next[idx + 1] < NFP_COL_MIN[idx + 1]) {
+      next[idx] -= (NFP_COL_MIN[idx + 1] - next[idx + 1]);
+      next[idx + 1] = NFP_COL_MIN[idx + 1];
+    }
+    const sum = next[0] + next[1] + next[2];
+    if (sum <= 0) return;
+    const fr = next.map((w) => w / sum);
+    applyNfpCols(sp, fr);
+    return fr;
+  }
+  function wireNfpColumns() {
+    const sp = nfpBody && nfpBody.querySelector('.nfp-sp');
+    if (!sp) return;
+    applyNfpCols(sp, readNfpCols());
+    sp.querySelectorAll('[data-nfp-split]').forEach((split) => {
+      split.addEventListener('pointerdown', (e) => {
+        if (e.button != null && e.button !== 0) return;
+        if (!nfpColWide()) return;
+        e.preventDefault();
+        const idx = Number(split.dataset.nfpSplit);
+        const cols = nfpColEls(sp);
+        if (!cols[idx] || !cols[idx + 1]) return;
+        const startX = e.clientX;
+        const startW = cols.map((c) => c.getBoundingClientRect().width);
+        document.documentElement.classList.add('nfp-col-dragging');
+        split.classList.add('is-on');
+        try { split.setPointerCapture(e.pointerId); } catch (_) {}
+        const move = (ev) => {
+          const dx = ev.clientX - startX;
+          const next = startW.slice();
+          next[idx] = startW[idx] + dx;
+          next[idx + 1] = startW[idx + 1] - dx;
+          if (next[idx] < NFP_COL_MIN[idx]) {
+            next[idx + 1] -= (NFP_COL_MIN[idx] - next[idx]);
+            next[idx] = NFP_COL_MIN[idx];
+          }
+          if (next[idx + 1] < NFP_COL_MIN[idx + 1]) {
+            next[idx] -= (NFP_COL_MIN[idx + 1] - next[idx + 1]);
+            next[idx + 1] = NFP_COL_MIN[idx + 1];
+          }
+          const sum = next[0] + next[1] + next[2];
+          if (sum > 0) applyNfpCols(sp, next.map((w) => w / sum));
+        };
+        const up = (ev) => {
+          document.documentElement.classList.remove('nfp-col-dragging');
+          split.classList.remove('is-on');
+          try { split.releasePointerCapture(ev.pointerId); } catch (_) {}
+          split.removeEventListener('pointermove', move);
+          split.removeEventListener('pointerup', up);
+          split.removeEventListener('pointercancel', up);
+          const now = nfpColEls(sp).map((c) => c && c.getBoundingClientRect().width);
+          const sum = now[0] + now[1] + now[2];
+          if (sum > 0) saveNfpCols(now.map((w) => w / sum));
+        };
+        split.addEventListener('pointermove', move);
+        split.addEventListener('pointerup', up);
+        split.addEventListener('pointercancel', up);
+      });
+      split.addEventListener('dblclick', () => {
+        const def = NFP_COL_DEFAULT.slice();
+        saveNfpCols(def);
+        applyNfpCols(sp, def);
+      });
+      split.addEventListener('keydown', (e) => {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        if (!nfpColWide()) return;
+        e.preventDefault();
+        const idx = Number(split.dataset.nfpSplit);
+        const step = (e.shiftKey ? 40 : 16) * (e.key === 'ArrowRight' ? 1 : -1);
+        const fr = nudgeNfpCols(sp, idx, step);
+        if (fr) saveNfpCols(fr);
+      });
+    });
+  }
+
+  /* Third column matches the full second column (Nutrition Facts + allergens
+     + contains). When the photo/shield column is taller, stretch to that
+     bottom too so the column meets the score-card divider. */
+  let nfpIaHeightRo = null;
+  function syncIngredColHeight() {
+    const sp = nfpBody && nfpBody.querySelector('.nfp-sp');
+    if (!sp) return;
+    const facts = sp.querySelector('.nfp-sp-facts');
+    const media = sp.querySelector('.nfp-sp-media');
+    const ingred = sp.querySelector('.nfp-sp-ingred');
+    if (!facts || !ingred) return;
+    const fr = facts.getBoundingClientRect();
+    const ir = ingred.getBoundingClientRect();
+    const mr = media && media.getBoundingClientRect();
+    let h;
+    if (nfpColWide() && ir.top < fr.bottom - 8) {
+      const bottom = Math.max(fr.bottom, mr ? mr.bottom : fr.bottom);
+      h = Math.round(bottom - ir.top);
+    } else {
+      h = Math.round(fr.height);
+    }
+    if (h < 120) h = Math.round(fr.height);
+    ingred.style.setProperty('--nfp-ia-h', h + 'px');
+    ingred.classList.add('has-ia-h');
+  }
+  function wireIngredColHeight() {
+    if (nfpIaHeightRo) {
+      nfpIaHeightRo.disconnect();
+      nfpIaHeightRo = null;
+    }
+    const sp = nfpBody && nfpBody.querySelector('.nfp-sp');
+    if (!sp) return;
+    const facts = sp.querySelector('.nfp-sp-facts');
+    const media = sp.querySelector('.nfp-sp-media');
+    if (typeof ResizeObserver === 'function') {
+      nfpIaHeightRo = new ResizeObserver(() => {
+        sizeIngredEdit();
+        syncIngredColHeight();
+      });
+      if (facts) nfpIaHeightRo.observe(facts);
+      if (media) nfpIaHeightRo.observe(media);
+      nfpIaHeightRo.observe(sp);
+      if (nfpBody) nfpIaHeightRo.observe(nfpBody);
+      const ingred = sp.querySelector('.nfp-sp-ingred');
+      if (ingred) nfpIaHeightRo.observe(ingred);
+    }
+    requestAnimationFrame(() => { sizeIngredEdit(); syncIngredColHeight(); });
+  }
+
   function renderNFP() {
     if (!nfpBody) return;
     if (state.nfpCompare) {
@@ -1061,20 +1541,19 @@
       return;
     }
     if (state.nfpWide) {
-      /* Double-pane: LEFT = category + Nutrition Facts + ingredients; RIGHT =
-         the product photo column with the gallery + UPC overlaid on it. */
+      /* Double-pane: LEFT = category + Nutrition Facts + allergens/contains +
+         ingredients; RIGHT = the product photo column with the gallery + UPC
+         overlaid on it. */
       nfpBody.innerHTML =
         `<div class="nfp-cols">
-          <div class="nfp-col-left">${categoryHTML()}${nutritionHTML()}${ingredientsHTML()}${packFormatsHTML()}${packNfSectionHTML()}${insightsHTML()}</div>
+          <div class="nfp-col-left">${categoryHTML()}${nutritionHTML()}${allergensHTML()}${ingredientsHTML()}${packFormatsHTML()}${packNfSectionHTML()}${insightsHTML()}</div>
           <div class="nfp-col-right">${rightColumnHTML()}</div>
         </div>`;
     } else {
-      /* Single-pane: the product identity — the Product Images / Pack Formats
-         strip, the photo, category and UPC barcode — sits in a LEFT column and
-         the Nutrition Facts (+ ingredients) in a RIGHT column once the module
-         is wide enough to read both. Narrow widths (mobile) stack them into a
-         single column. Driven by the .nfp-sp container query in add-product.html
-         so it tracks the MODULE's width, not the viewport. */
+      /* Single-pane: three columns once the module is wide enough —
+         photo, Nutrition Facts, ingredients — with drag-resize splitters
+         between them. Narrow widths stack into a single column. Driven by
+         the .nfp-sp container query so it tracks the MODULE's width. */
       const strip = imagesAndPacksHTML();
       let media, facts;
       if (state.view === 'pack' && state.packs.length) {
@@ -1083,16 +1562,20 @@
         facts = packNfSectionHTML();
       } else {
         media = richHeroHTML();
-        facts = nutritionHTML() + ingredientsHTML();
+        facts = nutritionHTML();
       }
-      /* The Product sizes strip spans the top of BOTH columns; the media (photo,
-         category, UPC) and facts (Nutrition Facts) columns sit beneath it. */
       nfpBody.innerHTML =
         `<div class="nfp-sp">
           <div class="nfp-sp-strip">${strip}</div>
-          <div class="nfp-sp-media">${media}</div>
-          <div class="nfp-sp-facts">${facts}</div>
-        </div>${insightsHTML()}`;
+          <div class="nfp-sp-media">${media}${shieldHTML()}</div>
+          <div class="nfp-sp-split" data-nfp-split="0" role="separator" aria-orientation="vertical" aria-label="Resize photo and Nutrition Facts" tabindex="0"><span class="nfp-sp-grip" aria-hidden="true"></span></div>
+          <div class="nfp-sp-facts">${facts}${allergensHTML()}</div>
+          <div class="nfp-sp-split" data-nfp-split="1" role="separator" aria-orientation="vertical" aria-label="Resize Nutrition Facts and ingredients" tabindex="0"><span class="nfp-sp-grip" aria-hidden="true"></span></div>
+          <div class="nfp-sp-ingred">${ingredientsHTML()}</div>
+        </div>${insightsCardsHTML()}`;
+      wireNfpColumns();
+      wireIngredColHeight();
+      requestAnimationFrame(sizeIngredEdit);
     }
     updateSaveState();
   }
@@ -1233,14 +1716,27 @@
       }
       lastProgressPct = pct;
     }
+    syncProgressResizeLock();
+  }
+
+  /* Lock the progress pane out of js/pane-resize.js only while it is the
+     collapsed 64px rail — a pinned drag width would out-specify that rail.
+     While expanded, the Product Details right edge must stay freely
+     draggable, so the lock comes off. */
+  function syncProgressResizeLock() {
+    if (!progressEl) return;
+    if (progressMin) {
+      progressEl.setAttribute('data-pr-lock', '');
+      try { window.WisePaneResize && window.WisePaneResize.release(progressEl); } catch (_) {}
+    } else {
+      progressEl.removeAttribute('data-pr-lock');
+    }
   }
 
   /* ── Progress module width changer (in the ⋯ menu) ──────────────────────
      A four-tier width control (single / double / triple / fill) lives in the
      module's three-dot menu rather than a header button — the collapsed rail is
-     too narrow for one, and free drag-resize is disabled for this module
-     (data-pr-lock, set in init) so width is only ever changed from here. The
-     control is hidden while the module is collapsed. */
+     too narrow for one. The control is hidden while the module is collapsed. */
   const AP_PW_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
   const AP_PW_LABELS = ['Single width', 'Double width', 'Triple width', 'Fill width'];
   let progressWidthTier = 0;
@@ -2122,6 +2618,8 @@
       case 'save': doSave(); break;
       case 'restart': restart(); break;
       case 'exit': window.location.href = 'product-portfolio.html'; break;
+      case 'ia-review': reviewIaMappings(); break;
+      case 'ia-analyze': runIngredientAnalysis(true); break;
       default: break;
     }
   }
@@ -2139,6 +2637,11 @@
   function placeCaret(el) {
     el.focus();
     try {
+      if (el.matches && el.matches('textarea, input')) {
+        const n = el.value.length;
+        el.setSelectionRange(n, n);
+        return;
+      }
       const r = document.createRange(); r.selectNodeContents(el); r.collapse(false);
       const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
     } catch (_) {}
@@ -2306,6 +2809,7 @@
       state.nf[k] = { amt: k === 'vitaminD' ? '0mcg' : k === 'calcium' ? '40mg' : k === 'iron' ? '2mg' : '95mg', dv: k === 'vitaminD' ? '0%' : k === 'calcium' ? '3%' : k === 'iron' ? '10%' : '2%' };
     });
     seedSamplePacks();
+    state.iaRan = true;
     renderNFP(); renderProgress();
     wiseSay('Here\'s a fully filled example so you can see the finished shape. Edit anything on the panel, then save — or start your own.',
       [{ label: 'Save this example', icon: 'save', action: 'goto:save', primary: true }, { label: 'Start fresh', icon: 'restart_alt', action: 'restart' }]);
@@ -2334,6 +2838,7 @@
     if (img) state.image = img;
     state.errors = {};
     seedSamplePacks();
+    state.iaRan = true;
     /* Deep-link ?compare=1 — open the side-by-side matrix of every format
        (base product + each pack) for screenshots / portfolio review. */
     if (params.get('compare') === '1') {
@@ -2392,6 +2897,8 @@
       packs: [], activePack: 0, view: 'product',
       category: '', ingredients: '', allergens: [], contains: '', upc: '',
       nf: blankNf(), errors: {}, done: {}, skipped: {}, awaiting: null, saved: false,
+      iaRan: false, iaTick: 0, iaConfirm: {},
+      iaOpen: { list: true, parsed: true, codes: true, nutrients: true, scout: true },
     });
     messagesEl.innerHTML = '';
     if (welcomeEl) { welcomeEl.classList.remove('sc-hidden'); welcomeEl.style.display = ''; }
@@ -2505,12 +3012,9 @@
     fileInput = $('ap-file');
     if (!messagesEl || !nfpBody || !progressEl) return;
 
-    /* Width for this module is driven only by the ⋯-menu width changer, so opt
-       it out of the shared drag-to-resize splitter (js/pane-resize.js). This
-       also fixes collapsing: a leftover dragged/pinned width was overriding the
-       collapsed rail — clear any stored/inline width so the rail can shrink. */
-    progressEl.setAttribute('data-pr-lock', '');
-    try { window.WisePaneResize && window.WisePaneResize.release(progressEl); } catch (_) {}
+    /* Rail lock only — expanded progress stays in the shared splitter so the
+       Product Details right edge can be grabbed. */
+    syncProgressResizeLock();
 
     // Welcome chips. The gold "What can I ask?" chip is hidden for now; the
     // below-input gold link still opens the catalog panel.
@@ -2558,7 +3062,7 @@
       const ed = e.target.closest('[data-field]');
       if (!ed) return;
       const path = ed.dataset.field;
-      const val = ed.textContent.trim();
+      const val = (ed.matches('textarea, input:not([data-nfp-upc-cell])') ? ed.value : ed.textContent).trim();
       const ph = ed.dataset.ph || '';
       if (val === ph) return; // untouched placeholder
       const current = getPath(path);
@@ -2574,6 +3078,13 @@
     /* Segmented UPC entry (product + pack) — one digit per box, auto-advancing
        to the next box and auto-committing once all 12 are filled. */
     nfpBody.addEventListener('input', (e) => {
+      const ing = e.target.closest('textarea[data-field="ingredients"]');
+      if (ing) {
+        sizeIngredEdit(ing);
+        const btn = nfpBody.querySelector('.nfp-ia-analyze');
+        if (btn) btn.disabled = !ing.value.trim();
+        return;
+      }
       const cell = e.target.closest('[data-nfp-upc-cell]');
       if (!cell) return;
       handleUpcCellInput(cell);
@@ -2607,7 +3118,11 @@
       }
       const ed = e.target.closest('[data-field]');
       if (!ed) return;
-      if (e.key === 'Enter') { e.preventDefault(); ed.blur(); }
+      if (e.key === 'Enter') {
+        if (ed.matches('textarea')) return;
+        e.preventDefault();
+        ed.blur();
+      }
     });
     nfpBody.addEventListener('focusin', (e) => {
       const ed = e.target.closest('.nfp-edit-empty[data-field]');
@@ -2687,25 +3202,42 @@
     }
     widthBtn?.addEventListener('click', () => { widthTier = (widthTier + 1) % 4; syncWidth(); });
 
-    // NFP width toggle — single pane ↔ double pane (photo column on the right).
+    // Product Details width — the canonical four-tier cycle (single → double →
+    // triple → fill), identical to every other .panel-width-toggle-btn. Fill is
+    // the default (right-of-chat rule). The old header control that flipped the
+    // internal two-pane photo layout now lives in the ⋯ menu.
+    let nfpWidthTier = 3;
     const nfpWidthBtn = $('nfp-width');
-    nfpWidthBtn?.addEventListener('click', () => {
-      state.nfpWide = !state.nfpWide;
+    function applyNfpWidth() {
       const panel = $('nfp-panel');
-      if (panel) panel.classList.toggle('nfp-wide', state.nfpWide);
-      const ic = nfpWidthBtn.querySelector('.material-symbols-outlined');
-      if (ic) ic.textContent = state.nfpWide ? 'width_wide' : 'width_normal';
-      nfpWidthBtn.classList.toggle('is-on', state.nfpWide);
-      nfpWidthBtn.setAttribute('aria-pressed', state.nfpWide ? 'true' : 'false');
-      nfpWidthBtn.title = state.nfpWide ? 'Back to single pane' : 'Widen to two panes';
-      renderNFP();
+      const W = window.WPaneWidth;
+      if (panel) {
+        try { window.WisePaneResize && window.WisePaneResize.release && window.WisePaneResize.release([panel]); } catch (_) {}
+        if (W) W.applyClasses(panel, nfpWidthTier, 'panel');
+        else {
+          panel.classList.toggle('panel-wide', nfpWidthTier >= 1);
+          panel.classList.toggle('panel-triple', nfpWidthTier >= 2);
+          panel.classList.toggle('panel-fill', nfpWidthTier >= 3);
+        }
+      }
+      if (W) W.syncButton(nfpWidthBtn, nfpWidthTier);
+      else if (nfpWidthBtn) {
+        const ic = nfpWidthBtn.querySelector('.material-symbols-outlined');
+        if (ic) ic.textContent = ['width_normal', 'width_wide', 'width_full', 'width_full'][nfpWidthTier];
+        nfpWidthBtn.classList.toggle('is-on', nfpWidthTier >= 1);
+        nfpWidthBtn.setAttribute('aria-pressed', nfpWidthTier >= 1 ? 'true' : 'false');
+        nfpWidthBtn.title = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to reset'][nfpWidthTier];
+      }
+    }
+    nfpWidthBtn?.addEventListener('click', () => {
+      const W = window.WPaneWidth;
+      nfpWidthTier = W ? W.next(nfpWidthTier) : (nfpWidthTier + 1) % 4;
+      applyNfpWidth();
     });
+    applyNfpWidth();
 
-    // "Compare formats side by side" toggle — injected into the Product Details
-    // ⋯ menu that sticky-modules.js builds for this module (the same menu that
-    // hosts Share / Copy link / Export). We watch for that menu to appear (it's
-    // created asynchronously) and add our row once.
-    installCompareMenuItem();
+    wireNfpModuleMenu();
+    installNfpLayoutMenuItems();
 
     // Save button
     $('nfp-save-btn')?.addEventListener('click', doSave);
@@ -2934,7 +3466,119 @@
       case 'pick-pack': { const i = Number(arg); if (!isNaN(i)) { state.view = 'pack'; state.activePack = i; renderNFP(); } break; }
       case 'upload-pack': { const i = Number(arg); if (!isNaN(i)) { state.view = 'pack'; state.activePack = i; renderNFP(); openPhotoModal(i); } break; }
       case 'pack-upc-edit': { const i = Number(arg); if (!isNaN(i)) { state.view = 'pack'; state.activePack = i; } openPicker('packUpc'); break; }
+      case 'ia-toggle': toggleIaSection(arg); break;
+      case 'ia-analyze': runIngredientAnalysis(true); break;
+      case 'ia-confirm': confirmIaRow(arg); break;
+      case 'ia-confirm-all': confirmAllIaRows(); break;
+      case 'ia-review': reviewIaMappings(); break;
       default: break;
+    }
+  }
+
+  function toggleIaSection(id) {
+    if (!id || !state.iaOpen.hasOwnProperty(id)) return;
+    state.iaOpen[id] = !state.iaOpen[id];
+    const sec = nfpBody && nfpBody.querySelector(`[data-ia-sec="${id}"]`);
+    if (!sec) return;
+    const open = !!state.iaOpen[id];
+    sec.classList.toggle('is-collapsed', !open);
+    const head = sec.querySelector('.nfp-ia-head');
+    if (head) head.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  function sizeIngredEdit(el) {
+    const ta = el || (nfpBody && nfpBody.querySelector('textarea.nfp-ingred-edit'));
+    if (!ta) return;
+    ta.style.height = '0px';
+    ta.style.height = ta.scrollHeight + 'px';
+  }
+
+  function replaceIaPanel() {
+    const host = nfpBody && nfpBody.querySelector('.nfp-ia');
+    if (!host) { renderNFP(); return; }
+    const wrap = document.createElement('div');
+    wrap.innerHTML = ingredientsHTML();
+    const next = wrap.firstElementChild;
+    if (next) host.replaceWith(next);
+    requestAnimationFrame(() => { sizeIngredEdit(); syncIngredColHeight(); });
+  }
+
+  function flushIngredientsFromPanel() {
+    const ed = nfpBody && nfpBody.querySelector('[data-field="ingredients"]');
+    if (!ed) return;
+    const val = (ed.matches('textarea, input') ? ed.value : ed.textContent).trim();
+    if (val === (ed.dataset.ph || '')) return;
+    if (val !== state.ingredients) {
+      state.ingredients = val;
+      delete state.errors.ingredients;
+    }
+  }
+
+  function runIngredientAnalysis(fromUser) {
+    flushIngredientsFromPanel();
+    if (!state.ingredients) {
+      if (fromUser) {
+        addUser('Analyze the ingredients.');
+        wiseSay('There isn\'t an ingredient list yet. Paste or type one in the <strong>Ingredient List</strong> panel, then hit Analyze.');
+      }
+      return;
+    }
+    state.iaRan = true;
+    state.iaTick += 1;
+    state.iaOpen.parsed = true;
+    state.iaOpen.codes = true;
+    state.iaOpen.nutrients = true;
+    state.iaOpen.scout = true;
+    replaceIaPanel();
+    if (fromUser) {
+      const tree = parseIngredientTree(state.ingredients);
+      const flat = flattenParsed(tree);
+      const ok = flat.filter((r) => iaMatchOf(r) === 'ok').length;
+      addUser('Analyze the ingredients.');
+      wiseSay(`Re-analyzed the list — <strong>${flat.length}</strong> ingredients parsed, <strong>${ok}</strong> matched. Codes, nutrients and Wise Code AI results updated in the ingredients column.`,
+        [
+          { label: 'Review mappings', icon: 'rule', action: 'ia-review' },
+          { label: 'Edit ingredients', icon: 'science', action: 'field:ingredients' },
+          { label: 'Save to Portfolio', icon: 'save', action: 'goto:save', primary: true },
+        ]);
+    }
+  }
+
+  function confirmIaRow(mapped) {
+    if (!mapped) return;
+    state.iaConfirm[mapped] = true;
+    replaceIaPanel();
+    addUser(`Confirm the ${mapped} mapping.`);
+    wiseSay(`Confirmed <strong>${esc(mapped)}</strong> as matched.`);
+  }
+
+  function confirmAllIaRows() {
+    flattenParsed(parseIngredientTree(state.ingredients)).forEach((r) => {
+      if (iaMatchOf(r) === 'ok') state.iaConfirm[r.mapped] = true;
+    });
+    replaceIaPanel();
+    addUser('Confirm matched ingredients.');
+    wiseSay('Confirmed every currently matched mapping.');
+  }
+
+  function reviewIaMappings() {
+    state.iaOpen.parsed = true;
+    const sec = nfpBody && nfpBody.querySelector('[data-ia-sec="parsed"]');
+    if (sec) {
+      sec.classList.remove('is-collapsed');
+      const head = sec.querySelector('.nfp-ia-head');
+      if (head) head.setAttribute('aria-expanded', 'true');
+      const first = sec.querySelector('.nfp-ia-parsed-row[data-ia-match="bad"], .nfp-ia-parsed-row[data-ia-match="part"]');
+      const col = first && first.closest('.nfp-sp-ingred');
+      if (first && col) {
+        const cr = col.getBoundingClientRect();
+        const fr = first.getBoundingClientRect();
+        const next = col.scrollTop + (fr.top - cr.top) - 12;
+        col.scrollTo({
+          top: Math.max(0, next),
+          behavior: prefersReducedMotion ? 'auto' : 'smooth',
+        });
+      }
     }
   }
 

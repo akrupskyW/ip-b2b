@@ -1087,6 +1087,16 @@ function setupMenuRail(navEl) {
     const v = localStorage.getItem(MENU_RAIL_STORE_KEY);
     if (v !== null) railed = v === '1';
   } catch (_) {}
+  /* Reports (and any page that opts into a collapsed rail on every visit)
+     must not honor a stored "expanded" preference here — doing so expands
+     the rail and then collapseNavRail() snaps it shut after first paint,
+     which replays module entrance animations and reads as a blink. */
+  if (document.body && (
+    document.body.dataset.navId === 'reports' ||
+    document.body.hasAttribute('data-default-nav-collapsed')
+  )) {
+    railed = true;
+  }
   apply(railed);
   refreshToggleSkin();
 

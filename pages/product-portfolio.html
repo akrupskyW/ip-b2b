@@ -286,13 +286,13 @@
     .topbar-profile.has-dot::after {
       content: '';
       position: absolute;
-      top: -1px;
-      right: -1px;
-      width: 9px;
-      height: 9px;
+      top: 1px;
+      right: 1px;
+      width: 6px;
+      height: 6px;
+      box-sizing: content-box;
       border-radius: 50%;
       background: var(--sec-red, #DC3038);
-      border: 2px solid var(--surface);
     }
     .topbar-profile.has-dot.is-read::after { display: none; }
     /* Appearance — crossword popover trigger, docked left of the profile avatar. */
@@ -4869,7 +4869,7 @@
     .sc-avatar-you img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
     .sc-line-wiseai strong { color: var(--primary-ink, var(--primary)); font-weight: 700; }
 
-    .sc-line-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 1px; }
+    .sc-line-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 2px; line-height: 1.2; }
     .sc-line-time { font-size: 0.625rem; font-weight: 500; letter-spacing: 0.02em;
       cursor: pointer; user-select: none; text-decoration: none;
       color: var(--primary-ink, var(--primary)); transition: color .14s ease; }
@@ -4880,11 +4880,11 @@
     .sc-trust-chip {
       display: inline-flex; align-items: center; gap: 4px;
       font-size: 0.625rem; font-weight: 600; letter-spacing: 0.01em;
-      /* Same light blue as the streaming-trace glob / step keys. */
-      color: color-mix(in srgb, var(--primary, #25507C) 46%, #ffffff);
+      /* Same muted grey as the copy / thumbs / more icons on the left of this row. */
+      color: color-mix(in srgb, var(--text-subtle) 62%, transparent);
     }
     .sc-trust-chip .material-symbols-outlined { font-size: 12px !important; }
-    html.dark .sc-trust-chip { color: #93B2DC; }
+    html.dark .sc-trust-chip { color: color-mix(in srgb, var(--text-subtle) 70%, transparent); }
     /* WISEcodeAI answer meta — the action icons (copy / thumbs / more) hug the
        far LEFT of the row while the grounding source chip floats to the far RIGHT. */
     .sc-line-wiseai .sc-line-meta > .sc-fb-wrap,
@@ -8800,7 +8800,7 @@
               <span class="sc-switch sc-switch--pink" aria-hidden="true"></span>
             </button>
             <!-- Standard app-wide rows — Compact spacing, Brand AI text,
-                 Background animation (+ opacity) and Response streaming
+                 Background animation (+ opacity, angle, scale) and Response streaming
                  (+ detail). Markup mirrors the shared module template; behavior
                  is wired by wireStandardChatMenu() from js/wiseai-chat.js so
                  every chat module runs the exact same code and follows the one
@@ -8812,6 +8812,16 @@
               <span class="sc-bganim-detail-label">Opacity</span>
               <input type="range" class="sc-bganim-opacity" min="10" max="100" step="5" value="20" aria-label="Background animation opacity">
               <span class="sc-bganim-opacity-val">20%</span>
+            </div>
+            <div class="sc-bganim-detail sc-bganim-angle">
+              <span class="sc-bganim-detail-label">Angle</span>
+              <input type="range" class="sc-bganim-angle-range" min="-90" max="90" step="1" value="10" aria-label="Helix angle">
+              <span class="sc-bganim-angle-val">10°</span>
+            </div>
+            <div class="sc-bganim-detail sc-bganim-scale">
+              <span class="sc-bganim-detail-label">Scale</span>
+              <input type="range" class="sc-bganim-scale-range" min="100" max="250" step="5" value="100" aria-label="Helix scale">
+              <span class="sc-bganim-scale-val">100%</span>
             </div>
             <div class="sc-bganim-playback">
               <span class="sc-bganim-playback-label">Playback</span>

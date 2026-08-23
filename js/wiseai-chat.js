@@ -1660,17 +1660,21 @@ export function injectChatExtras() {
     html.full-bleed.fb-chat-tint.chat-tint .sc-bganim-live #welcome-screen,
     html.full-bleed.fb-chat-tint.chat-tint .sc-orbit-live #welcome-screen { background: transparent !important; }
 
-    /* Opacity control that sits just under the "Background animation" toggle. Mirrors
-       the streaming-detail sub-row; uses the admin pink accent to match the toggle. */
+    /* Opacity / angle / scale controls that sit just under the "Background
+       animation" toggle. Mirror the streaming-detail sub-row; admin pink accent
+       matches the toggle. The rows share .sc-bganim-detail so they disable
+       together. Angle + scale are helix-only (hidden while Orbit is selected). */
     .sc-bganim-detail { display: flex; align-items: center; gap: 10px;
       margin: 2px 12px 8px 42px; transition: opacity .15s ease; }
     .sc-bganim-detail-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
-      text-transform: uppercase; color: var(--text-muted); white-space: nowrap; }
-    .sc-bganim-opacity { flex: 1 1 auto; min-width: 54px; height: 4px; cursor: pointer;
+      text-transform: uppercase; color: var(--text-muted); white-space: nowrap;
+      min-width: 58px; }
+    .sc-bganim-opacity, .sc-bganim-angle-range, .sc-bganim-scale-range { flex: 1 1 auto; min-width: 54px; height: 4px; cursor: pointer;
       accent-color: rgb(219, 39, 119); }
-    .sc-bganim-opacity-val { font-size: 11px; font-weight: 700; color: var(--text-muted);
-      width: 34px; text-align: right; font-variant-numeric: tabular-nums; }
+    .sc-bganim-opacity-val, .sc-bganim-angle-val, .sc-bganim-scale-val { font-size: 11px; font-weight: 700; color: var(--text-muted);
+      width: 38px; text-align: right; font-variant-numeric: tabular-nums; }
     .sc-bganim-detail.is-disabled { opacity: .45; pointer-events: none; }
+    .sc-bganim-detail[hidden] { display: none !important; }
 
     /* Playback control that sits just below the opacity row — a subtle (reduced
        opacity) pill that freezes / resumes the running field. Dims + locks along
@@ -1698,9 +1702,9 @@ export function injectChatExtras() {
        carries the owl instead. */
     .sc-bganim-live .ws-logo-wrap { display: none; }
 
-    /* "Style" segment (Helix / Ten / Orbit) — the second row under the Background
-       animation toggle that picks WHICH ambient field runs. Mirrors the streaming
-       "detail" segment; dims + locks with the toggle like the opacity row. */
+    /* "Style" segment (Helix / Ten / Orbit) — the row under Opacity / Angle /
+       Scale that picks WHICH ambient field runs. Mirrors the streaming "detail"
+       segment; dims + locks with the toggle like the opacity / angle / scale rows. */
     .sc-bganim-style { display: flex; align-items: center; gap: 10px;
       margin: -2px 12px 8px 42px; transition: opacity .15s ease; }
     .sc-bganim-style-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
@@ -1770,7 +1774,7 @@ export function injectChatExtras() {
     .sc-menu-grouped .sc-switch { width: 28px; height: 16px; }
     .sc-menu-grouped .sc-switch::after { width: 12px; height: 12px; }
     .sc-menu-grouped .sc-mcp-item.is-on .sc-switch::after { transform: translateX(12px); }
-    /* Sub-control rows (opacity / style / playback / streaming detail / strip side)
+    /* Sub-control rows (opacity / angle / scale / style / playback / streaming detail / strip side)
        lose the deep 42px indent — inside a ~206px column they align to the card. */
     .sc-menu-grouped .sc-bganim-detail { margin: 2px 12px 6px 14px; }
     .sc-menu-grouped .sc-bganim-style { margin: 0 12px 6px 14px; }
@@ -1933,6 +1937,10 @@ export function injectChatExtras() {
      host          {el}   gets `sc-bganim-live` while the field is live
      getBody       {fn}   () => element the canvas mounts into (chat body)
      getOpacity    {fn}   () => 0.1–1 field opacity (the shared slider)
+     getAngle      {fn}   () => helix axis tilt in degrees (−90…90; default 10).
+                          Positive tilts the strand down toward the right.
+     getScale      {fn}   () => helix coil width multiplier (1–2.5; default 1).
+                          1 is the original narrow strand; 2.5 is even wider.
      reducedMotion {bool} paint a single still frame instead of animating
      isOn          {fn}   () => whether the shared preference is ON
      isPaused      {fn}   () => whether the (shared) playback is paused —
@@ -1946,6 +1954,18 @@ export function createHelixBgAnim(cfg) {
   const host = cfg.host;
   const getBody = cfg.getBody;
   const getOpacity = cfg.getOpacity;
+  const HELIX_ANGLE_DEFAULT = 10;
+  const getAngle = () => {
+    const raw = typeof cfg.getAngle === 'function' ? cfg.getAngle() : HELIX_ANGLE_DEFAULT;
+    const n = Number(raw);
+    return Number.isFinite(n) ? Math.max(-90, Math.min(90, n)) : HELIX_ANGLE_DEFAULT;
+  };
+  const HELIX_SCALE_DEFAULT = 1;
+  const getScale = () => {
+    const raw = typeof cfg.getScale === 'function' ? cfg.getScale() : HELIX_SCALE_DEFAULT;
+    const n = Number(raw);
+    return Number.isFinite(n) ? Math.max(1, Math.min(2.5, n)) : HELIX_SCALE_DEFAULT;
+  };
   const reducedMotion = !!cfg.reducedMotion;
   const isOn = typeof cfg.isOn === 'function' ? cfg.isOn : () => true;
   const isPaused = typeof cfg.isPaused === 'function' ? cfg.isPaused : () => false;
@@ -2366,10 +2386,11 @@ export function createHelixBgAnim(cfg) {
     return (i % 3) !== 2;
   }
 
-  /* Evenly spaced indices in 0..total-1. Used by the "Ten" density so the
-     handful of products (and the leftover owl bugs) sit along the whole strand
-     instead of clustering on the first rungs. */
-  function pickEven(n, total) {
+  /* Cluster n product slots in a compact mid-strand run (~1.45 slots per
+     food) so the photos read as a group. Sized by product count, not helix
+     length — otherwise a long strand spreads them across the visible frame.
+     The run is centred to stay off the faded tips. */
+  function pickClustered(n, total) {
     const out = [];
     if (n <= 0 || total <= 0) return out;
     if (n >= total) {
@@ -2377,7 +2398,9 @@ export function createHelixBgAnim(cfg) {
       return out;
     }
     if (n === 1) return [Math.floor(total / 2)];
-    for (let k = 0; k < n; k++) out.push(Math.round(k * (total - 1) / (n - 1)));
+    const span = Math.min(total, Math.max(n, Math.round(n * 1.45)));
+    const start = Math.max(0, Math.round((total - span) / 2));
+    for (let k = 0; k < n; k++) out.push(start + Math.round(k * (span - 1) / (n - 1)));
     return out;
   }
 
@@ -2771,20 +2794,23 @@ export function createHelixBgAnim(cfg) {
     const [r, g, b] = rgb;
     const cx = w / 2, cy = h * 0.36;                           // ride higher in the chat body
     const intro = 1 - Math.pow(1 - Math.min(1, t / 3.2), 3);   // gentle grow-in over ~3.2s
-    /* Angled axis that slowly sways; base tilt is POSITIVE so the strand rides high
-       on the left and drops toward the right. */
-    const theta = 0.17 + 0.06 * Math.sin(t * 0.045);
+    /* Angled axis that slowly sways around the member's chosen tilt (degrees from
+       the shared Angle slider; default 10° so the strand rides high on the left
+       and drops toward the right). */
+    const theta = (getAngle() * Math.PI / 180) + 0.06 * Math.sin(t * 0.045);
     const ax = Math.cos(theta), ay = Math.sin(theta);          // along-axis unit vector
     const px = -Math.sin(theta), py = Math.cos(theta);         // perpendicular unit vector
     const L = Math.hypot(w, h) * 1.2;                          // cover the tilted diagonal
     /* Depth "breathes" on an ultra-slow, irregular cycle (~2–3 min): the helix opens
        and closes its 3-D volume every once in a while, very very slowly. */
     const depth = 1 + 0.16 * Math.sin(t * 0.02) + 0.07 * Math.sin(t * 0.009 + 1.3);
-    const ampBase = Math.min(h * 0.26, 120) * depth;
+    /* Coil width: the original narrow strand (amp cap 120) times the shared
+       Scale slider (1 = current, up to 2.5 = even wider). */
+    const ampBase = Math.min(h * 0.26, 120) * depth * getScale();
     const dotSize = 34;                                        // base circle size (before depth + breath)
-    /* Ten-density foods start at the usual dot size and swell a bit larger so
-       they read among the full field of owl-bug circles. */
-    const prodSize = few ? (dotSize + 20 * grow) : dotSize;
+    /* Ten-density foods start at the usual dot size and swell past the owl-bug
+       field so the product photos read as the focus of the cluster. */
+    const prodSize = few ? (dotSize + 30 * grow) : dotSize;
     /* Expand ↔ contract as a slow wave travelling left→right along the strand. */
     const breathK = (Math.PI * 2 * 1.4) / L;                   // ~1.4 squeezes across the strand
     const breathSpeed = 0.11;                                  // how fast the wave crawls (very slow)
@@ -2859,7 +2885,7 @@ export function createHelixBgAnim(cfg) {
         if (B[i]) slots.push(B[i]);
       }
       const wantProd = Math.min(10, slots.length);
-      const prodAt = new Set(pickEven(wantProd, slots.length));
+      const prodAt = new Set(pickClustered(wantProd, slots.length));
       let pi = 0;
       for (let i = 0; i < slots.length; i++) {
         const s = slots[i];
@@ -2889,12 +2915,12 @@ export function createHelixBgAnim(cfg) {
       const d = (n.z + 1) * 0.5;                               // 0 (far) → 1 (near)
       const size = prodSize * (0.74 + 0.54 * d) * breathe;     // near circles are larger
       const rad = size / 2;
-      /* WISEcode owl bug is 20% larger than a product circle at the same depth.
-         In Ten density the owl stays at the original "dot" size so the ten
-         foods can swell a bit past the logo-bug field. */
+      /* Full-density owl bugs sit 20% larger than a product at the same depth.
+         In Ten density the owl shrinks (~18% under the base dot) so the clustered
+         foods can swell past the logo-bug field. */
       if (n.owl) {
-        const owlSize = (few ? dotSize : prodSize) * (0.74 + 0.54 * d) * breathe;
-        drawOwl(n.x, n.y, owlSize * 1.2, n.alpha, n.alpha);
+        const owlSize = (few ? dotSize * 0.82 : prodSize) * (0.74 + 0.54 * d) * breathe;
+        drawOwl(n.x, n.y, owlSize * (few ? 1 : 1.2), n.alpha, n.alpha);
         continue;
       }
       if (!n.prod) continue;
@@ -2904,8 +2930,8 @@ export function createHelixBgAnim(cfg) {
            slot never goes empty for a frame. The product paints on the next
            frame once the image arrives. */
         if (few) {
-          const owlSize = dotSize * (0.74 + 0.54 * d) * breathe;
-          drawOwl(n.x, n.y, owlSize * 1.2, n.alpha, n.alpha);
+          const owlSize = dotSize * 0.82 * (0.74 + 0.54 * d) * breathe;
+          drawOwl(n.x, n.y, owlSize, n.alpha, n.alpha);
         }
         continue;
       }
@@ -3063,9 +3089,10 @@ export function createOrbitBgAnim(cfg) {
    empty space or a left-column row, which made every switch look dead.
 
    Rows are bucketed by their stable data-sc id; sub-control blocks (the opacity
-   slider, style/playback segments, streaming detail, strip side) carry no data-sc
-   and simply follow whichever toggle preceded them, so they land in that toggle's
-   group. Unknown rows fall through to a "More" group so nothing is ever dropped.
+   and angle sliders, style/playback segments, streaming detail, strip side) carry
+   no data-sc and simply follow whichever toggle preceded them, so they land in
+   that toggle's group. Unknown rows fall through to a "More" group so nothing is
+   ever dropped.
    Idempotent — a second call is a no-op. */
 const CHAT_MENU_GROUP_ORDER = ['navigate', 'conversation', 'data', 'display', 'background', 'motion', 'more', 'danger'];
 const CHAT_MENU_COL1 = { navigate: 1, conversation: 1, data: 1, display: 1 };
@@ -4298,6 +4325,26 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   let bgAnimOpacity = 0.2;
   let bgAnimOpacityUserSet = false;
   try { const s = parseInt(localStorage.getItem(BGANIM_OPACITY_KEY), 10); if (!isNaN(s)) { bgAnimOpacity = Math.max(0.1, Math.min(1, s / 100)); bgAnimOpacityUserSet = true; } } catch (_) {}
+  /* Axis tilt of the helix in degrees (−90…90). Shared APP-WIDE (one key,
+     broadcast on wise:chat-bg-anim-angle). Default 10° matches the original
+     hardcoded ~0.17 rad left-high / right-low lean. */
+  const BGANIM_ANGLE_KEY = 'wise:chat-bg-anim-angle';
+  const BGANIM_ANGLE_DEFAULT = 10;
+  let bgAnimAngle = BGANIM_ANGLE_DEFAULT;
+  try {
+    const s = parseInt(localStorage.getItem(BGANIM_ANGLE_KEY), 10);
+    if (!isNaN(s)) bgAnimAngle = Math.max(-90, Math.min(90, s));
+  } catch (_) {}
+  /* Coil width of the helix (100–250%). Shared APP-WIDE (one key, broadcast
+     on wise:chat-bg-anim-scale). 100% is the original narrow strand; 250% is
+     even wider. */
+  const BGANIM_SCALE_KEY = 'wise:chat-bg-anim-scale';
+  const BGANIM_SCALE_DEFAULT = 100;
+  let bgAnimScalePct = BGANIM_SCALE_DEFAULT;
+  try {
+    const s = parseInt(localStorage.getItem(BGANIM_SCALE_KEY), 10);
+    if (!isNaN(s)) bgAnimScalePct = Math.max(100, Math.min(250, s));
+  } catch (_) {}
   /* Default background-animation opacity: 20% on every layout. */
   function paneDefaultBgAnimOpacity() {
     return 0.20;
@@ -4422,6 +4469,16 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
             <span class="sc-bganim-detail-label">Opacity</span>
             <input type="range" class="sc-bganim-opacity" min="10" max="100" step="5" value="20" aria-label="Background animation opacity">
             <span class="sc-bganim-opacity-val">20%</span>
+          </div>
+          <div class="sc-bganim-detail sc-bganim-angle">
+            <span class="sc-bganim-detail-label">Angle</span>
+            <input type="range" class="sc-bganim-angle-range" min="-90" max="90" step="1" value="10" aria-label="Helix angle">
+            <span class="sc-bganim-angle-val">10°</span>
+          </div>
+          <div class="sc-bganim-detail sc-bganim-scale">
+            <span class="sc-bganim-detail-label">Scale</span>
+            <input type="range" class="sc-bganim-scale-range" min="100" max="250" step="5" value="100" aria-label="Helix scale">
+            <span class="sc-bganim-scale-val">100%</span>
           </div>
           <div class="sc-bganim-style">
             <span class="sc-bganim-style-label">Style</span>
@@ -6575,6 +6632,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     host: rootEl,
     getBody: () => rootEl.querySelector('.sc-body'),
     getOpacity: effectiveBgAnimOpacity,
+    getAngle: () => bgAnimAngle,
+    getScale: () => bgAnimScalePct / 100,
     reducedMotion: prefersReducedMotion,
     isOn: () => bgAnimOn,
     isPaused: () => bgAnimPaused,
@@ -6625,9 +6684,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       item.classList.toggle('is-on', bgAnimOn);
       item.setAttribute('aria-checked', bgAnimOn ? 'true' : 'false');
     }
-    /* The opacity slider (below the toggle) dims + locks while the animation is off. */
-    const detail = menuSel('.sc-bganim-detail');
-    if (detail) detail.classList.toggle('is-disabled', !bgAnimOn);
+    /* The opacity / angle / scale sliders (below the toggle) dim + lock while the animation is off. */
+    menuSelAll('.sc-bganim-detail').forEach((el) => el.classList.toggle('is-disabled', !bgAnimOn));
     /* The style segment (Helix / Ten / Orbit) reflects the shared choice and stays
        ALWAYS interactive — even when the field is off — so it reads as a real,
        discoverable choice (picking a style turns the animation on, below). */
@@ -6638,11 +6696,25 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       btn.classList.toggle('is-on', on);
       btn.setAttribute('aria-checked', on ? 'true' : 'false');
     });
+    /* Angle + scale only apply to the DNA helix (Helix / Ten), not Orbit. */
+    const helixCtl = isHelixStyle(bgAnimStyle);
+    const angleRow = menuSel('.sc-bganim-angle');
+    if (angleRow) angleRow.hidden = !helixCtl;
+    const scaleRow = menuSel('.sc-bganim-scale');
+    if (scaleRow) scaleRow.hidden = !helixCtl;
     const pct = Math.round(effectiveBgAnimOpacity() * 100);
     const range = menuSel('.sc-bganim-opacity');
     if (range && document.activeElement !== range) range.value = String(pct);
     const val = menuSel('.sc-bganim-opacity-val');
     if (val) val.textContent = pct + '%';
+    const angleRange = menuSel('.sc-bganim-angle-range');
+    if (angleRange && document.activeElement !== angleRange) angleRange.value = String(bgAnimAngle);
+    const angleVal = menuSel('.sc-bganim-angle-val');
+    if (angleVal) angleVal.textContent = bgAnimAngle + '°';
+    const scaleRange = menuSel('.sc-bganim-scale-range');
+    if (scaleRange && document.activeElement !== scaleRange) scaleRange.value = String(bgAnimScalePct);
+    const scaleVal = menuSel('.sc-bganim-scale-val');
+    if (scaleVal) scaleVal.textContent = bgAnimScalePct + '%';
     /* The Play/Pause pill (below opacity) — dims + locks with the toggle, and its
        icon/label + aria reflect whether the field is currently frozen. */
     const playback = menuSel('.sc-bganim-playback');
@@ -6686,6 +6758,62 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     bgAnimOpacityUserSet = true;                    // mirror the sibling chat's explicit choice
     syncBgAnimMenu();
     if (prefersReducedMotion && bgAnimOn) bgAnim.start();
+  });
+  /* Angle slider — tilt the whole helix. Persist + broadcast so every mounted
+     chat's slider (and its live canvas) follows the one shared setting. A
+     running field picks the new tilt on the next frame; a paused / reduced-
+     motion still frame is repainted immediately. */
+  const bgAngleRange = rootEl.querySelector('.sc-bganim-angle-range');
+  if (bgAngleRange) {
+    bgAngleRange.addEventListener('input', () => {
+      const deg = Math.max(-90, Math.min(90, parseInt(bgAngleRange.value, 10) || 0));
+      bgAnimAngle = deg;
+      try { localStorage.setItem(BGANIM_ANGLE_KEY, String(deg)); } catch (_) {}
+      try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-angle', { detail: { angle: bgAnimAngle } })); } catch (_) {}
+      const aval = menuSel('.sc-bganim-angle-val');
+      if (aval) aval.textContent = deg + '°';
+      if (bgAnimOn) {
+        if (prefersReducedMotion) bgAnim.start();
+        else bgAnim.redraw();
+      }
+    });
+  }
+  document.addEventListener('wise:chat-bg-anim-angle', (e) => {
+    const v = e && e.detail && e.detail.angle;
+    if (typeof v !== 'number') return;
+    bgAnimAngle = Math.max(-90, Math.min(90, v));
+    syncBgAnimMenu();
+    if (bgAnimOn) {
+      if (prefersReducedMotion) bgAnim.start();
+      else bgAnim.redraw();
+    }
+  });
+  /* Scale slider — widen the helix coils from the original narrow strand (100%)
+     up to 250%. Persist + broadcast so every mounted chat follows. */
+  const bgScaleRange = rootEl.querySelector('.sc-bganim-scale-range');
+  if (bgScaleRange) {
+    bgScaleRange.addEventListener('input', () => {
+      const pct = Math.max(100, Math.min(250, parseInt(bgScaleRange.value, 10) || 100));
+      bgAnimScalePct = pct;
+      try { localStorage.setItem(BGANIM_SCALE_KEY, String(pct)); } catch (_) {}
+      try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-scale', { detail: { scale: bgAnimScalePct / 100 } })); } catch (_) {}
+      const sval = menuSel('.sc-bganim-scale-val');
+      if (sval) sval.textContent = pct + '%';
+      if (bgAnimOn) {
+        if (prefersReducedMotion) bgAnim.start();
+        else bgAnim.redraw();
+      }
+    });
+  }
+  document.addEventListener('wise:chat-bg-anim-scale', (e) => {
+    const v = e && e.detail && e.detail.scale;
+    if (typeof v !== 'number') return;
+    bgAnimScalePct = Math.max(100, Math.min(250, Math.round(v * 100)));
+    syncBgAnimMenu();
+    if (bgAnimOn) {
+      if (prefersReducedMotion) bgAnim.start();
+      else bgAnim.redraw();
+    }
   });
   /* Play/Pause — freeze or resume the running field. Persist + broadcast so every
      mounted chat's control (and its live canvas) follows the one shared setting. */
@@ -8681,8 +8809,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
 /* Standard three-dot menu wiring for HAND-ROLLED chat surfaces        */
 /* ------------------------------------------------------------------ */
 /* Every WISE chat module offers the SAME app-wide rows in its three-dot
-   menu — Compact spacing, Brand AI text, Background animation (+ opacity)
-   and Response streaming (+ detail). The shared mountWISEcodeAIChat()
+   menu — Compact spacing, Brand AI text, Background animation (+ opacity,
+   angle, scale) and Response streaming (+ detail). The shared mountWISEcodeAIChat()
    surface wires these internally; pages that still carry a hand-rolled
    inline chat (product comparison / portfolio, guiding-stars report,
    add/view product) call THIS to wire the exact same rows with the exact
@@ -8780,13 +8908,17 @@ export function wireStandardChatMenu(cfg = {}) {
   document.addEventListener('wise:chat-sheen', syncSheen);
   syncSheen();
 
-  /* ── Background animation (+ opacity) — ON by default, stored '0'
+  /* ── Background animation (+ opacity, angle, scale) — ON by default, stored '0'
      turns it off; opacity is user-set via the slider or falls back to the
-     20% default on every layout. The LIVE field mounts only when the page
-     provides cfg.bgAnim; either way the switch drives the one shared
+     20% default on every layout. Angle is the helix axis tilt in degrees
+     (default 10°). Scale is the helix coil width (100–250%; default 100%
+     is the original narrow strand). The LIVE field mounts only when the
+     page provides cfg.bgAnim; either way the switch drives the one shared
      app-wide preference. ── */
   const BGANIM_KEY = 'wise:chat-bg-anim';
   const BGANIM_OPACITY_KEY = 'wise:chat-bg-anim-opacity';
+  const BGANIM_ANGLE_KEY = 'wise:chat-bg-anim-angle';
+  const BGANIM_SCALE_KEY = 'wise:chat-bg-anim-scale';
   const BGANIM_PAUSED_KEY = 'wise:chat-bg-anim-paused';
   let bgOn = true;
   try { if (localStorage.getItem(BGANIM_KEY) === '0') bgOn = false; } catch (_) {}
@@ -8794,6 +8926,16 @@ export function wireStandardChatMenu(cfg = {}) {
   try {
     const s = parseInt(localStorage.getItem(BGANIM_OPACITY_KEY), 10);
     if (!isNaN(s)) { bgOpacity = Math.max(0.1, Math.min(1, s / 100)); bgUserSet = true; }
+  } catch (_) {}
+  let bgAngle = 10;
+  try {
+    const a = parseInt(localStorage.getItem(BGANIM_ANGLE_KEY), 10);
+    if (!isNaN(a)) bgAngle = Math.max(-90, Math.min(90, a));
+  } catch (_) {}
+  let bgScalePct = 100;
+  try {
+    const sc = parseInt(localStorage.getItem(BGANIM_SCALE_KEY), 10);
+    if (!isNaN(sc)) bgScalePct = Math.max(100, Math.min(250, sc));
   } catch (_) {}
   let bgPaused = false;
   try { if (localStorage.getItem(BGANIM_PAUSED_KEY) === '1') bgPaused = true; } catch (_) {}
@@ -8847,6 +8989,35 @@ export function wireStandardChatMenu(cfg = {}) {
         '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="orbit" role="radio" aria-checked="false" title="Owl orbit constellation" aria-label="Owl orbit constellation">Orbit</button>');
     }
   }
+  /* Inline chats copied the menu markup before the Angle / Scale rows existed;
+     inject them (right after Opacity) so every hand-rolled surface gains the
+     sliders too. */
+  if (!q('.sc-bganim-angle')) {
+    const opacityRow = q('.sc-bganim-detail:not(.sc-bganim-angle):not(.sc-bganim-scale)');
+    const styleRowNow = q('.sc-bganim-style');
+    const playbackNow = q('.sc-bganim-playback');
+    const angleHtml = '<div class="sc-bganim-detail sc-bganim-angle">'
+      + '<span class="sc-bganim-detail-label">Angle</span>'
+      + '<input type="range" class="sc-bganim-angle-range" min="-90" max="90" step="1" value="10" aria-label="Helix angle">'
+      + '<span class="sc-bganim-angle-val">10°</span>'
+      + '</div>';
+    if (opacityRow) opacityRow.insertAdjacentHTML('afterend', angleHtml);
+    else if (styleRowNow) styleRowNow.insertAdjacentHTML('beforebegin', angleHtml);
+    else if (playbackNow) playbackNow.insertAdjacentHTML('beforebegin', angleHtml);
+  }
+  if (!q('.sc-bganim-scale')) {
+    const angleRowNow = q('.sc-bganim-angle');
+    const styleRowForScale = q('.sc-bganim-style');
+    const playbackForScale = q('.sc-bganim-playback');
+    const scaleHtml = '<div class="sc-bganim-detail sc-bganim-scale">'
+      + '<span class="sc-bganim-detail-label">Scale</span>'
+      + '<input type="range" class="sc-bganim-scale-range" min="100" max="250" step="5" value="100" aria-label="Helix scale">'
+      + '<span class="sc-bganim-scale-val">100%</span>'
+      + '</div>';
+    if (angleRowNow) angleRowNow.insertAdjacentHTML('afterend', scaleHtml);
+    else if (styleRowForScale) styleRowForScale.insertAdjacentHTML('beforebegin', scaleHtml);
+    else if (playbackForScale) playbackForScale.insertAdjacentHTML('beforebegin', scaleHtml);
+  }
   const welcomeEl = cfg.bgAnim && cfg.bgAnim.welcomeEl;
   const welcomeVisible = () => !!(welcomeEl
     && !welcomeEl.classList.contains('ws-hidden')
@@ -8865,6 +9036,8 @@ export function wireStandardChatMenu(cfg = {}) {
         host: cfg.bgAnim.host,
         getBody: cfg.bgAnim.getBody,
         getOpacity: effOpacity,
+        getAngle: () => bgAngle,
+        getScale: () => bgScalePct / 100,
         reducedMotion,
         isOn: () => bgOn,
         isPaused: () => bgPaused,
@@ -8902,13 +9075,25 @@ export function wireStandardChatMenu(cfg = {}) {
   const bgItem = q('[data-sc="bg-anim"]');
   const syncBg = () => {
     setSwitch(bgItem, bgOn);
-    const detail = q('.sc-bganim-detail');
-    if (detail) detail.classList.toggle('is-disabled', !bgOn);
+    pop.querySelectorAll('.sc-bganim-detail').forEach((el) => el.classList.toggle('is-disabled', !bgOn));
     const pct = Math.round(effOpacity() * 100);
     const range = q('.sc-bganim-opacity');
     if (range && document.activeElement !== range) range.value = String(pct);
     const val = q('.sc-bganim-opacity-val');
     if (val) val.textContent = pct + '%';
+    const angleRange = q('.sc-bganim-angle-range');
+    if (angleRange && document.activeElement !== angleRange) angleRange.value = String(bgAngle);
+    const angleVal = q('.sc-bganim-angle-val');
+    if (angleVal) angleVal.textContent = bgAngle + '°';
+    const scaleRange = q('.sc-bganim-scale-range');
+    if (scaleRange && document.activeElement !== scaleRange) scaleRange.value = String(bgScalePct);
+    const scaleVal = q('.sc-bganim-scale-val');
+    if (scaleVal) scaleVal.textContent = bgScalePct + '%';
+    const helixCtl = isHelixStyle(bgStyle);
+    const angleRowEl = q('.sc-bganim-angle');
+    if (angleRowEl) angleRowEl.hidden = !helixCtl;
+    const scaleRowEl = q('.sc-bganim-scale');
+    if (scaleRowEl) scaleRowEl.hidden = !helixCtl;
     const styleRow = q('.sc-bganim-style');
     if (styleRow) styleRow.classList.remove('is-disabled');
     pop.querySelectorAll('[data-sc="bg-anim-style"]').forEach((btn) => {
@@ -8960,6 +9145,64 @@ export function wireStandardChatMenu(cfg = {}) {
     bgUserSet = true;
     syncBg();
     if (reducedMotion && bgOn) maybeRunBgAnim();
+  });
+  const bgAngleRange = q('.sc-bganim-angle-range');
+  if (bgAngleRange) bgAngleRange.addEventListener('input', () => {
+    const deg = Math.max(-90, Math.min(90, parseInt(bgAngleRange.value, 10) || 0));
+    bgAngle = deg;
+    try { localStorage.setItem(BGANIM_ANGLE_KEY, String(deg)); } catch (_) {}
+    try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-angle', { detail: { angle: bgAngle } })); } catch (_) {}
+    const aval = q('.sc-bganim-angle-val');
+    if (aval) aval.textContent = deg + '°';
+    if (bgOn) {
+      if (reducedMotion) maybeRunBgAnim();
+      else {
+        const e = bgEngines[bgEngineKey(bgStyle)];
+        if (e && e.redraw) e.redraw();
+      }
+    }
+  });
+  document.addEventListener('wise:chat-bg-anim-angle', (e) => {
+    const v = e && e.detail && e.detail.angle;
+    if (typeof v !== 'number') return;
+    bgAngle = Math.max(-90, Math.min(90, v));
+    syncBg();
+    if (bgOn) {
+      if (reducedMotion) maybeRunBgAnim();
+      else {
+        const eng = bgEngines[bgEngineKey(bgStyle)];
+        if (eng && eng.redraw) eng.redraw();
+      }
+    }
+  });
+  const bgScaleRange = q('.sc-bganim-scale-range');
+  if (bgScaleRange) bgScaleRange.addEventListener('input', () => {
+    const pct = Math.max(100, Math.min(250, parseInt(bgScaleRange.value, 10) || 100));
+    bgScalePct = pct;
+    try { localStorage.setItem(BGANIM_SCALE_KEY, String(pct)); } catch (_) {}
+    try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-scale', { detail: { scale: bgScalePct / 100 } })); } catch (_) {}
+    const sval = q('.sc-bganim-scale-val');
+    if (sval) sval.textContent = pct + '%';
+    if (bgOn) {
+      if (reducedMotion) maybeRunBgAnim();
+      else {
+        const e = bgEngines[bgEngineKey(bgStyle)];
+        if (e && e.redraw) e.redraw();
+      }
+    }
+  });
+  document.addEventListener('wise:chat-bg-anim-scale', (e) => {
+    const v = e && e.detail && e.detail.scale;
+    if (typeof v !== 'number') return;
+    bgScalePct = Math.max(100, Math.min(250, Math.round(v * 100)));
+    syncBg();
+    if (bgOn) {
+      if (reducedMotion) maybeRunBgAnim();
+      else {
+        const eng = bgEngines[bgEngineKey(bgStyle)];
+        if (eng && eng.redraw) eng.redraw();
+      }
+    }
   });
   const bgPlaybackBtn = q('[data-sc="bg-anim-playback"]');
   if (bgPlaybackBtn) bgPlaybackBtn.addEventListener('click', () => {
@@ -9162,9 +9405,10 @@ export function wireStandardChatMenu(cfg = {}) {
     }
   }
 
-  /* Reflow the (now fully assembled, incl. injected Style + History rows) flat
-     menu into the shared two-column group cards — run last so every dynamically
-     added row is bucketed. Moves existing nodes, so all wiring above stays live. */
+  /* Reflow the (now fully assembled, incl. injected Style + Angle + History
+     rows) flat menu into the shared two-column group cards — run last so every
+     dynamically added row is bucketed. Moves existing nodes, so all wiring
+     above stays live. */
   groupifyChatMenu(pop);
 
   pop.__wiseStdMenuWired = api;

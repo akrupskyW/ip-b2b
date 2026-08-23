@@ -171,7 +171,17 @@
   function growOf(el) { var g = parseFloat(getComputedStyle(el).flexGrow); return isNaN(g) ? 0 : g; }
   // Every module has a hard 300px floor. A pane may declare a LARGER min-width
   // (which we honour), but never a smaller one — MIN_W always wins.
-  function minOf(el) { var m = parseFloat(getComputedStyle(el).minWidth); return (!isNaN(m) && m > 0) ? Math.max(MIN_W, m) : MIN_W; }
+  function minOf(el) {
+    // data-pr-min lets a pane opt below the 300px floor (e.g. a progress
+    // drawer that must shrink so its left neighbour can grow freely).
+    var attr = el && el.getAttribute && el.getAttribute('data-pr-min');
+    if (attr != null && attr !== '') {
+      var a = parseFloat(attr);
+      if (!isNaN(a) && a > 0) return a;
+    }
+    var m = parseFloat(getComputedStyle(el).minWidth);
+    return (!isNaN(m) && m > 0) ? Math.max(MIN_W, m) : MIN_W;
+  }
   // We pin with !important so a pane's stylesheet rule (e.g. a `width` bound to a
   // CSS variable, or a `.panel-wide` class) can never out-specify a dragged size.
   function snap(el) {
@@ -230,7 +240,7 @@
   //   { mode:'split', left, right }  — divider between two panes
   //   { mode:'outerL', right }       — outer-left edge of the first pane
   //   { mode:'outerR', left }        — outer-right edge of the last pane
-  function specsFor(ps) {
+  function specsFor(ps, row) {
     var out = [], n = ps.length;
     if (n < 1) return out;
     var hasFlex = ps.some(function (p) { return growOf(p) > 0; });
@@ -243,6 +253,21 @@
     // absorb the change (otherwise dragging would open an empty gap).
     if (hasFlex && growOf(ps[0]) === 0 && !isLocked(ps[0])) out.push({ mode: 'outerL', right: ps[0] });
     if (n > 1 && hasFlex && growOf(ps[n - 1]) === 0 && !isLocked(ps[n - 1])) out.push({ mode: 'outerR', left: ps[n - 1] });
+    // Width-changer modules must stay draggable even when a neighbour is
+    // locked (collapsed progress rail) and the usual split seam is skipped.
+    // Offer an outer handle on any missing edge so drag-to-tier still works.
+    for (var j = 0; j < n; j++) {
+      var el = ps[j];
+      if (isLocked(el) || !widthBtnOf(el, row)) continue;
+      var hasR = false, hasL = false;
+      for (var k = 0; k < out.length; k++) {
+        var s = out[k];
+        if ((s.mode === 'split' && s.left === el) || (s.mode === 'outerR' && s.left === el)) hasR = true;
+        if ((s.mode === 'split' && s.right === el) || (s.mode === 'outerL' && s.right === el)) hasL = true;
+      }
+      if (!hasR) out.push({ mode: 'outerR', left: el });
+      if (!hasL) out.push({ mode: 'outerL', right: el });
+    }
     return out;
   }
 
@@ -279,7 +304,7 @@
     var horizontal = cs.display.indexOf('flex') >= 0 && cs.flexDirection.indexOf('row') === 0;
     var rr = row.getBoundingClientRect();
     var ok = horizontal && window.innerWidth > STACK_BP && rr.width > 0 && rr.height > 0;
-    var specs = ok ? specsFor(panes(row)) : [];
+    var specs = ok ? specsFor(panes(row), row) : [];
 
     ensureHandles(entry, specs.length);
 
@@ -507,9 +532,19 @@
         if (gl && gr) keep = scrollable ? [left, right] : [isFill(left) ? right : left];
         else { if (!gl) keep.push(left); if (!gr) keep.push(right); }
         keep = keep.filter(function (el) { return !isFill(el); });
+        // A module with its own width changer must snap even when it is the
+        // flexible absorber (fill tier / flex-grow). Otherwise a fill-default
+        // module can never be drag-resized — only its neighbour is pinned, and
+        // the top-right width icon looks dead. Add it BEFORE restoring the
+        // other frozen panes so the dragged width is still on the element
+        // when we measure for snap-to-tier.
+        [left, right].forEach(function (el) {
+          if (el && widthBtnOf(el, row) && keep.indexOf(el) === -1) keep.push(el);
+        });
         frozen.forEach(function (o) { if (keep.indexOf(o.el) === -1) restore(o.el, o.s); });
       } else {
         keep = isFill(target) ? [] : [target];
+        if (target && widthBtnOf(target, row) && keep.indexOf(target) === -1) keep.push(target);
       }
       // Capture drag-end widths BEFORE releasing pins — once a neighbour
       // unpins, getBoundingClientRect no longer reflects what the user
@@ -588,16 +623,23 @@
       // Watch the pane's own class list so a width-button preset toggle releases
       // our pin (and any saved width) — letting single/wide/triple/fill size it.
       p.__prPreset = presetSig(p);
-      var cmo = new MutationObserver(function () {
+      var cmo = new MutationObserver(function (muts) {
+        var lockChanged = false;
+        for (var i = 0; i < muts.length; i++) {
+          if (muts[i].attributeName === 'data-pr-lock') { lockChanged = true; break; }
+        }
         var now = presetSig(p);
-        if (now === p.__prPreset) return;   // only react to preset-tier changes
-        p.__prPreset = now;
-        if (entry.active) return;           // never fight an in-progress drag
-        clearWidth(keyOf(entry.row, p));
-        clearInline(p);
-        schedule();
+        var presetChanged = now !== p.__prPreset;
+        if (presetChanged) {
+          p.__prPreset = now;
+          if (!entry.active) {
+            clearWidth(keyOf(entry.row, p));
+            clearInline(p);
+          }
+        }
+        if (presetChanged || lockChanged) schedule();
       });
-      cmo.observe(p, { attributes: true, attributeFilter: ['class'] });
+      cmo.observe(p, { attributes: true, attributeFilter: ['class', 'data-pr-lock'] });
       p.__prClassMo = cmo;
       entry.classObservers.push(cmo);
     });

@@ -193,10 +193,10 @@ function uploadHtml(kind) {
     </div>`;
 }
 
-/* Five self-contained SVG art presets so a member can pre-fill a fun, unique
-   avatar in one tap — no upload needed. Each is a 96×96 vector; picking one
-   flows through the exact same setAvatar() path (stored as a data URL) so it
-   shows in the nav + chat like any other picture. */
+/* Built-in avatar starters — five SVG art patterns plus two professional
+   portraits — so a member can pre-fill an avatar in one tap. SVG presets
+   store as data URLs; photo presets use a local asset path. Picking one
+   flows through setUserAvatar() so it shows in the nav + chat. */
 const AVATAR_PRESETS = [
   {
     id: 'aurora', label: 'Aurora',
@@ -218,11 +218,17 @@ const AVATAR_PRESETS = [
     id: 'bloom', label: 'Bloom',
     svg: `<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'><defs><radialGradient id='g' cx='50%' cy='28%' r='85%'><stop offset='0' stop-color='#34d399'/><stop offset='1' stop-color='#059669'/></radialGradient></defs><rect width='96' height='96' fill='url(#g)'/><g fill='#fff'><circle cx='26' cy='30' r='7' fill-opacity='0.9'/><circle cx='62' cy='22' r='5' fill-opacity='0.7'/><circle cx='72' cy='52' r='9' fill-opacity='0.85'/><circle cx='40' cy='58' r='6' fill-opacity='0.75'/><circle cx='22' cy='70' r='5' fill-opacity='0.65'/><circle cx='58' cy='74' r='7' fill-opacity='0.9'/></g></svg>`,
   },
+  { id: 'portrait-m', label: 'Professional man', src: '../assets/avatars/avatar-portrait-male.jpg' },
+  { id: 'portrait-f', label: 'Professional woman', src: '../assets/avatars/avatar-portrait-female.jpg' },
 ];
 
 /* Encode a preset's SVG as a data URL (used as the avatar src + swatch img). */
 function presetDataUrl(svg) {
   return 'data:image/svg+xml,' + encodeURIComponent(svg);
+}
+
+function presetSrc(preset) {
+  return preset.src || presetDataUrl(preset.svg);
 }
 
 /* The member's avatar uploader — a live circular preview beside the same
@@ -266,12 +272,13 @@ function avatarUploadHtml() {
         </div>
       </div>
       <div class="pf-avatar-presets">
-        <span class="pf-avatar-presets-label">Or start from a pattern</span>
-        <div class="pf-avatar-presets-row" role="group" aria-label="Avatar patterns">
+        <span class="pf-avatar-presets-label">Or start from a pattern or photo</span>
+        <div class="pf-avatar-presets-row" role="group" aria-label="Avatar starting images">
           ${AVATAR_PRESETS.map((p) => {
-            const url = presetDataUrl(p.svg);
+            const url = presetSrc(p);
             const active = src === url ? ' is-active' : '';
-            return `<button type="button" class="pf-avatar-preset${active}" data-pf-avatar-preset="${p.id}" title="${esc(p.label)}" aria-label="${esc(p.label)} pattern" aria-pressed="${src === url ? 'true' : 'false'}"><img src="${url}" alt="" /></button>`;
+            const kind = p.src ? 'portrait' : 'pattern';
+            return `<button type="button" class="pf-avatar-preset${active}" data-pf-avatar-preset="${p.id}" title="${esc(p.label)}" aria-label="${esc(p.label)} ${kind}" aria-pressed="${src === url ? 'true' : 'false'}"><img src="${url}" alt="" /></button>`;
           }).join('')}
         </div>
       </div>
@@ -438,16 +445,17 @@ function setAvatar(src, name, source) {
   return html;
 }
 
-/* Pre-fill the avatar from one of the built-in art presets. */
+/* Pre-fill the avatar from one of the built-in art or portrait presets. */
 function setAvatarPreset(preset, source) {
   if (!preset) return '';
-  state.avatar = presetDataUrl(preset.svg);
+  const kind = preset.src ? 'portrait' : 'pattern';
+  state.avatar = presetSrc(preset);
   state.avatarName = '';
   pendingUpload = null;
   setUserAvatar(state.avatar);
   repaintAvatar();
-  toast('Avatar pattern set', 'account_circle');
-  const html = `Set your <strong>avatar picture</strong> to the <strong>${esc(preset.label)}</strong> pattern. It now shows in the primary navigation and on your chat messages.`;
+  toast(preset.src ? 'Avatar picture set' : 'Avatar pattern set', 'account_circle');
+  const html = `Set your <strong>avatar picture</strong> to the <strong>${esc(preset.label)}</strong> ${kind}. It now shows in the primary navigation and on your chat messages.`;
   if (source === 'form') pushChat(html); else return html;
   return html;
 }

@@ -116,6 +116,7 @@
     .rp-poster.tone-upf     { --acc: #25507C; }
     .rp-poster.tone-metric  { --acc: #25507C; }
     .rp-poster.tone-action  { --acc: #b8862b; }
+    .rp-poster.tone-gen     { --acc: #3F5C4F; }
     .rp-poster.tone-locked  { --acc: #3a465a; }
 
     /* Bug watermark — the WISE mark, drifting off the bottom-right corner. */
@@ -183,6 +184,17 @@
     .rp-desc { margin: 0; font-size: 0.8125rem; line-height: 1.55; color: var(--text-muted); }
     .rp-lockline { margin: 2px 0 0; font-size: 0.75rem; line-height: 1.5; color: var(--text-subtle); }
     .rp-foot { margin-top: auto; padding-top: 12px; display: flex; justify-content: flex-end; }
+    .rp-foot-split { justify-content: space-between; align-items: center; gap: 12px; }
+    .rp-date { font-size: 0.75rem; font-weight: 600; color: var(--text-subtle); }
+    .rp-gen-empty { pointer-events: none; }
+    .rp-gen-empty .rp-view { pointer-events: auto; }
+    .rp-gen-lede { margin: 0; font-size: 0.875rem; line-height: 1.55; color: var(--text-muted); }
+    .rp-gen-outputs {
+      margin: 4px 0 0; padding: 0 0 0 1.2em;
+      display: flex; flex-direction: column; gap: 8px;
+      font-size: 0.875rem; line-height: 1.45; color: var(--text);
+    }
+    .rp-gen-outputs li::marker { color: var(--primary); font-weight: 700; }
 
     .rp-view {
       display: inline-flex; align-items: center; gap: 6px;
@@ -227,19 +239,37 @@
       flex: 1 1 0%;
       min-width: 380px;
     }
-    /* Match the chat + reports modules to the FULL height of the nav rail. The
-       shared shell insets the modules row with an 8px top margin + a bottom pad,
-       which leaves both modules visibly shorter than the nav column. On this
-       page we drop those insets so all three columns are the same height. */
-    .menu-brand-integrated #modules-row { margin-top: 0 !important; }
-    /* Keep a bottom padding as a SHADOW GUTTER and pull the row back down by the
-       same amount (negative margin), so the modules still match the nav column's
-       full height AND their drop-shadow renders into that gutter instead of
-       being clipped flush at the card edge (the nav rail, which sits outside this
-       row, already shows its full shadow). */
-    #modules-row { padding-bottom: 0 !important; margin-bottom: 0 !important; }
-    #modules-row #wiseai-dock-panel.wiseai-dock-open,
-    #modules-row #agent-main { height: 100% !important; max-height: 100% !important; align-self: stretch !important; }
+    /* Match chat + Reports to the nav rail height when Chat-only is NOT
+       stretching the chat through the page pad / elevation gutter. Those
+       !important zeros previously ran in every mode and blocked Chat-only
+       (chat could not grow through the 12px pad — same bug as library). */
+    html:not(.full-bleed) .menu-brand-integrated #modules-row,
+    html.full-bleed:not(.fb-chat-only) .menu-brand-integrated #modules-row {
+      margin-top: 0 !important;
+    }
+    html:not(.full-bleed) #modules-row,
+    html.full-bleed:not(.fb-chat-only) #modules-row {
+      padding-bottom: 0 !important;
+      margin-bottom: 0 !important;
+    }
+    /* Contained + Full bleed (everything): fill the row. Chat-only must not
+       pin the chat at height:100% — shared wise.css grows it through the pad. */
+    html:not(.fb-chat-only) #modules-row #wiseai-dock-panel.wiseai-dock-open,
+    html:not(.fb-chat-only) #modules-row #agent-main,
+    html.full-bleed.fb-chat-only #modules-row #agent-main {
+      height: 100% !important;
+      max-height: 100% !important;
+      align-self: stretch !important;
+    }
+    /* Chat-only: beat the two-id height pin so the chat can fill the row pad
+       the same way it does on wiseai.html. Reports stays a contained card. */
+    html.full-bleed.fb-chat-only #modules-row #wiseai-dock-panel.wiseai-dock-open {
+      margin-top: calc(-1 * var(--modules-bottom-pad, 12px)) !important;
+      margin-bottom: calc(-1 * var(--chat-elev-gutter, 48px)) !important;
+      height: calc(100% + var(--modules-bottom-pad, 12px) + var(--chat-elev-gutter, 48px)) !important;
+      max-height: none !important;
+      align-self: stretch !important;
+    }
     /* The Reports module owns its own scroll; each section is a horizontal
        carousel rail, so posters keep a fixed width and the row scrolls
        sideways rather than reflowing into a grid. */
@@ -260,7 +290,7 @@
 </head>
 <body data-nav-id="reports">
   <div id="agent-shell-wrap" class="menu-brand-integrated">
-    <div id="menu-panel" class="mp-open">
+    <div id="menu-panel" class="mp-open mp-rail">
       <div class="menu-inner">
         <div class="menu-panel-body">
           <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE platform navigation"></nav>
@@ -279,6 +309,13 @@
 
               <!-- ============ MASTHEAD ============ -->
               <h1 class="rp-title-main">Reports</h1>
+
+              <!-- ============ YOUR GENERATED REPORTS (from Output) ============ -->
+              <section class="rp-section" id="rp-generated-section" aria-label="Your generated reports">
+                <div class="rp-sec-eyebrow">Your generated reports</div>
+                <div class="rp-sec-sub">Reports you built from Output — pick charts in WISEcodeAI and they land here.</div>
+                <div class="rp-grid" id="rp-generated-grid"></div>
+              </section>
 
               <!-- ============ PORTFOLIO REPORTS ============ -->
               <section class="rp-section">
@@ -454,6 +491,10 @@
     </div>
   </div>
 
+  <script type="module">
+    import { mountGeneratedReportsShelf } from '../js/generated-reports.js';
+    mountGeneratedReportsShelf();
+  </script>
   <script type="module" src="../js/agent-overview.js"></script>
   <script src="/livereload.js?snipver=1"></script>
   <!-- App-wide "Sticky module" toggle for every module right of the chat. -->

@@ -345,7 +345,7 @@ const TABLE_CATALOG = [
   { label: 'Chat · Ingredient table', href: 'wiseai.html', page: 'WISEcodeAI Chat', selector: '.wa-tbl', icon: 'forum', area: 'ai', areaTitle: 'WISEcodeAI Studio', desc: 'The sortable ingredient table rendered inside a chat answer.' },
 
   /* Reformulation */
-  { label: 'Reformulation · Picks', href: 'reformulation.html', hash: 'rf-dash-pick', page: 'Reformulation Dashboard', selector: '.rf-table:not(.rf-table--moves)', icon: 'auto_fix_high', area: 'reform', areaTitle: 'Reformulation', desc: 'Products you can pick to reformulate.' },
+  { label: 'Reformulation · Picks', href: 'reformulation.html', hash: 'rf-dash-pick', page: 'Reformulation Overview', selector: '.rf-table:not(.rf-table--moves)', icon: 'auto_fix_high', area: 'reform', areaTitle: 'Reformulation', desc: 'Products you can pick to reformulate.' },
   { label: 'Reformulation · Moves', href: 'reformulation.html', page: 'Reformulation Dashboard', selector: '#rf-moves-table', icon: 'route', area: 'reform', areaTitle: 'Reformulation', desc: 'Recommended ingredient moves with impact and effort.' },
 
   /* Reports & Analytics */
@@ -3235,8 +3235,8 @@ const MOTION_ITEMS = [
   {
     id: 'helix', group: 'anim', icon: 'genetics', title: 'Welcome helix', wide: true,
     src: 'js/wiseai-chat.js · createHelixBgAnim',
-    used: 'Every chat welcome — ON by default at 20% opacity',
-    lede: 'The ambient DNA/RNA field behind the chat welcome. Product thumbnails travel the strand; move onto a circle for its card. Notes (brand insight or look-closer fact) are sprinkled two-of-three along the strand, mixed with food sheets — never a status stamp, and never on their own: a popover opens only when the pointer enters a circle. Default opacity is <strong>20%</strong> — drag the slider to change it (same control as the chat ⋯ menu). Honors pause and <code>prefers-reduced-motion</code>. The live field starts when this section opens.',
+    used: 'Every chat welcome — ON by default at 20% opacity, 10° tilt, 100% scale',
+    lede: 'The ambient DNA/RNA field behind the chat welcome. Product thumbnails travel the strand; move onto a circle for its card. Notes (brand insight or look-closer fact) are sprinkled two-of-three along the strand, mixed with food sheets — never a status stamp, and never on their own: a popover opens only when the pointer enters a circle. Default opacity is <strong>20%</strong>, the axis tilt defaults to <strong>10°</strong>, and scale defaults to <strong>100%</strong> (the original narrow coil; drag up to 250% to go wider) — same controls as the chat ⋯ menu. Honors pause and <code>prefers-reduced-motion</code>. The live field starts when this section opens.',
     demo: `
       <div class="mi-motion-helix sc-bganim-host" data-motion-helix>
         <div class="mi-motion-helix-stage" data-helix-body></div>
@@ -3249,6 +3249,16 @@ const MOTION_ITEMS = [
             <span class="mi-motion-helix-opacity-label">Opacity</span>
             <input type="range" class="sc-bganim-opacity" data-helix-opacity min="10" max="100" step="5" value="20" aria-label="Background animation opacity">
             <span class="sc-bganim-opacity-val" data-helix-opacity-val>20%</span>
+          </label>
+          <label class="mi-motion-helix-opacity">
+            <span class="mi-motion-helix-opacity-label">Angle</span>
+            <input type="range" class="sc-bganim-angle-range" data-helix-angle min="-90" max="90" step="1" value="10" aria-label="Helix angle">
+            <span class="sc-bganim-angle-val" data-helix-angle-val>10°</span>
+          </label>
+          <label class="mi-motion-helix-opacity">
+            <span class="mi-motion-helix-opacity-label">Scale</span>
+            <input type="range" class="sc-bganim-scale-range" data-helix-scale min="100" max="250" step="5" value="100" aria-label="Helix scale">
+            <span class="sc-bganim-scale-val" data-helix-scale-val>100%</span>
           </label>
         </div>
       </div>`,
@@ -3570,7 +3580,13 @@ function wireMotion(root) {
   const helixBody = mod.querySelector('[data-helix-body]');
   const helixRange = mod.querySelector('[data-helix-opacity]');
   const helixVal = mod.querySelector('[data-helix-opacity-val]');
+  const helixAngleRange = mod.querySelector('[data-helix-angle]');
+  const helixAngleVal = mod.querySelector('[data-helix-angle-val]');
+  const helixScaleRange = mod.querySelector('[data-helix-scale]');
+  const helixScaleVal = mod.querySelector('[data-helix-scale-val]');
   const BGANIM_OPACITY_KEY = 'wise:chat-bg-anim-opacity';
+  const BGANIM_ANGLE_KEY = 'wise:chat-bg-anim-angle';
+  const BGANIM_SCALE_KEY = 'wise:chat-bg-anim-scale';
   const readHelixPct = () => {
     try {
       const s = parseInt(localStorage.getItem(BGANIM_OPACITY_KEY), 10);
@@ -3578,7 +3594,23 @@ function wireMotion(root) {
     } catch (_) { /* ignore */ }
     return 20;
   };
+  const readHelixAngle = () => {
+    try {
+      const s = parseInt(localStorage.getItem(BGANIM_ANGLE_KEY), 10);
+      if (!isNaN(s)) return Math.max(-90, Math.min(90, s));
+    } catch (_) { /* ignore */ }
+    return 10;
+  };
+  const readHelixScale = () => {
+    try {
+      const s = parseInt(localStorage.getItem(BGANIM_SCALE_KEY), 10);
+      if (!isNaN(s)) return Math.max(100, Math.min(250, s));
+    } catch (_) { /* ignore */ }
+    return 100;
+  };
   let helixPct = readHelixPct();
+  let helixAngle = readHelixAngle();
+  let helixScalePct = readHelixScale();
   let helixPaused = false;
   let helix = null;
   const paintHelixOpacity = (pct, persist) => {
@@ -3591,12 +3623,42 @@ function wireMotion(root) {
     }
     if (reduced && helix) helix.start();
   };
+  const paintHelixAngle = (deg, persist) => {
+    helixAngle = Math.max(-90, Math.min(90, deg));
+    if (helixAngleRange) helixAngleRange.value = String(helixAngle);
+    if (helixAngleVal) helixAngleVal.textContent = helixAngle + '°';
+    if (persist) {
+      try { localStorage.setItem(BGANIM_ANGLE_KEY, String(helixAngle)); } catch (_) { /* ignore */ }
+      try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-angle', { detail: { angle: helixAngle } })); } catch (_) { /* ignore */ }
+    }
+    if (helix) {
+      if (reduced) helix.start();
+      else helix.redraw();
+    }
+  };
+  const paintHelixScale = (pct, persist) => {
+    helixScalePct = Math.max(100, Math.min(250, pct));
+    if (helixScaleRange) helixScaleRange.value = String(helixScalePct);
+    if (helixScaleVal) helixScaleVal.textContent = helixScalePct + '%';
+    if (persist) {
+      try { localStorage.setItem(BGANIM_SCALE_KEY, String(helixScalePct)); } catch (_) { /* ignore */ }
+      try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-scale', { detail: { scale: helixScalePct / 100 } })); } catch (_) { /* ignore */ }
+    }
+    if (helix) {
+      if (reduced) helix.start();
+      else helix.redraw();
+    }
+  };
   paintHelixOpacity(helixPct, false);
+  paintHelixAngle(helixAngle, false);
+  paintHelixScale(helixScalePct, false);
   if (helixHost && helixBody) {
     helix = createHelixBgAnim({
       host: helixHost,
       getBody: () => helixBody,
       getOpacity: () => helixPct / 100,
+      getAngle: () => helixAngle,
+      getScale: () => helixScalePct / 100,
       reducedMotion: reduced,
       isOn: () => !mod.classList.contains('is-collapsed'),
       isPaused: () => helixPaused,
@@ -3605,10 +3667,26 @@ function wireMotion(root) {
   helixRange?.addEventListener('input', () => {
     paintHelixOpacity(parseInt(helixRange.value, 10) || 20, true);
   });
+  helixAngleRange?.addEventListener('input', () => {
+    paintHelixAngle(parseInt(helixAngleRange.value, 10) || 0, true);
+  });
+  helixScaleRange?.addEventListener('input', () => {
+    paintHelixScale(parseInt(helixScaleRange.value, 10) || 100, true);
+  });
   document.addEventListener('wise:chat-bg-anim-opacity', (e) => {
     const v = e && e.detail && e.detail.opacity;
     if (typeof v !== 'number') return;
     paintHelixOpacity(Math.round(v * 100), false);
+  });
+  document.addEventListener('wise:chat-bg-anim-angle', (e) => {
+    const v = e && e.detail && e.detail.angle;
+    if (typeof v !== 'number') return;
+    paintHelixAngle(v, false);
+  });
+  document.addEventListener('wise:chat-bg-anim-scale', (e) => {
+    const v = e && e.detail && e.detail.scale;
+    if (typeof v !== 'number') return;
+    paintHelixScale(Math.round(v * 100), false);
   });
   const ppBtn = mod.querySelector('[data-helix-pp]');
   const syncHelixPp = () => {
@@ -4690,7 +4768,7 @@ function moduleStyles() {
        there as a stray red dot. */
     .dsc-demo .topbar-profile { position: relative; top: auto; right: auto; transform: none; }
     .dsc-demo .topbar-profile:hover { transform: scale(1.04); }
-    .dsc-demo .topbar-profile.has-dot::after { top: -1px; right: -1px; }
+    .dsc-demo .topbar-profile.has-dot::after { top: 1px; right: 1px; }
     .dsc-demo .adm-avatar,
     .dsc-demo .adm-avatar--photo,
     .dsc-demo .topbar-profile { border-radius: 50%; }
@@ -5260,13 +5338,17 @@ function moduleStyles() {
       font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
       color: var(--text-muted); white-space: nowrap;
     }
-    .mi-motion-helix-opacity .sc-bganim-opacity {
+    .mi-motion-helix-opacity .sc-bganim-opacity,
+    .mi-motion-helix-opacity .sc-bganim-angle-range,
+    .mi-motion-helix-opacity .sc-bganim-scale-range {
       flex: 1 1 auto; min-width: 72px; height: 4px; cursor: pointer;
       accent-color: var(--primary);
     }
-    .mi-motion-helix-opacity .sc-bganim-opacity-val {
+    .mi-motion-helix-opacity .sc-bganim-opacity-val,
+    .mi-motion-helix-opacity .sc-bganim-angle-val,
+    .mi-motion-helix-opacity .sc-bganim-scale-val {
       font-size: 11px; font-weight: 700; color: var(--text-muted);
-      width: 34px; text-align: right; font-variant-numeric: tabular-nums;
+      width: 38px; text-align: right; font-variant-numeric: tabular-nums;
     }
 
     .mi-motion-acc {
