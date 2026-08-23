@@ -8800,7 +8800,7 @@
               <span class="sc-switch sc-switch--pink" aria-hidden="true"></span>
             </button>
             <!-- Standard app-wide rows — Compact spacing, Brand AI text,
-                 Background animation (+ opacity, angle, scale) and Response streaming
+                 Background animation (+ opacity, angle, Scale X/Y/Z) and Response streaming
                  (+ detail). Markup mirrors the shared module template; behavior
                  is wired by wireStandardChatMenu() from js/wiseai-chat.js so
                  every chat module runs the exact same code and follows the one
@@ -8818,9 +8818,19 @@
               <input type="range" class="sc-bganim-angle-range" min="-90" max="90" step="1" value="10" aria-label="Helix angle">
               <span class="sc-bganim-angle-val">10°</span>
             </div>
-            <div class="sc-bganim-detail sc-bganim-scale">
-              <span class="sc-bganim-detail-label">Scale</span>
-              <input type="range" class="sc-bganim-scale-range" min="100" max="250" step="5" value="100" aria-label="Helix scale">
+            <div class="sc-bganim-detail sc-bganim-scale sc-bganim-scale-x">
+              <span class="sc-bganim-detail-label">Scale X</span>
+              <input type="range" class="sc-bganim-scale-range" data-axis="x" min="100" max="250" step="5" value="100" aria-label="Helix scale X">
+              <span class="sc-bganim-scale-val">100%</span>
+            </div>
+            <div class="sc-bganim-detail sc-bganim-scale sc-bganim-scale-y">
+              <span class="sc-bganim-detail-label">Scale Y</span>
+              <input type="range" class="sc-bganim-scale-range" data-axis="y" min="100" max="250" step="5" value="100" aria-label="Helix scale Y">
+              <span class="sc-bganim-scale-val">100%</span>
+            </div>
+            <div class="sc-bganim-detail sc-bganim-scale sc-bganim-scale-z">
+              <span class="sc-bganim-detail-label">Scale Z</span>
+              <input type="range" class="sc-bganim-scale-range" data-axis="z" min="100" max="250" step="5" value="100" aria-label="Helix scale Z">
               <span class="sc-bganim-scale-val">100%</span>
             </div>
             <div class="sc-bganim-playback">

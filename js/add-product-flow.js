@@ -152,6 +152,11 @@
     },
     image: 'https://images.unsplash.com/photo-1607958996333-41aef7caefaa?w=640&q=70',
   };
+  /* Fallback when the sizes-strip / header has no product photo (cleared,
+     missing, or a broken URL). Prefer the sample product shot; if that
+     remote file fails, use the bundled Flax4Life banner. */
+  const DEFAULT_PRODUCT_IMAGE = SAMPLE_PARSE.image;
+  const DEFAULT_PRODUCT_IMAGE_LOCAL = '../assets/brand-flax4life-banner.jpg';
 
   /* ─────────────────────────── steps ─────────────────────────── */
   const STEPS = [
@@ -409,6 +414,74 @@
   ];
   function useCatDropdown() {
     return !!(typeof window !== 'undefined' && (window.WISE_HERO_BRAND || window.WISE_HERO_BRANDROW));
+  }
+  /* view-product: the first-column hero is lifted into the module header
+     (photo as the banner background, left of the ⋯) and the sizes strip
+     (title + category + full barcode). add-product keeps the in-column hero. */
+  function useHeaderIdentity() {
+    return !!(typeof window !== 'undefined' && window.WISE_HERO_BRAND);
+  }
+  function activePackIndex() {
+    if (state.view !== 'pack' || !state.packs.length) return null;
+    return Math.min(state.activePack, state.packs.length - 1);
+  }
+  function activeProductImage() {
+    const i = activePackIndex();
+    if (i != null) return (state.packs[i] && state.packs[i].image) || state.image || '';
+    return state.image || '';
+  }
+  function productBackgroundSrc() {
+    return activeProductImage() || DEFAULT_PRODUCT_IMAGE;
+  }
+  function productBgImgHTML(src) {
+    const used = src || productBackgroundSrc();
+    const fallback = used === DEFAULT_PRODUCT_IMAGE
+      ? DEFAULT_PRODUCT_IMAGE_LOCAL
+      : DEFAULT_PRODUCT_IMAGE;
+    return `<img src="${esc(used)}" alt="" data-nfp-bg-fallback="${esc(fallback)}" onerror="if(!this.dataset.fell){this.dataset.fell='1';this.src=this.dataset.nfpBgFallback}">`;
+  }
+  /* view-product: faint right-side fade on the Product Details banner, plus
+     the original "Product image" edit control immediately left of the ⋯. */
+  function syncNfpHeaderPhoto() {
+    const header = document.querySelector('#nfp-panel .nfp-panel-header');
+    if (!header) return;
+    if (!useHeaderIdentity()) {
+      header.classList.remove('nfp-panel-header--photo');
+      header.querySelector('.nfp-header-photo-bg')?.remove();
+      header.querySelector('.nfp-header-photo')?.remove();
+      const logo = header.querySelector('.nfp-brand-logo');
+      if (logo) logo.hidden = false;
+      return;
+    }
+    const controls = header.querySelector('.panel-controls');
+    if (!controls) return;
+    const src = activeProductImage();
+    let bg = header.querySelector('.nfp-header-photo-bg');
+    if (!bg) {
+      bg = document.createElement('div');
+      bg.className = 'nfp-header-photo-bg';
+      bg.setAttribute('aria-hidden', 'true');
+      header.insertBefore(bg, header.firstChild);
+    }
+    bg.innerHTML = productBgImgHTML();
+    header.classList.add('nfp-panel-header--photo');
+    const logo = header.querySelector('.nfp-brand-logo');
+    if (logo) logo.hidden = true;
+    let hit = header.querySelector('.nfp-header-photo');
+    if (!hit) {
+      hit = document.createElement('button');
+      hit.type = 'button';
+      hit.className = 'nfp-header-photo';
+      controls.insertBefore(hit, controls.firstChild);
+    }
+    const label = src ? 'Replace product image' : 'Add product image';
+    hit.setAttribute('title', label);
+    hit.setAttribute('aria-label', label);
+    const i = activePackIndex();
+    hit.dataset.nfp = i != null ? 'upload-pack' : 'upload-main';
+    if (i != null) hit.dataset.arg = String(i);
+    else delete hit.dataset.arg;
+    hit.innerHTML = `<span class="material-symbols-outlined">edit</span>`;
   }
   /* One self-contained dropdown (a native <select>, so it escapes the hero's
      overflow:hidden clipping) that replaces the old chip + separate "Change"
@@ -676,13 +749,29 @@
     const hint = state.packs.length
       ? ''
       : `<div class="nfp-pack-caption">Starts with a single unit — add any multipacks or larger quantities this product also ships in.</div>`;
-    return `<div class="nfp-fi-group nfp-fi-group--packs">
-      <div class="nfp-fi-header"><span class="nfp-fi-title">Add Product Sizes</span></div>
+    const identity = useHeaderIdentity();
+    const packIdx = activePackIndex();
+    const title = identity
+      ? `<div class="nfp-fi-header">
+          <span class="nfp-fi-title">Add product sizes for our ${editSpan('productName', state.productName, 'product name')}</span>
+        </div>`
+      : `<div class="nfp-fi-header"><span class="nfp-fi-title">Add Product Sizes</span></div>`;
+    const stripExtras = identity
+      ? `<div class="nfp-fi-cat">${heroCatHTML(false)}</div>
+         <div class="nfp-fi-upc">${packIdx != null ? packUpcHTML(packIdx, false) : heroUpcHTML(false)}</div>`
+      : '';
+    const stripPhoto = identity
+      ? `<div class="nfp-fi-strip-photo" aria-hidden="true">${productBgImgHTML()}</div>`
+      : '';
+    return `<div class="nfp-fi-group nfp-fi-group--packs${identity ? ' nfp-fi-group--identity' : ''}">
+      ${stripPhoto}
+      ${title}
       ${hint}
       <div class="nfp-fi-thumbs">
         ${unitThumb}
         ${thumbs}
         <div class="nfp-fi-add" data-nfp="add-pack" title="Add another quantity"><span class="material-symbols-outlined">add</span></div>
+        ${stripExtras}
       </div>
     </div>`;
   }
@@ -1369,49 +1458,66 @@
      columns stack and the splitters hide, so a narrow module never traps
      the user in three skinny panes. Double-click a seam to reset. */
   const NFP_COL_KEY = 'wise-nfp-cols-v4';
+  const NFP_COL_KEY_2 = 'wise-nfp-cols-noidentity-v1';
   const NFP_COL_BP = 640;
   const NFP_COL_MIN = [120, 200, 240];
+  const NFP_COL_MIN_2 = [200, 240];
   const NFP_COL_DEFAULT = [0.20, 0.40, 0.40];
+  const NFP_COL_DEFAULT_2 = [0.50, 0.50];
   function nfpColWide() { return !!(nfpBody && nfpBody.clientWidth >= NFP_COL_BP); }
-  function readNfpCols() {
+  function nfpIsTwoCol(sp) { return !!(sp && sp.classList.contains('nfp-sp--noidentity')); }
+  function readNfpCols(sp) {
+    const two = nfpIsTwoCol(sp);
+    const key = two ? NFP_COL_KEY_2 : NFP_COL_KEY;
+    const def = two ? NFP_COL_DEFAULT_2 : NFP_COL_DEFAULT;
+    const expect = two ? 2 : 3;
     try {
-      const o = JSON.parse(localStorage.getItem(NFP_COL_KEY) || 'null');
-      if (Array.isArray(o) && o.length === 3 && o.every((n) => typeof n === 'number' && n > 0)) return o;
+      const o = JSON.parse(localStorage.getItem(key) || 'null');
+      if (Array.isArray(o) && o.length === expect && o.every((n) => typeof n === 'number' && n > 0)) return o;
     } catch (_) {}
-    return NFP_COL_DEFAULT.slice();
+    return def.slice();
   }
-  function saveNfpCols(fr) {
-    try { localStorage.setItem(NFP_COL_KEY, JSON.stringify(fr)); } catch (_) {}
+  function saveNfpCols(fr, sp) {
+    const two = nfpIsTwoCol(sp) || (fr && fr.length === 2);
+    try { localStorage.setItem(two ? NFP_COL_KEY_2 : NFP_COL_KEY, JSON.stringify(fr)); } catch (_) {}
   }
   function applyNfpCols(sp, fr) {
     if (!sp || !fr) return;
+    if (nfpIsTwoCol(sp) || fr.length === 2) {
+      sp.style.setProperty('--nfp-w-facts', fr[0] + 'fr');
+      sp.style.setProperty('--nfp-w-ingred', fr[1] + 'fr');
+      return;
+    }
     sp.style.setProperty('--nfp-w-media', fr[0] + 'fr');
     sp.style.setProperty('--nfp-w-facts', fr[1] + 'fr');
     sp.style.setProperty('--nfp-w-ingred', fr[2] + 'fr');
   }
   function nfpColEls(sp) {
-    return [
-      sp.querySelector('.nfp-sp-media'),
-      sp.querySelector('.nfp-sp-facts'),
-      sp.querySelector('.nfp-sp-ingred'),
-    ];
+    const media = sp.querySelector('.nfp-sp-media');
+    const facts = sp.querySelector('.nfp-sp-facts');
+    const ingred = sp.querySelector('.nfp-sp-ingred');
+    return nfpIsTwoCol(sp) || !media ? [facts, ingred] : [media, facts, ingred];
+  }
+  function nfpColMins(sp) {
+    return nfpIsTwoCol(sp) ? NFP_COL_MIN_2 : NFP_COL_MIN;
   }
   function nudgeNfpCols(sp, idx, dxPx) {
     const cols = nfpColEls(sp);
-    if (!cols[0] || !cols[1] || !cols[2]) return;
+    if (cols.some((c) => !c) || idx < 0 || idx + 1 >= cols.length) return;
+    const mins = nfpColMins(sp);
     const widths = cols.map((c) => c.getBoundingClientRect().width);
     const next = widths.slice();
     next[idx] = widths[idx] + dxPx;
     next[idx + 1] = widths[idx + 1] - dxPx;
-    if (next[idx] < NFP_COL_MIN[idx]) {
-      next[idx + 1] -= (NFP_COL_MIN[idx] - next[idx]);
-      next[idx] = NFP_COL_MIN[idx];
+    if (next[idx] < mins[idx]) {
+      next[idx + 1] -= (mins[idx] - next[idx]);
+      next[idx] = mins[idx];
     }
-    if (next[idx + 1] < NFP_COL_MIN[idx + 1]) {
-      next[idx] -= (NFP_COL_MIN[idx + 1] - next[idx + 1]);
-      next[idx + 1] = NFP_COL_MIN[idx + 1];
+    if (next[idx + 1] < mins[idx + 1]) {
+      next[idx] -= (mins[idx + 1] - next[idx + 1]);
+      next[idx + 1] = mins[idx + 1];
     }
-    const sum = next[0] + next[1] + next[2];
+    const sum = next.reduce((a, b) => a + b, 0);
     if (sum <= 0) return;
     const fr = next.map((w) => w / sum);
     applyNfpCols(sp, fr);
@@ -1420,7 +1526,7 @@
   function wireNfpColumns() {
     const sp = nfpBody && nfpBody.querySelector('.nfp-sp');
     if (!sp) return;
-    applyNfpCols(sp, readNfpCols());
+    applyNfpCols(sp, readNfpCols(sp));
     sp.querySelectorAll('[data-nfp-split]').forEach((split) => {
       split.addEventListener('pointerdown', (e) => {
         if (e.button != null && e.button !== 0) return;
@@ -1428,6 +1534,7 @@
         e.preventDefault();
         const idx = Number(split.dataset.nfpSplit);
         const cols = nfpColEls(sp);
+        const mins = nfpColMins(sp);
         if (!cols[idx] || !cols[idx + 1]) return;
         const startX = e.clientX;
         const startW = cols.map((c) => c.getBoundingClientRect().width);
@@ -1439,15 +1546,15 @@
           const next = startW.slice();
           next[idx] = startW[idx] + dx;
           next[idx + 1] = startW[idx + 1] - dx;
-          if (next[idx] < NFP_COL_MIN[idx]) {
-            next[idx + 1] -= (NFP_COL_MIN[idx] - next[idx]);
-            next[idx] = NFP_COL_MIN[idx];
+          if (next[idx] < mins[idx]) {
+            next[idx + 1] -= (mins[idx] - next[idx]);
+            next[idx] = mins[idx];
           }
-          if (next[idx + 1] < NFP_COL_MIN[idx + 1]) {
-            next[idx] -= (NFP_COL_MIN[idx + 1] - next[idx + 1]);
-            next[idx + 1] = NFP_COL_MIN[idx + 1];
+          if (next[idx + 1] < mins[idx + 1]) {
+            next[idx] -= (mins[idx + 1] - next[idx + 1]);
+            next[idx + 1] = mins[idx + 1];
           }
-          const sum = next[0] + next[1] + next[2];
+          const sum = next.reduce((a, b) => a + b, 0);
           if (sum > 0) applyNfpCols(sp, next.map((w) => w / sum));
         };
         const up = (ev) => {
@@ -1458,16 +1565,16 @@
           split.removeEventListener('pointerup', up);
           split.removeEventListener('pointercancel', up);
           const now = nfpColEls(sp).map((c) => c && c.getBoundingClientRect().width);
-          const sum = now[0] + now[1] + now[2];
-          if (sum > 0) saveNfpCols(now.map((w) => w / sum));
+          const sum = now.reduce((a, b) => a + (b || 0), 0);
+          if (sum > 0) saveNfpCols(now.map((w) => w / sum), sp);
         };
         split.addEventListener('pointermove', move);
         split.addEventListener('pointerup', up);
         split.addEventListener('pointercancel', up);
       });
       split.addEventListener('dblclick', () => {
-        const def = NFP_COL_DEFAULT.slice();
-        saveNfpCols(def);
+        const def = (nfpIsTwoCol(sp) ? NFP_COL_DEFAULT_2 : NFP_COL_DEFAULT).slice();
+        saveNfpCols(def, sp);
         applyNfpCols(sp, def);
       });
       split.addEventListener('keydown', (e) => {
@@ -1477,7 +1584,7 @@
         const idx = Number(split.dataset.nfpSplit);
         const step = (e.shiftKey ? 40 : 16) * (e.key === 'ArrowRight' ? 1 : -1);
         const fr = nudgeNfpCols(sp, idx, step);
-        if (fr) saveNfpCols(fr);
+        if (fr) saveNfpCols(fr, sp);
       });
     });
   }
@@ -1537,6 +1644,7 @@
       /* Compare takes precedence over the single/double-pane layout: the whole
          body becomes the side-by-side matrix of every format. */
       nfpBody.innerHTML = compareHTML();
+      syncNfpHeaderPhoto();
       updateSaveState();
       return;
     }
@@ -1564,19 +1672,31 @@
         media = richHeroHTML();
         facts = nutritionHTML();
       }
-      nfpBody.innerHTML =
-        `<div class="nfp-sp">
-          <div class="nfp-sp-strip">${strip}</div>
-          <div class="nfp-sp-media">${media}${shieldHTML()}</div>
-          <div class="nfp-sp-split" data-nfp-split="0" role="separator" aria-orientation="vertical" aria-label="Resize photo and Nutrition Facts" tabindex="0"><span class="nfp-sp-grip" aria-hidden="true"></span></div>
-          <div class="nfp-sp-facts">${facts}${allergensHTML()}</div>
-          <div class="nfp-sp-split" data-nfp-split="1" role="separator" aria-orientation="vertical" aria-label="Resize Nutrition Facts and ingredients" tabindex="0"><span class="nfp-sp-grip" aria-hidden="true"></span></div>
-          <div class="nfp-sp-ingred">${ingredientsHTML()}</div>
-        </div>${insightsCardsHTML()}`;
+      if (useHeaderIdentity()) {
+        nfpBody.innerHTML =
+          `<div class="nfp-sp nfp-sp--noidentity">
+            <div class="nfp-sp-strip">${strip}</div>
+            <div class="nfp-sp-shield">${shieldHTML()}</div>
+            <div class="nfp-sp-facts">${facts}${allergensHTML()}</div>
+            <div class="nfp-sp-split" data-nfp-split="0" role="separator" aria-orientation="vertical" aria-label="Resize Nutrition Facts and ingredients" tabindex="0"><span class="nfp-sp-grip" aria-hidden="true"></span></div>
+            <div class="nfp-sp-ingred">${ingredientsHTML()}</div>
+          </div><div class="nfp-ins">${insightsGridHTML()}</div>`;
+      } else {
+        nfpBody.innerHTML =
+          `<div class="nfp-sp">
+            <div class="nfp-sp-strip">${strip}</div>
+            <div class="nfp-sp-media">${media}${shieldHTML()}</div>
+            <div class="nfp-sp-split" data-nfp-split="0" role="separator" aria-orientation="vertical" aria-label="Resize photo and Nutrition Facts" tabindex="0"><span class="nfp-sp-grip" aria-hidden="true"></span></div>
+            <div class="nfp-sp-facts">${facts}${allergensHTML()}</div>
+            <div class="nfp-sp-split" data-nfp-split="1" role="separator" aria-orientation="vertical" aria-label="Resize Nutrition Facts and ingredients" tabindex="0"><span class="nfp-sp-grip" aria-hidden="true"></span></div>
+            <div class="nfp-sp-ingred">${ingredientsHTML()}</div>
+          </div>${insightsCardsHTML()}`;
+      }
       wireNfpColumns();
       wireIngredColHeight();
       requestAnimationFrame(sizeIngredEdit);
     }
+    syncNfpHeaderPhoto();
     updateSaveState();
   }
 
@@ -2440,7 +2560,16 @@
     });
     modal.querySelectorAll('[data-photo-close]').forEach((b) => b.addEventListener('click', closePhotoModal));
 
-    setPreview('', '');
+    const current = isPack ? ((pack && pack.image) || '') : (state.image || '');
+    if (current) {
+      setPreview(current, '');
+      saveBtn.disabled = true;
+    } else {
+      setPreview('', '');
+      previewImg.style.backgroundImage = `url('${DEFAULT_PRODUCT_IMAGE.replace(/'/g, '%27')}')`;
+      previewImg.style.display = 'block';
+      previewEmpty.style.display = 'none';
+    }
     requestAnimationFrame(() => { scrim.classList.add('is-open'); urlInput.focus(); });
   }
 
@@ -3042,7 +3171,8 @@
       }
       // NFP panel affordances
       const nfpBtn = e.target.closest('[data-nfp]');
-      if (nfpBtn && nfpBody.contains(nfpBtn)) { handleNfpClick(nfpBtn.dataset.nfp, nfpBtn.dataset.arg); return; }
+      const nfpPanel = document.getElementById('nfp-panel');
+      if (nfpBtn && nfpPanel && nfpPanel.contains(nfpBtn)) { handleNfpClick(nfpBtn.dataset.nfp, nfpBtn.dataset.arg); return; }
       // Progress module minimize/maximize toggle
       const minBtn = e.target.closest('[data-ap-min]');
       if (minBtn && progressEl.contains(minBtn)) { progressMin = !progressMin; renderProgress(); return; }
@@ -3379,7 +3509,7 @@
      a dropzone, so accept a dragged image file straight onto it. Delegated on
      nfpBody since the hero markup is re-rendered on every state change. */
   function heroDropTarget(el) {
-    return el && el.closest ? el.closest('.nfp-hero, .nfp-rcol, .nfp-rcol-empty') : null;
+    return el && el.closest ? el.closest('.nfp-hero, .nfp-rcol, .nfp-rcol-empty, .nfp-header-photo, .nfp-panel-header--photo') : null;
   }
   function dragHasImageFile(dt) {
     if (!dt) return false;
@@ -3398,8 +3528,9 @@
   }
   function wireHeroDrop() {
     let activeHero = null;
+    const host = document.getElementById('nfp-panel') || nfpBody;
     const clear = () => { if (activeHero) { activeHero.classList.remove('nfp-hero-drag'); activeHero = null; } };
-    nfpBody.addEventListener('dragover', (e) => {
+    host.addEventListener('dragover', (e) => {
       const hero = heroDropTarget(e.target);
       if (!hero || !dragHasImageFile(e.dataTransfer)) return;
       e.preventDefault();
@@ -3407,11 +3538,11 @@
       if (activeHero !== hero) { clear(); activeHero = hero; }
       hero.classList.add('nfp-hero-drag');
     });
-    nfpBody.addEventListener('dragleave', (e) => {
+    host.addEventListener('dragleave', (e) => {
       const hero = heroDropTarget(e.target);
       if (hero && !hero.contains(e.relatedTarget)) hero.classList.remove('nfp-hero-drag');
     });
-    nfpBody.addEventListener('drop', (e) => {
+    host.addEventListener('drop', (e) => {
       const hero = heroDropTarget(e.target);
       if (!hero) return;
       e.preventDefault();
@@ -3419,7 +3550,9 @@
       hero.classList.remove('nfp-hero-drag');
       const file = firstImageFile(e.dataTransfer);
       if (!file) return;
-      const packBtn = hero.querySelector('[data-nfp="upload-pack"]');
+      const packBtn = hero.matches && hero.matches('[data-nfp="upload-pack"]')
+        ? hero
+        : hero.querySelector('[data-nfp="upload-pack"]');
       const reader = new FileReader();
       reader.onload = () => {
         const src = reader.result;

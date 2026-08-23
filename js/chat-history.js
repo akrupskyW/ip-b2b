@@ -185,16 +185,21 @@
          what remains. Head padding/justify use !important to beat host pages that
          re-dress the docked head via an #id-scoped selector. Inner icon padding
          stays tight; the docked module itself still uses the sticky drawer height. */
-      '.wch-sidebar.wch-rail .wch-head{padding:4px 0 0 !important;justify-content:center !important;align-items:center !important;border-bottom:0 !important;}',
+      '.wch-sidebar.wch-rail .wch-head{padding:4px 0 !important;justify-content:center !important;align-items:center !important;border-bottom:0 !important;}',
       '.wch-sidebar.wch-rail .wch-head-title{display:none;}',
       '.wch-sidebar.wch-rail .wch-width-btn{display:none;}',
       /* History module width changer is permanently removed — never render it. */
       '.wch-sidebar .wch-width-btn{display:none !important;}',
-      '.wch-sidebar.wch-rail .wch-controls{margin:0;}',
-      '.wch-sidebar.wch-rail .wch-rail-btn{width:24px;height:24px;}',
-      '.wch-sidebar.wch-rail .wch-rail-btn .material-symbols-outlined{font-size:16px !important;}',
+      '.wch-sidebar.wch-rail .wch-controls{margin:0 !important;}',
+      /* Same glyph + hit target as the primary nav collapse toggle
+         (.topbar-menu-toggle in #menu-panel.mp-rail): 20px chevron in a
+         32×28 control, colour-only hover, equal air above and below. */
+      '.wch-rail-btn .material-symbols-outlined{font-size:20px !important;line-height:1 !important;}',
+      '.wch-sidebar.wch-rail .wch-rail-btn{width:32px;height:28px;min-height:28px;padding:2px 0;border-radius:0;background:transparent;opacity:1;color:var(--text-muted);}',
+      '.wch-sidebar.wch-rail .wch-rail-btn:hover,.wch-sidebar.wch-rail .wch-rail-btn.is-open{background:transparent;opacity:1;color:var(--primary,#2F6DF6);}',
+      '.wch-sidebar.wch-rail .wch-rail-btn .material-symbols-outlined{font-size:20px !important;line-height:1 !important;}',
       '.wch-sidebar.wch-rail .wch-search{display:none;}',
-      '.wch-sidebar.wch-rail .wch-search-row{margin:2px auto 0;justify-content:center;}',
+      '.wch-sidebar.wch-rail .wch-search-row{margin:0 auto;justify-content:center;}',
       '.wch-sidebar.wch-rail .wch-new{width:32px;height:32px;}',
       '.wch-sidebar.wch-rail .wch-new .material-symbols-outlined{font-size:18px;}',
       '.wch-sidebar.wch-rail .wch-list{padding:0 4px 4px;flex:1 1 auto;min-height:0;scrollbar-width:none;}',
@@ -342,7 +347,8 @@
         'box-shadow:var(--shadow-card,0 12px 32px rgba(20,30,60,0.12));border-radius:16px;overflow:hidden;flex-shrink:0;position:relative;z-index:1;',
         'align-self:center;height:calc(100% - 30px);}',
       '#modules-row .wch-sidebar.wch-docked .wch-head{padding:18px 14px 16px 24px;border-bottom:1px solid var(--border,rgba(0,0,0,0.08));align-items:flex-start;}',
-      '#modules-row .wch-sidebar.wch-docked.wch-rail .wch-head{border-bottom:0;}',
+      '#modules-row .wch-sidebar.wch-docked.wch-rail .wch-head{padding:4px 0 !important;border-bottom:0;}',
+      '#modules-row .wch-sidebar.wch-docked.wch-rail .wch-controls{margin:0 !important;}',
       '#modules-row .wch-sidebar.wch-docked .wch-head-title{font-family:"WISE Digits","Noto Serif",Georgia,serif;font-weight:800;font-size:1.2rem;letter-spacing:-.01em;line-height:1.16;align-items:center;}',
       '#modules-row .wch-sidebar.wch-docked .wch-head-title .material-symbols-outlined{display:none;}',
       '#modules-row .wch-sidebar.wch-docked .wch-controls{margin-top:1px;}',

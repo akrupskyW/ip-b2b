@@ -37,7 +37,7 @@
 import { ICON_INVENTORY } from './icon-inventory-data.js';
 import { CODE_STATS } from './code-stats-data.js';
 import { makeTraceHelix, measureTraceRungCentres, TRACE_STRAND_MARKUP } from './trace-helix.js';
-import { composerDbSelectorHtml, wireChatComposer, createHelixBgAnim } from './wiseai-chat.js';
+import { composerDbSelectorHtml, wireChatComposer, createHelixBgAnim, readBgAnimScaleAxes } from './wiseai-chat.js';
 import { MODULE_SECTIONS, AREA_ICONS } from './module-directory-data.js';
 
 function esc(s) {
@@ -3235,8 +3235,8 @@ const MOTION_ITEMS = [
   {
     id: 'helix', group: 'anim', icon: 'genetics', title: 'Welcome helix', wide: true,
     src: 'js/wiseai-chat.js · createHelixBgAnim',
-    used: 'Every chat welcome — ON by default at 20% opacity, 10° tilt, 100% scale',
-    lede: 'The ambient DNA/RNA field behind the chat welcome. Product thumbnails travel the strand; move onto a circle for its card. Notes (brand insight or look-closer fact) are sprinkled two-of-three along the strand, mixed with food sheets — never a status stamp, and never on their own: a popover opens only when the pointer enters a circle. Default opacity is <strong>20%</strong>, the axis tilt defaults to <strong>10°</strong>, and scale defaults to <strong>100%</strong> (the original narrow coil; drag up to 250% to go wider) — same controls as the chat ⋯ menu. Honors pause and <code>prefers-reduced-motion</code>. The live field starts when this section opens.',
+    used: 'Every chat welcome — ON by default at 20% opacity, 10° tilt, 100% scale on X / Y / Z',
+    lede: 'The ambient DNA/RNA field behind the chat welcome. Product thumbnails travel the strand; move onto a circle for its card. Notes (brand insight or look-closer fact) are sprinkled two-of-three along the strand, mixed with food sheets — never a status stamp, and never on their own: a popover opens only when the pointer enters a circle. Default opacity is <strong>20%</strong>, the axis tilt defaults to <strong>10°</strong>, and Scale X / Y / Z each default to <strong>100%</strong> (the original strand; drag any axis up to 250%) — same controls as the chat ⋯ menu. Honors pause and <code>prefers-reduced-motion</code>. The live field starts when this section opens.',
     demo: `
       <div class="mi-motion-helix sc-bganim-host" data-motion-helix>
         <div class="mi-motion-helix-stage" data-helix-body></div>
@@ -3256,9 +3256,19 @@ const MOTION_ITEMS = [
             <span class="sc-bganim-angle-val" data-helix-angle-val>10°</span>
           </label>
           <label class="mi-motion-helix-opacity">
-            <span class="mi-motion-helix-opacity-label">Scale</span>
-            <input type="range" class="sc-bganim-scale-range" data-helix-scale min="100" max="250" step="5" value="100" aria-label="Helix scale">
-            <span class="sc-bganim-scale-val" data-helix-scale-val>100%</span>
+            <span class="mi-motion-helix-opacity-label">Scale X</span>
+            <input type="range" class="sc-bganim-scale-range" data-helix-scale="x" min="100" max="250" step="5" value="100" aria-label="Helix scale X">
+            <span class="sc-bganim-scale-val" data-helix-scale-val="x">100%</span>
+          </label>
+          <label class="mi-motion-helix-opacity">
+            <span class="mi-motion-helix-opacity-label">Scale Y</span>
+            <input type="range" class="sc-bganim-scale-range" data-helix-scale="y" min="100" max="250" step="5" value="100" aria-label="Helix scale Y">
+            <span class="sc-bganim-scale-val" data-helix-scale-val="y">100%</span>
+          </label>
+          <label class="mi-motion-helix-opacity">
+            <span class="mi-motion-helix-opacity-label">Scale Z</span>
+            <input type="range" class="sc-bganim-scale-range" data-helix-scale="z" min="100" max="250" step="5" value="100" aria-label="Helix scale Z">
+            <span class="sc-bganim-scale-val" data-helix-scale-val="z">100%</span>
           </label>
         </div>
       </div>`,
@@ -3582,11 +3592,13 @@ function wireMotion(root) {
   const helixVal = mod.querySelector('[data-helix-opacity-val]');
   const helixAngleRange = mod.querySelector('[data-helix-angle]');
   const helixAngleVal = mod.querySelector('[data-helix-angle-val]');
-  const helixScaleRange = mod.querySelector('[data-helix-scale]');
-  const helixScaleVal = mod.querySelector('[data-helix-scale-val]');
   const BGANIM_OPACITY_KEY = 'wise:chat-bg-anim-opacity';
   const BGANIM_ANGLE_KEY = 'wise:chat-bg-anim-angle';
-  const BGANIM_SCALE_KEY = 'wise:chat-bg-anim-scale';
+  const BGANIM_SCALE_AXIS_KEYS = {
+    x: 'wise:chat-bg-anim-scale-x',
+    y: 'wise:chat-bg-anim-scale-y',
+    z: 'wise:chat-bg-anim-scale-z',
+  };
   const readHelixPct = () => {
     try {
       const s = parseInt(localStorage.getItem(BGANIM_OPACITY_KEY), 10);
@@ -3601,16 +3613,9 @@ function wireMotion(root) {
     } catch (_) { /* ignore */ }
     return 10;
   };
-  const readHelixScale = () => {
-    try {
-      const s = parseInt(localStorage.getItem(BGANIM_SCALE_KEY), 10);
-      if (!isNaN(s)) return Math.max(100, Math.min(250, s));
-    } catch (_) { /* ignore */ }
-    return 100;
-  };
   let helixPct = readHelixPct();
   let helixAngle = readHelixAngle();
-  let helixScalePct = readHelixScale();
+  const helixScale = readBgAnimScaleAxes();
   let helixPaused = false;
   let helix = null;
   const paintHelixOpacity = (pct, persist) => {
@@ -3636,29 +3641,47 @@ function wireMotion(root) {
       else helix.redraw();
     }
   };
-  const paintHelixScale = (pct, persist) => {
-    helixScalePct = Math.max(100, Math.min(250, pct));
-    if (helixScaleRange) helixScaleRange.value = String(helixScalePct);
-    if (helixScaleVal) helixScaleVal.textContent = helixScalePct + '%';
+  const paintHelixScaleAxis = (axis, pct, persist) => {
+    if (!(axis in helixScale)) return;
+    helixScale[axis] = Math.max(100, Math.min(250, pct));
+    const range = mod.querySelector('[data-helix-scale="' + axis + '"]');
+    const val = mod.querySelector('[data-helix-scale-val="' + axis + '"]');
+    if (range) range.value = String(helixScale[axis]);
+    if (val) val.textContent = helixScale[axis] + '%';
     if (persist) {
-      try { localStorage.setItem(BGANIM_SCALE_KEY, String(helixScalePct)); } catch (_) { /* ignore */ }
-      try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-scale', { detail: { scale: helixScalePct / 100 } })); } catch (_) { /* ignore */ }
+      try { localStorage.setItem(BGANIM_SCALE_AXIS_KEYS[axis], String(helixScale[axis])); } catch (_) { /* ignore */ }
+      try {
+        document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-scale', {
+          detail: {
+            axis,
+            scaleX: helixScale.x / 100,
+            scaleY: helixScale.y / 100,
+            scaleZ: helixScale.z / 100,
+            scale: helixScale[axis] / 100,
+          },
+        }));
+      } catch (_) { /* ignore */ }
     }
     if (helix) {
       if (reduced) helix.start();
       else helix.redraw();
     }
   };
+  const paintHelixScaleAll = () => {
+    paintHelixScaleAxis('x', helixScale.x, false);
+    paintHelixScaleAxis('y', helixScale.y, false);
+    paintHelixScaleAxis('z', helixScale.z, false);
+  };
   paintHelixOpacity(helixPct, false);
   paintHelixAngle(helixAngle, false);
-  paintHelixScale(helixScalePct, false);
+  paintHelixScaleAll();
   if (helixHost && helixBody) {
     helix = createHelixBgAnim({
       host: helixHost,
       getBody: () => helixBody,
       getOpacity: () => helixPct / 100,
       getAngle: () => helixAngle,
-      getScale: () => helixScalePct / 100,
+      getScale: () => ({ x: helixScale.x / 100, y: helixScale.y / 100, z: helixScale.z / 100 }),
       reducedMotion: reduced,
       isOn: () => !mod.classList.contains('is-collapsed'),
       isPaused: () => helixPaused,
@@ -3670,8 +3693,10 @@ function wireMotion(root) {
   helixAngleRange?.addEventListener('input', () => {
     paintHelixAngle(parseInt(helixAngleRange.value, 10) || 0, true);
   });
-  helixScaleRange?.addEventListener('input', () => {
-    paintHelixScale(parseInt(helixScaleRange.value, 10) || 100, true);
+  mod.querySelectorAll('[data-helix-scale]').forEach((range) => {
+    range.addEventListener('input', () => {
+      paintHelixScaleAxis(range.getAttribute('data-helix-scale'), parseInt(range.value, 10) || 100, true);
+    });
   });
   document.addEventListener('wise:chat-bg-anim-opacity', (e) => {
     const v = e && e.detail && e.detail.opacity;
@@ -3684,9 +3709,14 @@ function wireMotion(root) {
     paintHelixAngle(v, false);
   });
   document.addEventListener('wise:chat-bg-anim-scale', (e) => {
-    const v = e && e.detail && e.detail.scale;
-    if (typeof v !== 'number') return;
-    paintHelixScale(Math.round(v * 100), false);
+    const d = e && e.detail;
+    if (!d) return;
+    if (typeof d.scaleX === 'number') paintHelixScaleAxis('x', Math.round(d.scaleX * 100), false);
+    if (typeof d.scaleY === 'number') paintHelixScaleAxis('y', Math.round(d.scaleY * 100), false);
+    if (typeof d.scaleZ === 'number') paintHelixScaleAxis('z', Math.round(d.scaleZ * 100), false);
+    else if (typeof d.scale === 'number') {
+      paintHelixScaleAxis(d.axis === 'x' || d.axis === 'z' ? d.axis : 'y', Math.round(d.scale * 100), false);
+    }
   });
   const ppBtn = mod.querySelector('[data-helix-pp]');
   const syncHelixPp = () => {
