@@ -197,6 +197,25 @@ export function catalogHtmlPaths() {
   return [...set].sort();
 }
 
+/* Friendly product area for a path (e.g. "Portfolio", "Admin", "Marketing
+   site") pulled from the same hand-maintained catalog the nav uses. Lets the
+   generated synopsis say what kind of surface a page is, in plain words. */
+function areaTitleMap() {
+  const map = {};
+  pageGalleryEntries().forEach((m) => {
+    const href = String(m.href || '').split('#')[0];
+    if (href && m.areaTitle) map[href] = m.areaTitle;
+  });
+  return map;
+}
+
+export function areaTitleForPath(path) {
+  const map = areaTitleMap();
+  const p = String(path || '');
+  const base = p.split('/').pop();
+  return map[p] || map[base] || map['../' + base] || '';
+}
+
 export function defaultFileLabel(path, title) {
   const labels = labelMap();
   if (labels[path]) return labels[path];
@@ -437,49 +456,66 @@ function hasAny(out) {
   return Object.keys(out).some((k) => Array.isArray(out[k]) && out[k].length);
 }
 
-function describeSignals(out, added, removed) {
+/* Word for the kind of surface, used inside sentences. */
+function kindWord(fp) {
+  if (fp.kind === 'html') return 'page';
+  if (fp.kind === 'js') return 'shared script';
+  if (fp.kind === 'css') return 'stylesheet';
+  return 'file';
+}
+
+/* One plain sentence saying what the surface is and where it lives. */
+function surfaceIntro(fp) {
+  const label = defaultFileLabel(fp.path, fp.title);
+  const area = areaTitleForPath(fp.path);
+  const where = displayPath(fp.path);
+  if (area && fp.kind === 'html') return label + ' is the ' + area + ' page (' + where + ').';
+  return label + ' is the ' + kindWord(fp) + ' at ' + where + '.';
+}
+
+/* The detected feature signals turned into their own ready-made prose
+   sentences (the `on` copy), in a stable order. This is the "what it does". */
+function capabilityProse(signalIds) {
   const byId = Object.fromEntries(FEATURE_SIGNALS.map((s) => [s.id, s]));
-  added.forEach((id) => {
-    const spec = byId[id];
-    if (spec) push(out, spec.cat, spec.on);
-  });
-  removed.forEach((id) => {
-    const spec = byId[id];
-    if (spec) push(out, 'deletions', spec.off);
-  });
+  return FEATURE_SIGNALS
+    .map((s) => s.id)
+    .filter((id) => (signalIds || []).includes(id) && byId[id])
+    .map((id) => byId[id].on);
+}
+
+/* A plain sentence naming how the surface is organised — at most three
+   section names, in prose, never a bracketed dump of everything. */
+function structureProse(fp) {
+  const mods = (fp.modules || []).filter(Boolean);
+  if (!mods.length) return '';
+  if (mods.length <= 3) {
+    return 'It is organised into the ' + oxford(mods.map((m) => '“' + m + '”')) + (mods.length === 1 ? ' section.' : ' sections.');
+  }
+  return 'It is organised into ' + mods.length + ' titled sections, including ' + oxford(mods.slice(0, 3).map((m) => '“' + m + '”')) + '.';
 }
 
 function describeCurrentSurface(fp, before) {
   const out = emptyCats();
-  const kind = fp.kind === 'html' ? 'page' : 'file';
-  if (fp.modules && fp.modules.length) {
-    push(out, 'components', 'Modules and titled surfaces on this ' + kind + ': ' + quoteList(fp.modules, 12) + '.');
-  }
-  if (fp.headings && fp.headings.length) {
-    push(out, 'features', 'Headlines on this ' + kind + ': ' + quoteList(fp.headings, 12) + '.');
-  }
-  describeSignals(out, fp.signals || [], []);
+  push(out, 'features', surfaceIntro(fp));
+  const caps = capabilityProse(fp.signals);
+  if (caps.length) push(out, 'features', caps.join(' '));
+  const structure = structureProse(fp);
+  if (structure) push(out, 'components', structure);
   if (fp.chips && fp.chips.length) {
-    push(out, 'features', 'Intent or action chips: ' + quoteList(fp.chips, 10) + '.');
-  }
-  if (fp.scripts && fp.scripts.length) {
-    push(out, 'logic', 'Shared scripts on this page: ' + oxford(fp.scripts.slice(0, 12).map((s) => s.split('/').pop())) + (fp.scripts.length > 12 ? ', and ' + (fp.scripts.length - 12) + ' more' : '') + '.');
-  }
-  if (fp.buttons && fp.buttons.length) {
-    push(out, 'ux', 'Controls on this surface: ' + quoteList(fp.buttons, 8) + '.');
+    push(out, 'features', 'It offers ready-made prompts such as ' + quoteList(fp.chips, 4) + ', each opening a real transcript.');
   }
   if (before && typeof before.size === 'number' && fp.size !== before.size) {
     const d = fp.size - before.size;
-    push(out, 'changes', 'The file ' + (d > 0 ? 'grew' : 'shrank') + ' by ' + fmtBytes(Math.abs(d)) + ' versus the previous snapshot. The inventory above is what is actually on disk now — features, UX, and modules — not just the byte count.');
+    push(out, 'changes', 'Since the start of the day the ' + (fp.kind === 'html' ? 'page' : 'file') + ' ' + (d > 0 ? 'grew' : 'shrank') + ' by ' + fmtBytes(Math.abs(d)) + '; the description above is what is on disk right now, not just the byte count.');
   } else {
-    push(out, 'updates', 'Full inventory of what is on disk now. Later re-evaluations on this day describe only what moved versus the start-of-day baseline.');
+    push(out, 'updates', 'This is the full read of the surface as it stands now — later re-evaluations today describe only what moves from the start-of-day baseline.');
   }
   return out;
 }
 
 function describeNewFile(fp) {
   const out = describeCurrentSurface(fp, null);
-  out.features.unshift('First time this file is in the progress-log inventory.');
+  out.features.unshift('This surface is new to the log — here is its first full read.');
   return out;
 }
 
@@ -489,97 +525,82 @@ export function describeInventoryDiff(fp, before) {
   if (!isRichInventory(before)) return describeCurrentSurface(fp, before);
 
   const out = emptyCats();
+  const label = defaultFileLabel(fp.path, fp.title);
+  const noun = fp.kind === 'html' ? 'page' : (fp.kind === 'js' ? 'script' : 'file');
+
+  push(out, 'features', label + ' changed since the start of the day. Here is what moved.');
 
   if (fp.title && before.title && fp.title !== before.title) {
-    push(out, 'updates', 'The page title is now “' + cleanText(fp.title) + '” (was “' + cleanText(before.title) + '”).');
-  }
-
-  const heads = addedRemoved(fp.headings, before.headings);
-  if (heads.added.length) {
-    push(out, 'features', 'New headlines landed: ' + quoteList(heads.added, 10) + '. Section titles and module headlines use the brand serif face.');
-  }
-  if (heads.removed.length) {
-    push(out, 'deletions', 'Headlines removed: ' + quoteList(heads.removed, 10) + '.');
+    push(out, 'updates', 'The ' + noun + ' was retitled from “' + cleanText(before.title) + '” to “' + cleanText(fp.title) + '.”');
   }
 
   const mods = addedRemoved(fp.modules, before.modules);
   if (mods.added.length) {
-    push(out, 'components', 'New modules or titled surfaces: ' + quoteList(mods.added, 10) + '.');
+    push(out, 'components', 'It gained ' + (mods.added.length === 1 ? 'a new section, ' : mods.added.length + ' new sections — ')
+      + oxford(mods.added.slice(0, 4).map((m) => '“' + m + '”')) + (mods.added.length > 4 ? ', among others' : '') + '.');
   }
   if (mods.removed.length) {
-    push(out, 'deletions', 'Modules or titled surfaces removed: ' + quoteList(mods.removed, 10) + '.');
+    push(out, 'deletions', 'It dropped ' + oxford(mods.removed.slice(0, 4).map((m) => '“' + m + '”')) + (mods.removed.length > 4 ? ', among others' : '') + (mods.removed.length === 1 ? '.' : '.'));
   }
 
   const scripts = addedRemoved(fp.scripts, before.scripts);
   if (scripts.added.length) {
-    push(out, 'features', 'Now includes ' + oxford(scripts.added.map((s) => s.split('/').pop())) + ', so the page picks up those shared behaviors.');
+    push(out, 'features', 'It now loads ' + oxford(scripts.added.map((s) => s.split('/').pop())) + ', so it inherits those shared behaviours.');
   }
   if (scripts.removed.length) {
-    push(out, 'deletions', 'No longer includes ' + oxford(scripts.removed.map((s) => s.split('/').pop())) + '.');
+    push(out, 'deletions', 'It no longer loads ' + oxford(scripts.removed.map((s) => s.split('/').pop())) + '.');
+  }
+
+  const sig = addedRemoved(fp.signals, before.signals);
+  const byId = Object.fromEntries(FEATURE_SIGNALS.map((s) => [s.id, s]));
+  sig.added.forEach((id) => { if (byId[id]) push(out, byId[id].cat, byId[id].on); });
+  sig.removed.forEach((id) => { if (byId[id]) push(out, 'deletions', byId[id].off); });
+
+  if (fp.hasChat !== before.hasChat && !sig.added.includes('chat') && !sig.removed.includes('chat')) {
+    if (fp.hasChat) push(out, 'features', 'The shared WISEcodeAI chat module is now mounted here.');
+    else push(out, 'deletions', 'The shared WISEcodeAI chat module was removed.');
   }
 
   const chips = addedRemoved(fp.chips, before.chips);
   if (chips.added.length) {
-    push(out, 'features', 'New intent or action chips: ' + quoteList(chips.added, 10) + '. Each should open a real transcript or action, and the thread should still end on related chips.');
+    push(out, 'features', 'New prompts were added, such as ' + quoteList(chips.added, 4) + ', each opening a real transcript.');
   }
   if (chips.removed.length) {
-    push(out, 'deletions', 'Chips removed: ' + quoteList(chips.removed, 10) + '.');
+    push(out, 'deletions', 'Some prompts were removed, including ' + quoteList(chips.removed, 4) + '.');
   }
 
-  const btns = addedRemoved(fp.buttons, before.buttons);
-  if (btns.added.length) {
-    push(out, 'ux', 'New controls: ' + quoteList(btns.added, 8) + '.');
-  }
-  if (btns.removed.length) {
-    push(out, 'ux', 'Controls no longer on the page: ' + quoteList(btns.removed, 8) + '.');
+  const heads = addedRemoved(fp.headings, before.headings);
+  if (heads.added.length) {
+    push(out, 'ux', 'New headings appeared, including ' + quoteList(heads.added, 4) + '. Section titles use the brand serif face.');
   }
 
   const fns = addedRemoved(fp.functions, before.functions);
   if (fns.added.length) {
-    const extra = fns.added.length > 12 ? ', and ' + (fns.added.length - 12) + ' more' : '';
-    push(out, 'logic', 'New functions: ' + oxford(fns.added.slice(0, 12)) + extra + '.');
+    push(out, 'logic', 'Its behaviour grew with ' + (fns.added.length === 1 ? 'a new handler, ' : fns.added.length + ' new handlers, including ')
+      + oxford(fns.added.slice(0, 3)) + '.');
   }
   if (fns.removed.length) {
-    push(out, 'deletions', 'Functions removed: ' + oxford(fns.removed.slice(0, 12)) + (fns.removed.length > 12 ? ', and ' + (fns.removed.length - 12) + ' more' : '') + '.');
-  }
-
-  const cls = addedRemoved(fp.classes, before.classes);
-  if (cls.added.length) {
-    const extra = cls.added.length > 8 ? ', and ' + (cls.added.length - 8) + ' more' : '';
-    push(out, 'ux', 'New UI classes landed (' + cls.added.slice(0, 8).join(', ') + extra + ') — layout, chrome, or component skins changed.');
-  }
-  if (cls.removed.length) {
-    push(out, 'deletions', 'UI classes removed: ' + cls.removed.slice(0, 8).join(', ') + (cls.removed.length > 8 ? ', and ' + (cls.removed.length - 8) + ' more' : '') + '.');
+    push(out, 'deletions', (fns.removed.length === 1 ? 'A handler was removed (' : fns.removed.length + ' handlers were removed, including ')
+      + oxford(fns.removed.slice(0, 3)) + (fns.removed.length === 1 ? ').' : '.'));
   }
 
   const copy = addedRemoved(fp.copy, before.copy);
   if (copy.added.length) {
-    push(out, 'ux', 'New interface copy: ' + quoteList(copy.added, 6) + '.');
-  }
-  if (copy.removed.length) {
-    push(out, 'deletions', 'Copy removed: ' + quoteList(copy.removed, 6) + '.');
-  }
-
-  const sig = addedRemoved(fp.signals, before.signals);
-  describeSignals(out, sig.added, sig.removed);
-
-  if (fp.hasChat !== before.hasChat) {
-    if (fp.hasChat) push(out, 'features', 'The shared WISEcodeAI chat module is now on this page.');
-    else push(out, 'deletions', 'The shared WISEcodeAI chat module was removed from this page.');
+    push(out, 'ux', 'Fresh interface copy landed, such as “' + copy.added[0] + '.”');
   }
 
   const dSize = (fp.size || 0) - (before.size || 0);
   if (dSize) {
     const dir = dSize > 0 ? 'grew' : 'shrank';
     if (hasAny(out)) {
-      push(out, 'changes', 'The file ' + dir + ' by ' + fmtBytes(Math.abs(dSize)) + ' with those feature, UX, and module edits — the byte count is the footprint, not the story.');
+      push(out, 'changes', 'Altogether the ' + noun + ' ' + dir + ' by ' + fmtBytes(Math.abs(dSize)) + ' with those edits — the byte count is the footprint, not the story.');
     } else {
-      push(out, 'changes', 'The file ' + dir + ' by ' + fmtBytes(Math.abs(dSize)) + '. Headlines, modules, scripts, chips, and feature markers are the same — this was copy, styling, or logic inside existing surfaces.');
+      push(out, 'changes', 'The ' + noun + ' ' + dir + ' by ' + fmtBytes(Math.abs(dSize)) + ', but its sections, scripts, prompts, and features are unchanged — this was copy, styling, or internal logic.');
     }
   }
 
   if (!hasAny(out) && fp.hash !== before.hash) {
-    push(out, 'updates', 'The file changed on disk, but headlines, modules, scripts, chips, controls, and feature markers are unchanged. This was an internal edit — spacing, comments, or logic inside existing surfaces.');
+    push(out, 'updates', 'The ' + noun + ' changed on disk, but its sections, scripts, prompts, controls, and features are all unchanged — an internal edit to spacing, comments, or logic.');
   }
 
   return out;
@@ -587,6 +608,21 @@ export function describeInventoryDiff(fp, before) {
 
 export function catsHaveItems(cats) {
   return !!(cats && hasAny(cats));
+}
+
+/* One stacked paragraph per finding — never a comma-run of bullets. */
+export function catsToSynopsis(cats) {
+  const paras = [];
+  if (!cats) return paras;
+  ['features', 'components', 'ux', 'logic', 'changes', 'improvements', 'updates', 'deletions'].forEach((id) => {
+    const arr = cats[id];
+    if (!Array.isArray(arr)) return;
+    arr.forEach((t) => {
+      const s = String(t || '').trim();
+      if (s && !paras.includes(s)) paras.push(s);
+    });
+  });
+  return paras;
 }
 
 export function crawlOverview(htmlCount, scriptCount, diff, labels) {

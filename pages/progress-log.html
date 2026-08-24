@@ -5,11 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- Never serve a stale snapshot of this journal — every reload / hot reload
        must re-evaluate counts, filters, and the timeline from the current LOG.
-       A new local day opens a live day at the top of the board. Eval notes and
-       crawls are today-only — they never rewrite earlier days or write a
-       journal-wide digest. Boot, the hourly poll, midnight, and Re-evaluate
-       open every HTML file, inventory features / UX / modules, and rewrite
-       today’s cards against a frozen start-of-day baseline. -->
+       A new local day opens a live day at the top of the board. Every calendar
+       day from the first journal entry through today stays on the board —
+       days are never skipped. Each day is an accordion; each page inside it
+       is an accordion. Eval notes and crawls are today-only. -->
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <title>WISE · Progress Log</title>
@@ -193,8 +192,14 @@
     /* ── Timeline ── */
     .pl-day { margin-top: 24px; scroll-margin-top: 12px; }
     .pl-day:first-child { margin-top: 0; }
+    .pl-acc-chev {
+      flex-shrink: 0; font-size: 20px; line-height: 1; color: var(--text-subtle);
+      transition: transform .16s ease;
+    }
+    .pl-day.is-collapsed > .pl-day-head .pl-acc-chev,
+    .pl-pcard.is-collapsed > .pl-pcard-head .pl-acc-chev { transform: rotate(-90deg); }
     .pl-day-head {
-      display: flex; align-items: center; gap: 11px; flex-wrap: wrap;
+      display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap;
       padding-bottom: 12px; margin-bottom: 14px; border-bottom: 1px solid var(--border); cursor: pointer;
     }
     .pl-day-titles { min-width: 0; flex: 1; }
@@ -229,25 +234,30 @@
     html.dark .pl-day-card { background: rgba(255,255,255,0.03); }
     .pl-day-card .pl-notes { border-bottom-color: var(--border); }
 
-    /* ── Page block (inside the day container) ── */
-    .pl-pcard { padding: 16px 0 8px; }
+    /* ── Page accordion (inside the day accordion) ── */
+    .pl-pcard { padding: 4px 0; }
     .pl-pcard + .pl-pcard { border-top: 1px solid var(--border); }
-    .pl-pcard-head { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 10px; }
+    .pl-pcard-head {
+      display: flex; align-items: flex-start; gap: 8px;
+      width: 100%; margin: 0; padding: 12px 0;
+      border: 0; background: transparent; text-align: left; cursor: pointer;
+      font: inherit; color: inherit;
+    }
+    .pl-pcard-head:hover .pl-pcard-name { color: var(--primary); }
+    .pl-pcard-head:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); border-radius: 8px; }
     .pl-pcard-meta { min-width: 0; flex: 1; }
     .pl-pcard-name { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; word-break: break-word; color: var(--text); }
     .pl-pcard-path { font-size: 10.5px; color: var(--text-subtle); font-family: 'Courier New', monospace; margin-top: 1px; }
     .pl-pcard-new { display: inline-flex; align-items: center; margin-left: auto; flex-shrink: 0; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--sec-green); }
+    .pl-pcard.is-collapsed .pl-pcard-body { display: none; }
+    .pl-pcard-body { padding: 0 0 16px 28px; }
 
-    /* One category, then a stack of full descriptions — never inline bullets
-       wrapped into a single run-on line. */
-    .pl-pcard-cats { display: flex; flex-direction: column; gap: 16px; }
-    .pl-cat-block { display: flex; flex-direction: column; gap: 8px; margin: 0; }
-    .pl-cat-block-head { display: flex; align-items: baseline; gap: 5px; flex: 0 0 auto; }
-    .pl-cat-block-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-subtle); }
-    .pl-cat-block-count { font-size: 10px; font-weight: 700; color: var(--text-subtle); font-variant-numeric: tabular-nums; }
-    .pl-cat-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-    .pl-cat-list li { display: block; font-size: 13px; line-height: 1.55; color: var(--text); }
-    .pl-cat-list mark { background: color-mix(in srgb, var(--primary) 24%, transparent); color: inherit; border-radius: 3px; padding: 0 2px; }
+    /* Stacked synopsis paragraphs — never inline bullets, never one run-on line. */
+    .pl-syn { display: flex; flex-direction: column; gap: 12px; }
+    .pl-syn p { margin: 0; font-size: 13.5px; line-height: 1.65; color: var(--text); }
+    .pl-syn p + p { margin-top: 0; }
+    .pl-syn mark { background: color-mix(in srgb, var(--primary) 24%, transparent); color: inherit; border-radius: 3px; padding: 0 2px; }
+    .pl-pcard-empty { font-size: 13px; line-height: 1.55; color: var(--text-muted); font-style: italic; }
 
     /* ── Empty state ── */
     .pl-empty { margin-top: 26px; padding: 40px 22px; text-align: center; border-radius: var(--r-md, 16px); border: 1px dashed var(--border-strong); color: var(--text-muted); }
@@ -355,8 +365,8 @@
                 <button type="button" class="topbar-menu-item" role="menuitem" onclick="plReevaluateNow(); plCloseModuleMenu()"><span class="material-symbols-outlined topbar-menu-icon">autorenew</span><span>Re-evaluate now</span></button>
                 <button type="button" class="topbar-menu-item" role="menuitem" onclick="plAddNote(); plCloseModuleMenu()"><span class="material-symbols-outlined topbar-menu-icon">edit_note</span><span>Add a note</span></button>
                 <div class="topbar-menu-divider"></div>
-                <button type="button" class="topbar-menu-item" role="menuitem" onclick="plExpandAll(); plCloseModuleMenu()"><span class="material-symbols-outlined topbar-menu-icon">unfold_more</span><span>Expand all days</span></button>
-                <button type="button" class="topbar-menu-item" role="menuitem" onclick="plCollapseAll(); plCloseModuleMenu()"><span class="material-symbols-outlined topbar-menu-icon">unfold_less</span><span>Collapse all days</span></button>
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="plExpandAll(); plCloseModuleMenu()"><span class="material-symbols-outlined topbar-menu-icon">unfold_more</span><span>Expand all</span></button>
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="plCollapseAll(); plCloseModuleMenu()"><span class="material-symbols-outlined topbar-menu-icon">unfold_less</span><span>Collapse all</span></button>
                 <div class="topbar-menu-divider"></div>
                 <button type="button" class="topbar-menu-item" role="menuitem" onclick="plResetFilters(); plCloseModuleMenu()"><span class="material-symbols-outlined topbar-menu-icon">restart_alt</span><span>Reset filters</span></button>
               </div>
@@ -525,7 +535,7 @@
     import { mountWISEcodeAIChat } from '../js/wiseai-chat.js';
     import {
       CRAWL_KEY, CRAWL_KEY_LEGACY, SHARED_SCRIPTS,
-      inventoryDoc, describeInventoryDiff, catsHaveItems,
+      inventoryDoc, describeInventoryDiff, catsHaveItems, catsToSynopsis,
       catalogHtmlPaths, discoverHtmlPaths, defaultFileLabel,
       displayPath, isHtmlPath, crawlOverview, emptyCats,
     } from '../js/progress-log-eval.js';
@@ -546,15 +556,191 @@
       ];
       const CAT_BY_ID = Object.fromEntries(CATS.map((c) => [c.id, c]));
 
-      /* ── The log. Newest day first. Each entry is a page touched that day.
-         AUTHORED is the hand-written journal. LOG is the board: AUTHORED, plus
-         a live day prepended whenever today is not in AUTHORED. LOG_STAMP is
-         bumped whenever this file is rewritten; the board polls it every hour
-         (and on tab-focus after an hour) and reloads when the stamp has moved.
-         A new local day opens that live day so crawls and eval notes cannot
-         keep writing onto yesterday. ── */
-      const LOG_STAMP = '2026-08-23T17:20:00.000Z';
+      /* ── The log. Newest day first. AUTHORED is the hand-written journal.
+         LOG is every calendar day from the first authored date through today —
+         authored days, a live today when today is not authored, and an empty
+         accordion for any gap. Days are never skipped. ── */
+      const LOG_STAMP = '2026-08-23T19:00:00.000Z';
       const AUTHORED = [
+        {
+          date: '2026-08-23', rel: 'Sunday',
+          summary: 'App-wide search landed in Appearance ▸ Admin. Reformulation now saves a real recipe that Product pages can read. This journal evaluates every HTML file every time, never skips a calendar day, and stacks each day and each page as its own accordion.',
+          entries: [
+            { page: 'App search', path: 'app-search.js', isNew: true,
+              features: ['Admin search in the top band indexes transcripts, live outputs, and reports'],
+              synopsis: [
+                'App search is a new admin control. It sits in the shell’s top band, lined up with the primary-nav logo, and it is off until you turn it on from Appearance ▸ Admin ▸ Search.',
+                'The index is transcripts (every chat history plus the live thread), outputs (open panes and titles pulled from those transcripts), and reports (the Studio catalog plus generated reports). The full typed query is AND-matched across every token, so a specific ask actually finds the thread or report it belongs to.',
+              ] },
+            { page: 'Reformulation', path: 'reformulation.html',
+              features: ['Shared reformulation store; Studio writes the live recipe, product pages read it'],
+              logic: ['Keyed by UPC first, then catalog id; reset-to-original drops the record'],
+              synopsis: [
+                'Reformulation Studio no longer keeps a draft that dies on that page. A new shared store writes the live per-serving recipe, and View Product, Add Product, and the portfolio Guiding Stars read the same record. Saving in the studio is saving the product.',
+                'Records key off UPC digits first, then catalog id. Reset-to-original removes the record so every reader falls back to the printed label. The studio and overview modules grew with that save path, so the board and the chat stay on the same recipe.',
+              ] },
+            { page: 'Progress Log', path: 'progress-log.html',
+              features: ['Every HTML file is evaluated every time; every calendar day stays on the board'],
+              ux: ['Each day is an accordion; each page inside the day is an accordion; synopses stack as paragraphs'],
+              synopsis: [
+                'This journal used to jump dates when a day was not hand-written, and Re-evaluate collapsed the work into byte counts and heading tallies. That is gone.',
+                'Re-evaluate opens every HTML file, every time — app pages, marketing pages, and index.html. It writes a synopsis of features, UX, UI, and modules, not “grew 1.3 KB.” The same start-of-day baseline is reused all day, so two Re-evaluates of the same files read the same way.',
+                'The board is a calendar. Every day from the first journal entry through today is an accordion. A missing Friday or Saturday cannot fall out. Inside each day, every page or project is its own accordion, stacked, so you can open one surface or the whole day.',
+              ] },
+            { page: 'WISEcodeAI', path: 'wiseai.html',
+              features: ['Chat-module-parity now requires trailing topic chips and the unlocked composer on this studio'],
+              synopsis: [
+                'The studio picked up the same chat-parity pass as the rest of the app: trailing topic chips after every answer, an unlocked composer, and the shared search index so a transcript typed here is findable from any page.',
+                'Shared styles and the output shelf were tightened so generated reports and live artifacts stay in the same chrome as Saturday’s report work.',
+              ] },
+            { page: 'Shared chat', path: 'wiseai-chat.js',
+              features: ['Parity rule and audit skill require trailing chips and a live composer'],
+              synopsis: [
+                'The shared chat module is the source of the unlocked composer and the “every transcript ends on topic chips” rule. The Cursor parity rule and the chat-module-audit skill now say that out loud, so a page cannot ship a locked box or a dead-end reply.',
+              ] },
+            { page: 'All Modules', path: 'all-modules-flow.js',
+              updates: ['Directory, icon inventory, and code-stats scan grew with the new pages and scripts'],
+              synopsis: [
+                'All Modules absorbed the new search, reformulation store, and progress-log evaluator so the directory, icon inventory, and code-stats stay honest. The icon and stats scanners were updated in the same pass.',
+              ] },
+            { page: 'Appearance & Admin', path: 'appearance-menu.js',
+              features: ['Search toggle in Admin; jam strip and top-band search stay in one popover'],
+              synopsis: [
+                'Appearance gained the Search row under Admin. It is the same popover as Walkthrough, Surface style, and the jam strip — one place to turn the top-band search on without adding a second settings surface.',
+              ] },
+            { page: 'Marketing site', path: '(index + marketing-*.html)',
+              updates: ['Marketing pages inherit the shared shell hooks from today’s pass'],
+              synopsis: [
+                'Home and the marketing pages (Products, Solutions, Pricing, App, Coach, Enterprise, WISEcodeAI, GRAS, Non-UPF, Alliance) were brought onto the same shared hooks as the app shell so a crawl of every HTML file actually sees them.',
+              ] },
+          ],
+        },
+        {
+          date: '2026-08-22', rel: 'Saturday',
+          summary: 'Generated reports became a real shelf. Portrait avatars landed. Add Product, View Product, and Reformulation grew into the same conversational editor. WISEcodeAI’s studio and the shared chat took another large pass, and a written UI/UX audit sat down next to the code.',
+          entries: [
+            { page: 'Reports', path: 'reports.html',
+              features: ['Generated-reports shelf reads what WISEcodeAI writes from the Output panel'],
+              synopsis: [
+                'Reports is no longer only a static catalog. A shared generated-reports store takes what “Generate Report” writes in the WISEcodeAI output panel and shows it on the first shelf, capped and seeded with real conversations (Kraft UPF, artificial sweeteners, protein bars, top brands by WISEscore).',
+                'The same store is what app search reads on Sunday, so a report made in chat is a report you can find later.',
+              ] },
+            { page: 'WISEcodeAI', path: 'wiseai.html',
+              features: ['Studio output can generate a report that lands on the Reports shelf'],
+              ux: ['Large studio pass — artifacts, chips, and chrome stay on the shared WISE controls'],
+              synopsis: [
+                'The studio had a large Saturday pass: more of the right-hand artifacts, report generation into the new shelf, and the same chip and chrome language as the rest of the app. This is the page that writes generated reports; Reports is the page that keeps them.',
+              ] },
+            { page: 'Shared chat', path: 'wiseai-chat.js',
+              features: ['Generate-report path and another expansion of answer actions and follow-ups'],
+              synopsis: [
+                'Shared chat grew twice on Saturday — once with the afternoon UI/UX pass, again in the evening with add-product and view-product. Answer actions, follow-ups, and the generate-report path all sit in this module so every host page picks them up.',
+              ] },
+            { page: 'Add Product', path: 'add-product.html',
+              features: ['Conversational capture and Nutrition Facts editor expanded with the shared add-product flow'],
+              synopsis: [
+                'Add Product’s flow script took a large expansion. The Nutrition Facts panel, photo capture, and the chat-driven field log grew together so what the assistant captures is what the label shows, and nothing still commits until Save to Portfolio.',
+              ] },
+            { page: 'View Product', path: 'view-product.html',
+              ux: ['Same editor language as Add Product — hover underline, hover-only photo and category controls'],
+              synopsis: [
+                'View Product was brought in line with Add Product so the two panels read as one editor: the same Nutrition Facts hover underline, the same hover-only photo and category controls, and the same flow script underneath. Evening work deepened the detail layout without forking a second pattern.',
+              ] },
+            { page: 'Reformulation', path: 'reformulation.html',
+              components: ['Studio and overview modules expanded ahead of Sunday’s shared store'],
+              synopsis: [
+                'Reformulation’s studio and overview grew on Saturday so there was a real module to save from. Sunday’s shared store is what made that save the product; Saturday is when the board itself got the room to hold the recipe.',
+              ] },
+            { page: 'Profile', path: 'profile.html',
+              features: ['Portrait avatars (female and male) sit next to the pattern set'],
+              synopsis: [
+                'Profile can now pick from real portrait avatars, not only patterns. user-avatar.js still carries the choice into the nav chip and every chat “you” bubble.',
+              ] },
+            { page: 'Product Portfolio', path: 'product-portfolio.html',
+              ux: ['Same Saturday chrome pass as Comparison — answer actions and module gutters'],
+              synopsis: [
+                'Portfolio and Comparison stayed on one chrome: answer-action tooltips, the shared module gutter, and the evening flow tweaks so a product opened from either board still matches Add / View.',
+              ] },
+            { page: 'Product Comparison', path: 'product-comparison.html',
+              ux: ['Same Saturday chrome pass as Portfolio'],
+              synopsis: [
+                'Comparison took the same Saturday chrome and flow pass as Portfolio so the two boards do not drift.',
+              ] },
+            { page: 'Guiding Stars Report', path: 'report-guiding-stars.html',
+              updates: ['Picked up the shared product-flow and chat-host tweaks'],
+              synopsis: [
+                'The Guiding Stars action plan picked up the same host tweaks as the product pages so its chat and module chrome stay on the family, not a one-off report skin.',
+              ] },
+            { page: 'Add Catalog', path: 'add-catalog.html',
+              updates: ['Same host and flow alignment as Add Product'],
+              synopsis: [
+                'Add Catalog stayed aligned with Add Product’s host chrome so bulk import does not become a second conversational pattern.',
+              ] },
+            { page: 'History & Projects', path: 'chat-history.js',
+              logic: ['History rows stay reconciled with the Saturday chat expansion'],
+              synopsis: [
+                'History was tightened so the Saturday chat growth — more turns, more artifacts — still files into projects without losing a row or a count.',
+              ] },
+            { page: 'Platform-wide', path: '(UI/UX audit + wise.css)',
+              updates: ['Written UI/UX audit checked in beside the code'],
+              synopsis: [
+                'A written UI/UX audit sat down next to the repo. Shared wise.css and the chat surface picked up the small alignment fixes from that pass (status colors, spacing, dark-mode stops) so the audit is not a document that the product ignores.',
+              ] },
+          ],
+        },
+        {
+          date: '2026-08-21', rel: 'Friday',
+          summary: 'Thursday’s chat, library, All Modules, and journal work landed on disk at the start of Friday. History was slimmed. The shared chat grew again in the evening. The calendar day stays on this board so Thursday cannot swallow Friday.',
+          entries: [
+            { page: 'Shared chat', path: 'wiseai-chat.js',
+              features: ['Overnight growth of the shared module, then another evening expansion'],
+              synopsis: [
+                'The shared chat that Thursday designed — follow-up chips that carry the last topic, answer-action tooltips on the icon popover, replay / edit / fork from a detached ⋯ — landed on disk Friday morning in a large wiseai-chat pass.',
+                'Friday evening grew the same module again. Hosts still decorate a chip with contextualizeChip and carryTopic; mid-turn status cards still pass trailChips: false so chips trail the answer, not the card.',
+              ] },
+            { page: 'WISEcodeAI', path: 'wiseai.html',
+              features: ['Studio page grew with the shared chat; leftover markup was slimmed mid-morning'],
+              deletions: ['Unused WISEcodeAI markup stripped in the morning slim'],
+              synopsis: [
+                'The studio page took the Friday-morning chat ship, then a small mid-morning slim so leftover markup from the growth did not sit in the page. The hero line and the sweeteners grid from Thursday are what this surface still shows.',
+              ] },
+            { page: 'History & Projects', path: 'chat-history.js',
+              logic: ['History markup slimmed after the overnight chat ship'],
+              synopsis: [
+                'History was slimmed Friday morning once the overnight chat ship was on disk. Folder spine, counts, and drag-to-project stay; the extra markup that came in with the big chat pass does not.',
+              ] },
+            { page: 'All Modules', path: 'all-modules-flow.js',
+              features: ['Components-used rail from Thursday’s design shipped, then a Friday-evening tweak'],
+              synopsis: [
+                'The Components used list under each rail module — inverted from the Component Library, with the same Dev Ready toggle id — shipped Friday morning. A small evening tweak kept the rail and the catalog in lockstep.',
+              ] },
+            { page: 'Conversation Library', path: 'conversation-library.html',
+              ux: ['History-matched folder spine and full-bleed padding shipped'],
+              synopsis: [
+                'The library’s folder tree spine and L-elbows, measured to the live-dot and folder icon, shipped with Friday’s morning commit. Full bleed (everything) sheds the page frame; chat-only full bleed no longer leaves leftover top and bottom padding.',
+              ] },
+            { page: 'Progress Log', path: 'progress-log.html',
+              features: ['Live day at local midnight; eval notes stay on today'],
+              synopsis: [
+                'Friday morning is when the journal’s live-day logic landed: a new local day opens at the top of the board, and Re-evaluate / boot / hourly / midnight only rewrite today. That is the rule this Sunday still follows — and the reason Friday itself has to stay on the board instead of disappearing into Thursday.',
+              ] },
+            { page: 'Accessibility Review', path: 'accessibility-review.html',
+              updates: ['Board chrome aligned with the Friday shell pass'],
+              synopsis: [
+                'Accessibility Review picked up the same Friday shell pass as the other chat-and-board pages so the audit board still docks like this journal and the library.',
+              ] },
+            { page: 'Product Portfolio', path: 'product-portfolio.html',
+              ux: ['data-tip answer actions shipped with the Friday morning chrome'],
+              synopsis: [
+                'Portfolio’s answer-action buttons received data-tip Friday morning so replay / edit / fork and the turn id use the shared icon tooltip.',
+              ] },
+            { page: 'Product Comparison', path: 'product-comparison.html',
+              ux: ['Same data-tip answer actions as Portfolio'],
+              synopsis: [
+                'Comparison took the same Friday-morning tooltip and detached-menu pass as Portfolio so the two boards stay one chrome.',
+              ] },
+          ],
+        },
         {
           date: '2026-08-20', rel: 'Thursday',
           summary: 'Follow-up chips continue the last turn; answer-action tooltips sit on the icon popover; Conversation Library tree lines match History; All Modules rail lists each module’s components with a synced Dev Ready toggle; this journal opens a live day at local midnight instead of restamping yesterday.',
@@ -1044,10 +1230,34 @@
         return {
           date: iso,
           rel: weekdayRel(iso),
-          summary: 'Evaluating every HTML file — the live crawl will write full feature, UX, and module details versus the start of today.',
+          summary: 'This calendar day stays on the board. The live crawl fills each page accordion as files move.',
           entries: [],
           live: true,
         };
+      }
+      function emptyGapDay(iso) {
+        return {
+          date: iso,
+          rel: weekdayRel(iso),
+          summary: 'No authored work was written for this day. The day still sits on the board so the calendar never skips.',
+          entries: [],
+          gap: true,
+        };
+      }
+      function addDaysIso(iso, n) {
+        const [y, m, d] = String(iso).split('-').map(Number);
+        const dt = new Date(y, m - 1, d + n);
+        return localDayIso(dt);
+      }
+      function eachIso(from, to) {
+        const out = [];
+        if (!from || !to || from > to) return out;
+        let cur = from;
+        while (cur <= to) {
+          out.push(cur);
+          cur = addDaysIso(cur, 1);
+        }
+        return out;
       }
       function loadLiveDay() {
         try {
@@ -1062,15 +1272,19 @@
       }
       function syncBoardLog() {
         const today = localDayIso();
-        if (AUTHORED.some((d) => d.date === today)) {
+        const byDate = new Map();
+        AUTHORED.forEach((d) => { if (d && d.date) byDate.set(d.date, d); });
+        if (!byDate.has(today)) {
+          const stored = loadLiveDay();
+          liveDay = (stored && stored.date === today) ? stored : emptyLiveDay(today);
+          if (!stored || stored.date !== today) persistLiveDay();
+          byDate.set(today, liveDay);
+        } else {
           liveDay = null;
-          LOG = AUTHORED;
-          return LOG;
         }
-        const stored = loadLiveDay();
-        liveDay = (stored && stored.date === today) ? stored : emptyLiveDay(today);
-        if (!stored || stored.date !== today) persistLiveDay();
-        LOG = [liveDay, ...AUTHORED];
+        const dates = [...byDate.keys()].sort();
+        const start = dates[0] || today;
+        LOG = eachIso(start, today).reverse().map((iso) => byDate.get(iso) || emptyGapDay(iso));
         return LOG;
       }
       function dropJournalNotes() {
@@ -1122,7 +1336,24 @@
       let catFilter = null;
       let pageFilter = '__all';
       let searchTerm = '';
-      const collapsed = new Set();
+      /* Empty = collapsed. User opens a day or page by adding it here. */
+      const expandedDays = new Set();
+      const expandedPages = new Set();
+      function pageAccKey(dayIso, entry) {
+        return dayIso + '\t' + (entry && (entry.path || entry.page) || '');
+      }
+      function expandAllAccordions() {
+        expandedDays.clear();
+        expandedPages.clear();
+        LOG.forEach((d) => {
+          expandedDays.add(d.date);
+          (d.entries || []).forEach((e) => expandedPages.add(pageAccKey(d.date, e)));
+        });
+      }
+      function collapseAllAccordions() {
+        expandedDays.clear();
+        expandedPages.clear();
+      }
 
       /* ── Renderers ── */
       let catTotals = {};
@@ -1173,9 +1404,39 @@
         const re = new RegExp('(' + searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig');
         return safe.replace(re, '<mark>$1</mark>');
       }
+      /* Normalise a terse journal bullet into a full sentence so a group of
+         them reads as flowing prose, not a stack of one-line fragments. */
+      function toSentence(s) {
+        let t = String(s || '').trim();
+        if (!t) return '';
+        t = t.charAt(0).toUpperCase() + t.slice(1);
+        if (!/[.!?…]$/.test(t)) t += '.';
+        return t;
+      }
+      function entryParagraphs(entry) {
+        if (!entry) return [];
+        if (Array.isArray(entry.synopsis) && entry.synopsis.length) {
+          return entry.synopsis.map((p) => String(p || '').trim()).filter(Boolean);
+        }
+        if (typeof entry.synopsis === 'string' && entry.synopsis.trim()) {
+          return entry.synopsis.split(/\n\n+/).map((p) => p.trim()).filter(Boolean);
+        }
+        // Fallback: group each category's bullets into one flowing paragraph
+        // of full sentences, rather than one short paragraph per bullet (which
+        // reads as a stack of choppy fragments).
+        const paras = [];
+        CATS.forEach((c) => {
+          if (catFilter && c.id !== catFilter) return;
+          const arr = entry[c.id];
+          if (!Array.isArray(arr) || !arr.length) return;
+          const sentences = arr.map(toSentence).filter(Boolean);
+          if (sentences.length) paras.push(sentences.join(' '));
+        });
+        return paras;
+      }
       function matchesSearch(entry) {
         if (!searchTerm) return true;
-        const hay = (entry.page + ' ' + entry.path + ' ' + entryItems(entry).map((i) => i.text).join(' ')).toLowerCase();
+        const hay = (entry.page + ' ' + entry.path + ' ' + entryParagraphs(entry).join(' ') + ' ' + entryItems(entry).map((i) => i.text).join(' ')).toLowerCase();
         return hay.includes(searchTerm);
       }
       function notesMatchSearch(iso) {
@@ -1226,32 +1487,26 @@
         return `<div class="pl-notes${empty ? ' is-empty' : ''}" data-notes-day="${esc(dayIso)}">${head}${cards ? `<ul class="pl-notes-list">${cards}</ul>` : ''}${composer}${addBtn}</div>`;
       }
 
-      function renderCatBlock(cat, items) {
-        const c = CAT_BY_ID[cat];
+      function renderPageCard(dayIso, entry) {
+        if (catFilter && !(Array.isArray(entry[catFilter]) && entry[catFilter].length)) return '';
+        const paras = entryParagraphs(entry);
+        if (catFilter && !paras.length) return '';
+        const key = pageAccKey(dayIso, entry);
+        const isCollapsed = !expandedPages.has(key);
+        const body = paras.length
+          ? `<div class="pl-syn">${paras.map((p) => `<p>${highlight(p)}</p>`).join('')}</div>`
+          : `<p class="pl-pcard-empty">No synopsis written for this surface yet.</p>`;
         return `
-          <div class="pl-cat-block">
-            <div class="pl-cat-block-head">
-              <span class="pl-cat-block-label">${c.label}</span>
-              <span class="pl-cat-block-count">${items.length}</span>
-            </div>
-            <ul class="pl-cat-list">${items.map((t) => `<li>${highlight(t)}</li>`).join('')}</ul>
-          </div>`;
-      }
-      function renderPageCard(entry) {
-        const blocks = CATS
-          .filter((c) => (!catFilter || c.id === catFilter) && Array.isArray(entry[c.id]) && entry[c.id].length)
-          .map((c) => renderCatBlock(c.id, entry[c.id])).join('');
-        if (!blocks) return '';
-        return `
-          <article class="pl-pcard${entry.isNew ? ' is-new' : ''}">
-            <div class="pl-pcard-head">
+          <article class="pl-pcard${entry.isNew ? ' is-new' : ''}${isCollapsed ? ' is-collapsed' : ''}">
+            <button type="button" class="pl-pcard-head" data-page-acc="${esc(key)}" aria-expanded="${isCollapsed ? 'false' : 'true'}">
+              <span class="material-symbols-outlined pl-acc-chev" aria-hidden="true">expand_more</span>
               <div class="pl-pcard-meta">
                 <div class="pl-pcard-name">${esc(entry.page)}</div>
                 <div class="pl-pcard-path">${esc(entry.path)}</div>
               </div>
               ${entry.isNew ? '<span class="pl-pcard-new">New</span>' : ''}
-            </div>
-            <div class="pl-pcard-cats">${blocks}</div>
+            </button>
+            <div class="pl-pcard-body">${body}</div>
           </article>`;
       }
 
@@ -1261,12 +1516,10 @@
         let visible = 0;
         let visibleNotes = 0;
         LOG.forEach((day) => {
-          const entries = day.entries.filter((e) => (pageFilter === '__all' || e.page === pageFilter) && matchesSearch(e));
-          const cards = entries.map(renderPageCard).filter(Boolean);
+          const allEntries = day.entries || [];
+          const entries = allEntries.filter((e) => (pageFilter === '__all' || e.page === pageFilter) && matchesSearch(e));
+          const cards = entries.map((e) => renderPageCard(day.date, e)).filter(Boolean);
           const editingHere = !!(noteEditor && noteEditor.day === day.date);
-          const notesHit = notesMatchSearch(day.date);
-          const showNotesOnly = !catFilter && pageFilter === '__all' && (notesHit || editingHere);
-          if (!cards.length && !showNotesOnly && !editingHere) return;
           visible += cards.length;
           visibleNotes += notesForDay(day.date).length;
           const tally = {};
@@ -1274,13 +1527,17 @@
           const noteN = notesForDay(day.date).length;
           const tallyPills = CATS.filter((c) => tally[c.id]).map((c) => `<span class="pl-tally-pill" title="${c.label}">${esc(c.label)} ${tally[c.id]}</span>`).join('') +
             (noteN ? `<span class="pl-tally-pill" title="Notes">Notes ${noteN}</span>` : '');
-          const isCollapsed = collapsed.has(day.date);
-          const dayInner = `${renderNotesBlock(day.date)}${cards.join('')}`;
+          const isCollapsed = !expandedDays.has(day.date);
+          const empty = !cards.length
+            ? `<p class="pl-pcard-empty">${allEntries.length ? 'Nothing in this day matches the current filter.' : 'No page accordions on this day yet — the day stays here so the calendar never skips.'}</p>`
+            : '';
+          const dayInner = `${renderNotesBlock(day.date)}${cards.join('')}${empty}`;
           html += `
             <section class="pl-day${isCollapsed ? ' is-collapsed' : ''}" id="pl-day-${day.date}">
               <div class="pl-day-head" data-day="${day.date}" role="button" tabindex="0" aria-expanded="${!isCollapsed}">
+                <span class="material-symbols-outlined pl-acc-chev" aria-hidden="true">expand_more</span>
                 <div class="pl-day-titles">
-                  <div class="pl-day-date">${fmtDate(day.date)} <span class="pl-day-rel">${day.rel}</span></div>
+                  <div class="pl-day-date">${fmtDate(day.date)}</div>
                   <div class="pl-day-summary">${esc(day.summary)}</div>
                 </div>
                 <div class="pl-day-tally">${tallyPills}<button type="button" class="pl-day-copy" data-copy-day="${day.date}" title="Copy this day's work" aria-label="Copy ${esc(fmtDate(day.date))}'s work">Copy</button></div>
@@ -1295,7 +1552,10 @@
           </div>`;
 
         const note = document.getElementById('pl-filter-note');
-        const parts = [`${visible} page ${visible === 1 ? 'entry' : 'entries'} shown`];
+        const parts = [
+          `${LOG.length} ${LOG.length === 1 ? 'day' : 'days'}`,
+          `${visible} page ${visible === 1 ? 'accordion' : 'accordions'} shown`,
+        ];
         if (visibleNotes) parts.push(`${visibleNotes} ${visibleNotes === 1 ? 'note' : 'notes'}`);
         if (catFilter) parts.push(`category: ${CAT_BY_ID[catFilter].label}`);
         if (pageFilter !== '__all') parts.push(`page: ${pageFilter}`);
@@ -1344,7 +1604,7 @@
         const day = todayDay();
         if (day) upsertEvalNote(day.date, dayEvalNote(day), 'day');
         persistNotes();
-        if (scroll) collapsed.clear();
+        if (scroll && day) expandedDays.add(day.date);
         lastEvalAt = Date.now();
         lastEvalDay = localDayIso();
         persistEvalMeta();
@@ -1373,7 +1633,7 @@
           catFilter = null;
           pageFilter = '__all';
           searchTerm = '';
-          collapsed.clear();
+          collapseAllAccordions();
           noteEditor = null;
           noteWantFocus = false;
           if (searchInput) searchInput.value = '';
@@ -1495,6 +1755,8 @@
         CATS.forEach((c) => {
           if (Array.isArray(cats[c.id]) && cats[c.id].length) entry[c.id] = cats[c.id].slice();
         });
+        const syn = catsToSynopsis(cats);
+        if (syn.length) entry.synopsis = syn;
         return entry;
       }
       function rebuildLiveDay(diff, htmlCount) {
@@ -1585,7 +1847,7 @@
             }]).slice(-20),
           });
           lastCrawlAt = Date.now();
-          if (scroll) collapsed.delete(todayIso);
+          if (scroll) expandedDays.add(todayIso);
           renderAll();
           updateEvalMeta();
           if (scroll) {
@@ -1691,10 +1953,10 @@
       function setSearch(v) { searchTerm = String(v || '').trim().toLowerCase(); const inp = document.getElementById('pl-search-input'); if (inp) inp.value = v || ''; syncSearchWrap(); renderTimeline(); }
       function setPage(p) { pageFilter = p || '__all'; renderTimeline(); }
       function setCatOnly(catId) { catFilter = catId; renderCatStats(); renderTimeline(); }
-      function focusDay(iso) { collapsed.clear(); LOG.forEach((d) => { if (d.date !== iso) collapsed.add(d.date); }); renderTimeline(); const el = document.getElementById('pl-day-' + iso); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-      window.plExpandAll = () => { collapsed.clear(); renderTimeline(); };
-      window.plCollapseAll = () => { LOG.forEach((d) => collapsed.add(d.date)); renderTimeline(); };
-      window.plResetFilters = () => { catFilter = null; pageFilter = '__all'; searchTerm = ''; collapsed.clear(); const inp = document.getElementById('pl-search-input'); if (inp) inp.value = ''; syncSearchWrap(); renderCatStats(); renderTimeline(); };
+      function focusDay(iso) { expandedDays.clear(); expandedDays.add(iso); renderTimeline(); const el = document.getElementById('pl-day-' + iso); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      window.plExpandAll = () => { expandAllAccordions(); renderTimeline(); };
+      window.plCollapseAll = () => { collapseAllAccordions(); renderTimeline(); };
+      window.plResetFilters = () => { catFilter = null; pageFilter = '__all'; searchTerm = ''; collapseAllAccordions(); const inp = document.getElementById('pl-search-input'); if (inp) inp.value = ''; syncSearchWrap(); renderCatStats(); renderTimeline(); };
       window.plEvaluatePages = () => evaluateAllPages({ scroll: true });
 
       /* ── Note editor ── */
@@ -1710,7 +1972,7 @@
         const existing = id ? notes.find((n) => n.id === id) : null;
         noteEditor = { day: dayIso, id: existing ? existing.id : null, text: existing ? existing.text : '' };
         noteWantFocus = true;
-        collapsed.delete(dayIso);
+        expandedDays.add(dayIso);
         renderTimeline();
         const ta = document.getElementById('pl-note-input-' + dayIso);
         if (ta) ta.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1747,7 +2009,7 @@
         const now = new Date().toISOString();
         notes.unshift({ id: nid(), day: dayIso, text: val, createdAt: now, updatedAt: now });
         persistNotes();
-        collapsed.delete(dayIso);
+        expandedDays.add(dayIso);
         renderSummary();
         renderTimeline();
         return true;
@@ -1823,7 +2085,8 @@
         renderCatStats(); renderTimeline();
       });
       const timelineEl = document.getElementById('pl-timeline');
-      function toggleDay(head) { const key = head.dataset.day; if (collapsed.has(key)) collapsed.delete(key); else collapsed.add(key); renderTimeline(); }
+      function toggleDay(head) { const key = head.dataset.day; if (expandedDays.has(key)) expandedDays.delete(key); else expandedDays.add(key); renderTimeline(); }
+      function togglePageAcc(key) { if (expandedPages.has(key)) expandedPages.delete(key); else expandedPages.add(key); renderTimeline(); }
 
       /* ── Copy a full day's work ──
          Builds a plain-text digest of EVERY page + category for the day (ignores
@@ -1832,13 +2095,14 @@
         const lines = [`${fmtDate(day.date)} (${day.rel})`, day.summary, ''];
         day.entries.forEach((e) => {
           lines.push(`${e.page} — ${e.path}${e.isNew ? ' (NEW)' : ''}`);
-          CATS.forEach((c) => {
-            const arr = e[c.id];
-            if (Array.isArray(arr) && arr.length) {
-              lines.push(`  ${c.label}:`);
-              arr.forEach((t) => lines.push(`    - ${t}`));
-            }
-          });
+          const paras = entryParagraphs(e);
+          if (paras.length) paras.forEach((p) => { lines.push(''); lines.push(p); });
+          else {
+            CATS.forEach((c) => {
+              const arr = e[c.id];
+              if (Array.isArray(arr) && arr.length) arr.forEach((t) => lines.push(t));
+            });
+          }
           lines.push('');
         });
         const dayNotes = notesForDay(day.date);
@@ -1902,6 +2166,8 @@
         if (e.target.closest('[data-note-save]')) { e.stopPropagation(); commitNote(); return; }
         if (e.target.closest('[data-note-cancel]')) { e.stopPropagation(); cancelNoteEditor(); return; }
         if (e.target.closest('.pl-notes')) { e.stopPropagation(); return; }
+        const pageAcc = e.target.closest('[data-page-acc]');
+        if (pageAcc) { e.stopPropagation(); togglePageAcc(pageAcc.dataset.pageAcc); return; }
         const copyBtn = e.target.closest('[data-copy-day]');
         if (copyBtn) { e.stopPropagation(); copyDay(copyBtn.dataset.copyDay, copyBtn); return; }
         const head = e.target.closest('[data-day]'); if (head) toggleDay(head);
