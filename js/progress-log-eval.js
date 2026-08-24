@@ -506,16 +506,16 @@ function describeCurrentSurface(fp, before) {
   }
   if (before && typeof before.size === 'number' && fp.size !== before.size) {
     const d = fp.size - before.size;
-    push(out, 'changes', 'Since the start of the day the ' + (fp.kind === 'html' ? 'page' : 'file') + ' ' + (d > 0 ? 'grew' : 'shrank') + ' by ' + fmtBytes(Math.abs(d)) + '; the description above is what is on disk right now, not just the byte count.');
+    push(out, 'changes', 'Since the start of the day the ' + (fp.kind === 'html' ? 'page' : 'file') + ' ' + (d > 0 ? 'grew' : 'shrank') + ' by ' + fmtBytes(Math.abs(d)) + '.');
   } else {
-    push(out, 'updates', 'This is the full read of the surface as it stands now — later re-evaluations today describe only what moves from the start-of-day baseline.');
+    push(out, 'updates', 'Full inventory of the surface as it stands now; later re-evaluations today describe only what changed from the start-of-day baseline.');
   }
   return out;
 }
 
 function describeNewFile(fp) {
   const out = describeCurrentSurface(fp, null);
-  out.features.unshift('This surface is new to the log — here is its first full read.');
+  out.features.unshift('First inventory of this surface in the log.');
   return out;
 }
 
@@ -593,7 +593,7 @@ export function describeInventoryDiff(fp, before) {
   if (dSize) {
     const dir = dSize > 0 ? 'grew' : 'shrank';
     if (hasAny(out)) {
-      push(out, 'changes', 'Altogether the ' + noun + ' ' + dir + ' by ' + fmtBytes(Math.abs(dSize)) + ' with those edits — the byte count is the footprint, not the story.');
+      push(out, 'changes', 'Altogether the ' + noun + ' ' + dir + ' by ' + fmtBytes(Math.abs(dSize)) + ' with those edits.');
     } else {
       push(out, 'changes', 'The ' + noun + ' ' + dir + ' by ' + fmtBytes(Math.abs(dSize)) + ', but its sections, scripts, prompts, and features are unchanged — this was copy, styling, or internal logic.');
     }
