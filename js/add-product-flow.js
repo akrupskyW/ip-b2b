@@ -205,12 +205,14 @@
     catch (_) { return false; }
   })();
   /* ── Reply reveal ─────────────────────────────────────────────────────────
-     Word-by-word text animation is OFF app-wide — this mirrors the shared chat
-     module's typeInLine (js/wiseai-chat.js), where the per-word reveal was
-     removed so every WISEcodeAI answer lands whole. The signature + `done`
-     callback are kept so the downstream reveal chain (timestamp, reply chips)
-     keeps firing in the same order; only the text no longer types in. */
+     Same paragraph-by-paragraph reveal as the shared chat module
+     (js/wiseai-chat.js · typeInTranscript): content first, then the
+     timestamp / reply-chip chain in `done`. */
   function typeInLine(bodyEl, done) {
+    if (typeof window.WiseTypeInTranscript === 'function') {
+      window.WiseTypeInTranscript(bodyEl, done, { scroll: scrollDown, reduced: prefersReducedMotion });
+      return;
+    }
     scrollDown();
     if (done) done();
   }
@@ -317,9 +319,8 @@
     if (!chips || !chips.length) chips = fallbackChips();
     hideWelcome();
     const footer = `<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div>`;
-    /* Insert the line WITHOUT its reply chips, type the reply in word-by-word,
-       then bring in the timestamp, then the chips (left→right) — text, timestamp,
-       chips, in order. */
+    /* Insert the line WITHOUT its reply chips, reveal paragraphs, then the
+       timestamp, then the chips (left→right) — content, meta, chips, in order. */
     messagesEl.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEcodeAI">${OWL}</span><div class="sc-line-body">${html}${footer}</div></div>`);
     const line = messagesEl.lastElementChild;
@@ -2943,6 +2944,26 @@
     wiseSay('Here\'s a fully filled example so you can see the finished shape. Edit anything on the panel, then save — or start your own.',
       [{ label: 'Save this example', icon: 'save', action: 'goto:save', primary: true }, { label: 'Start fresh', icon: 'restart_alt', action: 'restart' }]);
   }
+  /* Overlay nutrients the Reformulation Studio actually modeled. Only the
+     fields on the saved recipe are written — nothing else is invented. */
+  function applySavedReformulation() {
+    const store = window.WISEReformulationStore;
+    if (!store) return;
+    const rec = store.get({ upc: state.upc, name: state.productName });
+    if (!rec || !rec.recipe) return;
+    const r = rec.recipe;
+    if (r.calories != null && r.calories !== '') state.nf.calories = String(r.calories);
+    function setAmt(key, n, unit) {
+      if (n == null || n === '' || !state.nf[key]) return;
+      const cur = state.nf[key] || { amt: '', dv: '' };
+      state.nf[key] = { amt: String(n) + unit, dv: cur.dv || '' };
+    }
+    setAmt('sodium', r.sodium, 'mg');
+    setAmt('satFat', r.satFat, 'g');
+    setAmt('transFat', r.transFat, 'g');
+    setAmt('fiber', r.fiber, 'g');
+    setAmt('addedSugars', r.addedSugar, 'g');
+  }
   /* View mode — used by view-product.html. Opens with a fully filled-in,
      editable Product Details card (the same finished example loadSample builds),
      but with no "Show me an example" chatter, and reflecting whichever product
@@ -2965,6 +2986,7 @@
     state.productName = (nm && nm.trim()) || p.productName;
     if (upc) { const d = upc.replace(/\D/g, ''); if (d) state.upc = d; }
     if (img) state.image = img;
+    applySavedReformulation();
     state.errors = {};
     seedSamplePacks();
     state.iaRan = true;
@@ -3152,7 +3174,7 @@
         `<button type="button" class="chip ws-intent-chip" data-action="${esc(c.action)}"${c.arg != null ? ` data-arg="${esc(c.arg)}"` : ''}><span class="material-symbols-outlined">${esc(c.icon)}</span>${esc(c.label)}</button>`).join('');
     }
 
-    // Play the welcome in: heading + sub type in word-by-word, then the intent
+    // Play the welcome in: heading + sub fade in as paragraphs, then the intent
     // chips fly in from the right and land — so the chips always trail the copy.
     revealWelcome();
 

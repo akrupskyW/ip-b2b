@@ -7,7 +7,7 @@
  * Portfolio workspace (js/portfolio-module.js), the WISEcodeAI chat (pages/ai-chat.html
  * inline), and the application sidebar (js/app.js) — renders the SAME menu by
  * calling buildAppearanceBody(). This keeps the toggles (Minimal UI, Header,
- * Full bleed, Jam strip, Text size, Theme …) identical everywhere; before this
+ * Full bleed, Jam strip, Search, Text size, Theme …) identical everywhere; before this
  * the menu was copy-pasted per shell and drifted out of sync (which is how a
  * new toggle could land in one menu but not another).
  *
@@ -21,7 +21,7 @@
  *
  * Click handling stays in each shell: every row keys off a stable data-*
  * attribute (data-pivot / data-minimal / data-fullbleed / data-fbchatonly /
- * data-jam / data-colorblind / data-fz / data-pop-action), so the existing
+ * data-jam / data-appsearch / data-colorblind / data-fz / data-pop-action), so the existing
  * per-shell listeners keep working unchanged.
  */
 
@@ -70,17 +70,16 @@ import {
 import {
   isJamStripOn,
   applyJamStrip,
-  JAM_SONGS,
-  toggleJam,
-  isJamPlaying,
-  currentJamSongId,
-  currentJamSongLabel,
 } from './jam-strip.js';
 import { getStoredFontSize, setTextSize } from './text-size.js';
 import {
   isActivityStripOn,
   applyActivityStrip,
 } from './chat-activity-strip.js';
+import {
+  isAppSearchOn,
+  applyAppSearch,
+} from './app-search.js';
 
 /**
  * A binary on/off setting row. Instead of highlighting the whole row when
@@ -96,22 +95,14 @@ import {
  *                            marking the toggle as an admin-only capability.
  * @param {string} [tip]     Hover/focus tooltip. Defaults to the visible label.
  */
-function toggleRow(dataAttr, on, label, admin = false, tip = '') {
+function toggleRow(dataAttr, on, label, admin = false, tip = '', disabled = false) {
   const badge = admin ? '<span class="wise-popover-badge">Admin</span>' : '';
   const adminAttr = admin ? ' data-admin-item="1"' : '';
-  return `<div class="wise-popover-item wise-toggle-item${on ? ' is-on' : ''}" ${dataAttr}${adminAttr} role="switch" aria-checked="${on ? 'true' : 'false'}"${tipAttrs(tip || label)}>
+  const lock = disabled ? ' is-locked' : '';
+  const disabledAttr = disabled ? ' aria-disabled="true"' : '';
+  return `<div class="wise-popover-item wise-toggle-item${on ? ' is-on' : ''}${lock}" ${dataAttr}${adminAttr}${disabledAttr} role="switch" aria-checked="${on ? 'true' : 'false'}"${tipAttrs(tip || label)}>
       <span class="material-symbols-outlined wise-toggle-ico">${on ? 'toggle_on' : 'toggle_off'}</span>${label}${badge}
     </div>`;
-}
-
-/** The Jam player, shown inline in the popover right under the "Jam strip"
-    toggle once it's switched on. It carries its own transport (play/pause), a
-    live equalizer, a "now playing" label, and the full track picker — so the
-    whole experience lives in the Appearance popover rather than the nav module.
-    Controls key off data-jam-play / data-jam-song, handled in
-    wireAppearancePopover(). */
-function jamEscape(s) {
-  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 /** Escape a string for use inside a double-quoted HTML attribute. */
@@ -128,68 +119,9 @@ function tipAttrs(text) {
   const t = escAttr(text);
   return t ? ` data-tip="${t}" title="${t}"` : '';
 }
-function jamPlayerSection() {
-  if (!isJamStripOn()) return '';
-  const playing = isJamPlaying();
-  const curId = currentJamSongId();
-  const curLabel = currentJamSongLabel();
-  const bars = Array.from({ length: 16 }, () => '<span></span>').join('');
-  const songs = JAM_SONGS.map(
-    (s) => `<button type="button" class="jam-pop-song${s.id === curId ? ' is-active' : ''}" data-jam-song="${s.id}" aria-pressed="${s.id === curId ? 'true' : 'false'}"${tipAttrs(s.label)}>${jamEscape(s.label)}</button>`
-  ).join('');
-  const nowText = playing && curLabel ? jamEscape(curLabel) : 'Pick a track to play';
-  const playTip = playing ? 'Pause' : 'Play';
-  return `
-    <div class="jam-pop${playing ? ' is-playing' : ''}" data-admin-item="1">
-      <div class="jam-pop-head">
-        <button type="button" class="jam-pop-play" data-jam-play aria-label="${playTip}"${tipAttrs(playTip)}>
-          <span class="material-symbols-outlined">${playing ? 'pause' : 'play_arrow'}</span>
-        </button>
-        <div class="jam-pop-now">
-          <div class="jam-pop-eq" aria-hidden="true">${bars}</div>
-          <div class="jam-pop-title">${nowText}</div>
-        </div>
-      </div>
-      <div class="jam-pop-songs" role="group" aria-label="Pick a track">${songs}</div>
-    </div>`;
-}
-
-/** Update the in-popover jam player IN PLACE (play icon, now-playing title,
-    active chip) instead of re-rendering the whole popover. A full re-render
-    rebuilds every node, which resets the song list's scroll position and makes
-    the popover visibly jump when you tap through chips — this keeps it steady. */
-function syncJamPop(root) {
-  const pop = root.querySelector('.jam-pop');
-  if (!pop) return false;
-  const playing = isJamPlaying();
-  const curId = currentJamSongId();
-  const curLabel = currentJamSongLabel();
-
-  pop.classList.toggle('is-playing', playing);
-
-  const playBtn = pop.querySelector('[data-jam-play]');
-  if (playBtn) {
-    const playTip = playing ? 'Pause' : 'Play';
-    playBtn.setAttribute('aria-label', playTip);
-    playBtn.setAttribute('data-tip', playTip);
-    playBtn.setAttribute('title', playTip);
-    const icon = playBtn.querySelector('.material-symbols-outlined');
-    if (icon) icon.textContent = playing ? 'pause' : 'play_arrow';
-  }
-
-  const title = pop.querySelector('.jam-pop-title');
-  if (title) title.textContent = playing && curLabel ? curLabel : 'Pick a track to play';
-
-  pop.querySelectorAll('.jam-pop-song').forEach((chip) => {
-    const active = playing && chip.dataset.jamSong === curId;
-    chip.classList.toggle('is-active', active);
-    chip.setAttribute('aria-pressed', active ? 'true' : 'false');
-  });
-  return true;
-}
 
 /** True when a chunk of Appearance markup is an Admin-badged row (or nested
-    chrome that belongs to one — jam player, full-bleed pickers, module gap).
+    chrome that belongs to one — full-bleed pickers, module gap).
     The pink Admin badge is the source of truth: unbadged rows must never be
     omitted when Admin controls is off. */
 function isAdminMarkup(html) {
@@ -498,10 +430,10 @@ function fullBleedOptionsSection() {
 }
 
 /** Wrap a set of rows in a titled "group" card. Groups are the unit the
-    Appearance popover flows into its responsive column layout: each group (and
-    therefore every row inside it) stays within ONE column and is never split or
-    stretched across columns. An empty body (e.g. a section whose only rows are
-    conditionally hidden) renders nothing so we don't leave a stray empty card. */
+    Appearance popover stacks inside one of its two columns: each group (and
+    therefore every row inside it) stays within ONE column and is never split
+    or stretched across columns. An empty body (e.g. a section whose only rows
+    are conditionally hidden) renders nothing so we don't leave a stray empty card. */
 function apGroup(title, body) {
   const inner = String(body || '').trim();
   if (!inner) return '';
@@ -510,6 +442,14 @@ function apGroup(title, body) {
       <div class="wise-popover-header">${title}</div>
       ${inner}
     </section>`;
+}
+
+/** One vertical stack of group cards. Empty (every group hidden) renders nothing
+    so a single remaining column can grow to full width. */
+function apCol(...groups) {
+  const inner = groups.join('').trim();
+  if (!inner) return '';
+  return `<div class="wise-appearance-col">${inner}</div>`;
 }
 
 /**
@@ -539,43 +479,47 @@ export function buildAppearanceBody({
   isDark = false,
 } = {}) {
   return `
-    ${apGroup('Layout', `
-      ${pivotSection(showPivot, isPivoted)}
-      ${toggleRow('data-minimal="1"', isMinimalUiOn(), 'Minimal UI', false, 'Show only the logo, Appearance, and your profile')}
-      ${toggleRow('data-iconrail="1"', isIconRailOn(), 'Icons only', false, 'Collapse the navigation to icons')}
-      ${adminOnly(toggleRow('data-sharpedges="1"', isSharpEdgesOn(), 'Sharper edges', true, 'Use tighter, less-rounded corners'))}
-    `)}
-    ${apGroup('Full bleed', `
-      ${adminOnly(toggleRow('data-fullbleed="1"', isFullBleedEverythingOn(), 'Full bleed', true, 'Stretch every module edge-to-edge'))}
-      ${adminOnly(toggleRow('data-fbchatonly="1"', isChatOnlyFullBleedOn(), 'Chat-only full bleed', true, 'Stretch only the chat module; keep the navigation and every other module contained'))}
-      ${adminOnly(fullBleedOptionsSection())}
-    `)}
-    ${apGroup('Chat', `
-      ${adminOnly(toggleRow('data-chattint="1"', isChatTintOn(), 'Blue chat surface', true, 'Tint the chat surface with brand blue'))}
-      ${adminOnly(toggleRow('data-activitystrip="1"', isActivityStripOn(), 'Activity strip', true, 'Show the live activity strip on the chat edge'))}
-    `)}
-    ${apGroup('Sound', `
-      ${adminOnly(toggleRow('data-jam="1"', isJamStripOn(), 'Jam strip', true, 'Show the music player in the navigation'))}
-      ${adminOnly(jamPlayerSection())}
-    `)}
-    ${apGroup('Accessibility', `
-      ${themeSection(isDark)}
-      ${toggleRow('data-colorblind="1"', isColorblindOn(), 'Accessible colors', false, 'Use a color-vision-safe palette')}
-      ${colorblindTypeSection()}
-      ${textSizeSection()}
-      ${adminOnly(brandingSection())}
-    `)}
-    ${apGroup('Experience', `
-      ${tourSection()}
-      ${adminOnly(toggleRow('data-cwrui="1"', isCwrUiOn(), 'Crawl · Walk · Run', true, 'Show the Crawl · Walk · Run switch — Crawl fills SaaS, Walk opens chat, Run unlocks the composer'))}
-    `)}
-    ${apGroup('Admin', `
-      ${toggleRow('data-adminui="1"', isAdminControlsOn(), 'Admin controls', false, 'Show or hide settings that carry an Admin badge')}
-      ${adminOnly(accessibilityReviewSection())}
-      ${adminOnly(allModulesSection())}
-      ${adminOnly(progressLogSection())}
-      ${adminOnly(pageGallerySection())}
-    `)}
+    ${apCol(
+      apGroup('Layout', `
+        ${pivotSection(showPivot, isPivoted)}
+        ${toggleRow('data-minimal="1"', isMinimalUiOn(), 'Minimal UI', false, 'Show only the logo, Appearance, and your profile')}
+        ${toggleRow('data-iconrail="1"', isIconRailOn(), 'Icons only', false, 'Collapse the navigation to icons')}
+        ${adminOnly(toggleRow('data-sharpedges="1"', isSharpEdgesOn(), 'Sharper edges', true, 'Use tighter, less-rounded corners'))}
+      `),
+      apGroup('Full bleed', `
+        ${adminOnly(toggleRow('data-fullbleed="1"', isFullBleedEverythingOn(), 'Full bleed', true, isAppSearchOn() ? 'Unavailable while Search is on' : 'Stretch every module edge-to-edge', isAppSearchOn()))}
+        ${adminOnly(toggleRow('data-fbchatonly="1"', isChatOnlyFullBleedOn(), 'Chat-only full bleed', true, isAppSearchOn() ? 'Unavailable while Search is on' : 'Stretch only the chat module; keep the navigation and every other module contained', isAppSearchOn()))}
+        ${adminOnly(fullBleedOptionsSection())}
+      `),
+      apGroup('Chat', `
+        ${adminOnly(toggleRow('data-chattint="1"', isChatTintOn(), 'Blue chat surface', true, 'Tint the chat surface with brand blue'))}
+        ${adminOnly(toggleRow('data-activitystrip="1"', isActivityStripOn(), 'Activity strip', true, 'Show the live activity strip on the chat edge'))}
+      `),
+    )}
+    ${apCol(
+      apGroup('Sound', `
+        ${adminOnly(toggleRow('data-jam="1"', isJamStripOn(), 'Jam strip', true, 'Show the music player in the navigation'))}
+      `),
+      apGroup('Accessibility', `
+        ${themeSection(isDark)}
+        ${toggleRow('data-colorblind="1"', isColorblindOn(), 'Accessible colors', false, 'Use a color-vision-safe palette')}
+        ${colorblindTypeSection()}
+        ${textSizeSection()}
+        ${adminOnly(brandingSection())}
+      `),
+      apGroup('Experience', `
+        ${tourSection()}
+        ${adminOnly(toggleRow('data-cwrui="1"', isCwrUiOn(), 'Crawl · Walk · Run', true, 'Show the Crawl · Walk · Run switch — Crawl fills SaaS, Walk opens chat, Run unlocks the composer'))}
+      `),
+      apGroup('Admin', `
+        ${toggleRow('data-adminui="1"', isAdminControlsOn(), 'Admin controls', false, 'Show or hide settings that carry an Admin badge')}
+        ${adminOnly(toggleRow('data-appsearch="1"', isAppSearchOn(), 'Search', true, 'Show a search field aligned with the nav logo for transcripts, outputs, and reports'))}
+        ${adminOnly(accessibilityReviewSection())}
+        ${adminOnly(allModulesSection())}
+        ${adminOnly(progressLogSection())}
+        ${adminOnly(pageGallerySection())}
+      `),
+    )}
   `;
 }
 
@@ -676,7 +620,7 @@ if (typeof document !== 'undefined') wireSignOut();
  * calls wireAppearancePopover() and gets identical behaviour.
  *
  * The universal on/off toggles (Minimal UI, Header, Full bleed, Jam strip,
- * Colorblind) and the Text-size buttons are handled here directly via the
+ * Search, Colorblind) and the Text-size buttons are handled here directly via the
  * shared modules, so a page CANNOT forget to wire them. The genuinely
  * shell-specific bits are passed as callbacks:
  *
@@ -697,12 +641,12 @@ export function wireAppearancePopover(pop, ctx = {}) {
   pop.dataset.appearanceWired = '1';
   pop.classList.add('wise-popover--appearance');
   /* Re-render the body, then re-place the popover. Toggling a row can reveal
-     (or hide) extra content — the Jam player under "Jam strip", the surface
-     pickers under "Full bleed", the CVD-type buttons under "Accessible colors"
-     — which changes the popover's height. Without re-placing, a taller popover
-     keeps its old top/left and spills off its anchor or out of the viewport, so
-     we call the reposition closure the positioning helpers stashed on the node
-     (topbar.js positionPopover*), guarded for shells that place it themselves. */
+     (or hide) extra content — the surface pickers under "Full bleed", the
+     CVD-type buttons under "Accessible colors" — which changes the popover's
+     height. Without re-placing, a taller popover keeps its old top/left and
+     spills off its anchor or out of the viewport, so we call the reposition
+     closure the positioning helpers stashed on the node (topbar.js
+     positionPopover*), guarded for shells that place it themselves. */
   const render = () => {
     try { ctx.render?.(); } catch (_) {}
     try { pop.__reposition?.(); } catch (_) {}
@@ -714,6 +658,10 @@ export function wireAppearancePopover(pop, ctx = {}) {
   if (!pop.__adminUiBound) {
     pop.__adminUiBound = true;
     document.addEventListener('wise:admin-ui', () => {
+      if (!pop.isConnected || !pop.classList.contains('open')) return;
+      render();
+    });
+    document.addEventListener('wise:app-search', () => {
       if (!pop.isConnected || !pop.classList.contains('open')) return;
       render();
     });
@@ -731,8 +679,8 @@ export function wireAppearancePopover(pop, ctx = {}) {
     /* Universal on/off toggles — handled here so no shell can miss one. */
     if (within('[data-minimal]'))     { ev.stopPropagation(); applyMinimalUi(!isMinimalUiOn());   render(); return; }
     if (within('[data-iconrail]'))    { ev.stopPropagation(); applyIconRail(!isIconRailOn());     render(); return; }
-    if (within('[data-fullbleed]'))   { ev.stopPropagation(); applyFullBleedMode(isFullBleedEverythingOn() ? '' : 'all'); render(); return; }
-    if (within('[data-fbchatonly]'))  { ev.stopPropagation(); applyFullBleedMode(isChatOnlyFullBleedOn() ? '' : 'chat'); render(); return; }
+    if (within('[data-fullbleed]'))   { ev.stopPropagation(); if (isAppSearchOn()) return; applyFullBleedMode(isFullBleedEverythingOn() ? '' : 'all'); render(); return; }
+    if (within('[data-fbchatonly]'))  { ev.stopPropagation(); if (isAppSearchOn()) return; applyFullBleedMode(isChatOnlyFullBleedOn() ? '' : 'chat'); render(); return; }
     if (within('[data-jam]'))         { ev.stopPropagation(); applyJamStrip(!isJamStripOn());      render(); return; }
     if (within('[data-chattint]'))    { ev.stopPropagation(); applyChatTint(!isChatTintOn());      render(); return; }
     if (within('[data-activitystrip]')) { ev.stopPropagation(); applyActivityStrip(!isActivityStripOn()); render(); return; }
@@ -741,13 +689,7 @@ export function wireAppearancePopover(pop, ctx = {}) {
     if (within('[data-colorblind]'))  { ev.stopPropagation(); applyColorblind(!isColorblindOn());  render(); return; }
     if (within('[data-sharpedges]'))  { ev.stopPropagation(); applySharpEdges(!isSharpEdgesOn());  render(); return; }
     if (within('[data-adminui]'))     { ev.stopPropagation(); applyAdminControls(!isAdminControlsOn()); render(); return; }
-
-    /* In-popover Jam player transport + track picker. Update the player in
-       place (not a full re-render) so the song list keeps its scroll position
-       and the popover doesn't jump as you tap between chips. */
-    if (within('[data-jam-play]')) { ev.stopPropagation(); toggleJam(); if (!syncJamPop(pop)) render(); return; }
-    const jamSong = within('[data-jam-song]');
-    if (jamSong) { ev.stopPropagation(); toggleJam(jamSong.dataset.jamSong); if (!syncJamPop(pop)) render(); return; }
+    if (within('[data-appsearch]'))   { ev.stopPropagation(); applyAppSearch(!isAppSearchOn());         render(); return; }
 
     /* Text size (connected segmented toggle). */
     const fz = within('[data-fz]');
@@ -815,7 +757,7 @@ export function wireAppearancePopover(pop, ctx = {}) {
 
     /* Non-interactive chrome (labels, dividers, the text-size row wrapper):
        swallow the click so it neither toggles nor closes the popover. */
-    if (within('.wise-appearance-group, .fz-row, .fz-size, .mg-size, .jam-pop, .fb-opts, .fb-color-row, .fb-presets, .wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
+    if (within('.wise-appearance-group, .fz-row, .fz-size, .mg-size, .fb-opts, .fb-color-row, .fb-presets, .wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
 
     /* Anything else = a click on blank popover space → close. */
     ctx.onClose?.();

@@ -8152,6 +8152,7 @@
 
   </style>
   <script src="../js/cwr-toggle.js"></script>
+  <script src="../js/reformulation-store.js"></script>
 </head>
 <body class="ai-chat-page">
   <button type="button" id="topbar-overlay-close" class="hidden" onclick="onTopbarOverlayCloseClick(event)" title="Close" aria-label="Close">
@@ -11703,16 +11704,19 @@
 
     /* Drop a WISEcodeAI reply with a grounding caption + timestamp. Pass
        { source: false } for a plain acknowledgement that shouldn't claim a source. */
-    /* Word-by-word reveal DISABLED — chat text appears whole. The
-       wiseaiTypeInLine signature is kept so the timestamp / chip reveal chain
-       runs unchanged. */
+    /* Same paragraph-by-paragraph reveal as the shared chat module. */
     const WISEAI_REDUCED_MOTION = (() => {
       try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
       catch (_) { return false; }
     })();
     function wiseaiTypeInLine(bodyEl, done) {
       const box = document.getElementById('chat-messages');
-      if (box) wiseaiFollowChat(box);
+      const scroll = () => { if (box) wiseaiFollowChat(box); };
+      if (typeof window.WiseTypeInTranscript === 'function') {
+        window.WiseTypeInTranscript(bodyEl, done, { scroll: scroll, reduced: WISEAI_REDUCED_MOTION });
+        return;
+      }
+      scroll();
       if (done) done();
     }
 
@@ -11851,28 +11855,21 @@
       const line = box.lastElementChild;
       const body = line && line.querySelector('.sc-line-body');
       wiseaiFollowChat(box);
-      /* Type the prose in word-by-word, then bring in the timestamp, then the
-         action icons (grounding chip + feedback pill) — text, timestamp, icons,
-         in order. Embedded charts / tables are left intact by the walker. Any
-         chip row that trails this answer is held back (see the chip observer)
-         until wiseaiReplyDone resolves at the very end. */
+      /* Paragraphs first, then the thumbs / meta row as one unit. Trailing
+         chips wait on wiseaiReplyDone (see the chip observer). */
       const canType = body && !WISEAI_REDUCED_MOTION && opts.typewriter !== false && !wiseaiInstant;
       if (canType) {
         let resolveDone;
         wiseaiReplyDone = new Promise((r) => { resolveDone = r; });
-        const timeEl = body.querySelector('.sc-line-time');
-        const icons = [];
-        const srcEl = body.querySelector('.sc-trust-chip');
-        if (srcEl) icons.push(srcEl);
+        const rowEls = [];
+        const metaEl = body.querySelector('.sc-line-meta');
         const fbEl = body.querySelector('.sc-feedback');
-        if (fbEl) icons.push(fbEl);
-        if (timeEl) wiseaiPrimeLeft(timeEl);
-        icons.forEach(wiseaiPrimeLeft);
+        if (metaEl) rowEls.push(metaEl);
+        if (fbEl) rowEls.push(fbEl);
+        rowEls.forEach(wiseaiPrimeLeft);
         wiseaiFollowChat(box);
         wiseaiTypeInLine(body, () => {
-          wiseaiRevealStaggered(timeEl ? [timeEl] : [], 120, 0, () => {
-            wiseaiRevealStaggered(icons, 130, 60, () => { wiseaiFollowChat(box); resolveDone(); });
-          });
+          wiseaiRevealStaggered(rowEls, 80, 0, () => { wiseaiFollowChat(box); resolveDone(); });
         });
       } else {
         /* Non-typed line (reduced motion / { typewriter:false }): there's nothing
@@ -14029,7 +14026,7 @@
       { name: 'Cereals & Grains', cls: 'pf-gs-cat--blue' },
     ];
     /* Deterministic Guiding Stars profile for a product name. */
-    function pfStarData(name) {
+    function pfStarData(name, upc) {
       /* `h` is an unsigned 32-bit hash, so every bit-shift below MUST use the
          unsigned `>>>` operator. A signed `>>` would go negative whenever bit
          31 is set, and `negative % length` yields a negative array index —
@@ -14048,8 +14045,24 @@
       const cat = PF_STAR_CATS[(h >>> 14) % PF_STAR_CATS.length];
       const serving = (40 + ((h >>> 16) % 25)) + ' g';
       const nearMiss = stars === 2;                          /* one point off ★★★    */
-      return { stars, score, stdStars, stdScore, ease, good, issue, nextPts,
+      const d = { stars, score, stdStars, stdScore, ease, good, issue, nextPts,
                category: cat.name, catCls: cat.cls, serving, nearMiss, brand: 'Flax4Life' };
+      /* A saved reformulation overlays the fields the studio actually scored.
+         Hash-derived std / ease stay put — those are not on the saved recipe. */
+      const rec = window.WISEReformulationStore && window.WISEReformulationStore.get({ name: name, upc: upc });
+      if (rec && rec.score) {
+        d.stars = rec.score.disqualified ? 0 : (rec.score.stars || 0);
+        if (typeof rec.score.net === 'number') d.score = rec.score.net;
+        if (rec.recipe && rec.recipe.grams != null) d.serving = rec.recipe.grams + ' g';
+        if (rec.score.disqualified) {
+          d.good = false;
+          d.issue = rec.score.issue || 'Disqualified';
+        } else if (d.stars >= 2) {
+          d.good = true;
+        }
+        d.nearMiss = d.stars === 2;
+      }
+      return d;
     }
     /* Renders `n` filled stars followed by `3 - n` empty stars. */
     function pfStarGlyphs(n) {
@@ -14132,7 +14145,9 @@
         let ref = row.querySelector('.pf-col-product');
         if (!ref) return;
         const nameEl = row.querySelector('.pf-pname');
-        const d = pfStarData(nameEl ? nameEl.textContent.trim() : '');
+        const upcEl = row.querySelector('.pf-upc');
+        const upc = upcEl ? upcEl.textContent.replace(/^\s*UPC\s*·?\s*/i, '').trim() : '';
+        const d = pfStarData(nameEl ? nameEl.textContent.trim() : '', upc);
         row.dataset.gsStars = d.stars;
         row.dataset.gsStdStars = d.stdStars;
         row.dataset.gsEase = d.ease;

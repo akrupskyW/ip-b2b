@@ -38,6 +38,7 @@
     ['.lib-stat-num', '.lib-stat'],
     ['.wmod-stat-num', '.wmod-stat'],
     ['.mi-stat-num', '.mi-stat'],
+    ['.mi-code-num', '.mi-code-card'],
     ['.mi-int-stat-num', '.mi-int-stat'],
     ['.ak-stat-num', '.ak-stat'],
     ['.rf-stat-num', '.rf-stat'],

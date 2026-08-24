@@ -84,16 +84,17 @@
       overflow: hidden;
     }
 
-    /* Left chat column (fixed width, carded) */
-    .rf-chat { flex: 0 0 var(--chat-pane-w, 380px); width: var(--chat-pane-w, 380px); background: var(--bg); }
-    /* Chat width toggle — canonical tiers (single 380 / double 580 / triple 760). */
-    .rf-chat.panel-wide { flex-basis: 580px; width: 580px; }
-    .rf-chat.panel-triple { flex-basis: 760px; width: 760px; }
+    /* Left chat column — four-tier rail (single 380 / double 580 / triple 760 /
+       fill via shared .panel-fill). The flex shorthand keeps grow/shrink at 0
+       so a widened chat can drag back to single the same way every other
+       module does. min-width stays 0; pane-resize.js owns the 300px floor. */
+    .rf-chat { flex: 0 0 var(--chat-pane-w, 380px); width: var(--chat-pane-w, 380px); min-width: 0; background: var(--bg); }
+    .rf-chat.panel-wide { flex: 0 0 580px; width: 580px; min-width: 0; }
+    .rf-chat.panel-triple { flex: 0 0 760px; width: 760px; min-width: 0; }
     /* Studio + dashboard each get the same 3-step widen from their own header
-       control. The studio is fixed-width so it visibly grows. Once a food is
-       loaded the dashboard is the supporting rail (like wiseai's Report pane):
-       its tiers are a fraction of the modules row, and flex-shrink drops it
-       back to a rail if a tier would overflow the screen. */
+       control. The studio stays a fixed single pane so it visibly grows when
+       widened. The dashboard claims leftover row space by default (fill);
+       single / double / triple pin it to a rail. */
     .rf-studio.panel-wide { flex-basis: 480px; width: 480px; }
     .rf-studio.panel-triple { flex-basis: 600px; width: 600px; }
     .rf-topbar-tag { font-size: 11px; font-weight: 600; color: var(--text-subtle); white-space: nowrap; }
@@ -178,15 +179,17 @@
     .rf-head--brand .rf-head-scrim { display: block; }
     .rf-head--brand .rf-head-title { color: #fff; }
     .rf-head--brand .rf-head-meta { color: rgba(255,255,255,.84); }
-    /* The brand leads the meta line, sharing it with the product name — same
-       "·" rhythm as the rest of the line, but uppercased so it still reads as
-       the parent label rather than another attribute of the food. */
+    /* Brand is the only loaded meta — uppercased so it reads as the parent
+       label. The middot only appears when a trailing note (the picker prompt)
+       sits after it. */
     .rf-head-brand {
       display: none; font-size: 10px; font-weight: 800;
       letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.92);
     }
     .rf-head--brand .rf-head-brand { display: inline; }
-    .rf-head-brand::after { content: '·'; margin: 0 5px; letter-spacing: 0; opacity: .55; }
+    .rf-head-brand:has(+ #rf-dash-meta:not(:empty))::after {
+      content: '·'; margin: 0 5px; letter-spacing: 0; opacity: .55;
+    }
     /* Product photo — circled, furthest-left floated item in the header. */
     .rf-head-badge {
       position: absolute; top: 50%; left: 22px; transform: translateY(-50%);
@@ -225,13 +228,15 @@
        them. */
 
     /* Studio is the lead workspace after chat: it rides above the dashboard
-       so the dashboard can tuck behind it and the studio has a visible end.
-       Full-height card (not a drawer) once a food is loaded. */
+       so the dashboard can tuck behind it. Same 15px sticky inset as every
+       other right-of-chat drawer (History, Product Details, wiseai panes).
+       Appearance ▸ Search stretches all sticky modules to the chat's height
+       (see html.app-search-on rules in wise.css). */
     #modules-row:not(.is-picking) .rf-studio.sticky-mod.is-sticky {
       z-index: 2;
-      height: 100%;
-      max-height: 100%;
-      align-self: stretch;
+      height: calc(100% - 30px);
+      max-height: calc(100% - 30px);
+      align-self: center;
     }
     /* Overview (the picker) keeps the shared cream sticky fill used by every
        other module to the right of chat. The Dashboard — only after a food
@@ -249,25 +254,78 @@
       padding-top: 22px;
       padding-bottom: 32px;
     }
-    /* Lift just enough for the ⋯ menu to clear the studio, stay under chat. */
+    /* Report is the tertiary drawer: one more step shorter than the dashboard
+       so the three cards read as stacked layers (studio 30 → dash 60 →
+       report 90). Paper white, tucked under the dashboard's right edge. */
+    #modules-row #rf-report.sticky-mod.is-sticky {
+      z-index: 0;
+      background: var(--surface);
+    }
+    #modules-row:not(.is-picking) #rf-report.sticky-mod.is-sticky.is-open {
+      height: calc(100% - 90px);
+      max-height: calc(100% - 90px);
+      align-self: center;
+    }
+    /* Overview (no studio): report is the second drawer under the picker. */
+    #modules-row.is-picking #rf-report.sticky-mod.is-sticky.is-open {
+      height: calc(100% - 60px);
+      max-height: calc(100% - 60px);
+      align-self: center;
+    }
+    #modules-row:has(#rf-report.is-open) .rf-dash.sticky-mod.is-sticky {
+      z-index: 1;
+      box-shadow: 18px 0 36px rgba(15, 23, 42, 0.18);
+    }
+    html.dark #modules-row:has(#rf-report.is-open) .rf-dash.sticky-mod.is-sticky {
+      box-shadow: 18px 0 40px rgba(0, 0, 0, 0.5);
+    }
+    /* Lift just enough for the ⋯ menu or the analysis overlay to clear the studio, stay under chat. */
     #modules-row:not(.is-picking) .rf-dash.sticky-mod.is-sticky:has(.panel-more-btn.is-open),
-    #modules-row:not(.is-picking) .rf-dash.sticky-mod.is-sticky:has(.topbar-popover:not(.hidden)) {
+    #modules-row:not(.is-picking) .rf-dash.sticky-mod.is-sticky:has(.topbar-popover:not(.hidden)),
+    #modules-row:not(.is-picking) .rf-dash.sticky-mod.is-sticky:has(.wch-sidebar.wch-open) {
       z-index: 2;
+    }
+    /* Scoring-tool menus open above the pill — lift the studio and drop
+       overflow so the popover is not clipped by the card. */
+    #modules-row:not(.is-picking) .rf-studio:has(.rf-tool-pop:not(.hidden)) {
+      overflow: visible;
+      z-index: 4;
+    }
+    #modules-row:not(.is-picking) .rf-studio:has(.rf-tool-pop:not(.hidden)) .rf-body {
+      overflow: visible;
     }
 
     .rf-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 18px 26px 26px; }
 
-    /* Center studio column — fixed while picking is N/A (studio is hidden).
-       Once a food is loaded it absorbs leftover row space so the dashboard
-       can sit as a rail; its own width selector still sets the preferred basis. */
+    /* Overlay host for Analyze Ingredients — same .wch-host / .wch-sidebar /
+       .wch-scrim shell as Connect a data source. The board stays full-width;
+       the panel pops over it and never reflows the content. */
+    .rf-dash-main {
+      flex: 1 1 auto; min-height: 0; min-width: 0;
+      display: flex; flex-direction: column;
+    }
+    .rf-dash-main > .rf-body { flex: 1 1 auto; min-width: 0; }
+
+    /* Center studio column — single-pane width by default (tier 0), same
+       idea as the chat's 380px single. Hidden while picking; once a food
+       is loaded it stays a fixed pane unless the user widens it. Fill is
+       the shared .panel-fill grow rule, not flex-grow on the default tier. */
     .rf-studio { flex: 0 0 var(--studio-pane-w, 392px); width: var(--studio-pane-w, 392px); }
     #modules-row:not(.is-picking) .rf-studio {
-      flex: 1 1 var(--studio-pane-w, 392px);
-      width: auto;
-      max-width: none;
+      flex: 0 0 var(--studio-pane-w, 392px);
+      width: var(--studio-pane-w, 392px);
+      max-width: var(--studio-pane-w, 392px);
     }
-    #modules-row:not(.is-picking) .rf-studio.panel-wide { flex-basis: 480px; }
-    #modules-row:not(.is-picking) .rf-studio.panel-triple { flex-basis: 600px; }
+    #modules-row:not(.is-picking) .rf-studio.panel-wide {
+      flex: 0 0 480px;
+      width: 480px;
+      max-width: 480px;
+    }
+    #modules-row:not(.is-picking) .rf-studio.panel-triple {
+      flex: 0 0 600px;
+      width: 600px;
+      max-width: 600px;
+    }
     /* Dashboard at fill claims leftover; keep the studio at its chosen basis. */
     #modules-row:not(.is-picking):has(.rf-dash.panel-fill) .rf-studio {
       flex-grow: 0;
@@ -280,8 +338,8 @@
       width: 600px; flex-basis: 600px;
     }
 
-    /* Right dashboard column — the picker fills leftover space; the loaded
-       board is a rail whose width selector is viewport/row-relative. */
+    /* Right dashboard column — picker and loaded fill leftover space by
+       default (.panel-fill). Single / double / triple pin a rail. */
     .rf-dash { flex: 1 1 auto; min-width: 0; }
     #modules-row:not(.is-picking) .rf-dash {
       --rf-dash-w: 380px;
@@ -304,13 +362,37 @@
       max-width: none;
     }
 
+    /* Report builder — same four-tier rail as wiseai's #wa-report. Hidden
+       until a dashboard section is added. */
+    #rf-report { display: none; }
+    #rf-report.is-open {
+      display: flex;
+      flex: 0 0 340px;
+      width: 340px;
+      min-width: 280px;
+      max-width: 420px;
+    }
+    #rf-report.is-open.panel-wide { flex: 0 0 460px; width: 460px; max-width: 520px; }
+    #rf-report.is-open.panel-triple { flex: 0 0 580px; width: 580px; max-width: none; }
+    #rf-report.is-open.panel-fill { flex: 1 1 0%; width: auto; min-width: 400px; max-width: none; }
+    #rf-report .rf-head-eyebrow {
+      margin: 0 0 4px;
+    }
+    #rf-report .rf-head-title {
+      outline: none;
+      min-height: 1.2em;
+    }
+    #rf-report .rf-head-title:focus {
+      box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--primary) 45%, transparent);
+    }
+
     /* ── Pane-level responsiveness ──
        Studio + dashboard live to the right of the chat and can be dragged to any
        width. Media queries only see the viewport, so we make each pane its own
        query container and reflow its content by the PANE's width — a narrow pane
        becomes a real mobile layout instead of a crushed desktop one. The floor
        keeps a pane phone-sized at its smallest rather than collapsing to nothing. */
-    .rf-studio, .rf-dash { container: rfpane / inline-size; }
+    .rf-studio, .rf-dash, .rf-report { container: rfpane / inline-size; }
     .rf-studio { min-width: 300px; }
 
     /* ── Module entrance ──
@@ -319,7 +401,11 @@
        then the studio and the dashboard land from the row's trailing edge. */
     .rf-chat {
       transform-origin: left center;
-      animation: panelBounceLeft 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s both;
+      /* `backwards` (not `both`): hold the start frame during the delay, but
+         don't keep a transform after the bounce — a leftover transform would
+         make the card a containing block and steal hits from the shared
+         drag-resize overlay (same reason wiseai.html uses backwards). */
+      animation: panelBounceLeft 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s backwards;
     }
     /* The studio only exists once a food is chosen, so scoping its animation to
        the loaded state re-fires the entrance every time it comes back — the rule
@@ -331,6 +417,10 @@
     .rf-dash {
       transform-origin: right center;
       animation: panelBounceRight 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) 0.17s both;
+    }
+    #rf-report.is-open {
+      transform-origin: right center;
+      animation: panelBounceRight 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) 0.22s backwards;
     }
     /* Same trick for the dashboard's two body states: swapping between the food
        list and the live board fades the incoming content up. */
@@ -352,16 +442,113 @@
     @media (prefers-reduced-motion: reduce) {
       .rf-chat,
       .rf-dash,
+      #rf-report.is-open,
       #modules-row:not(.is-picking) > .rf-studio,
       #rf-dash-pick,
       #rf-dash-loaded,
-      .rf-flash { animation: none !important; }
+      .rf-flash,
+      .rf-ia-card { animation: none !important; }
     }
 
     /* ── Section scaffolding ── */
     .rf-sec { margin: 0 0 26px; }
     .rf-sec:last-child { margin-bottom: 0; }
     .rf-sec-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 17px; font-weight: 700; letter-spacing: 0; color: var(--text); margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+    .rf-sec-title .rf-rpt-plus { margin-left: auto; }
+    .rf-sec--stats { margin-bottom: 18px; }
+    /* Plus / selected check — bare circle, no boxed backdrop (wiseai titledrop). */
+    .rf-rpt-plus {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%;
+      background: transparent; color: var(--text-muted); cursor: pointer;
+      flex: 0 0 auto;
+      transition: color .15s ease, background .15s ease;
+    }
+    .rf-rpt-plus:hover { color: var(--primary-ink, var(--primary)); background: color-mix(in srgb, var(--primary) 12%, transparent); }
+    .rf-rpt-plus:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .rf-rpt-plus.is-on { color: var(--primary-ink, var(--primary)); background: color-mix(in srgb, var(--primary) 14%, transparent); }
+    html.dark .rf-rpt-plus.is-on { color: var(--primary-bright, #8B9FAF); }
+    .rf-rpt-plus .material-symbols-outlined { font-size: 20px; }
+
+    .rf-rpt-item + .rf-rpt-item { margin-top: 4px; padding-top: 22px; border-top: 1px solid var(--border); }
+    .rf-rpt-item-pop { position: fixed; z-index: 40; }
+    .rf-rpt-item-head {
+      display: flex; align-items: center; gap: 8px;
+      margin: 0 0 10px;
+    }
+    .rf-rpt-item-title {
+      flex: 1 1 auto; min-width: 0; margin: 0;
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-weight: 800; font-size: 1.05rem; line-height: 1.2; letter-spacing: -.01em;
+      color: var(--text); outline: none;
+    }
+    .rf-rpt-item-title:focus {
+      box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--primary) 45%, transparent);
+    }
+    .rf-rpt-item-body { min-width: 0; }
+    .rf-rpt-item-body .rf-sec { margin-bottom: 0; }
+    .rf-rpt-item-body .rf-sec-title { display: none; }
+    .rf-rpt-item-body .rf-stat { cursor: default; }
+    .rf-rpt-item-body .rf-stat:hover {
+      transform: none;
+      box-shadow: none;
+      background: color-mix(in srgb, var(--primary) 10%, #fff);
+      border-color: var(--border-strong);
+    }
+    html.dark .rf-rpt-item-body .rf-stat:hover {
+      background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent);
+    }
+    .rf-rpt-note { margin-top: 10px; }
+    .rf-rpt-note-input {
+      width: 100%; box-sizing: border-box;
+      font-family: inherit; font-size: 12px; color: var(--text);
+      background: transparent; border: 0; border-bottom: 1px solid var(--border);
+      padding: 6px 0; outline: none;
+    }
+    .rf-rpt-note-input:focus { border-bottom-color: var(--primary); }
+    .rf-rpt-note-input::placeholder { color: var(--text-subtle); }
+
+    @media print {
+      html.rf-print-report,
+      html.rf-print-report body {
+        background: #fff !important;
+        height: auto !important;
+        overflow: visible !important;
+        padding: 0 !important;
+      }
+      html.rf-print-report #topbar-row,
+      html.rf-print-report #menu-panel,
+      html.rf-print-report #rf-chat,
+      html.rf-print-report #rf-studio,
+      html.rf-print-report #rf-dash,
+      html.rf-print-report .wch-sidebar,
+      html.rf-print-report .pr-overlay,
+      html.rf-print-report #rf-report .rf-head-controls,
+      html.rf-print-report #rf-report .rf-rpt-more,
+      html.rf-print-report #rf-report .rf-rpt-note {
+        display: none !important;
+      }
+      html.rf-print-report #chat-shell-wrap,
+      html.rf-print-report #modules-row {
+        display: block !important;
+        height: auto !important;
+        overflow: visible !important;
+        position: static !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        gap: 0 !important;
+      }
+      html.rf-print-report #rf-report {
+        display: block !important;
+        position: static !important;
+        width: auto !important;
+        max-width: none !important;
+        height: auto !important;
+        box-shadow: none !important;
+        border: 0 !important;
+        background: #fff !important;
+      }
+    }
 
     /* ── Disqualification banners ── */
     .rf-dq-banner { display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-radius: 12px; margin-bottom: 8px; font-size: 12.5px; line-height: 1.4; }
@@ -441,10 +628,85 @@
     .rf-tradeoff-col--debit .rf-tradeoff-col-label { color: var(--sec-red-text); }
     .rf-tradeoff-col--credit .rf-tradeoff-col-label { color: var(--sec-green-text); }
 
+    /* ── Dashboard: named additives-to-limit list (after the trade-off) ──
+       Drill-down of the Additives debit. Hidden when the label has none. */
+    .rf-limit-count { font-weight: 700; color: var(--text-muted); }
+    .rf-limit-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px; margin-bottom: 5px;
+      background: color-mix(in srgb, var(--ter-amber) 10%, var(--surface-2));
+      border: 1px solid color-mix(in srgb, var(--ter-amber) 22%, var(--border));
+      border-left: 3px solid var(--ter-amber);
+      border-radius: 8px;
+      font-size: 12.5px; line-height: 1.35; color: var(--text);
+    }
+    .rf-limit-row:last-child { margin-bottom: 0; }
+    .rf-limit-row .material-symbols-outlined {
+      font-size: 16px; flex: 0 0 auto; color: var(--text);
+    }
+    html.dark .rf-limit-row {
+      background: color-mix(in srgb, var(--ter-amber) 14%, var(--surface-2));
+      border-color: color-mix(in srgb, var(--ter-amber) 28%, var(--border));
+      border-left-color: var(--ter-amber);
+    }
+
     /* ── Dashboard: ingredient list (below the trade-off) — headline + copy ── */
     .rf-ing-text {
       margin: 0; padding: 0; background: none; border: 0;
       font-size: 12.5px; line-height: 1.55; color: var(--text);
+    }
+    .rf-ia-btn {
+      width: 100%; height: 40px; margin-top: 14px; box-sizing: border-box;
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      border: none; border-radius: 999px; padding: 0 16px; cursor: pointer;
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 0.82rem; font-weight: 700;
+      background: var(--primary); color: #fff; transition: filter .15s, opacity .15s;
+    }
+    .rf-ia-btn:hover { filter: brightness(1.07); }
+    .rf-ia-btn:disabled { opacity: .45; cursor: not-allowed; filter: grayscale(.25); }
+    .rf-ia-btn .material-symbols-outlined { font-size: 18px !important; }
+    html.dark .rf-ia-btn { background: var(--primary-bright, #8B9FAF); color: var(--surface); }
+    .rf-ia-btn.is-open { filter: brightness(1.04); }
+
+    /* Overlay pane reuses .wch-sidebar.wch-right — only the width + card
+       list are page-local. Open/close animation comes from chat-history.js. */
+    .rf-ia-panel.wch-sidebar { width: 340px; }
+    .rf-ia-panel .wch-head-title {
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-weight: 800; font-size: 1.05rem; letter-spacing: -.01em;
+    }
+    .rf-ia-panel-meta {
+      margin: 2px 16px 8px; font-size: 12px; line-height: 1.45; opacity: .7;
+    }
+    .rf-ia-cards { display: flex; flex-direction: column; gap: 10px; min-width: 0; padding: 2px 12px 16px; }
+    .rf-ia-card {
+      background: var(--surface); border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
+      border-radius: 12px; padding: 12px 13px 10px;
+      animation: rf-ia-in .42s cubic-bezier(.22, 1, .36, 1) both;
+      animation-delay: calc(var(--i, 0) * 38ms);
+    }
+    html.dark .rf-ia-card {
+      background: var(--surface);
+      border-color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 28%, var(--border));
+    }
+    .rf-ia-card-head { margin: 0 0 10px; font-size: 12.5px; line-height: 1.4; }
+    .rf-ia-card-name { font-weight: 800; color: var(--primary-ink, var(--primary)); }
+    html.dark .rf-ia-card-name { color: var(--primary-bright, #8B9FAF); }
+    .rf-ia-card-arrow { color: var(--text-subtle); font-weight: 600; padding: 0 5px; }
+    .rf-ia-card-mapped { color: var(--text-muted); font-weight: 500; }
+    .rf-ia-metric {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+      padding: 3px 0; font-size: 12px; line-height: 1.35;
+    }
+    .rf-ia-metric-name { color: var(--text-muted); }
+    .rf-ia-metric-val {
+      font-weight: 700; color: var(--text); text-align: right; white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .rf-ia-metric-unit { font-weight: 700; letter-spacing: .02em; }
+    @keyframes rf-ia-in {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: none; }
     }
     .rf-metric { display: grid; grid-template-columns: 40px 1fr; gap: 2px 10px; align-items: center; padding: 9px 11px; border-radius: 10px; margin-bottom: 7px; background: var(--surface-2); border: 1px solid transparent; }
     .rf-metric-pts { grid-row: 1 / span 2; align-self: center; font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 20px; text-align: center; color: var(--text-subtle); }
@@ -460,19 +722,63 @@
     .rf-metric.sev-credit { background: var(--sec-green-10); border-color: color-mix(in srgb, var(--sec-green) 26%, transparent); }
     .rf-metric.sev-credit .rf-metric-pts { color: var(--sec-green-text); }
 
-    /* ── Studio: algorithm + basis ── */
-    /* Algorithm selector — a single pill that holds the label and the native
-       select together (no squared corners, label lives inside the pill). */
-    .rf-algo { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 8px 0 14px; margin-bottom: 16px; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 9999px; transition: border-color .16s; }
-    .rf-algo:hover { border-color: var(--primary); }
-    html.dark .rf-algo:hover { border-color: var(--primary-bright, #8B9FAF); }
-    .rf-algo-label { flex: 0 0 auto; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-subtle); }
-    .rf-algo select {
-      flex: 1 1 auto; min-width: 0; height: 100%; font-family: 'WISE Digits', 'DM Sans', sans-serif; font-size: 12px; font-weight: 600;
-      color: var(--text); background: transparent; border: 0; border-radius: 0;
-      padding: 0 4px 0 0; cursor: pointer; text-align-last: right;
+    /* ── Studio: scoring basis + algorithm as ONE pill ──
+       Two readable halves (icon · value · caret) share a rail. Each icon
+       carries the shared floating tooltip; each half opens a stylized
+       menu above the trigger (never below), matching the rest of the app. */
+    .rf-score-tools {
+      display: flex; align-items: stretch;
+      height: 40px; margin: 0 0 14px;
+      background: var(--surface-2); border: 1px solid var(--border-strong);
+      border-radius: 9999px; min-width: 0;
     }
-    .rf-algo select:focus-visible { outline: none; }
+    .rf-tool {
+      position: relative; flex: 1 1 0; min-width: 0;
+      display: flex; align-items: center; gap: 2px; padding: 0 6px 0 8px;
+    }
+    .rf-tool-rule {
+      flex: 0 0 1px; width: 1px; margin: 8px 0; background: var(--border-strong);
+      opacity: .7;
+    }
+    .rf-tool-ico {
+      flex: 0 0 auto; width: 26px; height: 26px; padding: 0; border: 0;
+      background: transparent; color: var(--primary); cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 50%;
+    }
+    .rf-tool-ico .material-symbols-outlined { font-size: 18px; }
+    .rf-tool-ico:hover { color: var(--primary-ink, var(--primary)); background: color-mix(in srgb, var(--primary) 12%, transparent); }
+    html.dark .rf-tool-ico { color: var(--primary-bright, #8B9FAF); }
+    html.dark .rf-tool-ico:hover { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 16%, transparent); }
+    .rf-tool-trigger {
+      flex: 1 1 auto; min-width: 0; height: 32px; padding: 0 4px 0 2px;
+      display: inline-flex; align-items: center; gap: 2px;
+      border: 0; background: transparent; color: var(--text); cursor: pointer;
+      font-family: 'WISE Digits', 'DM Sans', sans-serif; font-size: 11.5px; font-weight: 600;
+      text-align: left; border-radius: 9999px;
+    }
+    .rf-tool-trigger:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
+    html.dark .rf-tool-trigger:hover { background: rgba(255,255,255,0.06); }
+    .rf-tool-value { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rf-tool-caret { flex: 0 0 auto; font-size: 18px; color: var(--text-subtle); }
+    .rf-tool-trigger[aria-expanded="true"] .rf-tool-caret { color: var(--primary); }
+    html.dark .rf-tool-trigger[aria-expanded="true"] .rf-tool-caret { color: var(--primary-bright, #8B9FAF); }
+    .rf-tool-pop {
+      top: auto; bottom: calc(100% + 8px); left: 0; right: auto;
+      min-width: min(260px, 72vw); max-width: min(320px, 86vw);
+    }
+    .rf-tool--algo .rf-tool-pop { left: auto; right: 0; }
+    .rf-tool-pop-title {
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-weight: 800; font-size: 14px; letter-spacing: -.01em; line-height: 1.2;
+      color: var(--text); margin: 4px 12px 8px;
+    }
+    .rf-tool-item-copy { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto; }
+    .rf-tool-item-copy small { font-size: 10.5px; font-weight: 500; color: var(--text-muted); line-height: 1.3; }
+    .rf-tool-check { margin-left: auto; font-size: 16px; color: var(--primary); opacity: 0; }
+    html.dark .rf-tool-check { color: var(--primary-bright, #8B9FAF); }
+    .topbar-menu-item[aria-checked="true"] .rf-tool-check { opacity: 1; }
+    .topbar-menu-item[aria-checked="true"] { color: var(--text); font-weight: 600; }
     /* Nutrient basis — a fully-rounded pill toggle (no squared corners). The
        track is a pill, and the active segment is a pill that slides between
        Per Serving / Per 100 kcal / Per 100 g. */
@@ -495,7 +801,7 @@
     .rf-ctl-val { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 700; font-size: 13.5px; color: var(--primary); }
     html.dark .rf-ctl-val { color: var(--primary-bright, #8B9FAF); }
     .rf-ctl-row { display: flex; align-items: center; gap: 9px; }
-    .rf-step-btn { width: 26px; height: 26px; flex: 0 0 auto; border-radius: 7px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text); font-size: 16px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .16s; }
+    .rf-step-btn { width: 26px; height: 26px; flex: 0 0 auto; border-radius: 50%; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text); font-size: 16px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .16s; }
     .rf-step-btn:hover { background: var(--surface-3); }
     .rf-range { flex: 1 1 auto; min-width: 0; -webkit-appearance: none; appearance: none; height: 5px; border-radius: 9999px; background: var(--surface-3); outline: none; cursor: pointer; }
     .rf-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--primary); border: 2px solid var(--surface); box-shadow: var(--shadow-1); cursor: pointer; }
@@ -536,9 +842,35 @@
     .rf-score-net.is-dq { color: var(--sec-red-text); }
     .rf-score-path { font-size: 12px; color: var(--text-muted); margin-top: 6px; line-height: 1.45; }
     .rf-score-path b { color: var(--text); font-weight: 800; }
-    .rf-reset { margin-top: 14px; width: 100%; height: 40px; font-family: 'WISE Digits', 'DM Sans', sans-serif; font-weight: 700; font-size: 11.5px; padding: 0 18px; border-radius: 9999px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background .16s, color .16s, border-color .16s; }
-    .rf-reset:hover { background: var(--surface-2); color: var(--text); border-color: var(--text-muted); }
-    .rf-reset .material-symbols-outlined { font-size: 15px; }
+
+    /* Sticky studio footer — pinned to the card, sliders scroll above it.
+       Save is the primary pill (same family as Product Details' Save to
+       Portfolio). Reset sits under it as plain text, not a second button. */
+    .rf-studio-foot {
+      flex: 0 0 auto;
+      padding: 12px 26px 16px;
+      border-top: 1px solid var(--border);
+      background: color-mix(in srgb, var(--surface-2) 45%, var(--surface));
+    }
+    .rf-save-btn {
+      width: 100%; height: 40px; box-sizing: border-box;
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      border: none; border-radius: 999px; padding: 0 16px; cursor: pointer;
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 0.82rem; font-weight: 700;
+      background: var(--primary); color: #fff; transition: filter .15s, opacity .15s;
+    }
+    .rf-save-btn:hover { filter: brightness(1.07); }
+    .rf-save-btn.is-saved { opacity: .92; }
+    .rf-save-btn .material-symbols-outlined { font-size: 18px !important; }
+    html.dark .rf-save-btn { background: var(--primary-bright, #8B9FAF); color: var(--surface); }
+    .rf-reset-text {
+      display: block; width: 100%; margin-top: 8px; padding: 4px 0;
+      border: 0; background: none; cursor: pointer;
+      font-family: 'WISE Digits', 'DM Sans', sans-serif;
+      font-size: 12px; font-weight: 500; line-height: 1.35;
+      color: var(--text-muted); text-align: center;
+    }
+    .rf-reset-text:hover { color: var(--text); text-decoration: underline; }
 
     /* ═══════════ Step 0 · Product picker ═══════════
        The flow always starts by picking which food you're reformulating. The
@@ -549,19 +881,21 @@
     #modules-row:not(.is-picking) #rf-dash-pick { display: none; }
     /* No food chosen yet → the Reformulation Studio module isn't there at all. */
     #modules-row.is-picking > .rf-studio { display: none; }
+    /* Change product lives in the dashboard three-dot — only after a food is
+       loaded. The picker overview has nothing else in that menu. */
+    #modules-row.is-picking #rf-dash-menu-wrap { display: none; }
 
     /* ═══════════ Dashboard board chrome ═══════════
-       The dashboard wears the Product Portfolio board's chrome (see
-       product-portfolio.html's .pf-toolbar / .pf-stat / .pf-table): a search
-       toolbar, a row of at-a-glance score cards, then a grid "table". Metrics
-       are copied from there so the two boards read as one component family. */
+       The dashboard wears the Product Portfolio board's chrome for search +
+       table, and the shared welcome scorecards (.ws-scorecard in wise.css) for
+       the at-a-glance metrics — same tint, type, icon, and hover as wiseai. */
     /* The branded header ends in a hard banner edge, so the toolbar needs real
        card surface beneath it — the header's own bottom padding sits inside the
        artwork and reads as part of the banner, not as a gap. */
     .rf-dash .rf-body { display: flex; flex-direction: column; gap: 14px; padding-top: 18px; }
     .rf-dash .rf-body > * { flex-shrink: 0; }
 
-    /* ── Toolbar — the search pill fills the row, actions sit to its right ── */
+    /* ── Toolbar — the search pill fills the row ── */
     .rf-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 2px 0; }
     .rf-search-inline { position: relative; display: inline-flex; align-items: center; flex: 1 1 auto; min-width: 200px; }
     .rf-search-inline > .material-symbols-outlined { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-subtle); pointer-events: none; }
@@ -587,50 +921,56 @@
     html.dark .rf-search-clear:hover { background: rgba(255,255,255,0.08); }
     .rf-search-clear .material-symbols-outlined { font-size: 17px; }
 
-    /* "Change product" — the toolbar's trailing action (portfolio's Add Product slot). */
-    .rf-change-btn {
-      flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-      height: 38px; box-sizing: border-box; padding: 0 15px;
-      font-family: inherit; font-weight: 700; font-size: 12px;
-      border-radius: 9999px; cursor: pointer;
-      border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text-muted);
-      transition: background .16s, color .16s, border-color .16s;
+    /* ── Score cards — same .ws-scorecard family as wiseai.html / the chat rail.
+       The shared paint (tint, 10px radius, left-aligned icon + metric + title)
+       lives in wise.css; this only fits them to the board grid and keeps the
+       picker's filter / active / disabled states. No eyebrow. ── */
+    .rf-sec[data-rpt="stats"],
+    .rf-rpt-item-body { container-type: inline-size; }
+    .rf-stats {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(var(--rf-stat-cols, 4), minmax(0, 1fr));
     }
-    .rf-change-btn:hover { background: var(--surface-3); color: var(--text); border-color: var(--primary); }
-    .rf-change-btn .material-symbols-outlined { font-size: 16px; }
-
-    /* ── Score cards — at-a-glance numbers; the picker's also filter the list ── */
-    .rf-stats { display: flex; flex-wrap: wrap; gap: 10px; }
-    .rf-stat {
-      flex: 1 1 120px; min-width: 108px;
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-      padding: 12px 14px; border-radius: 6px;
-      background: var(--surface); border: 1px solid var(--border);
-      box-shadow: var(--shadow-1);
-      font-family: inherit; text-align: center; cursor: pointer;
-      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
+    .rf-stats > .ws-scorecard {
+      flex: none;
+      min-width: 0;
+      width: auto;
+      aspect-ratio: auto;
+      scroll-snap-align: unset;
+      height: 100%;
+      border-radius: 10px !important;
     }
-    /* Scorecard fill mirrors the chat module (.sc-card) across every theme. */
-    html.dark .rf-stat { background: #1A2339; }
-    html.chat-tint:not(.dark) .rf-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
-    html.dark.chat-tint .rf-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
-    .rf-stat:hover { transform: translateY(-1px); box-shadow: var(--shadow-card); border-color: var(--border-strong); }
-    .rf-stat:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
-    .rf-stat.is-active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--surface)); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1); }
-    html.dark .rf-stat.is-active { background: color-mix(in srgb, var(--primary) 26%, transparent); }
-    .rf-stat:disabled { cursor: default; }
-    .rf-stat:disabled:hover { transform: none; box-shadow: var(--shadow-1); border-color: var(--border); }
-    .rf-stat-num { display: inline-flex; align-items: center; gap: 1px; font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text); }
-    .rf-stat-num .material-symbols-outlined { font-size: 19px; }
-    .rf-stat-label { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
-    .rf-stat-label .material-symbols-outlined { font-size: 13px; line-height: 1; width: 14px; height: 14px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
-    .rf-stat--alert .rf-stat-num { color: var(--sec-red); }
-    .rf-stat--warn .rf-stat-num { color: #8a6400; }
-    html.dark .rf-stat--warn .rf-stat-num { color: #FFD98A; }
-    .rf-stat--good .rf-stat-num { color: var(--sec-green); }
-    .rf-stat--muted .rf-stat-num { color: var(--text-muted); }
-    .rf-stat--stars .rf-stat-num { color: var(--ter-amber); }
-    .rf-board-divider { height: 1px; background: var(--border); margin: 0 0 2px; }
+    .rf-stats .ws-sc-desc { flex: 0 1 auto; }
+    .rf-stats .ws-scorecard.is-active {
+      border-color: color-mix(in srgb, var(--primary) 70%, var(--border-strong));
+      background: color-mix(in srgb, var(--primary) 20%, #fff);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 22%, transparent);
+    }
+    html.dark .rf-stats .ws-scorecard.is-active {
+      background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 22%, transparent);
+    }
+    .rf-stats .ws-scorecard:disabled {
+      cursor: default;
+      opacity: 1;
+      color: inherit;
+      -webkit-text-fill-color: inherit;
+    }
+    .rf-stats .ws-scorecard:disabled:hover {
+      transform: none;
+      box-shadow: none;
+      background: color-mix(in srgb, var(--primary) 10%, #fff);
+      border-color: var(--border-strong);
+    }
+    html.dark .rf-stats .ws-scorecard:disabled:hover {
+      background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent);
+    }
+    @container (max-width: 860px) {
+      .rf-stats[data-cols="5"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @container (max-width: 720px) {
+      .rf-stats[data-cols="4"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
 
     /* ── Grid "table" — one grid per row, so head and body columns line up.
        Card chrome is the canonical list surface (.pf-table-card / .wmod-table-card):
@@ -749,6 +1089,7 @@
        Tablet band first, then a tighter phone band. */
     @container rfpane (max-width: 480px) {
       .rf-body { padding-left: 15px; padding-right: 15px; }
+      .rf-studio-foot { padding-left: 15px; padding-right: 15px; }
       /* Debit/credit trade-off: stack the two halves, drop the vertical rule. */
       .rf-tradeoff { grid-template-columns: 1fr; gap: 18px 0; }
       .rf-tradeoff-sep { display: none; }
@@ -759,9 +1100,13 @@
       .rf-table--moves .rf-thead, .rf-table--moves .rf-trow { min-width: 460px; }
       /* Segmented basis control keeps 3 equal cells but tightens up. */
       .rf-basis-btn { padding: 8px 4px; font-size: 11px; }
+      .rf-score-tools { height: 36px; }
+      .rf-tool { padding-left: 6px; padding-right: 4px; }
+      .rf-tool-value { font-size: 11px; }
     }
     @container rfpane (max-width: 360px) {
       .rf-body { padding-left: 12px; padding-right: 12px; }
+      .rf-studio-foot { padding-left: 12px; padding-right: 12px; }
       .rf-sec { margin-bottom: 20px; }
       .rf-sec-title { font-size: 15.5px; }
     }
@@ -802,7 +1147,7 @@
       <main class="rf-card rf-chat" id="rf-chat"></main>
 
       <!-- ═══════════ 2 · Reformulation Studio (calculator) ═══════════ -->
-      <section class="rf-card rf-studio" id="rf-studio">
+      <section class="rf-card rf-studio" id="rf-studio" data-no-fill-default>
         <header class="rf-head">
           <div class="rf-head-controls">
             <div class="panel-more-wrap" id="rf-studio-menu-wrap">
@@ -811,11 +1156,10 @@
                 <button type="button" class="topbar-menu-item" role="menuitem" onclick="rfResetProduct(); rfCloseModuleMenus()"><span class="material-symbols-outlined topbar-menu-icon">restart_alt</span><span>Reset to original label</span></button>
               </div>
             </div>
-            <button type="button" class="panel-width-toggle-btn" id="rf-studio-width" aria-pressed="false" title="Widen studio" aria-label="Studio width"><span class="material-symbols-outlined">width_normal</span></button>
+            <button type="button" class="panel-width-toggle-btn" id="rf-studio-width" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Studio width"><span class="material-symbols-outlined">width_normal</span></button>
           </div>
           <div class="rf-head-titles">
             <h2 class="rf-head-title">Reformulation Studio</h2>
-            <p class="rf-head-meta" id="rf-studio-meta">Dial in the WISE controls · live Guiding Stars</p>
           </div>
         </header>
         <div class="rf-body">
@@ -831,14 +1175,64 @@
             <div class="rf-score-path" id="rf-score-path"></div>
           </div>
 
-          <div class="rf-algo">
-            <span class="rf-algo-label">Algorithm</span>
-            <select id="rf-algo" aria-label="Guiding Stars algorithm">
-              <option value="G">G — General Foods</option>
-              <option value="M">M — Meat / Dairy / Nuts</option>
-              <option value="F">F — Fats &amp; Oils</option>
-              <option value="V">V — Beverage</option>
-            </select>
+          <div class="rf-score-tools" id="rf-score-tools">
+            <div class="rf-tool" id="rf-tool-basis">
+              <button type="button" class="rf-tool-ico" id="rf-basis-ico" data-tip="Scoring basis — which nutrients count toward Guiding Stars" aria-label="Scoring basis" aria-haspopup="menu" aria-expanded="false" aria-controls="rf-basis-menu"><span class="material-symbols-outlined">query_stats</span></button>
+              <button type="button" class="rf-tool-trigger" id="rf-basis-trigger" aria-haspopup="menu" aria-expanded="false" aria-controls="rf-basis-menu">
+                <span class="rf-tool-value" id="rf-basis-value">All available data</span>
+                <span class="material-symbols-outlined rf-tool-caret">expand_more</span>
+              </button>
+              <div id="rf-basis-menu" class="topbar-popover rf-tool-pop hidden" role="menu" aria-label="Scoring basis">
+                <p class="rf-tool-pop-title">Scoring basis</p>
+                <button type="button" class="topbar-menu-item" role="menuitemradio" data-basis="all" aria-checked="true">
+                  <span class="material-symbols-outlined topbar-menu-icon">database</span>
+                  <span class="rf-tool-item-copy"><span>All available data</span><small>Every nutrient on file</small></span>
+                  <span class="material-symbols-outlined rf-tool-check">check</span>
+                </button>
+                <button type="button" class="topbar-menu-item" role="menuitemradio" data-basis="nfp" aria-checked="false">
+                  <span class="material-symbols-outlined topbar-menu-icon">nutrition</span>
+                  <span class="rf-tool-item-copy"><span>Mandatory NFP only</span><small>Vit D, Calcium, Iron, Potassium</small></span>
+                  <span class="material-symbols-outlined rf-tool-check">check</span>
+                </button>
+              </div>
+            </div>
+            <span class="rf-tool-rule" aria-hidden="true"></span>
+            <div class="rf-tool rf-tool--algo" id="rf-tool-algo">
+              <button type="button" class="rf-tool-ico" id="rf-algo-ico" data-tip="Guiding Stars algorithm — Auto-detect picks the food group" aria-label="Algorithm" aria-haspopup="menu" aria-expanded="false" aria-controls="rf-algo-menu"><span class="material-symbols-outlined">hub</span></button>
+              <button type="button" class="rf-tool-trigger" id="rf-algo-trigger" aria-haspopup="menu" aria-expanded="false" aria-controls="rf-algo-menu">
+                <span class="rf-tool-value" id="rf-algo-value">Auto-detect — G</span>
+                <span class="material-symbols-outlined rf-tool-caret">expand_more</span>
+              </button>
+              <div id="rf-algo-menu" class="topbar-popover rf-tool-pop hidden" role="menu" aria-label="Guiding Stars algorithm">
+                <p class="rf-tool-pop-title">Algorithm</p>
+                <button type="button" class="topbar-menu-item" role="menuitemradio" data-algo="auto" aria-checked="true">
+                  <span class="material-symbols-outlined topbar-menu-icon">auto_awesome</span>
+                  <span class="rf-tool-item-copy"><span>Auto-detect</span><small id="rf-algo-auto-sub">Currently G — General Foods</small></span>
+                  <span class="material-symbols-outlined rf-tool-check">check</span>
+                </button>
+                <div class="topbar-menu-divider"></div>
+                <button type="button" class="topbar-menu-item" role="menuitemradio" data-algo="G" aria-checked="false">
+                  <span class="material-symbols-outlined topbar-menu-icon">grocery</span>
+                  <span class="rf-tool-item-copy"><span>G — General Foods</span></span>
+                  <span class="material-symbols-outlined rf-tool-check">check</span>
+                </button>
+                <button type="button" class="topbar-menu-item" role="menuitemradio" data-algo="M" aria-checked="false">
+                  <span class="material-symbols-outlined topbar-menu-icon">egg</span>
+                  <span class="rf-tool-item-copy"><span>M — Meat / Dairy / Nuts</span></span>
+                  <span class="material-symbols-outlined rf-tool-check">check</span>
+                </button>
+                <button type="button" class="topbar-menu-item" role="menuitemradio" data-algo="F" aria-checked="false">
+                  <span class="material-symbols-outlined topbar-menu-icon">oil_barrel</span>
+                  <span class="rf-tool-item-copy"><span>F — Fats &amp; Oils</span></span>
+                  <span class="material-symbols-outlined rf-tool-check">check</span>
+                </button>
+                <button type="button" class="topbar-menu-item" role="menuitemradio" data-algo="V" aria-checked="false">
+                  <span class="material-symbols-outlined topbar-menu-icon">water_full</span>
+                  <span class="rf-tool-item-copy"><span>V — Beverage</span></span>
+                  <span class="material-symbols-outlined rf-tool-check">check</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           <div class="rf-basis" role="tablist" aria-label="Nutrient basis">
@@ -852,8 +1246,8 @@
 
           <div class="rf-toggle-row" id="rf-vit-row">
             <div class="rf-toggle-info">
-              <div class="rf-toggle-name">Vitamins / minerals ≥5% DV</div>
-              <div class="rf-toggle-sub">+1 credit each per 100 kcal · max +3</div>
+              <div class="rf-toggle-name" id="rf-vit-name">Vitamins / minerals ≥5% DV</div>
+              <div class="rf-toggle-sub" id="rf-vit-sub">+1 credit each per 100 kcal · max +3</div>
             </div>
             <div class="rf-stepper">
               <button type="button" class="rf-step-btn" data-vit="-1" aria-label="Fewer fortified nutrients">−</button>
@@ -868,14 +1262,19 @@
             </div>
             <button type="button" class="rf-switch" id="rf-wg" role="switch" aria-checked="false" aria-label="Whole grain"></button>
           </div>
-
-          <button type="button" class="rf-reset" onclick="rfResetProduct()"><span class="material-symbols-outlined">restart_alt</span>Reset to original label</button>
           </div><!-- /#rf-studio-loaded -->
         </div>
+        <footer class="rf-studio-foot" id="rf-studio-foot">
+          <button type="button" class="rf-save-btn" id="rf-save-btn" onclick="rfSaveReformulation()">
+            <span class="material-symbols-outlined" id="rf-save-ico">save</span>
+            <span id="rf-save-label">Save the reformulation</span>
+          </button>
+          <button type="button" class="rf-reset-text" id="rf-reset-btn" onclick="rfResetProduct()">Reset to original</button>
+        </footer>
       </section>
 
       <!-- ═══════════ 3 · Reformulation Overview (picker) / Dashboard (loaded) ═══════════ -->
-      <section class="rf-card rf-dash" id="rf-dash" data-no-fill-default>
+      <section class="rf-card rf-dash panel-fill" id="rf-dash">
         <header class="rf-head" id="rf-dash-head">
           <!-- Brand banner + product badge — dressed by dressDashHead() once a food loads -->
           <div class="rf-head-bg" id="rf-dash-head-bg" aria-hidden="true"></div>
@@ -888,13 +1287,14 @@
                 <button type="button" class="topbar-menu-item" role="menuitem" onclick="rfShowPicker(); rfCloseModuleMenus()"><span class="material-symbols-outlined topbar-menu-icon">swap_horiz</span><span>Change product</span></button>
               </div>
             </div>
-            <button type="button" class="panel-width-toggle-btn" id="rf-dash-width" aria-pressed="false" title="Widen dashboard" aria-label="Dashboard width"><span class="material-symbols-outlined">width_normal</span></button>
+            <button type="button" class="panel-width-toggle-btn is-on" id="rf-dash-width" aria-pressed="true" title="Width (fill) — tap to reset" aria-label="Dashboard width"><span class="material-symbols-outlined">width_full</span></button>
           </div>
           <div class="rf-head-titles">
             <h2 class="rf-head-title" id="rf-dash-title">Reformulation Overview</h2>
             <p class="rf-head-meta"><span class="rf-head-brand" id="rf-dash-brand"></span><span id="rf-dash-meta">Choose a product to reformulate</span></p>
           </div>
         </header>
+        <div class="rf-dash-main wch-host">
         <div class="rf-body">
 
           <!-- Toolbar · one search box serves both board states -->
@@ -904,29 +1304,30 @@
               <input type="text" class="rf-search" id="rf-search" placeholder="Search by product name or UPC" aria-label="Search products" autocomplete="off" />
               <button type="button" class="rf-search-clear" id="rf-search-clear" title="Clear search" aria-label="Clear search"><span class="material-symbols-outlined">close</span></button>
             </div>
-            <button type="button" class="rf-change-btn" id="rf-change-btn" onclick="rfShowPicker()" title="Choose a different product" style="display:none"><span class="material-symbols-outlined">swap_horiz</span>Change product</button>
           </div>
 
-          <!-- Score cards · rebuilt per state by renderPickStats / renderLoadedStats -->
-          <div class="rf-stats" id="rf-stats"></div>
-
-          <div class="rf-board-divider" aria-hidden="true"></div>
+          <!-- Score cards · no section title / eyebrow; rebuilt by renderPickStats / renderLoadedStats -->
+          <div class="rf-sec rf-sec--stats" data-rpt="stats" data-rpt-label="Score cards">
+            <div class="rf-stats" id="rf-stats"></div>
+          </div>
 
           <!-- Step 0 · pick a food -->
           <div id="rf-dash-pick">
-            <div class="rf-table">
+            <div class="rf-sec" data-rpt="catalog" data-rpt-label="Products">
+              <div class="rf-table">
               <!-- Head row is rendered by renderPickHead() so it can carry sort state -->
               <div class="rf-thead" id="rf-thead"></div>
               <div id="rf-pick-list" role="group" aria-label="Products to reformulate"></div>
               <div class="rf-empty" id="rf-pick-empty" hidden>No products match your search.</div>
               <div class="rf-table-foot"><span id="rf-pick-foot"></span></div>
+              </div>
             </div>
           </div>
 
           <!-- Loaded state · the live board -->
           <div id="rf-dash-loaded">
             <!-- Disqualification & recommendations -->
-            <div class="rf-sec">
+            <div class="rf-sec" data-rpt="dq">
               <p class="rf-sec-title">Disqualification &amp; Recommendations</p>
               <div id="rf-dq"></div>
               <div class="rf-table rf-table--moves" id="rf-moves-table" style="margin-top:12px">
@@ -942,8 +1343,8 @@
             </div>
 
             <!-- Debits & credits trade-off -->
-            <div class="rf-sec">
-              <p class="rf-sec-title">the trade-off</p>
+            <div class="rf-sec" data-rpt="tradeoff">
+              <p class="rf-sec-title">The trade-off</p>
               <div class="rf-tradeoff">
                 <div class="rf-tradeoff-col rf-tradeoff-col--debit">
                   <p class="rf-tradeoff-col-label"><span>Debits</span><span class="rf-col-sum" id="rf-debit-sum">0</span></p>
@@ -957,12 +1358,58 @@
               </div>
             </div>
 
-            <div class="rf-sec" id="rf-ing-sec" hidden>
+            <!-- Named additives-to-limit — only when the label has some.
+                 Sits after the trade-off (which already shows the additives
+                 debit count) and before the full ingredient statement. -->
+            <div class="rf-sec" id="rf-limit-sec" data-rpt="additives" hidden>
+              <p class="rf-sec-title">Additives to limit <span class="rf-limit-count">(<span id="rf-limit-n">0</span>)</span></p>
+              <div id="rf-limit-list"></div>
+            </div>
+
+            <div class="rf-sec" id="rf-ing-sec" data-rpt="ingredients" hidden>
               <p class="rf-sec-title">Ingredients</p>
               <p class="rf-ing-text" id="rf-ing-text"></p>
+              <button type="button" class="rf-ia-btn" id="rf-ia-btn" aria-expanded="false" aria-controls="rf-ia-panel">
+                <span class="material-symbols-outlined">science</span>Analyze Ingredients
+              </button>
             </div>
           </div>
         </div>
+        <div class="wch-scrim" id="rf-ia-scrim"></div>
+        <aside class="wch-sidebar wch-right rf-ia-panel" id="rf-ia-panel" aria-label="Ingredient analysis">
+          <div class="wch-head">
+            <span class="wch-head-title"><span class="material-symbols-outlined">science</span>Ingredient analysis</span>
+            <button type="button" class="wch-close" id="rf-ia-close" title="Close" aria-label="Close ingredient analysis">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+          <p class="rf-ia-panel-meta" id="rf-ia-meta">Per 100 g FoodData profile</p>
+          <div class="wch-list rf-ia-cards" id="rf-ia-cards" role="list"></div>
+        </aside>
+        </div>
+      </section>
+
+      <!-- ═══════════ 4 · Report builder (tertiary sticky, same as wiseai) ═══════════ -->
+      <section class="rf-card rf-report" id="rf-report" aria-label="Report" data-no-fill-default>
+        <header class="rf-head">
+          <div class="rf-head-controls">
+            <div class="panel-more-wrap" id="rf-report-menu-wrap">
+              <button type="button" id="rf-report-menu-btn" class="panel-more-btn" onclick="rfToggleModuleMenu(event, 'rf-report-menu')" title="Module options" aria-haspopup="menu" aria-expanded="false" aria-controls="rf-report-menu" aria-label="Module options"><span class="material-symbols-outlined">more_vert</span></button>
+              <div id="rf-report-menu" class="topbar-popover hidden" role="menu">
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="rfOpenGeneratedReports(); rfCloseModuleMenus()"><span class="material-symbols-outlined topbar-menu-icon">folder_open</span><span>View in Reports</span></button>
+                <button type="button" class="topbar-menu-item" role="menuitem" data-pane-act="export" onclick="rfExportReportPdf(); rfCloseModuleMenus()"><span class="material-symbols-outlined topbar-menu-icon">picture_as_pdf</span><span>Export as PDF</span></button>
+                <div class="topbar-menu-divider"></div>
+                <button type="button" class="topbar-menu-item topbar-menu-item--danger" role="menuitem" data-pane-act="close" onclick="rfCloseReport(); rfCloseModuleMenus()"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close pane</span></button>
+              </div>
+            </div>
+            <button type="button" class="panel-width-toggle-btn" id="rf-report-width" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Report pane width"><span class="material-symbols-outlined">width_normal</span></button>
+          </div>
+          <div class="rf-head-titles">
+            <p class="rf-head-eyebrow dash-eyebrow">Report</p>
+            <h2 class="rf-head-title" id="rf-report-title" contenteditable="true" spellcheck="false" role="textbox" aria-label="Report name"></h2>
+          </div>
+        </header>
+        <div class="rf-body" id="rf-report-body"></div>
       </section>
 
     </div><!-- /#modules-row -->
@@ -1098,6 +1545,8 @@
     })();
   </script>
 
+  <!-- Shared save store — studio writes, product + reformulation pages read. -->
+  <script src="../js/reformulation-store.js"></script>
   <!-- ═══════════ Reformulation engine — single source of truth ═══════════
        One state object drives all three modules. Any change (a studio slider, a
        dashboard "Apply", or a chat chip) mutates state, recomputes the Guiding
@@ -1106,6 +1555,7 @@
        always match whatever the product currently is. -->
   <script type="module">
     import { mountWISEcodeAIChat } from '../js/wiseai-chat.js';
+    import { saveGeneratedReport } from '../js/generated-reports.js';
     (function () {
       /* The shared WISEcodeAI chat instance — mounted in boot() once the page's
          reformulation content (products, scoring, replies) is defined. All the
@@ -1155,9 +1605,52 @@
       const GENERIC_BASELINE = { calories: 230, grams: 55, sodium: 260, addedSugar: 16, satFat: 3, transFat: 0, fiber: 1, additives: 3, vitamins: 0, wholeGrain: false, algo: 'G' };
 
       let product = null;   // the currently selected product (identity)
-      let ORIGINAL = null;  // its per-serving baseline (for reset)
+      let ORIGINAL = null;  // its per-serving printed label (for reset)
       let state = null;     // the live, editable copy
+      /* Keep the catalog baseline untouched so Reset always has the printed
+         label, even after a save overlays the live recipe. */
+      function factoryOf(p) {
+        if (!p) return null;
+        if (!p._factory) p._factory = { ...p.baseline };
+        return p._factory;
+      }
+      function storeApi() {
+        return window.WISEReformulationStore || null;
+      }
+      function liveRecipe(p) {
+        if (!p) return null;
+        const store = storeApi();
+        const saved = store && store.recipeOf(p);
+        return saved ? { ...saved } : { ...factoryOf(p) };
+      }
+      const RECIPE_KEYS = ['calories', 'grams', 'sodium', 'addedSugar', 'satFat', 'transFat', 'fiber', 'additives', 'vitamins', 'nfpVitamins', 'wholeGrain', 'algo'];
+      function snapshotRecipe() {
+        const out = {};
+        RECIPE_KEYS.forEach((k) => {
+          if (state && state[k] !== undefined) out[k] = state[k];
+        });
+        out.algo = effectiveAlgo();
+        return out;
+      }
+      function recipeMatches(a, b) {
+        if (!a || !b) return false;
+        return RECIPE_KEYS.every((k) => {
+          if (a[k] === undefined && b[k] === undefined) return true;
+          return String(a[k]) === String(b[k]);
+        });
+      }
+      function snapshotScore(c) {
+        let issue = null;
+        if (c.disqualified && c.dq && c.dq[0]) {
+          issue = c.dq[0].id === 'dq-sugar' ? 'Added sugar' : c.dq[0].id === 'dq-additives' ? 'Additives' : 'Disqualified';
+        }
+        return { stars: c.stars, net: c.net, disqualified: !!c.disqualified, issue };
+      }
       let basis = 'serving';
+      /* Guiding Stars vitamin credits: 'all' counts every nutrient ≥5% DV;
+         'nfp' credits only the four label-mandatory nutrients (Vit D, Calcium,
+         Iron, Potassium). */
+      let scoringBasis = 'all';
       /* Dashboard Apply history — each Apply keeps a snapshot so the same row
          can switch to Undo and restore exactly what that move changed. */
       let appliedMoves = [];
@@ -1175,6 +1668,259 @@
         { key: 'additives', name: 'Additives to limit', unit: '', min: 0, max: 12, step: 1 },
       ];
       const ALGO_NAME = { G: 'General Foods', M: 'Meat / Dairy / Nuts', F: 'Fats & Oils', V: 'Beverage' };
+      /* 'auto' uses the food-group algorithm on the product; G/M/F/V override. */
+      let algoPick = 'auto';
+      function detectedAlgo() {
+        const code = (ORIGINAL && ORIGINAL.algo) || (product && product.baseline && product.baseline.algo) || 'G';
+        return ALGO_NAME[code] ? code : 'G';
+      }
+      function effectiveAlgo() {
+        return algoPick === 'auto' ? detectedAlgo() : algoPick;
+      }
+      function algoOptionLabel(code) {
+        return `${code} — ${ALGO_NAME[code] || ALGO_NAME.G}`;
+      }
+      function syncAlgoSelect() {
+        const detected = detectedAlgo();
+        const valueEl = document.getElementById('rf-algo-value');
+        if (valueEl) {
+          valueEl.textContent = algoPick === 'auto'
+            ? `Auto-detect — ${detected}`
+            : algoOptionLabel(algoPick);
+        }
+        const autoSub = document.getElementById('rf-algo-auto-sub');
+        if (autoSub) autoSub.textContent = `Currently ${algoOptionLabel(detected)}`;
+        const ico = document.getElementById('rf-algo-ico');
+        if (ico) {
+          ico.setAttribute('data-tip', algoPick === 'auto'
+            ? `Algorithm — Auto-detect picked ${algoOptionLabel(detected)}`
+            : `Algorithm — ${algoOptionLabel(algoPick)}`);
+        }
+        document.querySelectorAll('#rf-algo-menu [data-algo]').forEach((btn) => {
+          btn.setAttribute('aria-checked', btn.dataset.algo === algoPick ? 'true' : 'false');
+        });
+        if (state) state.algo = effectiveAlgo();
+      }
+
+      /* ── Ingredient analysis (USDA FoodData-style per 100 g) ── */
+      const n100 = (calories, protein, fat, sat, fiber, sodium) => ({ calories, protein, fat, sat, fiber, sodium });
+      const USDA_ING = [
+        { keys: ['milkfat and nonfat milk', 'nonfat milk', 'milkfat'], usda: 'Milk, whole, 3.25% milkfat', n: n100(61, 3.15, 3.25, 1.86, 0, 43) },
+        { keys: ['cane sugar'], usda: 'Sugars, turbinado', n: n100(399, 0, 0, 0, 0, 1) },
+        { keys: ['sugar', 'sugars, granulated'], usda: 'Sugars, granulated', n: n100(387, 0, 0, 0, 0, 1) },
+        { keys: ['water'], usda: 'Water, municipal', n: n100(0, 0, 0, 0, 0, 4) },
+        { keys: ['bleached wheat flour', 'wheat flour', 'enriched flour'], usda: 'Flour, wheat, all-purpose, enriched, bleached', n: n100(366, 10.9, 1.48, 0.24, 2.7, 2) },
+        { keys: ['hydrogenated palm kernel oil'], usda: 'Oil, palm kernel, hydrogenated', n: n100(884, 0, 100, 87.5, 0, 0) },
+        { keys: ['palm and palm kernel oils', 'palm kernel oil', 'palm oil'], usda: 'Oil, palm', n: n100(884, 0, 100, 49.3, 0, 0) },
+        { keys: ['hydrogenated coconut oil'], usda: 'Oil, coconut, hydrogenated', n: n100(884, 0, 100, 93.9, 0, 0) },
+        { keys: ['coconut oil'], usda: 'Oil, coconut', n: n100(892, 0, 99.1, 82.5, 0, 0) },
+        { keys: ['high fructose corn syrup'], usda: 'Syrups, corn, high-fructose', n: n100(281, 0, 0, 0, 0, 2) },
+        { keys: ['corn syrup'], usda: 'Syrups, corn, dark', n: n100(286, 0, 0, 0, 0, 155) },
+        { keys: ['dextrose'], usda: 'Sugars, dextrose, anhydrous', n: n100(365, 0, 0, 0, 0, 1) },
+        { keys: ['cocoa alkali processed', 'cocoa processed with alkali'], usda: 'Cocoa, dry powder, unsweetened, processed with alkali', n: n100(220, 18.1, 13.1, 7.76, 29.8, 19) },
+        { keys: ['cocoa butter'], usda: 'Oil, cocoa butter', n: n100(884, 0, 100, 59.7, 0, 0) },
+        { keys: ['unsweetened chocolate', 'chocolate liquor'], usda: 'Chocolate, unsweetened, squares', n: n100(642, 14.3, 52.3, 32.4, 16.6, 24) },
+        { keys: ['chocolate chips', 'chocolate chip'], usda: 'Candies, semisweet chocolate', n: n100(479, 4.2, 30, 17.8, 5.9, 11) },
+        { keys: ['cocoa'], usda: 'Cocoa, dry powder, unsweetened', n: n100(228, 19.6, 13.7, 8.07, 37, 21) },
+        { keys: ['colored with', 'caramel color', 'caramel colour'], usda: 'Color, caramel', n: n100(0, 0, 0, 0, 0, 125) },
+        { keys: ['titanium dioxide'], usda: 'Titanium dioxide (color)', n: n100(0, 0, 0, 0, 0, 0) },
+        { keys: ['rice flour'], usda: 'Flour, rice, white', n: n100(366, 5.95, 1.42, 0.39, 2.4, 0) },
+        { keys: ['natural and artificial flavor', 'natural and artificial flavour'], usda: 'Flavoring, natural and artificial', n: n100(18, 0, 0, 0, 0, 12) },
+        { keys: ['natural flavor', 'natural flavour'], usda: 'Flavoring, natural', n: n100(12, 0, 0, 0, 0, 8) },
+        { keys: ['modified cornstarch', 'modified corn starch', 'cornstarch', 'corn starch'], usda: 'Starch, corn', n: n100(381, 0.26, 0.05, 0.01, 0.9, 9) },
+        { keys: ['sea salt'], usda: 'Salt, table, sea', n: n100(0, 0, 0, 0, 0, 38758) },
+        { keys: ['salt'], usda: 'Salt, table', n: n100(0, 0, 0, 0, 0, 38758) },
+        { keys: ['soy lecithin'], usda: 'Lecithin, soybean', n: n100(763, 0, 100, 15, 0, 0) },
+        { keys: ['wheat gluten'], usda: 'Vital wheat gluten', n: n100(370, 75.2, 1.85, 0.27, 0.6, 29) },
+        { keys: ['sodium caseinate'], usda: 'Caseinate, sodium', n: n100(373, 88.3, 0.7, 0.4, 0, 1219) },
+        { keys: ['mono and diglycerides', 'mono- and diglycerides'], usda: 'Monoglycerides and diglycerides', n: n100(884, 0, 100, 32, 0, 0) },
+        { keys: ['cellulose gum'], usda: 'Gums, cellulose (CMC)', n: n100(0, 0, 0, 0, 0, 0) },
+        { keys: ['guar gum'], usda: 'Gums, guar', n: n100(332, 4.6, 0.5, 0.06, 82.3, 125) },
+        { keys: ['locust bean gum'], usda: 'Gums, locust bean', n: n100(0, 0, 0, 0, 80, 0) },
+        { keys: ['xanthan gum'], usda: 'Gums, xanthan', n: n100(0, 0, 0, 0, 0, 0) },
+        { keys: ['carbohydrate gum'], usda: 'Gums, carbohydrate', n: n100(0, 0, 0, 0, 0, 0) },
+        { keys: ['carrageenan'], usda: 'Carrageenan', n: n100(0, 0, 0, 0, 0, 0) },
+        { keys: ['baking soda', 'sodium bicarbonate'], usda: 'Leavening agents, baking soda', n: n100(0, 0, 0, 0, 0, 27360) },
+        { keys: ['baking powder'], usda: 'Leavening agents, baking powder, double-acting, sodium aluminum sulfate', n: n100(53, 0.1, 0, 0, 0.2, 10600) },
+        { keys: ['polysorbate 65'], usda: 'Polysorbate 65 (emulsifier)', n: n100(0, 0, 0, 0, 0, 0) },
+        { keys: ['polysorbate 80'], usda: 'Polysorbate 80 (emulsifier)', n: n100(0, 0, 0, 0, 0, 0) },
+        { keys: ['polysorbate 60'], usda: 'Polysorbate 60 (emulsifier)', n: n100(0, 0, 0, 0, 0, 0) },
+        { keys: ['polyglycerol esters of fatty acids'], usda: 'Polyglycerol esters of fatty acids', n: n100(884, 0, 100, 40, 0, 0) },
+        { keys: ['soy protein isolate'], usda: 'Soy protein isolate', n: n100(338, 88.3, 3.39, 0.42, 0, 1004) },
+        { keys: ['to preserve freshness', 'potassium sorbate'], usda: 'Potassium sorbate (preservative)', n: n100(0, 0, 0, 0, 0, 0) },
+        { keys: ['sodium benzoate'], usda: 'Sodium benzoate (preservative)', n: n100(0, 0, 0, 0, 0, 387) },
+        { keys: ['dextrin'], usda: 'Dextrin', n: n100(391, 0.2, 0.05, 0, 0.9, 50) },
+        { keys: ['confectioners glaze', "confectioner's glaze"], usda: "Confectioner's glaze (shellac)", n: n100(0, 0, 0, 0, 0, 0) },
+        { keys: ['carnauba wax'], usda: 'Wax, carnauba', n: n100(0, 0, 0, 0, 0, 0) },
+        { keys: ['citric acid'], usda: 'Citric acid', n: n100(247, 0, 0, 0, 0, 0) },
+        { keys: ['disodium phosphate'], usda: 'Disodium phosphate', n: n100(0, 0, 0, 0, 0, 17450) },
+        { keys: ['artificial colors', 'artificial colour', 'yellow 6', 'yellow 5', 'red 40', 'red 3', 'blue 1'], usda: 'Food coloring, artificial', n: n100(0, 0, 0, 0, 0, 0) },
+        { keys: ['ground flaxseed', 'flaxseed', 'flax seed'], usda: 'Seeds, flaxseed', n: n100(534, 18.3, 42.2, 3.66, 27.3, 30) },
+        { keys: ['egg whites', 'egg white'], usda: 'Egg, white, raw, fresh', n: n100(52, 10.9, 0.17, 0, 0, 166) },
+        { keys: ['coconut'], usda: 'Nuts, coconut meat, raw', n: n100(354, 3.33, 33.5, 29.7, 9, 20) },
+        { keys: ['non-gmo canola oil', 'canola oil'], usda: 'Oil, canola', n: n100(884, 0, 100, 7.37, 0, 0) },
+        { keys: ['blueberries'], usda: 'Blueberries, raw', n: n100(57, 0.74, 0.33, 0.03, 2.4, 1) },
+        { keys: ['whole grain oats', 'oats'], usda: 'Cereals, oats, regular and quick, not fortified, dry', n: n100(379, 13.2, 6.52, 1.11, 10.6, 2) },
+        { keys: ['raisins'], usda: 'Raisins, seedless', n: n100(299, 3.07, 0.46, 0.06, 3.7, 11) },
+        { keys: ['cinnamon'], usda: 'Spices, cinnamon, ground', n: n100(247, 3.99, 1.24, 0.35, 53.1, 10) },
+      ];
+      const IA_PREAMBLE = /^(contains less than \d+% of(?: the following)?:?\s*|contains \d+% or less of:?\s*)/i;
+      function splitIngTokens(text) {
+        const parts = [];
+        let buf = '';
+        let depth = 0;
+        String(text || '').split('').forEach((ch) => {
+          if (ch === '(') { depth += 1; buf += ch; return; }
+          if (ch === ')') { depth = Math.max(0, depth - 1); buf += ch; return; }
+          if (ch === ',' && depth === 0) {
+            if (buf.trim()) parts.push(buf.trim());
+            buf = '';
+            return;
+          }
+          buf += ch;
+        });
+        if (buf.trim()) parts.push(buf.trim());
+        return parts;
+      }
+      function iaNorm(s) {
+        return String(s || '').toLowerCase().replace(/[^a-z0-9+ ]/g, ' ').replace(/\s+/g, ' ').trim();
+      }
+      function iaKeyHit(name, key) {
+        if (name === key) return true;
+        if (name.endsWith(' ' + key) || name.startsWith(key + ' ')) return true;
+        return name.includes(' ' + key + ' ');
+      }
+      function iaFallback(name) {
+        const k = iaNorm(name);
+        if (/gum|wax|glaze|polysorbate|color|colour|lake|lecithin|ester|phosphate|sorbate|benzoate|carrageenan/.test(k)) {
+          return { usda: name, n: n100(0, 0, 0, 0, 0, 0) };
+        }
+        if (/oil|fat|butter/.test(k)) return { usda: name, n: n100(884, 0, 100, 50, 0, 0) };
+        if (/sugar|syrup|dextrose|fructose/.test(k)) return { usda: name, n: n100(380, 0, 0, 0, 0, 2) };
+        return { usda: name, n: n100(0, 0, 0, 0, 0, 0) };
+      }
+      function lookupUsda(name) {
+        const key = iaNorm(name);
+        let best = null;
+        let bestLen = 0;
+        USDA_ING.forEach((e) => {
+          e.keys.forEach((k) => {
+            if (k.length > bestLen && iaKeyHit(key, k)) { best = e; bestLen = k.length; }
+          });
+        });
+        return best || iaFallback(name);
+      }
+      function parseIngredientList(text) {
+        const out = [];
+        splitIngTokens(text).forEach((token) => {
+          const m = token.match(/^(.*?)(?:\s*\((.*)\))\s*$/);
+          let parent = (m ? m[1] : token).replace(IA_PREAMBLE, '').trim();
+          const inner = m && m[2] ? m[2] : '';
+          if (!parent && inner) {
+            splitIngTokens(inner).forEach((c) => { if (c) out.push({ name: c, inner: '' }); });
+            return;
+          }
+          if (!parent) return;
+          out.push({ name: parent.replace(/:$/, '').trim(), inner });
+        });
+        return out.filter((r) => r.name);
+      }
+      function iaFmtNum(n) {
+        const v = Number(n) || 0;
+        if (Math.abs(v - Math.round(v)) < 0.005) return String(Math.round(v));
+        return String(Math.round(v * 100) / 100);
+      }
+      function analyzeIngredientRows(text) {
+        return parseIngredientList(text).map((row) => {
+          const hit = lookupUsda(row.name);
+          const mapped = row.inner
+            ? `${hit.usda} · ${splitIngTokens(row.inner).join('; ')}`
+            : hit.usda;
+          return { name: row.name, mapped, n: hit.n };
+        });
+      }
+      let iaCloseTimer = null;
+      function analysisIsOpen() {
+        const panel = document.getElementById('rf-ia-panel');
+        return !!(panel && panel.classList.contains('wch-open'));
+      }
+      function closeAnalysis() {
+        const dash = document.getElementById('rf-dash');
+        const panel = document.getElementById('rf-ia-panel');
+        const scrim = document.getElementById('rf-ia-scrim');
+        const btn = document.getElementById('rf-ia-btn');
+        if (!panel) return;
+        if (!panel.classList.contains('wch-open') && !panel.classList.contains('wch-closing')) {
+          if (dash) dash.classList.remove('is-analyzing');
+          if (btn) { btn.classList.remove('is-open'); btn.setAttribute('aria-expanded', 'false'); }
+          return;
+        }
+        panel.classList.remove('wch-open');
+        scrim?.classList.remove('wch-open');
+        panel.classList.add('wch-closing');
+        scrim?.classList.add('wch-closing');
+        if (dash) dash.classList.remove('is-analyzing');
+        if (btn) { btn.classList.remove('is-open'); btn.setAttribute('aria-expanded', 'false'); }
+        clearTimeout(iaCloseTimer);
+        iaCloseTimer = setTimeout(() => {
+          panel.classList.remove('wch-closing');
+          scrim?.classList.remove('wch-closing');
+        }, 300);
+      }
+      function openAnalysis() {
+        const dash = document.getElementById('rf-dash');
+        const panel = document.getElementById('rf-ia-panel');
+        const scrim = document.getElementById('rf-ia-scrim');
+        const btn = document.getElementById('rf-ia-btn');
+        if (!panel) return;
+        clearTimeout(iaCloseTimer);
+        panel.classList.remove('wch-closing');
+        scrim?.classList.remove('wch-closing');
+        panel.classList.add('wch-open');
+        scrim?.classList.add('wch-open');
+        if (dash) dash.classList.add('is-analyzing');
+        if (btn) { btn.classList.add('is-open'); btn.setAttribute('aria-expanded', 'true'); }
+      }
+      function renderAnalysisCards(rows) {
+        const host = document.getElementById('rf-ia-cards');
+        const meta = document.getElementById('rf-ia-meta');
+        if (!host) return;
+        const metrics = [
+          { key: 'calories', label: 'Calories', unit: 'KCAL/100g' },
+          { key: 'protein', label: 'Protein', unit: 'G/100g' },
+          { key: 'fat', label: 'Total Fat', unit: 'G/100g' },
+          { key: 'sat', label: 'Sat. Fat', unit: 'G/100g' },
+          { key: 'fiber', label: 'Fiber', unit: 'G/100g' },
+          { key: 'sodium', label: 'Sodium', unit: 'MG/100g' },
+        ];
+        if (meta) meta.textContent = `${rows.length} ingredient${rows.length === 1 ? '' : 's'} · per 100 g`;
+        host.innerHTML = rows.map((row, i) => {
+          const lines = metrics.map((m) => {
+            const raw = iaFmtNum(row.n[m.key]);
+            return `<div class="rf-ia-metric"><span class="rf-ia-metric-name">${esc(m.label)}</span><span class="rf-ia-metric-val"><span data-countup>${raw}</span> <span class="rf-ia-metric-unit">${esc(m.unit)}</span></span></div>`;
+          }).join('');
+          return `<article class="rf-ia-card" style="--i:${i}" data-cu-card="1">
+            <p class="rf-ia-card-head"><span class="rf-ia-card-name">${esc(row.name)}</span><span class="rf-ia-card-arrow">→</span><span class="rf-ia-card-mapped">${esc(row.mapped)}</span></p>
+            ${lines}
+          </article>`;
+        }).join('');
+      }
+      function runIngredientAnalysis() {
+        const text = (product && product.ingredients) || '';
+        const rows = analyzeIngredientRows(text);
+        const dash = document.getElementById('rf-dash');
+        const panel = document.getElementById('rf-ia-panel');
+        const btn = document.getElementById('rf-ia-btn');
+        if (!rows.length || !panel || !dash) return;
+        const wasOpen = analysisIsOpen();
+        renderAnalysisCards(rows);
+        openAnalysis();
+        const list = document.getElementById('rf-ia-cards');
+        if (list) list.scrollTop = 0;
+        if (wasOpen) return;
+        addUser('Analyze ingredients');
+        addWISEcodeAI(`I reviewed every ingredient on the <b>${esc(product.short)}</b> label — <b>${rows.length}</b> items, each mapped to a FoodData profile. The breakdown is open on the right of the dashboard: calories, protein, fat, fiber, and sodium per 100 g.`, { chips: true });
+      }
 
       /* Per-100-kcal converter (mg or g → per 100 kcal). */
       const per100 = (v) => (state.calories ? (v / state.calories) * 100 : 0);
@@ -1222,7 +1968,8 @@
 
         // Credits
         let cFiber = s100.fiber >= FIBER_TIERS[2] ? 3 : s100.fiber >= FIBER_TIERS[1] ? 2 : s100.fiber >= FIBER_TIERS[0] ? 1 : 0;
-        const cVit = Math.max(0, Math.min(3, st.vitamins));
+        const vitCount = scoringBasis === 'nfp' && st.nfpVitamins != null ? st.nfpVitamins : st.vitamins;
+        const cVit = Math.max(0, Math.min(3, vitCount));
         const grainAlgo = st.algo === 'G';
         let cWhole = grainAlgo && st.wholeGrain ? 1 : 0;
 
@@ -1276,7 +2023,8 @@
         }
         // Vitamins/minerals (+1 each up to 3)
         if (c.credits.vitamins < 3) {
-          recs.push({ id: 'vit', kind: 'credit', icon: 'medication', pts: '+1', title: `Fortify one more vitamin/mineral to ≥5% DV per 100 kcal (${c.credits.vitamins} credited) → +1`, note: 'fortification', effort: 'low', chip: `Fortify nutrients`, keys: ['vitamins'],
+          const vitNoun = scoringBasis === 'nfp' ? 'mandatory NFP nutrient' : 'vitamin/mineral';
+          recs.push({ id: 'vit', kind: 'credit', icon: 'medication', pts: '+1', title: `Fortify one more ${vitNoun} to ≥5% DV per 100 kcal (${c.credits.vitamins} credited) → +1`, note: 'fortification', effort: 'low', chip: `Fortify nutrients`, keys: ['vitamins'],
             apply: () => { state.vitamins = Math.min(3, state.vitamins + 1); } });
         }
         // Whole grain (+1, grain algo only)
@@ -1308,7 +2056,7 @@
         const need = Math.max(0, targetNet - c.net);
         const stars = '★'.repeat(targetStar);
         if (c.disqualified) {
-          return { done: false, msg: `Disqualified. Clear the <b>${c.dq.length}</b> blocker${c.dq.length > 1 ? 's' : ''} and add <b>+${need}</b> net point${need === 1 ? '' : 's'} to reach <b>${stars}</b>.` };
+          return { done: false, msg: `Clear the <b>${c.dq.length}</b> blocker${c.dq.length > 1 ? 's' : ''} and add <b>+${need}</b> net point${need === 1 ? '' : 's'} to reach <b>${stars}</b>.` };
         }
         if (need === 0) return { done: false, msg: `On the cusp of <b>${stars}</b> — one more credit locks it in.` };
         return { done: false, msg: `Needs <b>+${need}</b> point${need === 1 ? '' : 's'} to reach <b>${stars}</b>.` };
@@ -1365,10 +2113,54 @@
         }
       }
 
+      /* Guiding Stars “additives to limit” named on the printed label.
+         Order matches the usual roster (dyes, colors, flavor, preservatives,
+         then functional additives). Dyes collapse lakes into one row. */
+      const LIMIT_ADDITIVE_RULES = [
+        { re: /yellow\s*5/, label: 'Artificial color (Yellow 5)' },
+        { re: /yellow\s*6/, label: 'Artificial color (Yellow 6)' },
+        { re: /red\s*40/, label: 'Artificial color (Red 40)' },
+        { re: /red\s*3/, label: 'Artificial color (Red 3)' },
+        { re: /blue\s*1/, label: 'Artificial color (Blue 1)' },
+        { re: /caramel color/, label: 'Caramel color' },
+        { re: /titanium dioxide/, label: 'Titanium dioxide' },
+        { re: /artificial flavor/, label: 'Artificial flavor' },
+        { re: /sodium benzoate/, label: 'Sodium benzoate (preservative)' },
+        { re: /potassium sorbate/, label: 'Potassium sorbate (preservative)' },
+        { re: /carrageenan/, label: 'Carrageenan' },
+        { re: /polysorbate/, label: 'Polysorbate (emulsifier)' },
+      ];
+      function detectLimitAdditives(text) {
+        const src = String(text || '').toLowerCase();
+        if (!src) return [];
+        const out = [];
+        LIMIT_ADDITIVE_RULES.forEach((rule) => {
+          if (rule.re.test(src)) out.push(rule.label);
+        });
+        if (!out.some((l) => /artificial color/i.test(l)) && /artificial colors?/.test(src)) {
+          out.unshift('Artificial colors');
+        }
+        return out;
+      }
+      function renderLimitAdditives() {
+        const sec = document.getElementById('rf-limit-sec');
+        const list = document.getElementById('rf-limit-list');
+        const nEl = document.getElementById('rf-limit-n');
+        if (!sec || !list) return;
+        const items = detectLimitAdditives((product && product.ingredients) || '');
+        sec.hidden = !items.length;
+        if (!items.length) {
+          list.innerHTML = '';
+          return;
+        }
+        if (nEl && nEl.textContent !== String(items.length)) nEl.textContent = String(items.length);
+        list.innerHTML = items.map((name) => (
+          `<div class="rf-limit-row"><span class="material-symbols-outlined">warning</span><span>${esc(name)}</span></div>`
+        )).join('');
+      }
+
       function renderDashboard(c) {
-        document.getElementById('rf-dash-meta').textContent = GS
-          ? `${product.name} · ${ALGO_NAME[state.algo]} algorithm`
-          : product.name;
+        document.getElementById('rf-dash-meta').textContent = '';
 
         // Disqualification / issue banners
         const dqEl = document.getElementById('rf-dq');
@@ -1426,7 +2218,7 @@
 
         const creditRows = [
           { key: 'fiber', name: 'Dietary Fiber', detail: `${fmt(c.s100.fiber)} g/100kcal` },
-          { key: 'vitamins', name: 'Vitamins / Min.', detail: state.vitamins ? `${state.vitamins} ≥5% DV credited` : 'None ≥5% DV' },
+          { key: 'vitamins', name: scoringBasis === 'nfp' ? 'Mandatory NFP' : 'Vitamins / Min.', detail: state.vitamins ? (scoringBasis === 'nfp' ? `${state.vitamins} mandatory NFP ≥5% DV credited` : `${state.vitamins} ≥5% DV credited`) : (scoringBasis === 'nfp' ? 'None of Vit D / Ca / Fe / K ≥5% DV' : 'None ≥5% DV') },
           { key: 'wholeGrain', name: 'Whole Grain', detail: !c.grainAlgo ? 'N/A for this algorithm' : (state.wholeGrain ? 'Named whole grain' : 'Not detected') },
         ];
         document.getElementById('rf-credits').innerHTML = creditRows.map((row) => {
@@ -1438,6 +2230,7 @@
         document.getElementById('rf-debit-sum').textContent = c.debitSum;
         document.getElementById('rf-credit-sum').textContent = '+' + c.creditSum;
 
+        renderLimitAdditives();
         renderLoadedStats(c);
         applyDashFilter();
       }
@@ -1512,7 +2305,7 @@
       /* Post a WISEcodeAI line. `opts.chips` marks a board-state reply, so we refresh
          the trailing move chips to the new board state right after it lands.
          `opts.onDone` fires once the line has finished animating in (the module's
-         word-by-word type + meta reveal) — used to chain a follow-up line so a
+         paragraph reveal + thumbs + chips) — used to chain a follow-up line so a
          multi-part turn animates strictly IN ORDER instead of every line typing
          at once. `opts.trailChips:false` keeps a line from parking the move chips
          beneath it (so only the final line of a turn carries them). */
@@ -1558,8 +2351,381 @@
         const c = compute();
         renderStudio(c);
         renderDashboard(c);
+        syncSaveBtn();
+        refreshReportClones();
         return c;
       }
+
+      function syncSaveBtn() {
+        const btn = document.getElementById('rf-save-btn');
+        const label = document.getElementById('rf-save-label');
+        const ico = document.getElementById('rf-save-ico');
+        if (!btn || !label) return;
+        const saved = product && storeApi() && storeApi().recipeOf(product);
+        const same = !!(saved && state && recipeMatches(saved, snapshotRecipe()));
+        btn.classList.toggle('is-saved', same);
+        label.textContent = same ? 'Saved' : 'Save the reformulation';
+        if (ico) ico.textContent = same ? 'check' : 'save';
+      }
+
+      /* ── Report builder (same drawer as wiseai.html #wa-report) ── */
+      const reportSelected = new Set();
+      let rptSeq = 0;
+      let rptItemPop = null;
+      let reportWidth = null;
+      const reportEl = document.getElementById('rf-report');
+      const reportBody = document.getElementById('rf-report-body');
+      const reportTitle = document.getElementById('rf-report-title');
+
+      function reportSectionEl(id) {
+        return document.querySelector('[data-rpt="' + id + '"]');
+      }
+      function sectionAvailable(el) {
+        if (!el || el.hidden) return false;
+        let p = el;
+        while (p && p.id !== 'modules-row') {
+          if (p.hidden) return false;
+          const cs = getComputedStyle(p);
+          if (cs.display === 'none' || cs.visibility === 'hidden') return false;
+          p = p.parentElement;
+        }
+        return true;
+      }
+      function reportSectionLabel(id) {
+        const sec = reportSectionEl(id);
+        const named = (sec && sec.getAttribute('data-rpt-label') || '').trim();
+        if (named) return named;
+        const title = sec?.querySelector('.rf-sec-title');
+        if (!title) return id;
+        const clone = title.cloneNode(true);
+        clone.querySelectorAll('.rf-rpt-plus, .rf-limit-count').forEach((n) => n.remove());
+        return (clone.textContent || id).replace(/\s+/g, ' ').trim();
+      }
+      function reportItemCount() {
+        return reportBody ? reportBody.querySelectorAll('.rf-rpt-item').length : 0;
+      }
+      function reportNameForCount(n) {
+        const words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
+          'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen'];
+        const word = (n >= 0 && n < words.length) ? words[n] : String(n);
+        return n === 1 ? word + ' section' : word + ' sections';
+      }
+      function syncReportName() {
+        if (!reportTitle || reportTitle.dataset.userNamed === '1') return;
+        reportTitle.textContent = reportNameForCount(reportItemCount());
+        reportTitle.dataset.orig = reportTitle.textContent;
+      }
+      function reportHref() {
+        if (product && (product.id || product.upc)) {
+          return 'reformulation.html?product=' + encodeURIComponent(product.id || product.upc);
+        }
+        return 'reformulation.html';
+      }
+      function persistGeneratedReport(asNew) {
+        if (!reportEl || !reportBody) return;
+        const title = ((reportTitle && reportTitle.textContent) || '').trim()
+          || reportNameForCount(reportItemCount());
+        const items = Array.from(reportBody.querySelectorAll('.rf-rpt-item')).map((item, i) =>
+          ((item.querySelector('.rf-rpt-item-title') || {}).textContent || '').trim() || ('Section ' + (i + 1)));
+        if (asNew) delete reportEl.dataset.rptId;
+        const rec = saveGeneratedReport({
+          id: asNew ? undefined : reportEl.dataset.rptId,
+          title,
+          items,
+          conversation: (product && (product.short || product.name)) || 'Reformulation',
+          icon: 'auto_fix_high',
+          source: 'reformulation',
+          href: reportHref(),
+        });
+        if (rec) reportEl.dataset.rptId = rec.id;
+      }
+      function cloneSectionForReport(src) {
+        const wrap = document.createElement('div');
+        wrap.className = 'rf-rpt-clone';
+        const node = src.cloneNode(true);
+        node.removeAttribute('id');
+        node.removeAttribute('hidden');
+        node.querySelectorAll('.rf-rpt-plus, .rf-ia-btn').forEach((el) => el.remove());
+        node.querySelectorAll('[id]').forEach((el, k) => {
+          el.id = 'rf-rpt-' + (++rptSeq) + '-' + k + '-' + el.id;
+        });
+        node.querySelectorAll('[aria-controls], [aria-labelledby]').forEach((el) => {
+          el.removeAttribute('aria-controls');
+          el.removeAttribute('aria-labelledby');
+        });
+        wrap.appendChild(node);
+        wrap.setAttribute('inert', '');
+        return wrap;
+      }
+      function fillReportItemBody(item, id) {
+        const src = reportSectionEl(id);
+        const host = item.querySelector('.rf-rpt-item-body');
+        if (!host) return;
+        if (!src || !sectionAvailable(src)) return;
+        host.innerHTML = '';
+        host.appendChild(cloneSectionForReport(src));
+      }
+      function closeReportItemMenus() {
+        document.querySelectorAll('.rf-rpt-more .panel-more-btn').forEach((b) => {
+          b.classList.remove('is-open');
+          b.setAttribute('aria-expanded', 'false');
+        });
+        if (rptItemPop) { rptItemPop.remove(); rptItemPop = null; }
+      }
+      function startRenameReportItem(item) {
+        const title = item.querySelector('.rf-rpt-item-title');
+        if (!title) return;
+        title.focus();
+        const range = document.createRange();
+        range.selectNodeContents(title);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+      function deleteReportItem(item) {
+        if (!item) return;
+        const id = item.dataset.rptSrc;
+        if (id) reportSelected.delete(id);
+        item.remove();
+        syncSectionPluses();
+        syncGenerateBar();
+        if (!reportItemCount()) {
+          closeReportPane();
+          return;
+        }
+        syncReportName();
+        persistGeneratedReport(false);
+      }
+      function openReportItemMenu(item, btn) {
+        closeReportItemMenus();
+        btn.classList.add('is-open');
+        btn.setAttribute('aria-expanded', 'true');
+        rptItemPop = document.createElement('div');
+        rptItemPop.className = 'topbar-popover rf-rpt-item-pop';
+        rptItemPop.setAttribute('role', 'menu');
+        rptItemPop.innerHTML =
+          '<button type="button" class="topbar-menu-item" data-rpt-act="rename"><span class="material-symbols-outlined topbar-menu-icon">edit</span><span>Rename</span></button>' +
+          '<div class="topbar-menu-divider"></div>' +
+          '<button type="button" class="topbar-menu-item topbar-menu-item--danger" data-rpt-act="delete"><span class="material-symbols-outlined topbar-menu-icon">delete</span><span>Delete</span></button>';
+        rptItemPop.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const act = e.target.closest('[data-rpt-act]')?.dataset.rptAct;
+          if (!act) return;
+          if (act === 'rename') { closeReportItemMenus(); startRenameReportItem(item); return; }
+          if (act === 'delete') { closeReportItemMenus(); deleteReportItem(item); }
+        });
+        document.body.appendChild(rptItemPop);
+        const r = btn.getBoundingClientRect();
+        const pw = rptItemPop.offsetWidth || 200;
+        const ph = rptItemPop.offsetHeight || 88;
+        let left = r.right - pw;
+        let top = r.top - ph - 8;
+        if (top < 8) top = r.bottom + 8;
+        if (left < 8) left = 8;
+        rptItemPop.style.position = 'fixed';
+        rptItemPop.style.left = left + 'px';
+        rptItemPop.style.top = top + 'px';
+        rptItemPop.classList.remove('hidden');
+      }
+      function wireReportItem(item) {
+        const title = item.querySelector('.rf-rpt-item-title');
+        if (title) {
+          title.dataset.orig = title.textContent || '';
+          title.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); title.blur(); }
+            if (e.key === 'Escape') {
+              e.preventDefault();
+              title.textContent = title.dataset.orig || '';
+              title.blur();
+            }
+          });
+          title.addEventListener('blur', () => {
+            const next = (title.textContent || '').replace(/\s+/g, ' ').trim();
+            title.textContent = next || title.dataset.orig || '';
+            title.dataset.orig = title.textContent;
+            persistGeneratedReport(false);
+          });
+        }
+        const moreBtn = item.querySelector('[data-rpt-more] .panel-more-btn');
+        if (moreBtn) {
+          moreBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (moreBtn.classList.contains('is-open')) closeReportItemMenus();
+            else openReportItemMenu(item, moreBtn);
+          });
+        }
+        const note = item.querySelector('.rf-rpt-note-input');
+        if (note) note.addEventListener('change', () => persistGeneratedReport(false));
+      }
+      function createReportItem(id) {
+        const item = document.createElement('article');
+        item.className = 'rf-rpt-item';
+        item.dataset.rptSrc = id;
+        const title = reportSectionLabel(id);
+        item.innerHTML =
+          '<header class="rf-rpt-item-head">' +
+            '<h3 class="rf-rpt-item-title" contenteditable="true" spellcheck="false" role="textbox" aria-label="Section name">' + esc(title) + '</h3>' +
+            '<div class="panel-more-wrap rf-rpt-more" data-rpt-more>' +
+              '<button type="button" class="panel-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="Section options">' +
+                '<span class="material-symbols-outlined">more_vert</span>' +
+              '</button>' +
+            '</div>' +
+          '</header>' +
+          '<div class="rf-rpt-item-body"></div>' +
+          '<div class="rf-rpt-note">' +
+            '<input type="text" class="rf-rpt-note-input" placeholder="Add an annotation…" aria-label="Annotation">' +
+          '</div>';
+        fillReportItemBody(item, id);
+        wireReportItem(item);
+        return item;
+      }
+      function ensureReportSticky() {
+        if (!reportEl) return;
+        reportEl.classList.add('sticky-mod', 'is-sticky');
+      }
+      function openReportPane() {
+        if (!reportEl) return;
+        ensureReportSticky();
+        reportEl.classList.add('is-open');
+        if (reportWidth) reportWidth.applyTier(0);
+        window.WisePaneResize?.release?.([
+          document.getElementById('rf-chat'),
+          document.getElementById('rf-studio'),
+          document.getElementById('rf-dash'),
+          reportEl,
+        ]);
+        requestAnimationFrame(() => {
+          requestAnimationFrame(fitDashToRow);
+        });
+      }
+      function closeReportPane() {
+        if (!reportEl) return;
+        reportEl.classList.remove('is-open');
+        if (reportBody) reportBody.innerHTML = '';
+        delete reportEl.dataset.rptId;
+        if (reportTitle) {
+          delete reportTitle.dataset.userNamed;
+          reportTitle.textContent = '';
+        }
+        closeReportItemMenus();
+        syncSectionPluses();
+        syncGenerateBar();
+        requestAnimationFrame(() => {
+          requestAnimationFrame(fitDashToRow);
+        });
+      }
+      function refreshReportClones() {
+        if (!reportBody || !reportEl || !reportEl.classList.contains('is-open')) return;
+        reportBody.querySelectorAll('.rf-rpt-item').forEach((item) => {
+          const id = item.dataset.rptSrc;
+          if (id) fillReportItemBody(item, id);
+        });
+      }
+      function setSectionPlus(btn, on) {
+        if (!btn) return;
+        btn.classList.toggle('is-on', on);
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        const ic = btn.querySelector('.material-symbols-outlined');
+        if (ic) ic.textContent = on ? 'check' : 'add';
+        const tip = on ? 'Remove from report' : 'Add to report';
+        btn.setAttribute('data-tip', tip);
+        btn.setAttribute('aria-label', tip);
+        btn.title = tip;
+      }
+      function syncSectionPluses() {
+        document.querySelectorAll('[data-rpt]').forEach((sec) => {
+          setSectionPlus(sec.querySelector('.rf-rpt-plus'), reportSelected.has(sec.dataset.rpt));
+        });
+      }
+      function selectedAvailableIds() {
+        return Array.from(document.querySelectorAll('[data-rpt]'))
+          .map((el) => el.dataset.rpt)
+          .filter((id) => id && reportSelected.has(id) && sectionAvailable(reportSectionEl(id)));
+      }
+      function syncGenerateBar() {
+        const bar = document.getElementById('rf-rpt-gen');
+        const btn = document.getElementById('rf-rpt-gen-btn');
+        const n = selectedAvailableIds().length;
+        if (bar) bar.hidden = n < 1;
+        if (btn) btn.textContent = n > 1 ? 'Generate Report (' + n + ')' : 'Generate Report';
+      }
+      function generateReportFromSelection() {
+        const ids = selectedAvailableIds();
+        if (!ids.length || !reportBody) return;
+        closeReportItemMenus();
+        reportBody.innerHTML = '';
+        ids.forEach((id) => reportBody.appendChild(createReportItem(id)));
+        if (reportTitle) {
+          delete reportTitle.dataset.userNamed;
+          reportTitle.textContent = reportNameForCount(ids.length);
+          reportTitle.dataset.orig = reportTitle.textContent;
+        }
+        persistGeneratedReport(true);
+        openReportPane();
+      }
+      function toggleSectionSelect(id) {
+        if (!id) return;
+        if (reportSelected.has(id)) reportSelected.delete(id);
+        else {
+          if (!sectionAvailable(reportSectionEl(id))) return;
+          reportSelected.add(id);
+        }
+        syncSectionPluses();
+        syncGenerateBar();
+      }
+      function wireSectionPluses() {
+        document.querySelectorAll('[data-rpt]').forEach((sec) => {
+          if (sec.querySelector(':scope > .rf-rpt-plus, .rf-sec-title > .rf-rpt-plus')) return;
+          const host = sec.querySelector('.rf-sec-title') || sec;
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'rf-rpt-plus';
+          btn.innerHTML = '<span class="material-symbols-outlined">add</span>';
+          setSectionPlus(btn, reportSelected.has(sec.dataset.rpt));
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleSectionSelect(sec.dataset.rpt);
+          });
+          host.appendChild(btn);
+        });
+      }
+      function bindEditableReportTitle() {
+        if (!reportTitle) return;
+        reportTitle.dataset.orig = reportTitle.textContent || '';
+        reportTitle.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); reportTitle.blur(); }
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            reportTitle.textContent = reportTitle.dataset.orig || '';
+            reportTitle.blur();
+          }
+        });
+        reportTitle.addEventListener('blur', () => {
+          const next = (reportTitle.textContent || '').replace(/\s+/g, ' ').trim();
+          if (!next) {
+            reportTitle.textContent = reportTitle.dataset.orig || reportNameForCount(reportItemCount());
+            return;
+          }
+          reportTitle.textContent = next;
+          reportTitle.dataset.orig = next;
+          reportTitle.dataset.userNamed = '1';
+          persistGeneratedReport(false);
+        });
+      }
+      window.rfExportReportPdf = function () {
+        if (!reportEl || !reportEl.classList.contains('is-open')) return;
+        document.documentElement.classList.add('rf-print-report');
+        const cleanup = () => document.documentElement.classList.remove('rf-print-report');
+        window.addEventListener('afterprint', cleanup, { once: true });
+        window.print();
+        setTimeout(cleanup, 2500);
+      };
+      window.rfCloseReport = closeReportPane;
+      window.rfOpenGeneratedReports = function () {
+        const id = reportEl && reportEl.dataset.rptId;
+        location.href = id ? ('reports.html?gen=' + encodeURIComponent(id)) : 'reports.html';
+      };
 
       /* Highlight the studio inputs a move just rewrote. renderStudio() rebuilds
          the sliders, so the class goes on after the render, not before. */
@@ -1696,12 +2862,49 @@
         const c = render();
         respond(`Whole-grain ingredient <b>${state.wholeGrain ? 'added' : 'removed'}</b>. ${scoreSentence(c)}`);
       });
-      document.getElementById('rf-algo').addEventListener('change', (e) => {
-        state.algo = e.target.value;
+      function applyAlgo(next) {
+        const pick = next === 'auto' ? 'auto' : next;
+        if (pick === algoPick) return;
+        algoPick = pick;
+        syncAlgoSelect();
         clearApplied();
         const c = render();
-        respond(`Switched to the <b>${ALGO_NAME[state.algo]}</b> algorithm. ${scoreSentence(c)}`);
-      });
+        respond(algoPick === 'auto'
+          ? `Auto-detected the <b>${ALGO_NAME[state.algo]}</b> algorithm. ${scoreSentence(c)}`
+          : `Switched to the <b>${ALGO_NAME[state.algo]}</b> algorithm. ${scoreSentence(c)}`);
+      }
+
+      const SCORE_BASIS_LABEL = { all: 'All available data', nfp: 'Mandatory NFP only' };
+      const SCORE_BASIS_TIP = {
+        all: 'Scoring basis — all available nutrient data counts toward Guiding Stars',
+        nfp: 'Scoring basis — only label-mandatory nutrients (Vit D, Calcium, Iron, Potassium)',
+      };
+      function syncScoreBasisUI() {
+        const valueEl = document.getElementById('rf-basis-value');
+        if (valueEl) valueEl.textContent = SCORE_BASIS_LABEL[scoringBasis] || SCORE_BASIS_LABEL.all;
+        const ico = document.getElementById('rf-basis-ico');
+        if (ico) ico.setAttribute('data-tip', SCORE_BASIS_TIP[scoringBasis] || SCORE_BASIS_TIP.all);
+        document.querySelectorAll('#rf-basis-menu [data-basis]').forEach((btn) => {
+          btn.setAttribute('aria-checked', btn.dataset.basis === scoringBasis ? 'true' : 'false');
+        });
+        const name = document.getElementById('rf-vit-name');
+        const sub = document.getElementById('rf-vit-sub');
+        if (name) name.textContent = scoringBasis === 'nfp' ? 'Mandatory NFP nutrients ≥5% DV' : 'Vitamins / minerals ≥5% DV';
+        if (sub) sub.textContent = scoringBasis === 'nfp'
+          ? '+1 each for Vit D, Calcium, Iron, Potassium · max +3'
+          : '+1 credit each per 100 kcal · max +3';
+      }
+      function applyScoreBasis(next) {
+        const value = next === 'nfp' ? 'nfp' : 'all';
+        if (value === scoringBasis) return;
+        scoringBasis = value;
+        syncScoreBasisUI();
+        if (!product) return;
+        const c = render();
+        respond(scoringBasis === 'nfp'
+          ? `Scoring from <b>mandatory NFP nutrients only</b> (Vit D, Calcium, Iron, Potassium). ${scoreSentence(c)}`
+          : `Scoring from <b>all available nutrient data</b>. ${scoreSentence(c)}`);
+      }
 
       const BASIS_HELP = {
         serving: 'Values as printed on the Nutrition Facts label for one serving of this product.',
@@ -1727,6 +2930,9 @@
         const b = e.target.closest('[data-apply]');
         if (b) applyStep(b.dataset.apply);
       });
+      document.getElementById('rf-ia-btn')?.addEventListener('click', () => runIngredientAnalysis());
+      document.getElementById('rf-ia-close')?.addEventListener('click', () => closeAnalysis());
+      document.getElementById('rf-ia-scrim')?.addEventListener('click', () => closeAnalysis());
 
       /* ── Free-text conversation — routed by the shared module's `reply` opt.
          The module posts the you-line + typing indicator; we return WISEcodeAI's
@@ -1764,7 +2970,7 @@
          .topbar-popover, so the studio and dashboard carry the same overflow
          chrome the chat already has. ── */
       window.rfCloseModuleMenus = function () {
-        ['rf-studio-menu', 'rf-dash-menu'].forEach((id) => {
+        ['rf-studio-menu', 'rf-dash-menu', 'rf-report-menu'].forEach((id) => {
           const m = document.getElementById(id);
           if (!m) return;
           m.classList.add('hidden');
@@ -1783,10 +2989,55 @@
           m.closest('.panel-more-wrap')?.querySelector('.panel-more-btn')?.setAttribute('aria-expanded', 'true');
         }
       };
-      document.addEventListener('click', (e) => {
-        if (!e.target.closest('#rf-studio-menu-wrap') && !e.target.closest('#rf-dash-menu-wrap')) window.rfCloseModuleMenus();
+      const TOOL_MENUS = [
+        { menu: 'rf-basis-menu', triggers: ['rf-basis-trigger', 'rf-basis-ico'] },
+        { menu: 'rf-algo-menu', triggers: ['rf-algo-trigger', 'rf-algo-ico'] },
+      ];
+      function setToolExpanded(spec, open) {
+        const m = document.getElementById(spec.menu);
+        if (m) m.classList.toggle('hidden', !open);
+        spec.triggers.forEach((id) => {
+          document.getElementById(id)?.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+      }
+      window.rfCloseToolMenus = function () {
+        TOOL_MENUS.forEach((spec) => setToolExpanded(spec, false));
+      };
+      function toggleToolMenu(spec) {
+        const m = document.getElementById(spec.menu);
+        if (!m) return;
+        const willOpen = m.classList.contains('hidden');
+        window.rfCloseToolMenus();
+        window.rfCloseModuleMenus();
+        if (willOpen) setToolExpanded(spec, true);
+      }
+      TOOL_MENUS.forEach((spec) => {
+        spec.triggers.forEach((id) => {
+          document.getElementById(id)?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleToolMenu(spec);
+          });
+        });
       });
-      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { window.rfCloseModuleMenus(); window.rfCloseChatMenu(); } });
+      document.getElementById('rf-basis-menu')?.addEventListener('click', (e) => {
+        const item = e.target.closest('[data-basis]');
+        if (!item) return;
+        applyScoreBasis(item.dataset.basis);
+        window.rfCloseToolMenus();
+      });
+      document.getElementById('rf-algo-menu')?.addEventListener('click', (e) => {
+        const item = e.target.closest('[data-algo]');
+        if (!item) return;
+        applyAlgo(item.dataset.algo);
+        window.rfCloseToolMenus();
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('#rf-studio-menu-wrap') && !e.target.closest('#rf-dash-menu-wrap') && !e.target.closest('#rf-report-menu-wrap') && !e.target.closest('.rf-rpt-more')) window.rfCloseModuleMenus();
+        if (!e.target.closest('.rf-rpt-more') && !e.target.closest('.rf-rpt-item-pop')) closeReportItemMenus();
+        if (!e.target.closest('#rf-score-tools')) window.rfCloseToolMenus();
+      });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { window.rfCloseModuleMenus(); window.rfCloseToolMenus(); window.rfCloseChatMenu(); closeAnalysis(); closeReportItemMenus(); } });
 
       /* ── Width toggles — the canonical four-step cycle (single → double →
          triple → fill) on the studio and dashboard. These MUST speak the same
@@ -1835,9 +3086,9 @@
           getTier: () => tier,
         };
       }
-      /* If the loaded dashboard's current width tier overflows the modules
-         row, step it back toward the rail so the board never pushes past
-         the screen. Picker state is exempt — that board is the filler. */
+      /* Double / triple are fixed rails — if one overflows the modules row,
+         step back toward single so the board never pushes past the screen.
+         Fill is the default and absorbs leftover, so it must not be demoted. */
       const dashEl = document.getElementById('rf-dash');
       function rowOverflows() {
         const row = document.getElementById('modules-row');
@@ -1848,6 +3099,7 @@
         if (!row || !dashWidth || row.classList.contains('is-picking')) return;
         const W = window.WPaneWidth;
         let tier = W ? W.tierOfEl(dashEl) : dashWidth.getTier();
+        if (tier >= 3) return;
         while (tier > 0 && rowOverflows()) {
           tier -= 1;
           dashWidth.applyTier(tier);
@@ -1856,6 +3108,7 @@
       /* The chat's width toggle is now the shared module's own control. */
       wireWidthToggle('rf-studio-width', document.getElementById('rf-studio'), fitDashToRow);
       const dashWidth = wireWidthToggle('rf-dash-width', dashEl, fitDashToRow);
+      reportWidth = wireWidthToggle('rf-report-width', reportEl, fitDashToRow);
       window.addEventListener('resize', fitDashToRow);
       if (typeof ResizeObserver === 'function' && dashEl) {
         const row = document.getElementById('modules-row');
@@ -1867,8 +3120,6 @@
         if (row) row.classList.add('rf-gs-on');
         const tag = document.getElementById('rf-topbar-tag');
         if (tag) tag.textContent = 'Reformulation · Guiding Stars';
-        const smeta = document.getElementById('rf-studio-meta');
-        if (smeta) smeta.textContent = 'Dial in the WISE controls · live Guiding Stars';
         if (product) { render(); refreshChips(); }
       }
       applyGsMode();
@@ -1876,12 +3127,17 @@
       /* Reset the live label back to the product's original and re-seed the chat
          opener. (Transcript export/copy now lives in the shared module's menu.) */
       window.rfRestart = function () {
-        state = { ...ORIGINAL };
+        const rec = product && storeApi() && storeApi().get(product);
+        state = { ...(product ? liveRecipe(product) : ORIGINAL) };
         basis = 'serving';
+        scoringBasis = (rec && rec.scoringBasis) || 'all';
         clearApplied();
         document.querySelectorAll('.rf-basis-btn').forEach((x) => x.classList.toggle('is-active', x.dataset.basis === 'serving'));
         syncBasisHelp();
-        document.getElementById('rf-algo').value = state.algo;
+        syncScoreBasisUI();
+        algoPick = (rec && rec.algoPick) || 'auto';
+        syncAlgoSelect();
+        if (state) state.algo = effectiveAlgo();
         render();
         if (chat) chat.reset();
         if (product) { if (chat) chat.hideWelcome(); seed(); }
@@ -1889,10 +3145,33 @@
       window.rfResetProduct = function () {
         state = { ...ORIGINAL };
         clearApplied();
-        document.getElementById('rf-algo').value = state.algo;
+        algoPick = 'auto';
+        syncAlgoSelect();
+        if (product && storeApi()) storeApi().remove(product);
         const c = render();
-        addUser('Reset to original label');
+        addUser('Reset to original');
         respond(`Back to the original label. ${scoreSentence(c)}`);
+      };
+      window.rfSaveReformulation = function () {
+        if (!product || !state) return;
+        state.algo = effectiveAlgo();
+        const c = compute();
+        const store = storeApi();
+        if (store) {
+          store.save({
+            id: product.id,
+            upc: product.upc,
+            name: product.name,
+            short: product.short,
+            recipe: snapshotRecipe(),
+            score: snapshotScore(c),
+            algoPick: algoPick,
+            scoringBasis: scoringBasis,
+          });
+        }
+        syncSaveBtn();
+        addUser('Save the reformulation');
+        respond(`Saved. This recipe is now the product — on the dashboard, in the portfolio, and on the product page. ${scoreSentence(c)}`);
       };
 
       /* ── Opening turn (tailored to the chosen product) ── */
@@ -1928,7 +3207,6 @@
       /* ═══════════ Step 0 · Product picker (rows, in-module) ═══════════ */
       const modulesRow = document.getElementById('modules-row');
       const pickList = document.getElementById('rf-pick-list');
-      const changeBtn = document.getElementById('rf-change-btn');
 
       /* ═══════════ Board chrome · score cards + search ═══════════
          Mirrors the Product Portfolio board. The cards are live: while picking
@@ -1941,12 +3219,25 @@
       let dashQuery = '';
       let pickFilter = 'all';   // all · dq · ok
 
-      /* Cards without a `filter` are read-outs, so they render disabled. */
+      /* Cards without a `filter` are read-outs, so they render disabled.
+         Markup matches the shared welcome scorecard (icon / metric / title /
+         desc) so the board and the chat rail read as one family. */
       function statHtml(o) {
-        const cls = ['rf-stat', o.tone ? 'rf-stat--' + o.tone : '', o.active ? 'is-active' : ''].filter(Boolean).join(' ');
+        const cls = ['ws-scorecard', 'rf-stat', o.active ? 'is-active' : ''].filter(Boolean).join(' ');
         const attrs = o.filter ? ` data-filter="${o.filter}" aria-pressed="${o.active ? 'true' : 'false'}"` : ' disabled';
-        const icon = o.icon ? `<span class="material-symbols-outlined">${o.icon}</span>` : '';
-        return `<button type="button" class="${cls}"${attrs}><span class="rf-stat-num">${o.num}</span><span class="rf-stat-label">${icon}${o.label}</span></button>`;
+        const icon = o.icon || 'insights';
+        const desc = o.desc ? `<div class="ws-sc-desc">${o.desc}</div>` : '';
+        return `<button type="button" class="${cls}"${attrs}>` +
+          `<div class="ws-sc-top"><span class="ws-sc-icon"><span class="material-symbols-outlined">${icon}</span></span></div>` +
+          `<div class="ws-sc-metric">${o.num}</div>` +
+          `<div class="ws-sc-title">${o.label}</div>` +
+          desc +
+          `</button>`;
+      }
+      function paintStats(cards) {
+        statsEl.dataset.cols = String(cards.length);
+        statsEl.style.setProperty('--rf-stat-cols', String(cards.length));
+        statsEl.innerHTML = cards.join('');
       }
       function starsGlyph(n) {
         return `<span class="rf-stars-glyph" role="img" aria-label="${n} of 3 Guiding Stars">`
@@ -1958,30 +3249,35 @@
         const rated = ratedProducts().map((r) => r.c);
         const dqCount = rated.filter((c) => c.disqualified).length;
         const blockers = rated.reduce((n, c) => n + c.dq.length, 0);
-        statsEl.innerHTML = [
-          statHtml({ num: PRODUCTS.length, label: 'Products', filter: 'all', active: pickFilter === 'all' }),
-          statHtml({ num: dqCount, label: 'Disqualified', icon: 'block', tone: 'alert', filter: 'dq', active: pickFilter === 'dq' }),
-          statHtml({ num: rated.length - dqCount, label: 'Qualifying', icon: 'verified', tone: 'good', filter: 'ok', active: pickFilter === 'ok' }),
-          statHtml({ num: blockers, label: 'Blockers to clear', tone: 'warn' }),
-        ].join('');
+        paintStats([
+          statHtml({ num: PRODUCTS.length, label: 'Products', icon: 'inventory_2', desc: 'In this reformulation catalog', filter: 'all', active: pickFilter === 'all' }),
+          statHtml({ num: dqCount, label: 'Disqualified', icon: 'block', desc: 'Fail a Guiding Stars hard stop', filter: 'dq', active: pickFilter === 'dq' }),
+          statHtml({ num: rated.length - dqCount, label: 'Qualifying', icon: 'verified', desc: 'Clear of disqualifiers', filter: 'ok', active: pickFilter === 'ok' }),
+          statHtml({ num: blockers, label: 'Blockers to clear', icon: 'warning', desc: 'Hard stops still on a label' }),
+        ]);
       }
 
       function renderLoadedStats(c) {
         const signed = (c.net >= 0 ? '+' : '') + c.net;
         const cards = GS
           ? [
-              statHtml({ num: c.disqualified ? '<span class="material-symbols-outlined">block</span>' : `${c.stars}<span class="material-symbols-outlined">star</span>`, label: 'Guiding Stars', tone: c.disqualified ? 'alert' : 'stars' }),
-              statHtml({ num: signed, label: 'Net points', tone: c.net > 0 ? 'good' : c.net < 0 ? 'alert' : 'muted' }),
+              statHtml({
+                num: c.disqualified ? 0 : c.stars,
+                label: 'Guiding Stars',
+                icon: c.disqualified ? 'block' : 'star',
+                desc: c.disqualified ? 'Disqualified — no stars' : 'Earned on this recipe',
+              }),
+              statHtml({ num: signed, label: 'Net points', icon: 'query_stats', desc: 'Credits minus debits' }),
             ]
           : [
-              statHtml({ num: signed, label: 'Nutrition score', tone: c.net > 0 ? 'good' : c.net < 0 ? 'alert' : 'muted' }),
+              statHtml({ num: signed, label: 'Nutrition score', icon: 'query_stats', desc: 'Credits minus debits' }),
             ];
         cards.push(
-          statHtml({ num: c.debitSum, label: 'Debits', tone: c.debitSum < 0 ? 'alert' : 'muted' }),
-          statHtml({ num: '+' + c.creditSum, label: 'Credits', tone: c.creditSum > 0 ? 'good' : 'muted' }),
-          statHtml({ num: c.dq.length, label: GS ? 'Blockers' : 'Flags', tone: c.dq.length ? 'warn' : 'good' })
+          statHtml({ num: c.debitSum, label: 'Debits', icon: 'trending_down', desc: 'Nutrients that cost points' }),
+          statHtml({ num: '+' + c.creditSum, label: 'Credits', icon: 'trending_up', desc: 'Nutrients that add points' }),
+          statHtml({ num: c.dq.length, label: GS ? 'Blockers' : 'Flags', icon: 'warning', desc: c.dq.length ? 'Hard stops still in play' : 'No hard stops on this label' })
         );
-        statsEl.innerHTML = cards.join('');
+        paintStats(cards);
       }
 
       /* Tapping the same card again clears the filter back to "all". */
@@ -2028,7 +3324,7 @@
         searchInput.placeholder = picking ? 'Search by product name or UPC' : 'Search reformulation moves';
         searchInput.setAttribute('aria-label', picking ? 'Search products' : 'Search reformulation moves');
         const titleEl = document.getElementById('rf-dash-title');
-        if (titleEl) titleEl.textContent = picking ? 'Reformulation Overview' : 'Reformulation Dashboard';
+        if (titleEl) titleEl.textContent = 'Reformulation Overview';
         const widthBtn = document.getElementById('rf-dash-width');
         if (widthBtn) {
           widthBtn.setAttribute('aria-label', picking ? 'Overview width' : 'Dashboard width');
@@ -2071,7 +3367,7 @@
 
       /* Score every product once — the cards and the rows read the same pass. */
       function ratedProducts() {
-        return PRODUCTS.map((p, i) => ({ p, c: compute({ ...p.baseline }), i }));
+        return PRODUCTS.map((p, i) => ({ p, c: compute({ ...liveRecipe(p) }), i }));
       }
       /* Sorting the computed rows (rather than shuffling the DOM) is what lets
          the star column sort by rating instead of by its icon ligatures. */
@@ -2186,6 +3482,7 @@
         const ingText = (p && p.ingredients) || '';
         if (ingSec) ingSec.hidden = !ingText;
         if (ingBox) ingBox.textContent = ingText;
+        closeAnalysis();
       }
 
       window.rfShowPicker = function () {
@@ -2197,7 +3494,6 @@
         renderPickStats();
         applyDashFilter();
         document.getElementById('rf-dash-meta').textContent = 'Choose a product to reformulate';
-        if (changeBtn) changeBtn.style.display = 'none';
         seedPickPrompt();
       };
 
@@ -2206,17 +3502,21 @@
         const p = (typeof idOrObj === 'object') ? idOrObj : PRODUCTS.find((x) => x.id === idOrObj);
         if (!p) return null;
         product = p;
-        ORIGINAL = { ...p.baseline };
-        state = { ...ORIGINAL };
+        ORIGINAL = { ...factoryOf(p) };
+        const rec = storeApi() && storeApi().get(p);
+        state = { ...liveRecipe(p) };
         basis = 'serving';
+        scoringBasis = (rec && rec.scoringBasis) || 'all';
         clearApplied();
         document.querySelectorAll('.rf-basis-btn').forEach((x) => x.classList.toggle('is-active', x.dataset.basis === 'serving'));
         syncBasisHelp();
-        document.getElementById('rf-algo').value = state.algo;
+        syncScoreBasisUI();
+        algoPick = (rec && rec.algoPick) || 'auto';
+        syncAlgoSelect();
+        state.algo = effectiveAlgo();
         modulesRow.classList.remove('is-picking');
         setDashMode(false);
         dressDashHead(p);
-        if (changeBtn) changeBtn.style.display = '';
         render();
         requestAnimationFrame(() => {
           requestAnimationFrame(fitDashToRow);
@@ -2238,6 +3538,9 @@
         if (!q) return null;
         return PRODUCTS.find((p) => p.id === q) || PRODUCTS.find((p) => digits(p.upc) === digits(q)) || null;
       }
+      bindEditableReportTitle();
+      ensureReportSticky();
+
       (function boot() {
         /* Mount the ONE shared WISEcodeAI chat module and feed it the reformulation
            content. Every transcript wrapper, chip and reply above drives this

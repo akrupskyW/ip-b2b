@@ -1111,6 +1111,12 @@ export function injectChatExtras() {
     .wch-conn-cta .material-symbols-outlined { font-size: 15px; }
     .wch-conn-row.is-connected .wch-conn-cta { color: var(--sec-green-text, #2E7D32); }
 
+    /* Paragraph-by-paragraph transcript reveal — each prose run is wrapped in
+       .sc-para so it can fade in as a block. Consecutive paras get the same
+       gap a <br><br> used to create. */
+    .sc-line-body > .sc-para { display: block; }
+    .sc-line-body > .sc-para + .sc-para { margin-top: 1em; }
+
     /* Feedback actions (copy / thumbs) sit INLINE, directly to the right of the
        timestamp inside .sc-line-meta — quiet outlined glyphs at rest. */
     .sc-fb-wrap { margin: 0; align-self: center; flex: 1 1 auto; min-width: 0; }
@@ -3942,6 +3948,136 @@ function buildScorecardsHtml(sc, id) {
 
 let _seq = 0;
 
+/* ── Paragraph-by-paragraph transcript reveal ──────────────────────────────
+   Word-by-word typing was too busy. A WISEcodeAI answer now lands in reading
+   order: each prose paragraph / block (a <p>, a list, a card, or a run split
+   by <br><br>) fades in as a unit, then the thumbs row, then the intent chips.
+   Trailer chrome (.sc-line-meta, thumbs, chip rows) is never part of a para.
+   Honors prefers-reduced-motion (everything shows whole). Exported so the
+   hand-rolled page chats call the same helper instead of forking a typewriter. */
+const TRANSCRIPT_TRAILER = [
+  'sc-line-meta', 'sc-fb-wrap', 'sc-feedback', 'sc-inline-chips',
+  'sc-reply-chips', 'gs-chips-inline', 'gs-chips',
+];
+const TRANSCRIPT_BLOCK = new Set([
+  'P', 'UL', 'OL', 'DIV', 'TABLE', 'BLOCKQUOTE', 'PRE', 'FIGURE',
+  'HR', 'SECTION', 'ARTICLE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
+  'DL', 'DETAILS', 'VIDEO', 'CANVAS',
+]);
+
+function isTranscriptTrailer(node) {
+  if (!node || node.nodeType !== 1 || !node.classList) return false;
+  return TRANSCRIPT_TRAILER.some((name) => node.classList.contains(name));
+}
+function isTranscriptBlock(node) {
+  return !!(node && node.nodeType === 1 && TRANSCRIPT_BLOCK.has(node.tagName));
+}
+function runHasCopy(nodes) {
+  return nodes.some((n) => {
+    if (n.nodeType === 3) return /\S/.test(n.nodeValue);
+    if (n.nodeType !== 1) return false;
+    if (n.tagName === 'BR') return false;
+    if (n.classList && n.classList.contains('sc-open-marker')) return false;
+    return true;
+  });
+}
+function wrapTranscriptRun(parent, nodes, before) {
+  const list = nodes.slice();
+  while (list.length && list[0].nodeType === 1 && list[0].tagName === 'BR') list.shift();
+  while (list.length && list[list.length - 1].nodeType === 1 && list[list.length - 1].tagName === 'BR') list.pop();
+  if (!list.length || !runHasCopy(list)) return null;
+  const span = document.createElement('span');
+  span.className = 'sc-para';
+  list.forEach((n) => span.appendChild(n));
+  parent.insertBefore(span, before || null);
+  return span;
+}
+
+export function collectTranscriptParas(root) {
+  if (!root) return [];
+  const kids = Array.from(root.childNodes);
+  const hasTrailer = kids.some(isTranscriptTrailer);
+  const hasSplit = kids.some((n) =>
+    isTranscriptBlock(n) || isTranscriptTrailer(n) || (n.nodeType === 1 && n.tagName === 'BR'));
+  if (!hasTrailer && !hasSplit) {
+    const hasViz = !!(root.querySelector && root.querySelector('img,svg,canvas,table,video'));
+    return ((root.textContent || '').trim() || hasViz) ? [root] : [];
+  }
+  const units = [];
+  let run = [];
+  const flush = (before) => {
+    const wrap = wrapTranscriptRun(root, run, before);
+    if (wrap) units.push(wrap);
+    run = [];
+  };
+  kids.forEach((node) => {
+    if (isTranscriptTrailer(node)) { flush(node); return; }
+    if (node.nodeType === 1 && node.tagName === 'BR') {
+      const prev = run[run.length - 1];
+      if (prev && prev.nodeType === 1 && prev.tagName === 'BR') {
+        run.pop();
+        if (prev.parentNode) prev.remove();
+        flush(node);
+        if (node.parentNode) node.remove();
+        return;
+      }
+      run.push(node);
+      return;
+    }
+    if (isTranscriptBlock(node)) { flush(node); units.push(node); return; }
+    if (node.nodeType === 3 && !/\S/.test(node.nodeValue) && !run.length) return;
+    run.push(node);
+  });
+  flush(null);
+  return units.filter((el) => {
+    if ((el.textContent || '').trim()) return true;
+    return !!(el.querySelector && el.querySelector('img,svg,canvas,table,video'));
+  });
+}
+
+export function primeTranscriptPara(el) {
+  if (!el) return;
+  el.hidden = true;
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(8px)';
+}
+export function showTranscriptPara(el) {
+  if (!el) return;
+  el.hidden = false;
+  void el.offsetWidth;
+  el.style.transition = 'opacity .32s ease, transform .32s cubic-bezier(0.22, 0.85, 0.25, 1)';
+  el.style.opacity = '1';
+  el.style.transform = 'none';
+}
+
+export function typeInTranscript(bodyEl, done, hooks) {
+  const scroll = (hooks && hooks.scroll) || function () {};
+  const reduced = hooks && Object.prototype.hasOwnProperty.call(hooks, 'reduced')
+    ? hooks.reduced
+    : (() => {
+      try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+      catch (_) { return false; }
+    })();
+  if (!bodyEl || reduced) { scroll(); if (done) done(); return; }
+  const units = collectTranscriptParas(bodyEl);
+  if (!units.length) { scroll(); if (done) done(); return; }
+  units.forEach(primeTranscriptPara);
+  let i = 0;
+  const gap = (hooks && hooks.gap) || 300;
+  const start = (hooks && hooks.startDelay) != null ? hooks.startDelay : 40;
+  const next = () => {
+    if (i >= units.length) { scroll(); if (done) done(); return; }
+    showTranscriptPara(units[i]);
+    i += 1;
+    scroll();
+    /* Hold the last paragraph until its fade has settled so the thumbs row
+       reads as the next beat, not an overlap. */
+    setTimeout(next, i >= units.length ? 340 : gap);
+  };
+  setTimeout(next, start);
+}
+if (typeof window !== 'undefined') window.WiseTypeInTranscript = typeInTranscript;
+
 /**
  * Mount the shared WISEcodeAI chat into `rootEl`.
  * @param {HTMLElement} rootEl
@@ -3986,6 +4122,12 @@ let _seq = 0;
  *   onAddMember  {fn}      () => void — "Add team member to chat" popover item
  *   onHistory    {fn}      () => void — "History & Projects" popover item
  *   onToggleWidth{fn}      (isWide) => void — fired when the width toggle flips
+ *   onEngage     {fn}      () => void — first leave of the welcome (type, chip,
+ *                          or send). Hosts like wiseai.html collapse the
+ *                          full-width chat to its single column.
+ *   onDisengage  {fn}      () => void — composer cleared while welcome is still
+ *                          showing (typed, then deleted). Hosts can expand back.
+ *   onReset      {fn}      () => void — "Start new conversation" / reset()
  *   reply        {fn}      (text, intent, ctx) => html string for WISEcodeAI's response
  * @returns {{ addUser, addWISEcodeAI, reset, root }}
  */
@@ -5003,10 +5145,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       </div>`;
   }
 
-  /* ── Word-by-word reveal (DISABLED) ──────────────────────────────────────
-     Text animation is turned off: every WISEcodeAI answer appears whole. The
-     typeInLine signature is kept so the downstream reveal chain (timestamp,
-     action icons, chips) keeps firing in the same order. */
+  /* ── Paragraph-by-paragraph reveal ───────────────────────────────────────
+     Each prose block fades in as a unit (never word-by-word). The callback
+     then fires so the thumbs row and intent chips trail the copy. */
   const prefersReducedMotion = (() => {
     try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
     catch (_) { return false; }
@@ -5015,14 +5156,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (!el) return false;
     /* Only self-animating / interactive cards pop in whole — their own logic
        drives the reveal and must not be torn apart. Everything else types in;
-       embedded charts / tables are left intact by the walker below. */
+       embedded charts / tables are left intact as their own paragraph unit. */
     return !el.querySelector('.sc-connect-flow, [data-cf-step], .sc-surface-card');
   }
-  function typeInLine(bodyEl, done, wordDelay) {
-    /* Text animation disabled — replies land whole. The callback still fires
-       so the timestamp / chip reveal chain runs unchanged. */
-    scrollDown();
-    if (done) done();
+  function typeInLine(bodyEl, done) {
+    typeInTranscript(bodyEl, done, { scroll: scrollDown, reduced: prefersReducedMotion });
   }
 
   /* Prime an element to animate in from the left, then reveal a set of them one
@@ -5059,12 +5197,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     el.style.transform = 'translateX(30px)';
     el.style.transition = 'opacity .28s ease, transform .38s cubic-bezier(0.22, 0.85, 0.25, 1)';
   }
-  /* Welcome-screen reveal. The owl + rings are already breathing; here we type
-     the heading, then the sub, WORD-BY-WORD (exactly like every WISEcodeAI answer),
-     and only once all that text has landed do we fly the intent chips in from
-     the right so they arrive AFTER the copy — never sitting there before it.
-     Honors reduced-motion (everything just shows). Safe to re-run whenever the
-     welcome is shown again (see reset()). */
+  /* Welcome-screen reveal. The owl + rings are already breathing; here we
+     fade the heading, then the sub (same paragraph reveal as every WISEcodeAI
+     answer), and only once that copy has landed do we fly the intent chips
+     in from the right so they arrive AFTER the copy — never sitting there
+     before it. Honors reduced-motion (everything just shows). Safe to re-run
+     whenever the welcome is shown again (see reset()). */
   function revealWelcome() {
     if (!welcome || welcome.classList.contains('sc-hidden')) return;
     /* Arm the admin background field whenever the welcome is (re)shown — mount or
@@ -5093,56 +5231,35 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       revealStaggered(all, 90, 60, null);
     }, 38)); // sub line types a bit faster than the heading
   }
-  /* Collect a line's meta pieces in reveal order: the timestamp first, then the
-     action icons (grounding chip, feedback buttons, turn id) left→right. */
-  function metaTimeEl(metaEl) {
-    if (!metaEl) return null;
-    /* The timestamp now lives INSIDE the three-dot menu on answers that carry a
-       feedback row, so it must not be part of the meta row's reveal stagger (it
-       would animate an element that's hidden behind the menu). Only a standalone
-       timestamp — a "you"/status line with no menu — animates in here. */
-    const t = metaEl.querySelector('.sc-line-time');
-    return (t && !t.closest('.sc-fb-menu')) ? t : null;
-  }
-  function metaIconEls(metaEl) {
-    const icons = [];
-    if (!metaEl) return icons;
-    const srcEl = metaEl.querySelector('.sc-trust-chip');
-    if (srcEl) icons.push(srcEl);
-    /* Skip anything tucked inside the collapsed three-dot menu — those reveal
-       with the menu, not with the row. */
-    metaEl.querySelectorAll('.sc-fb-btn, .sc-fb-id').forEach((el) => {
-      if (!el.closest('.sc-fb-menu')) icons.push(el);
-    });
-    return icons;
-  }
-  /* Hide the timestamp + icons up-front so they can animate in later. */
+  /* Hide the thumbs / meta row up-front so it lands as one unit after the
+     last paragraph — never icon-by-icon, and never before the copy. */
   function primeMeta(metaEl) {
-    const timeEl = metaTimeEl(metaEl);
-    if (timeEl) primeRevealFromLeft(timeEl);
-    metaIconEls(metaEl).forEach(primeRevealFromLeft);
+    primeTranscriptPara(metaEl);
   }
-  /* Bring in the timestamp, then the icons (left→right), then — if this line
-     should trail the suggested actions — the intent chips (left→right). */
+  /* After the paragraphs: the thumbs-up/thumbs-down row as a single beat,
+     then — if this line should trail them — the intent chips (left→right). */
   function revealMetaThenChips(metaEl, trailChips, whenDone) {
     const finish = () => { scrollDown(); if (typeof whenDone === 'function') whenDone(); };
-    const timeEl = metaTimeEl(metaEl);
-    const icons = metaIconEls(metaEl);
-    revealStaggered(timeEl ? [timeEl] : [], 120, 0, () => {
-      revealStaggered(icons, 130, 55, () => {
-        if (trailChips) {
-          parkInlineChips();
-          /* Intent chips fly in from the RIGHT here too — the exact same
-             animation the welcome uses — so chips read identically whether
-             they're on the welcome or trailing a turn in the transcript. */
-          const chips = ichipsEl ? Array.from(ichipsEl.children) : [];
-          chips.forEach(primeRevealFromRight);
-          revealStaggered(chips, 110, 55, finish);
-        } else {
-          finish();
-        }
-      });
-    });
+    const showChips = () => {
+      if (trailChips) {
+        parkInlineChips();
+        /* Intent chips fly in from the RIGHT here too — the exact same
+           animation the welcome uses — so chips read identically whether
+           they're on the welcome or trailing a turn in the transcript. */
+        const chips = ichipsEl ? Array.from(ichipsEl.children) : [];
+        chips.forEach(primeRevealFromRight);
+        revealStaggered(chips, 110, 55, finish);
+      } else {
+        finish();
+      }
+    };
+    if (metaEl) {
+      showTranscriptPara(metaEl);
+      scrollDown();
+      setTimeout(showChips, 220);
+    } else {
+      showChips();
+    }
   }
 
   /* Host-built suggested-action chip rows (e.g. the compare board's follow
@@ -5254,7 +5371,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      @param {object} [meta] { source, feedback, typewriter } — `source` overrides
      the grounding caption for a single line (pass '' to drop it); `feedback:false`
      suppresses the accuracy-feedback row (e.g. on a non-answer status card);
-     `typewriter:false` forces the line to appear whole (no word-by-word reveal). */
+     `typewriter:false` forces the line to appear whole (no paragraph reveal). */
   function addWISEcodeAI(html, meta = {}) {
     if (!messages) return null;
     html = transformOpenChips(html, meta);
@@ -5275,12 +5392,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const line = messages.lastElementChild; /* capture before chips re-park */
     const body = line && line.querySelector('.sc-line-body');
     refreshDockedTurns();
-    /* Bring a turn in, in order: (1) the text (typed word-by-word for a plain
-       answer; whole for a rich/interactive card), then (2) the timestamp,
-       (3) the action icons (left→right), and finally (4) the intent chips
-       (left→right) — but ONLY if this line should trail them. Surface/preview
-       cards pass { trailChips:false } so the chips stay attached to the actual
-       answer, not to a card posted mid-thinking. Reduced-motion shows it whole. */
+    /* Bring a turn in, in order: (1) the content, paragraph by paragraph,
+       (2) the thumbs-up/thumbs-down row as one unit, then (3) the intent
+       chips (left→right) — but ONLY if this line should trail them.
+       Surface/preview cards pass { trailChips:false } so the chips stay
+       attached to the actual answer, not to a card posted mid-thinking.
+       Reduced-motion shows it whole. */
     const metaEl = body && body.querySelector('.sc-line-meta');
     const trailChips = meta.trailChips !== false;
     /* Direct posts (connectors, announceRoute, feedback) still have to end on
@@ -7198,6 +7315,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   function hideWelcome() {
     /* The transcript has advanced to its next state — retire the welcome-only
        background animation (if it was armed) so it never bleeds into a live thread. */
+    const first = !!(welcome && !welcome.classList.contains('sc-hidden'));
     bgAnim.stop();
     welcome?.classList.add('sc-hidden');
     /* A clicked intent chip starts a fresh turn, so drop any half-typed copy
@@ -7206,6 +7324,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        so this only bites the chip/scorecard/sendIntent paths.) */
     if (input && input.value) input.value = '';
     if (persistChips) { rootEl.classList.add('sc-conversing'); requestAnimationFrame(refreshPersistChips); }
+    if (first && typeof opts.onEngage === 'function') {
+      try { opts.onEngage(); } catch (_) { /* host layout hook */ }
+    }
   }
   function reset() {
     if (messages) messages.innerHTML = '';
@@ -7234,6 +7355,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     chatHistory?.markNew();
     /* Keep a broken-out Turns module honest about the now-empty thread. */
     if (turnsDocked && turnsPanel) renderTurns();
+    if (typeof opts.onReset === 'function') {
+      try { opts.onReset(); } catch (_) { /* host layout hook */ }
+    }
   }
   function submit() {
     if (!input) return;
@@ -8147,6 +8271,18 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   rootEl.querySelector(`#${id}-send`)?.addEventListener('click', submit);
   input?.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } });
   wireComposerGrow(input);
+  /* First keystroke leaves the full-width welcome; clearing the field while
+     the welcome is still up restores it. Hosts (wiseai.html) use these to
+     collapse / expand the chat to its single column. Idempotent on the host. */
+  input?.addEventListener('input', () => {
+    const typed = !!(input.value && input.value.trim());
+    const welcomeUp = !!(welcome && !welcome.classList.contains('sc-hidden'));
+    if (typed && typeof opts.onEngage === 'function') {
+      try { opts.onEngage(); } catch (_) { /* host layout hook */ }
+    } else if (!typed && welcomeUp && typeof opts.onDisengage === 'function') {
+      try { opts.onDisengage(); } catch (_) { /* host layout hook */ }
+    }
+  });
 
   /* Keep the caret in the TEXT field whenever the user clicks the input pill.
      The pending attachment chips render before the input, each with a focusable
@@ -8862,7 +8998,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   syncCards();
   syncChips();
 
-  /* Play the welcome in: heading + sub type in word-by-word, then the intent
+  /* Play the welcome in: heading + sub fade in as paragraphs, then the intent
      chips fly in from the right and land — so the chips always trail the copy. */
   revealWelcome();
 

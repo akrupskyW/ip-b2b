@@ -181,7 +181,7 @@ export function scBuildHelixSVG(H, phase, rungsY, greenCount, uid) {
    freezes it aligned to the milestone rows and sweeps it green from the top. */
 export function makeTraceHelix(bodyEl, opts = {}) {
   const reduced = opts.prefersReducedMotion != null ? !!opts.prefersReducedMotion : prefersReduced();
-  let raf = null, phase = 0, last = 0, lastDraw = 0, running = false;
+  let raf = null, phase = Number.isFinite(opts.phase) ? opts.phase : 0, last = 0, lastDraw = 0, running = false;
   let mode = 'live', staticRungs = null, greenCount = 0;
   const uid = 'h' + Math.random().toString(36).slice(2, 7);   /* unique gradient ns */
   const dnaEl = () => bodyEl.querySelector('.sc-trace-dna');

@@ -204,7 +204,14 @@
     try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
     catch (_) { return false; }
   })();
-  function typeInLine(bodyEl, done) { scrollDown(); if (done) done(); }
+  function typeInLine(bodyEl, done) {
+    if (typeof window.WiseTypeInTranscript === 'function') {
+      window.WiseTypeInTranscript(bodyEl, done, { scroll: scrollDown, reduced: prefersReducedMotion });
+      return;
+    }
+    scrollDown();
+    if (done) done();
+  }
 
   function addUser(text) {
     hideWelcome();

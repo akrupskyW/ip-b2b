@@ -23,7 +23,7 @@ Search for the shared chat module usage across pages:
 - [ ] Intent chips: clickable, actionable, each opens a real transcript
 - [ ] Intent chip icon is gold; right-side label animates
 - [ ] Every transcript / answer ends on related intent chips (never a dead end)
-- [ ] Streaming word-by-word output (not the old pulsating dots)
+- [ ] Streaming paragraph-by-paragraph (then thumbs row, then intent chips)
 - [ ] Helix animation ON by default at 20% opacity
 - [ ] Composer unlocked (no lock icon / readonly); typing a chip word plays that transcript
 - [ ] Right-hand module actions reflected in the chat

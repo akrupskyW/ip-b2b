@@ -24,6 +24,7 @@ const TOOLTIP_SELECTOR =
   '.panel-more-btn, .panel-close-btn, .panel-ctrl-btn, .wiseai-dock-flip, .dash-term, ' +
   '.topbar-appearance-btn, #menu-footer-layout-btn, ' +
   '.wise-popover--appearance [data-tip], ' +
+  '.rf-tool-ico, .rf-rpt-plus, .wa-titledrop-plus, ' +
   '.ws-intent-chip, .sc-reply-chips .chip, .sc-inline-chips .chip';
 
 /* The History / Turns modules (`.wch-sidebar`) run their own dark tooltip in
@@ -93,7 +94,9 @@ export function initLirTooltip() {
     const tipRight = btn.classList.contains('topbar-menu-toggle') &&
       !btn.closest('.mp-pivot');
     const isIntentChip = !!(btn.matches && btn.matches('.ws-intent-chip, .sc-reply-chips .chip, .sc-inline-chips .chip'));
-    const preferAbove = !!(btn.closest('.wise-popover--appearance') || isAppearanceTrigger(btn) || isIntentChip);
+    const isStudioTool = !!(btn.matches && btn.matches('.rf-tool-ico'));
+    const isReportPlus = !!(btn.matches && btn.matches('.rf-rpt-plus, .wa-titledrop-plus'));
+    const preferAbove = !!(btn.closest('.wise-popover--appearance') || isAppearanceTrigger(btn) || isIntentChip || isStudioTool || isReportPlus);
     tip.classList.toggle('lir-tip-wrap', isIntentChip);
     tip.classList.remove('lir-tip-right', 'lir-tip-above');
     if (tipRight) {

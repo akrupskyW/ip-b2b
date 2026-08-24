@@ -26,8 +26,10 @@
  *      its variants and the exact surfaces where it is used.
  *   5. Codebase — score cards for the size of the app itself: lines of code
  *      by file type with an up/down trend (one git snapshot per day) and the
- *      HTML page count. The data is scanned by scripts/scan_code_stats.py
- *      into js/code-stats-data.js.
+ *      HTML page count. scripts/scan_code_stats.py writes the git series into
+ *      js/code-stats-data.js. Re-evaluate also live-crawls every HTML / JS /
+ *      CSS / Python file in the project once a day so the "now" numbers and
+ *      the scanned date never sit on a stale snapshot.
  *   6. Motion & Resize — every animation (count-up, chart replay, streaming,
  *      chip shimmer / fly-in, welcome helix, thinking helix, accordion) and
  *      every drag/resize interaction (module splitter, width tiers, reorder,
@@ -56,17 +58,21 @@ function esc(s) {
 function moduleCard(m) {
   const badge = m.badge ? `<span class="mi-card-badge">${esc(m.badge)}</span>` : '';
   const group = m.group ? `<span class="mi-card-group">${esc(m.group)}</span>` : '';
-  const search = `${m.label} ${m.href} ${m.group || ''} ${m.badge || ''}`.toLowerCase();
+  const comps = componentsUsedByModule(m);
+  const search = `${m.label} ${m.href} ${m.group || ''} ${m.badge || ''} ${comps.map((c) => c.name).join(' ')}`.toLowerCase();
   return `
-    <a class="mi-card" data-mod-card data-search="${esc(search)}" href="${esc(m.href)}">
-      <span class="mi-card-ic"><span class="material-symbols-outlined">${esc(m.icon || 'widgets')}</span></span>
-      <span class="mi-card-body">
-        <span class="mi-card-name">${esc(m.label)}${badge}</span>
-        <span class="mi-card-href">${esc(m.href)}</span>
-        ${group}
-      </span>
-      <span class="mi-card-go material-symbols-outlined" aria-hidden="true">arrow_outward</span>
-    </a>`;
+    <div class="mi-card" data-mod-card data-search="${esc(search)}" data-href="${esc(m.href)}" data-area="${esc(m.area || '')}">
+      <a class="mi-card-main" href="${esc(m.href)}">
+        <span class="mi-card-ic"><span class="material-symbols-outlined">${esc(m.icon || 'widgets')}</span></span>
+        <span class="mi-card-body">
+          <span class="mi-card-name">${esc(m.label)}${badge}</span>
+          <span class="mi-card-href">${esc(m.href)}</span>
+          ${group}
+        </span>
+        <span class="mi-card-go material-symbols-outlined" aria-hidden="true">arrow_outward</span>
+      </a>
+      ${paneCompsHTML(comps, 'Components used')}
+    </div>`;
 }
 
 /* One rail pane = the ACTUAL module, rendered live in an iframe and scaled down
@@ -167,6 +173,7 @@ function moduleMoreItems(moduleId) {
     return [
       { action: 'ds-type', icon: 'text_fields', label: 'Jump to typography' },
       { action: 'ds-colors', icon: 'palette', label: 'Jump to color tokens' },
+      { action: 'ds-reset-colors', icon: 'restart_alt', label: 'Reset color tokens' },
     ];
   }
   if (moduleId === 'mi-components') {
@@ -209,7 +216,7 @@ function moduleMoreItems(moduleId) {
     ];
   }
   return [
-    { action: 'dir-reeval', icon: 'autorenew', label: 'Re-evaluate pages' },
+    { action: 'dir-reeval', icon: 'autorenew', label: 'Re-evaluate project' },
     { action: 'dir-gallery', icon: 'browse_gallery', label: 'Open page gallery' },
     { action: 'dir-grid', icon: 'grid_view', label: 'Grid view' },
     { action: 'dir-rail', icon: 'view_column', label: 'Rail view' },
@@ -414,11 +421,14 @@ function tablePane(t) {
   const search = `${t.label} ${path} ${page} ${t.areaTitle} ${t.desc || ''}`.toLowerCase();
   return `
     <div class="mi-pane mi-tpane" data-pane data-tpane data-href="${esc(path)}" data-search="${esc(search)}" data-area="${esc(t.area)}">
-      <a class="mi-pane-head" href="${esc(open)}" aria-label="Open ${esc(t.label)} on ${esc(page)}">
-        <span class="mi-pane-ic material-symbols-outlined" aria-hidden="true">${esc(t.icon || 'table_chart')}</span>
-        <span class="mi-pane-name">${esc(t.label)}</span>
-        <span class="mi-pane-area">${esc(t.areaTitle)}</span>
-      </a>
+      <div class="mi-tpane-bar">
+        <a class="mi-pane-head" href="${esc(open)}" aria-label="Open ${esc(t.label)} on ${esc(page)}">
+          <span class="mi-pane-ic material-symbols-outlined" aria-hidden="true">${esc(t.icon || 'table_chart')}</span>
+          <span class="mi-pane-name">${esc(t.label)}</span>
+          <span class="mi-pane-area">${esc(t.areaTitle)}</span>
+        </a>
+        ${readyToggleHTML(tableReadyId(t), t.label, { level: 'item', parent: 'mi-tables' })}
+      </div>
       <div class="mi-pane-viewport">
         ${frameMarkup(previewSrc(path), t.label + ' table preview', `data-focus="${esc(t.selector)}"`)}
         <a class="mi-pane-hit" href="${esc(open)}" aria-label="Open ${esc(t.label)} on ${esc(page)}"></a>
@@ -486,6 +496,47 @@ const CODE_METRICS = [
   { key: 'py', label: 'Python lines', icon: 'terminal', sub: 'Tooling scripts' },
 ];
 
+/* Live daily scan overlay. The generated CODE_STATS file is the git trend
+   plus the last Python pass; Re-evaluate crawls the working tree once a
+   local day and wins whenever that crawl is newer. */
+const CODE_SKIP_FILES = new Set(['icon-inventory-data.js', 'code-stats-data.js', 'gs-data.js']);
+const CODE_SKIP_DIRS = new Set(['.git', 'node_modules', '__pycache__', '_WISEdesigns']);
+const CODE_EXTS = new Set(['html', 'js', 'css', 'py']);
+const REEVAL_STORE_KEY = 'wise-mi-reeval';
+
+const codeState = {
+  now: Object.assign({}, (CODE_STATS && CODE_STATS.now) || {}),
+  scannedAt: (CODE_STATS && CODE_STATS.generatedAt) || '',
+};
+
+function localDayIso(d) {
+  const x = d || new Date();
+  return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0');
+}
+
+function readReevalStore() {
+  try { return JSON.parse(localStorage.getItem(REEVAL_STORE_KEY) || '{}') || {}; }
+  catch { return {}; }
+}
+
+function writeReevalStore(patch) {
+  const next = Object.assign({}, readReevalStore(), patch);
+  try { localStorage.setItem(REEVAL_STORE_KEY, JSON.stringify(next)); } catch (_) { /* quota / private */ }
+}
+
+function syncCodeStateFromStore() {
+  const bakedAt = (CODE_STATS && CODE_STATS.generatedAt) || '';
+  const baked = Object.assign({}, (CODE_STATS && CODE_STATS.now) || {});
+  const live = readReevalStore();
+  if (live.now && live.day && live.day >= bakedAt) {
+    codeState.now = Object.assign({}, live.now);
+    codeState.scannedAt = live.day;
+  } else {
+    codeState.now = baked;
+    codeState.scannedAt = bakedAt;
+  }
+}
+
 /* All-time sparkline of total LOC — one point per daily git snapshot. */
 function codeSparkline(series) {
   const vals = series.map((e) => e.total);
@@ -511,7 +562,8 @@ function codeSparkline(series) {
 }
 
 function renderCodebase() {
-  const now = (CODE_STATS && CODE_STATS.now) || { total: 0, files: 0, pages: 0 };
+  const now = codeState.now || { total: 0, files: 0, pages: 0 };
+  const scannedAt = codeState.scannedAt || '—';
   const series = (CODE_STATS && CODE_STATS.series) || [];
   const first = series[0];
   const cards = CODE_METRICS.map((m) => `
@@ -520,7 +572,7 @@ function renderCodebase() {
         <span class="mi-code-ic"><span class="material-symbols-outlined">${esc(m.icon)}</span></span>
         <span class="mi-code-pill" data-code-pill="${esc(m.key)}"></span>
       </div>
-      <div class="mi-code-num">${fmtNum(now[m.key])}</div>
+      <div class="mi-code-num" data-code-num="${esc(m.key)}">${fmtNum(now[m.key])}</div>
       <div class="mi-code-label">${esc(m.label)}</div>
       <div class="mi-code-sub">${esc(m.sub)}</div>
     </article>`).join('');
@@ -531,9 +583,9 @@ function renderCodebase() {
           <h2 class="mi-module-title">Codebase</h2>
           <p class="mi-module-lede">How big the app itself is — lines of hand-written HTML, JavaScript, CSS and
             Python (generated data blobs excluded) with an up/down trend from one git snapshot per day, plus the
-            HTML page count. Generated by <code>scripts/scan_code_stats.py</code>.</p>
+            HTML page count. Re-evaluate crawls the whole project once a day; the git trend is written by
+            <code>scripts/scan_code_stats.py</code>.</p>
         </div>
-        ${moduleReadyToggleHTML('mi-code', 'Codebase')}
         ${moduleControlsHTML('mi-code')}
       </header>
 
@@ -543,7 +595,7 @@ function renderCodebase() {
           <button type="button" class="ii-filter" data-code-win="30" aria-pressed="false">30 days</button>
           <button type="button" class="ii-filter" data-code-win="all" aria-pressed="false">All time</button>
         </div>
-        <span class="mi-code-updated"><span class="material-symbols-outlined">history</span>Scanned ${esc(CODE_STATS?.generatedAt || '—')} · ${fmtNum(now.files)} files</span>
+        <span class="mi-code-updated" data-code-scanned><span class="material-symbols-outlined">history</span>Scanned ${esc(scannedAt)} · ${fmtNum(now.files)} files</span>
       </div>
 
       <div class="mi-code-grid">
@@ -553,16 +605,16 @@ function renderCodebase() {
               <span class="mi-code-ic"><span class="material-symbols-outlined">code</span></span>
               <span class="mi-code-pill" data-code-pill="total"></span>
             </div>
-            <div class="mi-code-num">${fmtNum(now.total)}</div>
+            <div class="mi-code-num" data-code-num="total">${fmtNum(now.total)}</div>
             <div class="mi-code-label">Lines of code</div>
-            <div class="mi-code-sub">HTML · JavaScript · CSS · Python across ${fmtNum(now.files)} files</div>
+            <div class="mi-code-sub" data-code-hero-sub>HTML · JavaScript · CSS · Python across ${fmtNum(now.files)} files</div>
           </div>
           <div class="mi-code-hero-chart">
             ${codeSparkline(series)}
             ${first ? `<div class="mi-code-spark-cap">
               <span>${esc(first.date)}</span>
-              <span>${fmtNum(first.total)} → ${fmtNum(now.total)} lines</span>
-              <span>${esc(CODE_STATS?.generatedAt || '')}</span>
+              <span data-code-spark-now>${fmtNum(first.total)} → ${fmtNum(now.total)} lines</span>
+              <span data-code-spark-end>${esc(scannedAt)}</span>
             </div>` : ''}
           </div>
         </article>
@@ -574,15 +626,15 @@ function renderCodebase() {
 function wireCodebase(root) {
   const mod = root.querySelector('#mi-code');
   if (!mod) return;
-  const now = (CODE_STATS && CODE_STATS.now) || {};
   const series = (CODE_STATS && CODE_STATS.series) || [];
+  let currentWin = '7';
 
-  /* The newest snapshot at or before (today − window days); the earliest
+  /* The newest snapshot at or before (scan day − window days); the earliest
      snapshot when the history is shorter than the window (or for "all"). */
   const baselineFor = (win) => {
     if (!series.length) return null;
     if (win === 'all') return series[0];
-    const cut = new Date((CODE_STATS.generatedAt || new Date().toISOString().slice(0, 10)) + 'T00:00:00Z');
+    const cut = new Date((codeState.scannedAt || new Date().toISOString().slice(0, 10)) + 'T00:00:00Z');
     cut.setUTCDate(cut.getUTCDate() - Number(win));
     const iso = cut.toISOString().slice(0, 10);
     let base = series[0];
@@ -594,6 +646,8 @@ function wireCodebase(root) {
   };
 
   const applyWindow = (win) => {
+    currentWin = win;
+    const now = codeState.now || {};
     const base = baselineFor(win);
     mod.querySelectorAll('[data-code-pill]').forEach((pill) => {
       const key = pill.getAttribute('data-code-pill');
@@ -617,7 +671,40 @@ function wireCodebase(root) {
     const btn = e.target.closest('[data-code-win]');
     if (btn) applyWindow(btn.getAttribute('data-code-win'));
   });
+  mod._applyCodeWindow = () => applyWindow(currentWin);
   applyWindow('7');
+}
+
+function applyLiveCodeScan(root, now, scannedAt) {
+  codeState.now = Object.assign({}, now);
+  codeState.scannedAt = scannedAt;
+  const series = (CODE_STATS && CODE_STATS.series) || [];
+  const first = series[0];
+  const mod = root.querySelector('#mi-code');
+  if (mod) {
+    mod.querySelectorAll('[data-code-num]').forEach((el) => {
+      const key = el.getAttribute('data-code-num');
+      el.textContent = fmtNum(now[key]);
+    });
+    const scanned = mod.querySelector('[data-code-scanned]');
+    if (scanned) {
+      scanned.innerHTML = `<span class="material-symbols-outlined">history</span>Scanned ${esc(scannedAt)} · ${fmtNum(now.files)} files`;
+    }
+    const heroSub = mod.querySelector('[data-code-hero-sub]');
+    if (heroSub) heroSub.textContent = `HTML · JavaScript · CSS · Python across ${fmtNum(now.files)} files`;
+    const sparkNow = mod.querySelector('[data-code-spark-now]');
+    if (sparkNow && first) sparkNow.textContent = `${fmtNum(first.total)} → ${fmtNum(now.total)} lines`;
+    const sparkEnd = mod.querySelector('[data-code-spark-end]');
+    if (sparkEnd) sparkEnd.textContent = scannedAt;
+    if (typeof mod._applyCodeWindow === 'function') mod._applyCodeWindow();
+  }
+  const jump = root.querySelector('.dsc-jump-tile[data-jump="mi-code"]');
+  if (jump) {
+    const num = jump.querySelector('.dsc-jump-num');
+    if (num) num.textContent = fmtNum(now.total);
+    const sub = jump.querySelector('.dsc-jump-sub');
+    if (sub) sub.textContent = `${fmtNum(now.pages)} HTML pages`;
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -705,6 +792,18 @@ function renderIconInventory() {
           <span class="mi-stat-num">${g.count}</span>
           <span class="mi-stat-label"><span class="mi-stat-text">${esc(g.label)}</span><span class="material-symbols-outlined">${esc(g.icon)}</span></span>
         </button>`).join('');
+  const groupReady = `
+    <div class="mi-ready-kids" aria-label="Dev Ready by icon group">
+      <h3 class="mi-ready-kids-title">Dev Ready by group</h3>
+      <div class="mi-ready-kids-row">
+        ${groups.map((g) => `
+          <div class="mi-ready-kid">
+            <span class="mi-ready-kid-label">${esc(g.label)}</span>
+            <span class="mi-ready-kid-n">${g.count}</span>
+            ${readyToggleHTML(iconReadyId(g), g.label, { level: 'item', parent: 'mi-icons' })}
+          </div>`).join('')}
+      </div>
+    </div>`;
   return `
     <section class="mi-module is-collapsed" id="mi-icons">
       <header class="mi-module-head">
@@ -712,13 +811,16 @@ function renderIconInventory() {
           <h2 class="mi-module-title">Icon Inventory</h2>
           <p class="mi-module-lede">Every Material Symbols glyph used in the live app — its variant, how
             many times it appears, a representative label, and the exact placements (file and line).
-            This page is excluded from the scan so the catalog is not polluted by its own chrome.
+            This page and the Module Directory catalog data are excluded from the scan so the catalog
+            is not polluted by its own chrome.
             Toggle a group to see just the chat module, primary nav, and so on. Generated by
             <code>scripts/scan_icons.py</code>.</p>
         </div>
         ${moduleReadyToggleHTML('mi-icons', 'Icon Inventory')}
         ${moduleControlsHTML('mi-icons')}
       </header>
+
+      ${groupReady}
 
       <div class="mi-toolbar">
         <div class="mi-search-inline">
@@ -898,9 +1000,15 @@ const COLOR_GROUPS = [
   },
 ];
 
+function swatchIsColor(sw) {
+  const kind = sw.kind || 'fill';
+  return kind === 'fill' || kind === 'ink' || kind === 'border';
+}
+
 function swatchHTML(sw) {
   const kind = sw.kind || 'fill';
   const bg = sw.fallback ? `var(${sw.token}, ${sw.fallback})` : `var(${sw.token})`;
+  const editable = swatchIsColor(sw);
   let chip = '';
   if (kind === 'ink') {
     chip = `<span class="ds-swatch-chip ds-swatch-chip--ink" style="color:${bg}">Ag</span>`;
@@ -913,40 +1021,57 @@ function swatchHTML(sw) {
   } else {
     chip = `<span class="ds-swatch-chip" style="background:${bg}"></span>`;
   }
+  if (editable) {
+    chip = `<label class="ds-swatch-pick">
+      <input type="color" data-token-color value="#000000" aria-label="Set ${esc(sw.token)}" />
+      ${chip}
+    </label>`;
+  }
   const val = kind === 'radius'
     ? `<span class="ds-swatch-val">${esc(sw.val || '')}</span>`
     : kind === 'shadow'
       ? '<span class="ds-swatch-val">theme-dependent</span>'
-      : '<span class="ds-swatch-val" data-swatch-val>…</span>';
+      : `<input type="text" class="ds-swatch-val" data-swatch-val data-token-hex spellcheck="false" autocomplete="off" aria-label="${esc(sw.token)} value" />`;
+  const reset = editable
+    ? `<button type="button" class="ds-swatch-reset" data-token-reset hidden title="Reset ${esc(sw.token)} to the theme default" aria-label="Reset ${esc(sw.token)}"><span class="material-symbols-outlined">restart_alt</span></button>`
+    : '';
   return `
-    <div class="ds-swatch" data-swatch data-kind="${esc(kind)}">
+    <div class="ds-swatch${editable ? ' is-editable' : ''}" data-swatch data-kind="${esc(kind)}"${editable ? ` data-token="${esc(sw.token)}"` : ''}>
       ${chip}
       <span class="ds-swatch-meta">
         <span class="ds-swatch-name">${esc(sw.token)}</span>
         ${val}
         <span class="ds-swatch-use">${esc(sw.use)}</span>
       </span>
+      ${reset}
     </div>`;
 }
 
+function dsFontReadyId(f) { return 'ds:font:' + f.name; }
+function dsTypeReadyId(t) { return 'ds:type:' + t.name; }
+
 function renderDesignSystem() {
   const familyCards = FONT_FAMILIES.map((f) => `
-    <div class="ds-font-card">
+    <div class="ds-font-card" data-ds-font="${esc(f.name)}">
       <div class="ds-font-sample" style="font-family:${esc(f.css)}">${esc(f.sample)}</div>
-      <div class="ds-font-name">${esc(f.name)}</div>
+      <div class="ds-font-head">
+        <div class="ds-font-name">${esc(f.name)}</div>
+        ${readyToggleHTML(dsFontReadyId(f), f.name, { level: 'item', parent: 'mi-design' })}
+      </div>
       <code class="ds-font-stack">${esc(f.css)}</code>
       <div class="ds-font-weights">${esc(f.weights)}</div>
       <p class="ds-font-use">${esc(f.use)}</p>
     </div>`).join('');
 
   const typeRows = TYPE_SCALE.map((t) => `
-    <div class="ds-type-row">
+    <div class="ds-type-row" data-ds-type="${esc(t.name)}">
       <span class="ds-type-sample" style="${esc(t.style)}">${esc(t.sample || 'Wise nutrition 0123')}</span>
       <span class="ds-type-meta">
         <span class="ds-type-name">${esc(t.name)}${t.token ? ` <code>${esc(t.token)}</code>` : ''}</span>
         <span class="ds-type-spec">${esc(t.size)} ≈ ${esc(t.px)} · ${esc(t.weight)} · ${esc(t.family)}</span>
         <span class="ds-type-use">${esc(t.use)}</span>
       </span>
+      ${readyToggleHTML(dsTypeReadyId(t), t.name, { level: 'item', parent: 'mi-design' })}
     </div>`).join('');
 
   const colorGroups = COLOR_GROUPS.map((g) => `
@@ -975,7 +1100,6 @@ function renderDesignSystem() {
       <div class="ds-block" id="ds-typography">
         <div class="ds-block-head">
           <span class="mi-dir-title">Typography — families</span>
-          ${readyToggleHTML('ds:typography', 'Typography', { level: 'item', parent: 'mi-design' })}
         </div>
         <div class="ds-font-grid">${familyCards}</div>
 
@@ -991,7 +1115,11 @@ function renderDesignSystem() {
       <div class="ds-block" id="ds-colors">
         <div class="ds-block-head">
           <span class="mi-dir-title">Color, line, elevation &amp; radius tokens</span>
+          <button type="button" class="ds-token-reset-all" data-ds-reset-colors hidden>
+            <span class="material-symbols-outlined">restart_alt</span>Reset colors
+          </button>
         </div>
+        <p class="ds-footnote" style="margin-top:0;margin-bottom:14px">Click a swatch or paste a hex to recolor the live token. Edits save for this theme, apply across the app, and survive reload. Reset a swatch — or Reset colors — to return to the defaults.</p>
         <div class="ds-color-grid">${colorGroups}</div>
       </div>
     </section>`;
@@ -1939,6 +2067,108 @@ const COMPONENTS = [
 ];
 
 /* ------------------------------------------------------------------ */
+/* Composition graph — which library cards are built from which.       */
+/*                                                                     */
+/* Each component's demo is the source of truth: if it renders another */
+/* component's signature class, that other card is a part. Toggles and */
+/* jump links on "Made of" / "Used by" rows share the same Dev Ready   */
+/* id as the part's own card, so flipping one flips every copy.        */
+/* ------------------------------------------------------------------ */
+
+function classesInHtml(html) {
+  const set = new Set();
+  const re = /class\s*=\s*["']([^"']+)["']/gi;
+  let m;
+  while ((m = re.exec(String(html || '')))) {
+    String(m[1]).split(/\s+/).forEach((tok) => { if (tok) set.add(tok); });
+  }
+  return set;
+}
+
+function classTokensFromCls(cls) {
+  return (String(cls || '').match(/\.[a-z][a-z0-9_-]+/gi) || []).map((s) => s.slice(1));
+}
+
+function compSignature(c) {
+  const toks = classTokensFromCls(c && c.cls);
+  if (toks.length) return toks[0];
+  for (const name of classesInHtml(c && c.demo)) {
+    if (name !== 'material-symbols-outlined' && !/^(is-|has-)/.test(name)) return name;
+  }
+  return '';
+}
+
+function demoHasSignature(demo, sig) {
+  if (!sig) return false;
+  for (const name of classesInHtml(demo)) {
+    if (name === sig || name.startsWith(sig + '--')) return true;
+  }
+  return false;
+}
+
+let COMP_GRAPH = null;
+
+function buildCompGraph() {
+  const sigs = COMPONENTS.map((c) => ({ c, sig: compSignature(c) }));
+  const parts = new Map();
+  const usedBy = new Map();
+  COMPONENTS.forEach((c) => {
+    const found = sigs.filter((o) => o.c.name !== c.name && demoHasSignature(c.demo, o.sig)).map((o) => o.c);
+    parts.set(c.name, found);
+    found.forEach((o) => {
+      const list = usedBy.get(o.name) || [];
+      list.push(c);
+      usedBy.set(o.name, list);
+    });
+  });
+  COMP_GRAPH = { parts, usedBy };
+}
+
+function partsOf(name) {
+  if (!COMP_GRAPH) buildCompGraph();
+  return COMP_GRAPH.parts.get(name) || [];
+}
+
+function usedByComps(name) {
+  if (!COMP_GRAPH) buildCompGraph();
+  return COMP_GRAPH.usedBy.get(name) || [];
+}
+
+/* Directory modules named in a component's "Used in" prose. */
+function modulesForUsed(used) {
+  const flat = dirModulesFlat();
+  const seen = new Set();
+  const out = [];
+  const add = (m) => {
+    if (!m || seen.has(m.href)) return;
+    seen.add(m.href);
+    out.push(m);
+  };
+  hrefsForUsed(used).forEach((h) => {
+    const file = String(h).split('#')[0];
+    add(flat.find((m) => m.href === h) || flat.find((m) => String(m.href).split('#')[0] === file));
+  });
+  String(used || '').split(/[·•]/).forEach((raw) => {
+    const p = raw.replace(/\([^)]*\)/g, '').replace(/—.*$/, '').trim().toLowerCase();
+    if (p.length < 3) return;
+    const exact = flat.find((m) => m.label.toLowerCase() === p);
+    if (exact) add(exact);
+  });
+  return out;
+}
+
+function usedSurfacesHTML(used) {
+  const mods = modulesForUsed(used);
+  if (!mods.length) {
+    return `<div class="dsc-used"><span class="dsc-used-label">Used in</span><span class="dsc-used-list">${esc(used)}</span></div>`;
+  }
+  const chips = mods.map((m) =>
+    `<a class="dsc-used-chip" href="#mi-directory" data-jump-mod="${esc(m.href)}">${esc(m.label)}</a>`
+  ).join('');
+  return `<div class="dsc-used"><span class="dsc-used-label">Used in</span><span class="dsc-used-list dsc-used-list--chips">${chips}</span></div>`;
+}
+
+/* ------------------------------------------------------------------ */
 /* Invert COMPONENTS.used → modules in the directory rail.             */
 /*                                                                     */
 /* Each component already names the surfaces it appears on. The rail   */
@@ -2037,8 +2267,11 @@ function componentsUsedByModule(m) {
   return COMPS_BY_MODULE_HREF.get(m && m.href) || [];
 }
 
-function paneCompsHTML(comps) {
+function paneCompsHTML(comps, title, opts) {
+  opts = opts || {};
   const n = (comps || []).length;
+  if (!n && opts.hideEmpty) return '';
+  const head = title || 'Components used';
   const rows = n
     ? comps.map((c) => `
         <li class="mi-pane-comp">
@@ -2048,7 +2281,7 @@ function paneCompsHTML(comps) {
     : '<li class="mi-pane-comp mi-pane-comp--empty">No catalogued components</li>';
   return `
     <div class="mi-pane-comps">
-      <div class="mi-pane-comps-head">Components used${n ? ` · ${n}` : ''}</div>
+      <div class="mi-pane-comps-head">${esc(head)}${n ? ` · ${n}` : ''}</div>
       <ul class="mi-pane-comp-list">${rows}</ul>
     </div>`;
 }
@@ -2080,11 +2313,12 @@ function isDscReady(name, map) {
 /* ------------------------------------------------------------------ */
 /* Dev Ready hierarchy                                                 */
 /*                                                                     */
-/* A higher-level module ("Dev Ready" at the top level) can only be    */
-/* marked ready once every lower-level part it owns is ready too. The  */
-/* parent→child tree is built at render time from the very same data   */
-/* arrays the modules render from, so a parent and its children can    */
-/* never drift out of sync. Modules with no lower-level parts are      */
+/* A higher-level module ("Dev Ready" at the top level) turns on once  */
+/* every lower-level part it owns is ready, and drops back off if any  */
+/* child is flipped off. Clicking the accordion switch while parts are */
+/* still off opens a two-step verify modal; confirming marks every     */
+/* child ready. The parent→child tree is built at render time from the */
+/* same data arrays the modules render from. Modules with no parts are */
 /* leaves and toggle freely.                                           */
 /* ------------------------------------------------------------------ */
 let DEV_READY_CHILDREN = {}; /* moduleId -> [{ id, label }] */
@@ -2103,8 +2337,55 @@ function readyChildStats(moduleId, map) {
   return { ready, total: kids.length };
 }
 
+function readyProgressTitle(stats) {
+  if (!stats.total) return 'No parts to mark Dev Ready';
+  return stats.ready + ' of ' + stats.total + ' parts ready for dev';
+}
+
+function readyProgressInner(stats) {
+  const gated = stats.ready < stats.total;
+  return `<span class="material-symbols-outlined" aria-hidden="true">${gated ? 'radio_button_unchecked' : 'task_alt'}</span>`
+    + `<span class="dsc-ready-count">${stats.ready}/${stats.total}</span>`
+    + (gated ? '' : '<span class="dsc-ready-label">ready</span>');
+}
+
+function readyProgressHTML(moduleId, stats) {
+  const gated = stats.ready < stats.total;
+  return `<span class="dsc-ready-progress${gated ? '' : ' is-complete'}" data-ready-progress-for="${esc(moduleId)}" title="${esc(readyProgressTitle(stats))}">
+        ${readyProgressInner(stats)}
+      </span>`;
+}
+
+function paintReadyProgress(pill, stats) {
+  if (!pill) return;
+  pill.classList.toggle('is-complete', stats.ready >= stats.total && stats.total > 0);
+  pill.setAttribute('title', readyProgressTitle(stats));
+  pill.innerHTML = readyProgressInner(stats);
+}
+
 /* Stable child ids — MUST match the ids the child toggles render with. */
 function motionReadyId(item) { return 'motion:' + item.title; }
+function tableReadyId(t) { return 'tbl:' + (t.selector || t.label); }
+function intentReadyId(surf) { return 'int:' + surf.href; }
+function iconReadyId(g) { return 'icon:' + g.id; }
+
+function tableReadyChildren() {
+  return TABLE_CATALOG.map((t) => ({ id: tableReadyId(t), label: t.label }));
+}
+function intentReadyChildren() {
+  return INTENT_AUDIT.map((s) => ({ id: intentReadyId(s), label: s.label }));
+}
+function traceReadyChildren() {
+  return [
+    { id: 'trace:live', label: 'Live animation' },
+    { id: 'trace:mid', label: 'Mid-animation · paused' },
+    { id: 'trace:done', label: 'Finished' },
+    { id: 'trace:detail', label: 'Streaming detail' },
+  ];
+}
+function iconReadyChildren() {
+  return ((ICON_INVENTORY && ICON_INVENTORY.groups) || []).map((g) => ({ id: iconReadyId(g), label: g.label }));
+}
 
 /* De-duped directory sections — shared by the directory render and the tree so
    the area children always match the areas actually shown. */
@@ -2122,28 +2403,37 @@ function dedupedDirSections() {
     .filter((s) => s.modules.length);
 }
 
-/* Design System groups that each carry a Dev Ready child toggle. */
+/* Design System parts that each carry a Dev Ready child toggle — every type
+   family, every type-scale step, and every color/token group. */
 function designReadyGroups() {
   return [
-    { id: 'ds:typography', label: 'Typography' },
+    ...FONT_FAMILIES.map((f) => ({ id: dsFontReadyId(f), label: f.name })),
+    ...TYPE_SCALE.map((t) => ({ id: dsTypeReadyId(t), label: t.name })),
     ...COLOR_GROUPS.map((g) => ({ id: 'ds:' + g.title, label: g.title })),
   ];
 }
 
-/* Build the parent→child map. Call once before rendering. */
+/* Build the parent→child map. Call once before rendering. Accordion
+   sections that own parts show ready / still-to-go counts. Codebase is
+   stats-only — it is not in this tree and has no Dev Ready chrome. */
 function buildDevReadyTree() {
   DEV_READY_CHILDREN = {};
   DEV_READY_PARENT = {};
-  registerReadyChildren('mi-components', COMPONENTS.map((c) => ({ id: c.name, label: c.name })));
-  registerReadyChildren('mi-motion', MOTION_ITEMS.map((i) => ({ id: motionReadyId(i), label: i.title })));
   registerReadyChildren('mi-directory', dedupedDirSections().map((s) => ({ id: 'dir:' + s.tone, label: s.title })));
+  registerReadyChildren('mi-tables', tableReadyChildren());
+  registerReadyChildren('mi-intents', intentReadyChildren());
+  registerReadyChildren('mi-trace', traceReadyChildren());
+  registerReadyChildren('mi-motion', MOTION_ITEMS.map((i) => ({ id: motionReadyId(i), label: i.title })));
+  registerReadyChildren('mi-icons', iconReadyChildren());
   registerReadyChildren('mi-design', designReadyGroups());
+  registerReadyChildren('mi-components', COMPONENTS.map((c) => ({ id: c.name, label: c.name })));
 }
 
-/* One Dev Ready switch. `level` is 'module' (a higher-level component — gated by
-   its children) or 'item' (a lower-level part). A module that owns children
-   renders a live "k/n ready" progress pill and can only be switched on once
-   every child is ready. */
+/* One Dev Ready switch. `level` is 'module' (a higher-level component — on
+   when every child is ready) or 'item' (a lower-level part). A module that
+   owns children renders a live "k/n" progress pill; the accordion switch
+   follows that count. Clicking an incomplete accordion switch opens the
+   two-step verify modal instead of toggling directly. */
 function readyToggleHTML(id, label, opts) {
   opts = opts || {};
   const level = opts.level || 'item';
@@ -2152,39 +2442,37 @@ function readyToggleHTML(id, label, opts) {
   const kids = level === 'module' ? (DEV_READY_CHILDREN[id] || []) : [];
   const hasKids = kids.length > 0;
   const stats = hasKids ? readyChildStats(id, map) : null;
-  const gated = hasKids && stats.ready < stats.total;
-  const ready = isDscReady(id, map) && !gated;
-  const cls = 'dash-brand-toggle' + (ready ? ' is-on' : '') + (gated ? ' is-gated' : '');
-  const title = gated
-    ? `All ${stats.total} parts must be Dev Ready first — ${stats.ready}/${stats.total} done`
-    : `Mark ${label} ready for dev`;
-  const progress = hasKids
-    ? `<span class="dsc-ready-progress${gated ? '' : ' is-complete'}" data-ready-progress-for="${esc(id)}" title="${stats.ready} of ${stats.total} parts Dev Ready">
-        <span class="material-symbols-outlined" aria-hidden="true">${gated ? 'radio_button_unchecked' : 'task_alt'}</span>
-        <span class="dsc-ready-count">${stats.ready}/${stats.total}</span>
-      </span>`
-    : '';
+  const complete = hasKids ? stats.ready >= stats.total : isDscReady(id, map);
+  const ready = hasKids ? complete : isDscReady(id, map);
+  const cls = 'dash-brand-toggle' + (ready ? ' is-on' : '');
+  const title = hasKids && !complete
+    ? `Mark every part in ${label} as Dev Ready`
+    : (ready ? 'Ready for dev' : `Mark ${label} ready for dev`);
+  const progress = hasKids ? readyProgressHTML(id, stats) : '';
   return `
     <div class="dsc-ready dsc-ready--${level}" data-ready-wrap>
       ${progress}
       <button type="button" class="${cls}" role="switch"
-        aria-checked="${ready ? 'true' : 'false'}"${gated ? ' aria-disabled="true"' : ''}
+        aria-checked="${ready ? 'true' : 'false'}"
         aria-label="Dev Ready for ${esc(label)}" title="${esc(title)}"
-        data-dsc-ready data-ready-id="${esc(id)}" data-ready-level="${esc(level)}"${parent ? ` data-ready-parent="${esc(parent)}"` : ''}>
+        data-dsc-ready data-ready-id="${esc(id)}" data-ready-level="${esc(level)}"
+        data-ready-label="${esc(label)}"${parent ? ` data-ready-parent="${esc(parent)}"` : ''}>
         <span class="dash-brand-toggle-track"><span class="dash-brand-toggle-thumb"></span></span>
         <span class="dash-brand-toggle-text">Dev Ready</span>
       </button>
     </div>`;
 }
 
-/* A higher-level module toggle — gated by its children when it owns any. */
+/* A higher-level module toggle — on when every child is ready. */
 function moduleReadyToggleHTML(moduleId, label) {
   return readyToggleHTML(moduleId, label, { level: 'module' });
 }
 
 function componentCard(c, readyMap) {
   const cat = catOf(c);
-  const search = `${c.name} ${c.cls} ${c.used} ${c.note || ''} ${cat}`.toLowerCase();
+  const parts = partsOf(c.name);
+  const hosts = usedByComps(c.name);
+  const search = `${c.name} ${c.cls} ${c.used} ${c.note || ''} ${cat} ${parts.map((p) => p.name).join(' ')} ${hosts.map((h) => h.name).join(' ')}`.toLowerCase();
   const cardCls = `dsc-card${c.wide ? ' dsc-card--wide' : ''}`;
   const note = c.note
     ? `<div class="dsc-note"><span class="material-symbols-outlined">${esc(c.noteIcon || 'aspect_ratio')}</span><span>${c.note}</span></div>`
@@ -2206,7 +2494,11 @@ function componentCard(c, readyMap) {
       <div class="dsc-demo">${c.demo}</div>
       ${note}
       ${download}
-      <div class="dsc-used"><span class="dsc-used-label">Used in</span><span class="dsc-used-list">${esc(c.used)}</span></div>
+      <div class="dsc-refs">
+        ${paneCompsHTML(parts, 'Made of', { hideEmpty: true })}
+        ${paneCompsHTML(hosts, 'Used by', { hideEmpty: true })}
+      </div>
+      ${usedSurfacesHTML(c.used)}
     </div>`;
 }
 
@@ -2276,11 +2568,11 @@ function renderComponentLibrary() {
       <header class="mi-module-head">
         <div class="mi-module-head-text">
           <h2 class="mi-module-title">Component Library</h2>
-          <p class="mi-module-lede">Reusable components that are <em>not</em> already on this page,
-            rendered live with the real global classes from <code>pages/wise.css</code>. Search pills,
-            filter tiles, Grid⇄Rail, module ⋯ menus, badges, and Dev Ready toggles live in the
-            modules above — they are omitted here so the library does not duplicate them.
-            Each card lists the surfaces where the component is used and the shared rule behind it.</p>
+          <p class="mi-module-lede">Reusable components, rendered live with the real global classes from
+            <code>pages/wise.css</code>. Composite cards list the parts they are <em>made of</em> — jump to
+            any part, or flip its Dev Ready switch; the same switch on the part’s own card and on every
+            Module Directory row stays in sync. Search pills, filter tiles, Grid⇄Rail, module ⋯ menus,
+            and the page chrome live in the modules above.</p>
         </div>
         ${moduleReadyToggleHTML('mi-components', 'Component Library')}
         ${moduleControlsHTML('mi-components')}
@@ -2755,6 +3047,21 @@ function intentGapCallout(stats) {
     </div>`;
 }
 
+function intentSurfaceReadyStrip() {
+  return `
+    <div class="mi-ready-kids" aria-label="Dev Ready by surface">
+      <h3 class="mi-ready-kids-title">Dev Ready by surface</h3>
+      <div class="mi-ready-kids-row">
+        ${INTENT_AUDIT.map((s) => `
+          <div class="mi-ready-kid">
+            <span class="mi-ready-kid-label">${esc(s.label)}</span>
+            <span class="mi-ready-kid-n">${s.chips.length}</span>
+            ${readyToggleHTML(intentReadyId(s), s.label, { level: 'item', parent: 'mi-intents' })}
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
 function renderIntentAudit() {
   const stats = intentAuditStats();
   return `
@@ -2766,11 +3073,13 @@ function renderIntentAudit() {
             is only fully wired when it carries both halves — its own <strong>transcript</strong> (a scripted reply) and its own
             <strong>logic</strong> (an <code>onIntent</code> page action). This table lists all <strong>${stats.chips} chips</strong>
             across <strong>${stats.surfaces} surfaces</strong> with the exact side-effect each one runs. Click a column header to
-            sort. Filter tiles and search narrow the same list.</p>
+            sort. Filter tiles and search narrow the same list. Mark a surface Dev Ready when its chips are signed off.</p>
         </div>
         ${moduleReadyToggleHTML('mi-intents', 'Intent Chip Logic')}
         ${moduleControlsHTML('mi-intents')}
       </header>
+
+      ${intentSurfaceReadyStrip()}
 
       <div class="mi-int-stats">
         <button type="button" class="mi-int-stat is-active" data-int-filter="all" aria-pressed="true">
@@ -2875,6 +3184,10 @@ function wireIntentAudit(root) {
 /*   • the GLOB — the subdued narration that streams in line by line     */
 /*     beneath the active section. On THIS page the glob is always a     */
 /*     HAIKU (5·7·5), so the anatomy reads at a glance.                  */
+/* Shown in three states side by side: the live animation, a mid-       */
+/* animation still (paused), and the finished summary. How much of the  */
+/* trace appears in chat is the ⋯ menu's Response streaming toggle:     */
+/* Full (steps + glob), Steps (keys only), or Final (no trace).         */
 /* Rendered live with the real .sc-trace* classes from pages/wise.css   */
 /* (loaded on this page), so the demo looks exactly like the live chat. */
 /* ------------------------------------------------------------------ */
@@ -2914,40 +3227,137 @@ const TRACE_MILESTONES = [
   },
 ];
 
+/* Frozen stills always use the first key + first haiku so they stay readable
+   next to the live replay (which picks randomly). Mid-stream freezes two
+   finished sections plus a third still landing; finished is the quiet summary. */
+const TRACE_STILL_TIMES = ['0:06', '0:13', '0:19', '0:24'];
+
+function traceLiveBlockHtml(key, lines, done) {
+  return `<div class="sc-trace-live${done ? ' is-done' : ''}">`
+    + `<div class="sc-trace-now"><span class="sc-trace-now-key">${esc(key)}</span></div>`
+    + `<div class="sc-trace-story">${(lines || []).map((line) =>
+      `<span class="sc-trace-story-line is-in">${esc(line)}</span>`).join('')}</div></div>`;
+}
+
+function traceStillHeadHtml(title, timer, open) {
+  return `<button type="button" class="sc-trace-head" aria-expanded="${open ? 'true' : 'false'}">`
+    + `<span class="sc-trace-title">${esc(title)}</span>`
+    + `<span class="sc-trace-timer" aria-hidden="true">${esc(timer)}</span>`
+    + `<span class="sc-trace-caret material-symbols-outlined" aria-hidden="true">chevron_right</span>`
+    + `</button>`;
+}
+
+function traceStillMidHtml() {
+  const a = TRACE_MILESTONES[0], b = TRACE_MILESTONES[1], c = TRACE_MILESTONES[2];
+  return TRACE_STRAND_MARKUP
+    + traceLiveBlockHtml(a.keys[0], a.haiku[0], true)
+    + traceLiveBlockHtml(b.keys[0], b.haiku[0], true)
+    + traceLiveBlockHtml(c.keys[0], c.haiku[0].slice(0, 2), false);
+}
+
+function traceStillDoneHtml() {
+  const last = TRACE_STILL_TIMES[TRACE_STILL_TIMES.length - 1];
+  return TRACE_STRAND_MARKUP
+    + `<ul class="sc-trace-steps">${TRACE_MILESTONES.map((m, i) =>
+      `<li class="sc-trace-step is-revealed"><span class="sc-trace-step-key">${esc(m.keys[0])}</span>`
+      + `<span class="sc-trace-step-time" aria-hidden="true">${esc(TRACE_STILL_TIMES[i] || last)}</span></li>`
+    ).join('')}</ul>`;
+}
+
 function renderStreamingTrace() {
   const sections = TRACE_MILESTONES.length;
+  const last = TRACE_STILL_TIMES[TRACE_STILL_TIMES.length - 1];
   return `
     <section class="mi-module is-collapsed" id="mi-trace">
       <header class="mi-module-head">
         <div class="mi-module-head-text">
           <h2 class="mi-module-title">Streaming Trace</h2>
-          <p class="mi-module-lede">The "thinking" trace every WISEcodeAI turn streams while it works, shown here with its
-            three moving parts named. The <strong>helix</strong> is the DNA rail that twists on the left — the same
-            animation the live chat draws. The <strong>main sections</strong> are the ${sections} milestones the trace
-            walks through — <em>Reading → Gathering → Cross-checking → Composing</em> — and beneath each, the
-            <strong>glob</strong> of subdued narration streams in line by line. On this page the glob is
-            <strong>always a haiku</strong> (5·7·5). Rendered live with the same <code>.sc-trace</code> classes the chat uses.</p>
+          <p class="mi-module-lede">The “thinking” trace every WISEcodeAI turn streams while it works, shown here in
+            three states: the <strong>live animation</strong>, a <strong>mid-animation still</strong> (paused), and
+            the <strong>finished</strong> summary. The <strong>helix</strong> is the DNA rail that twists on the left —
+            the same animation the live chat draws. The <strong>main sections</strong> are the ${sections} milestones
+            — <em>Reading → Gathering → Cross-checking → Composing</em> — and beneath each, the <strong>glob</strong>
+            of subdued narration streams in line by line. On this page the glob is <strong>always a haiku</strong>
+            (5·7·5). How much of that appears in chat is a ⋯ menu choice: <strong>Response streaming</strong> on or
+            off, then <strong>Streaming detail</strong> — Full, Steps, or Final. Rendered with the same
+            <code>.sc-trace</code> classes the chat uses.</p>
         </div>
         ${moduleReadyToggleHTML('mi-trace', 'Streaming Trace')}
         ${moduleControlsHTML('mi-trace')}
       </header>
 
       <div class="mi-trace">
-        <div class="mi-trace-card">
-          <div class="sc-trace" data-open="0" id="mi-trace-live">
-            <button type="button" class="sc-trace-head" aria-expanded="false">
-              <span class="sc-trace-title">Thinking</span>
-              <span class="sc-trace-timer" aria-hidden="true">0:00</span>
-              <span class="sc-trace-caret material-symbols-outlined" aria-hidden="true">chevron_right</span>
+        <div class="mi-trace-stages">
+          <article class="mi-trace-card">
+            <div class="mi-trace-card-head">
+              <h3 class="mi-trace-card-title">Live animation</h3>
+              ${readyToggleHTML('trace:live', 'Live animation', { level: 'item', parent: 'mi-trace' })}
+            </div>
+            <p class="mi-trace-card-lede">Playing — helix twists, sections land, glob streams. Replay to watch it again. The
+              Streaming detail control below changes how much of this run you see.</p>
+            <div class="sc-trace" data-open="0" id="mi-trace-live">
+              <button type="button" class="sc-trace-head" aria-expanded="false">
+                <span class="sc-trace-title">Thinking</span>
+                <span class="sc-trace-timer" aria-hidden="true">0:00</span>
+                <span class="sc-trace-caret material-symbols-outlined" aria-hidden="true">chevron_right</span>
+              </button>
+              <div class="sc-trace-body">${TRACE_STRAND_MARKUP}</div>
+            </div>
+            <button type="button" class="mi-trace-run" data-trace-run>
+              <span class="material-symbols-outlined">replay</span><span data-trace-run-label>Replay trace</span>
             </button>
-            <div class="sc-trace-body">${TRACE_STRAND_MARKUP}</div>
-          </div>
+          </article>
+
+          <article class="mi-trace-card">
+            <div class="mi-trace-card-head">
+              <h3 class="mi-trace-card-title">Mid-animation · paused</h3>
+              ${readyToggleHTML('trace:mid', 'Mid-animation · paused', { level: 'item', parent: 'mi-trace' })}
+            </div>
+            <p class="mi-trace-card-lede">Frozen mid-stream at Full detail: two sections done, the third still landing.
+              Helix, title pulse, and key shimmer are paused so you can read the pose.</p>
+            <div class="sc-trace is-paused" data-open="1" id="mi-trace-mid">
+              ${traceStillHeadHtml('Thinking', TRACE_STILL_TIMES[2], true)}
+              <div class="sc-trace-body">${traceStillMidHtml()}</div>
+            </div>
+          </article>
+
+          <article class="mi-trace-card">
+            <div class="mi-trace-card-head">
+              <h3 class="mi-trace-card-title">Finished</h3>
+              ${readyToggleHTML('trace:done', 'Finished', { level: 'item', parent: 'mi-trace' })}
+            </div>
+            <p class="mi-trace-card-lede">The quiet summary after the last glob: each milestone key plus the m:ss it
+              took. Helix frozen, every base-pair dot green.</p>
+            <div class="sc-trace is-complete" data-open="1" id="mi-trace-done">
+              ${traceStillHeadHtml(`Worked for ${last}`, `${sections} steps`, true)}
+              <div class="sc-trace-body">${traceStillDoneHtml()}</div>
+            </div>
+          </article>
         </div>
 
-        <div class="mi-trace-side">
-          <button type="button" class="mi-trace-run" data-trace-run>
-            <span class="material-symbols-outlined">replay</span><span data-trace-run-label>Replay trace</span>
-          </button>
+        <div class="mi-trace-notes">
+          <div class="mi-trace-levels">
+            <div class="mi-trace-card-head">
+              <h3 class="mi-trace-card-title">Streaming detail</h3>
+              ${readyToggleHTML('trace:detail', 'Streaming detail', { level: 'item', parent: 'mi-trace' })}
+            </div>
+            <p class="mi-trace-card-lede">Every chat’s ⋯ menu has a <strong>Response streaming</strong> switch. When it
+              is on, <strong>Streaming detail</strong> picks how much thinking you see before the answer lands. Each
+              load starts ON at <strong>Full</strong>. The stills above stay at Full so the animation anatomy is
+              visible; this control drives the live card.</p>
+            <div class="mi-trace-seg" role="radiogroup" aria-label="Streaming detail">
+              <button type="button" class="mi-trace-seg-btn is-on" data-trace-level="full" role="radio" aria-checked="true" title="Full thinking">Full</button>
+              <button type="button" class="mi-trace-seg-btn" data-trace-level="steps" role="radio" aria-checked="false" title="Steps only">Steps</button>
+              <button type="button" class="mi-trace-seg-btn" data-trace-level="final" role="radio" aria-checked="false" title="Final only">Final</button>
+            </div>
+            <ul class="mi-trace-level-list">
+              <li><strong>Full</strong> — every milestone step plus the glob story under each (the default, and what
+                the paused and finished stills show).</li>
+              <li><strong>Steps</strong> — milestone keys only, landing one after another. No glob text in between.</li>
+              <li><strong>Final</strong> — no trace at all. A brief thinking beat, then the answer. No helix, no
+                steps, no glob.</li>
+            </ul>
+          </div>
           <ul class="mi-trace-legend">
             <li class="mi-trace-leg">
               <span class="mi-trace-leg-swatch mi-trace-leg-swatch--helix" aria-hidden="true"></span>
@@ -2962,7 +3372,7 @@ function renderStreamingTrace() {
             <li class="mi-trace-leg">
               <span class="mi-trace-leg-swatch mi-trace-leg-swatch--glob" aria-hidden="true"></span>
               <span><strong>Glob</strong> — the narration under each section. Always a <strong>haiku</strong>: three
-                lines, 5·7·5.</span>
+                lines, 5·7·5. Hidden when Streaming detail is Steps or Final.</span>
             </li>
           </ul>
         </div>
@@ -2974,6 +3384,8 @@ function wireStreamingTrace(root) {
   const mod = root.querySelector('#mi-trace');
   if (!mod) return;
   const trace = mod.querySelector('#mi-trace-live');
+  const midTrace = mod.querySelector('#mi-trace-mid');
+  const doneTrace = mod.querySelector('#mi-trace-done');
   const head = trace.querySelector('.sc-trace-head');
   const titleEl = trace.querySelector('.sc-trace-title');
   const timerEl = trace.querySelector('.sc-trace-timer');
@@ -2993,20 +3405,57 @@ function wireStreamingTrace(root) {
      so hammering Replay never leaves two traces streaming over each other. */
   let token = 0;
   let helix = null;
+  let midHelix = null;
+  let doneHelix = null;
   let started = false;
+  let stillsPainted = false;
+  /* Same three-way choice as the chat ⋯ menu (wise:chat-stream-level): full
+     globs, steps only, or final message only. Local to this demo. */
+  let streamLevel = 'full';
 
   const killHelix = () => {
     if (helix) { helix.destroy(); helix = null; }
   };
 
-  /* The header collapses the whole trace (live glob or final summary) and back,
-     exactly like the real one. */
-  head.addEventListener('click', () => {
-    const open = trace.getAttribute('data-open') === '1';
-    trace.setAttribute('data-open', open ? '0' : '1');
-    head.setAttribute('aria-expanded', open ? 'false' : 'true');
-    if (helix) helix.redraw();
-  });
+  const bindTraceToggle = (el, getHelix) => {
+    const btn = el && el.querySelector('.sc-trace-head');
+    if (!el || !btn) return;
+    btn.addEventListener('click', () => {
+      const open = el.getAttribute('data-open') === '1';
+      el.setAttribute('data-open', open ? '0' : '1');
+      btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+      const h = getHelix();
+      if (h) h.redraw();
+    });
+  };
+  bindTraceToggle(trace, () => helix);
+  bindTraceToggle(midTrace, () => midHelix);
+  bindTraceToggle(doneTrace, () => doneHelix);
+
+  const paintStills = () => {
+    if (mod.classList.contains('is-collapsed')) return;
+    const midBody = midTrace && midTrace.querySelector('.sc-trace-body');
+    const doneBody = doneTrace && doneTrace.querySelector('.sc-trace-body');
+    if (midBody) {
+      if (midHelix) { midHelix.destroy(); midHelix = null; }
+      /* Reduced-motion start = draw once and stay. A mid-twist phase so the
+         paused rail doesn't sit at the symmetric 0° pose. */
+      midHelix = makeTraceHelix(midBody, { prefersReducedMotion: true, phase: 1.15 });
+      midHelix.startLive();
+    }
+    if (doneBody) {
+      if (doneHelix) { doneHelix.destroy(); doneHelix = null; }
+      doneHelix = makeTraceHelix(doneBody, { prefersReducedMotion: true });
+      const freezeDone = () => {
+        if (!doneHelix) return;
+        doneHelix.freezeAligned(measureTraceRungCentres(doneBody));
+        doneHelix.setGreen(TRACE_MILESTONES.length);
+      };
+      requestAnimationFrame(() => requestAnimationFrame(freezeDone));
+      setTimeout(freezeDone, 80);
+    }
+    stillsPainted = true;
+  };
 
   const stepsHtml = (landmarks, revealed) => TRACE_STRAND_MARKUP
     + `<ul class="sc-trace-steps">${landmarks.map((l) =>
@@ -3040,10 +3489,32 @@ function wireStreamingTrace(root) {
     });
   };
 
+  const runFinal = (myToken) => {
+    trace.classList.remove('is-complete');
+    trace.setAttribute('data-open', '1');
+    head.setAttribute('aria-expanded', 'true');
+    titleEl.textContent = 'Thinking';
+    timerEl.textContent = '';
+    bodyEl.innerHTML = '<p class="mi-trace-final-note">Final only — the helix, steps, and glob never appear. A brief thinking beat stands in, then the answer streams in.</p>';
+    runBtn.disabled = true;
+    if (runLabel) runLabel.textContent = 'Thinking…';
+    setTimeout(() => {
+      if (myToken !== token) return;
+      titleEl.textContent = 'Answer ready';
+      timerEl.textContent = '';
+      bodyEl.innerHTML = '<p class="mi-trace-final-note">The answer lands next. No summary row, no green dots — Streaming detail is Final.</p>';
+      runBtn.disabled = false;
+      if (runLabel) runLabel.textContent = 'Replay beat';
+    }, reduced ? 200 : 700);
+  };
+
   const run = () => {
     const myToken = ++token;
     started = true;
     killHelix();
+    if (streamLevel === 'final') { runFinal(myToken); return; }
+
+    const showGlobs = streamLevel === 'full';
     const steps = TRACE_MILESTONES.map((m) => ({ key: pick(m.keys), haiku: pick(m.haiku) }));
     trace.classList.remove('is-complete');
     trace.setAttribute('data-open', '1');
@@ -3081,7 +3552,8 @@ function wireStreamingTrace(root) {
       if (mi >= steps.length) { clearInterval(timer); finish(landmarks, now(), myToken); return; }
       const m = steps[mi];
       /* Append a NEW section block below the previous ones — the haiku globs
-         build on each other into one growing narrative, never wiping the last. */
+         build on each other into one growing narrative, never wiping the last.
+         Steps-only drops the glob so the run is just keys landing in sequence. */
       const block = document.createElement('div');
       block.className = 'sc-trace-live';
       block.innerHTML = '<div class="sc-trace-now"><span class="sc-trace-now-key"></span></div>'
@@ -3089,7 +3561,7 @@ function wireStreamingTrace(root) {
       block.querySelector('.sc-trace-now-key').textContent = m.key;
       bodyEl.appendChild(block);
       const storyEl = block.querySelector('.sc-trace-story');
-      const lines = m.haiku.slice();
+      const lines = showGlobs ? m.haiku.slice() : [];
       let si = 0;
       const streamLine = () => {
         if (myToken !== token) { clearInterval(timer); return; }
@@ -3097,7 +3569,7 @@ function wireStreamingTrace(root) {
           block.classList.add('is-done');
           landmarks.push({ key: m.key, time: fmtClock(now()) });
           mi += 1;
-          setTimeout(runMilestone, rnd(240, 480));
+          setTimeout(runMilestone, showGlobs ? rnd(240, 480) : rnd(360, 640));
           return;
         }
         const sp = document.createElement('span');
@@ -3108,18 +3580,39 @@ function wireStreamingTrace(root) {
         si += 1;
         setTimeout(streamLine, rnd(360, 720));
       };
-      setTimeout(streamLine, rnd(160, 340));
+      setTimeout(streamLine, showGlobs ? rnd(160, 340) : 80);
     };
     setTimeout(runMilestone, rnd(240, 520));
   };
 
   runBtn.addEventListener('click', run);
 
-  /* Don't spin the helix while the accordion is closed (height 0). Start the
-     first run the moment the section opens; Replay always runs immediately. */
+  mod.querySelectorAll('[data-trace-level]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const lvl = btn.getAttribute('data-trace-level');
+      if (lvl !== 'full' && lvl !== 'steps' && lvl !== 'final') return;
+      if (lvl === streamLevel) return;
+      streamLevel = lvl;
+      mod.querySelectorAll('[data-trace-level]').forEach((el) => {
+        const on = el === btn;
+        el.classList.toggle('is-on', on);
+        el.setAttribute('aria-checked', on ? 'true' : 'false');
+      });
+      if (started) run();
+    });
+  });
+
+  /* Don't spin the helix while the accordion is closed (height 0). Paint the
+     paused / finished stills and start the first live run the moment the
+     section opens; Replay always runs immediately. */
   const startWhenOpen = () => {
-    if (started || mod.classList.contains('is-collapsed')) return;
-    run();
+    if (mod.classList.contains('is-collapsed')) return;
+    if (!stillsPainted) paintStills();
+    else {
+      if (midHelix) midHelix.redraw();
+      if (doneHelix) doneHelix.redraw();
+    }
+    if (!started) run();
   };
   startWhenOpen();
   new MutationObserver(startWhenOpen).observe(mod, { attributes: true, attributeFilter: ['class'] });
@@ -3129,7 +3622,7 @@ function wireStreamingTrace(root) {
 /* Motion & Resize — every animation and drag/resize interaction       */
 /*                                                                     */
 /* A live catalog of how things move in the app: count-ups, chart      */
-/* replay, word-by-word streaming, gold chip shimmer, chip fly-in,     */
+/* replay, paragraph streaming, gold chip shimmer, chip fly-in,        */
 /* the welcome helix, the thinking helix, and accordion open — plus    */
 /* the four drag/resize systems (module splitter, width tiers,         */
 /* reorder, drag-to-file). Each card explains the rule and runs the    */
@@ -3186,13 +3679,13 @@ const MOTION_ITEMS = [
       <p class="mi-motion-hint">Click the chart to replay the grow-in.</p>`,
   },
   {
-    id: 'stream', group: 'anim', icon: 'text_ad', title: 'Word-by-word streaming',
-    src: 'js/wiseai-chat.js · typeInLine',
-    used: 'WISEcodeAI welcome heading, Streaming Trace glob, in-conversation replies',
-    lede: 'Copy lands one word at a time — the welcome heading, the thinking-trace glob, and (when enabled) assistant replies. Reduced motion shows the line whole. Replay to watch it type.',
+    id: 'stream', group: 'anim', icon: 'text_ad', title: 'Paragraph streaming',
+    src: 'js/wiseai-chat.js · typeInTranscript',
+    used: 'WISEcodeAI replies — paragraphs, then the thumbs row, then intent chips',
+    lede: 'Copy lands one paragraph at a time, then the thumbs-up/thumbs-down row, then the intent chips. Reduced motion shows the line whole. Replay to watch the cascade.',
     demo: `
       <div class="mi-motion-stream" data-motion-stream>
-        <p class="mi-motion-stream-line" data-stream-out></p>
+        <div class="mi-motion-stream-paras" data-stream-out></div>
         <button type="button" class="mi-trace-run" data-stream-run>
           <span class="material-symbols-outlined">replay</span><span>Replay stream</span>
         </button>
@@ -3277,7 +3770,7 @@ const MOTION_ITEMS = [
     id: 'tracehelix', group: 'anim', icon: 'psychology', title: 'Thinking helix',
     src: 'js/trace-helix.js · Streaming Trace',
     used: 'Every WISEcodeAI turn while it works',
-    lede: 'The DNA rail on the left of the thinking trace — twists while working, then freezes with green base-pair dots on each completed step. The full anatomy (helix + milestones + haiku glob) lives in the <strong>Streaming Trace</strong> section above.',
+    lede: 'The DNA rail on the left of the thinking trace — twists while working, then freezes with green base-pair dots on each completed step. The full anatomy (playing · mid-paused · finished, plus the Full / Steps / Final streaming-detail toggle) lives in the <strong>Streaming Trace</strong> section above.',
     demo: `
       <button type="button" class="mi-trace-run" data-jump-trace>
         <span class="material-symbols-outlined">play_arrow</span><span>Open Streaming Trace</span>
@@ -3538,25 +4031,36 @@ function wireMotion(root) {
     });
   });
 
-  /* ---- Word-by-word stream ---- */
-  const STREAM_COPY = 'Every WISEcodeAI turn streams its answer one word at a time, then the timestamp and chips land after the line.';
+  /* ---- Paragraph stream ---- */
+  const STREAM_PARAS = [
+    'The proposal turns today\u2019s voluntary GRAS notification into a mandatory one.',
+    'Anyone introducing a substance under GRAS must notify FDA of the basis.',
+    'Then the thumbs row lands, and the intent chips fly in after the copy.',
+  ];
   const streamOut = mod.querySelector('[data-stream-out]');
   const streamRun = mod.querySelector('[data-stream-run]');
   let streamTimer = 0;
   const runStream = () => {
     if (!streamOut) return;
     clearTimeout(streamTimer);
-    const words = STREAM_COPY.split(/\s+/);
-    if (reduced) { streamOut.textContent = STREAM_COPY; return; }
-    streamOut.textContent = '';
+    streamOut.innerHTML = STREAM_PARAS.map((p) => `<p class="mi-motion-stream-line">${esc(p)}</p>`).join('');
+    const lines = Array.from(streamOut.querySelectorAll('.mi-motion-stream-line'));
+    if (reduced) return;
+    lines.forEach((el) => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(8px)';
+    });
     let i = 0;
     const tick = () => {
-      if (i >= words.length) return;
-      streamOut.textContent += (i ? ' ' : '') + words[i];
+      if (i >= lines.length) return;
+      const el = lines[i];
+      el.style.transition = 'opacity .32s ease, transform .32s cubic-bezier(0.22, 0.85, 0.25, 1)';
+      el.style.opacity = '1';
+      el.style.transform = 'none';
       i += 1;
-      streamTimer = setTimeout(tick, 48);
+      streamTimer = setTimeout(tick, 300);
     };
-    tick();
+    streamTimer = setTimeout(tick, 40);
   };
   streamRun?.addEventListener('click', runStream);
 
@@ -4014,7 +4518,8 @@ function moduleStyles() {
       margin-top: 8px;
     }
     .mi-hero-lede { font-size: 0.95rem; color: var(--text-muted); margin: 0; max-width: 74ch; flex: 1 1 280px; }
-    .mi-hero-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
+    .mi-hero-actions { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .mi-reeval-meta { font-size: 0.72rem; color: var(--text-subtle); text-align: right; max-width: 26ch; line-height: 1.35; }
 
     .mi-reeval-btn .material-symbols-outlined { font-size: 18px !important; }
     .mi-reeval-btn:disabled { opacity: 0.7; cursor: progress; }
@@ -4285,7 +4790,9 @@ function moduleStyles() {
     .mi-pane-comps .dsc-ready { padding: 0; flex: 0 0 auto; margin-left: auto; }
     .mi-pane-comps .dash-brand-toggle { transform: scale(0.92); transform-origin: right center; }
 
-    .dsc-card.is-flash {
+    .dsc-card.is-flash,
+    .mi-card.is-flash,
+    .mi-pane.is-flash {
       border-color: var(--sec-green, #32A966);
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--sec-green, #32A966) 40%, transparent);
     }
@@ -4295,6 +4802,10 @@ function moduleStyles() {
       margin-top: 6px;
       --frame-w: 1180px; --frame-h: 760px; --pane-scale: 0.46;
     }
+    .mi-tpane-bar {
+      display: flex; align-items: center; gap: 8px; padding: 0 2px;
+    }
+    .mi-tpane-bar .mi-pane-head { flex: 1 1 auto; min-width: 0; padding: 0; }
     .mi-tpane { width: var(--pane-w); }
     .mi-tpane .mi-pane-viewport { background: var(--surface-2, var(--surface)); }
     /* The isolated table sits at the top-left of the framed page; nudge the
@@ -4397,15 +4908,23 @@ function moduleStyles() {
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     }
     .mi-card {
-      display: flex; align-items: center; gap: 12px;
+      display: flex; flex-direction: column; align-items: stretch; gap: 10px;
       padding: 12px 14px; border-radius: 14px;
       border: 1px solid var(--border); background: var(--surface);
       box-shadow: var(--shadow-1); text-decoration: none; color: inherit;
       transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
     }
+    .mi-card-main {
+      display: flex; align-items: center; gap: 12px;
+      text-decoration: none; color: inherit; min-width: 0;
+    }
     .mi-card:hover {
       transform: translateY(-3px); box-shadow: var(--shadow-2);
       border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+    }
+    .mi-card .mi-pane-comps {
+      max-height: 200px; margin: 0; padding: 8px 10px 6px;
+      box-shadow: none;
     }
     .mi-card-ic {
       display: grid; place-items: center; flex: 0 0 28px; width: 28px; color: var(--text);
@@ -4430,7 +4949,8 @@ function moduleStyles() {
     }
     .mi-card-group { font-size: 0.625rem; color: var(--text-subtle); }
     .mi-card-go { font-size: 16px !important; color: var(--text-subtle); flex: 0 0 auto; transition: transform 0.16s ease; }
-    .mi-card:hover .mi-card-go { transform: translate(2px, -2px); color: var(--primary-ink, var(--primary)); }
+    .mi-card:hover .mi-card-go,
+    .mi-card-main:hover .mi-card-go { transform: translate(2px, -2px); color: var(--primary-ink, var(--primary)); }
 
     /* ---- Broken-link state (flagged live by runLinkValidation) ---- */
     .mi-card--broken {
@@ -4509,6 +5029,20 @@ function moduleStyles() {
       font-size: 0.625rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
       color: var(--text-subtle);
     }
+    .mi-ready-kids { margin: 0 0 18px; }
+    .mi-ready-kids-title {
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      margin: 0 0 10px; font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
+    }
+    .mi-ready-kids-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .mi-ready-kid {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 10px 6px 12px;
+      border: 1px solid var(--border); border-radius: 999px; background: var(--surface);
+    }
+    html.dark .mi-ready-kid { background: rgba(255,255,255,0.03); }
+    .mi-ready-kid-label { font-size: 0.75rem; font-weight: 700; color: var(--text); }
+    .mi-ready-kid-n { font-size: 0.68rem; font-weight: 700; color: var(--text-muted); font-variant-numeric: tabular-nums; }
     .mi-stats { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 8px; }
     .mi-stat {
       flex: 1 1 130px; min-width: 118px;
@@ -4651,7 +5185,8 @@ function moduleStyles() {
       font-size: 1.25rem; font-weight: 600; color: var(--text); line-height: 1.3;
       min-height: 2.6em; margin-bottom: 4px;
     }
-    .ds-font-name { font-size: 0.9rem; font-weight: 800; color: var(--text); }
+    .ds-font-head { display: flex; align-items: center; gap: 10px; }
+    .ds-font-name { font-size: 0.9rem; font-weight: 800; color: var(--text); min-width: 0; }
     .ds-font-stack { align-self: flex-start; word-break: break-all; }
     .ds-font-weights { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-subtle); }
     .ds-font-use { font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0; }
@@ -4675,6 +5210,7 @@ function moduleStyles() {
     @media (max-width: 720px) {
       .ds-type-row { flex-direction: column; align-items: flex-start; gap: 6px; }
       .ds-type-sample { white-space: normal; }
+      .ds-type-row .dsc-ready--item { margin-left: 0; align-self: flex-start; }
     }
 
     .ds-color-grid {
@@ -4693,6 +5229,21 @@ function moduleStyles() {
     .ds-group-note { font-size: 0.75rem; color: var(--text-muted); margin: 8px 0 14px; }
     .ds-swatch-grid { display: flex; flex-direction: column; gap: 10px; }
     .ds-swatch { display: flex; align-items: center; gap: 12px; }
+    .ds-swatch.is-custom .ds-swatch-name::after {
+      content: "custom";
+      margin-left: 6px;
+      font-size: 0.5625rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--sec-green-text, #245E3B);
+    }
+    .ds-swatch-pick {
+      position: relative; flex: 0 0 44px; width: 44px; height: 36px;
+      display: block; cursor: pointer;
+    }
+    .ds-swatch-pick input[type="color"] {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      opacity: 0; cursor: pointer; border: 0; padding: 0; background: none;
+    }
+    .ds-swatch-pick .ds-swatch-chip { width: 100%; height: 100%; }
     .ds-swatch-chip {
       flex: 0 0 44px; width: 44px; height: 36px; border-radius: 9px;
       border: 1px solid var(--border); box-sizing: border-box;
@@ -4706,9 +5257,34 @@ function moduleStyles() {
     .ds-swatch-chip--radius { background: var(--surface-2); border: 1.5px solid var(--border-strong); }
     .ds-swatch-meta { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
     .ds-swatch-name { font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.75rem; font-weight: 600; color: var(--text); }
-    .ds-swatch-val { font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.65rem; color: var(--primary); }
+    .ds-swatch-val {
+      font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.65rem;
+      color: var(--primary); background: transparent; border: 0; padding: 0;
+      width: 100%; min-width: 0; outline: none;
+    }
+    input.ds-swatch-val {
+      border-bottom: 1px solid transparent;
+      border-radius: 0;
+    }
+    input.ds-swatch-val:focus { border-bottom-color: var(--border-strong); }
     html.dark .ds-swatch-val { color: var(--primary-bright, #93C5FD); }
     .ds-swatch-use { font-size: 0.7rem; color: var(--text-muted); }
+    .ds-swatch-reset {
+      display: inline-flex; align-items: center; justify-content: center;
+      flex: 0 0 auto; width: 28px; height: 28px; padding: 0;
+      border: 0; background: none; color: var(--text-muted); cursor: pointer;
+    }
+    .ds-swatch-reset .material-symbols-outlined { font-size: 18px !important; }
+    .ds-swatch-reset:hover { color: var(--text); }
+    .ds-swatch-reset[hidden] { display: none; }
+    .ds-token-reset-all {
+      display: inline-flex; align-items: center; gap: 6px; margin-left: auto;
+      border: 0; background: none; cursor: pointer; padding: 0;
+      font: inherit; font-size: 0.75rem; font-weight: 700; color: var(--text-muted);
+    }
+    .ds-token-reset-all .material-symbols-outlined { font-size: 16px !important; }
+    .ds-token-reset-all:hover { color: var(--text); }
+    .ds-token-reset-all[hidden] { display: none; }
 
     /* ---- Component Library ---- */
     .dsc-grid {
@@ -4773,6 +5349,17 @@ function moduleStyles() {
       color: var(--text-subtle); padding-top: 1px;
     }
     .dsc-used-list { font-size: 0.72rem; color: var(--text-muted); line-height: 1.5; }
+    .dsc-used-list--chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .dsc-used-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 9px; border-radius: 999px;
+      border: 1px solid var(--border); background: var(--surface-2, var(--surface));
+      color: var(--text); font-size: 0.6875rem; font-weight: 700; text-decoration: none;
+    }
+    .dsc-used-chip:hover { border-color: var(--primary); color: var(--primary-ink, var(--primary)); }
+    html.dark .dsc-used-chip:hover { color: var(--primary-bright, #93C5FD); }
+    .dsc-refs { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 0; }
+    .dsc-refs .mi-pane-comps { max-height: none; margin: 0; box-shadow: none; }
     .dsc-card[hidden] { display: none; }
 
     /* Full-width cards for components that need the room (tables, charts,
@@ -5000,9 +5587,8 @@ function moduleStyles() {
     .mi-code-hero-chart { flex: 2 1 320px; min-width: 240px; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; }
     .mi-code-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
     .mi-code-ic {
-      flex: 0 0 auto; width: 34px; height: 34px; border-radius: 10px;
-      display: grid; place-items: center; color: var(--primary);
-      background: color-mix(in srgb, var(--primary) 12%, transparent);
+      flex: 0 0 auto; display: inline-flex; align-items: center;
+      color: var(--primary);
     }
     html.dark .mi-code-ic { color: var(--primary-bright, #93C5FD); }
     .mi-code-ic .material-symbols-outlined { font-size: 20px !important; }
@@ -5183,13 +5769,72 @@ function moduleStyles() {
     }
 
     /* ---- Streaming Trace anatomy ---- */
-    .mi-trace { display: grid; grid-template-columns: minmax(0, 1fr) 264px; gap: 20px; align-items: start; }
-    @media (max-width: 720px) { .mi-trace { grid-template-columns: 1fr; } }
+    #mi-trace .mi-module-lede { max-width: 92ch; }
+    .mi-trace { display: flex; flex-direction: column; gap: 20px; }
+    .mi-trace-stages {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px; align-items: stretch;
+    }
+    @media (max-width: 980px) { .mi-trace-stages { grid-template-columns: 1fr; } }
     .mi-trace-card {
-      min-width: 0; padding: 18px 20px;
+      display: flex; flex-direction: column; gap: 10px; min-width: 0;
+      padding: 16px 18px 18px;
       border: 1px solid var(--border); border-radius: 14px; background: var(--surface-2);
     }
     html.dark .mi-trace-card { background: rgba(255,255,255,0.03); }
+    .mi-trace-card-head {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+    }
+    .mi-trace-card-title {
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      margin: 0; font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
+    }
+    .mi-trace-card-lede {
+      margin: 0; font-size: 0.78rem; line-height: 1.45; color: var(--text-muted);
+    }
+    .mi-trace-card .sc-trace { min-height: 0; }
+    .mi-trace-card .mi-trace-run { align-self: flex-start; margin-top: 4px; }
+    .mi-trace-notes {
+      display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(240px, 1fr);
+      gap: 20px; align-items: start;
+    }
+    @media (max-width: 720px) { .mi-trace-notes { grid-template-columns: 1fr; } }
+    .mi-trace-levels { display: flex; flex-direction: column; gap: 10px; }
+    .mi-trace-level-list {
+      list-style: none; margin: 0; padding: 0;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .mi-trace-level-list li { font-size: 0.78rem; line-height: 1.45; color: var(--text-muted); }
+    .mi-trace-level-list strong { color: var(--text); font-weight: 700; }
+    .mi-trace-seg {
+      display: flex; width: 100%; max-width: 360px;
+      border: 1px solid var(--border-strong); border-radius: 9999px; overflow: hidden;
+    }
+    .mi-trace-seg-btn {
+      flex: 1 1 0; min-width: 0; height: 28px; border: 0;
+      border-left: 1px solid var(--border-strong); background: transparent;
+      font: inherit; font-size: 11.5px; font-weight: 700; line-height: 1;
+      color: var(--text-muted); cursor: pointer; white-space: nowrap;
+      transition: background .14s ease, color .14s ease;
+    }
+    .mi-trace-seg-btn:first-child { border-left: 0; }
+    .mi-trace-seg-btn:hover { background: var(--surface-3); color: var(--text); }
+    .mi-trace-seg-btn.is-on { background: var(--primary); color: #fff; }
+    .mi-trace-seg-btn:focus-visible { outline: none; box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--primary) 45%, transparent); }
+    .mi-trace-final-note {
+      margin: 6px 0 0; font-size: 0.75rem; line-height: 1.45; color: var(--text-muted);
+    }
+    /* Freeze the live-trace motion (breathe, title pulse, key shimmer) on the
+       mid-animation still so the pose is readable. Rest the in-progress key
+       on its gold tone — same resting color reduced-motion uses. */
+    .sc-trace.is-paused .sc-trace-strand,
+    .sc-trace.is-paused .sc-trace-title { animation: none; }
+    .sc-trace.is-paused .sc-trace-live:not(.is-done) .sc-trace-now-key {
+      animation: none;
+      background-image: none;
+      -webkit-text-fill-color: var(--sc-shimmer-base, #FFC434);
+      color: var(--sc-shimmer-base, #FFC434);
+    }
     /* Dev Ready sits in the module header next to the ⋯ cluster. Don't let a
        click on it collapse/expand the accordion. */
     .mi-module-head .dsc-ready {
@@ -5207,6 +5852,7 @@ function moduleStyles() {
     }
     .dsc-ready-progress .material-symbols-outlined { font-size: 16px !important; line-height: 1 !important; }
     .dsc-ready-progress.is-complete { color: var(--sec-green, #32A966); }
+    .dsc-ready-label { font-weight: 700; color: inherit; opacity: 0.78; }
     @keyframes dsc-nudge {
       0%, 100% { transform: translateX(0); }
       25% { transform: translateX(-3px); }
@@ -5214,28 +5860,64 @@ function moduleStyles() {
     }
     .dsc-ready-progress.nudge { animation: dsc-nudge 0.28s ease; }
     @media (prefers-reduced-motion: reduce) { .dsc-ready-progress.nudge { animation: none; } }
-    /* Gated module switch — visibly not-yet-available (its parts aren't all done). */
-    .dsc-ready .dash-brand-toggle.is-gated { opacity: 0.5; cursor: not-allowed; }
-    .dsc-ready .dash-brand-toggle.is-gated:hover { box-shadow: none; transform: none; }
+    /* Accordion-level verify modal — centered card on the shared adm scrim
+       (the default scrim modal is full-bleed; this confirm stays a dialog). */
+    .dsc-ready-scrim {
+      align-items: center; justify-content: center; padding: 24px; z-index: 2400;
+    }
+    .dsc-ready-scrim .adm-modal {
+      width: min(440px, 100%); height: auto; max-width: 440px;
+      max-height: calc(100vh - 48px); border-radius: 18px;
+      border: 1px solid var(--border-strong);
+      box-shadow: var(--shadow-card, 0 24px 60px rgba(0,0,0,0.28));
+      overflow: auto;
+    }
+    html.dark .dsc-ready-scrim .adm-modal {
+      background: #14242f; border-color: rgba(255,255,255,0.08);
+    }
+    .dsc-ready-verify-steps {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .dsc-ready-verify-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--border-strong);
+    }
+    .dsc-ready-verify-dot.is-on { background: var(--primary); }
+    .dsc-ready-verify-dot.is-done { background: var(--sec-green, #32A966); }
+    html.dark .dsc-ready-verify-dot.is-on { background: var(--primary-bright, #93C5FD); }
+    .dsc-ready-verify-actions {
+      display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap;
+    }
 
     /* Lower-level (item) toggles that sit inline in a card / section head. */
     .mi-motion-card-head .dsc-ready--item,
     .mi-dir-head .dsc-ready--item,
     .ds-group-head .dsc-ready--item,
     .ds-block-head .dsc-ready--item,
-    .mi-pane-comp .dsc-ready--item {
+    .ds-font-head .dsc-ready--item,
+    .ds-type-row .dsc-ready--item,
+    .mi-pane-comp .dsc-ready--item,
+    .dsc-refs .dsc-ready--item,
+    .mi-tpane-bar .dsc-ready--item,
+    .mi-trace-card-head .dsc-ready--item,
+    .mi-ready-kid .dsc-ready--item {
       padding: 0; margin-left: auto; flex: 0 0 auto; align-self: flex-start;
     }
     .mi-dir-head .dsc-ready--item,
     .ds-group-head .dsc-ready--item,
     .ds-block-head .dsc-ready--item,
-    .mi-pane-comp .dsc-ready--item { align-self: center; }
+    .ds-font-head .dsc-ready--item,
+    .ds-type-row .dsc-ready--item,
+    .mi-pane-comp .dsc-ready--item,
+    .dsc-refs .dsc-ready--item,
+    .mi-tpane-bar .dsc-ready--item,
+    .mi-trace-card-head .dsc-ready--item,
+    .mi-ready-kid .dsc-ready--item { align-self: center; }
     /* The directory count badge no longer needs to push to the far right — the
        toggle owns the right edge now. */
     .mi-dir-head .mi-dir-count { margin-right: 0; }
     .ds-group-head { display: flex; align-items: center; gap: 10px; }
 
-    .mi-trace-side { display: flex; flex-direction: column; gap: 14px; }
     .mi-trace-run {
       display: inline-flex; align-items: center; justify-content: center; gap: 7px;
       padding: 9px 15px; height: 40px; box-sizing: border-box; align-self: flex-start;
@@ -5332,8 +6014,9 @@ function moduleStyles() {
     .mi-motion-chart:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
 
     .mi-motion-stream { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; width: 100%; }
+    .mi-motion-stream-paras { display: flex; flex-direction: column; gap: 0.75em; width: 100%; min-height: 6.4em; }
     .mi-motion-stream-line {
-      margin: 0; min-height: 3.2em; font-size: 0.88rem; line-height: 1.45; color: var(--text);
+      margin: 0; font-size: 0.88rem; line-height: 1.45; color: var(--text);
     }
 
     .mi-motion-fly { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; width: 100%; }
@@ -5703,6 +6386,7 @@ let hostEl = null;
 export function renderAllModules(mainEl) {
   hostEl = mainEl;
   buildDevReadyTree();
+  syncCodeStateFromStore();
   mainEl.innerHTML = `
     ${moduleStyles()}
     <div class="mi-wrap">
@@ -5710,12 +6394,13 @@ export function renderAllModules(mainEl) {
         <div class="mi-hero-text">
           <h1 class="mi-hero-title">All Modules</h1>
           <div class="mi-hero-row">
-            <p class="mi-hero-lede">Every module, component, icon, design token, animation and drag/resize interaction in the WISE app — indexed, rendered live, and one tap away.</p>
+            <p class="mi-hero-lede">Every module, component, icon, design token, animation and drag/resize interaction in the WISE app — indexed, rendered live, and one tap away. Re-evaluate crawls the whole project once a day.</p>
             <div class="mi-hero-actions">
-              <button type="button" class="adm-btn adm-btn--primary mi-reeval-btn" data-mi-reeval title="Fetch every HTML page and make sure the directory accounts for each one">
+              <button type="button" class="adm-btn adm-btn--primary mi-reeval-btn" data-mi-reeval title="Scan every HTML, JavaScript, CSS and Python file and account for each HTML page. Runs automatically once a day.">
                 <span class="material-symbols-outlined" aria-hidden="true">autorenew</span>
                 <span data-mi-reeval-label>Re-evaluate</span>
               </button>
+              <span class="mi-reeval-meta" data-mi-reeval-meta></span>
             </div>
           </div>
         </div>
@@ -5761,6 +6446,9 @@ export function renderAllModules(mainEl) {
     requestAnimationFrame(() => {
       document.getElementById(hashId)?.scrollIntoView({ block: 'start' });
     });
+  } else if (hashId) {
+    const comp = COMPONENTS.find((c) => compDomId(c.name) === hashId);
+    if (comp) jumpToComponent(mainEl, comp.name);
   }
 }
 
@@ -5850,11 +6538,11 @@ function moduleTotal() {
 function renderSectionNav() {
   const tokenCount = COLOR_GROUPS.reduce((n, g) => n + g.swatches.length, 0) + TYPE_SCALE.length;
   const tiles = [
-    { id: 'mi-code', icon: 'code', num: fmtNum(CODE_STATS?.now?.total), label: 'Lines of code', sub: `${fmtNum(CODE_STATS?.now?.pages)} HTML pages` },
+    { id: 'mi-code', icon: 'code', num: fmtNum(codeState.now?.total), label: 'Lines of code', sub: `${fmtNum(codeState.now?.pages)} HTML pages` },
     { id: 'mi-directory', icon: 'apps', num: moduleTotal(), label: 'Modules', sub: 'Every screen in the app' },
     { id: 'mi-tables', icon: 'table_chart', num: TABLE_CATALOG.length, label: 'Tables', sub: 'Every data table, live' },
     { id: 'mi-intents', icon: 'bolt', num: intentAuditStats().chips, label: 'Intent chip logic', sub: 'Transcript + logic audit' },
-    { id: 'mi-trace', icon: 'psychology', num: TRACE_MILESTONES.length, label: 'Trace sections', sub: 'Live helix + haiku glob' },
+    { id: 'mi-trace', icon: 'psychology', num: TRACE_MILESTONES.length, label: 'Trace sections', sub: 'Playing, paused, finished' },
     { id: 'mi-motion', icon: 'animation', num: MOTION_ITEMS.length, label: 'Motion & resize', sub: 'Animations + drag/resize' },
     { id: 'mi-icons', icon: 'emoji_symbols', num: (ICON_INVENTORY && ICON_INVENTORY.totalUniqueIcons) || 0, label: 'Icons', sub: 'Material Symbols inventory' },
     { id: 'mi-design', icon: 'palette', num: tokenCount, label: 'Design tokens', sub: 'Type scale + color tokens' },
@@ -5916,6 +6604,7 @@ function runModuleAction(root, action) {
     case 'ii-all': clearInput('#ii-search-input'); click('[data-ii-fam="all"]'); click('[data-ii-group="all"]'); break;
     case 'ds-type': expandAccordionSection(root, 'mi-design'); root.querySelector('#ds-typography')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
     case 'ds-colors': expandAccordionSection(root, 'mi-design'); root.querySelector('#ds-colors')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
+    case 'ds-reset-colors': click('[data-ds-reset-colors]'); break;
     case 'ds-jump': expandAccordionSection(root, 'mi-design'); root.querySelector('#mi-design')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
     case 'dsc-clear': clearInput('#dsc-search'); break;
     case 'code-7': click('[data-code-win="7"]'); break;
@@ -6027,7 +6716,8 @@ function markCardBroken(card) {
   if (name && !name.querySelector('.mi-card-broken-badge')) {
     name.insertAdjacentHTML('beforeend', '<span class="mi-card-broken-badge">404</span>');
   }
-  card.addEventListener('click', preventBrokenNav);
+  const main = card.matches('a.mi-card, a.mi-card-main') ? card : card.querySelector('.mi-card-main');
+  if (main) main.addEventListener('click', preventBrokenNav);
 }
 
 /* Reset a card that probed healthy on a re-check (e.g. a renamed file was
@@ -6038,7 +6728,8 @@ function clearCardBroken(card) {
   card.removeAttribute('aria-disabled');
   card.removeAttribute('title');
   card.querySelector('.mi-card-broken-badge')?.remove();
-  card.removeEventListener('click', preventBrokenNav);
+  const main = card.matches('a.mi-card, a.mi-card-main') ? card : card.querySelector('.mi-card-main');
+  if (main) main.removeEventListener('click', preventBrokenNav);
 }
 
 function preventBrokenNav(e) { e.preventDefault(); }
@@ -6092,7 +6783,7 @@ async function runLinkValidation(root) {
     if (!byHref.has(href)) byHref.set(href, []);
     byHref.get(href).push(el);
   };
-  cards.forEach((c) => register(c, c.getAttribute('href')));
+  cards.forEach((c) => register(c, c.getAttribute('data-href') || c.getAttribute('href') || c.querySelector('.mi-card-main')?.getAttribute('href')));
   panes.forEach((p) => register(p, p.getAttribute('data-href')));
 
   await Promise.all(Array.from(byHref.entries()).map(async ([href, els]) => {
@@ -6128,12 +6819,13 @@ function wireLinkValidation(root) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Re-evaluate — crawl every HTML page and make sure the directory     */
-/* accounts for each one. Discovers files from directory listings when */
-/* the server provides them, unions that with the curated catalog (and */
-/* the intentionally omitted pitch deck), probes each file live, then  */
-/* injects anything missing into an Unaccounted section so the index   */
-/* is complete for this session.                                       */
+/* Re-evaluate — crawl the whole project once a day. Discovers every   */
+/* HTML / JS / CSS / Python file from directory listings, recounts     */
+/* lines of code (generated blobs excluded), probes each HTML page,    */
+/* and injects anything missing into Unaccounted so the directory is   */
+/* complete for this session. Manual click always runs; otherwise it   */
+/* auto-runs on the first visit of a local calendar day, at midnight,  */
+/* and when the tab comes back on a new day.                           */
 /* ------------------------------------------------------------------ */
 
 const OMITTED_PAGES = {
@@ -6213,10 +6905,169 @@ async function fetchText(url) {
   return res.text();
 }
 
-async function discoverHtmlPages() {
+function listingEntries(html) {
+  const out = [];
+  const re = /href=["']([^"']+)["']/gi;
+  let m;
+  while ((m = re.exec(html))) {
+    let raw = m[1].trim();
+    if (!raw || raw.startsWith('?') || raw.startsWith('#') || raw.startsWith('mailto:') || raw.startsWith('javascript:')) continue;
+    try { raw = decodeURIComponent(raw); } catch (_) { /* keep raw */ }
+    out.push(raw);
+  }
+  return out;
+}
+
+function repoRootUrl() {
+  return new URL('../', location.href);
+}
+
+function urlUnderRepo(abs) {
+  const root = repoRootUrl();
+  if (abs.origin !== root.origin) return false;
+  const rootPath = root.pathname.endsWith('/') ? root.pathname : root.pathname + '/';
+  return abs.pathname === rootPath.slice(0, -1) || abs.pathname.startsWith(rootPath);
+}
+
+function projectRelFromUrl(abs) {
+  const root = repoRootUrl();
+  const rootPath = root.pathname.endsWith('/') ? root.pathname : root.pathname + '/';
+  let path = abs.pathname;
+  if (path.startsWith(rootPath)) path = path.slice(rootPath.length);
+  else if (path.startsWith('/')) path = path.slice(1);
+  try { return decodeURIComponent(path); } catch (_) { return path; }
+}
+
+function pageHrefFromRel(rel) {
+  const norm = String(rel || '').replace(/^\/+/, '');
+  if (norm.startsWith('pages/')) return norm.slice(6);
+  return '../' + norm;
+}
+
+function countFileLines(text) {
+  if (!text) return 0;
+  let n = 0;
+  for (let i = 0; i < text.length; i++) {
+    if (text.charCodeAt(i) === 10) n++;
+  }
+  if (text.charCodeAt(text.length - 1) !== 10) n++;
+  return n;
+}
+
+function pushProjectFile(files, seenFile, abs, name, ext, rel) {
+  if (seenFile.has(rel)) return;
+  seenFile.add(rel);
+  files.push({ url: abs.href, name, ext, rel });
+}
+
+async function discoverRootCodeFiles(files, seenFile) {
+  /* `/` serves index.html, so the root never returns a directory listing.
+     Probe catalog / omitted root pages plus the handful of root-level code
+     files the Python scanner counts. */
+  const root = repoRootUrl();
+  const names = new Set(['index.html', 'dev_server.py', 'marketing.css', 'wiseai-chat.css', '_inject_countup.js']);
+  catalogHrefList().forEach((h) => {
+    const key = canonicalPageHref(h);
+    if (key.startsWith('../')) names.add(key.slice(3));
+  });
+  await Promise.all(Array.from(names).map(async (name) => {
+    if (!name || name.includes('/')) return;
+    const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
+    if (!CODE_EXTS.has(ext) || CODE_SKIP_FILES.has(name) || name.startsWith('.')) return;
+    const abs = new URL(name, root);
+    try {
+      const res = await fetch(abs.href + (abs.href.includes('?') ? '&' : '?') + 'mi=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) return;
+      pushProjectFile(files, seenFile, abs, name, ext, name);
+    } catch (_) { /* missing at root */ }
+  }));
+}
+
+async function discoverProjectFiles() {
+  const files = [];
+  const seenDir = new Set();
+  const seenFile = new Set();
+  const root = repoRootUrl();
+  /* Seed the dirs that actually list (repo root serves index.html). Also
+     try the root in case a server is configured to list it. */
+  const queue = [
+    new URL('js/', root).href,
+    new URL('pages/', root).href,
+    new URL('scripts/', root).href,
+    new URL('screenshots/', root).href,
+    root.href,
+  ];
+
+  while (queue.length) {
+    const dirUrl = queue.shift();
+    let dirKey;
+    try { dirKey = new URL(dirUrl).pathname; } catch (_) { continue; }
+    if (seenDir.has(dirKey)) continue;
+    seenDir.add(dirKey);
+
+    let html;
+    try { html = await fetchText(dirUrl); } catch (_) { continue; }
+    if (!isDirListing(html)) continue;
+
+    for (const raw of listingEntries(html)) {
+      let abs;
+      try { abs = new URL(raw, dirUrl); } catch (_) { continue; }
+      if (!urlUnderRepo(abs)) continue;
+
+      const isDir = raw.endsWith('/') || abs.pathname.endsWith('/');
+      const name = abs.pathname.split('/').filter(Boolean).pop() || '';
+      if (!name || name.startsWith('.') || CODE_SKIP_DIRS.has(name)) continue;
+
+      if (isDir) {
+        const next = abs.href.endsWith('/') ? abs.href : abs.href + '/';
+        let nextKey;
+        try { nextKey = new URL(next).pathname; } catch (_) { continue; }
+        if (!seenDir.has(nextKey)) queue.push(next);
+        continue;
+      }
+
+      const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
+      if (!CODE_EXTS.has(ext) || CODE_SKIP_FILES.has(name)) continue;
+      pushProjectFile(files, seenFile, abs, name, ext, projectRelFromUrl(abs));
+    }
+  }
+  await discoverRootCodeFiles(files, seenFile);
+  return files;
+}
+
+async function scanProjectLineCounts(files) {
+  const lines = { html: 0, js: 0, css: 0, py: 0 };
+  const counts = { html: 0, js: 0, css: 0, py: 0 };
+  const BATCH = 12;
+  for (let i = 0; i < files.length; i += BATCH) {
+    const chunk = files.slice(i, i + BATCH);
+    await Promise.all(chunk.map(async (f) => {
+      try {
+        const text = await fetchText(f.url);
+        lines[f.ext] += countFileLines(text);
+        counts[f.ext] += 1;
+      } catch (_) { /* unreachable file */ }
+    }));
+  }
+  return {
+    total: lines.html + lines.js + lines.css + lines.py,
+    html: lines.html,
+    js: lines.js,
+    css: lines.css,
+    py: lines.py,
+    pages: counts.html,
+    files: counts.html + counts.js + counts.css + counts.py,
+  };
+}
+
+async function discoverHtmlPages(extraHrefs) {
   const found = new Set();
   catalogHrefList().forEach((h) => found.add(canonicalPageHref(h)));
   Object.keys(OMITTED_PAGES).forEach((h) => found.add(canonicalPageHref(h)));
+  (extraHrefs || []).forEach((h) => {
+    const key = canonicalPageHref(h);
+    if (key) found.add(key);
+  });
 
   const tryList = async (url, kind) => {
     try {
@@ -6317,13 +7168,26 @@ function setReevalStatus(root, kind, title, bodyHtml) {
 
 let reevalBusy = false;
 
-async function reevaluateAllPages(root) {
+function reevalMetaText() {
+  const store = readReevalStore();
+  if (!store.day) return 'Scans the whole project automatically once a day';
+  if (store.day === localDayIso()) return 'Scanned today · next at midnight';
+  return 'Last scanned ' + store.day + ' · due now';
+}
+
+function paintReevalMeta(root) {
+  const el = root.querySelector('[data-mi-reeval-meta]');
+  if (el) el.textContent = reevalMetaText();
+}
+
+async function reevaluateProject(root, opts) {
   if (reevalBusy) return;
+  const reason = (opts && opts.reason) || 'manual';
   const btn = root.querySelector('[data-mi-reeval]');
   const label = root.querySelector('[data-mi-reeval-label]');
   if (location.protocol === 'file:') {
     setReevalStatus(root, 'warn', 'Serve this page over http',
-      '<p>Live re-evaluate needs a local server so it can fetch sibling HTML files. Start <code>python3 -m http.server</code> or <code>python3 dev_server.py</code> and reload.</p>');
+      '<p>Live re-evaluate needs a local server so it can fetch the project. Start <code>python3 -m http.server</code> or <code>python3 dev_server.py</code> and reload.</p>');
     return;
   }
 
@@ -6335,12 +7199,17 @@ async function reevaluateAllPages(root) {
     btn.setAttribute('aria-busy', 'true');
   }
   if (label) label.textContent = 'Re-evaluating…';
-  setReevalStatus(root, 'busy', 'Re-evaluating every HTML page',
-    '<p>Fetching the live file list and probing each page…</p>');
+  setReevalStatus(root, 'busy', 'Re-evaluating the whole project',
+    '<p>Walking every HTML, JavaScript, CSS and Python file, then probing each page…</p>');
 
   try {
-    const pages = await discoverHtmlPages();
-    const results = await Promise.all(pages.map(probePage));
+    const files = await discoverProjectFiles();
+    const htmlFromWalk = files.filter((f) => f.ext === 'html').map((f) => pageHrefFromRel(f.rel));
+    const pages = await discoverHtmlPages(htmlFromWalk);
+    const [results, codeNow] = await Promise.all([
+      Promise.all(pages.map(probePage)),
+      files.length ? scanProjectLineCounts(files) : Promise.resolve(null),
+    ]);
     const catalog = catalogPageSet();
     const live = results.filter((r) => r.ok);
     const unreachable = results.filter((r) => !r.ok);
@@ -6366,6 +7235,21 @@ async function reevaluateAllPages(root) {
       runLinkValidation(root);
     }
 
+    const day = localDayIso();
+    if (codeNow && codeNow.files) {
+      applyLiveCodeScan(root, codeNow, day);
+    }
+
+    writeReevalStore({
+      day,
+      at: new Date().toISOString(),
+      reason,
+      files: files.length,
+      pages: pages.length,
+      now: codeNow && codeNow.files ? codeNow : readReevalStore().now,
+    });
+    paintReevalMeta(root);
+
     const accounted = live.length - omitted.length;
     const gaps = unaccounted.length + catalogMissing.length + omittedMissing.length;
     const kind = (catalogMissing.length || omittedMissing.length)
@@ -6377,7 +7261,13 @@ async function reevaluateAllPages(root) {
         ? `Accounted for ${unaccounted.length} missing page${unaccounted.length === 1 ? '' : 's'}`
         : `${gaps} page${gaps === 1 ? '' : 's'} need attention`);
 
-    const bits = [`<p>Probed <strong>${results.length}</strong> HTML files · <strong>${live.length}</strong> reachable · directory now holds <strong>${moduleTotal()}</strong> modules.</p>`];
+    const bits = [];
+    if (codeNow && codeNow.files) {
+      bits.push(`<p>Scanned <strong>${fmtNum(codeNow.files)}</strong> project files · <strong>${fmtNum(codeNow.total)}</strong> lines (HTML ${fmtNum(codeNow.html)}, JS ${fmtNum(codeNow.js)}, CSS ${fmtNum(codeNow.css)}, Python ${fmtNum(codeNow.py)}).</p>`);
+    } else {
+      bits.push('<p>Directory listing was not available, so Codebase kept the last generated scan. Serve the repo root (not a live-reload wrapper) to recount lines live.</p>');
+    }
+    bits.push(`<p>Probed <strong>${results.length}</strong> HTML files · <strong>${live.length}</strong> reachable · directory now holds <strong>${moduleTotal()}</strong> modules.</p>`);
     if (unaccounted.length) {
       bits.push('<ul>' + unaccounted.map((r) =>
         `<li>Added <a href="${esc(r.href)}">${esc(r.title || labelFromPath(r.href))}</a> <code>${esc(r.href)}</code></li>`
@@ -6418,9 +7308,40 @@ async function reevaluateAllPages(root) {
 
 function wirePageReeval(root) {
   const btn = root.querySelector('[data-mi-reeval]');
-  if (btn) btn.addEventListener('click', () => reevaluateAllPages(root));
-  /* Do not auto-run on load. Probing every HTML file (full body, cache-busted)
-     contends with first paint and is what the Re-evaluate button is for. */
+  if (btn) btn.addEventListener('click', () => reevaluateProject(root, { reason: 'manual' }));
+  paintReevalMeta(root);
+
+  const kickIfDue = () => {
+    if (!root.isConnected) return;
+    if (location.protocol === 'file:') return;
+    if (readReevalStore().day === localDayIso()) return;
+    reevaluateProject(root, { reason: 'daily' });
+  };
+
+  /* After first paint — the daily crawl fetches the project and should
+     not contend with the initial render / count-ups. */
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(kickIfDue, { timeout: 2800 });
+  else setTimeout(kickIfDue, 900);
+
+  if (!wirePageReeval._wired) {
+    wirePageReeval._wired = true;
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden || !hostEl || !hostEl.isConnected) return;
+      if (readReevalStore().day === localDayIso()) return;
+      reevaluateProject(hostEl, { reason: 'daily' });
+    });
+    const armMidnight = () => {
+      const n = new Date();
+      const wait = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1).getTime() - n.getTime() + 400;
+      setTimeout(() => {
+        if (hostEl && hostEl.isConnected && !document.hidden) {
+          reevaluateProject(hostEl, { reason: 'daily' });
+        }
+        armMidnight();
+      }, Math.max(400, wait));
+    };
+    armMidnight();
+  }
 }
 
 /* Rail previews should show ONLY the module itself — not the repeated left nav,
@@ -7283,26 +8204,110 @@ function cssColorLabel(raw) {
   return `#${hex(r)}${hex(g)}${hex(b)}`;
 }
 
-function resolveSwatchValues(root) {
+function cssToPickerHex(raw) {
+  const label = cssColorLabel(raw);
+  const m = String(raw).match(/rgba?\(([^)]+)\)/);
+  if (m) {
+    const [r, g, b] = m[1].split(',').map((p) => parseFloat(p.trim()));
+    const hex = (n) => Math.round(n).toString(16).padStart(2, '0').toUpperCase();
+    return `#${hex(r)}${hex(g)}${hex(b)}`;
+  }
+  if (/^#[0-9A-Fa-f]{6}$/.test(label)) return label.toUpperCase();
+  return '#000000';
+}
+
+function chipComputedColor(sw) {
+  const chip = sw.querySelector('.ds-swatch-chip');
+  if (!chip) return '';
+  const cs = getComputedStyle(chip);
+  const kind = sw.dataset.kind || 'fill';
+  return kind === 'ink' ? cs.color : kind === 'border' ? cs.borderTopColor : cs.backgroundColor;
+}
+
+function syncSwatchEditors(root) {
+  const T = window.WiseTokenTheme;
+  const resetAll = root.querySelector('[data-ds-reset-colors]');
+  if (resetAll) resetAll.hidden = !(T && T.count && T.count());
   root.querySelectorAll('[data-swatch]').forEach((sw) => {
-    const out = sw.querySelector('[data-swatch-val]');
-    const chip = sw.querySelector('.ds-swatch-chip');
-    if (!out || !chip) return;
-    const cs = getComputedStyle(chip);
-    const kind = sw.dataset.kind || 'fill';
-    const raw = kind === 'ink' ? cs.color : kind === 'border' ? cs.borderTopColor : cs.backgroundColor;
-    out.textContent = cssColorLabel(raw);
+    const raw = chipComputedColor(sw);
+    if (!raw) return;
+    const token = sw.dataset.token;
+    const custom = !!(T && token && T.isCustom(token));
+    sw.classList.toggle('is-custom', custom);
+    const reset = sw.querySelector('[data-token-reset]');
+    if (reset) reset.hidden = !custom;
+    const color = sw.querySelector('[data-token-color]');
+    const hex = sw.querySelector('[data-token-hex]');
+    const picker = cssToPickerHex(raw);
+    if (color && color.value.toUpperCase() !== picker) color.value = picker;
+    if (hex && document.activeElement !== hex) {
+      hex.value = custom && T.get(token) ? T.get(token) : cssColorLabel(raw);
+    }
+    const out = sw.querySelector('[data-swatch-val]:not(input)');
+    if (out) out.textContent = cssColorLabel(raw);
   });
 }
 
+function resolveSwatchValues(root) {
+  syncSwatchEditors(root);
+}
+
 function wireDesignSystem(root) {
-  resolveSwatchValues(root);
-  /* Theme flips toggle html.dark without re-rendering this page — watch the
-     root element's class so the printed values always match the live theme. */
+  const T = window.WiseTokenTheme;
+  syncSwatchEditors(root);
+
+  if (!root._dsTokensWired) {
+    root._dsTokensWired = true;
+    root.addEventListener('input', (e) => {
+      const color = e.target.closest('[data-token-color]');
+      if (color && T) {
+        const sw = color.closest('[data-swatch]');
+        if (sw && sw.dataset.token) T.set(sw.dataset.token, color.value);
+        return;
+      }
+      const hex = e.target.closest('[data-token-hex]');
+      if (hex && T && hex.value.trim().length >= 4) {
+        const sw = hex.closest('[data-swatch]');
+        if (sw && sw.dataset.token) T.set(sw.dataset.token, hex.value);
+      }
+    });
+    root.addEventListener('change', (e) => {
+      const hex = e.target.closest('[data-token-hex]');
+      if (!hex || !T) return;
+      const sw = hex.closest('[data-swatch]');
+      if (!sw || !sw.dataset.token) return;
+      if (!T.set(sw.dataset.token, hex.value)) syncSwatchEditors(root);
+    });
+    root.addEventListener('click', (e) => {
+      const one = e.target.closest('[data-token-reset]');
+      if (one && T) {
+        e.stopPropagation();
+        const sw = one.closest('[data-swatch]');
+        if (sw && sw.dataset.token) T.reset(sw.dataset.token);
+        return;
+      }
+      const all = e.target.closest('[data-ds-reset-colors]');
+      if (all && T) {
+        e.stopPropagation();
+        T.resetTheme();
+      }
+    });
+  }
+
+  if (T && T.onChange && !wireDesignSystem._tokenSub) {
+    wireDesignSystem._tokenSub = true;
+    T.onChange(() => {
+      const host = wireDesignSystem._host;
+      if (host && host.isConnected) syncSwatchEditors(host);
+    });
+  }
+
+  /* Theme flips toggle html.dark — token apply is global; refresh printed values. */
+  wireDesignSystem._host = root;
   if (!wireDesignSystem._observer) {
     wireDesignSystem._observer = new MutationObserver(() => {
-      const host = hostEl;
-      if (host && host.isConnected) resolveSwatchValues(host);
+      const host = wireDesignSystem._host;
+      if (host && host.isConnected) syncSwatchEditors(host);
     });
     wireDesignSystem._observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   }
@@ -7392,12 +8397,11 @@ function wireComponentLibrary(root) {
 /* Dev Ready wiring — hierarchical, persisted in localStorage.         */
 /*                                                                     */
 /* Every toggle (module OR item) shares this one handler. A lower-level */
-/* item toggles freely; flipping one recomputes its parent module so   */
-/* the "k/n ready" pill and the parent's gate stay honest. A module    */
-/* that owns children can only be switched on once all of them are     */
-/* ready — and if a child is later switched off, the parent is forced  */
-/* back off, because a higher-level component is only ready for dev     */
-/* when all of its parts are.                                          */
+/* item toggles freely; flipping one recomputes its parent so the "k/n" */
+/* pill and the accordion switch stay honest. When every child is ready */
+/* the parent turns on; if any child is later switched off, the parent  */
+/* turns off with it. Clicking an incomplete accordion switch opens a   */
+/* two-step verify modal; confirming marks every child ready.           */
 /* ------------------------------------------------------------------ */
 function paintItemReady(btn, on) {
   btn.classList.toggle('is-on', !!on);
@@ -7412,6 +8416,19 @@ function syncItemReadyButtons(root, id, on) {
   });
 }
 
+let readyVerifyEl = null;
+function closeReadyVerifyModal() {
+  const scrim = readyVerifyEl;
+  if (!scrim) return;
+  readyVerifyEl = null;
+  scrim.classList.remove('is-open');
+  setTimeout(() => scrim.remove(), 220);
+  document.removeEventListener('keydown', readyVerifyKeyHandler);
+}
+function readyVerifyKeyHandler(e) {
+  if (e.key === 'Escape') closeReadyVerifyModal();
+}
+
 function wireDevReady(root) {
   const moduleBtn = (moduleId) =>
     Array.from(root.querySelectorAll('[data-dsc-ready][data-ready-level="module"]'))
@@ -7420,42 +8437,118 @@ function wireDevReady(root) {
     Array.from(root.querySelectorAll('[data-ready-progress-for]'))
       .find((p) => p.getAttribute('data-ready-progress-for') === moduleId);
 
-  /* Recompute a parent module's progress pill + gate from its children. */
+  /* Recompute a parent module's progress pill + switch from its children. */
   function refreshParent(moduleId) {
     const kids = DEV_READY_CHILDREN[moduleId] || [];
     if (!kids.length) return;
     const map = loadDscReadyMap();
     const { ready, total } = readyChildStats(moduleId, map);
     const complete = ready === total;
+    const label = (moduleBtn(moduleId) && moduleBtn(moduleId).dataset.readyLabel) || moduleId;
 
     const pill = progressPill(moduleId);
-    if (pill) {
-      pill.classList.toggle('is-complete', complete);
-      const count = pill.querySelector('.dsc-ready-count');
-      if (count) count.textContent = ready + '/' + total;
-      const ic = pill.querySelector('.material-symbols-outlined');
-      if (ic) ic.textContent = complete ? 'task_alt' : 'radio_button_unchecked';
-      pill.setAttribute('title', ready + ' of ' + total + ' parts Dev Ready');
-    }
+    if (pill) paintReadyProgress(pill, { ready, total });
 
     const btn = moduleBtn(moduleId);
     if (!btn) return;
-    btn.classList.toggle('is-gated', !complete);
-    if (!complete) {
-      /* A parent can never rest "on" while a part is unfinished. */
+    btn.classList.remove('is-gated');
+    btn.removeAttribute('aria-disabled');
+    if (complete) {
+      if (map[moduleId] !== true) { map[moduleId] = true; saveDscReadyMap(map); }
+      btn.classList.add('is-on');
+      btn.setAttribute('aria-checked', 'true');
+      btn.title = 'Ready for dev';
+    } else {
       if (map[moduleId]) { delete map[moduleId]; saveDscReadyMap(map); }
       btn.classList.remove('is-on');
       btn.setAttribute('aria-checked', 'false');
-      btn.setAttribute('aria-disabled', 'true');
-      btn.title = 'All ' + total + ' parts must be Dev Ready first — ' + ready + '/' + total + ' done';
-    } else {
-      btn.removeAttribute('aria-disabled');
-      const on = map[moduleId] === true;
-      btn.classList.toggle('is-on', on);
-      btn.setAttribute('aria-checked', on ? 'true' : 'false');
-      btn.title = on ? 'Ready for dev' : 'Mark this module ready for dev';
+      btn.title = 'Mark every part in ' + label + ' as Dev Ready';
     }
   }
+
+  function markModuleChildrenReady(moduleId) {
+    const kids = DEV_READY_CHILDREN[moduleId] || [];
+    const map = loadDscReadyMap();
+    kids.forEach((c) => { map[c.id] = true; });
+    map[moduleId] = true;
+    saveDscReadyMap(map);
+    kids.forEach((c) => syncItemReadyButtons(root, c.id, true));
+    refreshParent(moduleId);
+  }
+
+  function openReadyVerifyModal(moduleId, label) {
+    const kids = DEV_READY_CHILDREN[moduleId] || [];
+    if (!kids.length) return;
+    const stats = readyChildStats(moduleId, loadDscReadyMap());
+    if (stats.ready >= stats.total) return;
+    const pending = stats.total - stats.ready;
+    closeReadyVerifyModal();
+
+    const scrim = document.createElement('div');
+    scrim.className = 'adm-modal-scrim dsc-ready-scrim';
+    scrim.setAttribute('data-ready-verify', moduleId);
+
+    function paint(step) {
+      const first = step === 1;
+      const title = first
+        ? 'Mark all of ' + label + ' Dev Ready?'
+        : 'Confirm you want every part ready';
+      const sub = first
+        ? (esc(label) + ' has <strong>' + stats.total + '</strong> parts. <strong>'
+          + pending + '</strong> ' + (pending === 1 ? 'is' : 'are') + ' still off'
+          + (stats.ready ? ', <strong>' + stats.ready + '</strong> already on' : '')
+          + '. Continuing marks every one Dev Ready.')
+        : ('This turns on Dev Ready for all <strong>' + stats.total
+          + '</strong> parts inside ' + esc(label) + ' and flips the accordion switch on.');
+      scrim.innerHTML = `
+        <div class="adm-modal" role="dialog" aria-modal="true" aria-labelledby="dsc-ready-verify-title">
+          <button type="button" class="adm-modal-x" data-ready-verify-act="close" aria-label="Close">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+          <div class="adm-modal-head">
+            <div class="adm-modal-eyebrow">${first ? 'Verify · 1 of 2' : 'Verify again · 2 of 2'}</div>
+            <h2 class="adm-modal-title" id="dsc-ready-verify-title">${esc(title)}</h2>
+            <p class="adm-modal-sub">${sub}</p>
+          </div>
+          <div class="adm-modal-body">
+            <div class="dsc-ready-verify-steps" aria-hidden="true">
+              <span class="dsc-ready-verify-dot${first ? ' is-on' : ' is-done'}"></span>
+              <span class="dsc-ready-verify-dot${first ? '' : ' is-on'}"></span>
+            </div>
+            <div class="dsc-ready-verify-actions">
+              <button type="button" class="adm-btn adm-btn--ghost" data-ready-verify-act="close">Cancel</button>
+              <button type="button" class="adm-btn adm-btn--primary" data-ready-verify-act="${first ? 'next' : 'confirm'}">
+                <span class="material-symbols-outlined">${first ? 'arrow_forward' : 'task_alt'}</span>
+                ${first ? 'Continue' : 'Mark all Dev Ready'}
+              </button>
+            </div>
+          </div>
+        </div>`;
+      scrim.querySelector('.adm-btn--primary')?.focus();
+    }
+
+    document.body.appendChild(scrim);
+    readyVerifyEl = scrim;
+    paint(1);
+    requestAnimationFrame(() => scrim.classList.add('is-open'));
+    scrim.addEventListener('click', (e) => {
+      if (e.target === scrim) { closeReadyVerifyModal(); return; }
+      const act = e.target.closest('[data-ready-verify-act]');
+      if (!act) return;
+      const kind = act.getAttribute('data-ready-verify-act');
+      if (kind === 'close') closeReadyVerifyModal();
+      else if (kind === 'next') paint(2);
+      else if (kind === 'confirm') {
+        closeReadyVerifyModal();
+        markModuleChildrenReady(moduleId);
+      }
+    });
+    document.addEventListener('keydown', readyVerifyKeyHandler);
+  }
+
+  root._markModuleChildrenReady = markModuleChildrenReady;
+  root._openReadyVerifyModal = openReadyVerifyModal;
+  root._refreshReadyParent = refreshParent;
 
   /* One delegated handler so rail copies, library cards, and panes injected
      by Re-evaluate all flip the same stored flag — and every matching switch
@@ -7470,10 +8563,11 @@ function wireDevReady(root) {
       if (!id) return;
       const level = btn.dataset.readyLevel || 'item';
 
-      /* A gated module can't be turned on — nudge the progress pill instead. */
-      if (level === 'module' && btn.classList.contains('is-gated')) {
-        const pill = progressPill(id);
-        if (pill) { pill.classList.remove('nudge'); void pill.offsetWidth; pill.classList.add('nudge'); }
+      /* Accordion switch with parts: already complete is a no-op; otherwise
+         the two-step verify modal marks every child ready. */
+      if (level === 'module' && (DEV_READY_CHILDREN[id] || []).length) {
+        if (btn.getAttribute('aria-checked') === 'true') return;
+        root._openReadyVerifyModal(id, btn.dataset.readyLabel || id);
         return;
       }
 
@@ -7490,7 +8584,9 @@ function wireDevReady(root) {
 
       /* A flipped child re-scores its parent. */
       const parent = btn.dataset.readyParent;
-      if (parent) refreshParent(parent);
+      if (parent && typeof root._refreshReadyParent === 'function') {
+        root._refreshReadyParent(parent);
+      }
     });
   }
 
@@ -7513,10 +8609,32 @@ function jumpToComponent(root, name) {
   });
 }
 
+function jumpToDirectoryModule(root, href) {
+  expandAccordionSection(root, 'mi-directory');
+  const card = Array.from(root.querySelectorAll('[data-mod-card]'))
+    .find((el) => (el.getAttribute('data-href') || el.getAttribute('href')) === href);
+  const pane = Array.from(root.querySelectorAll('[data-pane]'))
+    .find((el) => el.getAttribute('data-href') === href);
+  const target = card || pane;
+  if (!target) return;
+  target.classList.remove('is-flash');
+  void target.offsetWidth;
+  target.classList.add('is-flash');
+  requestAnimationFrame(() => {
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+}
+
 function wirePaneCompJumps(root) {
   if (root._paneCompJumpsWired) return;
   root._paneCompJumpsWired = true;
   root.addEventListener('click', (e) => {
+    const mod = e.target.closest('[data-jump-mod]');
+    if (mod && root.contains(mod)) {
+      e.preventDefault();
+      jumpToDirectoryModule(root, mod.getAttribute('data-jump-mod'));
+      return;
+    }
     const a = e.target.closest('[data-jump-comp]');
     if (!a || !root.contains(a)) return;
     e.preventDefault();
@@ -7541,7 +8659,10 @@ export const ALL_MODULES_WISEAI = {
     { intent: 'counts', label: 'How many icons are there?', icon: 'tag' },
   ],
   intentReplies: {
-    codebase: `The app is <strong>${fmtNum(CODE_STATS?.now?.total)} lines of code</strong> across <strong>${fmtNum(CODE_STATS?.now?.files)} files</strong> — ${fmtNum(CODE_STATS?.now?.html)} HTML, ${fmtNum(CODE_STATS?.now?.js)} JavaScript, ${fmtNum(CODE_STATS?.now?.css)} CSS and ${fmtNum(CODE_STATS?.now?.py)} Python — shipping <strong>${fmtNum(CODE_STATS?.now?.pages)} HTML pages</strong>. The Codebase score cards above the directory show the up/down trend.`,
+    codebase: () => {
+      const now = codeState.now || {};
+      return `The app is <strong>${fmtNum(now.total)} lines of code</strong> across <strong>${fmtNum(now.files)} files</strong> — ${fmtNum(now.html)} HTML, ${fmtNum(now.js)} JavaScript, ${fmtNum(now.css)} CSS and ${fmtNum(now.py)} Python — shipping <strong>${fmtNum(now.pages)} HTML pages</strong>. The Codebase score cards above the directory show the up/down trend.`;
+    },
     directory: 'The <strong>Module Directory</strong> lists every workspace, account, chat, report, product, auth and marketing screen in the app.',
     tables: `The <strong>Table Gallery</strong> collects all <strong>${TABLE_CATALOG.length} data tables</strong> in the app — portfolio grids, verification and analytics tables, admin boards, the ingredient registry and more — rendered live in one carousel, each isolated from its page.`,
     intents: () => {

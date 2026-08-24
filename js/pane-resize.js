@@ -182,6 +182,15 @@
     var m = parseFloat(getComputedStyle(el).minWidth);
     return (!isNaN(m) && m > 0) ? Math.max(MIN_W, m) : MIN_W;
   }
+  // Stylesheet max-width (e.g. the reformulation studio rail at 392px). Read
+  // BEFORE pin() — pin sets max-width:none !important. Used to detect a rail
+  // that is already sitting on its cap so a chat drag can leave it alone.
+  function maxOf(el) {
+    var raw = getComputedStyle(el).maxWidth;
+    if (!raw || raw === 'none') return Infinity;
+    var m = parseFloat(raw);
+    return (!isNaN(m) && m > 0) ? m : Infinity;
+  }
   // We pin with !important so a pane's stylesheet rule (e.g. a `width` bound to a
   // CSS variable, or a `.panel-wide` class) can never out-specify a dragged size.
   function snap(el) {
@@ -448,12 +457,50 @@
     // On non-scrolling rows we keep the classic zero-sum splitter (no regression).
     var scrollable = /(auto|scroll)/.test(getComputedStyle(row).overflowX);
 
-    // 'split' freezes the whole row so the trade between the two neighbours is
-    // exact; outer drags pin only the target and let a flexible pane absorb.
     var isSplit = mode === 'split';
-    var frozen = isSplit ? panes(row).map(function (p) { return { el: p, s: snap(p), grow: growOf(p) }; }) : [];
-    if (isSplit) frozen.forEach(function (o) { pin(o.el, rectW(o.el)); });
+
+    // Read sizes BEFORE pin() — pin sets max-width:none !important, which
+    // would hide a stylesheet cap (e.g. the 392px studio rail).
+    var lw0 = left ? rectW(left) : 0;
+    var rw0 = right ? rectW(right) : 0;
+    var minL = left ? minOf(left) : 0;
+    var minR = right ? minOf(right) : 0;
+    var maxL = left ? maxOf(left) : Infinity;
+    var maxR = right ? maxOf(right) : Infinity;
+    var capMax = rr.width - 40;
+
+    // 'split' pins the two rails so the trade is exact; fillers (flex-grow /
+    // data-pr-fill) stay unpinned so they can absorb when a rail hits its
+    // max-width — same as an outer drag against a fill neighbour. Freezing
+    // the filler too left no place for a just-widened chat to give space
+    // back (the reformulation studio is max-capped at 392px).
+    var allPanesStart = panes(row);
+    var hasFiller = allPanesStart.some(function (p) { return growOf(p) > 0 || isFill(p); });
+    function isRail(el) { return !!(el && growOf(el) === 0 && !isFill(el)); }
+    // Two rails + a fill elsewhere (Chat | max-capped Studio | Dash-fill):
+    // a rail sitting on its stylesheet max must stay put. Pin only the other
+    // rail and let the filler absorb — identical to Chat | Fill on every
+    // other page. A rail | fill seam (Studio | Dash) is NOT this case.
+    var leftAtCap = !!(left && isFinite(maxL) && lw0 >= maxL - 2);
+    var rightAtCap = !!(right && isFinite(maxR) && rw0 >= maxR - 2);
+    var absorbRight = !!(isSplit && hasFiller && rightAtCap && isRail(right) && left && widthBtnOf(left, row));
+    var absorbLeft = !!(isSplit && hasFiller && leftAtCap && isRail(left) && isRail(right) && right && widthBtnOf(right, row) && !absorbRight);
+    var frozen = [];
+    if (isSplit) {
+      allPanesStart.forEach(function (p) {
+        if (growOf(p) > 0 || isFill(p)) return;
+        if (absorbRight && p === right) return;
+        if (absorbLeft && p === left) return;
+        frozen.push({ el: p, s: snap(p), grow: growOf(p) });
+      });
+      frozen.forEach(function (o) { pin(o.el, rectW(o.el)); });
+    }
     function fInfo(el) { for (var i = 0; i < frozen.length; i++) if (frozen[i].el === el) return frozen[i]; return null; }
+    function wasGrow(el) {
+      var f = fInfo(el);
+      if (f) return f.grow > 0 || isFill(el);
+      return !!(el && (growOf(el) > 0 || isFill(el)));
+    }
 
     // Kill width/flex transitions on every pane for the duration of the drag so
     // pinning takes effect instantly (a CSS transition would make it look dead).
@@ -462,12 +509,6 @@
 
     var target = isSplit ? null : (mode === 'outerL' ? right : left);
     var targetSnap = target ? snap(target) : null;
-
-    var lw0 = left ? rectW(left) : 0;
-    var rw0 = right ? rectW(right) : 0;
-    var minL = left ? minOf(left) : 0;
-    var minR = right ? minOf(right) : 0;
-    var capMax = rr.width - 40;
 
     entry.active = handle;
     handle.classList.add('pr-active');
@@ -478,7 +519,13 @@
     function move(e) {
       var dx = e.clientX - startX;
       if (Math.abs(dx) > 1) moved = true;
-      if (mode === 'split') {
+      if (mode === 'split' && absorbRight) {
+        pin(left, Math.max(minL, Math.min(lw0 + dx, capMax)));
+        place(left.getBoundingClientRect().right);
+      } else if (mode === 'split' && absorbLeft) {
+        pin(right, Math.max(minR, Math.min(rw0 - dx, capMax)));
+        place(right.getBoundingClientRect().left);
+      } else if (mode === 'split') {
         var newL, newR;
         if (scrollable) {
           // Each side follows the cursor down to its own min; once a side hits
@@ -522,10 +569,15 @@
       }
 
       var keep = [];
-      if (isSplit) {
+      if (isSplit && (absorbLeft || absorbRight)) {
+        var only = absorbRight ? left : right;
+        keep = (only && !isFill(only)) ? [only] : [];
+        if (only && widthBtnOf(only, row) && keep.indexOf(only) === -1) keep.push(only);
+        frozen.forEach(function (o) { if (keep.indexOf(o.el) === -1) restore(o.el, o.s); });
+      } else if (isSplit) {
         // Treat a fill pane as flexible so we pin its NEIGHBOUR and let the
         // filler re-absorb whatever's left — it must never be pinned or saved.
-        var gl = fInfo(left).grow > 0 || isFill(left), gr = fInfo(right).grow > 0 || isFill(right);
+        var gl = wasGrow(left), gr = wasGrow(right);
         // Both flexible: normally pin one side and let the other re-absorb. But on
         // a scrollable row we may have GROWN the total, so pin both sides (minus any
         // fill pane) to persist the dragged widths and keep the row scrolled.
@@ -562,7 +614,16 @@
         // Four-tier rule: a module with its own width changer snaps to the
         // nearest preset (single/double/triple/fill) instead of keeping the
         // free dragged width — dragging must never overrule the presets.
-        if (job.btn) { snapToTier(row, job.el, job.btn, job.w); return; }
+        if (job.btn) {
+          // A split touches two modules. Only snap the one the user actually
+          // resized. The other rail (e.g. a max-capped studio) may move a few
+          // pixels or stay put — walking its width changer would jump it to
+          // the wrong tier and make the chat look stuck.
+          var start = job.el === left ? lw0 : job.el === right ? rw0 : job.w;
+          if (Math.abs(job.w - start) < 40) return;
+          snapToTier(row, job.el, job.btn, job.w);
+          return;
+        }
         pin(job.el, job.w);
         saveWidth(keyOf(row, job.el), job.w);
       });

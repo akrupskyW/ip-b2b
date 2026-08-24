@@ -16,9 +16,9 @@
  *   .topbar-profile, #pf-module-rail, .lir-layout-btn …
  */
 
-/* Musical "pump up the jam" strip for the Minimal-UI top bar. Side-effect
-   import so it auto-mounts on every page that loads the shared top bar. */
-import './jam-strip.js';
+/* Musical "pump up the jam" strip for the Minimal-UI top bar. Named import so
+   the footer mount can place the strip once #menu-panel .menu-inner exists. */
+import { mountJamStrip } from './jam-strip.js';
 
 /* Mobile primary navigation (≤768px): collapses the nav to an owl + expand
    rail and opens the full nav / History as full-screen pop-overs. Side-effect
@@ -149,7 +149,9 @@ export function syncMenuTogglePlacement() {
  * Lift the WISE wordmark into the navigation panel's brand strip so the menu
  * module spans the full left column (including the old logo row). The menu
  * toggle sits to the right of the logo and collapses the panel to an icon
- * rail (.mp-rail). When collapsed only the owl bug mark shows.
+ * rail (.mp-rail). When collapsed only the owl bug mark shows, except
+ * while Appearance ▸ Search is on — then the full wordmark paints in the
+ * search band as if the nav were still expanded.
  */
 export function mountMenuBrand({
   logoHref = 'overview.html',
@@ -254,6 +256,7 @@ export function mountMenuFooter({
     </div>`;
 
   wireMenuFooter();
+  mountJamStrip();
   return footer;
 }
 
@@ -262,14 +265,14 @@ export function isMenuFooterAnchor(anchor) {
   return !!anchor?.closest?.('.menu-footer');
 }
 
-/* The Appearance popover only becomes its wide, multi-column (and therefore
+/* The Appearance popover only becomes its wide two-column (and therefore
    short) layout once wireAppearancePopover() tags it with
    `.wise-popover--appearance`. But shells call the positioning helpers BEFORE
    wiring, so without this the popover is still measured as a narrow ~320px
    SINGLE column — tall enough to overflow the viewport, which made the
    above-the-icon placement clamp all the way to the top-left corner. Detect the
    appearance body by its group cards and add the class up front so its height is
-   measured at the real (multi-column) size. The avatar/user menu has no
+   measured at the real (two-column) size. The avatar/user menu has no
    `.wise-appearance-group`, so it is never affected. */
 function ensureAppearanceClass(pop) {
   if (pop && !pop.classList.contains('wise-popover--appearance') &&
@@ -490,8 +493,22 @@ function resolveFullBleedMode() {
   }
 }
 
-/** True when either full-bleed mode is active (everything or chat-only). */
+/** Search (Appearance ▸ Admin) suspends both full-bleed modes. Same key as
+    js/app-search.js (`wise-app-search`) — read here so this module never
+    imports the search row (avoids a cycle through appearance-menu.js). */
+function isSearchSuppressingFullBleed() {
+  try { return localStorage.getItem('wise-app-search') === '1'; } catch { return false; }
+}
+
+/** Drop the live full-bleed classes without rewriting the stored mode. */
+function paintFullBleedOff() {
+  document.documentElement.classList.remove('full-bleed', 'fb-chat-only');
+}
+
+/** True when either full-bleed mode is active (everything or chat-only).
+    Search forces this off so the layout and the Appearance rows agree. */
 export function isFullBleedOn() {
+  if (isSearchSuppressingFullBleed()) return false;
   return resolveFullBleedMode() !== 'off';
 }
 
@@ -514,20 +531,30 @@ export function restoreFullBleed() {
 
 /** True when Full bleed is stretching every module (not the Chat-only mode). */
 export function isFullBleedEverythingOn() {
+  if (isSearchSuppressingFullBleed()) return false;
   return resolveFullBleedMode() === 'all';
 }
 
 /** True when the Chat-only full bleed mode is on. */
 export function isChatOnlyFullBleedOn() {
+  if (isSearchSuppressingFullBleed()) return false;
   return resolveFullBleedMode() === 'chat';
 }
 
 /** Switch between the two mutually exclusive full-bleed modes:
     `'all'` (every module), `'chat'` (chat only), or `''` / `'off'` (off).
-    Chat-only still sets `full-bleed` + `fb-chat-only` so existing CSS applies. */
+    Chat-only still sets `full-bleed` + `fb-chat-only` so existing CSS applies.
+    While Search is on the stored mode is kept, but the classes stay off. */
 export function applyFullBleedMode(mode) {
   const resolved = mode === 'all' || mode === 'chat' ? mode : 'off';
   try { localStorage.setItem(FB_MODE_KEY, resolved); } catch {}
+  if (isSearchSuppressingFullBleed()) {
+    paintFullBleedOff();
+    try {
+      document.dispatchEvent(new CustomEvent('wise:full-bleed', { detail: { on: false } }));
+    } catch {}
+    return;
+  }
   if (resolved === 'all') {
     applyFullBleed(true);
     applyFullBleedChatOnly(false);

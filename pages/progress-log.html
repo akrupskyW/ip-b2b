@@ -8,7 +8,8 @@
        A new local day opens a live day at the top of the board. Eval notes and
        crawls are today-only — they never rewrite earlier days or write a
        journal-wide digest. Boot, the hourly poll, midnight, and Re-evaluate
-       crawl disk and rewrite today’s note only. -->
+       open every HTML file, inventory features / UX / modules, and rewrite
+       today’s cards against a frozen start-of-day baseline. -->
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <title>WISE · Progress Log</title>
@@ -237,17 +238,15 @@
     .pl-pcard-path { font-size: 10.5px; color: var(--text-subtle); font-family: 'Courier New', monospace; margin-top: 1px; }
     .pl-pcard-new { display: inline-flex; align-items: center; margin-left: auto; flex-shrink: 0; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--sec-green); }
 
-    /* Categories + bullets flow left-to-right in one block — not side-by-side columns. */
-    .pl-pcard-cats { display: flex; flex-direction: column; gap: 8px; }
-    .pl-cat-block { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin: 0; }
+    /* One category, then a stack of full descriptions — never inline bullets
+       wrapped into a single run-on line. */
+    .pl-pcard-cats { display: flex; flex-direction: column; gap: 16px; }
+    .pl-cat-block { display: flex; flex-direction: column; gap: 8px; margin: 0; }
     .pl-cat-block-head { display: flex; align-items: baseline; gap: 5px; flex: 0 0 auto; }
     .pl-cat-block-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-subtle); }
     .pl-cat-block-count { font-size: 10px; font-weight: 700; color: var(--text-subtle); font-variant-numeric: tabular-nums; }
-    .pl-cat-list { list-style: none; margin: 0; padding: 0; display: block; flex: 1 1 200px; min-width: 0; line-height: 1.55; }
-    .pl-cat-list li { display: inline; font-size: 12.5px; color: var(--text-muted); }
-    .pl-cat-list li::before { content: "•"; margin: 0 0.4em 0 0.05em; color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); }
-    .pl-cat-list li:first-child::before { margin-left: 0; }
-    .pl-cat-list li + li { margin-left: 0.85em; }
+    .pl-cat-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+    .pl-cat-list li { display: block; font-size: 13px; line-height: 1.55; color: var(--text); }
     .pl-cat-list mark { background: color-mix(in srgb, var(--primary) 24%, transparent); color: inherit; border-radius: 3px; padding: 0 2px; }
 
     /* ── Empty state ── */
@@ -371,7 +370,7 @@
               <input type="text" class="pl-search" id="pl-search-input" placeholder="Search entries, pages, components…" aria-label="Search the progress log" autocomplete="off" />
               <button type="button" class="pl-search-clear" id="pl-search-clear" title="Clear search" aria-label="Clear search"><span class="pl-search-clear-x" aria-hidden="true">×</span></button>
             </div>
-            <button type="button" class="adm-btn adm-btn--primary pl-review-btn" id="pl-eval-btn" title="Evaluate every page and update the notes">
+            <button type="button" class="adm-btn adm-btn--primary pl-review-btn" id="pl-eval-btn" title="Evaluate every HTML file and write full feature, UX, and module details">
               <span class="material-symbols-outlined" aria-hidden="true">autorenew</span>
               <span class="pl-review-btn-label">Re-evaluate</span>
             </button>
@@ -524,20 +523,26 @@
   <!-- ═══════════ Progress Log board + shared WISEcodeAI chat ═══════════ -->
   <script type="module">
     import { mountWISEcodeAIChat } from '../js/wiseai-chat.js';
+    import {
+      CRAWL_KEY, CRAWL_KEY_LEGACY, SHARED_SCRIPTS,
+      inventoryDoc, describeInventoryDiff, catsHaveItems,
+      catalogHtmlPaths, discoverHtmlPaths, defaultFileLabel,
+      displayPath, isHtmlPath, crawlOverview, emptyCats,
+    } from '../js/progress-log-eval.js';
     (function () {
       let chat = null;
       const esc = (s) => String(s).replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
 
       /* ── Category taxonomy ── */
       const CATS = [
-        { id: 'components',   label: 'Components',   icon: 'widgets' },
-        { id: 'features',     label: 'Features',     icon: 'bolt' },
-        { id: 'logic',        label: 'Logic',        icon: 'memory' },
-        { id: 'ux',           label: 'UX & UI',      icon: 'palette' },
-        { id: 'changes',      label: 'Changes',      icon: 'edit' },
-        { id: 'improvements', label: 'Improvements', icon: 'trending_up' },
-        { id: 'updates',      label: 'Updates',      icon: 'update' },
-        { id: 'deletions',    label: 'Deletions',    icon: 'delete' },
+        { id: 'components',   label: 'Components' },
+        { id: 'features',     label: 'Features' },
+        { id: 'logic',        label: 'Logic' },
+        { id: 'ux',           label: 'UX & UI' },
+        { id: 'changes',      label: 'Changes' },
+        { id: 'improvements', label: 'Improvements' },
+        { id: 'updates',      label: 'Updates' },
+        { id: 'deletions',    label: 'Deletions' },
       ];
       const CAT_BY_ID = Object.fromEntries(CATS.map((c) => [c.id, c]));
 
@@ -548,7 +553,7 @@
          (and on tab-focus after an hour) and reloads when the stamp has moved.
          A new local day opens that live day so crawls and eval notes cannot
          keep writing onto yesterday. ── */
-      const LOG_STAMP = '2026-08-21T00:25:00.000Z';
+      const LOG_STAMP = '2026-08-23T17:20:00.000Z';
       const AUTHORED = [
         {
           date: '2026-08-20', rel: 'Thursday',
@@ -1039,7 +1044,7 @@
         return {
           date: iso,
           rel: weekdayRel(iso),
-          summary: 'No disk changes captured yet today — the live crawl will fill this in as files move.',
+          summary: 'Evaluating every HTML file — the live crawl will write full feature, UX, and module details versus the start of today.',
           entries: [],
           live: true,
         };
@@ -1311,45 +1316,11 @@
         if (list.length === 2) return list[0] + ' and ' + list[1];
         return list.slice(0, -1).join(', ') + ', and ' + list[list.length - 1];
       }
-      function dayCounts(day) {
-        const cats = {};
-        let n = 0;
-        day.entries.forEach((e) => entryItems(e).forEach((it) => { n++; cats[it.cat] = (cats[it.cat] || 0) + 1; }));
-        return { n, cats };
-      }
-      function firstClause(text, max = 88) {
-        let t = String(text || '').trim().replace(/[.;]+$/, '');
-        const dash = t.split(' — ')[0].trim();
-        if (dash.length >= 16 && dash.length <= max) t = dash;
-        if (t.length > max) {
-          const cut = t.slice(0, max);
-          const sp = cut.lastIndexOf(' ');
-          t = (sp > 40 ? cut.slice(0, sp) : cut).replace(/[.,;:]+$/, '') + '…';
-        }
-        return t;
-      }
-      function pageEvalSentence(entry) {
-        const first = CATS.map((c) => (Array.isArray(entry[c.id]) && entry[c.id][0]) || null).find(Boolean);
-        const clause = first ? firstClause(first) : '';
-        const name = entry.page + (entry.isNew ? ' (new)' : '');
-        if (!clause) return name + ' progressed.';
-        return name + ' — ' + clause.charAt(0).toLowerCase() + clause.slice(1) + '.';
-      }
       function dayEvalNote(day) {
-        const { n, cats } = dayCounts(day);
-        const pages = day.entries;
-        const lead = pages.map(pageEvalSentence);
-        const heavy = CATS.filter((c) => cats[c.id]).sort((a, b) => cats[b.id] - cats[a.id]).slice(0, 3);
-        const parts = [
-          'Evaluated ' + pages.length + (pages.length === 1 ? ' page' : ' pages') + ' on ' + fmtDate(day.date) + '.',
-          ...lead,
-        ];
-        parts.push(
-          n + (n === 1 ? ' entry' : ' entries')
-          + (heavy.length ? ', heaviest in ' + oxford(heavy.map((c) => c.label)) : '')
-          + '.'
-        );
-        return parts.join(' ');
+        const pages = (day.entries || []).filter((e) => e.path !== '(all HTML files)');
+        return 'Evaluated every HTML file on ' + fmtDate(day.date) + '. '
+          + pages.length + (pages.length === 1 ? ' surface has' : ' surfaces have')
+          + ' a card below with full feature, UX, UI, and module descriptions — not byte counts or heading tallies.';
       }
       function upsertEvalNote(dayIso, text, scope) {
         const now = new Date().toISOString();
@@ -1413,247 +1384,167 @@
       window.plReevaluate = (opts) => reevaluate(opts || {});
 
       /* ── Live page crawl ──────────────────────────────────────────────
-         Re-evaluate does NOT just reflow the static LOG — it fetches every
-         page in the app, parses each one, and fingerprints it (size, module
-         count, headings, chat module, script includes, content hash). The
-         fingerprints are stored in localStorage; each crawl diffs against the
-         previous snapshot so the journal reports what actually changed on
-         disk (grown / shrank, modules added, chat added, new/unreachable
-         pages). The first crawl captures the baseline. This manifest is the
-         full set of pages/*.html plus the shared JS the journal already tracks
-         — add new pages and scripts here so the crawl sees them. */
-      const CRAWL_KEY = 'wise-progress-log-crawl-v1';
-      const PAGES = [
-        'add-catalog.html', 'add-product.html', 'accessibility-review.html',
-        'admin-utils.html', 'agents.html', 'ai-dashboard.html', 'alerts.html',
-        'all-modules.html', 'analytics-types.html', 'api-keys.html',
-        'app-vision-deck.html', 'audit-queue.html', 'conversation-library.html',
-        'create-account.html', 'docs.html', 'forgot-password.html',
-        'gras-verification.html', 'help.html', 'ingredient-browser.html',
-        'invoices.html', 'login.html', 'marketing-assets.html',
-        'non-upf-dashboard.html', 'organizations.html', 'overview.html',
-        'page-gallery.html', 'preferences.html', 'product-comparison.html',
-        'product-portfolio.html', 'profile.html', 'progress-log.html',
-        'quick-invite.html', 'reformulation.html', 'report-guiding-stars.html',
-        'reports.html', 'studio-ai.html', 'user-management.html',
-        'verification.html', 'view-product.html', 'wiseai.html',
-      ];
-      const CRAWL_SCRIPTS = [
-        '../js/wiseai-chat.js', '../js/all-modules-flow.js',
-        '../js/appearance-menu.js', '../js/topbar.js', '../js/owl-walkthrough.js',
-        '../js/chat-ask.js', '../js/chat-history.js', '../js/agent-menu.js',
-        'wise.css',
-      ];
-      const CRAWL_FILES = PAGES.concat(CRAWL_SCRIPTS);
-      const PATH_LABELS = {
-        'wiseai.html': 'WISEcodeAI',
-        'wiseai-chat.js': 'Shared chat',
-        '../js/wiseai-chat.js': 'Shared chat',
-        'all-modules.html': 'All Modules',
-        '../js/all-modules-flow.js': 'All Modules',
-        'conversation-library.html': 'Conversation Library',
-        'product-portfolio.html': 'Product Portfolio',
-        'product-comparison.html': 'Product Comparison',
-        'page-gallery.html': 'Page Gallery',
-        'progress-log.html': 'Progress Log',
-        'accessibility-review.html': 'Accessibility Review',
-        'add-product.html': 'Add Product',
-        'view-product.html': 'View Product',
-        'overview.html': 'Dashboard',
-        'ai-dashboard.html': 'AI Dashboard',
-        'analytics-types.html': 'Analytics Types',
-        'marketing-assets.html': 'Marketing Assets',
-        'gras-verification.html': 'GRAS Verification',
-        'non-upf-dashboard.html': 'NON-UPF Dashboard',
-        'reformulation.html': 'Reformulation',
-        'studio-ai.html': 'Studio & AI',
-        '../js/appearance-menu.js': 'Appearance & Admin',
-        '../js/topbar.js': 'Appearance & Admin',
-        '../js/owl-walkthrough.js': 'WISEowl walkthrough',
-        '../js/chat-ask.js': 'What can I ask?',
-        '../js/chat-history.js': 'History & Projects',
-        '../js/agent-menu.js': 'Primary navigation',
-        'wise.css': 'Platform-wide',
-      };
+         Re-evaluate opens every HTML file every time (catalog + directory
+         listing + extras), inventories features / UX / modules / scripts /
+         chips, and diffs against a frozen start-of-day baseline. The live
+         day is rebuilt from that same baseline on every pass so the cards
+         stay identical until the files themselves move. Byte counts are
+         supporting context only. */
       let lastCrawlAt = 0;
       let crawlBusy = false;
+      let lastCrawlFileCount = catalogHtmlPaths().length + SHARED_SCRIPTS.length;
 
-      function hashStr(s) {
-        let h = 5381;
-        for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
-        return (h >>> 0).toString(36);
-      }
-      function fmtBytes(n) {
-        if (n < 1024) return n + ' B';
-        if (n < 1024 * 1024) return (n / 1024).toFixed(n < 10240 ? 1 : 0) + ' KB';
-        return (n / (1024 * 1024)).toFixed(1) + ' MB';
-      }
-      function fingerprintDoc(path, text) {
-        let title = path, headings = 0, sections = 0, scripts = 0;
-        try {
-          const doc = new DOMParser().parseFromString(text, 'text/html');
-          title = (doc.querySelector('title') && doc.querySelector('title').textContent || path).trim();
-          headings = doc.querySelectorAll('h1, h2, h3').length;
-          sections = doc.querySelectorAll('section, article, [class*="module"], [class*="-card"]').length;
-          scripts = doc.querySelectorAll('script[src]').length;
-        } catch (_) {}
-        return {
-          path, title, headings, sections, scripts,
-          hasChat: /chat-shell-wrap|wiseai-chat|chat-topbar/.test(text),
-          size: text.length,
-          hash: hashStr(text),
-        };
-      }
       async function crawlPage(path) {
         try {
           const res = await fetch(path + '?plc=' + Date.now(), { cache: 'no-store' });
           if (!res.ok) return { path, missing: true };
-          const fp = fingerprintDoc(path, await res.text());
+          const fp = inventoryDoc(path, await res.text());
           const lm = res.headers.get('Last-Modified');
           fp.mtime = lm ? Date.parse(lm) : 0;
           return fp;
         } catch (_) { return { path, missing: true }; }
       }
-      function crawlAllPages() { return Promise.all(CRAWL_FILES.map(crawlPage)); }
-      function displayPath(path) {
-        return String(path || '').replace(/^\.\.\//, '').replace(/^js\//, '');
+      async function resolveCrawlFiles() {
+        const html = await discoverHtmlPaths(async (url) => {
+          const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'plc=' + Date.now(), { cache: 'no-store' });
+          if (!res.ok) return '';
+          return res.text();
+        });
+        const seen = new Set();
+        const files = [];
+        html.concat(SHARED_SCRIPTS).forEach((p) => {
+          if (!p || seen.has(p)) return;
+          seen.add(p);
+          files.push(p);
+        });
+        lastCrawlFileCount = files.length;
+        return files;
       }
+      function crawlAllPages(files) { return Promise.all(files.map(crawlPage)); }
       function fileLabel(path, title) {
-        if (PATH_LABELS[path]) return PATH_LABELS[path];
-        const base = String(path || '').split('/').pop();
-        if (PATH_LABELS[base]) return PATH_LABELS[base];
-        for (const d of AUTHORED) {
-          for (const e of d.entries) {
-            if (e.path === path || e.path === base || e.path === displayPath(path)) return e.page;
+        const authored = (() => {
+          const base = String(path || '').split('/').pop();
+          const disp = displayPath(path);
+          for (const d of AUTHORED) {
+            for (const e of d.entries) {
+              if (e.path === path || e.path === base || e.path === disp) return e.page;
+            }
           }
-        }
-        const cleaned = String(title || '').replace(/^WISE\s*[·•]\s*/i, '').trim();
-        if (cleaned && cleaned !== path) return cleaned;
-        return displayPath(path);
+          return '';
+        })();
+        return authored || defaultFileLabel(path, title);
       }
       function loadCrawlSnap() {
         try {
           const raw = JSON.parse(localStorage.getItem(CRAWL_KEY) || 'null');
           if (raw && raw.pages && typeof raw.pages === 'object') return raw;
         } catch (_) {}
+        try {
+          const legacy = JSON.parse(localStorage.getItem(CRAWL_KEY_LEGACY) || 'null');
+          if (legacy && legacy.pages && typeof legacy.pages === 'object') return legacy;
+        } catch (_) {}
         return null;
       }
       function persistCrawlSnap(snap) {
-        try { localStorage.setItem(CRAWL_KEY, JSON.stringify(snap)); } catch (_) {}
-      }
-      function liveDaySummary(day) {
-        const names = (day.entries || []).map((e) => e.page);
-        if (!names.length) return 'No disk changes captured yet today — the live crawl will fill this in as files move.';
-        return 'Live crawl of today’s disk changes — ' + oxford(names) + '.';
-      }
-      function upsertLiveChange(path, title, cat, text, isNew) {
-        if (!liveDay) return false;
-        const disp = displayPath(path);
-        let entry = liveDay.entries.find((e) => e.path === path || e.path === disp);
-        if (!entry) {
-          entry = { page: fileLabel(path, title), path: disp };
-          if (isNew) entry.isNew = true;
-          liveDay.entries.push(entry);
-        }
-        const bucket = entry[cat] || (entry[cat] = []);
-        if (!bucket.includes(text)) bucket.push(text);
-        return true;
-      }
-      function touchedToday(fp) {
-        if (!fp || fp.missing) return false;
-        if (!fp.mtime) return true;
-        return fp.mtime >= startOfLocalDay();
-      }
-      function todayOnlyDiff(diff, firstSnap) {
-        return {
-          added: (diff.added || []).filter((fp) => {
-            if (!touchedToday(fp)) return false;
-            if (firstSnap && !fp.mtime) return false;
-            return true;
-          }),
-          changed: (diff.changed || []).filter((c) => touchedToday(c.fp)),
-          unchanged: diff.unchanged || [],
-          unreachable: diff.unreachable || [],
-          curMap: diff.curMap,
+        const compactMap = (map) => {
+          const out = {};
+          Object.keys(map || {}).forEach((k) => {
+            const fp = map[k];
+            if (!fp) return;
+            out[k] = {
+              path: fp.path, title: fp.title, size: fp.size, hash: fp.hash,
+              headings: fp.headings, modules: fp.modules, scripts: fp.scripts,
+              chips: fp.chips, buttons: fp.buttons, signals: fp.signals,
+              functions: fp.functions, classes: fp.classes, copy: fp.copy,
+              hasChat: fp.hasChat, kind: fp.kind,
+            };
+          });
+          return out;
         };
+        const payload = {
+          at: snap.at, day: snap.day, history: snap.history,
+          dayStart: compactMap(snap.dayStart),
+          pages: compactMap(snap.pages),
+        };
+        try { localStorage.setItem(CRAWL_KEY, JSON.stringify(payload)); }
+        catch (_) {
+          try {
+            delete payload.dayStart;
+            localStorage.setItem(CRAWL_KEY, JSON.stringify(payload));
+          } catch (__) {}
+        }
       }
-      function applyDiffToToday(diff, cur, firstSnap) {
+      function dayStartMap(prev, todayIso) {
+        if (!prev || !prev.pages) return null;
+        if (prev.day === todayIso && prev.dayStart && typeof prev.dayStart === 'object') return prev.dayStart;
+        return prev.pages;
+      }
+      function liveDaySummary(day, htmlCount) {
+        const names = (day.entries || []).filter((e) => e.path !== '(all HTML files)').map((e) => e.page);
+        const n = htmlCount || 0;
+        if (!names.length) {
+          return 'Evaluated every HTML file' + (n ? ' (' + n + ')' : '') + '. No disk changes versus the start-of-day baseline.';
+        }
+        return 'Evaluated every HTML file' + (n ? ' (' + n + ')' : '') + '. '
+          + names.length + (names.length === 1 ? ' surface has' : ' surfaces have')
+          + ' full feature, UX, UI, and module details below.';
+      }
+      function entryFromCats(fp, cats, isNew) {
+        const entry = { page: fileLabel(fp.path, fp.title), path: displayPath(fp.path) };
+        if (isNew) entry.isNew = true;
+        CATS.forEach((c) => {
+          if (Array.isArray(cats[c.id]) && cats[c.id].length) entry[c.id] = cats[c.id].slice();
+        });
+        return entry;
+      }
+      function rebuildLiveDay(diff, htmlCount) {
         syncBoardLog();
         if (!liveDay) return false;
-        const todays = todayOnlyDiff(diff, firstSnap);
-        let changed = false;
-        if (!firstSnap) todays.added.forEach((fp) => {
-          if (upsertLiveChange(fp.path, fp.title, 'features', 'New file on disk — first seen today.', true)) changed = true;
+        const next = [];
+        (diff.added || []).forEach((fp) => {
+          const cats = describeInventoryDiff(fp, null);
+          if (catsHaveItems(cats)) next.push(entryFromCats(fp, cats, true));
         });
-        todays.changed.forEach(({ fp, before }) => {
-          const raw = describeChange(fp, before);
-          const bits = raw.replace(/^.* — /, '');
-          const text = bits.charAt(0).toUpperCase() + bits.slice(1) + (bits.endsWith('.') ? '' : '.');
-          if (upsertLiveChange(fp.path, fp.title, 'changes', text, false)) changed = true;
+        (diff.changed || []).forEach(({ fp, before }) => {
+          const cats = describeInventoryDiff(fp, before);
+          if (catsHaveItems(cats)) next.push(entryFromCats(fp, cats, false));
         });
-        const start = startOfLocalDay();
-        (cur || []).forEach((fp) => {
-          if (fp.missing || !fp.mtime || fp.mtime < start) return;
-          const disp = displayPath(fp.path);
-          if (liveDay.entries.some((e) => e.path === fp.path || e.path === disp)) return;
-          if (upsertLiveChange(fp.path, fp.title, 'updates', 'Touched today (file timestamp).', false)) changed = true;
-        });
-        if (changed) {
-          liveDay.summary = liveDaySummary(liveDay);
-          persistLiveDay();
-          syncBoardLog();
+        next.sort((a, b) => String(a.page).localeCompare(String(b.page)) || String(a.path).localeCompare(String(b.path)));
+        const unchangedHtml = (diff.unchanged || []).filter((fp) => isHtmlPath(fp.path));
+        if (unchangedHtml.length) {
+          const names = unchangedHtml.map((fp) => fileLabel(fp.path, fp.title)).sort((a, b) => a.localeCompare(b));
+          const scope = emptyCats();
+          scope.updates.push(
+            'Evaluated every HTML file on this pass. Unchanged from the start of today: '
+            + oxford(names) + '.'
+          );
+          next.push({ page: 'All HTML files', path: '(all HTML files)', updates: scope.updates });
         }
-        return changed;
+        liveDay.entries = next;
+        liveDay.summary = liveDaySummary(liveDay, htmlCount);
+        persistLiveDay();
+        syncBoardLog();
+        return true;
       }
-      function diffCrawl(prev, cur) {
-        const prevMap = (prev && prev.pages) || {};
+      function diffAgainstBaseline(baseline, cur) {
+        const prevMap = baseline || {};
         const curMap = {};
         cur.forEach((fp) => { if (!fp.missing) curMap[fp.path] = fp; });
         const added = [], changed = [], unchanged = [], unreachable = [];
+        const hasBaseline = !!(baseline && Object.keys(baseline).length);
         cur.forEach((fp) => {
           if (fp.missing) { unreachable.push(fp.path); return; }
           const before = prevMap[fp.path];
+          if (!hasBaseline) { unchanged.push(fp); return; }
           if (!before) added.push(fp);
           else if (before.hash !== fp.hash) changed.push({ fp, before });
           else unchanged.push(fp);
         });
-        return { added, changed, unchanged, unreachable, curMap };
+        return { added, changed, unchanged, unreachable, curMap, firstBaseline: !hasBaseline };
       }
-      function describeChange(fp, before) {
-        const bits = [];
-        const dSize = fp.size - before.size;
-        if (dSize) bits.push((dSize > 0 ? 'grew ' : 'shrank ') + fmtBytes(Math.abs(dSize)));
-        const dSec = fp.sections - before.sections;
-        if (dSec) bits.push((dSec > 0 ? '+' : '') + dSec + (Math.abs(dSec) === 1 ? ' module' : ' modules'));
-        const dHead = fp.headings - before.headings;
-        if (dHead) bits.push((dHead > 0 ? '+' : '') + dHead + (Math.abs(dHead) === 1 ? ' heading' : ' headings'));
-        const dScr = fp.scripts - before.scripts;
-        if (dScr) bits.push((dScr > 0 ? '+' : '') + dScr + (Math.abs(dScr) === 1 ? ' script' : ' scripts'));
-        if (fp.hasChat !== before.hasChat) bits.push(fp.hasChat ? 'chat added' : 'chat removed');
-        return fp.path + ' — ' + (bits.length ? bits.join(', ') : 'content changed');
-      }
-      function crawlSummaryText(diff, firstSnap) {
-        const parts = [];
-        if (firstSnap) {
-          const touched = (diff.added || []).filter((fp) => fp.mtime && fp.mtime >= startOfLocalDay());
-          if (touched.length) parts.push(touched.length + (touched.length === 1 ? ' file touched today: ' : ' files touched today: ') + touched.map((f) => displayPath(f.path)).join(', ') + '.');
-          else parts.push('No files changed today.');
-        } else {
-          if (diff.changed.length) {
-            parts.push(diff.changed.length + (diff.changed.length === 1 ? ' file changed today: ' : ' files changed today: ')
-              + diff.changed.map((c) => describeChange(c.fp, c.before)).join('; ') + '.');
-          }
-          if (diff.added.length) {
-            parts.push('New today: ' + diff.added.map((f) => displayPath(f.path)).join(', ') + '.');
-          }
-          if (!diff.changed.length && !diff.added.length) parts.push('No files changed today.');
-        }
-        if (diff.unreachable.length) parts.push('Unreachable today: ' + diff.unreachable.map(displayPath).join(', ') + '.');
-        return parts.join(' ');
-      }
-      function setCrawlBusyUi(on) {
+      function setCrawlBusyUi(on, n) {
         const el = document.getElementById('pl-head-meta');
-        if (on && el) el.textContent = 'Crawling ' + CRAWL_FILES.length + ' files…';
+        if (on && el) el.textContent = 'Evaluating every HTML file (' + (n || lastCrawlFileCount) + ')…';
         else updateEvalMeta();
       }
       async function crawlAndReport({ scroll = false } = {}) {
@@ -1664,21 +1555,28 @@
           syncBoardLog();
           notes = loadNotes();
           dropJournalNotes();
-          const cur = await crawlAllPages();
+          const files = await resolveCrawlFiles();
+          setCrawlBusyUi(true, files.length);
+          const cur = await crawlAllPages(files);
           const prev = loadCrawlSnap();
-          const firstSnap = !prev;
-          const raw = diffCrawl(prev, cur);
-          const diff = todayOnlyDiff(raw, firstSnap);
           const todayIso = localDayIso();
-          const mutated = applyDiffToToday(diff, cur, firstSnap);
-          upsertEvalNote(todayIso, crawlSummaryText(diff, firstSnap), 'crawl');
+          const baseline = dayStartMap(prev, todayIso);
+          const diff = diffAgainstBaseline(baseline, cur);
+          const htmlCount = files.filter(isHtmlPath).length;
+          const mutated = rebuildLiveDay(diff, htmlCount);
+          const overview = diff.firstBaseline
+            ? ('Evaluated every HTML file (' + htmlCount + ') plus ' + SHARED_SCRIPTS.length
+              + ' shared scripts. First inventory saved as today’s baseline — the next Re-evaluate will describe features, UX, UI, and modules against this snapshot.')
+            : crawlOverview(htmlCount, SHARED_SCRIPTS.length, diff, (fp) => fileLabel(fp.path, fp.title));
+          upsertEvalNote(todayIso, overview, 'crawl');
           if (mutated && liveDay) upsertEvalNote(todayIso, dayEvalNote(liveDay), 'day');
           persistNotes();
           const prevHist = Array.isArray(prev && prev.history) ? prev.history : [];
           persistCrawlSnap({
             at: Date.now(),
             day: todayIso,
-            pages: raw.curMap,
+            dayStart: baseline || diff.curMap,
+            pages: diff.curMap,
             history: prevHist.concat([{
               at: Date.now(),
               day: todayIso,
@@ -1704,9 +1602,10 @@
       /* ── Hourly check + new-day full evaluation ──
          Every hour (and when the tab comes back after an hour) we cache-bust
          fetch this page, compare LOG_STAMP, and reload if the journal was
-         rewritten. We also crawl disk so a save (or an overnight change) lands
-         on today. A Re-evaluate click, a new local day, a missing today-note,
-         or a stamp mismatch rewrites today’s eval note only. Polling pauses
+         rewritten. We also crawl every HTML file so a save (or an overnight
+         change) lands on today with full feature / UX / module descriptions.
+         A Re-evaluate click, a new local day, a missing today-note, or a
+         stamp mismatch rewrites today’s eval note only. Polling pauses
          while the tab is hidden. Auto-checks skip if a note composer is open;
          a manual Re-evaluate does not. */
       const HOUR_MS = 60 * 60 * 1000;
@@ -1898,7 +1797,7 @@
           btn.classList.add('is-busy');
           btn.classList.remove('is-done');
           if (icon) icon.textContent = 'autorenew';
-          if (label) label.textContent = 'Crawling pages…';
+          if (label) label.textContent = 'Evaluating HTML…';
           btn.setAttribute('aria-busy', 'true');
           try { await runFullEval(); } catch (_) {}
           btn.classList.remove('is-busy');

@@ -127,6 +127,46 @@
     #modules-row[data-out-w="2"]:has(.wa-pane.is-open) .wa-chat { flex-basis: 400px !important; width: 400px !important; }
     #modules-row[data-out-w="3"]:has(.wa-pane.is-open) .wa-chat { flex-basis: 340px !important; width: 340px !important; }
 
+    /* ── Full-screen → single-pane collapse ────────────────────────────────
+       The welcome chat fills the modules row. The first time a result pane
+       opens, the chat eases down to its single-column width while the pane
+       grows into the freed space. Pixel flex-basis is interpolable; `flex: auto`
+       → `380px` is not, so JS pins both ends and this class runs the tween.
+       Competing bounce/slide keyframes are paused so width is the only motion. */
+    #modules-row.is-dock-animating {
+      overflow-x: hidden;
+    }
+    #modules-row.is-dock-animating .wa-chat,
+    #modules-row.is-dock-animating .wa-pane.is-open {
+      transition:
+        flex-basis 0.58s cubic-bezier(0.22, 1, 0.36, 1),
+        width 0.58s cubic-bezier(0.22, 1, 0.36, 1),
+        min-width 0.58s cubic-bezier(0.22, 1, 0.36, 1),
+        max-width 0.58s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    #modules-row.is-dock-animating .wa-pane.is-open,
+    #modules-row.is-dock-animating .wa-pane.is-open.is-sticky {
+      animation: none !important;
+    }
+    #modules-row.is-dock-animating .wa-pane.is-open.is-dock-opening {
+      min-width: 0 !important;
+      overflow: hidden;
+    }
+    /* After the collapse finishes we drop `is-dock-animating`, which would
+       otherwise re-apply panelBounceRight / stickySlideRight and jerk the
+       pane. Mark it settled so those entrance keyframes stay off. */
+    #modules-row .wa-pane.is-open.is-dock-settled,
+    #modules-row .wa-pane.is-open.is-sticky.is-dock-settled {
+      animation: none !important;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #modules-row.is-dock-animating .wa-chat,
+      #modules-row.is-dock-animating .wa-pane.is-open {
+        transition: none !important;
+      }
+    }
+
     /* ── Activity strip ──────────────────────────────────────────────
        The thin landmark rail on the chat's edge is fully self-contained in
        js/chat-activity-strip.js now — it injects its own styles and is mounted
@@ -413,6 +453,7 @@
       border-radius: 16px;
       overflow: hidden;
       flex-shrink: 0;
+      animation: none;
     }
     #modules-row .wch-sidebar.wch-docked .wch-head {
       padding: 18px 14px 16px 24px;
@@ -470,7 +511,11 @@
       border-top-right-radius: 0;
       border-bottom-right-radius: 0;
       border-right: 0;
-      animation: stickySlideLeft .42s cubic-bezier(.34, 1.45, .64, 1) both;
+      /* Resting sticky state has no enter animation. A leftover keyframe here
+         restarts from its "closed" from-state when reveal/conceal classes drop,
+         so the module flashes shut after expanding. Show/hide uses only
+         wch-dock-reveal / wch-dock-conceal. */
+      animation: none;
     }
     /* Turns (right of chat): flush + tucked under the chat's RIGHT edge. */
     #modules-row.modules-sticky .wch-sidebar.wch-docked.wch-right:not(.wch-unsticky) {
@@ -479,7 +524,7 @@
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
       border-left: 0;
-      animation: stickySlideRight .42s cubic-bezier(.34, 1.45, .64, 1) both;
+      animation: none;
     }
     /* Output pane + Turns / walkthrough: restore a vertical left edge. */
     #modules-row:has(.wa-pane.is-open) .wch-sidebar.wch-docked.wch-right,
@@ -489,9 +534,6 @@
     html.dark #modules-row:has(.wa-pane.is-open) .wch-sidebar.wch-docked.wch-right {
       border-left-color: rgba(255, 255, 255, 0.22) !important;
     }
-    /* Emerge from behind the chat: start mostly hidden under it, slide outward. */
-    @keyframes stickySlideLeft  { from { transform: translateX(26px); opacity: .35; } to { transform: none; opacity: 1; } }
-    @keyframes stickySlideRight { from { transform: translateX(-26px); opacity: .35; } to { transform: none; opacity: 1; } }
     @media (prefers-reduced-motion: reduce) {
       #modules-row.modules-sticky .wch-sidebar.wch-docked { animation: none !important; }
     }
@@ -4330,6 +4372,160 @@
       block.insertBefore(h, block.firstChild);
     }
 
+    /* ── Full-screen chat → single-pane dock ────────────────────────────────
+       The welcome chat fills the row (`flex: 1 1 auto`). The first result pane
+       must collapse it to the canonical single width. CSS cannot tween `auto`
+       → `380px`, so we pin both ends in pixels (same pattern as History's
+       `wch-anim` reveal) and let `#modules-row.is-dock-animating` run the
+       ease. The pane is `flex: 1 1 0` with min-width 0, so it grows into
+       whatever the chat gives up — no second width tween to keep in sync. */
+    const DOCK_ANIM_MS = 580;
+    let dockAnimTimer = 0;
+    let dockAnimDir = null; /* 'in' | 'out' | null — so type/delete can reverse mid-tween */
+    function dockReduceMotion() {
+      try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+      catch (e) { return false; }
+    }
+    function anyOtherPaneOpen(except) {
+      return ['results', 'visuals', 'unified', 'report'].some((k) => {
+        const el = paneEl[k];
+        return el && el !== except && el.classList.contains('is-open');
+      });
+    }
+    function chatDockTargetPx(chat, row) {
+      if (chat.classList.contains('panel-triple')) return 760;
+      if (chat.classList.contains('panel-wide')) return 580;
+      const outW = row && row.getAttribute('data-out-w');
+      if (outW === '3') return 340;
+      if (outW === '2') return 400;
+      if (outW === '1') return 480;
+      return 380;
+    }
+    function clearDockInline(el) {
+      if (!el || !el.style) return;
+      el.style.removeProperty('flex');
+      el.style.removeProperty('width');
+      el.style.removeProperty('min-width');
+      el.style.removeProperty('max-width');
+      el.style.removeProperty('opacity');
+    }
+    function pinChatPx(chat, px) {
+      const v = Math.max(0, Math.round(px)) + 'px';
+      chat.style.setProperty('flex', '0 0 ' + v, 'important');
+      chat.style.setProperty('width', v, 'important');
+      chat.style.setProperty('min-width', v, 'important');
+      chat.style.setProperty('max-width', v, 'important');
+    }
+    function finishDockAnim(chat, pane) {
+      clearTimeout(dockAnimTimer);
+      dockAnimTimer = 0;
+      dockAnimDir = null;
+      clearDockInline(chat);
+      if (pane) {
+        clearDockInline(pane);
+        pane.classList.remove('is-dock-opening');
+        if (pane.classList.contains('is-open')) pane.classList.add('is-dock-settled');
+      }
+      document.getElementById('modules-row')?.classList.remove('is-dock-animating');
+    }
+    /* Open `pane` and, when this is the first pane, collapse the full-width
+       chat down to single. No-ops if the pane is already open (unless an
+       expand is in flight — then we reverse it). */
+    function ensurePaneOpen(pane) {
+      if (!pane) return false;
+      if (pane.classList.contains('is-open') && dockAnimDir !== 'out') return false;
+      const chat = document.getElementById('wa-chat');
+      const row = document.getElementById('modules-row');
+      const firstDock = !anyOtherPaneOpen(pane) || dockAnimDir === 'out';
+      const startW = chat ? chat.getBoundingClientRect().width : 0;
+      const targetW = chat && row ? chatDockTargetPx(chat, row) : 380;
+      if (!firstDock || !chat || !row || dockReduceMotion() || (startW <= targetW + 12 && dockAnimDir !== 'out')) {
+        clearTimeout(dockAnimTimer);
+        dockAnimDir = null;
+        pane.classList.add('is-open', 'is-dock-settled');
+        return true;
+      }
+      /* Stop default-fill from click-cycling the new pane's width control
+         mid-tween (that would also set data-out-w and snap the chat). The
+         lone pane already fills leftover space at the single tier. */
+      pane.dataset.fillDefaulted = '1';
+      const reversing = dockAnimDir === 'out';
+      clearTimeout(dockAnimTimer);
+      dockAnimDir = 'in';
+      pinChatPx(chat, startW);
+      pane.classList.add('is-open', 'is-dock-opening');
+      pane.style.setProperty('flex', '1 1 0%', 'important');
+      pane.style.setProperty('min-width', '0px', 'important');
+      pane.style.removeProperty('width');
+      pane.style.removeProperty('max-width');
+      pane.style.opacity = reversing ? '1' : '0';
+      void row.offsetWidth;
+      row.classList.add('is-dock-animating');
+      void row.offsetWidth;
+      requestAnimationFrame(() => {
+        pinChatPx(chat, targetW);
+        pane.style.opacity = '1';
+      });
+      dockAnimTimer = setTimeout(() => {
+        finishDockAnim(chat, pane);
+        if (typeof recomputeSoloPaneWidth === 'function') recomputeSoloPaneWidth();
+      }, DOCK_ANIM_MS + 40);
+      return true;
+    }
+    /* Last pane closing: grow the chat back to full-screen while the pane
+       shrinks to 0, then run `done` (which removes is-open + cleans up). */
+    function animateChatExpand(pane, done) {
+      const chat = document.getElementById('wa-chat');
+      const row = document.getElementById('modules-row');
+      if (!pane || !chat || !row || dockReduceMotion()) {
+        if (typeof done === 'function') done();
+        return;
+      }
+      const startChat = chat.getBoundingClientRect().width;
+      const startPane = pane.getBoundingClientRect().width;
+      const fullW = Math.max(startChat, row.clientWidth);
+      clearTimeout(dockAnimTimer);
+      dockAnimDir = 'out';
+      pinChatPx(chat, startChat);
+      pane.classList.add('is-dock-opening');
+      pane.style.setProperty('flex', '0 0 ' + Math.round(startPane) + 'px', 'important');
+      pane.style.setProperty('width', Math.round(startPane) + 'px', 'important');
+      pane.style.setProperty('min-width', '0px', 'important');
+      pane.style.opacity = '1';
+      void row.offsetWidth;
+      row.classList.add('is-dock-animating');
+      void row.offsetWidth;
+      requestAnimationFrame(() => {
+        pinChatPx(chat, fullW);
+        pane.style.setProperty('flex', '0 0 0px', 'important');
+        pane.style.setProperty('width', '0px', 'important');
+        pane.style.opacity = '0';
+      });
+      dockAnimTimer = setTimeout(() => {
+        if (typeof done === 'function') done();
+        finishDockAnim(chat, pane);
+        if (typeof recomputeSoloPaneWidth === 'function') recomputeSoloPaneWidth();
+      }, DOCK_ANIM_MS + 40);
+    }
+    function engageConversationLayout() {
+      const dest = mergedMode ? 'unified' : 'results';
+      ensurePaneOpen(paneEl[dest]);
+    }
+    function disengageConversationLayout() {
+      const dest = mergedMode ? 'unified' : 'results';
+      const el = paneEl[dest];
+      if (!el || !el.classList.contains('is-open')) return;
+      if (paneBody[dest] && paneBody[dest].querySelector('.wa-block')) return;
+      closePane(dest);
+    }
+    function resetConversationLayout() {
+      const keys = ['report', 'results', 'visuals', 'unified']
+        .filter((k) => paneEl[k] && paneEl[k].classList.contains('is-open'));
+      if (!keys.length) return;
+      keys.slice(0, -1).forEach((k) => closePane(k, { instant: true }));
+      closePane(keys[keys.length - 1]);
+    }
+
     /* Append a result/chart into a pane so the module keeps GROWING as the
        conversation surfaces more — each answer stacks below the previous one.
        The surfaced output's title/meta are promoted into the pane's header
@@ -4378,8 +4574,7 @@
          just landed (seeds the scope + renders the full interactive board). */
       paneBody[dest].querySelectorAll('.cmp-host:not([data-ready])').forEach((h) => bootCompareEngine(h));
       if (!el.classList.contains('is-open')) {
-        el.classList.remove('is-open'); void el.offsetWidth; /* replay entrance */
-        el.classList.add('is-open');
+        ensurePaneOpen(el);
       }
       /* Rebuild the thumbnail rail; make the just-surfaced block the active slide
          once the pane holds 2+ outputs. */
@@ -4783,39 +4978,47 @@
       setTimeout(() => card.classList.remove('is-flash'), 1400);
     }
 
-    function closePane(which) {
+    function closePane(which, { instant } = {}) {
       const el = paneEl[which];
-      if (el) {
-        const wasFs = paneIsFs(el);
-        el.classList.remove('is-open', 'pane-wide', 'pane-triple', 'pane-fill', 'pane-fs');
-        if (wasFs) setOutputFsOn(false);
+      const finishClose = () => {
+        if (el) {
+          const wasFs = paneIsFs(el);
+          el.classList.remove('is-open', 'pane-wide', 'pane-triple', 'pane-fill', 'pane-fs', 'is-dock-opening', 'is-dock-settled');
+          if (wasFs) setOutputFsOn(false);
+        }
+        if (which === 'unified') closeTitledropPop();
+        if (which === 'report') {
+          closeReportItemMenus();
+          if (typeof shareContext !== 'undefined' && shareContext === 'report') closeShareModal();
+        }
+        if (paneBody[which]) { paneBody[which].innerHTML = ''; paneBody[which].classList.remove('is-carousel'); }
+        if (paneTrack[which]) { paneTrack[which].innerHTML = ''; paneTrack[which].classList.remove('is-on', 'is-min', 'is-grouped', 'is-stacked'); }
+        if (paneNavBtns[which]) paneNavBtns[which].innerHTML = '';
+        if (paneCount[which]) paneCount[which].innerHTML = '';
+        paneMin[which] = false;
+        setPaneMinItemVisible(which, false);
+        updateMinBtn(which);
+        const wb = document.querySelector(`[data-pane-width="${which}"]`);
+        if (wb) syncPaneWidthBtn(wb, 0);
+        /* Drop any drag-pinned widths so the remaining modules reflow to fill the
+           freed space — and once the last pane is gone, the chat expands back to
+           full-screen (its stylesheet default) instead of staying docked at the
+           width it was dragged to. */
+        window.WisePaneResize?.release?.([
+          document.getElementById('wa-chat'),
+          paneEl.results,
+          paneEl.visuals,
+          paneEl.unified,
+          paneEl.report,
+        ]);
+        recomputeSoloPaneWidth();
+      };
+      const wasLast = !!(el && el.classList.contains('is-open') && !anyOtherPaneOpen(el));
+      if (!instant && wasLast) {
+        animateChatExpand(el, finishClose);
+        return;
       }
-      if (which === 'unified') closeTitledropPop();
-      if (which === 'report') {
-        closeReportItemMenus();
-        if (typeof shareContext !== 'undefined' && shareContext === 'report') closeShareModal();
-      }
-      if (paneBody[which]) { paneBody[which].innerHTML = ''; paneBody[which].classList.remove('is-carousel'); }
-      if (paneTrack[which]) { paneTrack[which].innerHTML = ''; paneTrack[which].classList.remove('is-on', 'is-min', 'is-grouped', 'is-stacked'); }
-      if (paneNavBtns[which]) paneNavBtns[which].innerHTML = '';
-      if (paneCount[which]) paneCount[which].innerHTML = '';
-      paneMin[which] = false;
-      setPaneMinItemVisible(which, false);
-      updateMinBtn(which);
-      const wb = document.querySelector(`[data-pane-width="${which}"]`);
-      if (wb) syncPaneWidthBtn(wb, 0);
-      /* Drop any drag-pinned widths so the remaining modules reflow to fill the
-         freed space — and once the last pane is gone, the chat expands back to
-         full-screen (its stylesheet default) instead of staying docked at the
-         width it was dragged to. */
-      window.WisePaneResize?.release?.([
-        document.getElementById('wa-chat'),
-        paneEl.results,
-        paneEl.visuals,
-        paneEl.unified,
-        paneEl.report,
-      ]);
-      recomputeSoloPaneWidth();
+      finishClose();
     }
 
     /* Per-pane three-dot menu + width control (their own, independent of the chat).
@@ -4979,8 +5182,10 @@
       btn.setAttribute('aria-pressed', on ? 'true' : 'false');
       const ic = btn.querySelector('.material-symbols-outlined');
       if (ic) ic.textContent = on ? 'check' : 'add';
-      btn.title = on ? 'Remove from report' : 'Add to report';
-      btn.setAttribute('aria-label', on ? 'Remove from report' : 'Add to report');
+      const tip = on ? 'Remove from report' : 'Add to report';
+      btn.setAttribute('data-tip', tip);
+      btn.setAttribute('aria-label', tip);
+      btn.title = tip;
     }
     function toggleTitledropPlus(idx) {
       if (titledropSelected.has(idx)) titledropSelected.delete(idx);
@@ -5014,7 +5219,7 @@
             <span class="wa-titledrop-label">${esc(label)}</span>
             ${ver ? `<span class="wa-titledrop-ver">${esc(ver)}</span>` : ''}
           </span>
-          <button type="button" class="wa-titledrop-plus${picked ? ' is-on' : ''}" data-td-plus="${esc(key)}" aria-pressed="${picked ? 'true' : 'false'}" title="${picked ? 'Remove from report' : 'Add to report'}" aria-label="${picked ? 'Remove from report' : 'Add to report'}">
+          <button type="button" class="wa-titledrop-plus${picked ? ' is-on' : ''}" data-td-plus="${esc(key)}" aria-pressed="${picked ? 'true' : 'false'}" data-tip="${picked ? 'Remove from report' : 'Add to report'}" title="${picked ? 'Remove from report' : 'Add to report'}" aria-label="${picked ? 'Remove from report' : 'Add to report'}">
             <span class="material-symbols-outlined">${picked ? 'check' : 'add'}</span>
           </button>
         </div>`;
@@ -5377,8 +5582,7 @@
       if (paneMeta.report) paneMeta.report.textContent = '';
       persistGeneratedReport(true);
       if (!el.classList.contains('is-open')) {
-        el.classList.remove('is-open'); void el.offsetWidth;
-        el.classList.add('is-open');
+        ensurePaneOpen(el);
       }
       /* Stay the smaller sticky drawer — never inherit Output's fill default. */
       applyPaneWidth(el, 0);
@@ -9136,7 +9340,7 @@
       const pane = paneEl[dest];
       const present = paneBody[dest] && paneBody[dest].querySelector(`[data-block-id="${blockId}"]`);
       if (present) {
-        if (pane && !pane.classList.contains('is-open')) pane.classList.add('is-open');
+        if (pane && !pane.classList.contains('is-open')) ensurePaneOpen(pane);
         if (paneBody[dest].classList.contains('is-carousel')) {
           const idx = Number(present.dataset.slideIndex);
           setPaneSlide(dest, Number.isNaN(idx) ? 0 : idx, { animate: true, scrollNav: true });
@@ -9190,7 +9394,7 @@
       const dest = which === 'report' ? 'report' : (mergedMode ? 'unified' : which);
       const el = paneEl[dest];
       if (!el) return;
-      if (!el.classList.contains('is-open')) el.classList.add('is-open');
+      if (!el.classList.contains('is-open')) ensurePaneOpen(el);
       applyPaneFs(el, !paneIsFs(el));
     }
 
@@ -9283,7 +9487,7 @@
       /* Wake up any interactive content that just landed (tables / compare board). */
       body.querySelectorAll('.wa-tbl:not([data-ready])').forEach((tbl) => initTable(tbl));
       body.querySelectorAll('.cmp-host:not([data-ready])').forEach((h) => bootCompareEngine(h));
-      if (pane && !pane.classList.contains('is-open')) pane.classList.add('is-open');
+      if (pane && !pane.classList.contains('is-open')) ensurePaneOpen(pane);
       const firstBlock = blocks[0] || null;
       if (dest === 'unified') refreshUnifiedCarousel({ activate: firstBlock });
       else refreshPaneCarousel(e.which, { activate: firstBlock });
@@ -10316,6 +10520,13 @@
         onReply(intent, text, ctx) {
           surface(intent, ctx);
         },
+        /* First type / chip / send leaves the full-width welcome and docks the
+           chat to its single column while the output pane eases in. Clearing
+           the composer before a turn starts (welcome still up) expands back.
+           A new conversation restores the full-screen welcome. */
+        onEngage() { engageConversationLayout(); },
+        onDisengage() { disengageConversationLayout(); },
+        onReset() { resetConversationLayout(); },
         /* An answer's "Opened … in Results & Details / Visuals →" narration
            renders as a clickable chip; tapping it re-opens that pane's most
            recent output, and the module also opens by default the moment the
@@ -10328,7 +10539,7 @@
           if (target) { reopenSurface(target); return true; }
           const dest = mergedMode ? 'unified' : which;
           const pane = paneEl[dest];
-          if (pane && paneBody[dest] && paneBody[dest].children.length) { pane.classList.add('is-open'); return true; }
+          if (pane && paneBody[dest] && paneBody[dest].children.length) { ensurePaneOpen(pane); return true; }
           return false;
         },
       });

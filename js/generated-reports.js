@@ -90,7 +90,8 @@ function normalize(rec) {
     items: Array.isArray(rec.items) ? rec.items.map((t) => String(t || '').trim()).filter(Boolean) : [],
     conversation: String(rec.conversation || '').trim(),
     icon: String(rec.icon || 'analytics'),
-    source: 'output',
+    source: String(rec.source || 'output'),
+    href: String(rec.href || ''),
     createdAt: Number(rec.createdAt) || Date.now(),
     updatedAt: Number(rec.updatedAt) || Number(rec.createdAt) || Date.now(),
   };
@@ -123,6 +124,8 @@ export function saveGeneratedReport(partial) {
     items: (partial && partial.items) || [],
     conversation: (partial && partial.conversation) || '',
     icon: (partial && partial.icon) || 'analytics',
+    source: (partial && partial.source) || 'output',
+    href: (partial && partial.href) || '',
     createdAt: (partial && partial.createdAt) || now,
     updatedAt: now,
   });
@@ -152,14 +155,15 @@ export function formatReportDate(ts) {
   return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function itemCountLabel(n) {
+function itemCountLabel(n, source) {
+  if (source === 'reformulation') return n === 1 ? '1 section' : `${n} sections`;
   return n === 1 ? '1 chart' : `${n} charts`;
 }
 
 function cardHTML(rec) {
   const n = rec.items.length;
-  const preview = rec.items.slice(0, 2).join(' · ') || rec.conversation || 'Generated from Output.';
-  const desc = n ? `${itemCountLabel(n)} · ${preview}` : preview;
+  const preview = rec.items.slice(0, 2).join(' · ') || rec.conversation || (rec.source === 'reformulation' ? 'Generated from Reformulation.' : 'Generated from Output.');
+  const desc = n ? `${itemCountLabel(n, rec.source)} · ${preview}` : preview;
   return `<a class="rp-card" href="#" data-rp-gen="${esc(rec.id)}">
     <div class="rp-poster tone-gen">
       ${BUG_SVG}
@@ -195,27 +199,36 @@ function emptyHTML() {
 
 function viewHTML(rec) {
   const n = rec.items.length;
+  const fromReform = rec.source === 'reformulation';
   const items = rec.items.length
     ? `<ol class="rp-gen-outputs">${rec.items.map((t) => `<li>${esc(t)}</li>`).join('')}</ol>`
-    : `<p class="rp-desc">This report doesn’t list individual charts yet.</p>`;
+    : `<p class="rp-desc">This report doesn’t list individual ${fromReform ? 'sections' : 'charts'} yet.</p>`;
   const from = rec.conversation
-    ? `Generated from Output in “${esc(rec.conversation)}”.`
-    : 'Generated from the Output panel in WISEcodeAI.';
+    ? (fromReform
+      ? `Generated from Reformulation · “${esc(rec.conversation)}”.`
+      : `Generated from Output in “${esc(rec.conversation)}”.`)
+    : (fromReform
+      ? 'Generated from the Reformulation dashboard.'
+      : 'Generated from the Output panel in WISEcodeAI.');
+  const openHref = rec.href || 'wiseai.html';
+  const openLabel = fromReform ? 'Open in Reformulation' : 'Open in WISEcodeAI';
+  const openIcon = fromReform ? 'auto_fix_high' : 'auto_awesome';
+  const eyebrow = fromReform ? 'Generated from Reformulation' : 'Generated from Output';
   return `<section class="dash-report-view" aria-label="${esc(rec.title)}">
     <header class="dash-report-view-head">
       <button class="dash-btn dash-btn--ghost dash-report-back" type="button" data-rp-gen-back>
         <span class="material-symbols-outlined">arrow_back</span>Back to reports
       </button>
       <div class="dash-report-view-titles">
-        <span class="dash-modal-eyebrow">Generated from Output</span>
+        <span class="dash-modal-eyebrow">${eyebrow}</span>
         <h2 class="dash-modal-title">${esc(rec.title)}</h2>
       </div>
-      <a class="dash-btn dash-btn--primary" href="wiseai.html">
-        <span class="material-symbols-outlined">auto_awesome</span>Open in WISEcodeAI
+      <a class="dash-btn dash-btn--primary" href="${esc(openHref)}">
+        <span class="material-symbols-outlined">${openIcon}</span>${openLabel}
       </a>
     </header>
     <div class="dash-report-view-body">
-      <p class="dash-report-summary">${esc(itemCountLabel(n))} · ${esc(formatReportDate(rec.createdAt))}</p>
+      <p class="dash-report-summary">${esc(itemCountLabel(n, rec.source))} · ${esc(formatReportDate(rec.createdAt))}</p>
       <p class="rp-gen-lede">${from}</p>
       ${items}
     </div>
@@ -227,13 +240,42 @@ function renderGrid(gridEl) {
   gridEl.innerHTML = list.length ? list.map(cardHTML).join('') : emptyHTML();
 }
 
+/** Open a generated report in the Reports scroll host (used by app search). */
+export function openGeneratedReportView(id, hostEl) {
+  const host = hostEl || document.getElementById('agent-main-scroll');
+  const rec = getGeneratedReport(id);
+  if (!host || !rec) return false;
+  if (host._rpGenRestore == null) host._rpGenRestore = host.innerHTML;
+  host.innerHTML = viewHTML(rec);
+  host.scrollTop = 0;
+  return true;
+}
+
 export function mountGeneratedReportsShelf(opts) {
   const host = (opts && opts.scrollHost) || document.getElementById('agent-main-scroll');
   const gridEl = (opts && opts.grid) || document.getElementById('rp-generated-grid');
   if (gridEl) renderGrid(gridEl);
   if (!host) return;
 
-  if (host._rpGenBound) return;
+  const tryPending = () => {
+    try {
+      const pending = sessionStorage.getItem('wise-search-open-report');
+      if (pending) {
+        sessionStorage.removeItem('wise-search-open-report');
+        openGeneratedReportView(pending, host);
+        return;
+      }
+    } catch (_) { /* sessionStorage blocked */ }
+    try {
+      const q = new URLSearchParams(location.search).get('gen');
+      if (q) openGeneratedReportView(q, host);
+    } catch (_) { /* ignore */ }
+  };
+
+  if (host._rpGenBound) {
+    tryPending();
+    return;
+  }
   host._rpGenBound = true;
   host.addEventListener('click', (e) => {
     const back = e.target.closest('[data-rp-gen-back]');
@@ -252,8 +294,15 @@ export function mountGeneratedReportsShelf(opts) {
     e.preventDefault();
     const rec = getGeneratedReport(card.getAttribute('data-rp-gen'));
     if (!rec) return;
-    if (host._rpGenRestore == null) host._rpGenRestore = host.innerHTML;
-    host.innerHTML = viewHTML(rec);
-    host.scrollTop = 0;
+    openGeneratedReportView(rec.id, host);
   });
+
+  if (!host._rpGenSearchBound) {
+    host._rpGenSearchBound = true;
+    document.addEventListener('wise:open-generated-report', (ev) => {
+      const id = ev.detail && ev.detail.id;
+      if (id) openGeneratedReportView(id, host);
+    });
+  }
+  tryPending();
 }

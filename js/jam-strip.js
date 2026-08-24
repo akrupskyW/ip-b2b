@@ -9,21 +9,20 @@
  *
  * The tunes are synthesized live with the Web Audio API (no audio files /
  * licensing needed) so each riff ships as a few lines of note data. The
- * library is a crate of certified bangers — recognizable hooks that read
- * instantly even as a bare monophonic chiptune:
- *   - "Money, Money"     ABBA · Money, Money, Money chorus hook
- *   - "Pump Up the Jam"  Technotronic
- *   - "Axel F"           the Axel Foley / Beverly Hills Cop theme
+ * library is a crate of certified bangers — full main themes, not just
+ * the opening bar:
+ *   - "Tetris"           Korobeiniki · the Tetris Type-A theme
+ *   - "Imperial March"   Star Wars · the Darth Vader theme
+ *   - "Axel Foley"       the Axel Foley / Beverly Hills Cop theme
+ *   - "Take On Me"       a-ha
+ *   - "Dancing Queen"    ABBA
  *   - "Ode to Joy"       Beethoven
  *   - "Sonic"            Sonic the Hedgehog · Green Hill Zone melody
  *   - "Mario"            Super Mario Bros · the overworld theme
- *   - "Tetris"           Korobeiniki · the Tetris Type-A theme
- *   - "Imperial March"   Star Wars · the Darth Vader theme
  *   - "7 Nation Army"    The White Stripes · the stadium riff
- *   - "Smoke/Water"      Deep Purple · Smoke on the Water riff
+ *   - "Smoke/Water"      Deep Purple · Smoke on the Water
  *   - "Megalovania"      Undertale
  *   - "Pirates"          Pirates of the Caribbean · He's a Pirate
- *   - "Take On Me"       a-ha · the synth hook
  *   - "Never Gonna…"     Rick Astley · Never Gonna Give You Up
  *
  * The strip mounts into #menu-panel .menu-inner and is CSS-gated so it
@@ -53,176 +52,360 @@ function noteFreq(name) {
 /* Each note is [name|null, beats]. Rests use a null name. */
 
 const SONGS = {
-  money: {
-    label: 'Money, Money',
-    bpm: 120,
-    type: 'sawtooth',
-    notes: [
-      // ABBA — Money, Money, Money, the chorus hook, key Am.
-      ['A4', 0.5], ['A4', 0.5], ['A4', 0.75], ['C5', 0.25], ['B4', 0.5], ['A4', 0.5],
-      ['C5', 0.5], ['B4', 0.5], ['A4', 1.0], [null, 0.5],
-      ['A4', 0.25], ['A4', 0.25], ['C5', 0.5], ['B4', 0.5], ['A4', 0.5], ['G4', 0.5], ['A4', 1.0],
-      [null, 0.5],
-    ],
-  },
-  pump: {
-    label: 'Pump Up the Jam',
-    bpm: 125,
-    type: 'sawtooth',
-    notes: [
-      ['C5', 0.5], ['Eb5', 0.5], ['F5', 0.5], ['G5', 0.5], ['Ab5', 0.5], ['G5', 0.5], ['F5', 0.5], ['Eb5', 0.5],
-      ['C5', 0.5], ['C5', 0.25], ['C5', 0.25], ['Eb5', 0.5], ['F5', 0.5], ['G5', 0.5], ['Eb5', 0.5],
-      ['C5', 1.0], [null, 0.5],
-    ],
-  },
-  axelf: {
-    label: 'Axel F',
-    bpm: 118,
-    type: 'square',
-    notes: [
-      ['F4', 0.75], ['Ab4', 0.5], ['F4', 0.25], ['F4', 0.5], ['Bb4', 0.5], ['F4', 0.5], ['Eb4', 0.5],
-      ['F4', 0.75], ['C5', 0.5], ['F4', 0.25], ['F4', 0.5], ['Db5', 0.5], ['C5', 0.5], ['Ab4', 0.5],
-      ['F4', 0.5], ['C5', 0.5], ['F5', 0.5], ['F4', 0.25], ['Eb4', 0.25], ['Eb4', 0.25], ['C5', 0.5], ['G4', 0.5],
-      ['F4', 1.0], [null, 0.5],
-    ],
-  },
-  ode: {
-    label: 'Ode to Joy',
-    bpm: 120,
-    type: 'triangle',
-    notes: [
-      ['E4', 1], ['E4', 1], ['F4', 1], ['G4', 1],
-      ['G4', 1], ['F4', 1], ['E4', 1], ['D4', 1],
-      ['C4', 1], ['C4', 1], ['D4', 1], ['E4', 1],
-      ['E4', 1.5], ['D4', 0.5], ['D4', 2],
-      [null, 0.5],
-    ],
-  },
-  sonic: {
-    label: 'Sonic',
-    bpm: 160,
-    type: 'square',
-    notes: [
-      // Green Hill Zone — main theme (Masato Nakamura), key of C.
-      ['C5', 0.5], ['A4', 0.5], ['C5', 0.5], ['B4', 0.5], ['C5', 0.5], ['B4', 0.5], ['G4', 1.0],
-      ['G4', 0.5], ['E5', 0.5], ['D5', 0.5], ['C5', 0.5], ['B4', 0.5], ['C5', 0.5], ['B4', 0.5], ['G4', 0.5],
-      ['C5', 0.5], ['A4', 0.5], ['C5', 0.5], ['B4', 0.5], ['C5', 1.5], [null, 0.5],
-      ['B4', 0.5], ['G4', 1.0], ['A4', 0.5], ['A4', 0.5], ['F4', 0.5], ['A4', 1.0],
-      ['G4', 0.5], ['A4', 0.5], ['G4', 0.5], ['C5', 2.5],
-      ['A4', 1.0], ['B4', 1.0], ['B4', 1.0], ['G4', 1.0],
-      ['A4', 0.5], ['G4', 0.5], ['C5', 0.5], ['C5', 0.5], ['E5', 0.5], ['D5', 0.5], ['C5', 1.0], [null, 0.5],
-    ],
-  },
-  mario: {
-    label: 'Mario',
-    bpm: 180,
-    type: 'square',
-    notes: [
-      // Super Mario Bros. — overworld theme (Koji Kondo), key of C.
-      ['E5', 0.5], ['E5', 0.5], [null, 0.5], ['E5', 0.5], [null, 0.5], ['C5', 0.5], ['E5', 0.5], [null, 0.5],
-      ['G5', 0.5], [null, 1.5], ['G4', 0.5], [null, 1.5],
-      ['C5', 0.5], [null, 1.0], ['G4', 0.5], [null, 1.0], ['E4', 0.5], [null, 1.0],
-      ['A4', 0.5], [null, 0.5], ['B4', 0.5], [null, 0.5], ['Bb4', 0.5], ['A4', 0.5], [null, 0.5],
-      ['G4', 0.5], ['E5', 0.5], ['G5', 0.5], ['A5', 0.5], [null, 0.5], ['F5', 0.5], ['G5', 0.5], [null, 0.5],
-      ['E5', 0.5], [null, 0.5], ['C5', 0.5], ['D5', 0.5], ['B4', 0.5], [null, 1.0],
-    ],
-  },
   tetris: {
     label: 'Tetris',
+    artist: 'Hirokazu Tanaka',
     bpm: 144,
     type: 'square',
     notes: [
+      // Korobeiniki · Tetris Type-A. A, A′, B, then A + A′ again.
       ['E5', 1.0], ['B4', 0.5], ['C5', 0.5], ['D5', 1.0], ['C5', 0.5], ['B4', 0.5],
       ['A4', 1.0], ['A4', 0.5], ['C5', 0.5], ['E5', 1.0], ['D5', 0.5], ['C5', 0.5],
       ['B4', 1.5], ['C5', 0.5], ['D5', 1.0], ['E5', 1.0],
-      ['C5', 1.0], ['A4', 1.0], ['A4', 2.0], [null, 0.5],
+      ['C5', 1.0], ['A4', 1.0], ['A4', 2.0],
+      [null, 0.5], ['D5', 1.0], ['F5', 0.5], ['A5', 1.0], ['G5', 0.5], ['F5', 0.5],
+      ['E5', 1.5], ['C5', 0.5], ['E5', 1.0], ['D5', 0.5], ['C5', 0.5],
+      ['B4', 1.5], ['C5', 0.5], ['D5', 1.0], ['E5', 1.0],
+      ['C5', 1.0], ['A4', 1.0], ['A4', 2.0],
+      ['E5', 2.0], ['C5', 2.0],
+      ['D5', 2.0], ['B4', 2.0],
+      ['C5', 2.0], ['A4', 2.0],
+      ['G#4', 2.0], ['B4', 2.0],
+      ['E5', 2.0], ['C5', 2.0],
+      ['D5', 2.0], ['B4', 2.0],
+      ['C5', 1.0], ['E5', 1.0], ['A5', 2.0],
+      ['G#5', 4.0],
+      ['E5', 1.0], ['B4', 0.5], ['C5', 0.5], ['D5', 1.0], ['C5', 0.5], ['B4', 0.5],
+      ['A4', 1.0], ['A4', 0.5], ['C5', 0.5], ['E5', 1.0], ['D5', 0.5], ['C5', 0.5],
+      ['B4', 1.5], ['C5', 0.5], ['D5', 1.0], ['E5', 1.0],
+      ['C5', 1.0], ['A4', 1.0], ['A4', 2.0],
+      [null, 0.5], ['D5', 1.0], ['F5', 0.5], ['A5', 1.0], ['G5', 0.5], ['F5', 0.5],
+      ['E5', 1.5], ['C5', 0.5], ['E5', 1.0], ['D5', 0.5], ['C5', 0.5],
+      ['B4', 1.5], ['C5', 0.5], ['D5', 1.0], ['E5', 1.0],
+      ['C5', 1.0], ['A4', 1.0], ['A4', 2.0],
     ],
   },
   imperial: {
     label: 'Imperial March',
+    artist: 'John Williams',
     bpm: 104,
     type: 'square',
     notes: [
-      // Star Wars — the Imperial (Darth Vader) march (John Williams), key Gm.
-      ['G4', 0.75], ['G4', 0.75], ['G4', 0.75], ['Eb4', 0.5], ['Bb4', 0.25],
-      ['G4', 0.75], ['Eb4', 0.5], ['Bb4', 0.25], ['G4', 1.5], [null, 0.5],
-      ['D5', 0.75], ['D5', 0.75], ['D5', 0.75], ['Eb5', 0.5], ['Bb4', 0.25],
-      ['Gb4', 0.75], ['Eb4', 0.5], ['Bb4', 0.25], ['G4', 1.5], [null, 0.5],
+      // Star Wars — Imperial March, key Gm. Opening + high continuation twice.
+      ['G4', 1.0], ['G4', 1.0], ['G4', 1.0], ['Eb4', 0.75], ['Bb4', 0.25],
+      ['G4', 1.0], ['Eb4', 0.75], ['Bb4', 0.25], ['G4', 2.0],
+      ['D5', 1.0], ['D5', 1.0], ['D5', 1.0], ['Eb5', 0.75], ['Bb4', 0.25],
+      ['F#4', 1.0], ['Eb4', 0.75], ['Bb4', 0.25], ['G4', 2.0],
+      ['G5', 1.0], ['G5', 1.0], ['G5', 1.0], ['F#5', 0.75], ['F5', 0.25],
+      ['E5', 0.25], ['Eb5', 0.25], ['E5', 0.5], [null, 0.5], ['Ab4', 0.5], ['D5', 1.0], ['C#5', 0.75], ['C5', 0.25],
+      ['B4', 0.25], ['Bb4', 0.25], ['B4', 0.5], [null, 0.5], ['Eb4', 0.5], ['Ab4', 1.0], ['G4', 0.75], ['F#4', 0.25],
+      ['G4', 1.0], ['Eb4', 0.75], ['Bb4', 0.25], ['G4', 2.0],
+      ['G5', 1.0], ['G5', 1.0], ['G5', 1.0], ['F#5', 0.75], ['F5', 0.25],
+      ['E5', 0.25], ['Eb5', 0.25], ['E5', 0.5], [null, 0.5], ['Ab4', 0.5], ['D5', 1.0], ['C#5', 0.75], ['C5', 0.25],
+      ['B4', 0.25], ['Bb4', 0.25], ['B4', 0.5], [null, 0.5], ['Eb4', 0.5], ['Ab4', 1.0], ['G4', 0.75], ['F#4', 0.25],
+      ['G4', 1.0], ['Eb4', 0.75], ['Bb4', 0.25], ['G4', 2.0],
+    ],
+  },
+  axelf: {
+    label: 'Axel Foley',
+    artist: 'Harold Faltermeyer',
+    bpm: 118,
+    type: 'square',
+    notes: [
+      // Harold Faltermeyer — Axel F lead. The riff is the song; play it through.
+      ['F4', 0.75], ['Ab4', 0.5], ['F4', 0.25], ['F4', 0.5], ['Bb4', 0.5], ['F4', 0.5], ['Eb4', 0.5],
+      ['F4', 0.75], ['C5', 0.5], ['F4', 0.25], ['F4', 0.5], ['Db5', 0.5], ['C5', 0.5], ['Ab4', 0.5],
+      ['F4', 0.5], ['C5', 0.5], ['F5', 0.5], ['F4', 0.25], ['Eb4', 0.25], ['Eb4', 0.25], ['C5', 0.5], ['G4', 0.5],
+      ['F4', 1.5], [null, 0.5],
+      ['F4', 0.75], ['Ab4', 0.5], ['F4', 0.25], ['F4', 0.5], ['Bb4', 0.5], ['F4', 0.5], ['Eb4', 0.5],
+      ['F4', 0.75], ['C5', 0.5], ['F4', 0.25], ['F4', 0.5], ['Db5', 0.5], ['C5', 0.5], ['Ab4', 0.5],
+      ['F4', 0.5], ['C5', 0.5], ['F5', 0.5], ['F4', 0.25], ['Eb4', 0.25], ['Eb4', 0.25], ['C5', 0.5], ['G4', 0.5],
+      ['F4', 1.5], [null, 0.5],
+      ['F4', 0.75], ['Ab4', 0.5], ['F4', 0.25], ['F4', 0.5], ['Bb4', 0.5], ['F4', 0.5], ['Eb4', 0.5],
+      ['F4', 0.75], ['C5', 0.5], ['F4', 0.25], ['F4', 0.5], ['Db5', 0.5], ['C5', 0.5], ['Ab4', 0.5],
+      ['F4', 0.5], ['C5', 0.5], ['F5', 0.5], ['F4', 0.25], ['Eb4', 0.25], ['Eb4', 0.25], ['C5', 0.5], ['G4', 0.5],
+      ['F4', 2.0],
+    ],
+  },
+  ode: {
+    label: 'Ode to Joy',
+    artist: 'Ludwig van Beethoven',
+    bpm: 120,
+    type: 'triangle',
+    notes: [
+      // Beethoven 9 — the complete hymn (all four phrases).
+      ['E4', 1.0], ['E4', 1.0], ['F4', 1.0], ['G4', 1.0],
+      ['G4', 1.0], ['F4', 1.0], ['E4', 1.0], ['D4', 1.0],
+      ['C4', 1.0], ['C4', 1.0], ['D4', 1.0], ['E4', 1.0],
+      ['E4', 1.5], ['D4', 0.5], ['D4', 2.0],
+      ['E4', 1.0], ['E4', 1.0], ['F4', 1.0], ['G4', 1.0],
+      ['G4', 1.0], ['F4', 1.0], ['E4', 1.0], ['D4', 1.0],
+      ['C4', 1.0], ['C4', 1.0], ['D4', 1.0], ['E4', 1.0],
+      ['D4', 1.5], ['C4', 0.5], ['C4', 2.0],
+      ['D4', 1.0], ['D4', 1.0], ['E4', 1.0], ['C4', 1.0],
+      ['D4', 1.0], ['E4', 0.5], ['F4', 0.5], ['E4', 1.0], ['C4', 1.0],
+      ['D4', 1.0], ['E4', 0.5], ['F4', 0.5], ['E4', 1.0], ['D4', 1.0],
+      ['C4', 1.0], ['D4', 1.0], ['G3', 2.0],
+      ['E4', 1.0], ['E4', 1.0], ['F4', 1.0], ['G4', 1.0],
+      ['G4', 1.0], ['F4', 1.0], ['E4', 1.0], ['D4', 1.0],
+      ['C4', 1.0], ['C4', 1.0], ['D4', 1.0], ['E4', 1.0],
+      ['D4', 1.5], ['C4', 0.5], ['C4', 2.0],
+    ],
+  },
+  sonic: {
+    label: 'Sonic',
+    artist: 'Masato Nakamura',
+    title: 'Green Hill Zone',
+    bpm: 160,
+    type: 'square',
+    notes: [
+      // Green Hill Zone — main theme through the ending tag, key C.
+      ['C5', 0.5], ['A4', 1.0], ['C5', 0.5], ['B4', 1.0], ['C5', 0.5], ['B4', 1.0], ['G4', 2.0],
+      [null, 0.5], ['G4', 0.5], ['E5', 0.5], ['D5', 1.0], ['C5', 0.5], ['B4', 1.0], ['C5', 0.5], ['B4', 1.0], ['G4', 2.0],
+      [null, 1.0], ['C5', 0.5], ['A4', 1.0], ['C5', 0.5], ['B4', 1.0], ['C5', 0.5], ['B4', 1.0], ['G4', 2.0],
+      [null, 0.5], ['A4', 0.5], ['A4', 0.5], ['F4', 1.0], ['A4', 0.5], ['G4', 1.0], ['A4', 0.5], ['G4', 1.0], ['C4', 2.0],
+      [null, 1.0], ['C5', 0.5], ['A4', 1.0], ['C5', 0.5], ['B4', 1.0], ['C5', 0.5], ['B4', 1.0], ['G4', 2.0],
+      [null, 0.5], ['G4', 0.5], ['E5', 0.5], ['D5', 1.0], ['C5', 0.5], ['B4', 1.0], ['C5', 0.5], ['B4', 1.0], ['G4', 2.0],
+      [null, 1.0], ['C5', 0.5], ['A4', 1.0], ['C5', 0.5], ['B4', 1.0], ['C5', 0.5], ['B4', 1.0], ['G4', 2.0],
+      [null, 0.5], ['A4', 0.5], ['A4', 0.5], ['F4', 1.0], ['A4', 0.5], ['G4', 1.0], ['A4', 0.5], ['G4', 1.0],
+      ['C4', 0.5], ['C4', 0.5], ['E4', 0.5], ['D4', 6.0],
+      [null, 0.5], ['C4', 0.5], ['D4', 0.5], ['E4', 6.0],
+      [null, 0.5], ['C4', 0.5], ['C4', 0.5], ['E4', 0.5], ['Eb4', 6.0],
+      [null, 0.5], ['C4', 0.5], ['Eb4', 0.5], ['D4', 0.5], ['D4', 3.0],
+      ['G4', 0.5], ['B4', 0.5], ['E5', 0.5], ['D5', 1.0], ['C5', 0.5], ['G5', 1.5],
+    ],
+  },
+  mario: {
+    label: 'Mario',
+    artist: 'Koji Kondo',
+    title: 'Super Mario Bros.',
+    bpm: 180,
+    type: 'square',
+    notes: [
+      // Super Mario Bros. overworld — intro, A, B, C, and the underworld strain.
+      ['E5', 0.5], ['E5', 0.5], [null, 0.5], ['E5', 0.5], [null, 0.5], ['C5', 0.5], ['E5', 0.5],
+      ['G5', 1.0], [null, 1.0], ['G4', 0.5], [null, 1.5],
+      ['C5', 1.5], ['G4', 0.5], [null, 1.0], ['E4', 1.5],
+      ['A4', 1.0], ['B4', 1.0], ['Bb4', 0.5], ['A4', 1.0],
+      ['G4', 0.75], ['E5', 0.75], ['G5', 0.75], ['A5', 1.0], ['F5', 0.5], ['G5', 0.5],
+      [null, 0.5], ['E5', 1.0], ['C5', 0.5], ['D5', 0.5], ['B4', 1.5],
+      ['C5', 1.5], ['G4', 0.5], [null, 1.0], ['E4', 1.5],
+      ['A4', 1.0], ['B4', 1.0], ['Bb4', 0.5], ['A4', 1.0],
+      ['G4', 0.75], ['E5', 0.75], ['G5', 0.75], ['A5', 1.0], ['F5', 0.5], ['G5', 0.5],
+      [null, 0.5], ['E5', 1.0], ['C5', 0.5], ['D5', 0.5], ['B4', 1.5],
+      [null, 1.0], ['G5', 0.5], ['F#5', 0.5], ['F5', 0.5], ['Eb5', 1.0], ['E5', 0.5],
+      [null, 0.5], ['G#4', 0.5], ['A4', 0.5], ['C5', 0.5], [null, 0.5], ['A4', 0.5], ['C5', 0.5], ['D5', 0.5],
+      [null, 1.0], ['Eb5', 1.0], [null, 0.5], ['D5', 1.5],
+      ['C5', 2.0], [null, 2.0],
+      [null, 1.0], ['G5', 0.5], ['F#5', 0.5], ['F5', 0.5], ['Eb5', 1.0], ['E5', 0.5],
+      [null, 0.5], ['G#4', 0.5], ['A4', 0.5], ['C5', 0.5], [null, 0.5], ['A4', 0.5], ['C5', 0.5], ['D5', 0.5],
+      [null, 1.0], ['Eb5', 1.0], [null, 0.5], ['D5', 1.5],
+      ['C5', 2.0], [null, 2.0],
+      ['C5', 0.5], ['C5', 1.0], ['C5', 0.5], [null, 0.5], ['C5', 0.5], ['D5', 1.0],
+      ['E5', 0.5], ['C5', 1.0], ['A4', 0.5], ['G4', 2.0],
+      ['C5', 0.5], ['C5', 1.0], ['C5', 0.5], [null, 0.5], ['C5', 0.5], ['D5', 0.5], ['E5', 0.5],
+      [null, 2.0],
+      ['C5', 0.5], ['C5', 1.0], ['C5', 0.5], [null, 0.5], ['C5', 0.5], ['D5', 1.0],
+      ['E5', 0.5], ['C5', 1.0], ['A4', 0.5], ['G4', 2.0],
+      ['E5', 0.5], ['C5', 1.0], ['G4', 0.5], [null, 1.0], ['G#4', 1.0],
+      ['A4', 0.5], ['F5', 1.0], ['F5', 0.5], ['A4', 2.0],
+      ['D5', 0.75], ['A5', 0.75], ['A5', 0.75], ['A5', 0.75], ['G5', 0.75], ['F5', 0.75],
+      ['E5', 0.5], ['C5', 1.0], ['A4', 0.5], ['G4', 2.0],
+      ['E5', 0.5], ['C5', 1.0], ['G4', 0.5], [null, 1.0], ['G#4', 1.0],
+      ['A4', 0.5], ['F5', 1.0], ['F5', 0.5], ['A4', 2.0],
+      ['B4', 0.5], ['F5', 1.0], ['F5', 0.5], ['F5', 0.75], ['E5', 0.75], ['D5', 0.75],
+      ['C5', 0.5], ['E4', 1.0], ['E4', 0.5], ['C4', 2.0],
     ],
   },
   seven: {
     label: '7 Nation Army',
+    artist: 'The White Stripes',
+    title: 'Seven Nation Army',
     bpm: 124,
     type: 'sawtooth',
     notes: [
-      // The White Stripes — Seven Nation Army, the stadium bass riff, key Em.
+      // The White Stripes — riff twice, the climb, riff out. Key Em.
       ['E4', 1.0], ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['D4', 1.0], ['C4', 1.5], ['B3', 1.5],
-      ['E4', 1.0], ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['D4', 1.0], ['C4', 1.0], ['B3', 1.0],
-      [null, 0.5],
+      ['E4', 1.0], ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['D4', 1.0], ['C4', 1.0], ['B3', 2.0],
+      ['E4', 1.0], ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['D4', 1.0], ['C4', 1.5], ['B3', 1.5],
+      ['E4', 1.0], ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['D4', 1.0], ['C4', 1.0], ['B3', 2.0],
+      ['E4', 1.0], ['G4', 0.5], ['A4', 0.5], ['B4', 1.0], ['A4', 0.5], ['G4', 0.5],
+      ['E4', 1.0], ['G4', 0.5], ['A4', 0.5], ['B4', 2.0],
+      ['E4', 1.0], ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['D4', 1.0], ['C4', 1.5], ['B3', 1.5],
+      ['E4', 1.0], ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['D4', 1.0], ['C4', 1.0], ['B3', 2.0],
     ],
   },
   smoke: {
     label: 'Smoke/Water',
+    artist: 'Deep Purple',
+    title: 'Smoke on the Water',
     bpm: 112,
     type: 'sawtooth',
     notes: [
-      // Deep Purple — Smoke on the Water, the four-note riff, key Gm.
-      ['G4', 0.5], ['Bb4', 0.5], ['C5', 0.75], ['G4', 0.5], ['Bb4', 0.5], ['Db5', 0.25], ['C5', 1.0], [null, 0.25],
-      ['G4', 0.5], ['Bb4', 0.5], ['C5', 0.75], ['Bb4', 0.5], ['G4', 1.0], [null, 0.5],
+      // Deep Purple — the complete riff twice, then the vocal chorus.
+      ['G4', 0.5], ['Bb4', 0.5], ['C5', 0.75], [null, 0.25], ['G4', 0.5], ['Bb4', 0.5], ['Db5', 0.25], ['C5', 1.0], [null, 0.25],
+      ['G4', 0.5], ['Bb4', 0.5], ['C5', 0.75], [null, 0.25], ['Bb4', 0.5], ['G4', 1.5], [null, 0.5],
+      ['G4', 0.5], ['Bb4', 0.5], ['C5', 0.75], [null, 0.25], ['G4', 0.5], ['Bb4', 0.5], ['Db5', 0.25], ['C5', 1.0], [null, 0.25],
+      ['G4', 0.5], ['Bb4', 0.5], ['C5', 0.75], [null, 0.25], ['Bb4', 0.5], ['G4', 1.5], [null, 0.5],
+      ['G4', 0.5], ['G4', 0.5], ['Bb4', 0.5], ['C5', 1.0], ['C5', 1.5],
+      ['C5', 0.5], ['Bb4', 0.5], ['G4', 1.0], ['G4', 2.0],
+      ['G4', 0.5], ['G4', 0.5], ['Bb4', 0.5], ['C5', 1.0], ['C5', 1.5],
+      ['Eb5', 0.5], ['C5', 0.5], ['Bb4', 1.0], ['G4', 2.0],
     ],
   },
   megalovania: {
     label: 'Megalovania',
+    artist: 'Toby Fox',
     bpm: 120,
     type: 'square',
     notes: [
-      // Undertale — Megalovania (Toby Fox), the intro riff, key Dm.
+      // Undertale — the four-root intro, then the same phrase an octave up.
       ['D4', 0.25], ['D4', 0.25], ['D5', 0.5], ['A4', 0.5], [null, 0.25], ['Ab4', 0.5], [null, 0.25], ['G4', 0.5], ['F4', 0.5], ['D4', 0.25], ['F4', 0.25], ['G4', 0.5],
       ['C4', 0.25], ['C4', 0.25], ['D5', 0.5], ['A4', 0.5], [null, 0.25], ['Ab4', 0.5], [null, 0.25], ['G4', 0.5], ['F4', 0.5], ['D4', 0.25], ['F4', 0.25], ['G4', 0.5],
-      [null, 0.5],
+      ['B3', 0.25], ['B3', 0.25], ['D5', 0.5], ['A4', 0.5], [null, 0.25], ['Ab4', 0.5], [null, 0.25], ['G4', 0.5], ['F4', 0.5], ['D4', 0.25], ['F4', 0.25], ['G4', 0.5],
+      ['Bb3', 0.25], ['Bb3', 0.25], ['D5', 0.5], ['A4', 0.5], [null, 0.25], ['Ab4', 0.5], [null, 0.25], ['G4', 0.5], ['F4', 0.5], ['D4', 0.25], ['F4', 0.25], ['G4', 0.5],
+      ['D5', 0.25], ['D5', 0.25], ['D6', 0.5], ['A5', 0.5], [null, 0.25], ['Ab5', 0.5], [null, 0.25], ['G5', 0.5], ['F5', 0.5], ['D5', 0.25], ['F5', 0.25], ['G5', 0.5],
+      ['C5', 0.25], ['C5', 0.25], ['D6', 0.5], ['A5', 0.5], [null, 0.25], ['Ab5', 0.5], [null, 0.25], ['G5', 0.5], ['F5', 0.5], ['D5', 0.25], ['F5', 0.25], ['G5', 0.5],
+      ['B4', 0.25], ['B4', 0.25], ['D6', 0.5], ['A5', 0.5], [null, 0.25], ['Ab5', 0.5], [null, 0.25], ['G5', 0.5], ['F5', 0.5], ['D5', 0.25], ['F5', 0.25], ['G5', 0.5],
+      ['Bb4', 0.25], ['Bb4', 0.25], ['D6', 0.5], ['A5', 0.5], [null, 0.25], ['Ab5', 0.5], [null, 0.25], ['G5', 0.5], ['F5', 0.5], ['D5', 0.25], ['F5', 0.25], ['G5', 0.5],
     ],
   },
   pirates: {
     label: 'Pirates',
+    artist: 'Klaus Badelt & Hans Zimmer',
+    title: "He's a Pirate",
     bpm: 140,
     type: 'square',
     notes: [
-      // Pirates of the Caribbean — He's a Pirate (Zimmer/Badelt), key Dm.
-      ['A4', 0.5], ['A4', 0.25], ['A4', 0.25], ['A4', 0.5], ['C5', 0.25], ['D5', 0.5], ['D5', 0.25], ['D5', 0.25], ['D5', 0.5], ['E5', 0.25],
-      ['F5', 0.5], ['F5', 0.25], ['F5', 0.25], ['F5', 0.5], ['E5', 0.25], ['E5', 0.25], ['D5', 0.25], ['C5', 0.25], ['C5', 0.5], ['B4', 0.25], ['A4', 0.5], ['A4', 0.5],
-      [null, 0.5],
+      // He's a Pirate — the gallop, the climb, and the E–F–G coda.
+      ['E4', 0.5], ['G4', 0.5], ['A4', 1.0], ['A4', 0.5], [null, 0.5],
+      ['A4', 0.5], ['B4', 0.5], ['C5', 1.0], ['C5', 0.5], [null, 0.5],
+      ['C5', 0.5], ['D5', 0.5], ['B4', 1.0], ['B4', 0.5], [null, 0.5],
+      ['A4', 0.5], ['G4', 0.5], ['A4', 1.5], [null, 0.5],
+      ['E4', 0.5], ['G4', 0.5], ['A4', 1.0], ['A4', 0.5], [null, 0.5],
+      ['A4', 0.5], ['B4', 0.5], ['C5', 1.0], ['C5', 0.5], [null, 0.5],
+      ['C5', 0.5], ['D5', 0.5], ['B4', 1.0], ['B4', 0.5], [null, 0.5],
+      ['A4', 0.5], ['G4', 0.5], ['A4', 1.5], [null, 0.5],
+      ['E4', 0.5], ['G4', 0.5], ['A4', 1.0], ['A4', 0.5], [null, 0.5],
+      ['A4', 0.5], ['C5', 0.5], ['D5', 1.0], ['D5', 0.5], [null, 0.5],
+      ['D5', 0.5], ['E5', 0.5], ['F5', 1.0], ['F5', 0.5], [null, 0.5],
+      ['E5', 0.5], ['D5', 0.5], ['E5', 0.5], ['A4', 1.0], [null, 0.5],
+      ['A4', 0.5], ['B4', 0.5], ['C5', 1.0], ['C5', 0.5], [null, 0.5],
+      ['D5', 1.0], ['E5', 0.5], ['A4', 1.0], [null, 0.5],
+      ['A4', 0.5], ['C5', 0.5], ['B4', 1.0], ['B4', 0.5], [null, 0.5],
+      ['C5', 0.5], ['A4', 0.5], ['B4', 1.5], [null, 1.5],
+      ['E5', 1.0], [null, 2.0], ['F5', 1.0], [null, 2.0],
+      ['E5', 0.5], ['E5', 0.5], [null, 0.5], ['G5', 0.5], [null, 0.5], ['E5', 0.5], ['D5', 0.5], [null, 2.0],
+      ['D5', 1.0], [null, 2.0], ['C5', 1.0], [null, 2.0],
+      ['B4', 0.5], ['C5', 0.5], [null, 0.5], ['B4', 0.5], [null, 0.5], ['A4', 2.0],
+      ['E5', 1.0], [null, 2.0], ['F5', 1.0], [null, 2.0],
+      ['E5', 0.5], ['E5', 0.5], [null, 0.5], ['G5', 0.5], [null, 0.5], ['E5', 0.5], ['D5', 0.5], [null, 2.0],
+      ['D5', 1.0], [null, 2.0], ['C5', 1.0], [null, 2.0],
+      ['B4', 0.5], ['C5', 0.5], [null, 0.5], ['B4', 0.5], [null, 0.5], ['A4', 2.0],
     ],
   },
   takeonme: {
     label: 'Take On Me',
+    artist: 'a-ha',
     bpm: 170,
     type: 'square',
     notes: [
-      // a-ha — Take On Me, the synth hook, key A.
-      ['F#5', 0.5], ['F#5', 0.5], ['D5', 0.5], ['B4', 0.5], ['B4', 0.5], ['E5', 0.5], ['E5', 0.5], ['E5', 0.5],
-      ['G#5', 0.5], ['G#5', 0.5], ['A5', 0.5], ['B5', 0.5], ['A5', 0.5], ['A5', 0.5], ['A5', 0.5], ['E5', 0.5],
-      ['D5', 0.5], ['F#5', 0.5], ['F#5', 0.5], ['F#5', 0.5], ['E5', 0.5], ['E5', 0.5], ['F#5', 0.5], ['E5', 0.5],
-      [null, 0.5],
+      // a-ha — synth hook twice, then the vocal chorus.
+      ['F#5', 0.5], ['F#5', 0.5], ['D5', 0.5], ['B4', 0.5], [null, 0.5], ['B4', 0.5], [null, 0.5], ['E5', 0.5],
+      [null, 0.5], ['E5', 0.5], [null, 0.5], ['E5', 0.5], ['G#5', 0.5], ['G#5', 0.5], ['A5', 0.5], ['B5', 0.5],
+      ['A5', 0.5], ['A5', 0.5], ['A5', 0.5], ['E5', 0.5], [null, 0.5], ['D5', 0.5], [null, 0.5], ['F#5', 0.5],
+      [null, 0.5], ['F#5', 0.5], [null, 0.5], ['F#5', 0.5], ['E5', 0.5], ['E5', 0.5], ['F#5', 0.5], ['E5', 0.5],
+      ['F#5', 0.5], ['F#5', 0.5], ['D5', 0.5], ['B4', 0.5], [null, 0.5], ['B4', 0.5], [null, 0.5], ['E5', 0.5],
+      [null, 0.5], ['E5', 0.5], [null, 0.5], ['E5', 0.5], ['G#5', 0.5], ['G#5', 0.5], ['A5', 0.5], ['B5', 0.5],
+      ['A5', 0.5], ['A5', 0.5], ['A5', 0.5], ['E5', 0.5], [null, 0.5], ['D5', 0.5], [null, 0.5], ['F#5', 0.5],
+      [null, 0.5], ['F#5', 0.5], [null, 0.5], ['F#5', 0.5], ['E5', 0.5], ['E5', 0.5], ['F#5', 0.5], ['E5', 0.5],
+      ['A4', 0.5], ['F#5', 1.0], ['F#5', 0.5], ['E5', 2.0],
+      ['A4', 0.5], ['E5', 1.0], ['E5', 0.5], ['D5', 2.0],
+      ['B4', 0.5], ['D5', 1.0], ['D5', 0.5], ['C#5', 1.0], ['B4', 1.0],
+      ['A4', 0.5], ['C#5', 1.0], ['C#5', 0.5], ['A4', 2.0],
+    ],
+  },
+  dancing: {
+    label: 'Dancing Queen',
+    artist: 'ABBA',
+    bpm: 101,
+    type: 'square',
+    notes: [
+      // ABBA — Dancing Queen, key A. Chorus, "you are the dancing queen", verse.
+      // You can dance / you can jive
+      ['C#5', 0.5], ['B4', 0.5], ['B4', 2.0], [null, 1.0],
+      ['C#5', 0.5], ['B4', 0.5], ['B4', 0.5], ['C#5', 2.5],
+      // Having the time of your life
+      ['A4', 0.5], ['B4', 0.5], ['G#4', 0.5], ['A4', 0.5], ['B4', 0.5], ['G#4', 0.5], ['A4', 0.5], ['G#4', 0.5],
+      ['F#4', 3.0], [null, 1.0],
+      ['C#5', 0.5], ['B4', 0.5], ['A4', 0.5], ['G#4', 2.5],
+      // See that girl / watch that scene / digging the dancing queen
+      ['G#4', 0.5], ['A4', 0.5], ['A4', 2.0], [null, 1.0],
+      ['G#4', 0.5], ['A4', 0.5], ['A4', 2.0], [null, 1.0],
+      ['B4', 0.5], ['A4', 0.5], ['G#4', 0.5], ['G#4', 0.5], ['A4', 0.5], ['A4', 1.5],
+      // You are the dancing queen / young and sweet / only seventeen
+      ['E5', 0.5], ['F#5', 0.5], ['G#5', 0.5], ['G#5', 0.5], ['A5', 0.5], ['A5', 1.5],
+      ['G#5', 0.5], ['A5', 0.5], ['A5', 2.0], [null, 1.0],
+      ['B5', 0.5], ['A5', 0.5], ['G#5', 0.5], ['A5', 0.5], ['A5', 2.0],
+      ['G#5', 0.5], ['A5', 0.5], ['A5', 2.0], [null, 1.0],
+      // Friday night and the lights are low / looking out for a place to go
+      ['C#5', 0.25], ['E5', 0.5], ['E5', 0.5], ['E5', 0.5], ['E5', 0.5], ['E5', 0.5], ['E5', 0.5], ['F#5', 0.75],
+      ['C#5', 0.25], ['E5', 0.5], ['E5', 0.5], ['E5', 0.5], ['E5', 0.5], ['E5', 0.5], ['E5', 0.5], ['C#5', 0.75],
+      // And when you get the chance
+      ['A4', 1.0], ['B4', 0.5], ['C#5', 0.5], ['C#5', 0.5], ['D5', 0.5], ['D5', 0.25], ['C#5', 0.25], ['B4', 0.5],
+      // Chorus back — you can dance
+      ['C#5', 0.5], ['B4', 0.5], ['B4', 2.0], [null, 1.0],
+      ['C#5', 0.5], ['B4', 0.5], ['B4', 0.5], ['C#5', 2.5],
+      ['A4', 0.5], ['B4', 0.5], ['G#4', 0.5], ['A4', 0.5], ['B4', 0.5], ['G#4', 0.5], ['A4', 0.5], ['G#4', 0.5],
+      ['F#4', 3.0], [null, 1.0],
+      ['G#4', 0.5], ['A4', 0.5], ['A4', 2.0], [null, 1.0],
+      ['G#4', 0.5], ['A4', 0.5], ['A4', 2.0], [null, 1.0],
+      ['B4', 0.5], ['A4', 0.5], ['G#4', 0.5], ['G#4', 0.5], ['A4', 0.5], ['A4', 1.5],
     ],
   },
   rickroll: {
     label: 'Never Gonna…',
+    artist: 'Rick Astley',
+    title: 'Never Gonna Give You Up',
     bpm: 113,
     type: 'square',
     notes: [
-      // Rick Astley — Never Gonna Give You Up, the chorus hook.
-      ['G4', 0.25], ['A4', 0.25], ['C5', 0.25], ['A4', 0.25], ['E5', 0.75], ['E5', 0.75], ['D5', 1.0], [null, 0.25],
-      ['G4', 0.25], ['A4', 0.25], ['C5', 0.25], ['A4', 0.25], ['D5', 0.75], ['D5', 0.75], ['C5', 0.5], ['B4', 0.25], ['A4', 0.5], [null, 0.25],
-      ['G4', 0.25], ['A4', 0.25], ['C5', 0.25], ['A4', 0.25], ['C5', 0.5], ['D5', 0.5], ['B4', 0.25], ['A4', 0.25], ['G4', 0.5], ['G4', 0.25], ['D5', 0.5], ['C5', 1.0],
-      [null, 0.5],
+      // Rick Astley — intro, verse, and the full chorus (original key).
+      ['D5', 1.5], ['E5', 1.5], ['A4', 1.0],
+      ['E5', 1.5], ['F#5', 1.5], ['A5', 0.25], ['G5', 0.25], ['F#5', 0.5],
+      ['D5', 1.5], ['E5', 1.5], ['A4', 2.0],
+      ['A4', 0.25], ['A4', 0.25], ['B4', 0.25], ['D5', 0.5], ['D5', 0.25],
+      ['D5', 1.5], ['E5', 1.5], ['A4', 1.0],
+      ['E5', 1.5], ['F#5', 1.5], ['A5', 0.25], ['G5', 0.25], ['F#5', 0.5],
+      ['D5', 1.5], ['E5', 1.5], ['A4', 2.0],
+      ['A4', 0.25], ['A4', 0.25], ['B4', 0.25], ['D5', 0.5], ['D5', 0.25],
+      [null, 1.0], ['B4', 0.5], ['C#5', 0.5], ['D5', 0.5], ['D5', 0.5], ['E5', 0.5], ['C#5', 0.75],
+      ['B4', 0.25], ['A4', 2.0], [null, 1.0],
+      [null, 0.5], ['B4', 0.5], ['B4', 0.5], ['C#5', 0.5], ['D5', 0.5], ['B4', 1.0], ['A4', 0.5],
+      ['A5', 0.5], [null, 0.5], ['A5', 0.5], ['E5', 1.5], [null, 1.0],
+      ['B4', 0.5], ['B4', 0.5], ['C#5', 0.5], ['D5', 0.5], ['B4', 0.5], ['D5', 0.5], ['E5', 0.5], [null, 0.5],
+      [null, 0.5], ['C#5', 0.5], ['B4', 0.5], ['A4', 1.5], [null, 1.0],
+      [null, 0.5], ['B4', 0.5], ['B4', 0.5], ['C#5', 0.5], ['D5', 0.5], ['B4', 0.5], ['A4', 1.0],
+      ['E5', 0.5], ['E5', 0.5], ['E5', 0.5], ['F#5', 0.5], ['E5', 1.0], [null, 1.0],
+      ['D5', 2.0], ['E5', 0.5], ['F#5', 0.5], ['D5', 0.5],
+      ['E5', 0.5], ['E5', 0.5], ['E5', 0.5], ['F#5', 0.5], ['E5', 1.0], ['A4', 1.0],
+      [null, 2.0], ['B4', 0.5], ['C#5', 0.5], ['D5', 0.5], ['B4', 0.5],
+      [null, 0.5], ['E5', 0.5], ['F#5', 0.5], ['E5', 1.5], ['A4', 0.25], ['B4', 0.25], ['D5', 0.25], ['B4', 0.25],
+      ['F#5', 0.75], ['F#5', 0.75], ['E5', 1.5], ['A4', 0.25], ['B4', 0.25], ['D5', 0.25], ['B4', 0.25],
+      ['E5', 0.75], ['E5', 0.75], ['D5', 0.75], ['C#5', 0.25], ['B4', 0.75], ['A4', 0.25], ['B4', 0.25], ['D5', 0.25], ['B4', 0.25],
+      ['D5', 1.0], ['E5', 0.5], ['C#5', 0.75], ['B4', 0.25], ['A4', 0.5], ['A4', 0.5], ['A4', 0.5],
+      ['E5', 1.0], ['D5', 2.0], ['A4', 0.25], ['B4', 0.25], ['D5', 0.25], ['B4', 0.25],
+      ['F#5', 0.75], ['F#5', 0.75], ['E5', 1.5], ['A4', 0.25], ['B4', 0.25], ['D5', 0.25], ['B4', 0.25],
+      ['A5', 1.0], ['C#5', 0.5], ['D5', 0.75], ['C#5', 0.25], ['B4', 0.5], ['A4', 0.25], ['B4', 0.25], ['D5', 0.25], ['B4', 0.25],
+      ['D5', 1.0], ['E5', 0.5], ['C#5', 0.75], ['B4', 0.25], ['A4', 1.0], ['A4', 0.5],
+      ['E5', 1.0], ['D5', 2.0],
     ],
   },
 };
 
 const SONG_ORDER = [
-  'money', 'pump', 'axelf', 'ode', 'sonic', 'mario', 'tetris',
-  'imperial', 'seven', 'smoke', 'megalovania', 'pirates', 'takeonme',
-  'rickroll',
+  'tetris', 'imperial', 'axelf', 'takeonme', 'dancing', 'ode', 'sonic', 'mario',
+  'seven', 'smoke', 'megalovania', 'pirates', 'rickroll',
 ];
 
 /** Default when the jam strip is switched on, or when nothing has been picked. */
@@ -237,18 +420,18 @@ const DEFAULT_SONG_ID = 'tetris';
    [name|null, beats], played at the parent song's bpm and timbre. */
 
 const STABS = {
-  money: [
-    [['A4', 0.5], ['A4', 0.5], ['A4', 0.75], ['C5', 0.25]],          // "money, money, mo-ney"
-    [['C5', 0.5], ['B4', 0.5], ['A4', 0.75]],
-    [['A4', 0.25], ['A4', 0.25], ['C5', 0.5], ['B4', 0.5]],
+  tetris: [
+    [['E5', 0.5], ['B4', 0.25], ['C5', 0.25], ['D5', 0.5]],
+    [['A4', 0.5], ['A4', 0.25], ['C5', 0.25], ['E5', 0.5]],
+    [['B4', 0.5], ['C5', 0.25], ['D5', 0.5]],
   ],
-  pump: [
-    [['C5', 0.5], ['Eb5', 0.5], ['F5', 0.5]],                        // the rising "pump up"
-    [['G5', 0.5], ['Ab5', 0.5], ['G5', 0.5]],
-    [['C5', 0.25], ['C5', 0.25], ['Eb5', 0.5], ['F5', 0.5]],
+  imperial: [
+    [['G4', 0.5], ['G4', 0.5], ['G4', 0.5]],
+    [['Eb4', 0.5], ['Bb4', 0.25], ['G4', 0.75]],
+    [['D5', 0.5], ['D5', 0.5], ['D5', 0.5]],
   ],
   axelf: [
-    [['F4', 0.75], ['Ab4', 0.5], ['F4', 0.25]],                      // the opening lick
+    [['F4', 0.75], ['Ab4', 0.5], ['F4', 0.25]],
     [['F4', 0.5], ['Bb4', 0.5], ['F4', 0.5], ['Eb4', 0.5]],
     [['F4', 0.5], ['C5', 0.5], ['F5', 0.5]],
   ],
@@ -258,56 +441,52 @@ const STABS = {
     [['E4', 0.75], ['D4', 0.25], ['D4', 0.75]],
   ],
   sonic: [
-    [['C5', 0.5], ['A4', 0.5], ['C5', 0.5], ['B4', 0.5]],            // Green Hill opener
+    [['C5', 0.5], ['A4', 0.5], ['C5', 0.5], ['B4', 0.5]],
     [['G4', 0.5], ['E5', 0.5], ['D5', 0.5], ['C5', 0.5]],
-    [['B4', 0.25], ['C5', 0.25], ['E5', 0.75]],                      // spring-jump flick
+    [['B4', 0.25], ['C5', 0.25], ['E5', 0.75]],
   ],
   mario: [
-    [['E5', 0.5], ['E5', 0.5], [null, 0.5], ['E5', 0.5]],            // the overworld intro
-    [['B5', 0.3], ['E6', 1.0]],                                      // the coin
-    [['C5', 0.25], ['E5', 0.25], ['G5', 0.75]],                      // power-up run
-  ],
-  tetris: [
-    [['E5', 0.5], ['B4', 0.25], ['C5', 0.25], ['D5', 0.5]],          // Korobeiniki opener
-    [['A4', 0.5], ['A4', 0.25], ['C5', 0.25], ['E5', 0.5]],
-    [['B4', 0.5], ['C5', 0.25], ['D5', 0.5]],
-  ],
-  imperial: [
-    [['G4', 0.5], ['G4', 0.5], ['G4', 0.5]],                         // the march tread
-    [['Eb4', 0.5], ['Bb4', 0.25], ['G4', 0.75]],
-    [['D5', 0.5], ['D5', 0.5], ['D5', 0.5]],
+    [['E5', 0.5], ['E5', 0.5], [null, 0.5], ['E5', 0.5]],
+    [['B5', 0.3], ['E6', 1.0]],
+    [['C5', 0.25], ['E5', 0.25], ['G5', 0.75]],
   ],
   seven: [
-    [['E4', 0.75], ['E4', 0.25], ['G4', 0.25], ['E4', 0.25]],        // the stadium riff head
+    [['E4', 0.75], ['E4', 0.25], ['G4', 0.25], ['E4', 0.25]],
     [['D4', 0.5], ['C4', 0.75], ['B3', 0.75]],
     [['E4', 0.5], ['G4', 0.25], ['E4', 0.25], ['D4', 0.5]],
   ],
   smoke: [
-    [['G4', 0.5], ['Bb4', 0.5], ['C5', 0.75]],                       // duh, duh, duuh
+    [['G4', 0.5], ['Bb4', 0.5], ['C5', 0.75]],
     [['G4', 0.5], ['Bb4', 0.5], ['Db5', 0.25], ['C5', 0.75]],
     [['C5', 0.5], ['Bb4', 0.5], ['G4', 0.75]],
   ],
   megalovania: [
-    [['D4', 0.25], ['D4', 0.25], ['D5', 0.5], ['A4', 0.5]],          // the intro riff head
+    [['D4', 0.25], ['D4', 0.25], ['D5', 0.5], ['A4', 0.5]],
     [['Ab4', 0.375], ['G4', 0.375], ['F4', 0.375]],
     [['F4', 0.25], ['D4', 0.25], ['F4', 0.25], ['G4', 0.5]],
   ],
   pirates: [
-    [['A4', 0.25], ['C5', 0.25], ['D5', 0.5], ['D5', 0.25]],         // the galloping climb
-    [['D5', 0.25], ['E5', 0.25], ['F5', 0.5], ['F5', 0.25]],
-    [['E5', 0.25], ['D5', 0.25], ['C5', 0.25], ['B4', 0.25], ['A4', 0.5]],
+    [['E4', 0.25], ['G4', 0.25], ['A4', 0.5]],
+    [['A4', 0.25], ['C5', 0.25], ['D5', 0.5]],
+    [['E5', 0.5], ['F5', 0.5], ['E5', 0.25], ['G5', 0.5]],
   ],
   takeonme: [
-    [['F#5', 0.5], ['F#5', 0.5], ['D5', 0.5], ['B4', 0.5]],          // the synth hook head
+    [['F#5', 0.5], ['F#5', 0.5], ['D5', 0.5], ['B4', 0.5]],
     [['E5', 0.5], ['E5', 0.5], ['G#5', 0.5], ['G#5', 0.5]],
-    [['A5', 0.5], ['B5', 0.5], ['A5', 0.5]],                         // the "taaake ooon" leap
+    [['A5', 0.5], ['B5', 0.5], ['A5', 0.5]],
+  ],
+  dancing: [
+    [['C#5', 0.5], ['B4', 0.5], ['B4', 1.0]],
+    [['G#4', 0.5], ['A4', 0.5], ['A4', 0.75]],
+    [['E5', 0.25], ['F#5', 0.25], ['G#5', 0.25], ['A5', 0.5]],
   ],
   rickroll: [
-    [['G4', 0.25], ['A4', 0.25], ['C5', 0.25], ['A4', 0.25], ['E5', 0.5]], // "never gonna give"
+    [['A4', 0.25], ['B4', 0.25], ['D5', 0.25], ['B4', 0.25], ['F#5', 0.5]],
+    [['F#5', 0.5], ['F#5', 0.5], ['E5', 0.75]],
     [['E5', 0.5], ['E5', 0.5], ['D5', 0.75]],
-    [['C5', 0.25], ['D5', 0.25], ['B4', 0.25], ['A4', 0.5]],
   ],
 };
+
 
 /* ---- Tiny synth ----------------------------------------------------- */
 
@@ -531,7 +710,15 @@ function toggle(songId) {
    so the transport + track list are driven from there. These exports give that
    UI the song catalogue, the play/stop transport, the current state, and a
    subscription so the open popover can reflect play/stop as it happens. */
-export const JAM_SONGS = SONG_ORDER.map((id) => ({ id, label: SONGS[id].label }));
+function songTip(song) {
+  const name = song.title || song.label;
+  return song.artist ? `${name} — ${song.artist}` : name;
+}
+
+export const JAM_SONGS = SONG_ORDER.map((id) => {
+  const s = SONGS[id];
+  return { id, label: s.label, artist: s.artist, tip: songTip(s) };
+});
 
 let jamStateSubs = [];
 function emitJamState() {
@@ -565,7 +752,11 @@ function buildStrip() {
   const eqBars = Array.from({ length: EQ_BARS }, () => '<span></span>').join('');
 
   const songChips = SONG_ORDER
-    .map((id) => `<button type="button" class="jam-song" data-song="${id}">${SONGS[id].label}</button>`)
+    .map((id) => {
+      const s = SONGS[id];
+      const tip = songTip(s).replace(/"/g, '&quot;');
+      return `<button type="button" class="jam-song" data-song="${id}" data-tip="${tip}" title="${tip}">${s.label}</button>`;
+    })
     .join('');
 
   strip.innerHTML = `
@@ -644,6 +835,7 @@ export function isJamStripOn() {
  *   initial restore must NOT write, or it would lock in a default forever.
  */
 export function applyJamStrip(on, persist = true) {
+  if (on) mountJamStrip();
   const panel = document.getElementById('menu-panel');
   if (panel) panel.classList.toggle('jam-off', !on);
   if (persist) { try { localStorage.setItem(JAM_KEY, on ? '1' : '0'); } catch (_) {} }
@@ -681,11 +873,29 @@ export function mountJamStrip() {
   }
 }
 
-/* NOTE: the jam player intentionally no longer auto-mounts into the nav module.
-   Per product direction the transport + track list live inside the Appearance
-   popover (see js/appearance-menu.js → jamPlayerSection), so there's nothing to
-   inject into #menu-panel. mountJamStrip()/buildStrip() are kept only for the
-   legacy Minimal-UI pivot bar should a shell opt back into an inline strip. */
+/* Mount into the nav as soon as #menu-panel .menu-inner exists. The Appearance
+   popover only toggles the strip on/off — the transport + track list live here,
+   not inside that popover (turning Jam on must not grow or reflow the menu). */
+function bootJamStrip() {
+  if (document.querySelector('#menu-panel .menu-inner')) {
+    mountJamStrip();
+    return;
+  }
+  if (typeof MutationObserver === 'undefined' || !document.documentElement) return;
+  const mo = new MutationObserver(() => {
+    if (!document.querySelector('#menu-panel .menu-inner')) return;
+    mountJamStrip();
+    mo.disconnect();
+  });
+  mo.observe(document.documentElement, { childList: true, subtree: true });
+}
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootJamStrip);
+  } else {
+    bootJamStrip();
+  }
+}
 
 /* ---- App-wide button click stabs ------------------------------------ */
 /* While the Jam strip is switched on, EVERY button click in the app plays a

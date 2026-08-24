@@ -392,12 +392,10 @@ html.dark.chat-tint.header-float .sc-card.sc-scrolled .chat-topbar > .sc-topbar-
   background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339);
 }
 
-/* Wide state — legacy hook when panel-wide is applied to an inner card; the
-   dock itself now carries panel-wide (see .wiseai-dock.wiseai-dock-open.panel-wide). */
-.sc-card.panel-wide {
-  flex-grow: 2;
-  min-width: min(580px, 92vw);
-}
+/* Wide state used to live on an INNER .sc-card (grow:2 + min 580px). The
+   mounted chat IS the .sc-card now and carries the four-tier width classes.
+   That old floor locked a just-widened chat at double width so it could not
+   drag back to single. Tier widths are owned by each host. */
 
 /* ===== Body (messages + welcome overlay) ===== */
 .sc-body { position: relative; flex: 1 1 0%; min-height: 0; display: flex; overflow: hidden;
@@ -443,6 +441,10 @@ html.dark .chat-messages-area { background: transparent; }
      the panel (the small, quiet meta row below carries the timestamp). */
   font-size: var(--fs-chat, 0.9375rem); line-height: 1.6; color: var(--text);
 }
+/* Paragraph-by-paragraph transcript reveal — each prose run is wrapped so it
+   can fade in as a block. Consecutive paras keep the gap a <br><br> used to. */
+.sc-line-body > .sc-para { display: block; }
+.sc-line-body > .sc-para + .sc-para { margin-top: 1em; }
 /* Per-line profile avatars in place of the old "You" / "WISEcodeAI™" labels.
    WISEcodeAI = the WISE-owl bug (same mark as the header) in a brand-blue circle.
    You   = the member's initials, matching the top-bar .topbar-profile chip. */

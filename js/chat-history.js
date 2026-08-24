@@ -166,17 +166,18 @@
          flex sibling in the modules row), no scrim, always in-flow. ── */
       '.wch-sidebar.wch-docked{position:relative;top:auto;bottom:auto;left:auto;right:auto;height:100%;max-width:none;flex:0 0 300px;display:flex;overflow:hidden;',
         'border:1px solid rgba(255,255,255,0.10);border-radius:16px;box-shadow:var(--shadow-card,0 12px 32px rgba(0,0,0,0.30));',
-        'animation:wchDockIn .38s cubic-bezier(.34,1.4,.64,1) both;}',
+        'animation:none;}',
       /* Smoothly animate the width when minimizing to / maximizing from the icon
          rail (and on width-tier / sticky changes). overflow:hidden lets the inner
          labels + icons glide in/out cleanly instead of the width snapping. Gated
          on `wch-anim` (added a frame after mount) so the initial layout applies
          instantly. The splitter drag disables this transition for its duration
-         (pane-resize.js), so dragging stays instant. */
-      '.wch-sidebar.wch-docked.wch-anim{transition:flex-basis .3s cubic-bezier(.4,0,.2,1),width .3s cubic-bezier(.4,0,.2,1);}',
+         (pane-resize.js), so dragging stays instant. min-width is in the same
+         transition so expand can leave a sticky floor (240) the same way collapse
+         releases it — otherwise maximize jumps 66→240 and looks like a snap. */
+      '.wch-sidebar.wch-docked.wch-anim{transition:flex-basis .3s cubic-bezier(.4,0,.2,1),width .3s cubic-bezier(.4,0,.2,1),min-width .3s cubic-bezier(.4,0,.2,1);}',
       'html:not(.dark) .wch-sidebar.wch-docked{border-color:var(--border,rgba(0,0,0,0.08));box-shadow:var(--shadow-card,0 12px 32px rgba(20,30,60,0.12));}',
       '.wch-sidebar.wch-docked.wch-docked-hidden{display:none;}',
-      '@keyframes wchDockIn{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}',
       '@media (prefers-reduced-motion:reduce){.wch-sidebar.wch-docked.wch-anim{transition:none;}}',
       /* ── Icon-rail (minimized) mode ──────────────────────────────────────────
          Collapses the docked module to a slim column of icons + project folder
@@ -365,15 +366,13 @@
       '#modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-unsticky){z-index:1;background:var(--surface-2,var(--surface,#fff));--wch-tree-bg:var(--surface-2,var(--surface,#fff));box-shadow:none;align-self:center;height:calc(100% - 30px);}',
       /* History (left of chat): flush + tucked under the chat\'s LEFT edge. */
       '#modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-right):not(.wch-unsticky){margin-right:calc(-14px - var(--modules-gap, 8px));padding-right:14px;',
-        'border-top-right-radius:0;border-bottom-right-radius:0;border-right:0;animation:wchStickySlideL .42s cubic-bezier(.34,1.45,.64,1) both;}',
+        'border-top-right-radius:0;border-bottom-right-radius:0;border-right:0;animation:none;}',
       /* Turns (right of chat): flush + tucked under the chat\'s RIGHT edge. */
       '#modules-row.modules-sticky .wch-sidebar.wch-docked.wch-right:not(.wch-unsticky){margin-left:calc(-14px - var(--modules-gap, 8px));padding-left:14px;',
-        'border-top-left-radius:0;border-bottom-left-radius:0;border-left:0;animation:wchStickySlideR .42s cubic-bezier(.34,1.45,.64,1) both;}',
+        'border-top-left-radius:0;border-bottom-left-radius:0;border-left:0;animation:none;}',
       '#modules-row:has(.wa-pane.is-open) .wch-sidebar.wch-docked.wch-right,',
       '#modules-row.modules-sticky:has(.wa-pane.is-open) .wch-sidebar.wch-docked.wch-right:not(.wch-unsticky){border-left:1px solid var(--border-strong,var(--border,rgba(0,0,0,0.14)));}',
       'html.dark #modules-row:has(.wa-pane.is-open) .wch-sidebar.wch-docked.wch-right{border-left-color:rgba(255,255,255,0.16);}',
-      '@keyframes wchStickySlideL{from{transform:translateX(26px);opacity:.35}to{transform:none;opacity:1}}',
-      '@keyframes wchStickySlideR{from{transform:translateX(-26px);opacity:.35}to{transform:none;opacity:1}}',
       /* Docked-module popovers portal to <body>, so the module never needs
          lifting above the chat while its menu is open (this overrides the
          generic pane-resize "menu open" z-bump). */
@@ -1605,18 +1604,27 @@
        A docked module sits a layer below the chat, so revealing it slides it out
        from behind the chat card and concealing it tucks it back in behind before
        it's hidden. (Overlay mode keeps its own scrim slide.) */
+    function collapseDockWidth() {
+      /* True 0-width start/end — the sticky floor (min-width: 240) must drop
+         too, or the module cannot leave / return through the closed size. */
+      sidebar.style.setProperty('flex', '0 0 0px', 'important');
+      sidebar.style.setProperty('width', '0px', 'important');
+      sidebar.style.setProperty('min-width', '0px', 'important');
+    }
     function revealDocked() {
       clearTimeout(concealTimer);
       clearTimeout(revealTimer);
       sidebar.classList.remove('wch-dock-conceal', 'wch-dock-reveal');
-      /* Collapse the module's width to 0 while it's still hidden (no flash), then
-         expand it back to its docked width using the shared `wch-anim` flex-basis /
-         width transition. As it widens, the flex row reflows and the chat contracts
-         smoothly in step — instead of the chat snapping narrow the instant the
-         module reappears. The keyframe (opacity / tuck) rides on top. */
+      /* Expand from a collapsed width using the same `wch-anim` flex-basis /
+         width / min-width transition conceal uses (in reverse). The reveal
+         keyframe (opacity / tuck) rides on top. Resting docked/sticky rules
+         must NOT keep an enter animation — removing this class would restart
+         that leftover keyframe from its "closed" from-state and the module
+         would flash shut. */
       sidebar.classList.add('wch-anim');
-      sidebar.style.setProperty('flex', '0 0 0px', 'important');
-      sidebar.style.setProperty('width', '0px', 'important');
+      var wasHidden = sidebar.classList.contains('wch-docked-hidden')
+        || sidebar.style.width === '0px';
+      if (wasHidden) collapseDockWidth();
       sidebar.classList.remove('wch-docked-hidden');
       void sidebar.offsetWidth;               /* register the collapsed start frame */
       sidebar.classList.add('wch-dock-reveal');
@@ -1631,13 +1639,12 @@
       sidebar.classList.add('wch-dock-conceal');
       /* Shrink the width to 0 in sync with the fade/tuck so the chat grows to fill
          the freed space over the same 0.3s, rather than staying put and then
-         snapping wide the moment the module is display:none'd. */
-      sidebar.style.setProperty('flex', '0 0 0px', 'important');
-      sidebar.style.setProperty('width', '0px', 'important');
+         snapping wide the moment the module is display:none'd. Leave the inline
+         0-width in place after hide so the next reveal starts collapsed. */
+      collapseDockWidth();
       concealTimer = setTimeout(function () {
         sidebar.classList.add('wch-docked-hidden');
         sidebar.classList.remove('wch-dock-conceal');
-        applyDockWidth();                      /* restore docked width while hidden */
       }, 300);
     }
     function isDockedHidden() {
@@ -1814,9 +1821,25 @@
          sync so a toggle mid-hover doesn't show the stale caption. */
       if (btn.hasAttribute('data-wch-title')) btn.setAttribute('data-wch-title', label);
     }
+    var railExpandTimer = null;
+    var railExpandOnEnd = null;
+    function cancelRailExpand() {
+      if (railExpandOnEnd) {
+        sidebar.removeEventListener('transitionend', railExpandOnEnd);
+        railExpandOnEnd = null;
+      }
+      if (railExpandTimer) { clearTimeout(railExpandTimer); railExpandTimer = null; }
+    }
     function setRail(on) {
-      railMode = !!on;
-      sidebar.classList.toggle('wch-rail', railMode);
+      var next = !!on;
+      var expanding = railMode && !next;
+      railMode = next;
+      cancelRailExpand();
+      /* Collapse: switch to rail chrome first, then shrink (labels vanish, width
+         eases down). Expand: grow first while still in rail chrome, then reveal
+         labels — the reverse, so maximize uses the same width motion as minimize
+         instead of popping the full panel on at rail width. */
+      if (!expanding) sidebar.classList.toggle('wch-rail', railMode);
       /* Lock the module's drag-resize while minimized — the icon rail is a fixed
          slim column, so pane-resize.js should not offer a splitter on its seam. */
       if (railMode) sidebar.setAttribute('data-pr-lock', '');
@@ -1831,7 +1854,23 @@
         else newBtn.removeAttribute('data-tip');
       }
       updateRailItem();
-      render();               /* re-render so item/project rail labels attach */
+      if (expanding) {
+        var finishExpand = function () {
+          cancelRailExpand();
+          if (railMode) return;
+          sidebar.classList.remove('wch-rail');
+          render();
+        };
+        railExpandOnEnd = function (e) {
+          if (e.target !== sidebar) return;
+          if (e.propertyName !== 'width' && e.propertyName !== 'flex-basis' && e.propertyName !== 'min-width') return;
+          finishExpand();
+        };
+        sidebar.addEventListener('transitionend', railExpandOnEnd);
+        railExpandTimer = setTimeout(finishExpand, 360);
+      } else {
+        render();               /* re-render so item/project rail labels attach */
+      }
       writeStore();
     }
     /* Host toggles this when it tucks the docked module in behind the chat. */
@@ -1968,7 +2007,7 @@
       requestAnimationFrame(function () { sidebar.classList.add('wch-anim'); });
     });
 
-    return {
+    var api = {
       toggle: toggle, open: open, close: close, isOpen: isOpen,
       saveCurrent: saveCurrent, startNew: startNew, restore: restore,
       remove: remove, markNew: markNew, refresh: render, root: sidebar,
@@ -1983,6 +2022,12 @@
       moveToProject: moveToProject,
       listProjects: function () { return projects.map(function (p) { return { id: p.id, name: p.name, color: p.color, count: projectItems(p.id).length }; }); }
     };
+    try {
+      document.dispatchEvent(new CustomEvent('wise:chat-history-ready', {
+        detail: { api: api, storageKey: storageKey }
+      }));
+    } catch (_) {}
+    return api;
   }
 
   global.WiseChatHistory = { mount: mount };

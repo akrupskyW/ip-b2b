@@ -268,6 +268,445 @@ body:has(.menu-brand-integrated) {
   padding: var(--modules-bottom-pad, 12px);
 }
 
+/* ===== APP SEARCH (Appearance ▸ Admin ▸ Search) =====
+   Lives inside the shell wrap as grid-area: search, sharing the nav brand
+   band so the logo and the field sit on one horizontal line. Hidden unless
+   html.app-search-on. Search suspends full-bleed, so sticky drawers are
+   stretched to the chat's height (no 15px top/bottom inset). The nav
+   chevron then lines up with History's collapse from the modules-row top
+   (18px head pad + 1px controls — not the old 15px drawer inset). */
+html.app-search-on {
+  --app-search-band-h: var(--panel-header-h, 60px);
+  /* Expanded History header: 18px head pad + 1px controls. */
+  --app-search-toggle-gap: 19px;
+}
+/* Collapsed rail only: absorb the page's top frame into the band so the
+   overflowing wordmark and search field share equal pad above and below.
+   Expanded nav keeps its original 60px brand strip and 12px page frame. */
+html.app-search-on:has(#menu-panel.mp-rail:not(.mp-pivot)) {
+  --app-search-band-h: calc(var(--panel-header-h, 60px) + var(--modules-bottom-pad, 12px));
+}
+html.app-search-on:has(#menu-panel.mp-rail:not(.mp-pivot)) body:has(.menu-brand-integrated) {
+  padding-top: 0;
+}
+html.app-search-on:has(#modules-row .wch-sidebar.wch-docked.wch-rail:not(.wch-right)) {
+  /* Minimized History head is only 4px padded (drawers match chat height). */
+  --app-search-toggle-gap: 5px;
+}
+.wise-app-search {
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 40;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0 12px;
+}
+.wise-app-search-inner {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 480px;
+  box-sizing: border-box;
+}
+.wise-app-search-field {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+.wise-app-search-field > .material-symbols-outlined {
+  position: absolute;
+  left: 12px;
+  font-size: 20px;
+  color: var(--text-subtle);
+  pointer-events: none;
+}
+.wise-app-search-input {
+  width: 100%;
+  height: 38px;
+  box-sizing: border-box;
+  padding: 0 40px 0 40px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  background: rgba(20, 40, 80, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+html.dark .wise-app-search-input {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.wise-app-search-input::placeholder { color: var(--text-subtle); opacity: 0.7; }
+.wise-app-search-input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; display: none; }
+.wise-app-search-input:focus {
+  border-color: var(--primary, #2F6DF6);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary, #2F6DF6) 18%, transparent);
+}
+.wise-app-search-clear {
+  position: absolute;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+}
+.wise-app-search-clear[hidden] { display: none; }
+.wise-app-search-clear:hover { background: rgba(0, 0, 0, 0.08); opacity: 1; }
+html.dark .wise-app-search-clear:hover { background: rgba(255, 255, 255, 0.12); }
+.wise-app-search-clear .material-symbols-outlined { font-size: 16px; }
+
+.wise-app-search-results {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(480px, calc(100% - 24px));
+  top: calc(100% + 6px);
+  max-height: min(62vh, 560px);
+  overflow: auto;
+  padding: 10px 8px 12px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-2);
+  z-index: 80;
+  box-sizing: border-box;
+}
+html.dark .wise-app-search-results {
+  background: #0D1B24;
+  border-color: rgba(37, 80, 124, 0.22);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+.wise-app-search-results[hidden] { display: none; }
+.wise-app-search-empty {
+  padding: 18px 16px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  text-align: center;
+}
+.wise-app-search-group + .wise-app-search-group { margin-top: 10px; }
+.wise-app-search-group-title {
+  margin: 0 8px 6px;
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.wise-app-search-hit {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 8px 10px;
+  border-radius: 12px;
+  font: inherit;
+}
+.wise-app-search-hit:hover,
+.wise-app-search-hit.is-active {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+}
+html.dark .wise-app-search-hit:hover,
+html.dark .wise-app-search-hit.is-active {
+  background: rgba(255, 255, 255, 0.06);
+}
+.wise-app-search-hit-ico {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  font-size: 20px;
+  color: var(--primary-ink, var(--primary));
+}
+.wise-app-search-hit-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.wise-app-search-hit-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+}
+.wise-app-search-lock {
+  font-size: 14px;
+  margin-left: 6px;
+  vertical-align: -2px;
+  opacity: 0.55;
+}
+.wise-app-search-hit-where {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-subtle);
+}
+.wise-app-search-hit-snip {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+.wise-app-search-hit mark {
+  background: color-mix(in srgb, var(--ter-amber, #FFC434) 42%, transparent);
+  color: inherit;
+  padding: 0 1px;
+  border-radius: 2px;
+}
+html.dark .wise-app-search-hit mark {
+  background: color-mix(in srgb, var(--ter-amber, #FFC434) 28%, transparent);
+}
+.wa-block.wise-search-flash {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+  border-radius: 10px;
+}
+
+html.app-search-on #chat-shell-wrap,
+html.app-search-on #agent-shell-wrap {
+  flex: 1 1 0%;
+  min-height: 0;
+}
+
+/* Side-nav: logo + search share row 1; modules (and History) start on row 2
+   so the nav chevron can sit on the History header's line. */
+html.app-search-on #chat-shell-wrap.menu-brand-integrated:not(.menu-pivoted),
+html.app-search-on #agent-shell-wrap.menu-brand-integrated:not(.menu-pivoted) {
+  grid-template-rows: var(--app-search-band-h) minmax(0, 1fr);
+  grid-template-areas:
+    "menu search"
+    "menu modules";
+}
+html.app-search-on #chat-shell-wrap.menu-brand-integrated:not(.menu-pivoted) .wise-app-search,
+html.app-search-on #agent-shell-wrap.menu-brand-integrated:not(.menu-pivoted) .wise-app-search {
+  grid-area: search;
+  height: var(--app-search-band-h);
+  min-height: var(--app-search-band-h);
+  max-height: var(--app-search-band-h);
+  padding: 0 2px;
+  overflow: visible;
+}
+html.app-search-on #chat-shell-wrap.menu-brand-integrated:not(.menu-pivoted):not(:has(#menu-panel.mp-open)),
+html.app-search-on #agent-shell-wrap.menu-brand-integrated:not(.menu-pivoted):not(:has(#menu-panel.mp-open)) {
+  grid-template-columns: 1fr;
+  grid-template-rows: var(--app-search-band-h) minmax(0, 1fr);
+  grid-template-areas:
+    "search"
+    "modules";
+}
+
+/* Pivoted top bar: search sits between the bar and the modules. */
+html.app-search-on #chat-shell-wrap.menu-brand-integrated.menu-pivoted,
+html.app-search-on #agent-shell-wrap.menu-brand-integrated.menu-pivoted {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto var(--app-search-band-h) minmax(0, 1fr);
+  grid-template-areas:
+    "menu"
+    "search"
+    "modules";
+}
+html.app-search-on #chat-shell-wrap.menu-brand-integrated.menu-pivoted .wise-app-search,
+html.app-search-on #agent-shell-wrap.menu-brand-integrated.menu-pivoted .wise-app-search {
+  grid-area: search;
+  height: var(--app-search-band-h);
+  min-height: var(--app-search-band-h);
+  max-height: var(--app-search-band-h);
+}
+
+/* Brand strip matches the search band; owl sits on the field's centerline
+   (drop the 16px headline nudge — headlines now live on the row below). */
+html.app-search-on #chat-shell-wrap #menu-panel:not(.mp-pivot) .menu-brand-bar,
+html.app-search-on #agent-shell-wrap #menu-panel:not(.mp-pivot) .menu-brand-bar {
+  height: var(--app-search-band-h);
+  min-height: var(--app-search-band-h);
+  max-height: var(--app-search-band-h);
+  position: relative;
+}
+html.app-search-on #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug,
+html.app-search-on #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug {
+  transform: none;
+}
+
+/* Search on + collapsed rail: paint the expanded wordmark (WISEcode +
+   Intelligence™) in the search band, even though the icon rail stays 54px.
+   The panel/inner must not clip; the body still scrolls the icon list. */
+html.app-search-on #menu-panel.mp-rail:not(.mp-pivot).mp-open,
+html.app-search-on #menu-panel.mp-rail:not(.mp-pivot) .menu-inner {
+  overflow: visible;
+}
+html.app-search-on #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-bar,
+html.app-search-on #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-bar {
+  overflow: visible;
+  justify-content: flex-start;
+}
+html.app-search-on #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo,
+html.app-search-on #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo {
+  position: absolute;
+  /* Nudged left of the expanded-nav wordmark so the mark sits closer to
+     the page edge while Search is on. */
+  left: calc(var(--modules-bottom-pad, 12px) + 6px - var(--nav-rail-gap, 2px));
+  top: 50%;
+  transform: translateY(-50%);
+  width: max-content;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  z-index: 50;
+}
+html.app-search-on #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo a,
+html.app-search-on #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo a {
+  display: inline-flex !important;
+  flex-direction: column;
+  align-items: flex-end !important;
+  justify-content: flex-start;
+  width: fit-content;
+  max-width: none;
+  margin: 0;
+  height: auto;
+}
+html.app-search-on #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-full,
+html.app-search-on #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-full {
+  display: block !important;
+  width: 138px;
+  height: auto;
+}
+html.app-search-on #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo .topbar-tagline,
+html.app-search-on #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo .topbar-tagline {
+  display: block !important;
+}
+html.app-search-on #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug,
+html.app-search-on #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug {
+  display: none !important;
+}
+
+/* Narrow windows: the centered 480px field would slide under the overflowing
+   wordmark. Push the field right of the mark; wide windows stay centered. */
+@media (max-width: 720px) {
+  html.app-search-on #chat-shell-wrap.menu-brand-integrated:not(.menu-pivoted):has(#menu-panel.mp-rail:not(.mp-pivot)) .wise-app-search,
+  html.app-search-on #agent-shell-wrap.menu-brand-integrated:not(.menu-pivoted):has(#menu-panel.mp-rail:not(.mp-pivot)) .wise-app-search {
+    padding-left: 128px;
+    justify-content: flex-start;
+  }
+  html.app-search-on #chat-shell-wrap.menu-brand-integrated:not(.menu-pivoted):has(#menu-panel.mp-rail:not(.mp-pivot)) .wise-app-search-inner,
+  html.app-search-on #agent-shell-wrap.menu-brand-integrated:not(.menu-pivoted):has(#menu-panel.mp-rail:not(.mp-pivot)) .wise-app-search-inner {
+    justify-content: flex-start;
+  }
+}
+
+/* Search on: History rail rows use the same 32×32 / 1px-margin flex stack as
+   the primary nav, so icons stay on one grid with the floated chevrons. */
+html.app-search-on .wch-sidebar.wch-rail .wch-new {
+  margin: 0 auto 1px;
+}
+html.app-search-on .wch-sidebar.wch-rail .wch-list,
+html.app-search-on .wch-sidebar.wch-rail .wch-projects,
+html.app-search-on .wch-sidebar.wch-rail .wch-ungrouped,
+html.app-search-on .wch-sidebar.wch-rail .wch-project,
+html.app-search-on .wch-sidebar.wch-rail .wch-project-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+html.app-search-on .wch-sidebar.wch-rail .wch-list {
+  padding: 0 0 4px;
+}
+html.app-search-on .wch-sidebar.wch-rail .wch-item {
+  margin: 1px auto;
+  justify-content: center;
+}
+html.app-search-on .wch-sidebar.wch-rail .wch-item::before,
+html.app-search-on .wch-sidebar.wch-rail .wch-project-body > .wch-item::before {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+html.app-search-on .wch-sidebar.wch-rail .wch-project-head {
+  width: 32px;
+  height: 32px;
+  margin: 1px auto;
+  padding: 0;
+  justify-content: center;
+  box-sizing: border-box;
+}
+html.app-search-on .wch-sidebar.wch-rail .wch-proj-toggle {
+  width: 22px;
+  height: 22px;
+  margin: 0 auto;
+}
+
+/* Collapsed rail: float the nav chevron onto History's header line.
+   Expanded nav keeps the chevron beside the logo (same as Search off).
+   Pivot keeps it in the top bar. */
+html.app-search-on #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-bar .topbar-menu-toggle {
+  position: absolute !important;
+  top: calc(100% + var(--app-search-toggle-gap)) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  min-height: 28px !important;
+  width: 32px !important;
+  padding: 2px 0 !important;
+  margin-left: 0;
+}
+html.app-search-on #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-bar .topbar-menu-toggle .material-symbols-outlined {
+  font-size: 20px !important;
+}
+html.app-search-on .menu-brand-integrated #menu-panel.mp-rail:not(.mp-pivot) .menu-panel-body {
+  padding-top: calc(3px + 32px + var(--app-search-toggle-gap) - 4px);
+}
+
+/* Search on: every sticky / docked module matches the chat card's height.
+   Search turns full-bleed off, which would otherwise restore the 15px
+   (or 30px / 62px supporting-drawer) top/bottom inset and leave History,
+   Turns, output, studio, and progress shorter than the chat. Horizontal
+   tuck stays; only the vertical inset is removed. */
+html.app-search-on #modules-row .sticky-mod.is-sticky,
+html.app-search-on #modules-row #agent-main.sticky-mod.is-sticky,
+html.app-search-on #modules-row .vf-progress-pane.sticky-mod.is-sticky,
+html.app-search-on #modules-row .gv-progress-pane.sticky-mod.is-sticky,
+html.app-search-on #modules-row #nfp-panel.sticky-mod.is-sticky,
+html.app-search-on #modules-row #ap-progress.vf-progress-pane.sticky-mod.is-sticky,
+html.app-search-on #modules-row:not(.is-picking) .rf-studio.sticky-mod.is-sticky,
+html.app-search-on #modules-row:not(.is-picking) .rf-dash.sticky-mod.is-sticky,
+html.app-search-on #modules-row #rf-report.sticky-mod.is-sticky,
+html.app-search-on #modules-row .wa-pane.is-open,
+html.app-search-on #modules-row .wa-pane.is-open.is-sticky,
+html.app-search-on #modules-row #wa-report.wa-pane.is-open.is-sticky,
+html.app-search-on #modules-row .wch-sidebar.wch-docked,
+html.app-search-on #modules-row.modules-sticky .wch-sidebar.wch-docked,
+html.app-search-on #modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-unsticky),
+html.app-search-on #modules-row .sa-panel {
+  align-self: stretch !important;
+  height: 100% !important;
+  max-height: 100% !important;
+}
+
+html.wa-print-report #wise-app-search { display: none !important; }
+
+@media print {
+  #wise-app-search { display: none !important; }
+}
+
 #agent-shell-wrap {
   flex: 1 1 0%;
   min-height: 0;
@@ -900,14 +1339,13 @@ html.dark .topbar-menu-item--admin:hover { background: rgba(236, 72, 153, 0.16);
 .wise-popover.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
 /* Appearance popover runs a long row set. Rather than one tall single column
    (which pushed the last groups — Branding, Admin links — off the viewport and
-   clipped them), it flows its GROUP CARDS through a responsive multi-column
-   (masonry) layout. Each group is break-inside:avoid, so a whole group — and
-   every row inside it — always stays within a SINGLE column; nothing is ever
-   split or stretched across more than one column. `column-width` makes it
-   naturally responsive: wide popovers get two columns, and on narrow / mobile
-   widths (where max-width clamps to the viewport) it collapses to one column
-   with no media query needed. Scoped to the appearance popover only
-   (wireAppearancePopover() tags it) so the shorter avatar menu is unaffected. */
+   clipped them), it stacks GROUP CARDS in two flex columns. Each group stays
+   in one column — nothing is split or stretched across the gap. CSS multi-column
+   used to size the box to the un-columnated (single-column) height, leaving a
+   tall empty gap under the content; flex columns size to the taller stack.
+   Columns wrap to one when the viewport is too narrow for 206px × 2. Scoped to
+   the appearance popover only (wireAppearancePopover() tags it) so the shorter
+   avatar menu is unaffected. */
 .wise-popover--appearance {
   min-width: 260px;
   width: 452px;
@@ -915,25 +1353,31 @@ html.dark .topbar-menu-item--admin:hover { background: rgba(236, 72, 153, 0.16);
   padding: 8px;
   max-height: calc(100vh - 24px);
   overflow: hidden auto;
-  column-width: 206px;
-  column-gap: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+}
+.wise-appearance-col {
+  flex: 1 1 206px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 .wise-popover--appearance .wise-popover-header { padding-top: 6px; }
 
-/* Group card — visually binds a section's rows together. break-inside:avoid
-   keeps the whole card in one column so it is never split across the gap. */
+/* Group card — visually binds a section's rows together. min-width:0 keeps a
+   card from blowing out its grid track; the grid gap is the only gutter. */
 .wise-appearance-group {
-  break-inside: avoid;
-  -webkit-column-break-inside: avoid;
-  page-break-inside: avoid;
+  min-width: 0;
   display: block;
-  margin: 0 0 8px;
+  margin: 0;
   padding: 2px 0 5px;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--surface-2);
 }
-.wise-appearance-group:last-child { margin-bottom: 0; }
 .wise-appearance-group > .wise-popover-header {
   padding: 8px 12px 4px;
 }
@@ -1044,6 +1488,7 @@ html.dark .wise-popover-item.is-active .material-symbols-outlined { color: var(-
 .wise-popover-item.wise-toggle-item:hover { background: var(--primary-soft); color: var(--primary); }
 html.dark .wise-popover-item.wise-toggle-item:hover { background: rgba(255,255,255,0.06); color: var(--text); }
 .wise-popover-item .wise-toggle-ico {
+  flex-shrink: 0;
   font-size: 22px;
   color: var(--text-subtle);
   transition: color .15s ease;
@@ -1585,7 +2030,8 @@ html.mod-gap-xl #modules-row { gap: var(--modules-gap) !important; }
   box-shadow: none;
   /* Shorter + vertically centred so the module reads as a DRAWER emerging from
      behind the chat — exactly like the docked Turns module (chat-history.js
-     `.wch-docked` rules), not a full-height flat panel flush against it. */
+     `.wch-docked` rules), not a full-height flat panel flush against it.
+     Appearance ▸ Search removes this inset (see html.app-search-on rules). */
   align-self: center;
   height: calc(100% - 30px);
   margin-left: calc(-14px - var(--modules-gap, 8px)); /* cancels the REAL row gap + ~14px tuck */
@@ -1860,7 +2306,8 @@ html.dark #menu-panel .menu-inner {
 
 /* Brand strip — WISE wordmark lives here instead of the top bar. Aligns beside
    the menu toggle (which stays in #topbar-row); the panel extends upward to
-   occupy the old logo row. Collapsed rail (.mp-rail) shows the owl bug only. */
+   occupy the old logo row. Collapsed rail (.mp-rail) shows the owl bug only,
+   unless Search is on (full wordmark; see html.app-search-on rules above). */
 .menu-brand-bar {
   display: flex;
   align-items: center;
@@ -5248,12 +5695,12 @@ html:not(.dark) .sc-topbar-titles .topbar-title { color: var(--text); }
 .panel-width-toggle-btn:hover { opacity: 1; color: var(--text); background: var(--surface-3); }
 .panel-width-toggle-btn.is-on { opacity: 1; color: var(--primary-ink, var(--primary)); background: color-mix(in srgb, var(--primary) 16%, var(--surface-2)); }
 
-/* Wide state — legacy hook when panel-wide is applied to an inner card; the
-   dock itself now carries panel-wide (see .wiseai-dock.wiseai-dock-open.panel-wide). */
-.sc-card.panel-wide {
-  flex-grow: 2;
-  min-width: min(580px, 92vw);
-}
+/* Wide state used to live on an INNER .sc-card (grow:2 + min 580px). The
+   mounted chat IS the .sc-card now and carries the four-tier width classes
+   (single / double / triple / fill). That old floor locked a just-widened
+   chat at double width — drag and the width changer could not return it to
+   single. Tier widths are owned by each host (.rf-chat.panel-wide, the
+   dock's .wiseai-dock-open.panel-wide, etc.). */
 
 /* ===== Body (messages + welcome overlay) ===== */
 .sc-body { position: relative; flex: 1 1 0%; min-height: 0; display: flex; overflow: hidden;
@@ -5302,6 +5749,10 @@ html.dark .chat-messages-area { background: transparent; }
      the panel (the small, quiet meta row below carries the timestamp). */
   font-size: var(--fs-chat, 0.9375rem); line-height: 1.6; color: var(--text);
 }
+/* Paragraph-by-paragraph transcript reveal — each prose run is wrapped so it
+   can fade in as a block. Consecutive paras keep the gap a <br><br> used to. */
+.sc-line-body > .sc-para { display: block; }
+.sc-line-body > .sc-para + .sc-para { margin-top: 1em; }
 /* Per-line profile avatars in place of the old "You" / "WISEcodeAI™" labels.
    WISEcodeAI = the WISE-owl bug (same mark as the header) in a brand-blue circle.
    You   = the member's initials, matching the top-bar .topbar-profile chip. */

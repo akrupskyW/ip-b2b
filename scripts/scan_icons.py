@@ -5,9 +5,13 @@ Produces a JSON inventory of every icon glyph name, the CSS family it uses,
 how many times it appears, the UI group(s) it belongs to, and example
 placements (file + a short human label). This feeds the Icon Inventory module.
 
-The All Modules kitchen-sink (pages/all-modules.html + js/all-modules-flow.js)
-is excluded on purpose — that page *renders* the inventory and would otherwise
-inflate counts and list glyphs that only exist as catalog chrome.
+Catalog chrome is excluded on purpose so the inventory lists glyphs the live
+app actually paints — not the All Modules page that *renders* the catalog,
+and not Module Directory labels that only appear on that page.
+
+JavaScript is only scanned when a real HTML page loads it (script src,
+ES import, or agent-menu dynamic inject). Unreachable leftover files cannot
+contribute icons.
 """
 import json
 import os
@@ -33,14 +37,27 @@ SCAN_ROOT_FILES = [
     "marketing-wiseai.html",
 ]
 
-# Skip giant generated blobs and the inventory page itself so listed icons
-# reflect the live app, not the catalog that displays them.
+# Skip giant generated blobs and catalog chrome so listed icons reflect
+# the live app, not the page that displays them.
 SKIP_NAMES = {
     "gs-data.js",
     "icon-inventory-data.js",
     "all-modules-flow.js",
     "all-modules.html",
+    "module-directory-data.js",
 }
+
+SKIPPED_FOR_OUTPUT = [
+    "pages/all-modules.html",
+    "js/all-modules-flow.js",
+    "js/module-directory-data.js",
+    "js/icon-inventory-data.js",
+    "js/gs-data.js",
+]
+
+SCRIPT_SRC_RE = re.compile(r"""<script[^>]+src=['"]([^'"]+)['"]""", re.I)
+IMPORT_RE = re.compile(r"""(?:from|import)\s+['"](\./[^'"]+\.js)['"]""")
+NEW_URL_JS_RE = re.compile(r"""new URL\(\s*['"](\./[^'"]+\.js)['"]""")
 
 # Canonical UI groups — first matching file rule wins for a placement; an
 # icon can still belong to several groups via several files.
@@ -104,15 +121,97 @@ def group_for_file(relpath):
     return None
 
 
-def iter_files():
+def is_comment_line(line):
+    s = line.strip()
+    return (
+        s.startswith("//")
+        or s.startswith("<!--")
+        or s.startswith("/*")
+        or s.startswith("* ")
+        or s.startswith("*/")
+    )
+
+
+def resolve_local_js(from_path, spec):
+    if not spec or spec.startswith("http") or spec.startswith("//"):
+        return None
+    if "livereload" in spec:
+        return None
+    clean = spec.split("?")[0].split("#")[0]
+    if not clean.endswith(".js"):
+        return None
+    abs_path = os.path.normpath(os.path.join(os.path.dirname(from_path), clean))
+    if not abs_path.startswith(ROOT + os.sep) and abs_path != ROOT:
+        return None
+    if not os.path.isfile(abs_path):
+        return None
+    return abs_path
+
+
+def html_entry_files():
+    entries = []
+    pages = os.path.join(ROOT, "pages")
+    if os.path.isdir(pages):
+        for f in os.listdir(pages):
+            if f.endswith(".html") and f not in SKIP_NAMES:
+                entries.append(os.path.join(pages, f))
+    for f in SCAN_ROOT_FILES:
+        p = os.path.join(ROOT, f)
+        if os.path.exists(p):
+            entries.append(p)
+    return entries
+
+
+def reachable_js():
+    """JS files loaded by a real HTML page (script src, ES import, dynamic inject).
+
+    Skipped catalog files are never followed, so their private data cannot
+    contribute leftover glyphs.
+    """
+    reachable = set()
+    queue = []
+    for html in html_entry_files():
+        try:
+            text = open(html, "r", encoding="utf-8", errors="ignore").read()
+        except OSError:
+            continue
+        for m in SCRIPT_SRC_RE.finditer(text):
+            resolved = resolve_local_js(html, m.group(1))
+            if resolved:
+                queue.append(resolved)
+    while queue:
+        path = queue.pop()
+        if path in reachable:
+            continue
+        name = os.path.basename(path)
+        if name in SKIP_NAMES:
+            continue
+        reachable.add(path)
+        try:
+            text = open(path, "r", encoding="utf-8", errors="ignore").read()
+        except OSError:
+            continue
+        for rx in (IMPORT_RE, NEW_URL_JS_RE):
+            for m in rx.finditer(text):
+                resolved = resolve_local_js(path, m.group(1))
+                if resolved:
+                    queue.append(resolved)
+    return reachable
+
+
+def iter_files(js_ok):
     for d in SCAN_DIRS:
         base = os.path.join(ROOT, d)
         for dirpath, _dirs, files in os.walk(base):
             for f in files:
                 if f in SKIP_NAMES:
                     continue
-                if f.rsplit(".", 1)[-1] in ("js", "html", "css"):
-                    yield os.path.join(dirpath, f)
+                ext = f.rsplit(".", 1)[-1]
+                path = os.path.join(dirpath, f)
+                if ext == "js" and path not in js_ok:
+                    continue
+                if ext in ("js", "html", "css"):
+                    yield path
     for f in SCAN_ROOT_FILES:
         p = os.path.join(ROOT, f)
         if os.path.exists(p):
@@ -161,8 +260,15 @@ def add_hit(inv, glyph, fam, path, lineno, line, markup_end=None):
 
 def main():
     inv = defaultdict(lambda: {"families": set(), "count": 0, "placements": [], "groups": set()})
+    js_ok = reachable_js()
+    js_all = {
+        os.path.join(ROOT, "js", f)
+        for f in os.listdir(os.path.join(ROOT, "js"))
+        if f.endswith(".js") and f not in SKIP_NAMES
+    }
+    unreachable = sorted(rel(p) for p in js_all if p not in js_ok)
 
-    for path in iter_files():
+    for path in iter_files(js_ok):
         try:
             with open(path, "r", encoding="utf-8", errors="ignore") as fh:
                 text = fh.read()
@@ -171,6 +277,8 @@ def main():
         rpath = rel(path)
         lines = text.splitlines()
         for lineno, line in enumerate(lines, 1):
+            if is_comment_line(line):
+                continue
             seen_on_line = set()
             for m in ICON_RE.finditer(line):
                 fam, glyph = m.group(1), m.group(2)
@@ -201,7 +309,7 @@ def main():
         "generatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "totalUniqueIcons": len(inv),
         "totalUses": total_uses,
-        "excluded": ["pages/all-modules.html", "js/all-modules-flow.js"],
+        "excluded": SKIPPED_FOR_OUTPUT,
         "groups": groups_out,
         "icons": [],
     }
@@ -231,7 +339,7 @@ def main():
     header = (
         "/* AUTO-GENERATED by scripts/scan_icons.py — do not edit by hand.\n"
         " * A scan of every Material Icons / Symbols glyph used across the app\n"
-        " * (All Modules itself excluded), with family, count, UI group, label,\n"
+        " * (catalog chrome excluded), with family, count, UI group, label,\n"
         " * and example placements. Regenerate with:\n"
         " *   python3 scripts/scan_icons.py\n"
         " */\n"
@@ -244,6 +352,9 @@ def main():
 
     print("unique icons:", len(inv))
     print("total uses:", total_uses)
+    print("reachable js:", len(js_ok))
+    if unreachable:
+        print("unreachable js (not scanned):", ", ".join(unreachable))
     print("groups:", ", ".join(f"{g['id']}={g['count']}" for g in groups_out))
     print("wrote:", rel(out_path))
     print("wrote:", rel(js_path))

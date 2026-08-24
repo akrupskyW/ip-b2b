@@ -392,13 +392,16 @@
     };
     var hideWelcome = function () { if (welcome) welcome.classList.add('sc-hidden'); };
 
-    /* Word-by-word reveal DISABLED — chat text appears whole. The typeInLine
-       signature is kept so the timestamp / chip reveal chain runs unchanged. */
+    /* Same paragraph-by-paragraph reveal as the shared chat module. */
     var prefersReducedMotion = (function () {
       try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
       catch (_) { return false; }
     })();
     function typeInLine(bodyEl, done) {
+      if (typeof window.WiseTypeInTranscript === 'function') {
+        window.WiseTypeInTranscript(bodyEl, done, { scroll: scrollDown, reduced: prefersReducedMotion });
+        return;
+      }
       scrollDown();
       if (done) done();
     }
@@ -453,8 +456,7 @@
       var metaEl = body && body.querySelector('.sc-line-meta');
       if (metaEl) metaEl.style.opacity = '0';
       scrollDown();
-      /* Type the answer in word-by-word, then bring in the timestamp, then the
-         reply chips (left→right) — text, timestamp, chips, in order. */
+      /* Reveal paragraphs, then the timestamp, then the reply chips. */
       typeInLine(body, function () {
         if (metaEl) metaEl.style.opacity = '';
         var chips = chipsHtml(options);
