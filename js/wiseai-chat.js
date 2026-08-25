@@ -2539,7 +2539,7 @@ export function createHelixBgAnim(cfg) {
      out from under the cursor. A card opens only when the pointer moves onto
      a circle — never because a circle drifted under a still cursor. */
   let hitNodes = [], hoverImg = null, hoverX = -1, hoverY = -1;
-  let lastT = 0, card = null, overCard = false, hideTimer = 0, ptrX = -1, ptrY = -1;
+  let lastT = 0, card = null, overCard = false, ptrX = -1, ptrY = -1;
   let hoverPinned = false;
 
   /* Resolve assets/ relative to THIS module so the photos load no matter how deep
@@ -2660,7 +2660,7 @@ export function createHelixBgAnim(cfg) {
        canvas sits behind the (transparent) welcome. Hovering a product circle
        pins its card (food sheet, brand insight, or look-closer fact). */
     body.addEventListener('mousemove', onMove);
-    body.addEventListener('mouseleave', () => { if (hoverPinned && !overCard) scheduleHide(); });
+    body.addEventListener('mouseleave', () => { if (hoverPinned && !overCard) hideCard(); });
   }
 
   /* Product or insight card: round thumb over the bug. Food mode is name/brand +
@@ -2685,9 +2685,11 @@ export function createHelixBgAnim(cfg) {
     body.appendChild(card);
     card.addEventListener('mouseenter', () => {
       overCard = true; hoverPinned = true;
-      if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
     });
-    card.addEventListener('mouseleave', () => { overCard = false; scheduleHide(); });
+    card.addEventListener('mouseleave', () => {
+      overCard = false;
+      hideCard();
+    });
   }
 
   /* Point-in-circle hit test against the last frame's product bugs, front-most first.
@@ -2731,7 +2733,7 @@ export function createHelixBgAnim(cfg) {
     }
     if (eventOverChrome(e)) {
       ptrX = mx; ptrY = my;
-      if (hoverPinned && !overCard) scheduleHide();
+      if (hoverPinned && !overCard) hideCard();
       return;
     }
     const prevX = ptrX, prevY = ptrY;
@@ -2742,7 +2744,6 @@ export function createHelixBgAnim(cfg) {
       if (same) {
         hoverPinned = true;
         body.style.cursor = 'pointer';
-        if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
         return;
       }
       /* First sample only records the pointer — a card must wait until the
@@ -2750,20 +2751,14 @@ export function createHelixBgAnim(cfg) {
       if (prevX >= 0 && !insideNode(hit, prevX, prevY, 2)) {
         body.style.cursor = 'pointer';
         hoverPinned = true;
-        if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
         showCard(hit);
       } else {
         body.style.cursor = 'pointer';
       }
     } else {
       body.style.cursor = '';
-      if (hoverPinned && !overCard) scheduleHide();
+      if (hoverPinned && !overCard) hideCard();
     }
-  }
-
-  function scheduleHide() {
-    if (hideTimer) clearTimeout(hideTimer);
-    hideTimer = setTimeout(() => { hideTimer = 0; if (!overCard) hideCard(); }, 140);
   }
 
   /* Freeze the strand while a product popover is open. Local only — does not
@@ -2861,13 +2856,15 @@ export function createHelixBgAnim(cfg) {
   }
 
   function hideCard() {
+    /* Resume first so the next animation frame is queued in this same turn —
+       not after a hide delay. */
+    resumeAfterHover();
     hoverImg = null; hoverX = hoverY = -1;
     hoverPinned = false;
     if (card) card.hidden = true;
     const body = canvas && canvas.parentElement;
     if (body) body.style.cursor = '';
     if (!running) redraw();
-    resumeAfterHover();
   }
 
   /* Deep-link into the product's Nutrition Facts (NFP) view — mirrors the portfolio /
@@ -3120,11 +3117,11 @@ export function createHelixBgAnim(cfg) {
       if (live) {
         hoverX = live.x; hoverY = live.y;
         if (card && !card.hidden) placeCard(live);
-        if (!overCard && ptrX >= 0 && !insideNode(live, ptrX, ptrY, 2) && !hideTimer) {
-          scheduleHide();
+        if (!overCard && ptrX >= 0 && !insideNode(live, ptrX, ptrY, 2)) {
+          hideCard();
         }
-      } else if (!overCard && !hideTimer) {
-        scheduleHide();
+      } else if (!overCard) {
+        hideCard();
       }
     }
     /* Blit the finished (opaque) buffer onto the visible canvas at the field opacity. */
@@ -3200,7 +3197,6 @@ export function createHelixBgAnim(cfg) {
   function stop() {
     running = false; paused = false;
     if (raf) { cancelAnimationFrame(raf); raf = 0; }
-    if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
     overCard = false; hoverPinned = false; hoverImg = null; hoverX = hoverY = -1; ptrX = ptrY = -1;
     if (card) card.hidden = true;
     const cbody = canvas && canvas.parentElement;

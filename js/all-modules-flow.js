@@ -41,6 +41,7 @@ import { CODE_STATS } from './code-stats-data.js';
 import { makeTraceHelix, measureTraceRungCentres, TRACE_STRAND_MARKUP } from './trace-helix.js';
 import { composerDbSelectorHtml, wireChatComposer, createHelixBgAnim, readBgAnimScaleAxes } from './wiseai-chat.js';
 import { MODULE_SECTIONS, AREA_ICONS } from './module-directory-data.js';
+import { DEV_READY_SEED } from './dev-ready-data.js';
 
 function esc(s) {
   return String(s == null ? '' : s)
@@ -2298,10 +2299,16 @@ function paneCompsHTML(comps, title, opts) {
     </div>`;
 }
 
-/* Persist Dev Ready flags per component name. Missing keys default to off. */
+/* Persist Dev Ready flags per component name. The committed DEV_READY_SEED
+   (js/dev-ready-data.js) is the baseline, so state ships with the code instead
+   of being trapped in one origin's localStorage. localStorage holds only the
+   diff against the seed — an entry is written there when, and only when, it
+   disagrees with the seed. That way a newly pushed seed still reaches browsers
+   that have already flipped switches, and a switch turned off against a green
+   seed stays off. Missing keys default to off. */
 const DSC_READY_KEY = 'wise-dsc-dev-ready';
 
-function loadDscReadyMap() {
+function readReadyOverrides() {
   try {
     const raw = localStorage.getItem(DSC_READY_KEY);
     if (!raw) return {};
@@ -2312,10 +2319,46 @@ function loadDscReadyMap() {
   }
 }
 
+/* Seed + overrides, flattened so every caller can keep testing `=== true`.
+   Pre-seed localStorage (an all-`true` map) merges as true-overrides, which is
+   exactly what it meant, so no migration is needed. */
+function loadDscReadyMap() {
+  const map = {};
+  Object.keys(DEV_READY_SEED).forEach((k) => { if (DEV_READY_SEED[k] === true) map[k] = true; });
+  const overrides = readReadyOverrides();
+  Object.keys(overrides).forEach((k) => {
+    if (overrides[k] === true) map[k] = true;
+    else delete map[k];
+  });
+  return map;
+}
+
 function saveDscReadyMap(map) {
+  const overrides = {};
+  const keys = new Set([...Object.keys(DEV_READY_SEED), ...Object.keys(map)]);
+  keys.forEach((k) => {
+    const on = map[k] === true;
+    if (on !== (DEV_READY_SEED[k] === true)) overrides[k] = on;
+  });
   try {
-    localStorage.setItem(DSC_READY_KEY, JSON.stringify(map));
+    localStorage.setItem(DSC_READY_KEY, JSON.stringify(overrides));
   } catch (e) { /* quota / private mode — ignore */ }
+}
+
+/* Turn the live state into a paste-ready replacement for js/dev-ready-data.js,
+   so the browser holding the real state can hand it to the repo. */
+function dumpDevReadySeed() {
+  const map = loadDscReadyMap();
+  const ids = Object.keys(map).filter((k) => map[k] === true).sort();
+  const body = ids.map((id) => `  ${JSON.stringify(id)}: true,`).join('\n');
+  const text = `export const DEV_READY_SEED = {\n${body}\n};\n`;
+  try { navigator.clipboard?.writeText(text); } catch (e) { /* no clipboard permission */ }
+  console.log(`${ids.length} Dev Ready ids — paste over the export in js/dev-ready-data.js:\n\n${text}`);
+  return text;
+}
+
+if (typeof window !== 'undefined') {
+  window.WiseDevReady = { dumpSeed: dumpDevReadySeed, map: loadDscReadyMap };
 }
 
 function isDscReady(name, map) {
