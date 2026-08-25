@@ -21,4 +21,10 @@
  *   2. run  WiseDevReady.dumpSeed()  in the console (also copies to clipboard)
  *   3. paste the result over the export below and commit
  */
-export const DEV_READY_SEED = {};
+export const DEV_READY_SEED = {
+  "mi-trace": true,
+  "trace:detail": true,
+  "trace:done": true,
+  "trace:live": true,
+  "trace:mid": true,
+};

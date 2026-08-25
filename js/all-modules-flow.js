@@ -34,6 +34,11 @@
  *      chip shimmer / fly-in, welcome helix, thinking helix, accordion) and
  *      every drag/resize interaction (module splitter, width tiers, reorder,
  *      drag-to-file), explained and rendered live.
+ *   7. App Logic — the app's general behavioral rules written down and grouped
+ *      by page: auth, theme, nav, panes, tables, wizard gating, scoring math,
+ *      filter semantics and persistence. Sits directly above Intent Chip
+ *      Logic, which audits the one narrow slice of logic the chips own.
+ *      Catalog in js/app-logic-data.js.
  */
 
 import { ICON_INVENTORY } from './icon-inventory-data.js';
@@ -41,6 +46,7 @@ import { CODE_STATS } from './code-stats-data.js';
 import { makeTraceHelix, measureTraceRungCentres, TRACE_STRAND_MARKUP } from './trace-helix.js';
 import { composerDbSelectorHtml, wireChatComposer, createHelixBgAnim, readBgAnimScaleAxes } from './wiseai-chat.js';
 import { MODULE_SECTIONS, AREA_ICONS } from './module-directory-data.js';
+import { APP_LOGIC, LOGIC_AREAS } from './app-logic-data.js';
 import { DEV_READY_SEED } from './dev-ready-data.js';
 
 function esc(s) {
@@ -188,6 +194,14 @@ function moduleMoreItems(moduleId) {
       { action: 'code-7', icon: 'calendar_view_week', label: 'Trend · last 7 days' },
       { action: 'code-30', icon: 'calendar_month', label: 'Trend · last 30 days' },
       { action: 'code-all', icon: 'timeline', label: 'Trend · all time' },
+    ];
+  }
+  if (moduleId === 'mi-logic') {
+    return [
+      { action: 'logic-all', icon: 'rule', label: 'Show every rule' },
+      { action: 'logic-shared', icon: 'hub', label: 'Show app-wide rules' },
+      { action: 'logic-intents', icon: 'bolt', label: 'Jump to Intent Chip Logic' },
+      { action: 'logic-clear', icon: 'restart_alt', label: 'Clear search' },
     ];
   }
   if (moduleId === 'mi-intents') {
@@ -2476,6 +2490,7 @@ function buildDevReadyTree() {
   DEV_READY_PARENT = {};
   registerReadyChildren('mi-directory', dedupedDirSections().map((s) => ({ id: 'dir:' + s.tone, label: s.title })));
   registerReadyChildren('mi-tables', tableReadyChildren());
+  registerReadyChildren('mi-logic', logicReadyChildren());
   registerReadyChildren('mi-intents', intentReadyChildren());
   registerReadyChildren('mi-trace', traceReadyChildren());
   registerReadyChildren('mi-motion', MOTION_ITEMS.map((i) => ({ id: motionReadyId(i), label: i.title })));
@@ -3221,6 +3236,198 @@ function wireIntentAudit(root) {
       apply(btn.getAttribute('data-int-filter'));
     });
   }
+  search?.addEventListener('input', () => apply());
+  apply('all');
+}
+
+/* ------------------------------------------------------------------ */
+/* App Logic module                                                    */
+/*                                                                     */
+/* Intent Chip Logic audits one narrow slice — "does each chip carry a */
+/* transcript and a page action?". This module is everything else: the */
+/* general rules the app runs on, written down and grouped by page so  */
+/* they can be read without opening the source.                        */
+/*                                                                     */
+/* The catalog lives in js/app-logic-data.js (hand-maintained, and     */
+/* hand-verified against the files each rule cites). Rendering here is */
+/* deliberately plain — a card per page, a numbered rule list inside — */
+/* because the value is the text, not the chrome. Area filter tiles    */
+/* reuse the Module Directory tones so "Portfolio" means the same set  */
+/* of pages in both modules; `shared` is the extra area for logic that */
+/* runs on every page rather than on one screen.                       */
+/* ------------------------------------------------------------------ */
+
+function logicReadyId(page) { return 'logic:' + page.id; }
+
+function logicRuleCount() {
+  return APP_LOGIC.reduce((n, p) => n + p.rules.length, 0);
+}
+
+/* Rules per area, in LOGIC_AREAS order, skipping areas with nothing in them
+   so the tile row never shows a zero. */
+function logicAreaStats() {
+  const counts = {};
+  APP_LOGIC.forEach((p) => { counts[p.area] = (counts[p.area] || 0) + p.rules.length; });
+  return LOGIC_AREAS.filter((a) => counts[a.tone]).map((a) => ({ ...a, n: counts[a.tone] }));
+}
+
+function logicReadyChildren() {
+  return APP_LOGIC.map((p) => ({ id: logicReadyId(p), label: p.label }));
+}
+
+function logicAreaTiles() {
+  const all = `
+    <button type="button" class="mi-int-stat is-active" data-logic-filter="all" aria-pressed="true">
+      <span class="mi-int-stat-num">${logicRuleCount()}</span>
+      <span class="mi-int-stat-label"><span class="mi-int-stat-text">All rules</span><span class="material-symbols-outlined">rule</span></span>
+    </button>`;
+  const tiles = logicAreaStats().map((a) => `
+    <button type="button" class="mi-int-stat" data-logic-filter="${esc(a.tone)}" aria-pressed="false">
+      <span class="mi-int-stat-num">${a.n}</span>
+      <span class="mi-int-stat-label"><span class="mi-int-stat-text">${esc(a.label)}</span><span class="material-symbols-outlined">${esc(a.icon)}</span></span>
+    </button>`);
+  return [all, ...tiles].join('');
+}
+
+function logicPageReadyStrip() {
+  return `
+    <div class="mi-ready-kids" aria-label="Dev Ready by page">
+      <h3 class="mi-ready-kids-title">Dev Ready by page</h3>
+      <div class="mi-ready-kids-row">
+        ${APP_LOGIC.map((p) => `
+          <div class="mi-ready-kid">
+            <span class="mi-ready-kid-label">${esc(p.label)}</span>
+            <span class="mi-ready-kid-n">${p.rules.length}</span>
+            ${readyToggleHTML(logicReadyId(p), p.label, { level: 'item', parent: 'mi-logic' })}
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+/* One rule row. `how` is trusted HTML from the catalog (it carries <code> and
+   <strong>); the title and the search index are escaped. */
+function logicRuleRow(page, rule, i) {
+  const search = `${page.label} ${page.area} ${rule.title} ${String(rule.how).replace(/<[^>]+>/g, ' ')}`.toLowerCase();
+  return `
+    <li class="mi-logic-rule" data-logic-rule data-search="${esc(search)}">
+      <span class="mi-logic-n" aria-hidden="true">${i + 1}</span>
+      <div class="mi-logic-rule-body">
+        <div class="mi-logic-rule-title">${esc(rule.title)}</div>
+        <p class="mi-logic-how">${rule.how}</p>
+      </div>
+    </li>`;
+}
+
+function logicPageCard(page) {
+  const name = page.href
+    ? `<a class="mi-logic-name" href="${esc(page.href)}">${esc(page.label)}<span class="material-symbols-outlined">open_in_new</span></a>`
+    : `<span class="mi-logic-name">${esc(page.label)}</span>`;
+  const src = (page.src || []).map((f) => `<code>${esc(f)}</code>`).join('');
+  const note = page.note
+    ? `<p class="mi-logic-note"><span class="material-symbols-outlined">info</span><span>${esc(page.note)}</span></p>`
+    : '';
+  return `
+    <article class="mi-logic-page" data-logic-page data-area="${esc(page.area)}" id="logic-${esc(page.id)}">
+      <header class="mi-logic-head">
+        <span class="mi-logic-ic"><span class="material-symbols-outlined">${esc(page.icon)}</span></span>
+        <div class="mi-logic-titles">
+          ${name}
+          <span class="mi-logic-src">${src}</span>
+        </div>
+        <span class="mi-logic-count" data-logic-count>${page.rules.length} rule${page.rules.length === 1 ? '' : 's'}</span>
+        ${readyToggleHTML(logicReadyId(page), page.label, { level: 'item', parent: 'mi-logic' })}
+      </header>
+      ${note}
+      <ol class="mi-logic-rules">
+        ${page.rules.map((r, i) => logicRuleRow(page, r, i)).join('')}
+      </ol>
+    </article>`;
+}
+
+function renderAppLogic() {
+  const rules = logicRuleCount();
+  const shared = APP_LOGIC.filter((p) => p.area === 'shared').length;
+  return `
+    <section class="mi-module is-collapsed" id="mi-logic">
+      <header class="mi-module-head">
+        <div class="mi-module-head-text">
+          <h2 class="mi-module-title">App Logic</h2>
+          <p class="mi-module-lede">The rules the app actually runs on, written down and grouped by page — auth, theme,
+            navigation, pane widths, tables, wizard gating, scoring math, filter semantics and what persists where.
+            <strong>${rules} rules</strong> across <strong>${APP_LOGIC.length} pages</strong>, of which <strong>${shared}</strong>
+            are shared subsystems that run on every page. Each rule names the functions, keys and classes it lives in, and
+            each card links to the source files so it can be verified. Filter by area, search any rule, and mark a page
+            Dev Ready when its logic is signed off. The <strong>Intent Chip Logic</strong> module below audits the one
+            slice of logic the chips own.</p>
+        </div>
+        ${moduleReadyToggleHTML('mi-logic', 'App Logic')}
+        ${moduleControlsHTML('mi-logic')}
+      </header>
+
+      ${logicPageReadyStrip()}
+
+      <div class="mi-int-stats" id="mi-logic-stats" role="group" aria-label="Filter rules by area">
+        ${logicAreaTiles()}
+      </div>
+
+      <div class="mi-toolbar">
+        <div class="mi-search-inline">
+          <span class="material-symbols-outlined">search</span>
+          <input type="search" class="mi-search" id="mi-logic-search" placeholder="Search rules by page, behavior, function or storage key…" aria-label="Search app logic rules" autocomplete="off" />
+        </div>
+        <div class="mi-tbl-count"><span id="mi-logic-shown">${rules}</span> of ${rules} rules</div>
+      </div>
+
+      <div class="mi-logic-grid" id="mi-logic-grid">
+        ${APP_LOGIC.map(logicPageCard).join('')}
+      </div>
+      <div class="mi-int-empty" id="mi-logic-empty" hidden>No rules match this filter.</div>
+    </section>`;
+}
+
+function wireAppLogic(root) {
+  const mod = root.querySelector('#mi-logic');
+  if (!mod) return;
+  const tiles = mod.querySelector('#mi-logic-stats');
+  const search = mod.querySelector('#mi-logic-search');
+  const empty = mod.querySelector('#mi-logic-empty');
+  const shownEl = mod.querySelector('#mi-logic-shown');
+  let area = 'all';
+
+  /* Search hides individual rules; the area filter hides whole pages. A page
+     with no visible rules left hides itself, and its count pill reports what
+     survived so the header never contradicts the list under it. */
+  const apply = (nextArea) => {
+    if (nextArea) area = nextArea;
+    const q = (search?.value || '').trim().toLowerCase();
+    let shown = 0;
+    mod.querySelectorAll('[data-logic-page]').forEach((page) => {
+      const areaOk = area === 'all' || page.getAttribute('data-area') === area;
+      let visibleRules = 0;
+      page.querySelectorAll('[data-logic-rule]').forEach((rule) => {
+        const hit = areaOk && (!q || (rule.getAttribute('data-search') || '').includes(q));
+        rule.hidden = !hit;
+        if (hit) visibleRules++;
+      });
+      page.hidden = visibleRules === 0;
+      const count = page.querySelector('[data-logic-count]');
+      if (count) count.textContent = `${visibleRules} rule${visibleRules === 1 ? '' : 's'}`;
+      shown += visibleRules;
+    });
+    if (shownEl) shownEl.textContent = String(shown);
+    if (empty) empty.hidden = shown !== 0;
+    mod.querySelectorAll('[data-logic-filter]').forEach((b) => {
+      const on = b.getAttribute('data-logic-filter') === area;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  };
+
+  tiles?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-logic-filter]');
+    if (!btn) return;
+    apply(btn.getAttribute('data-logic-filter'));
+  });
   search?.addEventListener('input', () => apply());
   apply('all');
 }
@@ -5868,6 +6075,74 @@ function moduleStyles() {
       .mi-int-thead, .mi-int-trow { min-width: 760px; }
     }
 
+    /* ---- App Logic ---- */
+    #mi-logic .mi-module-lede { max-width: 96ch; }
+    .mi-logic-grid { display: flex; flex-direction: column; gap: 14px; }
+    .mi-logic-page {
+      border: 1px solid var(--border); border-radius: 16px; background: var(--surface);
+      box-shadow: var(--shadow-1); overflow: hidden;
+    }
+    .mi-logic-page[hidden] { display: none; }
+    .mi-logic-head {
+      display: flex; align-items: center; gap: 11px;
+      padding: 13px 16px; border-bottom: 1px solid var(--border); background: var(--surface-2);
+    }
+    /* Bare icon — no boxed backdrop behind it. */
+    .mi-logic-ic { flex: 0 0 auto; display: grid; place-items: center; color: var(--primary); }
+    html.dark .mi-logic-ic { color: var(--primary-bright, #93C5FD); }
+    .mi-logic-ic .material-symbols-outlined { font-size: 22px !important; }
+    .mi-logic-titles { min-width: 0; flex: 1; }
+    .mi-logic-name {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.95rem; font-weight: 700; color: var(--text); text-decoration: none;
+    }
+    a.mi-logic-name:hover { color: var(--primary); }
+    html.dark a.mi-logic-name:hover { color: var(--primary-bright, #93C5FD); }
+    .mi-logic-name .material-symbols-outlined { font-size: 14px !important; color: var(--text-subtle); }
+    .mi-logic-src { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 3px; }
+    .mi-logic-src code { font-size: 0.68rem; color: var(--text-subtle); }
+    .mi-logic-count {
+      flex: 0 0 auto; font-size: 0.7rem; font-weight: 800; padding: 3px 9px; border-radius: 999px;
+      background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
+      font-variant-numeric: tabular-nums; white-space: nowrap;
+    }
+    .mi-logic-note {
+      display: flex; align-items: flex-start; gap: 7px; margin: 0;
+      padding: 11px 16px 0; font-size: 0.76rem; color: var(--text-subtle); line-height: 1.45;
+    }
+    .mi-logic-note .material-symbols-outlined { font-size: 15px !important; margin-top: 1px; }
+    .mi-logic-rules { list-style: none; margin: 0; padding: 6px 8px 10px; }
+    .mi-logic-rule {
+      display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; align-items: start;
+      padding: 10px 10px; border-radius: 12px;
+    }
+    .mi-logic-rule[hidden] { display: none; }
+    .mi-logic-rule:hover { background: color-mix(in srgb, var(--primary) 5%, transparent); }
+    .mi-logic-n {
+      display: grid; place-items: center; width: 22px; height: 22px; margin-top: 1px; border-radius: 999px;
+      font-size: 0.68rem; font-weight: 800; font-variant-numeric: tabular-nums;
+      background: var(--surface-2); border: 1px solid var(--border); color: var(--text-subtle);
+    }
+    .mi-logic-rule-title { font-size: 0.86rem; font-weight: 700; color: var(--text); }
+    .mi-logic-how {
+      margin: 4px 0 0; font-size: 0.8rem; line-height: 1.55; color: var(--text-muted);
+      max-width: 92ch;
+    }
+    .mi-logic-how code {
+      font-size: 0.74rem; padding: 1px 5px; border-radius: 5px;
+      background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+    }
+    .mi-logic-how strong { color: var(--text); font-weight: 700; }
+    .mi-logic-how kbd {
+      font: inherit; font-size: 0.72rem; font-weight: 700; padding: 1px 6px; border-radius: 5px;
+      background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+    }
+    @media (max-width: 640px) {
+      .mi-logic-head { flex-wrap: wrap; }
+      .mi-logic-rule { grid-template-columns: 1fr; }
+      .mi-logic-n { display: none; }
+    }
+
     /* ---- Streaming Trace anatomy ---- */
     #mi-trace .mi-module-lede { max-width: 92ch; }
     .mi-trace { display: flex; flex-direction: column; gap: 20px; }
@@ -6510,6 +6785,7 @@ export function renderAllModules(mainEl) {
       ${renderCodebase()}
       ${renderDirectory()}
       ${renderTableGallery()}
+      ${renderAppLogic()}
       ${renderIntentAudit()}
       ${renderStreamingTrace()}
       ${renderMotion()}
@@ -6526,6 +6802,7 @@ export function renderAllModules(mainEl) {
   wireDirectoryExport(mainEl);
   wireTableGallery(mainEl);
   wireRailFrames(mainEl);
+  wireAppLogic(mainEl);
   wireIntentAudit(mainEl);
   wireStreamingTrace(mainEl);
   wireMotion(mainEl);
@@ -6565,7 +6842,7 @@ export function renderAllModules(mainEl) {
 /* Clicks on the header's trailing ⋯ controls (and the Dev Ready       */
 /* toggle, when present) never expand or collapse the section.         */
 /* ------------------------------------------------------------------ */
-const ACC_SECTION_IDS = ['mi-code', 'mi-directory', 'mi-tables', 'mi-intents', 'mi-trace', 'mi-motion', 'mi-icons', 'mi-design', 'mi-components'];
+const ACC_SECTION_IDS = ['mi-code', 'mi-directory', 'mi-tables', 'mi-logic', 'mi-intents', 'mi-trace', 'mi-motion', 'mi-icons', 'mi-design', 'mi-components'];
 
 function setSectionCollapsed(root, sec, collapsed) {
   sec.classList.toggle('is-collapsed', collapsed);
@@ -6641,6 +6918,7 @@ function renderSectionNav() {
     { id: 'mi-code', icon: 'code', num: fmtNum(codeState.now?.total), label: 'Lines of code', sub: `${fmtNum(codeState.now?.pages)} HTML pages` },
     { id: 'mi-directory', icon: 'apps', num: moduleTotal(), label: 'Modules', sub: 'Every screen in the app' },
     { id: 'mi-tables', icon: 'table_chart', num: TABLE_CATALOG.length, label: 'Tables', sub: 'Every data table, live' },
+    { id: 'mi-logic', icon: 'rule', num: logicRuleCount(), label: 'App logic', sub: 'Every rule, by page' },
     { id: 'mi-intents', icon: 'bolt', num: intentAuditStats().chips, label: 'Intent chip logic', sub: 'Transcript + logic audit' },
     { id: 'mi-trace', icon: 'psychology', num: TRACE_MILESTONES.length, label: 'Trace sections', sub: 'Playing, paused, finished' },
     { id: 'mi-motion', icon: 'animation', num: MOTION_ITEMS.length, label: 'Motion & resize', sub: 'Animations + drag/resize' },
@@ -6710,6 +6988,10 @@ function runModuleAction(root, action) {
     case 'code-7': click('[data-code-win="7"]'); break;
     case 'code-30': click('[data-code-win="30"]'); break;
     case 'code-all': click('[data-code-win="all"]'); break;
+    case 'logic-all': click('#mi-logic [data-logic-filter="all"]'); break;
+    case 'logic-shared': click('#mi-logic [data-logic-filter="shared"]'); break;
+    case 'logic-intents': expandAccordionSection(root, 'mi-intents'); root.querySelector('#mi-intents')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
+    case 'logic-clear': clearInput('#mi-logic-search'); click('#mi-logic [data-logic-filter="all"]'); break;
     case 'int-all': click('#mi-intents [data-int-filter="all"]'); break;
     case 'int-talk': click('#mi-intents [data-int-filter="talk"]'); break;
     case 'int-act': click('#mi-intents [data-int-filter="act"]'); break;
@@ -8787,6 +9069,7 @@ export const ALL_MODULES_WISEAI = {
     { intent: 'codebase', label: 'How big is the codebase?', icon: 'code' },
     { intent: 'directory', label: 'Jump to the Module Directory', icon: 'apps' },
     { intent: 'tables', label: 'Show every table', icon: 'table_chart' },
+    { intent: 'logic', label: 'What logic runs on each page?', icon: 'rule' },
     { intent: 'intents', label: 'Which intent chips work?', icon: 'bolt' },
     { intent: 'icons', label: 'Jump to the Icon Inventory', icon: 'emoji_symbols' },
     { intent: 'design', label: 'Jump to the Design System', icon: 'palette' },
@@ -8801,6 +9084,10 @@ export const ALL_MODULES_WISEAI = {
     },
     directory: 'The <strong>Module Directory</strong> lists every workspace, account, chat, report, product, auth and marketing screen in the app.',
     tables: `The <strong>Table Gallery</strong> collects all <strong>${TABLE_CATALOG.length} data tables</strong> in the app — portfolio grids, verification and analytics tables, admin boards, the ingredient registry and more — rendered live in one carousel, each isolated from its page.`,
+    logic: () => {
+      const shared = APP_LOGIC.filter((p) => p.area === 'shared').reduce((n, p) => n + p.rules.length, 0);
+      return `The <strong>App Logic</strong> module writes down all <strong>${logicRuleCount()} behavioral rules</strong> in the app across <strong>${APP_LOGIC.length} pages</strong> — auth, theme, navigation, pane widths, tables, wizard gating, scoring math, filter semantics and what persists where. <strong>${shared}</strong> of them are shared subsystems that run on every page; the rest are page-specific. Every rule names the functions, storage keys and classes it lives in.`;
+    },
     intents: () => {
       const s = intentAuditStats();
       return s.gaps
@@ -8819,6 +9106,13 @@ export const ALL_MODULES_WISEAI = {
     if (intent === 'codebase') {
       expandAccordionSection(document, 'mi-code');
       document.getElementById('mi-code')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return false;
+    }
+    /* "What logic runs on each page?" is a question — open + scroll to the
+       catalog AND let the summary post in the thread. */
+    if (intent === 'logic') {
+      expandAccordionSection(document, 'mi-logic');
+      document.getElementById('mi-logic')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return false;
     }
     /* "Which intent chips work?" is a question — open + scroll to the audit
