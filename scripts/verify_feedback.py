@@ -202,7 +202,9 @@ def main():
         js("(function(){var b=document.querySelector('.wnote-chip[data-chip=\"design\"]');b&&b.click()})()")
         fill(".wnote-pop .wnote-ta",
              "The hero number feels too small next to the headline — can it match the module title scale?")
-        fill(".wnote-pop .wnote-in", "Dana (reviewer)")
+        # This run is signed in as the owner, who posts under their own name
+        # from the server and so has no name field to fill.
+        print("  posting as:", js("(document.querySelector('.wnote-as')||{}).textContent||'(name field)'"))
         time.sleep(0.3)
         shot("02-composer-" + theme)
 
@@ -219,7 +221,6 @@ def main():
         time.sleep(0.8)
         print("  thread open:", js("!!document.querySelector('.wnote-rta')"))
         fill(".wnote-rta", "Good catch — bumping it to the module title size today.")
-        fill(".wnote-rname", "AK")
         time.sleep(0.2)
         shot("04-thread-" + theme)
         js("(function(){var b=document.querySelector('.wnote-send');b&&b.click()})()")

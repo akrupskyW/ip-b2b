@@ -14,6 +14,10 @@ Environment=WISE_FEEDBACK_DB=/home/ubuntu/wise-feedback/comments.db
 # A local checkout writes to this same store, so notes left while working
 # locally and notes left by reviewers on the server are one shared thread.
 Environment=WISE_FEEDBACK_ALLOW_LOCALHOST=1
+# How the owner is signed on their own notes and replies. Anyone holding the
+# admin key posts under this name and is badged, so an answer is never
+# mistaken for a note from the person who raised the thread.
+Environment=WISE_FEEDBACK_OWNER=AeyKay
 EnvironmentFile=/home/ubuntu/wise-feedback/secret.env
 ExecStart=/home/ubuntu/wise-feedback/venv/bin/gunicorn \
     --workers 2 \

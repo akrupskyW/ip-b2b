@@ -39,10 +39,18 @@ ALLOW_ORIGINS = {
 ALLOW_LOCALHOST = os.environ.get("WISE_FEEDBACK_ALLOW_LOCALHOST", "") == "1"
 _LOCALHOST_RE = re.compile(r"^https?://(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$")
 
+# How the site owner is signed on their own notes and replies. Anyone holding
+# the admin key posts under this name and is badged as the owner, so a reply
+# can never be mistaken for one from the person who raised the thread.
+OWNER_NAME = os.environ.get("WISE_FEEDBACK_OWNER", "Owner")
+
 MAX_TEXT = 4000
 MAX_NAME = 80
 MAX_SELECTOR = 600
-CHIPS = {"bug", "design", "copy", "question", "idea"}
+# "comment" is the neutral default: a note is only a question if someone
+# actually says so.
+DEFAULT_CHIP = "comment"
+CHIPS = {"comment", "bug", "design", "copy", "question", "idea"}
 
 app = Flask(__name__)
 
@@ -62,7 +70,8 @@ CREATE TABLE IF NOT EXISTS comments (
     text        TEXT NOT NULL,
     author      TEXT NOT NULL,
     created_at  TEXT NOT NULL,
-    resolved    INTEGER NOT NULL DEFAULT 0
+    resolved    INTEGER NOT NULL DEFAULT 0,
+    is_owner    INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_comments_page ON comments(page);
 
@@ -71,10 +80,27 @@ CREATE TABLE IF NOT EXISTS replies (
     comment_id  TEXT NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
     author      TEXT NOT NULL,
     text        TEXT NOT NULL,
-    created_at  TEXT NOT NULL
+    created_at  TEXT NOT NULL,
+    is_owner    INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_replies_comment ON replies(comment_id);
 """
+
+# CREATE TABLE IF NOT EXISTS leaves an older database untouched, so columns
+# added later have to be filled in by hand. Adding a column is cheap and
+# idempotent; existing rows keep the DEFAULT.
+MIGRATIONS = [
+    ("comments", "is_owner", "INTEGER NOT NULL DEFAULT 0"),
+    ("replies", "is_owner", "INTEGER NOT NULL DEFAULT 0"),
+]
+
+
+def migrate(conn):
+    for table, column, decl in MIGRATIONS:
+        have = {r["name"] for r in conn.execute("PRAGMA table_info(%s)" % table)}
+        if column not in have:
+            conn.execute("ALTER TABLE %s ADD COLUMN %s %s" % (table, column, decl))
+    conn.commit()
 
 
 def db():
@@ -88,6 +114,7 @@ def db():
         # WAL keeps a reader from blocking the reviewer who is posting.
         conn.execute("PRAGMA journal_mode = WAL")
         conn.executescript(SCHEMA)
+        migrate(conn)
         g.db = conn
     return g.db
 
@@ -165,6 +192,7 @@ def row_to_comment(row, replies):
         "author": row["author"],
         "created_at": row["created_at"],
         "resolved": row["resolved"],
+        "is_owner": row["is_owner"],
         "replies": replies,
     }
 
@@ -190,6 +218,7 @@ def fetch(where="", params=()):
                 "author": r["author"],
                 "text": r["text"],
                 "created_at": r["created_at"],
+                "is_owner": r["is_owner"],
             }
         )
     return [row_to_comment(r, grouped.get(r["id"], [])) for r in rows]
@@ -238,13 +267,23 @@ def cors(resp):
 # ── Routes ─────────────────────────────────────────────────────────────────
 @app.get("/api/feedback/health")
 def health():
-    return jsonify({"ok": True, "comments": db().execute("SELECT COUNT(*) c FROM comments").fetchone()["c"]})
+    return jsonify({
+        "ok": True,
+        "comments": db().execute("SELECT COUNT(*) c FROM comments").fetchone()["c"],
+        # The widget shows this as "Replying as …" so the owner can see which
+        # name their reply will carry before they send it.
+        "owner": OWNER_NAME,
+    })
 
 
 @app.get("/api/feedback/comments")
 def list_comments():
     page = page_of(request.args.get("page", "/"))
-    return jsonify(fetch("WHERE page = ?", (page,)))
+    # Closing a thread takes it off the page for everyone. The owner still gets
+    # them back so a thread closed by mistake can be reopened.
+    if is_admin():
+        return jsonify(fetch("WHERE page = ?", (page,)))
+    return jsonify(fetch("WHERE page = ? AND resolved = 0", (page,)))
 
 
 @app.get("/api/feedback/comments/all")
@@ -260,14 +299,18 @@ def add_comment():
         return jsonify({"error": "slow down"}), 429
     data = request.get_json(silent=True) or {}
     text = clean(data.get("text"), MAX_TEXT)
-    author = clean(data.get("author"), MAX_NAME)
     selector = clean(data.get("selector"), MAX_SELECTOR)
+    # Whoever holds the admin key is the owner, and the server decides that —
+    # a client cannot claim to be the owner, nor can the owner accidentally
+    # post under the name the browser happens to remember.
+    owner = is_admin()
+    author = OWNER_NAME if owner else clean(data.get("author"), MAX_NAME)
     if not text or not author or not selector:
         return jsonify({"error": "text, author and selector are required"}), 400
 
     chip = clean(data.get("chip"), 20).lower()
     if chip not in CHIPS:
-        chip = "question"
+        chip = DEFAULT_CHIP
 
     def frac(v):
         try:
@@ -295,13 +338,14 @@ def add_comment():
         "author": author,
         "created_at": written_at(data.get("created_at")),
         "resolved": 0,
+        "is_owner": 1 if owner else 0,
     }
     conn = db()
     conn.execute(
         "INSERT INTO comments (id, page, url, selector, fx, fy, viewport_w, viewport_h,"
-        " chip, text, author, created_at, resolved)"
+        " chip, text, author, created_at, resolved, is_owner)"
         " VALUES (:id, :page, :url, :selector, :fx, :fy, :viewport_w, :viewport_h,"
-        " :chip, :text, :author, :created_at, :resolved)",
+        " :chip, :text, :author, :created_at, :resolved, :is_owner)",
         row,
     )
     conn.commit()
@@ -315,7 +359,8 @@ def add_reply(cid):
         return jsonify({"error": "slow down"}), 429
     data = request.get_json(silent=True) or {}
     text = clean(data.get("text"), MAX_TEXT)
-    author = clean(data.get("author"), MAX_NAME)
+    owner = is_admin()
+    author = OWNER_NAME if owner else clean(data.get("author"), MAX_NAME)
     if not text or not author:
         return jsonify({"error": "text and author are required"}), 400
 
@@ -329,10 +374,11 @@ def add_reply(cid):
         "author": author,
         "text": text,
         "created_at": written_at(data.get("created_at")),
+        "is_owner": 1 if owner else 0,
     }
     conn.execute(
-        "INSERT INTO replies (id, comment_id, author, text, created_at)"
-        " VALUES (:id, :comment_id, :author, :text, :created_at)",
+        "INSERT INTO replies (id, comment_id, author, text, created_at, is_owner)"
+        " VALUES (:id, :comment_id, :author, :text, :created_at, :is_owner)",
         reply,
     )
     conn.commit()

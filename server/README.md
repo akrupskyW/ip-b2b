@@ -60,9 +60,9 @@ Open any page with your secret once per browser:
 http://3.17.180.155:4144/pages/wiseai.html?feedback=admin&key=YOUR_SECRET
 ```
 
-The key is stored locally and stripped from the URL. Admin mode adds
-**Resolve** and **Delete** to every thread; replying works the same as it does
-for everyone else. From then on that browser stays in admin mode.
+The key is stored locally and stripped from the URL. From then on that browser
+stays in admin mode, which adds **Close thread** and **Delete** to every thread
+and signs everything you write as the owner.
 
 Straight from the terminal:
 
@@ -84,14 +84,37 @@ curl -s "http://127.0.0.1:4144/api/feedback/comments?page=/pages/add-product.htm
 | POST | `/api/feedback/comments` | no | Leave a comment |
 | POST | `/api/feedback/comments/<id>/replies` | no | Reply in a thread |
 | GET | `/api/feedback/comments/all` | yes | Every comment, all pages |
-| POST | `/api/feedback/comments/<id>/resolve` | yes | Resolve / reopen |
+| POST | `/api/feedback/comments/<id>/resolve` | yes | Close / reopen a thread |
 | DELETE | `/api/feedback/comments/<id>` | yes | Delete a thread |
+
+`GET /comments?page=…` returns only open threads. With the key it also returns
+closed ones, which is the only way to reopen one.
 
 Dates are stamped server-side in UTC, so a reviewer's wrong system clock can't
 skew a thread. The one exception is a note replayed from the offline queue,
 which keeps its original client timestamp if it is neither in the future nor
 more than 90 days old — otherwise a backlog would all land at once at the top
 of the thread. Posts are rate limited to 20 per IP per minute.
+
+## Who is who
+
+A note is a **Comment** unless the person leaving it says otherwise — Bug,
+Design, Copy, Question and Idea are there to be chosen, never assumed.
+
+Identity is settled by the server, not by the browser. Anyone holding the admin
+key posts under `WISE_FEEDBACK_OWNER` and is stamped `is_owner`, whatever name
+the request carries. That closes a real trap: the widget remembers one name per
+browser, so replying from the browser a reviewer used would otherwise have
+signed your answer with *their* name. In admin mode there is no name field at
+all — the composer says "Replying as …" and the reply is badged **Owner**.
+
+## Closing a thread
+
+Closing is the owner's call alone, and it takes the pin off the page for
+everyone — a closed thread is not a dimmed pin, it is gone. The owner still
+finds it under **Closed** in the comments panel, where it can be reopened; a
+closed thread has no reply box until it is. **Delete** remains separate, and
+still destroys the thread and its replies.
 
 ## One store, wherever you are
 
@@ -154,12 +177,21 @@ run a static server on 8099 and the API on 8770, then:
 python3 scripts/verify_feedback_sync.py
 ```
 
+To check identity and closing — the default category, that the owner's reply
+cannot inherit a reviewer's name, that only the owner can close, and that a
+closed thread really leaves the page — in both themes:
+
+```bash
+python3 scripts/verify_feedback_roles.py
+```
+
 ## Configuration
 
 | Env var | Default | Meaning |
 |---|---|---|
 | `WISE_FEEDBACK_DB` | `/var/lib/wise-feedback/comments.db` | SQLite file |
 | `WISE_FEEDBACK_KEY` | *(empty)* | Admin secret; empty disables admin entirely |
+| `WISE_FEEDBACK_OWNER` | `Owner` | Name the owner's notes and replies are signed with |
 | `WISE_FEEDBACK_ORIGIN` | *(empty)* | Extra allowed origins, comma separated |
 | `WISE_FEEDBACK_ALLOW_LOCALHOST` | *(empty)* | `1` lets a local checkout on any `localhost`/`127.0.0.1` port write to this store |
 

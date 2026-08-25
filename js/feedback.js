@@ -48,22 +48,33 @@
      have one (use it). Probed once, then reused for the session. */
   var API = window.WISE_FEEDBACK_API || '/api/feedback';
   var apiProbe = null;
+  /* How the site owner is signed. The server is authoritative — it stamps the
+     name on anything posted with the admin key — but the widget needs it up
+     front to show "Replying as …" before you send. */
+  var ownerName = 'Owner';
+
+  function health(base) {
+    return fetch(base + '/health').then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function (info) {
+      if (info && info.owner) ownerName = info.owner;
+      return base;
+    });
+  }
 
   function apiBase() {
     if (apiProbe) return apiProbe;
     if (window.WISE_FEEDBACK_API) {
-      apiProbe = Promise.resolve(API);
+      apiProbe = health(API).catch(function () { return API; });
       return apiProbe;
     }
-    apiProbe = fetch('/api/feedback/health').then(function (r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    }).then(function () {
-      API = '/api/feedback';
+    apiProbe = health('/api/feedback').then(function (base) {
+      API = base;
       return API;
     }).catch(function () {
       API = REMOTE + '/api/feedback';
-      return API;
+      return health(API).catch(function () { return API; });
     });
     return apiProbe;
   }
@@ -75,7 +86,11 @@
   /* The old local-only store, drained into the queue on first sight. */
   var LS_DATA = 'wise-feedback-data';
 
+  /* "Comment" leads and is the default — a note is only a question, a bug or
+     anything else if the person leaving it says so. */
+  var DEFAULT_CHIP = 'comment';
   var CHIPS = [
+    { id: 'comment', label: 'Comment' },
     { id: 'bug', label: 'Bug' },
     { id: 'design', label: 'Design' },
     { id: 'copy', label: 'Copy' },
@@ -445,12 +460,14 @@
      renders correctly on pages that do not load wise.css. */
   var CSS = [
     ':root{',
+    '--wnote-comment:#5B6B7C;',
     '--wnote-bug:#DC3038;--wnote-design:#25507C;--wnote-copy:#B07908;--wnote-question:#2E7D9A;--wnote-idea:#2E9A5E;',
     '--wnote-surface:var(--surface,#fff);--wnote-bg:var(--surface-2,#F4F2EA);',
     '--wnote-text:var(--text,#111827);--wnote-muted:var(--text-subtle,#474E58);',
     '--wnote-border:var(--border-strong,rgba(37,80,124,.28));',
     '}',
     'html.dark{',
+    '--wnote-comment:#93A3B4;',
     '--wnote-bug:#FF6B72;--wnote-design:#8B9FAF;--wnote-copy:#E8B84B;--wnote-question:#5FB6D1;--wnote-idea:#4FC98A;',
     '--wnote-surface:var(--surface,#0D1B24);--wnote-bg:var(--surface-2,#112633);',
     '--wnote-text:var(--text,#F3F4F6);--wnote-muted:var(--text-subtle,#B1BAC7);',
@@ -531,6 +548,17 @@
     '.wnote-text{font-size:13px;line-height:1.5;margin:6px 0 0;white-space:pre-wrap;word-break:break-word;}',
     '.wnote-thread{max-height:230px;overflow:auto;margin-top:10px;display:flex;flex-direction:column;gap:10px;}',
     '.wnote-reply{border-left:2px solid var(--wnote-border);padding-left:10px;}',
+    /* The owner's side of the conversation reads as answers, not more notes. */
+    '.wnote-reply.is-owner{border-left-color:var(--wnote-design);}',
+    '.wnote-badge{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;',
+    'color:#fff;background:var(--wnote-design);border-radius:9999px;padding:2px 6px;line-height:1;}',
+    'html.dark .wnote-badge{color:#05141C;}',
+    '.wnote-as{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;',
+    'color:var(--wnote-muted);}',
+    '.wnote-as strong{color:var(--wnote-text);}',
+    '.wnote-closed{font-weight:700;color:var(--wnote-muted);}',
+    '.wnote-section{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;',
+    'color:var(--wnote-muted);padding:10px 0 2px;border-top:1px solid var(--wnote-border);margin-top:4px;}',
     '.wnote-empty{font-size:12px;color:var(--wnote-muted);padding:10px 0;}',
     '.wnote-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;',
     'padding-top:10px;border-top:1px solid var(--wnote-border);}',
@@ -774,7 +802,12 @@
           'style="--wnote-dot:' + chipColor(c.id) + '">' + esc(c.label) + '</button>';
       }).join('') + '</div>' +
       '<textarea class="wnote-ta" placeholder="What should change here?"></textarea>' +
-      '<input class="wnote-in" type="text" placeholder="Your name" value="' + esc(name) + '" />' +
+      /* The owner is identified by their key, not by whatever name this
+         browser last used — so no editable field to get it wrong. */
+      (admin
+        ? '<div class="wnote-as">Commenting as <strong>' + esc(ownerName) + '</strong>' +
+          '<span class="wnote-badge">Owner</span></div>'
+        : '<input class="wnote-in" type="text" placeholder="Your name" value="' + esc(name) + '" />') +
       '<div class="wnote-actions">' +
       '<button type="button" class="wnote-btn wnote-cancel">Cancel</button>' +
       '<button type="button" class="wnote-btn primary wnote-post" disabled>Post</button>' +
@@ -785,10 +818,11 @@
     var ta = pop.querySelector('.wnote-ta');
     var nameIn = pop.querySelector('.wnote-in');
     var post = pop.querySelector('.wnote-post');
-    var chip = 'question';
+    var chip = DEFAULT_CHIP;
 
+    function who() { return admin ? ownerName : (nameIn ? nameIn.value.trim() : ''); }
     function sync() {
-      post.disabled = !(ta.value.trim() && nameIn.value.trim());
+      post.disabled = !(ta.value.trim() && who());
     }
     pop.querySelectorAll('.wnote-chip').forEach(function (b) {
       if (b.getAttribute('data-chip') === chip) b.setAttribute('aria-pressed', 'true');
@@ -800,7 +834,7 @@
       });
     });
     ta.addEventListener('input', sync);
-    nameIn.addEventListener('input', sync);
+    if (nameIn) nameIn.addEventListener('input', sync);
     ta.addEventListener('keydown', function (e) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !post.disabled) submit();
     });
@@ -813,8 +847,8 @@
     function submit() {
       post.disabled = true;
       post.textContent = 'Posting…';
-      var author = nameIn.value.trim();
-      lsSet(LS_NAME, author);
+      var author = who();
+      if (!admin) lsSet(LS_NAME, author);
       Store.add({
         page: pageKey(),
         selector: anchor.selector,
@@ -839,10 +873,18 @@
     openPopup = { node: pop, anchor: anchor };
   }
 
-  /* ── Thread ──────────────────────────────────────────────────────────── */
+  /* ── Thread ──────────────────────────────────────────────────────────────
+     Who is talking has to be unmistakable, so an answer from the site owner
+     is never read as coming from the person who raised the thread. The badge
+     follows the server's is_owner stamp, not a name the client typed. */
+  function ownerBadge(row) {
+    return row && row.is_owner ? '<span class="wnote-badge">Owner</span>' : '';
+  }
+
   function replyHtml(r) {
-    return '<div class="wnote-reply"><div class="wnote-meta"><span class="wnote-who">' + esc(r.author) +
-      '</span><span>·</span><span>' + esc(fmtDate(r.created_at)) + '</span></div>' +
+    return '<div class="wnote-reply' + (r.is_owner ? ' is-owner' : '') + '">' +
+      '<div class="wnote-meta"><span class="wnote-who">' + esc(r.author) + '</span>' +
+      ownerBadge(r) + '<span>·</span><span>' + esc(fmtDate(r.created_at)) + '</span></div>' +
       '<p class="wnote-text">' + esc(r.text) + '</p></div>';
   }
 
@@ -865,17 +907,26 @@
       '<div class="wnote-pop-head"><h3 class="wnote-title">' + esc(CHIP_LABEL[c.chip] || 'Comment') + '</h3>' +
       '<button type="button" class="wnote-x" aria-label="Close">' + ICONS.close + '</button></div>' +
       '<div class="wnote-body">' +
-      '<div class="wnote-meta"><span class="wnote-who">' + esc(c.author) + '</span><span>·</span><span>' +
-      esc(fmtDate(c.created_at)) + '</span>' + (c.resolved ? '<span>· resolved</span>' : '') + '</div>' +
+      '<div class="wnote-meta"><span class="wnote-who">' + esc(c.author) + '</span>' + ownerBadge(c) +
+      '<span>·</span><span>' + esc(fmtDate(c.created_at)) + '</span>' +
+      (c.resolved ? '<span class="wnote-closed">· Closed</span>' : '') + '</div>' +
       '<p class="wnote-text">' + esc(c.text) + '</p>' +
       (orphan ? '<div class="wnote-empty">The spot this was pinned to is not on the page right now.</div>' : '') +
       '<div class="wnote-thread">' + replies.map(replyHtml).join('') + '</div>' +
-      '<textarea class="wnote-ta wnote-rta" placeholder="Reply…" style="min-height:56px;margin-top:10px"></textarea>' +
-      '<input class="wnote-in wnote-rname" type="text" placeholder="Your name" value="' + esc(lsGet(LS_NAME) || '') + '" />' +
-      '<div class="wnote-actions"><button type="button" class="wnote-btn primary wnote-send" disabled>' +
-      ICONS.send + ' Reply</button></div>' +
+      (c.resolved
+        ? '<div class="wnote-empty">This thread is closed, so it no longer shows on the page.</div>'
+        : '<textarea class="wnote-ta wnote-rta" placeholder="Reply…" style="min-height:56px;margin-top:10px"></textarea>' +
+          (admin
+            ? '<div class="wnote-as">Replying as <strong>' + esc(ownerName) + '</strong>' +
+              '<span class="wnote-badge">Owner</span></div>'
+            : '<input class="wnote-in wnote-rname" type="text" placeholder="Your name" value="' + esc(lsGet(LS_NAME) || '') + '" />') +
+          '<div class="wnote-actions"><button type="button" class="wnote-btn primary wnote-send" disabled>' +
+          ICONS.send + ' Reply</button></div>') +
+      /* Closing is the owner's call alone, and it takes the pin off the page
+         for everyone — so it lives here, not next to Reply. */
       (admin ? '<div class="wnote-foot">' +
-        '<button type="button" class="wnote-link wnote-resolve">' + ICONS.check + (c.resolved ? ' Reopen' : ' Resolve') + '</button>' +
+        '<button type="button" class="wnote-link wnote-resolve">' + ICONS.check +
+        (c.resolved ? ' Reopen' : ' Close thread') + '</button>' +
         '<button type="button" class="wnote-link danger wnote-del">' + ICONS.trash + ' Delete</button></div>' : '') +
       '</div>';
     root.appendChild(pop);
@@ -886,20 +937,25 @@
     var send = pop.querySelector('.wnote-send');
     var thread = pop.querySelector('.wnote-thread');
     thread.scrollTop = thread.scrollHeight;
-
-    function sync() { send.disabled = !(rta.value.trim() && rname.value.trim()); }
-    rta.addEventListener('input', sync);
-    rname.addEventListener('input', sync);
-    rta.addEventListener('keydown', function (e) {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !send.disabled) fire();
-    });
-    send.addEventListener('click', fire);
     pop.querySelector('.wnote-x').addEventListener('click', closePopup);
+
+    function who() { return admin ? ownerName : (rname ? rname.value.trim() : ''); }
+    function sync() { send.disabled = !(rta.value.trim() && who()); }
+
+    /* A closed thread has no reply box at all. */
+    if (rta && send) {
+      rta.addEventListener('input', sync);
+      if (rname) rname.addEventListener('input', sync);
+      rta.addEventListener('keydown', function (e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !send.disabled) fire();
+      });
+      send.addEventListener('click', fire);
+    }
 
     function fire() {
       send.disabled = true;
-      var author = rname.value.trim();
-      lsSet(LS_NAME, author);
+      var author = who();
+      if (!admin) lsSet(LS_NAME, author);
       Store.reply(c.id, { author: author, text: rta.value.trim() }).then(function (saved) {
         (c.replies = c.replies || []).push(saved);
         thread.insertAdjacentHTML('beforeend', replyHtml(saved));
@@ -951,22 +1007,33 @@
     renderPanel();
   }
 
+  function itemHtml(c) {
+    var n = (c.replies || []).length;
+    return '<button type="button" class="wnote-item' + (c.resolved ? ' is-resolved' : '') +
+      '" data-id="' + esc(c.id) + '" style="--wnote-dot:' + chipColor(c.chip) + '">' +
+      '<div class="wnote-meta"><span class="wnote-tag">' + esc(CHIP_LABEL[c.chip] || 'Comment') + '</span>' +
+      '<span>·</span><span class="wnote-who">' + esc(c.author) + '</span>' + ownerBadge(c) +
+      '<span>·</span><span>' + esc(fmtDate(c.created_at)) + '</span>' +
+      (n ? '<span>· ' + n + ' repl' + (n === 1 ? 'y' : 'ies') + '</span>' : '') + '</div>' +
+      '<p class="wnote-text">' + esc(c.text) + '</p></button>';
+  }
+
   function renderPanel() {
     if (!panel) return;
     var list = panel.querySelector('.wnote-list');
+    var open = openComments();
+    /* Closed threads are only ever returned to the owner, so this section
+       simply does not exist for anyone else. */
+    var closed = comments.filter(function (c) { return c.resolved; });
+
     if (!comments.length) {
       list.innerHTML = '<div class="wnote-empty">No comments on this page yet.</div>';
     } else {
-      list.innerHTML = comments.map(function (c, i) {
-        var n = (c.replies || []).length;
-        return '<button type="button" class="wnote-item' + (c.resolved ? ' is-resolved' : '') +
-          '" data-id="' + esc(c.id) + '" style="--wnote-dot:' + chipColor(c.chip) + '">' +
-          '<div class="wnote-meta"><span class="wnote-tag">' + esc(CHIP_LABEL[c.chip] || 'Note') + '</span>' +
-          '<span>·</span><span class="wnote-who">' + esc(c.author) + '</span>' +
-          '<span>·</span><span>' + esc(fmtDate(c.created_at)) + '</span>' +
-          (n ? '<span>· ' + n + ' repl' + (n === 1 ? 'y' : 'ies') + '</span>' : '') + '</div>' +
-          '<p class="wnote-text">' + esc(c.text) + '</p></button>';
-      }).join('');
+      list.innerHTML =
+        (open.length ? open.map(itemHtml).join('')
+          : '<div class="wnote-empty">Nothing open on this page.</div>') +
+        (closed.length ? '<div class="wnote-section">Closed · ' + closed.length + '</div>' +
+          closed.map(itemHtml).join('') : '');
       list.querySelectorAll('.wnote-item').forEach(function (b) {
         b.addEventListener('click', function () {
           var c = comments.filter(function (o) { return String(o.id) === b.getAttribute('data-id'); })[0];
@@ -986,10 +1053,17 @@
     }
   }
 
-  /* ── Pins ────────────────────────────────────────────────────────────── */
+  /* ── Pins ────────────────────────────────────────────────────────────────
+     Closing a thread takes it off the page entirely — no dimmed pin left
+     behind. The owner still reaches closed threads from the panel, which is
+     the only way back to reopening one. */
+  function openComments() {
+    return comments.filter(function (c) { return !c.resolved; });
+  }
+
   function render() {
     var seen = {};
-    comments.forEach(function (c, i) {
+    openComments().forEach(function (c, i) {
       seen[c.id] = true;
       var pin = pins[c.id];
       if (!pin) {
@@ -1007,13 +1081,12 @@
       pin.style.background = chipColor(c.chip);
       pin.title = (CHIP_LABEL[c.chip] || 'Comment') + ' — ' + c.author +
         (c.pending ? ' (waiting to sync)' : '');
-      pin.classList.toggle('is-resolved', !!c.resolved);
       pin.classList.toggle('is-pending', !!c.pending);
     });
     Object.keys(pins).forEach(function (id) {
       if (!seen[id]) { pins[id].remove(); delete pins[id]; }
     });
-    var open = comments.filter(function (c) { return !c.resolved; }).length;
+    var open = openComments().length;
     countBadge.textContent = String(open);
     countBadge.style.display = open ? 'flex' : 'none';
     layout();
