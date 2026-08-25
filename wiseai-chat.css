@@ -288,10 +288,10 @@ html:not(.dark) .sc-topbar-titles .topbar-title { color: var(--text); }
 .panel-more-btn {
   display: inline-flex; align-items: center; justify-content: center;
   width: 28px; height: 28px; border-radius: 50%; background: transparent; border: 0;
-  color: var(--text-muted); cursor: pointer; opacity: 0.85;
+  color: var(--text-muted); cursor: pointer; opacity: 0.52;
   transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
 }
-.panel-more-btn .material-symbols-outlined { font-size: 18px !important; line-height: 1 !important; }
+.panel-more-btn .material-symbols-outlined { font-size: 16px !important; line-height: 1 !important; }
 /* Opaque circle behind the icon on hover so content scrolling underneath a
    floated header never bleeds through the glyph. */
 .panel-more-btn:hover { opacity: 1; background: var(--surface-3); color: var(--text); }
@@ -362,10 +362,10 @@ html.dark .topbar-menu-divider { background: rgba(255,255,255,0.08); }
 .panel-width-toggle-btn {
   display: inline-flex; align-items: center; justify-content: center;
   width: 28px; height: 28px; border-radius: 50%; background: transparent; border: 0;
-  color: var(--text-muted); opacity: 0.75; cursor: pointer; padding: 0; flex-shrink: 0;
+  color: var(--text-muted); opacity: 0.52; cursor: pointer; padding: 0; flex-shrink: 0;
   transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
-.panel-width-toggle-btn .material-symbols-outlined { font-size: 18px !important; line-height: 1 !important; }
+.panel-width-toggle-btn .material-symbols-outlined { font-size: 16px !important; line-height: 1 !important; }
 /* Opaque circle behind the icon on hover / active so scrolling content under a
    floated header never shows through. */
 .panel-width-toggle-btn:hover { opacity: 1; color: var(--text); background: var(--surface-3); }

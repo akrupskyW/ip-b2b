@@ -6712,14 +6712,14 @@
       background: transparent;
       border: 0;
       color: var(--text-muted);
-      opacity: 0.75;
+      opacity: 0.52;
       cursor: pointer;
       padding: 0;
       flex-shrink: 0;
       transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
     }
     .panel-width-toggle-btn .material-symbols-outlined {
-      font-size: 18px !important;
+      font-size: 16px !important;
       line-height: 1 !important;
     }
     .panel-width-toggle-btn:hover,
@@ -6770,13 +6770,13 @@
       background: transparent;
       border: 0;
       color: var(--text-muted);
-      opacity: 0.75;
+      opacity: 0.52;
       cursor: pointer;
       padding: 0;
       transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
     }
     .pf-module-menu-btn .material-symbols-outlined,
-    .pf-module-menu-btn .material-symbols-outlined { font-size: 18px !important; line-height: 1 !important; }
+    .pf-module-menu-btn .material-symbols-outlined { font-size: 16px !important; line-height: 1 !important; }
     .pf-module-menu-btn:hover,
     .pf-module-menu.is-open .pf-module-menu-btn {
       opacity: 1;
@@ -7129,11 +7129,11 @@
       border: 0;
       color: var(--text-muted);
       cursor: pointer;
-      opacity: 0.85;
+      opacity: 0.52;
       transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
     }
     .panel-more-btn .material-symbols-outlined {
-      font-size: 18px !important;
+      font-size: 16px !important;
       line-height: 1 !important;
     }
     .panel-more-btn:hover {
@@ -16504,6 +16504,7 @@
       shell.classList.toggle('panel-wide', tier >= 1);
       shell.classList.toggle('panel-triple', tier >= 2);
       shell.classList.toggle('panel-fill', tier >= 3);
+      if (tier < 1) document.documentElement.classList.remove('chat-default-double');
       if (btn) {
         btn.classList.toggle('is-on', tier >= 1);
         btn.setAttribute('aria-pressed', tier >= 1 ? 'true' : 'false');
@@ -16527,17 +16528,16 @@
       applyWISEcodeAIWide(next);
       persistWISEcodeAIWide(next);
     };
-    /* WISEcodeAI always loads at its single (minimum) width on every page EXCEPT the
-       flagship pages/wiseai.html — the widened (double/triple) tier is a
-       within-session choice and is intentionally NOT restored across loads, so
-       the chat module is the exact same minimum size every time it loads. This
-       mirrors the shared dock (writeWISEcodeAIDockState({ wide: 0 }) in
-       js/wiseai-dock.js). We still reset the shared key to single so the size
-       stays uniform. A within-session change from another tab is still honored
-       by the `storage` listener below. */
+    /* Chat width is a screen default: laptop-class (≤1512 CSS px) opens single;
+       wider screens open double. The widened (triple/fill) tiers stay a
+       within-session choice and are NOT restored across loads. This mirrors
+       the shared dock (writeWISEcodeAIDockState({ wide: defaultChatTier() }) in
+       js/wiseai-dock.js). A within-session change from another tab is still
+       honored by the `storage` listener below. */
     (function initWISEcodeAIWidth() {
-      applyWISEcodeAIWide(0);
-      persistWISEcodeAIWide(0);
+      const t = typeof window.wiseDefaultChatTier === 'function' ? window.wiseDefaultChatTier() : 0;
+      applyWISEcodeAIWide(t);
+      persistWISEcodeAIWide(t);
     })();
     window.addEventListener('storage', function(e) {
       if (e.key !== 'wise-wiseai-dock') return;

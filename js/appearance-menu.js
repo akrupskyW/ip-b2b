@@ -20,9 +20,9 @@
  * Everything else renders the same on every page.
  *
  * Click handling stays in each shell: every row keys off a stable data-*
- * attribute (data-pivot / data-minimal / data-fullbleed / data-fbchatonly /
- * data-jam / data-appsearch / data-colorblind / data-fz / data-pop-action), so the existing
- * per-shell listeners keep working unchanged.
+ * attribute (data-pivot / data-minimal / data-navhistory / data-fullbleed /
+ * data-fbchatonly / data-jam / data-appsearch / data-navhamburger / data-colorblind / data-fz /
+ * data-pop-action), so the existing per-shell listeners keep working unchanged.
  */
 
 import {
@@ -80,6 +80,14 @@ import {
   isAppSearchOn,
   applyAppSearch,
 } from './app-search.js';
+import {
+  isNavHistoryOn,
+  applyNavHistory,
+} from './nav-history.js';
+import {
+  isNavHamburgerOn,
+  applyNavHamburger,
+} from './nav-hamburger.js';
 
 /**
  * A binary on/off setting row. Instead of highlighting the whole row when
@@ -144,8 +152,10 @@ function pivotSection(showPivot, isPivoted) {
 
 /** "Colorblind type" segmented control — only revealed once the colorblind
     palette is switched on, so the picker never clutters the menu when unused.
-    Each button carries a `data-cbtype` id that topbar.js's capture-phase handler
-    turns into the matching cb-<type> palette on <html>. */
+    Three buttons, one per cone system (deutan / protan / tritan); each palette
+    also covers the matching anomaly. Each button carries a `data-cbtype` id
+    that topbar.js's capture-phase handler turns into the matching cb-<type>
+    palette on <html>. */
 function colorblindTypeSection() {
   if (!isColorblindOn()) return '';
   const active = getColorblindMode();
@@ -155,8 +165,8 @@ function colorblindTypeSection() {
   ).join('');
   return `
     <div class="fz-row cb-type-row">
-      <span class="fz-row-label"${tipAttrs('Color-vision deficiency type')}>CVD type</span>
-      <div class="fz-btns" role="group" aria-label="Color-vision deficiency type">${btns}</div>
+      <span class="fz-row-label"${tipAttrs('Color vision type — green-weak, red-weak, or blue-green / blue-yellow weak. Each choice also covers the complete (blind) form of that type.')}>Vision type</span>
+      <div class="fz-btns" role="group" aria-label="Color vision type">${btns}</div>
     </div>`;
 }
 
@@ -484,6 +494,7 @@ export function buildAppearanceBody({
         ${pivotSection(showPivot, isPivoted)}
         ${toggleRow('data-minimal="1"', isMinimalUiOn(), 'Minimal UI', false, 'Show only the logo, Appearance, and your profile')}
         ${toggleRow('data-iconrail="1"', isIconRailOn(), 'Icons only', false, 'Collapse the navigation to icons')}
+        ${adminOnly(toggleRow('data-navhistory="1"', isNavHistoryOn(), 'History in navigation', true, 'Merge the History module into an expandable section of the primary navigation — search, projects, and All conversations stay fully usable'))}
         ${adminOnly(toggleRow('data-sharpedges="1"', isSharpEdgesOn(), 'Sharper edges', true, 'Use tighter, less-rounded corners'))}
       `),
       apGroup('Full bleed', `
@@ -514,6 +525,7 @@ export function buildAppearanceBody({
       apGroup('Admin', `
         ${toggleRow('data-adminui="1"', isAdminControlsOn(), 'Admin controls', false, 'Show or hide settings that carry an Admin badge')}
         ${adminOnly(toggleRow('data-appsearch="1"', isAppSearchOn(), 'Search', true, 'Show a search field aligned with the nav logo for transcripts, outputs, and reports'))}
+        ${adminOnly(toggleRow('data-navhamburger="1"', isNavHamburgerOn(), 'Menu icon', true, isAppSearchOn() ? 'When the navigation is collapsed, show a menu icon to the left of the logo instead of the icon rail' : 'Unavailable while Search is off', !isAppSearchOn()))}
         ${adminOnly(accessibilityReviewSection())}
         ${adminOnly(allModulesSection())}
         ${adminOnly(progressLogSection())}
@@ -619,8 +631,9 @@ if (typeof document !== 'undefined') wireSignOut();
  * (e.g. the Jam strip or Colorblind row doing nothing there). Now every shell
  * calls wireAppearancePopover() and gets identical behaviour.
  *
- * The universal on/off toggles (Minimal UI, Header, Full bleed, Jam strip,
- * Search, Colorblind) and the Text-size buttons are handled here directly via the
+ * The universal on/off toggles (Minimal UI, Icons only, History in navigation,
+ * Full bleed, Jam strip, Search, Menu icon, Colorblind) and the Text-size buttons are
+ * handled here directly via the
  * shared modules, so a page CANNOT forget to wire them. The genuinely
  * shell-specific bits are passed as callbacks:
  *
@@ -679,6 +692,13 @@ export function wireAppearancePopover(pop, ctx = {}) {
     /* Universal on/off toggles — handled here so no shell can miss one. */
     if (within('[data-minimal]'))     { ev.stopPropagation(); applyMinimalUi(!isMinimalUiOn());   render(); return; }
     if (within('[data-iconrail]'))    { ev.stopPropagation(); applyIconRail(!isIconRailOn());     render(); return; }
+    if (within('[data-navhistory]'))  {
+      ev.stopPropagation();
+      const next = !isNavHistoryOn();
+      applyNavHistory(next, true, { open: next });
+      render();
+      return;
+    }
     if (within('[data-fullbleed]'))   { ev.stopPropagation(); if (isAppSearchOn()) return; applyFullBleedMode(isFullBleedEverythingOn() ? '' : 'all'); render(); return; }
     if (within('[data-fbchatonly]'))  { ev.stopPropagation(); if (isAppSearchOn()) return; applyFullBleedMode(isChatOnlyFullBleedOn() ? '' : 'chat'); render(); return; }
     if (within('[data-jam]'))         { ev.stopPropagation(); applyJamStrip(!isJamStripOn());      render(); return; }
@@ -690,6 +710,13 @@ export function wireAppearancePopover(pop, ctx = {}) {
     if (within('[data-sharpedges]'))  { ev.stopPropagation(); applySharpEdges(!isSharpEdgesOn());  render(); return; }
     if (within('[data-adminui]'))     { ev.stopPropagation(); applyAdminControls(!isAdminControlsOn()); render(); return; }
     if (within('[data-appsearch]'))   { ev.stopPropagation(); applyAppSearch(!isAppSearchOn());         render(); return; }
+    if (within('[data-navhamburger]')) {
+      ev.stopPropagation();
+      if (!isAppSearchOn()) return;
+      applyNavHamburger(!isNavHamburgerOn());
+      render();
+      return;
+    }
 
     /* Text size (connected segmented toggle). */
     const fz = within('[data-fz]');

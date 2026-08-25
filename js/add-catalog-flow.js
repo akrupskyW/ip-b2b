@@ -813,7 +813,9 @@
     // Chat width toggle — the canonical four-step cycle (matches Add Product).
     const WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
     const WIDTH_TITLES = ['Widen chat', 'Widen chat further', 'Widen chat to triple', 'Fill remaining space'];
-    let widthTier = 0;
+    let widthTier = (window.WPaneWidth && typeof window.WPaneWidth.defaultChatTier === 'function')
+      ? window.WPaneWidth.defaultChatTier()
+      : (typeof window.wiseDefaultChatTier === 'function' ? window.wiseDefaultChatTier() : 0);
     const widthBtn = $('ap-width');
     function syncWidth() {
       const chat = document.querySelector('.ap-chat');
@@ -822,6 +824,7 @@
         chat.classList.toggle('panel-triple', widthTier >= 2);
         chat.classList.toggle('panel-fill', widthTier >= 3);
       }
+      if (widthTier < 1) document.documentElement.classList.remove('chat-default-double');
       if (widthBtn) {
         const ic = widthBtn.querySelector('.material-symbols-outlined');
         if (ic) ic.textContent = WIDTH_ICONS[widthTier];
@@ -830,6 +833,7 @@
         widthBtn.title = WIDTH_TITLES[widthTier];
       }
     }
+    syncWidth();
     widthBtn?.addEventListener('click', () => { widthTier = (widthTier + 1) % 4; syncWidth(); });
 
     // Chat topbar menu (restart / export / share / close)

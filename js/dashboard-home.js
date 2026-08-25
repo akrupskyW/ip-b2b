@@ -155,15 +155,15 @@ function cssUrl(url) {
 /* Palette for chart segments (resolves against shared CSS tokens). */
 const C = {
   green: 'var(--sec-green)',
-  /* A distinctly lighter shade of green — the "Good" tier and the second
-     processing level. */
-  greenLight: '#7DC470',
+  /* "Good" / second processing tier — follows --chart-status-good so Accessible
+     colors can retune it (a second green collides for deutan/protan vision). */
+  greenLight: 'var(--chart-status-good)',
   teal: 'var(--ter-cyan)',
   /* Soft, same-hue blue used as the muted complement in the binary
      health-status gauges. */
   tealSoft: 'color-mix(in srgb, var(--ter-cyan) 50%, var(--surface))',
   amber: 'var(--ter-amber)',
-  orange: '#D27326',
+  orange: 'var(--chart-status-fair)',
   red: 'var(--sec-red)',
   ink: 'var(--text-subtle)',
   primary: 'var(--primary)',

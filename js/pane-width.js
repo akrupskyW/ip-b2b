@@ -10,6 +10,12 @@
        3  fill     — take up ALL the remaining space in the row
                      (then the cycle wraps back to single)
 
+   Chat modules have a viewport-based DEFAULT (not a persisted user choice):
+       ≤ 1512 CSS px  →  single (tier 0)  — 14" MacBook Pro class and below
+       >  1512 CSS px  →  double (tier 1)  — wider screens
+     `defaultChatTier()` is that rule. In-session, the user can still cycle
+     every tier; the next load reapplies the screen default, same as today.
+
    Two things live here so the behaviour is identical on every page:
      • the shared spec (icons, titles, tier math) on window.WPaneWidth, and
      • the universal `.panel-fill` CSS that makes ANY pane at the fill tier grow
@@ -27,6 +33,17 @@
   if (window.WPaneWidth) return;
 
   var TIERS = 4;
+
+  /* 14" MacBook Pro at default scaling is 1512 CSS px. That class of screen
+     keeps the chat at single pane; anything wider defaults to double. Keep in
+     sync with the FOUC guard in js/text-size-fouc.js (WISE_CHAT_SINGLE_MAX_PX). */
+  var CHAT_SINGLE_MAX_PX = (typeof window.WISE_CHAT_SINGLE_MAX_PX === 'number')
+    ? window.WISE_CHAT_SINGLE_MAX_PX
+    : 1512;
+
+  function defaultChatTier() {
+    return (window.innerWidth || 0) > CHAT_SINGLE_MAX_PX ? 1 : 0;
+  }
 
   /* Material Symbols from the width_* family the whole app already uses. There
      are only three width glyphs, so the fill tier reuses `width_full` (the
@@ -123,10 +140,19 @@
   // Also inject immediately in case the head is already available (defer script).
   try { injectStyles(); } catch (_) {}
 
+  if (typeof window.WISE_CHAT_SINGLE_MAX_PX !== 'number') {
+    window.WISE_CHAT_SINGLE_MAX_PX = CHAT_SINGLE_MAX_PX;
+  }
+  if (typeof window.wiseDefaultChatTier !== 'function') {
+    window.wiseDefaultChatTier = defaultChatTier;
+  }
+
   window.WPaneWidth = {
     TIERS: TIERS,
     ICONS: ICONS,
     TITLES: TITLES,
+    CHAT_SINGLE_MAX_PX: CHAT_SINGLE_MAX_PX,
+    defaultChatTier: defaultChatTier,
     clamp: clamp,
     next: next,
     tierOfEl: tierOfEl,

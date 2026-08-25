@@ -1195,17 +1195,22 @@
           'Width (triple) — tap to widen',
           'Width (fill) — tap to reset',
         ];
-        let tier = 0;
-        btn.addEventListener('click', () => {
-          tier = (tier + 1) % 4;
+        let tier = typeof window.wiseDefaultChatTier === 'function' ? window.wiseDefaultChatTier() : 0;
+        function applyChatWidth() {
           chat.classList.toggle('panel-wide', tier >= 1);
           chat.classList.toggle('panel-triple', tier >= 2);
           chat.classList.toggle('panel-fill', tier >= 3);
+          if (tier < 1) document.documentElement.classList.remove('chat-default-double');
           btn.classList.toggle('is-on', tier >= 1);
           btn.setAttribute('aria-pressed', String(tier !== 0));
           btn.title = TITLES[tier];
           const ic = btn.querySelector('.material-symbols-outlined');
           if (ic) ic.textContent = ICONS[tier];
+        }
+        applyChatWidth();
+        btn.addEventListener('click', () => {
+          tier = (tier + 1) % 4;
+          applyChatWidth();
         });
       })();
 

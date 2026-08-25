@@ -1,5 +1,7 @@
 import { applyMinimalUi } from './topbar.js';
 import { initLirTooltip } from './lir-tooltip.js';
+import { parkNavHistory, refreshNavHistory } from './nav-history.js';
+import { isNavHamburgerActive } from './nav-hamburger.js';
 
 /* Give every page that renders the WISE nav the shared floating tooltip. This
    covers the per-module header controls uniformly — the three-dot "More
@@ -660,6 +662,7 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
   if (options.appNav) {
     navEl.classList.add('menu-nav-app');
     navEl.setAttribute('aria-label', 'WISE platform navigation');
+    try { parkNavHistory(); } catch (_) { /* sidebar not in nav yet */ }
     navEl.innerHTML = renderAppNav(prefix, options.activeNavId || null);
     finalizeMenu(navEl);
     return;
@@ -718,7 +721,7 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
           </button>
         </a>
         <div class="menu-nav-children" id="menu-nav-${escAttr(id)}" role="region" aria-label="${escAttr(node.label)} agents"${collapsedAttrs}>
-          <div class="menu-nav-children-inner">
+          <div class="menu-nav-children-inner menu-nav-tree-inner">
             ${childrenHtml}
           </div>
         </div>
@@ -758,7 +761,7 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
           </button>
         </a>
         <div class="menu-nav-children" id="menu-nav-${escAttr(sectionId)}" role="region" aria-label="${escAttr(sec.label)}"${collapsedAttrs}>
-          <div class="menu-nav-children-inner">
+          <div class="menu-nav-children-inner menu-nav-tree-inner">
             ${childrenHtml}
           </div>
         </div>
@@ -788,7 +791,7 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
             </button>
           </a>
           <div class="menu-nav-children" id="menu-nav-${escAttr(productId)}" role="region" aria-label="${escAttr(product.label)} sections"${collapsedAttrs}>
-            <div class="menu-nav-children-inner">
+            <div class="menu-nav-children-inner menu-nav-tree-inner">
               ${sectionsHtml}
             </div>
           </div>
@@ -816,9 +819,79 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
   };
 
   navEl.setAttribute('aria-label', 'WISE platform navigation');
+  try { parkNavHistory(); } catch (_) { /* sidebar not in nav yet */ }
   navEl.innerHTML = TOP_LEVEL_PRODUCT_IDS.map(renderProduct).join('');
 
   finalizeMenu(navEl);
+}
+
+/* Size History-style tree spines / rounded elbows on primary-nav groups
+   (WISEcodeAI, WISEcode Admin, nested folders, History fallback). Mirrors
+   layoutProjectTrees in js/chat-history.js: the horizontal runs into the
+   child icon, and the last child's L-elbow is where the spine ends. */
+export function layoutNavTrees(navRoot) {
+  const nav = navRoot
+    || document.getElementById('agent-menu-nav')
+    || document.querySelector('#menu-panel .menu-nav');
+  if (!nav) return;
+  const panel = document.getElementById('menu-panel');
+  if (panel && (panel.classList.contains('mp-rail')
+      || panel.classList.contains('mp-pivot')
+      || panel.classList.contains('minimal-ui'))) return;
+
+  nav.querySelectorAll('.menu-nav-tree-inner').forEach((inner) => {
+    const group = inner.closest('.menu-nav-group');
+    if (!group || group.dataset.open !== 'true') return;
+    const toggle = group.querySelector(':scope > .menu-nav-toggle');
+    const icon = toggle && (toggle.querySelector('.menu-nav-icon') || toggle.querySelector('.menu-nav-subicon'));
+    if (!icon) return;
+    const innerRect = inner.getBoundingClientRect();
+    const iconRect = icon.getBoundingClientRect();
+    if (!innerRect.height || !iconRect.height) return;
+
+    const spineX = iconRect.left + iconRect.width / 2;
+    const lift = Math.max(2, Math.round(innerRect.top - iconRect.bottom));
+    inner.style.setProperty('--nav-spine-left', Math.round(spineX - innerRect.left) + 'px');
+    inner.style.setProperty('--nav-spine-lift', lift + 'px');
+
+    const kids = inner.children;
+    for (let i = 0; i < kids.length; i++) {
+      const el = kids[i];
+      const row = el.classList.contains('menu-nav-group')
+        ? (el.querySelector(':scope > .menu-nav-toggle') || el)
+        : el;
+      const target = row.querySelector('.menu-nav-subicon')
+        || row.querySelector('.menu-nav-icon')
+        || row.querySelector('.material-symbols-outlined');
+      if (!target) continue;
+      const rowRect = row.getBoundingClientRect();
+      const tRect = target.getBoundingClientRect();
+      if (!rowRect.height || !tRect.height) continue;
+      const y = tRect.top + tRect.height / 2 - rowRect.top;
+      /* Outlined glyphs have no fill to mask a stroke, so stop a couple of
+         pixels into the icon instead of running through it. */
+      const w = tRect.left + 3 - spineX;
+      const left = spineX - rowRect.left;
+      if (y > 4) row.style.setProperty('--nav-elbow-h', Math.round(y) + 'px');
+      if (w > 8) row.style.setProperty('--nav-elbow-w', Math.round(w) + 'px');
+      row.style.setProperty('--nav-elbow-left', Math.round(left) + 'px');
+    }
+
+    const last = inner.lastElementChild;
+    if (!last) return;
+    const lastRow = last.classList.contains('menu-nav-group')
+      ? (last.querySelector(':scope > .menu-nav-toggle') || last)
+      : last;
+    let elbow = parseFloat(getComputedStyle(lastRow).getPropertyValue('--nav-elbow-h'));
+    if (!elbow) elbow = Math.max(1, Math.round(lastRow.offsetHeight / 2));
+    inner.style.setProperty('--nav-tree-end', (last.offsetTop + elbow) + 'px');
+  });
+}
+
+function scheduleNavTrees(navEl) {
+  layoutNavTrees(navEl);
+  requestAnimationFrame(() => layoutNavTrees(navEl));
+  setTimeout(() => layoutNavTrees(navEl), 240);
 }
 
 /* Wire the rail-collapse + pivot behaviours and the expand/collapse toggle
@@ -827,6 +900,8 @@ export function mountAgentMenu(navEl, activeId, options = {}) {
 function finalizeMenu(navEl) {
   setupMenuRail(navEl);
   setupMenuPivot(navEl);
+  try { refreshNavHistory(); } catch (_) { /* nav-history is optional on first paint */ }
+  scheduleNavTrees(navEl);
 
   navEl.addEventListener('click', (e) => {
     const chevron = e.target.closest('[class~="menu-nav-chevron-btn"]');
@@ -852,6 +927,12 @@ function finalizeMenu(navEl) {
       } else {
         childrenEl.setAttribute('inert', '');
         childrenEl.setAttribute('aria-hidden', 'true');
+      }
+    }
+    if (willOpen) {
+      scheduleNavTrees(navEl);
+      if (groupId === 'nav-history') {
+        try { document.dispatchEvent(new CustomEvent('wise:nav-history-open')); } catch (_) {}
       }
     }
   });
@@ -978,7 +1059,7 @@ function renderAppGroup(prefix, node, activeId) {
         </button>
       </a>
       <div class="menu-nav-children" id="menu-nav-${escAttr(node.id)}" role="region" aria-label="${escAttr(node.label)}"${collapsedAttrs}>
-        <div class="menu-nav-children-inner">
+        <div class="menu-nav-children-inner menu-nav-tree-inner">
           ${childrenHtml}
         </div>
       </div>
@@ -1040,6 +1121,17 @@ function setupMenuRail(navEl) {
   const btn = document.getElementById('topbar-menu-toggle');
   if (!btn) return;
 
+  const applyHamburgerSkin = () => {
+    if (!isNavHamburgerActive()) return;
+    if (panel.classList.contains('minimal-ui') || panel.classList.contains('mp-pivot')) return;
+    if (!panel.classList.contains('mp-rail')) return;
+    const icon = btn.querySelector('.material-symbols-outlined');
+    const label = 'Open navigation';
+    btn.setAttribute('aria-label', label);
+    btn.setAttribute('title', label);
+    if (icon) icon.textContent = 'menu';
+  };
+
   const apply = (railed) => {
     panel.classList.toggle('mp-rail', railed);
     btn.setAttribute('aria-pressed', railed ? 'true' : 'false');
@@ -1048,6 +1140,8 @@ function setupMenuRail(navEl) {
     btn.setAttribute('title', label);
     const icon = btn.querySelector('.material-symbols-outlined');
     if (icon) icon.textContent = railed ? 'chevron_right' : 'chevron_left';
+    applyHamburgerSkin();
+    if (!railed) scheduleNavTrees(navEl);
   };
 
   /* The menu button sits to the right of the logo and reflects the nav state:
@@ -1132,6 +1226,8 @@ function setupMenuRail(navEl) {
     /* The Appearance popover's "Icons only" toggle flips `.mp-rail` directly;
        re-skin the chevron so it reflects the new collapsed/expanded state. */
     document.addEventListener('wise:menu-rail', refreshToggleSkin);
+    document.addEventListener('wise:nav-hamburger', refreshToggleSkin);
+    document.addEventListener('wise:app-search', refreshToggleSkin);
   }
 
   brand.appendChild(btn);
@@ -1168,8 +1264,9 @@ function setupMenuRailTooltip() {
   };
 
   const show = (row) => {
+    const floated = row.closest('.menu-footer--search-float');
     const panel = row.closest('#menu-panel.mp-rail, #menu-panel.mp-pivot');
-    if (!panel) return;
+    if (!floated && !panel) return;
     /* Most rows carry their text in `.menu-nav-label`; the upgrade card labels
        it as `.menu-nav-upgrade-title` instead, so fall back to that. */
     const labelEl = row.querySelector('.menu-nav-label') || row.querySelector('.menu-nav-upgrade-title');
@@ -1178,8 +1275,8 @@ function setupMenuRailTooltip() {
     current = row;
     tip.textContent = label;
     const r = row.getBoundingClientRect();
-    if (panel.classList.contains('mp-pivot')) {
-      /* Horizontal bar — float the label below the hovered icon. */
+    if (floated || panel.classList.contains('mp-pivot')) {
+      /* Horizontal bar / search-row cluster — float the label below the icon. */
       tip.classList.add('menu-rail-tip-below');
       tip.style.top = `${Math.round(r.bottom + 8)}px`;
       tip.style.left = `${Math.round(r.left + r.width / 2)}px`;
@@ -1316,4 +1413,15 @@ export function getDirectChildren(id) {
  *  order, with depth metadata for indentation in the overview list. */
 export function getDescendants(id) {
   return collectDescendantIds(id);
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('wise:nav-tree-layout', () => scheduleNavTrees());
+  document.addEventListener('wise:nav-history', () => scheduleNavTrees());
+  window.addEventListener('resize', () => layoutNavTrees());
+  try {
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => layoutNavTrees()).catch(() => {});
+    }
+  } catch (_) { /* fonts API optional */ }
 }

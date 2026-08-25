@@ -95,7 +95,7 @@
       '.topbar-menu-item--admin .topbar-menu-icon{color:rgb(219,39,119) !important;}',
       '.topbar-menu-item--admin:hover{background:rgba(236,72,153,0.12);color:rgb(219,39,119);}',
       'html.dark .topbar-menu-item--admin:hover{background:rgba(236,72,153,0.16);}',
-      '.topbar-menu-badge{margin-left:auto;flex-shrink:0;padding:1px 5px;border-radius:5px;background:rgb(219,39,119);color:#fff;font-size:8.5px;font-weight:700;letter-spacing:0.06em;line-height:1.4;}'
+      '.topbar-menu-badge{margin-left:auto;flex-shrink:0;padding:0 3.5px;border-radius:3px;background:rgb(219,39,119);color:#fff;font-size:7px;font-weight:700;letter-spacing:0.04em;line-height:1.25;}'
     ].join('\n');
     var style = document.createElement('style');
     style.id = STYLE_ID;

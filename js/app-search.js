@@ -13,7 +13,7 @@
  */
 
 import { listGeneratedReports, getGeneratedReport } from './generated-reports.js';
-import { restoreFullBleed } from './topbar.js';
+import { restoreFullBleed, syncSearchFloatedFooter } from './topbar.js';
 
 const LS_KEY = 'wise-app-search';
 const HTML_CLASS = 'app-search-on';
@@ -104,7 +104,9 @@ export function applyAppSearch(on, persist = true) {
   if (val) {
     document.documentElement.classList.remove('full-bleed', 'fb-chat-only');
     mountSearchRow();
+    try { syncSearchFloatedFooter(); } catch (_) { /* footer not mounted yet */ }
   } else {
+    try { syncSearchFloatedFooter(); } catch (_) { /* footer not mounted yet */ }
     unmountSearchRow();
     try { restoreFullBleed(); } catch (_) { /* topbar not ready */ }
   }
@@ -535,7 +537,14 @@ function findShell() {
 }
 
 function unmountSearchRow() {
-  document.getElementById('wise-app-search')?.remove();
+  const search = document.getElementById('wise-app-search');
+  const footer = search?.querySelector('.menu-footer');
+  const inner = document.querySelector('#menu-panel .menu-inner');
+  if (footer && inner && footer.parentElement !== inner) {
+    footer.classList.remove('menu-footer--search-float');
+    inner.appendChild(footer);
+  }
+  search?.remove();
   document.documentElement.classList.remove(HTML_CLASS);
 }
 
@@ -547,10 +556,13 @@ function mountSearchRow() {
   el.innerHTML = `
     <div class="wise-app-search-inner">
       <div class="wise-app-search-field">
-        <span class="material-symbols-outlined" aria-hidden="true">search</span>
+        <span class="wise-app-search-ph" aria-hidden="true">
+          <span class="material-symbols-outlined">search</span>
+          <span class="wise-app-search-ph-label">Search reports, files, and documents</span>
+        </span>
         <input type="search" class="wise-app-search-input" id="wise-app-search-input"
-          placeholder="Search transcripts, outputs, and reports"
-          autocomplete="off" spellcheck="false" aria-label="Search transcripts, outputs, and reports"
+          placeholder="Search reports, files, and documents"
+          autocomplete="off" spellcheck="false" aria-label="Search reports, files, and documents"
           aria-controls="wise-app-search-results" aria-autocomplete="list" />
         <button type="button" class="wise-app-search-clear" hidden aria-label="Clear search">
           <span class="material-symbols-outlined">close</span>
@@ -587,7 +599,7 @@ function wireSearchRow(root) {
     const { toks, groups } = searchIndex(q);
     flat = [];
     if (!groups.length) {
-      panel.innerHTML = `<div class="wise-app-search-empty">No transcripts, outputs, or reports match <strong>${esc(q.trim())}</strong>.</div>`;
+      panel.innerHTML = `<div class="wise-app-search-empty">No files, reports, or documents match <strong>${esc(q.trim())}</strong>.</div>`;
       setOpen(true);
       active = -1;
       return;
@@ -664,7 +676,7 @@ function wireSearchRow(root) {
     }
   });
   document.addEventListener('pointerdown', (e) => {
-    if (!root.contains(e.target)) setOpen(false);
+    if (!root.contains(e.target) || e.target.closest('.menu-footer')) setOpen(false);
   });
 }
 

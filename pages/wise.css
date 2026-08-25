@@ -168,8 +168,9 @@
 
   /* Canonical single-pane chat width — every chat module (Family A #chat-shell,
      the studio panes .rf-chat/.ap-chat/.sa-chat, and the injected WISEcodeAI dock)
-     loads at this exact width on every page so the chat never changes size
-     between pages. */
+     uses this width at the single tier. Default tier is screen-based: single on
+     laptop-class viewports (≤1512 CSS px), double when wider — see
+     WPaneWidth.defaultChatTier() in js/pane-width.js. */
   --chat-pane-w: 380px;
 
   /* Canonical right-module headline — the display title of whatever module sits
@@ -311,7 +312,7 @@ html.app-search-on:has(#modules-row .wch-sidebar.wch-docked.wch-rail:not(.wch-ri
   display: flex;
   justify-content: center;
   width: 100%;
-  max-width: 480px;
+  max-width: 600px;
   box-sizing: border-box;
 }
 .wise-app-search-field {
@@ -321,32 +322,64 @@ html.app-search-on:has(#modules-row .wch-sidebar.wch-docked.wch-rail:not(.wch-ri
   display: flex;
   align-items: center;
 }
-.wise-app-search-field > .material-symbols-outlined {
+/* Empty state: magnifying glass + placeholder copy sit as one centered
+   cluster inside the pill. Native ::placeholder is kept for a11y but
+   painted transparent so it does not stack on the overlay. */
+.wise-app-search-ph {
   position: absolute;
-  left: 12px;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 40px;
+  box-sizing: border-box;
+  pointer-events: none;
+  color: var(--text-subtle);
+  font-size: 13px;
+  line-height: 1;
+}
+.wise-app-search-ph .material-symbols-outlined {
+  position: static;
+  left: auto;
   font-size: 20px;
   color: var(--text-subtle);
-  pointer-events: none;
+  flex-shrink: 0;
 }
+.wise-app-search-ph-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.7;
+}
+.wise-app-search.has-q .wise-app-search-ph {
+  justify-content: flex-start;
+  padding-left: 12px;
+}
+.wise-app-search.has-q .wise-app-search-ph-label { display: none; }
 .wise-app-search-input {
   width: 100%;
   height: 38px;
   box-sizing: border-box;
-  padding: 0 40px 0 40px;
+  padding: 0 40px;
   border-radius: 999px;
   font: inherit;
   font-size: 13px;
   color: var(--text);
   outline: none;
+  text-align: center;
   background: rgba(20, 40, 80, 0.04);
   border: 1px solid rgba(0, 0, 0, 0.10);
   transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
 }
+.wise-app-search.has-q .wise-app-search-input { text-align: left; }
 html.dark .wise-app-search-input {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.12);
 }
-.wise-app-search-input::placeholder { color: var(--text-subtle); opacity: 0.7; }
+.wise-app-search-input::placeholder { color: transparent; opacity: 0; }
 .wise-app-search-input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; display: none; }
 .wise-app-search-input:focus {
   border-color: var(--primary, #2F6DF6);
@@ -354,6 +387,7 @@ html.dark .wise-app-search-input {
 }
 .wise-app-search-clear {
   position: absolute;
+  z-index: 3;
   right: 8px;
   width: 24px;
   height: 24px;
@@ -475,6 +509,57 @@ html.dark .wise-app-search-hit.is-active {
 html.dark .wise-app-search-hit mark {
   background: color-mix(in srgb, var(--ter-amber, #FFC434) 28%, transparent);
 }
+
+/* Search on (Appearance ▸ Admin ▸ Search): Appearance + avatar float to the
+   far right of the search row. Only then — turning Search off restores
+   them to the nav footer. Phones keep the drawer footer (see sync in
+   js/topbar.js). */
+@media (min-width: 769px) {
+  .menu-footer.menu-footer--search-float {
+    position: absolute;
+    right: 8px;
+    left: auto;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 51;
+    margin: 0;
+    border: 0;
+    padding: 0;
+    width: auto;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    background: transparent;
+  }
+  .menu-footer.menu-footer--search-float .menu-footer-actions {
+    flex-direction: row;
+    width: auto;
+    gap: 2px;
+  }
+  .menu-footer.menu-footer--search-float .menu-footer-layout,
+  .menu-footer.menu-footer--search-float .menu-footer-profile {
+    width: auto;
+  }
+  .menu-footer.menu-footer--search-float .menu-nav-item {
+    justify-content: center;
+    gap: 0;
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+    padding: 0;
+    margin: 0;
+  }
+  .menu-footer.menu-footer--search-float .menu-nav-label,
+  .menu-footer.menu-footer--search-float .menu-footer-identity {
+    display: none !important;
+  }
+  .menu-footer.menu-footer--search-float .menu-footer-profile--rich .menu-nav-icon.menu-footer-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 11px;
+  }
+}
+
 .wa-block.wise-search-flash {
   outline: 2px solid var(--primary);
   outline-offset: 3px;
@@ -599,12 +684,13 @@ html.app-search-on #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-br
   display: none !important;
 }
 
-/* Narrow windows: the centered 480px field would slide under the overflowing
+/* Narrow windows: the centered field would slide under the overflowing
    wordmark. Push the field right of the mark; wide windows stay centered. */
 @media (max-width: 720px) {
   html.app-search-on #chat-shell-wrap.menu-brand-integrated:not(.menu-pivoted):has(#menu-panel.mp-rail:not(.mp-pivot)) .wise-app-search,
   html.app-search-on #agent-shell-wrap.menu-brand-integrated:not(.menu-pivoted):has(#menu-panel.mp-rail:not(.mp-pivot)) .wise-app-search {
     padding-left: 128px;
+    padding-right: 80px;
     justify-content: flex-start;
   }
   html.app-search-on #chat-shell-wrap.menu-brand-integrated:not(.menu-pivoted):has(#menu-panel.mp-rail:not(.mp-pivot)) .wise-app-search-inner,
@@ -673,6 +759,84 @@ html.app-search-on #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-bar .topbar-me
 }
 html.app-search-on .menu-brand-integrated #menu-panel.mp-rail:not(.mp-pivot) .menu-panel-body {
   padding-top: calc(3px + 32px + var(--app-search-toggle-gap) - 4px);
+}
+
+/* Search on + Menu icon: collapsed nav becomes a hamburger to the left of
+   the unchanged wordmark (no 54px icon rail). Desktop only — phones keep
+   the floating owl + drawer from the mobile-nav block. */
+@media (min-width: 769px) {
+  html.app-search-on.nav-hamburger {
+    --nav-hamburger-w: 32px;
+    --nav-hamburger-gap: 8px;
+    --nav-hamburger-col: calc(var(--modules-bottom-pad, 12px) + 6px - var(--nav-rail-gap, 2px) + var(--nav-hamburger-w));
+  }
+  /* Menu occupies only the search-band row so modules are not indented
+     by an empty rail. The wordmark still overflows into the search cell. */
+  html.app-search-on.nav-hamburger #agent-shell-wrap.menu-brand-integrated:not(.menu-pivoted):has(#menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui)),
+  html.app-search-on.nav-hamburger #chat-shell-wrap.menu-brand-integrated:not(.menu-pivoted):has(#menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui)) {
+    grid-template-columns: var(--nav-hamburger-col) 1fr;
+    grid-template-rows: var(--app-search-band-h) minmax(0, 1fr);
+    grid-template-areas:
+      "menu search"
+      "modules modules";
+    column-gap: 0;
+  }
+  html.app-search-on.nav-hamburger .menu-brand-integrated #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) {
+    z-index: 45;
+    overflow: visible;
+    height: var(--app-search-band-h);
+    max-height: var(--app-search-band-h);
+    align-self: start;
+    margin-left: 0 !important;
+  }
+  html.app-search-on.nav-hamburger #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui).mp-open,
+  html.app-search-on.nav-hamburger #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) .menu-inner {
+    width: var(--nav-hamburger-col) !important;
+    min-width: var(--nav-hamburger-col) !important;
+    max-width: none !important;
+    height: var(--app-search-band-h) !important;
+    min-height: var(--app-search-band-h) !important;
+    max-height: var(--app-search-band-h) !important;
+    overflow: visible !important;
+    background: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+  html.app-search-on.nav-hamburger #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) .menu-panel-body {
+    display: none !important;
+  }
+  /* Appearance + avatar leave the panel (see .menu-footer--search-float).
+     Do not hide .menu-footer here — JS parks it on the search row. */
+  html.app-search-on.nav-hamburger #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) .menu-brand-bar .topbar-menu-toggle {
+    position: absolute !important;
+    left: calc(var(--modules-bottom-pad, 12px) + 6px - var(--nav-rail-gap, 2px)) !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: var(--nav-hamburger-w) !important;
+    min-height: var(--nav-hamburger-w) !important;
+    padding: 0 !important;
+    margin-left: 0;
+    z-index: 51;
+  }
+  html.app-search-on.nav-hamburger #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) .menu-brand-bar .topbar-menu-toggle .material-symbols-outlined {
+    font-size: 24px !important;
+  }
+  html.app-search-on.nav-hamburger #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) .menu-brand-logo,
+  html.app-search-on.nav-hamburger #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) .menu-brand-logo {
+    left: calc(var(--modules-bottom-pad, 12px) + 6px - var(--nav-rail-gap, 2px) + var(--nav-hamburger-w) + var(--nav-hamburger-gap));
+  }
+  @media (max-width: 880px) {
+    html.app-search-on.nav-hamburger #chat-shell-wrap.menu-brand-integrated:not(.menu-pivoted):has(#menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui)) .wise-app-search,
+    html.app-search-on.nav-hamburger #agent-shell-wrap.menu-brand-integrated:not(.menu-pivoted):has(#menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui)) .wise-app-search {
+      padding-left: 200px;
+      padding-right: 80px;
+      justify-content: flex-start;
+    }
+    html.app-search-on.nav-hamburger #chat-shell-wrap.menu-brand-integrated:not(.menu-pivoted):has(#menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui)) .wise-app-search-inner,
+    html.app-search-on.nav-hamburger #agent-shell-wrap.menu-brand-integrated:not(.menu-pivoted):has(#menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui)) .wise-app-search-inner {
+      justify-content: flex-start;
+    }
+  }
 }
 
 /* Search on: every sticky / docked module matches the chat card's height.
@@ -1277,14 +1441,14 @@ html.dark .topbar-menu-item--admin:hover { background: rgba(236, 72, 153, 0.16);
 .topbar-menu-badge {
   margin-left: auto;
   flex-shrink: 0;
-  padding: 1px 5px;
-  border-radius: 5px;
+  padding: 0 3.5px;
+  border-radius: 3px;
   background: rgb(219, 39, 119);
   color: #fff;
-  font-size: 8.5px;
+  font-size: 7px;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  line-height: 1.4;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
 }
 
 /* Compact pink switch on the toggle rows (mirrors the old hero brand toggle).
@@ -1457,14 +1621,15 @@ a.wise-popover-item { text-decoration: none; }
 .wise-popover-badge {
   margin-left: auto;
   flex-shrink: 0;
-  padding: 1px 6px;
-  border-radius: 5px;
+  align-self: center;
+  padding: 0 3.5px;
+  border-radius: 3px;
   background: rgb(219, 39, 119);
   color: #fff;
-  font-size: 8.5px;
+  font-size: 7px;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  line-height: 1.5;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
   text-transform: uppercase;
 }
 .wise-popover-item .wise-popover-badge + .wise-popover-ext { margin-left: 6px; }
@@ -3106,7 +3271,14 @@ html.dark .menu-nav-chevron-btn:hover { background: rgba(255,255,255,0.06); }
   padding: 0;
   max-height: 0;
 }
-.menu-nav-group[data-open="true"] > .menu-nav-children { grid-template-rows: 1fr; }
+.menu-nav-group[data-open="true"] > .menu-nav-children {
+  grid-template-rows: 1fr;
+  /* Spines reach up into the parent icon; clip only while collapsed. */
+  overflow: visible;
+}
+.menu-nav-group[data-open="true"] > .menu-nav-children > .menu-nav-children-inner {
+  overflow: visible;
+}
 .menu-nav-children-inner {
   overflow: hidden;
   min-height: 0;
@@ -3219,8 +3391,190 @@ html.dark .menu-nav-subitem.is-active .menu-nav-subicon { color: var(--primary-b
 #menu-panel.mp-rail .menu-nav-section,
 #menu-panel.minimal-ui .menu-nav-section { display: none; }
 
+/* History merged into the primary nav (Appearance ▸ Layout ▸ History in
+   navigation). The live History module moves into the History group so
+   search, new conversation, projects, and chat actions keep working.
+   Turns (.wch-right) is untouched. A leftover copy still sitting in the
+   modules row is hidden; the in-nav copy is dressed to match the nav. */
+html.nav-history .wch-scrim {
+  display: none !important;
+}
+html.nav-history #modules-row .wch-sidebar:not(.wch-right):not(.wch-in-nav) {
+  display: none !important;
+}
+.wch-sidebar.wch-in-nav,
+.wch-sidebar.wch-docked.wch-in-nav,
+.wch-sidebar.wch-open.wch-in-nav {
+  position: relative !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  z-index: auto !important;
+  display: flex !important;
+  flex: 0 1 auto !important;
+  flex-direction: column;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: auto !important;
+  max-height: none !important;
+  align-self: stretch !important;
+  box-sizing: border-box !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  color: inherit !important;
+  overflow: visible !important;
+  animation: none !important;
+  /* Match the nav fill so the circular folder mask covers the spine the
+     same way the standalone History module does. */
+  --wch-tree-bg: var(--surface-2, var(--surface));
+}
+html.dark .wch-sidebar.wch-in-nav {
+  --wch-tree-bg: #1A2339;
+  background: transparent !important;
+}
+html.nav-history #menu-panel .wch-sidebar.wch-in-nav {
+  --wch-tree-bg: var(--surface-2, var(--surface));
+}
+html.dark.nav-history #menu-panel .wch-sidebar.wch-in-nav {
+  --wch-tree-bg: #1A2339;
+}
+.wch-sidebar.wch-in-nav .wch-head,
+.wch-sidebar.wch-in-nav .wch-rail-btn {
+  display: none !important;
+}
+.wch-sidebar.wch-in-nav .wch-search-row,
+.wch-sidebar.wch-in-nav .wch-list,
+.wch-sidebar.wch-in-nav .wch-projects,
+html.dark .wch-sidebar.wch-in-nav .wch-search-row {
+  background: transparent !important;
+}
+.wch-sidebar.wch-in-nav .wch-search-row {
+  margin: 2px 0 6px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  min-width: 0;
+}
+.wch-sidebar.wch-in-nav .wch-new {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+}
+html.nav-history #menu-panel .wch-sidebar.wch-in-nav .wch-proj-toggle {
+  background: var(--wch-tree-bg);
+}
+/* Collapsed icon rail cannot host the live History module — hide children
+   until the nav is expanded (clicking History opens the rail). */
+#menu-panel.mp-rail .menu-nav-group[data-group="nav-history"] > .menu-nav-children,
+#menu-panel.minimal-ui .menu-nav-group[data-group="nav-history"] > .menu-nav-children {
+  display: none !important;
+}
+.wch-sidebar.wch-in-nav .wch-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: min(52vh, 480px);
+  overflow-y: auto;
+  padding: 0 0 8px;
+}
+.menu-nav-group[data-group="nav-history"] > .menu-nav-children > .menu-nav-children-inner {
+  padding: 4px 0 8px;
+  margin-left: 8px;
+  border-left: none;
+  overflow: visible;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.menu-nav-history-empty {
+  opacity: 0.55;
+  pointer-events: none;
+  cursor: default;
+}
+.menu-nav-history-live .menu-nav-subicon .material-symbols-outlined {
+  color: var(--primary);
+}
+
+/* ===== NAV TREE LINES (History-module language) =====
+   Spine from the parent icon plus a rounded L-elbow into each child icon,
+   matching js/chat-history.js. JS (layoutNavTrees) sizes --nav-spine-* and
+   --nav-elbow-* so the stroke runs into the icon; icons paint on top. */
+.menu-nav-tree-inner {
+  --nav-tree: color-mix(in srgb, var(--text-subtle, #8B9FAF) 52%, transparent);
+  --nav-tree-radius: 10px;
+  --nav-tree-end: 16px;
+  --nav-spine-left: 16px;
+  --nav-spine-lift: 11px;
+  position: relative;
+}
+html.dark .menu-nav-tree-inner {
+  --nav-tree: rgba(255, 255, 255, 0.20);
+}
+.menu-nav-group[data-open="true"] > .menu-nav-children > .menu-nav-tree-inner {
+  margin-left: 0;
+  padding: 2px 4px 6px 28px;
+  border-left: none;
+  overflow: visible;
+}
+.menu-nav-group[data-open="true"] > .menu-nav-children > .menu-nav-tree-inner:not(:empty)::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: var(--nav-spine-left);
+  top: calc(-1 * var(--nav-spine-lift));
+  width: 1px;
+  height: calc(var(--nav-spine-lift) + var(--nav-tree-end) - var(--nav-tree-radius) + 1px);
+  background: var(--nav-tree);
+  pointer-events: none;
+}
+.menu-nav-tree-inner > .menu-nav-subitem,
+.menu-nav-tree-inner > .menu-nav-group > .menu-nav-toggle {
+  position: relative;
+  overflow: visible;
+}
+.menu-nav-tree-inner > .menu-nav-subitem::before,
+.menu-nav-tree-inner > .menu-nav-group > .menu-nav-toggle::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: var(--nav-elbow-left, -6px);
+  width: var(--nav-elbow-w, 22px);
+  height: calc(var(--nav-tree-radius) + 6px);
+  top: calc(var(--nav-elbow-h, 16px) - var(--nav-tree-radius) - 6px);
+  border: 0;
+  border-left: 1px solid var(--nav-tree);
+  border-bottom: 1px solid var(--nav-tree);
+  border-bottom-left-radius: var(--nav-tree-radius);
+  box-sizing: border-box;
+  background: transparent;
+  pointer-events: none;
+}
+.menu-nav-icon,
+.menu-nav-subicon {
+  position: relative;
+  z-index: 2;
+}
+.menu-nav-group > .menu-nav-toggle {
+  position: relative;
+  z-index: 2;
+}
+#menu-panel.mp-rail .menu-nav-tree-inner::before,
+#menu-panel.mp-rail .menu-nav-tree-inner > .menu-nav-subitem::before,
+#menu-panel.mp-rail .menu-nav-tree-inner > .menu-nav-group > .menu-nav-toggle::before,
+#menu-panel.mp-pivot .menu-nav-tree-inner::before,
+#menu-panel.mp-pivot .menu-nav-tree-inner > .menu-nav-subitem::before,
+#menu-panel.mp-pivot .menu-nav-tree-inner > .menu-nav-group > .menu-nav-toggle::before,
+#menu-panel.minimal-ui .menu-nav-tree-inner::before,
+#menu-panel.minimal-ui .menu-nav-tree-inner > .menu-nav-subitem::before,
+#menu-panel.minimal-ui .menu-nav-tree-inner > .menu-nav-group > .menu-nav-toggle::before {
+  display: none;
+}
+
 /* App-nav admin children: drop the dashed rail for a flatter, indented list. */
-.menu-nav-app .menu-nav-children-inner {
+.menu-nav-app .menu-nav-children-inner:not(.menu-nav-tree-inner) {
   border-left: none;
   margin-left: 12px;
   padding: 2px 0 4px 8px;
@@ -4112,7 +4466,7 @@ html.dark .agent-main-scroll { background: transparent; }
 .nfp-panel-header .panel-more-btn,
 .nfp-panel-header .panel-width-toggle-btn {
   color: #fff;
-  opacity: 0.9;
+  opacity: 0.55;
 }
 .nfp-panel-header .panel-more-btn:hover,
 .nfp-panel-header .panel-more-btn.is-open,
@@ -5666,10 +6020,10 @@ html:not(.dark) .sc-topbar-titles .topbar-title { color: var(--text); }
 .panel-more-btn {
   display: inline-flex; align-items: center; justify-content: center;
   width: 28px; height: 28px; border-radius: 50%; background: transparent; border: 0;
-  color: var(--text-muted); cursor: pointer; opacity: 0.85;
+  color: var(--text-muted); cursor: pointer; opacity: 0.52;
   transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
 }
-.panel-more-btn .material-symbols-outlined { font-size: 18px !important; line-height: 1 !important; }
+.panel-more-btn .material-symbols-outlined { font-size: 16px !important; line-height: 1 !important; }
 /* Opaque circle behind the icon on hover so content scrolling underneath a
    floated header never bleeds through the glyph. */
 .panel-more-btn:hover { opacity: 1; background: var(--surface-3); color: var(--text); }
@@ -5686,10 +6040,10 @@ html:not(.dark) .sc-topbar-titles .topbar-title { color: var(--text); }
 .panel-width-toggle-btn {
   display: inline-flex; align-items: center; justify-content: center;
   width: 28px; height: 28px; border-radius: 50%; background: transparent; border: 0;
-  color: var(--text-muted); opacity: 0.75; cursor: pointer; padding: 0; flex-shrink: 0;
+  color: var(--text-muted); opacity: 0.52; cursor: pointer; padding: 0; flex-shrink: 0;
   transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
-.panel-width-toggle-btn .material-symbols-outlined { font-size: 18px !important; line-height: 1 !important; }
+.panel-width-toggle-btn .material-symbols-outlined { font-size: 16px !important; line-height: 1 !important; }
 /* Opaque circle behind the icon on hover / active so scrolling content under a
    floated header never shows through. */
 .panel-width-toggle-btn:hover { opacity: 1; color: var(--text); background: var(--surface-3); }
@@ -8761,9 +9115,9 @@ html.dark .dash-status-tip {
   color: var(--text-muted);
 }
 .dash-status-tip-dot--excellent { background: var(--sec-green, #32A966); }
-.dash-status-tip-dot--good { background: #7DC470; }
+.dash-status-tip-dot--good { background: var(--chart-status-good, #7DC470); }
 .dash-status-tip-dot--okay { background: var(--ter-amber, #FFC434); }
-.dash-status-tip-dot--fair { background: #D27326; }
+.dash-status-tip-dot--fair { background: var(--chart-status-fair, #D27326); }
 .dash-status-tip-dot--poor { background: var(--sec-red, #DC3038); }
 
 /* The Portfolio Analysis section is the last block on the page, so its status
@@ -9296,10 +9650,10 @@ html.dark .dash-tab.is-active { background: rgba(255, 255, 255, 0.08); }
   margin: 12px 0;
 }
 .dash-badge--excellent { background: color-mix(in srgb, var(--sec-green) 18%, transparent); color: var(--sec-green-text); }
-.dash-badge--good { background: color-mix(in srgb, #7DC470 24%, transparent); color: var(--sec-green-text); }
+.dash-badge--good { background: color-mix(in srgb, var(--chart-status-good, #7DC470) 24%, transparent); color: var(--sec-green-text); }
 .dash-badge--okay { background: color-mix(in srgb, var(--ter-amber) 18%, transparent); color: #a07a10; }
 html.dark .dash-badge--okay { color: #d4a830; }
-.dash-badge--fair { background: color-mix(in srgb, #D27326 18%, transparent); color: #9e4a10; }
+.dash-badge--fair { background: color-mix(in srgb, var(--chart-status-fair, #D27326) 18%, transparent); color: #9e4a10; }
 html.dark .dash-badge--fair { color: #e08840; }
 .dash-badge--poor { background: color-mix(in srgb, var(--sec-red) 18%, transparent); color: #8e1818; }
 html.dark .dash-badge--poor { color: #f07070; }

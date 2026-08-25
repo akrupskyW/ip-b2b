@@ -296,6 +296,9 @@
       '.wch-item.wch-dragging{opacity:.45;}',
       '.wch-ungrouped{border-radius:10px;min-height:20px;}',
       '.wch-ungrouped.wch-drop-on{background:color-mix(in srgb,var(--primary,#2F6DF6) 12%,transparent);outline:1px dashed color-mix(in srgb,var(--primary,#2F6DF6) 50%,transparent);}',
+      /* All conversations — ungrouped threads, same folder chrome as a project,
+         muted icon, no ⋯ menu. */
+      '.wch-project.wch-loose > .wch-project-head .wch-proj-toggle{color:var(--text-muted,var(--text-subtle,#8B9FAF));}',
       /* Floating action popover (per-chat "move to project"). */
       '.wch-pop{position:fixed;z-index:80;min-width:210px;max-width:260px;padding:6px;border-radius:12px;',
         'background:var(--card,var(--surface,#0F1830));color:var(--text,#C5CFD7);border:1px solid rgba(255,255,255,0.12);box-shadow:0 14px 38px rgba(0,0,0,0.42);}',
@@ -594,6 +597,11 @@
        a slim column of icons + project dots, like the primary nav's icon rail.
        Toggled from the module's three-dot menu; persisted per surface. */
     var railMode = !!stored.rail;
+    /* Last user-chosen rail state — kept across a temporary expand while History
+       is embedded in the primary nav, so writeStore never clobbers the pref. */
+    var railPersist = railMode;
+    /* Loose-chats folder (ungrouped threads). Default expanded. */
+    var ungroupedCollapsed = stored.ungroupedCollapsed === true;
     /* Transient project-editing UI state (never persisted). */
     var editingProjectId = null;   /* project row shown as an inline name input */
     var editingItemId = null;      /* conversation row shown as an inline name input */
@@ -745,7 +753,10 @@
       var cleanProjects = projects.map(function (p) {
         return { id: p.id, name: p.name, color: p.color, ts: p.ts, collapsed: p.collapsed === true };
       });
-      try { localStorage.setItem(storageKey, JSON.stringify({ v: 1, seedV: seedVersion, items: clean, projects: cleanProjects, seeded: seeded, docked: docked, rail: railMode })); } catch (_) {}
+      try { localStorage.setItem(storageKey, JSON.stringify({ v: 1, seedV: seedVersion, items: clean, projects: cleanProjects, seeded: seeded, docked: docked, rail: railPersist, ungroupedCollapsed: ungroupedCollapsed === true })); } catch (_) {}
+      try {
+        document.dispatchEvent(new CustomEvent('wise:chat-history-change', { detail: { storageKey: storageKey } }));
+      } catch (_) {}
     }
 
     /* ── Projects (chat grouping) — full CRUD ── */
@@ -802,6 +813,11 @@
       var proj = findProject(id);
       if (!proj) return;
       proj.collapsed = !proj.collapsed;
+      writeStore();
+      render();
+    }
+    function toggleUngroupedCollapse() {
+      ungroupedCollapsed = !ungroupedCollapsed;
       writeStore();
       render();
     }
@@ -1071,6 +1087,16 @@
         body.style.setProperty('--wch-tree-end', (last.offsetTop + elbow) + 'px');
       });
     }
+    var treeLayoutTick = 0;
+    function scheduleProjectTrees() {
+      layoutProjectTrees();
+      requestAnimationFrame(layoutProjectTrees);
+      if (treeLayoutTick) clearTimeout(treeLayoutTick);
+      treeLayoutTick = setTimeout(function () {
+        treeLayoutTick = 0;
+        layoutProjectTrees();
+      }, 240);
+    }
 
     function render() {
       var q = query.trim().toLowerCase();
@@ -1118,43 +1144,42 @@
         }
         html += '</div></div>';
       });
-      html += '</div>';
 
-      /* ── Ungrouped conversations (day-grouped, as before) ── */
-      var ungrouped = items.filter(function (it) { return !it.projectId && matches(it); });
-      var ungroupedHtml = '';
-      var lastGroup = null;
-      ungrouped.forEach(function (it) {
-        var g = dayLabel(it.ts);
-        if (g !== lastGroup) { ungroupedHtml += '<div class="wch-group">' + esc(g) + '</div>'; lastGroup = g; }
-        ungroupedHtml += (editingItemId === it.id && !railMode) ? itemEditRowHtml(it) : itemHtml(it, true);
-      });
-
+      /* ── All conversations (ungrouped) — always a collapsible folder, same pattern
+         as a project, so they are not a flat leftover list. Dropping here
+         clears projectId. No ⋯ menu: this is not a real project. ── */
+      var ungroupedAll = items.filter(function (it) { return !it.projectId; });
+      var ungrouped = ungroupedAll.filter(matches);
+      var looseCollapsed = ungroupedCollapsed && !filtering;
+      var looseBody = '';
       if (!items.length) {
-        ungroupedHtml = '<div class="wch-empty">No saved conversations yet.<br>Start chatting, then use “New conversation” to file this one here.</div>';
+        looseBody = '<div class="wch-project-empty">No saved conversations yet. Start chatting, then use “New conversation” to file this one here.</div>';
       } else if (filtering && !items.some(matches)) {
         var why = mcpOnly && !q
           ? 'No conversations used the MCP server.'
           : mcpOnly
             ? 'No MCP-server conversations match “' + esc(query.trim()) + '”.'
             : 'No conversations match “' + esc(query.trim()) + '”.';
-        ungroupedHtml = '<div class="wch-empty">' + why + '</div>';
-      }
-
-      /* When projects exist, wrap the ungrouped list in a drop zone so a chat can
-         be dragged back out of a project (dropping here clears its projectId). */
-      if (projects.length && !filtering) {
-        var zoneBody = items.length && !ungrouped.length
-          ? '<div class="wch-group">Ungrouped</div><div class="wch-project-empty">All chats are in projects. Drop one here to ungroup it.</div>'
-          : ungroupedHtml;
-        html += '<div class="wch-ungrouped" data-ungrouped-zone>' + zoneBody + '</div>';
+        looseBody = '<div class="wch-project-empty">' + why + '</div>';
+      } else if (!ungrouped.length) {
+        looseBody = '<div class="wch-project-empty">' + (filtering ? 'No matches here.' : 'All chats are in projects. Drop one here to ungroup it.') + '</div>';
       } else {
-        html += ungroupedHtml;
+        ungrouped.forEach(function (it) {
+          looseBody += (editingItemId === it.id && !railMode) ? itemEditRowHtml(it) : itemHtml(it);
+        });
       }
+      html += '<div class="wch-project wch-loose wch-ungrouped' + (looseCollapsed ? ' wch-collapsed' : '') + '" data-ungrouped-zone>';
+      html += '<div class="wch-project-head" data-loose-head role="button" tabindex="0" aria-expanded="' + (looseCollapsed ? 'false' : 'true') + '"' + (railMode ? ' data-tip="All conversations"' : '') + '>' +
+        '<button type="button" class="wch-proj-toggle" data-loose-toggle tabindex="-1" aria-label="Expand or collapse all conversations"><span class="material-symbols-outlined">' + (looseCollapsed ? 'folder' : 'folder_open') + '</span></button>' +
+        '<span class="wch-proj-name">All conversations</span>' +
+        '<span class="wch-proj-count">' + ungroupedAll.length + '</span>' +
+      '</div>';
+      html += '<div class="wch-project-body">' + looseBody + '</div></div>';
+
+      html += '</div>';
 
       listEl.innerHTML = html;
-      layoutProjectTrees();
-      requestAnimationFrame(layoutProjectTrees);
+      scheduleProjectTrees();
 
       /* Focus any open inline name editor (create / rename). */
       var editInput = listEl.querySelector('.wch-proj-edit-input');
@@ -1580,7 +1605,10 @@
       var id = dragItemId;
       dragItemId = null;
       clearDropHints();
-      moveToProject(id, proj ? proj.getAttribute('data-proj-id') : null);
+      /* Loose-chats folder is also `.wch-project` (for folder chrome) but has no
+         project id — dropping there ungroups. Prefer that over a null attr. */
+      if (zone || (proj && proj.hasAttribute('data-ungrouped-zone'))) moveToProject(id, null);
+      else moveToProject(id, proj ? proj.getAttribute('data-proj-id') : null);
     });
 
     /* ── Search ── */
@@ -1612,6 +1640,11 @@
       sidebar.style.setProperty('min-width', '0px', 'important');
     }
     function revealDocked() {
+      if (sidebar.classList.contains('wch-in-nav')) {
+        sidebar.classList.remove('wch-docked-hidden', 'wch-dock-conceal', 'wch-dock-reveal');
+        applyDockWidth();
+        return;
+      }
       clearTimeout(concealTimer);
       clearTimeout(revealTimer);
       sidebar.classList.remove('wch-dock-conceal', 'wch-dock-reveal');
@@ -1651,6 +1684,12 @@
       return sidebar.classList.contains('wch-docked-hidden') || sidebar.classList.contains('wch-dock-conceal');
     }
     function open() {
+      if (sidebar.classList.contains('wch-in-nav')) {
+        render();
+        sidebar.classList.remove('wch-docked-hidden', 'wch-dock-conceal', 'wch-dock-reveal');
+        applyDockWidth();
+        return;
+      }
       /* Broken-out mode is a persistent module, not an overlay — "open" re-renders
          it (so it reflects the latest threads) and slides it out from behind the
          chat. No scrim, no overlay slide. */
@@ -1763,6 +1802,16 @@
     var RAIL_W = 66;
     function applyDockWidth() {
       /* Icon-rail mode pins a fixed slim width, ignoring the width tiers. */
+      if (sidebar.classList.contains('wch-in-nav')) {
+        try { global.WisePaneResize && global.WisePaneResize.release && global.WisePaneResize.release([sidebar]); } catch (_) {}
+        sidebar.style.setProperty('flex', '0 1 auto', 'important');
+        sidebar.style.setProperty('width', '100%', 'important');
+        sidebar.style.setProperty('min-width', '0', 'important');
+        sidebar.style.setProperty('max-width', '100%', 'important');
+        sidebar.style.setProperty('height', 'auto', 'important');
+        sidebar.style.setProperty('box-sizing', 'border-box', 'important');
+        return;
+      }
       if (railMode) {
         try { global.WisePaneResize && global.WisePaneResize.release && global.WisePaneResize.release([sidebar]); } catch (_) {}
         sidebar.style.setProperty('flex', '0 0 ' + RAIL_W + 'px', 'important');
@@ -1830,7 +1879,7 @@
       }
       if (railExpandTimer) { clearTimeout(railExpandTimer); railExpandTimer = null; }
     }
-    function setRail(on) {
+    function setRail(on, persist) {
       var next = !!on;
       var expanding = railMode && !next;
       railMode = next;
@@ -1871,7 +1920,33 @@
       } else {
         render();               /* re-render so item/project rail labels attach */
       }
-      writeStore();
+      if (persist !== false) {
+        railPersist = railMode;
+        writeStore();
+      }
+    }
+    /* Temporarily expand labels while History is embedded in the primary nav.
+       Does not persist — railPersist still holds the user's last choice. */
+    function prepareNavEmbed() {
+      cancelRailExpand();
+      railMode = false;
+      sidebar.classList.remove('wch-rail', 'wch-docked-hidden', 'wch-dock-conceal', 'wch-dock-reveal');
+      sidebar.setAttribute('data-pr-lock', '');
+      applyDockWidth();
+      render();
+    }
+    function releaseNavEmbed() {
+      if (railPersist) {
+        railMode = true;
+        sidebar.classList.add('wch-rail');
+        sidebar.setAttribute('data-pr-lock', '');
+      } else {
+        railMode = false;
+        sidebar.classList.remove('wch-rail');
+        sidebar.removeAttribute('data-pr-lock');
+      }
+      applyDockWidth();
+      render();
     }
     /* Host toggles this when it tucks the docked module in behind the chat. */
     function setSticky(on) {
@@ -1937,10 +2012,11 @@
       /* Icon-rail: everything is collapsed to an icon, so clicking a project
          folder or a conversation icon opens a popover with the actions (rename/delete,
          open/move/delete) rather than the inline hover controls. */
-      if (railMode) {
+      if (railMode && !sidebar.classList.contains('wch-in-nav')) {
         /* Minimized: a click anywhere on the rail simply MAXIMIZES the panel —
            the user then works with the full controls inside the expanded module.
-           (No inline popovers while minimized.) */
+           (No inline popovers while minimized.) Skip this while History is
+           embedded in the primary nav — labels are forced on there. */
         if (e.target.closest('.wch-proj-edit')) return;
         e.stopPropagation();
         setRail(false);
@@ -1956,6 +2032,10 @@
       if (pToggle) { e.stopPropagation(); toggleProjectCollapse(pToggle.getAttribute('data-proj-toggle')); return; }
       var pHead = e.target.closest('[data-proj-head]');
       if (pHead) { toggleProjectCollapse(pHead.getAttribute('data-proj-head')); return; }
+      var looseToggle = e.target.closest('[data-loose-toggle]');
+      if (looseToggle) { e.stopPropagation(); toggleUngroupedCollapse(); return; }
+      var looseHead = e.target.closest('[data-loose-head]');
+      if (looseHead) { toggleUngroupedCollapse(); return; }
       /* Ignore clicks inside the inline name editor. */
       if (e.target.closest('.wch-proj-edit')) return;
       /* The drag handle is a drag affordance only — a plain click on it should
@@ -1979,6 +2059,8 @@
       if (e.target.closest('.wch-proj-edit-input')) return;
       var pHead = e.target.closest('[data-proj-head]');
       if (pHead) { e.preventDefault(); toggleProjectCollapse(pHead.getAttribute('data-proj-head')); return; }
+      var looseHead = e.target.closest('[data-loose-head]');
+      if (looseHead) { e.preventDefault(); toggleUngroupedCollapse(); return; }
       var item = e.target.closest('[data-wch-id]');
       if (item) { e.preventDefault(); restore(item.getAttribute('data-wch-id')); }
     });
@@ -1990,8 +2072,13 @@
     else updateDockButton();
 
     /* Hosts that keep History as an on-demand drawer start it docked but tucked
-       in behind the chat (hidden); the three-dot "History" toggle reveals it. */
-    if (docked && opts.breakoutStartHidden === true) sidebar.classList.add('wch-docked-hidden');
+       in behind the chat (hidden); the three-dot "History" toggle reveals it.
+       Skip when the pane is already living in the primary nav — setDocked's
+       store write can re-enter mountGroup and adopt first, and adding hidden
+       afterwards would fight that. */
+    if (docked && opts.breakoutStartHidden === true && !sidebar.classList.contains('wch-in-nav')) {
+      sidebar.classList.add('wch-docked-hidden');
+    }
 
     /* Restore the icon-rail (minimized) state, but only where it applies — the
        docked module that carries pane-style chrome. */
@@ -2007,6 +2094,14 @@
       requestAnimationFrame(function () { sidebar.classList.add('wch-anim'); });
     });
 
+    if (typeof ResizeObserver !== 'undefined') {
+      try { new ResizeObserver(function () { layoutProjectTrees(); }).observe(listEl); } catch (_) {}
+    }
+    window.addEventListener('resize', layoutProjectTrees);
+    document.addEventListener('wise:nav-history-open', function () {
+      if (sidebar.classList.contains('wch-in-nav')) scheduleProjectTrees();
+    });
+
     var api = {
       toggle: toggle, open: open, close: close, isOpen: isOpen,
       saveCurrent: saveCurrent, startNew: startNew, restore: restore,
@@ -2014,6 +2109,9 @@
       add: add, currentTitle: currentTitle,
       setDocked: setDocked, isDocked: function () { return docked; },
       setSticky: setSticky,
+      prepareNavEmbed: prepareNavEmbed,
+      releaseNavEmbed: releaseNavEmbed,
+      layoutTrees: scheduleProjectTrees,
       /* Projects (chat grouping) CRUD, exposed for host integrations. */
       createProject: function (name, color) { var p = createProject(name, color); render(); return p; },
       renameProject: function (id, name, color) { renameProject(id, name, color); render(); },

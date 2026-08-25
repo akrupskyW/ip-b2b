@@ -588,6 +588,53 @@
     .wa-empty-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 700; font-size: 15px; color: var(--text); }
     .wa-empty-sub { font-size: 12.5px; line-height: 1.5; max-width: 300px; }
 
+    /* Output pane loading — same pending-ghost bars, scan sweep, and breathing
+       owl that product-comparison.html uses while a board is still assembling.
+       Fills the sticky module so engage-to-surface is never a blank cream panel. */
+    .wa-pane-body.is-loading {
+      display: flex; flex-direction: column;
+      padding: 14px 16px 18px;
+    }
+    .wa-pane-skel {
+      position: relative;
+      flex: 1 1 auto; min-height: 0; width: 100%;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .wa-pane-skel-board {
+      flex: 1 1 auto; min-height: 0;
+      display: flex; flex-direction: column;
+    }
+    .wa-pane-skel-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      flex: 1 1 0;
+      min-height: 44px;
+    }
+    .wa-pane-skel-row--head { flex: 2.1 1 0; min-height: 88px; }
+    .wa-pane-skel-row .cmp-cell {
+      display: flex; align-items: center; min-width: 0;
+    }
+    .wa-pane-skel-row--head .cmp-cell { align-items: stretch; padding: 10px; }
+    .wa-pane-skel-tile .cmp-ghost {
+      height: 100%; min-height: 64px; width: 100%;
+      border-radius: 10px;
+    }
+    .wa-pane-skel-row:not(.wa-pane-skel-row--head) .cmp-ghost.cmp-ghost--bar { width: 68%; }
+    .wa-pane-skel-row:not(.wa-pane-skel-row--head) .cmp-cell:nth-child(2) .cmp-ghost--bar { width: 86%; }
+    .wa-pane-skel-row:not(.wa-pane-skel-row--head) .cmp-cell:nth-child(3) .cmp-ghost--bar { width: 52%; }
+    .wa-pane-skel-row:not(.wa-pane-skel-row--head) .cmp-cell:nth-child(4) .cmp-ghost--bar { width: 74%; }
+    .wa-pane-skel-owl {
+      position: absolute; left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 7; pointer-events: none;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .wa-pane-skel-owl svg { width: 64px; height: auto; display: block; }
+    @media (prefers-reduced-motion: reduce) {
+      .wa-pane-skel-board.is-recalcing::after { animation: none; opacity: 0; }
+    }
+
     /* ── Section scaffolding inside panes ── */
     .wa-block { margin: 0 0 26px; }
     .wa-block:last-child { margin-bottom: 0; }
@@ -4088,7 +4135,7 @@
   <!-- WISEcodeAI — mounts the shared chat (left) and drives the scripted transcript,
        opening the Results & Details / Visuals panes as data surfaces. -->
   <script type="module">
-    import { mountWISEcodeAIChat } from '../js/wiseai-chat.js';
+    import { mountWISEcodeAIChat, OWL_BUG } from '../js/wiseai-chat.js';
     import { saveGeneratedReport } from '../js/generated-reports.js';
 
     /* ═════════ Data (copy + rows lifted verbatim from the WISEcodeAI transcript) ═════════ */
@@ -4507,8 +4554,49 @@
         if (typeof recomputeSoloPaneWidth === 'function') recomputeSoloPaneWidth();
       }, DOCK_ANIM_MS + 40);
     }
+    /* While the chat is thinking, the Output sticky module is already open
+       (onEngage) but no .wa-block has landed yet. Fill that gap with the
+       product-comparison loading pose — pending ghost bars, scan sweep, and
+       the breathing owl — so the pane is never a blank cream screen. */
+    function outputSkelMarkup() {
+      const cell = '<div class="cmp-cell cmp-cell--entity is-pending"><span class="cmp-ghost cmp-ghost--bar"></span></div>';
+      const tile = '<div class="cmp-cell cmp-cell--entity is-pending wa-pane-skel-tile"><span class="cmp-ghost cmp-ghost--bar"></span></div>';
+      const row = (head) => '<div class="wa-pane-skel-row' + (head ? ' wa-pane-skel-row--head' : '') + '">' + (head ? tile : cell).repeat(4) + '</div>';
+      return '<div class="wa-pane-skel" role="status" aria-live="polite" aria-label="Loading output">' +
+        '<div class="wa-pane-skel-board cmp-grid-wrap is-recalcing">' +
+          row(true) + row(false) + row(false) + row(false) + row(false) + row(false) + row(false) +
+        '</div>' +
+        '<div class="cmp-owl-loader wa-pane-skel-owl">' + OWL_BUG + '</div>' +
+      '</div>';
+    }
+    function showOutputSkeleton(which) {
+      const dest = which || (mergedMode ? 'unified' : 'results');
+      const body = paneBody[dest];
+      const el = paneEl[dest];
+      if (!body) return;
+      if (paneBlocks(dest).length) return;
+      if (body.querySelector('.wa-pane-skel')) {
+        body.classList.add('is-loading');
+        if (el) el.setAttribute('aria-busy', 'true');
+        return;
+      }
+      body.insertAdjacentHTML('afterbegin', outputSkelMarkup());
+      body.classList.add('is-loading');
+      if (el) el.setAttribute('aria-busy', 'true');
+    }
+    function hideOutputSkeleton(which) {
+      const keys = which ? [which] : ['unified', 'results', 'visuals'];
+      keys.forEach((k) => {
+        const body = paneBody[k];
+        if (!body) return;
+        body.querySelectorAll('.wa-pane-skel').forEach((n) => n.remove());
+        body.classList.remove('is-loading');
+        paneEl[k]?.removeAttribute('aria-busy');
+      });
+    }
     function engageConversationLayout() {
       const dest = mergedMode ? 'unified' : 'results';
+      showOutputSkeleton(dest);
       ensurePaneOpen(paneEl[dest]);
     }
     function disengageConversationLayout() {
@@ -4549,6 +4637,7 @@
       const tallyBefore = paneBlocks(dest).length;
       let firstAdded = null;
       const addedBlocks = [];
+      if (html != null) hideOutputSkeleton(dest);
       if (html != null) {
         const tmp = document.createElement('div');
         tmp.innerHTML = html;
@@ -4991,7 +5080,11 @@
           closeReportItemMenus();
           if (typeof shareContext !== 'undefined' && shareContext === 'report') closeShareModal();
         }
-        if (paneBody[which]) { paneBody[which].innerHTML = ''; paneBody[which].classList.remove('is-carousel'); }
+        if (paneBody[which]) {
+          paneBody[which].innerHTML = '';
+          paneBody[which].classList.remove('is-carousel', 'is-loading');
+        }
+        if (el) el.removeAttribute('aria-busy');
         if (paneTrack[which]) { paneTrack[which].innerHTML = ''; paneTrack[which].classList.remove('is-on', 'is-min', 'is-grouped', 'is-stacked'); }
         if (paneNavBtns[which]) paneNavBtns[which].innerHTML = '';
         if (paneCount[which]) paneCount[which].innerHTML = '';
@@ -5385,24 +5478,39 @@
       bootReportItemContent(item);
       persistGeneratedReport(false);
     }
-    function placeReportPop(pop, btn) {
+    /* Pin a report dropdown in viewport space. `fromRect` keeps Swap (and any
+       follow-on panel) glued to the same top-right corner as the ⋯ menu it
+       replaced, instead of re-anchoring from the button with the new height. */
+    function placeReportPop(pop, btn, fromRect) {
+      pop.style.position = 'fixed';
+      pop.style.right = 'auto';
+      pop.style.bottom = 'auto';
       pop.style.visibility = 'hidden';
       if (!pop.parentNode) document.body.appendChild(pop);
-      const r = btn.getBoundingClientRect();
       const pw = pop.offsetWidth || 240;
       const ph = pop.offsetHeight || 120;
-      let left = r.right - pw;
-      let top = r.top - ph - 8;
-      if (top < 8) {
-        if (r.right + 8 + pw <= window.innerWidth - 8) {
-          left = r.right + 8;
-          top = Math.max(8, Math.min(r.top, window.innerHeight - ph - 8));
-        } else {
-          top = 8;
+      let left;
+      let top;
+      if (fromRect) {
+        left = fromRect.right - pw;
+        top = fromRect.top;
+      } else {
+        const r = btn.getBoundingClientRect();
+        left = r.right - pw;
+        top = r.top - ph - 8;
+        if (top < 8) {
+          if (r.right + 8 + pw <= window.innerWidth - 8) {
+            left = r.right + 8;
+            top = Math.max(8, Math.min(r.top, window.innerHeight - ph - 8));
+          } else {
+            top = r.bottom + 8;
+          }
         }
       }
       if (left < 8) left = 8;
       if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+      if (top < 8) top = 8;
+      if (top + ph > window.innerHeight - 8) top = Math.max(8, window.innerHeight - ph - 8);
       pop.style.left = left + 'px';
       pop.style.top = top + 'px';
       pop.style.visibility = '';
@@ -5415,6 +5523,33 @@
       });
       if (rptItemPop) { rptItemPop.remove(); rptItemPop = null; }
       if (rptSwapPop) { rptSwapPop.remove(); rptSwapPop = null; }
+    }
+    /* Pane ⋯ popovers portal onto <body> (js/popover-layer.js), so a live
+       `[data-pane-more] .topbar-popover` query misses them while they're open.
+       Close via the node reference captured at wire time. */
+    function closeAllPaneMoreMenus() {
+      document.querySelectorAll('[data-pane-more]').forEach((wrap) => {
+        const btn = wrap.querySelector('.panel-more-btn');
+        const pop = wrap.__panePop || wrap.querySelector('.topbar-popover');
+        if (pop) pop.classList.add('hidden');
+        if (btn) {
+          btn.classList.remove('is-open');
+          btn.setAttribute('aria-expanded', 'false');
+        }
+      });
+    }
+    function reportOrPaneMenuContains(node) {
+      const t = node && node.nodeType === 1 ? node : node && node.parentElement;
+      if (!t || !t.closest) return false;
+      if (rptItemPop && rptItemPop.contains(t)) return true;
+      if (rptSwapPop && rptSwapPop.contains(t)) return true;
+      if (t.closest('.wa-rpt-more, .wa-rpt-item-pop, .wa-rpt-swap-pop')) return true;
+      for (const wrap of document.querySelectorAll('[data-pane-more]')) {
+        if (wrap.contains(t)) return true;
+        const pop = wrap.__panePop;
+        if (pop && pop.contains(t)) return true;
+      }
+      return false;
     }
     function startRenameReportItem(item) {
       const title = item.querySelector('.wa-rpt-item-title');
@@ -5436,6 +5571,9 @@
       syncReportName();
     }
     function openReportSwapPop(item, btn) {
+      const fromRect = (rptItemPop && rptItemPop.isConnected)
+        ? rptItemPop.getBoundingClientRect()
+        : (rptSwapPop && rptSwapPop.isConnected ? rptSwapPop.getBoundingClientRect() : null);
       closeReportItemMenus();
       btn.classList.add('is-open');
       btn.setAttribute('aria-expanded', 'true');
@@ -5445,6 +5583,7 @@
       rptSwapPop.className = 'wa-rpt-swap-pop';
       rptSwapPop.setAttribute('role', 'listbox');
       rptSwapPop.setAttribute('aria-label', 'Swap output');
+      rptSwapPop.setAttribute('data-popover-static', '');
       const rows = catalog.map((entry) => {
         const label = paneSlideLabel(entry.block, entry.which, entry.i);
         const ver = titledropVerLabel(entry.block);
@@ -5471,7 +5610,7 @@
         closeReportItemMenus();
       });
       document.body.appendChild(rptSwapPop);
-      placeReportPop(rptSwapPop, btn);
+      placeReportPop(rptSwapPop, btn, fromRect);
     }
     function openReportItemMenu(item, btn) {
       closeReportItemMenus();
@@ -5480,6 +5619,7 @@
       rptItemPop = document.createElement('div');
       rptItemPop.className = 'topbar-popover wa-rpt-item-pop';
       rptItemPop.setAttribute('role', 'menu');
+      rptItemPop.setAttribute('data-popover-static', '');
       rptItemPop.innerHTML =
         `<button type="button" class="topbar-menu-item" data-rpt-act="rename"><span class="material-symbols-outlined topbar-menu-icon">edit</span><span>Rename</span></button>` +
         `<button type="button" class="topbar-menu-item" data-rpt-act="swap"><span class="material-symbols-outlined topbar-menu-icon">swap_horiz</span><span>Swap output</span></button>` +
@@ -5509,8 +5649,7 @@
           e.stopPropagation();
           if (moreBtn.classList.contains('is-open')) closeReportItemMenus();
           else {
-            document.querySelectorAll('[data-pane-more] .topbar-popover').forEach((p) => p.classList.add('hidden'));
-            document.querySelectorAll('[data-pane-more] .panel-more-btn').forEach((b) => b.classList.remove('is-open'));
+            closeAllPaneMoreMenus();
             closeTitledropPop();
             openReportItemMenu(item, moreBtn);
           }
@@ -5663,16 +5802,16 @@
     document.querySelectorAll('[data-pane-more]').forEach((wrap) => {
       const btn = wrap.querySelector('.panel-more-btn');
       const pop = wrap.querySelector('.topbar-popover');
+      wrap.__panePop = pop;
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        const open = pop.classList.contains('hidden');
-        document.querySelectorAll('[data-pane-more] .topbar-popover').forEach((p) => p.classList.add('hidden'));
-        document.querySelectorAll('[data-pane-more] .panel-more-btn').forEach((b) => b.classList.remove('is-open'));
+        const willOpen = pop.classList.contains('hidden');
+        closeAllPaneMoreMenus();
         closeReportItemMenus();
-        pop.classList.toggle('hidden', !open);
-        btn.classList.toggle('is-open', open);
-        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-        if (open) {
+        if (willOpen) {
+          pop.classList.remove('hidden');
+          btn.classList.add('is-open');
+          btn.setAttribute('aria-expanded', 'true');
           syncPaneGsItem(wrap.dataset.paneMore);
           if (wrap.dataset.paneMore === 'unified') { syncTitledropItem(); }
         }
@@ -5718,14 +5857,23 @@
         }
       });
     });
-    document.addEventListener('click', () => {
-      document.querySelectorAll('[data-pane-more] .topbar-popover').forEach((p) => p.classList.add('hidden'));
-      document.querySelectorAll('[data-pane-more] .panel-more-btn').forEach((b) => b.classList.remove('is-open'));
-      closeTitledropPop();
-      closeReportItemMenus();
-    });
+    /* Capture so a click that another handler stopPropagates still dismisses.
+       Popovers may be on <body> (portaled), so test the live node, not a
+       descendant selector from the ⋯ wrap. */
+    document.addEventListener('click', (e) => {
+      const t = e.target;
+      if (!reportOrPaneMenuContains(t)) {
+        closeAllPaneMoreMenus();
+        closeReportItemMenus();
+      }
+      const el = t && t.nodeType === 1 ? t : t && t.parentElement;
+      if (!el || !el.closest || !el.closest('.wa-titledrop-pop, .wa-pane-mast-head')) closeTitledropPop();
+    }, true);
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeReportItemMenus();
+      if (e.key === 'Escape') {
+        closeReportItemMenus();
+        closeAllPaneMoreMenus();
+      }
     });
 
     /* ══════════ Share side panel ══════════

@@ -217,7 +217,7 @@
     .rf-head--badged .rf-head-titles { padding-left: 78px; }
     .rf-head-controls .panel-more-wrap { position: relative; }
     .rf-head--brand .rf-head-controls .panel-more-btn,
-    .rf-head--brand .rf-head-controls .panel-width-toggle-btn { color: rgba(255,255,255,.92); }
+    .rf-head--brand .rf-head-controls .panel-width-toggle-btn { color: rgba(255,255,255,.55); }
     .rf-head--brand .rf-head-controls .panel-more-btn:hover,
     .rf-head--brand .rf-head-controls .panel-more-btn.is-open,
     .rf-head--brand .rf-head-controls .panel-width-toggle-btn:hover,
@@ -1659,12 +1659,14 @@
          algorithm, and the picker stays visible. */
       let GS = true;
 
-      /* Slider config — ranges are per SERVING (canonical); labels convert. */
+      /* Slider config — ranges are per SERVING (canonical); labels convert.
+         Steps match the studio increment: sodium 5 mg, sugar/sat fat/fiber 0.1 g,
+         additives 1. Vitamins/minerals use the stepper below (also by 1). */
       const SLIDERS = [
-        { key: 'sodium', name: 'Sodium', unit: 'mg', min: 0, max: 800, step: 5 }, // 5 mg keeps real label values (e.g. 135) on the grid
-        { key: 'addedSugar', name: 'Added Sugar', unit: 'g', min: 0, max: 60, step: 1 },
-        { key: 'satFat', name: 'Saturated Fat', unit: 'g', min: 0, max: 15, step: 0.5 },
-        { key: 'fiber', name: 'Dietary Fiber', unit: 'g', min: 0, max: 20, step: 0.5 },
+        { key: 'sodium', name: 'Sodium', unit: 'mg', min: 0, max: 800, step: 5 },
+        { key: 'addedSugar', name: 'Added Sugar', unit: 'g', min: 0, max: 60, step: 0.1 },
+        { key: 'satFat', name: 'Saturated Fat', unit: 'g', min: 0, max: 15, step: 0.1 },
+        { key: 'fiber', name: 'Dietary Fiber', unit: 'g', min: 0, max: 20, step: 0.1 },
         { key: 'additives', name: 'Additives to limit', unit: '', min: 0, max: 12, step: 1 },
       ];
       const ALGO_NAME = { G: 'General Foods', M: 'Meat / Dairy / Nuts', F: 'Fats & Oils', V: 'Beverage' };
@@ -1925,9 +1927,9 @@
       /* Per-100-kcal converter (mg or g → per 100 kcal). */
       const per100 = (v) => (state.calories ? (v / state.calories) * 100 : 0);
       /* Display a per-serving value in the currently-selected basis. */
-      function display(key) {
-        const v = state[key];
-        if (key === 'additives') return { num: String(v), unit: '' };
+      function display(key, override) {
+        const v = (override !== undefined) ? override : state[key];
+        if (key === 'additives') return { num: String(Math.round(v)), unit: '' };
         if (basis === '100kcal') return { num: fmt(per100(v), key === 'sodium' ? 0 : 1), unit: (key === 'sodium' ? 'mg' : 'g') + '/100kcal' };
         if (basis === '100g') return { num: fmt(state.grams ? (v / state.grams) * 100 : 0, key === 'sodium' ? 0 : 1), unit: (key === 'sodium' ? 'mg' : 'g') + '/100g' };
         return { num: fmt(v, key === 'sodium' ? 0 : 1), unit: (key === 'sodium' ? 'mg' : 'g') };
@@ -1938,6 +1940,11 @@
          round up (a floor to clear), debit targets round down (a ceiling to stay
          under), so applying a move always crosses the threshold it promises. */
       const stepFor = (key) => (SLIDERS.find((s) => s.key === key) || { step: 1 }).step;
+      function snapStep(v, step) {
+        const s = Number(step);
+        if (!s) return Number(v) || 0;
+        return Math.round(Math.round(Number(v) / s) * s * 1000) / 1000;
+      }
       function snapTo(key, v, dir) {
         const step = stepFor(key);
         const n = dir > 0 ? Math.ceil(v / step - 1e-9) : Math.floor(v / step + 1e-9);
@@ -2064,6 +2071,61 @@
 
       /* ═══════════ Renderers ═══════════ */
       const effortLabel = { low: 'Low effort', med: 'Medium effort', high: 'Higher effort' };
+
+      /* Studio entrance: the fader "dots" glide from the low end to their real
+         value while the readout numerals count up in lock-step, snapping to each
+         control's increment (5 mg / 0.1 g / 1). Runs once when a product first
+         loads into the studio (not on every drag/apply). */
+      let studioEntranceRaf = 0;
+      function animateStudioEntrance() {
+        const controls = document.getElementById('rf-controls');
+        if (!controls) return;
+        let reduce = false;
+        try { reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+        const items = SLIDERS.map((s) => {
+          const input = controls.querySelector(`.rf-range[data-range="${s.key}"]`);
+          const valEl = controls.querySelector(`.rf-ctl-val[data-val="${s.key}"]`);
+          if (!input || !valEl) return null;
+          return { s, input, valEl, from: Number(s.min), to: Number(state[s.key]) };
+        }).filter(Boolean);
+        const vitEl = document.getElementById('rf-vit-val');
+        const vit = vitEl ? { el: vitEl, from: 0, to: Number(state.vitamins) || 0, step: 1 } : null;
+        if (!items.length && !vit) return;
+        if (studioEntranceRaf) { cancelAnimationFrame(studioEntranceRaf); studioEntranceRaf = 0; }
+        const paintSlider = (it, raw) => {
+          const v = snapStep(raw, it.s.step);
+          it.input.value = v;
+          const d = display(it.s.key, v);
+          it.valEl.textContent = d.num + (d.unit ? ' ' + d.unit : '');
+        };
+        const paintVit = (raw) => {
+          if (!vit) return;
+          vit.el.textContent = String(Math.max(0, Math.round(snapStep(raw, vit.step))));
+        };
+        if (reduce) {
+          items.forEach((it) => paintSlider(it, it.to));
+          paintVit(vit ? vit.to : 0);
+          return;
+        }
+        const DUR = 900;
+        const ease = (t) => 1 - Math.pow(1 - t, 3);
+        items.forEach((it) => paintSlider(it, it.from));
+        paintVit(vit ? vit.from : 0);
+        const start = performance.now();
+        const tick = (now) => {
+          const t = Math.min(1, (now - start) / DUR);
+          const e = ease(t);
+          items.forEach((it) => paintSlider(it, it.from + (it.to - it.from) * e));
+          if (vit) paintVit(vit.from + (vit.to - vit.from) * e);
+          if (t < 1) { studioEntranceRaf = requestAnimationFrame(tick); }
+          else {
+            studioEntranceRaf = 0;
+            items.forEach((it) => paintSlider(it, it.to));
+            paintVit(vit ? vit.to : 0);
+          }
+        };
+        studioEntranceRaf = requestAnimationFrame(tick);
+      }
 
       function renderStudio(c) {
         // Sliders
@@ -2830,7 +2892,10 @@
         const r = e.target.closest('[data-range]');
         if (!r) return;
         const key = r.dataset.range;
-        state[key] = parseFloat(r.value);
+        const cfg = SLIDERS.find((s) => s.key === key);
+        const next = snapStep(parseFloat(r.value), cfg.step);
+        state[key] = Math.max(cfg.min, Math.min(cfg.max, next));
+        if (Number(r.value) !== state[key]) r.value = state[key];
         // live number label without full re-render jitter
         const valEl = document.querySelector(`[data-val="${key}"]`);
         if (valEl) { const d = display(key); valEl.textContent = d.num + (d.unit ? ' ' + d.unit : ''); }
@@ -2846,7 +2911,7 @@
         const key = b.dataset.nudge;
         const cfg = SLIDERS.find((s) => s.key === key);
         const dir = parseInt(b.dataset.dir, 10);
-        state[key] = Math.max(cfg.min, Math.min(cfg.max, Math.round((state[key] + dir * cfg.step) * 100) / 100));
+        state[key] = Math.max(cfg.min, Math.min(cfg.max, snapStep(state[key] + dir * cfg.step, cfg.step)));
         afterSliderChange(key);
       });
 
@@ -3521,6 +3586,7 @@
         requestAnimationFrame(() => {
           requestAnimationFrame(fitDashToRow);
         });
+        animateStudioEntrance();
         return p;
       }
       /* Load a product AND open its conversation (dashboard picker rows + deep

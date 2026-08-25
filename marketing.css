@@ -1350,6 +1350,10 @@ html.dark .mkt-galaxy-ring { border-color: color-mix(in srgb, var(--primary-brig
    onToggleWidth hook. Overriding --mkt-chat-w here reflows the ENTIRE shell in
    one move: the rail widens and the body module, footer and floating nav all
    track it, since every offset is expressed in terms of --mkt-chat-w. */
+/* First-paint double-pane default on viewports wider than 1512 CSS px
+   (js/text-size-fouc.js adds html.chat-default-double). In-session, the
+   chat's width toggle still drives body.mkt-chat-wide / -triple / -fill. */
+html.chat-default-double { --mkt-chat-w: 560px; }
 body.mkt-chat-wide { --mkt-chat-w: 560px; }
 body.mkt-chat-wide.mkt-chat-triple { --mkt-chat-w: 720px; }
 /* Fill — the chat rail takes the widest reading column the marketing shell

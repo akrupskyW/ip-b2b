@@ -1,0 +1,25 @@
+---
+description: Chat module default width is single on laptop-class screens, double when wider
+alwaysApply: true
+---
+
+# Chat Module Width
+
+The chat module's **load default** depends on viewport width. The user can still cycle single → double → triple → fill in-session; the next load reapplies this default (do not restore the last toggle).
+
+## Breakpoint
+
+**1512 CSS pixels** — the 14" MacBook Pro class (`window.innerWidth`).
+
+- **≤ 1512** → default **single** (tier 0, `--chat-pane-w` / 380px)
+- **> 1512** → default **double** (tier 1, typically 580px)
+
+Source of truth: `WPaneWidth.defaultChatTier()` in `js/pane-width.js` (FOUC twin in `js/text-size-fouc.js` as `wiseDefaultChatTier`).
+
+## Rules for the agent
+
+- Never hard-reset a chat to `wide: 0` / `widthTier = 0` on load. Use `defaultChatTier()`.
+- Apply the default through the existing `panel-wide` / `panel-triple` / `panel-fill` classes and the width-toggle button. Do not invent a parallel width system.
+- When the user cycles back to single, drop `html.chat-default-double` so the FOUC class cannot pin the chat wide.
+- Right-of-chat modules still default to **fill** (`js/default-fill.js`). That rule is unchanged.
+- On `wiseai.html`, the welcome chat still fills the row; `panel-wide` only sizes the docked column once a result pane is open.

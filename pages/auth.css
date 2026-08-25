@@ -906,10 +906,10 @@ html.dark .sp-header-icon { color: var(--primary-bright); }
 .panel-more-btn {
   display: inline-flex; align-items: center; justify-content: center;
   width: 28px; height: 28px; border-radius: 8px; background: transparent; border: 0;
-  color: var(--text-muted); cursor: pointer; opacity: 0.85;
+  color: var(--text-muted); cursor: pointer; opacity: 0.52;
   transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
 }
-.panel-more-btn .material-symbols-outlined { font-size: 18px !important; line-height: 1 !important; }
+.panel-more-btn .material-symbols-outlined { font-size: 16px !important; line-height: 1 !important; }
 .panel-more-btn:hover { opacity: 1; background: color-mix(in srgb, currentColor 12%, transparent); color: var(--text); }
 .panel-more-btn.is-open { opacity: 1; color: var(--primary-ink, var(--primary)); background: color-mix(in srgb, var(--primary) 14%, transparent); }
 .sp-menu {

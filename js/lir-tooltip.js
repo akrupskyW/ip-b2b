@@ -34,7 +34,7 @@ const TOOLTIP_SELECTOR =
 function ownedElsewhere(btn) {
   if (btn.closest && btn.closest('.wch-sidebar')) return true;
   if (btn.id === 'menu-footer-layout-btn' &&
-      btn.closest('#menu-panel.mp-rail, #menu-panel.mp-pivot')) {
+      btn.closest('#menu-panel.mp-rail, #menu-panel.mp-pivot, .menu-footer--search-float')) {
     return true;
   }
   return false;

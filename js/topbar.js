@@ -177,6 +177,7 @@ export function mountMenuBrand({
 
   shell?.classList.add('menu-brand-integrated');
   syncMenuTogglePlacement();
+  restoreMinimalUi();
   mountMenuFooter({ profileTitle, profileName, profileEmail, avatarText });
   return brand;
 }
@@ -216,7 +217,7 @@ export function mountMenuFooter({
   const avatarInner = avatarImg || esc(initials);
   const avatarClass = avatarImg ? 'menu-nav-icon menu-footer-avatar has-avatar-img' : 'menu-nav-icon menu-footer-avatar';
 
-  let footer = inner.querySelector('.menu-footer');
+  let footer = findMenuFooter();
   if (!footer) {
     footer = document.createElement('div');
     footer.className = 'menu-footer';
@@ -257,7 +258,42 @@ export function mountMenuFooter({
 
   wireMenuFooter();
   mountJamStrip();
+  syncSearchFloatedFooter();
   return footer;
+}
+
+/* Search on: park Appearance + avatar on the search band, at the far
+   right of the row. Search off (or phones): put them back in the nav
+   footer. The search row is removed on toggle-off, so this must run
+   BEFORE unmount or the controls would be deleted with the row. */
+const SEARCH_FOOTER_MQ = '(min-width: 769px)';
+
+function findMenuFooter() {
+  return document.querySelector('#menu-panel .menu-footer')
+    || document.querySelector('#wise-app-search .menu-footer');
+}
+
+/** Move or restore the nav footer at the far right of the search row. */
+export function syncSearchFloatedFooter() {
+  const footer = findMenuFooter();
+  const search = document.getElementById('wise-app-search');
+  const inner = document.querySelector('#menu-panel .menu-inner');
+  if (!footer) return;
+
+  const float = !!(
+    search &&
+    document.documentElement.classList.contains('app-search-on') &&
+    window.matchMedia(SEARCH_FOOTER_MQ).matches
+  );
+
+  if (float) {
+    const slot = search;
+    if (footer.parentElement !== slot) slot.appendChild(footer);
+    footer.classList.add('menu-footer--search-float');
+  } else {
+    footer.classList.remove('menu-footer--search-float');
+    if (inner && footer.parentElement !== inner) inner.appendChild(footer);
+  }
 }
 
 /** True when the popover anchor lives in the menu module footer. */
@@ -287,7 +323,8 @@ export function positionPopoverInMenuPanel(pop, anchor) {
   /* Pivoted into the horizontal top bar, the "panel" spans the full screen
      width — sizing the popover to it would make it huge. Fall back to the
      compact top-bar placement (fit-to-content, dropped below the anchor). */
-  if (anchor.closest('#menu-panel.mp-pivot')) {
+  if (anchor.closest('#menu-panel.mp-pivot') ||
+      anchor.closest('.menu-footer--search-float')) {
     positionPopoverForTopbar(pop, anchor);
     return;
   }
@@ -367,28 +404,43 @@ export function syncThemeKeys() {
    (Appearance), and the avatar. Everything else (the nav list and the
    collapse toggle) is hidden via the `minimal-ui` class on #menu-panel. The
    toggle itself lives inside the Appearance (crossword) popover; the choice is
-   persisted so it survives reloads and page changes. */
-const MINIMAL_UI_KEY = 'wise-minimal-ui';
+   persisted so it survives reloads and page changes.
 
-/** True when minimal UI was last left on. */
+   Defaults to ON (no stored value) so the Appearance toggle and first-run
+   nav match. v2 key — restore used to write the v1 key to "0" on every load,
+   so a fresh key is required for the on-by-default to stick. Keep the FOUC
+   guard in js/text-size-fouc.js in sync with this key and default. */
+const MINIMAL_UI_KEY = 'wise-minimal-ui-v2';
+
+/** True when minimal UI is on. Defaults to ON (no stored value) so the
+    Appearance toggle reflects the real nav state out of the box. */
 export function isMinimalUiOn() {
-  try { return localStorage.getItem(MINIMAL_UI_KEY) === '1'; } catch { return false; }
+  try {
+    const v = localStorage.getItem(MINIMAL_UI_KEY);
+    return v === null ? true : v === '1';
+  } catch { return true; }
 }
 
-/** Reflect minimal-UI state onto the navigation panel and persist it. The
-    Appearance popover reads isMinimalUiOn() to render its own toggle state. */
-export function applyMinimalUi(on) {
+/** Reflect minimal-UI state onto the navigation panel. The Appearance
+    popover reads isMinimalUiOn() to render its own toggle state.
+    @param {boolean} on
+    @param {boolean} [persist=true]  Only an explicit user toggle persists;
+      the initial restore must NOT write, or it would lock in a default. */
+export function applyMinimalUi(on, persist = true) {
   const panel = document.getElementById('menu-panel');
   if (panel) panel.classList.toggle('minimal-ui', !!on);
-  try { localStorage.setItem(MINIMAL_UI_KEY, on ? '1' : '0'); } catch {}
+  if (persist) {
+    try { localStorage.setItem(MINIMAL_UI_KEY, on ? '1' : '0'); } catch {}
+  }
   try {
     document.dispatchEvent(new CustomEvent('wise:minimal-ui', { detail: { on: !!on } }));
   } catch {}
 }
 
-/** Restore the persisted minimal-UI state onto the panel (no popover needed). */
+/** Restore the persisted (or default-on) minimal-UI state onto the panel
+    without writing, so a first visit stays on until the user toggles. */
 export function restoreMinimalUi() {
-  applyMinimalUi(isMinimalUiOn());
+  applyMinimalUi(isMinimalUiOn(), false);
 }
 
 /* Icons only — collapse the navigation to an icons-only rail (all icons, no
@@ -967,15 +1019,22 @@ export function restoreModuleGap() {
 
 /* Colorblind-friendly palettes — remap the semantic status colors (success
    green, danger red, warning amber) to a colorblind-safe set so the red↔green
-   coding stays distinguishable. Color-vision deficiency comes in different
-   forms, and the ideal "safe" palette differs by type, so we ship THREE tuned
-   variants and let the user pick the one that matches their vision:
-     - Deuteranopia (green-weak, the most common)  → Okabe–Ito bluish-green /
-       vermillion / orange, separated on the blue–orange axis.
-     - Protanopia   (red-weak)                     → success shifts to BLUE
-       (protans lose red luminance, so a blue "good" reads far more clearly).
-     - Tritanopia   (blue-yellow-weak, rare)       → the red/green channel is
-       intact, but amber/yellow collides with pink, so warning shifts to PURPLE.
+   coding stays distinguishable. There are three cone systems, so there are
+   three confusion axes — and those three are the complete set of hue-based
+   color-vision deficiencies:
+     - Deuteranopia / deuteranomaly (green-blind / green-weak, most common)
+         Okabe–Ito bluish-green / vermillion / orange, on the blue–orange axis.
+     - Protanopia / protanomaly (red-blind / red-weak)
+         Success shifts to BLUE (protans lose red luminance, so a blue "good"
+         reads far more clearly) and warning shifts to YELLOW so it does not
+         sit on the same orange as vermillion.
+     - Tritanopia / tritanomaly (blue-blind / blue-weak, rare)
+         Red/green is intact. Warning must NOT be blue-purple (tritans cannot
+         see that channel) — Okabe–Ito reddish-purple instead of amber.
+   Anomalous trichromacy (the "weak" forms) shares the same confusion axis as
+   the matching dichromacy, so one palette per axis covers both. Achromatopsia
+   (no hue at all) is not a fourth palette — luminance/contrast (Sharper edges,
+   text size) is the right tool there.
    Rather than re-declaring tokens in every page's :root block, we inject ONE
    stylesheet (scoped to `html.colorblind.cb-*` and their `.dark` variants) that
    overrides the shared design tokens — so every page that loads this module
@@ -986,19 +1045,32 @@ const COLORBLIND_KEY = 'wise-colorblind';
 const COLORBLIND_MODE_KEY = 'wise-colorblind-mode';
 const COLORBLIND_STYLE_ID = 'wise-colorblind-style';
 
-/** Supported CVD types. `class` is the modifier added to <html>; the label is
-    shown in the Appearance picker; `short` labels the compact segmented button. */
+/** Supported CVD types — one per cone system. Each palette also serves the
+    matching anomaly (deuteranomaly with deuteranopia, etc.) because they share
+    a confusion axis. `class` is the modifier added to <html>; `label` is the
+    Appearance tooltip; `short` labels the compact segmented button. */
 export const COLORBLIND_MODES = [
-  { id: 'deuter', class: 'cb-deuter', label: 'Deuteranopia (green-weak)', short: 'Deut' },
-  { id: 'protan', class: 'cb-protan', label: 'Protanopia (red-weak)', short: 'Prot' },
-  { id: 'tritan', class: 'cb-tritan', label: 'Tritanopia (blue-weak)', short: 'Trit' },
+  { id: 'deuter', class: 'cb-deuter', label: 'Green-weak or green-blind (deuteranomaly / deuteranopia)', short: 'Deut' },
+  { id: 'protan', class: 'cb-protan', label: 'Red-weak or red-blind (protanomaly / protanopia)', short: 'Prot' },
+  { id: 'tritan', class: 'cb-tritan', label: 'Blue-green / blue-yellow weak or blind (tritanomaly / tritanopia)', short: 'Trit' },
 ];
 const COLORBLIND_CLASSES = COLORBLIND_MODES.map((m) => m.class);
 const DEFAULT_COLORBLIND_MODE = 'deuter';
 
 /* The *-text shades are darkened (light mode) / lightened (dark mode) so labels
-   keep strong contrast on their translucent tints. */
+   keep strong contrast on their translucent tints. Tints and the five-stop
+   chart scale follow the remapped semantics so chips and charts cannot leak
+   the original green/orange hexes. */
 const COLORBLIND_CSS = `
+html.colorblind {
+  --sec-green-10: color-mix(in srgb, var(--sec-green) 12%, transparent);
+  --sec-red-10: color-mix(in srgb, var(--sec-red) 12%, transparent);
+  --ter-amber-10: color-mix(in srgb, var(--ter-amber) 14%, transparent);
+  --chart-status-excellent: var(--sec-green);
+  --chart-status-okay: var(--ter-amber);
+  --chart-status-poor: var(--sec-red);
+  --chart-status-fair: color-mix(in srgb, var(--ter-amber) 50%, var(--sec-red));
+}
 html.colorblind.cb-deuter {
   --sec-green: #009E73;
   --sec-red: #D55E00;
@@ -1006,6 +1078,7 @@ html.colorblind.cb-deuter {
   --sec-green-text: #006B4F;
   --sec-red-text: #8A3D00;
   --ter-amber-text: #6B4A00;
+  --chart-status-good: #56B4E9;
 }
 html.colorblind.cb-deuter.dark {
   --sec-green-text: #6FD4B5;
@@ -1015,28 +1088,30 @@ html.colorblind.cb-deuter.dark {
 html.colorblind.cb-protan {
   --sec-green: #0072B2;
   --sec-red: #D55E00;
-  --ter-amber: #E69F00;
+  --ter-amber: #F0E442;
   --sec-green-text: #004E7A;
   --sec-red-text: #8A3D00;
-  --ter-amber-text: #6B4A00;
+  --ter-amber-text: #5C4E00;
+  --chart-status-good: #56B4E9;
 }
 html.colorblind.cb-protan.dark {
   --sec-green-text: #7FC4EC;
   --sec-red-text: #FFB07A;
-  --ter-amber-text: #FFD98A;
+  --ter-amber-text: #FFE9A0;
 }
 html.colorblind.cb-tritan {
   --sec-green: #1B7F3B;
   --sec-red: #D01C2E;
-  --ter-amber: #8130A6;
+  --ter-amber: #CC79A7;
   --sec-green-text: #0F5626;
   --sec-red-text: #8E1220;
-  --ter-amber-text: #5C1E77;
+  --ter-amber-text: #7A3A62;
+  --chart-status-good: #6BBF70;
 }
 html.colorblind.cb-tritan.dark {
   --sec-green-text: #7FD69A;
   --sec-red-text: #FF8A97;
-  --ter-amber-text: #D9A6F0;
+  --ter-amber-text: #F0C4DE;
 }
 /* The palette overrides above keep semantic status colors distinct, but on a
    given screen those chips may be sparse — so the effect can look invisible.
@@ -1556,6 +1631,9 @@ function wireColorblindTypePicker() {
 
 if (typeof document !== 'undefined') {
   wireColorblindTypePicker();
+  document.addEventListener('wise:app-search', syncSearchFloatedFooter);
+  document.addEventListener('wise:menu-pivot', syncSearchFloatedFooter);
+  window.addEventListener('resize', syncSearchFloatedFooter);
   document.addEventListener('DOMContentLoaded', () => {
     restoreMinimalUi();
     restoreHeaderFloat();
@@ -1570,8 +1648,11 @@ if (typeof document !== 'undefined') {
     restoreAdminControls();
     const inner = document.querySelector('#menu-panel .menu-inner');
     if (!inner) return;
-    const footer = inner.querySelector('.menu-footer');
+    const footer = findMenuFooter();
     if (!footer || !footer.querySelector('.menu-nav-item')) mountMenuFooter();
-    else wireMenuFooter();
+    else {
+      wireMenuFooter();
+      syncSearchFloatedFooter();
+    }
   });
 }

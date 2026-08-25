@@ -2059,7 +2059,10 @@ function applyScaleEventToAxes(axes, detail) {
      isOn          {fn}   () => whether the shared preference is ON
      isPaused      {fn}   () => whether the (shared) playback is paused —
                           when true the field freezes on its current frame
-                          rather than advancing (the canvas stays visible)
+                          rather than advancing (the canvas stays visible).
+                          Hovering a product circle also freezes locally
+                          until the pointer leaves that popover; that hold
+                          does not flip the shared Play/Pause preference.
      getDensity    {fn}   () => 'full' (default roster) or 'ten' (same node
                           density; ~10 foods swell a bit larger; every other
                           circle is the WISE owl logo bug)
@@ -2763,12 +2766,31 @@ export function createHelixBgAnim(cfg) {
     hideTimer = setTimeout(() => { hideTimer = 0; if (!overCard) hideCard(); }, 140);
   }
 
+  /* Freeze the strand while a product popover is open. Local only — does not
+     write the shared Play/Pause preference. */
+  function pauseForHover() {
+    if (reducedMotion || !running || paused) return;
+    pause();
+  }
+
+  /* Continue after the pointer leaves the popover, unless the member already
+     paused playback from the menu. */
+  function resumeAfterHover() {
+    if (reducedMotion || isPaused()) return;
+    resumeLoop();
+  }
+
+  function cardIsOpen() {
+    return !!(card && !card.hidden);
+  }
+
   /* Fill + place the card on a product. Most bugs get the food sheet + NFP
      link; fact bugs get a brand-insight or look-closer note. `skipRedraw` is
      set when we are already inside draw() so we do not recurse a second paint. */
   function showCard(node, skipRedraw) {
     const p = node.prod;
     if (!p) return;
+    pauseForHover();
     if (hoverImg === p.img) return;
     hoverImg = p.img; hoverX = node.x; hoverY = node.y;
     if (card) {
@@ -2845,6 +2867,7 @@ export function createHelixBgAnim(cfg) {
     const body = canvas && canvas.parentElement;
     if (body) body.style.cursor = '';
     if (!running) redraw();
+    resumeAfterHover();
   }
 
   /* Deep-link into the product's Nutrition Facts (NFP) view — mirrors the portfolio /
@@ -3085,9 +3108,10 @@ export function createHelixBgAnim(cfg) {
       }
       hitNodes.push({ x: n.x, y: n.y, r: rad, prod: n.prod });
     }
-    /* A shown card rides its (moving) circle and closes once the pointer
-       leaves both circle and card — or if its product leaves the frame.
-       A circle drifting back under a parked cursor does not reopen it. */
+    /* A shown card stays glued to its (now frozen) circle and closes once
+       the pointer leaves both circle and card — or if its product leaves
+       the frame. A circle drifting back under a parked cursor does not
+       reopen it. */
     if (hoverImg) {
       let live = null;
       for (let i = hitNodes.length - 1; i >= 0; i--) {
@@ -3157,14 +3181,20 @@ export function createHelixBgAnim(cfg) {
     if (raf) { cancelAnimationFrame(raf); raf = 0; }
   }
 
-  /* Resume from the frozen frame, continuing the loop smoothly (no jump/restart). */
-  function resume() {
+  function resumeLoop() {
     if (!running || !paused) return;
     paused = false;
     const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
     t0 = now - lastT * 1000;                       // continue from the frozen time
     if (raf) cancelAnimationFrame(raf);
     raf = requestAnimationFrame(frame);
+  }
+
+  /* Resume from the frozen frame, continuing the loop smoothly (no jump/restart).
+     A hover popover keeps the hold until the pointer leaves that card. */
+  function resume() {
+    if (cardIsOpen()) return;
+    resumeLoop();
   }
 
   function stop() {
@@ -8352,11 +8382,19 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     'Width (fill) — tap to reset',
   ];
   const scTierOf = (v) => (v === true ? 1 : typeof v === 'number' ? Math.max(0, Math.min(3, v | 0)) : 0);
+  const defaultChatTier = () => {
+    if (window.WPaneWidth && typeof window.WPaneWidth.defaultChatTier === 'function') {
+      return window.WPaneWidth.defaultChatTier();
+    }
+    if (typeof window.wiseDefaultChatTier === 'function') return window.wiseDefaultChatTier();
+    return (window.innerWidth || 0) > 1512 ? 1 : 0;
+  };
   const syncWidthUI = (tier) => {
     tier = scTierOf(tier);
     rootEl.classList.toggle('panel-wide', tier >= 1);
     rootEl.classList.toggle('panel-triple', tier >= 2);
     rootEl.classList.toggle('panel-fill', tier >= 3);
+    if (tier < 1) document.documentElement.classList.remove('chat-default-double');
     const btn = rootEl.querySelector('.panel-width-toggle-btn');
     if (btn) {
       btn.classList.toggle('is-on', tier >= 1);
@@ -8382,6 +8420,14 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     syncWidthUI(next);
     if (typeof opts.onToggleWidth === 'function') opts.onToggleWidth(next);
   });
+  /* Load at the screen default (single on laptop-class ≤1512 CSS px, double
+     when wider). In-session cycling is unchanged; the next navigation reapplies
+     this default rather than restoring the last toggle. */
+  (function applyDefaultChatWidth() {
+    const initial = defaultChatTier();
+    syncWidthUI(initial);
+    if (initial && typeof opts.onToggleWidth === 'function') opts.onToggleWidth(initial);
+  })();
 
   /* "What can I ask?" link (below-input, left) — opens the in-chat help panel
      (break-out-able as a sticky module). The gold chip still also posts a

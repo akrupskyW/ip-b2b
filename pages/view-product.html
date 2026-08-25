@@ -59,7 +59,8 @@
        with the headlines of the modules to the right (matches wiseai.html). */
     #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug { transform: translateY(16px); }
 
-    /* ── Center chat column — always opens single-pane. Holds that width until
+    /* ── Center chat column — single pane on laptop-class screens (≤1512 CSS px),
+       double pane when wider (js/pane-width.js defaultChatTier). Holds that width until
        the Product Details module has given back everything it can, then shrinks
        rather than letting the row overflow. ── */
     .ap-chat {

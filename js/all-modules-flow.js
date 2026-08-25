@@ -524,11 +524,23 @@ function writeReevalStore(patch) {
   try { localStorage.setItem(REEVAL_STORE_KEY, JSON.stringify(next)); } catch (_) { /* quota / private */ }
 }
 
+/* A genuine full crawl discovers essentially every code file the Python
+   scanner did. When a server won't hand back directory listings (e.g. a
+   live-reload wrapper that hides js/ or scripts/), only a handful of
+   root-probed files are found — a gross under-count that must never win over
+   the full baked totals. Reject any live scan that sees far fewer files. */
+function codeScanLooksComplete(scan) {
+  if (!scan || !scan.files) return false;
+  const bakedFiles = Number(((CODE_STATS && CODE_STATS.now) || {}).files || 0);
+  if (bakedFiles && scan.files < bakedFiles * 0.75) return false;
+  return true;
+}
+
 function syncCodeStateFromStore() {
   const bakedAt = (CODE_STATS && CODE_STATS.generatedAt) || '';
   const baked = Object.assign({}, (CODE_STATS && CODE_STATS.now) || {});
   const live = readReevalStore();
-  if (live.now && live.day && live.day >= bakedAt) {
+  if (live.now && live.day && live.day >= bakedAt && codeScanLooksComplete(live.now)) {
     codeState.now = Object.assign({}, live.now);
     codeState.scannedAt = live.day;
   } else {
@@ -1009,41 +1021,41 @@ function swatchHTML(sw) {
   const kind = sw.kind || 'fill';
   const bg = sw.fallback ? `var(${sw.token}, ${sw.fallback})` : `var(${sw.token})`;
   const editable = swatchIsColor(sw);
-  let chip = '';
-  if (kind === 'ink') {
-    chip = `<span class="ds-swatch-chip ds-swatch-chip--ink" style="color:${bg}">Ag</span>`;
-  } else if (kind === 'border') {
-    chip = `<span class="ds-swatch-chip ds-swatch-chip--border" style="border-color:${bg}"></span>`;
-  } else if (kind === 'shadow') {
-    chip = `<span class="ds-swatch-chip ds-swatch-chip--shadow" style="box-shadow:${bg}"></span>`;
+  const fillChip = (attrs) =>
+    `<span class="ds-swatch-well"><span class="ds-swatch-chip" ${attrs} style="background:${bg}"></span></span>`;
+  let chips = '';
+  if (kind === 'shadow') {
+    chips = `<span class="ds-swatch-chip ds-swatch-chip--shadow" style="box-shadow:${bg}"></span>`;
   } else if (kind === 'radius') {
-    chip = `<span class="ds-swatch-chip ds-swatch-chip--radius" style="border-radius:${bg}"></span>`;
+    chips = `<span class="ds-swatch-chip ds-swatch-chip--radius" style="border-radius:${bg}"></span>`;
+  } else if (editable) {
+    chips = `<span class="ds-swatch-pair">
+      ${fillChip('data-swatch-now')}
+      <label class="ds-swatch-pick">
+        <input type="color" data-token-color value="#000000" aria-label="New color for ${esc(sw.token)}" />
+        ${fillChip('data-swatch-next')}
+      </label>
+      <button type="button" class="ds-swatch-reset" data-token-reset disabled title="Undo ${esc(sw.token)} to the theme default" aria-label="Undo ${esc(sw.token)}"><span class="material-symbols-outlined">undo</span></button>
+      <span class="ds-swatch-cap">Now</span>
+      <span class="ds-swatch-cap">New</span>
+      <span class="ds-swatch-cap ds-swatch-cap--undo">Undo</span>
+    </span>`;
   } else {
-    chip = `<span class="ds-swatch-chip" style="background:${bg}"></span>`;
-  }
-  if (editable) {
-    chip = `<label class="ds-swatch-pick">
-      <input type="color" data-token-color value="#000000" aria-label="Set ${esc(sw.token)}" />
-      ${chip}
-    </label>`;
+    chips = fillChip('');
   }
   const val = kind === 'radius'
     ? `<span class="ds-swatch-val">${esc(sw.val || '')}</span>`
     : kind === 'shadow'
       ? '<span class="ds-swatch-val">theme-dependent</span>'
       : `<input type="text" class="ds-swatch-val" data-swatch-val data-token-hex spellcheck="false" autocomplete="off" aria-label="${esc(sw.token)} value" />`;
-  const reset = editable
-    ? `<button type="button" class="ds-swatch-reset" data-token-reset hidden title="Reset ${esc(sw.token)} to the theme default" aria-label="Reset ${esc(sw.token)}"><span class="material-symbols-outlined">restart_alt</span></button>`
-    : '';
   return `
     <div class="ds-swatch${editable ? ' is-editable' : ''}" data-swatch data-kind="${esc(kind)}"${editable ? ` data-token="${esc(sw.token)}"` : ''}>
-      ${chip}
+      ${chips}
       <span class="ds-swatch-meta">
         <span class="ds-swatch-name">${esc(sw.token)}</span>
         ${val}
         <span class="ds-swatch-use">${esc(sw.use)}</span>
       </span>
-      ${reset}
     </div>`;
 }
 
@@ -1119,7 +1131,7 @@ function renderDesignSystem() {
             <span class="material-symbols-outlined">restart_alt</span>Reset colors
           </button>
         </div>
-        <p class="ds-footnote" style="margin-top:0;margin-bottom:14px">Click a swatch or paste a hex to recolor the live token. Edits save for this theme, apply across the app, and survive reload. Reset a swatch — or Reset colors — to return to the defaults.</p>
+        <p class="ds-footnote" style="margin-top:0;margin-bottom:14px">Each token shows its current color, then a new color to change to, then undo. Pick or paste a hex — edits save for this theme, apply across the app, and survive reload.</p>
         <div class="ds-color-grid">${colorGroups}</div>
       </div>
     </section>`;
@@ -3729,7 +3741,7 @@ const MOTION_ITEMS = [
     id: 'helix', group: 'anim', icon: 'genetics', title: 'Welcome helix', wide: true,
     src: 'js/wiseai-chat.js · createHelixBgAnim',
     used: 'Every chat welcome — ON by default at 20% opacity, 10° tilt, 100% scale on X / Y / Z',
-    lede: 'The ambient DNA/RNA field behind the chat welcome. Product thumbnails travel the strand; move onto a circle for its card. Notes (brand insight or look-closer fact) are sprinkled two-of-three along the strand, mixed with food sheets — never a status stamp, and never on their own: a popover opens only when the pointer enters a circle. Default opacity is <strong>20%</strong>, the axis tilt defaults to <strong>10°</strong>, and Scale X / Y / Z each default to <strong>100%</strong> (the original strand; drag any axis up to 250%) — same controls as the chat ⋯ menu. Honors pause and <code>prefers-reduced-motion</code>. The live field starts when this section opens.',
+    lede: 'The ambient DNA/RNA field behind the chat welcome. Product thumbnails travel the strand; move onto a circle for its card — the field pauses while that popover is open and continues when you leave it. Notes (brand insight or look-closer fact) are sprinkled two-of-three along the strand, mixed with food sheets — never a status stamp, and never on their own: a popover opens only when the pointer enters a circle. Default opacity is <strong>20%</strong>, the axis tilt defaults to <strong>10°</strong>, and Scale X / Y / Z each default to <strong>100%</strong> (the original strand; drag any axis up to 250%) — same controls as the chat ⋯ menu. Honors pause and <code>prefers-reduced-motion</code>. The live field starts when this section opens.',
     demo: `
       <div class="mi-motion-helix sc-bganim-host" data-motion-helix>
         <div class="mi-motion-helix-stage" data-helix-body></div>
@@ -5215,7 +5227,7 @@ function moduleStyles() {
 
     .ds-color-grid {
       display: grid; gap: 14px;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
       align-items: start;
     }
     .ds-color-group {
@@ -5227,35 +5239,80 @@ function moduleStyles() {
       color: var(--text-subtle);
     }
     .ds-group-note { font-size: 0.75rem; color: var(--text-muted); margin: 8px 0 14px; }
-    .ds-swatch-grid { display: flex; flex-direction: column; gap: 10px; }
-    .ds-swatch { display: flex; align-items: center; gap: 12px; }
+    .ds-swatch-grid { display: flex; flex-direction: column; gap: 14px; }
+    .ds-swatch { display: flex; align-items: center; gap: 14px; }
     .ds-swatch.is-custom .ds-swatch-name::after {
       content: "custom";
       margin-left: 6px;
       font-size: 0.5625rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
       color: var(--sec-green-text, #245E3B);
     }
-    .ds-swatch-pick {
-      position: relative; flex: 0 0 44px; width: 44px; height: 36px;
-      display: block; cursor: pointer;
+    .ds-swatch-pair {
+      display: grid;
+      grid-template-columns: auto auto auto;
+      grid-template-rows: auto auto;
+      column-gap: 8px;
+      row-gap: 4px;
+      align-items: center;
+      flex: 0 0 auto;
     }
+    .ds-swatch-well {
+      display: block;
+      width: 56px; height: 44px;
+      border-radius: 10px;
+      border: 1px solid var(--border-strong);
+      box-sizing: border-box;
+      overflow: hidden;
+      background:
+        repeating-conic-gradient(rgba(17, 24, 39, 0.12) 0% 25%, transparent 0% 50%)
+        50% / 8px 8px;
+    }
+    html.dark .ds-swatch-well {
+      background:
+        repeating-conic-gradient(rgba(243, 244, 246, 0.14) 0% 25%, transparent 0% 50%)
+        50% / 8px 8px;
+    }
+    .ds-swatch-chip {
+      display: block;
+      width: 56px; height: 44px;
+      border: 0;
+      border-radius: 0;
+      box-sizing: border-box;
+    }
+    .ds-swatch-well .ds-swatch-chip { width: 100%; height: 100%; }
+    .ds-swatch-pick {
+      position: relative;
+      display: block;
+      width: 56px; height: 44px;
+      cursor: pointer;
+    }
+    .ds-swatch-pick .ds-swatch-well { width: 100%; height: 100%; }
     .ds-swatch-pick input[type="color"] {
       position: absolute; inset: 0; width: 100%; height: 100%;
       opacity: 0; cursor: pointer; border: 0; padding: 0; background: none;
+      z-index: 1;
     }
-    .ds-swatch-pick .ds-swatch-chip { width: 100%; height: 100%; }
-    .ds-swatch-chip {
-      flex: 0 0 44px; width: 44px; height: 36px; border-radius: 9px;
-      border: 1px solid var(--border); box-sizing: border-box;
+    .ds-swatch-pick:hover .ds-swatch-well,
+    .ds-swatch-pick:focus-within .ds-swatch-well {
+      box-shadow: 0 0 0 2px var(--primary);
     }
-    .ds-swatch-chip--ink {
-      display: grid; place-items: center; background: var(--surface);
-      font-size: 1rem; font-weight: 800;
+    html.dark .ds-swatch-pick:hover .ds-swatch-well,
+    html.dark .ds-swatch-pick:focus-within .ds-swatch-well {
+      box-shadow: 0 0 0 2px var(--primary-bright, #8B9FAF);
     }
-    .ds-swatch-chip--border { background: var(--surface); border-width: 3px; border-style: solid; }
-    .ds-swatch-chip--shadow { background: var(--surface); border-color: transparent; }
-    .ds-swatch-chip--radius { background: var(--surface-2); border: 1.5px solid var(--border-strong); }
-    .ds-swatch-meta { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .ds-swatch-chip--shadow {
+      flex: 0 0 56px; width: 56px; height: 44px; border-radius: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+    }
+    .ds-swatch-chip--radius {
+      flex: 0 0 56px; width: 56px; height: 44px;
+      background: var(--surface-2); border: 1.5px solid var(--border-strong);
+    }
+    .ds-swatch-cap {
+      font-size: 0.5625rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-subtle); text-align: center; justify-self: center;
+    }
+    .ds-swatch-meta { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto; }
     .ds-swatch-name { font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.75rem; font-weight: 600; color: var(--text); }
     .ds-swatch-val {
       font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.65rem;
@@ -5271,12 +5328,12 @@ function moduleStyles() {
     .ds-swatch-use { font-size: 0.7rem; color: var(--text-muted); }
     .ds-swatch-reset {
       display: inline-flex; align-items: center; justify-content: center;
-      flex: 0 0 auto; width: 28px; height: 28px; padding: 0;
+      flex: 0 0 auto; width: 28px; height: 28px; padding: 0; justify-self: center;
       border: 0; background: none; color: var(--text-muted); cursor: pointer;
     }
     .ds-swatch-reset .material-symbols-outlined { font-size: 18px !important; }
-    .ds-swatch-reset:hover { color: var(--text); }
-    .ds-swatch-reset[hidden] { display: none; }
+    .ds-swatch-reset:hover:not(:disabled) { color: var(--text); }
+    .ds-swatch-reset:disabled { opacity: 0.35; cursor: default; }
     .ds-token-reset-all {
       display: inline-flex; align-items: center; gap: 6px; margin-left: auto;
       border: 0; background: none; cursor: pointer; padding: 0;
@@ -7236,7 +7293,8 @@ async function reevaluateProject(root, opts) {
     }
 
     const day = localDayIso();
-    if (codeNow && codeNow.files) {
+    const codeComplete = codeScanLooksComplete(codeNow);
+    if (codeComplete) {
       applyLiveCodeScan(root, codeNow, day);
     }
 
@@ -7246,7 +7304,7 @@ async function reevaluateProject(root, opts) {
       reason,
       files: files.length,
       pages: pages.length,
-      now: codeNow && codeNow.files ? codeNow : readReevalStore().now,
+      now: codeComplete ? codeNow : readReevalStore().now,
     });
     paintReevalMeta(root);
 
@@ -7262,8 +7320,11 @@ async function reevaluateProject(root, opts) {
         : `${gaps} page${gaps === 1 ? '' : 's'} need attention`);
 
     const bits = [];
-    if (codeNow && codeNow.files) {
+    if (codeComplete) {
       bits.push(`<p>Scanned <strong>${fmtNum(codeNow.files)}</strong> project files · <strong>${fmtNum(codeNow.total)}</strong> lines (HTML ${fmtNum(codeNow.html)}, JS ${fmtNum(codeNow.js)}, CSS ${fmtNum(codeNow.css)}, Python ${fmtNum(codeNow.py)}).</p>`);
+    } else if (codeNow && codeNow.files) {
+      const bakedNow = (CODE_STATS && CODE_STATS.now) || {};
+      bits.push(`<p>Only <strong>${fmtNum(codeNow.files)}</strong> code files were reachable via directory listing — well short of the full project — so Codebase kept the last complete scan (<strong>${fmtNum(bakedNow.total)}</strong> lines across <strong>${fmtNum(bakedNow.files)}</strong> files). Serve the repo root with directory listings enabled (e.g. <code>python3 -m http.server</code>, not a live-reload wrapper) to recount lines live.</p>`);
     } else {
       bits.push('<p>Directory listing was not available, so Codebase kept the last generated scan. Serve the repo root (not a live-reload wrapper) to recount lines live.</p>');
     }
@@ -8191,37 +8252,68 @@ function wireIconInventory(root) {
 /* Design System wiring — resolve swatch values live, per theme        */
 /* ------------------------------------------------------------------ */
 
-/* "rgb(37, 80, 124)" → "#25507C"; keeps rgba() strings readable as-is. */
+/* "rgb(37, 80, 124)" / "color(srgb 0.14 0.31 0.49)" → "#25507C"; keeps alpha readable. */
+function cssColorParts(raw) {
+  const s = String(raw || '').trim();
+  let m = s.match(/rgba?\(([^)]+)\)/);
+  if (m) {
+    const parts = m[1].split(/[,/]/).map((p) => parseFloat(p.trim())).filter((n) => !Number.isNaN(n));
+    return { r: parts[0], g: parts[1], b: parts[2], a: parts.length >= 4 ? parts[3] : 1 };
+  }
+  m = s.match(/color\(\s*srgb\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)(?:\s*\/\s*([0-9.]+))?\s*\)/i);
+  if (m) {
+    const to255 = (n) => (n <= 1 ? n * 255 : n);
+    return { r: to255(+m[1]), g: to255(+m[2]), b: to255(+m[3]), a: m[4] != null ? +m[4] : 1 };
+  }
+  if (/^#[0-9A-Fa-f]{6}$/.test(s)) {
+    return {
+      r: parseInt(s.slice(1, 3), 16),
+      g: parseInt(s.slice(3, 5), 16),
+      b: parseInt(s.slice(5, 7), 16),
+      a: 1,
+    };
+  }
+  if (/^#[0-9A-Fa-f]{3}$/.test(s)) {
+    return {
+      r: parseInt(s[1] + s[1], 16),
+      g: parseInt(s[2] + s[2], 16),
+      b: parseInt(s[3] + s[3], 16),
+      a: 1,
+    };
+  }
+  return null;
+}
+
 function cssColorLabel(raw) {
-  const m = String(raw).match(/rgba?\(([^)]+)\)/);
-  if (!m) return raw;
-  const parts = m[1].split(',').map((p) => parseFloat(p.trim()));
-  const [r, g, b, a] = parts;
-  if (parts.length >= 4 && a < 1) {
-    return `rgba(${r}, ${g}, ${b}, ${Math.round(a * 100) / 100})`;
+  const parts = cssColorParts(raw);
+  if (!parts) return raw;
+  const { r, g, b, a } = parts;
+  if (a < 0.999) {
+    return `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${Math.round(a * 100) / 100})`;
   }
   const hex = (n) => Math.round(n).toString(16).padStart(2, '0').toUpperCase();
   return `#${hex(r)}${hex(g)}${hex(b)}`;
 }
 
 function cssToPickerHex(raw) {
-  const label = cssColorLabel(raw);
-  const m = String(raw).match(/rgba?\(([^)]+)\)/);
-  if (m) {
-    const [r, g, b] = m[1].split(',').map((p) => parseFloat(p.trim()));
-    const hex = (n) => Math.round(n).toString(16).padStart(2, '0').toUpperCase();
-    return `#${hex(r)}${hex(g)}${hex(b)}`;
-  }
-  if (/^#[0-9A-Fa-f]{6}$/.test(label)) return label.toUpperCase();
-  return '#000000';
+  const parts = cssColorParts(raw);
+  if (!parts) return '#000000';
+  const hex = (n) => Math.round(n).toString(16).padStart(2, '0').toUpperCase();
+  return `#${hex(parts.r)}${hex(parts.g)}${hex(parts.b)}`;
 }
 
 function chipComputedColor(sw) {
-  const chip = sw.querySelector('.ds-swatch-chip');
+  const chip = sw.querySelector('[data-swatch-next]') || sw.querySelector('.ds-swatch-chip');
   if (!chip) return '';
-  const cs = getComputedStyle(chip);
-  const kind = sw.dataset.kind || 'fill';
-  return kind === 'ink' ? cs.color : kind === 'border' ? cs.borderTopColor : cs.backgroundColor;
+  return getComputedStyle(chip).backgroundColor;
+}
+
+function paintDefaultChip(sw, token) {
+  const now = sw.querySelector('[data-swatch-now]');
+  if (!now) return;
+  const T = window.WiseTokenTheme;
+  const def = T && T.default ? T.default(token) : '';
+  if (def) now.style.background = def;
 }
 
 function syncSwatchEditors(root) {
@@ -8229,13 +8321,14 @@ function syncSwatchEditors(root) {
   const resetAll = root.querySelector('[data-ds-reset-colors]');
   if (resetAll) resetAll.hidden = !(T && T.count && T.count());
   root.querySelectorAll('[data-swatch]').forEach((sw) => {
+    const token = sw.dataset.token;
+    if (token) paintDefaultChip(sw, token);
     const raw = chipComputedColor(sw);
     if (!raw) return;
-    const token = sw.dataset.token;
     const custom = !!(T && token && T.isCustom(token));
     sw.classList.toggle('is-custom', custom);
     const reset = sw.querySelector('[data-token-reset]');
-    if (reset) reset.hidden = !custom;
+    if (reset) reset.disabled = !custom;
     const color = sw.querySelector('[data-token-color]');
     const hex = sw.querySelector('[data-token-hex]');
     const picker = cssToPickerHex(raw);

@@ -85,7 +85,14 @@ function syncNavIcon() {
   } else {
     const p = panel();
     if (p && !p.classList.contains('minimal-ui') && !p.classList.contains('mp-pivot')) {
-      icon.textContent = p.classList.contains('mp-rail') ? 'chevron_right' : 'chevron_left';
+      const hamburger = document.documentElement.classList.contains('nav-hamburger')
+        && document.documentElement.classList.contains('app-search-on')
+        && p.classList.contains('mp-rail');
+      icon.textContent = hamburger ? 'menu' : (p.classList.contains('mp-rail') ? 'chevron_right' : 'chevron_left');
+      if (hamburger) {
+        btn.setAttribute('aria-label', 'Open navigation');
+        btn.setAttribute('title', 'Open navigation');
+      }
     }
   }
 }
@@ -137,6 +144,9 @@ function start() {
 
   syncNavIcon();
   syncChrome();
+  document.addEventListener('wise:nav-hamburger', syncNavIcon);
+  document.addEventListener('wise:app-search', syncNavIcon);
+  document.addEventListener('wise:menu-rail', syncNavIcon);
 }
 
 if (typeof document !== 'undefined') {

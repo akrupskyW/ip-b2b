@@ -3,9 +3,10 @@
  *
  * Every page that shows WISEcodeAI as a right-rail module mounts it through here
  * instead of calling mountWISEcodeAIChat() directly. That gives the dock ONE
- * source of truth for its place + size, persisted in localStorage, so WISEcodeAI
- * is always in the exact same spot and at the exact same width as the page
- * you just left — uniform across the whole app.
+ * source of truth for its place, persisted in localStorage, so WISEcodeAI is
+ * always in the exact same spot as the page you just left. Chat width on each
+ * load follows the screen default (single ≤1512 CSS px, double when wider);
+ * in-session widen/fill is not restored across navigations.
  *
  * Persisted state (key `wise-wiseai-dock`):
  *   { wide: number, right: 0 | 1 | 2 }
@@ -50,7 +51,11 @@ export function readWISEcodeAIDockState() {
       collapsed: raw.collapsed === true,
     };
   } catch (_) {
-    return { wide: 0, right: 1, collapsed: false };
+    return {
+      wide: (typeof window.wiseDefaultChatTier === 'function' ? window.wiseDefaultChatTier() : 0),
+      right: 1,
+      collapsed: false,
+    };
   }
 }
 
@@ -168,6 +173,7 @@ export function applyWISEcodeAIDockState(dock, state = readWISEcodeAIDockState()
   dock.classList.toggle('panel-wide', tier >= 1);
   dock.classList.toggle('panel-triple', tier >= 2);
   dock.classList.toggle('panel-fill', tier >= 3);
+  if (tier < 1) document.documentElement.classList.remove('chat-default-double');
 
   /* When WISEcodeAI is the ONLY module left in the row there are no panes to place,
      so it just centre-docks (capped at double width) until another module
@@ -305,11 +311,15 @@ export function mountWISEcodeAIDock(dock, opts = {}) {
   /* WISEcodeAI is the fixed anchor that modules flip around — it never flips sides
      itself, so no side-flip control is added to its dock. */
 
-  /* WISEcodeAI always loads at its single-pane width on every page. The widened
-     (double/triple) tier is a within-session choice and is intentionally NOT
-     restored across page loads, so the chat module is the exact same size every
-     time it loads. (The right-pane count is still restored below.) */
-  writeWISEcodeAIDockState({ wide: 0 });
+  /* Chat width is a screen default, not a restored session choice: laptop-class
+     (≤1512 CSS px) opens single; wider screens open double. The user can still
+     cycle double/triple/fill in-session; the next load reapplies this default
+     so the chat is the same size every time it loads on a given screen. (The
+     right-pane count is still restored below.) */
+  const defaultWide = (window.WPaneWidth && typeof window.WPaneWidth.defaultChatTier === 'function')
+    ? window.WPaneWidth.defaultChatTier()
+    : (typeof window.wiseDefaultChatTier === 'function' ? window.wiseDefaultChatTier() : 0);
+  writeWISEcodeAIDockState({ wide: defaultWide });
 
   /* Restore the persisted place, then keep this dock in sync if the state
      changes in another tab/page. */

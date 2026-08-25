@@ -24,11 +24,10 @@ const RED = () => cssVar('--sec-red', '#DC3038');
 const AMBER = () => cssVar('--ter-amber', '#FFC434');
 const BLUE = () => cssVar('--primary', '#25507C');
 /* The two intermediate tiers of the canonical five-status palette (mirrors the
-   C palette in js/dashboard-home.js): a lighter "Good" green and a "Fair"
-   orange, so the processing spectrum runs green → light-green → amber → orange
-   → red, worst-to-best like every other status chart in the app. */
-const GREEN_LIGHT = () => '#7DC470';
-const ORANGE = () => '#D27326';
+   C palette in js/dashboard-home.js). Read from --chart-status-* so Accessible
+   colors can retune them off a second green / leftover orange. */
+const GREEN_LIGHT = () => cssVar('--chart-status-good', '#7DC470');
+const ORANGE = () => cssVar('--chart-status-fair', '#D27326');
 
 /* ---- Portfolio split (donut) ---------------------------------------- */
 const PORTFOLIO = { nonUpf: 9, upf: 3 };

@@ -10,6 +10,36 @@
   } catch (_) {}
 })();
 
+/** FOUC guard — Minimal UI is on by default. Keep in sync with
+    isMinimalUiOn() in js/topbar.js so the first paint already has
+    `minimal-ui` on #menu-panel instead of flashing the full nav. */
+(function () {
+  var KEY = 'wise-minimal-ui-v2';
+  function wantOn() {
+    try {
+      var v = localStorage.getItem(KEY);
+      return v === null ? true : v === '1';
+    } catch (_) { return true; }
+  }
+  function apply() {
+    var panel = document.getElementById('menu-panel');
+    if (!panel) return false;
+    panel.classList.toggle('minimal-ui', wantOn());
+    return true;
+  }
+  if (apply()) return;
+  var mo = new MutationObserver(function () {
+    if (apply()) mo.disconnect();
+  });
+  mo.observe(document.documentElement, { childList: true, subtree: true });
+  function stop() {
+    apply();
+    mo.disconnect();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', stop);
+  else stop();
+})();
+
 /** FOUC guard — Chat-only full bleed is on by default. Keep in sync with
     resolveFullBleedMode() in js/topbar.js so the first paint already has
     `full-bleed` + `fb-chat-only` instead of flashing contained chat. */
@@ -29,6 +59,17 @@
     } else {
       root.classList.add('full-bleed');
       root.classList.toggle('fb-chat-only', mode === 'chat');
+    }
+  } catch (_) {}
+})();
+
+/** FOUC guard — Menu icon (wise-nav-hamburger) paints from <html> so the
+    collapsed search+rail wordmark does not flash the 54px icon list first.
+    Keep in sync with isNavHamburgerOn() in js/nav-hamburger.js. */
+(function () {
+  try {
+    if (localStorage.getItem('wise-nav-hamburger') === '1') {
+      document.documentElement.classList.add('nav-hamburger');
     }
   } catch (_) {}
 })();
@@ -57,6 +98,7 @@
     '--ter-amber': [{ token: '--ter-amber-10', a: 0.14 }]
   };
   var listeners = [];
+  var DEFAULTS = { light: null, dark: null };
 
   var themeLockedToClass = document.documentElement.classList.contains('dark');
   function themeOf() {
@@ -176,6 +218,44 @@
   function getToken(token) {
     return (load()[themeOf()] || {})[token] || '';
   }
+  /* Snapshot stylesheet defaults (after CSS has loaded) so the Design System
+     can show the original chip next to a live override. Inline overrides are
+     stripped and restored in the same turn, so nothing paints in between. */
+  function captureDefaults() {
+    var theme = themeOf();
+    if (DEFAULTS[theme]) return DEFAULTS[theme];
+    var root = document.documentElement;
+    var saved = {};
+    TOKENS.forEach(function (t) {
+      var v = root.style.getPropertyValue(t);
+      if (v) saved[t] = v;
+      root.style.removeProperty(t);
+    });
+    var probe = document.createElement('div');
+    probe.style.cssText = 'position:absolute;left:-9999px;top:0;width:1px;height:1px;pointer-events:none;';
+    (document.body || root).appendChild(probe);
+    var map = {};
+    var any = false;
+    TOKENS.forEach(function (t) {
+      probe.style.backgroundColor = '';
+      probe.style.color = '';
+      probe.style.borderColor = '';
+      probe.style.backgroundColor = 'var(' + t + ')';
+      var v = getComputedStyle(probe).backgroundColor;
+      map[t] = (v && v !== 'rgba(0, 0, 0, 0)' && v !== 'transparent') ? v : '';
+      if (map[t]) any = true;
+    });
+    probe.remove();
+    Object.keys(saved).forEach(function (t) {
+      root.style.setProperty(t, saved[t]);
+    });
+    if (!any) return map;
+    DEFAULTS[theme] = map;
+    return map;
+  }
+  function defaultValue(token) {
+    return (captureDefaults() || {})[token] || '';
+  }
   function countCustom() {
     return Object.keys(load()[themeOf()] || {}).length;
   }
@@ -192,6 +272,8 @@
     resetAll: resetAll,
     isCustom: isCustom,
     get: getToken,
+    default: defaultValue,
+    captureDefaults: captureDefaults,
     count: countCustom,
     parse: parseColor,
     onChange: function (fn) { if (typeof fn === 'function') listeners.push(fn); }
@@ -217,4 +299,51 @@
       if (e.key === KEY) apply();
     });
   } catch (_) {}
+})();
+
+/** FOUC guard — chat module default width. Laptop-class viewports
+    (≤ 1512 CSS px, 14" MacBook Pro) stay single pane; wider viewports
+    default to double. Keep in sync with WPaneWidth.defaultChatTier() in
+    js/pane-width.js. Stops once the chat host exists so a later in-session
+    toggle back to single is not overwritten. */
+(function () {
+  var SINGLE_MAX = 1512;
+  function defaultTier() {
+    return (window.innerWidth || 0) > SINGLE_MAX ? 1 : 0;
+  }
+  window.WISE_CHAT_SINGLE_MAX_PX = SINGLE_MAX;
+  window.wiseDefaultChatTier = defaultTier;
+
+  var CHAT_SEL = [
+    '#wa-chat', '#chat-shell', '#rf-chat', '#gs-chat', '#sa-chat',
+    '#aid-chat', '#pl-chat', '#ar-chat', '.ap-chat', '#mkt-wiseai',
+    '.wiseai-dock', '#wiseai-dock-panel', '#wiseai-panel', '#pf-chat-panel'
+  ].join(',');
+
+  function apply() {
+    var want = defaultTier() >= 1;
+    document.documentElement.classList.toggle('chat-default-double', want);
+    var nodes = document.querySelectorAll(CHAT_SEL);
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (el.classList.contains('panel-triple') || el.classList.contains('panel-fill')) continue;
+      el.classList.toggle('panel-wide', want);
+    }
+    if (want && document.body && document.getElementById('mkt-chat-rail')) {
+      document.body.classList.add('mkt-chat-wide');
+    }
+    return document.querySelector(CHAT_SEL);
+  }
+
+  if (apply()) return;
+  var mo = new MutationObserver(function () {
+    if (apply()) mo.disconnect();
+  });
+  mo.observe(document.documentElement, { childList: true, subtree: true });
+  function stop() {
+    apply();
+    mo.disconnect();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', stop);
+  else stop();
 })();

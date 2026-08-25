@@ -31,30 +31,27 @@
        Reuses the shared WISE palette + fonts from wise.css; everything
        bespoke here is prefixed `aid-`. No external chart library. */
 
-    /* Brand palette — mirrors analytics-types.html: everything is derived from the
-       WISE token palette (navy --primary + the green/amber/red status inks). The
-       multi-series charts read as one family — a navy→azure blue ramp for the
-       "neutral" series, then the semantic green / amber / warm-orange / red. */
+    /* Brand palette — only official WISE swatches (see scripts/brandify_colors.py).
+       Neutral series are the blue ramp (blue-400 → 300 → 200); status series are
+       the shared green / amber / fair-orange / red tokens. No invented azures. */
     :root {
-      --aid-blue:   var(--primary);       /* #25507C navy */
-      --aid-cyan:   #3E7CB1;              /* mid azure (brand blue family) */
-      --aid-violet: #6B93C4;              /* light azure (brand blue family) */
-      --aid-teal:   #2E9E5B;              /* green (Minimally-Processed tier) */
-      --aid-green:  var(--sec-green);     /* #32A966 */
-      --aid-gold:   var(--ter-amber);     /* #FFC434 */
-      --aid-pink:   #D27326;              /* warm orange (Fair tier) */
-      --aid-red:    var(--sec-red);       /* #DC3038 */
+      --aid-blue:   var(--primary);                 /* blue-400 #25507C */
+      --aid-cyan:   #687896;                        /* blue-300 */
+      --aid-violet: #8B9FAF;                        /* blue-200 */
+      --aid-teal:   #6D947C;                        /* green-200 */
+      --aid-green:  var(--sec-green);               /* #32A966 */
+      --aid-gold:   var(--ter-amber);               /* #FFC434 */
+      --aid-pink:   var(--chart-status-fair);       /* #D27326 */
+      --aid-red:    var(--sec-red);                 /* #DC3038 */
       --aid-gap: 16px;
     }
-    /* Dark mode lifts the navy blue family so lines/bars keep contrast on navy,
-       exactly how analytics-types swaps --primary → --primary-bright in dark. */
+    /* Dark: lift the blue ramp with blue-100/200/300 so lines stay visible on
+       navy, same --primary → --primary-bright swap the rest of the app uses.
+       Status fills stay the shared tokens (already contrast-safe on navy). */
     html.dark {
-      --aid-blue:   var(--primary-bright, #8B9FAF);
-      --aid-cyan:   #6FA0D0;
-      --aid-violet: #A6C2E2;
-      --aid-teal:   #4FBE84;
-      --aid-green:  #4FBE84;
-      --aid-pink:   #E8965A;
+      --aid-blue:   var(--primary-bright, #8B9FAF); /* blue-200 */
+      --aid-cyan:   #687896;                        /* blue-300 */
+      --aid-violet: #C5CFD7;                        /* blue-100 */
     }
 
     * { box-sizing: border-box; }
@@ -225,7 +222,6 @@
     .tone-gold   { color: var(--ter-amber-text); }
     .tone-pink   { color: var(--aid-pink); }
     .tone-red    { color: var(--aid-red); }
-    html.dark .tone-gold  { color: #e6c67d; }
 
     /* ── Chart grid ── */
     .aid-grid { display: grid; grid-template-columns: repeat(12, minmax(0,1fr)); gap: var(--aid-gap); align-items: stretch; margin-top: 22px; }
@@ -750,16 +746,16 @@
     var C = {};
     function refreshColors() {
       C = {
-        violet: cssvar('--aid-violet') || '#6B93C4',
-        cyan: cssvar('--aid-cyan') || '#3E7CB1',
+        violet: cssvar('--aid-violet') || '#8B9FAF',
+        cyan: cssvar('--aid-cyan') || '#687896',
         pink: cssvar('--aid-pink') || '#D27326',
-        teal: cssvar('--aid-teal') || '#2E9E5B',
+        teal: cssvar('--aid-teal') || '#6D947C',
         gold: cssvar('--aid-gold') || cssvar('--ter-amber') || '#FFC434',
         blue: cssvar('--aid-blue') || cssvar('--primary') || '#25507C',
         green: cssvar('--aid-green') || cssvar('--sec-green') || '#32A966',
         red: cssvar('--aid-red') || cssvar('--sec-red') || '#DC3038',
         grid: cssvar('--border') || 'rgba(0,0,0,.08)',
-        text: cssvar('--text-subtle') || '#888',
+        text: cssvar('--text-subtle') || '#474E58',
       };
     }
     refreshColors();
