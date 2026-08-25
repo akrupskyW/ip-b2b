@@ -49,7 +49,6 @@
   CHIPS.forEach(function (c) { CHIP_LABEL[c.id] = c.label; });
 
   var ICONS = {
-    comment: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 6a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h1v3.2a.8.8 0 0 0 1.3.62L12.6 17H18a3 3 0 0 0 3-3V6Z"/></svg>',
     close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6 6.4 5Z"/></svg>',
     check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.6 16.2 5.4 12l-1.4 1.4 5.6 5.6L20.4 7.8 19 6.4 9.6 16.2Z"/></svg>',
     trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l1 2h4v2H4V5h4l1-2ZM6 9h12l-1 11a2 2 0 0 1-2 1.8H9A2 2 0 0 1 7 20L6 9Z"/></svg>',
@@ -377,21 +376,38 @@
     '.wnote-link:hover{color:var(--wnote-text);}',
     '.wnote-link.danger:hover{color:var(--wnote-bug);}',
 
-    /* Launcher (circular — never a rounded square) */
-    '.wnote-fab{position:fixed;right:18px;bottom:var(--wnote-fab-bottom,18px);width:46px;height:46px;border-radius:50%;',
-    'pointer-events:auto;cursor:pointer;border:1px solid var(--wnote-border);background:var(--wnote-surface);',
-    'color:var(--wnote-text);font-size:22px;display:flex;align-items:center;justify-content:center;',
-    'box-shadow:0 6px 20px rgba(17,24,39,.20);}',
-    '.wnote-fab:hover{border-color:var(--wnote-design);}',
-    '.wnote-fab.is-armed{background:var(--wnote-design);color:#fff;border-color:var(--wnote-design);}',
-    '.wnote-count{position:absolute;top:-3px;right:-3px;min-width:19px;height:19px;border-radius:50%;',
+    /* Launcher — a triangle carrying the very key that opens it, parked on the
+       right edge at mid-height where no page puts its own controls. Drawn as
+       SVG so the outline follows the shape (a clip-path would cut the border
+       off) and so the corners can be softened with a round line join. */
+    '.wnote-fab{position:fixed;right:14px;top:var(--wnote-fab-top,50%);',
+    'transform:translateY(-50%);width:50px;height:46px;padding:0;border:0;background:none;',
+    'pointer-events:auto;cursor:pointer;display:block;line-height:0;',
+    'filter:drop-shadow(0 4px 12px rgba(17,24,39,.22));}',
+    /* ID-scoped: the generic `#wnote-root svg` rule above sizes the small inline
+       icons to 1em and would otherwise win on specificity and shrink this one. */
+    '#wnote-root .wnote-fab svg{width:100%;height:100%;overflow:visible;fill:none;}',
+    '#wnote-root .wnote-tri{fill:var(--wnote-surface);stroke:var(--wnote-border);stroke-width:3;',
+    'stroke-linejoin:round;transition:fill .15s ease,stroke .15s ease;}',
+    '#wnote-root .wnote-fab:hover .wnote-tri{stroke:var(--wnote-design);}',
+    '#wnote-root .wnote-key{fill:var(--wnote-text);font-family:inherit;font-size:15px;',
+    'font-weight:700;text-anchor:middle;}',
+    '#wnote-root .wnote-fab.is-armed .wnote-tri{fill:var(--wnote-design);stroke:var(--wnote-design);}',
+    '#wnote-root .wnote-fab.is-armed .wnote-key{fill:#fff;}',
+    'html.dark #wnote-root .wnote-fab.is-armed .wnote-key{fill:#05141C;}',
+    /* Anchored on the solid bottom-right corner — floating it off the apex
+       would leave it hanging in empty space beside the hypotenuse. */
+    '.wnote-count{position:absolute;right:-5px;bottom:-4px;min-width:19px;height:19px;border-radius:50%;',
     'background:var(--wnote-bug);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;',
     'justify-content:center;padding:0 5px;border:2px solid var(--wnote-surface);}',
 
     /* Panel */
-    '.wnote-panel{position:fixed;right:18px;bottom:calc(var(--wnote-fab-bottom,18px) + 56px);',
+    /* Opens to the LEFT of the launcher — the trigger already hugs the right
+       edge, so there is no room to its right and a popover must never drop
+       straight below its trigger. */
+    '.wnote-panel{position:fixed;right:74px;top:50%;transform:translateY(-50%);',
     'width:330px;max-height:min(70vh,560px);',
-    'max-width:calc(100vw - 24px);pointer-events:auto;display:flex;flex-direction:column;',
+    'max-width:calc(100vw - 92px);pointer-events:auto;display:flex;flex-direction:column;',
     'background:var(--wnote-surface);color:var(--wnote-text);border:1px solid var(--wnote-border);',
     'border-radius:16px;box-shadow:0 16px 44px rgba(17,24,39,.24);overflow:hidden;}',
     '.wnote-list{overflow:auto;padding:0 14px 14px;display:flex;flex-direction:column;gap:8px;}',
@@ -418,10 +434,13 @@
     root = el('div');
     root.id = 'wnote-root';
 
-    fab = el('button', 'wnote-fab', ICONS.comment);
+    fab = el('button', 'wnote-fab',
+      '<svg viewBox="0 0 50 46" aria-hidden="true">' +
+      '<polygon class="wnote-tri" points="25,5 45,40 5,40"></polygon>' +
+      '<text class="wnote-key" x="25" y="35">C</text></svg>');
     fab.type = 'button';
-    fab.title = 'Comments — press C to drop one';
-    fab.setAttribute('aria-label', 'Comments');
+    fab.title = 'Comments — press C to leave one';
+    fab.setAttribute('aria-label', 'Comments — press C to leave one');
     countBadge = el('span', 'wnote-count');
     countBadge.style.display = 'none';
     fab.appendChild(countBadge);
@@ -438,19 +457,30 @@
     return 'var(--wnote-' + (CHIP_LABEL[id] ? id : 'design') + ')';
   }
 
-  /* The launcher lives in the bottom-right corner, which on several pages is
-     exactly where the app parks its own controls (the chat send button on
-     wiseai.html, for one). Rather than hard-code a per-page offset, hit-test
-     the corner and step upwards until the button is not sitting on top of
-     anything clickable. */
+  /* The right edge at mid-height is clear on most pages, but not all — the
+     wiseai.html speed rail (Crawl / Walk / Run) sits exactly there. Rather than
+     hard-code a per-page offset, hit-test the shape and slide up or down until
+     the launcher is not sitting on top of anything clickable. */
   var CLICKABLE = 'button,a,input,textarea,select,[role="button"],[contenteditable="true"]';
+
+  /* Breathing room above and below, so the launcher never ends up flush
+     against a control (which reads as part of it, e.g. the speed rail). */
+  var HALO = 16;
 
   function fabCovers() {
     var r = fab.getBoundingClientRect();
+    /* Sample points INSIDE the triangle — its bounding-box corners are empty
+       space, so testing those would report collisions that are not real —
+       plus a vertical halo above and below. */
     var pts = [
-      [r.left + r.width / 2, r.top + r.height / 2],
-      [r.left + 4, r.top + 4], [r.right - 4, r.top + 4],
-      [r.left + 4, r.bottom - 4], [r.right - 4, r.bottom - 4]
+      [r.left + r.width * 0.5, r.top + r.height * 0.65],
+      [r.left + r.width * 0.5, r.top + r.height * 0.18],
+      [r.left + r.width * 0.24, r.bottom - 4],
+      [r.left + r.width * 0.76, r.bottom - 4],
+      [r.left + r.width * 0.5, r.top - HALO],
+      [r.left + r.width * 0.5, r.bottom + HALO],
+      [r.left + r.width * 0.24, r.bottom + HALO],
+      [r.left + r.width * 0.76, r.bottom + HALO]
     ];
     var prev = fab.style.pointerEvents;
     fab.style.pointerEvents = 'none';
@@ -465,12 +495,25 @@
 
   function avoidChrome() {
     if (!fab || !root) return;
-    var steps = [18, 78, 138, 198];
+    var steps = [0, -90, 90, -180, 180, -270, 270];
     for (var i = 0; i < steps.length; i++) {
-      root.style.setProperty('--wnote-fab-bottom', steps[i] + 'px');
+      root.style.setProperty('--wnote-fab-top',
+        steps[i] ? 'calc(50% + ' + steps[i] + 'px)' : '50%');
       if (!fabCovers()) return;
     }
-    root.style.setProperty('--wnote-fab-bottom', steps[0] + 'px');
+    root.style.setProperty('--wnote-fab-top', '50%');
+  }
+
+  /* Page chrome does not all arrive at once — wiseai.html's speed rail settles
+     after the first checks — so keep re-checking, but only act when the
+     launcher is actually covered, which keeps it from wandering. */
+  var lastAvoid = 0;
+  function maybeAvoid() {
+    if (!fab || !root) return;
+    var now = Date.now();
+    if (now - lastAvoid < 1500) return;
+    lastAvoid = now;
+    if (fabCovers()) avoidChrome();
   }
 
   /* ── Arm / disarm ────────────────────────────────────────────────────── */
@@ -837,7 +880,7 @@
 
   window.addEventListener('scroll', layout, true);
   window.addEventListener('resize', layout);
-  setInterval(layout, 500);
+  setInterval(function () { layout(); maybeAvoid(); }, 500);
 
   /* ── Boot ────────────────────────────────────────────────────────────── */
   function start() {
