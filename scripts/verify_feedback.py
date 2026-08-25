@@ -173,9 +173,17 @@ def main():
             init += "document.addEventListener('DOMContentLoaded',function(){document.documentElement.classList.add('dark')});"
         cmd("Page.addScriptToEvaluateOnNewDocument", {"source": init})
 
-        cmd("Page.navigate", {"url": PAGE + "?feedback=admin&key=devsecret"})
-        time.sleep(4.0)
-        print("  widget loaded:", js("!!document.getElementById('wnote-root')"))
+        cmd("Page.navigate", {"url": PAGE + "?feedback=admin&key=" + KEY})
+        # Poll rather than guess: a remote host over the network takes far
+        # longer to paint this page than localhost does.
+        ready = False
+        for _ in range(50):
+            time.sleep(0.5)
+            if js("!!(window.WiseFeedback && document.querySelector('.wnote-fab'))"):
+                ready = True
+                break
+        time.sleep(2.0)
+        print("  widget loaded:", ready)
         print("  admin:", js("window.WiseFeedback && WiseFeedback.isAdmin()"))
 
         # Press C, then click a spot in the page body.
