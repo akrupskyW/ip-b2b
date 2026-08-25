@@ -1,0 +1,873 @@
+/* On-page comments — press C, click a spot, leave a note.
+ *
+ * Reviewers looking at the deployed app (any URL) hold nothing and simply press
+ * "C" to arm comment mode, then click the exact spot they want to talk about. A
+ * pin lands there and a composer opens with a category chip row, a free-text
+ * box and their name (remembered per browser). The server stamps the date. Any
+ * pin can be opened later to read the thread and reply, so the whole thing is a
+ * conversation rather than a one-way suggestion box.
+ *
+ * Pins are anchored to an ELEMENT plus a fractional offset inside it — never to
+ * raw page pixels. Most WISE pages set `body { overflow: hidden }` and scroll
+ * inside module panes, so absolute coordinates are meaningless; resolving the
+ * anchor's live getBoundingClientRect() every frame keeps a pin glued to its
+ * target through scrolling, resizing, pane-width changes and re-renders.
+ *
+ * Storage goes to the shared API (see server/feedback_api.py) so comments are
+ * visible to everyone, including the person who has to answer them. When that
+ * API is unreachable — opening the files locally, or before the server piece is
+ * deployed — it degrades to localStorage so the UI is still testable, and says
+ * so in the panel.
+ *
+ * Self-contained: injects its own CSS (no stylesheet to wire up) and its own
+ * inline SVG icons (no Material Symbols dependency, so it also works on the
+ * marketing pages). Drop in with a single <script defer src> tag.
+ */
+(function () {
+  'use strict';
+  if (typeof document === 'undefined') return;
+  if (window.__wiseFeedbackReady) return;
+  window.__wiseFeedbackReady = true;
+
+  /* ── Config ──────────────────────────────────────────────────────────────
+     Same-origin by default; nginx proxies /api/feedback to the Flask service.
+     Override before this script loads with:
+       <script>window.WISE_FEEDBACK_API = 'https://example.com/api/feedback';</script> */
+  var API = window.WISE_FEEDBACK_API || '/api/feedback';
+  var LS_NAME = 'wise-feedback-name';
+  var LS_KEY = 'wise-feedback-key';
+  var LS_LOCAL = 'wise-feedback-local';
+
+  var CHIPS = [
+    { id: 'bug', label: 'Bug' },
+    { id: 'design', label: 'Design' },
+    { id: 'copy', label: 'Copy' },
+    { id: 'question', label: 'Question' },
+    { id: 'idea', label: 'Idea' }
+  ];
+  var CHIP_LABEL = {};
+  CHIPS.forEach(function (c) { CHIP_LABEL[c.id] = c.label; });
+
+  var ICONS = {
+    comment: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 6a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h1v3.2a.8.8 0 0 0 1.3.62L12.6 17H18a3 3 0 0 0 3-3V6Z"/></svg>',
+    close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6 6.4 5Z"/></svg>',
+    check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.6 16.2 5.4 12l-1.4 1.4 5.6 5.6L20.4 7.8 19 6.4 9.6 16.2Z"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l1 2h4v2H4V5h4l1-2ZM6 9h12l-1 11a2 2 0 0 1-2 1.8H9A2 2 0 0 1 7 20L6 9Z"/></svg>',
+    reply: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 9V5l-7 7 7 7v-4.1c5 0 8 1.6 10 5.1-.8-4-3.2-8-10-9V9Z"/></svg>',
+    send: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.4 20.6 21 12 3.4 3.4 3.4 10l12 2-12 2v6.6Z"/></svg>'
+  };
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function el(tag, cls, html) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (html != null) n.innerHTML = html;
+    return n;
+  }
+  function lsGet(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { window.localStorage.setItem(k, v); } catch (e) { /* private mode */ } }
+
+  /* Page identity. Comments are scoped to a path, so the same page served from
+     a sub-directory on the server still groups correctly. */
+  function pageKey() {
+    var p = location.pathname || '/';
+    if (p.charAt(p.length - 1) === '/') p += 'index.html';
+    return p;
+  }
+
+  /* ── Anchoring ───────────────────────────────────────────────────────────
+     A selector that survives a reload. Prefer a real id, then a stable data-*
+     hook, and fall back to an :nth-of-type path. Kept short so a re-render of
+     unrelated siblings does not invalidate it. */
+  function cssPath(node) {
+    if (!node || node.nodeType !== 1 || node === document.documentElement) return 'body';
+    var parts = [];
+    var cur = node;
+    while (cur && cur.nodeType === 1 && cur !== document.body && parts.length < 8) {
+      if (cur.id && document.querySelectorAll('#' + cssEscape(cur.id)).length === 1) {
+        parts.unshift('#' + cssEscape(cur.id));
+        return parts.join(' > ');
+      }
+      var seg = cur.tagName.toLowerCase();
+      var hook = cur.getAttribute && (cur.getAttribute('data-flow') || cur.getAttribute('data-module') || cur.getAttribute('data-pane'));
+      if (hook) {
+        seg += '[data-flow="' + hook + '"]';
+        if (document.querySelectorAll(seg).length === 1) { parts.unshift(seg); return parts.join(' > '); }
+        seg = cur.tagName.toLowerCase();
+      }
+      var parent = cur.parentNode;
+      if (parent && parent.nodeType === 1) {
+        var same = [];
+        for (var i = 0; i < parent.children.length; i++) {
+          if (parent.children[i].tagName === cur.tagName) same.push(parent.children[i]);
+        }
+        if (same.length > 1) seg += ':nth-of-type(' + (same.indexOf(cur) + 1) + ')';
+      }
+      parts.unshift(seg);
+      cur = cur.parentNode;
+    }
+    return 'body > ' + parts.join(' > ');
+  }
+  function cssEscape(s) {
+    if (window.CSS && window.CSS.escape) return window.CSS.escape(s);
+    return String(s).replace(/[^a-zA-Z0-9_-]/g, '\\$&');
+  }
+
+  /* The clicked element itself is often a tiny text node wrapper that vanishes
+     on re-render. Walk up to the nearest element that is both identifiable and
+     big enough to hold a meaningful fractional offset. */
+  function anchorFor(target, x, y) {
+    var node = target;
+    /* A click that lands on <html> (page chrome, gaps between panes) would
+       otherwise produce an anchor that resolves to nothing. */
+    if (node === document.documentElement || !node || node.nodeType !== 1) node = document.body;
+    while (node && node.nodeType === 1 && node !== document.body) {
+      var r = node.getBoundingClientRect();
+      var identified = node.id || (node.getAttribute && node.getAttribute('data-flow'));
+      if (identified || (r.width >= 24 && r.height >= 16)) break;
+      node = node.parentNode;
+    }
+    if (!node || node.nodeType !== 1) node = document.body;
+    var rect = node.getBoundingClientRect();
+    return {
+      selector: cssPath(node),
+      fx: rect.width ? (x - rect.left) / rect.width : 0.5,
+      fy: rect.height ? (y - rect.top) / rect.height : 0.5,
+      viewport_w: window.innerWidth,
+      viewport_h: window.innerHeight
+    };
+  }
+  function resolveAnchor(c) {
+    var node = null;
+    try { node = document.querySelector(c.selector); } catch (e) { node = null; }
+    if (!node) return null;
+    var r = node.getBoundingClientRect();
+    if (!r.width && !r.height) return null;
+    return { x: r.left + r.width * c.fx, y: r.top + r.height * c.fy };
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    var now = new Date();
+    var opts = { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+    if (d.getFullYear() !== now.getFullYear()) opts.year = 'numeric';
+    return d.toLocaleString(undefined, opts);
+  }
+
+  /* ── Store ───────────────────────────────────────────────────────────────
+     Talks to the API, and transparently falls back to localStorage the first
+     time a request fails so the widget still works undeployed. */
+  var Store = (function () {
+    var local = lsGet(LS_LOCAL) === '1';
+    var LS_DATA = 'wise-feedback-data';
+
+    function readLocal() {
+      try { return JSON.parse(lsGet(LS_DATA) || '[]'); } catch (e) { return []; }
+    }
+    function writeLocal(rows) { lsSet(LS_DATA, JSON.stringify(rows)); }
+    function goLocal() { local = true; lsSet(LS_LOCAL, '1'); }
+
+    function req(path, opts) {
+      opts = opts || {};
+      var headers = { 'Content-Type': 'application/json' };
+      var key = lsGet(LS_KEY);
+      if (key) headers['X-Feedback-Key'] = key;
+      return fetch(API + path, {
+        method: opts.method || 'GET',
+        headers: headers,
+        body: opts.body ? JSON.stringify(opts.body) : undefined
+      }).then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      });
+    }
+
+    return {
+      isLocal: function () { return local; },
+      list: function (page) {
+        if (local) {
+          return Promise.resolve(readLocal().filter(function (c) { return c.page === page; }));
+        }
+        return req('/comments?page=' + encodeURIComponent(page)).catch(function () {
+          goLocal();
+          return readLocal().filter(function (c) { return c.page === page; });
+        });
+      },
+      listAll: function () {
+        if (local) return Promise.resolve(readLocal());
+        return req('/comments/all').catch(function () { goLocal(); return readLocal(); });
+      },
+      add: function (c) {
+        if (local) {
+          c.id = 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+          c.created_at = new Date().toISOString();
+          c.replies = [];
+          c.resolved = 0;
+          var rows = readLocal(); rows.push(c); writeLocal(rows);
+          return Promise.resolve(c);
+        }
+        return req('/comments', { method: 'POST', body: c }).catch(function () {
+          goLocal();
+          return Store.add(c);
+        });
+      },
+      reply: function (id, r) {
+        if (local) {
+          var rows = readLocal();
+          for (var i = 0; i < rows.length; i++) {
+            if (rows[i].id === id) {
+              r.id = 'r' + Date.now().toString(36);
+              r.created_at = new Date().toISOString();
+              (rows[i].replies = rows[i].replies || []).push(r);
+            }
+          }
+          writeLocal(rows);
+          return Promise.resolve(r);
+        }
+        return req('/comments/' + encodeURIComponent(id) + '/replies', { method: 'POST', body: r })
+          .catch(function () { goLocal(); return Store.reply(id, r); });
+      },
+      resolve: function (id, val) {
+        if (local) {
+          var rows = readLocal();
+          rows.forEach(function (c) { if (c.id === id) c.resolved = val ? 1 : 0; });
+          writeLocal(rows);
+          return Promise.resolve({ ok: true });
+        }
+        return req('/comments/' + encodeURIComponent(id) + '/resolve', { method: 'POST', body: { resolved: val ? 1 : 0 } });
+      },
+      remove: function (id) {
+        if (local) {
+          writeLocal(readLocal().filter(function (c) { return c.id !== id; }));
+          return Promise.resolve({ ok: true });
+        }
+        return req('/comments/' + encodeURIComponent(id), { method: 'DELETE' });
+      }
+    };
+  })();
+
+  /* ── State ───────────────────────────────────────────────────────────── */
+  var comments = [];
+  var armed = false;
+  var pins = {};          // id -> pin element
+  var openPopup = null;   // { node, comment, anchor }
+  var admin = false;
+  var panelOpen = false;
+
+  /* Admin unlock: ?feedback=admin&key=SECRET — the key is remembered and sent
+     as a header, then scrubbed from the URL so it is not left in the address
+     bar or copied into a share link. */
+  (function initAdmin() {
+    var q = new URLSearchParams(location.search);
+    if (q.get('feedback') === 'admin') {
+      var k = q.get('key');
+      if (k) lsSet(LS_KEY, k);
+      admin = true;
+      q.delete('feedback'); q.delete('key');
+      var qs = q.toString();
+      try {
+        history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
+      } catch (e) { /* file:// */ }
+    } else if (lsGet(LS_KEY)) {
+      admin = true;
+    }
+  })();
+
+  /* ── Styles ──────────────────────────────────────────────────────────────
+     Everything is prefixed wnote- (fb- is already taken by the full-bleed
+     theming in wise.css). Colors fall back to literals so the widget also
+     renders correctly on pages that do not load wise.css. */
+  var CSS = [
+    ':root{',
+    '--wnote-bug:#DC3038;--wnote-design:#25507C;--wnote-copy:#B07908;--wnote-question:#2E7D9A;--wnote-idea:#2E9A5E;',
+    '--wnote-surface:var(--surface,#fff);--wnote-bg:var(--surface-2,#F4F2EA);',
+    '--wnote-text:var(--text,#111827);--wnote-muted:var(--text-subtle,#474E58);',
+    '--wnote-border:var(--border-strong,rgba(37,80,124,.28));',
+    '}',
+    'html.dark{',
+    '--wnote-bug:#FF6B72;--wnote-design:#8B9FAF;--wnote-copy:#E8B84B;--wnote-question:#5FB6D1;--wnote-idea:#4FC98A;',
+    '--wnote-surface:var(--surface,#0D1B24);--wnote-bg:var(--surface-2,#112633);',
+    '--wnote-text:var(--text,#F3F4F6);--wnote-muted:var(--text-subtle,#B1BAC7);',
+    '}',
+    '#wnote-root{position:fixed;inset:0;z-index:2000000;pointer-events:none;',
+    "font-family:'WISE Digits','DM Sans',system-ui,sans-serif;}",
+    '#wnote-root *{box-sizing:border-box;}',
+    '#wnote-root svg{width:1em;height:1em;fill:currentColor;display:block;}',
+
+    /* Armed state */
+    'html.wnote-armed,html.wnote-armed *{cursor:crosshair !important;}',
+    '.wnote-hint{position:fixed;top:16px;left:50%;transform:translateX(-50%);pointer-events:none;',
+    'background:var(--wnote-surface);color:var(--wnote-text);border:1px solid var(--wnote-border);',
+    'border-radius:9999px;padding:8px 16px;font-size:12px;font-weight:600;',
+    'box-shadow:0 8px 24px rgba(17,24,39,.18);display:flex;align-items:center;gap:8px;}',
+    '.wnote-hint kbd{font:inherit;font-size:11px;background:var(--wnote-bg);border:1px solid var(--wnote-border);',
+    'border-radius:5px;padding:1px 5px;}',
+
+    /* Pins — circular by design (no rounded-square icon tiles anywhere). */
+    '.wnote-pin{position:fixed;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;',
+    'pointer-events:auto;cursor:pointer;border:2px solid #fff;color:#fff;font-size:12px;font-weight:700;',
+    'display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(17,24,39,.35);',
+    'transition:transform .14s ease;padding:0;font-family:inherit;}',
+    '.wnote-pin:hover{transform:scale(1.16);}',
+    '.wnote-pin.is-open{transform:scale(1.16);box-shadow:0 0 0 4px rgba(37,80,124,.28),0 2px 8px rgba(17,24,39,.35);}',
+    '.wnote-pin.is-resolved{opacity:.45;}',
+    'html.dark .wnote-pin{border-color:rgba(255,255,255,.55);}',
+
+    /* Popups (composer + thread) */
+    '.wnote-pop{position:fixed;width:320px;max-width:calc(100vw - 24px);pointer-events:auto;',
+    'background:var(--wnote-surface);color:var(--wnote-text);border:1px solid var(--wnote-border);',
+    'border-radius:16px;box-shadow:0 12px 40px rgba(17,24,39,.22);overflow:hidden;}',
+    '.wnote-pop-head{display:flex;align-items:center;justify-content:space-between;gap:8px;',
+    'padding:12px 14px 8px;}',
+    ".wnote-title{font-family:'WISE Digits','Noto Serif',Georgia,serif;font-weight:800;font-size:1rem;margin:0;}",
+    '.wnote-x{pointer-events:auto;background:none;border:0;color:var(--wnote-muted);cursor:pointer;',
+    'font-size:16px;padding:2px;border-radius:50%;display:flex;}',
+    '.wnote-x:hover{color:var(--wnote-text);}',
+    '.wnote-body{padding:0 14px 14px;}',
+
+    /* Chip row */
+    '.wnote-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px;}',
+    '.wnote-chip{height:26px;padding:0 10px;border-radius:9999px;border:1px solid var(--wnote-border);',
+    'background:transparent;color:var(--wnote-muted);font-family:inherit;font-size:11px;font-weight:600;',
+    'cursor:pointer;display:inline-flex;align-items:center;gap:6px;line-height:1;}',
+    '.wnote-chip::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--wnote-dot,#888);}',
+    '.wnote-chip:hover{color:var(--wnote-text);border-color:var(--wnote-dot,var(--wnote-border));}',
+    '.wnote-chip[aria-pressed="true"]{color:#fff;background:var(--wnote-dot,#555);border-color:var(--wnote-dot,#555);}',
+    '.wnote-chip[aria-pressed="true"]::before{background:#fff;}',
+    'html.dark .wnote-chip[aria-pressed="true"]{color:#05141C;}',
+
+    /* Inputs */
+    '.wnote-ta,.wnote-in{width:100%;font-family:inherit;font-size:13px;color:var(--wnote-text);',
+    'background:var(--wnote-bg);border:1px solid var(--wnote-border);border-radius:10px;padding:8px 10px;',
+    'outline:none;resize:vertical;}',
+    '.wnote-ta{min-height:74px;line-height:1.45;}',
+    '.wnote-in{height:34px;margin-top:8px;}',
+    '.wnote-ta:focus,.wnote-in:focus{border-color:var(--wnote-design);}',
+    '.wnote-ta::placeholder,.wnote-in::placeholder{color:var(--wnote-muted);opacity:.85;}',
+    '.wnote-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:10px;}',
+    '.wnote-btn{height:32px;padding:0 14px;border-radius:9999px;font-family:inherit;font-size:12px;',
+    'font-weight:600;cursor:pointer;border:1px solid var(--wnote-border);background:transparent;',
+    'color:var(--wnote-muted);display:inline-flex;align-items:center;gap:6px;}',
+    '.wnote-btn:hover{color:var(--wnote-text);}',
+    '.wnote-btn.primary{background:var(--wnote-design);border-color:var(--wnote-design);color:#fff;}',
+    'html.dark .wnote-btn.primary{color:#05141C;}',
+    '.wnote-btn.primary:hover{filter:brightness(1.08);}',
+    '.wnote-btn[disabled]{opacity:.5;cursor:default;}',
+
+    /* Thread */
+    '.wnote-meta{display:flex;align-items:center;flex-wrap:wrap;gap:2px 6px;font-size:11px;',
+    'color:var(--wnote-muted);}',
+    '.wnote-meta > span{white-space:nowrap;}',
+    '.wnote-tag{font-weight:700;color:var(--wnote-dot,var(--wnote-muted));text-transform:uppercase;letter-spacing:.04em;}',
+    '.wnote-who{font-weight:700;color:var(--wnote-text);font-size:12px;}',
+    '.wnote-text{font-size:13px;line-height:1.5;margin:6px 0 0;white-space:pre-wrap;word-break:break-word;}',
+    '.wnote-thread{max-height:230px;overflow:auto;margin-top:10px;display:flex;flex-direction:column;gap:10px;}',
+    '.wnote-reply{border-left:2px solid var(--wnote-border);padding-left:10px;}',
+    '.wnote-empty{font-size:12px;color:var(--wnote-muted);padding:10px 0;}',
+    '.wnote-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;',
+    'padding-top:10px;border-top:1px solid var(--wnote-border);}',
+    '.wnote-link{background:none;border:0;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;',
+    'color:var(--wnote-muted);display:inline-flex;align-items:center;gap:5px;padding:2px;}',
+    '.wnote-link:hover{color:var(--wnote-text);}',
+    '.wnote-link.danger:hover{color:var(--wnote-bug);}',
+
+    /* Launcher (circular — never a rounded square) */
+    '.wnote-fab{position:fixed;right:18px;bottom:var(--wnote-fab-bottom,18px);width:46px;height:46px;border-radius:50%;',
+    'pointer-events:auto;cursor:pointer;border:1px solid var(--wnote-border);background:var(--wnote-surface);',
+    'color:var(--wnote-text);font-size:22px;display:flex;align-items:center;justify-content:center;',
+    'box-shadow:0 6px 20px rgba(17,24,39,.20);}',
+    '.wnote-fab:hover{border-color:var(--wnote-design);}',
+    '.wnote-fab.is-armed{background:var(--wnote-design);color:#fff;border-color:var(--wnote-design);}',
+    '.wnote-count{position:absolute;top:-3px;right:-3px;min-width:19px;height:19px;border-radius:50%;',
+    'background:var(--wnote-bug);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;',
+    'justify-content:center;padding:0 5px;border:2px solid var(--wnote-surface);}',
+
+    /* Panel */
+    '.wnote-panel{position:fixed;right:18px;bottom:calc(var(--wnote-fab-bottom,18px) + 56px);',
+    'width:330px;max-height:min(70vh,560px);',
+    'max-width:calc(100vw - 24px);pointer-events:auto;display:flex;flex-direction:column;',
+    'background:var(--wnote-surface);color:var(--wnote-text);border:1px solid var(--wnote-border);',
+    'border-radius:16px;box-shadow:0 16px 44px rgba(17,24,39,.24);overflow:hidden;}',
+    '.wnote-list{overflow:auto;padding:0 14px 14px;display:flex;flex-direction:column;gap:8px;}',
+    '.wnote-item{width:100%;text-align:left;background:var(--wnote-bg);border:1px solid transparent;',
+    'border-radius:12px;padding:9px 11px;cursor:pointer;font-family:inherit;color:inherit;}',
+    '.wnote-item:hover{border-color:var(--wnote-design);}',
+    '.wnote-item.is-resolved{opacity:.55;}',
+    '.wnote-item .wnote-text{font-size:12px;max-height:34px;overflow:hidden;}',
+    '.wnote-note{font-size:11px;color:var(--wnote-muted);padding:0 14px 10px;line-height:1.4;}',
+    '@media (prefers-reduced-motion:reduce){#wnote-root *{transition:none !important;}}'
+  ].join('');
+
+  function injectCss() {
+    var s = document.createElement('style');
+    s.id = 'wnote-css';
+    s.textContent = CSS;
+    document.head.appendChild(s);
+  }
+
+  /* ── Root ────────────────────────────────────────────────────────────── */
+  var root, fab, countBadge, hint;
+
+  function build() {
+    root = el('div');
+    root.id = 'wnote-root';
+
+    fab = el('button', 'wnote-fab', ICONS.comment);
+    fab.type = 'button';
+    fab.title = 'Comments — press C to drop one';
+    fab.setAttribute('aria-label', 'Comments');
+    countBadge = el('span', 'wnote-count');
+    countBadge.style.display = 'none';
+    fab.appendChild(countBadge);
+    fab.addEventListener('click', function (e) {
+      e.stopPropagation();
+      togglePanel();
+    });
+
+    root.appendChild(fab);
+    document.body.appendChild(root);
+  }
+
+  function chipColor(id) {
+    return 'var(--wnote-' + (CHIP_LABEL[id] ? id : 'design') + ')';
+  }
+
+  /* The launcher lives in the bottom-right corner, which on several pages is
+     exactly where the app parks its own controls (the chat send button on
+     wiseai.html, for one). Rather than hard-code a per-page offset, hit-test
+     the corner and step upwards until the button is not sitting on top of
+     anything clickable. */
+  var CLICKABLE = 'button,a,input,textarea,select,[role="button"],[contenteditable="true"]';
+
+  function fabCovers() {
+    var r = fab.getBoundingClientRect();
+    var pts = [
+      [r.left + r.width / 2, r.top + r.height / 2],
+      [r.left + 4, r.top + 4], [r.right - 4, r.top + 4],
+      [r.left + 4, r.bottom - 4], [r.right - 4, r.bottom - 4]
+    ];
+    var prev = fab.style.pointerEvents;
+    fab.style.pointerEvents = 'none';
+    var hit = false;
+    for (var i = 0; i < pts.length && !hit; i++) {
+      var node = document.elementFromPoint(pts[i][0], pts[i][1]);
+      if (node && node.closest && node.closest(CLICKABLE)) hit = true;
+    }
+    fab.style.pointerEvents = prev;
+    return hit;
+  }
+
+  function avoidChrome() {
+    if (!fab || !root) return;
+    var steps = [18, 78, 138, 198];
+    for (var i = 0; i < steps.length; i++) {
+      root.style.setProperty('--wnote-fab-bottom', steps[i] + 'px');
+      if (!fabCovers()) return;
+    }
+    root.style.setProperty('--wnote-fab-bottom', steps[0] + 'px');
+  }
+
+  /* ── Arm / disarm ────────────────────────────────────────────────────── */
+  function setArmed(on) {
+    armed = !!on;
+    document.documentElement.classList.toggle('wnote-armed', armed);
+    fab.classList.toggle('is-armed', armed);
+    if (armed) {
+      if (!hint) {
+        hint = el('div', 'wnote-hint', 'Click anywhere to leave a comment <kbd>Esc</kbd> to cancel');
+        root.appendChild(hint);
+      }
+    } else if (hint) {
+      hint.remove();
+      hint = null;
+    }
+  }
+
+  function isTyping(t) {
+    if (!t || t.nodeType !== 1) return false;
+    var tag = t.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || t.isContentEditable;
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.defaultPrevented) return;
+    if (e.key === 'Escape') {
+      if (armed) { setArmed(false); return; }
+      if (openPopup) { closePopup(); return; }
+      if (panelOpen) { togglePanel(); return; }
+      return;
+    }
+    /* Bare "c" only — never with a modifier (Cmd+C must still copy) and never
+       while the reviewer is typing into the app's own inputs. */
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (isTyping(e.target)) return;
+    if (String(e.key).toLowerCase() !== 'c') return;
+    e.preventDefault();
+    setArmed(!armed);
+  }, true);
+
+  /* Capture-phase so the app's own click handlers never see the placement
+     click (rows would navigate, chips would fire transcripts, etc). */
+  document.addEventListener('click', function (e) {
+    if (!armed) return;
+    if (root && root.contains(e.target)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setArmed(false);
+    openComposer(e.clientX, e.clientY, anchorFor(e.target, e.clientX, e.clientY));
+  }, true);
+
+  /* ── Popup placement ─────────────────────────────────────────────────────
+     Popovers sit to the right of the pin when there is room, then left, then
+     above — never directly below the trigger. */
+  function place(node, x, y) {
+    var pad = 12;
+    var w = node.offsetWidth || 320;
+    var h = node.offsetHeight || 200;
+    var left = x + 22;
+    if (left + w + pad > window.innerWidth) left = x - 22 - w;
+    if (left < pad) left = Math.max(pad, Math.min(x - w / 2, window.innerWidth - w - pad));
+    var top = y - h / 2;
+    if (top + h + pad > window.innerHeight) top = y - h - 18;
+    if (top < pad) top = pad;
+    node.style.left = Math.round(left) + 'px';
+    node.style.top = Math.round(top) + 'px';
+  }
+
+  function closePopup() {
+    if (!openPopup) return;
+    if (openPopup.node) openPopup.node.remove();
+    Object.keys(pins).forEach(function (id) { pins[id].classList.remove('is-open'); });
+    openPopup = null;
+  }
+
+  document.addEventListener('mousedown', function (e) {
+    if (!openPopup) return;
+    if (openPopup.node && openPopup.node.contains(e.target)) return;
+    if (e.target.closest && e.target.closest('.wnote-pin')) return;
+    closePopup();
+  }, true);
+
+  /* ── Composer ────────────────────────────────────────────────────────── */
+  function openComposer(x, y, anchor) {
+    closePopup();
+    var pop = el('div', 'wnote-pop');
+    var name = lsGet(LS_NAME) || '';
+    pop.innerHTML =
+      '<div class="wnote-pop-head"><h3 class="wnote-title">Leave a comment</h3>' +
+      '<button type="button" class="wnote-x" aria-label="Cancel">' + ICONS.close + '</button></div>' +
+      '<div class="wnote-body">' +
+      '<div class="wnote-chips">' + CHIPS.map(function (c) {
+        return '<button type="button" class="wnote-chip" data-chip="' + c.id + '" aria-pressed="false" ' +
+          'style="--wnote-dot:' + chipColor(c.id) + '">' + esc(c.label) + '</button>';
+      }).join('') + '</div>' +
+      '<textarea class="wnote-ta" placeholder="What should change here?"></textarea>' +
+      '<input class="wnote-in" type="text" placeholder="Your name" value="' + esc(name) + '" />' +
+      '<div class="wnote-actions">' +
+      '<button type="button" class="wnote-btn wnote-cancel">Cancel</button>' +
+      '<button type="button" class="wnote-btn primary wnote-post" disabled>Post</button>' +
+      '</div></div>';
+    root.appendChild(pop);
+    place(pop, x, y);
+
+    var ta = pop.querySelector('.wnote-ta');
+    var nameIn = pop.querySelector('.wnote-in');
+    var post = pop.querySelector('.wnote-post');
+    var chip = 'question';
+
+    function sync() {
+      post.disabled = !(ta.value.trim() && nameIn.value.trim());
+    }
+    pop.querySelectorAll('.wnote-chip').forEach(function (b) {
+      if (b.getAttribute('data-chip') === chip) b.setAttribute('aria-pressed', 'true');
+      b.addEventListener('click', function () {
+        chip = b.getAttribute('data-chip');
+        pop.querySelectorAll('.wnote-chip').forEach(function (o) {
+          o.setAttribute('aria-pressed', String(o === b));
+        });
+      });
+    });
+    ta.addEventListener('input', sync);
+    nameIn.addEventListener('input', sync);
+    ta.addEventListener('keydown', function (e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !post.disabled) submit();
+    });
+    pop.querySelector('.wnote-x').addEventListener('click', closePopup);
+    pop.querySelector('.wnote-cancel').addEventListener('click', closePopup);
+    post.addEventListener('click', submit);
+    sync();
+    setTimeout(function () { ta.focus(); }, 0);
+
+    function submit() {
+      post.disabled = true;
+      post.textContent = 'Posting…';
+      var author = nameIn.value.trim();
+      lsSet(LS_NAME, author);
+      Store.add({
+        page: pageKey(),
+        selector: anchor.selector,
+        fx: anchor.fx,
+        fy: anchor.fy,
+        viewport_w: anchor.viewport_w,
+        viewport_h: anchor.viewport_h,
+        chip: chip,
+        text: ta.value.trim(),
+        author: author,
+        url: location.href
+      }).then(function (saved) {
+        closePopup();
+        comments.push(saved);
+        render();
+      }).catch(function () {
+        post.disabled = false;
+        post.textContent = 'Retry';
+      });
+    }
+
+    openPopup = { node: pop, anchor: anchor };
+  }
+
+  /* ── Thread ──────────────────────────────────────────────────────────── */
+  function replyHtml(r) {
+    return '<div class="wnote-reply"><div class="wnote-meta"><span class="wnote-who">' + esc(r.author) +
+      '</span><span>·</span><span>' + esc(fmtDate(r.created_at)) + '</span></div>' +
+      '<p class="wnote-text">' + esc(r.text) + '</p></div>';
+  }
+
+  function openThread(c) {
+    closePopup();
+    var pin = pins[c.id];
+    /* The anchor can genuinely disappear — a flow moves on, a pane closes, the
+       page changes. The thread must still open (from the panel) rather than
+       becoming a comment nobody can read, so fall back to the viewport centre
+       and say why the pin is missing. */
+    var pt = resolveAnchor(c);
+    var orphan = !pt;
+    if (orphan) pt = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    if (pin) pin.classList.add('is-open');
+
+    var pop = el('div', 'wnote-pop');
+    pop.style.setProperty('--wnote-dot', chipColor(c.chip));
+    var replies = c.replies || [];
+    pop.innerHTML =
+      '<div class="wnote-pop-head"><h3 class="wnote-title">' + esc(CHIP_LABEL[c.chip] || 'Comment') + '</h3>' +
+      '<button type="button" class="wnote-x" aria-label="Close">' + ICONS.close + '</button></div>' +
+      '<div class="wnote-body">' +
+      '<div class="wnote-meta"><span class="wnote-who">' + esc(c.author) + '</span><span>·</span><span>' +
+      esc(fmtDate(c.created_at)) + '</span>' + (c.resolved ? '<span>· resolved</span>' : '') + '</div>' +
+      '<p class="wnote-text">' + esc(c.text) + '</p>' +
+      (orphan ? '<div class="wnote-empty">The spot this was pinned to is not on the page right now.</div>' : '') +
+      '<div class="wnote-thread">' + replies.map(replyHtml).join('') + '</div>' +
+      '<textarea class="wnote-ta wnote-rta" placeholder="Reply…" style="min-height:56px;margin-top:10px"></textarea>' +
+      '<input class="wnote-in wnote-rname" type="text" placeholder="Your name" value="' + esc(lsGet(LS_NAME) || '') + '" />' +
+      '<div class="wnote-actions"><button type="button" class="wnote-btn primary wnote-send" disabled>' +
+      ICONS.send + ' Reply</button></div>' +
+      (admin ? '<div class="wnote-foot">' +
+        '<button type="button" class="wnote-link wnote-resolve">' + ICONS.check + (c.resolved ? ' Reopen' : ' Resolve') + '</button>' +
+        '<button type="button" class="wnote-link danger wnote-del">' + ICONS.trash + ' Delete</button></div>' : '') +
+      '</div>';
+    root.appendChild(pop);
+    place(pop, pt.x, pt.y);
+
+    var rta = pop.querySelector('.wnote-rta');
+    var rname = pop.querySelector('.wnote-rname');
+    var send = pop.querySelector('.wnote-send');
+    var thread = pop.querySelector('.wnote-thread');
+    thread.scrollTop = thread.scrollHeight;
+
+    function sync() { send.disabled = !(rta.value.trim() && rname.value.trim()); }
+    rta.addEventListener('input', sync);
+    rname.addEventListener('input', sync);
+    rta.addEventListener('keydown', function (e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !send.disabled) fire();
+    });
+    send.addEventListener('click', fire);
+    pop.querySelector('.wnote-x').addEventListener('click', closePopup);
+
+    function fire() {
+      send.disabled = true;
+      var author = rname.value.trim();
+      lsSet(LS_NAME, author);
+      Store.reply(c.id, { author: author, text: rta.value.trim() }).then(function (saved) {
+        (c.replies = c.replies || []).push(saved);
+        thread.insertAdjacentHTML('beforeend', replyHtml(saved));
+        thread.scrollTop = thread.scrollHeight;
+        rta.value = '';
+        sync();
+        renderPanel();
+      }).catch(function () { send.disabled = false; });
+    }
+
+    if (admin) {
+      pop.querySelector('.wnote-resolve').addEventListener('click', function () {
+        Store.resolve(c.id, !c.resolved).then(function () {
+          c.resolved = c.resolved ? 0 : 1;
+          closePopup();
+          render();
+        });
+      });
+      pop.querySelector('.wnote-del').addEventListener('click', function () {
+        if (!window.confirm('Delete this comment and its replies?')) return;
+        Store.remove(c.id).then(function () {
+          comments = comments.filter(function (o) { return o.id !== c.id; });
+          closePopup();
+          render();
+        });
+      });
+    }
+
+    openPopup = { node: pop, comment: c };
+  }
+
+  /* ── Panel ───────────────────────────────────────────────────────────── */
+  var panel = null;
+
+  function togglePanel() {
+    panelOpen = !panelOpen;
+    if (!panelOpen) {
+      if (panel) { panel.remove(); panel = null; }
+      return;
+    }
+    panel = el('div', 'wnote-panel');
+    panel.innerHTML =
+      '<div class="wnote-pop-head"><h3 class="wnote-title">Comments</h3>' +
+      '<button type="button" class="wnote-x" aria-label="Close">' + ICONS.close + '</button></div>' +
+      '<div class="wnote-note">Press <strong>C</strong>, then click the exact spot you want to talk about.</div>' +
+      '<div class="wnote-list"></div>';
+    root.appendChild(panel);
+    panel.querySelector('.wnote-x').addEventListener('click', togglePanel);
+    renderPanel();
+  }
+
+  function renderPanel() {
+    if (!panel) return;
+    var list = panel.querySelector('.wnote-list');
+    if (!comments.length) {
+      list.innerHTML = '<div class="wnote-empty">No comments on this page yet.</div>';
+    } else {
+      list.innerHTML = comments.map(function (c, i) {
+        var n = (c.replies || []).length;
+        return '<button type="button" class="wnote-item' + (c.resolved ? ' is-resolved' : '') +
+          '" data-id="' + esc(c.id) + '" style="--wnote-dot:' + chipColor(c.chip) + '">' +
+          '<div class="wnote-meta"><span class="wnote-tag">' + esc(CHIP_LABEL[c.chip] || 'Note') + '</span>' +
+          '<span>·</span><span class="wnote-who">' + esc(c.author) + '</span>' +
+          '<span>·</span><span>' + esc(fmtDate(c.created_at)) + '</span>' +
+          (n ? '<span>· ' + n + ' repl' + (n === 1 ? 'y' : 'ies') + '</span>' : '') + '</div>' +
+          '<p class="wnote-text">' + esc(c.text) + '</p></button>';
+      }).join('');
+      list.querySelectorAll('.wnote-item').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var c = comments.filter(function (o) { return String(o.id) === b.getAttribute('data-id'); })[0];
+          if (c) openThread(c);
+        });
+      });
+    }
+    var note = panel.querySelector('.wnote-note');
+    if (Store.isLocal()) {
+      note.innerHTML = 'Press <strong>C</strong>, then click the exact spot you want to talk about.' +
+        '<br><em>Saved in this browser only — the comment server is not reachable.</em>';
+    }
+  }
+
+  /* ── Pins ────────────────────────────────────────────────────────────── */
+  function render() {
+    var seen = {};
+    comments.forEach(function (c, i) {
+      seen[c.id] = true;
+      var pin = pins[c.id];
+      if (!pin) {
+        pin = el('button', 'wnote-pin');
+        pin.type = 'button';
+        pin.addEventListener('click', function (e) {
+          e.stopPropagation();
+          if (openPopup && openPopup.comment && openPopup.comment.id === c.id) closePopup();
+          else openThread(c);
+        });
+        root.appendChild(pin);
+        pins[c.id] = pin;
+      }
+      pin.textContent = String(i + 1);
+      pin.style.background = chipColor(c.chip);
+      pin.title = (CHIP_LABEL[c.chip] || 'Comment') + ' — ' + c.author;
+      pin.classList.toggle('is-resolved', !!c.resolved);
+    });
+    Object.keys(pins).forEach(function (id) {
+      if (!seen[id]) { pins[id].remove(); delete pins[id]; }
+    });
+    var open = comments.filter(function (c) { return !c.resolved; }).length;
+    countBadge.textContent = String(open);
+    countBadge.style.display = open ? 'flex' : 'none';
+    layout();
+    renderPanel();
+  }
+
+  /* Pins are fixed-position, so they must be re-resolved whenever anything
+     moves. WISE pages scroll inside module panes and re-render on flow steps,
+     so events alone are not enough — a light interval covers the rest. */
+  var layoutQueued = false;
+  function layout() {
+    if (layoutQueued) return;
+    layoutQueued = true;
+    requestAnimationFrame(function () {
+      layoutQueued = false;
+      comments.forEach(function (c) {
+        var pin = pins[c.id];
+        if (!pin) return;
+        var pt = resolveAnchor(c);
+        if (!pt || pt.x < -20 || pt.y < -20 || pt.x > window.innerWidth + 20 || pt.y > window.innerHeight + 20) {
+          pin.style.display = 'none';
+          return;
+        }
+        pin.style.display = 'flex';
+        pin.style.left = pt.x + 'px';
+        pin.style.top = pt.y + 'px';
+      });
+      if (openPopup && openPopup.comment) {
+        var p = resolveAnchor(openPopup.comment);
+        if (p) place(openPopup.node, p.x, p.y);
+      }
+    });
+  }
+
+  window.addEventListener('scroll', layout, true);
+  window.addEventListener('resize', layout);
+  setInterval(layout, 500);
+
+  /* ── Boot ────────────────────────────────────────────────────────────── */
+  function start() {
+    injectCss();
+    build();
+    Store.list(pageKey()).then(function (rows) {
+      comments = rows || [];
+      comments.sort(function (a, b) { return String(a.created_at).localeCompare(String(b.created_at)); });
+      render();
+    });
+    /* Page chrome arrives late on several flows, so re-check the corner once
+       the first paint settles and again after the shell has injected its nav. */
+    setTimeout(avoidChrome, 400);
+    setTimeout(avoidChrome, 1800);
+    window.addEventListener('resize', avoidChrome);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start);
+  } else {
+    start();
+  }
+
+  window.WiseFeedback = {
+    open: function () { if (!panelOpen) togglePanel(); },
+    arm: function () { setArmed(true); },
+    refresh: function () {
+      Store.list(pageKey()).then(function (rows) { comments = rows || []; render(); });
+    },
+    isAdmin: function () { return admin; },
+    isLocal: function () { return Store.isLocal(); }
+  };
+})();
