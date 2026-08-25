@@ -1165,7 +1165,7 @@
 
     /* Product cell — real food image + name with brand beneath it */
     .wa-prod { display: flex; align-items: center; gap: 11px; min-width: 0; }
-    .wa-thumb { width: 40px; height: 40px; flex: 0 0 auto; border-radius: 50%; overflow: hidden; position: relative; display: inline-flex; align-items: center; justify-content: center; background: var(--surface-2); color: var(--primary); border: 1px solid var(--border); }
+    .wa-thumb { width: 40px; height: 40px; flex: 0 0 auto; border-radius: var(--w-prod-thumb-r, 8px); overflow: hidden; position: relative; display: inline-flex; align-items: center; justify-content: center; background: var(--surface-2); color: var(--primary); border: 1px solid var(--border); }
     html.dark .wa-thumb { background: rgba(37,80,124,0.28); color: #9DC0E6; border-color: rgba(255,255,255,0.10); }
     .wa-thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .wa-thumb-fallback { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; }
@@ -1828,19 +1828,19 @@
     .sc-surface-slot { display: block; min-width: 0; max-width: 100%; }
     .sc-surface-card {
       position: relative; box-sizing: border-box;
-      display: flex; flex-direction: column; align-items: stretch;
-      width: 100%; max-width: min(360px, 100%); min-width: 0;
-      text-align: left; margin: 4px 0 0; padding: 6px 10px 6px 6px;
+      display: inline-flex; flex-direction: column; align-items: stretch;
+      width: min(240px, 100%); max-width: 100%; min-width: 0;
+      text-align: left; margin: 4px 0 0; padding: 8px 12px 8px 8px;
       /* Thin, light gold-yellow stroke so the output chips echo the amber
          activity-strip ticks on the chat's right edge — but the fill matches the
          chat container's own background so only the outline reads as gold. */
       background: var(--surface); border: 1px solid color-mix(in srgb, var(--ter-amber, #FFC434) 50%, transparent);
-      border-radius: 12px; cursor: pointer; font-family: inherit;
+      border-radius: 14px; cursor: pointer; font-family: inherit;
       transition: border-color .15s ease, box-shadow .15s ease, transform .05s ease, max-width .35s ease;
     }
     /* The chip's top row: thumbnail(s) + title. min-width:0 so the title column
        can shrink inside the docked chat instead of overflowing and clipping. */
-    .sc-surface-head { display: flex; align-items: center; gap: 10px; min-width: 0; width: 100%; }
+    .sc-surface-head { display: flex; align-items: center; gap: 12px; min-width: 0; width: 100%; }
     /* Dark chat card uses #1A2339 (not --surface), so match it here too. */
     html.dark .sc-surface-card { background: #1A2339; }
     html.dark.chat-tint .sc-surface-card { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
@@ -1849,30 +1849,24 @@
     .sc-surface-card:active { transform: translateY(1px); }
     /* Small clipped snapshot of the surfaced content, scaled way down. */
     .sc-surface-thumb {
-      width: 44px; height: 44px; flex: 0 0 auto; border-radius: 8px; overflow: hidden;
+      width: 52px; height: 52px; flex: 0 0 auto; border-radius: 10px; overflow: hidden;
       position: relative; background: var(--surface); border: 1px solid var(--border);
     }
     .sc-surface-thumb-inner {
       position: absolute; top: 0; left: 0; width: 360px;
-      transform: scale(0.122); transform-origin: top left; pointer-events: none;
+      transform: scale(0.1444); transform-origin: top left; pointer-events: none;
     }
     .sc-surface-thumb-inner > * { margin: 0 !important; }
     /* Body column — the title now stacks above a small meta row (timestamp +
        version), so every output chip is time-stamped and versioned. */
-    .sc-surface-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-    /* Two-line title: wrap at the middot (two <span>s) when present, otherwise
-       clamp a long single name to two lines so it never clips off the right. */
+    .sc-surface-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+    /* Title uses the full width beside the thumbnail and wraps to two lines
+       when the name is long, instead of stretching the chip across the chat. */
     .sc-surface-title {
-      min-width: 0; font-size: var(--fs-label); font-weight: 700; color: var(--text);
+      min-width: 0; width: 100%; font-size: 14px; font-weight: 700; color: var(--text);
       line-height: 1.3; white-space: normal; overflow-wrap: anywhere; word-break: break-word;
-      display: flex; flex-direction: column; justify-content: center;
-    }
-    .sc-surface-title > span {
-      min-width: 0; display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1;
-      -webkit-box-orient: vertical; overflow: hidden;
-    }
-    .sc-surface-title:not(:has(> span)) {
-      display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden;
     }
     .sc-surface-stamp { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
     .sc-surface-time {
@@ -4556,8 +4550,9 @@
     }
     /* While the chat is thinking, the Output sticky module is already open
        (onEngage) but no .wa-block has landed yet. Fill that gap with the
-       product-comparison loading pose — pending ghost bars, scan sweep, and
-       the breathing owl — so the pane is never a blank cream screen. */
+       product-comparison loading pose — pending ghost bars and a scan sweep
+       when Appearance ▸ Helix loading is off; js/load-anim.js overlays the
+       larger streaming helix on top (and hides the stripes) when it is on. */
     function outputSkelMarkup() {
       const cell = '<div class="cmp-cell cmp-cell--entity is-pending"><span class="cmp-ghost cmp-ghost--bar"></span></div>';
       const tile = '<div class="cmp-cell cmp-cell--entity is-pending wa-pane-skel-tile"><span class="cmp-ghost cmp-ghost--bar"></span></div>';
@@ -9224,13 +9219,9 @@
       const count = versions ? versions.length : 1;
       const version = o.version || count;
       const rawTitle = String(title == null ? '' : title).trim() || 'Output';
-      /* Compound names ("10 worst foods · gut & immune request") wrap at the
-         middot so the chip title always has two lines instead of running off
-         the right edge of the docked chat. */
-      const mid = rawTitle.indexOf(' · ');
-      const titleHtml = mid > 0
-        ? `<span>${esc(rawTitle.slice(0, mid))} ·</span><span>${esc(rawTitle.slice(mid + 3))}</span>`
-        : esc(rawTitle);
+      /* Let the title fill the chip and wrap naturally (up to two lines). A
+         middot is a wrap hint, not a forced line break. */
+      const titleHtml = esc(rawTitle);
 
       let thumb;
       if (versions && versions.length > 1) {

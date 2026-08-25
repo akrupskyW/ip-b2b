@@ -32,9 +32,34 @@
       line-height: 1.15;
       letter-spacing: normal;
     }
-    [data-nav-id="non-upf-dashboard"] .adm-head-actions .adm-btn {
-      height: 38px;
-      font-size: 12px;
+    /* ── Status chips match Product Portfolio `.pf-chip` ─────────────────
+       Shared `.adm-chip` is a larger pill (0.72rem, 3×10 padding, 5px gap).
+       Score-card chips also wrap to the card width (`white-space: normal` +
+       `max-width: 100%`), so they read as fat buttons instead of compact
+       labels. Size score-card and table chips to the portfolio table chips
+       so both surfaces match. */
+    [data-nav-id="non-upf-dashboard"] .adm-chip {
+      gap: 1px;
+      padding: 2px 9px;
+      font-size: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+      line-height: 1.5;
+    }
+    [data-nav-id="non-upf-dashboard"] .adm-chip .material-symbols-outlined {
+      font-size: 13px !important;
+      line-height: 1 !important;
+      width: 14px; height: 14px; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    [data-nav-id="non-upf-dashboard"] .adm-vf-stat-chipwrap { min-height: 0; }
+    [data-nav-id="non-upf-dashboard"] .adm-vf-stat .adm-chip {
+      width: max-content;
+      max-width: 100%;
+      white-space: normal;
+      text-align: center;
+      justify-content: center;
+      line-height: 1.5;
     }
 
     /* ── Row actions "⋮" — mirror Product Portfolio's .pf-rowmenu-btn ──────
@@ -101,12 +126,12 @@
     [data-nav-id="non-upf-dashboard"] .adm-table--cards .adm-td--num { justify-content: flex-start; text-align: left; }
     [data-nav-id="non-upf-dashboard"] .adm-table--cards .adm-trow .adm-td--end { position: absolute; top: 10px; right: 10px; padding: 0; }
 
-    /* Row ⇆ Card layout now lives in the table's ⋮ menu (see openViewMenu). The
-       trigger reuses .nud-rowmenu-btn (bare 30px circle) and sits at the end of
-       the toolbar; it grows a subtle "active" tint while its menu is open. */
-    [data-nav-id="non-upf-dashboard"] .nud-table-menu-btn { flex: 0 0 auto; }
-    [data-nav-id="non-upf-dashboard"] .nud-table-menu-btn[aria-expanded="true"] { background: var(--surface-2); color: var(--text); }
-    html.dark [data-nav-id="non-upf-dashboard"] .nud-table-menu-btn[aria-expanded="true"] { background: rgba(255,255,255,0.06); }
+    /* Page ⋮ — invoices, export, and row/card live in the header (see
+       openPageMenu). Reuses .nud-rowmenu-btn (bare 30px circle); it grows a
+       subtle "active" tint while its menu is open. */
+    [data-nav-id="non-upf-dashboard"] .nud-page-menu-btn { flex: 0 0 auto; }
+    [data-nav-id="non-upf-dashboard"] .nud-page-menu-btn[aria-expanded="true"] { background: var(--surface-2); color: var(--text); }
+    html.dark [data-nav-id="non-upf-dashboard"] .nud-page-menu-btn[aria-expanded="true"] { background: rgba(255,255,255,0.06); }
 
     /* Row / Card items inside the ⋮ menu: label fills the row, a trailing check
        marks the active layout in the brand colour. */
@@ -118,7 +143,7 @@
     .nud-view-item.is-active .material-symbols-outlined { color: inherit; }
 
     /* True mobile — cards are the only sensible layout, so force them and hide
-       the toggle regardless of the saved preference. */
+       the row/card items in the page menu. Invoices and export stay. */
     @media (max-width: 640px) {
       [data-nav-id="non-upf-dashboard"] .adm-table { min-width: 0; }
       [data-nav-id="non-upf-dashboard"] .adm-thead { display: none; }
@@ -126,7 +151,7 @@
       [data-nav-id="non-upf-dashboard"] .adm-actions { justify-content: flex-start; }
       [data-nav-id="non-upf-dashboard"] .adm-td--num { justify-content: flex-start; text-align: left; }
       [data-nav-id="non-upf-dashboard"] .adm-trow .adm-td--end { position: absolute; top: 10px; right: 10px; padding: 0; }
-      [data-nav-id="non-upf-dashboard"] .nud-table-menu-btn { display: none; }
+      .nud-view-item, .nud-view-sep { display: none; }
     }
   </style>
   <script src="../js/cwr-toggle.js"></script>

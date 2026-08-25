@@ -18,6 +18,12 @@
    the same layer as those overlays, above everything. A comment marker holds
    its original DOM slot so it restores the instant it hides.
 
+   Dismiss is also central: a capture-phase pointerdown/click (and Escape)
+   closes any shown menu whose event landed outside it. Local close handlers
+   often look the popover up as a descendant of its wrap (`wrap.querySelector`
+   / `wrap.contains`); after the portal that lookup misses, so the menu would
+   otherwise stick on screen. Opt out with `data-popover-static`.
+
    Self-guarding + idempotent; a no-op on pages with no popovers. */
 (function () {
   if (typeof document === 'undefined') return;
@@ -58,6 +64,15 @@
     '.sc-fb-reasons',
     '.sc-fb-menu',
     '.sc-fb-pop',
+  ].join(',');
+
+  /* Three-dot / row menus that are not floated by this layer (they stay in
+     flow) but still need the same click-off / Escape dismiss, because their
+     own bubble-phase listeners are often eaten by stopPropagation. */
+  var DISMISS_EXTRA = [
+    '.adm-rowmenu-pop',
+    '.inv-rowmenu-pop',
+    '.pf-datemenu-pop',
   ].join(',');
 
   var floated = new Set();
@@ -119,7 +134,7 @@
        activity-strip rail lives there at z-index 70) instead of remaining
        trapped in the chat module's stacking context. A comment marker holds
        the original slot for restore. */
-    el.__plHost = el.parentElement;
+    el.__plHost = isPageRoot(el.parentElement) ? null : el.parentElement;
     if (el.parentNode) {
       var marker = document.createComment('wise-pl');
       el.parentNode.insertBefore(marker, el);
@@ -236,6 +251,117 @@
   /* Accessible colors on/off changes whether a filter containing block exists.
      Re-pin any open menus so they stay on their anchors in both palettes. */
   document.addEventListener('wise:colorblind', refresh);
+
+  /* ── Click-off / Escape dismiss ───────────────────────────────────────
+     Capture so a click that another handler stopPropagates still closes the
+     menu. Skip the popover itself, its original wrap (the ⋯ trigger lives
+     there — the trigger's own toggle owns open/close), and a nested popover
+     that was portaled out of this one (both sit on <body>, so contains()
+     alone would close the parent while using the child). */
+
+  function isPageRoot(node) {
+    return !node || node === document.body || node === document.documentElement;
+  }
+
+  function originHost(el) {
+    /* Never treat <body> as the trigger wrap — some openers portal onto
+       body themselves before this layer does, and a body host would make
+       every click look "inside" the menu (so it could never dismiss). */
+    var host = el.__plHost;
+    if (host && host.nodeType === 1 && host.isConnected && !isPageRoot(host)) return host;
+    var markerParent = el.__plMarker && el.__plMarker.parentNode;
+    if (markerParent && markerParent.nodeType === 1 && !isPageRoot(markerParent)) return markerParent;
+    var parent = el.parentElement;
+    return parent && !isPageRoot(parent) ? parent : null;
+  }
+
+  function shownPops() {
+    var seen = [];
+    function add(el) {
+      if (!el || el.nodeType !== 1 || el.hasAttribute('data-popover-static')) return;
+      if (!isShown(el)) return;
+      for (var i = 0; i < seen.length; i++) if (seen[i] === el) return;
+      seen.push(el);
+    }
+    document.querySelectorAll(SELECTOR).forEach(add);
+    document.querySelectorAll(DISMISS_EXTRA).forEach(add);
+    floated.forEach(add);
+    return seen;
+  }
+
+  function clickInsideTree(el, target, shown) {
+    if (el.contains(target)) return true;
+    var host = originHost(el);
+    if (host && host.contains && host.contains(target)) return true;
+    if (el.id && target.closest) {
+      var opener = target.closest('[aria-controls="' + el.id + '"]');
+      if (opener) return true;
+    }
+    for (var i = 0; i < shown.length; i++) {
+      var other = shown[i];
+      if (other === el || !other.contains(target)) continue;
+      var otherHost = originHost(other);
+      if (otherHost && el.contains(otherHost)) return true;
+    }
+    return false;
+  }
+
+  /* Reverse the mechanism that showed this popover — do not stack a second
+     hide flag the opener doesn't know to clear (e.g. a `hidden` attribute on
+     a `.topbar-popover` that only toggles `.hidden`). */
+  function hidePop(el) {
+    el.classList.remove('open');
+    el.classList.remove('lir-pop-open');
+    if (el.classList.contains('topbar-popover') ||
+        el.classList.contains('wch-more-pop') ||
+        el.classList.contains('sc-fb-pop')) {
+      el.classList.add('hidden');
+    } else if (!el.classList.contains('fl-more-popover') &&
+               !el.classList.contains('fl-model-popover') &&
+               el.id !== 'lir-more-popover') {
+      el.hidden = true;
+      el.setAttribute('hidden', '');
+    }
+  }
+
+  function markTriggerClosed(el) {
+    var host = originHost(el);
+    if (!host || host.nodeType !== 1 || host === document.body) return;
+    host.classList.remove('is-open');
+    var nodes = host.querySelectorAll('[aria-expanded="true"], .is-open');
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].classList.remove('is-open');
+      if (nodes[i].hasAttribute('aria-expanded')) nodes[i].setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  function dismiss(el) {
+    if (!el) return;
+    markTriggerClosed(el);
+    hidePop(el);
+  }
+
+  function onDocDismiss(e) {
+    var target = e.target;
+    if (target && target.nodeType !== 1) target = target.parentElement;
+    if (!target) return;
+    var shown = shownPops();
+    if (!shown.length) return;
+    for (var i = 0; i < shown.length; i++) {
+      if (!clickInsideTree(shown[i], target, shown)) dismiss(shown[i]);
+    }
+  }
+
+  function onKeyDismiss(e) {
+    if (e.key !== 'Escape') return;
+    var shown = shownPops();
+    if (!shown.length) return;
+    for (var i = shown.length - 1; i >= 0; i--) dismiss(shown[i]);
+  }
+
+  document.addEventListener('pointerdown', onDocDismiss, true);
+  document.addEventListener('click', onDocDismiss, true);
+  document.addEventListener('keydown', onKeyDismiss, true);
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', start);

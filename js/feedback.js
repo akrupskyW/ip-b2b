@@ -52,6 +52,12 @@
      name on anything posted with the admin key — but the widget needs it up
      front to show "Replying as …" before you send. */
   var ownerName = 'Owner';
+  /* Whether on-page commenting is switched on at all. The server owns this —
+     it is a site-wide gate, not a per-browser preference — but it is mirrored
+     into localStorage so the Appearance popover, which renders synchronously,
+     can show the right state without waiting on a round trip. */
+  var LS_ON = 'wise-comments-on';
+  var commentsOn = lsGet(LS_ON) === '1';
 
   function health(base) {
     return fetch(base + '/health').then(function (r) {
@@ -59,6 +65,10 @@
       return r.json();
     }).then(function (info) {
       if (info && info.owner) ownerName = info.owner;
+      if (info && typeof info.enabled !== 'undefined') {
+        commentsOn = !!info.enabled;
+        lsSet(LS_ON, commentsOn ? '1' : '0');
+      }
       return base;
     });
   }
@@ -415,6 +425,9 @@
       resolve: function (id, val) {
         return req('/comments/' + encodeURIComponent(id) + '/resolve', { method: 'POST', body: { resolved: val ? 1 : 0 } });
       },
+      setEnabled: function (on) {
+        return req('/settings', { method: 'POST', body: { enabled: on ? 1 : 0 } });
+      },
       remove: function (id) {
         if (String(id).charAt(0) === 'l') {
           writeQueue(readQueue().filter(function (op) {
@@ -620,6 +633,10 @@
 
   /* ── Root ────────────────────────────────────────────────────────────── */
   var root, fab, countBadge, hint;
+  /* False until the feature is switched on. Every document-level listener and
+     the layout interval check it, so an off page carries no comment behaviour
+     at all — the script is present but inert. */
+  var built = false;
 
   function build() {
     root = el('div');
@@ -709,9 +726,9 @@
 
   /* ── Arm / disarm ────────────────────────────────────────────────────── */
   function setArmed(on) {
-    armed = !!on;
+    armed = !!on && built;
     document.documentElement.classList.toggle('wnote-armed', armed);
-    fab.classList.toggle('is-armed', armed);
+    if (fab) fab.classList.toggle('is-armed', armed);
     if (armed) {
       if (!hint) {
         hint = el('div', 'wnote-hint', 'Click anywhere to leave a comment <kbd>Esc</kbd> to cancel');
@@ -730,6 +747,7 @@
   }
 
   document.addEventListener('keydown', function (e) {
+    if (!built) return;
     if (e.defaultPrevented) return;
     if (e.key === 'Escape') {
       if (armed) { setArmed(false); return; }
@@ -749,7 +767,7 @@
   /* Capture-phase so the app's own click handlers never see the placement
      click (rows would navigate, chips would fire transcripts, etc). */
   document.addEventListener('click', function (e) {
-    if (!armed) return;
+    if (!built || !armed) return;
     if (root && root.contains(e.target)) return;
     e.preventDefault();
     e.stopPropagation();
@@ -1121,9 +1139,9 @@
     });
   }
 
-  window.addEventListener('scroll', layout, true);
-  window.addEventListener('resize', layout);
-  setInterval(function () { layout(); maybeAvoid(); }, 500);
+  window.addEventListener('scroll', function () { if (built) layout(); }, true);
+  window.addEventListener('resize', function () { if (built) layout(); });
+  setInterval(function () { if (built) { layout(); maybeAvoid(); } }, 500);
 
   /* ── Boot ────────────────────────────────────────────────────────────── */
   function load() {
@@ -1134,7 +1152,12 @@
     });
   }
 
-  function start() {
+  /* Nothing below exists until the feature is switched on: no launcher, no C
+     shortcut, no pins, no stylesheet. Turning it off tears all of it back
+     down, so a page that was showing comments stops without a reload. */
+  function raise() {
+    if (built) return;
+    built = true;
     injectCss();
     build();
     load();
@@ -1142,16 +1165,48 @@
        the first paint settles and again after the shell has injected its nav. */
     setTimeout(avoidChrome, 400);
     setTimeout(avoidChrome, 1800);
-    window.addEventListener('resize', avoidChrome);
+  }
 
+  function teardown() {
+    if (!built) return;
+    built = false;
+    setArmed(false);
+    closePopup();
+    panelOpen = false;
+    panel = null;
+    pins = {};
+    comments = [];
+    if (root) root.remove();
+    root = fab = countBadge = null;
+    if (hint) { hint.remove(); hint = null; }
+    var sheet = document.getElementById('wnote-css');
+    if (sheet) sheet.remove();
+    document.documentElement.classList.remove('wnote-armed');
+  }
+
+  function gate() {
+    if (commentsOn) raise();
+    else teardown();
+    try {
+      document.dispatchEvent(new CustomEvent('wise:comments', { detail: { on: commentsOn } }));
+    } catch (e) { /* older engines */ }
+  }
+
+  function start() {
+    /* Ask the server before drawing anything. The mirrored value only decides
+       what the popover shows; what actually renders waits for the truth. */
+    apiBase().then(gate, gate);
+
+    window.addEventListener('resize', function () { if (built) avoidChrome(); });
     /* Retry parked writes without needing a reload: when the network comes
        back, when the tab is looked at again, and on a slow background beat. */
-    window.addEventListener('online', load);
+    window.addEventListener('online', function () { if (built) load(); });
     document.addEventListener('visibilitychange', function () {
-      if (!document.hidden && (Store.isLocal() || Store.pendingCount())) load();
+      if (document.hidden || !built) return;
+      if (Store.isLocal() || Store.pendingCount()) load();
     });
     setInterval(function () {
-      if (Store.isLocal() || Store.pendingCount()) load();
+      if (built && (Store.isLocal() || Store.pendingCount())) load();
     }, 30000);
   }
 
@@ -1162,13 +1217,26 @@
   }
 
   window.WiseFeedback = {
-    open: function () { if (!panelOpen) togglePanel(); },
-    arm: function () { setArmed(true); },
+    open: function () { if (built && !panelOpen) togglePanel(); },
+    arm: function () { if (built) setArmed(true); },
     refresh: load,
     isAdmin: function () { return admin; },
     isLocal: function () { return Store.isLocal(); },
     pending: function () { return Store.pendingCount(); },
     api: function () { return API; },
-    pageKey: pageKey
+    pageKey: pageKey,
+    /* Used by the Comments row in the Appearance popover. */
+    isOn: function () { return commentsOn; },
+    isBuilt: function () { return built; },
+    canToggle: function () { return admin; },
+    setEnabled: function (on) {
+      if (!admin) return Promise.reject(new Error('owner only'));
+      return Store.setEnabled(on).then(function (info) {
+        commentsOn = !!(info && info.enabled);
+        lsSet(LS_ON, commentsOn ? '1' : '0');
+        gate();
+        return commentsOn;
+      });
+    }
   };
 })();

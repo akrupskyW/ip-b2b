@@ -245,7 +245,7 @@
     /* Product cell — thumbnail + brand/name */
     .gs-prodcell { display: flex; align-items: center; gap: 11px; min-width: 0; }
     .gs-thumb {
-      width: 40px; height: 40px; flex: 0 0 auto; border-radius: 9px; overflow: hidden;
+      width: 40px; height: 40px; flex: 0 0 auto; border-radius: var(--w-prod-thumb-r, 8px); overflow: hidden;
       display: inline-flex; align-items: center; justify-content: center;
       background: var(--primary-soft); color: var(--primary); border: 1px solid var(--border);
     }
@@ -405,7 +405,7 @@
                 <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="turns" role="menuitemcheckbox" aria-checked="false" onclick="toggleWISEcodeAITurnsModule(event)"><span class="material-symbols-outlined topbar-menu-icon">alt_route</span><span>Turns</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>
                 <div class="topbar-menu-divider"></div>
                 <!-- Standard app-wide rows — Compact spacing, Brand AI text,
-                     Background animation (+ opacity, angle, Scale X/Y/Z) and Response streaming
+                     Background animation (+ opacity, angle, scale, shape) and Response streaming
                      (+ detail). Markup mirrors the shared module template;
                      behavior is wired by wireStandardChatMenu() from
                      js/wiseai-chat.js so every chat module runs the exact same
@@ -423,20 +423,50 @@
                   <input type="range" class="sc-bganim-angle-range" min="-90" max="90" step="1" value="10" aria-label="Helix angle">
                   <span class="sc-bganim-angle-val">10°</span>
                 </div>
+                <div class="sc-bganim-detail sc-bganim-scale sc-bganim-scale-all">
+                  <span class="sc-bganim-detail-label">Scale</span>
+                  <input type="range" class="sc-bganim-scale-range" data-axis="all" min="0" max="35" step="1" value="15" aria-label="Background animation scale — all axes" title="Scale every axis together">
+                  <span class="sc-bganim-scale-val">100%</span>
+                </div>
                 <div class="sc-bganim-detail sc-bganim-scale sc-bganim-scale-x">
                   <span class="sc-bganim-detail-label">Scale X</span>
-                  <input type="range" class="sc-bganim-scale-range" data-axis="x" min="100" max="250" step="5" value="100" aria-label="Helix scale X">
+                  <input type="range" class="sc-bganim-scale-range" data-axis="x" min="0" max="35" step="1" value="15" aria-label="Background animation scale X">
                   <span class="sc-bganim-scale-val">100%</span>
                 </div>
                 <div class="sc-bganim-detail sc-bganim-scale sc-bganim-scale-y">
                   <span class="sc-bganim-detail-label">Scale Y</span>
-                  <input type="range" class="sc-bganim-scale-range" data-axis="y" min="100" max="250" step="5" value="100" aria-label="Helix scale Y">
+                  <input type="range" class="sc-bganim-scale-range" data-axis="y" min="0" max="35" step="1" value="15" aria-label="Background animation scale Y">
                   <span class="sc-bganim-scale-val">100%</span>
                 </div>
                 <div class="sc-bganim-detail sc-bganim-scale sc-bganim-scale-z">
                   <span class="sc-bganim-detail-label">Scale Z</span>
-                  <input type="range" class="sc-bganim-scale-range" data-axis="z" min="100" max="250" step="5" value="100" aria-label="Helix scale Z">
+                  <input type="range" class="sc-bganim-scale-range" data-axis="z" min="0" max="35" step="1" value="15" aria-label="Background animation scale Z">
                   <span class="sc-bganim-scale-val">100%</span>
+                </div>
+                <div class="sc-bganim-detail sc-bganim-knob sc-bganim-knob-pitch" data-helix-only="1">
+                  <span class="sc-bganim-detail-label">Pitch</span>
+                  <input type="range" class="sc-bganim-knob-range" data-knob="pitch" min="0" max="35" step="1" value="15" aria-label="Background animation pitch" title="Coil pitch — low twists the strand tight, high opens the loops out">
+                  <span class="sc-bganim-knob-val">100%</span>
+                </div>
+                <div class="sc-bganim-detail sc-bganim-knob sc-bganim-knob-nodes">
+                  <span class="sc-bganim-detail-label">Nodes</span>
+                  <input type="range" class="sc-bganim-knob-range" data-knob="nodes" min="0" max="35" step="1" value="15" aria-label="Background animation nodes" title="Size of the product photos and owl bugs on the field">
+                  <span class="sc-bganim-knob-val">100%</span>
+                </div>
+                <div class="sc-bganim-detail sc-bganim-knob sc-bganim-knob-length" data-helix-only="1">
+                  <span class="sc-bganim-detail-label">Length</span>
+                  <input type="range" class="sc-bganim-knob-range" data-knob="length" min="0" max="35" step="1" value="15" aria-label="Background animation length" title="How far the strand runs across the pane">
+                  <span class="sc-bganim-knob-val">100%</span>
+                </div>
+                <div class="sc-bganim-detail sc-bganim-knob sc-bganim-knob-thickness" data-helix-only="1">
+                  <span class="sc-bganim-detail-label">Thick</span>
+                  <input type="range" class="sc-bganim-knob-range" data-knob="thickness" min="0" max="35" step="1" value="15" aria-label="Background animation thick" title="Strand thickness — how fat the DNA backbones and rungs paint">
+                  <span class="sc-bganim-knob-val">100%</span>
+                </div>
+                <div class="sc-bganim-detail sc-bganim-knob sc-bganim-knob-depth" data-helix-only="1">
+                  <span class="sc-bganim-detail-label">Depth</span>
+                  <input type="range" class="sc-bganim-knob-range" data-knob="depth" min="0" max="35" step="1" value="15" aria-label="Background animation depth" title="3-D pop — low flattens the helix, high pushes near loops forward and fades the back">
+                  <span class="sc-bganim-knob-val">100%</span>
                 </div>
                 <div class="sc-bganim-playback">
                   <span class="sc-bganim-playback-label">Playback</span>
@@ -489,12 +519,11 @@
                 <div class="fl-model-row">
                   <div class="fl-attachments"></div>
                 </div>
-                <div class="fl-input-line fl-input-line--locked">
-                  <textarea id="chat-input" placeholder="Ask WISEcodeAI about the action plan…" class="fl-input fl-input--locked" rows="1" autocomplete="off" readonly aria-disabled="true" tabindex="-1"></textarea>
-                  <span class="fl-input-lock" tabindex="0" role="img" aria-label="Not accessible at this moment — WISEcodeAI is coming soon"><span class="material-symbols-outlined">lock</span><span class="fl-input-lock-tip"><span class="fl-input-lock-tip-main">Not accessible at this moment</span><span class="fl-input-lock-tip-sub">WISEcodeAI is coming soon</span></span></span>
+                <div class="fl-input-line">
+                  <textarea id="chat-input" placeholder="Ask WISEcodeAI about the action plan…" class="fl-input" rows="1" autocomplete="off"></textarea>
                 </div>
               </div>
-              <button type="button" id="gs-send" class="sc-send sc-send--locked" onclick="gsSend()" title="Send" disabled aria-disabled="true">
+              <button type="button" id="gs-send" class="sc-send" onclick="gsSend()" title="Send">
                 <span class="material-symbols-outlined">send</span>
               </button>
             </div>

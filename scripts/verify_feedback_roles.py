@@ -41,7 +41,18 @@ def check(label, got, want):
         fails.append(label)
 
 
+def api_enable():
+    """Commenting is off until the owner switches it on, so open the gate
+    before expecting any of the widget to exist."""
+    req = urllib.request.Request(API + "/api/feedback/settings",
+                                 data=json.dumps({"enabled": 1}).encode(),
+                                 headers={"Content-Type": "application/json",
+                                          "X-Feedback-Key": KEY})
+    urllib.request.urlopen(req)
+
+
 def api_wipe():
+    api_enable()
     req = urllib.request.Request(API + "/api/feedback/comments/all",
                                  headers={"X-Feedback-Key": KEY})
     for row in json.load(urllib.request.urlopen(req)):

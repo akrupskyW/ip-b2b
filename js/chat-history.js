@@ -273,15 +273,17 @@
       '.wch-proj-menu.is-open{opacity:1;box-shadow:0 0 0 2px var(--primary,#2F6DF6);}',
       '.wch-proj-menu .material-symbols-outlined{font-size:16px;}',
       /* Tree lines — a spine from the folder, plus a rounded L-elbow on every
-         child. The elbow is a quarter-circle whose horizontal is measured to
-         the live-dot (see layoutProjectTrees) so the line runs into that
+         chat row. The elbow is a quarter-circle whose horizontal is measured
+         to the live-dot (see layoutProjectTrees) so the line runs into that
          circle, which paints on top. Folder icons sit above the lines
-         (z-index + circular --wch-tree-bg mask). */
+         (z-index + circular --wch-tree-bg mask). An empty-state message is
+         not a tree child, so a body holding only that message draws no
+         spine and no elbow. */
       '.wch-project-body{position:relative;z-index:0;padding-left:22px;--wch-tree-end:16px;--wch-tree-radius:10px;}',
       '.wch-project.wch-collapsed .wch-project-body{display:none;}',
-      '.wch-sidebar:not(.wch-rail) .wch-project:not(.wch-collapsed) > .wch-project-body:not(:empty)::before{content:"";position:absolute;z-index:0;left:16px;top:-11px;width:1px;height:calc(11px + var(--wch-tree-end) - var(--wch-tree-radius) + 1px);background:var(--wch-tree);pointer-events:none;}',
+      '.wch-sidebar:not(.wch-rail) .wch-project:not(.wch-collapsed) > .wch-project-body:not(:empty):not(:has(> .wch-project-empty))::before{content:"";position:absolute;z-index:0;left:16px;top:-11px;width:1px;height:calc(11px + var(--wch-tree-end) - var(--wch-tree-radius) + 1px);background:var(--wch-tree);pointer-events:none;}',
       '.wch-project-body > .wch-item,.wch-project-body > .wch-project-empty,.wch-project-body > .wch-proj-edit{position:relative;}',
-      '.wch-sidebar:not(.wch-rail) .wch-project-body > .wch-item::before,.wch-sidebar:not(.wch-rail) .wch-project-body > .wch-project-empty::before,.wch-sidebar:not(.wch-rail) .wch-project-body > .wch-proj-edit::before{content:"";position:absolute;z-index:0;left:-6px;width:var(--wch-elbow-w,22px);height:calc(var(--wch-tree-radius) + 6px);top:calc(var(--wch-elbow-h,16px) - var(--wch-tree-radius) - 6px);border:0;border-left:1px solid var(--wch-tree);border-bottom:1px solid var(--wch-tree);border-bottom-left-radius:var(--wch-tree-radius);box-sizing:border-box;background:transparent;pointer-events:none;}',
+      '.wch-sidebar:not(.wch-rail) .wch-project-body > .wch-item::before,.wch-sidebar:not(.wch-rail) .wch-project-body > .wch-proj-edit::before{content:"";position:absolute;z-index:0;left:-6px;width:var(--wch-elbow-w,22px);height:calc(var(--wch-tree-radius) + 6px);top:calc(var(--wch-elbow-h,16px) - var(--wch-tree-radius) - 6px);border:0;border-left:1px solid var(--wch-tree);border-bottom:1px solid var(--wch-tree);border-bottom-left-radius:var(--wch-tree-radius);box-sizing:border-box;background:transparent;pointer-events:none;}',
       '.wch-project-empty{font-size:11px;opacity:.5;padding:4px 12px 8px 20px;}',
       /* Inline name editor (create + rename). */
       '.wch-proj-edit{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:6px 8px 6px 8px;}',

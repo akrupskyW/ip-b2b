@@ -139,6 +139,8 @@
   --r-md: 16px;
   --r-lg: 24px;
   --r-xl: 32px;
+  /* Product photo in every data table — a rounded-corner square, never a circle. */
+  --w-prod-thumb-r: 8px;
 
   --shadow-1: 0 1px 2px rgba(17,24,39,.04), 0 1px 3px rgba(17,24,39,.04);
   --shadow-2: 0 1px 2px rgba(17,24,39,.04), 0 8px 24px rgba(17,24,39,.06);
@@ -1633,6 +1635,39 @@ a.wise-popover-item { text-decoration: none; }
   text-transform: uppercase;
 }
 .wise-popover-item .wise-popover-badge + .wise-popover-ext { margin-left: 6px; }
+/* Two-line Admin rows: title on top, a 3–5 word hint underneath. The wrap
+   claims leftover width so the badge (and any trailing glyph) stay pinned right.
+   Mirrors the chat ⋯ menu's .topbar-menu-copy / .topbar-menu-desc. */
+.wise-popover-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.wise-popover-title { display: block; line-height: 1.2; }
+.wise-popover-desc {
+  display: block;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-muted);
+}
+.wise-popover-item:hover .wise-popover-desc,
+.wise-popover-item.is-on .wise-popover-desc,
+html.dark .wise-popover-desc,
+html.dark .wise-popover-item:hover .wise-popover-desc {
+  color: var(--text-muted);
+}
+.wise-appearance-group .wise-popover-item:has(.wise-popover-desc) {
+  padding-top: 6px;
+  padding-bottom: 6px;
+  align-items: center;
+}
 /* Verdict-tinted Admin badge (Appearance → Accessibility review). Instead of the
    default pink, the badge signals how well the app scores in the current theme:
    green = passes AAA, amber = meets AA but misses AAA, red = below AA. The base
@@ -1663,6 +1698,32 @@ html.dark .wise-popover-item.wise-toggle-item:hover { background: rgba(255,255,2
 .wise-popover-item:hover .wise-toggle-ico { color: var(--text-subtle); }
 html.dark .wise-popover-item.is-on .wise-toggle-ico,
 html.dark .wise-popover-item:hover.is-on .wise-toggle-ico { color: var(--sec-green); }
+/* Locked group (Appearance ▸ Experience) — the card keeps its place so the
+   capability stays visible, but every row inside reads inert: a lock trails the
+   heading, labels and switch glyphs go muted (no green "on" tint), and hover
+   never highlights. Clicks are swallowed in wireAppearancePopover(); tooltips
+   still fire, so a row can explain that it's locked. Declared after the toggle
+   rules so it wins on equal specificity. */
+.wise-appearance-group.is-locked > .wise-popover-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.wise-appearance-group-lock { font-size: 13px; opacity: 0.8; }
+.wise-appearance-group.is-locked .wise-popover-item,
+.wise-appearance-group.is-locked .wise-popover-item:hover,
+html.dark .wise-appearance-group.is-locked .wise-popover-item,
+html.dark .wise-appearance-group.is-locked .wise-popover-item:hover {
+  background: none;
+  color: var(--text-subtle);
+  cursor: default;
+}
+.wise-appearance-group.is-locked .wise-popover-item .material-symbols-outlined,
+.wise-appearance-group.is-locked .wise-popover-item.is-on .wise-toggle-ico,
+html.dark .wise-appearance-group.is-locked .wise-popover-item .material-symbols-outlined,
+html.dark .wise-appearance-group.is-locked .wise-popover-item.is-on .wise-toggle-ico {
+  color: var(--text-subtle);
+}
 .wise-popover-divider { height: 1px; background: var(--border); margin: 4px 0; }
 html.dark .wise-popover-divider { background: rgba(255,255,255,0.08); }
 
@@ -7295,6 +7356,49 @@ html.dark .sc-out-source-txt strong { color: var(--primary-bright, #AEC8ED); }
   width: 20px; height: 100%;
   overflow: visible;
 }
+
+/* Loading pose — a larger streaming helix centered in the output module and
+   Compare Foods empty state. Appearance ▸ Helix loading (on by default) hides
+   the striped skeleton / breathing owl and plays this rope instead. */
+.cmp-empty { position: relative; min-height: 240px; }
+.load-helix {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.load-helix .sc-trace-strand {
+  position: relative;
+  left: auto; top: auto; bottom: auto;
+  width: 128px;
+  height: min(80%, 540px);
+  animation: scDnaBreathe 9.5s ease-in-out infinite;
+}
+.load-helix .sc-trace-dna svg {
+  width: 100%;
+  height: 100%;
+}
+html.load-anim-helix .wa-pane-skel-board,
+html.load-anim-helix .wa-pane-skel .cmp-owl-loader,
+html.load-anim-helix .cmp-empty > .cmp-owl-loader {
+  visibility: hidden;
+}
+html.load-anim-helix .cmp-grid-wrap.is-recalcing::after {
+  display: none;
+}
+html.load-anim-helix .cmp-cell.is-pending {
+  background: color-mix(in srgb, var(--text-subtle) 10%, var(--surface));
+}
+html.load-anim-helix .cmp-ghost {
+  animation: none;
+  opacity: 0.42;
+}
+@media (prefers-reduced-motion: reduce) {
+  .load-helix .sc-trace-strand { animation: none; }
+}
 /* The whole strand breathes on its own slow cycle while thinking — a gentle
    swell in and out of presence so the twist never feels metronomic. */
 .sc-trace:not(.is-complete) .sc-trace-strand {
@@ -11618,7 +11722,7 @@ html.dark .vf-row:hover td { background: rgba(255, 255, 255, 0.04); }
 .vf-date-status { font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-subtle); }
 .vf-date-val { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-/* Product cell — circular photo + name / UPC stack (mirrors product-portfolio
+/* Product cell — rounded-square photo + name / UPC stack (mirrors product-portfolio
    `pf-col-product`). */
 .vf-pcell { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .vf-pcell-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
@@ -11626,13 +11730,13 @@ html.dark .vf-row:hover td { background: rgba(255, 255, 255, 0.04); }
 .vf-pname { font-size: 0.78rem; font-weight: 600; color: var(--text); line-height: 1.3; }
 .vf-upc { font-size: 0.6875rem; color: var(--text-subtle); font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
 
-/* Circular product thumbnail — always holds the real product photo; the icon is
-   only a fallback swapped in if the <img> fails to load. */
+/* Rounded-square product thumbnail — always holds the real product photo; the
+   icon is only a fallback swapped in if the <img> fails to load. */
 .vf-thumb {
   width: 40px;
   height: 40px;
   flex-shrink: 0;
-  border-radius: 50%;
+  border-radius: 9px;
   overflow: hidden;
   position: relative;
   display: inline-flex;
@@ -11643,7 +11747,7 @@ html.dark .vf-row:hover td { background: rgba(255, 255, 255, 0.04); }
   color: var(--primary);
 }
 html.dark .vf-thumb { background: rgba(37, 80, 124, 0.28); color: #9DC0E6; border-color: rgba(255, 255, 255, 0.10); }
-.vf-thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
+.vf-thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 9px; }
 .vf-thumb .material-symbols-outlined { font-size: 20px; }
 
 .vf-empty { text-align: center; color: var(--text-subtle); padding: 26px 12px !important; font-size: 0.85rem; }
@@ -11965,8 +12069,8 @@ html.dark .vf-select-el {
   border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
 }
 .vfp-item:first-of-type { border-top: 0; }
-.vfp-item .vf-thumb { width: 30px; height: 30px; }
-.vfp-item .vf-thumb .material-symbols-outlined { font-size: 15px; }
+.vfp-item .pf-thumb { width: 30px; height: 30px; }
+.vfp-item .pf-thumb .material-symbols-outlined { font-size: 15px; }
 .vfp-item-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .vfp-item-name {
   font-size: 0.76rem; font-weight: 600; color: var(--text); line-height: 1.25;
@@ -14030,6 +14134,50 @@ html.dark .wmod-stat--verified .wmod-stat-label .material-symbols-outlined { col
 }
 .wmod-table { width: 100%; }
 .wmod-thead, .wmod-trow { display: grid; align-items: center; gap: 12px; padding: 12px 14px; }
+
+/* ── Shared product table (.pf-table)
+   One grid table for every product list. Pages pick columns by adding a
+   variant class (claimed / verify / reformulation / …) that only changes
+   `grid-template-columns`. Product photos always use .pf-thumb. ── */
+.pf-table { width: 100%; }
+.pf-thead, .pf-trow { display: grid; align-items: center; gap: 10px; padding: 10px 12px; }
+.pf-thead { border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; background: var(--surface); }
+.pf-th { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); min-width: 0; }
+.pf-trow { border-bottom: 1px solid var(--border); transition: background 0.15s ease; }
+.pf-trow:last-child { border-bottom: none; }
+.pf-trow:hover { background: var(--surface-2); }
+html.dark .pf-trow:hover { background: rgba(255,255,255,0.04); }
+.pf-trow.is-selected { background: color-mix(in srgb, var(--primary) 6%, transparent); }
+.pf-td { font-size: 12px; color: var(--text-muted); min-width: 0; }
+.pf-col-product { display: flex; align-items: center; gap: 10px; }
+.pf-col-check { display: flex; align-items: center; justify-content: center; }
+.pf-thumb {
+  width: 40px; height: 40px; flex-shrink: 0;
+  border-radius: var(--w-prod-thumb-r, 8px);
+  overflow: hidden; position: relative;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface-2); color: var(--primary);
+  border: 1px solid var(--border);
+}
+html.dark .pf-thumb { background: rgba(37,80,124,0.28); color: #9DC0E6; border-color: rgba(255,255,255,0.10); }
+.pf-thumb-img, .pf-thumb img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  border-radius: var(--w-prod-thumb-r, 8px);
+}
+.pf-thumb .material-symbols-outlined { font-size: 20px; }
+.pf-pcell-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.pf-pname-row { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+.pf-pname { font-size: 12.5px; font-weight: 600; color: var(--text); line-height: 1.3; }
+.pf-upc { font-size: 11px; color: var(--text-subtle); font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+
+/* Verification — same table, checkbox / product / shield / dates columns. */
+.pf-table--verify .pf-thead,
+.pf-table--verify .pf-trow { grid-template-columns: 44px minmax(0, 2.2fr) 168px minmax(150px, 1.4fr); }
+.pf-table--verify-attest .pf-thead,
+.pf-table--verify-attest .pf-trow { grid-template-columns: 40px 44px minmax(0, 2.2fr) 168px minmax(150px, 1.4fr); }
+.pf-trow--detail { display: block; padding: 0 12px 12px; border-bottom: 1px solid var(--border); }
+.pf-trow--detail:not(.is-open) { display: none; }
+.pf-table .pf-empty { grid-column: 1 / -1; text-align: center; color: var(--text-subtle); padding: 26px 12px; font-size: 0.85rem; }
 .wmod-thead { border-bottom: 1px solid var(--border); }
 .wmod-th { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); min-width: 0; }
 .wmod-trow { border-bottom: 1px solid var(--border); transition: background 0.15s ease; }
@@ -14324,4 +14472,19 @@ html.dark .owt-mod .owt-nav { border-bottom-color: rgba(255, 255, 255, 0.08); }
   .ak-stat, .ac-stat, .gv-stat, .sc-stat, .wa-stat, .wa-ref-stat
 ):nth-child(6n) {
   border-radius: 4px 8px 10px 12px !important;
+}
+
+/* Shared table product photo — rounded-corner square on every list.
+   Wins over leftover per-page `border-radius: 50%` copies. */
+.pf-thumb, .vf-thumb, .wa-thumb, .rf-thumb, .gs-thumb,
+.upf-avatar, .pmx-avatar {
+  border-radius: var(--w-prod-thumb-r, 8px) !important;
+  overflow: hidden;
+}
+.pf-thumb img, .pf-thumb-img,
+.vf-thumb img, .vf-thumb-img,
+.wa-thumb img, .wa-thumb-img,
+.rf-thumb img, .gs-thumb img,
+.upf-avatar img, .pmx-avatar img {
+  border-radius: inherit !important;
 }

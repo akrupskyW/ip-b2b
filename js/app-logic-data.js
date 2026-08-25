@@ -543,7 +543,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Helix background on at 20%',
-        how: 'The welcome background animation defaults ON (<code>wise:chat-bg-anim</code>) at <strong>20% opacity</strong> (<code>wise:chat-bg-anim-opacity</code>), with <code>helix</code>, <code>helix-ten</code> and <code>orbit</code> styles. This is separate from the per-turn trace helix, which always runs.',
+        how: 'The welcome background animation defaults ON (<code>wise:chat-bg-anim</code>) at <strong>20% opacity</strong> (<code>wise:chat-bg-anim-opacity</code>), with <code>helix</code>, <code>helix-ten</code> and <code>orbit</code> styles. The chat ⋯ menu’s Thick slider is strand weight; Depth is 3-D pop (near loops forward, far loops fading). This is separate from the per-turn trace helix, which always runs.',
       },
       {
         title: 'History and Turns are docked drawers',
@@ -813,7 +813,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Dev Ready is a two-level tree',
-        how: '<code>buildDevReadyTree()</code> registers each module\u2019s children (directory areas, tables, intent surfaces, motion items, icon groups, design groups, components, logic pages). A module switch turns itself on only when every child is ready, and clicking an incomplete one opens a two-step verify modal rather than toggling silently.',
+        how: '<code>buildDevReadyTree()</code> registers each module\u2019s children (directory areas, tables, intent surfaces, motion items, icon groups, design groups, components). A module switch turns itself on only when every child is ready, and clicking an incomplete one opens a two-step verify modal rather than toggling silently. App Logic is a leaf — it has a module switch and no per-page children.',
       },
       {
         title: 'Only the diff from the seed is stored',

@@ -1,0 +1,64 @@
+---
+description: The Progress Log describes what was built in human language — features, logic, UX, UI — never bytes, filenames, or identifiers
+alwaysApply: true
+---
+
+# Progress Log: Plain Language Only
+
+`pages/progress-log.html` and its evaluator (`js/progress-log-eval.js`) exist to
+answer one question: **what was actually created?** Every card must answer it in
+words a reader who has never opened the codebase understands.
+
+## The only four things a card describes
+
+1. **Features** — what you can now do that you could not do before.
+2. **Logic** — what the surface now decides, remembers, or enforces.
+3. **UX** — how it behaves while you use it.
+4. **UI** — what is on the screen: sections, headings, controls.
+
+Each of those is its own labelled paragraph, in that order
+(`SYNOPSIS_LABELS` / `SYNOPSIS_ORDER` in `js/progress-log-eval.js`). Anything
+that does not fit one of them is almost certainly not worth saying.
+
+## Banned outright
+
+Never emit any of this in a card, a day summary, a crawl note, or a chat reply:
+
+- **Byte counts and file sizes.** No "grew by 142 B", no "shrank by 4 KB", no
+  KB/MB anywhere. The user does not care about bytes. There is no `fmtBytes`.
+- **Script plumbing.** Never "It now loads feedback.js, so it inherits those
+  shared behaviours." Say what the behaviour *does*.
+- **Raw identifiers.** No function names, class names, selectors, data
+  attributes, localStorage keys, or CSS variables in prose. Humanize them
+  (`humanizeName`) or leave them out.
+- **Filenames as the substance of a sentence.** The card header already shows
+  the path; the description must not repeat it as its subject.
+- **Counting for its own sake.** No hash comparisons, no heading tallies, no
+  "3 new handlers" as the point of a sentence.
+- **Filler.** No "X changed since the start of the day. Here is what moved."
+  If there is nothing to say, say that plainly, once.
+
+## How to say what a script does
+
+A page that starts or stops loading shared behaviour is described by that
+behaviour's purpose, resolved in this order:
+
+1. `SCRIPT_PURPOSES` in `js/progress-log-eval.js` — reader-facing wording for
+   scripts whose own header comment is written for developers.
+2. The first sentence of the script's header comment, read at crawl time
+   (`scriptPurpose`).
+3. The humanized filename, as a last resort.
+
+When a generated card reads like code instead of English, add or fix the
+`SCRIPT_PURPOSES` entry. Do not invent a purpose — read the file.
+
+## Feature-signal copy
+
+`FEATURE_SIGNALS` sentences are product copy, not code notes. Write them the way
+you would explain the app to a new colleague ("You can talk to WISEcodeAI right
+here…"), and keep the `on` / `off` pair in the same voice.
+
+## When nothing changed for the reader
+
+Say exactly that — one honest sentence that the pass was wording, styling, or
+internal tidying — and nothing else. Never pad it with a size delta.

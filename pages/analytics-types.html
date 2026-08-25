@@ -235,7 +235,7 @@
     .pmx-avatar {
       display: inline-flex; align-items: center; justify-content: center;
       width: 32px; height: 32px; flex: none;
-      border-radius: 50%; overflow: hidden;
+      border-radius: 9px; overflow: hidden;
       border: 1px solid var(--border);
       background: color-mix(in srgb, var(--primary) 8%, transparent);
     }
@@ -429,7 +429,7 @@
         min-width: 0; gap: 3px;
       }
       .pmx-cell { min-height: 26px; border-radius: 4px; }
-      .pmx-avatar { width: 24px; height: 24px; }
+      .pmx-avatar { width: 24px; height: 24px; border-radius: 6px; }
       .pmx-rowmeta { padding-left: 6px; gap: 6px; }
       .pmx-fix-toast { display: none; }
     }
@@ -440,7 +440,7 @@
       }
       .pmx-cell { min-height: 22px; border-radius: 3px; }
       .pmx-xlabel { padding-top: 5px; }
-      .pmx-avatar { width: 20px; height: 20px; }
+      .pmx-avatar { width: 20px; height: 20px; border-radius: 5px; }
     }
 
     /* =====================================================================
@@ -2841,7 +2841,7 @@
         '<span class="dash-mrow-report-label">View report</span>' +
         '<span class="material-symbols-outlined dash-mrow-report-icon">north_east</span></button>';
 
-      /* Circular product thumbnail for the leading (titleless) column. Uses the
+      /* Rounded-square product thumbnail for the leading (titleless) column. Uses the
          row's `img` URL when supplied, otherwise a deterministic seeded
          placeholder photo (same product → same image across re-renders). Error
          fallback is wired in JS after render (see wireAvatars). */
@@ -3450,9 +3450,9 @@
     .upf-count--warn { color: var(--ter-amber-text); }
     .upf-count--none { color: var(--text-subtle); font-weight: 600; }
 
-    /* Leading product-image column: a titleless cell holding a circular
+    /* Leading product-image column: a titleless cell holding a rounded-square
        thumbnail. Shows the product image when one is supplied, otherwise a
-       neutral placeholder circle. */
+       neutral placeholder. */
     .upf-th-avatar { width: 1%; white-space: nowrap; }
     #gras-prod-card .upf-table thead th.upf-th-avatar,
     #gras-prod-card .upf-table tbody td.upf-th-avatar,
@@ -3461,7 +3461,7 @@
     .upf-avatar {
       display: inline-flex; align-items: center; justify-content: center;
       width: 36px; height: 36px; flex: none;
-      border-radius: 50%; overflow: hidden;
+      border-radius: 9px; overflow: hidden;
       border: 1px solid var(--border);
       background: color-mix(in srgb, var(--primary) 8%, transparent);
     }
@@ -3575,7 +3575,7 @@
         return `<span class="upf-count upf-count--${col.tone}">${n} ingredient${n === 1 ? '' : 's'}</span>`;
       }
 
-      /* Circular product thumbnail for the leading (titleless) column. Uses the
+      /* Rounded-square product thumbnail for the leading (titleless) column. Uses the
          row's `img` URL when supplied, otherwise a deterministic seeded
          placeholder photo (same product → same image across re-renders). Error
          fallback is wired in JS after render (see wireAvatars). */

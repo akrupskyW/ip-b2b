@@ -152,9 +152,9 @@
     },
     image: 'https://images.unsplash.com/photo-1607958996333-41aef7caefaa?w=640&q=70',
   };
-  /* Fallback when the sizes-strip / header has no product photo (cleared,
-     missing, or a broken URL). Prefer the sample product shot; if that
-     remote file fails, use the bundled Flax4Life banner. */
+  /* Sample muffin URL — used only when the user asks to preview a filled
+     example, or as the empty-state photo in the image picker modal. A brand-new
+     product does not fall back to this in the identity strip or header. */
   const DEFAULT_PRODUCT_IMAGE = SAMPLE_PARSE.image;
   const DEFAULT_PRODUCT_IMAGE_LOCAL = '../assets/brand-flax4life-banner.jpg';
 
@@ -416,9 +416,10 @@
   function useCatDropdown() {
     return !!(typeof window !== 'undefined' && (window.WISE_HERO_BRAND || window.WISE_HERO_BRANDROW));
   }
-  /* view-product: the first-column hero is lifted into the module header
-     (photo as the banner background, left of the ⋯) and the sizes strip
-     (title + category + full barcode). add-product keeps the in-column hero. */
+  /* Header-identity template (view-product, and add-product matching it):
+     the first-column hero is lifted into the module header (photo as the
+     banner background, left of the ⋯) and the sizes strip (title +
+     category + full barcode). */
   function useHeaderIdentity() {
     return !!(typeof window !== 'undefined' && window.WISE_HERO_BRAND);
   }
@@ -432,14 +433,73 @@
     return state.image || '';
   }
   function productBackgroundSrc() {
-    return activeProductImage() || DEFAULT_PRODUCT_IMAGE;
+    /* New products have no photo yet — do not invent a sample muffin. The
+       identity strip paints a still of the food helix instead. */
+    return activeProductImage() || '';
   }
   function productBgImgHTML(src) {
     const used = src || productBackgroundSrc();
+    if (!used) return '';
     const fallback = used === DEFAULT_PRODUCT_IMAGE
       ? DEFAULT_PRODUCT_IMAGE_LOCAL
       : DEFAULT_PRODUCT_IMAGE;
     return `<img src="${esc(used)}" alt="" data-nfp-bg-fallback="${esc(fallback)}" onerror="if(!this.dataset.fell){this.dataset.fell='1';this.src=this.dataset.nfpBgFallback}">`;
+  }
+  /* Still frame of the shared DNA/RNA product helix, used as the identity-strip
+     background until a real product photo exists. */
+  let nfpHelix = null;
+  function syncNfpHelixBg() {
+    const host = nfpBody && nfpBody.querySelector('.nfp-fi-strip-photo--helix');
+    if (!host) {
+      if (nfpHelix) {
+        try { nfpHelix.stop(); } catch (_) {}
+        nfpHelix = null;
+      }
+      return;
+    }
+    if (nfpHelix && host.querySelector('.sc-bganim-canvas')) {
+      host.classList.add('sc-bganim-live');
+      try { nfpHelix.redraw(); } catch (_) {}
+      return;
+    }
+    const startOn = (createHelixBgAnim) => {
+      const h = nfpBody && nfpBody.querySelector('.nfp-fi-strip-photo--helix');
+      if (!h || typeof createHelixBgAnim !== 'function') return;
+      if (nfpHelix) {
+        try { nfpHelix.stop(); } catch (_) {}
+        nfpHelix = null;
+      }
+      nfpHelix = createHelixBgAnim({
+        host: h,
+        getBody: () => (nfpBody && nfpBody.querySelector('.nfp-fi-strip-photo--helix')) || h,
+        getOpacity: () => 0.52,
+        getAngle: () => 10,
+        getScale: () => ({ x: 1, y: 1, z: 1 }),
+        getPitch: () => 1,
+        getNodes: () => 1.1,
+        getLength: () => 1,
+        getThickness: () => 1,
+        getDepth: () => 1,
+        reducedMotion: true,
+        isOn: () => true,
+        isPaused: () => true,
+      });
+      nfpHelix.start();
+      requestAnimationFrame(() => {
+        try {
+          if (nfpHelix && typeof nfpHelix.resize === 'function') nfpHelix.resize();
+          nfpHelix && nfpHelix.redraw();
+        } catch (_) {}
+      });
+    };
+    if (typeof window.createHelixBgAnim === 'function') {
+      startOn(window.createHelixBgAnim);
+      return;
+    }
+    import('../js/wiseai-chat.js').then((m) => {
+      window.createHelixBgAnim = m.createHelixBgAnim;
+      startOn(m.createHelixBgAnim);
+    }).catch(() => {});
   }
   /* view-product: faint right-side fade on the Product Details banner, plus
      the original "Product image" edit control immediately left of the ⋯. */
@@ -457,17 +517,23 @@
     const controls = header.querySelector('.panel-controls');
     if (!controls) return;
     const src = activeProductImage();
-    let bg = header.querySelector('.nfp-header-photo-bg');
-    if (!bg) {
-      bg = document.createElement('div');
-      bg.className = 'nfp-header-photo-bg';
-      bg.setAttribute('aria-hidden', 'true');
-      header.insertBefore(bg, header.firstChild);
-    }
-    bg.innerHTML = productBgImgHTML();
-    header.classList.add('nfp-panel-header--photo');
     const logo = header.querySelector('.nfp-brand-logo');
-    if (logo) logo.hidden = true;
+    if (!src) {
+      header.classList.remove('nfp-panel-header--photo');
+      header.querySelector('.nfp-header-photo-bg')?.remove();
+      if (logo) logo.hidden = false;
+    } else {
+      let bg = header.querySelector('.nfp-header-photo-bg');
+      if (!bg) {
+        bg = document.createElement('div');
+        bg.className = 'nfp-header-photo-bg';
+        bg.setAttribute('aria-hidden', 'true');
+        header.insertBefore(bg, header.firstChild);
+      }
+      bg.innerHTML = productBgImgHTML(src);
+      header.classList.add('nfp-panel-header--photo');
+      if (logo) logo.hidden = true;
+    }
     let hit = header.querySelector('.nfp-header-photo');
     if (!hit) {
       hit = document.createElement('button');
@@ -761,8 +827,11 @@
       ? `<div class="nfp-fi-cat">${heroCatHTML(false)}</div>
          <div class="nfp-fi-upc">${packIdx != null ? packUpcHTML(packIdx, false) : heroUpcHTML(false)}</div>`
       : '';
+    const photoSrc = activeProductImage();
     const stripPhoto = identity
-      ? `<div class="nfp-fi-strip-photo" aria-hidden="true">${productBgImgHTML()}</div>`
+      ? (photoSrc
+        ? `<div class="nfp-fi-strip-photo" aria-hidden="true">${productBgImgHTML(photoSrc)}</div>`
+        : `<div class="nfp-fi-strip-photo nfp-fi-strip-photo--helix" aria-hidden="true"></div>`)
       : '';
     return `<div class="nfp-fi-group nfp-fi-group--packs${identity ? ' nfp-fi-group--identity' : ''}">
       ${stripPhoto}
@@ -1367,7 +1436,7 @@
      injects Share / Copy link / Export into the same popover; we add the
      layout rows (two-pane photo + compare formats) once it exists. */
   function closeNfpMenu(pop) {
-    const wrap = pop && pop.closest('.panel-more-wrap, .pf-module-menu');
+    const wrap = pop && (pop.closest('.panel-more-wrap, .pf-module-menu') || pop.__plHost);
     const btn = wrap && wrap.querySelector('.panel-more-btn, .pf-module-menu-btn');
     if (pop) pop.classList.add('hidden');
     if (btn) { btn.classList.remove('is-open'); btn.setAttribute('aria-expanded', 'false'); }
@@ -1447,7 +1516,7 @@
     });
     document.addEventListener('click', (e) => {
       if (pop.classList.contains('hidden')) return;
-      if (wrap.contains(e.target)) return;
+      if (wrap.contains(e.target) || pop.contains(e.target)) return;
       closeNfpMenu(pop);
     });
   }
@@ -1641,11 +1710,17 @@
 
   function renderNFP() {
     if (!nfpBody) return;
+    const helixKeep = [];
+    const prevHelix = nfpBody.querySelector('.nfp-fi-strip-photo--helix');
+    if (prevHelix) {
+      prevHelix.querySelectorAll(':scope > .sc-bganim-canvas, :scope > .wch-helix-card').forEach((el) => helixKeep.push(el));
+    }
     if (state.nfpCompare) {
       /* Compare takes precedence over the single/double-pane layout: the whole
          body becomes the side-by-side matrix of every format. */
       nfpBody.innerHTML = compareHTML();
       syncNfpHeaderPhoto();
+      syncNfpHelixBg();
       updateSaveState();
       return;
     }
@@ -1696,6 +1771,19 @@
       wireNfpColumns();
       wireIngredColHeight();
       requestAnimationFrame(sizeIngredEdit);
+    }
+    const nextHelix = nfpBody.querySelector('.nfp-fi-strip-photo--helix');
+    if (nextHelix && helixKeep.length) {
+      helixKeep.forEach((el) => nextHelix.appendChild(el));
+      nextHelix.classList.add('sc-bganim-live');
+      requestAnimationFrame(() => {
+        try {
+          if (nfpHelix && typeof nfpHelix.resize === 'function') nfpHelix.resize();
+          nfpHelix && nfpHelix.redraw();
+        } catch (_) {}
+      });
+    } else {
+      syncNfpHelixBg();
     }
     syncNfpHeaderPhoto();
     updateSaveState();

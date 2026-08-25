@@ -86,6 +86,7 @@ curl -s "http://127.0.0.1:4144/api/feedback/comments?page=/pages/add-product.htm
 | GET | `/api/feedback/comments/all` | yes | Every comment, all pages |
 | POST | `/api/feedback/comments/<id>/resolve` | yes | Close / reopen a thread |
 | DELETE | `/api/feedback/comments/<id>` | yes | Delete a thread |
+| POST | `/api/feedback/settings` | yes | Switch commenting on or off site-wide |
 
 `GET /comments?page=…` returns only open threads. With the key it also returns
 closed ones, which is the only way to reopen one.
@@ -95,6 +96,29 @@ skew a thread. The one exception is a note replayed from the offline queue,
 which keeps its original client timestamp if it is neither in the future nor
 more than 90 days old — otherwise a backlog would all land at once at the top
 of the thread. Posts are rate limited to 20 per IP per minute.
+
+## Switching commenting on and off
+
+Commenting is **off until you switch it on**, from **Appearance ▸ Admin ▸
+Comments** in the primary navigation. Off means off: no launcher, no `C`
+shortcut, no pins, not even the widget's stylesheet. The page carries no trace
+of the feature.
+
+The row is locked shut for everyone but you. Holding the admin key — set once
+by visiting `?feedback=admin&key=…`, which is also what makes you the owner — is
+what opens it, and the server refuses `POST /settings` without that key
+regardless, so the lock is a gate rather than decoration.
+
+Unlike every other row in that popover this is **not** a per-browser
+preference. It is one switch held by the server, because a `localStorage` flag
+could never stop a reviewer from commenting, only change what you see. Flipping
+it takes effect for everyone on their next page load, and immediately in the tab
+you flipped it in — the widget raises and tears itself down without a reload.
+
+Switching it off hides existing threads from you too, and stops the API serving
+or accepting anything. Nothing is deleted: switch it back on and every thread is
+exactly where it was. To have a fresh database start switched on instead, set
+`WISE_FEEDBACK_DEFAULT_ENABLED=1`.
 
 ## Who is who
 
@@ -157,7 +181,10 @@ WISE_FEEDBACK_STATIC="$PWD" \
 PORT=8770 python3 server/feedback_api.py
 ```
 
-Then open <http://127.0.0.1:8770/pages/wiseai.html> and press C. Note this uses
+Then open <http://127.0.0.1:8770/pages/wiseai.html?feedback=admin&key=devsecret>,
+switch **Appearance ▸ Admin ▸ Comments** on, and press C. A fresh database
+starts switched off, so without that step there is deliberately nothing to
+see. Note this uses
 a throwaway database, so these notes stay local — that is the point of the
 probe. To write to the real shared store instead, serve the pages with any
 static server and let the widget fall back to the deployed API.
@@ -185,6 +212,15 @@ closed thread really leaves the page — in both themes:
 python3 scripts/verify_feedback_roles.py
 ```
 
+To check the gate itself — that an off page carries no launcher, stylesheet or
+`C` shortcut, that a visitor's Comments row is locked and refuses to flip, and
+that the owner's flip raises and tears down the widget without a reload — in
+both themes:
+
+```bash
+python3 scripts/verify_feedback_toggle.py
+```
+
 ## Configuration
 
 | Env var | Default | Meaning |
@@ -194,6 +230,7 @@ python3 scripts/verify_feedback_roles.py
 | `WISE_FEEDBACK_OWNER` | `Owner` | Name the owner's notes and replies are signed with |
 | `WISE_FEEDBACK_ORIGIN` | *(empty)* | Extra allowed origins, comma separated |
 | `WISE_FEEDBACK_ALLOW_LOCALHOST` | *(empty)* | `1` lets a local checkout on any `localhost`/`127.0.0.1` port write to this store |
+| `WISE_FEEDBACK_DEFAULT_ENABLED` | *(empty)* | `1` makes a fresh database start with commenting on; otherwise it is off until switched on from Appearance |
 
 On the widget side, `window.WISE_FEEDBACK_API` pins the API base outright and
 `window.WISE_FEEDBACK_REMOTE` sets the host to fall back to when there is no

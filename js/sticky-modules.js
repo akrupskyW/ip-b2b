@@ -163,7 +163,9 @@
 
   function closeMenu(pop) {
     pop.classList.add('hidden');
-    var wrap = pop.closest('.panel-more-wrap');
+    /* After js/popover-layer.js portals the popover onto <body>, closest()
+       from the pop misses the wrap — use the saved host instead. */
+    var wrap = pop.closest('.panel-more-wrap') || pop.__plHost;
     var btn = wrap && wrap.querySelector('.panel-more-btn');
     if (btn) { btn.classList.remove('is-open'); btn.setAttribute('aria-expanded', 'false'); }
   }
@@ -268,16 +270,29 @@
     btn.addEventListener('click', function (e) {
       e.stopPropagation();
       var opening = pop.classList.contains('hidden');
-      /* Close any other open sticky-created menus first. */
-      document.querySelectorAll('.panel-more-wrap[data-sticky-menu] .topbar-popover').forEach(function (p) { p.classList.add('hidden'); });
-      document.querySelectorAll('.panel-more-wrap[data-sticky-menu] .panel-more-btn').forEach(function (b) { b.classList.remove('is-open'); });
+      /* Close any other open sticky-created menus first. Pops may be on
+         <body> (js/popover-layer.js), so walk each wrap + its portaled pop. */
+      document.querySelectorAll('.panel-more-wrap[data-sticky-menu]').forEach(function (w) {
+        var p = w.querySelector('.topbar-popover');
+        if (!p) {
+          document.querySelectorAll('.topbar-popover').forEach(function (cand) {
+            if (cand.__plHost === w) p = cand;
+          });
+        }
+        if (p && p !== pop) p.classList.add('hidden');
+        var b = w.querySelector('.panel-more-btn');
+        if (b && b !== btn) {
+          b.classList.remove('is-open');
+          b.setAttribute('aria-expanded', 'false');
+        }
+      });
       pop.classList.toggle('hidden', !opening);
       btn.classList.toggle('is-open', opening);
       btn.setAttribute('aria-expanded', opening ? 'true' : 'false');
     });
     document.addEventListener('click', function (e) {
       if (pop.classList.contains('hidden')) return;
-      if (wrap.contains(e.target)) return;
+      if (wrap.contains(e.target) || pop.contains(e.target)) return;
       pop.classList.add('hidden');
       btn.classList.remove('is-open');
       btn.setAttribute('aria-expanded', 'false');

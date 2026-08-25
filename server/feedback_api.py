@@ -44,6 +44,10 @@ _LOCALHOST_RE = re.compile(r"^https?://(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$"
 # can never be mistaken for one from the person who raised the thread.
 OWNER_NAME = os.environ.get("WISE_FEEDBACK_OWNER", "Owner")
 
+# On-page commenting is opt-in: off until the owner switches it on from the
+# Appearance popover. Set to 1 to have a fresh database start switched on.
+DEFAULT_ENABLED = os.environ.get("WISE_FEEDBACK_DEFAULT_ENABLED", "0") == "1"
+
 MAX_TEXT = 4000
 MAX_NAME = 80
 MAX_SELECTOR = 600
@@ -84,6 +88,11 @@ CREATE TABLE IF NOT EXISTS replies (
     is_owner    INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_replies_comment ON replies(comment_id);
+
+CREATE TABLE IF NOT EXISTS settings (
+    key    TEXT PRIMARY KEY,
+    value  TEXT NOT NULL
+);
 """
 
 # CREATE TABLE IF NOT EXISTS leaves an older database untouched, so columns
@@ -160,8 +169,37 @@ def clean(value, limit):
     return text[:limit]
 
 
+def get_setting(key, default=None):
+    row = db().execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
+    return default if row is None else row["value"]
+
+
+def set_setting(key, value):
+    conn = db()
+    conn.execute(
+        "INSERT INTO settings (key, value) VALUES (?, ?)"
+        " ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        (key, str(value)),
+    )
+    conn.commit()
+
+
+def comments_enabled():
+    """Whether on-page commenting is switched on for the whole site.
+
+    Server-side on purpose: this is a gate, not a preference. A per-browser
+    setting could not stop a reviewer from commenting, only change what the
+    owner sees. Off by default — the feature is opt-in.
+    """
+    return get_setting("enabled", "1" if DEFAULT_ENABLED else "0") == "1"
+
+
 def is_admin():
     return bool(ADMIN_KEY) and request.headers.get("X-Feedback-Key", "") == ADMIN_KEY
+
+
+def need_enabled():
+    return jsonify({"error": "comments are switched off"}), 403
 
 
 def need_admin():
@@ -273,11 +311,28 @@ def health():
         # The widget shows this as "Replying as …" so the owner can see which
         # name their reply will carry before they send it.
         "owner": OWNER_NAME,
+        # The widget refuses to render anything at all unless this is true.
+        "enabled": comments_enabled(),
     })
+
+
+@app.post("/api/feedback/settings")
+def settings():
+    """Switch on-page commenting on or off for everyone. Owner only."""
+    if not is_admin():
+        return need_admin()
+    data = request.get_json(silent=True) or {}
+    if "enabled" in data:
+        set_setting("enabled", "1" if data.get("enabled") in (1, "1", True, "true") else "0")
+    return jsonify({"ok": True, "enabled": comments_enabled()})
 
 
 @app.get("/api/feedback/comments")
 def list_comments():
+    # Switched off means off for everyone — nothing to read, so nothing can be
+    # rendered by a page that skipped the widget's own check.
+    if not comments_enabled():
+        return jsonify([])
     page = page_of(request.args.get("page", "/"))
     # Closing a thread takes it off the page for everyone. The owner still gets
     # them back so a thread closed by mistake can be reopened.
@@ -295,6 +350,8 @@ def list_all():
 
 @app.post("/api/feedback/comments")
 def add_comment():
+    if not comments_enabled():
+        return need_enabled()
     if rate_limited():
         return jsonify({"error": "slow down"}), 429
     data = request.get_json(silent=True) or {}
@@ -355,6 +412,8 @@ def add_comment():
 
 @app.post("/api/feedback/comments/<cid>/replies")
 def add_reply(cid):
+    if not comments_enabled():
+        return need_enabled()
     if rate_limited():
         return jsonify({"error": "slow down"}), 429
     data = request.get_json(silent=True) or {}

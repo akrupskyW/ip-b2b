@@ -786,6 +786,13 @@ function setFilterOpen(host, open) {
   syncFilterUi(host);
 }
 
+function popOfRowMenu(menu) {
+  if (!menu) return null;
+  const inner = menu.querySelector('.ma-rowmenu-pop');
+  if (inner) return inner;
+  return Array.from(document.querySelectorAll('.ma-rowmenu-pop')).find((p) => p.__plHost === menu) || null;
+}
+
 function closeRowMenus(host, keep) {
   if (!host) return;
   host.querySelectorAll('.ma-rowmenu.is-open').forEach((menu) => {
@@ -793,7 +800,7 @@ function closeRowMenus(host, keep) {
     menu.classList.remove('is-open');
     const btn = menu.querySelector('.ma-rowmenu-btn');
     if (btn) btn.setAttribute('aria-expanded', 'false');
-    const pop = menu.querySelector('.ma-rowmenu-pop');
+    const pop = popOfRowMenu(menu);
     if (pop) pop.hidden = true;
   });
 }
@@ -924,7 +931,7 @@ export function renderMarketingAssets(host) {
       closeRowMenus(host, open ? menu : null);
       menu.classList.toggle('is-open', open);
       menuBtn.setAttribute('aria-expanded', String(open));
-      const pop = menu.querySelector('.ma-rowmenu-pop');
+      const pop = popOfRowMenu(menu);
       if (pop) pop.hidden = !open;
       return;
     }
@@ -939,7 +946,7 @@ export function renderMarketingAssets(host) {
       else if ((act === 'expand' || act === 'collapse') && node) toggleFolder(host, node._path);
       return;
     }
-    if (e.target.closest('.ma-rowmenu')) {
+    if (e.target.closest('.ma-rowmenu') || e.target.closest('.ma-rowmenu-pop')) {
       e.stopPropagation();
       return;
     }
@@ -1016,7 +1023,7 @@ if (typeof document !== 'undefined' && !window.__maReplyChipsWired) {
     if (state.filterOpen && activeHost && !e.target.closest('.ma-search-inline')) {
       setFilterOpen(activeHost, false);
     }
-    if (activeHost && !e.target.closest('.ma-rowmenu')) closeRowMenus(activeHost, null);
+    if (activeHost && !e.target.closest('.ma-rowmenu') && !e.target.closest('.ma-rowmenu-pop')) closeRowMenus(activeHost, null);
     const chip = e.target.closest('.ma-do-chip[data-ma-do]');
     if (!chip) return;
     e.preventDefault();

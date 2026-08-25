@@ -442,22 +442,22 @@ function datesCell(f) {
     `</div>`;
 }
 
-/* Circular product photo (the real 10-can render), with the themed material
-   icon kept only as a graceful fallback if the image can't load — identical to
-   the product-portfolio `pf-thumb` pattern. */
+/* Shared table product photo (the real pack shot), with the themed
+   material icon kept only as a graceful fallback if the image can't load —
+   same `.pf-thumb` used by Product Portfolio. */
 function thumb(f) {
-  return `<span class="vf-thumb">` +
-    `<img class="vf-thumb-img" src="${esc(f.img)}" alt="${esc(f.name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'">` +
+  return `<span class="pf-thumb">` +
+    `<img class="pf-thumb-img" src="${esc(f.img)}" alt="${esc(f.name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'">` +
     `<span class="material-symbols-outlined" style="display:none">${esc(f.thumbIcon)}</span></span>`;
 }
 
 /* Product cell — thumbnail + a name / UPC stack (UPC sits directly under the
-   name), matching the product-portfolio `pf-col-product` layout. `extra` lets
+   name). Same markup as Product Portfolio `.pf-col-product`. `extra` lets
    the attest step slot an expand toggle before the name. */
 function productCell(f, extra) {
-  return `<div class="vf-pcell">${thumb(f)}` +
-    `<div class="vf-pcell-text"><div class="vf-pname-row">${extra || ''}<span class="vf-pname">${esc(f.name)}</span></div>` +
-    `<span class="vf-upc">UPC · ${esc(f.upc)}</span></div></div>`;
+  return `<span class="pf-td pf-col-product">${thumb(f)}` +
+    `<span class="pf-pcell-text"><span class="pf-pname-row">${extra || ''}<span class="pf-pname">${esc(f.name)}</span></span>` +
+    `<span class="pf-upc">UPC · ${esc(f.upc)}</span></span></span>`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -474,34 +474,30 @@ function selectStepHTML() {
     <div class="vf-board">
       ${glanceHTML('Select foods to review & attest')}
       <div class="vf-board-divider"></div>
-      <table class="vf-table" data-no-sort data-wtp-skip>
-        <thead>
-          <tr>
-            <th class="vf-col-check">
-              <button class="vf-check vf-check--head" type="button" data-vf="toggle-all" aria-label="Select all foods">
-                <span class="material-symbols-outlined">${headState}</span>
-              </button>
-            </th>
-            <th>Product</th>
-            <th class="vf-col-status">Non-UPF Shield</th>
-            <th class="vf-col-updated">Updated</th>
-          </tr>
-        </thead>
-        <tbody>
+      <div class="pf-table pf-table--verify">
+        <div class="pf-thead">
+          <span class="pf-th pf-col-check">
+            <button class="vf-check vf-check--head" type="button" data-vf="toggle-all" aria-label="Select all foods">
+              <span class="material-symbols-outlined">${headState}</span>
+            </button>
+          </span>
+          <span class="pf-th pf-col-product">Product</span>
+          <span class="pf-th">Non-UPF Shield</span>
+          <span class="pf-th">Updated</span>
+        </div>
           ${rows.map((f) => `
-            <tr class="vf-row ${f.selected ? 'is-selected' : ''}" data-food="${f.id}">
-              <td class="vf-col-check">
+            <div class="pf-trow ${f.selected ? 'is-selected' : ''}" data-food="${f.id}">
+              <span class="pf-td pf-col-check">
                 <button class="vf-check" type="button" data-vf="toggle-food" data-food="${f.id}" aria-label="Select ${esc(f.name)}" aria-pressed="${f.selected}">
                   <span class="material-symbols-outlined">${f.selected ? 'check_box' : 'check_box_outline_blank'}</span>
                 </button>
-              </td>
-              <td>${productCell(f)}</td>
-              <td class="vf-col-status">${statusPill(f)}</td>
-              <td class="vf-col-updated">${datesCell(f)}</td>
-            </tr>`).join('')}
-          ${rows.length ? '' : '<tr><td colspan="4" class="vf-empty">No foods match your search.</td></tr>'}
-        </tbody>
-      </table>
+              </span>
+              ${productCell(f)}
+              <span class="pf-td">${statusPill(f)}</span>
+              <span class="pf-td">${datesCell(f)}</span>
+            </div>`).join('')}
+          ${rows.length ? '' : '<div class="pf-trow"><span class="pf-td pf-empty">No foods match your search.</span></div>'}
+      </div>
     </div>`;
 }
 
@@ -516,44 +512,38 @@ function attestStepHTML() {
     <div class="vf-board">
       ${glanceHTML('Review & attest your selections')}
       <div class="vf-board-divider"></div>
-      <table class="vf-table vf-table--attest" data-no-sort data-wtp-skip>
-        <thead>
-          <tr>
-            <th class="vf-col-expand"></th>
-            <th class="vf-col-check"><span class="material-symbols-outlined vf-head-glyph">check_box</span></th>
-            <th>Product</th>
-            <th class="vf-col-status">Non-UPF Shield</th>
-            <th class="vf-col-updated">Updated</th>
-          </tr>
-        </thead>
-        <tbody>
+      <div class="pf-table pf-table--verify-attest">
+        <div class="pf-thead">
+          <span class="pf-th"></span>
+          <span class="pf-th pf-col-check"><span class="material-symbols-outlined vf-head-glyph">check_box</span></span>
+          <span class="pf-th pf-col-product">Product</span>
+          <span class="pf-th">Non-UPF Shield</span>
+          <span class="pf-th">Updated</span>
+        </div>
           ${rows.map((f) => {
             const open = state.expanded.has(f.id);
             const expandBtn = `<button class="vf-expand ${open ? 'is-open' : ''}" type="button" data-vf="toggle-expand" data-food="${f.id}" aria-label="Toggle ingredients" aria-expanded="${open}"><span class="material-symbols-outlined">expand_more</span></button>`;
             return `
-            <tr class="vf-row is-selected" data-food="${f.id}">
-              <td class="vf-col-expand">${expandBtn}</td>
-              <td class="vf-col-check">
+            <div class="pf-trow is-selected" data-food="${f.id}">
+              <span class="pf-td">${expandBtn}</span>
+              <span class="pf-td pf-col-check">
                 <button class="vf-check" type="button" data-vf="toggle-food" data-food="${f.id}" aria-label="Deselect ${esc(f.name)}" aria-pressed="true">
                   <span class="material-symbols-outlined">check_box</span>
                 </button>
-              </td>
-              <td>${productCell(f)}</td>
-              <td class="vf-col-status">${statusPill(f)}</td>
-              <td class="vf-col-updated">${datesCell(f)}</td>
-            </tr>
-            <tr class="vf-detail-row ${open ? 'is-open' : ''}" data-detail="${f.id}">
-              <td colspan="5">
-                <div class="vf-detail">
-                  <div class="vf-detail-label">Ingredients</div>
-                  <p class="vf-detail-text">${esc(f.ingredients)}</p>
-                </div>
-              </td>
-            </tr>`;
+              </span>
+              ${productCell(f)}
+              <span class="pf-td">${statusPill(f)}</span>
+              <span class="pf-td">${datesCell(f)}</span>
+            </div>
+            <div class="pf-trow--detail ${open ? 'is-open' : ''}" data-detail="${f.id}">
+              <div class="vf-detail">
+                <div class="vf-detail-label">Ingredients</div>
+                <p class="vf-detail-text">${esc(f.ingredients)}</p>
+              </div>
+            </div>`;
           }).join('')}
-          ${rows.length ? '' : '<tr><td colspan="5" class="vf-empty">No selected foods match your search.</td></tr>'}
-        </tbody>
-      </table>
+          ${rows.length ? '' : '<div class="pf-trow"><span class="pf-td pf-empty">No selected foods match your search.</span></div>'}
+      </div>
     </div>
 
     <label class="vf-attest vf-attest--sticky ${state.attested ? 'is-checked' : ''}">

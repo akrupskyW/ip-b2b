@@ -44,7 +44,7 @@
 import { ICON_INVENTORY } from './icon-inventory-data.js';
 import { CODE_STATS } from './code-stats-data.js';
 import { makeTraceHelix, measureTraceRungCentres, TRACE_STRAND_MARKUP } from './trace-helix.js';
-import { composerDbSelectorHtml, wireChatComposer, createHelixBgAnim, readBgAnimScaleAxes } from './wiseai-chat.js';
+import { composerDbSelectorHtml, wireChatComposer, createHelixBgAnim, readBgAnimScaleAxes, readBgAnimKnobs, bgAnimPctToStop, bgAnimStopToPct } from './wiseai-chat.js';
 import { MODULE_SECTIONS, AREA_ICONS } from './module-directory-data.js';
 import { APP_LOGIC, LOGIC_AREAS } from './app-logic-data.js';
 import { DEV_READY_SEED } from './dev-ready-data.js';
@@ -1054,6 +1054,12 @@ function swatchHTML(sw) {
       <span class="ds-swatch-cap">Now</span>
       <span class="ds-swatch-cap">New</span>
       <span class="ds-swatch-cap ds-swatch-cap--undo">Undo</span>
+      <span class="ds-swatch-alpha">
+        <span class="ds-swatch-cap ds-swatch-cap--alpha">A</span>
+        <input type="range" min="0" max="100" step="1" value="100" data-token-alpha
+               title="Opacity of ${esc(sw.token)}" aria-label="Alpha for ${esc(sw.token)}" />
+        <span class="ds-swatch-alpha-out" data-token-alpha-out aria-hidden="true">100%</span>
+      </span>
     </span>`;
   } else {
     chips = fillChip('');
@@ -1146,7 +1152,7 @@ function renderDesignSystem() {
             <span class="material-symbols-outlined">restart_alt</span>Reset colors
           </button>
         </div>
-        <p class="ds-footnote" style="margin-top:0;margin-bottom:14px">Each token shows its current color, then a new color to change to, then undo. Pick or paste a hex — edits save for this theme, apply across the app, and survive reload.</p>
+        <p class="ds-footnote" style="margin-top:0;margin-bottom:14px">Each token shows its current color, then a new color to change to, then undo. Pick a color, or paste a hex or <code>rgba()</code> value; drag <strong>A</strong> to set transparency, since the browser's own color popover has no alpha field. Edits save for this theme, apply across the app, and survive reload.</p>
         <div class="ds-color-grid">${colorGroups}</div>
       </div>
     </section>`;
@@ -1209,8 +1215,13 @@ const CAT_BY_NAME = {
   'Library cards': 'Library & reports',
   'Library folders': 'Library & reports',
   'Report posters': 'Library & reports',
-  'Scorecards': 'Filters',
+  'Filter tiles': 'Filters',
+  'Action scorecards': 'Tables & data',
+  'Compact metrics': 'Tables & data',
+  'KPI scorecards': 'Tables & data',
+  'Claim scorecards': 'Tables & data',
   'Filter toolbar': 'Filters',
+  'Used-in links': 'Navigation',
   'Menu popover': 'Overlays',
   'Row action menu': 'Overlays',
   'Modal dialog': 'Overlays',
@@ -1230,11 +1241,34 @@ const COMPONENTS = [
     name: 'Buttons',
     cls: '.dash-btn --primary / --ghost · .dash-text-link',
     used: 'Non-UPF Dashboard · Reports · Verification CTAs · Reformulation',
+    note: 'Every interactive control in this library shows its states side by side. Default is rest; Hover is forced with <code>.is-hover</code> so it stays visible; Disabled uses the native attribute. Text links are the tertiary action — not a button.',
+    noteIcon: 'smart_button',
     demo: `
-      <div class="dash-btn-row">
-        <button type="button" class="dash-btn dash-btn--primary"><span class="material-symbols-outlined">rocket_launch</span>Primary action</button>
-        <button type="button" class="dash-btn dash-btn--ghost">Ghost action</button>
-        <button type="button" class="dash-text-link">View full report<span class="material-symbols-outlined">north_east</span></button>
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Default</div>
+          <div class="dash-btn-row">
+            <button type="button" class="dash-btn dash-btn--primary"><span class="material-symbols-outlined">rocket_launch</span>Primary action</button>
+            <button type="button" class="dash-btn dash-btn--ghost">Ghost action</button>
+            <button type="button" class="dash-text-link">View full report<span class="material-symbols-outlined">north_east</span></button>
+          </div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Hover</div>
+          <div class="dash-btn-row">
+            <button type="button" class="dash-btn dash-btn--primary is-hover"><span class="material-symbols-outlined">rocket_launch</span>Primary action</button>
+            <button type="button" class="dash-btn dash-btn--ghost is-hover">Ghost action</button>
+            <button type="button" class="dash-text-link is-hover">View full report<span class="material-symbols-outlined">north_east</span></button>
+          </div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Disabled</div>
+          <div class="dash-btn-row">
+            <button type="button" class="dash-btn dash-btn--primary" disabled><span class="material-symbols-outlined">rocket_launch</span>Primary action</button>
+            <button type="button" class="dash-btn dash-btn--ghost" disabled>Ghost action</button>
+            <button type="button" class="dash-text-link" disabled>View full report<span class="material-symbols-outlined">north_east</span></button>
+          </div>
+        </div>
       </div>`,
   },
   {
@@ -1242,17 +1276,34 @@ const COMPONENTS = [
     wide: true,
     cls: '.chip · .ws-intent-chip · .sc-reply-chips .chip (+ .chip-primary, .chip-dive, .chip--match, .ms-chip.is-selected)',
     used: 'WISEcodeAI dock & Studio welcome, module shortcuts, Auth signup, Comparison, in-conversation reply chips',
-    note: 'The compact 28px chip. Welcome shortcuts, module intents, and reply chips all share <code>.chip</code> at <code>height: 28px</code> with <code>--fs-label</code> type, so they read as one family with the composer. Its large-format sibling — the tap-through <em>Large intent cards</em> (<code>.ws-scorecard</code>) — sits right beside it here.',
+    note: 'The compact 28px chip. Welcome shortcuts, module intents, and reply chips all share <code>.chip</code> at <code>height: 28px</code> with <code>--fs-label</code> type. States: Default, Hover, Open/selected (<code>.is-selected</code> / match). Its large-format sibling — <em>Large intent cards</em> — sits beside it.',
     noteIcon: 'straighten',
     demo: `
-      <div class="sc-reply-chips" style="margin:0">
-        <button type="button" class="chip"><span class="material-symbols-outlined">auto_awesome</span>Suggest a reformulation</button>
-        <button type="button" class="chip ws-intent-chip"><span class="material-symbols-outlined">inventory_2</span>Open portfolio</button>
-        <button type="button" class="chip chip--match"><span class="material-symbols-outlined">check_circle</span>Best match</button>
-        <button type="button" class="chip">Compare two products</button>
-        <button type="button" class="chip ms-chip is-selected">High sugar</button>
-        <button type="button" class="chip chip-dive"><span class="material-symbols-outlined">arrow_forward</span>Dive in</button>
-        <button type="button" class="chip chip-primary"><span class="material-symbols-outlined">check</span>Confirm</button>
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Default</div>
+          <div class="sc-reply-chips" style="margin:0">
+            <button type="button" class="chip"><span class="material-symbols-outlined">auto_awesome</span>Suggest a reformulation</button>
+            <button type="button" class="chip ws-intent-chip"><span class="material-symbols-outlined">inventory_2</span>Open portfolio</button>
+            <button type="button" class="chip chip-dive"><span class="material-symbols-outlined">arrow_forward</span>Dive in</button>
+          </div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Hover</div>
+          <div class="sc-reply-chips" style="margin:0">
+            <button type="button" class="chip is-hover"><span class="material-symbols-outlined">auto_awesome</span>Suggest a reformulation</button>
+            <button type="button" class="chip ws-intent-chip is-hover"><span class="material-symbols-outlined">inventory_2</span>Open portfolio</button>
+            <button type="button" class="chip chip-dive is-hover"><span class="material-symbols-outlined">arrow_forward</span>Dive in</button>
+          </div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Open / selected</div>
+          <div class="sc-reply-chips" style="margin:0">
+            <button type="button" class="chip chip--match"><span class="material-symbols-outlined">check_circle</span>Best match</button>
+            <button type="button" class="chip ms-chip is-selected">High sugar</button>
+            <button type="button" class="chip chip-primary"><span class="material-symbols-outlined">check</span>Confirm</button>
+          </div>
+        </div>
       </div>`,
   },
   {
@@ -1261,7 +1312,7 @@ const COMPONENTS = [
     wide: true,
     cls: '.ws-scorecard · .ws-sc-action (+ --intro, --wiseai, locked)',
     used: 'WISEcodeAI welcome rail · Product Portfolio · Comparison — the large-format sibling of the 28px intent chips',
-    note: 'The large-format intent chip, not a scorecard: the whole card is one tap and the footer (<code>.ws-sc-action</code>) is the visible affordance. Same family as the 28px <code>.chip</code> above — one carries an eyebrow/metric and a CTA, the other is the in-conversation pill. (The click-to-filter <em>Scorecards</em> that sit above tables are a separate component.)',
+    note: 'The large-format intent chip, not a scorecard: the whole card is one tap and the footer (<code>.ws-sc-action</code>) is the visible affordance. Same family as the 28px <code>.chip</code> above — one carries an eyebrow/metric and a CTA, the other is the in-conversation pill. Click-to-filter <em>Filter tiles</em>, dashboard <em>KPI</em> / <em>Claim</em> / <em>Action</em> cards, and <em>Compact metrics</em> are each their own component.',
     noteIcon: 'bolt',
     demo: `
       <div class="ws-scorecards" style="overflow:visible;padding:0;width:100%">
@@ -1319,13 +1370,12 @@ const COMPONENTS = [
             <div class="fl-model-row">
               ${composerDbSelectorHtml().replace('role="menu"', 'role="menu" data-popover-static')}
             </div>
-            <div class="fl-input-line fl-input-line--locked">
-              <textarea class="fl-input fl-input--locked" rows="1" autocomplete="off" readonly aria-disabled="true" tabindex="-1" placeholder="Ask WISEcodeAI about any food\u2026"></textarea>
-              <span class="fl-input-lock" tabindex="0" role="img" aria-label="Not accessible at this moment \u2014 WISEcodeAI is coming soon"><span class="material-symbols-outlined">lock</span><span class="fl-input-lock-tip"><span class="fl-input-lock-tip-main">Not accessible at this moment</span><span class="fl-input-lock-tip-sub">WISEcodeAI is coming soon</span></span></span>
+            <div class="fl-input-line">
+              <textarea class="fl-input" rows="1" autocomplete="off" placeholder="Ask WISEcodeAI about any food\u2026"></textarea>
             </div>
             <div class="fl-attachments" aria-label="Pending attachments"></div>
           </div>
-          <button type="button" class="sc-send sc-send--locked" title="Send" disabled aria-disabled="true"><span class="material-symbols-outlined">send</span></button>
+          <button type="button" class="sc-send" title="Send"><span class="material-symbols-outlined">send</span></button>
         </div>
       </div>`,
   },
@@ -1337,31 +1387,74 @@ const COMPONENTS = [
   },
   {
     name: 'Left-nav item',
-    cls: '.menu-nav-item · .menu-nav-icon (+ .is-active, .menu-nav-locked)',
+    cls: '.menu-nav-item · .menu-nav-icon (+ .is-active, .menu-nav-locked, .is-hover)',
     used: 'Primary navigation rail on every app page (js/agent-menu.js)',
+    note: 'States: Default, Hover, Open/active (<code>.is-active</code>), Locked. One row shape for the whole rail.',
+    noteIcon: 'menu',
     demo: `
-      <nav class="menu-nav" style="max-width:230px">
-        <a class="menu-nav-item" href="#" onclick="return false"><span class="menu-nav-icon"><span class="material-symbols-outlined">space_dashboard</span></span><span class="menu-nav-label">Overview</span></a>
-        <a class="menu-nav-item is-active" href="#" onclick="return false"><span class="menu-nav-icon"><span class="material-symbols-outlined">handyman</span></span><span class="menu-nav-label">Product Portfolio</span></a>
-        <a class="menu-nav-item menu-nav-locked" href="#" onclick="return false"><span class="menu-nav-icon"><span class="material-symbols-outlined">description</span></span><span class="menu-nav-label">Reports</span><span class="menu-nav-lock"><span class="material-symbols-outlined">lock</span></span></a>
-      </nav>`,
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Default · Hover · Open · Locked</div>
+          <nav class="menu-nav" style="max-width:230px">
+            <a class="menu-nav-item" href="#" onclick="return false"><span class="menu-nav-icon"><span class="material-symbols-outlined">space_dashboard</span></span><span class="menu-nav-label">Overview</span></a>
+            <a class="menu-nav-item is-hover" href="#" onclick="return false"><span class="menu-nav-icon"><span class="material-symbols-outlined">insights</span></span><span class="menu-nav-label">Reports</span></a>
+            <a class="menu-nav-item is-active" href="#" onclick="return false"><span class="menu-nav-icon"><span class="material-symbols-outlined">handyman</span></span><span class="menu-nav-label">Product Portfolio</span></a>
+            <a class="menu-nav-item menu-nav-locked" href="#" onclick="return false"><span class="menu-nav-icon"><span class="material-symbols-outlined">description</span></span><span class="menu-nav-label">Studio</span><span class="menu-nav-lock"><span class="material-symbols-outlined">lock</span></span></a>
+          </nav>
+        </div>
+      </div>`,
   },
   {
     name: 'Top-bar icon button',
-    cls: '.lir-btn',
+    cls: '.lir-btn (+ .is-hover, .is-open, [disabled])',
     used: 'Top-bar trailing rail on every page — alerts, appearance, minimal UI, dock toggles',
+    note: 'Icon-only control. States: Default, Hover, Open (popover anchored), Disabled. Always carries an <code>aria-label</code>.',
+    noteIcon: 'touch_app',
     demo: `
-      <div style="display:inline-flex;gap:2px">
-        <button type="button" class="lir-btn" aria-label="Alerts"><span class="material-symbols-outlined">notifications</span></button>
-        <button type="button" class="lir-btn" aria-label="Appearance"><span class="material-symbols-outlined">palette</span></button>
-        <button type="button" class="lir-btn" aria-label="More"><span class="material-symbols-outlined">more_vert</span></button>
+      <div class="dsc-states">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Default</div>
+          <button type="button" class="lir-btn" aria-label="Alerts"><span class="material-symbols-outlined">notifications</span></button>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Hover</div>
+          <button type="button" class="lir-btn is-hover" aria-label="Appearance"><span class="material-symbols-outlined">palette</span></button>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Open</div>
+          <button type="button" class="lir-btn is-open" aria-label="More" aria-expanded="true"><span class="material-symbols-outlined">more_vert</span></button>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Disabled</div>
+          <button type="button" class="lir-btn" disabled aria-label="Alerts"><span class="material-symbols-outlined">notifications</span></button>
+        </div>
       </div>`,
   },
   {
     name: 'Avatar button',
-    cls: '.topbar-profile (+ .has-dot unread state)',
+    cls: '.topbar-profile (+ .has-dot unread, .is-hover, .is-open)',
     used: 'Top bar on every app page — opens the profile popover',
-    demo: `<button type="button" class="topbar-profile has-dot" aria-label="Profile">MC</button>`,
+    note: 'States: Default, Hover, Open (menu up), Unread dot. Initials only — no photo tile.',
+    noteIcon: 'account_circle',
+    demo: `
+      <div class="dsc-states">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Default</div>
+          <button type="button" class="topbar-profile" aria-label="Profile">MC</button>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Hover</div>
+          <button type="button" class="topbar-profile is-hover" aria-label="Profile">MC</button>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Open</div>
+          <button type="button" class="topbar-profile is-open" aria-label="Profile" aria-expanded="true">MC</button>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Unread</div>
+          <button type="button" class="topbar-profile has-dot" aria-label="Profile">MC</button>
+        </div>
+      </div>`,
   },
   {
     name: 'Dashboard card',
@@ -1505,125 +1598,191 @@ const COMPONENTS = [
       </div>`,
   },
 
-  /* ---- Scorecards — every variant in one card -------------------- */
+  /* ---- Score & metric cards — each shape is its own reusable part ---- */
   {
-    name: 'Scorecards',
+    name: 'Filter tiles',
     wide: true,
-    cls: '.adm-stat · .adm-vf-stat (+ .adm-btn) · .adm-metric · .dash-score-card · .dash-claim-col (+ .dash-btn-row)',
-    used: 'Organizations · User Management · Audit Queue · Portfolio (.pf-stats) · Non-UPF Dashboard (.adm-vf-stat) · Analytics Types / Overview (.dash-score-card, .dash-claim-col) — every scorecard surface',
-    note: 'Every scorecard variant lives here. Filter tiles sit above tables and scope the list (<code>.is-active</code>). Action scorecards (Non-UPF Dashboard) add a status chip, a caption, and a ghost button pinned to the bottom. Compact metrics are the at-a-glance row. KPI cards are the dashboard score band. Claim columns are the big-numeral dashboard row with a button underneath. The large-format welcome cards (<code>.ws-scorecard</code>) are cataloged separately as <em>Large intent cards</em>. No eyebrows on any of these.',
-    noteIcon: 'space_dashboard',
+    cls: '.adm-stat (+ .is-active, .adm-stat--green/--amber/--red) (= .pf-stat)',
+    used: 'Organizations · User Management · Audit Queue · Portfolio (.pf-stats) · Conversation Library — click-to-filter row above every list',
+    note: 'Click-to-filter tiles that sit above tables and scope the list. <code>.is-active</code> is the selected/open state; Hover lifts the card. These are not KPI displays — tapping one filters. No eyebrows.',
+    noteIcon: 'filter_alt',
     demo: `
-      <div class="dsc-sub">
-        <div class="dsc-sub-label">Filter tiles</div>
-        <div class="adm-stats" style="width:100%">
-          <button type="button" class="adm-stat is-active">
-            <span class="adm-stat-num">128</span>
-            <span class="adm-stat-label"><span class="material-symbols-outlined">apps</span>All</span>
-          </button>
-          <button type="button" class="adm-stat adm-stat--green">
-            <span class="adm-stat-num">62</span>
-            <span class="adm-stat-label"><span class="material-symbols-outlined">verified</span>Verified</span>
-          </button>
-          <button type="button" class="adm-stat adm-stat--amber">
-            <span class="adm-stat-num">41</span>
-            <span class="adm-stat-label"><span class="material-symbols-outlined">pending</span>Pending</span>
-          </button>
-          <button type="button" class="adm-stat adm-stat--red">
-            <span class="adm-stat-num">25</span>
-            <span class="adm-stat-label"><span class="material-symbols-outlined">error</span>At risk</span>
-          </button>
-        </div>
-      </div>
-      <div class="dsc-sub">
-        <div class="dsc-sub-label">Action scorecards</div>
-        <div class="adm-vf-stats" style="width:100%">
-          <div class="adm-vf-stat is-active" role="button" tabindex="0">
-            <span class="adm-vf-stat-num">90</span>
-            <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--blue"><span class="material-symbols-outlined">inventory_2</span>Products</span></span>
-            <span class="adm-vf-stat-sub">Items in Registry</span>
-          </div>
-          <div class="adm-vf-stat adm-stat--red" role="button" tabindex="0">
-            <span class="adm-vf-stat-num" style="color:var(--sec-red)">10</span>
-            <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--red"><span class="material-symbols-outlined">warning</span>Action Required</span></span>
-            <span class="adm-vf-stat-sub">Missing mandatory data</span>
-            <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm">Edit</button>
-          </div>
-          <div class="adm-vf-stat" role="button" tabindex="0">
-            <span class="adm-vf-stat-num" style="color:var(--primary-ink, var(--primary))">19</span>
-            <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--blue"><span class="material-symbols-outlined">fact_check</span>Pending Attestation</span></span>
-            <span class="adm-vf-stat-sub">Selected products need review and attestation</span>
-            <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm">Attest</button>
-          </div>
-          <div class="adm-vf-stat adm-stat--green" role="button" tabindex="0">
-            <span class="adm-vf-stat-num" style="color:var(--sec-green)">8</span>
-            <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--green"><span class="material-symbols-outlined">verified</span>Verified</span></span>
-            <span class="adm-vf-stat-sub">Fully verified (shield verification)</span>
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col" style="flex:1 1 100%">
+          <div class="dsc-sub-label">Default · Hover · Open (selected)</div>
+          <div class="adm-stats" style="width:100%">
+            <button type="button" class="adm-stat">
+              <span class="adm-stat-num">128</span>
+              <span class="adm-stat-label"><span class="material-symbols-outlined">apps</span>All</span>
+            </button>
+            <button type="button" class="adm-stat adm-stat--green is-hover">
+              <span class="adm-stat-num">62</span>
+              <span class="adm-stat-label"><span class="material-symbols-outlined">verified</span>Verified</span>
+            </button>
+            <button type="button" class="adm-stat adm-stat--amber is-active">
+              <span class="adm-stat-num">41</span>
+              <span class="adm-stat-label"><span class="material-symbols-outlined">pending</span>Pending</span>
+            </button>
+            <button type="button" class="adm-stat adm-stat--red">
+              <span class="adm-stat-num">25</span>
+              <span class="adm-stat-label"><span class="material-symbols-outlined">error</span>At risk</span>
+            </button>
           </div>
         </div>
-      </div>
-      <div class="dsc-sub">
-        <div class="dsc-sub-label">Compact metrics</div>
-        <div class="adm-metrics" style="width:100%">
-          <div class="adm-metric adm-metric--accent">
-            <span class="adm-metric-top"><span class="material-symbols-outlined">verified</span>Verified</span>
-            <span class="adm-metric-num">62</span>
-            <span class="adm-metric-sub">Ready to publish</span>
+      </div>`,
+  },
+  {
+    name: 'Action scorecards',
+    wide: true,
+    cls: '.adm-vf-stat (+ .is-active, .adm-stat--*) · .adm-chip · .adm-btn',
+    used: 'Non-UPF Dashboard — status chip + caption + optional ghost action pinned to the bottom',
+    note: 'Dashboard action cards, not filter tiles. Each carries a big numeral, a status chip, a caption, and optionally a ghost button. <code>.is-active</code> marks the focused card. Reuses <em>Status chips (domain)</em> and <em>Admin buttons</em> — those stay separate catalog entries.',
+    noteIcon: 'bolt',
+    demo: `
+      <div class="adm-vf-stats" style="width:100%">
+        <div class="adm-vf-stat is-active" role="button" tabindex="0">
+          <span class="adm-vf-stat-num">90</span>
+          <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--blue"><span class="material-symbols-outlined">inventory_2</span>Products</span></span>
+          <span class="adm-vf-stat-sub">Items in Registry</span>
+        </div>
+        <div class="adm-vf-stat adm-stat--red is-hover" role="button" tabindex="0">
+          <span class="adm-vf-stat-num" style="color:var(--sec-red)">10</span>
+          <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--red"><span class="material-symbols-outlined">warning</span>Action Required</span></span>
+          <span class="adm-vf-stat-sub">Missing mandatory data</span>
+          <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm">Edit</button>
+        </div>
+        <div class="adm-vf-stat" role="button" tabindex="0">
+          <span class="adm-vf-stat-num" style="color:var(--primary-ink, var(--primary))">19</span>
+          <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--blue"><span class="material-symbols-outlined">fact_check</span>Pending Attestation</span></span>
+          <span class="adm-vf-stat-sub">Selected products need review and attestation</span>
+          <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm">Attest</button>
+        </div>
+        <div class="adm-vf-stat adm-stat--green" role="button" tabindex="0">
+          <span class="adm-vf-stat-num" style="color:var(--sec-green)">8</span>
+          <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--green"><span class="material-symbols-outlined">verified</span>Verified</span></span>
+          <span class="adm-vf-stat-sub">Fully verified (shield verification)</span>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Compact metrics',
+    cls: '.adm-metric (+ .adm-metric--accent)',
+    used: 'Admin utils · denser at-a-glance rows where a full filter tile is too heavy',
+    note: 'Read-only metric strip — icon + label, numeral, caption. Not clickable and not a filter. Accent marks the primary figure in the row.',
+    noteIcon: 'speed',
+    demo: `
+      <div class="adm-metrics" style="width:100%">
+        <div class="adm-metric adm-metric--accent">
+          <span class="adm-metric-top"><span class="material-symbols-outlined">verified</span>Verified</span>
+          <span class="adm-metric-num">62</span>
+          <span class="adm-metric-sub">Ready to publish</span>
+        </div>
+        <div class="adm-metric">
+          <span class="adm-metric-top"><span class="material-symbols-outlined">pending</span>Pending</span>
+          <span class="adm-metric-num">41</span>
+          <span class="adm-metric-sub">Awaiting review</span>
+        </div>
+        <div class="adm-metric">
+          <span class="adm-metric-top"><span class="material-symbols-outlined">error</span>At risk</span>
+          <span class="adm-metric-num">25</span>
+          <span class="adm-metric-sub">Needs a fix</span>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'KPI scorecards',
+    wide: true,
+    cls: '.dash-score-card · .dash-score-num · .dash-badge · .dash-score-note',
+    used: 'Analytics Types · Overview · Non-UPF Dashboard — the dashboard score band',
+    note: 'Dashboard KPI cards: big numeral, status badge, short note. Display-only — no filter, no CTA button. No eyebrows. Count-up animates the numeral on load.',
+    noteIcon: 'monitoring',
+    demo: `
+      <div class="dash-score-band">
+        <article class="dash-card dash-score-card">
+          <div class="dash-score-top">
+            <div class="dash-score-num"><span class="n">62<span class="dash-pct">%</span></span><span class="d">Non-UPF</span></div>
           </div>
-          <div class="adm-metric">
-            <span class="adm-metric-top"><span class="material-symbols-outlined">pending</span>Pending</span>
-            <span class="adm-metric-num">41</span>
-            <span class="adm-metric-sub">Awaiting review</span>
+          <span class="dash-badge dash-badge--good"><span class="material-symbols-outlined" style="font-size:13px;">check</span>Good</span>
+          <p class="dash-score-note"><strong>9 of 12</strong> analyzed products are Non&#8209;UPF.</p>
+        </article>
+        <article class="dash-card dash-score-card">
+          <div class="dash-score-top">
+            <div class="dash-score-num"><span class="n">79</span><span class="d">/100</span></div>
           </div>
-          <div class="adm-metric">
-            <span class="adm-metric-top"><span class="material-symbols-outlined">error</span>At risk</span>
-            <span class="adm-metric-num">25</span>
-            <span class="adm-metric-sub">Needs a fix</span>
+          <span class="dash-badge dash-badge--good"><span class="material-symbols-outlined" style="font-size:13px;">check</span>Good</span>
+          <p class="dash-score-note">Average WISEscore&#8482; across all <strong>discovered products</strong></p>
+        </article>
+      </div>`,
+  },
+  {
+    name: 'Claim scorecards',
+    wide: true,
+    cls: '.dash-claim · .dash-claim-col · .dash-bignum · .dash-btn-row',
+    used: 'Overview · Analytics Types — big-numeral discovery row with a CTA underneath',
+    note: 'Two-column claim band: big numeral + caption, then a button row. Reuses <em>Buttons</em> for the CTA — that stays a separate component. Distinct from KPI cards (no CTA) and filter tiles (no filter).',
+    noteIcon: 'featured_play_list',
+    demo: `
+      <section class="dash-claim dsc-claim-demo">
+        <div class="dash-claim-col">
+          <div class="dash-bignum-row">
+            <span class="dash-bignum">47</span>
+            <span class="dash-bignum-cap"><strong>Products Discovered</strong><br>across retail &amp; distribution</span>
+          </div>
+          <div class="dash-btn-row">
+            <button class="dash-btn dash-btn--ghost" type="button"><span class="material-symbols-outlined">verified_user</span>Claim your products</button>
           </div>
         </div>
-      </div>
-      <div class="dsc-sub">
-        <div class="dsc-sub-label">KPI scorecards</div>
-        <div class="dash-score-band">
-          <article class="dash-card dash-score-card">
-            <div class="dash-score-top">
-              <div class="dash-score-num"><span class="n">62<span class="dash-pct">%</span></span><span class="d">Non-UPF</span></div>
-            </div>
-            <span class="dash-badge dash-badge--good"><span class="material-symbols-outlined" style="font-size:13px;">check</span>Good</span>
-            <p class="dash-score-note"><strong>9 of 12</strong> analyzed products are Non&#8209;UPF.</p>
-          </article>
-          <article class="dash-card dash-score-card">
-            <div class="dash-score-top">
-              <div class="dash-score-num"><span class="n">79</span><span class="d">/100</span></div>
-            </div>
-            <span class="dash-badge dash-badge--good"><span class="material-symbols-outlined" style="font-size:13px;">check</span>Good</span>
-            <p class="dash-score-note">Average WISEscore&#8482; across all <strong>discovered products</strong></p>
-          </article>
+        <div class="dash-claim-divider"></div>
+        <div class="dash-claim-col">
+          <div class="dash-bignum-row">
+            <span class="dash-bignum">9</span>
+            <span class="dash-bignum-cap"><strong>Products Qualify</strong><br>for Non&#8209;UPF verification shield</span>
+          </div>
+          <div class="dash-btn-row">
+            <button class="dash-btn dash-btn--primary" type="button"><span class="material-symbols-outlined">verified</span>Start Non&#8209;UPF Verification</button>
+          </div>
         </div>
-      </div>
-      <div class="dsc-sub">
-        <div class="dsc-sub-label">Claim scorecards</div>
-        <section class="dash-claim dsc-claim-demo">
-          <div class="dash-claim-col">
-            <div class="dash-bignum-row">
-              <span class="dash-bignum">47</span>
-              <span class="dash-bignum-cap"><strong>Products Discovered</strong><br>across retail &amp; distribution</span>
-            </div>
-            <div class="dash-btn-row">
-              <button class="dash-btn dash-btn--ghost" type="button"><span class="material-symbols-outlined">verified_user</span>Claim your products</button>
-            </div>
-          </div>
-          <div class="dash-claim-divider"></div>
-          <div class="dash-claim-col">
-            <div class="dash-bignum-row">
-              <span class="dash-bignum">9</span>
-              <span class="dash-bignum-cap"><strong>Products Qualify</strong><br>for Non&#8209;UPF verification shield</span>
-            </div>
-            <div class="dash-btn-row">
-              <button class="dash-btn dash-btn--primary" type="button"><span class="material-symbols-outlined">verified</span>Start Non&#8209;UPF Verification</button>
-            </div>
-          </div>
-        </section>
+      </section>`,
+  },
+
+  /* ---- Used-in links — tiny plain-text jump links ----------------- */
+  {
+    name: 'Used-in links',
+    wide: true,
+    cls: '.dsc-used-link (+ .dsc-used-link--plain, .is-hover, .is-open)',
+    used: 'Component Library “Used in” rows · Module Directory cross-links — tiny text links that point at (or name) a module',
+    note: 'Not a chip. <strong>Link</strong> is a tiny text jump target; <strong>Plain</strong> is the same type, not clickable. States: Default, Hover (<code>.is-hover</code>), Open (<code>.is-open</code> when the linked surface is the one in view).',
+    noteIcon: 'link',
+    demo: `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Link · Default</div>
+          <span class="dsc-used-list dsc-used-list--links">
+            <a class="dsc-used-link" href="#" onclick="return false">Product Portfolio</a>
+            <a class="dsc-used-link" href="#" onclick="return false">NON-UPF Dashboard</a>
+          </span>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Link · Hover</div>
+          <span class="dsc-used-list dsc-used-list--links">
+            <a class="dsc-used-link is-hover" href="#" onclick="return false">Product Portfolio</a>
+            <a class="dsc-used-link is-hover" href="#" onclick="return false">Reports</a>
+          </span>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Link · Open</div>
+          <span class="dsc-used-list dsc-used-list--links">
+            <a class="dsc-used-link is-open" href="#" onclick="return false">Overview</a>
+            <a class="dsc-used-link" href="#" onclick="return false">Comparison</a>
+          </span>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Plain text</div>
+          <span class="dsc-used-list dsc-used-list--links">
+            <span class="dsc-used-link dsc-used-link--plain">Marketing Assets</span>
+            <span class="dsc-used-link dsc-used-link--plain">Add Catalog</span>
+          </span>
+        </div>
       </div>`,
   },
 
@@ -1688,17 +1847,34 @@ const COMPONENTS = [
   },
   {
     name: 'Row action menu',
-    cls: '.adm-rowmenu · .adm-rowmenu-btn · .adm-rowmenu-pop · .adm-rowmenu-item (+ --primary, --danger)',
+    cls: '.adm-rowmenu · .adm-rowmenu-btn · .adm-rowmenu-pop · .adm-rowmenu-item (+ --primary, --danger, .is-open)',
     used: 'Every table row kebab — Organizations, User Management, Audit Queue, Portfolio (.pf-rowmenu)',
-    note: 'The per-row ⋯ menu that collapses row actions into a popover. Portalled floating variant (<code>.adm-menu</code>) is used when a row menu would clip inside the table card.',
+    note: 'The per-row ⋯ menu that collapses row actions into a popover. States: Default (closed), Open (<code>.is-open</code>). Portalled floating variant (<code>.adm-menu</code>) is used when a row menu would clip inside the table card.',
     noteIcon: 'more_vert',
     demo: `
-      <div class="adm-rowmenu is-open" style="position:relative">
-        <button type="button" class="adm-rowmenu-btn" aria-label="Row actions"><span class="material-symbols-outlined">more_vert</span></button>
-        <div class="adm-rowmenu-pop" data-popover-static style="position:static;margin-top:8px">
-          <button type="button" class="adm-rowmenu-item adm-rowmenu-item--primary"><span class="material-symbols-outlined">visibility</span>View details</button>
-          <button type="button" class="adm-rowmenu-item"><span class="material-symbols-outlined">edit</span>Edit</button>
-          <button type="button" class="adm-rowmenu-item adm-rowmenu-item--danger"><span class="material-symbols-outlined">delete</span>Remove</button>
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Default (closed)</div>
+          <div class="adm-rowmenu" style="position:relative">
+            <button type="button" class="adm-rowmenu-btn" aria-label="Row actions" aria-expanded="false"><span class="material-symbols-outlined">more_vert</span></button>
+          </div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Hover</div>
+          <div class="adm-rowmenu" style="position:relative">
+            <button type="button" class="adm-rowmenu-btn is-hover" aria-label="Row actions"><span class="material-symbols-outlined">more_vert</span></button>
+          </div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Open</div>
+          <div class="adm-rowmenu is-open" style="position:relative">
+            <button type="button" class="adm-rowmenu-btn" aria-label="Row actions" aria-expanded="true"><span class="material-symbols-outlined">more_vert</span></button>
+            <div class="adm-rowmenu-pop" data-popover-static style="position:static;margin-top:8px">
+              <button type="button" class="adm-rowmenu-item adm-rowmenu-item--primary"><span class="material-symbols-outlined">visibility</span>View details</button>
+              <button type="button" class="adm-rowmenu-item"><span class="material-symbols-outlined">edit</span>Edit</button>
+              <button type="button" class="adm-rowmenu-item adm-rowmenu-item--danger"><span class="material-symbols-outlined">delete</span>Remove</button>
+            </div>
+          </div>
         </div>
       </div>`,
   },
@@ -1746,15 +1922,40 @@ const COMPONENTS = [
     name: 'Admin buttons',
     cls: '.adm-btn (+ --primary/--ghost/--danger/--good/--sm) · .adm-icon-btn',
     used: 'Admin module headers & rows · Invoices (.inv-btn mirror) — the pill button set beside the app .dash-btn',
-    note: 'The admin/list surfaces use this pill button family; content surfaces use <code>.dash-btn</code>. Same tokens, two shapes — pick by surface.',
+    note: 'The admin/list surfaces use this pill button family; content surfaces use <code>.dash-btn</code>. Same tokens, two shapes — pick by surface. States shown: Default, Hover, Disabled.',
     noteIcon: 'smart_button',
     demo: `
-      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-        <button type="button" class="adm-btn adm-btn--primary"><span class="material-symbols-outlined">add</span>New</button>
-        <button type="button" class="adm-btn adm-btn--ghost">Cancel</button>
-        <button type="button" class="adm-btn adm-btn--good"><span class="material-symbols-outlined">check</span>Approve</button>
-        <button type="button" class="adm-btn adm-btn--danger"><span class="material-symbols-outlined">delete</span>Delete</button>
-        <button type="button" class="adm-icon-btn" aria-label="More"><span class="material-symbols-outlined">more_horiz</span></button>
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Default</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+            <button type="button" class="adm-btn adm-btn--primary"><span class="material-symbols-outlined">add</span>New</button>
+            <button type="button" class="adm-btn adm-btn--ghost">Cancel</button>
+            <button type="button" class="adm-btn adm-btn--good"><span class="material-symbols-outlined">check</span>Approve</button>
+            <button type="button" class="adm-btn adm-btn--danger"><span class="material-symbols-outlined">delete</span>Delete</button>
+            <button type="button" class="adm-icon-btn" aria-label="More"><span class="material-symbols-outlined">more_horiz</span></button>
+          </div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Hover</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+            <button type="button" class="adm-btn adm-btn--primary is-hover"><span class="material-symbols-outlined">add</span>New</button>
+            <button type="button" class="adm-btn adm-btn--ghost is-hover">Cancel</button>
+            <button type="button" class="adm-btn adm-btn--good is-hover"><span class="material-symbols-outlined">check</span>Approve</button>
+            <button type="button" class="adm-btn adm-btn--danger is-hover"><span class="material-symbols-outlined">delete</span>Delete</button>
+            <button type="button" class="adm-icon-btn is-hover" aria-label="More"><span class="material-symbols-outlined">more_horiz</span></button>
+          </div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Disabled</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+            <button type="button" class="adm-btn adm-btn--primary" disabled><span class="material-symbols-outlined">add</span>New</button>
+            <button type="button" class="adm-btn adm-btn--ghost" disabled>Cancel</button>
+            <button type="button" class="adm-btn adm-btn--good" disabled><span class="material-symbols-outlined">check</span>Approve</button>
+            <button type="button" class="adm-btn adm-btn--danger" disabled><span class="material-symbols-outlined">delete</span>Delete</button>
+            <button type="button" class="adm-icon-btn" disabled aria-label="More"><span class="material-symbols-outlined">more_horiz</span></button>
+          </div>
+        </div>
       </div>`,
   },
 
@@ -2127,10 +2328,9 @@ function compSignature(c) {
 
 function demoHasSignature(demo, sig) {
   if (!sig) return false;
-  for (const name of classesInHtml(demo)) {
-    if (name === sig || name.startsWith(sig + '--')) return true;
-  }
-  return false;
+  /* Require the base class token itself. A shared modifier like
+     adm-stat--red on .adm-vf-stat must not count as "made of Filter tiles". */
+  return classesInHtml(demo).has(sig);
 }
 
 let COMP_GRAPH = null;
@@ -2189,10 +2389,10 @@ function usedSurfacesHTML(used) {
   if (!mods.length) {
     return `<div class="dsc-used"><span class="dsc-used-label">Used in</span><span class="dsc-used-list">${esc(used)}</span></div>`;
   }
-  const chips = mods.map((m) =>
-    `<a class="dsc-used-chip" href="#mi-directory" data-jump-mod="${esc(m.href)}">${esc(m.label)}</a>`
+  const links = mods.map((m) =>
+    `<a class="dsc-used-link" href="#mi-directory" data-jump-mod="${esc(m.href)}">${esc(m.label)}</a>`
   ).join('');
-  return `<div class="dsc-used"><span class="dsc-used-label">Used in</span><span class="dsc-used-list dsc-used-list--chips">${chips}</span></div>`;
+  return `<div class="dsc-used"><span class="dsc-used-label">Used in</span><span class="dsc-used-list dsc-used-list--links">${links}</span></div>`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -2303,7 +2503,7 @@ function paneCompsHTML(comps, title, opts) {
     ? comps.map((c) => `
         <li class="mi-pane-comp">
           <a class="mi-pane-comp-link" href="#${esc(compDomId(c.name))}" data-jump-comp="${esc(c.name)}">${esc(c.name)}</a>
-          ${readyToggleHTML(c.name, c.name, { level: 'item', parent: 'mi-components' })}
+          ${opts.hideReady ? '' : readyToggleHTML(c.name, c.name, { level: 'item', parent: 'mi-components' })}
         </li>`).join('')
     : '<li class="mi-pane-comp mi-pane-comp--empty">No catalogued components</li>';
   return `
@@ -2490,7 +2690,6 @@ function buildDevReadyTree() {
   DEV_READY_PARENT = {};
   registerReadyChildren('mi-directory', dedupedDirSections().map((s) => ({ id: 'dir:' + s.tone, label: s.title })));
   registerReadyChildren('mi-tables', tableReadyChildren());
-  registerReadyChildren('mi-logic', logicReadyChildren());
   registerReadyChildren('mi-intents', intentReadyChildren());
   registerReadyChildren('mi-trace', traceReadyChildren());
   registerReadyChildren('mi-motion', MOTION_ITEMS.map((i) => ({ id: motionReadyId(i), label: i.title })));
@@ -2565,8 +2764,8 @@ function componentCard(c, readyMap) {
       ${note}
       ${download}
       <div class="dsc-refs">
-        ${paneCompsHTML(parts, 'Made of', { hideEmpty: true })}
-        ${paneCompsHTML(hosts, 'Used by', { hideEmpty: true })}
+        ${paneCompsHTML(parts, 'Made of', { hideEmpty: true, hideReady: true })}
+        ${paneCompsHTML(hosts, 'Used by', { hideEmpty: true, hideReady: true })}
       </div>
       ${usedSurfacesHTML(c.used)}
     </div>`;
@@ -2605,7 +2804,7 @@ const CONVENTIONS = [
   {
     icon: 'accessibility_new',
     title: 'Consistent states',
-    body: 'Interactive components share hover, <code>:focus-visible</code> rings, <code>.is-active</code> selection, disabled/locked, and honor <code>prefers-reduced-motion</code>. Icon-only controls carry an <code>aria-label</code>.',
+    body: 'Interactive components show Default, Hover (<code>.is-hover</code> in demos), Open / <code>.is-active</code> / <code>.is-open</code>, and Disabled side by side — not just the rest state. Real UI also uses <code>:focus-visible</code> rings and honors <code>prefers-reduced-motion</code>. Icon-only controls carry an <code>aria-label</code>.',
   },
 ];
 
@@ -2639,10 +2838,11 @@ function renderComponentLibrary() {
         <div class="mi-module-head-text">
           <h2 class="mi-module-title">Component Library</h2>
           <p class="mi-module-lede">Reusable components, rendered live with the real global classes from
-            <code>pages/wise.css</code>. Composite cards list the parts they are <em>made of</em> — jump to
-            any part, or flip its Dev Ready switch; the same switch on the part’s own card and on every
-            Module Directory row stays in sync. Search pills, filter tiles, Grid⇄Rail, module ⋯ menus,
-            and the page chrome live in the modules above.</p>
+            <code>pages/wise.css</code>. Each card is one reusable part — interactive cards show
+            Default, Hover, and Open (or Disabled) side by side. Composite cards list the parts they
+            are <em>made of</em> and who uses them (jump links only; Dev Ready lives on each part’s
+            own card and on Module Directory rows). Search pills, filter tiles, Grid⇄Rail, module ⋯
+            menus, and the page chrome live in the modules above.</p>
         </div>
         ${moduleReadyToggleHTML('mi-components', 'Component Library')}
         ${moduleControlsHTML('mi-components')}
@@ -3257,8 +3457,6 @@ function wireIntentAudit(root) {
 /* runs on every page rather than on one screen.                       */
 /* ------------------------------------------------------------------ */
 
-function logicReadyId(page) { return 'logic:' + page.id; }
-
 function logicRuleCount() {
   return APP_LOGIC.reduce((n, p) => n + p.rules.length, 0);
 }
@@ -3269,10 +3467,6 @@ function logicAreaStats() {
   const counts = {};
   APP_LOGIC.forEach((p) => { counts[p.area] = (counts[p.area] || 0) + p.rules.length; });
   return LOGIC_AREAS.filter((a) => counts[a.tone]).map((a) => ({ ...a, n: counts[a.tone] }));
-}
-
-function logicReadyChildren() {
-  return APP_LOGIC.map((p) => ({ id: logicReadyId(p), label: p.label }));
 }
 
 function logicAreaTiles() {
@@ -3289,17 +3483,18 @@ function logicAreaTiles() {
   return [all, ...tiles].join('');
 }
 
-function logicPageReadyStrip() {
+/* Compact page index — label + rule count, jumping to that page’s card.
+   These chips are not Dev Ready controls. */
+function logicPageIndex() {
   return `
-    <div class="mi-ready-kids" aria-label="Dev Ready by page">
-      <h3 class="mi-ready-kids-title">Dev Ready by page</h3>
+    <div class="mi-ready-kids" aria-label="Rules by page">
+      <h3 class="mi-ready-kids-title">By page</h3>
       <div class="mi-ready-kids-row">
         ${APP_LOGIC.map((p) => `
-          <div class="mi-ready-kid">
+          <a class="mi-ready-kid mi-ready-kid--plain" href="#logic-${esc(p.id)}">
             <span class="mi-ready-kid-label">${esc(p.label)}</span>
             <span class="mi-ready-kid-n">${p.rules.length}</span>
-            ${readyToggleHTML(logicReadyId(p), p.label, { level: 'item', parent: 'mi-logic' })}
-          </div>`).join('')}
+          </a>`).join('')}
       </div>
     </div>`;
 }
@@ -3335,7 +3530,6 @@ function logicPageCard(page) {
           <span class="mi-logic-src">${src}</span>
         </div>
         <span class="mi-logic-count" data-logic-count>${page.rules.length} rule${page.rules.length === 1 ? '' : 's'}</span>
-        ${readyToggleHTML(logicReadyId(page), page.label, { level: 'item', parent: 'mi-logic' })}
       </header>
       ${note}
       <ol class="mi-logic-rules">
@@ -3356,15 +3550,15 @@ function renderAppLogic() {
             navigation, pane widths, tables, wizard gating, scoring math, filter semantics and what persists where.
             <strong>${rules} rules</strong> across <strong>${APP_LOGIC.length} pages</strong>, of which <strong>${shared}</strong>
             are shared subsystems that run on every page. Each rule names the functions, keys and classes it lives in, and
-            each card links to the source files so it can be verified. Filter by area, search any rule, and mark a page
-            Dev Ready when its logic is signed off. The <strong>Intent Chip Logic</strong> module below audits the one
+            each card links to the source files so it can be verified. Filter by area or search any rule.
+            The <strong>Intent Chip Logic</strong> module below audits the one
             slice of logic the chips own.</p>
         </div>
         ${moduleReadyToggleHTML('mi-logic', 'App Logic')}
         ${moduleControlsHTML('mi-logic')}
       </header>
 
-      ${logicPageReadyStrip()}
+      ${logicPageIndex()}
 
       <div class="mi-int-stats" id="mi-logic-stats" role="group" aria-label="Filter rules by area">
         ${logicAreaTiles()}
@@ -3429,6 +3623,17 @@ function wireAppLogic(root) {
     apply(btn.getAttribute('data-logic-filter'));
   });
   search?.addEventListener('input', () => apply());
+  /* The shell scrolls an inner pane, so a raw hash on these chips would not
+     move the card into view. */
+  mod.querySelector('.mi-ready-kids')?.addEventListener('click', (e) => {
+    const a = e.target.closest('a.mi-ready-kid');
+    if (!a || !mod.contains(a)) return;
+    const id = (a.getAttribute('href') || '').replace(/^#/, '');
+    const target = id && document.getElementById(id);
+    if (!target || target.hidden) return;
+    e.preventDefault();
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
   apply('all');
 }
 
@@ -3990,8 +4195,8 @@ const MOTION_ITEMS = [
   {
     id: 'helix', group: 'anim', icon: 'genetics', title: 'Welcome helix', wide: true,
     src: 'js/wiseai-chat.js · createHelixBgAnim',
-    used: 'Every chat welcome — ON by default at 20% opacity, 10° tilt, 100% scale on X / Y / Z',
-    lede: 'The ambient DNA/RNA field behind the chat welcome. Product thumbnails travel the strand; move onto a circle for its card — the field pauses while that popover is open and continues when you leave it. Notes (brand insight or look-closer fact) are sprinkled two-of-three along the strand, mixed with food sheets — never a status stamp, and never on their own: a popover opens only when the pointer enters a circle. Default opacity is <strong>20%</strong>, the axis tilt defaults to <strong>10°</strong>, and Scale X / Y / Z each default to <strong>100%</strong> (the original strand; drag any axis up to 250%) — same controls as the chat ⋯ menu. Honors pause and <code>prefers-reduced-motion</code>. The live field starts when this section opens.',
+    used: 'Every chat welcome — ON by default at 20% opacity, 10° tilt, 100% on every scale + shape knob',
+    lede: 'The ambient DNA/RNA field behind the chat welcome. Product thumbnails travel the strand; move onto a circle for its card — the field pauses while that popover is open and continues when you leave it. Notes (brand insight or look-closer fact) are sprinkled two-of-three along the strand, mixed with food sheets — never a status stamp, and never on their own: a popover opens only when the pointer enters a circle. Default opacity is <strong>20%</strong> and the axis tilt defaults to <strong>10°</strong>. Nine knobs shape the field, each running <strong>25–400%</strong> from a <strong>100%</strong> default (the original strand): a master <strong>Scale</strong> that moves all three axes together, <strong>Scale X / Y / Z</strong> to stretch or pinch one direction, <strong>Pitch</strong> (how tightly the strand twists), <strong>Nodes</strong> (circle size) and <strong>Length</strong> (how far the strand runs), <strong>Thick</strong> (backbone and rung weight) and <strong>Depth</strong> (3-D pop) — same controls as the chat ⋯ menu, where Scale and Nodes also drive the Orbit style. Honors pause and <code>prefers-reduced-motion</code>. The live field starts when this section opens.',
     demo: `
       <div class="mi-motion-helix sc-bganim-host" data-motion-helix>
         <div class="mi-motion-helix-stage" data-helix-body></div>
@@ -4011,19 +4216,49 @@ const MOTION_ITEMS = [
             <span class="sc-bganim-angle-val" data-helix-angle-val>10°</span>
           </label>
           <label class="mi-motion-helix-opacity">
+            <span class="mi-motion-helix-opacity-label">Scale</span>
+            <input type="range" class="sc-bganim-scale-range" data-helix-scale="all" min="0" max="35" step="1" value="15" aria-label="Helix scale — all axes">
+            <span class="sc-bganim-scale-val" data-helix-scale-val="all">100%</span>
+          </label>
+          <label class="mi-motion-helix-opacity">
             <span class="mi-motion-helix-opacity-label">Scale X</span>
-            <input type="range" class="sc-bganim-scale-range" data-helix-scale="x" min="100" max="250" step="5" value="100" aria-label="Helix scale X">
+            <input type="range" class="sc-bganim-scale-range" data-helix-scale="x" min="0" max="35" step="1" value="15" aria-label="Helix scale X">
             <span class="sc-bganim-scale-val" data-helix-scale-val="x">100%</span>
           </label>
           <label class="mi-motion-helix-opacity">
             <span class="mi-motion-helix-opacity-label">Scale Y</span>
-            <input type="range" class="sc-bganim-scale-range" data-helix-scale="y" min="100" max="250" step="5" value="100" aria-label="Helix scale Y">
+            <input type="range" class="sc-bganim-scale-range" data-helix-scale="y" min="0" max="35" step="1" value="15" aria-label="Helix scale Y">
             <span class="sc-bganim-scale-val" data-helix-scale-val="y">100%</span>
           </label>
           <label class="mi-motion-helix-opacity">
             <span class="mi-motion-helix-opacity-label">Scale Z</span>
-            <input type="range" class="sc-bganim-scale-range" data-helix-scale="z" min="100" max="250" step="5" value="100" aria-label="Helix scale Z">
+            <input type="range" class="sc-bganim-scale-range" data-helix-scale="z" min="0" max="35" step="1" value="15" aria-label="Helix scale Z">
             <span class="sc-bganim-scale-val" data-helix-scale-val="z">100%</span>
+          </label>
+          <label class="mi-motion-helix-opacity">
+            <span class="mi-motion-helix-opacity-label">Pitch</span>
+            <input type="range" class="sc-bganim-knob-range" data-helix-knob="pitch" min="0" max="35" step="1" value="15" aria-label="Helix pitch">
+            <span class="sc-bganim-knob-val" data-helix-knob-val="pitch">100%</span>
+          </label>
+          <label class="mi-motion-helix-opacity">
+            <span class="mi-motion-helix-opacity-label">Nodes</span>
+            <input type="range" class="sc-bganim-knob-range" data-helix-knob="nodes" min="0" max="35" step="1" value="15" aria-label="Helix node size">
+            <span class="sc-bganim-knob-val" data-helix-knob-val="nodes">100%</span>
+          </label>
+          <label class="mi-motion-helix-opacity">
+            <span class="mi-motion-helix-opacity-label">Length</span>
+            <input type="range" class="sc-bganim-knob-range" data-helix-knob="length" min="0" max="35" step="1" value="15" aria-label="Helix strand length">
+            <span class="sc-bganim-knob-val" data-helix-knob-val="length">100%</span>
+          </label>
+          <label class="mi-motion-helix-opacity">
+            <span class="mi-motion-helix-opacity-label">Thick</span>
+            <input type="range" class="sc-bganim-knob-range" data-helix-knob="thickness" min="0" max="35" step="1" value="15" aria-label="Helix strand thickness">
+            <span class="sc-bganim-knob-val" data-helix-knob-val="thickness">100%</span>
+          </label>
+          <label class="mi-motion-helix-opacity">
+            <span class="mi-motion-helix-opacity-label">Depth</span>
+            <input type="range" class="sc-bganim-knob-range" data-helix-knob="depth" min="0" max="35" step="1" value="15" aria-label="Helix 3-D depth">
+            <span class="sc-bganim-knob-val" data-helix-knob-val="depth">100%</span>
           </label>
         </div>
       </div>`,
@@ -4365,6 +4600,17 @@ function wireMotion(root) {
     y: 'wise:chat-bg-anim-scale-y',
     z: 'wise:chat-bg-anim-scale-z',
   };
+  const BGANIM_KNOB_KEYS = {
+    pitch: 'wise:chat-bg-anim-pitch',
+    nodes: 'wise:chat-bg-anim-nodes',
+    length: 'wise:chat-bg-anim-length',
+    thickness: 'wise:chat-bg-anim-thickness',
+    depth: 'wise:chat-bg-anim-depth',
+  };
+  /* The scale / shape sliders carry a STOP INDEX, not the percentage — see
+     bgAnimPctToStop in js/wiseai-chat.js — so the shrink half of the 25–400%
+     window gets as much track as the growth half. */
+  const clampHelixPct = (n) => bgAnimStopToPct(bgAnimPctToStop(n));
   const readHelixPct = () => {
     try {
       const s = parseInt(localStorage.getItem(BGANIM_OPACITY_KEY), 10);
@@ -4382,6 +4628,7 @@ function wireMotion(root) {
   let helixPct = readHelixPct();
   let helixAngle = readHelixAngle();
   const helixScale = readBgAnimScaleAxes();
+  const helixKnobs = readBgAnimKnobs();
   let helixPaused = false;
   let helix = null;
   const paintHelixOpacity = (pct, persist) => {
@@ -4407,13 +4654,27 @@ function wireMotion(root) {
       else helix.redraw();
     }
   };
+  /* The master row ("all") sets every axis at once and reads "—" whenever the
+     three disagree — same behavior as the master Scale row in the chat ⋯ menu. */
+  const paintHelixScaleMaster = () => {
+    const common = (helixScale.x === helixScale.y && helixScale.y === helixScale.z) ? helixScale.x : null;
+    const range = mod.querySelector('[data-helix-scale="all"]');
+    const val = mod.querySelector('[data-helix-scale-val="all"]');
+    if (range && document.activeElement !== range) {
+      range.value = String(bgAnimPctToStop(common == null
+        ? Math.round((helixScale.x + helixScale.y + helixScale.z) / 3)
+        : common));
+    }
+    if (val) val.textContent = common == null ? '—' : common + '%';
+  };
   const paintHelixScaleAxis = (axis, pct, persist) => {
     if (!(axis in helixScale)) return;
-    helixScale[axis] = Math.max(100, Math.min(250, pct));
+    helixScale[axis] = clampHelixPct(pct);
     const range = mod.querySelector('[data-helix-scale="' + axis + '"]');
     const val = mod.querySelector('[data-helix-scale-val="' + axis + '"]');
-    if (range) range.value = String(helixScale[axis]);
+    if (range && document.activeElement !== range) range.value = String(bgAnimPctToStop(helixScale[axis]));
     if (val) val.textContent = helixScale[axis] + '%';
+    paintHelixScaleMaster();
     if (persist) {
       try { localStorage.setItem(BGANIM_SCALE_AXIS_KEYS[axis], String(helixScale[axis])); } catch (_) { /* ignore */ }
       try {
@@ -4433,10 +4694,31 @@ function wireMotion(root) {
       else helix.redraw();
     }
   };
+  const paintHelixKnob = (id, pct, persist) => {
+    if (!(id in helixKnobs)) return;
+    helixKnobs[id] = clampHelixPct(pct);
+    const range = mod.querySelector('[data-helix-knob="' + id + '"]');
+    const val = mod.querySelector('[data-helix-knob-val="' + id + '"]');
+    if (range && document.activeElement !== range) range.value = String(bgAnimPctToStop(helixKnobs[id]));
+    if (val) val.textContent = helixKnobs[id] + '%';
+    if (persist) {
+      try { localStorage.setItem(BGANIM_KNOB_KEYS[id], String(helixKnobs[id])); } catch (_) { /* ignore */ }
+      try {
+        document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-knob', {
+          detail: { knob: id, pct: helixKnobs[id], value: helixKnobs[id] / 100 },
+        }));
+      } catch (_) { /* ignore */ }
+    }
+    if (helix) {
+      if (reduced) helix.start();
+      else helix.redraw();
+    }
+  };
   const paintHelixScaleAll = () => {
     paintHelixScaleAxis('x', helixScale.x, false);
     paintHelixScaleAxis('y', helixScale.y, false);
     paintHelixScaleAxis('z', helixScale.z, false);
+    Object.keys(helixKnobs).forEach((id) => paintHelixKnob(id, helixKnobs[id], false));
   };
   paintHelixOpacity(helixPct, false);
   paintHelixAngle(helixAngle, false);
@@ -4448,6 +4730,11 @@ function wireMotion(root) {
       getOpacity: () => helixPct / 100,
       getAngle: () => helixAngle,
       getScale: () => ({ x: helixScale.x / 100, y: helixScale.y / 100, z: helixScale.z / 100 }),
+      getPitch: () => helixKnobs.pitch / 100,
+      getNodes: () => helixKnobs.nodes / 100,
+      getLength: () => helixKnobs.length / 100,
+      getThickness: () => helixKnobs.thickness / 100,
+      getDepth: () => helixKnobs.depth / 100,
       reducedMotion: reduced,
       isOn: () => !mod.classList.contains('is-collapsed'),
       isPaused: () => helixPaused,
@@ -4461,7 +4748,15 @@ function wireMotion(root) {
   });
   mod.querySelectorAll('[data-helix-scale]').forEach((range) => {
     range.addEventListener('input', () => {
-      paintHelixScaleAxis(range.getAttribute('data-helix-scale'), parseInt(range.value, 10) || 100, true);
+      const axis = range.getAttribute('data-helix-scale');
+      const pct = bgAnimStopToPct(range.value);
+      if (axis === 'all') ['x', 'y', 'z'].forEach((a) => paintHelixScaleAxis(a, pct, true));
+      else paintHelixScaleAxis(axis, pct, true);
+    });
+  });
+  mod.querySelectorAll('[data-helix-knob]').forEach((range) => {
+    range.addEventListener('input', () => {
+      paintHelixKnob(range.getAttribute('data-helix-knob'), bgAnimStopToPct(range.value), true);
     });
   });
   document.addEventListener('wise:chat-bg-anim-opacity', (e) => {
@@ -4483,6 +4778,13 @@ function wireMotion(root) {
     else if (typeof d.scale === 'number') {
       paintHelixScaleAxis(d.axis === 'x' || d.axis === 'z' ? d.axis : 'y', Math.round(d.scale * 100), false);
     }
+  });
+  document.addEventListener('wise:chat-bg-anim-knob', (e) => {
+    const d = e && e.detail;
+    if (!d || !(d.knob in helixKnobs)) return;
+    const pct = typeof d.pct === 'number' ? d.pct : (typeof d.value === 'number' ? Math.round(d.value * 100) : NaN);
+    if (!Number.isFinite(pct)) return;
+    paintHelixKnob(d.knob, pct, false);
   });
   const ppBtn = mod.querySelector('[data-helix-pp]');
   const syncHelixPp = () => {
@@ -5303,6 +5605,13 @@ function moduleStyles() {
       border: 1px solid var(--border); border-radius: 999px; background: var(--surface);
     }
     html.dark .mi-ready-kid { background: rgba(255,255,255,0.03); }
+    a.mi-ready-kid { text-decoration: none; color: inherit; }
+    a.mi-ready-kid:hover { border-color: var(--border-strong); }
+    a.mi-ready-kid:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+    }
+    .mi-ready-kid--plain { padding: 6px 12px; }
     .mi-ready-kid-label { font-size: 0.75rem; font-weight: 700; color: var(--text); }
     .mi-ready-kid-n { font-size: 0.68rem; font-weight: 700; color: var(--text-muted); font-variant-numeric: tabular-nums; }
     .mi-stats { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 8px; }
@@ -5562,6 +5871,52 @@ function moduleStyles() {
       font-size: 0.5625rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
       color: var(--text-subtle); text-align: center; justify-self: center;
     }
+    /* Alpha is edited here rather than in the browser's color popover: the
+       native picker only exposes RGB unless the engine supports the HTML
+       alpha attribute, which Chrome still does not. */
+    .ds-swatch-alpha {
+      grid-column: 1 / -1;
+      display: flex; align-items: center; gap: 6px;
+      margin-top: 2px;
+    }
+    .ds-swatch-alpha input[type="range"] {
+      flex: 1 1 0; min-width: 0;
+      height: 6px; margin: 0; padding: 0;
+      -webkit-appearance: none; appearance: none;
+      border: 0; border-radius: 999px; cursor: pointer;
+      box-shadow: inset 0 0 0 1px var(--border);
+      background:
+        linear-gradient(90deg, transparent, var(--ds-alpha-ink, var(--text))),
+        repeating-conic-gradient(rgba(17, 24, 39, 0.12) 0% 25%, transparent 0% 50%) 50% / 6px 6px;
+    }
+    html.dark .ds-swatch-alpha input[type="range"] {
+      box-shadow: inset 0 0 0 1px var(--border);
+      background:
+        linear-gradient(90deg, transparent, var(--ds-alpha-ink, var(--text))),
+        repeating-conic-gradient(rgba(243, 244, 246, 0.16) 0% 25%, transparent 0% 50%) 50% / 6px 6px;
+    }
+    .ds-swatch-alpha input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 13px; height: 13px; border-radius: 50%;
+      background: var(--surface); border: 1.5px solid var(--border-strong);
+      box-shadow: var(--shadow-1); cursor: pointer;
+    }
+    .ds-swatch-alpha input[type="range"]::-moz-range-thumb {
+      width: 13px; height: 13px; border-radius: 50%;
+      background: var(--surface); border: 1.5px solid var(--border-strong);
+      box-shadow: var(--shadow-1); cursor: pointer;
+    }
+    .ds-swatch-alpha input[type="range"]:focus-visible { outline: none; }
+    .ds-swatch-alpha input[type="range"]:focus-visible::-webkit-slider-thumb {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 24%, transparent);
+    }
+    .ds-swatch-alpha-out {
+      flex: 0 0 auto; min-width: 30px; text-align: right;
+      font-family: 'SF Mono', ui-monospace, Menlo, monospace;
+      font-size: 0.6rem; font-weight: 700; color: var(--text-subtle);
+      font-variant-numeric: tabular-nums;
+    }
     .ds-swatch-meta { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto; }
     .ds-swatch-name { font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.75rem; font-weight: 600; color: var(--text); }
     .ds-swatch-val {
@@ -5655,16 +6010,27 @@ function moduleStyles() {
       flex: 0 0 auto; font-size: 0.5625rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
       color: var(--text-subtle); padding-top: 1px;
     }
-    .dsc-used-list { font-size: 0.72rem; color: var(--text-muted); line-height: 1.5; }
-    .dsc-used-list--chips { display: flex; flex-wrap: wrap; gap: 6px; }
-    .dsc-used-chip {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 3px 9px; border-radius: 999px;
-      border: 1px solid var(--border); background: var(--surface-2, var(--surface));
-      color: var(--text); font-size: 0.6875rem; font-weight: 700; text-decoration: none;
+    .dsc-used-list { font-size: 0.625rem; color: var(--text-muted); line-height: 1.45; }
+    .dsc-used-list--links { display: flex; flex-wrap: wrap; column-gap: 10px; row-gap: 2px; }
+    .dsc-used-link {
+      display: inline;
+      padding: 0; border: 0; border-radius: 0; background: none;
+      color: var(--text-muted); font-size: 0.625rem; font-weight: 600; line-height: 1.45;
+      text-decoration: none;
+      transition: color 0.15s ease;
     }
-    .dsc-used-chip:hover { border-color: var(--primary); color: var(--primary-ink, var(--primary)); }
-    html.dark .dsc-used-chip:hover { color: var(--primary-bright, #93C5FD); }
+    .dsc-used-link:hover,
+    .dsc-used-link.is-hover { color: var(--primary-ink, var(--primary)); text-decoration: underline; }
+    html.dark .dsc-used-link:hover,
+    html.dark .dsc-used-link.is-hover { color: var(--primary-bright, #93C5FD); }
+    .dsc-used-link.is-open {
+      color: var(--primary-ink, var(--primary)); font-weight: 700;
+    }
+    html.dark .dsc-used-link.is-open { color: var(--primary-bright, #93C5FD); }
+    .dsc-used-link--plain {
+      cursor: default; pointer-events: none;
+      font-weight: 500; text-decoration: none;
+    }
     .dsc-refs { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 0; }
     .dsc-refs .mi-pane-comps { max-height: none; margin: 0; box-shadow: none; }
     .dsc-card[hidden] { display: none; }
@@ -5725,8 +6091,52 @@ function moduleStyles() {
       font-size: 0.5625rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
       color: var(--text-subtle);
     }
-    /* Scorecard variants: the live 8-col / 4-col grids would squash a 4-up
-       demo, so the library stage uses auto-fit. Claim demo is two columns. */
+    /* State matrix — Default / Hover / Open side by side so every interactive
+       control documents its full set, not just the rest state. */
+    .dsc-states {
+      display: flex; flex-wrap: wrap; gap: 16px 22px; align-items: flex-start; width: 100%;
+    }
+    .dsc-state-col {
+      display: flex; flex-direction: column; gap: 8px; min-width: 0;
+    }
+    .dsc-state-col .dash-btn-row { margin: 0; flex-wrap: wrap; }
+    /* Forced hover / open for demos (mirrors :hover so all states stay visible). */
+    .dsc-demo .dash-btn--primary.is-hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(37, 80, 124, 0.3); }
+    .dsc-demo .dash-btn--ghost.is-hover { background: var(--surface-2); }
+    .dsc-demo .dash-text-link.is-hover { color: var(--primary-bright); text-decoration: none; }
+    .dsc-demo .dash-text-link.is-hover .material-symbols-outlined { transform: translate(2px, -2px); }
+    html.dark .dsc-demo .dash-text-link.is-hover { color: #fff; }
+    .dsc-demo .dash-btn[disabled],
+    .dsc-demo .dash-text-link[disabled],
+    .dsc-demo .adm-btn[disabled],
+    .dsc-demo .adm-icon-btn[disabled],
+    .dsc-demo .lir-btn[disabled] { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+    .dsc-demo .adm-btn--primary.is-hover { filter: brightness(1.08); }
+    .dsc-demo .adm-btn--ghost.is-hover { color: var(--text); background: var(--surface-2); }
+    .dsc-demo .adm-btn--danger.is-hover { background: var(--sec-red-10); }
+    .dsc-demo .adm-btn--good.is-hover { background: var(--sec-green-10); }
+    .dsc-demo .adm-icon-btn.is-hover { background: var(--surface-2); color: var(--text); }
+    .dsc-demo .adm-stat.is-hover { transform: translateY(-1px); box-shadow: var(--shadow-card, var(--shadow-1)); border-color: var(--border-strong); }
+    .dsc-demo .adm-vf-stat.is-hover { transform: translateY(-1px); box-shadow: var(--shadow-card, var(--shadow-1)); border-color: var(--border-strong); }
+    .dsc-demo .lir-btn.is-hover { background: rgba(0,0,0,0.04); color: var(--text); }
+    html.dark .dsc-demo .lir-btn.is-hover { background: rgba(255,255,255,0.06); }
+    .dsc-demo .lir-btn.is-open {
+      background: color-mix(in srgb, var(--primary) 14%, transparent);
+      color: var(--primary-ink, var(--primary));
+    }
+    html.dark .dsc-demo .lir-btn.is-open { color: var(--primary-bright, #93C5FD); }
+    .dsc-demo .topbar-profile.is-hover { transform: scale(1.04); }
+    .dsc-demo .topbar-profile.is-open {
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 45%, transparent);
+    }
+    .dsc-demo .menu-nav-item.is-hover { background: var(--surface-2); }
+    .dsc-demo .adm-rowmenu-btn.is-hover { background: var(--surface-2); color: var(--text); }
+    .dsc-demo .chip.is-hover {
+      border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+      background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+    }
+    /* Score & metric cards: live grids squash a demo, so the stage uses auto-fit.
+       Claim demo is two columns. */
     .dsc-demo .adm-vf-stats { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
     .dsc-demo .dash-score-band { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); width: 100%; }
     .dsc-demo .dsc-claim-demo {
@@ -5739,7 +6149,14 @@ function moduleStyles() {
       box-shadow: var(--shadow-card);
     }
     html.dark .dsc-demo .dsc-claim-demo { background: var(--surface); }
-    .dsc-card[data-comp-name="Scorecards"] .dsc-demo { gap: 22px; align-items: stretch; }
+    .dsc-card[data-comp-name="Filter tiles"] .dsc-demo,
+    .dsc-card[data-comp-name="Action scorecards"] .dsc-demo,
+    .dsc-card[data-comp-name="KPI scorecards"] .dsc-demo,
+    .dsc-card[data-comp-name="Claim scorecards"] .dsc-demo,
+    .dsc-card[data-comp-name="Used-in links"] .dsc-demo,
+    .dsc-card[data-comp-name="Buttons"] .dsc-demo,
+    .dsc-card[data-comp-name="Admin buttons"] .dsc-demo,
+    .dsc-card[data-comp-name="Intent chips"] .dsc-demo { gap: 16px; align-items: stretch; }
 
     /* Reply-chip variants (match / dive / selected). Size is locked at 28px
        on the shared .chip rule in wise.css — do not re-inflate padding here. */
@@ -6081,6 +6498,7 @@ function moduleStyles() {
     .mi-logic-page {
       border: 1px solid var(--border); border-radius: 16px; background: var(--surface);
       box-shadow: var(--shadow-1); overflow: hidden;
+      scroll-margin-top: 12px;
     }
     .mi-logic-page[hidden] { display: none; }
     .mi-logic-head {
@@ -6428,13 +6846,15 @@ function moduleStyles() {
     }
     .mi-motion-helix-opacity .sc-bganim-opacity,
     .mi-motion-helix-opacity .sc-bganim-angle-range,
-    .mi-motion-helix-opacity .sc-bganim-scale-range {
+    .mi-motion-helix-opacity .sc-bganim-scale-range,
+    .mi-motion-helix-opacity .sc-bganim-knob-range {
       flex: 1 1 auto; min-width: 72px; height: 4px; cursor: pointer;
       accent-color: var(--primary);
     }
     .mi-motion-helix-opacity .sc-bganim-opacity-val,
     .mi-motion-helix-opacity .sc-bganim-angle-val,
-    .mi-motion-helix-opacity .sc-bganim-scale-val {
+    .mi-motion-helix-opacity .sc-bganim-scale-val,
+    .mi-motion-helix-opacity .sc-bganim-knob-val {
       font-size: 11px; font-weight: 700; color: var(--text-muted);
       width: 38px; text-align: right; font-variant-numeric: tabular-nums;
     }
@@ -8590,23 +9010,35 @@ function cssColorParts(raw) {
     const to255 = (n) => (n <= 1 ? n * 255 : n);
     return { r: to255(+m[1]), g: to255(+m[2]), b: to255(+m[3]), a: m[4] != null ? +m[4] : 1 };
   }
-  if (/^#[0-9A-Fa-f]{6}$/.test(s)) {
+  m = s.match(/^#([0-9A-Fa-f]{3,8})$/);
+  if (m) {
+    let h = m[1];
+    if (h.length === 3 || h.length === 4) h = h.replace(/./g, (c) => c + c);
+    if (h.length !== 6 && h.length !== 8) return null;
     return {
-      r: parseInt(s.slice(1, 3), 16),
-      g: parseInt(s.slice(3, 5), 16),
-      b: parseInt(s.slice(5, 7), 16),
-      a: 1,
-    };
-  }
-  if (/^#[0-9A-Fa-f]{3}$/.test(s)) {
-    return {
-      r: parseInt(s[1] + s[1], 16),
-      g: parseInt(s[2] + s[2], 16),
-      b: parseInt(s[3] + s[3], 16),
-      a: 1,
+      r: parseInt(h.slice(0, 2), 16),
+      g: parseInt(h.slice(2, 4), 16),
+      b: parseInt(h.slice(4, 6), 16),
+      a: h.length === 8 ? parseInt(h.slice(6), 16) / 255 : 1,
     };
   }
   return null;
+}
+
+/* Recombine a picked RGB with an alpha the native popover cannot offer. */
+function colorWithAlpha(raw, a) {
+  const parts = cssColorParts(raw);
+  if (!parts) return '';
+  const to = (n) => Math.round(n);
+  if (a >= 0.999) return `rgb(${to(parts.r)}, ${to(parts.g)}, ${to(parts.b)})`;
+  return `rgba(${to(parts.r)}, ${to(parts.g)}, ${to(parts.b)}, ${Math.round(a * 1000) / 1000})`;
+}
+
+function swatchAlpha(sw) {
+  const slider = sw.querySelector('[data-token-alpha]');
+  if (!slider) return 1;
+  const pct = Number(slider.value);
+  return Number.isFinite(pct) ? Math.max(0, Math.min(1, pct / 100)) : 1;
 }
 
 function cssColorLabel(raw) {
@@ -8658,6 +9090,16 @@ function syncSwatchEditors(root) {
     const hex = sw.querySelector('[data-token-hex]');
     const picker = cssToPickerHex(raw);
     if (color && color.value.toUpperCase() !== picker) color.value = picker;
+    const parts = cssColorParts(raw);
+    const alpha = parts && parts.a != null ? parts.a : 1;
+    const pct = Math.round(alpha * 100);
+    const slider = sw.querySelector('[data-token-alpha]');
+    if (slider && document.activeElement !== slider && Number(slider.value) !== pct) {
+      slider.value = String(pct);
+    }
+    const alphaOut = sw.querySelector('[data-token-alpha-out]');
+    if (alphaOut) alphaOut.textContent = `${pct}%`;
+    sw.style.setProperty('--ds-alpha-ink', picker);
     if (hex && document.activeElement !== hex) {
       hex.value = custom && T.get(token) ? T.get(token) : cssColorLabel(raw);
     }
@@ -8680,7 +9122,17 @@ function wireDesignSystem(root) {
       const color = e.target.closest('[data-token-color]');
       if (color && T) {
         const sw = color.closest('[data-swatch]');
-        if (sw && sw.dataset.token) T.set(sw.dataset.token, color.value);
+        /* The popover only edits RGB — carry the swatch's current alpha over. */
+        if (sw && sw.dataset.token) T.set(sw.dataset.token, colorWithAlpha(color.value, swatchAlpha(sw)));
+        return;
+      }
+      const slider = e.target.closest('[data-token-alpha]');
+      if (slider && T) {
+        const sw = slider.closest('[data-swatch]');
+        if (sw && sw.dataset.token) {
+          const base = sw.querySelector('[data-token-color]');
+          T.set(sw.dataset.token, colorWithAlpha(base ? base.value : chipComputedColor(sw), swatchAlpha(sw)));
+        }
         return;
       }
       const hex = e.target.closest('[data-token-hex]');

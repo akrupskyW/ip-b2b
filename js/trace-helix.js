@@ -40,13 +40,23 @@ function prefersReduced() {
      greenCount  how many rungs (from the top) have gone green ("done").
 
    Returns raw <svg> markup for a .sc-trace-dna element's innerHTML. */
-export function scBuildHelixSVG(H, phase, rungsY, greenCount, uid) {
-  const W = 20, PERIOD = 36;
+export function scBuildHelixSVG(H, phase, rungsY, greenCount, uid, geom) {
+  const g = geom || {};
+  const W = Number.isFinite(g.width) ? g.width : 20;
+  const PERIOD = Number.isFinite(g.period) ? g.period : 36;
   /* Axis sits left of center so the helix's left swell lines up with the
-     "Thinking" / "Worked for" label, instead of floating in the rail. */
-  const cx = 7;
+     "Thinking" / "Worked for" label, instead of floating in the rail.
+     Overlay loaders pass cx = width/2 so the rope sits in the middle. */
+  const cx = Number.isFinite(g.cx) ? g.cx : 7;
   uid = uid || 'h';
   const h = Math.max(20, Math.round(H));
+  const AMP_BASE = Number.isFinite(g.amp) ? g.amp : 4.8;
+  const frontStroke = Number.isFinite(g.stroke) ? g.stroke : 1.15;
+  const backStroke = Number.isFinite(g.backStroke) ? g.backStroke : 0.5;
+  const rungStroke = Number.isFinite(g.rungStroke) ? g.rungStroke : 0.65;
+  const dotR = Number.isFinite(g.dotR) ? g.dotR : 1.55;
+  const dotRange = Number.isFinite(g.dotRange) ? g.dotRange : 0.9;
+  const axisSway = 0.8 * (AMP_BASE / 4.8);
   const TWO_PI = Math.PI * 2;
   /* Theme-aware ink: brand navy on light, a bright periwinkle on dark (the deep
      --primary is invisible over the dark-mode navy surface). */
@@ -70,7 +80,6 @@ export function scBuildHelixSVG(H, phase, rungsY, greenCount, uid) {
      toward the bottom (depth on descent), and a whisper of AXIS SWAY plus a
      NON-UNIFORM twist (turns subtly tighten and loosen along the length) break
      the mirror symmetry so no two turns are identical. */
-  const AMP_BASE = 4.8;
   /* Breathing: a smaller, gentler swell than before — shallower depth over
      longer periods (wider, more gradual taper) that drifts down more slowly,
      so the diameter eases in and out rather than pumping. */
@@ -79,7 +88,7 @@ export function scBuildHelixSVG(H, phase, rungsY, greenCount, uid) {
     + 0.08 * Math.sin((TWO_PI * y) / 150 - phase * 0.2 + 1.7);
   const persp = (y) => 1 + 0.14 * (y / h);                 /* depth on descent */
   const amp = (y) => AMP_BASE * env(y) * persp(y);
-  const axis = (y) => cx + 0.8 * Math.sin((TWO_PI * y) / 150 + phase * 0.24);
+  const axis = (y) => cx + axisSway * Math.sin((TWO_PI * y) / 150 + phase * 0.24);
   /* Non-uniform twist: local turn spacing warps ±~20% down the length, so the
      rope never reads as one tile stamped over and over. Stays monotonic. */
   const theta = (y) => (TWO_PI / PERIOD) * (y + 6 * Math.sin((TWO_PI * y) / 165 + phase * 0.2)) + phase;
@@ -161,7 +170,7 @@ export function scBuildHelixSVG(H, phase, rungsY, greenCount, uid) {
        tint, so gold and blue circles intermix as the rope turns. */
     const dot = (x, d, slot) => {
       const col = done ? dotGreen : pendCol(i, slot);
-      return `<circle cx="${x.toFixed(2)}" cy="${ry.toFixed(1)}" r="${(1.55 + 0.9 * d).toFixed(2)}"`
+      return `<circle cx="${x.toFixed(2)}" cy="${ry.toFixed(1)}" r="${(dotR + dotRange * d).toFixed(2)}"`
         + ` fill="${col}" fill-opacity="${(0.58 + 0.42 * d).toFixed(2)}"/>`;
     };
     dots += dA >= dB ? (dot(bx, dB, 1) + dot(ax, dA, 0)) : (dot(ax, dA, 0) + dot(bx, dB, 1));
@@ -170,9 +179,9 @@ export function scBuildHelixSVG(H, phase, rungsY, greenCount, uid) {
   const rungCol = `rgba(${blueRGB},0.28)`;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${h}" viewBox="0 0 ${W} ${h}">`
     + `<defs>${defs}</defs>`
-    + `<g fill="none" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round">${backPaths}</g>`
-    + `<g stroke="${rungCol}" stroke-width="0.65" stroke-linecap="round">${rungs}</g>`
-    + `<g fill="none" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round">${frontPaths}</g>`
+    + `<g fill="none" stroke-width="${backStroke}" stroke-linecap="round" stroke-linejoin="round">${backPaths}</g>`
+    + `<g stroke="${rungCol}" stroke-width="${rungStroke}" stroke-linecap="round">${rungs}</g>`
+    + `<g fill="none" stroke-width="${frontStroke}" stroke-linecap="round" stroke-linejoin="round">${frontPaths}</g>`
     + dots
     + `</svg>`;
 }
@@ -181,6 +190,7 @@ export function scBuildHelixSVG(H, phase, rungsY, greenCount, uid) {
    freezes it aligned to the milestone rows and sweeps it green from the top. */
 export function makeTraceHelix(bodyEl, opts = {}) {
   const reduced = opts.prefersReducedMotion != null ? !!opts.prefersReducedMotion : prefersReduced();
+  const geom = opts.geom || null;
   let raf = null, phase = Number.isFinite(opts.phase) ? opts.phase : 0, last = 0, lastDraw = 0, running = false;
   let mode = 'live', staticRungs = null, greenCount = 0;
   const uid = 'h' + Math.random().toString(36).slice(2, 7);   /* unique gradient ns */
@@ -189,10 +199,15 @@ export function makeTraceHelix(bodyEl, opts = {}) {
     const el = dnaEl(); if (!el) return;
     const strand = el.parentElement;
     const h = (strand && strand.clientHeight) || el.clientHeight || 40;
+    if (strand && geom && Number.isFinite(geom.width)) strand.style.width = geom.width + 'px';
     let rungsY;
     if (mode === 'static' && staticRungs) rungsY = staticRungs;
-    else { rungsY = []; for (let y = 11; y < h; y += 22) rungsY.push(y); }
-    el.innerHTML = scBuildHelixSVG(h, phase, rungsY, mode === 'static' ? greenCount : 0, uid);
+    else {
+      const start = (geom && Number.isFinite(geom.rungStart)) ? geom.rungStart : 11;
+      const step = (geom && Number.isFinite(geom.rungStep)) ? geom.rungStep : 22;
+      rungsY = []; for (let y = start; y < h; y += step) rungsY.push(y);
+    }
+    el.innerHTML = scBuildHelixSVG(h, phase, rungsY, mode === 'static' ? greenCount : 0, uid, geom);
   };
   const frame = (t) => {
     if (!running) return;
@@ -217,6 +232,7 @@ export function makeTraceHelix(bodyEl, opts = {}) {
   };
   return {
     startLive() {
+      this.stop();
       mode = 'live'; staticRungs = null; greenCount = 0;
       attach();
       if (reduced) { draw(); return; }

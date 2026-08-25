@@ -13,6 +13,11 @@
  * activity shimmer, so the web shifts between gold / blue / white depending on
  * which levels it is linking. LIGHT mode keeps the calm single-blue look.
  *
+ * This web is also the "Orbit" background-animation style, so it follows the
+ * chat ⋯ menu's Scale X / Y / Z and Nodes sliders: X / Y stretch or pinch the
+ * hull around the owl, Z sharpens or flattens the 4D perspective, and Nodes
+ * sizes the food photos.
+ *
  * Zero markup changes: it auto-enhances every `.ws-logo-wrap` on the page (and
  * any injected later by mountWISEcodeAIChat) by dropping an <svg> overlay behind
  * the owl. The CSS-only orbit rings stay as a graceful no-JS fallback and are
@@ -72,6 +77,57 @@ const FOODS = [
 
 const isDark = () =>
   typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+
+/* ── Shared background-animation scale ────────────────────────────────────────
+   The chat ⋯ menu's Scale X / Y / Z and Nodes sliders drive BOTH ambient
+   styles, and Orbit is this constellation — so read the same preferences the
+   helix does and follow the same broadcasts. The keys/events are duplicated
+   here (rather than imported) because js/wiseai-chat.js imports THIS module:
+   importing back would be circular, and this file also runs standalone.
+   X / Y stretch the projected hull from the owl; Z sharpens or flattens the
+   perspective so the near vertices spread and the far ones pinch. */
+const ORBIT_SCALE_KEYS = {
+  x: 'wise:chat-bg-anim-scale-x',
+  y: 'wise:chat-bg-anim-scale-y',
+  z: 'wise:chat-bg-anim-scale-z',
+};
+const ORBIT_NODES_KEY = 'wise:chat-bg-anim-nodes';
+const clampMul = (n) => (Number.isFinite(n) ? Math.max(0.25, Math.min(4, n)) : 1);
+const readPrefMul = (key) => {
+  try {
+    const n = parseInt(localStorage.getItem(key), 10);
+    if (!isNaN(n)) return clampMul(n / 100);
+  } catch (_) {}
+  return 1;
+};
+const scaleMul = {
+  x: readPrefMul(ORBIT_SCALE_KEYS.x),
+  y: readPrefMul(ORBIT_SCALE_KEYS.y),
+  z: readPrefMul(ORBIT_SCALE_KEYS.z),
+};
+let nodeMul = readPrefMul(ORBIT_NODES_KEY);
+/* Every enhanced wrap registers a repaint so a slider drag shows immediately —
+   including on a still (reduced-motion or off-screen) frame. */
+const orbitRepaints = new Set();
+const repaintOrbits = () => orbitRepaints.forEach((fn) => { try { fn(); } catch (_) {} });
+if (typeof document !== 'undefined') {
+  document.addEventListener('wise:chat-bg-anim-scale', (e) => {
+    const d = e && e.detail;
+    if (!d) return;
+    if (typeof d.scaleX === 'number') scaleMul.x = clampMul(d.scaleX);
+    if (typeof d.scaleY === 'number') scaleMul.y = clampMul(d.scaleY);
+    if (typeof d.scaleZ === 'number') scaleMul.z = clampMul(d.scaleZ);
+    repaintOrbits();
+  });
+  document.addEventListener('wise:chat-bg-anim-knob', (e) => {
+    const d = e && e.detail;
+    if (!d || d.knob !== 'nodes') return;
+    const pct = typeof d.pct === 'number' ? d.pct : (typeof d.value === 'number' ? d.value * 100 : NaN);
+    if (!Number.isFinite(pct)) return;
+    nodeMul = clampMul(pct / 100);
+    repaintOrbits();
+  });
+}
 
 /* One-time stylesheet: positions the overlay behind the owl, hides the CSS
    pulse/orbit rings where JS has taken over, and defines the LIGHT-mode look.
@@ -200,7 +256,11 @@ function project(p, t) {
   [z, w] = rot(z, w, t * 0.13);   // z–w plane (inside-out tumble)
   const fw = 1 / (PROJ.distW - w);
   const x3 = x * fw, y3 = y * fw, z3 = z * fw;
-  const fz = 1 / (PROJ.distZ - z3);
+  /* Scale Z pulls the eye toward the hull (stronger perspective — near vertices
+     spread, far ones pinch) or pushes it back for a flat, even web. The divisor
+     stays comfortably above the largest |z3| (0.5) at every setting. */
+  const distZ = PROJ.distZ / (0.4 + 0.6 * scaleMul.z);
+  const fz = 1 / (distZ - z3);
   const depth = fw * fz;
   return {
     x: C + x3 * fz * PROJ.scale,
@@ -324,23 +384,27 @@ export function enhanceWelcomeOrbit(wrap) {
   const pos = new Array(nodes.length);
   const raw = new Array(nodes.length);
   const pts = new Array(nodes.length);
+  let lastT = 0;
   function frame(t) {
+    lastT = t;
     const dark = isDark();
     const tr = t * T_ROT; // slowed rotation time for the 4D tumble
     for (let i = 0; i < nodes.length; i++) {
       const pr = project(nodes[i].p, tr);
       raw[i] = pr;
-      pts[i] = [pr.x, pr.y];
+      // Scale X / Y stretch the hull from the owl BEFORE containment, so the
+      // owl still sits inside however far the member pinches the web in.
+      pts[i] = [C + (pr.x - C) * scaleMul.x, C + (pr.y - C) * scaleMul.y];
     }
     // Enlarge the whole shape just enough to keep the owl circle inside it.
     const s = containScale(pts);
     for (let i = 0; i < nodes.length; i++) {
       const pr = raw[i];
-      const x = C + (pr.x - C) * s;
-      const y = C + (pr.y - C) * s;
+      const x = C + (pr.x - C) * scaleMul.x * s;
+      const y = C + (pr.y - C) * scaleMul.y * s;
       // Depth-driven radius + a slow, gentle breath so the photos ease in and
-      // out of size rather than flickering.
-      const r = Math.max(1.4, pr.size + 0.45 * Math.sin(t * T_BREATH + i * 0.6));
+      // out of size rather than flickering. The Nodes slider sizes them.
+      const r = Math.max(1.4, (pr.size + 0.45 * Math.sin(t * T_BREATH + i * 0.6)) * nodeMul);
       pos[i] = { x, y, depth: pr.depth };
       clips[i].setAttribute('cx', x);
       clips[i].setAttribute('cy', y);
@@ -382,6 +446,15 @@ export function enhanceWelcomeOrbit(wrap) {
   // Re-tint live when the theme is toggled.
   const themeObs = new MutationObserver(() => applyTheme());
   themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+  /* Repaint on a Scale / Nodes drag so a still frame (reduced motion, or a web
+     parked off-screen) follows the sliders too. Drops itself once the wrap is
+     gone so a torn-down chat leaves nothing behind. */
+  const repaint = () => {
+    if (!wrap.isConnected) { orbitRepaints.delete(repaint); return; }
+    frame(lastT);
+  };
+  orbitRepaints.add(repaint);
 
   if (reduce) {
     frame(0);

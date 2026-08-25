@@ -112,7 +112,18 @@ def api_texts():
     return sorted(c["text"] for c in api_all())
 
 
+def api_enable():
+    """Commenting is off until the owner switches it on from Appearance, so
+    open the gate before expecting the widget to render at all."""
+    req = urllib.request.Request(API + "/api/feedback/settings",
+                                 data=json.dumps({"enabled": 1}).encode(),
+                                 headers={"Content-Type": "application/json",
+                                          "X-Feedback-Key": KEY})
+    urllib.request.urlopen(req)
+
+
 def api_wipe():
+    api_enable()
     for row in api_all():
         req = urllib.request.Request(API + "/api/feedback/comments/" + row["id"],
                                      headers={"X-Feedback-Key": KEY}, method="DELETE")

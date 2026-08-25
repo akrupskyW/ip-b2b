@@ -1,7 +1,16 @@
 /**
- * Progress Log evaluator — inventories every HTML page (and a small set of
- * shared scripts) and turns a start-of-day snapshot into categorized
- * descriptions: features, UX/UI, modules, logic, deletions.
+ * Progress Log evaluator — inventories every HTML page and the scripts those
+ * pages load, then turns a snapshot into a plain-language account of what was
+ * built: features, logic, UX, and UI.
+ *
+ * Byte counts, file sizes, hashes, raw filenames, and raw identifiers never
+ * appear in a description. A reader who has never opened the codebase has to
+ * understand every sentence, so machine facts are always translated: a newly
+ * loaded script is described by what it does, a new handler by what it is for.
+ *
+ * How much landed that day drives how much is said. A large pass gets several
+ * sentences per category; a tidy-up gets one honest line. Cards never collapse
+ * a busy day into a single generic sentence.
  *
  * Used by pages/progress-log.html. Deterministic: same baseline + same files
  * always produce the same sentences, in the same order.
@@ -19,87 +28,121 @@ export const SHARED_SCRIPTS = [
   '../js/wiseai-chat.js',
   '../js/all-modules-flow.js',
   '../js/appearance-menu.js',
+  '../js/load-anim.js',
+  '../js/feedback.js',
+  '../js/feedback-setting.js',
+  '../js/nav-history.js',
+  '../js/nav-hamburger.js',
+  '../js/trace-helix.js',
+  '../js/welcome-orbit.js',
   '../js/topbar.js',
   '../js/owl-walkthrough.js',
   '../js/chat-ask.js',
   '../js/chat-history.js',
   '../js/agent-menu.js',
   '../js/app-search.js',
+  '../js/app-logic-data.js',
+  '../js/pane-width.js',
+  '../js/text-size-fouc.js',
   '../js/progress-log-eval.js',
   'wise.css',
+  '../wiseai-chat.css',
 ];
 
-/* Product-language signals. Presence/absence becomes a full sentence. */
+/* Product-language signals. Presence/absence becomes a full sentence, written
+   for a reader who has never opened the code — no filenames, no class names,
+   no identifiers. */
 export const FEATURE_SIGNALS = [
   { id: 'chat', cat: 'features', re: /mountWISEcodeAIChat|wiseai-chat\.js|id=["']pl-chat["']|id=["']chat-shell["']/,
-    on: 'Hosts the shared WISEcodeAI chat module — the same mount as wiseai.html.',
-    off: 'The shared WISEcodeAI chat module is no longer on this page.' },
+    on: 'You can talk to WISEcodeAI right here — the same assistant that runs on the WISEcodeAI studio.',
+    off: 'You can no longer talk to WISEcodeAI here.' },
   { id: 'ask', cat: 'features', re: /What can I ask|chat-ask\.js|ask-catalog|mountAsk/,
-    on: '“What can I ask?” can open inside the chat and break out. The panel headline uses the brand serif face.',
-    off: 'The “What can I ask?” catalog is no longer wired on this page.' },
+    on: 'If you are not sure what to say, “What can I ask?” opens inside the chat with a catalog of questions, and can break out into its own panel.',
+    off: 'The “What can I ask?” catalog is gone from here.' },
   { id: 'chips', cat: 'features', re: /intent-chip|setIntents\s*\(|nextIntents|ws-intent-chip|INTENT_REPLIES/,
-    on: 'Intent chips are present. Each chip is meant to open a real transcript, and answers should trail related follow-up chips — never a dead-end reply.',
-    off: 'Intent chips were removed from this surface.' },
+    on: 'Ready-made questions sit under the chat as tappable chips, and every answer ends on more of them, so the conversation never dead-ends.',
+    off: 'The tappable question chips are gone from here.' },
   { id: 'helix', cat: 'ux', re: /trace-helix|helix-canvas|bgAnim|helix\.js/,
-    on: 'Helix background animation is wired. Chat-module parity keeps it on by default at 20% opacity.',
-    off: 'Helix background animation is no longer referenced.' },
+    on: 'A faint helix drifts behind the chat while you work — on by default, quiet enough to read over.',
+    off: 'The drifting helix backdrop is gone.' },
   { id: 'history', cat: 'features', re: /chat-history|History & Projects|historyBreakout|historyKey/,
-    on: 'History & Projects is wired — the three-dot menu can open the sticky history module.',
-    off: 'History & Projects is no longer wired on this page.' },
+    on: 'Past conversations are kept: open History & Projects from the chat’s three-dot menu to pick one back up.',
+    off: 'Past conversations are no longer reachable from here.' },
   { id: 'sticky', cat: 'features', re: /sticky-modules|modules-sticky|stickyModules/,
-    on: 'Sticky modules are enabled — modules to the right of chat tuck as drawers. There is no sticky on/off toggle.',
-    off: 'Sticky modules were removed from this page.' },
+    on: 'Everything to the right of the chat tucks away as a drawer you can pull open, so the screen never gets crowded.',
+    off: 'The panels to the right no longer tuck away as drawers.' },
   { id: 'threedot', cat: 'components', re: /panel-more-btn|more_vert/,
-    on: 'The three-dot module menu is present (Share, Copy link, Export, and the page’s own items).',
-    off: 'The three-dot module menu was removed.' },
+    on: 'Each panel carries a three-dot menu — share it, copy a link to it, export it, plus whatever that panel can do.',
+    off: 'The three-dot menu on each panel is gone.' },
   { id: 'countup', cat: 'ux', re: /data-countup|count-up-all|count-up\.js/,
-    on: 'Scorecard numbers use the shared count-up animation.',
-    off: 'Count-up animation is no longer referenced.' },
+    on: 'The numbers count up from zero when the page opens instead of just appearing.',
+    off: 'The numbers no longer count up.' },
   { id: 'dark', cat: 'ux', re: /html\.dark|wise-theme|chat-theme|classList\.toggle\(\s*['"]dark['"]/,
-    on: 'Dark-mode theme wiring is present (wise-theme / chat-theme, dark class on html) so the page keeps light/dark parity.',
-    off: 'Dark-mode theme wiring was removed.' },
+    on: 'It follows the light or dark theme you picked, everywhere in the app at once.',
+    off: 'It no longer follows your light or dark theme.' },
   { id: 'serif', cat: 'ux', re: /Noto Serif|--module-title-family|WISE Digits['"],\s*['"]Noto Serif/,
-    on: 'Headlines use the brand serif face (Noto Serif / WISE Digits), matching wiseai.html.',
-    off: 'The brand serif headline face is no longer referenced.' },
+    on: 'Titles are set in the brand serif, the same as the rest of the app.',
+    off: 'Titles are no longer set in the brand serif.' },
   { id: 'cwr', cat: 'features', re: /cwr-toggle|Crawl · Walk · Run|cwr-mode/,
-    on: 'Crawl · Walk · Run is on the page (Run by default).',
-    off: 'Crawl · Walk · Run was removed.' },
+    on: 'You can switch the whole app between Crawl, Walk, and Run; it opens on Run.',
+    off: 'The Crawl · Walk · Run switch is gone.' },
   { id: 'width', cat: 'ux', re: /WPaneWidth|panel-width-toggle|width_normal/,
-    on: 'The four-step module width toggle is present (single / double / triple / fill).',
-    off: 'The module width toggle was removed.' },
+    on: 'You can widen any panel through four steps — single, double, triple, then fill the screen.',
+    off: 'You can no longer widen the panels here.' },
   { id: 'appearance', cat: 'features', re: /buildAppearanceBody|appearance-menu/,
-    on: 'Appearance & Admin is mounted from the shared appearance menu.',
-    off: 'The Appearance menu was removed.' },
+    on: 'Appearance & Admin opens from the navigation, so theme, text size, and admin switches are one click away.',
+    off: 'Appearance & Admin no longer opens from here.' },
+  { id: 'helixload', cat: 'ux', re: /data-helixload|isHelixLoadOn|load-anim\.js/,
+    on: 'While a board is still assembling you can pick the streaming helix or the striped skeleton from Appearance.',
+    off: 'You can no longer choose how assembling boards animate.' },
   { id: 'nav', cat: 'components', re: /mountAgentMenu|agent-menu\.js/,
-    on: 'Shared primary navigation (agent-menu) is mounted from the wiseai.html shell.',
-    off: 'Shared primary navigation was removed.' },
+    on: 'It carries the app’s shared primary navigation, so you can get anywhere from here.',
+    off: 'The shared primary navigation is gone from this surface.' },
   { id: 'walkthrough', cat: 'features', re: /owl-walkthrough|WiseWalkthrough/,
-    on: 'The WISEowl walkthrough can open on this page.',
-    off: 'The WISEowl walkthrough was removed.' },
+    on: 'The WISEowl can walk you through what is on screen.',
+    off: 'The WISEowl walkthrough no longer opens here.' },
   { id: 'search', cat: 'features', re: /app-search|data-app-search/,
-    on: 'App-wide search is wired on this page.',
-    off: 'App-wide search is no longer wired.' },
+    on: 'You can search the whole app from the top band — conversations, live output, and reports.',
+    off: 'App-wide search is gone from here.' },
   { id: 'scorecards', cat: 'components', re: /data-countup|pl-stat|rf-stat|mi-stat(?!-text)/,
-    on: 'Scorecards are on the page — no eyebrow; numbers count up.',
-    off: 'Scorecards were removed.' },
+    on: 'The headline numbers sit in scorecards at the top, with no eyebrow above them.',
+    off: 'The scorecards at the top are gone.' },
   { id: 'popover', cat: 'ux', re: /wise-popover|lir-tooltip|data-tip=/,
-    on: 'Popovers and icon tooltips are present. They should anchor above or to the right of the trigger, never directly below.',
-    off: 'Popover / tooltip chrome was removed.' },
+    on: 'Hovering an icon explains it in a small popover that opens above or beside it, never underneath.',
+    off: 'The hover explanations are gone.' },
   { id: 'nfp', cat: 'features', re: /nutrition-facts|Nutrition Facts|nfp-/,
-    on: 'A Nutrition Facts panel is on this page (must stay legible in both themes).',
-    off: 'The Nutrition Facts panel was removed.' },
+    on: 'A real Nutrition Facts panel is on the page, readable in both light and dark mode.',
+    off: 'The Nutrition Facts panel is gone.' },
   { id: 'auth', cat: 'logic', re: /auth-guard\.js|auth\.js/,
-    on: 'Auth guard is on — unsigned visitors are sent to sign-in.',
-    off: 'Auth guard was removed.' },
+    on: 'You have to be signed in — anyone who is not gets sent to sign-in first.',
+    off: 'Signing in is no longer required to see this.' },
   { id: 'streaming', cat: 'ux', re: /streamParagraph|trailChips|paragraph-by-paragraph|streamReply/,
-    on: 'Streaming is paragraph-by-paragraph (then thumbs, then trailing intent chips) — not word-by-word typing.',
-    off: 'Paragraph streaming helpers were removed.' },
+    on: 'Answers arrive a paragraph at a time, then the thumbs row, then the next questions — never word-by-word typing.',
+    off: 'Answers no longer arrive a paragraph at a time.' },
   { id: 'lockedComposer', cat: 'ux', re: /composer-lock|lock_outline|readonly.*Ask about/,
-    on: 'Composer is locked (readonly / lock icon).',
-    off: 'Composer is unlocked — typing is live, matching chat-module parity.' },
+    on: 'The message box is locked, so you can only tap the suggested questions.',
+    off: 'The message box is unlocked — you can type anything into it.' },
   { id: 'jam', cat: 'features', re: /jam-strip|isJamStripOn/,
-    on: 'Jam strip (transport + equalizer) is wired.',
-    off: 'Jam strip was removed.' },
+    on: 'The jam strip is available — play, skip, and a live equalizer in the navigation.',
+    off: 'The jam strip is gone.' },
+  { id: 'comments', cat: 'features', re: /js\/feedback\.js|WiseFeedback|data-comments/,
+    on: 'You can leave an on-page comment: press C, click a spot, and pin a note there. Anyone can reply, so it is a thread, not a one-way box.',
+    off: 'On-page comments are gone from here.' },
+  { id: 'commentsGate', cat: 'features', re: /feedback-setting|isCommentsOn|isCommentsUnlocked/,
+    on: 'Appearance carries a Comments switch. Only the owner can flip it, and it turns commenting on or off for everyone — not just this browser.',
+    off: 'The Appearance Comments switch is gone.' },
+  { id: 'navHistory', cat: 'features', re: /nav-history|data-navhistory|History in navigation/,
+    on: 'History can live inside the primary navigation as an expandable section — search, projects, and All conversations stay usable there.',
+    off: 'History no longer merges into the primary navigation.' },
+  { id: 'navHamburger', cat: 'ux', re: /nav-hamburger|data-navhamburger/,
+    on: 'When Search is on and the nav is collapsed, a menu icon sits left of the wordmark instead of the icon rail.',
+    off: 'The collapsed-nav menu icon is gone.' },
+  { id: 'appLogic', cat: 'features', re: /app-logic-data|id=["']mi-logic["']|>App Logic</,
+    on: 'App Logic writes down the behavioral rules the app actually runs — auth, theme, navigation, widths, and what persists — grouped by page.',
+    off: 'The App Logic catalog is gone.' },
+  { id: 'chatWidthDefault', cat: 'ux', re: /defaultChatTier|WISE_CHAT_SINGLE_MAX_PX|chat-default-double/,
+    on: 'The chat opens at a width that matches the screen: single on a 14-inch-class display, double when there is more room. You can still cycle wider in the session; the next load puts it back.',
+    off: 'The chat no longer picks a default width from the screen size.' },
 ];
 
 const MODULE_TITLE_SEL = [
@@ -123,11 +166,92 @@ export function hashStr(s) {
   return (h >>> 0).toString(36);
 }
 
-export function fmtBytes(n) {
-  const v = Math.abs(Number(n) || 0);
-  if (v < 1024) return v + ' B';
-  if (v < 1024 * 1024) return (v / 1024).toFixed(v < 10240 ? 1 : 0) + ' KB';
-  return (v / (1024 * 1024)).toFixed(1) + ' MB';
+/* ── Plain-language helpers ──────────────────────────────────────────────
+   File sizes, byte deltas, hashes, and raw identifiers are never part of a
+   description. Everything below turns machine facts into the words a reader
+   would use: what a script actually does, what a handler is for. */
+
+const DECOR_ONLY = /^[\s*\/=─═\-–—·+|]+$/;
+
+/* Reader-facing wording for shared behaviour whose own header comment is
+   written for developers ("FOUC guard", "the ONE canonical pane-width
+   model"). Anything not listed here falls back to its header sentence, which
+   is usually already plain enough. Add an entry the moment a card reads like
+   code instead of English. */
+export const SCRIPT_PURPOSES = {
+  'text-size-fouc.js': 'the text size you picked is applied before the page paints, so nothing jumps',
+  'text-size.js': 'the app-wide text-size setting',
+  'wiseai-chat.js': 'the one shared WISEcodeAI chat — welcome screen, question chips, streaming answers — that every page mounts',
+  'agent-menu.js': 'the app’s shared primary navigation',
+  'auth-guard.js': 'anyone who is not signed in is sent to the sign-in screen before the page paints',
+  'count-up-all.js': 'every scorecard number animates from zero up to its value',
+  'default-fill.js': 'every module to the right of the chat opens filling the screen',
+  'pane-width.js': 'the one width model behind every module’s width control — single, double, triple, fill the screen',
+  'sticky-modules.js': 'modules to the right of the chat tuck in as drawers, and each one carries a three-dot menu',
+  'load-anim.js': 'while a board is assembling you see the streaming helix, or the striped skeleton if you switch back in Appearance',
+  'marketing-shell.js': 'the shared marketing shell — the same navigation and footer on every marketing page',
+  'jam-strip.js': 'the jam strip in the navigation — play, skip, and a live equalizer',
+  'feedback.js': 'on-page comments — press C, click a spot, leave a threaded note pinned to it',
+  'feedback-setting.js': 'the Appearance Comments switch, a site-wide on/off held by the server and locked to the owner',
+  'nav-history.js': 'History inside the primary navigation as an expandable section',
+  'nav-hamburger.js': 'a menu icon to the left of the wordmark when Search is on and the nav is collapsed',
+  'trace-helix.js': 'the DNA helix every WISEcodeAI turn draws while it thinks',
+  'welcome-orbit.js': 'the welcome owl as a living node network instead of pulse rings',
+  'app-logic-data.js': 'the written catalog of behavioral rules the app actually runs, grouped by page',
+  'chat-history.js': 'History & Projects — past conversations, folders, and the drawer beside chat',
+  'app-search.js': 'app-wide search in the top band across conversations, live output, and reports',
+  'reformulation-store.js': 'the shared recipe Reformulation writes and the product pages read',
+};
+
+/* The first real sentence of a script's own header comment — the file's
+   stated purpose, in its author's words. Decorative rule lines and the
+   "filename.js — " prefix are stripped, so feedback.js reports "On-page
+   comments — press C, click a spot, leave a note." */
+export function scriptPurpose(text) {
+  const src = String(text || '').slice(0, 6000);
+  const re = /\/\*+([\s\S]*?)\*\//g;
+  let m;
+  let tries = 0;
+  while ((m = re.exec(src)) && tries < 5) {
+    tries++;
+    /* Take the comment's opening paragraph only: a blank or rule line after
+       real text ends the summary, so a header's second thought never runs
+       into the first. */
+    const lines = [];
+    for (const raw of m[1].split('\n')) {
+      const l = raw.replace(/^\s*\*+/, '').replace(/[=─═_]{3,}/g, '').trim();
+      const blank = !l || DECOR_ONLY.test(l);
+      if (blank) { if (lines.length) break; continue; }
+      lines.push(l);
+    }
+    if (!lines.length) continue;
+    let body = lines.join(' ').replace(/\s+/g, ' ').trim();
+    body = body.replace(/^[\w.-]+\.(?:js|css|html)\s*[—–:-]\s*/i, '').trim();
+    if (!body) continue;
+    const stop = body.search(/[.!?](?:\s|$)/);
+    let sentence = stop > 16 ? body.slice(0, stop) : body;
+    if (sentence.length > 190) {
+      const cut = sentence.slice(0, 190);
+      const space = cut.lastIndexOf(' ');
+      sentence = (space > 60 ? cut.slice(0, space) : cut).trim() + '…';
+    }
+    sentence = sentence.replace(/[\s,;:—–-]+$/, '').trim();
+    if (sentence.length >= 8) return sentence;
+  }
+  return '';
+}
+
+/* "count-up-all.js" → "count up all"; "mountAgentMenu" → "mount agent menu". */
+export function humanizeName(name) {
+  return String(name || '')
+    .split('/').pop()
+    .replace(/\.(?:js|css|html)$/i, '')
+    .replace(/^_+/, '')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
 }
 
 export function oxford(items) {
@@ -146,6 +270,37 @@ export function isHtmlPath(path) {
   return /\.html(?:$|\?)/i.test(String(path || ''));
 }
 
+/* Turn a script/src or href from markup into the fetch path the crawler uses
+   (`../js/foo.js` from pages/). Remote URLs are dropped. */
+export function localFetchPath(src) {
+  let s = String(src || '').split('#')[0].split('?')[0].trim();
+  if (!s || /^(?:https?:)?\/\//i.test(s) || s.startsWith('data:') || s.startsWith('blob:')) return '';
+  s = s.replace(/^\.\//, '');
+  if (s.startsWith('../')) return s;
+  if (s.startsWith('js/')) return '../' + s;
+  if (s.startsWith('/js/')) return '..' + s;
+  if (/^[\w.-]+\.js$/i.test(s)) return '../js/' + s;
+  if (/^[\w.-]+\.css$/i.test(s)) return s;
+  return '';
+}
+
+/* Shared scripts plus every local script a crawled page actually loads. */
+export function collectLocalScriptPaths(fps, extra) {
+  const seen = new Set();
+  const out = [];
+  const add = (raw) => {
+    const f = localFetchPath(raw) || (String(raw || '').startsWith('../') ? String(raw) : '');
+    if (!f || seen.has(f)) return;
+    seen.add(f);
+    out.push(f);
+  };
+  (extra || []).forEach(add);
+  (fps || []).forEach((fp) => {
+    (fp && fp.scripts || []).forEach(add);
+  });
+  return out;
+}
+
 function cleanText(s) {
   return String(s || '').replace(/\s+/g, ' ').trim();
 }
@@ -162,6 +317,19 @@ function quoteList(items, max = 8) {
   return list.slice(0, max).map((s) => '“' + s + '”').join(', ') + ', and ' + (list.length - max) + ' more';
 }
 
+/* Same, but trailing off in words rather than a count. */
+function quoteSome(items, max = 5) {
+  const list = (items || []).filter(Boolean);
+  if (list.length <= max) return oxford(list.map((s) => '“' + s + '”'));
+  return oxford(list.slice(0, max).map((s) => '“' + s + '”')) + ', among others';
+}
+
+/* Handler names turned into readable capabilities. One-word names ("build",
+   "render") say nothing to a reader, so they are left out. */
+function capabilityNames(list) {
+  return uniqSorted((list || []).map(humanizeName).filter((n) => n && n.includes(' ')));
+}
+
 function labelMap() {
   const map = {
     'page-gallery.html': 'Page Gallery',
@@ -170,6 +338,7 @@ function labelMap() {
     '../js/wiseai-chat.js': 'Shared chat',
     '../js/all-modules-flow.js': 'All Modules',
     '../js/appearance-menu.js': 'Appearance & Admin',
+    '../js/load-anim.js': 'Appearance & Admin',
     '../js/topbar.js': 'Appearance & Admin',
     '../js/owl-walkthrough.js': 'WISEowl walkthrough',
     '../js/chat-ask.js': 'What can I ask?',
@@ -177,6 +346,16 @@ function labelMap() {
     '../js/agent-menu.js': 'Primary navigation',
     '../js/app-search.js': 'App search',
     '../js/progress-log-eval.js': 'Progress Log evaluator',
+    '../js/feedback.js': 'On-page comments',
+    '../js/feedback-setting.js': 'Appearance & Admin',
+    '../js/nav-history.js': 'History in navigation',
+    '../js/nav-hamburger.js': 'Menu icon',
+    '../js/trace-helix.js': 'Streaming helix',
+    '../js/welcome-orbit.js': 'Welcome orbit',
+    '../js/app-logic-data.js': 'App Logic',
+    '../js/pane-width.js': 'Panel width',
+    '../js/text-size-fouc.js': 'Platform-wide',
+    '../wiseai-chat.css': 'Shared chat',
   };
   pageGalleryEntries().forEach((m) => {
     const href = String(m.href || '').split('#')[0];
@@ -266,18 +445,24 @@ function pushHeading(list, text) {
 
 function extractFunctions(text) {
   const out = [];
-  const re = /(?:^|[\n;])\s*(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]{2,})\s*\(/g;
-  let m;
-  while ((m = re.exec(text))) out.push(m[1]);
-  return uniqSorted(out, 60);
+  const patterns = [
+    /(?:^|[\n;])\s*(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]{2,})\s*\(/g,
+    /(?:^|[\n;])\s*(?:export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]{2,})\s*=\s*(?:async\s*)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>/g,
+    /(?:^|[\n;])\s*(?:export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]{2,})\s*=\s*(?:async\s+)?function\b/g,
+  ];
+  patterns.forEach((re) => {
+    let m;
+    while ((m = re.exec(text))) out.push(m[1]);
+  });
+  return uniqSorted(out, 80);
 }
 
 function extractSectionHeads(text) {
   const out = [];
   const re = /(?:\/\*\s*[─═]+\s*|<!--\s*[─═]+\s*\d*\s*[·•\-]?\s*)([A-Za-z][^—*\/<\n]{6,80})/g;
   let m;
-  while ((m = re.exec(text))) out.push(cleanText(m[1]).replace(/\s*═+\s*$/, ''));
-  return uniqSorted(out, 24);
+  while ((m = re.exec(text))) out.push(cleanText(m[1]).replace(/[─═=·+|_-]{2,}\s*$/, '').trim());
+  return uniqSorted(out, 40);
 }
 
 function extractCopy(text, doc) {
@@ -298,7 +483,7 @@ function extractCopy(text, doc) {
     out.push(t);
     n++;
   }
-  return uniqSorted(out, 30);
+  return uniqSorted(out, 48);
 }
 
 function extractClasses(doc, text) {
@@ -410,9 +595,10 @@ export function emptyCats() {
 
 export function inventoryDoc(path, text) {
   const src = String(text || '');
-  const html = isHtmlPath(path) || /<html[\s>]/i.test(src);
   const js = /\.js(?:$|\?)/i.test(path);
   const css = /\.css(?:$|\?)/i.test(path);
+  /* Extension wins: a script that injects markup still is not a page. */
+  const html = !js && !css && (isHtmlPath(path) || /<html[\s>]/i.test(src));
   const doc = html ? parseHtml(src) : null;
   const title = (doc && doc.querySelector('title') && cleanText(doc.querySelector('title').textContent)) || path;
   return {
@@ -429,6 +615,7 @@ export function inventoryDoc(path, text) {
     functions: (js || (html && src.length < 400000)) ? extractFunctions(src) : [],
     classes: html || css ? extractClasses(doc, src) : [],
     copy: extractCopy(src, doc),
+    purpose: (js || css) ? scriptPurpose(src) : '',
     hasChat: /chat-shell-wrap|wiseai-chat|mountWISEcodeAIChat/.test(src),
     kind: html ? 'html' : (js ? 'js' : (css ? 'css' : 'file')),
   };
@@ -456,21 +643,24 @@ function hasAny(out) {
   return Object.keys(out).some((k) => Array.isArray(out[k]) && out[k].length);
 }
 
-/* Word for the kind of surface, used inside sentences. */
-function kindWord(fp) {
-  if (fp.kind === 'html') return 'page';
-  if (fp.kind === 'js') return 'shared script';
-  if (fp.kind === 'css') return 'stylesheet';
-  return 'file';
-}
-
-/* One plain sentence saying what the surface is and where it lives. */
-function surfaceIntro(fp) {
+/* One plain sentence saying what the surface is, in reader's terms — never a
+   file path, and for shared behaviour the script's own stated purpose. */
+function surfaceIntro(fp, isNew) {
   const label = defaultFileLabel(fp.path, fp.title);
+  const named = label !== displayPath(fp.path);
   const area = areaTitleForPath(fp.path);
-  const where = displayPath(fp.path);
-  if (area && fp.kind === 'html') return label + ' is the ' + area + ' page (' + where + ').';
-  return label + ' is the ' + kindWord(fp) + ' at ' + where + '.';
+  if (fp.kind === 'html') {
+    const where = area ? ' in ' + area : ' in the app';
+    return label + (isNew ? ' is a new page' : ' is a page') + where + (isNew ? ', built today.' : '.');
+  }
+  if (fp.kind === 'css') {
+    return (named ? label : 'This') + ' is the shared styling every page inherits.';
+  }
+  const lead = isNew
+    ? (named ? label + ' is new shared behaviour any page can use' : 'New shared behaviour any page can use')
+    : (named ? label + ' is shared behaviour any page can use' : 'Shared behaviour any page can use');
+  const purpose = SCRIPT_PURPOSES[String(fp.path).split('/').pop()] || fp.purpose || '';
+  return purpose ? lead + ': ' + purpose.replace(/\.$/, '') + '.' : lead + '.';
 }
 
 /* The detected feature signals turned into their own ready-made prose
@@ -494,62 +684,80 @@ function structureProse(fp) {
   return 'It is organised into ' + mods.length + ' titled sections, including ' + oxford(mods.slice(0, 3).map((m) => '“' + m + '”')) + '.';
 }
 
-function describeCurrentSurface(fp, before) {
+/* A shared script described by what it does, never by its filename. `ctx`
+   carries the purposes read out of the scripts themselves; without it we fall
+   back to the humanised name so a sentence still reads as English. */
+function behaviourPhrase(src, ctx) {
+  const purposes = (ctx && ctx.scriptPurposes) || {};
+  const base = String(src || '').split('/').pop();
+  const purpose = SCRIPT_PURPOSES[base] || purposes[src] || purposes[base] || purposes['../' + src] || '';
+  if (purpose) return purpose.replace(/\.$/, '');
+  return 'the shared “' + humanizeName(base) + '” behaviour';
+}
+
+function describeCurrentSurface(fp, isNew) {
   const out = emptyCats();
-  push(out, 'features', surfaceIntro(fp));
-  const caps = capabilityProse(fp.signals);
-  if (caps.length) push(out, 'features', caps.join(' '));
+  push(out, 'features', surfaceIntro(fp, isNew));
+  capabilityProse(fp.signals).forEach((s) => push(out, 'features', s));
+  if (fp.chips && fp.chips.length) {
+    pushQuoted(out, 'features', 'You can ask it ', fp.chips, 6,
+      fp.chips.length === 1 ? ', and it opens a real transcript.' : ', and each one opens a real transcript.');
+  }
   const structure = structureProse(fp);
   if (structure) push(out, 'components', structure);
-  if (fp.chips && fp.chips.length) {
-    push(out, 'features', 'It offers ready-made prompts such as ' + quoteList(fp.chips, 4) + ', each opening a real transcript.');
+  if (fp.buttons && fp.buttons.length) {
+    pushQuoted(out, 'components', 'You act on it through ', fp.buttons, 6, '.');
   }
-  if (before && typeof before.size === 'number' && fp.size !== before.size) {
-    const d = fp.size - before.size;
-    push(out, 'changes', 'Since the start of the day the ' + (fp.kind === 'html' ? 'page' : 'file') + ' ' + (d > 0 ? 'grew' : 'shrank') + ' by ' + fmtBytes(Math.abs(d)) + '.');
-  } else {
-    push(out, 'updates', 'Full inventory of the surface as it stands now; later re-evaluations today describe only what changed from the start-of-day baseline.');
-  }
+  pushNameBatches(out, 'logic', 'It knows how to ', capabilityNames(fp.functions), 5);
   return out;
 }
 
-function describeNewFile(fp) {
-  const out = describeCurrentSurface(fp, null);
-  out.features.unshift('First inventory of this surface in the log.');
-  return out;
+function pushQuoted(out, cat, lead, items, batch, tail) {
+  const list = (items || []).filter(Boolean);
+  if (!list.length) return;
+  const end = tail || '.';
+  if (list.length <= batch) {
+    push(out, cat, lead + quoteList(list, batch) + end);
+    return;
+  }
+  push(out, cat, lead + quoteList(list.slice(0, batch), batch) + end);
+  const rest = list.slice(batch);
+  if (rest.length) push(out, cat, 'Also: ' + quoteList(rest, batch) + end);
 }
 
-export function describeInventoryDiff(fp, before) {
+function pushNameBatches(out, cat, lead, names, batch) {
+  const list = names || [];
+  if (!list.length) return;
+  for (let i = 0; i < list.length; i += batch) {
+    const slice = list.slice(i, i + batch);
+    const prefix = i === 0 ? lead : 'It also ';
+    push(out, cat, prefix + oxford(slice.map((n) => n)) + '.');
+  }
+}
+
+export function describeInventoryDiff(fp, before, ctx) {
   if (!fp) return emptyCats();
-  if (!before) return describeNewFile(fp);
-  if (!isRichInventory(before)) return describeCurrentSurface(fp, before);
+  if (!before) return describeCurrentSurface(fp, true);
+  if (!isRichInventory(before)) return describeCurrentSurface(fp, false);
 
   const out = emptyCats();
-  const label = defaultFileLabel(fp.path, fp.title);
   const noun = fp.kind === 'html' ? 'page' : (fp.kind === 'js' ? 'script' : 'file');
-
-  push(out, 'features', label + ' changed since the start of the day. Here is what moved.');
 
   if (fp.title && before.title && fp.title !== before.title) {
     push(out, 'updates', 'The ' + noun + ' was retitled from “' + cleanText(before.title) + '” to “' + cleanText(fp.title) + '.”');
   }
 
-  const mods = addedRemoved(fp.modules, before.modules);
-  if (mods.added.length) {
-    push(out, 'components', 'It gained ' + (mods.added.length === 1 ? 'a new section, ' : mods.added.length + ' new sections — ')
-      + oxford(mods.added.slice(0, 4).map((m) => '“' + m + '”')) + (mods.added.length > 4 ? ', among others' : '') + '.');
-  }
-  if (mods.removed.length) {
-    push(out, 'deletions', 'It dropped ' + oxford(mods.removed.slice(0, 4).map((m) => '“' + m + '”')) + (mods.removed.length > 4 ? ', among others' : '') + (mods.removed.length === 1 ? '.' : '.'));
+  if (fp.purpose && before.purpose && fp.purpose !== before.purpose) {
+    push(out, 'updates', 'Its stated job is now: ' + fp.purpose.replace(/\.$/, '') + '.');
   }
 
   const scripts = addedRemoved(fp.scripts, before.scripts);
-  if (scripts.added.length) {
-    push(out, 'features', 'It now loads ' + oxford(scripts.added.map((s) => s.split('/').pop())) + ', so it inherits those shared behaviours.');
-  }
-  if (scripts.removed.length) {
-    push(out, 'deletions', 'It no longer loads ' + oxford(scripts.removed.map((s) => s.split('/').pop())) + '.');
-  }
+  scripts.added.forEach((src) => {
+    push(out, 'features', 'New on this page: ' + behaviourPhrase(src, ctx) + '.');
+  });
+  scripts.removed.forEach((src) => {
+    push(out, 'deletions', 'No longer on this page: ' + behaviourPhrase(src, ctx) + '.');
+  });
 
   const sig = addedRemoved(fp.signals, before.signals);
   const byId = Object.fromEntries(FEATURE_SIGNALS.map((s) => [s.id, s]));
@@ -563,44 +771,72 @@ export function describeInventoryDiff(fp, before) {
 
   const chips = addedRemoved(fp.chips, before.chips);
   if (chips.added.length) {
-    push(out, 'features', 'New prompts were added, such as ' + quoteList(chips.added, 4) + ', each opening a real transcript.');
+    pushQuoted(out, 'features', 'You can now ask ', chips.added, 6,
+      chips.added.length === 1 ? ', and it opens a real transcript.' : ', and each one opens a real transcript.');
   }
   if (chips.removed.length) {
-    push(out, 'deletions', 'Some prompts were removed, including ' + quoteList(chips.removed, 4) + '.');
+    pushQuoted(out, 'deletions', 'These prompts are gone: ', chips.removed, 6, '.');
   }
 
+  const mods = addedRemoved(fp.modules, before.modules);
+  if (mods.added.length === 1) {
+    push(out, 'components', 'A new section reads “' + mods.added[0] + '.”');
+  } else if (mods.added.length) {
+    pushQuoted(out, 'components', 'New sections were added: ', mods.added, 6, '.');
+  }
+  if (mods.removed.length === 1) {
+    push(out, 'deletions', 'The section “' + mods.removed[0] + '” was dropped.');
+  } else if (mods.removed.length) {
+    pushQuoted(out, 'deletions', 'Sections were dropped: ', mods.removed, 6, '.');
+  }
+
+  const modSet = new Set(mods.added);
   const heads = addedRemoved(fp.headings, before.headings);
-  if (heads.added.length) {
-    push(out, 'ux', 'New headings appeared, including ' + quoteList(heads.added, 4) + '. Section titles use the brand serif face.');
+  const newHeads = heads.added.filter((h) => !modSet.has(h));
+  if (newHeads.length === 1) {
+    push(out, 'components', 'A new heading reads “' + newHeads[0] + '.”');
+  } else if (newHeads.length) {
+    pushQuoted(out, 'components', 'New headings read ', newHeads, 6, '.');
+  }
+  const goneHeads = heads.removed.filter((h) => !(mods.removed || []).includes(h));
+  if (goneHeads.length) {
+    pushQuoted(out, 'deletions', 'Headings no longer on the surface: ', goneHeads, 6, '.');
   }
 
-  const fns = addedRemoved(fp.functions, before.functions);
-  if (fns.added.length) {
-    push(out, 'logic', 'Its behaviour grew with ' + (fns.added.length === 1 ? 'a new handler, ' : fns.added.length + ' new handlers, including ')
-      + oxford(fns.added.slice(0, 3)) + '.');
+  const btns = addedRemoved(fp.buttons, before.buttons);
+  if (btns.added.length) {
+    pushQuoted(out, 'components', 'You can now act on it through ', btns.added, 6, '.');
   }
-  if (fns.removed.length) {
-    push(out, 'deletions', (fns.removed.length === 1 ? 'A handler was removed (' : fns.removed.length + ' handlers were removed, including ')
-      + oxford(fns.removed.slice(0, 3)) + (fns.removed.length === 1 ? ').' : '.'));
+  if (btns.removed.length) {
+    pushQuoted(out, 'deletions', 'These controls were taken away: ', btns.removed, 6, '.');
   }
 
   const copy = addedRemoved(fp.copy, before.copy);
   if (copy.added.length) {
-    push(out, 'ux', 'Fresh interface copy landed, such as “' + copy.added[0] + '.”');
+    pushQuoted(out, 'ux', 'The wording it shows you changed, and now includes ', copy.added, 4, '.');
+  }
+  if (copy.removed.length && copy.removed.length <= 8) {
+    pushQuoted(out, 'ux', 'Wording that left: ', copy.removed, 4, '.');
   }
 
-  const dSize = (fp.size || 0) - (before.size || 0);
-  if (dSize) {
-    const dir = dSize > 0 ? 'grew' : 'shrank';
-    if (hasAny(out)) {
-      push(out, 'changes', 'Altogether the ' + noun + ' ' + dir + ' by ' + fmtBytes(Math.abs(dSize)) + ' with those edits.');
+  const fns = addedRemoved(fp.functions, before.functions);
+  const newFns = capabilityNames(fns.added);
+  const goneFns = capabilityNames(fns.removed);
+  if (newFns.length) {
+    pushNameBatches(out, 'logic', 'It can now ', newFns, 5);
+  }
+  if (goneFns.length) {
+    pushNameBatches(out, 'deletions', 'It no longer needs to ', goneFns, 5);
+  }
+
+  if (!hasAny(out)) {
+    const purpose = SCRIPT_PURPOSES[String(fp.path).split('/').pop()] || fp.purpose || '';
+    if (purpose) {
+      push(out, 'updates', 'The pass stayed on ' + purpose.replace(/\.$/, '')
+        + ' — same features, same logic, same UX, same UI for the reader. Wording, styling, or internal tidying.');
     } else {
-      push(out, 'changes', 'The ' + noun + ' ' + dir + ' by ' + fmtBytes(Math.abs(dSize)) + ', but its sections, scripts, prompts, and features are unchanged — this was copy, styling, or internal logic.');
+      push(out, 'updates', 'Worked on this day, but nothing changed for the reader: same features, same logic, same UX, same UI. The pass was wording, styling, or internal tidying.');
     }
-  }
-
-  if (!hasAny(out) && fp.hash !== before.hash) {
-    push(out, 'updates', 'The ' + noun + ' changed on disk, but its sections, scripts, prompts, controls, and features are all unchanged — an internal edit to spacing, comments, or logic.');
   }
 
   return out;
@@ -610,17 +846,38 @@ export function catsHaveItems(cats) {
   return !!(cats && hasAny(cats));
 }
 
-/* One stacked paragraph per finding — never a comma-run of bullets. */
+/* The breakdown a reader asked for: Features, Logic, UX, UI — one labelled
+   paragraph per sentence, in that order, then anything removed. Stacking
+   sentences (instead of joining them into one run-on) is how a busy day
+   stays readable. The label is a plain text prefix ("Features — …");
+   pages/progress-log.html lifts it out and renders it as the paragraph's
+   heading, and hides a repeated label when the next paragraph is the same
+   category. */
+export const SYNOPSIS_LABELS = {
+  features: 'Features',
+  logic: 'Logic',
+  ux: 'UX',
+  components: 'UI',
+  changes: 'Changes',
+  improvements: 'Improvements',
+  updates: 'Notes',
+  deletions: 'Removed',
+};
+export const SYNOPSIS_ORDER = ['features', 'logic', 'ux', 'components', 'changes', 'improvements', 'updates', 'deletions'];
+export const SYNOPSIS_SEP = ' — ';
+
 export function catsToSynopsis(cats) {
   const paras = [];
   if (!cats) return paras;
-  ['features', 'components', 'ux', 'logic', 'changes', 'improvements', 'updates', 'deletions'].forEach((id) => {
+  SYNOPSIS_ORDER.forEach((id) => {
     const arr = cats[id];
-    if (!Array.isArray(arr)) return;
+    if (!Array.isArray(arr) || !arr.length) return;
+    const seen = [];
     arr.forEach((t) => {
       const s = String(t || '').trim();
-      if (s && !paras.includes(s)) paras.push(s);
+      if (s && !seen.includes(s)) seen.push(s);
     });
+    seen.forEach((s) => paras.push(SYNOPSIS_LABELS[id] + SYNOPSIS_SEP + s));
   });
   return paras;
 }
@@ -636,7 +893,7 @@ export function crawlOverview(htmlCount, scriptCount, diff, labels) {
   if (added) lines.push(added + (added === 1 ? ' new file' : ' new files') + ' appeared today.');
   if (changed) {
     lines.push(changed + (changed === 1 ? ' file changed today.' : ' files changed today.')
-      + ' Each card below is a full description of features, UX, UI, and modules — not a byte-count.');
+      + ' Each card below says what was actually built, in plain language: features, logic, UX, and UI.');
   }
   if (!added && !changed) {
     lines.push('No files changed versus the start-of-day baseline. ' + unchangedHtml + ' HTML files were still opened and inventoried.');

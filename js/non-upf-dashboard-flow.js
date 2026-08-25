@@ -394,8 +394,7 @@ function paint() {
             <h1 class="adm-title">Your Non-UPF Verification Dashboard</h1>
           </div>
           <div class="adm-head-actions">
-            <a class="adm-btn adm-btn--ghost" href="invoices.html"><span class="material-symbols-outlined">receipt_long</span>View invoices</a>
-            <button type="button" class="adm-btn adm-btn--primary" data-adm-action="export"><span class="material-symbols-outlined">download</span>Export</button>
+            <button type="button" class="adm-icon-btn nud-rowmenu-btn nud-page-menu-btn" data-adm-action="page-options" aria-haspopup="menu" aria-expanded="false" aria-label="Dashboard options" title="More"><span class="material-symbols-outlined">more_vert</span></button>
           </div>
         </div>
       </header>
@@ -407,7 +406,6 @@ function paint() {
           <button type="button" class="adm-search-filter${activeFilterCount() ? ' has-dot' : ''}${filterOpen ? ' is-active' : ''}" data-adm-action="toggle-filters" aria-haspopup="true" aria-expanded="${filterOpen}" title="Filters"><span class="material-symbols-outlined">tune</span></button>
           ${filterPopHtml()}
         </div>
-        <button type="button" class="adm-icon-btn nud-rowmenu-btn nud-table-menu-btn" data-adm-action="table-options" aria-haspopup="menu" aria-expanded="false" aria-label="Table view options" title="View options"><span class="material-symbols-outlined">more_vert</span></button>
       </div>
 
       <div class="adm-chart-grid">
@@ -599,7 +597,7 @@ const MENU_ITEMS = [
 let openMenuEl = null;
 function closeRowMenu() {
   if (openMenuEl) { openMenuEl.remove(); openMenuEl = null; }
-  hostEl?.querySelector('[data-adm-action="table-options"]')?.setAttribute('aria-expanded', 'false');
+  hostEl?.querySelector('[data-adm-action="page-options"]')?.setAttribute('aria-expanded', 'false');
   document.removeEventListener('scroll', closeRowMenu, true);
   window.removeEventListener('resize', closeRowMenu);
 }
@@ -641,28 +639,36 @@ function openRowMenu(btn, upc) {
   });
 }
 
-/* Table-level ⋮ menu — the row / card layout choice lives here now, as a pair
-   of radio menu items with a check on the active layout. */
+/* Page ⋮ menu — invoices + export, then the row / card layout choice as a
+   pair of radio items with a check on the active layout. */
 const VIEW_MENU_ITEMS = [
   { view: 'rows',  icon: 'table_rows', label: 'Row view' },
   { view: 'cards', icon: 'grid_view',  label: 'Card view' },
 ];
-function openViewMenu(btn) {
+function openPageMenu(btn) {
   closeRowMenu();
   const menu = document.createElement('div');
   menu.className = 'adm-menu';
   menu.setAttribute('role', 'menu');
-  menu.innerHTML = VIEW_MENU_ITEMS.map((it) => {
-    const on = viewMode === it.view;
-    return `<button type="button" role="menuitemradio" aria-checked="${on}" class="adm-menu-item nud-view-item${on ? ' is-active' : ''}" data-adm-view-menu="${it.view}"><span class="material-symbols-outlined">${it.icon}</span><span class="nud-view-item-label">${esc(it.label)}</span><span class="material-symbols-outlined nud-view-item-check">${on ? 'check' : ''}</span></button>`;
-  }).join('');
+  const actions = `
+    <button type="button" role="menuitem" class="adm-menu-item" data-adm-menu-action="view-invoices"><span class="material-symbols-outlined">receipt_long</span>View invoices</button>
+    <button type="button" role="menuitem" class="adm-menu-item" data-adm-menu-action="export"><span class="material-symbols-outlined">download</span>Export</button>
+    <div class="adm-menu-sep nud-view-sep"></div>
+    ${VIEW_MENU_ITEMS.map((it) => {
+      const on = viewMode === it.view;
+      return `<button type="button" role="menuitemradio" aria-checked="${on}" class="adm-menu-item nud-view-item${on ? ' is-active' : ''}" data-adm-view-menu="${it.view}"><span class="material-symbols-outlined">${it.icon}</span><span class="nud-view-item-label">${esc(it.label)}</span><span class="material-symbols-outlined nud-view-item-check">${on ? 'check' : ''}</span></button>`;
+    }).join('')}`;
+  menu.innerHTML = actions;
   placeMenu(menu, btn);
   btn.setAttribute('aria-expanded', 'true');
   menu.addEventListener('click', (e) => {
-    const item = e.target.closest('[data-adm-view-menu]');
+    const view = e.target.closest('[data-adm-view-menu]');
+    if (view) { setViewMode(view.dataset.admViewMenu); closeRowMenu(); return; }
+    const item = e.target.closest('[data-adm-menu-action]');
     if (!item) return;
-    setViewMode(item.dataset.admViewMenu);
+    const action = item.dataset.admMenuAction;
     closeRowMenu();
+    runAction(action, '');
   });
 }
 
@@ -784,6 +790,7 @@ function openDupModal(upc) {
 function runAction(action, ctx) {
   switch (action) {
     case 'export': toast('Exporting dashboard', 'download'); pushChat('Exporting your <strong>Non-UPF verification dashboard</strong> — portfolio split, processing spectrum, and product statuses.'); break;
+    case 'view-invoices': window.location.href = 'invoices.html'; break;
     case 'edit': toast('Fixing action-required products', 'edit'); pushChat('Opening the <strong>10 products that need attention</strong> — each is missing mandatory data before it can be verified.'); setNonUpfStatus('action'); break;
     case 'attest': toast('Opening attestation', 'fact_check'); pushChat('Starting attestation for the <strong>19 products</strong> pending review. I\u2019ll walk you through the required confirmations.'); setNonUpfStatus('pending_att'); break;
     case 'pay': toast('Opening payment', 'payments'); pushChat('Two products are <strong>attested and ready for payment</strong> — I\u2019ll take you to checkout to activate their shields.'); break;
@@ -811,8 +818,8 @@ export function renderNonUpfDashboard(mainEl) {
     if (chartCard) { replayCharts(); return; }
     const sortH = e.target.closest('[data-adm-sort]');
     if (sortH) { toggleSort(sortH.dataset.admSort); return; }
-    const optBtn = e.target.closest('[data-adm-action="table-options"]');
-    if (optBtn) { e.preventDefault(); e.stopPropagation(); openViewMenu(optBtn); return; }
+    const optBtn = e.target.closest('[data-adm-action="page-options"]');
+    if (optBtn) { e.preventDefault(); e.stopPropagation(); openPageMenu(optBtn); return; }
     const menuBtn = e.target.closest('[data-adm-action="manage-product"]');
     if (menuBtn) { e.preventDefault(); e.stopPropagation(); openRowMenu(menuBtn, menuBtn.dataset.admUpc || ''); return; }
     const vf = e.target.closest('[data-adm-vf]');
@@ -841,7 +848,7 @@ export function renderNonUpfDashboard(mainEl) {
     docListenersBound = true;
     document.addEventListener('click', (e) => {
       if (filterOpen && !e.target.closest('.adm-search-inline')) setFilterOpen(false);
-      if (openMenuEl && !e.target.closest('.adm-menu') && !e.target.closest('[data-adm-action="manage-product"]') && !e.target.closest('[data-adm-action="table-options"]')) closeRowMenu();
+      if (openMenuEl && !e.target.closest('.adm-menu') && !e.target.closest('[data-adm-action="manage-product"]') && !e.target.closest('[data-adm-action="page-options"]')) closeRowMenu();
     });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { setFilterOpen(false); closeRowMenu(); } });
   }

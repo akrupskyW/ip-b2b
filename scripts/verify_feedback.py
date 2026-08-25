@@ -95,8 +95,19 @@ def wipe():
     print("  cleared %d existing comment(s)" % len(rows))
 
 
+def api_enable():
+    """Commenting is off until the owner switches it on from Appearance, so
+    open the gate before expecting the widget to render at all."""
+    req = urllib.request.Request(BASE + "/api/feedback/settings",
+                                 data=json.dumps({"enabled": 1}).encode(),
+                                 headers={"Content-Type": "application/json",
+                                          "X-Feedback-Key": KEY})
+    urllib.request.urlopen(req)
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
+    api_enable()
     proc = subprocess.Popen(
         [CHROME, "--headless=new", "--disable-gpu", "--no-sandbox", "--hide-scrollbars",
          "--window-size=1440,900", "--remote-debugging-port=%d" % PORT, "about:blank"],

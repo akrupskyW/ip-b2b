@@ -128,34 +128,66 @@
   function save(store) {
     try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (_) {}
   }
+  function clamp255(n) { return Math.max(0, Math.min(255, Math.round(n))); }
+  function clampAlpha(n) { return isNaN(n) ? 1 : Math.max(0, Math.min(1, n)); }
   function hexToRgb(hex) {
-    var m = String(hex || '').trim().match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i);
+    var m = String(hex || '').trim().match(/^#?([0-9a-f]{3,8})$/i);
     if (!m) return null;
     var h = m[1];
-    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
-    var n = parseInt(h, 16);
-    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+    if (h.length === 3 || h.length === 4) {
+      h = h.replace(/./g, function (c) { return c + c; });
+    }
+    if (h.length !== 6 && h.length !== 8) return null;
+    var n = parseInt(h.slice(0, 6), 16);
+    return {
+      r: (n >> 16) & 255,
+      g: (n >> 8) & 255,
+      b: n & 255,
+      a: h.length === 8 ? clampAlpha(parseInt(h.slice(6), 16) / 255) : 1
+    };
   }
-  function rgbaFromHex(hex, a) {
-    var rgb = hexToRgb(hex);
-    if (!rgb) return hex;
-    return 'rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', ' + a + ')';
-  }
-  function parseColor(value) {
+  /* Any hex (3/4/6/8 digit) or rgb()/rgba() string → { r, g, b, a }. */
+  function toRgba(value) {
     var v = String(value || '').trim();
-    if (hexToRgb(v)) {
-      var rgb = hexToRgb(v);
-      var hex = '#' + [rgb.r, rgb.g, rgb.b].map(function (n) {
+    var hex = hexToRgb(v);
+    if (hex) return hex;
+    var m = v.match(/^rgba?\(([^)]*)\)$/i);
+    if (!m) return null;
+    var parts = m[1].split(/[,/]/).map(function (p) { return p.trim(); })
+      .filter(function (p) { return p !== ''; });
+    if (parts.length < 3) return null;
+    var chan = function (p) { return /%$/.test(p) ? parseFloat(p) * 2.55 : parseFloat(p); };
+    var r = chan(parts[0]), g = chan(parts[1]), b = chan(parts[2]);
+    if (isNaN(r) || isNaN(g) || isNaN(b)) return null;
+    var a = 1;
+    if (parts.length > 3) {
+      a = /%$/.test(parts[3]) ? parseFloat(parts[3]) / 100 : parseFloat(parts[3]);
+    }
+    return { r: clamp255(r), g: clamp255(g), b: clamp255(b), a: clampAlpha(a) };
+  }
+  function roundAlpha(a) { return Math.round(clampAlpha(a) * 1000) / 1000; }
+  /* Opaque colors stay hex so older saved overrides round-trip unchanged;
+     anything translucent serializes as rgba() so the alpha survives. */
+  function formatColor(rgb) {
+    if (!rgb) return '';
+    var a = roundAlpha(rgb.a == null ? 1 : rgb.a);
+    if (a === 1) {
+      return '#' + [rgb.r, rgb.g, rgb.b].map(function (n) {
         return n.toString(16).padStart(2, '0').toUpperCase();
       }).join('');
-      return hex;
     }
-    var m = v.match(/^rgba?\(\s*([0-9.]+)\s*,\s*([0-9.]+)\s*,\s*([0-9.]+)/i);
-    if (!m) return '';
-    var hex = '#' + [m[1], m[2], m[3]].map(function (n) {
-      return Math.round(parseFloat(n)).toString(16).padStart(2, '0').toUpperCase();
-    }).join('');
-    return hex;
+    return 'rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', ' + a + ')';
+  }
+  /* Derived tints multiply their own alpha by the base color's, so a
+     half-transparent --primary yields a half-strength --primary-10. */
+  function tintFrom(value, a) {
+    var rgb = toRgba(value);
+    if (!rgb) return value;
+    return 'rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', '
+      + roundAlpha(a * (rgb.a == null ? 1 : rgb.a)) + ')';
+  }
+  function parseColor(value) {
+    return formatColor(toRgba(value));
   }
   function clearInline(root) {
     TOKENS.forEach(function (t) { root.style.removeProperty(t); });
@@ -167,7 +199,7 @@
         if (map[dep.token]) return;
         var a = dep.a;
         if (dep.aLight != null) a = theme === 'dark' ? dep.aDark : dep.aLight;
-        root.style.setProperty(dep.token, rgbaFromHex(map[src], a));
+        root.style.setProperty(dep.token, tintFrom(map[src], a));
       });
     });
   }
@@ -276,6 +308,17 @@
     captureDefaults: captureDefaults,
     count: countCustom,
     parse: parseColor,
+    rgba: toRgba,
+    format: formatColor,
+    alphaOf: function (value) {
+      var rgb = toRgba(value);
+      return rgb ? (rgb.a == null ? 1 : rgb.a) : 1;
+    },
+    withAlpha: function (value, a) {
+      var rgb = toRgba(value);
+      if (!rgb) return '';
+      return formatColor({ r: rgb.r, g: rgb.g, b: rgb.b, a: clampAlpha(a) });
+    },
     onChange: function (fn) { if (typeof fn === 'function') listeners.push(fn); }
   };
 
@@ -346,4 +389,15 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', stop);
   else stop();
+})();
+
+/** FOUC guard — Helix loading is on by default. Keep in sync with
+    isHelixLoadOn() in js/load-anim.js so the striped skeleton never flashes
+    before the overlay module runs. */
+(function () {
+  try {
+    var helix = localStorage.getItem('wise-helix-loading') !== '0';
+    document.documentElement.classList.toggle('load-anim-helix', helix);
+    document.documentElement.classList.toggle('load-anim-stripes', !helix);
+  } catch (_) {}
 })();

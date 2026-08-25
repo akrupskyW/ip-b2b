@@ -7,8 +7,10 @@
        must re-evaluate counts, filters, and the timeline from the current LOG.
        A new local day opens a live day at the top of the board. Every calendar
        day from the first journal entry through today stays on the board —
-       days are never skipped. Each day is an accordion; each page inside it
-       is an accordion. Eval notes and crawls are today-only. -->
+       days are never skipped. A day that had files saved is never thrown away
+       at midnight. Each day is an accordion; each page inside it is an
+       accordion. Eval notes attach to today; the crawl attributes each file
+       to the calendar day it was last saved. -->
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <title>WISE · Progress Log</title>
@@ -256,6 +258,12 @@
     .pl-syn { display: flex; flex-direction: column; gap: 12px; }
     .pl-syn p { margin: 0; font-size: 13.5px; line-height: 1.65; color: var(--text); }
     .pl-syn p + p { margin-top: 0; }
+    /* Features / Logic / UX / UI label above its paragraph. */
+    .pl-syn-cat {
+      display: block; font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--text-subtle); margin-bottom: 3px;
+    }
     .pl-syn mark { background: color-mix(in srgb, var(--primary) 24%, transparent); color: inherit; border-radius: 3px; padding: 0 2px; }
     .pl-pcard-empty { font-size: 13px; line-height: 1.55; color: var(--text-muted); font-style: italic; }
 
@@ -538,6 +546,7 @@
       inventoryDoc, describeInventoryDiff, catsHaveItems, catsToSynopsis,
       catalogHtmlPaths, discoverHtmlPaths, defaultFileLabel,
       displayPath, isHtmlPath, crawlOverview, emptyCats,
+      scriptPurpose, SYNOPSIS_LABELS, SYNOPSIS_SEP, collectLocalScriptPaths,
     } from '../js/progress-log-eval.js';
     (function () {
       let chat = null;
@@ -558,10 +567,352 @@
 
       /* ── The log. Newest day first. AUTHORED is the hand-written journal.
          LOG is every calendar day from the first authored date through today —
-         authored days, a live today when today is not authored, and an empty
-         accordion for any gap. Days are never skipped. ── */
-      const LOG_STAMP = '2026-08-23T19:00:00.000Z';
+         authored days, frozen live days (a crawl that actually found work),
+         a mutable live today when today is not authored, and an empty
+         accordion only when nothing on disk was last saved that day.
+         Days are never skipped, and a day that had work is never thrown
+         away at midnight. ── */
+      const LOG_STAMP = '2026-08-25T17:05:00.000Z';
       const AUTHORED = [
+        {
+          date: '2026-08-25', rel: 'Tuesday',
+          summary: 'On-page comments became a site-wide switch only the owner can flip, off until they do. Assembling boards play the streaming helix instead of stripes (Appearance ▸ Helix loading). The chat ⋯ menu grew a master Scale plus Pitch, Nodes, and Length, and Orbit follows those sliders too.',
+          entries: [
+            { page: 'Appearance & Admin', path: 'appearance-menu.js',
+              features: [
+                'Comments row — press C, click a spot, leave a note. Only the owner can flip it, and it turns commenting on or off for every visitor, not just this browser. Off until they switch it on. Locked for everyone else, with a real lock, not decoration',
+                'Helix loading — while output and Compare Foods boards assemble, play the streaming helix. Off restores the striped skeleton. On by default',
+              ],
+              logic: [
+                'Comments is not a per-browser preference. The server holds the gate, so a localStorage flag could never stop a reviewer from commenting. The popover mirrors the server value so it can paint without waiting on a round trip',
+                'Holding the feedback admin key (once, via a keyed URL) is what unlocks the row. The server rejects the write without that key no matter what the UI allows',
+              ],
+              synopsis: [
+                'Features — Appearance now has a Comments switch. It is off until the owner turns it on, and then everyone can press C and pin a note — not just this browser. For anyone who is not the owner the row is locked, with a lock icon and a popover that says so.',
+                'Features — Helix loading sits with the other appearance rows. While a board is still assembling you see the streaming helix; switch it off and the old striped skeleton comes back. It is on by default, so the stripes never flash on first paint.',
+                'Logic — Comments is a site-wide gate held by the comment server. A flag in this browser could only hide the chrome, not stop a reviewer from posting. The owner key is a real gate: the server refuses the write without it.',
+              ] },
+            { page: 'On-page comments', path: 'feedback.js',
+              features: [
+                'When Comments is off, the widget does not arm, does not draw pins, and does not show the C launcher — the page carries no comment behaviour until the owner switches it on',
+              ],
+              logic: [
+                'The widget asks the server whether commenting is enabled on every load, mirrors that into this browser so Appearance can paint, and tears itself down without a reload when the owner flips it off',
+                'setEnabled is owner-only. Anyone else is rejected. An off site returns 403 on list and post, so a stale tab cannot keep writing',
+              ],
+              synopsis: [
+                'Features — Comments is now opt-in. Until the owner switches it on, pressing C does nothing and the C triangle is gone. After they switch it on, the widget you already had yesterday — pin, thread, owner close — is the thing that comes up.',
+                'Logic — Enablement lives on the server. Every page load asks, Appearance reads the mirrored answer, and flipping the row raises or tears the widget down without a reload. An off site refuses list and post, so a tab that loaded while it was on cannot keep writing after it is switched off.',
+              ] },
+            { page: 'Comments switch', path: 'feedback-setting.js', isNew: true,
+              features: [
+                'The Appearance Comments row — the only control that turns on-page commenting on or off for the whole site',
+              ],
+              logic: [
+                'Locked for everyone except the owner. The popover paints from a mirrored value so it does not wait on the network; the widget refreshes that mirror from the server on every page load',
+              ],
+              synopsis: [
+                'Features — New shared behaviour: the Appearance row that switches on-page commenting on or off. It is not a per-browser toy. It is the site-wide gate.',
+                'Logic — Only the owner can flip it. Everyone else sees a locked row. The popover paints immediately from a mirrored value; the comment widget then refreshes that mirror from the server so the two cannot drift.',
+              ] },
+            { page: 'Helix loading', path: 'load-anim.js', isNew: true,
+              ux: [
+                'While output and Compare Foods boards assemble, a larger streaming helix plays in the middle of the board instead of the striped skeleton',
+              ],
+              logic: [
+                'On by default. Appearance ▸ Helix loading flips between the rope and the older diagonal-stripe skeleton. The choice is per browser, and it covers the output module on the studio plus every Compare Foods board (comparison, portfolio, and the copy on WISEcodeAI)',
+              ],
+              synopsis: [
+                'UX — New loading pose: while a board is still assembling you see the streaming helix — a larger rope, centered — instead of the busy striped skeleton. Switch it off in Appearance and the stripes come back.',
+                'Logic — On unless you last left it off. It covers the studio output module and every Compare Foods empty/pending board, so those surfaces load as one family instead of each inventing a spinner.',
+              ] },
+            { page: 'Shared chat', path: 'wiseai-chat.js',
+              ux: [
+                'Background animation ⋯ menu: a master Scale that moves X, Y, and Z together, then the three axes, plus Pitch (coil tightness), Nodes (circle size), and Length (how far the strand runs). Bounds are 25–400%',
+                'Angle, Pitch, and Length hide while Orbit is the chosen style — they describe the strand. Scale and Nodes still drive Orbit',
+              ],
+              logic: [
+                'Scale and the shape knobs are app-wide. A drag broadcasts so every open chat, and the welcome orbit, repaint together',
+              ],
+              synopsis: [
+                'UX — The chat ⋯ menu’s background-animation row grew up. There is a master Scale that moves every axis at once, then X / Y / Z, then Pitch, Nodes, and Length. You can pinch the field down to a quarter or push it out to four times the original. Pitch twists the helix tight or opens the loops; Nodes sizes the photos and dots; Length is how far the strand runs across the pane.',
+                'UX — Angle, Pitch, and Length only apply to the DNA helix (Helix and Ten). While Orbit is selected they hide, because they describe a strand Orbit does not have. Scale and Nodes still apply — Orbit is a constellation, and those two sliders stretch it and size the food photos.',
+                'Logic — The sliders are shared across the app, not per chat. Drag on the studio and the welcome owl on Add Product moves with you.',
+              ] },
+            { page: 'Streaming helix', path: 'trace-helix.js',
+              ux: [
+                'The load overlay can ask for a wider, centered rope (not the skinny thinking rail), so Helix loading reads as a pose in the middle of the board',
+              ],
+              synopsis: [
+                'UX — The same DNA helix that twists beside “Thinking” can now draw larger and centered for the loading pose. The thinking rail stays the skinny left gutter; the assembling board gets a rope you can actually see.',
+              ] },
+            { page: 'Welcome orbit', path: 'welcome-orbit.js',
+              ux: [
+                'Orbit follows the same Scale X / Y / Z and Nodes sliders as the helix, live, including on a still frame',
+              ],
+              synopsis: [
+                'UX — The welcome owl’s constellation is the Orbit style, so the ⋯ menu sliders that stretch the helix also stretch this web and size its food photos. A drag repaints immediately, even when motion is reduced.',
+              ] },
+            { page: 'WISEcodeAI', path: 'wiseai.html',
+              ux: [
+                'Output boards take Helix loading: the streaming helix while they assemble, stripes if you switch it off',
+              ],
+              synopsis: [
+                'UX — The studio output module uses the new Helix loading pose while it assembles, matching Compare Foods. First paint already knows the setting, so the striped skeleton does not flash and then get replaced.',
+              ] },
+            { page: 'Platform-wide', path: 'wise.css',
+              ux: [
+                'Helix loading styles: a centered load-helix in output and Compare Foods, and the striped skeleton hidden while the helix is on',
+                'Locked Appearance rows still show a popover that explains the lock, including the Comments row',
+              ],
+              synopsis: [
+                'UX — Shared styles for the loading helix (centered, larger) and for hiding the striped skeleton while it plays — in both themes. Locked Appearance rows still explain themselves on hover, so “only the owner can switch comments on” is readable, not a dead control.',
+              ] },
+            { page: 'Comments service', path: '(feedback API · every page)',
+              logic: [
+                'On-page commenting is opt-in and off by default. The owner switches it on for everyone. List and post refuse while it is off',
+              ],
+              synopsis: [
+                'Logic — The comment server now holds an enabled flag, off until the owner switches it on. While it is off, listing and posting are refused, so the widget cannot quietly keep working after the switch is flipped.',
+              ] },
+            { page: 'Progress Log', path: 'progress-log.html',
+              features: [
+                'A day that had files saved is never thrown away at midnight. The crawl attributes each file to the calendar day it was last saved, and that day stays on the board',
+              ],
+              ux: [
+                'Each change is its own labelled paragraph (Features, Logic, UX, UI), stacked — a busy day is not collapsed into one sentence',
+              ],
+              synopsis: [
+                'Features — The journal was dropping yesterday the moment the clock rolled. Live days now freeze, and a file is attributed to the day it was last saved, so Monday cannot go blank because you opened the log on Tuesday.',
+                'UX — Cards stack a paragraph per change, labelled Features / Logic / UX / UI, instead of joining a whole day’s work into one sentence. How much landed that day is how much the card says.',
+              ] },
+          ],
+        },
+        {
+          date: '2026-08-24', rel: 'Monday',
+          summary: 'On-page comments (press C, click a spot, leave a thread) shipped to every page and to a shared server store. History can live in the primary nav; a collapsed nav can use a menu icon. Chat width now defaults from the screen. All Modules gained App Logic. Page Gallery thumbs actually ship. Evening: the welcome orbit and chat background-animation sliders started talking to each other.',
+          entries: [
+            { page: 'On-page comments', path: 'feedback.js', isNew: true,
+              features: [
+                'Press C, click a spot, pin a note — category chip, free text, your name, a server-stamped date. Anyone can reply, so a reviewer’s note is a thread, not a one-way box',
+                'Pins glue to an element plus a fractional offset inside it, not to page pixels, so they stay put while you scroll a module, resize a pane, or re-render the board',
+                'The launcher sits mid-right as a C triangle (not a crowded bottom-right corner). Hit-testing follows the triangle, and the position re-checks when late chrome such as the speed rail lands on top of it',
+              ],
+              logic: [
+                'One comment store: the deployed site and a local checkout write to the same API. Locally, a static server has no API, so the widget probes health on this origin, then falls back to the deployed host instead of trapping notes in this browser',
+                'A note written while the server is unreachable parks locally (dashed amber pin) and goes up on the next load that gets through, on refocus, or when the network returns — keeping its original timestamp so a backlog does not all land at once',
+                'Identity is the server’s call. Holding the admin key posts as the owner, whatever the request claims; owner replies carry an Owner badge. Closing a thread is the owner’s alone and takes the pin off the page for everyone. Closed threads stay reachable to the owner under Closed',
+                'An uncategorised note is a Comment, not a Question — the composer leads with a neutral chip, and the API defaults to it',
+              ],
+              ux: [
+                'Works on app pages and marketing pages: it injects its own CSS and icons, so there is no extra stylesheet or icon font to wire',
+              ],
+              synopsis: [
+                'Features — Reviewers looking at any URL can now leave a note on the exact spot they mean. Press C to arm comment mode, click, and a pin lands with a category, free text, a remembered name, and a server-stamped date. Anyone can open that pin later and reply, so feedback is a conversation.',
+                'Features — The pin is glued to the thing you clicked, not to a pixel on the window. Most of this app scrolls inside a module, not the page, so a pixel pin would drift; this one tracks the element through scrolling, resizing, width changes, and re-renders.',
+                'UX — The launcher is a C-shaped triangle on the right edge at mid-height. The old bottom-right chip sat on the chat send button on the studio and gave no hint of the key. Clicks only count inside the triangle (plus a small halo), and the widget re-checks if later chrome covers it.',
+                'Logic — There is one store. A local checkout used to 404, fall back to this browser only, and never try the server again, so notes from working locally never reached the people who have to answer them. The widget now asks this origin if the API is alive; if not, it writes to the deployed host. Notes taken while offline queue and replay without bunching at the top of the thread.',
+                'Logic — Who is speaking is not “whoever last typed a name in this browser.” Holding the owner key stamps the reply as Owner. Closing a thread is the owner’s, and it removes the pin for everyone rather than dimming it. A note nobody categorised is a Comment, not a Question.',
+              ] },
+            { page: 'Comments service', path: '(feedback API · every page)',
+              features: [
+                'A small Flask service stores the threads (SQLite) and can also serve the site, so the widget talks to its own origin with no second port and no CORS maze',
+              ],
+              logic: [
+                'Cross-origin from localhost is allowed on purpose, so a static local server can still write to the same store as the deployed app',
+                'Page keys normalise to /pages/<file>, so the same page groups together whether you opened it from the server, localhost, or a file path',
+              ],
+              synopsis: [
+                'Features — Comments live in a small server next to the site, not in each reviewer’s browser. The deployed app and a local checkout share that store, which is the whole point: a note left while building has to reach the same place as one left on the live URL.',
+                'Logic — Locally you often run a plain static server with no API. The widget is allowed to call the deployed host from localhost in that case, and it groups the same page together no matter how the file was opened.',
+              ] },
+            { page: 'Appearance & Admin', path: 'appearance-menu.js',
+              features: [
+                'History in navigation — Admin row that merges History into an expandable nav section, same chevron pattern as WISEcodeAI / WISEcode Admin',
+                'Menu icon — Admin row, locked while Search is off (the preference still saves, so turning Search back on restores the chrome)',
+              ],
+              ux: [
+                'Both rows sit with the other layout switches, so theme, Search, History-in-nav, and the menu icon are one popover',
+              ],
+              synopsis: [
+                'Features — Appearance grew two layout switches. History in navigation (Admin) relocates the live History module into the primary nav as an expandable section: search, new conversation, projects, drag-drop, rename, and live dots keep working. Pages without a mounted History fall back to a nested folder tree read from what is already saved.',
+                'Features — Menu icon (Admin) depends on Search being on. While Search is off the row is locked, matching how Full bleed locks while Search is on. When it is on and the nav is collapsed, the icon rail hides and a three-line menu icon sits left of the unchanged wordmark; clicking it expands the nav the same way the chevron already does. Default off for both.',
+                'UX — The new rows live in the same popover as Search and Full bleed, so you are not hunting a second menu.',
+              ] },
+            { page: 'History in navigation', path: 'nav-history.js', isNew: true,
+              features: [
+                'When this is on, History is not a separate drawer — it is a section of the primary nav, and every History action still works there',
+              ],
+              logic: [
+                'The choice persists across reloads and page changes. Default off',
+              ],
+              synopsis: [
+                'Features — New shared behaviour any page can use: put History inside the primary navigation. Search, new conversation, projects, drag-and-drop, rename, delete, move, and live dots all keep working in that section.',
+                'Logic — Off by default. Once you turn it on, it stays on as you move around the app. Pages that do not mount History still show a nested folder tree of projects and All conversations from what this device already stored.',
+              ] },
+            { page: 'Menu icon', path: 'nav-hamburger.js', isNew: true,
+              ux: [
+                'Collapsed Search+nav no longer flashes the 54px icon list before the menu icon paints — the first paint already matches the setting',
+              ],
+              logic: [
+                'Depends on Search. Default off; the preference still saves while Search is off',
+              ],
+              synopsis: [
+                'UX — New shared behaviour: when Search is on and the primary nav is collapsed, a menu icon sits left of the wordmark instead of the icon rail. The first paint already shows that chrome, so the icon list does not flash and then vanish.',
+                'Logic — Locked while Search is off. The preference still persists, so turning Search back on restores the menu icon without flipping the toggle again.',
+              ] },
+            { page: 'Shared chat', path: 'wiseai-chat.js',
+              features: [
+                'Chat width follows the screen default (single on a 14-inch-class display, double when wider) instead of always opening skinny',
+              ],
+              ux: [
+                'Dev Ready flags for the helix card hide immediately on hover-out instead of through a timer that left a grace-period state to juggle',
+              ],
+              synopsis: [
+                'Features — The shared chat now opens at a width that matches the display: single on a 14-inch MacBook-class screen, double when there is more room. You can still cycle single → double → triple → fill in the session; the next load reapplies the screen default, it does not restore the last toggle.',
+                'UX — The helix hover card hides as soon as you leave it, instead of waiting out a timer that had to remember a half-hidden state.',
+              ] },
+            { page: 'WISEcodeAI', path: 'wiseai.html',
+              ux: [
+                'Studio chrome picked up the nav History/menu-icon pass and the screen-based chat width default, so this page is the reference for both',
+              ],
+              synopsis: [
+                'UX — The studio took the same Monday shell pass as the rest of the app: History can sit in the nav, the collapsed nav can show a menu icon, and the chat opens at the screen-based default width. This page remains the reference other chats have to match.',
+              ] },
+            { page: 'Panel width', path: 'pane-width.js',
+              logic: [
+                'One rule: 1512 CSS pixels is the breakpoint. At or below that, chat defaults to single; above it, double',
+              ],
+              synopsis: [
+                'Logic — The four-step width model (single, double, triple, fill) now includes a chat default that reads the viewport. 1512 CSS pixels is the 14-inch MacBook Pro class. In-session cycling is unchanged; only the load default moved.',
+              ] },
+            { page: 'Platform-wide', path: '(wise.css · first paint · every page)',
+              ux: [
+                'Nav History, menu icon, and chat-width defaults paint before first paint so the shell does not flash the old chrome',
+                'Shared styles grew with the History-in-nav section, the menu icon beside the wordmark, and the C-triangle comment launcher',
+              ],
+              synopsis: [
+                'UX — First paint already knows about History-in-nav, the menu icon, and the chat’s screen-based width, so the nav does not flash the icon rail and the chat does not open skinny and then jump wide.',
+                'UI — Shared styles cover the new nav section, the menu icon beside the wordmark, and the comment launcher sitting mid-right as a C triangle — in both light and dark.',
+              ] },
+            { page: 'Primary navigation', path: 'agent-menu.js',
+              features: [
+                'Wires History-in-nav and the menu icon so every page that mounts the shared nav gets both switches for free',
+              ],
+              synopsis: [
+                'Features — The shared primary navigation now hosts History when that switch is on, and shows the menu icon when Search is on and the rail is collapsed. Every page that already mounted this nav inherited both, instead of each shell inventing its own.',
+              ] },
+            { page: 'History & Projects', path: 'chat-history.js',
+              logic: [
+                'History still files correctly when it is living inside the nav instead of beside the chat',
+              ],
+              synopsis: [
+                'Logic — History was taught to keep working after it relocates into the nav: row counts, drag-to-project, and the folder spine still match what you see. It is the same History, in a different slot.',
+              ] },
+            { page: 'All Modules', path: 'all-modules-flow.js',
+              features: [
+                'App Logic — a catalog of the behavioral rules the app actually runs, grouped by page, sitting beside Intent Chip Logic',
+                'Dev Ready state ships with the code. The committed seed is the baseline; this browser only stores the diff, so a push reaches every origin instead of trapping green switches in whichever browser toggled them',
+              ],
+              synopsis: [
+                'Features — All Modules grew App Logic: the rest of the app’s behaviour written down per page — auth, theme, nav, pane widths, tables, wizards, scoring, filters, what persists — so a reader can see the rules without opening the source. Intent Chip Logic still answers the narrow chip question; this catalog is everything else.',
+                'Features — Dev Ready is no longer trapped in one browser. The committed seed is what a fresh origin sees; localStorage keeps only what you flipped away from that seed, so updating the seed updates everyone on the next push.',
+                'UX — The helix hover card on the motion catalog hides immediately, matching the shared chat, instead of lingering through a timer.',
+              ] },
+            { page: 'App Logic', path: 'app-logic-data.js', isNew: true,
+              features: [
+                'Hand-maintained rules, each with a title and a how, grouped into Every page, Workspace, Portfolio, WISEcodeAI, Reformulation, Reports, Verification, Admin, Account, Auth, and Marketing',
+              ],
+              logic: [
+                'Every rule names the files it lives in, so you can go verify it. A stale rule is worse than no rule — when behaviour changes, the catalog changes in the same pass',
+              ],
+              synopsis: [
+                'Features — New catalog: every behavioral rule in the app, grouped by surface. Shared subsystems that run on every page sit under Every page; the rest sit on the page they belong to. Filter tiles match the Module Directory so you can scan one area at a time.',
+                'Logic — Each rule points at the files it actually lives in. The catalog is hand-verified against the source; when a page’s behaviour changes, its rule changes in the same pass.',
+              ] },
+            { page: 'Page Gallery', path: 'page-gallery.html',
+              features: [
+                'Light and dark thumbs now travel with the repo, so a deployed gallery renders real screenshots instead of “No screenshot yet” on every card',
+              ],
+              synopsis: [
+                'Features — The Page Gallery loads thumbs from a folder that used to be git-ignored, so the server shipped empty and every card fell through to “No screenshot yet.” Those thumbs are tracked now. After deploy, the gallery shows the pages.',
+              ] },
+            { page: 'Reformulation', path: 'reformulation.html',
+              ux: [
+                'Picked up the Monday shell pass — History-in-nav, menu icon, and the screen-based chat width — so the studio docks like WISEcodeAI',
+              ],
+              synopsis: [
+                'UX — Reformulation took the same shell pass as the studio: History can sit in the nav, the collapsed nav can show a menu icon, and the chat opens at the screen-based default width.',
+              ] },
+            { page: 'Product Portfolio', path: 'product-portfolio.html',
+              ux: [
+                'Same Monday shell pass as Comparison and the product editors',
+              ],
+              synopsis: [
+                'UX — Portfolio stayed on the shared shell: screen-based chat width, History-in-nav, and the menu icon. Evening, its chat ⋯ menu grew a combined Scale slider plus Pitch, Nodes, and Length for the background animation, matching Add Product, View Product, Comparison, Add Catalog, and Guiding Stars.',
+              ] },
+            { page: 'Product Comparison', path: 'product-comparison.html',
+              ux: [
+                'Same Monday shell and evening background-animation sliders as Portfolio',
+              ],
+              synopsis: [
+                'UX — Comparison took the same Monday chrome as Portfolio, then the evening background-animation sliders (Scale together, then X / Y / Z, Pitch, Nodes, Length) so every product chat speaks one ⋯ menu.',
+              ] },
+            { page: 'Add Product', path: 'add-product.html',
+              ux: [
+                'Chat ⋯ menu: a Scale slider that moves every axis together, plus Pitch, Nodes, and Length beside X / Y / Z',
+              ],
+              synopsis: [
+                'UX — Add Product’s chat ⋯ menu grew the evening background-animation pass: one Scale that drives every axis, then X / Y / Z, plus Pitch (coil tightness), Nodes (photo size on the field), and Length (how far the strand runs). The same row landed on View Product, Add Catalog, Portfolio, Comparison, and Guiding Stars so the chats do not fork.',
+              ] },
+            { page: 'View Product', path: 'view-product.html',
+              ux: [
+                'Same evening background-animation sliders as Add Product',
+              ],
+              synopsis: [
+                'UX — View Product stayed locked to Add Product’s chat ⋯ menu, including the evening Scale / Pitch / Nodes / Length row.',
+              ] },
+            { page: 'Add Catalog', path: 'add-catalog.html',
+              ux: [
+                'Same evening background-animation sliders as Add Product',
+              ],
+              synopsis: [
+                'UX — Add Catalog’s chat ⋯ menu took the same Scale / Pitch / Nodes / Length row as Add Product.',
+              ] },
+            { page: 'Guiding Stars Report', path: 'report-guiding-stars.html',
+              ux: [
+                'Same evening background-animation sliders as the product chats',
+              ],
+              synopsis: [
+                'UX — Guiding Stars stayed on the product-chat ⋯ menu, including the evening background-animation sliders.',
+              ] },
+            { page: 'Welcome orbit', path: 'welcome-orbit.js',
+              ux: [
+                'The welcome owl’s node web is the Orbit background-animation style, so it follows the chat ⋯ menu’s Scale X / Y / Z and Nodes sliders live',
+              ],
+              logic: [
+                'X / Y stretch the hull around the owl; Z sharpens or flattens the perspective; Nodes sizes the food photos. A drag repaints immediately, including on a still frame',
+              ],
+              synopsis: [
+                'UX — The welcome owl’s constellation is no longer a separate toy. It is the Orbit background-animation style, so the same Scale X / Y / Z and Nodes sliders in the chat ⋯ menu stretch the web, pinch the perspective, and size the food photos. Light mode stays the calm single-blue look; dark mode still shifts gold / blue / white with the activity shimmer.',
+                'Logic — A slider drag repaints every enhanced owl immediately, including when motion is reduced or the wrap is off-screen, so the setting you see is the setting you have.',
+              ] },
+            { page: 'Progress Log', path: 'progress-log.html',
+              ux: [
+                'Each card’s Features / Logic / UX / UI label sits as a heading above its paragraph, not inline with the sentence',
+              ],
+              synopsis: [
+                'UX — Cards now put Features, Logic, UX, and UI on their own heading line above the paragraph, matching how a reader asked to scan a busy day. File sizes and byte counts stay out of the descriptions.',
+              ] },
+            { page: 'Top bar', path: 'topbar.js',
+              ux: [
+                'Shell wiring for History-in-nav and the menu icon, so the top band and the nav stay in lockstep',
+              ],
+              synopsis: [
+                'UX — The top band learned the Monday layout switches so History-in-nav and the menu icon do not desync from the rest of the chrome when you change pages.',
+              ] },
+          ],
+        },
         {
           date: '2026-08-23', rel: 'Sunday',
           summary: 'Added app-wide search in Appearance ▸ Admin. Reformulation now writes a shared recipe that the Product pages read. The journal evaluates every HTML file on each run, shows every calendar day, and stacks each day and page as its own accordion.',
@@ -1189,8 +1540,10 @@
           ],
         },
       ];
+      let liveDays = {};
       let liveDay = null;
       let LOG = AUTHORED;
+      const AUTHORED_DATES = new Set(AUTHORED.map((d) => d && d.date).filter(Boolean));
 
       /* ── Derived helpers ── */
       function entryItems(entry) {
@@ -1225,7 +1578,8 @@
         const [y, m, d] = iso.split('-').map(Number);
         return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'long' });
       }
-      const LIVE_DAY_KEY = 'wise-progress-log-live-day-v1';
+      const LIVE_DAYS_KEY = 'wise-progress-log-live-days-v1';
+      const LIVE_DAY_KEY_LEGACY = 'wise-progress-log-live-day-v1';
       function emptyLiveDay(iso) {
         return {
           date: iso,
@@ -1239,7 +1593,7 @@
         return {
           date: iso,
           rel: weekdayRel(iso),
-          summary: 'No authored work was written for this day. The day still sits on the board so the calendar never skips.',
+          summary: 'Nothing on disk was last saved this day. The day still sits on the board so the calendar never skips.',
           entries: [],
           gap: true,
         };
@@ -1259,26 +1613,55 @@
         }
         return out;
       }
-      function loadLiveDay() {
+      function loadLiveDays() {
+        const map = {};
         try {
-          const raw = JSON.parse(localStorage.getItem(LIVE_DAY_KEY) || 'null');
-          if (raw && typeof raw.date === 'string' && Array.isArray(raw.entries)) return raw;
+          const raw = JSON.parse(localStorage.getItem(LIVE_DAYS_KEY) || 'null');
+          if (raw && raw.days && typeof raw.days === 'object') {
+            Object.keys(raw.days).forEach((iso) => {
+              const d = raw.days[iso];
+              if (d && typeof d.date === 'string' && Array.isArray(d.entries)) map[iso] = d;
+            });
+          }
         } catch (_) {}
-        return null;
+        try {
+          const one = JSON.parse(localStorage.getItem(LIVE_DAY_KEY_LEGACY) || 'null');
+          if (one && typeof one.date === 'string' && Array.isArray(one.entries) && !map[one.date]) {
+            map[one.date] = one;
+          }
+        } catch (_) {}
+        return map;
       }
-      function persistLiveDay() {
-        if (!liveDay) return;
-        try { localStorage.setItem(LIVE_DAY_KEY, JSON.stringify(liveDay)); } catch (_) {}
+      function persistLiveDays() {
+        try {
+          localStorage.setItem(LIVE_DAYS_KEY, JSON.stringify({ days: liveDays }));
+        } catch (_) {
+          try {
+            const slim = {};
+            Object.keys(liveDays).forEach((iso) => {
+              const d = liveDays[iso];
+              if (d && Array.isArray(d.entries) && d.entries.length) slim[iso] = d;
+            });
+            localStorage.setItem(LIVE_DAYS_KEY, JSON.stringify({ days: slim }));
+          } catch (__) {}
+        }
       }
+      function persistLiveDay() { persistLiveDays(); }
       function syncBoardLog() {
         const today = localDayIso();
         const byDate = new Map();
         AUTHORED.forEach((d) => { if (d && d.date) byDate.set(d.date, d); });
-        if (!byDate.has(today)) {
-          const stored = loadLiveDay();
-          liveDay = (stored && stored.date === today) ? stored : emptyLiveDay(today);
-          if (!stored || stored.date !== today) persistLiveDay();
+        liveDays = loadLiveDays();
+        Object.keys(liveDays).forEach((iso) => {
+          if (byDate.has(iso)) return;
+          const d = liveDays[iso];
+          if (d && Array.isArray(d.entries) && d.entries.length) byDate.set(iso, d);
+        });
+        if (!AUTHORED_DATES.has(today)) {
+          if (!liveDays[today]) liveDays[today] = emptyLiveDay(today);
+          liveDay = liveDays[today];
           byDate.set(today, liveDay);
+          persistLiveDays();
         } else {
           liveDay = null;
         }
@@ -1398,6 +1781,16 @@
           })).join('');
       }
 
+      /* A generated paragraph arrives as "Features — …". Lift the label out so
+         it renders as the paragraph's own heading instead of running inline. */
+      const SYN_LABELS = new Set(Object.values(SYNOPSIS_LABELS));
+      function splitSynLabel(para) {
+        const at = String(para || '').indexOf(SYNOPSIS_SEP);
+        if (at <= 0) return { label: '', text: para };
+        const head = para.slice(0, at);
+        if (!SYN_LABELS.has(head)) return { label: '', text: para };
+        return { label: head, text: para.slice(at + SYNOPSIS_SEP.length) };
+      }
       function highlight(text) {
         const safe = esc(text);
         if (!searchTerm) return safe;
@@ -1413,26 +1806,39 @@
         if (!/[.!?…]$/.test(t)) t += '.';
         return t;
       }
-      function entryParagraphs(entry) {
-        if (!entry) return [];
-        if (Array.isArray(entry.synopsis) && entry.synopsis.length) {
-          return entry.synopsis.map((p) => String(p || '').trim()).filter(Boolean);
-        }
-        if (typeof entry.synopsis === 'string' && entry.synopsis.trim()) {
-          return entry.synopsis.split(/\n\n+/).map((p) => p.trim()).filter(Boolean);
-        }
-        // Fallback: group each category's bullets into one flowing paragraph
-        // of full sentences, rather than one short paragraph per bullet (which
-        // reads as a stack of choppy fragments).
+      function parasFromCats(entry) {
         const paras = [];
         CATS.forEach((c) => {
           if (catFilter && c.id !== catFilter) return;
           const arr = entry[c.id];
           if (!Array.isArray(arr) || !arr.length) return;
-          const sentences = arr.map(toSentence).filter(Boolean);
-          if (sentences.length) paras.push(sentences.join(' '));
+          const label = SYNOPSIS_LABELS[c.id] || c.label || '';
+          arr.forEach((raw) => {
+            const s = toSentence(raw);
+            if (s) paras.push(label ? label + SYNOPSIS_SEP + s : s);
+          });
         });
         return paras;
+      }
+      function entryParagraphs(entry) {
+        if (!entry) return [];
+        const fromCats = parasFromCats(entry);
+        let syn = [];
+        if (Array.isArray(entry.synopsis) && entry.synopsis.length) {
+          syn = entry.synopsis.map((p) => String(p || '').trim()).filter(Boolean);
+        } else if (typeof entry.synopsis === 'string' && entry.synopsis.trim()) {
+          syn = entry.synopsis.split(/\n\n+/).map((p) => p.trim()).filter(Boolean);
+        }
+        if (catFilter) {
+          const keep = syn.filter((p) => splitSynLabel(p).label === (SYNOPSIS_LABELS[catFilter] || ''));
+          return keep.length ? keep : fromCats;
+        }
+        /* A one-line synopsis must not hide a day that actually did several
+           things — stack the category sentences instead. Two or more written
+           paragraphs stay as the authored account. */
+        if (syn.length >= 2) return syn;
+        if (fromCats.length > syn.length) return fromCats;
+        return syn;
       }
       function matchesSearch(entry) {
         if (!searchTerm) return true;
@@ -1494,7 +1900,12 @@
         const key = pageAccKey(dayIso, entry);
         const isCollapsed = !expandedPages.has(key);
         const body = paras.length
-          ? `<div class="pl-syn">${paras.map((p) => `<p>${highlight(p)}</p>`).join('')}</div>`
+          ? `<div class="pl-syn">${paras.map((p, i) => {
+              const { label, text } = splitSynLabel(p);
+              const prev = i ? splitSynLabel(paras[i - 1]).label : '';
+              const show = label && label !== prev;
+              return `<p>${show ? `<span class="pl-syn-cat">${esc(label)}</span>` : ''}${highlight(text)}</p>`;
+            }).join('')}</div>`
           : `<p class="pl-pcard-empty">No synopsis written for this surface yet.</p>`;
         return `
           <article class="pl-pcard${entry.isNew ? ' is-new' : ''}${isCollapsed ? ' is-collapsed' : ''}">
@@ -1580,7 +1991,7 @@
         const pages = (day.entries || []).filter((e) => e.path !== '(all HTML files)');
         return 'Evaluated every HTML file on ' + fmtDate(day.date) + '. '
           + pages.length + (pages.length === 1 ? ' surface has' : ' surfaces have')
-          + ' a card below with full feature, UX, UI, and module descriptions — not byte counts or heading tallies.';
+          + ' a card below saying, in plain language, what was built: features, logic, UX, and UI.';
       }
       function upsertEvalNote(dayIso, text, scope) {
         const now = new Date().toISOString();
@@ -1645,11 +2056,13 @@
 
       /* ── Live page crawl ──────────────────────────────────────────────
          Re-evaluate opens every HTML file every time (catalog + directory
-         listing + extras), inventories features / UX / modules / scripts /
-         chips, and diffs against a frozen start-of-day baseline. The live
-         day is rebuilt from that same baseline on every pass so the cards
-         stay identical until the files themselves move. Byte counts are
-         supporting context only. */
+         listing + extras) plus the scripts those pages load, inventories
+         features / logic / UX / UI, and diffs against a frozen start-of-day
+         baseline. Each changed file is attributed to the calendar day it was
+         last saved — not dumped onto today — and that day is frozen so
+         midnight cannot blank it. Cards never report file sizes or byte
+         deltas — only what a reader would notice. The amount that landed
+         that day drives how much the card says. */
       let lastCrawlAt = 0;
       let crawlBusy = false;
       let lastCrawlFileCount = catalogHtmlPaths().length + SHARED_SCRIPTS.length;
@@ -1664,7 +2077,46 @@
           return fp;
         } catch (_) { return { path, missing: true }; }
       }
-      async function resolveCrawlFiles() {
+      /* When a page starts or stops loading a shared script, the card has to
+         say what that script DOES, not name the file. Purposes come from the
+         script's own header comment — read once per script, then cached. */
+      const purposeCache = new Map();
+      async function readScriptPurposes(srcs) {
+        const wanted = [...new Set((srcs || []).filter(Boolean))]
+          .filter((s) => /\.js$/i.test(s) && !/^(?:https?:)?\/\//.test(s));
+        const out = {};
+        await Promise.all(wanted.map(async (src) => {
+          if (purposeCache.has(src)) { out[src] = purposeCache.get(src); return; }
+          let purpose = '';
+          try {
+            const url = (src.startsWith('/') ? src : '../' + src) + '?plc=' + Date.now();
+            const res = await fetch(url, { cache: 'no-store' });
+            if (res.ok) purpose = scriptPurpose(await res.text());
+          } catch (_) { /* offline or missing — fall back to the plain name */ }
+          purposeCache.set(src, purpose);
+          out[src] = purpose;
+        }));
+        return out;
+      }
+      /* Scripts we already fetched as part of the crawl describe themselves. */
+      function purposesFromCrawl(cur) {
+        const out = {};
+        (cur || []).forEach((fp) => {
+          if (fp && fp.purpose) out[displayPath(fp.path)] = fp.purpose;
+        });
+        return out;
+      }
+      function diffedScriptSrcs(diff) {
+        const srcs = [];
+        (diff.changed || []).forEach(({ fp, before }) => {
+          const prev = new Set((before && before.scripts) || []);
+          const now = new Set(fp.scripts || []);
+          now.forEach((s) => { if (!prev.has(s)) srcs.push(s); });
+          prev.forEach((s) => { if (!now.has(s)) srcs.push(s); });
+        });
+        return srcs;
+      }
+      async function resolveHtmlFiles() {
         const html = await discoverHtmlPaths(async (url) => {
           const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'plc=' + Date.now(), { cache: 'no-store' });
           if (!res.ok) return '';
@@ -1672,7 +2124,7 @@
         });
         const seen = new Set();
         const files = [];
-        html.concat(SHARED_SCRIPTS).forEach((p) => {
+        html.forEach((p) => {
           if (!p || seen.has(p)) return;
           seen.add(p);
           files.push(p);
@@ -1716,7 +2168,7 @@
               headings: fp.headings, modules: fp.modules, scripts: fp.scripts,
               chips: fp.chips, buttons: fp.buttons, signals: fp.signals,
               functions: fp.functions, classes: fp.classes, copy: fp.copy,
-              hasChat: fp.hasChat, kind: fp.kind,
+              purpose: fp.purpose, hasChat: fp.hasChat, kind: fp.kind,
             };
           });
           return out;
@@ -1741,13 +2193,12 @@
       }
       function liveDaySummary(day, htmlCount) {
         const names = (day.entries || []).filter((e) => e.path !== '(all HTML files)').map((e) => e.page);
-        const n = htmlCount || 0;
         if (!names.length) {
-          return 'Evaluated every HTML file' + (n ? ' (' + n + ')' : '') + '. No disk changes versus the start-of-day baseline.';
+          return 'Opened every page and the scripts they load. Nothing on disk moved versus the start-of-day baseline.';
         }
-        return 'Evaluated every HTML file' + (n ? ' (' + n + ')' : '') + '. '
-          + names.length + (names.length === 1 ? ' surface has' : ' surfaces have')
-          + ' full feature, UX, UI, and module details below.';
+        return names.length + (names.length === 1 ? ' surface is' : ' surfaces are')
+          + ' broken down below in plain language — features, logic, UX, and UI'
+          + (htmlCount ? ' — after opening every HTML file.' : '.');
       }
       function entryFromCats(fp, cats, isNew) {
         const entry = { page: fileLabel(fp.path, fp.title), path: displayPath(fp.path) };
@@ -1759,47 +2210,93 @@
         if (syn.length) entry.synopsis = syn;
         return entry;
       }
-      function rebuildLiveDay(diff, htmlCount) {
-        syncBoardLog();
-        if (!liveDay) return false;
+      function fileMtimeDay(fp) {
+        const today = localDayIso();
+        if (!fp || !fp.mtime) return today;
+        const iso = localDayIso(new Date(fp.mtime));
+        if (iso > today) return today;
+        const first = AUTHORED.length ? AUTHORED[AUTHORED.length - 1].date : today;
+        if (first && iso < first) return first;
+        return iso;
+      }
+      function entriesFromBucket(added, changed, ctx) {
         const next = [];
-        (diff.added || []).forEach((fp) => {
-          const cats = describeInventoryDiff(fp, null);
+        (added || []).forEach((fp) => {
+          const cats = describeInventoryDiff(fp, null, ctx);
           if (catsHaveItems(cats)) next.push(entryFromCats(fp, cats, true));
         });
-        (diff.changed || []).forEach(({ fp, before }) => {
-          const cats = describeInventoryDiff(fp, before);
+        (changed || []).forEach(({ fp, before }) => {
+          const cats = describeInventoryDiff(fp, before, ctx);
           if (catsHaveItems(cats)) next.push(entryFromCats(fp, cats, false));
         });
         next.sort((a, b) => String(a.page).localeCompare(String(b.page)) || String(a.path).localeCompare(String(b.path)));
-        const unchangedHtml = (diff.unchanged || []).filter((fp) => isHtmlPath(fp.path));
-        if (unchangedHtml.length) {
-          const names = unchangedHtml.map((fp) => fileLabel(fp.path, fp.title)).sort((a, b) => a.localeCompare(b));
-          const scope = emptyCats();
-          scope.updates.push(
-            'Evaluated every HTML file on this pass. Unchanged from the start of today: '
-            + oxford(names) + '.'
-          );
-          next.push({ page: 'All HTML files', path: '(all HTML files)', updates: scope.updates });
-        }
-        liveDay.entries = next;
-        liveDay.summary = liveDaySummary(liveDay, htmlCount);
-        persistLiveDay();
-        syncBoardLog();
+        return next;
+      }
+      function writeLiveDay(iso, entries, htmlCount) {
+        if (AUTHORED_DATES.has(iso)) return false;
+        const today = localDayIso();
+        if (iso !== today && !entries.length) return false;
+        if (!liveDays[iso]) liveDays[iso] = emptyLiveDay(iso);
+        const day = liveDays[iso];
+        day.entries = entries;
+        day.summary = liveDaySummary(day, htmlCount);
+        day.live = true;
+        day.gap = false;
+        if (iso === today) liveDay = day;
+        persistLiveDays();
         return true;
+      }
+      function rebuildDaysFromDiff(diff, htmlCount, ctx) {
+        syncBoardLog();
+        const today = localDayIso();
+        const buckets = new Map();
+        const bucketFor = (iso) => {
+          if (!buckets.has(iso)) buckets.set(iso, { added: [], changed: [] });
+          return buckets.get(iso);
+        };
+        (diff.added || []).forEach((fp) => bucketFor(fileMtimeDay(fp)).added.push(fp));
+        (diff.changed || []).forEach((pair) => bucketFor(fileMtimeDay(pair.fp)).changed.push(pair));
+        let mutated = false;
+        buckets.forEach((b, iso) => {
+          const entries = entriesFromBucket(b.added, b.changed, ctx);
+          if (iso === today) {
+            mutated = writeLiveDay(iso, entries, htmlCount) || mutated;
+          } else if (entries.length) {
+            mutated = writeLiveDay(iso, entries, htmlCount) || mutated;
+          }
+        });
+        if (!buckets.has(today) && !AUTHORED_DATES.has(today)) {
+          mutated = writeLiveDay(today, [], htmlCount) || mutated;
+        }
+        syncBoardLog();
+        return mutated;
       }
       function diffAgainstBaseline(baseline, cur) {
         const prevMap = baseline || {};
         const curMap = {};
+        const today = localDayIso();
         cur.forEach((fp) => { if (!fp.missing) curMap[fp.path] = fp; });
         const added = [], changed = [], unchanged = [], unreachable = [];
         const hasBaseline = !!(baseline && Object.keys(baseline).length);
         cur.forEach((fp) => {
           if (fp.missing) { unreachable.push(fp.path); return; }
           const before = prevMap[fp.path];
-          if (!hasBaseline) { unchanged.push(fp); return; }
-          if (!before) added.push(fp);
-          else if (before.hash !== fp.hash) changed.push({ fp, before });
+          if (!hasBaseline) {
+            /* No prior snapshot: we can still see which files were last saved
+               today. Card them so the day cannot go blank; without a before-
+               image the description is the surface as it stands, not a delta. */
+            if (fileMtimeDay(fp) === today) added.push(fp);
+            else unchanged.push(fp);
+            return;
+          }
+          if (!before) {
+            /* Newly tracked, not newly created: older files join the snapshot
+               silently. A file last saved today is treated as added. */
+            if (fileMtimeDay(fp) !== today) unchanged.push(fp);
+            else added.push(fp);
+            return;
+          }
+          if (before.hash !== fp.hash) changed.push({ fp, before });
           else unchanged.push(fp);
         });
         return { added, changed, unchanged, unreachable, curMap, firstBaseline: !hasBaseline };
@@ -1817,19 +2314,29 @@
           syncBoardLog();
           notes = loadNotes();
           dropJournalNotes();
-          const files = await resolveCrawlFiles();
+          const htmlFiles = await resolveHtmlFiles();
+          setCrawlBusyUi(true, htmlFiles.length);
+          const htmlCur = await crawlAllPages(htmlFiles);
+          const scriptFiles = collectLocalScriptPaths(htmlCur, SHARED_SCRIPTS)
+            .filter((p) => htmlFiles.indexOf(p) < 0);
+          const extraCur = scriptFiles.length ? await crawlAllPages(scriptFiles) : [];
+          const cur = htmlCur.concat(extraCur);
+          const files = htmlFiles.concat(scriptFiles);
+          lastCrawlFileCount = files.length;
           setCrawlBusyUi(true, files.length);
-          const cur = await crawlAllPages(files);
           const prev = loadCrawlSnap();
           const todayIso = localDayIso();
           const baseline = dayStartMap(prev, todayIso);
           const diff = diffAgainstBaseline(baseline, cur);
-          const htmlCount = files.filter(isHtmlPath).length;
-          const mutated = rebuildLiveDay(diff, htmlCount);
+          const htmlCount = htmlFiles.length;
+          const scriptPurposes = Object.assign(
+            purposesFromCrawl(cur),
+            await readScriptPurposes(diffedScriptSrcs(diff)),
+          );
+          const mutated = rebuildDaysFromDiff(diff, htmlCount, { scriptPurposes });
           const overview = diff.firstBaseline
-            ? ('Evaluated every HTML file (' + htmlCount + ') plus ' + SHARED_SCRIPTS.length
-              + ' shared scripts. First inventory saved as today’s baseline — the next Re-evaluate will describe features, UX, UI, and modules against this snapshot.')
-            : crawlOverview(htmlCount, SHARED_SCRIPTS.length, diff, (fp) => fileLabel(fp.path, fp.title));
+            ? ('Opened every HTML file (' + htmlCount + ') plus the scripts they load. First inventory saved as today’s baseline — the next Re-evaluate will describe the features, logic, UX, and UI that changed against this snapshot.')
+            : crawlOverview(htmlCount, scriptFiles.length, diff, (fp) => fileLabel(fp.path, fp.title));
           upsertEvalNote(todayIso, overview, 'crawl');
           if (mutated && liveDay) upsertEvalNote(todayIso, dayEvalNote(liveDay), 'day');
           persistNotes();
