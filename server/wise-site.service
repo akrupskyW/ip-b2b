@@ -11,6 +11,9 @@ WorkingDirectory=/home/ubuntu/wisealliance/server
 # whole deploy. Comments live outside the checkout so pulling never touches them.
 Environment=WISE_FEEDBACK_STATIC=/home/ubuntu/wisealliance
 Environment=WISE_FEEDBACK_DB=/home/ubuntu/wise-feedback/comments.db
+# A local checkout writes to this same store, so notes left while working
+# locally and notes left by reviewers on the server are one shared thread.
+Environment=WISE_FEEDBACK_ALLOW_LOCALHOST=1
 EnvironmentFile=/home/ubuntu/wise-feedback/secret.env
 ExecStart=/home/ubuntu/wise-feedback/venv/bin/gunicorn \
     --workers 2 \

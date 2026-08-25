@@ -88,7 +88,37 @@ curl -s "http://127.0.0.1:4144/api/feedback/comments?page=/pages/add-product.htm
 | DELETE | `/api/feedback/comments/<id>` | yes | Delete a thread |
 
 Dates are stamped server-side in UTC, so a reviewer's wrong system clock can't
-skew a thread. Posts are rate limited to 20 per IP per minute.
+skew a thread. The one exception is a note replayed from the offline queue,
+which keeps its original client timestamp if it is neither in the future nor
+more than 90 days old — otherwise a backlog would all land at once at the top
+of the thread. Posts are rate limited to 20 per IP per minute.
+
+## One store, wherever you are
+
+There is a single comment database, on the server. A local checkout writes to
+that same database, so a note left while working locally and a note left by a
+reviewer on the deployed site are one shared thread — open either and you see
+both.
+
+The widget works out where to send things by asking rather than guessing. On
+load it probes `/api/feedback/health` on its own origin:
+
+- **Deployed** — the API answers, so it is used directly.
+- **Local checkout on a plain static server** (`python3 -m http.server`,
+  `dev_server.py`) — nothing answers, so it falls back to the deployed API at
+  `window.WISE_FEEDBACK_REMOTE` (default `http://3.17.180.155:4144`). This is
+  cross-origin, which is why the service sets
+  `WISE_FEEDBACK_ALLOW_LOCALHOST=1`.
+- **Local checkout on `feedback_api.py`** — the API answers on its own origin,
+  so it is used and nothing goes to the deployed server.
+
+If the server cannot be reached at all, a note is parked in a local queue and
+its pin is drawn with a dashed amber ring. The queue is replayed on the next
+load that gets through, and in the background when the tab regains focus or
+the network returns — nothing is stranded in one browser.
+
+Comments are deliberately **not** in git. They are feedback *about* the code,
+not part of it, so `git pull` never touches them and there is nothing to merge.
 
 ## Local testing
 
@@ -104,7 +134,10 @@ WISE_FEEDBACK_STATIC="$PWD" \
 PORT=8770 python3 server/feedback_api.py
 ```
 
-Then open <http://127.0.0.1:8770/pages/wiseai.html> and press C.
+Then open <http://127.0.0.1:8770/pages/wiseai.html> and press C. Note this uses
+a throwaway database, so these notes stay local — that is the point of the
+probe. To write to the real shared store instead, serve the pages with any
+static server and let the widget fall back to the deployed API.
 
 To drive the whole flow headlessly — press C, click, post, reply — in both
 themes and capture screenshots to `/tmp/wise-feedback-shots`:
@@ -113,12 +146,23 @@ themes and capture screenshots to `/tmp/wise-feedback-shots`:
 python3 scripts/verify_feedback.py
 ```
 
+To prove notes actually flow both ways — local to server, server to local,
+queued while offline, replayed on reconnect, and old stranded notes rescued —
+run a static server on 8099 and the API on 8770, then:
+
+```bash
+python3 scripts/verify_feedback_sync.py
+```
+
 ## Configuration
 
 | Env var | Default | Meaning |
 |---|---|---|
 | `WISE_FEEDBACK_DB` | `/var/lib/wise-feedback/comments.db` | SQLite file |
 | `WISE_FEEDBACK_KEY` | *(empty)* | Admin secret; empty disables admin entirely |
-| `WISE_FEEDBACK_ORIGIN` | *(empty)* | Set only when the API is on another origin |
+| `WISE_FEEDBACK_ORIGIN` | *(empty)* | Extra allowed origins, comma separated |
+| `WISE_FEEDBACK_ALLOW_LOCALHOST` | *(empty)* | `1` lets a local checkout on any `localhost`/`127.0.0.1` port write to this store |
 
-The widget reads `window.WISE_FEEDBACK_API` (default `/api/feedback`).
+On the widget side, `window.WISE_FEEDBACK_API` pins the API base outright and
+`window.WISE_FEEDBACK_REMOTE` sets the host to fall back to when there is no
+same-origin API. Set either before `js/feedback.js` loads.

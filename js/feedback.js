@@ -30,13 +30,50 @@
   window.__wiseFeedbackReady = true;
 
   /* ── Config ──────────────────────────────────────────────────────────────
-     Same-origin by default; nginx proxies /api/feedback to the Flask service.
-     Override before this script loads with:
-       <script>window.WISE_FEEDBACK_API = 'https://example.com/api/feedback';</script> */
+     There is ONE comment store, on the deployed server, and both the deployed
+     site and a local checkout talk to it. That is the whole point: a note left
+     while working locally has to reach the same place as one left by a
+     reviewer on the server, or the two views disagree.
+
+     Deployed, the API is same-origin. Locally the site is served by a plain
+     static server (`python3 -m http.server`, dev_server.py) that has no API at
+     all, so point at the deployed one instead. Override either with:
+       <script>window.WISE_FEEDBACK_API = 'http://host:4144/api/feedback';</script>
+       <script>window.WISE_FEEDBACK_REMOTE = 'http://host:4144';</script> */
+  var REMOTE = window.WISE_FEEDBACK_REMOTE || 'http://3.17.180.155:4144';
+
+  /* Which API to talk to is answered by asking, not by guessing from the
+     hostname: a local checkout may be served by a static server with no API
+     (fall back to the deployed one) or by feedback_api.py itself, which does
+     have one (use it). Probed once, then reused for the session. */
   var API = window.WISE_FEEDBACK_API || '/api/feedback';
+  var apiProbe = null;
+
+  function apiBase() {
+    if (apiProbe) return apiProbe;
+    if (window.WISE_FEEDBACK_API) {
+      apiProbe = Promise.resolve(API);
+      return apiProbe;
+    }
+    apiProbe = fetch('/api/feedback/health').then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function () {
+      API = '/api/feedback';
+      return API;
+    }).catch(function () {
+      API = REMOTE + '/api/feedback';
+      return API;
+    });
+    return apiProbe;
+  }
+
   var LS_NAME = 'wise-feedback-name';
   var LS_KEY = 'wise-feedback-key';
-  var LS_LOCAL = 'wise-feedback-local';
+  /* Anything written while the API was unreachable, waiting to be sent up. */
+  var LS_QUEUE = 'wise-feedback-queue';
+  /* The old local-only store, drained into the queue on first sight. */
+  var LS_DATA = 'wise-feedback-data';
 
   var CHIPS = [
     { id: 'bug', label: 'Bug' },
@@ -70,11 +107,17 @@
   function lsGet(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { window.localStorage.setItem(k, v); } catch (e) { /* private mode */ } }
 
-  /* Page identity. Comments are scoped to a path, so the same page served from
-     a sub-directory on the server still groups correctly. */
+  /* Page identity, normalised so the SAME page groups together however it was
+     opened: /pages/wiseai.html on the server, on localhost:8099, or as a long
+     file:///Users/... path in a local checkout. Keyed from /pages/ onward, or
+     on the bare filename for the root-level pages. */
   function pageKey() {
     var p = location.pathname || '/';
     if (p.charAt(p.length - 1) === '/') p += 'index.html';
+    var pages = p.indexOf('/pages/');
+    if (pages !== -1) return p.slice(pages);
+    var slash = p.lastIndexOf('/');
+    if (slash !== -1) return '/' + p.slice(slash + 1);
     return p;
   }
 
@@ -160,90 +203,208 @@
   }
 
   /* ── Store ───────────────────────────────────────────────────────────────
-     Talks to the API, and transparently falls back to localStorage the first
-     time a request fails so the widget still works undeployed. */
-  var Store = (function () {
-    var local = lsGet(LS_LOCAL) === '1';
-    var LS_DATA = 'wise-feedback-data';
+     The server is the only source of truth. When it cannot be reached a write
+     is parked in a local queue and replayed on the next load that gets
+     through, so a note written on a plane still lands in the shared store
+     rather than being stranded in one browser.
 
-    function readLocal() {
-      try { return JSON.parse(lsGet(LS_DATA) || '[]'); } catch (e) { return []; }
+     Deliberately NOT sticky: an earlier version latched a permanent
+     "local mode" flag on the first failed request, which meant a browser that
+     ever saw a 404 never spoke to the API again. Reachability is re-tested on
+     every load. */
+  var Store = (function () {
+    var offline = false;
+
+    function readQueue() {
+      try { return JSON.parse(lsGet(LS_QUEUE) || '[]'); } catch (e) { return []; }
     }
-    function writeLocal(rows) { lsSet(LS_DATA, JSON.stringify(rows)); }
-    function goLocal() { local = true; lsSet(LS_LOCAL, '1'); }
+    function writeQueue(q) { lsSet(LS_QUEUE, JSON.stringify(q)); }
+    function push(op) { var q = readQueue(); q.push(op); writeQueue(q); return op; }
+    function localId(p) { return p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
     function req(path, opts) {
       opts = opts || {};
       var headers = { 'Content-Type': 'application/json' };
       var key = lsGet(LS_KEY);
       if (key) headers['X-Feedback-Key'] = key;
-      return fetch(API + path, {
-        method: opts.method || 'GET',
-        headers: headers,
-        body: opts.body ? JSON.stringify(opts.body) : undefined
+      return apiBase().then(function (base) {
+        return fetch(base + path, {
+          method: opts.method || 'GET',
+          headers: headers,
+          body: opts.body ? JSON.stringify(opts.body) : undefined
+        });
       }).then(function (r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
       });
     }
 
+    /* Comments written by the old local-only fallback. Fold them into the
+       queue once so nothing written before this fix is lost. */
+    function drainLegacy() {
+      var rows;
+      try { rows = JSON.parse(lsGet(LS_DATA) || '[]'); } catch (e) { rows = []; }
+      if (!rows.length) return;
+      var q = readQueue();
+      rows.forEach(function (c) {
+        var lid = c.id || localId('l');
+        q.push({ kind: 'comment', id: lid, data: {
+          page: c.page, selector: c.selector, fx: c.fx, fy: c.fy,
+          chip: c.chip, text: c.text, author: c.author, url: c.url,
+          viewport_w: c.viewport_w, viewport_h: c.viewport_h,
+          created_at: c.created_at
+        } });
+        (c.replies || []).forEach(function (r) {
+          q.push({ kind: 'reply', commentId: lid, data: { author: r.author, text: r.text, created_at: r.created_at } });
+        });
+      });
+      writeQueue(q);
+      lsSet(LS_DATA, '[]');
+    }
+
+    /* Replay parked writes oldest-first. A reply may point at a comment that
+       is itself still queued, so remember each local id -> server id as we go.
+       Anything that fails stays queued for the next attempt. */
+    function flush() {
+      var q = readQueue();
+      if (!q.length) return Promise.resolve(false);
+      var idMap = {};
+      var left = [];
+      var chain = Promise.resolve();
+      q.forEach(function (op) {
+        chain = chain.then(function () {
+          if (op.kind === 'comment') {
+            return req('/comments', { method: 'POST', body: op.data }).then(function (saved) {
+              idMap[op.id] = saved.id;
+            });
+          }
+          var cid = idMap[op.commentId] || op.commentId;
+          return req('/comments/' + encodeURIComponent(cid) + '/replies', { method: 'POST', body: op.data });
+        }).catch(function () { left.push(op); });
+      });
+      return chain.then(function () {
+        writeQueue(left);
+        return left.length !== q.length;
+      });
+    }
+
+    /* Queued writes rendered in the same shape the API returns, so a pending
+       pin looks and behaves like any other until it syncs. */
+    function pending(page) {
+      var q = readQueue();
+      var byId = {};
+      var out = [];
+      q.forEach(function (op) {
+        if (op.kind !== 'comment') return;
+        if (page && op.data.page !== page) return;
+        var c = {};
+        for (var k in op.data) c[k] = op.data[k];
+        c.id = op.id;
+        c.created_at = op.data.created_at || new Date().toISOString();
+        c.replies = [];
+        c.resolved = 0;
+        c.pending = true;
+        byId[op.id] = c;
+        out.push(c);
+      });
+      q.forEach(function (op) {
+        if (op.kind !== 'reply') return;
+        var c = byId[op.commentId];
+        if (!c) return;
+        var r = {};
+        for (var k in op.data) r[k] = op.data[k];
+        r.pending = true;
+        c.replies.push(r);
+      });
+      return out;
+    }
+
+    /* Replies parked against comments that already live on the server. */
+    function mergePendingReplies(rows) {
+      var q = readQueue();
+      if (!q.length) return rows;
+      var byId = {};
+      rows.forEach(function (c) { byId[c.id] = c; });
+      q.forEach(function (op) {
+        if (op.kind !== 'reply') return;
+        var c = byId[op.commentId];
+        if (!c) return;
+        var r = {};
+        for (var k in op.data) r[k] = op.data[k];
+        r.pending = true;
+        (c.replies = c.replies || []).push(r);
+      });
+      return rows;
+    }
+
+    function sync() {
+      drainLegacy();
+      return flush().catch(function () { return false; });
+    }
+
     return {
-      isLocal: function () { return local; },
+      isLocal: function () { return offline; },
+      pendingCount: function () { return readQueue().length; },
       list: function (page) {
-        if (local) {
-          return Promise.resolve(readLocal().filter(function (c) { return c.page === page; }));
-        }
-        return req('/comments?page=' + encodeURIComponent(page)).catch(function () {
-          goLocal();
-          return readLocal().filter(function (c) { return c.page === page; });
+        return sync().then(function () {
+          return req('/comments?page=' + encodeURIComponent(page));
+        }).then(function (rows) {
+          offline = false;
+          return mergePendingReplies(rows).concat(pending(page));
+        }).catch(function () {
+          offline = true;
+          return pending(page);
         });
       },
       listAll: function () {
-        if (local) return Promise.resolve(readLocal());
-        return req('/comments/all').catch(function () { goLocal(); return readLocal(); });
+        return sync().then(function () {
+          return req('/comments/all');
+        }).then(function (rows) {
+          offline = false;
+          return mergePendingReplies(rows).concat(pending(null));
+        }).catch(function () {
+          offline = true;
+          return pending(null);
+        });
       },
       add: function (c) {
-        if (local) {
-          c.id = 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-          c.created_at = new Date().toISOString();
-          c.replies = [];
-          c.resolved = 0;
-          var rows = readLocal(); rows.push(c); writeLocal(rows);
-          return Promise.resolve(c);
-        }
-        return req('/comments', { method: 'POST', body: c }).catch(function () {
-          goLocal();
-          return Store.add(c);
+        return req('/comments', { method: 'POST', body: c }).then(function (saved) {
+          offline = false;
+          return saved;
+        }).catch(function () {
+          offline = true;
+          var op = push({ kind: 'comment', id: localId('l'), data: c });
+          var row = {};
+          for (var k in c) row[k] = c[k];
+          row.id = op.id;
+          row.created_at = new Date().toISOString();
+          row.replies = [];
+          row.resolved = 0;
+          row.pending = true;
+          return row;
         });
       },
       reply: function (id, r) {
-        if (local) {
-          var rows = readLocal();
-          for (var i = 0; i < rows.length; i++) {
-            if (rows[i].id === id) {
-              r.id = 'r' + Date.now().toString(36);
-              r.created_at = new Date().toISOString();
-              (rows[i].replies = rows[i].replies || []).push(r);
-            }
-          }
-          writeLocal(rows);
-          return Promise.resolve(r);
-        }
         return req('/comments/' + encodeURIComponent(id) + '/replies', { method: 'POST', body: r })
-          .catch(function () { goLocal(); return Store.reply(id, r); });
+          .then(function (saved) { offline = false; return saved; })
+          .catch(function () {
+            offline = true;
+            push({ kind: 'reply', commentId: id, data: r });
+            var row = {};
+            for (var k in r) row[k] = r[k];
+            row.created_at = new Date().toISOString();
+            row.pending = true;
+            return row;
+          });
       },
       resolve: function (id, val) {
-        if (local) {
-          var rows = readLocal();
-          rows.forEach(function (c) { if (c.id === id) c.resolved = val ? 1 : 0; });
-          writeLocal(rows);
-          return Promise.resolve({ ok: true });
-        }
         return req('/comments/' + encodeURIComponent(id) + '/resolve', { method: 'POST', body: { resolved: val ? 1 : 0 } });
       },
       remove: function (id) {
-        if (local) {
-          writeLocal(readLocal().filter(function (c) { return c.id !== id; }));
+        if (String(id).charAt(0) === 'l') {
+          writeQueue(readQueue().filter(function (op) {
+            return op.id !== id && op.commentId !== id;
+          }));
           return Promise.resolve({ ok: true });
         }
         return req('/comments/' + encodeURIComponent(id), { method: 'DELETE' });
@@ -316,7 +477,9 @@
     '.wnote-pin:hover{transform:scale(1.16);}',
     '.wnote-pin.is-open{transform:scale(1.16);box-shadow:0 0 0 4px rgba(37,80,124,.28),0 2px 8px rgba(17,24,39,.35);}',
     '.wnote-pin.is-resolved{opacity:.45;}',
+    '.wnote-pin.is-pending{border-style:dashed;border-color:#f59e0b;}',
     'html.dark .wnote-pin{border-color:rgba(255,255,255,.55);}',
+    'html.dark .wnote-pin.is-pending{border-color:#fbbf24;}',
 
     /* Popups (composer + thread) */
     '.wnote-pop{position:fixed;width:320px;max-width:calc(100vw - 24px);pointer-events:auto;',
@@ -812,9 +975,14 @@
       });
     }
     var note = panel.querySelector('.wnote-note');
+    var waiting = Store.pendingCount();
     if (Store.isLocal()) {
       note.innerHTML = 'Press <strong>C</strong>, then click the exact spot you want to talk about.' +
-        '<br><em>Saved in this browser only — the comment server is not reachable.</em>';
+        '<br><em>Comment server unreachable — ' + (waiting || 'new') + ' note' +
+        (waiting === 1 ? '' : 's') + ' held here and sent up automatically once it answers.</em>';
+    } else if (waiting) {
+      note.innerHTML = 'Press <strong>C</strong>, then click the exact spot you want to talk about.' +
+        '<br><em>' + waiting + ' note' + (waiting === 1 ? '' : 's') + ' still waiting to sync.</em>';
     }
   }
 
@@ -837,8 +1005,10 @@
       }
       pin.textContent = String(i + 1);
       pin.style.background = chipColor(c.chip);
-      pin.title = (CHIP_LABEL[c.chip] || 'Comment') + ' — ' + c.author;
+      pin.title = (CHIP_LABEL[c.chip] || 'Comment') + ' — ' + c.author +
+        (c.pending ? ' (waiting to sync)' : '');
       pin.classList.toggle('is-resolved', !!c.resolved);
+      pin.classList.toggle('is-pending', !!c.pending);
     });
     Object.keys(pins).forEach(function (id) {
       if (!seen[id]) { pins[id].remove(); delete pins[id]; }
@@ -883,19 +1053,33 @@
   setInterval(function () { layout(); maybeAvoid(); }, 500);
 
   /* ── Boot ────────────────────────────────────────────────────────────── */
-  function start() {
-    injectCss();
-    build();
-    Store.list(pageKey()).then(function (rows) {
+  function load() {
+    return Store.list(pageKey()).then(function (rows) {
       comments = rows || [];
       comments.sort(function (a, b) { return String(a.created_at).localeCompare(String(b.created_at)); });
       render();
     });
+  }
+
+  function start() {
+    injectCss();
+    build();
+    load();
     /* Page chrome arrives late on several flows, so re-check the corner once
        the first paint settles and again after the shell has injected its nav. */
     setTimeout(avoidChrome, 400);
     setTimeout(avoidChrome, 1800);
     window.addEventListener('resize', avoidChrome);
+
+    /* Retry parked writes without needing a reload: when the network comes
+       back, when the tab is looked at again, and on a slow background beat. */
+    window.addEventListener('online', load);
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden && (Store.isLocal() || Store.pendingCount())) load();
+    });
+    setInterval(function () {
+      if (Store.isLocal() || Store.pendingCount()) load();
+    }, 30000);
   }
 
   if (document.readyState === 'loading') {
@@ -907,10 +1091,11 @@
   window.WiseFeedback = {
     open: function () { if (!panelOpen) togglePanel(); },
     arm: function () { setArmed(true); },
-    refresh: function () {
-      Store.list(pageKey()).then(function (rows) { comments = rows || []; render(); });
-    },
+    refresh: load,
     isAdmin: function () { return admin; },
-    isLocal: function () { return Store.isLocal(); }
+    isLocal: function () { return Store.isLocal(); },
+    pending: function () { return Store.pendingCount(); },
+    api: function () { return API; },
+    pageKey: pageKey
   };
 })();

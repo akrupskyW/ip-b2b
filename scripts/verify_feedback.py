@@ -167,7 +167,11 @@ def main():
             "addEventListener('error',function(e){__errs.push((e.message||'')+' @ '+(e.filename||'')+':'+(e.lineno||''))});"
             "addEventListener('unhandledrejection',function(e){__errs.push('promise: '+(e.reason&&e.reason.message||e.reason))});"
             "try{localStorage.setItem('wise-theme',%s);localStorage.setItem('chat-theme',%s);"
-            "localStorage.removeItem('wise-feedback-local');}catch(e){}"
+            "localStorage.removeItem('wise-feedback-local');"
+            # Leftover unsynced notes would place a stray pin on the click point
+            # and open a thread instead of the composer.
+            "localStorage.removeItem('wise-feedback-queue');"
+            "localStorage.removeItem('wise-feedback-data');}catch(e){}"
         ) % (json.dumps(theme), json.dumps(theme))
         if theme == "dark":
             init += "document.addEventListener('DOMContentLoaded',function(){document.documentElement.classList.add('dark')});"

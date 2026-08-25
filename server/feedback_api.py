@@ -27,9 +27,17 @@ from flask import Flask, g, jsonify, request
 
 DB_PATH = os.environ.get("WISE_FEEDBACK_DB", "/var/lib/wise-feedback/comments.db")
 ADMIN_KEY = os.environ.get("WISE_FEEDBACK_KEY", "")
-# Set to a site origin (e.g. "https://wise.example.com") only if the API is
-# served from a different host than the pages. Same-origin needs no CORS.
-ALLOW_ORIGIN = os.environ.get("WISE_FEEDBACK_ORIGIN", "")
+# Extra site origins allowed to call the API, comma separated. The deployed
+# site is same-origin and needs none of this; it exists so a local checkout
+# (served by a plain static server on some port) writes to the SAME store
+# instead of stranding notes in one browser.
+ALLOW_ORIGINS = {
+    o.strip() for o in os.environ.get("WISE_FEEDBACK_ORIGIN", "").split(",") if o.strip()
+}
+# Accept http://localhost:* and http://127.0.0.1:* whatever port the local
+# static server happens to be on. Off unless explicitly enabled.
+ALLOW_LOCALHOST = os.environ.get("WISE_FEEDBACK_ALLOW_LOCALHOST", "") == "1"
+_LOCALHOST_RE = re.compile(r"^https?://(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$")
 
 MAX_TEXT = 4000
 MAX_NAME = 80
@@ -94,6 +102,28 @@ def close_db(_exc):
 # ── Helpers ────────────────────────────────────────────────────────────────
 def now_iso():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def written_at(value):
+    """Timestamp for a note, preferring the server clock.
+
+    A note written while the API was unreachable is replayed later, so it may
+    legitimately carry an older client timestamp; keeping it stops a backlog
+    from all landing at once at the top of the thread. Anything in the future
+    or absurdly old is a wrong client clock, so fall back to now.
+    """
+    if not isinstance(value, str) or not value:
+        return now_iso()
+    try:
+        stamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return now_iso()
+    if stamp.tzinfo is None:
+        stamp = stamp.replace(tzinfo=timezone.utc)
+    now = datetime.now(timezone.utc)
+    if stamp > now or (now - stamp).days > 90:
+        return now_iso()
+    return stamp.astimezone(timezone.utc).isoformat(timespec="seconds")
 
 
 def clean(value, limit):
@@ -183,12 +213,25 @@ def rate_limited():
     return len(hits) > POST_LIMIT
 
 
+def origin_allowed(origin: str) -> bool:
+    if not origin:
+        return False
+    if origin in ALLOW_ORIGINS:
+        return True
+    return ALLOW_LOCALHOST and bool(_LOCALHOST_RE.match(origin))
+
+
 @app.after_request
 def cors(resp):
-    if ALLOW_ORIGIN:
-        resp.headers["Access-Control-Allow-Origin"] = ALLOW_ORIGIN
+    origin = request.headers.get("Origin", "")
+    if origin_allowed(origin):
+        # Echo the caller rather than "*": the allowlist is the gate, and an
+        # echoed origin keeps the door open to credentialed requests later.
+        resp.headers["Access-Control-Allow-Origin"] = origin
+        resp.headers["Vary"] = "Origin"
         resp.headers["Access-Control-Allow-Headers"] = "Content-Type, X-Feedback-Key"
         resp.headers["Access-Control-Allow-Methods"] = "GET, POST, DELETE, OPTIONS"
+        resp.headers["Access-Control-Max-Age"] = "86400"
     return resp
 
 
@@ -250,8 +293,7 @@ def add_comment():
         "chip": chip,
         "text": text,
         "author": author,
-        # Server clock, so a reviewer's wrong system time cannot skew the thread.
-        "created_at": now_iso(),
+        "created_at": written_at(data.get("created_at")),
         "resolved": 0,
     }
     conn = db()
@@ -286,7 +328,7 @@ def add_reply(cid):
         "comment_id": cid,
         "author": author,
         "text": text,
-        "created_at": now_iso(),
+        "created_at": written_at(data.get("created_at")),
     }
     conn.execute(
         "INSERT INTO replies (id, comment_id, author, text, created_at)"
