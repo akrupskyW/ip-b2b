@@ -396,7 +396,7 @@
         '<div class="mkt-chat-bug">' + OWL_BUG + '</div>' +
         '<div class="mkt-chat-titles"><span class="mkt-chat-title">WISEcodeAI\u2122</span><span class="mkt-chat-sub">Find Your Food Truth\u2122</span></div>' +
         '<button class="mkt-chat-head-btn" data-chat-reset type="button" title="New conversation" aria-label="New conversation"><span class="material-symbols-outlined">add_comment</span></button>' +
-        '<button class="mkt-chat-head-btn" data-chat-close type="button" title="Minimize" aria-label="Minimize chat"><span class="material-symbols-outlined">close</span></button>' +
+        '<button class="mkt-chat-head-btn" data-chat-close type="button" aria-label="Minimize chat"><span class="material-symbols-outlined">close</span></button>' +
       '</div>' +
       '<div class="mkt-chat-body" data-chat-body></div>' +
       '<div class="mkt-chat-foot">' +

@@ -486,9 +486,27 @@
     function candidate(node) {
       return node && node.closest ? node.closest(TIP_SEL) : null;
     }
+    function isCloseControl(el) {
+      if (!el || !el.matches) return false;
+      var leftover = '';
+      try {
+        var clone = el.cloneNode(true);
+        clone.querySelectorAll('.material-symbols-outlined, svg, img').forEach(function (n) { n.remove(); });
+        leftover = (clone.textContent || '').replace(/\s+/g, ' ').trim();
+      } catch (_) {}
+      if (leftover.length > 2) return false;
+      var icon = el.querySelector && el.querySelector('.material-symbols-outlined');
+      var glyph = icon ? (icon.textContent || '').replace(/\s+/g, ' ').trim() : '';
+      if (glyph === 'close') return true;
+      return el.matches('.wch-close, .wch-search-clear, .wt-search-clear, .wch-ask-search-clear');
+    }
     document.addEventListener('mouseover', function (e) {
       var el = candidate(e.target);
       if (!el || el === forEl) return;
+      if (isCloseControl(el)) {
+        if (el.hasAttribute('title')) el.removeAttribute('title');
+        return;
+      }
       if (!el.hasAttribute('title') && !el.hasAttribute('data-tip') && !el.hasAttribute('data-wch-title')) return;
       if (forEl) hide();
       show(el);
@@ -500,6 +518,10 @@
     document.addEventListener('focusin', function (e) {
       var el = candidate(e.target);
       if (!el) return;
+      if (isCloseControl(el)) {
+        if (el.hasAttribute('title')) el.removeAttribute('title');
+        return;
+      }
       if (!el.hasAttribute('title') && !el.hasAttribute('data-tip') && !el.hasAttribute('data-wch-title')) return;
       show(el);
     });
@@ -676,7 +698,7 @@
           '<button type="button" class="panel-more-btn wch-rail-btn" aria-pressed="false" title="Minimize panel" aria-label="Minimize panel"><span class="material-symbols-outlined">chevron_left</span></button>' +
         '</div>'
       : (breakout ? '<button type="button" class="wch-dock" title="Break out as a side panel" aria-label="Break out history as a side panel"><span class="material-symbols-outlined">vertical_split</span></button>' : '') +
-        '<button type="button" class="wch-close" title="Close history" aria-label="Close history"><span class="material-symbols-outlined">close</span></button>';
+        '<button type="button" class="wch-close" aria-label="Close history"><span class="material-symbols-outlined">close</span></button>';
 
     /* MCP-usage filter now lives as a filter icon INSIDE the search input; a
        small popover anchored to it hosts the filter toggle(s). */
@@ -696,7 +718,7 @@
         '<div class="wch-search">' +
           '<span class="material-symbols-outlined">search</span>' +
           '<input type="text" class="wch-search-input" placeholder="Search conversations…" aria-label="Search conversations" autocomplete="off">' +
-          '<button type="button" class="wch-search-clear" title="Clear search" aria-label="Clear search"><span class="material-symbols-outlined">close</span></button>' +
+          '<button type="button" class="wch-search-clear" aria-label="Clear search"><span class="material-symbols-outlined">close</span></button>' +
           filterBtnHtml +
         '</div>' +
         '<button type="button" class="wch-new" title="New conversation" aria-label="New conversation"><span class="material-symbols-outlined">chat_add_on</span></button>' +

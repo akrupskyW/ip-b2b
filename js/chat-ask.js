@@ -168,7 +168,7 @@
         '<div class="wch-ask-search">' +
           '<span class="material-symbols-outlined">search</span>' +
           '<input type="text" class="wch-ask-search-input" placeholder="' + esc((catalog && catalog.searchPlaceholder) || 'Search prompts\u2026') + '" aria-label="Search prompts" autocomplete="off">' +
-          '<button type="button" class="wch-ask-search-clear" title="Clear search" aria-label="Clear search"><span class="material-symbols-outlined">close</span></button>' +
+          '<button type="button" class="wch-ask-search-clear" aria-label="Clear search"><span class="material-symbols-outlined">close</span></button>' +
         '</div>' +
         '<div class="wch-ask-toolbar">' +
           '<div class="wch-ask-sort" role="group" aria-label="Sort prompts">' +

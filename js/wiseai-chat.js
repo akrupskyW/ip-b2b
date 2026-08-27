@@ -8245,7 +8245,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     connPanel.innerHTML =
       '<div class="wch-head">' +
         `<span class="wch-head-title"><span class="material-symbols-outlined">hub</span>${esc(connectorsLabel || 'Connect a data source')}</span>` +
-        '<button type="button" class="wch-close" title="Close" aria-label="Close"><span class="material-symbols-outlined">close</span></button>' +
+        '<button type="button" class="wch-close" aria-label="Close"><span class="material-symbols-outlined">close</span></button>' +
       '</div>' +
       '<p class="wch-conn-intro">Link a retailer or food-data source so WISEcodeAI\u2122 can pull verified product, pricing &amp; nutrition data.</p>' +
       '<div class="wch-list wch-conn-list" role="list"></div>';
@@ -8843,13 +8843,13 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           '<button type="button" class="panel-width-toggle-btn wt-width-btn" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Turns module width"><span class="material-symbols-outlined">width_normal</span></button>' +
         '</div>'
       : (turnsBreakout ? '<button type="button" class="wch-dock" title="Break out as a side module" aria-label="Break turns out as a side module"><span class="material-symbols-outlined">vertical_split</span></button>' : '') +
-        '<button type="button" class="wch-close" title="Close" aria-label="Close"><span class="material-symbols-outlined">close</span></button>';
+        '<button type="button" class="wch-close" aria-label="Close"><span class="material-symbols-outlined">close</span></button>';
 
     const searchHtml = turnsSearchOn
       ? '<div class="wt-search">' +
           '<span class="material-symbols-outlined">search</span>' +
           '<input type="text" class="wt-search-input" placeholder="Search turns…" aria-label="Search turns" autocomplete="off">' +
-          '<button type="button" class="wt-search-clear" title="Clear search" aria-label="Clear search"><span class="material-symbols-outlined">close</span></button>' +
+          '<button type="button" class="wt-search-clear" aria-label="Clear search"><span class="material-symbols-outlined">close</span></button>' +
         '</div>'
       : '';
 
@@ -11111,7 +11111,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       '<div class="wch-head">' +
         '<span class="wch-head-title"><span class="material-symbols-outlined">database</span>Databases</span>' +
         '<div class="wch-controls">' +
-          '<button type="button" class="panel-width-toggle-btn fl-db-undock" title="Undock — back to popover" aria-label="Merge databases back into the popover"><span class="material-symbols-outlined">close</span></button>' +
+          '<button type="button" class="panel-width-toggle-btn fl-db-undock" aria-label="Merge databases back into the popover"><span class="material-symbols-outlined">close</span></button>' +
         '</div>' +
       '</div>' +
       '<div class="fl-db-module-body">' +

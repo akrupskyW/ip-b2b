@@ -166,7 +166,7 @@ const SHELL_HTML = `
   <button type="button" id="mkt-chat-fab" aria-label="Open WISEcodeAI"></button>
   <aside id="mkt-scanner-panel" aria-label="WISE Web Scanner">
     <div class="mkt-scanner-card">
-      <button type="button" class="mkt-scanner-close" data-scanner-close title="Close scanner" aria-label="Close scanner"><span class="material-symbols-outlined">close</span></button>
+      <button type="button" class="mkt-scanner-close" data-scanner-close aria-label="Close scanner"><span class="material-symbols-outlined">close</span></button>
       <div class="mkt-scanner-body">
         <iframe class="mkt-scanner-frame" title="WISE Web Scanner" data-scanner-frame loading="lazy"></iframe>
       </div>

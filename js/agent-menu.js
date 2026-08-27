@@ -8,8 +8,9 @@ import './load-anim.js';
 
 /* Give every page that renders the WISE nav the shared floating tooltip. This
    covers the per-module header controls uniformly — the three-dot "More
-   options" menu, the width changer, move-side and close — on the WISEcodeAI chat,
-   result panes and all agent modules, without each page wiring it up. It is
+   options" menu, the width changer, move-side — on the WISEcodeAI chat,
+   result panes and all agent modules, without each page wiring it up. The
+   X / close control is excluded (the glyph is enough). It is
    idempotent (guards on window.__lirTooltipReady) and uses document-level
    delegation, so it also covers modules rendered after load. */
 (function bootLirTooltip() {

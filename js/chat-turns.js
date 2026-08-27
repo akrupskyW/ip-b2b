@@ -156,7 +156,7 @@
       '<div class="wt-search">' +
         '<span class="material-symbols-outlined">search</span>' +
         '<input type="text" class="wt-search-input" placeholder="Search turns…" aria-label="Search turns" autocomplete="off">' +
-        '<button type="button" class="wt-search-clear" title="Clear search" aria-label="Clear search"><span class="material-symbols-outlined">close</span></button>' +
+        '<button type="button" class="wt-search-clear" aria-label="Clear search"><span class="material-symbols-outlined">close</span></button>' +
       '</div>' +
       '<div class="wt-list" role="list"></div>';
 
