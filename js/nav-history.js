@@ -10,6 +10,8 @@
  * folder tree (projects + All conversations) read from localStorage.
  *
  * Default OFF. The choice persists so it survives reloads and page changes.
+ * Roll / Crawl (Appearance ▸ Roll · Crawl · Walk · Run) hide this section
+ * entirely — History is a chat surface, and those modes have no chat.
  */
 
 import { applyMinimalUi, applyIconRail } from './topbar.js';
@@ -46,6 +48,18 @@ export function isNavHistoryOn() {
   try { return localStorage.getItem(LS_KEY) === '1'; } catch { return false; }
 }
 
+/** Appearance ▸ Roll · Crawl · Walk · Run is on, and the mode is Roll or
+ *  Crawl — chat is gone, so History must not appear in the primary nav. */
+function isCwrSaas() {
+  const r = document.documentElement;
+  return r.classList.contains('cwr-ui-on')
+    && (r.classList.contains('cwr-roll') || r.classList.contains('cwr-crawl'));
+}
+
+function historyInNavAllowed() {
+  return isNavHistoryOn() && !isCwrSaas();
+}
+
 /**
  * Reflect the on/off choice onto the nav + History module.
  * @param {boolean} on
@@ -58,7 +72,7 @@ export function applyNavHistory(on, persist = true, opts = {}) {
     try { localStorage.setItem(LS_KEY, val ? '1' : '0'); } catch (_) { /* session-only */ }
   }
   document.documentElement.classList.toggle(HTML_CLASS, val);
-  if (val) {
+  if (val && !isCwrSaas()) {
     /* The nav list is hidden in Minimal UI and labels are hidden in Icons
        only, so an explicit turn-on expands the full labelled nav so the new
        History section is actually readable. Restore-on-load leaves those
@@ -79,7 +93,7 @@ export function restoreNavHistory() {
 
 /** Re-inject (or remove) the History group after the nav re-renders. */
 export function refreshNavHistory() {
-  if (isNavHistoryOn()) mountGroup();
+  if (historyInNavAllowed()) mountGroup();
   else unmountGroup();
 }
 
@@ -332,6 +346,7 @@ function syncOpen(group, open) {
 }
 
 function mountGroup({ open } = {}) {
+  if (isCwrSaas()) return;
   const nav = navEl();
   if (!nav) return;
   let group = nav.querySelector(`[data-group="${GROUP_ID}"]`);
@@ -386,6 +401,7 @@ function revealPrimaryNav() {
 }
 
 function expandGroup() {
+  if (!historyInNavAllowed()) return;
   revealPrimaryNav();
   const nav = navEl();
   let group = nav?.querySelector(`[data-group="${GROUP_ID}"]`);
@@ -418,7 +434,7 @@ function onHistoryReady(ev) {
   const api = ev?.detail?.api;
   const key = ev?.detail?.storageKey;
   if (api && key) historyApis.set(key, api);
-  if (isNavHistoryOn()) mountGroup();
+  if (historyInNavAllowed()) mountGroup();
 }
 
 function wireClicks() {
@@ -436,7 +452,7 @@ function wireClicks() {
   /* Three-dot "History & Projects" — reveal the nav section instead of the
      sticky module while this mode is on. */
   document.addEventListener('click', (ev) => {
-    if (!isNavHistoryOn()) return;
+    if (!historyInNavAllowed()) return;
     const item = ev.target?.closest?.('[data-sc="history"]');
     if (!item) return;
     ev.preventDefault();
@@ -449,7 +465,7 @@ function wireClicks() {
      the History group open) instead of unfolding the live module into the
      54px icon rail. */
   document.addEventListener('click', (ev) => {
-    if (!isNavHistoryOn() || !navIsCollapsed()) return;
+    if (!historyInNavAllowed() || !navIsCollapsed()) return;
     const trigger = ev.target?.closest?.('[data-toggle-group="' + GROUP_ID + '"]');
     if (!trigger) return;
     ev.preventDefault();
@@ -471,7 +487,7 @@ function boot() {
 if (typeof document !== 'undefined') {
   document.addEventListener('wise:chat-history-ready', onHistoryReady);
   document.addEventListener('wise:chat-history-change', () => {
-    if (!isNavHistoryOn()) return;
+    if (!historyInNavAllowed()) return;
     const live = liveSidebar();
     const group = document.querySelector(`[data-group="${GROUP_ID}"]`);
     /* Live module re-renders itself; only remount when we are on the fallback
@@ -480,9 +496,16 @@ if (typeof document !== 'undefined') {
     mountGroup();
   });
   window.addEventListener('storage', (e) => {
-    if (!e.key || !isNavHistoryOn()) return;
+    if (!e.key) return;
+    if (e.key === 'wise-cwr-mode' || e.key === 'wise-cwr-ui') {
+      refreshNavHistory();
+      return;
+    }
+    if (!isNavHistoryOn()) return;
     if (/chat-history|wise-nav-history/.test(e.key)) refreshNavHistory();
   });
+  document.addEventListener('wise:cwr-ui', refreshNavHistory);
+  window.addEventListener('wise:cwr-mode', refreshNavHistory);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 }

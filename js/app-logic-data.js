@@ -109,7 +109,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Roll · Crawl · Walk · Run gates the chat',
-        how: '<code>wise-cwr-mode</code> (<code>roll|crawl|walk|run</code>, default <code>run</code>) sets <code>cwr-roll</code> / <code>cwr-crawl</code> / <code>cwr-walk</code> / <code>cwr-run</code> on <code>&lt;html&gt;</code>. Roll is Crawl with a stripped SaaS nav. Crawl hides chat surfaces with <code>inert</code> + <code>aria-hidden</code>, Walk hides the composer rail, Run unlocks everything. Turning the widget off (<code>wise-cwr-ui</code>) suspends the gating entirely.',
+        how: '<code>wise-cwr-mode</code> (<code>roll|crawl|walk|run</code>, default <code>run</code>) sets <code>cwr-roll</code> / <code>cwr-crawl</code> / <code>cwr-walk</code> / <code>cwr-run</code> on <code>&lt;html&gt;</code>. Roll is Crawl with a stripped SaaS nav. Crawl hides chat surfaces with <code>inert</code> + <code>aria-hidden</code>. Roll and Crawl also drop History from the primary nav (the History-in-nav section, the History chevron, and the new-chat circle). Walk hides the composer rail, Run unlocks everything. Turning the widget off (<code>wise-cwr-ui</code>) suspends the gating entirely.',
       },
     ],
   },

@@ -334,7 +334,7 @@
       }
       .nfp-sp--noidentity .nfp-sp-ingred { padding-top: 10px; }
       .nfp-sp-ingred { padding: 12px 10px 8px 4px; }
-      .nfp-sp-ingred .nfp-ingred-wrap > *,
+      .nfp-sp-ingred .nfp-ingred-wrap > *:not(.nfp-ia-analyze),
       .nfp-sp-ingred .nfp-ia { max-width: none; margin-left: 0; margin-right: 0; }
       /* Photo stays at about half the module body so the Non-UPF shield sits
          directly underneath. */
@@ -1308,7 +1308,8 @@
     .nfp-ia .nfp-ingred-body { padding: 0 0 10px; }
     .nfp-ia .nfp-ingred-edit { min-height: 0; }
     .nfp-ia-analyze {
-      width: fit-content; max-width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      width: fit-content; max-width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px;
+      margin-left: auto; margin-right: auto;
       border: none; border-radius: 999px; padding: 9px 14px; cursor: pointer;
       font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 0.8rem; font-weight: 700;
       background: var(--primary); color: #fff; transition: filter 0.15s, opacity 0.15s;
@@ -1401,7 +1402,8 @@
     .nfp-foot-status .material-symbols-outlined { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
     .nfp-foot-status strong { color: var(--text); font-weight: 700; }
     .nfp-save-btn {
-      width: fit-content; max-width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      width: fit-content; max-width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;
+      margin-left: auto; margin-right: auto;
       border: 1.5px solid var(--primary); border-radius: 999px; padding: 9px 14px; cursor: pointer;
       font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 0.82rem; font-weight: 700;
       background: transparent; color: var(--primary-ink, var(--primary));

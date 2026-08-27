@@ -8,12 +8,15 @@
      roll  — Crawl, plus a stripped primary nav: Overview, Product Portfolio,
              Reports, Profile, Invoices, and WISEcode Admin (Organizations,
              User Management, Audit Queue, Quick Invite, Admin Utils). Studio,
-             comparison, dashboards, and the upgrade card are hidden.
+             comparison, dashboards, and the upgrade card are hidden. History
+             is gone from the primary nav (same as Crawl).
      crawl — SaaS only. Every WISEcodeAI chat surface is hidden AND taken out
              of the a11y/focus tree (inert + aria-hidden). Remaining modules
              grow to fill the modules-row — no leftover empty width. The
              primary nav has no borders; the first remaining module keeps its
-             card border and rounded corners.
+             card border and rounded corners. History does not appear in the
+             nav at all — no History-in-nav section, no History chevron, no
+             new-chat circle.
      walk  — Chat turns on. Four-tier widths (single / double / triple / fill)
              stay fluid. The composer rail is hidden and inert; intent chips
              stay visible. Focus never lands in the hidden input.
@@ -576,9 +579,22 @@
     'html.cwr-ui-on.cwr-roll .menu-nav [data-nav-id="library"],',
     'html.cwr-ui-on.cwr-roll .menu-nav [data-nav-id="ingredients"],',
     'html.cwr-ui-on.cwr-roll .menu-nav-group[data-group="wiseai"],',
-    'html.cwr-ui-on.cwr-roll .menu-nav-group[data-group="nav-history"],',
     'html.cwr-ui-on.cwr-roll .menu-nav-upgrade,',
     'html.cwr-ui-on.cwr-roll .menu-nav-section[data-nav-section="studio"] {',
+    '  display: none !important;',
+    '}',
+
+    /* ===== ROLL / CRAWL — History is a chat surface. Drop it from the
+       primary nav: the History-in-nav group, the new-chat circle, and the
+       collapsed-rail chevron that would otherwise open History. The chevron
+       stays when the labelled nav is open so it can close back. ===== */
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) .menu-nav-group[data-group="nav-history"],',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) .menu-modules-new {',
+    '  display: none !important;',
+    '}',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl).nav-modules #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) #topbar-menu-toggle,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl).nav-modules #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) #topbar-menu-toggle,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl).nav-modules #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) #topbar-menu-toggle {',
     '  display: none !important;',
     '}',
 

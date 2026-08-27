@@ -57,9 +57,11 @@ export function applyNavModules(on, persist = true) {
        in-session only (persist false), so a leftover "0" cannot hide the
        four-icon rail on the next load. */
     try { applyIconRail(true); } catch (_) { /* already railed */ }
-    /* WISEcodeAI is the one surface whose sticky History starts open — don't
-       tuck it when this chrome boots. Chevron / hamburger still close it. */
-    if (!historyStartsOpen()) concealHistoryModule();
+    /* Roll / Crawl hide History entirely. WISEcodeAI is the one surface whose
+       sticky History starts open otherwise — don't tuck it on Walk / Run.
+       An icon-rail leftover still counts as "open" for that default, but it
+       duplicates this chrome, so tuck it. */
+    if (!historyAllowed() || !historyStartsOpen() || isHistoryRail()) concealHistoryModule();
   }
   syncNavModulesChrome();
   try { document.dispatchEvent(new CustomEvent('wise:nav-modules', { detail: { on: val } })); } catch (_) {}
@@ -156,6 +158,18 @@ function historyApi() {
   return liveApi;
 }
 
+/** Appearance ▸ Roll · Crawl · Walk · Run is on, and the mode is Roll or
+ *  Crawl — chat is gone, so History must not appear in the primary nav. */
+function isCwrSaas() {
+  const r = document.documentElement;
+  return r.classList.contains('cwr-ui-on')
+    && (r.classList.contains('cwr-roll') || r.classList.contains('cwr-crawl'));
+}
+
+function historyAllowed() {
+  return !isCwrSaas();
+}
+
 let histObs = null;
 function watchHistoryRoot() {
   const el = historyApi() && historyApi().root;
@@ -200,6 +214,7 @@ function isHistoryFull(api) {
 }
 
 function openHistoryModule(opts = {}) {
+  if (!historyAllowed()) return;
   const api = historyApi();
   if (!api) return;
   try {
@@ -212,10 +227,15 @@ function openHistoryModule(opts = {}) {
 
 function concealHistoryModule() {
   const api = historyApi();
-  if (!api || !isHistoryShowing(api)) return;
+  if (!api) return;
   try {
-    if (api.isDocked && api.isDocked()) api.toggle();
-    else if (api.close) api.close();
+    if (api.isDocked && api.isDocked()) {
+      if (api.isRail && api.isRail() && typeof api.setRail === 'function') {
+        api.setRail(true, false);
+        return;
+      }
+      if (isHistoryShowing(api)) api.toggle();
+    } else if (api.close) api.close();
   } catch (_) { /* best-effort */ }
 }
 
@@ -239,7 +259,7 @@ function toggleNavModule() {
 
 /** Chevron: History in full, primary nav stays (or returns) collapsed. */
 function toggleHistoryModule() {
-  if (!isNavModulesOn()) return;
+  if (!isNavModulesOn() || !historyAllowed()) return;
   try { applyMinimalUi(false); } catch (_) { /* already expanded */ }
   if (isHistoryFull() && navIsCollapsed()) {
     pendingLayout = null;
@@ -253,6 +273,7 @@ function toggleHistoryModule() {
 }
 
 function startNewConversation() {
+  if (!historyAllowed()) return;
   const api = historyApi();
   try { api && api.startNew && api.startNew(); } catch (_) { /* no-op */ }
 }
@@ -311,9 +332,26 @@ function onChevronClick(e) {
   e.stopPropagation();
   e.stopImmediatePropagation();
   /* Open menu → chevron closes the labelled nav. Open History → chevron
-     closes History. Collapsed rail → chevron opens History. */
+     closes History. Collapsed rail → chevron opens History — unless Roll /
+     Crawl has taken History out of the nav entirely. */
   if (!navIsCollapsed()) toggleNavModule();
-  else toggleHistoryModule();
+  else if (historyAllowed()) toggleHistoryModule();
+}
+
+/** Roll / Crawl hid an open History; restore it when Walk / Run comes back. */
+let hidForCwr = false;
+
+function syncCwrHistory() {
+  if (!historyAllowed()) {
+    if (isHistoryShowing(historyApi())) hidForCwr = true;
+    pendingLayout = null;
+    concealHistoryModule();
+    document.documentElement.classList.remove('nav-modules-hist-open');
+  } else if (hidForCwr) {
+    hidForCwr = false;
+    openHistoryModule({ rail: false });
+  }
+  if (isNavModulesOn()) syncNavModulesChrome();
 }
 
 function boot() {
@@ -322,18 +360,29 @@ function boot() {
   document.addEventListener('wise:menu-rail', onMenuRail);
   document.addEventListener('wise:minimal-ui', syncNavModulesChrome);
   document.addEventListener('wise:menu-pivot', syncNavModulesChrome);
+  document.addEventListener('wise:cwr-ui', syncCwrHistory);
+  window.addEventListener('wise:cwr-mode', syncCwrHistory);
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'wise-cwr-mode' || e.key === 'wise-cwr-ui') syncCwrHistory();
+  });
   document.addEventListener('wise:chat-history-ready', (ev) => {
     const api = ev?.detail?.api;
     if (api && api.root) liveApi = api;
     watchHistoryRoot();
     if (!isNavModulesOn()) return;
     syncNavModulesChrome();
+    if (!historyAllowed()) {
+      if (historyStartsOpen(api || historyApi()) || isHistoryShowing(api || historyApi())) hidForCwr = true;
+      concealHistoryModule();
+      return;
+    }
     if (pendingLayout === 'hist-full') openHistoryModule({ rail: false });
-    else if (!historyStartsOpen(api || historyApi())) concealHistoryModule();
+    else if (isHistoryRail(api || historyApi()) || !historyStartsOpen(api || historyApi())) concealHistoryModule();
   });
   const existing = typeof window !== 'undefined' ? window.__wiseChatHistory : null;
   if (existing && existing.root) liveApi = existing;
   watchHistoryRoot();
+  syncCwrHistory();
 }
 
 if (typeof document !== 'undefined') {

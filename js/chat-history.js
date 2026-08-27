@@ -1690,6 +1690,7 @@
         applyDockWidth();
         return;
       }
+      if (navModulesOwnsHistoryChrome() && railMode) dropRailChrome();
       clearTimeout(concealTimer);
       clearTimeout(revealTimer);
       sidebar.classList.remove('wch-dock-conceal', 'wch-dock-reveal');
@@ -1709,7 +1710,31 @@
       applyDockWidth();                        /* animate 0 → docked width */
       revealTimer = setTimeout(function () { sidebar.classList.remove('wch-dock-reveal'); }, 480);
     }
+    function navModulesOwnsHistoryChrome() {
+      /* Appearance ▸ Nav & History icons: the primary nav already has the
+         collapsed History chrome (chevron + new-chat). A History icon-rail
+         beside the chat would duplicate it. */
+      try {
+        return document.documentElement.classList.contains('nav-modules')
+          && !sidebar.classList.contains('wch-in-nav');
+      } catch (_) { return false; }
+    }
+    function dropRailChrome() {
+      cancelRailExpand();
+      railMode = false;
+      sidebar.classList.remove('wch-rail');
+      sidebar.removeAttribute('data-pr-lock');
+      var newBtn = sidebar.querySelector('.wch-new');
+      if (newBtn) newBtn.removeAttribute('data-tip');
+      updateRailItem();
+    }
     function concealDocked() {
+      /* Nav & History icons: never leave a slim icon-rail behind after close. */
+      if (navModulesOwnsHistoryChrome() && railMode) {
+        dropRailChrome();
+        railPersist = false;
+        writeStore();
+      }
       clearTimeout(concealTimer);
       sidebar.classList.remove('wch-dock-reveal');
       sidebar.classList.add('wch-anim');
@@ -1923,8 +1948,9 @@
       var ic = btn.querySelector('.material-symbols-outlined');
       /* Match the primary navigation module's collapse toggle: chevron_left to
          minimize (collapse toward the edge), chevron_right to maximize. */
-      if (ic) ic.textContent = railMode ? 'chevron_right' : 'chevron_left';
-      var label = railMode ? 'Maximize panel' : 'Minimize panel';
+      var navOwns = navModulesOwnsHistoryChrome();
+      if (ic) ic.textContent = (railMode && !navOwns) ? 'chevron_right' : 'chevron_left';
+      var label = navOwns ? 'Close History' : (railMode ? 'Maximize panel' : 'Minimize panel');
       btn.title = label;
       btn.setAttribute('aria-label', label);
       btn.setAttribute('aria-pressed', railMode ? 'true' : 'false');
@@ -1943,6 +1969,17 @@
     }
     function setRail(on, persist) {
       var next = !!on;
+      if (next && navModulesOwnsHistoryChrome()) {
+        /* Minimize would collapse to a duplicate icon rail next to the
+           primary nav. Tuck the sticky module away instead. */
+        dropRailChrome();
+        if (persist !== false) {
+          railPersist = false;
+          writeStore();
+        }
+        if (docked && !isDockedHidden()) concealDocked();
+        return;
+      }
       var expanding = railMode && !next;
       railMode = next;
       cancelRailExpand();
@@ -2145,9 +2182,26 @@
     }
 
     /* Restore the icon-rail (minimized) state, but only where it applies — the
-       docked module that carries pane-style chrome. */
-    if (docked && dockedControls && railMode) setRail(true);
-    else if (!(docked && dockedControls)) railMode = false;
+       docked module that carries pane-style chrome. Nav & History icons already
+       owns that collapsed chrome, so a restored rail would sit as a duplicate
+       strip beside the primary nav — drop it and keep the load default. */
+    if (docked && dockedControls && railMode) {
+      if (navModulesOwnsHistoryChrome()) {
+        dropRailChrome();
+        railPersist = false;
+      } else {
+        setRail(true);
+      }
+    } else if (!(docked && dockedControls)) railMode = false;
+
+    document.addEventListener('wise:nav-modules', function (ev) {
+      if (!(ev && ev.detail && ev.detail.on)) {
+        updateRailItem();
+        return;
+      }
+      if (railMode && !sidebar.classList.contains('wch-in-nav')) setRail(true);
+      else updateRailItem();
+    });
 
     /* Arm the width transition only AFTER the initial layout has settled (dock,
        sticky base width, and any restored minimized state are all applied above).
