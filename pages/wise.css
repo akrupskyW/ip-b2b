@@ -4137,7 +4137,9 @@ html.dark .menu-nav .menu-nav-group[data-open="true"] > .menu-nav-product .menu-
 
 /* Nav & History icons (Appearance ▸ Layout). Collapsed rail is the logo
    bug, hamburger, History chevron, and new-chat (blue circle). The hamburger
-   opens only the labelled nav; the chevron opens only History. */
+   opens only the labelled nav; the chevron opens only History. While either
+   is open, hamburger and new-chat hide so they are not repeated inside the
+   opened module — the chevron stays to close. */
 .menu-modules-btn {
   display: none;
   flex-shrink: 0;
@@ -4205,13 +4207,22 @@ html.nav-modules #menu-panel.mp-pivot .menu-modules-btn {
   display: none !important;
 }
 
-/* Expanded labelled nav: wordmark, then hamburger + History chevron + blue
-   new-chat grouped on the right so the hamburger can still close the nav. */
-html.nav-modules #menu-panel:not(.mp-rail):not(.mp-pivot):not(.minimal-ui) .menu-brand-bar .menu-modules-menu {
-  margin-left: auto;
+/* Open labelled nav: drop hamburger and new-chat — the nav items and
+   History's own chrome already cover those. Keep the chevron on the
+   right of the wordmark so it can close back to the four-icon rail. */
+html.nav-modules #menu-panel:not(.mp-rail):not(.mp-pivot):not(.minimal-ui) .menu-modules-menu,
+html.nav-modules #menu-panel:not(.mp-rail):not(.mp-pivot):not(.minimal-ui) .menu-modules-new {
+  display: none !important;
 }
 html.nav-modules #menu-panel:not(.mp-rail):not(.mp-pivot):not(.minimal-ui) .menu-brand-bar .topbar-menu-toggle {
-  margin-left: 0;
+  margin-left: auto;
+}
+
+/* Open History: same hide on the collapsed nav rail. History already
+   has new-conversation and its own close. */
+html.nav-modules.nav-modules-hist-open #menu-panel .menu-modules-menu,
+html.nav-modules.nav-modules-hist-open #menu-panel .menu-modules-new {
+  display: none !important;
 }
 
 html.nav-modules #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) .menu-brand-bar,

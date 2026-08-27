@@ -558,7 +558,7 @@ export function buildAppearanceBody({
         ${plainToggle('data-minimal="1"', isMinimalUiOn(), 'Minimal UI', 'Logo, Appearance, and you', 'Show only the logo, Appearance, and your profile', false, false, 'crop_free')}
         ${plainToggle('data-iconrail="1"', isIconRailOn(), 'Icons only', 'Collapse nav to icons', 'Collapse the navigation to icons', false, false, 'apps')}
         ${adminOnly(adminToggle('data-navhistory="1"', isNavHistoryOn(), 'History in navigation', 'History inside the nav', 'Merge the History module into an expandable section of the primary navigation — search, projects, and All conversations stay fully usable', false, false, 'history'))}
-        ${adminOnly(adminToggle('data-navmodules="1"', isNavModulesOn(), 'Nav &amp; History icons', 'Logo, menu, History, new chat', 'Menu opens the labelled navigation in full, with History collapsed beside it. The chevron opens History in full, with the navigation collapsed. New chat is a circle and starts a conversation', false, false, 'view_sidebar'))}
+        ${adminOnly(adminToggle('data-navmodules="1"', isNavModulesOn(), 'Nav &amp; History icons', 'Logo, menu, History, new chat', 'Menu opens the labelled navigation; the chevron opens History. While either is open, the extra icons hide and the chevron closes back to the four-icon rail. New chat is a circle and starts a conversation', false, false, 'view_sidebar'))}
       `),
       apGroup('Experience', `
         ${tourSection()}

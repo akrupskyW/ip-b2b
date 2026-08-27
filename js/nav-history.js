@@ -381,8 +381,8 @@ function navIsCollapsed() {
 
 /** Expand a collapsed primary nav (icon rail / Minimal UI) so History is readable. */
 function revealPrimaryNav() {
-  try { applyMinimalUi(false); } catch (_) { /* already expanded */ }
-  try { applyIconRail(false); } catch (_) { /* labels already visible */ }
+  try { applyMinimalUi(false, false); } catch (_) { /* already expanded */ }
+  try { applyIconRail(false, false); } catch (_) { /* labels already visible */ }
 }
 
 function expandGroup() {

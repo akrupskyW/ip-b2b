@@ -940,8 +940,8 @@ function arrivedByNavigation() {
                           exactly like pages/wiseai.html.
      • history breakout → the three-dot "History & Projects" toggle reveals the
                           History module as a docked sticky drawer on the chat's
-                          LEFT (never the in-chat overlay), matching wiseai.html.
-                          It starts tucked in behind the chat (hidden).
+                          LEFT (never the in-chat overlay). Unlike wiseai.html,
+                          the dock starts it tucked behind the chat (hidden).
      • sticky modules   → permanently ON (the menu switch is dropped): both
                           flanking drawers tuck in behind the chat card.
 

@@ -177,7 +177,11 @@
          releases it — otherwise maximize jumps 66→240 and looks like a snap. */
       '.wch-sidebar.wch-docked.wch-anim{transition:flex-basis .3s cubic-bezier(.4,0,.2,1),width .3s cubic-bezier(.4,0,.2,1),min-width .3s cubic-bezier(.4,0,.2,1);}',
       'html:not(.dark) .wch-sidebar.wch-docked{border-color:var(--border,rgba(0,0,0,0.08));box-shadow:var(--shadow-card,0 12px 32px rgba(20,30,60,0.12));}',
-      '.wch-sidebar.wch-docked.wch-docked-hidden{display:none;}',
+      /* !important so host page rules (#modules-row .wch-sidebar.wch-docked)
+         cannot leak a hidden History drawer back into the row. */
+      '.wch-sidebar.wch-docked.wch-docked-hidden{display:none !important;}',
+      '#modules-row .wch-sidebar.wch-docked.wch-docked-hidden,',
+      '#modules-row.modules-sticky .wch-sidebar.wch-docked.wch-docked-hidden{display:none !important;}',
       '@media (prefers-reduced-motion:reduce){.wch-sidebar.wch-docked.wch-anim{transition:none;}}',
       /* ── Icon-rail (minimized) mode ──────────────────────────────────────────
          Collapses the docked module to a slim column of icons + project folder
@@ -2129,12 +2133,14 @@
     if (breakout && docked) { docked = false; setDocked(true); }
     else updateDockButton();
 
-    /* Hosts that keep History as an on-demand drawer start it docked but tucked
-       in behind the chat (hidden); the three-dot "History" toggle reveals it.
-       Skip when the pane is already living in the primary nav — setDocked's
-       store write can re-enter mountGroup and adopt first, and adding hidden
-       afterwards would fight that. */
-    if (docked && opts.breakoutStartHidden === true && !sidebar.classList.contains('wch-in-nav')) {
+    /* Load default: the sticky History drawer is OFF (tucked / display:none)
+       unless the host opts out with breakoutStartHidden: false — pages/wiseai.html
+       is the only surface that starts it visible. Skip when the pane is already
+       living in the primary nav — setDocked's store write can re-enter mountGroup
+       and adopt first, and adding hidden afterwards would fight that. */
+    var startHidden = opts.breakoutStartHidden !== false;
+    if (!startHidden) sidebar.setAttribute('data-wch-open-default', '1');
+    if (docked && startHidden && !sidebar.classList.contains('wch-in-nav')) {
       sidebar.classList.add('wch-docked-hidden');
     }
 

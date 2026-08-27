@@ -8,19 +8,23 @@
  * chrome — logo bug, menu, expand chevron, new chat (blue circle).
  *
  * Collapsed (icon rail): those four icons. The hamburger opens the labelled
- * navigation in full, with History docked to its right in collapsed (icon)
- * mode. The chevron opens History in full, with the navigation staying in
- * collapsed mode. New conversation starts a thread without forcing either
- * module open. The new-chat control is a circle, matching History.
+ * navigation in full; the chevron opens History in full, with the navigation
+ * staying collapsed. While either is open, the hamburger and new-chat hide —
+ * those controls already live inside the opened module — and the chevron
+ * stays so it can close back to the four-icon rail. New conversation starts
+ * a thread without forcing either module open. The new-chat control is a
+ * circle, matching History.
  *
- * Default ON (no stored value). The choice persists so it survives reloads
- * and page changes; an explicit off stays off. Keep the FOUC guard in
- * js/text-size-fouc.js in sync with this key and default.
+ * Default ON (no stored value). v2 key — the v1 key was written to "0"
+ * whenever the labelled nav opened (hamburger) or History-in-nav turned on,
+ * which locked later visits into the old off default. An explicit off on
+ * this key still stays off. Keep the FOUC guard in js/text-size-fouc.js
+ * in sync with this key and default.
  */
 
 import { applyMinimalUi, applyIconRail } from './topbar.js';
 
-const LS_KEY = 'wise-nav-modules';
+const LS_KEY = 'wise-nav-modules-v2';
 const HTML_CLASS = 'nav-modules';
 
 /** True when Nav & History icons is on. Defaults to ON (no stored value)
@@ -45,12 +49,17 @@ export function applyNavModules(on, persist = true) {
   document.documentElement.classList.toggle(HTML_CLASS, val);
   if (val) {
     /* This chrome replaces Minimal UI's logo+chevron strip. Always stand
-       Minimal UI down (including restore) so the four icons actually show. */
-    try { applyMinimalUi(false); } catch (_) { /* already expanded */ }
-    if (persist) {
-      try { applyIconRail(true); } catch (_) { /* already railed */ }
-    }
-    concealHistoryModule();
+       Minimal UI down so the four icons actually show. Icons only is the
+       load default for this mode — paint the rail even on restore so a
+       leftover expanded preference cannot hide it. */
+    try { applyMinimalUi(false, persist); } catch (_) { /* already expanded */ }
+    /* Always persist Icons only on with this mode: hamburger expand is
+       in-session only (persist false), so a leftover "0" cannot hide the
+       four-icon rail on the next load. */
+    try { applyIconRail(true); } catch (_) { /* already railed */ }
+    /* WISEcodeAI is the one surface whose sticky History starts open — don't
+       tuck it when this chrome boots. Chevron / hamburger still close it. */
+    if (!historyStartsOpen()) concealHistoryModule();
   }
   syncNavModulesChrome();
   try { document.dispatchEvent(new CustomEvent('wise:nav-modules', { detail: { on: val } })); } catch (_) {}
@@ -74,6 +83,7 @@ export function syncNavModulesChrome() {
   if (!on) {
     menuBtn?.remove();
     newBtn?.remove();
+    document.documentElement.classList.remove('nav-modules-hist-open');
     return;
   }
 
@@ -104,6 +114,7 @@ export function syncNavModulesChrome() {
   } else {
     brand.appendChild(newBtn);
   }
+  syncOpenChrome();
   syncMenuLabel();
   syncChevronLabel();
 }
@@ -153,9 +164,18 @@ function watchHistoryRoot() {
     try { histObs.disconnect(); } catch (_) {}
     histObs = null;
   }
-  histObs = new MutationObserver(() => { if (isNavModulesOn()) syncChevronLabel(); });
+  histObs = new MutationObserver(() => {
+    if (!isNavModulesOn()) return;
+    syncOpenChrome();
+    syncChevronLabel();
+  });
   histObs._el = el;
   histObs.observe(el, { attributes: true, attributeFilter: ['class'] });
+}
+
+function historyStartsOpen(api) {
+  const el = (api || historyApi()) && (api || historyApi()).root;
+  return !!(el && el.hasAttribute('data-wch-open-default'));
 }
 
 function isHistoryShowing(api) {
@@ -199,18 +219,20 @@ function concealHistoryModule() {
   } catch (_) { /* best-effort */ }
 }
 
-/** Hamburger: labelled nav in full, History docked to its right as the icon rail. */
+/** Hamburger: labelled nav in full. History stays closed — its chrome
+ *  already lives inside the History module, so it is not repeated beside
+ *  the open menu. The chevron is what closes this view. */
 function toggleNavModule() {
   if (!isNavModulesOn()) return;
   try { applyMinimalUi(false); } catch (_) { /* already expanded */ }
   if (!navIsCollapsed()) {
     pendingLayout = null;
-    try { applyIconRail(true); } catch (_) { /* already railed */ }
+    try { applyIconRail(true, false); } catch (_) { /* already railed */ }
     concealHistoryModule();
   } else {
-    pendingLayout = 'nav-full';
-    try { applyIconRail(false); } catch (_) { /* already labelled */ }
-    openHistoryModule({ rail: true });
+    pendingLayout = null;
+    try { applyIconRail(false, false); } catch (_) { /* already labelled */ }
+    concealHistoryModule();
   }
   syncNavModulesChrome();
 }
@@ -224,7 +246,7 @@ function toggleHistoryModule() {
     concealHistoryModule();
   } else {
     pendingLayout = 'hist-full';
-    try { applyIconRail(true); } catch (_) { /* already railed */ }
+    try { applyIconRail(true, false); } catch (_) { /* already railed */ }
     openHistoryModule({ rail: false });
   }
   syncNavModulesChrome();
@@ -239,19 +261,28 @@ function isDesktop() {
   try { return !window.matchMedia('(max-width: 768px)').matches; } catch (_) { return true; }
 }
 
+/** Mark when History is fully open so CSS can drop the repeated hamburger
+ *  and new-chat on the collapsed rail. */
+function syncOpenChrome() {
+  const on = isNavModulesOn() && isHistoryFull();
+  document.documentElement.classList.toggle('nav-modules-hist-open', on);
+}
+
 function syncChevronLabel() {
   if (!isNavModulesOn()) return;
   const btn = document.getElementById('topbar-menu-toggle');
   const panel = panelEl();
   if (!btn || !panel || panel.classList.contains('mp-pivot')) return;
-  const open = isHistoryFull();
-  const label = open ? 'Close History' : 'Open History';
+  const navOpen = !navIsCollapsed();
+  const histOpen = isHistoryFull();
+  const closing = navOpen || histOpen;
+  const label = navOpen ? 'Close navigation' : histOpen ? 'Close History' : 'Open History';
   btn.setAttribute('aria-label', label);
   btn.setAttribute('title', label);
   btn.setAttribute('data-tip', label);
-  btn.setAttribute('aria-pressed', open ? 'true' : 'false');
+  btn.setAttribute('aria-pressed', closing ? 'true' : 'false');
   const icon = btn.querySelector('.material-symbols-outlined');
-  if (icon) icon.textContent = 'chevron_right';
+  if (icon) icon.textContent = closing ? 'chevron_left' : 'chevron_right';
 }
 
 function syncMenuLabel() {
@@ -279,7 +310,10 @@ function onChevronClick(e) {
   e.preventDefault();
   e.stopPropagation();
   e.stopImmediatePropagation();
-  toggleHistoryModule();
+  /* Open menu → chevron closes the labelled nav. Open History → chevron
+     closes History. Collapsed rail → chevron opens History. */
+  if (!navIsCollapsed()) toggleNavModule();
+  else toggleHistoryModule();
 }
 
 function boot() {
@@ -294,9 +328,8 @@ function boot() {
     watchHistoryRoot();
     if (!isNavModulesOn()) return;
     syncNavModulesChrome();
-    if (pendingLayout === 'nav-full') openHistoryModule({ rail: true });
-    else if (pendingLayout === 'hist-full') openHistoryModule({ rail: false });
-    else if (navIsCollapsed()) concealHistoryModule();
+    if (pendingLayout === 'hist-full') openHistoryModule({ rail: false });
+    else if (!historyStartsOpen(api || historyApi())) concealHistoryModule();
   });
   const existing = typeof window !== 'undefined' ? window.__wiseChatHistory : null;
   if (existing && existing.root) liveApi = existing;

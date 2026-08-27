@@ -459,7 +459,7 @@ export function applyMinimalUi(on, persist = true) {
     Keep the stored check in sync with isNavModulesOn() in js/nav-modules.js. */
 export function restoreMinimalUi() {
   try {
-    const v = localStorage.getItem('wise-nav-modules');
+    const v = localStorage.getItem('wise-nav-modules-v2');
     if (v === null ? true : v === '1') {
       applyMinimalUi(false, false);
       return;
@@ -488,21 +488,27 @@ export function isIconRailOn() {
   } catch { return true; }
 }
 
-/** Reflect icons-only-rail state onto the navigation panel and persist it. The
-    Appearance popover reads isIconRailOn() to render its own toggle state; the
-    dispatched event lets the nav's collapse chevron re-skin itself to match. */
-export function applyIconRail(on) {
+/** Reflect icons-only-rail state onto the navigation panel. The Appearance
+    popover reads isIconRailOn() to render its own toggle state; the dispatched
+    event lets the nav's collapse chevron re-skin itself to match.
+    @param {boolean} on
+    @param {boolean} [persist=true]  Only an explicit user toggle persists;
+      hamburger/chevron in-session expands and restore must not write, or
+      opening the labelled nav would lock Icons only off on the next load. */
+export function applyIconRail(on, persist = true) {
   const panel = document.getElementById('menu-panel');
   if (panel) panel.classList.toggle('mp-rail', !!on);
-  try { localStorage.setItem(ICON_RAIL_KEY, on ? '1' : '0'); } catch {}
+  if (persist) {
+    try { localStorage.setItem(ICON_RAIL_KEY, on ? '1' : '0'); } catch {}
+  }
   try {
     document.dispatchEvent(new CustomEvent('wise:menu-rail', { detail: { on: !!on } }));
   } catch {}
 }
 
-/** Restore the persisted icons-only-rail state onto the panel. */
+/** Restore the persisted (or default-on) icons-only-rail state without writing. */
 export function restoreIconRail() {
-  applyIconRail(isIconRailOn());
+  applyIconRail(isIconRailOn(), false);
 }
 
 /** Read a page-level appearance default from `<body data-default-…>`.

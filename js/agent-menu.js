@@ -1143,8 +1143,8 @@ function setupMenuRail(navEl) {
   const apply = (railed) => {
     panel.classList.toggle('mp-rail', railed);
     if (isNavModulesOn()) {
-      /* Chevron stays chevron_right and only opens History; the hamburger
-         owns expand/collapse of the labelled nav. */
+      /* Chevron opens History from the collapsed rail and closes whichever
+         module is open; hamburger/new-chat hide while a module is open. */
       applyHamburgerSkin();
       if (!railed) scheduleNavTrees(navEl);
       try { syncNavModulesChrome(); } catch (_) { /* optional on first paint */ }
@@ -1188,16 +1188,18 @@ function setupMenuRail(navEl) {
     }
   };
 
-  /* The leftmost navigation module opens collapsed to its icon rail by default,
-     but an explicit choice — made from the collapse chevron OR the Appearance
-     popover's "Icons only" toggle, both persisted under the same key — is
-     honored on load, so the nav round-trips the user's preference like the
-     other Appearance toggles. No stored value = collapsed, as before. */
+  /* The leftmost navigation module opens collapsed to its icon rail by default.
+     Nav & History icons owns that rail on every load — an in-session expand
+     (hamburger) must not round-trip as Icons only off. When that mode is off,
+     an explicit Icons only choice under the shared key is honored; no stored
+     value = collapsed. */
   let railed = true;
-  try {
-    const v = localStorage.getItem(MENU_RAIL_STORE_KEY);
-    if (v !== null) railed = v === '1';
-  } catch (_) {}
+  if (!isNavModulesOn()) {
+    try {
+      const v = localStorage.getItem(MENU_RAIL_STORE_KEY);
+      if (v !== null) railed = v === '1';
+    } catch (_) {}
+  }
   /* Reports (and any page that opts into a collapsed rail on every visit)
      must not honor a stored "expanded" preference here — doing so expands
      the rail and then collapseNavRail() snaps it shut after first paint,
@@ -1230,7 +1232,11 @@ function setupMenuRail(navEl) {
       }
       const next = !panel.classList.contains('mp-rail');
       apply(next);
-      try { localStorage.setItem(MENU_RAIL_STORE_KEY, next ? '1' : '0'); } catch (_) {}
+      /* Nav & History icons owns the rail as a load default; expanding here
+         is in-session only so the next page still opens as four icons. */
+      if (!isNavModulesOn()) {
+        try { localStorage.setItem(MENU_RAIL_STORE_KEY, next ? '1' : '0'); } catch (_) {}
+      }
       try { document.dispatchEvent(new CustomEvent('wise:menu-rail', { detail: { on: next } })); } catch (_) {}
     });
   }

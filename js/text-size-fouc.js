@@ -20,7 +20,7 @@
       /* Nav & History icons owns the collapsed chrome (default ON); don't
          paint Minimal UI over that four-icon rail. Keep in sync with
          isNavModulesOn() in js/nav-modules.js. */
-      var nm = localStorage.getItem('wise-nav-modules');
+      var nm = localStorage.getItem('wise-nav-modules-v2');
       if (nm === null ? true : nm === '1') return false;
       var v = localStorage.getItem(KEY);
       return v === null ? true : v === '1';
@@ -79,18 +79,50 @@
   } catch (_) {}
 })();
 
-/** FOUC guard — Nav & History icons (wise-nav-modules) is on by default
+/** FOUC guard — Nav & History icons (wise-nav-modules-v2) is on by default
     so the collapsed rail does not flash the full icon list first.
     Keep in sync with isNavModulesOn() in js/nav-modules.js. */
 (function () {
   try {
-    var v = localStorage.getItem('wise-nav-modules');
+    var v = localStorage.getItem('wise-nav-modules-v2');
     if (v === null ? true : v === '1') {
       document.documentElement.classList.add('nav-modules');
     }
   } catch (_) {
     document.documentElement.classList.add('nav-modules');
   }
+})();
+
+/** FOUC guard — Icons only (wise-menu-rail) is on by default, and Nav &
+    History icons owns the four-icon collapsed rail on load. Keep in sync
+    with isIconRailOn() in js/topbar.js and isNavModulesOn() in js/nav-modules.js
+    so the labelled nav does not flash before the module scripts run. */
+(function () {
+  function wantOn() {
+    try {
+      var nm = localStorage.getItem('wise-nav-modules-v2');
+      if (nm === null ? true : nm === '1') return true;
+      var v = localStorage.getItem('wise-menu-rail');
+      return v === null ? true : v === '1';
+    } catch (_) { return true; }
+  }
+  function apply() {
+    var panel = document.getElementById('menu-panel');
+    if (!panel) return false;
+    panel.classList.toggle('mp-rail', wantOn());
+    return true;
+  }
+  if (apply()) return;
+  var mo = new MutationObserver(function () {
+    if (apply()) mo.disconnect();
+  });
+  mo.observe(document.documentElement, { childList: true, subtree: true });
+  function stop() {
+    apply();
+    mo.disconnect();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', stop);
+  else stop();
 })();
 
 /** Design-token color overrides — persist per theme and apply before paint so

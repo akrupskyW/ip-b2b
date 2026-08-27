@@ -502,6 +502,7 @@
       flex-shrink: 0;
       animation: none;
     }
+    #modules-row .wch-sidebar.wch-docked.wch-docked-hidden { display: none !important; }
     #modules-row .wch-sidebar.wch-docked .wch-head {
       padding: 18px 14px 16px 24px;
       border-bottom: 1px solid var(--border);
@@ -11046,9 +11047,11 @@
            an in-chat overlay popover. It carries pane-style header chrome (a
            three-dot menu + width changer) and stays open as its own module. */
         historyBreakout: true,
-        /* Keep History collapsed on first load — it stays tucked in behind the
-           chat until the three-dot "History" toggle reveals it. */
-        historyBreakoutDefault: false,
+        /* This is the only surface where sticky History starts visible, docked
+           to the left of the chat. Every other chat keeps it tucked until the
+           three-dot "History & Projects" switch reveals it. */
+        historyBreakoutDefault: true,
+        historyBreakoutHidden: false,
         /* Dress the broken-out History header like the result panes: serif
            masthead + three-dot menu + width changer (instead of the overlay's
            break-out / close buttons). */

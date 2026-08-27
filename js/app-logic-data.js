@@ -89,7 +89,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Appearance defaults that are ON',
-        how: 'Unset means on for <strong>Minimal UI</strong> (<code>wise-minimal-ui-v2</code>), the <strong>icon nav rail</strong> (<code>wise-menu-rail</code>), <strong>chat tint</strong> (<code>wise-chat-tint</code>), the <strong>activity strip</strong> (<code>wise-activity-strip</code>) and <strong>serif headlines</strong> (<code>wise-serif-headlines</code>). <strong>Header float</strong> is unconditional — <code>isHeaderFloatOn()</code> always returns true, so module header strips are gone app-wide and <code>.panel-controls</code> float over the content.',
+        how: 'Unset means on for <strong>Minimal UI</strong> (<code>wise-minimal-ui-v2</code>), the <strong>icon nav rail</strong> (<code>wise-menu-rail</code>), <strong>Nav &amp; History icons</strong> (<code>wise-nav-modules-v2</code>), <strong>chat tint</strong> (<code>wise-chat-tint</code>), the <strong>activity strip</strong> (<code>wise-activity-strip</code>) and <strong>serif headlines</strong> (<code>wise-serif-headlines</code>). <strong>History in navigation</strong> stays off. <strong>Header float</strong> is unconditional — <code>isHeaderFloatOn()</code> always returns true, so module header strips are gone app-wide and <code>.panel-controls</code> float over the content.',
       },
       {
         title: 'Text size is a scale, not a font size',
@@ -146,7 +146,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'History can merge into the nav, or share a four-icon rail',
-        how: '<code>nav-history.js</code> relocates the live History module into an expandable nav section (Appearance ▸ History in navigation). <code>nav-modules.js</code> is the sibling and the load default: collapsed, the rail shows only the logo bug, menu, History chevron and a circular new-chat icon. The menu opens the labelled navigation with History collapsed beside it; the chevron opens History in full with the navigation collapsed. The two modes are mutually exclusive.',
+        how: '<code>nav-history.js</code> relocates the live History module into an expandable nav section (Appearance ▸ History in navigation). <code>nav-modules.js</code> is the sibling and the load default: collapsed, the rail shows only the logo bug, menu, History chevron and a circular new-chat icon. The menu opens the labelled navigation; the chevron opens History in full with the navigation collapsed. While either is open, the hamburger and new-chat hide so they are not repeated inside the opened module, and the chevron closes back to the rail. The two modes are mutually exclusive.',
       },
       {
         title: 'App Search re-plumbs the shell',
@@ -579,7 +579,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'History and Turns are docked drawers',
-        how: 'The three-dot <em>History &amp; Projects</em> switch reveals the History module as a sticky drawer on the chat\u2019s <strong>left</strong>; <em>Turns</em> docks on the <strong>right</strong>. Both start tucked behind the chat (<code>historyBreakoutHidden</code>), never as an in-chat overlay. History persists per surface under <code>wise-chat-history:{surface}</code>, capped at 60 threads.',
+        how: 'The three-dot <em>History &amp; Projects</em> switch reveals the History module as a sticky drawer on the chat\u2019s <strong>left</strong>; <em>Turns</em> docks on the <strong>right</strong>. History starts visible only on <code>pages/wiseai.html</code> (<code>historyBreakoutHidden: false</code>); every other surface tucks it on load. Turns always starts tucked. Neither is an in-chat overlay. History persists per surface under <code>wise-chat-history:{surface}</code>, capped at 60 threads.',
       },
       {
         title: 'Surface actions mirror into the thread',

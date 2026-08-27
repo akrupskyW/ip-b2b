@@ -10836,9 +10836,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
          MCP-usage filter toggle beside the search. */
       breakoutDefault: opts.historyBreakoutDefault === true,
       dockedControls: opts.historyDockedControls === true,
-      /* Start the docked module tucked in behind the chat (hidden) — the
-         three-dot "History" toggle reveals it, exactly like Turns. */
-      breakoutStartHidden: opts.historyBreakoutHidden === true,
+      /* Sticky History is OFF on load except pages/wiseai.html, which passes
+         historyBreakoutHidden: false. Unset (and true) stay tucked; the
+         three-dot "History & Projects" switch reveals the drawer. */
+      breakoutStartHidden: opts.historyBreakoutHidden !== false,
       mcpFilter: opts.historyMcpFilter === true,
       onNew: () => reset(),
       /* Persist the restored transcript and park follow-up intents for that
