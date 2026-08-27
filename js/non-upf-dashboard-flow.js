@@ -1,3 +1,5 @@
+import './date-column.js';
+
 /**
  * Non-UPF Verification Dashboard — WISEcode Admin module.
  *
@@ -93,7 +95,7 @@ const COLS = [
   { key: 'name',    label: 'Product Name',  sortable: true,  value: (p) => p.name.toLowerCase(), type: 'text' },
   { key: 'upf',     label: 'Verification',  sortable: true,  value: (p) => UPF_CHIP[p.upf].label, type: 'text' },
   { key: 'status',  label: 'Status',        sortable: true,  value: (p) => PROD_STATUS[p.status].label, type: 'text' },
-  { key: 'updated', label: 'Updated Last',  sortable: true,  value: (p) => Date.parse(`${p.updated} ${p.time}`) || 0, type: 'num' },
+  { key: 'updated', label: 'Updated Last',  sortable: true,  value: (p) => (dc() ? dc().sortValue(prodDates(p), 'product', dateLead) : (Date.parse(`${p.updated} ${p.time}`) || 0)), type: 'num' },
 ];
 const ARROW_SVG = '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
@@ -110,6 +112,14 @@ let filters = { ...FILTER_DEFAULTS };
 let sortKey = null, sortDir = 1;
 let filterOpen = false;
 let docListenersBound = false;
+let dateLead = 'updated';
+let dateLeadBound = false;
+
+function dc() { return window.WiseDateCol; }
+function prodDates(p) {
+  const D = dc();
+  return D ? D.complete({ updated: p.updated, edited: p.edited }, 'product') : { updated: p.updated };
+}
 
 /* Product-table layout: 'rows' (default) or 'cards'. Persisted so the choice
    survives navigation. True mobile forces cards via CSS regardless. */
@@ -307,11 +317,19 @@ function statCardsHtml() {
 }
 
 /* ---- Product table -------------------------------------------------- */
-const GRID_COLS = '88px minmax(220px, 2.4fr) 150px 190px 160px';
+const GRID_COLS = '88px minmax(220px, 2.4fr) 150px 190px 186px';
 
 function theadHtml() {
+  const D = dc();
   return COLS.map((c) => {
-    const cls = `adm-th${c.end ? ' adm-th--end' : ''}`;
+    const cls = `adm-th${c.end ? ' adm-th--end' : ''}${c.key === 'updated' ? ' w-date-th' : ''}`;
+    if (c.key === 'updated' && D) {
+      const inner = D.headerHtml({ kinds: 'product', lead: dateLead });
+      if (!c.sortable) return `<span class="${cls}">${inner}</span>`;
+      const active = c.key === sortKey;
+      const dir = active ? ` data-adm-dir="${sortDir === 1 ? 'asc' : 'desc'}"` : '';
+      return `<span class="${cls} adm-th--sortable" role="button" tabindex="0" data-adm-sort="${esc(c.key)}"${dir}>${inner}<span class="adm-sort-arrow">${ARROW_SVG}</span></span>`;
+    }
     if (!c.sortable) return `<span class="${cls}">${esc(c.label)}</span>`;
     const active = c.key === sortKey;
     const dir = active ? ` data-adm-dir="${sortDir === 1 ? 'asc' : 'desc'}"` : '';
@@ -331,10 +349,10 @@ function productRow(p) {
   return `
     <div class="adm-trow" data-adm-prow="${esc(p.upc)}" data-adm-pstatus="${esc(p.status)}" data-adm-pupf="${esc(p.upf)}">
       <span class="adm-td"><span class="adm-actions nud-actions"><button type="button" class="adm-icon-btn nud-rowmenu-btn" title="Manage product" aria-haspopup="menu" data-adm-action="manage-product" data-adm-upc="${esc(p.upc)}"><span class="material-symbols-outlined">more_vert</span></button></span></span>
-      <span class="adm-td"><span class="adm-idcell">${thumbHtml(p)}<span class="adm-idcell-body"><span class="adm-idcell-name"><a href="#" data-adm-action="open-product" data-adm-upc="${esc(p.upc)}">${esc(p.name)}</a></span><span class="adm-idcell-sub" style="font-family:'SF Mono',ui-monospace,Menlo,monospace">UPC · ${esc(p.upc)}</span></span></span></span>
+      <span class="adm-td"><span class="adm-idcell">${thumbHtml(p)}<span class="adm-idcell-body"><span class="adm-idcell-name"><a href="#" data-adm-action="open-product" data-adm-upc="${esc(p.upc)}">${esc(p.name)}</a></span><span class="adm-idcell-sub" style="font-family:var(--font-mono)">UPC · ${esc(p.upc)}</span></span></span></span>
       <span class="adm-td"><span class="adm-chip ${upf.cls}">${esc(upf.label)}</span></span>
       <span class="adm-td"><span class="adm-chip ${st.cls}"><span class="material-symbols-outlined">${esc(st.icon)}</span>${esc(st.label)}</span></span>
-      <span class="adm-td"><span class="adm-idcell-body nud-updated"><span class="nud-updated-date">${esc(p.updated)}</span><span class="adm-idcell-sub">${esc(p.time)}</span></span></span>
+      <span class="adm-td"><span class="w-datecell">${dc() ? dc().cellHtml(prodDates(p), 'product', dateLead) : `<span class="adm-idcell-body nud-updated"><span class="nud-updated-date">${esc(p.updated)}</span><span class="adm-idcell-sub">${esc(p.time)}</span></span>`}</span></span>
     </div>`;
 }
 
@@ -387,7 +405,7 @@ function filterPopHtml() {
 function paint() {
   if (!hostEl) return;
   hostEl.innerHTML = `
-    <div class="adm-wrap adm-wrap--wide">
+    <div class="adm-wrap adm-wrap--wide" data-w-date-root data-nud-board>
       <header class="adm-head">
         <div class="adm-head-row">
           <div>
@@ -811,13 +829,22 @@ export function renderNonUpfDashboard(mainEl) {
   hostEl = mainEl;
   query = ''; filters = { ...FILTER_DEFAULTS }; sortKey = null; sortDir = 1; filterOpen = false;
   viewMode = loadViewMode();
+  if (!dateLeadBound && dc()) {
+    dateLeadBound = true;
+    dc().onLead(hostEl, (lead, root) => {
+      if (!hostEl.querySelector('[data-nud-board]')) return;
+      if (root && !hostEl.contains(root)) return;
+      dateLead = lead;
+      paint();
+    });
+  }
   paint();
 
   mainEl.addEventListener('click', (e) => {
     const chartCard = e.target.closest('.adm-chart-card');
     if (chartCard) { replayCharts(); return; }
     const sortH = e.target.closest('[data-adm-sort]');
-    if (sortH) { toggleSort(sortH.dataset.admSort); return; }
+    if (sortH && !e.target.closest('.w-datemenu, .pf-datemenu')) { toggleSort(sortH.dataset.admSort); return; }
     const optBtn = e.target.closest('[data-adm-action="page-options"]');
     if (optBtn) { e.preventDefault(); e.stopPropagation(); openPageMenu(optBtn); return; }
     const menuBtn = e.target.closest('[data-adm-action="manage-product"]');

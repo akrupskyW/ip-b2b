@@ -412,10 +412,23 @@
     function currentUserInitials() {
       return initialsFrom(flow.answers.name || flow.answers.email) || 'ME';
     }
+    function youAvatarSpan() {
+      var init = currentUserInitials();
+      try {
+        if (window.WiseUserAvatar && typeof window.WiseUserAvatar.span === 'function') {
+          return window.WiseUserAvatar.span('You', init);
+        }
+        var src = localStorage.getItem('wise-user-avatar');
+        if (src) {
+          return '<span class="sc-avatar sc-avatar-you has-avatar-img" role="img" aria-label="You" data-initials="' + esc(init) + '"><img class="wise-avatar-img" src="' + esc(src) + '" alt="You" /></span>';
+        }
+      } catch (_) { /* storage / global unavailable */ }
+      return '<span class="sc-avatar sc-avatar-you" role="img" aria-label="You" data-initials="' + esc(init) + '">' + esc(init) + '</span>';
+    }
     function addUser(text, masked) {
       var body = masked ? '<span class="sc-mask">' + esc(text) + '</span>' : esc(text);
       messages.insertAdjacentHTML('beforeend',
-        '<div class="sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You">' + esc(currentUserInitials()) + '</span><div class="sc-line-body">' + body + '<div class="sc-line-meta"><span class="sc-line-time">' + esc(nowLabel()) + '</span></div></div></div>');
+        '<div class="sc-line sc-line-you">' + youAvatarSpan() + '<div class="sc-line-body">' + body + '<div class="sc-line-meta"><span class="sc-line-time">' + esc(nowLabel()) + '</span></div></div></div>');
       scrollDown(true); /* fresh user action — always bring their message into view */
     }
     function chipsHtml(options) {

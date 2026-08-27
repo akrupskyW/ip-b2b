@@ -1,0 +1,15 @@
+# Glyph names the static scan in gen_icon_sprite.py cannot see, because the
+# name is computed or lives in a shape no pattern matches. Harvested from the
+# runtime sweep: load a page, and js/icon-svg-shim.js warns in the console with
+# every name that had no SVG twin (also on window.WISE_ICONS.misses). Add them
+# here and re-run `python3 scripts/gen_icon_sprite.py`.
+#
+# One name per line. Unknown names are reported as unresolved, not fatal.
+
+photo
+toll
+timer
+savings
+speed_camera
+local_florist
+width_normal

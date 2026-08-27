@@ -58,84 +58,18 @@ export const OWL_BUG = `<svg viewBox="0 0 193 100" fill="currentColor" xmlns="ht
    the marketing galaxy can reuse the exact same pulsating owl for its core. */
 export const OWL_MARK = `<svg viewBox="0 0 193 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z" fill="white"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z" fill="white"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z" fill="white"/></svg>`;
 
-/* Chat module elevation — Admin three-dot control. Shared app-wide (one key,
-   broadcast on wise:chat-elev) so every chat surface follows one choice.
-   Default is "Above high" so the AI Chat container sits above other modules. */
+/* Chat module elevation is locked to Little min — the same drop as the
+   other module cards. The Admin three-dot picker (Little min / Above high / 3D)
+   was removed; leftover wise:chat-elev prefs are rewritten to min. */
 const CHAT_ELEV_KEY = 'wise:chat-elev';
-const CHAT_ELEV_LEVELS = ['min', 'high', '3d'];
-const CHAT_ELEV_DEFAULT = 'high';
-const CHAT_ELEV_OPTS = [
-  { id: 'min', label: 'Little min', title: 'Little minimum' },
-  { id: 'high', label: 'Above high', title: 'Above high' },
-  { id: '3d', label: '3D', title: '3D' },
-];
-function readChatElev() {
-  try {
-    const s = localStorage.getItem(CHAT_ELEV_KEY);
-    if (CHAT_ELEV_LEVELS.includes(s)) return s;
-  } catch (_) {}
-  return CHAT_ELEV_DEFAULT;
-}
-function applyChatElev(level) {
+function applyChatElevMin() {
   if (typeof document === 'undefined') return;
   const html = document.documentElement;
-  const next = CHAT_ELEV_LEVELS.includes(level) ? level : CHAT_ELEV_DEFAULT;
-  html.classList.remove('chat-elev-min', 'chat-elev-high', 'chat-elev-3d');
-  html.classList.add('chat-elev-' + next);
+  html.classList.remove('chat-elev-high', 'chat-elev-3d');
+  html.classList.add('chat-elev-min');
+  try { localStorage.setItem(CHAT_ELEV_KEY, 'min'); } catch (_) {}
 }
-function setChatElev(level) {
-  const next = CHAT_ELEV_LEVELS.includes(level) ? level : CHAT_ELEV_DEFAULT;
-  try { localStorage.setItem(CHAT_ELEV_KEY, next); } catch (_) {}
-  applyChatElev(next);
-  try { document.dispatchEvent(new CustomEvent('wise:chat-elev', { detail: { level: next } })); } catch (_) {}
-}
-function chatElevControlHtml(active) {
-  const cur = CHAT_ELEV_LEVELS.includes(active) ? active : CHAT_ELEV_DEFAULT;
-  const btns = CHAT_ELEV_OPTS.map((o) =>
-    `<button type="button" class="sc-stream-seg-btn${o.id === cur ? ' is-on' : ''}" data-sc="elev" data-elev="${o.id}" role="radio" aria-checked="${o.id === cur ? 'true' : 'false'}" title="${o.title}" aria-label="${o.title}">${o.label}</button>`
-  ).join('');
-  return '<div class="sc-elev">'
-    + '<span class="sc-elev-label">Elevation<span class="topbar-menu-badge">Admin</span></span>'
-    + '<div class="sc-stream-seg sc-elev-seg" role="radiogroup" aria-label="Chat module elevation">'
-    + btns
-    + '</div></div>';
-}
-function injectChatElevControl(pop) {
-  if (!pop || pop.querySelector('.sc-elev')) return;
-  const html = chatElevControlHtml(readChatElev());
-  const bg = pop.querySelector('[data-sc="bg-anim"]');
-  const brand = pop.querySelector('[data-sc="brandtext"]');
-  const compact = pop.querySelector('[data-sc="compact"]');
-  if (bg) bg.insertAdjacentHTML('beforebegin', html);
-  else if (brand) brand.insertAdjacentHTML('afterend', html);
-  else if (compact) compact.insertAdjacentHTML('afterend', html);
-  else pop.insertAdjacentHTML('beforeend', html);
-}
-function syncChatElevControl(root) {
-  if (!root) return;
-  const cur = readChatElev();
-  root.querySelectorAll('[data-sc="elev"]').forEach((btn) => {
-    const on = btn.dataset.elev === cur;
-    btn.classList.toggle('is-on', on);
-    btn.setAttribute('aria-checked', on ? 'true' : 'false');
-  });
-}
-function wireChatElev(pop) {
-  if (!pop || pop.__wiseElevWired) return;
-  injectChatElevControl(pop);
-  applyChatElev(readChatElev());
-  pop.querySelectorAll('[data-sc="elev"]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const level = btn.dataset.elev;
-      if (CHAT_ELEV_LEVELS.includes(level)) setChatElev(level);
-    });
-  });
-  document.addEventListener('wise:chat-elev', () => syncChatElevControl(pop));
-  syncChatElevControl(pop);
-  pop.__wiseElevWired = true;
-}
-try { applyChatElev(readChatElev()); } catch (_) {}
+try { applyChatElevMin(); } catch (_) {}
 
 const DEFAULT_INTENTS = [
   { intent: 'customer_profile', label: 'Start New Verification', icon: 'add', nextIntents: ['resume_prompt', 'add_food_intro', 'faq_intro'] },
@@ -248,6 +182,14 @@ function esc(s) {
     .replace(/'/g, '&#39;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+/* "You" chip: photo from the shared store (or an explicit override), else initials. */
+function youAvatarChipHtml(initials, customAvatar) {
+  const custom = typeof customAvatar === 'function' ? customAvatar() : customAvatar;
+  const img = custom || userAvatarImg('You');
+  const init = initials || 'AK';
+  return `<span class="sc-avatar sc-avatar-you${img ? ' has-avatar-img' : ''}" role="img" aria-label="You" data-initials="${esc(init)}">${img || esc(init)}</span>`;
 }
 
 /* Split a label into per-letter spans so CSS can run a staggered, text-clipped
@@ -617,7 +559,9 @@ export const WISEAI_DBS = [
   },
   {
     label: 'Personal sandboxes', access: 'read/write', badge: 'ORG',
-    items: [], empty: 'None available',
+    items: [
+      { id: 'sb-mine', name: 'My foods (demo)', desc: '80 foods \u00b7 imports, clones, creations' },
+    ],
   },
   {
     label: 'Global', access: 'read-only', badge: 'GLB',
@@ -867,15 +811,13 @@ export function wireChatComposer(railEl, opts = {}) {
   function addDbChangeNote(messages, prev, next) {
     if (!messages || !next) return;
     const initials = opts.userInitials || 'AK';
-    const custom = typeof opts.userAvatar === 'function' ? opts.userAvatar() : opts.userAvatar;
-    const userAvatar = custom || userAvatarImg('You') || esc(initials);
     const tid = makeTurnId();
     const body = prev
       ? `<span class="sc-event-label">Switched database from</span> <strong>${esc(prev.name)}</strong> to <strong>${esc(next.name)}</strong>`
       : `<span class="sc-event-label">Set database to</span> <strong>${esc(next.name)}</strong>`;
     messages.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-you sc-line-event" data-activity="database" role="note" aria-label="${esc(prev ? `Switched database to ${next.name}` : `Set database to ${next.name}`)}">`
-      + `<span class="sc-avatar sc-avatar-you" role="img" aria-label="You" data-initials="${esc(initials)}">${userAvatar}</span>`
+      + youAvatarChipHtml(initials, opts.userAvatar)
       + `<div class="sc-line-body">${body}<div class="sc-line-meta">${timeStampHtml()}<span class="sc-fb-id" data-tip="Turn ID" tabindex="0">#${esc(tid)}</span></div></div>`
       + `</div>`);
     messages.scrollTop = messages.scrollHeight;
@@ -1084,8 +1026,11 @@ export function injectChatExtras() {
        master switch is off. */
     .sc-stream-detail { display: flex; flex-direction: column; gap: 7px;
       margin: 4px 12px 8px 42px; transition: opacity .15s ease; }
-    .sc-stream-detail-label { font-size: 10px; letter-spacing: 0.1em; font-weight: 700;
+    .sc-stream-detail-label { display: flex; align-items: center; gap: 6px;
+      font-size: 10px; letter-spacing: 0.1em; font-weight: 700;
       text-transform: uppercase; color: var(--text-muted); }
+    .sc-bganim-row-icon { font-size: 17px !important; flex-shrink: 0; color: var(--text-subtle);
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20; }
     .sc-stream-seg { display: flex; width: 100%; border: 1px solid var(--border-strong);
       border-radius: 9999px; overflow: hidden; }
     .sc-stream-seg-btn { flex: 1 1 0; min-width: 0; height: 28px; border: 0;
@@ -1469,7 +1414,16 @@ export function injectChatExtras() {
        fixed board (portaled to <body>) so long prompt sets read as a gallery. */
     .wch-ask-empty { padding: 18px 16px; color: var(--text-muted); font-size: 13.5px; line-height: 1.5; }
     .wch-ask-intro { margin: 2px 16px 8px; font-size: 13px; line-height: 1.5; opacity: .82; }
-    .wch-ask-list { flex: 1; overflow-y: auto; padding: 4px 10px 14px; }
+    /* One scroller for the whole catalog — header, intro, search, chips, and
+       prompts. The header sticks so the width control and ⋯ stay reachable. */
+    .wch-ask-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+    .wch-ask-panel .wch-head { position: sticky; top: 0; z-index: 3;
+      background: var(--card, var(--surface, #0F1830)); }
+    html:not(.dark) .wch-ask-panel .wch-head { background: #fff; }
+    #modules-row .wch-sidebar.wch-ask-panel.wch-docked .wch-head { background: var(--surface, #fff); }
+    #modules-row.modules-sticky .wch-sidebar.wch-ask-panel.wch-docked:not(.wch-unsticky) .wch-head {
+      background: var(--surface-2, var(--surface, #fff)); }
+    .wch-ask-panel .wch-ask-list, .wch-ask-panel .wch-list { flex: none; overflow: visible; padding: 4px 10px 14px; }
     .wch-ask-group { margin: 0; padding: 10px 0 6px; }
     .wch-ask-group + .wch-ask-group { margin-top: 8px; padding-top: 28px;
       border-top: 1px solid rgba(20,40,80,0.10); }
@@ -1525,7 +1479,7 @@ export function injectChatExtras() {
     /* Search row — pinned above the prompt list so long libraries can be
        filtered by keyword (mirrors the Turns / History search field: icon
        overlay with pointer-events:none, clear only when there is a query). */
-    .wch-ask-search { position: relative; display: flex; align-items: center; margin: 0 12px 8px; flex-shrink: 0; }
+    .wch-ask-search { position: relative; display: flex; align-items: center; margin: 0 12px 8px; }
     .wch-ask-search > .material-symbols-outlined { position: absolute; left: 11px; font-size: 18px; opacity: .5; pointer-events: none; }
     .wch-ask-search-input { width: 100%; height: 38px; box-sizing: border-box; padding: 0 32px 0 36px;
       border-radius: 999px; font: inherit; font-size: 13.5px; color: inherit; outline: none;
@@ -1563,9 +1517,10 @@ export function injectChatExtras() {
        tool footer. A row of filter chips above the list scopes to one section. */
     /* Filter chips read exactly like the transcript's intent chips (.chip /
        .ws-intent-chip): the composer's blue-tinted surface, --border-strong,
-       muted text, regular weight — never a bold white pill. Pinned in the
-       toolbar (not inside the scrolling list) so search / tags / sort stay put. */
-    .wch-ask-toolbar { flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; margin: 0 12px 8px; }
+       muted text, regular weight — never a bold white pill. They live in the
+       same scroller as the prompts so the whole catalog (intro, search, chips,
+       cards) moves as one. */
+    .wch-ask-toolbar { display: flex; flex-direction: column; gap: 8px; margin: 0 12px 8px; }
     .wch-ask-sort { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
     .wch-ask-filters { display: flex; flex-wrap: wrap; gap: 6px; }
     .wch-ask-filter { border: 1px solid var(--border-strong); background: color-mix(in srgb, var(--primary) 10%, #fff);
@@ -1620,7 +1575,7 @@ export function injectChatExtras() {
       font-size: 12px; line-height: 1.5; opacity: .72; }
     html:not(.dark) .wch-ask-cap-tools { border-top-color: rgba(20,40,80,0.12); }
     .wch-ask-cap-tools b { font-weight: 700; text-transform: none; letter-spacing: 0; opacity: .95; }
-    .wch-ask-cap-tools code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; opacity: .95; }
+    .wch-ask-cap-tools code { font-size: 11.5px; opacity: .95; }
 
     /* Clickable attachment thumbnails + the full-size image lightbox they open. */
     .fl-attach-thumb { cursor: zoom-in; }
@@ -1649,6 +1604,7 @@ export function injectChatExtras() {
     .sc-bganim-canvas { position: absolute; inset: 0; width: 100%; height: 100%;
       z-index: 1; pointer-events: none; opacity: 0; transition: opacity .55s ease; }
     .sc-bganim-live .sc-bganim-canvas { opacity: 1; }
+    .sc-bganim-live.sc-bganim-panning { cursor: grabbing; user-select: none; }
     /* The class is repeated to out-rank page-level skin rules such as
        html.chat-tint:not(.dark) #welcome-screen (product portfolio/comparison,
        an opaque 5%-blue wash with !important) — both rules carry !important,
@@ -1666,26 +1622,29 @@ export function injectChatExtras() {
     html.full-bleed.fb-chat-tint.chat-tint .sc-bganim-live #welcome-screen,
     html.full-bleed.fb-chat-tint.chat-tint .sc-orbit-live #welcome-screen { background: transparent !important; }
 
-    /* Opacity / angle / scale / shape controls that sit just under the
-       "Background animation" toggle. Mirror the streaming-detail sub-row; admin
+    /* Opacity / angle / camera / scale / shape controls that sit just under the
+       Helix "Animation" toggle. Mirror the streaming-detail sub-row; admin
        pink accent matches the toggle. The rows share .sc-bganim-detail so they
-       disable together. Angle, Pitch, Length, Thick and Depth are helix-only
-       (hidden while Orbit is selected); Scale and Nodes drive both fields. */
+       disable together. Angle, Camera, Pitch, Length, Thick, Rungs, Bar and Depth
+       are helix-only (hidden while Orbit is selected); Scale and Nodes drive both
+       fields. Dots (size, colour, motion of the small beads between product
+       circles) are helix-only too. Pulse and Spark each keep their own Rate / Size
+       knobs. Rungs / Bar are the cross-lines between the two strands. */
     .sc-bganim-detail { display: flex; align-items: center; gap: 10px;
       margin: 2px 12px 8px 42px; transition: opacity .15s ease; }
-    .sc-bganim-detail-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+    .sc-bganim-detail-label { font-size: 8px; font-weight: 700; letter-spacing: 0.04em;
       text-transform: uppercase; color: var(--text-muted); white-space: nowrap;
-      min-width: 66px; }
-    .sc-bganim-opacity, .sc-bganim-angle-range, .sc-bganim-scale-range,
-    .sc-bganim-knob-range { flex: 1 1 auto; min-width: 54px; height: 4px; cursor: pointer;
+      min-width: 38px; }
+    .sc-bganim-opacity, .sc-bganim-angle-range, .sc-bganim-camera-range, .sc-bganim-azimuth-range, .sc-bganim-shift-range, .sc-bganim-scale-range,
+    .sc-bganim-knob-range, .sc-bganim-motion-knob-range, .sc-bganim-mat-range { flex: 1 1 auto; min-width: 54px; height: 4px; cursor: pointer;
       accent-color: rgb(219, 39, 119); }
     /* The master Scale row leads the three axes — a touch stronger so it reads
        as the one that moves them all. */
     .sc-bganim-scale-all .sc-bganim-detail-label,
     .sc-bganim-scale-all .sc-bganim-scale-val { color: var(--text); }
-    .sc-bganim-opacity-val, .sc-bganim-angle-val, .sc-bganim-scale-val,
-    .sc-bganim-knob-val { font-size: 11px; font-weight: 700; color: var(--text-muted);
-      width: 38px; text-align: right; font-variant-numeric: tabular-nums; }
+    .sc-bganim-opacity-val, .sc-bganim-angle-val, .sc-bganim-camera-val, .sc-bganim-azimuth-val, .sc-bganim-shift-val, .sc-bganim-scale-val,
+    .sc-bganim-knob-val, .sc-bganim-motion-knob-val, .sc-bganim-mat-val { font-size: 11px; font-weight: 700; color: var(--text-muted);
+      width: 44px; text-align: right; font-variant-numeric: tabular-nums; }
     .sc-bganim-detail.is-disabled { opacity: .45; pointer-events: none; }
     .sc-bganim-detail[hidden] { display: none !important; }
 
@@ -1695,7 +1654,7 @@ export function injectChatExtras() {
     .sc-bganim-playback { display: flex; align-items: center; gap: 10px;
       margin: -4px 12px 8px 42px; opacity: .78; transition: opacity .15s ease; }
     .sc-bganim-playback:hover { opacity: 1; }
-    .sc-bganim-playback-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+    .sc-bganim-playback-label { font-size: 8px; font-weight: 700; letter-spacing: 0.04em;
       text-transform: uppercase; color: var(--text-muted); white-space: nowrap; }
     .sc-bganim-pp { margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
       padding: 4px 11px; border: 1px solid var(--border, rgba(15,30,55,.12)); border-radius: 999px;
@@ -1720,39 +1679,72 @@ export function injectChatExtras() {
        "detail" segment; dims + locks with the toggle like the slider rows. */
     .sc-bganim-style { display: flex; align-items: center; gap: 10px;
       margin: -2px 12px 8px 42px; transition: opacity .15s ease; }
-    .sc-bganim-style-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+    .sc-bganim-style-label { font-size: 8px; font-weight: 700; letter-spacing: 0.04em;
       text-transform: uppercase; color: var(--text-muted); white-space: nowrap; }
     .sc-bganim-style .sc-stream-seg { margin-left: auto; }
     .sc-bganim-style .sc-stream-seg-btn { font-size: 10.5px; }
     .sc-bganim-style.is-disabled { opacity: .45; pointer-events: none; }
 
-    /* Elevation — Admin segmented control in the Display group. Pink outline
-       matching Compact spacing / Module spacing so it reads as an admin pick. */
-    .sc-elev { display: flex; flex-direction: column; gap: 7px;
-      margin: 4px 12px 8px 42px; }
-    .sc-elev-label { display: flex; align-items: center; gap: 6px;
-      font-size: 10px; letter-spacing: 0.1em; font-weight: 700;
-      text-transform: uppercase; color: var(--text-muted); }
-    .sc-elev-label .topbar-menu-badge { margin-left: auto; }
-    .sc-elev-seg { border-color: rgb(219, 39, 119); }
-    .sc-elev-seg .sc-stream-seg-btn { border-left-color: color-mix(in srgb, rgb(219, 39, 119) 45%, transparent);
-      font-size: 10.5px; }
-    .sc-elev-seg .sc-stream-seg-btn:hover { background: color-mix(in srgb, rgb(219, 39, 119) 12%, transparent); color: var(--text); }
-    .sc-elev-seg .sc-stream-seg-btn.is-on { background: rgb(219, 39, 119); color: #fff; }
+    /* Little beads between the product circles — colour swatch + motion segment.
+       Helix-only; they hide with Pitch / Thick while Orbit is selected. */
+    .sc-bganim-dots-color { gap: 8px; }
+    .sc-bganim-dots-color-input {
+      flex: 0 0 auto; width: 30px; height: 18px; padding: 0;
+      border: 1px solid var(--border-strong, rgba(15,30,55,.18)); border-radius: 6px;
+      background: transparent; cursor: pointer; overflow: hidden;
+    }
+    .sc-bganim-dots-color-input::-webkit-color-swatch-wrapper { padding: 0; }
+    .sc-bganim-dots-color-input::-webkit-color-swatch { border: 0; border-radius: 4px; }
+    .sc-bganim-dots-color-input::-moz-color-swatch { border: 0; border-radius: 4px; }
+    .sc-bganim-dots-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .sc-bganim-dots-match, .sc-bganim-dots-reset, .sc-bganim-rungs-match {
+      padding: 0; border: 0; background: none;
+      color: rgb(219, 39, 119); font: inherit; font-size: 11px; font-weight: 700;
+      cursor: pointer; white-space: nowrap;
+    }
+    .sc-bganim-dots-match:hover, .sc-bganim-dots-reset:hover,
+    .sc-bganim-rungs-match:hover { text-decoration: underline; }
+    .sc-bganim-dots-match.is-on, .sc-bganim-dots-reset.is-on,
+    .sc-bganim-rungs-match.is-on { opacity: .42; pointer-events: none; text-decoration: none; }
+    html.dark .sc-bganim-dots-match, html.dark .sc-bganim-dots-reset,
+    html.dark .sc-bganim-rungs-match { color: #f9a8d4; }
+    .sc-bganim-knob-rungs.is-matched .sc-bganim-knob-val { width: auto; min-width: 38px; }
+    .sc-bganim-rungs-match { flex: 0 0 auto; margin-left: 2px; }
+    .sc-bganim-subhead {
+      padding: 4px 12px 0; font-size: 8px; letter-spacing: 0.06em; font-weight: 700;
+      text-transform: uppercase; color: var(--text-subtle);
+    }
+    .sc-bganim-subhead[hidden] { display: none !important; }
+    .sc-bganim-motion-knob[hidden] { display: none !important; }
+    .sc-bganim-dots-motion, .sc-bganim-spin, .sc-bganim-look { display: flex; align-items: center; gap: 10px;
+      margin: 2px 12px 8px 42px; transition: opacity .15s ease; }
+    .sc-bganim-dots-motion[hidden], .sc-bganim-spin[hidden], .sc-bganim-look[hidden] { display: none !important; }
+    .sc-bganim-dots-motion .sc-bganim-style-label,
+    .sc-bganim-spin .sc-bganim-style-label,
+    .sc-bganim-look .sc-bganim-style-label { min-width: 38px; }
+    .sc-bganim-dots-motion .sc-stream-seg,
+    .sc-bganim-spin .sc-stream-seg,
+    .sc-bganim-look .sc-stream-seg { margin-left: auto; }
+    .sc-bganim-dots-motion .sc-stream-seg-btn,
+    .sc-bganim-spin .sc-stream-seg-btn,
+    .sc-bganim-look .sc-stream-seg-btn { font-size: 10.5px; }
+    .sc-bganim-dots-motion.is-disabled, .sc-bganim-spin.is-disabled, .sc-bganim-look.is-disabled { opacity: .45; pointer-events: none; }
 
-    /* ── Grouped, two-column three-dot menu ──────────────────────────────────
-       The chat "More options" popover runs a long list of controls. Rather than
-       one tall single column, its rows are bucketed into titled GROUP CARDS that
-       sit in two flex columns — Conversation/Data/Display on the left,
-       Background/Activity on the right. Flex (not CSS column-width) keeps
-       hit-testing honest: Chromium multi-column layouts often swallow clicks
-       in the second column. groupifyChatMenu() reorganizes the flat rows into
-       these cards and tags the popover with .sc-menu-grouped. */
+    /* ── Grouped three-column three-dot menu ─────────────────────────────────
+       The chat "More options" popover buckets rows into titled GROUP CARDS
+       across three flex columns — Conversation/Data/Display on the left,
+       Helix alone in the middle, Activity on the right. Flex (not CSS
+       column-width) keeps hit-testing honest: Chromium multi-column layouts
+       often swallow clicks in later columns. groupifyChatMenu() reorganizes
+       the flat rows into these cards and tags the popover with .sc-menu-grouped.
+       Helix gets its own column so its clusters can sit two-up without
+       stacking under Activity. Scrolls if it would run off the screen. */
     .topbar-popover.sc-menu-grouped {
-      width: 470px; min-width: 0; max-width: calc(100vw - 24px);
+      width: min(920px, calc(100vw - 16px)); min-width: 0; max-width: calc(100vw - 16px);
       padding: 8px;
-      align-items: flex-start; gap: 8px;
-      max-height: min(82vh, 760px); overflow: hidden auto;
+      align-items: stretch; gap: 8px;
+      max-height: min(82vh, calc(100vh - 16px));
+      overflow-x: hidden; overflow-y: auto;
       pointer-events: auto;
     }
     /* Flex only while shown — .sc-menu-grouped { display:flex } would tie
@@ -1762,9 +1754,13 @@ export function injectChatExtras() {
       display: flex; flex-direction: row; flex-wrap: wrap;
     }
     .topbar-popover.sc-menu-grouped.hidden { display: none; }
-    .sc-menu-col { flex: 1 1 216px; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+    .sc-menu-col { flex: 1 1 216px; min-width: 0; max-width: 300px; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+    .sc-menu-col--helix {
+      flex: 1.4 1 280px; min-width: 240px; min-height: 0; max-width: none;
+      overflow: visible;
+    }
     .sc-menu-group {
-      display: block; margin: 0; padding: 2px 0 6px;
+      display: block; margin: 0; padding: 2px 0 6px; overflow: visible; min-width: 0;
       border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2);
     }
     html.dark .sc-menu-group { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.09); }
@@ -1792,26 +1788,196 @@ export function injectChatExtras() {
     .topbar-menu-item--admin .topbar-menu-desc { color: var(--text-muted); }
     html.dark .topbar-menu-desc,
     html.dark .topbar-menu-item--admin .topbar-menu-desc { color: var(--text-muted); }
-    .sc-elev .topbar-menu-desc { margin-top: -4px; }
     .sc-menu-grouped .topbar-menu-item:has(.topbar-menu-desc) { padding-top: 7px; padding-bottom: 7px; }
     .sc-menu-grouped .topbar-menu-badge { margin-left: 3px; margin-right: 2px; padding: 1px 3px; font-size: 7px; letter-spacing: 0.02em; }
     /* Trim the toggle switch to reclaim row width for the label. */
     .sc-menu-grouped .sc-switch { width: 28px; height: 16px; }
     .sc-menu-grouped .sc-switch::after { width: 12px; height: 12px; }
     .sc-menu-grouped .sc-mcp-item.is-on .sc-switch::after { transform: translateX(12px); }
-    /* Sub-control rows (opacity / angle / scale / style / playback / streaming detail / strip side)
-       lose the deep 42px indent — inside a ~206px column they align to the card. */
-    .sc-menu-grouped .sc-bganim-detail { margin: 2px 12px 6px 14px; }
-    .sc-menu-grouped .sc-bganim-style { margin: 0 12px 6px 14px; }
-    .sc-menu-grouped .sc-bganim-playback { margin: 0 12px 4px 14px; }
+    /* Helix grows into leftover popover width. Sliders sit two-up on one
+       line (label | track | value). Segment rows (Style / Motion / Playback)
+       still span. Hints stay on the control titles so they don't stack rows. */
+    .sc-menu-grouped .sc-bganim-detail { margin: 1px 8px 3px 10px; min-width: 0; }
+    .sc-menu-grouped .sc-bganim-style { margin: 0 10px 6px 12px; min-width: 0; }
+    .sc-menu-grouped .sc-bganim-dots-motion,
+    .sc-menu-grouped .sc-bganim-spin,
+    .sc-menu-grouped .sc-bganim-look { margin: 0 8px 4px 10px; min-width: 0; }
+    .sc-menu-grouped .sc-bganim-playback { margin: 0 10px 4px 12px; min-width: 0; }
+    .sc-menu-grouped .sc-bganim-subhead { padding: 3px 10px 0; }
     .sc-menu-grouped .sc-stream-detail { margin: 4px 12px 6px 14px; }
-    .sc-menu-grouped .sc-elev { margin: 4px 12px 6px 14px; }
-    /* The Style + Strip-side segments stack their label above the control in the
-       narrow column so the pills get the full width (matching Streaming detail). */
-    .sc-menu-grouped .sc-bganim-style { flex-direction: column; align-items: stretch; gap: 6px; }
-    .sc-menu-grouped .sc-bganim-style .sc-stream-seg { margin-left: 0; }
-    .sc-menu-grouped .sc-bganim-playback { flex-direction: column; align-items: stretch; gap: 6px; }
-    .sc-menu-grouped .sc-bganim-playback .sc-bganim-pp { margin-left: 0; justify-content: center; }
+    .sc-menu-grouped .sc-bganim-detail-label,
+    .sc-menu-grouped .sc-bganim-style-label,
+    .sc-menu-grouped .sc-bganim-playback-label { min-width: 38px; font-size: 10px; letter-spacing: 0.04em; }
+    .sc-menu-group--helix > .sc-menu-group-head,
+    .sc-menu-group--background > .sc-menu-group-head { font-size: 9px; letter-spacing: 0.06em; padding: 4px 8px 2px; }
+    .sc-menu-grouped .sc-bganim-opacity-val, .sc-menu-grouped .sc-bganim-angle-val,
+    .sc-menu-grouped .sc-bganim-camera-val, .sc-menu-grouped .sc-bganim-azimuth-val, .sc-menu-grouped .sc-bganim-shift-val, .sc-menu-grouped .sc-bganim-scale-val,
+    .sc-menu-grouped .sc-bganim-knob-val, .sc-menu-grouped .sc-bganim-motion-knob-val, .sc-menu-grouped .sc-bganim-mat-val {
+      font-size: 10px; width: 40px;
+    }
+    .sc-menu-grouped .sc-bganim-opacity,
+    .sc-menu-grouped .sc-bganim-angle-range,
+    .sc-menu-grouped .sc-bganim-camera-range,
+    .sc-menu-grouped .sc-bganim-azimuth-range,
+    .sc-menu-grouped .sc-bganim-shift-range,
+    .sc-menu-grouped .sc-bganim-scale-range,
+    .sc-menu-grouped .sc-bganim-knob-range,
+    .sc-menu-grouped .sc-bganim-motion-knob-range,
+    .sc-menu-grouped .sc-bganim-mat-range {
+      min-width: 64px; max-width: none; flex: 1 1 80px; height: 4px;
+      -webkit-appearance: none; appearance: none;
+      background: color-mix(in srgb, rgb(219, 39, 119) 38%, var(--border));
+      border-radius: 999px;
+    }
+    .sc-menu-grouped input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 10px; height: 10px; border-radius: 50%;
+      background: rgb(219, 39, 119); border: 0; cursor: pointer;
+    }
+    .sc-menu-grouped input[type="range"]::-moz-range-thumb {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: rgb(219, 39, 119); border: 0; cursor: pointer;
+    }
+    .sc-menu-grouped .sc-bganim-style .sc-stream-seg,
+    .sc-menu-grouped .sc-bganim-dots-motion .sc-stream-seg,
+    .sc-menu-grouped .sc-bganim-spin .sc-stream-seg,
+    .sc-menu-grouped .sc-bganim-look .sc-stream-seg {
+      width: auto; flex: 1 1 auto; min-width: 0; margin-left: auto;
+    }
+    .sc-menu-group--helix, .sc-menu-group--background {
+      display: flex; flex-direction: column; gap: 0; align-items: stretch;
+      min-width: 0; overflow: visible; max-height: none;
+    }
+    .sc-menu-group--helix { padding-bottom: 4px; }
+    .sc-menu-group--helix > *, .sc-menu-group--background > * { min-width: 0; }
+    .sc-menu-group--helix > .topbar-menu-item { margin: 0 4px 2px; width: calc(100% - 8px); padding: 3px 6px; }
+    .sc-menu-grouped .sc-menu-group--helix > .topbar-menu-item:has(.topbar-menu-desc) { padding-top: 3px; padding-bottom: 3px; }
+    .sc-menu-group--helix .topbar-menu-desc { display: none; }
+    .sc-bganim-cluster {
+      display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 1px 8px; align-items: center;
+      margin: 0; padding: 0 6px 3px;
+      border: 0; border-radius: 0; background: transparent; min-width: 0;
+    }
+    .sc-bganim-cluster--span { grid-template-columns: minmax(0, 1fr); }
+    .sc-bganim-cluster:not(:has(.sc-bganim-subhead)) { grid-template-columns: minmax(0, 1fr); }
+    html.dark .sc-bganim-cluster { background: transparent; border-color: transparent; }
+    .sc-bganim-cluster[hidden] { display: none !important; }
+    .sc-bganim-cluster > * { min-width: 0; }
+    .sc-bganim-cluster > .sc-bganim-subhead {
+      grid-column: 1 / -1; padding: 3px 2px 1px; margin: 1px 0 0;
+      font-size: 8px; letter-spacing: 0.08em;
+      border-bottom: 1px solid var(--border);
+    }
+    html.dark .sc-bganim-cluster > .sc-bganim-subhead { border-bottom-color: rgba(255,255,255,0.08); }
+    .sc-bganim-cluster > .sc-bganim-style,
+    .sc-bganim-cluster > .sc-bganim-look,
+    .sc-bganim-cluster > .sc-bganim-dots-color,
+    .sc-bganim-cluster > .sc-bganim-dots-motion,
+    .sc-bganim-cluster > .sc-bganim-playback,
+    .sc-bganim-cluster > .sc-bganim-spin {
+      grid-column: 1 / -1;
+    }
+    .sc-bganim-cluster > .sc-bganim-detail,
+    .sc-bganim-cluster > .sc-bganim-style,
+    .sc-bganim-cluster > .sc-bganim-look,
+    .sc-bganim-cluster > .sc-bganim-dots-motion,
+    .sc-bganim-cluster > .sc-bganim-spin,
+    .sc-bganim-cluster > .sc-bganim-playback {
+      margin: 0; padding: 0; flex-wrap: nowrap; gap: 4px 6px; align-items: center;
+    }
+    .sc-bganim-copy {
+      display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+      gap: 1px; min-width: 0; max-width: none; flex: 1 1 100%;
+    }
+    .sc-menu-group--helix .sc-bganim-copy { flex: 0 0 auto; }
+    .sc-menu-group--helix .sc-bganim-hint { display: none; }
+    .sc-bganim-hint {
+      display: block; font-size: 7.5px; font-weight: 500; line-height: 1.2;
+      letter-spacing: 0; text-transform: none; color: var(--text-muted);
+    }
+    html.dark .sc-bganim-hint { color: var(--text-muted); }
+    .sc-bganim-cluster > .sc-bganim-detail[hidden],
+    .sc-bganim-cluster > .sc-bganim-spin[hidden],
+    .sc-bganim-cluster > .sc-bganim-look[hidden],
+    .sc-bganim-cluster > .sc-bganim-dots-motion[hidden],
+    .sc-bganim-cluster > .sc-bganim-subhead[hidden],
+    .sc-bganim-cluster > .sc-bganim-motion-knob[hidden] { display: none !important; }
+    .sc-menu-group--helix .sc-bganim-rungs-match,
+    .sc-menu-group--helix .sc-bganim-dots-match,
+    .sc-menu-group--helix .sc-bganim-dots-reset { font-size: 9px; }
+    .sc-menu-group--helix .sc-bganim-dots-actions { gap: 6px; }
+    .sc-menu-group--helix .sc-stream-seg-btn { font-size: 9.5px; padding: 0 5px; height: 22px; }
+    .sc-menu-group--helix .sc-bganim-pp { padding: 2px 8px; font-size: 10px; }
+    .sc-menu-group--helix .sc-bganim-pp .material-symbols-outlined { font-size: 14px; }
+    .sc-menu-group--helix .sc-bganim-dots-color-input { width: 24px; height: 16px; }
+    .sc-menu-group--helix .sc-bganim-detail-label,
+    .sc-menu-group--helix .sc-bganim-style-label,
+    .sc-menu-group--helix .sc-bganim-playback-label { min-width: 32px; font-size: 9px; }
+    .sc-menu-group--helix .sc-bganim-opacity-val,
+    .sc-menu-group--helix .sc-bganim-angle-val,
+    .sc-menu-group--helix .sc-bganim-camera-val,
+    .sc-menu-group--helix .sc-bganim-azimuth-val,
+    .sc-menu-group--helix .sc-bganim-shift-val,
+    .sc-menu-group--helix .sc-bganim-scale-val,
+    .sc-menu-group--helix .sc-bganim-knob-val,
+    .sc-menu-group--helix .sc-bganim-motion-knob-val,
+    .sc-menu-group--helix .sc-bganim-mat-val { font-size: 9px; width: 34px; }
+    .sc-menu-group--helix .sc-bganim-opacity,
+    .sc-menu-group--helix .sc-bganim-angle-range,
+    .sc-menu-group--helix .sc-bganim-camera-range,
+    .sc-menu-group--helix .sc-bganim-azimuth-range,
+    .sc-menu-group--helix .sc-bganim-shift-range,
+    .sc-menu-group--helix .sc-bganim-scale-range,
+    .sc-menu-group--helix .sc-bganim-knob-range,
+    .sc-menu-group--helix .sc-bganim-motion-knob-range,
+    .sc-menu-group--helix .sc-bganim-mat-range { min-width: 36px; height: 3px; }
+    .sc-menu-group--helix .sc-bganim-row-icon { display: none; }
+    .sc-menu-group--helix > .sc-menu-group-head {
+      display: flex; align-items: center; gap: 4px;
+      padding: 4px 4px 2px 8px;
+    }
+    .sc-helix-head-label { flex: 1 1 auto; min-width: 0; }
+    .sc-helix-head-actions { flex: 0 0 auto; display: inline-flex; align-items: center; }
+    .sc-helix-pop-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%;
+      background: transparent; color: var(--text-subtle); cursor: pointer;
+      opacity: 0.78; transition: background .15s ease, color .15s ease, opacity .15s ease;
+    }
+    .sc-helix-pop-btn .material-symbols-outlined { font-size: 15px !important; line-height: 1 !important; }
+    .sc-helix-pop-btn:hover { opacity: 1; color: var(--text); background: var(--surface-3); }
+    html.dark .sc-helix-pop-btn:hover { background: rgba(255,255,255,0.07); }
+    .sc-helix-dock { display: none; }
+    .sc-helix-float .sc-helix-popout { display: none; }
+    .sc-helix-float .sc-helix-dock { display: inline-flex; }
+    .sc-helix-float {
+      position: fixed; z-index: 2147483600;
+      width: min(320px, calc(100vw - 16px));
+      max-height: min(86vh, calc(100vh - 16px));
+      overflow-x: hidden; overflow-y: auto;
+      padding: 8px; box-sizing: border-box;
+      background: var(--surface-2);
+      border: 1px solid var(--border-strong);
+      border-radius: 14px; box-shadow: var(--shadow-card);
+      pointer-events: auto;
+    }
+    html.dark .sc-helix-float {
+      background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+      border-color: rgba(37, 80, 124, 0.22);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    }
+    .sc-helix-float .sc-menu-col--helix {
+      flex: none; width: 100%; min-width: 0; max-width: none; overflow: visible;
+    }
+    .sc-helix-float .sc-menu-group--helix > .sc-menu-group-head {
+      cursor: grab; user-select: none; touch-action: none;
+      position: sticky; top: -8px; z-index: 2;
+      background: var(--surface-2);
+    }
+    html.dark .sc-helix-float .sc-menu-group--helix > .sc-menu-group-head { background: #1A2339; }
+    .sc-helix-float.is-dragging .sc-menu-group--helix > .sc-menu-group-head { cursor: grabbing; }
+    .sc-helix-float.is-dragging { user-select: none; }
 
     /* Nested Admin popover — a kebab in the grouped menu's top-right opens a
        small card with the master "Admin controls" switch. Off hides every
@@ -1878,14 +2044,19 @@ export function injectChatExtras() {
     .topbar-popover.sc-menu-admin-off .topbar-menu-item--admin,
     .topbar-popover.sc-menu-admin-off .topbar-menu-item:has(.topbar-menu-badge),
     .topbar-popover.sc-menu-admin-off [data-admin-item],
-    .topbar-popover.sc-menu-admin-off .sc-elev,
     .topbar-popover.sc-menu-admin-off .sc-bganim-detail,
     .topbar-popover.sc-menu-admin-off .sc-bganim-style,
+    .topbar-popover.sc-menu-admin-off .sc-bganim-dots-motion,
+    .topbar-popover.sc-menu-admin-off .sc-bganim-spin,
+    .topbar-popover.sc-menu-admin-off .sc-bganim-look,
     .topbar-popover.sc-menu-admin-off .sc-bganim-playback,
+    .topbar-popover.sc-menu-admin-off .sc-bganim-subhead,
+    .topbar-popover.sc-menu-admin-off .sc-bganim-cluster,
     .topbar-popover.sc-menu-admin-off .topbar-menu-badge { display: none !important; }
     .topbar-popover.sc-menu-grouped .sc-menu-group.is-empty,
     .topbar-popover.sc-menu-grouped .sc-menu-col.is-empty { display: none !important; }
     .topbar-popover.sc-menu-grouped.sc-menu-one-col { width: 250px; }
+    .topbar-popover.sc-menu-grouped.sc-menu-two-col { width: min(860px, calc(100vw - 16px)); }
 
     /* Helix product card — most bugs open a food sheet (name/brand + View Details
        into the NFP). A minority open a brand-insight or look-closer fact instead.
@@ -1957,9 +2128,9 @@ export function injectChatExtras() {
    migrates onto Y when the per-axis keys are unset so the look does not jump.
    X and Z default to 100%.
 
-   Each axis runs 25–400%, so the field can be pinched down well BELOW its
-   default size as well as blown up far past it — 100% is the original strand,
-   not the floor. */
+   Each axis runs 1–800%, so the field can be pinched to a hairline or
+   blown far past its default size — 100% is the original strand, not the
+   floor. Bead Rate at 1% is a slow crawl; 800% is a fast loop. */
 const BGANIM_SCALE_LEGACY_KEY = 'wise:chat-bg-anim-scale';
 const BGANIM_SCALE_AXIS_KEYS = {
   x: 'wise:chat-bg-anim-scale-x',
@@ -1968,17 +2139,18 @@ const BGANIM_SCALE_AXIS_KEYS = {
 };
 const BGANIM_SCALE_AXES = ['x', 'y', 'z'];
 const BGANIM_SCALE_PCT_DEFAULT = 100;
-/* Slider STOPS — round percentages that step finely around 100% and coarsely
-   out at the extremes. A plain linear 25–400 input would squeeze the entire
-   shrink half of the window into a few pixels of a menu-width track; these
-   stops spread the whole range evenly instead, and every stop is a round
-   number. The input carries the stop INDEX; the stored preference is always
-   the percentage, so older saved values keep working. */
+/* Slider STOPS — 1% steps through 100%, then 2 / 5 / 10 out at the extremes.
+   A plain linear 1–800 input would squeeze the shrink half of the window into
+   a few pixels of a menu-width track; these stops spread the whole range
+   evenly instead, and every stop is a round number. The input carries the
+   stop INDEX; the stored preference is always the percentage, so older saved
+   values keep working. */
 const BGANIM_PCT_STOPS = (() => {
   const stops = [];
-  for (let p = 25; p <= 100; p += 5) stops.push(p);
-  for (let p = 110; p <= 200; p += 10) stops.push(p);
-  for (let p = 220; p <= 400; p += 20) stops.push(p);
+  for (let p = 1; p <= 100; p += 1) stops.push(p);
+  for (let p = 102; p <= 200; p += 2) stops.push(p);
+  for (let p = 205; p <= 400; p += 5) stops.push(p);
+  for (let p = 410; p <= 800; p += 10) stops.push(p);
   return stops;
 })();
 const BGANIM_PCT_MIN = BGANIM_PCT_STOPS[0];
@@ -2064,9 +2236,10 @@ function bgAnimScaleRowsHtml() {
 }
 
 /* Beyond the axes, shape knobs open up the strand itself — values it used to
-   hardcode. Same 25–400% window as the scale rows. `nodes` is the only one
-   the owl orbit shares (it has circles but no strand), so pitch / length /
-   thick / depth are tagged helix-only and hide while Orbit is selected. */
+   hardcode. Same 1–800% window as the scale rows. `nodes` is the only one
+   the owl orbit shares (it has circles but no strand), so pitch / dots /
+   length / thick / rungs / rungthick / depth are tagged helix-only and hide
+   while Orbit is selected. */
 const BGANIM_KNOBS = [
   {
     id: 'pitch', label: 'Pitch', key: 'wise:chat-bg-anim-pitch', helixOnly: true,
@@ -2077,16 +2250,32 @@ const BGANIM_KNOBS = [
     tip: 'Size of the product photos and owl bugs on the field',
   },
   {
+    id: 'dots', label: 'Dots', key: 'wise:chat-bg-anim-dots', helixOnly: true,
+    tip: 'Size of the small beads between the product circles',
+  },
+  {
     id: 'length', label: 'Length', key: 'wise:chat-bg-anim-length', helixOnly: true,
     tip: 'How far the strand runs across the pane',
   },
   {
+    id: 'rungs', label: 'Rungs', key: 'wise:chat-bg-anim-rungs', helixOnly: true,
+    tip: 'How many cross-lines between the two strands. Match pins them to the product circles',
+  },
+  {
+    id: 'rungthick', label: 'Bar', key: 'wise:chat-bg-anim-rungthick', helixOnly: true,
+    tip: 'How thick those cross-lines paint — independent of the backbone Thick slider',
+  },
+  {
     id: 'thickness', label: 'Thick', key: 'wise:chat-bg-anim-thickness', helixOnly: true,
-    tip: 'Strand thickness — how fat the DNA backbones and rungs paint',
+    tip: 'Strand thickness — how fat the DNA lines paint',
   },
   {
     id: 'depth', label: 'Depth', key: 'wise:chat-bg-anim-depth', helixOnly: true,
     tip: '3-D pop — low flattens the helix, high pushes near loops forward and fades the back',
+  },
+  {
+    id: 'speed', label: 'Speed', key: 'wise:chat-bg-anim-speed', helixOnly: true,
+    tip: 'How fast the helix twists — 100% is the original crawl',
   },
 ];
 const BGANIM_KNOB_IDS = BGANIM_KNOBS.map((k) => k.id);
@@ -2131,15 +2320,41 @@ function applyKnobEventToKnobs(knobs, detail) {
 }
 
 function bgAnimKnobRowHtml(k) {
+  const match = k.id === 'rungs'
+    ? `<button type="button" class="sc-bganim-rungs-match" aria-label="Match rungs to nodes" title="One cross-line at each product circle">Match</button>`
+    : '';
   return `<div class="sc-bganim-detail sc-bganim-knob sc-bganim-knob-${k.id}"${k.helixOnly ? ' data-helix-only="1"' : ''}>
             <span class="sc-bganim-detail-label">${k.label}</span>
             <input type="range" class="sc-bganim-knob-range" data-knob="${k.id}" ${BGANIM_RANGE_ATTRS} aria-label="Background animation ${k.label.toLowerCase()}" title="${k.tip}">
             <span class="sc-bganim-knob-val">100%</span>
+            ${match}
           </div>`;
 }
 
+function bgAnimKnobById(id) {
+  const k = BGANIM_KNOBS.find((x) => x.id === id);
+  return k ? bgAnimKnobRowHtml(k) : '';
+}
+
+function bgAnimSubheadHtml(label, helixOnly) {
+  return `<div class="sc-bganim-subhead"${helixOnly ? ' data-helix-only="1"' : ''}>${label}</div>`;
+}
+
 function bgAnimKnobRowsHtml() {
-  return BGANIM_KNOBS.map(bgAnimKnobRowHtml).join('\n          ');
+  return [
+    bgAnimSubheadHtml('Beads', true),
+    bgAnimKnobById('dots'),
+    bgAnimDotsChromeHtml(),
+    bgAnimSubheadHtml('Strand', true),
+    bgAnimKnobById('pitch'),
+    bgAnimKnobById('length'),
+    bgAnimKnobById('rungs'),
+    bgAnimKnobById('rungthick'),
+    bgAnimKnobById('thickness'),
+    bgAnimKnobById('depth'),
+    bgAnimSpinChromeHtml(),
+    bgAnimKnobById('speed'),
+  ].join('\n          ');
 }
 
 function ensureBgAnimScaleRows(pop) {
@@ -2151,10 +2366,12 @@ function ensureBgAnimScaleRows(pop) {
       old[0].insertAdjacentHTML('beforebegin', html);
       old.forEach((el) => el.remove());
     } else {
+      const camera = pop.querySelector('.sc-bganim-camera');
       const angle = pop.querySelector('.sc-bganim-angle');
       const style = pop.querySelector('.sc-bganim-style');
       const playback = pop.querySelector('.sc-bganim-playback');
-      if (angle) angle.insertAdjacentHTML('afterend', html);
+      if (camera) camera.insertAdjacentHTML('afterend', html);
+      else if (angle) angle.insertAdjacentHTML('afterend', html);
       else if (style) style.insertAdjacentHTML('beforebegin', html);
       else if (playback) playback.insertAdjacentHTML('beforebegin', html);
     }
@@ -2164,11 +2381,12 @@ function ensureBgAnimScaleRows(pop) {
   /* Sliders copied before the range widened still carry the old percentage
      bounds (min=100/max=250), which would leave that surface unable to shrink
      the field. Re-stamp every scale / shape input onto the stop scale. */
-  pop.querySelectorAll('.sc-bganim-scale-range, .sc-bganim-knob-range').forEach((r) => {
+  pop.querySelectorAll('.sc-bganim-scale-range, .sc-bganim-knob-range, .sc-bganim-motion-knob-range').forEach((r) => {
     r.min = '0';
     r.max = String(BGANIM_STOP_LAST);
     r.step = '1';
   });
+  pop.querySelectorAll('.sc-bganim-opacity').forEach((r) => { r.step = '1'; });
 }
 
 function ensureBgAnimKnobRows(pop) {
@@ -2201,6 +2419,658 @@ function ensureBgAnimKnobRows(pop) {
   BGANIM_KNOBS.forEach((k) => { if (!existing.has(k.id)) insertMissing(k); });
 }
 
+/* Colour + motion of the little beads between product circles. Empty colour
+   means "match the strand" (theme / full-bleed accent). Reset restores the
+   original brand blue. Motion is still / pulse / spark; Pulse and Spark each
+   keep their own Rate / Size (Spark also has Span) so the two styles never
+   share a slider. Shared app-wide, same broadcast pattern as the shape knobs. */
+const BGANIM_DOTS_COLOR_KEY = 'wise:chat-bg-anim-dots-color';
+const BGANIM_DOTS_COLOR_ORIGINAL = '#25507c';
+const BGANIM_DOTS_MOTION_KEY = 'wise:chat-bg-anim-dots-motion';
+const BGANIM_DOTS_MOTIONS = ['still', 'pulse', 'spark'];
+const BGANIM_DOTS_HEX_RE = /^#[0-9a-fA-F]{6}$/;
+
+const BGANIM_MOTION_KNOBS = [
+  { motion: 'pulse', id: 'speed', label: 'Rate', key: 'wise:chat-bg-anim-pulse-speed',
+    tip: 'How fast the beads breathe' },
+  { motion: 'pulse', id: 'length', label: 'Span', key: 'wise:chat-bg-anim-pulse-length',
+    tip: 'How wide each breath is along the strand' },
+  { motion: 'pulse', id: 'size', label: 'Size', key: 'wise:chat-bg-anim-pulse-size',
+    tip: 'How much each bead swells on the breath' },
+  { motion: 'spark', id: 'speed', label: 'Rate', key: 'wise:chat-bg-anim-spark-speed',
+    tip: 'How fast the glint travels the strand' },
+  { motion: 'spark', id: 'length', label: 'Span', key: 'wise:chat-bg-anim-spark-length',
+    tip: 'How wide each glint is along the strand' },
+  { motion: 'spark', id: 'size', label: 'Size', key: 'wise:chat-bg-anim-spark-size',
+    tip: 'How large the glint swells' },
+];
+
+function motionKnobKey(motion, id) {
+  const def = BGANIM_MOTION_KNOBS.find((k) => k.motion === motion && k.id === id);
+  return def ? def.key : '';
+}
+
+function emptyMotionKnobs() {
+  return { pulse: { speed: 100, length: 100, size: 100 }, spark: { speed: 100, length: 100, size: 100 } };
+}
+
+export function readBgAnimMotionKnobs() {
+  const out = emptyMotionKnobs();
+  BGANIM_MOTION_KNOBS.forEach((k) => {
+    try {
+      const n = parseInt(localStorage.getItem(k.key), 10);
+      if (!isNaN(n)) out[k.motion][k.id] = clampBgAnimScalePct(n);
+    } catch (_) {}
+  });
+  return out;
+}
+
+function persistBgAnimMotionKnob(motion, id, pct) {
+  const key = motionKnobKey(motion, id);
+  if (!key) return;
+  try { localStorage.setItem(key, String(pct)); } catch (_) {}
+}
+
+function broadcastBgAnimMotionKnob(motion, id, pct) {
+  try {
+    document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-motion-knob', {
+      detail: { motion, knob: id, pct, value: pct / 100 },
+    }));
+  } catch (_) {}
+}
+
+function applyMotionKnobEvent(knobs, detail) {
+  if (!knobs || !detail) return false;
+  const motion = detail.motion;
+  const id = detail.knob;
+  if (!knobs[motion] || !(id in knobs[motion])) return false;
+  const pct = typeof detail.pct === 'number'
+    ? detail.pct
+    : (typeof detail.value === 'number' ? Math.round(detail.value * 100) : NaN);
+  if (!Number.isFinite(pct)) return false;
+  knobs[motion][id] = clampBgAnimScalePct(pct);
+  return true;
+}
+
+function bgAnimMotionKnobRowHtml(k) {
+  return `<div class="sc-bganim-detail sc-bganim-motion-knob sc-bganim-motion-${k.motion}-${k.id}" data-helix-only="1" data-motion-for="${k.motion}" data-motion-knob="${k.id}">
+            <span class="sc-bganim-detail-label">${k.label}</span>
+            <input type="range" class="sc-bganim-motion-knob-range" data-motion="${k.motion}" data-motion-knob="${k.id}" ${BGANIM_RANGE_ATTRS} aria-label="${k.motion} ${k.label.toLowerCase()}" title="${k.tip}">
+            <span class="sc-bganim-motion-knob-val">100%</span>
+          </div>`;
+}
+
+function bgAnimMotionKnobsHtml() {
+  return BGANIM_MOTION_KNOBS.map(bgAnimMotionKnobRowHtml).join('\n          ');
+}
+
+function normalizeBgAnimDotsHex(raw) {
+  const s = String(raw || '').trim();
+  return BGANIM_DOTS_HEX_RE.test(s) ? s.toLowerCase() : '';
+}
+
+export function readBgAnimDotsColor() {
+  try { return normalizeBgAnimDotsHex(localStorage.getItem(BGANIM_DOTS_COLOR_KEY)); }
+  catch (_) { return ''; }
+}
+
+export function readBgAnimDotsMotion() {
+  try {
+    const s = localStorage.getItem(BGANIM_DOTS_MOTION_KEY);
+    if (BGANIM_DOTS_MOTIONS.includes(s)) return s;
+  } catch (_) {}
+  return 'still';
+}
+
+function persistBgAnimDotsColor(hex) {
+  try {
+    if (hex) localStorage.setItem(BGANIM_DOTS_COLOR_KEY, hex);
+    else localStorage.removeItem(BGANIM_DOTS_COLOR_KEY);
+  } catch (_) {}
+}
+
+function persistBgAnimDotsMotion(motion) {
+  try { localStorage.setItem(BGANIM_DOTS_MOTION_KEY, motion); } catch (_) {}
+}
+
+function broadcastBgAnimDots(state) {
+  try {
+    document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-dots', {
+      detail: { color: state.color || '', motion: state.motion || 'still' },
+    }));
+  } catch (_) {}
+}
+
+function applyDotsEventToState(state, detail) {
+  if (!state || !detail) return false;
+  let changed = false;
+  if (typeof detail.color === 'string') {
+    const hex = normalizeBgAnimDotsHex(detail.color);
+    if (hex !== state.color) { state.color = hex; changed = true; }
+  }
+  if (typeof detail.motion === 'string' && BGANIM_DOTS_MOTIONS.includes(detail.motion)
+      && detail.motion !== state.motion) {
+    state.motion = detail.motion;
+    changed = true;
+  }
+  return changed;
+}
+
+/* Live strand accent as #rrggbb so the colour swatch can preview "Match"
+   without a custom pick. Mirrors createHelixBgAnim's readColor(). */
+function strandAccentHex() {
+  let col = '#25507c';
+  try {
+    const root = document.documentElement;
+    const cs = getComputedStyle(root);
+    if (root.classList.contains('fb-chat-tint')) {
+      col = (cs.getPropertyValue('--fb-chat-accent') || '').trim()
+        || (cs.getPropertyValue('--fb-chat-fg') || '').trim()
+        || col;
+    } else {
+      const dark = root.classList.contains('dark');
+      col = ((dark ? cs.getPropertyValue('--primary-bright') : cs.getPropertyValue('--primary')) || '').trim() || col;
+    }
+  } catch (_) {}
+  const s = String(col || '').trim();
+  if (s[0] === '#') {
+    let x = s.slice(1);
+    if (x.length === 3) x = x.split('').map((c) => c + c).join('');
+    if (x.length === 6 && /^[0-9a-fA-F]+$/.test(x)) return '#' + x.toLowerCase();
+  }
+  const m = s.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+  if (m) {
+    const hex = [m[1], m[2], m[3]].map((n) => ('0' + Math.max(0, Math.min(255, +n)).toString(16)).slice(-2)).join('');
+    return '#' + hex;
+  }
+  return '#25507c';
+}
+
+function parseDotsRgb(hex) {
+  const s = normalizeBgAnimDotsHex(hex);
+  if (!s) return null;
+  const n = parseInt(s.slice(1), 16);
+  if (isNaN(n)) return null;
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function bgAnimDotsChromeHtml() {
+  return `<div class="sc-bganim-detail sc-bganim-dots-color" data-helix-only="1">
+            <span class="sc-bganim-detail-label">Color</span>
+            <input type="color" class="sc-bganim-dots-color-input" value="${BGANIM_DOTS_COLOR_ORIGINAL}" aria-label="Little node color" title="Colour of the small beads between product circles">
+            <span class="sc-bganim-dots-actions">
+              <button type="button" class="sc-bganim-dots-match" aria-label="Match strand color" title="Use the same colour as the DNA strand">Match</button>
+              <button type="button" class="sc-bganim-dots-reset" aria-label="Reset to original color" title="Restore the original bead colour">Reset</button>
+            </span>
+          </div>
+          <div class="sc-bganim-dots-motion" data-helix-only="1">
+            <span class="sc-bganim-style-label">Motion</span>
+            <div class="sc-stream-seg" role="radiogroup" aria-label="Little node motion">
+              <button type="button" class="sc-stream-seg-btn is-on" data-sc="bg-anim-dots-motion" data-dots-motion="still" role="radio" aria-checked="true" title="Still beads" aria-label="Still beads">Still</button>
+              <button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-dots-motion" data-dots-motion="pulse" role="radio" aria-checked="false" title="Beads breathe along the strand" aria-label="Beads breathe along the strand">Pulse</button>
+              <button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-dots-motion" data-dots-motion="spark" role="radio" aria-checked="false" title="A glint travels the strand" aria-label="A glint travels the strand">Spark</button>
+            </div>
+          </div>
+          ${bgAnimMotionKnobsHtml()}`;
+}
+
+function ensureBgAnimDotsChrome(pop) {
+  if (!pop) return;
+  if (!pop.querySelector('.sc-bganim-dots-color')) {
+    const html = bgAnimDotsChromeHtml();
+    const dots = pop.querySelector('.sc-bganim-knob-dots');
+    if (dots) { dots.insertAdjacentHTML('afterend', html); }
+    else {
+      const nodes = pop.querySelector('.sc-bganim-knob-nodes');
+      const style = pop.querySelector('.sc-bganim-style');
+      const playback = pop.querySelector('.sc-bganim-playback');
+      if (nodes) nodes.insertAdjacentHTML('afterend', html);
+      else if (style) style.insertAdjacentHTML('beforebegin', html);
+      else if (playback) playback.insertAdjacentHTML('beforebegin', html);
+    }
+  }
+  const color = pop.querySelector('.sc-bganim-dots-color');
+  if (color && !color.querySelector('.sc-bganim-dots-reset')) {
+    let actions = color.querySelector('.sc-bganim-dots-actions');
+    if (!actions) {
+      actions = document.createElement('span');
+      actions.className = 'sc-bganim-dots-actions';
+      const match = color.querySelector('.sc-bganim-dots-match');
+      if (match) {
+        match.replaceWith(actions);
+        actions.appendChild(match);
+      } else {
+        color.appendChild(actions);
+      }
+    }
+    actions.insertAdjacentHTML('beforeend',
+      '<button type="button" class="sc-bganim-dots-reset" aria-label="Reset to original color" title="Restore the original bead colour">Reset</button>');
+  }
+  if (!pop.querySelector('.sc-bganim-motion-knob')) {
+    const motion = pop.querySelector('.sc-bganim-dots-motion');
+    if (motion) motion.insertAdjacentHTML('afterend', bgAnimMotionKnobsHtml());
+  }
+  BGANIM_MOTION_KNOBS.forEach((k) => {
+    const sel = `.sc-bganim-motion-${k.motion}-${k.id}`;
+    if (pop.querySelector(sel)) return;
+    const html = bgAnimMotionKnobRowHtml(k);
+    const idx = BGANIM_MOTION_KNOBS.indexOf(k);
+    for (let j = idx - 1; j >= 0; j--) {
+      const prev = pop.querySelector(`.sc-bganim-motion-${BGANIM_MOTION_KNOBS[j].motion}-${BGANIM_MOTION_KNOBS[j].id}`);
+      if (prev) { prev.insertAdjacentHTML('afterend', html); return; }
+    }
+    const motion = pop.querySelector('.sc-bganim-dots-motion');
+    if (motion) motion.insertAdjacentHTML('afterend', html);
+  });
+}
+
+function helixStyleActive(root) {
+  root = liveBgAnimRoot(root);
+  const angle = root && root.querySelector('.sc-bganim-angle');
+  return !angle || !angle.hidden;
+}
+
+function syncBgAnimMotionKnobRows(root, motion, knobs, isHelix) {
+  root = liveBgAnimRoot(root);
+  if (!root) return;
+  if (isHelix == null) isHelix = helixStyleActive(root);
+  root.querySelectorAll('.sc-bganim-motion-knob').forEach((el) => {
+    const forMotion = el.getAttribute('data-motion-for');
+    el.hidden = !isHelix || forMotion !== motion;
+  });
+  if (!knobs) return;
+  root.querySelectorAll('.sc-bganim-motion-knob-range').forEach((range) => {
+    const m = range.dataset.motion;
+    const id = range.dataset.motionKnob;
+    if (!knobs[m] || knobs[m][id] == null) return;
+    const pct = knobs[m][id];
+    if (document.activeElement !== range) range.value = String(bgAnimPctToStop(pct));
+    const val = range.parentElement && range.parentElement.querySelector('.sc-bganim-motion-knob-val');
+    if (val) val.textContent = pct + '%';
+  });
+}
+
+function wireBgAnimMotionKnobs(root, knobs, onChange) {
+  if (!root || !knobs) return;
+  root.querySelectorAll('.sc-bganim-motion-knob-range').forEach((range) => {
+    if (range.__bgAnimWired) return;
+    range.__bgAnimWired = true;
+    range.min = '0';
+    range.max = String(BGANIM_STOP_LAST);
+    range.step = '1';
+    range.addEventListener('input', () => {
+      const motion = range.dataset.motion;
+      const id = range.dataset.motionKnob;
+      if (!knobs[motion] || !(id in knobs[motion])) return;
+      const pct = bgAnimStopToPct(range.value);
+      knobs[motion][id] = pct;
+      persistBgAnimMotionKnob(motion, id, pct);
+      broadcastBgAnimMotionKnob(motion, id, pct);
+      syncBgAnimMotionKnobRows(root, motion, knobs, helixStyleActive(root));
+      if (typeof onChange === 'function') onChange();
+    });
+  });
+}
+
+function syncBgAnimDotsChrome(root, state, motionKnobs, isHelix) {
+  root = liveBgAnimRoot(root);
+  if (!root || !state) return;
+  const input = root.querySelector('.sc-bganim-dots-color-input');
+  const match = root.querySelector('.sc-bganim-dots-match');
+  const reset = root.querySelector('.sc-bganim-dots-reset');
+  const matching = !state.color;
+  const shown = matching ? strandAccentHex() : state.color;
+  if (input && document.activeElement !== input) input.value = shown;
+  if (match) match.classList.toggle('is-on', matching);
+  if (reset) reset.classList.toggle('is-on', !matching && state.color === BGANIM_DOTS_COLOR_ORIGINAL);
+  root.querySelectorAll('[data-sc="bg-anim-dots-motion"]').forEach((btn) => {
+    const on = btn.dataset.dotsMotion === state.motion;
+    btn.classList.toggle('is-on', on);
+    btn.setAttribute('aria-checked', on ? 'true' : 'false');
+  });
+  syncBgAnimMotionKnobRows(root, state.motion, motionKnobs, isHelix);
+}
+
+function wireBgAnimDotsChrome(root, state, onChange, motionKnobs) {
+  if (!root || !state) return;
+  const resync = () => syncBgAnimDotsChrome(root, state, motionKnobs, helixStyleActive(root));
+  const input = root.querySelector('.sc-bganim-dots-color-input');
+  if (input && !input.__bgAnimWired) {
+    input.__bgAnimWired = true;
+    const commit = () => {
+      const hex = normalizeBgAnimDotsHex(input.value);
+      if (!hex || hex === state.color) return;
+      state.color = hex;
+      persistBgAnimDotsColor(hex);
+      broadcastBgAnimDots(state);
+      resync();
+      if (typeof onChange === 'function') onChange();
+    };
+    input.addEventListener('input', commit);
+    input.addEventListener('change', commit);
+    input.addEventListener('click', (e) => e.stopPropagation());
+  }
+  const match = root.querySelector('.sc-bganim-dots-match');
+  if (match && !match.__bgAnimWired) {
+    match.__bgAnimWired = true;
+    match.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!state.color) return;
+      state.color = '';
+      persistBgAnimDotsColor('');
+      broadcastBgAnimDots(state);
+      resync();
+      if (typeof onChange === 'function') onChange();
+    });
+  }
+  const reset = root.querySelector('.sc-bganim-dots-reset');
+  if (reset && !reset.__bgAnimWired) {
+    reset.__bgAnimWired = true;
+    reset.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (state.color === BGANIM_DOTS_COLOR_ORIGINAL) return;
+      state.color = BGANIM_DOTS_COLOR_ORIGINAL;
+      persistBgAnimDotsColor(BGANIM_DOTS_COLOR_ORIGINAL);
+      broadcastBgAnimDots(state);
+      resync();
+      if (typeof onChange === 'function') onChange();
+    });
+  }
+  root.querySelectorAll('[data-sc="bg-anim-dots-motion"]').forEach((btn) => {
+    if (btn.__bgAnimWired) return;
+    btn.__bgAnimWired = true;
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const motion = btn.dataset.dotsMotion;
+      if (!BGANIM_DOTS_MOTIONS.includes(motion) || motion === state.motion) return;
+      state.motion = motion;
+      persistBgAnimDotsMotion(motion);
+      broadcastBgAnimDots(state);
+      resync();
+      if (typeof onChange === 'function') onChange();
+    });
+  });
+}
+
+/* Helix twist direction — Forward is the original left→right crawl; Reverse
+   unwinds the other way. Speed is a shape knob (1–800%). Shared app-wide. */
+const BGANIM_SPIN_KEY = 'wise:chat-bg-anim-spin';
+const BGANIM_SPIN_DIRS = ['fwd', 'rev'];
+
+export function readBgAnimSpinDir() {
+  try {
+    const s = localStorage.getItem(BGANIM_SPIN_KEY);
+    if (BGANIM_SPIN_DIRS.includes(s)) return s;
+  } catch (_) {}
+  return 'fwd';
+}
+
+function persistBgAnimSpinDir(dir) {
+  try { localStorage.setItem(BGANIM_SPIN_KEY, dir); } catch (_) {}
+}
+
+function broadcastBgAnimSpin(dir) {
+  try {
+    document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-spin', { detail: { dir } }));
+  } catch (_) {}
+}
+
+function bgAnimSpinChromeHtml() {
+  return `<div class="sc-bganim-spin" data-helix-only="1">
+            <span class="sc-bganim-style-label">Spin</span>
+            <div class="sc-stream-seg" role="radiogroup" aria-label="Helix spin direction">
+              <button type="button" class="sc-stream-seg-btn is-on" data-sc="bg-anim-spin" data-spin="fwd" role="radio" aria-checked="true" title="Twist forward" aria-label="Twist forward">Fwd</button>
+              <button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-spin" data-spin="rev" role="radio" aria-checked="false" title="Twist reverse" aria-label="Twist reverse">Rev</button>
+            </div>
+          </div>`;
+}
+
+function ensureBgAnimSpinChrome(pop) {
+  if (!pop) return;
+  if (pop.querySelector('.sc-bganim-spin')) return;
+  const html = bgAnimSpinChromeHtml();
+  const speed = pop.querySelector('.sc-bganim-knob-speed');
+  if (speed) { speed.insertAdjacentHTML('beforebegin', html); return; }
+  const depth = pop.querySelector('.sc-bganim-knob-depth');
+  if (depth) { depth.insertAdjacentHTML('afterend', html); return; }
+  const style = pop.querySelector('.sc-bganim-style');
+  const playback = pop.querySelector('.sc-bganim-playback');
+  if (style) style.insertAdjacentHTML('beforebegin', html);
+  else if (playback) playback.insertAdjacentHTML('beforebegin', html);
+}
+
+function syncBgAnimSpinChrome(root, dir) {
+  root = liveBgAnimRoot(root);
+  if (!root) return;
+  root.querySelectorAll('[data-sc="bg-anim-spin"]').forEach((btn) => {
+    const on = btn.dataset.spin === dir;
+    btn.classList.toggle('is-on', on);
+    btn.setAttribute('aria-checked', on ? 'true' : 'false');
+  });
+}
+
+function wireBgAnimSpinChrome(root, getDir, setDir, onChange) {
+  if (!root) return;
+  root.querySelectorAll('[data-sc="bg-anim-spin"]').forEach((btn) => {
+    if (btn.__bgAnimWired) return;
+    btn.__bgAnimWired = true;
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const dir = btn.dataset.spin;
+      if (!BGANIM_SPIN_DIRS.includes(dir) || dir === getDir()) return;
+      setDir(dir);
+      persistBgAnimSpinDir(dir);
+      broadcastBgAnimSpin(dir);
+      syncBgAnimSpinChrome(root, dir);
+      if (typeof onChange === 'function') onChange();
+    });
+  });
+}
+
+/* Classic lines vs lit 3-D tubes. Shared app-wide. Default Classic so the
+   original strand stays until someone opts into a lit look. */
+const BGANIM_LOOK_KEY = 'wise:chat-bg-anim-look';
+const BGANIM_LOOKS = ['classic', '3d'];
+const BGANIM_LOOK_DEFAULT = 'classic';
+
+function normalizeBgAnimLook(look) {
+  if (look === 'tripo') return '3d';
+  return BGANIM_LOOKS.includes(look) ? look : BGANIM_LOOK_DEFAULT;
+}
+
+export function readBgAnimLook() {
+  try {
+    const s = localStorage.getItem(BGANIM_LOOK_KEY);
+    if (s === 'tripo') {
+      try { localStorage.setItem(BGANIM_LOOK_KEY, '3d'); } catch (_) {}
+      return '3d';
+    }
+    if (BGANIM_LOOKS.includes(s)) return s;
+  } catch (_) {}
+  return BGANIM_LOOK_DEFAULT;
+}
+
+function persistBgAnimLook(look) {
+  try { localStorage.setItem(BGANIM_LOOK_KEY, normalizeBgAnimLook(look)); } catch (_) {}
+}
+
+function broadcastBgAnimLook(look) {
+  try {
+    document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-look', { detail: { look } }));
+  } catch (_) {}
+}
+
+function bgAnimLookChromeHtml(active) {
+  const cur = normalizeBgAnimLook(active);
+  return `<div class="sc-bganim-look" data-helix-only="1">
+            <span class="sc-bganim-style-label">Look</span>
+            <div class="sc-stream-seg" role="radiogroup" aria-label="Helix look">
+              <button type="button" class="sc-stream-seg-btn${cur === 'classic' ? ' is-on' : ''}" data-sc="bg-anim-look" data-look="classic" role="radio" aria-checked="${cur === 'classic' ? 'true' : 'false'}" title="Original line drawing" aria-label="Classic look">Classic</button>
+              <button type="button" class="sc-stream-seg-btn${cur === '3d' ? ' is-on' : ''}" data-sc="bg-anim-look" data-look="3d" role="radio" aria-checked="${cur === '3d' ? 'true' : 'false'}" title="Lit tubes" aria-label="3D look">3D</button>
+            </div>
+          </div>`;
+}
+
+function ensureBgAnimLookChrome(pop) {
+  if (!pop) return;
+  if (!pop.querySelector('.sc-bganim-look')) {
+    const html = bgAnimLookChromeHtml(readBgAnimLook());
+    const anim = pop.querySelector('[data-sc="bg-anim"]');
+    if (anim) { anim.insertAdjacentHTML('afterend', html); }
+    else {
+      const style = pop.querySelector('.sc-bganim-style');
+      const playback = pop.querySelector('.sc-bganim-playback');
+      if (style) style.insertAdjacentHTML('beforebegin', html);
+      else if (playback) playback.insertAdjacentHTML('beforebegin', html);
+    }
+  }
+  queryChatMenuAll(pop, '[data-look="tripo"]').forEach((el) => el.remove());
+}
+
+function syncBgAnimLookChrome(root, look) {
+  root = liveBgAnimRoot(root);
+  if (!root) return;
+  const cur = normalizeBgAnimLook(look);
+  root.querySelectorAll('[data-sc="bg-anim-look"]').forEach((btn) => {
+    const on = btn.dataset.look === cur;
+    btn.classList.toggle('is-on', on);
+    btn.setAttribute('aria-checked', on ? 'true' : 'false');
+  });
+}
+
+function wireBgAnimLookChrome(root, getLook, setLook, onChange) {
+  if (!root) return;
+  root.querySelectorAll('[data-sc="bg-anim-look"]').forEach((btn) => {
+    if (btn.__bgAnimWired) return;
+    btn.__bgAnimWired = true;
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const look = normalizeBgAnimLook(btn.dataset.look);
+      if (!BGANIM_LOOKS.includes(look) || look === getLook()) return;
+      setLook(look);
+      persistBgAnimLook(look);
+      broadcastBgAnimLook(look);
+      syncBgAnimLookChrome(root, look);
+      if (typeof onChange === 'function') onChange();
+    });
+  });
+}
+
+/* Tripo / 3D surface finish — the 3deeeee PBR knobs, mapped onto the cheap
+   canvas tubes. Hidden while Look is Classic. Shared app-wide. */
+const BGANIM_MAT_KNOBS = [
+  { id: 'rough', label: 'Rough', key: 'wise:chat-bg-anim-mat-rough', def: 36,
+    tip: 'How matte the tubes are — 0 is a mirror, 100 is felt' },
+  { id: 'metal', label: 'Metal', key: 'wise:chat-bg-anim-mat-metal', def: 0,
+    tip: 'Blends the strand toward a metallic sheen' },
+  { id: 'coat', label: 'Coat', key: 'wise:chat-bg-anim-mat-coat', def: 28,
+    tip: 'A thin glossy lacquer over the tube — the Tripo clearcoat' },
+  { id: 'sheen', label: 'Sheen', key: 'wise:chat-bg-anim-mat-sheen', def: 42,
+    tip: 'Soft edge glow, like down catching the studio key light' },
+  { id: 'fuzz', label: 'Fuzz', key: 'wise:chat-bg-anim-mat-fuzz', def: 22,
+    tip: 'Downy bump on the tube skin — the Tripo owl’s feather relief' },
+];
+const BGANIM_MAT_IDS = BGANIM_MAT_KNOBS.map((k) => k.id);
+
+export function readBgAnimMat(id) {
+  const def = BGANIM_MAT_KNOBS.find((k) => k.id === id);
+  const fallback = def ? def.def : 0;
+  try {
+    const n = parseInt(localStorage.getItem(def && def.key), 10);
+    if (!isNaN(n)) return Math.max(0, Math.min(100, n));
+  } catch (_) {}
+  return fallback;
+}
+
+export function readBgAnimMats() {
+  const out = {};
+  BGANIM_MAT_IDS.forEach((id) => { out[id] = readBgAnimMat(id); });
+  return out;
+}
+
+function persistBgAnimMat(id, pct) {
+  const def = BGANIM_MAT_KNOBS.find((k) => k.id === id);
+  if (!def) return;
+  try { localStorage.setItem(def.key, String(pct)); } catch (_) {}
+}
+
+function broadcastBgAnimMat(id, pct) {
+  try {
+    document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-mat', {
+      detail: { knob: id, pct },
+    }));
+  } catch (_) {}
+}
+
+function bgAnimMatRowHtml(k) {
+  return `<div class="sc-bganim-detail sc-bganim-mat sc-bganim-mat-${k.id}" data-helix-only="1" data-mat-only="1">
+            <span class="sc-bganim-detail-label">${k.label}</span>
+            <input type="range" class="sc-bganim-mat-range" data-mat="${k.id}" min="0" max="100" step="1" value="${k.def}" aria-label="${k.label}" title="${k.tip}">
+            <span class="sc-bganim-mat-val">${k.def}</span>
+          </div>`;
+}
+
+function bgAnimMatRowsHtml() {
+  return [bgAnimSubheadHtml('Finish', true)]
+    .concat(BGANIM_MAT_KNOBS.map(bgAnimMatRowHtml))
+    .join('\n          ');
+}
+
+function ensureBgAnimMatRows(root) {
+  if (!root || root.querySelector('.sc-bganim-mat')) return;
+  const look = root.querySelector('.sc-bganim-look');
+  if (look) look.insertAdjacentHTML('afterend', bgAnimMatRowsHtml());
+}
+
+function syncBgAnimMatRows(root, mats, look) {
+  root = liveBgAnimRoot(root);
+  if (!root) return;
+  const show = normalizeBgAnimLook(look) === '3d';
+  root.querySelectorAll('.sc-bganim-mat').forEach((el) => { el.hidden = !show; });
+  root.querySelectorAll('.sc-bganim-cluster:has(.sc-bganim-mat)').forEach((c) => { c.hidden = !show; });
+  root.querySelectorAll('.sc-bganim-subhead').forEach((el) => {
+    const label = (el.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    if (label.includes('finish')) el.hidden = !show;
+  });
+  if (!mats) return;
+  root.querySelectorAll('.sc-bganim-mat-range').forEach((range) => {
+    const id = range.dataset.mat;
+    if (!id || mats[id] == null) return;
+    if (document.activeElement !== range) range.value = String(mats[id]);
+    const val = range.parentElement && range.parentElement.querySelector('.sc-bganim-mat-val');
+    if (val) val.textContent = String(mats[id]);
+  });
+}
+
+function wireBgAnimMatRows(root, mats, onChange) {
+  if (!root || !mats) return;
+  root.querySelectorAll('.sc-bganim-mat-range').forEach((range) => {
+    if (range.__bgAnimWired) return;
+    range.__bgAnimWired = true;
+    range.addEventListener('input', () => {
+      const id = range.dataset.mat;
+      if (!id || !(id in mats)) return;
+      const pct = Math.max(0, Math.min(100, parseInt(range.value, 10) || 0));
+      mats[id] = pct;
+      persistBgAnimMat(id, pct);
+      broadcastBgAnimMat(id, pct);
+      const val = range.parentElement && range.parentElement.querySelector('.sc-bganim-mat-val');
+      if (val) val.textContent = String(pct);
+      if (typeof onChange === 'function') onChange();
+    });
+  });
+}
+
+function applyMatEvent(mats, detail) {
+  if (!mats || !detail) return false;
+  const id = detail.knob;
+  if (!BGANIM_MAT_IDS.includes(id) || typeof detail.pct !== 'number') return false;
+  mats[id] = Math.max(0, Math.min(100, detail.pct));
+  return true;
+}
+
 /* One shared sync + wire pair for the scale and knob rows, used by BOTH the
    mounted module and wireStandardChatMenu() so every surface runs identical
    slider behavior instead of two hand-kept copies. */
@@ -2209,6 +3079,7 @@ function bgAnimScaleCommonPct(axes) {
 }
 
 function syncBgAnimScaleRows(root, axes) {
+  root = liveBgAnimRoot(root);
   if (!root) return;
   root.querySelectorAll('.sc-bganim-scale-range').forEach((range) => {
     const val = range.parentElement && range.parentElement.querySelector('.sc-bganim-scale-val');
@@ -2248,6 +3119,7 @@ function wireBgAnimScaleRows(root, axes, onChange) {
 }
 
 function syncBgAnimKnobRows(root, knobs) {
+  root = liveBgAnimRoot(root);
   if (!root) return;
   root.querySelectorAll('.sc-bganim-knob-range').forEach((range) => {
     const id = range.dataset.knob;
@@ -2276,15 +3148,291 @@ function wireBgAnimKnobRows(root, knobs, onChange) {
   });
 }
 
-/* Angle, Pitch, Length, Thick and Depth describe the STRAND, so they hide
-   while Orbit is the chosen style. Scale (all four rows) and Nodes apply to
-   both fields. */
+/* Pin rungs 1:1 with product circles. Empty (off) keeps the Rungs slider;
+   Match writes the shared flag so every chat's strand snaps to the node stride.
+   Dragging Rungs turns Match off, same as picking a colour turns colour-Match off. */
+const BGANIM_RUNGS_MATCH_KEY = 'wise:chat-bg-anim-rungs-match';
+
+export function readBgAnimRungsMatch() {
+  try { return localStorage.getItem(BGANIM_RUNGS_MATCH_KEY) === '1'; }
+  catch (_) { return false; }
+}
+
+function persistBgAnimRungsMatch(on) {
+  try {
+    if (on) localStorage.setItem(BGANIM_RUNGS_MATCH_KEY, '1');
+    else localStorage.removeItem(BGANIM_RUNGS_MATCH_KEY);
+  } catch (_) {}
+}
+
+function broadcastBgAnimRungsMatch(on) {
+  try {
+    document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-rungs-match', { detail: { match: !!on } }));
+  } catch (_) {}
+}
+
+function ensureBgAnimRungsMatch(pop) {
+  if (!pop) return;
+  const row = pop.querySelector('.sc-bganim-knob-rungs');
+  if (!row || row.querySelector('.sc-bganim-rungs-match')) return;
+  row.insertAdjacentHTML('beforeend',
+    '<button type="button" class="sc-bganim-rungs-match" aria-label="Match rungs to nodes" title="One cross-line at each product circle">Match</button>');
+}
+
+function syncBgAnimRungsMatch(root, matching, knobs) {
+  root = liveBgAnimRoot(root);
+  if (!root) return;
+  const row = root.querySelector('.sc-bganim-knob-rungs');
+  if (!row) return;
+  row.classList.toggle('is-matched', !!matching);
+  const btn = row.querySelector('.sc-bganim-rungs-match');
+  if (btn) btn.classList.toggle('is-on', !!matching);
+  const val = row.querySelector('.sc-bganim-knob-val');
+  if (val && matching) val.textContent = 'nodes';
+  else if (val && knobs && knobs.rungs != null) val.textContent = knobs.rungs + '%';
+}
+
+function wireBgAnimRungsMatch(root, getMatch, setMatch, knobs, onChange) {
+  if (!root) return;
+  ensureBgAnimRungsMatch(root);
+  const btn = root.querySelector('.sc-bganim-rungs-match');
+  if (btn && !btn.__bgAnimWired) {
+    btn.__bgAnimWired = true;
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (getMatch()) return;
+      setMatch(true);
+      persistBgAnimRungsMatch(true);
+      broadcastBgAnimRungsMatch(true);
+      syncBgAnimRungsMatch(root, true, knobs);
+      if (typeof onChange === 'function') onChange();
+    });
+  }
+  const range = root.querySelector('.sc-bganim-knob-rungs .sc-bganim-knob-range');
+  if (range && !range.__bgAnimRungsMatchWired) {
+    range.__bgAnimRungsMatchWired = true;
+    range.addEventListener('input', () => {
+      if (!getMatch()) return;
+      setMatch(false);
+      persistBgAnimRungsMatch(false);
+      broadcastBgAnimRungsMatch(false);
+      syncBgAnimRungsMatch(root, false, knobs);
+    });
+  }
+}
+
+/* Camera — elevation (above / below) plus azimuth (around the coil) so the
+   view can sit on any 3-D side, not just a tilt from the top. Shared app-wide. */
+const BGANIM_CAMERA_KEY = 'wise:chat-bg-anim-camera';
+const BGANIM_CAMERA_DEFAULT = 0;
+const BGANIM_CAMERA_MIN = -90;
+const BGANIM_CAMERA_MAX = 90;
+const BGANIM_AZIMUTH_KEY = 'wise:chat-bg-anim-azimuth';
+const BGANIM_AZIMUTH_DEFAULT = 0;
+const BGANIM_AZIMUTH_MIN = -180;
+const BGANIM_AZIMUTH_MAX = 180;
+const BGANIM_SHIFT_KEY = 'wise:chat-bg-anim-shift';
+const BGANIM_SHIFT_DEFAULT = 0;
+const BGANIM_SHIFT_MIN = -100;
+const BGANIM_SHIFT_MAX = 100;
+
+function clampBgAnimCamera(n) {
+  const v = Number(n);
+  return Number.isFinite(v)
+    ? Math.max(BGANIM_CAMERA_MIN, Math.min(BGANIM_CAMERA_MAX, Math.round(v)))
+    : BGANIM_CAMERA_DEFAULT;
+}
+
+function clampBgAnimAzimuth(n) {
+  const v = Number(n);
+  if (!Number.isFinite(v)) return BGANIM_AZIMUTH_DEFAULT;
+  let d = Math.round(v);
+  while (d > 180) d -= 360;
+  while (d < -180) d += 360;
+  return Math.max(BGANIM_AZIMUTH_MIN, Math.min(BGANIM_AZIMUTH_MAX, d));
+}
+
+function clampBgAnimShift(n) {
+  const v = Number(n);
+  return Number.isFinite(v)
+    ? Math.max(BGANIM_SHIFT_MIN, Math.min(BGANIM_SHIFT_MAX, Math.round(v)))
+    : BGANIM_SHIFT_DEFAULT;
+}
+
+export function readBgAnimCamera() {
+  try {
+    const s = parseInt(localStorage.getItem(BGANIM_CAMERA_KEY), 10);
+    if (!isNaN(s)) return clampBgAnimCamera(s);
+  } catch (_) {}
+  return BGANIM_CAMERA_DEFAULT;
+}
+
+export function readBgAnimAzimuth() {
+  try {
+    const s = parseInt(localStorage.getItem(BGANIM_AZIMUTH_KEY), 10);
+    if (!isNaN(s)) return clampBgAnimAzimuth(s);
+  } catch (_) {}
+  return BGANIM_AZIMUTH_DEFAULT;
+}
+
+export function readBgAnimShift() {
+  try {
+    const s = parseInt(localStorage.getItem(BGANIM_SHIFT_KEY), 10);
+    if (!isNaN(s)) return clampBgAnimShift(s);
+  } catch (_) {}
+  return BGANIM_SHIFT_DEFAULT;
+}
+
+function persistBgAnimCamera(deg) {
+  try { localStorage.setItem(BGANIM_CAMERA_KEY, String(deg)); } catch (_) {}
+}
+
+function persistBgAnimAzimuth(deg) {
+  try { localStorage.setItem(BGANIM_AZIMUTH_KEY, String(deg)); } catch (_) {}
+}
+
+function persistBgAnimShift(pct) {
+  try { localStorage.setItem(BGANIM_SHIFT_KEY, String(pct)); } catch (_) {}
+}
+
+function broadcastBgAnimCamera(deg) {
+  try {
+    document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-camera', { detail: { camera: deg } }));
+  } catch (_) {}
+}
+
+function broadcastBgAnimAzimuth(deg) {
+  try {
+    document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-azimuth', { detail: { azimuth: deg } }));
+  } catch (_) {}
+}
+
+function broadcastBgAnimShift(pct) {
+  try {
+    document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-shift', { detail: { shift: pct } }));
+  } catch (_) {}
+}
+
+function bgAnimCameraRowHtml() {
+  return `<div class="sc-bganim-detail sc-bganim-camera" data-helix-only="1">
+            <span class="sc-bganim-detail-label">Camera</span>
+            <input type="range" class="sc-bganim-camera-range" min="${BGANIM_CAMERA_MIN}" max="${BGANIM_CAMERA_MAX}" step="1" value="${BGANIM_CAMERA_DEFAULT}" aria-label="Helix camera elevation" title="Look at the strand from above or below">
+            <span class="sc-bganim-camera-val">${BGANIM_CAMERA_DEFAULT}°</span>
+          </div>`;
+}
+
+function bgAnimAzimuthRowHtml() {
+  return `<div class="sc-bganim-detail sc-bganim-azimuth" data-helix-only="1">
+            <span class="sc-bganim-detail-label">Side</span>
+            <input type="range" class="sc-bganim-azimuth-range" min="${BGANIM_AZIMUTH_MIN}" max="${BGANIM_AZIMUTH_MAX}" step="1" value="${BGANIM_AZIMUTH_DEFAULT}" aria-label="Helix camera side" title="Look at the strand from the left, right, front or back">
+            <span class="sc-bganim-azimuth-val">${BGANIM_AZIMUTH_DEFAULT}°</span>
+          </div>`;
+}
+
+function bgAnimShiftRowHtml() {
+  return `<div class="sc-bganim-detail sc-bganim-shift" data-helix-only="1">
+            <span class="sc-bganim-detail-label">Shift</span>
+            <input type="range" class="sc-bganim-shift-range" min="${BGANIM_SHIFT_MIN}" max="${BGANIM_SHIFT_MAX}" step="1" value="${BGANIM_SHIFT_DEFAULT}" aria-label="Helix left-right shift" title="Slide the strand left or right">
+            <span class="sc-bganim-shift-val">${BGANIM_SHIFT_DEFAULT}%</span>
+          </div>`;
+}
+
+function ensureBgAnimSubheads(pop) {
+  if (!pop || pop.querySelector('.sc-bganim-subhead')) return;
+  const opacity = pop.querySelector('.sc-bganim-opacity');
+  if (opacity && opacity.closest('.sc-bganim-detail')) {
+    opacity.closest('.sc-bganim-detail').insertAdjacentHTML('beforebegin', bgAnimSubheadHtml('View'));
+  }
+  const scale = pop.querySelector('.sc-bganim-scale-all') || pop.querySelector('.sc-bganim-scale');
+  if (scale) scale.insertAdjacentHTML('beforebegin', bgAnimSubheadHtml('Size'));
+  const dots = pop.querySelector('.sc-bganim-knob-dots');
+  if (dots) dots.insertAdjacentHTML('beforebegin', bgAnimSubheadHtml('Beads', true));
+  const pitch = pop.querySelector('.sc-bganim-knob-pitch');
+  if (pitch) pitch.insertAdjacentHTML('beforebegin', bgAnimSubheadHtml('Strand', true));
+  const style = pop.querySelector('.sc-bganim-style');
+  if (style) style.insertAdjacentHTML('beforebegin', bgAnimSubheadHtml('Look'));
+}
+
+function ensureBgAnimCameraRow(pop) {
+  if (!pop) return;
+  if (!pop.querySelector('.sc-bganim-camera')) {
+    const html = bgAnimCameraRowHtml();
+    const angle = pop.querySelector('.sc-bganim-angle');
+    if (angle) angle.insertAdjacentHTML('afterend', html);
+    else {
+      const opacity = pop.querySelector('.sc-bganim-detail:not(.sc-bganim-scale):not(.sc-bganim-knob)');
+      if (opacity) opacity.insertAdjacentHTML('afterend', html);
+      else {
+        const style = pop.querySelector('.sc-bganim-style');
+        const playback = pop.querySelector('.sc-bganim-playback');
+        if (style) style.insertAdjacentHTML('beforebegin', html);
+        else if (playback) playback.insertAdjacentHTML('beforebegin', html);
+      }
+    }
+  }
+  pop.querySelectorAll('.sc-bganim-camera-range').forEach((r) => {
+    r.min = String(BGANIM_CAMERA_MIN);
+    r.max = String(BGANIM_CAMERA_MAX);
+  });
+  if (!pop.querySelector('.sc-bganim-azimuth')) {
+    const html = bgAnimAzimuthRowHtml();
+    const camera = pop.querySelector('.sc-bganim-camera');
+    if (camera) camera.insertAdjacentHTML('afterend', html);
+  }
+  if (!pop.querySelector('.sc-bganim-shift')) {
+    const html = bgAnimShiftRowHtml();
+    const azimuth = pop.querySelector('.sc-bganim-azimuth');
+    if (azimuth) azimuth.insertAdjacentHTML('afterend', html);
+    else {
+      const camera = pop.querySelector('.sc-bganim-camera');
+      if (camera) camera.insertAdjacentHTML('afterend', html);
+    }
+  }
+  pop.querySelectorAll('.sc-bganim-shift-range').forEach((r) => {
+    r.min = String(BGANIM_SHIFT_MIN);
+    r.max = String(BGANIM_SHIFT_MAX);
+  });
+}
+
+/* Angle, Camera, Pitch, Dots, Length, Rungs, Bar, Thick and Depth describe the
+   STRAND, so they hide while Orbit is the chosen style. Scale (all four rows)
+   and Nodes apply to both fields. */
 function syncBgAnimHelixOnlyRows(root, isHelix) {
+  root = liveBgAnimRoot(root);
   if (!root) return;
   const angle = root.querySelector('.sc-bganim-angle');
   if (angle) angle.hidden = !isHelix;
+  const camera = root.querySelector('.sc-bganim-camera');
+  if (camera) camera.hidden = !isHelix;
+  const azimuth = root.querySelector('.sc-bganim-azimuth');
+  if (azimuth) azimuth.hidden = !isHelix;
+  const shift = root.querySelector('.sc-bganim-shift');
+  if (shift) shift.hidden = !isHelix;
   root.querySelectorAll('.sc-bganim-knob').forEach((el) => {
     el.hidden = !isHelix && el.dataset.helixOnly === '1';
+  });
+  root.querySelectorAll('.sc-bganim-dots-color, .sc-bganim-dots-motion, .sc-bganim-spin, .sc-bganim-look').forEach((el) => {
+    el.hidden = !isHelix;
+  });
+  if (!isHelix) {
+    root.querySelectorAll('.sc-bganim-mat').forEach((el) => { el.hidden = true; });
+    root.querySelectorAll('.sc-bganim-cluster').forEach((c) => {
+      const head = c.querySelector(':scope > .sc-bganim-subhead');
+      const label = (head && head.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+      if (label === 'finish') c.hidden = true;
+    });
+  }
+  /* Pulse / Spark knobs stay hidden on Orbit. Showing the matching motion's
+     rows is owned by syncBgAnimMotionKnobRows — this only force-hides. */
+  if (!isHelix) {
+    root.querySelectorAll('.sc-bganim-motion-knob').forEach((el) => { el.hidden = true; });
+  }
+  root.querySelectorAll('.sc-bganim-subhead').forEach((el) => {
+    if (el.dataset.helixOnly === '1') el.hidden = !isHelix;
+  });
+  root.querySelectorAll('.sc-bganim-cluster').forEach((el) => {
+    if (el.dataset.helixOnly === '1') el.hidden = !isHelix;
   });
   root.querySelectorAll('.sc-bganim-scale').forEach((el) => { el.hidden = false; });
 }
@@ -2338,20 +3486,50 @@ function applyScaleEventToAxes(axes, detail) {
      getOpacity    {fn}   () => 0.1–1 field opacity (the shared slider)
      getAngle      {fn}   () => helix axis tilt in degrees (−90…90; default 10).
                           Positive tilts the strand down toward the right.
-     getScale      {fn}   () => { x, y, z } multipliers (0.25–4; default 1)
+     getCamera     {fn}   () => view elevation in degrees (−90…90; default 0).
+                          90 looks straight down from above, −90 from below.
+     getAzimuth    {fn}   () => view yaw in degrees (−180…180; default 0).
+                          Spins the look-from around the coil so every side
+                          (left, right, front, back) is reachable.
+                          Pitches the corkscrew toward the viewer — looking more
+                          from above (positive) or below (negative) — without
+                          changing the axis Angle.
+     getShift      {fn}   () => screen-space left/right pan (−100…100; default 0).
+                          Independent of Angle / Camera / Side: +100 slides the
+                          strand toward the right edge of the pane. Dragging
+                          the welcome field left or right writes the same value.
+     getScale      {fn}   () => { x, y, z } multipliers (0.01–8; default 1)
                           stretching — or pinching — the helix from its centre
                           on each axis. 1 is the original strand, not a floor.
                           A legacy number is applied uniformly to all three.
-     getPitch      {fn}   () => coil-pitch multiplier (0.25–4; default 1). Low
+     getPitch      {fn}   () => coil-pitch multiplier (0.01–8; default 1). Low
                           twists the strand tight; high opens the loops out.
-     getNodes      {fn}   () => circle-size multiplier (0.25–4; default 1) for
+     getNodes      {fn}   () => circle-size multiplier (0.01–8; default 1) for
                           the product photos and owl bugs on the strand.
-     getLength     {fn}   () => strand-length multiplier (0.25–4; default 1) —
+     getDots       {fn}   () => size multiplier (0.01–8; default 1) for the
+                          small beads that sit on the strand between those
+                          product circles.
+     getDotsColor  {fn}   () => '#rrggbb' or '' (empty = match the strand).
+     getDotsMotion {fn}   () => 'still' | 'pulse' | 'spark'
+     getMotionKnob {fn}   (motion, id) => 0.01–8 multiplier for that
+                          motion's own knobs (pulse: speed, size;
+                          pulse / spark: speed, length, size). 1 is the original.
+     getSpinDir    {fn}   () => 1 (forward) or -1 (reverse)
+     getSpinSpeed  {fn}   () => twist-speed multiplier (0.01–8; default 1)
+     getLength     {fn}   () => strand-length multiplier (0.01–8; default 1) —
                           how far the helix runs across the pane.
-     getThickness  {fn}   () => backbone/rung stroke-weight multiplier
-                          (0.25–4; default 1). Low is a hairline; high paints
-                          fat tubes.
-     getDepth      {fn}   () => 3-D pop multiplier (0.25–4; default 1). Low
+     getRungs      {fn}   () => rung-count multiplier (0.01–8; default 1).
+                          How many cross-lines between the two strands;
+                          1 is the original couple per turn. Ignored while
+                          getRungsMatch is true.
+     getRungsMatch {fn}   () => true pins one rung to each product-circle
+                          pair (the node stride).
+     getRungThick  {fn}   () => rung stroke-weight multiplier (0.01–8;
+                          default 1). Independent of backbone thickness.
+     getThickness  {fn}   () => backbone stroke-weight multiplier
+                          (0.01–8; default 1). Low is a hairline; high paints
+                          fat tubes. Does not move the rungs.
+     getDepth      {fn}   () => 3-D pop multiplier (0.01–8; default 1). Low
                           flattens shade + perspective; high pushes near
                           loops forward and fades the back. Independent of
                           Scale Z, which is coil volume.
@@ -2377,8 +3555,27 @@ export function createHelixBgAnim(cfg) {
     const n = Number(raw);
     return Number.isFinite(n) ? Math.max(-90, Math.min(90, n)) : HELIX_ANGLE_DEFAULT;
   };
+  const HELIX_CAMERA_DEFAULT = 0;
+  const getCamera = () => {
+    const raw = typeof cfg.getCamera === 'function' ? cfg.getCamera() : HELIX_CAMERA_DEFAULT;
+    return clampBgAnimCamera(raw);
+  };
+  const getAzimuth = () => {
+    const raw = typeof cfg.getAzimuth === 'function' ? cfg.getAzimuth() : BGANIM_AZIMUTH_DEFAULT;
+    return clampBgAnimAzimuth(raw);
+  };
+  /* Screen-space pan. 0 is centred; ±100 is ~48% of the pane width. A live
+     drag holds `dragShift` so a lagged host read cannot snap the strand back. */
+  const SHIFT_SPAN = 0.48;
+  let dragShift = null;
+  let pan = null;
+  const getShift = () => {
+    if (dragShift != null) return dragShift;
+    const raw = typeof cfg.getShift === 'function' ? cfg.getShift() : readBgAnimShift();
+    return clampBgAnimShift(raw);
+  };
   const HELIX_SCALE_DEFAULT = 1;
-  const clampScaleMul = (n) => (Number.isFinite(n) ? Math.max(0.25, Math.min(4, n)) : HELIX_SCALE_DEFAULT);
+  const clampScaleMul = (n) => (Number.isFinite(n) ? Math.max(BGANIM_PCT_MIN / 100, Math.min(BGANIM_PCT_MAX / 100, n)) : HELIX_SCALE_DEFAULT);
   const getScaleAxes = () => {
     const raw = typeof cfg.getScale === 'function' ? cfg.getScale() : HELIX_SCALE_DEFAULT;
     if (raw && typeof raw === 'object') {
@@ -2392,14 +3589,47 @@ export function createHelixBgAnim(cfg) {
     return { x: n, y: n, z: n };
   };
   /* Shape knobs — pitch, node size, strand length, stroke weight and 3-D pop.
-     Same 0.25–4 window as the axes so a host can push the field well past its
+     Same 0.01–8 window as the axes so a host can push the field well past its
      default look in either direction. */
   const knobMul = (fn) => clampScaleMul(Number(typeof fn === 'function' ? fn() : HELIX_SCALE_DEFAULT));
   const getPitchMul = () => knobMul(cfg.getPitch);
   const getNodesMul = () => knobMul(cfg.getNodes);
+  const getDotsMul = () => knobMul(cfg.getDots);
   const getLengthMul = () => knobMul(cfg.getLength);
+  const getRungsMul = () => knobMul(cfg.getRungs);
+  const getRungsMatch = () => (typeof cfg.getRungsMatch === 'function' ? !!cfg.getRungsMatch() : false);
+  const getRungThickMul = () => knobMul(cfg.getRungThick);
   const getThicknessMul = () => knobMul(cfg.getThickness);
   const getDepthMul = () => knobMul(cfg.getDepth);
+  const getDotsColorHex = () => {
+    const raw = typeof cfg.getDotsColor === 'function' ? cfg.getDotsColor() : '';
+    return normalizeBgAnimDotsHex(raw);
+  };
+  const getDotsMotion = () => {
+    const raw = typeof cfg.getDotsMotion === 'function' ? cfg.getDotsMotion() : cfg.dotsMotion;
+    return (raw === 'pulse' || raw === 'spark') ? raw : 'still';
+  };
+  const getMotionKnobMul = (motion, id) => {
+    const fn = cfg.getMotionKnob;
+    if (typeof fn !== 'function') return HELIX_SCALE_DEFAULT;
+    return clampScaleMul(Number(fn(motion, id)));
+  };
+  const getSpinSpeedMul = () => knobMul(cfg.getSpinSpeed);
+  const getSpinDir = () => {
+    const raw = typeof cfg.getSpinDir === 'function' ? cfg.getSpinDir() : cfg.spinDir;
+    if (raw === -1 || raw === 'rev' || raw === 'reverse') return -1;
+    return 1;
+  };
+  const getLook = () => {
+    const raw = typeof cfg.getLook === 'function' ? cfg.getLook() : cfg.look;
+    return normalizeBgAnimLook(raw);
+  };
+  const getMat = (id) => {
+    const fn = cfg.getMat;
+    if (typeof fn !== 'function') return readBgAnimMat(id);
+    const n = Number(fn(id));
+    return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : readBgAnimMat(id);
+  };
   const reducedMotion = !!cfg.reducedMotion;
   const isOn = typeof cfg.isOn === 'function' ? cfg.isOn : () => true;
   const isPaused = typeof cfg.isPaused === 'function' ? cfg.isPaused : () => false;
@@ -2840,6 +4070,7 @@ export function createHelixBgAnim(cfg) {
 
   let canvas = null, ctx = null, buf = null, bctx = null, raf = 0, ro = null, images = null, owlImg = null;
   let rgb = [37, 80, 124], w = 0, h = 0, dpr = 1, t0 = 0, running = false, paused = false;
+  let lastFrame = 0;
   /* Track density flips so switching Helix → Ten mid-run still swells the
      ten product bugs from "dot" size into the leftover node space. */
   let densityNow = null, fewSince = 0;
@@ -2849,6 +4080,9 @@ export function createHelixBgAnim(cfg) {
      a circle — never because a circle drifted under a still cursor. */
   let hitNodes = [], hoverImg = null, hoverX = -1, hoverY = -1;
   let lastT = 0, card = null, overCard = false, ptrX = -1, ptrY = -1;
+  /* Accumulated twist clock — advances by dt × speed × direction so changing
+     Speed or Spin never jumps the phase, and Reverse unwinds from here. */
+  let spinT = 0, lastSpinT = null;
   let hoverPinned = false;
 
   /* Resolve assets/ relative to THIS module so the photos load no matter how deep
@@ -2970,6 +4204,10 @@ export function createHelixBgAnim(cfg) {
        pins its card (food sheet, brand insight, or look-closer fact). */
     body.addEventListener('mousemove', onMove);
     body.addEventListener('mouseleave', () => { if (hoverPinned && !overCard) hideCard(); });
+    body.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', onPointerUp);
+    document.addEventListener('pointercancel', onPointerUp);
   }
 
   /* Product or insight card: round thumb over the bug. Food mode is name/brand +
@@ -3023,15 +4261,106 @@ export function createHelixBgAnim(cfg) {
     if (!t || !t.closest) return false;
     if (t.closest('.wch-helix-card')) return false;
     return !!t.closest(
-      'button, a, input, textarea, select, .chip, .ws-heading, .ws-sub, ' +
+      'button, a, input, textarea, select, .chip, ' +
       '.ws-chips, .ws-chips-scroll, .ws-chips-wrap, .ws-scorecards-section, ' +
       '.sc-input-row, .chat-input-rail, .sc-belowinput, .topbar-popover, ' +
-      '.wise-popover, .fl-more-popover, [role="menu"], .sc-ask-help'
+      '.sc-helix-float, .wise-popover, .fl-more-popover, [role="menu"], .sc-ask-help'
     );
+  }
+  /* Pan may start on the welcome title — the strand often sits behind it —
+     but never on chips, composer, menus, or other controls. */
+  function eventBlocksPan(e) {
+    const t = e && e.target;
+    if (!t || !t.closest) return false;
+    if (t.closest('.wch-helix-card')) return true;
+    return !!t.closest(
+      'button, a, input, textarea, select, .chip, ' +
+      '.ws-chips, .ws-chips-scroll, .ws-chips-wrap, .ws-scorecards-section, ' +
+      '.sc-input-row, .chat-input-rail, .sc-belowinput, .topbar-popover, ' +
+      '.sc-helix-float, .wise-popover, .fl-more-popover, [role="menu"], .sc-ask-help'
+    );
+  }
+
+  /* The strand itself is not a drag surface. Shift is a slider in Helix
+     settings; the only thing you drag is the popped-out settings card. */
+  function helixPanAllowed() {
+    return false;
+  }
+
+  function commitShift(pct, persist) {
+    const next = clampBgAnimShift(pct);
+    dragShift = next;
+    if (persist) {
+      persistBgAnimShift(next);
+      broadcastBgAnimShift(next);
+    }
+    redraw();
+  }
+
+  function endPan(e) {
+    if (!pan) return;
+    if (e && pan.id != null && e.pointerId !== pan.id) return;
+    const body = canvas && canvas.parentElement;
+    if (body && pan.id != null) {
+      try { body.releasePointerCapture(pan.id); } catch (_) {}
+    }
+    pan = null;
+    host.classList.remove('sc-bganim-panning');
+    requestAnimationFrame(() => { dragShift = null; });
+  }
+
+  /* The strand is not a drag surface. Product circles still open their cards.
+     Chrome (chips, composer, menus, the Helix settings card) never starts a pan. */
+  function onPointerDown(e) {
+    if (!host.classList.contains('sc-bganim-live')) return;
+    if (!helixPanAllowed()) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (eventBlocksPan(e)) return;
+    if (e.target && e.target.closest && e.target.closest('.wch-helix-card')) return;
+    const body = canvas && canvas.parentElement;
+    if (!body) return;
+    const rect = body.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    if (hitTest(mx, my)) return;
+    pan = {
+      id: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      startShift: getShift(),
+      armed: false,
+    };
+    if (e.pointerType === 'mouse' && e.cancelable) e.preventDefault();
+  }
+
+  function onPointerMove(e) {
+    if (!pan || e.pointerId !== pan.id) return;
+    if (!helixPanAllowed()) { endPan(e); return; }
+    const dx = e.clientX - pan.startX;
+    const dy = e.clientY - pan.startY;
+    if (!pan.armed) {
+      if (Math.hypot(dx, dy) < 6) return;
+      if (Math.abs(dy) > Math.abs(dx)) { pan = null; return; }
+      pan.armed = true;
+      host.classList.add('sc-bganim-panning');
+      if (hoverPinned && !overCard) hideCard();
+      const body = canvas && canvas.parentElement;
+      if (body) {
+        try { body.setPointerCapture(e.pointerId); } catch (_) {}
+      }
+    }
+    if (e.cancelable) e.preventDefault();
+    const body = canvas && canvas.parentElement;
+    const span = Math.max(1, (body ? body.clientWidth : w) * SHIFT_SPAN);
+    commitShift(pan.startShift + (dx / span) * 100, true);
+  }
+
+  function onPointerUp(e) {
+    endPan(e);
   }
 
   function onMove(e) {
     if (!host.classList.contains('sc-bganim-live')) return;
+    if (pan && pan.armed) return;
     const body = canvas && canvas.parentElement;
     if (!body) return;
     const rect = body.getBoundingClientRect();
@@ -3042,6 +4371,7 @@ export function createHelixBgAnim(cfg) {
     }
     if (eventOverChrome(e)) {
       ptrX = mx; ptrY = my;
+      body.style.cursor = '';
       if (hoverPinned && !overCard) hideCard();
       return;
     }
@@ -3065,7 +4395,7 @@ export function createHelixBgAnim(cfg) {
         body.style.cursor = 'pointer';
       }
     } else {
-      body.style.cursor = '';
+      body.style.cursor = helixPanAllowed() ? 'grab' : '';
       if (hoverPinned && !overCard) hideCard();
     }
   }
@@ -3215,6 +4545,105 @@ export function createHelixBgAnim(cfg) {
   /* Smootherstep for the soft fade at the strand's two ends. */
   function smooth(x) { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }
 
+  /* Cheap lit-tube finish for Look → 3D. One gradient across the stroke so
+     the strand reads round without WebGL. Classic keeps the original lines. */
+  const TUBE_LX = -0.52, TUBE_LY = -0.62;
+  function mix255(c, lift) {
+    if (lift < 0) return Math.max(0, Math.min(255, Math.round(c * (1 + lift))));
+    return Math.max(0, Math.min(255, Math.round(c + (255 - c) * lift)));
+  }
+  function drawLitSeg(x1, y1, x2, y2, width, alpha, depth, tripo, mats) {
+    if (alpha <= 0.01 || width < 0.7) return;
+    const dx = x2 - x1, dy = y2 - y1;
+    const len = Math.hypot(dx, dy);
+    if (len < 0.2) return;
+    const nx = -dy / len, ny = dx / len;
+    const rad = width * 0.5;
+    const side = (nx * TUBE_LX + ny * TUBE_LY) >= 0 ? 1 : -1;
+    const [cr, cg, cb] = rgb;
+    const m = mats || { rough: 0.36, metal: 0, coat: 0.28, sheen: 0.42, fuzz: 0.22 };
+    const k = tripo ? 1 : 0.55;
+    const rough = m.rough * k;
+    const metal = m.metal * k;
+    const coat = m.coat * k;
+    const sheen = m.sheen * k;
+    const fuzz = tripo ? m.fuzz : m.fuzz * 0.35;
+    if (fuzz > 0.08) {
+      const nFuzz = 1 + Math.round(fuzz * 2);
+      for (let i = 0; i < nFuzz; i++) {
+        const o = (i - (nFuzz - 1) / 2) * (0.7 + fuzz * 1.6);
+        ctx.globalAlpha = Math.min(1, alpha * (0.07 + 0.16 * fuzz));
+        ctx.strokeStyle = 'rgb(' + mix255(cr, -0.08) + ',' + mix255(cg, -0.06) + ',' + mix255(cb, -0.04) + ')';
+        ctx.lineWidth = width * (1.12 + fuzz * 0.7);
+        ctx.beginPath();
+        ctx.moveTo(x1 + nx * o, y1 + ny * o);
+        ctx.lineTo(x2 + nx * o, y2 + ny * o);
+        ctx.stroke();
+      }
+    }
+    const g = ctx.createLinearGradient(
+      x1 - nx * rad * side, y1 - ny * rad * side,
+      x1 + nx * rad * side, y1 + ny * rad * side
+    );
+    const hi = (tripo ? 0.36 : 0.28) + 0.42 * depth + metal * 0.32 - rough * 0.22;
+    const hiStop = Math.max(0.14, Math.min(0.52, 0.38 - metal * 0.16 + rough * 0.20));
+    const shadeAmt = -0.42 + rough * 0.12 - metal * 0.08;
+    g.addColorStop(0, 'rgb(' + mix255(cr, hi) + ',' + mix255(cg, hi * 0.9) + ',' + mix255(cb, hi * (0.7 + metal * 0.2)) + ')');
+    g.addColorStop(hiStop, 'rgb(' + cr + ',' + cg + ',' + cb + ')');
+    g.addColorStop(1, 'rgb(' + mix255(cr, shadeAmt) + ',' + mix255(cg, shadeAmt + 0.02) + ',' + mix255(cb, shadeAmt + 0.08) + ')');
+    ctx.globalAlpha = Math.min(1, alpha);
+    ctx.strokeStyle = g;
+    ctx.lineWidth = width;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    if (coat > 0.06) {
+      ctx.globalAlpha = Math.min(1, alpha * (0.18 + 0.5 * coat) * (0.45 + 0.55 * depth));
+      ctx.strokeStyle = 'rgba(255,255,255,' + (0.16 + 0.42 * coat) + ')';
+      ctx.lineWidth = Math.max(0.55, width * (0.18 + 0.2 * coat));
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    }
+    if (sheen > 0.06) {
+      const rim = rad * (0.62 + 0.2 * sheen);
+      ctx.globalAlpha = Math.min(1, alpha * (0.12 + 0.4 * sheen) * (0.35 + 0.65 * depth));
+      ctx.strokeStyle = 'rgba(255,255,255,' + (0.22 + 0.5 * sheen) + ')';
+      ctx.lineWidth = Math.max(0.45, width * (0.1 + 0.12 * sheen));
+      ctx.beginPath();
+      ctx.moveTo(x1 - nx * rim * side, y1 - ny * rim * side);
+      ctx.lineTo(x2 - nx * rim * side, y2 - ny * rim * side);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+  function drawLitDot(cx, cy, rad, alpha, cr, cg, cb, depth, tripo, mats) {
+    if (alpha <= 0.02 || rad < 0.4) return;
+    const m = mats || { rough: 0.36, metal: 0, coat: 0.28, sheen: 0.42, fuzz: 0.22 };
+    const k = tripo ? 1 : 0.55;
+    const metal = m.metal * k;
+    const sheen = m.sheen * k;
+    const fuzz = tripo ? m.fuzz : 0;
+    const hx = cx + TUBE_LX * rad * 0.42;
+    const hy = cy + TUBE_LY * rad * 0.42;
+    if (fuzz > 0.1) {
+      ctx.globalAlpha = Math.min(1, alpha * (0.1 + 0.22 * fuzz));
+      ctx.beginPath(); ctx.arc(cx, cy, rad * (1.18 + fuzz * 0.35), 0, Math.PI * 2);
+      ctx.fillStyle = 'rgb(' + mix255(cr, -0.06) + ',' + mix255(cg, -0.04) + ',' + mix255(cb, -0.02) + ')';
+      ctx.fill();
+    }
+    const grd = ctx.createRadialGradient(hx, hy, rad * 0.08, cx, cy, rad);
+    const hi = 0.55 + metal * 0.22;
+    grd.addColorStop(0, 'rgb(' + mix255(cr, hi) + ',' + mix255(cg, hi * 0.87) + ',' + mix255(cb, hi * 0.65) + ')');
+    grd.addColorStop(0.45, 'rgb(' + cr + ',' + cg + ',' + cb + ')');
+    grd.addColorStop(1, 'rgb(' + mix255(cr, -0.42) + ',' + mix255(cg, -0.40) + ',' + mix255(cb, -0.34) + ')');
+    ctx.globalAlpha = Math.min(1, alpha);
+    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+    ctx.fillStyle = grd; ctx.fill();
+    if (rad > 2 && depth > 0.3) {
+      ctx.globalAlpha = Math.min(1, alpha * (0.2 + 0.4 * depth) * (0.7 + 0.8 * sheen));
+      ctx.beginPath(); ctx.arc(hx, hy, Math.max(0.4, rad * (0.16 + 0.08 * sheen)), 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,' + (0.72 + 0.2 * sheen) + ')'; ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
   /* Paint one frame at time `t` (seconds). The strand runs along a tilted, slowly-
      swaying axis that DESCENDS left→right (high on the left, low on the right); its
      loops TRAVEL end-to-end at a slow crawl (a moving twist, not an in-place spin).
@@ -3227,6 +4656,13 @@ export function createHelixBgAnim(cfg) {
   function draw(t) {
     if (!ctx || !bctx || w < 2 || h < 2) return;
     lastT = t;                                                 // remember the last painted time (for redraw)
+    if (lastSpinT == null) lastSpinT = t;
+    else {
+      const dt = t - lastSpinT;
+      lastSpinT = t;
+      if (dt !== 0) spinT += dt * getSpinSpeedMul() * getSpinDir();
+    }
+    const st = spinT;
     rgb = readColor();                                         // track preset / theme flips live
     const few = getDensity() === 'ten';
     if (few && densityNow !== 'ten') fewSince = t;
@@ -3243,12 +4679,12 @@ export function createHelixBgAnim(cfg) {
     ctx = bctx;
     ctx.clearRect(0, 0, w, h);
     const [r, g, b] = rgb;
-    const cx = w / 2, cy = h * 0.36;                           // ride higher in the chat body
+    const cx = w / 2 + (getShift() / 100) * w * SHIFT_SPAN, cy = h * 0.36;
     const intro = 1 - Math.pow(1 - Math.min(1, t / 3.2), 3);   // gentle grow-in over ~3.2s
     /* Angled axis that slowly sways around the member's chosen tilt (degrees from
        the shared Angle slider; default 10° so the strand rides high on the left
        and drops toward the right). */
-    const theta = (getAngle() * Math.PI / 180) + 0.06 * Math.sin(t * 0.045);
+    const theta = (getAngle() * Math.PI / 180) + 0.06 * Math.sin(st * 0.045);
     const ax = Math.cos(theta), ay = Math.sin(theta);          // along-axis unit vector
     const px = -Math.sin(theta), py = Math.cos(theta);         // perpendicular unit vector
     /* Strand length — the default covers the tilted diagonal; the Length knob
@@ -3260,7 +4696,7 @@ export function createHelixBgAnim(cfg) {
     const sc = getScaleAxes();
     const thick = getThicknessMul();
     const depth3d = getDepthMul();
-    const volume = 1 + (0.16 * Math.sin(t * 0.02) + 0.07 * Math.sin(t * 0.009 + 1.3)) * sc.z;
+    const volume = 1 + (0.16 * Math.sin(st * 0.02) + 0.07 * Math.sin(st * 0.009 + 1.3)) * sc.z;
     /* Coil radius stays at the original narrow-strand size. Scale X / Y stretch
        the projected helix from its centre; Scale Z is how wide the corkscrew
        opens; Depth (not Scale Z) is the near/far pop so front nodes spread and
@@ -3298,23 +4734,43 @@ export function createHelixBgAnim(cfg) {
        very slowly; each sample carries z = depth so we can shade + sort front/back. --- */
     const lambda = Math.max(150, Math.min(240, L / 5.5)) * getPitchMul();
     const kw = (Math.PI * 2) / lambda;                         // angular frequency along axis
-    const twistDrift = 1 + 0.05 * Math.sin(t * 0.03);          // pitch drifts a touch, slowly
-    const phase = t * 0.08;                                    // loops crawl along the axis (very slow)
+    const twistDrift = 1 + 0.05 * Math.sin(st * 0.03);          // pitch drifts a touch, slowly
+    const phase = st * 0.08;                                    // loops crawl along the axis (speed × direction)
     /* Sample fine enough that a TIGHT pitch still reads as a rounded curve
        instead of a zig-zag; the default pitch keeps the original 7px stride.
        N is capped so a 400% strand cannot run the frame cost away. */
     const STEP = Math.max(2.5, Math.min(7, lambda / 20));      // px between samples → rounded curve
-    const N = Math.max(24, Math.min(1200, Math.round(L / STEP)));
+    const N = Math.max(24, Math.min(480, Math.round(L / STEP)));
+    /* Camera: azimuth spins the look-from around the coil (left / front /
+       right / back); elevation pitches it above or below. Together they cover
+       every 3-D side. The axis Angle is unchanged — only the radial + depth
+       offset rotates, so the strand stays on the same diagonal. */
+    const elev = getCamera() * Math.PI / 180;
+    const az = getAzimuth() * Math.PI / 180;
+    const elC = Math.cos(elev), elS = Math.sin(elev);
+    const azC = Math.cos(az), azS = Math.sin(az);
+    const rotCam = (rx, ry, rz) => {
+      const x1 = rx * azC + rz * azS;
+      const z1 = -rx * azS + rz * azC;
+      return {
+        x: x1,
+        y: ry * elC - z1 * elS,
+        z: ry * elS + z1 * elC,
+      };
+    };
     const A = [], B = [];
     for (let i = 0; i <= N; i++) {
       const u = (i / N - 0.5) * L;
       const phi = u * kw * twistDrift - phase;
       const s = Math.sin(phi), c = Math.cos(phi);
       const endFade = smooth((L * 0.5 - Math.abs(u)) / (L * 0.13));
-      const amp = ampBase * intro * (1 + 0.4 * Math.sin(u * breathK - t * breathSpeed));
+      const amp = ampBase * intro * (1 + 0.4 * Math.sin(u * breathK - st * breathSpeed));
       const bx = cx + ax * u, by = cy + ay * u;                // point on the axis
-      A.push(mapPt(bx + px * amp * s, by + py * amp * s, c, endFade));
-      B.push(mapPt(bx - px * amp * s, by - py * amp * s, -c, endFade));
+      const ra = rotCam(px * amp * s, py * amp * s, amp * c);
+      const rb = rotCam(-px * amp * s, -py * amp * s, -amp * c);
+      const zDiv = amp > 1e-6 ? amp : 1;
+      A.push(mapPt(bx + ra.x, by + ra.y, ra.z / zDiv, endFade));
+      B.push(mapPt(bx + rb.x, by + rb.y, rb.z / zDiv, endFade));
     }
     /* --- Backbones as depth-sorted round-capped segments: the nearer half of each turn
        (z→+1) is drawn thicker + brighter and OVER the farther half (z→−1), so the two
@@ -3327,34 +4783,60 @@ export function createHelixBgAnim(cfg) {
     }
     segs.sort((m, n) => m.z - n.z);
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    const look = getLook();
+    const lit = look === '3d';
+    const tripo = false;
+    const mats = {
+      rough: getMat('rough') / 100,
+      metal: getMat('metal') / 100,
+      coat: getMat('coat') / 100,
+      sheen: getMat('sheen') / 100,
+      fuzz: getMat('fuzz') / 100,
+    };
     for (const seg of segs) {
       const d = shade(seg.z);                                  // 0 (far) → 1 (near)
       const la = seg.a * (0.26 + 0.6 * d);
       if (la <= 0.01) continue;
-      ctx.lineWidth = (1.1 + 1.9 * d) * thick;                 // near strand is fatter
-      ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + la + ')';
-      ctx.beginPath(); ctx.moveTo(seg.x1, seg.y1); ctx.lineTo(seg.x2, seg.y2); ctx.stroke();
+      if (lit) drawLitSeg(seg.x1, seg.y1, seg.x2, seg.y2, (2.2 + 3.4 * d) * thick * (tripo ? 1.18 : 1), la, d, tripo, mats);
+      else {
+        ctx.lineWidth = (1.1 + 1.9 * d) * thick;                 // near strand is fatter
+        ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + la + ')';
+        ctx.beginPath(); ctx.moveTo(seg.x1, seg.y1); ctx.lineTo(seg.x2, seg.y2); ctx.stroke();
+      }
     }
-    /* Rungs — base-pair links, a couple per turn, shaded by their own depth. */
-    const rungEvery = Math.max(4, Math.round(lambda / (STEP * 2)));
-    for (let i = 0; i <= N; i += rungEvery) {
+    /* Rungs — base-pair links, a couple per turn, shaded by their own depth.
+       Match pins them to product circles; the Rungs slider densifies or thins
+       the original stride; Bar is stroke weight. */
+    const nodeEvery = Math.max(3, Math.round(48 / STEP));
+    const origRungEvery = Math.max(4, Math.round(lambda / (STEP * 2)));
+    const rungsOn = getRungsMul() > 0.02 && getRungThickMul() > 0.02;
+    const rungEvery = !rungsOn
+      ? Infinity
+      : (getRungsMatch()
+          ? nodeEvery
+          : Math.max(2, Math.round(origRungEvery / Math.max(0.25, getRungsMul()))));
+    const rungThick = getRungThickMul();
+    if (rungsOn) for (let i = 0; i <= N; i += rungEvery) {
       const p = A[i], q = B[i];
+      if (!p || !q) continue;
       const a = Math.min(p.alpha, q.alpha);
       if (a <= 0.01) continue;
       const d = shade((p.z + q.z) * 0.5);
       const la = a * (0.16 + 0.28 * d);
-      ctx.lineWidth = (1.1 + 0.6 * d) * thick;
-      ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + la + ')';
-      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
+      if (lit) drawLitSeg(p.x, p.y, q.x, q.y, (1.6 + 1.1 * d) * thick * rungThick * (tripo ? 1.1 : 1), la, d, tripo, mats);
+      else {
+        ctx.lineWidth = (1.1 + 0.6 * d) * thick * rungThick;
+        ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + la + ')';
+        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
+      }
     }
     /* A slow, deep "breath" pulses every circle's size together — echoing the original
        centre owl's pulse. Combined with depth (near = bigger), the circles swell as they
        come to the FRONT of the helix and shrink as they swing to the back. */
-    const breathe = 1 + 0.09 * Math.sin(t * 0.42);             // deep + slow, ~15s
+    const breathe = 1 + 0.09 * Math.sin(st * 0.42);             // deep + slow, ~15s at 100% speed
     /* Same node stride as the full helix — Ten keeps every circle on the
        strand. Only ~10 of them are foods; every other circle is the WISE owl
-       logo bug. */
-    const nodeEvery = Math.max(3, Math.round(48 / STEP));
+       logo bug. (nodeEvery is computed with the rungs so Match can share it.) */
     const nodes = [];
     /* Every food on the strand is UNIQUE: `pi` walks the (session-shuffled) pool
        once and never rewinds, so no product can appear twice in a frame. Should a
@@ -3390,6 +4872,76 @@ export function createHelixBgAnim(cfg) {
       }
     }
     nodes.sort((p, q) => p.z - q.z);
+    /* Little beads along both backbones — the nucleotides between product
+       circles. They sit on a finer stride than the photos (and on every rung
+       end), skip anything that would land under a large node, and honour the
+       Dots size / colour / motion controls. */
+    const dotsMul = getDotsMul() * Math.min(sc.x, sc.y);
+    const beadBase = 4.8 * dotsMul;
+    const dotsMotion = reducedMotion ? 'still' : getDotsMotion();
+    const customRgb = parseDotsRgb(getDotsColorHex());
+    const [dr, dg, db] = customRgb || [r, g, b];
+    const occupiedI = new Set();
+    for (let i = 0; i <= N; i += nodeEvery) occupiedI.add(i);
+    const beadI = new Set();
+    const dotEvery = Math.max(2, Math.round(16 / STEP));
+    for (let i = 0; i <= N; i += dotEvery) beadI.add(i);
+    for (let i = 0; i <= N; i += rungEvery) beadI.add(i);
+    const beads = [];
+    const clearRad = Math.max(10, dotSize * 0.52);
+    const clearRad2 = clearRad * clearRad;
+    beadI.forEach((i) => {
+      if (occupiedI.has(i)) return;
+      const nearLarge = (pt) => {
+        for (let n = 0; n < nodes.length; n++) {
+          const dx = nodes[n].x - pt.x, dy = nodes[n].y - pt.y;
+          if (dx * dx + dy * dy < clearRad2) return true;
+        }
+        return false;
+      };
+      const a = A[i], b = B[i];
+      if (a && a.alpha > 0.02 && !nearLarge(a)) beads.push({ x: a.x, y: a.y, z: a.z, alpha: a.alpha, i, strand: 0 });
+      if (b && b.alpha > 0.02 && !nearLarge(b)) beads.push({ x: b.x, y: b.y, z: b.z, alpha: b.alpha, i, strand: 1 });
+    });
+    beads.sort((p, q) => p.z - q.z);
+    for (const bead of beads) {
+      const d = shade(bead.z);
+      let sizeK = 0.78 + 0.40 * d;
+      let aK = bead.alpha * (0.38 + 0.62 * d);
+      const u = bead.i / Math.max(1, N);
+      if (dotsMotion === 'pulse') {
+        const pSpeed = getMotionKnobMul('pulse', 'speed');
+        const pSize = getMotionKnobMul('pulse', 'size');
+        const pSpan = getMotionKnobMul('pulse', 'length');
+        /* Span stretches or pinches the breath along the strand (fewer, wider
+           waves when high). Rate is how fast those waves roll. */
+        const waves = Math.max(0.45, 2.2 / Math.max(0.15, pSpan));
+        const s = 0.5 + 0.5 * Math.sin((u * waves - st * 0.52 * pSpeed + bead.strand * 0.5) * Math.PI * 2);
+        sizeK *= 0.52 + (0.55 + 1.55 * pSize) * s;
+        aK *= 0.28 + 0.95 * s;
+      } else if (dotsMotion === 'spark') {
+        const sSpeed = getMotionKnobMul('spark', 'speed');
+        const sSize = getMotionKnobMul('spark', 'size');
+        const sLen = getMotionKnobMul('spark', 'length');
+        const pos = ((st * 0.58 * sSpeed) % 1 + 1) % 1;
+        const span = Math.max(0.035, 0.20 * sLen);
+        let dist = Math.abs(u - pos);
+        dist = Math.min(dist, 1 - dist);
+        const spark = Math.pow(Math.max(0, 1 - dist / span), 2.0);
+        aK *= 0.10 + 1.65 * spark;
+        sizeK *= 0.28 + (0.35 + 2.2 * sSize) * spark;
+      }
+      const rad = Math.max(0.45, (beadBase / 2) * sizeK);
+      if (aK <= 0.02 || rad < 0.4) continue;
+      if (lit) drawLitDot(bead.x, bead.y, rad, aK, dr, dg, db, d, tripo, mats);
+      else {
+        ctx.globalAlpha = Math.min(1, aK);
+        ctx.beginPath(); ctx.arc(bead.x, bead.y, rad, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgb(' + dr + ',' + dg + ',' + db + ')';
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
     hitNodes = [];
     for (const n of nodes) {
       if (n.alpha <= 0.02) continue;
@@ -3460,6 +5012,9 @@ export function createHelixBgAnim(cfg) {
   function frame(now) {
     if (!running || paused) return;
     if (!t0) t0 = now;
+    /* ~30 fps is plenty for a 20% opacity background — skip extra frames. */
+    if (now - lastFrame < 33) { raf = requestAnimationFrame(frame); return; }
+    lastFrame = now;
     draw((now - t0) / 1000);
     raf = requestAnimationFrame(frame);
   }
@@ -3524,8 +5079,11 @@ export function createHelixBgAnim(cfg) {
     if (card) card.hidden = true;
     const cbody = canvas && canvas.parentElement;
     if (cbody) cbody.style.cursor = '';
-    host.classList.remove('sc-bganim-live');
+    endPan();
+    host.classList.remove('sc-bganim-live', 'sc-bganim-panning');
     if (ctx) ctx.clearRect(0, 0, w, h);
+    spinT = 0; lastSpinT = null;
+    lastFrame = 0;
   }
 
   /* Preset / colour-picker changes while the field is paused (or on a still
@@ -3563,16 +5121,16 @@ export function createOrbitBgAnim(cfg) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Grouped two-column three-dot menu (shared)                          */
+/* Grouped three-column three-dot menu (shared)                        */
 /* ------------------------------------------------------------------ */
 /* Reorganize a chat "More options" popover's flat row list into titled GROUP
-   CARDS that flow through a two-column layout, matching the primary-nav
+   CARDS that flow through a three-column layout, matching the primary-nav
    Appearance popover. It MOVES the existing row nodes (never re-creates them) so
    every wired listener + captured reference stays valid, then tags the popover
    with .sc-menu-grouped.
 
    Columns are REAL flex wrappers — not CSS `column-width`. Chromium's
-   multi-column hit-testing often maps a click in the right-hand column onto
+   multi-column hit-testing often maps a click in a later column onto
    empty space or a left-column row, which made every switch look dead.
 
    Rows are bucketed by their stable data-sc id; sub-control blocks (the opacity
@@ -3580,20 +5138,24 @@ export function createOrbitBgAnim(cfg) {
    no data-sc and simply follow whichever toggle preceded them, so they land in
    that toggle's group. Unknown rows fall through to a "More" group so nothing is
    ever dropped.
-   Idempotent — a second call is a no-op. */
-const CHAT_MENU_GROUP_ORDER = ['navigate', 'conversation', 'data', 'display', 'background', 'motion', 'more', 'danger'];
-const CHAT_MENU_COL1 = { navigate: 1, conversation: 1, data: 1, display: 1 };
+   Helix sits in its own middle column so its clustered sliders are not stacked
+   under Activity. Idempotent — a second call is a no-op. */
+const CHAT_MENU_GROUP_ORDER = ['navigate', 'conversation', 'data', 'display', 'helix', 'motion', 'more', 'danger'];
+const CHAT_MENU_COL = {
+  navigate: 1, conversation: 1, data: 1, display: 1,
+  helix: 2,
+  motion: 3, more: 3, danger: 3,
+};
 const CHAT_MENU_GROUP_TITLE = {
   navigate: 'Go to', conversation: 'Conversation', data: 'Data & agents',
-  display: 'Display', background: 'Background', motion: 'Activity & streaming',
+  display: 'Display', helix: 'Helix', motion: 'Activity & streaming',
   more: 'More', danger: '',
 };
 const CHAT_MENU_GROUP_OF = {
   history: 'conversation', new: 'conversation', export: 'conversation', share: 'conversation', 'add-member': 'conversation',
-  turns: 'data', outputs: 'data', connect: 'data', 'mcp-toggle': 'data', 'merge-panels': 'data', sticky: 'data',
+  turns: 'data', outputs: 'data', connect: 'data', 'mcp-toggle': 'data', sticky: 'data',
   'toggle-cards': 'display', 'toggle-intent-chips': 'display', compact: 'display', brandtext: 'display', sheen: 'display',
-  elev: 'display',
-  'bg-anim': 'background',
+  'bg-anim': 'helix',
   'activity-strip': 'motion', 'stream-toggle': 'motion',
   close: 'danger',
 };
@@ -3679,8 +5241,8 @@ function closeChatMenuAdminPop(wrap) {
 }
 function isChatMenuAdminGated(el) {
   if (!el || !el.classList) return false;
-  if (el.classList.contains('topbar-menu-item--admin') || el.classList.contains('sc-elev')) return true;
-  if (el.classList.contains('sc-bganim-detail') || el.classList.contains('sc-bganim-style') || el.classList.contains('sc-bganim-playback')) return true;
+  if (el.classList.contains('topbar-menu-item--admin')) return true;
+  if (el.classList.contains('sc-bganim-detail') || el.classList.contains('sc-bganim-style') || el.classList.contains('sc-bganim-look') || el.classList.contains('sc-bganim-dots-motion') || el.classList.contains('sc-bganim-spin') || el.classList.contains('sc-bganim-playback') || el.classList.contains('sc-bganim-subhead') || el.classList.contains('sc-bganim-cluster')) return true;
   if (el.hasAttribute && el.hasAttribute('data-admin-item')) return true;
   try {
     if (el.classList.contains('topbar-menu-item') && el.querySelector('.topbar-menu-badge')) return true;
@@ -3724,6 +5286,7 @@ function applyChatMenuAdminGate(pop) {
   });
   const visibleCols = Array.from(pop.querySelectorAll('.sc-menu-col')).filter((c) => !c.classList.contains('is-empty'));
   pop.classList.toggle('sc-menu-one-col', visibleCols.length < 2);
+  pop.classList.toggle('sc-menu-two-col', visibleCols.length === 2);
 }
 function ensureChatMenuAdminDocWire() {
   if (typeof document === 'undefined' || document.__wiseChatAdminMenuWired) return;
@@ -3828,15 +5391,10 @@ const CHAT_ADMIN_DESC = {
   compact: 'Tighten chat padding',
   brandtext: 'Blue assistant replies',
   sheen: 'Glow around the input',
-  elev: 'Raise the chat card',
-  'bg-anim': 'Welcome DNA helix',
-  'merge-outputs': 'Combine results into one',
-  'merge-panels': 'Combine results into one',
+  'bg-anim': 'DNA behind welcome',
 };
 function adminDescKey(el) {
   if (!el || !el.classList) return '';
-  if (el.classList.contains('sc-elev')) return 'elev';
-  if (el.hasAttribute('data-merge-outputs')) return 'merge-outputs';
   const sc = el.getAttribute('data-sc');
   if (sc && CHAT_ADMIN_DESC[sc]) return sc;
   if (el.id === 'wiseai-cards-item') return 'toggle-cards';
@@ -3851,15 +5409,6 @@ function decorateAdminToggleDesc(el) {
   if (!el || el.querySelector('.topbar-menu-desc')) return;
   const desc = CHAT_ADMIN_DESC[adminDescKey(el)];
   if (!desc) return;
-  if (el.classList.contains('sc-elev')) {
-    const label = el.querySelector('.sc-elev-label');
-    if (!label) return;
-    const d = document.createElement('span');
-    d.className = 'topbar-menu-desc';
-    d.textContent = desc;
-    label.insertAdjacentElement('afterend', d);
-    return;
-  }
   const kids = Array.from(el.children);
   const label = kids.find((n) =>
     n.tagName === 'SPAN'
@@ -3875,7 +5424,9 @@ function decorateAdminToggleDesc(el) {
   wrap.className = 'topbar-menu-copy';
   const title = document.createElement('span');
   title.className = 'topbar-menu-title';
-  title.textContent = (label.textContent || '').trim();
+  let text = (label.textContent || '').trim();
+  if (adminDescKey(el) === 'bg-anim' && /background animation/i.test(text)) text = 'Animation';
+  title.textContent = text;
   const d = document.createElement('span');
   d.className = 'topbar-menu-desc';
   d.textContent = desc;
@@ -3885,14 +5436,314 @@ function decorateAdminToggleDesc(el) {
 }
 function decorateChatMenuAdminDescs(pop) {
   if (!pop) return;
-  pop.querySelectorAll('.topbar-menu-item--admin, .sc-elev, [data-merge-outputs]').forEach(decorateAdminToggleDesc);
+  pop.querySelectorAll('.topbar-menu-item--admin').forEach(decorateAdminToggleDesc);
+}
+
+/* Tiny 2–4 word hint under every Helix slider / segment. Idempotent. */
+const HELIX_HINTS = [
+  ['.sc-bganim-detail:has(.sc-bganim-opacity)', 'How faint it sits'],
+  ['.sc-bganim-angle', 'Tilt of the coil'],
+  ['.sc-bganim-camera', 'Above or below'],
+  ['.sc-bganim-azimuth', 'Around the coil'],
+  ['.sc-bganim-shift', 'Drag left or right'],
+  ['.sc-bganim-scale-all', 'All axes at once'],
+  ['.sc-bganim-scale-x', 'Stretch left–right'],
+  ['.sc-bganim-scale-y', 'Stretch up–down'],
+  ['.sc-bganim-scale-z', 'Coil toward you'],
+  ['.sc-bganim-knob-nodes', 'Photo size'],
+  ['.sc-bganim-knob-dots', 'Bead size'],
+  ['.sc-bganim-dots-color', 'Bead colour'],
+  ['.sc-bganim-dots-motion', 'How beads move'],
+  ['.sc-bganim-motion-pulse-speed', 'Breath speed'],
+  ['.sc-bganim-motion-pulse-length', 'Breath width'],
+  ['.sc-bganim-motion-pulse-size', 'How they swell'],
+  ['.sc-bganim-motion-spark-speed', 'Glint speed'],
+  ['.sc-bganim-motion-spark-length', 'Glint width'],
+  ['.sc-bganim-motion-spark-size', 'Glint swell'],
+  ['.sc-bganim-knob-pitch', 'Coil tightness'],
+  ['.sc-bganim-knob-length', 'How far it runs'],
+  ['.sc-bganim-knob-rungs', 'All on, or off'],
+  ['.sc-bganim-knob-rungthick', 'Cross-line thickness'],
+  ['.sc-bganim-knob-thickness', 'Strand fatness'],
+  ['.sc-bganim-knob-depth', '3-D pop'],
+  ['.sc-bganim-spin', 'Twist direction'],
+  ['.sc-bganim-knob-speed', 'Twist speed'],
+  ['.sc-bganim-look', 'Classic or 3D'],
+  ['.sc-bganim-mat-rough', 'Matte vs mirror'],
+  ['.sc-bganim-mat-metal', 'Metallic sheen'],
+  ['.sc-bganim-mat-coat', 'Glossy lacquer'],
+  ['.sc-bganim-mat-sheen', 'Edge glow'],
+  ['.sc-bganim-mat-fuzz', 'Downy bump'],
+  ['.sc-bganim-style', 'Helix, Ten, or Orbit'],
+  ['.sc-bganim-playback', 'Pause or play'],
+];
+function decorateMenuRowIcons(pop) {
+  if (!pop) return;
+  const pairs = [
+    ['.sc-actside-detail > .sc-stream-detail-label', 'align_horizontal_left'],
+    ['.sc-stream-detail:not(.sc-actside-detail) > .sc-stream-detail-label', 'view_list'],
+    ['.sc-bganim-look', 'view_in_ar'],
+    ['.sc-bganim-style', 'schema'],
+    ['.sc-bganim-dots-motion', 'motion_photos_on'],
+    ['.sc-bganim-spin', 'rotate_right'],
+    ['.sc-bganim-playback', 'play_circle'],
+  ];
+  pairs.forEach(([sel, icon]) => {
+    pop.querySelectorAll(sel).forEach((el) => {
+      if (!el || el.querySelector('.sc-bganim-row-icon')) return;
+      const glyph = '<span class="material-symbols-outlined topbar-menu-icon sc-bganim-row-icon" aria-hidden="true">' + icon + '</span>';
+      el.insertAdjacentHTML('afterbegin', glyph);
+    });
+  });
+}
+
+function decorateHelixHints(root) {
+  if (!root) return;
+  HELIX_HINTS.forEach(([sel, hint]) => {
+    root.querySelectorAll(sel).forEach((el) => {
+      if (!el || el.querySelector('.sc-bganim-hint')) return;
+      const d = document.createElement('span');
+      d.className = 'sc-bganim-hint';
+      d.textContent = hint;
+      const label = el.querySelector('.sc-bganim-detail-label, .sc-bganim-style-label, .sc-bganim-playback-label');
+      if (label && !label.closest('.sc-bganim-copy')) {
+        const wrap = document.createElement('span');
+        wrap.className = 'sc-bganim-copy';
+        label.replaceWith(wrap);
+        wrap.appendChild(label);
+        wrap.appendChild(d);
+      } else {
+        el.appendChild(d);
+      }
+    });
+  });
+}
+
+/* Wrap Helix sub-controls into titled inner cards (View / Size / Beads /
+   Strand / Look) so the column reads as clusters instead of one long slider
+   dump. Subheads already exist; this just groups everything after a subhead
+   until the next one. Idempotent. */
+function tagHelixClusterSpan(section) {
+  if (!section) return;
+  section.querySelectorAll('.sc-bganim-cluster').forEach((c) => {
+    const head = c.querySelector(':scope > .sc-bganim-subhead');
+    const label = (head && head.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    c.classList.toggle('sc-bganim-cluster--span', label === 'look' || label === 'finish');
+  });
+}
+
+function clusterifyHelixGroup(section) {
+  if (!section) return;
+  if (section.dataset.helixClustered === '1') { tagHelixClusterSpan(section); return; }
+  const kids = Array.from(section.children);
+  let cluster = null;
+  kids.forEach((el) => {
+    if (!el || !el.classList) return;
+    if (el.classList.contains('sc-menu-group-head') || el.classList.contains('wise-popover-header') || el.classList.contains('topbar-menu-item') || el.classList.contains('wise-popover-item')) {
+      cluster = null;
+      return;
+    }
+    if (el.classList.contains('sc-bganim-cluster')) { cluster = el; return; }
+    if (el.classList.contains('sc-bganim-subhead')) {
+      cluster = document.createElement('div');
+      cluster.className = 'sc-bganim-cluster';
+      const label = (el.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+      if (label === 'look' || label === 'finish') cluster.classList.add('sc-bganim-cluster--span');
+      if (el.dataset.helixOnly === '1') cluster.dataset.helixOnly = '1';
+      el.before(cluster);
+      cluster.appendChild(el);
+      return;
+    }
+    if (!cluster) {
+      cluster = document.createElement('div');
+      cluster.className = 'sc-bganim-cluster';
+      el.before(cluster);
+    }
+    cluster.appendChild(el);
+  });
+  section.dataset.helixClustered = '1';
+  tagHelixClusterSpan(section);
+}
+
+function helixFloatForPop(pop) {
+  if (typeof document === 'undefined') return null;
+  if (pop && pop.classList && pop.classList.contains('sc-helix-float')) return pop;
+  const id = pop && pop.id;
+  if (id) {
+    try {
+      const esc = (typeof CSS !== 'undefined' && CSS.escape) ? CSS.escape(id) : String(id).replace(/"/g, '');
+      const named = document.querySelector('.sc-helix-float[data-helix-float-for="' + esc + '"]');
+      if (named) return named;
+    } catch (_) {}
+  }
+  return document.querySelector('.sc-helix-float');
+}
+
+function liveBgAnimRoot(root) {
+  return helixFloatForPop(root) || root;
+}
+
+function queryChatMenu(pop, sel) {
+  if (!pop) return null;
+  const float = helixFloatForPop(pop);
+  return pop.querySelector(sel) || (float && float.querySelector(sel));
+}
+
+function queryChatMenuAll(pop, sel) {
+  const nodes = [];
+  const seen = new Set();
+  const add = (list) => {
+    if (!list) return;
+    list.forEach((el) => {
+      if (seen.has(el)) return;
+      seen.add(el);
+      nodes.push(el);
+    });
+  };
+  if (pop) add(pop.querySelectorAll(sel));
+  const float = helixFloatForPop(pop);
+  if (float) add(float.querySelectorAll(sel));
+  return nodes;
+}
+
+function clampHelixFloat(shell, left, top) {
+  if (!shell) return;
+  const pad = 8;
+  const w = shell.offsetWidth || 0;
+  const h = shell.offsetHeight || 0;
+  const maxL = Math.max(pad, window.innerWidth - w - pad);
+  const maxT = Math.max(pad, window.innerHeight - h - pad);
+  shell.style.left = Math.round(Math.max(pad, Math.min(left, maxL))) + 'px';
+  shell.style.top = Math.round(Math.max(pad, Math.min(top, maxT))) + 'px';
+}
+
+function dockHelixColumn(shell) {
+  if (!shell || !shell.classList.contains('sc-helix-float')) return;
+  const col = shell.__helixCol || shell.querySelector('.sc-menu-col--helix') || shell.firstElementChild;
+  const marker = col && col.__helixMarker;
+  const pop = (col && col.__helixHostPop) || null;
+  if (col) {
+    if (marker && marker.parentNode) {
+      marker.parentNode.insertBefore(col, marker);
+      marker.parentNode.removeChild(marker);
+    } else if (pop && pop.isConnected) {
+      pop.appendChild(col);
+    }
+    delete col.__helixMarker;
+    delete col.__helixHostPop;
+  }
+  if (shell.parentNode) shell.parentNode.removeChild(shell);
+  if (pop) applyChatMenuAdminGate(pop);
+}
+
+function popOutHelixColumn(group, pop) {
+  if (!group) return;
+  const col = group.closest('.sc-menu-col--helix') || group;
+  if (col.closest('.sc-helix-float')) return;
+  const host = pop || col.closest('.topbar-popover') || col.closest('.sc-menu-grouped');
+  const rect = col.getBoundingClientRect();
+  const marker = document.createComment('wise-helix');
+  if (col.parentNode) col.parentNode.insertBefore(marker, col);
+  const shell = document.createElement('div');
+  shell.className = 'sc-helix-float sc-menu-grouped';
+  shell.setAttribute('role', 'dialog');
+  shell.setAttribute('aria-label', 'Helix');
+  if (host && host.id) shell.setAttribute('data-helix-float-for', host.id);
+  shell.__helixCol = col;
+  col.__helixMarker = marker;
+  col.__helixHostPop = host;
+  shell.appendChild(col);
+  document.body.appendChild(shell);
+  shell.style.width = Math.max(240, Math.round(rect.width)) + 'px';
+  clampHelixFloat(shell, rect.left, rect.top);
+  wireHelixFloatDrag(shell);
+  if (host) applyChatMenuAdminGate(host);
+}
+
+function wireHelixFloatDrag(shell) {
+  if (!shell || shell.__helixDragWired) return;
+  shell.__helixDragWired = true;
+  shell.addEventListener('pointerdown', (e) => {
+    if (e.button != null && e.button !== 0) return;
+    const head = e.target.closest && e.target.closest('.sc-menu-group--helix > .sc-menu-group-head');
+    if (!head || !shell.contains(head)) return;
+    if (e.target.closest('button, input, a, [role="slider"]')) return;
+    e.preventDefault();
+    const r = shell.getBoundingClientRect();
+    const dx = e.clientX - r.left;
+    const dy = e.clientY - r.top;
+    shell.classList.add('is-dragging');
+    const onMove = (ev) => { clampHelixFloat(shell, ev.clientX - dx, ev.clientY - dy); };
+    const onUp = () => {
+      shell.classList.remove('is-dragging');
+      document.removeEventListener('pointermove', onMove, true);
+      document.removeEventListener('pointerup', onUp, true);
+      document.removeEventListener('pointercancel', onUp, true);
+    };
+    document.addEventListener('pointermove', onMove, true);
+    document.addEventListener('pointerup', onUp, true);
+    document.addEventListener('pointercancel', onUp, true);
+  });
+}
+
+function decorateHelixHead(group, pop) {
+  if (!group) return;
+  const head = group.querySelector(':scope > .sc-menu-group-head');
+  if (!head) return;
+  if (!head.querySelector('.sc-helix-head-actions')) {
+    const label = document.createElement('span');
+    label.className = 'sc-helix-head-label';
+    label.textContent = (head.textContent || 'Helix').replace(/\s+/g, ' ').trim() || 'Helix';
+    head.textContent = '';
+    const actions = document.createElement('span');
+    actions.className = 'sc-helix-head-actions';
+    actions.innerHTML =
+      '<button type="button" class="sc-helix-pop-btn sc-helix-popout" title="Pop out Helix" aria-label="Pop out Helix">' +
+        '<span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>' +
+      '</button>' +
+      '<button type="button" class="sc-helix-pop-btn sc-helix-dock" title="Return Helix to menu" aria-label="Return Helix to menu">' +
+        '<span class="material-symbols-outlined" aria-hidden="true">close</span>' +
+      '</button>';
+    head.appendChild(label);
+    head.appendChild(actions);
+  }
+  const popBtn = head.querySelector('.sc-helix-popout');
+  const dockBtn = head.querySelector('.sc-helix-dock');
+  if (popBtn && !popBtn.__helixWired) {
+    popBtn.__helixWired = true;
+    popBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      popOutHelixColumn(group, pop);
+    });
+  }
+  if (dockBtn && !dockBtn.__helixWired) {
+    dockBtn.__helixWired = true;
+    dockBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const shell = group.closest('.sc-helix-float');
+      if (shell) dockHelixColumn(shell);
+    });
+  }
+}
+
+function finishChatMenuLayout(pop) {
+  decorateChatMenuAdminDescs(pop);
+  decorateHelixHints(pop);
+  decorateHelixHints(helixFloatForPop(pop));
+  decorateMenuRowIcons(pop);
+  decorateMenuRowIcons(helixFloatForPop(pop));
+  clusterifyHelixGroup(queryChatMenu(pop, '.sc-menu-group--helix'));
+  mountChatMenuAdminPopover(pop);
+  const group = queryChatMenu(pop, '.sc-menu-group--helix');
+  if (group) decorateHelixHead(group, pop);
 }
 
 export function groupifyChatMenu(pop) {
   if (!pop) return;
   if (pop.dataset.scGrouped === '1') {
-    decorateChatMenuAdminDescs(pop);
-    mountChatMenuAdminPopover(pop);
+    finishChatMenuLayout(pop);
     return;
   }
   const kids = Array.from(pop.children);
@@ -3922,7 +5773,10 @@ export function groupifyChatMenu(pop) {
   const col1 = document.createElement('div');
   col1.className = 'sc-menu-col';
   const col2 = document.createElement('div');
-  col2.className = 'sc-menu-col';
+  col2.className = 'sc-menu-col sc-menu-col--helix';
+  const col3 = document.createElement('div');
+  col3.className = 'sc-menu-col';
+  const cols = { 1: col1, 2: col2, 3: col3 };
   CHAT_MENU_GROUP_ORDER.forEach((key) => {
     const nodes = buckets[key];
     if (!nodes || !nodes.length) return;
@@ -3936,15 +5790,16 @@ export function groupifyChatMenu(pop) {
       section.appendChild(head);
     }
     nodes.forEach((n) => section.appendChild(n));
-    (CHAT_MENU_COL1[key] ? col1 : col2).appendChild(section);
+    const colN = CHAT_MENU_COL[key] || 3;
+    cols[colN].appendChild(section);
   });
   if (col1.childNodes.length) frag.appendChild(col1);
   if (col2.childNodes.length) frag.appendChild(col2);
+  if (col3.childNodes.length) frag.appendChild(col3);
   pop.appendChild(frag);
   pop.classList.add('sc-menu-grouped');
   pop.dataset.scGrouped = '1';
-  decorateChatMenuAdminDescs(pop);
-  mountChatMenuAdminPopover(pop);
+  finishChatMenuLayout(pop);
 }
 
 function defaultReply(text, intent) {
@@ -4622,10 +6477,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      picture set / cleared later on the Organization Profile page: an explicit
      opts.userAvatar (string or getter) wins, else the shared avatar store, else
      the member's initials. */
-  const resolveUserAvatar = () => {
-    const custom = typeof opts.userAvatar === 'function' ? opts.userAvatar() : opts.userAvatar;
-    return custom || userAvatarImg('You') || esc(userInitials);
-  };
+  const youChipHtml = () => youAvatarChipHtml(userInitials, opts.userAvatar);
   /* Optional per-intent reply map for this surface; an intent-id hit here means
      a clicked chip always continues with an on-feature answer. Mutable so
      setIntents() can extend it alongside a new chip set. */
@@ -5031,13 +6883,25 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const s = parseInt(localStorage.getItem(BGANIM_ANGLE_KEY), 10);
     if (!isNaN(s)) bgAnimAngle = Math.max(-90, Math.min(90, s));
   } catch (_) {}
-  /* Scale of the field on X / Y / Z (25–400% each). Shared APP-WIDE (per-axis
+  let bgAnimCamera = readBgAnimCamera();
+  let bgAnimAzimuth = readBgAnimAzimuth();
+  let bgAnimShift = readBgAnimShift();
+  /* Scale of the field on X / Y / Z (1–800% each). Shared APP-WIDE (per-axis
      keys, broadcast on wise:chat-bg-anim-scale). 100% is the original strand;
      each axis stretches — or pinches — independently from the centre, and the
-     master Scale row moves all three at once. Pitch / Nodes / Length / Thick /
-     Depth (the `knob` rows, same 25–400% window) open up the shape itself. */
+     master Scale row moves all three at once. Pitch / Nodes / Dots / Length /
+     Rungs / Bar / Thick / Depth (the `knob` rows, same 1–800% window) open
+     up the shape itself; Dots size sits with a colour swatch and Still /
+     Pulse / Spark motion for the small beads between product circles. Rungs
+     and Bar are the cross-lines between the two strands. */
   const bgAnimScale = readBgAnimScaleAxes();
   const bgAnimKnobs = readBgAnimKnobs();
+  const bgAnimDots = { color: readBgAnimDotsColor(), motion: readBgAnimDotsMotion() };
+  const bgAnimMotionKnobs = readBgAnimMotionKnobs();
+  let bgAnimRungsMatch = readBgAnimRungsMatch();
+  let bgAnimSpinDir = readBgAnimSpinDir();
+  let bgAnimLook = readBgAnimLook();
+  const bgAnimMats = readBgAnimMats();
   /* Default background-animation opacity: 20% on every layout. */
   function paneDefaultBgAnimOpacity() {
     return 0.20;
@@ -5156,11 +7020,13 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-compact-item" data-sc="compact" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">density_small</span><span>Compact spacing</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-brandtext-item" data-sc="brandtext" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">format_color_text</span><span>Brand AI text</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-sheen-item" data-sc="sheen" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">auto_awesome</span><span>Input glow</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
-          ${chatElevControlHtml(readChatElev())}
-          <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-bganim-item" data-sc="bg-anim" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">animation</span><span>Background animation</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
+          <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-bganim-item" data-sc="bg-anim" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">animation</span><span>Animation</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
+          ${bgAnimLookChromeHtml('classic')}
+          ${bgAnimMatRowsHtml()}
+          ${bgAnimSubheadHtml('View')}
           <div class="sc-bganim-detail">
             <span class="sc-bganim-detail-label">Opacity</span>
-            <input type="range" class="sc-bganim-opacity" min="10" max="100" step="5" value="20" aria-label="Background animation opacity">
+            <input type="range" class="sc-bganim-opacity" min="10" max="100" step="1" value="20" aria-label="Helix opacity">
             <span class="sc-bganim-opacity-val">20%</span>
           </div>
           <div class="sc-bganim-detail sc-bganim-angle">
@@ -5168,8 +7034,14 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
             <input type="range" class="sc-bganim-angle-range" min="-90" max="90" step="1" value="10" aria-label="Helix angle">
             <span class="sc-bganim-angle-val">10°</span>
           </div>
+          ${bgAnimCameraRowHtml()}
+          ${bgAnimAzimuthRowHtml()}
+          ${bgAnimShiftRowHtml()}
+          ${bgAnimSubheadHtml('Size')}
           ${bgAnimScaleRowsHtml()}
+          ${bgAnimKnobById('nodes')}
           ${bgAnimKnobRowsHtml()}
+          ${bgAnimSubheadHtml('Look')}
           <div class="sc-bganim-style">
             <span class="sc-bganim-style-label">Style</span>
             <div class="sc-stream-seg" role="radiogroup" aria-label="Background animation style">
@@ -5278,13 +7150,19 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      document + a contains() check), not rootEl, or every switch looks
      dead once the menu is showing. */
   const menuRoot = () => document.getElementById(`${id}-more-pop`) || rootEl;
+  const bgAnimSyncRoot = () => {
+    const pop = document.getElementById(`${id}-more-pop`);
+    return helixFloatForPop(pop) || pop || rootEl;
+  };
   const menuSel = (sel) => {
     const pop = document.getElementById(`${id}-more-pop`);
-    return (pop && pop.querySelector(sel)) || rootEl.querySelector(sel);
+    return queryChatMenu(pop, sel) || rootEl.querySelector(sel);
   };
   const menuSelAll = (sel) => {
     const pop = document.getElementById(`${id}-more-pop`);
-    return pop ? pop.querySelectorAll(sel) : rootEl.querySelectorAll(sel);
+    const fromMenu = queryChatMenuAll(pop, sel);
+    if (fromMenu.length) return fromMenu;
+    return Array.from(rootEl.querySelectorAll(sel));
   };
 
   /* Follow the conversation without losing the reader's place. Advances the
@@ -5504,7 +7382,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     }
     const bodyText = text ? esc(text) : '';
     messages.insertAdjacentHTML('beforeend',
-      `<div class="sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You" data-initials="${esc(userInitials)}">${resolveUserAvatar()}</span><div class="sc-line-body">${attHtml}${bodyText}<div class="sc-line-meta">${timeStampHtml()}</div></div></div>`);
+      `<div class="sc-line sc-line-you">${youChipHtml()}<div class="sc-line-body">${attHtml}${bodyText}<div class="sc-line-meta">${timeStampHtml()}</div></div></div>`);
     scrollDown(true); /* fresh user action — always bring their message into view */
     refreshDockedTurns();
   }
@@ -6884,14 +8762,15 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (inp) inp.focus();
   }
 
-  /* Width changer for the broken-out Turns module. Cycles the canonical four
-     tiers shared by every module: single → double → triple → fill → single. */
-  const TURNS_W_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
+  /* Width changer for the broken-out Turns module. Cycles the canonical five
+     tiers shared by every module: single → double → triple → fill → custom. */
+  const TURNS_W_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
   const TURNS_W_TITLES = [
     'Width (single) — tap to widen',
     'Width (double) — tap to widen',
     'Width (triple) — tap to widen',
-    'Width (fill) — tap to reset',
+    'Width (fill) — tap to widen',
+    'Width (custom) — drag to any size',
   ];
   let turnsWidthTier = 0;
   function applyTurnsWidth() {
@@ -6900,28 +8779,46 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        two flanking modules are equal; tiers scale from whichever base is live. */
     const baseW = stickyOn ? STICKY_MODULE_W : turnsBreakoutWidth;
     const tiers = [baseW, Math.round(baseW * 1.5), baseW * 2];
-    try { window.WisePaneResize && window.WisePaneResize.release && window.WisePaneResize.release([turnsPanel]); } catch (_) {}
-    if (turnsWidthTier >= 3) {
-      /* Fill — grow to take the rest of the row instead of a fixed column. */
-      turnsPanel.style.setProperty('flex', '1000 1 auto', 'important');
-      turnsPanel.style.setProperty('width', 'auto', 'important');
-      turnsPanel.style.setProperty('max-width', 'none', 'important');
+    const W = window.WPaneWidth;
+    if (turnsWidthTier === 4) {
+      if (W && W.applyClasses) W.applyClasses(turnsPanel, 4, 'panel');
+      else {
+        turnsPanel.classList.add('panel-custom');
+        if (W && W.pinToCurrent) W.pinToCurrent(turnsPanel);
+      }
     } else {
-      const w = tiers[turnsWidthTier] || baseW;
-      turnsPanel.style.setProperty('flex', '0 0 ' + w + 'px', 'important');
-      turnsPanel.style.setProperty('width', w + 'px', 'important');
-      turnsPanel.style.setProperty('max-width', 'none', 'important');
+      try { window.WisePaneResize && window.WisePaneResize.release && window.WisePaneResize.release([turnsPanel]); } catch (_) {}
+      if (turnsWidthTier === 3) {
+        /* Fill — grow to take the rest of the row instead of a fixed column. */
+        turnsPanel.style.setProperty('flex', '1000 1 auto', 'important');
+        turnsPanel.style.setProperty('width', 'auto', 'important');
+        turnsPanel.style.setProperty('max-width', 'none', 'important');
+      } else {
+        const w = tiers[turnsWidthTier] || baseW;
+        turnsPanel.style.setProperty('flex', '0 0 ' + w + 'px', 'important');
+        turnsPanel.style.setProperty('width', w + 'px', 'important');
+        turnsPanel.style.setProperty('max-width', 'none', 'important');
+      }
+      turnsPanel.classList.toggle('panel-custom', false);
+      if (W && W.applyClasses) W.applyClasses(turnsPanel, turnsWidthTier, 'panel');
     }
     const btn = turnsPanel.querySelector('.wt-width-btn');
     if (btn) {
-      btn.classList.toggle('is-on', turnsWidthTier >= 1);
-      btn.setAttribute('aria-pressed', turnsWidthTier >= 1 ? 'true' : 'false');
-      btn.title = TURNS_W_TITLES[turnsWidthTier];
-      const ic = btn.querySelector('.material-symbols-outlined');
-      if (ic) ic.textContent = TURNS_W_ICONS[turnsWidthTier];
+      if (W && W.syncButton) W.syncButton(btn, turnsWidthTier);
+      else {
+        btn.classList.toggle('is-on', turnsWidthTier >= 1);
+        btn.setAttribute('aria-pressed', turnsWidthTier >= 1 ? 'true' : 'false');
+        btn.title = TURNS_W_TITLES[turnsWidthTier];
+        const ic = btn.querySelector('.material-symbols-outlined');
+        if (ic) ic.textContent = TURNS_W_ICONS[turnsWidthTier];
+      }
     }
   }
-  function cycleTurnsWidth() { turnsWidthTier = (turnsWidthTier + 1) % 4; applyTurnsWidth(); }
+  function cycleTurnsWidth() {
+    const W = window.WPaneWidth;
+    turnsWidthTier = W ? W.next(turnsWidthTier) : (turnsWidthTier + 1) % 5;
+    applyTurnsWidth();
+  }
 
   function ensureTurnsPanel() {
     if (turnsPanel) return;
@@ -7271,7 +9168,6 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     item.setAttribute('aria-checked', on ? 'true' : 'false');
   }
   document.addEventListener('wise:chat-sheen', syncSheenMenu);
-  document.addEventListener('wise:chat-elev', () => syncChatElevControl(menuRoot()));
   /* ── "Background animation" (Admin) engine ─────────────────────────────────
      A welcome-only ambient canvas: a DNA/RNA double helix whose two backbones +
      base-pair "rungs" are drawn in brand blue, chain-linking a run of OUR REAL
@@ -7283,7 +9179,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      swelling wide then drawing back in on a slow breathing cycle. The Depth
      knob trades the strands front/back in 3-D: near products swell and
      brighten, far ones shrink and fade. Thick paints the backbones fatter or
-     finer. The canvas is created lazily the first time the animation is turned on,
+     finer. Rungs / Bar set how many cross-lines sit between the two strands
+     and how heavy those lines paint. The canvas is created lazily the first time the animation is turned on,
      lives behind the welcome content (which goes transparent while live), and is
      torn down to a cleared, faded layer the instant the transcript advances. */
   /* The welcome-only ambient field. Helix and orbit share one facade so all the
@@ -7299,10 +9196,23 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     getBody: () => rootEl.querySelector('.sc-body'),
     getOpacity: effectiveBgAnimOpacity,
     getAngle: () => bgAnimAngle,
+    getCamera: () => bgAnimCamera,
+    getAzimuth: () => bgAnimAzimuth,
+    getShift: () => bgAnimShift,
     getScale: () => ({ x: bgAnimScale.x / 100, y: bgAnimScale.y / 100, z: bgAnimScale.z / 100 }),
     getPitch: () => bgAnimKnobs.pitch / 100,
     getNodes: () => bgAnimKnobs.nodes / 100,
+    getDots: () => bgAnimKnobs.dots / 100,
+    getDotsColor: () => bgAnimDots.color,
+    getDotsMotion: () => bgAnimDots.motion,
+    getMotionKnob: (motion, id) => ((bgAnimMotionKnobs[motion] && bgAnimMotionKnobs[motion][id]) || 100) / 100,
+    getSpinDir: () => bgAnimSpinDir,
+    getSpinSpeed: () => bgAnimKnobs.speed / 100,
+    getLook: () => bgAnimLook,
     getLength: () => bgAnimKnobs.length / 100,
+    getRungs: () => bgAnimKnobs.rungs / 100,
+    getRungsMatch: () => bgAnimRungsMatch,
+    getRungThick: () => bgAnimKnobs.rungthick / 100,
     getThickness: () => bgAnimKnobs.thickness / 100,
     getDepth: () => bgAnimKnobs.depth / 100,
     reducedMotion: prefersReducedMotion,
@@ -7357,6 +9267,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     }
     /* The opacity / angle / scale sliders (below the toggle) dim + lock while the animation is off. */
     menuSelAll('.sc-bganim-detail').forEach((el) => el.classList.toggle('is-disabled', !bgAnimOn));
+    const dotsMotionRow = menuSel('.sc-bganim-dots-motion');
+    if (dotsMotionRow) dotsMotionRow.classList.toggle('is-disabled', !bgAnimOn);
+    const spinRow = menuSel('.sc-bganim-spin');
+    if (spinRow) spinRow.classList.toggle('is-disabled', !bgAnimOn);
+    const lookRow = menuSel('.sc-bganim-look');
+    if (lookRow) lookRow.classList.toggle('is-disabled', !bgAnimOn);
     /* The style segment (Helix / Ten / Orbit) reflects the shared choice and stays
        ALWAYS interactive — even when the field is off — so it reads as a real,
        discoverable choice (picking a style turns the animation on, below). */
@@ -7367,9 +9283,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       btn.classList.toggle('is-on', on);
       btn.setAttribute('aria-checked', on ? 'true' : 'false');
     });
-    /* Angle, Pitch, Length, Thick and Depth describe the strand, so they only
+    /* Angle, Camera, Pitch, Dots, Length, Thick and Depth describe the strand, so they only
        apply to the DNA helix (Helix / Ten). Scale and Nodes drive Orbit too. */
-    syncBgAnimHelixOnlyRows(menuRoot(), isHelixStyle(bgAnimStyle));
+    syncBgAnimHelixOnlyRows(bgAnimSyncRoot(), isHelixStyle(bgAnimStyle));
     const pct = Math.round(effectiveBgAnimOpacity() * 100);
     const range = menuSel('.sc-bganim-opacity');
     if (range && document.activeElement !== range) range.value = String(pct);
@@ -7379,8 +9295,25 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (angleRange && document.activeElement !== angleRange) angleRange.value = String(bgAnimAngle);
     const angleVal = menuSel('.sc-bganim-angle-val');
     if (angleVal) angleVal.textContent = bgAnimAngle + '°';
-    syncBgAnimScaleRows(menuRoot(), bgAnimScale);
-    syncBgAnimKnobRows(menuRoot(), bgAnimKnobs);
+    const cameraRange = menuSel('.sc-bganim-camera-range');
+    if (cameraRange && document.activeElement !== cameraRange) cameraRange.value = String(bgAnimCamera);
+    const cameraVal = menuSel('.sc-bganim-camera-val');
+    if (cameraVal) cameraVal.textContent = bgAnimCamera + '°';
+    const azimuthRange = menuSel('.sc-bganim-azimuth-range');
+    if (azimuthRange && document.activeElement !== azimuthRange) azimuthRange.value = String(bgAnimAzimuth);
+    const azimuthVal = menuSel('.sc-bganim-azimuth-val');
+    if (azimuthVal) azimuthVal.textContent = bgAnimAzimuth + '°';
+    const shiftRange = menuSel('.sc-bganim-shift-range');
+    if (shiftRange && document.activeElement !== shiftRange) shiftRange.value = String(bgAnimShift);
+    const shiftVal = menuSel('.sc-bganim-shift-val');
+    if (shiftVal) shiftVal.textContent = bgAnimShift + '%';
+    syncBgAnimScaleRows(bgAnimSyncRoot(), bgAnimScale);
+    syncBgAnimKnobRows(bgAnimSyncRoot(), bgAnimKnobs);
+    syncBgAnimRungsMatch(bgAnimSyncRoot(), bgAnimRungsMatch, bgAnimKnobs);
+    syncBgAnimDotsChrome(bgAnimSyncRoot(), bgAnimDots, bgAnimMotionKnobs, isHelixStyle(bgAnimStyle));
+    syncBgAnimSpinChrome(bgAnimSyncRoot(), bgAnimSpinDir);
+    syncBgAnimLookChrome(bgAnimSyncRoot(), bgAnimLook);
+    syncBgAnimMatRows(bgAnimSyncRoot(), bgAnimMats, bgAnimLook);
     /* The Play/Pause pill (below opacity) — dims + locks with the toggle, and its
        icon/label + aria reflect whether the field is currently frozen. */
     const playback = menuSel('.sc-bganim-playback');
@@ -7454,10 +9387,87 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       else bgAnim.redraw();
     }
   });
-  /* Scale (master + X / Y / Z) and the Pitch / Nodes / Length / Thick / Depth
-     knobs — stretch, pinch and reshape the field from its centre (25–400%
-     each). Persist + broadcast so every mounted chat follows the one shared
-     setting. */
+  /* Camera slider — look at the corkscrew from above or below. Persist +
+     broadcast so every mounted chat follows the one shared setting. */
+  const bgCameraRange = rootEl.querySelector('.sc-bganim-camera-range');
+  if (bgCameraRange) {
+    bgCameraRange.addEventListener('input', () => {
+      const deg = clampBgAnimCamera(parseInt(bgCameraRange.value, 10));
+      bgAnimCamera = deg;
+      persistBgAnimCamera(deg);
+      broadcastBgAnimCamera(deg);
+      const cval = menuSel('.sc-bganim-camera-val');
+      if (cval) cval.textContent = deg + '°';
+      if (bgAnimOn) {
+        if (prefersReducedMotion) bgAnim.start();
+        else bgAnim.redraw();
+      }
+    });
+  }
+  document.addEventListener('wise:chat-bg-anim-camera', (e) => {
+    const v = e && e.detail && e.detail.camera;
+    if (typeof v !== 'number') return;
+    bgAnimCamera = clampBgAnimCamera(v);
+    syncBgAnimMenu();
+    if (bgAnimOn) {
+      if (prefersReducedMotion) bgAnim.start();
+      else bgAnim.redraw();
+    }
+  });
+  const bgAzimuthRange = rootEl.querySelector('.sc-bganim-azimuth-range');
+  if (bgAzimuthRange) {
+    bgAzimuthRange.addEventListener('input', () => {
+      const deg = clampBgAnimAzimuth(parseInt(bgAzimuthRange.value, 10));
+      bgAnimAzimuth = deg;
+      persistBgAnimAzimuth(deg);
+      broadcastBgAnimAzimuth(deg);
+      const aval = menuSel('.sc-bganim-azimuth-val');
+      if (aval) aval.textContent = deg + '°';
+      if (bgAnimOn) {
+        if (prefersReducedMotion) bgAnim.start();
+        else bgAnim.redraw();
+      }
+    });
+  }
+  document.addEventListener('wise:chat-bg-anim-azimuth', (e) => {
+    const v = e && e.detail && e.detail.azimuth;
+    if (typeof v !== 'number') return;
+    bgAnimAzimuth = clampBgAnimAzimuth(v);
+    syncBgAnimMenu();
+    if (bgAnimOn) {
+      if (prefersReducedMotion) bgAnim.start();
+      else bgAnim.redraw();
+    }
+  });
+  const bgShiftRange = rootEl.querySelector('.sc-bganim-shift-range');
+  if (bgShiftRange) {
+    bgShiftRange.addEventListener('input', () => {
+      const pct = clampBgAnimShift(parseInt(bgShiftRange.value, 10));
+      bgAnimShift = pct;
+      persistBgAnimShift(pct);
+      broadcastBgAnimShift(pct);
+      const sval = menuSel('.sc-bganim-shift-val');
+      if (sval) sval.textContent = pct + '%';
+      if (bgAnimOn) {
+        if (prefersReducedMotion) bgAnim.start();
+        else bgAnim.redraw();
+      }
+    });
+  }
+  document.addEventListener('wise:chat-bg-anim-shift', (e) => {
+    const v = e && e.detail && e.detail.shift;
+    if (typeof v !== 'number') return;
+    bgAnimShift = clampBgAnimShift(v);
+    syncBgAnimMenu();
+    if (bgAnimOn) {
+      if (prefersReducedMotion) bgAnim.start();
+      else bgAnim.redraw();
+    }
+  });
+  /* Scale (master + X / Y / Z) and the Pitch / Nodes / Dots / Length / Rungs /
+     Bar / Thick / Depth knobs — stretch, pinch and reshape the field from its
+     centre (1–800% each). Persist + broadcast so every mounted chat follows
+     the one shared setting. */
   const repaintBgAnim = () => {
     if (!bgAnimOn) return;
     if (prefersReducedMotion) bgAnim.start();
@@ -7465,6 +9475,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   };
   wireBgAnimScaleRows(menuRoot(), bgAnimScale, repaintBgAnim);
   wireBgAnimKnobRows(menuRoot(), bgAnimKnobs, repaintBgAnim);
+  wireBgAnimRungsMatch(menuRoot(), () => bgAnimRungsMatch, (v) => { bgAnimRungsMatch = v; }, bgAnimKnobs, repaintBgAnim);
+  wireBgAnimDotsChrome(menuRoot(), bgAnimDots, repaintBgAnim, bgAnimMotionKnobs);
+  wireBgAnimMotionKnobs(menuRoot(), bgAnimMotionKnobs, repaintBgAnim);
+  wireBgAnimSpinChrome(menuRoot(), () => bgAnimSpinDir, (d) => { bgAnimSpinDir = d; }, repaintBgAnim);
+  wireBgAnimLookChrome(menuRoot(), () => bgAnimLook, (v) => { bgAnimLook = v; syncBgAnimMatRows(bgAnimSyncRoot(), bgAnimMats, v); }, repaintBgAnim);
+  wireBgAnimMatRows(menuRoot(), bgAnimMats, repaintBgAnim);
   document.addEventListener('wise:chat-bg-anim-scale', (e) => {
     if (!applyScaleEventToAxes(bgAnimScale, e && e.detail)) return;
     syncBgAnimMenu();
@@ -7472,6 +9488,42 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   });
   document.addEventListener('wise:chat-bg-anim-knob', (e) => {
     if (!applyKnobEventToKnobs(bgAnimKnobs, e && e.detail)) return;
+    syncBgAnimMenu();
+    repaintBgAnim();
+  });
+  document.addEventListener('wise:chat-bg-anim-rungs-match', (e) => {
+    const on = !!(e && e.detail && e.detail.match);
+    if (on === bgAnimRungsMatch) return;
+    bgAnimRungsMatch = on;
+    syncBgAnimMenu();
+    repaintBgAnim();
+  });
+  document.addEventListener('wise:chat-bg-anim-dots', (e) => {
+    if (!applyDotsEventToState(bgAnimDots, e && e.detail)) return;
+    syncBgAnimMenu();
+    repaintBgAnim();
+  });
+  document.addEventListener('wise:chat-bg-anim-motion-knob', (e) => {
+    if (!applyMotionKnobEvent(bgAnimMotionKnobs, e && e.detail)) return;
+    syncBgAnimMenu();
+    repaintBgAnim();
+  });
+  document.addEventListener('wise:chat-bg-anim-spin', (e) => {
+    const d = e && e.detail && e.detail.dir;
+    if (!BGANIM_SPIN_DIRS.includes(d) || d === bgAnimSpinDir) return;
+    bgAnimSpinDir = d;
+    syncBgAnimMenu();
+    repaintBgAnim();
+  });
+  document.addEventListener('wise:chat-bg-anim-look', (e) => {
+    const look = normalizeBgAnimLook(e && e.detail && e.detail.look);
+    if (!BGANIM_LOOKS.includes(look) || look === bgAnimLook) return;
+    bgAnimLook = look;
+    syncBgAnimMenu();
+    repaintBgAnim();
+  });
+  document.addEventListener('wise:chat-bg-anim-mat', (e) => {
+    if (!applyMatEvent(bgAnimMats, e && e.detail)) return;
     syncBgAnimMenu();
     repaintBgAnim();
   });
@@ -7850,7 +9902,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     return (turns || []).map((t, i) => {
       const ts = (baseTs || Date.now()) + i * 60000;
       if (t.role === 'you') {
-        return `<div class="sc-line sc-line-you"><span class="sc-avatar sc-avatar-you" role="img" aria-label="You" data-initials="${esc(userInitials)}">${resolveUserAvatar()}</span><div class="sc-line-body">${esc(t.text || '')}<div class="sc-line-meta">${timeStampHtml(ts)}</div></div></div>`;
+        return `<div class="sc-line sc-line-you">${youChipHtml()}<div class="sc-line-body">${esc(t.text || '')}<div class="sc-line-meta">${timeStampHtml(ts)}</div></div></div>`;
       }
       const body = t.html != null ? t.html : esc(t.text || '');
       /* Seeded history turns are grounded too — fall back to a connected source
@@ -8739,11 +10791,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   moreBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
     const open = morePop.classList.contains('hidden');
-    /* Reflow the flat menu into titled group cards + two columns (like the
-       Appearance popover) on first open — deferred to here so every row that
-       other mount code injects (history, connectors, intent toggles) already
-       exists and is bucketed. Moves the existing nodes, so all wiring keeps
-       working; idempotent, so subsequent opens are a no-op. */
+    /* Reflow the flat menu into titled group cards + three columns (Helix
+       gets its own middle column) on first open — deferred to here so every
+       row that other mount code injects (history, connectors, intent toggles)
+       already exists and is bucketed. Moves the existing nodes, so all wiring
+       keeps working; idempotent, so subsequent opens are a no-op. */
     if (open) groupifyChatMenu(morePop);
     morePop.classList.toggle('hidden', !open);
     moreBtn.classList.toggle('is-open', open);
@@ -8762,36 +10814,48 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   });
 
   /* Module width toggle (mirrors the .panel-width-toggle-btn on the other
-     modules). Width is a three-tier cycle: 0 = single, 1 = double, 2 = triple.
-     The icon reflects the tier; the label/title carry the state. */
-  const SC_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
+     modules). Width is the canonical five-tier cycle: 0 single, 1 double,
+     2 triple, 3 fill, 4 custom. Custom keeps the current width until dragged. */
+  const SC_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
   const SC_WIDTH_TITLES = [
     'Width (single) — tap to widen',
     'Width (double) — tap to widen',
     'Width (triple) — tap to widen',
-    'Width (fill) — tap to reset',
+    'Width (fill) — tap to widen',
+    'Width (custom) — drag to any size',
   ];
-  const scTierOf = (v) => (v === true ? 1 : typeof v === 'number' ? Math.max(0, Math.min(3, v | 0)) : 0);
+  const scTierOf = (v) => {
+    if (window.WPaneWidth) return window.WPaneWidth.clamp(v);
+    return v === true ? 1 : typeof v === 'number' ? Math.max(0, Math.min(4, v | 0)) : 0;
+  };
   const defaultChatTier = () => {
     if (window.WPaneWidth && typeof window.WPaneWidth.defaultChatTier === 'function') {
       return window.WPaneWidth.defaultChatTier();
     }
     if (typeof window.wiseDefaultChatTier === 'function') return window.wiseDefaultChatTier();
-    return (window.innerWidth || 0) > 1512 ? 1 : 0;
+    return (((window.screen && +window.screen.width) || window.innerWidth || 0) > 1512) ? 1 : 0;
   };
   const syncWidthUI = (tier) => {
     tier = scTierOf(tier);
-    rootEl.classList.toggle('panel-wide', tier >= 1);
-    rootEl.classList.toggle('panel-triple', tier >= 2);
-    rootEl.classList.toggle('panel-fill', tier >= 3);
+    const W = window.WPaneWidth;
+    if (W && W.applyClasses) W.applyClasses(rootEl, tier, 'panel');
+    else {
+      rootEl.classList.toggle('panel-wide', tier >= 1 && tier < 4);
+      rootEl.classList.toggle('panel-triple', tier >= 2 && tier < 4);
+      rootEl.classList.toggle('panel-fill', tier === 3);
+      rootEl.classList.toggle('panel-custom', tier === 4);
+    }
     if (tier < 1) document.documentElement.classList.remove('chat-default-double');
     const btn = rootEl.querySelector('.panel-width-toggle-btn');
     if (btn) {
-      btn.classList.toggle('is-on', tier >= 1);
-      btn.setAttribute('aria-pressed', tier >= 1 ? 'true' : 'false');
-      btn.title = SC_WIDTH_TITLES[tier];
-      const icon = btn.querySelector('.material-symbols-outlined');
-      if (icon) icon.textContent = SC_WIDTH_ICONS[tier];
+      if (W && W.syncButton) W.syncButton(btn, tier);
+      else {
+        btn.classList.toggle('is-on', tier >= 1);
+        btn.setAttribute('aria-pressed', tier >= 1 ? 'true' : 'false');
+        btn.title = SC_WIDTH_TITLES[tier];
+        const icon = btn.querySelector('.material-symbols-outlined');
+        if (icon) icon.textContent = SC_WIDTH_ICONS[tier];
+      }
     }
     /* When the field's opacity is still on its pane-count default, a width change
        re-tunes it (single/double → 30%, wider → 65%): refresh the slider readout
@@ -8805,8 +10869,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const widthToggle = e.target.closest('.panel-width-toggle-btn');
     if (!widthToggle || !rootEl.contains(widthToggle)) return;
     e.stopPropagation();
-    const cur = rootEl.classList.contains('panel-fill') ? 3 : rootEl.classList.contains('panel-triple') ? 2 : rootEl.classList.contains('panel-wide') ? 1 : 0;
-    const next = (cur + 1) % 4;
+    const W = window.WPaneWidth;
+    const cur = W ? W.tierOfEl(rootEl) : (rootEl.classList.contains('panel-custom') ? 4 : rootEl.classList.contains('panel-fill') ? 3 : rootEl.classList.contains('panel-triple') ? 2 : rootEl.classList.contains('panel-wide') ? 1 : 0);
+    const next = W ? W.next(cur) : (cur + 1) % 5;
     syncWidthUI(next);
     if (typeof opts.onToggleWidth === 'function') opts.onToggleWidth(next);
   });
@@ -8943,7 +11008,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       : `<span class="sc-event-label">Set database to</span> <strong>${esc(next.name)}</strong>`;
     messages.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-you sc-line-event" data-activity="database" role="note" aria-label="${esc(prev ? `Switched database to ${next.name}` : `Set database to ${next.name}`)}">`
-      + `<span class="sc-avatar sc-avatar-you" role="img" aria-label="You" data-initials="${esc(userInitials)}">${resolveUserAvatar()}</span>`
+      + youChipHtml()
       + `<div class="sc-line-body">${body}<div class="sc-line-meta">${timeStampHtml()}<span class="sc-fb-id" data-tip="Turn ID" tabindex="0">#${esc(tid)}</span></div></div>`
       + `</div>`);
     scrollDown(true); /* fresh user action — always bring the marker into view */
@@ -9133,7 +11198,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const item = e.target.closest('[data-sc]');
     if (!item) return;
     const flPopEl = document.getElementById(`${id}-fl-pop`);
-    const ours = rootEl.contains(item) || morePop?.contains(item) || flPopEl?.contains(item);
+    const helixFloat = helixFloatForPop(morePop);
+    const ours = rootEl.contains(item) || morePop?.contains(item) || flPopEl?.contains(item) || helixFloat?.contains(item);
     if (!ours) return;
     const action = item.dataset.sc;
     if (action === 'add-member') {
@@ -9222,13 +11288,6 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       try { document.dispatchEvent(new CustomEvent('wise:chat-sheen', { detail: { on } })); } catch (_) {}
       syncSheenMenu();
     }
-    else if (action === 'elev') {
-      /* Admin chat-container elevation: Little min / Above high / 3D. Persist +
-         broadcast so every chat module follows the one shared choice. Keep the
-         menu open so the segment reads back immediately. */
-      const level = item.dataset.elev;
-      if (CHAT_ELEV_LEVELS.includes(level)) setChatElev(level);
-    }
     else if (action === 'bg-anim') {
       /* Admin-only ambient backdrop for the welcome state. Flip the shared pref,
          persist + broadcast it; the wise:chat-bg-anim listener does the actual
@@ -9258,6 +11317,15 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim', { detail: { on: true } })); } catch (_) {}
         }
       }
+    }
+    else if (action === 'bg-anim-dots-motion') {
+      /* Wired by wireBgAnimDotsChrome — keep the menu open so the segment reads back. */
+    }
+    else if (action === 'bg-anim-spin') {
+      /* Wired by wireBgAnimSpinChrome — keep the menu open so the segment reads back. */
+    }
+    else if (action === 'bg-anim-look') {
+      /* Wired by wireBgAnimLookChrome — keep the menu open so the segment reads back. */
     }
     else if (action === 'stream-toggle') {
       /* Master streaming switch: ON streams the thinking at the chosen level,
@@ -9453,7 +11521,6 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   syncCompactMenu();
   syncBrandtextMenu();
   syncSheenMenu();
-  syncChatElevControl(menuRoot());
   syncBgAnimMenu();
   syncStreamMenu();
   syncActivityStripMenu();
@@ -9497,7 +11564,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      trace as a chip-driven turn before posting the given reply, so hosts that
      post their own answers (bridged engines, board mirrors) never skip the
      thinking stream the way a raw addWISEcodeAI would. */
-  return { addUser, addWISEcodeAI, respond: respondWithTrace, showTyping, primeChips, revealChips, messages, ask, sendIntent, reset, openAgents, closeAgents, openConnectors, closeConnectors, openAskHelp, closeAskHelp, setAskDocked, isAskDocked: () => !!(askHelpApi && askHelpApi.isDocked && askHelpApi.isDocked()), openTurns, closeTurns, toggleTurns, setTurnsDocked, isTurnsDocked: () => turnsDocked, hideWelcome, setIntents, announceRoute, setWidth: syncWidthUI, root: rootEl };
+  return { addUser, addWISEcodeAI, respond: respondWithTrace, showTyping, primeChips, revealChips, messages, ask, sendIntent, reset, openAgents, closeAgents, openConnectors, closeConnectors, openAskHelp, closeAskHelp, setAskDocked, isAskDocked: () => !!(askHelpApi && askHelpApi.isDocked && askHelpApi.isDocked()), openTurns, closeTurns, toggleTurns, setTurnsDocked, isTurnsDocked: () => turnsDocked, hideWelcome, setIntents, announceRoute, setWidth: syncWidthUI, getDbId: () => currentDbId, selectDb, root: rootEl };
 }
 
 /* ------------------------------------------------------------------ */
@@ -9531,7 +11598,8 @@ export function wireStandardChatMenu(cfg = {}) {
   injectChatExtras();
   const pop = cfg.pop;
   if (!pop || pop.__wiseStdMenuWired) return pop && pop.__wiseStdMenuWired || null;
-  const q = (sel) => pop.querySelector(sel);
+  const q = (sel) => queryChatMenu(pop, sel);
+  const bgRoot = () => helixFloatForPop(pop) || pop;
   const setSwitch = (el, on) => {
     if (!el) return;
     el.classList.toggle('is-on', !!on);
@@ -9541,11 +11609,6 @@ export function wireStandardChatMenu(cfg = {}) {
     try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
     catch (_) { return false; }
   })();
-
-  /* ── Chat module elevation — Admin Little min / Above high / 3D. Injected
-     into hand-rolled menus that predate the control; the shared template already
-     ships it. Persist + broadcast so every chat follows one preference. ── */
-  wireChatElev(pop);
 
   /* ── Compact spacing — app-wide <html>.chat-compact; ON by default, a
      stored '0' (explicitly turned off) wins. Same key/event as the shared
@@ -9607,9 +11670,9 @@ export function wireStandardChatMenu(cfg = {}) {
      Thick / Depth) — ON by default, stored '0' turns it off; opacity is user-set
      via the slider or falls back to the 20% default on every layout. Angle is
      the helix axis tilt in degrees (default 10°). Scale stretches or pinches
-     the field from its centre on X, Y and Z (25–400% each, default 100%, with
-     a master row that moves all three); Pitch / Nodes / Length / Thick / Depth
-     reshape the strand itself over the same window. The LIVE field mounts only
+     the field from its centre on X, Y and Z (1–800% each, default 100%, with
+     a master row that moves all three); Pitch / Nodes / Length / Rungs / Bar /
+     Thick / Depth reshape the strand itself over the same window. The LIVE field mounts only
      when the page provides cfg.bgAnim; either way the switch drives the one
      shared app-wide preference. ── */
   const BGANIM_KEY = 'wise:chat-bg-anim';
@@ -9628,8 +11691,17 @@ export function wireStandardChatMenu(cfg = {}) {
     const a = parseInt(localStorage.getItem(BGANIM_ANGLE_KEY), 10);
     if (!isNaN(a)) bgAngle = Math.max(-90, Math.min(90, a));
   } catch (_) {}
+  let bgCamera = readBgAnimCamera();
+  let bgAzimuth = readBgAnimAzimuth();
+  let bgShift = readBgAnimShift();
   const bgScale = readBgAnimScaleAxes();
   const bgKnobs = readBgAnimKnobs();
+  const bgDots = { color: readBgAnimDotsColor(), motion: readBgAnimDotsMotion() };
+  const bgMotionKnobs = readBgAnimMotionKnobs();
+  let bgRungsMatch = readBgAnimRungsMatch();
+  let bgSpinDir = readBgAnimSpinDir();
+  let bgLook = readBgAnimLook();
+  const bgMats = readBgAnimMats();
   let bgPaused = false;
   try { if (localStorage.getItem(BGANIM_PAUSED_KEY) === '1') bgPaused = true; } catch (_) {}
   const effOpacity = () => (bgUserSet ? bgOpacity : 0.20);
@@ -9685,7 +11757,7 @@ export function wireStandardChatMenu(cfg = {}) {
   /* Inline chats copied the menu markup before the Angle / Scale / shape rows
      existed; inject them (right after Opacity) so every hand-rolled surface
      gains the sliders too. A leftover single Scale row is upgraded in place,
-     and older copies get the master Scale row plus the wider 25–400% bounds. */
+     and older copies get the master Scale row plus the wider 1–800% bounds. */
   if (!q('.sc-bganim-angle')) {
     const opacityRow = q('.sc-bganim-detail:not(.sc-bganim-angle):not(.sc-bganim-scale)');
     const styleRowNow = q('.sc-bganim-style');
@@ -9699,8 +11771,15 @@ export function wireStandardChatMenu(cfg = {}) {
     else if (styleRowNow) styleRowNow.insertAdjacentHTML('beforebegin', angleHtml);
     else if (playbackNow) playbackNow.insertAdjacentHTML('beforebegin', angleHtml);
   }
+  ensureBgAnimCameraRow(pop);
   ensureBgAnimScaleRows(pop);
   ensureBgAnimKnobRows(pop);
+  ensureBgAnimRungsMatch(pop);
+  ensureBgAnimDotsChrome(pop);
+  ensureBgAnimSpinChrome(pop);
+  ensureBgAnimLookChrome(pop);
+  ensureBgAnimMatRows(pop);
+  ensureBgAnimSubheads(pop);
   const welcomeEl = cfg.bgAnim && cfg.bgAnim.welcomeEl;
   const welcomeVisible = () => !!(welcomeEl
     && !welcomeEl.classList.contains('ws-hidden')
@@ -9720,10 +11799,23 @@ export function wireStandardChatMenu(cfg = {}) {
         getBody: cfg.bgAnim.getBody,
         getOpacity: effOpacity,
         getAngle: () => bgAngle,
+        getCamera: () => bgCamera,
+        getAzimuth: () => bgAzimuth,
+        getShift: () => bgShift,
         getScale: () => ({ x: bgScale.x / 100, y: bgScale.y / 100, z: bgScale.z / 100 }),
         getPitch: () => bgKnobs.pitch / 100,
         getNodes: () => bgKnobs.nodes / 100,
+        getDots: () => bgKnobs.dots / 100,
+        getDotsColor: () => bgDots.color,
+        getDotsMotion: () => bgDots.motion,
+        getMotionKnob: (motion, id) => ((bgMotionKnobs[motion] && bgMotionKnobs[motion][id]) || 100) / 100,
+        getSpinDir: () => bgSpinDir,
+        getLook: () => bgLook,
+        getSpinSpeed: () => bgKnobs.speed / 100,
         getLength: () => bgKnobs.length / 100,
+        getRungs: () => bgKnobs.rungs / 100,
+        getRungsMatch: () => bgRungsMatch,
+        getRungThick: () => bgKnobs.rungthick / 100,
         getThickness: () => bgKnobs.thickness / 100,
         getDepth: () => bgKnobs.depth / 100,
         reducedMotion,
@@ -9763,7 +11855,11 @@ export function wireStandardChatMenu(cfg = {}) {
   const bgItem = q('[data-sc="bg-anim"]');
   const syncBg = () => {
     setSwitch(bgItem, bgOn);
-    pop.querySelectorAll('.sc-bganim-detail').forEach((el) => el.classList.toggle('is-disabled', !bgOn));
+    queryChatMenuAll(pop, '.sc-bganim-detail').forEach((el) => el.classList.toggle('is-disabled', !bgOn));
+    const dotsMotionRow = q('.sc-bganim-dots-motion');
+    if (dotsMotionRow) dotsMotionRow.classList.toggle('is-disabled', !bgOn);
+    const spinRow = q('.sc-bganim-spin');
+    if (spinRow) spinRow.classList.toggle('is-disabled', !bgOn);
     const pct = Math.round(effOpacity() * 100);
     const range = q('.sc-bganim-opacity');
     if (range && document.activeElement !== range) range.value = String(pct);
@@ -9773,12 +11869,29 @@ export function wireStandardChatMenu(cfg = {}) {
     if (angleRange && document.activeElement !== angleRange) angleRange.value = String(bgAngle);
     const angleVal = q('.sc-bganim-angle-val');
     if (angleVal) angleVal.textContent = bgAngle + '°';
-    syncBgAnimScaleRows(pop, bgScale);
-    syncBgAnimKnobRows(pop, bgKnobs);
-    syncBgAnimHelixOnlyRows(pop, isHelixStyle(bgStyle));
+    const cameraRange = q('.sc-bganim-camera-range');
+    if (cameraRange && document.activeElement !== cameraRange) cameraRange.value = String(bgCamera);
+    const cameraVal = q('.sc-bganim-camera-val');
+    if (cameraVal) cameraVal.textContent = bgCamera + '°';
+    const azimuthRange = q('.sc-bganim-azimuth-range');
+    if (azimuthRange && document.activeElement !== azimuthRange) azimuthRange.value = String(bgAzimuth);
+    const azimuthVal = q('.sc-bganim-azimuth-val');
+    if (azimuthVal) azimuthVal.textContent = bgAzimuth + '°';
+    const shiftRange = q('.sc-bganim-shift-range');
+    if (shiftRange && document.activeElement !== shiftRange) shiftRange.value = String(bgShift);
+    const shiftVal = q('.sc-bganim-shift-val');
+    if (shiftVal) shiftVal.textContent = bgShift + '%';
+    syncBgAnimScaleRows(bgRoot(), bgScale);
+    syncBgAnimKnobRows(bgRoot(), bgKnobs);
+    syncBgAnimRungsMatch(bgRoot(), bgRungsMatch, bgKnobs);
+    syncBgAnimDotsChrome(bgRoot(), bgDots, bgMotionKnobs, isHelixStyle(bgStyle));
+    syncBgAnimSpinChrome(bgRoot(), bgSpinDir);
+    syncBgAnimLookChrome(bgRoot(), bgLook);
+    syncBgAnimMatRows(bgRoot(), bgMats, bgLook);
+    syncBgAnimHelixOnlyRows(bgRoot(), isHelixStyle(bgStyle));
     const styleRow = q('.sc-bganim-style');
     if (styleRow) styleRow.classList.remove('is-disabled');
-    pop.querySelectorAll('[data-sc="bg-anim-style"]').forEach((btn) => {
+    queryChatMenuAll(pop, '[data-sc="bg-anim-style"]').forEach((btn) => {
       const on = btn.dataset.style === bgStyle;
       btn.classList.toggle('is-on', on);
       btn.setAttribute('aria-checked', on ? 'true' : 'false');
@@ -9857,6 +11970,93 @@ export function wireStandardChatMenu(cfg = {}) {
       }
     }
   });
+  const bgCameraRange = q('.sc-bganim-camera-range');
+  if (bgCameraRange) bgCameraRange.addEventListener('input', () => {
+    const deg = clampBgAnimCamera(parseInt(bgCameraRange.value, 10));
+    bgCamera = deg;
+    persistBgAnimCamera(deg);
+    broadcastBgAnimCamera(deg);
+    const cval = q('.sc-bganim-camera-val');
+    if (cval) cval.textContent = deg + '°';
+    if (bgOn) {
+      if (reducedMotion) maybeRunBgAnim();
+      else {
+        const e = bgEngines[bgEngineKey(bgStyle)];
+        if (e && e.redraw) e.redraw();
+      }
+    }
+  });
+  document.addEventListener('wise:chat-bg-anim-camera', (e) => {
+    const v = e && e.detail && e.detail.camera;
+    if (typeof v !== 'number') return;
+    bgCamera = clampBgAnimCamera(v);
+    syncBg();
+    if (bgOn) {
+      if (reducedMotion) maybeRunBgAnim();
+      else {
+        const eng = bgEngines[bgEngineKey(bgStyle)];
+        if (eng && eng.redraw) eng.redraw();
+      }
+    }
+  });
+  const bgAzimuthRange = q('.sc-bganim-azimuth-range');
+  if (bgAzimuthRange) bgAzimuthRange.addEventListener('input', () => {
+    const deg = clampBgAnimAzimuth(parseInt(bgAzimuthRange.value, 10));
+    bgAzimuth = deg;
+    persistBgAnimAzimuth(deg);
+    broadcastBgAnimAzimuth(deg);
+    const aval = q('.sc-bganim-azimuth-val');
+    if (aval) aval.textContent = deg + '°';
+    if (bgOn) {
+      if (reducedMotion) maybeRunBgAnim();
+      else {
+        const e = bgEngines[bgEngineKey(bgStyle)];
+        if (e && e.redraw) e.redraw();
+      }
+    }
+  });
+  document.addEventListener('wise:chat-bg-anim-azimuth', (e) => {
+    const v = e && e.detail && e.detail.azimuth;
+    if (typeof v !== 'number') return;
+    bgAzimuth = clampBgAnimAzimuth(v);
+    syncBg();
+    if (bgOn) {
+      if (reducedMotion) maybeRunBgAnim();
+      else {
+        const eng = bgEngines[bgEngineKey(bgStyle)];
+        if (eng && eng.redraw) eng.redraw();
+      }
+    }
+  });
+  const bgShiftRange = q('.sc-bganim-shift-range');
+  if (bgShiftRange) bgShiftRange.addEventListener('input', () => {
+    const pct = clampBgAnimShift(parseInt(bgShiftRange.value, 10));
+    bgShift = pct;
+    persistBgAnimShift(pct);
+    broadcastBgAnimShift(pct);
+    const sval = q('.sc-bganim-shift-val');
+    if (sval) sval.textContent = pct + '%';
+    if (bgOn) {
+      if (reducedMotion) maybeRunBgAnim();
+      else {
+        const e = bgEngines[bgEngineKey(bgStyle)];
+        if (e && e.redraw) e.redraw();
+      }
+    }
+  });
+  document.addEventListener('wise:chat-bg-anim-shift', (e) => {
+    const v = e && e.detail && e.detail.shift;
+    if (typeof v !== 'number') return;
+    bgShift = clampBgAnimShift(v);
+    syncBg();
+    if (bgOn) {
+      if (reducedMotion) maybeRunBgAnim();
+      else {
+        const eng = bgEngines[bgEngineKey(bgStyle)];
+        if (eng && eng.redraw) eng.redraw();
+      }
+    }
+  });
   const repaintBg = () => {
     if (!bgOn) return;
     if (reducedMotion) maybeRunBgAnim();
@@ -9867,6 +12067,12 @@ export function wireStandardChatMenu(cfg = {}) {
   };
   wireBgAnimScaleRows(pop, bgScale, repaintBg);
   wireBgAnimKnobRows(pop, bgKnobs, repaintBg);
+  wireBgAnimRungsMatch(pop, () => bgRungsMatch, (v) => { bgRungsMatch = v; }, bgKnobs, repaintBg);
+  wireBgAnimDotsChrome(pop, bgDots, repaintBg, bgMotionKnobs);
+  wireBgAnimMotionKnobs(pop, bgMotionKnobs, repaintBg);
+  wireBgAnimSpinChrome(pop, () => bgSpinDir, (d) => { bgSpinDir = d; }, repaintBg);
+  wireBgAnimLookChrome(pop, () => bgLook, (v) => { bgLook = v; syncBgAnimMatRows(bgRoot(), bgMats, v); }, repaintBg);
+  wireBgAnimMatRows(pop, bgMats, repaintBg);
   document.addEventListener('wise:chat-bg-anim-scale', (e) => {
     if (!applyScaleEventToAxes(bgScale, e && e.detail)) return;
     syncBg();
@@ -9874,6 +12080,42 @@ export function wireStandardChatMenu(cfg = {}) {
   });
   document.addEventListener('wise:chat-bg-anim-knob', (e) => {
     if (!applyKnobEventToKnobs(bgKnobs, e && e.detail)) return;
+    syncBg();
+    repaintBg();
+  });
+  document.addEventListener('wise:chat-bg-anim-rungs-match', (e) => {
+    const on = !!(e && e.detail && e.detail.match);
+    if (on === bgRungsMatch) return;
+    bgRungsMatch = on;
+    syncBg();
+    repaintBg();
+  });
+  document.addEventListener('wise:chat-bg-anim-dots', (e) => {
+    if (!applyDotsEventToState(bgDots, e && e.detail)) return;
+    syncBg();
+    repaintBg();
+  });
+  document.addEventListener('wise:chat-bg-anim-motion-knob', (e) => {
+    if (!applyMotionKnobEvent(bgMotionKnobs, e && e.detail)) return;
+    syncBg();
+    repaintBg();
+  });
+  document.addEventListener('wise:chat-bg-anim-spin', (e) => {
+    const d = e && e.detail && e.detail.dir;
+    if (!BGANIM_SPIN_DIRS.includes(d) || d === bgSpinDir) return;
+    bgSpinDir = d;
+    syncBg();
+    repaintBg();
+  });
+  document.addEventListener('wise:chat-bg-anim-look', (e) => {
+    const look = normalizeBgAnimLook(e && e.detail && e.detail.look);
+    if (!BGANIM_LOOKS.includes(look) || look === bgLook) return;
+    bgLook = look;
+    syncBg();
+    repaintBg();
+  });
+  document.addEventListener('wise:chat-bg-anim-mat', (e) => {
+    if (!applyMatEvent(bgMats, e && e.detail)) return;
     syncBg();
     repaintBg();
   });
@@ -10079,7 +12321,7 @@ export function wireStandardChatMenu(cfg = {}) {
   }
 
   /* Reflow the (now fully assembled, incl. injected Style + Angle + History
-     rows) flat menu into the shared two-column group cards — run last so every
+     rows) flat menu into the shared three-column group cards — run last so every
      dynamically added row is bucketed. Moves existing nodes, so all wiring
      above stays live. */
   groupifyChatMenu(pop);

@@ -1,3 +1,5 @@
+import './date-column.js';
+
 /**
  * Alerts module.
  *
@@ -48,6 +50,16 @@ const CATEGORIES = [
 let hostEl = null;
 let filter = 'all';
 let query = '';
+let dateLead = 'occurred';
+let dateLeadBound = false;
+function dc() { return window.WiseDateCol; }
+function alertDates(a) {
+  const D = dc();
+  const occurred = a.time;
+  const read = a.read ? (a.readAt || a.time) : '—';
+  const created = a.created;
+  return D ? D.complete({ occurred, read, created }, 'alert') : { occurred, read };
+}
 
 function toneColor(tone) {
   const map = { green: 'var(--sec-green, #2e7d32)', amber: 'var(--ter-amber, #e0a800)', cyan: 'var(--sec-cyan, #22b8cf)', blue: 'var(--primary)' };
@@ -95,7 +107,7 @@ function paint() {
   const shown = ALERTS.filter(matches).slice().sort((a, b) => b.ts - a.ts);
 
   hostEl.innerHTML = `
-    <div class="wmod-wrap">
+    <div class="wmod-wrap" data-w-date-root data-al-board>
       <div class="wmod-masthead">
         <div class="wmod-masthead-main">
           <h1 class="wmod-title">Alerts</h1>
@@ -134,14 +146,14 @@ function paint() {
           <div class="wmod-thead">
             <div class="wmod-th"></div>
             <div class="wmod-th">Event</div>
-            <div class="wmod-th">When</div>
+            <div class="wmod-th w-date-th">${dc() ? dc().headerHtml({ kinds: 'alert', lead: dateLead }) : 'When'}</div>
             <div class="wmod-th"></div>
           </div>
           ${shown.length ? shown.map((a) => `
             <div class="wmod-trow is-clickable al-row${a.read ? '' : ' is-unread'}" data-al-id="${a.id}"${a.href ? ` data-al-href="${esc(a.href)}"` : ''}>
               <div class="wmod-td"><span class="wmod-row-ic" style="--ic:${toneColor(a.tone)}"><span class="material-symbols-outlined">${esc(a.icon)}</span></span></div>
               <div class="wmod-td"><div class="wmod-td-primary">${esc(a.title)}</div><div class="wmod-td-meta">${esc(a.sub)}</div></div>
-              <div class="wmod-td al-when">${a.read ? '' : '<span class="al-unread-dot" title="Unread"></span>'}<span>${esc(a.time)}</span></div>
+              <div class="wmod-td al-when">${a.read ? '' : '<span class="al-unread-dot" title="Unread"></span>'}<span class="w-datecell">${dc() ? dc().cellHtml(alertDates(a), 'alert', dateLead) : esc(a.time)}</span></div>
               <div class="wmod-td"><button type="button" class="wmod-icon-btn al-x" data-al-action="dismiss" data-id="${a.id}" title="Dismiss"><span class="material-symbols-outlined">close</span></button></div>
             </div>`).join('') : `
             <div class="wmod-empty">
@@ -157,6 +169,15 @@ export function renderAlerts(mainEl) {
   hostEl = mainEl;
   filter = 'all';
   query = '';
+  if (!dateLeadBound && dc()) {
+    dateLeadBound = true;
+    dc().onLead(hostEl, (lead, root) => {
+      if (!hostEl.querySelector('[data-al-board]')) return;
+      if (root && !hostEl.contains(root)) return;
+      dateLead = lead;
+      paint();
+    });
+  }
   paint();
 
   mainEl.addEventListener('click', (e) => {

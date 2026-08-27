@@ -54,8 +54,9 @@ function assetBase() {
   try { return new URL('../assets/', import.meta.url).href; } catch (_) { return '../assets/'; }
 }
 
-/* 16 real food photos from the helix roster — one per tesseract vertex. Tiny on
-   screen (by design); the tier color + glow live on each node's stroke ring. */
+/* 16 real food photos from the helix roster — one per tesseract vertex. Each
+   vertex is a round 3-D ball (clipped photo + sphere gloss) so nearer nodes
+   read as larger, deeper orbs on the 4D web. */
 const FOODS = [
   'helix/ferrero-nutella.jpg',
   'helix/oreo-oreo-original.jpg',
@@ -92,7 +93,8 @@ const ORBIT_SCALE_KEYS = {
   z: 'wise:chat-bg-anim-scale-z',
 };
 const ORBIT_NODES_KEY = 'wise:chat-bg-anim-nodes';
-const clampMul = (n) => (Number.isFinite(n) ? Math.max(0.25, Math.min(4, n)) : 1);
+/* Match the helix fader window in js/wiseai-chat.js (1–800%). */
+const clampMul = (n) => (Number.isFinite(n) ? Math.max(0.01, Math.min(8, n)) : 1);
 const readPrefMul = (key) => {
   try {
     const n = parseInt(localStorage.getItem(key), 10);
@@ -166,9 +168,13 @@ function injectStyles() {
     @keyframes wsTrackBreathe { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
     @media (prefers-reduced-motion: reduce) { .ws-orbit-track { animation: none; opacity: 0.75; } }
     .ws-orbit-link { stroke: rgba(${PRIMARY}, 0.22); stroke-width: 1; stroke-linecap: round; }
-    /* Nodes are food photos; the color + glow live on the stroke RING. */
-    .ws-orbit-node { fill: none; stroke: rgba(${PRIMARY}, 0.85); stroke-width: 1.4; }
-    .ws-orbit-node--accent { stroke: ${ACCENT}; stroke-width: 1.6; filter: drop-shadow(0 0 4px rgba(47, 111, 237, 0.9)); }
+    /* Nodes are food-photo spheres; the color + glow live on the stroke RING,
+       and a shared radial gloss paints the 3-D ball lighting. */
+    .ws-orbit-node { fill: none; stroke: rgba(${PRIMARY}, 0.85); stroke-width: 1.1; }
+    .ws-orbit-node--accent { stroke: ${ACCENT}; stroke-width: 1.25; filter: drop-shadow(0 0 4px rgba(47, 111, 237, 0.9)); }
+    .ws-orbit-shadow { fill: rgba(8, 14, 28, 0.38); pointer-events: none; }
+    html.dark .ws-orbit-shadow { fill: rgba(0, 0, 0, 0.55); }
+    .ws-orbit-gloss { pointer-events: none; }
   `;
   document.head.appendChild(el);
 }
@@ -214,7 +220,7 @@ function buildEdges() {
    position, on-screen dot size (nearer = bigger) and a depth scalar. */
 const PROJ = { distW: 3.0, distZ: 3.6, scale: 260 };
 const OWL_R = 30;      // owl circle radius in this mode (see injectStyles)
-const OWL_MARGIN = 9;  // keep the hull comfortably outside the owl + its circle
+const OWL_MARGIN = 14; // keep the hull outside the owl plus the larger food balls
 const MAX_CONTAIN = 2.8; // allow enough growth that the 4D hull ALWAYS encloses the owl
 
 /* Smallest hull-edge distance from the owl center = the radius of the biggest
@@ -265,8 +271,8 @@ function project(p, t) {
   return {
     x: C + x3 * fz * PROJ.scale,
     y: C + y3 * fz * PROJ.scale,
-    // Wider spread than before so nearer vertices read clearly larger.
-    size: 1.5 + depth * 22,
+    // Wider spread than before so nearer vertices read as larger 3-D balls.
+    size: 6.4 + depth * 46,
     depth,
   };
 }
@@ -305,19 +311,29 @@ export function enhanceWelcomeOrbit(wrap) {
     return { l, a, b, grad: makeGrad(i), ph: i * 0.55 };
   });
 
-  // Each vertex = a tiny circular food photo (clipped) with a colored stroke
-  // ring drawn on top. Photos sit above the edges; rings above the photos.
+  // Shared sphere lighting — one radial so every food ball shares the same
+  // key-light (upper-left highlight, dark rim) the helix beads use.
+  const glossId = `wsgloss-${myId}`;
+  const glossGrad = svgEl('radialGradient', { id: glossId, cx: '30%', cy: '24%', r: '78%' });
+  glossGrad.appendChild(svgEl('stop', { offset: '0', 'stop-color': '#ffffff', 'stop-opacity': '0.78' }));
+  glossGrad.appendChild(svgEl('stop', { offset: '0.22', 'stop-color': '#ffffff', 'stop-opacity': '0.22' }));
+  glossGrad.appendChild(svgEl('stop', { offset: '0.55', 'stop-color': '#000000', 'stop-opacity': '0' }));
+  glossGrad.appendChild(svgEl('stop', { offset: '1', 'stop-color': '#000000', 'stop-opacity': '0.58' }));
+  defs.appendChild(glossGrad);
+
+  // Each vertex = a circular food-photo ball (clipped image + gloss + ring).
+  // Groups are reordered by depth each frame so nearer orbs sit on top.
   const foodBase = assetBase();
-  const clips = [];
-  const foods = [];
-  const rings = [];
+  const balls = [];
   nodes.forEach((nd, i) => {
+    const g = svgEl('g', { class: 'ws-orbit-ball' });
     const clipId = `wsclip-${myId}-${i}`;
     const cp = svgEl('clipPath', { id: clipId });
-    const cc = svgEl('circle', { r: 3 });
+    const cc = svgEl('circle', { r: 6 });
     cp.appendChild(cc);
     defs.appendChild(cp);
 
+    const shadow = svgEl('ellipse', { class: 'ws-orbit-shadow', rx: 6, ry: 2.2 });
     const im = svgEl('image', {
       class: 'ws-orbit-food', 'clip-path': `url(#${clipId})`,
       preserveAspectRatio: 'xMidYMid slice',
@@ -325,14 +341,18 @@ export function enhanceWelcomeOrbit(wrap) {
     const href = foodBase + nd.img;
     im.setAttribute('href', href);
     try { im.setAttributeNS('http://www.w3.org/1999/xlink', 'href', href); } catch (_) {}
-    svg.appendChild(im);
-
-    const ring = svgEl('circle', {
-      class: 'ws-orbit-node' + (nd.accent ? ' ws-orbit-node--accent' : ''), r: 3,
+    const gloss = svgEl('circle', {
+      class: 'ws-orbit-gloss', r: 6, fill: `url(#${glossId})`,
     });
-    svg.appendChild(ring);
-
-    clips.push(cc); foods.push(im); rings.push(ring);
+    const ring = svgEl('circle', {
+      class: 'ws-orbit-node' + (nd.accent ? ' ws-orbit-node--accent' : ''), r: 6,
+    });
+    g.appendChild(shadow);
+    g.appendChild(im);
+    g.appendChild(gloss);
+    g.appendChild(ring);
+    svg.appendChild(g);
+    balls.push({ g, cc, im, gloss, ring, shadow });
   });
 
   // Owl sits above the overlay; insert svg first so it renders behind the logo.
@@ -357,8 +377,9 @@ export function enhanceWelcomeOrbit(wrap) {
      we clear inline styles so the CSS classes (single blue) take over. */
   function applyTheme() {
     const dark = isDark();
-    nodes.forEach((nd, i) => {
-      const ring = rings[i];
+    balls.forEach((ball, i) => {
+      const ring = ball.ring;
+      const nd = nodes[i];
       if (dark) {
         ring.style.stroke = TIER_DARK[nd.tier];
         const glow = TIER_GLOW_DARK[nd.tier] || 'rgba(174,200,237,0.85)';
@@ -404,26 +425,41 @@ export function enhanceWelcomeOrbit(wrap) {
       const y = C + (pr.y - C) * scaleMul.y * s;
       // Depth-driven radius + a slow, gentle breath so the photos ease in and
       // out of size rather than flickering. The Nodes slider sizes them.
-      const r = Math.max(1.4, (pr.size + 0.45 * Math.sin(t * T_BREATH + i * 0.6)) * nodeMul);
+      const r = Math.max(5.2, (pr.size + 0.55 * Math.sin(t * T_BREATH + i * 0.6)) * nodeMul);
       pos[i] = { x, y, depth: pr.depth };
-      clips[i].setAttribute('cx', x);
-      clips[i].setAttribute('cy', y);
-      clips[i].setAttribute('r', r.toFixed(2));
-      const im = foods[i];
+      const ball = balls[i];
+      ball.cc.setAttribute('cx', x);
+      ball.cc.setAttribute('cy', y);
+      ball.cc.setAttribute('r', r.toFixed(2));
+      const im = ball.im;
       im.setAttribute('x', (x - r).toFixed(2));
       im.setAttribute('y', (y - r).toFixed(2));
       im.setAttribute('width', (r * 2).toFixed(2));
       im.setAttribute('height', (r * 2).toFixed(2));
-      const ring = rings[i];
+      ball.gloss.setAttribute('cx', x);
+      ball.gloss.setAttribute('cy', y);
+      ball.gloss.setAttribute('r', r.toFixed(2));
+      ball.gloss.setAttribute('opacity', (0.88 + 0.12 * Math.min(1, pr.depth * 4)).toFixed(3));
+      ball.shadow.setAttribute('cx', (x + r * 0.12).toFixed(2));
+      ball.shadow.setAttribute('cy', (y + r * 0.34).toFixed(2));
+      ball.shadow.setAttribute('rx', (r * 0.92).toFixed(2));
+      ball.shadow.setAttribute('ry', (r * 0.32).toFixed(2));
+      ball.shadow.setAttribute('opacity', (0.18 + 0.42 * Math.min(1, pr.depth * 3.4)).toFixed(3));
+      const ring = ball.ring;
       ring.setAttribute('cx', x);
       ring.setAttribute('cy', y);
       ring.setAttribute('r', r.toFixed(2));
+      ring.setAttribute('stroke-width', Math.max(0.7, r * 0.08).toFixed(2));
       if (dark) {
         ring.style.strokeOpacity = (0.7 + 0.3 * Math.sin(t * T_SHIMMER + i)).toFixed(3);
       } else {
         ring.style.strokeOpacity = '';
       }
     }
+    /* Far balls first so nearer orbs occlude them — same painter's algorithm
+       the helix canvas uses. */
+    const order = balls.map((_, i) => i).sort((a, b) => pos[a].depth - pos[b].depth);
+    order.forEach((i) => svg.appendChild(balls[i].g));
     for (const e of links) {
       const a = pos[e.a], b = pos[e.b];
       e.l.setAttribute('x1', a.x); e.l.setAttribute('y1', a.y);

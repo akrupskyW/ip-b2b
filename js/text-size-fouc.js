@@ -97,6 +97,10 @@
     '--sec-red': [{ token: '--sec-red-10', a: 0.12 }],
     '--ter-amber': [{ token: '--ter-amber-10', a: 0.14 }]
   };
+  /* Tokens that always mirror another — stale per-token overrides are dropped. */
+  var ALIAS = {
+    '--text-subtle': '--text-muted'
+  };
   var listeners = [];
   var DEFAULTS = { light: null, dark: null };
 
@@ -112,6 +116,15 @@
     } catch (_) {}
     return 'light';
   }
+  function pruneAliases(store) {
+    ['light', 'dark'].forEach(function (theme) {
+      var map = store[theme];
+      if (!map) return;
+      Object.keys(ALIAS).forEach(function (alias) {
+        delete map[alias];
+      });
+    });
+  }
   function emptyStore() { return { light: {}, dark: {} }; }
   function load() {
     try {
@@ -119,10 +132,13 @@
       if (!raw) return emptyStore();
       var parsed = JSON.parse(raw);
       if (!parsed || typeof parsed !== 'object') return emptyStore();
-      return {
+      var store = {
         light: parsed.light && typeof parsed.light === 'object' ? parsed.light : {},
         dark: parsed.dark && typeof parsed.dark === 'object' ? parsed.dark : {}
       };
+      pruneAliases(store);
+      if (JSON.stringify(store) !== raw) save(store);
+      return store;
     } catch (_) { return emptyStore(); }
   }
   function save(store) {
@@ -186,8 +202,16 @@
     return 'rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', '
       + roundAlpha(a * (rgb.a == null ? 1 : rgb.a)) + ')';
   }
+  /* Keep an explicit rgba()/rgb() paste as rgba so Design System hex→RGBA
+     conversion survives storage; hex input still round-trips as hex. */
   function parseColor(value) {
-    return formatColor(toRgba(value));
+    var rgb = toRgba(value);
+    if (!rgb) return '';
+    if (/^rgba?\(/i.test(String(value || '').trim())) {
+      return 'rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', '
+        + roundAlpha(rgb.a == null ? 1 : rgb.a) + ')';
+    }
+    return formatColor(rgb);
   }
   function clearInline(root) {
     TOKENS.forEach(function (t) { root.style.removeProperty(t); });
@@ -217,11 +241,13 @@
     listeners.forEach(function (fn) { try { fn(theme, map); } catch (_) {} });
   }
   function setToken(token, value) {
+    if (ALIAS[token]) token = ALIAS[token];
     var parsed = parseColor(value);
     if (!parsed || TOKENS.indexOf(token) === -1) return false;
     var store = load();
     var theme = themeOf();
     store[theme][token] = parsed;
+    pruneAliases(store);
     save(store);
     apply();
     return true;
@@ -344,17 +370,35 @@
   } catch (_) {}
 })();
 
-/** FOUC guard — chat module default width. Laptop-class viewports
-    (≤ 1512 CSS px, 14" MacBook Pro) stay single pane; wider viewports
+/** FOUC guard — chat module default width. Laptop-class SCREENS
+    (≤ 1512 CSS px, 14" MacBook Pro) stay single pane; larger screens
     default to double. Keep in sync with WPaneWidth.defaultChatTier() in
     js/pane-width.js. Stops once the chat host exists so a later in-session
     toggle back to single is not overwritten. */
 (function () {
   var SINGLE_MAX = 1512;
+
+  /* Measure the DISPLAY, not the browser window.
+
+     This used to read window.innerWidth, which is the viewport — it changes
+     every time the window is resized, opened un-maximised, or has devtools
+     docked. On a single 1512 px laptop that made the chat flip between single
+     and double for no reason the user could see.
+
+     screen.width is the logical width of the monitor the window is on, so the
+     default is stable for a given screen and only changes if the window moves
+     to a different display. innerWidth remains the fallback for the rare
+     browser that will not report a screen. */
+  function screenWidthPx() {
+    var w = 0;
+    try { w = (window.screen && +window.screen.width) || 0; } catch (_) { w = 0; }
+    return w > 0 ? w : (window.innerWidth || 0);
+  }
   function defaultTier() {
-    return (window.innerWidth || 0) > SINGLE_MAX ? 1 : 0;
+    return screenWidthPx() > SINGLE_MAX ? 1 : 0;
   }
   window.WISE_CHAT_SINGLE_MAX_PX = SINGLE_MAX;
+  window.WISE_CHAT_SCREEN_WIDTH_PX = screenWidthPx;
   window.wiseDefaultChatTier = defaultTier;
 
   var CHAT_SEL = [
@@ -377,6 +421,30 @@
     }
     return document.querySelector(CHAT_SEL);
   }
+
+  /* Moving the window to a different display (or changing that display's
+     resolution) is the only thing that can legitimately change the screen
+     tier now. Re-apply the default in exactly that case — ordinary window
+     resizing no longer affects the tier, and a manual in-session toggle is
+     never overwritten (js/pane-width.js sets the user-set flag). */
+  (function watchDisplayChange() {
+    var lastTier = defaultTier();
+    var pending = 0;
+    function check() {
+      pending = 0;
+      var t = defaultTier();
+      if (t === lastTier) return;
+      lastTier = t;
+      if (document.documentElement.getAttribute('data-chat-width-user-set') === '1') return;
+      apply();
+    }
+    try {
+      window.addEventListener('resize', function () {
+        if (pending) return;
+        pending = requestAnimationFrame(check);
+      }, { passive: true });
+    } catch (_) {}
+  })();
 
   if (apply()) return;
   var mo = new MutationObserver(function () {

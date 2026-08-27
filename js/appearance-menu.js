@@ -22,7 +22,7 @@
  * Click handling stays in each shell: every row keys off a stable data-*
  * attribute (data-pivot / data-minimal / data-navhistory / data-fullbleed /
  * data-fbchatonly / data-jam / data-appsearch / data-navhamburger / data-colorblind / data-fz /
- * data-helixload / data-pop-action), so the existing per-shell listeners keep working unchanged.
+ * data-pop-action), so the existing per-shell listeners keep working unchanged.
  */
 
 import {
@@ -93,10 +93,6 @@ import {
   isCommentsUnlocked,
   applyComments,
 } from './feedback-setting.js';
-import {
-  isHelixLoadOn,
-  applyLoadAnim,
-} from './load-anim.js';
 
 /**
  * A binary on/off setting row. Instead of highlighting the whole row when
@@ -119,9 +115,9 @@ import {
  *                            Search is on, Menu icon while Search is off) say
  *                            so in their tooltip and read as temporary, while
  *                            a permanent gate should look like one.
- * @param {string}  [desc]    Optional 3–5 word hint under the label (Admin rows).
+ * @param {string}  [desc]    Optional 3–5 word hint under the label.
  */
-function toggleRow(dataAttr, on, label, admin = false, tip = '', disabled = false, showLock = false, desc = '') {
+function toggleRow(dataAttr, on, label, admin = false, tip = '', disabled = false, showLock = false, desc = '', icon = '') {
   const badge = admin ? '<span class="wise-popover-badge">Admin</span>' : '';
   const adminAttr = admin ? ' data-admin-item="1"' : '';
   const lock = disabled ? ' is-locked' : '';
@@ -129,22 +125,34 @@ function toggleRow(dataAttr, on, label, admin = false, tip = '', disabled = fals
   const lockIco = disabled && showLock
     ? '<span class="wise-popover-lock material-symbols-outlined" aria-hidden="true">lock</span>'
     : '';
+  const rowIco = icon
+    ? `<span class="material-symbols-outlined wise-row-icon" aria-hidden="true">${icon}</span>`
+    : '';
   return `<div class="wise-popover-item wise-toggle-item${on ? ' is-on' : ''}${lock}" ${dataAttr}${adminAttr}${disabledAttr} role="switch" aria-checked="${on ? 'true' : 'false'}"${tipAttrs(tip || label)}>
-      <span class="material-symbols-outlined wise-toggle-ico">${on ? 'toggle_on' : 'toggle_off'}</span>${rowCopy(label, desc)}${badge}${lockIco}
+      ${rowIco}${rowCopy(label, desc)}${badge}<span class="material-symbols-outlined wise-toggle-ico">${on ? 'toggle_on' : 'toggle_off'}</span>${lockIco}
     </div>`;
 }
 
-/** Title + a 3–5 word hint under an Admin-badged control. Same two-line
-    pattern as the chat ⋯ menu. Unhinted labels stay a plain string. */
+/** Title + a 3–5 word hint under the label. Same two-line pattern as the
+    chat ⋯ menu. Unhinted labels stay a plain string. */
 function rowCopy(label, desc) {
   if (!desc) return label;
   return `<span class="wise-popover-copy"><span class="wise-popover-title">${label}</span><span class="wise-popover-desc">${desc}</span></span>`;
 }
 
-/** Admin-badged toggle: the short on-row hint is the 4th argument so call
-    sites never have to thread empty `disabled` / `showLock` just to reach it. */
-function adminToggle(dataAttr, on, label, desc, tip, disabled = false, showLock = false) {
-  return toggleRow(dataAttr, on, label, true, tip, disabled, showLock, desc);
+function rowIcon(name) {
+  return `<span class="material-symbols-outlined wise-row-icon" aria-hidden="true">${name}</span>`;
+}
+
+/** Toggle with a short on-row hint as the 4th argument, so call sites never
+    have to thread empty `disabled` / `showLock` just to reach it. */
+function plainToggle(dataAttr, on, label, desc, tip, disabled = false, showLock = false, icon = '') {
+  return toggleRow(dataAttr, on, label, false, tip, disabled, showLock, desc, icon);
+}
+
+/** Admin-badged toggle: same argument order as plainToggle, plus the badge. */
+function adminToggle(dataAttr, on, label, desc, tip, disabled = false, showLock = false, icon = '') {
+  return toggleRow(dataAttr, on, label, true, tip, disabled, showLock, desc, icon);
 }
 
 /** Escape a string for use inside a double-quoted HTML attribute. */
@@ -181,7 +189,7 @@ function adminOnly(html) {
 /** "Pivot Navigation" row — only for shells whose nav rail can pivot to the top. */
 function pivotSection(showPivot, isPivoted) {
   if (!showPivot) return '';
-  return adminOnly(adminToggle('data-pivot="1"', isPivoted, 'Pivot Navigation', 'Horizontal top bar', 'Move the navigation to a horizontal top bar'));
+  return adminOnly(adminToggle('data-pivot="1"', isPivoted, 'Pivot Navigation', 'Horizontal top bar', 'Move the navigation to a horizontal top bar', false, false, 'view_quilt'));
 }
 
 /** "Colorblind type" segmented control — only revealed once the colorblind
@@ -199,7 +207,7 @@ function colorblindTypeSection() {
   ).join('');
   return `
     <div class="fz-row cb-type-row">
-      <span class="fz-row-label"${tipAttrs('Color vision type — green-weak, red-weak, or blue-green / blue-yellow weak. Each choice also covers the complete (blind) form of that type.')}>Vision type</span>
+      <span class="fz-row-label"${tipAttrs('Color vision type — green-weak, red-weak, or blue-green / blue-yellow weak. Each choice also covers the complete (blind) form of that type.')}>${rowIcon('visibility')}Vision type</span>
       <div class="fz-btns" role="group" aria-label="Color vision type">${btns}</div>
     </div>`;
 }
@@ -225,7 +233,7 @@ function moduleGapSection() {
     .join('');
   return `
     <div class="mg-size" data-admin-item="1">
-      <span class="mg-size-label"${tipAttrs('Gap between modules')}>${rowCopy('Module spacing', 'Gap between modules')}<span class="wise-popover-badge">Admin</span></span>
+      <span class="mg-size-label"${tipAttrs('Gap between modules')}>${rowIcon('space_dashboard')}${rowCopy('Module spacing', 'Gap between modules')}<span class="wise-popover-badge">Admin</span></span>
       <div class="mg-seg" role="group" aria-label="Module spacing">${btns}</div>
     </div>`;
 }
@@ -345,7 +353,7 @@ function brandingSection() {
     .join('');
   return `
     <div class="fz-size brand-style-row" data-admin-item="1">
-      <span class="fz-size-label"${tipAttrs('How module surfaces are drawn')}>${rowCopy('Surface style', 'How surfaces are drawn')}<span class="wise-popover-badge">Admin</span></span>
+      <span class="fz-size-label"${tipAttrs('How module surfaces are drawn')}>${rowIcon('layers')}${rowCopy('Surface style', 'How surfaces are drawn')}<span class="wise-popover-badge">Admin</span></span>
       <div class="fz-seg" role="group" aria-label="Surface style">${btns}</div>
     </div>`;
 }
@@ -361,12 +369,12 @@ function isTourOpen() {
   }
 }
 
-/** "Walkthrough" row — a plain (non-admin) toggle that would open the WISEowl
-    walkthrough sticky module or hide it, reflecting whether it's live right
-    now. It sits in the locked "Experience" group, so it renders on every shell
-    (including ones where the walkthrough script isn't loaded) and stays inert. */
+/** "Walkthrough" row — a plain (non-admin) toggle that opens the WISEowl
+    walkthrough sticky module or hides it, reflecting whether it's live right
+    now. Renders on every shell (including ones where the walkthrough script
+    isn't loaded yet); the click handler no-ops until WiseWalkthrough is ready. */
 function tourSection() {
-  return toggleRow('data-tour="1"', isTourOpen(), 'Walkthrough', false, 'Locked — the WISEowl walkthrough can\u2019t be toggled here', true);
+  return plainToggle('data-tour="1"', isTourOpen(), 'Walkthrough', 'Open the WISEowl tour', 'Open the WISEowl walkthrough', false, false, 'explore');
 }
 
 /** "Comments" row — switches on-page commenting (press C, click a spot, leave
@@ -378,7 +386,7 @@ function commentsSection() {
   const tip = unlocked
     ? 'Let anyone press C and pin a comment to an exact spot on the page — on for every visitor, not just this browser'
     : 'Locked — only the site owner can switch on-page comments on or off';
-  return toggleRow('data-comments="1"', isCommentsOn(), 'Comments', false, tip, !unlocked, true);
+  return plainToggle('data-comments="1"', isCommentsOn(), 'Comments', 'Pin notes on the page', tip, !unlocked, true, 'comment');
 }
 
 /** Text-size segmented block (S / M / L / XL). Extracted so it can live inside
@@ -393,7 +401,7 @@ function textSizeSection() {
   };
   return `
     <div class="fz-size">
-      <span class="fz-size-label"${tipAttrs('Text size')}>Text size</span>
+      <span class="fz-size-label"${tipAttrs('Text size')}>${rowIcon('format_size')}${rowCopy('Text size', 'Scale the interface type')}</span>
       <div class="fz-seg" role="group" aria-label="Text size">
         ${Object.keys(sizes)
           .map((s) => `<button type="button" class="fz-seg-btn${fz === s ? ' is-active' : ''}" data-fz="${s}" aria-pressed="${fz === s ? 'true' : 'false'}"${tipAttrs(sizes[s].tip)}>${sizes[s].short}</button>`)
@@ -409,7 +417,7 @@ function themeSection(isDark) {
   return `
     <div class="wise-popover-item" data-pop-action="theme"${tipAttrs(tip)}>
       <span class="material-symbols-outlined js-theme-icon">${isDark ? 'light_mode' : 'dark_mode'}</span>
-      <span class="js-theme-label">${tip}</span>
+      ${rowCopy(`<span class="js-theme-label">${tip}</span>`, 'Toggle light and dark')}
     </div>`;
 }
 
@@ -467,7 +475,7 @@ function fullBleedOptionsSection() {
       ${fbColorRow('hist', 'History background', getHistoryBg() || getRightModuleBg(), rmodFallback)}`;
   const rmodBlock = chatOnly ? '' : `
       <div class="fz-size fb-rmod-mode">
-        <span class="fz-size-label"${tipAttrs('How the module to the right of chat behaves')}>Right module</span>
+        <span class="fz-size-label"${tipAttrs('How the module to the right of chat behaves')}>${rowIcon('view_sidebar')}Right module</span>
         <div class="fz-seg" role="group" aria-label="Right module behaviour">${modeBtns}</div>
       </div>`;
 
@@ -485,10 +493,10 @@ function fullBleedOptionsSection() {
 }
 
 /** Wrap a set of rows in a titled "group" card. Groups are the unit the
-    Appearance popover stacks inside one of its two columns: each group (and
-    therefore every row inside it) stays within ONE column and is never split
-    or stretched across columns. An empty body (e.g. a section whose only rows
-    are conditionally hidden) renders nothing so we don't leave a stray empty card.
+    Appearance popover stacks inside a column: each group (and therefore every
+    row inside it) stays within ONE column and is never split or stretched
+    across columns. An empty body (e.g. a section whose only rows are
+    conditionally hidden) renders nothing so we don't leave a stray empty card.
     `locked` keeps the whole card in place but makes every row inside it inert:
     a lock trails the heading, the rows read muted, and wireAppearancePopover()
     swallows clicks landing anywhere inside. */
@@ -543,42 +551,50 @@ export function buildAppearanceBody({
     ${apCol(
       apGroup('Layout', `
         ${pivotSection(showPivot, isPivoted)}
-        ${toggleRow('data-minimal="1"', isMinimalUiOn(), 'Minimal UI', false, 'Show only the logo, Appearance, and your profile')}
-        ${toggleRow('data-iconrail="1"', isIconRailOn(), 'Icons only', false, 'Collapse the navigation to icons')}
-        ${toggleRow('data-helixload="1"', isHelixLoadOn(), 'Helix loading', false, 'While output and comparison boards assemble, play the streaming helix. Off restores the striped skeleton')}
-        ${adminOnly(adminToggle('data-navhistory="1"', isNavHistoryOn(), 'History in navigation', 'History inside the nav', 'Merge the History module into an expandable section of the primary navigation — search, projects, and All conversations stay fully usable'))}
-        ${adminOnly(adminToggle('data-sharpedges="1"', isSharpEdgesOn(), 'Sharper edges', 'Tighter, less-rounded corners', 'Use tighter, less-rounded corners'))}
+        ${plainToggle('data-minimal="1"', isMinimalUiOn(), 'Minimal UI', 'Logo, Appearance, and you', 'Show only the logo, Appearance, and your profile', false, false, 'crop_free')}
+        ${plainToggle('data-iconrail="1"', isIconRailOn(), 'Icons only', 'Collapse nav to icons', 'Collapse the navigation to icons', false, false, 'apps')}
+        ${adminOnly(adminToggle('data-navhistory="1"', isNavHistoryOn(), 'History in navigation', 'History inside the nav', 'Merge the History module into an expandable section of the primary navigation — search, projects, and All conversations stay fully usable', false, false, 'history'))}
+        ${adminOnly(adminToggle('data-sharpedges="1"', isSharpEdgesOn(), 'Sharper edges', 'Tighter, less-rounded corners', 'Use tighter, less-rounded corners', false, false, 'crop_square'))}
       `),
+      apGroup('Experience', `
+        ${tourSection()}
+        ${adminOnly(adminToggle('data-cwrui="1"', isCwrUiOn(), 'Roll · Crawl · Walk · Run', 'Show the mode switch', 'Show the floating Roll · Crawl · Walk · Run switch', false, false, 'speed'))}
+      `),
+      /* Master Admin-controls switch lives at the bottom of the leftmost
+         column so it stays the last toggle on that side; the rest of the
+         Admin rows stay in the right-hand column and shift up to fill. */
+      apGroup('Admin', `
+        ${plainToggle('data-adminui="1"', isAdminControlsOn(), 'Admin controls', 'Show Admin-badged settings', 'Show or hide settings that carry an Admin badge', false, false, 'admin_panel_settings')}
+      `),
+    )}
+    ${apCol(
       apGroup('Full bleed', `
-        ${adminOnly(adminToggle('data-fullbleed="1"', isFullBleedEverythingOn(), 'Full bleed', 'Stretch every module', isAppSearchOn() ? 'Unavailable while Search is on' : 'Stretch every module edge-to-edge', isAppSearchOn()))}
-        ${adminOnly(adminToggle('data-fbchatonly="1"', isChatOnlyFullBleedOn(), 'Chat-only full bleed', 'Stretch chat only', isAppSearchOn() ? 'Unavailable while Search is on' : 'Stretch only the chat module; keep the navigation and every other module contained', isAppSearchOn()))}
+        ${adminOnly(adminToggle('data-fullbleed="1"', isFullBleedEverythingOn(), 'Full bleed', 'Stretch every module', isAppSearchOn() ? 'Unavailable while Search is on' : 'Stretch every module edge-to-edge', isAppSearchOn(), false, 'fullscreen'))}
+        ${adminOnly(adminToggle('data-fbchatonly="1"', isChatOnlyFullBleedOn(), 'Chat-only full bleed', 'Stretch chat only', isAppSearchOn() ? 'Unavailable while Search is on' : 'Stretch only the chat module; keep the navigation and every other module contained', isAppSearchOn(), false, 'crop_16_9'))}
         ${adminOnly(fullBleedOptionsSection())}
       `),
       apGroup('Chat', `
-        ${adminOnly(adminToggle('data-chattint="1"', isChatTintOn(), 'Blue chat surface', 'Tint chat brand blue', 'Tint the chat surface with brand blue'))}
-        ${adminOnly(adminToggle('data-activitystrip="1"', isActivityStripOn(), 'Activity strip', 'Live strip on chat', 'Show the live activity strip on the chat edge'))}
+        ${adminOnly(adminToggle('data-chattint="1"', isChatTintOn(), 'Blue chat surface', 'Tint chat brand blue', 'Tint the chat surface with brand blue', false, false, 'format_paint'))}
+        ${adminOnly(adminToggle('data-activitystrip="1"', isActivityStripOn(), 'Activity strip', 'Live strip on chat', 'Show the live activity strip on the chat edge', false, false, 'timeline'))}
       `),
     )}
     ${apCol(
       apGroup('Sound', `
-        ${adminOnly(adminToggle('data-jam="1"', isJamStripOn(), 'Jam strip', 'Music in the nav', 'Show the music player in the navigation'))}
+        ${adminOnly(adminToggle('data-jam="1"', isJamStripOn(), 'Jam strip', 'Music in the nav', 'Show the music player in the navigation', false, false, 'music_note'))}
       `),
       apGroup('Accessibility', `
         ${themeSection(isDark)}
-        ${toggleRow('data-colorblind="1"', isColorblindOn(), 'Accessible colors', false, 'Use a color-vision-safe palette')}
+        ${plainToggle('data-colorblind="1"', isColorblindOn(), 'Accessible colors', 'Color-vision-safe palette', 'Use a color-vision-safe palette', false, false, 'visibility')}
         ${colorblindTypeSection()}
         ${textSizeSection()}
         ${adminOnly(brandingSection())}
       `),
-      apGroup('Experience', `
-        ${tourSection()}
-        ${adminOnly(adminToggle('data-cwrui="1"', isCwrUiOn(), 'Crawl · Walk · Run', 'Show the mode switch', 'Locked — the Crawl · Walk · Run switch can\u2019t be toggled here', true))}
-      `, { locked: true }),
+    )}
+    ${apCol(
       apGroup('Admin', `
-        ${toggleRow('data-adminui="1"', isAdminControlsOn(), 'Admin controls', false, 'Show or hide settings that carry an Admin badge')}
         ${commentsSection()}
-        ${adminOnly(adminToggle('data-appsearch="1"', isAppSearchOn(), 'Search', 'Search beside the logo', 'Show a search field aligned with the nav logo for transcripts, outputs, and reports'))}
-        ${adminOnly(adminToggle('data-navhamburger="1"', isNavHamburgerOn(), 'Menu icon', 'Hamburger when collapsed', isAppSearchOn() ? 'When the navigation is collapsed, show a menu icon to the left of the logo instead of the icon rail' : 'Unavailable while Search is off', !isAppSearchOn()))}
+        ${adminOnly(adminToggle('data-appsearch="1"', isAppSearchOn(), 'Search', 'Search beside the logo', 'Show a search field aligned with the nav logo for transcripts, outputs, and reports', false, false, 'search'))}
+        ${adminOnly(adminToggle('data-navhamburger="1"', isNavHamburgerOn(), 'Menu icon', 'Hamburger when collapsed', isAppSearchOn() ? 'When the navigation is collapsed, show a menu icon to the left of the logo instead of the icon rail' : 'Unavailable while Search is off', !isAppSearchOn(), false, 'menu'))}
         ${adminOnly(accessibilityReviewSection())}
         ${adminOnly(allModulesSection())}
         ${adminOnly(progressLogSection())}
@@ -739,9 +755,10 @@ export function wireAppearancePopover(pop, ctx = {}) {
       return el && pop.contains(el) ? el : null;
     };
 
-    /* Locked group (Experience) — the card stays visible but nothing inside it
-       is actionable, so swallow the click before any row handler sees it. */
+    /* Locked group or locked row — stay visible but inert. Swallow before
+       any row handler sees the click. Tooltips still fire. */
     if (within('.wise-appearance-group.is-locked')) { ev.stopPropagation(); return; }
+    if (within('.wise-popover-item.is-locked')) { ev.stopPropagation(); return; }
 
     /* Nav pivot — shells whose rail can pivot to a top bar. */
     if (within('[data-pivot]')) { ev.stopPropagation(); ctx.togglePivot?.(); render(); return; }
@@ -749,7 +766,6 @@ export function wireAppearancePopover(pop, ctx = {}) {
     /* Universal on/off toggles — handled here so no shell can miss one. */
     if (within('[data-minimal]'))     { ev.stopPropagation(); applyMinimalUi(!isMinimalUiOn());   render(); return; }
     if (within('[data-iconrail]'))    { ev.stopPropagation(); applyIconRail(!isIconRailOn());     render(); return; }
-    if (within('[data-helixload]'))   { ev.stopPropagation(); applyLoadAnim(!isHelixLoadOn());    render(); return; }
     if (within('[data-navhistory]'))  {
       ev.stopPropagation();
       const next = !isNavHistoryOn();
@@ -763,7 +779,16 @@ export function wireAppearancePopover(pop, ctx = {}) {
     if (within('[data-chattint]'))    { ev.stopPropagation(); applyChatTint(!isChatTintOn());      render(); return; }
     if (within('[data-activitystrip]')) { ev.stopPropagation(); applyActivityStrip(!isActivityStripOn()); render(); return; }
     if (within('[data-cwrui]'))       { ev.stopPropagation(); applyCwrUi(!isCwrUiOn());          render(); return; }
-    if (within('[data-tour]'))        { ev.stopPropagation(); try { isTourOpen() ? window.WiseWalkthrough.close() : window.WiseWalkthrough.open(); } catch (_) {} render(); return; }
+    if (within('[data-tour]')) {
+      ev.stopPropagation();
+      const flip = () => {
+        try { isTourOpen() ? window.WiseWalkthrough.close() : window.WiseWalkthrough.open(); } catch (_) {}
+        render();
+      };
+      if (typeof window.WiseWalkthrough?.open === 'function') flip();
+      else document.addEventListener('wise:walkthrough-ready', flip, { once: true });
+      return;
+    }
     if (within('[data-colorblind]'))  { ev.stopPropagation(); applyColorblind(!isColorblindOn());  render(); return; }
     if (within('[data-sharpedges]'))  { ev.stopPropagation(); applySharpEdges(!isSharpEdgesOn());  render(); return; }
     if (within('[data-adminui]'))     { ev.stopPropagation(); applyAdminControls(!isAdminControlsOn()); render(); return; }

@@ -1,29 +1,28 @@
 /* ── App-wide mono numerals ──────────────────────────────────────────────
    'WISE Digits' is a synthetic digit-only family (unicode-range U+0030-39)
-   that resolves to the app's mono stack (SF Mono / Menlo / Roboto Mono /
-   Consolas). It is prepended to every font stack in the app so that every
-   numeral renders in mono while letters fall through to the normal face. */
+   backed by DM Mono. It is prepended to every font stack in the app so that
+   every numeral renders in mono while letters fall through to the normal face. */
 @font-face {
   font-family: 'WISE Digits';
-  src: local('SFMono-Regular'), local('SF Mono'), local('Menlo-Regular'), local('Menlo'), local('Roboto Mono'), local('Consolas'), local('Courier New');
+  src: url('https://fonts.gstatic.com/s/dmmono/v16/aFTR7PB1QTsUX8KYvrGyEYOtbQ.woff2') format('woff2');
   unicode-range: U+0030-0039;
   font-weight: 100 450;
 }
 @font-face {
   font-family: 'WISE Digits';
-  src: local('SFMono-Medium'), local('SF Mono Medium'), local('Menlo-Regular'), local('Menlo'), local('Roboto Mono Medium'), local('Consolas'), local('Courier New');
+  src: url('https://fonts.gstatic.com/s/dmmono/v16/aFTU7PB1QTsUX8KYthqQBA.woff2') format('woff2');
   unicode-range: U+0030-0039;
   font-weight: 451 570;
 }
 @font-face {
   font-family: 'WISE Digits';
-  src: local('SFMono-Semibold'), local('SF Mono Semibold'), local('Menlo-Bold'), local('Roboto Mono SemiBold'), local('Consolas Bold'), local('Courier New Bold');
+  src: url('https://fonts.gstatic.com/s/dmmono/v16/aFTR7PB1QTsUX8KYvumzEYOtbQ.woff2') format('woff2');
   unicode-range: U+0030-0039;
   font-weight: 571 650;
 }
 @font-face {
   font-family: 'WISE Digits';
-  src: local('SFMono-Bold'), local('SF Mono Bold'), local('Menlo-Bold'), local('Roboto Mono Bold'), local('Consolas Bold'), local('Courier New Bold');
+  src: url('https://fonts.gstatic.com/s/dmmono/v16/aFTR7PB1QTsUX8KYvumzEYOtbQ.woff2') format('woff2');
   unicode-range: U+0030-0039;
   font-weight: 651 900;
 }
@@ -41,6 +40,7 @@
   --fs-ui: 0.75rem;
   --fs-label: 0.6875rem;
   --panel-header-h: 60px;
+  --font-mono: 'DM Mono', ui-monospace, monospace;
 }
 
 /* =============================================================
@@ -619,7 +619,7 @@ html.dark .ws-heading { color: var(--text); }
 /* The live food-count ticks upward constantly, so render it with tabular
    (fixed-width) mono figures — every digit occupies the same advance width,
    keeping the surrounding sentence from shifting as the number changes. */
-.ws-count { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; font-family: ui-monospace, "SF Mono", "SFMono-Regular", "Roboto Mono", Menlo, Consolas, monospace; }
+.ws-count { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; font-family: var(--font-mono); }
 .ws-chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 100%; width: 100%; margin-bottom: 2rem; }
 .ws-chips .chip { width: fit-content; max-width: 100%; flex: 0 0 auto; }
 /* Welcome intent chips. Full-size chat: wrap and show every chip. Single pane

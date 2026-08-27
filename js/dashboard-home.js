@@ -1,3 +1,5 @@
+import { isNudgeDismissed } from './nudge-toast-dismiss.js';
+
 /**
  * Brand Intelligence dashboard home.
  *
@@ -1775,15 +1777,15 @@ function renderClaim(d) {
       </div>
       <div class="dash-claim-divider"></div>
       <div class="dash-claim-col dash-claim-col--nudge">
-        ${u.nonCount > 0 ? `
-        <div class="dash-score-toast" role="status">
+        ${u.nonCount > 0 && !isNudgeDismissed('overview-upf') ? `
+        <div class="dash-score-toast" data-nudge-id="overview-upf" role="status">
           <span class="dash-score-toast-icon"><span class="material-symbols-outlined">verified</span></span>
           <div class="dash-score-toast-body">
             <div class="dash-score-toast-title">${u.nonCount} products are ready to verify</div>
             <p class="dash-score-toast-text">Earn the Non&#8209;UPF verification shield on these products so they stand out on retail listings — it only takes a moment to start.</p>
             <button class="dash-score-toast-link" type="button" data-dash-action="verify-upf">Start Non&#8209;UPF Verification<span class="material-symbols-outlined dash-score-toast-link-arrow">arrow_outward</span></button>
           </div>
-          <button class="dash-score-toast-close" type="button" data-dash-action="dismiss-score-toast" aria-label="Dismiss"><span class="material-symbols-outlined">close</span></button>
+          <button class="dash-score-toast-close" type="button" aria-label="Dismiss" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined">close</span></button>
         </div>` : ''}
         <div class="dash-bignum-row">
           ${countUpMarkup(u.nonCount, { className: 'dash-bignum' })}
@@ -1797,15 +1799,15 @@ function renderClaim(d) {
       </div>
       <div class="dash-claim-divider"></div>
       <div class="dash-claim-col dash-claim-col--nudge">
-        ${d.gras.grasCount > 0 ? `
-        <div class="dash-score-toast" role="status">
+        ${d.gras.grasCount > 0 && !isNudgeDismissed('overview-gras') ? `
+        <div class="dash-score-toast" data-nudge-id="overview-gras" role="status">
           <span class="dash-score-toast-icon"><span class="material-symbols-outlined">verified</span></span>
           <div class="dash-score-toast-body">
             <div class="dash-score-toast-title">${d.gras.grasCount} products are ready to verify</div>
             <p class="dash-score-toast-text">Earn the GRAS verification shield on these products so their ingredient safety stands out on retail listings — it only takes a moment to start.</p>
             <button class="dash-score-toast-link" type="button" data-dash-action="verify-gras">Start GRAS Verification<span class="material-symbols-outlined dash-score-toast-link-arrow">arrow_outward</span></button>
           </div>
-          <button class="dash-score-toast-close" type="button" data-dash-action="dismiss-score-toast" aria-label="Dismiss"><span class="material-symbols-outlined">close</span></button>
+          <button class="dash-score-toast-close" type="button" aria-label="Dismiss" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined">close</span></button>
         </div>` : ''}
         <div class="dash-bignum-row">
           ${countUpMarkup(d.gras.grasCount, { className: 'dash-bignum' })}
@@ -3073,12 +3075,10 @@ export function renderDashboardHome(host) {
         return;
       }
 
-      /* Dismiss the celebratory WISEscore toast. Not persisted — it returns on
-         reload, and only disappears for the current view when closed. */
-      if (a === 'dismiss-score-toast') {
-        action.closest('.dash-score-toast')?.remove();
-        return;
-      }
+      /* Toast × is handled by js/nudge-toast-dismiss.js (session-only
+         dismissal). Keep this branch so a leftover data-dash-action
+         cannot fall through to an unknown-action path. */
+      if (a === 'dismiss-score-toast') return;
 
       /* The radar's "view full report" jumps to the per-pillar breakdown. */
       if (a === 'radar-report') {

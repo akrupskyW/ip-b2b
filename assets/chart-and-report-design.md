@@ -18,7 +18,7 @@ headlines, and headers. Never invent a new chart/report look.
   and card titles.
 - **All numbers** (stats, axis ticks, scores, counts, percentages) use the
   **mono** face — reuse the `.ws-count` utility / the
-  `ui-monospace, "SF Mono", "Roboto Mono", Menlo` stack with
+  `var(--font-mono)` stack (DM Mono with a system fallback) with
   `font-variant-numeric: tabular-nums`.
 - **No eyebrows.** Never place an eyebrow / kicker label above any headline.
 

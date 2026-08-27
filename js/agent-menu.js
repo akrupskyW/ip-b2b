@@ -2,6 +2,9 @@ import { applyMinimalUi } from './topbar.js';
 import { initLirTooltip } from './lir-tooltip.js';
 import { parkNavHistory, refreshNavHistory } from './nav-history.js';
 import { isNavHamburgerActive } from './nav-hamburger.js';
+/* Side-effect: overlay the streaming helix on assembling boards. No Appearance
+   toggle — the overlay boots on every page that renders the WISE nav. */
+import './load-anim.js';
 
 /* Give every page that renders the WISE nav the shared floating tooltip. This
    covers the per-module header controls uniformly — the three-dot "More
@@ -23,10 +26,11 @@ import { isNavHamburgerActive } from './nav-hamburger.js';
    per-page <script> tag — so it loads uniformly and survives HTML edits. The
    loaded file self-guards and is a no-op on pages without a #modules-row. */
 /* Load the canonical pane-width spec (js/pane-width.js) FIRST — it defines the
-   universal four-tier model (single · double · triple · fill) shared by every
-   module's width control and injects the `.panel-fill` "take the rest of the
-   row" CSS. Loaded before pane-resize so the resize splitter sees the fill
-   classes and the fill CSS is present the moment any pane opens. */
+   universal five-tier model (single · double · triple · fill · custom) shared
+   by every module's width control and injects the `.panel-fill` "take the rest
+   of the row" CSS plus the custom carousel rail. Loaded before pane-resize so
+   the resize splitter sees the fill classes and the fill CSS is present the
+   moment any pane opens. */
 (function loadPaneWidth() {
   try {
     if (typeof document === 'undefined' || window.__wisePaneWidthLoaded) return;
@@ -1008,7 +1012,7 @@ function renderAppNav(prefix, activeId) {
   return WISE_APP_NAV.map((node) => {
     switch (node.type) {
       case 'section':
-        return `<div class="menu-nav-section">${escAttr(node.label)}</div>`;
+        return `<div class="menu-nav-section" data-nav-section="${escAttr(String(node.label || '').toLowerCase())}">${escAttr(node.label)}</div>`;
       case 'group':
         return renderAppGroup(prefix, node, activeId);
       case 'upgrade':

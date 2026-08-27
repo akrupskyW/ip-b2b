@@ -301,20 +301,35 @@ export function isMenuFooterAnchor(anchor) {
   return !!anchor?.closest?.('.menu-footer');
 }
 
-/* The Appearance popover only becomes its wide two-column (and therefore
+/* The Appearance popover only becomes its wide multi-column (and therefore
    short) layout once wireAppearancePopover() tags it with
    `.wise-popover--appearance`. But shells call the positioning helpers BEFORE
    wiring, so without this the popover is still measured as a narrow ~320px
    SINGLE column — tall enough to overflow the viewport, which made the
    above-the-icon placement clamp all the way to the top-left corner. Detect the
    appearance body by its group cards and add the class up front so its height is
-   measured at the real (two-column) size. The avatar/user menu has no
+   measured at the real (multi-column) size. The avatar/user menu has no
    `.wise-appearance-group`, so it is never affected. */
 function ensureAppearanceClass(pop) {
   if (pop && !pop.classList.contains('wise-popover--appearance') &&
       pop.querySelector?.('.wise-appearance-group')) {
     pop.classList.add('wise-popover--appearance');
   }
+}
+
+/** Keep a popover fully inside the viewport. Caps its height to the available
+    window and shifts left/top so no edge clips. Preferred top is honored
+    unless that would push it off-screen. */
+function placePopoverInViewport(pop, left, preferredTop) {
+  const pad = 8;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  pop.style.maxHeight = `${Math.max(160, vh - pad * 2)}px`;
+  const pw = pop.offsetWidth || 240;
+  const ph = pop.offsetHeight || 0;
+  const x = Math.max(pad, Math.min(left, vw - pw - pad));
+  const y = Math.max(pad, Math.min(preferredTop, vh - ph - pad));
+  placeFixedInViewport(pop, x, y);
 }
 
 /** Position a .wise-popover beside / above a menu-footer row (inside the nav module). */
@@ -350,7 +365,7 @@ export function positionPopoverInMenuPanel(pop, anchor) {
   let top = anchorRect.top - ph - 8;
   if (top < 8) top = anchorRect.bottom + 8;
   if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
-  placeFixedInViewport(pop, Math.max(8, left), Math.max(8, Math.min(top, window.innerHeight - ph - 8)));
+  placePopoverInViewport(pop, left, top);
   /* Remember how to re-place this popover so a later re-render (e.g. turning on
      the Jam strip or Full bleed reveals extra rows and makes it taller) can snap
      it back inside the viewport instead of overflowing off its old anchor. */
@@ -379,7 +394,7 @@ export function positionPopoverForTopbar(pop, anchor) {
   const rect = anchor.getBoundingClientRect();
   const pw = pop.offsetWidth || 240;
   const left = Math.max(8, Math.min(rect.right - pw, window.innerWidth - pw - 8));
-  placeFixedInViewport(pop, left, rect.bottom + 8);
+  placePopoverInViewport(pop, left, rect.bottom + 8);
   /* Same as above — keep a way to re-place after the body grows/shrinks. */
   pop.__reposition = () => positionPopoverForTopbar(pop, anchor);
 }
@@ -955,7 +970,7 @@ export function restoreChatTint() {
   applyChatTint(isChatTintOn());
 }
 
-/* Crawl · Walk · Run — the floating rollout-mode switch pinned to the right
+/* Roll · Crawl · Walk · Run — the floating rollout-mode switch pinned to the right
    edge of every page (js/cwr-toggle.js). Shown by default (mode: Run); this
    Appearance toggle hides it. Driven by a `cwr-ui-on` class on <html> —
    cwr-toggle.js gates BOTH the widget and the crawl/walk mode CSS on that
@@ -963,7 +978,7 @@ export function restoreChatTint() {
    doing (the stored mode is kept for when the switch comes back on). */
 const CWR_UI_KEY = 'wise-cwr-ui';
 
-/** True when the floating Crawl · Walk · Run switch is shown. Defaults ON. */
+/** True when the floating Roll · Crawl · Walk · Run switch is shown. Defaults ON. */
 export function isCwrUiOn() {
   try { return localStorage.getItem(CWR_UI_KEY) !== '0'; } catch { return true; }
 }

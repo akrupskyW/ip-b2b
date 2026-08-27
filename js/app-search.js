@@ -51,10 +51,11 @@ const TRANSCRIPT_FALLBACK = [
 
 const REPORT_CATALOG = [
   { id: 'rpt-gs', title: 'Guiding Stars Action Plan', desc: 'Your prioritized path to more stars — quick wins, near-misses, and the competitive gap.', href: 'report-guiding-stars.html', where: 'Reports · Portfolio reports', icon: 'star' },
-  { id: 'rpt-pupf', title: 'Portfolio UPF', desc: 'Ultra-processed food classification across every product in your portfolio.', href: 'analytics-types.html', where: 'Reports · Portfolio reports', icon: 'description' },
+  { id: 'rpt-pupf', title: 'Portfolio UPF', desc: 'Ultra-processed food classification across every product in your portfolio.', href: 'product-portfolio.html?report=upf', where: 'Reports · Portfolio reports', icon: 'description' },
   { id: 'rpt-pgras', title: 'Portfolio GRAS', desc: 'Generally-recognized-as-safe assessment across your portfolio.', href: 'reports.html', where: 'Reports · Portfolio reports', icon: 'verified_user', locked: true },
   { id: 'rpt-pins', title: 'Portfolio Insights', desc: 'Nutrient and ingredient insights across your portfolio.', href: 'reports.html', where: 'Reports · Portfolio reports', icon: 'insights', locked: true },
-  { id: 'rpt-prupf', title: 'Product UPF', desc: 'Ultra-processed food classification for a single product.', href: 'analytics-types.html', where: 'Reports · Product reports', icon: 'description' },
+  { id: 'rpt-prupf', title: 'Product UPF', desc: 'Ultra-processed food classification for a single product.', href: 'product-portfolio.html?report=upf', where: 'Reports · Product reports', icon: 'description' },
+  { id: 'rpt-prdetails', title: 'Product Details Report', desc: 'Nutrition, ingredients, and classification for a single product.', href: 'product-portfolio.html?report=details', where: 'Reports · Product reports', icon: 'receipt_long' },
   { id: 'rpt-prgras', title: 'Product GRAS', desc: 'Generally-recognized-as-safe assessment for a product.', href: 'reports.html', where: 'Reports · Product reports', icon: 'verified_user', locked: true },
   { id: 'rpt-prins', title: 'Product Insights', desc: 'Nutrient and ingredient insights for a single product.', href: 'reports.html', where: 'Reports · Product reports', icon: 'insights', locked: true },
   { id: 'rpt-iq', title: 'Ingredient Quality', desc: 'Composite ingredient-quality score, with per-metric views of artificial additives, clean label, seed oils, and more.', href: 'analytics-types.html', where: 'Reports · Metric deep-dives', icon: 'science' },

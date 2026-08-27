@@ -65,7 +65,7 @@
       '.wch-close .material-symbols-outlined,.wch-dock .material-symbols-outlined{font-size:19px;}',
       '.wch-new{flex:0 0 auto;width:36px;height:36px;padding:0;border:0;border-radius:50%;background:var(--primary,#2F6DF6);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;}',
       '.wch-new:hover{filter:brightness(1.06);}',
-      '.wch-new .material-symbols-outlined{font-size:20px;}',
+      '.wch-new .material-symbols-outlined{font-size:20px !important;line-height:1 !important;}',
       '.wch-list{flex:1;overflow-y:auto;padding:2px 8px 12px;}',
       /* ── Chat color dot ─────────────────────────────────────────────────────
          Every conversation has a colored circle. A rounded progress ring
@@ -202,14 +202,14 @@
       '.wch-sidebar.wch-rail .wch-search{display:none;}',
       '.wch-sidebar.wch-rail .wch-search-row{margin:0 auto;justify-content:center;}',
       '.wch-sidebar.wch-rail .wch-new{width:32px;height:32px;}',
-      '.wch-sidebar.wch-rail .wch-new .material-symbols-outlined{font-size:18px;}',
+      '.wch-sidebar.wch-rail .wch-new .material-symbols-outlined{font-size:18px !important;line-height:1 !important;}',
       '.wch-sidebar.wch-rail .wch-list{padding:0 4px 4px;flex:1 1 auto;min-height:0;scrollbar-width:none;}',
       '.wch-sidebar.wch-rail .wch-list::-webkit-scrollbar{width:0;display:none;}',
       '.wch-sidebar.wch-rail .wch-projects{margin:0;}',
       '.wch-sidebar.wch-rail .wch-projects-head{display:none;}',
       '.wch-sidebar.wch-rail .wch-group,.wch-sidebar.wch-rail .wch-empty,.wch-sidebar.wch-rail .wch-project-empty{display:none;}',
       '.wch-sidebar.wch-rail .wch-proj-name,.wch-sidebar.wch-rail .wch-proj-count,.wch-sidebar.wch-rail .wch-proj-menu{display:none;}',
-      '.wch-sidebar.wch-rail .wch-project-head{justify-content:center;padding:2px 0;gap:0;}',
+      '.wch-sidebar.wch-rail .wch-project-head{justify-content:center;padding:0;gap:0;width:32px;height:32px;margin:1px auto;box-sizing:border-box;}',
       '.wch-sidebar.wch-rail .wch-proj-toggle{display:flex;width:22px;height:22px;}',
       '.wch-sidebar.wch-rail .wch-proj-toggle .material-symbols-outlined{font-size:20px;}',
       '.wch-sidebar.wch-rail .wch-project-body{padding-left:0;}',
@@ -226,6 +226,20 @@
          the panel instead, where those controls live. !important beats the base
          `:hover`/`:focus-within` reveal rules, which share this specificity. */
       '.wch-sidebar.wch-rail .wch-item-actions,.wch-sidebar.wch-rail .wch-del,.wch-sidebar.wch-rail .wch-proj-menu{display:none !important;}',
+      /* Collapsed sticky rail: only New conversation + the expand chevron stay
+         at full strength. Folders and chats recede to ~30%. Hover matches the
+         primary nav: that one glyph lights in brand blue on a circular soft
+         disc — not full --text, which read too dark. */
+      '.wch-sidebar.wch-rail:not(.wch-in-nav) .wch-project-head,.wch-sidebar.wch-rail:not(.wch-in-nav) .wch-item{opacity:.3;transition:opacity .18s ease,background-color .18s ease,box-shadow .18s ease,color .18s ease;}',
+      '.wch-sidebar.wch-rail:not(.wch-in-nav) .wch-project-head:hover,.wch-sidebar.wch-rail:not(.wch-in-nav) .wch-project-head:focus-visible,.wch-sidebar.wch-rail:not(.wch-in-nav) .wch-item:hover,.wch-sidebar.wch-rail:not(.wch-in-nav) .wch-item:focus-visible{opacity:1;color:var(--primary,#2F6DF6);background:var(--primary-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary,#2F6DF6) 18%,transparent);border-radius:50%;}',
+      '.wch-sidebar.wch-rail:not(.wch-in-nav) .wch-item:hover::before,.wch-sidebar.wch-rail:not(.wch-in-nav) .wch-item:focus-visible::before,.wch-sidebar.wch-rail:not(.wch-in-nav) .wch-project-body > .wch-item:hover::before,.wch-sidebar.wch-rail:not(.wch-in-nav) .wch-project-body > .wch-item:focus-visible::before{color:var(--primary,#2F6DF6);opacity:1;}',
+      '.wch-sidebar.wch-rail:not(.wch-in-nav) .wch-project-head:hover .wch-proj-toggle,.wch-sidebar.wch-rail:not(.wch-in-nav) .wch-project-head:focus-visible .wch-proj-toggle{color:var(--primary,#2F6DF6) !important;background:transparent;}',
+      'html.dark .wch-sidebar.wch-rail:not(.wch-in-nav) .wch-project-head:hover,html.dark .wch-sidebar.wch-rail:not(.wch-in-nav) .wch-project-head:focus-visible,html.dark .wch-sidebar.wch-rail:not(.wch-in-nav) .wch-item:hover,html.dark .wch-sidebar.wch-rail:not(.wch-in-nav) .wch-item:focus-visible{color:var(--primary-bright,var(--primary,#2F6DF6));}',
+      'html.dark .wch-sidebar.wch-rail:not(.wch-in-nav) .wch-item:hover::before,html.dark .wch-sidebar.wch-rail:not(.wch-in-nav) .wch-item:focus-visible::before,html.dark .wch-sidebar.wch-rail:not(.wch-in-nav) .wch-project-body > .wch-item:hover::before,html.dark .wch-sidebar.wch-rail:not(.wch-in-nav) .wch-project-body > .wch-item:focus-visible::before{color:var(--primary-bright,var(--primary,#2F6DF6));}',
+      'html.dark .wch-sidebar.wch-rail:not(.wch-in-nav) .wch-project-head:hover .wch-proj-toggle,html.dark .wch-sidebar.wch-rail:not(.wch-in-nav) .wch-project-head:focus-visible .wch-proj-toggle{color:var(--primary-bright,var(--primary,#2F6DF6)) !important;}',
+      '.wch-sidebar.wch-rail:not(.wch-in-nav) .wch-item::before,.wch-sidebar.wch-rail:not(.wch-in-nav) .wch-project-body > .wch-item::before,.wch-sidebar.wch-rail:not(.wch-in-nav) .wch-item.wch-active::before{opacity:1;}',
+      '.wch-sidebar.wch-rail:not(.wch-in-nav) .wch-new,.wch-sidebar.wch-rail:not(.wch-in-nav) .wch-rail-btn{opacity:1;}',
+      '@media (prefers-reduced-motion:reduce){.wch-sidebar.wch-rail:not(.wch-in-nav) .wch-project-head,.wch-sidebar.wch-rail:not(.wch-in-nav) .wch-item{transition:none;}}',
       /* ── Projects (chat grouping) ── */
       /* Hover actions float over the (now longer) title as a rounded cluster
          whose fill matches the panel surface, so the icons read as tidy circles
@@ -252,7 +266,7 @@
       '.wch-proj-add{width:24px;height:24px;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.7;}',
       '.wch-proj-add:hover{background:rgba(255,255,255,0.10);opacity:1;color:var(--primary-ink,var(--primary,#2F6DF6));}',
       'html:not(.dark) .wch-proj-add:hover{background:rgba(0,0,0,0.06);}',
-      '.wch-proj-add .material-symbols-outlined{font-size:18px;}',
+      '.wch-proj-add .material-symbols-outlined{font-size:18px !important;line-height:1 !important;}',
       /* A single project block — copied from Library's folder panel
          (.lib-fp-folder): colored folder / folder_open icon + name + count +
          hover ⋯. Nested chats indent under a straight tick tree. */
@@ -262,7 +276,7 @@
       '.wch-project-head:hover,.wch-project-head:focus,.wch-project-head:focus-visible{background:transparent;outline:none;}',
       'html:not(.dark) .wch-project-head:hover{background:transparent;}',
       '.wch-proj-toggle{position:relative;z-index:3;width:22px;height:22px;flex:0 0 auto;border:0;border-radius:50%;background:var(--wch-tree-bg);color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;}',
-      '.wch-proj-toggle .material-symbols-outlined{font-size:18px;line-height:1;font-variation-settings:"FILL" 1,"wght" 400,"GRAD" 0,"opsz" 20;}',
+      '.wch-proj-toggle .material-symbols-outlined{font-size:18px !important;line-height:1 !important;font-variation-settings:"FILL" 1,"wght" 400,"GRAD" 0,"opsz" 20;}',
       '.wch-proj-dot{flex:0 0 auto;width:9px;height:9px;border-radius:50%;background:currentColor;}',
       '.wch-proj-name{flex:1;min-width:0;font-size:13px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
       '.wch-proj-count{flex:0 0 auto;font-size:11px;font-weight:600;opacity:.55;padding:0 4px;}',
@@ -359,10 +373,13 @@
       '#modules-row .wch-sidebar.wch-docked .wch-head-title .material-symbols-outlined{display:none;}',
       '#modules-row .wch-sidebar.wch-docked .wch-controls{margin-top:1px;}',
       /* The chat rides above the docked drawers so they read as tucking behind
-         it. The persistent WISEcodeAI dock manages its own (higher) z-index. */
+         it. Sticky must NOT drop the chat to 2 — that ties add/view-product's
+         NFP (also 2) and the later panel paints over the chat. Keep 3 in both
+         states (still well under the resize-handle overlay at 60). The
+         persistent WISEcodeAI dock manages its own (higher) z-index. */
       '#modules-row > .wch-chat-anchor:not(.wiseai-dock){position:relative;z-index:3;}',
       '#modules-row.modules-sticky{position:relative;}',
-      '#modules-row.modules-sticky > .wch-chat-anchor:not(.wiseai-dock){z-index:2;}',
+      '#modules-row.modules-sticky > .wch-chat-anchor:not(.wiseai-dock){z-index:3;}',
       /* `.wch-unsticky` (set from a docked module\'s ⋯ "Sticky module" switch —
          Turns, the "What can I ask?" module, or sticky-modules.js) opts that
          one module OUT of the tuck: it keeps the free-standing card look, so
@@ -1796,10 +1813,10 @@
       }
     }
 
-    /* ── Width changer (docked module) — the canonical four-step cycle
-       (single → double → triple → fill), identical to every other module. ── */
-    var WCH_W_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
-    var WCH_W_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to reset'];
+    /* ── Width changer (docked module) — the canonical five-step cycle
+       (single → double → triple → fill → custom), identical to every other module. ── */
+    var WCH_W_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
+    var WCH_W_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to widen', 'Width (custom) — drag to any size'];
     /* Slim column width used while the module is minimized to its icon rail. */
     var RAIL_W = 66;
     function applyDockWidth() {
@@ -1826,35 +1843,52 @@
          two read as an equal pair); tiers scale from whichever base is active. */
       var baseW = (stickyActive && stickyWidth) ? stickyWidth : breakoutWidth;
       var tiers = [baseW, Math.round(baseW * 1.5), baseW * 2];
-      /* Release any drag-pinned width so the preset wins (mirrors how the panes'
-         width buttons stand down the resize splitter). */
-      try { global.WisePaneResize && global.WisePaneResize.release && global.WisePaneResize.release([sidebar]); } catch (_) {}
-      if (widthTier >= 3) {
-        /* Fill — grow to take the rest of the row instead of a fixed column. */
-        sidebar.style.setProperty('flex', '1000 1 auto', 'important');
-        sidebar.style.setProperty('width', 'auto', 'important');
-        sidebar.style.setProperty('min-width', (stickyActive && stickyWidth) ? (stickyWidth + 'px') : '0', 'important');
-        sidebar.style.setProperty('max-width', 'none', 'important');
+      var W = window.WPaneWidth;
+      if (widthTier === 4) {
+        if (W && W.applyClasses) W.applyClasses(sidebar, 4, 'panel');
+        else {
+          sidebar.classList.add('panel-custom');
+          if (W && W.pinToCurrent) W.pinToCurrent(sidebar);
+        }
       } else {
-        var w = tiers[widthTier] || baseW;
-        sidebar.style.setProperty('flex', '0 0 ' + w + 'px', 'important');
-        sidebar.style.setProperty('width', w + 'px', 'important');
-        /* While sticky, hold stickyWidth (240) as a hard minimum floor so the
-           module never renders — or drag-resizes — narrower than that; the width
-           beyond the floor stays flexible (tiers + the resize splitter). */
-        sidebar.style.setProperty('min-width', (stickyActive && stickyWidth) ? (stickyWidth + 'px') : '0', 'important');
-        sidebar.style.setProperty('max-width', 'none', 'important');
+        /* Release any drag-pinned width so the preset wins (mirrors how the panes'
+           width buttons stand down the resize splitter). */
+        try { global.WisePaneResize && global.WisePaneResize.release && global.WisePaneResize.release([sidebar]); } catch (_) {}
+        if (widthTier === 3) {
+          /* Fill — grow to take the rest of the row instead of a fixed column. */
+          sidebar.style.setProperty('flex', '1000 1 auto', 'important');
+          sidebar.style.setProperty('width', 'auto', 'important');
+          sidebar.style.setProperty('min-width', (stickyActive && stickyWidth) ? (stickyWidth + 'px') : '0', 'important');
+          sidebar.style.setProperty('max-width', 'none', 'important');
+        } else {
+          var w = tiers[widthTier] || baseW;
+          sidebar.style.setProperty('flex', '0 0 ' + w + 'px', 'important');
+          sidebar.style.setProperty('width', w + 'px', 'important');
+          /* While sticky, hold stickyWidth (240) as a hard minimum floor so the
+             module never renders — or drag-resizes — narrower than that; the width
+             beyond the floor stays flexible (tiers + the resize splitter). */
+          sidebar.style.setProperty('min-width', (stickyActive && stickyWidth) ? (stickyWidth + 'px') : '0', 'important');
+          sidebar.style.setProperty('max-width', 'none', 'important');
+        }
+        sidebar.classList.remove('panel-custom');
+        if (W && W.applyClasses) W.applyClasses(sidebar, widthTier, 'panel');
       }
       var btn = sidebar.querySelector('.wch-width-btn');
       if (btn) {
-        btn.classList.toggle('is-on', widthTier >= 1);
-        btn.setAttribute('aria-pressed', widthTier >= 1 ? 'true' : 'false');
-        btn.title = WCH_W_TITLES[widthTier];
-        var ic = btn.querySelector('.material-symbols-outlined');
-        if (ic) ic.textContent = WCH_W_ICONS[widthTier];
+        if (W && W.syncButton) W.syncButton(btn, widthTier);
+        else {
+          btn.classList.toggle('is-on', widthTier >= 1);
+          btn.setAttribute('aria-pressed', widthTier >= 1 ? 'true' : 'false');
+          btn.title = WCH_W_TITLES[widthTier];
+          var ic = btn.querySelector('.material-symbols-outlined');
+          if (ic) ic.textContent = WCH_W_ICONS[widthTier];
+        }
       }
     }
-    function cycleWidth() { widthTier = (widthTier + 1) % 4; applyDockWidth(); }
+    function cycleWidth() {
+      widthTier = window.WPaneWidth ? window.WPaneWidth.next(widthTier) : (widthTier + 1) % 5;
+      applyDockWidth();
+    }
     /* ── Icon-rail (minimize) toggle ── */
     function updateRailItem() {
       /* The minimize/maximize toggle now lives as its own icon in the head. */
@@ -2093,7 +2127,14 @@
        animates itself open→closed on every reload — only user-driven minimize /
        maximize toggles animate. */
     requestAnimationFrame(function () {
-      requestAnimationFrame(function () { sidebar.classList.add('wch-anim'); });
+      requestAnimationFrame(function () {
+        sidebar.classList.add('wch-anim');
+        /* Nav-history is a deferred module, so it may adopt this sidebar after
+           mount has already pinned the sticky 280px dock width. Re-fit once
+           the in-nav class is on so the new-conversation / new-project controls
+           are not clipped by the 260px nav. */
+        if (sidebar.classList.contains('wch-in-nav')) prepareNavEmbed();
+      });
     });
 
     if (typeof ResizeObserver !== 'undefined') {
@@ -2102,6 +2143,9 @@
     window.addEventListener('resize', layoutProjectTrees);
     document.addEventListener('wise:nav-history-open', function () {
       if (sidebar.classList.contains('wch-in-nav')) scheduleProjectTrees();
+    });
+    document.addEventListener('wise:nav-history', function () {
+      if (sidebar.classList.contains('wch-in-nav')) prepareNavEmbed();
     });
 
     var api = {

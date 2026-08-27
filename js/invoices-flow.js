@@ -1,3 +1,5 @@
+import './date-column.js';
+
 /**
  * Invoices & Downloads module.
  *
@@ -30,12 +32,12 @@ function esc(s) {
 
 /* ---- Invoice data — seeded to match the Flax4Life sample org --------- */
 const INVOICES = [
-  { id: 'RQVPPYUX-0001', date: 'Apr 20, 2026', desc: 'SKU Verification', sub: '9 items', amount: '$891.00', status: 'sent' },
-  { id: 'RQVPPYUX-0002', date: 'Apr 18, 2026', desc: 'Non-UPF Shield Activation', sub: '9 shields', amount: '$1,350.00', status: 'sent' },
-  { id: 'RQVPPYUX-0003', date: 'Apr 12, 2026', desc: 'Marketing Assets Pack', sub: '24 assets', amount: '$480.00', status: 'paid' },
-  { id: 'RQVPPYUX-0004', date: 'Mar 30, 2026', desc: 'GRAS Verification', sub: '4 items', amount: '$620.00', status: 'paid' },
-  { id: 'RQVPPYUX-0005', date: 'Mar 22, 2026', desc: 'Bulk UPC Import', sub: '128 UPCs', amount: '$256.00', status: 'failed' },
-  { id: 'RQVPPYUX-0006', date: 'Mar 15, 2026', desc: 'Reformulation Report', sub: '2 items', amount: '$340.00', status: 'cancelled' },
+  { id: 'RQVPPYUX-0001', date: 'Apr 20, 2026', due: 'May 4, 2026', paid: '—', edited: 'Apr 18, 2026', desc: 'SKU Verification', sub: '9 items', amount: '$891.00', status: 'sent' },
+  { id: 'RQVPPYUX-0002', date: 'Apr 18, 2026', due: 'May 2, 2026', paid: '—', edited: 'Apr 16, 2026', desc: 'Non-UPF Shield Activation', sub: '9 shields', amount: '$1,350.00', status: 'sent' },
+  { id: 'RQVPPYUX-0003', date: 'Apr 12, 2026', due: 'Apr 26, 2026', paid: 'Apr 14, 2026', edited: 'Apr 12, 2026', desc: 'Marketing Assets Pack', sub: '24 assets', amount: '$480.00', status: 'paid' },
+  { id: 'RQVPPYUX-0004', date: 'Mar 30, 2026', due: 'Apr 13, 2026', paid: 'Apr 2, 2026', edited: 'Mar 28, 2026', desc: 'GRAS Verification', sub: '4 items', amount: '$620.00', status: 'paid' },
+  { id: 'RQVPPYUX-0005', date: 'Mar 22, 2026', due: 'Apr 5, 2026', paid: '—', edited: 'Mar 21, 2026', desc: 'Bulk UPC Import', sub: '128 UPCs', amount: '$256.00', status: 'failed' },
+  { id: 'RQVPPYUX-0006', date: 'Mar 15, 2026', due: 'Mar 29, 2026', paid: '—', edited: 'Mar 14, 2026', desc: 'Reformulation Report', sub: '2 items', amount: '$340.00', status: 'cancelled' },
 ];
 
 const STATUS_META = {
@@ -58,6 +60,15 @@ const FILTERS = [
 let hostEl = null;
 let activeStatus = null; // null = show all; otherwise a status key
 let query = '';          // current search text (lowercased)
+let dateLead = 'issued';
+let dateLeadBound = false;
+
+function dc() { return window.WiseDateCol; }
+function invDates(inv) {
+  const D = dc();
+  const partial = { issued: inv.date, due: inv.due, paid: inv.paid || '—', edited: inv.edited };
+  return D ? D.complete(partial, 'invoice') : partial;
+}
 
 /* ---- Live chat bridge ---------------------------------------------- */
 let chatApi = null;
@@ -133,14 +144,16 @@ function menuFor(inv) {
   const items = actionListFor(inv).map((a) =>
     `<button type="button" class="inv-rowmenu-item inv-rowmenu-item--${esc(a.variant)}" role="menuitem" data-inv-action="${esc(a.action)}" data-inv-id="${esc(inv.id)}"><span class="material-symbols-outlined">${esc(a.icon)}</span>${esc(a.label)}</button>`
   ).join('');
-  return `<div class="inv-rowmenu"><button type="button" class="inv-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button><div class="inv-rowmenu-pop" role="menu" hidden>${items}</div></div>`;
+  return `<div class="inv-rowmenu"><button type="button" class="inv-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Actions"><span class="material-symbols-outlined">more_vert</span></button><div class="inv-rowmenu-pop" role="menu" hidden>${items}</div></div>`;
 }
 
 function rowHtml(inv) {
   const m = STATUS_META[inv.status];
+  const D = dc();
+  const stacked = D ? D.cellHtml(invDates(inv), 'invoice', dateLead) : `<span class="inv-date">${esc(inv.date)}</span>`;
   return `
     <div class="inv-trow" data-inv-row="${esc(inv.id)}" data-inv-status="${esc(inv.status)}">
-      <span class="inv-td"><span class="inv-meta"><span class="inv-date">${esc(inv.date)}</span><span class="inv-num">#${esc(inv.id)}</span><span class="inv-state inv-state--${esc(inv.status)}"><span class="material-symbols-outlined">${esc(m.icon)}</span>${esc(m.label)}</span></span></span>
+      <span class="inv-td"><span class="inv-meta"><span class="w-datecell">${stacked}</span><span class="inv-num">#${esc(inv.id)}</span><span class="inv-state inv-state--${esc(inv.status)}"><span class="material-symbols-outlined">${esc(m.icon)}</span>${esc(m.label)}</span></span></span>
       <span class="inv-td inv-desc"><span class="inv-amount">${esc(inv.amount)}</span><span class="inv-desc-name">${esc(inv.desc)}</span><span class="inv-desc-sub">${esc(inv.sub)}</span></span>
       <span class="inv-td"><span class="inv-actions">${actionsFor(inv)}</span>${menuFor(inv)}</span>
     </div>`;
@@ -152,7 +165,7 @@ function rowHtml(inv) {
    Date/Invoice/Status column and Amount for the Amount/Description column.
    Actions is not sortable. */
 const SORT_COLS = [
-  { key: 'date',   label: 'Date / Invoice',        sortable: true,  value: (i) => Date.parse(i.date) || 0, type: 'num' },
+  { key: 'date',   label: 'Date / Invoice',        sortable: true,  value: (i) => (dc() ? dc().sortValue(invDates(i), 'invoice', dateLead) : (Date.parse(i.date) || 0)), type: 'num' },
   { key: 'amount', label: 'Amount / Description',  sortable: true,  value: (i) => parseFloat(String(i.amount).replace(/[^0-9.\-]/g, '')) || 0, type: 'num' },
   { key: 'actions', label: 'Actions',              sortable: false },
 ];
@@ -166,7 +179,15 @@ const ARROW_SVG =
   'stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 function theadHtml() {
+  const D = dc();
   return SORT_COLS.map((c) => {
+    if (c.key === 'date') {
+      const inner = D ? D.headerHtml({ kinds: 'invoice', lead: dateLead }) : esc(c.label);
+      const active = c.key === sortKey;
+      const dirAttr = active ? ` data-inv-dir="${sortDir === 1 ? 'asc' : 'desc'}"` : '';
+      const ariaSort = active ? (sortDir === 1 ? 'ascending' : 'descending') : 'none';
+      return `<span class="inv-th inv-th--sortable w-date-th" role="button" tabindex="0" data-inv-sort="${esc(c.key)}" aria-sort="${ariaSort}"${dirAttr}>${inner}<span class="inv-sort-arrow" aria-hidden="true">${ARROW_SVG}</span></span>`;
+    }
     if (!c.sortable) return `<span class="inv-th">${esc(c.label)}</span>`;
     const active = c.key === sortKey;
     const dirAttr = active ? ` data-inv-dir="${sortDir === 1 ? 'asc' : 'desc'}"` : '';
@@ -229,7 +250,7 @@ function statsHtml() {
 function paint() {
   if (!hostEl) return;
   hostEl.innerHTML = `
-    <div class="inv-wrap">
+    <div class="inv-wrap" data-w-date-root>
       <header class="inv-head">
         <h1 class="inv-title">Invoices &amp; Downloads</h1>
         <p class="inv-lede">Flax4Life · Manage your invoices and download marketing resources.</p>
@@ -360,6 +381,16 @@ export function renderInvoices(mainEl) {
   query = '';
   sortKey = null;
   sortDir = 1;
+  hostEl.setAttribute('data-w-date-root', '');
+  if (!dateLeadBound && dc()) {
+    dateLeadBound = true;
+    dc().onLead(hostEl, (lead, root) => {
+      if (!hostEl.querySelector('.inv-wrap')) return;
+      if (root && !hostEl.contains(root)) return;
+      dateLead = lead;
+      paint();
+    });
+  }
   paint();
 
   mainEl.addEventListener('click', (e) => {
@@ -372,7 +403,7 @@ export function renderInvoices(mainEl) {
       return;
     }
     const sortHeader = e.target.closest('[data-inv-sort]');
-    if (sortHeader) {
+    if (sortHeader && !e.target.closest('.w-datemenu, .pf-datemenu')) {
       toggleSort(sortHeader.dataset.invSort);
       return;
     }
@@ -402,7 +433,7 @@ export function renderInvoices(mainEl) {
     if (e.key === 'Escape') { closeMenus(null); return; }
     if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
     const sortHeader = e.target.closest('[data-inv-sort]');
-    if (!sortHeader) return;
+    if (!sortHeader || e.target.closest('.w-datemenu, .pf-datemenu')) return;
     e.preventDefault();
     toggleSort(sortHeader.dataset.invSort);
   });

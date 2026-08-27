@@ -1,5 +1,5 @@
-"""Verify the chat ⋯ Background sliders: master Scale + Scale X/Y/Z over the
-wide 25–400% range, plus the Pitch / Nodes / Length / Thick / Depth shape knobs,
+"""Verify the chat ⋯ Helix sliders: master Scale + Scale X/Y/Z over the
+wide 1–800% range, plus the Pitch / Nodes / Length / Thick / Depth shape knobs,
 on the helix AND the owl orbit. Drives the REAL slider inputs (value + 'input'
 event) so the shared wiring is what runs, waits real wall-clock time for the
 field to settle, and writes PNGs to screenshots/.
@@ -206,8 +206,11 @@ ROWS = """(function(){
 
 
 # The sliders carry a STOP INDEX, not the percentage (see bgAnimPctToStop in
-# js/wiseai-chat.js) — mirror the same stop list so a test can ask for "400%".
-STOPS = list(range(25, 101, 5)) + list(range(110, 201, 10)) + list(range(220, 401, 20))
+# js/wiseai-chat.js) — mirror the same stop list so a test can ask for "800%".
+STOPS = (list(range(1, 101, 1))
+         + list(range(102, 201, 2))
+         + list(range(205, 401, 5))
+         + list(range(410, 801, 10)))
 
 
 def stop_of(pct):

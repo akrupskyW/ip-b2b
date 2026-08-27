@@ -73,6 +73,10 @@
       desc: 'All of the required product data has been provided.' },
     pay: { icon: 'payments', title: 'Payment due',
       desc: 'A payment is required before this product can move forward.' },
+    muted: { icon: 'lock', title: 'Locked',
+      desc: 'This Shield status is locked until the product’s data is complete.' },
+    incomplete: { icon: 'edit_note', title: 'Incomplete',
+      desc: 'Required product details are still missing. Complete them to unlock reports and stats.' },
   };
   var GRAS = {
     ok: { icon: 'verified_user', title: 'GRAS',

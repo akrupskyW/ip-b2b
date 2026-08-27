@@ -592,9 +592,17 @@ function boot() {
          body, so the whole shell (rail, body module, footer and floating nav)
          reflows in step — exactly like the product's module width control. */
       onToggleWidth: (tier) => {
+        if (tier >= 4) {
+          /* Custom: keep the rail at whatever width it already is. */
+          var cur = getComputedStyle(body).getPropertyValue('--mkt-chat-w').trim();
+          if (cur) body.style.setProperty('--mkt-chat-w', cur);
+          body.classList.remove('mkt-chat-wide', 'mkt-chat-triple', 'mkt-chat-fill');
+          return;
+        }
+        body.style.removeProperty('--mkt-chat-w');
         body.classList.toggle('mkt-chat-wide', tier >= 1);
         body.classList.toggle('mkt-chat-triple', tier >= 2);
-        body.classList.toggle('mkt-chat-fill', tier >= 3);
+        body.classList.toggle('mkt-chat-fill', tier === 3);
       },
       /* Every chat-driven intent (a chip, a scorecard, an inline suggestion, or
          a mirrored body CTA) reflects back onto the page: scroll the matching

@@ -20,29 +20,152 @@ import {
 import { initLirTooltip } from './lir-tooltip.js';
 import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, restoreFullBleed, applyColorblind, isColorblindOn, pageAppearanceDefault } from './topbar.js';
 import { isJamStripOn, applyJamStrip } from './jam-strip.js';
-import { mountWISEcodeAIDock, setWISEcodeAIDockPosition, wiseaiDockMode, writeWISEcodeAIDockState, isWISEcodeAIClosed, restartWISEcodeAIChat, setWISEcodeAICollapsed } from './wiseai-dock.js';
 import { buildAppearanceBody, wireAppearancePopover, buildUserMenuBody, performSignOut } from './appearance-menu.js';
 import { mountNotificationsPanel } from './notifications-panel.js';
 import { setTextSize, applyStoredTextSize } from './text-size.js';
-import { renderDashboardHome, editBrandBanner, setDashChat, openDashReport, dashReportChatReply, isBrandCompareActive, isStarsViewActive, toggleBrandCompare, toggleStarsView } from './dashboard-home.js';
-import { renderVerificationFlow, VERIFICATION_WISEAI } from './verification-flow.js';
-import { renderGrasVerificationFlow, GRAS_WISEAI, setGrasChat } from './gras-verification-flow.js';
-import { renderMarketingAssets } from './marketing-assets-flow.js';
-import { renderProfile, PROFILE_WISEAI, setProfileChat } from './profile-flow.js';
-import { renderPreferences, PREFERENCES_WISEAI } from './preferences-flow.js';
-import { renderApiKeys, API_KEYS_WISEAI } from './api-keys-flow.js';
-import { renderInvoices, INVOICES_WISEAI, setInvoicesChat } from './invoices-flow.js';
-import { renderHelp, HELP_WISEAI } from './help-flow.js';
-import { renderDocs, DOCS_WISEAI } from './docs-flow.js';
-import { renderAgents, AGENTS_WISEAI } from './agents-flow.js';
-import { renderAlerts, ALERTS_WISEAI } from './alerts-flow.js';
-import { renderOrganizations, ORGANIZATIONS_WISEAI, setOrganizationsChat } from './organizations-flow.js';
-import { renderQuickInvite, QUICK_INVITE_WISEAI, setQuickInviteChat } from './quick-invite-flow.js';
-import { renderUserManagement, USER_MANAGEMENT_WISEAI, setUserManagementChat } from './user-management-flow.js';
-import { renderNonUpfDashboard, NON_UPF_WISEAI, setNonUpfChat } from './non-upf-dashboard-flow.js';
-import { renderAuditQueue, AUDIT_QUEUE_WISEAI, setAuditQueueChat } from './audit-queue-flow.js';
-import { renderAdminUtils, ADMIN_UTILS_WISEAI, setAdminUtilsChat } from './admin-utils-flow.js';
-import { renderAllModules, ALL_MODULES_WISEAI } from './all-modules-flow.js';
+
+/* Page flows load on demand from the host's `data-nav-id` (or the dashboard
+   product id). A static import of every *-flow.js here used to parse invoices,
+   verification, All Modules, … on every agent page — All Modules in particular
+   could not paint until that whole graph arrived.
+
+   The WISEcodeAI dock is the same: a static import of wiseai-dock.js pulled
+   the entire chat stack (history, ask catalog, helix, orbit) before any
+   page flow could render. Load it when the dock actually mounts. */
+let dashApi = null;
+let navFlowMod = null;
+let dockApi = null;
+
+async function ensureDockApi() {
+  if (dockApi) return dockApi;
+  dockApi = await import('./wiseai-dock.js');
+  return dockApi;
+}
+
+const APP_NAV_FLOWS = {
+  verification: {
+    title: 'WISE · Non-UPF Verification',
+    load: () => import('./verification-flow.js'),
+    render: (m) => m.renderVerificationFlow,
+    wiseai: (m) => m.VERIFICATION_WISEAI,
+  },
+  'gras-verification': {
+    title: 'WISE · GRAS Verification',
+    load: () => import('./gras-verification-flow.js'),
+    render: (m) => m.renderGrasVerificationFlow,
+    wiseai: (m) => m.GRAS_WISEAI,
+    setChat: (m) => m.setGrasChat,
+  },
+  'marketing-assets': {
+    title: 'WISE · Marketing Assets',
+    load: () => import('./marketing-assets-flow.js'),
+    render: (m) => m.renderMarketingAssets,
+  },
+  profile: {
+    title: 'WISE · My Profile',
+    load: () => import('./profile-flow.js'),
+    render: (m) => m.renderProfile,
+    wiseai: (m) => m.PROFILE_WISEAI,
+    setChat: (m) => m.setProfileChat,
+  },
+  preferences: {
+    title: 'WISE · Preferences',
+    load: () => import('./preferences-flow.js'),
+    render: (m) => m.renderPreferences,
+    wiseai: (m) => m.PREFERENCES_WISEAI,
+  },
+  'api-keys': {
+    title: 'WISE · API Keys',
+    load: () => import('./api-keys-flow.js'),
+    render: (m) => m.renderApiKeys,
+    wiseai: (m) => m.API_KEYS_WISEAI,
+  },
+  invoices: {
+    title: 'WISE · Invoices & Downloads',
+    load: () => import('./invoices-flow.js'),
+    render: (m) => m.renderInvoices,
+    wiseai: (m) => m.INVOICES_WISEAI,
+    setChat: (m) => m.setInvoicesChat,
+  },
+  help: {
+    title: 'WISE · Help',
+    load: () => import('./help-flow.js'),
+    render: (m) => m.renderHelp,
+    wiseai: (m) => m.HELP_WISEAI,
+  },
+  docs: {
+    title: 'WISE · Docs',
+    load: () => import('./docs-flow.js'),
+    render: (m) => m.renderDocs,
+    wiseai: (m) => m.DOCS_WISEAI,
+  },
+  agents: {
+    title: 'WISE · Agents',
+    load: () => import('./agents-flow.js'),
+    render: (m) => m.renderAgents,
+    wiseai: (m) => m.AGENTS_WISEAI,
+  },
+  alerts: {
+    title: 'WISE · Alerts',
+    load: () => import('./alerts-flow.js'),
+    render: (m) => m.renderAlerts,
+    wiseai: (m) => m.ALERTS_WISEAI,
+  },
+  organizations: {
+    title: 'WISE · Organizations',
+    load: () => import('./organizations-flow.js'),
+    render: (m) => m.renderOrganizations,
+    wiseai: (m) => m.ORGANIZATIONS_WISEAI,
+    setChat: (m) => m.setOrganizationsChat,
+  },
+  'quick-invite': {
+    title: 'WISE · Quick Invite',
+    load: () => import('./quick-invite-flow.js'),
+    render: (m) => m.renderQuickInvite,
+    wiseai: (m) => m.QUICK_INVITE_WISEAI,
+    setChat: (m) => m.setQuickInviteChat,
+  },
+  'user-management': {
+    title: 'WISE · User Management',
+    load: () => import('./user-management-flow.js'),
+    render: (m) => m.renderUserManagement,
+    wiseai: (m) => m.USER_MANAGEMENT_WISEAI,
+    setChat: (m) => m.setUserManagementChat,
+  },
+  'non-upf-dashboard': {
+    title: 'WISE · Non-UPF Dashboard',
+    load: () => import('./non-upf-dashboard-flow.js'),
+    render: (m) => m.renderNonUpfDashboard,
+    wiseai: (m) => m.NON_UPF_WISEAI,
+    setChat: (m) => m.setNonUpfChat,
+  },
+  'audit-queue': {
+    title: 'WISE · Audit Queue',
+    load: () => import('./audit-queue-flow.js'),
+    render: (m) => m.renderAuditQueue,
+    wiseai: (m) => m.AUDIT_QUEUE_WISEAI,
+    setChat: (m) => m.setAuditQueueChat,
+  },
+  'admin-utils': {
+    title: 'WISE · Admin Utilities',
+    load: () => import('./admin-utils-flow.js'),
+    render: (m) => m.renderAdminUtils,
+    wiseai: (m) => m.ADMIN_UTILS_WISEAI,
+    setChat: (m) => m.setAdminUtilsChat,
+  },
+  'all-modules': {
+    title: 'WISE · All Modules',
+    load: () => import('./all-modules-flow.js'),
+    render: (m) => m.renderAllModules,
+    wiseai: (m) => m.ALL_MODULES_WISEAI,
+  },
+};
+
+async function ensureDashApi() {
+  if (dashApi) return dashApi;
+  dashApi = await import('./dashboard-home.js');
+  return dashApi;
+}
 
 /* App-wide, self-initialising table helpers: consistent sortable headers
    (up/down chevron) + a matching "load more" pagination footer on every data
@@ -50,6 +173,7 @@ import { renderAllModules, ALL_MODULES_WISEAI } from './all-modules-flow.js';
 import './sortable-tables.js';
 import './table-pagination.js';
 import './responsive-tables.js';
+import './date-column.js';
 
 function escHtml(s) {
   return String(s)
@@ -391,12 +515,7 @@ function bootstrapBlankPage(productId) {
       : '';
   }
   const mainEl = document.getElementById('agent-main-scroll');
-  if (mainEl) {
-    mainEl.innerHTML = '';
-    /* The top-level Dashboard renders the Brand Intelligence overview; other
-       blank product shells stay empty. */
-    if (isDashboard) renderDashboardHome(mainEl);
-  }
+  if (mainEl) mainEl.innerHTML = '';
 
   const navEl = document.getElementById('agent-menu-nav');
   if (navEl) {
@@ -415,7 +534,23 @@ function bootstrapBlankPage(productId) {
   /* Give the dashboard's main panel the same header cluster (⋯ menu + width
      toggle) every other pane has, so the functions survive header-float. */
   if (isDashboard) setupMainPanelControls();
-  setupWISEcodeAIDock();
+
+  const finish = () => {
+    setupWISEcodeAIDock().catch((err) => console.error('[agent-overview] chat dock failed', err));
+  };
+  if (isDashboard && mainEl) {
+    ensureDashApi().then((m) => {
+      m.renderDashboardHome(mainEl);
+      const morePop = document.getElementById('topbar-more-popover');
+      if (morePop) morePop.innerHTML = renderMorePopover();
+      finish();
+    }).catch((err) => {
+      console.error('[agent-overview] failed to load dashboard home', err);
+      finish();
+    });
+  } else {
+    finish();
+  }
 }
 
 /* ====================================================================
@@ -473,89 +608,10 @@ function bootstrapAppNavPage(navId) {
   }
 
   /* Blank content slot — each page fills #agent-main-scroll with its own
-     module content. The shell (nav + appearance + profile) is fully wired. */
+     module content. The shell (nav + appearance + profile) is fully wired
+     first so All Modules can keep showing its boot headline while its flow
+     module is still arriving. */
   const mainEl = document.getElementById('agent-main-scroll');
-  if (navId === 'verification') {
-    /* Non-UPF Verification flow (the first of several verification types).
-       Renders the Select → Attest → Payment wizard beside the WISEcodeAI dock. */
-    document.title = 'WISE · Non-UPF Verification';
-    if (mainEl) renderVerificationFlow(mainEl);
-  } else if (navId === 'gras-verification') {
-    /* GRAS Verification flow (the ingredient-level verification type).
-       Renders the 5-step documentation wizard beside the WISEcodeAI dock. */
-    document.title = 'WISE · GRAS Verification';
-    if (mainEl) renderGrasVerificationFlow(mainEl);
-  } else if (navId === 'marketing-assets') {
-    /* Marketing Assets — a nested-table browser of the co-branding toolkit
-       (one-sheets, packaging, social, email/SMS, and the Non-UPF shield). */
-    document.title = 'WISE · Marketing Assets';
-    if (mainEl) renderMarketingAssets(mainEl);
-  } else if (navId === 'profile') {
-    /* My Profile — editable identity card + Activity/Security tabs. */
-    document.title = 'WISE · My Profile';
-    if (mainEl) renderProfile(mainEl);
-  } else if (navId === 'preferences') {
-    /* Preferences — appearance, notifications, workspace, accessibility. */
-    document.title = 'WISE · Preferences';
-    if (mainEl) renderPreferences(mainEl);
-  } else if (navId === 'api-keys') {
-    /* API keys — create / reveal / revoke keys, usage, and docs. */
-    document.title = 'WISE · API Keys';
-    if (mainEl) renderApiKeys(mainEl);
-  } else if (navId === 'invoices') {
-    /* Invoices & Downloads — filterable billing board + downloads. */
-    document.title = 'WISE · Invoices & Downloads';
-    if (mainEl) renderInvoices(mainEl);
-  } else if (navId === 'help') {
-    /* Help — search, browse-by-topic, FAQs, and contact support. */
-    document.title = 'WISE · Help';
-    if (mainEl) renderHelp(mainEl);
-  } else if (navId === 'docs') {
-    /* Docs — a sidebar + reading-pane documentation browser. */
-    document.title = 'WISE · Docs';
-    if (mainEl) renderDocs(mainEl);
-  } else if (navId === 'agents') {
-    /* Agents — account-level manager for every WISE agent. */
-    document.title = 'WISE · Agents';
-    if (mainEl) renderAgents(mainEl);
-  } else if (navId === 'alerts') {
-    /* Alerts — a full-page, filterable inbox of agent notifications. */
-    document.title = 'WISE · Alerts';
-    if (mainEl) renderAlerts(mainEl);
-  } else if (navId === 'organizations') {
-    /* WISEcode Admin · Organizations — customer org directory + counts. */
-    document.title = 'WISE · Organizations';
-    if (mainEl) renderOrganizations(mainEl);
-  } else if (navId === 'quick-invite') {
-    /* WISEcode Admin · Quick Invite — one-step org invite + history. */
-    document.title = 'WISE · Quick Invite';
-    if (mainEl) renderQuickInvite(mainEl);
-  } else if (navId === 'user-management') {
-    /* WISEcode Admin · User & Role Management. */
-    document.title = 'WISE · User Management';
-    if (mainEl) renderUserManagement(mainEl);
-  } else if (navId === 'non-upf-dashboard') {
-    /* WISEcode Admin · Non-UPF Verification Dashboard (analytics charts). */
-    document.title = 'WISE · Non-UPF Dashboard';
-    if (mainEl) renderNonUpfDashboard(mainEl);
-  } else if (navId === 'audit-queue') {
-    /* WISEcode Admin · Ingredient Audit Review queue. */
-    document.title = 'WISE · Audit Queue';
-    if (mainEl) renderAuditQueue(mainEl);
-  } else if (navId === 'admin-utils') {
-    /* WISEcode Admin · Admin Utilities (maintenance + seeding tools). */
-    document.title = 'WISE · Admin Utilities';
-    if (mainEl) renderAdminUtils(mainEl);
-  } else if (navId === 'all-modules') {
-    /* Admin · All Modules — the app-wide module directory + Icon Inventory. */
-    document.title = 'WISE · All Modules';
-    if (mainEl) renderAllModules(mainEl);
-  } else if (mainEl && !mainEl.innerHTML.trim()) {
-    mainEl.innerHTML = `
-      <div class="agent-empty" data-module-placeholder>
-        ${escHtml(node ? node.label : 'Module')} — content coming soon.
-      </div>`;
-  }
 
   const navEl = document.getElementById('agent-menu-nav');
   if (navEl) {
@@ -573,7 +629,35 @@ function bootstrapAppNavPage(navId) {
   applyBodyAppearanceDefaults();
   setupTrailingRail();
   setupMainPanelControls();
-  setupWISEcodeAIDock();
+  fillAppNavMain(navId, mainEl, node);
+}
+
+async function fillAppNavMain(navId, mainEl, node) {
+  const spec = APP_NAV_FLOWS[navId];
+  if (navId === 'reports') {
+    try { await ensureDashApi(); } catch (err) {
+      console.error('[agent-overview] failed to load dashboard home', err);
+    }
+  }
+  if (spec) {
+    try { navFlowMod = await spec.load(); }
+    catch (err) {
+      console.error('[agent-overview] failed to load flow for', navId, err);
+      navFlowMod = null;
+    }
+    if (spec.title) document.title = spec.title;
+    if (mainEl && spec.render && navFlowMod) {
+      try { spec.render(navFlowMod)(mainEl); }
+      catch (err) { console.error('[agent-overview] failed to render', navId, err); }
+    }
+  } else if (mainEl && !mainEl.innerHTML.trim()) {
+    mainEl.innerHTML = `
+      <div class="agent-empty" data-module-placeholder>
+        ${escHtml(node ? node.label : 'Module')} — content coming soon.
+      </div>`;
+  }
+  try { await setupWISEcodeAIDock(); }
+  catch (err) { console.error('[agent-overview] chat dock failed', err); }
 }
 
 export function bootstrapAgentPage() {
@@ -637,7 +721,7 @@ export function bootstrapAgentPage() {
   setupTrailingRail();
   /* Same header cluster (⋯ menu + width toggle) as every other pane. */
   setupMainPanelControls();
-  setupWISEcodeAIDock();
+  setupWISEcodeAIDock().catch((err) => console.error('[agent-overview] chat dock failed', err));
 
   if (location.hash) {
     requestAnimationFrame(() => {
@@ -904,12 +988,20 @@ function injectWISEcodeAIHistoryMenuItem(dock) {
   morePop.insertBefore(btn, div);
 }
 
-function setupWISEcodeAIDock() {
+async function setupWISEcodeAIDock() {
   /* Pages can opt out of the persistent WISEcodeAI dock with
      `<body data-hide-wiseai>` (e.g. analytics-types.html). */
   if (document.body.dataset.hideWISEcodeAI) return;
   const row = document.getElementById('modules-row');
   if (!row || document.getElementById('wiseai-dock-panel')) return;
+
+  let dockMod;
+  try { dockMod = await ensureDockApi(); }
+  catch (err) {
+    console.error('[agent-overview] failed to load WISEcodeAI dock', err);
+    return;
+  }
+
   const dock = document.createElement('aside');
   dock.id = 'wiseai-dock-panel';
   dock.className = 'wiseai-dock wiseai-dock-open';
@@ -924,28 +1016,13 @@ function setupWISEcodeAIDock() {
   const isGras = document.body.dataset.navId === 'gras-verification';
   const isMarketing = document.body.dataset.navId === 'marketing-assets';
 
-  /* Account-level modules (opened from the profile menu) — each pairs its own
-     surface with the WISEcodeAI dock and its own intent chips. Keyed by navId so a
-     single map wires the render, the dock config, and the force-open behavior. */
-  const ACCOUNT_WISEAI = {
-    profile: PROFILE_WISEAI,
-    preferences: PREFERENCES_WISEAI,
-    'api-keys': API_KEYS_WISEAI,
-    invoices: INVOICES_WISEAI,
-    help: HELP_WISEAI,
-    docs: DOCS_WISEAI,
-    agents: AGENTS_WISEAI,
-    alerts: ALERTS_WISEAI,
-    /* WISEcode Admin surfaces — each pairs its board with the WISEcodeAI dock. */
-    organizations: ORGANIZATIONS_WISEAI,
-    'quick-invite': QUICK_INVITE_WISEAI,
-    'user-management': USER_MANAGEMENT_WISEAI,
-    'non-upf-dashboard': NON_UPF_WISEAI,
-    'audit-queue': AUDIT_QUEUE_WISEAI,
-    'admin-utils': ADMIN_UTILS_WISEAI,
-    'all-modules': ALL_MODULES_WISEAI,
-  };
-  const accountWiseai = ACCOUNT_WISEAI[document.body.dataset.navId];
+  /* Account-level modules (and All Modules / verification / GRAS) ship a
+     complete WISEcodeAI config on the flow we just loaded. */
+  const navId = document.body.dataset.navId;
+  const flowSpec = APP_NAV_FLOWS[navId];
+  const flowWiseai = (flowSpec && flowSpec.wiseai && navFlowMod)
+    ? flowSpec.wiseai(navFlowMod)
+    : null;
 
   /* The Verification and Reports pages are a chat + surface pairing, so WISEcodeAI
      should be showing when you first NAVIGATE here — we clear any "collapsed"
@@ -953,8 +1030,8 @@ function setupWISEcodeAIDock() {
      ON this page, that must stick: a reload (incl. livereload during editing) or
      a back/forward must NOT re-open it, otherwise "Close conversation" looks like
      it just restarts the chat. So only force-open on a genuine navigation. */
-  if ((isVerification || isGras || isReports || isLibrary || isIngredients || isMarketing || accountWiseai) && arrivedByNavigation()) {
-    writeWISEcodeAIDockState({ collapsed: false });
+  if ((isVerification || isGras || isReports || isLibrary || isIngredients || isMarketing || flowWiseai) && arrivedByNavigation()) {
+    dockMod.writeWISEcodeAIDockState({ collapsed: false });
   }
 
   /* Pages can pin the WISEcodeAI dock to a fixed default via `<body data-default-dock>`
@@ -968,18 +1045,14 @@ function setupWISEcodeAIDock() {
   const dockDefault = document.body.dataset.defaultDock;
   const DEFAULT_DOCK_RIGHT = { left: 2, center: 1, right: 0, center0: 0, right1: 1, right2: 2 };
   if (dockDefault in DEFAULT_DOCK_RIGHT) {
-    writeWISEcodeAIDockState({ right: DEFAULT_DOCK_RIGHT[dockDefault] });
+    dockMod.writeWISEcodeAIDockState({ right: DEFAULT_DOCK_RIGHT[dockDefault] });
   }
 
   let cfg;
-  if (accountWiseai) {
-    /* Account modules ship a complete WISEcodeAI config (sub + intents + replies +
-       onIntent that drives the module's own surface), so use it as-is. */
-    cfg = { ...accountWiseai };
-  } else if (isVerification) {
-    cfg = { ...VERIFICATION_WISEAI };
-  } else if (isGras) {
-    cfg = { ...GRAS_WISEAI };
+  if (flowWiseai) {
+    /* Account modules (and All Modules / verification / GRAS) ship a complete
+       WISEcodeAI config (sub + intents + replies + onIntent), so use it as-is. */
+    cfg = { ...flowWiseai };
   } else if (isMarketing) {
     cfg = {
       sub: 'Find and pull any co-branding asset — one tap.',
@@ -1032,9 +1105,9 @@ function setupWISEcodeAIDock() {
          uses, while the report itself opens on the surface to the right. */
       intentReplies: {
         ...REPORTS_WISEAI_REPLIES,
-        open_upf_report:      () => dashReportChatReply('upf'),
-        open_gras_report:     () => dashReportChatReply('gras'),
-        open_insights_report: () => dashReportChatReply('insights'),
+        open_upf_report:      () => dashApi ? dashApi.dashReportChatReply('upf') : '',
+        open_gras_report:     () => dashApi ? dashApi.dashReportChatReply('gras') : '',
+        open_insights_report: () => dashApi ? dashApi.dashReportChatReply('insights') : '',
       },
       /* Report chips open the report INLINE on the Reports module surface
          (right of the chat) — openDashReport stashes the library markup and
@@ -1042,8 +1115,8 @@ function setupWISEcodeAIDock() {
          "you" line + the narration above. */
       onIntent: (intent) => {
         const reportCard = DASHBOARD_WISEAI_REPORTS[intent];
-        if (reportCard) {
-          openDashReport(reportCard, {
+        if (reportCard && dashApi) {
+          dashApi.openDashReport(reportCard, {
             mirror: false,
             host: document.getElementById('agent-main-scroll'),
             backLabel: 'Back to reports',
@@ -1116,9 +1189,9 @@ function setupWISEcodeAIDock() {
          describe the on-page control they're about to fire. */
       intentReplies: {
         ...DASHBOARD_WISEAI_REPLIES,
-        open_upf_report:      () => dashReportChatReply('upf'),
-        open_gras_report:     () => dashReportChatReply('gras'),
-        open_insights_report: () => dashReportChatReply('insights'),
+        open_upf_report:      () => dashApi ? dashApi.dashReportChatReply('upf') : '',
+        open_gras_report:     () => dashApi ? dashApi.dashReportChatReply('gras') : '',
+        open_insights_report: () => dashApi ? dashApi.dashReportChatReply('insights') : '',
       },
       /* onIntent runs the moment the chip is tapped; onReply runs once the
          narration has landed in the thread. Report chips open INLINE on the
@@ -1130,7 +1203,7 @@ function setupWISEcodeAIDock() {
          onReply — so the transcript is always written before the chip acts. */
       onIntent: (intent) => {
         const reportCard = DASHBOARD_WISEAI_REPORTS[intent];
-        if (reportCard) { openDashReport(reportCard, { mirror: false }); return false; }
+        if (reportCard && dashApi) { dashApi.openDashReport(reportCard, { mirror: false }); return false; }
         return false;
       },
       /* Fires exactly when a chip's narration is added to the thread. For the
@@ -1165,42 +1238,15 @@ function setupWISEcodeAIDock() {
      every dock carries the same components + three-dot actions as wiseai.html
      (tokens/cost activity read-out, Turns module, Admin toggles) while keeping
      its page-specific content (sub, intents, scorecards, onIntent …). */
-  const wiseai = mountWISEcodeAIDock(dock, { ...WISEAI_DOCK_PARITY, ...cfg });
-
-  /* History & Projects is toggled from the chat's own three-dot menu — the
-     shared module wires the action but leaves the menu row for the host. */
-  injectWISEcodeAIHistoryMenuItem(dock);
-
-  /* Hand the live chat to the GRAS flow so UI interactions mirror into the
-     conversation (and vice-versa) for one shared, mirrored surface. */
-  if (isGras) setGrasChat(wiseai);
-
-  /* Same for the Dashboard: opening a report on the surface (or via a chip)
-     mirrors into the conversation instead of popping a modal. */
-  if (isDashboard) setDashChat(wiseai);
-
-  /* Organization Profile: hand it the live chat so on-form edits (field
-     changes, logo/banner uploads, Save) narrate back into the conversation,
-     matching the chip-driven flow in the other direction. */
-  if (document.body.dataset.navId === 'profile') setProfileChat(wiseai);
-
-  /* Invoices & Downloads: hand it the live chat so row actions (Pay, Retry,
-     Download, Cancel …) narrate back into the conversation. */
-  if (document.body.dataset.navId === 'invoices') setInvoicesChat(wiseai);
-
-  /* WISEcode Admin surfaces: hand each its live chat so on-board actions
-     (invites, resolves, verifications …) narrate back into the conversation,
-     matching the chip-driven flow in the other direction. */
-  const ADMIN_CHAT_SETTERS = {
-    organizations: setOrganizationsChat,
-    'quick-invite': setQuickInviteChat,
-    'user-management': setUserManagementChat,
-    'non-upf-dashboard': setNonUpfChat,
-    'audit-queue': setAuditQueueChat,
-    'admin-utils': setAdminUtilsChat,
-  };
-  const adminSetter = ADMIN_CHAT_SETTERS[document.body.dataset.navId];
-  if (adminSetter) adminSetter(wiseai);
+  let wiseai = null;
+  try {
+    wiseai = dockMod.mountWISEcodeAIDock(dock, { ...WISEAI_DOCK_PARITY, ...cfg });
+    injectWISEcodeAIHistoryMenuItem(dock);
+    if (flowSpec && flowSpec.setChat && navFlowMod) flowSpec.setChat(navFlowMod)(wiseai);
+    if (isDashboard && dashApi) dashApi.setDashChat(wiseai);
+  } catch (err) {
+    console.error('[agent-overview] failed to mount WISEcodeAI dock', err);
+  }
 }
 
 /* ====================================================================
@@ -1312,13 +1358,13 @@ function renderMorePopover() {
      the invite action. Highlighted pink and flagged with a teensy ADMIN badge. */
   const adminItems = isDashboard
     ? `
-    <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle" role="switch" aria-checked="${isBrandCompareActive()}" data-action="toggle-brand">
+    <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle" role="switch" aria-checked="${dashApi ? dashApi.isBrandCompareActive() : false}" data-action="toggle-brand">
       <span class="material-symbols-outlined topbar-menu-icon">insights</span>
       <span>Bad Scores / High Numbers</span>
       <span class="topbar-menu-badge">ADMIN</span>
       <span class="topbar-menu-switch" aria-hidden="true"><span class="topbar-menu-switch-thumb"></span></span>
     </button>
-    <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle" role="switch" aria-checked="${isStarsViewActive()}" data-action="toggle-stars">
+    <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle" role="switch" aria-checked="${dashApi ? dashApi.isStarsViewActive() : false}" data-action="toggle-stars">
       <span class="material-symbols-outlined topbar-menu-icon">star</span>
       <span>Guiding Stars</span>
       <span class="topbar-menu-badge">ADMIN</span>
@@ -1371,17 +1417,17 @@ function ensureMorePopover(moreBtn) {
 function runMoreAction(action) {
   switch (action) {
     case 'update-banner':
-      editBrandBanner();
+      if (dashApi) dashApi.editBrandBanner();
       break;
     case 'invite-member':
       window.location.href = 'quick-invite.html';
       break;
     case 'toggle-brand':
-      toggleBrandCompare();
+      if (dashApi) dashApi.toggleBrandCompare();
       syncDashToggleItems();
       break;
     case 'toggle-stars':
-      toggleStarsView();
+      if (dashApi) dashApi.toggleStarsView();
       syncDashToggleItems();
       break;
     case 'export':
@@ -1397,8 +1443,9 @@ function runMoreAction(action) {
    toggle menu item (the popover persists across dashboard re-renders, so the
    switch state must be pushed in after a toggle). */
 function syncDashToggleItems() {
-  const brand = String(isBrandCompareActive());
-  const stars = String(isStarsViewActive());
+  if (!dashApi) return;
+  const brand = String(dashApi.isBrandCompareActive());
+  const stars = String(dashApi.isStarsViewActive());
   document.querySelectorAll('[data-action="toggle-brand"]').forEach((el) => el.setAttribute('aria-checked', brand));
   document.querySelectorAll('[data-action="toggle-stars"]').forEach((el) => el.setAttribute('aria-checked', stars));
 }
@@ -1413,28 +1460,43 @@ function syncDashToggleItems() {
      so the main panel reads + behaves like every other pane.
 ==================================================================== */
 
-const MAIN_WIDTH_KEY = 'wise-main-width';
-/* The canonical four-tier width control shared by every module in the app:
-   single → double → triple → fill (take the whole row). `#agent-main` shares
+/* The canonical five-tier width control shared by every module in the app:
+   single → double → triple → fill → custom. `#agent-main` shares
    the row with the fixed WISEcodeAI dock, so it DEFAULTS to fill (tier 3) — the
    full-width surface every admin/overview page opens with — and the control
-   steps it down through triple / double / single reading widths before wrapping
-   back to fill. Tier → class: 0 narrow · 1 wide · 2 triple · 3 fill (no class). */
-const MAIN_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
+   steps it down through triple / double / single reading widths, then custom,
+   before wrapping back to fill. Tier → class: 0 narrow · 1 wide · 2 triple ·
+   3 fill (no class) · 4 custom (pinned current width). */
+const MAIN_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
 const MAIN_WIDTH_TITLES = [
   'Width (single) — tap to widen',
   'Width (double) — tap to widen',
   'Width (triple) — tap to widen',
-  'Width (fill) — tap to reset',
+  'Width (fill) — tap to widen',
+  'Width (custom) — drag to any size',
 ];
 
+/* FILL is the load default for the main module, on every page, every load.
+
+   This used to restore the last toggle from localStorage ('wise-main-width' /
+   'wise-all-modules-width'). One stray narrowing therefore pinned #agent-main
+   to a capped max-width on every subsequent load, leaving dead space between
+   it and the right edge — while the chat beside it re-applied its own default
+   each load. The two halves of the row disagreed about whether width is a
+   session choice or a load default.
+
+   It is a load default. The module to the RIGHT of the chat opens filling
+   whatever the chat leaves, which is the same rule js/default-fill.js states
+   for every other right-of-chat module; #agent-main is simply the one that
+   owns its own control instead of being driven by that script. In-session
+   cycling is unchanged — the next navigation puts it back to fill. */
+const MAIN_WIDTH_DEFAULT = 3;   // fill — see WPaneWidth tiers in js/pane-width.js
+let mainWidthTier = MAIN_WIDTH_DEFAULT;
+
 function readMainWidth() {
-  try {
-    const n = parseInt(localStorage.getItem(MAIN_WIDTH_KEY), 10);
-    return Number.isFinite(n) ? Math.max(0, Math.min(3, n)) : 3;
-  } catch {
-    return 3;
-  }
+  return window.WPaneWidth
+    ? window.WPaneWidth.clamp(mainWidthTier)
+    : Math.max(0, Math.min(4, mainWidthTier));
 }
 
 /* Reflect the width tier onto the module container itself (drives the WHOLE
@@ -1446,26 +1508,38 @@ function applyMainWidth(tier) {
      slot/card — so the entire module resizes; the inner content fills whatever
      width the module ends up at. The toggle "is on" whenever the width is capped
      (tiers 0–2); fill is the neutral/reset state. */
+  mainWidthTier = window.WPaneWidth ? window.WPaneWidth.clamp(tier) : Math.max(0, Math.min(4, tier | 0));
   const main = document.getElementById('agent-main');
   if (main) {
     main.classList.toggle('main-w-narrow', tier === 0);
     main.classList.toggle('main-w-wide', tier === 1);
     main.classList.toggle('main-w-triple', tier === 2);
+    const W = window.WPaneWidth;
+    if (W) W.applyClasses(main, tier, 'panel');
+    else {
+      main.classList.toggle('panel-wide', tier >= 1 && tier < 4);
+      main.classList.toggle('panel-triple', tier >= 2 && tier < 4);
+      main.classList.toggle('panel-fill', tier === 3);
+      main.classList.toggle('panel-custom', tier === 4);
+    }
   }
   const btn = document.getElementById('agent-main-width-btn');
   if (btn) {
-    btn.classList.toggle('is-on', tier <= 2);
-    btn.setAttribute('aria-pressed', tier <= 2 ? 'true' : 'false');
-    btn.title = MAIN_WIDTH_TITLES[tier];
-    const icon = btn.querySelector('.material-symbols-outlined');
-    if (icon) icon.textContent = MAIN_WIDTH_ICONS[tier];
+    const W = window.WPaneWidth;
+    if (W && W.syncButton) W.syncButton(btn, tier);
+    else {
+      btn.classList.toggle('is-on', tier >= 1);
+      btn.setAttribute('aria-pressed', tier >= 1 ? 'true' : 'false');
+      btn.title = MAIN_WIDTH_TITLES[tier] || MAIN_WIDTH_TITLES[3];
+      const icon = btn.querySelector('.material-symbols-outlined');
+      if (icon) icon.textContent = MAIN_WIDTH_ICONS[tier];
+    }
   }
 }
 
 function cycleMainWidth() {
-  const next = (readMainWidth() + 1) % 4;
-  try { localStorage.setItem(MAIN_WIDTH_KEY, String(next)); } catch {}
-  applyMainWidth(next);
+  const next = window.WPaneWidth ? window.WPaneWidth.next(readMainWidth()) : (readMainWidth() + 1) % 5;
+  applyMainWidth(next);   // in-session only — never persisted (see MAIN_WIDTH_DEFAULT)
 }
 
 /* Markup for the main-panel control cluster — same classes (so the same
@@ -1488,7 +1562,16 @@ function setupMainPanelControls() {
   if (!headerEl || headerEl.querySelector('.panel-controls')) return;
   headerEl.insertAdjacentHTML('beforeend', mainPanelControlsHTML());
 
-  applyMainWidth(readMainWidth());
+  const tier = readMainWidth();
+  applyMainWidth(tier);
+  /* pane-width.js is injected async from agent-menu — re-apply once it lands. */
+  if (!window.WPaneWidth) {
+    const retry = () => {
+      if (window.WPaneWidth) applyMainWidth(readMainWidth());
+      else requestAnimationFrame(retry);
+    };
+    requestAnimationFrame(retry);
+  }
 
   const widthBtn = headerEl.querySelector('#agent-main-width-btn');
   if (widthBtn) widthBtn.addEventListener('click', (e) => { e.stopPropagation(); cycleMainWidth(); });
@@ -1717,9 +1800,9 @@ function renderAppearanceBody(pop) {
     showPivot: true,
     isPivoted: isMenuPivoted(),
     isDark: isDarkMode(),
-    wiseaiDockMode: wiseaiDockMode(),
+    wiseaiDockMode: dockApi ? dockApi.wiseaiDockMode() : 'center',
     showWISEcodeAIChat: hasWISEcodeAIDock,
-    wiseaiChatOn: !isWISEcodeAIClosed(),
+    wiseaiChatOn: dockApi ? !dockApi.isWISEcodeAIClosed() : true,
   });
 }
 
@@ -1744,10 +1827,15 @@ function openAppearancePopover(anchor) {
     onClose: closeAppearancePopover,
     togglePivot: () => toggleMenuPivot(),
     toggleTheme: () => setDarkMode(!isDarkMode()),
-    setDock: (m) => setWISEcodeAIDockPosition(m),
+    setDock: (m) => { ensureDockApi().then((d) => d.setWISEcodeAIDockPosition(m)); },
     /* Off → fresh-restart the chat back into its welcome state; on → close it
        (folds to the floating owl, same as "Close conversation"). */
-    toggleWiseaiChat: () => { if (isWISEcodeAIClosed()) restartWISEcodeAIChat(); else setWISEcodeAICollapsed(true); },
+    toggleWiseaiChat: () => {
+      ensureDockApi().then((d) => {
+        if (d.isWISEcodeAIClosed()) d.restartWISEcodeAIChat();
+        else d.setWISEcodeAICollapsed(true);
+      });
+    },
   });
 }
 

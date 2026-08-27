@@ -129,8 +129,8 @@
 
     var query = '';
     var concealTimer = null, revealTimer = null, toastTimer = null;
-    var WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
-    var WIDTH_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to reset'];
+    var WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
+    var WIDTH_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to widen', 'Width (custom) — drag to any size'];
     var widthTier = 0;
 
     /* ── The docked module shell (dressed by the shared #modules-row
@@ -266,27 +266,41 @@
       listEl.innerHTML = rows.map(function (r) { return turnRowHtml(r.t, r.i); }).join('');
     }
 
-    /* ── Width changer (canonical four-tier cycle) ── */
+    /* ── Width changer (canonical five-tier cycle) ── */
     function applyWidth() {
       var tiers = [width, Math.round(width * 1.5), width * 2];
-      try { global.WisePaneResize && global.WisePaneResize.release && global.WisePaneResize.release([panel]); } catch (_) {}
-      if (widthTier >= 3) {
-        panel.style.setProperty('flex', '1000 1 auto', 'important');
-        panel.style.setProperty('width', 'auto', 'important');
-        panel.style.setProperty('max-width', 'none', 'important');
+      var W = window.WPaneWidth;
+      if (widthTier === 4) {
+        if (W && W.applyClasses) W.applyClasses(panel, 4, 'panel');
+        else {
+          panel.classList.add('panel-custom');
+          if (W && W.pinToCurrent) W.pinToCurrent(panel);
+        }
       } else {
-        var w = tiers[widthTier] || width;
-        panel.style.setProperty('flex', '0 0 ' + w + 'px', 'important');
-        panel.style.setProperty('width', w + 'px', 'important');
-        panel.style.setProperty('max-width', 'none', 'important');
+        try { global.WisePaneResize && global.WisePaneResize.release && global.WisePaneResize.release([panel]); } catch (_) {}
+        if (widthTier === 3) {
+          panel.style.setProperty('flex', '1000 1 auto', 'important');
+          panel.style.setProperty('width', 'auto', 'important');
+          panel.style.setProperty('max-width', 'none', 'important');
+        } else {
+          var w = tiers[widthTier] || width;
+          panel.style.setProperty('flex', '0 0 ' + w + 'px', 'important');
+          panel.style.setProperty('width', w + 'px', 'important');
+          panel.style.setProperty('max-width', 'none', 'important');
+        }
+        panel.classList.remove('panel-custom');
+        if (W && W.applyClasses) W.applyClasses(panel, widthTier, 'panel');
       }
       var btn = panel.querySelector('.wt-width-btn');
       if (btn) {
-        btn.classList.toggle('is-on', widthTier >= 1);
-        btn.setAttribute('aria-pressed', widthTier >= 1 ? 'true' : 'false');
-        btn.title = WIDTH_TITLES[widthTier];
-        var ic = btn.querySelector('.material-symbols-outlined');
-        if (ic) ic.textContent = WIDTH_ICONS[widthTier];
+        if (W && W.syncButton) W.syncButton(btn, widthTier);
+        else {
+          btn.classList.toggle('is-on', widthTier >= 1);
+          btn.setAttribute('aria-pressed', widthTier >= 1 ? 'true' : 'false');
+          btn.title = WIDTH_TITLES[widthTier];
+          var ic = btn.querySelector('.material-symbols-outlined');
+          if (ic) ic.textContent = WIDTH_ICONS[widthTier];
+        }
       }
     }
 
@@ -400,7 +414,7 @@
     var widthBtn = panel.querySelector('.wt-width-btn');
     if (widthBtn) widthBtn.addEventListener('click', function (e) {
       e.stopPropagation();
-      widthTier = (widthTier + 1) % 4;
+      widthTier = window.WPaneWidth ? window.WPaneWidth.next(widthTier) : (widthTier + 1) % 5;
       applyWidth();
     });
 

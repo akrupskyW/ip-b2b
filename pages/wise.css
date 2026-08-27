@@ -1,29 +1,28 @@
 /* ── App-wide mono numerals ──────────────────────────────────────────────
    'WISE Digits' is a synthetic digit-only family (unicode-range U+0030-39)
-   that resolves to the app's mono stack (SF Mono / Menlo / Roboto Mono /
-   Consolas). It is prepended to every font stack in the app so that every
-   numeral renders in mono while letters fall through to the normal face. */
+  backed by DM Mono. It is prepended to every font stack in the app so that
+  every numeral renders in mono while letters fall through to the normal face. */
 @font-face {
   font-family: 'WISE Digits';
-  src: local('SFMono-Regular'), local('SF Mono'), local('Menlo-Regular'), local('Menlo'), local('Roboto Mono'), local('Consolas'), local('Courier New');
+  src: url('https://fonts.gstatic.com/s/dmmono/v16/aFTR7PB1QTsUX8KYvrGyEYOtbQ.woff2') format('woff2');
   unicode-range: U+0030-0039;
   font-weight: 100 450;
 }
 @font-face {
   font-family: 'WISE Digits';
-  src: local('SFMono-Medium'), local('SF Mono Medium'), local('Menlo-Regular'), local('Menlo'), local('Roboto Mono Medium'), local('Consolas'), local('Courier New');
+  src: url('https://fonts.gstatic.com/s/dmmono/v16/aFTU7PB1QTsUX8KYthqQBA.woff2') format('woff2');
   unicode-range: U+0030-0039;
   font-weight: 451 570;
 }
 @font-face {
   font-family: 'WISE Digits';
-  src: local('SFMono-Semibold'), local('SF Mono Semibold'), local('Menlo-Bold'), local('Roboto Mono SemiBold'), local('Consolas Bold'), local('Courier New Bold');
+  src: url('https://fonts.gstatic.com/s/dmmono/v16/aFTR7PB1QTsUX8KYvumzEYOtbQ.woff2') format('woff2');
   unicode-range: U+0030-0039;
   font-weight: 571 650;
 }
 @font-face {
   font-family: 'WISE Digits';
-  src: local('SFMono-Bold'), local('SF Mono Bold'), local('Menlo-Bold'), local('Roboto Mono Bold'), local('Consolas Bold'), local('Courier New Bold');
+  src: url('https://fonts.gstatic.com/s/dmmono/v16/aFTR7PB1QTsUX8KYvumzEYOtbQ.woff2') format('woff2');
   unicode-range: U+0030-0039;
   font-weight: 651 900;
 }
@@ -81,12 +80,10 @@
   --surface-2: #F4F2EA;
   --surface-3: #EFEDE2;
   --text: #111827;
-  /* Quiet grays darkened to clear WCAG 1.4.3/1.4.6 AAA (7:1) on every light
-     surface they appear on (down to surface-3 #EFEDE2), while keeping muted
-     a touch stronger than subtle. */
+  /* Quiet gray darkened to clear WCAG 1.4.3/1.4.6 AAA (7:1) on every light
+     surface it appears on (down to surface-3 #EFEDE2). Subtle is the same ink. */
   --text-muted: #444B55;
-  /* AAA on surface, bg, surface-2 and surface-3 (was #646E7C, AA-only). */
-  --text-subtle: #474E58;
+  --text-subtle: var(--text-muted);
   /* Brand-blue borders — tinted from --primary (#25507C) instead of neutral
      ink so every card, divider, input and SVG stroke reads on-brand. */
   --border: color-mix(in srgb, var(--primary) 16%, transparent);
@@ -145,12 +142,10 @@
   --shadow-1: 0 1px 2px rgba(17,24,39,.04), 0 1px 3px rgba(17,24,39,.04);
   --shadow-2: 0 1px 2px rgba(17,24,39,.04), 0 8px 24px rgba(17,24,39,.06);
   --shadow-card: var(--shadow-2);
-  /* AI Chat module elevation — default "Above high" so the chat sits above
-     every other module card. Admin three-dot control steps Little min / High / 3D.
-     --chat-elev-gutter is the bottom shadow room inside #modules-row (overflow-x:auto
-     forces overflow-y to clip, so the drop-shadow must paint into padding). */
-  --chat-elev: 0 4px 16px rgba(17, 24, 39, 0.10), 0 18px 44px rgba(17, 24, 39, 0.14);
-  --chat-elev-gutter: 48px;
+  /* Chat module elevation is Little min — same drop as the other module cards.
+     --chat-elev-gutter is the bottom shadow room inside #modules-row. */
+  --chat-elev: var(--shadow-card);
+  --chat-elev-gutter: 16px;
   /* Brand-navy lip on the chat module (.sc-card) — a step lighter than 40%
      so the edge reads without a charcoal outline. */
   --chat-rim-color: color-mix(in srgb, #05141C 28%, transparent);
@@ -183,6 +178,10 @@
   --module-title-weight: 800;
   --module-head-pad-t: 26px;
   --module-head-pad-x: 40px;
+
+  /* Full monospace — code, paths, UPCs, barcodes, token names. WISE Digits
+     (above) uses the same DM Mono face for 0–9 only; use this for whole strings. */
+  --font-mono: 'DM Mono', ui-monospace, monospace;
 }
 
 html.dark {
@@ -192,9 +191,9 @@ html.dark {
   --surface-3: #15303F;
   --text: #F3F4F6;
   /* Lightened so muted/subtle clear AAA (7:1) on every navy surface up to the
-     lightest (surface-3 #15303F), keeping muted brighter than subtle. */
+     lightest (surface-3 #15303F). Subtle is the same ink. */
   --text-muted: #BCC6D3;
-  --text-subtle: #B1BAC7;
+  --text-subtle: var(--text-muted);
   /* Legible accent on dark gradient chrome (rails, nav) — primary is too dark on navy. AAA (9.7:1) on surface. */
   --primary-bright: #8B9FAF;
   /* Brand-blue foregrounds go white on navy (see :root note). */
@@ -226,8 +225,8 @@ html.dark {
   --shadow-1: 0 1px 2px rgba(0,0,0,.4);
   --shadow-2: 0 4px 12px rgba(0,0,0,.35), 0 12px 32px rgba(0,0,0,.35);
   --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.35);
-  --chat-elev: 0 8px 28px rgba(0, 0, 0, 0.48), 0 24px 64px rgba(0, 0, 0, 0.46);
-  --chat-elev-gutter: 56px;
+  --chat-elev: 0 2px 8px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.28);
+  --chat-elev-gutter: 16px;
   /* Muted brand lip on navy — cream at 48% read as a bright outline. */
   --chat-rim-color: color-mix(in srgb, var(--primary-bright) 22%, transparent);
   --chat-rim:
@@ -245,6 +244,8 @@ html {
   background-color: var(--bg) !important;
   transition: background-color 0.35s ease;
 }
+code, kbd, samp, pre { font-family: var(--font-mono); }
+
 body {
   height: 100%;
   margin: 0;
@@ -850,6 +851,7 @@ html.app-search-on #modules-row .sticky-mod.is-sticky,
 html.app-search-on #modules-row #agent-main.sticky-mod.is-sticky,
 html.app-search-on #modules-row .vf-progress-pane.sticky-mod.is-sticky,
 html.app-search-on #modules-row .gv-progress-pane.sticky-mod.is-sticky,
+html.app-search-on #modules-row #help-contact.sticky-mod.is-sticky,
 html.app-search-on #modules-row #nfp-panel.sticky-mod.is-sticky,
 html.app-search-on #modules-row #ap-progress.vf-progress-pane.sticky-mod.is-sticky,
 html.app-search-on #modules-row:not(.is-picking) .rf-studio.sticky-mod.is-sticky,
@@ -1185,7 +1187,7 @@ html.full-bleed.fb-chat-only:not(.brand-inset) #chat-shell-wrap.menu-brand-integ
   font-family: inherit;
   opacity: 0;
   transform: translateX(-50%) translateY(-4px);
-  transition: opacity 0.12s ease, transform 0.12s ease;
+  transition: opacity 0.06s ease, transform 0.06s ease;
 }
 #lir-tooltip.lir-tip-visible {
   opacity: 1;
@@ -1503,29 +1505,35 @@ html.dark .topbar-menu-item--admin:hover { background: rgba(236, 72, 153, 0.16);
   transition: transform .2s ease, opacity .18s ease;
 }
 .wise-popover.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
-/* Appearance popover runs a long row set. Rather than one tall single column
-   (which pushed the last groups — Branding, Admin links — off the viewport and
-   clipped them), it stacks GROUP CARDS in two flex columns. Each group stays
-   in one column — nothing is split or stretched across the gap. CSS multi-column
-   used to size the box to the un-columnated (single-column) height, leaving a
-   tall empty gap under the content; flex columns size to the taller stack.
-   Columns wrap to one when the viewport is too narrow for 206px × 2. Scoped to
-   the appearance popover only (wireAppearancePopover() tags it) so the shorter
-   avatar menu is unaffected. */
+/* Appearance popover runs a long row set. Rather than one tall single or
+   two-column stack (which pushed Admin off the viewport), it packs GROUP
+   CARDS into four short columns so the panel uses available width and
+   stays on screen. Four tracks (not five) keep each column wide enough
+   that titles stay on one line — a skinnier fifth track wrapped labels
+   into extra lines and made Admin taller than the two-column panel.
+   Grid (not wrapping flex) keeps the column count stable. Narrow
+   viewports step down to 2. Scoped to the appearance popover only
+   (wireAppearancePopover() tags it) so the shorter avatar menu is unaffected. */
 .wise-popover--appearance {
   min-width: 260px;
-  width: 452px;
+  width: min(1040px, calc(100vw - 16px));
   max-width: calc(100vw - 16px);
   padding: 8px;
-  max-height: calc(100vh - 24px);
+  max-height: calc(100vh - 16px);
   overflow: hidden auto;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
+  align-content: start;
   gap: 8px;
 }
+@media (max-width: 720px) {
+  .wise-popover--appearance {
+    width: min(452px, calc(100vw - 16px));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 .wise-appearance-col {
-  flex: 1 1 206px;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -1656,6 +1664,10 @@ a.wise-popover-item { text-decoration: none; }
   letter-spacing: 0;
   text-transform: none;
   color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 .wise-popover-item:hover .wise-popover-desc,
 .wise-popover-item.is-on .wise-popover-desc,
@@ -1681,29 +1693,46 @@ html.dark .wise-popover-item:hover .wise-popover-desc {
 .wise-popover-item.is-active .material-symbols-outlined { color: var(--primary-ink, var(--primary)); }
 html.dark .wise-popover-item.is-active .material-symbols-outlined { color: var(--primary-bright); }
 .wise-popover-item.danger .material-symbols-outlined { color: var(--sec-red-text); }
-/* Binary on/off settings: a Material Symbols switch on the left of the label
-   replaces the old full-row highlight. Blue = on, gray = off. The row itself
-   never takes the active background, so state reads only from the switch. */
+/* Binary on/off settings: a small semantic icon to the left of the label,
+   and the Material Symbols switch on the right. Green = on, gray = off. The
+   row itself never takes the active background, so state reads from the switch. */
 .wise-popover-item.wise-toggle-item.is-active { background: none; color: var(--text); }
 .wise-popover-item.wise-toggle-item:hover { background: var(--primary-soft); color: var(--primary); }
 html.dark .wise-popover-item.wise-toggle-item:hover { background: rgba(255,255,255,0.06); color: var(--text); }
 .wise-popover-item .wise-toggle-ico {
   flex-shrink: 0;
+  margin-left: auto;
   font-size: 22px;
   color: var(--text-subtle);
   transition: color .15s ease;
 }
+.wise-popover-item .wise-row-icon {
+  flex-shrink: 0;
+  font-size: 17px;
+  color: var(--text-subtle);
+}
+.wise-toggle-item .wise-popover-lock { margin-left: 0; }
+.fz-size-label .wise-row-icon,
+.mg-size-label .wise-row-icon,
+.fz-row-label .wise-row-icon {
+  font-size: 17px;
+  margin-right: 8px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-subtle);
+}
+.fz-row-label { display: flex; align-items: center; }
 .wise-popover-item.is-on .wise-toggle-ico,
 .wise-popover-item:hover.is-on .wise-toggle-ico { color: var(--sec-green); }
 .wise-popover-item:hover .wise-toggle-ico { color: var(--text-subtle); }
 html.dark .wise-popover-item.is-on .wise-toggle-ico,
 html.dark .wise-popover-item:hover.is-on .wise-toggle-ico { color: var(--sec-green); }
-/* Locked group (Appearance ▸ Experience) — the card keeps its place so the
-   capability stays visible, but every row inside reads inert: a lock trails the
-   heading, labels and switch glyphs go muted (no green "on" tint), and hover
-   never highlights. Clicks are swallowed in wireAppearancePopover(); tooltips
-   still fire, so a row can explain that it's locked. Declared after the toggle
-   rules so it wins on equal specificity. */
+/* Locked Appearance group — the card keeps its place so the capability stays
+   visible, but every row inside reads inert: a lock trails the heading, labels
+   and switch glyphs go muted (no green "on" tint), and hover never highlights.
+   Clicks are swallowed in wireAppearancePopover(); tooltips still fire, so a
+   row can explain that it's locked. Declared after the toggle rules so it wins
+   on equal specificity. */
 .wise-appearance-group.is-locked > .wise-popover-header {
   display: flex;
   align-items: center;
@@ -2248,7 +2277,28 @@ html.mod-gap-xl #modules-row { gap: var(--modules-gap) !important; }
    (which keeps its inline styling) — sticky-modules.js skips modules that
    already own a native sticky toggle, so this never double-applies there. */
 #modules-row { position: relative; }
-#modules-row .sticky-chat { position: relative; z-index: 3; }
+/* Chat is always the top module in the row. Right-of-chat drawers (NFP,
+   progress, Turns) and left-of-chat History tuck underneath it. !important
+   beats page-level `#nfp-panel { z-index: 2 }` (add/view-product) and the
+   chat-history.js `.modules-sticky` rule that otherwise dropped the chat to
+   2 — a tie the later NFP then won. Applies to the chat hosts themselves
+   (not nested `.sc-card`s) so it is in force before JS adds `.sticky-chat`.
+   Stays well under the resize-handle overlay (z-index 60). */
+#modules-row :is(
+  .sticky-chat, .ap-chat, .rf-chat, .sa-chat, .gs-chat, .aid-chat, .wa-chat,
+  #wa-chat, #rf-chat, #sa-chat, #aid-chat, #pl-chat, #ar-chat, #gs-chat, #chat-shell,
+  .wch-chat-anchor
+):not(.wiseai-dock) {
+  position: relative;
+  z-index: 3 !important;
+}
+/* Product Details / NFP sits under the chat (3) and over nested progress (0).
+   Page copies that set `#nfp-panel { z-index: 2 }` must not climb back to a
+   tie with the chat. */
+#modules-row #nfp-panel,
+#modules-row #nfp-panel.sticky-mod.is-sticky {
+  z-index: 1 !important;
+}
 #modules-row .sticky-mod.is-sticky {
   position: relative;
   z-index: 1;
@@ -2354,18 +2404,38 @@ html.mod-gap-xl #modules-row { gap: var(--modules-gap) !important; }
         held ~30px shorter still so it reads as nested BELOW the taller module
         to its left rather than the same height. */
 #modules-row .vf-progress-pane.sticky-mod.is-sticky,
-#modules-row .gv-progress-pane.sticky-mod.is-sticky {
+#modules-row .gv-progress-pane.sticky-mod.is-sticky,
+#modules-row #help-contact.sticky-mod.is-sticky {
   z-index: 0;
-  height: calc(100% - 60px);
-  max-height: calc(100% - 60px);
-  align-self: center;
+  height: calc(100% - 60px) !important;
+  max-height: calc(100% - 60px) !important;
+  align-self: center !important;
+}
+/* Contact is a next-level drawer off Help (same tuck as #wa-report off Output):
+   paper surface, no left seam, square chat-facing corners. Page-level
+   `#help-contact` card rules must not win and turn it back into a peer module. */
+#modules-row #help-contact.sticky-mod.is-sticky {
+  margin-left: calc(-14px - var(--modules-gap, 8px));
+  padding-left: 14px;
+  border-left: 0 !important;
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  box-shadow: none !important;
+  background: var(--surface) !important;
+}
+/* Help sits ON TOP of Contact. Keep Help's open (right) corners rounded —
+   the drawer tucks under that radius, it does not square the parent card. */
+#modules-row:has(#help-contact) #agent-main.sticky-mod.is-sticky {
+  z-index: 1;
 }
 /* Menu-open: lift just enough to clear the left neighbour so the popover isn't
    clipped, but stay under the chat (z-index 3). */
 #modules-row .vf-progress-pane.sticky-mod.is-sticky:has(.panel-more-btn.is-open),
 #modules-row .vf-progress-pane.sticky-mod.is-sticky:has(.topbar-popover:not(.hidden)),
 #modules-row .gv-progress-pane.sticky-mod.is-sticky:has(.panel-more-btn.is-open),
-#modules-row .gv-progress-pane.sticky-mod.is-sticky:has(.topbar-popover:not(.hidden)) {
+#modules-row .gv-progress-pane.sticky-mod.is-sticky:has(.topbar-popover:not(.hidden)),
+#modules-row #help-contact.sticky-mod.is-sticky:has(.panel-more-btn.is-open),
+#modules-row #help-contact.sticky-mod.is-sticky:has(.topbar-popover:not(.hidden)) {
   z-index: 2;
 }
 
@@ -3514,16 +3584,42 @@ html.dark .wch-sidebar.wch-in-nav .wch-search-row {
   background: transparent !important;
 }
 .wch-sidebar.wch-in-nav .wch-search-row {
-  margin: 2px 0 6px;
+  margin: 2px 4px 6px;
   position: sticky;
   top: 0;
   z-index: 2;
   min-width: 0;
 }
 .wch-sidebar.wch-in-nav .wch-new {
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+}
+/* Match primary-nav glyph size (16px). Pages like product-portfolio force
+   `.material-symbols-outlined { font-size: 24px !important }`, which otherwise
+   blows up New conversation / New folder / All conversations. */
+.wch-sidebar.wch-in-nav .wch-new .material-symbols-outlined,
+.wch-sidebar.wch-in-nav .wch-proj-add .material-symbols-outlined,
+.wch-sidebar.wch-in-nav .wch-proj-toggle .material-symbols-outlined,
+.wch-sidebar.wch-in-nav .wch-search > .material-symbols-outlined,
+.wch-sidebar.wch-in-nav .wch-search-filter .material-symbols-outlined,
+.wch-sidebar.wch-in-nav .wch-search-clear .material-symbols-outlined {
+  font-size: 16px !important;
+  line-height: 1 !important;
+  width: 16px;
+  height: 16px;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 20;
+}
+.wch-sidebar.wch-in-nav .wch-proj-toggle .material-symbols-outlined {
+  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 20;
+}
+.wch-sidebar.wch-in-nav .wch-proj-add {
+  width: 20px;
+  height: 20px;
+}
+.wch-sidebar.wch-in-nav .wch-proj-toggle {
+  width: 20px;
+  height: 20px;
 }
 html.nav-history #menu-panel .wch-sidebar.wch-in-nav .wch-proj-toggle {
   background: var(--wch-tree-bg);
@@ -4547,9 +4643,10 @@ html.dark .agent-main-scroll { background: transparent; }
    header strip is collapsed to zero height — the title/icon block is dropped
    and the header reclaims NO vertical space, so the content slides up to the
    top of the card. The right-floated controls (.panel-controls) are kept and
-   pinned absolutely over the top-right corner, landing on top of the content.
-   Loaded on every page (agent-page.css is shared), so it reaches the portfolio
-   modules, the agent overview module, and the ai-chat side panels alike. */
+   pinned absolutely over the top-right corner. Their z-index must beat any
+   in-module sticky chrome (portfolio's pinned title / toolbar / score cards
+   sit at 30–32) so the ⋯ menu and width toggle stay clickable on top while
+   those headers pin. Loaded on every page (agent-page.css is shared). */
 html.header-float .pf-module-header,
 html.header-float .pf-history-header,
 html.header-float .agent-main-header,
@@ -4568,7 +4665,7 @@ html.header-float .chat-topbar {
   background: transparent !important;
   position: relative;
   overflow: visible;
-  z-index: 5;
+  z-index: 50;
 }
 /* Drop the title block (icon + titles) but keep the floated controls. */
 html.header-float .pf-module-header > *:not(.panel-controls),
@@ -4596,7 +4693,8 @@ html.header-float .notif-panel-header .panel-controls {
   top: 8px;
   right: 8px;
   margin: 0 !important;
-  z-index: 6;
+  z-index: 51;
+  pointer-events: auto;
 }
 /* Banner chrome is gone in header-float — drop the white-on-blue button
    colors so the ⋯ / width icons read on the module surface. */
@@ -4626,7 +4724,8 @@ html.header-float .chat-topbar > *:last-child {
   top: 8px;
   right: 8px;
   margin: 0 !important;
-  z-index: 6;
+  z-index: 51;
+  pointer-events: auto;
 }
 /* WISEcodeAI keeps BOTH its resize (width) toggle AND its more-options menu in the
    headerless view — exactly like every other module's floated controls. The
@@ -4740,7 +4839,8 @@ html.header-float .vs-header > button {
   top: 8px;
   right: 8px;
   margin: 0 !important;
-  z-index: 6;
+  z-index: 51;
+  pointer-events: auto;
 }
 
 /* Full bleed — open EVERY module top-to-bottom so it runs the full height of the
@@ -4959,7 +5059,7 @@ html.full-bleed:not(.fb-chat-only).fb-aside-dark #modules-row .wa-pane,
 html.full-bleed:not(.fb-chat-only).fb-hist-dark #modules-row .wch-sidebar:not(.wch-right) {
   --text: #F3F4F6;
   --text-muted: #BCC6D3;
-  --text-subtle: #B1BAC7;
+  --text-subtle: var(--text-muted);
   --primary-bright: #8B9FAF;
   --primary-ink: #F3F4F6;
   --ter-violet: #8B9FAF;
@@ -4988,7 +5088,7 @@ html.full-bleed:not(.fb-chat-only).fb-aside-light #modules-row .wa-pane,
 html.full-bleed:not(.fb-chat-only).fb-hist-light #modules-row .wch-sidebar:not(.wch-right) {
   --text: #111827;
   --text-muted: #444B55;
-  --text-subtle: #474E58;
+  --text-subtle: var(--text-muted);
   --primary-bright: #25507C;
   --primary-ink: #25507C;
   --ter-violet: #25507C;
@@ -5044,7 +5144,7 @@ html.full-bleed:not(.fb-chat-only).dark:not(.fb-nav-tint) #menu-panel .menu-foot
 html.full-bleed:not(.fb-chat-only).fb-nav-tint #menu-panel {
   --text: var(--fb-nav-fg, #EAF1F9);
   --text-muted: color-mix(in srgb, var(--fb-nav-fg, #EAF1F9) 78%, transparent);
-  --text-subtle: color-mix(in srgb, var(--fb-nav-fg, #EAF1F9) 66%, transparent);
+  --text-subtle: var(--text-muted);
   --primary-bright: var(--fb-nav-accent, var(--fb-nav-fg, #EAF1F9));
   --primary-ink: var(--fb-nav-fg, #EAF1F9);
   --primary-soft: color-mix(in srgb, var(--fb-nav-accent, var(--fb-nav-fg, #EAF1F9)) 16%, transparent);
@@ -5621,12 +5721,17 @@ html.dark .agent-empty { background: rgba(255,255,255,0.03); border-color: rgba(
 .agent-cta {
   display: inline-flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 6px;
   padding: 8px 14px;
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 600;
+  line-height: 1.25;
   text-decoration: none;
+  text-align: left;
+  white-space: normal;
+  max-width: 100%;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
@@ -5644,7 +5749,7 @@ html.dark .agent-empty { background: rgba(255,255,255,0.03); border-color: rgba(
   color: white;
   border-color: color-mix(in srgb, var(--primary) 88%, black);
 }
-.agent-cta .material-symbols-outlined { font-size: 16px !important; }
+.agent-cta .material-symbols-outlined { font-size: 16px !important; flex-shrink: 0; }
 
 .agent-cta--ghost { background: transparent; color: var(--text-muted); }
 .agent-card.is-interactive { cursor: pointer; }
@@ -5945,14 +6050,10 @@ html.dark .sc-card {
   box-shadow: var(--chat-rim), var(--chat-elev);
 }
 
-/* ── Chat module elevation (Admin · three-dot menu) ────────────────────────
-   The AI Chat container is the one module that sits ABOVE everything else.
-   Default = "Above high". The three-dot Admin control steps:
-     Little min  — matches the other module cards
-     Above high  — default; deeper drop so the chat reads in front
-     3D          — layered physical shadow + a slight float so the shadow
-                   reads all the way around the card
-   Scoped off full-bleed / brand-inset, which flatten or invert elevation. */
+/* ── Chat module elevation ─────────────────────────────────────────────────
+   Locked to Little min: the chat card uses the same drop as every other
+   module. The Admin three-dot picker was removed. html.chat-elev-min is
+   applied on boot so leftover high / 3D prefs cannot raise the card. */
 html.chat-elev-min {
   --chat-elev: var(--shadow-card);
   --chat-elev-gutter: 16px;
@@ -5960,35 +6061,11 @@ html.chat-elev-min {
 html.dark.chat-elev-min {
   --chat-elev: 0 2px 8px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.28);
 }
-html.chat-elev-3d {
-  --chat-elev:
-    0 1px 1px rgba(15, 23, 42, 0.06),
-    0 3px 6px rgba(15, 23, 42, 0.07),
-    0 10px 20px rgba(15, 23, 42, 0.10),
-    0 24px 48px rgba(15, 23, 42, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.70);
-  --chat-elev-gutter: 64px;
-}
-html.dark.chat-elev-3d {
-  --chat-elev:
-    0 1px 2px rgba(0, 0, 0, 0.40),
-    0 4px 10px rgba(0, 0, 0, 0.36),
-    0 14px 28px rgba(0, 0, 0, 0.42),
-    0 32px 64px rgba(0, 0, 0, 0.52),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  --chat-elev-gutter: 72px;
-}
 html:not(.full-bleed):not(.brand-inset) :is(.sc-card, .wa-chat, .ap-chat, .rf-chat, .sa-chat, .gs-chat, .aid-chat, #chat-shell, #wiseai-panel, #wiseai-dock-panel, #pf-chat-panel) {
   position: relative;
-  z-index: 2;
+  z-index: 1;
   border: 1px solid var(--chat-rim-color, var(--border));
   box-shadow: var(--chat-rim), var(--chat-elev);
-}
-html.chat-elev-min:not(.full-bleed):not(.brand-inset) :is(.sc-card, .wa-chat, .ap-chat, .rf-chat, .sa-chat, .gs-chat, .aid-chat, #chat-shell, #wiseai-panel, #wiseai-dock-panel, #pf-chat-panel) {
-  z-index: 1;
-}
-html.chat-elev-3d:not(.full-bleed):not(.brand-inset) #modules-row > :is(.sc-card, .wa-chat, .ap-chat, .rf-chat, .sa-chat, .gs-chat, .aid-chat, #chat-shell, #wiseai-panel, #wiseai-dock-panel, #pf-chat-panel) {
-  z-index: 4;
 }
 /* Bottom shadow gutter. overflow-x:auto on #modules-row forces overflow-y to
    clip, so the chat drop-shadow was shearing off flush with the card's bottom
@@ -6320,7 +6397,7 @@ html.dark .ws-logo-wrap .ws-pulse-ring { --ws-track: rgba(174, 200, 237, 0.55); 
 /* The live food-count ticks upward constantly, so render it with tabular
    (fixed-width) mono figures — every digit occupies the same advance width,
    keeping the surrounding sentence from shifting as the number changes. */
-.ws-count { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; font-family: ui-monospace, "SF Mono", "SFMono-Regular", "Roboto Mono", Menlo, Consolas, monospace; }
+.ws-count { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; font-family: var(--font-mono); }
 .ws-chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 100%; width: 100%; margin-bottom: 2rem; }
 .ws-chips .chip { width: fit-content; max-width: 100%; flex: 0 0 auto; }
 /* Welcome intent chips. Full-size chat: wrap and show every chip. Single pane
@@ -7358,8 +7435,8 @@ html.dark .sc-out-source-txt strong { color: var(--primary-bright, #AEC8ED); }
 }
 
 /* Loading pose — a larger streaming helix centered in the output module and
-   Compare Foods empty state. Appearance ▸ Helix loading (on by default) hides
-   the striped skeleton / breathing owl and plays this rope instead. */
+   Compare Foods empty state. On by default: hides the striped skeleton /
+   breathing owl and plays this rope instead. */
 .cmp-empty { position: relative; min-height: 240px; }
 .load-helix {
   position: absolute;
@@ -8696,8 +8773,8 @@ html.dark .dash-top5-hero-claim .dash-stamp-icon.dash-stamp-num { text-shadow: 0
 .dash-claim-col--nudge { position: relative; }
 
 /* Nudge toast — pops up just over the column it belongs to (e.g. the "products
-   qualify" count) to push the next action. Small × dismisses it for the current
-   view; it is not persisted, so it returns on reload. */
+   qualify" count) to push the next action. The × opens a tiny menu: dismiss
+   for now or dismiss for the current session. */
 .dash-score-toast {
   position: absolute;
   left: -6px;
@@ -8749,9 +8826,11 @@ html.dark .dash-score-toast::after { background: #5A8BB8; }
   color: rgba(255, 255, 255, 0.92);
 }
 .dash-score-toast-link {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 5px;
+  width: 100%;
   margin-top: 9px;
   padding: 0;
   background: none;
@@ -8759,6 +8838,9 @@ html.dark .dash-score-toast::after { background: #5A8BB8; }
   font-family: inherit;
   font-size: 0.78rem;
   font-weight: 700;
+  line-height: 1.25;
+  text-align: right;
+  white-space: normal;
   color: #fff;
   cursor: pointer;
 }
@@ -8787,6 +8869,58 @@ html.dark .dash-score-toast::after { background: #5A8BB8; }
 }
 .dash-score-toast-close:hover { background: rgba(255, 255, 255, 0.32); }
 .dash-score-toast-close .material-symbols-outlined { font-size: 13px; }
+.dash-score-toast.is-paused { animation-play-state: paused; }
+.dash-score-toast[hidden] { display: none !important; }
+
+/* Tiny “Dismiss for now / session” menu, portaled to body and anchored above
+   or to the right of the toast’s × — never directly below it. */
+.nudge-dismiss-pop {
+  position: fixed;
+  z-index: 1300;
+  min-width: 168px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--surface-2, #fff);
+  border: 1px solid var(--border-strong, rgba(0, 0, 0, 0.12));
+  box-shadow: var(--shadow-card, 0 12px 32px rgba(7, 12, 26, 0.18));
+  animation: morePopIn 0.15s ease-out both;
+}
+html.dark .nudge-dismiss-pop {
+  background: #1A2339;
+  border-color: rgba(37, 80, 124, 0.22);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+.nudge-dismiss-pop-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 9999px;
+  background: none;
+  color: var(--text-muted, #5b6573);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.nudge-dismiss-pop-item:hover {
+  background: var(--surface-3, rgba(0, 0, 0, 0.05));
+  color: var(--text, #1a1a1a);
+}
+html.dark .nudge-dismiss-pop-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text, #fff);
+}
+.nudge-dismiss-pop-item .material-symbols-outlined {
+  font-size: 16px !important;
+  color: var(--text-subtle, #8a93a0);
+  flex-shrink: 0;
+}
 @keyframes dash-score-toast-in {
   from { opacity: 0; transform: translateY(8px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
@@ -8861,17 +8995,23 @@ html.dark .dash-bignum { color: var(--text); }
 .dash-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 7px;
   padding: 9px 15px;
   border-radius: var(--radius-pill);
   font-family: inherit;
   font-size: 0.78rem;
   font-weight: 600;
+  line-height: 1.25;
   cursor: pointer;
   border: 1px solid transparent;
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  /* UA stylesheet centers <button> text; keep wrapped labels flush left. */
+  text-align: left;
+  white-space: normal;
+  max-width: 100%;
 }
-.dash-btn .material-symbols-outlined { font-size: 16px; }
+.dash-btn .material-symbols-outlined { font-size: 16px; flex-shrink: 0; }
 .dash-btn--primary { background: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(37, 80, 124, 0.25); }
 .dash-btn--primary:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(37, 80, 124, 0.3); }
 .dash-btn--ghost { background: transparent; color: var(--text); border-color: var(--border-strong); }
@@ -10927,7 +11067,7 @@ html.dark .dash-pillar-card-head .dash-stamp-icon:hover {
 @container dash (max-width: 480px) {
   .dash-claim { grid-template-columns: 1fr; row-gap: 30px; }
   .dash-wisescore { grid-template-columns: 1fr; }
-  .dash-pillars-cta-btn { white-space: normal; text-align: center; }
+  .dash-pillars-cta-btn { white-space: normal; text-align: left; }
   .dash-claim-divider,
   .dash-wisescore .dash-claim-divider { display: none; }
 
@@ -11053,6 +11193,35 @@ html.dark .dash-pillar-card-head .dash-stamp-icon:hover {
 }
 .dash-modal-scrim.is-open .dash-modal { transform: none; }
 html.dark .dash-modal { background: #14242f; border-color: rgba(255, 255, 255, 0.08); }
+/* Centered card (product photo editor) — the default dash-modal is full-bleed;
+   this modifier keeps a dialog like the all-modules verify panel. */
+.dash-modal-scrim.dash-modal-scrim--panel {
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.dash-modal-scrim.dash-modal-scrim--panel .dash-modal {
+  width: min(480px, 100%);
+  height: auto;
+  max-width: 480px;
+  max-height: calc(100vh - 48px);
+  border-radius: 18px;
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-card, 0 24px 60px rgba(0,0,0,0.28));
+}
+.dash-modal--panel .dash-modal-title {
+  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-weight: 700;
+}
+.dash-modal-scrim.dash-modal-scrim--panel .dash-modal-body { flex: 0 1 auto; }
+.dash-banner-preview--photo {
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  max-width: 240px;
+  max-height: 240px;
+  margin: 0 auto;
+  border-radius: 14px;
+}
 
 .dash-modal-head {
   display: flex;
@@ -11345,10 +11514,10 @@ html.dark .dash-report-view-body {
    Uses the shared design tokens (agent-page.css) so it tracks light/dark.
    ===================================================================== */
 
-/* Progress + accent colors resolve to the brand blue (no green/teal). `--vf-fill`
-   is the solid fill used behind white glyphs (step nodes, progress bar); it stays
-   the deep brand navy in both themes. `--vf-ink` is the accent TEXT color, which
-   lightens in dark mode so brand blue stays legible on the navy surfaces. */
+/* In-progress chrome stays brand blue. `--vf-ink` is the accent TEXT color for
+   live step labels and footer amounts; it lightens in dark mode so brand blue
+   stays legible on the navy surfaces. Completed steps and the health bar use
+   `--sec-green` (see `.vfp-step--done` / `.vfp-progress-*`). */
 body[data-nav-id="verification"] {
   --vf-fill: var(--primary);
   --vf-ink: var(--primary);
@@ -11566,11 +11735,12 @@ html.dark .vf-stat--verified .vf-stat-label .material-symbols-outlined { color: 
   display: flex; align-items: center; justify-content: space-between;
   font-size: 0.72rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px;
 }
-.vfp-progress-pct { color: var(--vf-ink); font-weight: 700; }
-.vfp-progress-track { height: 6px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+.vfp-progress-pct { color: var(--sec-green-text); font-weight: 700; }
+.vfp-progress-track { height: 6px; border-radius: 999px; background: var(--sec-green-10); overflow: hidden; }
+html.dark .vfp-progress-track { background: color-mix(in srgb, var(--sec-green) 26%, var(--surface)); }
 .vfp-progress-fill {
   height: 100%; border-radius: 999px;
-  background: var(--vf-ink);
+  background: var(--sec-green);
   width: 0%; transition: width 0.25s ease-out;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -11588,23 +11758,23 @@ html.dark .vf-stat--verified .vf-stat-label .material-symbols-outlined { color: 
 }
 .vfp-step-num .material-symbols-outlined { font-size: 16px; }
 .vfp-step--active .vfp-step-num { background: var(--primary); color: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
-.vfp-step--done .vfp-step-num { background: var(--vf-fill); color: #fff; cursor: pointer; }
+.vfp-step--done .vfp-step-num { background: var(--sec-green); color: #fff; cursor: pointer; }
 .vfp-step--done .vfp-step-num:hover { filter: brightness(1.06); }
 .vfp-step-num:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
 .vfp-step-line { width: 2px; flex: 1; min-height: 16px; background: var(--border-strong); margin: 3px 0; border-radius: 1px; }
-.vfp-step--done .vfp-step-line { background: color-mix(in srgb, var(--vf-fill) 55%, var(--border-strong)); }
+.vfp-step--done .vfp-step-line { background: color-mix(in srgb, var(--sec-green) 55%, var(--border-strong)); }
 .vfp-step:last-child .vfp-step-line { display: none; }
 .vfp-step-body { padding: 4px 0 16px; min-width: 0; flex: 1; }
 .vfp-step:last-child .vfp-step-body { padding-bottom: 4px; }
 .vfp-step-title { font-size: 0.84rem; font-weight: 500; color: var(--text-muted); line-height: 1.3; }
 .vfp-step--active .vfp-step-title { font-weight: 700; color: var(--text); }
 .vfp-step-sub { font-size: 0.68rem; color: var(--vf-ink); font-weight: 600; margin-top: 2px; }
-.vfp-step--done .vfp-step-sub { color: var(--vf-ink); }
+.vfp-step--done .vfp-step-sub { color: var(--sec-green-text); }
 
 .vfp-fields { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
 .vfp-field { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; line-height: 1.35; }
 .vfp-field .material-symbols-outlined { font-size: 14px; flex-shrink: 0; }
-.vfp-field--done .material-symbols-outlined { color: var(--vf-ink); }
+.vfp-field--done .material-symbols-outlined { color: var(--sec-green); }
 .vfp-field--active .material-symbols-outlined { color: var(--text-subtle); }
 .vfp-field-label { color: var(--text-muted); }
 .vfp-field-val {
@@ -11643,7 +11813,10 @@ html.dark .vf-stat--verified .vf-stat-label .material-symbols-outlined { color: 
 .vfp-pct-ring {
   display: none; flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%;
   align-items: center; justify-content: center; position: relative;
-  background: conic-gradient(var(--vf-ink) calc(var(--pct) * 1%), var(--surface-3) 0);
+  background: conic-gradient(var(--sec-green) calc(var(--pct) * 1%), var(--sec-green-10) 0);
+}
+html.dark .vfp-pct-ring {
+  background: conic-gradient(var(--sec-green) calc(var(--pct) * 1%), color-mix(in srgb, var(--sec-green) 26%, var(--surface)) 0);
 }
 .vfp-pct-ring::before { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--surface); }
 .vfp-pct-ring span { position: relative; font-size: 0.6rem; font-weight: 700; color: var(--text); }
@@ -11715,12 +11888,12 @@ html.dark .vf-row:hover td { background: rgba(255, 255, 255, 0.04); }
 .vf-mono { font-variant-numeric: tabular-nums; color: var(--text-muted); }
 .vf-col-updated { color: var(--text-muted); }
 
-/* Updated column — the product-portfolio two-line date stack: an uppercase
-   status label above its value, with the two dates sitting side by side. */
-.vf-dates { display: flex; flex-flow: row wrap; gap: 5px 16px; }
-.vf-date { display: flex; flex-direction: column; line-height: 1.2; }
-.vf-date-status { font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-subtle); }
-.vf-date-val { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Updated column — stacked date lines (label + value), matching the shared
+   date-column module. Injected CSS in date-column.js is the source of truth. */
+.vf-dates { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.vf-date { display: flex; flex-direction: row; align-items: baseline; gap: 5px; line-height: 1.25; }
+.vf-date-status { font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); }
+.vf-date-val { font-size: 11px; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* Product cell — rounded-square photo + name / UPC stack (mirrors product-portfolio
    `pf-col-product`). */
@@ -12199,8 +12372,9 @@ html.dark .vf-select-el {
    pattern, and button language, so it reads as one platform.
    ===================================================================== */
 
-/* Accent resolves to the brand blue in both themes; `--gv-ink` lightens in dark
-   mode so it stays legible on the navy surfaces. */
+/* In-progress chrome stays brand blue in both themes; `--gv-ink` lightens in
+   dark mode so it stays legible on the navy surfaces. Completed steps and the
+   health bar use `--sec-green` (see `.gvp-step--done` / `.gvp-progress-*`). */
 body[data-nav-id="gras-verification"] {
   --gv-fill: var(--primary);
   --gv-ink: var(--primary);
@@ -12672,9 +12846,10 @@ html.dark .gv-input { background: rgba(255,255,255,0.05); border-color: rgba(255
 
 .gvp-progress { padding: 12px 14px 8px; flex-shrink: 0; }
 .gvp-progress-head { display: flex; align-items: center; justify-content: space-between; font-size: 0.72rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
-.gvp-progress-pct { color: var(--gv-ink); font-weight: 700; }
-.gvp-progress-track { height: 6px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
-.gvp-progress-fill { height: 100%; border-radius: 999px; background: var(--gv-ink); width: 0%; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.gvp-progress-pct { color: var(--sec-green-text); font-weight: 700; }
+.gvp-progress-track { height: 6px; border-radius: 999px; background: var(--sec-green-10); overflow: hidden; }
+html.dark .gvp-progress-track { background: color-mix(in srgb, var(--sec-green) 26%, var(--surface)); }
+.gvp-progress-fill { height: 100%; border-radius: 999px; background: var(--sec-green); width: 0%; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
 
 .gvp-steps { padding: 10px 14px 6px; display: flex; flex-direction: column; overflow-y: auto; flex: 1; }
 .gvp-step { display: flex; flex-direction: row; gap: 10px; align-items: flex-start; }
@@ -12686,22 +12861,23 @@ html.dark .gv-input { background: rgba(255,255,255,0.05); border-color: rgba(255
 }
 .gvp-step-num .material-symbols-outlined { font-size: 16px; }
 .gvp-step--active .gvp-step-num { background: var(--primary); color: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
-.gvp-step--done .gvp-step-num { background: var(--gv-fill); color: #fff; cursor: pointer; }
+.gvp-step--done .gvp-step-num { background: var(--sec-green); color: #fff; cursor: pointer; }
 .gvp-step--done .gvp-step-num:hover { filter: brightness(1.06); }
 .gvp-step-num:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
 .gvp-step-line { width: 2px; flex: 1; min-height: 16px; background: var(--border-strong); margin: 3px 0; border-radius: 1px; }
-.gvp-step--done .gvp-step-line { background: color-mix(in srgb, var(--gv-fill) 55%, var(--border-strong)); }
+.gvp-step--done .gvp-step-line { background: color-mix(in srgb, var(--sec-green) 55%, var(--border-strong)); }
 .gvp-step:last-child .gvp-step-line { display: none; }
 .gvp-step-body { padding: 4px 0 16px; min-width: 0; flex: 1; }
 .gvp-step:last-child .gvp-step-body { padding-bottom: 4px; }
 .gvp-step-title { font-size: 0.84rem; font-weight: 500; color: var(--text-muted); line-height: 1.3; }
 .gvp-step--active .gvp-step-title { font-weight: 700; color: var(--text); }
 .gvp-step-sub { font-size: 0.68rem; color: var(--gv-ink); font-weight: 600; margin-top: 2px; }
+.gvp-step--done .gvp-step-sub { color: var(--sec-green-text); }
 
 .gvp-fields { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
 .gvp-field { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; line-height: 1.35; }
 .gvp-field .material-symbols-outlined { font-size: 14px; flex-shrink: 0; }
-.gvp-field--done .material-symbols-outlined { color: var(--gv-ink); }
+.gvp-field--done .material-symbols-outlined { color: var(--sec-green); }
 .gvp-field--active .material-symbols-outlined { color: var(--text-subtle); }
 .gvp-field-label { color: var(--text-muted); }
 .gvp-field-val { color: var(--text); font-weight: 600; margin-left: auto; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
@@ -12728,7 +12904,10 @@ html.dark .gv-input { background: rgba(255,255,255,0.05); border-color: rgba(255
 .gvp-pct-ring {
   display: none; flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%;
   align-items: center; justify-content: center; position: relative;
-  background: conic-gradient(var(--gv-ink) calc(var(--pct) * 1%), var(--surface-3) 0);
+  background: conic-gradient(var(--sec-green) calc(var(--pct) * 1%), var(--sec-green-10) 0);
+}
+html.dark .gvp-pct-ring {
+  background: conic-gradient(var(--sec-green) calc(var(--pct) * 1%), color-mix(in srgb, var(--sec-green) 26%, var(--surface)) 0);
 }
 .gvp-pct-ring::before { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--surface); }
 .gvp-pct-ring span { position: relative; font-size: 0.6rem; font-weight: 700; color: var(--text); }
@@ -13191,7 +13370,7 @@ html.dark .adm-db-head { background: rgba(255,255,255,0.03); }
 .adm-db-cell { padding: 12px 16px; display: flex; flex-direction: column; gap: 3px; border-right: 1px solid var(--border); }
 .adm-db-cell:last-child { border-right: 0; }
 .adm-db-key { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); }
-.adm-db-val { font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.8rem; color: var(--text); word-break: break-all; }
+.adm-db-val { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text); word-break: break-all; }
 
 .adm-util { display: flex; align-items: flex-start; gap: 16px; padding: 18px 20px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-1); }
 .adm-util + .adm-util { margin-top: 12px; }
@@ -13290,13 +13469,15 @@ html.dark .adm-icon-btn--danger { color: #FF9E96; }
 body[data-adm-page] #agent-main-header { display: none; }
 body[data-adm-page] .agent-main-scroll { padding: 0; }
 /* All Modules (and the admin dashboards that supply their own head — Non-UPF
-   Dashboard, Marketing Assets) keep the module's ⋯ + width cluster: the header
-   collapses to zero height (title block dropped, like header-float) but stays
-   rendered so the .panel-controls can float pinned to the module's top-right
-   corner. Every right-of-chat module reads the same [⋯][width] this way. */
+   Dashboard, Marketing Assets, Help) keep the module's ⋯ + width cluster: the
+   header collapses to zero height (title block dropped, like header-float) but
+   stays rendered so the .panel-controls can float pinned to the module's
+   top-right corner. Every right-of-chat module reads the same [⋯][width] this
+   way. */
 body[data-nav-id="all-modules"] #agent-main-header,
 body[data-nav-id="non-upf-dashboard"] #agent-main-header,
-body[data-nav-id="marketing-assets"] #agent-main-header {
+body[data-nav-id="marketing-assets"] #agent-main-header,
+body[data-nav-id="help"] #agent-main-header {
   display: flex;
   height: 0 !important;
   min-height: 0 !important;
@@ -13305,19 +13486,22 @@ body[data-nav-id="marketing-assets"] #agent-main-header {
   background: transparent !important;
   position: relative;
   overflow: visible;
-  z-index: 6;
+  z-index: 50;
 }
 body[data-nav-id="all-modules"] #agent-main-header > *:not(.panel-controls),
 body[data-nav-id="non-upf-dashboard"] #agent-main-header > *:not(.panel-controls),
-body[data-nav-id="marketing-assets"] #agent-main-header > *:not(.panel-controls) { display: none !important; }
+body[data-nav-id="marketing-assets"] #agent-main-header > *:not(.panel-controls),
+body[data-nav-id="help"] #agent-main-header > *:not(.panel-controls) { display: none !important; }
 body[data-nav-id="all-modules"] #agent-main-header .panel-controls,
 body[data-nav-id="non-upf-dashboard"] #agent-main-header .panel-controls,
-body[data-nav-id="marketing-assets"] #agent-main-header .panel-controls {
+body[data-nav-id="marketing-assets"] #agent-main-header .panel-controls,
+body[data-nav-id="help"] #agent-main-header .panel-controls {
   position: absolute;
   top: 8px;
   right: 8px;
   margin: 0 !important;
-  z-index: 6;
+  z-index: 51;
+  pointer-events: auto;
 }
 /* Shadow gutter via padding + equal negative margin — see the verification
    rule; keeps admin modules flush with the nav height while letting their
@@ -14188,7 +14372,7 @@ html.dark .wmod-trow:hover { background: rgba(255,255,255,0.04); }
 .wmod-td { font-size: 12.5px; color: var(--text-muted); min-width: 0; }
 .wmod-td-primary { font-size: 0.875rem; font-weight: 600; color: var(--text); }
 .wmod-td-meta { font-size: 0.72rem; color: var(--text-subtle); margin-top: 2px; }
-.wmod-td-code { font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.8rem; color: var(--text-muted); }
+.wmod-td-code { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); }
 
 /* Leading tinted status glyph inside a row — a BARE icon, no box behind it. */
 .wmod-row-ic { display: inline-flex; align-items: center; justify-content: center; color: var(--ic, var(--primary)); }
@@ -14268,7 +14452,7 @@ html.dark .wmod-input { background: rgba(255,255,255,0.05); }
 .wmod-modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: auto; padding-top: 22px; }
 .wmod-secret { display: flex; align-items: center; gap: 8px; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 10px; padding: 10px 12px; }
 html.dark .wmod-secret { background: rgba(0,0,0,0.25); }
-.wmod-secret code { font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.82rem; color: var(--text); word-break: break-all; flex: 1; }
+.wmod-secret code { font-size: 0.82rem; color: var(--text); word-break: break-all; flex: 1; }
 
 /* ── Toast ── */
 .wmod-toast-wrap { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 3200; display: flex; flex-direction: column; gap: 8px; align-items: center; }

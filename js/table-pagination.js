@@ -41,7 +41,7 @@
      excluded from the pagination count (they're already hidden by that code). */
   var FILTER_HIDDEN = [
     'adm-row-hidden', 'inv-row-hidden', 'rf-row-hidden',
-    'pf-row-hidden', 'wf-row-hidden', 'is-hidden'
+    'pf-row-hidden', 'pf-row-collapsing', 'wf-row-hidden', 'is-hidden'
   ];
 
   /* ── Injected styles ──────────────────────────────────────────────────── */

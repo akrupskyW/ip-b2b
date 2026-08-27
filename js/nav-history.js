@@ -153,7 +153,28 @@ function apiForSidebar(sidebar) {
   for (const api of historyApis.values()) {
     if (api && api.root === sidebar) return api;
   }
+  /* Chat-history often mounts (and fires ready) before this module evaluates,
+     so the ready listener never saw that event. The page stashes the live API
+     on window.__wiseChatHistory after mount. */
+  const existing = typeof window !== 'undefined' ? window.__wiseChatHistory : null;
+  if (existing && existing.root === sidebar) return existing;
+  if (existing && !existing.root) return existing;
   return null;
+}
+
+/** Drop the docked-module pixel pin (sticky 280px) so History can fill the
+ *  260px nav. Inline !important beats the stylesheet; this must run even when
+ *  the History API has not been registered yet. */
+function fitSidebarToNav(sidebar) {
+  if (!sidebar) return;
+  sidebar.style.setProperty('flex', '0 1 auto', 'important');
+  sidebar.style.setProperty('width', '100%', 'important');
+  sidebar.style.setProperty('min-width', '0', 'important');
+  sidebar.style.setProperty('max-width', '100%', 'important');
+  sidebar.style.setProperty('height', 'auto', 'important');
+  sidebar.style.setProperty('box-sizing', 'border-box', 'important');
+  sidebar.setAttribute('data-pr-lock', '');
+  try { window.WisePaneResize && window.WisePaneResize.release && window.WisePaneResize.release([sidebar]); } catch (_) { /* optional */ }
 }
 
 function adoptSidebar(sidebar, host) {
@@ -168,9 +189,10 @@ function adoptSidebar(sidebar, host) {
   }
   sidebar.classList.add('wch-in-nav');
   sidebar.classList.remove('wch-docked-hidden', 'wch-dock-conceal', 'wch-dock-reveal');
+  host.appendChild(sidebar);
+  fitSidebarToNav(sidebar);
   const api = apiForSidebar(sidebar);
   try { api && api.prepareNavEmbed && api.prepareNavEmbed(); } catch (_) { /* best-effort */ }
-  host.appendChild(sidebar);
 }
 
 function releaseSidebar({ restoreChrome = true } = {}) {
@@ -331,6 +353,7 @@ function mountGroup({ open } = {}) {
   if (live && group.contains(live)) {
     syncOpen(group, nextOpen);
     live.classList.remove('wch-docked-hidden', 'wch-dock-conceal', 'wch-dock-reveal');
+    fitSidebarToNav(live);
     const api = apiForSidebar(live);
     try { api && api.prepareNavEmbed && api.prepareNavEmbed(); } catch (_) { /* already embedded */ }
     return;
@@ -437,6 +460,11 @@ function wireClicks() {
 
 function boot() {
   wireClicks();
+  /* Ready may have already fired (classic chat-history.js runs during parse;
+     this module is deferred). Register the live API so adopt can call
+     prepareNavEmbed instead of leaving the sticky 280px pin in place. */
+  const existing = typeof window !== 'undefined' ? window.__wiseChatHistory : null;
+  if (existing && existing.root) historyApis.set('__live__', existing);
   restoreNavHistory();
 }
 

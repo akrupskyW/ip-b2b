@@ -1,0 +1,1697 @@
+{
+ "generated_for": "high-res product image replacement",
+ "items": [
+  {
+   "img": "portfolio/coconut_brownies.png",
+   "name": "Toasted Coconut Brownies-12 ct",
+   "brand": "Flax4Life",
+   "upc": "857287004203",
+   "cur_w": 96,
+   "cur_h": 96,
+   "cur_bytes": 18354
+  },
+  {
+   "img": "portfolio/chocolate_chip_muffins.png",
+   "name": "Chocolate Chip Muffins-4 ct",
+   "brand": "Flax4Life",
+   "upc": "065776631520",
+   "cur_w": 96,
+   "cur_h": 96,
+   "cur_bytes": 18786
+  },
+  {
+   "img": "portfolio/blueberry_muffins.png",
+   "name": "Blueberry Muffins-4 ct",
+   "brand": "Flax4Life",
+   "upc": "065776631537",
+   "cur_w": 96,
+   "cur_h": 96,
+   "cur_bytes": 17795
+  },
+  {
+   "img": "portfolio/apple_cinnamon_muffins.png",
+   "name": "Apple Cinnamon Muffins-4 ct",
+   "brand": "Flax4Life",
+   "upc": "",
+   "cur_w": 96,
+   "cur_h": 96,
+   "cur_bytes": 18772
+  },
+  {
+   "img": "portfolio/oatmeal_raisin_cookies.png",
+   "name": "Oatmeal Raisin Cookies-5 ct",
+   "brand": "Flax4Life",
+   "upc": "857287004562",
+   "cur_w": 96,
+   "cur_h": 96,
+   "cur_bytes": 16331
+  },
+  {
+   "img": "portfolio/dark_cherry_brownies.png",
+   "name": "Mini Dark Cherry Brownie Flax Muffins",
+   "brand": "Flax4Life",
+   "upc": "",
+   "cur_w": 96,
+   "cur_h": 96,
+   "cur_bytes": 18713
+  },
+  {
+   "img": "portfolio/chocolate_brownies.png",
+   "name": "Chocolate Brownies-12 ct",
+   "brand": "Flax4Life",
+   "upc": "",
+   "cur_w": 96,
+   "cur_h": 96,
+   "cur_bytes": 18014
+  },
+  {
+   "img": "portfolio/carrot_raisin_muffins.png",
+   "name": "Carrot Raisin Muffins-4 ct",
+   "brand": "Flax4Life",
+   "upc": "",
+   "cur_w": 96,
+   "cur_h": 96,
+   "cur_bytes": 18450
+  },
+  {
+   "img": "portfolio/granola.jpg",
+   "name": "Chunky Chocolate Granola",
+   "brand": "Flax4Life",
+   "upc": "857287004272",
+   "cur_w": 85,
+   "cur_h": 96,
+   "cur_bytes": 5000
+  },
+  {
+   "img": "portfolio/vegan_blueberry_mini.png",
+   "name": "Vegan Blueberry Mini Muffins",
+   "brand": "Flax4Life",
+   "upc": "",
+   "cur_w": 96,
+   "cur_h": 96,
+   "cur_bytes": 17882
+  },
+  {
+   "img": "top5-ginger-turmeric-bar.png",
+   "name": "Ginger Turmeric Bar",
+   "brand": "Date Better",
+   "upc": "",
+   "cur_w": 1536,
+   "cur_h": 1024,
+   "cur_bytes": 2299259
+  },
+  {
+   "img": "top5-almond-coconut-crisp.png",
+   "name": "Almond Coconut Crisp",
+   "brand": "Date Better",
+   "upc": "",
+   "cur_w": 1536,
+   "cur_h": 1024,
+   "cur_bytes": 2345402
+  },
+  {
+   "img": "top5-pistachio-rose-bar.png",
+   "name": "Pistachio Rose Bar",
+   "brand": "Date Better",
+   "upc": "",
+   "cur_w": 1536,
+   "cur_h": 1024,
+   "cur_bytes": 2363681
+  },
+  {
+   "img": "top5-matcha-cashew-bites.png",
+   "name": "Matcha Cashew Bites",
+   "brand": "Date Better",
+   "upc": "",
+   "cur_w": 1536,
+   "cur_h": 1024,
+   "cur_bytes": 2058616
+  },
+  {
+   "img": "top5-walnut-brownie-bar.png",
+   "name": "Walnut Brownie Bar",
+   "brand": "Date Better",
+   "upc": "",
+   "cur_w": 1536,
+   "cur_h": 1024,
+   "cur_bytes": 2576853
+  },
+  {
+   "img": "date-better-cashew-lime-crisp.png",
+   "name": "Cashew Lime Crisp",
+   "brand": "Date Better",
+   "upc": "",
+   "cur_w": 1536,
+   "cur_h": 1024,
+   "cur_bytes": 1721154
+  },
+  {
+   "img": "verification/ns-powdered-vitamin-eggs.png",
+   "name": "Powdered Vitamin Eggs",
+   "brand": "Nutrient Survival",
+   "upc": "818491020984",
+   "cur_w": 600,
+   "cur_h": 600,
+   "cur_bytes": 416791
+  },
+  {
+   "img": "verification/ns-homestyle-scramble.png",
+   "name": "Homestyle Scramble \u2014 Protein Meal",
+   "brand": "Nutrient Survival",
+   "upc": "",
+   "cur_w": 2000,
+   "cur_h": 2000,
+   "cur_bytes": 4020742
+  },
+  {
+   "img": "verification/ns-triple-cheese-mac.png",
+   "name": "Triple Cheese Mac \u2014 Protein Meal",
+   "brand": "Nutrient Survival",
+   "upc": "",
+   "cur_w": 2000,
+   "cur_h": 2000,
+   "cur_bytes": 3998969
+  },
+  {
+   "img": "verification/ns-protein-cereal-chocolate.png",
+   "name": "Protein Cereal \u2014 Chocolate",
+   "brand": "Nutrient Survival",
+   "upc": "",
+   "cur_w": 2000,
+   "cur_h": 2000,
+   "cur_bytes": 4040057
+  },
+  {
+   "img": "verification/ns-freeze-dried-mixed-vegetables.png",
+   "name": "Freeze-Dried Mixed Vegetables",
+   "brand": "Nutrient Survival",
+   "upc": "",
+   "cur_w": 2000,
+   "cur_h": 2000,
+   "cur_bytes": 4031172
+  },
+  {
+   "img": "verification/ns-powdered-vitamin-milk.png",
+   "name": "Powdered Vitamin Milk",
+   "brand": "Nutrient Survival",
+   "upc": "",
+   "cur_w": 2000,
+   "cur_h": 2000,
+   "cur_bytes": 3774377
+  },
+  {
+   "img": "verification/ns-powdered-vitamin-butter.png",
+   "name": "Powdered Vitamin Butter",
+   "brand": "Nutrient Survival",
+   "upc": "",
+   "cur_w": 2000,
+   "cur_h": 2000,
+   "cur_bytes": 3818527
+  },
+  {
+   "img": "verification/ns-powdered-vitamin-potato.png",
+   "name": "Powdered Vitamin Potato",
+   "brand": "Nutrient Survival",
+   "upc": "",
+   "cur_w": 600,
+   "cur_h": 600,
+   "cur_bytes": 402488
+  },
+  {
+   "img": "portfolio/frosted_toaster_pastries.png",
+   "name": "Frosted Toaster Pastries",
+   "brand": "Great Value",
+   "upc": "078742129084",
+   "cur_w": 96,
+   "cur_h": 96,
+   "cur_bytes": 15535
+  },
+  {
+   "img": "portfolio/nsa_carrot_raisin_mini.png",
+   "name": "Carrot Raisin No Sugar Added Mini Flax Muffins",
+   "brand": "Flax4Life",
+   "upc": "857287004746",
+   "cur_w": 96,
+   "cur_h": 96,
+   "cur_bytes": 18465
+  },
+  {
+   "img": "portfolio/vegan_carrot_raisin_mini.png",
+   "name": "Vegan Carrot Raisin Mini Muffins",
+   "brand": "Flax4Life",
+   "upc": "857287004821",
+   "cur_w": 96,
+   "cur_h": 96,
+   "cur_bytes": 18983
+  },
+  {
+   "img": "portfolio/vegan_chocolate_brownies.png",
+   "name": "Vegan Chocolate Brownies",
+   "brand": "Flax4Life",
+   "upc": "857287004838",
+   "cur_w": 96,
+   "cur_h": 96,
+   "cur_bytes": 17580
+  },
+  {
+   "img": "portfolio/pf_cereal.png",
+   "name": "Organic Honey Oat Toasted Cereal",
+   "brand": "Simple Truth",
+   "upc": "011110884616",
+   "cur_w": 1024,
+   "cur_h": 1024,
+   "cur_bytes": 1303474
+  },
+  {
+   "img": "portfolio/pf_protein_bar.png",
+   "name": "Organic Peanut Butter Protein Bar",
+   "brand": "Simple Truth",
+   "upc": "011110884746",
+   "cur_w": 1024,
+   "cur_h": 1024,
+   "cur_bytes": 1297627
+  },
+  {
+   "img": "portfolio/pf_trail_mix.png",
+   "name": "Organic Nut & Berry Trail Mix",
+   "brand": "Simple Truth",
+   "upc": "011110884401",
+   "cur_w": 1024,
+   "cur_h": 1024,
+   "cur_bytes": 1256692
+  },
+  {
+   "img": "portfolio/pf_crackers.png",
+   "name": "Organic Sea Salt Multi-Seed Crackers",
+   "brand": "Simple Truth",
+   "upc": "011110884524",
+   "cur_w": 1024,
+   "cur_h": 1024,
+   "cur_bytes": 1520491
+  },
+  {
+   "img": "portfolio/pf_date_bites.png",
+   "name": "Organic Chocolate Brownie Bites",
+   "brand": "Simple Truth",
+   "upc": "011110887010",
+   "cur_w": 1024,
+   "cur_h": 1024,
+   "cur_bytes": 1632959
+  },
+  {
+   "img": "portfolio/pf_tortilla_chips.png",
+   "name": "Grain-Free Sea Salt Tortilla Chips",
+   "brand": "Siete",
+   "upc": "074992900113",
+   "cur_w": 1024,
+   "cur_h": 1024,
+   "cur_bytes": 1188343
+  },
+  {
+   "img": "portfolio/pf_popcorn.png",
+   "name": "Grain-Free Butter Popcorn",
+   "brand": "Siete",
+   "upc": "074992901126",
+   "cur_w": 1024,
+   "cur_h": 1024,
+   "cur_bytes": 1104808
+  },
+  {
+   "img": "helix/ferrero-nutella.jpg",
+   "name": "Nutella",
+   "brand": "Ferrero",
+   "upc": "3017620425035",
+   "cur_w": 323,
+   "cur_h": 400,
+   "cur_bytes": 21924
+  },
+  {
+   "img": "helix/kinder-kinder-bueno.jpg",
+   "name": "Kinder Bueno",
+   "brand": "Kinder",
+   "upc": "8000500037560",
+   "cur_w": 400,
+   "cur_h": 181,
+   "cur_bytes": 47672
+  },
+  {
+   "img": "helix/terra-delyssa-extra-virgin-olive-oil.jpg",
+   "name": "Extra Virgin Olive Oil",
+   "brand": "Terra Delyssa",
+   "upc": "6191509900664",
+   "cur_w": 400,
+   "cur_h": 300,
+   "cur_bytes": 15284
+  },
+  {
+   "img": "helix/ritz-bakery-the-original-cracker.jpg",
+   "name": "The Original Cracker",
+   "brand": "Ritz Bakery",
+   "upc": "5000137487908",
+   "cur_w": 332,
+   "cur_h": 400,
+   "cur_bytes": 59533
+  },
+  {
+   "img": "helix/oatly-barista-edition-oat-drink.jpg",
+   "name": "Barista edition oat drink",
+   "brand": "Oatly!",
+   "upc": "7394376620157",
+   "cur_w": 166,
+   "cur_h": 400,
+   "cur_bytes": 14540
+  },
+  {
+   "img": "helix/yeo-valley-yoghurt.jpg",
+   "name": "Yoghurt",
+   "brand": "Yeo Valley",
+   "upc": "5036589255550",
+   "cur_w": 337,
+   "cur_h": 400,
+   "cur_bytes": 39419
+  },
+  {
+   "img": "helix/weetabix-super-smooth-porridge.jpg",
+   "name": "Super smooth porridge",
+   "brand": "Weetabix",
+   "upc": "5010029219494",
+   "cur_w": 283,
+   "cur_h": 400,
+   "cur_bytes": 32383
+  },
+  {
+   "img": "helix/peter-s-yard-peter-s-yard-original-sourdough-crackers.jpg",
+   "name": "Peter's Yard Original Sourdough Crackers",
+   "brand": "Peter's Yard",
+   "upc": "5060198820052",
+   "cur_w": 300,
+   "cur_h": 400,
+   "cur_bytes": 18122
+  },
+  {
+   "img": "helix/doritos-doritos-nachos-cheese-flavoured-100g.jpg",
+   "name": "Doritos Nachos Cheese Flavoured 100g",
+   "brand": "Doritos",
+   "upc": "5900259094704",
+   "cur_w": 300,
+   "cur_h": 400,
+   "cur_bytes": 35403
+  },
+  {
+   "img": "helix/ambrosia-ambrosia-rice-pudding.jpg",
+   "name": "Ambrosia Rice pudding",
+   "brand": "Ambrosia",
+   "upc": "5000354800931",
+   "cur_w": 235,
+   "cur_h": 400,
+   "cur_bytes": 55503
+  },
+  {
+   "img": "helix/vita-coco-coconut-water.jpg",
+   "name": "Coconut Water",
+   "brand": "Vita Coco",
+   "upc": "898999000503",
+   "cur_w": 287,
+   "cur_h": 400,
+   "cur_bytes": 27464
+  },
+  {
+   "img": "helix/great-value-purified-drinking-water.jpg",
+   "name": "Purified Drinking Water",
+   "brand": "Great Value",
+   "upc": "078742040370",
+   "cur_w": 136,
+   "cur_h": 400,
+   "cur_bytes": 10683
+  },
+  {
+   "img": "helix/lu-napolitain-l-original.jpg",
+   "name": "Napolitain l'Original",
+   "brand": "Lu",
+   "upc": "3017760290692",
+   "cur_w": 400,
+   "cur_h": 194,
+   "cur_bytes": 23766
+  },
+  {
+   "img": "helix/terry-s-chocolate-orange-milk.jpg",
+   "name": "Chocolate Orange Milk",
+   "brand": "Terry's",
+   "upc": "3664346304863",
+   "cur_w": 400,
+   "cur_h": 385,
+   "cur_bytes": 54462
+  },
+  {
+   "img": "helix/nairn-s-fruit-seed-oatcakes.jpg",
+   "name": "Fruit & Seed Oatcakes",
+   "brand": "Nairn's",
+   "upc": "612322000202",
+   "cur_w": 201,
+   "cur_h": 400,
+   "cur_bytes": 28356
+  },
+  {
+   "img": "helix/carozzi-pasta-mix.jpg",
+   "name": "pasta mix",
+   "brand": "Carozzi",
+   "upc": "7802575034038",
+   "cur_w": 148,
+   "cur_h": 400,
+   "cur_bytes": 20353
+  },
+  {
+   "img": "helix/cirio-rosii-cirio-diced-tomatoes.jpg",
+   "name": "Rosii Cirio Diced Tomatoes",
+   "brand": "Cirio",
+   "upc": "8000320010118",
+   "cur_w": 163,
+   "cur_h": 200,
+   "cur_bytes": 9191
+  },
+  {
+   "img": "helix/natural-set-yogurt-onken.jpg",
+   "name": "Onken",
+   "brand": "natural set yogurt",
+   "upc": "7610900299072",
+   "cur_w": 225,
+   "cur_h": 400,
+   "cur_bytes": 17268
+  },
+  {
+   "img": "helix/toblerone-toblerone-dark-chocolate-bar.jpg",
+   "name": "Toblerone Dark Chocolate Bar",
+   "brand": "Toblerone",
+   "upc": "7614500010617",
+   "cur_w": 300,
+   "cur_h": 400,
+   "cur_bytes": 34665
+  },
+  {
+   "img": "helix/nature-valley-nature-valley-crunchy-oats-n-honey-granola-bar.jpg",
+   "name": "Nature Valley Crunchy Oats 'N Honey Granola Bar",
+   "brand": "Nature Valley",
+   "upc": "016000264694",
+   "cur_w": 400,
+   "cur_h": 167,
+   "cur_bytes": 33600
+  },
+  {
+   "img": "helix/terra-delyssa-organic-extra-virgin-olive-oil.jpg",
+   "name": "Organic Extra Virgin Olive Oil",
+   "brand": "Terra Delyssa",
+   "upc": "6191509903023",
+   "cur_w": 300,
+   "cur_h": 400,
+   "cur_bytes": 36675
+  },
+  {
+   "img": "helix/dave-s-killer-bread-21-whole-grains-and-seeds.jpg",
+   "name": "21 whole Grains and Seeds",
+   "brand": "Dave's Killer Bread",
+   "upc": "013764027053",
+   "cur_w": 300,
+   "cur_h": 400,
+   "cur_bytes": 36523
+  },
+  {
+   "img": "helix/soreen-malt-loaf-lunchbox-sized.jpg",
+   "name": "Malt Loaf (Lunchbox Sized)",
+   "brand": "Soreen",
+   "upc": "5018735224924",
+   "cur_w": 400,
+   "cur_h": 300,
+   "cur_bytes": 29602
+  },
+  {
+   "img": "helix/robinsons-robinsons-orange-squash.jpg",
+   "name": "Robinsons Orange Squash",
+   "brand": "Robinsons",
+   "upc": "5000147030125",
+   "cur_w": 243,
+   "cur_h": 400,
+   "cur_bytes": 19227
+  },
+  {
+   "img": "helix/kirkland-signature-water-bottled.jpg",
+   "name": "Water, Bottled",
+   "brand": "Kirkland Signature",
+   "upc": "096619756803",
+   "cur_w": 300,
+   "cur_h": 400,
+   "cur_bytes": 44818
+  },
+  {
+   "img": "helix/frank-cooper-s-fine-cut-oxford-marmalade.jpg",
+   "name": "Fine cut Oxford marmalade",
+   "brand": "Frank Cooper's",
+   "upc": "5035660138782",
+   "cur_w": 279,
+   "cur_h": 400,
+   "cur_bytes": 49231
+  },
+  {
+   "img": "helix/crespo-pitted-ripe-olives.jpg",
+   "name": "Pitted Ripe Olives",
+   "brand": "Crespo",
+   "upc": "3076820002064",
+   "cur_w": 217,
+   "cur_h": 400,
+   "cur_bytes": 110339
+  },
+  {
+   "img": "helix/kellogg-s-coco-pops.jpg",
+   "name": "Coco Pops",
+   "brand": "Kellogg's",
+   "upc": "5059319024479",
+   "cur_w": 255,
+   "cur_h": 400,
+   "cur_bytes": 37630
+  },
+  {
+   "img": "helix/lu-cioccolato-al-latte.jpg",
+   "name": "Cioccolato al latte",
+   "brand": "LU",
+   "upc": "3017760363396",
+   "cur_w": 230,
+   "cur_h": 400,
+   "cur_bytes": 31116
+  },
+  {
+   "img": "helix/tesco-finest-wholemeal-loaf.jpg",
+   "name": "Finest Wholemeal Loaf",
+   "brand": "Tesco",
+   "upc": "5057545918791",
+   "cur_w": 291,
+   "cur_h": 400,
+   "cur_bytes": 24708
+  },
+  {
+   "img": "helix/lee-kum-kee-premium-soy-sauce.jpg",
+   "name": "Premium Soy Sauce",
+   "brand": "Lee Kum Kee",
+   "upc": "078895126396",
+   "cur_w": 104,
+   "cur_h": 400,
+   "cur_bytes": 26537
+  },
+  {
+   "img": "helix/nairn-s-stem-ginger-oat-biscuits.jpg",
+   "name": "Stem ginger oat biscuits",
+   "brand": "Nairn's",
+   "upc": "061232201047",
+   "cur_w": 400,
+   "cur_h": 209,
+   "cur_bytes": 23544
+  },
+  {
+   "img": "helix/reese-s-creamy-peanut-butter.jpg",
+   "name": "Creamy Peanut Butter",
+   "brand": "reese's",
+   "upc": "034000400126",
+   "cur_w": 238,
+   "cur_h": 400,
+   "cur_bytes": 24929
+  },
+  {
+   "img": "helix/cadbury-bournville-cocoa.jpg",
+   "name": "Bournville Cocoa",
+   "brand": "Cadbury",
+   "upc": "5034660021445",
+   "cur_w": 195,
+   "cur_h": 400,
+   "cur_bytes": 30152
+  },
+  {
+   "img": "helix/acti-leaf-almond-unsweetened-uht-milk.jpg",
+   "name": "Almond Unsweetened UHT Milk",
+   "brand": "Acti Leaf",
+   "upc": "4061459332896",
+   "cur_w": 169,
+   "cur_h": 400,
+   "cur_bytes": 19184
+  },
+  {
+   "img": "helix/chobani-nonfat-greek-yogurt.jpg",
+   "name": "Nonfat Greek Yogurt",
+   "brand": "Chobani",
+   "upc": "894700010137",
+   "cur_w": 300,
+   "cur_h": 400,
+   "cur_bytes": 43126
+  },
+  {
+   "img": "helix/warburtons-warburtons-old-english-medium-sliced-white-bread-.jpg",
+   "name": "Warburtons Old English Medium Sliced White Bread 400G",
+   "brand": "Warburtons",
+   "upc": "5010044006529",
+   "cur_w": 396,
+   "cur_h": 400,
+   "cur_bytes": 35181
+  },
+  {
+   "img": "helix/waitrose-duchy-organic-houmous.jpg",
+   "name": "Houmous",
+   "brand": "Waitrose Duchy Organic",
+   "upc": "5000169090336",
+   "cur_w": 296,
+   "cur_h": 400,
+   "cur_bytes": 44133
+  },
+  {
+   "img": "helix/toblerone-milk-chocolate-large-bar.jpg",
+   "name": "Milk Chocolate Large Bar",
+   "brand": "Toblerone",
+   "upc": "7622210496645",
+   "cur_w": 400,
+   "cur_h": 300,
+   "cur_bytes": 22303
+  },
+  {
+   "img": "helix/nature-s-own-100-whole-wheat-bread.jpg",
+   "name": "100% Whole Wheat Bread",
+   "brand": "Nature's Own",
+   "upc": "072250037129",
+   "cur_w": 151,
+   "cur_h": 400,
+   "cur_bytes": 17954
+  },
+  {
+   "img": "helix/jif-peanut-butter-creamy.jpg",
+   "name": "Peanut Butter (Creamy)",
+   "brand": "Jif",
+   "upc": "051500240946",
+   "cur_w": 224,
+   "cur_h": 400,
+   "cur_bytes": 16330
+  },
+  {
+   "img": "helix/cadbury-dairymilk-buttons.jpg",
+   "name": "Dairymilk buttons",
+   "brand": "Cadbury",
+   "upc": "7622210286956",
+   "cur_w": 300,
+   "cur_h": 400,
+   "cur_bytes": 56320
+  },
+  {
+   "img": "helix/jif-jif-peanut-butter.jpg",
+   "name": "Jif peanut butter",
+   "brand": "Jif",
+   "upc": "051500255162",
+   "cur_w": 206,
+   "cur_h": 400,
+   "cur_bytes": 35019
+  },
+  {
+   "img": "helix/member-s-mark-purified-water.jpg",
+   "name": "Purified Water",
+   "brand": "Member's Mark",
+   "upc": "078742051451",
+   "cur_w": 290,
+   "cur_h": 400,
+   "cur_bytes": 13304
+  },
+  {
+   "img": "helix/oreo-oreo-original.jpg",
+   "name": "Oreo Original",
+   "brand": "Oreo",
+   "upc": "7622210021502",
+   "cur_w": 400,
+   "cur_h": 225,
+   "cur_bytes": 41796
+  },
+  {
+   "img": "helix/chocolove-ginger-crystallized-in-dark-chocolate.jpg",
+   "name": "Ginger Crystallized In Dark Chocolate",
+   "brand": "Chocolove",
+   "upc": "716270001660",
+   "cur_w": 210,
+   "cur_h": 400,
+   "cur_bytes": 24595
+  },
+  {
+   "img": "helix/coca-cola-coca-cola-zero.jpg",
+   "name": "Coca Cola Zero",
+   "brand": "Coca-Cola",
+   "upc": "049000042566",
+   "cur_w": 209,
+   "cur_h": 400,
+   "cur_bytes": 19446
+  },
+  {
+   "img": "helix/lipton-yeellow-label-tea.jpg",
+   "name": "Yeellow Label Tea",
+   "brand": "Lipton",
+   "upc": "6221048700705",
+   "cur_w": 400,
+   "cur_h": 174,
+   "cur_bytes": 15333
+  },
+  {
+   "img": "helix/warburtons-6-soft-white-rolls-sliced.jpg",
+   "name": "6 Soft White Rolls Sliced",
+   "brand": "Warburtons",
+   "upc": "5010044002316",
+   "cur_w": 120,
+   "cur_h": 400,
+   "cur_bytes": 19649
+  },
+  {
+   "img": "helix/hellmann-s-mayonnaise.jpg",
+   "name": "Mayonnaise",
+   "brand": "Hellmann's",
+   "upc": "048001213487",
+   "cur_w": 212,
+   "cur_h": 400,
+   "cur_bytes": 35018
+  },
+  {
+   "img": "helix/maruchan-ramen-noodle-soup-chicken-flavor.jpg",
+   "name": "Ramen noodle soup chicken flavor",
+   "brand": "Maruchan",
+   "upc": "041789002113",
+   "cur_w": 400,
+   "cur_h": 225,
+   "cur_bytes": 30607
+  },
+  {
+   "img": "helix/kirkland-signature-creamy-almond-butter.jpg",
+   "name": "Creamy Almond Butter",
+   "brand": "Kirkland Signature",
+   "upc": "096619676811",
+   "cur_w": 231,
+   "cur_h": 400,
+   "cur_bytes": 21714
+  },
+  {
+   "img": "helix/nature-valley-nature-valley-crunchy-oats-n-honey.jpg",
+   "name": "Nature Valley Crunchy Oats 'N Honey",
+   "brand": "Nature Valley",
+   "upc": "016000264601",
+   "cur_w": 225,
+   "cur_h": 400,
+   "cur_bytes": 46335
+  },
+  {
+   "img": "helix/danone-hipro.jpg",
+   "name": "Hipro",
+   "brand": "Danone",
+   "upc": "034361588136",
+   "cur_w": 333,
+   "cur_h": 400,
+   "cur_bytes": 29231
+  },
+  {
+   "img": "helix/bragg-organic-apple-cider-vinegar-imp.jpg",
+   "name": "Organic Apple Cider Vinegar imp",
+   "brand": "Bragg",
+   "upc": "074305001321",
+   "cur_w": 225,
+   "cur_h": 400,
+   "cur_bytes": 39431
+  },
+  {
+   "img": "helix/post-grape-nuts.jpg",
+   "name": "Grape-Nuts",
+   "brand": "Post",
+   "upc": "884912004710",
+   "cur_w": 294,
+   "cur_h": 400,
+   "cur_bytes": 71745
+  },
+  {
+   "img": "helix/bragg-organic-apple-cider-vinegar.jpg",
+   "name": "Organic Apple Cider Vinegar",
+   "brand": "Bragg",
+   "upc": "074305001161",
+   "cur_w": 155,
+   "cur_h": 400,
+   "cur_bytes": 25832
+  },
+  {
+   "img": "helix/hershey-s-natural-unsweetened-cocoa.jpg",
+   "name": "Natural Unsweetened Cocoa",
+   "brand": "Hershey's",
+   "upc": "034000052004",
+   "cur_w": 379,
+   "cur_h": 400,
+   "cur_bytes": 67368
+  },
+  {
+   "img": "helix/heinz-original-sandwich-spread.jpg",
+   "name": "Original Sandwich Spread",
+   "brand": "Heinz",
+   "upc": "5000157076021",
+   "cur_w": 343,
+   "cur_h": 400,
+   "cur_bytes": 27457
+  },
+  {
+   "img": "helix/kirkland-fancy-whole-cashews-with-sea-salt.jpg",
+   "name": "Fancy Whole Cashews with Sea Salt",
+   "brand": "Kirkland",
+   "upc": "096619142453",
+   "cur_w": 300,
+   "cur_h": 400,
+   "cur_bytes": 26716
+  },
+  {
+   "img": "helix/honey-maid-graham-crackers.jpg",
+   "name": "Graham Crackers",
+   "brand": "Honey Maid",
+   "upc": "044000004637",
+   "cur_w": 268,
+   "cur_h": 400,
+   "cur_bytes": 42386
+  },
+  {
+   "img": "helix/morinaga-mori-nu-shelf-stable-silken-tofu-firm.jpg",
+   "name": "Mori-Nu Shelf Stable Silken Tofu Firm",
+   "brand": "Morinaga",
+   "upc": "085696608044",
+   "cur_w": 400,
+   "cur_h": 227,
+   "cur_bytes": 19450
+  },
+  {
+   "img": "helix/kirkland-organic-creamy-peanut-butter.jpg",
+   "name": "Organic Creamy Peanut Butter",
+   "brand": "Kirkland",
+   "upc": "096619555505",
+   "cur_w": 300,
+   "cur_h": 400,
+   "cur_bytes": 31138
+  },
+  {
+   "img": "helix/heinz-tomato-ketchup-local.jpg",
+   "name": "Tomato Ketchup Local",
+   "brand": "Heinz",
+   "upc": "013000006057",
+   "cur_w": 216,
+   "cur_h": 400,
+   "cur_bytes": 22074
+  },
+  {
+   "img": "helix/great-value-vitamin-d-milk.jpg",
+   "name": "Vitamin D Milk",
+   "brand": "Great Value",
+   "upc": "078742351865",
+   "cur_w": 400,
+   "cur_h": 394,
+   "cur_bytes": 49297
+  },
+  {
+   "img": "helix/tilda-wholegrain-pilau-microwave-basmati-rice-classics.jpg",
+   "name": "Wholegrain Pilau Microwave Basmati Rice Classics",
+   "brand": "Tilda",
+   "upc": "5011157900025",
+   "cur_w": 238,
+   "cur_h": 400,
+   "cur_bytes": 22459
+  },
+  {
+   "img": "helix/general-mills-cheerios.jpg",
+   "name": "Cheerios",
+   "brand": "General Mills",
+   "upc": "016000170032",
+   "cur_w": 248,
+   "cur_h": 400,
+   "cur_bytes": 36783
+  },
+  {
+   "img": "helix/dairylea-dairylea-processed-cheese-portions-regular.jpg",
+   "name": "Dairylea processed cheese-portions regular",
+   "brand": "Dairylea",
+   "upc": "7622210317643",
+   "cur_w": 400,
+   "cur_h": 391,
+   "cur_bytes": 33491
+  },
+  {
+   "img": "helix/branston-original-pickle.jpg",
+   "name": "Original pickle",
+   "brand": "Branston",
+   "upc": "5060336505049",
+   "cur_w": 230,
+   "cur_h": 400,
+   "cur_bytes": 19126
+  },
+  {
+   "img": "helix/tesco-finest-white-loaf.jpg",
+   "name": "Finest White Loaf",
+   "brand": "Tesco",
+   "upc": "5057545918814",
+   "cur_w": 400,
+   "cur_h": 141,
+   "cur_bytes": 19315
+  },
+  {
+   "img": "helix/morrisons-morrisons-spreadable.jpg",
+   "name": "Morrisons Spreadable",
+   "brand": "Morrisons",
+   "upc": "5010525201320",
+   "cur_w": 400,
+   "cur_h": 210,
+   "cur_bytes": 16254
+  },
+  {
+   "img": "helix/cheerios-cheerios-heart-shape-imp.jpg",
+   "name": "Cheerios Heart shape imp",
+   "brand": "Cheerios",
+   "upc": "016000275263",
+   "cur_w": 288,
+   "cur_h": 400,
+   "cur_bytes": 59049
+  },
+  {
+   "img": "helix/danone-light-and-free.jpg",
+   "name": "Light and Free",
+   "brand": "Danone",
+   "upc": "034360005986",
+   "cur_w": 333,
+   "cur_h": 400,
+   "cur_bytes": 14561
+  },
+  {
+   "img": "helix/quaker-oats-old-fashioned-oats.jpg",
+   "name": "Old Fashioned Oats",
+   "brand": "Quaker Oats",
+   "upc": "030000010402",
+   "cur_w": 193,
+   "cur_h": 400,
+   "cur_bytes": 17902
+  },
+  {
+   "img": "helix/deer-park-100-natural-spring-water.jpg",
+   "name": "100% Natural Spring  Water",
+   "brand": "Deer Park",
+   "upc": "082657500638",
+   "cur_w": 300,
+   "cur_h": 400,
+   "cur_bytes": 16706
+  },
+  {
+   "img": "helix/kidfresh-super-duper-chicken-nuggets.jpg",
+   "name": "Super Duper Chicken Nuggets",
+   "brand": "Kidfresh",
+   "upc": "810882010024",
+   "cur_w": 400,
+   "cur_h": 305,
+   "cur_bytes": 35427
+  },
+  {
+   "img": "helix/sara-lee-healthy-multi-grain-bread.jpg",
+   "name": "Healthy Multi-Grain Bread",
+   "brand": "Sara Lee",
+   "upc": "072945715882",
+   "cur_w": 134,
+   "cur_h": 400,
+   "cur_bytes": 24418
+  },
+  {
+   "img": "helix/morrisons-all-bran-flakes.jpg",
+   "name": "All Bran Flakes",
+   "brand": "Morrisons",
+   "upc": "5010251720072",
+   "cur_w": 291,
+   "cur_h": 400,
+   "cur_bytes": 26268
+  },
+  {
+   "img": "helix/grupo-cuervo-s-a-cholula-hot-sauce-original-imp.jpg",
+   "name": "Cholula Hot Sauce (Original) imp",
+   "brand": "Grupo Cuervo S A",
+   "upc": "049733123457",
+   "cur_w": 165,
+   "cur_h": 400,
+   "cur_bytes": 24771
+  },
+  {
+   "img": "helix/justin-s-classic-peanut-butter-jars.jpg",
+   "name": "Classic Peanut Butter Jars",
+   "brand": "Justin's",
+   "upc": "855188003004",
+   "cur_w": 252,
+   "cur_h": 400,
+   "cur_bytes": 18471
+  },
+  {
+   "img": "helix/green-black-s-black-s-organic-cooking-dark-chocolate-bar.jpg",
+   "name": "Black's Organic Cooking Dark Chocolate Bar",
+   "brand": "Green & Black's",
+   "upc": "5011835102390",
+   "cur_w": 190,
+   "cur_h": 400,
+   "cur_bytes": 19479
+  },
+  {
+   "img": "helix/haugen-gruppen-as-french-sennep-yellow-397g.jpg",
+   "name": "French Sennep Yellow 397g",
+   "brand": "HAUGEN-GRUPPEN AS",
+   "upc": "041500763675",
+   "cur_w": 190,
+   "cur_h": 400,
+   "cur_bytes": 20521
+  },
+  {
+   "img": "helix/mondelez-original.jpg",
+   "name": "Original",
+   "brand": "Mondelez",
+   "upc": "044000050986",
+   "cur_w": 300,
+   "cur_h": 400,
+   "cur_bytes": 33009
+  },
+  {
+   "img": "helix/quaker-old-fashioned-oats-imp.jpg",
+   "name": "Old Fashioned Oats imp",
+   "brand": "Quaker",
+   "upc": "030000010204",
+   "cur_w": 184,
+   "cur_h": 400,
+   "cur_bytes": 25745
+  },
+  {
+   "img": "helix/food-for-life-ezekiel-4-9-sprouted-grain-bread.jpg",
+   "name": "Ezekiel 4:9 sprouted grain bread",
+   "brand": "Food For Life",
+   "upc": "073472001202",
+   "cur_w": 300,
+   "cur_h": 400,
+   "cur_bytes": 31399
+  },
+  {
+   "img": "helix/light-free-light-free-mousse.jpg",
+   "name": "Light & Free mousse",
+   "brand": "Light & Free",
+   "upc": "034360006143",
+   "cur_w": 333,
+   "cur_h": 400,
+   "cur_bytes": 33316
+  },
+  {
+   "img": "helix/haugen-gruppen-as-sweet-baby-rays-bbq-sauce-510g.jpg",
+   "name": "Sweet Baby Rays bbq Sauce 510g",
+   "brand": "HAUGEN-GRUPPEN AS",
+   "upc": "013409918104",
+   "cur_w": 213,
+   "cur_h": 400,
+   "cur_bytes": 26466
+  },
+  {
+   "img": "helix/general-mills-honey-nut-cheerios-imp.jpg",
+   "name": "Honey Nut Cheerios imp",
+   "brand": "General Mills",
+   "upc": "016000124790",
+   "cur_w": 280,
+   "cur_h": 400,
+   "cur_bytes": 26645
+  },
+  {
+   "img": "helix/thomas-thomas-original-english-muffins.jpg",
+   "name": "Thomas original english muffins",
+   "brand": "Thomas",
+   "upc": "048121102081",
+   "cur_w": 300,
+   "cur_h": 400,
+   "cur_bytes": 23787
+  },
+  {
+   "img": "helix/fairlife-chocolate-protien-shake.jpg",
+   "name": "Chocolate protien shake",
+   "brand": "Fairlife",
+   "upc": "811620022118",
+   "cur_w": 300,
+   "cur_h": 400,
+   "cur_bytes": 28669
+  },
+  {
+   "img": "helix/maretti-bruschette-chips-spinach-cheese.jpg",
+   "name": "Bruschette Chips Spinach & cheese",
+   "brand": "Maretti",
+   "upc": "3800205875000",
+   "cur_w": 162,
+   "cur_h": 222,
+   "cur_bytes": 12481
+  },
+  {
+   "img": "helix/nestle-ritz-cheese-flavour.jpg",
+   "name": "Ritz Cheese Flavour",
+   "brand": "Nestle",
+   "upc": "5000137488905",
+   "cur_w": 317,
+   "cur_h": 400,
+   "cur_bytes": 26339
+  },
+  {
+   "img": "helix/soreen-strawberry-lunchbox-loaves.jpg",
+   "name": "Strawberry lunchbox loaves",
+   "brand": "Soreen",
+   "upc": "5088722225647",
+   "cur_w": 400,
+   "cur_h": 187,
+   "cur_bytes": 27124
+  },
+  {
+   "img": "helix/sheldon-s-lancashire-oven-bottom-muffins.jpg",
+   "name": "Lancashire oven bottom muffins",
+   "brand": "Sheldon's",
+   "upc": "5023528000036",
+   "cur_w": 400,
+   "cur_h": 146,
+   "cur_bytes": 17117
+  },
+  {
+   "img": "helix/chobani-natural-light-greek-yogurt.jpg",
+   "name": "Natural Light Greek Yogurt",
+   "brand": "Chobani",
+   "upc": "9310653102626",
+   "cur_w": 258,
+   "cur_h": 400,
+   "cur_bytes": 22207
+  },
+  {
+   "img": "helix/welch-s-mixed-fruit-fruit-snacks.jpg",
+   "name": "Mixed Fruit Fruit Snacks",
+   "brand": "Welch's",
+   "upc": "034856008187",
+   "cur_w": 347,
+   "cur_h": 400,
+   "cur_bytes": 36183
+  },
+  {
+   "img": "helix/batchelors-batchelors-marrowfat-bigga-peas.jpg",
+   "name": "Batchelors Marrowfat Bigga Peas",
+   "brand": "Batchelors",
+   "upc": "5000232901286",
+   "cur_w": 223,
+   "cur_h": 400,
+   "cur_bytes": 18104
+  },
+  {
+   "img": "helix/lee-kum-kee-panda-brand-oyster-sauce.jpg",
+   "name": "Panda Brand Oyster Sauce",
+   "brand": "Lee Kum Kee",
+   "upc": "078895300017",
+   "cur_w": 113,
+   "cur_h": 400,
+   "cur_bytes": 21885
+  },
+  {
+   "img": "helix/dasani-dasani-purified-water.jpg",
+   "name": "Dasani Purified Water",
+   "brand": "Dasani",
+   "upc": "049000027624",
+   "cur_w": 198,
+   "cur_h": 400,
+   "cur_bytes": 30516
+  },
+  {
+   "img": "helix/florida-crystals-organic-raw-cane-sugar.jpg",
+   "name": "Organic Raw Cane Sugar",
+   "brand": "Florida Crystals",
+   "upc": "075779311145",
+   "cur_w": 301,
+   "cur_h": 400,
+   "cur_bytes": 23191
+  },
+  {
+   "img": "helix/orgain-vanilla-bean-organic-protein-50-superfoods.jpg",
+   "name": "Vanilla Bean Organic Protein + 50 Superfoods",
+   "brand": "Orgain",
+   "upc": "851770007566",
+   "cur_w": 217,
+   "cur_h": 400,
+   "cur_bytes": 25485
+  },
+  {
+   "img": "helix/oluf-lorentzen-as-shortbread-pure-butter-150g-walkers.jpg",
+   "name": "Shortbread Pure Butter 150g Walkers",
+   "brand": "Oluf lorentzen as",
+   "upc": "039047001152",
+   "cur_w": 400,
+   "cur_h": 149,
+   "cur_bytes": 25374
+  },
+  {
+   "img": "helix/oatly-oatmilk.jpg",
+   "name": "Oatmilk",
+   "brand": "Oatly",
+   "upc": "190646641016",
+   "cur_w": 300,
+   "cur_h": 400,
+   "cur_bytes": 27639
+  },
+  {
+   "img": "helix/nature-s-bakery-fig-bar-blueberry.jpg",
+   "name": "Fig Bar Blueberry",
+   "brand": "Nature's Bakery",
+   "upc": "047495112900",
+   "cur_w": 400,
+   "cur_h": 210,
+   "cur_bytes": 23380
+  },
+  {
+   "img": "helix/daisy-sour-cream.jpg",
+   "name": "Sour Cream",
+   "brand": "Daisy",
+   "upc": "073420000110",
+   "cur_w": 267,
+   "cur_h": 400,
+   "cur_bytes": 20104
+  },
+  {
+   "img": "helix/belvita-nabisco-belvita-cookies-cinnamon-brown-sugar-1x1-76-.jpg",
+   "name": "Nabisco belvita cookies cinnamon brown sugar 1x1.76 oz",
+   "brand": "Belvita",
+   "upc": "044000031930",
+   "cur_w": 400,
+   "cur_h": 225,
+   "cur_bytes": 21329
+  },
+  {
+   "img": "helix/poland-spring-poland-spring.jpg",
+   "name": "poland spring",
+   "brand": "Poland Spring",
+   "upc": "075720000814",
+   "cur_w": 174,
+   "cur_h": 400,
+   "cur_bytes": 17562
+  },
+  {
+   "img": "helix/oatly-oatmilk-full-fat.jpg",
+   "name": "Oatmilk Full Fat",
+   "brand": "Oatly",
+   "upc": "190646630089",
+   "cur_w": 300,
+   "cur_h": 400,
+   "cur_bytes": 24995
+  },
+  {
+   "img": "helix/quaker-oats-quick-1-minute-oats-imp.jpg",
+   "name": "Quick 1-minute Oats imp",
+   "brand": "Quaker Oats",
+   "upc": "030000012000",
+   "cur_w": 300,
+   "cur_h": 400,
+   "cur_bytes": 38405
+  },
+  {
+   "img": "helix/pepperidge-farm-goldfish.jpg",
+   "name": "Goldfish",
+   "brand": "Pepperidge Farm",
+   "upc": "014100085478",
+   "cur_w": 235,
+   "cur_h": 400,
+   "cur_bytes": 50153
+  },
+  {
+   "img": "helix/napolina-spaghetti-no-6.jpg",
+   "name": "Spaghetti no. 6",
+   "brand": "Napolina",
+   "upc": "5000232024602",
+   "cur_w": 400,
+   "cur_h": 119,
+   "cur_bytes": 10615
+  },
+  {
+   "img": "helix/kerrygold-salted-butter.jpg",
+   "name": "Salted Butter",
+   "brand": "Kerrygold",
+   "upc": "767707001067",
+   "cur_w": 400,
+   "cur_h": 244,
+   "cur_bytes": 44871
+  },
+  {
+   "img": "helix/quaker-lightly-salted-rice-cakes.jpg",
+   "name": "Lightly salted rice cakes",
+   "brand": "Quaker",
+   "upc": "030000169018",
+   "cur_w": 211,
+   "cur_h": 400,
+   "cur_bytes": 17353
+  },
+  {
+   "img": "helix/nature-s-path-organic-kirkland-ancient-grains-probiotic-gran.jpg",
+   "name": "Ancient Grains Probiotic Granola",
+   "brand": "Nature's Path Organic - Kirkland",
+   "upc": "096619194261",
+   "cur_w": 257,
+   "cur_h": 400,
+   "cur_bytes": 35466
+  },
+  {
+   "img": "helix/skippy-skippy-smooth-peanut-butter.jpg",
+   "name": "Skippy Smooth Peanut Butter",
+   "brand": "Skippy",
+   "upc": "037600106689",
+   "cur_w": 221,
+   "cur_h": 400,
+   "cur_bytes": 19668
+  },
+  {
+   "img": "helix/poland-spring-poland-spring-water.jpg",
+   "name": "Poland Spring Water",
+   "brand": "Poland Spring",
+   "upc": "075720481279",
+   "cur_w": 146,
+   "cur_h": 400,
+   "cur_bytes": 28156
+  },
+  {
+   "img": "helix/nutrail-keto-nut-granola.jpg",
+   "name": "Keto Nut Granola",
+   "brand": "NuTrail",
+   "upc": "819562022791",
+   "cur_w": 277,
+   "cur_h": 400,
+   "cur_bytes": 25757
+  },
+  {
+   "img": "helix/wai-wai-instant-noodles-casserole-beef-flavour.jpg",
+   "name": "Instant Noodles Casserole Beef Flavour",
+   "brand": "Wai Wai",
+   "upc": "8850100002488",
+   "cur_w": 400,
+   "cur_h": 328,
+   "cur_bytes": 90181
+  },
+  {
+   "img": "helix/lidl-special-flakes-original.jpg",
+   "name": "Special flakes original",
+   "brand": "Lidl",
+   "upc": "4056489479413",
+   "cur_w": 300,
+   "cur_h": 400,
+   "cur_bytes": 23505
+  },
+  {
+   "img": "helix/nabisco-ritz.jpg",
+   "name": "Ritz",
+   "brand": "Nabisco",
+   "upc": "044000031114",
+   "cur_w": 307,
+   "cur_h": 400,
+   "cur_bytes": 26258
+  },
+  {
+   "img": "compare/alpen.jpg",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 1500,
+   "cur_h": 1500,
+   "cur_bytes": 228694
+  },
+  {
+   "img": "compare/amys.png",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 192,
+   "cur_h": 192,
+   "cur_bytes": 5601
+  },
+  {
+   "img": "compare/annies.png",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 192,
+   "cur_h": 192,
+   "cur_bytes": 13947
+  },
+  {
+   "img": "compare/banza.png",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 96,
+   "cur_h": 96,
+   "cur_bytes": 2156
+  },
+  {
+   "img": "compare/barilla.png",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 256,
+   "cur_h": 256,
+   "cur_bytes": 2797
+  },
+  {
+   "img": "compare/bitchin.jpg",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 1000,
+   "cur_h": 1000,
+   "cur_bytes": 125603
+  },
+  {
+   "img": "compare/brekky.jpg",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 1200,
+   "cur_h": 1200,
+   "cur_bytes": 96979
+  },
+  {
+   "img": "compare/cascadian.jpg",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 246,
+   "cur_h": 400,
+   "cur_bytes": 23924
+  },
+  {
+   "img": "compare/chefboyardee.png",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 213,
+   "cur_h": 130,
+   "cur_bytes": 40015
+  },
+  {
+   "img": "compare/chickapea.png",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 512,
+   "cur_h": 268,
+   "cur_bytes": 14379
+  },
+  {
+   "img": "compare/crackerbarrel.png",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 192,
+   "cur_h": 192,
+   "cur_bytes": 24011
+  },
+  {
+   "img": "compare/familia.png",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 512,
+   "cur_h": 512,
+   "cur_bytes": 380693
+  },
+  {
+   "img": "compare/goodfoods.webp",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 1200,
+   "cur_h": 1200,
+   "cur_bytes": 153738
+  },
+  {
+   "img": "compare/goodles.png",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 1000,
+   "cur_h": 1000,
+   "cur_bytes": 28772
+  },
+  {
+   "img": "compare/kind.jpg",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 1000,
+   "cur_h": 1000,
+   "cur_bytes": 192398
+  },
+  {
+   "img": "compare/moderntable.png",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 256,
+   "cur_h": 256,
+   "cur_bytes": 2599
+  },
+  {
+   "img": "compare/naturespath.jpg",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 1000,
+   "cur_h": 1000,
+   "cur_bytes": 302418
+  },
+  {
+   "img": "compare/raos.png",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 512,
+   "cur_h": 268,
+   "cur_bytes": 33855
+  },
+  {
+   "img": "compare/simpletruth.png",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 256,
+   "cur_h": 256,
+   "cur_bytes": 4267
+  },
+  {
+   "img": "compare/sug_bearnaked.jpg",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 184,
+   "cur_h": 400,
+   "cur_bytes": 17847
+  },
+  {
+   "img": "compare/sug_bobs.jpg",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 184,
+   "cur_h": 400,
+   "cur_bytes": 13260
+  },
+  {
+   "img": "compare/sug_chosen.jpg",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 300,
+   "cur_h": 400,
+   "cur_bytes": 21808
+  },
+  {
+   "img": "compare/sug_kodiak.png",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 1800,
+   "cur_h": 1800,
+   "cur_bytes": 2269056
+  },
+  {
+   "img": "compare/sug_lara.jpg",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 185,
+   "cur_h": 400,
+   "cur_bytes": 24161
+  },
+  {
+   "img": "compare/sug_michele.jpg",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 205,
+   "cur_h": 400,
+   "cur_bytes": 22133
+  },
+  {
+   "img": "compare/sug_primal.jpg",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 300,
+   "cur_h": 400,
+   "cur_bytes": 30639
+  },
+  {
+   "img": "compare/sug_purely.jpg",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 300,
+   "cur_h": 400,
+   "cur_bytes": 24203
+  },
+  {
+   "img": "compare/sug_rxbar.jpg",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 210,
+   "cur_h": 400,
+   "cur_bytes": 19075
+  },
+  {
+   "img": "compare/sug_sabra.jpg",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 185,
+   "cur_h": 400,
+   "cur_bytes": 21399
+  },
+  {
+   "img": "compare/sug_siete.jpg",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 242,
+   "cur_h": 400,
+   "cur_bytes": 18552
+  },
+  {
+   "img": "compare/sug_wholly.jpg",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 228,
+   "cur_h": 400,
+   "cur_bytes": 20396
+  },
+  {
+   "img": "compare/velveeta.png",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 256,
+   "cur_h": 256,
+   "cur_bytes": 2861
+  },
+  {
+   "img": "compare/w365.jpg",
+   "name": "",
+   "brand": "",
+   "upc": "",
+   "cur_w": 592,
+   "cur_h": 1280,
+   "cur_bytes": 97071
+  }
+ ]
+}

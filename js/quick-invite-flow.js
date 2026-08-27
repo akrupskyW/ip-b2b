@@ -63,9 +63,9 @@ const COLS = [
   { key: 'name',    label: 'Invitee',     sortable: true,  value: (i) => i.name.toLowerCase(), type: 'text' },
   { key: 'org',     label: 'Organization', sortable: true, value: (i) => i.org.toLowerCase(),  type: 'text' },
   { key: 'status',  label: 'Status',      sortable: true,  value: (i) => STATUS_ORDER[i.status] ?? 9, type: 'num' },
-  { key: 'when',    label: 'Sent',        sortable: true,  value: (i) => whenTs(i), type: 'num' },
+  { key: 'when',    label: 'Sent',        sortable: true,  value: (i) => (dc() ? dc().sortValue(inviteDates(i), 'invite', dateLead) : whenTs(i)), type: 'num' },
 ];
-const GRID_COLS = '72px minmax(220px, 2.4fr) minmax(150px, 1.3fr) 118px minmax(150px, 1fr)';
+const GRID_COLS = '72px minmax(220px, 2.4fr) minmax(150px, 1.3fr) 118px minmax(186px, 1.15fr)';
 
 function initials(name) {
   return String(name).trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
@@ -78,6 +78,19 @@ let salesperson = 'All salespeople';
 let sortKey = null, sortDir = 1;
 let filterOpen = false;
 let docListenersBound = false;
+let dateLead = 'sent';
+let dateLeadBound = false;
+
+function dc() { return window.WiseDateCol; }
+function inviteDates(i) {
+  const D = dc();
+  const sent = i.day;
+  const accepted = i.status === 'accepted' ? i.day : '—';
+  const t = Date.parse(sent);
+  const expires = (D && !isNaN(t)) ? D.fmtDate(t + 7 * 86400000) : sent;
+  const partial = { sent, created: sent, edited: sent, expires, accepted };
+  return D ? D.complete(partial, 'invite') : partial;
+}
 
 /* ---- Chat bridge + toast -------------------------------------------- */
 let chatApi = null;
@@ -138,8 +151,16 @@ function activeFilterCount() {
 }
 
 function theadHtml() {
+  const D = dc();
   return COLS.map((c) => {
-    const cls = `adm-th${c.end ? ' adm-th--end' : ''}`;
+    const cls = `adm-th${c.end ? ' adm-th--end' : ''}${c.key === 'when' ? ' w-date-th' : ''}`;
+    if (c.key === 'when' && D) {
+      const inner = D.headerHtml({ kinds: 'invite', lead: dateLead });
+      if (!c.sortable) return `<span class="${cls}">${inner}</span>`;
+      const active = c.key === sortKey;
+      const dir = active ? ` data-adm-dir="${sortDir === 1 ? 'asc' : 'desc'}"` : '';
+      return `<span class="${cls} adm-th--sortable" role="button" tabindex="0" data-adm-sort="${esc(c.key)}"${dir}>${inner}<span class="adm-sort-arrow">${ARROW_SVG}</span></span>`;
+    }
     if (!c.sortable) return `<span class="${cls}">${esc(c.label)}</span>`;
     const active = c.key === sortKey;
     const dir = active ? ` data-adm-dir="${sortDir === 1 ? 'asc' : 'desc'}"` : '';
@@ -156,7 +177,7 @@ function rowMenuHtml(i) {
   ].map((a) =>
     `<button type="button" class="adm-rowmenu-item${a.variant ? ' adm-rowmenu-item--' + a.variant : ''}" role="menuitem" data-adm-action="${esc(a.action)}" data-adm-org="${esc(i.org)}" data-adm-email="${esc(i.email)}"${a.disabled ? ' disabled' : ''}><span class="material-symbols-outlined">${esc(a.icon)}</span>${esc(a.label)}</button>`
   ).join('');
-  return `<div class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button><div class="adm-rowmenu-pop" role="menu" hidden>${items}</div></div>`;
+  return `<div class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Actions"><span class="material-symbols-outlined">more_vert</span></button><div class="adm-rowmenu-pop" role="menu" hidden>${items}</div></div>`;
 }
 
 function inviteRowHtml(i) {
@@ -177,7 +198,7 @@ function inviteRowHtml(i) {
       <span class="adm-td"><span class="adm-chip ${chip.cls}">${esc(chip.label)}</span></span>
       <span class="adm-td">
         <span class="adm-idcell-body">
-          <span class="adm-idcell-name" style="font-weight:600;font-size:0.8rem">${esc(i.when)}</span>
+          <span class="w-datecell">${dc() ? dc().cellHtml(inviteDates(i), 'invite', dateLead) : esc(i.when)}</span>
           <span class="adm-idcell-sub">by ${esc(i.by)}</span>
         </span>
       </span>
@@ -240,7 +261,7 @@ function filterPopHtml() {
 function paint() {
   if (!hostEl) return;
   hostEl.innerHTML = `
-    <div class="adm-wrap adm-wrap--wide">
+    <div class="adm-wrap adm-wrap--wide" data-w-date-root data-qi-board>
       <header class="adm-head">
         <div class="adm-head-row">
           <div>
@@ -387,6 +408,15 @@ function runAction(action, org, email) {
 export function renderQuickInvite(mainEl) {
   hostEl = mainEl;
   activeStatus = null; query = ''; salesperson = 'All salespeople'; sortKey = null; sortDir = 1; filterOpen = false;
+  if (!dateLeadBound && dc()) {
+    dateLeadBound = true;
+    dc().onLead(hostEl, (lead, root) => {
+      if (!hostEl.querySelector('[data-qi-board]')) return;
+      if (root && !hostEl.contains(root)) return;
+      dateLead = lead;
+      applyFilter();
+    });
+  }
   paint();
 
   mainEl.addEventListener('click', (e) => {
@@ -405,7 +435,7 @@ export function renderQuickInvite(mainEl) {
       return;
     }
     const sortH = e.target.closest('[data-adm-sort]');
-    if (sortH) { toggleSort(sortH.dataset.admSort); return; }
+    if (sortH && !e.target.closest('.w-datemenu, .pf-datemenu')) { toggleSort(sortH.dataset.admSort); return; }
     const filter = e.target.closest('button[data-adm-filter]');
     if (filter) { const s = filter.dataset.admFilter || null; setInviteFilter(s && s === activeStatus ? null : s); return; }
     const act = e.target.closest('[data-adm-action]');

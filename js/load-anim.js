@@ -3,13 +3,9 @@
 /* ------------------------------------------------------------------ */
 /*
  * While output and comparison boards assemble, the streaming helix plays in
- * place of the striped skeleton — unless you switch back from Appearance.
- *
- * Default is the helix. Appearance ▸ Helix loading flips between that rope
- * and the older diagonal-stripe skeleton (the busy scan wash on pending
- * cells). The choice is per browser, and it covers the output module on
- * wiseai.html plus every Compare Foods board (product-comparison, portfolio,
- * and the copy on the WISEcodeAI page).
+ * place of the striped skeleton. Default is the helix. It covers the output
+ * module on wiseai.html plus every Compare Foods board (product-comparison,
+ * portfolio, and the copy on the WISEcodeAI page).
  */
 
 import { makeTraceHelix, TRACE_STRAND_MARKUP } from './trace-helix.js';

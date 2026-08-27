@@ -63,9 +63,16 @@
      flat column, and they gain a "Remove panel" row to hide the tracker outright
      (with a small restore tab left behind). */
   var PROGRESS_SEL = '.vf-progress-pane,.gv-progress-pane';
+  /* Next-level drawers that sit to the RIGHT of another sticky module (Help's
+     contact form, the generated Report pane). Same geometry rule as progress:
+     always treat as right-of-chat so a mid-layout probe cannot strip `.is-sticky`
+     and leave them as a flush peer card. Do NOT add Remove-panel — that is
+     progress-tracker only. */
+  var NESTED_DRAWER_SEL = '#help-contact,#wa-report,#pf-report-panel';
   var REMOVE_TOGGLE_ATTR = 'data-progress-remove';
 
   function isProgressPane(el) { return !!(el && el.matches && el.matches(PROGRESS_SEL)); }
+  function isNestedDrawer(el) { return !!(el && el.matches && el.matches(NESTED_DRAWER_SEL)); }
   function progressKey(mod) {
     return 'wise-progress-removed:' + location.pathname + ':' + (mod.id || (typeof mod.className === 'string' ? mod.className : 'progress'));
   }
@@ -220,7 +227,7 @@
        report a stale/left position mid-render, and syncSide would then STRIP
        their default `.is-sticky` — leaving the tracker un-tucked. Force true so
        progress panes are sticky by default and never lose it. */
-    if (isProgressPane(mod)) return true;
+    if (isProgressPane(mod) || isNestedDrawer(mod)) return true;
     if (isWchSidebar(mod)) return mod.classList.contains('wch-right');
     if (chat) {
       var mr = mod.getBoundingClientRect();

@@ -104,8 +104,8 @@ export const APP_LOGIC = [
         how: '<code>wise-colorblind</code> toggles the <code>colorblind</code> class and <code>wise-colorblind-mode</code> picks <code>deuter</code> (default), <code>protan</code> or <code>tritan</code>. The injected daltonization SVG filters are scoped to <code>#chat-shell-wrap, #agent-shell-wrap</code> and deliberately never applied to <code>&lt;body&gt;</code>, which would break fixed popovers.',
       },
       {
-        title: 'Crawl · Walk · Run gates the chat',
-        how: '<code>wise-cwr-mode</code> (<code>crawl|walk|run</code>, default <code>run</code>) sets <code>cwr-crawl</code> / <code>cwr-walk</code> / <code>cwr-run</code> on <code>&lt;html&gt;</code>. Crawl hides chat surfaces with <code>inert</code> + <code>aria-hidden</code>, Walk hides the composer rail, Run unlocks everything. Turning the widget off (<code>wise-cwr-ui</code>) suspends the gating entirely.',
+        title: 'Roll · Crawl · Walk · Run gates the chat',
+        how: '<code>wise-cwr-mode</code> (<code>roll|crawl|walk|run</code>, default <code>run</code>) sets <code>cwr-roll</code> / <code>cwr-crawl</code> / <code>cwr-walk</code> / <code>cwr-run</code> on <code>&lt;html&gt;</code>. Roll is Crawl with a stripped SaaS nav. Crawl hides chat surfaces with <code>inert</code> + <code>aria-hidden</code>, Walk hides the composer rail, Run unlocks everything. Turning the widget off (<code>wise-cwr-ui</code>) suspends the gating entirely.',
       },
     ],
   },
@@ -151,27 +151,39 @@ export const APP_LOGIC = [
     label: 'Panes, width & docking',
     icon: 'view_column',
     area: 'shared',
-    src: ['js/pane-width.js', 'js/pane-resize.js', 'js/default-fill.js', 'js/sticky-modules.js', 'js/wiseai-dock.js'],
+    src: ['js/pane-width.js', 'js/pane-resize.js', 'js/default-fill.js', 'js/sticky-modules.js', 'js/wiseai-dock.js', 'pages/wise.css'],
     rules: [
       {
-        title: 'Four width tiers, one control',
-        how: 'Every module uses the same <code>window.WPaneWidth</code> ladder — <strong>single → double → triple → fill</strong> (tiers 0–3) — expressed as <code>panel-wide</code>, <code>panel-triple</code>, <code>panel-fill</code> and cycled by <code>.panel-width-toggle-btn</code>. Do not invent a parallel width system for a new module.',
+        title: 'Five width tiers, one control',
+        how: 'Every module uses the same <code>window.WPaneWidth</code> ladder — <strong>single → double → triple → fill → custom</strong> (tiers 0–4) — expressed as <code>panel-wide</code>, <code>panel-triple</code>, <code>panel-fill</code>, <code>panel-custom</code> and cycled by <code>.panel-width-toggle-btn</code>. Custom keeps the current width until you drag; that dragged size is what it then maintains. Do not invent a parallel width system for a new module.',
       },
       {
         title: 'Chat width default is viewport-based',
-        how: '<code>WPaneWidth.defaultChatTier()</code> returns tier <strong>1 (double)</strong> above <strong>1512 CSS px</strong> and tier <strong>0 (single)</strong> at or below it — the 14″ MacBook Pro class. <code>mountWISEcodeAIDock()</code> re-applies that default on every load rather than restoring the last toggle, and the FOUC twin adds <code>html.chat-default-double</code> pre-paint. Cycling back to single drops that class.',
+        how: '<code>WPaneWidth.defaultChatTier()</code> returns tier <strong>1 (double)</strong> above <strong>1512 CSS px</strong> and tier <strong>0 (single)</strong> at or below it — the 14″ MacBook Pro class. The measurement is <code>window.screen.width</code>, the <strong>display</strong>, not <code>innerWidth</code>: resizing or un-maximising the browser window must never change the tier. <code>mountWISEcodeAIDock()</code> re-applies that default on every load rather than restoring the last toggle, and the FOUC twin adds <code>html.chat-default-double</code> pre-paint. Cycling back to single drops that class.',
       },
       {
         title: 'Modules right of the chat default to fill',
         how: '<code>default-fill.js</code> finds the chat in <code>#modules-row</code> and drives every visible module to its right to tier 3 by clicking its real width toggle — no parallel state. It latches with <code>data-fill-defaulted</code> per open cycle, skips <code>[data-no-fill-default]</code>, and stands down below 560px where the row stacks.',
       },
       {
-        title: 'Drag-resize snaps back to a tier',
-        how: '<code>pane-resize.js</code> mounts handles in a body-level <code>.pr-overlay</code> so they escape overflow clipping. A pane that owns a width toggle snaps to the nearest tier on release; only panes without one keep a free pixel width, persisted per page in <code>wise-pane-widths-v1</code> keyed by <code>location.pathname</code>. Minimum width is 300px.',
+        title: 'Drag-resize snaps back to a preset, unless custom',
+        how: '<code>pane-resize.js</code> mounts handles in a body-level <code>.pr-overlay</code> so they escape overflow clipping. A pane at single/double/triple/fill snaps to the nearest of those four on release. A pane at <strong>custom</strong> keeps the free pixel width, persisted per page in <code>wise-pane-widths-v1</code>. Minimum width is 300px.',
+      },
+      {
+        title: 'Custom width turns the row into a carousel rail',
+        how: 'When any first-class module in <code>#modules-row</code> (or a panel inside <code>#panels-row</code> / <code>#panels-row-right</code>) is at <strong>custom</strong>, <code>WPaneWidth.syncCarousel()</code> adds <code>modules-carousel</code> to the row. The row scrolls horizontally with the content (<code>overflow-x: auto</code>); every direct child is <code>flex-shrink: 0</code> so modules keep the width they were given instead of squeezing to fit the window. Nested demos inside a module do not trip the rail. Navigation lives outside the row and is never on it. A scrollbar is always reserved (<code>scrollbar-gutter: stable</code>). Leave custom — or close the last custom pane — and the rail class drops.',
+      },
+      {
+        title: 'Browser height shrinks the work surface, not the modules',
+        how: 'The shell fills the window: <code>#modules-row</code> is <code>flex: 1</code> with <code>min-height: 0</code>, and each module is <code>height: 100%</code> / <code>max-height: 100%</code>. Shortening the browser shortens every module’s inner work surface — lists, charts and forms compress or scroll inside the card. Module <em>widths</em> stay exactly what they were; chips, type and controls keep their designed size. A shorter window never squeezes, wraps or restacks the row. Horizontal overflow is the carousel rail, not a squeeze. Below <strong>560px</strong> wide the row does stack, but that is a width breakpoint, not a height one.',
       },
       {
         title: 'Sticky is the only drawer mode',
         how: '<code>sticky-modules.js</code> tucks flanking modules behind the chat card with <code>.sticky-mod.is-sticky</code> and marks the chat <code>.sticky-chat</code>. There is no on/off switch to add — the parity config sets <code>stickyModules: true</code> and <code>stickyModulesMenu: false</code>. Progress panes may be dismissed, remembered under <code>wise-progress-removed:{path}:{moduleId}</code>.',
+      },
+      {
+        title: 'Drawers stack as a utility belt under the chat',
+        how: 'The chat is the buckle at <strong>z-index 3</strong>. Peer drawers to its right (Output, Nutrition Facts, Turns, Help) sit at <strong>z-index 1</strong>: shorter, vertically centred, chat-facing corners squared, tucked with a negative left margin so they read as emerging from the card. History tucks left of the chat. Nested drawers — progress, Help contact, generated Report (<code>#help-contact</code>, <code>#wa-report</code>, <code>#pf-report-panel</code>, <code>.vf-progress-pane</code>) — sit at <strong>z-index 0</strong> and are ~30px shorter still. Opening a module \u22ef must never lift a drawer over the chat.',
       },
       {
         title: 'Dock side is a pane count, not a side',
@@ -334,7 +346,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Row menus deep-link with state',
-        how: '<code>pfViewHref</code>, <code>pfEditHref</code>, <code>pfAddPacksHref</code> and <code>pfReformulateHref</code> build query strings carrying <code>name</code>, <code>upc</code>, <code>img</code>, <code>mode=edit</code> and <code>packs=1</code>, so <code>view-product.html</code>, <code>add-product.html</code> and <code>reformulation.html</code> open already focused on the right product and the right task.',
+        how: '<code>pfViewHref</code>, <code>pfEditHref</code>, <code>pfAddPacksHref</code> and <code>pfReformulateHref</code> build query strings carrying <code>name</code>, <code>upc</code>, <code>img</code>, <code>mode=edit</code> and <code>packs=1</code>, so <code>view-product.html</code>, <code>add-product.html</code> and <code>reformulation.html</code> open already focused on the right product and the right task. Discovered rows also pass <code>from=discovered</code> so the product page can offer claim instead of the Non-UPF Shield.',
       },
       {
         title: 'Multiple sizes only show when real',
@@ -374,6 +386,10 @@ export const APP_LOGIC = [
         title: 'Column widths persist per layout',
         how: 'The Nutrition Facts panel splitter stores its columns in <code>wise-nfp-cols-v4</code> (three-column) or <code>wise-nfp-cols-noidentity-v1</code> (two-column). Double-clicking the splitter resets to <code>NFP_COL_DEFAULT</code>.',
       },
+      {
+        title: 'Nutrition Facts height drives the ingredients column',
+        how: 'In the side-by-side Product Details split, the ingredients column matches the Nutrition Facts column (the printed label plus allergens). The label can grow — extra nutrient rows, a longer serving line — and the ingredients column grows with it. It never shrinks below the remaining height of the module body (from the column top to the save bar), so a short label does not leave a gap. Below <strong>900px</strong> of module width the columns stack and each grows with its own content. View Product uses the same rule.',
+      },
     ],
   },
   {
@@ -395,6 +411,14 @@ export const APP_LOGIC = [
       {
         title: 'Saved reformulations overlay the label',
         how: '<code>applySavedReformulation()</code> looks the product up in <code>WISEReformulationStore</code> by UPC or name and writes the reformulated sodium, saturated fat and fiber into <code>state.nf</code>, so the panel shows the current recipe rather than the printed label.',
+      },
+      {
+        title: 'Discovered products claim instead of the Non-UPF Shield',
+        how: 'Opening a product from Portfolio \u2192 Discovered passes <code>from=discovered</code>. Until it is claimed, the next-step banner uses the existing panel chrome with the copy <em>Reviewing a discovered product</em> / <em>Check the details below. If everything looks right, claim it into your portfolio.</em> / <em>Everything looks right, claim this product</em>. Claimed and newly-added products still see Get the Non-UPF Shield. Claiming writes the UPC to <code>wise-portfolio-claimed</code>, flips the banner to the shield, and drops the row from Discovered on the next visit.',
+      },
+      {
+        title: 'Nutrition Facts height drives the ingredients column',
+        how: 'The printed Nutrition Facts label can grow with its content. In the two-column Product Details split that growth sets the ingredients column height — the right column matches the facts column, never the other way around. The ingredients column has a floor: the remaining height of the module body down to the save bar, which is the fill it already has on a typical product. Extra analysis in that column scrolls inside; it does not stretch the facts label.',
       },
     ],
   },
@@ -559,7 +583,27 @@ export const APP_LOGIC = [
       },
       {
         title: 'The token read-out is illustrative',
-        how: 'With <code>activity: true</code>, the &ldquo;…&rdquo; under the input opens a hover read-out of this-turn and conversation tokens, cache share and cost. <code>accrueTurn()</code> synthesizes the figures and prices them at <code>tokIn/1e6*0.9 + tokOut/1e6*4.5</code> — a demonstration of the surface, not real billing.',
+        how: 'With <code>activity: true</code>, the &ldquo;…&rdquo; under the input opens a hover read-out of this-turn and conversation tokens, cache share and cost. <code>accrueTurn()</code> synthesizes the figures and prices them at <code>tokIn/1e6*0.9 + tokOut/1e6*4.5</code> — a demonstration of the surface, not real billing. It is not the edge landmark rail — that is the activity strip.',
+      },
+      {
+        title: 'The activity strip marks transcript landmarks',
+        how: '<code>chat-activity-strip.js</code> paints a 3px rail on the chat\u2019s <strong>left</strong> edge by default (right is opt-in from the \u22ef menu or Appearance). Gold ticks are outputs, green are sources, amber are database switches. Multi-version outputs draw a stacked pair, never a count. Click a tick to scroll that row into view and flash it. Hover widens the tab and shows the turn ID.',
+      },
+      {
+        title: 'Every answer carries copy, thumbs, and a more menu',
+        how: '<code>feedbackRowHtml()</code> sits under the last paragraph, before intent chips. Copy flashes Copied. Accurate / Not accurate each open a reason popover; submitting posts a follow-up turn in the thread. The \u22ef spills timestamp (clock \u2194 relative), Re-run in new chat, Edit in new chat, Fork a turn, and the turn ID. Hover uses the styled <code>.sc-tip</code> card, never a native title bubble.',
+      },
+      {
+        title: 'Output chips preview the sticky pane',
+        how: 'When a turn opens Results or Visuals, <code>surfaceBlock()</code> also drops a <code>.sc-surface-card</code> into the transcript: a 52px snapshot of that output beside its name. Tapping the card re-opens the sticky Output module on the right. The chip is posted mid-turn with <code>trailChips: false</code> so follow-up intent chips still land on the actual answer.',
+      },
+      {
+        title: 'Every output is versioned, and every version is the same size',
+        how: 'A compact <code>vN</code> badge rides every thumbnail — including the first pass. Redo the same output (same version key) and the chip stacks every version at that same 52px, oldest first, newest raised. Hover fans the stack; the version currently open on the right gets a stronger ring. The sticky Output rail uses the same 52px thumb and the same <code>vN</code> badge so the two never drift.',
+      },
+      {
+        title: 'All versions appear as chips in the Output module',
+        how: '<code>insertAllVersionSlides()</code> writes each version as its own pane slide. A redo that seeded v1/v2 then surfaced v3 still lands all three in the rail. Tapping a stacked thumb activates that slide rather than swapping content in place, so the transcript stack and the Output chips stay in lock-step.',
       },
     ],
   },
@@ -813,7 +857,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Dev Ready is a two-level tree',
-        how: '<code>buildDevReadyTree()</code> registers each module\u2019s children (directory areas, tables, intent surfaces, motion items, icon groups, design groups, components). A module switch turns itself on only when every child is ready, and clicking an incomplete one opens a two-step verify modal rather than toggling silently. App Logic is a leaf — it has a module switch and no per-page children.',
+        how: '<code>buildDevReadyTree()</code> registers each module\u2019s children (directory areas, tables, motion items, icon groups, design groups, components). A module switch turns itself on only when every child is ready, and clicking an incomplete one opens a two-step verify modal rather than toggling silently. App Logic is a leaf — it has a module switch and no per-page children. Intent Chip Logic is an audit index and has no Dev Ready chrome.',
       },
       {
         title: 'Only the diff from the seed is stored',

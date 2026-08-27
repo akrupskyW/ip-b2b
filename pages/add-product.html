@@ -6,9 +6,14 @@
   <title>WISEcodeAI — Add Product · Product Portfolio</title>
   <script src="../js/text-size-fouc.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <!-- SVG icon shim: swaps every Material Symbols glyph for an inline SVG from
+       assets/icons/wise-icons.svg (Rounded 300). The font links above stay as the
+       fallback for any glyph the sprite does not carry. See js/icon-svg-shim.js. -->
+  <script defer src="../js/icon-svg-shim.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="wise.css" />
   <style>
@@ -126,7 +131,7 @@
        other module. Fill (the default, via .panel-fill) absorbs leftover row
        space; the narrower tiers are fixed. min-width stays 0 so a narrow
        window can still shrink the pane instead of overflowing the row. */
-    #nfp-panel { flex: 0 0 520px; width: 520px; min-width: 0; display: flex; position: relative; z-index: 2; }
+    #nfp-panel { flex: 0 0 520px; width: 520px; min-width: 0; display: flex; position: relative; z-index: 1; }
     #nfp-panel.panel-wide { flex: 0 0 680px; width: 680px; }
     #nfp-panel.panel-triple { flex: 0 0 860px; width: 860px; }
     .nfp-inner {
@@ -195,8 +200,8 @@
       opacity: 1; background: rgba(255, 255, 255, 0.24);
     }
     /* Header-float pins ⋯ / width at 8px — drop them to the sizes-title row
-       (14px strip padding) so the headline and the three 28px actions share
-       one line. */
+       (14px strip padding). The headline reserves padding-right so it wraps
+       before these 28px actions instead of running under them. */
     html.header-float #nfp-panel .nfp-panel-header .panel-controls {
       top: 14px; right: 14px;
     }
@@ -237,9 +242,10 @@
     html.dark .nfp-scroll-body { background: transparent; }
 
     /* ── Single-pane responsive split ──────────────────────────────────────
-       Default: the three blocks (photo, Nutrition Facts, ingredients) stack.
-       Once the module is wide enough they sit as three drag-resizable
-       columns. The Product sizes strip always spans the full width on top. */
+       Default: Nutrition Facts and ingredients stack (and the identity
+       barcode centers in its row). From 900px of MODULE width they sit as
+       drag-resizable columns and the barcode hugs the right. The Product
+       sizes strip always spans the full width on top. */
     .nfp-sp {
       display: flex; flex-direction: column;
       --nfp-w-media: 0.2fr; --nfp-w-facts: 0.4fr; --nfp-w-ingred: 0.4fr;
@@ -272,7 +278,10 @@
       scrollbar-width: thin;
       scrollbar-color: color-mix(in srgb, var(--text-subtle) 35%, transparent) transparent;
     }
-    .nfp-sp-ingred.has-ia-h { height: var(--nfp-ia-h); max-height: var(--nfp-ia-h); }
+    /* Height is set by JS: max(Nutrition Facts column, remaining module body).
+       The facts label can grow; this column grows with it and never shrinks
+       below the fill it has on a typical product. Extra analysis scrolls. */
+    .nfp-sp-ingred.has-ia-h { min-height: var(--nfp-ia-h); height: var(--nfp-ia-h); max-height: var(--nfp-ia-h); }
     .nfp-sp-ingred::-webkit-scrollbar { width: 8px; }
     .nfp-sp-ingred::-webkit-scrollbar-track { background: transparent; }
     .nfp-sp-ingred::-webkit-scrollbar-thumb {
@@ -304,7 +313,7 @@
     html.dark .nfp-sp-grip { background: rgba(230,236,244,.88); border-color: rgba(16,24,32,.35); }
     html.nfp-col-dragging, html.nfp-col-dragging * { cursor: col-resize !important; user-select: none !important; -webkit-user-select: none !important; }
 
-    @container nfp-body (min-width: 640px) {
+    @container nfp-body (min-width: 900px) {
       .nfp-sp {
         display: grid; align-items: start;
         grid-template-columns: minmax(120px, var(--nfp-w-media)) 16px minmax(200px, var(--nfp-w-facts)) 16px minmax(240px, var(--nfp-w-ingred));
@@ -650,7 +659,7 @@
     .nfp-upc-chip { background: var(--surface); border-bottom: 1px solid var(--border); padding: 8px 12px 10px; }
     .nfp-upc-label { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-subtle); margin-bottom: 4px; }
     .nfp-barcode-svg { display: block; margin: 2px auto 0; max-width: 100%; height: auto; }
-    .nfp-barcode-num { font-family: 'Courier New', monospace; font-size: 0.68rem; letter-spacing: 0.08em; color: var(--text-muted); text-align: center; margin-top: 3px; }
+    .nfp-barcode-num { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.08em; color: var(--text-muted); text-align: center; margin-top: 3px; }
 
     /* ── Segmented UPC-A entry — one white card holding a faded example barcode
        above one box per digit (SSN / verification-code style), grouped the way
@@ -683,7 +692,7 @@
     .nfp-upc-cells { display: flex; align-items: flex-end; justify-content: center; gap: 7px; width: 100%; }
     .nfp-upc-cell {
       flex: 1 1 0; min-width: 0; width: 100%; height: 32px; box-sizing: border-box;
-      font-family: 'Courier New', ui-monospace, monospace; font-size: 1.1rem; font-weight: 700;
+      font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700;
       letter-spacing: 0; text-align: center; padding: 0 0 3px;
       color: #111; background: transparent;
       border: none; border-bottom: 2px solid var(--border-strong); border-radius: 0; outline: none;
@@ -720,11 +729,12 @@
 
     /* Food Identity thumbs (multiple product images) */
     .nfp-fi { background: transparent; border-bottom: none; padding: 14px 14px 14px; }
-    .nfp-fi:has(.nfp-fi-group--identity) { padding: 0; overflow: hidden; }
-    .nfp-fi-header { display: flex; align-items: center; justify-content: flex-start; gap: 8px; margin-bottom: 4px; }
-    .nfp-fi-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.375rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; color: var(--text); }
+    .nfp-fi:has(.nfp-fi-group--identity) { padding: 0; overflow: visible; }
+    .nfp-fi-header { display: flex; align-items: flex-start; justify-content: flex-start; gap: 8px; margin-bottom: 4px; min-width: 0; }
+    .nfp-fi-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.375rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; color: var(--text); flex: 1 1 auto; min-width: 0; overflow-wrap: break-word; }
     .nfp-fi-title .nfp-edit {
       font: inherit; letter-spacing: inherit; color: inherit; padding: 0 3px;
+      overflow-wrap: inherit; white-space: normal;
     }
     .nfp-fi-title .nfp-edit:focus {
       background: color-mix(in srgb, var(--primary) 8%, transparent);
@@ -751,51 +761,79 @@
     .nfp-fi-vr { flex: 0 0 1px; align-self: stretch; background: var(--border); }
     .nfp-fi-thumbs { display: flex; justify-content: flex-start; align-items: flex-start; gap: 6px; flex-wrap: wrap; }
     .nfp-fi-thumb { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; width: 44px; }
-    .nfp-fi-thumb-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); background: var(--surface-2); display: block; transition: border-color 0.15s, transform 0.12s; flex-shrink: 0; }
+    .nfp-fi-thumb-img { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; border: 2px solid var(--border); background: var(--surface-2); display: block; transition: border-color 0.15s, transform 0.12s; flex-shrink: 0; }
     .nfp-fi-thumb:hover .nfp-fi-thumb-img { border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); transform: scale(1.08); }
     .nfp-fi-thumb.active .nfp-fi-thumb-img { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 22%, transparent); }
     .nfp-fi-thumb-label { font-size: 0.58rem; font-weight: 600; color: var(--text-muted); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
     .nfp-fi-add {
-      width: 40px; height: 40px; border-radius: 50%; border: 2px dashed var(--border-strong);
-      background: var(--surface-2); color: var(--text-subtle); display: flex; align-items: center; justify-content: center; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      width: 76px; cursor: pointer; color: var(--text-subtle); background: transparent;
     }
-    .nfp-fi-add:hover { border-color: var(--primary); color: var(--primary-ink, var(--primary)); }
+    .nfp-fi-add-sq {
+      width: 40px; height: 40px; border-radius: 10px; border: 2px dashed var(--border-strong);
+      background: var(--surface-2); color: inherit;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      transition: border-color 0.15s, transform 0.12s;
+    }
+    .nfp-fi-add:hover { color: var(--primary-ink, var(--primary)); }
+    .nfp-fi-add:hover .nfp-fi-add-sq { border-color: var(--primary); transform: scale(1.08); }
     .nfp-fi-add .material-symbols-outlined { font-size: 18px !important; }
-    /* view-product identity strip — product photo is the full background of
-       this top container. Category sits after the + ; a compact barcode
-       floats to the far right on top of the photo (not under it). */
-    .nfp-fi-group--identity { position: relative; isolation: isolate; padding: 14px 14px 24px; }
-    .nfp-fi-group--identity .nfp-fi-header { margin-bottom: 16px; padding-right: 108px; }
-    .nfp-fi-strip-photo {
-      position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+    .nfp-fi-add-label {
+      font-size: 0.58rem; font-weight: 600; color: var(--text-muted);
+      text-align: center; line-height: 1.2; max-width: 100%;
     }
-    .nfp-fi-strip-photo img {
-      position: absolute; inset: 0; width: 100%; height: 100%;
-      object-fit: cover; object-position: center 28%; display: block;
+    .nfp-fi-add:hover .nfp-fi-add-label { color: var(--primary-ink, var(--primary)); }
+    html.dark .nfp-fi-add:hover { color: var(--primary-bright, var(--primary)); }
+    html.dark .nfp-fi-add:hover .nfp-fi-add-sq { border-color: var(--primary-bright, var(--primary)); }
+    html.dark .nfp-fi-add:hover .nfp-fi-add-label { color: var(--primary-bright, var(--primary)); }
+    .nfp-fi-thumb-icon { border-radius: 50%; }
+    /* Identity strip — rounded-square product photo left of the headline,
+       description, price, and count thumbs. */
+    .nfp-fi-group--identity {
+      position: relative; isolation: isolate; padding: 14px 14px 18px;
+      display: flex; align-items: flex-start; gap: 14px;
     }
-    .nfp-fi-strip-photo::after {
-      content: ''; position: absolute; inset: 0;
-      background: color-mix(in srgb, var(--bg) 46%, transparent);
+    .nfp-fi-lead-photo {
+      flex: 0 0 112px; width: 112px; height: 112px; padding: 0; margin: 0;
+      border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+      background: var(--surface-2); cursor: pointer; display: block; position: relative;
     }
-    html.dark .nfp-fi-strip-photo::after {
-      background: color-mix(in srgb, var(--bg) 58%, transparent);
+    .nfp-fi-lead-photo img {
+      width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;
     }
-    /* New product — no photo yet. The shared food helix sits still behind the
-       sizes strip (not a sample muffin). */
+    .nfp-fi-lead-photo:hover,
+    .nfp-fi-lead-photo:focus-visible { box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 40%, transparent); }
+    html.dark .nfp-fi-lead-photo { border-color: color-mix(in srgb, #fff 12%, var(--border)); }
+    html.dark .nfp-fi-desc { color: var(--text-muted); }
+    .nfp-fi-copy { flex: 1 1 auto; min-width: 0; }
+    .nfp-fi-group--identity .nfp-fi-header { margin-bottom: 6px; }
+    /* Photo + ⋯ + width (3×28px) float over this row — wrap before them. */
+    html.header-float .nfp-fi-group--identity .nfp-fi-header { padding-right: 96px; }
+    /* Fill the copy column (not a fixed 72ch) so the blurb tracks module width.
+       pretty wrap keeps a leftover word from sitting short of the line above. */
+    .nfp-fi-desc {
+      margin: 0 0 8px; font-size: 0.8125rem; line-height: 1.45; color: var(--text-muted);
+      width: 100%; max-width: none;
+      text-wrap: pretty;
+    }
+    .nfp-fi-desc .nfp-edit {
+      display: block; width: 100%; box-sizing: border-box;
+      font: inherit; color: inherit;
+      padding-left: 0; padding-right: 0;
+      overflow-wrap: break-word;
+      text-wrap: pretty;
+    }
+    .nfp-fi-price {
+      display: flex; align-items: baseline; gap: 2px; flex-wrap: wrap;
+      margin: 0 0 12px; font-size: 1.05rem; font-weight: 800; color: var(--text); letter-spacing: -0.01em;
+    }
+    .nfp-fi-price .nfp-edit { font: inherit; font-weight: 800; letter-spacing: inherit; color: inherit; }
+    .nfp-fi-price-size {
+      margin-left: 8px; font-size: 0.68rem; font-weight: 600; color: var(--text-muted); letter-spacing: 0;
+    }
     .nfp-fi-strip-photo--helix { background: color-mix(in srgb, var(--primary) 8%, var(--bg)); }
-    .nfp-fi-strip-photo--helix::after {
-      z-index: 1;
-      background: color-mix(in srgb, var(--bg) 22%, transparent);
-    }
-    html.dark .nfp-fi-strip-photo--helix::after {
-      background: color-mix(in srgb, var(--bg) 34%, transparent);
-    }
     .nfp-fi-strip-photo--helix .sc-bganim-canvas { z-index: 0; }
     .nfp-fi-strip-photo--helix.sc-bganim-live .sc-bganim-canvas { opacity: 1; }
-    .nfp-fi-group--identity > *:not(.nfp-fi-strip-photo) { position: relative; z-index: 1; }
-    .nfp-fi-group--identity .nfp-fi-title {
-      text-shadow: 0 1px 2px color-mix(in srgb, var(--bg) 70%, transparent);
-    }
     .nfp-fi-group--identity .nfp-fi-thumbs {
       align-items: flex-start; flex-wrap: wrap; row-gap: 10px;
     }
@@ -807,23 +845,38 @@
       max-width: 220px; height: 40px; box-sizing: border-box;
       padding-top: 0; padding-bottom: 0; line-height: 38px;
     }
-    .nfp-fi-upc { flex: 0 0 232px; width: 232px; margin-left: auto; }
+    /* Identity-strip barcode is a fixed 232px chip — the default size. It
+       never grows with the thumbs row and never shrinks with the module. */
+    .nfp-fi-upc {
+      flex: 1 0 100%; width: auto; margin-left: 0;
+      display: flex; justify-content: center; align-items: flex-start;
+    }
     .nfp-fi-upc .nfp-hero-upc,
-    .nfp-fi-upc .nfp-hero-upc--seg { width: 100%; max-width: none; }
+    .nfp-fi-upc .nfp-hero-upc--seg,
+    .nfp-fi-upc .nfp-upc-entry {
+      flex: 0 0 232px; width: 232px; min-width: 232px; max-width: 232px;
+      flex-shrink: 0; box-sizing: border-box;
+    }
     .nfp-fi-upc .nfp-upc-entry {
       padding: 6px 8px 5px; gap: 4px; border-radius: 8px;
       background: color-mix(in srgb, var(--surface) 92%, transparent);
     }
-    .nfp-fi-upc .nfp-upc-barcode { height: 24px; }
-    .nfp-fi-upc .nfp-upc-cells { gap: 2px; }
+    .nfp-fi-upc .nfp-upc-barcode { height: 24px; flex-shrink: 0; }
+    .nfp-fi-upc .nfp-upc-cells { gap: 2px; width: 100%; justify-content: center; }
     .nfp-fi-upc .nfp-upc-cell {
-      flex: 1 1 14px; min-width: 14px; height: 20px;
-      font-size: 0.78rem; padding: 0 0 1px; border-bottom-width: 1px;
+      flex: 0 0 14px; width: 14px; min-width: 14px; max-width: 14px;
+      height: 20px; font-size: 0.78rem; padding: 0 0 1px; border-bottom-width: 1px;
     }
     .nfp-fi-upc .nfp-upc-cell--sep { margin-left: 6px; }
     .nfp-fi-upc .nfp-pack-upc-note { margin-bottom: 2px; font-size: 0.52rem; }
     html.dark .nfp-fi-upc .nfp-upc-entry:not(.nfp-upc-entry--onphoto) {
       background: color-mix(in srgb, var(--surface-2) 92%, transparent);
+    }
+    @container nfp-body (min-width: 900px) {
+      .nfp-fi-upc {
+        flex: 0 0 232px; width: 232px; min-width: 232px; max-width: 232px;
+        margin-left: auto; display: flex; justify-content: center;
+      }
     }
 
     /* Pack Formats — an additional section (below Product Images) for products
@@ -893,14 +946,14 @@
     .nfp-cmp-amt { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
     .nfp-cmp-dv { font-size: 0.58rem; color: var(--text-muted); }
     .nfp-cmp-empty { color: var(--text-subtle); font-style: italic; }
-    .nfp-cmp-cell--mono .nfp-cmp-amt { font-family: 'Courier New', monospace; font-size: 0.66rem; letter-spacing: 0.02em; }
+    .nfp-cmp-cell--mono .nfp-cmp-amt { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.02em; }
     /* Barcode row — each column carries the same white barcode card used on the
        single product view, so the UPC reads as a real scannable code here too. */
     .nfp-cmp-bc-cell { align-items: stretch; padding: 12px; }
     .nfp-cmp-bc-card { width: 100%; background: rgba(255,255,255,0.92); border: 1px solid var(--border); border-radius: 12px; padding: 10px 10px 8px; box-shadow: 0 1px 2px rgba(7,12,26,0.06); display: flex; flex-direction: column; gap: 6px; }
     .nfp-cmp-bc { width: 100%; height: 44px; }
     .nfp-cmp-bc .nfp-upc-bc { display: block; width: 100%; height: 100%; fill: #111; }
-    .nfp-cmp-bc-num { font-family: 'Courier New', ui-monospace, monospace; font-size: 0.64rem; letter-spacing: 0.12em; color: #111; text-align: center; }
+    .nfp-cmp-bc-num { font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.12em; color: #111; text-align: center; }
     /* A pack value that differs from the base product is tinted so the real
        format-to-format differences stand out at a glance. */
     .nfp-cmp-diff { background: color-mix(in srgb, var(--primary) 11%, transparent); }
@@ -947,7 +1000,7 @@
     .nfp-rcol-brand { font-size: 0.68rem; color: rgba(255,255,255,0.82); margin-top: -3px; }
     .nfp-rupc { align-self: center; max-width: 100%; background: rgba(255,255,255,0.94); border-radius: 8px; padding: 7px 10px 6px; text-align: center; box-shadow: 0 4px 14px rgba(0,0,0,0.32); }
     .nfp-rupc .nfp-barcode-svg { display: block; margin: 0 auto; }
-    .nfp-rupc-num { font-family: 'Courier New', monospace; font-size: 0.66rem; letter-spacing: 0.08em; color: #111; text-align: center; margin-top: 3px; }
+    .nfp-rupc-num { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.08em; color: #111; text-align: center; margin-top: 3px; }
     .nfp-rupc-empty { align-self: center; background: rgba(0,0,0,0.42); box-shadow: none; padding: 6px; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
     .nfp-mini-btn--onphoto { background: rgba(255,255,255,0.94); border-color: transparent; color: var(--primary); }
     .nfp-mini-btn--onphoto:hover { background: #fff; color: var(--primary); }
@@ -1014,9 +1067,32 @@
     .nfp-ingred-edit::placeholder { color: var(--text-subtle); font-style: italic; }
     .nfp-allergen-wrap { padding: 2px 0 10px; border-bottom: 1px solid #e5e7eb; }
     .nfp-allergen-heading { font-size: 0.65rem; font-weight: 700; color: #535964; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
-    .nfp-allergen-tags { display: flex; flex-wrap: wrap; gap: 5px; }
-    .nfp-allergen-tag { font-size: 0.7rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px; background: #E2EEF7; color: #1A2339; border: 1px solid #C5CFD7; }
-    .nfp-allergen-emoji { font-size: 0.95rem; line-height: 1; }
+    .nfp-allergen-tags { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+    .nfp-allergen-tag { font-size: 0.7rem; font-weight: 600; padding: 3px 8px 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px; background: #E2EEF7; color: #1A2339; border: 1px solid #C5CFD7; }
+    .nfp-allergen-ico { font-size: 15px !important; color: var(--primary-ink, var(--primary)); }
+    .nfp-allergen-empty { font-size: 0.66rem; color: #9ca3af; font-style: italic; }
+    .nfp-allergen-x {
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 0; background: none; padding: 0; margin: 0; cursor: pointer;
+      color: inherit; opacity: 0.5; line-height: 1;
+    }
+    .nfp-allergen-x:hover { opacity: 1; }
+    .nfp-allergen-x .material-symbols-outlined { font-size: 14px !important; }
+    .nfp-allergen-add-wrap { position: relative; display: inline-flex; align-items: center; margin-left: 2px; }
+    .nfp-allergen-add-wrap .topbar-popover.nfp-allergen-pop {
+      top: 0; bottom: auto; left: calc(100% + 8px); right: auto;
+      min-width: 232px; max-height: min(420px, 70vh); overflow-y: auto;
+    }
+    .nfp-allergen-pop-title {
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-size: 0.88rem; font-weight: 700; letter-spacing: -0.01em;
+      color: var(--text); padding: 8px 12px 6px;
+    }
+    .nfp-allergen-opt .nfp-allergen-check {
+      margin-left: auto; font-size: 18px !important; opacity: 0; color: var(--primary-ink, var(--primary));
+    }
+    .nfp-allergen-opt.is-on { color: var(--text); }
+    .nfp-allergen-opt.is-on .nfp-allergen-check { opacity: 1; }
     .nfp-contains { padding: 6px 0 8px; font-size: 0.66rem; color: #374151; }
 
     /* Editable affordance: any value the flow collects can be clicked to edit.
@@ -1089,6 +1165,9 @@
       background: var(--primary-soft); color: var(--text);
       border-color: color-mix(in srgb, var(--primary-bright) 26%, transparent);
     }
+    html.dark .nfp-allergen-ico { color: var(--primary-bright, var(--primary)); }
+    html.dark .nfp-allergen-empty { color: var(--text-subtle); }
+    html.dark .nfp-allergen-opt.is-on .nfp-allergen-check { color: var(--primary-bright, var(--primary)); }
     html.dark .nfp-contains { color: var(--text-muted); }
 
     /* Inline edit affordance — underline uses the bright primary on navy; keep
@@ -1136,34 +1215,43 @@
        only from the reference; the styling is our own. */
     .nfp-ins { background: transparent; border-top: none; padding: 16px 14px 22px; display: flex; flex-direction: column; gap: 14px; }
 
-    /* NEXT STEP banner — a soft primary-tinted panel (not the dark hero): an
-       eyebrow, title, one-line rationale, a filled CTA and two quiet quick
-       actions. The lead glyph sits in a fully circular disc (never a rounded
-       square, per the icon rule). */
+    /* NEXT STEP banner — a soft primary-tinted panel (not the dark hero).
+       Claimed products that qualify show the Non-UPF shield lockup; a product
+       opened from Portfolio → Discovered uses the same chrome with a bookmark
+       mark and the claim copy. No boxed backdrop behind the icon. */
     .nfp-ins-next {
       position: relative; display: flex; flex-wrap: wrap; align-items: center;
       gap: 12px 16px; padding: 16px 18px; border-radius: 16px;
       background: var(--primary-soft); border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
     }
     .nfp-ins-next-ic {
-      align-self: flex-start; flex-shrink: 0;
-      width: 44px; height: 44px; border-radius: 50%;
+      align-self: flex-start; flex-shrink: 0; padding-top: 2px;
       display: inline-flex; align-items: center; justify-content: center;
-      background: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(7,12,26,0.22);
+      background: none; box-shadow: none;
     }
-    .nfp-ins-next-ic .material-symbols-outlined { font-size: 24px !important; }
+    .nfp-ins-next-shield { display: block; width: 52px; height: auto; }
+    .nfp-ins-next-ic .material-symbols-outlined {
+      font-size: 40px !important; line-height: 1; color: var(--primary-ink, var(--primary));
+      font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 48;
+    }
+    html.dark .nfp-ins-next-ic .material-symbols-outlined { color: var(--primary-bright, var(--primary)); }
     .nfp-ins-next-body { flex: 1 1 240px; min-width: 0; }
     .nfp-ins-next-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.15rem; font-weight: 700; color: var(--text); line-height: 1.2; }
-    .nfp-ins-next-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.45; margin-top: 3px; max-width: 52ch; }
+    .nfp-ins-next-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.45; margin-top: 3px; max-width: none; }
     .nfp-ins-next-btn {
       flex: 0 0 auto; margin-left: auto; align-self: center; white-space: nowrap;
       display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
       border: none; border-radius: 999px; padding: 10px 18px;
       font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 0.82rem; font-weight: 700;
       background: var(--primary); color: #fff; text-decoration: none; transition: filter 0.15s;
+      appearance: none; -webkit-appearance: none;
     }
     .nfp-ins-next-btn:hover { filter: brightness(1.07); text-decoration: none; }
     .nfp-ins-next-btn .material-symbols-outlined { font-size: 18px !important; }
+    .nfp-ins-next--claim .nfp-ins-next-btn {
+      white-space: normal; text-align: center; line-height: 1.25;
+      height: auto; min-height: 40px; padding: 8px 16px;
+    }
     /* Shield CTA under the product photo — stack in the narrower media column
        so title, copy and button all fit, and never grow into the leftover
        column height (that read as a gap under the image). */
@@ -1220,7 +1308,7 @@
     .nfp-ia .nfp-ingred-body { padding: 0 0 10px; }
     .nfp-ia .nfp-ingred-edit { min-height: 0; }
     .nfp-ia-analyze {
-      width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      width: fit-content; max-width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
       border: none; border-radius: 999px; padding: 9px 14px; cursor: pointer;
       font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 0.8rem; font-weight: 700;
       background: var(--primary); color: #fff; transition: filter 0.15s, opacity 0.15s;
@@ -1306,19 +1394,26 @@
       .nfp-ia-chev { transition: none; }
     }
 
-    /* Save footer */
-    .nfp-foot { flex-shrink: 0; border-top: 1px solid var(--border); background: color-mix(in srgb, var(--surface-2) 45%, transparent); padding: 10px 12px 12px; }
+    /* Save footer — same canvas as the module body, not a tinted bar. */
+    .nfp-foot { flex-shrink: 0; border-top: 1px solid var(--border); background: var(--bg); padding: 10px 12px 12px; }
+    html.dark .nfp-foot { background: transparent; }
     .nfp-foot-status { display: flex; align-items: flex-start; gap: 6px; font-size: 0.68rem; line-height: 1.4; color: var(--text-muted); margin-bottom: 8px; }
     .nfp-foot-status .material-symbols-outlined { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
     .nfp-foot-status strong { color: var(--text); font-weight: 700; }
     .nfp-save-btn {
-      width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-      border: none; border-radius: 999px; padding: 9px 14px; cursor: pointer;
+      width: fit-content; max-width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      border: 1.5px solid var(--primary); border-radius: 999px; padding: 9px 14px; cursor: pointer;
       font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 0.82rem; font-weight: 700;
-      background: var(--primary); color: #fff; transition: filter 0.15s, opacity 0.15s;
+      background: transparent; color: var(--primary-ink, var(--primary));
+      transition: background 0.15s, opacity 0.15s, border-color 0.15s, color 0.15s;
     }
-    .nfp-save-btn:hover { filter: brightness(1.07); }
-    .nfp-save-btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(0.3); }
+    .nfp-save-btn:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
+    .nfp-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    html.dark .nfp-save-btn {
+      color: var(--primary-bright, var(--primary));
+      border-color: color-mix(in srgb, var(--primary-bright) 55%, var(--border-strong));
+    }
+    html.dark .nfp-save-btn:hover { background: color-mix(in srgb, var(--primary-bright) 12%, transparent); }
     .nfp-save-btn .material-symbols-outlined { font-size: 17px; }
     /* Shared CTA height — shield, Analyze Ingredients, and Save to Portfolio. */
     .nfp-ins-next-btn,
@@ -1339,7 +1434,7 @@
     /* Progress is a supporting drawer under Product Details. Restate the
        shared sticky inset at #id so this page's align-self:stretch cannot
        flatten it back into a same-plane column. */
-    #modules-row #nfp-panel.sticky-mod.is-sticky { z-index: 2; }
+    #modules-row #nfp-panel.sticky-mod.is-sticky { z-index: 1; }
     #modules-row #ap-progress.vf-progress-pane.sticky-mod.is-sticky {
       z-index: 0;
       height: calc(100% - 60px);
@@ -1347,11 +1442,11 @@
       align-self: center;
       margin-left: calc(-14px - var(--modules-gap, 8px));
     }
-    /* The shared progress module paints completed step nodes, done icons and the
-       progress bar with --vf-fill / --vf-ink. Those tokens are only defined for
-       the verification page's body, so define them here — otherwise finished
-       steps render as an invisible (transparent) circle with a white glyph. */
-    #ap-progress { --vf-fill: var(--primary); --vf-ink: var(--primary); }
+    /* In-progress chrome (--vf-ink on step subs / footer) is brand blue.
+       Completed steps and the health bar come from wise.css (--sec-green).
+       --vf-ink is only defined for the verification page's body, so set it
+       here so "In progress" labels stay visible. */
+    #ap-progress { --vf-ink: var(--primary); }
     html.dark #ap-progress { --vf-ink: #93C5FD; }
     /* Width changer (lives in the ⋯ menu — see add-product-flow.js). The
        expanded module rests at one of four tiers; `panel-fill` is the universal
@@ -1366,7 +1461,7 @@
        later) so a widened module still collapses to the rail. */
     #ap-progress:has(.vfp-inner.is-min) { flex: 0 0 64px; width: 64px; }
     #ap-progress .vfp-inner { border-radius: 16px; box-shadow: var(--shadow-card); }
-    .vfp-step-done-icon { color: var(--vf-ink); }
+    .vfp-step-done-icon { color: var(--sec-green); }
     .vfp-field--err .material-symbols-outlined { color: var(--sec-red); }
     .vfp-field--err .vfp-field-val { color: var(--sec-red); }
     .vfp-step--err .vfp-step-num { background: var(--sec-red); color: #fff; }
@@ -1858,9 +1953,9 @@
   <!-- Shared "What can I ask?" catalog (window.WISE_ASK_CATALOG) so this page's
        ask panel is IDENTICAL to wiseai.html's. Must load before add-product-flow.js. -->
   <script src="../js/ask-catalog.js"></script>
-  <!-- Same Product Details template as view-product.html: photo lives in the
-       module header + sizes strip; Nutrition Facts and ingredients sit as
-       two columns below. -->
+  <!-- Same Product Details template as view-product.html: photo is a rounded
+       square left of the sizes headline; Nutrition Facts and ingredients sit
+       as two columns below. -->
   <script>window.WISE_HERO_BRAND = true;</script>
   <script src="../js/reformulation-store.js"></script>
   <script src="../js/add-product-flow.js"></script>

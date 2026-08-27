@@ -6,14 +6,20 @@
  *   • the primary navigation avatar (top bar chip + nav-footer profile chip)
  *   • the "you" bubbles in every WISEcodeAI chat transcript
  *
- * The Organization Profile page writes it; the top bar and chat read it. When
+ * The Organization Profile page writes it; every other surface reads it. When
  * cleared, every surface falls back to the member's initials exactly as before.
  *
  * Kept dependency-free so it can be imported from topbar.js, wiseai-chat.js,
- * profile-flow.js and agent-overview.js without any import cycles.
+ * and profile-flow.js without any import cycles. Also exposed as
+ * window.WiseUserAvatar so classic (non-module) chats can render the same
+ * picture. A load-time sweep plus a DOM observer keep chips in sync even when
+ * a page inserts initials and never asks the store itself.
  */
 
 const KEY = 'wise-user-avatar';
+const CHIP_SEL = '.topbar-profile, .menu-footer-avatar, .sc-avatar-you';
+/* Design-system samples on all-modules.html must keep their staged initials. */
+const SKIP_SEL = '.dsc-demo, [data-avatar-static]';
 
 /* App default initials, used when a chat "you" bubble or nav chip has no
    captured fallback of its own (e.g. it was first rendered while an avatar was
@@ -58,11 +64,52 @@ export function userAvatarImg(alt = 'You') {
   return `<img class="wise-avatar-img" src="${escAttr(src)}" alt="${escAttr(alt)}" />`;
 }
 
+/**
+ * Inner HTML + pictured flag for a "you" chip: the photo when set, otherwise
+ * `fallback` initials. Classic scripts use the same shape via window.WiseUserAvatar.
+ */
+export function userAvatarMarkup(alt = 'You', fallback) {
+  const img = userAvatarImg(alt);
+  const init = fallback == null || fallback === '' ? defaultInitials : String(fallback);
+  return { inner: img || init, pictured: !!img, initials: init };
+}
+
+/** Full `<span class="sc-avatar sc-avatar-you">` markup for inline / classic chats. */
+export function userAvatarSpan(alt = 'You', fallback) {
+  const m = userAvatarMarkup(alt, fallback);
+  return `<span class="sc-avatar sc-avatar-you${m.pictured ? ' has-avatar-img' : ''}" role="img" aria-label="${escAttr(alt)}" data-initials="${escAttr(m.initials)}">${m.inner}</span>`;
+}
+
 function broadcast() {
   refreshAvatarsInDom();
   try {
     document.dispatchEvent(new CustomEvent('wise:user-avatar', { detail: { src: getUserAvatar() } }));
   } catch { /* no DOM (SSR / tests) — nothing to notify */ }
+}
+
+function isLiveChip(el) {
+  return el && el.nodeType === 1 && !el.closest(SKIP_SEL);
+}
+
+function readInitials(el) {
+  const stored = el.getAttribute('data-initials');
+  if (stored) return stored;
+  if (!el.querySelector('img')) {
+    const text = (el.textContent || '').trim();
+    if (text) {
+      el.setAttribute('data-initials', text);
+      return text;
+    }
+  }
+  return defaultInitials;
+}
+
+function chipIsCurrent(el, src) {
+  if (src) {
+    const img = el.querySelector('img.wise-avatar-img, img');
+    return !!(img && img.getAttribute('src') === src && el.classList.contains('has-avatar-img'));
+  }
+  return !el.classList.contains('has-avatar-img') && !el.querySelector('img.wise-avatar-img');
 }
 
 /**
@@ -71,10 +118,12 @@ function broadcast() {
  * cleared avatar restores the exact text it had before.
  */
 export function refreshAvatarsInDom() {
+  if (typeof document === 'undefined' || !document.querySelectorAll) return;
   const src = getUserAvatar();
-  const chips = document.querySelectorAll('.topbar-profile, .menu-footer-avatar, .sc-avatar-you');
-  chips.forEach((el) => {
-    const init = el.getAttribute('data-initials') || defaultInitials;
+  document.querySelectorAll(CHIP_SEL).forEach((el) => {
+    if (!isLiveChip(el)) return;
+    if (chipIsCurrent(el, src)) return;
+    const init = readInitials(el);
     if (src) {
       el.innerHTML = `<img class="wise-avatar-img" src="${escAttr(src)}" alt="" />`;
       el.classList.add('has-avatar-img');
@@ -84,3 +133,53 @@ export function refreshAvatarsInDom() {
     }
   });
 }
+
+function nodeHasChip(node) {
+  if (!node || node.nodeType !== 1) return false;
+  return node.matches?.(CHIP_SEL) || !!node.querySelector?.(CHIP_SEL);
+}
+
+function watchDom() {
+  if (typeof MutationObserver === 'undefined' || !document.documentElement) return;
+  const obs = new MutationObserver((mutations) => {
+    for (const m of mutations) {
+      for (const n of m.addedNodes) {
+        if (nodeHasChip(n)) {
+          refreshAvatarsInDom();
+          return;
+        }
+      }
+    }
+  });
+  obs.observe(document.documentElement, { childList: true, subtree: true });
+}
+
+function boot() {
+  refreshAvatarsInDom();
+  watchDom();
+}
+
+try {
+  if (typeof window !== 'undefined') {
+    window.WiseUserAvatar = {
+      KEY,
+      get: getUserAvatar,
+      set: setUserAvatar,
+      clear: clearUserAvatar,
+      img: userAvatarImg,
+      markup: userAvatarMarkup,
+      span: userAvatarSpan,
+      refresh: refreshAvatarsInDom,
+    };
+    window.addEventListener('storage', (e) => {
+      if (e.key === KEY || e.key === null) refreshAvatarsInDom();
+    });
+  }
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', boot);
+    } else {
+      boot();
+    }
+  }
+} catch { /* no window / document (SSR / tests) */ }

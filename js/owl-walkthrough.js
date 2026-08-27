@@ -476,12 +476,13 @@
   var screenIntro = false;
   var lastFocus = null;
   var widthTier = 0;
-  var WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
+  var WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
   var WIDTH_TITLES = [
     'Width (single) — tap to widen',
     'Width (double) — tap to widen',
     'Width (triple) — tap to widen',
-    'Width (fill) — tap to reset'
+    'Width (fill) — tap to widen',
+    'Width (custom) — drag to any size'
   ];
 
   function hostRow() {
@@ -494,13 +495,17 @@
     var base = 360;
     var tiers = [base, Math.round(base * 1.5), base * 2];
     try {
-      window.WisePaneResize && window.WisePaneResize.release && window.WisePaneResize.release([aside]);
+      if (widthTier !== 4) {
+        window.WisePaneResize && window.WisePaneResize.release && window.WisePaneResize.release([aside]);
+      }
     } catch (e) {}
     if (window.WPaneWidth) {
       window.WPaneWidth.applyClasses(aside, widthTier, 'panel');
       window.WPaneWidth.syncButton(els.widthBtn, widthTier);
     }
-    if (widthTier >= 3) {
+    if (widthTier === 4) {
+      /* Custom — applyClasses already pinned the current (default) width. */
+    } else if (widthTier === 3) {
       aside.style.setProperty('flex', '1000 1 auto', 'important');
       aside.style.setProperty('width', 'auto', 'important');
       aside.style.setProperty('max-width', 'none', 'important');
@@ -606,7 +611,7 @@
     if (els.widthBtn) {
       els.widthBtn.addEventListener('click', function (e) {
         e.stopPropagation();
-        widthTier = (widthTier + 1) % 4;
+        widthTier = window.WPaneWidth ? window.WPaneWidth.next(widthTier) : (widthTier + 1) % 5;
         applyWidth();
       });
     }

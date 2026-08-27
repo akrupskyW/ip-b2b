@@ -1,3 +1,5 @@
+import './date-column.js';
+
 /**
  * Marketing Assets browser.
  *
@@ -228,7 +230,15 @@ const state = {
   query: '',         // live search text (matches names at any depth)
   typeFilter: null,  // null | 'image' | 'vector' | 'pdf' | 'doc' — score-card / popover filter
   filterOpen: false, // in-search filter popover
+  dateLead: 'updated',
 };
+let dateLeadBound = false;
+function dc() { return window.WiseDateCol; }
+function nodeDates(node) {
+  const D = dc();
+  const partial = { updated: node._updated, created: node._created, viewed: node._viewed || node._updated };
+  return D ? D.complete(partial, 'asset') : partial;
+}
 
 const ARROW_SVG = '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
@@ -253,22 +263,31 @@ assignPaths(TREE);
 /* Roll size + latest date up the tree so folders have real Size / Date cells
    and can sort on those columns the same way files do. */
 function rollup(node) {
+  const D = dc();
   if (node.type === 'file') {
     node._bytes = node.bytes || 0;
     node._updated = node.updated || '';
+    node._created = node.created || (D ? D.shiftDate(node._updated, -14) : node._updated);
+    node._viewed = node.viewed || node._updated;
     return;
   }
   let bytes = 0;
   let latest = '';
   let latestTs = 0;
+  let earliest = '';
+  let earliestTs = Infinity;
   (node.children || []).forEach((c) => {
     rollup(c);
     bytes += c._bytes || 0;
     const ts = Date.parse(c._updated) || 0;
     if (ts >= latestTs) { latestTs = ts; latest = c._updated; }
+    const cts = Date.parse(c._created) || 0;
+    if (cts && cts < earliestTs) { earliestTs = cts; earliest = c._created; }
   });
   node._bytes = bytes;
   node._updated = latest;
+  node._created = earliest || latest;
+  node._viewed = latest;
 }
 rollup(TREE);
 
@@ -295,7 +314,12 @@ function sortChildren(children) {
 
   const byName = (a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }) * dir;
   const bySize = (a, b) => ((a._bytes || 0) - (b._bytes || 0)) * dir;
-  const byDate = (a, b) => ((Date.parse(a._updated) || 0) - (Date.parse(b._updated) || 0)) * dir;
+  const byDate = (a, b) => {
+    const D = dc();
+    const av = D ? D.sortValue(nodeDates(a), 'asset', state.dateLead) : (Date.parse(a._updated) || 0);
+    const bv = D ? D.sortValue(nodeDates(b), 'asset', state.dateLead) : (Date.parse(b._updated) || 0);
+    return (av - bv) * dir;
+  };
   const cmp = state.sortKey === 'size' ? bySize : state.sortKey === 'date' ? byDate : byName;
 
   /* Folders stay grouped above files; both groups honour the active column. */
@@ -382,10 +406,13 @@ function countChildren(node) {
 /* ------------------------------------------------------------------ */
 
 function renderThead() {
+  const D = dc();
   const th = (key, label, extraCls = '') => {
     const active = state.sortKey === key;
     const dir = active ? ` data-ma-dir="${state.sortDir === 1 ? 'asc' : 'desc'}"` : '';
-    return `<th class="ma-th ma-th--sortable ${extraCls}" role="columnheader" tabindex="0" data-ma-sort="${key}"${dir} aria-sort="${active ? (state.sortDir === 1 ? 'ascending' : 'descending') : 'none'}">${esc(label)}<span class="ma-sort-arrow">${ARROW_SVG}</span></th>`;
+    const inner = (key === 'date' && D) ? D.headerHtml({ kinds: 'asset', lead: state.dateLead }) : esc(label);
+    const dateCls = key === 'date' ? ' w-date-th' : '';
+    return `<th class="ma-th ma-th--sortable ${extraCls}${dateCls}" role="columnheader" tabindex="0" data-ma-sort="${key}"${dir} aria-sort="${active ? (state.sortDir === 1 ? 'ascending' : 'descending') : 'none'}">${inner}<span class="ma-sort-arrow">${ARROW_SVG}</span></th>`;
   };
   return `<tr>
     <th class="ma-th ma-th-actions" scope="col" aria-label="Actions"></th>
@@ -407,7 +434,7 @@ function renderRowMenu(node, open) {
         rowMenuItem('download', node._path, 'download', 'Download'),
       ].join('');
   return `<div class="ma-rowmenu">
-    <button type="button" class="ma-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button>
+    <button type="button" class="ma-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Actions"><span class="material-symbols-outlined">more_vert</span></button>
     <div class="ma-rowmenu-pop" role="menu" hidden>${items}</div>
   </div>`;
 }
@@ -449,7 +476,7 @@ function renderFolderRow(node) {
         </span>
       </td>
       <td class="ma-cell-size">${esc(fmtNodeBytes(node))}</td>
-      <td class="ma-cell-date">${esc(fmtNodeDate(node))}</td>
+      <td class="ma-cell-date"><span class="w-datecell">${dc() ? dc().cellHtml(nodeDates(node), 'asset', state.dateLead) : esc(fmtNodeDate(node))}</span></td>
     </tr>${nested}`;
 }
 
@@ -469,7 +496,7 @@ function renderFileRow(node) {
         </span>
       </td>
       <td class="ma-cell-size">${esc(fmtNodeBytes(node))}</td>
-      <td class="ma-cell-date">${esc(fmtNodeDate(node))}</td>
+      <td class="ma-cell-date"><span class="w-datecell">${dc() ? dc().cellHtml(nodeDates(node), 'asset', state.dateLead) : esc(fmtNodeDate(node))}</span></td>
     </tr>`;
 }
 
@@ -528,6 +555,7 @@ function renderFilterPop() {
 
 function renderShell() {
   return `
+    <div data-w-date-root data-ma-board>
     <header class="ma-head">
       <div class="ma-head-titles">
         <h1 class="ma-head-title">Marketing Assets</h1>
@@ -561,6 +589,7 @@ function renderShell() {
           <tbody>${renderRows(visibleChildren(TREE))}</tbody>
         </table>
       </div>
+    </div>
     </div>`;
 }
 
@@ -873,13 +902,22 @@ export function renderMarketingAssets(host) {
   syncScorecards(host);
   syncFilterUi(host);
   updateSearchMeta(host);
+  if (!dateLeadBound && dc()) {
+    dateLeadBound = true;
+    dc().onLead(host, (lead, root) => {
+      if (!host.querySelector('[data-ma-board]')) return;
+      if (root && !host.contains(root)) return;
+      state.dateLead = lead;
+      repaint(host);
+    });
+  }
 
   /* Row + toolbar interactions. Event delegation stays live across nested
      table re-renders. Filter / sort handlers run first so a click inside the
      search pill or a column header never toggles a folder. */
   host.addEventListener('click', (e) => {
     const sortH = e.target.closest('[data-ma-sort]');
-    if (sortH) {
+    if (sortH && !e.target.closest('.w-datemenu, .pf-datemenu')) {
       e.stopPropagation();
       toggleSort(sortH.dataset.maSort);
       repaint(host);
@@ -957,7 +995,7 @@ export function renderMarketingAssets(host) {
   host.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     const sortH = e.target.closest('[data-ma-sort]');
-    if (sortH) {
+    if (sortH && !e.target.closest('.w-datemenu, .pf-datemenu')) {
       e.preventDefault();
       toggleSort(sortH.dataset.maSort);
       repaint(host);

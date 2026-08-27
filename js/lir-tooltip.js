@@ -2,30 +2,50 @@
  *
  * The rail buttons (Menu, the section/agent icons, Alerts, More, layout
  * toggles, …) no longer carry a text caption under the glyph. Instead, hovering
- * / focusing / tapping an icon shows a single floating tooltip. Most top-bar
- * icons get it centered just below; the left-nav collapse toggle
+ * / focusing an icon shows a single floating tooltip instantly — no click.
+ * Most top-bar icons get it centered just below; the left-nav collapse toggle
  * (`.topbar-menu-toggle` in the vertical menu) pins it to the right — same
  * placement as `#menu-rail-tip` on collapsed nav rows. We position it `fixed`
  * via JS so it can escape overflow clipping that would clip a CSS-only tip.
  *
- * The label text is read from `data-tip`, falling back to the (now hidden)
- * `.lir-label` caption, then `aria-label` / `title`. Listeners are delegated on
- * the document so dynamically-rendered rail buttons are covered automatically.
+ * Every icon-only control in the app is covered (reports, checks, module
+ * header ⋯ / width, composer icons, …). Row ⋮ buttons that open a menu are
+ * excluded — the menu is the hover result, not a tooltip. The label is read
+ * from `data-tip`, then `.lir-label`, then `aria-label` / `title`. Listeners
+ * are delegated on the document so dynamically-rendered buttons are included.
  */
 
-/* Every icon-only control that lost its caption gets the same instant floating
-   tooltip: the top-bar rail buttons, the menu collapse toggle, the per-module
-   header toggles (move-side / double-width / close), the Appearance trigger in
-   the primary nav, every labelled control inside the Appearance popover, and
-   the small intent chips in every chat module (hover status = the chip's ask).
-   They expose their name via `data-tip`, `aria-label`, or `title`. */
+/* Named controls that always get the card (including a few that carry visible
+   text — intent chips, Appearance terms). Icon-only buttons elsewhere are
+   picked up by isIconOnly() so every glyph in the app labels itself on hover
+   without a click. */
 const TOOLTIP_SELECTOR =
   '.lir-btn, .topbar-menu-toggle, .panel-flip-btn, .panel-width-toggle-btn, ' +
   '.panel-more-btn, .panel-close-btn, .panel-ctrl-btn, .wiseai-dock-flip, .dash-term, ' +
   '.topbar-appearance-btn, #menu-footer-layout-btn, ' +
   '.wise-popover--appearance [data-tip], ' +
   '.rf-tool-ico, .rf-rpt-plus, .wa-titledrop-plus, ' +
-  '.ws-intent-chip, .sc-reply-chips .chip, .sc-inline-chips .chip';
+  '.ws-intent-chip, .sc-reply-chips .chip, .sc-inline-chips .chip, ' +
+  '.pf-reports-btn, .pf-datemenu-btn, .pf-module-menu-btn, ' +
+  '.vf-check, .pf-ico, .fl-icon-btn, .sc-send, .adm-icon-btn';
+
+const CANDIDATE_SELECTOR =
+  'button, a[href], [role="button"], [data-tip], .lir-btn, .ws-intent-chip, ' +
+  '.sc-reply-chips .chip, .sc-inline-chips .chip, .dash-term';
+
+/* Status chips have their own explainer card (chip-tooltip.js). Menu rows carry
+   a text label already. Text CTAs (Review & Claim, Complete details) are not
+   icon-only. Row ⋮ and other kebab triggers that open a popover are skipped
+   so hover/click opens the menu instead of an "Actions" tooltip. Named
+   click-to-open menus still get a tip via TOOLTIP_SELECTOR (checked first). */
+const SKIP_SELECTOR =
+  '.pf-chip, .vf-chip, .gv-chip, .ib-gras, .ib-pl, .pf-claim-btn, .pf-row-act, ' +
+  '.pf-head-btn, .pf-loadmore, ' +
+  '.pf-rowmenu-btn, .adm-rowmenu-btn, .inv-rowmenu-btn, .ma-rowmenu-btn, .nud-rowmenu-btn, ' +
+  '[aria-haspopup="true"], [aria-haspopup="menu"]';
+const SKIP_ANCESTOR =
+  '[role="menu"], .pf-module-menu-pop, .pf-rowmenu-pop, .pf-datemenu-pop, ' +
+  '.topbar-popover, .wise-popover, #lir-tooltip, .ct-card, .nudge-dismiss-pop';
 
 /* The History / Turns modules (`.wch-sidebar`) run their own dark tooltip in
    chat-history.js, so we stand down for their controls to avoid a double tip.
@@ -40,6 +60,36 @@ function ownedElsewhere(btn) {
   return false;
 }
 
+function visibleTextWithoutIcons(el) {
+  try {
+    const clone = el.cloneNode(true);
+    clone.querySelectorAll('.material-symbols-outlined, svg, img, .lir-label').forEach((n) => n.remove());
+    return (clone.textContent || '').replace(/\s+/g, ' ').trim();
+  } catch (_) {
+    return '';
+  }
+}
+
+function isIconOnly(el) {
+  if (!el || !el.matches) return false;
+  if (el.closest && el.closest(SKIP_ANCESTOR)) return false;
+  if (el.matches(SKIP_SELECTOR)) return false;
+  const hasIcon = !!(el.querySelector && el.querySelector('.material-symbols-outlined, svg, img'));
+  if (!hasIcon && !el.hasAttribute('data-tip')) return false;
+  const leftover = visibleTextWithoutIcons(el);
+  if (leftover.length > 2) return false;
+  return hasIcon || el.hasAttribute('data-tip');
+}
+
+function tipTarget(start) {
+  if (!start || !start.closest) return null;
+  const btn = start.closest(CANDIDATE_SELECTOR);
+  if (!btn || ownedElsewhere(btn)) return null;
+  if (btn.closest && btn.closest('#lir-tooltip, .ct-card')) return null;
+  if (btn.matches(TOOLTIP_SELECTOR) || isIconOnly(btn)) return btn;
+  return null;
+}
+
 function isAppearanceTrigger(btn) {
   return btn.id === 'menu-footer-layout-btn' ||
     btn.id === 'topbar-appearance-btn' ||
@@ -47,13 +97,54 @@ function isAppearanceTrigger(btn) {
     btn.classList.contains('lir-layout-btn');
 }
 
+const GLYPH_LABELS = {
+  more_vert: 'Actions',
+  more_horiz: 'More',
+  description: 'Reports',
+  receipt_long: 'Report',
+  check_box_outline_blank: 'Select',
+  check_box: 'Selected',
+  width_normal: 'Width',
+  width_wide: 'Width',
+  width_full: 'Width',
+  close: 'Close',
+  search: 'Search',
+  settings: 'Settings',
+  filter_list: 'Filter',
+  download: 'Download',
+  upload: 'Upload',
+  edit: 'Edit',
+  visibility: 'View',
+  add: 'Add',
+  info: 'Info',
+  help: 'Help',
+  notifications: 'Alerts',
+  expand_more: 'Show more',
+  chevron_right: 'Open',
+  unfold_more: 'Resize',
+  swap_horiz: 'Move',
+  open_in_full: 'Expand',
+  close_fullscreen: 'Collapse',
+};
+
+function glyphLabel(btn) {
+  const icon = btn.querySelector && btn.querySelector('.material-symbols-outlined');
+  if (!icon) return '';
+  const raw = (icon.textContent || '').replace(/\s+/g, ' ').trim();
+  if (!raw) return '';
+  if (GLYPH_LABELS[raw]) return GLYPH_LABELS[raw];
+  return raw.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function labelFor(btn) {
   const tip = btn.getAttribute('data-tip');
   if (tip) return tip.trim();
   const cap = btn.querySelector('.lir-label');
   if (cap && cap.textContent.trim()) return cap.textContent.trim();
-  return (btn.getAttribute('aria-label') || btn.getAttribute('title') ||
+  const named = (btn.getAttribute('aria-label') || btn.getAttribute('title') ||
           btn.getAttribute('data-lir-title') || '').trim();
+  if (named) return named;
+  return glyphLabel(btn);
 }
 
 export function initLirTooltip() {
@@ -134,23 +225,23 @@ export function initLirTooltip() {
   }
 
   document.addEventListener('mouseover', (e) => {
-    const btn = e.target.closest(TOOLTIP_SELECTOR);
-    if (btn && btn !== current && !ownedElsewhere(btn)) show(btn);
+    const btn = tipTarget(e.target);
+    if (btn && btn !== current) show(btn);
   });
   document.addEventListener('mouseout', (e) => {
-    const btn = e.target.closest(TOOLTIP_SELECTOR);
+    const btn = tipTarget(e.target);
     if (btn && !btn.contains(e.relatedTarget)) hide();
   });
   document.addEventListener('focusin', (e) => {
-    const btn = e.target.closest(TOOLTIP_SELECTOR);
-    if (btn && !ownedElsewhere(btn)) show(btn);
+    const btn = tipTarget(e.target);
+    if (btn) show(btn);
   });
   document.addEventListener('focusout', hide);
   /* Clicking an icon (which often opens a panel) should dismiss the tooltip.
      Capture phase so our title-restore runs BEFORE the button's own handler
      re-writes its `title` (the width toggle cycles its caption on click). */
   document.addEventListener('click', (e) => {
-    if (e.target.closest(TOOLTIP_SELECTOR)) hide();
+    if (tipTarget(e.target)) hide();
   }, true);
   /* Keep it glued to its button if the page scrolls/resizes while shown. */
   window.addEventListener('scroll', hide, true);

@@ -7,9 +7,9 @@
    (pane-* classes), the product utility panels (panel-* classes, flipped into
    #panels-row-right), the reformulation studio (rf-* cards), etc. Rather than
    teach every page a new default, this file expresses the rule ONCE against the
-   one thing they all share: the canonical four-tier width control
+   one thing they all share: the canonical five-tier width control
    (.panel-width-toggle-btn) whose per-tier title text is identical everywhere
-   ("Width (single|double|triple|fill) — …" — see pane-width.js).
+   ("Width (single|double|triple|fill|custom) — …" — see pane-width.js).
 
    How: for each module positioned to the right of the chat, we drive that
    module's OWN width toggle (by clicking it) up to the fill tier. Going through
@@ -27,16 +27,17 @@
   window.__wiseDefaultFill = true;
 
   var STACK_BP = 560;   // px — below this the row stacks vertically; "right" is moot
-  var FILL_TIER = 3;    // the fourth setting: Fill the Screen
+  var FILL_TIER = 3;    // the fourth setting: Fill the Screen (custom is 4)
 
   /* The button's title is the one truly universal signal of a module's current
      tier — every page's width control renders the same "Width (single|double|
-     triple|fill) — …" text (pane-width.js). We read the tier from the title
-     rather than the icon because the width_* icon family only has three glyphs,
-     so the fill tier reuses `width_full` and the icon alone can't tell triple
-     from fill. The icon map stays as a fallback for the unambiguous tiers. */
-  var TITLE_TIER = { single: 0, double: 1, triple: 2, fill: 3 };
-  var ICON_TIER = { width_normal: 0, width_wide: 1, width_full: 2 };
+     triple|fill|custom) — …" text (pane-width.js). We read the tier from the
+     title rather than the icon because the width_* icon family only has three
+     glyphs, so the fill tier reuses `width_full` and the icon alone can't tell
+     triple from fill. The icon map stays as a fallback for the unambiguous
+     tiers. Custom uses `crop_free`. */
+  var TITLE_TIER = { single: 0, double: 1, triple: 2, fill: 3, custom: 4 };
+  var ICON_TIER = { width_normal: 0, width_wide: 1, width_full: 2, crop_free: 4 };
 
   /* ── element helpers ──────────────────────────────────────────────────── */
   function isVisible(el) {
@@ -71,7 +72,7 @@
 
   function tierOfBtn(btn) {
     // Title first — it names the tier unambiguously (…"(fill)"… etc).
-    var m = /\((single|double|triple|fill)\)/.exec(btn.getAttribute('title') || '');
+    var m = /\((single|double|triple|fill|custom)\)/.exec(btn.getAttribute('title') || '');
     if (m) return TITLE_TIER[m[1]];
     // Fallback: the icon glyph resolves the non-fill tiers (fill shares
     // width_full with triple, so it can't be told apart here — hence title first).

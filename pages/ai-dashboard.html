@@ -18,9 +18,14 @@
   </script>
   <script src="../js/text-size-fouc.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <!-- SVG icon shim: swaps every Material Symbols glyph for an inline SVG from
+       assets/icons/wise-icons.svg (Rounded 300). The font links above stay as the
+       fallback for any glyph the sprite does not carry. See js/icon-svg-shim.js. -->
+  <script defer src="../js/icon-svg-shim.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="wise.css" />
   <style>
@@ -504,7 +509,7 @@
     <!-- ══ Usage-by-user table ══ -->
     <section class="aid-card aid-table-card col-12" style="grid-column: span 12;">
       <div class="aid-table-wrap">
-        <table class="aid-table" id="aid-user-table">
+        <table class="aid-table" id="aid-user-table" data-w-date-root>
           <thead>
             <tr>
               <th>User</th>
@@ -513,7 +518,7 @@
               <th>Top skill</th>
               <th>Budget used</th>
               <th class="num">Spend</th>
-              <th>Last active</th>
+              <th class="w-date-th" data-aid-date-th>Last active</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -735,6 +740,7 @@
     })();
   </script>
 
+  <script src="../js/date-column.js"></script>
   <script>
   (function () {
     'use strict';
@@ -755,7 +761,7 @@
         green: cssvar('--aid-green') || cssvar('--sec-green') || '#32A966',
         red: cssvar('--aid-red') || cssvar('--sec-red') || '#DC3038',
         grid: cssvar('--border') || 'rgba(0,0,0,.08)',
-        text: cssvar('--text-subtle') || '#474E58',
+        text: cssvar('--text-subtle') || '#444B55',
       };
     }
     refreshColors();
@@ -837,13 +843,14 @@
     ];
 
     var USERS = [
-      { name: 'Arthur Krupsky', role: 'Product Intelligence Lead', req: 184200, tokens: 9.1e6, skill: 'RAG Search', budget: 78, spend: 1284, last: '2m ago', color: 'violet' },
-      { name: 'Dana Owusu', role: 'Data Scientist', req: 142800, tokens: 7.4e6, skill: 'Code Interp.', budget: 64, spend: 1042, last: '11m ago', color: 'cyan' },
-      { name: 'Miguel Santos', role: 'Compliance Analyst', req: 98400, tokens: 5.2e6, skill: 'Rules Check', budget: 51, spend: 733, last: '38m ago', color: 'teal' },
-      { name: 'Priya Nair', role: 'Ops Engineer', req: 76100, tokens: 3.9e6, skill: 'Agents', budget: 44, spend: 561, last: '1h ago', color: 'gold' },
-      { name: 'Lena Fischer', role: 'Content Strategist', req: 51900, tokens: 2.6e6, skill: 'Summarize', budget: 29, spend: 372, last: '3h ago', color: 'pink' },
-      { name: 'Omar Haddad', role: 'Support Lead', req: 38700, tokens: 1.8e6, skill: 'Q&A Bot', budget: 22, spend: 254, last: '5h ago', color: 'blue' },
+      { name: 'Arthur Krupsky', role: 'Product Intelligence Lead', req: 184200, tokens: 9.1e6, skill: 'RAG Search', budget: 78, spend: 1284, last: '2m ago', joined: 'Mar 4, 2026', color: 'violet' },
+      { name: 'Dana Owusu', role: 'Data Scientist', req: 142800, tokens: 7.4e6, skill: 'Code Interp.', budget: 64, spend: 1042, last: '11m ago', joined: 'Jan 18, 2026', color: 'cyan' },
+      { name: 'Miguel Santos', role: 'Compliance Analyst', req: 98400, tokens: 5.2e6, skill: 'Rules Check', budget: 51, spend: 733, last: '38m ago', joined: 'Feb 9, 2026', color: 'teal' },
+      { name: 'Priya Nair', role: 'Ops Engineer', req: 76100, tokens: 3.9e6, skill: 'Agents', budget: 44, spend: 561, last: '1h ago', joined: 'Nov 12, 2025', color: 'gold' },
+      { name: 'Lena Fischer', role: 'Content Strategist', req: 51900, tokens: 2.6e6, skill: 'Summarize', budget: 29, spend: 372, last: '3h ago', joined: 'Apr 2, 2026', color: 'pink' },
+      { name: 'Omar Haddad', role: 'Support Lead', req: 38700, tokens: 1.8e6, skill: 'Q&A Bot', budget: 22, spend: 254, last: '5h ago', joined: 'Dec 1, 2025', color: 'blue' },
     ];
+    var dateLead = 'active';
 
     var SKILLS = [
       { name: 'RAG Search', val: 312000, color: 'violet' },
@@ -1303,13 +1310,28 @@
     function avColor(c) { return C[c] || C.violet; }
     function initials(name) { return name.split(' ').map(function (p) { return p[0]; }).slice(0, 2).join('').toUpperCase(); }
 
+    function userDates(u) {
+      var D = window.WiseDateCol;
+      var partial = { active: u.last, used: u.last, created: u.joined };
+      return D ? D.complete(partial, 'activity') : partial;
+    }
+    function paintDateHeader() {
+      var th = document.querySelector('[data-aid-date-th]');
+      var D = window.WiseDateCol;
+      if (!th || !D) return;
+      th.innerHTML = D.headerHtml({ kinds: 'activity', lead: dateLead });
+      th.classList.add('w-date-th');
+    }
     function renderUserTable() {
+      paintDateHeader();
       var tb = $('#aid-user-table tbody');
       tb.innerHTML = '';
       var s = RANGE_SCALE[RANGE];
+      var D = window.WiseDateCol;
       USERS.forEach(function (u) {
         var tr = document.createElement('tr');
         var budgetColor = u.budget > 75 ? C.red : (u.budget > 55 ? C.gold : C.green);
+        var dateCell = D ? D.cellHtml(userDates(u), 'activity', dateLead) : u.last;
         tr.innerHTML =
           '<td><div class="aid-user"><span class="aid-av" style="background:' + avColor(u.color) + '">' + initials(u.name) + '</span>' +
           '<div><div class="aid-user-name">' + u.name + '</div><div class="aid-user-role">' + u.role + '</div></div></div></td>' +
@@ -1318,7 +1340,7 @@
           '<td><span class="aid-pill">' + u.skill + '</span></td>' +
           '<td><div class="aid-util"><span class="aid-util-track"><span class="aid-util-fill" style="width:' + u.budget + '%;background:' + budgetColor + '"></span></span><span style="font-size:.72rem;color:var(--text-muted);font-weight:600">' + u.budget + '%</span></div></td>' +
           '<td class="num">' + fmt.money(Math.round(u.spend * s)) + '</td>' +
-          '<td style="color:var(--text-muted)">' + u.last + '</td>';
+          '<td><span class="w-datecell">' + dateCell + '</span></td>';
         tb.appendChild(tr);
       });
     }
@@ -1399,6 +1421,13 @@
       var bars = card.querySelector('.aid-hbars');
       if (bars) playHealthBars(bars);
     });
+
+    if (window.WiseDateCol && window.WiseDateCol.onLead) {
+      window.WiseDateCol.onLead(document.getElementById('aid-user-table'), function (lead) {
+        dateLead = lead;
+        renderUserTable();
+      });
+    }
 
     renderAll();
     window.addEventListener('resize', function () { /* SVGs are responsive via viewBox; no-op */ });

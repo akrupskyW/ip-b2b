@@ -1,25 +1,36 @@
 ---
-description: Chat module default width is single on laptop-class screens, double when wider
+description: Chat module default width is single on laptop-class screens, double on larger ones — measured against the display, never the browser window
 alwaysApply: true
 ---
 
 # Chat Module Width
 
-The chat module's **load default** depends on viewport width. The user can still cycle single → double → triple → fill in-session; the next load reapplies this default (do not restore the last toggle).
+The chat module's **load default** depends on the **size of the display**, not the size of the browser window. The user can still cycle single → double → triple → fill → custom in-session; the next load reapplies this default (do not restore the last toggle).
 
 ## Breakpoint
 
-**1512 CSS pixels** — the 14" MacBook Pro class (`window.innerWidth`).
+**1512 CSS pixels** — the 14" MacBook Pro class, measured with **`window.screen.width`**.
 
 - **≤ 1512** → default **single** (tier 0, `--chat-pane-w` / 380px)
 - **> 1512** → default **double** (tier 1, typically 580px)
 
-Source of truth: `WPaneWidth.defaultChatTier()` in `js/pane-width.js` (FOUC twin in `js/text-size-fouc.js` as `wiseDefaultChatTier`).
+Source of truth: `WPaneWidth.defaultChatTier()` in `js/pane-width.js` (FOUC twin in `js/text-size-fouc.js` as `wiseDefaultChatTier`). Both call the one measurer, `window.WISE_CHAT_SCREEN_WIDTH_PX()`.
+
+## Never measure `window.innerWidth` for this
+
+`innerWidth` is the **viewport**. It changes when the window is resized, opened un-maximised, or has devtools docked — so on one physical screen the chat flipped between single and double for no reason the user could see. The tier must be a property of the screen, so that a given machine always opens the chat the same way.
+
+`innerWidth` survives only as the fallback inside `screenWidthPx()`, for a browser that will not report `screen.width` at all.
+
+## Re-applying on a display change
+
+Moving the window to a different monitor is the only thing that can legitimately change the tier. `js/text-size-fouc.js` watches for it and re-applies — but skips when `html[data-chat-width-user-set="1"]` is set, so a manual in-session toggle is never stomped. `js/pane-width.js` sets that flag from one delegated capture-phase click listener covering every module's width control; individual toggle handlers do not need to set it.
 
 ## Rules for the agent
 
-- Never hard-reset a chat to `wide: 0` / `widthTier = 0` on load. Use `defaultChatTier()`.
+- Never hard-reset a chat to `wide: 0` / `widthTier = 0` on load. Use `defaultChatTier()`. A `: 0` fallback on the end of a `wiseDefaultChatTier` check is the same bug — it silently pins the chat to single on any page where load order puts the module first.
 - Apply the default through the existing `panel-wide` / `panel-triple` / `panel-fill` classes and the width-toggle button. Do not invent a parallel width system.
 - When the user cycles back to single, drop `html.chat-default-double` so the FOUC class cannot pin the chat wide.
 - Right-of-chat modules still default to **fill** (`js/default-fill.js`). That rule is unchanged.
+- **The right module's fill is a load default too — never a restored session choice.** `#agent-main` owns its own control instead of being driven by `default-fill.js`, and it used to restore its last tier from `localStorage` (`wise-main-width` / `wise-all-modules-width`). One stray narrowing then pinned it to a capped `max-width` on every later load, leaving dead space against the right edge while the chat beside it reset itself — the two halves of the row disagreeing about what "width" means. It now opens at `MAIN_WIDTH_DEFAULT` (fill) every load, cycles freely in-session, and persists nothing. Do not reintroduce a width read from storage for either half of the row.
 - On `wiseai.html`, the welcome chat still fills the row; `panel-wide` only sizes the docked column once a result pane is open.

@@ -1,3 +1,5 @@
+import './date-column.js';
+
 /**
  * Ingredient Audit Review (Audit Queue) — WISEcode Admin module.
  *
@@ -80,12 +82,12 @@ const COLS = [
   { key: 'mapping', label: 'Current Mapping',  sortable: true,  value: (a) => a.mapping.toLowerCase(), type: 'text' },
   { key: 'action',  label: "Brand's Action",   sortable: true,  value: (a) => a.action.toLowerCase(), type: 'text' },
   { key: 'notes',   label: "Brand's Notes",    sortable: false },
-  { key: 'flagged', label: 'Flagged',          sortable: true,  value: (a) => flaggedTime(a) ?? 0, type: 'num' },
+  { key: 'flagged', label: 'Flagged',          sortable: true,  value: (a) => (dc() ? dc().sortValue(auditDates(a), 'audit', dateLead) : (flaggedTime(a) ?? 0)), type: 'num' },
   { key: 'actions', label: '',                 sortable: false, end: true },
 ];
 /* min:0 tracks let every flexible column shrink so the table fits the narrow
    board beside the WISEcodeAI dock (text truncates/clamps). */
-const GRID_COLS = 'minmax(0,1.4fr) minmax(0,1fr) minmax(0,0.85fr) 156px minmax(0,2.3fr) 88px 112px';
+const GRID_COLS = 'minmax(0,1.4fr) minmax(0,1fr) minmax(0,0.85fr) 156px minmax(0,2.3fr) 168px 112px';
 const ARROW_SVG = '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 let hostEl = null;
@@ -95,6 +97,18 @@ let filters = { ...FILTER_DEFAULTS };
 let sortKey = null, sortDir = 1;
 let filterOpen = false;
 let docListenersBound = false;
+let dateLead = 'flagged';
+let dateLeadBound = false;
+
+function dc() { return window.WiseDateCol; }
+function auditDates(a) {
+  const D = dc();
+  const flagged = a.when;
+  const t = flaggedTime(a);
+  const created = (D && t) ? D.fmtDate(t - 2 * 86400000) : flagged;
+  const edited = (D && t) ? D.fmtDate(t - 3600000) : flagged;
+  return D ? D.complete({ flagged, created, edited }, 'audit') : { flagged };
+}
 
 let chatApi = null;
 export function setAuditQueueChat(api) { chatApi = api; }
@@ -158,7 +172,7 @@ function rowHtml(a, i) {
       <span class="adm-td" style="font-style:italic;color:var(--text-subtle);font-size:0.8rem">${esc(a.mapping)}</span>
       <span class="adm-td"><span class="adm-chip ${meta.cls}">${icon}${esc(a.action)}</span></span>
       <span class="adm-td"><span class="adm-notes">${esc(a.notes)}</span></span>
-      <span class="adm-td"><span class="adm-flagged"><span class="adm-flagged-when">${esc(a.when)}</span><span class="adm-flagged-by">by ${esc(a.by)}</span></span></span>
+      <span class="adm-td"><span class="w-datecell">${dc() ? dc().cellHtml(auditDates(a), 'audit', dateLead) : `<span class="adm-flagged"><span class="adm-flagged-when">${esc(a.when)}</span><span class="adm-flagged-by">by ${esc(a.by)}</span></span>`}</span></span>
       <span class="adm-td adm-td--end"><span class="adm-actions">
         <button type="button" class="adm-btn adm-btn--primary adm-btn--sm" data-adm-action="resolve" data-adm-idx="${i}"><span class="material-symbols-outlined">task_alt</span>Resolve</button>
       </span></span>
@@ -177,8 +191,16 @@ function statsHtml() {
 }
 
 function theadHtml() {
+  const D = dc();
   return COLS.map((c) => {
-    const cls = `adm-th${c.end ? ' adm-th--end' : ''}`;
+    const cls = `adm-th${c.end ? ' adm-th--end' : ''}${c.key === 'flagged' ? ' w-date-th' : ''}`;
+    if (c.key === 'flagged' && D) {
+      const inner = D.headerHtml({ kinds: 'audit', lead: dateLead });
+      if (!c.sortable) return `<span class="${cls}">${inner}</span>`;
+      const active = c.key === sortKey;
+      const dir = active ? ` data-adm-dir="${sortDir === 1 ? 'asc' : 'desc'}"` : '';
+      return `<span class="${cls} adm-th--sortable" role="button" tabindex="0" data-adm-sort="${esc(c.key)}"${dir}>${inner}<span class="adm-sort-arrow">${ARROW_SVG}</span></span>`;
+    }
     if (!c.sortable) return `<span class="${cls}">${esc(c.label)}</span>`;
     const active = c.key === sortKey;
     const dir = active ? ` data-adm-dir="${sortDir === 1 ? 'asc' : 'desc'}"` : '';
@@ -217,7 +239,7 @@ function paint() {
   if (!hostEl) return;
   const rows = orderedFiltered();
   hostEl.innerHTML = `
-    <div class="adm-wrap adm-wrap--wide">
+    <div class="adm-wrap adm-wrap--wide" data-w-date-root data-aq-board>
       <header class="adm-head">
         <div class="adm-head-row">
           <div>
@@ -323,11 +345,20 @@ function runAction(action, idx) {
 export function renderAuditQueue(mainEl) {
   hostEl = mainEl;
   activeStatus = 'open'; query = ''; filters = { ...FILTER_DEFAULTS }; sortKey = null; sortDir = 1; filterOpen = false;
+  if (!dateLeadBound && dc()) {
+    dateLeadBound = true;
+    dc().onLead(hostEl, (lead, root) => {
+      if (!hostEl.querySelector('[data-aq-board]')) return;
+      if (root && !hostEl.contains(root)) return;
+      dateLead = lead;
+      paint();
+    });
+  }
   paint();
 
   mainEl.addEventListener('click', (e) => {
     const sortH = e.target.closest('[data-adm-sort]');
-    if (sortH) { toggleSort(sortH.dataset.admSort); return; }
+    if (sortH && !e.target.closest('.w-datemenu, .pf-datemenu')) { toggleSort(sortH.dataset.admSort); return; }
     const filter = e.target.closest('button[data-adm-filter]');
     if (filter) { const s = filter.dataset.admFilter || null; setAuditFilter(s === activeStatus ? null : s); return; }
     const act = e.target.closest('[data-adm-action]');

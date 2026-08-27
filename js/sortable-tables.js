@@ -61,7 +61,7 @@
     if (!cell) return '';
     var pname = cell.querySelector && cell.querySelector('.pf-pname');
     if (pname) return norm(pname.textContent);
-    var dateVal = cell.querySelector && cell.querySelector('.pf-date-val');
+    var dateVal = cell.querySelector && cell.querySelector('.w-date--primary .w-date-val, .pf-date--primary .pf-date-val, .w-date-val, .pf-date-val');
     if (dateVal) return norm(dateVal.textContent);
     return norm(textWithoutIcons(cell));
   }
@@ -130,7 +130,10 @@
     arrow.setAttribute('aria-hidden', 'true');
     arrow.innerHTML = ARROW_SVG;
     header.appendChild(arrow);
-    header.addEventListener('click', onSort);
+    header.addEventListener('click', function (e) {
+      if (e.target && e.target.closest && e.target.closest('.w-datemenu, .pf-datemenu')) return;
+      onSort();
+    });
     header.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
         e.preventDefault();
@@ -157,7 +160,9 @@
   function isSortableTh(th) {
     if (th.hasAttribute('data-no-sort')) return false;
     if (/\bupf-th-(avatar|action)\b/.test(th.className)) return false;
-    return norm(th.textContent) !== '';
+    /* Ignore Material icon ligatures so bare checkbox / menu headers stay
+       non-sortable even when they carry an icon glyph. */
+    return norm(textWithoutIcons(th)) !== '';
   }
 
   function enhanceTable(table) {
@@ -194,23 +199,54 @@
   function colClassOf(th) {
     var found = null;
     (th.className || '').split(/\s+/).forEach(function (c) {
-      if (c.indexOf('pf-col-') === 0 && c !== 'pf-col-menu') found = c;
+      /* Menu + select/check columns are controls, never sort keys. */
+      if (c.indexOf('pf-col-') === 0 && c !== 'pf-col-menu' && c !== 'pf-col-check') found = c;
     });
     return found;
   }
 
+  /* Strip sort chrome that shouldn't have been applied (e.g. a checkbox
+     header whose Material ligature looked like a label). Idempotent.
+     Replaces the node so decorate()'s click/keydown listeners are dropped. */
+  function undress(header) {
+    if (!header || !header.parentNode) return;
+    if (!header.dataset.srtOn && !header.classList.contains('srt-sortable') &&
+        !header.querySelector('.srt-arrow')) return;
+    var clone = header.cloneNode(true);
+    delete clone.dataset.srtOn;
+    clone.classList.remove('srt-sortable');
+    clone.removeAttribute('data-srt-dir');
+    clone.removeAttribute('aria-sort');
+    if (clone.getAttribute('role') === 'button') clone.removeAttribute('role');
+    if (clone.getAttribute('tabindex') === '0') clone.removeAttribute('tabindex');
+    var arrow = clone.querySelector('.srt-arrow');
+    if (arrow) arrow.parentNode.removeChild(arrow);
+    header.parentNode.replaceChild(clone, header);
+  }
+
   function enhanceGrid(container) {
     if (container.tagName === 'TABLE') return;              /* real table path */
-    if (container.dataset.srtInit) return;
     if (container.hasAttribute('data-no-sort')) return;
     var thead = container.querySelector('.pf-thead');
     if (!thead) return;
+
+    /* Always scrub control columns — even on a re-scan after init — so a
+       checkbox / menu header that was wrongly decorated (Material ligature
+       looked like a label) loses its sort arrow and recenters. */
+    Array.prototype.forEach.call(thead.querySelectorAll('.pf-th'), function (th) {
+      if (th.hasAttribute('data-no-sort') || /\bpf-col-(menu|check)\b/.test(th.className) ||
+          norm(textWithoutIcons(th)) === '') {
+        undress(th);
+      }
+    });
+
+    if (container.dataset.srtInit) return;
     container.dataset.srtInit = '1';
 
     var headers = Array.prototype.slice.call(thead.querySelectorAll('.pf-th'));
     headers.forEach(function (th) {
-      if (th.hasAttribute('data-no-sort')) return;
-      if (norm(th.textContent) === '') return;              /* skip menu column */
+      if (th.hasAttribute('data-no-sort') || /\bpf-col-(menu|check)\b/.test(th.className)) return;
+      if (norm(textWithoutIcons(th)) === '') return;
       var colClass = colClassOf(th);
       if (!colClass) return;
       decorate(th, function () {

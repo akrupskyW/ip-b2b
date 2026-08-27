@@ -8,21 +8,23 @@
      panes (or the outer edge of an end pane), a small drag handle fades in and
      the cursor becomes a col-resize. Drag it to any width; the neighbouring pane
      grows/shrinks to match the direction you drag.
-   • THE FOUR-TIER RULE: any module that carries the canonical width changer
+   • THE PRESET RULE: any module that carries the canonical width changer
      (.panel-width-toggle-btn — the width icon in the module's top-right)
-     may only REST at one of the four preset widths: single, double, triple,
-     or fill. Those four settings are the width changer's limits. A drag on
-     such a module is a live preview only; on release it SNAPS to whichever
-     of those four limits is closest to the dragged width. The width changer
-     is then walked from its CURRENT tier to the snapped one (zero clicks
-     when they already match) — it is never cycled through every tier, so a
-     drag cannot wipe the user's setting and force them to start over.
-     Dragged pixel widths are never saved or restored for these modules, and
-     a click on the width icon always releases any leftover drag pin so the
-     changer stays in charge.
-   • Only modules WITHOUT a width changer keep free-form widths, remembered
-     per-page in localStorage. Double-click a handle to reset the two panes it
-     sits between.
+     and is sitting at one of the four PRESET widths (single, double, triple,
+     fill) may only REST at one of those four. A drag on such a module is a
+     live preview only; on release it SNAPS to whichever of those four is
+     closest to the dragged width. The width changer is then walked from its
+     CURRENT tier to the snapped one (zero clicks when they already match).
+     Dragged pixel widths are never saved for preset tiers, and a click on
+     the width icon always releases any leftover drag pin so the changer
+     stays in charge.
+   • CUSTOM (the fifth width setting): a module at the custom tier does NOT
+     snap. It keeps whatever width it had when custom was chosen (the
+     default), and the first drag is what it then maintains — a free pixel
+     width, remembered per-page in localStorage. Custom panes put the row on
+     a carousel rail so the content can scroll horizontally.
+   • Modules WITHOUT a width changer keep free-form widths the same way.
+     Double-click a handle to reset the two panes it sits between.
 
    Implementation: handles are drawn in a fixed, body-level overlay so they are
    never clipped by a pane's overflow, never cover a pane's buttons/content, and
@@ -100,8 +102,8 @@
   // Preset-width classes toggled by a pane's own "width" button (single → wide →
   // triple → fill). When one is present the page controls that pane's width, so
   // we must stand down and let the preset win rather than force our pinned width.
-  var PRESET_CLASSES = ['panel-wide', 'panel-triple', 'panel-fill',
-                        'pane-wide', 'pane-triple', 'pane-fill'];
+  var PRESET_CLASSES = ['panel-wide', 'panel-triple', 'panel-fill', 'panel-custom',
+                        'pane-wide', 'pane-triple', 'pane-fill', 'pane-custom'];
   // Exact signature of the preset classes on a pane. The class observer compares
   // SIGNATURES, not just presence: the tiers are cumulative (triple keeps wide,
   // fill keeps both), so after a drag pinned a pane that already sat at a preset
@@ -145,18 +147,28 @@
     while (n && n.parentElement && !isRowContainer(n.parentElement, row)) n = n.parentElement;
     return (n && n.parentElement && isRowContainer(n.parentElement, row)) ? n : null;
   }
-  // The pane's OWN four-tier width changer, if it has one. Modules with this
-  // button follow the four-tier rule (see header): drags snap to the nearest
-  // preset and pixel widths are never persisted for them. A button belonging
-  // to a NESTED module (e.g. a panel inside the #panels-row rail) resolves to
-  // that inner module, not to `el`, and is rejected — so we never drive some
-  // other module's width control by mistake.
+  // The pane's OWN width changer, if it has one. Modules with this button
+  // follow the preset rule (see header) while at single/double/triple/fill:
+  // drags snap to the nearest of those four. At the custom tier they keep a
+  // free pixel width instead. A button belonging to a NESTED module (e.g. a
+  // panel inside the #panels-row rail) resolves to that inner module, not to
+  // `el`, and is rejected — so we never drive some other module's width
+  // control by mistake.
   function widthBtnOf(el, row) {
     if (!el || el.nodeType !== 1 || !el.querySelectorAll) return null;
     var btns = el.querySelectorAll('.panel-width-toggle-btn');
     for (var i = 0; i < btns.length; i++)
       if (moduleRootOfBtn(btns[i], row) === el) return btns[i];
     return null;
+  }
+  function isCustom(el) {
+    if (window.WPaneWidth && typeof window.WPaneWidth.isCustom === 'function')
+      return window.WPaneWidth.isCustom(el);
+    return !!(el && el.classList &&
+      (el.classList.contains('panel-custom') || el.classList.contains('pane-custom')));
+  }
+  function isCarousel(row) {
+    return !!(row && row.classList && row.classList.contains('modules-carousel'));
   }
   // A "locked" pane (marked data-pr-lock) opts out of resizing entirely — no
   // drag handle is offered on either of its seams and its width is never pinned
@@ -228,15 +240,15 @@
     if (ps.length < 2) return;
     var stored = readPage();
     ps.forEach(function (el) {
-      // Four-tier rule: a module with its own width changer is sized ONLY by
-      // its preset tier (single/double/triple/fill). Never restore a saved
-      // pixel width onto it — any stored value is legacy from before drags
-      // snapped to tiers, and re-pinning it would let a drag overrule the
-      // preset system across reloads.
-      if (widthBtnOf(el, row)) return;
-      if (hasPreset(el)) return;            // preset width classes own this pane
+      // Preset rule: a module with its own width changer at single/double/
+      // triple/fill is sized ONLY by that preset. Never restore a saved
+      // pixel width onto it. Custom is the exception: the dragged width
+      // is what it maintains, so we restore that pin.
+      var btn = widthBtnOf(el, row);
+      if (btn && !isCustom(el)) return;
+      if (hasPreset(el) && !isCustom(el)) return;  // preset width classes own this pane
       if (isLocked(el)) return;             // minimized/locked pane owns its own fixed width
-      if (isFill(el)) { clearInline(el); return; }  // flexible filler: stays fluid
+      if (isFill(el) && !isCustom(el)) { clearInline(el); return; }  // flexible filler: stays fluid
       var w = stored[keyOf(row, el)];
       // Clamp any previously-saved width up to the hard floor so a width stored
       // before the floor existed can never hold a module below MIN_W.
@@ -253,15 +265,22 @@
     var out = [], n = ps.length;
     if (n < 1) return out;
     var hasFlex = ps.some(function (p) { return growOf(p) > 0; });
+    var carousel = isCarousel(row) || ps.some(isCustom);
     // Skip any split seam that touches a locked pane (e.g. a minimized module).
     for (var i = 0; i < n - 1; i++) {
       if (isLocked(ps[i]) || isLocked(ps[i + 1])) continue;
       out.push({ mode: 'split', left: ps[i], right: ps[i + 1] });
     }
     // Outer handles only for fixed end-panes, and only when a flexible pane can
-    // absorb the change (otherwise dragging would open an empty gap).
-    if (hasFlex && growOf(ps[0]) === 0 && !isLocked(ps[0])) out.push({ mode: 'outerL', right: ps[0] });
-    if (n > 1 && hasFlex && growOf(ps[n - 1]) === 0 && !isLocked(ps[n - 1])) out.push({ mode: 'outerR', left: ps[n - 1] });
+    // absorb the change (otherwise dragging would open an empty gap) — unless
+    // the row is a custom carousel, where growing past the viewport is the
+    // point (the row scrolls).
+    if ((hasFlex || carousel) && growOf(ps[0]) === 0 && !isLocked(ps[0])) out.push({ mode: 'outerL', right: ps[0] });
+    if (n > 1 && (hasFlex || carousel) && growOf(ps[n - 1]) === 0 && !isLocked(ps[n - 1])) out.push({ mode: 'outerR', left: ps[n - 1] });
+    if (n === 1 && carousel && !isLocked(ps[0])) {
+      out.push({ mode: 'outerL', right: ps[0] });
+      out.push({ mode: 'outerR', left: ps[0] });
+    }
     // Width-changer modules must stay draggable even when a neighbour is
     // locked (collapsed progress rail) and the usual split seam is skipped.
     // Offer an outer handle on any missing edge so drag-to-tier still works.
@@ -352,15 +371,15 @@
   }
   function hide(h) { h.style.display = 'none'; h._spec = null; }
 
-  /* ── four-tier snapping ───────────────────────────────────────────────── */
+  /* ── four-tier snapping (presets only; custom never snaps) ────────────── */
   // The width button's title names its tier unambiguously on every page —
-  // pane-width.js renders the same "Width (single|double|triple|fill) — …"
+  // pane-width.js renders the same "Width (single|double|triple|fill|custom) — …"
   // text app-wide. Reading the BUTTON (with the pane's classes as fallback)
   // also covers pages that put the tier classes on an inner card rather than
   // on the row child itself (mirrors js/default-fill.js's tierOfBtn).
-  var TITLE_TIER = { single: 0, double: 1, triple: 2, fill: 3 };
+  var TITLE_TIER = { single: 0, double: 1, triple: 2, fill: 3, custom: 4 };
   function tierOf(el, btn) {
-    var m = /\((single|double|triple|fill)\)/.exec(btn.getAttribute('title') || '');
+    var m = /\((single|double|triple|fill|custom)\)/.exec(btn.getAttribute('title') || '');
     if (m) return TITLE_TIER[m[1]];
     return window.WPaneWidth.clamp(window.WPaneWidth.tierOfEl(el));
   }
@@ -386,8 +405,9 @@
     var W = window.WPaneWidth;
     var alias = classAlias(el, btn);
     var current = W.tierOfEl(el);
+    var n = W.PRESET_TIERS || 4;
     var widths = [];
-    for (var t = 0; t < W.TIERS; t++) {
+    for (var t = 0; t < n; t++) {
       W.applyClasses(el, t, alias);
       widths[t] = rectW(el);
     }
@@ -395,15 +415,16 @@
     return widths;
   }
 
-  /* Snap a just-dragged pane onto the canonical four-tier width scale
-     (single / double / triple / fill). Pixel pins are released first so the
-     width changer's CSS limits size the pane again. We measure each tier by
-     applying classes (not by clicking), pick the closest to the dragged
-     width, then walk the module's OWN width button from its current tier to
-     that one — zero clicks when they already match, never a full lap. Going
-     through the native control inherits the page's icon / pressed state and
-     persistence. Never saves a pixel width: for these modules the four
-     presets are the only widths that exist. */
+  /* Snap a just-dragged pane onto the canonical four-tier PRESET scale
+     (single / double / triple / fill). Custom never comes through here —
+     a custom pane keeps the dragged pixel width. Pixel pins are released
+     first so the width changer's CSS limits size the pane again. We measure
+     each preset by applying classes (not by clicking), pick the closest to
+     the dragged width, then walk the module's OWN width button from its
+     current tier to that one — zero clicks when they already match, never a
+     full lap. Going through the native control inherits the page's icon /
+     pressed state and persistence. Never saves a pixel width: for preset
+     modules those four sizes are the only widths that exist. */
   function snapToTier(row, el, btn, targetW) {
     var W = window.WPaneWidth;
     if (!W) { var w0 = targetW != null ? targetW : rectW(el); pin(el, w0); saveWidth(keyOf(row, el), w0); return; }
@@ -415,15 +436,18 @@
 
     var widths = measureTierWidths(el, btn);
     var best = 0, bd = Infinity;
-    for (var k = 0; k < W.TIERS; k++) {
+    var n = (W.PRESET_TIERS || 4);
+    for (var k = 0; k < n; k++) {
       if (widths[k] == null) continue;
       var d = Math.abs(widths[k] - target);
       if (d < bd) { bd = d; best = k; }
     }
 
-    // Walk forward from the current tier to `best` only. A click that does
-    // not advance the reported tier ends the loop so a stuck control can
-    // never be clicked forever.
+    // Walk forward from the current tier to `best` only. Custom is past fill
+    // on the cycle, so hops that would pass through custom are taken via the
+    // native button the same as any other hop. A click that does not advance
+    // the reported tier ends the loop so a stuck control can never be
+    // clicked forever.
     var tier = tierOf(el, btn);
     var hops = (best - tier + W.TIERS) % W.TIERS;
     for (var g = 0; g < hops; g++) {
@@ -454,8 +478,10 @@
     // When the row can scroll horizontally, a split drag is allowed to push a
     // neighbour to its min and then keep GROWING — expanding the row past the
     // viewport so it scrolls — instead of hard-stopping at a zero-sum trade.
-    // On non-scrolling rows we keep the classic zero-sum splitter (no regression).
-    var scrollable = /(auto|scroll)/.test(getComputedStyle(row).overflowX);
+    // Custom/carousel rows always count as scrollable (that's the rail).
+    var scrollable = isCarousel(row) ||
+      /(auto|scroll)/.test(getComputedStyle(row).overflowX) ||
+      (left && isCustom(left)) || (right && isCustom(right));
 
     var isSplit = mode === 'split';
 
@@ -467,7 +493,10 @@
     var minR = right ? minOf(right) : 0;
     var maxL = left ? maxOf(left) : Infinity;
     var maxR = right ? maxOf(right) : Infinity;
-    var capMax = rr.width - 40;
+    var capMax = (scrollable || isCarousel(row) ||
+      (left && isCustom(left)) || (right && isCustom(right)))
+      ? 8000
+      : (rr.width - 40);
 
     // 'split' pins the two rails so the trade is exact; fillers (flex-grow /
     // data-pr-fill) stay unpinned so they can absorb when a rail hits its
@@ -607,14 +636,16 @@
       });
       snapJobs.forEach(function (job) {
         if (!job.btn) return;
+        if (isCustom(job.el)) return;       // custom keeps the dragged pin
         clearWidth(keyOf(row, job.el));
         clearInline(job.el);
       });
       snapJobs.forEach(function (job) {
-        // Four-tier rule: a module with its own width changer snaps to the
-        // nearest preset (single/double/triple/fill) instead of keeping the
-        // free dragged width — dragging must never overrule the presets.
-        if (job.btn) {
+        // Preset rule: a module with its own width changer at single/double/
+        // triple/fill snaps to the nearest of those four instead of keeping
+        // the free dragged width. Custom keeps the dragged width and saves it
+        // — that's the size it then maintains.
+        if (job.btn && !isCustom(job.el)) {
           // A split touches two modules. Only snap the one the user actually
           // resized. The other rail (e.g. a max-capped studio) may move a few
           // pixels or stay put — walking its width changer would jump it to
@@ -626,6 +657,8 @@
         }
         pin(job.el, job.w);
         saveWidth(keyOf(row, job.el), job.w);
+        if (isCustom(job.el) && window.WPaneWidth && window.WPaneWidth.syncCarousel)
+          window.WPaneWidth.syncCarousel(job.el);
       });
 
       layout(entry);
@@ -694,8 +727,16 @@
         if (presetChanged) {
           p.__prPreset = now;
           if (!entry.active) {
-            clearWidth(keyOf(entry.row, p));
-            clearInline(p);
+            if (isCustom(p)) {
+              // Entering custom: keep (or take) the current width. Do not
+              // wipe the pin applyClasses just set.
+              if (!p.style.getPropertyValue('width')) pin(p, rectW(p));
+              if (window.WPaneWidth && window.WPaneWidth.syncCarousel)
+                window.WPaneWidth.syncCarousel(p);
+            } else {
+              clearWidth(keyOf(entry.row, p));
+              clearInline(p);
+            }
           }
         }
         if (presetChanged || lockChanged) schedule();
@@ -769,31 +810,11 @@
         'border-color:var(--primary,#25507C);' +
         'box-shadow:0 0 0 3px color-mix(in srgb,var(--primary,#25507C) 32%,transparent),0 3px 14px rgba(0,0,0,.5);}' +
       'html.pr-dragging,html.pr-dragging *{cursor:col-resize !important;' +
-        '-webkit-user-select:none !important;user-select:none !important;}' +
-      /* Each module/card uses `transform`, so it forms its own stacking context
-         that traps header popovers (three-dots menus, filter/info pops) beneath
-         the neighbouring module and beneath this resize overlay. While a popover
-         is open, lift the whole module above its siblings (and the overlay) so
-         the menu is always on top. Reverts the instant the popover closes.
-         Static, always-visible demo popovers (the Component Library renders
-         them with data-popover-static) must NOT count as "open" — they would
-         pin the module at z 500 permanently and break the sticky-drawer
-         layering (the tucked module would paint over the chat). */
-      '#modules-row>*:has(.topbar-popover:not(.hidden):not([data-popover-static])),' +
-      '.modules-row>*:has(.topbar-popover:not(.hidden):not([data-popover-static])),' +
-      '#modules-row>*:has(.panel-more-btn.is-open),' +
-      '.modules-row>*:has(.panel-more-btn.is-open),' +
-      '#modules-row>*:has([role="menu"]:not(.hidden):not([hidden]):not([data-popover-static])),' +
-      '.modules-row>*:has([role="menu"]:not(.hidden):not([hidden]):not([data-popover-static])),' +
-      '#modules-row>*:has(.pf-rowmenu-pop:not([hidden])),' +
-      '.modules-row>*:has(.pf-rowmenu-pop:not([hidden])),' +
-      '#modules-row>*:has(.pf-filter-pop:not([hidden])),' +
-      '.modules-row>*:has(.pf-filter-pop:not([hidden])),' +
-      '#modules-row>*:has(.lib-filter-pop:not([hidden])),' +
-      '.modules-row>*:has(.lib-filter-pop:not([hidden])),' +
-      '#modules-row>*:has(.pf-gs-infopop:not([hidden])),' +
-      '.modules-row>*:has(.pf-gs-infopop:not([hidden]))' +
-      '{z-index:500 !important;position:relative;}';
+        '-webkit-user-select:none !important;user-select:none !important;}';
+    /* Do NOT lift a module's z-index while a popover is open. Chat is z-index 3
+       (always — elevation / sticky-chat). Raising the card to 2 or 500 paints it
+       over the chat. Menus portal onto <body> via popover-layer.js, so they stay
+       on top without moving the card. */
     var st = document.createElement('style');
     st.id = 'pr-styles';
     st.textContent = css;
@@ -814,11 +835,10 @@
   window.addEventListener('resize', schedule);
   window.addEventListener('scroll', schedule, true);
 
-  // Width changer always wins: a click on the top-right width icon releases
-  // any leftover drag pin on that module BEFORE the page's own handler
-  // advances the tier. Without this, an inline !important pin from a drag
-  // out-specs the preset classes and the changer looks dead until the user
-  // cycles all the way around (or resets).
+  // Width changer always wins for PRESETS: a click on the top-right width icon
+  // releases any leftover drag pin on that module BEFORE the page's own handler
+  // advances the tier — unless the click is about to land on custom, in which
+  // case we leave the current width so custom can pin it as the default.
   document.addEventListener('click', function (e) {
     var btn = e.target && e.target.closest && e.target.closest('.panel-width-toggle-btn');
     if (!btn) return;
@@ -826,6 +846,13 @@
     if (!row) return;
     var el = moduleRootOfBtn(btn, row);
     if (!el) return;
+    var W = window.WPaneWidth;
+    var cur = W ? W.tierOfEl(el) : 0;
+    var nxt = W ? W.next(cur) : ((cur + 1) % 5);
+    if (W && nxt === W.CUSTOM) {
+      // Keep the current rendered width; applyClasses will pin it.
+      return;
+    }
     clearWidth(keyOf(row, el));
     clearInline(el);
   }, true);

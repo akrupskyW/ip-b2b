@@ -1,3 +1,5 @@
+import './date-column.js';
+
 /**
  * Non-UPF Verification flow module.
  *
@@ -220,7 +222,20 @@ const state = {
   search: '',
   expanded: new Set(['milk', 'scramble']),
   discount: 0,
+  dateLead: 'updated',
 };
+
+function dc() { return window.WiseDateCol; }
+function dateHeaderHtml() {
+  const D = dc();
+  const inner = D ? D.headerHtml({ kinds: 'product', lead: state.dateLead }) : 'Updated';
+  return `<span class="pf-th pf-col-updated w-date-th">${inner}</span>`;
+}
+function datesOf(f) {
+  const D = dc();
+  const partial = { updated: f.updated, edited: f.edited };
+  return D ? D.complete(partial, 'product') : partial;
+}
 
 const stepIndex = (id) => STEPS.findIndex((s) => s.id === id);
 const selectedFoods = () => FOODS.filter((f) => f.selected);
@@ -433,13 +448,11 @@ function statusPill(f) {
   return `<span class="vf-chip ${m.cls}"><span class="material-symbols-outlined">${m.icon}</span>${esc(m.label)}</span>`;
 }
 
-/* Dates cell — the product-portfolio two-line "Updated / Last edited" stack,
-   each date carrying an uppercase status label above its value. */
+/* Dates cell — stacked primary + pair, matching Product Portfolio. */
 function datesCell(f) {
-  return `<div class="vf-dates">` +
-    `<span class="vf-date"><span class="vf-date-status">Updated</span><span class="vf-date-val">${esc(f.updated)}</span></span>` +
-    `<span class="vf-date"><span class="vf-date-status">Last edited</span><span class="vf-date-val">${esc(f.edited)}</span></span>` +
-    `</div>`;
+  const D = dc();
+  const html = D ? D.cellHtml(datesOf(f), 'product', state.dateLead) : `${esc(f.updated)}`;
+  return `<div class="vf-dates w-datecell">${html}</div>`;
 }
 
 /* Shared table product photo (the real pack shot), with the themed
@@ -483,7 +496,7 @@ function selectStepHTML() {
           </span>
           <span class="pf-th pf-col-product">Product</span>
           <span class="pf-th">Non-UPF Shield</span>
-          <span class="pf-th">Updated</span>
+          ${dateHeaderHtml()}
         </div>
           ${rows.map((f) => `
             <div class="pf-trow ${f.selected ? 'is-selected' : ''}" data-food="${f.id}">
@@ -518,7 +531,7 @@ function attestStepHTML() {
           <span class="pf-th pf-col-check"><span class="material-symbols-outlined vf-head-glyph">check_box</span></span>
           <span class="pf-th pf-col-product">Product</span>
           <span class="pf-th">Non-UPF Shield</span>
-          <span class="pf-th">Updated</span>
+          ${dateHeaderHtml()}
         </div>
           ${rows.map((f) => {
             const open = state.expanded.has(f.id);
@@ -841,8 +854,12 @@ function mountProgressPane() {
  */
 export function renderVerificationFlow(mainEl) {
   if (!mainEl) return;
-  mainEl.innerHTML = '<div class="vf-root"></div>';
+  mainEl.innerHTML = '<div class="vf-root" data-w-date-root></div>';
   rootEl = mainEl.querySelector('.vf-root');
+  if (dc() && !rootEl._wDateBound) {
+    rootEl._wDateBound = true;
+    dc().onLead(rootEl, (lead) => { state.dateLead = lead; render(); });
+  }
 
   /* Progress module — a sibling pane docked to the RIGHT of the flow inside
      #modules-row (the WISEcodeAI chat docks to the left). Mirrors the account-

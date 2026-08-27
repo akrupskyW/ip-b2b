@@ -21,9 +21,14 @@
     })();
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <!-- SVG icon shim: swaps every Material Symbols glyph for an inline SVG from
+       assets/icons/wise-icons.svg (Rounded 300). The font links above stay as the
+       fallback for any glyph the sprite does not carry. See js/icon-svg-shim.js. -->
+  <script defer src="../js/icon-svg-shim.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="wise.css" />
   <style>
@@ -155,7 +160,7 @@
       border: 1px solid var(--border);
     }
     #ar-audit .reeval-status .material-symbols-outlined { font-size: 17px; flex-shrink: 0; }
-    #ar-audit .reeval-status code { font-family: 'Courier New', monospace; font-size: 0.9em; }
+    #ar-audit .reeval-status code { font-family: var(--font-mono); font-size: 0.9em; }
     #ar-audit .reeval-status.ok { background: var(--pass-bg); border-color: color-mix(in srgb, var(--pass) 30%, transparent); color: color-mix(in srgb, var(--pass) 92%, var(--text)); }
     #ar-audit .reeval-status.ok .material-symbols-outlined { color: var(--pass); }
     #ar-audit .reeval-status.warn { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn) 30%, transparent); color: color-mix(in srgb, var(--warn) 92%, var(--text)); }
@@ -245,7 +250,7 @@
     #ar-audit .concern-body { min-width: 0; flex: 1; }
     #ar-audit .concern-title { font-size: 0.8125rem; font-weight: 700; line-height: 1.4; }
     #ar-audit .concern-detail { font-size: 0.75rem; color: var(--text-muted); line-height: 1.45; margin-top: 2px; }
-    #ar-audit .concern-detail code { font-family: 'Courier New', monospace; }
+    #ar-audit .concern-detail code { font-family: var(--font-mono); }
     #ar-audit .concern-where { font-size: 0.6875rem; color: var(--text-subtle); margin-top: 3px; }
     #ar-audit .concern-side { display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-left: auto; }
     #ar-audit .concern-metric { font-size: 0.875rem; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -299,8 +304,8 @@
     #ar-audit .swatch-on { font-size: 0.6875rem; font-weight: 700; padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,0.85); color: #111; }
     #ar-audit .swatch-meta { padding: 10px 12px 12px; }
     #ar-audit .swatch-name { font-size: 0.8125rem; font-weight: 700; }
-    #ar-audit .swatch-var { font-size: 0.6875rem; color: var(--text-subtle); font-family: 'Courier New', monospace; margin-top: 2px; }
-    #ar-audit .swatch-hex { font-size: 0.6875rem; color: var(--text-muted); font-family: 'Courier New', monospace; margin-top: 1px; text-transform: uppercase; }
+    #ar-audit .swatch-var { font-size: 0.6875rem; color: var(--text-subtle); font-family: var(--font-mono); margin-top: 2px; }
+    #ar-audit .swatch-hex { font-size: 0.6875rem; color: var(--text-muted); font-family: var(--font-mono); margin-top: 1px; text-transform: uppercase; }
 
     /* ── Tables ── */
     #ar-audit .table-wrap { border-radius: var(--r-md); border: 1px solid var(--border); overflow: hidden; overflow-x: auto; box-shadow: var(--shadow-1); background: #fff; }
@@ -324,7 +329,7 @@
       border: 1px solid var(--border);
     }
     #ar-audit .cell-name { font-weight: 600; }
-    #ar-audit .cell-sub { font-size: 0.6875rem; color: var(--text-subtle); font-family: 'Courier New', monospace; }
+    #ar-audit .cell-sub { font-size: 0.6875rem; color: var(--text-subtle); font-family: var(--font-mono); }
     #ar-audit .cell-ratio { font-weight: 800; font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
     #ar-audit .req { font-size: 0.6875rem; color: var(--text-subtle); }
 
@@ -371,7 +376,7 @@
     #ar-audit .type-row:last-child { border-bottom: 0; }
     #ar-audit .type-specimen { flex: 1; min-width: 220px; color: var(--text); }
     #ar-audit .type-info { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
-    #ar-audit .type-px { font-family: 'Courier New', monospace; font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; }
+    #ar-audit .type-px { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; }
     #ar-audit .spec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
     #ar-audit .spec {
       padding: 14px; border-radius: var(--r-md); text-align: center;
@@ -382,7 +387,7 @@
     #ar-audit .spec-box { background: var(--primary-soft); border: 1.5px solid var(--primary); margin: 0 auto 10px; height: 56px; width: 56px; }
     html.dark #ar-audit .spec-box { border-color: var(--primary-bright); }
     #ar-audit .spec-name { font-size: 0.75rem; font-weight: 700; }
-    #ar-audit .spec-val { font-size: 0.6875rem; color: var(--text-subtle); font-family: 'Courier New', monospace; margin-top: 2px; }
+    #ar-audit .spec-val { font-size: 0.6875rem; color: var(--text-subtle); font-family: var(--font-mono); margin-top: 2px; }
 
     /* ── Focus demo ── */
     #ar-audit .focus-demo { display: flex; flex-wrap: wrap; gap: 14px; }
@@ -435,7 +440,7 @@
       100% { box-shadow: 0 0 0 0 transparent; }
     }
     #ar-audit .page-checked { font-size: 0.75rem; color: var(--text-subtle); }
-    #ar-audit .page-checked code { font-family: 'Courier New', monospace; }
+    #ar-audit .page-checked code { font-family: var(--font-mono); }
     #ar-audit .page-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
     #ar-audit .page-card {
       padding: 16px 16px 14px; border-radius: var(--r-md);
@@ -456,7 +461,7 @@
     #ar-audit .page-grade.g-d, #ar-audit .page-grade.g-f { color: var(--fail); }
     #ar-audit .page-card-meta { min-width: 0; flex: 1; }
     #ar-audit .page-name { font-size: 0.9375rem; font-weight: 800; letter-spacing: -0.01em; word-break: break-word; }
-    #ar-audit .page-path { font-size: 0.6875rem; color: var(--text-subtle); font-family: 'Courier New', monospace; margin-top: 1px; }
+    #ar-audit .page-path { font-size: 0.6875rem; color: var(--text-subtle); font-family: var(--font-mono); margin-top: 1px; }
     #ar-audit .page-score-line { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
     #ar-audit .page-pct { font-size: 0.75rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-muted); }
     #ar-audit .page-bar { flex: 1; height: 6px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
@@ -1371,7 +1376,7 @@ const FINDINGS = [
   {
     sev: 'pass',
     title: '1 · AAA — quiet grays deepened to clear 7:1',
-    body: 'The muted/subtle grays were AA-only (≈5–6:1). <code>--text-muted</code> is now <code>#444B55</code> (light) / <code>#BCC6D3</code> (dark) and <code>--text-subtle</code> is <code>#474E58</code> / <code>#B1BAC7</code>, so every caption, sub-label and table header clears the AAA 7:1 threshold on every surface — down to the darkest light tint (<code>surface-3</code> #EFEDE2) and the lightest navy (<code>surface-3</code> #15303F). Updated in <code>agent-page.css</code>, <code>index.html</code>, <code>ai-chat.html</code> and the inline mirror here.'
+    body: 'The muted/subtle grays were AA-only (≈5–6:1). <code>--text-muted</code> is now <code>#444B55</code> (light) / <code>#BCC6D3</code> (dark), and <code>--text-subtle</code> is the same ink, so every caption, sub-label and table header clears the AAA 7:1 threshold on every surface — down to the darkest light tint (<code>surface-3</code> #EFEDE2) and the lightest navy (<code>surface-3</code> #15303F). Updated in <code>agent-page.css</code>, <code>index.html</code>, <code>ai-chat.html</code> and the inline mirror here.'
   },
   {
     sev: 'pass',
@@ -1938,14 +1943,15 @@ document.addEventListener('keydown', (e) => {
   const wBtn = document.getElementById('ar-width');
   const moduleEl = document.getElementById('ar-audit');
   if (!wBtn || !moduleEl) return;
-  const CANON_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
-  const CANON_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to reset'];
+  const CANON_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
+  const CANON_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to widen', 'Width (custom) — drag to any size'];
   const W = window.WPaneWidth;
   const applyTier = (t) => {
     if (W) { W.applyClasses(moduleEl, t, 'panel'); W.syncButton(wBtn, t); return; }
-    moduleEl.classList.toggle('panel-wide', t >= 1);
-    moduleEl.classList.toggle('panel-triple', t >= 2);
-    moduleEl.classList.toggle('panel-fill', t >= 3);
+    moduleEl.classList.toggle('panel-wide', t >= 1 && t < 4);
+    moduleEl.classList.toggle('panel-triple', t >= 2 && t < 4);
+    moduleEl.classList.toggle('panel-fill', t === 3);
+    moduleEl.classList.toggle('panel-custom', t === 4);
     const ic = wBtn.querySelector('.material-symbols-outlined');
     if (ic) ic.textContent = CANON_ICONS[t];
     wBtn.classList.toggle('is-on', t >= 1);
@@ -1954,7 +1960,7 @@ document.addEventListener('keydown', (e) => {
   };
   let tier = W ? W.tierOfEl(moduleEl) : 0;
   applyTier(tier);
-  wBtn.addEventListener('click', () => { tier = W ? W.next(tier) : (tier + 1) % 4; applyTier(tier); });
+  wBtn.addEventListener('click', () => { tier = W ? W.next(tier) : (tier + 1) % 5; applyTier(tier); });
 })();
 
   </script>

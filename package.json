@@ -25,6 +25,10 @@
   },
   "homepage": "https://github.com/akrupskyW/ip-b2b#readme",
   "devDependencies": {
+    "@material-icons/svg": "^1.0.33",
+    "@material-symbols/svg-300": "^0.47.0",
+    "@material-symbols/svg-400": "^0.47.0",
+    "@material-symbols/svg-600": "^0.47.0",
     "eslint": "^10.8.1",
     "globals": "^17.11.0",
     "htmlhint": "^1.9.2",

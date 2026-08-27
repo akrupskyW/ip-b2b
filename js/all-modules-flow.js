@@ -15,25 +15,29 @@
  *      appears twice.
  *   2. Icon Inventory — every Material Icons / Symbols glyph used in the live
  *      app (this page excluded), grouped by surface (chat, primary nav, …),
- *      with family, usage count, label, and placements. Scanned by
+ *      with family, label, and placements. Scanned by
  *      scripts/scan_icons.py into js/icon-inventory-data.js.
  *   3. Design System — the app's typography (families, live type scale, usage)
  *      and every color/radius/shadow token from pages/wise.css, rendered as
  *      live swatches that resolve their computed value in the current theme
  *      (and re-resolve when the theme flips).
- *   4. Component Library — every reusable component rendered LIVE in its
- *      default state using the real global classes from pages/wise.css, with
- *      its variants and the exact surfaces where it is used.
+ *   4. Component Library — every reusable component rendered LIVE using the
+ *      real global classes from pages/wise.css, with interaction states
+ *      (Default / Hover / Open), Light and Dark theme versions, and the
+ *      exact surfaces where it is used. Chat chrome (activity strip, transcript
+ *      actions, sticky drawers / the utility belt) lives here as its own family.
  *   5. Codebase — score cards for the size of the app itself: lines of code
  *      by file type with an up/down trend (one git snapshot per day) and the
  *      HTML page count. scripts/scan_code_stats.py writes the git series into
  *      js/code-stats-data.js. Re-evaluate also live-crawls every HTML / JS /
- *      CSS / Python file in the project once a day so the "now" numbers and
+ *      CSS / Python file in the project when you click Re-evaluate so the "now"
+ *      numbers and the scanned date never sit on a stale snapshot. It does not
+ *      run on page load.
  *      the scanned date never sit on a stale snapshot.
  *   6. Motion & Resize — every animation (count-up, chart replay, streaming,
  *      chip shimmer / fly-in, welcome helix, thinking helix, accordion) and
- *      every drag/resize interaction (module splitter, width tiers, reorder,
- *      drag-to-file), explained and rendered live.
+ *      every drag/resize interaction (module splitter, width tiers, carousel
+ *      rail, reorder, drag-to-file), explained and rendered live.
  *   7. App Logic — the app's general behavioral rules written down and grouped
  *      by page: auth, theme, nav, panes, tables, wizard gating, scoring math,
  *      filter semantics and persistence. Sits directly above Intent Chip
@@ -43,8 +47,8 @@
 
 import { ICON_INVENTORY } from './icon-inventory-data.js';
 import { CODE_STATS } from './code-stats-data.js';
+import './date-column.js';
 import { makeTraceHelix, measureTraceRungCentres, TRACE_STRAND_MARKUP } from './trace-helix.js';
-import { composerDbSelectorHtml, wireChatComposer, createHelixBgAnim, readBgAnimScaleAxes, readBgAnimKnobs, bgAnimPctToStop, bgAnimStopToPct } from './wiseai-chat.js';
 import { MODULE_SECTIONS, AREA_ICONS } from './module-directory-data.js';
 import { APP_LOGIC, LOGIC_AREAS } from './app-logic-data.js';
 import { DEV_READY_SEED } from './dev-ready-data.js';
@@ -60,7 +64,7 @@ function esc(s) {
 
 /* Module Directory catalog lives in js/module-directory-data.js so the
    full-screen Page Gallery can render the same list without pulling this
-   file (and the chat module it imports) along with it. */
+   file along with it. */
 
 function moduleCard(m) {
   const badge = m.badge ? `<span class="mi-card-badge">${esc(m.badge)}</span>` : '';
@@ -232,6 +236,7 @@ function moduleMoreItems(moduleId) {
   }
   return [
     { action: 'dir-reeval', icon: 'autorenew', label: 'Re-evaluate project' },
+    { action: 'dir-hard', icon: 'restart_alt', label: 'Hard reload page' },
     { action: 'dir-gallery', icon: 'browse_gallery', label: 'Open page gallery' },
     { action: 'dir-grid', icon: 'grid_view', label: 'Grid view' },
     { action: 'dir-rail', icon: 'view_column', label: 'Rail view' },
@@ -435,7 +440,7 @@ function tablePane(t) {
   const page = tablePageLabel(t);
   const search = `${t.label} ${path} ${page} ${t.areaTitle} ${t.desc || ''}`.toLowerCase();
   return `
-    <div class="mi-pane mi-tpane" data-pane data-tpane data-href="${esc(path)}" data-search="${esc(search)}" data-area="${esc(t.area)}">
+    <div class="mi-pane mi-tpane" data-pane data-tpane data-href="${esc(path)}" data-tbl="${esc(t.label)}" data-search="${esc(search)}" data-area="${esc(t.area)}">
       <div class="mi-tpane-bar">
         <a class="mi-pane-head" href="${esc(open)}" aria-label="Open ${esc(t.label)} on ${esc(page)}">
           <span class="mi-pane-ic material-symbols-outlined" aria-hidden="true">${esc(t.icon || 'table_chart')}</span>
@@ -515,7 +520,10 @@ const CODE_METRICS = [
    plus the last Python pass; Re-evaluate crawls the working tree once a
    local day and wins whenever that crawl is newer. */
 const CODE_SKIP_FILES = new Set(['icon-inventory-data.js', 'code-stats-data.js', 'gs-data.js']);
-const CODE_SKIP_DIRS = new Set(['.git', 'node_modules', '__pycache__', '_WISEdesigns']);
+const CODE_SKIP_DIRS = new Set(['.git', 'node_modules', '__pycache__', '_WISEdesigns', 'screenshots', 'assets']);
+const REEVAL_FETCH_MS = 8000;
+const REEVAL_BUDGET_MS = 20000;
+const REEVAL_CONCURRENCY = 3;
 const CODE_EXTS = new Set(['html', 'js', 'css', 'py']);
 const REEVAL_STORE_KEY = 'wise-mi-reeval';
 
@@ -594,7 +602,7 @@ function renderCodebase() {
   const series = (CODE_STATS && CODE_STATS.series) || [];
   const first = series[0];
   const cards = CODE_METRICS.map((m) => `
-    <article class="mi-code-card">
+    <article class="mi-code-card" data-code-metric="${esc(m.key)}">
       <div class="mi-code-top">
         <span class="mi-code-ic"><span class="material-symbols-outlined">${esc(m.icon)}</span></span>
         <span class="mi-code-pill" data-code-pill="${esc(m.key)}"></span>
@@ -610,7 +618,7 @@ function renderCodebase() {
           <h2 class="mi-module-title">Codebase</h2>
           <p class="mi-module-lede">How big the app itself is — lines of hand-written HTML, JavaScript, CSS and
             Python (generated data blobs excluded) with an up/down trend from one git snapshot per day, plus the
-            HTML page count. Re-evaluate crawls the whole project once a day; the git trend is written by
+            HTML page count. Re-evaluate crawls the whole project when you ask it to; the git trend is written by
             <code>scripts/scan_code_stats.py</code>.</p>
         </div>
         ${moduleControlsHTML('mi-code')}
@@ -626,7 +634,7 @@ function renderCodebase() {
       </div>
 
       <div class="mi-code-grid">
-        <article class="mi-code-card mi-code-hero">
+        <article class="mi-code-card mi-code-hero" data-code-metric="total">
           <div class="mi-code-hero-main">
             <div class="mi-code-top">
               <span class="mi-code-ic"><span class="material-symbols-outlined">code</span></span>
@@ -767,14 +775,6 @@ function placementRows(placements) {
     .join('');
 }
 
-/** The app renders only Material Symbols, so a glyph's variant is the real
-    distinction — outlined vs rounded (an icon can appear as both). */
-function variantKeys(families) {
-  return Array.from(new Set(families.map((f) =>
-    f.includes('rounded') ? 'rounded' : f.includes('sharp') ? 'sharp' : 'outlined'
-  ))).join(' ');
-}
-
 function groupTags(groups, catalog) {
   if (!groups || !groups.length) return '';
   const byId = Object.fromEntries((catalog || []).map((g) => [g.id, g]));
@@ -789,20 +789,22 @@ function iconCard(ic, catalog) {
   const label = ic.label ? esc(ic.label) : '';
   const groups = ic.groups || [];
   const search = `${ic.name} ${ic.label || ''} ${groups.join(' ')} ${ic.placements.map((p) => `${p.file} ${p.label || ''}`).join(' ')}`.toLowerCase();
-  const famKey = variantKeys(ic.families);
   return `
-    <div class="ii-card" data-icon-card data-name="${esc(ic.name)}" data-count="${esc(ic.count)}" data-fam="${esc(famKey)}" data-groups="${esc(groups.join(' '))}" data-search="${esc(search)}">
+    <div class="ii-card" data-icon-card data-name="${esc(ic.name)}" data-count="${esc(ic.count)}" data-groups="${esc(groups.join(' '))}" data-search="${esc(search)}">
       <button type="button" class="ii-card-main" data-ii-toggle aria-expanded="false">
-        <span class="ii-glyph"><span class="${dcls}">${esc(ic.name)}</span></span>
+        <span class="ii-glyph">
+          <span class="ii-glyph-font ${dcls}" data-icon-svg-skip>${esc(ic.name)}</span>
+          <span class="ii-glyph-svg" aria-hidden="true"></span>
+        </span>
         <span class="ii-meta">
           <span class="ii-name">${esc(ic.name)}</span>
           ${label ? `<span class="ii-label">${label}</span>` : '<span class="ii-label ii-label-none">no nearby label</span>'}
-          <span class="ii-tagrow">${familyTags(ic.families)}${groupTags(groups, catalog)}<span class="ii-count" title="${esc(ic.count)} uses across the app"><span class="material-symbols-outlined">tag</span>${esc(ic.count)}</span></span>
+          <span class="ii-tagrow">${familyTags(ic.families)}${groupTags(groups, catalog)}</span>
         </span>
         <span class="ii-chev material-symbols-outlined" aria-hidden="true">expand_more</span>
       </button>
       <div class="ii-places" hidden>
-        <div class="ii-places-title">Placements (${ic.placements.length}${ic.count > ic.placements.length ? ' of ' + ic.count : ''})</div>
+        <div class="ii-places-title">Placements</div>
         <ul class="ii-place-list">${placementRows(ic.placements)}</ul>
       </div>
     </div>`;
@@ -812,42 +814,26 @@ function renderIconInventory() {
   const data = ICON_INVENTORY || { icons: [], totalUniqueIcons: 0, totalUses: 0, groups: [] };
   const icons = (data.icons || []).slice();
   const groups = data.groups || [];
-  const outlinedCount = icons.filter((i) => i.families.some((f) => f.includes('outlined'))).length;
-  const roundedCount = icons.filter((i) => i.families.some((f) => f.includes('rounded'))).length;
   const groupCards = groups.map((g) => `
         <button type="button" class="mi-stat" data-ii-group="${esc(g.id)}" aria-pressed="false">
-          <span class="mi-stat-num">${g.count}</span>
           <span class="mi-stat-label"><span class="mi-stat-text">${esc(g.label)}</span><span class="material-symbols-outlined">${esc(g.icon)}</span></span>
         </button>`).join('');
-  const groupReady = `
-    <div class="mi-ready-kids" aria-label="Dev Ready by icon group">
-      <h3 class="mi-ready-kids-title">Dev Ready by group</h3>
-      <div class="mi-ready-kids-row">
-        ${groups.map((g) => `
-          <div class="mi-ready-kid">
-            <span class="mi-ready-kid-label">${esc(g.label)}</span>
-            <span class="mi-ready-kid-n">${g.count}</span>
-            ${readyToggleHTML(iconReadyId(g), g.label, { level: 'item', parent: 'mi-icons' })}
-          </div>`).join('')}
-      </div>
-    </div>`;
   return `
     <section class="mi-module is-collapsed" id="mi-icons">
       <header class="mi-module-head">
         <div class="mi-module-head-text">
           <h2 class="mi-module-title">Icon Inventory</h2>
-          <p class="mi-module-lede">Every Material Symbols glyph used in the live app — its variant, how
-            many times it appears, a representative label, and the exact placements (file and line).
-            This page and the Module Directory catalog data are excluded from the scan so the catalog
-            is not polluted by its own chrome.
-            Toggle a group to see just the chat module, primary nav, and so on. Generated by
-            <code>scripts/scan_icons.py</code>.</p>
+          <p class="mi-module-lede">Every Material Symbols glyph used in the live app — a representative
+            label, and the exact placements (file and line). Preview each glyph as outlined,
+            filled, or light weight with rounded corners, and flip Font/SVG to compare the
+            live webfont against Google\u2019s SVG export of the same glyph. This page and the Module Directory catalog data are excluded
+            from the scan so the catalog is not polluted by its own chrome. Toggle a group to see
+            just the chat module, primary nav, and so on.
+            Generated by <code>scripts/scan_icons.py</code>.</p>
         </div>
         ${moduleReadyToggleHTML('mi-icons', 'Icon Inventory')}
         ${moduleControlsHTML('mi-icons')}
       </header>
-
-      ${groupReady}
 
       <div class="mi-toolbar">
         <div class="mi-search-inline">
@@ -858,27 +844,28 @@ function renderIconInventory() {
           <button type="button" class="ii-filter is-active" data-ii-sort="name">A–Z</button>
           <button type="button" class="ii-filter" data-ii-sort="count">Most used</button>
         </div>
-        <div class="ii-sort" role="group" aria-label="Variant">
-          <button type="button" class="ii-filter is-active" data-ii-fam="all" aria-pressed="true">All variants</button>
-          <button type="button" class="ii-filter" data-ii-fam="outlined" aria-pressed="false">Outlined · ${outlinedCount}</button>
-          <button type="button" class="ii-filter" data-ii-fam="rounded" aria-pressed="false">Rounded · ${roundedCount}</button>
+        <div class="ii-sort" role="group" aria-label="Icon style preview">
+          <button type="button" class="ii-filter is-active" data-ii-style="outlined" aria-pressed="true">Outlined</button>
+          <button type="button" class="ii-filter" data-ii-style="filled" aria-pressed="false">Filled</button>
+          <button type="button" class="ii-filter" data-ii-style="light" aria-pressed="false" title="Light weight, rounded corners">Light</button>
+        </div>
+        <div class="ii-sort" role="group" aria-label="Icon render mode" id="ii-render-switch">
+          <button type="button" class="ii-filter is-active" data-ii-render="font" aria-pressed="true" title="The Material Symbols variable font, served from fonts.googleapis.com \u2014 exempt from the app-wide SVG shim so this column stays a true comparison">Font</button>
+          <button type="button" class="ii-filter" data-ii-render="svg" aria-pressed="false" title="The same glyphs as inline SVG, from Google\u2019s own SVG export \u2014 no webfont, no network">SVG</button>
         </div>
       </div>
 
+      <p class="ii-render-note" id="ii-render-note" hidden></p>
+
       <div class="mi-stats" id="ii-group-stats" role="group" aria-label="Filter icons by group">
         <button type="button" class="mi-stat is-active" data-ii-group="all" aria-pressed="true">
-          <span class="mi-stat-num">${data.totalUniqueIcons}</span>
           <span class="mi-stat-label"><span class="mi-stat-text">All icons</span><span class="material-symbols-outlined">emoji_symbols</span></span>
         </button>
         ${groupCards}
-        <button type="button" class="mi-stat" disabled>
-          <span class="mi-stat-num">${data.totalUses}</span>
-          <span class="mi-stat-label"><span class="mi-stat-text">Total uses</span><span class="material-symbols-outlined">tag</span></span>
-        </button>
       </div>
 
       <div class="ii-empty" id="ii-empty" hidden>No icons match your filter.</div>
-      <div class="ii-grid" id="ii-grid">
+      <div class="ii-grid ii-style-outlined ii-render-font" id="ii-grid">
         ${icons.map((ic) => iconCard(ic, groups)).join('')}
       </div>
     </section>`;
@@ -888,8 +875,8 @@ function renderIconInventory() {
 /* Design System module — typography + color/radius/shadow tokens      */
 /* ------------------------------------------------------------------ */
 
-/* The four faces the app actually loads/declares (see each page's <head> and
-   the WISE Digits @font-face at the top of pages/wise.css). */
+/* The type families the app actually loads/declares (see each page's <head>
+   and the WISE Digits @font-face at the top of pages/wise.css). */
 const FONT_FAMILIES = [
   {
     name: 'DM Sans',
@@ -906,17 +893,25 @@ const FONT_FAMILIES = [
     sample: 'Reformulate with confidence.',
   },
   {
+    name: 'DM Mono',
+    css: "'DM Mono', ui-monospace, monospace",
+    weights: 'Loaded 300 · 400 · 500 (+ italics)',
+    use: 'The monospace face for code, file paths, UPCs, barcodes, token names, and inline <code>.',
+    sample: 'pages/wise.css · scripts/scan_icons.py',
+  },
+  {
     name: 'WISE Digits',
-    css: "'WISE Digits', 'SF Mono', ui-monospace, Menlo, monospace",
+    css: "'WISE Digits', var(--font-mono)",
     weights: 'Synthetic @font-face · four weight buckets 100–900',
-    use: 'A digit-only family (unicode-range U+0030–39) that resolves to the local mono stack. Prepended to every font stack so every numeral in the app renders mono while letters fall through.',
+    use: 'Digit-only shim (unicode-range U+0030–39) backed by DM Mono. Prepended to every text stack so numerals render mono while letters use the normal face.',
     sample: '0123456789 · 62% · $1,480.00',
   },
   {
-    name: 'SF Mono stack',
-    css: "'SF Mono', ui-monospace, Menlo, monospace",
-    weights: 'System faces · 400–700 as available',
-    use: 'Code and file paths — icon ligature names, module hrefs, placement rows, token names, inline <code>.',
+    name: 'Mono stack',
+    css: 'var(--font-mono)',
+    token: '--font-mono',
+    weights: 'DM Mono 300 · 400 · 500 · ui-monospace fallback',
+    use: 'The shared token for full monospace strings across the app. Defined once in pages/wise.css.',
     sample: 'pages/wise.css · scripts/scan_icons.py',
   },
 ];
@@ -941,6 +936,7 @@ const TYPE_SCALE = [
    wireDesignSystem) so they always show the current theme's real color. */
 const COLOR_GROUPS = [
   {
+    id: 'surfaces',
     title: 'Surfaces',
     note: 'The four-step elevation ramp. Warm paper in light mode, deep navy in dark.',
     swatches: [
@@ -951,15 +947,17 @@ const COLOR_GROUPS = [
     ],
   },
   {
+    id: 'ink',
     title: 'Ink',
-    note: 'Text colors. Muted and subtle are tuned to clear WCAG AAA (7:1) on every surface they sit on, in both themes.',
+    note: 'Text colors. Muted and subtle are the same ink — tuned to clear WCAG AAA (7:1) on every surface they sit on, in both themes.',
     swatches: [
       { token: '--text', kind: 'ink', use: 'Primary text and headings' },
-      { token: '--text-muted', kind: 'ink', use: 'Secondary copy, ledes, menu items' },
-      { token: '--text-subtle', kind: 'ink', use: 'Quietest ink — eyebrows, captions, placeholders' },
+      { token: '--text-muted', kind: 'ink', use: 'Secondary copy, ledes, menu items, eyebrows, captions, placeholders' },
+      { token: '--text-subtle', kind: 'ink', use: 'Alias of --text-muted (same color)' },
     ],
   },
   {
+    id: 'brand',
     title: 'Brand',
     note: 'WISE blue. --primary doubles as AAA text on light surfaces and as a button fill; --primary-bright is the dark-theme accent where #25507C would vanish on navy.',
     swatches: [
@@ -971,6 +969,7 @@ const COLOR_GROUPS = [
     ],
   },
   {
+    id: 'semantic-green',
     title: 'Semantic · green',
     note: 'Positive / verified. Vibrant fill, AAA-safe ink for text, 12% tint for chip fills.',
     swatches: [
@@ -980,6 +979,7 @@ const COLOR_GROUPS = [
     ],
   },
   {
+    id: 'semantic-red',
     title: 'Semantic · red',
     note: 'Negative / failed / destructive.',
     swatches: [
@@ -989,6 +989,7 @@ const COLOR_GROUPS = [
     ],
   },
   {
+    id: 'semantic-amber',
     title: 'Semantic · amber',
     note: 'Warning / pending / at-risk.',
     swatches: [
@@ -998,6 +999,7 @@ const COLOR_GROUPS = [
     ],
   },
   {
+    id: 'lines',
     title: 'Lines',
     note: 'Borders are tinted from the brand blue (color-mix over --primary / --primary-bright) rather than neutral gray, so every card edge reads on-brand.',
     swatches: [
@@ -1006,15 +1008,35 @@ const COLOR_GROUPS = [
     ],
   },
   {
+    id: 'elevation',
     title: 'Elevation',
-    note: 'Three shadow steps. Dark theme swaps in deeper, softer shadows.',
+    note: 'Three shadow steps. Light mode uses the same value for Hover lift and Floating popovers; dark mode separates them with a deeper popover shadow.',
     swatches: [
-      { token: '--shadow-1', kind: 'shadow', use: 'Resting cards' },
-      { token: '--shadow-2', kind: 'shadow', use: 'Hover lift, dropdowns' },
-      { token: '--shadow-card', kind: 'shadow', use: 'Floating popovers / modals' },
+      {
+        token: '--shadow-1',
+        kind: 'shadow',
+        lightValue: '0 1px 2px rgba(17,24,39,.04), 0 1px 3px rgba(17,24,39,.04)',
+        darkValue: '0 1px 2px rgba(0,0,0,.4)',
+        use: 'Resting cards',
+      },
+      {
+        token: '--shadow-2',
+        kind: 'shadow',
+        lightValue: '0 1px 2px rgba(17,24,39,.04), 0 8px 24px rgba(17,24,39,.06)',
+        darkValue: '0 4px 12px rgba(0,0,0,.35), 0 12px 32px rgba(0,0,0,.35)',
+        use: 'Hover lift, dropdowns',
+      },
+      {
+        token: '--shadow-card',
+        kind: 'shadow',
+        lightValue: '0 1px 2px rgba(17,24,39,.04), 0 8px 24px rgba(17,24,39,.06)',
+        darkValue: '0 8px 32px rgba(0,0,0,.45), 0 2px 8px rgba(0,0,0,.35)',
+        use: 'Floating popovers / modals',
+      },
     ],
   },
   {
+    id: 'radii',
     title: 'Radii',
     note: 'The corner ramp, plus the pill used by every chip, button and input.',
     swatches: [
@@ -1026,6 +1048,41 @@ const COLOR_GROUPS = [
     ],
   },
 ];
+
+const COLOR_NAME_KEY = 'wise-ds-color-names';
+
+function colorGroupId(g) {
+  return (g && (g.id || g.title)) || '';
+}
+
+function loadColorNames() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(COLOR_NAME_KEY) || '{}');
+    return raw && typeof raw === 'object' ? raw : {};
+  } catch (e) { return {}; }
+}
+
+function colorGroupTitle(g) {
+  const id = colorGroupId(g);
+  const custom = loadColorNames()[id];
+  return (custom && String(custom).trim()) || (g && g.title) || '';
+}
+
+function colorGroupById(id) {
+  return COLOR_GROUPS.find((g) => colorGroupId(g) === id);
+}
+
+function saveColorGroupName(id, name) {
+  const group = colorGroupById(id);
+  if (!group) return '';
+  const store = loadColorNames();
+  const trimmed = String(name || '').replace(/\s+/g, ' ').trim();
+  if (!trimmed || trimmed === group.title) delete store[id];
+  else store[id] = trimmed;
+  try { localStorage.setItem(COLOR_NAME_KEY, JSON.stringify(store)); } catch (e) {}
+  _globalIndex = null;
+  return colorGroupTitle(group);
+}
 
 function swatchIsColor(sw) {
   const kind = sw.kind || 'fill';
@@ -1045,15 +1102,27 @@ function swatchHTML(sw) {
     chips = `<span class="ds-swatch-chip ds-swatch-chip--radius" style="border-radius:${bg}"></span>`;
   } else if (editable) {
     chips = `<span class="ds-swatch-pair">
-      ${fillChip('data-swatch-now')}
-      <label class="ds-swatch-pick">
-        <input type="color" data-token-color value="#000000" aria-label="New color for ${esc(sw.token)}" />
-        ${fillChip('data-swatch-next')}
-      </label>
-      <button type="button" class="ds-swatch-reset" data-token-reset disabled title="Undo ${esc(sw.token)} to the theme default" aria-label="Undo ${esc(sw.token)}"><span class="material-symbols-outlined">undo</span></button>
-      <span class="ds-swatch-cap">Now</span>
-      <span class="ds-swatch-cap">New</span>
-      <span class="ds-swatch-cap ds-swatch-cap--undo">Undo</span>
+      <span class="ds-swatch-col">
+        ${fillChip('data-swatch-now')}
+        <input type="text" class="ds-swatch-hex" data-swatch-hex-now readonly tabindex="-1" aria-label="Current ${esc(sw.token)}" />
+        <span class="ds-swatch-cap">Now</span>
+      </span>
+      <span class="ds-swatch-col">
+        <label class="ds-swatch-pick">
+          <input type="color" data-token-color value="#000000" aria-label="New color for ${esc(sw.token)}" />
+          ${fillChip('data-swatch-next')}
+        </label>
+        <input type="text" class="ds-swatch-hex" data-swatch-hex-next data-token-hex spellcheck="false" autocomplete="off" aria-label="New ${esc(sw.token)} value" />
+        <span class="ds-swatch-cap">New</span>
+      </span>
+      <span class="ds-swatch-col ds-swatch-col--act">
+        <button type="button" class="ds-swatch-reset" data-token-reset disabled title="Undo ${esc(sw.token)} to the theme default" aria-label="Undo ${esc(sw.token)}"><span class="material-symbols-outlined">undo</span></button>
+        <span class="ds-swatch-cap ds-swatch-cap--undo">Undo</span>
+      </span>
+      <span class="ds-swatch-col ds-swatch-col--act">
+        <button type="button" class="ds-swatch-apply" data-token-apply disabled title="Apply ${esc(sw.token)} across the app" aria-label="Apply ${esc(sw.token)} across the app"><span class="material-symbols-outlined">sync</span></button>
+        <span class="ds-swatch-cap">Apply</span>
+      </span>
       <span class="ds-swatch-alpha">
         <span class="ds-swatch-cap ds-swatch-cap--alpha">A</span>
         <input type="range" min="0" max="100" step="1" value="100" data-token-alpha
@@ -1067,15 +1136,34 @@ function swatchHTML(sw) {
   const val = kind === 'radius'
     ? `<span class="ds-swatch-val">${esc(sw.val || '')}</span>`
     : kind === 'shadow'
-      ? '<span class="ds-swatch-val">theme-dependent</span>'
-      : `<input type="text" class="ds-swatch-val" data-swatch-val data-token-hex spellcheck="false" autocomplete="off" aria-label="${esc(sw.token)} value" />`;
+      ? `<span class="ds-swatch-val ds-swatch-val--themes">
+          <span class="ds-swatch-theme-value"><span class="ds-swatch-theme-label">Light</span> ${esc(sw.lightValue || '')}</span>
+          <span class="ds-swatch-theme-value"><span class="ds-swatch-theme-label">Dark</span> ${esc(sw.darkValue || '')}</span>
+        </span>`
+      : '';
+  const fmt = editable
+    ? `<span class="ds-swatch-fmt" role="group" aria-label="Color format for ${esc(sw.token)}">
+        <button type="button" class="ds-swatch-fmt-btn" data-token-fmt="hex" aria-pressed="true">Hex</button>
+        <button type="button" class="ds-swatch-fmt-btn" data-token-fmt="rgba" aria-pressed="false">RGBA</button>
+      </span>`
+    : '';
+  const rollout = editable
+    ? `<button type="button" class="ds-swatch-rollout" data-token-rollout hidden>
+        <span class="ds-swatch-rollout-track"><span class="ds-swatch-rollout-fill" data-rollout-fill></span></span>
+        <span class="ds-swatch-rollout-label" data-rollout-label></span>
+      </button>`
+    : '';
   return `
-    <div class="ds-swatch${editable ? ' is-editable' : ''}" data-swatch data-kind="${esc(kind)}"${editable ? ` data-token="${esc(sw.token)}"` : ''}>
+    <div class="ds-swatch${editable ? ' is-editable' : ''}" data-swatch data-kind="${esc(kind)}" data-fmt="hex"${sw.token ? ` data-token="${esc(sw.token)}"` : ''}>
       ${chips}
       <span class="ds-swatch-meta">
-        <span class="ds-swatch-name">${esc(sw.token)}</span>
+        <span class="ds-swatch-meta-top">
+          <span class="ds-swatch-name">${esc(sw.token)}</span>
+          ${fmt}
+        </span>
         ${val}
         <span class="ds-swatch-use">${esc(sw.use)}</span>
+        ${rollout}
       </span>
     </div>`;
 }
@@ -1091,7 +1179,7 @@ function renderDesignSystem() {
         <div class="ds-font-name">${esc(f.name)}</div>
         ${readyToggleHTML(dsFontReadyId(f), f.name, { level: 'item', parent: 'mi-design' })}
       </div>
-      <code class="ds-font-stack">${esc(f.css)}</code>
+      <code class="ds-font-stack">${f.token ? esc(f.token) + ' → ' : ''}${esc(f.css)}</code>
       <div class="ds-font-weights">${esc(f.weights)}</div>
       <p class="ds-font-use">${esc(f.use)}</p>
     </div>`).join('');
@@ -1108,10 +1196,10 @@ function renderDesignSystem() {
     </div>`).join('');
 
   const colorGroups = COLOR_GROUPS.map((g) => `
-    <div class="ds-color-group">
+    <div class="ds-color-group" data-ds-group="${esc(colorGroupId(g))}">
       <div class="ds-group-head">
-        <h4 class="ds-group-title">${esc(g.title)}</h4>
-        ${readyToggleHTML('ds:' + g.title, g.title, { level: 'item', parent: 'mi-design' })}
+        <input type="text" class="ds-group-title" data-ds-group-name="${esc(colorGroupId(g))}" value="${esc(colorGroupTitle(g))}" spellcheck="false" autocomplete="off" aria-label="Name for ${esc(g.title)}" title="Click to rename — the name is saved on this device" />
+        ${readyToggleHTML('ds:' + g.title, colorGroupTitle(g), { level: 'item', parent: 'mi-design' })}
       </div>
       <p class="ds-group-note">${esc(g.note)}</p>
       <div class="ds-swatch-grid">${g.swatches.map(swatchHTML).join('')}</div>
@@ -1140,8 +1228,9 @@ function renderDesignSystem() {
           <span class="mi-dir-title">Typography — type scale</span>
         </div>
         <div class="ds-type-table">${typeRows}</div>
-        <p class="ds-footnote">Every numeral app-wide renders in mono via the synthetic
-          <code>WISE Digits</code> family prepended to each stack. Body base is
+        <p class="ds-footnote">Every numeral app-wide renders in DM Mono via the synthetic
+          <code>WISE Digits</code> family prepended to each stack; full monospace strings
+          use <code>--font-mono</code>. Body base is
           <code>--fs-ui</code> (0.75rem), user-scalable via <code>--wise-text-scale</code>.</p>
       </div>
 
@@ -1152,7 +1241,7 @@ function renderDesignSystem() {
             <span class="material-symbols-outlined">restart_alt</span>Reset colors
           </button>
         </div>
-        <p class="ds-footnote" style="margin-top:0;margin-bottom:14px">Each token shows its current color, then a new color to change to, then undo. Pick a color, or paste a hex or <code>rgba()</code> value; drag <strong>A</strong> to set transparency, since the browser's own color popover has no alpha field. Edits save for this theme, apply across the app, and survive reload.</p>
+        <p class="ds-footnote" style="margin-top:0;margin-bottom:14px">Each color token shows its current value, then a new color to change to. Hex sits under both samples — switch <strong>Hex</strong> / <strong>RGBA</strong> to convert. Drag <strong>A</strong> for transparency (the browser picker has no alpha). Shadow tokens show their exact light and dark values beside the preview. <strong>Apply</strong> writes the new color across every page that uses the token and opens a progress panel; undo restores the theme default. Click a group name (Semantic · red, and the rest) to rename it. Color values and names both save on this device and survive reload.</p>
         <div class="ds-color-grid">${colorGroups}</div>
       </div>
     </section>`;
@@ -1182,6 +1271,7 @@ const ARROW_SVG_DEMO = '<span class="adm-sort-arrow"><svg viewBox="0 0 12 12" fi
    Library, so you can jump straight to a family instead of scrolling. Order
    here is the order the tiles render in. */
 const COMPONENT_CATS = [
+  { key: 'Chat & drawers', icon: 'view_sidebar' },
   { key: 'Tables & data', icon: 'table_rows' },
   { key: 'Library & reports', icon: 'auto_stories' },
   { key: 'Filters', icon: 'filter_alt' },
@@ -1200,10 +1290,34 @@ const CAT_BY_NAME = {
   'Admin buttons': 'Actions',
   'Top-bar icon button': 'Actions',
   'Intent chips': 'Chips & badges',
+  'Output chips': 'Chips & badges',
   'Large intent cards': 'Chips & badges',
   'Status pills': 'Chips & badges',
   'Status chips (domain)': 'Chips & badges',
   'Chat composer': 'Inputs & forms',
+  'Transcript lines': 'Chat & drawers',
+  'Transcript actions': 'Chat & drawers',
+  'Activity strip': 'Chat & drawers',
+  'Token readout': 'Chat & drawers',
+  'Chat ⋯ menu': 'Chat & drawers',
+  'Module ⋯ menu': 'Overlays',
+  'Sticky modules': 'Chat & drawers',
+  'What can I ask?': 'Chat & drawers',
+  'Turns module': 'Chat & drawers',
+  'Database roster': 'Chat & drawers',
+  'Attachments': 'Chat & drawers',
+  'Image lightbox': 'Overlays',
+  'Chat welcome': 'Chat & drawers',
+  'Segmented control': 'Actions',
+  'Switch': 'Actions',
+  'Width toggle': 'Actions',
+  'Empty states': 'Feedback',
+  'Nutrition Facts': 'Chat & drawers',
+  'Progress tracker': 'Chat & drawers',
+  'Jam strip': 'Navigation',
+  'App search': 'Navigation',
+  'Crawl · Walk · Run': 'Navigation',
+  'Owl walkthrough': 'Chat & drawers',
   'Form fields': 'Inputs & forms',
   'Data table': 'Tables & data',
   'Charts & graphs': 'Tables & data',
@@ -1235,6 +1349,119 @@ const CAT_BY_NAME = {
 };
 
 function catOf(c) { return c.cat || CAT_BY_NAME[c.name] || 'Actions'; }
+
+/* Live Output-chip demos — same 52px thumbs + vN badges as wiseai.html.
+   Inners are full-size product photos scaled by the shared thumb transform. */
+function outputDemoInner(src) {
+  return `<div class="mi-out-thumb-fill"><img src="../assets/portfolio/${src}" alt="" width="360" height="360" loading="lazy"></div>`;
+}
+function outputChipHTML({ title, versions, hover, activeVer }) {
+  const vtag = (n) => `<span class="sc-surface-vtag">v${n}</span>`;
+  const thumbs = versions.map((v, i) => {
+    const latest = i === versions.length - 1;
+    const active = activeVer != null && Number(activeVer) === Number(v.ver);
+    const cls = ['sc-surface-thumb', latest ? 'is-latest' : 'is-old', active ? 'is-active' : ''].filter(Boolean).join(' ');
+    const role = versions.length > 1 ? ' role="button" tabindex="0"' : '';
+    return `<div class="${cls}"${role}><div class="sc-surface-thumb-inner">${v.inner}</div>${vtag(v.ver)}</div>`;
+  }).join('');
+  const thumbWrap = versions.length > 1 ? `<div class="sc-surface-stack">${thumbs}</div>` : thumbs;
+  return `<div class="sc-surface-slot">
+    <div class="sc-surface-card${hover ? ' is-hover' : ''}" role="button" tabindex="0">
+      <div class="sc-surface-head">
+        ${thumbWrap}
+        <div class="sc-surface-body"><div class="sc-surface-title">${esc(title)}</div></div>
+      </div>
+    </div>
+  </div>`;
+}
+function outputRailChipHTML({ title, inner, ver, active }) {
+  return `<div class="wa-merge-chip${active ? ' is-active' : ''}" role="tab" tabindex="0" aria-selected="${active ? 'true' : 'false'}" title="${esc(title)} (v${ver})">
+    <span class="wa-merge-chip-thumb"><span class="wa-merge-chip-thumb-inner">${inner}</span><span class="sc-surface-vtag">v${ver}</span></span>
+    <span class="wa-merge-chip-label">${esc(title)}</span>
+  </div>`;
+}
+
+const OUTPUT_CHIP_VERS = [
+  { ver: 1, inner: outputDemoInner('frosted_toaster_pastries.png') },
+  { ver: 2, inner: outputDemoInner('chocolate_chip_muffins.png') },
+  { ver: 3, inner: outputDemoInner('blueberry_muffins.png') },
+];
+const OUTPUT_CHIP_TITLE = 'Worst-ranked cupcake · detail';
+
+/* Compact WISE-owl bug for transcript / welcome demos — same mark the chat
+   mounts (js/wiseai-chat.js OWL_BUG), inlined so this catalog never imports
+   the chat engine. */
+const DEMO_OWL_BUG = '<svg viewBox="0 0 193 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/></svg>';
+
+function demoYouAvatar() {
+  return '<span class="sc-avatar sc-avatar-you" role="img" aria-label="You" data-initials="AK">AK</span>';
+}
+function demoWiseAvatar() {
+  return `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEcodeAI">${DEMO_OWL_BUG}</span>`;
+}
+function demoFbBtn({ fb, tip, icon, on, more, hover }) {
+  const cls = ['sc-fb-btn', more ? 'sc-fb-more' : '', on ? 'is-on' : '', hover ? 'is-hover' : ''].filter(Boolean).join(' ');
+  const dataFb = fb ? ` data-fb="${esc(fb)}"` : '';
+  const moreAttr = more ? ' data-fb-more' : '';
+  return `<button type="button" class="${cls}"${dataFb}${moreAttr} data-tip="${esc(tip)}" aria-label="${esc(tip)}"><span class="material-symbols-outlined">${esc(icon)}</span></button>`;
+}
+function demoReasonsPop(kind, open) {
+  const down = kind === 'down';
+  const label = down ? 'What wasn\u2019t right?' : 'What was accurate?';
+  const chips = down
+    ? ['Inaccurate', 'Missing info', 'Wrong food', 'Outdated data']
+    : ['Trustworthy sources', 'Clear & easy', 'Thorough', 'Right food'];
+  const chipHtml = chips.map((c, i) =>
+    `<button type="button" class="chip sc-fb-reason${i === 0 && open ? ' is-on' : ''}" data-reason="${esc(c)}">${esc(c)}</button>`
+  ).join('');
+  return `<div class="sc-fb-reasons sc-fb-reasons--${kind}${open ? ' is-demo-open' : ''}" role="menu" aria-label="${esc(label)}"${open ? '' : ' hidden'}>
+    <span class="sc-fb-reasons-label">${esc(label)}</span>
+    <div class="sc-fb-reason-chips">${chipHtml}</div>
+    <div class="sc-fb-form">
+      <textarea class="sc-fb-input" rows="2" placeholder="${down ? 'Tell us more (optional)' : 'What worked? (optional)'}" aria-label="Optional note"></textarea>
+      <button type="button" class="chip sc-fb-send">Send</button>
+    </div>
+  </div>`;
+}
+function demoFbRow({ hoverCopy, upOpen, downOpen, moreOpen, upOn, downOn } = {}) {
+  return `<div class="sc-fb-wrap">
+    <div class="sc-fb" role="group" aria-label="Answer actions">
+      <span class="sc-fb-copy-wrap">
+        ${demoFbBtn({ fb: 'copy', tip: 'Copy answer', icon: 'content_copy', hover: hoverCopy })}
+        <span class="sc-fb-copied${hoverCopy ? ' is-vis' : ''}" role="status"${hoverCopy ? '' : ' aria-hidden="true"'}><span class="material-symbols-outlined">check</span>Copied</span>
+      </span>
+      <span class="sc-fb-up-wrap">
+        ${demoFbBtn({ fb: 'up', tip: 'Accurate', icon: 'thumb_up', on: !!upOn })}
+        ${demoReasonsPop('up', upOpen)}
+      </span>
+      <span class="sc-fb-down-wrap">
+        ${demoFbBtn({ fb: 'down', tip: 'Not accurate', icon: 'thumb_down', on: !!downOn })}
+        ${demoReasonsPop('down', downOpen)}
+      </span>
+      <span class="sc-fb-more-wrap">
+        ${demoFbBtn({ more: true, tip: 'More actions', icon: 'more_horiz', on: moreOpen })}
+        <div class="sc-fb-menu${moreOpen ? ' is-demo-open' : ''}" role="menu"${moreOpen ? '' : ' hidden'}>
+          <span class="sc-line-time sc-fb-menu-time" role="button" tabindex="0">2:14 PM</span>
+          <span class="sc-fb-menu-actions">
+            ${demoFbBtn({ fb: 'replay', tip: 'Re-run in new chat', icon: 'auto_read_play' })}
+            ${demoFbBtn({ fb: 'edit', tip: 'Edit in new chat', icon: 'bubble' })}
+            ${demoFbBtn({ fb: 'turn', tip: 'Fork a turn', icon: 'alt_route' })}
+            <span class="sc-fb-id" data-tip="Turn ID" tabindex="0">#6d7a</span>
+          </span>
+        </div>
+      </span>
+    </div>
+  </div>`;
+}
+function demoActTick(type, { stacked, hover, id } = {}) {
+  const cap = id ? `<span class="wa-activity-tick-id">#${esc(id)}</span>` : '';
+  const tick = `<button type="button" class="wa-activity-tick wa-activity-tick--${type}${hover ? ' is-hover' : ''}" title="${esc(type)}" aria-label="${esc(type)}">${cap}</button>`;
+  if (!stacked) return tick;
+  return `<span class="wa-activity-tick-stack${hover ? ' is-hover' : ''}">${tick}${tick}</span>`;
+}
+function demoJamEq(n) {
+  return Array.from({ length: n }, () => '<span></span>').join('');
+}
 
 const COMPONENTS = [
   {
@@ -1276,7 +1503,7 @@ const COMPONENTS = [
     wide: true,
     cls: '.chip · .ws-intent-chip · .sc-reply-chips .chip (+ .chip-primary, .chip-dive, .chip--match, .ms-chip.is-selected)',
     used: 'WISEcodeAI dock & Studio welcome, module shortcuts, Auth signup, Comparison, in-conversation reply chips',
-    note: 'The compact 28px chip. Welcome shortcuts, module intents, and reply chips all share <code>.chip</code> at <code>height: 28px</code> with <code>--fs-label</code> type. States: Default, Hover, Open/selected (<code>.is-selected</code> / match). Its large-format sibling — <em>Large intent cards</em> — sits beside it.',
+    note: 'The compact 28px chip. Welcome shortcuts, module intents, and reply chips all share <code>.chip</code> at <code>height: 28px</code> with <code>--fs-label</code> type. States: Default, Hover, Open/selected (<code>.is-selected</code> / match). Not the same as <em>Output chips</em> — those are the in-transcript previews that open the sticky Output module. Its large-format sibling — <em>Large intent cards</em> — sits beside it.',
     noteIcon: 'straighten',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -1302,6 +1529,47 @@ const COMPONENTS = [
             <button type="button" class="chip chip--match"><span class="material-symbols-outlined">check_circle</span>Best match</button>
             <button type="button" class="chip ms-chip is-selected">High sugar</button>
             <button type="button" class="chip chip-primary"><span class="material-symbols-outlined">check</span>Confirm</button>
+          </div>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Output chips',
+    wide: true,
+    cls: '.sc-surface-card · .sc-surface-stack · .sc-surface-vtag · .wa-merge-chip',
+    used: 'WISEcodeAI Studio Chat · WISEcodeAI dock · sticky Output rail',
+    note: 'When a turn opens Results or Visuals, a chip lands in the transcript: a <strong>52px</strong> preview on the left, the output name on the right, gold stroke. Every chip is versioned — a compact <code>vN</code> badge rides the thumb, even on the first pass. Redo the same output and the chip stacks every version at that same 52px (oldest first, newest raised). Hover fans the stack; the version currently open on the right wears a stronger ring. Tapping a thumb opens <em>that</em> version in the sticky Output module — and the rail on the right shows <strong>one chip per version</strong>, same size, same badge, so the stack and the pane never disagree.',
+    noteIcon: 'layers',
+    demo: `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Single · v1</div>
+          ${outputChipHTML({ title: OUTPUT_CHIP_TITLE, versions: [OUTPUT_CHIP_VERS[0]] })}
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Single · hover</div>
+          ${outputChipHTML({ title: OUTPUT_CHIP_TITLE, versions: [OUTPUT_CHIP_VERS[0]], hover: true })}
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Stack of 3 · default</div>
+          ${outputChipHTML({ title: OUTPUT_CHIP_TITLE, versions: OUTPUT_CHIP_VERS })}
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Stack of 3 · hover (fan)</div>
+          ${outputChipHTML({ title: OUTPUT_CHIP_TITLE, versions: OUTPUT_CHIP_VERS, hover: true })}
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Stack · v2 open in Output</div>
+          ${outputChipHTML({ title: OUTPUT_CHIP_TITLE, versions: OUTPUT_CHIP_VERS, activeVer: 2 })}
+        </div>
+      </div>
+      <div class="dsc-states" style="width:100%;margin-top:18px">
+        <div class="dsc-state-col" style="flex:1 1 100%">
+          <div class="dsc-sub-label">Sticky Output rail — every version is its own chip</div>
+          <div class="wa-merge-chips mi-out-rail">
+            ${outputRailChipHTML({ title: OUTPUT_CHIP_TITLE, inner: OUTPUT_CHIP_VERS[0].inner, ver: 1 })}
+            ${outputRailChipHTML({ title: OUTPUT_CHIP_TITLE, inner: OUTPUT_CHIP_VERS[1].inner, ver: 2, active: true })}
+            ${outputRailChipHTML({ title: OUTPUT_CHIP_TITLE, inner: OUTPUT_CHIP_VERS[2].inner, ver: 3 })}
           </div>
         </div>
       </div>`,
@@ -1351,7 +1619,7 @@ const COMPONENTS = [
     wide: true,
     cls: '.fl-input-wrap--stacked · .fl-more-btn · .fl-db-trigger · .fl-input · .sc-send',
     used: 'WISEcodeAI dock (every page) · Studio Chat · Reformulation / Add Product / Studio&AI panes',
-    note: 'The stacked composer from the chat module — not a one-line pill. <code>+</code> attach on the left (Voice lives in that menu), database selector left of send, lock beside the placeholder, send uses the <code>send</code> glyph. Same markup <code>mountWISEcodeAIChat</code> builds in <code>js/wiseai-chat.js</code>.',
+    note: 'The stacked composer from the chat module — not a one-line pill. <code>+</code> attach on the left (Voice lives in that menu), database selector left of send, lock beside the placeholder, send uses the <code>send</code> glyph. Same markup <code>mountWISEcodeAIChat</code> builds in <code>js/wiseai-chat.js</code>. The full database picker is <em>Database roster</em>; pending files are <em>Attachments</em>.',
     noteIcon: 'chat',
     demo: `
       <div class="sc-input-row" data-wise-composer>
@@ -1368,7 +1636,17 @@ const COMPONENTS = [
           </div>
           <div class="fl-input-col">
             <div class="fl-model-row">
-              ${composerDbSelectorHtml().replace('role="menu"', 'role="menu" data-popover-static')}
+              <div class="fl-model-wrap fl-model-wrap--lead">
+                <button type="button" class="fl-db-trigger fl-model-btn" title="Active database — click to switch" aria-haspopup="menu" aria-expanded="false">
+                  <span class="fl-db-trigger-label">Postgres (DEV)</span>
+                  <span class="material-symbols-outlined fl-db-trigger-caret" aria-hidden="true">expand_more</span>
+                </button>
+                <div class="fl-model-popover fl-db-popover fl-db-popover--lead" role="menu" data-popover-static>
+                  <div class="fl-db-top">
+                    <div class="fl-db-pop-head"><span class="fl-db-pop-title">Databases</span></div>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="fl-input-line">
               <textarea class="fl-input" rows="1" autocomplete="off" placeholder="Ask WISEcodeAI about any food\u2026"></textarea>
@@ -1376,6 +1654,750 @@ const COMPONENTS = [
             <div class="fl-attachments" aria-label="Pending attachments"></div>
           </div>
           <button type="button" class="sc-send" title="Send"><span class="material-symbols-outlined">send</span></button>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Transcript lines',
+    wide: true,
+    cat: 'Chat & drawers',
+    cls: '.sc-line · .sc-line-you / .sc-line-wiseai / .sc-line-event · .sc-avatar · .sc-line-time',
+    used: 'WISEcodeAI dock (every page) · Studio Chat — every turn in the thread',
+    note: 'Three line types, never a speech bubble. <strong>You</strong> uses the member avatar (initials or photo). <strong>WISEcodeAI</strong> uses the owl on a black chip (white chip in dark). <strong>Event</strong> is a mid-thread action the member took — a database switch or a data source — stamped <code>data-activity</code> so the activity strip can tick it. The timestamp toggles clock \u2194 relative on click. Forked threads open with a lineage banner.',
+    noteIcon: 'forum',
+    demo: `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col" style="flex:1 1 280px">
+          <div class="dsc-sub-label">You</div>
+          <div class="sc-line sc-line-you">${demoYouAvatar()}<div class="sc-line-body">Compare oat milk vs almond milk on processing.<div class="sc-line-meta"><span class="sc-line-time" role="button" tabindex="0">2:11 PM</span></div></div></div>
+        </div>
+        <div class="dsc-state-col" style="flex:1 1 280px">
+          <div class="dsc-sub-label">WISEcodeAI</div>
+          <div class="sc-line sc-line-wiseai">${demoWiseAvatar()}<div class="sc-line-body"><span class="sc-para">Oat milk scores higher on processing; almond milk wins on additives. Both sit in the same WISEscore band.</span><div class="sc-line-meta"><span class="sc-line-time" role="button" tabindex="0">2:12 PM</span></div></div></div>
+        </div>
+        <div class="dsc-state-col" style="flex:1 1 280px">
+          <div class="dsc-sub-label">Event · database switched</div>
+          <div class="sc-line sc-line-you sc-line-event" data-activity="database" role="note">${demoYouAvatar()}<div class="sc-line-body"><span class="sc-event-label">Switched database from</span> <strong>Postgres (DEV)</strong> to <strong>Postgres (UAT)</strong><div class="sc-line-meta"><span class="sc-line-time" role="button" tabindex="0">2:13 PM</span><span class="sc-fb-id" data-tip="Turn ID" tabindex="0">#6d7a</span></div></div></div>
+        </div>
+        <div class="dsc-state-col" style="flex:1 1 280px">
+          <div class="dsc-sub-label">Forked-from banner</div>
+          <div class="sc-fork-banner"><span class="material-symbols-outlined sc-fork-banner-ic">alt_route</span><span class="sc-fork-banner-txt">Forked from <strong>Compare oat milk vs almond milk</strong> at turn #6d7a</span></div>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Transcript actions',
+    wide: true,
+    cat: 'Chat & drawers',
+    cls: '.sc-fb · .sc-fb-btn · .sc-fb-reasons · .sc-fb-menu · .sc-tip · .sc-fb-id',
+    used: 'Every WISEcodeAI answer — the row under the last paragraph, before intent chips',
+    note: 'Left cluster is the quick trio: <strong>Copy</strong> (flashes Copied), <strong>Accurate</strong> and <strong>Not accurate</strong> (each opens a reason popover with chips + optional note; submitting posts a follow-up turn). The far-right <strong>\u22ef</strong> spills timestamp (clock \u2194 relative), Re-run in new chat, Edit in new chat, Fork a turn, and the turn ID. Hover/focus uses the styled tip card — never a native title bubble. Icons are outlined at rest and fill when on.',
+    noteIcon: 'thumbs_up_down',
+    demo: `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Default</div>
+          ${demoFbRow()}
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Copy \u00b7 confirmation</div>
+          ${demoFbRow({ hoverCopy: true })}
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Accurate \u00b7 reasons open</div>
+          ${demoFbRow({ upOn: true, upOpen: true })}
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Not accurate \u00b7 reasons open</div>
+          ${demoFbRow({ downOn: true, downOpen: true })}
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">More \u00b7 timestamp, re-run, edit, fork, ID</div>
+          ${demoFbRow({ moreOpen: true })}
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Hover tip</div>
+          <span style="position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:10px">
+            ${demoFbBtn({ fb: 'copy', tip: 'Copy answer', icon: 'content_copy' })}
+            <span class="dsc-tip sc-tip is-vis" style="position:static;transform:none;opacity:1">Copy answer</span>
+          </span>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Activity strip',
+    wide: true,
+    cat: 'Chat & drawers',
+    cls: '.wa-activity-strip · .wa-activity-rail · .wa-activity-tick (--output / --source / --database) · .wa-activity-tick-stack',
+    used: 'Every chat module — pinned to the transcript edge, toggled from the chat \u22ef menu and Appearance',
+    note: 'A 3px landmark rail on the chat\u2019s <strong>left</strong> edge by default (right is opt-in). Ticks sit at each event as a fraction of the transcript: gold <strong>output</strong>, green <strong>source</strong>, amber <strong>database</strong>. Multi-version outputs draw a stacked pair \u2014 two tabs mean \u201cmore than one\u201d, never a count. Click a tick to scroll that landmark into view and flash it. Hover widens the tab and shows the turn ID. Not the token readout under the composer \u2014 that is <em>Token readout</em>.',
+    noteIcon: 'timeline',
+    demo: `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Left edge \u00b7 default ticks</div>
+          <div class="mi-actstrip" data-side="left">
+            <div class="wa-activity-rail"></div>
+            ${demoActTick('output', { id: '3a1c' })}
+            ${demoActTick('output', { stacked: true, id: '6d7a' })}
+            ${demoActTick('source', { id: 'b12e' })}
+            ${demoActTick('database', { id: '9f04' })}
+            <div class="mi-actstrip-ghost">
+              <span>Output created</span>
+              <span>Output \u00b7 2 versions</span>
+              <span>Data source added</span>
+              <span>Database switched</span>
+            </div>
+          </div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Hover \u00b7 tab widens, ID shows</div>
+          <div class="mi-actstrip" data-side="left">
+            <div class="wa-activity-rail"></div>
+            ${demoActTick('output', { hover: true, id: '3a1c' })}
+            ${demoActTick('output', { stacked: true, hover: true, id: '6d7a' })}
+            ${demoActTick('source', { id: 'b12e' })}
+            ${demoActTick('database', { id: '9f04' })}
+            <div class="mi-actstrip-ghost">
+              <span>Output created</span>
+              <span>Output \u00b7 2 versions</span>
+              <span>Data source added</span>
+              <span>Database switched</span>
+            </div>
+          </div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Right edge</div>
+          <div class="mi-actstrip mi-actstrip--right" data-side="right" data-ticks="3">
+            <div class="wa-activity-rail"></div>
+            ${demoActTick('output', { id: '3a1c' })}
+            ${demoActTick('source', { id: 'b12e' })}
+            ${demoActTick('database', { id: '9f04' })}
+            <div class="mi-actstrip-ghost">
+              <span>Output created</span>
+              <span>Data source added</span>
+              <span>Database switched</span>
+            </div>
+          </div>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Token readout',
+    cat: 'Chat & drawers',
+    cls: '.sc-activity · .sc-activity-dots · .sc-activity-pop',
+    used: 'Under the composer on every chat when activity: true — this-turn and conversation tokens',
+    note: 'Three dots under the input. Idle is quiet; thinking pulses brand-blue. Hover opens a read-out of this-turn and conversation tokens, cache share, and a demo cost. Not the edge landmark rail \u2014 that is <em>Activity strip</em>.',
+    noteIcon: 'more_horiz',
+    demo: `
+      <div class="dsc-states">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Idle</div>
+          <div class="sc-activity">
+            <div class="sc-activity-wrap">
+              <div class="sc-activity-dots" tabindex="0" role="button" aria-label="WISEcodeAI activity"><span></span><span></span><span></span></div>
+            </div>
+          </div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Thinking</div>
+          <div class="sc-activity is-thinking">
+            <div class="sc-activity-wrap">
+              <div class="sc-activity-dots" tabindex="0" role="button" aria-label="WISEcodeAI activity"><span></span><span></span><span></span></div>
+            </div>
+          </div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Hover \u00b7 read-out open</div>
+          <div class="sc-activity is-open">
+            <div class="sc-activity-wrap">
+              <div class="sc-activity-dots" tabindex="0" role="button" aria-label="WISEcodeAI activity"><span></span><span></span><span></span></div>
+              <div class="sc-activity-pop" role="tooltip">
+                <div class="sc-activity-row"><span class="sc-activity-key">This turn</span><span class="sc-activity-val">1,284 in \u00b7 412 out</span></div>
+                <div class="sc-activity-row"><span class="sc-activity-key">Conversation</span><span class="sc-activity-val">8.1k tokens \u00b7 $0.04</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Chat \u22ef menu',
+    wide: true,
+    cat: 'Chat & drawers',
+    cls: '.panel-more-btn \u00b7 .topbar-popover \u00b7 .sc-mcp-item \u00b7 .sc-switch \u00b7 .sc-stream-seg',
+    used: 'The three-dot on every chat module \u2014 History, Turns, Activity strip, streaming, helix, Share, Export',
+    note: 'Same compact <code>.topbar-popover</code> shell as other module menus. Toggle rows use a switch, not a row highlight. Activity strip and Response streaming each grow a segmented picker underneath (Left/Right, Full/Steps/Final). Helix knobs live in this menu too \u2014 the field itself is in Motion &amp; Resize. Admin rows wear the pink switch + Admin badge.',
+    noteIcon: 'more_vert',
+    demo: `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Closed</div>
+          <button type="button" class="panel-more-btn" aria-label="More options" aria-expanded="false"><span class="material-symbols-outlined">more_vert</span></button>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Hover</div>
+          <button type="button" class="panel-more-btn is-hover" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Open \u00b7 drawers, strip, streaming</div>
+          <div class="panel-more-wrap" style="position:relative">
+            <button type="button" class="panel-more-btn is-open" aria-label="More options" aria-expanded="true"><span class="material-symbols-outlined">more_vert</span></button>
+            <div class="topbar-popover" data-popover-static style="position:static;margin-top:8px;max-width:280px">
+              <button type="button" class="topbar-menu-item"><span class="material-symbols-outlined topbar-menu-icon">add</span><span>Start new conversation</span></button>
+              <button type="button" class="topbar-menu-item sc-mcp-item is-on" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">history</span><span>History &amp; Projects</span><span class="sc-switch" aria-hidden="true"></span></button>
+              <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">alt_route</span><span>Turns</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>
+              <div class="topbar-menu-divider"></div>
+              <button type="button" class="topbar-menu-item sc-mcp-item is-on" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">timeline</span><span>Activity strip</span><span class="sc-switch" aria-hidden="true"></span></button>
+              <div class="sc-stream-detail">
+                <span class="sc-stream-detail-label">Strip side</span>
+                <div class="sc-stream-seg" role="radiogroup" aria-label="Activity strip side">
+                  <button type="button" class="sc-stream-seg-btn is-on" role="radio" aria-checked="true">Left</button>
+                  <button type="button" class="sc-stream-seg-btn" role="radio" aria-checked="false">Right</button>
+                </div>
+              </div>
+              <button type="button" class="topbar-menu-item sc-mcp-item is-on" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">stream</span><span>Response streaming</span><span class="sc-switch" aria-hidden="true"></span></button>
+              <div class="sc-stream-detail">
+                <span class="sc-stream-detail-label">Streaming detail</span>
+                <div class="sc-stream-seg" role="radiogroup" aria-label="Response streaming detail">
+                  <button type="button" class="sc-stream-seg-btn is-on" role="radio" aria-checked="true">Full</button>
+                  <button type="button" class="sc-stream-seg-btn" role="radio" aria-checked="false">Steps</button>
+                  <button type="button" class="sc-stream-seg-btn" role="radio" aria-checked="false">Final</button>
+                </div>
+              </div>
+              <div class="topbar-menu-divider"></div>
+              <button type="button" class="topbar-menu-item topbar-menu-item--danger"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close conversation</span></button>
+            </div>
+          </div>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Module \u22ef menu',
+    cat: 'Overlays',
+    cls: '.panel-more-wrap \u00b7 [data-sticky-act] \u00b7 .topbar-menu-item--danger',
+    used: 'Every module to the right of the chat \u2014 Share, Copy link, Export; progress panes also get Remove panel',
+    note: 'Injected when a right-of-chat module has no menu of its own. Chat, Turns, and What can I ask? keep their native menus. Progress trackers add a danger <strong>Remove panel</strong> row that leaves a restore tab on the row\u2019s right edge.',
+    noteIcon: 'more_vert',
+    demo: `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Default module</div>
+          <div class="topbar-popover" data-popover-static style="position:static;max-width:240px">
+            <button type="button" class="topbar-menu-item"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
+            <button type="button" class="topbar-menu-item"><span class="material-symbols-outlined topbar-menu-icon">link</span><span>Copy link</span></button>
+            <div class="topbar-menu-divider"></div>
+            <button type="button" class="topbar-menu-item"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export</span></button>
+          </div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Progress \u00b7 Remove panel</div>
+          <div class="topbar-popover" data-popover-static style="position:static;max-width:240px">
+            <button type="button" class="topbar-menu-item"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
+            <button type="button" class="topbar-menu-item"><span class="material-symbols-outlined topbar-menu-icon">link</span><span>Copy link</span></button>
+            <div class="topbar-menu-divider"></div>
+            <button type="button" class="topbar-menu-item"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export</span></button>
+            <div class="topbar-menu-divider"></div>
+            <button type="button" class="topbar-menu-item topbar-menu-item--danger"><span class="material-symbols-outlined topbar-menu-icon">visibility_off</span><span>Remove panel</span></button>
+          </div>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Sticky modules',
+    wide: true,
+    cat: 'Chat & drawers',
+    cls: '.sticky-chat \u00b7 .sticky-mod.is-sticky \u00b7 #modules-row (z-index 3 / 1 / 0)',
+    used: 'Every #modules-row page with a chat \u2014 History left, Output / NFP / Turns right, progress and Report nested one layer deeper',
+    note: 'Sticky is the only drawer mode \u2014 no on/off switch. Think of it as a <strong>WISE utility belt</strong>: the chat is the buckle (z-index 3). Drawers to its right tuck behind it, shorter and centred, with the chat-facing corners squared so they read as emerging from the card, not floating beside it. History tucks left. Next-level drawers (progress tracker, Help contact, generated Report) sit one layer under their parent (z-index 0, ~30px shorter still). Opening a module \u22ef never lifts a drawer over the chat.',
+    noteIcon: 'layers',
+    demo: `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col" style="flex:1 1 100%">
+          <div class="dsc-sub-label">Utility belt \u00b7 chat on top, drawers nested underneath</div>
+          <div class="mi-belt" aria-label="Sticky module stack">
+            <aside class="mi-belt-mod mi-belt-hist"><span class="mi-belt-name">History</span><span class="mi-belt-z">left of chat</span></aside>
+            <section class="mi-belt-chat"><span class="mi-belt-name">Chat</span><span class="mi-belt-z">z 3 \u00b7 buckle</span></section>
+            <aside class="mi-belt-mod mi-belt-out"><span class="mi-belt-name">Output</span><span class="mi-belt-z">z 1</span></aside>
+            <aside class="mi-belt-mod mi-belt-nfp"><span class="mi-belt-name">Nutrition Facts</span><span class="mi-belt-z">z 1</span></aside>
+            <aside class="mi-belt-mod mi-belt-prog"><span class="mi-belt-name">Progress</span><span class="mi-belt-z">z 0 \u00b7 nested</span></aside>
+          </div>
+        </div>
+        <div class="dsc-state-col" style="flex:1 1 100%">
+          <div class="dsc-sub-label">Next-level drawer \u00b7 Help with Contact tucked behind it</div>
+          <div class="mi-belt mi-belt--nested" aria-label="Nested sticky drawers">
+            <section class="mi-belt-chat"><span class="mi-belt-name">Chat</span><span class="mi-belt-z">z 3</span></section>
+            <aside class="mi-belt-mod mi-belt-out"><span class="mi-belt-name">Help</span><span class="mi-belt-z">z 1 \u00b7 parent</span></aside>
+            <aside class="mi-belt-mod mi-belt-prog"><span class="mi-belt-name">Contact</span><span class="mi-belt-z">z 0 \u00b7 shorter</span></aside>
+          </div>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'What can I ask?',
+    wide: true,
+    cat: 'Chat & drawers',
+    cls: '.wch-ask-panel \u00b7 .wch-ask-card \u00b7 .wch-ask-insert \u00b7 .sc-ask-help',
+    used: 'Every chat \u2014 gold link under the composer, matching intent chip, and a break-out-able sticky panel',
+    note: 'Opens as a right-of-chat drawer (same shell as History / Turns). Tap a card to ask it now; the insert icon drops the prompt into the composer to tweak first. The panel can break out as its own sticky module. Headline is serif. The gold shimmer on the below-input link lives in Motion &amp; Resize.',
+    noteIcon: 'help',
+    demo: `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Below-input link</div>
+          <button type="button" class="sc-ask-help" aria-label="What can I ask?"><span aria-hidden="true">${motionShimmer('What can I ask?')}</span></button>
+        </div>
+        <div class="dsc-state-col" style="flex:1 1 280px">
+          <div class="dsc-sub-label">Card \u00b7 default</div>
+          <button type="button" class="wch-ask-card" title="Ask: Look up a product by barcode">
+            <span class="wch-ask-ico"><span class="material-symbols-outlined">qr_code_scanner</span></span>
+            <span class="wch-ask-card-body"><span class="wch-ask-card-title">Look up a product by barcode</span><span class="wch-ask-card-desc">Paste a UPC or point the camera at the package.</span></span>
+            <span class="wch-ask-insert" title="Insert into the message box"><span class="material-symbols-outlined">chat_add_on</span></span>
+          </button>
+        </div>
+        <div class="dsc-state-col" style="flex:1 1 280px">
+          <div class="dsc-sub-label">Card \u00b7 hover (insert shows)</div>
+          <button type="button" class="wch-ask-card is-hover" title="Ask: Compare two products">
+            <span class="wch-ask-ico"><span class="material-symbols-outlined">compare</span></span>
+            <span class="wch-ask-card-body"><span class="wch-ask-card-title">Compare two products</span><span class="wch-ask-card-desc">Side-by-side processing, additives, and stars.</span></span>
+            <span class="wch-ask-insert" title="Insert into the message box" style="opacity:.7"><span class="material-symbols-outlined">chat_add_on</span></span>
+          </button>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Turns module',
+    wide: true,
+    cat: 'Chat & drawers',
+    cls: '.wt-turn \u00b7 .wt-fork \u00b7 .wt-jump \u00b7 .wt-fork-id \u00b7 .wt-empty',
+    used: 'WISEcodeAI Studio Chat \u2014 docks as a sticky drawer on the chat\u2019s right from the \u22ef Turns switch',
+    note: 'Every turn in the live thread, with Fork from here (copies the conversation up to that point into a new chat), Jump (scrolls the transcript), and the same turn ID as the answer row. Empty until the first question lands. Starts tucked behind the chat, never as an in-chat overlay.',
+    noteIcon: 'alt_route',
+    demo: `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col" style="flex:1 1 280px">
+          <div class="dsc-sub-label">A turn</div>
+          <div class="wt-turn">
+            <div class="wt-turn-head"><span class="wt-turn-num">1</span><span class="wt-turn-q">Compare oat milk vs almond milk on processing.</span></div>
+            <div class="wt-turn-a">Oat milk scores higher on processing; almond milk wins on additives\u2026</div>
+            <div class="wt-chips"><span class="wt-chip"><span class="material-symbols-outlined">bar_chart</span>Results</span></div>
+            <div class="wt-actions">
+              <button type="button" class="wt-fork" title="Fork from here" aria-label="Fork from here"><span class="material-symbols-outlined">alt_route</span></button>
+              <span class="wt-fork-id" title="Fork ID">#6d7a</span>
+              <button type="button" class="wt-jump" title="Jump to this turn"><span class="material-symbols-outlined">my_location</span>Jump</button>
+            </div>
+          </div>
+        </div>
+        <div class="dsc-state-col" style="flex:1 1 220px">
+          <div class="dsc-sub-label">Empty</div>
+          <div class="wt-empty">No turns yet.<br>Ask a question, then fork any turn from here to branch the conversation into a new chat of your own.</div>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Database roster',
+    wide: true,
+    cat: 'Chat & drawers',
+    cls: '.fl-db-popover \u00b7 .fl-db-item \u00b7 .fl-db-chip \u00b7 .fl-db-dock-btn',
+    used: 'Chat composer on every surface \u2014 popover in the input, or docked as its own sticky module',
+    note: 'Grouped, searchable, single-select. Filter chips hide read-only or read/write groups. The dock icon at the top breaks the same roster out as a sticky drawer to the right of the chat. A mid-thread switch drops an event line in the transcript and ticks the activity strip.',
+    noteIcon: 'database',
+    demo: `
+      <div class="fl-db-popover" data-popover-static style="position:static;display:flex;flex-direction:column">
+        <div class="fl-db-top">
+          <div class="fl-db-pop-head">
+            <span class="fl-db-pop-title">Databases</span>
+            <button type="button" class="fl-db-dock-btn" title="Dock as a sticky module" aria-label="Dock the database selector as a sticky module"><span class="material-symbols-outlined">dock_to_right</span></button>
+          </div>
+          <label class="fl-db-search">
+            <span class="material-symbols-outlined" aria-hidden="true">search</span>
+            <input type="text" class="fl-db-search-input" placeholder="Search databases\u2026" aria-label="Search databases" autocomplete="off">
+          </label>
+          <div class="fl-db-filters" role="group" aria-label="Filter by access">
+            <button type="button" class="fl-db-chip is-active" data-filter="all">All</button>
+            <button type="button" class="fl-db-chip" data-filter="ro">Read-only</button>
+            <button type="button" class="fl-db-chip" data-filter="rw">Read/write</button>
+          </div>
+        </div>
+        <div class="fl-db-scroll">
+          <div class="fl-db-group" data-access="ro">
+            <div class="fl-db-grouphead"><span class="fl-db-grouptitle">Postgres databases</span><span class="fl-db-access fl-db-access--ro">read-only</span></div>
+            <button type="button" class="fl-db-item is-active" role="menuitemradio" aria-checked="true"><span class="fl-db-meta"><span class="fl-db-name">Postgres (DEV)</span><span class="fl-db-desc">Named live environment</span></span><span class="fl-db-badge">LIVE</span><span class="fl-db-check material-symbols-outlined" aria-hidden="true">check</span></button>
+            <button type="button" class="fl-db-item" role="menuitemradio" aria-checked="false"><span class="fl-db-meta"><span class="fl-db-name">Postgres (UAT)</span><span class="fl-db-desc">Named live environment</span></span><span class="fl-db-badge">LIVE</span><span class="fl-db-check material-symbols-outlined" aria-hidden="true">check</span></button>
+          </div>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Attachments',
+    cat: 'Chat & drawers',
+    cls: '.fl-attach-chip \u00b7 .sc-att-chip \u00b7 .sc-att-thumb',
+    used: 'Chat composer pending row \u00b7 in-transcript previews on the member\u2019s line',
+    note: 'Pending chips sit in the composer (thumb + name + remove). Once sent they ride the You line as the same thumb + name, without the remove. Tapping a photo thumb opens <em>Image lightbox</em>.',
+    noteIcon: 'attach_file',
+    demo: `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Pending in composer</div>
+          <div class="fl-attachments" style="display:flex;flex-wrap:wrap;gap:6px">
+            <span class="fl-attach-chip"><span class="fl-attach-thumb" style="background-image:url('../assets/portfolio/blueberry_muffins.png')"></span><span class="fl-attach-name">muffin-front.png</span><button type="button" class="fl-attach-x" aria-label="Remove"><span class="material-symbols-outlined">close</span></button></span>
+            <span class="fl-attach-chip"><span class="fl-attach-thumb fl-attach-thumb--icon"><span class="material-symbols-outlined">description</span></span><span class="fl-attach-name">spec.pdf</span><button type="button" class="fl-attach-x" aria-label="Remove"><span class="material-symbols-outlined">close</span></button></span>
+          </div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">In the transcript</div>
+          <div class="sc-att-row">
+            <span class="sc-att-chip" title="muffin-front.png"><span class="sc-att-thumb" style="background-image:url('../assets/portfolio/blueberry_muffins.png')"></span><span class="sc-att-name">muffin-front.png</span></span>
+            <span class="sc-att-chip" title="spec.pdf"><span class="sc-att-thumb sc-att-thumb--icon"><span class="material-symbols-outlined">image</span></span><span class="sc-att-name">spec.pdf</span></span>
+          </div>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Image lightbox',
+    cat: 'Overlays',
+    cls: '.wai-img-scrim \u00b7 .wai-img-modal \u00b7 .wai-img-close',
+    used: 'Chat \u2014 opened from an attachment thumbnail in the thread or the composer',
+    note: 'Full-size preview on a scrim. Closes on backdrop click, the close button, or Escape. Same shell in light and dark.',
+    noteIcon: 'photo',
+    demo: `
+      <div class="wai-img-modal" data-modal-static style="position:relative;max-width:280px;width:100%">
+        <div class="wai-img-head">
+          <span class="wai-img-name">muffin-front.png</span>
+          <button type="button" class="wai-img-close" aria-label="Close preview"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <div class="wai-img-body"><img src="../assets/portfolio/blueberry_muffins.png" alt="muffin-front.png"></div>
+      </div>`,
+  },
+  {
+    name: 'Chat welcome',
+    cat: 'Chat & drawers',
+    cls: '.sc-welcome \u00b7 .ws-logo-wrap \u00b7 .ws-heading \u00b7 .ws-pulse-ring',
+    used: 'Every chat before the first message \u2014 owl, serif headline, intent chips',
+    note: 'The owl sits in pulse rings (the helix field behind it is Motion &amp; Resize). Headline is brand serif. First keystroke or chip dismisses the welcome and unlocks the thread. Large intent cards and 28px chips are their own components.',
+    noteIcon: 'waving_hand',
+    demo: `
+      <div class="sc-welcome mi-welcome-demo">
+        <div class="ws-logo-wrap">
+          <span class="ws-pulse-ring" aria-hidden="true"></span>
+          <span class="ws-pulse-ring" aria-hidden="true"></span>
+          <div class="ws-logo">${DEMO_OWL_BUG}</div>
+        </div>
+        <h1 class="ws-heading">Ask WISEcodeAI<sup class="ws-tm">TM</sup></h1>
+        <p class="ws-sub">Any food, any label, any reformulation.</p>
+      </div>`,
+  },
+  {
+    name: 'Segmented control',
+    cat: 'Actions',
+    cls: '.sc-stream-seg \u00b7 .sc-stream-seg-btn (+ .is-on)',
+    used: 'Chat \u22ef \u2014 Activity strip side, streaming detail, helix style \u00b7 Appearance text size / spacing',
+    note: 'One connected pill track. The on segment fills brand. Used anywhere a control picks exactly one of a few named sizes or modes. Not a switch (on/off is <em>Switch</em>) and not a filter chip.',
+    noteIcon: 'view_week',
+    demo: `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col" style="flex:1 1 200px">
+          <div class="dsc-sub-label">Default \u00b7 Full selected</div>
+          <div class="sc-stream-seg" role="radiogroup" aria-label="Streaming detail">
+            <button type="button" class="sc-stream-seg-btn is-on" role="radio" aria-checked="true">Full</button>
+            <button type="button" class="sc-stream-seg-btn" role="radio" aria-checked="false">Steps</button>
+            <button type="button" class="sc-stream-seg-btn" role="radio" aria-checked="false">Final</button>
+          </div>
+        </div>
+        <div class="dsc-state-col" style="flex:1 1 160px">
+          <div class="dsc-sub-label">Hover on unselected</div>
+          <div class="sc-stream-seg" role="radiogroup">
+            <button type="button" class="sc-stream-seg-btn is-on" role="radio" aria-checked="true">Left</button>
+            <button type="button" class="sc-stream-seg-btn is-hover" role="radio" aria-checked="false">Right</button>
+          </div>
+        </div>
+        <div class="dsc-state-col" style="flex:1 1 200px">
+          <div class="dsc-sub-label">Disabled (master switch off)</div>
+          <div class="sc-stream-detail is-disabled" style="margin:0">
+            <div class="sc-stream-seg" role="radiogroup">
+              <button type="button" class="sc-stream-seg-btn is-on" role="radio" aria-checked="true" disabled>Full</button>
+              <button type="button" class="sc-stream-seg-btn" role="radio" aria-checked="false" disabled>Steps</button>
+              <button type="button" class="sc-stream-seg-btn" role="radio" aria-checked="false" disabled>Final</button>
+            </div>
+          </div>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Switch',
+    cat: 'Actions',
+    cls: '.sc-switch (+ .sc-switch--pink) \u00b7 .sc-mcp-item.is-on',
+    used: 'Chat \u22ef toggles \u00b7 Appearance rows \u00b7 History filters \u2014 on/off, not a segmented pick',
+    note: 'The track is the state. Off is muted; on fills brand. Admin rows that should read as caution use the pink fill. Never replace this with a row highlight.',
+    noteIcon: 'toggle_on',
+    demo: `
+      <div class="dsc-states">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Off</div>
+          <button type="button" class="topbar-menu-item sc-mcp-item" role="menuitemcheckbox" aria-checked="false"><span>Activity strip</span><span class="sc-switch" aria-hidden="true"></span></button>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">On</div>
+          <button type="button" class="topbar-menu-item sc-mcp-item is-on" role="menuitemcheckbox" aria-checked="true"><span>Activity strip</span><span class="sc-switch" aria-hidden="true"></span></button>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">On \u00b7 Admin pink</div>
+          <button type="button" class="topbar-menu-item sc-mcp-item is-on" role="menuitemcheckbox" aria-checked="true"><span>Compact spacing</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Width toggle',
+    cat: 'Actions',
+    cls: '.panel-width-toggle-btn (+ .is-on) \u00b7 panel-wide / panel-triple / panel-fill / panel-custom',
+    used: 'Every module header except Navigation and the minimized History rail',
+    note: 'One control, five rest states: single \u2192 double \u2192 triple \u2192 fill \u2192 custom, then back. The Motion &amp; Resize card for Width tiers is the same control running live. Chat load default is a property of the display, not the last toggle.',
+    noteIcon: 'width_wide',
+    demo: `
+      <div class="dsc-states">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Single</div>
+          <button type="button" class="panel-width-toggle-btn" aria-pressed="false" title="Width (single)" aria-label="Module width, single"><span class="material-symbols-outlined">width_normal</span></button>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Hover</div>
+          <button type="button" class="panel-width-toggle-btn is-hover" aria-pressed="false" title="Width (single)" aria-label="Module width, hover"><span class="material-symbols-outlined">width_normal</span></button>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Double / on</div>
+          <button type="button" class="panel-width-toggle-btn is-on" aria-pressed="true" title="Width (double)" aria-label="Module width, double"><span class="material-symbols-outlined">width_wide</span></button>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Fill</div>
+          <button type="button" class="panel-width-toggle-btn is-on" aria-pressed="true" title="Width (fill)" aria-label="Module width, fill"><span class="material-symbols-outlined">width_full</span></button>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Custom</div>
+          <button type="button" class="panel-width-toggle-btn is-on" aria-pressed="true" title="Width (custom)" aria-label="Module width, custom"><span class="material-symbols-outlined">tune</span></button>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Empty states',
+    cat: 'Feedback',
+    cls: '.adm-empty \u00b7 .wt-empty \u00b7 .wise-app-search-empty \u00b7 .wch-ask-empty',
+    used: 'Admin lists, Turns, App search, What can I ask? \u2014 when a filter or a new surface has nothing yet',
+    note: 'Quiet centred copy, never an illustration tile. Lists say nothing matched the filter; Turns says ask a question first. Search names the query in the empty line.',
+    noteIcon: 'inbox',
+    demo: `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col" style="flex:1 1 200px">
+          <div class="dsc-sub-label">List filter</div>
+          <div class="adm-empty">No organizations match these filters.</div>
+        </div>
+        <div class="dsc-state-col" style="flex:1 1 200px">
+          <div class="dsc-sub-label">Turns</div>
+          <div class="wt-empty">No turns yet.<br>Ask a question, then fork any turn from here.</div>
+        </div>
+        <div class="dsc-state-col" style="flex:1 1 200px">
+          <div class="dsc-sub-label">Search</div>
+          <div class="wise-app-search-empty">No files, reports, or documents match <strong>oat milk</strong>.</div>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Nutrition Facts',
+    wide: true,
+    cat: 'Chat & drawers',
+    cls: '#nfp-panel \u00b7 .nfp-nf-panel \u00b7 .nfp-barcode-svg \u00b7 .nfp-hero',
+    used: 'Add Product \u00b7 View Product \u2014 sticky drawer to the right of chat',
+    note: 'The FDA-style facts label plus the product hero and barcode. Sits as a sticky drawer at z-index 1, under the chat and over the progress tracker. Count-up animates the calories numeral. The label itself stays black-on-white in both themes so it still reads as a printed panel. On Add / View Product the label can grow with extra nutrient rows; that height drives the ingredients column beside it, which never shrinks below the remaining module-body fill (the height it has on a typical product).',
+    noteIcon: 'nutrition',
+    demo: `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Facts label</div>
+          <div class="nfp-nf-panel mi-nfp-demo">
+            <div class="nfp-nf-title">Nutrition Facts</div>
+            <div class="nfp-nf-serving">
+              <div class="nfp-nf-spc-row">8 servings per container</div>
+              <div class="nfp-nf-ss-row"><span>Serving size</span><span>1 pastry (50g)</span></div>
+            </div>
+            <div class="nfp-nf-cal-band">
+              <div class="nfp-nf-cal-left"><span class="nfp-nf-cal-sm">Amount per serving</span><span class="nfp-nf-cal-text">Calories</span></div>
+              <span class="nfp-nf-cal-num">210</span>
+            </div>
+            <div class="nfp-nf-dv-hdr">% Daily Value*</div>
+            <div class="nfp-nf-row"><span class="nfp-nf-main"><strong>Total Fat</strong>&nbsp;9g</span><span class="nfp-nf-dv">12%</span></div>
+            <div class="nfp-nf-row nfp-nf-ind1"><span class="nfp-nf-main">Saturated Fat 3.5g</span><span class="nfp-nf-dv">18%</span></div>
+            <div class="nfp-nf-row"><span class="nfp-nf-main"><strong>Sodium</strong>&nbsp;180mg</span><span class="nfp-nf-dv">8%</span></div>
+            <div class="nfp-nf-row"><span class="nfp-nf-main"><strong>Total Carbohydrate</strong>&nbsp;30g</span><span class="nfp-nf-dv">11%</span></div>
+          </div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Barcode slot</div>
+          <div class="mi-nfp-upc">
+            <svg class="nfp-barcode-svg" width="180" height="56" viewBox="0 0 180 56" aria-hidden="true">${Array.from({ length: 48 }, (_, i) => `<rect x="${4 + i * 3.6}" y="4" width="${i % 5 === 0 ? 2.4 : 1.2}" height="40" fill="#111"/>`).join('')}</svg>
+            <div class="mi-nfp-upc-digits">8 57287 00420 3</div>
+          </div>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Progress tracker',
+    wide: true,
+    cat: 'Chat & drawers',
+    cls: '.vf-progress-pane \u00b7 .vfp-step (--done / --active / --err) \u00b7 .vfp-progress-fill',
+    used: 'Add Product \u00b7 View Product \u00b7 Add Catalog \u00b7 Non-UPF and GRAS verification \u2014 the rightmost nested drawer',
+    note: 'Always sticky, always one layer under the pane to its left (z-index 0, shorter). Steps: pending, active, done, error. The \u22ef menu can Remove panel; a restore tab stays on the row\u2019s right edge. Count-up on the percent.',
+    noteIcon: 'checklist',
+    demo: `
+      <div class="vfp-inner mi-vfp-demo" style="max-width:280px;width:100%">
+        <div class="vfp-header">
+          <div class="vfp-pct-ring" style="--pct:50"><span>50%</span></div>
+          <div class="vfp-header-text">
+            <div class="vfp-title">Add product progress</div>
+            <div class="vfp-subtitle">Flax4Life \u00b7 8 steps</div>
+          </div>
+        </div>
+        <div class="vfp-progress">
+          <div class="vfp-progress-head"><span>4 of 8 steps</span><span class="vfp-progress-pct">50%</span></div>
+          <div class="vfp-progress-track"><div class="vfp-progress-fill" style="width:50%"></div></div>
+        </div>
+        <div class="vfp-steps">
+          <div class="vfp-step vfp-step--done"><div class="vfp-step-track"><div class="vfp-step-num"><span class="material-symbols-outlined">check</span></div><div class="vfp-step-line"></div></div><div class="vfp-step-body"><div class="vfp-step-title">Photo</div></div></div>
+          <div class="vfp-step vfp-step--done"><div class="vfp-step-track"><div class="vfp-step-num"><span class="material-symbols-outlined">check</span></div><div class="vfp-step-line"></div></div><div class="vfp-step-body"><div class="vfp-step-title">Category</div></div></div>
+          <div class="vfp-step vfp-step--active"><div class="vfp-step-track"><div class="vfp-step-num">3</div><div class="vfp-step-line"></div></div><div class="vfp-step-body"><div class="vfp-step-title">UPC / barcode</div><div class="vfp-step-sub">12 digits</div></div></div>
+          <div class="vfp-step vfp-step--err"><div class="vfp-step-track"><div class="vfp-step-num"><span class="material-symbols-outlined">error</span></div><div class="vfp-step-line"></div></div><div class="vfp-step-body"><div class="vfp-step-title">Nutrition</div><div class="vfp-step-sub">Calories and serving size required</div></div></div>
+          <div class="vfp-step"><div class="vfp-step-track"><div class="vfp-step-num">5</div></div><div class="vfp-step-body"><div class="vfp-step-title">Ingredients</div><div class="vfp-step-sub">Pending</div></div></div>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Jam strip',
+    wide: true,
+    cat: 'Navigation',
+    cls: '.jam-strip \u00b7 .jam-play \u00b7 .jam-eq \u00b7 .jam-song (+ .is-playing, .is-active)',
+    used: 'Primary nav on every app page \u2014 off by default; Appearance switch turns it on',
+    note: 'Play/pause pill, live equalizer, track chips. Idle shimmer when paused; bounce plus a brand-gradient pill while a tune plays. The collapsed icon rail keeps only the pill + a compact EQ. Not a boxed icon tile \u2014 the play control is a circle.',
+    noteIcon: 'graphic_eq',
+    demo: `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col" style="flex:1 1 100%">
+          <div class="dsc-sub-label">Idle</div>
+          <div class="jam-strip mi-jam-demo" role="group" aria-label="WISE jam bar">
+            <button type="button" class="jam-play" aria-label="Play the jam" aria-pressed="false"><span class="material-symbols-outlined jam-play-icon">play_arrow</span></button>
+            <div class="jam-eq" aria-hidden="true">${demoJamEq(24)}</div>
+            <div class="jam-songs" role="group">
+              <button type="button" class="jam-song">WISE</button>
+              <button type="button" class="jam-song">Orbit</button>
+              <button type="button" class="jam-song">Helix</button>
+            </div>
+          </div>
+        </div>
+        <div class="dsc-state-col" style="flex:1 1 100%">
+          <div class="dsc-sub-label">Playing</div>
+          <div class="jam-strip mi-jam-demo is-playing" role="group" aria-label="WISE jam bar">
+            <button type="button" class="jam-play" aria-label="Pause the jam" aria-pressed="true"><span class="material-symbols-outlined jam-play-icon">pause</span></button>
+            <div class="jam-eq" aria-hidden="true">${demoJamEq(24)}</div>
+            <div class="jam-songs" role="group">
+              <button type="button" class="jam-song is-active">WISE</button>
+              <button type="button" class="jam-song">Orbit</button>
+              <button type="button" class="jam-song">Helix</button>
+            </div>
+          </div>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'App search',
+    wide: true,
+    cat: 'Navigation',
+    cls: '.wise-app-search \u00b7 .wise-app-search-hit \u00b7 .wise-app-search-empty',
+    used: 'Nav footer search on every app page when Appearance \u203a Search is on',
+    note: 'Indexes transcripts, outputs, and reports. Results group by type; locked hits wear a lock. Empty names the query. Hands off through session keys so a hit can reopen the matching chat or report.',
+    noteIcon: 'search',
+    demo: `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col" style="flex:1 1 260px">
+          <div class="dsc-sub-label">Idle</div>
+          <div class="wise-app-search mi-search-demo">
+            <div class="wise-app-search-inner">
+              <div class="wise-app-search-field">
+                <span class="wise-app-search-ph" aria-hidden="true"><span class="material-symbols-outlined">search</span><span class="wise-app-search-ph-label">Search reports, files, and documents</span></span>
+                <input type="search" class="wise-app-search-input" placeholder="" aria-label="Search reports, files, and documents" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="dsc-state-col" style="flex:1 1 260px">
+          <div class="dsc-sub-label">Results</div>
+          <div class="wise-app-search mi-search-demo">
+            <div class="wise-app-search-results" role="listbox" style="display:block">
+              <section class="wise-app-search-group">
+                <h3 class="wise-app-search-group-title">Chats</h3>
+                <button type="button" class="wise-app-search-hit" role="option">
+                  <span class="material-symbols-outlined wise-app-search-hit-ico">forum</span>
+                  <span class="wise-app-search-hit-body">
+                    <span class="wise-app-search-hit-title">Compare oat milk vs almond milk</span>
+                    <span class="wise-app-search-hit-where">WISEcodeAI \u00b7 today</span>
+                  </span>
+                </button>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Crawl \u00b7 Walk \u00b7 Run',
+    cat: 'Navigation',
+    cls: '#cwr-toggle \u00b7 .cwr-btn [aria-checked] \u00b7 html.cwr-roll / -crawl / -walk / -run',
+    used: 'Floating segmented control on every app page \u2014 ON by default in Run',
+    note: 'Four rollout modes: <strong>Roll</strong> (stripped nav), <strong>Crawl</strong> (no chat, modules fill), <strong>Walk</strong> (chat on, composer locked), <strong>Run</strong> (composer unlocked). The live widget lives in shadow DOM so page button styles cannot restyle it; this demo mirrors the same four states. Drag to move; double-click restores the right-edge seat.',
+    noteIcon: 'directions_run',
+    demo: `
+      <div class="dsc-states">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Run selected (default)</div>
+          <div class="mi-cwr" role="radiogroup" aria-label="Rollout mode">
+            <button type="button" class="cwr-btn" role="radio" aria-checked="false"><span class="material-symbols-outlined">cached</span><span class="cwr-btn-label">Roll</span></button>
+            <button type="button" class="cwr-btn" role="radio" aria-checked="false"><span class="material-symbols-outlined">child_care</span><span class="cwr-btn-label">Crawl</span></button>
+            <button type="button" class="cwr-btn" role="radio" aria-checked="false"><span class="material-symbols-outlined">directions_walk</span><span class="cwr-btn-label">Walk</span></button>
+            <button type="button" class="cwr-btn" role="radio" aria-checked="true"><span class="material-symbols-outlined">directions_run</span><span class="cwr-btn-label">Run</span></button>
+          </div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Hover on Crawl</div>
+          <div class="mi-cwr" role="radiogroup" aria-label="Rollout mode">
+            <button type="button" class="cwr-btn" role="radio" aria-checked="false"><span class="material-symbols-outlined">cached</span><span class="cwr-btn-label">Roll</span></button>
+            <button type="button" class="cwr-btn is-hover" role="radio" aria-checked="false"><span class="material-symbols-outlined">child_care</span><span class="cwr-btn-label">Crawl</span></button>
+            <button type="button" class="cwr-btn" role="radio" aria-checked="false"><span class="material-symbols-outlined">directions_walk</span><span class="cwr-btn-label">Walk</span></button>
+            <button type="button" class="cwr-btn" role="radio" aria-checked="true"><span class="material-symbols-outlined">directions_run</span><span class="cwr-btn-label">Run</span></button>
+          </div>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Owl walkthrough',
+    wide: true,
+    cat: 'Chat & drawers',
+    cls: '.owt-mod \u00b7 .owt-copy \u00b7 .owt-nav-link \u00b7 .owt-chips',
+    used: 'First login and first visit to a chapter \u2014 docks as a sticky module; replay from Help or Preferences',
+    note: 'Same docked-module shell as What can I ask?. Next opens the real page, not a mockup. Skip a group or the rest; progress is remembered. Headline is serif.',
+    noteIcon: 'auto_awesome',
+    demo: `
+      <div class="mi-owt">
+        <div class="wch-head">
+          <div class="owt-mast">
+            <span class="wch-head-title">WISEowl walkthrough</span>
+            <p class="owt-kicker">Meet WISEowl \u00b7 1 of 3</p>
+          </div>
+        </div>
+        <p class="owt-copy">WISEcode is where brands keep the truth about their products \u2014 and where you ask me anything about food. This walkthrough is the map.</p>
+        <div class="owt-chips" role="navigation" aria-label="Walkthrough groups">
+          <button type="button" class="chip is-selected">Meet WISEowl</button>
+          <button type="button" class="chip">Talk to me</button>
+          <button type="button" class="chip">Your portfolio</button>
+        </div>
+        <div class="owt-nav-move">
+          <button type="button" class="owt-nav-link" disabled>Back</button>
+          <button type="button" class="owt-nav-link owt-nav-link--next">Next</button>
         </div>
       </div>`,
   },
@@ -1504,56 +2526,56 @@ const COMPONENTS = [
     wide: true,
     cls: '.adm-table · .adm-thead / .adm-trow · .adm-th(--sortable/--num) · .adm-td(--actions/--num) · .adm-idcell · .adm-avatar · .adm-chip · .adm-rowmenu · .wtp-foot',
     used: 'Organizations · User Management · Audit Queue · Non-UPF Dashboard · Quick Invite · Invoices · Portfolio · Ingredient Browser · Guiding Stars · Reformulation — every admin & module list',
-    note: 'One CSS-grid pattern (no <code>&lt;table&gt;</code>) driven by <code>--adm-cols</code>. Cell types, left to right: <strong>bare kebab</strong> (no circled chip), <strong>identity</strong> (avatar + name + sub), <strong>status chip</strong>, <strong>date</strong> (value, empty dash, or date + via), <strong>numeric</strong> (hot vs zero), <strong>score</strong> (serif numeral), <strong>Guiding Stars</strong>, <strong>currency</strong>. Sort + paging attach app-wide. The demo is marked <code>data-wtp-skip</code> so the shared pager does not inject a second footer.',
+    note: 'One CSS-grid pattern (no <code>&lt;table&gt;</code>) driven by <code>--adm-cols</code>. Cell types, left to right: <strong>bare kebab</strong> (no circled chip), <strong>identity</strong> (avatar + name + sub), <strong>status chip</strong>, <strong>stacked dates</strong> (two lines, header ⋮ picks created / joined / last active / last edited), <strong>numeric</strong> (hot vs zero), <strong>score</strong> (serif numeral), <strong>Guiding Stars</strong>, <strong>currency</strong>. Sort + paging attach app-wide. The demo is marked <code>data-wtp-skip</code> so the shared pager does not inject a second footer.',
     noteIcon: 'table_rows',
     demo: `
       <div class="adm-table-card adm-card" style="width:100%">
-        <div class="adm-table" data-wtp-skip data-no-paginate style="--adm-cols: 36px minmax(150px, 1.5fr) 108px 96px 52px 56px 78px 64px">
+        <div class="adm-table" data-wtp-skip data-no-paginate data-w-date-root style="--adm-cols: 36px minmax(150px, 1.5fr) 108px 168px 52px 56px 78px 64px">
           <div class="adm-thead">
             <span class="adm-th" title="Actions"> </span>
             <span class="adm-th adm-th--sortable" data-adm-dir="asc">Identity ${ARROW_SVG_DEMO}</span>
             <span class="adm-th adm-th--sortable">Status ${ARROW_SVG_DEMO}</span>
-            <span class="adm-th adm-th--sortable">Date ${ARROW_SVG_DEMO}</span>
+            <span class="adm-th adm-th--sortable w-date-th">${(window.WiseDateCol && window.WiseDateCol.headerHtml({ kinds: 'org', lead: 'joined' })) || 'Date'}${ARROW_SVG_DEMO}</span>
             <span class="adm-th adm-th--num adm-th--sortable">Count ${ARROW_SVG_DEMO}</span>
             <span class="adm-th adm-th--num adm-th--sortable">Score ${ARROW_SVG_DEMO}</span>
             <span class="adm-th">Stars</span>
             <span class="adm-th adm-th--num adm-th--sortable">Amount ${ARROW_SVG_DEMO}</span>
           </div>
           <div class="adm-trow">
-            <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
+            <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
             <span class="adm-td"><span class="adm-idcell"><span class="adm-avatar">AB</span><span class="adm-idcell-body"><span class="adm-idcell-name"><a href="#" onclick="return false">Abbot's Butcher</a></span><span class="adm-idcell-sub">Independent Food/Beverage Brand</span></span></span></span>
             <span class="adm-td"><span class="adm-chip adm-chip--green"><span class="material-symbols-outlined">check</span>Active</span></span>
-            <span class="adm-td"><span class="adm-idcell-body"><span style="font-weight:600">Jun 26, 2026</span><span class="adm-idcell-sub">Invitation</span></span></span>
+            <span class="adm-td"><span class="w-datecell">${(window.WiseDateCol && window.WiseDateCol.cellHtml(window.WiseDateCol.complete({ joined: 'Jun 26, 2026' }, 'org'), 'org', 'joined')) || 'Jun 26, 2026'}</span></span>
             <span class="adm-td adm-td--num is-hot">6</span>
             <span class="adm-td adm-td--num dsc-score">82</span>
             <span class="adm-td"><span class="dsc-gs" aria-label="3 Guiding Stars"><span class="material-symbols-outlined dsc-gs-on">star</span><span class="material-symbols-outlined dsc-gs-on">star</span><span class="material-symbols-outlined dsc-gs-on">star</span></span></span>
             <span class="adm-td adm-td--num dsc-amt">$1,284</span>
           </div>
           <div class="adm-trow">
-            <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
+            <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
             <span class="adm-td"><span class="adm-idcell"><span class="adm-avatar adm-avatar--round">MC</span><span class="adm-idcell-body"><span class="adm-idcell-name">maya.chen</span><span class="adm-idcell-sub">maya@flax4life.com</span><span class="adm-idcell-sub">ID: 10482</span></span></span></span>
             <span class="adm-td"><span class="adm-chip adm-chip--amber"><span class="material-symbols-outlined">hourglass_top</span>Pending</span></span>
-            <span class="adm-td" style="font-size:0.8rem">Apr 18, 2026</span>
+            <span class="adm-td"><span class="w-datecell">${(window.WiseDateCol && window.WiseDateCol.cellHtml(window.WiseDateCol.complete({ joined: 'Apr 18, 2026' }, 'org'), 'org', 'joined')) || 'Apr 18, 2026'}</span></span>
             <span class="adm-td adm-td--num is-hot">3</span>
             <span class="adm-td adm-td--num dsc-score">64</span>
             <span class="adm-td"><span class="dsc-gs" aria-label="2 Guiding Stars"><span class="material-symbols-outlined dsc-gs-on">star</span><span class="material-symbols-outlined dsc-gs-on">star</span><span class="material-symbols-outlined dsc-gs-off">star</span></span></span>
             <span class="adm-td adm-td--num dsc-amt">$420</span>
           </div>
           <div class="adm-trow">
-            <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
+            <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
             <span class="adm-td"><span class="adm-idcell"><span class="adm-idcell-body"><span class="adm-idcell-name">Toasted Coconut Brownies</span><span class="adm-idcell-sub dsc-mono">UPC · 8 57287 00420 3</span></span></span></span>
             <span class="adm-td"><span class="adm-chip adm-chip--blue"><span class="material-symbols-outlined">gpp_good</span>Verified</span></span>
-            <span class="adm-td" style="font-size:0.8rem">May 2, 2026</span>
+            <span class="adm-td"><span class="w-datecell">${(window.WiseDateCol && window.WiseDateCol.cellHtml(window.WiseDateCol.complete({ joined: 'May 2, 2026' }, 'org'), 'org', 'joined')) || 'May 2, 2026'}</span></span>
             <span class="adm-td adm-td--num is-hot">12</span>
             <span class="adm-td adm-td--num dsc-score">71</span>
             <span class="adm-td"><span class="dsc-gs" aria-label="1 Guiding Star"><span class="material-symbols-outlined dsc-gs-on">star</span><span class="material-symbols-outlined dsc-gs-off">star</span><span class="material-symbols-outlined dsc-gs-off">star</span></span></span>
             <span class="adm-td adm-td--num dsc-amt">$86</span>
           </div>
           <div class="adm-trow">
-            <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
+            <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
             <span class="adm-td"><span class="adm-idcell"><span class="adm-avatar">BF</span><span class="adm-idcell-body"><span class="adm-idcell-name">Brave Foods</span><span class="adm-idcell-sub">Independent Food/Beverage Brand</span></span></span></span>
             <span class="adm-td"><span class="adm-chip adm-chip--outline">Invited</span></span>
-            <span class="adm-td" style="font-size:0.8rem"><span style="color:var(--text-subtle)">—</span></span>
+            <span class="adm-td"><span class="w-datecell">${(window.WiseDateCol && window.WiseDateCol.cellHtml({ joined: '—', created: '—', active: '—', edited: '—' }, 'org', 'joined')) || '—'}</span></span>
             <span class="adm-td adm-td--num">0</span>
             <span class="adm-td adm-td--num" style="color:var(--text-subtle)">—</span>
             <span class="adm-td"><span class="dsc-gs" aria-label="0 Guiding Stars"><span class="material-symbols-outlined dsc-gs-off">star</span><span class="material-symbols-outlined dsc-gs-off">star</span><span class="material-symbols-outlined dsc-gs-off">star</span></span></span>
@@ -2361,7 +3383,8 @@ function usedByComps(name) {
   return COMP_GRAPH.usedBy.get(name) || [];
 }
 
-/* Directory modules named in a component's "Used in" prose. */
+/* Directory modules named in a component's "Used in" prose.
+   Same resolver the Module Directory inverts — keep the two lists twins. */
 function modulesForUsed(used) {
   const flat = dirModulesFlat();
   const seen = new Set();
@@ -2372,8 +3395,16 @@ function modulesForUsed(used) {
     out.push(m);
   };
   hrefsForUsed(used).forEach((h) => {
-    const file = String(h).split('#')[0];
-    add(flat.find((m) => m.href === h) || flat.find((m) => String(m.href).split('#')[0] === file));
+    const href = String(h);
+    const file = href.split('#')[0];
+    const hashed = href.indexOf('#') !== -1;
+    if (hashed) {
+      add(flat.find((m) => m.href === href));
+      return;
+    }
+    const matches = flat.filter((m) => m.href === href || String(m.href).split('#')[0] === file);
+    if (matches.length) matches.forEach(add);
+    else add(flat.find((m) => String(m.href).split('#')[0] === file));
   });
   String(used || '').split(/[·•]/).forEach((raw) => {
     const p = raw.replace(/\([^)]*\)/g, '').replace(/—.*$/, '').trim().toLowerCase();
@@ -2381,6 +3412,8 @@ function modulesForUsed(used) {
     const exact = flat.find((m) => m.label.toLowerCase() === p);
     if (exact) add(exact);
   });
+  const order = new Map(flat.map((m, i) => [m.href, i]));
+  out.sort((a, b) => (order.get(a.href) ?? 999) - (order.get(b.href) ?? 999));
   return out;
 }
 
@@ -2432,6 +3465,7 @@ const USED_HREF_RULES = [
   { re: /ingredient browser/, hrefs: ['ingredient-browser.html'] },
   { re: /ai dashboard/, hrefs: ['ai-dashboard.html'] },
   { re: /studio\s*&\s*ai|studio&ai/, hrefs: ['studio-ai.html'] },
+  { re: /add catalog/, hrefs: ['add-catalog.html'] },
   { re: /add product/, hrefs: ['add-product.html'] },
   { re: /quick invite/, hrefs: ['quick-invite.html'] },
   { re: /user management/, hrefs: ['user-management.html'] },
@@ -2446,9 +3480,21 @@ const USED_HREF_RULES = [
   { re: /\bgras\b/, hrefs: ['gras-verification.html', 'verification.html'] },
   { re: /\breformulation\b/, hrefs: ['reformulation.html', 'reformulation.html#dashboard'] },
   { re: /wiseai\.html#history|wisecodeai history/, hrefs: ['wiseai.html#history'] },
-  { re: /studio chat|wisecodeai welcome|in-conversation reply|wisecodeai dock/, hrefs: ['wiseai.html'] },
+  { re: /wiseai\.html#turns|\bturns module\b/, hrefs: ['wiseai.html#turns'] },
+  { re: /wiseai\.html#data-sources|data sources/, hrefs: ['wiseai.html#data-sources'] },
+  { re: /help or preferences|\bpreferences\b/, hrefs: ['help.html', 'preferences.html'] },
+  { re: /add product \u00b7 view product|view product/, hrefs: ['add-product.html', 'view-product.html'] },
   { re: /\bauth\b|sign in|sign up|signup/, hrefs: ['login.html', 'create-account.html', 'forgot-password.html'] },
   { re: /\balerts\b/, hrefs: ['alerts.html'] },
+  { re: /marketing assets/, hrefs: ['marketing-assets.html'] },
+  { re: /\bmy profile\b|\bprofile\b/, hrefs: ['profile.html'] },
+  { re: /\bdocs\b/, hrefs: ['docs.html'] },
+  { re: /\bagents\b/, hrefs: ['agents.html'] },
+  { re: /api keys/, hrefs: ['api-keys.html'] },
+  { re: /accessibility/, hrefs: ['accessibility-review.html'] },
+  { re: /progress log/, hrefs: ['progress-log.html'] },
+  { re: /all modules|this page/, hrefs: ['all-modules.html'] },
+  { re: /\bhelp\b/, hrefs: ['help.html'] },
   { re: /portfolio table|\.pf-stats|\.pf-rowmenu|portfolio \(\.pf/, hrefs: ['product-portfolio.html'] },
 ];
 
@@ -2457,10 +3503,12 @@ function hrefsForUsed(used) {
   const hrefs = new Set();
   const add = (list) => { (list || []).forEach((h) => hrefs.add(h)); };
 
-  if (/\bevery (app )?page\b|\bapp-wide\b|\bevery #modules-row page\b|\bagent shell\b/.test(t)) {
+  /* Shared chrome on every agent-shell / #modules-row page. */
+  if (/\bevery (app )?page\b|\bapp-wide\b|\bevery #modules-row page\b|\bagent shell\b|\bevery module header\b|\bevery module to the right\b/.test(t)) {
     add(appDirHrefs());
   }
-  if (/\bevery chat welcome\b|\bevery wisecodeai turn\b/.test(t)) {
+  /* Chat lives on every agent page via the WISEcodeAI dock — not only wiseai.html. */
+  if (/\bevery chat\b|\bevery wisecodeai\b|\bwisecodeai dock\b|\bstudio chat\b|\bwisecodeai welcome\b|\bin-conversation reply\b|\bevery surface\b|\bchat [⋯\u22ef]\b|\bchat composer\b/.test(t)) {
     add(appDirHrefs());
   }
   USED_HREF_RULES.forEach((rule) => {
@@ -2480,10 +3528,10 @@ function rebuildModuleCompIndex() {
   const map = new Map();
   dirModulesFlat().forEach((m) => { if (!map.has(m.href)) map.set(m.href, []); });
   COMPONENTS.forEach((c) => {
-    hrefsForUsed(c.used).forEach((href) => {
-      const list = map.get(href) || [];
+    modulesForUsed(c.used).forEach((m) => {
+      const list = map.get(m.href) || [];
       if (!list.some((x) => x.name === c.name)) list.push(c);
-      map.set(href, list);
+      map.set(m.href, list);
     });
   });
   COMPS_BY_MODULE_HREF = map;
@@ -2491,7 +3539,26 @@ function rebuildModuleCompIndex() {
 
 function componentsUsedByModule(m) {
   if (!COMPS_BY_MODULE_HREF) rebuildModuleCompIndex();
-  return COMPS_BY_MODULE_HREF.get(m && m.href) || [];
+  const href = m && m.href;
+  const exact = COMPS_BY_MODULE_HREF.get(href);
+  /* Catalogued modules keep the inverted list, even when it is empty
+     (marketing / auth often have no shared chrome). Unaccounted pages
+     inherit Overview's agent-shell set so the Dev Ready rows still appear. */
+  if (Array.isArray(exact) && (exact.length || (m && m.area) !== 'unaccounted')) return exact;
+  const file = String(href || '').split('#')[0];
+  if (!file) return exact || [];
+  const merged = [];
+  const seen = new Set();
+  COMPS_BY_MODULE_HREF.forEach((list, h) => {
+    if (String(h).split('#')[0] !== file) return;
+    (list || []).forEach((c) => {
+      if (seen.has(c.name)) return;
+      seen.add(c.name);
+      merged.push(c);
+    });
+  });
+  if (merged.length) return merged;
+  return COMPS_BY_MODULE_HREF.get('overview.html') || exact || [];
 }
 
 function paneCompsHTML(comps, title, opts) {
@@ -2635,14 +3702,9 @@ function paintReadyProgress(pill, stats) {
 /* Stable child ids — MUST match the ids the child toggles render with. */
 function motionReadyId(item) { return 'motion:' + item.title; }
 function tableReadyId(t) { return 'tbl:' + (t.selector || t.label); }
-function intentReadyId(surf) { return 'int:' + surf.href; }
-function iconReadyId(g) { return 'icon:' + g.id; }
 
 function tableReadyChildren() {
   return TABLE_CATALOG.map((t) => ({ id: tableReadyId(t), label: t.label }));
-}
-function intentReadyChildren() {
-  return INTENT_AUDIT.map((s) => ({ id: intentReadyId(s), label: s.label }));
 }
 function traceReadyChildren() {
   return [
@@ -2651,9 +3713,6 @@ function traceReadyChildren() {
     { id: 'trace:done', label: 'Finished' },
     { id: 'trace:detail', label: 'Streaming detail' },
   ];
-}
-function iconReadyChildren() {
-  return ((ICON_INVENTORY && ICON_INVENTORY.groups) || []).map((g) => ({ id: iconReadyId(g), label: g.label }));
 }
 
 /* De-duped directory sections — shared by the directory render and the tree so
@@ -2678,7 +3737,7 @@ function designReadyGroups() {
   return [
     ...FONT_FAMILIES.map((f) => ({ id: dsFontReadyId(f), label: f.name })),
     ...TYPE_SCALE.map((t) => ({ id: dsTypeReadyId(t), label: t.name })),
-    ...COLOR_GROUPS.map((g) => ({ id: 'ds:' + g.title, label: g.title })),
+    ...COLOR_GROUPS.map((g) => ({ id: 'ds:' + g.title, label: colorGroupTitle(g) })),
   ];
 }
 
@@ -2690,10 +3749,12 @@ function buildDevReadyTree() {
   DEV_READY_PARENT = {};
   registerReadyChildren('mi-directory', dedupedDirSections().map((s) => ({ id: 'dir:' + s.tone, label: s.title })));
   registerReadyChildren('mi-tables', tableReadyChildren());
-  registerReadyChildren('mi-intents', intentReadyChildren());
+  /* Intent Chip Logic is an audit index, like Codebase — it is not in this
+     tree and has no Dev Ready chrome. */
   registerReadyChildren('mi-trace', traceReadyChildren());
   registerReadyChildren('mi-motion', MOTION_ITEMS.map((i) => ({ id: motionReadyId(i), label: i.title })));
-  registerReadyChildren('mi-icons', iconReadyChildren());
+  /* Icon Inventory is one library — Dev Ready is the module switch, not a
+     per-group count. */
   registerReadyChildren('mi-design', designReadyGroups());
   registerReadyChildren('mi-components', COMPONENTS.map((c) => ({ id: c.name, label: c.name })));
 }
@@ -2737,6 +3798,21 @@ function moduleReadyToggleHTML(moduleId, label) {
   return readyToggleHTML(moduleId, label, { level: 'module' });
 }
 
+function themedDemoHTML(demo) {
+  const stage = String(demo || '');
+  return `
+    <div class="dsc-themes">
+      <div class="dsc-theme dsc-theme-light">
+        <div class="dsc-sub-label">Light</div>
+        <div class="dsc-demo">${stage}</div>
+      </div>
+      <div class="dsc-theme dsc-theme-dark">
+        <div class="dsc-sub-label">Dark</div>
+        <div class="dsc-demo">${stage}</div>
+      </div>
+    </div>`;
+}
+
 function componentCard(c, readyMap) {
   const cat = catOf(c);
   const parts = partsOf(c.name);
@@ -2760,7 +3836,7 @@ function componentCard(c, readyMap) {
         <span class="dsc-name">${esc(c.name)}</span>
         <code class="dsc-class">${esc(c.cls)}</code>
       </div>
-      <div class="dsc-demo">${c.demo}</div>
+      ${themedDemoHTML(c.demo)}
       ${note}
       ${download}
       <div class="dsc-refs">
@@ -2784,7 +3860,12 @@ const CONVENTIONS = [
   {
     icon: 'palette',
     title: 'Token-driven color',
-    body: 'No hard-coded colors. Fills and ink come from design tokens (<code>--primary</code>, <code>--surface</code>, <code>--sec-*</code>, <code>--ter-*</code>), so light/dark and status semantics stay consistent everywhere — see the Design System above.',
+    body: 'No hard-coded colors. Fills and ink come from design tokens (<code>--primary</code>, <code>--surface</code>, <code>--sec-*</code>, <code>--ter-*</code>), so light/dark and status semantics stay consistent everywhere — see the Design System above. Each card below shows both themes, not only the page’s current one.',
+  },
+  {
+    icon: 'contrast',
+    title: 'Light and dark',
+    body: 'Dark is a first-class version of every component, not a page-only toggle. The Dark pane uses the same tokens as <code>html.dark</code>; the Light pane pins the light tokens so it stays readable when the rest of the page is navy.',
   },
   {
     icon: 'table_rows',
@@ -2799,7 +3880,12 @@ const CONVENTIONS = [
   {
     icon: 'layers',
     title: 'Two popover shapes',
-    body: 'All menus reduce to two shells — <code>.topbar-popover</code> (compact top-bar / row menus) and <code>.wise-popover</code> (settings / profile). Both are opened and dismissed centrally by <code>js/popover-layer.js</code>.',
+    body: 'All menus reduce to two shells — <code>.topbar-popover</code> (compact top-bar / row menus, including chat and module \u22ef) and <code>.wise-popover</code> (settings / profile). Both are opened and dismissed centrally by <code>js/popover-layer.js</code>. Transcript action tips are the dark <code>.sc-tip</code> card, not a third menu shell.',
+  },
+  {
+    icon: 'view_sidebar',
+    title: 'Sticky drawers are a utility belt',
+    body: 'Any module to the right of the chat tucks behind it like a drawer \u2014 always on, no toggle. The chat is the buckle (z-index 3). Peer drawers (Output, Nutrition Facts, Turns) sit at z-index 1, shorter and centred, with the chat-facing corners squared. Nested drawers (progress, Help contact, Report) sit one layer under their parent (z-index 0, shorter still). History tucks left. Opening a \u22ef never lifts a drawer over the chat.',
   },
   {
     icon: 'accessibility_new',
@@ -2839,10 +3925,11 @@ function renderComponentLibrary() {
           <h2 class="mi-module-title">Component Library</h2>
           <p class="mi-module-lede">Reusable components, rendered live with the real global classes from
             <code>pages/wise.css</code>. Each card is one reusable part — interactive cards show
-            Default, Hover, and Open (or Disabled) side by side. Composite cards list the parts they
-            are <em>made of</em> and who uses them (jump links only; Dev Ready lives on each part’s
-            own card and on Module Directory rows). Search pills, filter tiles, Grid⇄Rail, module ⋯
-            menus, and the page chrome live in the modules above.</p>
+            Default, Hover, and Open (or Disabled) side by side, and every card shows
+            <strong>Light</strong> and <strong>Dark</strong> so theme is a version, not an afterthought.
+            Composite cards list the parts they are <em>made of</em> and who uses them (jump links only;
+            Dev Ready lives on each part’s own card and on Module Directory rows). Search pills, filter
+            tiles, Grid⇄Rail, module ⋯ menus, and the page chrome live in the modules above.</p>
         </div>
         ${moduleReadyToggleHTML('mi-components', 'Component Library')}
         ${moduleControlsHTML('mi-components')}
@@ -3256,7 +4343,7 @@ function intentChipRow(c) {
   const meta = INTENT_STATUS_META[c.status];
   const search = `${c.label} ${c.i} ${c.surface} ${c.does || ''} ${c.status}`.toLowerCase();
   return `
-    <div class="mi-int-trow" data-int-row data-status="${esc(c.status)}" data-search="${esc(search)}">
+    <div class="mi-int-trow" data-int-row data-int-id="${esc(c.href + '::' + c.i)}" data-status="${esc(c.status)}" data-search="${esc(search)}">
       <span class="mi-int-td mi-int-td--chip">
         <span class="mi-int-chip-dot mi-int-dot--${esc(c.status)}" title="${esc(meta.label)}"><span class="material-symbols-outlined">${esc(meta.icon)}</span></span>
         <span class="mi-int-chip-label">${esc(c.label)}</span>
@@ -3317,17 +4404,18 @@ function intentGapCallout(stats) {
     </div>`;
 }
 
+/* Compact surface index — label + chip count, linking to that surface.
+   These chips are not Dev Ready controls. */
 function intentSurfaceReadyStrip() {
   return `
-    <div class="mi-ready-kids" aria-label="Dev Ready by surface">
-      <h3 class="mi-ready-kids-title">Dev Ready by surface</h3>
+    <div class="mi-ready-kids" aria-label="Chips by surface">
+      <h3 class="mi-ready-kids-title">By surface</h3>
       <div class="mi-ready-kids-row">
         ${INTENT_AUDIT.map((s) => `
-          <div class="mi-ready-kid">
+          <a class="mi-ready-kid mi-ready-kid--plain" href="${esc(s.href)}">
             <span class="mi-ready-kid-label">${esc(s.label)}</span>
             <span class="mi-ready-kid-n">${s.chips.length}</span>
-            ${readyToggleHTML(intentReadyId(s), s.label, { level: 'item', parent: 'mi-intents' })}
-          </div>`).join('')}
+          </a>`).join('')}
       </div>
     </div>`;
 }
@@ -3343,9 +4431,8 @@ function renderIntentAudit() {
             is only fully wired when it carries both halves — its own <strong>transcript</strong> (a scripted reply) and its own
             <strong>logic</strong> (an <code>onIntent</code> page action). This table lists all <strong>${stats.chips} chips</strong>
             across <strong>${stats.surfaces} surfaces</strong> with the exact side-effect each one runs. Click a column header to
-            sort. Filter tiles and search narrow the same list. Mark a surface Dev Ready when its chips are signed off.</p>
+            sort. Filter tiles and search narrow the same list.</p>
         </div>
-        ${moduleReadyToggleHTML('mi-intents', 'Intent Chip Logic')}
         ${moduleControlsHTML('mi-intents')}
       </header>
 
@@ -3504,7 +4591,7 @@ function logicPageIndex() {
 function logicRuleRow(page, rule, i) {
   const search = `${page.label} ${page.area} ${rule.title} ${String(rule.how).replace(/<[^>]+>/g, ' ')}`.toLowerCase();
   return `
-    <li class="mi-logic-rule" data-logic-rule data-search="${esc(search)}">
+    <li class="mi-logic-rule" data-logic-rule data-logic-title="${esc(rule.title)}" data-search="${esc(search)}">
       <span class="mi-logic-n" aria-hidden="true">${i + 1}</span>
       <div class="mi-logic-rule-body">
         <div class="mi-logic-rule-title">${esc(rule.title)}</div>
@@ -3547,7 +4634,7 @@ function renderAppLogic() {
         <div class="mi-module-head-text">
           <h2 class="mi-module-title">App Logic</h2>
           <p class="mi-module-lede">The rules the app actually runs on, written down and grouped by page — auth, theme,
-            navigation, pane widths, tables, wizard gating, scoring math, filter semantics and what persists where.
+            navigation, pane widths, the carousel rail, tables, wizard gating, scoring math, filter semantics and what persists where.
             <strong>${rules} rules</strong> across <strong>${APP_LOGIC.length} pages</strong>, of which <strong>${shared}</strong>
             are shared subsystems that run on every page. Each rule names the functions, keys and classes it lives in, and
             each card links to the source files so it can be verified. Filter by area or search any rule.
@@ -4091,8 +5178,8 @@ function wireStreamingTrace(root) {
 /* A live catalog of how things move in the app: count-ups, chart      */
 /* replay, paragraph streaming, gold chip shimmer, chip fly-in,        */
 /* the welcome helix, the thinking helix, and accordion open — plus    */
-/* the four drag/resize systems (module splitter, width tiers,         */
-/* reorder, drag-to-file). Each card explains the rule and runs the    */
+/* the drag/resize systems (module splitter, width tiers, carousel     */
+/* rail, reorder, drag-to-file). Each card explains the rule and runs  */
 /* real behaviour (or a faithful mini of it) so you can try it here.   */
 /* ------------------------------------------------------------------ */
 
@@ -4195,8 +5282,8 @@ const MOTION_ITEMS = [
   {
     id: 'helix', group: 'anim', icon: 'genetics', title: 'Welcome helix', wide: true,
     src: 'js/wiseai-chat.js · createHelixBgAnim',
-    used: 'Every chat welcome — ON by default at 20% opacity, 10° tilt, 100% on every scale + shape knob',
-    lede: 'The ambient DNA/RNA field behind the chat welcome. Product thumbnails travel the strand; move onto a circle for its card — the field pauses while that popover is open and continues when you leave it. Notes (brand insight or look-closer fact) are sprinkled two-of-three along the strand, mixed with food sheets — never a status stamp, and never on their own: a popover opens only when the pointer enters a circle. Default opacity is <strong>20%</strong> and the axis tilt defaults to <strong>10°</strong>. Nine knobs shape the field, each running <strong>25–400%</strong> from a <strong>100%</strong> default (the original strand): a master <strong>Scale</strong> that moves all three axes together, <strong>Scale X / Y / Z</strong> to stretch or pinch one direction, <strong>Pitch</strong> (how tightly the strand twists), <strong>Nodes</strong> (circle size) and <strong>Length</strong> (how far the strand runs), <strong>Thick</strong> (backbone and rung weight) and <strong>Depth</strong> (3-D pop) — same controls as the chat ⋯ menu, where Scale and Nodes also drive the Orbit style. Honors pause and <code>prefers-reduced-motion</code>. The live field starts when this section opens.',
+    used: 'Every chat welcome — ON by default at 20% opacity, 10° tilt, 0° camera, 100% on every scale + shape knob',
+    lede: 'The ambient DNA/RNA field behind the chat welcome. Product thumbnails travel the strand; move onto a circle for its card — the field pauses while that popover is open and continues when you leave it. Notes (brand insight or look-closer fact) are sprinkled two-of-three along the strand, mixed with food sheets — never a status stamp, and never on their own: a popover opens only when the pointer enters a circle. Default opacity is <strong>20%</strong> and the axis tilt defaults to <strong>10°</strong>. <strong>Camera</strong> looks at the corkscrew from above or below (default <strong>0°</strong>). Shape knobs run <strong>1–800%</strong> from a <strong>100%</strong> default (the original strand): a master <strong>Scale</strong> that moves all three axes together, <strong>Scale X / Y / Z</strong>, <strong>Pitch</strong>, <strong>Nodes</strong>, <strong>Dots</strong>, <strong>Length</strong>, <strong>Rungs</strong> (Match pins them to the product circles), <strong>Bar</strong>, <strong>Thick</strong>, <strong>Depth</strong> and <strong>Speed</strong> — plus colour / Still-Pulse-Spark for the beads, and <strong>Fwd / Rev</strong> for which way the helix twists. Same controls as the chat ⋯ menu, where Scale and Nodes also drive the Orbit style. Honors pause and <code>prefers-reduced-motion</code>. The live field starts when this section opens.',
     demo: `
       <div class="mi-motion-helix sc-bganim-host" data-motion-helix>
         <div class="mi-motion-helix-stage" data-helix-body></div>
@@ -4214,6 +5301,21 @@ const MOTION_ITEMS = [
             <span class="mi-motion-helix-opacity-label">Angle</span>
             <input type="range" class="sc-bganim-angle-range" data-helix-angle min="-90" max="90" step="1" value="10" aria-label="Helix angle">
             <span class="sc-bganim-angle-val" data-helix-angle-val>10°</span>
+          </label>
+          <label class="mi-motion-helix-opacity">
+            <span class="mi-motion-helix-opacity-label">Camera</span>
+            <input type="range" class="sc-bganim-camera-range" data-helix-camera min="-90" max="90" step="1" value="0" aria-label="Helix camera elevation">
+            <span class="sc-bganim-camera-val" data-helix-camera-val>0°</span>
+          </label>
+          <label class="mi-motion-helix-opacity">
+            <span class="mi-motion-helix-opacity-label">Side</span>
+            <input type="range" class="sc-bganim-azimuth-range" data-helix-azimuth min="-180" max="180" step="1" value="0" aria-label="Helix camera side">
+            <span class="sc-bganim-azimuth-val" data-helix-azimuth-val>0°</span>
+          </label>
+          <label class="mi-motion-helix-opacity">
+            <span class="mi-motion-helix-opacity-label">Shift</span>
+            <input type="range" class="sc-bganim-shift-range" data-helix-shift min="-100" max="100" step="1" value="0" aria-label="Helix left-right shift">
+            <span class="sc-bganim-shift-val" data-helix-shift-val>0%</span>
           </label>
           <label class="mi-motion-helix-opacity">
             <span class="mi-motion-helix-opacity-label">Scale</span>
@@ -4246,9 +5348,71 @@ const MOTION_ITEMS = [
             <span class="sc-bganim-knob-val" data-helix-knob-val="nodes">100%</span>
           </label>
           <label class="mi-motion-helix-opacity">
+            <span class="mi-motion-helix-opacity-label">Dots</span>
+            <input type="range" class="sc-bganim-knob-range" data-helix-knob="dots" min="0" max="35" step="1" value="15" aria-label="Helix little-node size">
+            <span class="sc-bganim-knob-val" data-helix-knob-val="dots">100%</span>
+          </label>
+          <label class="mi-motion-helix-opacity">
+            <span class="mi-motion-helix-opacity-label">Color</span>
+            <input type="color" class="sc-bganim-dots-color-input" data-helix-dots-color value="#25507c" aria-label="Helix little-node color">
+            <span class="sc-bganim-dots-actions">
+              <button type="button" class="sc-bganim-dots-match" data-helix-dots-match>Match</button>
+              <button type="button" class="sc-bganim-dots-reset" data-helix-dots-reset>Reset</button>
+            </span>
+          </label>
+          <div class="mi-motion-helix-opacity mi-motion-helix-dots-motion">
+            <span class="mi-motion-helix-opacity-label">Motion</span>
+            <div class="sc-stream-seg" role="radiogroup" aria-label="Helix little-node motion">
+              <button type="button" class="sc-stream-seg-btn is-on" data-helix-dots-motion="still" role="radio" aria-checked="true">Still</button>
+              <button type="button" class="sc-stream-seg-btn" data-helix-dots-motion="pulse" role="radio" aria-checked="false">Pulse</button>
+              <button type="button" class="sc-stream-seg-btn" data-helix-dots-motion="spark" role="radio" aria-checked="false">Spark</button>
+            </div>
+          </div>
+          <label class="mi-motion-helix-opacity" data-helix-motion-knob="pulse" data-helix-motion-id="speed" hidden>
+            <span class="mi-motion-helix-opacity-label">Pulse rate</span>
+            <input type="range" class="sc-bganim-motion-knob-range" data-helix-motion="pulse" data-helix-motion-id="speed" min="0" max="35" step="1" value="15" aria-label="Pulse rate">
+            <span class="sc-bganim-motion-knob-val" data-helix-motion-val="pulse-speed">100%</span>
+          </label>
+          <label class="mi-motion-helix-opacity" data-helix-motion-knob="pulse" data-helix-motion-id="length" hidden>
+            <span class="mi-motion-helix-opacity-label">Pulse span</span>
+            <input type="range" class="sc-bganim-motion-knob-range" data-helix-motion="pulse" data-helix-motion-id="length" min="0" max="35" step="1" value="15" aria-label="Pulse span">
+            <span class="sc-bganim-motion-knob-val" data-helix-motion-val="pulse-length">100%</span>
+          </label>
+          <label class="mi-motion-helix-opacity" data-helix-motion-knob="pulse" data-helix-motion-id="size" hidden>
+            <span class="mi-motion-helix-opacity-label">Pulse size</span>
+            <input type="range" class="sc-bganim-motion-knob-range" data-helix-motion="pulse" data-helix-motion-id="size" min="0" max="35" step="1" value="15" aria-label="Pulse size">
+            <span class="sc-bganim-motion-knob-val" data-helix-motion-val="pulse-size">100%</span>
+          </label>
+          <label class="mi-motion-helix-opacity" data-helix-motion-knob="spark" data-helix-motion-id="speed" hidden>
+            <span class="mi-motion-helix-opacity-label">Spark rate</span>
+            <input type="range" class="sc-bganim-motion-knob-range" data-helix-motion="spark" data-helix-motion-id="speed" min="0" max="35" step="1" value="15" aria-label="Spark rate">
+            <span class="sc-bganim-motion-knob-val" data-helix-motion-val="spark-speed">100%</span>
+          </label>
+          <label class="mi-motion-helix-opacity" data-helix-motion-knob="spark" data-helix-motion-id="length" hidden>
+            <span class="mi-motion-helix-opacity-label">Spark span</span>
+            <input type="range" class="sc-bganim-motion-knob-range" data-helix-motion="spark" data-helix-motion-id="length" min="0" max="35" step="1" value="15" aria-label="Spark span">
+            <span class="sc-bganim-motion-knob-val" data-helix-motion-val="spark-length">100%</span>
+          </label>
+          <label class="mi-motion-helix-opacity" data-helix-motion-knob="spark" data-helix-motion-id="size" hidden>
+            <span class="mi-motion-helix-opacity-label">Spark size</span>
+            <input type="range" class="sc-bganim-motion-knob-range" data-helix-motion="spark" data-helix-motion-id="size" min="0" max="35" step="1" value="15" aria-label="Spark size">
+            <span class="sc-bganim-motion-knob-val" data-helix-motion-val="spark-size">100%</span>
+          </label>
+          <label class="mi-motion-helix-opacity">
             <span class="mi-motion-helix-opacity-label">Length</span>
             <input type="range" class="sc-bganim-knob-range" data-helix-knob="length" min="0" max="35" step="1" value="15" aria-label="Helix strand length">
             <span class="sc-bganim-knob-val" data-helix-knob-val="length">100%</span>
+          </label>
+          <label class="mi-motion-helix-opacity">
+            <span class="mi-motion-helix-opacity-label">Rungs</span>
+            <input type="range" class="sc-bganim-knob-range" data-helix-knob="rungs" min="0" max="35" step="1" value="15" aria-label="Helix rung count">
+            <span class="sc-bganim-knob-val" data-helix-knob-val="rungs">100%</span>
+            <button type="button" class="sc-bganim-rungs-match" data-helix-rungs-match>Match</button>
+          </label>
+          <label class="mi-motion-helix-opacity">
+            <span class="mi-motion-helix-opacity-label">Bar</span>
+            <input type="range" class="sc-bganim-knob-range" data-helix-knob="rungthick" min="0" max="35" step="1" value="15" aria-label="Helix rung thickness">
+            <span class="sc-bganim-knob-val" data-helix-knob-val="rungthick">100%</span>
           </label>
           <label class="mi-motion-helix-opacity">
             <span class="mi-motion-helix-opacity-label">Thick</span>
@@ -4259,6 +5423,18 @@ const MOTION_ITEMS = [
             <span class="mi-motion-helix-opacity-label">Depth</span>
             <input type="range" class="sc-bganim-knob-range" data-helix-knob="depth" min="0" max="35" step="1" value="15" aria-label="Helix 3-D depth">
             <span class="sc-bganim-knob-val" data-helix-knob-val="depth">100%</span>
+          </label>
+          <div class="mi-motion-helix-opacity mi-motion-helix-dots-motion">
+            <span class="mi-motion-helix-opacity-label">Spin</span>
+            <div class="sc-stream-seg" role="radiogroup" aria-label="Helix spin direction">
+              <button type="button" class="sc-stream-seg-btn is-on" data-helix-spin="fwd" role="radio" aria-checked="true">Fwd</button>
+              <button type="button" class="sc-stream-seg-btn" data-helix-spin="rev" role="radio" aria-checked="false">Rev</button>
+            </div>
+          </div>
+          <label class="mi-motion-helix-opacity">
+            <span class="mi-motion-helix-opacity-label">Speed</span>
+            <input type="range" class="sc-bganim-knob-range" data-helix-knob="speed" min="0" max="35" step="1" value="15" aria-label="Helix spin speed">
+            <span class="sc-bganim-knob-val" data-helix-knob-val="speed">100%</span>
           </label>
         </div>
       </div>`,
@@ -4291,10 +5467,69 @@ const MOTION_ITEMS = [
       </div>`,
   },
   {
+    id: 'sticky', group: 'anim', icon: 'view_sidebar', title: 'Sticky drawer slide-in',
+    src: 'js/sticky-modules.js · stickySlideRight',
+    used: 'Every #modules-row page with a chat — drawers tuck behind the chat as they open',
+    lede: 'A right-of-chat module does not fade in beside the thread. It slides out from under the chat card (overshoot ease, 0.42s) already tucked, shorter, and squared on the chat-facing edge. Replay to watch the drawer emerge. Nested drawers (progress, Help contact) use the same motion one layer under.',
+    demo: `
+      <div class="dsc-demo mi-motion-sticky" data-motion-sticky>
+        <div class="mi-belt" aria-label="Sticky slide-in">
+          <section class="mi-belt-chat"><span class="mi-belt-name">Chat</span><span class="mi-belt-z">z 3 \u00b7 buckle</span></section>
+          <aside class="mi-belt-mod mi-motion-sticky-slide" data-sticky-slide><span class="mi-belt-name">Output</span><span class="mi-belt-z">z 1 \u00b7 slide-in</span></aside>
+        </div>
+        <button type="button" class="mi-trace-run" data-sticky-run>
+          <span class="material-symbols-outlined">replay</span><span>Replay slide-in</span>
+        </button>
+      </div>`,
+  },
+  {
+    id: 'actstrip', group: 'anim', icon: 'timeline', title: 'Activity strip ticks',
+    src: 'js/chat-activity-strip.js · .wa-activity-tick',
+    used: 'Every chat module — landmark rail on the transcript edge',
+    lede: 'Hover widens a tick from 9px to 14px and reveals the turn ID. Clicking it scrolls that landmark into view and runs a 1.4s gold outline flash. Replay to watch the flash land on the output row.',
+    demo: `
+      <div class="dsc-demo mi-motion-act" data-motion-act>
+        <div class="mi-actstrip" data-ticks="3">
+          <div class="wa-activity-rail"></div>
+          ${demoActTick('output', { hover: true, id: '3a1c' })}
+          ${demoActTick('source', { id: 'b12e' })}
+          ${demoActTick('database', { id: '9f04' })}
+          <div class="mi-actstrip-ghost">
+            <span class="wa-activity-flash-target">Output created</span>
+            <span>Data source added</span>
+            <span>Database switched</span>
+          </div>
+        </div>
+        <button type="button" class="mi-trace-run" data-actstrip-run>
+          <span class="material-symbols-outlined">replay</span><span>Replay flash</span>
+        </button>
+      </div>`,
+  },
+  {
+    id: 'jameq', group: 'anim', icon: 'graphic_eq', title: 'Jam equalizer',
+    src: '.jam-eq · jamEqIdle / jamEq',
+    used: 'Primary nav jam strip — idle shimmer when paused, bounce while a tune plays',
+    lede: 'The 24-bar equalizer never sits still. Idle is a slow shimmer. Playing switches to a staggered bounce and the play pill picks up the brand gradient pulse. Reduced motion freezes the bars.',
+    demo: `
+      <div class="mi-motion-jam">
+        <div class="jam-strip mi-jam-demo" role="group" aria-label="Idle equalizer">
+          <button type="button" class="jam-play" aria-label="Play" aria-pressed="false"><span class="material-symbols-outlined jam-play-icon">play_arrow</span></button>
+          <div class="jam-eq" aria-hidden="true">${demoJamEq(24)}</div>
+          <div class="jam-songs"><button type="button" class="jam-song">WISE</button></div>
+        </div>
+        <div class="jam-strip mi-jam-demo is-playing" role="group" aria-label="Playing equalizer">
+          <button type="button" class="jam-play" aria-label="Pause" aria-pressed="true"><span class="material-symbols-outlined jam-play-icon">pause</span></button>
+          <div class="jam-eq" aria-hidden="true">${demoJamEq(24)}</div>
+          <div class="jam-songs"><button type="button" class="jam-song is-active">WISE</button></div>
+        </div>
+      </div>
+      <p class="mi-motion-hint">Top bar is idle. Bottom bar is playing.</p>`,
+  },
+  {
     id: 'splitter', group: 'drag', icon: 'width_normal', title: 'Module drag-resize', wide: true,
     src: 'js/pane-resize.js',
     used: 'Every #modules-row page — hover the seam between two modules',
-    lede: 'Nothing shows at rest. Hover the edge between two panes and a grip fades in. Drag to preview any width; on release, modules with a width changer <strong>snap to the nearest of four tiers</strong> (single / double / triple / fill). Modules without a width changer keep a free-form width. Double-click a handle to reset. Navigation is never resized.',
+    lede: 'Nothing shows at rest. Hover the edge between two panes and a grip fades in. Drag to preview any width; on release, modules with a width changer <strong>snap to the nearest of four presets</strong> (single / double / triple / fill) unless the fifth setting — <strong>custom</strong> — is on, which keeps the dragged size. Custom also puts the row on the carousel rail (next card). Modules without a width changer keep a free-form width. Double-click a handle to reset. Navigation is never resized.',
     demo: `
       <div class="mi-motion-split" data-motion-split>
         <div class="mi-motion-pane" data-split-pane="a" style="flex: 1 1 46%">
@@ -4315,7 +5550,7 @@ const MOTION_ITEMS = [
     id: 'width', group: 'drag', icon: 'width_wide', title: 'Width tiers',
     src: 'js/pane-width.js · .panel-width-toggle-btn',
     used: 'Every module ⋯ / width button except Navigation and the minimized History rail',
-    lede: 'One control, four rest states: <strong>single → double → triple → fill</strong>, then back. Fill absorbs leftover row space. Drag-resize is only a preview — release snaps to the closest tier by driving this same button.',
+    lede: 'One control, five rest states: <strong>single → double → triple → fill → custom</strong>, then back. Fill absorbs leftover row space. Custom keeps the current width so you can drag it to any size — that is what puts the row on the <strong>carousel rail</strong> (next card). Drag-resize on a preset is only a preview — release snaps to the closest of the four named sizes.',
     demo: `
       <div class="mi-motion-width" data-motion-width>
         <div class="mi-motion-width-row">
@@ -4331,7 +5566,66 @@ const MOTION_ITEMS = [
           <span class="material-symbols-outlined">width_normal</span>
         </button>
       </div>
-      <p class="mi-motion-hint">Tap the width icon to cycle single → double → triple → fill.</p>`,
+      <p class="mi-motion-hint">Tap the width icon to cycle single → double → triple → fill → custom.</p>`,
+  },
+  {
+    id: 'carousel', group: 'drag', icon: 'view_carousel', title: 'Carousel rail', wide: true,
+    src: 'js/pane-width.js · #modules-row.modules-carousel',
+    used: 'Every #modules-row page once any module is at custom width',
+    lede: 'Custom width pins each module at the size it already had (or the size you drag to) and puts the whole row on a <strong>carousel rail</strong> you scroll sideways. Shorten the browser and the inner work surface of every module compresses — lists, charts and forms get shorter and scroll inside the card — but the modules themselves keep their width, and chips, type and controls keep their designed size. A shorter window never squeezes or restacks the row. Overflow goes sideways on the rail, not as a squeeze.',
+    demo: `
+      <div class="mi-motion-car" data-motion-car>
+        <label class="mi-motion-helix-opacity">
+          <span class="mi-motion-helix-opacity-label">Browser height</span>
+          <input type="range" class="sc-bganim-knob-range" data-car-h min="42" max="100" step="1" value="100" aria-label="Simulated browser height">
+          <span class="sc-bganim-knob-val" data-car-h-val>100%</span>
+        </label>
+        <div class="mi-motion-car-browser" data-car-browser>
+          <div class="mi-motion-car-chrome">
+            <span class="mi-motion-car-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="mi-motion-car-url">app · modules row</span>
+          </div>
+          <div class="mi-motion-car-row" data-car-row>
+            <article class="mi-motion-car-mod" style="--car-w:260px">
+              <header class="mi-motion-car-mod-head">Chat</header>
+              <div class="mi-motion-car-body">
+                <div class="mi-motion-car-line"></div>
+                <div class="mi-motion-car-line mi-motion-car-line--short"></div>
+                <div class="mi-motion-car-bars" aria-hidden="true"><i style="height:72%"></i><i style="height:48%"></i><i style="height:34%"></i></div>
+                <div class="mi-motion-car-chips"><span>Ask</span><span>Compare</span></div>
+              </div>
+            </article>
+            <article class="mi-motion-car-mod" style="--car-w:300px">
+              <header class="mi-motion-car-mod-head">History</header>
+              <div class="mi-motion-car-body">
+                <div class="mi-motion-car-rowline"></div>
+                <div class="mi-motion-car-rowline"></div>
+                <div class="mi-motion-car-rowline"></div>
+                <div class="mi-motion-car-rowline"></div>
+                <div class="mi-motion-car-chips"><span>Open</span></div>
+              </div>
+            </article>
+            <article class="mi-motion-car-mod" style="--car-w:280px">
+              <header class="mi-motion-car-mod-head">Details</header>
+              <div class="mi-motion-car-body">
+                <div class="mi-motion-car-score no-countup" data-no-countup>86</div>
+                <div class="mi-motion-car-bars" aria-hidden="true"><i style="height:80%"></i><i style="height:55%"></i><i style="height:28%"></i></div>
+                <div class="mi-motion-car-chips"><span>Verify</span><span>Report</span></div>
+              </div>
+            </article>
+            <article class="mi-motion-car-mod" style="--car-w:240px">
+              <header class="mi-motion-car-mod-head">Reports</header>
+              <div class="mi-motion-car-body">
+                <div class="mi-motion-car-line"></div>
+                <div class="mi-motion-car-line mi-motion-car-line--short"></div>
+                <div class="mi-motion-car-rowline"></div>
+                <div class="mi-motion-car-chips"><span>Export</span></div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+      <p class="mi-motion-hint">Drag the slider to shorten the window. Modules keep their width — scroll the rail sideways. Inner surfaces shrink; chips stay the same size.</p>`,
   },
   {
     id: 'reorder', group: 'drag', icon: 'drag_indicator', title: 'Drag to reorder',
@@ -4393,7 +5687,7 @@ const MOTION_ITEMS = [
 function motionCard(item) {
   const search = `${item.title} ${item.src} ${item.used} ${item.group}`.toLowerCase();
   return `
-    <article class="mi-motion-card${item.wide ? ' mi-motion-card--wide' : ''}" data-motion-card data-motion-group="${esc(item.group)}" data-search="${esc(search)}">
+    <article class="mi-motion-card${item.wide ? ' mi-motion-card--wide' : ''}" data-motion-card data-motion-id="${esc(item.id)}" data-motion-group="${esc(item.group)}" data-search="${esc(search)}">
       <header class="mi-motion-card-head">
         <span class="material-symbols-outlined" aria-hidden="true">${esc(item.icon)}</span>
         <div class="mi-motion-card-head-text">
@@ -4417,9 +5711,9 @@ function renderMotion() {
         <div class="mi-module-head-text">
           <h2 class="mi-module-title">Motion &amp; Resize</h2>
           <p class="mi-module-lede">Every animation and every drag/resize interaction in the app — explained and
-            running live. Count-ups, chart replay, streaming, chip shimmer and fly-in, both helixes, and accordion
-            open sit next to the module splitter, the four width tiers, drag-to-reorder, drag-to-file, and
-            drag-to-found-a-folder (Library card-on-card).
+            running live. Count-ups, chart replay, streaming, chip shimmer and fly-in, both helixes, accordion
+            open, sticky drawer slide-in, activity-strip ticks, and the jam equalizer sit next to the module splitter, the five width tiers, the carousel rail, drag-to-reorder,
+            drag-to-file, and drag-to-found-a-folder (Library card-on-card).
             All of it honors <code>prefers-reduced-motion</code>.</p>
         </div>
         ${moduleReadyToggleHTML('mi-motion', 'Motion & Resize')}
@@ -4452,8 +5746,15 @@ function renderMotion() {
           <div class="dsc-conv-item">
             <span class="material-symbols-outlined" aria-hidden="true">width_wide</span>
             <div class="dsc-conv-body">
-              <div class="dsc-conv-item-title">Four-tier snap</div>
-              <p class="dsc-conv-item-desc">A module with a width changer may only <em>rest</em> at single, double, triple, or fill. Drag is a live preview; release snaps to the closest tier by driving the module’s own width button.</p>
+              <div class="dsc-conv-item-title">Five-tier rest</div>
+              <p class="dsc-conv-item-desc">A module with a width changer rests at single, double, triple, or fill — drag is a preview, release snaps. <strong>Custom</strong> is the fifth rest state: no snap, free pixel width, and the row becomes a carousel rail.</p>
+            </div>
+          </div>
+          <div class="dsc-conv-item">
+            <span class="material-symbols-outlined" aria-hidden="true">height</span>
+            <div class="dsc-conv-body">
+              <div class="dsc-conv-item-title">Height shrinks the surface</div>
+              <p class="dsc-conv-item-desc">Shorten the browser and each module’s inner work surface gets shorter. Module widths, chips and controls stay the same size. Overflow goes sideways on the carousel rail — never a squeeze.</p>
             </div>
           </div>
           <div class="dsc-conv-item">
@@ -4487,104 +5788,17 @@ function renderMotion() {
     </section>`;
 }
 
-function wireMotion(root) {
-  const mod = root.querySelector('#mi-motion');
-  if (!mod) return;
-  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  /* ---- Filter tiles ---- */
-  const applyFilter = (filter) => {
-    mod.querySelectorAll('[data-motion-card]').forEach((card) => {
-      card.hidden = filter !== 'all' && card.getAttribute('data-motion-group') !== filter;
-    });
-    mod.querySelectorAll('[data-motion-filter]').forEach((b) => {
-      const on = b.getAttribute('data-motion-filter') === filter;
-      b.classList.toggle('is-active', on);
-      b.setAttribute('aria-pressed', on ? 'true' : 'false');
-    });
-  };
-  mod.querySelector('#mi-motion-stats')?.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-motion-filter]');
-    if (!btn) return;
-    applyFilter(btn.getAttribute('data-motion-filter'));
-  });
-
-  /* ---- Chart replay ---- */
-  const replayChart = (card) => {
-    card.querySelectorAll('.adm-bar-fill').forEach((bar) => {
-      const h = bar.getAttribute('data-h') || '50';
-      bar.style.transition = 'none';
-      bar.style.height = '0%';
-      void bar.offsetHeight;
-      bar.style.transition = reduced ? 'none' : 'height 0.9s cubic-bezier(0.22, 1, 0.36, 1)';
-      bar.style.height = h + '%';
-    });
-  };
-  mod.querySelectorAll('[data-motion-chart]').forEach((card) => {
-    const run = () => replayChart(card);
-    card.addEventListener('click', run);
-    card.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); run(); }
-    });
-  });
-
-  /* ---- Paragraph stream ---- */
-  const STREAM_PARAS = [
-    'The proposal turns today\u2019s voluntary GRAS notification into a mandatory one.',
-    'Anyone introducing a substance under GRAS must notify FDA of the basis.',
-    'Then the thumbs row lands, and the intent chips fly in after the copy.',
-  ];
-  const streamOut = mod.querySelector('[data-stream-out]');
-  const streamRun = mod.querySelector('[data-stream-run]');
-  let streamTimer = 0;
-  const runStream = () => {
-    if (!streamOut) return;
-    clearTimeout(streamTimer);
-    streamOut.innerHTML = STREAM_PARAS.map((p) => `<p class="mi-motion-stream-line">${esc(p)}</p>`).join('');
-    const lines = Array.from(streamOut.querySelectorAll('.mi-motion-stream-line'));
-    if (reduced) return;
-    lines.forEach((el) => {
-      el.style.opacity = '0';
-      el.style.transform = 'translateY(8px)';
-    });
-    let i = 0;
-    const tick = () => {
-      if (i >= lines.length) return;
-      const el = lines[i];
-      el.style.transition = 'opacity .32s ease, transform .32s cubic-bezier(0.22, 0.85, 0.25, 1)';
-      el.style.opacity = '1';
-      el.style.transform = 'none';
-      i += 1;
-      streamTimer = setTimeout(tick, 300);
-    };
-    streamTimer = setTimeout(tick, 40);
-  };
-  streamRun?.addEventListener('click', runStream);
-
-  /* ---- Chip fly-in ---- */
-  const flyChips = Array.from(mod.querySelectorAll('[data-fly-chip]'));
-  const runFly = () => {
-    flyChips.forEach((chip, i) => {
-      chip.classList.remove('is-in');
-      chip.style.transition = 'none';
-      chip.style.opacity = '0';
-      chip.style.transform = 'translateX(30px)';
-      void chip.offsetWidth;
-      if (reduced) {
-        chip.style.opacity = '1';
-        chip.style.transform = 'none';
-        chip.classList.add('is-in');
-        return;
-      }
-      chip.style.transition = 'opacity .28s ease, transform .38s cubic-bezier(0.22, 0.85, 0.25, 1)';
-      setTimeout(() => {
-        chip.style.opacity = '1';
-        chip.style.transform = 'none';
-        chip.classList.add('is-in');
-      }, 80 + i * 90);
-    });
-  };
-  mod.querySelector('[data-fly-run]')?.addEventListener('click', runFly);
+function runMotionHelix(mod, chat, ctx) {
+  const reduced = ctx.reduced;
+  const runStream = ctx.runStream;
+  const runFly = ctx.runFly;
+  const replayChart = ctx.replayChart;
+  const {
+    createHelixBgAnim, readBgAnimScaleAxes, readBgAnimKnobs, readBgAnimDotsColor,
+    readBgAnimDotsMotion, readBgAnimSpinDir, readBgAnimLook, readBgAnimCamera,
+    readBgAnimAzimuth, readBgAnimShift, readBgAnimMotionKnobs, readBgAnimRungsMatch,
+    bgAnimPctToStop, bgAnimStopToPct,
+  } = chat;
 
   /* ---- Welcome helix ---- */
   const helixHost = mod.querySelector('[data-motion-helix]');
@@ -4593,8 +5807,17 @@ function wireMotion(root) {
   const helixVal = mod.querySelector('[data-helix-opacity-val]');
   const helixAngleRange = mod.querySelector('[data-helix-angle]');
   const helixAngleVal = mod.querySelector('[data-helix-angle-val]');
+  const helixCameraRange = mod.querySelector('[data-helix-camera]');
+  const helixCameraVal = mod.querySelector('[data-helix-camera-val]');
+  const helixAzimuthRange = mod.querySelector('[data-helix-azimuth]');
+  const helixAzimuthVal = mod.querySelector('[data-helix-azimuth-val]');
+  const helixShiftRange = mod.querySelector('[data-helix-shift]');
+  const helixShiftVal = mod.querySelector('[data-helix-shift-val]');
   const BGANIM_OPACITY_KEY = 'wise:chat-bg-anim-opacity';
   const BGANIM_ANGLE_KEY = 'wise:chat-bg-anim-angle';
+  const BGANIM_CAMERA_KEY = 'wise:chat-bg-anim-camera';
+  const BGANIM_AZIMUTH_KEY = 'wise:chat-bg-anim-azimuth';
+  const BGANIM_SHIFT_KEY = 'wise:chat-bg-anim-shift';
   const BGANIM_SCALE_AXIS_KEYS = {
     x: 'wise:chat-bg-anim-scale-x',
     y: 'wise:chat-bg-anim-scale-y',
@@ -4603,13 +5826,28 @@ function wireMotion(root) {
   const BGANIM_KNOB_KEYS = {
     pitch: 'wise:chat-bg-anim-pitch',
     nodes: 'wise:chat-bg-anim-nodes',
+    dots: 'wise:chat-bg-anim-dots',
     length: 'wise:chat-bg-anim-length',
+    rungs: 'wise:chat-bg-anim-rungs',
+    rungthick: 'wise:chat-bg-anim-rungthick',
     thickness: 'wise:chat-bg-anim-thickness',
     depth: 'wise:chat-bg-anim-depth',
+    speed: 'wise:chat-bg-anim-speed',
   };
+  const BGANIM_DOTS_COLOR_KEY = 'wise:chat-bg-anim-dots-color';
+  const BGANIM_DOTS_MOTION_KEY = 'wise:chat-bg-anim-dots-motion';
+  const BGANIM_DOTS_MOTIONS = ['still', 'pulse', 'spark'];
+  const BGANIM_SPIN_KEY = 'wise:chat-bg-anim-spin';
+  const BGANIM_SPIN_DIRS = ['fwd', 'rev'];
   /* The scale / shape sliders carry a STOP INDEX, not the percentage — see
-     bgAnimPctToStop in js/wiseai-chat.js — so the shrink half of the 25–400%
+     bgAnimPctToStop in js/wiseai-chat.js — so the shrink half of the 1–800%
      window gets as much track as the growth half. */
+  const helixStopLast = bgAnimPctToStop(1e6);
+  mod.querySelectorAll('.sc-bganim-scale-range, .sc-bganim-knob-range, .sc-bganim-motion-knob-range').forEach((r) => {
+    r.min = '0';
+    r.max = String(helixStopLast);
+    r.step = '1';
+  });
   const clampHelixPct = (n) => bgAnimStopToPct(bgAnimPctToStop(n));
   const readHelixPct = () => {
     try {
@@ -4627,8 +5865,24 @@ function wireMotion(root) {
   };
   let helixPct = readHelixPct();
   let helixAngle = readHelixAngle();
+  let helixCamera = readBgAnimCamera();
+  let helixAzimuth = readBgAnimAzimuth();
+  let helixShift = readBgAnimShift();
   const helixScale = readBgAnimScaleAxes();
   const helixKnobs = readBgAnimKnobs();
+  const helixDots = { color: readBgAnimDotsColor(), motion: readBgAnimDotsMotion() };
+  const helixMotionKnobs = readBgAnimMotionKnobs();
+  const BGANIM_MOTION_KNOB_KEYS = {
+    'pulse-speed': 'wise:chat-bg-anim-pulse-speed',
+    'pulse-length': 'wise:chat-bg-anim-pulse-length',
+    'pulse-size': 'wise:chat-bg-anim-pulse-size',
+    'spark-speed': 'wise:chat-bg-anim-spark-speed',
+    'spark-length': 'wise:chat-bg-anim-spark-length',
+    'spark-size': 'wise:chat-bg-anim-spark-size',
+  };
+  const BGANIM_DOTS_COLOR_ORIGINAL = '#25507c';
+  let helixSpinDir = readBgAnimSpinDir();
+  let helixRungsMatch = readBgAnimRungsMatch();
   let helixPaused = false;
   let helix = null;
   const paintHelixOpacity = (pct, persist) => {
@@ -4648,6 +5902,48 @@ function wireMotion(root) {
     if (persist) {
       try { localStorage.setItem(BGANIM_ANGLE_KEY, String(helixAngle)); } catch (_) { /* ignore */ }
       try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-angle', { detail: { angle: helixAngle } })); } catch (_) { /* ignore */ }
+    }
+    if (helix) {
+      if (reduced) helix.start();
+      else helix.redraw();
+    }
+  };
+  const paintHelixCamera = (deg, persist) => {
+    helixCamera = Math.max(-90, Math.min(90, Math.round(deg)));
+    if (helixCameraRange) helixCameraRange.value = String(helixCamera);
+    if (helixCameraVal) helixCameraVal.textContent = helixCamera + '°';
+    if (persist) {
+      try { localStorage.setItem(BGANIM_CAMERA_KEY, String(helixCamera)); } catch (_) { /* ignore */ }
+      try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-camera', { detail: { camera: helixCamera } })); } catch (_) { /* ignore */ }
+    }
+    if (helix) {
+      if (reduced) helix.start();
+      else helix.redraw();
+    }
+  };
+  const paintHelixAzimuth = (deg, persist) => {
+    let d = Math.round(deg);
+    while (d > 180) d -= 360;
+    while (d < -180) d += 360;
+    helixAzimuth = Math.max(-180, Math.min(180, d));
+    if (helixAzimuthRange) helixAzimuthRange.value = String(helixAzimuth);
+    if (helixAzimuthVal) helixAzimuthVal.textContent = helixAzimuth + '°';
+    if (persist) {
+      try { localStorage.setItem(BGANIM_AZIMUTH_KEY, String(helixAzimuth)); } catch (_) { /* ignore */ }
+      try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-azimuth', { detail: { azimuth: helixAzimuth } })); } catch (_) { /* ignore */ }
+    }
+    if (helix) {
+      if (reduced) helix.start();
+      else helix.redraw();
+    }
+  };
+  const paintHelixShift = (pct, persist) => {
+    helixShift = Math.max(-100, Math.min(100, Math.round(pct)));
+    if (helixShiftRange) helixShiftRange.value = String(helixShift);
+    if (helixShiftVal) helixShiftVal.textContent = helixShift + '%';
+    if (persist) {
+      try { localStorage.setItem(BGANIM_SHIFT_KEY, String(helixShift)); } catch (_) { /* ignore */ }
+      try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-shift', { detail: { shift: helixShift } })); } catch (_) { /* ignore */ }
     }
     if (helix) {
       if (reduced) helix.start();
@@ -4701,6 +5997,15 @@ function wireMotion(root) {
     const val = mod.querySelector('[data-helix-knob-val="' + id + '"]');
     if (range && document.activeElement !== range) range.value = String(bgAnimPctToStop(helixKnobs[id]));
     if (val) val.textContent = helixKnobs[id] + '%';
+    if (id === 'rungs' && helixRungsMatch && persist) {
+      helixRungsMatch = false;
+      const mbtn = mod.querySelector('[data-helix-rungs-match]');
+      if (mbtn) mbtn.classList.remove('is-on');
+      if (persist) {
+        try { localStorage.removeItem('wise:chat-bg-anim-rungs-match'); } catch (_) { /* ignore */ }
+        try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-rungs-match', { detail: { match: false } })); } catch (_) { /* ignore */ }
+      }
+    }
     if (persist) {
       try { localStorage.setItem(BGANIM_KNOB_KEYS[id], String(helixKnobs[id])); } catch (_) { /* ignore */ }
       try {
@@ -4708,6 +6013,96 @@ function wireMotion(root) {
           detail: { knob: id, pct: helixKnobs[id], value: helixKnobs[id] / 100 },
         }));
       } catch (_) { /* ignore */ }
+    }
+    if (helix) {
+      if (reduced) helix.start();
+      else helix.redraw();
+    }
+  };
+  const paintHelixRungsMatch = (persist) => {
+    const btn = mod.querySelector('[data-helix-rungs-match]');
+    if (btn) btn.classList.toggle('is-on', helixRungsMatch);
+    const val = mod.querySelector('[data-helix-knob-val="rungs"]');
+    if (val) val.textContent = helixRungsMatch ? 'nodes' : helixKnobs.rungs + '%';
+    if (persist) {
+      try {
+        if (helixRungsMatch) localStorage.setItem('wise:chat-bg-anim-rungs-match', '1');
+        else localStorage.removeItem('wise:chat-bg-anim-rungs-match');
+      } catch (_) { /* ignore */ }
+      try {
+        document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-rungs-match', { detail: { match: helixRungsMatch } }));
+      } catch (_) { /* ignore */ }
+    }
+    if (helix) {
+      if (reduced) helix.start();
+      else helix.redraw();
+    }
+  };
+  const paintHelixDots = (persist) => {
+    const input = mod.querySelector('[data-helix-dots-color]');
+    const match = mod.querySelector('[data-helix-dots-match]');
+    const reset = mod.querySelector('[data-helix-dots-reset]');
+    const matching = !helixDots.color;
+    if (input && document.activeElement !== input) {
+      input.value = matching ? BGANIM_DOTS_COLOR_ORIGINAL : helixDots.color;
+    }
+    if (match) match.classList.toggle('is-on', matching);
+    if (reset) reset.classList.toggle('is-on', !matching && helixDots.color === BGANIM_DOTS_COLOR_ORIGINAL);
+    mod.querySelectorAll('[data-helix-dots-motion]').forEach((btn) => {
+      const on = btn.getAttribute('data-helix-dots-motion') === helixDots.motion;
+      btn.classList.toggle('is-on', on);
+      btn.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+    mod.querySelectorAll('[data-helix-motion-knob]').forEach((el) => {
+      el.hidden = el.getAttribute('data-helix-motion-knob') !== helixDots.motion;
+    });
+    if (persist) {
+      try {
+        if (helixDots.color) localStorage.setItem(BGANIM_DOTS_COLOR_KEY, helixDots.color);
+        else localStorage.removeItem(BGANIM_DOTS_COLOR_KEY);
+        localStorage.setItem(BGANIM_DOTS_MOTION_KEY, helixDots.motion);
+      } catch (_) { /* ignore */ }
+      try {
+        document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-dots', {
+          detail: { color: helixDots.color || '', motion: helixDots.motion },
+        }));
+      } catch (_) { /* ignore */ }
+    }
+    if (helix) {
+      if (reduced) helix.start();
+      else helix.redraw();
+    }
+  };
+  const paintHelixMotionKnob = (motion, id, pct, persist) => {
+    if (!helixMotionKnobs[motion] || !(id in helixMotionKnobs[motion])) return;
+    helixMotionKnobs[motion][id] = clampHelixPct(pct);
+    const range = mod.querySelector('[data-helix-motion="' + motion + '"][data-helix-motion-id="' + id + '"]');
+    const val = mod.querySelector('[data-helix-motion-val="' + motion + '-' + id + '"]');
+    if (range && document.activeElement !== range) range.value = String(bgAnimPctToStop(helixMotionKnobs[motion][id]));
+    if (val) val.textContent = helixMotionKnobs[motion][id] + '%';
+    if (persist) {
+      const key = BGANIM_MOTION_KNOB_KEYS[motion + '-' + id];
+      if (key) { try { localStorage.setItem(key, String(helixMotionKnobs[motion][id])); } catch (_) { /* ignore */ } }
+      try {
+        document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-motion-knob', {
+          detail: { motion, knob: id, pct: helixMotionKnobs[motion][id], value: helixMotionKnobs[motion][id] / 100 },
+        }));
+      } catch (_) { /* ignore */ }
+    }
+    if (helix) {
+      if (reduced) helix.start();
+      else helix.redraw();
+    }
+  };
+  const paintHelixSpin = (persist) => {
+    mod.querySelectorAll('[data-helix-spin]').forEach((btn) => {
+      const on = btn.getAttribute('data-helix-spin') === helixSpinDir;
+      btn.classList.toggle('is-on', on);
+      btn.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+    if (persist) {
+      try { localStorage.setItem(BGANIM_SPIN_KEY, helixSpinDir); } catch (_) { /* ignore */ }
+      try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-spin', { detail: { dir: helixSpinDir } })); } catch (_) { /* ignore */ }
     }
     if (helix) {
       if (reduced) helix.start();
@@ -4722,17 +6117,41 @@ function wireMotion(root) {
   };
   paintHelixOpacity(helixPct, false);
   paintHelixAngle(helixAngle, false);
+  paintHelixCamera(helixCamera, false);
+  paintHelixAzimuth(helixAzimuth, false);
+  paintHelixShift(helixShift, false);
   paintHelixScaleAll();
+  paintHelixDots(false);
+  paintHelixSpin(false);
+  paintHelixRungsMatch(false);
+  ['pulse', 'spark'].forEach((motion) => {
+    Object.keys(helixMotionKnobs[motion] || {}).forEach((id) => {
+      paintHelixMotionKnob(motion, id, helixMotionKnobs[motion][id], false);
+    });
+  });
   if (helixHost && helixBody) {
     helix = createHelixBgAnim({
       host: helixHost,
       getBody: () => helixBody,
       getOpacity: () => helixPct / 100,
       getAngle: () => helixAngle,
+      getCamera: () => helixCamera,
+      getAzimuth: () => helixAzimuth,
+      getShift: () => helixShift,
       getScale: () => ({ x: helixScale.x / 100, y: helixScale.y / 100, z: helixScale.z / 100 }),
       getPitch: () => helixKnobs.pitch / 100,
       getNodes: () => helixKnobs.nodes / 100,
+      getDots: () => helixKnobs.dots / 100,
+      getDotsColor: () => helixDots.color,
+      getDotsMotion: () => helixDots.motion,
+      getMotionKnob: (motion, id) => ((helixMotionKnobs[motion] && helixMotionKnobs[motion][id]) || 100) / 100,
+      getSpinDir: () => helixSpinDir,
+      getLook: () => readBgAnimLook(),
+      getSpinSpeed: () => helixKnobs.speed / 100,
       getLength: () => helixKnobs.length / 100,
+      getRungs: () => helixKnobs.rungs / 100,
+      getRungsMatch: () => helixRungsMatch,
+      getRungThick: () => helixKnobs.rungthick / 100,
       getThickness: () => helixKnobs.thickness / 100,
       getDepth: () => helixKnobs.depth / 100,
       reducedMotion: reduced,
@@ -4745,6 +6164,15 @@ function wireMotion(root) {
   });
   helixAngleRange?.addEventListener('input', () => {
     paintHelixAngle(parseInt(helixAngleRange.value, 10) || 0, true);
+  });
+  helixCameraRange?.addEventListener('input', () => {
+    paintHelixCamera(parseInt(helixCameraRange.value, 10) || 0, true);
+  });
+  helixAzimuthRange?.addEventListener('input', () => {
+    paintHelixAzimuth(parseInt(helixAzimuthRange.value, 10) || 0, true);
+  });
+  helixShiftRange?.addEventListener('input', () => {
+    paintHelixShift(parseInt(helixShiftRange.value, 10) || 0, true);
   });
   mod.querySelectorAll('[data-helix-scale]').forEach((range) => {
     range.addEventListener('input', () => {
@@ -4759,6 +6187,48 @@ function wireMotion(root) {
       paintHelixKnob(range.getAttribute('data-helix-knob'), bgAnimStopToPct(range.value), true);
     });
   });
+  mod.querySelector('[data-helix-rungs-match]')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (helixRungsMatch) return;
+    helixRungsMatch = true;
+    paintHelixRungsMatch(true);
+  });
+  const helixDotsColor = mod.querySelector('[data-helix-dots-color]');
+  helixDotsColor?.addEventListener('input', () => {
+    const hex = String(helixDotsColor.value || '').trim().toLowerCase();
+    if (!/^#[0-9a-f]{6}$/.test(hex)) return;
+    helixDots.color = hex;
+    paintHelixDots(true);
+  });
+  mod.querySelector('[data-helix-dots-match]')?.addEventListener('click', () => {
+    helixDots.color = '';
+    paintHelixDots(true);
+  });
+  mod.querySelector('[data-helix-dots-reset]')?.addEventListener('click', () => {
+    helixDots.color = BGANIM_DOTS_COLOR_ORIGINAL;
+    paintHelixDots(true);
+  });
+  mod.querySelectorAll('[data-helix-dots-motion]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const motion = btn.getAttribute('data-helix-dots-motion');
+      if (!BGANIM_DOTS_MOTIONS.includes(motion) || motion === helixDots.motion) return;
+      helixDots.motion = motion;
+      paintHelixDots(true);
+    });
+  });
+  mod.querySelectorAll('[data-helix-motion]').forEach((range) => {
+    range.addEventListener('input', () => {
+      paintHelixMotionKnob(range.getAttribute('data-helix-motion'), range.getAttribute('data-helix-motion-id'), bgAnimStopToPct(range.value), true);
+    });
+  });
+  mod.querySelectorAll('[data-helix-spin]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const dir = btn.getAttribute('data-helix-spin');
+      if (!BGANIM_SPIN_DIRS.includes(dir) || dir === helixSpinDir) return;
+      helixSpinDir = dir;
+      paintHelixSpin(true);
+    });
+  });
   document.addEventListener('wise:chat-bg-anim-opacity', (e) => {
     const v = e && e.detail && e.detail.opacity;
     if (typeof v !== 'number') return;
@@ -4768,6 +6238,21 @@ function wireMotion(root) {
     const v = e && e.detail && e.detail.angle;
     if (typeof v !== 'number') return;
     paintHelixAngle(v, false);
+  });
+  document.addEventListener('wise:chat-bg-anim-camera', (e) => {
+    const v = e && e.detail && e.detail.camera;
+    if (typeof v !== 'number') return;
+    paintHelixCamera(v, false);
+  });
+  document.addEventListener('wise:chat-bg-anim-azimuth', (e) => {
+    const v = e && e.detail && e.detail.azimuth;
+    if (typeof v !== 'number') return;
+    paintHelixAzimuth(v, false);
+  });
+  document.addEventListener('wise:chat-bg-anim-shift', (e) => {
+    const v = e && e.detail && e.detail.shift;
+    if (typeof v !== 'number') return;
+    paintHelixShift(v, false);
   });
   document.addEventListener('wise:chat-bg-anim-scale', (e) => {
     const d = e && e.detail;
@@ -4785,6 +6270,32 @@ function wireMotion(root) {
     const pct = typeof d.pct === 'number' ? d.pct : (typeof d.value === 'number' ? Math.round(d.value * 100) : NaN);
     if (!Number.isFinite(pct)) return;
     paintHelixKnob(d.knob, pct, false);
+  });
+  document.addEventListener('wise:chat-bg-anim-rungs-match', (e) => {
+    const on = !!(e && e.detail && e.detail.match);
+    if (on === helixRungsMatch) return;
+    helixRungsMatch = on;
+    paintHelixRungsMatch(false);
+  });
+  document.addEventListener('wise:chat-bg-anim-dots', (e) => {
+    const d = e && e.detail;
+    if (!d) return;
+    if (typeof d.color === 'string') helixDots.color = /^#[0-9a-fA-F]{6}$/.test(d.color) ? d.color.toLowerCase() : '';
+    if (BGANIM_DOTS_MOTIONS.includes(d.motion)) helixDots.motion = d.motion;
+    paintHelixDots(false);
+  });
+  document.addEventListener('wise:chat-bg-anim-motion-knob', (e) => {
+    const d = e && e.detail;
+    if (!d || !helixMotionKnobs[d.motion] || !(d.knob in helixMotionKnobs[d.motion])) return;
+    const pct = typeof d.pct === 'number' ? d.pct : (typeof d.value === 'number' ? Math.round(d.value * 100) : NaN);
+    if (!Number.isFinite(pct)) return;
+    paintHelixMotionKnob(d.motion, d.knob, pct, false);
+  });
+  document.addEventListener('wise:chat-bg-anim-spin', (e) => {
+    const d = e && e.detail && e.detail.dir;
+    if (!BGANIM_SPIN_DIRS.includes(d) || d === helixSpinDir) return;
+    helixSpinDir = d;
+    paintHelixSpin(false);
   });
   const ppBtn = mod.querySelector('[data-helix-pp]');
   const syncHelixPp = () => {
@@ -4816,6 +6327,24 @@ function wireMotion(root) {
     accHead.setAttribute('aria-expanded', open ? 'false' : 'true');
     if (accBody) accBody.hidden = open;
   });
+
+  const replaySticky = () => {
+    mod.querySelectorAll('[data-sticky-slide]').forEach((el) => {
+      el.classList.remove('mi-motion-sticky-slide');
+      void el.offsetWidth;
+      el.classList.add('mi-motion-sticky-slide');
+    });
+  };
+  mod.querySelector('[data-sticky-run]')?.addEventListener('click', replaySticky);
+
+  const replayActStrip = () => {
+    const t = mod.querySelector('[data-motion-act] .wa-activity-flash-target');
+    if (!t) return;
+    t.classList.remove('wa-activity-flash');
+    void t.offsetWidth;
+    t.classList.add('wa-activity-flash');
+  };
+  mod.querySelector('[data-actstrip-run]')?.addEventListener('click', replayActStrip);
 
   /* ---- Splitter ---- */
   const split = mod.querySelector('[data-motion-split]');
@@ -4857,23 +6386,37 @@ function wireMotion(root) {
   const widthPane = mod.querySelector('[data-width-pane]');
   const widthBtn = mod.querySelector('[data-width-btn]');
   const widthLab = mod.querySelector('[data-width-label]');
-  const TIER_NAMES = ['single', 'double', 'triple', 'fill'];
+  const TIER_NAMES = ['single', 'double', 'triple', 'fill', 'custom'];
   let widthTier = 0;
   const applyWidth = () => {
     if (window.WPaneWidth) {
       window.WPaneWidth.applyClasses(widthPane, widthTier, 'panel');
       window.WPaneWidth.syncButton(widthBtn, widthTier);
     } else if (widthPane) {
-      widthPane.classList.toggle('panel-wide', widthTier >= 1);
-      widthPane.classList.toggle('panel-triple', widthTier >= 2);
-      widthPane.classList.toggle('panel-fill', widthTier >= 3);
+      widthPane.classList.toggle('panel-wide', widthTier >= 1 && widthTier < 4);
+      widthPane.classList.toggle('panel-triple', widthTier >= 2 && widthTier < 4);
+      widthPane.classList.toggle('panel-fill', widthTier === 3);
+      widthPane.classList.toggle('panel-custom', widthTier === 4);
     }
     if (widthLab) widthLab.textContent = TIER_NAMES[widthTier];
   };
   widthBtn?.addEventListener('click', () => {
-    widthTier = (widthTier + 1) % 4;
+    widthTier = window.WPaneWidth ? window.WPaneWidth.next(widthTier) : (widthTier + 1) % 5;
     applyWidth();
   });
+
+  /* ---- Carousel rail (browser-height shrink) ---- */
+  const carHost = mod.querySelector('[data-motion-car]');
+  const carBrowser = carHost?.querySelector('[data-car-browser]');
+  const carRange = carHost?.querySelector('[data-car-h]');
+  const carVal = carHost?.querySelector('[data-car-h-val]');
+  const applyCarHeight = (pct) => {
+    const n = Math.max(42, Math.min(100, Number(pct) || 100));
+    if (carBrowser) carBrowser.style.setProperty('--car-pct', String(n));
+    if (carVal) carVal.textContent = n + '%';
+    if (carRange && Number(carRange.value) !== n) carRange.value = String(n);
+  };
+  carRange?.addEventListener('input', () => applyCarHeight(carRange.value));
 
   /* ---- Reorder ---- */
   const reorder = mod.querySelector('[data-motion-reorder]');
@@ -5041,6 +6584,7 @@ function wireMotion(root) {
     mod.querySelectorAll('[data-motion-chart]').forEach(replayChart);
     runStream();
     runFly();
+    applyCarHeight(100);
     mod.querySelectorAll('.mi-motion-stats .mi-stat').forEach((card) => card.click());
   };
   mod.__motionReplayAll = replayAll;
@@ -5060,6 +6604,130 @@ function wireMotion(root) {
   new MutationObserver(startWhenOpen).observe(mod, { attributes: true, attributeFilter: ['class'] });
 }
 
+function wireMotion(root) {
+  const mod = root.querySelector('#mi-motion');
+  if (!mod) return;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---- Filter tiles ---- */
+  const applyFilter = (filter) => {
+    mod.querySelectorAll('[data-motion-card]').forEach((card) => {
+      card.hidden = filter !== 'all' && card.getAttribute('data-motion-group') !== filter;
+    });
+    mod.querySelectorAll('[data-motion-filter]').forEach((b) => {
+      const on = b.getAttribute('data-motion-filter') === filter;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  };
+  mod.querySelector('#mi-motion-stats')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-motion-filter]');
+    if (!btn) return;
+    applyFilter(btn.getAttribute('data-motion-filter'));
+  });
+
+  /* ---- Chart replay ---- */
+  const replayChart = (card) => {
+    card.querySelectorAll('.adm-bar-fill').forEach((bar) => {
+      const h = bar.getAttribute('data-h') || '50';
+      bar.style.transition = 'none';
+      bar.style.height = '0%';
+      void bar.offsetHeight;
+      bar.style.transition = reduced ? 'none' : 'height 0.9s cubic-bezier(0.22, 1, 0.36, 1)';
+      bar.style.height = h + '%';
+    });
+  };
+  mod.querySelectorAll('[data-motion-chart]').forEach((card) => {
+    const run = () => replayChart(card);
+    card.addEventListener('click', run);
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); run(); }
+    });
+  });
+
+  /* ---- Paragraph stream ---- */
+  const STREAM_PARAS = [
+    'The proposal turns today\u2019s voluntary GRAS notification into a mandatory one.',
+    'Anyone introducing a substance under GRAS must notify FDA of the basis.',
+    'Then the thumbs row lands, and the intent chips fly in after the copy.',
+  ];
+  const streamOut = mod.querySelector('[data-stream-out]');
+  const streamRun = mod.querySelector('[data-stream-run]');
+  let streamTimer = 0;
+  const runStream = () => {
+    if (!streamOut) return;
+    clearTimeout(streamTimer);
+    streamOut.innerHTML = STREAM_PARAS.map((p) => `<p class="mi-motion-stream-line">${esc(p)}</p>`).join('');
+    const lines = Array.from(streamOut.querySelectorAll('.mi-motion-stream-line'));
+    if (reduced) return;
+    lines.forEach((el) => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(8px)';
+    });
+    let i = 0;
+    const tick = () => {
+      if (i >= lines.length) return;
+      const el = lines[i];
+      el.style.transition = 'opacity .32s ease, transform .32s cubic-bezier(0.22, 0.85, 0.25, 1)';
+      el.style.opacity = '1';
+      el.style.transform = 'none';
+      i += 1;
+      streamTimer = setTimeout(tick, 300);
+    };
+    streamTimer = setTimeout(tick, 40);
+  };
+  streamRun?.addEventListener('click', runStream);
+
+  /* ---- Chip fly-in ---- */
+  const flyChips = Array.from(mod.querySelectorAll('[data-fly-chip]'));
+  const runFly = () => {
+    flyChips.forEach((chip, i) => {
+      chip.classList.remove('is-in');
+      chip.style.transition = 'none';
+      chip.style.opacity = '0';
+      chip.style.transform = 'translateX(30px)';
+      void chip.offsetWidth;
+      if (reduced) {
+        chip.style.opacity = '1';
+        chip.style.transform = 'none';
+        chip.classList.add('is-in');
+        return;
+      }
+      chip.style.transition = 'opacity .28s ease, transform .38s cubic-bezier(0.22, 0.85, 0.25, 1)';
+      setTimeout(() => {
+        chip.style.opacity = '1';
+        chip.style.transform = 'none';
+        chip.classList.add('is-in');
+      }, 80 + i * 90);
+    });
+  };
+  mod.querySelector('[data-fly-run]')?.addEventListener('click', runFly);
+
+  const replayAll = () => {
+    mod.querySelectorAll('[data-motion-chart]').forEach(replayChart);
+    runStream();
+    runFly();
+  };
+  mod.__motionReplayAll = replayAll;
+
+  /* Welcome helix needs the chat module. Do not parse that graph on load —
+     boot it the first time this accordion actually opens. */
+  const bootHelix = () => {
+    if (!mod.isConnected) return;
+    if (mod.classList.contains('is-collapsed')) return;
+    if (mod.dataset.helixBooted === '1') return;
+    mod.dataset.helixBooted = '1';
+    import('./wiseai-chat.js').then((chat) => {
+      runMotionHelix(mod, chat, { reduced, runStream, runFly, replayChart });
+    }).catch((err) => {
+      console.error('[all-modules] motion helix failed', err);
+      delete mod.dataset.helixBooted;
+    });
+  };
+  bootHelix();
+  new MutationObserver(bootHelix).observe(mod, { attributes: true, attributeFilter: ['class'] });
+}
+
 /* ------------------------------------------------------------------ */
 /* Styles — scoped, self-contained so the module drops onto any shell  */
 /* ------------------------------------------------------------------ */
@@ -5073,17 +6741,36 @@ function moduleStyles() {
       gap: 20px; flex-wrap: wrap;
     }
     .mi-hero-text { min-width: 0; flex: 1 1 360px; }
+    .mi-hero-title-row {
+      display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+    }
     .mi-hero-title {
       font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
       margin: 0; font-size: 1.7rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
     }
+    .mi-load-pct {
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em;
+      color: var(--text-muted); line-height: 1.2; white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .mi-load-bytes {
+      font-size: 0.75rem; font-weight: 700; color: var(--text-subtle);
+      font-variant-numeric: tabular-nums; white-space: nowrap;
+    }
+    html.dark .mi-load-pct { color: var(--text-subtle); }
+    html.dark .mi-load-bytes { color: var(--text-subtle); }
+    .mi-load-pct[data-done="1"] { color: var(--text-subtle); }
     .mi-hero-row {
       display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap;
       margin-top: 8px;
     }
     .mi-hero-lede { font-size: 0.95rem; color: var(--text-muted); margin: 0; max-width: 74ch; flex: 1 1 280px; }
     .mi-hero-actions { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-    .mi-reeval-meta { font-size: 0.72rem; color: var(--text-subtle); text-align: right; max-width: 26ch; line-height: 1.35; }
+    .mi-hero-btns { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+    .mi-reeval-meta { font-size: 0.72rem; color: var(--text-subtle); text-align: right; max-width: 32ch; line-height: 1.35; }
+    .mi-hard-btn .material-symbols-outlined { font-size: 18px !important; }
+    .mi-hard-btn:disabled { opacity: 0.7; cursor: progress; }
 
     .mi-reeval-btn .material-symbols-outlined { font-size: 18px !important; }
     .mi-reeval-btn:disabled { opacity: 0.7; cursor: progress; }
@@ -5143,7 +6830,7 @@ function moduleStyles() {
     html.dark .mi-reeval-status a { color: var(--primary-bright, #93C5FD); }
     .mi-reeval-status a:hover { text-decoration: underline; }
     .mi-reeval-status code {
-      font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.75rem;
+      font-family: var(--font-mono); font-size: 0.75rem;
       color: var(--text-subtle);
     }
 
@@ -5356,7 +7043,16 @@ function moduleStyles() {
 
     .dsc-card.is-flash,
     .mi-card.is-flash,
-    .mi-pane.is-flash {
+    .mi-pane.is-flash,
+    .ii-card.is-flash,
+    .mi-motion-card.is-flash,
+    .mi-logic-rule.is-flash,
+    .mi-int-trow.is-flash,
+    .ds-swatch.is-flash,
+    .ds-type-row.is-flash,
+    .mi-code-card.is-flash,
+    .ds-color-group.is-flash,
+    .ds-font-card.is-flash {
       border-color: var(--sec-green, #32A966);
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--sec-green, #32A966) 40%, transparent);
     }
@@ -5427,7 +7123,7 @@ function moduleStyles() {
     }
     .mi-module-lede { font-size: 0.875rem; color: var(--text-muted); margin: 6px 0 0; max-width: 76ch; }
     .mi-module-lede code {
-      font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.8em;
+      font-family: var(--font-mono); font-size: 0.8em;
       padding: 1px 6px; border-radius: 6px; background: var(--surface-2); color: var(--text);
     }
 
@@ -5508,7 +7204,7 @@ function moduleStyles() {
       color: var(--ter-amber-text, #b45309);
     }
     .mi-card-href {
-      font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.6875rem;
+      font-family: var(--font-mono); font-size: 0.6875rem;
       color: var(--text-subtle); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .mi-card-group { font-size: 0.625rem; color: var(--text-subtle); }
@@ -5586,6 +7282,60 @@ function moduleStyles() {
       border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
     }
+    .mi-search-inline.has-clear .mi-search { padding-right: 42px; }
+    .mi-search-clear {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%;
+      background: transparent; color: var(--text-subtle); cursor: pointer;
+      display: grid; place-items: center;
+    }
+    .mi-search-clear:hover { color: var(--text); background: color-mix(in srgb, var(--primary) 10%, transparent); }
+    .mi-search-clear .material-symbols-outlined { font-size: 18px !important; }
+
+    .mi-global-search { position: relative; margin: 14px 0 16px; }
+    .mi-global-search .mi-search-inline { width: 100%; min-width: 0; }
+    .mi-global-hits {
+      margin-top: 10px; padding: 8px 4px 4px;
+      border: 1px solid var(--border); border-radius: 16px;
+      background: var(--surface); box-shadow: var(--shadow-1);
+      max-height: min(52vh, 520px); overflow: auto;
+    }
+    html.dark .mi-global-hits { background: rgba(255,255,255,0.03); }
+    .mi-global-hits-meta {
+      padding: 4px 14px 8px; font-size: 0.72rem; font-weight: 700;
+      color: var(--text-subtle); letter-spacing: 0.02em;
+    }
+    .mi-global-hits-ghead {
+      padding: 10px 14px 4px; font-size: 0.625rem; font-weight: 800;
+      letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle);
+    }
+    .mi-global-hit {
+      display: flex; align-items: center; gap: 10px; width: 100%;
+      padding: 8px 14px; border: 0; background: transparent; text-align: left;
+      font: inherit; color: var(--text); cursor: pointer; border-radius: 10px;
+    }
+    .mi-global-hit:hover, .mi-global-hit.is-active {
+      background: color-mix(in srgb, var(--primary) 10%, transparent);
+    }
+    .mi-global-hit .material-symbols-outlined {
+      flex: 0 0 auto; font-size: 20px !important; color: var(--primary);
+    }
+    html.dark .mi-global-hit .material-symbols-outlined { color: var(--primary-bright, #93C5FD); }
+    .mi-global-hit-body { min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; gap: 1px; }
+    .mi-global-hit-title {
+      font-size: 0.875rem; font-weight: 650; line-height: 1.25;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .mi-global-hit-sub {
+      font-size: 0.72rem; color: var(--text-subtle); line-height: 1.3;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .mi-global-hit-more { color: var(--text-muted); font-weight: 700; font-style: italic; }
+    .mi-global-hits-empty {
+      padding: 16px 14px 18px; font-size: 0.875rem; color: var(--text-muted);
+    }
+    .dsc-jump-tile[hidden],
+    .dsc-jump.is-filtered .dsc-jump-tile[hidden] { display: none !important; }
 
     /* ---- Scorecards (mirrors product-portfolio's .pf-stat filter tiles) ---- */
     .mi-stats-bar { padding: 0 2px 10px; }
@@ -5653,6 +7403,26 @@ function moduleStyles() {
     html.dark .mi-stat.is-active .mi-stat-label,
     html.dark .mi-stat.is-active .mi-stat-label .material-symbols-outlined { color: var(--primary-bright, #93C5FD); }
 
+    /* Icon group filters — light-blue button tiles, no count. The library is
+       ready or it isn't; the numeral scorecard language belongs elsewhere. */
+    #ii-group-stats .mi-stat {
+      flex: 1 1 120px; min-width: 108px; padding: 10px 14px;
+      background: color-mix(in srgb, var(--primary) 14%, var(--surface));
+    }
+    html.dark #ii-group-stats .mi-stat {
+      background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 22%, #1A2339);
+    }
+    html.chat-tint:not(.dark) #ii-group-stats .mi-stat {
+      background: color-mix(in srgb, var(--primary) 14%, #fff);
+    }
+    #ii-group-stats .mi-stat.is-active,
+    html.chat-tint:not(.dark) #ii-group-stats .mi-stat.is-active {
+      background: color-mix(in srgb, var(--primary) 22%, var(--surface));
+    }
+    html.dark #ii-group-stats .mi-stat.is-active {
+      background: color-mix(in srgb, var(--primary) 36%, transparent);
+    }
+
     .mi-dir-empty { padding: 32px; text-align: center; color: var(--text-muted); font-size: 0.9rem; }
 
     /* ---- Icon Inventory ---- */
@@ -5689,9 +7459,48 @@ function moduleStyles() {
       color: var(--text);
     }
     .ii-glyph .material-symbols-outlined, .ii-glyph .material-symbols-outlined { font-size: 26px !important; }
+    #ii-grid.ii-style-outlined .ii-glyph .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    #ii-grid.ii-style-filled .ii-glyph .material-symbols-outlined {
+      font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    }
+    #ii-grid.ii-style-light .ii-glyph .material-symbols-outlined {
+      font-family: 'Material Symbols Rounded';
+      font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+    }
+
+    /* Font / SVG render toggle. Both twins live in every card; the grid class
+       decides which one paints, so flipping the switch costs no re-render and
+       the two stay pixel-comparable in the same 40px well. */
+    .ii-glyph-font, .ii-glyph-svg { display: none; grid-area: 1 / 1; }
+    #ii-grid.ii-render-font .ii-glyph-font { display: block; }
+    #ii-grid.ii-render-svg .ii-glyph-svg { display: grid; place-items: center; }
+    .ii-glyph-svg svg {
+      display: block; width: 26px; height: 26px;
+      fill: currentColor; stroke: none;
+    }
+    /* Nothing painted yet (data still loading, or a glyph with no twin). */
+    #ii-grid.ii-render-svg .ii-glyph-svg:empty::after {
+      content: ''; width: 18px; height: 18px; border-radius: 5px;
+      background: var(--surface-3, var(--surface-2));
+    }
+    #ii-render-switch.is-loading .ii-filter { opacity: 0.55; pointer-events: none; }
+
+    .ii-render-note {
+      margin: 0 2px 16px; padding: 9px 12px; border-radius: 10px;
+      background: var(--surface-2); border: 1px solid var(--border);
+      font-size: 0.75rem; line-height: 1.6; color: var(--text-muted);
+    }
+    .ii-render-note code {
+      font-family: var(--font-mono); font-size: 0.85em;
+      padding: 1px 6px; border-radius: 6px; background: var(--surface-2); color: var(--text);
+    }
+    .ii-tag.is-legacy { display: none; background: color-mix(in srgb, var(--ter-amber) 16%, transparent); color: var(--ter-amber-text, var(--text)); }
+    #ii-grid.ii-render-svg .ii-tag.is-legacy { display: inline; }
     .ii-meta { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
     .ii-name {
-      font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.8125rem; font-weight: 600;
+      font-family: var(--font-mono); font-size: 0.8125rem; font-weight: 600;
       color: var(--text); word-break: break-all; line-height: 1.25;
     }
     .ii-label { font-size: 0.75rem; color: var(--text-muted); }
@@ -5706,11 +7515,6 @@ function moduleStyles() {
     .ii-tag.is-symbols { background: var(--surface-2); color: var(--text-muted); }
     .ii-tag.is-group { background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary-ink, var(--primary)); }
     html.dark .ii-tag.is-group { color: var(--primary-bright, #93C5FD); }
-    .ii-count {
-      display: inline-flex; align-items: center; gap: 2px; margin-left: auto;
-      font-size: 0.6875rem; font-weight: 700; color: var(--text-subtle);
-    }
-    .ii-count .material-symbols-outlined { font-size: 12px !important; }
     .ii-chev { font-size: 20px !important; color: var(--text-subtle); flex: 0 0 auto; transition: transform 0.2s ease; }
     .ii-card.is-open .ii-chev { transform: rotate(180deg); }
 
@@ -5725,7 +7529,7 @@ function moduleStyles() {
       padding: 6px 9px; border-radius: 8px; background: var(--surface-2);
     }
     .ii-place-file {
-      font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.6875rem; color: var(--text-muted);
+      font-family: var(--font-mono); font-size: 0.6875rem; color: var(--text-muted);
       word-break: break-all;
     }
     .ii-place-line { color: var(--primary-ink, var(--primary)); }
@@ -5738,7 +7542,7 @@ function moduleStyles() {
     .ds-block-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
     .ds-footnote { font-size: 0.75rem; color: var(--text-subtle); margin: 14px 2px 0; max-width: 80ch; }
     .ds-footnote code, .ds-font-stack, .dsc-class, .ds-type-name code {
-      font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.85em;
+      font-family: var(--font-mono); font-size: 0.85em;
       padding: 1px 6px; border-radius: 6px; background: var(--surface-2); color: var(--text);
     }
 
@@ -5775,7 +7579,7 @@ function moduleStyles() {
     .ds-type-sample { flex: 1 1 55%; min-width: 0; color: var(--text); line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .ds-type-meta { flex: 1 1 45%; min-width: 220px; display: flex; flex-direction: column; gap: 2px; }
     .ds-type-name { font-size: 0.8125rem; font-weight: 700; color: var(--text); }
-    .ds-type-spec { font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.6875rem; color: var(--primary); }
+    .ds-type-spec { font-family: var(--font-mono); font-size: 0.6875rem; color: var(--primary); }
     html.dark .ds-type-spec { color: var(--primary-bright, #93C5FD); }
     .ds-type-use { font-size: 0.75rem; color: var(--text-muted); }
     @media (max-width: 720px) {
@@ -5786,7 +7590,7 @@ function moduleStyles() {
 
     .ds-color-grid {
       display: grid; gap: 14px;
-      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
       align-items: start;
     }
     .ds-color-group {
@@ -5794,12 +7598,20 @@ function moduleStyles() {
       border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow-1);
     }
     .ds-group-title {
-      margin: 0; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
-      color: var(--text-subtle);
+      margin: 0; flex: 1 1 auto; min-width: 0; width: 100%;
+      font: inherit; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-subtle); background: transparent; border: 0; border-radius: 6px;
+      padding: 2px 6px; margin-left: -6px; outline: none; box-sizing: border-box;
+      appearance: none; -webkit-appearance: none;
+    }
+    .ds-group-title:hover { color: var(--text); }
+    .ds-group-title:focus {
+      color: var(--text);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 22%, transparent);
     }
     .ds-group-note { font-size: 0.75rem; color: var(--text-muted); margin: 8px 0 14px; }
     .ds-swatch-grid { display: flex; flex-direction: column; gap: 14px; }
-    .ds-swatch { display: flex; align-items: center; gap: 14px; }
+    .ds-swatch { display: flex; align-items: flex-start; gap: 14px; }
     .ds-swatch.is-custom .ds-swatch-name::after {
       content: "custom";
       margin-left: 6px;
@@ -5808,12 +7620,31 @@ function moduleStyles() {
     }
     .ds-swatch-pair {
       display: grid;
-      grid-template-columns: auto auto auto;
-      grid-template-rows: auto auto;
+      grid-template-columns: auto auto auto auto;
+      grid-template-rows: 44px auto auto auto;
       column-gap: 8px;
       row-gap: 4px;
       align-items: center;
       flex: 0 0 auto;
+      max-width: 100%;
+    }
+    .ds-swatch-col {
+      display: grid;
+      grid-template-rows: subgrid;
+      grid-row: 1 / 4;
+      justify-items: center;
+      align-items: center;
+      min-width: 56px;
+    }
+    .ds-swatch-col--act { min-width: 28px; }
+    .ds-swatch-col--act .ds-swatch-reset,
+    .ds-swatch-col--act .ds-swatch-apply { grid-row: 1; }
+    .ds-swatch-col--act .ds-swatch-cap { grid-row: 3; }
+    .ds-swatch-alpha {
+      grid-column: 1 / -1;
+      grid-row: 4;
+      display: flex; align-items: center; gap: 6px;
+      margin-top: 2px;
     }
     .ds-swatch-well {
       display: block;
@@ -5867,6 +7698,20 @@ function moduleStyles() {
       flex: 0 0 56px; width: 56px; height: 44px;
       background: var(--surface-2); border: 1.5px solid var(--border-strong);
     }
+    .ds-swatch-hex {
+      font-family: var(--font-mono); font-size: 0.55rem; font-weight: 600;
+      text-align: center; color: var(--primary);
+      background: transparent; border: 0; border-bottom: 1px solid transparent;
+      padding: 0; margin: 0; width: 72px; min-width: 56px; max-width: 108px;
+      outline: none; line-height: 1.2;
+    }
+    .ds-swatch[data-fmt="rgba"] .ds-swatch-hex {
+      width: 132px; min-width: 56px; max-width: 148px; font-size: 0.5rem;
+    }
+    input.ds-swatch-hex:focus { border-bottom-color: var(--border-strong); }
+    input.ds-swatch-hex[readonly] { cursor: default; color: var(--text-muted); }
+    html.dark .ds-swatch-hex { color: var(--primary-bright, #93C5FD); }
+    html.dark input.ds-swatch-hex[readonly] { color: var(--text-subtle); }
     .ds-swatch-cap {
       font-size: 0.5625rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
       color: var(--text-subtle); text-align: center; justify-self: center;
@@ -5874,11 +7719,6 @@ function moduleStyles() {
     /* Alpha is edited here rather than in the browser's color popover: the
        native picker only exposes RGB unless the engine supports the HTML
        alpha attribute, which Chrome still does not. */
-    .ds-swatch-alpha {
-      grid-column: 1 / -1;
-      display: flex; align-items: center; gap: 6px;
-      margin-top: 2px;
-    }
     .ds-swatch-alpha input[type="range"] {
       flex: 1 1 0; min-width: 0;
       height: 6px; margin: 0; padding: 0;
@@ -5913,32 +7753,72 @@ function moduleStyles() {
     }
     .ds-swatch-alpha-out {
       flex: 0 0 auto; min-width: 30px; text-align: right;
-      font-family: 'SF Mono', ui-monospace, Menlo, monospace;
+      font-family: var(--font-mono);
       font-size: 0.6rem; font-weight: 700; color: var(--text-subtle);
       font-variant-numeric: tabular-nums;
     }
-    .ds-swatch-meta { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto; }
-    .ds-swatch-name { font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.75rem; font-weight: 600; color: var(--text); }
+    .ds-swatch-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; padding-top: 2px; }
+    .ds-swatch-meta-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .ds-swatch-name { font-family: var(--font-mono); font-size: 0.75rem; font-weight: 600; color: var(--text); min-width: 0; }
+    .ds-swatch-fmt { display: inline-flex; align-items: center; flex: 0 0 auto; gap: 0; }
+    .ds-swatch-fmt-btn {
+      border: 0; background: none; cursor: pointer; padding: 2px 5px;
+      font-family: var(--font-mono); font-size: 0.55rem; font-weight: 800;
+      letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-subtle);
+    }
+    .ds-swatch-fmt-btn[aria-pressed="true"] { color: var(--primary); }
+    html.dark .ds-swatch-fmt-btn[aria-pressed="true"] { color: var(--primary-bright, #93C5FD); }
+    .ds-swatch-fmt-btn:hover { color: var(--text); }
     .ds-swatch-val {
-      font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.65rem;
+      font-family: var(--font-mono); font-size: 0.65rem;
       color: var(--primary); background: transparent; border: 0; padding: 0;
       width: 100%; min-width: 0; outline: none;
     }
-    input.ds-swatch-val {
-      border-bottom: 1px solid transparent;
-      border-radius: 0;
+    .ds-swatch-val--themes {
+      display: flex; flex-direction: column; gap: 2px;
+      line-height: 1.35; overflow-wrap: anywhere; word-break: break-word;
     }
-    input.ds-swatch-val:focus { border-bottom-color: var(--border-strong); }
+    .ds-swatch-theme-value { display: block; }
+    .ds-swatch-theme-label {
+      color: var(--text-muted); font-family: var(--font-mono);
+      font-size: 0.9em; font-weight: 800; letter-spacing: 0.02em;
+    }
     html.dark .ds-swatch-val { color: var(--primary-bright, #93C5FD); }
     .ds-swatch-use { font-size: 0.7rem; color: var(--text-muted); }
-    .ds-swatch-reset {
+    .ds-swatch-reset,
+    .ds-swatch-apply {
       display: inline-flex; align-items: center; justify-content: center;
-      flex: 0 0 auto; width: 28px; height: 28px; padding: 0; justify-self: center;
+      flex: 0 0 auto; width: 28px; height: 44px; padding: 0; justify-self: center;
       border: 0; background: none; color: var(--text-muted); cursor: pointer;
     }
-    .ds-swatch-reset .material-symbols-outlined { font-size: 18px !important; }
-    .ds-swatch-reset:hover:not(:disabled) { color: var(--text); }
-    .ds-swatch-reset:disabled { opacity: 0.35; cursor: default; }
+    .ds-swatch-reset .material-symbols-outlined,
+    .ds-swatch-apply .material-symbols-outlined { font-size: 18px !important; }
+    .ds-swatch-reset:hover:not(:disabled),
+    .ds-swatch-apply:hover:not(:disabled) { color: var(--text); }
+    .ds-swatch-apply:hover:not(:disabled) { color: var(--primary); }
+    html.dark .ds-swatch-apply:hover:not(:disabled) { color: var(--primary-bright, #93C5FD); }
+    .ds-swatch-reset:disabled,
+    .ds-swatch-apply:disabled { opacity: 0.35; cursor: default; }
+    .ds-swatch-rollout {
+      display: flex; align-items: center; gap: 8px; margin-top: 6px;
+      border: 0; background: none; padding: 0; cursor: pointer; text-align: left;
+      font: inherit; color: var(--text-muted); width: 100%;
+    }
+    .ds-swatch-rollout[hidden] { display: none; }
+    .ds-swatch-rollout:hover { color: var(--text); }
+    .ds-swatch-rollout-track {
+      flex: 1 1 auto; min-width: 48px; height: 4px; border-radius: 999px;
+      background: var(--surface-2); overflow: hidden;
+      box-shadow: inset 0 0 0 1px var(--border);
+    }
+    .ds-swatch-rollout-fill {
+      display: block; height: 100%; width: 0%; border-radius: 999px;
+      background: var(--sec-green, #32A966); transition: width 0.25s ease;
+    }
+    .ds-swatch-rollout-label {
+      flex: 0 0 auto; font-size: 0.62rem; font-weight: 700;
+      font-variant-numeric: tabular-nums; white-space: nowrap;
+    }
     .ds-token-reset-all {
       display: inline-flex; align-items: center; gap: 6px; margin-left: auto;
       border: 0; background: none; cursor: pointer; padding: 0;
@@ -5947,6 +7827,91 @@ function moduleStyles() {
     .ds-token-reset-all .material-symbols-outlined { font-size: 16px !important; }
     .ds-token-reset-all:hover { color: var(--text); }
     .ds-token-reset-all[hidden] { display: none; }
+
+    /* Color apply modal — progress + page list. Icon is bare (no tile). */
+    .dash-modal-scrim--panel .dash-modal.ds-prop-modal {
+      width: min(520px, 100%); max-width: 520px;
+    }
+    .ds-prop-modal .dash-modal-titles { min-width: 0; }
+    .ds-prop-modal .dash-modal-title {
+      font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+      font-weight: 800;
+    }
+    .ds-prop-modal .dash-modal-eyebrow {
+      text-transform: none;
+      letter-spacing: 0;
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+    .ds-prop-compare {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px; border-radius: 12px;
+      border: 1px solid var(--border); background: var(--surface-2);
+    }
+    html.dark .ds-prop-compare { background: rgba(255,255,255,0.03); }
+    .ds-prop-chip {
+      display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0;
+    }
+    .ds-prop-chip-well {
+      width: 44px; height: 32px; border-radius: 8px;
+      border: 1px solid var(--border-strong);
+      background:
+        repeating-conic-gradient(rgba(17, 24, 39, 0.12) 0% 25%, transparent 0% 50%)
+        50% / 8px 8px;
+      overflow: hidden;
+    }
+    html.dark .ds-prop-chip-well {
+      background:
+        repeating-conic-gradient(rgba(243, 244, 246, 0.14) 0% 25%, transparent 0% 50%)
+        50% / 8px 8px;
+    }
+    .ds-prop-chip-fill { display: block; width: 100%; height: 100%; }
+    .ds-prop-chip-hex {
+      font-family: var(--font-mono); font-size: 0.55rem; font-weight: 600;
+      color: var(--text-muted); max-width: 120px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .ds-prop-arrow { color: var(--text-subtle); font-size: 18px; }
+    .ds-prop-score {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+    }
+    .ds-prop-pct {
+      font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+      font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em;
+      color: var(--text); font-variant-numeric: tabular-nums; line-height: 1;
+    }
+    .ds-prop-frac { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .ds-prop-bar {
+      height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden;
+      box-shadow: inset 0 0 0 1px var(--border);
+    }
+    .ds-prop-fill {
+      display: block; height: 100%; width: 0%; border-radius: 999px;
+      background: var(--primary); transition: width 0.2s ease;
+    }
+    html.dark .ds-prop-fill { background: var(--primary-bright, #8B9FAF); }
+    .ds-prop-list {
+      margin: 0; padding: 0; list-style: none; overflow-y: auto;
+      max-height: min(36vh, 280px);
+      border: 1px solid var(--border); border-radius: 12px;
+    }
+    .ds-prop-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 12px; border-bottom: 1px solid var(--border);
+      font-size: 0.75rem; color: var(--text-subtle);
+    }
+    .ds-prop-row:last-child { border-bottom: 0; }
+    .ds-prop-row .material-symbols-outlined { font-size: 16px !important; flex: 0 0 auto; }
+    .ds-prop-row-name { flex: 1 1 auto; min-width: 0; font-weight: 600; color: inherit;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ds-prop-row-href { flex: 0 1 auto; font-family: var(--font-mono); font-size: 0.62rem;
+      color: var(--text-subtle); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 42%; }
+    .ds-prop-row[data-state="pending"] { color: var(--text-subtle); }
+    .ds-prop-row[data-state="run"] { color: var(--text); }
+    .ds-prop-row[data-state="run"] .material-symbols-outlined { color: var(--primary); animation: mi-export-spin 0.9s linear infinite; }
+    .ds-prop-row[data-state="ok"] { color: var(--text); }
+    .ds-prop-row[data-state="ok"] .material-symbols-outlined { color: var(--sec-green, #16A34A); }
+    html.dark .ds-prop-row[data-state="ok"] .material-symbols-outlined { color: #4ADE80; }
 
     /* ---- Component Library ---- */
     .dsc-grid {
@@ -5992,15 +7957,78 @@ function moduleStyles() {
     .dsc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 10px 16px 10px; flex-wrap: wrap; }
     .dsc-name { font-size: 0.9rem; font-weight: 800; color: var(--text); }
     .dsc-class { font-size: 0.625rem; color: var(--text-muted); word-break: break-word; }
+    /* Light + Dark are first-class versions — each card stages both, using
+       the same tokens as :root / html.dark so a dark page still shows a true
+       light pane and a light page still shows a true dark pane. */
+    .dsc-themes {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+      padding: 0 12px; align-items: stretch;
+    }
+    .dsc-card:not(.dsc-card--wide) .dsc-themes { grid-template-columns: 1fr; }
+    @media (max-width: 860px) { .dsc-themes { grid-template-columns: 1fr; } }
+    .dsc-theme {
+      display: flex; flex-direction: column; gap: 8px; min-width: 0;
+      padding: 8px 8px 10px; border-radius: 12px;
+      border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    }
+    .dsc-theme > .dsc-sub-label { padding: 2px 8px 0; }
+    .dsc-theme-light {
+      color-scheme: light;
+      --bg: #F9F8F3;
+      --surface: #FFFFFF;
+      --surface-2: #F4F2EA;
+      --surface-3: #EFEDE2;
+      --text: #111827;
+      --text-muted: #444B55;
+      --text-subtle: var(--text-muted);
+      --primary-ink: var(--primary);
+      --primary-bright: var(--primary);
+      --ter-violet: #25507C;
+      --ter-cyan: #25507C;
+      --chart-mono: var(--primary);
+      --border: color-mix(in srgb, var(--primary) 16%, transparent);
+      --border-strong: color-mix(in srgb, var(--primary) 28%, transparent);
+      --primary-soft: rgba(37, 80, 124, 0.08);
+      --sec-green-text: #245E3B;
+      --ter-amber-text: #75360A;
+      --sec-red-text: #831F23;
+      --shadow-1: 0 1px 2px rgba(17,24,39,.04), 0 1px 3px rgba(17,24,39,.04);
+      --shadow-2: 0 1px 2px rgba(17,24,39,.04), 0 8px 24px rgba(17,24,39,.06);
+      --shadow-card: var(--shadow-2);
+    }
+    .dsc-theme-dark {
+      color-scheme: dark;
+      --bg: #05141C;
+      --surface: #0D1B24;
+      --surface-2: #112633;
+      --surface-3: #15303F;
+      --text: #F3F4F6;
+      --text-muted: #BCC6D3;
+      --text-subtle: var(--text-muted);
+      --primary-bright: #8B9FAF;
+      --primary-ink: var(--text);
+      --ter-violet: var(--primary-bright);
+      --ter-cyan: var(--primary-bright);
+      --chart-mono: var(--primary-bright);
+      --border: color-mix(in srgb, var(--primary-bright) 18%, transparent);
+      --border-strong: color-mix(in srgb, var(--primary-bright) 30%, transparent);
+      --primary-soft: rgba(37, 80, 124, 0.18);
+      --sec-green-text: #B6C9BE;
+      --ter-amber-text: #D7BE91;
+      --sec-red-text: #FFE1DC;
+      --shadow-1: 0 1px 2px rgba(0,0,0,.4);
+      --shadow-2: 0 4px 12px rgba(0,0,0,.35), 0 12px 32px rgba(0,0,0,.35);
+      --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.35);
+    }
     .dsc-demo {
       display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
-      padding: 18px 16px; margin: 0 12px;
+      padding: 18px 16px; margin: 0;
       border-radius: 12px; border: 1px dashed var(--border-strong);
       background:
         radial-gradient(color-mix(in srgb, var(--text-subtle) 14%, transparent) 1px, transparent 1px) 0 0 / 14px 14px,
         var(--surface-2);
     }
-    html.dark .dsc-demo { background:
+    .dsc-theme-dark .dsc-demo { background:
         radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px) 0 0 / 14px 14px,
         rgba(255,255,255,0.03); }
     .dsc-used {
@@ -6156,7 +8184,8 @@ function moduleStyles() {
     .dsc-card[data-comp-name="Used-in links"] .dsc-demo,
     .dsc-card[data-comp-name="Buttons"] .dsc-demo,
     .dsc-card[data-comp-name="Admin buttons"] .dsc-demo,
-    .dsc-card[data-comp-name="Intent chips"] .dsc-demo { gap: 16px; align-items: stretch; }
+    .dsc-card[data-comp-name="Intent chips"] .dsc-demo,
+    .dsc-card[data-comp-name="Output chips"] .dsc-demo { gap: 16px; align-items: stretch; }
 
     /* Reply-chip variants (match / dive / selected). Size is locked at 28px
        on the shared .chip rule in wise.css — do not re-inflate padding here. */
@@ -6178,6 +8207,661 @@ function moduleStyles() {
       background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600;
     }
     .dsc-demo .sc-reply-chips .chip.ms-chip.is-selected .material-symbols-outlined { color: #fff !important; }
+
+    /* Output chips — transcript + sticky Output rail. Copied from wiseai.html
+       so this catalog can render them live (those rules are page-scoped). */
+    .dsc-demo .sc-surface-slot { display: block; min-width: 0; max-width: 100%; }
+    .dsc-demo .sc-surface-card {
+      position: relative; box-sizing: border-box;
+      display: inline-flex; flex-direction: column; align-items: stretch;
+      width: min(240px, 100%); max-width: 100%; min-width: 0;
+      text-align: left; margin: 0; padding: 8px 12px 8px 8px;
+      background: var(--surface);
+      border: 1px solid color-mix(in srgb, var(--ter-amber, #FFC434) 50%, transparent);
+      border-radius: 14px; cursor: pointer; font-family: inherit;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .dsc-demo .sc-surface-head { display: flex; align-items: center; gap: 12px; min-width: 0; width: 100%; }
+    html.dark .dsc-demo .sc-surface-card { background: #1A2339; }
+    .dsc-demo .sc-surface-card:hover,
+    .dsc-demo .sc-surface-card.is-hover {
+      border-color: color-mix(in srgb, var(--ter-amber, #FFC434) 80%, transparent);
+      box-shadow: 0 4px 12px rgba(255,196,52,0.12);
+    }
+    .dsc-demo .sc-surface-thumb,
+    .dsc-demo .wa-merge-chip-thumb {
+      width: 52px; height: 52px; flex: 0 0 auto; border-radius: 10px; overflow: hidden;
+      position: relative; background: var(--surface); border: 1px solid var(--border);
+    }
+    .dsc-demo .sc-surface-thumb-inner,
+    .dsc-demo .wa-merge-chip-thumb-inner {
+      position: absolute; top: 0; left: 0; width: 360px;
+      transform: scale(0.1444); transform-origin: top left; pointer-events: none;
+    }
+    .dsc-demo .mi-out-thumb-fill {
+      width: 360px; height: 360px; overflow: hidden; background: var(--surface-2);
+    }
+    .dsc-demo .mi-out-thumb-fill img {
+      width: 360px; height: 360px; object-fit: cover; display: block;
+    }
+    .dsc-demo .sc-surface-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+    .dsc-demo .sc-surface-title {
+      min-width: 0; width: 100%; font-size: 14px; font-weight: 700; color: var(--text);
+      line-height: 1.3; overflow: hidden;
+      display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
+    }
+    .dsc-demo .sc-surface-stack { display: inline-flex; align-items: center; flex: 0 0 auto; padding-left: 4px; }
+    .dsc-demo .sc-surface-stack .sc-surface-thumb {
+      margin-left: -24px;
+      box-shadow: -3px 2px 8px rgba(0,0,0,0.16); background: var(--surface-2);
+      transition: transform .15s ease, margin .15s ease;
+    }
+    .dsc-demo .sc-surface-stack .sc-surface-thumb:first-child { margin-left: 0; }
+    .dsc-demo .sc-surface-stack .sc-surface-thumb.is-old { filter: saturate(.85) brightness(.98); opacity: .9; }
+    .dsc-demo .sc-surface-stack .sc-surface-thumb.is-latest {
+      border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));
+      box-shadow: -3px 2px 10px rgba(37,80,124,0.28), 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent);
+    }
+    .dsc-demo .sc-surface-stack .sc-surface-thumb.is-active {
+      z-index: 3;
+      border-color: color-mix(in srgb, var(--primary) 70%, var(--border-strong));
+      box-shadow: -3px 2px 12px rgba(37,80,124,0.34), 0 0 0 2px color-mix(in srgb, var(--primary) 45%, transparent);
+    }
+    .dsc-demo .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb,
+    .dsc-demo .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb { margin-left: -12px; }
+    .dsc-demo .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb:first-child,
+    .dsc-demo .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb:first-child { margin-left: 0; }
+    .dsc-demo .sc-surface-vtag {
+      position: absolute; right: 1px; bottom: 1px; z-index: 2;
+      padding: 0 3px; border-radius: 5px; min-width: 12px; text-align: center;
+      font-size: 8px; font-weight: 800; line-height: 13px; letter-spacing: 0;
+      color: var(--text-muted); background: color-mix(in srgb, var(--surface) 88%, transparent);
+      border: 1px solid var(--border); font-variant-numeric: tabular-nums;
+    }
+    .dsc-demo .sc-surface-thumb.is-latest .sc-surface-vtag,
+    .dsc-demo .wa-merge-chip.is-active .sc-surface-vtag {
+      color: #fff; background: var(--primary); border-color: var(--primary);
+    }
+    .dsc-demo .wa-merge-chips {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      padding: 2px;
+    }
+    .dsc-demo .wa-merge-chip {
+      flex: 0 0 auto; box-sizing: border-box; width: min(240px, 100%); max-width: 240px;
+      display: inline-flex; align-items: center; gap: 12px; padding: 8px 12px 8px 8px;
+      background: var(--surface);
+      border: 1px solid color-mix(in srgb, var(--ter-amber, #FFC434) 50%, transparent);
+      border-radius: 14px;
+      font-family: inherit; font-size: 14px; font-weight: 700; color: var(--text);
+      text-align: left;
+    }
+    html.dark .dsc-demo .wa-merge-chip { background: #1A2339; }
+    .dsc-demo .wa-merge-chip.is-active {
+      border-color: var(--primary); color: var(--primary-ink, var(--primary));
+      box-shadow: inset 0 0 0 1px var(--primary);
+    }
+    .dsc-demo .wa-merge-chip-label {
+      flex: 1 1 auto; min-width: 0; line-height: 1.25; overflow: hidden;
+      display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
+    }
+
+    /* ---- Chat & drawers catalog demos (wiseai-chat.css is not on this page) ---- */
+    .dsc-demo .sc-line {
+      display: flex; align-items: flex-start; gap: 12px;
+      margin: 0; color: var(--text); text-align: left;
+    }
+    .dsc-demo .sc-line-body {
+      flex: 1 1 0%; min-width: 0;
+      font-size: var(--fs-chat, 0.9375rem); line-height: 1.6; color: var(--text);
+    }
+    .dsc-demo .sc-line-body > .sc-para { display: block; }
+    .dsc-demo .sc-line-meta {
+      display: flex; align-items: center; gap: 6px; margin-top: 4px;
+      font-size: 10.5px; font-weight: 600; color: var(--text-subtle);
+    }
+    .dsc-demo .sc-line-time { cursor: default; color: var(--primary-ink, var(--primary)); }
+    .dsc-demo .sc-event-label { color: var(--text-muted); }
+    .dsc-demo .sc-avatar {
+      flex-shrink: 0; width: 30px; height: 30px; margin-top: 1px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 11px; letter-spacing: 0.02em; user-select: none;
+    }
+    .dsc-demo .sc-avatar svg { width: 18px; height: auto; }
+    .dsc-demo .sc-avatar-wiseai { background: #141414; color: #fff; }
+    .dsc-theme-dark .dsc-demo .sc-avatar-wiseai { background: #fff; color: #141414; }
+    .dsc-demo .sc-avatar-you {
+      background: transparent; color: var(--text-muted);
+      border: 1.5px solid var(--border-strong);
+    }
+    .dsc-demo .sc-fork-banner {
+      display: flex; align-items: center; gap: 9px; padding: 9px 13px; border-radius: 12px;
+      font-size: 12.5px; line-height: 1.4; color: var(--text); text-align: left;
+      background: color-mix(in srgb, var(--primary) 10%, transparent);
+      border: 1px solid color-mix(in srgb, var(--primary) 26%, transparent);
+    }
+    .dsc-demo .sc-fork-banner-ic { font-size: 18px; color: var(--primary-ink, var(--primary)); }
+
+    .dsc-demo .sc-fb-wrap { margin: 0; }
+    .dsc-demo .sc-fb { display: flex; align-items: center; gap: 1px; flex-wrap: wrap; }
+    .dsc-demo .sc-fb-copy-wrap,
+    .dsc-demo .sc-fb-up-wrap,
+    .dsc-demo .sc-fb-down-wrap,
+    .dsc-demo .sc-fb-more-wrap { position: relative; display: inline-flex; flex-wrap: wrap; align-items: center; }
+    .dsc-demo .sc-fb-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px; border: 0; border-radius: 50%;
+      background: transparent; color: var(--text-subtle); cursor: default; padding: 0;
+    }
+    .dsc-demo .sc-fb-btn .material-symbols-outlined { font-size: 14px; font-variation-settings: 'FILL' 0; }
+    .dsc-demo .sc-fb-btn.is-hover,
+    .dsc-demo .sc-fb-btn:hover { background: var(--surface-3); color: var(--text); }
+    .dsc-demo .sc-fb-btn.is-on { color: var(--primary-ink, var(--primary)); }
+    .dsc-demo .sc-fb-btn.is-on[data-fb="down"] { color: var(--sec-red-text); }
+    .dsc-demo .sc-fb-btn.is-on .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
+    .dsc-demo .sc-fb-copied {
+      display: none; align-items: center; gap: 3px; padding: 3px 7px; border-radius: 7px;
+      font-size: 10.5px; font-weight: 700; color: var(--sec-green-text);
+      background: color-mix(in srgb, var(--sec-green) 16%, var(--surface));
+      white-space: nowrap;
+    }
+    .dsc-demo .sc-fb-copied.is-vis { display: inline-flex; }
+    .dsc-demo .sc-fb-reasons {
+      display: none; position: static; z-index: 2;
+      flex-direction: column; gap: 7px; min-width: 214px; max-width: 280px;
+      margin-top: 8px; padding: 10px 12px; border-radius: 14px;
+      background: var(--surface); border: 1px solid var(--border-strong);
+      box-shadow: var(--shadow-2); text-align: left;
+    }
+    .dsc-demo .sc-fb-reasons.is-demo-open { display: flex; }
+    .dsc-demo .sc-fb-reasons[hidden]:not(.is-demo-open) { display: none; }
+    .dsc-demo .sc-fb-reasons-label { font-size: 11.5px; font-weight: 600; color: var(--text-muted); }
+    .dsc-demo .sc-fb-reason-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .dsc-demo .sc-fb-reason { font-size: 11.5px !important; padding: 5px 11px !important; }
+    .dsc-demo .sc-fb-reason.is-on {
+      border-color: var(--primary); color: var(--primary-ink, var(--primary));
+    }
+    .dsc-demo .sc-fb-form { display: flex; flex-direction: column; gap: 7px; }
+    .dsc-demo .sc-fb-input {
+      width: 100%; box-sizing: border-box; resize: vertical; min-height: 34px;
+      padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--surface-2); color: var(--text); font: inherit; font-size: 12px;
+    }
+    .dsc-demo .sc-fb-send { align-self: flex-end; font-size: 11.5px !important; padding: 5px 14px !important; font-weight: 700; }
+    .dsc-demo .sc-fb-menu {
+      display: none; position: static; z-index: 3;
+      align-items: center; gap: 6px; margin-top: 8px; padding: 6px 8px; border-radius: 12px;
+      background: var(--surface); border: 1px solid var(--border-strong); box-shadow: var(--shadow-2);
+    }
+    .dsc-demo .sc-fb-menu.is-demo-open { display: inline-flex; }
+    .dsc-demo .sc-fb-menu[hidden]:not(.is-demo-open) { display: none; }
+    .dsc-demo .sc-fb-menu-actions { display: inline-flex; align-items: center; gap: 1px; }
+    .dsc-demo .sc-fb-menu-time {
+      margin-right: 4px; padding-right: 6px; white-space: nowrap;
+      border-right: 1px solid var(--border);
+    }
+    .dsc-demo .sc-fb-id {
+      margin-left: 3px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em;
+      color: var(--text-subtle); cursor: default;
+    }
+    .dsc-demo .sc-tip {
+      display: inline-flex; align-items: center; padding: 5px 9px; border-radius: 7px;
+      background: #1f2430; color: #fff; font-size: 11.5px; font-weight: 600;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.30); white-space: nowrap;
+    }
+
+    .dsc-demo .sc-activity { display: flex; justify-content: center; margin: 0; }
+    .dsc-demo .sc-activity-wrap { position: relative; display: inline-flex; flex-direction: column; align-items: center; }
+    .dsc-demo .sc-activity-dots {
+      display: inline-flex; align-items: center; gap: 4px; padding: 5px 8px;
+      border-radius: 999px; cursor: default;
+    }
+    .dsc-demo .sc-activity-dots > span {
+      width: 5px; height: 5px; border-radius: 50%; flex: 0 0 auto;
+      background: var(--text-subtle);
+    }
+    .dsc-demo .sc-activity.is-thinking .sc-activity-dots > span {
+      background: var(--primary); animation: scBlink 1.2s infinite;
+    }
+    .dsc-demo .sc-activity.is-thinking .sc-activity-dots > span:nth-child(2) { animation-delay: .16s; }
+    .dsc-demo .sc-activity.is-thinking .sc-activity-dots > span:nth-child(3) { animation-delay: .32s; }
+    .dsc-demo .sc-activity-pop {
+      position: static; margin-top: 8px; min-width: 200px; padding: 8px 10px;
+      border-radius: 12px; text-align: left;
+      background: var(--surface); border: 1px solid var(--border-strong); box-shadow: var(--shadow-2);
+    }
+    .dsc-demo .sc-activity-row {
+      display: flex; justify-content: space-between; gap: 12px; font-size: 11.5px;
+    }
+    .dsc-demo .sc-activity-key { color: var(--text-muted); font-weight: 600; }
+    .dsc-demo .sc-activity-val { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+    .dsc-demo .panel-more-btn.is-hover { background: var(--surface-3); color: var(--text); opacity: 1; }
+    .dsc-demo .sc-mcp-item { justify-content: flex-start; }
+    .dsc-demo .sc-mcp-item .sc-switch { margin-left: auto; }
+    .dsc-demo .sc-mcp-item .topbar-menu-badge { margin-left: auto; }
+    .dsc-demo .sc-mcp-item .topbar-menu-badge ~ .sc-switch { margin-left: 0; }
+    .dsc-demo .sc-switch {
+      position: relative; flex: 0 0 auto; width: 34px; height: 19px; border-radius: 999px;
+      background: var(--surface-3); border: 1px solid var(--border-strong);
+    }
+    .dsc-demo .sc-switch::after {
+      content: ''; position: absolute; top: 1px; left: 1px; width: 15px; height: 15px; border-radius: 50%;
+      background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.28);
+    }
+    .dsc-demo .sc-mcp-item.is-on .sc-switch { background: var(--primary); border-color: var(--primary); }
+    .dsc-demo .sc-mcp-item.is-on .sc-switch::after { transform: translateX(15px); }
+    .dsc-demo .sc-mcp-item.is-on .sc-switch--pink { background: rgb(219, 39, 119); border-color: rgb(219, 39, 119); }
+    .dsc-demo .sc-stream-detail { display: flex; flex-direction: column; gap: 7px; margin: 4px 12px 8px 12px; }
+    .dsc-demo .sc-stream-detail-label {
+      font-size: 10px; letter-spacing: 0.1em; font-weight: 700;
+      text-transform: uppercase; color: var(--text-muted);
+    }
+    .dsc-demo .sc-stream-seg {
+      display: flex; width: 100%; border: 1px solid var(--border-strong);
+      border-radius: 9999px; overflow: hidden;
+    }
+    .dsc-demo .sc-stream-seg-btn {
+      flex: 1 1 0; min-width: 0; height: 28px; border: 0;
+      border-left: 1px solid var(--border-strong); background: transparent;
+      font: inherit; font-size: 11.5px; font-weight: 700; color: var(--text-muted); cursor: default;
+    }
+    .dsc-demo .sc-stream-seg-btn:first-child { border-left: 0; }
+    .dsc-demo .sc-stream-seg-btn.is-hover,
+    .dsc-demo .sc-stream-seg-btn:hover { background: var(--surface-3); color: var(--text); }
+    .dsc-demo .sc-stream-seg-btn.is-on { background: var(--primary); color: #fff; }
+    .dsc-demo .sc-stream-seg-btn.is-on:hover { background: var(--primary); color: #fff; }
+    .dsc-demo .sc-stream-detail.is-disabled { opacity: .45; }
+    .dsc-demo .panel-width-toggle-btn.is-hover { opacity: 1; color: var(--text); background: var(--surface-3); }
+
+    .dsc-demo .mi-actstrip {
+      position: relative; width: 100%; min-height: 168px; max-width: 220px;
+      padding: 12px 16px 12px 22px; border-radius: 14px;
+      background: var(--surface); border: 1px solid var(--border);
+    }
+    .dsc-demo .mi-actstrip--right { padding: 12px 22px 12px 16px; }
+    .dsc-demo .mi-actstrip .wa-activity-rail {
+      position: absolute; top: 10px; bottom: 10px; left: 0; width: 3px;
+      background: color-mix(in srgb, var(--border-strong) 90%, transparent);
+    }
+    .dsc-demo .mi-actstrip--right .wa-activity-rail { left: auto; right: 0; }
+    .dsc-demo .mi-actstrip .wa-activity-tick,
+    .dsc-demo .mi-actstrip .wa-activity-tick-stack {
+      position: absolute; left: 0; width: 9px; height: 13px;
+      border-radius: 0 4px 4px 0; border: 0; padding: 0; cursor: default;
+    }
+    .dsc-demo .mi-actstrip--right .wa-activity-tick,
+    .dsc-demo .mi-actstrip--right .wa-activity-tick-stack {
+      left: auto; right: 0; border-radius: 4px 0 0 4px;
+    }
+    .dsc-demo .mi-actstrip .wa-activity-tick-stack {
+      display: flex; flex-direction: column; height: auto; width: auto;
+    }
+    .dsc-demo .mi-actstrip .wa-activity-tick-stack .wa-activity-tick {
+      position: relative; left: auto; right: auto;
+    }
+    .dsc-demo .mi-actstrip .wa-activity-tick-stack .wa-activity-tick + .wa-activity-tick { margin-top: -9px; }
+    .dsc-demo .mi-actstrip > .wa-activity-tick:nth-of-type(1) { top: 18%; }
+    .dsc-demo .mi-actstrip > .wa-activity-tick-stack { top: 38%; }
+    .dsc-demo .mi-actstrip > .wa-activity-tick:nth-of-type(2) { top: 62%; }
+    .dsc-demo .mi-actstrip > .wa-activity-tick:nth-of-type(3) { top: 82%; }
+    .dsc-demo .mi-actstrip[data-ticks="3"] > .wa-activity-tick:nth-of-type(1) { top: 18%; }
+    .dsc-demo .mi-actstrip[data-ticks="3"] > .wa-activity-tick:nth-of-type(2) { top: 50%; }
+    .dsc-demo .mi-actstrip[data-ticks="3"] > .wa-activity-tick:nth-of-type(3) { top: 82%; }
+    .dsc-demo .wa-activity-tick--output { background-color: var(--ter-amber, #FFC434); }
+    .dsc-demo .wa-activity-tick--source { background-color: #12b76a; }
+    .dsc-demo .wa-activity-tick--database { background-color: #f79009; }
+    .dsc-demo .wa-activity-tick.is-hover,
+    .dsc-demo .wa-activity-tick-stack.is-hover .wa-activity-tick { width: 14px; }
+    .dsc-demo .wa-activity-tick-id {
+      position: absolute; top: 50%; left: 100%; transform: translateY(-50%);
+      margin-left: 4px; font-size: 8px; font-weight: 700; letter-spacing: 0.02em;
+      font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--text-muted);
+      opacity: 0; pointer-events: none;
+    }
+    .dsc-demo .mi-actstrip--right .wa-activity-tick-id {
+      left: auto; right: 100%; margin-left: 0; margin-right: 4px;
+    }
+    .dsc-demo .wa-activity-tick.is-hover .wa-activity-tick-id,
+    .dsc-demo .wa-activity-tick-stack.is-hover .wa-activity-tick-id { opacity: 0.9; }
+    .dsc-demo .mi-actstrip-ghost {
+      display: flex; flex-direction: column; justify-content: space-between;
+      height: 140px; padding: 4px 0 4px 18px;
+      font-size: 11px; font-weight: 600; color: var(--text-muted); text-align: left;
+    }
+    .dsc-demo .mi-actstrip--right .mi-actstrip-ghost { padding: 4px 18px 4px 0; text-align: right; }
+    .dsc-demo .wa-activity-flash {
+      outline: 2px solid transparent; outline-offset: 3px; border-radius: 8px;
+      animation: waActivityFlash 1.4s ease;
+    }
+    @keyframes waActivityFlash {
+      0%, 35% { outline-color: var(--ter-amber, #FFC434); }
+      100%    { outline-color: transparent; }
+    }
+
+    .dsc-demo .mi-belt {
+      display: flex; align-items: center; gap: 0; min-height: 160px; width: 100%;
+      padding: 12px; border-radius: 16px; background: var(--surface-2); overflow: hidden;
+    }
+    .dsc-demo .mi-belt-chat,
+    .dsc-demo .mi-belt-mod {
+      display: flex; flex-direction: column; justify-content: center; gap: 4px;
+      min-width: 0; padding: 14px 12px; border: 1px solid var(--border);
+    }
+    .dsc-demo .mi-belt-chat {
+      position: relative; z-index: 3; flex: 1.2 1 120px;
+      height: 140px; border-radius: 16px; background: var(--surface);
+      box-shadow: var(--shadow-2);
+    }
+    .dsc-demo .mi-belt-mod {
+      position: relative; z-index: 1; flex: 0.85 1 90px;
+      height: 110px; margin-left: -14px; padding-left: 18px;
+      border-radius: 0 16px 16px 0; border-left: 0; background: var(--surface-2);
+    }
+    .dsc-demo .mi-belt-hist {
+      z-index: 2; margin-left: 0; margin-right: -14px; padding-left: 12px; padding-right: 18px;
+      border-radius: 16px 0 0 16px; border-left: 1px solid var(--border); border-right: 0;
+      height: 110px;
+    }
+    .dsc-demo .mi-belt-prog { z-index: 0; height: 88px; }
+    .dsc-demo .mi-belt-name {
+      font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
+      font-size: 0.85rem; font-weight: 800; color: var(--text);
+    }
+    .dsc-demo .mi-belt-z { font-size: 0.68rem; font-weight: 600; color: var(--text-muted); }
+
+    .dsc-demo .wch-ask-card {
+      position: relative; display: flex; align-items: flex-start; gap: 11px; width: 100%;
+      padding: 11px 12px; border: 1px solid var(--border); background: var(--surface);
+      border-radius: 12px; cursor: default; text-align: left; color: inherit; font-family: inherit;
+    }
+    .dsc-demo .wch-ask-card.is-hover { background: var(--surface-2); }
+    .dsc-demo .wch-ask-ico { color: var(--primary-ink, var(--primary)); }
+    .dsc-demo .wch-ask-ico .material-symbols-outlined { font-size: 22px; }
+    .dsc-demo .wch-ask-card-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding-right: 26px; }
+    .dsc-demo .wch-ask-card-title { font-size: 14px; font-weight: 600; line-height: 1.35; }
+    .dsc-demo .wch-ask-card-desc { font-size: 13px; line-height: 1.45; opacity: .8; }
+    .dsc-demo .wch-ask-insert {
+      position: absolute; top: 9px; right: 9px; display: inline-flex;
+      width: 22px; height: 22px; border: 0; background: none; color: var(--text-muted); opacity: 0;
+    }
+    .dsc-demo .wch-ask-card.is-hover .wch-ask-insert { opacity: .7; }
+    .dsc-demo .sc-ask-help {
+      border: 0; background: none; cursor: default; padding: 0;
+      font-family: inherit; font-size: 0.75rem; font-weight: 700;
+      color: var(--ter-amber, #C9A227);
+    }
+    .dsc-demo .sc-ask-help .sc-ask-ch,
+    .dsc-demo .chip.ws-intent-chip--askhelp .sc-ask-ch,
+    #mi-motion .sc-ask-help .sc-ask-ch,
+    #mi-motion .chip.ws-intent-chip--askhelp .sc-ask-ch {
+      display: inline-block;
+      background: linear-gradient(105deg,
+        color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 0%,
+        color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 42%,
+        var(--ter-amber, #FFC434) 48%, #ffe08a 50%, var(--ter-amber, #FFC434) 52%,
+        color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 58%,
+        color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 100%);
+      background-size: 250% 100%; background-position: 100% 0;
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent; color: transparent;
+      -webkit-text-stroke: 0.4px color-mix(in srgb, var(--ter-amber, #FFC434) 45%, #fff);
+      animation: sc-ask-shimmer 7.5s ease-in-out infinite;
+      animation-delay: calc(var(--ch-i, 0) * 90ms);
+    }
+    .dsc-demo .sc-ask-sp { white-space: pre; }
+    @keyframes sc-ask-shimmer {
+      0%, 8%    { background-position: 100% 0; transform: translateY(0); }
+      20%       { transform: translateY(-1.5px); }
+      34%, 100% { background-position: 0% 0; transform: translateY(0); }
+    }
+    .dsc-demo .chip.ws-intent-chip--askhelp,
+    #mi-motion .chip.ws-intent-chip--askhelp {
+      border-color: color-mix(in srgb, var(--ter-amber, #FFC434) 75%, var(--border-strong));
+      color: color-mix(in srgb, var(--ter-amber, #FFC434) 62%, #000);
+    }
+    .dsc-demo .chip.ws-intent-chip--askhelp > .material-symbols-outlined,
+    #mi-motion .chip.ws-intent-chip--askhelp > .material-symbols-outlined {
+      color: var(--ter-amber, #FFC434);
+    }
+
+    .dsc-demo .wt-turn {
+      border: 1px solid var(--border); border-radius: 12px; padding: 11px 12px;
+      background: var(--surface); text-align: left;
+    }
+    .dsc-demo .wt-turn-head { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+    .dsc-demo .wt-turn-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px;
+      font-size: 11px; font-weight: 700;
+      background: color-mix(in srgb, var(--primary) 14%, transparent);
+      color: var(--primary-ink, var(--primary));
+    }
+    .dsc-demo .wt-turn-q { flex: 1; font-size: 13px; font-weight: 600; line-height: 1.35; }
+    .dsc-demo .wt-turn-a { font-size: 12px; line-height: 1.45; opacity: .72; margin: 2px 0 9px; }
+    .dsc-demo .wt-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+    .dsc-demo .wt-chip {
+      display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 600;
+      padding: 3px 8px; border-radius: 999px; background: var(--surface-3); color: var(--text-muted);
+    }
+    .dsc-demo .wt-chip .material-symbols-outlined { font-size: 13px; }
+    .dsc-demo .wt-actions { display: flex; align-items: center; gap: 6px; }
+    .dsc-demo .wt-fork {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 30px; height: 30px; border: 0; border-radius: 50%;
+      background: transparent; color: var(--primary-ink, var(--primary));
+    }
+    .dsc-demo .wt-fork-id {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
+      color: var(--primary-ink, var(--primary)); font-variant-numeric: tabular-nums;
+    }
+    .dsc-demo .wt-jump {
+      display: inline-flex; align-items: center; gap: 5px; margin-left: auto;
+      border: 0; background: transparent; font: inherit; font-size: 12px; font-weight: 600;
+      color: var(--text-muted);
+    }
+    .dsc-demo .wt-empty {
+      padding: 18px 12px; font-size: 12.5px; line-height: 1.55; opacity: .72; text-align: center;
+    }
+
+    .dsc-demo .fl-db-popover[data-popover-static] {
+      position: static; display: flex; flex-direction: column; animation: none;
+      max-width: 360px; width: 100%;
+    }
+    .dsc-demo .fl-attach-chip,
+    .dsc-demo .sc-att-chip {
+      display: inline-flex; align-items: center; gap: 6px; max-width: 220px;
+      padding: 4px 10px 4px 4px; border-radius: 999px;
+      background: var(--surface-2); border: 1px solid var(--border-strong);
+    }
+    .dsc-demo .sc-att-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .dsc-demo .fl-attach-thumb,
+    .dsc-demo .sc-att-thumb {
+      width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%;
+      background-size: cover; background-position: center; background-color: var(--surface-3);
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .dsc-demo .fl-attach-thumb--icon .material-symbols-outlined,
+    .dsc-demo .sc-att-thumb--icon .material-symbols-outlined { font-size: 14px; color: var(--text-muted); }
+    .dsc-demo .fl-attach-name,
+    .dsc-demo .sc-att-name { font-size: 12px; font-weight: 500; }
+    .dsc-demo .fl-attach-x {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px; border: 0; border-radius: 50%;
+      background: transparent; color: var(--text-subtle); padding: 0;
+    }
+    .dsc-demo .fl-attach-x .material-symbols-outlined { font-size: 12px; }
+
+    .dsc-demo .wai-img-modal {
+      border-radius: 14px; overflow: hidden; background: var(--surface);
+      border: 1px solid var(--border); box-shadow: var(--shadow-2);
+    }
+    .dsc-demo .wai-img-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      padding: 8px 10px; border-bottom: 1px solid var(--border);
+    }
+    .dsc-demo .wai-img-name { font-size: 12px; font-weight: 700; }
+    .dsc-demo .wai-img-close {
+      width: 28px; height: 28px; border: 0; border-radius: 50%;
+      background: transparent; color: var(--text-muted);
+    }
+    .dsc-demo .wai-img-body img { display: block; width: 100%; height: auto; }
+
+    .dsc-demo .mi-welcome-demo {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      padding: 18px 12px; text-align: center;
+    }
+    .dsc-demo .ws-logo-wrap { position: relative; width: 72px; height: 72px; }
+    .dsc-demo .ws-logo {
+      position: relative; z-index: 1; width: 72px; height: 72px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--primary); color: #fff;
+    }
+    .dsc-demo .ws-logo svg { width: 42px; height: auto; }
+    .dsc-demo .ws-pulse-ring {
+      position: absolute; inset: 0; border-radius: 50%;
+      border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+      animation: scBlink 2.4s ease-in-out infinite;
+    }
+    .dsc-demo .ws-pulse-ring:nth-child(2) { inset: -8px; animation-delay: .4s; opacity: .6; }
+    .dsc-demo .ws-heading {
+      font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
+      font-size: 1.35rem; font-weight: 800; margin: 8px 0 0; letter-spacing: -0.02em;
+    }
+    .dsc-demo .ws-sub { margin: 0; font-size: 0.82rem; color: var(--text-muted); }
+    .dsc-demo .ws-tm { font-size: 0.45em; vertical-align: super; }
+
+    .dsc-demo .nfp-nf-panel.mi-nfp-demo {
+      background: #fff; color: #000; border: 1px solid #111; max-width: 220px; text-align: left;
+      font-family: 'WISE Digits', 'DM Sans', system-ui, sans-serif;
+    }
+    .dsc-demo .nfp-nf-title { font-size: 1.2rem; font-weight: 900; padding: 6px 10px 4px; border-bottom: 1px solid #000; }
+    .dsc-demo .nfp-nf-serving { padding: 4px 10px; border-bottom: 8px solid #000; font-size: 0.7rem; }
+    .dsc-demo .nfp-nf-spc-row { margin-bottom: 2px; }
+    .dsc-demo .nfp-nf-ss-row { display: flex; justify-content: space-between; font-weight: 800; }
+    .dsc-demo .nfp-nf-cal-band {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      padding: 4px 10px; border-bottom: 4px solid #000;
+    }
+    .dsc-demo .nfp-nf-cal-left { display: flex; flex-direction: column; }
+    .dsc-demo .nfp-nf-cal-sm { font-size: 0.58rem; }
+    .dsc-demo .nfp-nf-cal-text { font-size: 1.05rem; font-weight: 900; }
+    .dsc-demo .nfp-nf-cal-num { font-size: 1.8rem; font-weight: 900; line-height: 1; }
+    .dsc-demo .nfp-nf-dv-hdr { text-align: right; font-size: 0.62rem; font-weight: 700; padding: 2px 10px; border-bottom: 1px solid #000; }
+    .dsc-demo .nfp-nf-row {
+      display: flex; justify-content: space-between; padding: 2px 10px;
+      border-bottom: 1px solid #C5CFD7; font-size: 0.68rem;
+    }
+    .dsc-demo .nfp-nf-ind1 { padding-left: 18px; }
+    .dsc-demo .mi-nfp-upc { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .dsc-demo .mi-nfp-upc-digits {
+      font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.08em; color: var(--text);
+    }
+
+    .dsc-demo .mi-vfp-demo .vfp-title {
+      font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
+      font-weight: 800;
+    }
+    .dsc-demo .vfp-pct-ring {
+      width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 800;
+      background: conic-gradient(var(--sec-green) calc(var(--pct) * 1%), var(--surface-3) 0);
+    }
+    .dsc-demo .vfp-pct-ring span {
+      width: 30px; height: 30px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--surface); font-variant-numeric: tabular-nums;
+    }
+    .dsc-demo .vfp-step--err .vfp-step-num { background: var(--sec-red); color: #fff; }
+    .dsc-demo .vfp-step--err .vfp-step-title { font-weight: 700; color: var(--text); }
+    .dsc-demo .vfp-step--err .vfp-step-sub { color: var(--sec-red); }
+
+    .dsc-demo .mi-jam-demo {
+      width: 100%; padding: 10px 12px; border-radius: 12px;
+      background: var(--surface-2); border: 1px solid var(--border);
+    }
+    .dsc-demo .mi-jam-demo .jam-eq { flex: 1 1 0%; min-width: 48px; display: flex; }
+    .dsc-demo .mi-jam-demo .jam-songs { max-width: none; flex: 0 1 auto; }
+
+    .dsc-demo .mi-search-demo { width: 100%; max-width: 320px; text-align: left; }
+    .dsc-demo .wise-app-search-field {
+      position: relative; display: flex; align-items: center;
+      height: 38px; padding: 0 12px; border-radius: 999px;
+      border: 1px solid var(--border); background: var(--surface);
+    }
+    .dsc-demo .wise-app-search-ph {
+      position: absolute; left: 12px; display: inline-flex; align-items: center; gap: 8px;
+      font-size: 0.78rem; color: var(--text-subtle); pointer-events: none;
+    }
+    .dsc-demo .wise-app-search-ph .material-symbols-outlined { font-size: 18px; }
+    .dsc-demo .wise-app-search-input {
+      width: 100%; border: 0; background: transparent; outline: none; font: inherit; font-size: 0.78rem;
+    }
+    .dsc-demo .wise-app-search-results {
+      margin-top: 8px; padding: 8px; border-radius: 12px;
+      border: 1px solid var(--border); background: var(--surface);
+    }
+    .dsc-demo .wise-app-search-group-title {
+      margin: 0 0 6px; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--text-subtle);
+    }
+    .dsc-demo .wise-app-search-hit {
+      display: flex; align-items: flex-start; gap: 10px; width: 100%;
+      padding: 8px; border: 0; border-radius: 10px; background: transparent;
+      text-align: left; font: inherit; color: inherit; cursor: default;
+    }
+    .dsc-demo .wise-app-search-hit-ico { font-size: 18px; color: var(--text-muted); }
+    .dsc-demo .wise-app-search-hit-title { display: block; font-size: 0.82rem; font-weight: 700; }
+    .dsc-demo .wise-app-search-hit-where { display: block; font-size: 0.72rem; color: var(--text-muted); }
+    .dsc-demo .wise-app-search-empty { padding: 16px 10px; font-size: 0.82rem; color: var(--text-muted); }
+
+    .dsc-demo .mi-cwr {
+      display: inline-flex; padding: 4px; border-radius: 999px;
+      background: var(--surface); border: 1px solid var(--border-strong);
+    }
+    .dsc-demo .mi-cwr .cwr-btn {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 2px; width: 48px; height: 48px; margin: 0; padding: 0;
+      border: none; border-radius: 999px; background: transparent;
+      color: var(--text-muted); font-family: inherit; cursor: default;
+    }
+    .dsc-demo .mi-cwr .cwr-btn .material-symbols-outlined { font-size: 20px; }
+    .dsc-demo .mi-cwr .cwr-btn-label {
+      font-size: 8px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    }
+    .dsc-demo .mi-cwr .cwr-btn.is-hover { background: var(--primary-soft); color: var(--primary); }
+    .dsc-demo .mi-cwr .cwr-btn[aria-checked="true"] { background: var(--primary); color: #fff; }
+
+    .dsc-demo .mi-owt {
+      max-width: 320px; padding: 14px 16px 16px; border-radius: 16px;
+      background: var(--surface); border: 1px solid var(--border); text-align: left;
+    }
+    .dsc-demo .mi-owt .wch-head-title {
+      font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
+      font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em;
+    }
+    .dsc-demo .owt-kicker { margin: 4px 0 0; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); }
+    .dsc-demo .owt-copy { margin: 12px 0; font-size: 0.82rem; line-height: 1.5; color: var(--text); }
+    .dsc-demo .owt-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .dsc-demo .owt-nav-move { display: flex; justify-content: space-between; }
+    .dsc-demo .owt-nav-link {
+      border: 0; background: none; font: inherit; font-size: 0.78rem; font-weight: 700;
+      color: var(--text-muted); cursor: default;
+    }
+    .dsc-demo .owt-nav-link--next { color: var(--primary-ink, var(--primary)); }
+    .dsc-demo .owt-nav-link:disabled { opacity: .4; }
+
+    .dsc-card[data-comp-name="Transcript lines"] .dsc-demo,
+    .dsc-card[data-comp-name="Transcript actions"] .dsc-demo,
+    .dsc-card[data-comp-name="Activity strip"] .dsc-demo,
+    .dsc-card[data-comp-name="Sticky modules"] .dsc-demo,
+    .dsc-card[data-comp-name="Chat \u22ef menu"] .dsc-demo,
+    .dsc-card[data-comp-name="What can I ask?"] .dsc-demo,
+    .dsc-card[data-comp-name="Database roster"] .dsc-demo,
+    .dsc-card[data-comp-name="Jam strip"] .dsc-demo,
+    .dsc-card[data-comp-name="Nutrition Facts"] .dsc-demo,
+    .dsc-card[data-comp-name="Progress tracker"] .dsc-demo,
+    .dsc-card[data-comp-name="Owl walkthrough"] .dsc-demo { gap: 16px; align-items: stretch; }
 
     /* Bottom sheet demo: render inline (not fixed / off-screen) + inert. */
     .dsc-demo .ag-sheet { animation: none; }
@@ -6207,7 +8891,7 @@ function moduleStyles() {
       font-weight: 800; letter-spacing: -0.02em;
     }
     .dsc-demo .dsc-amt { font-variant-numeric: tabular-nums; font-weight: 700; }
-    .dsc-demo .dsc-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.68rem; letter-spacing: 0.01em; }
+    .dsc-demo .dsc-mono { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.01em; }
     .dsc-demo .dsc-gs { display: inline-flex; align-items: center; gap: 0; color: var(--ter-amber, #C9A227); }
     .dsc-demo .dsc-gs .material-symbols-outlined { font-size: 16px !important; line-height: 1; }
     .dsc-demo .dsc-gs-on { font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20; }
@@ -6692,8 +9376,7 @@ function moduleStyles() {
     .mi-pane-comp .dsc-ready--item,
     .dsc-refs .dsc-ready--item,
     .mi-tpane-bar .dsc-ready--item,
-    .mi-trace-card-head .dsc-ready--item,
-    .mi-ready-kid .dsc-ready--item {
+    .mi-trace-card-head .dsc-ready--item {
       padding: 0; margin-left: auto; flex: 0 0 auto; align-self: flex-start;
     }
     .mi-dir-head .dsc-ready--item,
@@ -6704,8 +9387,7 @@ function moduleStyles() {
     .mi-pane-comp .dsc-ready--item,
     .dsc-refs .dsc-ready--item,
     .mi-tpane-bar .dsc-ready--item,
-    .mi-trace-card-head .dsc-ready--item,
-    .mi-ready-kid .dsc-ready--item { align-self: center; }
+    .mi-trace-card-head .dsc-ready--item { align-self: center; }
     /* The directory count badge no longer needs to push to the far right — the
        toggle owns the right edge now. */
     .mi-dir-head .mi-dir-count { margin-right: 0; }
@@ -6847,16 +9529,42 @@ function moduleStyles() {
     .mi-motion-helix-opacity .sc-bganim-opacity,
     .mi-motion-helix-opacity .sc-bganim-angle-range,
     .mi-motion-helix-opacity .sc-bganim-scale-range,
-    .mi-motion-helix-opacity .sc-bganim-knob-range {
+    .mi-motion-helix-opacity .sc-bganim-knob-range,
+    .mi-motion-helix-opacity .sc-bganim-motion-knob-range {
       flex: 1 1 auto; min-width: 72px; height: 4px; cursor: pointer;
       accent-color: var(--primary);
     }
     .mi-motion-helix-opacity .sc-bganim-opacity-val,
     .mi-motion-helix-opacity .sc-bganim-angle-val,
     .mi-motion-helix-opacity .sc-bganim-scale-val,
-    .mi-motion-helix-opacity .sc-bganim-knob-val {
+    .mi-motion-helix-opacity .sc-bganim-knob-val,
+    .mi-motion-helix-opacity .sc-bganim-motion-knob-val {
       font-size: 11px; font-weight: 700; color: var(--text-muted);
-      width: 38px; text-align: right; font-variant-numeric: tabular-nums;
+      width: 44px; text-align: right; font-variant-numeric: tabular-nums;
+    }
+    .mi-motion-helix-opacity .sc-bganim-dots-color-input {
+      width: 30px; height: 18px; padding: 0; border: 1px solid var(--border);
+      border-radius: 6px; background: transparent; cursor: pointer; overflow: hidden;
+    }
+    .mi-motion-helix-opacity .sc-bganim-dots-color-input::-webkit-color-swatch-wrapper { padding: 0; }
+    .mi-motion-helix-opacity .sc-bganim-dots-color-input::-webkit-color-swatch { border: 0; border-radius: 4px; }
+    .mi-motion-helix-opacity .sc-bganim-dots-match {
+      margin-left: auto; padding: 0; border: 0; background: none;
+      color: var(--primary); font: inherit; font-size: 11px; font-weight: 700; cursor: pointer;
+    }
+    .mi-motion-helix-opacity .sc-bganim-dots-match.is-on { opacity: .42; pointer-events: none; }
+    .mi-motion-helix-dots-motion .sc-stream-seg {
+      display: inline-flex; margin-left: auto; border: 1px solid var(--border); border-radius: 999px;
+      overflow: hidden;
+    }
+    .mi-motion-helix-dots-motion .sc-stream-seg-btn {
+      padding: 4px 10px; border: 0; border-right: 1px solid var(--border);
+      background: transparent; color: var(--text-muted); font: inherit; font-size: 10.5px;
+      font-weight: 700; cursor: pointer;
+    }
+    .mi-motion-helix-dots-motion .sc-stream-seg-btn:last-child { border-right: 0; }
+    .mi-motion-helix-dots-motion .sc-stream-seg-btn.is-on {
+      background: var(--primary); color: #fff;
     }
 
     .mi-motion-acc {
@@ -6881,6 +9589,19 @@ function moduleStyles() {
     .mi-motion-acc-body p { margin: 0; }
     @media (prefers-reduced-motion: reduce) { .mi-motion-acc-chevron { transition: none; } }
 
+    #mi-motion .mi-motion-sticky-slide {
+      animation: stickySlideRight .42s cubic-bezier(.34, 1.45, .64, 1) both;
+    }
+    #mi-motion .mi-motion-jam {
+      display: flex; flex-direction: column; gap: 12px; width: 100%;
+    }
+    #mi-motion .mi-jam-demo {
+      width: 100%; padding: 10px 12px; border-radius: 12px;
+      background: var(--surface-2); border: 1px solid var(--border);
+    }
+    #mi-motion .mi-jam-demo .jam-eq { display: flex; flex: 1 1 0%; min-width: 48px; }
+    #mi-motion .mi-jam-demo .jam-songs { max-width: none; }
+
     .mi-motion-split {
       position: relative; display: flex; width: 100%; height: 120px;
       border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
@@ -6897,7 +9618,7 @@ function moduleStyles() {
     }
     .mi-motion-pane-label { font-size: 0.72rem; font-weight: 700; color: var(--text); }
     .mi-motion-pane-w {
-      font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+      font-family: var(--font-mono);
       font-size: 0.78rem; font-weight: 700; color: var(--primary);
     }
     html.dark .mi-motion-pane-w { color: var(--primary-bright, #93C5FD); }
@@ -6925,8 +9646,96 @@ function moduleStyles() {
     .mi-motion-width-pane.panel-wide { flex-basis: 48%; }
     .mi-motion-width-pane.panel-triple { flex-basis: 62%; }
     .mi-motion-width-pane.panel-fill { flex-grow: 1000; flex-basis: auto; }
+    .mi-motion-width-pane.panel-custom { flex-grow: 0; flex-shrink: 0; }
     .mi-motion-width-rest { flex: 1 1 40%; }
     @media (prefers-reduced-motion: reduce) { .mi-motion-width-pane { transition: none; } }
+
+    .mi-motion-car { display: flex; flex-direction: column; align-items: stretch; gap: 10px; width: 100%; }
+    .mi-motion-car .mi-motion-helix-opacity { flex: 1 1 auto; min-width: 0; }
+    .mi-motion-car-browser {
+      --car-pct: 100;
+      width: 100%; border: 1px solid var(--border); border-radius: 12px;
+      overflow: hidden; background: var(--surface);
+    }
+    html.dark .mi-motion-car-browser { background: rgba(255,255,255,0.03); }
+    .mi-motion-car-chrome {
+      display: flex; align-items: center; gap: 10px; flex: 0 0 auto;
+      height: 28px; padding: 0 10px;
+      border-bottom: 1px solid var(--border); background: var(--surface-2);
+    }
+    .mi-motion-car-dots { display: flex; align-items: center; gap: 5px; }
+    .mi-motion-car-dots i {
+      display: block; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--text-subtle);
+    }
+    .mi-motion-car-url {
+      font-size: 0.68rem; font-weight: 700; color: var(--text-muted);
+      letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .mi-motion-car-row {
+      display: flex; gap: 8px; align-items: stretch;
+      height: calc(176px * var(--car-pct) / 100);
+      min-height: 72px; overflow-x: auto; overflow-y: hidden;
+      padding: 8px; scrollbar-width: thin;
+      transition: height 0.12s ease;
+    }
+    .mi-motion-car-row::-webkit-scrollbar { height: 8px; }
+    .mi-motion-car-row::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
+    .mi-motion-car-mod {
+      flex: 0 0 var(--car-w); width: var(--car-w);
+      display: flex; flex-direction: column; min-width: 0; min-height: 0; height: 100%;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: color-mix(in srgb, var(--primary) 7%, var(--surface));
+      overflow: hidden;
+    }
+    .mi-motion-car-mod:nth-child(2) {
+      background: color-mix(in srgb, var(--ter-amber, #FFC434) 10%, var(--surface));
+    }
+    .mi-motion-car-mod:nth-child(3) {
+      background: color-mix(in srgb, var(--sec-green, #32A966) 8%, var(--surface));
+    }
+    .mi-motion-car-mod:nth-child(4) {
+      background: color-mix(in srgb, var(--primary) 4%, var(--surface));
+    }
+    .mi-motion-car-mod-head {
+      flex: 0 0 auto;
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-size: 0.78rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
+      padding: 8px 10px 6px;
+    }
+    .mi-motion-car-body {
+      flex: 1 1 0%; min-height: 0; overflow: hidden;
+      display: flex; flex-direction: column; gap: 6px; padding: 0 10px 8px;
+    }
+    .mi-motion-car-line, .mi-motion-car-rowline {
+      flex: 0 0 auto; height: 7px; border-radius: 999px;
+      background: color-mix(in srgb, var(--text) 14%, transparent); width: 100%;
+    }
+    .mi-motion-car-line--short { width: 62%; }
+    .mi-motion-car-score {
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-size: 1.15rem; font-weight: 800; color: var(--text); line-height: 1;
+      flex: 0 0 auto;
+    }
+    .mi-motion-car-bars {
+      flex: 1 1 0%; min-height: 0; display: flex; align-items: flex-end; gap: 5px;
+    }
+    .mi-motion-car-bars i {
+      flex: 1 1 0; min-width: 0; display: block; border-radius: 3px 3px 0 0;
+      background: var(--primary); opacity: 0.72;
+    }
+    .mi-motion-car-chips {
+      display: flex; flex-wrap: nowrap; gap: 6px; flex: 0 0 auto;
+    }
+    .mi-motion-car-chips span {
+      display: inline-flex; align-items: center; height: 22px; padding: 0 8px;
+      border-radius: 999px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text);
+      font-size: 0.62rem; font-weight: 700; white-space: nowrap;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .mi-motion-car-row { transition: none; }
+    }
 
     .mi-motion-reorder, .mi-motion-file-cards { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
     .mi-motion-file { display: flex; flex-direction: column; gap: 12px; width: 100%; }
@@ -7182,25 +9991,49 @@ export function renderAllModules(mainEl) {
   hostEl = mainEl;
   buildDevReadyTree();
   syncCodeStateFromStore();
+  const loadLabel = (typeof window !== 'undefined' && window.WiseMiLoad && window.WiseMiLoad.label)
+    ? window.WiseMiLoad.label()
+    : '0%';
+  const loadBytes = (typeof window !== 'undefined' && window.WiseMiLoad && window.WiseMiLoad.bytes)
+    ? window.WiseMiLoad.bytes()
+    : '';
+  const loadDone = loadLabel === '100%';
   mainEl.innerHTML = `
     ${moduleStyles()}
     <div class="mi-wrap">
       <header class="mi-hero">
         <div class="mi-hero-text">
-          <h1 class="mi-hero-title">All Modules</h1>
+          <div class="mi-hero-title-row">
+            <h1 class="mi-hero-title">All Modules</h1>
+            <span class="mi-load-pct no-countup" id="mi-load-pct" data-no-countup aria-live="polite" title="Bytes received for this page’s files"${loadDone ? ' data-done="1"' : ''}>${esc(loadLabel)}</span>
+            <span class="mi-load-bytes no-countup" id="mi-load-bytes" data-no-countup>${esc(loadBytes)}</span>
+          </div>
           <div class="mi-hero-row">
-            <p class="mi-hero-lede">Every module, component, icon, design token, animation and drag/resize interaction in the WISE app — indexed, rendered live, and one tap away. Re-evaluate crawls the whole project once a day.</p>
+            <p class="mi-hero-lede">Every module, component, icon, design token, animation and drag/resize interaction in the WISE app — indexed, rendered live, and one tap away. Re-evaluate scans the project when you click it — it does not run on load.</p>
             <div class="mi-hero-actions">
-              <button type="button" class="adm-btn adm-btn--primary mi-reeval-btn" data-mi-reeval title="Scan every HTML, JavaScript, CSS and Python file and account for each HTML page. Runs automatically once a day.">
-                <span class="material-symbols-outlined" aria-hidden="true">autorenew</span>
-                <span data-mi-reeval-label>Re-evaluate</span>
-              </button>
+              <div class="mi-hero-btns">
+                <button type="button" class="adm-btn adm-btn--primary mi-reeval-btn" data-mi-reeval title="Scan HTML, JavaScript, CSS and Python files and account for each HTML page. Does not run on its own — click when you want a fresh count.">
+                  <span class="material-symbols-outlined" aria-hidden="true">autorenew</span>
+                  <span data-mi-reeval-label>Re-evaluate</span>
+                </button>
+                <button type="button" class="adm-btn adm-btn--ghost mi-hard-btn" data-mi-hard-reload title="Bypass the cache and reload this page from disk. Live reload is off on All Modules, so file saves do not keep remounting it.">
+                  <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>
+                  <span data-mi-hard-label>Hard reload</span>
+                </button>
+              </div>
               <span class="mi-reeval-meta" data-mi-reeval-meta></span>
             </div>
           </div>
         </div>
       </header>
       <div class="mi-reeval-status" id="mi-reeval-status" hidden></div>
+      <div class="mi-global-search" id="mi-global-search">
+        <div class="mi-search-inline">
+          <span class="material-symbols-outlined" aria-hidden="true">search</span>
+          <input type="search" class="mi-search" id="mi-global-q" placeholder="Search everything on this page…" aria-label="Search modules, tables, logic, icons, components, and more" autocomplete="off" aria-controls="mi-global-hits" aria-autocomplete="list" />
+        </div>
+        <div class="mi-global-hits" id="mi-global-hits" hidden role="listbox" aria-label="Search results"></div>
+      </div>
       ${renderSectionNav()}
       ${renderCodebase()}
       ${renderDirectory()}
@@ -7214,26 +10047,32 @@ export function renderAllModules(mainEl) {
       ${renderComponentLibrary()}
     </div>`;
 
-  setupAccordion(mainEl);
-  wireView(mainEl);
-  wireSectionNav(mainEl);
-  wireCodebase(mainEl);
-  wireDirectory(mainEl);
-  wireDirectoryExport(mainEl);
-  wireTableGallery(mainEl);
-  wireRailFrames(mainEl);
-  wireAppLogic(mainEl);
-  wireIntentAudit(mainEl);
-  wireStreamingTrace(mainEl);
-  wireMotion(mainEl);
-  wireIconInventory(mainEl);
-  wireDesignSystem(mainEl);
-  wireComponentLibrary(mainEl);
-  wireDevReady(mainEl);
-  wirePaneCompJumps(mainEl);
-  wireModuleControls(mainEl);
-  wireLinkValidation(mainEl);
-  wirePageReeval(mainEl);
+  const safeWire = (name, fn) => {
+    try { fn(); }
+    catch (err) { console.error('[all-modules] ' + name + ' failed', err); }
+  };
+  safeWire('accordion', () => setupAccordion(mainEl));
+  safeWire('view', () => wireView(mainEl));
+  safeWire('sectionNav', () => wireSectionNav(mainEl));
+  safeWire('globalSearch', () => wireGlobalSearch(mainEl));
+  safeWire('codebase', () => wireCodebase(mainEl));
+  safeWire('directory', () => wireDirectory(mainEl));
+  safeWire('directoryExport', () => wireDirectoryExport(mainEl));
+  safeWire('tableGallery', () => wireTableGallery(mainEl));
+  safeWire('railFrames', () => wireRailFrames(mainEl));
+  safeWire('appLogic', () => wireAppLogic(mainEl));
+  safeWire('intentAudit', () => wireIntentAudit(mainEl));
+  safeWire('streamingTrace', () => wireStreamingTrace(mainEl));
+  safeWire('motion', () => wireMotion(mainEl));
+  safeWire('iconInventory', () => wireIconInventory(mainEl));
+  safeWire('designSystem', () => wireDesignSystem(mainEl));
+  safeWire('componentLibrary', () => wireComponentLibrary(mainEl));
+  safeWire('devReady', () => wireDevReady(mainEl));
+  safeWire('paneCompJumps', () => wirePaneCompJumps(mainEl));
+  safeWire('moduleControls', () => wireModuleControls(mainEl));
+  safeWire('linkValidation', () => wireLinkValidation(mainEl));
+  safeWire('pageReeval', () => wirePageReeval(mainEl));
+  safeWire('hardReload', () => wireHardReload(mainEl));
 
   /* Deep link — `#mi-directory` (used by the Page Gallery close/back) opens
      that section after the accordion has collapsed everything on load. */
@@ -7247,6 +10086,8 @@ export function renderAllModules(mainEl) {
     const comp = COMPONENTS.find((c) => compDomId(c.name) === hashId);
     if (comp) jumpToComponent(mainEl, comp.name);
   }
+
+  try { window.WiseMiLoad && window.WiseMiLoad.scan && window.WiseMiLoad.scan(); } catch (e) { /* load meter is best-effort */ }
 }
 
 /* ------------------------------------------------------------------ */
@@ -7332,9 +10173,9 @@ function moduleTotal() {
   return n;
 }
 
-function renderSectionNav() {
+function sectionNavTiles() {
   const tokenCount = COLOR_GROUPS.reduce((n, g) => n + g.swatches.length, 0) + TYPE_SCALE.length;
-  const tiles = [
+  return [
     { id: 'mi-code', icon: 'code', num: fmtNum(codeState.now?.total), label: 'Lines of code', sub: `${fmtNum(codeState.now?.pages)} HTML pages` },
     { id: 'mi-directory', icon: 'apps', num: moduleTotal(), label: 'Modules', sub: 'Every screen in the app' },
     { id: 'mi-tables', icon: 'table_chart', num: TABLE_CATALOG.length, label: 'Tables', sub: 'Every data table, live' },
@@ -7346,6 +10187,10 @@ function renderSectionNav() {
     { id: 'mi-design', icon: 'palette', num: tokenCount, label: 'Design tokens', sub: 'Type scale + color tokens' },
     { id: 'mi-components', icon: 'widgets', num: COMPONENTS.length, label: 'Components', sub: 'Reusable, live-rendered' },
   ];
+}
+
+function renderSectionNav() {
+  const tiles = sectionNavTiles();
   return `
     <nav class="dsc-jump" aria-label="Jump to a section">
       ${tiles.map((t) => `
@@ -7376,6 +10221,362 @@ function wireSectionNav(root) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Page-wide search — indexes every catalog this page already renders */
+/* ------------------------------------------------------------------ */
+
+const GLOBAL_SEARCH_PER_GROUP = 6;
+const GLOBAL_SEARCH_MAX = 36;
+const GLOBAL_SEARCH_GROUPS = [
+  'Scorecards', 'Modules', 'Tables', 'App logic', 'Intent chips',
+  'Trace', 'Motion', 'Icons', 'Type', 'Tokens', 'Components', 'Codebase',
+];
+const GLOBAL_SECTION_SEARCH = [
+  '#mi-dir-search', '#mi-tbl-search', '#mi-logic-search',
+  '#mi-int-search', '#ii-search-input', '#dsc-search',
+];
+
+function stripSearchText(s) {
+  return String(s || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function matchSearchTokens(hay, q) {
+  const tokens = String(q || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!tokens.length) return false;
+  const h = String(hay || '').toLowerCase();
+  return tokens.every((t) => h.indexOf(t) !== -1);
+}
+
+let _globalIndex = null;
+function buildGlobalIndex() {
+  if (_globalIndex) return _globalIndex;
+  const items = [];
+  const add = (item) => {
+    items.push({
+      ...item,
+      q: String(item.q || '').toLowerCase(),
+    });
+  };
+
+  sectionNavTiles().forEach((t) => add({
+    kind: 'section', section: t.id, group: 'Scorecards', icon: t.icon,
+    title: t.label, sub: t.sub, key: t.id,
+    q: `${t.label} ${t.sub} ${t.id} scorecard`,
+  }));
+
+  dirModulesFlat().forEach((m) => add({
+    kind: 'module', section: 'mi-directory', group: 'Modules', icon: m.icon || 'apps',
+    title: m.label, sub: m.href, key: m.href, searchSel: '#mi-dir-search',
+    q: `${m.label} ${m.href} ${m.group || ''} ${m.badge || ''} ${m.areaTitle || ''}`,
+  }));
+
+  TABLE_CATALOG.forEach((t) => add({
+    kind: 'table', section: 'mi-tables', group: 'Tables', icon: t.icon || 'table_chart',
+    title: t.label, sub: t.desc || t.areaTitle, key: t.label, searchSel: '#mi-tbl-search',
+    q: `${t.label} ${t.href} ${t.areaTitle || ''} ${t.desc || ''} ${t.selector || ''}`,
+  }));
+
+  APP_LOGIC.forEach((page) => {
+    (page.rules || []).forEach((rule) => add({
+      kind: 'logic', section: 'mi-logic', group: 'App logic', icon: page.icon || 'rule',
+      title: rule.title, sub: page.label, key: rule.title, searchSel: '#mi-logic-search',
+      q: `${page.label} ${page.area} ${rule.title} ${stripSearchText(rule.how)} ${(page.src || []).join(' ')}`,
+    }));
+  });
+
+  allIntentRows().forEach((c) => add({
+    kind: 'intent', section: 'mi-intents', group: 'Intent chips', icon: c.icon || 'bolt',
+    title: c.label, sub: `${c.surface} · ${c.i}`, key: `${c.href}::${c.i}`, searchSel: '#mi-int-search',
+    q: `${c.label} ${c.i} ${c.surface} ${c.does || ''} ${c.status}`,
+  }));
+
+  TRACE_MILESTONES.forEach((m, i) => add({
+    kind: 'trace', section: 'mi-trace', group: 'Trace', icon: 'psychology',
+    title: (m.keys || [])[0] || ('Section ' + (i + 1)),
+    sub: (m.keys || []).slice(1).join(' · '), key: String(i),
+    q: `${(m.keys || []).join(' ')} ${(m.haiku || []).flat().join(' ')} trace helix streaming`,
+  }));
+
+  MOTION_ITEMS.forEach((item) => add({
+    kind: 'motion', section: 'mi-motion', group: 'Motion', icon: item.icon || 'animation',
+    title: item.title, sub: item.used || item.src || '', key: item.id,
+    q: `${item.title} ${item.id} ${item.group} ${item.src || ''} ${item.used || ''} ${stripSearchText(item.lede)}`,
+  }));
+
+  ((ICON_INVENTORY && ICON_INVENTORY.icons) || []).forEach((ic) => add({
+    kind: 'icon', section: 'mi-icons', group: 'Icons', icon: ic.name,
+    title: ic.name, sub: ic.label || (ic.groups || []).join(', '), key: ic.name, searchSel: '#ii-search-input',
+    q: `${ic.name} ${ic.label || ''} ${(ic.groups || []).join(' ')} ${(ic.placements || []).map((p) => `${p.file} ${p.label || ''}`).join(' ')}`,
+  }));
+
+  FONT_FAMILIES.forEach((f) => add({
+    kind: 'font', section: 'mi-design', group: 'Type', icon: 'font_download',
+    title: f.name, sub: f.use, key: f.name,
+    q: `${f.name} ${f.css} ${f.token || ''} ${f.use} ${f.sample || ''} font typography`,
+  }));
+
+  TYPE_SCALE.forEach((t) => add({
+    kind: 'type', section: 'mi-design', group: 'Type', icon: 'format_size',
+    title: t.name, sub: `${t.size} · ${t.family}`, key: t.name,
+    q: `${t.name} ${t.size} ${t.px} ${t.weight} ${t.family} ${t.token || ''} ${t.use}`,
+  }));
+
+  COLOR_GROUPS.forEach((g) => {
+    const name = colorGroupTitle(g);
+    add({
+      kind: 'token-group', section: 'mi-design', group: 'Tokens', icon: 'palette',
+      title: name, sub: g.note, key: colorGroupId(g),
+      q: `${g.title} ${name} ${g.note || ''} ${(g.swatches || []).map((s) => s.token).join(' ')} color group`,
+    });
+    (g.swatches || []).forEach((sw) => add({
+      kind: 'token', section: 'mi-design', group: 'Tokens', icon: 'palette',
+      title: sw.token, sub: sw.use || name, key: sw.token,
+      q: `${sw.token} ${sw.use || ''} ${g.title} ${name} ${g.note || ''} color token`,
+    }));
+  });
+
+  COMPONENTS.forEach((c) => add({
+    kind: 'component', section: 'mi-components', group: 'Components', icon: c.noteIcon || 'widgets',
+    title: c.name, sub: c.cls, key: c.name, searchSel: '#dsc-search',
+    q: `${c.name} ${c.cls} ${c.used} ${stripSearchText(c.note)} ${catOf(c)}`,
+  }));
+
+  CODE_METRICS.forEach((m) => add({
+    kind: 'code', section: 'mi-code', group: 'Codebase', icon: m.icon,
+    title: m.label, sub: m.sub, key: m.key,
+    q: `${m.label} ${m.key} ${m.sub} lines of code`,
+  }));
+  add({
+    kind: 'code', section: 'mi-code', group: 'Codebase', icon: 'code',
+    title: 'Lines of code', sub: 'Total across HTML, JavaScript, CSS, Python', key: 'total',
+    q: 'lines of code total codebase files python javascript html css',
+  });
+
+  _globalIndex = items;
+  return items;
+}
+
+function flashEl(el) {
+  if (!el) return;
+  el.classList.remove('is-flash');
+  void el.offsetWidth;
+  el.classList.add('is-flash');
+  requestAnimationFrame(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+}
+
+function setSectionQuery(root, sel, q) {
+  if (!sel) return;
+  const el = root.querySelector(sel);
+  if (!el) return;
+  el.value = q || '';
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function clearSectionQueries(root) {
+  GLOBAL_SECTION_SEARCH.forEach((sel) => {
+    const el = root.querySelector(sel);
+    if (el && el.value) {
+      el.value = '';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  });
+  root.querySelectorAll('[data-motion-card]').forEach((el) => { el.hidden = false; });
+}
+
+function findByAttr(root, sel, attr, key) {
+  return Array.from(root.querySelectorAll(sel)).find((n) => n.getAttribute(attr) === key);
+}
+
+function jumpGlobalHit(root, hit, q) {
+  if (!hit) return;
+  expandAccordionSection(root, hit.section);
+  setSectionQuery(root, hit.searchSel, q);
+  if (hit.kind === 'motion') {
+    const needle = String(q || '').trim().toLowerCase();
+    root.querySelectorAll('[data-motion-card]').forEach((el) => {
+      el.hidden = !!(needle && (el.dataset.search || '').indexOf(needle) === -1);
+    });
+  }
+  if (hit.kind === 'more' || hit.kind === 'section' || hit.kind === 'trace') {
+    const sec = root.querySelector('#' + hit.section);
+    if (sec) requestAnimationFrame(() => sec.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    return;
+  }
+  if (hit.kind === 'module') { jumpToDirectoryModule(root, hit.key); return; }
+  if (hit.kind === 'component') { jumpToComponent(root, hit.key); return; }
+
+  let el = null;
+  if (hit.kind === 'table') el = findByAttr(root, '[data-tpane]', 'data-tbl', hit.key);
+  else if (hit.kind === 'logic') el = findByAttr(root, '[data-logic-rule]', 'data-logic-title', hit.key);
+  else if (hit.kind === 'intent') el = findByAttr(root, '[data-int-row]', 'data-int-id', hit.key);
+  else if (hit.kind === 'motion') el = findByAttr(root, '[data-motion-card]', 'data-motion-id', hit.key);
+  else if (hit.kind === 'icon') el = findByAttr(root, '[data-icon-card]', 'data-name', hit.key);
+  else if (hit.kind === 'font') el = findByAttr(root, '[data-ds-font]', 'data-ds-font', hit.key);
+  else if (hit.kind === 'type') el = findByAttr(root, '[data-ds-type]', 'data-ds-type', hit.key);
+  else if (hit.kind === 'token') el = findByAttr(root, '[data-swatch]', 'data-token', hit.key);
+  else if (hit.kind === 'token-group') el = findByAttr(root, '[data-ds-group]', 'data-ds-group', hit.key);
+  else if (hit.kind === 'code') el = findByAttr(root, '[data-code-metric]', 'data-code-metric', hit.key);
+
+  if (el) flashEl(el);
+  else {
+    const sec = root.querySelector('#' + hit.section);
+    if (sec) requestAnimationFrame(() => sec.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }
+}
+
+function filterScorecards(root, hits) {
+  const nav = root.querySelector('.dsc-jump');
+  if (!nav) return;
+  if (!hits) {
+    nav.classList.remove('is-filtered');
+    nav.querySelectorAll('[data-jump]').forEach((t) => { t.hidden = false; });
+    return;
+  }
+  const sections = new Set(hits.map((h) => h.section));
+  nav.classList.add('is-filtered');
+  nav.querySelectorAll('[data-jump]').forEach((t) => {
+    t.hidden = !sections.has(t.dataset.jump);
+  });
+}
+
+function groupedGlobalHits(matches) {
+  const byGroup = {};
+  matches.forEach((item) => {
+    (byGroup[item.group] || (byGroup[item.group] = [])).push(item);
+  });
+  const rows = [];
+  let shown = 0;
+  GLOBAL_SEARCH_GROUPS.forEach((group) => {
+    const list = byGroup[group];
+    if (!list || !list.length) return;
+    if (shown >= GLOBAL_SEARCH_MAX) return;
+    const room = Math.min(GLOBAL_SEARCH_PER_GROUP, GLOBAL_SEARCH_MAX - shown, list.length);
+    const slice = list.slice(0, room);
+    const hidden = list.length - slice.length;
+    rows.push({ type: 'head', group, n: list.length });
+    slice.forEach((item) => rows.push({ type: 'hit', item }));
+    shown += slice.length;
+    if (hidden > 0) {
+      rows.push({
+        type: 'hit',
+        item: {
+          kind: 'more',
+          section: slice[0].section,
+          searchSel: slice[0].searchSel,
+          group,
+          title: hidden + ' more in ' + group,
+          sub: 'Open the section with this search applied',
+          icon: 'arrow_downward',
+        },
+      });
+    }
+  });
+  return rows;
+}
+
+function wireGlobalSearch(root) {
+  const input = root.querySelector('#mi-global-q');
+  const panel = root.querySelector('#mi-global-hits');
+  if (!input || !panel) return;
+
+  const state = { q: '', rows: [], active: -1 };
+
+  const setActive = (i) => {
+    const buttons = Array.from(panel.querySelectorAll('.mi-global-hit'));
+    state.active = buttons.length ? Math.max(0, Math.min(i, buttons.length - 1)) : -1;
+    buttons.forEach((b, n) => b.classList.toggle('is-active', n === state.active));
+    const cur = buttons[state.active];
+    if (cur) cur.scrollIntoView({ block: 'nearest' });
+  };
+
+  const render = () => {
+    const q = state.q;
+    if (!q) {
+      panel.hidden = true;
+      panel.innerHTML = '';
+      state.rows = [];
+      state.active = -1;
+      input.removeAttribute('aria-expanded');
+      filterScorecards(root, null);
+      return;
+    }
+    const matches = buildGlobalIndex().filter((item) => matchSearchTokens(item.q, q));
+    filterScorecards(root, matches);
+    if (!matches.length) {
+      panel.hidden = false;
+      panel.innerHTML = `<div class="mi-global-hits-empty">No matches for “${esc(q)}”.</div>`;
+      state.rows = [];
+      state.active = -1;
+      input.setAttribute('aria-expanded', 'true');
+      return;
+    }
+    const rows = groupedGlobalHits(matches);
+    const hits = rows.filter((r) => r.type === 'hit').map((r) => r.item);
+    state.rows = hits;
+    let hitI = 0;
+    const html = [
+      `<div class="mi-global-hits-meta">${matches.length} match${matches.length === 1 ? '' : 'es'}</div>`,
+      ...rows.map((r) => {
+        if (r.type === 'head') {
+          return `<div class="mi-global-hits-ghead">${esc(r.group)} · ${r.n}</div>`;
+        }
+        const item = r.item;
+        const i = hitI++;
+        const moreCls = item.kind === 'more' ? ' mi-global-hit-more' : '';
+        return `<button type="button" class="mi-global-hit${moreCls}" role="option" data-hit="${i}">
+          <span class="material-symbols-outlined" aria-hidden="true">${esc(item.icon || 'search')}</span>
+          <span class="mi-global-hit-body">
+            <span class="mi-global-hit-title">${esc(item.title)}</span>
+            ${item.sub ? `<span class="mi-global-hit-sub">${esc(item.sub)}</span>` : ''}
+          </span>
+        </button>`;
+      }),
+    ].join('');
+    panel.hidden = false;
+    panel.innerHTML = html;
+    input.setAttribute('aria-expanded', 'true');
+    setActive(0);
+  };
+
+  input.addEventListener('input', () => {
+    state.q = input.value.trim();
+    if (!state.q) clearSectionQueries(root);
+    render();
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (input.value) {
+        e.preventDefault();
+        input.value = '';
+        state.q = '';
+        clearSectionQueries(root);
+        render();
+      }
+      return;
+    }
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActive(state.active + 1); return; }
+    if (e.key === 'ArrowUp') { e.preventDefault(); setActive(state.active - 1); return; }
+    if (e.key === 'Enter') {
+      const hit = state.rows[state.active] || state.rows[0];
+      if (!hit) return;
+      e.preventDefault();
+      jumpGlobalHit(root, hit, state.q);
+    }
+  });
+  panel.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-hit]');
+    if (!btn) return;
+    const hit = state.rows[Number(btn.getAttribute('data-hit'))];
+    if (hit) jumpGlobalHit(root, hit, state.q);
+  });
+  panel.addEventListener('mousemove', (e) => {
+    const btn = e.target.closest('[data-hit]');
+    if (!btn) return;
+    const i = Number(btn.getAttribute('data-hit'));
+    if (i !== state.active) setActive(i);
+  });
+}
+
+/* ------------------------------------------------------------------ */
 /* Per-module control wiring (three-dot menu + width changer)         */
 /* ------------------------------------------------------------------ */
 
@@ -7397,9 +10598,10 @@ function runModuleAction(root, action) {
     }
     case 'dir-clear': clearInput('#mi-dir-search'); click('#mi-dir-stats [data-area="all"]'); break;
     case 'dir-reeval': click('[data-mi-reeval]'); break;
+    case 'dir-hard': click('[data-mi-hard-reload]'); break;
     case 'ii-name': click('[data-ii-sort="name"]'); break;
     case 'ii-count': click('[data-ii-sort="count"]'); break;
-    case 'ii-all': clearInput('#ii-search-input'); click('[data-ii-fam="all"]'); click('[data-ii-group="all"]'); break;
+    case 'ii-all': clearInput('#ii-search-input'); click('[data-ii-style="outlined"]'); click('[data-ii-group="all"]'); break;
     case 'ds-type': expandAccordionSection(root, 'mi-design'); root.querySelector('#ds-typography')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
     case 'ds-colors': expandAccordionSection(root, 'mi-design'); root.querySelector('#ds-colors')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
     case 'ds-reset-colors': click('[data-ds-reset-colors]'); break;
@@ -7700,11 +10902,41 @@ function hrefsFromListing(html, kind) {
   return out;
 }
 
-async function fetchText(url) {
-  const sep = url.includes('?') ? '&' : '?';
-  const res = await fetch(url + sep + 'mi=' + Date.now(), { cache: 'no-store' });
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  return res.text();
+async function fetchText(url, signal) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), REEVAL_FETCH_MS);
+  const onAbort = () => ctrl.abort();
+  if (signal) {
+    if (signal.aborted) {
+      clearTimeout(timer);
+      throw new DOMException('Aborted', 'AbortError');
+    }
+    signal.addEventListener('abort', onAbort, { once: true });
+  }
+  try {
+    const sep = url.includes('?') ? '&' : '?';
+    const res = await fetch(url + sep + 'mi=' + Date.now(), { cache: 'no-store', signal: ctrl.signal });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return await res.text();
+  } finally {
+    clearTimeout(timer);
+    if (signal) signal.removeEventListener('abort', onAbort);
+  }
+}
+
+async function mapPool(items, limit, fn) {
+  const list = Array.from(items || []);
+  const out = new Array(list.length);
+  let i = 0;
+  const n = Math.max(0, Math.min(limit || 1, list.length));
+  async function worker() {
+    while (i < list.length) {
+      const idx = i++;
+      out[idx] = await fn(list[idx], idx);
+    }
+  }
+  if (n) await Promise.all(Array.from({ length: n }, () => worker()));
+  return out;
 }
 
 function listingEntries(html) {
@@ -7772,7 +11004,7 @@ async function discoverRootCodeFiles(files, seenFile) {
     const key = canonicalPageHref(h);
     if (key.startsWith('../')) names.add(key.slice(3));
   });
-  await Promise.all(Array.from(names).map(async (name) => {
+  await mapPool(Array.from(names), REEVAL_CONCURRENCY, async (name) => {
     if (!name || name.includes('/')) return;
     const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
     if (!CODE_EXTS.has(ext) || CODE_SKIP_FILES.has(name) || name.startsWith('.')) return;
@@ -7782,10 +11014,10 @@ async function discoverRootCodeFiles(files, seenFile) {
       if (!res.ok) return;
       pushProjectFile(files, seenFile, abs, name, ext, name);
     } catch (_) { /* missing at root */ }
-  }));
+  });
 }
 
-async function discoverProjectFiles() {
+async function discoverProjectFiles(signal) {
   const files = [];
   const seenDir = new Set();
   const seenFile = new Set();
@@ -7796,11 +11028,11 @@ async function discoverProjectFiles() {
     new URL('js/', root).href,
     new URL('pages/', root).href,
     new URL('scripts/', root).href,
-    new URL('screenshots/', root).href,
     root.href,
   ];
 
   while (queue.length) {
+    if (signal && signal.aborted) break;
     const dirUrl = queue.shift();
     let dirKey;
     try { dirKey = new URL(dirUrl).pathname; } catch (_) { continue; }
@@ -7808,7 +11040,7 @@ async function discoverProjectFiles() {
     seenDir.add(dirKey);
 
     let html;
-    try { html = await fetchText(dirUrl); } catch (_) { continue; }
+    try { html = await fetchText(dirUrl, signal); } catch (_) { continue; }
     if (!isDirListing(html)) continue;
 
     for (const raw of listingEntries(html)) {
@@ -7837,20 +11069,17 @@ async function discoverProjectFiles() {
   return files;
 }
 
-async function scanProjectLineCounts(files) {
+async function scanProjectLineCounts(files, signal) {
   const lines = { html: 0, js: 0, css: 0, py: 0 };
   const counts = { html: 0, js: 0, css: 0, py: 0 };
-  const BATCH = 12;
-  for (let i = 0; i < files.length; i += BATCH) {
-    const chunk = files.slice(i, i + BATCH);
-    await Promise.all(chunk.map(async (f) => {
-      try {
-        const text = await fetchText(f.url);
-        lines[f.ext] += countFileLines(text);
-        counts[f.ext] += 1;
-      } catch (_) { /* unreachable file */ }
-    }));
-  }
+  await mapPool(files, REEVAL_CONCURRENCY, async (f) => {
+    if (signal && signal.aborted) return;
+    try {
+      const text = await fetchText(f.url, signal);
+      lines[f.ext] += countFileLines(text);
+      counts[f.ext] += 1;
+    } catch (_) { /* unreachable file */ }
+  });
   return {
     total: lines.html + lines.js + lines.css + lines.py,
     html: lines.html,
@@ -7862,7 +11091,7 @@ async function scanProjectLineCounts(files) {
   };
 }
 
-async function discoverHtmlPages(extraHrefs) {
+async function discoverHtmlPages(extraHrefs, signal) {
   const found = new Set();
   catalogHrefList().forEach((h) => found.add(canonicalPageHref(h)));
   Object.keys(OMITTED_PAGES).forEach((h) => found.add(canonicalPageHref(h)));
@@ -7873,7 +11102,7 @@ async function discoverHtmlPages(extraHrefs) {
 
   const tryList = async (url, kind) => {
     try {
-      const html = await fetchText(url);
+      const html = await fetchText(url, signal);
       if (!isDirListing(html)) return;
       hrefsFromListing(html, kind).forEach((h) => found.add(canonicalPageHref(h)));
     } catch (_) { /* listing not available (livereload 403, etc.) */ }
@@ -7885,10 +11114,10 @@ async function discoverHtmlPages(extraHrefs) {
   return Array.from(found).filter(Boolean).sort();
 }
 
-async function probePage(href) {
+async function probePage(href, signal) {
   try {
     const sep = href.includes('?') ? '&' : '?';
-    const res = await fetch(href + sep + 'mi=' + Date.now(), { cache: 'no-store' });
+    const res = await fetch(href + sep + 'mi=' + Date.now(), { cache: 'no-store', signal });
     if (!res.ok) return { href, ok: false };
     const text = await res.text();
     return { href, ok: true, title: titleFromHtml(text, labelFromPath(href)), size: text.length };
@@ -7925,6 +11154,7 @@ function injectUnaccounted(root, mod) {
   const secData = ensureUnaccountedSection();
   if (secData.modules.some((m) => canonicalPageHref(m.href) === canonicalPageHref(mod.href))) return;
   secData.modules.push(mod);
+  COMPS_BY_MODULE_HREF = null;
 
   const sectionsRoot = root.querySelector('#mi-dir-sections');
   const stats = root.querySelector('#mi-dir-stats');
@@ -7972,9 +11202,10 @@ let reevalBusy = false;
 
 function reevalMetaText() {
   const store = readReevalStore();
-  if (!store.day) return 'Scans the whole project automatically once a day';
-  if (store.day === localDayIso()) return 'Scanned today · next at midnight';
-  return 'Last scanned ' + store.day + ' · due now';
+  const off = 'Live reload off';
+  if (!store.day) return off + ' · click to scan';
+  if (store.day === localDayIso()) return off + ' · scanned today';
+  return off + ' · last scanned ' + store.day;
 }
 
 function paintReevalMeta(root) {
@@ -8002,16 +11233,17 @@ async function reevaluateProject(root, opts) {
   }
   if (label) label.textContent = 'Re-evaluating…';
   setReevalStatus(root, 'busy', 'Re-evaluating the whole project',
-    '<p>Walking every HTML, JavaScript, CSS and Python file, then probing each page…</p>');
+    '<p>Walking HTML, JavaScript, CSS and Python files, then probing each page…</p>');
 
+  const ac = new AbortController();
+  const budget = setTimeout(() => ac.abort(), REEVAL_BUDGET_MS);
   try {
-    const files = await discoverProjectFiles();
+    const files = await discoverProjectFiles(ac.signal);
     const htmlFromWalk = files.filter((f) => f.ext === 'html').map((f) => pageHrefFromRel(f.rel));
-    const pages = await discoverHtmlPages(htmlFromWalk);
-    const [results, codeNow] = await Promise.all([
-      Promise.all(pages.map(probePage)),
-      files.length ? scanProjectLineCounts(files) : Promise.resolve(null),
-    ]);
+    const pages = await discoverHtmlPages(htmlFromWalk, ac.signal);
+    const codeNow = files.length ? await scanProjectLineCounts(files, ac.signal) : null;
+    const results = await mapPool(pages, REEVAL_CONCURRENCY, (href) => probePage(href, ac.signal));
+    if (ac.signal.aborted) throw new DOMException('Timed out', 'AbortError');
     const catalog = catalogPageSet();
     const live = results.filter((r) => r.ok);
     const unreachable = results.filter((r) => !r.ok);
@@ -8100,8 +11332,14 @@ async function reevaluateProject(root, opts) {
       setTimeout(() => btn.classList.remove('is-done'), 2200);
     }
   } catch (err) {
-    setReevalStatus(root, 'err', 'Re-evaluate failed', `<p>${esc(err.message || String(err))}</p>`);
+    const timedOut = err && (err.name === 'AbortError' || /timed out/i.test(err.message || ''));
+    setReevalStatus(root, timedOut ? 'warn' : 'err',
+      timedOut ? 'Re-evaluate stopped so this page stays usable' : 'Re-evaluate failed',
+      timedOut
+        ? '<p>The scan was taking too long (usually a busy local server). The directory and codebase cards above are still the last complete pass. Click Re-evaluate again when the page is idle, or serve the repo with directory listings enabled.</p>'
+        : `<p>${esc(err.message || String(err))}</p>`);
   } finally {
+    clearTimeout(budget);
     reevalBusy = false;
     if (btn) {
       btn.disabled = false;
@@ -8112,42 +11350,68 @@ async function reevaluateProject(root, opts) {
   }
 }
 
+function collectHardReloadUrls() {
+  const seen = new Set();
+  const urls = [];
+  const add = (raw) => {
+    if (!raw) return;
+    let href;
+    try { href = new URL(raw, location.href).href.split('#')[0]; }
+    catch { return; }
+    if (!href || seen.has(href)) return;
+    if (/^(data:|blob:|chrome-extension:|safari-extension:)/i.test(href)) return;
+    if (/livereload|\/sockjs\//i.test(href)) return;
+    if (/[?&]preview=1(?:&|$)/.test(href)) return;
+    if (href.indexOf(location.origin) !== 0) return;
+    seen.add(href);
+    urls.push(href);
+  };
+  add(location.href);
+  document.querySelectorAll('script[src], link[rel="stylesheet"][href], link[rel="modulepreload"][href]')
+    .forEach((el) => add(el.src || el.href));
+  try {
+    performance.getEntriesByType('resource').forEach((e) => {
+      const kind = String(e.initiatorType || '');
+      if (kind !== 'script' && kind !== 'link' && kind !== 'css') return;
+      add(e.name);
+    });
+  } catch (_) { /* performance timeline unavailable */ }
+  return urls;
+}
+
+async function hardReloadAllModules(root) {
+  const btn = root.querySelector('[data-mi-hard-reload]');
+  const label = root.querySelector('[data-mi-hard-label]');
+  if (btn) {
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+  }
+  if (label) label.textContent = 'Reloading…';
+  try {
+    const urls = collectHardReloadUrls();
+    await Promise.all(urls.map((u) => fetch(u, { cache: 'reload', credentials: 'same-origin' }).catch(() => {})));
+  } catch (_) { /* still navigate — cache-bust query is the fallback */ }
+  const url = new URL(location.href);
+  url.searchParams.set('hard', String(Date.now()));
+  location.replace(url.pathname + url.search + url.hash);
+}
+
+function wireHardReload(root) {
+  const btn = root.querySelector('[data-mi-hard-reload]');
+  if (btn) btn.addEventListener('click', () => hardReloadAllModules(root));
+  try {
+    const url = new URL(location.href);
+    if (url.searchParams.has('hard')) {
+      url.searchParams.delete('hard');
+      history.replaceState(null, '', url.pathname + url.search + url.hash);
+    }
+  } catch (_) { /* ignore */ }
+}
+
 function wirePageReeval(root) {
   const btn = root.querySelector('[data-mi-reeval]');
   if (btn) btn.addEventListener('click', () => reevaluateProject(root, { reason: 'manual' }));
   paintReevalMeta(root);
-
-  const kickIfDue = () => {
-    if (!root.isConnected) return;
-    if (location.protocol === 'file:') return;
-    if (readReevalStore().day === localDayIso()) return;
-    reevaluateProject(root, { reason: 'daily' });
-  };
-
-  /* After first paint — the daily crawl fetches the project and should
-     not contend with the initial render / count-ups. */
-  if (typeof requestIdleCallback === 'function') requestIdleCallback(kickIfDue, { timeout: 2800 });
-  else setTimeout(kickIfDue, 900);
-
-  if (!wirePageReeval._wired) {
-    wirePageReeval._wired = true;
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden || !hostEl || !hostEl.isConnected) return;
-      if (readReevalStore().day === localDayIso()) return;
-      reevaluateProject(hostEl, { reason: 'daily' });
-    });
-    const armMidnight = () => {
-      const n = new Date();
-      const wait = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1).getTime() - n.getTime() + 400;
-      setTimeout(() => {
-        if (hostEl && hostEl.isConnected && !document.hidden) {
-          reevaluateProject(hostEl, { reason: 'daily' });
-        }
-        armMidnight();
-      }, Math.max(400, wait));
-    };
-    armMidnight();
-  }
 }
 
 /* Rail previews should show ONLY the module itself — not the repeated left nav,
@@ -8913,7 +12177,110 @@ function wireIconInventory(root) {
   if (!grid) return;
 
   const cards = Array.from(grid.querySelectorAll('[data-icon-card]'));
-  const state = { q: '', fam: 'all', group: 'all', sort: 'name' };
+  const state = { q: '', style: 'outlined', group: 'all', sort: 'name', render: 'font' };
+
+  /* ---- SVG twins -------------------------------------------------------
+     js/icon-svg-data.js is ~600 KB of path data, so it is imported only on
+     the first flip to SVG and cached here. Until it lands the wells show a
+     placeholder rather than an empty hole. */
+  const renderSwitch = root.querySelector('#ii-render-switch');
+  const renderNote = root.querySelector('#ii-render-note');
+  let svgData = null;
+  let svgLoading = null;
+
+  const glyphFor = (name) => {
+    const ic = svgData && svgData.icons && svgData.icons[name];
+    if (!ic) return '';
+    const body = ic[state.style] || ic.outlined;
+    if (!body) return '';
+    const vb = ic.viewBox || svgData.defaultViewBox || '0 -960 960 960';
+    return `<svg viewBox="${esc(vb)}" role="img" aria-hidden="true" focusable="false">${body}</svg>`;
+  };
+
+  /* Paint the SVG wells for the current style. Cheap enough to redo whole
+     (397 cards, no layout thrash) and it keeps style + render in lockstep. */
+  const paintSvg = () => {
+    if (!svgData) return;
+    cards.forEach((c) => {
+      const well = c.querySelector('.ii-glyph-svg');
+      if (well) well.innerHTML = glyphFor(c.dataset.name);
+    });
+  };
+
+  /* One-time: tag the glyphs whose twin came from the classic Material Icons
+     set because the Symbols SVG export renamed them. CSS shows the tag in SVG
+     mode only. */
+  const tagLegacy = () => {
+    const names = new Set((svgData && svgData.legacy) || []);
+    if (!names.size) return;
+    cards.forEach((c) => {
+      if (!names.has(c.dataset.name)) return;
+      const row = c.querySelector('.ii-tagrow');
+      if (!row || row.querySelector('.is-legacy')) return;
+      row.insertAdjacentHTML(
+        'beforeend',
+        '<span class="ii-tag is-legacy" title="Legacy Material Icons name — still a valid ligature in the Symbols font, but renamed in the Symbols SVG export, so this vector comes from the classic Material Icons set">MI legacy</span>'
+      );
+    });
+  };
+
+  const noteFor = () => {
+    if (state.render !== 'svg' || !svgData) return '';
+    const legacy = (svgData.legacy || []).length;
+    const miss = (svgData.missing || []).length;
+    let txt = `${svgData.count} inline SVGs from <code>@material-symbols/svg-400</code> + <code>svg-300</code>`;
+    if (legacy) txt += ` \u2014 ${legacy} tagged <strong>MI legacy</strong> fall back to <code>@material-icons/svg</code>`;
+    if (miss) txt += ` \u2014 ${miss} with no vector twin`;
+    return txt + '. No webfont, no network. Regenerate with <code>python3 scripts/gen_icon_svgs.py</code>.';
+  };
+
+  const applyNote = () => {
+    if (!renderNote) return;
+    const txt = noteFor();
+    renderNote.innerHTML = txt;
+    renderNote.hidden = !txt;
+  };
+
+  const loadSvgData = () => {
+    if (svgData) return Promise.resolve(svgData);
+    if (svgLoading) return svgLoading;
+    if (renderSwitch) renderSwitch.classList.add('is-loading');
+    svgLoading = import('./icon-svg-data.js')
+      .then((m) => {
+        svgData = m.ICON_SVGS;
+        tagLegacy();
+        return svgData;
+      })
+      .catch((err) => {
+        console.error('[icon-inventory] SVG twins failed to load', err);
+        if (renderNote) {
+          renderNote.innerHTML = 'Could not load <code>js/icon-svg-data.js</code>. Run <code>python3 scripts/gen_icon_svgs.py</code> to generate it.';
+          renderNote.hidden = false;
+        }
+        return null;
+      })
+      .then((d) => {
+        if (renderSwitch) renderSwitch.classList.remove('is-loading');
+        svgLoading = null;
+        return d;
+      });
+    return svgLoading;
+  };
+
+  const applyRender = () => {
+    grid.classList.remove('ii-render-font', 'ii-render-svg');
+    grid.classList.add('ii-render-' + state.render);
+    if (state.render !== 'svg') { applyNote(); return; }
+    loadSvgData().then(() => { paintSvg(); applyNote(); });
+  };
+
+  const applyStyle = () => {
+    grid.classList.remove('ii-style-outlined', 'ii-style-filled', 'ii-style-light');
+    grid.classList.add('ii-style-' + state.style);
+    /* filled and light are different geometry, not a variation axis, so the
+       vectors have to be repainted when the style changes. */
+    if (state.render === 'svg') paintSvg();
+  };
 
   const applySort = () => {
     const sorted = cards.slice().sort((a, b) => {
@@ -8929,9 +12296,8 @@ function wireIconInventory(root) {
     let shown = 0;
     cards.forEach((c) => {
       const matchQ = !state.q || c.dataset.search.indexOf(state.q) !== -1;
-      const matchF = state.fam === 'all' || c.dataset.fam.split(' ').includes(state.fam);
       const matchG = state.group === 'all' || (c.dataset.groups || '').split(' ').includes(state.group);
-      const vis = matchQ && matchF && matchG;
+      const vis = matchQ && matchG;
       c.hidden = !vis;
       if (vis) shown++;
     });
@@ -8956,15 +12322,15 @@ function wireIconInventory(root) {
     });
   }
 
-  root.querySelectorAll('[data-ii-fam]').forEach((btn) => {
+  root.querySelectorAll('[data-ii-style]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      state.fam = btn.dataset.iiFam;
-      root.querySelectorAll('[data-ii-fam]').forEach((b) => {
+      state.style = btn.dataset.iiStyle;
+      root.querySelectorAll('[data-ii-style]').forEach((b) => {
         const on = b === btn;
         b.classList.toggle('is-active', on);
         b.setAttribute('aria-pressed', on ? 'true' : 'false');
       });
-      applyFilter();
+      applyStyle();
     });
   });
 
@@ -8989,8 +12355,23 @@ function wireIconInventory(root) {
     });
   });
 
+  root.querySelectorAll('[data-ii-render]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (state.render === btn.dataset.iiRender) return;
+      state.render = btn.dataset.iiRender;
+      root.querySelectorAll('[data-ii-render]').forEach((b) => {
+        const on = b === btn;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      applyRender();
+    });
+  });
+
+  applyStyle();
   applySort();
   applyFilter();
+  applyRender();
 }
 
 /* ------------------------------------------------------------------ */
@@ -9042,14 +12423,25 @@ function swatchAlpha(sw) {
 }
 
 function cssColorLabel(raw) {
+  return formatSwatchColor(raw, 'hex');
+}
+
+function formatSwatchColor(raw, fmt) {
   const parts = cssColorParts(raw);
-  if (!parts) return raw;
-  const { r, g, b, a } = parts;
-  if (a < 0.999) {
-    return `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${Math.round(a * 100) / 100})`;
-  }
-  const hex = (n) => Math.round(n).toString(16).padStart(2, '0').toUpperCase();
-  return `#${hex(r)}${hex(g)}${hex(b)}`;
+  if (!parts) return String(raw || '').trim();
+  const r = Math.round(parts.r);
+  const g = Math.round(parts.g);
+  const b = Math.round(parts.b);
+  const a = Math.round((parts.a == null ? 1 : parts.a) * 1000) / 1000;
+  if (fmt === 'rgba') return `rgba(${r}, ${g}, ${b}, ${a})`;
+  const hex = (n) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, '0').toUpperCase();
+  let h = `#${hex(r)}${hex(g)}${hex(b)}`;
+  if (a < 0.999) h += hex(Math.round(a * 255));
+  return h;
+}
+
+function swatchFmt(sw) {
+  return sw && sw.dataset.fmt === 'rgba' ? 'rgba' : 'hex';
 }
 
 function cssToPickerHex(raw) {
@@ -9073,43 +12465,255 @@ function paintDefaultChip(sw, token) {
   if (def) now.style.background = def;
 }
 
+function paintNextChip(sw, token) {
+  const next = sw.querySelector('[data-swatch-next]');
+  if (!next || !token) return;
+  next.style.background = sw.dataset.draft || `var(${token})`;
+}
+
+function uniqueTokenPages() {
+  const seen = new Set();
+  const out = [];
+  MODULE_SECTIONS.forEach((s) => s.modules.forEach((m) => {
+    const path = String(m.href || '').split('#')[0].split('?')[0];
+    if (!path || path === '#' || seen.has(path)) return;
+    seen.add(path);
+    out.push({ label: m.label, href: path, area: s.title });
+  }));
+  return out;
+}
+
+function markSwatchRollout(sw, done, total, saved) {
+  const btn = sw.querySelector('[data-token-rollout]');
+  if (!btn) return;
+  const pages = total || uniqueTokenPages().length;
+  const n = Math.max(0, Math.min(pages, done == null ? pages : done));
+  btn.hidden = false;
+  const fill = btn.querySelector('[data-rollout-fill]');
+  const label = btn.querySelector('[data-rollout-label]');
+  const pct = pages ? Math.round((n / pages) * 100) : 0;
+  if (fill) fill.style.width = `${pct}%`;
+  if (label) {
+    label.textContent = saved
+      ? `Saved for this theme · ${pages} pages`
+      : `Applied to ${n} of ${pages} pages`;
+  }
+  sw.dataset.rolloutTotal = String(pages);
+  sw.dataset.rolloutDone = String(n);
+}
+
+function setSwatchDraft(sw, value) {
+  const token = sw && sw.dataset.token;
+  if (!token) return;
+  const formatted = formatSwatchColor(value, swatchFmt(sw));
+  if (!formatted) return;
+  sw.dataset.draft = formatted;
+  paintNextChip(sw, token);
+  const apply = sw.querySelector('[data-token-apply]');
+  if (apply) apply.disabled = false;
+  const rollout = sw.querySelector('[data-token-rollout]');
+  if (rollout) rollout.hidden = true;
+  syncOneSwatch(sw);
+}
+
+function syncOneSwatch(sw) {
+  const T = window.WiseTokenTheme;
+  const token = sw.dataset.token;
+  if (token) {
+    paintDefaultChip(sw, token);
+    paintNextChip(sw, token);
+  }
+  const draft = sw.dataset.draft;
+  const live = draft || chipComputedColor(sw);
+  if (!live) return;
+  const custom = !!(T && token && T.isCustom(token));
+  sw.classList.toggle('is-custom', custom);
+  const reset = sw.querySelector('[data-token-reset]');
+  if (reset) reset.disabled = !(custom || draft);
+  const apply = sw.querySelector('[data-token-apply]');
+  if (apply) apply.disabled = !draft;
+  const fmt = swatchFmt(sw);
+  sw.querySelectorAll('[data-token-fmt]').forEach((btn) => {
+    btn.setAttribute('aria-pressed', btn.dataset.tokenFmt === fmt ? 'true' : 'false');
+  });
+  const color = sw.querySelector('[data-token-color]');
+  const picker = cssToPickerHex(live);
+  if (color && color.value.toUpperCase() !== picker) color.value = picker;
+  const parts = cssColorParts(live);
+  const alpha = parts && parts.a != null ? parts.a : 1;
+  const pct = Math.round(alpha * 100);
+  const slider = sw.querySelector('[data-token-alpha]');
+  if (slider && document.activeElement !== slider && Number(slider.value) !== pct) {
+    slider.value = String(pct);
+  }
+  const alphaOut = sw.querySelector('[data-token-alpha-out]');
+  if (alphaOut) alphaOut.textContent = `${pct}%`;
+  sw.style.setProperty('--ds-alpha-ink', picker);
+  const nowHex = sw.querySelector('[data-swatch-hex-now]');
+  const defRaw = (T && token && T.default) ? T.default(token) : '';
+  if (nowHex && document.activeElement !== nowHex) {
+    nowHex.value = formatSwatchColor(defRaw || live, fmt);
+  }
+  const nextHex = sw.querySelector('[data-swatch-hex-next]');
+  if (nextHex && document.activeElement !== nextHex) {
+    nextHex.value = formatSwatchColor(live, fmt);
+  }
+  const out = sw.querySelector('[data-swatch-val]:not(input)');
+  if (sw.dataset.kind === 'shadow') return;
+  if (out) out.textContent = formatSwatchColor(live, fmt);
+  if (custom && !draft && sw.querySelector('[data-token-rollout]')?.hidden) {
+    markSwatchRollout(sw, uniqueTokenPages().length, uniqueTokenPages().length, true);
+  }
+}
+
 function syncSwatchEditors(root) {
   const T = window.WiseTokenTheme;
   const resetAll = root.querySelector('[data-ds-reset-colors]');
   if (resetAll) resetAll.hidden = !(T && T.count && T.count());
-  root.querySelectorAll('[data-swatch]').forEach((sw) => {
-    const token = sw.dataset.token;
-    if (token) paintDefaultChip(sw, token);
-    const raw = chipComputedColor(sw);
-    if (!raw) return;
-    const custom = !!(T && token && T.isCustom(token));
-    sw.classList.toggle('is-custom', custom);
-    const reset = sw.querySelector('[data-token-reset]');
-    if (reset) reset.disabled = !custom;
-    const color = sw.querySelector('[data-token-color]');
-    const hex = sw.querySelector('[data-token-hex]');
-    const picker = cssToPickerHex(raw);
-    if (color && color.value.toUpperCase() !== picker) color.value = picker;
-    const parts = cssColorParts(raw);
-    const alpha = parts && parts.a != null ? parts.a : 1;
-    const pct = Math.round(alpha * 100);
-    const slider = sw.querySelector('[data-token-alpha]');
-    if (slider && document.activeElement !== slider && Number(slider.value) !== pct) {
-      slider.value = String(pct);
-    }
-    const alphaOut = sw.querySelector('[data-token-alpha-out]');
-    if (alphaOut) alphaOut.textContent = `${pct}%`;
-    sw.style.setProperty('--ds-alpha-ink', picker);
-    if (hex && document.activeElement !== hex) {
-      hex.value = custom && T.get(token) ? T.get(token) : cssColorLabel(raw);
-    }
-    const out = sw.querySelector('[data-swatch-val]:not(input)');
-    if (out) out.textContent = cssColorLabel(raw);
-  });
+  root.querySelectorAll('[data-swatch]').forEach(syncOneSwatch);
 }
 
 function resolveSwatchValues(root) {
   syncSwatchEditors(root);
+}
+
+function openTokenApplyModal(sw, opts) {
+  const pages = uniqueTokenPages();
+  const token = sw.dataset.token || '';
+  const fmt = swatchFmt(sw);
+  const T = window.WiseTokenTheme;
+  const fromRaw = (T && T.default) ? T.default(token) : '';
+  const toRaw = sw.dataset.draft || (T && T.get && T.get(token)) || chipComputedColor(sw);
+  const fromHex = formatSwatchColor(fromRaw || toRaw, fmt);
+  const toHex = formatSwatchColor(toRaw, fmt);
+  const instant = !!(opts && opts.instant);
+  const scrim = document.createElement('div');
+  scrim.className = 'dash-modal-scrim dash-modal-scrim--panel';
+  scrim.innerHTML = `
+    <div class="dash-modal dash-modal--panel ds-prop-modal" role="dialog" aria-modal="true" aria-labelledby="ds-prop-title">
+      <header class="dash-modal-head">
+        <div class="dash-modal-titles">
+          <span class="dash-modal-eyebrow">${esc(token)}</span>
+          <h2 class="dash-modal-title" id="ds-prop-title">Apply across the app</h2>
+        </div>
+        <button class="dash-modal-close" type="button" data-prop-close aria-label="Close"><span class="material-symbols-outlined">close</span></button>
+      </header>
+      <div class="dash-modal-body">
+        <div class="ds-prop-compare">
+          <span class="ds-prop-chip">
+            <span class="ds-prop-chip-well"><span class="ds-prop-chip-fill" style="background:${esc(fromHex)}"></span></span>
+            <span class="ds-prop-chip-hex">${esc(fromHex)}</span>
+          </span>
+          <span class="material-symbols-outlined ds-prop-arrow" aria-hidden="true">arrow_forward</span>
+          <span class="ds-prop-chip">
+            <span class="ds-prop-chip-well"><span class="ds-prop-chip-fill" style="background:${esc(toHex)}"></span></span>
+            <span class="ds-prop-chip-hex">${esc(toHex)}</span>
+          </span>
+        </div>
+        <div class="ds-prop-score">
+          <span class="ds-prop-pct" data-prop-pct>0%</span>
+          <span class="ds-prop-frac" data-prop-frac>0 of ${pages.length} pages</span>
+        </div>
+        <div class="ds-prop-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-prop-bar>
+          <span class="ds-prop-fill" data-prop-fill></span>
+        </div>
+        <ul class="ds-prop-list" data-prop-list>
+          ${pages.map((p, i) => `
+            <li class="ds-prop-row" data-prop-row="${i}" data-state="pending">
+              <span class="material-symbols-outlined">schedule</span>
+              <span class="ds-prop-row-name">${esc(p.label)}</span>
+              <span class="ds-prop-row-href">${esc(p.href)}</span>
+            </li>`).join('')}
+        </ul>
+      </div>
+      <footer class="dash-modal-foot">
+        <span class="ds-prop-frac" data-prop-note>Writing ${esc(token)} into every page that loads the design tokens.</span>
+        <div class="dash-modal-foot-right">
+          <button type="button" class="dash-btn dash-btn--primary" data-prop-done disabled>Working…</button>
+        </div>
+      </footer>
+    </div>`;
+  document.body.appendChild(scrim);
+  requestAnimationFrame(() => scrim.classList.add('is-open'));
+
+  const doneBtn = scrim.querySelector('[data-prop-done]');
+  const close = () => {
+    scrim.classList.remove('is-open');
+    setTimeout(() => scrim.remove(), 220);
+  };
+  scrim.querySelector('[data-prop-close]').addEventListener('click', close);
+  scrim.addEventListener('click', (e) => { if (e.target === scrim && !doneBtn.disabled) close(); });
+  const onKey = (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (!doneBtn.disabled) { document.removeEventListener('keydown', onKey); close(); }
+    }
+  };
+  document.addEventListener('keydown', onKey);
+  doneBtn.addEventListener('click', () => { if (!doneBtn.disabled) { document.removeEventListener('keydown', onKey); close(); } });
+
+  const rowIcon = { run: 'sync', ok: 'check_circle', pending: 'schedule' };
+  const setRow = (i, state) => {
+    const row = scrim.querySelector(`[data-prop-row="${i}"]`);
+    if (!row) return;
+    row.dataset.state = state;
+    const ic = row.querySelector('.material-symbols-outlined');
+    if (ic) ic.textContent = rowIcon[state] || 'schedule';
+    if (state === 'run') row.scrollIntoView({ block: 'nearest' });
+  };
+  const setProgress = (done) => {
+    const pct = pages.length ? Math.round((done / pages.length) * 100) : 0;
+    const fill = scrim.querySelector('[data-prop-fill]');
+    const bar = scrim.querySelector('[data-prop-bar]');
+    const pctEl = scrim.querySelector('[data-prop-pct]');
+    const frac = scrim.querySelector('[data-prop-frac]');
+    if (fill) fill.style.width = `${pct}%`;
+    if (bar) bar.setAttribute('aria-valuenow', String(pct));
+    if (pctEl) pctEl.textContent = `${pct}%`;
+    if (frac) frac.textContent = `${done} of ${pages.length} pages`;
+    markSwatchRollout(sw, done, pages.length, false);
+  };
+
+  const finish = () => {
+    pages.forEach((_, i) => setRow(i, 'ok'));
+    setProgress(pages.length);
+    const note = scrim.querySelector('[data-prop-note]');
+    if (note) note.textContent = `${esc(token)} is live on ${pages.length} pages in this theme.`;
+    doneBtn.disabled = false;
+    doneBtn.textContent = 'Done';
+  };
+
+  if (instant) {
+    finish();
+    return;
+  }
+
+  let i = 0;
+  const tick = () => {
+    if (i > 0) setRow(i - 1, 'ok');
+    if (i >= pages.length) {
+      finish();
+      return;
+    }
+    setRow(i, 'run');
+    setProgress(i);
+    i += 1;
+    setTimeout(tick, 28);
+  };
+  setTimeout(tick, 80);
+}
+
+function applyTokenAcrossApp(sw) {
+  const T = window.WiseTokenTheme;
+  const token = sw && sw.dataset.token;
+  if (!T || !token) return;
+  const value = sw.dataset.draft || formatSwatchColor(chipComputedColor(sw), swatchFmt(sw));
+  if (!value) return;
+  T.set(token, value);
+  delete sw.dataset.draft;
+  markSwatchRollout(sw, 0, uniqueTokenPages().length, false);
+  syncOneSwatch(sw);
+  openTokenApplyModal(sw, { instant: false });
 }
 
 function wireDesignSystem(root) {
@@ -9120,45 +12724,103 @@ function wireDesignSystem(root) {
     root._dsTokensWired = true;
     root.addEventListener('input', (e) => {
       const color = e.target.closest('[data-token-color]');
-      if (color && T) {
+      if (color) {
         const sw = color.closest('[data-swatch]');
-        /* The popover only edits RGB — carry the swatch's current alpha over. */
-        if (sw && sw.dataset.token) T.set(sw.dataset.token, colorWithAlpha(color.value, swatchAlpha(sw)));
+        if (sw && sw.dataset.token) setSwatchDraft(sw, colorWithAlpha(color.value, swatchAlpha(sw)));
         return;
       }
       const slider = e.target.closest('[data-token-alpha]');
-      if (slider && T) {
+      if (slider) {
         const sw = slider.closest('[data-swatch]');
         if (sw && sw.dataset.token) {
           const base = sw.querySelector('[data-token-color]');
-          T.set(sw.dataset.token, colorWithAlpha(base ? base.value : chipComputedColor(sw), swatchAlpha(sw)));
+          setSwatchDraft(sw, colorWithAlpha(base ? base.value : chipComputedColor(sw), swatchAlpha(sw)));
         }
         return;
       }
       const hex = e.target.closest('[data-token-hex]');
-      if (hex && T && hex.value.trim().length >= 4) {
+      if (hex && hex.value.trim().length >= 4) {
         const sw = hex.closest('[data-swatch]');
-        if (sw && sw.dataset.token) T.set(sw.dataset.token, hex.value);
+        if (sw && sw.dataset.token && cssColorParts(hex.value)) setSwatchDraft(sw, hex.value);
       }
     });
     root.addEventListener('change', (e) => {
+      const nameEl = e.target.closest('[data-ds-group-name]');
+      if (nameEl) {
+        const saved = saveColorGroupName(nameEl.getAttribute('data-ds-group-name'), nameEl.value);
+        if (nameEl.value !== saved) nameEl.value = saved;
+        return;
+      }
       const hex = e.target.closest('[data-token-hex]');
-      if (!hex || !T) return;
+      if (!hex) return;
       const sw = hex.closest('[data-swatch]');
       if (!sw || !sw.dataset.token) return;
-      if (!T.set(sw.dataset.token, hex.value)) syncSwatchEditors(root);
+      if (!cssColorParts(hex.value)) syncOneSwatch(sw);
+      else setSwatchDraft(sw, hex.value);
+    });
+    root.addEventListener('keydown', (e) => {
+      const nameEl = e.target.closest('[data-ds-group-name]');
+      if (!nameEl) return;
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        nameEl.blur();
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        const g = colorGroupById(nameEl.getAttribute('data-ds-group-name'));
+        nameEl.value = g ? colorGroupTitle(g) : nameEl.value;
+        nameEl.blur();
+      }
     });
     root.addEventListener('click', (e) => {
+      const fmtBtn = e.target.closest('[data-token-fmt]');
+      if (fmtBtn) {
+        e.stopPropagation();
+        const sw = fmtBtn.closest('[data-swatch]');
+        if (!sw) return;
+        const fmt = fmtBtn.dataset.tokenFmt === 'rgba' ? 'rgba' : 'hex';
+        if (swatchFmt(sw) === fmt) return;
+        sw.dataset.fmt = fmt;
+        const raw = sw.dataset.draft || chipComputedColor(sw);
+        if (raw) setSwatchDraft(sw, raw);
+        else syncOneSwatch(sw);
+        return;
+      }
+      const apply = e.target.closest('[data-token-apply]');
+      if (apply) {
+        e.stopPropagation();
+        const sw = apply.closest('[data-swatch]');
+        if (sw && sw.dataset.token && sw.dataset.draft) applyTokenAcrossApp(sw);
+        return;
+      }
+      const rollout = e.target.closest('[data-token-rollout]');
+      if (rollout) {
+        e.stopPropagation();
+        const sw = rollout.closest('[data-swatch]');
+        if (sw && sw.dataset.token) openTokenApplyModal(sw, { instant: true });
+        return;
+      }
       const one = e.target.closest('[data-token-reset]');
       if (one && T) {
         e.stopPropagation();
         const sw = one.closest('[data-swatch]');
-        if (sw && sw.dataset.token) T.reset(sw.dataset.token);
+        if (sw && sw.dataset.token) {
+          delete sw.dataset.draft;
+          const rb = sw.querySelector('[data-token-rollout]');
+          if (rb) rb.hidden = true;
+          T.reset(sw.dataset.token);
+        }
         return;
       }
       const all = e.target.closest('[data-ds-reset-colors]');
       if (all && T) {
         e.stopPropagation();
+        root.querySelectorAll('[data-swatch]').forEach((sw) => {
+          delete sw.dataset.draft;
+          const rb = sw.querySelector('[data-token-rollout]');
+          if (rb) rb.hidden = true;
+        });
         T.resetTheme();
       }
     });
@@ -9172,12 +12834,19 @@ function wireDesignSystem(root) {
     });
   }
 
-  /* Theme flips toggle html.dark — token apply is global; refresh printed values. */
+  /* Theme flips toggle html.dark — drop in-progress drafts and refresh chips. */
   wireDesignSystem._host = root;
   if (!wireDesignSystem._observer) {
+    wireDesignSystem._dark = document.documentElement.classList.contains('dark');
     wireDesignSystem._observer = new MutationObserver(() => {
+      const dark = document.documentElement.classList.contains('dark');
+      if (dark === wireDesignSystem._dark) return;
+      wireDesignSystem._dark = dark;
       const host = wireDesignSystem._host;
-      if (host && host.isConnected) syncSwatchEditors(host);
+      if (host && host.isConnected) {
+        host.querySelectorAll('[data-swatch][data-draft]').forEach((s) => delete s.dataset.draft);
+        syncSwatchEditors(host);
+      }
     });
     wireDesignSystem._observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   }
@@ -9187,7 +12856,63 @@ function wireDesignSystem(root) {
 /* Component Library wiring — search filter + interactive demo bits    */
 /* ------------------------------------------------------------------ */
 
+/* html.dark .foo rules in wise.css (and this page's injected sheet) only
+   match when the DOCUMENT is dark. Mirror them onto .dsc-theme-dark so a
+   dark component pane is accurate on a light page, and exclude .dsc-theme-light
+   so a light pane stays light when the document is navy. */
+const patchedThemeSheets = new WeakSet();
+
+function darkSelectorTwin(selector) {
+  return String(selector || '').replace(/html\.dark/g, '.dsc-theme-dark');
+}
+
+function excludeLightIsland(selector) {
+  return String(selector || '').split(',').map((part) => {
+    const s = part.trim();
+    if (!s || s.indexOf('html.dark') === -1 || s.indexOf('.dsc-theme-light') !== -1) return s;
+    return s + ':not(.dsc-theme-light *)';
+  }).join(', ');
+}
+
+function patchThemeRuleList(rules, sheet) {
+  if (!rules || !sheet || typeof sheet.insertRule !== 'function') return;
+  const extras = [];
+  for (let i = 0; i < rules.length; i++) {
+    const rule = rules[i];
+    /* Chrome exposes an empty cssRules list on style rules (CSS nesting).
+       Recurse when there are children, but still process this rule's selector. */
+    if (rule.cssRules && rule.cssRules.length) {
+      patchThemeRuleList(rule.cssRules, rule);
+    }
+    const sel = rule.selectorText;
+    if (!sel || sel.indexOf('html.dark') === -1 || sel.indexOf('.dsc-theme-dark') !== -1) continue;
+    const twin = darkSelectorTwin(sel);
+    if (twin && twin !== sel) {
+      const text = rule.cssText;
+      extras.push(text.indexOf(sel) !== -1 ? text.replace(sel, twin) : `${twin} { ${rule.style.cssText} }`);
+    }
+    try {
+      const excluded = excludeLightIsland(sel);
+      if (excluded !== sel) rule.selectorText = excluded;
+    } catch (e) { /* selectorText is read-only on some grouping rules */ }
+  }
+  extras.forEach((css) => {
+    try { sheet.insertRule(css, sheet.cssRules.length); } catch (e) { /* skip invalid clones */ }
+  });
+}
+
+function patchLibraryThemeSheets() {
+  Array.from(document.styleSheets).forEach((sheet) => {
+    if (patchedThemeSheets.has(sheet)) return;
+    let rules;
+    try { rules = sheet.cssRules; } catch (e) { return; }
+    patchedThemeSheets.add(sheet);
+    patchThemeRuleList(rules, sheet);
+  });
+}
+
 function wireComponentLibrary(root) {
+  patchLibraryThemeSheets();
   const grid = root.querySelector('#dsc-grid');
   const emptyEl = root.querySelector('#dsc-empty');
   const searchInput = root.querySelector('#dsc-search');
@@ -9246,11 +12971,25 @@ function wireComponentLibrary(root) {
     });
   }
 
-  /* Live-wire the stacked composer demo so the attach menu and database
-     selector behave like the canonical chat module. */
-  root.querySelectorAll('.dsc-demo [data-wise-composer]').forEach((rail) => {
-    wireChatComposer(rail);
-  });
+  /* Live-wire the stacked composer demo once this section opens — the chat
+     module is not imported on load. */
+  const compMod = root.querySelector('#mi-components');
+  const bootComposers = () => {
+    if (!compMod || !compMod.isConnected) return;
+    if (compMod.classList.contains('is-collapsed')) return;
+    if (compMod.dataset.composerBooted === '1') return;
+    compMod.dataset.composerBooted = '1';
+    import('./wiseai-chat.js').then((chat) => {
+      root.querySelectorAll('.dsc-demo [data-wise-composer]').forEach((rail) => {
+        chat.wireChatComposer(rail);
+      });
+    }).catch((err) => {
+      console.error('[all-modules] composer demo failed', err);
+      delete compMod.dataset.composerBooted;
+    });
+  };
+  bootComposers();
+  if (compMod) new MutationObserver(bootComposers).observe(compMod, { attributes: true, attributeFilter: ['class'] });
 
   /* Demo switches (brand toggle, admin popover switch) flip on click so their
      on/off states can be inspected live. Purely local — no persistence. */
@@ -9303,37 +13042,45 @@ function wireDevReady(root) {
   const moduleBtn = (moduleId) =>
     Array.from(root.querySelectorAll('[data-dsc-ready][data-ready-level="module"]'))
       .find((b) => b.dataset.readyId === moduleId);
-  const progressPill = (moduleId) =>
-    Array.from(root.querySelectorAll('[data-ready-progress-for]'))
-      .find((p) => p.getAttribute('data-ready-progress-for') === moduleId);
 
-  /* Recompute a parent module's progress pill + switch from its children. */
+  /* Recompute a parent module's progress pill + switch from its children.
+     Directory rows, rail panes, and library cards all share these ids —
+     paint every copy, not just the first accordion header. */
   function refreshParent(moduleId) {
     const kids = DEV_READY_CHILDREN[moduleId] || [];
     if (!kids.length) return;
     const map = loadDscReadyMap();
     const { ready, total } = readyChildStats(moduleId, map);
     const complete = ready === total;
-    const label = (moduleBtn(moduleId) && moduleBtn(moduleId).dataset.readyLabel) || moduleId;
+    const firstBtn = moduleBtn(moduleId);
+    const label = (firstBtn && firstBtn.dataset.readyLabel) || moduleId;
 
-    const pill = progressPill(moduleId);
-    if (pill) paintReadyProgress(pill, { ready, total });
-
-    const btn = moduleBtn(moduleId);
-    if (!btn) return;
-    btn.classList.remove('is-gated');
-    btn.removeAttribute('aria-disabled');
     if (complete) {
       if (map[moduleId] !== true) { map[moduleId] = true; saveDscReadyMap(map); }
-      btn.classList.add('is-on');
-      btn.setAttribute('aria-checked', 'true');
-      btn.title = 'Ready for dev';
-    } else {
-      if (map[moduleId]) { delete map[moduleId]; saveDscReadyMap(map); }
-      btn.classList.remove('is-on');
-      btn.setAttribute('aria-checked', 'false');
-      btn.title = 'Mark every part in ' + label + ' as Dev Ready';
+    } else if (map[moduleId]) {
+      delete map[moduleId];
+      saveDscReadyMap(map);
     }
+
+    root.querySelectorAll('[data-ready-progress-for]').forEach((pill) => {
+      if (pill.getAttribute('data-ready-progress-for') === moduleId) {
+        paintReadyProgress(pill, { ready, total });
+      }
+    });
+    root.querySelectorAll('[data-dsc-ready][data-ready-level="module"]').forEach((btn) => {
+      if (btn.dataset.readyId !== moduleId) return;
+      btn.classList.remove('is-gated');
+      btn.removeAttribute('aria-disabled');
+      if (complete) {
+        btn.classList.add('is-on');
+        btn.setAttribute('aria-checked', 'true');
+        btn.title = 'Ready for dev';
+      } else {
+        btn.classList.remove('is-on');
+        btn.setAttribute('aria-checked', 'false');
+        btn.title = 'Mark every part in ' + label + ' as Dev Ready';
+      }
+    });
   }
 
   function markModuleChildrenReady(moduleId) {
@@ -9546,10 +13293,10 @@ export const ALL_MODULES_WISEAI = {
         ? `I audited all <strong>${s.chips} intent chips</strong> across <strong>${s.surfaces} surfaces</strong>: <strong>${s.wired} are fully wired</strong> (transcript + logic), while <strong>${s.gaps} are missing a half</strong> — ${s.talk} need logic, ${s.act} need their own transcript${s.none ? `, ${s.none} are fully unwired` : ''}. The <strong>Intent Chip Logic</strong> module calls each one out.`
         : `All <strong>${s.chips} intent chips</strong> across <strong>${s.surfaces} surfaces</strong> are fully wired — every one carries both its own transcript and its own logic. See the <strong>Intent Chip Logic</strong> module.`;
     },
-    icons: 'The <strong>Icon Inventory</strong> catalogs every Material Symbols glyph used in the live app (this page excluded), grouped by surface — chat module, primary nav, top bar and so on — with variant, usage count, label, and exact placements.',
+    icons: 'The <strong>Icon Inventory</strong> catalogs every Material Symbols glyph used in the live app (this page excluded), grouped by surface — chat module, primary nav, top bar and so on — with label and exact placements. Preview each glyph as outlined, filled, or light weight with rounded corners, and flip <strong>Font/SVG</strong> to compare the live Material Symbols webfont against Google\u2019s SVG export of the same glyph \u2014 the vectors are generated locally by <code>scripts/gen_icon_svgs.py</code>, so SVG mode needs no network at all.',
     design: 'The <strong>Design System</strong> documents the app’s fonts (families, sizes, usage) and every color, line, elevation and radius token — with live swatches that follow the current theme.',
     components: 'The <strong>Component Library</strong> renders every reusable component in its default state with its real classes, its variations, and the surfaces where it’s used.',
-    motion: `The <strong>Motion &amp; Resize</strong> module catalogs all <strong>${MOTION_ITEMS.length} motion systems</strong> — count-up, chart replay, streaming, chip shimmer and fly-in, both helixes, accordion open, plus the module splitter, four width tiers, drag-to-reorder and drag-to-file — each running live.`,
+    motion: `The <strong>Motion &amp; Resize</strong> module catalogs all <strong>${MOTION_ITEMS.length} motion systems</strong> — count-up, chart replay, streaming, chip shimmer and fly-in, both helixes, accordion open, sticky drawer slide-in, activity-strip ticks, the jam equalizer, plus the module splitter, five width tiers, drag-to-reorder and drag-to-file — each running live.`,
     counts: `There are <strong>${ICON_INVENTORY?.totalUniqueIcons || 0} unique icons</strong> across <strong>${ICON_INVENTORY?.totalUses || 0} placements</strong> in the app.`,
   },
   onIntent: (intent) => {

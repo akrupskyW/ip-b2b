@@ -31,14 +31,24 @@ import { mountWISEcodeAIChat, OWL_BUG } from './wiseai-chat.js';
 
 export const WISEAI_DOCK_KEY = 'wise-wiseai-dock';
 
-/* Width is a four-tier cycle stored under `wide`: 0 single, 1 double, 2 triple,
-   3 fill (take the rest of the row). Legacy booleans map true → 1, false → 0. */
-const WISEAI_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
-const WISEAI_WIDTH_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to reset'];
+/* Width is a five-tier cycle stored under `wide`: 0 single, 1 double, 2 triple,
+   3 fill, 4 custom. Legacy booleans map true → 1, false → 0. */
+function widthMeta() {
+  const W = window.WPaneWidth;
+  if (W) return W;
+  return {
+    ICONS: ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'],
+    TITLES: ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to widen', 'Width (custom) — drag to any size'],
+    CUSTOM: 4,
+    clamp: (v) => {
+      if (v === true) return 1;
+      if (typeof v === 'number') return Math.max(0, Math.min(4, v | 0));
+      return 0;
+    },
+  };
+}
 function widthTierOf(v) {
-  if (v === true) return 1;
-  if (typeof v === 'number') return Math.max(0, Math.min(3, v | 0));
-  return 0;
+  return widthMeta().clamp(v);
 }
 
 /* Read the persisted dock state, normalised so callers never see garbage. */
@@ -52,7 +62,7 @@ export function readWISEcodeAIDockState() {
     };
   } catch (_) {
     return {
-      wide: (typeof window.wiseDefaultChatTier === 'function' ? window.wiseDefaultChatTier() : 0),
+      wide: (typeof window.wiseDefaultChatTier === 'function' ? window.wiseDefaultChatTier() : ((((window.screen && +window.screen.width) || window.innerWidth || 0) > 1512) ? 1 : 0)),
       right: 1,
       collapsed: false,
     };
@@ -168,11 +178,16 @@ export function applyWISEcodeAIDockState(dock, state = readWISEcodeAIDockState()
   /* The dock is always shown now; the three modes only change how many module
      panes sit to its RIGHT. It stays sticky-clamped to both edges (the
      `wiseai-dock-center` CSS) so it never scrolls off-screen regardless. */
+  const W = widthMeta();
   const tier = widthTierOf(state.wide);
   dock.classList.add('wiseai-dock-open');
-  dock.classList.toggle('panel-wide', tier >= 1);
-  dock.classList.toggle('panel-triple', tier >= 2);
-  dock.classList.toggle('panel-fill', tier >= 3);
+  if (W.applyClasses) W.applyClasses(dock, tier, 'panel');
+  else {
+    dock.classList.toggle('panel-wide', tier >= 1 && tier < 4);
+    dock.classList.toggle('panel-triple', tier >= 2 && tier < 4);
+    dock.classList.toggle('panel-fill', tier === 3);
+    dock.classList.toggle('panel-custom', tier === 4);
+  }
   if (tier < 1) document.documentElement.classList.remove('chat-default-double');
 
   /* When WISEcodeAI is the ONLY module left in the row there are no panes to place,
@@ -188,11 +203,14 @@ export function applyWISEcodeAIDockState(dock, state = readWISEcodeAIDockState()
 
   const widthBtn = dock.querySelector('.panel-width-toggle-btn');
   if (widthBtn) {
-    widthBtn.classList.toggle('is-on', tier >= 1);
-    widthBtn.setAttribute('aria-pressed', tier >= 1 ? 'true' : 'false');
-    widthBtn.title = WISEAI_WIDTH_TITLES[tier];
-    const icon = widthBtn.querySelector('.material-symbols-outlined');
-    if (icon) icon.textContent = WISEAI_WIDTH_ICONS[tier];
+    if (W.syncButton) W.syncButton(widthBtn, tier);
+    else {
+      widthBtn.classList.toggle('is-on', tier >= 1);
+      widthBtn.setAttribute('aria-pressed', tier >= 1 ? 'true' : 'false');
+      widthBtn.title = W.TITLES[tier];
+      const icon = widthBtn.querySelector('.material-symbols-outlined');
+      if (icon) icon.textContent = W.ICONS[tier];
+    }
   }
 }
 
@@ -318,7 +336,7 @@ export function mountWISEcodeAIDock(dock, opts = {}) {
      right-pane count is still restored below.) */
   const defaultWide = (window.WPaneWidth && typeof window.WPaneWidth.defaultChatTier === 'function')
     ? window.WPaneWidth.defaultChatTier()
-    : (typeof window.wiseDefaultChatTier === 'function' ? window.wiseDefaultChatTier() : 0);
+    : (typeof window.wiseDefaultChatTier === 'function' ? window.wiseDefaultChatTier() : ((((window.screen && +window.screen.width) || window.innerWidth || 0) > 1512) ? 1 : 0));
   writeWISEcodeAIDockState({ wide: defaultWide });
 
   /* Restore the persisted place, then keep this dock in sync if the state
@@ -343,9 +361,17 @@ function observeRowForSolo(dock) {
   let queued = false;
   const obs = new MutationObserver((records) => {
     const relevant = records.some((m) => {
+      /* Mutations originating inside the dock are ours, whatever their type.
+         The childList branch used to return true unconditionally, which
+         contradicted the comment above and made any DOM write inside the dock
+         re-enter applyWISEcodeAIDockState. Harmless while nothing wrote inside
+         the dock on its own — but syncButton() rewrites the width button's icon
+         on every call, so once the SVG icon shim started swapping that glyph the
+         two observers drove each other every frame. */
+      if (m.target === dock || dock.contains(m.target)) return false;
       if (m.type === 'childList') return true;
       /* Attribute change on a real sibling module, not the dock or its guts. */
-      return m.target !== dock && !dock.contains(m.target) && m.target.parentElement === row;
+      return m.target.parentElement === row;
     });
     if (!relevant || queued) return;
     queued = true;

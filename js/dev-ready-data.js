@@ -10,7 +10,6 @@
  * Keys are the same stable ready ids the toggles render with:
  *   component name  e.g. "Score card"
  *   'dir:<area>'    directory areas        'tbl:<selector|label>'  tables
- *   'int:<href>'    intent surfaces        'icon:<group id>'       icon groups
  *   'motion:<title>' motion items          'trace:<part>'          trace states
  *   'ds:<title>' / 'dsfont:*' / 'dstype:*'  design system parts
  *   'mi-*'          a whole module (set implicitly when every part is ready)

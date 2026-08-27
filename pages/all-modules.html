@@ -1,6 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>
+    /* All Modules is too heavy to remount on every save. Block LiveReload on
+       this page only — Hard reload (next to Re-evaluate) is the refresh. */
+    (function () {
+      var OrigWS = window.WebSocket;
+      if (OrigWS) {
+        function BlockedWS(url, protocols) {
+          if (/livereload/i.test(String(url || ''))) {
+            return {
+              url: url, readyState: OrigWS.CLOSED, bufferedAmount: 0,
+              extensions: '', protocol: '', binaryType: 'blob',
+              close: function () {}, send: function () {},
+              addEventListener: function () {}, removeEventListener: function () {},
+              dispatchEvent: function () { return false; },
+              onopen: null, onmessage: null, onerror: null, onclose: null
+            };
+          }
+          return protocols === undefined ? new OrigWS(url) : new OrigWS(url, protocols);
+        }
+        BlockedWS.prototype = OrigWS.prototype;
+        BlockedWS.CONNECTING = OrigWS.CONNECTING;
+        BlockedWS.OPEN = OrigWS.OPEN;
+        BlockedWS.CLOSING = OrigWS.CLOSING;
+        BlockedWS.CLOSED = OrigWS.CLOSED;
+        window.WebSocket = BlockedWS;
+      }
+      var lr;
+      try {
+        Object.defineProperty(window, 'LiveReload', {
+          configurable: true,
+          get: function () { return lr; },
+          set: function (v) {
+            lr = v;
+            try {
+              if (v && typeof v.shutDown === 'function') v.shutDown();
+              else if (v && v.connector && typeof v.connector.disconnect === 'function') v.connector.disconnect();
+            } catch (e) { /* already down */ }
+          }
+        });
+      } catch (e) { /* non-configurable LiveReload */ }
+    })();
+  </script>
   <script src="../js/auth-guard.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -20,9 +62,15 @@
     })();
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <!-- SVG icon shim: swaps every Material Symbols glyph for an inline SVG from
+       assets/icons/wise-icons.svg (Rounded 300). The font links above stay as the
+       fallback for any glyph the sprite does not carry. See js/icon-svg-shim.js. -->
+  <script defer src="../js/icon-svg-shim.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="wise.css" />
   <style>
@@ -56,6 +104,50 @@
     #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo a { height: 100%; display: flex; align-items: center; justify-content: center; }
     /* Drop the owl so it lines up with the headlines of the modules to the right. */
     #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug { transform: translateY(16px); }
+
+    /* All Modules is the only surface in the row — open at fill (tier 3) and
+       grow to the full modules column beside the nav. */
+    body[data-nav-id="all-modules"] #agent-main {
+      flex: 1 1 0%;
+      min-width: 0;
+      max-width: none;
+    }
+    body[data-nav-id="all-modules"] #agent-main.panel-fill {
+      flex-grow: 1000;
+    }
+    body[data-nav-id="all-modules"] .agent-main-inner {
+      flex: 1 1 0%;
+      min-height: 0;
+    }
+    body[data-nav-id="all-modules"] .agent-main-scroll {
+      flex: 1 1 0%;
+      min-height: 0;
+      overflow: auto;
+    }
+
+    /* Boot headline — same serif All Modules title as the rendered module, so
+       the load % is visible while the (large) JS graph is still arriving. */
+    .mi-wrap { padding: var(--module-head-pad-t, 26px) var(--module-head-pad-x, 40px) 64px; }
+    .mi-hero-title-row {
+      display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+    }
+    .mi-hero-title {
+      font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
+      margin: 0; font-size: 1.7rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
+    }
+    .mi-load-pct {
+      font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
+      font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em;
+      color: var(--text-muted); line-height: 1.2; white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .mi-load-bytes {
+      font-size: 0.75rem; font-weight: 700; color: var(--text-subtle);
+      font-variant-numeric: tabular-nums; white-space: nowrap;
+    }
+    html.dark .mi-load-pct { color: var(--text-subtle); }
+    html.dark .mi-load-bytes { color: var(--text-subtle); }
+    .mi-load-pct[data-done="1"] { color: var(--text-subtle); }
   </style>
   <script src="../js/cwr-toggle.js"></script>
 </head>
@@ -70,16 +162,246 @@
     </div>
     <div id="topbar-row" hidden aria-hidden="true"></div>
     <div id="modules-row">
-      <main id="agent-main">
+      <main id="agent-main" class="panel-fill">
         <div class="agent-main-inner">
           <header class="agent-main-header" id="agent-main-header"></header>
-          <div class="agent-main-scroll" id="agent-main-scroll"></div>
+          <div class="agent-main-scroll" id="agent-main-scroll">
+            <div class="mi-wrap" data-mi-boot>
+              <header class="mi-hero">
+                <div class="mi-hero-text">
+                  <div class="mi-hero-title-row">
+                    <h1 class="mi-hero-title">All Modules</h1>
+                    <span class="mi-load-pct no-countup" id="mi-load-pct" data-no-countup aria-live="polite" title="Bytes received for this page’s files">0%</span>
+                    <span class="mi-load-bytes no-countup" id="mi-load-bytes" data-no-countup></span>
+                  </div>
+                </div>
+              </header>
+            </div>
+          </div>
         </div>
       </main>
     </div>
   </div>
+  <script>
+    /* Real load meter for All Modules: bytes actually received for THIS page
+       becoming usable — the document, its scripts, styles and fonts. 100%
+       means the kitchen-sink UI can paint, not that every chat-helix photo
+       or recursively discovered import has arrived. Lazy catalog preview
+       iframes, dock product photos, and import-graph fetches are excluded. */
+    (function () {
+      var files = Object.create(null);
+      var winLoaded = false;
+      var fontsReady = !document.fonts;
+      var finished = false;
+      var lastPct = 0;
+      var lastLabel = '0%';
+      var lastBytes = '';
+      var SKIP_KIND = { xmlhttprequest: 1, fetch: 1, beacon: 1, ping: 1, img: 1, image: 1, iframe: 1 };
+
+      function abs(url) {
+        try { return new URL(url, location.href).href.split('#')[0]; }
+        catch (e) { return String(url || ''); }
+      }
+      function skip(url) {
+        if (!url || url.indexOf('data:') === 0 || url.indexOf('blob:') === 0) return true;
+        if (/livereload|\/sockjs\/|browser-sync/i.test(url)) return true;
+        if (/^chrome-extension:|^safari-extension:/i.test(url)) return true;
+        if (/[?&]preview=1(?:&|$)/.test(url)) return true;
+        /* Chat helix / component thumbs / capture CDNs are not this page’s load. */
+        if (/\/assets\//i.test(url)) return true;
+        if (/cdn\.jsdelivr\.net/i.test(url)) return true;
+        return false;
+      }
+      function rec(url, kind) {
+        url = abs(url);
+        if (skip(url)) return null;
+        if (!files[url]) files[url] = { expect: 0, got: 0, done: false, kind: kind || 'other' };
+        else if (kind && files[url].kind === 'other') files[url].kind = kind;
+        return files[url];
+      }
+      function sizeOf(entry) {
+        return (entry && (entry.encodedBodySize || entry.decodedBodySize || entry.transferSize)) || 0;
+      }
+      function applyEntry(entry) {
+        if (!entry || !entry.name) return;
+        if (SKIP_KIND[entry.initiatorType]) return;
+        if (entry.initiatorType === 'iframe') return;
+        var f = rec(entry.name, entry.initiatorType);
+        if (!f) return;
+        var n = sizeOf(entry);
+        if (n) {
+          f.got = Math.max(f.got, n);
+          f.expect = Math.max(f.expect, n);
+        }
+        f.done = true;
+        paint();
+      }
+      function scanDom() {
+        rec(location.href, 'document');
+        document.querySelectorAll('script[src]').forEach(function (el) {
+          rec(el.src, 'script');
+          if (el.dataset.miLoadBound) return;
+          el.dataset.miLoadBound = '1';
+          el.addEventListener('load', function () {
+            var x = rec(el.src, 'script');
+            if (x) x.done = true;
+            paint();
+          });
+        });
+        document.querySelectorAll('link[rel="stylesheet"][href], link[rel="preload"][href], link[rel="modulepreload"][href]').forEach(function (el) {
+          rec(el.href, el.rel === 'stylesheet' ? 'css' : 'script');
+          if (el.dataset.miLoadBound) return;
+          el.dataset.miLoadBound = '1';
+          el.addEventListener('load', function () {
+            var x = rec(el.href, el.rel === 'stylesheet' ? 'css' : 'script');
+            if (x) x.done = true;
+            paint();
+          });
+        });
+      }
+      function fmtBytes(n) {
+        n = Math.max(0, n || 0);
+        if (n < 1024) return n + ' B';
+        if (n < 1024 * 1024) {
+          var kb = n / 1024;
+          return (kb < 10 ? kb.toFixed(1) : Math.round(kb)) + ' KB';
+        }
+        return (n / (1024 * 1024)).toFixed(1) + ' MB';
+      }
+      function pendingCount() {
+        var n = 0;
+        Object.keys(files).forEach(function (u) { if (!files[u].done) n++; });
+        return n;
+      }
+      function paint() {
+        var loaded = 0, expected = 0, n = 0;
+        Object.keys(files).forEach(function (u) {
+          var f = files[u];
+          n++;
+          loaded += f.got;
+          expected += Math.max(f.expect, f.got);
+        });
+        if (loaded > expected) expected = loaded;
+        var pending = pendingCount();
+        var complete = winLoaded && fontsReady && pending === 0 && n > 0;
+        /* Pending files have no byte size until they finish, so a pure
+           loaded/expected ratio sticks at 99%. Reserve an equal share of the
+           bar for each file that is still arriving. */
+        var pct = 0;
+        if (complete) pct = 100;
+        else if (n > 0) {
+          var byteFrac = expected > 0 ? loaded / expected : 0;
+          var reserved = pending / n;
+          pct = Math.round(100 * byteFrac * (1 - reserved));
+        }
+        if (!complete && pct > 99) pct = 99;
+        if (!complete && pending && pct >= 100) pct = 99;
+        /* Before window load we have not seen the full file list yet — don't
+           sit at 99% just because the few files in the HTML have finished. */
+        if (!winLoaded && pending === 0) pct = Math.min(pct, 80);
+        lastPct = pct;
+        lastLabel = pct + '%';
+        lastBytes = fmtBytes(loaded);
+        if (!complete && expected > loaded) lastBytes += ' / ' + fmtBytes(expected);
+        var el = document.getElementById('mi-load-pct');
+        var bytesEl = document.getElementById('mi-load-bytes');
+        if (el) {
+          el.textContent = lastLabel;
+          el.setAttribute('aria-label', 'All Modules loaded ' + pct + ' percent, ' + lastBytes);
+          el.setAttribute('title', n + ' files · ' + lastBytes + (pending ? ' · ' + pending + ' still arriving' : ''));
+          if (complete) el.setAttribute('data-done', '1');
+          else el.removeAttribute('data-done');
+        }
+        if (bytesEl) bytesEl.textContent = lastBytes;
+        if (complete && !finished) {
+          finished = true;
+          if (poll) { clearInterval(poll); poll = null; }
+        }
+      }
+
+      try {
+        if (performance.getEntriesByType) {
+          (performance.getEntriesByType('navigation') || []).forEach(applyEntry);
+          (performance.getEntriesByType('resource') || []).forEach(applyEntry);
+        }
+        if (typeof PerformanceObserver === 'function') {
+          var po = new PerformanceObserver(function (list) {
+            list.getEntries().forEach(applyEntry);
+          });
+          try { po.observe({ type: 'resource', buffered: true }); }
+          catch (e1) { try { po.observe({ entryTypes: ['resource'] }); } catch (e2) { /* no observer */ } }
+          try {
+            var pn = new PerformanceObserver(function (list) {
+              list.getEntries().forEach(applyEntry);
+            });
+            pn.observe({ type: 'navigation', buffered: true });
+          } catch (e3) { /* optional */ }
+        }
+      } catch (e) { /* best-effort */ }
+
+      scanDom();
+      if (document.fonts) {
+        document.fonts.ready.then(function () { fontsReady = true; paint(); });
+        if (document.fonts.addEventListener) {
+          document.fonts.addEventListener('loadingdone', function () { fontsReady = true; paint(); });
+        }
+      }
+      window.addEventListener('load', function () { winLoaded = true; scanDom(); paint(); });
+      document.addEventListener('readystatechange', function () {
+        if (document.readyState === 'complete') winLoaded = true;
+        scanDom();
+        paint();
+      });
+      if (typeof MutationObserver === 'function') {
+        var moTimer = null;
+        var mo = new MutationObserver(function () {
+          if (moTimer) return;
+          moTimer = setTimeout(function () {
+            moTimer = null;
+            scanDom();
+            paint();
+          }, 120);
+        });
+        mo.observe(document.documentElement, { childList: true, subtree: true });
+      }
+      var poll = setInterval(function () {
+        if (finished) { clearInterval(poll); poll = null; return; }
+        try {
+          (performance.getEntriesByType('navigation') || []).forEach(applyEntry);
+          (performance.getEntriesByType('resource') || []).forEach(applyEntry);
+        } catch (e) { /* ignore */ }
+        scanDom();
+        paint();
+      }, 200);
+
+      window.WiseMiLoad = {
+        label: function () { return lastLabel; },
+        bytes: function () { return lastBytes; },
+        scan: function () { scanDom(); paint(); },
+        snapshot: function () {
+          var pending = pendingCount();
+          var loaded = 0, n = 0;
+          Object.keys(files).forEach(function (u) {
+            n++;
+            loaded += files[u].got;
+          });
+          return {
+            label: lastLabel,
+            bytes: lastBytes,
+            files: n,
+            pending: pending,
+            loaded: loaded,
+            done: !!(finished || (winLoaded && fontsReady && pending === 0 && n > 0))
+          };
+        }
+      };
+      paint();
+    })();
+  </script>
   <script type="module" src="../js/agent-overview.js"></script>
-  <script src="/livereload.js?snipver=1"></script>
+  <!-- LiveReload is intentionally off on All Modules — it remounts this page
+       on every save. Use Hard reload next to Re-evaluate when you want a
+       fresh load. Do not re-add /livereload.js here. -->
   <!-- App-wide "Sticky module" toggle for every module right of the chat. -->
   <script defer src="../js/sticky-modules.js"></script>
   <script defer src="../js/count-up-all.js"></script>

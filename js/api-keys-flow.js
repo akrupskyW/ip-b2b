@@ -1,3 +1,5 @@
+import './date-column.js';
+
 /**
  * API keys module.
  *
@@ -41,6 +43,13 @@ let query = '';
 let statusFilter = 'all';
 let scopeFilter = 'all';
 let filterOpen = false;
+let dateLead = 'used';
+let dateLeadBound = false;
+function dc() { return window.WiseDateCol; }
+function keyDates(k) {
+  const D = dc();
+  return D ? D.complete({ created: k.created, used: k.lastUsed, edited: k.edited }, 'key') : { created: k.created, used: k.lastUsed };
+}
 
 /* Keys store — only a masked preview is ever kept (never the full secret). */
 const KEYS = [
@@ -85,7 +94,7 @@ function paint() {
   const active = KEYS.filter((k) => k.status !== 'revoked').length;
   const shown = KEYS.filter(matches);
   hostEl.innerHTML = `
-    <div class="wmod-wrap">
+    <div class="wmod-wrap" data-w-date-root data-ak-board>
       <div class="wmod-masthead">
         <div class="wmod-masthead-main">
           <h1 class="wmod-title">API keys</h1>
@@ -143,16 +152,16 @@ function paint() {
             <div class="wmod-th">Name</div>
             <div class="wmod-th">Key</div>
             <div class="wmod-th ak-col-scope">Scope</div>
-            <div class="wmod-th ak-col-used">Last used</div>
+            <div class="wmod-th ak-col-used w-date-th">${dc() ? dc().headerHtml({ kinds: 'key', lead: dateLead }) : 'Last used'}</div>
             <div class="wmod-th">Status</div>
             <div class="wmod-th ak-row-actions">Actions</div>
           </div>
           ${shown.length ? shown.map((k) => `
             <div class="wmod-trow ak-row${k.status === 'revoked' ? ' is-revoked' : ''}">
-              <div class="wmod-td"><div class="wmod-td-primary">${esc(k.name)}</div><div class="wmod-td-meta">Created ${esc(k.created)}</div></div>
+              <div class="wmod-td"><div class="wmod-td-primary">${esc(k.name)}</div></div>
               <div class="wmod-td"><code class="wmod-td-code">${esc(k.preview)}</code></div>
               <div class="wmod-td ak-col-scope"><span class="wmod-pill wmod-pill--muted">${esc(k.scope)}</span></div>
-              <div class="wmod-td ak-col-used">${esc(k.lastUsed)}</div>
+              <div class="wmod-td ak-col-used"><span class="w-datecell">${dc() ? dc().cellHtml(keyDates(k), 'key', dateLead) : esc(k.lastUsed)}</span></div>
               <div class="wmod-td">${statusPill(k.status)}</div>
               <div class="wmod-td ak-row-actions">${k.status !== 'revoked' ? `<button type="button" class="wmod-linkbtn" data-ak-action="revoke" data-id="${k.id}">Revoke</button>` : ''}</div>
             </div>`).join('') : `
@@ -235,6 +244,15 @@ export function renderApiKeys(mainEl) {
   statusFilter = 'all';
   scopeFilter = 'all';
   filterOpen = false;
+  if (!dateLeadBound && dc()) {
+    dateLeadBound = true;
+    dc().onLead(hostEl, (lead, root) => {
+      if (!hostEl.querySelector('[data-ak-board]')) return;
+      if (root && !hostEl.contains(root)) return;
+      dateLead = lead;
+      paint();
+    });
+  }
   paint();
 
   mainEl.addEventListener('click', (e) => {

@@ -36,7 +36,12 @@
     var css = [
       '.wch-ask-empty{padding:18px 16px;color:var(--text-muted);font-size:13.5px;line-height:1.5;}',
       '.wch-ask-intro{margin:2px 16px 8px;font-size:13px;line-height:1.5;opacity:.82;}',
-      '.wch-ask-list{flex:1;overflow-y:auto;padding:4px 10px 14px;}',
+      '.wch-ask-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;}',
+      '.wch-ask-panel .wch-head{position:sticky;top:0;z-index:3;background:var(--card,var(--surface,#0F1830));}',
+      'html:not(.dark) .wch-ask-panel .wch-head{background:#fff;}',
+      '#modules-row .wch-sidebar.wch-ask-panel.wch-docked .wch-head{background:var(--surface,#fff);}',
+      '#modules-row.modules-sticky .wch-sidebar.wch-ask-panel.wch-docked:not(.wch-unsticky) .wch-head{background:var(--surface-2,var(--surface,#fff));}',
+      '.wch-ask-panel .wch-ask-list,.wch-ask-panel .wch-list{flex:none;overflow:visible;padding:4px 10px 14px;}',
       '.wch-ask-group{margin:0;padding:10px 0 6px;}',
       '.wch-ask-group+.wch-ask-group{margin-top:8px;padding-top:28px;border-top:1px solid rgba(20,40,80,0.10);}',
       'html.dark .wch-ask-group+.wch-ask-group{border-top-color:rgba(255,255,255,0.10);}',
@@ -52,7 +57,7 @@
       '.wch-ask-card-desc{font-size:13px;line-height:1.45;opacity:.8;}',
       '.wch-ask-insert{position:absolute;top:9px;right:9px;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border:0;background:none;color:var(--text-muted);cursor:pointer;opacity:0;}',
       '.wch-ask-card:hover .wch-ask-insert,.wch-ask-card:focus-within .wch-ask-insert{opacity:.7;}',
-      '.wch-ask-search{position:relative;display:flex;align-items:center;margin:0 12px 8px;flex-shrink:0;}',
+      '.wch-ask-search{position:relative;display:flex;align-items:center;margin:0 12px 8px;}',
       '.wch-ask-search > .material-symbols-outlined{position:absolute;left:11px;font-size:18px;opacity:.5;pointer-events:none;}',
       '.wch-ask-search-input{width:100%;height:38px;box-sizing:border-box;padding:0 32px 0 36px;border-radius:999px;font:inherit;font-size:13.5px;color:inherit;outline:none;background:rgba(20,40,80,0.04);border:1px solid rgba(20,40,80,0.10);transition:border-color .15s ease,box-shadow .15s ease;}',
       'html.dark .wch-ask-search-input{background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.12);}',
@@ -65,7 +70,7 @@
       '.wch-ask-search.has-q .wch-ask-search-clear{display:flex;}',
       '.wch-ask-panel .wch-head-title{font-family:"WISE Digits","Noto Serif",Georgia,serif;font-weight:800;font-size:1.2rem;letter-spacing:-.01em;line-height:1.16;}',
       '.wch-ask-panel .wch-head-title .material-symbols-outlined{display:none;}',
-      '.wch-ask-toolbar{flex-shrink:0;display:flex;flex-direction:column;gap:8px;margin:0 12px 8px;}',
+      '.wch-ask-toolbar{display:flex;flex-direction:column;gap:8px;margin:0 12px 8px;}',
       '.wch-ask-sort{display:flex;flex-wrap:wrap;align-items:center;gap:6px;}',
       '.wch-ask-filters{display:flex;flex-wrap:wrap;gap:6px;}',
       '.wch-ask-filter{border:1px solid var(--border-strong);background:color-mix(in srgb,var(--primary) 10%,#fff);color:var(--text-muted);border-radius:999px;padding:5px 13px;font-family:inherit;font-size:12.5px;font-weight:500;cursor:pointer;}',
@@ -118,6 +123,17 @@
     var askConcealTimer = null;
     var askRevealTimer = null;
     var askMorePop = null;
+    var overlayBaseW = 300;
+    var WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
+    var WIDTH_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to widen', 'Width (custom) — drag to any size'];
+    function defaultAskTier() {
+      if (global.WPaneWidth && typeof global.WPaneWidth.defaultChatTier === 'function') {
+        return global.WPaneWidth.defaultChatTier();
+      }
+      if (typeof global.wiseDefaultChatTier === 'function') return global.wiseDefaultChatTier();
+      return (((global.screen && +global.screen.width) || global.innerWidth || 0) > 1512) ? 1 : 0;
+    }
+    var widthTier = defaultAskTier();
 
     host.classList.add('wch-host');
 
@@ -126,40 +142,47 @@
     var askPanel = document.createElement('aside');
     askPanel.className = 'wch-sidebar wch-right wch-ask-panel';
     askPanel.setAttribute('aria-label', label);
+    /* Right-of-chat modules normally default to fill. This catalog follows
+       the chat width rule instead (single on laptop-class, double when wider). */
+    askPanel.setAttribute('data-no-fill-default', '');
     askPanel.innerHTML =
-      '<div class="wch-head">' +
-        '<span class="wch-head-title"><span class="material-symbols-outlined">help</span>' + esc(label) + '</span>' +
-        '<div class="wch-controls">' +
-          '<div class="panel-more-wrap wch-ask-more-wrap">' +
-            '<button type="button" class="panel-more-btn wch-ask-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>' +
-            '<div class="topbar-popover hidden wch-ask-more-pop" role="menu">' +
-              '<button type="button" class="topbar-menu-item" data-ask-act="sort-catalog"><span class="material-symbols-outlined topbar-menu-icon">reorder</span><span>Catalog order</span></button>' +
-              '<button type="button" class="topbar-menu-item" data-ask-act="sort-az"><span class="material-symbols-outlined topbar-menu-icon">sort_by_alpha</span><span>Sort A\u2013Z</span></button>' +
-              '<div class="topbar-menu-divider"></div>' +
-              '<button type="button" class="topbar-menu-item wch-ask-breakout" data-ask-act="breakout"><span class="material-symbols-outlined topbar-menu-icon">vertical_split</span><span class="wch-ask-breakout-label">Break out as a side module</span></button>' +
-              '<div class="topbar-menu-divider"></div>' +
-              '<button type="button" class="topbar-menu-item topbar-menu-item--danger" data-ask-act="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close pane</span></button>' +
+      '<div class="wch-ask-scroll">' +
+        '<div class="wch-head">' +
+          '<span class="wch-head-title"><span class="material-symbols-outlined">help</span>' + esc(label) + '</span>' +
+          '<div class="wch-controls">' +
+            '<div class="panel-more-wrap wch-ask-more-wrap">' +
+              '<button type="button" class="panel-more-btn wch-ask-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>' +
+              '<div class="topbar-popover hidden wch-ask-more-pop" role="menu">' +
+                '<button type="button" class="topbar-menu-item" data-ask-act="sort-catalog"><span class="material-symbols-outlined topbar-menu-icon">reorder</span><span>Catalog order</span></button>' +
+                '<button type="button" class="topbar-menu-item" data-ask-act="sort-az"><span class="material-symbols-outlined topbar-menu-icon">sort_by_alpha</span><span>Sort A\u2013Z</span></button>' +
+                '<div class="topbar-menu-divider"></div>' +
+                '<button type="button" class="topbar-menu-item wch-ask-breakout" data-ask-act="breakout"><span class="material-symbols-outlined topbar-menu-icon">vertical_split</span><span class="wch-ask-breakout-label">Break out as a side module</span></button>' +
+                '<div class="topbar-menu-divider"></div>' +
+                '<button type="button" class="topbar-menu-item topbar-menu-item--danger" data-ask-act="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close pane</span></button>' +
+              '</div>' +
             '</div>' +
+            '<button type="button" class="panel-width-toggle-btn wch-ask-width-btn" aria-pressed="false" title="Width (single) — tap to widen" aria-label="What can I ask? module width"><span class="material-symbols-outlined">width_normal</span></button>' +
           '</div>' +
         '</div>' +
-      '</div>' +
-      '<p class="wch-ask-intro">' + esc((catalog && catalog.intro) || 'Tap a prompt to ask it now, or use the insert icon to drop it into the message box and tweak it first.') + '</p>' +
-      '<div class="wch-ask-search">' +
-        '<span class="material-symbols-outlined">search</span>' +
-        '<input type="text" class="wch-ask-search-input" placeholder="' + esc((catalog && catalog.searchPlaceholder) || 'Search prompts\u2026') + '" aria-label="Search prompts" autocomplete="off">' +
-        '<button type="button" class="wch-ask-search-clear" title="Clear search" aria-label="Clear search"><span class="material-symbols-outlined">close</span></button>' +
-      '</div>' +
-      '<div class="wch-ask-toolbar">' +
-        '<div class="wch-ask-sort" role="group" aria-label="Sort prompts">' +
-          '<button type="button" class="wch-ask-filter is-active" data-ask-sort="catalog" aria-pressed="true">Catalog</button>' +
-          '<button type="button" class="wch-ask-filter" data-ask-sort="az" aria-pressed="false">A\u2013Z</button>' +
+        '<p class="wch-ask-intro">' + esc((catalog && catalog.intro) || 'Tap a prompt to ask it now, or use the insert icon to drop it into the message box and tweak it first.') + '</p>' +
+        '<div class="wch-ask-search">' +
+          '<span class="material-symbols-outlined">search</span>' +
+          '<input type="text" class="wch-ask-search-input" placeholder="' + esc((catalog && catalog.searchPlaceholder) || 'Search prompts\u2026') + '" aria-label="Search prompts" autocomplete="off">' +
+          '<button type="button" class="wch-ask-search-clear" title="Clear search" aria-label="Clear search"><span class="material-symbols-outlined">close</span></button>' +
         '</div>' +
-        '<div class="wch-ask-filters" role="group" aria-label="Filter by topic"></div>' +
-      '</div>' +
-      '<div class="wch-list wch-ask-list" role="list"></div>';
+        '<div class="wch-ask-toolbar">' +
+          '<div class="wch-ask-sort" role="group" aria-label="Sort prompts">' +
+            '<button type="button" class="wch-ask-filter is-active" data-ask-sort="catalog" aria-pressed="true">Catalog</button>' +
+            '<button type="button" class="wch-ask-filter" data-ask-sort="az" aria-pressed="false">A\u2013Z</button>' +
+          '</div>' +
+          '<div class="wch-ask-filters" role="group" aria-label="Filter by topic"></div>' +
+        '</div>' +
+        '<div class="wch-list wch-ask-list" role="list"></div>' +
+      '</div>';
     host.appendChild(askScrim);
     host.appendChild(askPanel);
     var askList = askPanel.querySelector('.wch-ask-list');
+    var askScroll = askPanel.querySelector('.wch-ask-scroll');
 
     function groupsOf() {
       if (typeof opts.getSuggestions === 'function') {
@@ -354,7 +377,7 @@
       askSort = mode === 'az' ? 'az' : 'catalog';
       syncSortButtons();
       renderList();
-      if (askList) askList.scrollTop = 0;
+      resetAskScroll();
     }
     function focusSearch() {
       var inp = askPanel.querySelector('.wch-ask-search-input');
@@ -371,6 +394,75 @@
       if (g) g.textContent = askDocked ? 'close_fullscreen' : 'vertical_split';
       var lbl = item.querySelector('.wch-ask-breakout-label');
       if (lbl) lbl.textContent = askDocked ? 'Merge back into the chat' : 'Break out as a side module';
+    }
+
+    function resetAskScroll() {
+      if (askScroll) askScroll.scrollTop = 0;
+    }
+
+    function syncWidthBtn() {
+      var btn = askPanel.querySelector('.wch-ask-width-btn');
+      if (!btn) return;
+      var W = global.WPaneWidth;
+      if (W && W.syncButton) W.syncButton(btn, widthTier);
+      else {
+        btn.classList.toggle('is-on', widthTier >= 1);
+        btn.setAttribute('aria-pressed', widthTier >= 1 ? 'true' : 'false');
+        btn.title = WIDTH_TITLES[widthTier];
+        var ic = btn.querySelector('.material-symbols-outlined');
+        if (ic) ic.textContent = WIDTH_ICONS[widthTier];
+      }
+    }
+
+    /* Canonical five-tier width (single → double → triple → fill → custom).
+       Overlay lives inside the chat, so fill is 100% of the host; docked uses
+       the same flex/pixel math as Turns. Load default follows the chat rule:
+       single on laptop-class ≤1512 CSS px, double when wider. */
+    function applyWidth() {
+      var W = global.WPaneWidth;
+      var baseW = askDocked ? breakoutWidth : overlayBaseW;
+      var tiers = [baseW, Math.round(baseW * 1.5), baseW * 2];
+      if (widthTier === 4) {
+        if (W && W.applyClasses) W.applyClasses(askPanel, 4, 'panel');
+        else {
+          askPanel.classList.add('panel-custom');
+          if (W && W.pinToCurrent) W.pinToCurrent(askPanel);
+        }
+        if (!askDocked) {
+          var cw = Math.round(askPanel.getBoundingClientRect().width);
+          if (cw > 0) {
+            askPanel.style.setProperty('width', cw + 'px', 'important');
+            askPanel.style.setProperty('max-width', 'none', 'important');
+          }
+        }
+      } else {
+        try { global.WisePaneResize && global.WisePaneResize.release && global.WisePaneResize.release([askPanel]); } catch (_) {}
+        if (askDocked) {
+          if (widthTier === 3) {
+            askPanel.style.setProperty('flex', '1000 1 auto', 'important');
+            askPanel.style.setProperty('width', 'auto', 'important');
+            askPanel.style.setProperty('max-width', 'none', 'important');
+          } else {
+            var w = tiers[widthTier] || baseW;
+            askPanel.style.setProperty('flex', '0 0 ' + w + 'px', 'important');
+            askPanel.style.setProperty('width', w + 'px', 'important');
+            askPanel.style.setProperty('max-width', 'none', 'important');
+          }
+        } else {
+          askPanel.style.removeProperty('flex');
+          if (widthTier === 3) {
+            askPanel.style.setProperty('width', '100%', 'important');
+            askPanel.style.setProperty('max-width', '100%', 'important');
+          } else {
+            var ow = tiers[widthTier] || baseW;
+            askPanel.style.setProperty('width', ow + 'px', 'important');
+            askPanel.style.setProperty('max-width', '86%', 'important');
+          }
+        }
+        askPanel.classList.remove('panel-custom');
+        if (W && W.applyClasses) W.applyClasses(askPanel, widthTier, 'panel');
+      }
+      syncWidthBtn();
     }
 
     function setSticky(on) {
@@ -424,17 +516,18 @@
         if (!container && anchor) container = anchor.parentElement;
         if (container) placeDocked(container, anchor);
         askPanel.classList.add('wch-docked');
-        askPanel.style.flex = '0 0 ' + breakoutWidth + 'px';
-        askPanel.style.width = breakoutWidth + 'px';
+        applyWidth();
         setSticky(askSticky);
         renderList();
         updateBreakBtn();
       } else {
         askPanel.classList.remove('wch-docked', 'wch-docked-hidden', 'wch-dock-conceal', 'wch-dock-reveal', 'wch-unsticky');
-        askPanel.style.flex = '';
-        askPanel.style.width = '';
+        askPanel.style.removeProperty('flex');
+        askPanel.style.removeProperty('width');
+        askPanel.style.removeProperty('max-width');
         host.classList.add('wch-host');
         if (!host.contains(askPanel)) host.appendChild(askPanel);
+        applyWidth();
         updateBreakBtn();
         open();
       }
@@ -557,6 +650,13 @@
       if (!askMorePop.classList.contains('hidden') && !askMoreWrap.contains(e.target) && !askMorePop.contains(e.target)) closeMore();
     });
 
+    var askWidthBtn = askPanel.querySelector('.wch-ask-width-btn');
+    if (askWidthBtn) askWidthBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      widthTier = global.WPaneWidth ? global.WPaneWidth.next(widthTier) : (widthTier + 1) % 5;
+      applyWidth();
+    });
+
     var askSearchWrap = askPanel.querySelector('.wch-ask-search');
     var askSearchInput = askPanel.querySelector('.wch-ask-search-input');
     var askSearchClear = askPanel.querySelector('.wch-ask-search-clear');
@@ -580,6 +680,7 @@
     askPanel.addEventListener('mousedown', function (e) { e.stopPropagation(); });
     askPanel.addEventListener('click', function (e) {
       e.stopPropagation();
+      if (e.target.closest('.wch-ask-width-btn, .panel-width-toggle-btn')) return;
       var sortBtn = e.target.closest('[data-ask-sort]');
       if (sortBtn) {
         setSort(sortBtn.getAttribute('data-ask-sort') || 'catalog');
@@ -589,7 +690,7 @@
       if (filter) {
         askSection = filter.getAttribute('data-section') || 'all';
         renderList();
-        if (askList) askList.scrollTop = 0;
+        resetAskScroll();
         return;
       }
       var card = e.target.closest('[data-ask]');
@@ -601,6 +702,7 @@
     });
 
     renderList();
+    applyWidth();
 
     return {
       open: open,

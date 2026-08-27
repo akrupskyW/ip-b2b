@@ -1,3 +1,5 @@
+import './date-column.js';
+
 /**
  * Organizations — WISEcode Admin module.
  *
@@ -94,11 +96,11 @@ const COLS = [
   { key: 'actions',  label: 'Actions',        sortable: false },
   { key: 'name',     label: 'Company + Type', sortable: true,  value: (o) => o.name.toLowerCase(), type: 'text' },
   { key: 'status',   label: 'Status',         sortable: true,  value: (o) => o.status, type: 'text' },
-  { key: 'joined',   label: 'Joined',         sortable: true,  value: (o) => (o.joined === '—' ? 0 : Date.parse(o.joined) || 0), type: 'num' },
+  { key: 'joined',   label: 'Joined',         sortable: true,  value: (o) => (dc() ? dc().sortValue(orgDates(o), 'org', dateLead) : (o.joined === '—' ? 0 : Date.parse(o.joined) || 0)), type: 'num' },
   { key: 'users',    label: 'Users',          sortable: true,  value: (o) => o.users, type: 'num', num: true },
   { key: 'products', label: 'Products',       sortable: true,  value: (o) => o.products, type: 'num', num: true },
 ];
-const GRID_COLS = '72px minmax(210px, 2.2fr) 128px 148px 80px 96px';
+const GRID_COLS = '72px minmax(210px, 2.2fr) 128px 178px 80px 96px';
 
 /* ---- Per-row actions (collapsed into a three-dot menu) -------------- */
 const ROW_ACTIONS = [
@@ -115,6 +117,17 @@ let activeStatus = null;
 let query = '';
 let sortKey = null;
 let sortDir = 1;
+let dateLead = 'joined';
+let dateLeadBound = false;
+
+function dc() { return window.WiseDateCol; }
+function orgDates(o) {
+  const D = dc();
+  const joined = o.joined === '—' ? '—' : o.joined;
+  const empty = joined === '—';
+  const partial = { joined, created: empty ? '—' : undefined, active: empty ? '—' : undefined, updated: empty ? '—' : undefined, edited: empty ? '—' : undefined };
+  return D ? D.complete(partial, 'org') : { joined };
+}
 
 /* ---- Chat bridge + toast -------------------------------------------- */
 let chatApi = null;
@@ -159,8 +172,16 @@ function statsHtml() {
 }
 
 function theadHtml() {
+  const D = dc();
   return COLS.map((c) => {
-    const cls = `adm-th${c.num ? ' adm-th--num' : ''}${c.end ? ' adm-th--end' : ''}`;
+    const cls = `adm-th${c.num ? ' adm-th--num' : ''}${c.end ? ' adm-th--end' : ''}${c.key === 'joined' ? ' w-date-th' : ''}`;
+    if (c.key === 'joined' && D) {
+      const inner = D.headerHtml({ kinds: 'org', lead: dateLead });
+      if (!c.sortable) return `<span class="${cls}">${inner}</span>`;
+      const active = c.key === sortKey;
+      const dir = active ? ` data-adm-dir="${sortDir === 1 ? 'asc' : 'desc'}"` : '';
+      return `<span class="${cls} adm-th--sortable" role="button" tabindex="0" data-adm-sort="${esc(c.key)}"${dir}>${inner}<span class="adm-sort-arrow">${ARROW_SVG}</span></span>`;
+    }
     if (!c.sortable) return `<span class="${cls}">${esc(c.label)}</span>`;
     const active = c.key === sortKey;
     const dir = active ? ` data-adm-dir="${sortDir === 1 ? 'asc' : 'desc'}"` : '';
@@ -172,20 +193,23 @@ function rowMenuHtml(o) {
   const items = ROW_ACTIONS.map((a) =>
     `<button type="button" class="adm-rowmenu-item${a.variant ? ' adm-rowmenu-item--' + a.variant : ''}" role="menuitem" data-adm-action="${esc(a.action)}" data-adm-org="${esc(o.name)}"><span class="material-symbols-outlined">${esc(a.icon)}</span>${esc(a.label)}</button>`
   ).join('');
-  return `<div class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Actions" title="Actions"><span class="material-symbols-outlined">more_vert</span></button><div class="adm-rowmenu-pop" role="menu" hidden>${items}</div></div>`;
+  return `<div class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Actions"><span class="material-symbols-outlined">more_vert</span></button><div class="adm-rowmenu-pop" role="menu" hidden>${items}</div></div>`;
 }
 
 function rowHtml(o) {
   const chip = STATUS_CHIP[o.status];
-  const joined = o.joined === '—'
-    ? '<span style="color:var(--text-subtle)">—</span>'
-    : `<span class="adm-idcell-body"><span style="font-weight:600">${esc(o.joined)}</span>${o.via ? `<span class="adm-idcell-sub">${esc(o.via)}</span>` : ''}</span>`;
+  const D = dc();
+  const joined = D
+    ? `<span class="w-datecell">${D.cellHtml(orgDates(o), 'org', dateLead)}</span>`
+    : (o.joined === '—'
+      ? '<span style="color:var(--text-subtle)">—</span>'
+      : `<span class="adm-idcell-body"><span style="font-weight:600">${esc(o.joined)}</span>${o.via ? `<span class="adm-idcell-sub">${esc(o.via)}</span>` : ''}</span>`);
   return `
     <div class="adm-trow" data-adm-row="${esc(o.name)}" data-adm-status="${esc(o.status)}">
       <span class="adm-td adm-td--actions">${rowMenuHtml(o)}</span>
       <span class="adm-td"><span class="adm-idcell"><span class="adm-avatar">${esc(initials(o.name))}</span><span class="adm-idcell-body"><span class="adm-idcell-name">${esc(o.name)}</span><span class="adm-idcell-sub">${esc(o.type)}</span></span></span></span>
       <span class="adm-td"><span class="adm-chip ${chip.cls}"><span class="material-symbols-outlined">${esc(chip.icon)}</span>${esc(chip.label)}</span></span>
-      <span class="adm-td" style="font-size:0.8rem">${joined}</span>
+      <span class="adm-td">${joined}</span>
       <span class="adm-td adm-td--num${o.users ? ' is-hot' : ''}">${o.users}</span>
       <span class="adm-td adm-td--num${o.products ? ' is-hot' : ''}">${o.products}</span>
     </div>`;
@@ -207,7 +231,7 @@ function orderedOrgs() {
 function paint() {
   if (!hostEl) return;
   hostEl.innerHTML = `
-    <div class="adm-wrap adm-wrap--wide">
+    <div class="adm-wrap adm-wrap--wide" data-w-date-root data-org-board>
       <header class="adm-head">
         <div class="adm-head-row">
           <div>
@@ -392,6 +416,15 @@ export function renderOrganizations(mainEl) {
   hostEl = mainEl;
   activeStatus = null; query = ''; sortKey = null; sortDir = 1;
   loadMetricOrder();
+  if (!dateLeadBound && dc()) {
+    dateLeadBound = true;
+    dc().onLead(hostEl, (lead, root) => {
+      if (!hostEl.querySelector('[data-org-board]')) return;
+      if (root && !hostEl.contains(root)) return;
+      dateLead = lead;
+      paint();
+    });
+  }
   paint();
   wireMetricDnD(mainEl);
 
@@ -413,7 +446,7 @@ export function renderOrganizations(mainEl) {
     const filter = e.target.closest('[data-adm-filter]');
     if (filter) { const s = filter.dataset.admFilter || null; setOrgFilter(s && s === activeStatus ? null : s); return; }
     const sortH = e.target.closest('[data-adm-sort]');
-    if (sortH) { toggleSort(sortH.dataset.admSort); return; }
+    if (sortH && !e.target.closest('.w-datemenu, .pf-datemenu')) { toggleSort(sortH.dataset.admSort); return; }
     const act = e.target.closest('[data-adm-action]');
     if (act) { closeRowMenus(null); runAction(act.dataset.admAction, act.dataset.admOrg || ''); return; }
   });

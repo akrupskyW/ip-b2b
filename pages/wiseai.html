@@ -6,9 +6,14 @@
   <title>WISEcodeAI — Ask your verified food data anything</title>
   <script src="../js/text-size-fouc.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <!-- SVG icon shim: swaps every Material Symbols glyph for an inline SVG from
+       assets/icons/wise-icons.svg (Rounded 300). The font links above stay as the
+       fallback for any glyph the sprite does not carry. See js/icon-svg-shim.js. -->
+  <script defer src="../js/icon-svg-shim.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="wise.css" />
   <style>
@@ -355,14 +360,55 @@
       align-items: stretch; gap: 2px;
     }
     #wa-report .wa-pane-eyebrow { margin: 0; }
+    .wa-rpt-name {
+      display: flex; align-items: center; gap: 4px;
+      min-width: 0; max-width: 100%;
+    }
     #wa-report .wa-pane-title {
+      flex: 0 1 auto; min-width: 0;
       cursor: text; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      border-bottom: 1px dashed color-mix(in srgb, var(--text-muted) 55%, transparent);
+      padding-bottom: 1px;
+      transition: border-color .15s ease, box-shadow .15s ease;
     }
     #wa-report .wa-pane-title:empty { display: block; min-height: 1.2em; }
+    #wa-report .wa-pane-title:empty::before {
+      content: attr(data-placeholder);
+      color: var(--text-subtle);
+      font-style: italic;
+      font-weight: 600;
+    }
+    .wa-rpt-name:hover .wa-pane-title,
+    #wa-report .wa-pane-title:hover {
+      border-bottom-style: solid;
+      border-bottom-color: color-mix(in srgb, var(--primary) 55%, var(--text-muted));
+    }
     #wa-report .wa-pane-title:focus {
       outline: none;
+      border-bottom-style: solid;
+      border-bottom-color: var(--primary);
       box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--primary) 55%, transparent);
     }
+    .wa-rpt-name-edit {
+      flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%;
+      background: transparent; color: var(--text-muted); cursor: pointer;
+      transition: color .15s ease, background .15s ease;
+    }
+    .wa-rpt-name-edit:hover,
+    .wa-rpt-name-edit:focus-visible,
+    .wa-rpt-name:hover .wa-rpt-name-edit {
+      color: var(--primary-ink, var(--primary));
+      background: color-mix(in srgb, var(--primary) 12%, transparent);
+    }
+    .wa-rpt-name-edit:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    html.dark .wa-rpt-name-edit:hover,
+    html.dark .wa-rpt-name-edit:focus-visible,
+    html.dark .wa-rpt-name:hover .wa-rpt-name-edit {
+      color: var(--primary-bright, #8B9FAF);
+    }
+    .wa-rpt-name-edit .material-symbols-outlined { font-size: 18px; }
     /* Chart-count line is gone — the editable title is the only mast label. */
     #wa-report .wa-pane-meta { display: none; }
     /* Report is the secondary sticky drawer to the RIGHT of Output: narrower
@@ -412,7 +458,8 @@
       background: var(--surface) !important;
     }
     #modules-row #wa-report.is-sticky .wa-pane-top,
-    #wa-report .wa-pane-body {
+    #wa-report .wa-pane-body,
+    #wa-report .wa-rpt-foot {
       background: var(--surface) !important;
     }
     /* Version badge in the pane masthead — mirrors the transcript card's
@@ -815,28 +862,32 @@
       scroll-snap-type: x proximity; padding: 2px;
     }
     .wa-merge-chips::-webkit-scrollbar { height: 6px; }
-    /* Output chip — a rounded-corner RECTANGLE card that mirrors the transcript's
-       .sc-surface-card exactly: a tiny scaled preview of the output on the left,
-       its name to the right. NOT a pill. Clicking it reveals that output below. */
+    /* Output chip — the same card as the transcript's .sc-surface-card: 52px
+       preview on the left, name on the right, gold stroke, vN badge on the
+       thumb. One chip per version. Clicking it reveals that version below. */
     .wa-merge-chip {
-      flex: 0 0 auto; scroll-snap-align: start; max-width: 200px;
-      display: inline-flex; align-items: center; gap: 10px; padding: 6px 12px 6px 6px;
-      background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 12px;
-      font-family: inherit; font-size: 12.5px; font-weight: 700; color: var(--text);
+      flex: 0 0 auto; scroll-snap-align: start;
+      box-sizing: border-box; width: min(240px, 100%); max-width: 240px;
+      display: inline-flex; align-items: center; gap: 12px; padding: 8px 12px 8px 8px;
+      background: var(--surface);
+      border: 1px solid color-mix(in srgb, var(--ter-amber, #FFC434) 50%, transparent);
+      border-radius: 14px;
+      font-family: inherit; font-size: 14px; font-weight: 700; color: var(--text);
       cursor: pointer; text-align: left;
       transition: border-color .15s ease, box-shadow .15s ease, transform .05s ease;
     }
-    .wa-merge-chip:hover { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 4px 12px rgba(37,80,124,0.10); }
+    .wa-merge-chip:hover { border-color: color-mix(in srgb, var(--ter-amber, #FFC434) 80%, transparent); box-shadow: 0 4px 12px rgba(255,196,52,0.12); }
     .wa-merge-chip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .wa-merge-chip:active { transform: translateY(1px); }
-    /* Clipped snapshot of the output, scaled way down (matches .sc-surface-thumb). */
+    /* Same 52px snapshot as .sc-surface-thumb so rail chips and transcript
+       chips never drift in size. */
     .wa-merge-chip-thumb {
-      width: 40px; height: 40px; flex: 0 0 auto; border-radius: 8px; overflow: hidden;
+      width: 52px; height: 52px; flex: 0 0 auto; border-radius: 10px; overflow: hidden;
       position: relative; background: var(--surface); border: 1px solid var(--border);
     }
     .wa-merge-chip-thumb-inner {
       position: absolute; top: 0; left: 0; width: 360px;
-      transform: scale(0.111); transform-origin: top left; pointer-events: none;
+      transform: scale(0.1444); transform-origin: top left; pointer-events: none;
     }
     .wa-merge-chip-thumb-inner > * { margin: 0 !important; }
     /* Two-line clamp — lets the name wrap so chips stay short instead of running
@@ -849,7 +900,10 @@
       background: var(--surface); border-color: var(--primary); color: var(--primary-ink, var(--primary));
       box-shadow: inset 0 0 0 1px var(--primary);
     }
-    html.dark .wa-merge-chip { background: rgba(255,255,255,0.04); }
+    html.dark .wa-merge-chip { background: #1A2339; }
+    html.dark.chat-tint .wa-merge-chip { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
+    .wa-merge-chip.is-active .sc-surface-vtag,
+    .wa-titledrop-item.is-active .sc-surface-vtag { color: #fff; background: var(--primary); border-color: var(--primary); }
 
     /* ── Merged rail, responsive ──
        As the merged pane narrows, keep the carousel but stack each chip: the
@@ -912,7 +966,7 @@
     }
     .wa-titledrop-item {
       display: grid;
-      grid-template-columns: 1.35em 40px minmax(0, 1fr) 28px;
+      grid-template-columns: 1.35em 52px minmax(0, 1fr) 28px;
       align-items: center; gap: 8px; width: 100%;
       padding: 6px 8px; border-radius: 10px; cursor: pointer;
     }
@@ -1018,6 +1072,21 @@
       background: var(--surface);
     }
     html.dark .wa-rpt-note-input.adm-input { background: rgba(255,255,255,0.05); }
+    /* Sticky save/share bar — same pinned-footer treatment as .wa-sh-foot. */
+    .wa-rpt-foot {
+      flex-shrink: 0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 12px 16px 14px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+    html.dark .wa-rpt-foot { border-top-color: rgba(255,255,255,0.08); }
+    .wa-rpt-foot .adm-btn { width: 100%; }
+    #wa-report .wa-pane-body { padding-bottom: 16px; }
+    #wa-report.wch-host:has(#wa-share-panel.wch-open) .wa-rpt-foot,
+    #wa-report.wch-host:has(#wa-share-panel.wch-closing) .wa-rpt-foot { visibility: hidden; }
     .wa-rpt-item-body { min-width: 0; }
     .wa-rpt-item-body > .wa-block {
       display: block !important;
@@ -1230,6 +1299,7 @@
     .wa-ffui-upf--sup { color: var(--sec-red-text); font-weight: 600; }
     .wa-ffui-flag--present { color: var(--sec-red-text); font-weight: 700; }
     .wa-ffui-flag--none { color: var(--text-subtle); }
+    .wa-ffui-swatch { width: 10px; height: 10px; border-radius: 50%; display: inline-block; justify-self: center; }
 
     /* ── Correlation heatmap (UPF tier × sweetener presence) ── */
     .wa-heat { display: flex; flex-direction: column; gap: 6px; }
@@ -1997,10 +2067,11 @@
     /* ═══════════ Versioned output — stacked thumbnails ═══════════
        When an output has been redone, its chip shows every version as a
        horizontal cascade: the previous version(s) first, the newest last and
-       fully raised. Each mini-thumb wears a small vN tag. */
+       fully raised. Each mini-thumb is the same 52px as a single-version
+       chip and wears the same vN tag. */
     .sc-surface-stack { display: inline-flex; align-items: center; flex: 0 0 auto; padding-left: 4px; }
     .sc-surface-stack .sc-surface-thumb {
-      width: 40px; height: 40px; margin-left: -18px;
+      margin-left: -24px;
       box-shadow: -3px 2px 8px rgba(0,0,0,0.16); background: var(--surface-2);
       transition: transform .15s ease, margin .15s ease;
     }
@@ -2012,8 +2083,10 @@
     /* The version currently mirrored into the pane gets a stronger ring so the
        stack and the pane agree. */
     .sc-surface-stack .sc-surface-thumb.is-active { z-index: 3; border-color: color-mix(in srgb, var(--primary) 70%, var(--border-strong)); box-shadow: -3px 2px 12px rgba(37,80,124,0.34), 0 0 0 2px color-mix(in srgb, var(--primary) 45%, transparent); }
-    .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb { margin-left: -10px; }
-    .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb:first-child { margin-left: 0; }
+    .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb,
+    .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb { margin-left: -12px; }
+    .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb:first-child,
+    .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb:first-child { margin-left: 0; }
     /* Each stacked version thumb is its own click target — tapping it opens that
        exact version on the right. Give it a clear hover/focus affordance so it
        reads as individually clickable, not just part of the card. */
@@ -3784,7 +3857,9 @@
       html.wa-print-report [data-owt],
       html.wa-print-report #wa-report .wa-pane-controls,
       html.wa-print-report #wa-report .wa-rpt-more,
-      html.wa-print-report #wa-report .wa-rpt-note {
+      html.wa-print-report #wa-report .wa-rpt-note,
+      html.wa-print-report #wa-report .wa-rpt-foot,
+      html.wa-print-report #wa-report .wa-rpt-name-edit {
         display: none !important;
       }
       html.wa-print-report #chat-shell-wrap,
@@ -3817,6 +3892,11 @@
         background: #fff !important;
         overflow: visible !important;
         height: auto !important;
+      }
+      html.wa-print-report #wa-report .wa-pane-title {
+        border-bottom: 0 !important;
+        box-shadow: none !important;
+        white-space: normal !important;
       }
     }
   </style>
@@ -3914,8 +3994,7 @@
         <div class="wa-pane-body" id="wa-visuals-body"></div>
       </section>
 
-      <!-- 4 · Unified pane — Results & Visuals merged into ONE module. Hidden
-           unless the chat's "Merge outputs into one panel" switch is on. Its
+      <!-- 4 · Unified pane — Results & Visuals live in ONE module. Its
            thumbnail rail is grouped (Results · | · Visuals), split by a line
            divider; clicking a thumbnail reveals that one output below. -->
       <section class="wa-pane wa-pane--unified" id="wa-unified" aria-label="Outputs (merged)">
@@ -3944,8 +4023,6 @@
                   <div class="topbar-menu-divider" data-pane-gs-div hidden></div>
                   <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle is-on" data-pane-act="titledrop" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">arrow_drop_down_circle</span><span>Outputs dropdown</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
                   <div class="topbar-menu-divider"></div>
-                  <button type="button" class="topbar-menu-item" data-pane-act="split" hidden><span class="material-symbols-outlined topbar-menu-icon">splitscreen</span><span>Split into two panels</span></button>
-                  <div class="topbar-menu-divider" data-pane-split-div hidden></div>
                   <button type="button" class="topbar-menu-item" data-pane-act="min" hidden><span class="material-symbols-outlined topbar-menu-icon">close_fullscreen</span><span class="pane-min-label">Minimize to chips</span></button>
                   <div class="topbar-menu-divider" data-pane-min-div hidden></div>
                   <button type="button" class="topbar-menu-item" data-pane-act="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export</span></button>
@@ -3969,7 +4046,10 @@
         <div class="wa-pane-top">
           <div class="wa-pane-mast">
             <p class="wa-pane-eyebrow dash-eyebrow" id="wa-report-eyebrow">Report</p>
-            <h2 class="wa-pane-title" id="wa-report-title" contenteditable="true" spellcheck="false" role="textbox" aria-label="Report name"></h2>
+            <div class="wa-rpt-name">
+              <h2 class="wa-pane-title" id="wa-report-title" contenteditable="true" spellcheck="false" role="textbox" aria-label="Report name" data-placeholder="Name this report" title="Click to rename"></h2>
+              <button type="button" class="wa-rpt-name-edit" title="Rename report" aria-label="Rename report"><span class="material-symbols-outlined">edit</span></button>
+            </div>
             <p class="wa-pane-meta" id="wa-report-meta"></p>
           </div>
           <div class="wa-pane-top-right">
@@ -3988,6 +4068,9 @@
           </div>
         </div>
         <div class="wa-pane-body" id="wa-report-body"></div>
+        <div class="wa-rpt-foot">
+          <button type="button" class="adm-btn adm-btn--primary" data-rpt-save>Save or Share Report</button>
+        </div>
       </section>
     </div><!-- /#modules-row -->
   </div>
@@ -4386,12 +4469,11 @@
       paneBumpTimers[which] = setTimeout(() => el.classList.remove('is-bump'), 950);
     }
 
-    /* ── Merged mode ──────────────────────────────────────────────────────────
-       Toggled from the chat's three-dot "Merge outputs into one panel" switch.
-       When ON, every result/visual block is pulled into the single #wa-unified
-       module, whose one thumbnail rail is grouped (Results · | · Visuals). The
-       two source panes are hidden; flipping it OFF sends each block home. */
-    let mergedMode = false;
+    /* ── Unified output pane ──────────────────────────────────────────────────
+       Results & Visuals always land in the single #wa-unified module, whose one
+       thumbnail rail is grouped (Results · | · Visuals). The two source panes
+       stay in the DOM as origin buckets for grouping; they are not shown. */
+    const mergedMode = true;
     const PANE_GROUPS = ['results', 'visuals'];
     const PANE_GROUP_LABEL = { results: 'Results & Details', visuals: 'Visuals' };
     const PANE_GROUP_ICON = { results: 'table_chart', visuals: 'insights' };
@@ -4550,9 +4632,9 @@
     }
     /* While the chat is thinking, the Output sticky module is already open
        (onEngage) but no .wa-block has landed yet. Fill that gap with the
-       product-comparison loading pose — pending ghost bars and a scan sweep
-       when Appearance ▸ Helix loading is off; js/load-anim.js overlays the
-       larger streaming helix on top (and hides the stripes) when it is on. */
+       product-comparison loading pose — pending ghost bars and a scan sweep;
+       js/load-anim.js overlays the larger streaming helix on top (and hides
+       the stripes). */
     function outputSkelMarkup() {
       const cell = '<div class="cmp-cell cmp-cell--entity is-pending"><span class="cmp-ghost cmp-ghost--bar"></span></div>';
       const tile = '<div class="cmp-cell cmp-cell--entity is-pending wa-pane-skel-tile"><span class="cmp-ghost cmp-ghost--bar"></span></div>';
@@ -4699,6 +4781,16 @@
       return block.dataset.slideTitle
         || pick('.wa-report-title') || pick('.wa-dhero-name') || pick('.wa-sec-title', true)
         || ((which === 'visuals' ? 'Chart ' : 'Result ') + (i + 1));
+    }
+
+    /* Compact vN badge on Output-rail thumbs — same mark the transcript stack
+       wears, so a versioned output is labelled identically in both places. */
+    function paneVerTag(block) {
+      const n = block && block.dataset && block.dataset.ver;
+      return n ? `<span class="sc-surface-vtag">v${esc(n)}</span>` : '';
+    }
+    function paneChipJumpId(block) {
+      return (block && (block.dataset.transcript || block.dataset.blockId)) || '';
     }
 
     function paneBlocks(which) {
@@ -4914,13 +5006,15 @@
       const chips = blocks.map((b, i) => {
         const grp = b.dataset.origin || 'results';
         const label = paneSlideLabel(b, grp, i);
-        const bid = b.dataset.blockId || '';
+        const bid = paneChipJumpId(b);
+        const verN = b.dataset.ver || '';
+        const title = verN ? `${label} (v${verN})` : label;
         /* A <div role="tab"> (not a <button>) so the preview clone — which for
            result blocks holds <button>/<input> controls — can nest safely; the
-           clone is `inert` so nothing inside it is focusable. Mirrors the
-           transcript's .sc-surface-card. */
-        return `<div class="wa-merge-chip" data-slide="${i}"${bid ? ` data-block-id="${esc(bid)}"` : ''} role="tab" tabindex="0" aria-selected="false" title="${esc(label)}">
-          <span class="wa-merge-chip-thumb"><span class="wa-merge-chip-thumb-inner" inert>${thumbSafe(b.innerHTML)}</span></span>
+           clone is `inert` so nothing inside it is focusable. Same 52px thumb
+           + vN badge as the transcript output chip. */
+        return `<div class="wa-merge-chip" data-slide="${i}"${bid ? ` data-block-id="${esc(bid)}"` : ''} role="tab" tabindex="0" aria-selected="false" title="${esc(title)}">
+          <span class="wa-merge-chip-thumb"><span class="wa-merge-chip-thumb-inner" inert>${thumbSafe(b.innerHTML)}</span>${paneVerTag(b)}</span>
           <span class="wa-merge-chip-label">${esc(label)}</span>
         </div>`;
       }).join('');
@@ -4932,86 +5026,6 @@
          meaningless here — keep it hidden while merged. */
       setPaneMinItemVisible(which, false);
       setPaneSlide(which, activeIdx, { animate: false, scrollNav: true });
-    }
-
-    /* Sync the chat menu's "Merge outputs" switch with the current state. */
-    let mergeMenuItem = null;
-    function syncMergeMenu() {
-      if (!mergeMenuItem) return;
-      mergeMenuItem.classList.toggle('is-on', mergedMode);
-      mergeMenuItem.setAttribute('aria-checked', mergedMode ? 'true' : 'false');
-    }
-
-    /* Flip between the two-pane and one-merged-pane layouts, carrying every block
-       across with it so nothing is lost either way. */
-    function applyMergeMode(on) {
-      on = !!on;
-      if (on === mergedMode) { syncMergeMenu(); return; }
-      mergedMode = on;
-      const row = document.getElementById('modules-row');
-      if (row) row.classList.toggle('outputs-merged', on);
-
-      if (on) {
-        /* Pull each source pane's blocks into the unified body, tagged by origin,
-           results first then visuals (grouped order). */
-        PANE_GROUPS.forEach((grp) => {
-          const src = paneBody[grp];
-          if (!src) return;
-          Array.from(src.children)
-            .filter((n) => n.nodeType === 1 && n.classList.contains('wa-block'))
-            .forEach((b) => { b.dataset.origin = grp; b.classList.remove('is-active'); paneBody.unified.appendChild(b); });
-          /* Reset the now-empty source pane back to a clean closed state. */
-          src.classList.remove('is-carousel');
-          if (paneTrack[grp]) { paneTrack[grp].innerHTML = ''; paneTrack[grp].classList.remove('is-on', 'is-min'); }
-          if (paneNavBtns[grp]) paneNavBtns[grp].innerHTML = '';
-          if (paneCount[grp]) paneCount[grp].innerHTML = '';
-          paneEl[grp]?.classList.remove('is-open', 'pane-wide', 'pane-triple', 'pane-fill', 'pane-fs');
-          setOutputFsOn(false);
-          const wb = document.querySelector(`[data-pane-width="${grp}"]`);
-          if (wb) syncPaneWidthBtn(wb, 0);
-        });
-        const hasContent = paneBody.unified.querySelector('.wa-block');
-        if (hasContent) {
-          paneEl.unified.classList.remove('is-open'); void paneEl.unified.offsetWidth;
-          paneEl.unified.classList.add('is-open');
-        }
-        refreshUnifiedCarousel({ activate: paneBody.unified.querySelector('.wa-block') });
-      } else {
-        /* Send every block home to its origin pane, preserving order. */
-        Array.from(paneBody.unified.children)
-          .filter((n) => n.nodeType === 1 && n.classList.contains('wa-block'))
-          .forEach((b) => {
-            const grp = b.dataset.origin || 'results';
-            b.classList.remove('is-active');
-            (paneBody[grp] || paneBody.results).appendChild(b);
-          });
-        paneBody.unified.classList.remove('is-carousel');
-        closeTitledropPop();
-        if (paneTrack.unified) { paneTrack.unified.innerHTML = ''; paneTrack.unified.classList.remove('is-on', 'is-min', 'is-grouped', 'is-stacked'); }
-        if (paneNavBtns.unified) paneNavBtns.unified.innerHTML = '';
-        if (paneCount.unified) paneCount.unified.innerHTML = '';
-        paneEl.unified.classList.remove('is-open', 'pane-wide', 'pane-triple', 'pane-fill', 'pane-fs');
-        setOutputFsOn(false);
-        const uwb = document.querySelector('[data-pane-width="unified"]');
-        if (uwb) syncPaneWidthBtn(uwb, 0);
-        /* Re-open each source pane that regained content + rebuild its rail. */
-        PANE_GROUPS.forEach((grp) => {
-          if (paneBody[grp] && paneBody[grp].querySelector('.wa-block')) {
-            paneEl[grp]?.classList.remove('is-open'); void paneEl[grp]?.offsetWidth;
-            paneEl[grp]?.classList.add('is-open');
-            refreshPaneCarousel(grp);
-          }
-        });
-      }
-      window.WisePaneResize?.release?.([
-        document.getElementById('wa-chat'),
-        paneEl.results,
-        paneEl.visuals,
-        paneEl.unified,
-        paneEl.report,
-      ]);
-      syncMergeMenu();
-      recomputeSoloPaneWidth();
     }
 
     /* Carousel controls live in two spots: the prev/next group up in the top bar
@@ -5055,7 +5069,12 @@
        so it's obvious where in the conversation that output came from. */
     function jumpTranscriptToBlock(blockId) {
       if (!blockId || !host) return;
-      const card = host.querySelector(`.sc-surface-card[data-surface="${blockId}"]`);
+      let card = host.querySelector(`.sc-surface-card[data-surface="${blockId}"]`);
+      if (!card) {
+        const paneBlock = document.querySelector(`.wa-block[data-block-id="${blockId}"]`);
+        const tid = paneBlock && (paneBlock.dataset.transcript || paneBlock.dataset.blockId);
+        if (tid && tid !== blockId) card = host.querySelector(`.sc-surface-card[data-surface="${tid}"]`);
+      }
       if (!card) return;
       card.scrollIntoView({ block: 'center', behavior: 'smooth' });
       card.classList.remove('is-flash'); void card.offsetWidth; card.classList.add('is-flash');
@@ -5110,32 +5129,44 @@
     }
 
     /* Per-pane three-dot menu + width control (their own, independent of the chat).
-       Cycles the canonical four tiers shared by every module in the app:
-       single → double → triple → fill (take the rest of the row) → single. */
-    const PANE_W_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full'];
+       Cycles the canonical five tiers shared by every module in the app:
+       single → double → triple → fill → custom → single. */
+    const PANE_W_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
     const PANE_W_TITLES = [
       'Width (single) — tap to widen',
       'Width (double) — tap to widen',
       'Width (triple) — tap to widen',
-      'Width (fill) — tap to reset',
+      'Width (fill) — tap to widen',
+      'Width (custom) — drag to any size',
     ];
     function syncPaneWidthBtn(btn, tier) {
-      btn.classList.toggle('is-on', tier >= 1);
-      btn.setAttribute('aria-pressed', tier >= 1 ? 'true' : 'false');
-      btn.title = PANE_W_TITLES[tier];
-      const ic = btn.querySelector('.material-symbols-outlined');
-      if (ic) ic.textContent = PANE_W_ICONS[tier];
+      const W = window.WPaneWidth;
+      if (W) W.syncButton(btn, tier);
+      else {
+        btn.classList.toggle('is-on', tier >= 1);
+        btn.setAttribute('aria-pressed', tier >= 1 ? 'true' : 'false');
+        btn.title = PANE_W_TITLES[tier];
+        const ic = btn.querySelector('.material-symbols-outlined');
+        if (ic) ic.textContent = PANE_W_ICONS[tier];
+      }
     }
     function paneWidthTier(el) {
+      if (window.WPaneWidth) return window.WPaneWidth.tierOfEl(el);
+      if (el.classList.contains('pane-custom')) return 4;
       if (el.classList.contains('pane-fill')) return 3;
       if (el.classList.contains('pane-triple')) return 2;
       if (el.classList.contains('pane-wide')) return 1;
       return 0;
     }
     function applyPaneWidth(el, tier) {
-      el.classList.toggle('pane-wide', tier >= 1);
-      el.classList.toggle('pane-triple', tier >= 2);
-      el.classList.toggle('pane-fill', tier >= 3);
+      const W = window.WPaneWidth;
+      if (W) W.applyClasses(el, tier, 'pane');
+      else {
+        el.classList.toggle('pane-wide', tier >= 1 && tier < 4);
+        el.classList.toggle('pane-triple', tier >= 2 && tier < 4);
+        el.classList.toggle('pane-fill', tier === 3);
+        el.classList.toggle('pane-custom', tier === 4);
+      }
     }
     /* With TWO output panes open (results + visuals) the flex-grow tiers
        redistribute the shared space and are enough on their own; with ONE open the
@@ -5151,7 +5182,7 @@
       const open = ['results', 'visuals', 'unified', 'report']
         .filter((k) => paneEl[k] && paneEl[k].classList.contains('is-open'));
       const tier = open.length === 1 ? paneWidthTier(paneEl[open[0]]) : 0;
-      if (tier >= 1) row.setAttribute('data-out-w', String(tier));
+      if (tier >= 1 && tier < 4) row.setAttribute('data-out-w', String(tier));
       else row.removeAttribute('data-out-w');
     }
     document.querySelectorAll('[data-pane-width]').forEach((btn) => {
@@ -5159,7 +5190,7 @@
         e.stopPropagation();
         const which = btn.dataset.paneWidth;
         const el = paneEl[which];
-        const next = (paneWidthTier(el) + 1) % 4;
+        const next = window.WPaneWidth ? window.WPaneWidth.next(paneWidthTier(el)) : (paneWidthTier(el) + 1) % 5;
         applyPaneWidth(el, next);
         syncPaneWidthBtn(btn, next);
         recomputeSoloPaneWidth();
@@ -5294,7 +5325,7 @@
       const items = blocks.map((b, i) => {
         const label = paneSlideLabel(b, b.dataset.origin || 'results', i);
         const ver = titledropVerLabel(b);
-        const bid = b.dataset.blockId || '';
+        const bid = paneChipJumpId(b);
         const title = ver ? `${label} (${ver})` : label;
         const key = titledropKey(b, i);
         const picked = titledropSelected.has(key);
@@ -5302,7 +5333,7 @@
            may hold <button>/<input> controls — can nest safely. */
         return `<div class="wa-titledrop-item${i === activeIdx ? ' is-active' : ''}" data-slide="${i}"${bid ? ` data-block-id="${esc(bid)}"` : ''} role="option" tabindex="0" aria-selected="${i === activeIdx ? 'true' : 'false'}" title="${esc(title)}">
           <span class="wa-titledrop-num">${i + 1}</span>
-          <span class="wa-merge-chip-thumb"><span class="wa-merge-chip-thumb-inner" inert>${thumbSafe(b.innerHTML)}</span></span>
+          <span class="wa-merge-chip-thumb"><span class="wa-merge-chip-thumb-inner" inert>${thumbSafe(b.innerHTML)}</span>${paneVerTag(b)}</span>
           <span class="wa-titledrop-text">
             <span class="wa-titledrop-label">${esc(label)}</span>
             ${ver ? `<span class="wa-titledrop-ver">${esc(ver)}</span>` : ''}
@@ -5584,7 +5615,7 @@
         const ver = titledropVerLabel(entry.block);
         const on = entry.key === current;
         return `<div class="wa-titledrop-item wa-rpt-swap-item${on ? ' is-active' : ''}" data-rpt-swap="${esc(entry.key)}" role="option" tabindex="0" aria-selected="${on ? 'true' : 'false'}" title="${esc(label)}">
-          <span class="wa-merge-chip-thumb"><span class="wa-merge-chip-thumb-inner" inert>${thumbSafe(entry.block.innerHTML)}</span></span>
+          <span class="wa-merge-chip-thumb"><span class="wa-merge-chip-thumb-inner" inert>${thumbSafe(entry.block.innerHTML)}</span>${paneVerTag(entry.block)}</span>
           <span class="wa-titledrop-text">
             <span class="wa-titledrop-label">${esc(label)}</span>
             ${ver ? `<span class="wa-titledrop-ver">${esc(ver)}</span>` : ''}
@@ -5777,6 +5808,24 @@
       if (paneTitle.report) paneTitle.report.dataset.userNamed = '1';
       persistGeneratedReport(false);
     });
+    (function wireReportNameEdit() {
+      const btn = document.querySelector('#wa-report .wa-rpt-name-edit');
+      const el = paneTitle.report;
+      if (!btn || !el) return;
+      btn.addEventListener('mousedown', (e) => e.preventDefault());
+      btn.addEventListener('click', () => {
+        el.focus();
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      });
+    })();
+    document.querySelector('#wa-report [data-rpt-save]')?.addEventListener('click', () => {
+      persistGeneratedReport(false);
+      openShareModal('report');
+    });
     window.addEventListener('resize', () => {
       if (titledropPop) sizeTitledropPop();
       closeReportItemMenus();
@@ -5839,7 +5888,6 @@
           const idx = Number(paneTrack[which]?.querySelector('.wa-pane-thumb-item.is-active')?.dataset.slide || 0);
           setPaneSlide(which, idx, { animate: false, scrollNav: true });
         }
-        else if (act === 'split') applyMergeMode(false);
         else if (act === 'close') closePane(which);
         else if (act === 'export') {
           if (which === 'report') exportReportPdf();
@@ -6979,7 +7027,7 @@
           </div>
         </div>`;
     }
-    function kraftDonutBlock({ title, colLabel, rows, total, aria, centerLabel, centerSub, numClass }) {
+    function kraftDonutBlock({ title, colLabel, rows, total, aria, centerLabel, centerSub, numClass, sub }) {
       const cols = '16px minmax(0,1fr) 72px 56px';
       const head = `<div style="display:grid;grid-template-columns:${cols};gap:10px;padding:0 2px 7px;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-subtle)">
           <span></span><span>${esc(colLabel)}</span><span style="text-align:right">Count</span><span style="text-align:right">%</span>
@@ -6993,7 +7041,7 @@
       return `
         <div class="wa-block">
           <h3 class="wa-report-title wa-chart-title">${title}</h3>
-          <p class="wa-kraft-sub">Foods where brand equals Kraft</p>
+          <p class="wa-kraft-sub">${esc(sub || 'Foods where brand equals Kraft')}</p>
           <div class="wa-chart-card">
             <div class="dash-donut-row">
               ${waDashDonut({ rows, num: total.toLocaleString('en-US'), label: centerLabel || 'foods', sub: centerSub || 'Kraft', aria, ringName: colLabel, numClass })}
@@ -7130,6 +7178,305 @@
           ${searchToolbar('Search Kraft UPF foods\u2026')}
           ${sortTable(KRAFT_UPF_FOODS, { images: COOKIE_IMGS, fallbackIcon: 'inventory_2', tone: 'bad', sortCol: 'score', sortDir: 'asc', pageSize: 8 })}
           <div class="wa-table-foot"><span class="material-symbols-outlined">science</span>Sample of Kraft foods classified UPF \u2014 10 of 878. Mac &amp; cheese, singles, and whipped toppings sit at the processed end of the brand.</div>
+        </div>`;
+    }
+
+    /* ── My foods (demo) workspace ──────────────────────────────────────
+       Scripted Storyline 1: canned answers that *route* like a live store.
+       80 workspace foods; 65 Super Ultra-Processed; 51 fail the heart test;
+       47 score under zero on the raw scale; 12 not fully parsed; 73 have a
+       UPF label. Fat Quality v2 is in-development until an explicit run. */
+    const MYFOODS_TOTAL = 80;
+    const MYFOODS_SUP = 65;
+    const MYFOODS_HEART = 51;
+    const MYFOODS_RAW = 47;
+    const MYFOODS_PARSED = 12;
+    const MYFOODS_LABEL = 73;
+    const MYFOODS_STORE = 'sb-mine';
+    const MYFOODS_LIVE = 'pg-dev';
+    const MYFOODS_POP = '80 foods in My foods (demo)';
+    let activeDbId = MYFOODS_LIVE;
+    let lastWorkspaceRoute = false;
+    let fatqRan = false;
+    const queryLock = { published: false, rawScore: false };
+
+    const MYFOODS_UPF = [
+      { label: 'Super Ultra-Processed', count: 65, pct: 81.3, color: 'var(--sec-red)' },
+      { label: 'Ultra-Processed', count: 8, pct: 10.0, color: '#D27326' },
+      { label: 'Moderately Processed', count: 4, pct: 5.0, color: 'var(--ter-amber)' },
+      { label: 'Lightly Processed', count: 2, pct: 2.5, color: 'var(--chart-status-good)' },
+      { label: 'Minimally Processed', count: 1, pct: 1.3, color: 'var(--sec-green)' },
+    ];
+    const MYFOODS_FATQ = [
+      { label: 'Poor', count: 19, pct: 23.8, color: 'var(--sec-red)' },
+      { label: 'Fair', count: 22, pct: 27.5, color: 'var(--chart-status-fair)' },
+      { label: 'OK', count: 18, pct: 22.5, color: 'var(--chart-status-okay)' },
+      { label: 'Good', count: 14, pct: 17.5, color: 'var(--chart-status-good)' },
+      { label: 'Excellent', count: 7, pct: 8.8, color: 'var(--sec-green)' },
+    ];
+    /* Sample rows: workspace imports / clones — not Kraft catalog SKUs.
+       [food, brand, score, upf, extra?] */
+    const MYFOODS_SUP_ROWS = [
+      ['House Chili with Beans', 'Kitchen import', 14, 'Super Ultra-Processed'],
+      ['Buffalo Ranch Party Dip', 'Clone \u00b7 catering', 16, 'Super Ultra-Processed'],
+      ['Maple Breakfast Sausage Links', 'Menu CSV', 18, 'Super Ultra-Processed'],
+      ['Loaded Baked Potato Soup', 'Kitchen import', 19, 'Super Ultra-Processed'],
+      ['Crispy Chicken Tender Basket', 'Menu CSV', 21, 'Super Ultra-Processed'],
+      ['Smoky BBQ Pulled Jackfruit', 'Clone \u00b7 R&D', 22, 'Super Ultra-Processed'],
+      ['Three-Cheese Queso Blanco', 'Kitchen import', 23, 'Super Ultra-Processed'],
+      ['Spicy Korean Fried Cauliflower', 'Menu CSV', 24, 'Super Ultra-Processed'],
+      ['Vanilla Protein Shake Mix', 'Clone \u00b7 bench', 26, 'Super Ultra-Processed'],
+      ['Caramel Cookie Dough Bites', 'Kitchen import', 27, 'Super Ultra-Processed'],
+    ];
+    const MYFOODS_HEART_ROWS = [
+      ['House Chili with Beans', 'Kitchen import', 18, 'Super Ultra-Processed', 'Fail'],
+      ['Buffalo Ranch Party Dip', 'Clone \u00b7 catering', 22, 'Super Ultra-Processed', 'Fail'],
+      ['Maple Breakfast Sausage Links', 'Menu CSV', 24, 'Super Ultra-Processed', 'Fail'],
+      ['Loaded Baked Potato Soup', 'Kitchen import', 28, 'Super Ultra-Processed', 'Fail'],
+      ['Crispy Chicken Tender Basket', 'Menu CSV', 31, 'Super Ultra-Processed', 'Fail'],
+      ['Three-Cheese Queso Blanco', 'Kitchen import', 33, 'Super Ultra-Processed', 'Fail'],
+      ['Vanilla Protein Shake Mix', 'Clone \u00b7 bench', 36, 'Super Ultra-Processed', 'Fail'],
+      ['Caramel Cookie Dough Bites', 'Kitchen import', 38, 'Super Ultra-Processed', 'Fail'],
+      ['Smoky BBQ Pulled Jackfruit', 'Clone \u00b7 R&D', 41, 'Ultra-Processed', 'Fail'],
+      ['Spicy Korean Fried Cauliflower', 'Menu CSV', 44, 'Ultra-Processed', 'Fail'],
+    ];
+    const MYFOODS_RAW_ROWS = [
+      ['House Chili with Beans', 'Kitchen import', -12.4, 'Super Ultra-Processed'],
+      ['Buffalo Ranch Party Dip', 'Clone \u00b7 catering', -9.8, 'Super Ultra-Processed'],
+      ['Maple Breakfast Sausage Links', 'Menu CSV', -8.1, 'Super Ultra-Processed'],
+      ['Loaded Baked Potato Soup', 'Kitchen import', -6.6, 'Super Ultra-Processed'],
+      ['Crispy Chicken Tender Basket', 'Menu CSV', -5.2, 'Super Ultra-Processed'],
+      ['Three-Cheese Queso Blanco', 'Kitchen import', -4.0, 'Super Ultra-Processed'],
+      ['Vanilla Protein Shake Mix', 'Clone \u00b7 bench', -2.8, 'Super Ultra-Processed'],
+      ['Caramel Cookie Dough Bites', 'Kitchen import', -1.9, 'Super Ultra-Processed'],
+      ['Smoky BBQ Pulled Jackfruit', 'Clone \u00b7 R&D', -0.7, 'Ultra-Processed'],
+      ['Spicy Korean Fried Cauliflower', 'Menu CSV', -0.2, 'Ultra-Processed'],
+    ];
+    const MYFOODS_PARSED_ROWS = [
+      ['House Special Sauce (bulk)', 'Kitchen import', 22, 'Super Ultra-Processed', 'Incomplete'],
+      ['Weekend Brunch Hash', 'Menu CSV', 34, 'Ultra-Processed', 'Incomplete'],
+      ['Kids Mac Cup', 'Clone \u00b7 catering', 19, 'Super Ultra-Processed', 'Incomplete'],
+      ['Seasonal Pumpkin Spread', 'Kitchen import', 41, 'Ultra-Processed', 'Incomplete'],
+      ['Chef\u2019s Daily Soup', 'Menu CSV', 28, 'Super Ultra-Processed', 'Incomplete'],
+      ['Unlabeled Prep Pan #4', 'Kitchen import', 15, 'Super Ultra-Processed', 'Incomplete'],
+      ['Catering Slider Mix', 'Clone \u00b7 catering', 31, 'Ultra-Processed', 'Incomplete'],
+      ['R&D Binder Batch 12', 'Clone \u00b7 R&D', 26, 'Super Ultra-Processed', 'Incomplete'],
+      ['Imported Condiment Flight', 'Menu CSV', 37, 'Ultra-Processed', 'Incomplete'],
+      ['Scratch Dressing \u2014 unlabeled', 'Kitchen import', 44, 'Moderately Processed', 'Incomplete'],
+    ];
+    const MYFOODS_LABEL_ROWS = [
+      ['House Chili with Beans', 'Kitchen import', 14, 'Super Ultra-Processed', 'Present'],
+      ['Buffalo Ranch Party Dip', 'Clone \u00b7 catering', 16, 'Super Ultra-Processed', 'Present'],
+      ['Weekend Brunch Hash', 'Menu CSV', 34, 'Ultra-Processed', 'Present'],
+      ['Scratch Dressing \u2014 unlabeled', 'Kitchen import', '', '—', 'None'],
+      ['Prep Pan #4 (no label)', 'Kitchen import', '', '—', 'None'],
+      ['Maple Breakfast Sausage Links', 'Menu CSV', 18, 'Super Ultra-Processed', 'Present'],
+      ['Loaded Baked Potato Soup', 'Kitchen import', 19, 'Super Ultra-Processed', 'Present'],
+      ['Bulk Oil Blend', 'Clone \u00b7 R&D', '', '—', 'None'],
+      ['Crispy Chicken Tender Basket', 'Menu CSV', 21, 'Super Ultra-Processed', 'Present'],
+      ['Three-Cheese Queso Blanco', 'Kitchen import', 23, 'Super Ultra-Processed', 'Present'],
+    ];
+
+    function mentionsMine(text) {
+      return /\bmy\s+foods\b|\bin my sandbox\b|\bmy sandbox\b|\bmy workspace\b|\banalyze my\b/i.test(String(text || ''));
+    }
+    function isSandboxStore() { return activeDbId === MYFOODS_STORE; }
+    function useWorkspacePack(text, intent) {
+      const mineIntent = intent && String(intent).indexOf('myfoods_') === 0;
+      if (mentionsMine(text)) return true;
+      if (isSandboxStore() && mineIntent) return true;
+      return false;
+    }
+    function applyStorePhrase(text) {
+      const t = String(text || '').toLowerCase();
+      if (!chat || typeof chat.selectDb !== 'function') return;
+      if (/\bin my sandbox\b|\bmy sandbox\b|\bin my workspace\b/.test(t)) {
+        chat.selectDb(MYFOODS_STORE);
+        return;
+      }
+      if (/\bon the live database\b|\bon the live db\b|\blive database\b/.test(t)) {
+        chat.selectDb(MYFOODS_LIVE);
+      }
+    }
+    function qualifierBits(text) {
+      const t = String(text || '').toLowerCase();
+      return {
+        hasRaw: /\braw\s+score\b|\braw\s+scale\b/.test(t),
+        hasPub: /\bpublished\b/.test(t),
+      };
+    }
+    function lockQualifiers(text) {
+      const { hasRaw, hasPub } = qualifierBits(text);
+      if (hasRaw) queryLock.rawScore = true;
+      if (hasPub) queryLock.published = true;
+    }
+    function underZeroRefusal(text, intent) {
+      const t = String(text || '').toLowerCase();
+      const isUnder = intent === 'myfoods_raw' || /score under (zero|0)\b/.test(t);
+      if (!isUnder) return null;
+      const { hasRaw, hasPub } = qualifierBits(text);
+      if (queryLock.rawScore && hasPub && !hasRaw) {
+        return 'That question dropped the <strong>raw score</strong> qualifier I locked in. I will not silently switch scales. On the raw scale the answer is <strong>47</strong> of 80 foods; say \u201craw score\u201d if you still want that list.';
+      }
+      if (queryLock.published && !hasPub) {
+        return 'That question dropped the <strong>published</strong> qualifier I locked in. I will not rebuild it from memory. On the published scale, score-under-zero is empty; on the raw scale it is <strong>47</strong>. Restate the qualifier you want.';
+      }
+      return null;
+    }
+    function resetMyfoodsState() {
+      lastWorkspaceRoute = false;
+      fatqRan = false;
+      queryLock.published = false;
+      queryLock.rawScore = false;
+    }
+
+    const MYFOODS_COLS = 'minmax(0,1.6fr) minmax(0,0.9fr) 76px minmax(0,1.15fr) minmax(64px,0.7fr)';
+    function myfoodsRows(rows, extraCls) {
+      return rows.map((r) => {
+        const [food, brand, score, upf, extra] = r;
+        const tone = upfTone(upf);
+        const color = toneColor(tone);
+        const extraCell = extraCls
+          ? `<span class="wa-ffui-cell ${extraCls(extra)}">${esc(extra || '')}</span>`
+          : `<span class="wa-ffui-cell"><span class="wa-ffui-swatch" style="background:${color}" title="${esc(upf)}"></span></span>`;
+        const scoreHtml = score === '' || score == null
+          ? `<span class="wa-ffui-cell wa-ffui-end" style="color:var(--text-subtle)">\u2014</span>`
+          : `<span class="wa-ffui-cell wa-ffui-end"><span class="wa-ffui-score">${Number.isInteger(score) ? String(score) : Number(score).toFixed(1)}</span></span>`;
+        return `<div class="wa-ffui-row" style="grid-template-columns:${MYFOODS_COLS}">
+            <span class="wa-ffui-food" title="${esc(food)}">${esc(food)}</span>
+            <span class="wa-ffui-brand" title="${esc(brand)}">${esc(brand)}</span>
+            ${scoreHtml}
+            <span class="wa-ffui-cell wa-ffui-upf--${tone}">${esc(upf)}</span>
+            ${extraCell}
+          </div>`;
+      }).join('');
+    }
+    function myfoodsFfuiTable({ rows, count, total, caption, extraHead, extraCls }) {
+      const head = `<div class="wa-ffui-hrow" style="grid-template-columns:${MYFOODS_COLS}">
+          <span class="wa-ffui-th">Food</span>
+          <span class="wa-ffui-th">Source</span>
+          <span class="wa-ffui-th wa-ffui-end">WISEscore</span>
+          <span class="wa-ffui-th">WISEcode UPF</span>
+          <span class="wa-ffui-th">${esc(extraHead || 'Color')}</span>
+        </div>`;
+      return `<div class="wa-ffui">
+          <div class="wa-ffui-head">
+            <div class="wa-ffui-count"><span class="material-symbols-outlined">kitchen</span><b>${count}</b>&nbsp;of ${total.toLocaleString()} matches</div>
+          </div>
+          <div class="wa-ffui-cap">${esc(caption)}</div>
+          <div class="wa-ffui-tbl">${head}${myfoodsRows(rows, extraCls)}</div>
+        </div>`;
+    }
+    function myfoodsUpfDonutChart() {
+      return kraftDonutBlock({
+        title: '<span data-countup>80</span> foods across 5 WISEcode UPF labels',
+        colLabel: 'WISEcode UPF',
+        rows: MYFOODS_UPF,
+        total: MYFOODS_TOTAL,
+        aria: 'My foods by WISEcode UPF label',
+        centerLabel: 'foods',
+        centerSub: '65 Super Ultra-Processed',
+        numClass: 'is-teal',
+        sub: 'Foods in My foods (demo) \u00b7 workspace scores, not the 943k catalog',
+      });
+    }
+    function myfoodsFatqDonutChart() {
+      return kraftDonutBlock({
+        title: '<span data-countup>80</span> foods \u00b7 Fat Quality v2',
+        colLabel: 'Fat Quality v2',
+        rows: MYFOODS_FATQ,
+        total: MYFOODS_TOTAL,
+        aria: 'My foods by Fat Quality v2 after an explicit run',
+        centerLabel: 'foods',
+        centerSub: '19 Poor \u00b7 Run 1',
+        sub: 'Run 1 \u00b7 80 foods \u00b7 no duplicate scoring brackets',
+      });
+    }
+    function myfoodsSupView() {
+      return `
+        <div class="wa-block wa-resultset">
+          ${scoreCards([
+            { num: '65', label: 'Super Ultra-Processed', tone: 'alert' },
+            { num: '80', label: 'In this workspace' },
+            { num: '81%', label: 'of my foods', tone: 'alert' },
+          ])}
+          ${myfoodsFfuiTable({
+            rows: MYFOODS_SUP_ROWS,
+            count: 10,
+            total: MYFOODS_SUP,
+            caption: 'Foods in My foods (demo) whose workspace UPF label is Super Ultra-Processed \u00b7 WISEscore, label, and color from that filter',
+          })}
+          <div class="wa-table-foot"><span class="material-symbols-outlined">kitchen</span>${MYFOODS_POP} \u2014 scores read from the workspace, not the global catalog.</div>
+        </div>`;
+    }
+    function myfoodsHeartView() {
+      return `
+        <div class="wa-block wa-resultset">
+          ${scoreCards([
+            { num: '51', label: 'Fail the heart test', tone: 'alert' },
+            { num: '80', label: 'In this workspace' },
+          ])}
+          ${myfoodsFfuiTable({
+            rows: MYFOODS_HEART_ROWS,
+            count: 10,
+            total: MYFOODS_HEART,
+            caption: 'Foods in My foods (demo) whose Heart Health score fails the workspace heart test',
+            extraHead: 'Heart',
+            extraCls: (v) => /fail/i.test(v) ? 'wa-ffui-flag--present' : 'wa-ffui-flag--none',
+          })}
+          <div class="wa-table-foot"><span class="material-symbols-outlined">favorite</span>${MYFOODS_POP} \u00b7 Heart Health results that actually exist here.</div>
+        </div>`;
+    }
+    function myfoodsRawView() {
+      return `
+        <div class="wa-block wa-resultset">
+          ${scoreCards([
+            { num: '47', label: 'Raw score under 0', tone: 'alert' },
+            { num: '0', label: 'On published scale' },
+          ])}
+          ${myfoodsFfuiTable({
+            rows: MYFOODS_RAW_ROWS,
+            count: 10,
+            total: MYFOODS_RAW,
+            caption: 'Foods in My foods (demo) with raw WISEscore under zero \u00b7 published scale is empty',
+          })}
+          <div class="wa-table-foot"><span class="material-symbols-outlined">south</span>${MYFOODS_POP} \u00b7 47 on the raw scale. Qualifiers travel as settings, not prose.</div>
+        </div>`;
+    }
+    function myfoodsParsedView() {
+      return `
+        <div class="wa-block wa-resultset">
+          ${scoreCards([
+            { num: '12', label: 'Not fully parsed', tone: 'alert' },
+            { num: '80', label: 'In this workspace' },
+          ])}
+          ${myfoodsFfuiTable({
+            rows: MYFOODS_PARSED_ROWS,
+            count: 10,
+            total: MYFOODS_PARSED,
+            caption: 'Foods in My foods (demo) whose ingredient parse is incomplete',
+            extraHead: 'Parse',
+            extraCls: () => 'wa-ffui-flag--present',
+          })}
+          <div class="wa-table-foot"><span class="material-symbols-outlined">segment</span>${MYFOODS_POP} \u00b7 parse status from the workspace record.</div>
+        </div>`;
+    }
+    function myfoodsLabelView() {
+      return `
+        <div class="wa-block wa-resultset">
+          ${scoreCards([
+            { num: '73', label: 'Have a label', tone: 'good' },
+            { num: '7', label: 'No label yet' },
+          ])}
+          ${myfoodsFfuiTable({
+            rows: MYFOODS_LABEL_ROWS,
+            count: 10,
+            total: MYFOODS_TOTAL,
+            caption: 'Foods in My foods (demo) \u00b7 presence of any UPF label (not a specific tier)',
+            extraHead: 'Label',
+            extraCls: (v) => /present/i.test(v) ? 'wa-ffui-flag--present' : 'wa-ffui-flag--none',
+          })}
+          <div class="wa-table-foot"><span class="material-symbols-outlined">label</span>${MYFOODS_POP} \u00b7 73 carry a label at all.</div>
         </div>`;
     }
 
@@ -8701,6 +9048,7 @@
       { intent: 'gras_upf', icon: 'gavel',          label: 'Summarize the GRAS + UPF announcement', ask: 'Summarize the Kennedy/Diamantas GRAS + UPF announcement' },
       { intent: 'energy', icon: 'bolt',             label: 'Energy drinks: sweeteners vs UPF tier', ask: 'Top 10 and bottom 10 energy drinks: artificial sweetener use vs UPF-tier correlation' },
       { intent: 'proteinbars', icon: 'inventory_2', label: 'How many protein-bar SKUs?', ask: 'How many SKUs of protein bars do we have in the database?' },
+      { intent: 'myfoods_sup', icon: 'kitchen',     label: 'Which of my foods are Super Ultra-Processed?', ask: 'Which of my foods are Super Ultra-Processed?' },
       { intent: 'sweeteners', icon: 'science',      label: 'Artificial sweeteners by PL level', ask: 'Artificial sweeteners scored in the WISEcode UPF code by PL level' },
       { intent: 'brisket', icon: 'outdoor_grill',   label: 'Gut-healthy brisket recipe' },
       { intent: 'redochart', icon: 'refresh',       label: 'Redo the gut-health chart', ask: 'Redo the chart — promote sauerkraut and push the score higher' },
@@ -8779,6 +9127,21 @@
       c.nextIntents = KRAFT_FOLLOWUPS.filter((x) => x.intent !== c.intent);
     });
 
+    /* Follow-up chips after a "my foods" workspace answer. */
+    const MYFOODS_FOLLOWUPS = [
+      { intent: 'myfoods_upf',     icon: 'donut_small',  label: 'Analyze MY foods by UPF', ask: 'Analyze MY foods by UPF' },
+      { intent: 'myfoods_heart',   icon: 'favorite',     label: 'Which flunk the heart test?', ask: 'Which of my foods flunk the heart test?' },
+      { intent: 'myfoods_raw',     icon: 'south',        label: 'Score under zero', ask: 'Which of my foods have a score under zero?' },
+      { intent: 'myfoods_parsed',  icon: 'segment',      label: 'Not fully parsed', ask: 'Which of my foods are not fully parsed?' },
+      { intent: 'myfoods_label',   icon: 'label',        label: 'Which have a label at all?', ask: 'Which of my foods have a label at all?' },
+      { intent: 'myfoods_fatq',    icon: 'science',      label: 'Fat Quality v2 failures', ask: 'Which of my foods fail Fat Quality v2?' },
+      { intent: 'myfoods_fatq_run', icon: 'play_arrow',  label: 'Run Fat Quality v2', ask: 'Run Fat Quality v2 on my foods' },
+    ];
+    const MYFOODS_ALL = [{ intent: 'myfoods_sup', icon: 'kitchen', label: 'Which of my foods are Super Ultra-Processed?', ask: 'Which of my foods are Super Ultra-Processed?' }].concat(MYFOODS_FOLLOWUPS);
+    MYFOODS_FOLLOWUPS.forEach((c) => {
+      c.nextIntents = MYFOODS_ALL.filter((x) => x.intent !== c.intent);
+    });
+
     /* Every welcome chip names the topic-related row that must trail its
        answer. Curated follow-up objects win where they exist; otherwise the
        ids point at sibling welcome chips. The shared chat applies these
@@ -8795,6 +9158,8 @@
     attachNext('energy', ENERGY_FOLLOWUPS);
     attachNext('proteinbars', PROTEIN_FOLLOWUPS);
     attachNext('sweeteners', SWEET_FOLLOWUPS);
+    attachNext('myfoods_sup', MYFOODS_FOLLOWUPS);
+    MYFOODS_FOLLOWUPS.forEach((c) => attachNext(c.intent, MYFOODS_ALL.filter((x) => x.intent !== c.intent)));
     attachNext('brisket', ['redochart', 'report', 'compare']);
     attachNext('redochart', ['report', 'compare', 'brisket']);
     attachNext('upf', ['sweeteners', 'gras_upf', 'compare']);
@@ -8826,6 +9191,7 @@
         cupcake:      { label: 'Compare other cupcakes', ask: 'Compare that cupcake with a few other bakery desserts' },
         cookie:       { label: 'Compare the top cookies', ask: 'Compare the top chocolate-chip cookies side by side' },
         cat:          { label: 'Compare wet vs dry cat food', ask: 'Compare wet vs dry cat food against those feline nutrient needs' },
+        myfoods:      { label: 'Compare my UPF split', ask: 'Analyze MY foods by UPF' },
       },
       report: {
         kraft:        { label: 'Kraft UPF report', ask: 'Turn the Kraft SKU / UPF numbers into a report' },
@@ -8842,6 +9208,7 @@
         cupcake:      { label: 'Cupcake detail report', ask: 'Turn that cupcake detail into a short report' },
         cookie:       { label: 'Cookie ranking report', ask: 'Show me a pretty report \u2014 all the charts & trends' },
         cat:          { label: 'Feline nutrition report', ask: 'Turn the feline nutrient list into a short report' },
+        myfoods:      { label: 'My foods UPF report', ask: 'Analyze MY foods by UPF' },
       },
       spider: {
         kraft:        { label: 'Spider-chart Kraft categories', ask: 'Spider-chart Kraft\u2019s top categories' },
@@ -8858,6 +9225,7 @@
         cupcake:      { label: 'Spider-chart that cupcake', ask: 'Spider-chart that cupcake against nearby bakery desserts' },
         cookie:       { label: 'Spider-chart the top cookies', ask: 'Spider-chart the top cookies on WISEscore vs chocolate load' },
         cat:          { label: 'Spider-chart feline nutrients', ask: 'Spider-chart the essential feline nutrients' },
+        myfoods:      { label: 'Chart my UPF split', ask: 'Analyze MY foods by UPF' },
       },
     };
     function topicOf(intent) {
@@ -8868,6 +9236,7 @@
       if (id.indexOf('sweet') === 0) return 'sweeteners';
       if (id.indexOf('energy') === 0) return 'energy';
       if (id.indexOf('protein') === 0) return 'proteinbars';
+      if (id.indexOf('myfoods') === 0) return 'myfoods';
       if (id.indexOf('topbrands') === 0) return 'topbrands';
       if (id === 'sprouts') return 'sprouts';
       if (id === 'gras') return 'gras';
@@ -8944,6 +9313,7 @@
           cupcake: 'Spider-charted that cupcake against nearby bakery desserts \u2014 it still sits at the origin on every spoke we have data for. Charted it in Visuals \u2192',
           cat: 'Spider-charted the essential feline nutrients \u2014 taurine, animal protein, preformed vitamin A, arachidonic acid, niacin. Charted it in Visuals \u2192',
           upf: 'Spider-charted the main UPF signals \u2014 additives, sweeteners, refined oils \u2014 so you can see which ones drive the classification. Charted it in Visuals \u2192',
+          myfoods: 'Charted your workspace UPF split \u2014 80 foods, 65 Super Ultra-Processed. Not the 943k catalog. Charted it in Visuals \u2192',
         };
         if (t && by[t]) return by[t];
         if (t === 'worst' || !t) return SPIDER_REPLY;
@@ -8972,6 +9342,7 @@
           cupcake: 'Compared that cupcake with a couple of nearby bakery desserts on the same board. It still sits at the bottom: longer ingredient list, more synthetic colors, more emulsifiers.<br><br>Opened the comparison in Results &amp; Details \u2192',
           cookie: 'Took the cookie ranking we just ran and put the three strongest \u201cleast chocolate\u201d candidates head-to-head \u2014 Paleo Vegan Chocolate Chip, Emmy\u2019s Organics Coconut, and Get Back To Human Grain-Free.<br><br>Opened the comparison in Results &amp; Details \u2192',
           cat: 'Compared wet vs dry cat food against the feline nutrient needs we just walked through. Wet wins on moisture and typically on taurine density; dry wins on calorie density and shelf life \u2014 neither is a human WISEscore food.<br><br>Opened the comparison in Results &amp; Details \u2192',
+          myfoods: () => takeReply('myfoods_upf', text, 'myfoods_upf', ctx),
         };
         if (t && by[t]) {
           const v = by[t];
@@ -8998,6 +9369,7 @@
           cupcake: 'Turned that cupcake detail into a short report \u2014 the lookup failed on the full card, but the search result is enough to see why it sits at <strong>0.06</strong>.<br><br>Opened the detail in Results &amp; Details \u2192',
           cat: 'Turned the feline nutrient list into a short report \u2014 obligate carnivore, taurine, animal protein, preformed vitamin A, arachidonic acid, niacin, with the peer-reviewed sources attached.<br><br>Opened the references in Results &amp; Details \u2192',
           cookie: REPORT_REPLY,
+          myfoods: 'Turned your workspace into a short report \u2014 <strong>80</strong> foods in My foods (demo), <strong>65</strong> Super Ultra-Processed, scores read from the workspace not the 943k catalog.<br><br>Opened the breakdown in Visuals \u2192',
         };
         if (t && by[t]) return by[t];
         if (t) return followOn(ctx, REPORT_REPLY);
@@ -9112,6 +9484,87 @@
       topbrands_upf: 'Broke those three brands down by <strong>WISEcode UPF label</strong>. All three lean Minimally Processed \u2014 spice and bulk-ingredient catalogs \u2014 with only a thin Super Ultra-Processed tail.<br><br>Charted the split in Visuals \u2192',
       topbrands_top10: 'Widened the comparison to the <strong>top 10</strong> brands by foods with WISEscore \u2265 50. The same three still lead; the next seven are other bulk-ingredient and private-label catalogs.<br><br>Charted the top 10 in Visuals \u2192',
       topbrands_retail: 'Broke foods with WISEscore \u2265 50 down by <strong>retailer</strong>. Amazon carries the largest slice of the 600,197 qualifying foods, then Walmart and Kroger.<br><br>Charted the retailer split in Visuals \u2192',
+
+      myfoods_sup: (text, intent) => {
+        applyStorePhrase(text);
+        lastWorkspaceRoute = useWorkspacePack(text, intent);
+        if (!lastWorkspaceRoute) {
+          return 'Super Ultra-Processed is a huge slice of the <strong>943,428</strong>-food catalog \u2014 I can\u2019t list them all from here, and I will not pretend your workspace is empty.<br><br>Ask <strong>which of my foods</strong> are Super Ultra-Processed, or switch the database to <strong>My foods (demo)</strong> (80 foods). That is the routing that used to return a confident \u201cnone\u201d.';
+        }
+        return 'Looked in the workspace scores \u2014 the ones actually computed for your foods \u2014 not the global catalog.<br><br><strong>65 of 80</strong> are <strong>Super Ultra-Processed</strong>. That used to come back as \u201cnone\u201d / \u201c0 foods\u201d because the platform was looking where your foods never appear.<br><br>Opened the filtered list in Results &amp; Details \u2014 WISEscore, UPF label, and color are the values that drove the filter. \u2192';
+      },
+      myfoods_upf: (text, intent) => {
+        applyStorePhrase(text);
+        lastWorkspaceRoute = useWorkspacePack(text, intent);
+        if (!lastWorkspaceRoute) {
+          return 'That would analyze the <strong>943,000</strong>-food catalog, not your foods. Say <strong>analyze MY foods by UPF</strong> or switch to <strong>My foods (demo)</strong> \u2014 80 foods, 65 Super Ultra-Processed.';
+        }
+        return 'Analyzed <strong>your</strong> 80 foods by WISEcode UPF \u2014 not the 943k catalog with the question pasted on top.<br><br><strong>65</strong> Super Ultra-Processed, <strong>8</strong> Ultra-Processed, <strong>4</strong> Moderately, <strong>2</strong> Lightly, <strong>1</strong> Minimally. Charted the split in Visuals \u2192';
+      },
+      myfoods_heart: (text, intent) => {
+        applyStorePhrase(text);
+        lastWorkspaceRoute = useWorkspacePack(text, intent);
+        if (!lastWorkspaceRoute) {
+          return 'The heart test on the live catalog is a different population. Ask <strong>which of my foods flunk the heart test</strong>, or switch to <strong>My foods (demo)</strong> \u2014 that is where the <strong>51</strong> lives.';
+        }
+        return 'Read Heart Health where the results actually exist on your workspace foods \u2014 not an assumed empty catalog slice.<br><br><strong>51 of 80</strong> flunk the heart test. Opened the list in Results &amp; Details \u2192';
+      },
+      myfoods_raw: (text, intent) => {
+        applyStorePhrase(text);
+        const refused = underZeroRefusal(text, intent);
+        lockQualifiers(text);
+        if (refused) {
+          lastWorkspaceRoute = false;
+          return refused;
+        }
+        lastWorkspaceRoute = useWorkspacePack(text, intent);
+        if (!lastWorkspaceRoute) {
+          return 'Score-under-zero on the live catalog is not your workspace. Ask about <strong>my foods</strong> or switch to <strong>My foods (demo)</strong>.';
+        }
+        const { hasPub, hasRaw } = qualifierBits(text);
+        if (hasPub && !hasRaw) {
+          lastWorkspaceRoute = false;
+          return 'On the <strong>published</strong> scale, score-under-zero is empty \u2014 published scores do not go below zero. On the <strong>raw</strong> scale the true count is <strong>47</strong> of 80. I locked <em>published</em> as a setting for this thread; say \u201craw score\u201d if you want that list.';
+        }
+        return 'Locked this as a <strong>raw score</strong> question (qualifiers travel as settings, not leftover prose).<br><br><strong>47 of 80</strong> foods have a score under zero on the raw scale. The published scale is empty for the same cut. Opened the list in Results &amp; Details \u2192';
+      },
+      myfoods_parsed: (text, intent) => {
+        applyStorePhrase(text);
+        lastWorkspaceRoute = useWorkspacePack(text, intent);
+        if (!lastWorkspaceRoute) {
+          return 'Parse status is a workspace fact. Ask <strong>which of my foods are not fully parsed</strong>, or switch to <strong>My foods (demo)</strong>.';
+        }
+        return '<strong>12 of 80</strong> foods in your workspace are not fully parsed \u2014 ingredient lists that never finished resolving.<br><br>Opened the list in Results &amp; Details \u2192';
+      },
+      myfoods_label: (text, intent) => {
+        applyStorePhrase(text);
+        lastWorkspaceRoute = useWorkspacePack(text, intent);
+        if (!lastWorkspaceRoute) {
+          return 'That is a presence question on <em>your</em> foods. Ask <strong>which of my foods have a label at all</strong>, or switch to <strong>My foods (demo)</strong>.';
+        }
+        return 'Treated this as a presence query, not a specific-tier filter.<br><br><strong>73 of 80</strong> foods have a UPF label at all; <strong>7</strong> still do not. Opened the list in Results &amp; Details \u2192';
+      },
+      myfoods_fatq: (text, intent) => {
+        applyStorePhrase(text);
+        lastWorkspaceRoute = useWorkspacePack(text, intent);
+        if (!lastWorkspaceRoute) {
+          return 'Fat Quality v2 is an in-development score on your workspace. Ask about <strong>my foods</strong>, or switch to <strong>My foods (demo)</strong>.';
+        }
+        if (!fatqRan) {
+          lastWorkspaceRoute = false;
+          return 'I checked the workspace results \u2014 I did not assume. <strong>Fat Quality v2 hasn\u2019t been run here yet.</strong><br><br>Asking never triggers a run. If you want the distribution, say <strong>Run Fat Quality v2 on my foods</strong>.';
+        }
+        return 'Fat Quality v2 has already been run on this workspace (Run 1 \u00b7 80 foods).<br><br><strong>19</strong> land Poor. Charted the distribution in Visuals \u2192';
+      },
+      myfoods_fatq_run: (text, intent) => {
+        applyStorePhrase(text);
+        lastWorkspaceRoute = useWorkspacePack(text, intent);
+        if (!lastWorkspaceRoute) {
+          return 'I only run scores against the store this conversation is pointed at. Switch to <strong>My foods (demo)</strong> or say <strong>run Fat Quality v2 on my foods</strong>.';
+        }
+        fatqRan = true;
+        return 'Ran <strong>Fat Quality v2</strong> on your 80 foods \u2014 because you asked, not as a side effect of a question.<br><br>Requested score only; no supporting calculations mixed in. <strong>Run 1 \u00b7 80 foods \u00b7 no duplicate scoring brackets.</strong> 19 Poor, 22 Fair, 18 OK, 14 Good, 7 Excellent.<br><br>Charted the distribution in Visuals \u2192';
+      },
     };
 
     const DEFAULT_REPLY = 'I\u2019m answering from your verified WISE Food data. Try one of the suggested prompts to walk through this conversation \u2014 as results come up, I\u2019ll open them in the Results &amp; Details and Visuals panes on the right.';
@@ -9125,11 +9578,22 @@
       return takeReply(key, '', key, null);
     }
     function reply(text, intent, ctx) {
+      applyStorePhrase(text);
+      lockQualifiers(text);
       if (intent) {
         const hit = takeReply(intent, text, intent, ctx);
         if (hit != null) return hit;
       }
       const t = String(text || '').toLowerCase();
+      if (/fat\s*quality/.test(t) && /\brun\b/.test(t)) return takeReply('myfoods_fatq_run', text, 'myfoods_fatq_run', ctx);
+      if (/fat\s*quality/.test(t)) return takeReply('myfoods_fatq', text, 'myfoods_fatq', ctx);
+      if (/(my\s+foods|my sandbox|my workspace)/.test(t) && /super\s*ultra/.test(t)) return takeReply('myfoods_sup', text, 'myfoods_sup', ctx);
+      if (/(my\s+foods|analyze my)/.test(t) && /\bupf\b/.test(t)) return takeReply('myfoods_upf', text, 'myfoods_upf', ctx);
+      if (/(my\s+foods|my sandbox)/.test(t) && /heart/.test(t)) return takeReply('myfoods_heart', text, 'myfoods_heart', ctx);
+      if (/(my\s+foods|my sandbox)/.test(t) && /under\s*(zero|0)/.test(t)) return takeReply('myfoods_raw', text, 'myfoods_raw', ctx);
+      if (/(my\s+foods|my sandbox)/.test(t) && /parsed/.test(t)) return takeReply('myfoods_parsed', text, 'myfoods_parsed', ctx);
+      if (/(my\s+foods|my sandbox)/.test(t) && /label/.test(t)) return takeReply('myfoods_label', text, 'myfoods_label', ctx);
+      if (/super\s*ultra/.test(t) && !/kraft|energy|protein/.test(t)) return takeReply('myfoods_sup', text, 'myfoods_sup', ctx);
       if (/kraft/.test(t) && /heinz/.test(t)) return takeReply('kraft_heinz', text, 'kraft_heinz', ctx);
       if (/kraft/.test(t) && /(wisescore|wise\s*score)/.test(t)) return takeReply('kraft_wisescore', text, 'kraft_wisescore', ctx);
       if (/kraft/.test(t) && /categor/.test(t) && /(upf|ultra|processed)/.test(t)) return takeReply('kraft_upf_cat', text, 'kraft_upf_cat', ctx);
@@ -9179,19 +9643,24 @@
 
     /* Tag the first .wa-block in a view's html so we can later tell whether that
        exact block is still present in its pane (i.e. not closed/cleared). */
-    function tagBlock(html, id, title, meta, icon, ver) {
+    function tagBlock(html, id, title, meta, icon, ver, extra) {
+      extra = extra || {};
+      const more = (extra.versionKey ? ` data-version-key="${esc(extra.versionKey)}"` : '')
+        + (extra.ver != null ? ` data-ver="${esc(extra.ver)}"` : '')
+        + (extra.transcriptId ? ` data-transcript="${esc(extra.transcriptId)}"` : '');
       const headAttrs = `data-block-id="${id}"`
         + (title ? ` data-slide-title="${esc(title)}"` : '')
         + (meta ? ` data-slide-meta="${esc(meta)}"` : '')
         + (icon ? ` data-slide-icon="${esc(icon)}"` : '')
-        + (ver ? ` data-slide-ver="${esc(ver)}"` : '');
+        + (ver ? ` data-slide-ver="${esc(ver)}"` : '')
+        + more;
       /* Tag EVERY top-level output block of this surface with the same block id
          (so a multi-block output — e.g. chart + headroom — can be found and
          swapped as one group when a specific version is opened) and with the
          version label (so the pane's version badge holds across all of the
          output's sub-slides). Only the FIRST block carries the slide
          title/meta/icon, which differ per sub-block. */
-      const tailAttrs = `data-block-id="${id}"` + (ver ? ` data-slide-ver="${esc(ver)}"` : '');
+      const tailAttrs = `data-block-id="${id}"` + (ver ? ` data-slide-ver="${esc(ver)}"` : '') + more;
       let first = true;
       return html.replace(/<div class="wa-block/g, () => {
         if (first) { first = false; return `<div ${headAttrs} class="wa-block`; }
@@ -9224,18 +9693,20 @@
       const titleHtml = esc(rawTitle);
 
       let thumb;
+      const vtag = (n) => `<span class="sc-surface-vtag">v${n}</span>`;
       if (versions && versions.length > 1) {
-        /* Stacked cascade — oldest → newest, newest raised + tagged. */
+        /* Stacked cascade — oldest → newest, newest raised + tagged. Every
+           thumb is the same 52px as a single-version chip. */
         thumb = `<div class="sc-surface-stack">` + versions.map((entry, i) => {
           const isLatest = i === versions.length - 1;
           const vn = entry.version || (i + 1);
           return `<div class="sc-surface-thumb ${isLatest ? 'is-latest' : 'is-old'}" role="button" tabindex="0" data-surface-ver="${blockId}" data-ver="${vn}" aria-label="Open version ${vn} of “${esc(rawTitle)}” in the ${esc(paneName)} panel" title="Open v${vn} in the ${esc(paneName)} panel">
               <div class="sc-surface-thumb-inner">${entry.previewHtml}</div>
-              <span class="sc-surface-vtag">v${vn}</span>
+              ${vtag(vn)}
             </div>`;
         }).join('') + `</div>`;
       } else {
-        thumb = `<div class="sc-surface-thumb"><div class="sc-surface-thumb-inner">${previewHtml}</div></div>`;
+        thumb = `<div class="sc-surface-thumb is-latest"><div class="sc-surface-thumb-inner">${previewHtml}</div>${vtag(version)}</div>`;
       }
 
       /* The timestamp + version no longer live inside the chip — they render in
@@ -9426,6 +9897,104 @@
       syncManifestState();
     }
 
+    function cssAttr(v) {
+      if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(String(v));
+      return String(v).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    }
+    function paneDest(which) {
+      return (mergedMode && (which === 'results' || which === 'visuals')) ? 'unified' : which;
+    }
+    function findVersionBlock(dest, versionKey, ver) {
+      const body = paneBody[dest];
+      if (!body || versionKey == null || ver == null) return null;
+      return body.querySelector(`.wa-block[data-version-key="${cssAttr(versionKey)}"][data-ver="${ver}"]`);
+    }
+    function familyBlocks(dest, versionKey) {
+      const body = paneBody[dest];
+      if (!body || versionKey == null) return [];
+      return Array.from(body.querySelectorAll(`.wa-block[data-version-key="${cssAttr(versionKey)}"]`));
+    }
+    /* Parse tagged html and drop the nodes into the pane, keeping a version
+       family together (new versions land just after the previous one). */
+    function insertPaneNodes(which, html, { after } = {}) {
+      const routed = mergedMode && (which === 'results' || which === 'visuals');
+      const dest = routed ? 'unified' : which;
+      const body = paneBody[dest];
+      const added = [];
+      if (!body || html == null) return added;
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      const pivot = after && after.parentNode === body ? after.nextSibling : null;
+      while (tmp.firstChild) {
+        const node = tmp.firstChild;
+        if (routed && node.nodeType === 1) node.dataset.origin = which;
+        if (after && after.parentNode === body) body.insertBefore(node, pivot);
+        else body.appendChild(node);
+        if (node.nodeType === 1 && node.classList.contains('wa-block')) added.push(node);
+      }
+      return added;
+    }
+    /* Every version of an output is its own slide in the sticky Output module,
+       with the same vN badge the transcript chip wears. Missing prior versions
+       (e.g. a redo that seeded v1/v2 then surfaced v3) are inserted so the
+       rail always shows the full stack. */
+    function insertAllVersionSlides(which, { icon, title, meta, versionKey, list, latestBlockId, latestHtml }) {
+      const dest = paneDest(which);
+      const el = paneEl[dest];
+      const body = paneBody[dest];
+      if (!el || !body || !list || !list.length) return null;
+      const count = list.length;
+      hideOutputSkeleton(dest);
+      const tallyBefore = paneBlocks(dest).length;
+      let latestNode = null;
+
+      list.forEach((entry, i) => {
+        const vn = entry.version || (i + 1);
+        const verText = `${verLabel(vn)}${count > 1 ? ` · ${count} versions` : ''}`;
+        const existing = findVersionBlock(dest, versionKey, vn);
+        if (existing) {
+          existing.dataset.slideVer = verText;
+          if (i === list.length - 1) latestNode = existing;
+          return;
+        }
+        const isLatest = i === list.length - 1;
+        const blockId = isLatest ? latestBlockId : `${latestBlockId}-v${vn}`;
+        const sourceHtml = isLatest ? latestHtml : (entry.html || entry.previewHtml);
+        const tagged = tagBlock(sourceHtml, blockId, title, meta, icon, verText, {
+          versionKey, ver: vn, transcriptId: latestBlockId,
+        });
+        const family = familyBlocks(dest, versionKey);
+        const after = family.filter((b) => Number(b.dataset.ver) < vn).pop() || null;
+        const added = insertPaneNodes(which, tagged, { after });
+        added.forEach((b) => {
+          ensureBlockOutTitle(b, title);
+          waBootDashCharts(b);
+        });
+        if (isLatest) latestNode = added[0] || null;
+        if (!SURFACED[blockId]) {
+          SURFACED[blockId] = { which, title, meta, icon, html: tagged, versionKey };
+        }
+      });
+
+      familyBlocks(dest, versionKey).forEach((b) => {
+        const vn = Number(b.dataset.ver);
+        if (vn) b.dataset.slideVer = `${verLabel(vn)}${count > 1 ? ` · ${count} versions` : ''}`;
+      });
+
+      body.querySelectorAll('.wa-tbl:not([data-ready])').forEach((tbl) => initTable(tbl));
+      body.querySelectorAll('.cmp-host:not([data-ready])').forEach((h) => bootCompareEngine(h));
+      if (!el.classList.contains('is-open')) ensurePaneOpen(el);
+      if (dest === 'unified') refreshUnifiedCarousel({ activate: latestNode });
+      else refreshPaneCarousel(which, { activate: latestNode });
+      if (paneBlocks(dest).length > tallyBefore) bumpPaneTally(dest);
+      if (latestNode && paneBody[dest].classList.contains('is-carousel')) {
+        paneBody[dest].scrollTop = 0;
+      }
+      updatePaneVer(dest);
+      ensureChartExpandBtns(body);
+      return latestNode;
+    }
+
     /* Open (or refresh) a pane block AND mirror it as an inline preview card. */
     function surfaceBlock(which, { icon, title, meta, html, versionKey, versionReset }) {
       const blockId = 'blk' + (++surfaceSeq);
@@ -9442,15 +10011,19 @@
       const time = nowClock();
       if (versionReset) SURFACE_VERSIONS[key] = [];
       const list = SURFACE_VERSIONS[key] || (SURFACE_VERSIONS[key] = []);
-      list.push({ previewHtml, version: list.length + 1, time });
+      list.push({ previewHtml, html, version: list.length + 1, time });
       const count = list.length;
       /* Stamp the SAME version label the transcript card's meta row shows
          ("v1.0.0", or "v1.0.2 · 3 versions" once it's been redone) onto the pane
          block, so the versioning reads identically on the mini card and on the
          output shown on the right. */
       const verText = `${verLabel(count)}${count > 1 ? ` · ${count} versions` : ''}`;
-      const tagged = tagBlock(html, blockId, title, meta, icon, verText);
-      openPane(which, { title, meta, html: tagged });
+      const tagged = tagBlock(html, blockId, title, meta, icon, verText, {
+        versionKey: key, ver: count, transcriptId: blockId,
+      });
+      insertAllVersionSlides(which, {
+        icon, title, meta, versionKey: key, list, latestBlockId: blockId, latestHtml: html,
+      });
       SURFACED[blockId] = { which, title, meta, icon, html: tagged, versionKey: key };
       addManifestOutput({ blockId, which, icon, title });
       if (chat && typeof chat.addWISEcodeAI === 'function') {
@@ -9466,6 +10039,7 @@
           { feedback: true, trailChips: false }
         );
         decorateSurfaceMeta(surfLine, { time, version: count, count, blockId });
+        syncSurfaceVersionThumbs(blockId, list[list.length - 1]);
       }
     }
 
@@ -9477,7 +10051,10 @@
       /* While merged, every block lives in the unified pane — look for it there. */
       const dest = mergedMode ? 'unified' : e.which;
       const pane = paneEl[dest];
-      const present = paneBody[dest] && paneBody[dest].querySelector(`[data-block-id="${blockId}"]`);
+      const present = paneBody[dest] && (
+        paneBody[dest].querySelector(`[data-block-id="${blockId}"]`)
+        || (e.versionKey && familyBlocks(dest, e.versionKey).slice(-1)[0])
+      );
       if (present) {
         if (pane && !pane.classList.contains('is-open')) ensurePaneOpen(pane);
         if (paneBody[dest].classList.contains('is-carousel')) {
@@ -9581,11 +10158,11 @@
       });
     }
 
-    /* Open a SPECIFIC version of a surfaced output in its pane (tapping one of the
-       stacked version thumbnails on the transcript card). The chosen version's
-       content is swapped in place of whatever version is currently shown, and the
-       pane's version badge updates to match — so the mini-card stack and the
-       output on the right always agree on which version you're looking at. */
+    /* Open a SPECIFIC version of a surfaced output in its pane (tapping one of
+       the stacked version thumbnails on the transcript card). Each version is
+       its own slide in the sticky Output module — we activate that slide rather
+       than swapping content in place — so the mini-card stack and the rail on
+       the right always agree on which version you're looking at. */
     function openSurfaceVersion(blockId, verNum) {
       const e = SURFACED[blockId];
       if (!e) return;
@@ -9593,47 +10170,22 @@
       if (!list || !list.length || !verNum) { reopenSurface(blockId); return; }
       const idx = Math.max(0, Math.min((verNum | 0) - 1, list.length - 1));
       const entry = list[idx];
-      const count = list.length;
-      const verText = `${verLabel(entry.version)}${count > 1 ? ` · ${count} versions` : ''}`;
       syncSurfaceVersionThumbs(blockId, entry);
       const dest = mergedMode ? 'unified' : e.which;
+      let target = findVersionBlock(dest, e.versionKey, entry.version);
+      if (!target) {
+        insertAllVersionSlides(e.which, {
+          icon: e.icon, title: e.title, meta: e.meta, versionKey: e.versionKey,
+          list, latestBlockId: blockId, latestHtml: (list[list.length - 1] && list[list.length - 1].html) || e.html,
+        });
+        target = findVersionBlock(dest, e.versionKey, entry.version);
+      }
+      if (!target) { reopenSurface(blockId); return; }
       const pane = paneEl[dest];
-      const body = paneBody[dest];
-      if (!body) return;
-      const tagged = tagBlock(entry.previewHtml, blockId, e.title, e.meta, e.icon, verText);
-      const group = Array.from(body.querySelectorAll(`[data-block-id="${blockId}"]`));
-      if (!group.length) {
-        /* The output isn't in the pane anymore — open it fresh at this version. */
-        openPane(e.which, { title: e.title, meta: e.meta, html: tagged });
-        SURFACED[blockId].html = tagged;
-        return;
-      }
-      /* Slot the chosen version back into the same carousel position: insert its
-         block(s) before the current group's first block, then drop the old ones. */
-      const tmp = document.createElement('div');
-      tmp.innerHTML = tagged;
-      const inserted = [];
-      const anchor = group[0];
-      while (tmp.firstChild) {
-        const node = tmp.firstChild;
-        if (dest === 'unified' && node.nodeType === 1) node.dataset.origin = e.which;
-        body.insertBefore(node, anchor);
-        if (node.nodeType === 1) inserted.push(node);
-      }
-      group.forEach((n) => n.remove());
-      const blocks = inserted.filter((n) => n.classList && n.classList.contains('wa-block'));
-      blocks.forEach((b) => ensureBlockOutTitle(b, e.title));
-      /* Wake up any interactive content that just landed (tables / compare board). */
-      body.querySelectorAll('.wa-tbl:not([data-ready])').forEach((tbl) => initTable(tbl));
-      body.querySelectorAll('.cmp-host:not([data-ready])').forEach((h) => bootCompareEngine(h));
       if (pane && !pane.classList.contains('is-open')) ensurePaneOpen(pane);
-      const firstBlock = blocks[0] || null;
-      if (dest === 'unified') refreshUnifiedCarousel({ activate: firstBlock });
-      else refreshPaneCarousel(e.which, { activate: firstBlock });
+      if (dest === 'unified') refreshUnifiedCarousel({ activate: target });
+      else refreshPaneCarousel(e.which, { activate: target });
       updatePaneVer(dest);
-      /* Remember the shown version so a later card-body tap reopens the same one. */
-      SURFACED[blockId].html = tagged;
-      ensureChartExpandBtns(body);
     }
 
     /* When a turn surfaces data, open/refresh the right panes shortly after the
@@ -9645,18 +10197,21 @@
       energy: 'energy_sugar', proteinbars: 'protein_vs_granola', sweeteners: 'sweet_vs_natural',
       topbrands: 'topbrands_top10', brisket: 'brisket', upf: 'upf',
       worst: 'worst', cupcake: 'cupcake', cookie: 'cookie', cat: 'cat',
+      myfoods: 'myfoods_upf',
     };
     const REPORT_SURFACE = {
       kraft: 'kraft', sprouts: 'sprouts', gras: 'gras', gras_upf: 'gras_upf',
       energy: 'energy', proteinbars: 'proteinbars', sweeteners: 'sweeteners',
       topbrands: 'topbrands', brisket: 'brisket', upf: 'upf',
       worst: 'worst', cupcake: 'cupcake', cat: 'catnutrients',
+      myfoods: 'myfoods_upf',
     };
     const SPIDER_SURFACE = {
       kraft: 'kraft_cats', sprouts: 'sprouts', gras: 'gras', gras_upf: 'upf_def',
       energy: 'energy_heat', proteinbars: 'protein_brands', sweeteners: 'sweet_vs_natural',
       topbrands: 'topbrands', brisket: 'brisket', upf: 'upf',
       cupcake: 'cupcake', cookie: 'cookie', cat: 'catnutrients',
+      myfoods: 'myfoods_upf',
     };
     function surface(intent, ctx) {
       const topic = ctx && ctx.topic;
@@ -10039,6 +10594,62 @@
             title: 'Retailer breakdown \u00b7 WISEscore \u2265 50',
             meta: 'Foods scoring 50 or higher, by retailer assortment',
             html: topBrandsRetailView(),
+          });
+        } else if (intent === 'myfoods_sup' && lastWorkspaceRoute) {
+          surfaceBlock('results', {
+            icon: 'kitchen',
+            title: 'My foods \u00b7 Super Ultra-Processed',
+            meta: '65 of 80 in My foods (demo) \u00b7 workspace UPF labels',
+            html: myfoodsSupView(),
+          });
+        } else if (intent === 'myfoods_upf' && lastWorkspaceRoute) {
+          surfaceBlock('visuals', {
+            icon: 'donut_small',
+            title: 'My foods by UPF',
+            meta: '80 foods in My foods (demo) \u00b7 not the 943k catalog',
+            html: myfoodsUpfDonutChart(),
+          });
+        } else if (intent === 'myfoods_heart' && lastWorkspaceRoute) {
+          surfaceBlock('results', {
+            icon: 'favorite',
+            title: 'My foods \u00b7 heart test',
+            meta: '51 of 80 fail \u00b7 Heart Health results that exist here',
+            html: myfoodsHeartView(),
+          });
+        } else if (intent === 'myfoods_raw' && lastWorkspaceRoute) {
+          surfaceBlock('results', {
+            icon: 'south',
+            title: 'My foods \u00b7 raw score under zero',
+            meta: '47 of 80 on the raw scale \u00b7 published scale is empty',
+            html: myfoodsRawView(),
+          });
+        } else if (intent === 'myfoods_parsed' && lastWorkspaceRoute) {
+          surfaceBlock('results', {
+            icon: 'segment',
+            title: 'My foods \u00b7 not fully parsed',
+            meta: '12 of 80 in My foods (demo)',
+            html: myfoodsParsedView(),
+          });
+        } else if (intent === 'myfoods_label' && lastWorkspaceRoute) {
+          surfaceBlock('results', {
+            icon: 'label',
+            title: 'My foods \u00b7 have a label at all',
+            meta: '73 of 80 carry any UPF label',
+            html: myfoodsLabelView(),
+          });
+        } else if (intent === 'myfoods_fatq' && lastWorkspaceRoute && fatqRan) {
+          surfaceBlock('visuals', {
+            icon: 'science',
+            title: 'Fat Quality v2 \u00b7 my foods',
+            meta: 'Run 1 \u00b7 80 foods \u00b7 no duplicate scoring brackets',
+            html: myfoodsFatqDonutChart(),
+          });
+        } else if (intent === 'myfoods_fatq_run' && lastWorkspaceRoute) {
+          surfaceBlock('visuals', {
+            icon: 'science',
+            title: 'Fat Quality v2 \u00b7 my foods',
+            meta: 'Run 1 \u00b7 80 foods \u00b7 no duplicate scoring brackets',
+            html: myfoodsFatqDonutChart(),
           });
         }
       }, 660);
@@ -10637,6 +11248,7 @@
             { variant: 'metric', icon: 'cookie', pill: { tone: 'up', icon: 'north', text: 'Highest' }, metric: '3,010', title: 'Best chocolate chip cookie', desc: 'Highest-WISEscore cookies with the least chocolate.', action: 'Find it', intent: 'cookie', ask: 'Best chocolate chip cookie with the least chocolate' },
             { variant: 'metric', icon: 'bolt', pill: { tone: 'alert', icon: 'insights', text: '7,701' }, metric: '74.2%', title: 'Energy drinks: sweeteners vs UPF tier', desc: 'Top &amp; bottom 10 by WISEscore \u2014 how artificial sweetener use tracks the WISEcode UPF tier.', action: 'Correlate', intent: 'energy', ask: 'Top 10 and bottom 10 energy drinks: artificial sweetener use vs UPF-tier correlation' },
             { variant: 'metric', icon: 'inventory_2', pill: { tone: 'up', icon: 'inventory_2', text: 'SKUs' }, metric: '3,334', title: 'How many protein-bar SKUs?', desc: 'Count the Snacks \u203a Protein &amp; Meal Bars category and break it down.', action: 'Count', intent: 'proteinbars', ask: 'How many SKUs of protein bars do we have in the database?' },
+            { variant: 'metric', icon: 'kitchen', pill: { tone: 'alert', icon: 'warning', text: 'Mine' }, metric: '65', title: 'Which of my foods are Super Ultra-Processed?', desc: 'Reads workspace scores for your 80 foods — not the 943k catalog.', action: 'Ask', intent: 'myfoods_sup', ask: 'Which of my foods are Super Ultra-Processed?' },
             { variant: 'wiseai', icon: 'compare_arrows', title: 'Compare a few products', desc: 'Grab a few products and put them head-to-head on the comparison board.', action: 'Compare', intent: 'compare', ask: 'Compare a few products side by side' },
             { variant: 'intro', icon: 'summarize', title: 'Build me a report', desc: 'Turn the cookie ranking into a full visual report with charts & trends.', action: 'Generate', intent: 'report', ask: 'Show me a pretty report — all the charts & trends' },
             { variant: 'wiseai', icon: 'hub', title: 'Connect a data source', desc: 'Link Kroger, Instacart, USDA FoodData Central & more so WISEcodeAI can pull verified product data.', action: 'Connect', intent: 'connect_source' },
@@ -10650,7 +11262,9 @@
            onReply, which the chat fires only AFTER the reasoning trace's glob
            has finished thinking. Surfacing here would flash the output chips in
            before the story runs. */
-        onIntent() {
+        onIntent(intent, text) {
+          applyStorePhrase(text);
+          lockQualifiers(text);
           return false;
         },
         /* Fired once the reasoning trace completes, right as the answer lands.
@@ -10665,7 +11279,8 @@
            A new conversation restores the full-screen welcome. */
         onEngage() { engageConversationLayout(); },
         onDisengage() { disengageConversationLayout(); },
-        onReset() { resetConversationLayout(); },
+        onReset() { resetMyfoodsState(); resetConversationLayout(); },
+        onDbChange(dbId) { activeDbId = dbId || MYFOODS_LIVE; },
         /* An answer's "Opened … in Results & Details / Visuals →" narration
            renders as a clickable chip; tapping it re-opens that pane's most
            recent output, and the module also opens by default the moment the
@@ -10795,36 +11410,6 @@
       /* Sticky is now the only module style, so the "Sticky modules" switch has
          nothing to toggle — remove it from the menu. */
       if (morePop) morePop.querySelector('[data-sc="sticky"]')?.remove();
-
-      /* "Merge outputs into one panel" switch — collapses the Results & Details
-         and Visuals modules into a single #wa-unified module whose one thumbnail
-         rail is grouped (Results · | · Visuals). Uses a custom data attr (not
-         data-sc) so the chat module's own menu handler ignores it; we wire it
-         ourselves and keep the menu open so the switch state reads back. */
-      if (morePop && !morePop.querySelector('[data-merge-outputs]')) {
-        const mBtn = document.createElement('button');
-        mBtn.type = 'button';
-        mBtn.className = 'topbar-menu-item topbar-menu-item--admin sc-mcp-item';
-        mBtn.setAttribute('role', 'menuitemcheckbox');
-        mBtn.setAttribute('aria-checked', 'false');
-        mBtn.setAttribute('data-merge-outputs', '');
-        mBtn.innerHTML = '<span class="material-symbols-outlined topbar-menu-icon">dashboard</span><span>Merge outputs into one panel</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span>';
-        /* Sit it just above the danger "Close conversation" item when present. */
-        const closeItem = morePop.querySelector('[data-sc="close"]');
-        const anchor = closeItem ? (closeItem.previousElementSibling?.classList.contains('topbar-menu-divider') ? closeItem.previousElementSibling : closeItem) : null;
-        if (anchor) morePop.insertBefore(mBtn, anchor);
-        else morePop.appendChild(mBtn);
-        mergeMenuItem = mBtn;
-        syncMergeMenu();
-        mBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          applyMergeMode(!mergedMode);
-        });
-        /* Default this ON so every chat starts merged — all subsequent
-           results/visuals surface into the single unified panel. Runs once at
-           init (with empty panes it just flips state + syncs the switch). */
-        applyMergeMode(true);
-      }
     }
   </script>
 

@@ -53,6 +53,7 @@
     ['.dash-score-num .n', '.dash-score-card'],
     ['.nfp-ins .dash-bignum', '.dash-claim-col'],
     ['.nfp-ia-score', '.nfp-ia-sec'],
+    ['.dash-report-stat-val', '.dash-report-stat'],
     ['[data-countup]', null],
   ];
   var NUM_SEL = ENTRIES.map(function (e) { return e[0]; }).join(',');

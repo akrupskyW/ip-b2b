@@ -51,6 +51,10 @@
     '.pf-filter-pop',
     '.ma-filter-pop',
     '.pf-gs-infopop',
+    '.pf-add-menu',
+    '.pf-brand-menu',
+    '.pf-module-menu-pop',
+    '.pf-reports-pop',
     '#lir-more-popover',
     /* Chat-module popovers anchored INSIDE the transcript. They're pinned
        absolutely within an answer's meta row (low z-index), so the chat card's
@@ -64,6 +68,10 @@
     '.sc-fb-reasons',
     '.sc-fb-menu',
     '.sc-fb-pop',
+    /* Date-column ⋮ picker — tables clip overflow, so this must float like
+       every other header menu. Opens above / to the right of the trigger. */
+    '.w-datemenu-pop',
+    '.pf-datemenu-pop',
   ].join(',');
 
   /* Three-dot / row menus that are not floated by this layer (they stay in
@@ -72,7 +80,6 @@
   var DISMISS_EXTRA = [
     '.adm-rowmenu-pop',
     '.inv-rowmenu-pop',
-    '.pf-datemenu-pop',
   ].join(',');
 
   var floated = new Set();
