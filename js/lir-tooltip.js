@@ -22,7 +22,7 @@
    picked up by isIconOnly() so every glyph in the app labels itself on hover
    without a click. */
 const TOOLTIP_SELECTOR =
-  '.lir-btn, .topbar-menu-toggle, .panel-flip-btn, .panel-width-toggle-btn, ' +
+  '.lir-btn, .topbar-menu-toggle, .menu-modules-btn, .panel-flip-btn, .panel-width-toggle-btn, ' +
   '.panel-more-btn, .panel-ctrl-btn, .wiseai-dock-flip, .dash-term, ' +
   '.topbar-appearance-btn, #menu-footer-layout-btn, ' +
   '.wise-popover--appearance [data-tip], ' +
@@ -75,10 +75,12 @@ const CLOSE_SELECTOR =
 
 function isCloseControl(btn) {
   if (!btn || !btn.matches) return false;
-  const leftover = visibleTextWithoutIcons(btn);
-  if (leftover.length > 2) return false;
-  if (leftover === '×' || leftover === '✕' || leftover === 'x' || leftover === 'X') return true;
   if (btn.matches(CLOSE_SELECTOR)) return true;
+  const leftover = visibleTextWithoutIcons(btn);
+  if (leftover === '×' || leftover === '✕' || leftover === 'x' || leftover === 'X') return true;
+  /* Captioned menu items ("Close pane") are not the X control. A visible
+     "Close" label next to the glyph still is. */
+  if (leftover.length > 2) return false;
   const icon = btn.querySelector && btn.querySelector('.material-symbols-outlined');
   if (!icon) return false;
   const raw = (icon.textContent || '').replace(/\s+/g, ' ').trim();
@@ -155,6 +157,8 @@ const GLYPH_LABELS = {
   notifications: 'Alerts',
   expand_more: 'Show more',
   chevron_right: 'Open',
+  menu: 'Menu',
+  chat_add_on: 'New conversation',
   unfold_more: 'Resize',
   swap_horiz: 'Move',
   open_in_full: 'Expand',
@@ -216,7 +220,8 @@ export function initLirTooltip() {
        and the crossword trigger sit above / to the right of their target
        (never below), matching the appearance popover itself. Everything else
        keeps the default below placement. */
-    const tipRight = btn.classList.contains('topbar-menu-toggle') &&
+    const tipRight = (btn.classList.contains('topbar-menu-toggle') ||
+      btn.classList.contains('menu-modules-btn')) &&
       !btn.closest('.mp-pivot');
     const isIntentChip = !!(btn.matches && btn.matches('.ws-intent-chip, .sc-reply-chips .chip, .sc-inline-chips .chip'));
     const isStudioTool = !!(btn.matches && btn.matches('.rf-tool-ico'));

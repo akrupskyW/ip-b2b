@@ -2,6 +2,7 @@ import { applyMinimalUi } from './topbar.js';
 import { initLirTooltip } from './lir-tooltip.js';
 import { parkNavHistory, refreshNavHistory } from './nav-history.js';
 import { isNavHamburgerActive } from './nav-hamburger.js';
+import { isNavModulesOn, syncNavModulesChrome } from './nav-modules.js';
 /* Side-effect: overlay the streaming helix on assembling boards. No Appearance
    toggle — the overlay boots on every page that renders the WISE nav. */
 import './load-anim.js';
@@ -906,6 +907,7 @@ function finalizeMenu(navEl) {
   setupMenuRail(navEl);
   setupMenuPivot(navEl);
   try { refreshNavHistory(); } catch (_) { /* nav-history is optional on first paint */ }
+  try { syncNavModulesChrome(); } catch (_) { /* nav-modules is optional on first paint */ }
   scheduleNavTrees(navEl);
 
   navEl.addEventListener('click', (e) => {
@@ -1127,6 +1129,7 @@ function setupMenuRail(navEl) {
   if (!btn) return;
 
   const applyHamburgerSkin = () => {
+    if (isNavModulesOn()) return;
     if (!isNavHamburgerActive()) return;
     if (panel.classList.contains('minimal-ui') || panel.classList.contains('mp-pivot')) return;
     if (!panel.classList.contains('mp-rail')) return;
@@ -1140,9 +1143,12 @@ function setupMenuRail(navEl) {
   const apply = (railed) => {
     panel.classList.toggle('mp-rail', railed);
     btn.setAttribute('aria-pressed', railed ? 'true' : 'false');
-    const label = railed ? 'Expand menu' : 'Collapse menu to icons';
+    const label = isNavModulesOn()
+      ? (railed ? 'Open navigation and History' : 'Collapse to icons')
+      : (railed ? 'Expand menu' : 'Collapse menu to icons');
     btn.setAttribute('aria-label', label);
     btn.setAttribute('title', label);
+    btn.setAttribute('data-tip', label);
     const icon = btn.querySelector('.material-symbols-outlined');
     if (icon) icon.textContent = railed ? 'chevron_right' : 'chevron_left';
     applyHamburgerSkin();
@@ -1219,6 +1225,7 @@ function setupMenuRail(navEl) {
       const next = !panel.classList.contains('mp-rail');
       apply(next);
       try { localStorage.setItem(MENU_RAIL_STORE_KEY, next ? '1' : '0'); } catch (_) {}
+      try { document.dispatchEvent(new CustomEvent('wise:menu-rail', { detail: { on: next } })); } catch (_) {}
     });
   }
 
@@ -1233,9 +1240,11 @@ function setupMenuRail(navEl) {
     document.addEventListener('wise:menu-rail', refreshToggleSkin);
     document.addEventListener('wise:nav-hamburger', refreshToggleSkin);
     document.addEventListener('wise:app-search', refreshToggleSkin);
+    document.addEventListener('wise:nav-modules', refreshToggleSkin);
   }
 
   brand.appendChild(btn);
+  try { syncNavModulesChrome(); } catch (_) { /* optional on first paint */ }
   setupMenuRailTooltip();
 }
 

@@ -74,6 +74,17 @@
   } catch (_) {}
 })();
 
+/** FOUC guard — Nav & History icons (wise-nav-modules) paints from <html>
+    so the collapsed rail does not flash the full icon list first.
+    Keep in sync with isNavModulesOn() in js/nav-modules.js. */
+(function () {
+  try {
+    if (localStorage.getItem('wise-nav-modules') === '1') {
+      document.documentElement.classList.add('nav-modules');
+    }
+  } catch (_) {}
+})();
+
 /** Design-token color overrides — persist per theme and apply before paint so
     every page (and a theme flip) picks up the Design System swatch edits. */
 (function () {

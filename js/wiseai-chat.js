@@ -1716,9 +1716,26 @@ export function injectChatExtras() {
     }
     .sc-bganim-subhead[hidden] { display: none !important; }
     .sc-bganim-motion-knob[hidden] { display: none !important; }
-    .sc-bganim-dots-motion, .sc-bganim-spin, .sc-bganim-look { display: flex; align-items: center; gap: 10px;
+    .sc-bganim-dots-motion, .sc-bganim-spin, .sc-bganim-look, .sc-bganim-snapshots { display: flex; align-items: center; gap: 10px;
       margin: 2px 12px 8px 42px; transition: opacity .15s ease; }
-    .sc-bganim-dots-motion[hidden], .sc-bganim-spin[hidden], .sc-bganim-look[hidden] { display: none !important; }
+    .sc-bganim-dots-motion[hidden], .sc-bganim-spin[hidden], .sc-bganim-look[hidden], .sc-bganim-snapshots[hidden] { display: none !important; }
+    .sc-bganim-snap-list { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; flex: 1 1 auto; min-width: 0; }
+    .sc-bganim-snap-chip { display: inline-flex; align-items: center; gap: 0; }
+    .sc-bganim-snap-chip .sc-stream-seg-btn { margin: 0; }
+    .sc-bganim-snap-save {
+      padding: 0; border: 0; background: none; margin-left: auto;
+      color: rgb(219, 39, 119); font: inherit; font-size: 11px; font-weight: 700;
+      cursor: pointer; white-space: nowrap;
+    }
+    .sc-bganim-snap-save:hover { text-decoration: underline; }
+    html.dark .sc-bganim-snap-save { color: #f9a8d4; }
+    .sc-bganim-snap-del {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px; padding: 0; margin-left: 1px; border: 0; border-radius: 50%;
+      background: transparent; color: var(--text-subtle); cursor: pointer;
+    }
+    .sc-bganim-snap-del .material-symbols-outlined { font-size: 13px !important; line-height: 1 !important; }
+    .sc-bganim-snap-del:hover { color: var(--text); }
     .sc-bganim-dots-motion .sc-bganim-style-label,
     .sc-bganim-spin .sc-bganim-style-label,
     .sc-bganim-look .sc-bganim-style-label { min-width: 38px; }
@@ -1801,7 +1818,8 @@ export function injectChatExtras() {
     .sc-menu-grouped .sc-bganim-style { margin: 0 10px 6px 12px; min-width: 0; }
     .sc-menu-grouped .sc-bganim-dots-motion,
     .sc-menu-grouped .sc-bganim-spin,
-    .sc-menu-grouped .sc-bganim-look { margin: 0 8px 4px 10px; min-width: 0; }
+    .sc-menu-grouped .sc-bganim-look,
+    .sc-menu-grouped .sc-bganim-snapshots { margin: 0 8px 4px 10px; min-width: 0; }
     .sc-menu-grouped .sc-bganim-playback { margin: 0 10px 4px 12px; min-width: 0; }
     .sc-menu-grouped .sc-bganim-subhead { padding: 3px 10px 0; }
     .sc-menu-grouped .sc-stream-detail { margin: 4px 12px 6px 14px; }
@@ -1875,7 +1893,8 @@ export function injectChatExtras() {
     .sc-bganim-cluster > .sc-bganim-dots-color,
     .sc-bganim-cluster > .sc-bganim-dots-motion,
     .sc-bganim-cluster > .sc-bganim-playback,
-    .sc-bganim-cluster > .sc-bganim-spin {
+    .sc-bganim-cluster > .sc-bganim-spin,
+    .sc-bganim-cluster > .sc-bganim-snapshots {
       grid-column: 1 / -1;
     }
     .sc-bganim-cluster > .sc-bganim-detail,
@@ -1883,7 +1902,8 @@ export function injectChatExtras() {
     .sc-bganim-cluster > .sc-bganim-look,
     .sc-bganim-cluster > .sc-bganim-dots-motion,
     .sc-bganim-cluster > .sc-bganim-spin,
-    .sc-bganim-cluster > .sc-bganim-playback {
+    .sc-bganim-cluster > .sc-bganim-playback,
+    .sc-bganim-cluster > .sc-bganim-snapshots {
       margin: 0; padding: 0; flex-wrap: nowrap; gap: 4px 6px; align-items: center;
     }
     .sc-bganim-copy {
@@ -1933,6 +1953,8 @@ export function injectChatExtras() {
     .sc-menu-group--helix .sc-bganim-motion-knob-range,
     .sc-menu-group--helix .sc-bganim-mat-range { min-width: 36px; height: 3px; }
     .sc-menu-group--helix .sc-bganim-row-icon { display: none; }
+    .sc-menu-group--helix .sc-bganim-snap-save { font-size: 9px; }
+    .sc-menu-group--helix .sc-bganim-snap-del { width: 14px; height: 14px; }
     .sc-menu-group--helix > .sc-menu-group-head {
       display: flex; align-items: center; gap: 4px;
       padding: 4px 4px 2px 8px;
@@ -2049,6 +2071,7 @@ export function injectChatExtras() {
     .topbar-popover.sc-menu-admin-off .sc-bganim-dots-motion,
     .topbar-popover.sc-menu-admin-off .sc-bganim-spin,
     .topbar-popover.sc-menu-admin-off .sc-bganim-look,
+    .topbar-popover.sc-menu-admin-off .sc-bganim-snapshots,
     .topbar-popover.sc-menu-admin-off .sc-bganim-playback,
     .topbar-popover.sc-menu-admin-off .sc-bganim-subhead,
     .topbar-popover.sc-menu-admin-off .sc-bganim-cluster,
@@ -3069,6 +3092,372 @@ function applyMatEvent(mats, detail) {
   if (!BGANIM_MAT_IDS.includes(id) || typeof detail.pct !== 'number') return false;
   mats[id] = Math.max(0, Math.min(100, detail.pct));
   return true;
+}
+
+/* Named Helix snapshots — a full look you can load, save, and reload. Two
+   factory poses (Close-up / Scene) ship in code; extra ones the member saves
+   live in localStorage. Clicking a chip writes every slider + segment, so a
+   later reload always restores that exact pose. */
+const BGANIM_SNAPS_KEY = 'wise:chat-bg-anim-snaps-v1';
+const BGANIM_SNAPS_MAX_USER = 8;
+const BGANIM_SNAP_ON_KEY = 'wise:chat-bg-anim';
+const BGANIM_SNAP_OPACITY_KEY = 'wise:chat-bg-anim-opacity';
+const BGANIM_SNAP_ANGLE_KEY = 'wise:chat-bg-anim-angle';
+const BGANIM_SNAP_PAUSED_KEY = 'wise:chat-bg-anim-paused';
+const BGANIM_SNAP_STYLE_KEY = 'wise:chat-bg-anim-style';
+const BGANIM_SNAP_STYLES = ['helix', 'helix-ten', 'orbit'];
+
+function bgAnimFactorySnap(id, name, patch) {
+  return Object.assign({
+    id, name, builtIn: true,
+    look: '3d',
+    mats: { rough: 36, metal: 0, coat: 28, sheen: 42, fuzz: 22 },
+    opacity: 50,
+    angle: -90,
+    camera: 14,
+    azimuth: -59,
+    shift: -2,
+    scale: { x: 100, y: 100, z: 100 },
+    knobs: {
+      pitch: 100, nodes: 100, dots: 100, length: 100, rungs: 100,
+      rungthick: 100, thickness: 100, depth: 100, speed: 100,
+    },
+    dotsColor: BGANIM_DOTS_COLOR_ORIGINAL,
+    dotsMotion: 'pulse',
+    motionKnobs: {
+      pulse: { speed: 100, length: 100, size: 100 },
+      spark: { speed: 100, length: 100, size: 100 },
+    },
+    spin: 'rev',
+    rungsMatch: false,
+    style: 'helix',
+    on: true,
+    paused: false,
+  }, patch, { id, name, builtIn: true });
+}
+
+const BGANIM_FACTORY_SNAPS = [
+  /* First screenshot: the strand fills the pane — huge scale, fat tubes, giant beads. */
+  bgAnimFactorySnap('closeup', 'Close-up', {
+    mats: { rough: 36, metal: 0, coat: 28, sheen: 42, fuzz: 22 },
+    opacity: 50, angle: -90, camera: 14, azimuth: -59, shift: -2,
+    scale: { x: 570, y: 570, z: 570 },
+    knobs: {
+      pitch: 245, nodes: 210, dots: 800, length: 53, rungs: 380,
+      rungthick: 122, thickness: 800, depth: 158, speed: 400,
+    },
+    motionKnobs: {
+      pulse: { speed: 1, length: 100, size: 1 },
+      spark: { speed: 100, length: 100, size: 100 },
+    },
+  }),
+  /* Second screenshot: a smaller helix sitting in the scene. */
+  bgAnimFactorySnap('scene', 'Scene', {
+    mats: { rough: 36, metal: 17, coat: 26, sheen: 46, fuzz: 22 },
+    opacity: 50, angle: -89, camera: 9, azimuth: -59, shift: -2,
+    scale: { x: 61, y: 34, z: 34 },
+    knobs: {
+      pitch: 134, nodes: 160, dots: 87, length: 56, rungs: 295,
+      rungthick: 49, thickness: 54, depth: 106, speed: 400,
+    },
+    motionKnobs: {
+      pulse: { speed: 7, length: 100, size: 1 },
+      spark: { speed: 100, length: 100, size: 100 },
+    },
+  }),
+];
+
+function cloneBgAnimSnap(s) {
+  if (!s) return null;
+  return {
+    id: s.id, name: s.name, builtIn: !!s.builtIn,
+    look: normalizeBgAnimLook(s.look),
+    mats: Object.assign({}, s.mats),
+    opacity: s.opacity, angle: s.angle, camera: s.camera,
+    azimuth: s.azimuth, shift: s.shift,
+    scale: Object.assign({}, s.scale),
+    knobs: Object.assign({}, s.knobs),
+    dotsColor: normalizeBgAnimDotsHex(s.dotsColor),
+    dotsMotion: BGANIM_DOTS_MOTIONS.includes(s.dotsMotion) ? s.dotsMotion : 'still',
+    motionKnobs: {
+      pulse: Object.assign({}, (s.motionKnobs && s.motionKnobs.pulse) || {}),
+      spark: Object.assign({}, (s.motionKnobs && s.motionKnobs.spark) || {}),
+    },
+    spin: BGANIM_SPIN_DIRS.includes(s.spin) ? s.spin : 'fwd',
+    rungsMatch: !!s.rungsMatch,
+    style: BGANIM_SNAP_STYLES.includes(s.style) ? s.style : 'helix',
+    on: s.on !== false,
+    paused: !!s.paused,
+  };
+}
+
+function clampBgAnimSnap(raw) {
+  const s = cloneBgAnimSnap(raw);
+  if (!s) return null;
+  s.opacity = Math.max(10, Math.min(100, Math.round(Number(s.opacity) || 20)));
+  s.angle = Math.max(-90, Math.min(90, Math.round(Number(s.angle) || 0)));
+  s.camera = clampBgAnimCamera(s.camera);
+  s.azimuth = clampBgAnimAzimuth(s.azimuth);
+  s.shift = clampBgAnimShift(s.shift);
+  BGANIM_SCALE_AXES.forEach((a) => { s.scale[a] = clampBgAnimScalePct(s.scale[a]); });
+  BGANIM_KNOB_IDS.forEach((id) => { s.knobs[id] = clampBgAnimScalePct(s.knobs[id]); });
+  BGANIM_MAT_IDS.forEach((id) => {
+    const n = Math.round(Number(s.mats[id]));
+    s.mats[id] = Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : readBgAnimMat(id);
+  });
+  ['pulse', 'spark'].forEach((m) => {
+    ['speed', 'length', 'size'].forEach((id) => {
+      s.motionKnobs[m][id] = clampBgAnimScalePct(s.motionKnobs[m][id]);
+    });
+  });
+  return s;
+}
+
+function captureBgAnimSnapshot() {
+  let opacity = 20;
+  try {
+    const n = parseInt(localStorage.getItem(BGANIM_SNAP_OPACITY_KEY), 10);
+    if (!isNaN(n)) opacity = Math.max(10, Math.min(100, n));
+  } catch (_) {}
+  let angle = 10;
+  try {
+    const n = parseInt(localStorage.getItem(BGANIM_SNAP_ANGLE_KEY), 10);
+    if (!isNaN(n)) angle = Math.max(-90, Math.min(90, n));
+  } catch (_) {}
+  let on = true;
+  try { if (localStorage.getItem(BGANIM_SNAP_ON_KEY) === '0') on = false; } catch (_) {}
+  let paused = false;
+  try { if (localStorage.getItem(BGANIM_SNAP_PAUSED_KEY) === '1') paused = true; } catch (_) {}
+  let style = 'helix';
+  try {
+    const st = localStorage.getItem(BGANIM_SNAP_STYLE_KEY);
+    if (BGANIM_SNAP_STYLES.includes(st)) style = st;
+  } catch (_) {}
+  return clampBgAnimSnap({
+    look: readBgAnimLook(),
+    mats: readBgAnimMats(),
+    opacity, angle,
+    camera: readBgAnimCamera(),
+    azimuth: readBgAnimAzimuth(),
+    shift: readBgAnimShift(),
+    scale: readBgAnimScaleAxes(),
+    knobs: readBgAnimKnobs(),
+    dotsColor: readBgAnimDotsColor(),
+    dotsMotion: readBgAnimDotsMotion(),
+    motionKnobs: readBgAnimMotionKnobs(),
+    spin: readBgAnimSpinDir(),
+    rungsMatch: readBgAnimRungsMatch(),
+    style, on, paused,
+  });
+}
+
+function equalBgAnimSnap(a, b) {
+  if (!a || !b) return false;
+  if (a.look !== b.look || a.style !== b.style || a.spin !== b.spin) return false;
+  if (a.dotsMotion !== b.dotsMotion || !!a.rungsMatch !== !!b.rungsMatch) return false;
+  if ((a.dotsColor || '') !== (b.dotsColor || '')) return false;
+  if (a.opacity !== b.opacity || a.angle !== b.angle) return false;
+  if (a.camera !== b.camera || a.azimuth !== b.azimuth || a.shift !== b.shift) return false;
+  if (a.scale.x !== b.scale.x || a.scale.y !== b.scale.y || a.scale.z !== b.scale.z) return false;
+  for (let i = 0; i < BGANIM_MAT_IDS.length; i++) {
+    const id = BGANIM_MAT_IDS[i];
+    if (a.mats[id] !== b.mats[id]) return false;
+  }
+  for (let i = 0; i < BGANIM_KNOB_IDS.length; i++) {
+    const id = BGANIM_KNOB_IDS[i];
+    if (a.knobs[id] !== b.knobs[id]) return false;
+  }
+  for (let i = 0; i < BGANIM_MOTION_KNOBS.length; i++) {
+    const k = BGANIM_MOTION_KNOBS[i];
+    if (a.motionKnobs[k.motion][k.id] !== b.motionKnobs[k.motion][k.id]) return false;
+  }
+  return true;
+}
+
+function readUserBgAnimSnaps() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(BGANIM_SNAPS_KEY) || '[]');
+    if (!Array.isArray(raw)) return [];
+    return raw.map(clampBgAnimSnap).filter(Boolean).slice(0, BGANIM_SNAPS_MAX_USER);
+  } catch (_) { return []; }
+}
+
+function persistUserBgAnimSnaps(list) {
+  try { localStorage.setItem(BGANIM_SNAPS_KEY, JSON.stringify(list)); } catch (_) {}
+}
+
+function listedBgAnimSnaps() {
+  return BGANIM_FACTORY_SNAPS.map(cloneBgAnimSnap).concat(readUserBgAnimSnaps());
+}
+
+function findBgAnimSnap(id) {
+  return listedBgAnimSnaps().find((s) => s && s.id === id) || null;
+}
+
+function activeBgAnimSnapId() {
+  const cur = captureBgAnimSnapshot();
+  const list = listedBgAnimSnaps();
+  for (let i = 0; i < list.length; i++) {
+    if (equalBgAnimSnap(cur, list[i])) return list[i].id;
+  }
+  return '';
+}
+
+function persistBgAnimSnapshotState(s) {
+  persistBgAnimLook(s.look);
+  BGANIM_MAT_IDS.forEach((id) => persistBgAnimMat(id, s.mats[id]));
+  try { localStorage.setItem(BGANIM_SNAP_OPACITY_KEY, String(s.opacity)); } catch (_) {}
+  try { localStorage.setItem(BGANIM_SNAP_ANGLE_KEY, String(s.angle)); } catch (_) {}
+  persistBgAnimCamera(s.camera);
+  persistBgAnimAzimuth(s.azimuth);
+  persistBgAnimShift(s.shift);
+  BGANIM_SCALE_AXES.forEach((a) => persistBgAnimScaleAxis(a, s.scale[a]));
+  BGANIM_KNOB_IDS.forEach((id) => persistBgAnimKnob(id, s.knobs[id]));
+  persistBgAnimDotsColor(s.dotsColor);
+  persistBgAnimDotsMotion(s.dotsMotion);
+  BGANIM_MOTION_KNOBS.forEach((k) => persistBgAnimMotionKnob(k.motion, k.id, s.motionKnobs[k.motion][k.id]));
+  persistBgAnimSpinDir(s.spin);
+  persistBgAnimRungsMatch(s.rungsMatch);
+  try { localStorage.setItem(BGANIM_SNAP_STYLE_KEY, s.style); } catch (_) {}
+  try { localStorage.setItem(BGANIM_SNAP_ON_KEY, s.on ? '1' : '0'); } catch (_) {}
+  try { localStorage.setItem(BGANIM_SNAP_PAUSED_KEY, s.paused ? '1' : '0'); } catch (_) {}
+}
+
+function broadcastBgAnimSnapshotState(s) {
+  try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-snapshot', { detail: s })); } catch (_) {}
+  try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim', { detail: { on: s.on } })); } catch (_) {}
+  try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-opacity', { detail: { opacity: s.opacity / 100 } })); } catch (_) {}
+  try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-angle', { detail: { angle: s.angle } })); } catch (_) {}
+  broadcastBgAnimCamera(s.camera);
+  broadcastBgAnimAzimuth(s.azimuth);
+  broadcastBgAnimShift(s.shift);
+  broadcastBgAnimScale(s.scale);
+  BGANIM_KNOB_IDS.forEach((id) => broadcastBgAnimKnob(id, s.knobs[id]));
+  broadcastBgAnimRungsMatch(s.rungsMatch);
+  broadcastBgAnimDots({ color: s.dotsColor || '', motion: s.dotsMotion });
+  BGANIM_MOTION_KNOBS.forEach((k) => broadcastBgAnimMotionKnob(k.motion, k.id, s.motionKnobs[k.motion][k.id]));
+  broadcastBgAnimSpin(s.spin);
+  broadcastBgAnimLook(s.look);
+  BGANIM_MAT_IDS.forEach((id) => broadcastBgAnimMat(id, s.mats[id]));
+  try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-paused', { detail: { paused: s.paused } })); } catch (_) {}
+  try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-style', { detail: { style: s.style } })); } catch (_) {}
+}
+
+function applyBgAnimSnapshot(raw) {
+  const s = clampBgAnimSnap(raw);
+  if (!s) return;
+  persistBgAnimSnapshotState(s);
+  broadcastBgAnimSnapshotState(s);
+}
+
+function saveCurrentBgAnimSnap() {
+  const cur = captureBgAnimSnapshot();
+  const listed = listedBgAnimSnaps();
+  if (listed.some((s) => equalBgAnimSnap(cur, s))) return listed;
+  const users = readUserBgAnimSnaps();
+  if (users.length >= BGANIM_SNAPS_MAX_USER) users.shift();
+  const n = users.length + 1;
+  const saved = clampBgAnimSnap(Object.assign({}, cur, {
+    id: 'u' + Date.now().toString(36),
+    name: 'Saved ' + n,
+    builtIn: false,
+  }));
+  users.push(saved);
+  persistUserBgAnimSnaps(users);
+  return listedBgAnimSnaps();
+}
+
+function deleteUserBgAnimSnap(id) {
+  if (!id || BGANIM_FACTORY_SNAPS.some((s) => s.id === id)) return;
+  persistUserBgAnimSnaps(readUserBgAnimSnaps().filter((s) => s.id !== id));
+}
+
+function bgAnimSnapshotsChromeHtml() {
+  return `${bgAnimSubheadHtml('Snapshots')}
+          <div class="sc-bganim-snapshots">
+            <span class="sc-bganim-style-label">Load</span>
+            <div class="sc-bganim-snap-list" role="list" aria-label="Helix snapshots"></div>
+            <button type="button" class="sc-bganim-snap-save" data-sc="bg-anim-snap-save" title="Save the current Helix look so you can reload it later">Save</button>
+          </div>`;
+}
+
+function ensureBgAnimSnapshotsChrome(pop) {
+  if (!pop) return;
+  const host = queryChatMenu(pop, '.sc-menu-group--helix') || pop;
+  if (host.querySelector('.sc-bganim-snapshots')) return;
+  const html = bgAnimSnapshotsChromeHtml();
+  const anim = host.querySelector('[data-sc="bg-anim"]');
+  if (anim) { anim.insertAdjacentHTML('afterend', html); return; }
+  const look = host.querySelector('.sc-bganim-look');
+  if (look) { look.insertAdjacentHTML('beforebegin', html); return; }
+  const style = host.querySelector('.sc-bganim-style');
+  if (style) { style.insertAdjacentHTML('beforebegin', html); }
+}
+
+function renderBgAnimSnapList(root) {
+  root = liveBgAnimRoot(root);
+  if (!root) return;
+  const list = root.querySelector('.sc-bganim-snap-list');
+  if (!list) return;
+  const active = activeBgAnimSnapId();
+  const snaps = listedBgAnimSnaps();
+  list.innerHTML = snaps.map((s) => {
+    const on = s.id === active;
+    const del = s.builtIn ? ''
+      : `<button type="button" class="sc-bganim-snap-del" data-snap="${s.id}" aria-label="Delete ${s.name}" title="Delete this snapshot"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>`;
+    return `<span class="sc-bganim-snap-chip">`
+      + `<button type="button" class="sc-stream-seg-btn${on ? ' is-on' : ''}" data-sc="bg-anim-snap" data-snap="${s.id}" role="listitem" aria-pressed="${on ? 'true' : 'false'}" title="Load ${s.name}">${s.name}</button>`
+      + del
+      + `</span>`;
+  }).join('');
+}
+
+function syncBgAnimSnapshots(root) {
+  renderBgAnimSnapList(root);
+}
+
+function syncAllBgAnimSnapshots() {
+  if (typeof document === 'undefined') return;
+  document.querySelectorAll('.sc-bganim-snapshots').forEach((el) => {
+    const host = el.closest('.sc-helix-float, .topbar-popover, .sc-menu-grouped') || el;
+    renderBgAnimSnapList(host);
+  });
+}
+
+function wireBgAnimSnapshotsChrome(root) {
+  if (!root) return;
+  if (typeof document !== 'undefined' && !document.__wiseBgAnimSnapWired) {
+    document.__wiseBgAnimSnapWired = true;
+    document.addEventListener('wise:chat-bg-anim-snapshot', syncAllBgAnimSnapshots);
+  }
+  const el = root.querySelector('.sc-bganim-snapshots');
+  if (!el || el.__bgAnimWired) return;
+  el.__bgAnimWired = true;
+  el.addEventListener('click', (e) => {
+    const del = e.target.closest('.sc-bganim-snap-del');
+    if (del) {
+      e.preventDefault();
+      e.stopPropagation();
+      deleteUserBgAnimSnap(del.getAttribute('data-snap'));
+      syncAllBgAnimSnapshots();
+      return;
+    }
+    const save = e.target.closest('[data-sc="bg-anim-snap-save"]');
+    if (save) {
+      e.preventDefault();
+      e.stopPropagation();
+      saveCurrentBgAnimSnap();
+      syncAllBgAnimSnapshots();
+      return;
+    }
+    const btn = e.target.closest('[data-sc="bg-anim-snap"]');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const snap = findBgAnimSnap(btn.getAttribute('data-snap'));
+    if (snap) applyBgAnimSnapshot(snap);
+  });
+  renderBgAnimSnapList(root);
 }
 
 /* One shared sync + wire pair for the scale and knob rows, used by BOTH the
@@ -5155,7 +5544,7 @@ const CHAT_MENU_GROUP_OF = {
   history: 'conversation', new: 'conversation', export: 'conversation', share: 'conversation', 'add-member': 'conversation',
   turns: 'data', outputs: 'data', connect: 'data', 'mcp-toggle': 'data', sticky: 'data',
   'toggle-cards': 'display', 'toggle-intent-chips': 'display', compact: 'display', brandtext: 'display', sheen: 'display',
-  'bg-anim': 'helix',
+  'bg-anim': 'helix', 'bg-anim-snap': 'helix', 'bg-anim-snap-save': 'helix',
   'activity-strip': 'motion', 'stream-toggle': 'motion',
   close: 'danger',
 };
@@ -5242,7 +5631,7 @@ function closeChatMenuAdminPop(wrap) {
 function isChatMenuAdminGated(el) {
   if (!el || !el.classList) return false;
   if (el.classList.contains('topbar-menu-item--admin')) return true;
-  if (el.classList.contains('sc-bganim-detail') || el.classList.contains('sc-bganim-style') || el.classList.contains('sc-bganim-look') || el.classList.contains('sc-bganim-dots-motion') || el.classList.contains('sc-bganim-spin') || el.classList.contains('sc-bganim-playback') || el.classList.contains('sc-bganim-subhead') || el.classList.contains('sc-bganim-cluster')) return true;
+  if (el.classList.contains('sc-bganim-detail') || el.classList.contains('sc-bganim-style') || el.classList.contains('sc-bganim-look') || el.classList.contains('sc-bganim-dots-motion') || el.classList.contains('sc-bganim-spin') || el.classList.contains('sc-bganim-playback') || el.classList.contains('sc-bganim-snapshots') || el.classList.contains('sc-bganim-subhead') || el.classList.contains('sc-bganim-cluster')) return true;
   if (el.hasAttribute && el.hasAttribute('data-admin-item')) return true;
   try {
     if (el.classList.contains('topbar-menu-item') && el.querySelector('.topbar-menu-badge')) return true;
@@ -5469,6 +5858,7 @@ const HELIX_HINTS = [
   ['.sc-bganim-spin', 'Twist direction'],
   ['.sc-bganim-knob-speed', 'Twist speed'],
   ['.sc-bganim-look', 'Classic or 3D'],
+  ['.sc-bganim-snapshots', 'Load a saved look'],
   ['.sc-bganim-mat-rough', 'Matte vs mirror'],
   ['.sc-bganim-mat-metal', 'Metallic sheen'],
   ['.sc-bganim-mat-coat', 'Glossy lacquer'],
@@ -5483,6 +5873,7 @@ function decorateMenuRowIcons(pop) {
     ['.sc-actside-detail > .sc-stream-detail-label', 'align_horizontal_left'],
     ['.sc-stream-detail:not(.sc-actside-detail) > .sc-stream-detail-label', 'view_list'],
     ['.sc-bganim-look', 'view_in_ar'],
+    ['.sc-bganim-snapshots', 'photo_library'],
     ['.sc-bganim-style', 'schema'],
     ['.sc-bganim-dots-motion', 'motion_photos_on'],
     ['.sc-bganim-spin', 'rotate_right'],
@@ -5528,13 +5919,17 @@ function tagHelixClusterSpan(section) {
   section.querySelectorAll('.sc-bganim-cluster').forEach((c) => {
     const head = c.querySelector(':scope > .sc-bganim-subhead');
     const label = (head && head.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
-    c.classList.toggle('sc-bganim-cluster--span', label === 'look' || label === 'finish');
+    c.classList.toggle('sc-bganim-cluster--span', label === 'look' || label === 'finish' || label === 'snapshots');
   });
 }
 
 function clusterifyHelixGroup(section) {
   if (!section) return;
-  if (section.dataset.helixClustered === '1') { tagHelixClusterSpan(section); return; }
+  if (section.dataset.helixClustered === '1') {
+    const loose = Array.from(section.children).some((el) => el && el.classList && el.classList.contains('sc-bganim-subhead'));
+    if (!loose) { tagHelixClusterSpan(section); return; }
+    section.dataset.helixClustered = '';
+  }
   const kids = Array.from(section.children);
   let cluster = null;
   kids.forEach((el) => {
@@ -5548,7 +5943,7 @@ function clusterifyHelixGroup(section) {
       cluster = document.createElement('div');
       cluster.className = 'sc-bganim-cluster';
       const label = (el.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
-      if (label === 'look' || label === 'finish') cluster.classList.add('sc-bganim-cluster--span');
+      if (label === 'look' || label === 'finish' || label === 'snapshots') cluster.classList.add('sc-bganim-cluster--span');
       if (el.dataset.helixOnly === '1') cluster.dataset.helixOnly = '1';
       el.before(cluster);
       cluster.appendChild(el);
@@ -5701,7 +6096,7 @@ function decorateHelixHead(group, pop) {
       '<button type="button" class="sc-helix-pop-btn sc-helix-popout" title="Pop out Helix" aria-label="Pop out Helix">' +
         '<span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>' +
       '</button>' +
-      '<button type="button" class="sc-helix-pop-btn sc-helix-dock" title="Return Helix to menu" aria-label="Return Helix to menu">' +
+      '<button type="button" class="sc-helix-pop-btn sc-helix-dock" aria-label="Return Helix to menu">' +
         '<span class="material-symbols-outlined" aria-hidden="true">close</span>' +
       '</button>';
     head.appendChild(label);
@@ -5729,6 +6124,7 @@ function decorateHelixHead(group, pop) {
 }
 
 function finishChatMenuLayout(pop) {
+  ensureBgAnimSnapshotsChrome(pop);
   decorateChatMenuAdminDescs(pop);
   decorateHelixHints(pop);
   decorateHelixHints(helixFloatForPop(pop));
@@ -5738,6 +6134,10 @@ function finishChatMenuLayout(pop) {
   mountChatMenuAdminPopover(pop);
   const group = queryChatMenu(pop, '.sc-menu-group--helix');
   if (group) decorateHelixHead(group, pop);
+  wireBgAnimSnapshotsChrome(queryChatMenu(pop, '.sc-menu-group--helix') || pop);
+  wireBgAnimSnapshotsChrome(helixFloatForPop(pop));
+  syncBgAnimSnapshots(pop);
+  syncBgAnimSnapshots(helixFloatForPop(pop));
 }
 
 export function groupifyChatMenu(pop) {
@@ -9209,6 +9609,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     getSpinDir: () => bgAnimSpinDir,
     getSpinSpeed: () => bgAnimKnobs.speed / 100,
     getLook: () => bgAnimLook,
+    getMat: (id) => bgAnimMats[id],
     getLength: () => bgAnimKnobs.length / 100,
     getRungs: () => bgAnimKnobs.rungs / 100,
     getRungsMatch: () => bgAnimRungsMatch,
@@ -9314,6 +9715,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     syncBgAnimSpinChrome(bgAnimSyncRoot(), bgAnimSpinDir);
     syncBgAnimLookChrome(bgAnimSyncRoot(), bgAnimLook);
     syncBgAnimMatRows(bgAnimSyncRoot(), bgAnimMats, bgAnimLook);
+    syncBgAnimSnapshots(bgAnimSyncRoot());
     /* The Play/Pause pill (below opacity) — dims + locks with the toggle, and its
        icon/label + aria reflect whether the field is currently frozen. */
     const playback = menuSel('.sc-bganim-playback');
@@ -9481,6 +9883,33 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   wireBgAnimSpinChrome(menuRoot(), () => bgAnimSpinDir, (d) => { bgAnimSpinDir = d; }, repaintBgAnim);
   wireBgAnimLookChrome(menuRoot(), () => bgAnimLook, (v) => { bgAnimLook = v; syncBgAnimMatRows(bgAnimSyncRoot(), bgAnimMats, v); }, repaintBgAnim);
   wireBgAnimMatRows(menuRoot(), bgAnimMats, repaintBgAnim);
+  wireBgAnimSnapshotsChrome(menuRoot());
+  wireBgAnimSnapshotsChrome(bgAnimSyncRoot());
+  document.addEventListener('wise:chat-bg-anim-snapshot', (e) => {
+    const s = e && e.detail;
+    if (!s) return;
+    bgAnimLook = normalizeBgAnimLook(s.look);
+    Object.assign(bgAnimMats, s.mats);
+    bgAnimOpacity = Math.max(0.1, Math.min(1, (s.opacity || 20) / 100));
+    bgAnimOpacityUserSet = true;
+    bgAnimAngle = Math.max(-90, Math.min(90, s.angle));
+    bgAnimCamera = clampBgAnimCamera(s.camera);
+    bgAnimAzimuth = clampBgAnimAzimuth(s.azimuth);
+    bgAnimShift = clampBgAnimShift(s.shift);
+    Object.assign(bgAnimScale, s.scale);
+    Object.assign(bgAnimKnobs, s.knobs);
+    bgAnimDots.color = s.dotsColor || '';
+    bgAnimDots.motion = BGANIM_DOTS_MOTIONS.includes(s.dotsMotion) ? s.dotsMotion : 'still';
+    if (s.motionKnobs && s.motionKnobs.pulse) Object.assign(bgAnimMotionKnobs.pulse, s.motionKnobs.pulse);
+    if (s.motionKnobs && s.motionKnobs.spark) Object.assign(bgAnimMotionKnobs.spark, s.motionKnobs.spark);
+    bgAnimSpinDir = BGANIM_SPIN_DIRS.includes(s.spin) ? s.spin : bgAnimSpinDir;
+    bgAnimRungsMatch = !!s.rungsMatch;
+    bgAnimPaused = !!s.paused;
+    if (BGANIM_STYLES.includes(s.style)) bgAnim.setStyle(s.style);
+    syncBgAnimMenu();
+    applyBgAnimPaused();
+    repaintBgAnim();
+  });
   document.addEventListener('wise:chat-bg-anim-scale', (e) => {
     if (!applyScaleEventToAxes(bgAnimScale, e && e.detail)) return;
     syncBgAnimMenu();
@@ -10309,6 +10738,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
         refreshDockedTurns();
       },
     });
+    if (chatHistory && !window.__wiseChatHistory) window.__wiseChatHistory = chatHistory;
   }
 
   /* Score cards — a clicked card starts a chat turn on its own intent, the same
@@ -11327,6 +11757,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     else if (action === 'bg-anim-look') {
       /* Wired by wireBgAnimLookChrome — keep the menu open so the segment reads back. */
     }
+    else if (action === 'bg-anim-snap' || action === 'bg-anim-snap-save') {
+      /* Wired by wireBgAnimSnapshotsChrome — keep the menu open so the chips read back. */
+    }
     else if (action === 'stream-toggle') {
       /* Master streaming switch: ON streams the thinking at the chosen level,
          OFF skips the trace so answers just land. Keep the menu open so the
@@ -11779,6 +12212,7 @@ export function wireStandardChatMenu(cfg = {}) {
   ensureBgAnimSpinChrome(pop);
   ensureBgAnimLookChrome(pop);
   ensureBgAnimMatRows(pop);
+  ensureBgAnimSnapshotsChrome(pop);
   ensureBgAnimSubheads(pop);
   const welcomeEl = cfg.bgAnim && cfg.bgAnim.welcomeEl;
   const welcomeVisible = () => !!(welcomeEl
@@ -11811,6 +12245,7 @@ export function wireStandardChatMenu(cfg = {}) {
         getMotionKnob: (motion, id) => ((bgMotionKnobs[motion] && bgMotionKnobs[motion][id]) || 100) / 100,
         getSpinDir: () => bgSpinDir,
         getLook: () => bgLook,
+        getMat: (id) => bgMats[id],
         getSpinSpeed: () => bgKnobs.speed / 100,
         getLength: () => bgKnobs.length / 100,
         getRungs: () => bgKnobs.rungs / 100,
@@ -11888,6 +12323,7 @@ export function wireStandardChatMenu(cfg = {}) {
     syncBgAnimSpinChrome(bgRoot(), bgSpinDir);
     syncBgAnimLookChrome(bgRoot(), bgLook);
     syncBgAnimMatRows(bgRoot(), bgMats, bgLook);
+    syncBgAnimSnapshots(bgRoot());
     syncBgAnimHelixOnlyRows(bgRoot(), isHelixStyle(bgStyle));
     const styleRow = q('.sc-bganim-style');
     if (styleRow) styleRow.classList.remove('is-disabled');
@@ -12073,6 +12509,8 @@ export function wireStandardChatMenu(cfg = {}) {
   wireBgAnimSpinChrome(pop, () => bgSpinDir, (d) => { bgSpinDir = d; }, repaintBg);
   wireBgAnimLookChrome(pop, () => bgLook, (v) => { bgLook = v; syncBgAnimMatRows(bgRoot(), bgMats, v); }, repaintBg);
   wireBgAnimMatRows(pop, bgMats, repaintBg);
+  wireBgAnimSnapshotsChrome(pop);
+  wireBgAnimSnapshotsChrome(bgRoot());
   document.addEventListener('wise:chat-bg-anim-scale', (e) => {
     if (!applyScaleEventToAxes(bgScale, e && e.detail)) return;
     syncBg();
@@ -12117,6 +12555,34 @@ export function wireStandardChatMenu(cfg = {}) {
   document.addEventListener('wise:chat-bg-anim-mat', (e) => {
     if (!applyMatEvent(bgMats, e && e.detail)) return;
     syncBg();
+    repaintBg();
+  });
+  document.addEventListener('wise:chat-bg-anim-snapshot', (e) => {
+    const s = e && e.detail;
+    if (!s) return;
+    bgLook = normalizeBgAnimLook(s.look);
+    Object.assign(bgMats, s.mats);
+    bgOpacity = Math.max(0.1, Math.min(1, (s.opacity || 20) / 100));
+    bgUserSet = true;
+    bgAngle = Math.max(-90, Math.min(90, s.angle));
+    bgCamera = clampBgAnimCamera(s.camera);
+    bgAzimuth = clampBgAnimAzimuth(s.azimuth);
+    bgShift = clampBgAnimShift(s.shift);
+    Object.assign(bgScale, s.scale);
+    Object.assign(bgKnobs, s.knobs);
+    bgDots.color = s.dotsColor || '';
+    bgDots.motion = BGANIM_DOTS_MOTIONS.includes(s.dotsMotion) ? s.dotsMotion : 'still';
+    if (s.motionKnobs && s.motionKnobs.pulse) Object.assign(bgMotionKnobs.pulse, s.motionKnobs.pulse);
+    if (s.motionKnobs && s.motionKnobs.spark) Object.assign(bgMotionKnobs.spark, s.motionKnobs.spark);
+    bgSpinDir = BGANIM_SPIN_DIRS.includes(s.spin) ? s.spin : bgSpinDir;
+    bgRungsMatch = !!s.rungsMatch;
+    bgPaused = !!s.paused;
+    if (BGANIM_STYLES.includes(s.style) && s.style !== bgStyle) {
+      bgStyle = s.style;
+      maybeRunBgAnim();
+    }
+    syncBg();
+    applyBgPaused();
     repaintBg();
   });
   const bgPlaybackBtn = q('[data-sc="bg-anim-playback"]');

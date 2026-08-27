@@ -114,7 +114,7 @@ export const APP_LOGIC = [
     label: 'Navigation shell',
     icon: 'menu',
     area: 'shared',
-    src: ['js/agent-menu.js', 'js/topbar.js', 'js/mobile-nav.js', 'js/nav-history.js', 'js/app-search.js'],
+    src: ['js/agent-menu.js', 'js/topbar.js', 'js/mobile-nav.js', 'js/nav-history.js', 'js/nav-modules.js', 'js/app-search.js'],
     rules: [
       {
         title: 'wiseai.html is the canonical shell',
@@ -139,6 +139,10 @@ export const APP_LOGIC = [
       {
         title: 'Page-level nav overrides are forced, not stored',
         how: 'A page can open with the rail collapsed via <code>&lt;body data-default-nav-collapsed&gt;</code> (Reports does this by nav id). <code>collapseNavRail()</code> adds <code>mp-rail</code> <strong>without</strong> writing <code>wise-menu-rail</code>, so the user\u2019s own preference survives the visit and the toggle still expands it in-session.',
+      },
+      {
+        title: 'History can merge into the nav, or share a four-icon rail',
+        how: '<code>nav-history.js</code> relocates the live History module into an expandable nav section (Appearance ▸ History in navigation). <code>nav-modules.js</code> is the sibling: collapsed, the rail shows only the logo bug, menu, expand chevron and new-chat icons; opening them restores the navigation and History as their default modules. The two modes are mutually exclusive.',
       },
       {
         title: 'App Search re-plumbs the shell',

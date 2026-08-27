@@ -20,7 +20,7 @@
  * Everything else renders the same on every page.
  *
  * Click handling stays in each shell: every row keys off a stable data-*
- * attribute (data-pivot / data-minimal / data-navhistory / data-fullbleed /
+ * attribute (data-pivot / data-minimal / data-navhistory / data-navmodules / data-fullbleed /
  * data-fbchatonly / data-jam / data-appsearch / data-navhamburger / data-colorblind / data-fz /
  * data-pop-action), so the existing per-shell listeners keep working unchanged.
  */
@@ -84,6 +84,10 @@ import {
   isNavHistoryOn,
   applyNavHistory,
 } from './nav-history.js';
+import {
+  isNavModulesOn,
+  applyNavModules,
+} from './nav-modules.js';
 import {
   isNavHamburgerOn,
   applyNavHamburger,
@@ -554,6 +558,7 @@ export function buildAppearanceBody({
         ${plainToggle('data-minimal="1"', isMinimalUiOn(), 'Minimal UI', 'Logo, Appearance, and you', 'Show only the logo, Appearance, and your profile', false, false, 'crop_free')}
         ${plainToggle('data-iconrail="1"', isIconRailOn(), 'Icons only', 'Collapse nav to icons', 'Collapse the navigation to icons', false, false, 'apps')}
         ${adminOnly(adminToggle('data-navhistory="1"', isNavHistoryOn(), 'History in navigation', 'History inside the nav', 'Merge the History module into an expandable section of the primary navigation — search, projects, and All conversations stay fully usable', false, false, 'history'))}
+        ${adminOnly(adminToggle('data-navmodules="1"', isNavModulesOn(), 'Nav &amp; History icons', 'Logo, menu, expand, new chat', 'When collapsed, the logo, menu, expand, and new-chat icons open into the navigation and History as their default modules', false, false, 'view_sidebar'))}
         ${adminOnly(adminToggle('data-sharpedges="1"', isSharpEdgesOn(), 'Sharper edges', 'Tighter, less-rounded corners', 'Use tighter, less-rounded corners', false, false, 'crop_square'))}
       `),
       apGroup('Experience', `
@@ -701,7 +706,7 @@ if (typeof document !== 'undefined') wireSignOut();
  * calls wireAppearancePopover() and gets identical behaviour.
  *
  * The universal on/off toggles (Minimal UI, Icons only, History in navigation,
- * Full bleed, Jam strip, Search, Menu icon, Colorblind) and the Text-size buttons are
+ * Nav & History icons, Full bleed, Jam strip, Search, Menu icon, Colorblind) and the Text-size buttons are
  * handled here directly via the
  * shared modules, so a page CANNOT forget to wire them. The genuinely
  * shell-specific bits are passed as callbacks:
@@ -769,7 +774,16 @@ export function wireAppearancePopover(pop, ctx = {}) {
     if (within('[data-navhistory]'))  {
       ev.stopPropagation();
       const next = !isNavHistoryOn();
+      if (next) applyNavModules(false);
       applyNavHistory(next, true, { open: next });
+      render();
+      return;
+    }
+    if (within('[data-navmodules]')) {
+      ev.stopPropagation();
+      const next = !isNavModulesOn();
+      if (next) applyNavHistory(false);
+      applyNavModules(next);
       render();
       return;
     }

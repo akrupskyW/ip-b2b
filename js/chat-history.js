@@ -488,6 +488,7 @@
     }
     function isCloseControl(el) {
       if (!el || !el.matches) return false;
+      if (el.matches('.wch-close, .wch-search-clear, .wt-search-clear, .wch-ask-search-clear')) return true;
       var leftover = '';
       try {
         var clone = el.cloneNode(true);
@@ -497,8 +498,7 @@
       if (leftover.length > 2) return false;
       var icon = el.querySelector && el.querySelector('.material-symbols-outlined');
       var glyph = icon ? (icon.textContent || '').replace(/\s+/g, ' ').trim() : '';
-      if (glyph === 'close') return true;
-      return el.matches('.wch-close, .wch-search-clear, .wt-search-clear, .wch-ask-search-clear');
+      return glyph === 'close';
     }
     document.addEventListener('mouseover', function (e) {
       var el = candidate(e.target);
@@ -2176,6 +2176,7 @@
       remove: remove, markNew: markNew, refresh: render, root: sidebar,
       add: add, currentTitle: currentTitle,
       setDocked: setDocked, isDocked: function () { return docked; },
+      setRail: setRail, isRail: function () { return railMode; },
       setSticky: setSticky,
       prepareNavEmbed: prepareNavEmbed,
       releaseNavEmbed: releaseNavEmbed,
