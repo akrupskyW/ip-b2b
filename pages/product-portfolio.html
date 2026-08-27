@@ -18230,7 +18230,7 @@
         const kind = ent.kind || cmpEntKind(ent, scope);
         const pc = (ent.primary ? ' is-primary' : (isPending ? ' is-pending' : '')) + (ent.isCategory ? ' is-category' : '');
         const rm = (!ent.primary && compareState.shown.length > 2)
-          ? `<button type="button" title="Remove" onclick="cmpRemoveEntity('${ent.id}')" style="position:absolute;top:12px;right:12px;z-index:4;width:20px;height:20px;border:none;border-radius:50%;background:rgba(8,12,20,0.55);color:#fff;cursor:pointer;line-height:1;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>` : '';
+          ? `<button type="button" onclick="cmpRemoveEntity('${ent.id}')" style="position:absolute;top:12px;right:12px;z-index:4;width:20px;height:20px;border:none;border-radius:50%;background:rgba(8,12,20,0.55);color:#fff;cursor:pointer;line-height:1;font-size:14px;display:flex;align-items:center;justify-content:center;" aria-label="Remove">×</button>` : '';
         /* Per-slot TYPE TOGGLE — the control that makes any combination
            possible: tap to swap this column between product / portfolio /
            category. The slot's rank number (1, 2, 3…) rides inside the chip as
