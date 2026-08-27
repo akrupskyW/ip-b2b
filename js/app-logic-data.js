@@ -81,19 +81,23 @@ export const APP_LOGIC = [
       },
       {
         title: 'FOUC guard applies chrome pre-paint',
-        how: '<code>js/text-size-fouc.js</code> runs in <code>&lt;head&gt;</code> and applies theme, text scale, Minimal UI, full-bleed mode, nav-hamburger and the chat width default <em>before</em> first paint, so the shell never flashes the wrong state. It is a deliberate twin of the runtime logic in <code>topbar.js</code> — change one, change the other.',
+        how: '<code>js/text-size-fouc.js</code> runs in <code>&lt;head&gt;</code> and applies theme, text scale, Minimal UI, full-bleed mode, nav-hamburger, serif headlines and the chat width default <em>before</em> first paint, so the shell never flashes the wrong state. It is a deliberate twin of the runtime logic in <code>topbar.js</code> — change one, change the other.',
       },
       {
         title: 'One Appearance popover for the whole app',
-        how: '<code>buildAppearanceBody()</code> in <code>appearance-menu.js</code> is the single source of that markup; shells pass only <code>showPivot</code>, <code>isPivoted</code>, <code>isDark</code> plus callbacks. Rows are addressed by stable hooks (<code>data-minimal</code>, <code>data-fullbleed</code>, <code>data-fz</code>, <code>data-cbtype</code>), and Admin-badged rows hide when <code>wise-admin-ui</code> is <code>&#39;0&#39;</code>.',
+        how: '<code>buildAppearanceBody()</code> in <code>appearance-menu.js</code> is the single source of that markup; shells pass only <code>showPivot</code>, <code>isPivoted</code>, <code>isDark</code> plus callbacks. Rows are addressed by stable hooks (<code>data-minimal</code>, <code>data-fullbleed</code>, <code>data-fz</code>, <code>data-serif</code>, <code>data-cbtype</code>), and Admin-badged rows hide when <code>wise-admin-ui</code> is <code>&#39;0&#39;</code>.',
       },
       {
         title: 'Appearance defaults that are ON',
-        how: 'Unset means on for <strong>Minimal UI</strong> (<code>wise-minimal-ui-v2</code>), the <strong>icon nav rail</strong> (<code>wise-menu-rail</code>), <strong>chat tint</strong> (<code>wise-chat-tint</code>) and the <strong>activity strip</strong> (<code>wise-activity-strip</code>). <strong>Header float</strong> is unconditional — <code>isHeaderFloatOn()</code> always returns true, so module header strips are gone app-wide and <code>.panel-controls</code> float over the content.',
+        how: 'Unset means on for <strong>Minimal UI</strong> (<code>wise-minimal-ui-v2</code>), the <strong>icon nav rail</strong> (<code>wise-menu-rail</code>), <strong>chat tint</strong> (<code>wise-chat-tint</code>), the <strong>activity strip</strong> (<code>wise-activity-strip</code>) and <strong>serif headlines</strong> (<code>wise-serif-headlines</code>). <strong>Header float</strong> is unconditional — <code>isHeaderFloatOn()</code> always returns true, so module header strips are gone app-wide and <code>.panel-controls</code> float over the content.',
       },
       {
         title: 'Text size is a scale, not a font size',
         how: '<code>setTextSize()</code> stores <code>sm|md|lg|xl</code> in <code>chat-font-size</code> and sets the CSS variables <code>--wise-text-scale</code> and <code>--chat-line-height</code> on <code>&lt;html&gt;</code> plus <code>dataset.textSize</code>. Components size off the variable rather than hard pixel values.',
+      },
+      {
+        title: 'Serif headlines can switch to DM Sans',
+        how: 'Appearance ▸ Accessibility ▸ Serif headlines is on by default. Turning it off writes <code>wise-serif-headlines=0</code>, sets <code>sans-headlines</code> on <code>&lt;html&gt;</code>, remaps the title font tokens to DM Sans (weights 300–800, plus italic), and aliases hardcoded Noto Serif stacks to the same files so titles match. The FOUC twin in <code>text-size-fouc.js</code> applies it before first paint.',
       },
       {
         title: 'Full bleed defaults to chat-only',
@@ -142,7 +146,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'History can merge into the nav, or share a four-icon rail',
-        how: '<code>nav-history.js</code> relocates the live History module into an expandable nav section (Appearance ▸ History in navigation). <code>nav-modules.js</code> is the sibling: collapsed, the rail shows only the logo bug, menu, expand chevron and new-chat icons; opening them restores the navigation and History as their default modules. The two modes are mutually exclusive.',
+        how: '<code>nav-history.js</code> relocates the live History module into an expandable nav section (Appearance ▸ History in navigation). <code>nav-modules.js</code> is the sibling and the load default: collapsed, the rail shows only the logo bug, menu, History chevron and a circular new-chat icon. The menu opens the labelled navigation with History collapsed beside it; the chevron opens History in full with the navigation collapsed. The two modes are mutually exclusive.',
       },
       {
         title: 'App Search re-plumbs the shell',
@@ -571,7 +575,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Helix background on at 20%',
-        how: 'The welcome background animation defaults ON (<code>wise:chat-bg-anim</code>) at <strong>20% opacity</strong> (<code>wise:chat-bg-anim-opacity</code>), with <code>helix</code>, <code>helix-ten</code> and <code>orbit</code> styles. The chat ⋯ menu’s Thick slider is strand weight; Depth is 3-D pop (near loops forward, far loops fading). This is separate from the per-turn trace helix, which always runs.',
+        how: 'The welcome background animation defaults ON (<code>wise:chat-bg-anim</code>) to the published <strong>Scene</strong> pose (<code>BGANIM_PUBLISH_POSE</code>: 3D look, 50% opacity, reverse spin, pulse beads). Styles are <code>helix</code>, <code>helix-ten</code> and <code>orbit</code>. The chat ⋯ menu’s Thick slider is strand weight; Depth is 3-D pop (near loops forward, far loops fading). This is separate from the per-turn trace helix, which always runs.',
       },
       {
         title: 'History and Turns are docked drawers',
@@ -903,7 +907,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Changes are diffed against a daily baseline',
-        how: '<code>crawlPage()</code> fetches each page and runs the <code>FEATURE_SIGNALS</code> regex inventory to produce categorized sentences (features, UX, components, logic), then diffs against the start-of-day snapshot held in <code>wise-progress-log-crawl-v2</code>. The v1 key is migrated on read.',
+        how: '<code>crawlPage()</code> fetches each page and runs the <code>FEATURE_SIGNALS</code> regex inventory plus named component markers to produce categorized sentences (features, components, logic, UX, UI), then diffs against the start-of-day snapshot held in <code>wise-progress-log-crawl-v2</code>. The v1 key is migrated on read.',
       },
     ],
   },

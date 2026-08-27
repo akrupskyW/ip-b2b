@@ -257,7 +257,7 @@ PAGE_AFTER_LOAD = {
     }""",
     "pages/progress-log.html": """async () => {
       await new Promise(r => {
-        const ok = () => document.querySelector('.pl-day');
+        const ok = () => document.querySelector('.pl-day') && document.querySelector('#pl-cat-stats .pl-stat');
         if (ok()) return r();
         const obs = new MutationObserver(() => { if (ok()) { obs.disconnect(); r(); } });
         obs.observe(document.body, { childList: true, subtree: true });
@@ -268,7 +268,19 @@ PAGE_AFTER_LOAD = {
         || document.querySelector('.pl-day');
       const dateEl = day && day.querySelector('.pl-day-date');
       if (dateEl && day.classList.contains('is-collapsed')) dateEl.click();
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise(r => setTimeout(r, 400));
+      const openNamed = async (re) => {
+        const el = [...document.querySelectorAll('.pl-pcard-head')]
+          .find(h => re.test(h.textContent || ''));
+        const card = el && el.closest('.pl-pcard');
+        if (card && card.classList.contains('is-collapsed')) {
+          el.click();
+          await new Promise(r => setTimeout(r, 280));
+        }
+      };
+      await openNamed(/Progress Log/i);
+      await openNamed(/All Modules/i);
+      await new Promise(r => setTimeout(r, 400));
     }""",
 }
 

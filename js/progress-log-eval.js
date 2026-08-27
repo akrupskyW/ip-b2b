@@ -1,7 +1,7 @@
 /**
  * Progress Log evaluator — inventories every HTML page and the scripts those
  * pages load, then turns a snapshot into a plain-language account of what was
- * built: features, logic, UX, and UI.
+ * built: features, components, logic, UX, and UI.
  *
  * Byte counts, file sizes, hashes, raw filenames, and raw identifiers never
  * appear in a description. A reader who has never opened the codebase has to
@@ -95,7 +95,7 @@ export const FEATURE_SIGNALS = [
     on: 'You can widen any panel through five steps — single, double, triple, fill the screen, then a custom size you drag.',
     off: 'You can no longer widen the panels here.' },
   { id: 'appearance', cat: 'features', re: /buildAppearanceBody|appearance-menu/,
-    on: 'Appearance & Admin opens from the navigation, so theme, text size, and admin switches are one click away.',
+    on: 'Appearance & Admin opens from the navigation, so theme, text size, serif headlines, and admin switches are one click away.',
     off: 'Appearance & Admin no longer opens from here.' },
   { id: 'helixload', cat: 'ux', re: /isHelixLoadOn|load-anim\.js/,
     on: 'While a board is still assembling you see the streaming helix instead of stripes.',
@@ -140,7 +140,7 @@ export const FEATURE_SIGNALS = [
     on: 'History can live inside the primary navigation as an expandable section — search, projects, and All conversations stay usable there.',
     off: 'History no longer merges into the primary navigation.' },
   { id: 'navModules', cat: 'features', re: /nav-modules|data-navmodules|Nav & History icons/,
-    on: 'Navigation and History can collapse to four icons — the logo, a menu, expand, and new chat — and open back into both modules as they normally appear.',
+    on: 'Navigation and History open as four icons — the logo, a menu, a chevron, and a new-chat circle. The menu opens the labelled navigation with History collapsed beside it; the chevron opens History in full with the navigation collapsed.',
     off: 'The four-icon Navigation and History rail is gone.' },
   { id: 'navHamburger', cat: 'ux', re: /nav-hamburger|data-navhamburger/,
     on: 'When Search is on and the nav is collapsed, a menu icon sits left of the wordmark instead of the icon rail.',
@@ -151,6 +151,26 @@ export const FEATURE_SIGNALS = [
   { id: 'chatWidthDefault', cat: 'ux', re: /defaultChatTier|WISE_CHAT_SINGLE_MAX_PX|chat-default-double/,
     on: 'The chat opens at a width that matches the screen: single on a 14-inch-class display, double when there is more room. You can still cycle wider in the session; the next load puts it back.',
     off: 'The chat no longer picks a default width from the screen size.' },
+];
+
+/* Named pieces from the component catalog. Presence becomes a batched
+   Components sentence (“It uses these components: …”), never a class name. */
+const COMPONENT_MARKERS = [
+  { name: 'Buttons', re: /\bdash-btn\b/ },
+  { name: 'Output chips', re: /sc-surface-card|wa-merge-chip/ },
+  { name: 'Large intent cards', re: /\bws-scorecard\b/ },
+  { name: 'Chat composer', re: /fl-input-wrap|\.sc-send\b/ },
+  { name: 'Transcript actions', re: /\bsc-fb-btn\b/ },
+  { name: 'Activity strip', re: /wa-activity-strip/ },
+  { name: 'Token readout', re: /sc-activity-dots/ },
+  { name: 'What can I ask?', re: /wch-ask-panel/ },
+  { name: 'Switch', re: /\bsc-switch\b/ },
+  { name: 'Width toggle', re: /panel-width-toggle/ },
+  { name: 'Nutrition Facts', re: /\bnfp-panel\b|nutrition-facts/ },
+  { name: 'Row action menu', re: /pf-rowmenu/ },
+  { name: 'Date columns', re: /w-date-val|pf-date-val|w-datemenu/ },
+  { name: 'Form fields', re: /\badm-field\b/ },
+  { name: 'Modal dialog', re: /dash-modal/ },
 ];
 
 const MODULE_TITLE_SEL = [
@@ -202,7 +222,7 @@ export const SCRIPT_PURPOSES = {
   'feedback.js': 'on-page comments — press C, click a spot, leave a threaded note pinned to it',
   'feedback-setting.js': 'the Appearance Comments switch, a site-wide on/off held by the server and locked to the owner',
   'nav-history.js': 'History inside the primary navigation as an expandable section',
-  'nav-modules.js': 'Navigation and History collapse to the logo, menu, expand, and new-chat icons, and open as their default modules',
+  'nav-modules.js': 'Navigation and History open as the logo, menu, History chevron, and a circular new-chat control; the menu opens the labelled navigation with History collapsed beside it, and the chevron opens History in full with the navigation collapsed',
   'nav-hamburger.js': 'a menu icon to the left of the wordmark when Search is on and the nav is collapsed',
   'trace-helix.js': 'the DNA helix every WISEcodeAI turn draws while it thinks',
   'welcome-orbit.js': 'the welcome owl as a living node network instead of pulse rings',
@@ -619,12 +639,17 @@ function detectSignals(text) {
   return FEATURE_SIGNALS.filter((s) => s.re.test(text)).map((s) => s.id);
 }
 
+function extractComponentNames(text) {
+  return COMPONENT_MARKERS.filter((m) => m.re.test(String(text || ''))).map((m) => m.name);
+}
+
 export function emptyCats() {
   return {
-    components: [],
     features: [],
+    components: [],
     logic: [],
     ux: [],
+    ui: [],
     changes: [],
     improvements: [],
     updates: [],
@@ -651,6 +676,7 @@ export function inventoryDoc(path, text) {
     chips: extractChips(doc, src),
     buttons: extractButtons(doc, src),
     signals: detectSignals(src),
+    compNames: extractComponentNames(src),
     functions: (js || (html && src.length < 400000)) ? extractFunctions(src) : [],
     classes: html || css ? extractClasses(doc, src) : [],
     copy: extractCopy(src, doc),
@@ -703,13 +729,16 @@ function surfaceIntro(fp, isNew) {
 }
 
 /* The detected feature signals turned into their own ready-made prose
-   sentences (the `on` copy), in a stable order. This is the "what it does". */
-function capabilityProse(signalIds) {
-  const byId = Object.fromEntries(FEATURE_SIGNALS.map((s) => [s.id, s]));
-  return FEATURE_SIGNALS
-    .map((s) => s.id)
-    .filter((id) => (signalIds || []).includes(id) && byId[id])
-    .map((id) => byId[id].on);
+   sentences (the `on` copy), each in the category the signal declared —
+   Features, Components, UX, or Logic — never dumped into one bucket. */
+function applySignalSentences(out, signalIds, which) {
+  const want = which === 'off' ? 'off' : 'on';
+  const have = new Set(signalIds || []);
+  FEATURE_SIGNALS.forEach((s) => {
+    if (!have.has(s.id)) return;
+    const text = s[want];
+    if (text) push(out, s.cat, text);
+  });
 }
 
 /* A plain sentence naming how the surface is organised — at most three
@@ -737,18 +766,25 @@ function behaviourPhrase(src, ctx) {
 function describeCurrentSurface(fp, isNew) {
   const out = emptyCats();
   push(out, 'features', surfaceIntro(fp, isNew));
-  capabilityProse(fp.signals).forEach((s) => push(out, 'features', s));
+  applySignalSentences(out, fp.signals, 'on');
   if (fp.chips && fp.chips.length) {
     pushQuoted(out, 'features', 'You can ask it ', fp.chips, 8,
       fp.chips.length === 1 ? ', and it opens a real transcript.' : ', and each one opens a real transcript.');
+  }
+  if (fp.compNames && fp.compNames.length) {
+    pushQuoted(out, 'components', 'It uses these components: ', fp.compNames, 8, '.');
   }
   const structure = structureProse(fp);
   if (structure) push(out, 'components', structure);
   else if (fp.modules && fp.modules.length) {
     pushQuoted(out, 'components', 'It is organised into these sections: ', fp.modules, 8, '.');
   }
+  const heads = (fp.headings || []).filter((h) => !(fp.modules || []).includes(h));
+  if (heads.length) {
+    pushQuoted(out, 'ui', 'On the screen you see ', heads, 8, '.');
+  }
   if (fp.buttons && fp.buttons.length) {
-    pushQuoted(out, 'components', 'You act on it through ', fp.buttons, 8, '.');
+    pushQuoted(out, 'ui', 'You act on it through ', fp.buttons, 8, '.');
   }
   pushNameBatches(out, 'logic', 'It knows how to ', capabilityNames(fp.functions), 8);
   return out;
@@ -801,9 +837,21 @@ export function describeInventoryDiff(fp, before, ctx) {
   });
 
   const sig = addedRemoved(fp.signals, before.signals);
+  applySignalSentences(out, sig.added, 'on');
   const byId = Object.fromEntries(FEATURE_SIGNALS.map((s) => [s.id, s]));
-  sig.added.forEach((id) => { if (byId[id]) push(out, byId[id].cat, byId[id].on); });
   sig.removed.forEach((id) => { if (byId[id]) push(out, 'deletions', byId[id].off); });
+
+  if (Array.isArray(before.compNames)) {
+    const comps = addedRemoved(fp.compNames, before.compNames);
+    if (comps.added.length === 1) {
+      push(out, 'components', 'A new component on this surface: “' + comps.added[0] + '.”');
+    } else if (comps.added.length) {
+      pushQuoted(out, 'components', 'New components on this surface: ', comps.added, 8, '.');
+    }
+    if (comps.removed.length) {
+      pushQuoted(out, 'deletions', 'These components are gone: ', comps.removed, 8, '.');
+    }
+  }
 
   if (fp.hasChat !== before.hasChat && !sig.added.includes('chat') && !sig.removed.includes('chat')) {
     if (fp.hasChat) push(out, 'features', 'The shared WISEcodeAI chat module is now mounted here.');
@@ -835,9 +883,9 @@ export function describeInventoryDiff(fp, before, ctx) {
   const heads = addedRemoved(fp.headings, before.headings);
   const newHeads = heads.added.filter((h) => !modSet.has(h));
   if (newHeads.length === 1) {
-    push(out, 'components', 'A new heading reads “' + newHeads[0] + '.”');
+    push(out, 'ui', 'A new heading reads “' + newHeads[0] + '.”');
   } else if (newHeads.length) {
-    pushQuoted(out, 'components', 'New headings read ', newHeads, 8, '.');
+    pushQuoted(out, 'ui', 'New headings read ', newHeads, 8, '.');
   }
   const goneHeads = heads.removed.filter((h) => !(mods.removed || []).includes(h));
   if (goneHeads.length) {
@@ -846,7 +894,7 @@ export function describeInventoryDiff(fp, before, ctx) {
 
   const btns = addedRemoved(fp.buttons, before.buttons);
   if (btns.added.length) {
-    pushQuoted(out, 'components', 'You can now act on it through ', btns.added, 8, '.');
+    pushQuoted(out, 'ui', 'You can now act on it through ', btns.added, 8, '.');
   }
   if (btns.removed.length) {
     pushQuoted(out, 'deletions', 'These controls were taken away: ', btns.removed, 8, '.');
@@ -887,24 +935,25 @@ export function catsHaveItems(cats) {
   return !!(cats && hasAny(cats));
 }
 
-/* The breakdown a reader asked for: Features, Logic, UX, UI — one labelled
-   paragraph per sentence, in that order, then anything removed. Stacking
-   sentences (instead of joining them into one run-on) is how a busy day
-   stays readable. The label is a plain text prefix ("Features — …");
+/* The breakdown a reader asked for: Features, Components, Logic, UX, UI —
+   one labelled paragraph per sentence, in that order, then anything removed.
+   Stacking sentences (instead of joining them into one run-on) is how a busy
+   day stays readable. The label is a plain text prefix ("Features — …");
    pages/progress-log.html lifts it out and renders it as the paragraph's
    heading, and hides a repeated label when the next paragraph is the same
    category. */
 export const SYNOPSIS_LABELS = {
   features: 'Features',
+  components: 'Components',
   logic: 'Logic',
   ux: 'UX',
-  components: 'UI',
+  ui: 'UI',
   changes: 'Changes',
   improvements: 'Improvements',
   updates: 'Notes',
   deletions: 'Removed',
 };
-export const SYNOPSIS_ORDER = ['features', 'logic', 'ux', 'components', 'changes', 'improvements', 'updates', 'deletions'];
+export const SYNOPSIS_ORDER = ['features', 'components', 'logic', 'ux', 'ui', 'changes', 'improvements', 'updates', 'deletions'];
 export const SYNOPSIS_SEP = ' — ';
 
 export function catsToSynopsis(cats) {
@@ -934,7 +983,7 @@ export function crawlOverview(htmlCount, scriptCount, diff, labels) {
   if (added) lines.push(added + (added === 1 ? ' new file' : ' new files') + ' appeared today.');
   if (changed) {
     lines.push(changed + (changed === 1 ? ' file changed today.' : ' files changed today.')
-      + ' Each card below says what was actually built, in plain language: features, logic, UX, and UI.');
+      + ' Each card below says what was actually built, in plain language: features, components, logic, UX, and UI.');
   }
   if (!added && !changed) {
     lines.push('No files changed versus the start-of-day baseline. ' + unchangedHtml + ' HTML files were still opened and inventoried.');

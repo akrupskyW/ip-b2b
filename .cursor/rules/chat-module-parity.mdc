@@ -31,7 +31,8 @@ any chat surface, all others must still match.
 - **Streaming** paragraph-by-paragraph output (then the thumbs row, then
   intent chips). Do not regress to word-by-word typing or the old pulsating
   three-dot loader as the primary style.
-- **Helix animation** toggled ON by default at **20% opacity**.
+- **Helix animation** toggled ON by default on the published **Scene** pose
+  (3D look, ~50% opacity). Close-up stays available as a Load chip.
 - **Unlocked composer** — no lock icon, no readonly input. Typing is live.
   Sending any distinctive word from an intent chip (label, ask, or intent id)
   plays that chip's transcript, the same as clicking the chip.

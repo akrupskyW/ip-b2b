@@ -27,6 +27,18 @@
   font-weight: 651 900;
 }
 
+/* Extra DM Sans italics (500–800) so headline weights stay real faces when
+   Appearance ▸ Serif headlines is off. Roman 300–800 and italic 400 already
+   come from each page’s Google Fonts link. */
+@font-face {
+  font-family: 'DM Sans';
+  font-style: italic;
+  font-weight: 500 800;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/dmsans/v17/rP2Fp2ywxg089UriCZa4Hz-DJF4e8A.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 /* ===================================================================
    WISE — consolidated stylesheet for all app pages.
    (Auth screens — login / forgot-password — use the separate auth.css.)
@@ -182,6 +194,15 @@
   /* Full monospace — code, paths, UPCs, barcodes, token names. WISE Digits
      (above) uses the same DM Mono face for 0–9 only; use this for whole strings. */
   --font-mono: 'DM Mono', ui-monospace, monospace;
+}
+
+/* Serif headlines off (Appearance ▸ Accessibility). Titles use DM Sans at the
+   same weights. Keep in sync with applySerifHeadlines() in js/topbar.js.
+   `body` is listed so this beats per-page `--font-serif` on body.ai-chat-page. */
+html.sans-headlines,
+html.sans-headlines body {
+  --module-title-family: 'WISE Digits', 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-serif: 'WISE Digits', 'DM Sans', system-ui, -apple-system, sans-serif;
 }
 
 html.dark {
@@ -1889,9 +1910,9 @@ html.dark .wise-pop-vline { background: rgba(255,255,255,0.08); }
 .fz-seg-btn:first-child { border-left: 0; }
 .fz-seg-btn:hover { background: var(--surface-3); color: var(--text); }
 .fz-seg-btn.is-active { background: var(--primary); color: #fff; }
-/* Surface style has three labels (Default / Style 1 / Style 2); keep them
-   on one line inside the connected pill. */
-.brand-style-row .fz-seg-btn { font-size: 11px; padding: 0 4px; white-space: nowrap; }
+/* Surface style has three labels (Default / Sharper edges / Borderless); keep
+   them on one line inside the connected pill. */
+.brand-style-row .fz-seg-btn { font-size: 10px; padding: 0 3px; white-space: nowrap; }
 
 /* Module-spacing block — admin-only segmented control (Small / Medium / Large)
    that steps the horizontal gap between modules in #modules-row. Mirrors the
@@ -4114,9 +4135,9 @@ html.dark .menu-nav .menu-nav-group[data-open="true"] > .menu-nav-product .menu-
   padding: 2px 0 !important;
 }
 
-/* Nav & History icons (Appearance ▸ Layout). Collapsed rail is only the
-   logo bug, menu, expand chevron, and new-chat icons. Opening them restores
-   the navigation and History as their default modules. */
+/* Nav & History icons (Appearance ▸ Layout). Collapsed rail is the logo
+   bug, hamburger, History chevron, and new-chat (blue circle). The hamburger
+   opens only the labelled nav; the chevron opens only History. */
 .menu-modules-btn {
   display: none;
   flex-shrink: 0;
@@ -4140,13 +4161,57 @@ html.dark .menu-nav .menu-nav-group[data-open="true"] > .menu-nav-product .menu-
 html.dark .menu-modules-btn { color: var(--text-muted); }
 html.dark .menu-modules-btn:hover { color: var(--text); }
 
-html.nav-modules #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) .menu-modules-btn {
+/* Same filled circle as History's new-conversation control (.wch-new). A
+   full circle is allowed; a rounded-square tile behind an icon is not. */
+html.nav-modules .menu-modules-new,
+.menu-modules-new {
+  box-sizing: border-box;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  max-width: 32px !important;
+  max-height: 32px !important;
+  padding: 0 !important;
+  margin: 0;
+  flex: 0 0 32px !important;
+  aspect-ratio: 1 / 1;
+  border: 0;
+  border-radius: 50% !important;
+  overflow: hidden;
+  clip-path: circle(50%);
+  background: var(--primary, #2F6DF6) !important;
+  color: #fff !important;
+}
+.menu-modules-new .material-symbols-outlined {
+  font-size: 18px !important;
+  line-height: 1 !important;
+  color: #fff;
+}
+.menu-modules-new:hover {
+  color: #fff;
+  filter: brightness(1.06);
+}
+html.dark .menu-modules-new { color: #fff; }
+html.dark .menu-modules-new:hover {
+  color: #fff;
+  filter: brightness(1.06);
+}
+
+html.nav-modules #menu-panel:not(.mp-pivot) .menu-modules-btn {
   display: inline-flex;
 }
-html.nav-modules #menu-panel:not(.mp-rail) .menu-modules-btn,
-html.nav-modules #menu-panel.mp-pivot .menu-modules-btn,
-html.nav-modules #menu-panel.minimal-ui .menu-modules-btn {
+html.nav-modules #menu-panel.mp-pivot .menu-modules-btn {
   display: none !important;
+}
+
+/* Expanded labelled nav: wordmark, then hamburger + History chevron + blue
+   new-chat grouped on the right so the hamburger can still close the nav. */
+html.nav-modules #menu-panel:not(.mp-rail):not(.mp-pivot):not(.minimal-ui) .menu-brand-bar .menu-modules-menu {
+  margin-left: auto;
+}
+html.nav-modules #menu-panel:not(.mp-rail):not(.mp-pivot):not(.minimal-ui) .menu-brand-bar .topbar-menu-toggle {
+  margin-left: 0;
 }
 
 html.nav-modules #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) .menu-brand-bar,
@@ -4195,9 +4260,6 @@ html.nav-modules #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot):not(.minima
   align-items: center !important;
 }
 html.nav-modules #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) .menu-panel-body {
-  display: none !important;
-}
-html.nav-modules:has(#menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui)) #modules-row > .wch-sidebar:not(.wch-right):not(.wch-in-nav) {
   display: none !important;
 }
 

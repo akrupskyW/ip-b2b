@@ -1863,31 +1863,38 @@ export function injectChatExtras() {
       width: auto; flex: 1 1 auto; min-width: 0; margin-left: auto;
     }
     .sc-menu-group--helix, .sc-menu-group--background {
-      display: flex; flex-direction: column; gap: 0; align-items: stretch;
+      display: flex; flex-direction: column; gap: 8px; align-items: stretch;
       min-width: 0; overflow: visible; max-height: none;
     }
-    .sc-menu-group--helix { padding-bottom: 4px; }
+    .sc-menu-group--helix { padding: 2px 4px 8px; }
     .sc-menu-group--helix > *, .sc-menu-group--background > * { min-width: 0; }
     .sc-menu-group--helix > .topbar-menu-item { margin: 0 4px 2px; width: calc(100% - 8px); padding: 3px 6px; }
     .sc-menu-grouped .sc-menu-group--helix > .topbar-menu-item:has(.topbar-menu-desc) { padding-top: 3px; padding-bottom: 3px; }
     .sc-menu-group--helix .topbar-menu-desc { display: none; }
+    /* Each helix section (Load / Look / Finish / View / …) is its own card
+       with breathing room around it — not a flat stack of sliders. */
     .sc-bganim-cluster {
       display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: 1px 8px; align-items: center;
-      margin: 0; padding: 0 6px 3px;
-      border: 0; border-radius: 0; background: transparent; min-width: 0;
+      gap: 5px 10px; align-items: center;
+      margin: 0 2px; padding: 8px 10px 10px;
+      border: 1px solid var(--border, rgba(15,30,55,.10)); border-radius: 10px;
+      background: color-mix(in srgb, var(--surface, #fff) 88%, transparent);
+      min-width: 0;
     }
     .sc-bganim-cluster--span { grid-template-columns: minmax(0, 1fr); }
     .sc-bganim-cluster:not(:has(.sc-bganim-subhead)) { grid-template-columns: minmax(0, 1fr); }
-    html.dark .sc-bganim-cluster { background: transparent; border-color: transparent; }
+    html.dark .sc-bganim-cluster {
+      background: rgba(255,255,255,0.035);
+      border-color: rgba(255,255,255,0.10);
+    }
     .sc-bganim-cluster[hidden] { display: none !important; }
     .sc-bganim-cluster > * { min-width: 0; }
     .sc-bganim-cluster > .sc-bganim-subhead {
-      grid-column: 1 / -1; padding: 3px 2px 1px; margin: 1px 0 0;
+      grid-column: 1 / -1; padding: 0 0 5px; margin: 0 0 2px;
       font-size: 8px; letter-spacing: 0.08em;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--border, rgba(15,30,55,.10));
     }
-    html.dark .sc-bganim-cluster > .sc-bganim-subhead { border-bottom-color: rgba(255,255,255,0.08); }
+    html.dark .sc-bganim-cluster > .sc-bganim-subhead { border-bottom-color: rgba(255,255,255,0.10); }
     .sc-bganim-cluster > .sc-bganim-style,
     .sc-bganim-cluster > .sc-bganim-look,
     .sc-bganim-cluster > .sc-bganim-dots-color,
@@ -1904,7 +1911,11 @@ export function injectChatExtras() {
     .sc-bganim-cluster > .sc-bganim-spin,
     .sc-bganim-cluster > .sc-bganim-playback,
     .sc-bganim-cluster > .sc-bganim-snapshots {
-      margin: 0; padding: 0; flex-wrap: nowrap; gap: 4px 6px; align-items: center;
+      margin: 0; padding: 1px 0; flex-wrap: nowrap; gap: 4px 6px; align-items: center;
+    }
+    .sc-bganim-cluster > .sc-bganim-look .sc-stream-seg,
+    .sc-bganim-cluster > .sc-bganim-snapshots .sc-bganim-snap-list {
+      margin-left: 0; flex: 1 1 auto;
     }
     .sc-bganim-copy {
       display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
@@ -2162,6 +2173,34 @@ const BGANIM_SCALE_AXIS_KEYS = {
 };
 const BGANIM_SCALE_AXES = ['x', 'y', 'z'];
 const BGANIM_SCALE_PCT_DEFAULT = 100;
+/* Published Helix pose — Scene. Fresh loads (empty localStorage) open on this
+   look so a committed deploy matches the dialed-in reference: 3D tubes, the
+   smaller strand in the pane, reverse spin, pulse beads. Close-up stays a
+   Load chip; this is only the no-pref default. */
+const BGANIM_PUBLISH_POSE = Object.freeze({
+  look: '3d',
+  mats: Object.freeze({ rough: 36, metal: 17, coat: 26, sheen: 46, fuzz: 22 }),
+  opacity: 50,
+  angle: -89,
+  camera: 9,
+  azimuth: -59,
+  shift: -2,
+  scale: Object.freeze({ x: 61, y: 34, z: 34 }),
+  knobs: Object.freeze({
+    pitch: 134, nodes: 160, dots: 87, length: 56, rungs: 295,
+    rungthick: 49, thickness: 54, depth: 106, speed: 400,
+  }),
+  dotsMotion: 'pulse',
+  motionKnobs: Object.freeze({
+    pulse: Object.freeze({ speed: 7, length: 100, size: 1 }),
+    spark: Object.freeze({ speed: 100, length: 100, size: 100 }),
+  }),
+  spin: 'rev',
+  rungsMatch: false,
+  style: 'helix',
+  on: true,
+  paused: false,
+});
 /* Slider STOPS — 1% steps through 100%, then 2 / 5 / 10 out at the extremes.
    A plain linear 1–800 input would squeeze the shrink half of the window into
    a few pixels of a menu-width track; these stops spread the whole range
@@ -2213,7 +2252,8 @@ export function readBgAnimScaleAxis(axis) {
       if (!isNaN(legacy)) return clampBgAnimScalePct(legacy);
     }
   } catch (_) {}
-  return BGANIM_SCALE_PCT_DEFAULT;
+  const pub = BGANIM_PUBLISH_POSE.scale[axis];
+  return Number.isFinite(pub) ? clampBgAnimScalePct(pub) : BGANIM_SCALE_PCT_DEFAULT;
 }
 
 export function readBgAnimScaleAxes() {
@@ -2228,14 +2268,16 @@ function persistBgAnimScaleAxis(axis, pct) {
   try { localStorage.setItem(BGANIM_SCALE_AXIS_KEYS[axis], String(pct)); } catch (_) {}
 }
 
-/* The three axes plus a MASTER row above them. Dragging the master sets all
-   three at once (the fast uniform resize); the per-axis rows still stretch one
-   direction on their own. When the axes disagree the master reads "—" and sits
-   at their average until it is dragged, which re-unifies them. */
+/* The three axes plus a MASTER row above them. Dragging the master scales
+   whatever is already set — it multiplies X / Y / Z by the same factor so
+   their proportions stay put (a Scene pose with a short Z does not flatten
+   into a cube). The per-axis rows still stretch one direction on their own.
+   When the axes disagree the master reads "—" at their average until it is
+   dragged; while dragging it shows the live target %. */
 function bgAnimScaleAllRowHtml() {
   return `<div class="sc-bganim-detail sc-bganim-scale sc-bganim-scale-all">
             <span class="sc-bganim-detail-label">Scale</span>
-            <input type="range" class="sc-bganim-scale-range" data-axis="all" ${BGANIM_RANGE_ATTRS} aria-label="Background animation scale — all axes" title="Scale every axis together">
+            <input type="range" class="sc-bganim-scale-range" data-axis="all" ${BGANIM_RANGE_ATTRS} aria-label="Background animation scale — all axes" title="Scale every axis together, keeping their proportions">
             <span class="sc-bganim-scale-val">100%</span>
           </div>`;
 }
@@ -2309,7 +2351,8 @@ export function readBgAnimKnob(id) {
     const n = parseInt(localStorage.getItem(BGANIM_KNOB_KEYS[id]), 10);
     if (!isNaN(n)) return clampBgAnimScalePct(n);
   } catch (_) {}
-  return BGANIM_SCALE_PCT_DEFAULT;
+  const pub = BGANIM_PUBLISH_POSE.knobs[id];
+  return Number.isFinite(pub) ? clampBgAnimScalePct(pub) : BGANIM_SCALE_PCT_DEFAULT;
 }
 
 export function readBgAnimKnobs() {
@@ -2474,7 +2517,11 @@ function motionKnobKey(motion, id) {
 }
 
 function emptyMotionKnobs() {
-  return { pulse: { speed: 100, length: 100, size: 100 }, spark: { speed: 100, length: 100, size: 100 } };
+  const p = BGANIM_PUBLISH_POSE.motionKnobs;
+  return {
+    pulse: Object.assign({}, p.pulse),
+    spark: Object.assign({}, p.spark),
+  };
 }
 
 export function readBgAnimMotionKnobs() {
@@ -2542,7 +2589,7 @@ export function readBgAnimDotsMotion() {
     const s = localStorage.getItem(BGANIM_DOTS_MOTION_KEY);
     if (BGANIM_DOTS_MOTIONS.includes(s)) return s;
   } catch (_) {}
-  return 'still';
+  return BGANIM_PUBLISH_POSE.dotsMotion;
 }
 
 function persistBgAnimDotsColor(hex) {
@@ -2827,7 +2874,7 @@ export function readBgAnimSpinDir() {
     const s = localStorage.getItem(BGANIM_SPIN_KEY);
     if (BGANIM_SPIN_DIRS.includes(s)) return s;
   } catch (_) {}
-  return 'fwd';
+  return BGANIM_PUBLISH_POSE.spin;
 }
 
 function persistBgAnimSpinDir(dir) {
@@ -2841,11 +2888,12 @@ function broadcastBgAnimSpin(dir) {
 }
 
 function bgAnimSpinChromeHtml() {
+  const cur = BGANIM_PUBLISH_POSE.spin;
   return `<div class="sc-bganim-spin" data-helix-only="1">
             <span class="sc-bganim-style-label">Spin</span>
             <div class="sc-stream-seg" role="radiogroup" aria-label="Helix spin direction">
-              <button type="button" class="sc-stream-seg-btn is-on" data-sc="bg-anim-spin" data-spin="fwd" role="radio" aria-checked="true" title="Twist forward" aria-label="Twist forward">Fwd</button>
-              <button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-spin" data-spin="rev" role="radio" aria-checked="false" title="Twist reverse" aria-label="Twist reverse">Rev</button>
+              <button type="button" class="sc-stream-seg-btn${cur === 'fwd' ? ' is-on' : ''}" data-sc="bg-anim-spin" data-spin="fwd" role="radio" aria-checked="${cur === 'fwd' ? 'true' : 'false'}" title="Twist forward" aria-label="Twist forward">Fwd</button>
+              <button type="button" class="sc-stream-seg-btn${cur === 'rev' ? ' is-on' : ''}" data-sc="bg-anim-spin" data-spin="rev" role="radio" aria-checked="${cur === 'rev' ? 'true' : 'false'}" title="Twist reverse" aria-label="Twist reverse">Rev</button>
             </div>
           </div>`;
 }
@@ -2896,7 +2944,7 @@ function wireBgAnimSpinChrome(root, getDir, setDir, onChange) {
    original strand stays until someone opts into a lit look. */
 const BGANIM_LOOK_KEY = 'wise:chat-bg-anim-look';
 const BGANIM_LOOKS = ['classic', '3d'];
-const BGANIM_LOOK_DEFAULT = 'classic';
+const BGANIM_LOOK_DEFAULT = BGANIM_PUBLISH_POSE.look;
 
 function normalizeBgAnimLook(look) {
   if (look === 'tripo') return '3d';
@@ -2927,8 +2975,8 @@ function broadcastBgAnimLook(look) {
 
 function bgAnimLookChromeHtml(active) {
   const cur = normalizeBgAnimLook(active);
-  return `<div class="sc-bganim-look" data-helix-only="1">
-            <span class="sc-bganim-style-label">Look</span>
+  return `${bgAnimSubheadHtml('Look', true)}
+          <div class="sc-bganim-look" data-helix-only="1">
             <div class="sc-stream-seg" role="radiogroup" aria-label="Helix look">
               <button type="button" class="sc-stream-seg-btn${cur === 'classic' ? ' is-on' : ''}" data-sc="bg-anim-look" data-look="classic" role="radio" aria-checked="${cur === 'classic' ? 'true' : 'false'}" title="Original line drawing" aria-label="Classic look">Classic</button>
               <button type="button" class="sc-stream-seg-btn${cur === '3d' ? ' is-on' : ''}" data-sc="bg-anim-look" data-look="3d" role="radio" aria-checked="${cur === '3d' ? 'true' : 'false'}" title="Lit tubes" aria-label="3D look">3D</button>
@@ -2940,15 +2988,29 @@ function ensureBgAnimLookChrome(pop) {
   if (!pop) return;
   if (!pop.querySelector('.sc-bganim-look')) {
     const html = bgAnimLookChromeHtml(readBgAnimLook());
+    const snaps = pop.querySelector('.sc-bganim-snapshots');
+    const finish = pop.querySelector('.sc-bganim-mat');
     const anim = pop.querySelector('[data-sc="bg-anim"]');
-    if (anim) { anim.insertAdjacentHTML('afterend', html); }
+    if (snaps) snaps.insertAdjacentHTML('afterend', html);
+    else if (finish) finish.insertAdjacentHTML('beforebegin', html);
+    else if (anim) anim.insertAdjacentHTML('afterend', html);
     else {
       const style = pop.querySelector('.sc-bganim-style');
       const playback = pop.querySelector('.sc-bganim-playback');
       if (style) style.insertAdjacentHTML('beforebegin', html);
       else if (playback) playback.insertAdjacentHTML('beforebegin', html);
     }
+  } else {
+    const look = pop.querySelector('.sc-bganim-look');
+    const prev = look && look.previousElementSibling;
+    const hasLookHead = prev && prev.classList && prev.classList.contains('sc-bganim-subhead')
+      && /look/i.test(prev.textContent || '');
+    if (look && !hasLookHead) {
+      look.insertAdjacentHTML('beforebegin', bgAnimSubheadHtml('Look', true));
+    }
   }
+  /* Drop leftover inline labels once the section subhead owns the name. */
+  pop.querySelectorAll('.sc-bganim-look > .sc-bganim-style-label').forEach((el) => el.remove());
   queryChatMenuAll(pop, '[data-look="tripo"]').forEach((el) => el.remove());
 }
 
@@ -2984,15 +3046,15 @@ function wireBgAnimLookChrome(root, getLook, setLook, onChange) {
 /* Tripo / 3D surface finish — the 3deeeee PBR knobs, mapped onto the cheap
    canvas tubes. Hidden while Look is Classic. Shared app-wide. */
 const BGANIM_MAT_KNOBS = [
-  { id: 'rough', label: 'Rough', key: 'wise:chat-bg-anim-mat-rough', def: 36,
+  { id: 'rough', label: 'Rough', key: 'wise:chat-bg-anim-mat-rough', def: BGANIM_PUBLISH_POSE.mats.rough,
     tip: 'How matte the tubes are — 0 is a mirror, 100 is felt' },
-  { id: 'metal', label: 'Metal', key: 'wise:chat-bg-anim-mat-metal', def: 0,
+  { id: 'metal', label: 'Metal', key: 'wise:chat-bg-anim-mat-metal', def: BGANIM_PUBLISH_POSE.mats.metal,
     tip: 'Blends the strand toward a metallic sheen' },
-  { id: 'coat', label: 'Coat', key: 'wise:chat-bg-anim-mat-coat', def: 28,
+  { id: 'coat', label: 'Coat', key: 'wise:chat-bg-anim-mat-coat', def: BGANIM_PUBLISH_POSE.mats.coat,
     tip: 'A thin glossy lacquer over the tube — the Tripo clearcoat' },
-  { id: 'sheen', label: 'Sheen', key: 'wise:chat-bg-anim-mat-sheen', def: 42,
+  { id: 'sheen', label: 'Sheen', key: 'wise:chat-bg-anim-mat-sheen', def: BGANIM_PUBLISH_POSE.mats.sheen,
     tip: 'Soft edge glow, like down catching the studio key light' },
-  { id: 'fuzz', label: 'Fuzz', key: 'wise:chat-bg-anim-mat-fuzz', def: 22,
+  { id: 'fuzz', label: 'Fuzz', key: 'wise:chat-bg-anim-mat-fuzz', def: BGANIM_PUBLISH_POSE.mats.fuzz,
     tip: 'Downy bump on the tube skin — the Tripo owl’s feather relief' },
 ];
 const BGANIM_MAT_IDS = BGANIM_MAT_KNOBS.map((k) => k.id);
@@ -3110,29 +3172,26 @@ const BGANIM_SNAP_STYLES = ['helix', 'helix-ten', 'orbit'];
 function bgAnimFactorySnap(id, name, patch) {
   return Object.assign({
     id, name, builtIn: true,
-    look: '3d',
-    mats: { rough: 36, metal: 0, coat: 28, sheen: 42, fuzz: 22 },
-    opacity: 50,
-    angle: -90,
-    camera: 14,
-    azimuth: -59,
-    shift: -2,
-    scale: { x: 100, y: 100, z: 100 },
-    knobs: {
-      pitch: 100, nodes: 100, dots: 100, length: 100, rungs: 100,
-      rungthick: 100, thickness: 100, depth: 100, speed: 100,
-    },
+    look: BGANIM_PUBLISH_POSE.look,
+    mats: Object.assign({}, BGANIM_PUBLISH_POSE.mats),
+    opacity: BGANIM_PUBLISH_POSE.opacity,
+    angle: BGANIM_PUBLISH_POSE.angle,
+    camera: BGANIM_PUBLISH_POSE.camera,
+    azimuth: BGANIM_PUBLISH_POSE.azimuth,
+    shift: BGANIM_PUBLISH_POSE.shift,
+    scale: Object.assign({}, BGANIM_PUBLISH_POSE.scale),
+    knobs: Object.assign({}, BGANIM_PUBLISH_POSE.knobs),
     dotsColor: BGANIM_DOTS_COLOR_ORIGINAL,
-    dotsMotion: 'pulse',
+    dotsMotion: BGANIM_PUBLISH_POSE.dotsMotion,
     motionKnobs: {
-      pulse: { speed: 100, length: 100, size: 100 },
-      spark: { speed: 100, length: 100, size: 100 },
+      pulse: Object.assign({}, BGANIM_PUBLISH_POSE.motionKnobs.pulse),
+      spark: Object.assign({}, BGANIM_PUBLISH_POSE.motionKnobs.spark),
     },
-    spin: 'rev',
-    rungsMatch: false,
-    style: 'helix',
-    on: true,
-    paused: false,
+    spin: BGANIM_PUBLISH_POSE.spin,
+    rungsMatch: BGANIM_PUBLISH_POSE.rungsMatch,
+    style: BGANIM_PUBLISH_POSE.style,
+    on: BGANIM_PUBLISH_POSE.on,
+    paused: BGANIM_PUBLISH_POSE.paused,
   }, patch, { id, name, builtIn: true });
 }
 
@@ -3151,20 +3210,8 @@ const BGANIM_FACTORY_SNAPS = [
       spark: { speed: 100, length: 100, size: 100 },
     },
   }),
-  /* Second screenshot: a smaller helix sitting in the scene. */
-  bgAnimFactorySnap('scene', 'Scene', {
-    mats: { rough: 36, metal: 17, coat: 26, sheen: 46, fuzz: 22 },
-    opacity: 50, angle: -89, camera: 9, azimuth: -59, shift: -2,
-    scale: { x: 61, y: 34, z: 34 },
-    knobs: {
-      pitch: 134, nodes: 160, dots: 87, length: 56, rungs: 295,
-      rungthick: 49, thickness: 54, depth: 106, speed: 400,
-    },
-    motionKnobs: {
-      pulse: { speed: 7, length: 100, size: 1 },
-      spark: { speed: 100, length: 100, size: 100 },
-    },
-  }),
+  /* Published default — smaller helix sitting in the scene. */
+  bgAnimFactorySnap('scene', 'Scene', {}),
 ];
 
 function cloneBgAnimSnap(s) {
@@ -3373,9 +3420,8 @@ function deleteUserBgAnimSnap(id) {
 }
 
 function bgAnimSnapshotsChromeHtml() {
-  return `${bgAnimSubheadHtml('Snapshots')}
+  return `${bgAnimSubheadHtml('Load')}
           <div class="sc-bganim-snapshots">
-            <span class="sc-bganim-style-label">Load</span>
             <div class="sc-bganim-snap-list" role="list" aria-label="Helix snapshots"></div>
             <button type="button" class="sc-bganim-snap-save" data-sc="bg-anim-snap-save" title="Save the current Helix look so you can reload it later">Save</button>
           </div>`;
@@ -3384,7 +3430,15 @@ function bgAnimSnapshotsChromeHtml() {
 function ensureBgAnimSnapshotsChrome(pop) {
   if (!pop) return;
   const host = queryChatMenu(pop, '.sc-menu-group--helix') || pop;
-  if (host.querySelector('.sc-bganim-snapshots')) return;
+  if (host.querySelector('.sc-bganim-snapshots')) {
+    host.querySelectorAll('.sc-bganim-subhead').forEach((el) => {
+      if ((el.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase() === 'snapshots') {
+        el.textContent = 'Load';
+      }
+    });
+    host.querySelectorAll('.sc-bganim-snapshots > .sc-bganim-style-label').forEach((el) => el.remove());
+    return;
+  }
   const html = bgAnimSnapshotsChromeHtml();
   const anim = host.querySelector('[data-sc="bg-anim"]');
   if (anim) { anim.insertAdjacentHTML('afterend', html); return; }
@@ -3467,6 +3521,10 @@ function bgAnimScaleCommonPct(axes) {
   return (axes.x === axes.y && axes.y === axes.z) ? axes.x : null;
 }
 
+function bgAnimScaleAveragePct(axes) {
+  return clampBgAnimScalePct(Math.round((axes.x + axes.y + axes.z) / 3));
+}
+
 function syncBgAnimScaleRows(root, axes) {
   root = liveBgAnimRoot(root);
   if (!root) return;
@@ -3475,11 +3533,14 @@ function syncBgAnimScaleRows(root, axes) {
     const axis = range.dataset.axis;
     if (axis === 'all') {
       const common = bgAnimScaleCommonPct(axes);
-      const shown = common == null
-        ? clampBgAnimScalePct(Math.round((axes.x + axes.y + axes.z) / 3))
-        : common;
+      const shown = common == null ? bgAnimScaleAveragePct(axes) : common;
       if (document.activeElement !== range) range.value = String(bgAnimPctToStop(shown));
-      if (val) val.textContent = common == null ? '—' : common + '%';
+      if (val) {
+        /* While dragging, show the live target so the thumb's stop is readable
+           even when the axes still disagree (and would otherwise read "—"). */
+        if (document.activeElement === range) val.textContent = bgAnimStopToPct(range.value) + '%';
+        else val.textContent = common == null ? '—' : common + '%';
+      }
       return;
     }
     if (!axis || !(axis in axes)) return;
@@ -3488,17 +3549,44 @@ function syncBgAnimScaleRows(root, axes) {
   });
 }
 
+function clearBgAnimScaleDragBase(range) {
+  if (range) delete range.__scaleDragBase;
+}
+
 function wireBgAnimScaleRows(root, axes, onChange) {
   if (!root) return;
   root.querySelectorAll('.sc-bganim-scale-range').forEach((range) => {
     if (range.__bgAnimWired) return;
     range.__bgAnimWired = true;
+    const endDrag = () => clearBgAnimScaleDragBase(range);
+    range.addEventListener('pointerup', endDrag);
+    range.addEventListener('pointercancel', endDrag);
+    range.addEventListener('blur', endDrag);
+    range.addEventListener('change', endDrag);
     range.addEventListener('input', () => {
       const axis = range.dataset.axis;
       const pct = bgAnimStopToPct(range.value);
-      if (axis === 'all') BGANIM_SCALE_AXES.forEach((a) => { axes[a] = pct; });
-      else if (axis && axis in axes) axes[axis] = pct;
-      else return;
+      if (axis === 'all') {
+        /* Multiply the pose that was already set — never flatten X/Y/Z to the
+           same absolute %. Capture the baseline once per drag so each input
+           step is relative to the start, not compounded from the last tick. */
+        if (!range.__scaleDragBase) {
+          range.__scaleDragBase = {
+            x: axes.x,
+            y: axes.y,
+            z: axes.z,
+            master: Math.max(1, bgAnimScaleAveragePct(axes)),
+          };
+        }
+        const base = range.__scaleDragBase;
+        const factor = pct / base.master;
+        BGANIM_SCALE_AXES.forEach((a) => {
+          axes[a] = clampBgAnimScalePct(Math.round(base[a] * factor));
+        });
+      } else if (axis && axis in axes) {
+        clearBgAnimScaleDragBase(range);
+        axes[axis] = pct;
+      } else return;
       BGANIM_SCALE_AXES.forEach((a) => persistBgAnimScaleAxis(a, axes[a]));
       broadcastBgAnimScale(axes, axis === 'all' ? '' : axis);
       syncBgAnimScaleRows(root, axes);
@@ -3543,8 +3631,12 @@ function wireBgAnimKnobRows(root, knobs, onChange) {
 const BGANIM_RUNGS_MATCH_KEY = 'wise:chat-bg-anim-rungs-match';
 
 export function readBgAnimRungsMatch() {
-  try { return localStorage.getItem(BGANIM_RUNGS_MATCH_KEY) === '1'; }
-  catch (_) { return false; }
+  try {
+    const s = localStorage.getItem(BGANIM_RUNGS_MATCH_KEY);
+    if (s === '1') return true;
+    if (s === '0') return false;
+  } catch (_) {}
+  return !!BGANIM_PUBLISH_POSE.rungsMatch;
 }
 
 function persistBgAnimRungsMatch(on) {
@@ -3614,15 +3706,15 @@ function wireBgAnimRungsMatch(root, getMatch, setMatch, knobs, onChange) {
 /* Camera — elevation (above / below) plus azimuth (around the coil) so the
    view can sit on any 3-D side, not just a tilt from the top. Shared app-wide. */
 const BGANIM_CAMERA_KEY = 'wise:chat-bg-anim-camera';
-const BGANIM_CAMERA_DEFAULT = 0;
+const BGANIM_CAMERA_DEFAULT = BGANIM_PUBLISH_POSE.camera;
 const BGANIM_CAMERA_MIN = -90;
 const BGANIM_CAMERA_MAX = 90;
 const BGANIM_AZIMUTH_KEY = 'wise:chat-bg-anim-azimuth';
-const BGANIM_AZIMUTH_DEFAULT = 0;
+const BGANIM_AZIMUTH_DEFAULT = BGANIM_PUBLISH_POSE.azimuth;
 const BGANIM_AZIMUTH_MIN = -180;
 const BGANIM_AZIMUTH_MAX = 180;
 const BGANIM_SHIFT_KEY = 'wise:chat-bg-anim-shift';
-const BGANIM_SHIFT_DEFAULT = 0;
+const BGANIM_SHIFT_DEFAULT = BGANIM_PUBLISH_POSE.shift;
 const BGANIM_SHIFT_MIN = -100;
 const BGANIM_SHIFT_MAX = 100;
 
@@ -3740,7 +3832,7 @@ function ensureBgAnimSubheads(pop) {
   const pitch = pop.querySelector('.sc-bganim-knob-pitch');
   if (pitch) pitch.insertAdjacentHTML('beforebegin', bgAnimSubheadHtml('Strand', true));
   const style = pop.querySelector('.sc-bganim-style');
-  if (style) style.insertAdjacentHTML('beforebegin', bgAnimSubheadHtml('Look'));
+  if (style) style.insertAdjacentHTML('beforebegin', bgAnimSubheadHtml('Field'));
 }
 
 function ensureBgAnimCameraRow(pop) {
@@ -3938,7 +4030,7 @@ export function createHelixBgAnim(cfg) {
   const host = cfg.host;
   const getBody = cfg.getBody;
   const getOpacity = cfg.getOpacity;
-  const HELIX_ANGLE_DEFAULT = 10;
+  const HELIX_ANGLE_DEFAULT = BGANIM_PUBLISH_POSE.angle;
   const getAngle = () => {
     const raw = typeof cfg.getAngle === 'function' ? cfg.getAngle() : HELIX_ANGLE_DEFAULT;
     const n = Number(raw);
@@ -4935,13 +5027,16 @@ export function createHelixBgAnim(cfg) {
   function smooth(x) { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }
 
   /* Cheap lit-tube finish for Look → 3D. One gradient across the stroke so
-     the strand reads round without WebGL. Classic keeps the original lines. */
+     the strand reads round without WebGL. Classic keeps the original lines.
+     Finish knobs (Rough / Metal / Coat / Sheen / Fuzz) map onto these tubes
+     at full strength — the old Tripo dampening was left on after Tripo merged
+     into 3D, which made every slider look dead. */
   const TUBE_LX = -0.52, TUBE_LY = -0.62;
   function mix255(c, lift) {
     if (lift < 0) return Math.max(0, Math.min(255, Math.round(c * (1 + lift))));
     return Math.max(0, Math.min(255, Math.round(c + (255 - c) * lift)));
   }
-  function drawLitSeg(x1, y1, x2, y2, width, alpha, depth, tripo, mats) {
+  function drawLitSeg(x1, y1, x2, y2, width, alpha, depth, mats) {
     if (alpha <= 0.01 || width < 0.7) return;
     const dx = x2 - x1, dy = y2 - y1;
     const len = Math.hypot(dx, dy);
@@ -4950,20 +5045,25 @@ export function createHelixBgAnim(cfg) {
     const rad = width * 0.5;
     const side = (nx * TUBE_LX + ny * TUBE_LY) >= 0 ? 1 : -1;
     const [cr, cg, cb] = rgb;
-    const m = mats || { rough: 0.36, metal: 0, coat: 0.28, sheen: 0.42, fuzz: 0.22 };
-    const k = tripo ? 1 : 0.55;
-    const rough = m.rough * k;
-    const metal = m.metal * k;
-    const coat = m.coat * k;
-    const sheen = m.sheen * k;
-    const fuzz = tripo ? m.fuzz : m.fuzz * 0.35;
-    if (fuzz > 0.08) {
-      const nFuzz = 1 + Math.round(fuzz * 2);
+    const m = mats || {
+      rough: BGANIM_PUBLISH_POSE.mats.rough / 100,
+      metal: BGANIM_PUBLISH_POSE.mats.metal / 100,
+      coat: BGANIM_PUBLISH_POSE.mats.coat / 100,
+      sheen: BGANIM_PUBLISH_POSE.mats.sheen / 100,
+      fuzz: BGANIM_PUBLISH_POSE.mats.fuzz / 100,
+    };
+    const rough = m.rough;
+    const metal = m.metal;
+    const coat = m.coat;
+    const sheen = m.sheen;
+    const fuzz = m.fuzz;
+    if (fuzz > 0.04) {
+      const nFuzz = 1 + Math.round(fuzz * 3);
       for (let i = 0; i < nFuzz; i++) {
-        const o = (i - (nFuzz - 1) / 2) * (0.7 + fuzz * 1.6);
-        ctx.globalAlpha = Math.min(1, alpha * (0.07 + 0.16 * fuzz));
+        const o = (i - (nFuzz - 1) / 2) * (0.85 + fuzz * 2.0);
+        ctx.globalAlpha = Math.min(1, alpha * (0.08 + 0.22 * fuzz));
         ctx.strokeStyle = 'rgb(' + mix255(cr, -0.08) + ',' + mix255(cg, -0.06) + ',' + mix255(cb, -0.04) + ')';
-        ctx.lineWidth = width * (1.12 + fuzz * 0.7);
+        ctx.lineWidth = width * (1.14 + fuzz * 0.85);
         ctx.beginPath();
         ctx.moveTo(x1 + nx * o, y1 + ny * o);
         ctx.lineTo(x2 + nx * o, y2 + ny * o);
@@ -4974,27 +5074,27 @@ export function createHelixBgAnim(cfg) {
       x1 - nx * rad * side, y1 - ny * rad * side,
       x1 + nx * rad * side, y1 + ny * rad * side
     );
-    const hi = (tripo ? 0.36 : 0.28) + 0.42 * depth + metal * 0.32 - rough * 0.22;
-    const hiStop = Math.max(0.14, Math.min(0.52, 0.38 - metal * 0.16 + rough * 0.20));
-    const shadeAmt = -0.42 + rough * 0.12 - metal * 0.08;
-    g.addColorStop(0, 'rgb(' + mix255(cr, hi) + ',' + mix255(cg, hi * 0.9) + ',' + mix255(cb, hi * (0.7 + metal * 0.2)) + ')');
+    const hi = 0.36 + 0.42 * depth + metal * 0.48 - rough * 0.36;
+    const hiStop = Math.max(0.12, Math.min(0.58, 0.36 - metal * 0.2 + rough * 0.28));
+    const shadeAmt = -0.48 + rough * 0.22 - metal * 0.14;
+    g.addColorStop(0, 'rgb(' + mix255(cr, hi) + ',' + mix255(cg, hi * 0.9) + ',' + mix255(cb, hi * (0.65 + metal * 0.3)) + ')');
     g.addColorStop(hiStop, 'rgb(' + cr + ',' + cg + ',' + cb + ')');
     g.addColorStop(1, 'rgb(' + mix255(cr, shadeAmt) + ',' + mix255(cg, shadeAmt + 0.02) + ',' + mix255(cb, shadeAmt + 0.08) + ')');
     ctx.globalAlpha = Math.min(1, alpha);
     ctx.strokeStyle = g;
-    ctx.lineWidth = width;
+    ctx.lineWidth = width * (1 + metal * 0.06);
     ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-    if (coat > 0.06) {
-      ctx.globalAlpha = Math.min(1, alpha * (0.18 + 0.5 * coat) * (0.45 + 0.55 * depth));
-      ctx.strokeStyle = 'rgba(255,255,255,' + (0.16 + 0.42 * coat) + ')';
-      ctx.lineWidth = Math.max(0.55, width * (0.18 + 0.2 * coat));
+    if (coat > 0.03) {
+      ctx.globalAlpha = Math.min(1, alpha * (0.2 + 0.62 * coat) * (0.4 + 0.6 * depth));
+      ctx.strokeStyle = 'rgba(255,255,255,' + (0.18 + 0.55 * coat) + ')';
+      ctx.lineWidth = Math.max(0.55, width * (0.16 + 0.28 * coat));
       ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
     }
-    if (sheen > 0.06) {
-      const rim = rad * (0.62 + 0.2 * sheen);
-      ctx.globalAlpha = Math.min(1, alpha * (0.12 + 0.4 * sheen) * (0.35 + 0.65 * depth));
-      ctx.strokeStyle = 'rgba(255,255,255,' + (0.22 + 0.5 * sheen) + ')';
-      ctx.lineWidth = Math.max(0.45, width * (0.1 + 0.12 * sheen));
+    if (sheen > 0.03) {
+      const rim = rad * (0.58 + 0.28 * sheen);
+      ctx.globalAlpha = Math.min(1, alpha * (0.14 + 0.5 * sheen) * (0.3 + 0.7 * depth));
+      ctx.strokeStyle = 'rgba(255,255,255,' + (0.24 + 0.58 * sheen) + ')';
+      ctx.lineWidth = Math.max(0.45, width * (0.1 + 0.16 * sheen));
       ctx.beginPath();
       ctx.moveTo(x1 - nx * rim * side, y1 - ny * rim * side);
       ctx.lineTo(x2 - nx * rim * side, y2 - ny * rim * side);
@@ -5002,33 +5102,47 @@ export function createHelixBgAnim(cfg) {
     }
     ctx.globalAlpha = 1;
   }
-  function drawLitDot(cx, cy, rad, alpha, cr, cg, cb, depth, tripo, mats) {
+  function drawLitDot(cx, cy, rad, alpha, cr, cg, cb, depth, mats) {
     if (alpha <= 0.02 || rad < 0.4) return;
-    const m = mats || { rough: 0.36, metal: 0, coat: 0.28, sheen: 0.42, fuzz: 0.22 };
-    const k = tripo ? 1 : 0.55;
-    const metal = m.metal * k;
-    const sheen = m.sheen * k;
-    const fuzz = tripo ? m.fuzz : 0;
+    const m = mats || {
+      rough: BGANIM_PUBLISH_POSE.mats.rough / 100,
+      metal: BGANIM_PUBLISH_POSE.mats.metal / 100,
+      coat: BGANIM_PUBLISH_POSE.mats.coat / 100,
+      sheen: BGANIM_PUBLISH_POSE.mats.sheen / 100,
+      fuzz: BGANIM_PUBLISH_POSE.mats.fuzz / 100,
+    };
+    const metal = m.metal;
+    const rough = m.rough;
+    const coat = m.coat;
+    const sheen = m.sheen;
+    const fuzz = m.fuzz;
     const hx = cx + TUBE_LX * rad * 0.42;
     const hy = cy + TUBE_LY * rad * 0.42;
-    if (fuzz > 0.1) {
-      ctx.globalAlpha = Math.min(1, alpha * (0.1 + 0.22 * fuzz));
-      ctx.beginPath(); ctx.arc(cx, cy, rad * (1.18 + fuzz * 0.35), 0, Math.PI * 2);
+    if (fuzz > 0.04) {
+      ctx.globalAlpha = Math.min(1, alpha * (0.1 + 0.28 * fuzz));
+      ctx.beginPath(); ctx.arc(cx, cy, rad * (1.16 + fuzz * 0.45), 0, Math.PI * 2);
       ctx.fillStyle = 'rgb(' + mix255(cr, -0.06) + ',' + mix255(cg, -0.04) + ',' + mix255(cb, -0.02) + ')';
       ctx.fill();
     }
     const grd = ctx.createRadialGradient(hx, hy, rad * 0.08, cx, cy, rad);
-    const hi = 0.55 + metal * 0.22;
-    grd.addColorStop(0, 'rgb(' + mix255(cr, hi) + ',' + mix255(cg, hi * 0.87) + ',' + mix255(cb, hi * 0.65) + ')');
+    const hi = 0.52 + metal * 0.38 - rough * 0.18;
+    grd.addColorStop(0, 'rgb(' + mix255(cr, hi) + ',' + mix255(cg, hi * 0.87) + ',' + mix255(cb, hi * (0.55 + metal * 0.25)) + ')');
     grd.addColorStop(0.45, 'rgb(' + cr + ',' + cg + ',' + cb + ')');
-    grd.addColorStop(1, 'rgb(' + mix255(cr, -0.42) + ',' + mix255(cg, -0.40) + ',' + mix255(cb, -0.34) + ')');
+    grd.addColorStop(1, 'rgb(' + mix255(cr, -0.42 - metal * 0.08) + ',' + mix255(cg, -0.40) + ',' + mix255(cb, -0.34) + ')');
     ctx.globalAlpha = Math.min(1, alpha);
     ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2);
     ctx.fillStyle = grd; ctx.fill();
-    if (rad > 2 && depth > 0.3) {
-      ctx.globalAlpha = Math.min(1, alpha * (0.2 + 0.4 * depth) * (0.7 + 0.8 * sheen));
-      ctx.beginPath(); ctx.arc(hx, hy, Math.max(0.4, rad * (0.16 + 0.08 * sheen)), 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,255,255,' + (0.72 + 0.2 * sheen) + ')'; ctx.fill();
+    if (coat > 0.04 && rad > 1.5) {
+      ctx.globalAlpha = Math.min(1, alpha * (0.12 + 0.4 * coat) * (0.4 + 0.6 * depth));
+      ctx.beginPath(); ctx.arc(cx, cy, rad * 0.92, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,255,255,' + (0.2 + 0.45 * coat) + ')';
+      ctx.lineWidth = Math.max(0.5, rad * (0.08 + 0.12 * coat));
+      ctx.stroke();
+    }
+    if (rad > 2 && depth > 0.25) {
+      ctx.globalAlpha = Math.min(1, alpha * (0.2 + 0.45 * depth) * (0.55 + 0.9 * sheen));
+      ctx.beginPath(); ctx.arc(hx, hy, Math.max(0.4, rad * (0.14 + 0.12 * sheen)), 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,' + (0.7 + 0.25 * sheen) + ')'; ctx.fill();
     }
     ctx.globalAlpha = 1;
   }
@@ -5174,7 +5288,6 @@ export function createHelixBgAnim(cfg) {
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     const look = getLook();
     const lit = look === '3d';
-    const tripo = false;
     const mats = {
       rough: getMat('rough') / 100,
       metal: getMat('metal') / 100,
@@ -5186,7 +5299,7 @@ export function createHelixBgAnim(cfg) {
       const d = shade(seg.z);                                  // 0 (far) → 1 (near)
       const la = seg.a * (0.26 + 0.6 * d);
       if (la <= 0.01) continue;
-      if (lit) drawLitSeg(seg.x1, seg.y1, seg.x2, seg.y2, (2.2 + 3.4 * d) * thick * (tripo ? 1.18 : 1), la, d, tripo, mats);
+      if (lit) drawLitSeg(seg.x1, seg.y1, seg.x2, seg.y2, (2.2 + 3.4 * d) * thick * 1.12, la, d, mats);
       else {
         ctx.lineWidth = (1.1 + 1.9 * d) * thick;                 // near strand is fatter
         ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + la + ')';
@@ -5212,7 +5325,7 @@ export function createHelixBgAnim(cfg) {
       if (a <= 0.01) continue;
       const d = shade((p.z + q.z) * 0.5);
       const la = a * (0.16 + 0.28 * d);
-      if (lit) drawLitSeg(p.x, p.y, q.x, q.y, (1.6 + 1.1 * d) * thick * rungThick * (tripo ? 1.1 : 1), la, d, tripo, mats);
+      if (lit) drawLitSeg(p.x, p.y, q.x, q.y, (1.6 + 1.1 * d) * thick * rungThick * 1.08, la, d, mats);
       else {
         ctx.lineWidth = (1.1 + 0.6 * d) * thick * rungThick;
         ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + la + ')';
@@ -5322,7 +5435,7 @@ export function createHelixBgAnim(cfg) {
       }
       const rad = Math.max(0.45, (beadBase / 2) * sizeK);
       if (aK <= 0.02 || rad < 0.4) continue;
-      if (lit) drawLitDot(bead.x, bead.y, rad, aK, dr, dg, db, d, tripo, mats);
+      if (lit) drawLitDot(bead.x, bead.y, rad, aK, dr, dg, db, d, mats);
       else {
         ctx.globalAlpha = Math.min(1, aK);
         ctx.beginPath(); ctx.arc(bead.x, bead.y, rad, 0, Math.PI * 2);
@@ -5858,7 +5971,7 @@ const HELIX_HINTS = [
   ['.sc-bganim-spin', 'Twist direction'],
   ['.sc-bganim-knob-speed', 'Twist speed'],
   ['.sc-bganim-look', 'Classic or 3D'],
-  ['.sc-bganim-snapshots', 'Load a saved look'],
+  ['.sc-bganim-snapshots', 'Saved poses'],
   ['.sc-bganim-mat-rough', 'Matte vs mirror'],
   ['.sc-bganim-mat-metal', 'Metallic sheen'],
   ['.sc-bganim-mat-coat', 'Glossy lacquer'],
@@ -5910,21 +6023,41 @@ function decorateHelixHints(root) {
   });
 }
 
-/* Wrap Helix sub-controls into titled inner cards (View / Size / Beads /
-   Strand / Look) so the column reads as clusters instead of one long slider
-   dump. Subheads already exist; this just groups everything after a subhead
-   until the next one. Idempotent. */
+/* Wrap Helix sub-controls into titled inner cards (Load / Look / Finish /
+   View / Size / Beads / Strand / Field) so the column reads as clusters
+   instead of one long slider dump. Subheads already exist; this just groups
+   everything after a subhead until the next one. Idempotent. */
+function helixClusterIsSpan(label) {
+  return label === 'load' || label === 'snapshots' || label === 'look'
+    || label === 'finish' || label === 'field' || label === 'view';
+}
+
 function tagHelixClusterSpan(section) {
   if (!section) return;
   section.querySelectorAll('.sc-bganim-cluster').forEach((c) => {
     const head = c.querySelector(':scope > .sc-bganim-subhead');
     const label = (head && head.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
-    c.classList.toggle('sc-bganim-cluster--span', label === 'look' || label === 'finish' || label === 'snapshots');
+    c.classList.toggle('sc-bganim-cluster--span', helixClusterIsSpan(label));
   });
 }
 
 function clusterifyHelixGroup(section) {
   if (!section) return;
+  /* Rename leftover titles from older builds so clusters stay consistent. */
+  section.querySelectorAll('.sc-bganim-subhead').forEach((el) => {
+    const t = (el.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    if (t === 'snapshots') el.textContent = 'Load';
+    if (t === 'look') {
+      /* The old "Look" above Style/Helix-Ten-Orbit becomes Field; Classic/3D
+         already owns Look via bgAnimLookChromeHtml. */
+      const next = el.nextElementSibling;
+      if (next && next.classList && next.classList.contains('sc-bganim-style')) {
+        el.textContent = 'Field';
+      }
+    }
+  });
+  section.querySelectorAll('.sc-bganim-snapshots > .sc-bganim-style-label').forEach((el) => el.remove());
+  section.querySelectorAll('.sc-bganim-look > .sc-bganim-style-label').forEach((el) => el.remove());
   if (section.dataset.helixClustered === '1') {
     const loose = Array.from(section.children).some((el) => el && el.classList && el.classList.contains('sc-bganim-subhead'));
     if (!loose) { tagHelixClusterSpan(section); return; }
@@ -5943,7 +6076,7 @@ function clusterifyHelixGroup(section) {
       cluster = document.createElement('div');
       cluster.className = 'sc-bganim-cluster';
       const label = (el.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
-      if (label === 'look' || label === 'finish' || label === 'snapshots') cluster.classList.add('sc-bganim-cluster--span');
+      if (helixClusterIsSpan(label)) cluster.classList.add('sc-bganim-cluster--span');
       if (el.dataset.helixOnly === '1') cluster.dataset.helixOnly = '1';
       el.before(cluster);
       cluster.appendChild(el);
@@ -7266,18 +7399,15 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   /* Opacity of the background animation (0.1–1). Shared APP-WIDE (one key, broadcast
      on wise:chat-bg-anim-opacity), adjustable from the slider below the toggle. */
   const BGANIM_OPACITY_KEY = 'wise:chat-bg-anim-opacity';
-  /* Default opacity is a subtle 20% everywhere, regardless of how many panes the
-     chat occupies. This default holds until the member drags the opacity slider,
-     at which point their explicit choice (`bgAnimOpacityUserSet`) takes over
-     app-wide. */
-  let bgAnimOpacity = 0.2;
+  /* Published default matches Scene (50%). Holds until the member drags the
+     opacity slider, at which point their explicit choice takes over app-wide. */
+  let bgAnimOpacity = BGANIM_PUBLISH_POSE.opacity / 100;
   let bgAnimOpacityUserSet = false;
   try { const s = parseInt(localStorage.getItem(BGANIM_OPACITY_KEY), 10); if (!isNaN(s)) { bgAnimOpacity = Math.max(0.1, Math.min(1, s / 100)); bgAnimOpacityUserSet = true; } } catch (_) {}
   /* Axis tilt of the helix in degrees (−90…90). Shared APP-WIDE (one key,
-     broadcast on wise:chat-bg-anim-angle). Default 10° matches the original
-     hardcoded ~0.17 rad left-high / right-low lean. */
+     broadcast on wise:chat-bg-anim-angle). Published default matches Scene. */
   const BGANIM_ANGLE_KEY = 'wise:chat-bg-anim-angle';
-  const BGANIM_ANGLE_DEFAULT = 10;
+  const BGANIM_ANGLE_DEFAULT = BGANIM_PUBLISH_POSE.angle;
   let bgAnimAngle = BGANIM_ANGLE_DEFAULT;
   try {
     const s = parseInt(localStorage.getItem(BGANIM_ANGLE_KEY), 10);
@@ -7302,9 +7432,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   let bgAnimSpinDir = readBgAnimSpinDir();
   let bgAnimLook = readBgAnimLook();
   const bgAnimMats = readBgAnimMats();
-  /* Default background-animation opacity: 20% on every layout. */
+  /* Default background-animation opacity: Scene publish pose until user-set. */
   function paneDefaultBgAnimOpacity() {
-    return 0.20;
+    return BGANIM_PUBLISH_POSE.opacity / 100;
   }
   /* The opacity actually applied: the member's explicit slider choice when set,
      otherwise the pane-count default (recomputed live so a width change re-tunes
@@ -7327,7 +7457,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   const BGANIM_STYLE_KEY = 'wise:chat-bg-anim-style';
   const BGANIM_STYLES = ['helix', 'helix-ten', 'orbit'];
   const isHelixStyle = (s) => s === 'helix' || s === 'helix-ten';
-  let bgAnimStyle = 'helix';
+  let bgAnimStyle = BGANIM_PUBLISH_POSE.style;
   try {
     const s = localStorage.getItem(BGANIM_STYLE_KEY);
     if (s === 'stamp') { try { localStorage.setItem(BGANIM_STYLE_KEY, 'helix'); } catch (_) {} }
@@ -7421,27 +7551,34 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-brandtext-item" data-sc="brandtext" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">format_color_text</span><span>Brand AI text</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-sheen-item" data-sc="sheen" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">auto_awesome</span><span>Input glow</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-bganim-item" data-sc="bg-anim" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">animation</span><span>Animation</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
-          ${bgAnimLookChromeHtml('classic')}
+          ${bgAnimLookChromeHtml(BGANIM_PUBLISH_POSE.look)}
           ${bgAnimMatRowsHtml()}
           ${bgAnimSubheadHtml('View')}
           <div class="sc-bganim-detail">
             <span class="sc-bganim-detail-label">Opacity</span>
-            <input type="range" class="sc-bganim-opacity" min="10" max="100" step="1" value="20" aria-label="Helix opacity">
-            <span class="sc-bganim-opacity-val">20%</span>
+            <input type="range" class="sc-bganim-opacity" min="10" max="100" step="1" value="${BGANIM_PUBLISH_POSE.opacity}" aria-label="Helix opacity">
+            <span class="sc-bganim-opacity-val">${BGANIM_PUBLISH_POSE.opacity}%</span>
           </div>
           <div class="sc-bganim-detail sc-bganim-angle">
             <span class="sc-bganim-detail-label">Angle</span>
-            <input type="range" class="sc-bganim-angle-range" min="-90" max="90" step="1" value="10" aria-label="Helix angle">
-            <span class="sc-bganim-angle-val">10°</span>
+            <input type="range" class="sc-bganim-angle-range" min="-90" max="90" step="1" value="${BGANIM_PUBLISH_POSE.angle}" aria-label="Helix angle">
+            <span class="sc-bganim-angle-val">${BGANIM_PUBLISH_POSE.angle}°</span>
           </div>
           ${bgAnimCameraRowHtml()}
           ${bgAnimAzimuthRowHtml()}
           ${bgAnimShiftRowHtml()}
+          <div class="sc-bganim-playback">
+            <span class="sc-bganim-playback-label">Playback</span>
+            <button type="button" class="sc-bganim-pp" data-sc="bg-anim-playback" aria-pressed="false" aria-label="Pause background animation" title="Pause background animation">
+              <span class="sc-bganim-pp-pause"><span class="material-symbols-outlined">pause</span>Pause</span>
+              <span class="sc-bganim-pp-play"><span class="material-symbols-outlined">play_arrow</span>Play</span>
+            </button>
+          </div>
           ${bgAnimSubheadHtml('Size')}
           ${bgAnimScaleRowsHtml()}
           ${bgAnimKnobById('nodes')}
           ${bgAnimKnobRowsHtml()}
-          ${bgAnimSubheadHtml('Look')}
+          ${bgAnimSubheadHtml('Field')}
           <div class="sc-bganim-style">
             <span class="sc-bganim-style-label">Style</span>
             <div class="sc-stream-seg" role="radiogroup" aria-label="Background animation style">
@@ -7449,13 +7586,6 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
               <button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="helix-ten" role="radio" aria-checked="false" title="Food DNA helix — about ten products" aria-label="Food DNA helix — about ten products">Ten</button>
               <button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="orbit" role="radio" aria-checked="false" title="Owl orbit constellation" aria-label="Owl orbit constellation">Orbit</button>
             </div>
-          </div>
-          <div class="sc-bganim-playback">
-            <span class="sc-bganim-playback-label">Playback</span>
-            <button type="button" class="sc-bganim-pp" data-sc="bg-anim-playback" aria-pressed="false" aria-label="Pause background animation" title="Pause background animation">
-              <span class="sc-bganim-pp-pause"><span class="material-symbols-outlined">pause</span>Pause</span>
-              <span class="sc-bganim-pp-play"><span class="material-symbols-outlined">play_arrow</span>Play</span>
-            </button>
           </div>
           ${opts.activityStrip !== false ? `<button type="button" class="topbar-menu-item sc-mcp-item sc-actstrip-item" data-sc="activity-strip" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">timeline</span><span>Activity strip</span><span class="sc-switch" aria-hidden="true"></span></button>
           <div class="sc-stream-detail sc-actside-detail">
@@ -12101,25 +12231,22 @@ export function wireStandardChatMenu(cfg = {}) {
 
   /* ── Background animation (+ opacity, angle, Scale, Pitch / Nodes / Length /
      Thick / Depth) — ON by default, stored '0' turns it off; opacity is user-set
-     via the slider or falls back to the 20% default on every layout. Angle is
-     the helix axis tilt in degrees (default 10°). Scale stretches or pinches
-     the field from its centre on X, Y and Z (1–800% each, default 100%, with
-     a master row that moves all three); Pitch / Nodes / Length / Rungs / Bar /
-     Thick / Depth reshape the strand itself over the same window. The LIVE field mounts only
-     when the page provides cfg.bgAnim; either way the switch drives the one
-     shared app-wide preference. ── */
+     via the slider or falls back to the published Scene pose. Angle / Scale /
+     knobs match that same pose until localStorage overrides. The LIVE field
+     mounts only when the page provides cfg.bgAnim; either way the switch drives
+     the one shared app-wide preference. ── */
   const BGANIM_KEY = 'wise:chat-bg-anim';
   const BGANIM_OPACITY_KEY = 'wise:chat-bg-anim-opacity';
   const BGANIM_ANGLE_KEY = 'wise:chat-bg-anim-angle';
   const BGANIM_PAUSED_KEY = 'wise:chat-bg-anim-paused';
   let bgOn = true;
   try { if (localStorage.getItem(BGANIM_KEY) === '0') bgOn = false; } catch (_) {}
-  let bgOpacity = 0.2, bgUserSet = false;
+  let bgOpacity = BGANIM_PUBLISH_POSE.opacity / 100, bgUserSet = false;
   try {
     const s = parseInt(localStorage.getItem(BGANIM_OPACITY_KEY), 10);
     if (!isNaN(s)) { bgOpacity = Math.max(0.1, Math.min(1, s / 100)); bgUserSet = true; }
   } catch (_) {}
-  let bgAngle = 10;
+  let bgAngle = BGANIM_PUBLISH_POSE.angle;
   try {
     const a = parseInt(localStorage.getItem(BGANIM_ANGLE_KEY), 10);
     if (!isNaN(a)) bgAngle = Math.max(-90, Math.min(90, a));
@@ -12137,14 +12264,14 @@ export function wireStandardChatMenu(cfg = {}) {
   const bgMats = readBgAnimMats();
   let bgPaused = false;
   try { if (localStorage.getItem(BGANIM_PAUSED_KEY) === '1') bgPaused = true; } catch (_) {}
-  const effOpacity = () => (bgUserSet ? bgOpacity : 0.20);
+  const effOpacity = () => (bgUserSet ? bgOpacity : BGANIM_PUBLISH_POSE.opacity / 100);
   /* Background-animation STYLE (helix · helix-ten · orbit) — shared app-wide,
      same key/event as the mounted module so every surface swaps in lockstep. A
      leftover 'stamp' preference (removed) falls back to helix. */
   const BGANIM_STYLE_KEY = 'wise:chat-bg-anim-style';
   const BGANIM_STYLES = ['helix', 'helix-ten', 'orbit'];
   const isHelixStyle = (s) => s === 'helix' || s === 'helix-ten';
-  let bgStyle = 'helix';
+  let bgStyle = BGANIM_PUBLISH_POSE.style;
   try {
     const s = localStorage.getItem(BGANIM_STYLE_KEY);
     if (s === 'stamp') { try { localStorage.setItem(BGANIM_STYLE_KEY, 'helix'); } catch (_) {} }

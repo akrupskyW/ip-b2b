@@ -7887,13 +7887,16 @@
        sideways. Order: select · ⋮ · reports · product · serving · category ·
        rating (stars + score) · standardized (std★ + std score) · next star ·
        issues & ease · reformulate · data · shield · updated. */
-    #portfolio-panel.pf-stars-on .pf-table--claimed .pf-thead,
-    #portfolio-panel.pf-stars-on .pf-table--claimed .pf-trow,
     #portfolio-panel.pf-stars-on .pf-table--discovered .pf-thead,
     #portfolio-panel.pf-stars-on .pf-table--discovered .pf-trow,
     #portfolio-panel.pf-stars-on .pf-table--needsinfo .pf-thead,
     #portfolio-panel.pf-stars-on .pf-table--needsinfo .pf-trow {
       grid-template-columns: 34px 34px 168px 210px 74px 140px 92px 108px 132px 190px 150px 130px 160px 168px;
+      width: max-content; min-width: 100%;
+    }
+    #portfolio-panel.pf-stars-on .pf-table--claimed .pf-thead,
+    #portfolio-panel.pf-stars-on .pf-table--claimed .pf-trow {
+      grid-template-columns: 34px 34px 34px 210px 74px 140px 92px 108px 132px 190px 150px 130px 160px 168px;
       width: max-content; min-width: 100%;
     }
     #portfolio-panel.pf-stars-on .pf-table-card { overflow-x: auto; overflow-y: visible; }
@@ -8313,11 +8316,13 @@
     .pf-table { width: 100%; }
     .pf-thead, .pf-trow { display: grid; align-items: center; gap: 10px; padding: 10px 12px; }
     /* Unified columns across every list: select · ⋮ · reports · product
-       (name + UPC) · data · Non-UPF Shield · updated. Same tracks on Missing
-       data, Discovered, and Claimed so the stacked tables line up. */
-    .pf-table--claimed .pf-thead, .pf-table--claimed .pf-trow,
+       (name + UPC) · data · Non-UPF Shield · updated. Missing data and
+       Discovered share a wide reports track for their action buttons.
+       Claimed only has a reports icon, so that track stays icon-sized
+       and the product sits next to it. */
     .pf-table--discovered .pf-thead, .pf-table--discovered .pf-trow,
     .pf-table--needsinfo .pf-thead, .pf-table--needsinfo .pf-trow { grid-template-columns: 34px 34px minmax(158px,0.95fr) minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) minmax(150px,1.5fr); }
+    .pf-table--claimed .pf-thead, .pf-table--claimed .pf-trow { grid-template-columns: 34px 34px 34px minmax(0,2.4fr) minmax(0,1fr) minmax(0,1fr) minmax(150px,1.5fr); }
     .pf-col-claim { display: flex; align-items: center; }
     .pf-table-block { margin-bottom: 16px; }
     .pf-table-block:last-child { margin-bottom: 0; }
@@ -10766,7 +10771,7 @@
 
           <section class="pf-view" id="pf-view-needsinfo" role="tabpanel" aria-labelledby="pf-seg-needsinfo">
             <div class="pf-note pf-note--warn">
-              <h3 class="pf-card-title">Missing data</h3>
+              <h3 class="pf-card-title">Products with missing data</h3>
               <p class="pf-card-sub">We've identified these products but do not have all the information needed yet. Review and add the missing details, once complete the products will move into your portfolio.</p>
               <p class="pf-note-flag">Products with missing data aren't included in any reports or stats until they're complete.</p>
             </div>
@@ -11332,7 +11337,7 @@
           <section class="pf-view" id="pf-view-claimed" role="tabpanel" aria-labelledby="pf-seg-claimed">
             
             <div class="pf-table-block">
-              <h3 class="pf-card-title">Claimed</h3>
+              <h3 class="pf-card-title">Claimed products</h3>
               <div class="pf-block-stats">
                 <div class="pf-stats pf-stats--status" role="group" aria-label="Filter claimed products by status">
               <!-- Below: status cards filter the rows within the Claimed list. -->

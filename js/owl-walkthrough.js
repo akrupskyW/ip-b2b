@@ -83,7 +83,7 @@
           id: 'chat-home',
           page: 'wiseai.html',
           title: 'Chat is home base.',
-          body: 'WISEcodeAI is the product\u2019s front door. Ask about a food, a SKU, a shield, a report. I stream answers paragraph by paragraph. The helix behind me is on by default at a whisper (20% opacity) so the room still feels alive.',
+          body: 'WISEcodeAI is the product\u2019s front door. Ask about a food, a SKU, a shield, a report. I stream answers paragraph by paragraph. The helix behind me opens on the Scene pose by default so the room still feels alive.',
           bullets: [
             'Type in the composer, or tap an intent chip',
             'Answers stream in \u2014 you can keep working while I talk',

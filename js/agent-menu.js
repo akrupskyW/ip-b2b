@@ -1142,10 +1142,16 @@ function setupMenuRail(navEl) {
 
   const apply = (railed) => {
     panel.classList.toggle('mp-rail', railed);
+    if (isNavModulesOn()) {
+      /* Chevron stays chevron_right and only opens History; the hamburger
+         owns expand/collapse of the labelled nav. */
+      applyHamburgerSkin();
+      if (!railed) scheduleNavTrees(navEl);
+      try { syncNavModulesChrome(); } catch (_) { /* optional on first paint */ }
+      return;
+    }
     btn.setAttribute('aria-pressed', railed ? 'true' : 'false');
-    const label = isNavModulesOn()
-      ? (railed ? 'Open navigation and History' : 'Collapse to icons')
-      : (railed ? 'Expand menu' : 'Collapse menu to icons');
+    const label = railed ? 'Expand menu' : 'Collapse menu to icons';
     btn.setAttribute('aria-label', label);
     btn.setAttribute('title', label);
     btn.setAttribute('data-tip', label);

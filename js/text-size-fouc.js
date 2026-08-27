@@ -17,9 +17,14 @@
   var KEY = 'wise-minimal-ui-v2';
   function wantOn() {
     try {
+      /* Nav & History icons owns the collapsed chrome (default ON); don't
+         paint Minimal UI over that four-icon rail. Keep in sync with
+         isNavModulesOn() in js/nav-modules.js. */
+      var nm = localStorage.getItem('wise-nav-modules');
+      if (nm === null ? true : nm === '1') return false;
       var v = localStorage.getItem(KEY);
       return v === null ? true : v === '1';
-    } catch (_) { return true; }
+    } catch (_) { return false; }
   }
   function apply() {
     var panel = document.getElementById('menu-panel');
@@ -74,15 +79,18 @@
   } catch (_) {}
 })();
 
-/** FOUC guard — Nav & History icons (wise-nav-modules) paints from <html>
+/** FOUC guard — Nav & History icons (wise-nav-modules) is on by default
     so the collapsed rail does not flash the full icon list first.
     Keep in sync with isNavModulesOn() in js/nav-modules.js. */
 (function () {
   try {
-    if (localStorage.getItem('wise-nav-modules') === '1') {
+    var v = localStorage.getItem('wise-nav-modules');
+    if (v === null ? true : v === '1') {
       document.documentElement.classList.add('nav-modules');
     }
-  } catch (_) {}
+  } catch (_) {
+    document.documentElement.classList.add('nav-modules');
+  }
 })();
 
 /** Design-token color overrides — persist per theme and apply before paint so
@@ -464,6 +472,50 @@
   mo.observe(document.documentElement, { childList: true, subtree: true });
   function stop() {
     apply();
+    mo.disconnect();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', stop);
+  else stop();
+})();
+
+/** FOUC guard — Serif headlines are on by default. Keep in sync with
+    isSerifHeadlinesOn() / applySerifHeadlines() in js/topbar.js so titles do
+    not flash Noto Serif when the user has switched them to DM Sans. */
+(function () {
+  var KEY = 'wise-serif-headlines';
+  var STYLE_ID = 'wise-sans-headlines-faces';
+  var CSS = "@font-face{font-family:'Noto Serif';font-style:italic;font-weight:300 800;font-display:swap;src:url(https://fonts.gstatic.com/s/dmsans/v17/rP2Fp2ywxg089UriCZa4ET-DJF4e8BH9.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}"
+    + "@font-face{font-family:'Noto Serif';font-style:italic;font-weight:300 800;font-display:swap;src:url(https://fonts.gstatic.com/s/dmsans/v17/rP2Fp2ywxg089UriCZa4Hz-DJF4e8A.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}"
+    + "@font-face{font-family:'Noto Serif';font-style:normal;font-weight:300 800;font-display:swap;src:url(https://fonts.gstatic.com/s/dmsans/v17/rP2Hp2ywxg089UriCZ2IHTWEBlwu8Q.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}"
+    + "@font-face{font-family:'Noto Serif';font-style:normal;font-weight:300 800;font-display:swap;src:url(https://fonts.gstatic.com/s/dmsans/v17/rP2Hp2ywxg089UriCZOIHTWEBlw.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}"
+    + "@font-face{font-family:'Noto Serif Fallback';font-style:italic;font-weight:300 800;font-display:swap;src:url(https://fonts.gstatic.com/s/dmsans/v17/rP2Fp2ywxg089UriCZa4Hz-DJF4e8A.woff2) format('woff2')}"
+    + "@font-face{font-family:'Noto Serif Fallback';font-style:normal;font-weight:300 800;font-display:swap;src:url(https://fonts.gstatic.com/s/dmsans/v17/rP2Hp2ywxg089UriCZOIHTWEBlw.woff2) format('woff2')}";
+  function wantSans() {
+    try { return localStorage.getItem(KEY) === '0'; } catch (_) { return false; }
+  }
+  function ensureFaces() {
+    if (document.getElementById(STYLE_ID)) return;
+    var s = document.createElement('style');
+    s.id = STYLE_ID;
+    s.textContent = CSS;
+    (document.head || document.documentElement).appendChild(s);
+  }
+  function disableNoto() {
+    var nodes = document.querySelectorAll('link[rel="stylesheet"][href*="Noto+Serif"], link[rel="stylesheet"][href*="Noto%20Serif"]');
+    for (var i = 0; i < nodes.length; i++) nodes[i].disabled = true;
+  }
+  if (!wantSans()) return;
+  document.documentElement.classList.add('sans-headlines');
+  ensureFaces();
+  disableNoto();
+  var mo = new MutationObserver(function () {
+    ensureFaces();
+    disableNoto();
+  });
+  mo.observe(document.documentElement, { childList: true, subtree: true });
+  function stop() {
+    ensureFaces();
+    disableNoto();
     mo.disconnect();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', stop);

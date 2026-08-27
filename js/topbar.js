@@ -453,8 +453,21 @@ export function applyMinimalUi(on, persist = true) {
 }
 
 /** Restore the persisted (or default-on) minimal-UI state onto the panel
-    without writing, so a first visit stays on until the user toggles. */
+    without writing, so a first visit stays on until the user toggles.
+    Nav & History icons owns the collapsed chrome when that toggle is on
+    (including its on-by-default); skip painting Minimal UI over it.
+    Keep the stored check in sync with isNavModulesOn() in js/nav-modules.js. */
 export function restoreMinimalUi() {
+  try {
+    const v = localStorage.getItem('wise-nav-modules');
+    if (v === null ? true : v === '1') {
+      applyMinimalUi(false, false);
+      return;
+    }
+  } catch (_) {
+    applyMinimalUi(false, false);
+    return;
+  }
   applyMinimalUi(isMinimalUiOn(), false);
 }
 
@@ -992,6 +1005,72 @@ export function applyCwrUi(on) {
   } catch {}
 }
 
+/* Serif headlines — Appearance ▸ Accessibility, next to Text size. On by
+   default (Noto Serif titles). Turning the row off swaps every title to DM Sans
+   at the same weights (300–800, plus italic). Driven by a `sans-headlines`
+   class on <html> that remaps --module-title-family / --font-serif, plus an
+   injected @font-face so hardcoded `Noto Serif` stacks follow along.
+   Keep in sync with the FOUC twin in js/text-size-fouc.js. */
+const SERIF_HEADLINES_KEY = 'wise-serif-headlines';
+const SANS_HEADLINES_STYLE_ID = 'wise-sans-headlines-faces';
+/* Same woff2 files the pages already load as DM Sans — registered here under
+   the Noto Serif name so hardcoded stacks don't keep serving the serif face. */
+const SANS_HEADLINES_FACE_CSS = `
+@font-face{font-family:'Noto Serif';font-style:italic;font-weight:300 800;font-display:swap;src:url(https://fonts.gstatic.com/s/dmsans/v17/rP2Fp2ywxg089UriCZa4ET-DJF4e8BH9.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Noto Serif';font-style:italic;font-weight:300 800;font-display:swap;src:url(https://fonts.gstatic.com/s/dmsans/v17/rP2Fp2ywxg089UriCZa4Hz-DJF4e8A.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Noto Serif';font-style:normal;font-weight:300 800;font-display:swap;src:url(https://fonts.gstatic.com/s/dmsans/v17/rP2Hp2ywxg089UriCZ2IHTWEBlwu8Q.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Noto Serif';font-style:normal;font-weight:300 800;font-display:swap;src:url(https://fonts.gstatic.com/s/dmsans/v17/rP2Hp2ywxg089UriCZOIHTWEBlw.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Noto Serif Fallback';font-style:italic;font-weight:300 800;font-display:swap;src:url(https://fonts.gstatic.com/s/dmsans/v17/rP2Fp2ywxg089UriCZa4Hz-DJF4e8A.woff2) format('woff2')}
+@font-face{font-family:'Noto Serif Fallback';font-style:normal;font-weight:300 800;font-display:swap;src:url(https://fonts.gstatic.com/s/dmsans/v17/rP2Hp2ywxg089UriCZOIHTWEBlw.woff2) format('woff2')}
+`;
+
+function notoSerifStylesheets() {
+  if (typeof document === 'undefined') return [];
+  return document.querySelectorAll(
+    'link[rel="stylesheet"][href*="Noto+Serif"], link[rel="stylesheet"][href*="Noto%20Serif"]'
+  );
+}
+
+function ensureSansHeadlineFaces() {
+  if (typeof document === 'undefined' || document.getElementById(SANS_HEADLINES_STYLE_ID)) return;
+  const style = document.createElement('style');
+  style.id = SANS_HEADLINES_STYLE_ID;
+  style.textContent = SANS_HEADLINES_FACE_CSS;
+  (document.head || document.documentElement).appendChild(style);
+}
+
+function clearSansHeadlineFaces() {
+  document.getElementById(SANS_HEADLINES_STYLE_ID)?.remove();
+}
+
+/** True when titles use the brand serif. Defaults ON — the Appearance row
+    opts OUT, switching titles to DM Sans. */
+export function isSerifHeadlinesOn() {
+  try { return localStorage.getItem(SERIF_HEADLINES_KEY) !== '0'; } catch { return true; }
+}
+
+/** Toggle serif titles. `on` true restores Noto Serif; false applies DM Sans. */
+export function applySerifHeadlines(on) {
+  const sans = !on;
+  document.documentElement.classList.toggle('sans-headlines', sans);
+  try { localStorage.setItem(SERIF_HEADLINES_KEY, on ? '1' : '0'); } catch {}
+  if (sans) {
+    ensureSansHeadlineFaces();
+    notoSerifStylesheets().forEach((link) => { link.disabled = true; });
+  } else {
+    clearSansHeadlineFaces();
+    notoSerifStylesheets().forEach((link) => { link.disabled = false; });
+  }
+  try {
+    document.dispatchEvent(new CustomEvent('wise:serif-headlines', { detail: { on: !!on } }));
+  } catch {}
+}
+
+/** Restore the persisted serif-headlines state onto the document. */
+export function restoreSerifHeadlines() {
+  applySerifHeadlines(isSerifHeadlinesOn());
+}
+
 /* Module spacing — admin-only control for the horizontal gap BETWEEN the modules
    in #modules-row. Four steps (mirroring Text size): Small (12px) / Medium (24px)
    / Large (36px) / XL (48px). Driven by a `mod-gap-<size>` class on <html>;
@@ -1048,7 +1127,7 @@ export function restoreModuleGap() {
          see that channel) — Okabe–Ito reddish-purple instead of amber.
    Anomalous trichromacy (the "weak" forms) shares the same confusion axis as
    the matching dichromacy, so one palette per axis covers both. Achromatopsia
-   (no hue at all) is not a fourth palette — luminance/contrast (Sharper edges,
+   (no hue at all) is not a fourth palette — luminance/contrast (Surface style,
    text size) is the right tool there.
    Rather than re-declaring tokens in every page's :root block, we inject ONE
    stylesheet (scoped to `html.colorblind.cb-*` and their `.dark` variants) that
@@ -1349,27 +1428,36 @@ export function applySharpEdges(on) {
   } catch {}
 }
 
-/** Restore the persisted sharp-edges state onto the document. */
+/** Restore: the standalone Layout toggle is gone. If it was on and Surface
+    style was still Default, migrate onto Sharper edges (inset). Always drop
+    the leftover class so the two treatments cannot stack. */
 export function restoreSharpEdges() {
-  applySharpEdges(isSharpEdgesOn());
+  let edgesOn = false;
+  try { edgesOn = localStorage.getItem(EDGES_KEY) === '1'; } catch (_) {}
+  try { localStorage.setItem(EDGES_KEY, '0'); } catch (_) {}
+  if (typeof document !== 'undefined') {
+    document.documentElement.classList.remove('sharp-edges');
+  }
+  if (edgesOn && !getBrandStyle()) applyBrandStyle('inset');
 }
 
 /* ------------------------------------------------------------------ */
-/* Branding style — "Style 1" (inset) and "Style 2" (flush asides).
+/* Surface style — "Sharper edges" (inset) and "Borderless" (flush asides).
 
-   A per-app branding treatment chosen from the Appearance popover's "Branding"
-   section. Neither style touches the owl bug or WISE wordmark — the brand mark
-   stays exactly as drawn (its SVGs paint from currentColor, not the surface
-   tokens this treatment retunes).
+   A per-app surface treatment chosen from the Appearance popover's Surface
+   style control. Neither style touches the owl bug or WISE wordmark — the
+   brand mark stays exactly as drawn (its SVGs paint from currentColor, not
+   the surface tokens this treatment retunes).
 
-   Style 1 re-skins WORKING SURFACES: the module panels and chat panes in
+   Sharper edges re-skins WORKING SURFACES: the module panels and chat panes in
    #modules-row, plus the cards, inputs and popovers around them. It retunes
    the shared design tokens (--border / --border-strong and the --shadow-*
    scale) so every surface that already consumes them picks up a crisper
-   on-brand hairline and a deeper, softer, layered elevation. Driven by a
-   `brand-inset` class on <html>.
+   on-brand hairline and a deeper, softer, layered elevation. The primary nav
+   container also tightens its corners and hairline (the old standalone
+   Sharper edges toggle). Driven by a `brand-inset` class on <html>.
 
-   Style 2 leaves those tokens alone and instead drops the outer card stroke
+   Borderless leaves those tokens alone and instead drops the outer card stroke
    on every module EXCEPT the chat — History, output panes, Turns, and other
    asides. The chat card keeps its Default rim and elevation, untouched.
    Driven by a `brand-flush` class on <html>.
@@ -1380,12 +1468,12 @@ const BRAND_STYLE_ID = 'wise-brand-style-el';
 
 const BRAND_CSS = `
 /* ----------------------------------------------------------------------------
-   "Style 1" — the inset "stamp" surface treatment.
+   "Sharper edges" — the inset "stamp" surface treatment.
 
    The DEFAULT look floats every card ABOVE the page on an outer drop shadow.
-   Style 1 flips that completely: surfaces are pressed INTO the page (debossed /
-   letterpress "stamp"). The two are meant to read as opposites — no outer
-   elevation shadow at all in Style 1, just an inner shadow + a crisp on-brand
+   Sharper edges flips that completely: surfaces are pressed INTO the page
+   (debossed / letterpress "stamp"). The two are meant to read as opposites —
+   no outer elevation shadow at all, just an inner shadow + a crisp on-brand
    border, so a rounded card looks stamped rather than lifted.
 
    Two layers, both scoped under html.brand-inset:
@@ -1459,15 +1547,28 @@ html.brand-inset #modules-row > :is(#panels-row, #panels-row-right) {
 
 /* Facing stroke across the nav↔content gutter. The nav's right
    hairline sits ~12px from the first module; drop only that nav
-   edge. The chat (and every other module) keeps a full Style 1
+   edge. The chat (and every other module) keeps a full Sharper edges
    border on all four sides — including the left. Rail mode already
-   zeros the whole nav border, so the nav rule is a no-op there. */
+   zeros the whole nav border, so the nav rule is a no-op there.
+   Tighter corners, a thinner hairline, and a lighter fill used to live
+   on a separate Sharper edges toggle that stacked with this treatment
+   on the same container — they now belong only here. */
 html.brand-inset #menu-panel .menu-inner {
   border-right-color: transparent !important;
+  border-radius: 4px;
+  border-width: 0.5px;
+  background: linear-gradient(165deg,
+    color-mix(in srgb, var(--surface) 70%, #fff) 0%,
+    color-mix(in srgb, var(--surface-2) 70%, #fff) 100%);
+}
+html.brand-inset.dark #menu-panel .menu-inner {
+  background: linear-gradient(155deg,
+    color-mix(in srgb, #1A2339 70%, #fff) 0%,
+    color-mix(in srgb, #1A2339 70%, #fff) 100%);
 }
 
 /* ----------------------------------------------------------------------------
-   "Style 2" — Default surfaces, but every module OTHER THAN the chat sheds
+   "Borderless" — Default surfaces, but every module OTHER THAN the chat sheds
    its outer card stroke (and the drop shadow that reads as an edge).
    The chat hosts listed in :is(...) — including the #wiseai-dock-panel
    aside that IS the chat on overview/account pages — are never selected.
@@ -1509,7 +1610,7 @@ function ensureBrandStyle() {
   (document.head || document.documentElement).appendChild(style);
 }
 
-/** The active branding style: '' (default), 'inset' ("Style 1"), or 'flush' ("Style 2"). */
+/** The active branding style: '' (default), 'inset' ("Sharper edges"), or 'flush' ("Borderless"). */
 export function getBrandStyle() {
   try {
     const v = localStorage.getItem(BRAND_KEY);
@@ -1518,12 +1619,12 @@ export function getBrandStyle() {
   } catch { return ''; }
 }
 
-/** True when the inset ("Style 1") branding treatment is on. */
+/** True when the inset ("Sharper edges") branding treatment is on. */
 export function isBrandInsetOn() {
   return getBrandStyle() === 'inset';
 }
 
-/** True when the flush ("Style 2") branding treatment is on. */
+/** True when the flush ("Borderless") branding treatment is on. */
 export function isBrandFlushOn() {
   return getBrandStyle() === 'flush';
 }
@@ -1658,6 +1759,7 @@ if (typeof document !== 'undefined') {
     restoreChatTint();
     restoreModuleGap();
     restoreColorblind();
+    restoreSerifHeadlines();
     restoreSharpEdges();
     restoreBrandStyle();
     restoreAdminControls();

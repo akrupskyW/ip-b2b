@@ -1,5 +1,5 @@
 ---
-description: The Progress Log describes what was built in human language — features, logic, UX, UI — never bytes, filenames, or identifiers
+description: The Progress Log describes what was built in human language — features, components, logic, UX, UI — never bytes, filenames, or identifiers
 alwaysApply: true
 ---
 
@@ -9,16 +9,21 @@ alwaysApply: true
 answer one question: **what was actually created?** Every card must answer it in
 words a reader who has never opened the codebase understands.
 
-## The only four things a card describes
+## The only five things a card describes
 
 1. **Features** — what you can now do that you could not do before.
-2. **Logic** — what the surface now decides, remembers, or enforces.
-3. **UX** — how it behaves while you use it.
-4. **UI** — what is on the screen: sections, headings, controls.
+2. **Components** — named reusable pieces on the surface (composer, chips,
+   scorecards, menus, tables, and the rest of the catalog).
+3. **Logic** — what the surface now decides, remembers, or enforces.
+4. **UX** — how it behaves while you use it.
+5. **UI** — what is on the screen: headings, controls, visual chrome.
 
 Each of those is its own labelled paragraph, in that order
 (`SYNOPSIS_LABELS` / `SYNOPSIS_ORDER` in `js/progress-log-eval.js`). Anything
-that does not fit one of them is almost certainly not worth saying.
+that does not fit one of them is almost certainly not worth saying. A card
+that has something to say in Features or Components must say it — do not
+fold those into UX or UI, and do not drop them because a synopsis already
+covers the other buckets.
 
 ## Banned outright
 

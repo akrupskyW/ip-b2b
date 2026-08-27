@@ -298,7 +298,7 @@
     .pl-syn { display: flex; flex-direction: column; gap: 12px; }
     .pl-syn p { margin: 0; font-size: 13.5px; line-height: 1.65; color: var(--text); }
     .pl-syn p + p { margin-top: 0; }
-    /* Features / Logic / UX / UI label above its paragraph. */
+    /* Features / Components / Logic / UX / UI label above its paragraph. */
     .pl-syn-cat {
       display: block; font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
       font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em;
@@ -586,7 +586,7 @@
       inventoryDoc, describeInventoryDiff, catsHaveItems, catsToSynopsis,
       catalogHtmlPaths, discoverHtmlPaths, defaultFileLabel,
       displayPath, isHtmlPath, crawlOverview, emptyCats,
-      scriptPurpose, SYNOPSIS_LABELS, SYNOPSIS_SEP, collectLocalScriptPaths,
+      scriptPurpose, SYNOPSIS_LABELS, SYNOPSIS_ORDER, SYNOPSIS_SEP, collectLocalScriptPaths,
     } from '../js/progress-log-eval.js';
     (function () {
       let chat = null;
@@ -594,10 +594,11 @@
 
       /* ── Category taxonomy ── */
       const CATS = [
-        { id: 'components',   label: 'Components' },
         { id: 'features',     label: 'Features' },
+        { id: 'components',   label: 'Components' },
         { id: 'logic',        label: 'Logic' },
-        { id: 'ux',           label: 'UX & UI' },
+        { id: 'ux',           label: 'UX' },
+        { id: 'ui',           label: 'UI' },
         { id: 'changes',      label: 'Changes' },
         { id: 'improvements', label: 'Improvements' },
         { id: 'updates',      label: 'Updates' },
@@ -887,18 +888,23 @@
               ] },
             { page: 'Progress Log', path: 'progress-log.html',
               features: [
-                'Each day lists surfaces by how much actually moved — features first, then logic, UX, UI — not A–Z. The five heaviest titles on that day carry a neon highlighter behind the name',
+                'Each day lists surfaces by how much actually moved — features first, then components, logic, UX, UI — not A–Z. The five heaviest titles on that day carry a neon highlighter behind the name',
                 'Cards spell out the day’s work in labelled paragraphs. A busy surface gets several sentences per category; the evaluator no longer drops the rest behind “and N more” or a one-line tidying note',
+                'Every card reports Features and Components as their own labelled sections, the same way it already reports UX and UI — not folded into those buckets, and not dropped when a synopsis already covers the others',
               ],
               logic: [
-                'Rank uses how much was written in features, logic, UX, and UI, with new surfaces slightly ahead of ties. Copy, chat “what shipped today?”, and a newly crawled day all use that order',
+                'Rank uses how much was written in features, components, logic, UX, and UI, with new surfaces slightly ahead of ties. Copy, chat “what shipped today?”, and a newly crawled day all use that order',
               ],
               ux: [
                 'The highlighter is a marker stroke behind the words, dark ink on fluorescent yellow, readable in light and dark. Only the top five of that day get it',
               ],
+              components: [
+                'Category scorecards and card labels are Features, Components, Logic, UX, and UI as five separate sections — Components is no longer an alias for UI, and UX is no longer glued to it',
+              ],
               synopsis: [
-                'Features — Each day opens on the surfaces that moved most, not the alphabet. The five heaviest titles get a neon highlighter behind the name. The card under each title is the day’s work in full: features, logic, UX, UI — as many sentences as landed, not a stub.',
-                'Logic — Rank is how much was actually said in those four categories. New surfaces win ties. Copy and chat follow the same order.',
+                'Features — Each day opens on the surfaces that moved most, not the alphabet. The five heaviest titles get a neon highlighter behind the name. The card under each title is the day’s work in full: features, components, logic, UX, UI — as many sentences as landed, not a stub. Features and Components stay their own labelled sections, the way UX and UI already did.',
+                'Components — Category scorecards and card labels are the same five. Components is a real bucket, not an alias for UI.',
+                'Logic — Rank is how much was actually said in those five categories. New surfaces win ties. Copy and chat follow the same order.',
                 'UX — The highlighter is a marker stroke, dark ink on yellow, both themes. Only five per day.',
               ] },
             { page: 'Platform-wide', path: '(wise.css · every page)',
@@ -1016,11 +1022,11 @@
                 'A day that had files saved is never thrown away at midnight. The crawl attributes each file to the calendar day it was last saved, and that day stays on the board',
               ],
               ux: [
-                'Each change is its own labelled paragraph (Features, Logic, UX, UI), stacked — a busy day is not collapsed into one sentence',
+                'Each change is its own labelled paragraph (Features, Components, Logic, UX, UI), stacked — a busy day is not collapsed into one sentence',
               ],
               synopsis: [
                 'Features — The journal was dropping yesterday the moment the clock rolled. Live days now freeze, and a file is attributed to the day it was last saved, so Monday cannot go blank because you opened the log on Tuesday.',
-                'UX — Cards stack a paragraph per change, labelled Features / Logic / UX / UI, instead of joining a whole day’s work into one sentence. How much landed that day is how much the card says.',
+                'UX — Cards stack a paragraph per change, labelled Features / Components / Logic / UX / UI, instead of joining a whole day’s work into one sentence. How much landed that day is how much the card says.',
               ] },
           ],
         },
@@ -1884,7 +1890,26 @@
       /* ── Derived helpers ── */
       function entryItems(entry) {
         const out = [];
-        for (const c of CATS) { const arr = entry[c.id]; if (Array.isArray(arr)) for (const text of arr) out.push({ cat: c.id, text }); }
+        const seen = new Set();
+        for (const c of CATS) {
+          const arr = entry[c.id];
+          if (Array.isArray(arr) && arr.length) {
+            for (const text of arr) out.push({ cat: c.id, text });
+            seen.add(c.id);
+          }
+        }
+        /* Synopsis-only buckets (authored “UI — …” with no ui array) still
+           count, so the UI and Components scorecards can appear. */
+        synParas(entry).forEach((p) => {
+          const { label, text } = splitSynLabel(p);
+          if (!label || !text) return;
+          let id = '';
+          for (const k of Object.keys(SYNOPSIS_LABELS)) {
+            if (SYNOPSIS_LABELS[k] === label) { id = k; break; }
+          }
+          if (!id || seen.has(id)) return;
+          out.push({ cat: id, text });
+        });
         return out;
       }
       function fmtDate(iso) {
@@ -2156,23 +2181,64 @@
         });
         return paras;
       }
+      function synParas(entry) {
+        if (!entry) return [];
+        if (Array.isArray(entry.synopsis) && entry.synopsis.length) {
+          return entry.synopsis.map((p) => String(p || '').trim()).filter(Boolean);
+        }
+        if (typeof entry.synopsis === 'string' && entry.synopsis.trim()) {
+          return entry.synopsis.split(/\n\n+/).map((p) => p.trim()).filter(Boolean);
+        }
+        return [];
+      }
+      function orderParas(paras) {
+        const buckets = {};
+        (SYNOPSIS_ORDER || []).forEach((id) => { buckets[id] = []; });
+        const rest = [];
+        (paras || []).forEach((p) => {
+          const { label } = splitSynLabel(p);
+          if (!label) { rest.push(p); return; }
+          let id = '';
+          for (const k of Object.keys(SYNOPSIS_LABELS)) {
+            if (SYNOPSIS_LABELS[k] === label) { id = k; break; }
+          }
+          if (id && buckets[id]) buckets[id].push(p);
+          else rest.push(p);
+        });
+        const out = [];
+        (SYNOPSIS_ORDER || Object.keys(SYNOPSIS_LABELS)).forEach((id) => {
+          (buckets[id] || []).forEach((p) => out.push(p));
+        });
+        return out.concat(rest);
+      }
       function entryParagraphs(entry) {
         if (!entry) return [];
         const fromCats = parasFromCats(entry);
-        let syn = [];
-        if (Array.isArray(entry.synopsis) && entry.synopsis.length) {
-          syn = entry.synopsis.map((p) => String(p || '').trim()).filter(Boolean);
-        } else if (typeof entry.synopsis === 'string' && entry.synopsis.trim()) {
-          syn = entry.synopsis.split(/\n\n+/).map((p) => p.trim()).filter(Boolean);
-        }
+        const syn = synParas(entry);
         if (catFilter) {
           const keep = syn.filter((p) => splitSynLabel(p).label === (SYNOPSIS_LABELS[catFilter] || ''));
           return keep.length ? keep : fromCats;
         }
-        /* A one-line synopsis must not hide a day that actually did several
-           things — stack the category sentences instead. Two or more written
-           paragraphs stay as the authored account. */
-        if (syn.length >= 2) return syn;
+        /* A written synopsis must not hide Features or Components (or any
+           other bucket) that the arrays already recorded. Fill missing
+           labels from the arrays, then stack in the canonical order. */
+        const present = new Set();
+        syn.forEach((p) => {
+          const { label } = splitSynLabel(p);
+          if (label) present.add(label);
+        });
+        const extra = [];
+        CATS.forEach((c) => {
+          const label = SYNOPSIS_LABELS[c.id] || c.label || '';
+          if (!label || present.has(label)) return;
+          const arr = entry[c.id];
+          if (!Array.isArray(arr) || !arr.length) return;
+          arr.forEach((raw) => {
+            const s = toSentence(raw);
+            if (s) extra.push(label + SYNOPSIS_SEP + s);
+          });
+        });
+        if (syn.length >= 2 || extra.length) return orderParas(syn.concat(extra));
         if (fromCats.length > syn.length) return fromCats;
         return syn;
       }
@@ -2187,10 +2253,10 @@
         return entryParagraphs(entry).length > 0;
       }
       /* Rank a day's cards by how much actually moved for the reader —
-         features first, then logic / UX / UI, then notes. Alphabetical
+         features first, then components / logic / UX / UI, then notes. Alphabetical
          is only the last tie-break. Used by the board, Copy, and chat. */
       const CHANGE_WEIGHT = {
-        features: 8, logic: 6, ux: 5, components: 5,
+        features: 8, components: 6, logic: 6, ux: 5, ui: 5,
         changes: 4, improvements: 4, deletions: 4, updates: 1,
       };
       function synLabelToCat(label) {
@@ -2399,7 +2465,7 @@
         const pages = (day.entries || []).filter((e) => e.path !== '(all HTML files)');
         return 'Evaluated every HTML file on ' + fmtDate(day.date) + '. '
           + pages.length + (pages.length === 1 ? ' surface has' : ' surfaces have')
-          + ' a card below saying, in plain language, what was built: features, logic, UX, and UI.';
+          + ' a card below saying, in plain language, what was built: features, components, logic, UX, and UI.';
       }
       function upsertEvalNote(dayIso, text, scope) {
         const now = new Date().toISOString();
@@ -2575,6 +2641,7 @@
               path: fp.path, title: fp.title, size: fp.size, hash: fp.hash,
               headings: fp.headings, modules: fp.modules, scripts: fp.scripts,
               chips: fp.chips, buttons: fp.buttons, signals: fp.signals,
+              compNames: fp.compNames,
               functions: fp.functions, classes: fp.classes, copy: fp.copy,
               purpose: fp.purpose, hasChat: fp.hasChat, kind: fp.kind,
             };
@@ -2605,7 +2672,7 @@
           return 'Opened every page and the scripts they load. Nothing on disk moved versus the start-of-day baseline.';
         }
         return names.length + (names.length === 1 ? ' surface is' : ' surfaces are')
-          + ' broken down below in plain language — features, logic, UX, and UI'
+          + ' broken down below in plain language — features, components, logic, UX, and UI'
           + (htmlCount ? ' — after opening every HTML file.' : '.');
       }
       function entryFromCats(fp, cats, isNew) {
@@ -2743,7 +2810,7 @@
           );
           const mutated = rebuildDaysFromDiff(diff, htmlCount, { scriptPurposes });
           const overview = diff.firstBaseline
-            ? ('Opened every HTML file (' + htmlCount + ') plus the scripts they load. First inventory saved as today’s baseline — the next Re-evaluate will describe the features, logic, UX, and UI that changed against this snapshot.')
+            ? ('Opened every HTML file (' + htmlCount + ') plus the scripts they load. First inventory saved as today’s baseline — the next Re-evaluate will describe the features, components, logic, UX, and UI that changed against this snapshot.')
             : crawlOverview(htmlCount, scriptFiles.length, diff, (fp) => fileLabel(fp.path, fp.title));
           upsertEvalNote(todayIso, overview, 'crawl');
           if (mutated && liveDay) upsertEvalNote(todayIso, dayEvalNote(liveDay), 'day');
@@ -3137,17 +3204,27 @@
          The chips drive the board: each summarizes a slice of the log AND applies
          the matching filter so the board and the conversation stay in lockstep —
          the same pattern reformulation.html uses for its move chips. */
-      function countCat(catId) { let n = 0; LOG.forEach((d) => d.entries.forEach((e) => { if (Array.isArray(e[catId])) n += e[catId].length; })); return n; }
+      function countCat(catId) {
+        let n = 0;
+        LOG.forEach((d) => d.entries.forEach((e) => {
+          n += entryItems(e).filter((it) => it.cat === catId).length;
+        }));
+        return n;
+      }
       function catItemsHtml(catId, max = 8) {
         const rows = [];
-        LOG.forEach((d) => d.entries.forEach((e) => { (e[catId] || []).forEach((t) => rows.push({ page: e.page, t })); }));
+        LOG.forEach((d) => d.entries.forEach((e) => {
+          entryItems(e).forEach((it) => { if (it.cat === catId) rows.push({ page: e.page, t: it.text }); });
+        }));
         const shown = rows.slice(0, max).map((r) => `<li><b>${esc(r.page)}</b> — ${esc(r.t)}</li>`).join('');
         const more = rows.length > max ? `<li>+ ${rows.length - max} more…</li>` : '';
         return `<ul class="sc-reply-list">${shown}${more}</ul>`;
       }
       function dayReplyHtml(day) {
         const items = rankedEntries(day.entries, null).map((e) => {
-          const cats = CATS.filter((c) => Array.isArray(e[c.id]) && e[c.id].length).map((c) => `${e[c.id].length} ${c.label.toLowerCase()}`);
+          const tally = {};
+          entryItems(e).forEach((it) => { tally[it.cat] = (tally[it.cat] || 0) + 1; });
+          const cats = CATS.filter((c) => tally[c.id]).map((c) => `${tally[c.id]} ${c.label.toLowerCase()}`);
           return `<li><b>${esc(e.page)}</b> — ${esc(cats.join(', '))}</li>`;
         }).join('');
         return `<b>${fmtDate(day.date)}</b> — ${esc(day.summary)}<ul class="sc-reply-list">${items}</ul>`;
@@ -3207,16 +3284,24 @@
           setPage(pageHit);
           const items = [];
           LOG.forEach((d) => d.entries.filter((e) => e.page === pageHit).forEach((e) => entryItems(e).forEach((it) => items.push({ d, it }))));
-          return `Filtered the board to <b>${esc(pageHit)}</b> — <b>${items.length}</b> logged ${items.length === 1 ? 'entry' : 'entries'}.<ul class="sc-reply-list">${items.slice(0, 10).map((x) => `<li><b>${CAT_BY_ID[x.it.cat].label}</b> · ${esc(x.it.text)}</li>`).join('')}</ul>`;
+          return `Filtered the board to <b>${esc(pageHit)}</b> — <b>${items.length}</b> logged ${items.length === 1 ? 'entry' : 'entries'}.<ul class="sc-reply-list">${items.slice(0, 10).map((x) => `<li><b>${esc((CAT_BY_ID[x.it.cat] || {}).label || x.it.cat)}</b> · ${esc(x.it.text)}</li>`).join('')}</ul>`;
         }
-        const catHit = CATS.find((c) => t.includes(c.label.toLowerCase()) || t.includes(c.id));
+        const catHit = CATS.find((c) => {
+          const lab = String(c.label || '').toLowerCase();
+          const id = String(c.id || '').toLowerCase();
+          const needle = lab.length >= 2 ? lab : id;
+          if (needle.length <= 3) {
+            return new RegExp('(?:^|[^a-z0-9])' + needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?:[^a-z0-9]|$)', 'i').test(t);
+          }
+          return t.includes(lab) || t.includes(id);
+        });
         if (catHit) { setCatOnly(catHit.id); return `Filtered to <b>${catHit.label}</b> — <b>${countCat(catHit.id)}</b> entries.${catItemsHtml(catHit.id)}`; }
         if (/today|latest|recent/.test(t)) return INTENT_REPLIES['pl:today']();
         if (/delete|remove|deletion/.test(t)) return INTENT_REPLIES['pl:deletions']();
         if (/new page/.test(t)) return INTENT_REPLIES['pl:newpages']();
         const days = LOG.length, pages = new Set(); let total = 0;
         LOG.forEach((d) => d.entries.forEach((e) => { pages.add(e.page); total += entryItems(e).length; }));
-        return `This log covers <b>${days} days</b>, <b>${pages.size} surfaces</b> and <b>${total} entries</b>. It re-evaluates itself every hour. Ask about a page (e.g. “Add Product”), a category (components, features, logic, UX, changes, improvements, updates, deletions), add a note with “note: …”, or tap a chip below.`;
+        return `This log covers <b>${days} days</b>, <b>${pages.size} surfaces</b> and <b>${total} entries</b>. It re-evaluates itself every hour. Ask about a page (e.g. “Add Product”), a category (features, components, logic, UX, UI, changes, improvements, updates, deletions), add a note with “note: …”, or tap a chip below.`;
       }
 
       /* ═══════════ Boot — evaluate the log, then mount the ONE shared chat ═══════════ */

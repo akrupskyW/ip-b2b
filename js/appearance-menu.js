@@ -7,7 +7,7 @@
  * Portfolio workspace (js/portfolio-module.js), the WISEcodeAI chat (pages/ai-chat.html
  * inline), and the application sidebar (js/app.js) — renders the SAME menu by
  * calling buildAppearanceBody(). This keeps the toggles (Minimal UI, Header,
- * Full bleed, Jam strip, Search, Text size, Theme …) identical everywhere; before this
+ * Full bleed, Jam strip, Search, Text size, Serif headlines, Theme …) identical everywhere; before this
  * the menu was copy-pasted per shell and drifted out of sync (which is how a
  * new toggle could land in one menu but not another).
  *
@@ -21,7 +21,7 @@
  *
  * Click handling stays in each shell: every row keys off a stable data-*
  * attribute (data-pivot / data-minimal / data-navhistory / data-navmodules / data-fullbleed /
- * data-fbchatonly / data-jam / data-appsearch / data-navhamburger / data-colorblind / data-fz /
+ * data-fbchatonly / data-jam / data-appsearch / data-navhamburger / data-colorblind / data-serif / data-fz /
  * data-pop-action), so the existing per-shell listeners keep working unchanged.
  */
 
@@ -51,6 +51,8 @@ import {
   clearFullBleedThemeMark,
   isColorblindOn,
   applyColorblind,
+  isSerifHeadlinesOn,
+  applySerifHeadlines,
   getColorblindMode,
   COLORBLIND_MODES,
   isChatTintOn,
@@ -59,8 +61,6 @@ import {
   applyModuleGap,
   isCwrUiOn,
   applyCwrUi,
-  isSharpEdgesOn,
-  applySharpEdges,
   getBrandStyle,
   applyBrandStyle,
   isAdminControlsOn,
@@ -298,7 +298,7 @@ function allModulesSection() {
 }
 
 /** Link out to the "Progress log" admin page — the internal, day-by-day record
-    of what shipped across the platform (components, features, logic, UX/UI,
+    of what shipped across the platform (features, components, logic, UX, UI,
     changes, improvements, updates, deletions), grouped by page. Sits beneath the
     All modules row and, like it, is an Admin-only destination. Path resolves the
     same way — the page lives in pages/, so app shells (already in pages/) link to
@@ -334,9 +334,9 @@ function pageGallerySection() {
 }
 
 /** "Surfaces" section — the segmented control that switches the app's surface
-    treatment between the flat default, "Style 1" (inset stamp with hairline
-    borders), and "Style 2" (flat surfaces with every module except the chat
-    borderless). It deliberately leaves the owl bug + WISE
+    treatment between the flat default, "Sharper edges" (inset stamp, hairline
+    borders, tighter corners), and "Borderless" (every module except the chat
+    drops its outer stroke). It deliberately leaves the owl bug + WISE
     wordmark untouched (see applyBrandStyle / BRAND_CSS in topbar.js). A
     neutral segmented control (same skin as Text size), each button carrying a
     `data-brandstyle` id that wireAppearancePopover() feeds to applyBrandStyle().
@@ -346,8 +346,8 @@ function brandingSection() {
   const active = getBrandStyle();
   const opts = [
     { id: '', label: 'Default', tip: 'Flat surfaces' },
-    { id: 'inset', label: 'Style 1', tip: 'Inset surfaces with hairline borders' },
-    { id: 'flush', label: 'Style 2', tip: 'No border on modules other than chat' },
+    { id: 'inset', label: 'Sharper edges', tip: 'Tighter corners and inset surfaces with hairline borders' },
+    { id: 'flush', label: 'Borderless', tip: 'No border on modules other than chat' },
   ];
   const btns = opts
     .map(
@@ -558,8 +558,7 @@ export function buildAppearanceBody({
         ${plainToggle('data-minimal="1"', isMinimalUiOn(), 'Minimal UI', 'Logo, Appearance, and you', 'Show only the logo, Appearance, and your profile', false, false, 'crop_free')}
         ${plainToggle('data-iconrail="1"', isIconRailOn(), 'Icons only', 'Collapse nav to icons', 'Collapse the navigation to icons', false, false, 'apps')}
         ${adminOnly(adminToggle('data-navhistory="1"', isNavHistoryOn(), 'History in navigation', 'History inside the nav', 'Merge the History module into an expandable section of the primary navigation — search, projects, and All conversations stay fully usable', false, false, 'history'))}
-        ${adminOnly(adminToggle('data-navmodules="1"', isNavModulesOn(), 'Nav &amp; History icons', 'Logo, menu, expand, new chat', 'When collapsed, the logo, menu, expand, and new-chat icons open into the navigation and History as their default modules', false, false, 'view_sidebar'))}
-        ${adminOnly(adminToggle('data-sharpedges="1"', isSharpEdgesOn(), 'Sharper edges', 'Tighter, less-rounded corners', 'Use tighter, less-rounded corners', false, false, 'crop_square'))}
+        ${adminOnly(adminToggle('data-navmodules="1"', isNavModulesOn(), 'Nav &amp; History icons', 'Logo, menu, History, new chat', 'Menu opens the labelled navigation in full, with History collapsed beside it. The chevron opens History in full, with the navigation collapsed. New chat is a circle and starts a conversation', false, false, 'view_sidebar'))}
       `),
       apGroup('Experience', `
         ${tourSection()}
@@ -592,6 +591,7 @@ export function buildAppearanceBody({
         ${plainToggle('data-colorblind="1"', isColorblindOn(), 'Accessible colors', 'Color-vision-safe palette', 'Use a color-vision-safe palette', false, false, 'visibility')}
         ${colorblindTypeSection()}
         ${textSizeSection()}
+        ${plainToggle('data-serif="1"', isSerifHeadlinesOn(), 'Serif headlines', 'Brand display type', 'Use the brand serif for titles. Turn off to switch titles to DM Sans', false, false, 'title')}
         ${adminOnly(brandingSection())}
       `),
     )}
@@ -706,7 +706,7 @@ if (typeof document !== 'undefined') wireSignOut();
  * calls wireAppearancePopover() and gets identical behaviour.
  *
  * The universal on/off toggles (Minimal UI, Icons only, History in navigation,
- * Nav & History icons, Full bleed, Jam strip, Search, Menu icon, Colorblind) and the Text-size buttons are
+ * Nav & History icons, Full bleed, Jam strip, Search, Menu icon, Colorblind, Serif headlines) and the Text-size buttons are
  * handled here directly via the
  * shared modules, so a page CANNOT forget to wire them. The genuinely
  * shell-specific bits are passed as callbacks:
@@ -804,7 +804,7 @@ export function wireAppearancePopover(pop, ctx = {}) {
       return;
     }
     if (within('[data-colorblind]'))  { ev.stopPropagation(); applyColorblind(!isColorblindOn());  render(); return; }
-    if (within('[data-sharpedges]'))  { ev.stopPropagation(); applySharpEdges(!isSharpEdgesOn());  render(); return; }
+    if (within('[data-serif]'))       { ev.stopPropagation(); applySerifHeadlines(!isSerifHeadlinesOn()); render(); return; }
     if (within('[data-adminui]'))     { ev.stopPropagation(); applyAdminControls(!isAdminControlsOn()); render(); return; }
     if (within('[data-appsearch]'))   { ev.stopPropagation(); applyAppSearch(!isAppSearchOn());         render(); return; }
     if (within('[data-navhamburger]')) {
@@ -860,8 +860,8 @@ export function wireAppearancePopover(pop, ctx = {}) {
       return;
     }
 
-    /* Branding style ("Default" / "Style 1" inset / "Style 2" flush). Selecting
-       a style applies it app-wide; "Default" clears back to the flat mark. */
+    /* Surface style ("Default" / "Sharper edges" inset / "Borderless" flush).
+       Selecting a style applies it app-wide; "Default" clears back to the flat mark. */
     const bs = within('[data-brandstyle]');
     if (bs) { ev.stopPropagation(); applyBrandStyle(bs.dataset.brandstyle); render(); return; }
 
