@@ -2185,7 +2185,7 @@ const BGANIM_PUBLISH_POSE = Object.freeze({
   camera: 9,
   azimuth: -59,
   shift: -2,
-  scale: Object.freeze({ x: 61, y: 34, z: 34 }),
+  scale: Object.freeze({ x: 71, y: 34, z: 34 }),
   knobs: Object.freeze({
     pitch: 134, nodes: 160, dots: 87, length: 56, rungs: 295,
     rungthick: 49, thickness: 54, depth: 106, speed: 400,
