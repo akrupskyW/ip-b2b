@@ -154,7 +154,7 @@ function paint() {
               <div class="wmod-td"><span class="wmod-row-ic" style="--ic:${toneColor(a.tone)}"><span class="material-symbols-outlined">${esc(a.icon)}</span></span></div>
               <div class="wmod-td"><div class="wmod-td-primary">${esc(a.title)}</div><div class="wmod-td-meta">${esc(a.sub)}</div></div>
               <div class="wmod-td al-when">${a.read ? '' : '<span class="al-unread-dot" title="Unread"></span>'}<span class="w-datecell">${dc() ? dc().cellHtml(alertDates(a), 'alert', dateLead) : esc(a.time)}</span></div>
-              <div class="wmod-td"><button type="button" class="wmod-icon-btn al-x" data-al-action="dismiss" data-id="${a.id}" title="Dismiss"><span class="material-symbols-outlined">close</span></button></div>
+              <div class="wmod-td"><button type="button" class="wmod-icon-btn al-x" data-al-action="dismiss" data-id="${a.id}" aria-label="Dismiss"><span class="material-symbols-outlined">close</span></button></div>
             </div>`).join('') : `
             <div class="wmod-empty">
               <span class="material-symbols-outlined">notifications_off</span>

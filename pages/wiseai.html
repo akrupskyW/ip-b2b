@@ -6029,7 +6029,7 @@
       sharePanel.innerHTML =
         '<div class="wch-head">' +
           '<span class="wa-sh-head-text"><span class="wch-head-title">Share</span><span class="wa-sh-sub" data-sub></span></span>' +
-          '<button type="button" class="wch-close" title="Close" aria-label="Close"><span class="material-symbols-outlined">close</span></button>' +
+          '<button type="button" class="wch-close" aria-label="Close"><span class="material-symbols-outlined">close</span></button>' +
         '</div>' +
         '<div class="wa-sh-body">' +
           '<form class="wa-sh-form" data-form novalidate>' +
@@ -9777,7 +9777,7 @@
         <div class="wa-manifest-full">
           <div class="wa-manifest-ctrls">
             <button type="button" class="wa-manifest-btn" data-mf="collapse" title="Collapse to icons" aria-label="Collapse outputs & sources to icons"><span class="material-symbols-outlined">unfold_less</span></button>
-            <button type="button" class="wa-manifest-btn" data-mf="close" title="Hide" aria-label="Hide outputs & sources"><span class="material-symbols-outlined">close</span></button>
+            <button type="button" class="wa-manifest-btn" data-mf="close" aria-label="Hide outputs & sources"><span class="material-symbols-outlined">close</span></button>
           </div>
           <div class="wa-manifest-section" data-mf-out hidden>
             <div class="wa-manifest-label">Outputs</div>
@@ -13743,7 +13743,7 @@
         const isSeed = ent.id === seedId;
         const pc = (ent.primary ? ' is-primary' : (isPending ? ' is-pending' : '')) + (ent.isCategory ? ' is-category' : '');
         const rm = (!ent.primary && compareState.shown.length > 2)
-          ? `<button type="button" title="Remove" onclick="cmpRemoveEntity('${ent.id}')" style="position:absolute;top:12px;right:12px;z-index:4;width:20px;height:20px;border:none;border-radius:50%;background:rgba(8,12,20,0.55);color:#fff;cursor:pointer;line-height:1;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>` : '';
+          ? `<button type="button" onclick="cmpRemoveEntity('${ent.id}')" style="position:absolute;top:12px;right:12px;z-index:4;width:20px;height:20px;border:none;border-radius:50%;background:rgba(8,12,20,0.55);color:#fff;cursor:pointer;line-height:1;font-size:14px;display:flex;align-items:center;justify-content:center;" aria-label="Remove">×</button>` : '';
         /* Per-slot control. The SEED (first/anchor) column can change TYPE
            (product / portfolio / category), which re-keys the whole board.
            Every other column is locked to the board's kind and can only be

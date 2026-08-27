@@ -1308,7 +1308,7 @@
     }
     return state.allergens.map((a, i) =>
       `<span class="nfp-allergen-tag">${allergenIconHTML(a)}${esc(a)}` +
-      `<button type="button" class="nfp-allergen-x" data-nfp="remove-allergen" data-arg="${i}" title="Remove ${esc(a)}" aria-label="Remove ${esc(a)}">` +
+      `<button type="button" class="nfp-allergen-x" data-nfp="remove-allergen" data-arg="${i}" aria-label="Remove ${esc(a)}">` +
       `<span class="material-symbols-outlined" aria-hidden="true">close</span></button></span>`
     ).join('');
   }
