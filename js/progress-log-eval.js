@@ -45,6 +45,10 @@ export const SHARED_SCRIPTS = [
   '../js/pane-width.js',
   '../js/text-size-fouc.js',
   '../js/progress-log-eval.js',
+  '../js/icon-svg-shim.js',
+  '../js/date-column.js',
+  '../js/sticky-report.js',
+  '../js/nudge-toast-dismiss.js',
   'wise.css',
   '../wiseai-chat.css',
 ];
@@ -202,8 +206,10 @@ export const SCRIPT_PURPOSES = {
   'app-search.js': 'app-wide search in the top band across conversations, live output, and reports',
   'reformulation-store.js': 'the shared recipe Reformulation writes and the product pages read',
   'date-column.js': 'every date column stacks two dates (updated over last edited, or whichever pair you pick) and a three-dot menu in the header lists every date type',
-  'nudge-toast-dismiss.js': 'the close button on a floating nudge asks whether to hide it for now or for good',
+  'nudge-toast-dismiss.js': 'the close button on a floating nudge asks whether to hide it for now or for this viewing — a hard refresh brings every nudge back',
   'sticky-report.js': 'the Product Details and UPF reports that open as a module beside Product Portfolio',
+  'icon-svg-shim.js': 'every Material Symbols icon draws as an inline SVG from one sprite, with the webfont kept only as fallback for a name the sprite does not carry',
+  'icon-svg-data.js': 'the per-glyph SVG paths the icon inventory uses to preview Font versus SVG side by side',
   'help-flow.js': 'the Help center — search, topic cards, FAQs, and a contact form that emails support with optional attachments',
   'user-avatar.js': 'the photo you set on your profile shows in the navigation and in every chat as you',
 };
@@ -235,10 +241,10 @@ export function scriptPurpose(text) {
     if (!body) continue;
     const stop = body.search(/[.!?](?:\s|$)/);
     let sentence = stop > 16 ? body.slice(0, stop) : body;
-    if (sentence.length > 190) {
-      const cut = sentence.slice(0, 190);
+    if (sentence.length > 280) {
+      const cut = sentence.slice(0, 280);
       const space = cut.lastIndexOf(' ');
-      sentence = (space > 60 ? cut.slice(0, space) : cut).trim() + '…';
+      sentence = (space > 80 ? cut.slice(0, space) : cut).trim() + '…';
     }
     sentence = sentence.replace(/[\s,;:—–-]+$/, '').trim();
     if (sentence.length >= 8) return sentence;
@@ -351,6 +357,10 @@ function labelMap() {
     '../js/agent-menu.js': 'Primary navigation',
     '../js/app-search.js': 'App search',
     '../js/progress-log-eval.js': 'Progress Log evaluator',
+    '../js/icon-svg-shim.js': 'Icons',
+    '../js/date-column.js': 'Date columns',
+    '../js/sticky-report.js': 'Sticky reports',
+    '../js/nudge-toast-dismiss.js': 'Nudge toasts',
     '../js/feedback.js': 'On-page comments',
     '../js/feedback-setting.js': 'Appearance & Admin',
     '../js/nav-history.js': 'History in navigation',
@@ -459,7 +469,7 @@ function extractFunctions(text) {
     let m;
     while ((m = re.exec(text))) out.push(m[1]);
   });
-  return uniqSorted(out, 80);
+  return uniqSorted(out, 220);
 }
 
 function extractSectionHeads(text) {
@@ -467,28 +477,35 @@ function extractSectionHeads(text) {
   const re = /(?:\/\*\s*[─═]+\s*|<!--\s*[─═]+\s*\d*\s*[·•\-]?\s*)([A-Za-z][^—*\/<\n]{6,80})/g;
   let m;
   while ((m = re.exec(text))) out.push(cleanText(m[1]).replace(/[─═=·+|_-]{2,}\s*$/, '').trim());
-  return uniqSorted(out, 40);
+  const re2 = /\/\*\s*(?:[─═\-={]{3,}\s*)([A-Z][A-Za-z0-9 /&'’:,().-]{6,70}?)\s*(?:[─═\-={]{3,})?\s*\*\//g;
+  while ((m = re2.exec(text))) out.push(cleanText(m[1]));
+  return uniqSorted(out, 80);
 }
 
 function extractCopy(text, doc) {
   const out = [];
   if (doc) {
-    doc.querySelectorAll('[aria-label], [placeholder], button, .pl-head-title, [class$="-head-title"], [class$="-hero-title"]').forEach((el) => {
-      const t = cleanText(el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.textContent);
-      if (t && t.length >= 8 && t.length <= 90 && !ICON_ONLY.test(t)) out.push(t);
+    doc.querySelectorAll('[aria-label], [placeholder], [title], button, label, .pl-head-title, [class$="-head-title"], [class$="-hero-title"], [class$="-module-title"]').forEach((el) => {
+      const t = cleanText(el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.getAttribute('title') || el.textContent);
+      if (t && t.length >= 6 && t.length <= 110 && !ICON_ONLY.test(t)) out.push(t);
     });
   }
-  const re = /['"]([A-Z][^'"\n]{22,88})['"]/g;
+  const quoted = /['"]([A-Z][^'"\n]{11,110})['"]/g;
   let m;
   let n = 0;
-  while ((m = re.exec(text)) && n < 40) {
+  while ((m = quoted.exec(text)) && n < 120) {
     const t = cleanText(m[1]);
     if (/^(https?:|function |import |const |var |let )/.test(t)) continue;
-    if (/[{}<>]/.test(t)) continue;
+    if (/[{}<>\\]/.test(t)) continue;
     out.push(t);
     n++;
   }
-  return uniqSorted(out, 48);
+  const labeled = /(?:label|title|aria-label|placeholder|heading|menu|desc|lede|ask|prompt)\s*[:=]\s*['"]([^'"]{3,90})['"]/gi;
+  while ((m = labeled.exec(text)) && n < 200) {
+    const t = cleanText(m[1]);
+    if (t && t.length >= 3 && !ICON_ONLY.test(t)) { out.push(t); n++; }
+  }
+  return uniqSorted(out, 160);
 }
 
 function extractClasses(doc, text) {
@@ -504,7 +521,7 @@ function extractClasses(doc, text) {
     let m;
     while ((m = re.exec(text))) out.push(m[1] + '-' + m[2]);
   }
-  return uniqSorted(out, 50);
+  return uniqSorted(out, 160);
 }
 
 function extractScripts(doc, text) {
@@ -541,11 +558,22 @@ function extractChips(doc, text) {
     const t = cleanText(m[2]);
     if (t && !ICON_ONLY.test(t)) out.push(t);
   }
-  return uniqSorted(out, 24);
+  return uniqSorted(out, 48);
 }
 
-function extractButtons(doc) {
+function extractControlLabels(text) {
   const out = [];
+  const re = /(?:aria-label|title|placeholder|label|menu)\s*[:=]\s*['"]([^'"]{3,70})['"]/gi;
+  let m;
+  while ((m = re.exec(text))) {
+    const t = cleanText(m[1]);
+    if (t && t.length >= 3 && t.length <= 70 && !ICON_ONLY.test(t)) out.push(t);
+  }
+  return uniqSorted(out, 80);
+}
+
+function extractButtons(doc, text) {
+  const out = extractControlLabels(text);
   if (!doc) return out;
   doc.querySelectorAll('button, [role="button"]').forEach((el) => {
     const t = cleanText(el.getAttribute('aria-label') || el.getAttribute('title') || el.textContent);
@@ -553,7 +581,7 @@ function extractButtons(doc) {
     if (/^[a-z]{2,}[A-Z]/.test(t)) return;
     out.push(t);
   });
-  return uniqSorted(out, 30);
+  return uniqSorted(out, 80);
 }
 
 function extractModules(doc, text) {
@@ -566,7 +594,7 @@ function extractModules(doc, text) {
   const commentRe = /[═]{3,}\s*\d+\s*[·•\-]\s*([^\n═<]{3,80})/g;
   let m;
   while ((m = commentRe.exec(text))) pushHeading(out, m[1]);
-  return uniqSorted(out, 40);
+  return uniqSorted(out, 80);
 }
 
 function extractHeadings(doc, text) {
@@ -578,7 +606,7 @@ function extractHeadings(doc, text) {
     let m;
     while ((m = re.exec(text))) pushHeading(out, m[1].replace(/<[^>]+>/g, ''));
   }
-  return uniqSorted(out, 50);
+  return uniqSorted(out, 80);
 }
 
 function detectSignals(text) {
@@ -615,7 +643,7 @@ export function inventoryDoc(path, text) {
     modules: html ? extractModules(doc, src) : extractSectionHeads(src),
     scripts: html ? extractScripts(doc, src) : [],
     chips: extractChips(doc, src),
-    buttons: html ? extractButtons(doc) : [],
+    buttons: extractButtons(doc, src),
     signals: detectSignals(src),
     functions: (js || (html && src.length < 400000)) ? extractFunctions(src) : [],
     classes: html || css ? extractClasses(doc, src) : [],
@@ -683,10 +711,10 @@ function capabilityProse(signalIds) {
 function structureProse(fp) {
   const mods = (fp.modules || []).filter(Boolean);
   if (!mods.length) return '';
-  if (mods.length <= 3) {
+  if (mods.length <= 8) {
     return 'It is organised into the ' + oxford(mods.map((m) => '“' + m + '”')) + (mods.length === 1 ? ' section.' : ' sections.');
   }
-  return 'It is organised into ' + mods.length + ' titled sections, including ' + oxford(mods.slice(0, 3).map((m) => '“' + m + '”')) + '.';
+  return '';
 }
 
 /* A shared script described by what it does, never by its filename. `ctx`
@@ -705,15 +733,18 @@ function describeCurrentSurface(fp, isNew) {
   push(out, 'features', surfaceIntro(fp, isNew));
   capabilityProse(fp.signals).forEach((s) => push(out, 'features', s));
   if (fp.chips && fp.chips.length) {
-    pushQuoted(out, 'features', 'You can ask it ', fp.chips, 6,
+    pushQuoted(out, 'features', 'You can ask it ', fp.chips, 8,
       fp.chips.length === 1 ? ', and it opens a real transcript.' : ', and each one opens a real transcript.');
   }
   const structure = structureProse(fp);
   if (structure) push(out, 'components', structure);
-  if (fp.buttons && fp.buttons.length) {
-    pushQuoted(out, 'components', 'You act on it through ', fp.buttons, 6, '.');
+  else if (fp.modules && fp.modules.length) {
+    pushQuoted(out, 'components', 'It is organised into these sections: ', fp.modules, 8, '.');
   }
-  pushNameBatches(out, 'logic', 'It knows how to ', capabilityNames(fp.functions), 5);
+  if (fp.buttons && fp.buttons.length) {
+    pushQuoted(out, 'components', 'You act on it through ', fp.buttons, 8, '.');
+  }
+  pushNameBatches(out, 'logic', 'It knows how to ', capabilityNames(fp.functions), 8);
   return out;
 }
 
@@ -721,13 +752,12 @@ function pushQuoted(out, cat, lead, items, batch, tail) {
   const list = (items || []).filter(Boolean);
   if (!list.length) return;
   const end = tail || '.';
-  if (list.length <= batch) {
-    push(out, cat, lead + quoteList(list, batch) + end);
-    return;
+  const size = Math.max(1, batch || 8);
+  for (let i = 0; i < list.length; i += size) {
+    const slice = list.slice(i, i + size);
+    const prefix = i === 0 ? lead : 'Also: ';
+    push(out, cat, prefix + oxford(slice.map((s) => '“' + s + '”')) + end);
   }
-  push(out, cat, lead + quoteList(list.slice(0, batch), batch) + end);
-  const rest = list.slice(batch);
-  if (rest.length) push(out, cat, 'Also: ' + quoteList(rest, batch) + end);
 }
 
 function pushNameBatches(out, cat, lead, names, batch) {
@@ -776,23 +806,23 @@ export function describeInventoryDiff(fp, before, ctx) {
 
   const chips = addedRemoved(fp.chips, before.chips);
   if (chips.added.length) {
-    pushQuoted(out, 'features', 'You can now ask ', chips.added, 6,
+    pushQuoted(out, 'features', 'You can now ask ', chips.added, 8,
       chips.added.length === 1 ? ', and it opens a real transcript.' : ', and each one opens a real transcript.');
   }
   if (chips.removed.length) {
-    pushQuoted(out, 'deletions', 'These prompts are gone: ', chips.removed, 6, '.');
+    pushQuoted(out, 'deletions', 'These prompts are gone: ', chips.removed, 8, '.');
   }
 
   const mods = addedRemoved(fp.modules, before.modules);
   if (mods.added.length === 1) {
     push(out, 'components', 'A new section reads “' + mods.added[0] + '.”');
   } else if (mods.added.length) {
-    pushQuoted(out, 'components', 'New sections were added: ', mods.added, 6, '.');
+    pushQuoted(out, 'components', 'New sections were added: ', mods.added, 8, '.');
   }
   if (mods.removed.length === 1) {
     push(out, 'deletions', 'The section “' + mods.removed[0] + '” was dropped.');
   } else if (mods.removed.length) {
-    pushQuoted(out, 'deletions', 'Sections were dropped: ', mods.removed, 6, '.');
+    pushQuoted(out, 'deletions', 'Sections were dropped: ', mods.removed, 8, '.');
   }
 
   const modSet = new Set(mods.added);
@@ -801,46 +831,46 @@ export function describeInventoryDiff(fp, before, ctx) {
   if (newHeads.length === 1) {
     push(out, 'components', 'A new heading reads “' + newHeads[0] + '.”');
   } else if (newHeads.length) {
-    pushQuoted(out, 'components', 'New headings read ', newHeads, 6, '.');
+    pushQuoted(out, 'components', 'New headings read ', newHeads, 8, '.');
   }
   const goneHeads = heads.removed.filter((h) => !(mods.removed || []).includes(h));
   if (goneHeads.length) {
-    pushQuoted(out, 'deletions', 'Headings no longer on the surface: ', goneHeads, 6, '.');
+    pushQuoted(out, 'deletions', 'Headings no longer on the surface: ', goneHeads, 8, '.');
   }
 
   const btns = addedRemoved(fp.buttons, before.buttons);
   if (btns.added.length) {
-    pushQuoted(out, 'components', 'You can now act on it through ', btns.added, 6, '.');
+    pushQuoted(out, 'components', 'You can now act on it through ', btns.added, 8, '.');
   }
   if (btns.removed.length) {
-    pushQuoted(out, 'deletions', 'These controls were taken away: ', btns.removed, 6, '.');
+    pushQuoted(out, 'deletions', 'These controls were taken away: ', btns.removed, 8, '.');
   }
 
   const copy = addedRemoved(fp.copy, before.copy);
   if (copy.added.length) {
-    pushQuoted(out, 'ux', 'The wording it shows you changed, and now includes ', copy.added, 4, '.');
+    pushQuoted(out, 'ux', 'The wording it shows you changed, and now includes ', copy.added, 8, '.');
   }
-  if (copy.removed.length && copy.removed.length <= 8) {
-    pushQuoted(out, 'ux', 'Wording that left: ', copy.removed, 4, '.');
+  if (copy.removed.length) {
+    pushQuoted(out, 'ux', 'Wording that left: ', copy.removed, 8, '.');
   }
 
   const fns = addedRemoved(fp.functions, before.functions);
   const newFns = capabilityNames(fns.added);
   const goneFns = capabilityNames(fns.removed);
   if (newFns.length) {
-    pushNameBatches(out, 'logic', 'It can now ', newFns, 5);
+    pushNameBatches(out, 'logic', 'It can now ', newFns, 8);
   }
   if (goneFns.length) {
-    pushNameBatches(out, 'deletions', 'It no longer needs to ', goneFns, 5);
+    pushNameBatches(out, 'deletions', 'It no longer needs to ', goneFns, 8);
   }
 
   if (!hasAny(out)) {
     const purpose = SCRIPT_PURPOSES[String(fp.path).split('/').pop()] || fp.purpose || '';
     if (purpose) {
-      push(out, 'updates', 'The pass stayed on ' + purpose.replace(/\.$/, '')
-        + ' — same features, same logic, same UX, same UI for the reader. Wording, styling, or internal tidying.');
+      push(out, 'updates', 'Kept going on ' + purpose.replace(/\.$/, '')
+        + '. The pass was inside layout, wording, motion, or behaviour that was already on the surface — not a newly named section, control, or prompt.');
     } else {
-      push(out, 'updates', 'Worked on this day, but nothing changed for the reader: same features, same logic, same UX, same UI. The pass was wording, styling, or internal tidying.');
+      push(out, 'updates', 'Worked on this surface throughout the day. The pass was inside layout, wording, motion, or behaviour that was already there — not a newly named section, control, or prompt.');
     }
   }
 

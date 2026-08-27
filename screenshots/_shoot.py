@@ -255,6 +255,21 @@ PAGE_AFTER_LOAD = {
       });
       await new Promise(r => setTimeout(r, 800));
     }""",
+    "pages/progress-log.html": """async () => {
+      await new Promise(r => {
+        const ok = () => document.querySelector('.pl-day');
+        if (ok()) return r();
+        const obs = new MutationObserver(() => { if (ok()) { obs.disconnect(); r(); } });
+        obs.observe(document.body, { childList: true, subtree: true });
+        setTimeout(() => { obs.disconnect(); r(); }, 15000);
+      });
+      const day = [...document.querySelectorAll('.pl-day')]
+        .find(d => d.querySelectorAll('.pl-pcard').length >= 6)
+        || document.querySelector('.pl-day');
+      const dateEl = day && day.querySelector('.pl-day-date');
+      if (dateEl && day.classList.contains('is-collapsed')) dateEl.click();
+      await new Promise(r => setTimeout(r, 500));
+    }""",
 }
 
 WAIT_FULL_LOAD = """async () => {

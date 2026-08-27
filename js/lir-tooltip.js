@@ -9,10 +9,12 @@
  * via JS so it can escape overflow clipping that would clip a CSS-only tip.
  *
  * Every icon-only control in the app is covered (reports, checks, module
- * header ⋯ / width, composer icons, …). Row ⋮ buttons that open a menu are
- * excluded — the menu is the hover result, not a tooltip. The label is read
- * from `data-tip`, then `.lir-label`, then `aria-label` / `title`. Listeners
- * are delegated on the document so dynamically-rendered buttons are included.
+ * header ⋯ / width, composer icons, …) except the X / close glyph — that
+ * mark is self-explanatory, so it never gets a hover card or a native
+ * `title` bubble. Row ⋮ buttons that open a menu are excluded — the menu is
+ * the hover result, not a tooltip. The label is read from `data-tip`, then
+ * `.lir-label`, then `aria-label` / `title`. Listeners are delegated on the
+ * document so dynamically-rendered buttons are included.
  */
 
 /* Named controls that always get the card (including a few that carry visible
@@ -21,7 +23,7 @@
    without a click. */
 const TOOLTIP_SELECTOR =
   '.lir-btn, .topbar-menu-toggle, .panel-flip-btn, .panel-width-toggle-btn, ' +
-  '.panel-more-btn, .panel-close-btn, .panel-ctrl-btn, .wiseai-dock-flip, .dash-term, ' +
+  '.panel-more-btn, .panel-ctrl-btn, .wiseai-dock-flip, .dash-term, ' +
   '.topbar-appearance-btn, #menu-footer-layout-btn, ' +
   '.wise-popover--appearance [data-tip], ' +
   '.rf-tool-ico, .rf-rpt-plus, .wa-titledrop-plus, ' +
@@ -60,6 +62,33 @@ function ownedElsewhere(btn) {
   return false;
 }
 
+/* Icon-only X (Material `close`, a literal ×, or a named close class).
+   Captioned menu items ("Close pane") keep their label and are not skipped. */
+const CLOSE_SELECTOR =
+  '.panel-close-btn, .wch-close, .wnote-x, .adm-modal-x, .vf-modal-x, ' +
+  '.dash-modal-close, .ag-sheet-close, .wai-img-close, .amm-close-btn, ' +
+  '.mkt-scanner-close, .pg-close, .ma-modal-close, .mi-cap-close, ' +
+  '.nfp-allergen-x, .fl-attach-x, .gv-file-x, .al-x, .dash-score-toast-close, ' +
+  '.pmx-fix-toast-close, .wa-sh-chip-x, .hp-header-close-btn, ' +
+  '#topbar-overlay-close, [class*="search-clear"], [data-chat-close], ' +
+  '[data-scanner-close], [data-mf="close"]';
+
+function isCloseControl(btn) {
+  if (!btn || !btn.matches) return false;
+  const leftover = visibleTextWithoutIcons(btn);
+  if (leftover.length > 2) return false;
+  if (leftover === '×' || leftover === '✕' || leftover === 'x' || leftover === 'X') return true;
+  if (btn.matches(CLOSE_SELECTOR)) return true;
+  const icon = btn.querySelector && btn.querySelector('.material-symbols-outlined');
+  if (!icon) return false;
+  const raw = (icon.textContent || '').replace(/\s+/g, ' ').trim();
+  return raw === 'close';
+}
+
+function suppressNativeTitle(btn) {
+  if (btn.hasAttribute('title')) btn.removeAttribute('title');
+}
+
 function visibleTextWithoutIcons(el) {
   try {
     const clone = el.cloneNode(true);
@@ -84,8 +113,13 @@ function isIconOnly(el) {
 function tipTarget(start) {
   if (!start || !start.closest) return null;
   const btn = start.closest(CANDIDATE_SELECTOR);
-  if (!btn || ownedElsewhere(btn)) return null;
+  if (!btn) return null;
   if (btn.closest && btn.closest('#lir-tooltip, .ct-card')) return null;
+  if (isCloseControl(btn)) {
+    suppressNativeTitle(btn);
+    return null;
+  }
+  if (ownedElsewhere(btn)) return null;
   if (btn.matches(TOOLTIP_SELECTOR) || isIconOnly(btn)) return btn;
   return null;
 }
@@ -223,6 +257,13 @@ export function initLirTooltip() {
     current = null;
     tip.classList.remove('lir-tip-visible', 'lir-tip-right', 'lir-tip-above', 'lir-tip-wrap');
   }
+
+  /* Capture-phase so the native `title` is gone before History's tooltip
+     (or the browser bubble) can read it. */
+  document.addEventListener('pointerover', (e) => {
+    const el = e.target && e.target.closest && e.target.closest(CANDIDATE_SELECTOR);
+    if (el && isCloseControl(el)) suppressNativeTitle(el);
+  }, true);
 
   document.addEventListener('mouseover', (e) => {
     const btn = tipTarget(e.target);

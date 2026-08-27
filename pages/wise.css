@@ -7081,13 +7081,28 @@ html.dark .fl-db-module .fl-db-top { background: transparent; }
 /* Send button lives INSIDE the input pill (flush right, even padding). */
 .sc-send {
   width: 34px; height: 34px; flex-shrink: 0; align-self: center; margin-left: 2px;
-  border-radius: 9999px; border: 0; cursor: pointer;
+  border-radius: 9999px; border: 0; padding: 0; cursor: pointer;
   background: var(--primary); color: #fff;
   display: flex; align-items: center; justify-content: center;
+  line-height: 0;
+  appearance: none; -webkit-appearance: none;
   transition: background 0.15s ease;
 }
 .sc-send:hover { background: color-mix(in srgb, var(--primary) 86%, black); color: #fff; }
-.sc-send .material-symbols-outlined { font-size: 18px !important; }
+.sc-send .material-symbols-outlined {
+  font-size: 18px !important; line-height: 1;
+  width: 18px; height: 18px;
+  display: flex; align-items: center; justify-content: center;
+  /* Filled paper plane — the outline twin reads hollow and left-heavy in this circle. */
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+/* Kill the shim's text-baseline offset (vertical-align: -0.175em) so the 18px
+   square sits on the flex center of the circle, then nudge right: a right-
+   pointing plane is optically left-weighted in a round well. */
+.sc-send .wise-icon {
+  display: block; vertical-align: 0;
+  transform: translate(2px, 0);
+}
 
 /* ===== Composer v2 — Appearance ▸ "New chat input" (Admin toggle). One pill
    row: "+" far left, the text field beside it, then the database selector

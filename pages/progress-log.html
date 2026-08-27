@@ -254,6 +254,41 @@
     .pl-pcard-head:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); border-radius: 8px; }
     .pl-pcard-meta { min-width: 0; flex: 1; }
     .pl-pcard-name { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; word-break: break-word; color: var(--text); }
+    /* Neon highlighter behind the title of the day's five heaviest cards.
+       Marker stroke hugs the words (not a boxed tile). Dark ink on the
+       fluorescent yellow so the title stays readable in both themes. */
+    .pl-pcard-hl {
+      --pl-hl: #EFFF28;
+      display: inline;
+      padding: 0.02em 0.26em 0.07em;
+      margin: 0 -0.08em;
+      color: #16190c;
+      background-image: linear-gradient(
+        180deg,
+        transparent 10%,
+        var(--pl-hl) 10%,
+        var(--pl-hl) 88%,
+        transparent 88%
+      );
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+    .pl-pcard-hl[data-pl-hot="1"] { --pl-hl: #F7FF3A; }
+    .pl-pcard-hl[data-pl-hot="2"] { --pl-hl: #EBFF2E; }
+    .pl-pcard-hl[data-pl-hot="3"] { --pl-hl: #E2FF24; }
+    .pl-pcard-hl[data-pl-hot="4"] { --pl-hl: #D8FF1C; }
+    .pl-pcard-hl[data-pl-hot="5"] { --pl-hl: #CFFF14; }
+    .pl-pcard-head:hover .pl-pcard-name .pl-pcard-hl { color: #16190c; }
+    html.dark .pl-pcard-hl,
+    html.dark .pl-pcard-head:hover .pl-pcard-name .pl-pcard-hl {
+      color: #12150a;
+    }
+    html.dark .pl-pcard-hl[data-pl-hot="1"] { --pl-hl: #F4FF48; }
+    html.dark .pl-pcard-hl[data-pl-hot="2"] { --pl-hl: #E8FF2A; }
+    html.dark .pl-pcard-hl[data-pl-hot="3"] { --pl-hl: #DCFF1E; }
+    html.dark .pl-pcard-hl[data-pl-hot="4"] { --pl-hl: #D0FF16; }
+    html.dark .pl-pcard-hl[data-pl-hot="5"] { --pl-hl: #C4FF10; }
+    html.dark .pl-pcard-head:hover .pl-pcard-name .pl-pcard-hl { color: #12150a; }
     .pl-pcard-path { font-size: 10.5px; color: var(--text-subtle); font-family: var(--font-mono); margin-top: 1px; }
     .pl-pcard-new { display: inline-flex; align-items: center; margin-left: auto; flex-shrink: 0; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--sec-green); }
     .pl-pcard.is-collapsed .pl-pcard-body { display: none; }
@@ -577,8 +612,304 @@
          accordion only when nothing on disk was last saved that day.
          Days are never skipped, and a day that had work is never thrown
          away at midnight. ── */
-      const LOG_STAMP = '2026-08-25T17:05:00.000Z';
+      const LOG_STAMP = '2026-08-26T21:30:00.000Z';
       const AUTHORED = [
+        {
+          date: '2026-08-26', rel: 'Wednesday',
+          summary: 'Every icon in the app became a real SVG drawing from one sprite, with an Icon Inventory that can flip Font versus SVG. Product Portfolio grew a reports picker that opens finished Product Details and UPF reports beside the board, stacked date columns, a brand switcher, show/hide filters, and dismissible nudges. WISEcodeAI unified Results and Visuals into one versioned output pane and treats My foods as a workspace, not the 943k catalog. Chat’s three-dot menu grouped helix camera, rungs, 3-D look, and the You photo. Roll mode strips the nav; the rollout switch drags. Add and View Product got an identity strip and pack sizes. Help gained a contact-support drawer. This journal ranks each day’s heaviest work first and marks the top five titles with a highlighter.',
+          entries: [
+            { page: 'Icons', path: 'icon-svg-shim.js', isNew: true,
+              features: [
+                'Every Material Symbols glyph in the app — navigation, buttons, chat, tables, marketing — draws as an inline SVG from one sprite instead of a webfont character. The sprite is fetched once and reused on all pages',
+                'A name the sprite does not carry still falls back to the webfont, and that miss is listed so a new icon cannot silently stay a font glyph',
+              ],
+              logic: [
+                'The original ligature text stays in a hidden node, so every place that reads or writes the icon name still sees the same word. Dynamic swaps do not fight the drawing',
+                'Shadow roots get their own copy of the symbols. The webfont links stay in every page as the fallback, not as the drawing',
+              ],
+              ux: [
+                'Icons keep the size and colour of the text around them, the same as the old glyphs, in both light and dark',
+              ],
+              synopsis: [
+                'Features — Icons are drawings now. One sprite, fetched once, paints every Material Symbols name in the app as inline SVG — navigation, buttons, chat, tables, and the marketing site. A glyph the sprite does not carry still comes from the webfont, and that miss is listed rather than silent.',
+                'Logic — The original icon name stays in a hidden node, so the places that read or rewrite it still see the same word. Dynamic swaps do not tear the drawing out. Shadow trees get their own copy of the symbols.',
+                'UX — Size and colour still come from the surrounding text, in both themes, so existing rules keep driving the icon the way they drove the glyph.',
+              ] },
+            { page: 'All Modules', path: 'all-modules-flow.js',
+              features: [
+                'Icon Inventory is a real module: every Material Symbols glyph used in the live app, grouped by surface (chat, primary nav, top bar, and so on), with family, label, and exact placements',
+                'Each glyph previews outlined, filled, or light weight with rounded corners, and a Font / SVG switch compares the live webfont against Google’s SVG export of the same glyph — no network for SVG mode',
+                'Component Library cards stage Light and Dark as first-class versions of the same component, with live output-chip demos matching the studio',
+              ],
+              logic: [
+                'Dev Ready on Icon Inventory is the module switch, not a per-glyph toggle. Directory modules still invert to a Components used list even when that list is empty',
+                'LiveReload is blocked on this page so a save cannot remount the kitchen sink. A real load meter tracks bytes received for this page, not chat helix or capture CDNs',
+              ],
+              ux: [
+                'The page opens filling the row. Group filters are light-blue tiles with no count. Color apply shows progress and a page list, with a bare icon',
+              ],
+              components: [
+                'Typography, tokens, and component demos stay; the Icon Inventory sits with them as its own titled module',
+              ],
+              synopsis: [
+                'Features — Icon Inventory shipped. It catalogs every Material Symbols glyph the live app uses, grouped by surface, with label and placements. Preview outlined, filled, or light; flip Font / SVG to compare the webfont against the local SVG export of the same glyph.',
+                'Features — Component cards now stage Light and Dark as two versions of the same piece. Output chips in the catalog match the studio: 52px thumbs and a compact version badge.',
+                'Logic — Dev Ready on this library is the module switch. The page no longer remounts on every save. The load meter is this page’s bytes, not the helix photos.',
+                'UX — Opens filling the row. Icon group filters are tiles, not counts.',
+              ] },
+            { page: 'Product Portfolio', path: 'product-portfolio.html',
+              features: [
+                'A Reports picker sits to the right of the three-dot menu and opens a sticky module beside the board — Product Details Report or UPF Report, finished documents with scorecards, a product table, nutrition, and ingredients, not placeholders',
+                'Each date column stacks two dates (Updated over Last edited, or whichever pair you pick). A three-dot menu in the header lists every date kind; the choice is the primary line, the header label, and what the column sorts by',
+                'Closing a floating nudge asks Dismiss for now or Dismiss for session. Both hide it for this viewing; a hard refresh brings every nudge back. The menu opens above or to the right of the close icon, never below',
+              ],
+              logic: [
+                'The three lists stack on one board — Missing data, Discovered, Claimed. Status cards live inside Claimed and only filter that list',
+                'Reformulate on a locked row stays visible but inert, with a trailing lock. Pack-size products expose a count and a filter. Selecting a report puts the row in report mode so the sticky pane can sit beside the board without crowding it',
+              ],
+              ux: [
+                'Brand switcher is avatar and caret; the brand name lives on the hover tooltip above, not as a label beside the photo',
+                'Filters show and hide by collapsing height so the table card grows. Board chrome (title, CTAs, brand chip, scorecards) pins as you scroll, with an opaque fill only once rows are actually running underneath',
+              ],
+              components: [
+                'Unified columns across every list: select, row menu, reports, product, then the stacked dates. Select stays a perfect circle. Reports open above the icon',
+              ],
+              synopsis: [
+                'Features — Reports live on the board now. A picker next to the three-dot menu opens Product Details or UPF as a sticky module to the right — a real report: hero, scorecards, table, nutrition, ingredients — not a blank pane. Date columns stack two dates; the header three-dot menu picks which kind is on top and what the column sorts by.',
+                'Features — Nudges (Continue Non-UPF Verification and the others) have a close control that asks whether to hide for now or for this viewing. Nothing is written to storage. A hard refresh brings them back. That menu opens above or beside the icon, never underneath.',
+                'Logic — Missing data, Discovered, and Claimed are one stacked board. Status cards only filter Claimed. Reformulate on a locked row is visible and inert, with a lock. Pack sizes have a count and a filter. Opening a report puts the row in report mode so the pane can sit beside the board.',
+                'UX — Brand switcher is photo and caret; the name is on the hover tooltip above. Filters collapse so the table grows. Title, CTAs, and scorecards pin as you scroll, with a fill only once rows have gone underneath.',
+                'UI — Every list shares columns: select, row menu, reports, product, stacked dates. Select is a circle. The reports menu opens above its icon.',
+              ] },
+            { page: 'Sticky reports', path: 'sticky-report.js', isNew: true,
+              features: [
+                'Product Details Report: hero photo, Toasted Coconut Brownies-12 ct, Flax4Life, UPC, Non-UPF Verified and data-complete pills, then scorecards, nutrition, and ingredients',
+                'UPF Report: the same portfolio SKUs with Non-UPF / UPF class, processing level, and shield status as pills, in a table the report module and the Reports library both use',
+              ],
+              logic: [
+                'One body for both hosts — Product Portfolio’s sticky pane and the Reports library — so the two titles you pick from the portfolio popover are the same documents everywhere',
+              ],
+              synopsis: [
+                'Features — The two reports you pick from Portfolio are finished documents. Product Details opens on Toasted Coconut Brownies-12 ct with photo, brand, UPC, Non-UPF Verified and data-complete, then numbers, nutrition, and ingredients. UPF Report tables the line-up with class, processing, and shield.',
+                'Logic — Portfolio’s sticky pane and the Reports library share one body, so those two titles are the same report wherever you open them.',
+              ] },
+            { page: 'Date columns', path: 'date-column.js', isNew: true,
+              features: [
+                'Any table that shows a date stacks two dates in one cell — primary darker, secondary dimmed — matching Portfolio’s Updated / Last edited',
+                'The header three-dot menu lists every date kind that table supports (created, updated, last edited, published, verified, issued, due, paid, and the rest). Picking one makes it the primary line, the header label, and the sort key; the paired date sits underneath',
+              ],
+              logic: [
+                'Presets per table kind (product, invoice, org, asset, audit, key, alert, activity, invite) decide which kinds appear. Importing the behaviour is enough; it injects its own styles and listens app-wide',
+              ],
+              synopsis: [
+                'Features — Date columns are a pair, not a single stamp. Updated sits over Last edited (or whichever pair you pick). The header three-dot menu is the picker: created, updated, last edited, published, verified, issued, due, paid, and the others that table allows. The choice is the top line, the header, and what sort uses.',
+                'Logic — Product, invoice, org, and the other presets bring their own kind lists. Dropping this in is enough — styles and clicks are shared.',
+              ] },
+            { page: 'Nudge toasts', path: 'nudge-toast-dismiss.js', isNew: true,
+              features: [
+                'The × on every floating nudge opens Dismiss for now and Dismiss for session. Both hide that toast for this viewing only',
+              ],
+              logic: [
+                'Nothing is written to local storage, session storage, or cookies. A hard refresh brings every nudge back. Shared by the overview dashboard and Product Portfolio',
+              ],
+              ux: [
+                'The menu anchors above or to the right of the close icon, never below',
+              ],
+              synopsis: [
+                'Features — Closing a nudge is a real choice: hide it for now, or hide it for this viewing. A hard refresh brings them all back.',
+                'Logic — The choice is not stored. Overview and Portfolio share it.',
+                'UX — The menu opens above or beside the ×, never underneath.',
+              ] },
+            { page: 'WISEcodeAI', path: 'wiseai.html',
+              features: [
+                'Results and Visuals live in one unified output module. Every version of a surfaced output is its own slide in that sticky pane, with the same compact version badge the transcript chip wears',
+                'My foods (demo) is an 80-food workspace with its own UPF report, Super Ultra-Processed slice, heart-test misses, score-under-zero, and parse-incomplete lists — scores read from the workspace, not the 943k catalog',
+                'Asking about Super Ultra-Processed, the heart test, or Fat Quality v2 on the live catalog no longer pretends your workspace is empty. The reply routes you to My foods or asks you to say “my foods”',
+              ],
+              logic: [
+                'Tapping a versioned output chip opens that specific version in the pane. Missing prior versions do not invent a slide. Follow-up chips after a My foods answer stay on the workspace',
+              ],
+              ux: [
+                'A sticky save/share bar pins like the other module footers. Output-rail thumbs match the transcript: 52px snapshot, name, gold stroke, version badge',
+              ],
+              components: [
+                'The unified pane is one module in the row, not two competing Results / Visuals cards',
+              ],
+              synopsis: [
+                'Features — Results and Visuals are one module. Each version of an output is its own slide, with the same compact version badge the transcript chip wears. My foods (demo) is 80 foods in a workspace: UPF report, Super Ultra-Processed, heart-test misses, score-under-zero, parse-incomplete — scored from that workspace, not the 943k catalog.',
+                'Features — Asking the live catalog those questions no longer returns a confident “none.” The assistant tells you that is the 943k population and routes you to My foods, or asks you to say “my foods.”',
+                'Logic — A chip opens that exact version. Missing versions do not invent a slide. Follow-ups after a workspace answer stay on the workspace.',
+                'UX — Save/share pins at the foot. Rail thumbs match the transcript: snapshot, name, gold stroke, version badge.',
+              ] },
+            { page: 'Shared chat', path: 'wiseai-chat.js',
+              features: [
+                'The three-dot menu is a grouped three-column sheet: helix opacity, angle, camera, scale, and shape sit together, with little beads between product circles for colour and motion',
+                'Helix camera is elevation (above / below) plus azimuth (around the coil). Rungs pin base-pair links 1:1 with product circles, or stay off. Look can be classic lines or lit 3-D tubes. Twist runs Forward or Reverse',
+                'You in the transcript is the profile photo when you have set one, otherwise initials',
+              ],
+              logic: [
+                'Scale, camera, rungs, look, beads, pan, and twist are app-wide. A drag broadcasts so every open chat and the welcome orbit repaint together. Pulse / Spark knobs hide on Orbit; Angle, Camera, Pitch, Dots, Length, Rungs, Bar, Thick, and Depth hide when they do not describe the current style',
+                'The strand is not a drag surface. Product circles still open their cards. Shift is a slider. Pan is screen-space, centred at zero',
+              ],
+              ux: [
+                'Chat elevation matches the rest of the little modules. Slider stops are 1% through 100%, then coarser at the extremes. Helix grows into leftover popover width; sliders sit two-up',
+              ],
+              synopsis: [
+                'Features — The chat three-dot menu grew up into grouped columns. Opacity, angle, camera, scale, and shape sit together. Camera is above/below and around the coil. Rungs can pin to the product circles or stay off. Look is classic lines or lit tubes. Twist is Forward or Reverse. Beads between the circles take colour and motion.',
+                'Features — You is your profile photo when you have set one, otherwise initials — in the transcript and in the compact chrome.',
+                'Logic — Those knobs are shared across the app. Drag here and the welcome owl moves with you. Style-specific sliders hide when they do not apply. The strand itself is not a drag surface.',
+                'UX — Elevation matches the little modules. Fine steps through 100%, then coarser. The helix fills leftover menu width.',
+              ] },
+            { page: 'What can I ask?', path: 'ask-catalog.js',
+              features: [
+                'Every chat mounts the same starter catalog — Find foods, look up a barcode, find a brand, retailer, or category, and the rest — organised by what you want to do, with prompts you can click straight into the chat',
+              ],
+              logic: [
+                'One catalog object is loaded before any chat mounts, so the studio and every other surface show the identical rich list instead of drifting copies',
+              ],
+              synopsis: [
+                'Features — “What can I ask?” is one catalog everywhere: search foods, look up a UPC, find a brand, a retailer, a category, and the other jobs, each with example prompts you can tap into the chat.',
+                'Logic — That catalog loads before any chat mounts, so the studio and the other surfaces cannot drift.',
+              ] },
+            { page: 'Roll · Crawl · Walk · Run', path: 'cwr-toggle.js',
+              features: [
+                'Roll is Crawl plus a stripped primary nav: Overview, Product Portfolio, Reports, Profile, Invoices, and WISEcode Admin. Studio, comparison, dashboards, and the upgrade card hide',
+                'The floating switch drags; the spot is remembered so every page opens it where you left it. Double-click restores the default right-edge seat',
+              ],
+              logic: [
+                'Crawl still hides every WISEcodeAI chat and takes it out of the focus tree; remaining modules fill the row. Walk hides the composer rail and keeps chips. Run unlocks the composer at the bottom. While the widget is hidden, mode gating is suspended too',
+              ],
+              ux: [
+                'Chrome lives in a shadow tree so page button and icon rules cannot restyle it. In Roll / Crawl the primary nav has no frame; nested drawers stay tucked because chat is gone',
+              ],
+              synopsis: [
+                'Features — Roll is the SaaS slice: Overview, Portfolio, Reports, Profile, Invoices, Admin — studio and comparison gone. The switch itself drags. Leave it somewhere; every page opens it there. Double-click puts it back on the right edge.',
+                'Logic — Crawl still removes chat from the tree and lets the remaining modules fill. Walk hides the composer and keeps chips. Run unlocks typing at the bottom. Hide the widget and the gating pauses too.',
+                'UX — The control is in a shadow tree, so page styles cannot restyle it. Roll / Crawl drop the nav frame. Nested drawers stay tucked because chat is gone.',
+              ] },
+            { page: 'Add Product', path: 'add-product.html',
+              features: [
+                'An identity strip puts a rounded-square product photo beside the headline, with the barcode as a fixed chip. Pack sizes from the portfolio build a sizes strip; the first size is original, and a count token in the name (“12 ct”) stays in sync when you swap sizes',
+              ],
+              logic: [
+                'Ingredients column height follows the Nutrition Facts column. In a single pane the columns sit side by side from 900px of module width; stacked, ingredients grow with their content',
+                'Refreshing allergen tags (FDA Big 9, drawn through the icon sprite) does not wipe Product Details, Nutrition Facts, or the identity strip',
+              ],
+              ux: [
+                'Next step is a soft primary-tinted banner, not a dark hero. Save sits on the same canvas as the body. In-progress step copy uses brand blue. Photo, three-dot, and width float over the identity row',
+              ],
+              synopsis: [
+                'Features — The product opens as a person would recognise it: photo beside the name, barcode as a chip, pack sizes as a strip. Swap a size and the “12 ct” in the name follows. Those sizes come from the portfolio, original first.',
+                'Logic — Ingredients height follows Nutrition Facts. Wide enough, they sit side by side; otherwise ingredients grow with the copy. Refreshing Big 9 tags does not wipe the rest of the sheet.',
+                'UX — Next step is a soft banner. Save is on the same canvas. Photo and the module controls float over the identity row.',
+              ] },
+            { page: 'View Product', path: 'view-product.html',
+              features: [
+                'Same Product Details template as Add Product: identity strip, pack sizes, Nutrition Facts-driven ingredients height, next-step banner, and the original Product image edit control immediately left of the photo',
+              ],
+              ux: [
+                'Blurb fills the copy column instead of a fixed measure, so it tracks module width. Barcode chip stays 232px',
+              ],
+              synopsis: [
+                'Features — View Product is the same sheet as Add Product: photo beside the name, pack sizes, Nutrition Facts setting ingredients height, next-step banner. The original image edit control sits immediately left of the photo.',
+                'UX — The blurb fills its column as the module widens. The barcode chip stays a fixed chip.',
+              ] },
+            { page: 'Help', path: 'help.html',
+              features: [
+                'Help is a real center: search, browse-by-topic cards (Getting started, Verification, Reports & analytics, Billing & plans, API & integrations, Account & security), expandable FAQs, and Contact support',
+                'Contact support docks as the next sticky module — a Share-style email form with optional attachments. Intent chips search the FAQs, expand a topic, or open that form, and each on-page action narrates back in chat',
+              ],
+              ux: [
+                'The serif masthead stays clear of the pinned three-dot / width cluster',
+              ],
+              synopsis: [
+                'Features — Help is search, topic cards, FAQs, and Contact support. Contact docks to the right as an email form with optional attachments. Chat chips search the FAQs, open a topic, or open the form, and the page talks back.',
+                'UX — The title stays clear of the module controls.',
+              ] },
+            { page: 'Appearance & Admin', path: 'appearance-menu.js',
+              ux: [
+                'Every row is a title plus a three-to-five-word hint under the label, so you can read what the switch does without opening a popover',
+                'Walkthrough is a plain row that opens the WISEowl. Locked groups and locked rows stay visible but inert',
+              ],
+              logic: [
+                'Admin-badged toggles keep the same argument order as plain ones, plus the badge. The master Admin-controls switch stays at the bottom of the leftmost column',
+              ],
+              synopsis: [
+                'UX — Appearance rows now carry a short hint under the label, the same two-line pattern as the rollout switch. Walkthrough is an ordinary row. Locked rows stay visible and do nothing.',
+                'Logic — Admin badges share the same switch builder. The master Admin-controls switch stays at the bottom of the left column.',
+              ] },
+            { page: 'Panel width', path: 'pane-width.js',
+              ux: [
+                'Chat still defaults from the display, not the browser window: single on a 14-inch-class screen, double when there is more room. Custom is a fifth step — the row becomes a carousel you can scroll',
+              ],
+              logic: [
+                'One capture-phase listener covers every module’s width control, so a click marks the session as user-set and a display change cannot stomp it. Fill is the load default for the main module on every page, every load — nothing is restored from storage',
+              ],
+              synopsis: [
+                'UX — Chat still opens from the screen size, not the window. Custom is a real fifth step: the row turns into a carousel and the pane keeps the width you dragged.',
+                'Logic — One listener on every width control marks that you chose. The main module opens at fill every load and does not remember a stray narrowing.',
+              ] },
+            { page: 'Primary navigation', path: 'agent-overview.js',
+              logic: [
+                'Page flows load on demand from the host’s nav id. Account modules (and All Modules, verification, GRAS) ship a complete main module with the canonical five-tier width control. Fill is the load default every time',
+              ],
+              synopsis: [
+                'Logic — Destination pages load their board when you go there. Account, All Modules, verification, and GRAS all get the same five-tier width control. Fill is the default, every load.',
+              ] },
+            { page: 'Welcome orbit', path: 'welcome-orbit.js',
+              ux: [
+                'The constellation uses 16 real food photos, one per tesseract vertex. Nodes are food-photo spheres; colour and glow live on the stroke ring. Far balls paint first so nearer orbs occlude them',
+                'Orbit follows the same 1–800% fader window as the helix, including on a still frame',
+              ],
+              synopsis: [
+                'UX — The welcome owl’s constellation is 16 food photos on the vertices, nearer in front of farther, colour on the ring. The same scale range as the helix stretches it, even when motion is reduced.',
+              ] },
+            { page: 'You', path: 'user-avatar.js',
+              features: [
+                'The photo you set on your profile is the You chip in navigation and in every chat — full markup for inline and classic transcripts. Design-system samples on All Modules keep their staged initials',
+              ],
+              synopsis: [
+                'Features — You is your photo wherever the app shows you: nav and chat. All Modules samples keep their staged initials so the catalog does not pick up the live profile by accident.',
+              ] },
+            { page: 'History & Projects', path: 'chat-history.js',
+              ux: [
+                'Collapsed sticky rail keeps New conversation and the expand chevron. Docked, it uses the same five-step width cycle as every other module, with fill taking the rest of the row and a 240px floor while sticky',
+              ],
+              synopsis: [
+                'UX — History in a sticky rail still shows New conversation and the chevron when collapsed. Docked, it widens through the same five steps as everything else, fill taking the rest of the row.',
+              ] },
+            { page: 'Invoices', path: 'invoices.html',
+              features: [
+                'Invoice dates use the shared stacked date column — issued, due, paid, created, updated, last edited — with the header picker and sort',
+              ],
+              synopsis: [
+                'Features — Invoice dates are the same stacked pair as Portfolio: issued over due (or whichever pair you pick), header three-dot menu, sort by the primary line.',
+              ] },
+            { page: 'Progress Log', path: 'progress-log.html',
+              features: [
+                'Each day lists surfaces by how much actually moved — features first, then logic, UX, UI — not A–Z. The five heaviest titles on that day carry a neon highlighter behind the name',
+                'Cards spell out the day’s work in labelled paragraphs. A busy surface gets several sentences per category; the evaluator no longer drops the rest behind “and N more” or a one-line tidying note',
+              ],
+              logic: [
+                'Rank uses how much was written in features, logic, UX, and UI, with new surfaces slightly ahead of ties. Copy, chat “what shipped today?”, and a newly crawled day all use that order',
+              ],
+              ux: [
+                'The highlighter is a marker stroke behind the words, dark ink on fluorescent yellow, readable in light and dark. Only the top five of that day get it',
+              ],
+              synopsis: [
+                'Features — Each day opens on the surfaces that moved most, not the alphabet. The five heaviest titles get a neon highlighter behind the name. The card under each title is the day’s work in full: features, logic, UX, UI — as many sentences as landed, not a stub.',
+                'Logic — Rank is how much was actually said in those four categories. New surfaces win ties. Copy and chat follow the same order.',
+                'UX — The highlighter is a marker stroke, dark ink on yellow, both themes. Only five per day.',
+              ] },
+            { page: 'Platform-wide', path: '(wise.css · every page)',
+              ux: [
+                'Every HTML page loads the icon sprite shim. Shared styles cover the report sticky pane, identity strips, stacked date cells, nudge dismiss menu, unified output thumbs, and the rest of Wednesday’s chrome, in both themes',
+              ],
+              synopsis: [
+                'UX — The sprite shim is on every page. Shared styles cover the new report pane, identity strips, stacked dates, nudge menu, and output thumbs, in light and dark.',
+              ] },
+          ],
+        },
         {
           date: '2026-08-25', rel: 'Tuesday',
           summary: 'On-page comments became a site-wide switch only the owner can flip, off until they do. Assembling boards play the streaming helix instead of stripes (Appearance ▸ Helix loading). The chat ⋯ menu grew a master Scale plus Pitch, Nodes, and Length, and Orbit follows those sliders too.',
@@ -1850,6 +2181,74 @@
         const hay = (entry.page + ' ' + entry.path + ' ' + entryParagraphs(entry).join(' ') + ' ' + entryItems(entry).map((i) => i.text).join(' ')).toLowerCase();
         return hay.includes(searchTerm);
       }
+      function entryPassesCat(entry) {
+        if (!catFilter) return true;
+        if (Array.isArray(entry[catFilter]) && entry[catFilter].length) return true;
+        return entryParagraphs(entry).length > 0;
+      }
+      /* Rank a day's cards by how much actually moved for the reader —
+         features first, then logic / UX / UI, then notes. Alphabetical
+         is only the last tie-break. Used by the board, Copy, and chat. */
+      const CHANGE_WEIGHT = {
+        features: 8, logic: 6, ux: 5, components: 5,
+        changes: 4, improvements: 4, deletions: 4, updates: 1,
+      };
+      function synLabelToCat(label) {
+        for (const id of Object.keys(SYNOPSIS_LABELS)) {
+          if (SYNOPSIS_LABELS[id] === label) return id;
+        }
+        return 'updates';
+      }
+      function entryChangeWeight(entry, onlyCat) {
+        if (!entry) return 0;
+        const cats = onlyCat ? CATS.filter((c) => c.id === onlyCat) : CATS;
+        let score = 0, chars = 0, n = 0;
+        cats.forEach((c) => {
+          const arr = entry[c.id];
+          if (!Array.isArray(arr)) return;
+          const w = CHANGE_WEIGHT[c.id] || 2;
+          arr.forEach((raw) => {
+            const s = String(raw || '').trim();
+            if (!s) return;
+            n += 1;
+            chars += s.length;
+            score += w;
+          });
+        });
+        if (!n) {
+          let syn = [];
+          if (Array.isArray(entry.synopsis) && entry.synopsis.length) {
+            syn = entry.synopsis;
+          } else if (typeof entry.synopsis === 'string' && entry.synopsis.trim()) {
+            syn = entry.synopsis.split(/\n\n+/);
+          }
+          syn.forEach((p) => {
+            const s = String(p || '').trim();
+            if (!s) return;
+            const { label, text } = splitSynLabel(s);
+            const id = synLabelToCat(label);
+            if (onlyCat && id !== onlyCat) return;
+            n += 1;
+            chars += (text || s).length;
+            score += CHANGE_WEIGHT[id] || 2;
+          });
+        }
+        if (!onlyCat && entry.isNew) score += 4;
+        score += Math.min(10, chars / 160);
+        return score;
+      }
+      function cmpEntryWeightFor(onlyCat) {
+        return (a, b) => {
+          const d = entryChangeWeight(b, onlyCat) - entryChangeWeight(a, onlyCat);
+          if (d) return d;
+          if (!!a.isNew !== !!b.isNew) return a.isNew ? -1 : 1;
+          return String(a.page).localeCompare(String(b.page))
+            || String(a.path).localeCompare(String(b.path));
+        };
+      }
+      function rankedEntries(list, onlyCat) {
+        return (list || []).slice().sort(cmpEntryWeightFor(onlyCat === undefined ? catFilter : onlyCat));
+      }
       function notesMatchSearch(iso) {
         const list = notesForDay(iso);
         if (!searchTerm) return list.length > 0;
@@ -1898,8 +2297,8 @@
         return `<div class="pl-notes${empty ? ' is-empty' : ''}" data-notes-day="${esc(dayIso)}">${head}${cards ? `<ul class="pl-notes-list">${cards}</ul>` : ''}${composer}${addBtn}</div>`;
       }
 
-      function renderPageCard(dayIso, entry) {
-        if (catFilter && !(Array.isArray(entry[catFilter]) && entry[catFilter].length)) return '';
+      function renderPageCard(dayIso, entry, hotRank) {
+        if (!entryPassesCat(entry)) return '';
         const paras = entryParagraphs(entry);
         if (catFilter && !paras.length) return '';
         const key = pageAccKey(dayIso, entry);
@@ -1912,12 +2311,15 @@
               return `<p>${show ? `<span class="pl-syn-cat">${esc(label)}</span>` : ''}${highlight(text)}</p>`;
             }).join('')}</div>`
           : `<p class="pl-pcard-empty">No synopsis written for this surface yet.</p>`;
+        const nameInner = hotRank
+          ? `<span class="pl-pcard-hl" data-pl-hot="${hotRank}" title="One of the five surfaces with the most changes this day">${esc(entry.page)}</span>`
+          : esc(entry.page);
         return `
-          <article class="pl-pcard${entry.isNew ? ' is-new' : ''}${isCollapsed ? ' is-collapsed' : ''}">
+          <article class="pl-pcard${entry.isNew ? ' is-new' : ''}${hotRank ? ' is-hot' : ''}${isCollapsed ? ' is-collapsed' : ''}">
             <button type="button" class="pl-pcard-head" data-page-acc="${esc(key)}" aria-expanded="${isCollapsed ? 'false' : 'true'}">
               <span class="material-symbols-outlined pl-acc-chev" aria-hidden="true">expand_more</span>
               <div class="pl-pcard-meta">
-                <div class="pl-pcard-name">${esc(entry.page)}</div>
+                <div class="pl-pcard-name">${nameInner}</div>
                 <div class="pl-pcard-path">${esc(entry.path)}</div>
               </div>
               ${entry.isNew ? '<span class="pl-pcard-new">New</span>' : ''}
@@ -1933,8 +2335,9 @@
         let visibleNotes = 0;
         LOG.forEach((day) => {
           const allEntries = day.entries || [];
-          const entries = allEntries.filter((e) => (pageFilter === '__all' || e.page === pageFilter) && matchesSearch(e));
-          const cards = entries.map((e) => renderPageCard(day.date, e)).filter(Boolean);
+          const entries = rankedEntries(allEntries.filter((e) =>
+            (pageFilter === '__all' || e.page === pageFilter) && matchesSearch(e) && entryPassesCat(e)));
+          const cards = entries.map((e, i) => renderPageCard(day.date, e, i < 5 ? i + 1 : 0)).filter(Boolean);
           const editingHere = !!(noteEditor && noteEditor.day === day.date);
           visible += cards.length;
           visibleNotes += notesForDay(day.date).length;
@@ -2234,7 +2637,7 @@
           const cats = describeInventoryDiff(fp, before, ctx);
           if (catsHaveItems(cats)) next.push(entryFromCats(fp, cats, false));
         });
-        next.sort((a, b) => String(a.page).localeCompare(String(b.page)) || String(a.path).localeCompare(String(b.path)));
+        next.sort(cmpEntryWeightFor(null));
         return next;
       }
       function writeLiveDay(iso, entries, htmlCount) {
@@ -2605,7 +3008,7 @@
          the board's filters — "copy all in a day's work" means the whole day). */
       function dayPlainText(day) {
         const lines = [`${fmtDate(day.date)} (${day.rel})`, day.summary, ''];
-        day.entries.forEach((e) => {
+        rankedEntries(day.entries, null).forEach((e) => {
           lines.push(`${e.page} — ${e.path}${e.isNew ? ' (NEW)' : ''}`);
           const paras = entryParagraphs(e);
           if (paras.length) paras.forEach((p) => { lines.push(''); lines.push(p); });
@@ -2743,7 +3146,7 @@
         return `<ul class="sc-reply-list">${shown}${more}</ul>`;
       }
       function dayReplyHtml(day) {
-        const items = day.entries.map((e) => {
+        const items = rankedEntries(day.entries, null).map((e) => {
           const cats = CATS.filter((c) => Array.isArray(e[c.id]) && e[c.id].length).map((c) => `${e[c.id].length} ${c.label.toLowerCase()}`);
           return `<li><b>${esc(e.page)}</b> — ${esc(cats.join(', '))}</li>`;
         }).join('');
