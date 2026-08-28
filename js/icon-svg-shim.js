@@ -40,15 +40,23 @@
   var FILL_RE = /["']FILL["']\s*1/;
 
   var ICON_CSS =
-      /* 1em square, inline-flow, coloured by the surrounding text — so every
-         existing `font-size` and `color` rule on .material-symbols-outlined
-         keeps driving the icon exactly as it drove the glyph. */
-      '.wise-icon{width:1em;height:1em;display:inline-block;vertical-align:-0.175em;' +
+      /* 1em square, coloured by the surrounding text — existing `font-size`
+         and `color` rules on .material-symbols-outlined keep driving size.
+         display:block (not inline-block) drops the descender gap under SVGs;
+         margin:auto keeps the square centered when a parent forces the host
+         to `display:block` and stretches it (the icon rail). */
+      '.wise-icon{width:1em;height:1em;display:block;margin:0 auto;' +
       'fill:currentColor;stroke:none;flex:0 0 auto;overflow:visible}' +
+      /* Host flex-centers that square. vertical-align:middle is for icons
+         sitting next to a label; flex circle parents ignore it. Weight
+         (more_vert @ 600 vs the rest @ 400) does not move the viewBox —
+         the old vertical-align:-0.175em on .wise-icon did, and sat every
+         glyph low in its well. */
+      '[data-icon-svg]{display:inline-flex;align-items:center;justify-content:center;' +
+      'line-height:0;vertical-align:middle;font-variation-settings:normal}' +
       /* The ligature text kept for textContent compatibility: readable to JS,
          invisible to the page and to the accessibility tree. */
-      '.wise-icon-lig{display:none}' +
-      '[data-icon-svg]{font-variation-settings:normal}';
+      '.wise-icon-lig{display:none}';
 
 
   var have = null;            // Set of symbol ids present in the sprite
