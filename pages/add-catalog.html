@@ -389,10 +389,11 @@
                     <span class="sc-bganim-pp-play"><span class="material-symbols-outlined">play_arrow</span>Play</span>
                   </button>
                 </div>
-                <button type="button" class="topbar-menu-item sc-mcp-item" id="ap-actstrip-item" role="menuitemcheckbox" aria-checked="false" onclick="toggleActivityStripModule(event)">
+                <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-actstrip-item" id="ap-actstrip-item" data-sc="activity-strip" role="menuitemcheckbox" aria-checked="false" onclick="toggleActivityStripModule(event)">
                   <span class="material-symbols-outlined topbar-menu-icon">timeline</span>
                   <span>Activity strip</span>
-                  <span class="sc-switch" aria-hidden="true"></span>
+                  <span class="topbar-menu-badge">Admin</span>
+                  <span class="sc-switch sc-switch--pink" aria-hidden="true"></span>
                 </button>
                 <div class="topbar-menu-divider"></div>
                 <button type="button" class="topbar-menu-item sc-mcp-item sc-stream-item" data-sc="stream-toggle" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">stream</span><span>Response streaming</span><span class="sc-switch" aria-hidden="true"></span></button>

@@ -278,8 +278,8 @@
     .nfp-sp--flip .nfp-sp-strip--folded { padding-top: 4px; }
     .nfp-sp--flip .nfp-sp-strip--folded .nfp-fi-group--identity { padding-top: 4px; }
     .nfp-sp--flip .nfp-sp-facts .nfp-nf-panel { margin-top: 12px; }
-    /* Folded identity — photo + name/category on row 1; description, price,
-       counts and barcode span the full width under both on row 2. */
+    /* Folded identity — photo + name on row 1; description, price,
+       counts, barcode and category span the full width under both on row 2. */
     .nfp-sp--flip .nfp-fi-group--identity {
       display: grid; grid-template-columns: auto minmax(0, 1fr);
       align-items: start; column-gap: 14px; row-gap: 10px;
@@ -303,7 +303,8 @@
     .nfp-sp--flip .nfp-fi-desc { flex: none; width: 100%; max-width: none; margin: 0; }
     .nfp-sp--flip .nfp-fi-price { margin: 0; }
     .nfp-sp--flip .nfp-fi-thumbs { flex: none; width: 100%; }
-    .nfp-sp--flip .nfp-fi-details > .nfp-fi-upc { width: 100%; margin: 0; justify-content: flex-start; }
+    .nfp-sp--flip .nfp-fi-details > .nfp-fi-upc,
+    .nfp-sp--flip .nfp-fi-details > .nfp-fi-upc-stack { width: 100%; margin: 0; justify-content: flex-start; }
     .nfp-sp--flip .nfp-fi-upc .nfp-hero-upc,
     .nfp-sp--flip .nfp-fi-upc .nfp-hero-upc--seg,
     .nfp-sp--flip .nfp-fi-upc .nfp-upc-entry {
@@ -326,22 +327,12 @@
     .nfp-sp-ingred {
       padding: 4px 0 12px;
       overflow-x: hidden;
-      overflow-y: scroll;
-      overscroll-behavior: contain;
+      overflow-y: visible;
       box-sizing: border-box;
-      scrollbar-width: thin;
-      scrollbar-color: color-mix(in srgb, var(--text-subtle) 35%, transparent) transparent;
     }
-    /* Height is set by JS: max(Nutrition Facts column, remaining module body).
-       The facts label can grow; this column grows with it and never shrinks
-       below the fill it has on a typical product. Extra analysis scrolls. */
-    .nfp-sp-ingred.has-ia-h { min-height: var(--nfp-ia-h); height: var(--nfp-ia-h); max-height: var(--nfp-ia-h); }
-    .nfp-sp-ingred::-webkit-scrollbar { width: 8px; }
-    .nfp-sp-ingred::-webkit-scrollbar-track { background: transparent; }
-    .nfp-sp-ingred::-webkit-scrollbar-thumb {
-      background: color-mix(in srgb, var(--text-subtle) 35%, transparent);
-      border-radius: 8px;
-    }
+    /* Two-column: both panes share #nfp-body scroll. Nutrition Facts sticks
+       so it never rides higher than the module top; the ingredient tree keeps
+       going. Nested height lock (.has-ia-h) is no longer applied. */
 
     /* Seam splitters — hidden while stacked. Same grip as js/pane-resize.js. */
     .nfp-sp-split {
@@ -369,7 +360,7 @@
 
     @container nfp-body (min-width: 900px) {
       .nfp-sp {
-        display: grid; align-items: start;
+        display: grid; align-items: stretch;
         grid-template-columns: minmax(120px, var(--nfp-w-media)) 16px minmax(200px, var(--nfp-w-facts)) 16px minmax(240px, var(--nfp-w-ingred));
       }
       .nfp-sp--noidentity {
@@ -400,6 +391,11 @@
       .nfp-sp-ingred { padding: 12px 10px 8px 4px; }
       .nfp-sp-ingred .nfp-ingred-wrap > *:not(.nfp-ia-analyze),
       .nfp-sp-ingred .nfp-ia { max-width: none; margin-left: 0; margin-right: 0; }
+      .nfp-sp-facts-pin {
+        position: sticky; top: 0; z-index: 2;
+        background: var(--bg);
+      }
+      html.dark .nfp-sp-facts-pin { background: var(--bg); }
       /* Photo stays at about half the module body so the Non-UPF shield sits
          directly underneath. */
       .nfp-sp-media .nfp-hero--rich:not(.nfp-hero--empty) {
@@ -787,7 +783,7 @@
     .nfp-fi { background: transparent; border-bottom: none; padding: 14px 14px 14px; }
     .nfp-fi:has(.nfp-fi-group--identity) { padding: 0; overflow: visible; }
     .nfp-fi-header { display: flex; align-items: flex-start; justify-content: flex-start; gap: 8px; margin-bottom: 4px; min-width: 0; }
-    .nfp-fi-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.375rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; color: var(--text); flex: 1 1 auto; min-width: 0; overflow-wrap: break-word; }
+    .nfp-fi-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 0.95rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; color: var(--text); flex: 1 1 auto; min-width: 0; overflow-wrap: break-word; }
     .nfp-fi-title .nfp-edit {
       font: inherit; letter-spacing: inherit; color: inherit; padding: 0 3px;
       overflow-wrap: inherit; white-space: normal;
@@ -880,8 +876,7 @@
     .nfp-fi-group--identity .nfp-fi-header {
       margin-bottom: 6px; align-items: flex-start; gap: 10px; flex-wrap: nowrap;
     }
-    /* ⋯ + width (2×28px) float over this row — keep the category chip clear
-       of that cluster so it sits immediately left of the three dots. */
+    /* ⋯ + width (2×28px) float over the title row — keep the name clear. */
     html.header-float .nfp-fi-group--identity .nfp-fi-header { padding-right: 72px; }
     /* Fill the copy column (not a fixed 72ch) so the blurb tracks module width.
        pretty wrap keeps a leftover word from sitting short of the line above. */
@@ -915,18 +910,24 @@
       display: flex; align-items: flex-start; gap: 8px; flex: 0 0 auto;
     }
     .nfp-fi-group--identity .nfp-fi-add { align-self: flex-start; flex-shrink: 0; }
-    /* Compact category — 28px to match ⋯ / width, docked in the title row. */
+    /* Compact category — sits under the barcode, same width as the UPC card. */
+    .nfp-fi-upc-stack {
+      display: flex; flex-direction: column; align-items: flex-start;
+      gap: 6px; width: auto; min-width: 0;
+    }
+    .nfp-fi-upc-stack .nfp-fi-upc { margin: 0; }
     .nfp-fi-cat--dock {
       flex: 0 0 auto; align-self: flex-start; margin: 0; min-width: 0;
       display: flex; align-items: center; height: 28px;
+      width: 232px; max-width: 100%;
     }
     .nfp-fi-cat--dock .nfp-hero-cat {
-      width: auto; max-width: none; height: 28px;
-      align-items: center; flex-wrap: nowrap; margin: 0; justify-content: flex-end;
+      width: 100%; max-width: none; height: 28px;
+      align-items: center; flex-wrap: nowrap; margin: 0; justify-content: flex-start;
     }
-    .nfp-fi-cat--dock .nfp-cat-select { width: auto; height: 28px; }
+    .nfp-fi-cat--dock .nfp-cat-select { width: 100%; height: 28px; }
     .nfp-fi-cat--dock .nfp-cat-native {
-      width: auto; max-width: 180px; height: 28px; box-sizing: border-box;
+      width: 100%; max-width: none; height: 28px; box-sizing: border-box;
       padding: 0 22px 0 24px; line-height: 26px; font-size: 0.65rem;
     }
     .nfp-fi-cat--dock .nfp-cat-select-ic {
@@ -1368,13 +1369,18 @@
     .nfp-ia-head {
       width: 100%; display: flex; align-items: center; gap: 8px;
       padding: 10px 12px; border: 0; background: transparent; color: var(--text);
-      cursor: pointer; text-align: left;
+      cursor: pointer; text-align: left; flex-wrap: wrap;
     }
     .nfp-ia-head:hover { background: color-mix(in srgb, var(--primary) 6%, transparent); }
     .nfp-ia-title {
       font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
-      font-size: 0.95rem; font-weight: 700; letter-spacing: -0.01em; flex: 1; min-width: 0;
+      font-size: 0.95rem; font-weight: 700; letter-spacing: -0.01em; flex: 1 1 8rem; min-width: 0;
     }
+    .nfp-ia-head-pills {
+      display: flex; flex-wrap: wrap; gap: 4px; align-items: center;
+      flex: 0 1 auto; justify-content: flex-end;
+    }
+    .nfp-ia-head-pills .nfp-ia-pill { font-size: 0.55rem; padding: 1px 6px; pointer-events: none; }
     .nfp-ia-chev {
       font-size: 20px !important; color: var(--text-subtle); flex-shrink: 0;
       transition: transform 0.18s ease;
@@ -1416,7 +1422,10 @@
       display: grid; gap: 8px; align-items: center; min-width: 220px;
     }
     .nfp-ia-table--parsed .nfp-ia-th,
-    .nfp-ia-table--parsed .nfp-ia-row { grid-template-columns: minmax(90px, 1.15fr) minmax(88px, 1fr); align-items: start; }
+    .nfp-ia-table--parsed .nfp-ia-row {
+      grid-template-columns: minmax(88px, 1.25fr) minmax(64px, 0.9fr) minmax(84px, max-content);
+      align-items: start;
+    }
     .nfp-ia-table--codes .nfp-ia-th,
     .nfp-ia-table--codes .nfp-ia-row { grid-template-columns: minmax(90px, 1.3fr) minmax(88px, 1fr); align-items: start; }
     .nfp-ia-table--nut .nfp-ia-th,
@@ -1433,7 +1442,32 @@
       animation-delay: calc(var(--i, 0) * 38ms);
     }
     .nfp-ia-row:last-child { border-bottom: 0; }
-    .nfp-ia-scout-row.is-child .nfp-ia-td:first-child { padding-left: 12px; color: var(--text-muted); }
+    .nfp-ia-tree {
+      display: block; position: relative;
+      padding-left: calc(4px + min(12, var(--d, 0)) * 8px);
+      text-transform: capitalize;
+    }
+    .nfp-ia-parsed-row[data-depth="0"] .nfp-ia-tree,
+    .nfp-ia-scout-row[data-depth="0"] .nfp-ia-tree { font-weight: 700; padding-left: 2px; }
+    .nfp-ia-parsed-row.is-group .nfp-ia-tree,
+    .nfp-ia-scout-row.is-group .nfp-ia-tree { font-weight: 700; }
+    .nfp-ia-row:not([data-depth="0"]) .nfp-ia-tree::before {
+      content: '';
+      position: absolute;
+      left: calc(min(12, var(--d, 1)) * 8px - 4px);
+      top: 0.65em;
+      width: 8px; height: 1px;
+      background: var(--border);
+    }
+    .nfp-ia-parsed-row.is-group,
+    .nfp-ia-scout-row.is-group {
+      background: color-mix(in srgb, var(--text) 4%, transparent);
+    }
+    html.dark .nfp-ia-parsed-row.is-group,
+    html.dark .nfp-ia-scout-row.is-group {
+      background: color-mix(in srgb, #fff 6%, transparent);
+    }
+    .nfp-ia-scout-row.is-child .nfp-ia-td:first-child { padding-left: 0; color: inherit; }
     .nfp-ia-td { min-width: 0; overflow-wrap: anywhere; }
     .nfp-ia-td--num { font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
     .nfp-ia-td--amt { display: inline-flex; align-items: baseline; gap: 4px; }
@@ -1446,6 +1480,8 @@
       padding: 2px 8px; border-radius: 999px; font-size: 0.62rem; font-weight: 700; white-space: nowrap;
     }
     .nfp-ia-td--mapstack { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
+    .nfp-ia-td--mapped { min-width: 0; }
+    .nfp-ia-td--match { display: flex; align-items: flex-start; justify-content: flex-start; }
     .nfp-ia-mapped { font-weight: 700; letter-spacing: 0.01em; overflow-wrap: anywhere; }
     .nfp-ia-pill--ok { background: var(--sec-green-10); color: var(--sec-green-text); }
     .nfp-ia-pill--part, .nfp-ia-pill--warn { background: var(--ter-amber-10); color: var(--ter-amber-text); }
@@ -1692,10 +1728,11 @@
                 </div>
                 <!-- Activity strip — the landmark rail on the chat's edge
                      (shared app-wide preference, same as every other chat). -->
-                <button type="button" class="topbar-menu-item sc-mcp-item" id="ap-actstrip-item" role="menuitemcheckbox" aria-checked="false" onclick="toggleActivityStripModule(event)">
+                <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-actstrip-item" id="ap-actstrip-item" data-sc="activity-strip" role="menuitemcheckbox" aria-checked="false" onclick="toggleActivityStripModule(event)">
                   <span class="material-symbols-outlined topbar-menu-icon">timeline</span>
                   <span>Activity strip</span>
-                  <span class="sc-switch" aria-hidden="true"></span>
+                  <span class="topbar-menu-badge">Admin</span>
+                  <span class="sc-switch sc-switch--pink" aria-hidden="true"></span>
                 </button>
                 <div class="topbar-menu-divider"></div>
                 <button type="button" class="topbar-menu-item sc-mcp-item sc-stream-item" data-sc="stream-toggle" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">stream</span><span>Response streaming</span><span class="sc-switch" aria-hidden="true"></span></button>
@@ -1856,6 +1893,8 @@
     import { wireChatComposer, wireStandardChatMenu, createHelixBgAnim } from '../js/wiseai-chat.js';
     window.createHelixBgAnim = createHelixBgAnim;
     import { restoreActivityStrip, mountActivityStrip, applyActivityStrip, isActivityStripOn } from '../js/chat-activity-strip.js';
+    import { initNudgeToastDismiss } from '../js/nudge-toast-dismiss.js';
+    initNudgeToastDismiss();
 
     /* Add the canonical WISEcodeAI database selector to the wizard composer. The
        page keeps its own rich "+" attach popover, so skip the shared attach wiring. */

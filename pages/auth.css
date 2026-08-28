@@ -467,6 +467,7 @@ html.dark .auth-affix-btn:hover { color: var(--primary-bright); }
 .btn .material-symbols-outlined { font-size: 18px; }
 .btn-block { width: 100%; }
 .btn-primary { background: var(--primary); color: #fff; }
+.btn-primary .material-symbols-outlined { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 .btn-primary:hover { background: color-mix(in srgb, var(--primary) 88%, #000); color: #fff; }
 .btn-ghost { background: transparent; color: var(--text); border-color: var(--border-strong); }
 .btn-ghost:hover { background: var(--surface-2); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
@@ -1050,7 +1051,7 @@ html.dark .sp-pct-ring::before { background: #1A2339; }
 .sc-reply-chips .chip .material-symbols-outlined { align-self: center; flex-shrink: 0; }
 .chip.chip-primary { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; }
 .chip.chip-primary:hover { filter: brightness(1.05); color: #fff; }
-.chip.chip-primary .material-symbols-outlined { color: #fff !important; }
+.chip.chip-primary .material-symbols-outlined { color: #fff !important; font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 /* "Dive right into the product" — outlined (stroke only), not a solid fill. */
 .chip.chip-dive { background: transparent; border-color: var(--primary); color: var(--primary); font-weight: 600; }
 .chip.chip-dive:hover { background: color-mix(in srgb, var(--primary) 10%, transparent); border-color: var(--primary); color: var(--primary); }
@@ -1071,7 +1072,7 @@ html.dark .chip.chip-dive .material-symbols-outlined { color: var(--primary-brig
 .sc-reply-chips .chip.ms-chip.is-selected {
   background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600;
 }
-.sc-reply-chips .chip.ms-chip.is-selected .material-symbols-outlined { color: #fff !important; }
+.sc-reply-chips .chip.ms-chip.is-selected .material-symbols-outlined { color: #fff !important; font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 
 .ac-success { display: inline-flex; align-items: center; gap: 6px; color: var(--sec-green-text); font-weight: 700; }
 .ac-success .material-symbols-outlined { font-size: 18px; color: var(--sec-green); }

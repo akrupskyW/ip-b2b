@@ -86,6 +86,26 @@
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
+/* Primary (solid brand-blue) buttons always use the filled icon twin.
+   The SVG shim reads FILL 1 and swaps in the filled geometry. Ghost /
+   outline / tinted chips stay FILL 0. */
+.btn-primary .material-symbols-outlined,
+.adm-btn--primary .material-symbols-outlined,
+.adm-icon-btn--primary .material-symbols-outlined,
+.pf-btn--primary .material-symbols-outlined,
+.dash-btn--primary .material-symbols-outlined,
+.vf-modal-btn--primary .material-symbols-outlined,
+.gv-btn--primary .material-symbols-outlined,
+.wmod-btn--primary .material-symbols-outlined,
+.cmp-tool-btn--primary .material-symbols-outlined,
+.mkt-btn-primary .material-symbols-outlined,
+.demo-btn.primary .material-symbols-outlined,
+.chip.chip-primary .material-symbols-outlined,
+.sc-reply-chips .chip.ms-chip.is-selected .material-symbols-outlined,
+.sc-send .material-symbols-outlined {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
 :root {
   --bg: #F9F8F3;
   --surface: #FFFFFF;
@@ -1666,6 +1686,7 @@ a.wise-popover-item { text-decoration: none; }
   text-transform: uppercase;
 }
 .wise-popover-item .wise-popover-badge + .wise-popover-ext { margin-left: 6px; }
+.wise-popover-item .wise-popover-badge + .wise-popover-lock { margin-left: 6px; }
 /* Two-line Admin rows: title on top, a 3–5 word hint underneath. The wrap
    claims leftover width so the badge (and any trailing glyph) stay pinned right.
    Mirrors the chat ⋯ menu's .topbar-menu-copy / .topbar-menu-desc. */
@@ -1750,6 +1771,57 @@ html.dark .wise-popover-item.wise-toggle-item:hover { background: rgba(255,255,2
 .wise-popover-item:hover .wise-toggle-ico { color: var(--text-subtle); }
 html.dark .wise-popover-item.is-on .wise-toggle-ico,
 html.dark .wise-popover-item:hover.is-on .wise-toggle-ico { color: var(--sec-green); }
+
+/* Master Internal-admins switch — one pink card, no group header. The
+   switch glyph is the large Material toggle (pink on and off), not the
+   green/gray used by ordinary Appearance rows. */
+.wise-admin-master {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px;
+  min-width: 0;
+  border: 1px solid rgb(219, 39, 119);
+  border-radius: 12px;
+  background: rgba(236, 72, 153, 0.10);
+  color: rgb(219, 39, 119);
+  cursor: pointer;
+  font-family: inherit;
+  user-select: none;
+}
+.wise-admin-master:hover { background: rgba(236, 72, 153, 0.16); }
+.wise-admin-master.is-on { background: rgba(236, 72, 153, 0.18); }
+html.dark .wise-admin-master {
+  background: rgba(236, 72, 153, 0.12);
+  border-color: rgb(219, 39, 119);
+  color: rgb(244, 114, 182);
+}
+html.dark .wise-admin-master:hover,
+html.dark .wise-admin-master.is-on { background: rgba(236, 72, 153, 0.20); }
+.wise-admin-master > .material-symbols-outlined {
+  flex-shrink: 0;
+  font-size: 22px;
+  color: rgb(219, 39, 119);
+}
+html.dark .wise-admin-master > .material-symbols-outlined { color: rgb(244, 114, 182); }
+.wise-admin-master-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+}
+.wise-admin-master .wise-toggle-ico {
+  margin-left: auto;
+  font-size: 34px;
+  color: rgba(219, 39, 119, 0.45);
+  transition: color .15s ease;
+}
+.wise-admin-master.is-on .wise-toggle-ico { color: rgb(219, 39, 119); }
+html.dark .wise-admin-master .wise-toggle-ico { color: rgba(244, 114, 182, 0.45); }
+html.dark .wise-admin-master.is-on .wise-toggle-ico { color: rgb(244, 114, 182); }
 /* Locked Appearance group — the card keeps its place so the capability stays
    visible, but every row inside reads inert: a lock trails the heading, labels
    and switch glyphs go muted (no green "on" tint), and hover never highlights.
@@ -1817,6 +1889,7 @@ html.dark .wise-pop-action:hover .material-symbols-outlined { color: var(--prima
 .wise-pop-action.is-locked:hover { background: none; color: var(--text-subtle); }
 .wise-pop-action.is-locked:hover .material-symbols-outlined { color: var(--text-subtle); }
 .wise-pop-action .wise-pop-action-lock { position: absolute; top: 5px; right: 6px; font-size: 13px !important; opacity: 0.7; }
+.wise-pop-action .wise-popover-badge { margin-left: 0; align-self: center; }
 .wise-pop-action.has-dot { position: relative; }
 .wise-pop-action.has-dot::after {
   content: '';
@@ -6608,9 +6681,9 @@ html.dark .ws-logo-wrap .ws-pulse-ring { --ws-track: rgba(174, 200, 237, 0.55); 
 .ws-count { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; font-family: var(--font-mono); }
 .ws-chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 100%; width: 100%; margin-bottom: 2rem; }
 .ws-chips .chip { width: fit-content; max-width: 100%; flex: 0 0 auto; }
-/* Welcome intent chips. Full-size chat: wrap and show every chip. Single pane
-   (the 380px dock, below the double-width 580px tier): cap at THREE wrapping
-   rows and scroll extra chips vertically — never a one-line horizontal carousel. */
+/* Welcome intent chips. Cap at TWO wrapping rows; overflow is revealed by a
+   trailing "Load more" chip (see clampWelcomeChips in js/wiseai-chat.js) —
+   never a one-line horizontal carousel or a scrollable chip well. */
 .sc-welcome > .ws-chips-scroll {
   --ws-chip-h: 28px;
   --ws-chip-gap: 10px;
@@ -6632,16 +6705,7 @@ html.dark .ws-logo-wrap .ws-pulse-ring { --ws-track: rgba(174, 200, 237, 0.55); 
   justify-content: center;
 }
 .sc-welcome > .ws-chips-scroll > .ws-chips .chip { max-width: 100%; }
-@container sc-chat-body (max-width: 32.5rem) {
-  .ws-chips-scroll {
-    flex: 0 1 auto;
-    min-height: 0;
-    max-height: calc(var(--ws-chip-h) * 3 + var(--ws-chip-gap) * 2 + 8px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
-  }
-}
+.sc-welcome > .ws-chips-scroll > .ws-chips .chip[hidden] { display: none !important; }
 /* Intent chips, carousel variant — a single horizontal row with left/right
    controls + edge fades (mirrors ai-chat.html), so every module-shortcut chip
    stays reachable inside the narrower dock. */
@@ -6847,7 +6911,7 @@ html.dark .ws-intent-chip:hover {
   background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600;
 }
 .chip.chip-primary:hover { background: color-mix(in srgb, var(--primary) 90%, #000); border-color: color-mix(in srgb, var(--primary) 90%, #000); color: #fff; }
-.chip.chip-primary .material-symbols-outlined { color: #fff !important; }
+.chip.chip-primary .material-symbols-outlined { color: #fff !important; font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 html.dark .chip.chip-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
 /* Welcome / shortcut intent chips share the same 28px .chip size. Gold
    leading glyph; the trailing .ws-lock badge keeps its own colours. */
@@ -9092,6 +9156,54 @@ html.dark .dash-score-toast::after { background: #5A8BB8; }
 .dash-score-toast-close .material-symbols-outlined { font-size: 13px; }
 .dash-score-toast.is-paused { animation-play-state: paused; }
 .dash-score-toast[hidden] { display: none !important; }
+
+/* Body-portalled nudge (Analyze Ingredients, portfolio CTAs). Fixed so a
+   scrolling module cannot clip it; caret flips to face the anchor. */
+.dash-score-toast.is-portaled {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: auto;
+  bottom: auto;
+  width: min(320px, calc(100vw - 16px));
+  z-index: 240;
+}
+.dash-score-toast.is-portaled::after {
+  left: var(--nudge-toast-caret, 28px);
+  bottom: -7px;
+  top: auto;
+}
+.dash-score-toast.is-portaled.is-below::after {
+  bottom: auto;
+  top: -7px;
+  border-radius: 3px 0 0 0;
+}
+.dash-score-toast.is-portaled.is-right::after {
+  left: -7px;
+  bottom: auto;
+  top: var(--nudge-toast-caret-y, 28px);
+  border-radius: 0 0 0 3px;
+}
+.dash-score-toast.is-portaled.is-left::after {
+  left: auto;
+  right: -7px;
+  bottom: auto;
+  top: var(--nudge-toast-caret-y, 28px);
+  border-radius: 0 0 3px 0;
+}
+.dash-score-toast.is-portaled .dash-score-toast-link,
+.dash-score-toast.is-portaled .dash-score-toast-link:link,
+.dash-score-toast.is-portaled .dash-score-toast-link:visited,
+.dash-score-toast.is-portaled .dash-score-toast-link:hover,
+.dash-score-toast.is-portaled .dash-score-toast-link:focus {
+  text-decoration: none;
+  color: #fff;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-score-toast.is-portaled {
+    animation: dash-score-toast-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
 
 /* Tiny “Dismiss for now / session” menu, portaled to body and anchored above
    or to the right of the toast’s × — never directly below it. */

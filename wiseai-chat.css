@@ -625,9 +625,9 @@ html.dark .ws-heading { color: var(--text); }
 .ws-count { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; font-family: var(--font-mono); }
 .ws-chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 100%; width: 100%; margin-bottom: 2rem; }
 .ws-chips .chip { width: fit-content; max-width: 100%; flex: 0 0 auto; }
-/* Welcome intent chips. Full-size chat: wrap and show every chip. Single pane
-   (the 380px dock, below the double-width 580px tier): cap at THREE wrapping
-   rows and scroll extra chips vertically — never a one-line horizontal carousel. */
+/* Welcome intent chips. Cap at TWO wrapping rows; overflow is revealed by a
+   trailing "Load more" chip (see clampWelcomeChips in js/wiseai-chat.js) —
+   never a one-line horizontal carousel or a scrollable chip well. */
 .sc-welcome > .ws-chips-scroll {
   --ws-chip-h: 28px;
   --ws-chip-gap: 10px;
@@ -649,16 +649,7 @@ html.dark .ws-heading { color: var(--text); }
   justify-content: center;
 }
 .sc-welcome > .ws-chips-scroll > .ws-chips .chip { max-width: 100%; }
-@container sc-chat-body (max-width: 32.5rem) {
-  .ws-chips-scroll {
-    flex: 0 1 auto;
-    min-height: 0;
-    max-height: calc(var(--ws-chip-h) * 3 + var(--ws-chip-gap) * 2 + 8px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
-  }
-}
+.sc-welcome > .ws-chips-scroll > .ws-chips .chip[hidden] { display: none !important; }
 /* Intent chips, carousel variant — a single horizontal row with left/right
    controls + edge fades (mirrors ai-chat.html), so every module-shortcut chip
    stays reachable inside the narrower dock. */
@@ -858,7 +849,7 @@ html.dark .sc-card .ws-scorecards-wrap::after { background: linear-gradient(to l
   background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600;
 }
 .chip.chip-primary:hover { background: color-mix(in srgb, var(--primary) 90%, #000); border-color: color-mix(in srgb, var(--primary) 90%, #000); color: #fff; }
-.chip.chip-primary .material-symbols-outlined { color: #fff !important; }
+.chip.chip-primary .material-symbols-outlined { color: #fff !important; font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 html.dark .chip.chip-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
 /* Welcome / shortcut intent chips share the same 28px .chip size. Gold
    leading glyph; the trailing .ws-lock badge keeps its own colours. */

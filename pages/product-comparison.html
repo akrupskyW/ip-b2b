@@ -2194,7 +2194,7 @@
       background: var(--primary); border-color: var(--primary); color: #fff;
       box-shadow: 0 4px 12px rgba(37, 80, 124, 0.25);
     }
-    .cmp-tool-btn--primary .material-symbols-outlined { color: #fff !important; }
+    .cmp-tool-btn--primary .material-symbols-outlined { color: #fff !important; font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
     .cmp-tool-btn--primary:hover:not(:disabled) {
       background: var(--primary); border-color: var(--primary); color: #fff;
       transform: translateY(-1px); box-shadow: 0 8px 18px rgba(37, 80, 124, 0.3);
@@ -8101,10 +8101,11 @@
             <!-- Activity strip — the landmark rail on the chat's edge (shared
                  app-wide preference; mirrors the switch on pages/wiseai.html).
                  Keeps the menu open so the switch state reads back. -->
-            <button type="button" class="topbar-menu-item sc-mcp-item" id="wiseai-actstrip-item" role="menuitemcheckbox" aria-checked="false" onclick="toggleActivityStripModule(event)">
+            <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-actstrip-item" id="wiseai-actstrip-item" data-sc="activity-strip" role="menuitemcheckbox" aria-checked="false" onclick="toggleActivityStripModule(event)">
               <span class="material-symbols-outlined topbar-menu-icon">timeline</span>
               <span>Activity strip</span>
-              <span class="sc-switch" aria-hidden="true"></span>
+              <span class="topbar-menu-badge">Admin</span>
+              <span class="sc-switch sc-switch--pink" aria-hidden="true"></span>
             </button>
             <div class="topbar-menu-divider"></div>
             <button type="button" class="topbar-menu-item sc-mcp-item sc-stream-item" data-sc="stream-toggle" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">stream</span><span>Response streaming</span><span class="sc-switch" aria-hidden="true"></span></button>

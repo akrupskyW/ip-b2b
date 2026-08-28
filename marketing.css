@@ -211,6 +211,7 @@ html.dark .mkt-eyebrow { color: var(--primary-bright); }
 }
 .mkt-btn:active { transform: translateY(1px); }
 .mkt-btn-primary { background: var(--primary); color: #fff; box-shadow: var(--shadow-1); }
+.mkt-btn-primary .material-symbols-outlined { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 .mkt-btn-primary:hover { box-shadow: var(--shadow-2); transform: translateY(-1px); }
 .mkt-btn-ghost { background: transparent; color: var(--text); border-color: var(--border-strong); }
 .mkt-btn-ghost:hover { background: var(--surface-2); border-color: var(--primary); color: var(--primary); }

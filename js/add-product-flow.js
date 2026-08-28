@@ -129,11 +129,13 @@
     nfpCompare: false,    // ⋯ menu → show every format side by side (compare matrix)
     nfpFlip: true,        // ⋯ menu → fold the masthead into the Nutrition Facts column and swap it to the right, ingredients on the left. On by default.
     /* Ingredient analysis (third column). Accordions remember open/closed;
-       Analyze increments `iaTick` so row + score animations replay. */
-    iaOpen: { list: true, parsed: true, codes: true, nutrients: true, scout: true },
+       Analyze increments `iaTick` so row + score animations replay.
+       Only Ingredient List starts open; Parsed / Codes / Nutrients / Scout
+       start collapsed so the nested tree is a deliberate open. */
+    iaOpen: { list: true, parsed: false, codes: false, nutrients: false, scout: false },
     iaRan: false,
     iaTick: 0,
-    iaConfirm: {},        // mapped-name → true once the user confirms a row
+    iaConfirm: {},        // node id → true once the user confirms a row
   };
 
   /* FDA Big 9. Icons are Material Symbols (Google SVG via the sprite shim). */
@@ -187,23 +189,29 @@
     return chips;
   }
 
-  /* Demo payload used when a label photo / URL is "parsed". Micronutrients are
-     intentionally left unreadable to demonstrate error highlighting + repair. */
+  /* Demo payload used when a label photo / URL is "parsed", and as the
+     filled example on View Product / “Show me an example”. The ingredient
+     string is the Hungry-Man Breaded Chicken Alfredo label — nested with
+     (), [], and {} — so Parsed Ingredients can show a real depth tree.
+     Label-photo OCR still blanks the micronutrient row (see parseLabel). */
   const SAMPLE_PARSE = {
-    productName: 'Flax4Life Chocolate Chip Muffins',
-    category: 'Bakery › Muffins',
-    ingredients: 'Ground Flaxseed, Cane Sugar, Egg Whites, Water, Chocolate Chips (Cane Sugar, Unsweetened Chocolate, Cocoa Butter), Non-GMO Expeller-Pressed Canola Oil, Cocoa, Baking Soda, Baking Powder, Sea Salt, Xanthan Gum, Natural Flavor.',
-    allergens: ['Eggs'],
-    contains: 'Eggs. Made in a facility that also processes tree nuts and soy.',
+    productName: 'Double Chicken Bowls, Breaded Chicken Alfredo',
+    brand: 'Hungry-Man',
+    brandLogo: '',
+    category: 'Frozen › Meals',
+    ingredients: 'Breaded Chicken Breast Patties with Rib Meat (Chicken Breast with Rib Meat, Breader [Corn Flour, Wheat Flour, Salt, Monosodium Glutamate, Dextrose, Flavorings {Natural Flavor Complex (Yeast Extract [Autolyzed Baker\'s Yeast {Glutamic Acid, Nucleotide Fraction (Inosine Monophosphate, Guanosine Monophosphate)}, Amino Acid Digest], Spice Extractives), Garlic Powder, Onion Powder}], Water, Batter [Water, Wheat Flour, Modified Corn Starch, Salt], Chicken Skin, Salt, Sodium Phosphates, Autolyzed Yeast Extract, Flavorings), Alfredo Sauce (Water, Soybean Oil, Parmesan Cheese [Part-Skim Milk, Cheese Culture, Salt, Enzymes], Spices, Modified Corn Starch, Nonfat Dry Milk, Alfredo Cheese Blend [Parmesan Cheese {Pasteurized Milk, Cultures, Salt, Enzymes}, Water, Cheddar Cheese {Pasteurized Milk, Cultures, Salt, Enzymes}, Nonfat Dry Milk, Salt, Romano Cheese {Pasteurized Cow\'s Milk, Cultures, Salt, Enzymes}, Disodium Phosphate, Sodium Citrate], Salt, Garlic Powder, Xanthan Gum, Guar Gum), Cooked Fettuccine Pasta (Water, Enriched Wheat Flour [Durum Wheat Semolina {Hard Durum Wheat (Wheat Endosperm [Starch Granules, Gluten Protein Matrix {Gliadin, Glutenin}], Wheat Bran, Wheat Germ), Milling Process}, Niacin, Ferrous Sulfate (Iron), Thiamine Mononitrate, Riboflavin, Folic Acid], Soybean Oil, Dried Egg Whites [Pasteurized Egg Albumen {Ovalbumin, Conalbumin, Ovomucoid}, Spray-Drying Aid]).',
+    allergens: ['Wheat', 'Milk', 'Eggs', 'Soy'],
+    contains: 'Wheat, Milk, Eggs, Soybeans. May contain traces of peanuts and tree nuts.',
+    upc: '0658276209940',
     nf: {
-      servingsPer: '4', servingSize: '1 muffin (57g)', calories: '190',
-      totalFat: { amt: '11g', dv: '14%' }, satFat: { amt: '1.5g', dv: '8%' },
-      transFat: { amt: '0g', dv: '' }, cholesterol: { amt: '0mg', dv: '0%' },
-      sodium: { amt: '210mg', dv: '9%' }, totalCarb: { amt: '18g', dv: '7%' },
-      fiber: { amt: '5g', dv: '18%' }, totalSugars: { amt: '9g', dv: '' },
-      addedSugars: { amt: '8g', dv: '16%' }, protein: { amt: '5g', dv: '' },
-      vitaminD: { amt: '', dv: '' }, calcium: { amt: '', dv: '' },
-      iron: { amt: '', dv: '' }, potassium: { amt: '', dv: '' },
+      servingsPer: '1', servingSize: '1 meal (425g)', calories: '620',
+      totalFat: { amt: '27g', dv: '35%' }, satFat: { amt: '5g', dv: '25%' },
+      transFat: { amt: '0g', dv: '' }, cholesterol: { amt: '70mg', dv: '23%' },
+      sodium: { amt: '2110mg', dv: '92%' }, totalCarb: { amt: '65g', dv: '24%' },
+      fiber: { amt: '3g', dv: '11%' }, totalSugars: { amt: '4g', dv: '' },
+      addedSugars: { amt: '0g', dv: '0%' }, protein: { amt: '29g', dv: '' },
+      vitaminD: { amt: '0mcg', dv: '0%' }, calcium: { amt: '200mg', dv: '15%' },
+      iron: { amt: '3mg', dv: '15%' }, potassium: { amt: '460mg', dv: '10%' },
     },
     errors: {
       'nf.vitaminD': 'Unreadable — low resolution',
@@ -211,7 +219,7 @@
       'nf.iron': 'Unreadable — low resolution',
       'nf.potassium': 'Unreadable — low resolution',
     },
-    image: 'https://images.unsplash.com/photo-1607958996333-41aef7caefaa?w=640&q=70',
+    image: 'https://www.kroger.com/product/images/xlarge/front/0065827620994',
   };
   /* Sample muffin URL — used only when the user asks to preview a filled
      example, or as the empty-state photo in the image picker modal. A brand-new
@@ -490,7 +498,13 @@
   }
   function defaultDescription(name) {
     const n = String(name || 'This product').replace(/\s*-\s*\d+(?:\.\d+)?\s*(ct|oz)\b.*$/i, '').trim() || 'This product';
-    return clipDesc(n + ' — a bakery favorite with a moist crumb, simple ingredients, and flavor that holds from the first bite to the last.');
+    if (/muffin|brownie|bakery|flax/i.test(n)) {
+      return clipDesc(n + ' — a bakery favorite with a moist crumb, simple ingredients, and flavor that holds from the first bite to the last.');
+    }
+    if (/chicken|alfredo|hungry/i.test(n)) {
+      return clipDesc(n + ' — a frozen meal with breaded chicken, Alfredo sauce, and fettuccine. The ingredient tree is fully nested from the label.');
+    }
+    return clipDesc(n + ' — check the ingredient tree, Nutrition Facts, and codes on the right.');
   }
   function formatPrice(raw) {
     const s = String(raw == null ? '' : raw).replace(/[^0-9.]/g, '');
@@ -880,7 +894,6 @@
     const title = identity
       ? `<div class="nfp-fi-header">
           <span class="nfp-fi-title">${editSpan('productName', state.productName, 'Product name')}</span>
-          <div class="nfp-fi-cat nfp-fi-cat--dock">${heroCatHTML(false)}</div>
         </div>`
       : `<div class="nfp-fi-header"><span class="nfp-fi-title">Add Product Sizes</span></div>`;
     const addSizeThumb = `
@@ -932,6 +945,12 @@
             ${addSizeThumb}
           </div>`;
     const upcRow = foldUpc ? upcBlock : '';
+    const catRow = identity
+      ? `<div class="nfp-fi-cat nfp-fi-cat--dock">${heroCatHTML(false)}</div>`
+      : '';
+    const upcStack = identity
+      ? `<div class="nfp-fi-upc-stack">${upcRow}${catRow}</div>`
+      : '';
     const body = identity
       ? `<div class="nfp-fi-copy">
           ${title}
@@ -939,7 +958,7 @@
             ${descRow}
             ${priceRow}
             ${sizeRow}
-            ${upcRow}
+            ${upcStack}
           </div>
         </div>`
       : `${title}
@@ -1033,8 +1052,10 @@
     { keys: ['cocoa'], mapped: 'COCOA', cat: 'Flavor', sub: 'Cocoa', pl: 1, match: 'ok' },
     { keys: ['baking soda', 'sodium bicarbonate'], mapped: 'SODIUM BICARBONATE', cat: 'Additive', sub: 'Leavening', pl: 2, match: 'ok' },
     { keys: ['baking powder'], mapped: 'BAKING POWDER', cat: 'Additive', sub: 'Leavening', pl: 2, match: 'ok' },
-    { keys: ['sea salt', 'salt'], mapped: 'SEA SALT', cat: 'Mineral', sub: 'Salt', pl: 1, match: 'ok' },
+    { keys: ['sea salt'], mapped: 'SEA SALT', cat: 'Mineral', sub: 'Salt', pl: 1, match: 'ok' },
+    { keys: ['salt'], mapped: 'SALT', cat: 'Mineral', sub: 'Salt', pl: 1, match: 'ok' },
     { keys: ['xanthan gum'], mapped: 'XANTHAN GUM', cat: 'Additive', sub: 'Gum', pl: 2, match: 'part' },
+    { keys: ['guar gum'], mapped: 'GUAR GUM', cat: 'Additive', sub: 'Gum', pl: 2, match: 'ok' },
     { keys: ['natural flavor', 'natural flavour'], mapped: 'NATURAL FLAVOR', cat: 'Additive', sub: 'Flavor', pl: 2, match: 'bad' },
     { keys: ['dates', 'organic dates', '100% organic dates'], mapped: 'DATES', cat: 'Fruit', sub: 'Stone Fruits', pl: 1, match: 'ok' },
     { keys: ['almond', 'almonds'], mapped: 'ALMOND', cat: 'Protein', sub: 'Nut & Seed', pl: 1, match: 'ok' },
@@ -1047,69 +1068,189 @@
     { keys: ['reishi extract'], mapped: 'REISHI', cat: 'Additive', sub: 'Extract', pl: 2, match: 'ok' },
     { keys: ['lion\'s mane extract', 'lions mane extract'], mapped: 'LION\'S MANE', cat: 'Additive', sub: 'Extract', pl: 2, match: 'bad' },
     { keys: ['ashwagandha extract'], mapped: 'ASHWAGANDHA', cat: 'Additive', sub: 'Extract', pl: 2, match: 'part' },
+    { keys: ['chicken breast with rib meat'], mapped: 'CHICKEN BREAST WITH RIB MEAT', cat: 'Protein', sub: 'Poultry', pl: 1, match: 'ok' },
+    { keys: ['corn flour'], mapped: 'CORN FLOUR', cat: 'Grain', sub: 'Cereal', pl: 1, match: 'ok' },
+    { keys: ['wheat flour'], mapped: 'WHEAT FLOUR', cat: 'Grain', sub: 'Cereal', pl: 1, match: 'ok' },
+    { keys: ['monosodium glutamate'], mapped: 'MSG', cat: 'Additive', sub: 'Flavor', pl: 2, match: 'ok' },
+    { keys: ['dextrose'], mapped: 'DEXTROSE', cat: 'Sweetener', sub: 'Sugars', pl: 2, match: 'ok' },
+    { keys: ['flavorings', 'flavoring'], mapped: 'FLAVORINGS', cat: 'Additive', sub: 'Flavor', pl: 2, match: 'ok' },
+    { keys: ['glutamic acid'], mapped: 'GLUTAMIC ACID', cat: 'Additive', sub: 'Amino Acid', pl: 2, match: 'ok' },
+    { keys: ['inosine monophosphate'], mapped: 'IMP', cat: 'Additive', sub: 'Nucleotide', pl: 2, match: 'ok' },
+    { keys: ['guanosine monophosphate'], mapped: 'GMP', cat: 'Additive', sub: 'Nucleotide', pl: 2, match: 'ok' },
+    { keys: ['amino acid digest'], mapped: 'AMINO ACID DIGEST', cat: 'Additive', sub: 'Protein Hydrolysate', pl: 2, match: 'ok' },
+    { keys: ['spice extractives', 'spice extractive'], mapped: 'SPICE EXTRACTIVES', cat: 'Spice', sub: 'Extract', pl: 2, match: 'ok' },
+    { keys: ['garlic powder'], mapped: 'GARLIC POWDER', cat: 'Spice', sub: 'Allium', pl: 1, match: 'ok' },
+    { keys: ['onion powder'], mapped: 'ONION POWDER', cat: 'Spice', sub: 'Allium', pl: 1, match: 'ok' },
+    { keys: ['modified corn starch'], mapped: 'CORN STARCH MODIFIED', cat: 'Additive', sub: 'Starch', pl: 2, match: 'ok' },
+    { keys: ['chicken skin'], mapped: 'CHICKEN SKIN', cat: 'Fat', sub: 'Poultry', pl: 1, match: 'ok' },
+    { keys: ['sodium phosphates', 'sodium phosphate'], mapped: 'SODIUM PHOSPHATES', cat: 'Additive', sub: 'Phosphate', pl: 2, match: 'ok' },
+    { keys: ['autolyzed yeast extract'], mapped: 'AUTOLYZED YEAST EXTRACT', cat: 'Additive', sub: 'Yeast', pl: 2, match: 'ok' },
+    { keys: ['soybean oil'], mapped: 'SOYBEAN OIL', cat: 'Fat', sub: 'Oil', pl: 2, match: 'ok' },
+    { keys: ['part-skim milk', 'part skim milk'], mapped: 'MILK PART-SKIM', cat: 'Protein', sub: 'Dairy', pl: 1, match: 'ok' },
+    { keys: ['cheese culture', 'cheese cultures', 'cultures'], mapped: 'CHEESE CULTURE', cat: 'Additive', sub: 'Culture', pl: 1, match: 'ok' },
+    { keys: ['enzymes'], mapped: 'ENZYMES', cat: 'Additive', sub: 'Enzyme', pl: 1, match: 'ok' },
+    { keys: ['spices'], mapped: 'SPICES', cat: 'Spice', sub: 'Blend', pl: 1, match: 'ok' },
+    { keys: ['nonfat dry milk'], mapped: 'MILK NONFAT DRY', cat: 'Protein', sub: 'Dairy', pl: 2, match: 'ok' },
+    { keys: ['pasteurized cow\'s milk', 'pasteurized cows milk', 'pasteurized milk'], mapped: 'MILK PASTEURIZED', cat: 'Protein', sub: 'Dairy', pl: 1, match: 'ok' },
+    { keys: ['disodium phosphate'], mapped: 'DISODIUM PHOSPHATE', cat: 'Additive', sub: 'Phosphate', pl: 2, match: 'ok' },
+    { keys: ['sodium citrate'], mapped: 'SODIUM CITRATE', cat: 'Additive', sub: 'Salt', pl: 2, match: 'ok' },
+    { keys: ['starch granules'], mapped: 'WHEAT STARCH', cat: 'Grain', sub: 'Starch', pl: 1, match: 'ok' },
+    { keys: ['gliadin'], mapped: 'GLIADIN', cat: 'Protein', sub: 'Gluten', pl: 1, match: 'ok' },
+    { keys: ['glutenin'], mapped: 'GLUTENIN', cat: 'Protein', sub: 'Gluten', pl: 1, match: 'ok' },
+    { keys: ['wheat bran'], mapped: 'WHEAT BRAN', cat: 'Grain', sub: 'Bran', pl: 1, match: 'ok' },
+    { keys: ['wheat germ'], mapped: 'WHEAT GERM', cat: 'Grain', sub: 'Germ', pl: 1, match: 'ok' },
+    { keys: ['milling process'], mapped: 'MILLING', cat: 'Process', sub: 'Milling', pl: 2, match: 'part' },
+    { keys: ['niacin'], mapped: 'VITAMIN B-3', cat: 'Vitamin', sub: 'B Vitamin', pl: 2, match: 'ok' },
+    { keys: ['ferrous sulfate'], mapped: 'IRON', cat: 'Mineral', sub: 'Iron', pl: 2, match: 'ok' },
+    { keys: ['iron'], mapped: 'IRON', cat: 'Mineral', sub: 'Iron', pl: 1, match: 'ok' },
+    { keys: ['thiamine mononitrate'], mapped: 'VITAMIN B-1', cat: 'Vitamin', sub: 'B Vitamin', pl: 2, match: 'ok' },
+    { keys: ['riboflavin'], mapped: 'VITAMIN B-2', cat: 'Vitamin', sub: 'B Vitamin', pl: 2, match: 'ok' },
+    { keys: ['folic acid'], mapped: 'VITAMIN B-9', cat: 'Vitamin', sub: 'B Vitamin', pl: 2, match: 'ok' },
+    { keys: ['ovalbumin'], mapped: 'OVALBUMIN', cat: 'Protein', sub: 'Egg', pl: 1, match: 'ok' },
+    { keys: ['conalbumin'], mapped: 'MALTODEXTRIN', cat: 'Additive', sub: 'Carrier', pl: 2, match: 'part' },
+    { keys: ['ovomucoid'], mapped: 'MALTODEXTRIN', cat: 'Additive', sub: 'Carrier', pl: 2, match: 'part' },
+    { keys: ['spray-drying aid', 'spray drying aid'], mapped: 'MALTODEXTRIN', cat: 'Additive', sub: 'Carrier', pl: 2, match: 'part' },
   ];
+
+  const BRACKET_PAIRS = { '(': ')', '[': ']', '{': '}' };
+  const BRACKET_OPEN = Object.keys(BRACKET_PAIRS);
+  const BRACKET_CLOSE = Object.values(BRACKET_PAIRS);
 
   function splitIngredientTokens(text) {
     const parts = [];
     let buf = '';
     let depth = 0;
     String(text || '').split('').forEach((ch) => {
-      if (ch === '(') { depth += 1; buf += ch; return; }
-      if (ch === ')') { depth = Math.max(0, depth - 1); buf += ch; return; }
+      if (BRACKET_OPEN.indexOf(ch) >= 0) { depth += 1; buf += ch; return; }
+      if (BRACKET_CLOSE.indexOf(ch) >= 0) { depth = Math.max(0, depth - 1); buf += ch; return; }
       if (ch === ',' && depth === 0) {
-        if (buf.trim()) parts.push(buf.trim());
+        const t = buf.trim().replace(/\.+$/, '');
+        if (t) parts.push(t);
         buf = '';
         return;
       }
       buf += ch;
     });
-    if (buf.trim()) parts.push(buf.trim());
+    const t = buf.trim().replace(/\.+$/, '');
+    if (t) parts.push(t);
     return parts;
   }
 
+  function firstBracketGroup(token) {
+    const s = String(token || '');
+    let start = -1;
+    let openCh = '';
+    for (let i = 0; i < s.length; i++) {
+      if (BRACKET_OPEN.indexOf(s[i]) >= 0) { start = i; openCh = s[i]; break; }
+    }
+    if (start < 0) return null;
+    const closeCh = BRACKET_PAIRS[openCh];
+    let depth = 0;
+    for (let i = start; i < s.length; i++) {
+      if (s[i] === openCh) depth += 1;
+      else if (s[i] === closeCh) {
+        depth -= 1;
+        if (depth === 0) {
+          return { name: s.slice(0, start).trim(), inner: s.slice(start + 1, i).trim() };
+        }
+      }
+    }
+    return { name: s.slice(0, start).trim(), inner: s.slice(start + 1).replace(/[)\]}]+$/g, '').trim() };
+  }
+
   function lookupIngredient(raw) {
-    const clean = String(raw || '').replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+    const clean = String(raw || '').replace(/\s+/g, ' ').trim().replace(/\.+$/, '');
     const key = clean.toLowerCase().replace(/^100%\s+/, '').replace(/^organic\s+/, '');
-    const hit = IA_CATALOG.find((c) => c.keys.some((k) => key === k || key.endsWith(' ' + k) || key.startsWith(k)));
-    if (hit) return { raw: clean || raw, mapped: hit.mapped, cat: hit.cat, sub: hit.sub, pl: hit.pl, match: hit.match };
+    let best = null;
+    let bestLen = -1;
+    IA_CATALOG.forEach((c) => {
+      c.keys.forEach((k) => {
+        if (key === k || key.endsWith(' ' + k)) {
+          if (k.length > bestLen) { best = c; bestLen = k.length; }
+        }
+      });
+    });
+    if (best) {
+      return { raw: clean || raw, mapped: best.mapped, cat: best.cat, sub: best.sub, pl: best.pl, match: best.match, isGroup: false, children: [] };
+    }
     const mapped = clean.toUpperCase() || String(raw || '').toUpperCase();
-    return { raw: clean || raw, mapped, cat: 'Ingredient', sub: 'Unclassified', pl: 2, match: 'ok' };
+    return { raw: clean || raw, mapped, cat: 'Ingredient', sub: 'Unclassified', pl: 2, match: 'ok', isGroup: false, children: [] };
+  }
+
+  function parseIngredientNode(token, id) {
+    const trimmed = String(token || '').trim().replace(/\.+$/, '');
+    const group = firstBracketGroup(trimmed);
+    const name = ((group && group.name) || trimmed).trim();
+    if (group && group.inner) {
+      const children = splitIngredientTokens(group.inner)
+        .map((child, i) => parseIngredientNode(child, id + '.' + i))
+        .filter((n) => n && n.raw);
+      if (children.length) {
+        return {
+          id, raw: name, mapped: '', cat: '', sub: '', pl: 0, match: '',
+          isGroup: true, children,
+        };
+      }
+    }
+    const hit = lookupIngredient(name);
+    hit.id = id;
+    hit.isGroup = false;
+    hit.children = [];
+    return hit;
   }
 
   function parseIngredientTree(text) {
-    const rows = [];
-    splitIngredientTokens(text).forEach((token) => {
-      const m = token.match(/^(.*?)(?:\s*\((.*)\))\s*$/);
-      const parentRaw = m ? m[1].trim() : token;
-      const inner = m && m[2] ? m[2] : '';
-      const parent = lookupIngredient(parentRaw);
-      parent.children = inner ? splitIngredientTokens(inner).map((c) => lookupIngredient(c)) : [];
-      rows.push(parent);
-    });
-    return rows;
+    return splitIngredientTokens(text)
+      .map((token, i) => parseIngredientNode(token, String(i)))
+      .filter((n) => n && n.raw);
   }
 
   function flattenParsed(tree) {
     const out = [];
-    tree.forEach((row) => {
-      out.push(row);
-      (row.children || []).forEach((c) => out.push(c));
-    });
+    function walk(nodes, depth) {
+      (nodes || []).forEach((row) => {
+        out.push(Object.assign({}, row, { depth: depth }));
+        if (row.children && row.children.length) walk(row.children, depth + 1);
+      });
+    }
+    walk(tree, 0);
     return out;
   }
 
   function iaMatchOf(row) {
-    if (state.iaConfirm[row.mapped]) return 'ok';
+    if (!row || row.isGroup) return '';
+    if (row.id && state.iaConfirm[row.id]) return 'ok';
     return row.match || 'ok';
   }
 
-  function iaMatchPill(match, mapped) {
+  function iaMatchStats(tree) {
+    const flat = flattenParsed(tree);
+    const leaves = flat.filter((r) => !r.isGroup);
+    const matches = leaves.map(iaMatchOf);
+    return {
+      flat,
+      leaves,
+      ok: matches.filter((m) => m === 'ok').length,
+      part: matches.filter((m) => m === 'part').length,
+      bad: matches.filter((m) => m === 'bad').length,
+    };
+  }
+
+  function iaParsedBadges(stats) {
+    const bits = [];
+    if (stats.ok) bits.push(`<span class="nfp-ia-pill nfp-ia-pill--ok" title="${stats.ok} matched">${stats.ok}</span>`);
+    if (stats.part) bits.push(`<span class="nfp-ia-pill nfp-ia-pill--part" title="${stats.part} fuzzy">${stats.part}</span>`);
+    if (stats.bad) bits.push(`<span class="nfp-ia-pill nfp-ia-pill--bad" title="${stats.bad} unmatched">${stats.bad}</span>`);
+    return bits.length ? `<span class="nfp-ia-head-pills">${bits.join('')}</span>` : '';
+  }
+
+  function iaMatchPill(match, rowId) {
     if (match === 'ok') return `<span class="nfp-ia-pill nfp-ia-pill--ok">Matched</span>`;
     if (match === 'part') {
-      return `<span class="nfp-ia-pill-wrap"><span class="nfp-ia-pill nfp-ia-pill--part">Partly</span>`
-        + `<button type="button" class="nfp-ia-confirm" data-nfp="ia-confirm" data-arg="${esc(mapped)}">Confirm</button></span>`;
+      return `<span class="nfp-ia-pill-wrap"><span class="nfp-ia-pill nfp-ia-pill--part">Fuzzy</span>`
+        + `<button type="button" class="nfp-ia-confirm" data-nfp="ia-confirm" data-arg="${esc(rowId)}">Confirm</button></span>`;
     }
-    return `<span class="nfp-ia-pill-wrap"><span class="nfp-ia-pill nfp-ia-pill--bad">Mismatch</span>`
+    return `<span class="nfp-ia-pill-wrap"><span class="nfp-ia-pill nfp-ia-pill--bad">Unmatched</span>`
       + `<span class="material-symbols-outlined nfp-ia-pill-ico" aria-hidden="true">search</span></span>`;
   }
 
@@ -1165,11 +1306,12 @@
     return rows;
   }
 
-  function iaAccord(id, title, inner) {
-    const open = state.iaOpen[id] !== false;
+  function iaAccord(id, title, inner, extra) {
+    const open = !!state.iaOpen[id];
     return `<section class="nfp-ia-sec${open ? '' : ' is-collapsed'}" data-ia-sec="${id}">
       <button type="button" class="nfp-ia-head" data-nfp="ia-toggle" data-arg="${id}" aria-expanded="${open ? 'true' : 'false'}">
         <span class="nfp-ia-title">${title}</span>
+        ${extra || ''}
         <span class="material-symbols-outlined nfp-ia-chev" aria-hidden="true">expand_more</span>
       </button>
       <div class="nfp-ia-body">${inner}</div>
@@ -1177,33 +1319,35 @@
   }
 
   function parsedPanelHTML(tree) {
-    const flat = flattenParsed(tree);
-    const matches = flat.map(iaMatchOf);
-    const ok = matches.filter((m) => m === 'ok').length;
-    const part = matches.filter((m) => m === 'part').length;
-    const bad = matches.filter((m) => m === 'bad').length;
-    const pending = part + bad;
+    const stats = iaMatchStats(tree);
+    const pending = stats.part + stats.bad;
     const banner = pending
       ? `<div class="nfp-ia-banner nfp-ia-banner--warn"><span class="material-symbols-outlined">warning</span>${pending} mapping${pending === 1 ? '' : 's'} still need a review.</div>`
       : `<div class="nfp-ia-banner nfp-ia-banner--ok"><span class="material-symbols-outlined">check_circle</span>All ingredients matched and waiting for your confirmation.</div>`;
     const actions = `<div class="nfp-ia-actions">
         <button type="button" class="nfp-ia-btn nfp-ia-btn--ghost" data-nfp="ia-review">${pending ? `Review ${pending} mapping${pending === 1 ? '' : 's'}` : 'Review mappings'}</button>
-        <button type="button" class="nfp-ia-btn nfp-ia-btn--ghost" data-nfp="ia-analyze">Re-analyze all ${flat.length}</button>
-        <button type="button" class="nfp-ia-btn nfp-ia-btn--ok" data-nfp="ia-confirm-all">Confirm ${ok} matched</button>
+        <button type="button" class="nfp-ia-btn nfp-ia-btn--ghost" data-nfp="ia-analyze">Re-analyze all ${stats.flat.length}</button>
+        <button type="button" class="nfp-ia-btn nfp-ia-btn--ok" data-nfp="ia-confirm-all">Confirm ${stats.ok} matched</button>
       </div>`;
-    const rows = flat.map((row, i) => {
+    const rows = stats.flat.map((row, i) => {
+      const d = row.depth || 0;
       const match = iaMatchOf(row);
-      return `<div class="nfp-ia-row nfp-ia-parsed-row" style="--i:${i}" data-ia-match="${match}">
-        <div class="nfp-ia-td nfp-ia-td--ing">${esc(row.raw)}</div>
-        <div class="nfp-ia-td nfp-ia-td--mapstack">
-          <span class="nfp-ia-mapped">${esc(row.mapped)}</span>
-          ${iaMatchPill(match, row.mapped)}
-        </div>
+      if (row.isGroup) {
+        return `<div class="nfp-ia-row nfp-ia-parsed-row is-group" style="--i:${Math.min(i, 18)};--d:${d}" data-depth="${d}">
+        <div class="nfp-ia-td nfp-ia-td--ing"><span class="nfp-ia-tree">${esc(row.raw)}</span></div>
+        <div class="nfp-ia-td nfp-ia-td--mapped"></div>
+        <div class="nfp-ia-td nfp-ia-td--match"></div>
+      </div>`;
+      }
+      return `<div class="nfp-ia-row nfp-ia-parsed-row" style="--i:${Math.min(i, 18)};--d:${d}" data-depth="${d}" data-ia-id="${esc(row.id)}" data-ia-match="${match}">
+        <div class="nfp-ia-td nfp-ia-td--ing"><span class="nfp-ia-tree">${esc(row.raw)}</span></div>
+        <div class="nfp-ia-td nfp-ia-td--mapped"><span class="nfp-ia-mapped">${esc(row.mapped)}</span></div>
+        <div class="nfp-ia-td nfp-ia-td--match">${iaMatchPill(match, row.id)}</div>
       </div>`;
     }).join('');
     return `${banner}${actions}
       <div class="nfp-ia-table nfp-ia-table--parsed">
-        <div class="nfp-ia-th"><span>Ingredient</span><span>Mapped / Match</span></div>
+        <div class="nfp-ia-th"><span>Ingredient</span><span>Mapped</span><span>Match</span></div>
         ${rows}
       </div>`;
   }
@@ -1238,22 +1382,21 @@
   }
 
   function scoutPanelHTML(tree) {
-    const rows = [];
-    tree.forEach((row) => {
-      rows.push({ ...row, indent: 0 });
-      (row.children || []).forEach((c) => rows.push({ ...c, indent: 1 }));
-    });
+    const rows = flattenParsed(tree);
     return `<div class="nfp-ia-table nfp-ia-table--scout">
       <div class="nfp-ia-th nfp-ia-th--scout"><span>Name / alt</span><span>Mapped to</span><span>Category / Sub-category</span><span>Process</span></div>
-      ${rows.map((r, i) => `<div class="nfp-ia-row nfp-ia-scout-row${r.indent ? ' is-child' : ''}" style="--i:${i}">
-        <div class="nfp-ia-td">${esc(r.raw)}</div>
-        <div class="nfp-ia-td">${esc(r.mapped)}</div>
+      ${rows.map((r, i) => {
+        const d = r.depth || 0;
+        return `<div class="nfp-ia-row nfp-ia-scout-row${r.isGroup ? ' is-group' : ''}${d ? ' is-child' : ''}" style="--i:${Math.min(i, 18)};--d:${d}" data-depth="${d}">
+        <div class="nfp-ia-td"><span class="nfp-ia-tree">${esc(r.raw)}</span></div>
+        <div class="nfp-ia-td">${r.isGroup ? '' : esc(r.mapped)}</div>
         <div class="nfp-ia-td nfp-ia-td--mapstack">
-          <span class="nfp-ia-mapped">${esc(r.cat)}</span>
-          ${r.sub ? `<span class="nfp-ia-subcat">${esc(r.sub)}</span>` : ''}
+          ${r.isGroup ? '' : `<span class="nfp-ia-mapped">${esc(r.cat)}</span>`}
+          ${!r.isGroup && r.sub ? `<span class="nfp-ia-subcat">${esc(r.sub)}</span>` : ''}
         </div>
-        <div class="nfp-ia-td"><span class="nfp-ia-pl nfp-ia-pl--${r.pl}" title="Process level ${r.pl}">${r.pl}</span></div>
-      </div>`).join('')}
+        <div class="nfp-ia-td">${r.isGroup ? '' : `<span class="nfp-ia-pl nfp-ia-pl--${r.pl}" title="Process level ${r.pl}">${r.pl}</span>`}</div>
+      </div>`;
+      }).join('')}
     </div>`;
   }
 
@@ -1264,14 +1407,14 @@
         <textarea class="nfp-ingred-edit" data-field="ingredients" rows="1" placeholder="Paste or type the ingredient list">${esc(state.ingredients)}</textarea>
         ${err ? `<div class="nfp-field-note"><span class="material-symbols-outlined">error_outline</span>${esc(err)}</div>` : ''}
       </div>
-      <button type="button" class="nfp-ia-analyze" data-nfp="ia-analyze"${state.ingredients ? '' : ' disabled'}>
+      <button type="button" class="nfp-ia-analyze" id="nfp-ia-analyze-btn" data-nfp="ia-analyze"${state.ingredients ? '' : ' disabled'}>
         <span class="material-symbols-outlined">science</span>Analyze Ingredients
       </button>
     </div>`;
     const tree = parseIngredientTree(state.ingredients);
     const analyzed = state.iaRan && tree.length;
     const extras = analyzed
-      ? iaAccord('parsed', 'Parsed Ingredients', parsedPanelHTML(tree))
+      ? iaAccord('parsed', 'Parsed Ingredients', parsedPanelHTML(tree), iaParsedBadges(iaMatchStats(tree)))
         + iaAccord('codes', 'Codes', codesPanelHTML())
         + iaAccord('nutrients', 'Nutrients', nutrientsPanelHTML())
         + iaAccord('scout', 'Wise Code AI Engine Flavor Results', scoutPanelHTML(tree))
@@ -1887,50 +2030,18 @@
     });
   }
 
-  /* Ingredients column height is driven by the Nutrition Facts column (label
-     + allergens + contains). Extra nutrient rows grow the label, and the
-     ingredients column grows with it. A floor — the remaining height of the
-     module body from the column top to the save bar — keeps the column from
-     shrinking shorter than it is on a typical product. */
+  /* Shared module scroll: ingredients grow with the tree; Nutrition Facts
+     sticks in the right column so it never rides above the module top. */
   let nfpIaHeightRo = null;
-  function nfpIngredVisibleFloor(ingred) {
-    if (!nfpBody || !ingred) return 0;
-    const bodyBox = nfpBody.getBoundingClientRect();
-    const ingBox = ingred.getBoundingClientRect();
-    const y = ingBox.top - bodyBox.top + nfpBody.scrollTop;
-    return Math.round(nfpBody.clientHeight - y);
-  }
   function syncIngredColHeight() {
     const sp = nfpBody && nfpBody.querySelector('.nfp-sp');
     if (!sp) return;
-    const facts = sp.querySelector('.nfp-sp-facts');
-    const media = sp.querySelector('.nfp-sp-media');
     const ingred = sp.querySelector('.nfp-sp-ingred');
-    if (!facts || !ingred) return;
-    /* Stacked: let ingredients grow with their content instead of locking to
-       the Nutrition Facts height. */
-    if (!nfpColWide()) {
-      ingred.style.removeProperty('--nfp-ia-h');
-      ingred.classList.remove('has-ia-h');
-      return;
-    }
-    const fr = facts.getBoundingClientRect();
-    const ir = ingred.getBoundingClientRect();
-    const mr = media && media.getBoundingClientRect();
-    let factsH;
-    if (ir.top < fr.bottom - 8) {
-      const bottom = Math.max(fr.bottom, mr ? mr.bottom : fr.bottom);
-      factsH = Math.round(bottom - ir.top);
-    } else {
-      factsH = Math.round(fr.height);
-    }
-    if (factsH < 120) factsH = Math.round(fr.height);
-    const floor = nfpIngredVisibleFloor(ingred);
-    const h = Math.max(factsH, floor > 120 ? floor : 0);
-    const prev = parseFloat(ingred.style.getPropertyValue('--nfp-ia-h')) || 0;
-    if (Math.abs(prev - h) < 1 && ingred.classList.contains('has-ia-h')) return;
-    ingred.style.setProperty('--nfp-ia-h', h + 'px');
-    ingred.classList.add('has-ia-h');
+    if (!ingred) return;
+    /* Shared module scroll: the ingredients column grows with the tree and
+       the Nutrition Facts column sticks. Do not lock a nested scroller. */
+    ingred.style.removeProperty('--nfp-ia-h');
+    ingred.classList.remove('has-ia-h');
   }
   function wireIngredColHeight() {
     if (nfpIaHeightRo) {
@@ -1971,6 +2082,7 @@
       syncNfpHeaderPhoto();
       syncNfpHelixBg();
       updateSaveState();
+      refreshIaNudgeToast();
       return;
     }
     if (state.nfpWide) {
@@ -2006,7 +2118,7 @@
             <div class="nfp-sp-facts">
               <div class="nfp-sp-strip nfp-sp-strip--folded">${strip}</div>
               <div class="nfp-sp-shield nfp-sp-shield--folded">${nextStepHTML()}</div>
-              ${facts}${allergensHTML()}
+              <div class="nfp-sp-facts-pin">${facts}${allergensHTML()}</div>
             </div>
             <div class="nfp-sp-split" data-nfp-split="0" role="separator" aria-orientation="vertical" aria-label="Resize ingredients and Nutrition Facts" tabindex="0"><span class="nfp-sp-grip" aria-hidden="true"></span></div>
             <div class="nfp-sp-ingred">${ingredientsHTML()}</div>
@@ -2016,7 +2128,7 @@
           `<div class="nfp-sp nfp-sp--noidentity">
             <div class="nfp-sp-strip">${strip}</div>
             <div class="nfp-sp-shield">${nextStepHTML()}</div>
-            <div class="nfp-sp-facts">${facts}${allergensHTML()}</div>
+            <div class="nfp-sp-facts"><div class="nfp-sp-facts-pin">${facts}${allergensHTML()}</div></div>
             <div class="nfp-sp-split" data-nfp-split="0" role="separator" aria-orientation="vertical" aria-label="Resize Nutrition Facts and ingredients" tabindex="0"><span class="nfp-sp-grip" aria-hidden="true"></span></div>
             <div class="nfp-sp-ingred">${ingredientsHTML()}</div>
           </div><div class="nfp-ins">${insightsGridHTML()}</div>`;
@@ -2026,14 +2138,14 @@
             <div class="nfp-sp-strip">${strip}</div>
             <div class="nfp-sp-media">${media}${nextStepHTML()}</div>
             <div class="nfp-sp-split" data-nfp-split="0" role="separator" aria-orientation="vertical" aria-label="Resize photo and Nutrition Facts" tabindex="0"><span class="nfp-sp-grip" aria-hidden="true"></span></div>
-            <div class="nfp-sp-facts">${facts}${allergensHTML()}</div>
+            <div class="nfp-sp-facts"><div class="nfp-sp-facts-pin">${facts}${allergensHTML()}</div></div>
             <div class="nfp-sp-split" data-nfp-split="1" role="separator" aria-orientation="vertical" aria-label="Resize Nutrition Facts and ingredients" tabindex="0"><span class="nfp-sp-grip" aria-hidden="true"></span></div>
             <div class="nfp-sp-ingred">${ingredientsHTML()}</div>
           </div>${insightsCardsHTML()}`;
       }
       wireNfpColumns();
       wireIngredColHeight();
-      requestAnimationFrame(sizeIngredEdit);
+      requestAnimationFrame(() => { sizeIngredEdit(); refreshIaNudgeToast(); });
     }
     const nextHelix = nfpBody.querySelector('.nfp-fi-strip-photo--helix');
     if (nextHelix && helixKeep.length) {
@@ -2050,6 +2162,7 @@
     }
     syncNfpHeaderPhoto();
     updateSaveState();
+    requestAnimationFrame(() => refreshIaNudgeToast());
   }
 
   /* Clear a single Nutrition-Facts field's error visuals in place — used when a
@@ -2989,6 +3102,9 @@
       if (!state.allergens.length) state.allergens = p.allergens.slice();
       state.done.allergens = true;
       Object.assign(state.nf, JSON.parse(JSON.stringify(p.nf)));
+      ['vitaminD', 'calcium', 'iron', 'potassium'].forEach((k) => {
+        state.nf[k] = { amt: '', dv: '' };
+      });
       state.errors = Object.assign({}, state.errors, p.errors);
       renderNFP(); renderProgress();
       addWISEcodeAI('I read most of the label into <strong>Product Details</strong> — name, category, ingredients, allergens and the Nutrition Facts. But the bottom row of micronutrients (<strong>Vitamin D, Calcium, Iron, Potassium</strong>) came through <strong>unreadable — low resolution</strong>. They\'re flagged red on the panel. Fix them there, upload a sharper crop, or type them here.',
@@ -3009,10 +3125,13 @@
       state.image = p.image;
       state.productName = p.productName;
       state.category = p.category;
+      if (p.brand) state.brand = p.brand;
+      if (p.brandLogo != null) state.brandLogo = p.brandLogo;
       state.ingredients = p.ingredients;
       state.contains = p.contains;
       state.allergens = p.allergens.slice();
       state.done.allergens = true;
+      if (p.upc) state.upc = p.upc;
       Object.assign(state.nf, JSON.parse(JSON.stringify(p.nf)));
       // URL sources give clean nutrition — no errors here.
       renderNFP(); renderProgress();
@@ -3329,6 +3448,10 @@
       return;
     }
     if (/(save|finish|done|submit)/.test(t)) { goStep('save'); return; }
+    if (/(analy[sz]e|parse).*(ingredient|list)|ingredient.*(analy[sz]e|parse)/.test(t)) {
+      runIngredientAnalysis(true, false);
+      return;
+    }
     // Otherwise treat it as the product name if we don't have one yet.
     if (!state.productName) {
       commitField('productName', text, { silent: true });
@@ -3461,26 +3584,26 @@
     if (selected) state.productName = nameWithSize(state.productName, selected);
   }
   function seedSamplePacks() {
+    const img = state.image;
+    const nf = state.nf || {};
     state.packs = [
-      { label: '4 ct', size: '4-count box', image: state.image, upc: '065776631520', price: '14.99', servingSize: state.nf.servingSize || '1 muffin (57g)', servingsPer: '4', calories: state.nf.calories || '190' },
-      { label: '6 ct', size: '6-count box', image: state.image, upc: '461272475918', price: '19.99', servingSize: state.nf.servingSize || '1 muffin (57g)', servingsPer: '6', calories: state.nf.calories || '190' },
+      { label: '3-Pack', size: '3-pack', image: img, upc: '0658276210045', price: '10.99', servingSize: nf.servingSize || '1 meal (425g)', servingsPer: '1', calories: nf.calories || '620' },
     ];
     state.view = 'product';
     state.activePack = 0;
-    state.unitLabel = '1 ct';
-    state.price = '4.99';
+    state.unitLabel = '15 oz';
+    state.price = '3.99';
   }
   function loadSample() {
     addUser('Show me an example');
     const p = SAMPLE_PARSE;
     state.image = p.image; state.productName = p.productName; state.category = p.category;
+    if (p.brand) state.brand = p.brand;
+    if (p.brandLogo != null) state.brandLogo = p.brandLogo;
     state.description = defaultDescription(p.productName);
     state.ingredients = p.ingredients; state.contains = p.contains; state.allergens = p.allergens.slice();
-    state.done.allergens = true; state.upc = '853620006279';
+    state.done.allergens = true; state.upc = p.upc || '';
     Object.assign(state.nf, JSON.parse(JSON.stringify(p.nf)));
-    ['vitaminD', 'calcium', 'iron', 'potassium'].forEach((k) => {
-      state.nf[k] = { amt: k === 'vitaminD' ? '0mcg' : k === 'calcium' ? '40mg' : k === 'iron' ? '2mg' : '95mg', dv: k === 'vitaminD' ? '0%' : k === 'calcium' ? '3%' : k === 'iron' ? '10%' : '2%' };
-    });
     seedSamplePacks();
     state.iaRan = true;
     renderNFP(); renderProgress();
@@ -3517,19 +3640,22 @@
     const p = SAMPLE_PARSE;
     const params = new URLSearchParams(location.search);
     state.image = p.image; state.category = p.category;
+    if (p.brand) state.brand = p.brand;
+    if (p.brandLogo != null) state.brandLogo = p.brandLogo;
     state.ingredients = p.ingredients; state.contains = p.contains;
     state.allergens = p.allergens.slice(); state.done.allergens = true;
-    state.upc = '853620006279';
+    state.upc = p.upc || '';
     Object.assign(state.nf, JSON.parse(JSON.stringify(p.nf)));
-    ['vitaminD', 'calcium', 'iron', 'potassium'].forEach((k) => {
-      state.nf[k] = { amt: k === 'vitaminD' ? '0mcg' : k === 'calcium' ? '40mg' : k === 'iron' ? '2mg' : '95mg', dv: k === 'vitaminD' ? '0%' : k === 'calcium' ? '3%' : k === 'iron' ? '10%' : '2%' };
-    });
     // Reflect the specific product opened from the portfolio, when provided.
     const nm = params.get('name'); const upc = params.get('upc'); const img = params.get('img');
     state.productName = (nm && nm.trim()) || p.productName;
     state.description = defaultDescription(state.productName);
     if (upc) { const d = upc.replace(/\D/g, ''); if (d) state.upc = d; }
     if (img) state.image = img;
+    if (nm && nm.trim()) {
+      state.brand = 'Flax4Life';
+      state.brandLogo = '../assets/brand-flax4life-logo.png';
+    }
     state.fromDiscovered = params.get('from') === 'discovered';
     state.brandClaimed = !state.fromDiscovered || isProductClaimed(state.upc, state.productName);
     if (state.fromDiscovered && state.brandClaimed) state.saved = true;
@@ -3538,7 +3664,7 @@
     /* Portfolio count links pass `sizes` (ordered, original first) and `size`
        (the count that was clicked). Honour those so the Product sizes strip
        and the product name match the pack that was opened — don't fall back
-       to the sample muffin's 4 ct / 6 ct packs. */
+       to the sample 15 oz / 3-pack sizes. */
     const sizesRaw = params.get('sizes');
     const sizeSel = params.get('size');
     if (sizesRaw || sizeSel || nm || upc) {
@@ -3622,8 +3748,10 @@
       category: '', ingredients: '', allergens: [], contains: '', upc: '',
       nf: blankNf(), errors: {}, done: {}, skipped: {}, awaiting: null, saved: false,
       iaRan: false, iaTick: 0, iaConfirm: {},
-      iaOpen: { list: true, parsed: true, codes: true, nutrients: true, scout: true },
+      iaOpen: { list: true, parsed: false, codes: false, nutrients: false, scout: false },
+      brand: 'Flax4Life', brandLogo: '../assets/brand-flax4life-logo.png',
     });
+    iaNudgeTaken = false;
     messagesEl.innerHTML = '';
     if (welcomeEl) { welcomeEl.classList.remove('sc-hidden'); welcomeEl.style.display = ''; }
     renderNFP(); renderProgress();
@@ -3754,6 +3882,7 @@
     // First paint
     renderNFP();
     renderProgress();
+    wireIaNudgeToast();
     /* Add the width changer to this module's ⋯ menu (once it's built). */
     installProgressWidthMenu();
 
@@ -3812,6 +3941,7 @@
         sizeIngredEdit(ing);
         const btn = nfpBody.querySelector('.nfp-ia-analyze');
         if (btn) btn.disabled = !ing.value.trim();
+        refreshIaNudgeToast();
         return;
       }
       const cell = e.target.closest('[data-nfp-upc-cell]');
@@ -4264,6 +4394,7 @@
     sec.classList.toggle('is-collapsed', !open);
     const head = sec.querySelector('.nfp-ia-head');
     if (head) head.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (id === 'list') refreshIaNudgeToast();
   }
 
   function sizeIngredEdit(el) {
@@ -4280,7 +4411,161 @@
     wrap.innerHTML = ingredientsHTML();
     const next = wrap.firstElementChild;
     if (next) host.replaceWith(next);
-    requestAnimationFrame(() => { sizeIngredEdit(); syncIngredColHeight(); });
+    requestAnimationFrame(() => { sizeIngredEdit(); syncIngredColHeight(); refreshIaNudgeToast(); });
+  }
+
+  /* Floating Analyze CTA — same body-portalled nudge as Product Portfolio.
+     Sits above the Analyze Ingredients button, explains what analysis does and
+     that chat works the same, then hides once they run it or dismiss. */
+  let iaNudgeTaken = false;
+  let iaNudgeWired = false;
+  let iaNudgeRo = null;
+  const IA_NUDGE_ID = 'nfp-ia-analyze';
+
+  function iaNudgeDismissed() {
+    const api = window.WiseNudgeToast;
+    return !!(api && typeof api.isDismissed === 'function' && api.isDismissed(IA_NUDGE_ID));
+  }
+
+  function ensureIaNudgeToast() {
+    let toast = document.getElementById('nfp-ia-nudge');
+    if (toast) return toast;
+    toast = document.createElement('div');
+    toast.id = 'nfp-ia-nudge';
+    toast.className = 'dash-score-toast is-portaled';
+    toast.setAttribute('data-nudge-id', IA_NUDGE_ID);
+    toast.setAttribute('role', 'status');
+    toast.hidden = true;
+    toast.innerHTML =
+      '<span class="dash-score-toast-icon"><span class="material-symbols-outlined">science</span></span>' +
+      '<div class="dash-score-toast-body">' +
+        '<div class="dash-score-toast-title">Map every nested ingredient now</div>' +
+        '<p class="dash-score-toast-text">Analyze splits the list into a mapped tree — canonical WISE names, match status, codes, and nutrients — so you can confirm it before you save. Or skip the button and just say it in chat: “analyze the ingredients.”</p>' +
+        '<button type="button" class="dash-score-toast-link" data-nfp="ia-analyze">Analyze Ingredients now<span class="material-symbols-outlined dash-score-toast-link-arrow">arrow_outward</span></button>' +
+      '</div>' +
+      '<button class="dash-score-toast-close" type="button" aria-label="Dismiss" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined">close</span></button>';
+    document.body.appendChild(toast);
+    toast.addEventListener('click', (e) => {
+      const go = e.target.closest('[data-nfp="ia-analyze"]');
+      if (!go) return;
+      e.preventDefault();
+      e.stopPropagation();
+      runIngredientAnalysis(true);
+    });
+    return toast;
+  }
+
+  function iaNudgeClipRect() {
+    const col = nfpBody && nfpBody.querySelector('.nfp-sp-ingred');
+    const box = col || nfpBody;
+    if (!box) return null;
+    const r = box.getBoundingClientRect();
+    return {
+      top: Math.max(0, r.top),
+      bottom: Math.min(window.innerHeight, r.bottom),
+      left: Math.max(0, r.left),
+      right: Math.min(window.innerWidth, r.right),
+    };
+  }
+
+  function placeIaNudgeToast(toast, anchor) {
+    if (!toast || !anchor || toast.hidden) return;
+    const br = anchor.getBoundingClientRect();
+    if (br.width < 8 || br.height < 8) {
+      toast.style.visibility = 'hidden';
+      toast.style.pointerEvents = 'none';
+      return;
+    }
+    const clip = iaNudgeClipRect();
+    const onScreen = !clip || (
+      br.top >= clip.top - 1 && br.bottom <= clip.bottom + 1 &&
+      br.right > clip.left && br.left < clip.right
+    );
+    if (!onScreen) {
+      toast.style.visibility = 'hidden';
+      toast.style.pointerEvents = 'none';
+      return;
+    }
+    toast.style.visibility = '';
+    toast.style.pointerEvents = '';
+    const gap = 12;
+    const th = toast.offsetHeight || 148;
+    const tw = toast.offsetWidth || 320;
+    const canAbove = br.top >= th + gap + 8;
+    const canBelow = window.innerHeight - br.bottom >= th + gap + 8;
+    const canRight = window.innerWidth - br.right >= tw + gap + 8;
+    const canLeft = br.left >= tw + gap + 8;
+    toast.classList.remove('is-below', 'is-right', 'is-left');
+    let top;
+    let left;
+    const placeAbove = () => { top = br.top - th - gap; left = br.left + br.width / 2 - tw / 2; };
+    const placeBelow = () => { toast.classList.add('is-below'); top = br.bottom + gap; left = br.left + br.width / 2 - tw / 2; };
+    const placeRight = () => { toast.classList.add('is-right'); top = br.top + br.height / 2 - th / 2; left = br.right + gap; };
+    const placeLeft = () => { toast.classList.add('is-left'); top = br.top + br.height / 2 - th / 2; left = br.left - tw - gap; };
+    const order = [
+      ['right', canRight, placeRight],
+      ['left', canLeft, placeLeft],
+      ['above', canAbove, placeAbove],
+      ['below', canBelow, placeBelow],
+    ];
+    const pick = order.find((entry) => entry[1]) || order[0];
+    pick[2]();
+    left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+    top = Math.max(8, Math.min(top, window.innerHeight - th - 8));
+    toast.style.top = Math.round(top) + 'px';
+    toast.style.left = Math.round(left) + 'px';
+    const caretX = br.left + br.width / 2 - left - 7;
+    const caretY = br.top + br.height / 2 - top - 7;
+    toast.style.setProperty('--nudge-toast-caret', Math.round(Math.max(16, Math.min(tw - 24, caretX))) + 'px');
+    toast.style.setProperty('--nudge-toast-caret-y', Math.round(Math.max(16, Math.min(th - 24, caretY))) + 'px');
+  }
+
+  function refreshIaNudgeToast() {
+    const toast = ensureIaNudgeToast();
+    const btn = nfpBody && nfpBody.querySelector('#nfp-ia-analyze-btn, .nfp-ia-analyze');
+    const listSec = nfpBody && nfpBody.querySelector('[data-ia-sec="list"]');
+    const listOpen = !!(listSec && !listSec.classList.contains('is-collapsed'));
+    const hasList = !!(btn && !btn.disabled && (state.ingredients || '').trim());
+    const show = !iaNudgeTaken && !iaNudgeDismissed() && !state.nfpCompare && listOpen && hasList && !!btn;
+    if (!show) {
+      toast.hidden = true;
+      toast.setAttribute('hidden', '');
+      toast.style.visibility = '';
+      toast.style.pointerEvents = '';
+      return;
+    }
+    toast.hidden = false;
+    toast.removeAttribute('hidden');
+    if (iaNudgeRo) {
+      iaNudgeRo.disconnect();
+      iaNudgeRo = null;
+    }
+    if (typeof ResizeObserver !== 'undefined' && btn) {
+      iaNudgeRo = new ResizeObserver(() => placeIaNudgeToast(toast, btn));
+      iaNudgeRo.observe(btn);
+    }
+    placeIaNudgeToast(toast, btn);
+    requestAnimationFrame(() => placeIaNudgeToast(toast, btn));
+  }
+
+  function wireIaNudgeToast() {
+    if (iaNudgeWired) return;
+    iaNudgeWired = true;
+    ensureIaNudgeToast();
+    const place = () => {
+      const toast = document.getElementById('nfp-ia-nudge');
+      const btn = nfpBody && nfpBody.querySelector('#nfp-ia-analyze-btn, .nfp-ia-analyze');
+      placeIaNudgeToast(toast, btn);
+    };
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, { passive: true, capture: true });
+    nfpBody?.addEventListener('scroll', place, { passive: true });
+    document.addEventListener('scroll', (e) => {
+      if (e.target && e.target.classList && e.target.classList.contains('nfp-sp-ingred')) place();
+    }, { passive: true, capture: true });
+    refreshIaNudgeToast();
+    setTimeout(refreshIaNudgeToast, 200);
+    setTimeout(refreshIaNudgeToast, 700);
   }
 
   function flushIngredientsFromPanel() {
@@ -4294,28 +4579,24 @@
     }
   }
 
-  function runIngredientAnalysis(fromUser) {
+  function runIngredientAnalysis(fromUser, echoUser) {
     flushIngredientsFromPanel();
     if (!state.ingredients) {
       if (fromUser) {
-        addUser('Analyze the ingredients.');
+        if (echoUser !== false) addUser('Analyze the ingredients.');
         wiseSay('There isn\'t an ingredient list yet. Paste or type one in the <strong>Ingredient List</strong> panel, then hit Analyze.');
       }
       return;
     }
+    if (fromUser) iaNudgeTaken = true;
     state.iaRan = true;
     state.iaTick += 1;
-    state.iaOpen.parsed = true;
-    state.iaOpen.codes = true;
-    state.iaOpen.nutrients = true;
-    state.iaOpen.scout = true;
     replaceIaPanel();
     if (fromUser) {
       const tree = parseIngredientTree(state.ingredients);
-      const flat = flattenParsed(tree);
-      const ok = flat.filter((r) => iaMatchOf(r) === 'ok').length;
-      addUser('Analyze the ingredients.');
-      wiseSay(`Re-analyzed the list — <strong>${flat.length}</strong> ingredients parsed, <strong>${ok}</strong> matched. Codes, nutrients and Wise Code AI results updated in the ingredients column.`,
+      const stats = iaMatchStats(tree);
+      if (echoUser !== false) addUser('Analyze the ingredients.');
+      wiseSay(`Re-analyzed the list — <strong>${stats.leaves.length}</strong> ingredients parsed, <strong>${stats.ok}</strong> matched. Codes, nutrients and Wise Code AI results updated in the ingredients column.`,
         [
           { label: 'Review mappings', icon: 'rule', action: 'ia-review' },
           { label: 'Edit ingredients', icon: 'science', action: 'field:ingredients' },
@@ -4324,17 +4605,19 @@
     }
   }
 
-  function confirmIaRow(mapped) {
-    if (!mapped) return;
-    state.iaConfirm[mapped] = true;
+  function confirmIaRow(id) {
+    if (!id) return;
+    state.iaConfirm[id] = true;
+    const row = flattenParsed(parseIngredientTree(state.ingredients)).find((r) => r.id === id);
+    const label = (row && (row.mapped || row.raw)) || id;
     replaceIaPanel();
-    addUser(`Confirm the ${mapped} mapping.`);
-    wiseSay(`Confirmed <strong>${esc(mapped)}</strong> as matched.`);
+    addUser(`Confirm the ${label} mapping.`);
+    wiseSay(`Confirmed <strong>${esc(label)}</strong> as matched.`);
   }
 
   function confirmAllIaRows() {
     flattenParsed(parseIngredientTree(state.ingredients)).forEach((r) => {
-      if (iaMatchOf(r) === 'ok') state.iaConfirm[r.mapped] = true;
+      if (!r.isGroup && iaMatchOf(r) === 'ok' && r.id) state.iaConfirm[r.id] = true;
     });
     replaceIaPanel();
     addUser('Confirm matched ingredients.');
@@ -4349,12 +4632,12 @@
       const head = sec.querySelector('.nfp-ia-head');
       if (head) head.setAttribute('aria-expanded', 'true');
       const first = sec.querySelector('.nfp-ia-parsed-row[data-ia-match="bad"], .nfp-ia-parsed-row[data-ia-match="part"]');
-      const col = first && first.closest('.nfp-sp-ingred');
-      if (first && col) {
-        const cr = col.getBoundingClientRect();
+      const scroller = nfpBody;
+      if (first && scroller) {
+        const cr = scroller.getBoundingClientRect();
         const fr = first.getBoundingClientRect();
-        const next = col.scrollTop + (fr.top - cr.top) - 12;
-        col.scrollTo({
+        const next = scroller.scrollTop + (fr.top - cr.top) - 12;
+        scroller.scrollTo({
           top: Math.max(0, next),
           behavior: prefersReducedMotion ? 'auto' : 'smooth',
         });

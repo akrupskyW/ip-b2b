@@ -498,6 +498,19 @@ function fullBleedOptionsSection() {
     </div>`;
 }
 
+/** Master Internal-admins switch — a single pink card (no group header)
+    that shows or hides every Admin-badged Appearance row. Always visible;
+    never itself Admin-gated. */
+function adminMasterSwitch() {
+  const on = isAdminControlsOn();
+  return `
+    <div class="wise-admin-master${on ? ' is-on' : ''}" data-adminui="1" role="switch" aria-checked="${on ? 'true' : 'false'}"${tipAttrs('Show settings for internal admins')}>
+      <span class="material-symbols-outlined" aria-hidden="true">admin_panel_settings</span>
+      <span class="wise-admin-master-label">Internal admins</span>
+      <span class="material-symbols-outlined wise-toggle-ico">${on ? 'toggle_on' : 'toggle_off'}</span>
+    </div>`;
+}
+
 /** Wrap a set of rows in a titled "group" card. Groups are the unit the
     Appearance popover stacks inside a column: each group (and therefore every
     row inside it) stays within ONE column and is never split or stretched
@@ -564,14 +577,12 @@ export function buildAppearanceBody({
         ${tourSection()}
         ${adminOnly(adminToggle('data-cwrui="1"', isCwrUiOn(), 'Roll · Crawl · Walk · Run', 'Show the mode switch', 'Show the floating Roll · Crawl · Walk · Run switch', false, false, 'speed'))}
       `);
-  /* Master Admin-controls switch. Lives at the bottom of the leftmost
+  /* Master Internal-admins switch. Lives at the bottom of the leftmost
      column when that column still has Layout / Experience; otherwise it
      stacks under Accessibility so a lone switch does not sit in an empty
      track beside a taller card. The rest of the Admin rows stay in the
      right-hand column and shift up to fill. */
-  const adminSwitch = apGroup('Admin', `
-        ${plainToggle('data-adminui="1"', isAdminControlsOn(), 'Admin controls', 'Show Admin-badged settings', 'Show or hide settings that carry an Admin badge', false, false, 'admin_panel_settings')}
-      `);
+  const adminSwitch = adminMasterSwitch();
   const fullBleed = apGroup('Full bleed', `
         ${adminOnly(adminToggle('data-fullbleed="1"', isFullBleedEverythingOn(), 'Full bleed', 'Stretch every module', isAppSearchOn() ? 'Unavailable while Search is on' : 'Stretch every module edge-to-edge', isAppSearchOn(), false, 'fullscreen'))}
         ${adminOnly(adminToggle('data-fbchatonly="1"', isChatOnlyFullBleedOn(), 'Chat-only full bleed', 'Stretch chat only', isAppSearchOn() ? 'Unavailable while Search is on' : 'Stretch only the chat module; keep the navigation and every other module contained', isAppSearchOn(), false, 'crop_16_9'))}
@@ -622,9 +633,10 @@ export function buildAppearanceBody({
  * glyphs fell out of sync.
  *
  * Live surfaces (no lock): My profile and Invoices & Downloads, each carrying a
- * data-pop-action so the shell's click handler can route them. Everything else
- * (Alerts / Agents quick actions, Preferences, API keys, Help, Docs) renders
- * inert with a trailing lock. Sign out always works.
+ * data-pop-action so the shell's click handler can route them. Coming-soon
+ * rows (Alerts / Agents, Preferences, API keys, Help, Docs) are Admin-badged:
+ * they hide when Admin controls is off, and show a pink Admin badge (and a
+ * lock) when it is on. Sign out always works.
  *
  * @param {Object} [opts]
  * @param {string} [opts.name]  Display name for the header (defaults to the
@@ -634,15 +646,19 @@ export function buildUserMenuBody({ name = 'Arthur Krupsky' } = {}) {
   const safeName = String(name || 'Arthur Krupsky')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const locked = (icon, label) =>
-    `<div class="wise-popover-item is-locked" aria-disabled="true" title="Coming soon"><span class="material-symbols-outlined">${icon}</span>${label}<span class="wise-popover-lock material-symbols-outlined" aria-hidden="true">lock</span></div>`;
+    adminOnly(`<div class="wise-popover-item is-locked" data-admin-item="1" aria-disabled="true" title="Coming soon"><span class="material-symbols-outlined">${icon}</span>${label}<span class="wise-popover-badge">Admin</span><span class="wise-popover-lock material-symbols-outlined" aria-hidden="true">lock</span></div>`);
+  const lockedAction = (icon, label) =>
+    `<button type="button" class="wise-pop-action is-locked" data-admin-item="1" aria-disabled="true" title="Coming soon"><span class="material-symbols-outlined">${icon}</span><span>${label}</span><span class="wise-popover-badge">Admin</span><span class="wise-pop-action-lock material-symbols-outlined" aria-hidden="true">lock</span></button>`;
   return `
     <div class="wise-popover-header">${safeName}</div>
+    ${adminOnly(`
     <div class="wise-popover-actions">
-      <button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon"><span class="material-symbols-outlined">notifications</span><span>Alerts</span><span class="wise-pop-action-lock material-symbols-outlined" aria-hidden="true">lock</span></button>
+      ${lockedAction('notifications', 'Alerts')}
       <span class="wise-pop-vline" aria-hidden="true"></span>
-      <button type="button" class="wise-pop-action is-locked" aria-disabled="true" title="Coming soon"><span class="material-symbols-outlined">tune</span><span>Agents</span><span class="wise-pop-action-lock material-symbols-outlined" aria-hidden="true">lock</span></button>
+      ${lockedAction('tune', 'Agents')}
     </div>
     <div class="wise-popover-divider"></div>
+    `)}
     <div class="wise-popover-item" data-pop-action="profile"><span class="material-symbols-outlined">person</span>My profile</div>
     <div class="wise-popover-item" data-pop-action="invoices"><span class="material-symbols-outlined">receipt_long</span>Invoices &amp; Downloads</div>
     ${locked('tune', 'Preferences')}
@@ -693,7 +709,23 @@ function wireSignOut() {
   );
 }
 
-if (typeof document !== 'undefined') wireSignOut();
+if (typeof document !== 'undefined') {
+  wireSignOut();
+  /* Rebuild an open avatar menu when Admin controls flips, so locked rows
+     appear or collapse in place the same way Appearance does. */
+  if (!document.__wiseUserMenuAdminBound) {
+    document.__wiseUserMenuAdminBound = true;
+    document.addEventListener('wise:admin-ui', () => {
+      document.querySelectorAll('.wise-popover.open').forEach((pop) => {
+        if (pop.classList.contains('wise-popover--appearance')) return;
+        if (!pop.querySelector('[data-pop-action="signout"]')) return;
+        const name = (pop.querySelector('.wise-popover-header')?.textContent || '').trim();
+        pop.innerHTML = buildUserMenuBody({ name: name || 'Arthur Krupsky' });
+        try { pop.__reposition?.(); } catch (_) {}
+      });
+    });
+  }
+}
 
 /* ------------------------------------------------------------------ */
 /* Shared Appearance popover click handling                            */

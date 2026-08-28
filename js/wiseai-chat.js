@@ -1797,16 +1797,18 @@ export function injectChatExtras() {
     /* ── Grouped three-column three-dot menu ─────────────────────────────────
        The chat "More options" popover buckets rows into titled GROUP CARDS
        across three flex columns — Conversation/Data/Display on the left,
-       Helix alone in the middle, Activity on the right. Flex (not CSS
-       column-width) keeps hit-testing honest: Chromium multi-column layouts
-       often swallow clicks in later columns. groupifyChatMenu() reorganizes
-       the flat rows into these cards and tags the popover with .sc-menu-grouped.
+       Helix alone in the middle, Activity on the right. Width is max-content
+       so hiding Admin-badged groups (and their empty columns) shrinks the
+       panel instead of leaving blank tracks. Flex (not CSS column-width)
+       keeps hit-testing honest: Chromium multi-column layouts often swallow
+       clicks in later columns. groupifyChatMenu() reorganizes the flat rows
+       into these cards and tags the popover with .sc-menu-grouped.
        Helix gets its own column so its clusters can sit two-up without
        stacking under Activity. Scrolls if it would run off the screen. */
     .topbar-popover.sc-menu-grouped {
-      width: min(920px, calc(100vw - 16px)); min-width: 0; max-width: calc(100vw - 16px);
+      width: max-content; min-width: 0; max-width: min(920px, calc(100vw - 16px));
       padding: 8px;
-      align-items: stretch; gap: 8px;
+      align-items: start; gap: 8px;
       max-height: min(82vh, calc(100vh - 16px));
       overflow-x: hidden; overflow-y: auto;
       pointer-events: auto;
@@ -1818,9 +1820,9 @@ export function injectChatExtras() {
       display: flex; flex-direction: row; flex-wrap: wrap;
     }
     .topbar-popover.sc-menu-grouped.hidden { display: none; }
-    .sc-menu-col { flex: 1 1 216px; min-width: 0; max-width: 300px; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+    .sc-menu-col { flex: 0 0 250px; width: 250px; min-width: 0; max-width: 300px; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
     .sc-menu-col--helix {
-      flex: 1.4 1 280px; min-width: 240px; min-height: 0; max-width: none;
+      flex: 0 1 320px; width: 320px; min-width: 240px; min-height: 0; max-width: 420px;
       overflow: visible;
     }
     .sc-menu-group {
@@ -2078,7 +2080,7 @@ export function injectChatExtras() {
     .sc-menu-admin-btn.is-open { background: rgba(236, 72, 153, 0.14); }
     html.dark .sc-menu-admin-btn:hover { background: rgba(255,255,255,0.07); }
     html.dark .sc-menu-admin-btn.is-open { background: rgba(236, 72, 153, 0.18); }
-    .sc-menu-grouped > .sc-menu-col:last-child > .sc-menu-group:first-child > .sc-menu-group-head {
+    .sc-menu-grouped > .sc-menu-col--trail > .sc-menu-group:first-child > .sc-menu-group-head {
       padding-right: 36px;
     }
     .sc-admin-pop {
@@ -2133,11 +2135,12 @@ export function injectChatExtras() {
     .topbar-popover.sc-menu-admin-off .sc-bganim-playback,
     .topbar-popover.sc-menu-admin-off .sc-bganim-subhead,
     .topbar-popover.sc-menu-admin-off .sc-bganim-cluster,
+    .topbar-popover.sc-menu-admin-off .sc-actside-detail,
     .topbar-popover.sc-menu-admin-off .topbar-menu-badge { display: none !important; }
     .topbar-popover.sc-menu-grouped .sc-menu-group.is-empty,
     .topbar-popover.sc-menu-grouped .sc-menu-col.is-empty { display: none !important; }
-    .topbar-popover.sc-menu-grouped.sc-menu-one-col { width: 250px; }
-    .topbar-popover.sc-menu-grouped.sc-menu-two-col { width: min(860px, calc(100vw - 16px)); }
+    .topbar-popover.sc-menu-grouped.sc-menu-one-col,
+    .topbar-popover.sc-menu-grouped.sc-menu-two-col { width: max-content; }
 
     /* Helix product card — most bugs open a food sheet (name/brand + View Details
        into the NFP). A minority open a brand-insight or look-closer fact instead.
@@ -5791,7 +5794,7 @@ function closeChatMenuAdminPop(wrap) {
 function isChatMenuAdminGated(el) {
   if (!el || !el.classList) return false;
   if (el.classList.contains('topbar-menu-item--admin')) return true;
-  if (el.classList.contains('sc-bganim-detail') || el.classList.contains('sc-bganim-style') || el.classList.contains('sc-bganim-look') || el.classList.contains('sc-bganim-dots-motion') || el.classList.contains('sc-bganim-spin') || el.classList.contains('sc-bganim-playback') || el.classList.contains('sc-bganim-snapshots') || el.classList.contains('sc-bganim-subhead') || el.classList.contains('sc-bganim-cluster')) return true;
+  if (el.classList.contains('sc-bganim-detail') || el.classList.contains('sc-bganim-style') || el.classList.contains('sc-bganim-look') || el.classList.contains('sc-bganim-dots-motion') || el.classList.contains('sc-bganim-spin') || el.classList.contains('sc-bganim-playback') || el.classList.contains('sc-bganim-snapshots') || el.classList.contains('sc-bganim-subhead') || el.classList.contains('sc-bganim-cluster') || el.classList.contains('sc-actside-detail')) return true;
   if (el.hasAttribute && el.hasAttribute('data-admin-item')) return true;
   try {
     if (el.classList.contains('topbar-menu-item') && el.querySelector('.topbar-menu-badge')) return true;
@@ -5807,8 +5810,8 @@ function applyChatMenuAdminGate(pop) {
   if (btn) {
     btn.classList.toggle('is-admin-on', on);
     const tip = on
-      ? 'Admin controls on — hide admin items'
-      : 'Admin controls off — show admin items';
+      ? 'Internal admins on — hide admin items'
+      : 'Internal admins off — show admin items';
     btn.setAttribute('aria-label', tip);
     btn.setAttribute('title', tip);
     btn.setAttribute('data-tip', tip);
@@ -5834,6 +5837,8 @@ function applyChatMenuAdminGate(pop) {
     col.classList.toggle('is-empty', !keep);
   });
   const visibleCols = Array.from(pop.querySelectorAll('.sc-menu-col')).filter((c) => !c.classList.contains('is-empty'));
+  pop.querySelectorAll('.sc-menu-col').forEach((c) => c.classList.remove('sc-menu-col--trail'));
+  if (visibleCols.length) visibleCols[visibleCols.length - 1].classList.add('sc-menu-col--trail');
   pop.classList.toggle('sc-menu-one-col', visibleCols.length < 2);
   pop.classList.toggle('sc-menu-two-col', visibleCols.length === 2);
 }
@@ -5879,14 +5884,14 @@ function mountChatMenuAdminPopover(pop) {
     wrap = document.createElement('div');
     wrap.className = 'sc-menu-admin-wrap';
     wrap.innerHTML =
-      '<button type="button" class="sc-menu-admin-btn" aria-haspopup="menu" aria-expanded="false" title="Admin controls" data-tip="Admin controls">' +
+      '<button type="button" class="sc-menu-admin-btn" aria-haspopup="menu" aria-expanded="false" title="Internal admins" data-tip="Internal admins">' +
         '<span class="material-symbols-outlined">more_vert</span>' +
       '</button>' +
       '<div class="sc-admin-pop hidden" role="menu">' +
-        '<button type="button" class="topbar-menu-item sc-mcp-item" data-adminui="1" role="menuitemcheckbox" aria-checked="true">' +
+        '<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-adminui="1" role="menuitemcheckbox" aria-checked="true">' +
           '<span class="material-symbols-outlined topbar-menu-icon">admin_panel_settings</span>' +
-          '<span>Admin controls</span>' +
-          '<span class="sc-switch" aria-hidden="true"></span>' +
+          '<span>Internal admins</span>' +
+          '<span class="sc-switch sc-switch--pink" aria-hidden="true"></span>' +
         '</button>' +
       '</div>';
     pop.appendChild(wrap);
@@ -5935,12 +5940,15 @@ function mountChatMenuAdminPopover(pop) {
 const CHAT_ADMIN_DESC = {
   turns: 'Show the turn trail',
   outputs: 'Hide result panels',
+  connect: 'Link product data feeds',
+  'mcp-toggle': 'Talk to an MCP server',
   'toggle-cards': 'Welcome scorecard shortcuts',
   'toggle-intent-chips': 'Suggested next-step chips',
   compact: 'Tighten chat padding',
   brandtext: 'Blue assistant replies',
   sheen: 'Glow around the input',
   'bg-anim': 'DNA behind welcome',
+  'activity-strip': 'Live strip on chat',
 };
 function adminDescKey(el) {
   if (!el || !el.classList) return '';
@@ -5952,6 +5960,7 @@ function adminDescKey(el) {
   if (el.classList.contains('sc-brandtext-item')) return 'brandtext';
   if (el.classList.contains('sc-sheen-item')) return 'sheen';
   if (el.classList.contains('sc-bganim-item')) return 'bg-anim';
+  if (el.classList.contains('sc-actstrip-item') || el.id && el.id.indexOf('actstrip') !== -1) return 'activity-strip';
   return '';
 }
 function decorateAdminToggleDesc(el) {
@@ -7322,9 +7331,14 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     : '';
 
   /* Intent chips render as a wrapped flex grid (the chevron carousel is retired,
-     so `opts.chipsFlow` is ignored). Full-size chat shows every chip; a single-
-     pane dock caps the grid at three wrapping rows inside `.ws-chips-scroll`
-     and scrolls extra chips vertically. */
+     so `opts.chipsFlow` is ignored). Welcome chips show at most TWO wrapping
+     rows; overflow is behind a trailing "Load more" chip that reveals the rest.
+     Inline / follow-up chips are unaffected. */
+
+  /* Once the user taps "Load more", keep the full set visible until the next
+     fresh welcome (reset / setIntents). Resize still re-clamps while collapsed. */
+  let welcomeChipsExpanded = false;
+  const WELCOME_CHIP_MAX_ROWS = 2;
 
   const chipHoverStatus = (c) => {
     if (!c) return '';
@@ -7590,8 +7604,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="turns" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">alt_route</span><span>Turns</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           ${opts.outputsToggle === true ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="outputs" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dashboard_customize</span><span>Hide outputs &amp; sources</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           ${showConnectorsPanel ? `<div class="topbar-menu-divider"></div>
-          <button type="button" class="topbar-menu-item" data-sc="connect"><span class="material-symbols-outlined topbar-menu-icon">hub</span><span>Connect a data source</span></button>` : ''}
-          ${opts.mcpToggle === true ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="mcp-toggle" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dns</span><span>MCP server</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
+          <button type="button" class="topbar-menu-item topbar-menu-item--admin" data-sc="connect"><span class="material-symbols-outlined topbar-menu-icon">hub</span><span>Connect a data source</span><span class="topbar-menu-badge">Admin</span></button>` : ''}
+          ${opts.mcpToggle === true ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="mcp-toggle" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dns</span><span>MCP server</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           <div class="topbar-menu-divider"></div>
           ${scorecardsHtml ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="toggle-cards" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dashboard</span><span>Overview cards</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>` : ''}
           ${intents.length ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="toggle-intent-chips" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">label</span><span>Intent chips</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>` : ''}
@@ -7635,8 +7649,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
               <button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="orbit" role="radio" aria-checked="false" title="Owl orbit constellation" aria-label="Owl orbit constellation">Orbit</button>
             </div>
           </div>
-          ${opts.activityStrip !== false ? `<button type="button" class="topbar-menu-item sc-mcp-item sc-actstrip-item" data-sc="activity-strip" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">timeline</span><span>Activity strip</span><span class="sc-switch" aria-hidden="true"></span></button>
-          <div class="sc-stream-detail sc-actside-detail">
+          ${opts.activityStrip !== false ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-actstrip-item" data-sc="activity-strip" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">timeline</span><span>Activity strip</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
+          <div class="sc-stream-detail sc-actside-detail" data-admin-item="1">
             <span class="sc-stream-detail-label">Strip side</span>
             <div class="sc-stream-seg" role="radiogroup" aria-label="Activity strip side">
               <button type="button" class="sc-stream-seg-btn" data-sc="activity-strip-side" data-actside="left" role="radio" aria-checked="false" title="Pin to the left edge" aria-label="Pin to the left edge">Left</button>
@@ -8092,6 +8106,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     bgAnim.start();
     const heading = welcome.querySelector('.ws-heading');
     const subEl = welcome.querySelector('.ws-sub');
+    /* Cap at two rows (+ Load more) before measuring the fly-in set, so only the
+       visible chips animate — hidden overflow chips stay out of the cascade. */
+    clampWelcomeChips();
     /* The larger "at a glance" scorecards and the small intent chips share ONE
        fly-in: after the text types, they all sail in from the right in a single
        top-to-bottom cascade (cards first, then chips) so every card and chip
@@ -8100,7 +8117,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const scWrap = welcome.querySelector(`#${id}-scorecards`) || welcome.querySelector('.ws-scorecards');
     const cards = scWrap ? Array.from(scWrap.querySelectorAll('.ws-scorecard')) : [];
     const chipsWrap = welcome.querySelector(`#${id}-chips`) || welcome.querySelector('.ws-chips');
-    const chips = chipsWrap ? Array.from(chipsWrap.querySelectorAll('.chip')) : [];
+    const visibleChips = () => chipsWrap
+      ? Array.from(chipsWrap.querySelectorAll('.chip')).filter((c) => !c.hidden)
+      : [];
+    /* Include Load more in the same primed set as every other welcome chip. */
+    let chips = visibleChips();
     const all = cards.concat(chips);
     if (prefersReducedMotion) {
       all.forEach((c) => { c.style.opacity = ''; c.style.transform = ''; c.style.transition = ''; });
@@ -8110,7 +8131,13 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     all.forEach(primeRevealFromRight);
     const typeText = (el, next, wordDelay) => { if (el) typeInLine(el, next, wordDelay); else next(); };
     typeText(heading, () => typeText(subEl, () => {
-      revealStaggered(all, 90, 60, null);
+      /* Width/resize may have re-clamped during the type-in. Re-read the visible
+         set (Load more included) and re-prime so every chip shares one cascade —
+         never a Load more that was sitting fully opaque while the others flew in. */
+      clampWelcomeChips();
+      const fly = cards.concat(visibleChips());
+      fly.forEach(primeRevealFromRight);
+      revealStaggered(fly, 90, 60, null);
     }, 38)); // sub line types a bit faster than the heading
   }
   /* Hide the thumbs / meta row up-front so it lands as one unit after the
@@ -10418,6 +10445,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     usedIntents.clear();
     skipAutoFollowups = false;
     clearThread();
+    welcomeChipsExpanded = false;
     renderChips();
     welcome?.classList.remove('sc-hidden');
     if (welcome) welcome.style.display = '';
@@ -10940,6 +10968,14 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
 
   /* Intent chips */
   welcome?.addEventListener('click', (e) => {
+    /* "Load more" expands the welcome grid past the two-row cap — not an intent. */
+    const more = e.target.closest('[data-chip-more]');
+    if (more && welcome.contains(more)) {
+      e.preventDefault();
+      welcomeChipsExpanded = true;
+      clampWelcomeChips();
+      return;
+    }
     const chip = e.target.closest('.ws-intent-chip[data-intent]');
     if (!chip) return;
     /* A spent chip is inert — it already drove its turn and can't be re-run. */
@@ -11316,8 +11352,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   }
 
   /* Intent chips always render as a wrapped flex grid now — the chevron
-     carousel is retired. Full-size chat shows every chip; a single-pane dock
-     wraps them into three rows inside `.ws-chips-scroll`. */
+     carousel is retired. Welcome chips clamp to two rows with a trailing
+     "Load more" chip; overflow is revealed on tap. */
 
   /* Persistent intent-chip rail — same horizontal scroll controls + edge fades
      as the welcome carousel. `refreshPersistChips` is exposed so hideWelcome can
@@ -11473,6 +11509,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       syncBgAnimMenu();
       if (prefersReducedMotion && bgAnimOn && (rootEl.classList.contains('sc-bganim-live') || rootEl.classList.contains('sc-orbit-live'))) bgAnim.start();
     }
+    /* Pane width changes the chip grid's measure — re-clamp while collapsed so
+       Load more stays on row 2 (expanded stays fully open). */
+    requestAnimationFrame(() => clampWelcomeChips());
   };
   rootEl.addEventListener('click', (e) => {
     const widthToggle = e.target.closest('.panel-width-toggle-btn');
@@ -12071,6 +12110,77 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      transcript block) from the current intents + spent state. Shared by
      setIntents() and markIntentUsed() so a chip's spent look shows up wherever
      it's rendered. */
+  /* Cap the welcome chip grid at two wrapping rows. Chips that would fall on
+     row 3+ stay in the DOM (so renderChips can rebuild freely) but are hidden;
+     a trailing "Load more" chip takes the last slot on row 2 and reveals them.
+     Measurement is layout-based — chip labels vary in width, so a fixed count
+     would leave uneven rows. */
+  function welcomeChipRowCount(els) {
+    const tops = [];
+    els.forEach((el) => {
+      if (!el || el.hidden) return;
+      const t = el.offsetTop;
+      if (!tops.some((rt) => Math.abs(rt - t) < 2)) tops.push(t);
+    });
+    return tops.length;
+  }
+  function clampWelcomeChips() {
+    const wrap = rootEl.querySelector(`#${id}-chips`);
+    if (!wrap) return;
+    /* Reuse the Load more node when present — destroying it on every re-clamp
+       (width toggle, ResizeObserver) drops its primed fly-in styles and leaves
+       a brand-new chip sitting fully opaque while the others animate. */
+    let moreBtn = wrap.querySelector('[data-chip-more]');
+    if (moreBtn) moreBtn.hidden = true;
+    const chips = Array.from(wrap.querySelectorAll('.ws-intent-chip:not([data-chip-more])'));
+    chips.forEach((c) => { c.hidden = false; });
+    if (welcomeChipsExpanded || !chips.length) {
+      moreBtn?.remove();
+      return;
+    }
+    /* Welcome is off-screen (conversation underway) — skip measurement; the
+       next revealWelcome / reset will clamp again once the grid is visible. */
+    if (welcome && welcome.classList.contains('sc-hidden')) {
+      moreBtn?.remove();
+      return;
+    }
+    if (wrap.clientWidth < 8) {
+      moreBtn?.remove();
+      return;
+    }
+    if (welcomeChipRowCount(chips) <= WELCOME_CHIP_MAX_ROWS) {
+      moreBtn?.remove();
+      return;
+    }
+
+    if (!moreBtn) {
+      wrap.insertAdjacentHTML('beforeend',
+        `<button type="button" class="chip ws-intent-chip ws-intent-chip--more" data-chip-more aria-label="Load more intents"><span class="material-symbols-outlined" aria-hidden="true">expand_more</span>Load more</button>`);
+      moreBtn = wrap.querySelector('[data-chip-more]');
+    }
+    if (!moreBtn) return;
+    moreBtn.hidden = false;
+
+    /* Binary search the largest prefix of chips that, together with Load more,
+       still fits in two rows. Showing chips[0..n) keeps list order stable. */
+    let lo = 0;
+    let hi = chips.length;
+    while (lo < hi) {
+      const mid = Math.ceil((lo + hi) / 2);
+      chips.forEach((c, i) => { c.hidden = i >= mid; });
+      void wrap.offsetHeight;
+      const visible = chips.filter((c) => !c.hidden).concat(moreBtn);
+      if (welcomeChipRowCount(visible) <= WELCOME_CHIP_MAX_ROWS) lo = mid;
+      else hi = mid - 1;
+    }
+    chips.forEach((c, i) => { c.hidden = i >= lo; });
+    /* Everything already fits alongside Load more — drop the control and show
+       the full set (Load more would be a no-op). */
+    if (lo >= chips.length) {
+      moreBtn.remove();
+      chips.forEach((c) => { c.hidden = false; });
+    }
+  }
   function renderChips() {
     chipsHtml = buildChipsHtml();
     const wc = rootEl.querySelector(`#${id}-chips`);
@@ -12078,6 +12188,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const pc = rootEl.querySelector(`#${id}-pchips`);
     if (pc) pc.innerHTML = chipsHtml;
     if (ichipsEl) ichipsEl.innerHTML = chipsHtml;
+    clampWelcomeChips();
   }
   /* Flag a chip's intent as spent and re-render so it dims out and stops
      taking clicks. No-op for control intents (never passed here) or ids
@@ -12102,6 +12213,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     /* A fresh contextual chip set is a clean slate — spent state doesn't carry
        across a swap (e.g. a marketing dock re-skinning per page). */
     usedIntents.clear();
+    welcomeChipsExpanded = false;
     catalogizeNext(intents);
     renderChips();
     skipAutoFollowups = true;
@@ -12122,6 +12234,21 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   /* Apply the remembered overview-cards + intent-chips preferences now the DOM exists. */
   syncCards();
   syncChips();
+
+  /* Re-clamp welcome chips when the grid's width changes (window resize, dock
+     drag, font load). Expanded stays open; collapsed keeps the two-row cap. */
+  (function watchWelcomeChipWidth() {
+    const scroll = rootEl.querySelector(`#${id}-chips-scroll`) || rootEl.querySelector(`#${id}-chips`);
+    if (!scroll || typeof ResizeObserver !== 'function') return;
+    let lastW = scroll.clientWidth;
+    const ro = new ResizeObserver(() => {
+      const w = scroll.clientWidth;
+      if (w === lastW) return;
+      lastW = w;
+      clampWelcomeChips();
+    });
+    try { ro.observe(scroll); } catch (_) {}
+  })();
 
   /* Play the welcome in: heading + sub fade in as paragraphs, then the intent
      chips fly in from the right and land — so the chips always trail the copy. */

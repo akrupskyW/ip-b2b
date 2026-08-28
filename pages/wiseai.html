@@ -226,9 +226,8 @@
        these blocks width:100%, so on the full-width WISEcodeAI surface they stretch
        edge-to-edge and the cards left-float. Let the card cluster shrink to its
        content and center it (the welcome column is already align-items:center);
-       the max-width fits the full set on wide screens. Full-size chat shows
-       every chip; a single-pane dock wraps them into three rows inside
-       `.ws-chips-scroll` and scrolls extra chips vertically. */
+       the max-width fits the full set on wide screens. Welcome chips clamp to
+       two wrapping rows with a trailing "Load more" chip for the rest. */
     #wa-chat .sc-welcome > .ws-scorecards-section,
     #wa-chat .sc-welcome > .ws-chips-wrap,
     #wa-chat .sc-welcome > .ws-chips {
@@ -2540,7 +2539,7 @@
       background: var(--primary); border-color: var(--primary); color: #fff;
       box-shadow: 0 4px 12px rgba(37, 80, 124, 0.25);
     }
-    .cmp-tool-btn--primary .material-symbols-outlined { color: #fff !important; }
+    .cmp-tool-btn--primary .material-symbols-outlined { color: #fff !important; font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
     .cmp-tool-btn--primary:hover:not(:disabled) {
       background: var(--primary); border-color: var(--primary); color: #fff;
       transform: translateY(-1px); box-shadow: 0 8px 18px rgba(37, 80, 124, 0.3);
