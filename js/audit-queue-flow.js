@@ -174,7 +174,7 @@ function rowHtml(a, i) {
       <span class="adm-td"><span class="adm-notes">${esc(a.notes)}</span></span>
       <span class="adm-td"><span class="w-datecell">${dc() ? dc().cellHtml(auditDates(a), 'audit', dateLead) : `<span class="adm-flagged"><span class="adm-flagged-when">${esc(a.when)}</span><span class="adm-flagged-by">by ${esc(a.by)}</span></span>`}</span></span>
       <span class="adm-td adm-td--end"><span class="adm-actions">
-        <button type="button" class="adm-btn adm-btn--primary adm-btn--sm" data-adm-action="resolve" data-adm-idx="${i}"><span class="material-symbols-outlined">task_alt</span>Resolve</button>
+        <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" data-adm-action="resolve" data-adm-idx="${i}"><span class="material-symbols-outlined">task_alt</span>Resolve</button>
       </span></span>
     </div>`;
 }

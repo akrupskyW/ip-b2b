@@ -398,6 +398,14 @@ export const APP_LOGIC = [
         title: 'Nutrition Facts height drives the ingredients column',
         how: 'In the side-by-side Product Details split, the ingredients column matches the Nutrition Facts column (the printed label plus allergens). The label can grow — extra nutrient rows, a longer serving line — and the ingredients column grows with it. It never shrinks below the remaining height of the module body (from the column top to the save bar), so a short label does not leave a gap. Below <strong>900px</strong> of module width the columns stack and each grows with its own content. View Product uses the same rule.',
       },
+      {
+        title: 'Category docks with the ⋯, not in the size row',
+        how: 'When <code>useHeaderIdentity()</code> is on, <code>productSizesGroupHTML()</code> puts the category dropdown in the product-name row as <code>.nfp-fi-cat--dock</code> — a 28px pill immediately left of the floated ⋯ and width controls, matching their height. It is not a thumb-row extra.',
+      },
+      {
+        title: 'One picture hides the tiny preview; the barcode leads the size row',
+        how: 'The size row is any extra-count squares, then the barcode (<code>.nfp-fi-upc</code>), then Add size. Extra packs still get a square so you can switch. If <code>state.packs</code> is empty, the 1 ct square is omitted — the lead photo already shows that picture — so the row is barcode, then plus.',
+      },
     ],
   },
   {
@@ -427,6 +435,10 @@ export const APP_LOGIC = [
       {
         title: 'Nutrition Facts height drives the ingredients column',
         how: 'The printed Nutrition Facts label can grow with its content. In the two-column Product Details split that growth sets the ingredients column height — the right column matches the facts column, never the other way around. The ingredients column has a floor: the remaining height of the module body down to the save bar, which is the fill it already has on a typical product. Extra analysis in that column scrolls inside; it does not stretch the facts label.',
+      },
+      {
+        title: 'Identity strip follows Add Product',
+        how: 'The same <code>productSizesGroupHTML()</code> rules apply because both pages set <code>WISE_HERO_BRAND</code>: category docks left of ⋯ at 28px, the barcode sits after the size squares and before plus, and a product with only one picture does not show a tiny 1 ct preview.',
       },
     ],
   },
@@ -542,7 +554,7 @@ export const APP_LOGIC = [
     icon: 'forum',
     href: 'wiseai.html',
     area: 'ai',
-    src: ['js/wiseai-chat.js', 'js/wiseai-dock.js', 'js/agent-overview.js'],
+    src: ['js/wiseai-chat.js', 'js/wiseai-dock.js', 'js/agent-overview.js', 'js/wise-library-store.js'],
     note: 'Every chat module in the app shares this code and must look and behave identically. wiseai.html is the reference.',
     rules: [
       {
@@ -576,6 +588,10 @@ export const APP_LOGIC = [
       {
         title: 'Helix background on at 20%',
         how: 'The welcome background animation defaults ON (<code>wise:chat-bg-anim</code>) to the published <strong>Scene</strong> pose (<code>BGANIM_PUBLISH_POSE</code>: 3D look, 50% opacity, reverse spin, pulse beads). Styles are <code>helix</code>, <code>helix-ten</code> and <code>orbit</code>. The chat ⋯ menu’s Thick slider is strand weight; Depth is 3-D pop (near loops forward, far loops fading). This is separate from the per-turn trace helix, which always runs.',
+      },
+      {
+        title: 'File to Library puts the live thread on the Library shelf',
+        how: 'The three-dot <em>File to Library</em> row first saves the thread into History (the same store History &amp; Projects already uses), then copies a card onto the WISEcodeAI Library shelf. Re-filing the same thread updates that card. An empty welcome cannot be filed. Opening the card on the Library page restores the transcript in the docked chat.',
       },
       {
         title: 'History and Turns are docked drawers',
@@ -621,8 +637,12 @@ export const APP_LOGIC = [
     icon: 'auto_stories',
     href: 'conversation-library.html',
     area: 'ai',
-    src: ['pages/conversation-library.html', 'js/agent-overview.js'],
+    src: ['pages/conversation-library.html', 'js/agent-overview.js', 'js/wise-library-store.js'],
     rules: [
+      {
+        title: 'Conversations filed from chat appear on the shelf',
+        how: 'Items written by the chat\u2019s <em>File to Library</em> row hydrate as cards on the grid, using the same folder drag, copy, and link menus as the rest of the shelf. Clicking a filed chat restores it in the docked WISEcodeAI chat.',
+      },
       {
         title: 'Chips apply real filters',
         how: '<code>window.__wiseLibraryIntent(intent)</code> applies the filter on the grid and syncs the score cards and funnel; the chat can only offer intents the module can actually perform, so the chip list is kept in lock-step with the type and scope cards.',

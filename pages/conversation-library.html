@@ -1300,6 +1300,7 @@
     </div>
   </div>
 
+  <script src="../js/wise-library-store.js"></script>
   <script type="module" src="../js/agent-overview.js"></script>
 
   <!-- ============ Library search + funnel filter wiring ============
@@ -1466,6 +1467,52 @@
           copyOf: cp.sourceId
         });
       });
+
+      /* Conversations filed from a chat three-dot menu (File to Library).
+         History already saved the thread; this is the Library-shelf copy. */
+      function mountFiledItem(item) {
+        if (!item || !item.id) return false;
+        const store = window.WiseLibraryStore;
+        const existing = cardById(item.id);
+        if (existing) {
+          existing.titleTxt = item.title || existing.titleTxt;
+          existing.name = (existing.titleTxt || '').toLowerCase();
+          existing.time = item.ts || existing.time;
+          existing.msgCount = item.msgCount != null ? item.msgCount : existing.msgCount;
+          existing.type = item.type || existing.type;
+          existing.dateTxt = (store && store.formatDate ? store.formatDate(item.ts) : existing.dateTxt);
+          const nameEl = existing.el.querySelector('.lib-cname');
+          if (nameEl) nameEl.textContent = existing.titleTxt;
+          const dateEl = existing.el.querySelector('.lib-date');
+          if (dateEl) dateEl.textContent = existing.dateTxt;
+          const countEl = existing.el.querySelector('.lib-count');
+          if (countEl && existing.msgCount) countEl.innerHTML = '<span class="material-symbols-outlined">chat_bubble</span>' + existing.msgCount;
+          return false;
+        }
+        const html = store && typeof store.cardHtml === 'function' ? store.cardHtml(item) : '';
+        if (!html) return false;
+        const wrap = document.createElement('div');
+        wrap.innerHTML = html;
+        const el = wrap.firstElementChild;
+        if (!el) return false;
+        el.dataset.libId = item.id;
+        el.setAttribute('draggable', 'true');
+        grid.insertBefore(el, grid.firstChild);
+        const titleTxt = item.title || '';
+        cards.push({
+          el, id: item.id, type: item.type || 'chat', shared: 'none',
+          name: titleTxt.toLowerCase(), titleTxt, sharedTxt: '', sharedLabel: '',
+          dateTxt: (store && store.formatDate ? store.formatDate(item.ts) : ''),
+          time: item.ts || 0,
+          msgCount: item.msgCount || 0,
+          filed: true
+        });
+        return true;
+      }
+      try {
+        const filed = (window.WiseLibraryStore && window.WiseLibraryStore.list()) || [];
+        filed.forEach(mountFiledItem);
+      } catch (_) {}
 
       /* ---- Derived counts — every score-card number comes from the cards
          actually in the grid, so the tiles can never drift from the data. ---- */
@@ -1733,6 +1780,41 @@
         el.appendChild(btn);
       }
       cards.forEach((c) => ensureCardMenu(c.el));
+
+      function openFiledConversation(id) {
+        const store = window.WiseLibraryStore;
+        const item = store && store.get ? store.get(id) : null;
+        if (!item || !item.html) return false;
+        const hist = window.__wiseChatHistory;
+        if (hist && hist.add && hist.restore) {
+          const added = hist.add({
+            title: item.title || 'Conversation',
+            html: item.html,
+            count: item.msgCount || 0,
+            mcp: item.mcp === true
+          });
+          if (added && added.id) hist.restore(added.id);
+          return true;
+        }
+        document.addEventListener('wise:chat-history-ready', function onceReady() {
+          document.removeEventListener('wise:chat-history-ready', onceReady);
+          openFiledConversation(id);
+        });
+        return false;
+      }
+
+      document.addEventListener('wise:library-change', () => {
+        const store = window.WiseLibraryStore;
+        const filed = (store && store.list && store.list()) || [];
+        filed.forEach((item) => {
+          if (mountFiledItem(item)) {
+            const rec = cardById(item.id);
+            if (rec) ensureCardMenu(rec.el);
+          }
+        });
+        recountTypes();
+        apply();
+      });
 
       function refreshCardChrome() {
         cards.forEach((c) => {
@@ -2731,6 +2813,11 @@
           return;
         }
         if (suppressClick && e.target.closest('.lib-card')) e.preventDefault();
+        const filedCard = e.target.closest('.lib-card[data-filed]');
+        if (filedCard && !e.target.closest('.lib-card-menu')) {
+          e.preventDefault();
+          openFiledConversation(filedCard.dataset.libId);
+        }
       });
       grid.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter' && e.key !== ' ') return;

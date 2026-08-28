@@ -5,10 +5,11 @@ import './date-column.js';
  *
  * A self-contained account surface rendered into #agent-main-scroll on
  * invoices.html (an app-nav shell page). It presents the signed-in
- * organization's invoices as a filterable board — at-a-glance status cards
- * (All / Invoice Sent / Paid / Failed / Cancelled) that toggle a row filter,
- * a live search, and per-row actions (Pay, Retry, Cancel, Mark paid, Download,
- * Invoice).
+ * organization's invoices as a filterable board — a live search, at-a-glance
+ * status cards just below it (All / Invoice Sent / Paid / Failed / Cancelled)
+ * that toggle a row filter, then a table of its own. Each row has a leading
+ * ⋮ of every action for that invoice, plus the same actions as chips in the
+ * last column (Pay, Retry, Cancel, Mark paid, Download, Invoice).
  *
  * Like the other account modules it pairs with the persistent WISEcodeAI chat dock
  * to its LEFT (invoices.html pins `data-default-dock="left"`):
@@ -106,21 +107,21 @@ function countFor(status) {
 }
 
 /* Per-status actions, mirroring the original board's affordances. One source
-   of truth is rendered two ways: as an inline button row (wide) and as a
-   three-dot popover menu (narrow / mobile). */
+   of truth is rendered two ways: as chips in the last column, and as a
+   leading ⋮ popover that carries the same list. */
 function actionListFor(inv) {
   const invoice = { variant: 'ghost', icon: 'description', label: 'Invoice', action: 'invoice' };
   switch (inv.status) {
     case 'sent':
       return [
-        { variant: 'primary', icon: 'credit_card',     label: 'Pay Now',              action: 'pay' },
+        { variant: 'ghost', icon: 'credit_card',     label: 'Pay Now',              action: 'pay' },
         { variant: 'danger',  icon: 'cancel',          label: 'Cancel',               action: 'cancel' },
         { variant: 'good',    icon: 'account_balance', label: 'Mark paid externally', action: 'mark-paid' },
         invoice,
       ];
     case 'failed':
       return [
-        { variant: 'primary', icon: 'refresh', label: 'Retry Payment', action: 'retry' },
+        { variant: 'ghost', icon: 'refresh', label: 'Retry Payment', action: 'retry' },
         { variant: 'danger',  icon: 'cancel',  label: 'Cancel',        action: 'cancel' },
         invoice,
       ];
@@ -132,14 +133,14 @@ function actionListFor(inv) {
   }
 }
 
-/* Inline button row (shown on a wide board). */
+/* Inline action chips (always shown in the last column). */
 function actionsFor(inv) {
   return actionListFor(inv).map((a) =>
     `<button type="button" class="inv-btn inv-btn--${esc(a.variant)}" data-inv-action="${esc(a.action)}" data-inv-id="${esc(inv.id)}"><span class="material-symbols-outlined">${esc(a.icon)}</span>${esc(a.label)}</button>`
   ).join('');
 }
 
-/* Three-dot menu + popover (shown when the board is too narrow for the row). */
+/* Leading ⋮ + popover (always shown in the first column). */
 function menuFor(inv) {
   const items = actionListFor(inv).map((a) =>
     `<button type="button" class="inv-rowmenu-item inv-rowmenu-item--${esc(a.variant)}" role="menuitem" data-inv-action="${esc(a.action)}" data-inv-id="${esc(inv.id)}"><span class="material-symbols-outlined">${esc(a.icon)}</span>${esc(a.label)}</button>`
@@ -153,9 +154,10 @@ function rowHtml(inv) {
   const stacked = D ? D.cellHtml(invDates(inv), 'invoice', dateLead) : `<span class="inv-date">${esc(inv.date)}</span>`;
   return `
     <div class="inv-trow" data-inv-row="${esc(inv.id)}" data-inv-status="${esc(inv.status)}">
+      <span class="inv-td inv-td--menu">${menuFor(inv)}</span>
       <span class="inv-td"><span class="inv-meta"><span class="w-datecell">${stacked}</span><span class="inv-num">#${esc(inv.id)}</span><span class="inv-state inv-state--${esc(inv.status)}"><span class="material-symbols-outlined">${esc(m.icon)}</span>${esc(m.label)}</span></span></span>
       <span class="inv-td inv-desc"><span class="inv-amount">${esc(inv.amount)}</span><span class="inv-desc-name">${esc(inv.desc)}</span><span class="inv-desc-sub">${esc(inv.sub)}</span></span>
-      <span class="inv-td"><span class="inv-actions">${actionsFor(inv)}</span>${menuFor(inv)}</span>
+      <span class="inv-td"><span class="inv-actions">${actionsFor(inv)}</span></span>
     </div>`;
 }
 
@@ -163,10 +165,11 @@ function rowHtml(inv) {
 /* Each sortable column knows how to derive a comparable key from a row. The
    combined columns sort by their primary (top) field: Date for the
    Date/Invoice/Status column and Amount for the Amount/Description column.
-   Actions is not sortable. */
+   The leading ⋮ and the Actions chips column are not sortable. */
 const SORT_COLS = [
-  { key: 'date',   label: 'Date / Invoice',        sortable: true,  value: (i) => (dc() ? dc().sortValue(invDates(i), 'invoice', dateLead) : (Date.parse(i.date) || 0)), type: 'num' },
-  { key: 'amount', label: 'Amount / Description',  sortable: true,  value: (i) => parseFloat(String(i.amount).replace(/[^0-9.\-]/g, '')) || 0, type: 'num' },
+  { key: 'menu',    label: '',                     sortable: false },
+  { key: 'date',    label: 'Date / Invoice',       sortable: true,  value: (i) => (dc() ? dc().sortValue(invDates(i), 'invoice', dateLead) : (Date.parse(i.date) || 0)), type: 'num' },
+  { key: 'amount',  label: 'Amount / Description', sortable: true,  value: (i) => parseFloat(String(i.amount).replace(/[^0-9.\-]/g, '')) || 0, type: 'num' },
   { key: 'actions', label: 'Actions',              sortable: false },
 ];
 
@@ -181,6 +184,7 @@ const ARROW_SVG =
 function theadHtml() {
   const D = dc();
   return SORT_COLS.map((c) => {
+    if (c.key === 'menu') return `<span class="inv-th inv-th--menu" aria-label="Row actions"></span>`;
     if (c.key === 'date') {
       const inner = D ? D.headerHtml({ kinds: 'invoice', lead: dateLead }) : esc(c.label);
       const active = c.key === sortKey;
@@ -217,6 +221,7 @@ function orderedInvoices() {
    refresh the header arrows. */
 function applySort() {
   if (!hostEl) return;
+  closeMenus(null);
   const rowsWrap = hostEl.querySelector('[data-inv-rows]');
   if (rowsWrap) rowsWrap.innerHTML = orderedInvoices().map(rowHtml).join('');
   const thead = hostEl.querySelector('.inv-thead');
@@ -249,6 +254,7 @@ function statsHtml() {
 
 function paint() {
   if (!hostEl) return;
+  closeMenus(null);
   hostEl.innerHTML = `
     <div class="inv-wrap" data-w-date-root>
       <header class="inv-head">
@@ -264,18 +270,15 @@ function paint() {
         <button type="button" class="inv-btn inv-btn--primary" data-inv-action="download-all"><span class="material-symbols-outlined">download</span>Download all</button>
       </div>
 
+      <div class="inv-stats" role="group" aria-label="Filter invoices by status">
+        ${statsHtml()}
+      </div>
+
       <div class="inv-card inv-board">
-        <div class="inv-stats-bar"><span class="inv-stats-label">Your invoices at a glance</span></div>
-        <div class="inv-stats" role="group" aria-label="Filter invoices by status">
-          ${statsHtml()}
-        </div>
-        <div class="inv-board-divider"></div>
-        <div class="inv-table-card">
-          <div class="inv-table">
-            <div class="inv-thead">${theadHtml()}</div>
-            <div data-inv-rows>${orderedInvoices().map(rowHtml).join('')}</div>
-            <div class="inv-table-foot"><span data-inv-foot></span></div>
-          </div>
+        <div class="inv-table">
+          <div class="inv-thead">${theadHtml()}</div>
+          <div data-inv-rows>${orderedInvoices().map(rowHtml).join('')}</div>
+          <div class="inv-table-foot"><span data-inv-foot></span></div>
         </div>
       </div>
     </div>`;
@@ -407,7 +410,7 @@ export function renderInvoices(mainEl) {
       toggleSort(sortHeader.dataset.invSort);
       return;
     }
-    /* Row-actions three-dot menu (narrow board). */
+    /* Row-actions three-dot menu (leading column). */
     const menuBtn = e.target.closest('.inv-rowmenu-btn');
     if (menuBtn) {
       const menu = menuBtn.closest('.inv-rowmenu');
@@ -415,7 +418,7 @@ export function renderInvoices(mainEl) {
       closeMenus(open ? menu : null);
       menu.classList.toggle('is-open', open);
       menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      const pop = menu.querySelector('.inv-rowmenu-pop');
+      const pop = popOfRowMenu(menu);
       if (pop) pop.hidden = !open;
       return;
     }
@@ -426,6 +429,7 @@ export function renderInvoices(mainEl) {
       return;
     }
     /* A click anywhere else on the board closes any open row menu. */
+    if (e.target.closest('.inv-rowmenu') || e.target.closest('.inv-rowmenu-pop')) return;
     closeMenus(null);
   });
 
@@ -445,12 +449,28 @@ export function renderInvoices(mainEl) {
     applyFilter();
   });
 
-  /* Close an open row menu when clicking outside the board entirely. */
+  /* Close an open row menu when clicking outside the board entirely. A
+     portaled popover lives on <body>, so also handle its actions here. */
   document.addEventListener('click', (e) => {
     if (!hostEl) return;
-    if (e.target.closest && e.target.closest('.inv-rowmenu')) return;
+    const menuAct = e.target.closest && e.target.closest('.inv-rowmenu-pop [data-inv-action]');
+    if (menuAct && !hostEl.contains(menuAct)) {
+      runAction(menuAct.dataset.invAction, menuAct.dataset.invId || null, 'form');
+      closeMenus(null);
+      return;
+    }
+    if (e.target.closest && (e.target.closest('.inv-rowmenu') || e.target.closest('.inv-rowmenu-pop'))) return;
     closeMenus(null);
   });
+}
+
+/* After popover-layer portals the menu onto <body>, querySelector on the wrap
+   misses it — look it up by the layer's __plHost marker instead. */
+function popOfRowMenu(menu) {
+  if (!menu) return null;
+  const inner = menu.querySelector('.inv-rowmenu-pop');
+  if (inner) return inner;
+  return Array.from(document.querySelectorAll('.inv-rowmenu-pop')).find((p) => p.__plHost === menu) || null;
 }
 
 /* Close every open row-actions menu except `keep` (pass null to close all). */
@@ -461,8 +481,16 @@ function closeMenus(keep) {
     menu.classList.remove('is-open');
     const btn = menu.querySelector('.inv-rowmenu-btn');
     if (btn) btn.setAttribute('aria-expanded', 'false');
-    const pop = menu.querySelector('.inv-rowmenu-pop');
+    const pop = popOfRowMenu(menu);
     if (pop) pop.hidden = true;
+  });
+  /* Drop any popover left on <body> whose row was rewritten away. */
+  document.querySelectorAll('body > .inv-rowmenu-pop').forEach((pop) => {
+    const host = pop.__plHost;
+    if (keep && host === keep) return;
+    if (host && host.isConnected && hostEl.contains(host) && host.classList.contains('is-open')) return;
+    pop.hidden = true;
+    if (!host || !host.isConnected) pop.remove();
   });
 }
 

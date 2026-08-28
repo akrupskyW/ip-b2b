@@ -28,7 +28,7 @@ const TOOLTIP_SELECTOR =
   '.wise-popover--appearance [data-tip], ' +
   '.rf-tool-ico, .rf-rpt-plus, .wa-titledrop-plus, ' +
   '.ws-intent-chip, .sc-reply-chips .chip, .sc-inline-chips .chip, ' +
-  '.pf-reports-btn, .pf-datemenu-btn, .pf-module-menu-btn, ' +
+  '.pf-datemenu-btn, .pf-module-menu-btn, ' +
   '.vf-check, .pf-ico, .fl-icon-btn, .sc-send, .adm-icon-btn';
 
 const CANDIDATE_SELECTOR =
@@ -43,10 +43,10 @@ const CANDIDATE_SELECTOR =
 const SKIP_SELECTOR =
   '.pf-chip, .vf-chip, .gv-chip, .ib-gras, .ib-pl, .pf-claim-btn, .pf-row-act, ' +
   '.pf-head-btn, .pf-loadmore, ' +
-  '.pf-rowmenu-btn, .adm-rowmenu-btn, .inv-rowmenu-btn, .ma-rowmenu-btn, .nud-rowmenu-btn, ' +
+  '.pf-rowmenu-btn, .pf-reports-btn, .adm-rowmenu-btn, .inv-rowmenu-btn, .ma-rowmenu-btn, .nud-rowmenu-btn, ' +
   '[aria-haspopup="true"], [aria-haspopup="menu"]';
 const SKIP_ANCESTOR =
-  '[role="menu"], .pf-module-menu-pop, .pf-rowmenu-pop, .pf-datemenu-pop, ' +
+  '[role="menu"], .pf-module-menu-pop, .pf-reports-pop, .pf-rowmenu-pop, .inv-rowmenu-pop, .pf-datemenu-pop, ' +
   '.topbar-popover, .wise-popover, #lir-tooltip, .ct-card, .nudge-dismiss-pop';
 
 /* The History / Turns modules (`.wch-sidebar`) run their own dark tooltip in

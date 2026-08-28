@@ -6698,7 +6698,7 @@
       background: transparent;
       border: 0;
       color: var(--text-muted);
-      opacity: 0.52;
+      opacity: 1;
       cursor: pointer;
       padding: 0;
       flex-shrink: 0;
@@ -6756,13 +6756,17 @@
       background: transparent;
       border: 0;
       color: var(--text-muted);
-      opacity: 0.52;
+      opacity: 1;
       cursor: pointer;
       padding: 0;
       transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
     }
     .pf-module-menu-btn .material-symbols-outlined,
-    .pf-module-menu-btn .material-symbols-outlined { font-size: 16px !important; line-height: 1 !important; }
+    .pf-module-menu-btn .material-symbols-outlined {
+      font-size: 16px !important;
+      line-height: 1 !important;
+      font-variation-settings: 'FILL' 0, 'wght' 600, 'GRAD' 0, 'opsz' 24;
+    }
     .pf-module-menu-btn:hover,
     .pf-module-menu.is-open .pf-module-menu-btn {
       opacity: 1;
@@ -6859,6 +6863,23 @@
     .pf-module-menu-item.pf-mi-sticky.is-on .pf-mi-switch { background: var(--pf-pink, #EC4899); border-color: var(--pf-pink, #EC4899); }
     .pf-module-menu-item.pf-mi-sticky.is-on .pf-mi-knob { transform: translateX(14px); }
     .pf-module-menu-sep { height: 1px; margin: 4px 2px; background: var(--border); }
+    .pf-module-menu-item.is-locked {
+      color: var(--text-subtle);
+      cursor: default;
+    }
+    .pf-module-menu-item.is-locked:hover {
+      background: none;
+      color: var(--text-subtle);
+    }
+    html.dark .pf-module-menu-item.is-locked:hover { background: none; color: var(--text-subtle); }
+    .pf-module-menu-item.is-locked:hover .material-symbols-outlined { color: var(--text-subtle); }
+    .pf-module-menu-item .pf-rowmenu-lock {
+      margin-left: auto;
+      font-size: 15px !important;
+      opacity: 0.7;
+      width: 16px; height: 16px;
+      flex-shrink: 0;
+    }
     .pf-module-menu-item--off:hover {
       background: color-mix(in srgb, #DC3038 14%, transparent);
       color: #DC3038;
@@ -7179,12 +7200,13 @@
       border: 0;
       color: var(--text-muted);
       cursor: pointer;
-      opacity: 0.52;
+      opacity: 1;
       transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
     }
     .panel-more-btn .material-symbols-outlined {
       font-size: 16px !important;
       line-height: 1 !important;
+      font-variation-settings: 'FILL' 0, 'wght' 600, 'GRAD' 0, 'opsz' 24;
     }
     .panel-more-btn:hover {
       opacity: 1;
@@ -8322,7 +8344,7 @@
        and the product sits next to it. */
     .pf-table--discovered .pf-thead, .pf-table--discovered .pf-trow,
     .pf-table--needsinfo .pf-thead, .pf-table--needsinfo .pf-trow { grid-template-columns: 34px 34px minmax(158px,0.95fr) minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) minmax(150px,1.5fr); }
-    .pf-table--claimed .pf-thead, .pf-table--claimed .pf-trow { grid-template-columns: 34px 34px 34px minmax(0,2.4fr) minmax(0,1fr) minmax(0,1fr) minmax(150px,1.5fr); }
+    .pf-table--claimed .pf-thead, .pf-table--claimed .pf-trow { grid-template-columns: 34px 34px 34px minmax(150px,1.2fr) minmax(0,2.4fr) minmax(0,1fr) minmax(0,1fr) minmax(150px,1.5fr); }
     .pf-col-claim { display: flex; align-items: center; }
     .pf-table-block { margin-bottom: 16px; }
     .pf-table-block:last-child { margin-bottom: 0; }
@@ -8414,8 +8436,8 @@
     .pf-th { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); }
     .pf-trow { border-bottom: 1px solid var(--border); transition: background 0.15s ease; }
     .pf-trow:last-child { border-bottom: none; }
-    .pf-trow:hover { background: var(--surface-2); }
-    html.dark .pf-trow:hover { background: rgba(255,255,255,0.04); }
+    .pf-trow:hover,
+    .pf-trow.is-selected { background: var(--primary-soft); }
     .pf-td { font-size: 12px; color: var(--text-muted); min-width: 0; }
     .pf-col-product { display: flex; align-items: center; gap: 10px; }
     /* Product thumbnail — a rounded-corner square holding the real product
@@ -8453,6 +8475,10 @@
        column is the row's primary action: reports on Claimed, Complete details
        / Verify ingredients on Missing data, Review & Claim on Discovered. */
     .pf-col-menu { display: flex; align-items: center; justify-content: center; }
+    /* Claimed-only action track — the ghost "Finish and Claim" button that sits
+       between the reports icon and the product cell, jumping to view-product. */
+    .pf-col-action { display: flex; align-items: center; justify-content: flex-start; min-width: 0; }
+    .pf-col-action .pf-claim-btn { max-width: 100%; }
     .pf-col-reports { display: flex; align-items: center; justify-content: flex-start; min-width: 0; }
     .pf-col-reports .pf-claim-btn,
     .pf-col-reports .pf-row-act { max-width: 100%; }
@@ -8473,9 +8499,24 @@
       background: rgba(255,255,255,0.06);
     }
     .pf-col-reports .pf-reports-btn .material-symbols-outlined { font-size: 18px !important; line-height: 1; }
-    /* Open above the icon — same contract as the appearance popover. */
+    /* Open above or to the right of the icon — never directly below.
+       Portalled onto <body> (position:fixed) so the table cannot clip it. */
     .pf-col-reports .pf-reports-pop {
       top: auto; bottom: calc(100% + 6px); left: 0; right: auto; min-width: 244px;
+    }
+    .pf-reports-pop .pf-reports-pop-title {
+      font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      padding: 6px 10px 6px;
+    }
+    .pf-reports-pop.is-portalled {
+      position: fixed;
+      z-index: 240;
+      margin: 0;
+      top: auto; right: auto; bottom: auto; left: auto;
     }
     .pf-rowmenu { position: relative; }
     .pf-rowmenu-btn {
@@ -8589,15 +8630,18 @@
     .pf-ico--x:hover { color: var(--sec-red); }
     .pf-claim-btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap;
-      padding: 7px 14px; border-radius: 999px; border: none; cursor: pointer;
-      background: var(--primary); color: #fff;
+      padding: 7px 14px; border-radius: 999px; cursor: pointer;
+      border: 1px solid var(--border-strong); background: transparent; color: var(--text);
       font-family: inherit; font-size: 11.5px; font-weight: 700;
       text-decoration: none; line-height: 1; box-sizing: border-box;
-      transition: filter 0.15s ease;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     }
     a.pf-claim-btn, a.pf-claim-btn:link, a.pf-claim-btn:visited,
-    a.pf-claim-btn:hover, a.pf-claim-btn:focus { color: #fff; text-decoration: none; }
-    .pf-claim-btn:hover { filter: brightness(1.08); color: #fff; }
+    a.pf-claim-btn:hover, a.pf-claim-btn:focus { color: inherit; text-decoration: none; }
+    .pf-claim-btn:hover {
+      background: var(--primary-soft); color: var(--primary-ink, var(--primary));
+      border-color: var(--primary);
+    }
     .pf-claim-btn .material-symbols-outlined { font-size: 14px; }
 
     /* Table footer */
@@ -10744,10 +10788,10 @@
             </div>
           </div>
 
-          <!-- At-a-glance + tables — ONE component. The score cards are
-               toggle filters: segment cards (Missing data / Discovered / Claimed)
-               switch which list shows; status cards (To verify / Shields
-               pending / Ineligible) filter the rows within the Claimed list. -->
+          <!-- At-a-glance + tables — ONE component. Segment score cards jump
+               to a list and stay highlighted for the table in view as you
+               scroll. Status cards (To verify / Shields pending / Ineligible)
+               filter the rows within the Claimed list. -->
           <div class="pf-board">
             <div class="pf-stats pf-stats--seg" role="group" aria-label="Jump to a portfolio list">
               <button type="button" class="pf-stat is-active" id="pf-seg-all" data-seg="all" aria-pressed="true" onclick="pfFilterClick('all', null)">
@@ -11383,6 +11427,7 @@
                   <span class="pf-th pf-col-check" data-no-sort><button class="vf-check vf-check--head" type="button" data-pf="toggle-all" aria-label="Select all products" aria-checked="false"><span class="material-symbols-outlined">check_box_outline_blank</span></button></span>
                   <span class="pf-th pf-col-menu"></span>
                   <span class="pf-th pf-col-reports" data-no-sort></span>
+                  <span class="pf-th pf-col-action" data-no-sort></span>
                   <span class="pf-th pf-col-product">Product</span>
                   <span class="pf-th pf-col-data">Data</span>
                   <span class="pf-th pf-col-shield">Non-UPF Shield</span>
@@ -11391,40 +11436,40 @@
                 <div class="pf-trow">
                   <span class="pf-td pf-col-check"><button class="vf-check" type="button" data-pf="toggle-row" aria-label="Select product" aria-pressed="false"><span class="material-symbols-outlined">check_box_outline_blank</span></button></span>
                   <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions"><span class="material-symbols-outlined">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">edit</span>Edit</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">visibility</span>View</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-symbols-outlined">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-symbols-outlined">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
-                  <span class="pf-td pf-col-reports"><div class="pf-reports-wrap"><button type="button" class="pf-reports-btn" aria-haspopup="true" aria-expanded="false" title="Reports" aria-label="Reports" data-tip="Reports"><span class="material-symbols-outlined">description</span></button><div class="pf-module-menu-pop pf-reports-pop" role="menu" hidden><button type="button" class="pf-module-menu-item" role="menuitem" data-pf-report="details"><span class="material-symbols-outlined">receipt_long</span><span class="pf-mi-label">Product Details Report</span></button><button type="button" class="pf-module-menu-item" role="menuitem" data-pf-report="upf"><span class="material-symbols-outlined">description</span><span class="pf-mi-label">UPF Report</span></button></div></div></span>
-                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/coconut_brownies.png" alt="Toasted Coconut Brownies-12 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-symbols-outlined" style="display:none">bakery_dining</span></span><span class="pf-pcell-text"><span class="pf-pname-row"><span class="pf-pname">Toasted Coconut Brownies-12 ct</span></span><span class="pf-upc">UPC · 8 57287 00420 3</span></span></span>
+                  <span class="pf-td pf-col-reports"><div class="pf-reports-wrap"><button type="button" class="pf-reports-btn" aria-haspopup="true" aria-expanded="false" aria-label="Reports for this product"><span class="material-symbols-outlined">description</span></button><div class="pf-module-menu-pop pf-reports-pop" role="menu" hidden><div class="pf-reports-pop-title">Reports</div><button type="button" class="pf-module-menu-item" role="menuitem" data-pf-report="details"><span class="material-symbols-outlined">receipt_long</span><span class="pf-mi-label">Product Details Report</span></button><button type="button" class="pf-module-menu-item" role="menuitem" data-pf-report="upf"><span class="material-symbols-outlined">description</span><span class="pf-mi-label">Product UPF</span></button><button type="button" class="pf-module-menu-item is-locked" role="menuitem" aria-disabled="true"><span class="material-symbols-outlined">verified_user</span><span class="pf-mi-label">Product GRAS</span><span class="material-symbols-outlined pf-rowmenu-lock">lock</span></button><button type="button" class="pf-module-menu-item is-locked" role="menuitem" aria-disabled="true"><span class="material-symbols-outlined">insights</span><span class="pf-mi-label">Product Insights</span><span class="material-symbols-outlined pf-rowmenu-lock">lock</span></button></div></div></span>
+                  <span class="pf-td pf-col-action"><a class="pf-claim-btn" href="view-product.html?name=Toasted+Coconut+Brownies-12+ct&amp;upc=8+57287+00420+3&amp;img=..%2Fassets%2Fportfolio%2Fcoconut_brownies.png&amp;from=claimed">Finish and Claim</a></span><span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/coconut_brownies.png" alt="Toasted Coconut Brownies-12 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-symbols-outlined" style="display:none">bakery_dining</span></span><span class="pf-pcell-text"><span class="pf-pname-row"><span class="pf-pname">Toasted Coconut Brownies-12 ct</span></span><span class="pf-upc">UPC · 8 57287 00420 3</span></span></span>
                   <span class="pf-td pf-col-data"><span class="pf-chip pf-chip--complete">Complete</span></span>
                   <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--verified"><span class="material-symbols-outlined">gpp_good</span>Verified</span></span>
                 </div>
                 <div class="pf-trow">
                   <span class="pf-td pf-col-check"><button class="vf-check" type="button" data-pf="toggle-row" aria-label="Select product" aria-pressed="false"><span class="material-symbols-outlined">check_box_outline_blank</span></button></span>
                   <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions"><span class="material-symbols-outlined">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">edit</span>Edit</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">visibility</span>View</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-symbols-outlined">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-symbols-outlined">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
-                  <span class="pf-td pf-col-reports"><div class="pf-reports-wrap"><button type="button" class="pf-reports-btn" aria-haspopup="true" aria-expanded="false" title="Reports" aria-label="Reports" data-tip="Reports"><span class="material-symbols-outlined">description</span></button><div class="pf-module-menu-pop pf-reports-pop" role="menu" hidden><button type="button" class="pf-module-menu-item" role="menuitem" data-pf-report="details"><span class="material-symbols-outlined">receipt_long</span><span class="pf-mi-label">Product Details Report</span></button><button type="button" class="pf-module-menu-item" role="menuitem" data-pf-report="upf"><span class="material-symbols-outlined">description</span><span class="pf-mi-label">UPF Report</span></button></div></div></span>
-                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/chocolate_chip_muffins.png" alt="Chocolate Chip Muffins-4 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-symbols-outlined" style="display:none">cookie</span></span><span class="pf-pcell-text"><span class="pf-pname-row"><span class="pf-pname">Chocolate Chip Muffins-4 ct</span></span><span class="pf-upc">UPC · 0 65776 63152 0</span></span></span>
+                  <span class="pf-td pf-col-reports"><div class="pf-reports-wrap"><button type="button" class="pf-reports-btn" aria-haspopup="true" aria-expanded="false" aria-label="Reports for this product"><span class="material-symbols-outlined">description</span></button><div class="pf-module-menu-pop pf-reports-pop" role="menu" hidden><div class="pf-reports-pop-title">Reports</div><button type="button" class="pf-module-menu-item" role="menuitem" data-pf-report="details"><span class="material-symbols-outlined">receipt_long</span><span class="pf-mi-label">Product Details Report</span></button><button type="button" class="pf-module-menu-item" role="menuitem" data-pf-report="upf"><span class="material-symbols-outlined">description</span><span class="pf-mi-label">Product UPF</span></button><button type="button" class="pf-module-menu-item is-locked" role="menuitem" aria-disabled="true"><span class="material-symbols-outlined">verified_user</span><span class="pf-mi-label">Product GRAS</span><span class="material-symbols-outlined pf-rowmenu-lock">lock</span></button><button type="button" class="pf-module-menu-item is-locked" role="menuitem" aria-disabled="true"><span class="material-symbols-outlined">insights</span><span class="pf-mi-label">Product Insights</span><span class="material-symbols-outlined pf-rowmenu-lock">lock</span></button></div></div></span>
+                  <span class="pf-td pf-col-action"><a class="pf-claim-btn" href="view-product.html?name=Chocolate+Chip+Muffins-4+ct&amp;upc=0+65776+63152+0&amp;img=..%2Fassets%2Fportfolio%2Fchocolate_chip_muffins.png&amp;from=claimed">Finish and Claim</a></span><span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/chocolate_chip_muffins.png" alt="Chocolate Chip Muffins-4 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-symbols-outlined" style="display:none">cookie</span></span><span class="pf-pcell-text"><span class="pf-pname-row"><span class="pf-pname">Chocolate Chip Muffins-4 ct</span></span><span class="pf-upc">UPC · 0 65776 63152 0</span></span></span>
                   <span class="pf-td pf-col-data"><span class="pf-chip pf-chip--complete">Complete</span></span>
                   <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--verified"><span class="material-symbols-outlined">gpp_good</span>Verified</span></span>
                 </div>
                 <div class="pf-trow">
                   <span class="pf-td pf-col-check"><button class="vf-check" type="button" data-pf="toggle-row" aria-label="Select product" aria-pressed="false"><span class="material-symbols-outlined">check_box_outline_blank</span></button></span>
                   <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions"><span class="material-symbols-outlined">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">edit</span>Edit</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">visibility</span>View</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-symbols-outlined">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-symbols-outlined">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
-                  <span class="pf-td pf-col-reports"><div class="pf-reports-wrap"><button type="button" class="pf-reports-btn" aria-haspopup="true" aria-expanded="false" title="Reports" aria-label="Reports" data-tip="Reports"><span class="material-symbols-outlined">description</span></button><div class="pf-module-menu-pop pf-reports-pop" role="menu" hidden><button type="button" class="pf-module-menu-item" role="menuitem" data-pf-report="details"><span class="material-symbols-outlined">receipt_long</span><span class="pf-mi-label">Product Details Report</span></button><button type="button" class="pf-module-menu-item" role="menuitem" data-pf-report="upf"><span class="material-symbols-outlined">description</span><span class="pf-mi-label">UPF Report</span></button></div></div></span>
-                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/carrot_raisin_muffins.png" alt="Carrot Raisin Muffins- 4 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-symbols-outlined" style="display:none">bakery_dining</span></span><span class="pf-pcell-text"><span class="pf-pname-row"><span class="pf-pname">Carrot Raisin Muffins- 4 ct</span></span><span class="pf-upc">UPC · 0 65776 63151 3</span></span></span>
+                  <span class="pf-td pf-col-reports"><div class="pf-reports-wrap"><button type="button" class="pf-reports-btn" aria-haspopup="true" aria-expanded="false" aria-label="Reports for this product"><span class="material-symbols-outlined">description</span></button><div class="pf-module-menu-pop pf-reports-pop" role="menu" hidden><div class="pf-reports-pop-title">Reports</div><button type="button" class="pf-module-menu-item" role="menuitem" data-pf-report="details"><span class="material-symbols-outlined">receipt_long</span><span class="pf-mi-label">Product Details Report</span></button><button type="button" class="pf-module-menu-item" role="menuitem" data-pf-report="upf"><span class="material-symbols-outlined">description</span><span class="pf-mi-label">Product UPF</span></button><button type="button" class="pf-module-menu-item is-locked" role="menuitem" aria-disabled="true"><span class="material-symbols-outlined">verified_user</span><span class="pf-mi-label">Product GRAS</span><span class="material-symbols-outlined pf-rowmenu-lock">lock</span></button><button type="button" class="pf-module-menu-item is-locked" role="menuitem" aria-disabled="true"><span class="material-symbols-outlined">insights</span><span class="pf-mi-label">Product Insights</span><span class="material-symbols-outlined pf-rowmenu-lock">lock</span></button></div></div></span>
+                  <span class="pf-td pf-col-action"><a class="pf-claim-btn" href="view-product.html?name=Carrot+Raisin+Muffins-+4+ct&amp;upc=0+65776+63151+3&amp;img=..%2Fassets%2Fportfolio%2Fcarrot_raisin_muffins.png&amp;from=claimed">Finish and Claim</a></span><span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/carrot_raisin_muffins.png" alt="Carrot Raisin Muffins- 4 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-symbols-outlined" style="display:none">bakery_dining</span></span><span class="pf-pcell-text"><span class="pf-pname-row"><span class="pf-pname">Carrot Raisin Muffins- 4 ct</span></span><span class="pf-upc">UPC · 0 65776 63151 3</span></span></span>
                   <span class="pf-td pf-col-data"><span class="pf-chip pf-chip--complete">Complete</span></span>
                   <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--verified"><span class="material-symbols-outlined">gpp_good</span>Verified</span></span>
                 </div>
                 <div class="pf-trow">
                   <span class="pf-td pf-col-check"><button class="vf-check" type="button" data-pf="toggle-row" aria-label="Select product" aria-pressed="false"><span class="material-symbols-outlined">check_box_outline_blank</span></button></span>
                   <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions"><span class="material-symbols-outlined">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">edit</span>Edit</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">visibility</span>View</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-symbols-outlined">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-symbols-outlined">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
-                  <span class="pf-td pf-col-reports"><div class="pf-reports-wrap"><button type="button" class="pf-reports-btn" aria-haspopup="true" aria-expanded="false" title="Reports" aria-label="Reports" data-tip="Reports"><span class="material-symbols-outlined">description</span></button><div class="pf-module-menu-pop pf-reports-pop" role="menu" hidden><button type="button" class="pf-module-menu-item" role="menuitem" data-pf-report="details"><span class="material-symbols-outlined">receipt_long</span><span class="pf-mi-label">Product Details Report</span></button><button type="button" class="pf-module-menu-item" role="menuitem" data-pf-report="upf"><span class="material-symbols-outlined">description</span><span class="pf-mi-label">UPF Report</span></button></div></div></span>
-                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/chocolate_brownies.png" alt="Chocolate Brownies-12 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-symbols-outlined" style="display:none">bakery_dining</span></span><span class="pf-pcell-text"><span class="pf-pname-row"><span class="pf-pname">Chocolate Brownies-12 ct</span></span><span class="pf-upc">UPC · 0 65776 63550 4</span></span></span>
+                  <span class="pf-td pf-col-reports"><div class="pf-reports-wrap"><button type="button" class="pf-reports-btn" aria-haspopup="true" aria-expanded="false" aria-label="Reports for this product"><span class="material-symbols-outlined">description</span></button><div class="pf-module-menu-pop pf-reports-pop" role="menu" hidden><div class="pf-reports-pop-title">Reports</div><button type="button" class="pf-module-menu-item" role="menuitem" data-pf-report="details"><span class="material-symbols-outlined">receipt_long</span><span class="pf-mi-label">Product Details Report</span></button><button type="button" class="pf-module-menu-item" role="menuitem" data-pf-report="upf"><span class="material-symbols-outlined">description</span><span class="pf-mi-label">Product UPF</span></button><button type="button" class="pf-module-menu-item is-locked" role="menuitem" aria-disabled="true"><span class="material-symbols-outlined">verified_user</span><span class="pf-mi-label">Product GRAS</span><span class="material-symbols-outlined pf-rowmenu-lock">lock</span></button><button type="button" class="pf-module-menu-item is-locked" role="menuitem" aria-disabled="true"><span class="material-symbols-outlined">insights</span><span class="pf-mi-label">Product Insights</span><span class="material-symbols-outlined pf-rowmenu-lock">lock</span></button></div></div></span>
+                  <span class="pf-td pf-col-action"><a class="pf-claim-btn" href="view-product.html?name=Chocolate+Brownies-12+ct&amp;upc=0+65776+63550+4&amp;img=..%2Fassets%2Fportfolio%2Fchocolate_brownies.png&amp;from=claimed">Finish and Claim</a></span><span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/chocolate_brownies.png" alt="Chocolate Brownies-12 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-symbols-outlined" style="display:none">bakery_dining</span></span><span class="pf-pcell-text"><span class="pf-pname-row"><span class="pf-pname">Chocolate Brownies-12 ct</span></span><span class="pf-upc">UPC · 0 65776 63550 4</span></span></span>
                   <span class="pf-td pf-col-data"><span class="pf-chip pf-chip--complete">Complete</span></span>
                   <span class="pf-td pf-col-shield"><span class="pf-chip pf-chip--verified"><span class="material-symbols-outlined">gpp_good</span>Verified</span></span>
                 </div>
                 <div class="pf-trow">
                   <span class="pf-td pf-col-check"><button class="vf-check" type="button" data-pf="toggle-row" aria-label="Select product" aria-pressed="false"><span class="material-symbols-outlined">check_box_outline_blank</span></button></span>
                   <span class="pf-td pf-col-menu"><div class="pf-rowmenu"><button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Row actions"><span class="material-symbols-outlined">more_vert</span></button><div class="pf-rowmenu-pop" role="menu" hidden><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">edit</span>Edit</button><button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">visibility</span>View</button><div class="pf-rowmenu-sep"></div><div class="pf-rowmenu-info"><span class="material-symbols-outlined">update</span>Updated · Apr 20, 2026</div><div class="pf-rowmenu-info"><span class="material-symbols-outlined">edit_calendar</span>Last edited · Apr 16, 2026</div></div></div></span>
-                  <span class="pf-td pf-col-reports"><div class="pf-reports-wrap"><button type="button" class="pf-reports-btn" aria-haspopup="true" aria-expanded="false" title="Reports" aria-label="Reports" data-tip="Reports"><span class="material-symbols-outlined">description</span></button><div class="pf-module-menu-pop pf-reports-pop" role="menu" hidden><button type="button" class="pf-module-menu-item" role="menuitem" data-pf-report="details"><span class="material-symbols-outlined">receipt_long</span><span class="pf-mi-label">Product Details Report</span></button><button type="button" class="pf-module-menu-item" role="menuitem" data-pf-report="upf"><span class="material-symbols-outlined">description</span><span class="pf-mi-label">UPF Report</span></button></div></div></span>
-                  <span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/oatmeal_raisin_cookies.png" alt="Oatmeal Raisin Cookies-5 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-symbols-outlined" style="display:none">cookie</span></span><span class="pf-pcell-text"><span class="pf-pname">Oatmeal Raisin Cookies-5 ct</span><span class="pf-upc">UPC · 8 57287 00456 2</span></span></span>
+                  <span class="pf-td pf-col-reports"><div class="pf-reports-wrap"><button type="button" class="pf-reports-btn" aria-haspopup="true" aria-expanded="false" aria-label="Reports for this product"><span class="material-symbols-outlined">description</span></button><div class="pf-module-menu-pop pf-reports-pop" role="menu" hidden><div class="pf-reports-pop-title">Reports</div><button type="button" class="pf-module-menu-item" role="menuitem" data-pf-report="details"><span class="material-symbols-outlined">receipt_long</span><span class="pf-mi-label">Product Details Report</span></button><button type="button" class="pf-module-menu-item" role="menuitem" data-pf-report="upf"><span class="material-symbols-outlined">description</span><span class="pf-mi-label">Product UPF</span></button><button type="button" class="pf-module-menu-item is-locked" role="menuitem" aria-disabled="true"><span class="material-symbols-outlined">verified_user</span><span class="pf-mi-label">Product GRAS</span><span class="material-symbols-outlined pf-rowmenu-lock">lock</span></button><button type="button" class="pf-module-menu-item is-locked" role="menuitem" aria-disabled="true"><span class="material-symbols-outlined">insights</span><span class="pf-mi-label">Product Insights</span><span class="material-symbols-outlined pf-rowmenu-lock">lock</span></button></div></div></span>
+                  <span class="pf-td pf-col-action"><a class="pf-claim-btn" href="view-product.html?name=Oatmeal+Raisin+Cookies-5+ct&amp;upc=8+57287+00456+2&amp;img=..%2Fassets%2Fportfolio%2Foatmeal_raisin_cookies.png&amp;from=claimed">Finish and Claim</a></span><span class="pf-td pf-col-product"><span class="pf-thumb"><img class="pf-thumb-img" src="../assets/portfolio/oatmeal_raisin_cookies.png" alt="Oatmeal Raisin Cookies-5 ct" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="material-symbols-outlined" style="display:none">cookie</span></span><span class="pf-pcell-text"><span class="pf-pname">Oatmeal Raisin Cookies-5 ct</span><span class="pf-upc">UPC · 8 57287 00456 2</span></span></span>
                   <span class="pf-td pf-col-data"><span class="pf-chip pf-chip--complete">Complete</span></span>
                   <span class="pf-td pf-col-shield"><button type="button" class="pf-chip pf-chip--prequal">Pre-qualified <span class="material-symbols-outlined">arrow_outward</span></button></span>
                 </div>
@@ -14456,10 +14501,10 @@
       if (typeof syncPanelsRowRight === 'function') syncPanelsRowRight();
       if (typeof pfRefreshNudgeToasts === 'function') pfRefreshNudgeToasts();
     }
-    function openPortfolioReport(id) {
+    function openPortfolioReport(id, product) {
       const panel = document.getElementById('pf-report-panel');
       const api = window.WiseStickyReport;
-      if (!panel || !api || !api.fill(panel, id)) return;
+      if (!panel || !api || !api.fill(panel, id, product)) return;
       dockReportRight('pf-report-panel', 'report');
       panel.classList.add('pf-rpt-open');
       if (typeof window.setPanelWide === 'function') window.setPanelWide('report', 1);
@@ -14477,9 +14522,9 @@
     window.openPortfolioReport = openPortfolioReport;
     window.closePortfolioReport = closePortfolioReport;
     const PF_TABS = ['claimed', 'discovered', 'needsinfo'];
-    /* Every list is stacked on one board now, so the segment cards no longer
-       swap views — they scroll to a list and highlight it. 'all' is the
-       resting state: nothing highlighted, every list in view. */
+    /* Every list is stacked on one board now, so the segment cards scroll
+       to a list and stay highlighted for whichever table is in view.
+       'all' is the top-of-board resting state. */
     const PF_SEGS = ['all', 'needsinfo', 'discovered', 'claimed'];
     /* Board state: which segment (list) is showing and, within Claimed, which
        status filter (if any) is active. The score cards drive both. */
@@ -14706,8 +14751,9 @@
       document.querySelectorAll('.pf-stat').forEach((b) => {
         const status = b.dataset.status;
         const seg = b.dataset.seg;
-        const active = status ? (pfSeg === 'claimed' && pfStatus === status)
-                              : (pfSeg === seg && !pfStatus);
+        const active = status
+          ? (!!pfStatus && pfStatus === status)
+          : (pfSeg === seg);
         b.classList.toggle('is-active', active);
         b.setAttribute('aria-pressed', active ? 'true' : 'false');
       });
@@ -14761,12 +14807,57 @@
           if (el) ro.observe(el);
         });
       }
-      /* Only show the band's hairline once content has actually gone under it. */
-      const onScroll = () => panel.classList.toggle('pf-scrolled', body.scrollTop > 2);
+      /* Only show the band's hairline once content has actually gone under it.
+         The same scroll also drives which segment score card is lit. */
+      const onScroll = () => {
+        panel.classList.toggle('pf-scrolled', body.scrollTop > 2);
+        if (pfSpyRaf) return;
+        pfSpyRaf = requestAnimationFrame(() => {
+          pfSpyRaf = 0;
+          pfSpySeg();
+        });
+      };
       body.addEventListener('scroll', onScroll, { passive: true });
       onScroll();
+      requestAnimationFrame(pfSpySeg);
     }
     window.pfSyncStickyOffsets = pfSyncStickyOffsets;
+
+    /* Which list occupies the reading line just under the pinned score cards. */
+    let pfSpyLocked = false;
+    let pfSpyRaf = 0;
+    function pfApplySegHighlight(seg) {
+      document.querySelectorAll('.pf-stats--seg .pf-stat[data-seg]').forEach((b) => {
+        const on = b.dataset.seg === seg;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    }
+    function pfVisibleSeg() {
+      const body = document.getElementById('pf-body');
+      if (!body) return pfSeg;
+      const ids = ['needsinfo', 'discovered', 'claimed'];
+      const bodyRect = body.getBoundingClientRect();
+      const spyY = bodyRect.top + pfStickyHeight();
+      const first = document.getElementById('pf-view-needsinfo');
+      if (first && first.getBoundingClientRect().top > spyY + 20) return 'all';
+      let current = 'needsinfo';
+      ids.forEach((id) => {
+        const el = document.getElementById('pf-view-' + id);
+        if (el && el.getBoundingClientRect().top <= spyY + 28) current = id;
+      });
+      return current;
+    }
+    function pfSpySeg() {
+      if (pfSpyLocked) return;
+      const next = pfVisibleSeg();
+      if (next === pfSeg) {
+        pfApplySegHighlight(next);
+        return;
+      }
+      pfSeg = next;
+      pfApplySegHighlight(next);
+    }
 
     /* Scrolls a list's section up under the pinned score cards. 'all' returns
        to the top of the board instead of singling one list out. */
@@ -14776,14 +14867,35 @@
       const target = (seg && seg !== 'all')
         ? document.getElementById('pf-view-' + seg)
         : document.querySelector('.pf-board');
-      if (!target) { body.scrollTop = 0; return; }
+      pfSpyLocked = true;
+      const unlock = () => {
+        if (!pfSpyLocked) return;
+        pfSpyLocked = false;
+        pfSpySeg();
+      };
+      if (!target) { body.scrollTop = 0; unlock(); return; }
       requestAnimationFrame(() => {
         const b = body.getBoundingClientRect();
         const t = target.getBoundingClientRect();
         /* Clear the pinned header / search / score-card band, otherwise the
            list's title lands underneath it. */
         const clear = pfSyncStickyOffsets() + 12;
-        body.scrollTo({ top: Math.max(0, body.scrollTop + (t.top - b.top) - clear), behavior: 'smooth' });
+        const dest = Math.max(0, body.scrollTop + (t.top - b.top) - clear);
+        if (Math.abs(body.scrollTop - dest) < 2) { unlock(); return; }
+        let finished = false;
+        const finish = () => {
+          if (finished) return;
+          finished = true;
+          body.removeEventListener('scroll', onScr);
+          unlock();
+        };
+        const onScr = () => {
+          clearTimeout(onScr._t);
+          onScr._t = setTimeout(finish, 140);
+        };
+        body.addEventListener('scroll', onScr, { passive: true });
+        body.scrollTo({ top: dest, behavior: 'smooth' });
+        setTimeout(finish, 1000);
       });
     }
 
@@ -16115,6 +16227,16 @@
       }
       return '<span class="pf-td pf-col-reports"><button type="button" class="pf-claim-btn pf-row-act pf-row-act--complete">Complete details</button></span>';
     }
+    function pfClaimedActionHtml(name, upc, img) {
+      const params = new URLSearchParams();
+      if (name) params.set('name', name);
+      if (upc) params.set('upc', upc);
+      if (img) params.set('img', img);
+      params.set('from', 'claimed');
+      const qs = params.toString();
+      const href = 'view-product.html' + (qs ? ('?' + qs) : '');
+      return '<span class="pf-td pf-col-action"><a class="pf-claim-btn" href="' + pfEsc(href) + '">Finish and Claim</a></span>';
+    }
     function pfShieldChip(seg, shield) {
       if (seg === 'discovered') return '';
       if (seg === 'needsinfo' && !shield) return '<span class="pf-chip pf-chip--muted">Locked</span>';
@@ -16131,13 +16253,19 @@
     }
     function pfReportsHtml() {
       return '<span class="pf-td pf-col-reports"><div class="pf-reports-wrap">' +
-        '<button type="button" class="pf-reports-btn" aria-haspopup="true" aria-expanded="false" title="Reports" aria-label="Reports" data-tip="Reports">' +
+        '<button type="button" class="pf-reports-btn" aria-haspopup="true" aria-expanded="false" aria-label="Reports for this product">' +
         '<span class="material-symbols-outlined">description</span></button>' +
-        '<div class="pf-module-menu-pop pf-reports-pop" role="menu" hidden>' +
+        '<div class="pf-module-menu-pop pf-reports-pop" role="menu" hidden><div class="pf-reports-pop-title">Reports</div>' +
         '<button type="button" class="pf-module-menu-item" role="menuitem" data-pf-report="details">' +
         '<span class="material-symbols-outlined">receipt_long</span><span class="pf-mi-label">Product Details Report</span></button>' +
         '<button type="button" class="pf-module-menu-item" role="menuitem" data-pf-report="upf">' +
-        '<span class="material-symbols-outlined">description</span><span class="pf-mi-label">UPF Report</span></button>' +
+        '<span class="material-symbols-outlined">description</span><span class="pf-mi-label">Product UPF</span></button>' +
+        '<button type="button" class="pf-module-menu-item is-locked" role="menuitem" aria-disabled="true">' +
+        '<span class="material-symbols-outlined">verified_user</span><span class="pf-mi-label">Product GRAS</span>' +
+        '<span class="material-symbols-outlined pf-rowmenu-lock">lock</span></button>' +
+        '<button type="button" class="pf-module-menu-item is-locked" role="menuitem" aria-disabled="true">' +
+        '<span class="material-symbols-outlined">insights</span><span class="pf-mi-label">Product Insights</span>' +
+        '<span class="material-symbols-outlined pf-rowmenu-lock">lock</span></button>' +
         '</div></div></span>';
     }
     function pfBrandRow(p, seg, i) {
@@ -16164,7 +16292,8 @@
         '<span class="pf-pcell-text"><span class="pf-pname">' + pfEsc(name) + '</span>' +
         '<span class="pf-upc">UPC · ' + pfEsc(p[1]) + '</span></span></span>';
       return '<div class="pf-trow">' + pfCheckHtml(name) + pfRowMenuHtml(seg, dates[0], dates[1]) +
-        pfActionHtml(seg, data, href) + product +
+        pfActionHtml(seg, data, href) +
+        (seg === 'claimed' ? pfClaimedActionHtml(name, p[1], img) : '') + product +
         '<span class="pf-td pf-col-data">' + pfDataChip(seg, data, href) + '</span>' +
         '<span class="pf-td pf-col-shield">' + pfShieldChip(seg, shield) + '</span></div>';
     }
@@ -20885,6 +21014,32 @@
         nfp:    () => window.toggleNfpPanel    && window.toggleNfpPanel(false),
       };
 
+      function restoreReportsPop(pop) {
+        pop.setAttribute('hidden', '');
+        pop.classList.remove('is-portalled');
+        pop.style.position = pop.style.zIndex = '';
+        pop.style.left = pop.style.top = '';
+        if (pop._home && pop._home.parent) {
+          pop._home.parent.insertBefore(pop, pop._home.next);
+        }
+      }
+      function positionReportsPop(btn, pop) {
+        const r = btn.getBoundingClientRect();
+        const pw = pop.offsetWidth || 244;
+        const ph = pop.offsetHeight || 180;
+        const gap = 6;
+        let top = r.top - ph - gap;
+        let left = r.left;
+        if (top < 8) {
+          top = Math.max(8, r.top);
+          left = r.right + gap;
+          if (left + pw > window.innerWidth - 8) left = r.left - pw - gap;
+        }
+        left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
+        top = Math.max(8, Math.min(top, window.innerHeight - ph - 8));
+        pop.style.left = left + 'px';
+        pop.style.top = top + 'px';
+      }
       function closeAllModuleMenus() {
         document.querySelectorAll('.pf-module-menu.is-open').forEach((m) => {
           m.classList.remove('is-open');
@@ -20896,7 +21051,7 @@
           m.querySelector('.pf-reports-btn')?.setAttribute('aria-expanded', 'false');
         });
         /* The popover may be portalled onto <body>, so look it up globally. */
-        document.querySelectorAll('.pf-reports-pop').forEach((pop) => pop.setAttribute('hidden', ''));
+        document.querySelectorAll('.pf-reports-pop').forEach((pop) => restoreReportsPop(pop));
       }
 
       function makeItem({ icon, label, danger, extraClass, onClick }) {
@@ -21046,16 +21201,42 @@
           if (!wasOpen && wrap) {
             wrap.classList.add('is-open');
             reportsBtn.setAttribute('aria-expanded', 'true');
-            wrap.querySelector('.pf-reports-pop')?.removeAttribute('hidden');
+            const row = wrap.closest('.pf-trow');
+            wrap._product = row ? {
+              name: ((row.querySelector('.pf-pname') || {}).textContent || '').trim(),
+              upc: ((row.querySelector('.pf-upc') || {}).textContent || '').replace(/^\s*UPC\s*·\s*/i, '').trim(),
+              img: (row.querySelector('.pf-thumb-img') && row.querySelector('.pf-thumb-img').getAttribute('src')) || '',
+            } : null;
+            const pop = wrap.querySelector('.pf-reports-pop');
+            if (pop) {
+              pop._home = { parent: pop.parentNode, next: pop.nextSibling };
+              document.body.appendChild(pop);
+              pop.classList.add('is-portalled');
+              pop.style.position = 'fixed';
+              pop.style.zIndex = '240';
+              pop.removeAttribute('hidden');
+              positionReportsPop(reportsBtn, pop);
+            }
+            const boardBody = document.getElementById('pf-body');
+            if (boardBody) boardBody.addEventListener('scroll', closeAllModuleMenus, { once: true, passive: true });
+            window.addEventListener('resize', closeAllModuleMenus, { once: true });
           }
+          return;
+        }
+        const lockedItem = e.target.closest('.pf-reports-pop .is-locked');
+        if (lockedItem) {
+          e.preventDefault();
+          e.stopPropagation();
           return;
         }
         const reportItem = e.target.closest('[data-pf-report]');
         if (reportItem) {
           e.preventDefault();
           const id = reportItem.getAttribute('data-pf-report');
+          const wrap = document.querySelector('.pf-reports-wrap.is-open');
+          const product = wrap && wrap._product ? wrap._product : null;
           closeAllModuleMenus();
-          if (typeof window.openPortfolioReport === 'function') window.openPortfolioReport(id);
+          if (typeof window.openPortfolioReport === 'function') window.openPortfolioReport(id, product);
           return;
         }
         const btn = e.target.closest('.pf-module-menu-btn');

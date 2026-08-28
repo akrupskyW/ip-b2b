@@ -6716,7 +6716,7 @@
       background: transparent;
       border: 0;
       color: var(--text-muted);
-      opacity: 0.52;
+      opacity: 1;
       cursor: pointer;
       padding: 0;
       flex-shrink: 0;
@@ -6774,13 +6774,17 @@
       background: transparent;
       border: 0;
       color: var(--text-muted);
-      opacity: 0.52;
+      opacity: 1;
       cursor: pointer;
       padding: 0;
       transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
     }
     .pf-module-menu-btn .material-symbols-outlined,
-    .pf-module-menu-btn .material-symbols-outlined { font-size: 16px !important; line-height: 1 !important; }
+    .pf-module-menu-btn .material-symbols-outlined {
+      font-size: 16px !important;
+      line-height: 1 !important;
+      font-variation-settings: 'FILL' 0, 'wght' 600, 'GRAD' 0, 'opsz' 24;
+    }
     .pf-module-menu-btn:hover,
     .pf-module-menu.is-open .pf-module-menu-btn {
       opacity: 1;
@@ -7133,12 +7137,13 @@
       border: 0;
       color: var(--text-muted);
       cursor: pointer;
-      opacity: 0.52;
+      opacity: 1;
       transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
     }
     .panel-more-btn .material-symbols-outlined {
       font-size: 16px !important;
       line-height: 1 !important;
+      font-variation-settings: 'FILL' 0, 'wght' 600, 'GRAD' 0, 'opsz' 24;
     }
     .panel-more-btn:hover {
       opacity: 1;

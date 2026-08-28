@@ -2235,6 +2235,7 @@
       saveCurrent: saveCurrent, startNew: startNew, restore: restore,
       remove: remove, markNew: markNew, refresh: render, root: sidebar,
       add: add, currentTitle: currentTitle,
+      storageKey: function () { return storageKey; },
       setDocked: setDocked, isDocked: function () { return docked; },
       setRail: setRail, isRail: function () { return railMode; },
       setSticky: setSticky,

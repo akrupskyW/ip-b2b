@@ -48,6 +48,7 @@
     '.fl-model-popover',
     '.pf-rowmenu-pop',
     '.ma-rowmenu-pop',
+    '.inv-rowmenu-pop',
     '.pf-filter-pop',
     '.ma-filter-pop',
     '.pf-gs-infopop',
@@ -79,7 +80,6 @@
      own bubble-phase listeners are often eaten by stopPropagation. */
   var DISMISS_EXTRA = [
     '.adm-rowmenu-pop',
-    '.inv-rowmenu-pop',
   ].join(',');
 
   var floated = new Set();

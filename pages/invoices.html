@@ -64,16 +64,15 @@
     .inv-search::placeholder { color: color-mix(in srgb, var(--text-subtle) 55%, transparent); font-style: italic; }
     .inv-search:focus { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
 
-    /* Board card — same elevation / radius / surface as the Portfolio module's
-       .pf-card. */
-    /* overflow visible so a row's actions popover isn't clipped by the card. */
-    .inv-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-1); overflow: visible; padding: 14px; }
-    .inv-stats-bar { padding: 0 2px 10px; }
-    .inv-stats-label { font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); }
+    /* Board card — table only. Scorecards sit above it (just under search),
+       matching Ingredient Browser / Reformulation. Overflow stays visible so a
+       row's actions popover isn't clipped before it portals. */
+    .inv-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-1); overflow: visible; padding: 6px 4px; }
 
     /* At-a-glance filter cards — centered, rectangular tiles (serif number on
-       top, label below), matching the Portfolio module's .pf-stat. */
-    .inv-stats { display: flex; flex-wrap: wrap; gap: 10px; }
+       top, label below), matching the Portfolio module's .pf-stat. Live just
+       below the search, outside the table card. No eyebrow. */
+    .inv-stats { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
     .inv-stat { flex: 1 1 120px; min-width: 108px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; box-shadow: var(--shadow-1); font-family: inherit; text-align: center; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease; }
     html.dark .inv-stat { background: #1A2339; }
     html.chat-tint:not(.dark) .inv-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
@@ -91,18 +90,14 @@
     .inv-stat--failed .inv-stat-num { color: var(--sec-red); }
     .inv-stat--cancelled .inv-stat-num { color: var(--text-muted); }
 
-    .inv-board-divider { height: 1px; background: var(--border); margin: 14px 0 6px; }
-
     /* Table (CSS grid so rows align without a real table). Columns:
-       Date · Amount/Description · Status/Invoice · Actions. */
-    .inv-table-card { padding: 6px 4px; }
-    .inv-thead, .inv-trow { display: grid; grid-template-columns: minmax(186px, 0.95fr) minmax(0, 1.1fr) minmax(0, 2fr); align-items: center; gap: 12px; padding: 12px 12px; }
+       ⋮ · Date / Invoice · Amount / Description · Actions (chips). */
+    .inv-thead, .inv-trow { display: grid; grid-template-columns: 34px minmax(160px, 0.95fr) minmax(0, 1.1fr) minmax(0, 2fr); align-items: center; gap: 12px; padding: 12px 12px; }
     .inv-thead { border-bottom: 1px solid var(--border); }
     .inv-th { display: inline-flex; align-items: center; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); }
     .inv-trow { border-bottom: 1px solid var(--border); transition: background 0.15s ease; }
     .inv-trow:last-child { border-bottom: 0; }
-    .inv-trow:hover { background: var(--surface-2); }
-    html.dark .inv-trow:hover { background: rgba(255,255,255,0.04); }
+    .inv-trow:hover { background: var(--primary-soft); }
     .inv-trow.inv-row-hidden { display: none; }
     .inv-td { min-width: 0; font-size: 0.85rem; color: var(--text); }
     /* Date / Invoice / Status — date on top, then the invoice number, then the
@@ -149,8 +144,11 @@
     .inv-chip--cancelled { background: var(--surface-3, var(--surface-2)); color: var(--text-muted); }
     html.dark .inv-chip--cancelled { background: rgba(255,255,255,0.08); }
 
+    .inv-th--menu, .inv-td--menu { display: flex; align-items: center; justify-content: center; }
+
     /* Row + header action buttons — kept in a single row (never stacked) and
-       all one uniform size. */
+       all one uniform size. These stay visible as chips in every row; the
+       leading ⋮ duplicates the same actions in a menu. */
     .inv-actions { display: flex; align-items: center; flex-flow: row wrap; gap: 6px; }
     .inv-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; height: 32px; box-sizing: border-box; padding: 0 14px; border-radius: 999px; border: 1px solid transparent; cursor: pointer; font-family: inherit; font-size: 0.75rem; font-weight: 700; line-height: 1; transition: filter 0.15s ease, background 0.15s ease, color 0.15s ease; }
     .inv-btn .material-symbols-outlined { font-size: 15px; }
@@ -167,32 +165,35 @@
     .inv-btn--good:hover { background: var(--sec-green-10); }
     html.dark .inv-btn--good { color: #6FE0A0; }
     .inv-btn--ghost { background: transparent; color: var(--text-muted); border-color: var(--border-strong); }
-    .inv-btn--ghost:hover { color: var(--text); background: var(--surface-2); }
-    html.dark .inv-btn--ghost:hover { background: rgba(255,255,255,0.06); }
+    .inv-btn--ghost:hover { color: var(--text); background: var(--primary-soft); }
+    html.dark .inv-btn--ghost:hover { background: var(--primary-soft); }
 
-    /* Row actions kebab — hidden until the board is narrow, where the inline
-       button row is swapped for a three-dot menu + popover (mirrors the
-       Portfolio module's .pf-rowmenu). */
-    .inv-rowmenu { display: none; position: relative; }
-    .inv-rowmenu-btn { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; color: var(--text-subtle); cursor: pointer; transition: background 0.15s ease, color 0.15s ease; }
+    /* Leading ⋮ actions — same shell as .pf-rowmenu / .ma-rowmenu. The
+       popover opens to the right of the icon (never directly below). */
+    .inv-rowmenu { position: relative; display: inline-flex; }
+    .inv-rowmenu-btn { width: 30px; height: 30px; max-width: 44px; max-height: 44px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; color: var(--text-subtle); cursor: pointer; overflow: hidden; transition: background 0.15s ease, color 0.15s ease; }
     .inv-rowmenu-btn:hover, .inv-rowmenu.is-open .inv-rowmenu-btn { background: var(--surface-2); color: var(--text); }
     html.dark .inv-rowmenu-btn:hover, html.dark .inv-rowmenu.is-open .inv-rowmenu-btn { background: rgba(255,255,255,0.06); }
-    .inv-rowmenu-btn .material-symbols-outlined { font-size: 20px; }
-    .inv-rowmenu-pop { position: absolute; top: calc(100% + 4px); right: 0; z-index: 40; min-width: 210px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-2, 0 12px 32px rgba(0,0,0,0.18)); padding: 6px; }
+    .inv-rowmenu-btn .material-symbols-outlined { font-size: 18px !important; line-height: 1; }
+    .inv-rowmenu-pop { position: absolute; z-index: 40; top: 0; left: calc(100% + 4px); min-width: 210px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-2, 0 12px 32px rgba(0,0,0,0.18)); padding: 6px; }
     .inv-rowmenu-pop[hidden] { display: none; }
-    .inv-rowmenu-item { width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: none; background: transparent; cursor: pointer; border-radius: 8px; font-family: inherit; font-size: 0.8rem; font-weight: 600; color: var(--text); text-align: left; }
+    .inv-rowmenu-item { width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: none; background: transparent; cursor: pointer; border-radius: 8px; font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--text); text-align: left; }
     .inv-rowmenu-item:hover { background: var(--surface-2); }
     html.dark .inv-rowmenu-item:hover { background: rgba(255,255,255,0.06); }
-    .inv-rowmenu-item .material-symbols-outlined { font-size: 17px; color: var(--text-subtle); flex-shrink: 0; }
-    .inv-rowmenu-item--primary .material-symbols-outlined { color: var(--primary-ink, var(--primary)); }
+    .inv-rowmenu-item .material-symbols-outlined { font-size: 16px !important; line-height: 1 !important; color: var(--text-subtle); width: 18px; height: 18px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+    .inv-rowmenu-item:hover .material-symbols-outlined { color: var(--primary-ink, var(--primary)); }
     .inv-rowmenu-item--danger { color: var(--sec-red); }
     html.dark .inv-rowmenu-item--danger { color: #FF9E96; }
     .inv-rowmenu-item--danger .material-symbols-outlined { color: var(--sec-red); }
     html.dark .inv-rowmenu-item--danger .material-symbols-outlined { color: #FF9E96; }
+    .inv-rowmenu-item--danger:hover { background: var(--sec-red-10); color: var(--sec-red); }
+    .inv-rowmenu-item--danger:hover .material-symbols-outlined { color: var(--sec-red); }
     .inv-rowmenu-item--good { color: var(--sec-green); }
     html.dark .inv-rowmenu-item--good { color: #6FE0A0; }
     .inv-rowmenu-item--good .material-symbols-outlined { color: var(--sec-green); }
     html.dark .inv-rowmenu-item--good .material-symbols-outlined { color: #6FE0A0; }
+    .inv-rowmenu-item--good:hover { background: var(--sec-green-10); color: var(--sec-green); }
+    .inv-rowmenu-item--good:hover .material-symbols-outlined { color: var(--sec-green); }
 
     /* Toast */
     #inv-toast-wrap { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 2100; display: flex; flex-direction: column; gap: 8px; align-items: center; }
@@ -200,14 +201,14 @@
     .inv-toast.is-in { opacity: 1; transform: none; }
     .inv-toast .material-symbols-outlined { font-size: 17px; }
 
-    /* Narrow container (e.g. docked beside chat): stack each row into a single
-       column and swap the inline action buttons for a three-dot menu pinned to
-       the row's top-right. */
+    /* Narrow container (e.g. docked beside chat): stack date / amount / chips
+       in the second column; the leading ⋮ stays in column one. Chips stay
+       visible — they are not swapped out for the menu. */
     @container inv (max-width: 820px) {
       .inv-thead { display: none; }
-      .inv-trow { grid-template-columns: 1fr; gap: 4px; position: relative; padding-right: 44px; }
-      .inv-actions { display: none; }
-      .inv-rowmenu { display: inline-flex; position: absolute; top: 8px; right: 6px; }
+      .inv-trow { grid-template-columns: 34px 1fr; gap: 4px 12px; }
+      .inv-td--menu { align-self: start; padding-top: 4px; }
+      .inv-td:not(.inv-td--menu) { grid-column: 2; }
     }
 
     @media (max-width: 640px) {

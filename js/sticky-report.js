@@ -12,7 +12,7 @@
 
   var TITLES = {
     details: 'Product Details Report',
-    upf: 'UPF Report',
+    upf: 'Product UPF',
   };
 
   var UPF_ROWS = [
@@ -62,14 +62,17 @@
     return s === 'Non-UPF' ? 'verified' : 'inelig';
   }
 
-  function detailsHTML() {
+  function detailsHTML(product) {
+    var name = (product && product.name) || 'Toasted Coconut Brownies-12 ct';
+    var upc = (product && product.upc) || '8 57287 00420 3';
+    var img = (product && product.img) || '../assets/portfolio/coconut_brownies.png';
     return '' +
       '<article class="pf-rpt-doc" aria-label="Product Details Report">' +
         '<header class="pf-rpt-hero">' +
-          '<span class="pf-rpt-hero-img"><img src="../assets/portfolio/coconut_brownies.png" alt="Toasted Coconut Brownies-12 ct"></span>' +
+          '<span class="pf-rpt-hero-img"><img src="' + esc(img) + '" alt="' + esc(name) + '"></span>' +
           '<div class="pf-rpt-hero-copy">' +
-            '<h2 class="pf-rpt-title">Toasted Coconut Brownies-12 ct</h2>' +
-            '<p class="pf-rpt-lede">Flax4Life · UPC 8 57287 00420 3 · Complete data · Non-UPF Verified</p>' +
+            '<h2 class="pf-rpt-title">' + esc(name) + '</h2>' +
+            '<p class="pf-rpt-lede">Flax4Life · UPC ' + esc(upc) + ' · Complete data · Non-UPF Verified</p>' +
             '<div class="pf-rpt-hero-pills">' +
               pill('Non-UPF Verified', 'verified') +
               pill('Data complete', 'complete') +
@@ -123,10 +126,10 @@
     }).join('');
 
     return '' +
-      '<article class="pf-rpt-doc" aria-label="UPF Report">' +
+      '<article class="pf-rpt-doc" aria-label="Product UPF">' +
         '<header class="pf-rpt-hero pf-rpt-hero--plain">' +
           '<div class="pf-rpt-hero-copy">' +
-            '<h2 class="pf-rpt-title">UPF Report</h2>' +
+            '<h2 class="pf-rpt-title">Product UPF</h2>' +
             '<p class="pf-rpt-lede">Flax4Life · ultra-processed food classification across the claimed portfolio.</p>' +
           '</div>' +
         '</header>' +
@@ -155,20 +158,24 @@
       '</article>';
   }
 
-  function bodyHTML(id) {
-    if (id === 'details') return detailsHTML();
+  function bodyHTML(id, product) {
+    if (id === 'details') return detailsHTML(product);
     if (id === 'upf') return upfHTML();
     return '';
   }
 
-  function fill(panel, id) {
-    if (!panel || !bodyHTML(id)) return false;
+  function fill(panel, id, product) {
+    if (!panel || !bodyHTML(id, product)) return false;
     var titleEl = panel.querySelector('#pf-report-title');
     var subEl = panel.querySelector('#pf-report-sub');
     var body = panel.querySelector('#pf-report-body');
+    var name = (product && product.name) || '';
     if (titleEl) titleEl.textContent = TITLES[id] || 'Report';
-    if (subEl) subEl.textContent = id === 'details' ? 'Toasted Coconut Brownies-12 ct · Flax4Life' : 'Flax4Life · Claimed portfolio';
-    if (body) body.innerHTML = bodyHTML(id);
+    if (subEl) {
+      if (id === 'details') subEl.textContent = (name || 'Toasted Coconut Brownies-12 ct') + ' · Flax4Life';
+      else subEl.textContent = name ? (name + ' · Flax4Life') : 'Flax4Life · Claimed portfolio';
+    }
+    if (body) body.innerHTML = bodyHTML(id, product);
     panel.dataset.reportId = id;
     return true;
   }

@@ -719,14 +719,6 @@
     .nfp-hero-upc--seg { max-width: 320px; }
     .nfp-rcol-upc { width: 100%; max-width: 340px; align-self: center; }
 
-    /* Small centered note above a size's barcode when it reuses the single
-       count's UPC (shown until the size is given a code of its own). */
-    .nfp-pack-upc-note {
-      display: flex; align-items: center; justify-content: center; gap: 4px;
-      font-size: 0.62rem; font-weight: 600; color: var(--text-muted);
-      text-align: center; margin-bottom: 6px;
-    }
-
     /* Food Identity thumbs (multiple product images) */
     .nfp-fi { background: transparent; border-bottom: none; padding: 14px 14px 14px; }
     .nfp-fi:has(.nfp-fi-group--identity) { padding: 0; overflow: visible; }
@@ -803,12 +795,30 @@
     }
     .nfp-fi-lead-photo:hover,
     .nfp-fi-lead-photo:focus-visible { box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 40%, transparent); }
+    /* Pencil sits on the photo (top-left of the far-left square) — circle, not a tile. */
+    .nfp-fi-lead-edit {
+      position: absolute; top: 6px; left: 6px; z-index: 3;
+      width: 28px; height: 28px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.55); color: #fff; pointer-events: none;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+    }
+    .nfp-fi-lead-edit .material-symbols-outlined {
+      font-size: 16px !important; line-height: 1 !important;
+    }
+    .nfp-fi-lead-photo:hover .nfp-fi-lead-edit,
+    .nfp-fi-lead-photo:focus-visible .nfp-fi-lead-edit {
+      background: rgba(0,0,0,0.72);
+    }
     html.dark .nfp-fi-lead-photo { border-color: color-mix(in srgb, #fff 12%, var(--border)); }
     html.dark .nfp-fi-desc { color: var(--text-muted); }
     .nfp-fi-copy { flex: 1 1 auto; min-width: 0; }
-    .nfp-fi-group--identity .nfp-fi-header { margin-bottom: 6px; }
-    /* Photo + ⋯ + width (3×28px) float over this row — wrap before them. */
-    html.header-float .nfp-fi-group--identity .nfp-fi-header { padding-right: 96px; }
+    .nfp-fi-group--identity .nfp-fi-header {
+      margin-bottom: 6px; align-items: flex-start; gap: 10px; flex-wrap: nowrap;
+    }
+    /* ⋯ + width (2×28px) float over this row — keep the category chip clear
+       of that cluster so it sits immediately left of the three dots. */
+    html.header-float .nfp-fi-group--identity .nfp-fi-header { padding-right: 72px; }
     /* Fill the copy column (not a fixed 72ch) so the blurb tracks module width.
        pretty wrap keeps a leftover word from sitting short of the line above. */
     .nfp-fi-desc {
@@ -835,21 +845,37 @@
     .nfp-fi-strip-photo--helix .sc-bganim-canvas { z-index: 0; }
     .nfp-fi-strip-photo--helix.sc-bganim-live .sc-bganim-canvas { opacity: 1; }
     .nfp-fi-group--identity .nfp-fi-thumbs {
-      align-items: flex-start; flex-wrap: wrap; row-gap: 10px;
+      align-items: flex-start; flex-wrap: wrap; gap: 8px; row-gap: 10px;
+    }
+    .nfp-fi-thumb-upc {
+      display: flex; align-items: flex-start; gap: 8px; flex: 0 0 auto;
     }
     .nfp-fi-group--identity .nfp-fi-add { align-self: flex-start; flex-shrink: 0; }
-    .nfp-fi-cat { flex: 0 0 auto; align-self: flex-start; margin-left: 6px; min-width: 0; display: flex; align-items: stretch; height: 40px; }
-    .nfp-fi-cat .nfp-hero-cat { width: auto; max-width: none; height: 40px; align-items: stretch; flex-wrap: nowrap; }
-    .nfp-fi-cat .nfp-cat-select { width: auto; height: 40px; }
-    .nfp-fi-cat .nfp-cat-native {
-      max-width: 220px; height: 40px; box-sizing: border-box;
-      padding-top: 0; padding-bottom: 0; line-height: 38px;
+    /* Compact category — 28px to match ⋯ / width, docked in the title row. */
+    .nfp-fi-cat--dock {
+      flex: 0 0 auto; align-self: flex-start; margin: 0; min-width: 0;
+      display: flex; align-items: center; height: 28px;
     }
-    /* Identity-strip barcode is a fixed 232px chip — the default size. It
-       never grows with the thumbs row and never shrinks with the module. */
+    .nfp-fi-cat--dock .nfp-hero-cat {
+      width: auto; max-width: none; height: 28px;
+      align-items: center; flex-wrap: nowrap; margin: 0; justify-content: flex-end;
+    }
+    .nfp-fi-cat--dock .nfp-cat-select { width: auto; height: 28px; }
+    .nfp-fi-cat--dock .nfp-cat-native {
+      width: auto; max-width: 180px; height: 28px; box-sizing: border-box;
+      padding: 0 22px 0 24px; line-height: 26px; font-size: 0.65rem;
+    }
+    .nfp-fi-cat--dock .nfp-cat-select-ic {
+      left: 6px; top: 50%; transform: translateY(-50%); font-size: 14px !important;
+    }
+    .nfp-fi-cat--dock .nfp-cat-select-caret {
+      right: 3px; top: 50%; transform: translateY(-50%); font-size: 16px !important;
+    }
+    .nfp-fi-cat--dock .nfp-hero-field-note { display: none; }
+    /* Barcode sits in the thumbs row: after the size squares, before +. */
     .nfp-fi-upc {
-      flex: 1 0 100%; width: auto; margin-left: 0;
-      display: flex; justify-content: center; align-items: flex-start;
+      flex: 0 0 auto; width: auto; margin-left: 0;
+      display: flex; justify-content: flex-start; align-items: flex-start;
     }
     .nfp-fi-upc .nfp-hero-upc,
     .nfp-fi-upc .nfp-hero-upc--seg,
@@ -868,15 +894,8 @@
       height: 20px; font-size: 0.78rem; padding: 0 0 1px; border-bottom-width: 1px;
     }
     .nfp-fi-upc .nfp-upc-cell--sep { margin-left: 6px; }
-    .nfp-fi-upc .nfp-pack-upc-note { margin-bottom: 2px; font-size: 0.52rem; }
     html.dark .nfp-fi-upc .nfp-upc-entry:not(.nfp-upc-entry--onphoto) {
       background: color-mix(in srgb, var(--surface-2) 92%, transparent);
-    }
-    @container nfp-body (min-width: 900px) {
-      .nfp-fi-upc {
-        flex: 0 0 232px; width: 232px; min-width: 232px; max-width: 232px;
-        margin-left: auto; display: flex; justify-content: center;
-      }
     }
 
     /* Pack Formats — an additional section (below Product Images) for products
@@ -885,11 +904,6 @@
     .nfp-fi--packs { border-top: 1px dashed var(--border); }
     .nfp-fi-thumb-icon { display: flex; align-items: center; justify-content: center; color: var(--text-subtle); }
     .nfp-fi-thumb-icon .material-symbols-outlined { font-size: 20px !important; }
-    .nfp-pack-caption {
-      display: flex; align-items: center; justify-content: flex-start; gap: 5px; flex-wrap: wrap;
-      margin: 0 0 12px; font-size: 0.8125rem; line-height: 1.45; color: var(--text-muted); text-align: left;
-    }
-    .nfp-pack-caption .material-symbols-outlined { font-size: 13px !important; color: var(--primary-ink, var(--primary)); }
 
     /* ── Pack Nutrition Facts ──
        A per-pack, editable Nutrition Facts panel (seeded from the base product)
@@ -1059,7 +1073,7 @@
       border: 1px solid var(--border); border-radius: 10px;
       background: var(--surface); color: var(--text);
       font-family: 'WISE Digits', 'DM Sans', system-ui, sans-serif;
-      font-size: 0.72rem; line-height: 1.55; outline: none;
+      font-size: 0.8125rem; line-height: 1.45; outline: none;
     }
     .nfp-ingred-edit:focus {
       box-shadow: inset 0 0 0 2px var(--primary); border-color: transparent;

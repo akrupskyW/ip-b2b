@@ -4821,7 +4821,7 @@ html.dark .agent-main-scroll { background: transparent; }
 .nfp-panel-header .panel-more-btn,
 .nfp-panel-header .panel-width-toggle-btn {
   color: #fff;
-  opacity: 0.55;
+  opacity: 1;
 }
 .nfp-panel-header .panel-more-btn:hover,
 .nfp-panel-header .panel-more-btn.is-open,
@@ -6356,10 +6356,14 @@ html:not(.dark) .sc-topbar-titles .topbar-title { color: var(--text); }
 .panel-more-btn {
   display: inline-flex; align-items: center; justify-content: center;
   width: 28px; height: 28px; border-radius: 50%; background: transparent; border: 0;
-  color: var(--text-muted); cursor: pointer; opacity: 0.52;
+  color: var(--text-muted); cursor: pointer; opacity: 1;
   transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
 }
-.panel-more-btn .material-symbols-outlined { font-size: 16px !important; line-height: 1 !important; }
+.panel-more-btn .material-symbols-outlined {
+  font-size: 16px !important; line-height: 1 !important;
+  /* more_vert at 600 — three stacked dots read thin at the app-wide 400. */
+  font-variation-settings: 'FILL' 0, 'wght' 600, 'GRAD' 0, 'opsz' 24;
+}
 /* Opaque circle behind the icon on hover so content scrolling underneath a
    floated header never bleeds through the glyph. */
 .panel-more-btn:hover { opacity: 1; background: var(--surface-3); color: var(--text); }
@@ -6376,7 +6380,7 @@ html:not(.dark) .sc-topbar-titles .topbar-title { color: var(--text); }
 .panel-width-toggle-btn {
   display: inline-flex; align-items: center; justify-content: center;
   width: 28px; height: 28px; border-radius: 50%; background: transparent; border: 0;
-  color: var(--text-muted); opacity: 0.52; cursor: pointer; padding: 0; flex-shrink: 0;
+  color: var(--text-muted); opacity: 1; cursor: pointer; padding: 0; flex-shrink: 0;
   transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 .panel-width-toggle-btn .material-symbols-outlined { font-size: 16px !important; line-height: 1 !important; }
@@ -7294,11 +7298,9 @@ html.dark .fl-db-module .fl-db-top { background: transparent; }
   /* Filled paper plane — the outline twin reads hollow and left-heavy in this circle. */
   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
-/* Kill the shim's text-baseline offset (vertical-align: -0.175em) so the 18px
-   square sits on the flex center of the circle, then nudge right: a right-
-   pointing plane is optically left-weighted in a round well. */
+/* Optical nudge only: a right-pointing plane is left-weighted in a round well.
+   Geometric centering of the 1em square is the shim's job. */
 .sc-send .wise-icon {
-  display: block; vertical-align: 0;
   transform: translate(2px, 0);
 }
 
@@ -12095,9 +12097,8 @@ html.dark .vfp-pct-ring {
 }
 .vf-table tbody tr:first-child td { border-top: 0; }
 .vf-row { transition: background 0.15s ease; }
-.vf-row:hover td { background: var(--surface-2); }
-html.dark .vf-row:hover td { background: rgba(255, 255, 255, 0.04); }
-.vf-row.is-selected { background: color-mix(in srgb, var(--primary) 6%, transparent); }
+.vf-row:hover td { background: var(--primary-soft); }
+.vf-row.is-selected { background: var(--primary-soft); }
 .vf-mono { font-variant-numeric: tabular-nums; color: var(--text-muted); }
 .vf-col-updated { color: var(--text-muted); }
 
@@ -12208,7 +12209,7 @@ html.dark .vf-chip--inelig { background: rgba(255, 255, 255, 0.10); color: var(-
 .vf-detail-row td {
   padding: 0 12px 14px;
   border-top: 0;
-  background: color-mix(in srgb, var(--primary) 6%, transparent);
+  background: var(--primary-soft);
 }
 .vf-detail { padding: 0; }
 .vf-detail-label { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
@@ -12794,8 +12795,7 @@ html.dark.chat-tint .gv-stat { background: color-mix(in srgb, var(--primary-brig
 .gv-row td { padding: 12px; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--text-muted); vertical-align: middle; }
 .gv-table tbody tr:first-child td { border-top: 0; }
 .gv-row { transition: background 0.15s ease; }
-.gv-row:hover td { background: var(--surface-2); }
-html.dark .gv-row:hover td { background: rgba(255, 255, 255, 0.04); }
+.gv-row:hover td { background: var(--primary-soft); }
 
 .gv-icell { display: flex; align-items: center; gap: 11px; min-width: 0; }
 .gv-icell-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
@@ -12831,17 +12831,18 @@ html.dark .gv-glyph { background: rgba(96, 165, 250, 0.14); color: #9DC0E6; bord
 html.dark .gv-chip--info { background: rgba(45, 212, 191, 0.15); }
 .gv-chip--ok { background: rgba(50, 169, 102, 0.14); color: var(--gv-ok); }
 
-/* ---------- Row action buttons ---------- */
+/* ---------- Row action buttons (ghost, never solid primary) ---------- */
 .gv-row-cta {
-  display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 0;
-  border-radius: var(--radius-pill, 999px); background: var(--primary); color: #fff;
+  display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill, 999px); background: transparent; color: var(--text);
   font-family: inherit; font-size: 0.75rem; font-weight: 700; cursor: pointer;
-  transition: filter 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 .gv-row-cta .material-symbols-outlined { font-size: 15px; }
-.gv-row-cta:hover { filter: brightness(1.07); }
-.gv-row-cta--ghost { background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border-strong); }
-.gv-row-cta--ghost:hover { filter: none; color: var(--text); }
+.gv-row-cta:hover { background: var(--primary-soft); color: var(--primary-ink, var(--primary)); border-color: var(--primary); }
+.gv-row-cta--ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border-strong); }
+.gv-row-cta--ghost:hover { color: var(--text); background: var(--primary-soft); }
 .gv-row-done { display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; font-weight: 700; color: var(--gv-ok); }
 .gv-row-done .material-symbols-outlined { font-size: 16px; }
 
@@ -13337,8 +13338,22 @@ html.dark .adm-stat--blue .adm-stat-num, html.dark .adm-stat--blue .adm-stat-lab
 .adm-th--end, .adm-td--end { justify-content: flex-end; text-align: right; }
 .adm-trow { border-bottom: 1px solid var(--border); transition: background 0.15s ease; }
 .adm-trow:last-child { border-bottom: 0; }
-.adm-trow:hover { background: var(--surface-2); }
-html.dark .adm-trow:hover { background: rgba(255,255,255,0.03); }
+.adm-trow:hover { background: var(--primary-soft); }
+/* In-row actions are ghost (outline) — never a solid primary fill. */
+.adm-trow .adm-btn--primary,
+.wmod-trow .wmod-btn--primary {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border-strong);
+  box-shadow: none;
+}
+.adm-trow .adm-btn--primary:hover,
+.wmod-trow .wmod-btn--primary:hover {
+  filter: none;
+  color: var(--primary-ink, var(--primary));
+  background: var(--primary-soft);
+  border-color: var(--primary);
+}
 .adm-trow.adm-row-hidden { display: none; }
 .adm-td { min-width: 0; font-size: 0.84rem; color: var(--text); }
 .adm-td--num { font-variant-numeric: tabular-nums; color: var(--text-muted); }
@@ -14542,9 +14557,8 @@ html.dark .wmod-stat--verified .wmod-stat-label .material-symbols-outlined { col
 .pf-th { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); min-width: 0; }
 .pf-trow { border-bottom: 1px solid var(--border); transition: background 0.15s ease; }
 .pf-trow:last-child { border-bottom: none; }
-.pf-trow:hover { background: var(--surface-2); }
-html.dark .pf-trow:hover { background: rgba(255,255,255,0.04); }
-.pf-trow.is-selected { background: color-mix(in srgb, var(--primary) 6%, transparent); }
+.pf-trow:hover { background: var(--primary-soft); }
+.pf-trow.is-selected { background: var(--primary-soft); }
 .pf-td { font-size: 12px; color: var(--text-muted); min-width: 0; }
 .pf-col-product { display: flex; align-items: center; gap: 10px; }
 .pf-col-check { display: flex; align-items: center; justify-content: center; }
@@ -14575,12 +14589,27 @@ html.dark .pf-thumb { background: rgba(37,80,124,0.28); color: #9DC0E6; border-c
 .pf-trow--detail { display: block; padding: 0 12px 12px; border-bottom: 1px solid var(--border); }
 .pf-trow--detail:not(.is-open) { display: none; }
 .pf-table .pf-empty { grid-column: 1 / -1; text-align: center; color: var(--text-subtle); padding: 26px 12px; font-size: 0.85rem; }
+/* Row CTA — ghost pill (outline), matching .dash-btn--ghost / .adm-btn--ghost. */
+.pf-claim-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap;
+  padding: 7px 14px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--border-strong); background: transparent; color: var(--text);
+  font-family: inherit; font-size: 11.5px; font-weight: 700;
+  text-decoration: none; line-height: 1; box-sizing: border-box;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+a.pf-claim-btn, a.pf-claim-btn:link, a.pf-claim-btn:visited,
+a.pf-claim-btn:hover, a.pf-claim-btn:focus { color: inherit; text-decoration: none; }
+.pf-claim-btn:hover {
+  background: var(--primary-soft); color: var(--primary-ink, var(--primary));
+  border-color: var(--primary);
+}
+.pf-claim-btn .material-symbols-outlined { font-size: 14px; }
 .wmod-thead { border-bottom: 1px solid var(--border); }
 .wmod-th { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); min-width: 0; }
 .wmod-trow { border-bottom: 1px solid var(--border); transition: background 0.15s ease; }
 .wmod-trow:last-child { border-bottom: none; }
-.wmod-trow:hover { background: var(--surface-2); }
-html.dark .wmod-trow:hover { background: rgba(255,255,255,0.04); }
+.wmod-trow:hover { background: var(--primary-soft); }
 .wmod-trow.is-clickable { cursor: pointer; }
 .wmod-td { font-size: 12.5px; color: var(--text-muted); min-width: 0; }
 .wmod-td-primary { font-size: 0.875rem; font-weight: 600; color: var(--text); }

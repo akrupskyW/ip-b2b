@@ -1313,6 +1313,7 @@ const CAT_BY_NAME = {
   'Width toggle': 'Actions',
   'Empty states': 'Feedback',
   'Nutrition Facts': 'Chat & drawers',
+  'Product identity strip': 'Chat & drawers',
   'Progress tracker': 'Chat & drawers',
   'Jam strip': 'Navigation',
   'App search': 'Navigation',
@@ -1354,6 +1355,56 @@ function catOf(c) { return c.cat || CAT_BY_NAME[c.name] || 'Actions'; }
    Inners are full-size product photos scaled by the shared thumb transform. */
 function outputDemoInner(src) {
   return `<div class="mi-out-thumb-fill"><img src="../assets/portfolio/${src}" alt="" width="360" height="360" loading="lazy"></div>`;
+}
+/* Product identity strip — two-state catalog demo (several sizes vs one picture). */
+function idStripUpcDemo(digits) {
+  const bars = Array.from({ length: 36 }, (_, i) => `<rect x="${2 + i * 3.4}" y="0" width="${i % 5 === 0 ? 2.2 : 1.1}" height="24"/>`).join('');
+  return `<div class="nfp-fi-upc">
+    <div class="nfp-upc-entry nfp-upc-entry--filled">
+      <svg class="nfp-upc-barcode" viewBox="0 0 126 24" preserveAspectRatio="none" aria-hidden="true">${bars}</svg>
+      <div class="nfp-upc-cells">${esc(digits)}</div>
+    </div>
+  </div>`;
+}
+function idStripThumbDemo(label, src, active) {
+  return `<div class="nfp-fi-thumb${active ? ' active' : ''}">
+    <img class="nfp-fi-thumb-img" src="../assets/portfolio/${src}" alt="">
+    <span class="nfp-fi-thumb-label">${esc(label)}</span>
+  </div>`;
+}
+function idStripDemoHTML({ single }) {
+  const src = 'chocolate_chip_muffins.png';
+  const thumbs = single
+    ? ''
+    : idStripThumbDemo('1 ct', src, true) + idStripThumbDemo('4 ct', src, false) + idStripThumbDemo('6 ct', src, false);
+  return `<div class="nfp-fi-group nfp-fi-group--identity">
+    <button type="button" class="nfp-fi-lead-photo" title="Replace product image" aria-label="Replace product image">
+      <img src="../assets/portfolio/${src}" alt="">
+      <span class="nfp-fi-lead-edit" aria-hidden="true"><span class="material-symbols-outlined">edit</span></span>
+    </button>
+    <div class="nfp-fi-copy">
+      <div class="nfp-fi-header">
+        <span class="nfp-fi-title">${single ? 'Product name' : 'Flax4Life Chocolate Chip Muffins'}</span>
+        <div class="nfp-fi-cat nfp-fi-cat--dock">
+          <span class="nfp-cat-select"><span class="material-symbols-outlined nfp-cat-select-ic">sell</span><span class="nfp-cat-native">${single ? 'Select a category…' : 'Bakery › Muffins'}</span><span class="material-symbols-outlined nfp-cat-select-caret">expand_more</span></span>
+        </div>
+        <div class="panel-controls">
+          <div class="panel-more-wrap"><button type="button" class="panel-more-btn" title="Module options" aria-label="Module options"><span class="material-symbols-outlined">more_vert</span></button></div>
+          <button type="button" class="panel-width-toggle-btn" title="Width (fill)" aria-label="Product Details width"><span class="material-symbols-outlined">width_full</span></button>
+        </div>
+      </div>
+      <p class="nfp-fi-desc">${single ? 'Add a short product description' : 'A bakery favorite with a moist crumb, simple ingredients, and flavor that holds from the first bite to the last.'}</p>
+      <div class="nfp-fi-price">${single ? '$0.00' : '$4.99'} <span class="nfp-fi-price-size">1 ct</span></div>
+      <div class="nfp-fi-thumbs">
+        ${thumbs}
+        ${idStripUpcDemo(single ? '— — — — — — — — — — — —' : '8 5 3 6 2 0 0 0 6 2 7 9')}
+        <div class="nfp-fi-add" title="Add size or variation" role="button">
+          <span class="nfp-fi-add-sq" aria-hidden="true"><span class="material-symbols-outlined">add</span></span>
+          <span class="nfp-fi-add-label">Add size or variation</span>
+        </div>
+      </div>
+    </div>
+  </div>`;
 }
 function outputChipHTML({ title, versions, hover, activeVer }) {
   const vtag = (n) => `<span class="sc-surface-vtag">v${n}</span>`;
@@ -1826,7 +1877,7 @@ const COMPONENTS = [
     wide: true,
     cat: 'Chat & drawers',
     cls: '.panel-more-btn \u00b7 .topbar-popover \u00b7 .sc-mcp-item \u00b7 .sc-switch \u00b7 .sc-stream-seg',
-    used: 'The three-dot on every chat module \u2014 History, Turns, Activity strip, streaming, helix, Share, Export',
+    used: 'The three-dot on every chat module \u2014 History, File to Library, Turns, Activity strip, streaming, helix, Share, Export',
     note: 'Same compact <code>.topbar-popover</code> shell as other module menus. Toggle rows use a switch, not a row highlight. Activity strip and Response streaming each grow a segmented picker underneath (Left/Right, Full/Steps/Final). Helix knobs live in this menu too \u2014 the field itself is in Motion &amp; Resize. Admin rows wear the pink switch + Admin badge.',
     noteIcon: 'more_vert',
     demo: `
@@ -1845,6 +1896,7 @@ const COMPONENTS = [
             <button type="button" class="panel-more-btn is-open" aria-label="More options" aria-expanded="true"><span class="material-symbols-outlined">more_vert</span></button>
             <div class="topbar-popover" data-popover-static style="position:static;margin-top:8px;max-width:280px">
               <button type="button" class="topbar-menu-item"><span class="material-symbols-outlined topbar-menu-icon">add</span><span>Start new conversation</span></button>
+              <button type="button" class="topbar-menu-item"><span class="material-symbols-outlined topbar-menu-icon">auto_stories</span><span>File to Library</span></button>
               <button type="button" class="topbar-menu-item sc-mcp-item is-on" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">history</span><span>History &amp; Projects</span><span class="sc-switch" aria-hidden="true"></span></button>
               <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">alt_route</span><span>Turns</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>
               <div class="topbar-menu-divider"></div>
@@ -2235,6 +2287,26 @@ const COMPONENTS = [
             <svg class="nfp-barcode-svg" width="180" height="56" viewBox="0 0 180 56" aria-hidden="true">${Array.from({ length: 48 }, (_, i) => `<rect x="${4 + i * 3.6}" y="4" width="${i % 5 === 0 ? 2.4 : 1.2}" height="40" fill="#111"/>`).join('')}</svg>
             <div class="mi-nfp-upc-digits">8 57287 00420 3</div>
           </div>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Product identity strip',
+    wide: true,
+    cat: 'Chat & drawers',
+    cls: '.nfp-fi-group--identity \u00b7 .nfp-fi-cat--dock \u00b7 .nfp-fi-upc \u00b7 .nfp-fi-thumbs',
+    used: 'Add Product \u00b7 View Product \u2014 the top of the Product Details drawer',
+    note: 'The category is a 28px pill in the title row, immediately left of ⋯ and width. The size row is extra-count squares, then the barcode, then Add size. A product with only one picture does not show a tiny 1 ct preview \u2014 the lead photo is enough \u2014 so that row is barcode, then plus. The pencil lives on the lead photo, not next to ⋯.',
+    noteIcon: 'id_card',
+    demo: `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col" style="flex:1 1 100%">
+          <div class="dsc-sub-label">Several sizes</div>
+          ${idStripDemoHTML({ single: false })}
+        </div>
+        <div class="dsc-state-col" style="flex:1 1 100%">
+          <div class="dsc-sub-label">One picture</div>
+          ${idStripDemoHTML({ single: true })}
         </div>
       </div>`,
   },
@@ -8757,6 +8829,110 @@ function moduleStyles() {
       font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.08em; color: var(--text);
     }
 
+    /* Product identity strip — compact catalog twin of Add / View Product. */
+    .dsc-demo .nfp-fi-group--identity {
+      position: relative; isolation: isolate; width: 100%; box-sizing: border-box;
+      padding: 12px; display: flex; align-items: flex-start; gap: 12px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    }
+    .dsc-demo .nfp-fi-lead-photo {
+      flex: 0 0 88px; width: 88px; height: 88px; padding: 0; margin: 0;
+      border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+      background: var(--surface-2); cursor: default; display: block; position: relative;
+    }
+    .dsc-demo .nfp-fi-lead-photo img {
+      width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;
+    }
+    .dsc-demo .nfp-fi-lead-edit {
+      position: absolute; top: 5px; left: 5px; z-index: 3;
+      width: 24px; height: 24px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.55); color: #fff; pointer-events: none;
+    }
+    .dsc-demo .nfp-fi-lead-edit .material-symbols-outlined { font-size: 14px !important; line-height: 1 !important; }
+    .dsc-demo .nfp-fi-copy { flex: 1 1 auto; min-width: 0; }
+    .dsc-demo .nfp-fi-header {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 4px; min-width: 0;
+    }
+    .dsc-demo .nfp-fi-title {
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2;
+      color: var(--text); flex: 1 1 auto; min-width: 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .dsc-demo .nfp-fi-cat--dock {
+      flex: 0 0 auto; display: flex; align-items: center; height: 28px;
+    }
+    .dsc-demo .nfp-fi-cat--dock .nfp-cat-select {
+      position: relative; display: inline-flex; align-items: center; height: 28px;
+    }
+    .dsc-demo .nfp-fi-cat--dock .nfp-cat-native {
+      display: inline-flex; align-items: center; height: 28px; box-sizing: border-box;
+      padding: 0 22px 0 24px; border-radius: 999px;
+      font-size: 0.65rem; font-weight: 700; line-height: 26px; white-space: nowrap;
+      color: var(--text); background: var(--surface-2); border: 1px solid var(--border);
+    }
+    .dsc-demo .nfp-fi-cat--dock .nfp-cat-select-ic,
+    .dsc-demo .nfp-fi-cat--dock .nfp-cat-select-caret {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      color: var(--text-muted); pointer-events: none;
+    }
+    .dsc-demo .nfp-fi-cat--dock .nfp-cat-select-ic { left: 6px; font-size: 14px !important; }
+    .dsc-demo .nfp-fi-cat--dock .nfp-cat-select-caret { right: 3px; font-size: 16px !important; }
+    .dsc-demo .nfp-fi-group--identity .panel-controls {
+      display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0;
+      position: static; margin: 0;
+    }
+    .dsc-demo .nfp-fi-desc {
+      margin: 0 0 6px; font-size: 0.75rem; line-height: 1.4; color: var(--text-muted);
+    }
+    .dsc-demo .nfp-fi-price {
+      margin: 0 0 10px; font-size: 0.95rem; font-weight: 800; color: var(--text);
+    }
+    .dsc-demo .nfp-fi-price-size {
+      margin-left: 6px; font-size: 0.65rem; font-weight: 600; color: var(--text-muted);
+    }
+    .dsc-demo .nfp-fi-thumbs {
+      display: flex; align-items: flex-start; gap: 6px; flex-wrap: wrap;
+    }
+    .dsc-demo .nfp-fi-thumb { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 40px; }
+    .dsc-demo .nfp-fi-thumb-img {
+      width: 36px; height: 36px; border-radius: 8px; object-fit: cover;
+      border: 2px solid var(--border); background: var(--surface-2); display: block;
+    }
+    .dsc-demo .nfp-fi-thumb.active .nfp-fi-thumb-img {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 22%, transparent);
+    }
+    .dsc-demo .nfp-fi-thumb-label {
+      font-size: 0.55rem; font-weight: 600; color: var(--text-muted); white-space: nowrap;
+    }
+    .dsc-demo .nfp-fi-upc { flex: 0 0 auto; }
+    .dsc-demo .nfp-fi-upc .nfp-upc-entry {
+      width: 200px; padding: 5px 7px 4px; border-radius: 8px;
+      display: flex; flex-direction: column; gap: 3px;
+      background: color-mix(in srgb, var(--surface-2) 92%, transparent);
+      border: 1px solid var(--border); color: var(--text);
+    }
+    .dsc-demo .nfp-fi-upc .nfp-upc-barcode { width: 100%; height: 20px; display: block; fill: currentColor; }
+    .dsc-demo .nfp-fi-upc .nfp-upc-cells {
+      font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.06em;
+      text-align: center; color: var(--text);
+    }
+    .dsc-demo .nfp-fi-add {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      width: 72px; color: var(--text-subtle);
+    }
+    .dsc-demo .nfp-fi-add-sq {
+      width: 36px; height: 36px; border-radius: 8px; border: 2px dashed var(--border-strong);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .dsc-demo .nfp-fi-add .material-symbols-outlined { font-size: 16px !important; }
+    .dsc-demo .nfp-fi-add-label {
+      font-size: 0.52rem; font-weight: 600; color: var(--text-muted);
+      text-align: center; line-height: 1.2;
+    }
+
     .dsc-demo .mi-vfp-demo .vfp-title {
       font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
       font-weight: 800;
@@ -8860,6 +9036,7 @@ function moduleStyles() {
     .dsc-card[data-comp-name="Database roster"] .dsc-demo,
     .dsc-card[data-comp-name="Jam strip"] .dsc-demo,
     .dsc-card[data-comp-name="Nutrition Facts"] .dsc-demo,
+    .dsc-card[data-comp-name="Product identity strip"] .dsc-demo,
     .dsc-card[data-comp-name="Progress tracker"] .dsc-demo,
     .dsc-card[data-comp-name="Owl walkthrough"] .dsc-demo { gap: 16px; align-items: stretch; }
 
@@ -9153,7 +9330,7 @@ function moduleStyles() {
       padding: 12px 16px; border-bottom: 1px solid var(--border);
     }
     .mi-int-trow:last-child { border-bottom: 0; }
-    .mi-int-trow:hover { background: color-mix(in srgb, var(--primary) 5%, transparent); }
+    .mi-int-trow:hover { background: var(--primary-soft); }
     .mi-int-trow[hidden] { display: none; }
     .mi-int-td { font-size: 0.8rem; color: var(--text); min-width: 0; }
     .mi-int-td--chip { display: flex; align-items: flex-start; gap: 8px; }

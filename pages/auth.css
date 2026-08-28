@@ -859,11 +859,9 @@ html.chat-sheen-off .fl-input-wrap::before { display: none; }
   /* Filled paper plane — the outline twin reads hollow and left-heavy in this circle. */
   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
-/* Kill the shim's text-baseline offset (vertical-align: -0.175em) so the 18px
-   square sits on the flex center of the circle, then nudge right: a right-
-   pointing plane is optically left-weighted in a round well. */
+/* Optical nudge only: a right-pointing plane is left-weighted in a round well.
+   Geometric centering of the 1em square is the shim's job. */
 .sc-send .wise-icon {
-  display: block; vertical-align: 0;
   transform: translate(2px, 0);
 }
 
@@ -923,10 +921,13 @@ html.dark .sp-header-icon { color: var(--primary-bright); }
 .panel-more-btn {
   display: inline-flex; align-items: center; justify-content: center;
   width: 28px; height: 28px; border-radius: 8px; background: transparent; border: 0;
-  color: var(--text-muted); cursor: pointer; opacity: 0.52;
+  color: var(--text-muted); cursor: pointer; opacity: 1;
   transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
 }
-.panel-more-btn .material-symbols-outlined { font-size: 16px !important; line-height: 1 !important; }
+.panel-more-btn .material-symbols-outlined {
+  font-size: 16px !important; line-height: 1 !important;
+  font-variation-settings: 'FILL' 0, 'wght' 600, 'GRAD' 0, 'opsz' 24;
+}
 .panel-more-btn:hover { opacity: 1; background: color-mix(in srgb, currentColor 12%, transparent); color: var(--text); }
 .panel-more-btn.is-open { opacity: 1; color: var(--primary-ink, var(--primary)); background: color-mix(in srgb, var(--primary) 14%, transparent); }
 .sp-menu {

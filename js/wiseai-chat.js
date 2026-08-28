@@ -17,6 +17,9 @@
    history sidebar) so every mounted WISEcodeAI surface gets the same history +
    "start new conversation" behaviour. */
 import './chat-history.js';
+/* Side-effect import: registers window.WiseLibraryStore so File to Library
+   can copy the live thread onto the WISEcodeAI Library shelf. */
+import './wise-library-store.js';
 import './chat-ask.js';
 /* Side-effect import: registers window.WISE_ASK_CATALOG (the shared "What can I
    ask?" catalog) so every WISEcodeAI chat surface shows the SAME rich panel that
@@ -447,6 +450,50 @@ function flashScTip(target, label) {
     clearTimeout(scTipFlashTimer);
     scTipFlashTimer = setTimeout(hideScTip, 1200);
   });
+}
+
+/* File the live thread onto the WISEcodeAI Library shelf. History already
+   saves the conversation; this copies that saved item so it shows up with
+   reports and dashboards on conversation-library.html. */
+function fileConversationToLibrary(opts) {
+  opts = opts || {};
+  const store = typeof window !== 'undefined' ? window.WiseLibraryStore : null;
+  if (!store || typeof store.fileCurrent !== 'function') {
+    return { ok: false };
+  }
+  const result = store.fileCurrent({
+    chatHistory: opts.chatHistory || (typeof window !== 'undefined' ? window.__wiseChatHistory : null),
+    messagesEl: opts.messagesEl,
+    historyKey: opts.historyKey,
+  });
+  const tip = result && result.empty
+    ? 'Nothing to file yet'
+    : (result && result.updated ? 'Updated in Library' : 'Filed to Library');
+  flashScTip(opts.trigger, tip);
+  return result || { ok: false };
+}
+
+function injectFileToLibraryMenuItem(pop) {
+  if (!pop) return null;
+  /* Already in the shared mount template — that surface's [data-sc] handler
+     files the thread. Returning null keeps hand-rolled menus from double-firing. */
+  if (pop.querySelector('[data-sc="file-library"]')) return null;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'topbar-menu-item';
+  btn.setAttribute('data-sc', 'file-library');
+  btn.setAttribute('role', 'menuitem');
+  btn.innerHTML = '<span class="material-symbols-outlined topbar-menu-icon">auto_stories</span><span>File to Library</span>';
+  const after = pop.querySelector('[data-sc="share"], [data-ap="share"]')
+    || pop.querySelector('[data-sc="export"], [data-ap="export"]')
+    || pop.querySelector('[data-sc="new"], [data-ap="restart"]');
+  if (after && after.parentNode) {
+    if (after.nextSibling) after.parentNode.insertBefore(btn, after.nextSibling);
+    else after.parentNode.appendChild(btn);
+  } else {
+    pop.insertBefore(btn, pop.firstChild);
+  }
+  return btn;
 }
 
 export function wireAnswerTips() {
@@ -5654,7 +5701,7 @@ const CHAT_MENU_GROUP_TITLE = {
   more: 'More', danger: '',
 };
 const CHAT_MENU_GROUP_OF = {
-  history: 'conversation', new: 'conversation', export: 'conversation', share: 'conversation', 'add-member': 'conversation',
+  history: 'conversation', new: 'conversation', export: 'conversation', share: 'conversation', 'file-library': 'conversation', 'add-member': 'conversation',
   turns: 'data', outputs: 'data', connect: 'data', 'mcp-toggle': 'data', sticky: 'data',
   'toggle-cards': 'display', 'toggle-intent-chips': 'display', compact: 'display', brandtext: 'display', sheen: 'display',
   'bg-anim': 'helix', 'bg-anim-snap': 'helix', 'bg-anim-snap-save': 'helix',
@@ -7538,6 +7585,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           <button type="button" class="topbar-menu-item" data-sc="new"><span class="material-symbols-outlined topbar-menu-icon">add</span><span>Start new conversation</span></button>
           <button type="button" class="topbar-menu-item" data-sc="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export conversation</span></button>
           <button type="button" class="topbar-menu-item" data-sc="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
+          <button type="button" class="topbar-menu-item" data-sc="file-library"><span class="material-symbols-outlined topbar-menu-icon">auto_stories</span><span>File to Library</span></button>
           ${showTurns ? `<div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="turns" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">alt_route</span><span>Turns</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           ${opts.outputsToggle === true ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="outputs" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dashboard_customize</span><span>Hide outputs &amp; sources</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
@@ -11970,6 +12018,15 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
         if (navigator.share) navigator.share({ title: esc(title), url }).catch(() => {});
         else if (navigator.clipboard) navigator.clipboard.writeText(url).catch(() => {});
       }
+    } else if (action === 'file-library') {
+      /* History already saves the thread; this copies it onto the Library shelf. */
+      closeMore();
+      fileConversationToLibrary({
+        chatHistory,
+        messagesEl: messages,
+        historyKey: opts.historyKey || 'wise-wiseai-chat-history',
+        trigger: moreBtn,
+      });
     } else if (action === 'close') {
       closeMore();
       /* "Close conversation" wipes the thread and restarts the chat from scratch —
@@ -12912,6 +12969,35 @@ export function wireStandardChatMenu(cfg = {}) {
       }
       api.history = ctrl;
     }
+  }
+
+  /* File to Library — inject the row on hand-rolled menus that didn't
+     hardcode it, then wire the click to the same store the shared mount uses. */
+  const fileLibItem = injectFileToLibraryMenuItem(pop);
+  if (fileLibItem && !fileLibItem.__wiseFileLibWired) {
+    fileLibItem.__wiseFileLibWired = true;
+    fileLibItem.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const h = cfg.history || {};
+      const chatEl = (typeof h.chatEl === 'string') ? document.querySelector(h.chatEl) : h.chatEl;
+      const msgSel = h.messagesEl || '#chat-messages';
+      const messagesNode = (typeof msgSel === 'string')
+        ? ((chatEl || document).querySelector(msgSel) || document.querySelector('.chat-messages-area, #chat-messages'))
+        : msgSel;
+      pop.classList.add('hidden');
+      const wrap = pop.closest('.panel-more-wrap') || pop.__plHost;
+      const moreBtnEl = wrap && wrap.querySelector('.panel-more-btn');
+      if (moreBtnEl) {
+        moreBtnEl.classList.remove('is-open');
+        moreBtnEl.setAttribute('aria-expanded', 'false');
+      }
+      fileConversationToLibrary({
+        chatHistory: (api && api.history) || window.__wiseChatHistory,
+        messagesEl: messagesNode,
+        historyKey: h.storageKey,
+        trigger: moreBtnEl || fileLibItem,
+      });
+    });
   }
 
   /* Reflow the (now fully assembled, incl. injected Style + Angle + History

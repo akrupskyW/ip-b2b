@@ -35,6 +35,7 @@
     ['.pf-state-num', '.pf-state'],
     ['.gs-stat-num', '.gs-stat'],
     ['.ib-stat-num', '.ib-stat'],
+    ['.inv-stat-num', '.inv-stat'],
     ['.lib-stat-num', '.lib-stat'],
     ['.wmod-stat-num', '.wmod-stat'],
     ['.mi-stat-num', '.mi-stat'],

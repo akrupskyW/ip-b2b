@@ -606,40 +606,17 @@
       startOn(m.createHelixBgAnim);
     }).catch(() => {});
   }
-  /* view-product: the original "Product image" edit control immediately left
-     of the ⋯. The photo itself lives as a rounded square in the identity
-     strip — never as a full-row banner background. */
+  /* Identity-strip pages keep the product photo in the left square — never
+     as a header banner, and never as a pencil next to ⋯ / width. Leftover
+     header photo chrome is stripped on each render. */
   function syncNfpHeaderPhoto() {
     const header = document.querySelector('#nfp-panel .nfp-panel-header');
     if (!header) return;
     header.classList.remove('nfp-panel-header--photo');
     header.querySelector('.nfp-header-photo-bg')?.remove();
-    if (!useHeaderIdentity()) {
-      header.querySelector('.nfp-header-photo')?.remove();
-      const logo = header.querySelector('.nfp-brand-logo');
-      if (logo) logo.hidden = false;
-      return;
-    }
-    const controls = header.querySelector('.panel-controls');
-    if (!controls) return;
-    const src = activeProductImage();
+    header.querySelector('.nfp-header-photo')?.remove();
     const logo = header.querySelector('.nfp-brand-logo');
     if (logo) logo.hidden = false;
-    let hit = header.querySelector('.nfp-header-photo');
-    if (!hit) {
-      hit = document.createElement('button');
-      hit.type = 'button';
-      hit.className = 'nfp-header-photo';
-      controls.insertBefore(hit, controls.firstChild);
-    }
-    const label = src ? 'Replace product image' : 'Add product image';
-    hit.setAttribute('title', label);
-    hit.setAttribute('aria-label', label);
-    const i = activePackIndex();
-    hit.dataset.nfp = i != null ? 'upload-pack' : 'upload-main';
-    if (i != null) hit.dataset.arg = String(i);
-    else delete hit.dataset.arg;
-    hit.innerHTML = `<span class="material-symbols-outlined">edit</span>`;
   }
   /* One self-contained dropdown (a native <select>, so it escapes the hero's
      overflow:hidden clipping) that replaces the old chip + separate "Change"
@@ -822,12 +799,10 @@
   function packUpcHTML(i, onPhoto) {
     const p = state.packs[i];
     /* By default a size carries the same barcode as the single count: when the
-       size has no code of its own, reuse the base UPC (with a small note) so the
-       same barcode is shown. Editing any digit gives the size its own code. */
-    const reuse = !p.upc && !!state.upc;
+       size has no code of its own, reuse the base UPC. Editing any digit gives
+       the size its own code. */
     const digits = p.upc || state.upc;
-    const note = reuse ? `<div class="nfp-pack-upc-note">Same as ${esc(state.unitLabel || '1 ct')}</div>` : '';
-    return `<div class="nfp-hero-upc nfp-hero-upc--seg">${note}${upcSegmentedHTML(onPhoto, i, digits)}</div>`;
+    return `<div class="nfp-hero-upc nfp-hero-upc--seg">${upcSegmentedHTML(onPhoto, i, digits)}</div>`;
   }
   function packHeroHTML(i) {
     const p = state.packs[i];
@@ -898,21 +873,12 @@
           : `<span class="nfp-fi-thumb-img nfp-fi-thumb-icon"><span class="material-symbols-outlined">nutrition</span></span>`}
         <span class="nfp-fi-thumb-label">${esc(unitLabel)}</span>
       </div>`;
-    const thumbs = state.packs.map((p, i) => `
-      <div class="nfp-fi-thumb${(state.view === 'pack' && i === state.activePack) ? ' active' : ''}" data-nfp="pick-pack" data-arg="${i}" title="${esc(p.label || 'Size')}">
-        ${p.image
-          ? `<img class="nfp-fi-thumb-img" src="${esc(p.image)}" alt="${esc(p.label || '')}" onerror="this.src='https://placehold.co/40x40/f3f4f6/9ca3af?text=?'">`
-          : `<span class="nfp-fi-thumb-img nfp-fi-thumb-icon"><span class="material-symbols-outlined">inventory_2</span></span>`}
-        <span class="nfp-fi-thumb-label">${esc(p.label || 'Size')}</span>
-      </div>`).join('');
-    const hint = state.packs.length
-      ? ''
-      : `<div class="nfp-pack-caption">Starts with a single unit — add any multipacks or larger quantities this product also ships in.</div>`;
     const identity = useHeaderIdentity();
     const packIdx = activePackIndex();
     const title = identity
       ? `<div class="nfp-fi-header">
           <span class="nfp-fi-title">${editSpan('productName', state.productName, 'Product name')}</span>
+          <div class="nfp-fi-cat nfp-fi-cat--dock">${heroCatHTML(false)}</div>
         </div>`
       : `<div class="nfp-fi-header"><span class="nfp-fi-title">Add Product Sizes</span></div>`;
     const addSizeThumb = `
@@ -920,16 +886,33 @@
         <span class="nfp-fi-add-sq" aria-hidden="true"><span class="material-symbols-outlined">add</span></span>
         <span class="nfp-fi-add-label">Add size or variation</span>
       </div>`;
-    const stripExtras = identity
-      ? `<div class="nfp-fi-cat">${heroCatHTML(false)}</div>
-         <div class="nfp-fi-upc">${packIdx != null ? packUpcHTML(packIdx, false) : heroUpcHTML(false)}</div>`
+    /* The 1 ct square duplicates the lead photo when this product has no other
+       sizes — skip it. Extra counts still get a thumb so you can switch. */
+    const showUnitThumb = !identity || state.packs.length > 0;
+    const upcBlock = identity
+      ? `<div class="nfp-fi-upc">${packIdx != null ? packUpcHTML(packIdx, false) : heroUpcHTML(false)}</div>`
       : '';
+    /* Barcode sits immediately after the selected size so picking an earlier
+       count slides it left instead of leaving it parked at the end of the row. */
+    const packThumbs = state.packs.map((p, i) => {
+      const thumb = `
+      <div class="nfp-fi-thumb${(state.view === 'pack' && i === state.activePack) ? ' active' : ''}" data-nfp="pick-pack" data-arg="${i}" title="${esc(p.label || 'Size')}">
+        ${p.image
+          ? `<img class="nfp-fi-thumb-img" src="${esc(p.image)}" alt="${esc(p.label || '')}" onerror="this.src='https://placehold.co/40x40/f3f4f6/9ca3af?text=?'">`
+          : `<span class="nfp-fi-thumb-img nfp-fi-thumb-icon"><span class="material-symbols-outlined">inventory_2</span></span>`}
+        <span class="nfp-fi-thumb-label">${esc(p.label || 'Size')}</span>
+      </div>`;
+      return (identity && packIdx === i) ? `<div class="nfp-fi-thumb-upc">${thumb}${upcBlock}</div>` : thumb;
+    }).join('');
+    const unitBit = showUnitThumb
+      ? (identity && unitActive ? `<div class="nfp-fi-thumb-upc">${unitThumb}${upcBlock}</div>` : unitThumb)
+      : (identity ? upcBlock : '');
     const photoSrc = activeProductImage();
     const photoAction = packIdx != null ? 'upload-pack' : 'upload-main';
     const photoArg = packIdx != null ? ` data-arg="${packIdx}"` : '';
     const photoLabel = photoSrc ? 'Replace product image' : 'Add product image';
     const leadPhoto = identity
-      ? `<button type="button" class="nfp-fi-lead-photo${photoSrc ? '' : ' nfp-fi-strip-photo--helix'}" data-nfp="${photoAction}"${photoArg} title="${esc(photoLabel)}" aria-label="${esc(photoLabel)}">${photoSrc ? productBgImgHTML(photoSrc) : ''}</button>`
+      ? `<button type="button" class="nfp-fi-lead-photo${photoSrc ? '' : ' nfp-fi-strip-photo--helix'}" data-nfp="${photoAction}"${photoArg} title="${esc(photoLabel)}" aria-label="${esc(photoLabel)}">${photoSrc ? productBgImgHTML(photoSrc) : ''}<span class="nfp-fi-lead-edit" aria-hidden="true"><span class="material-symbols-outlined">edit</span></span></button>`
       : '';
     const descRow = identity
       ? `<p class="nfp-fi-desc">${editSpan('description', state.description, 'Add a short product description')}</p>`
@@ -941,27 +924,20 @@
           <span class="nfp-fi-price-size">${esc(activeSizeLabel())}</span>
         </div>`
       : '';
+    const sizeRow = `<div class="nfp-fi-thumbs">
+            ${unitBit}
+            ${packThumbs}
+            ${addSizeThumb}
+          </div>`;
     const body = identity
       ? `<div class="nfp-fi-copy">
           ${title}
           ${descRow}
           ${priceRow}
-          ${hint}
-          <div class="nfp-fi-thumbs">
-            ${unitThumb}
-            ${thumbs}
-            ${addSizeThumb}
-            ${stripExtras}
-          </div>
+          ${sizeRow}
         </div>`
       : `${title}
-      ${hint}
-      <div class="nfp-fi-thumbs">
-        ${unitThumb}
-        ${thumbs}
-        ${addSizeThumb}
-        ${stripExtras}
-      </div>`;
+      ${sizeRow}`;
     return `<div class="nfp-fi-group nfp-fi-group--packs${identity ? ' nfp-fi-group--identity' : ''}">
       ${leadPhoto}
       ${body}
