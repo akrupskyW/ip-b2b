@@ -1526,32 +1526,34 @@ html.dark .topbar-menu-item--admin:hover { background: rgba(236, 72, 153, 0.16);
   transition: transform .2s ease, opacity .18s ease;
 }
 .wise-popover.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
-/* Appearance popover runs a long row set. Rather than one tall single or
-   two-column stack (which pushed Admin off the viewport), it packs GROUP
-   CARDS into four short columns so the panel uses available width and
-   stays on screen. Four tracks (not five) keep each column wide enough
-   that titles stay on one line — a skinnier fifth track wrapped labels
-   into extra lines and made Admin taller than the two-column panel.
-   Grid (not wrapping flex) keeps the column count stable. Narrow
-   viewports step down to 2. Scoped to the appearance popover only
-   (wireAppearancePopover() tags it) so the shorter avatar menu is unaffected. */
-.wise-popover--appearance {
+/* Appearance popover packs GROUP CARDS into one column per stack. Tracks
+   are created only for columns that actually rendered (empty Admin groups
+   omit their column entirely), so turning Admin controls off shrinks the
+   panel instead of leaving blank grid tracks. Column width stays in the
+   same band as the old four-track layout so titles still fit on one line.
+   Narrow viewports wrap to two tracks. Scoped to the appearance popover
+   only (wireAppearancePopover() tags it) so the shorter avatar menu is
+   unaffected. */
+.wise-popover.wise-popover--appearance {
   min-width: 260px;
-  width: min(1040px, calc(100vw - 16px));
-  max-width: calc(100vw - 16px);
+  width: max-content;
+  max-width: min(1040px, calc(100vw - 16px));
   padding: 8px;
   max-height: calc(100vh - 16px);
   overflow: hidden auto;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 252px);
   align-items: start;
   align-content: start;
   gap: 8px;
 }
 @media (max-width: 720px) {
-  .wise-popover--appearance {
-    width: min(452px, calc(100vw - 16px));
+  .wise-popover.wise-popover--appearance {
+    width: min(516px, calc(100vw - 16px));
+    grid-auto-flow: row;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-columns: unset;
   }
 }
 .wise-appearance-col {
@@ -4207,21 +4209,25 @@ html.nav-modules #menu-panel.mp-pivot .menu-modules-btn {
   display: none !important;
 }
 
-/* Open labelled nav: drop hamburger and new-chat — the nav items and
-   History's own chrome already cover those. Keep the chevron on the
-   right of the wordmark so it can close back to the four-icon rail. */
-html.nav-modules #menu-panel:not(.mp-rail):not(.mp-pivot):not(.minimal-ui) .menu-modules-menu,
+/* Open labelled nav: drop only new-chat — the nav items already cover it.
+   The hamburger stays so it can collapse the nav back. The chevron stays
+   (unless History is open — see below) so it can open History alongside;
+   both sit at the right of the wordmark, hamburger first. */
 html.nav-modules #menu-panel:not(.mp-rail):not(.mp-pivot):not(.minimal-ui) .menu-modules-new {
   display: none !important;
 }
-html.nav-modules #menu-panel:not(.mp-rail):not(.mp-pivot):not(.minimal-ui) .menu-brand-bar .topbar-menu-toggle {
+html.nav-modules #menu-panel:not(.mp-rail):not(.mp-pivot):not(.minimal-ui) .menu-brand-bar .menu-modules-menu {
   margin-left: auto;
 }
+html.nav-modules #menu-panel:not(.mp-rail):not(.mp-pivot):not(.minimal-ui) .menu-brand-bar .topbar-menu-toggle {
+  margin-left: 0;
+}
 
-/* Open History: same hide on the collapsed nav rail. History already
-   has new-conversation and its own close. */
-html.nav-modules.nav-modules-hist-open #menu-panel .menu-modules-menu,
-html.nav-modules.nav-modules-hist-open #menu-panel .menu-modules-new {
+/* Open History: hide new-chat (History carries its own) and the nav
+   chevron (History has its own collapse). The hamburger stays so the
+   labelled nav can be opened or collapsed beside History. */
+html.nav-modules.nav-modules-hist-open #menu-panel .menu-modules-new,
+html.nav-modules.nav-modules-hist-open #menu-panel .topbar-menu-toggle {
   display: none !important;
 }
 

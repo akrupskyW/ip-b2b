@@ -269,6 +269,60 @@
       border-top: 1px solid var(--border-strong);
     }
     .nfp-sp--noidentity .nfp-sp-facts .nfp-nf-panel { margin-top: 10px; }
+    /* ── Ingredients-first (flipped) layout — ⋯ menu toggle ─────────────────
+       The masthead + Non-UPF shield fold into the Nutrition Facts column and
+       swap to the right; the ingredient list takes the left column. The strip
+       and shield are nested inside the facts column here (not full-width grid
+       rows), so no top rail is drawn above the masthead. */
+    .nfp-sp--flip .nfp-sp-facts { border-top: 0; }
+    .nfp-sp--flip .nfp-sp-strip--folded { padding-top: 4px; }
+    .nfp-sp--flip .nfp-sp-strip--folded .nfp-fi-group--identity { padding-top: 4px; }
+    .nfp-sp--flip .nfp-sp-facts .nfp-nf-panel { margin-top: 12px; }
+    /* Folded identity — photo + name/category on row 1; description, price,
+       counts and barcode span the full width under both on row 2. */
+    .nfp-sp--flip .nfp-fi-group--identity {
+      display: grid; grid-template-columns: auto minmax(0, 1fr);
+      align-items: start; column-gap: 14px; row-gap: 10px;
+    }
+    .nfp-sp--flip .nfp-fi-lead-photo { grid-column: 1; grid-row: 1; align-self: start; }
+    .nfp-sp--flip .nfp-fi-copy { display: contents; }
+    .nfp-sp--flip .nfp-fi-group--identity .nfp-fi-header {
+      grid-column: 2; grid-row: 1; flex-wrap: wrap; min-width: 0;
+    }
+    html.header-float .nfp-sp--flip .nfp-fi-group--identity .nfp-fi-header { padding-right: 72px; }
+    .nfp-sp--flip .nfp-fi-title {
+      flex: 1 1 12ch; min-width: 12ch;
+      overflow-wrap: break-word; word-break: normal;
+    }
+    .nfp-sp--flip .nfp-fi-title .nfp-edit { display: block; width: 100%; }
+    .nfp-sp--flip .nfp-fi-details {
+      grid-column: 1 / -1; grid-row: 2;
+      display: flex; flex-direction: column; flex-wrap: nowrap;
+      align-items: stretch; gap: 8px; min-width: 0;
+    }
+    .nfp-sp--flip .nfp-fi-desc { flex: none; width: 100%; max-width: none; margin: 0; }
+    .nfp-sp--flip .nfp-fi-price { margin: 0; }
+    .nfp-sp--flip .nfp-fi-thumbs { flex: none; width: 100%; }
+    .nfp-sp--flip .nfp-fi-details > .nfp-fi-upc { width: 100%; margin: 0; justify-content: flex-start; }
+    .nfp-sp--flip .nfp-fi-upc .nfp-hero-upc,
+    .nfp-sp--flip .nfp-fi-upc .nfp-hero-upc--seg,
+    .nfp-sp--flip .nfp-fi-upc .nfp-upc-entry {
+      flex: 0 1 232px; width: auto; min-width: 0; max-width: 100%;
+    }
+    /* Shield CTA hugs its copy. The default body flex-basis is a WIDTH (240px);
+       stacked in a column it became a tall empty well above the button. Icon
+       and copy share a row; the button sits directly underneath. */
+    .nfp-sp--flip .nfp-sp-facts .nfp-ins-next {
+      display: grid; grid-template-columns: auto minmax(0, 1fr);
+      gap: 10px 12px; align-items: start; justify-items: stretch;
+      padding: 12px 14px;
+    }
+    .nfp-sp--flip .nfp-sp-facts .nfp-ins-next-ic { grid-column: 1; grid-row: 1; }
+    .nfp-sp--flip .nfp-sp-facts .nfp-ins-next-body { grid-column: 2; grid-row: 1; flex: none; }
+    .nfp-sp--flip .nfp-sp-facts .nfp-ins-next-btn {
+      grid-column: 1 / -1; grid-row: 2;
+      margin: 0; width: 100%; justify-content: center; align-self: stretch;
+    }
     .nfp-sp-ingred {
       padding: 4px 0 12px;
       overflow-x: hidden;
@@ -321,6 +375,16 @@
       .nfp-sp--noidentity {
         grid-template-columns: minmax(200px, var(--nfp-w-facts)) 16px minmax(240px, var(--nfp-w-ingred));
       }
+      /* Flipped: ingredients left, masthead + Nutrition Facts right. */
+      .nfp-sp--noidentity.nfp-sp--flip {
+        grid-template-columns: minmax(240px, var(--nfp-w-ingred)) 16px minmax(200px, var(--nfp-w-facts));
+      }
+      .nfp-sp--flip .nfp-sp-ingred { grid-column: 1; grid-row: 1; }
+      .nfp-sp--flip .nfp-sp-split { grid-column: 2; grid-row: 1; }
+      .nfp-sp--flip .nfp-sp-facts { grid-column: 3; grid-row: 1; }
+      .nfp-sp--noidentity.nfp-sp--flip .nfp-sp-facts,
+      .nfp-sp--noidentity.nfp-sp--flip .nfp-sp-ingred,
+      .nfp-sp--noidentity.nfp-sp--flip .nfp-sp-split { border-top: 0; }
       .nfp-sp--noidentity .nfp-sp-facts { border-left: 0; }
       .nfp-sp-strip, .nfp-sp-shield { grid-column: 1 / -1; }
       .nfp-sp-split { display: flex; align-self: stretch; }

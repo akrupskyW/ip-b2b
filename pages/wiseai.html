@@ -952,7 +952,7 @@
     #wa-unified.is-titledrop .wa-pane-mast-row.is-open::after { transform: translateY(-1px) rotate(180deg); }
     .wa-titledrop-pop {
       position: absolute; top: calc(100% + 6px); left: 0; z-index: 40;
-      box-sizing: border-box; min-width: 0; max-width: none;
+      box-sizing: border-box; width: max-content; min-width: 280px; max-width: none;
       max-height: min(420px, calc(100vh - 160px));
       display: flex; flex-direction: column;
       overflow: hidden;
@@ -971,6 +971,12 @@
       align-items: center; gap: 8px; width: 100%;
       padding: 6px 8px; border-radius: 10px; cursor: pointer;
     }
+    /* While measuring intrinsic width, let the name column size to its text
+       instead of shrinking inside 1fr. */
+    .wa-titledrop-pop.is-measuring .wa-titledrop-item {
+      grid-template-columns: 1.35em 52px max-content 28px;
+      width: max-content;
+    }
     .wa-titledrop-item:hover { background: var(--surface-2); }
     .wa-titledrop-item:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
     .wa-titledrop-item.is-active { background: color-mix(in srgb, var(--primary) 10%, transparent); }
@@ -986,8 +992,8 @@
     }
     .wa-titledrop-label {
       min-width: 0; font-size: 12.5px; font-weight: 600;
-      color: var(--text); line-height: 1.3; overflow: hidden;
-      display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
+      color: var(--text); line-height: 1.3;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
     .wa-titledrop-item.is-active .wa-titledrop-label { color: var(--primary-ink, var(--primary)); font-weight: 700; }
     /* Version sits under the name so redone charts / artifact updates that share
@@ -5248,8 +5254,8 @@
     }
     function titledropAnchor() {
       /* Sit under the name+chevron row so the popover hangs off the headline
-         (not below the meta line). Width/left are measured to also cover the
-         counter to the left of this row. */
+         (not below the meta line). Left is measured to also cover the
+         counter to the left of this row; width is the menu's own content. */
       return paneEl.unified?.querySelector('.wa-pane-mast-row')
         || paneEl.unified?.querySelector('.wa-pane-mast');
     }
@@ -5259,23 +5265,31 @@
       t?.classList.remove('is-open');
       if (t?.hasAttribute('aria-haspopup')) t.setAttribute('aria-expanded', 'false');
     }
-    /* Size the popover to the full header line: counter + name + chevron. */
+    /* Align the popover with the count, then size it to the longest row —
+       not the headline name — so labels and the plus column stay readable.
+       Cap at the pane's remaining width so it never clips on the right. */
     function sizeTitledropPop() {
       if (!titledropPop) return;
       const row = titledropAnchor();
       const title = paneTitle.unified;
-      const name = paneName.unified;
+      const pane = paneEl.unified;
       if (!row || !title) return;
       const rowR = row.getBoundingClientRect();
       const titleR = title.getBoundingClientRect();
-      const nameR = name && name.offsetWidth ? name.getBoundingClientRect() : titleR;
-      const chevron = 22;
-      const gap = 8;
-      const right = (name && name.textContent) ? nameR.right + gap + chevron : titleR.right + gap + chevron;
+      const paneR = (pane || row).getBoundingClientRect();
       const left = titleR.left;
+      const cap = Math.max(160, paneR.right - left - 16);
       titledropPop.style.left = (left - rowR.left) + 'px';
-      titledropPop.style.width = Math.max(8, right - left) + 'px';
+      titledropPop.style.minWidth = '0';
       titledropPop.style.maxWidth = 'none';
+      titledropPop.classList.add('is-measuring');
+      titledropPop.style.width = 'max-content';
+      const natural = Math.ceil(titledropPop.getBoundingClientRect().width);
+      titledropPop.classList.remove('is-measuring');
+      const w = Math.min(cap, Math.max(Math.min(280, cap), natural));
+      titledropPop.style.width = w + 'px';
+      titledropPop.style.minWidth = Math.min(280, cap) + 'px';
+      titledropPop.style.maxWidth = cap + 'px';
     }
     /* data-slide-ver is "v1.0.1 · 2 versions" on redone outputs — the dropdown
        only needs the version tag under the name so identical titles stay distinct. */

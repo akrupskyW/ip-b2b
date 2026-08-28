@@ -373,24 +373,26 @@ function isTourOpen() {
   }
 }
 
-/** "Walkthrough" row — a plain (non-admin) toggle that opens the WISEowl
-    walkthrough sticky module or hides it, reflecting whether it's live right
-    now. Renders on every shell (including ones where the walkthrough script
-    isn't loaded yet); the click handler no-ops until WiseWalkthrough is ready. */
+/** "Walkthrough" row — Admin-badged. Opens the WISEowl walkthrough sticky
+    module or hides it, reflecting whether it's live right now. Hidden when
+    Admin controls is off. Renders on every shell (including ones where the
+    walkthrough script isn't loaded yet); the click handler no-ops until
+    WiseWalkthrough is ready. */
 function tourSection() {
-  return plainToggle('data-tour="1"', isTourOpen(), 'Walkthrough', 'Open the WISEowl tour', 'Open the WISEowl walkthrough', false, false, 'explore');
+  return adminOnly(adminToggle('data-tour="1"', isTourOpen(), 'Walkthrough', 'Open the WISEowl tour', 'Open the WISEowl walkthrough', false, false, 'explore'));
 }
 
-/** "Comments" row — switches on-page commenting (press C, click a spot, leave
-    a note) on or off for the whole site, not just this browser. Locked shut
-    unless you hold the feedback admin key, and the server refuses the write
-    without it either way, so the lock is a real gate rather than decoration. */
+/** "Comments" row — Admin-badged. Switches on-page commenting (press C, click
+    a spot, leave a note) on or off for the whole site, not just this browser.
+    Hidden when Admin controls is off. Locked shut unless you hold the
+    feedback admin key, and the server refuses the write without it either
+    way, so the lock is a real gate rather than decoration. */
 function commentsSection() {
   const unlocked = isCommentsUnlocked();
   const tip = unlocked
     ? 'Let anyone press C and pin a comment to an exact spot on the page — on for every visitor, not just this browser'
     : 'Locked — only the site owner can switch on-page comments on or off';
-  return plainToggle('data-comments="1"', isCommentsOn(), 'Comments', 'Pin notes on the page', tip, !unlocked, true, 'comment');
+  return adminOnly(adminToggle('data-comments="1"', isCommentsOn(), 'Comments', 'Pin notes on the page', tip, !unlocked, true, 'comment'));
 }
 
 /** Text-size segmented block (S / M / L / XL). Extracted so it can live inside
@@ -551,52 +553,46 @@ export function buildAppearanceBody({
   isPivoted = false,
   isDark = false,
 } = {}) {
-  return `
-    ${apCol(
-      apGroup('Layout', `
+  const layout = apGroup('Layout', `
         ${pivotSection(showPivot, isPivoted)}
-        ${plainToggle('data-minimal="1"', isMinimalUiOn(), 'Minimal UI', 'Logo, Appearance, and you', 'Show only the logo, Appearance, and your profile', false, false, 'crop_free')}
-        ${plainToggle('data-iconrail="1"', isIconRailOn(), 'Icons only', 'Collapse nav to icons', 'Collapse the navigation to icons', false, false, 'apps')}
+        ${adminOnly(adminToggle('data-minimal="1"', isMinimalUiOn(), 'Minimal UI', 'Logo, Appearance, and you', 'Show only the logo, Appearance, and your profile', false, false, 'crop_free'))}
+        ${adminOnly(adminToggle('data-iconrail="1"', isIconRailOn(), 'Icons only', 'Collapse nav to icons', 'Collapse the navigation to icons', false, false, 'apps'))}
         ${adminOnly(adminToggle('data-navhistory="1"', isNavHistoryOn(), 'History in navigation', 'History inside the nav', 'Merge the History module into an expandable section of the primary navigation — search, projects, and All conversations stay fully usable', false, false, 'history'))}
         ${adminOnly(adminToggle('data-navmodules="1"', isNavModulesOn(), 'Nav &amp; History icons', 'Logo, menu, History, new chat', 'Menu opens the labelled navigation; the chevron opens History. While either is open, the extra icons hide and the chevron closes back to the four-icon rail. New chat is a circle and starts a conversation', false, false, 'view_sidebar'))}
-      `),
-      apGroup('Experience', `
+      `);
+  const experience = apGroup('Experience', `
         ${tourSection()}
         ${adminOnly(adminToggle('data-cwrui="1"', isCwrUiOn(), 'Roll · Crawl · Walk · Run', 'Show the mode switch', 'Show the floating Roll · Crawl · Walk · Run switch', false, false, 'speed'))}
-      `),
-      /* Master Admin-controls switch lives at the bottom of the leftmost
-         column so it stays the last toggle on that side; the rest of the
-         Admin rows stay in the right-hand column and shift up to fill. */
-      apGroup('Admin', `
+      `);
+  /* Master Admin-controls switch. Lives at the bottom of the leftmost
+     column when that column still has Layout / Experience; otherwise it
+     stacks under Accessibility so a lone switch does not sit in an empty
+     track beside a taller card. The rest of the Admin rows stay in the
+     right-hand column and shift up to fill. */
+  const adminSwitch = apGroup('Admin', `
         ${plainToggle('data-adminui="1"', isAdminControlsOn(), 'Admin controls', 'Show Admin-badged settings', 'Show or hide settings that carry an Admin badge', false, false, 'admin_panel_settings')}
-      `),
-    )}
-    ${apCol(
-      apGroup('Full bleed', `
+      `);
+  const fullBleed = apGroup('Full bleed', `
         ${adminOnly(adminToggle('data-fullbleed="1"', isFullBleedEverythingOn(), 'Full bleed', 'Stretch every module', isAppSearchOn() ? 'Unavailable while Search is on' : 'Stretch every module edge-to-edge', isAppSearchOn(), false, 'fullscreen'))}
         ${adminOnly(adminToggle('data-fbchatonly="1"', isChatOnlyFullBleedOn(), 'Chat-only full bleed', 'Stretch chat only', isAppSearchOn() ? 'Unavailable while Search is on' : 'Stretch only the chat module; keep the navigation and every other module contained', isAppSearchOn(), false, 'crop_16_9'))}
         ${adminOnly(fullBleedOptionsSection())}
-      `),
-      apGroup('Chat', `
+      `);
+  const chat = apGroup('Chat', `
         ${adminOnly(adminToggle('data-chattint="1"', isChatTintOn(), 'Blue chat surface', 'Tint chat brand blue', 'Tint the chat surface with brand blue', false, false, 'format_paint'))}
         ${adminOnly(adminToggle('data-activitystrip="1"', isActivityStripOn(), 'Activity strip', 'Live strip on chat', 'Show the live activity strip on the chat edge', false, false, 'timeline'))}
-      `),
-    )}
-    ${apCol(
-      apGroup('Sound', `
+      `);
+  const sound = apGroup('Sound', `
         ${adminOnly(adminToggle('data-jam="1"', isJamStripOn(), 'Jam strip', 'Music in the nav', 'Show the music player in the navigation', false, false, 'music_note'))}
-      `),
-      apGroup('Accessibility', `
+      `);
+  const a11y = apGroup('Accessibility', `
         ${themeSection(isDark)}
         ${plainToggle('data-colorblind="1"', isColorblindOn(), 'Accessible colors', 'Color-vision-safe palette', 'Use a color-vision-safe palette', false, false, 'visibility')}
         ${colorblindTypeSection()}
         ${textSizeSection()}
-        ${plainToggle('data-serif="1"', isSerifHeadlinesOn(), 'Serif headlines', 'Brand display type', 'Use the brand serif for titles. Turn off to switch titles to DM Sans', false, false, 'title')}
+        ${adminOnly(adminToggle('data-serif="1"', isSerifHeadlinesOn(), 'Serif headlines', 'Brand display type', 'Use the brand serif for titles. Turn off to switch titles to DM Sans', false, false, 'title'))}
         ${adminOnly(brandingSection())}
-      `),
-    )}
-    ${apCol(
-      apGroup('Admin', `
+      `);
+  const adminRows = apGroup('Admin', `
         ${commentsSection()}
         ${adminOnly(adminToggle('data-appsearch="1"', isAppSearchOn(), 'Search', 'Search beside the logo', 'Show a search field aligned with the nav logo for transcripts, outputs, and reports', false, false, 'search'))}
         ${adminOnly(adminToggle('data-navhamburger="1"', isNavHamburgerOn(), 'Menu icon', 'Hamburger when collapsed', isAppSearchOn() ? 'When the navigation is collapsed, show a menu icon to the left of the logo instead of the icon rail' : 'Unavailable while Search is off', !isAppSearchOn(), false, 'menu'))}
@@ -604,8 +600,13 @@ export function buildAppearanceBody({
         ${adminOnly(allModulesSection())}
         ${adminOnly(progressLogSection())}
         ${adminOnly(pageGallerySection())}
-      `),
-    )}
+      `);
+  const leftHasRows = !!(layout || experience);
+  return `
+    ${leftHasRows ? apCol(layout, experience, adminSwitch) : ''}
+    ${apCol(fullBleed, chat)}
+    ${leftHasRows ? apCol(sound, a11y) : apCol(sound, a11y, adminSwitch)}
+    ${apCol(adminRows)}
   `;
 }
 
@@ -728,15 +729,19 @@ export function wireAppearancePopover(pop, ctx = {}) {
   pop.dataset.appearanceWired = '1';
   pop.classList.add('wise-popover--appearance');
   /* Re-render the body, then re-place the popover. Toggling a row can reveal
-     (or hide) extra content — the surface pickers under "Full bleed", the
-     CVD-type buttons under "Accessible colors" — which changes the popover's
-     height. Without re-placing, a taller popover keeps its old top/left and
-     spills off its anchor or out of the viewport, so we call the reposition
+     (or hide) extra content — Admin-badged columns appearing and collapsing,
+     the surface pickers under "Full bleed", the CVD-type buttons under
+     "Accessible colors" — which changes the popover's width AND height.
+     Without re-placing, a resized popover keeps its old top/left and spills
+     off its anchor or out of the viewport, so we call the reposition
      closure the positioning helpers stashed on the node (topbar.js
-     positionPopover*), guarded for shells that place it themselves. */
+     positionPopover*), guarded for shells that place it themselves. A
+     follow-up frame catches max-content width after layout. */
+  const place = () => { try { pop.__reposition?.(); } catch (_) {} };
   const render = () => {
     try { ctx.render?.(); } catch (_) {}
-    try { pop.__reposition?.(); } catch (_) {}
+    place();
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(place);
   };
 
   /* The chat ⋯ Admin popover writes the same wise-admin-ui key. If Appearance

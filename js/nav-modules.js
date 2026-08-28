@@ -7,13 +7,15 @@
  * keeps them as two default modules and gives them a shared collapsed
  * chrome — logo bug, menu, expand chevron, new chat (blue circle).
  *
- * Collapsed (icon rail): those four icons. The hamburger opens the labelled
- * navigation in full; the chevron opens History in full, with the navigation
- * staying collapsed. While either is open, the hamburger and new-chat hide —
- * those controls already live inside the opened module — and the chevron
- * stays so it can close back to the four-icon rail. New conversation starts
- * a thread without forcing either module open. The new-chat control is a
- * circle, matching History.
+ * Collapsed (icon rail): those four icons. The hamburger toggles the labelled
+ * navigation; the chevron toggles History. They are independent — opening one
+ * leaves the other as it was, so the labelled nav and History can be open at
+ * the same time, and clicking a control only closes its own module. While
+ * History is open the chevron and new-chat hide (History carries its own
+ * collapse and new conversation), but the hamburger stays so the nav can
+ * still be opened or collapsed alongside it. New conversation starts a thread
+ * without forcing either module open. The new-chat control is a circle,
+ * matching History.
  *
  * Default ON (no stored value). v2 key — the v1 key was written to "0"
  * whenever the labelled nav opened (hamburger) or History-in-nav turned on,
@@ -239,34 +241,28 @@ function concealHistoryModule() {
   } catch (_) { /* best-effort */ }
 }
 
-/** Hamburger: labelled nav in full. History stays closed — its chrome
- *  already lives inside the History module, so it is not repeated beside
- *  the open menu. The chevron is what closes this view. */
+/** Hamburger: toggle the labelled nav. Independent of History — an open
+ *  History stays open, so the two modules can sit side by side, and this
+ *  control only ever opens or collapses the nav. */
 function toggleNavModule() {
   if (!isNavModulesOn()) return;
   try { applyMinimalUi(false); } catch (_) { /* already expanded */ }
-  if (!navIsCollapsed()) {
-    pendingLayout = null;
-    try { applyIconRail(true, false); } catch (_) { /* already railed */ }
-    concealHistoryModule();
-  } else {
-    pendingLayout = null;
-    try { applyIconRail(false, false); } catch (_) { /* already labelled */ }
-    concealHistoryModule();
-  }
+  const collapse = !navIsCollapsed();
+  try { applyIconRail(collapse, false); } catch (_) { /* already in state */ }
   syncNavModulesChrome();
 }
 
-/** Chevron: History in full, primary nav stays (or returns) collapsed. */
+/** Chevron: toggle History. Independent of the nav — the labelled nav keeps
+ *  whatever state it was in, so this control only ever opens or closes
+ *  History. */
 function toggleHistoryModule() {
   if (!isNavModulesOn() || !historyAllowed()) return;
   try { applyMinimalUi(false); } catch (_) { /* already expanded */ }
-  if (isHistoryFull() && navIsCollapsed()) {
+  if (isHistoryFull()) {
     pendingLayout = null;
     concealHistoryModule();
   } else {
     pendingLayout = 'hist-full';
-    try { applyIconRail(true, false); } catch (_) { /* already railed */ }
     openHistoryModule({ rail: false });
   }
   syncNavModulesChrome();
@@ -282,8 +278,8 @@ function isDesktop() {
   try { return !window.matchMedia('(max-width: 768px)').matches; } catch (_) { return true; }
 }
 
-/** Mark when History is fully open so CSS can drop the repeated hamburger
- *  and new-chat on the collapsed rail. */
+/** Mark when History is fully open so CSS can drop the repeated chevron
+ *  and new-chat on the nav rail (History has its own of both). */
 function syncOpenChrome() {
   const on = isNavModulesOn() && isHistoryFull();
   document.documentElement.classList.toggle('nav-modules-hist-open', on);
@@ -294,16 +290,14 @@ function syncChevronLabel() {
   const btn = document.getElementById('topbar-menu-toggle');
   const panel = panelEl();
   if (!btn || !panel || panel.classList.contains('mp-pivot')) return;
-  const navOpen = !navIsCollapsed();
   const histOpen = isHistoryFull();
-  const closing = navOpen || histOpen;
-  const label = navOpen ? 'Close navigation' : histOpen ? 'Close History' : 'Open History';
+  const label = histOpen ? 'Close History' : 'Open History';
   btn.setAttribute('aria-label', label);
   btn.setAttribute('title', label);
   btn.setAttribute('data-tip', label);
-  btn.setAttribute('aria-pressed', closing ? 'true' : 'false');
+  btn.setAttribute('aria-pressed', histOpen ? 'true' : 'false');
   const icon = btn.querySelector('.material-symbols-outlined');
-  if (icon) icon.textContent = closing ? 'chevron_left' : 'chevron_right';
+  if (icon) icon.textContent = histOpen ? 'chevron_left' : 'chevron_right';
 }
 
 function syncMenuLabel() {
@@ -331,11 +325,10 @@ function onChevronClick(e) {
   e.preventDefault();
   e.stopPropagation();
   e.stopImmediatePropagation();
-  /* Open menu → chevron closes the labelled nav. Open History → chevron
-     closes History. Collapsed rail → chevron opens History — unless Roll /
-     Crawl has taken History out of the nav entirely. */
-  if (!navIsCollapsed()) toggleNavModule();
-  else if (historyAllowed()) toggleHistoryModule();
+  /* The chevron only ever toggles History, whatever the nav is doing — the
+     hamburger owns the nav. Roll / Crawl can take History out of the nav
+     entirely, in which case there is nothing to toggle. */
+  if (historyAllowed()) toggleHistoryModule();
 }
 
 /** Roll / Crawl hid an open History; restore it when Walk / Run comes back. */

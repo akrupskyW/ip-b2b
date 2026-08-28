@@ -1011,7 +1011,8 @@ export function applyCwrUi(on) {
   } catch {}
 }
 
-/* Serif headlines — Appearance ▸ Accessibility, next to Text size. On by
+/* Serif headlines — Appearance ▸ Accessibility, next to Text size.
+   Admin-badged (hidden when Admin controls is off). On by
    default (Noto Serif titles). Turning the row off swaps every title to DM Sans
    at the same weights (300–800, plus italic). Driven by a `sans-headlines`
    class on <html> that remaps --module-title-family / --font-serif, plus an

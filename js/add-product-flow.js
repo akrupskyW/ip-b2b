@@ -127,6 +127,7 @@
     saved: false,
     nfpWide: false,       // false = single pane; true = double-pane (photo column)
     nfpCompare: false,    // ⋯ menu → show every format side by side (compare matrix)
+    nfpFlip: true,        // ⋯ menu → fold the masthead into the Nutrition Facts column and swap it to the right, ingredients on the left. On by default.
     /* Ingredient analysis (third column). Accordions remember open/closed;
        Analyze increments `iaTick` so row + score animations replay. */
     iaOpen: { list: true, parsed: true, codes: true, nutrients: true, scout: true },
@@ -874,6 +875,7 @@
         <span class="nfp-fi-thumb-label">${esc(unitLabel)}</span>
       </div>`;
     const identity = useHeaderIdentity();
+    const foldUpc = identity && state.nfpFlip;
     const packIdx = activePackIndex();
     const title = identity
       ? `<div class="nfp-fi-header">
@@ -902,11 +904,11 @@
           : `<span class="nfp-fi-thumb-img nfp-fi-thumb-icon"><span class="material-symbols-outlined">inventory_2</span></span>`}
         <span class="nfp-fi-thumb-label">${esc(p.label || 'Size')}</span>
       </div>`;
-      return (identity && packIdx === i) ? `<div class="nfp-fi-thumb-upc">${thumb}${upcBlock}</div>` : thumb;
+      return (identity && !foldUpc && packIdx === i) ? `<div class="nfp-fi-thumb-upc">${thumb}${upcBlock}</div>` : thumb;
     }).join('');
     const unitBit = showUnitThumb
-      ? (identity && unitActive ? `<div class="nfp-fi-thumb-upc">${unitThumb}${upcBlock}</div>` : unitThumb)
-      : (identity ? upcBlock : '');
+      ? (identity && !foldUpc && unitActive ? `<div class="nfp-fi-thumb-upc">${unitThumb}${upcBlock}</div>` : unitThumb)
+      : (identity && !foldUpc ? upcBlock : '');
     const photoSrc = activeProductImage();
     const photoAction = packIdx != null ? 'upload-pack' : 'upload-main';
     const photoArg = packIdx != null ? ` data-arg="${packIdx}"` : '';
@@ -929,12 +931,16 @@
             ${packThumbs}
             ${addSizeThumb}
           </div>`;
+    const upcRow = foldUpc ? upcBlock : '';
     const body = identity
       ? `<div class="nfp-fi-copy">
           ${title}
-          ${descRow}
-          ${priceRow}
-          ${sizeRow}
+          <div class="nfp-fi-details">
+            ${descRow}
+            ${priceRow}
+            ${sizeRow}
+            ${upcRow}
+          </div>
         </div>`
       : `${title}
       ${sizeRow}`;
@@ -1640,8 +1646,32 @@
     let done = false;
     function tryInject() {
       if (done) return true;
-      const pop = panel.querySelector('.panel-more-wrap .topbar-popover, .pf-module-menu .pf-module-menu-pop');
+      const pop = document.getElementById('nfp-menu')
+        || panel.querySelector('.panel-more-wrap .topbar-popover, .pf-module-menu .pf-module-menu-pop');
       if (!pop) return false;
+      if (!pop.querySelector('#nfp-flip-item')) {
+        pop.insertAdjacentHTML('beforeend',
+          '<div class="topbar-menu-divider"></div>'
+          + '<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item is-on" id="nfp-flip-item" role="menuitemcheckbox" aria-checked="true">'
+          + '<span class="material-symbols-outlined topbar-menu-icon">swap_horiz</span>'
+          + '<span>Ingredients-first layout</span>'
+          + '<span class="topbar-menu-badge">Admin</span>'
+          + '<span class="sc-switch sc-switch--pink" aria-hidden="true"></span>'
+          + '</button>');
+        const flip = pop.querySelector('#nfp-flip-item');
+        const syncFlip = () => {
+          flip.classList.toggle('is-on', state.nfpFlip);
+          flip.setAttribute('aria-checked', state.nfpFlip ? 'true' : 'false');
+        };
+        flip.addEventListener('click', (e) => {
+          e.stopPropagation();
+          state.nfpFlip = !state.nfpFlip;
+          syncFlip();
+          closeNfpMenu(pop);
+          renderNFP();
+        });
+        syncFlip();
+      }
       if (!pop.querySelector('#nfp-compare-item')) {
         pop.insertAdjacentHTML('beforeend',
           '<div class="topbar-menu-divider"></div>'
@@ -1677,9 +1707,10 @@
           nfpDeleteCurrentProduct();
         });
       }
+      const haveFlip = !!pop.querySelector('#nfp-flip-item');
       const haveCompare = !!pop.querySelector('#nfp-compare-item');
       const haveDelete = !nfpIsExistingProduct() || !!pop.querySelector('#nfp-delete-item');
-      if (haveCompare && haveDelete) { done = true; return true; }
+      if (haveFlip && haveCompare && haveDelete) { done = true; return true; }
       return false;
     }
     if (tryInject()) return;
@@ -1767,6 +1798,9 @@
   function nudgeNfpCols(sp, idx, dxPx) {
     const cols = nfpColEls(sp);
     if (cols.some((c) => !c) || idx < 0 || idx + 1 >= cols.length) return;
+    /* Flipped layout renders the columns right-to-left relative to the [facts,
+       ingred] element order, so a seam drag must move the opposite way. */
+    if (sp.classList.contains('nfp-sp--flip')) dxPx = -dxPx;
     const mins = nfpColMins(sp);
     const widths = cols.map((c) => c.getBoundingClientRect().width);
     const next = widths.slice();
@@ -1800,12 +1834,13 @@
         const mins = nfpColMins(sp);
         if (!cols[idx] || !cols[idx + 1]) return;
         const startX = e.clientX;
+        const flipped = sp.classList.contains('nfp-sp--flip');
         const startW = cols.map((c) => c.getBoundingClientRect().width);
         document.documentElement.classList.add('nfp-col-dragging');
         split.classList.add('is-on');
         try { split.setPointerCapture(e.pointerId); } catch (_) {}
         const move = (ev) => {
-          const dx = ev.clientX - startX;
+          const dx = (ev.clientX - startX) * (flipped ? -1 : 1);
           const next = startW.slice();
           next[idx] = startW[idx] + dx;
           next[idx + 1] = startW[idx + 1] - dx;
@@ -1962,7 +1997,21 @@
         media = richHeroHTML();
         facts = nutritionHTML();
       }
-      if (useHeaderIdentity()) {
+      if (useHeaderIdentity() && state.nfpFlip) {
+        /* Ingredients-first: the masthead + Non-UPF shield fold into the
+           Nutrition Facts column, which swaps to the right; the ingredient
+           list + parsed analysis take the left column. */
+        nfpBody.innerHTML =
+          `<div class="nfp-sp nfp-sp--noidentity nfp-sp--flip">
+            <div class="nfp-sp-facts">
+              <div class="nfp-sp-strip nfp-sp-strip--folded">${strip}</div>
+              <div class="nfp-sp-shield nfp-sp-shield--folded">${nextStepHTML()}</div>
+              ${facts}${allergensHTML()}
+            </div>
+            <div class="nfp-sp-split" data-nfp-split="0" role="separator" aria-orientation="vertical" aria-label="Resize ingredients and Nutrition Facts" tabindex="0"><span class="nfp-sp-grip" aria-hidden="true"></span></div>
+            <div class="nfp-sp-ingred">${ingredientsHTML()}</div>
+          </div><div class="nfp-ins">${insightsGridHTML()}</div>`;
+      } else if (useHeaderIdentity()) {
         nfpBody.innerHTML =
           `<div class="nfp-sp nfp-sp--noidentity">
             <div class="nfp-sp-strip">${strip}</div>

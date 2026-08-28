@@ -7773,17 +7773,17 @@
     }
 
     /* ── Brand switcher ──────────────────────────────────────────────────
-       Avatar + caret only, after Marketing Assets. The brand name lives on
-       the hover tooltip (anchored above). 15% opacity fill keeps the chip
-       secondary. Click opens the brand listbox, also above the trigger. */
+       Avatar + name + caret, after Marketing Assets. Click opens the brand
+       listbox with a search field at the top so a long catalog is scannable. */
     .pf-brand { position: relative; flex-shrink: 0; }
     .pf-brand-chip {
-      display: inline-flex; align-items: center; gap: 1px;
-      padding: 3px 2px 3px 3px;
+      display: inline-flex; align-items: center; gap: 8px;
+      height: 34px; box-sizing: border-box; padding: 3px 10px 3px 4px;
       background: color-mix(in srgb, var(--primary) 15%, transparent);
       border: 1px solid color-mix(in srgb, var(--primary) 15%, var(--border));
       border-radius: var(--radius-pill, 999px);
       cursor: pointer;
+      font-family: inherit; color: var(--text); appearance: none;
       transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
     }
     .pf-brand-chip:hover { border-color: var(--primary); background: var(--primary-soft); }
@@ -7800,36 +7800,17 @@
       background: var(--primary); overflow: hidden;
     }
     .pf-brand-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .pf-brand-name {
+      font-size: 12px; font-weight: 700; color: var(--text); line-height: 1;
+      white-space: nowrap; max-width: 160px; overflow: hidden; text-overflow: ellipsis;
+    }
     .pf-brand-caret { font-size: 18px !important; color: var(--text-muted); transition: transform .15s ease; flex: 0 0 auto; }
     .pf-brand-chip[aria-expanded="true"] .pf-brand-caret { transform: rotate(180deg); color: var(--primary-ink, var(--primary)); }
 
-    .pf-brand-tip {
-      position: absolute; left: calc(100% + 8px); top: 50%;
-      transform: translateY(-50%) translateX(-4px);
-      z-index: 70;
-      background: var(--surface); color: var(--text);
-      font-size: var(--fs-ui); font-weight: 600; font-family: inherit;
-      white-space: nowrap; padding: 5px 10px;
-      border-radius: var(--radius-pill); border: 1px solid var(--border-strong);
-      box-shadow: var(--shadow-2); pointer-events: none;
-      opacity: 0; visibility: hidden;
-      transition: opacity 0.13s ease, transform 0.13s ease, visibility 0.13s ease;
-    }
-    html.dark .pf-brand-tip {
-      background: var(--surface-2); color: var(--text);
-      border-color: rgba(37,80,124,0.28);
-    }
-    .pf-brand:hover .pf-brand-tip,
-    .pf-brand-chip:focus-visible ~ .pf-brand-tip {
-      opacity: 1; visibility: visible; transform: translateY(-50%) translateX(0);
-    }
-    .pf-brand:has(.pf-brand-chip[aria-expanded="true"]) .pf-brand-tip {
-      opacity: 0; visibility: hidden;
-    }
-
     .pf-brand-menu {
       position: absolute; top: calc(100% + 8px); right: 0; left: auto; z-index: 60;
-      min-width: 300px; max-width: 340px; max-height: 380px; overflow-y: auto;
+      display: flex; flex-direction: column;
+      min-width: 300px; max-width: 340px; max-height: 380px;
       padding: 6px; background: var(--surface-2);
       border: 1px solid var(--border-strong); border-radius: 14px;
       box-shadow: var(--shadow-card); animation: fadeSlideUp 0.15s ease-out both;
@@ -7839,11 +7820,40 @@
       background: linear-gradient(155deg, #1A2339 0%, #1A2339 100%);
       border-color: rgba(37,80,124,0.28); box-shadow: 0 12px 40px rgba(0,0,0,0.5);
     }
+    .pf-brand-search {
+      display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+      margin: 2px 4px 6px; padding: 0 10px 0 12px; height: 34px; box-sizing: border-box;
+      background: var(--surface); border: 1px solid var(--border-strong);
+      border-radius: var(--radius-pill);
+    }
+    html.dark .pf-brand-search { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    .pf-brand-search > .material-symbols-outlined {
+      font-size: 18px; color: var(--text-subtle); pointer-events: none; flex-shrink: 0;
+    }
+    .pf-brand-search input {
+      flex: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent;
+      font-family: inherit; font-size: 0.8125rem; font-weight: 400; color: var(--text);
+      appearance: none; -webkit-appearance: none;
+    }
+    .pf-brand-search input::placeholder {
+      color: color-mix(in srgb, var(--text-subtle) 55%, transparent); font-style: italic;
+    }
+    .pf-brand-search:focus-within {
+      border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+    }
+    .pf-brand-opts { overflow-y: auto; min-height: 0; flex: 1 1 auto; }
+    .pf-brand-empty {
+      padding: 18px 12px; text-align: center;
+      font-size: 0.8125rem; color: var(--text-muted);
+    }
+    .pf-brand-empty[hidden] { display: none; }
     .pf-brand-opt {
       display: flex; align-items: center; gap: 10px; width: 100%;
       padding: 9px 10px; border: none; background: none; cursor: pointer;
       border-radius: 10px; text-align: left; color: var(--text);
     }
+    .pf-brand-opt[hidden] { display: none; }
     .pf-brand-opt:hover, .pf-brand-opt.is-active { background: var(--primary-soft); }
     html.dark .pf-brand-opt:hover, html.dark .pf-brand-opt.is-active { background: rgba(255,255,255,0.06); }
     .pf-brand-opt-avatar {
@@ -10687,15 +10697,22 @@
                 <span class="material-symbols-outlined">photo_library</span>Marketing Assets
               </a>
             </div>
-            <!-- Avatar + caret only. Brand name is on the hover tooltip above.
-                 Click opens the brand list so the board can switch catalogs. -->
+            <!-- Avatar + name + caret. Click opens the brand list (with search
+                 at the top) so the board can switch catalogs. -->
             <div class="pf-brand" id="pf-brand">
-              <button type="button" class="pf-brand-chip" id="pf-brand-chip" aria-haspopup="listbox" aria-expanded="false" onclick="pfToggleBrandMenu(event)" data-tip="Flax4Life" aria-label="Flax4Life" aria-describedby="pf-brand-tip">
+              <button type="button" class="pf-brand-chip" id="pf-brand-chip" aria-haspopup="listbox" aria-expanded="false" aria-controls="pf-brand-opts" onclick="pfToggleBrandMenu(event)">
                 <span class="pf-brand-avatar" id="pf-brand-avatar">F</span>
-                <span class="material-symbols-outlined pf-brand-caret">expand_more</span>
+                <span class="pf-brand-name" id="pf-brand-name">Flax4Life</span>
+                <span class="material-symbols-outlined pf-brand-caret" aria-hidden="true">expand_more</span>
               </button>
-              <div class="pf-brand-tip" id="pf-brand-tip" role="tooltip">Flax4Life</div>
-              <div class="pf-brand-menu" id="pf-brand-menu" role="listbox" aria-label="Select a brand" hidden></div>
+              <div class="pf-brand-menu" id="pf-brand-menu" hidden>
+                <div class="pf-brand-search">
+                  <span class="material-symbols-outlined" aria-hidden="true">search</span>
+                  <input type="search" id="pf-brand-search" placeholder="Search brands…" aria-label="Search brands" autocomplete="off" />
+                </div>
+                <div class="pf-brand-opts" id="pf-brand-opts" role="listbox" aria-label="Select a brand"></div>
+                <div class="pf-brand-empty" id="pf-brand-empty" hidden>No brands match</div>
+              </div>
             </div>
             <!-- The Guiding Stars on/off control now lives in the module's
                  three-dot (⋯) menu — see consolidatePanelControls(). -->
@@ -16382,25 +16399,21 @@
       if (note) note.textContent = 'We found ' + brand.discovered.length + ' products that look like ' + brand.name + '\u2019s';
     }
     function pfUpdateBrandHeader(brand) {
-      const chip = document.getElementById('pf-brand-chip');
-      if (chip) {
-        chip.setAttribute('data-tip', brand.name);
-        chip.setAttribute('aria-label', brand.name);
-      }
-      const tip = document.getElementById('pf-brand-tip');
-      if (tip) tip.textContent = brand.name;
+      const nameEl = document.getElementById('pf-brand-name');
+      if (nameEl) nameEl.textContent = brand.name;
       pfSyncNudgeToastCounts();
       pfRefreshNudgeToasts();
       const av = document.getElementById('pf-brand-avatar');
       if (av) {
         av.style.background = brand.color || 'var(--primary)';
         av.innerHTML = brand.avatar
-          ? '<img src="' + brand.avatar + '" alt="' + pfEsc(brand.name) + '" onerror="this.parentNode.textContent=\'' + pfEsc(brand.name.charAt(0)) + '\'">'
+          ? '<img src="' + brand.avatar + '" alt="" onerror="this.parentNode.textContent=\'' + pfEsc(brand.name.charAt(0)) + '\'">'
           : pfEsc(brand.name.charAt(0));
       }
       const sub = document.getElementById('pf-subtitle');
       if (sub) sub.textContent = brand.name + ' · Missing data, Discovered & Claimed';
-      document.querySelectorAll('#pf-brand-menu .pf-brand-opt').forEach((o, i) => {
+      document.querySelectorAll('#pf-brand-opts .pf-brand-opt').forEach((o) => {
+        const i = Number(o.getAttribute('data-brand'));
         o.classList.toggle('is-active', i === pfCurrentBrand);
         o.setAttribute('aria-selected', i === pfCurrentBrand ? 'true' : 'false');
       });
@@ -16426,20 +16439,56 @@
       if (body) body.scrollTop = 0;
     }
 
+    function pfBrandOptHtml(b, i) {
+      const n = (b.isDefault ? 5 : b.claimed.filter((p) => p[3] !== 'verify').length);
+      const d = (b.isDefault ? 47 : b.discovered.length);
+      const av = b.avatar
+        ? '<span class="pf-brand-opt-avatar" style="background:' + (b.color || 'var(--primary)') + '"><img src="' + b.avatar + '" alt="" onerror="this.parentNode.textContent=\'' + pfEsc(b.name.charAt(0)) + '\'"></span>'
+        : '<span class="pf-brand-opt-avatar" style="background:' + (b.color || 'var(--primary)') + '">' + pfEsc(b.name.charAt(0)) + '</span>';
+      return '<button type="button" class="pf-brand-opt" role="option" data-brand="' + i + '" data-name="' + pfEsc(b.name.toLowerCase()) + '" onclick="pfSelectBrand(' + i + ')">' + av +
+        '<span class="pf-brand-opt-text"><span class="pf-brand-opt-name">' + pfEsc(b.name) + '</span>' +
+        '<span class="pf-brand-opt-meta">' + n + ' claimed · ' + d + ' discovered</span></span>' +
+        '<span class="material-symbols-outlined pf-brand-opt-check" aria-hidden="true">check</span></button>';
+    }
+    function pfFilterBrandMenu(query) {
+      const q = String(query || '').trim().toLowerCase();
+      const list = document.getElementById('pf-brand-opts');
+      if (!list) return;
+      let shown = 0;
+      list.querySelectorAll('.pf-brand-opt').forEach((o) => {
+        const match = !q || (o.getAttribute('data-name') || '').indexOf(q) !== -1;
+        o.hidden = !match;
+        if (match) shown++;
+      });
+      const empty = document.getElementById('pf-brand-empty');
+      if (empty) empty.hidden = shown > 0;
+    }
+    function pfResetBrandSearch() {
+      const input = document.getElementById('pf-brand-search');
+      if (input) input.value = '';
+      pfFilterBrandMenu('');
+    }
     function pfBuildBrandMenu() {
-      const menu = document.getElementById('pf-brand-menu');
-      if (!menu) return;
-      menu.innerHTML = PF_BRANDS.map((b, i) => {
-        const n = (b.isDefault ? 5 : b.claimed.filter((p) => p[3] !== 'verify').length);
-        const d = (b.isDefault ? 47 : b.discovered.length);
-        const av = b.avatar
-          ? '<span class="pf-brand-opt-avatar" style="background:' + (b.color || 'var(--primary)') + '"><img src="' + b.avatar + '" alt="" onerror="this.parentNode.textContent=\'' + pfEsc(b.name.charAt(0)) + '\'"></span>'
-          : '<span class="pf-brand-opt-avatar" style="background:' + (b.color || 'var(--primary)') + '">' + pfEsc(b.name.charAt(0)) + '</span>';
-        return '<button type="button" class="pf-brand-opt" role="option" onclick="pfSelectBrand(' + i + ')">' + av +
-          '<span class="pf-brand-opt-text"><span class="pf-brand-opt-name">' + pfEsc(b.name) + '</span>' +
-          '<span class="pf-brand-opt-meta">' + n + ' claimed · ' + d + ' discovered</span></span>' +
-          '<span class="material-symbols-outlined pf-brand-opt-check">check</span></button>';
-      }).join('');
+      const list = document.getElementById('pf-brand-opts');
+      if (!list) return;
+      list.innerHTML = PF_BRANDS.map(pfBrandOptHtml).join('');
+      const input = document.getElementById('pf-brand-search');
+      if (input && !input.dataset.wired) {
+        input.dataset.wired = '1';
+        input.addEventListener('input', () => pfFilterBrandMenu(input.value));
+        input.addEventListener('click', (e) => e.stopPropagation());
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') { e.stopPropagation(); pfCloseBrandMenu(); return; }
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            e.stopPropagation();
+            const first = list.querySelector('.pf-brand-opt:not([hidden])');
+            if (first) first.click();
+            return;
+          }
+          e.stopPropagation();
+        });
+      }
     }
     function pfToggleBrandMenu(e) {
       if (e) e.stopPropagation();
@@ -16447,7 +16496,15 @@
       const chip = document.getElementById('pf-brand-chip');
       if (!menu) return;
       const open = menu.hasAttribute('hidden');
-      if (open) { menu.removeAttribute('hidden'); } else { menu.setAttribute('hidden', ''); }
+      if (open) {
+        pfResetBrandSearch();
+        menu.removeAttribute('hidden');
+        const input = document.getElementById('pf-brand-search');
+        if (input) setTimeout(() => input.focus(), 0);
+      } else {
+        menu.setAttribute('hidden', '');
+        pfResetBrandSearch();
+      }
       if (chip) chip.setAttribute('aria-expanded', open ? 'true' : 'false');
     }
     function pfCloseBrandMenu() {
@@ -16455,6 +16512,7 @@
       const chip = document.getElementById('pf-brand-chip');
       if (menu) menu.setAttribute('hidden', '');
       if (chip) chip.setAttribute('aria-expanded', 'false');
+      pfResetBrandSearch();
     }
     function pfSelectBrand(idx) {
       pfCloseBrandMenu();
@@ -16464,6 +16522,9 @@
     window.pfSelectBrand = pfSelectBrand;
     document.addEventListener('click', (e) => {
       if (!(e.target instanceof Element) || !e.target.closest('#pf-brand, #pf-brand-menu')) pfCloseBrandMenu();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') pfCloseBrandMenu();
     });
 
     /* Add ▾ dropdown (Product / Catalog) — same open/close contract as the
