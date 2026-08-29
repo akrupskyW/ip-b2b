@@ -255,7 +255,7 @@
           bullets: [
             'Reports in the Studio nav; Analytics Types for the chart catalog',
             'Click a chart to replay its animation',
-            'Exports and PDFs also land under Invoices & Downloads'
+            'Exports and PDFs also land under Invoices'
           ]
         },
         {
@@ -306,17 +306,17 @@
       id: 'account',
       label: 'You & the org',
       icon: 'manage_accounts',
-      pages: ['profile.html', 'preferences.html', 'invoices.html', 'api-keys.html', 'alerts.html', 'agents.html', 'help.html', 'docs.html', 'organizations.html', 'quick-invite.html', 'user-management.html', 'audit-queue.html', 'admin-utils.html', 'studio-ai.html'],
-      navIds: ['profile', 'invoices', 'preferences', 'api-keys', 'help', 'docs', 'organizations', 'quick-invite', 'user-management', 'audit-queue', 'admin-utils', 'studio-ai', 'wisecode-admin'],
+      pages: ['profile.html', 'preferences.html', 'invoices.html', 'marketing-assets.html', 'api-keys.html', 'alerts.html', 'agents.html', 'help.html', 'docs.html', 'organizations.html', 'quick-invite.html', 'user-management.html', 'audit-queue.html', 'admin-utils.html', 'studio-ai.html'],
+      navIds: ['profile', 'invoices', 'marketing-assets', 'preferences', 'api-keys', 'help', 'docs', 'organizations', 'quick-invite', 'user-management', 'audit-queue', 'admin-utils', 'studio-ai', 'wisecode-admin'],
       steps: [
         {
           id: 'ac-you',
           page: 'preferences.html',
           title: 'Your name, your lights, your invoices.',
-          body: 'My profile is identity and security. Preferences is theme, text size, notifications, dock side. Appearance in the primary nav is the fast version of the same idea. Invoices & Downloads is where receipts and unlocked files go. API keys, if you build.',
+          body: 'My profile is identity and security. Preferences is theme, text size, notifications, dock side. Appearance in the primary nav is the fast version of the same idea. Invoices is where receipts go; Marketing Assets is next to it for unlocked files. API keys, if you build.',
           bullets: [
             'Theme + text size persist everywhere (wise-theme / wise-text-size)',
-            'Invoices & Downloads = money and files, together',
+            'Invoices = receipts; Marketing Assets = unlocked files',
             'Admin (orgs, invites, users, audit) is for people who run the workspace'
           ]
         },

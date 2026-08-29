@@ -109,7 +109,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Roll · Crawl · Walk · Run gates the chat',
-        how: '<code>wise-cwr-mode</code> (<code>roll|crawl|walk|run</code>, default <code>run</code>) sets <code>cwr-roll</code> / <code>cwr-crawl</code> / <code>cwr-walk</code> / <code>cwr-run</code> on <code>&lt;html&gt;</code>. Roll is Crawl with a stripped SaaS nav. Crawl hides chat surfaces with <code>inert</code> + <code>aria-hidden</code>. Roll and Crawl also drop History from the primary nav (the History-in-nav section, the History chevron, and the new-chat circle). Walk hides the composer rail, Run unlocks everything. Turning the widget off (<code>wise-cwr-ui</code>) suspends the gating entirely.',
+        how: 'Each page loads a default mode onto <code>&lt;html&gt;</code> as <code>cwr-roll</code> / <code>cwr-crawl</code> / <code>cwr-walk</code> / <code>cwr-run</code>: <strong>Run</strong> on <code>wiseai.html</code>, <code>view-product.html</code>, and <code>add-product.html</code>; <strong>Roll</strong> on every other page. A click still applies for that visit; the next load reapplies the page default. <code>wise-cwr-mode</code> is only a snapshot of the in-session choice. Roll is Crawl with a stripped SaaS nav that still keeps Marketing Assets. Crawl hides chat surfaces with <code>inert</code> + <code>aria-hidden</code>. Roll and Crawl also drop History from the primary nav (the History-in-nav section, the History chevron, and the new-chat circle). Walk hides the composer rail, Run unlocks everything. Hovering a mode shows what it includes and excludes. Turning the widget off (<code>wise-cwr-ui</code>) suspends the gating entirely.',
       },
     ],
   },
@@ -179,7 +179,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Custom width turns the row into a carousel rail',
-        how: 'When any first-class module in <code>#modules-row</code> (or a panel inside <code>#panels-row</code> / <code>#panels-row-right</code>) is at <strong>custom</strong>, <code>WPaneWidth.syncCarousel()</code> adds <code>modules-carousel</code> to the row. The row scrolls horizontally with the content (<code>overflow-x: auto</code>); every direct child is <code>flex-shrink: 0</code> so modules keep the width they were given instead of squeezing to fit the window. Nested demos inside a module do not trip the rail. Navigation lives outside the row and is never on it. A scrollbar is always reserved (<code>scrollbar-gutter: stable</code>). Leave custom — or close the last custom pane — and the rail class drops.',
+        how: 'When any first-class module in <code>#modules-row</code> (or a panel inside <code>#panels-row</code> / <code>#panels-row-right</code>) is at <strong>custom</strong>, <code>WPaneWidth.syncCarousel()</code> adds <code>modules-carousel</code> to the row. The row scrolls horizontally with the content (<code>overflow-x: auto</code>); every direct child is <code>flex-shrink: 0</code> so modules keep the width they were given instead of squeezing to fit the window. <strong>Narrowing the browser</strong> is what makes the rail obvious: the pinned widths no longer fit, so overflow goes sideways. Nested demos inside a module do not trip the rail. Navigation lives outside the row and is never on it. A scrollbar is always reserved (<code>scrollbar-gutter: stable</code>). Leave custom — or close the last custom pane — and the rail class drops.',
       },
       {
         title: 'Browser height shrinks the work surface, not the modules',
@@ -204,7 +204,7 @@ export const APP_LOGIC = [
     label: 'Tables',
     icon: 'table_rows',
     area: 'shared',
-    src: ['js/sortable-tables.js', 'js/table-pagination.js', 'js/responsive-tables.js'],
+    src: ['js/sortable-tables.js', 'js/table-pagination.js', 'js/responsive-tables.js', 'js/product-row-click.js'],
     rules: [
       {
         title: 'One faux-table pattern everywhere',
@@ -217,6 +217,10 @@ export const APP_LOGIC = [
       {
         title: 'Load-more paging, ten at a time',
         how: '<code>table-pagination.js</code> appends a <code>.wtp-foot</code> reading &ldquo;Showing <em>n</em> of <em>total</em>&rdquo; with a Load more button that reveals 10 further rows; overflow rows are hidden with <code>.wtp-clip</code>. Opt out with <code>[data-wtp-skip]</code> or <code>[data-no-paginate]</code>.',
+      },
+      {
+        title: 'A product row opens the product',
+        how: 'Clicking anywhere on a product row opens <code>view-product.html</code> for that SKU. Icons, checkboxes, the ⋮ menu, reports, size links, claim/verify buttons, and any other control keep their own action — <code>product-row-click.js</code> stands down when the click lands on one of them. Opt out with <code>[data-no-row-click]</code>. Non-product lists (invoices, orgs, users, ingredients) never match.',
       },
       {
         title: 'Narrow tables become cards',
@@ -354,7 +358,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Row menus deep-link with state',
-        how: '<code>pfViewHref</code>, <code>pfEditHref</code>, <code>pfAddPacksHref</code> and <code>pfReformulateHref</code> build query strings carrying <code>name</code>, <code>upc</code>, <code>img</code>, <code>mode=edit</code> and <code>packs=1</code>, so <code>view-product.html</code>, <code>add-product.html</code> and <code>reformulation.html</code> open already focused on the right product and the right task. Discovered rows also pass <code>from=discovered</code> so the product page can offer claim instead of the Non-UPF Shield.',
+        how: '<code>pfViewHref</code>, <code>pfEditHref</code>, <code>pfAddPacksHref</code> and <code>pfReformulateHref</code> build query strings carrying <code>name</code>, <code>upc</code>, <code>img</code>, <code>mode=edit</code> and <code>packs=1</code>, so <code>view-product.html</code>, <code>add-product.html</code> and <code>reformulation.html</code> open already focused on the right product and the right task. Discovered rows also pass <code>from=discovered</code> so the product page can offer claim instead of the Non-UPF Shield. Clicking the row itself (not an icon, checkbox, menu, or other control) uses the same View deep-link.',
       },
       {
         title: 'Multiple sizes only show when real',
@@ -437,6 +441,10 @@ export const APP_LOGIC = [
         how: 'The printed Nutrition Facts label can grow with its content. In the two-column Product Details split that growth sets the ingredients column height — the right column matches the facts column, never the other way around. The ingredients column has a floor: the remaining height of the module body down to the save bar, which is the fill it already has on a typical product. Extra analysis in that column scrolls inside; it does not stretch the facts label.',
       },
       {
+        title: 'Intent chips track the NFP analysis workflow',
+        how: 'View/Edit Product chat chips are not a static Edit / Save / Back row. <code>nfpIntentChips()</code> reads the live ingredient-analysis state (list present, analyzed, fuzzy, unmatched, confirmed, which accordions are open) and offers the next possible panel actions: Analyze / Re-analyze, Review mappings, Confirm matched, Confirm a fuzzy row, Look up unmatched, Test code scores, Test Wise Code AI, Show nutrients. After each chip or panel action the reply trail updates. Typing a chip\u2019s label plays the same turn. Fallback chips on this surface use that set, not the blank Add Product wizard.',
+      },
+      {
         title: 'Identity strip follows Add Product',
         how: 'The same <code>productSizesGroupHTML()</code> rules apply because both pages set <code>WISE_HERO_BRAND</code>: category docks left of ⋯ at 28px, the barcode sits after the size squares and before plus, and a product with only one picture does not show a tiny 1 ct preview.',
       },
@@ -499,7 +507,7 @@ export const APP_LOGIC = [
     label: 'Marketing Assets',
     icon: 'photo_library',
     href: 'marketing-assets.html',
-    area: 'portfolio',
+    area: 'account',
     src: ['js/marketing-assets-flow.js'],
     rules: [
       {
@@ -966,8 +974,12 @@ export const APP_LOGIC = [
     src: ['js/page-gallery.js'],
     rules: [
       {
+        title: 'Cards show the live page',
+        how: 'Each card lazy-loads the real screen in a scaled iframe when it scrolls into view (at most three at a time). A leftover screenshot sits underneath as a placeholder and fades out once the preview lands. Cards that leave the wall unload so the gallery does not boot every page at once. Re-evaluate remounts the visible previews.',
+      },
+      {
         title: 'Screenshots fall back down a chain',
-        how: '<code>bindShot()</code> tries each candidate in <code>shotCandidates(href, isDark())</code> — themed gallery thumbnails first, then live page paths — and only shows &ldquo;No screenshot yet&rdquo; once every candidate has errored.',
+        how: '<code>bindShot()</code> tries each candidate in <code>shotCandidates(href, isDark())</code> — themed gallery thumbnails first, then live page paths — and hides the image once every candidate has errored, leaving the live preview to carry the card.',
       },
       {
         title: 'Order and dimming persist',
@@ -979,7 +991,11 @@ export const APP_LOGIC = [
       },
       {
         title: 'The gallery is not a module',
-        how: '<code>page-gallery.html</code> is deliberately kept out of <code>MODULE_SECTIONS</code> and listed in <code>OMITTED_PAGES</code>, so Re-evaluate does not file it as unaccounted and the gallery never iframes itself.',
+        how: '<code>page-gallery.html</code> is deliberately kept out of <code>MODULE_SECTIONS</code> and listed in <code>OMITTED_PAGES</code>, so Re-evaluate does not file it as unaccounted and the gallery never cards itself.',
+      },
+      {
+        title: 'Re-evaluate keeps the list current',
+        how: '<code>reevaluateGallery()</code> walks the <code>pages/</code> and repo-root directory listings, probes each HTML file, and adds anything missing — the same Re-evaluate pattern as All Modules, minus the line-count crawl. Opening the gallery (and coming back to the tab) also runs a quiet listing so a newly added page appears without a click. Found extras persist in <code>wise-page-gallery-extras</code>; the last scan stamp lives in <code>wise-pg-reeval</code>.',
       },
     ],
   },
@@ -1062,7 +1078,7 @@ export const APP_LOGIC = [
   },
   {
     id: 'invoices',
-    label: 'Invoices & Downloads',
+    label: 'Invoices',
     icon: 'receipt_long',
     href: 'invoices.html',
     area: 'account',

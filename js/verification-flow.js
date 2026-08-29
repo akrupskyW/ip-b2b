@@ -203,6 +203,18 @@ const FOODS = [
   },
 ];
 
+/* Same catalog as the Product Portfolio brand chip — Nutrient Survival is
+   first because this flow's foods belong to it. Rows start unchecked; the
+   Continue CTA stays on regardless. */
+const BRANDS = [
+  { name: 'Nutrient Survival', color: '#3D6B4F', avatar: '../assets/marketing/logos/nutrient-survival.png' },
+  { name: 'Flax4Life', color: '#2E7D5B', avatar: null, claimed: 5, discovered: 47 },
+  { name: 'Simple Truth', color: '#4E7D5A', avatar: '../assets/compare/simpletruth.png', claimed: 10, discovered: 10 },
+  { name: 'Purely Elizabeth', color: '#C9736B', avatar: '../assets/compare/sug_purely.jpg', claimed: 10, discovered: 10 },
+  { name: 'Siete', color: '#C0392B', avatar: '../assets/compare/sug_siete.jpg', claimed: 10, discovered: 10 },
+  { name: 'KIND', color: '#E0A100', avatar: '../assets/compare/kind.jpg', claimed: 10, discovered: 10 },
+];
+
 const STEPS = [
   { id: 'select', label: 'Select Foods', sub: 'Confirm items for verification', icon: 'insights' },
   { id: 'attest', label: 'Attest', sub: 'Review and sign off', icon: 'fact_check' },
@@ -220,6 +232,8 @@ const state = {
   paid: false,
   payMethod: 'card',
   search: '',
+  brand: 'Nutrient Survival',
+  shieldFilter: 'all',
   expanded: new Set(['milk', 'scramble']),
   discount: 0,
   dateLead: 'updated',
@@ -238,9 +252,11 @@ function datesOf(f) {
 }
 
 const stepIndex = (id) => STEPS.findIndex((s) => s.id === id);
+const brandFoods = () => FOODS.filter((f) => f.brand === state.brand);
 const selectedFoods = () => FOODS.filter((f) => f.selected);
 const selectedCount = () => selectedFoods().length;
-const countShield = (s) => FOODS.filter((f) => f.shield === s).length;
+const countShield = (s) => brandFoods().filter((f) => f.shield === s).length;
+const currentBrand = () => BRANDS.find((b) => b.name === state.brand) || BRANDS[0];
 const subtotal = () => selectedCount() * PRICE_PER_ITEM;
 const total = () => Math.max(0, subtotal() - (Number(state.discount) || 0));
 
@@ -248,6 +264,20 @@ function matchesSearch(f) {
   const q = state.search.trim().toLowerCase();
   if (!q) return true;
   return f.name.toLowerCase().includes(q) || f.upc.includes(q);
+}
+
+function matchesShield(f) {
+  const k = state.shieldFilter;
+  if (!k || k === 'all') return true;
+  return f.shield === k;
+}
+
+function matchesBrand(f) {
+  return f.brand === state.brand;
+}
+
+function visibleFoods(list) {
+  return list.filter((f) => matchesBrand(f) && matchesSearch(f) && matchesShield(f));
 }
 
 /* ------------------------------------------------------------------ */
@@ -371,8 +401,8 @@ function progressPaneHTML() {
 
 function headCtaHTML() {
   if (state.step === 'select') {
-    const n = selectedCount();
-    return `<button class="vf-cta" type="button" data-vf="open-confirm" ${n ? '' : 'disabled'}>
+    /* On by default — selection is independent of whether the CTA is enabled. */
+    return `<button class="vf-cta" type="button" data-vf="open-confirm">
       Continue to Review &amp; Attest <span class="material-symbols-outlined">arrow_forward</span></button>`;
   }
   if (state.step === 'attest') {
@@ -382,50 +412,105 @@ function headCtaHTML() {
   return '';
 }
 
+function brandAvatarHTML(b, cls) {
+  const letter = esc(b.name.charAt(0));
+  const bg = `style="background:${esc(b.color || 'var(--primary)')}"`;
+  if (b.avatar) {
+    return `<span class="${cls}" ${bg}><img src="${esc(b.avatar)}" alt="" onerror="this.parentNode.textContent='${letter}'"></span>`;
+  }
+  return `<span class="${cls}" ${bg}>${letter}</span>`;
+}
+
+function brandOptMeta(b) {
+  if (b.claimed != null && b.discovered != null) {
+    return `${b.claimed} claimed · ${b.discovered} discovered`;
+  }
+  const n = FOODS.filter((f) => f.brand === b.name).length;
+  return n ? `${n} to verify` : 'No foods in this flow';
+}
+
+function brandChipHTML() {
+  const b = currentBrand();
+  const opts = BRANDS.map((brand) => {
+    const on = brand.name === b.name;
+    return `<button type="button" class="pf-brand-opt${on ? ' is-active' : ''}" role="option"` +
+      ` data-vf="select-brand" data-brand="${esc(brand.name)}" data-name="${esc(brand.name.toLowerCase())}"` +
+      ` aria-selected="${on ? 'true' : 'false'}">` +
+      `${brandAvatarHTML(brand, 'pf-brand-opt-avatar')}` +
+      `<span class="pf-brand-opt-text"><span class="pf-brand-opt-name">${esc(brand.name)}</span>` +
+      `<span class="pf-brand-opt-meta">${esc(brandOptMeta(brand))}</span></span>` +
+      `<span class="material-symbols-outlined pf-brand-opt-check" aria-hidden="true">check</span></button>`;
+  }).join('');
+  return `
+    <div class="pf-brand" id="vf-brand">
+      <button type="button" class="pf-brand-chip" id="vf-brand-chip" aria-haspopup="listbox"
+        aria-expanded="false" aria-controls="vf-brand-opts" data-vf="toggle-brand">
+        ${brandAvatarHTML(b, 'pf-brand-avatar')}
+        <span class="pf-brand-name" id="vf-brand-name">${esc(b.name)}</span>
+        <span class="material-symbols-outlined pf-brand-caret" aria-hidden="true">expand_more</span>
+      </button>
+      <div class="pf-brand-menu" id="vf-brand-menu" hidden>
+        <div class="pf-brand-search">
+          <span class="material-symbols-outlined" aria-hidden="true">search</span>
+          <input type="search" id="vf-brand-search" data-vf="brand-search" placeholder="Search brands…" aria-label="Search brands" autocomplete="off" />
+        </div>
+        <div class="pf-brand-opts" id="vf-brand-opts" role="listbox" aria-label="Select a brand">${opts}</div>
+        <div class="pf-brand-empty" id="vf-brand-empty" hidden>No brands match</div>
+      </div>
+    </div>`;
+}
+
 function headerHTML() {
   const idx = stepIndex(state.step);
   const back = idx > 0
     ? `<button class="vf-back" type="button" data-vf="go-back" aria-label="Back to ${esc(STEPS[idx - 1].label)}" title="Back to ${esc(STEPS[idx - 1].label)}"><span class="material-symbols-outlined">arrow_back</span></button>`
     : '';
+  const cta = headCtaHTML();
   return `
     <header class="vf-head">
       ${back}
       <h1 class="vf-head-title">Non-UPF Verification</h1>
-      <p class="vf-head-meta">Nutrient Survival · Non-UPF verification</p>
+      <div class="vf-head-actions">${cta}${brandChipHTML()}</div>
     </header>`;
 }
 
-/* Controls bar — a clean search pill that fills the row plus the primary step
-   CTA on the right, mirroring the product-portfolio toolbar (search + Add
-   Product). The search input keeps id/vf hooks so focus + filtering survive. */
-function toolbarHTML(cta) {
+/* Search bar — a clean search pill that fills the row. The step CTA lives
+   inline with the headline, not here. The search input keeps id/vf hooks so
+   focus + filtering survive. */
+function toolbarHTML() {
   return `
     <div class="vf-toolbar">
       <div class="vf-search-inline">
         <span class="material-symbols-outlined">search</span>
         <input id="vf-search" class="vf-search" type="text" placeholder="Search by product name or UPC" value="${esc(state.search)}" data-vf="search" autocomplete="off" aria-label="Search foods" />
       </div>
-      <span class="vf-tool-spacer"></span>
-      ${cta || ''}
     </div>`;
 }
 
-/* Scorecards — one tile per possible Non-UPF Shield chip that can appear in the
-   table below (plus an "All foods" total), mirroring the product-portfolio
-   status filter cards. Each tile is colored to its matching chip. */
-function glanceHTML(label) {
-  const tile = (num, cap, mod, icon) =>
-    `<div class="vf-stat${mod ? ' ' + mod : ''}">` +
-    `<span class="vf-stat-num">${esc(num)}</span>` +
-    `<span class="vf-stat-label">${icon ? `<span class="material-symbols-outlined">${esc(icon)}</span>` : ''}${esc(cap)}</span>` +
-    `</div>`;
+/* Scorecards sit above the table card, never inside it — same rule as Product
+   Portfolio. Light-blue tiles are click-to-filter (no eyebrow). One tile per
+   Non-UPF Shield chip plus an "All foods" total; clicking the active tile
+   clears back to all. */
+function glanceHTML() {
+  const active = state.shieldFilter || 'all';
+  const tile = (key, num, cap, mod) => {
+    const on = active === key;
+    return `<button type="button" class="vf-stat${mod ? ' ' + mod : ''}${on ? ' is-active' : ''}"` +
+      ` data-vf="filter-shield" data-shield="${esc(key)}"` +
+      ` aria-pressed="${on ? 'true' : 'false'}"` +
+      ` aria-label="Show ${esc(cap)}">` +
+      `<span class="vf-stat-num">${esc(num)}</span>` +
+      `<span class="vf-stat-label">${esc(cap)}</span>` +
+      `</button>`;
+  };
   return `
-    <div class="vf-stats-bar"><span class="vf-stats-label">${esc(label)}</span></div>
-    <div class="vf-stats">
-      ${tile(String(FOODS.length), 'All foods')}
-      ${tile(String(countShield('prequal')), 'Pre-qualified', 'vf-stat--warn')}
-      ${tile(String(countShield('attest')), 'Pending attestation', 'vf-stat--info')}
-      ${tile(String(countShield('ineligible')), 'Ineligible', 'vf-stat--muted')}
+    <div class="vf-glance">
+      <div class="vf-stats" role="group" aria-label="Filter foods by Non-UPF Shield status">
+        ${tile('all', String(brandFoods().length), 'All foods')}
+        ${tile('prequal', String(countShield('prequal')), 'Pre-qualified', 'vf-stat--warn')}
+        ${tile('attest', String(countShield('attest')), 'Pending attestation', 'vf-stat--info')}
+        ${tile('ineligible', String(countShield('ineligible')), 'Ineligible', 'vf-stat--muted')}
+      </div>
     </div>`;
 }
 
@@ -473,20 +558,59 @@ function productCell(f, extra) {
     `<span class="pf-upc">UPC · ${esc(f.upc)}</span></span></span>`;
 }
 
+/* Pre-qualified and pending-attestation rows can enter Review & Attest;
+   ineligible foods cannot. */
+function canReview(f) {
+  return f.shield === 'prequal' || f.shield === 'attest';
+}
+
+function productHref(f, edit) {
+  const params = new URLSearchParams();
+  params.set('name', f.name);
+  params.set('upc', f.upc);
+  if (f.img) params.set('img', f.img);
+  params.set('from', 'verification');
+  if (edit) params.set('mode', 'edit');
+  return `view-product.html?${params.toString()}`;
+}
+
+/* Per-row ⋮ — same shell as Product Portfolio. View / Edit open the product
+   page; Review & Attest (eligible rows only) starts this flow for that SKU. */
+function rowMenuHtml(f) {
+  const review = canReview(f)
+    ? `<button type="button" class="pf-rowmenu-item" role="menuitem" data-vf="review-one" data-food="${esc(f.id)}"><span class="material-symbols-outlined">fact_check</span>Review &amp; Attest</button>`
+    : '';
+  return `<span class="pf-td pf-col-menu"><div class="pf-rowmenu">` +
+    `<button type="button" class="pf-rowmenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Actions for ${esc(f.name)}"><span class="material-symbols-outlined">more_vert</span></button>` +
+    `<div class="pf-rowmenu-pop" role="menu" hidden>` +
+    review +
+    `<a class="pf-rowmenu-item" role="menuitem" href="${esc(productHref(f))}"><span class="material-symbols-outlined">visibility</span>View</a>` +
+    `<a class="pf-rowmenu-item" role="menuitem" href="${esc(productHref(f, true))}"><span class="material-symbols-outlined">edit</span>Edit</a>` +
+    `<div class="pf-rowmenu-sep"></div>` +
+    `<div class="pf-rowmenu-info"><span class="material-symbols-outlined">update</span>Updated · ${esc(f.updated)}</div>` +
+    `<div class="pf-rowmenu-info"><span class="material-symbols-outlined">edit_calendar</span>Last edited · ${esc(f.edited)}</div>` +
+    `</div></div></span>`;
+}
+
+function rowActionHtml(f) {
+  if (!canReview(f)) return `<span class="pf-td pf-col-action"></span>`;
+  return `<span class="pf-td pf-col-action"><button type="button" class="pf-claim-btn" data-vf="review-one" data-food="${esc(f.id)}">Review &amp; Attest</button></span>`;
+}
+
 /* ------------------------------------------------------------------ */
 /* Step 1 — Select Foods                                               */
 /* ------------------------------------------------------------------ */
 
 function selectStepHTML() {
-  const rows = FOODS.filter(matchesSearch);
-  const allSel = FOODS.every((f) => f.selected);
-  const noneSel = FOODS.every((f) => !f.selected);
+  const rows = visibleFoods(FOODS);
+  const reviewable = brandFoods().filter(canReview);
+  const allSel = reviewable.length > 0 && reviewable.every((f) => f.selected);
+  const noneSel = reviewable.every((f) => !f.selected);
   const headState = allSel ? 'check_box' : noneSel ? 'check_box_outline_blank' : 'indeterminate_check_box';
   return `
-    ${toolbarHTML(headCtaHTML())}
+    ${toolbarHTML()}
+    ${glanceHTML()}
     <div class="vf-board">
-      ${glanceHTML('Select foods to review & attest')}
-      <div class="vf-board-divider"></div>
       <div class="pf-table pf-table--verify">
         <div class="pf-thead">
           <span class="pf-th pf-col-check">
@@ -494,6 +618,8 @@ function selectStepHTML() {
               <span class="material-symbols-outlined">${headState}</span>
             </button>
           </span>
+          <span class="pf-th pf-col-menu"></span>
+          <span class="pf-th pf-col-action"></span>
           <span class="pf-th pf-col-product">Product</span>
           <span class="pf-th">Non-UPF Shield</span>
           ${dateHeaderHtml()}
@@ -505,11 +631,13 @@ function selectStepHTML() {
                   <span class="material-symbols-outlined">${f.selected ? 'check_box' : 'check_box_outline_blank'}</span>
                 </button>
               </span>
+              ${rowMenuHtml(f)}
+              ${rowActionHtml(f)}
               ${productCell(f)}
               <span class="pf-td">${statusPill(f)}</span>
               <span class="pf-td">${datesCell(f)}</span>
             </div>`).join('')}
-          ${rows.length ? '' : '<div class="pf-trow"><span class="pf-td pf-empty">No foods match your search.</span></div>'}
+          ${rows.length ? '' : '<div class="pf-trow"><span class="pf-td pf-empty">No foods match.</span></div>'}
       </div>
     </div>`;
 }
@@ -519,16 +647,16 @@ function selectStepHTML() {
 /* ------------------------------------------------------------------ */
 
 function attestStepHTML() {
-  const rows = selectedFoods().filter(matchesSearch);
+  const rows = visibleFoods(selectedFoods());
   return `
-    ${toolbarHTML(headCtaHTML())}
+    ${toolbarHTML()}
+    ${glanceHTML()}
     <div class="vf-board">
-      ${glanceHTML('Review & attest your selections')}
-      <div class="vf-board-divider"></div>
       <div class="pf-table pf-table--verify-attest">
         <div class="pf-thead">
-          <span class="pf-th"></span>
           <span class="pf-th pf-col-check"><span class="material-symbols-outlined vf-head-glyph">check_box</span></span>
+          <span class="pf-th pf-col-menu"></span>
+          <span class="pf-th"></span>
           <span class="pf-th pf-col-product">Product</span>
           <span class="pf-th">Non-UPF Shield</span>
           ${dateHeaderHtml()}
@@ -538,12 +666,13 @@ function attestStepHTML() {
             const expandBtn = `<button class="vf-expand ${open ? 'is-open' : ''}" type="button" data-vf="toggle-expand" data-food="${f.id}" aria-label="Toggle ingredients" aria-expanded="${open}"><span class="material-symbols-outlined">expand_more</span></button>`;
             return `
             <div class="pf-trow is-selected" data-food="${f.id}">
-              <span class="pf-td">${expandBtn}</span>
               <span class="pf-td pf-col-check">
                 <button class="vf-check" type="button" data-vf="toggle-food" data-food="${f.id}" aria-label="Deselect ${esc(f.name)}" aria-pressed="true">
                   <span class="material-symbols-outlined">check_box</span>
                 </button>
               </span>
+              ${rowMenuHtml(f)}
+              <span class="pf-td">${expandBtn}</span>
               ${productCell(f)}
               <span class="pf-td">${statusPill(f)}</span>
               <span class="pf-td">${datesCell(f)}</span>
@@ -555,7 +684,7 @@ function attestStepHTML() {
               </div>
             </div>`;
           }).join('')}
-          ${rows.length ? '' : '<div class="pf-trow"><span class="pf-td pf-empty">No selected foods match your search.</span></div>'}
+          ${rows.length ? '' : '<div class="pf-trow"><span class="pf-td pf-empty">No selected foods match.</span></div>'}
       </div>
     </div>
 
@@ -720,8 +849,98 @@ function renderProgress() {
   applyProgressRailLock(show);
 }
 
+function popOfRowMenu(menu) {
+  if (!menu) return null;
+  const inner = menu.querySelector('.pf-rowmenu-pop');
+  if (inner) return inner;
+  return Array.from(document.querySelectorAll('.pf-rowmenu-pop')).find((p) => p.__plHost === menu) || null;
+}
+
+function closeRowMenus(keep) {
+  if (!rootEl) return;
+  rootEl.querySelectorAll('.pf-rowmenu.is-open').forEach((menu) => {
+    if (menu === keep) return;
+    menu.classList.remove('is-open');
+    const btn = menu.querySelector('.pf-rowmenu-btn');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+    const pop = popOfRowMenu(menu);
+    if (pop) pop.hidden = true;
+  });
+  document.querySelectorAll('body > .pf-rowmenu-pop').forEach((pop) => {
+    const host = pop.__plHost;
+    if (keep && host === keep) return;
+    if (host && host.isConnected && rootEl.contains(host) && host.classList.contains('is-open')) return;
+    pop.hidden = true;
+    if (!host || !host.isConnected) pop.remove();
+  });
+}
+
+function brandMenuEl() {
+  return document.getElementById('vf-brand-menu')
+    || Array.from(document.querySelectorAll('.pf-brand-menu')).find((m) => m.__plHost?.id === 'vf-brand')
+    || null;
+}
+
+function filterBrandMenu(query) {
+  const q = String(query || '').trim().toLowerCase();
+  const list = document.getElementById('vf-brand-opts')
+    || brandMenuEl()?.querySelector('.pf-brand-opts');
+  if (!list) return;
+  let shown = 0;
+  list.querySelectorAll('.pf-brand-opt').forEach((o) => {
+    const match = !q || (o.getAttribute('data-name') || '').indexOf(q) !== -1;
+    o.hidden = !match;
+    if (match) shown++;
+  });
+  const empty = document.getElementById('vf-brand-empty')
+    || brandMenuEl()?.querySelector('.pf-brand-empty');
+  if (empty) empty.hidden = shown > 0;
+}
+
+function resetBrandSearch() {
+  const input = document.getElementById('vf-brand-search')
+    || brandMenuEl()?.querySelector('#vf-brand-search');
+  if (input) input.value = '';
+  filterBrandMenu('');
+}
+
+function closeBrandMenu(discard) {
+  const menu = brandMenuEl();
+  const chip = document.getElementById('vf-brand-chip');
+  if (chip) chip.setAttribute('aria-expanded', 'false');
+  if (!menu) return;
+  menu.setAttribute('hidden', '');
+  resetBrandSearch();
+  /* A full re-render wipes the wrap before popover-layer's observer can
+     restore a portaled menu — drop the body copy so it cannot orphan. */
+  if (discard && menu.parentElement === document.body) {
+    if (menu.__plMarker && menu.__plMarker.parentNode) menu.__plMarker.parentNode.removeChild(menu.__plMarker);
+    menu.remove();
+  }
+}
+
+function toggleBrandMenu() {
+  const menu = brandMenuEl();
+  const chip = document.getElementById('vf-brand-chip');
+  if (!menu) return;
+  const open = menu.hasAttribute('hidden');
+  if (open) {
+    resetBrandSearch();
+    menu.removeAttribute('hidden');
+    const input = document.getElementById('vf-brand-search')
+      || menu.querySelector('#vf-brand-search');
+    if (input) setTimeout(() => input.focus(), 0);
+  } else {
+    menu.setAttribute('hidden', '');
+    resetBrandSearch();
+  }
+  if (chip) chip.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
 function render(preserveFocus) {
   if (!rootEl) return;
+  closeBrandMenu(true);
+  closeRowMenus(null);
   const focusSearch = preserveFocus && document.activeElement?.id === 'vf-search';
   const caret = focusSearch ? document.activeElement.selectionStart : null;
   rootEl.innerHTML = `
@@ -763,10 +982,26 @@ function modalEsc(e) { if (e.key === 'Escape') closeModal(); }
 
 function onAction(action, el) {
   switch (action) {
-    case 'toggle-all': {
-      const allSel = FOODS.every((f) => f.selected);
-      FOODS.forEach((f) => { f.selected = !allSel; });
+    case 'filter-shield': {
+      const key = el.dataset.shield || 'all';
+      state.shieldFilter = state.shieldFilter === key ? 'all' : key;
       render();
+      break;
+    }
+    case 'toggle-all': {
+      const reviewable = brandFoods().filter(canReview);
+      const allSel = reviewable.length > 0 && reviewable.every((f) => f.selected);
+      reviewable.forEach((f) => { f.selected = !allSel; });
+      render();
+      break;
+    }
+    case 'review-one': {
+      const f = FOODS.find((x) => x.id === el.dataset.food);
+      if (!f || !canReview(f)) break;
+      f.selected = true;
+      closeRowMenus(null);
+      if (state.step === 'select') openModal();
+      else render();
       break;
     }
     case 'toggle-food': {
@@ -795,8 +1030,23 @@ function onAction(action, el) {
       state.payMethod = el.dataset.method || 'card';
       render();
       break;
+    case 'toggle-brand':
+      toggleBrandMenu();
+      break;
+    case 'select-brand': {
+      const name = el.dataset.brand;
+      if (name && BRANDS.some((b) => b.name === name)) {
+        if (state.brand !== name) {
+          state.brand = name;
+          state.search = '';
+        }
+        render();
+      }
+      break;
+    }
     case 'open-confirm':
       if (selectedCount() > 0) openModal();
+      else vfToast('Select at least one food to continue.', 'info');
       break;
     case 'close-confirm':
       closeModal();
@@ -880,6 +1130,17 @@ export function renderVerificationFlow(mainEl) {
   });
 
   rootEl.addEventListener('click', (e) => {
+    const menuBtn = e.target.closest('.pf-rowmenu-btn');
+    if (menuBtn && rootEl.contains(menuBtn)) {
+      const menu = menuBtn.closest('.pf-rowmenu');
+      const open = !menu.classList.contains('is-open');
+      closeRowMenus(open ? menu : null);
+      menu.classList.toggle('is-open', open);
+      menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      const pop = popOfRowMenu(menu);
+      if (pop) pop.hidden = !open;
+      return;
+    }
     const goto = e.target.closest('[data-goto]');
     if (goto) { goStep(goto.dataset.goto); return; }
     const el = e.target.closest('[data-vf]');
@@ -898,19 +1159,42 @@ export function renderVerificationFlow(mainEl) {
     const el = e.target.closest('[data-vf]');
     if (!el) return;
     if (el.dataset.vf === 'search') { state.search = el.value; render(true); }
+    else if (el.dataset.vf === 'brand-search') { filterBrandMenu(el.value); }
     else if (el.dataset.vf === 'discount') { state.discount = Math.max(0, Number(el.value) || 0); render(); }
   });
 
   /* Modal host is appended to <body>, so its clicks are wired globally.
      Clicking the backdrop (the overlay itself) closes; clicks that land on an
      explicit [data-vf] control inside the dialog run their action. Clicks on
-     inert dialog chrome do nothing. */
+     inert dialog chrome do nothing. Portalled row menus also live on <body>. */
   document.addEventListener('click', (e) => {
     const overlay = e.target.closest('#vf-modal-host .vf-modal-overlay');
-    if (!overlay) return;
-    if (e.target === overlay) { closeModal(); return; }
-    const el = e.target.closest('[data-vf]');
-    if (el && overlay.contains(el)) onAction(el.dataset.vf, el);
+    if (overlay) {
+      if (e.target === overlay) { closeModal(); return; }
+      const el = e.target.closest('[data-vf]');
+      if (el && overlay.contains(el)) onAction(el.dataset.vf, el);
+      return;
+    }
+    const brandAct = e.target.closest && e.target.closest('.pf-brand-menu [data-vf]:not([data-vf="brand-search"])');
+    if (brandAct && rootEl && !rootEl.contains(brandAct)) {
+      onAction(brandAct.dataset.vf, brandAct);
+      return;
+    }
+    const menuAct = e.target.closest && e.target.closest('.pf-rowmenu-pop [data-vf]');
+    if (menuAct && rootEl && !rootEl.contains(menuAct)) {
+      onAction(menuAct.dataset.vf, menuAct);
+      return;
+    }
+    if (e.target.closest && (e.target.closest('.pf-rowmenu') || e.target.closest('.pf-rowmenu-pop'))) return;
+    closeRowMenus(null);
+    if (!(e.target instanceof Element) || !e.target.closest('#vf-brand, .pf-brand-menu')) closeBrandMenu();
+  });
+  document.addEventListener('input', (e) => {
+    const el = e.target.closest && e.target.closest('[data-vf="brand-search"]');
+    if (el) filterBrandMenu(el.value);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeBrandMenu();
   });
 }
 
@@ -977,7 +1261,7 @@ export const VERIFICATION_WISEAI = {
   onIntent: (intent) => {
     switch (intent) {
       case 'select_all':
-        FOODS.forEach((f) => { f.selected = true; });
+        brandFoods().filter(canReview).forEach((f) => { f.selected = true; });
         if (state.step !== 'select') goStep('select'); else render();
         return false;
       case 'go_attest':

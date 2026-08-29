@@ -300,11 +300,20 @@
   }
   function chipsRow(chips) {
     if (!chips || !chips.length) return '';
-    /* A chip flagged `primary` is the conclusive/result action for the step
-       (e.g. "Done", "Save to Portfolio") — render it as the brand-blue pill so
-       it reads as the emphasized choice. */
-    return `<div class="sc-reply-chips">${chips.map((c) =>
-      `<button type="button" class="chip${c.primary ? ' chip-primary' : ''}" data-action="${esc(c.action)}"${c.arg != null ? ` data-arg="${esc(c.arg)}"` : ''}><span class="material-symbols-outlined">${esc(c.icon || 'bolt')}</span>${esc(c.label)}</button>`).join('')}</div>`;
+    /* Same `.ws-intent-chip` surface as every other WISE chat: gold-comment /
+       brand leading glyph, fly-in label, clickable. A chip flagged `primary`
+       is the conclusive action for the step (Confirm, Test, Save) — the
+       solid brand-blue pill. "What can I ask?" wears the gold ask-help twin. */
+    return `<div class="sc-reply-chips">${chips.map((c) => {
+      const isAsk = c.action === 'askHelp';
+      const gold = isAsk ? ' ws-intent-chip--askhelp' : '';
+      const labelHtml = isAsk
+        ? `<span class="sc-ask-shimmer" aria-hidden="true">${shimmerLetters(c.label)}</span>`
+        : esc(c.label);
+      const ask = c.ask ? ` data-ask="${esc(c.ask)}"` : '';
+      const aria = isAsk ? ` aria-label="${esc(c.label)}"` : '';
+      return `<button type="button" class="chip ws-intent-chip${gold}${c.primary ? ' chip-primary' : ''}" data-action="${esc(c.action)}"${c.arg != null ? ` data-arg="${esc(c.arg)}"` : ''}${ask}${aria}><span class="material-symbols-outlined">${esc(c.icon || 'bolt')}</span>${labelHtml}</button>`;
+    }).join('')}</div>`;
   }
   /* Prime an element to slide in from the left, then reveal a set of them one
      after another (left→right) so the timestamp and reply chips each animate in,
@@ -357,9 +366,177 @@
       apRevealStaggered(chips, 90, 60, null);
     }));
   }
-  /* Rule: every reply ends on topic-related intent chips. Callers that omit
-     a row still get a current-step fallback so the transcript never dead-ends. */
+  /* Live NFP ingredient-analysis snapshot — drives which intent chips are
+     possible right now (analyze → review/confirm → test codes / Wise Code AI). */
+  function iaWorkflow() {
+    const list = String(state.ingredients || '').trim();
+    const tree = list ? parseIngredientTree(list) : [];
+    const stats = tree.length ? iaMatchStats(tree) : null;
+    const analyzed = !!(state.iaRan && stats && stats.leaves.length);
+    const leaves = analyzed ? stats.leaves : [];
+    const fuzzy = leaves.filter((r) => iaMatchOf(r) === 'part');
+    const unmatched = leaves.filter((r) => iaMatchOf(r) === 'bad');
+    const unconfirmedOk = leaves.filter((r) => iaMatchOf(r) === 'ok' && r.id && !state.iaConfirm[r.id]);
+    return {
+      list: list,
+      stats: stats,
+      analyzed: analyzed,
+      pending: analyzed ? (stats.part + stats.bad) : 0,
+      fuzzy: fuzzy,
+      unmatched: unmatched,
+      unconfirmedOk: unconfirmedOk,
+      confirmedOk: analyzed ? (stats.ok - unconfirmedOk.length) : 0,
+    };
+  }
+
+  /* Intent chips that mirror what the Product Details (NFP) column can do
+     right now. Analyze, confirm, and test rotate in and out as the panel
+     state changes — the transcript never offers a dead-end or a stale CTA. */
+  function nfpIntentChips(opts) {
+    opts = opts || {};
+    const skip = new Set(opts.skip || []);
+    const wf = iaWorkflow();
+    const workflow = [];
+    const rest = [];
+    const push = (bucket, c) => {
+      if (!c || skip.has(c.action)) return;
+      if (c.arg != null && skip.has(c.action + ':' + c.arg)) return;
+      bucket.push(c);
+    };
+
+    if (wf.list) {
+      push(workflow, {
+        label: wf.analyzed ? 'Re-analyze ingredients' : 'Analyze ingredients',
+        ask: wf.analyzed ? 'Re-analyze the ingredients' : 'Analyze the ingredients',
+        icon: 'science',
+        action: 'ia-analyze',
+        primary: !wf.analyzed,
+      });
+    }
+    if (wf.analyzed) {
+      if (wf.pending) {
+        push(workflow, {
+          label: wf.pending === 1 ? 'Review 1 mapping' : `Review ${wf.pending} mappings`,
+          ask: 'Review mappings',
+          icon: 'rule',
+          action: 'ia-review',
+        });
+      }
+      if (wf.unconfirmedOk.length) {
+        push(workflow, {
+          label: `Confirm ${wf.unconfirmedOk.length} matched`,
+          ask: 'Confirm matched ingredients',
+          icon: 'check_circle',
+          action: 'ia-confirm-all',
+          primary: !wf.pending,
+        });
+      }
+      if (wf.fuzzy.length) {
+        const first = wf.fuzzy[0];
+        const name = first.mapped || first.raw;
+        push(workflow, {
+          label: `Confirm ${name}`,
+          ask: `Confirm the ${name} mapping`,
+          icon: 'done',
+          action: 'ia-confirm',
+          arg: first.id,
+        });
+      }
+      if (wf.unmatched.length) {
+        const one = wf.unmatched.length === 1;
+        const name = wf.unmatched[0].raw;
+        push(workflow, {
+          label: one ? `Look up ${name}` : `Look up ${wf.unmatched.length} unmatched`,
+          ask: one ? `Look up ${name}` : 'Look up unmatched ingredients',
+          icon: 'search',
+          action: 'ia-lookup',
+        });
+      }
+      if (!state.iaOpen.codes) {
+        push(workflow, {
+          label: 'Test code scores',
+          ask: 'Test the code scores',
+          icon: 'verified',
+          action: 'ia-test-codes',
+          primary: !wf.pending && !wf.unconfirmedOk.length,
+        });
+      } else if (!state.iaOpen.scout) {
+        push(workflow, {
+          label: 'Test Wise Code AI',
+          ask: 'Test Wise Code AI results',
+          icon: 'psychology',
+          action: 'ia-test-scout',
+        });
+      }
+      if (!state.iaOpen.nutrients) {
+        push(rest, {
+          label: 'Show nutrients',
+          ask: 'Show the nutrients table',
+          icon: 'nutrition',
+          action: 'ia-open-nutrients',
+        });
+      }
+      if (!state.iaOpen.parsed) {
+        push(rest, {
+          label: 'Show parsed ingredients',
+          ask: 'Show parsed ingredients',
+          icon: 'account_tree',
+          action: 'ia-open-parsed',
+        });
+      }
+    }
+
+    push(rest, { label: 'Edit ingredients', icon: 'science', action: 'field:ingredients' });
+    push(rest, { label: 'Edit Nutrition Facts', icon: 'edit', action: 'focusNf' });
+    push(rest, { label: 'Update allergens', icon: 'warning', action: 'field:allergens' });
+
+    if (isClaimPending()) {
+      push(rest, {
+        label: 'Claim this product',
+        ask: 'Everything looks right, claim this product',
+        icon: 'bookmark_add',
+        action: 'claim',
+        primary: true,
+      });
+    } else {
+      push(rest, { label: 'Get the Non-UPF Shield', icon: 'gpp_good', action: 'shield' });
+      if (!state.saved) {
+        push(rest, { label: 'Save changes', icon: 'save', action: 'goto:save' });
+      }
+    }
+    if (nfpIsExistingProduct()) {
+      push(rest, { label: 'Back to portfolio', icon: 'inventory_2', action: 'exit' });
+    }
+
+    /* Lead with the live NFP workflow (analyze / confirm / test). Always
+       keep claim / shield / save / back in the tail so those panel CTAs
+       never drop off the row. Cap so it stays two wraps, not a wall. */
+    const STANDING = new Set(['claim', 'shield', 'goto:save', 'save', 'exit']);
+    const seen = new Set();
+    const take = (list, n) => {
+      const out = [];
+      list.forEach((c) => {
+        if (out.length >= n) return;
+        const key = c.action + (c.arg != null ? ':' + c.arg : '');
+        if (seen.has(key)) return;
+        seen.add(key);
+        out.push(c);
+      });
+      return out;
+    };
+    const standing = rest.filter((c) => STANDING.has(c.action));
+    const extras = rest.filter((c) => !STANDING.has(c.action));
+    const lead = take(workflow, 5);
+    const tail = take(standing, 3);
+    const room = Math.max(0, 8 - lead.length - tail.length);
+    return lead.concat(take(extras, room)).concat(tail);
+  }
+
+  /* Rule: every reply ends on topic-related intent chips. On View / Edit
+     Product (and once analysis has run) those chips track the NFP. On a
+     blank Add Product they stay the builder's next-step fallback. */
   function fallbackChips() {
+    if (nfpIsExistingProduct() || state.iaRan) return nfpIntentChips();
     const step = state.step || firstMissingStep() || 'save';
     const chips = [];
     const nextLabel = {
@@ -3299,19 +3476,26 @@
   }
 
   /* ─────────────────────────── chip / click dispatch ─────────────────────────── */
-  function dispatch(action, arg) {
+  function dispatch(action, arg, echoUser) {
+    const echo = echoUser !== false;
     if (!action) return;
     if (action.startsWith('field:')) {
       const f = action.slice(6);
-      if (f === 'upc') { addUser('Enter the UPC'); promptUpc(); return; }
-      if (f === 'allergens') { addUser('I\'ll type it'); promptAllergens(); return; }
+      if (echo) {
+        if (f === 'upc') { addUser('Enter the UPC'); promptUpc(); return; }
+        if (f === 'allergens') { addUser('I\'ll type it'); promptAllergens(); return; }
+      } else {
+        if (f === 'upc') { promptUpc(); return; }
+        if (f === 'allergens') { promptAllergens(); return; }
+      }
       const FIELD_ASK = {
         productName: 'What should the product name be?',
         category: 'What category should this be? (e.g. Bakery \u203a Muffins)',
         ingredients: 'Paste or type the full ingredient list and I\u2019ll update it.',
         allergens: 'Which allergen do you want to add?',
       };
-      addUser('I\'ll type it'); promptFor(f, FIELD_ASK[f]); return;
+      if (echo) addUser('I\'ll type it');
+      promptFor(f, FIELD_ASK[f]); return;
     }
     if (action.startsWith('goto:')) { goStep(action.slice(5)); return; }
     if (action.startsWith('skip:')) { skipStep(action.slice(5)); return; }
@@ -3327,7 +3511,7 @@
       case 'addAllergen': addUser(arg); addAllergen(arg); break;
       case 'noAllergens': addUser('No allergens'); state.allergens = []; state.done.allergens = true; refreshAllergenPanel(); addSysNote('No allergens declared.', 'edit'); maybeAdvanceAfter(); break;
       case 'allergensDone': addUser('Done with allergens'); closeAllergenPopover(); state.done.allergens = true; renderProgress(); maybeAdvanceAfter(); break;
-      case 'focusNf': addUser('I\'ll type it in the panel'); focusFirstNfError(); break;
+      case 'focusNf': if (echo) addUser('I\'ll type it in the panel'); focusFirstNfError(); break;
       case 'addPack': startAddPack(); break;
       case 'packPhoto': addUser('Upload a pack photo'); openPicker('pack'); break;
       case 'packUpc': addUser('Scan the pack barcode'); openPicker('packUpc'); break;
@@ -3340,8 +3524,16 @@
       case 'shield': window.location.href = 'non-upf-dashboard.html'; break;
       case 'restart': restart(); break;
       case 'exit': window.location.href = 'product-portfolio.html'; break;
-      case 'ia-review': reviewIaMappings(); break;
-      case 'ia-analyze': runIngredientAnalysis(true); break;
+      case 'ia-review': reviewIaMappings(echo); break;
+      case 'ia-analyze': runIngredientAnalysis(true, echo); break;
+      case 'ia-confirm': confirmIaRow(arg, echo); break;
+      case 'ia-confirm-all': confirmAllIaRows(echo); break;
+      case 'ia-lookup': lookupUnmatchedIa(echo); break;
+      case 'ia-test-codes': testIaCodes(echo); break;
+      case 'ia-test-scout': testIaScout(echo); break;
+      case 'ia-open-parsed': openIaSection('parsed', echo); break;
+      case 'ia-open-nutrients': openIaSection('nutrients', echo); break;
+      case 'ia-browser': window.location.href = 'ingredient-browser.html'; break;
       default: break;
     }
   }
@@ -3434,11 +3626,53 @@
   }
   function cap(s) { return String(s).charAt(0).toUpperCase() + String(s).slice(1); }
 
+  /* Typing a distinctive word from a live NFP intent chip plays that chip —
+     same contract as the shared chat module. */
+  function matchNfpChip(text) {
+    const raw = String(text || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    if (raw.length < 4) return null;
+    const catalog = nfpIntentChips().concat([
+      { label: 'Analyze ingredients', ask: 'Analyze the ingredients', action: 'ia-analyze' },
+      { label: 'Re-analyze ingredients', ask: 'Re-analyze the ingredients', action: 'ia-analyze' },
+      { label: 'Review mappings', ask: 'Review mappings', action: 'ia-review' },
+      { label: 'Confirm matched ingredients', ask: 'Confirm matched ingredients', action: 'ia-confirm-all' },
+      { label: 'Look up unmatched ingredients', ask: 'Look up unmatched ingredients', action: 'ia-lookup' },
+      { label: 'Test code scores', ask: 'Test the code scores', action: 'ia-test-codes' },
+      { label: 'Test Wise Code AI', ask: 'Test Wise Code AI results', action: 'ia-test-scout' },
+      { label: 'Show nutrients', ask: 'Show the nutrients table', action: 'ia-open-nutrients' },
+      { label: 'Show parsed ingredients', ask: 'Show parsed ingredients', action: 'ia-open-parsed' },
+    ]);
+    let best = null;
+    let bestLen = 0;
+    catalog.forEach((c) => {
+      ['ask', 'label'].forEach((k) => {
+        const phrase = String(c[k] || '').replace(/\s+/g, ' ').trim().toLowerCase();
+        if (phrase.length < 4) return;
+        if (raw === phrase || raw.includes(phrase) || (raw.split(' ').length >= 2 && phrase.includes(raw))) {
+          if (phrase.length > bestLen) { bestLen = phrase.length; best = c; }
+        }
+      });
+    });
+    return best;
+  }
+
   function interpret(text) {
     const t = text.toLowerCase();
     if (/^https?:\/\//i.test(text) || /www\./i.test(text)) { simulateUrlParse(text); return; }
     if (/^\d[\d\s-]{6,}$/.test(text)) { commitField('upc', text, { silent: true }); addSysNote('UPC captured.', 'edit'); wiseSay('Got the UPC — rendered it on the panel.'); maybeAdvanceAfter(); return; }
+    const nfpHit = matchNfpChip(text);
+    if (nfpHit) { dispatch(nfpHit.action, nfpHit.arg, false); return; }
+    if (/(analy[sz]e|parse).*(ingredient|list)|ingredient.*(analy[sz]e|parse)/.test(t)) {
+      runIngredientAnalysis(true, false);
+      return;
+    }
+    if (/(confirm).*(match|ingredient|mapping)/.test(t)) { confirmAllIaRows(false); return; }
+    if (/review\s+mapping/.test(t)) { reviewIaMappings(false); return; }
+    if (/test.+(code|score)|code scores/.test(t)) { testIaCodes(false); return; }
+    if (/test.+(wise\s*code|scout|flavor)/.test(t)) { testIaScout(false); return; }
+    if (/(look\s*up|search).*(unmatched|ingredient)/.test(t)) { lookupUnmatchedIa(false); return; }
     if (/(help|how|what|stuck|confus)/.test(t)) {
+      if (nfpIsExistingProduct() || state.iaRan) { sayWhatCanIAsk(); return; }
       wiseSay('No problem. This flow collects, in order: a <strong>photo</strong>, <strong>category</strong>, a <strong>UPC</strong>, <strong>Nutrition Facts</strong>, <strong>ingredients</strong>, and <strong>allergens</strong>. You can upload a label and I\'ll read most of it at once, edit anything live in <strong>Product Details</strong>, and nothing saves until you press <strong>Save to Portfolio</strong>. Where do you want to start?',
         [
           { label: 'Upload a label', icon: 'document_scanner', action: 'labelUpload' },
@@ -3448,10 +3682,6 @@
       return;
     }
     if (/(save|finish|done|submit)/.test(t)) { goStep('save'); return; }
-    if (/(analy[sz]e|parse).*(ingredient|list)|ingredient.*(analy[sz]e|parse)/.test(t)) {
-      runIngredientAnalysis(true, false);
-      return;
-    }
     // Otherwise treat it as the product name if we don't have one yet.
     if (!state.productName) {
       commitField('productName', text, { silent: true });
@@ -3461,7 +3691,9 @@
       return;
     }
     wiseSay('Noted. You can keep filling fields on the right, upload a label, or tell me the next value. Want me to pick up the next missing item?',
-      [{ label: 'Next step', icon: 'arrow_forward', action: 'goto:' + nextStep() }]);
+      nfpIsExistingProduct() || state.iaRan
+        ? nfpIntentChips()
+        : [{ label: 'Next step', icon: 'arrow_forward', action: 'goto:' + nextStep() }]);
   }
 
   /* "What can I ask?" — the standing gold affordance (below-input link + welcome
@@ -3490,6 +3722,24 @@
   function startWhatCanIAsk() {
     try { ensureAskPanel()?.open(); } catch (_) {}
     addUser('What can I ask?');
+    sayWhatCanIAsk();
+  }
+  function sayWhatCanIAsk() {
+    if (nfpIsExistingProduct() || state.iaRan) {
+      wiseSay(
+        'You\'re looking at this product\'s <strong>Product Details</strong>. Everything on that panel is also a chat turn — here\'s what you can ask or do:'
+        + '<ul class="sc-askhelp-list">'
+        + '<li><strong>Analyze ingredients</strong> — split the list into a mapped tree with match status, codes, nutrients, and Wise Code AI results.</li>'
+        + '<li><strong>Confirm mappings</strong> — accept matched rows, confirm a fuzzy match, or review anything still pending.</li>'
+        + '<li><strong>Test code scores</strong> — open Codes and run the Allergen / UPF / quality scores against this product.</li>'
+        + '<li><strong>Test Wise Code AI</strong> — open the engine flavor results (category, sub-category, process level).</li>'
+        + '<li><strong>Look up unmatched</strong> — jump to any ingredient that didn\'t map, then search it in the canon.</li>'
+        + '<li><strong>Edit on the panel</strong> — Nutrition Facts, the ingredient list, allergens, photo, UPC. The chat keeps up.</li>'
+        + '<li><strong>Save or claim</strong> — write changes back to the portfolio, or get the Non-UPF Shield when it qualifies.</li>'
+        + '</ul>Tap an intent chip or type the same words — they do the same thing.',
+        nfpIntentChips({ skip: ['askHelp'] }));
+      return;
+    }
     wiseSay(
       'You\'re on <strong>Add Product</strong>, so everything here drives one product build. Here\'s what you can ask or do:'
       + '<ul class="sc-askhelp-list">'
@@ -3710,34 +3960,17 @@
         tag.firstChild.textContent = 'Edit Product · ';
       }
       addUser(`Edit ${state.productName}`);
-      addWISEcodeAI(`Editing <strong>${esc(state.productName)}</strong> — everything\u2019s loaded on the right and every field is editable. Tell me what you\u2019d like to change, or just click any value on the panel. What should we update?`,
-        [
-          { label: 'Edit the Nutrition Facts', icon: 'nutrition', action: 'focusNf' },
-          { label: 'Edit ingredients', icon: 'science', action: 'field:ingredients' },
-          { label: 'Update allergens', icon: 'warning', action: 'field:allergens' },
-          { label: 'Change the category', icon: 'category', action: 'field:category' },
-          { label: 'Replace the photo', icon: 'photo_camera', action: 'mainUpload' },
-          { label: 'Update the UPC', icon: 'qr_code_2', action: 'field:upc' },
-          { label: 'Save changes', icon: 'save', action: 'goto:save', primary: true },
-          { label: 'Back to portfolio', icon: 'inventory_2', action: 'exit' },
-        ]);
+      addWISEcodeAI(`Editing <strong>${esc(state.productName)}</strong> — everything\u2019s loaded on the right and every field is editable. Analyze the ingredients, confirm mappings, test the code scores, or click any value on the panel. What should we update?`,
+        nfpIntentChips());
       return;
     }
     if (isClaimPending()) {
-      addWISEcodeAI(`Reviewing <strong>${esc(state.productName)}</strong> — a product we discovered that isn\u2019t in your portfolio yet. Check the details on the right. If everything looks right, claim it.`,
-        [
-          { label: 'Everything looks right, claim this product', icon: 'bookmark_add', action: 'claim', primary: true },
-          { label: 'Edit the Nutrition Facts', icon: 'edit', action: 'focusNf' },
-          { label: 'Back to portfolio', icon: 'inventory_2', action: 'exit' },
-        ]);
+      addWISEcodeAI(`Reviewing <strong>${esc(state.productName)}</strong> — a product we discovered that isn\u2019t in your portfolio yet. Check the details on the right, analyze and confirm the ingredients, then claim it if everything looks right.`,
+        nfpIntentChips());
       return;
     }
-    addWISEcodeAI(`Here\u2019s <strong>${esc(state.productName)}</strong> — its full Product Details are loaded on the right and every field is editable. Click any value to change it, swap the photo, or update the Nutrition Facts, then save your changes back to the portfolio.`,
-      [
-        { label: 'Edit the Nutrition Facts', icon: 'edit', action: 'focusNf' },
-        { label: 'Save changes', icon: 'save', action: 'goto:save', primary: true },
-        { label: 'Back to portfolio', icon: 'inventory_2', action: 'exit' },
-      ]);
+    addWISEcodeAI(`Here\u2019s <strong>${esc(state.productName)}</strong> — its full Product Details are loaded on the right. Analyze the ingredients, confirm mappings, test the code scores, or click any value to change it.`,
+      nfpIntentChips());
   }
   function restart() {
     Object.assign(state, {
@@ -4379,7 +4612,7 @@
       case 'ia-analyze': runIngredientAnalysis(true); break;
       case 'ia-confirm': confirmIaRow(arg); break;
       case 'ia-confirm-all': confirmAllIaRows(); break;
-      case 'ia-review': reviewIaMappings(); break;
+      case 'ia-review': reviewIaMappings(true); break;
       case 'claim-product': doClaim(); break;
       default: break;
     }
@@ -4588,61 +4821,195 @@
       }
       return;
     }
+    const wasRan = !!state.iaRan;
     if (fromUser) iaNudgeTaken = true;
     state.iaRan = true;
     state.iaTick += 1;
     replaceIaPanel();
     if (fromUser) {
-      const tree = parseIngredientTree(state.ingredients);
-      const stats = iaMatchStats(tree);
-      if (echoUser !== false) addUser('Analyze the ingredients.');
-      wiseSay(`Re-analyzed the list — <strong>${stats.leaves.length}</strong> ingredients parsed, <strong>${stats.ok}</strong> matched. Codes, nutrients and Wise Code AI results updated in the ingredients column.`,
-        [
-          { label: 'Review mappings', icon: 'rule', action: 'ia-review' },
-          { label: 'Edit ingredients', icon: 'science', action: 'field:ingredients' },
-          { label: 'Save to Portfolio', icon: 'save', action: 'goto:save', primary: true },
-        ]);
+      const wf = iaWorkflow();
+      const stats = wf.stats;
+      if (echoUser !== false) addUser(wasRan ? 'Re-analyze the ingredients.' : 'Analyze the ingredients.');
+      const pendingBit = wf.pending
+        ? ` <strong>${wf.pending}</strong> mapping${wf.pending === 1 ? '' : 's'} still need a review.`
+        : ' Every row matched — confirm them, then test the code scores.';
+      wiseSay(
+        (wasRan ? 'Re-analyzed' : 'Analyzed')
+        + ` the list — <strong>${stats.leaves.length}</strong> ingredients parsed, <strong>${stats.ok}</strong> matched, <strong>${stats.part}</strong> fuzzy, <strong>${stats.bad}</strong> unmatched.`
+        + pendingBit
+        + ' Codes, nutrients and Wise Code AI results are in the ingredients column.',
+        nfpIntentChips({ skip: ['ia-analyze'] }));
     }
   }
 
-  function confirmIaRow(id) {
+  function confirmIaRow(id, echoUser) {
     if (!id) return;
     state.iaConfirm[id] = true;
     const row = flattenParsed(parseIngredientTree(state.ingredients)).find((r) => r.id === id);
     const label = (row && (row.mapped || row.raw)) || id;
     replaceIaPanel();
-    addUser(`Confirm the ${label} mapping.`);
-    wiseSay(`Confirmed <strong>${esc(label)}</strong> as matched.`);
+    if (echoUser !== false) addUser(`Confirm the ${label} mapping.`);
+    const wf = iaWorkflow();
+    const next = wf.fuzzy.length
+      ? ` Next fuzzy match is <strong>${esc(wf.fuzzy[0].mapped || wf.fuzzy[0].raw)}</strong>.`
+      : (wf.pending ? ' Remaining unmatched rows still need a look-up.' : ' Ready to test the code scores.');
+    wiseSay(`Confirmed <strong>${esc(label)}</strong> as matched.` + next,
+      nfpIntentChips({ skip: ['ia-confirm:' + id] }));
   }
 
-  function confirmAllIaRows() {
+  function confirmAllIaRows(echoUser) {
     flattenParsed(parseIngredientTree(state.ingredients)).forEach((r) => {
       if (!r.isGroup && iaMatchOf(r) === 'ok' && r.id) state.iaConfirm[r.id] = true;
     });
     replaceIaPanel();
-    addUser('Confirm matched ingredients.');
-    wiseSay('Confirmed every currently matched mapping.');
+    if (echoUser !== false) addUser('Confirm matched ingredients.');
+    const wf = iaWorkflow();
+    const next = wf.pending
+      ? ` ${wf.pending} mapping${wf.pending === 1 ? '' : 's'} still need a review — confirm the fuzzy ones or look up anything unmatched.`
+      : ' All current matches are confirmed. Test the code scores whenever you\'re ready.';
+    wiseSay('Confirmed every currently matched mapping.' + next,
+      nfpIntentChips({ skip: ['ia-confirm-all'] }));
   }
 
-  function reviewIaMappings() {
-    state.iaOpen.parsed = true;
-    const sec = nfpBody && nfpBody.querySelector('[data-ia-sec="parsed"]');
-    if (sec) {
-      sec.classList.remove('is-collapsed');
-      const head = sec.querySelector('.nfp-ia-head');
-      if (head) head.setAttribute('aria-expanded', 'true');
-      const first = sec.querySelector('.nfp-ia-parsed-row[data-ia-match="bad"], .nfp-ia-parsed-row[data-ia-match="part"]');
-      const scroller = nfpBody;
-      if (first && scroller) {
-        const cr = scroller.getBoundingClientRect();
-        const fr = first.getBoundingClientRect();
-        const next = scroller.scrollTop + (fr.top - cr.top) - 12;
-        scroller.scrollTo({
-          top: Math.max(0, next),
-          behavior: prefersReducedMotion ? 'auto' : 'smooth',
-        });
-      }
+  function scrollIaRowIntoView(sec, selector) {
+    const first = sec && sec.querySelector(selector);
+    const scroller = nfpBody;
+    if (!first || !scroller) return;
+    const cr = scroller.getBoundingClientRect();
+    const fr = first.getBoundingClientRect();
+    const next = scroller.scrollTop + (fr.top - cr.top) - 12;
+    scroller.scrollTo({
+      top: Math.max(0, next),
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+    });
+  }
+
+  function expandIaSection(id) {
+    if (!id || !state.iaOpen.hasOwnProperty(id)) return null;
+    state.iaOpen[id] = true;
+    const sec = nfpBody && nfpBody.querySelector(`[data-ia-sec="${id}"]`);
+    if (!sec) return null;
+    sec.classList.remove('is-collapsed');
+    const head = sec.querySelector('.nfp-ia-head');
+    if (head) head.setAttribute('aria-expanded', 'true');
+    return sec;
+  }
+
+  function reviewIaMappings(echoUser) {
+    if (!state.iaRan) {
+      state.iaOpen.parsed = true;
+      runIngredientAnalysis(true, echoUser);
+      return;
     }
+    const sec = expandIaSection('parsed');
+    scrollIaRowIntoView(sec, '.nfp-ia-parsed-row[data-ia-match="bad"], .nfp-ia-parsed-row[data-ia-match="part"]');
+    if (echoUser === false) return;
+    const wf = iaWorkflow();
+    if (echoUser !== false) addUser(wf.pending ? `Review ${wf.pending} mapping${wf.pending === 1 ? '' : 's'}` : 'Review mappings');
+    wiseSay(
+      wf.pending
+        ? `Opened <strong>Parsed Ingredients</strong> — <strong>${wf.pending}</strong> mapping${wf.pending === 1 ? '' : 's'} still need a look. Confirm the fuzzy matches, or look up anything unmatched.`
+        : 'Opened <strong>Parsed Ingredients</strong> — every row is matched. Confirm them when you\'re ready, then test the code scores.',
+      nfpIntentChips({ skip: ['ia-review'] }));
+  }
+
+  function lookupUnmatchedIa(echoUser) {
+    if (!state.iaRan) {
+      state.iaOpen.parsed = true;
+      runIngredientAnalysis(true, echoUser);
+      return;
+    }
+    const sec = expandIaSection('parsed');
+    scrollIaRowIntoView(sec, '.nfp-ia-parsed-row[data-ia-match="bad"]');
+    const wf = iaWorkflow();
+    const names = wf.unmatched.map((r) => r.raw);
+    if (echoUser !== false) {
+      addUser(names.length === 1 ? `Look up ${names[0]}` : 'Look up unmatched ingredients');
+    }
+    if (!names.length) {
+      wiseSay('Nothing unmatched — every parsed ingredient has a mapping. Confirm the matches or test the code scores.',
+        nfpIntentChips({ skip: ['ia-lookup'] }));
+      return;
+    }
+    const listed = names.slice(0, 4).map((n) => `<strong>${esc(n)}</strong>`).join(', ')
+      + (names.length > 4 ? ` and ${names.length - 4} more` : '');
+    const chips = nfpIntentChips({ skip: ['ia-lookup'] });
+    chips.splice(Math.min(1, chips.length), 0, {
+      label: 'Open Ingredient Browser',
+      icon: 'travel_explore',
+      action: 'ia-browser',
+    });
+    wiseSay(
+      `Opened the unmatched ${names.length === 1 ? 'ingredient' : 'ingredients'} in <strong>Parsed Ingredients</strong>: ${listed}. Search the canon for a better map, or confirm a close match if it\'s right.`,
+      chips.slice(0, 8));
+  }
+
+  function openIaSection(id, echoUser) {
+    const titles = {
+      list: 'Ingredient List',
+      parsed: 'Parsed Ingredients',
+      codes: 'Codes',
+      nutrients: 'Nutrients',
+      scout: 'Wise Code AI Engine Flavor Results',
+    };
+    if (!state.iaRan) {
+      state.iaOpen[id] = true;
+      runIngredientAnalysis(true, echoUser);
+      return;
+    }
+    state.iaTick += 1;
+    const sec = expandIaSection(id);
+    if (!sec) replaceIaPanel();
+    const next = nfpBody && nfpBody.querySelector(`[data-ia-sec="${id}"]`);
+    if (next) {
+      next.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'nearest' });
+    }
+    if (echoUser === false) return;
+    if (echoUser !== false) addUser('Show ' + (titles[id] || id));
+    wiseSay(`Opened <strong>${esc(titles[id] || id)}</strong> in the ingredients column.`,
+      nfpIntentChips({ skip: ['ia-open-' + id] }));
+  }
+
+  function testIaCodes(echoUser) {
+    if (!state.iaRan) {
+      state.iaOpen.codes = true;
+      runIngredientAnalysis(true, echoUser);
+      return;
+    }
+    state.iaOpen.codes = true;
+    state.iaTick += 1;
+    replaceIaPanel();
+    const sec = nfpBody && nfpBody.querySelector('[data-ia-sec="codes"]');
+    if (sec) sec.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'nearest' });
+    const rows = iaCodesRows();
+    const flagged = rows.filter((r) => r.tone === 'bad' || r.tone === 'warn');
+    const flagBit = flagged.length
+      ? flagged.slice(0, 3).map((r) => `<strong>${esc(r.code)}</strong> ${esc(r.interp)} (${r.score}/100)`).join('; ')
+        + '.'
+      : 'no flags.';
+    if (echoUser !== false) addUser('Test the code scores');
+    wiseSay(
+      `Tested the code scores against this product — opened <strong>Codes</strong> in the ingredients column. ${flagged.length ? 'Needs a look: ' + flagBit : 'Clean read — ' + flagBit} Next you can test Wise Code AI results or confirm any leftover mappings.`,
+      nfpIntentChips({ skip: ['ia-test-codes'] }));
+  }
+
+  function testIaScout(echoUser) {
+    if (!state.iaRan) {
+      state.iaOpen.scout = true;
+      runIngredientAnalysis(true, echoUser);
+      return;
+    }
+    state.iaOpen.scout = true;
+    state.iaTick += 1;
+    replaceIaPanel();
+    const sec = nfpBody && nfpBody.querySelector('[data-ia-sec="scout"]');
+    if (sec) sec.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'nearest' });
+    const wf = iaWorkflow();
+    const pl2 = wf.analyzed ? wf.stats.leaves.filter((r) => r.pl >= 2).length : 0;
+    if (echoUser !== false) addUser('Test Wise Code AI results');
+    wiseSay(
+      `Opened <strong>Wise Code AI Engine Flavor Results</strong> — category, sub-category and process level for every parsed ingredient. ${pl2 ? `<strong>${pl2}</strong> sit at process level 2 or higher.` : 'Process levels are in.'}`,
+      nfpIntentChips({ skip: ['ia-test-scout'] }));
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

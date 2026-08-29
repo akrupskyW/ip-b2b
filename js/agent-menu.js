@@ -88,6 +88,21 @@ import './load-anim.js';
   } catch (_) {}
 })();
 
+/* Load hover-to-open for every three-dot menu (js/kebab-hover.js). A ⋮ that
+   owns a popover opens that popover on hover — never waits for a tap.
+   Injected here so it covers every page with the WISE nav; the file
+   self-guards and uses document-level delegation. */
+(function loadKebabHover() {
+  try {
+    if (typeof document === 'undefined' || window.__wiseKebabHoverLoaded) return;
+    window.__wiseKebabHoverLoaded = true;
+    var s = document.createElement('script');
+    s.src = new URL('./kebab-hover.js', import.meta.url).href;
+    s.defer = true;
+    (document.head || document.documentElement).appendChild(s);
+  } catch (_) {}
+})();
+
 /* Load the data-chip explainer tooltip (js/chip-tooltip.js) on every page that
    renders the WISE nav. It gives every Shield / GRAS status chip an instant
    hover tooltip explaining what the chip means, with the same thumbs up/down +
@@ -508,7 +523,6 @@ export const WISE_APP_NAV = [
   { type: 'item', id: 'comparison', label: 'Comparison', icon: 'compare', slug: 'product-comparison.html' },
   { type: 'item', id: 'non-upf-dashboard', label: 'NON-UPF Dashboard', icon: 'dashboard', slug: 'non-upf-dashboard.html' },
   { type: 'item', id: 'ai-dashboard', label: 'AI Dashboard', icon: 'hub', slug: 'ai-dashboard.html' },
-  { type: 'item', id: 'marketing-assets', label: 'Marketing Assets', icon: 'photo_library', slug: 'marketing-assets.html' },
 
   { type: 'section', label: 'Studio' },
   {
@@ -528,7 +542,8 @@ export const WISE_APP_NAV = [
 
   { type: 'section', label: 'Admin' },
   { type: 'item', id: 'profile', label: 'My profile', icon: 'account_circle', slug: 'profile.html' },
-  { type: 'item', id: 'invoices', label: 'Invoices & Downloads', icon: 'receipt_long', slug: 'invoices.html' },
+  { type: 'item', id: 'invoices', label: 'Invoices', icon: 'receipt_long', slug: 'invoices.html' },
+  { type: 'item', id: 'marketing-assets', label: 'Marketing Assets', icon: 'photo_library', slug: 'marketing-assets.html' },
   {
     type: 'group',
     id: 'wisecode-admin',
@@ -556,7 +571,7 @@ export const WISE_APP_NAV = [
  */
 export const WISE_ACCOUNT_NAV = [
   { type: 'item', id: 'profile', label: 'My profile', icon: 'account_circle', slug: 'profile.html' },
-  { type: 'item', id: 'invoices', label: 'Invoices & Downloads', icon: 'receipt_long', slug: 'invoices.html' },
+  { type: 'item', id: 'invoices', label: 'Invoices', icon: 'receipt_long', slug: 'invoices.html' },
   { type: 'item', id: 'agents', label: 'Agents', icon: 'smart_toy', slug: 'agents.html' },
   { type: 'item', id: 'alerts', label: 'Alerts', icon: 'notifications', slug: 'alerts.html' },
   { type: 'item', id: 'preferences', label: 'Preferences', icon: 'tune', slug: 'preferences.html' },

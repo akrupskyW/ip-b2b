@@ -7338,6 +7338,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   /* Once the user taps "Load more", keep the full set visible until the next
      fresh welcome (reset / setIntents). Resize still re-clamps while collapsed. */
   let welcomeChipsExpanded = false;
+  let welcomeChipsExpanding = false;
   const WELCOME_CHIP_MAX_ROWS = 2;
 
   const chipHoverStatus = (c) => {
@@ -10446,6 +10447,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     skipAutoFollowups = false;
     clearThread();
     welcomeChipsExpanded = false;
+    welcomeChipsExpanding = false;
     renderChips();
     welcome?.classList.remove('sc-hidden');
     if (welcome) welcome.style.display = '';
@@ -10972,8 +10974,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const more = e.target.closest('[data-chip-more]');
     if (more && welcome.contains(more)) {
       e.preventDefault();
-      welcomeChipsExpanded = true;
-      clampWelcomeChips();
+      expandWelcomeChips(more);
       return;
     }
     const chip = e.target.closest('.ws-intent-chip[data-intent]');
@@ -12127,6 +12128,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   function clampWelcomeChips() {
     const wrap = rootEl.querySelector(`#${id}-chips`);
     if (!wrap) return;
+    /* Don't interrupt a Load-more fly-in mid-cascade. */
+    if (welcomeChipsExpanding) return;
     /* Reuse the Load more node when present — destroying it on every re-clamp
        (width toggle, ResizeObserver) drops its primed fly-in styles and leaves
        a brand-new chip sitting fully opaque while the others animate. */
@@ -12181,6 +12184,52 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       chips.forEach((c) => { c.hidden = false; });
     }
   }
+  /* Reveal the clipped welcome chips with the same right→left fly-in the
+     welcome uses — Load more fades out, then the rest cascade in. */
+  function expandWelcomeChips(fromBtn) {
+    if (welcomeChipsExpanded || welcomeChipsExpanding) return;
+    const wrap = rootEl.querySelector(`#${id}-chips`);
+    if (!wrap) return;
+    const pending = Array.from(wrap.querySelectorAll('.ws-intent-chip:not([data-chip-more])'))
+      .filter((c) => c.hidden);
+    const more = fromBtn || wrap.querySelector('[data-chip-more]');
+    welcomeChipsExpanded = true;
+    welcomeChipsExpanding = true;
+
+    const done = () => { welcomeChipsExpanding = false; };
+
+    const showPending = () => {
+      if (more && more.parentNode) more.remove();
+      if (!pending.length) { done(); return; }
+      if (prefersReducedMotion) {
+        pending.forEach((c) => {
+          c.hidden = false;
+          c.style.opacity = '';
+          c.style.transform = '';
+          c.style.transition = '';
+        });
+        done();
+        return;
+      }
+      pending.forEach((c) => {
+        c.hidden = false;
+        primeRevealFromRight(c);
+      });
+      void wrap.offsetHeight;
+      revealStaggered(pending, 40, 48, done);
+    };
+
+    if (more && !prefersReducedMotion) {
+      more.style.pointerEvents = 'none';
+      more.setAttribute('aria-hidden', 'true');
+      more.style.opacity = '0';
+      more.style.transform = 'translateY(6px) scale(0.96)';
+      more.style.transition = 'opacity .18s ease, transform .18s ease';
+      setTimeout(showPending, 170);
+    } else {
+      showPending();
+    }
+  }
   function renderChips() {
     chipsHtml = buildChipsHtml();
     const wc = rootEl.querySelector(`#${id}-chips`);
@@ -12214,6 +12263,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        across a swap (e.g. a marketing dock re-skinning per page). */
     usedIntents.clear();
     welcomeChipsExpanded = false;
+    welcomeChipsExpanding = false;
     catalogizeNext(intents);
     renderChips();
     skipAutoFollowups = true;

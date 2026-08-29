@@ -11,6 +11,7 @@
   <script src="../js/sortable-tables.js" defer></script>
   <script src="../js/table-pagination.js" defer></script>
   <script src="../js/responsive-tables.js" defer></script>
+  <script src="../js/product-row-click.js" defer></script>
   <!-- Material Symbols (newer set). Needed for glyphs not in the legacy Material Icons
        font, e.g. `side_navigation` used by the menu toggle and panel-dock controls. -->
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
@@ -6744,7 +6745,13 @@
        control — move side, width toggle, and an Off / On switch — into a single
        dropdown. Built by consolidatePanelControls() so every module header on
        the page reads the same (WISEcodeAI excepted). */
-    .panel-controls.pf-menuized { flex-direction: row; min-width: 0; gap: 0; }
+    .panel-controls.pf-menuized { flex-direction: row; align-items: center; min-width: 0; gap: 0; }
+    /* Trail actions (Marketing Assets + brand) sit left of the ⋯ menu and
+       stay visible when consolidate() folds the dock/close buttons away. */
+    .panel-controls .pf-head-trail {
+      display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap;
+      flex-shrink: 0; margin-right: 4px;
+    }
     .pf-module-menu { position: relative; display: inline-flex; flex-shrink: 0; }
     .pf-module-menu-btn {
       display: inline-flex;
@@ -7646,21 +7653,25 @@
     }
     .pf-add-btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-      height: 38px; box-sizing: border-box; padding: 0 16px;
+      height: 34px; box-sizing: border-box; padding: 0 14px;
       border-radius: 999px; border: none; cursor: pointer;
       background: var(--primary); color: #fff;
       font-family: inherit; font-size: 12px; font-weight: 700;
       transition: filter 0.2s ease;
     }
     .pf-add-btn:hover { filter: brightness(1.08); }
-    .pf-add-btn .material-symbols-outlined { font-size: 18px !important; }
+    .pf-add-btn .material-symbols-outlined {
+      font-size: 16px !important;
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
     /* Add ▾ split-dropdown — the button opens a small menu (Product / Catalog).
-       Menu surface mirrors .pf-brand-menu so both dropdowns read identically. */
-    .pf-add-wrap { position: relative; display: inline-flex; }
-    .pf-add-caret { margin-left: 1px; transition: transform 0.15s ease; }
+       Menu surface mirrors .pf-brand-menu so both dropdowns read identically.
+       Anchored left of the trigger because Add now sits beside the headline. */
+    .pf-add-wrap { position: relative; display: inline-flex; flex-shrink: 0; }
+    .pf-add-caret { margin-left: 0; transition: transform 0.15s ease; }
     .pf-add-btn[aria-expanded="true"] .pf-add-caret { transform: rotate(180deg); }
     .pf-add-menu {
-      position: absolute; top: calc(100% + 8px); right: 0; z-index: 60;
+      position: absolute; top: calc(100% + 8px); left: 0; right: auto; z-index: 60;
       min-width: 268px; max-width: 320px; padding: 6px;
       background: var(--surface); border: 1px solid var(--border-strong);
       border-radius: 14px; box-shadow: var(--shadow-card);
@@ -7695,12 +7706,16 @@
        cards below it — the title, subtitle, search field and score cards all
        share one X origin. The head itself carries no extra padding (it used to
        double up on the body's gutter and push the title ~40px too far right). */
-    /* Title, then the two workflow CTAs, then the compact org switcher —
-       one left-aligned row, not a far-right float. */
-    .pf-head { display: flex; align-items: center; justify-content: flex-start; gap: 10px; padding: 0; flex-wrap: wrap; }
+    /* Title + Add + verify on the left. Marketing Assets + brand live in the
+       floated panel-controls cluster (next to ⋯). */
+    .pf-head { display: flex; align-items: center; justify-content: flex-start; gap: 8px; padding: 0; flex-wrap: wrap; }
     .pf-head-title { font-family: 'WISE Digits', var(--font-serif); font-size: 1.2rem; font-weight: 800; color: var(--text); line-height: 1.15; margin: 0; }
     .pf-head-meta { font-size: var(--fs-label); color: var(--text-muted); margin: 8px 0 0; }
     .pf-head-actions { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
+    .pf-head-trail {
+      display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;
+      flex-shrink: 0;
+    }
     .pf-head-btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 6px;
       height: 34px; box-sizing: border-box; padding: 0 14px;
@@ -7715,9 +7730,21 @@
     }
     .pf-head-btn--primary { background: var(--primary); color: #fff; }
     .pf-head-btn--primary:hover { filter: brightness(1.08); color: #fff; }
+    .pf-head-btn--primary .material-symbols-outlined {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
     .pf-head-btn--ghost { background: transparent; color: var(--text-muted); border-color: var(--border-strong); }
     .pf-head-btn--ghost:hover { color: var(--text); background: var(--surface-2); }
     html.dark .pf-head-btn--ghost:hover { background: rgba(255,255,255,0.06); }
+
+    /* Compact trail next to ⋯ — Marketing Assets + brand stay smaller than
+       the regular Add / verify CTAs beside the headline. */
+    .panel-controls .pf-head-trail .pf-head-btn {
+      height: 28px; padding: 0 11px; font-size: 11px; gap: 5px;
+    }
+    .panel-controls .pf-head-trail .pf-head-btn .material-symbols-outlined {
+      font-size: 14px !important;
+    }
 
     /* Portfolio nudge toasts — pinned to Continue Non-UPF Verification (above)
        and the Pre-qualified scorecard (to the right). Portalled to <body>
@@ -7773,12 +7800,12 @@
     }
 
     /* ── Brand switcher ──────────────────────────────────────────────────
-       Avatar + name + caret, after Marketing Assets. Click opens the brand
-       listbox with a search field at the top so a long catalog is scannable. */
+       Compact chip in the head trail (next to Marketing Assets / ⋯). Click
+       opens the brand listbox with a search field at the top. */
     .pf-brand { position: relative; flex-shrink: 0; }
     .pf-brand-chip {
-      display: inline-flex; align-items: center; gap: 8px;
-      height: 34px; box-sizing: border-box; padding: 3px 10px 3px 4px;
+      display: inline-flex; align-items: center; gap: 6px;
+      height: 28px; box-sizing: border-box; padding: 2px 8px 2px 3px;
       background: color-mix(in srgb, var(--primary) 15%, transparent);
       border: 1px solid color-mix(in srgb, var(--primary) 15%, var(--border));
       border-radius: var(--radius-pill, 999px);
@@ -7794,17 +7821,17 @@
     }
     html.dark .pf-brand-chip:hover, html.dark .pf-brand-chip[aria-expanded="true"] { background: rgba(37,80,124,0.28); }
     .pf-brand-avatar {
-      flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%;
+      flex: 0 0 auto; width: 20px; height: 20px; border-radius: 50%;
       display: inline-flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: 12px; color: #fff; letter-spacing: -0.01em;
+      font-weight: 800; font-size: 10px; color: #fff; letter-spacing: -0.01em;
       background: var(--primary); overflow: hidden;
     }
     .pf-brand-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .pf-brand-name {
-      font-size: 12px; font-weight: 700; color: var(--text); line-height: 1;
-      white-space: nowrap; max-width: 160px; overflow: hidden; text-overflow: ellipsis;
+      font-size: 11px; font-weight: 700; color: var(--text); line-height: 1;
+      white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis;
     }
-    .pf-brand-caret { font-size: 18px !important; color: var(--text-muted); transition: transform .15s ease; flex: 0 0 auto; }
+    .pf-brand-caret { font-size: 15px !important; color: var(--text-muted); transition: transform .15s ease; flex: 0 0 auto; }
     .pf-brand-chip[aria-expanded="true"] .pf-brand-caret { transform: rotate(180deg); color: var(--primary-ink, var(--primary)); }
 
     .pf-brand-menu {
@@ -8106,8 +8133,7 @@
     /* Search field — the canonical app input (matches .auth-input on the
        Login / Create Account screens): surface-2 fill, strong border, primary
        focus ring, italic placeholder. A leading search glyph is affixed inside
-       on the left. It fills all empty space between the tabs and the Add
-       button, and shares the toolbar control height. */
+       on the left. It fills the toolbar row and shares the control height. */
     .pf-search-inline {
       position: relative; display: inline-flex; align-items: center;
       flex: 1 1 auto; min-width: 200px;
@@ -8265,9 +8291,9 @@
     html.chat-tint:not(.dark) #portfolio-panel.pf-scrolled .pf-head,
     html.chat-tint:not(.dark) #portfolio-panel.pf-scrolled .pf-toolbar,
     html.chat-tint:not(.dark) #portfolio-panel.pf-scrolled .pf-stats--seg { background: color-mix(in srgb, var(--primary) 3%, var(--surface)); }
-    /* Right padding keeps the title / CTAs / brand chip clear of the floated
-       ⋯ + width cluster in the module's top-right corner. */
-    .pf-head { top: 0; z-index: 32; padding: var(--module-head-pad-t, 26px) 48px 8px 0; }
+    /* Right padding keeps the title / Add / verify CTAs clear of the floated
+       Marketing Assets + brand + ⋯ + width cluster in the top-right corner. */
+    .pf-head { top: 0; z-index: 32; padding: var(--module-head-pad-t, 26px) 300px 8px 0; }
     .pf-toolbar { top: var(--pf-sticky-1, 56px); z-index: 31; padding: 6px 0; }
     .pf-stats--seg { top: var(--pf-sticky-2, 108px); z-index: 30; padding: 4px 0 12px; }
     /* A hairline under the band only once something has scrolled beneath it,
@@ -10658,6 +10684,28 @@
             <p class="text-xs text-oyster-600 mt-0.5" id="pf-subtitle">Flax4Life · Claimed, Discovered &amp; Missing data</p>
           </div>
           <div class="panel-controls">
+            <!-- Marketing Assets + brand switcher float with the ⋯ / width
+                 controls (header-float). Kept visible by consolidate(). -->
+            <div class="pf-head-trail pf-header-keep">
+              <a class="pf-head-btn pf-head-btn--ghost" href="marketing-assets.html">
+                <span class="material-symbols-outlined">photo_library</span>Marketing Assets
+              </a>
+              <div class="pf-brand" id="pf-brand">
+                <button type="button" class="pf-brand-chip" id="pf-brand-chip" aria-haspopup="listbox" aria-expanded="false" aria-controls="pf-brand-opts" onclick="pfToggleBrandMenu(event)">
+                  <span class="pf-brand-avatar" id="pf-brand-avatar">F</span>
+                  <span class="pf-brand-name" id="pf-brand-name">Flax4Life</span>
+                  <span class="material-symbols-outlined pf-brand-caret" aria-hidden="true">expand_more</span>
+                </button>
+                <div class="pf-brand-menu" id="pf-brand-menu" hidden>
+                  <div class="pf-brand-search">
+                    <span class="material-symbols-outlined" aria-hidden="true">search</span>
+                    <input type="search" id="pf-brand-search" placeholder="Search brands…" aria-label="Search brands" autocomplete="off" />
+                  </div>
+                  <div class="pf-brand-opts" id="pf-brand-opts" role="listbox" aria-label="Select a brand"></div>
+                  <div class="pf-brand-empty" id="pf-brand-empty" hidden>No brands match</div>
+                </div>
+              </div>
+            </div>
             <div class="panel-flip" data-panel="portfolio" role="group" aria-label="Dock Product Portfolio panel">
               <button type="button" class="panel-flip-btn" onclick="flipPanel('portfolio')" title="Move to the other side of chat" aria-label="Move Product Portfolio to the other side of chat"><span class="material-symbols-outlined">side_navigation</span></button>
             </div>
@@ -10673,7 +10721,21 @@
           <header class="pf-head">
             <h2 class="pf-head-title">Product Portfolio</h2>
             <div class="pf-head-actions">
-              <a class="pf-head-btn pf-head-btn--primary" id="pf-verify-btn" href="verification.html">
+              <!-- Add ▾ — primary CTA beside the headline (Product / Catalog). -->
+              <div class="pf-add-wrap" id="pf-add-wrap">
+                <button type="button" class="pf-add-btn" id="pf-add-btn" aria-haspopup="menu" aria-expanded="false" onclick="pfToggleAddMenu(event)"><span class="material-symbols-outlined">add</span>Add<span class="material-symbols-outlined pf-add-caret">expand_more</span></button>
+                <div class="pf-add-menu" id="pf-add-menu" role="menu" aria-label="Add to portfolio" hidden>
+                  <button type="button" class="pf-add-item" role="menuitem" onclick="startAddProduct()">
+                    <span class="material-symbols-outlined">inventory_2</span>
+                    <span class="pf-add-item-text"><span class="pf-add-item-title">Product</span><span class="pf-add-item-desc">Build one product with WISEcodeAI</span></span>
+                  </button>
+                  <button type="button" class="pf-add-item" role="menuitem" onclick="startAddCatalog()">
+                    <span class="material-symbols-outlined">upload_file</span>
+                    <span class="pf-add-item-text"><span class="pf-add-item-title">Catalog</span><span class="pf-add-item-desc">Upload a CSV — up to 500 products</span></span>
+                  </button>
+                </div>
+              </div>
+              <a class="pf-head-btn pf-head-btn--ghost" id="pf-verify-btn" href="verification.html">
                 <span class="material-symbols-outlined">verified</span>Continue Non-UPF Verification
               </a>
               <div class="dash-score-toast pf-nudge-toast" id="pf-verify-toast" data-nudge-id="pf-verify" role="status" hidden>
@@ -10693,26 +10755,6 @@
                   <a class="dash-score-toast-link" href="verification.html">Continue Non&#8209;UPF Verification<span class="material-symbols-outlined dash-score-toast-link-arrow">arrow_outward</span></a>
                 </div>
                 <button class="dash-score-toast-close" type="button" id="pf-prequal-toast-close" aria-label="Dismiss" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined">close</span></button>
-              </div>
-              <a class="pf-head-btn pf-head-btn--ghost" href="marketing-assets.html">
-                <span class="material-symbols-outlined">photo_library</span>Marketing Assets
-              </a>
-            </div>
-            <!-- Avatar + name + caret. Click opens the brand list (with search
-                 at the top) so the board can switch catalogs. -->
-            <div class="pf-brand" id="pf-brand">
-              <button type="button" class="pf-brand-chip" id="pf-brand-chip" aria-haspopup="listbox" aria-expanded="false" aria-controls="pf-brand-opts" onclick="pfToggleBrandMenu(event)">
-                <span class="pf-brand-avatar" id="pf-brand-avatar">F</span>
-                <span class="pf-brand-name" id="pf-brand-name">Flax4Life</span>
-                <span class="material-symbols-outlined pf-brand-caret" aria-hidden="true">expand_more</span>
-              </button>
-              <div class="pf-brand-menu" id="pf-brand-menu" hidden>
-                <div class="pf-brand-search">
-                  <span class="material-symbols-outlined" aria-hidden="true">search</span>
-                  <input type="search" id="pf-brand-search" placeholder="Search brands…" aria-label="Search brands" autocomplete="off" />
-                </div>
-                <div class="pf-brand-opts" id="pf-brand-opts" role="listbox" aria-label="Select a brand"></div>
-                <div class="pf-brand-empty" id="pf-brand-empty" hidden>No brands match</div>
               </div>
             </div>
             <!-- The Guiding Stars on/off control now lives in the module's
@@ -10786,22 +10828,6 @@
                     <button type="button" class="pf-fchip" data-ease="Low">Low</button>
                   </div>
                 </div>
-              </div>
-            </div>
-            <span class="pf-tool-spacer"></span>
-            <!-- Add ▾ — one entry point that splits into the single-product
-                 builder (Add Product) and the brand-new bulk Catalog upload. -->
-            <div class="pf-add-wrap" id="pf-add-wrap">
-              <button type="button" class="pf-add-btn" id="pf-add-btn" aria-haspopup="menu" aria-expanded="false" onclick="pfToggleAddMenu(event)"><span class="material-symbols-outlined">add</span>Add<span class="material-symbols-outlined pf-add-caret">expand_more</span></button>
-              <div class="pf-add-menu" id="pf-add-menu" role="menu" aria-label="Add to portfolio" hidden>
-                <button type="button" class="pf-add-item" role="menuitem" onclick="startAddProduct()">
-                  <span class="material-symbols-outlined">inventory_2</span>
-                  <span class="pf-add-item-text"><span class="pf-add-item-title">Product</span><span class="pf-add-item-desc">Build one product with WISEcodeAI</span></span>
-                </button>
-                <button type="button" class="pf-add-item" role="menuitem" onclick="startAddCatalog()">
-                  <span class="material-symbols-outlined">upload_file</span>
-                  <span class="pf-add-item-text"><span class="pf-add-item-title">Catalog</span><span class="pf-add-item-desc">Upload a CSV — up to 500 products</span></span>
-                </button>
               </div>
             </div>
           </div>
@@ -15458,79 +15484,30 @@
       btn.setAttribute('aria-expanded', 'true');
       pop.removeAttribute('hidden');
     }
-    /* Hover opens the row ⋮ menu on pointer devices. The popup portals onto
-       <body>, so we treat the button and the live popup as one hover target
-       and give a short grace period to cross the gap between them. */
-    (function pfRowMenuHover() {
-      const hoverMq = window.matchMedia('(hover: hover) and (pointer: fine)');
-      let closeTimer = null;
-      let openedByHover = false;
-      function cancelClose() {
-        clearTimeout(closeTimer);
-        closeTimer = null;
-      }
-      function scheduleClose() {
-        cancelClose();
-        closeTimer = setTimeout(() => {
-          openedByHover = false;
-          pfCloseRowMenus();
-        }, 180);
-      }
-      function inRowMenuUi(el) {
-        if (!el || !el.closest) return false;
-        return !!(el.closest('.pf-rowmenu-btn') || el.closest('.pf-rowmenu-pop'));
-      }
-      document.addEventListener('pointerover', (e) => {
-        if (!hoverMq.matches || e.pointerType !== 'mouse') return;
-        const btn = e.target.closest && e.target.closest('.pf-rowmenu-btn');
-        if (btn && btn.closest('#portfolio-panel')) {
-          cancelClose();
-          openedByHover = true;
-          const rm = btn.closest('.pf-rowmenu');
-          if (rm && !rm.classList.contains('is-open')) pfOpenRowMenu(rm);
-          return;
+    /* Tap / keyboard toggle. Hover-to-open is shared (js/kebab-hover.js) —
+       it clicks this same path so Reformulate / pack actions still inject. */
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.pf-rowmenu-btn');
+      if (btn) {
+        e.preventDefault(); e.stopPropagation();
+        const rm = btn.closest('.pf-rowmenu');
+        const pop = pfPopOf(rm);
+        if (!pop) return;
+        const isOpen = rm.classList.contains('is-open');
+        pfCloseRowMenus(rm);
+        if (isOpen) {
+          rm.classList.remove('is-open');
+          btn.setAttribute('aria-expanded', 'false');
+          pop.setAttribute('hidden', '');
+        } else {
+          pfOpenRowMenu(rm);
         }
-        if (e.target.closest && e.target.closest('.pf-rowmenu-pop')) cancelClose();
-      });
-      document.addEventListener('pointerout', (e) => {
-        if (!hoverMq.matches) return;
-        const fromBtn = e.target.closest && e.target.closest('.pf-rowmenu-btn');
-        const fromPop = e.target.closest && e.target.closest('.pf-rowmenu-pop');
-        if (!fromBtn && !fromPop) return;
-        if (inRowMenuUi(e.relatedTarget)) return;
-        scheduleClose();
-      });
-      document.addEventListener('click', (e) => {
-        const btn = e.target.closest('.pf-rowmenu-btn');
-        if (btn) {
-          e.preventDefault(); e.stopPropagation();
-          const rm = btn.closest('.pf-rowmenu');
-          const pop = pfPopOf(rm);
-          if (!pop) return;
-          const isOpen = rm.classList.contains('is-open');
-          /* Mouse click on a hover-opened menu must not snap it shut under the
-             cursor — touch / keyboard still toggle. */
-          if (isOpen && openedByHover && e.pointerType !== 'touch') {
-            cancelClose();
-            return;
-          }
-          openedByHover = false;
-          pfCloseRowMenus(rm);
-          if (isOpen) {
-            rm.classList.remove('is-open');
-            btn.setAttribute('aria-expanded', 'false');
-            pop.setAttribute('hidden', '');
-          } else {
-            pfOpenRowMenu(rm);
-          }
-          return;
-        }
-        if (!e.target.closest('.pf-rowmenu-pop')) {
-          openedByHover = false;
-          pfCloseRowMenus();
-        }
-      });
-    })();
+        return;
+      }
+      if (!e.target.closest('.pf-rowmenu-pop')) {
+        pfCloseRowMenus();
+      }
+    });
 
     /* ── Guiding Stars ────────────────────────────────────────────────────
        The pink header switch reveals extra Guiding Stars columns in every
@@ -21153,9 +21130,12 @@
         /* Keep the originals in the DOM (hidden) so syncPanelWidthUI /
            syncPanelFlipUI keep updating them; we delegate clicks to them. The
            width toggle stays VISIBLE — it sits as its own button to the right of
-           the ⋯ menu (matching pages/wiseai.html), never folded into the menu. */
+           the ⋯ menu (matching pages/wiseai.html), never folded into the menu.
+           .pf-header-keep children (e.g. Marketing Assets + brand) also stay
+           visible so they can sit in line with the ⋯ / width cluster. */
         Array.from(controls.children).forEach((c) => {
           if (c === widthBtn) { c.style.display = ''; return; }
+          if (c.classList && c.classList.contains('pf-header-keep')) { c.style.display = ''; return; }
           c.style.display = 'none';
         });
 

@@ -4,7 +4,7 @@
   <script src="../js/auth-guard.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WISE · Invoices &amp; Downloads</title>
+  <title>WISE · Invoices</title>
   <script src="../js/text-size-fouc.js"></script>
   <script>
     (function () {
@@ -29,8 +29,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="wise.css" />
   <style>
-    /* Invoices & Downloads — billing surface rendered by js/invoices-flow.js. */
-    body[data-nav-id="invoices"] #agent-main-header { display: none; }
+    /* Invoices — billing surface rendered by js/invoices-flow.js.
+       The shared #agent-main-header collapses to zero height but stays rendered
+       so its ⋯ + width cluster floats pinned to the module's top-right (same
+       as Marketing Assets / Product Portfolio). The module supplies its own
+       .inv-head title below. */
     body[data-nav-id="invoices"] .agent-main-scroll { padding: 0; }
     body[data-nav-id="invoices"] #modules-row { margin-top: 0; }
 
@@ -47,15 +50,34 @@
        full width of its area (no capped column) so the table spans the pane. */
     .inv-wrap { padding: 26px 40px 56px; max-width: none; container-type: inline-size; container-name: inv; }
 
-    /* Header — serif title + a line of details, mirroring the Product
-       Portfolio module's .pf-head / .pf-head-title / .pf-head-meta. */
+    /* Header — serif title + Download all on one line.
+       Mirrors Product Portfolio's .pf-head / .pf-head-title / .pf-head-actions. */
     .inv-head { padding: 2px 2px 0; margin-bottom: 16px; }
+    .inv-head-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .inv-title { font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif); font-size: var(--module-title-size, 1.2rem); font-weight: var(--module-title-weight, 800); color: var(--text); margin: 0; letter-spacing: -0.01em; line-height: 1.15; }
-    .inv-lede { font-size: 0.9rem; color: var(--text-muted); margin: 6px 0 0; max-width: 60ch; }
+    .inv-head .inv-btn { height: 34px; padding: 0 14px; font-size: 12px; }
+    .inv-head .inv-btn .material-symbols-outlined { font-size: 16px; font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 
-    /* Toolbar / search — the search fills the row and the primary action sits
-       to its right, mirroring the Portfolio module's .pf-toolbar (search +
-       Add Product). */
+    /* Brand chip sits in the floated ⋯ cluster, compact like Product Portfolio. */
+    body[data-nav-id="invoices"] .panel-controls .inv-brand-trail {
+      display: inline-flex; align-items: center; gap: 6px;
+      flex-shrink: 0; margin-right: 4px;
+    }
+    body[data-nav-id="invoices"] .panel-controls .pf-brand-chip {
+      height: 28px; padding: 2px 8px 2px 3px; gap: 6px;
+    }
+    body[data-nav-id="invoices"] .panel-controls .pf-brand-avatar {
+      width: 20px; height: 20px; font-size: 10px;
+    }
+    body[data-nav-id="invoices"] .panel-controls .pf-brand-name {
+      font-size: 11px; max-width: 120px;
+    }
+    body[data-nav-id="invoices"] .panel-controls .pf-brand-caret {
+      font-size: 15px !important;
+    }
+
+    /* Toolbar / search — the search fills the row. Download all sits in line
+       with the headline, not here. */
     .inv-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
     .inv-search-inline { position: relative; display: inline-flex; align-items: center; flex: 1 1 auto; min-width: 220px; }
     .inv-search-inline .material-symbols-outlined { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-subtle); pointer-events: none; }
@@ -152,11 +174,8 @@
     .inv-actions { display: flex; align-items: center; flex-flow: row wrap; gap: 6px; }
     .inv-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; height: 32px; box-sizing: border-box; padding: 0 14px; border-radius: 999px; border: 1px solid transparent; cursor: pointer; font-family: inherit; font-size: 0.75rem; font-weight: 700; line-height: 1; transition: filter 0.15s ease, background 0.15s ease, color 0.15s ease; }
     .inv-btn .material-symbols-outlined { font-size: 15px; }
-    /* Toolbar-level primary button matches the search field height + the
-       Portfolio module's Add Product button. */
-    .inv-toolbar .inv-btn { height: 40px; padding: 0 18px; font-size: 0.8rem; }
-    .inv-toolbar .inv-btn .material-symbols-outlined { font-size: 16px; }
     .inv-btn--primary { background: var(--primary); color: #fff; }
+    .inv-btn--primary .material-symbols-outlined { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
     .inv-btn--primary:hover { filter: brightness(1.08); }
     .inv-btn--danger { background: transparent; color: var(--sec-red); border-color: var(--sec-red-10); }
     .inv-btn--danger:hover { background: var(--sec-red-10); }

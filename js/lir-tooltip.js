@@ -12,7 +12,7 @@
  * header ⋯ / width, composer icons, …) except the X / close glyph — that
  * mark is self-explanatory, so it never gets a hover card or a native
  * `title` bubble. Row ⋮ buttons that open a menu are excluded — the menu is
- * the hover result, not a tooltip. The label is read from `data-tip`, then
+ * the hover result (js/kebab-hover.js), not a tooltip. The label is read from `data-tip`, then
  * `.lir-label`, then `aria-label` / `title`. Listeners are delegated on the
  * document so dynamically-rendered buttons are included.
  */
@@ -37,9 +37,8 @@ const CANDIDATE_SELECTOR =
 
 /* Status chips have their own explainer card (chip-tooltip.js). Menu rows carry
    a text label already. Text CTAs (Review & Claim, Complete details) are not
-   icon-only. Row ⋮ and other kebab triggers that open a popover are skipped
-   so hover/click opens the menu instead of an "Actions" tooltip. Named
-   click-to-open menus still get a tip via TOOLTIP_SELECTOR (checked first). */
+   icon-only. Three-dot triggers that open a menu are skipped — the menu is
+   the hover result (js/kebab-hover.js), not an "Actions" / "More options" card. */
 const SKIP_SELECTOR =
   '.pf-chip, .vf-chip, .gv-chip, .ib-gras, .ib-pl, .pf-claim-btn, .pf-row-act, ' +
   '.pf-head-btn, .pf-loadmore, ' +
@@ -112,6 +111,22 @@ function isIconOnly(el) {
   return hasIcon || el.hasAttribute('data-tip');
 }
 
+function isKebabTrigger(btn) {
+  if (!btn || !btn.matches) return false;
+  if (btn.matches(
+    '.panel-more-btn, .pf-rowmenu-btn, .adm-rowmenu-btn, .inv-rowmenu-btn, ' +
+    '.ma-rowmenu-btn, .nud-rowmenu-btn, .pf-datemenu-btn, .w-datemenu-btn, ' +
+    '.pf-module-menu-btn, .dash-kebab, .sc-fb-more'
+  )) return true;
+  const popup = btn.getAttribute('aria-haspopup');
+  if (popup !== 'true' && popup !== 'menu') return false;
+  const icon = btn.querySelector && btn.querySelector('.material-symbols-outlined, [data-icon-svg]');
+  if (!icon) return false;
+  const raw = ((icon.getAttribute && icon.getAttribute('data-icon-svg')) ||
+    icon.textContent || '').replace(/\s+/g, ' ').trim();
+  return raw === 'more_vert' || raw === 'more_horiz';
+}
+
 function tipTarget(start) {
   if (!start || !start.closest) return null;
   const btn = start.closest(CANDIDATE_SELECTOR);
@@ -122,6 +137,10 @@ function tipTarget(start) {
     return null;
   }
   if (ownedElsewhere(btn)) return null;
+  if (isKebabTrigger(btn)) {
+    suppressNativeTitle(btn);
+    return null;
+  }
   if (btn.matches(TOOLTIP_SELECTOR) || isIconOnly(btn)) return btn;
   return null;
 }

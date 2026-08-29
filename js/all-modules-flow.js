@@ -364,7 +364,6 @@ const TABLE_CATALOG = [
   { label: 'Portfolio · Discovered', href: 'product-portfolio.html', hash: 'pf-view-discovered', selector: '.pf-table--discovered', icon: 'travel_explore', area: 'portfolio', areaTitle: 'Portfolio', desc: 'Auto-discovered UPCs waiting to be claimed.' },
   { label: 'Portfolio · Needs info', href: 'product-portfolio.html', hash: 'pf-view-needsinfo', selector: '.pf-table--needsinfo', icon: 'help', area: 'portfolio', areaTitle: 'Portfolio', desc: 'Products missing data before they can be verified.' },
   { label: 'Product Comparison', href: 'product-comparison.html', page: 'Product Comparison', selector: '.cmp-grid', icon: 'compare', area: 'portfolio', areaTitle: 'Portfolio', desc: 'Side-by-side attribute matrix for two products.' },
-  { label: 'Marketing Assets tree', href: 'marketing-assets.html', selector: '#ma-root-table', icon: 'photo_library', area: 'portfolio', areaTitle: 'Portfolio', desc: 'Nested file tree of the co-branding toolkit.' },
 
   /* WISEcodeAI Studio */
   { label: 'AI Dashboard · Users', href: 'ai-dashboard.html', selector: '#aid-user-table', icon: 'group', area: 'ai', areaTitle: 'WISEcodeAI Studio', desc: 'Per-user AI activity and usage.' },
@@ -397,6 +396,7 @@ const TABLE_CATALOG = [
 
   /* Account */
   { label: 'Invoices', href: 'invoices.html', selector: '.inv-table', icon: 'receipt_long', area: 'account', areaTitle: 'Account', desc: 'Billing board of every invoice and its status.' },
+  { label: 'Marketing Assets tree', href: 'marketing-assets.html', selector: '#ma-root-table', icon: 'photo_library', area: 'account', areaTitle: 'Account', desc: 'Nested file tree of the co-branding toolkit.' },
   { label: 'API Keys', href: 'api-keys.html', selector: '.ak-table', icon: 'key', area: 'account', areaTitle: 'Account', desc: 'Created keys with scope, usage and revoke.' },
 ];
 
@@ -520,7 +520,7 @@ const CODE_METRICS = [
    plus the last Python pass; Re-evaluate crawls the working tree once a
    local day and wins whenever that crawl is newer. */
 const CODE_SKIP_FILES = new Set(['icon-inventory-data.js', 'code-stats-data.js', 'gs-data.js']);
-const CODE_SKIP_DIRS = new Set(['.git', 'node_modules', '__pycache__', '_WISEdesigns', 'screenshots', 'assets']);
+const CODE_SKIP_DIRS = new Set(['.git', 'node_modules', '__pycache__', '_WISEdesigns', 'screenshots', 'assets', '_to_delete']);
 const REEVAL_FETCH_MS = 8000;
 const REEVAL_BUDGET_MS = 20000;
 const REEVAL_CONCURRENCY = 3;
@@ -563,7 +563,11 @@ function syncCodeStateFromStore() {
   const bakedAt = (CODE_STATS && CODE_STATS.generatedAt) || '';
   const baked = Object.assign({}, (CODE_STATS && CODE_STATS.now) || {});
   const live = readReevalStore();
-  if (live.now && live.day && live.day >= bakedAt && codeScanLooksComplete(live.now)) {
+  const liveOk = !!(live.now && live.day && live.day >= bakedAt && codeScanLooksComplete(live.now));
+  /* Same calendar day: a morning Re-evaluate must not hide a later baked
+     snapshot that counted more of the tree. */
+  const bakedNewer = liveOk && live.day === bakedAt && (baked.total || 0) > (live.now.total || 0);
+  if (liveOk && !bakedNewer) {
     codeState.now = Object.assign({}, live.now);
     codeState.scannedAt = live.day;
   } else {
@@ -2420,13 +2424,13 @@ const COMPONENTS = [
     name: 'Crawl \u00b7 Walk \u00b7 Run',
     cat: 'Navigation',
     cls: '#cwr-toggle \u00b7 .cwr-btn [aria-checked] \u00b7 html.cwr-roll / -crawl / -walk / -run',
-    used: 'Floating segmented control on every app page \u2014 ON by default in Run',
-    note: 'Four rollout modes: <strong>Roll</strong> (stripped nav), <strong>Crawl</strong> (no chat, modules fill), <strong>Walk</strong> (chat on, composer locked), <strong>Run</strong> (composer unlocked). The live widget lives in shadow DOM so page button styles cannot restyle it; this demo mirrors the same four states. Drag to move; double-click restores the right-edge seat.',
+    used: 'Floating segmented control on every app page \u2014 Run on WISEcodeAI, Add Product, and View Product; Roll everywhere else',
+    note: 'Four rollout modes: <strong>Roll</strong> (stripped nav), <strong>Crawl</strong> (no chat, modules fill), <strong>Walk</strong> (chat on, composer locked), <strong>Run</strong> (composer unlocked). Each page loads its own default; hovering a mode shows what it includes and excludes. The live widget lives in shadow DOM so page button styles cannot restyle it; this demo mirrors the same four states. Drag to move; double-click restores the right-edge seat.',
     noteIcon: 'directions_run',
     demo: `
       <div class="dsc-states">
         <div class="dsc-state-col">
-          <div class="dsc-sub-label">Run selected (default)</div>
+          <div class="dsc-sub-label">Run selected</div>
           <div class="mi-cwr" role="radiogroup" aria-label="Rollout mode">
             <button type="button" class="cwr-btn" role="radio" aria-checked="false"><span class="material-symbols-outlined">cached</span><span class="cwr-btn-label">Roll</span></button>
             <button type="button" class="cwr-btn" role="radio" aria-checked="false"><span class="material-symbols-outlined">child_care</span><span class="cwr-btn-label">Crawl</span></button>
@@ -3721,13 +3725,12 @@ function isDscReady(name, map) {
 /* ------------------------------------------------------------------ */
 /* Dev Ready hierarchy                                                 */
 /*                                                                     */
-/* A higher-level module ("Dev Ready" at the top level) turns on once  */
-/* every lower-level part it owns is ready, and drops back off if any  */
-/* child is flipped off. Clicking the accordion switch while parts are */
-/* still off opens a two-step verify modal; confirming marks every     */
-/* child ready. The parent→child tree is built at render time from the */
-/* same data arrays the modules render from. Modules with no parts are */
-/* leaves and toggle freely.                                           */
+/* A higher-level accordion ("Dev Ready" on a module or a composite     */
+/* component) turns on once every lower-level part it owns is ready,   */
+/* and drops back off if any child is flipped off. Clicking the switch */
+/* while parts are still off opens a two-step verify modal; confirming */
+/* marks every descendant ready. The parent→child tree is built at     */
+/* render time. Accordions with no parts are leaves and toggle freely. */
 /* ------------------------------------------------------------------ */
 let DEV_READY_CHILDREN = {}; /* moduleId -> [{ id, label }] */
 let DEV_READY_PARENT = {};   /* childId  -> moduleId        */
@@ -3885,12 +3888,19 @@ function themedDemoHTML(demo) {
     </div>`;
 }
 
+function setCompCardCollapsed(card, collapsed) {
+  if (!card) return;
+  card.classList.toggle('is-collapsed', !!collapsed);
+  card.querySelector(':scope > .dsc-card-head')?.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+}
+
 function componentCard(c, readyMap) {
   const cat = catOf(c);
   const parts = partsOf(c.name);
   const hosts = usedByComps(c.name);
   const search = `${c.name} ${c.cls} ${c.used} ${c.note || ''} ${cat} ${parts.map((p) => p.name).join(' ')} ${hosts.map((h) => h.name).join(' ')}`.toLowerCase();
-  const cardCls = `dsc-card${c.wide ? ' dsc-card--wide' : ''}`;
+  const cardCls = `dsc-card dsc-card--acc is-collapsed${c.wide ? ' dsc-card--wide' : ''}`;
+  const bodyId = 'acc-body-' + compDomId(c.name);
   const note = c.note
     ? `<div class="dsc-note"><span class="material-symbols-outlined">${esc(c.noteIcon || 'aspect_ratio')}</span><span>${c.note}</span></div>`
     : '';
@@ -3903,19 +3913,24 @@ function componentCard(c, readyMap) {
     : '';
   return `
     <div class="${cardCls}" id="${esc(compDomId(c.name))}" data-ds-comp data-comp-name="${esc(c.name)}" data-cat="${esc(cat)}" data-search="${esc(search)}">
-      ${readyToggleHTML(c.name, c.name, { level: 'item', parent: 'mi-components' })}
-      <div class="dsc-head">
-        <span class="dsc-name">${esc(c.name)}</span>
-        <code class="dsc-class">${esc(c.cls)}</code>
+      <div class="dsc-card-head" role="button" tabindex="0" aria-expanded="false" aria-controls="${esc(bodyId)}">
+        <span class="mi-acc-chevron material-symbols-outlined" aria-hidden="true">expand_more</span>
+        <div class="dsc-head">
+          <span class="dsc-name">${esc(c.name)}</span>
+          <code class="dsc-class">${esc(c.cls)}</code>
+        </div>
+        ${readyToggleHTML(c.name, c.name, { level: 'item', parent: 'mi-components' })}
       </div>
-      ${themedDemoHTML(c.demo)}
-      ${note}
-      ${download}
-      <div class="dsc-refs">
-        ${paneCompsHTML(parts, 'Made of', { hideEmpty: true, hideReady: true })}
-        ${paneCompsHTML(hosts, 'Used by', { hideEmpty: true, hideReady: true })}
+      <div class="dsc-card-body" id="${esc(bodyId)}">
+        ${themedDemoHTML(c.demo)}
+        ${note}
+        ${download}
+        <div class="dsc-refs">
+          ${paneCompsHTML(parts, 'Made of', { hideEmpty: true, hideReady: true })}
+          ${paneCompsHTML(hosts, 'Used by', { hideEmpty: true, hideReady: true })}
+        </div>
+        ${usedSurfacesHTML(c.used)}
       </div>
-      ${usedSurfacesHTML(c.used)}
     </div>`;
 }
 
@@ -3942,7 +3957,7 @@ const CONVENTIONS = [
   {
     icon: 'table_rows',
     title: 'One table pattern',
-    body: 'Every list is the same CSS-grid faux-table (<code>*-thead / *-trow / *-th / *-td</code>) driven by a single columns variable. Sorting and "load more" paging attach app-wide via <code>js/sortable-tables.js</code> and <code>js/table-pagination.js</code>.',
+    body: 'Every list is the same CSS-grid faux-table (<code>*-thead / *-trow / *-th / *-td</code>) driven by a single columns variable. Sorting and "load more" paging attach app-wide via <code>js/sortable-tables.js</code> and <code>js/table-pagination.js</code>. Clicking a product row opens that product; icons and other controls on the row keep their own actions (<code>js/product-row-click.js</code>).',
   },
   {
     icon: 'filter_alt',
@@ -3996,12 +4011,12 @@ function renderComponentLibrary() {
         <div class="mi-module-head-text">
           <h2 class="mi-module-title">Component Library</h2>
           <p class="mi-module-lede">Reusable components, rendered live with the real global classes from
-            <code>pages/wise.css</code>. Each card is one reusable part — interactive cards show
-            Default, Hover, and Open (or Disabled) side by side, and every card shows
-            <strong>Light</strong> and <strong>Dark</strong> so theme is a version, not an afterthought.
-            Composite cards list the parts they are <em>made of</em> and who uses them (jump links only;
-            Dev Ready lives on each part’s own card and on Module Directory rows). Search pills, filter
-            tiles, Grid⇄Rail, module ⋯ menus, and the page chrome live in the modules above.</p>
+            <code>pages/wise.css</code>. Each component is its own accordion — open one by its title to
+            see Default, Hover, and Open (or Disabled) side by side, in <strong>Light</strong> and
+            <strong>Dark</strong>. Composite cards list the parts they are <em>made of</em> and who uses
+            them (jump links only; Dev Ready lives on each part’s own card and on Module Directory rows).
+            Search pills, filter tiles, Grid⇄Rail, module ⋯ menus, and the page chrome live in the modules
+            above.</p>
         </div>
         ${moduleReadyToggleHTML('mi-components', 'Component Library')}
         ${moduleControlsHTML('mi-components')}
@@ -4205,7 +4220,7 @@ const INTENT_AUDIT = [
     ],
   },
   {
-    label: 'Invoices & Downloads', icon: 'receipt_long', href: 'invoices.html', src: 'invoices-flow.js',
+    label: 'Invoices', icon: 'receipt_long', href: 'invoices.html', src: 'invoices-flow.js',
     chips: [
       { i: 'outstanding',    label: 'What’s outstanding?',    t: true, l: true, does: 'Clears the invoice filter so outstanding items are in view.' },
       { i: 'show_paid',      label: 'Show paid invoices',     t: true, l: true, does: 'Filters the invoice table to paid.' },
@@ -5644,15 +5659,23 @@ const MOTION_ITEMS = [
     id: 'carousel', group: 'drag', icon: 'view_carousel', title: 'Carousel rail', wide: true,
     src: 'js/pane-width.js · #modules-row.modules-carousel',
     used: 'Every #modules-row page once any module is at custom width',
-    lede: 'Custom width pins each module at the size it already had (or the size you drag to) and puts the whole row on a <strong>carousel rail</strong> you scroll sideways. Shorten the browser and the inner work surface of every module compresses — lists, charts and forms get shorter and scroll inside the card — but the modules themselves keep their width, and chips, type and controls keep their designed size. A shorter window never squeezes or restacks the row. Overflow goes sideways on the rail, not as a squeeze.',
+    lede: 'Custom width pins each module at the size it already had (or the size you drag to) and puts the whole row on a <strong>carousel rail</strong> you scroll sideways. <strong>Narrow the browser</strong> — that is the important one — and the pinned modules overflow instead of squeezing: the row never restacks, and you scroll the rail. Shorten the window and the inner work surface of every module compresses — lists, charts and forms get shorter and scroll inside the card — but chips, type and controls keep their designed size.',
     demo: `
       <div class="mi-motion-car" data-motion-car>
-        <label class="mi-motion-helix-opacity">
-          <span class="mi-motion-helix-opacity-label">Browser height</span>
-          <input type="range" class="sc-bganim-knob-range" data-car-h min="42" max="100" step="1" value="100" aria-label="Simulated browser height">
-          <span class="sc-bganim-knob-val" data-car-h-val>100%</span>
-        </label>
-        <div class="mi-motion-car-browser" data-car-browser>
+        <div class="mi-motion-car-knobs">
+          <label class="mi-motion-helix-opacity">
+            <span class="mi-motion-helix-opacity-label">Browser width</span>
+            <input type="range" class="sc-bganim-knob-range" data-car-w min="42" max="100" step="1" value="56" aria-label="Simulated browser width">
+            <span class="sc-bganim-knob-val" data-car-w-val>56%</span>
+          </label>
+          <label class="mi-motion-helix-opacity">
+            <span class="mi-motion-helix-opacity-label">Browser height</span>
+            <input type="range" class="sc-bganim-knob-range" data-car-h min="42" max="100" step="1" value="100" aria-label="Simulated browser height">
+            <span class="sc-bganim-knob-val" data-car-h-val>100%</span>
+          </label>
+        </div>
+        <div class="mi-motion-car-stage">
+          <div class="mi-motion-car-browser" data-car-browser>
           <div class="mi-motion-car-chrome">
             <span class="mi-motion-car-dots" aria-hidden="true"><i></i><i></i><i></i></span>
             <span class="mi-motion-car-url">app · modules row</span>
@@ -5695,9 +5718,10 @@ const MOTION_ITEMS = [
               </div>
             </article>
           </div>
+          </div>
         </div>
       </div>
-      <p class="mi-motion-hint">Drag the slider to shorten the window. Modules keep their width — scroll the rail sideways. Inner surfaces shrink; chips stay the same size.</p>`,
+      <p class="mi-motion-hint">Drag <strong>width</strong> first — modules keep their size and the rail appears. Height shortens inner surfaces; chips stay the same size. Scroll the row sideways.</p>`,
   },
   {
     id: 'reorder', group: 'drag', icon: 'drag_indicator', title: 'Drag to reorder',
@@ -5823,10 +5847,17 @@ function renderMotion() {
             </div>
           </div>
           <div class="dsc-conv-item">
+            <span class="material-symbols-outlined" aria-hidden="true">stay_current_landscape</span>
+            <div class="dsc-conv-body">
+              <div class="dsc-conv-item-title">Width is the rail</div>
+              <p class="dsc-conv-item-desc">Narrow the browser and pinned modules overflow sideways — that is the carousel. They keep the custom width they were given (<code>flex-shrink: 0</code>); the row never squeezes or restacks to fit.</p>
+            </div>
+          </div>
+          <div class="dsc-conv-item">
             <span class="material-symbols-outlined" aria-hidden="true">height</span>
             <div class="dsc-conv-body">
               <div class="dsc-conv-item-title">Height shrinks the surface</div>
-              <p class="dsc-conv-item-desc">Shorten the browser and each module’s inner work surface gets shorter. Module widths, chips and controls stay the same size. Overflow goes sideways on the carousel rail — never a squeeze.</p>
+              <p class="dsc-conv-item-desc">Shorten the browser and each module’s inner work surface gets shorter. Module widths, chips and controls stay the same size. Overflow still goes sideways on the rail — never a squeeze.</p>
             </div>
           </div>
           <div class="dsc-conv-item">
@@ -6477,18 +6508,34 @@ function runMotionHelix(mod, chat, ctx) {
     applyWidth();
   });
 
-  /* ---- Carousel rail (browser-height shrink) ---- */
+  /* ---- Carousel rail (browser width is the rail; height shrinks inners) ---- */
+  const CAR_W_DEFAULT = 56;
+  const CAR_H_DEFAULT = 100;
   const carHost = mod.querySelector('[data-motion-car]');
   const carBrowser = carHost?.querySelector('[data-car-browser]');
-  const carRange = carHost?.querySelector('[data-car-h]');
-  const carVal = carHost?.querySelector('[data-car-h-val]');
-  const applyCarHeight = (pct) => {
-    const n = Math.max(42, Math.min(100, Number(pct) || 100));
-    if (carBrowser) carBrowser.style.setProperty('--car-pct', String(n));
-    if (carVal) carVal.textContent = n + '%';
-    if (carRange && Number(carRange.value) !== n) carRange.value = String(n);
+  const carRow = carHost?.querySelector('[data-car-row]');
+  const carWRange = carHost?.querySelector('[data-car-w]');
+  const carWVal = carHost?.querySelector('[data-car-w-val]');
+  const carHRange = carHost?.querySelector('[data-car-h]');
+  const carHVal = carHost?.querySelector('[data-car-h-val]');
+  const CAR_ROW_H = 176;
+  const clampCarPct = (pct, fallback) => Math.max(42, Math.min(100, Number(pct) || fallback));
+  const applyCarWidth = (pct) => {
+    const n = clampCarPct(pct, CAR_W_DEFAULT);
+    if (carBrowser) carBrowser.style.width = 'max(260px, ' + n + '%)';
+    if (carWVal) carWVal.textContent = n + '%';
+    if (carWRange && Number(carWRange.value) !== n) carWRange.value = String(n);
   };
-  carRange?.addEventListener('input', () => applyCarHeight(carRange.value));
+  const applyCarHeight = (pct) => {
+    const n = clampCarPct(pct, CAR_H_DEFAULT);
+    if (carRow) carRow.style.height = Math.max(72, Math.round(CAR_ROW_H * n / 100)) + 'px';
+    if (carHVal) carHVal.textContent = n + '%';
+    if (carHRange && Number(carHRange.value) !== n) carHRange.value = String(n);
+  };
+  carWRange?.addEventListener('input', () => applyCarWidth(carWRange.value));
+  carHRange?.addEventListener('input', () => applyCarHeight(carHRange.value));
+  applyCarWidth(carWRange?.value || CAR_W_DEFAULT);
+  applyCarHeight(carHRange?.value || CAR_H_DEFAULT);
 
   /* ---- Reorder ---- */
   const reorder = mod.querySelector('[data-motion-reorder]');
@@ -6656,7 +6703,8 @@ function runMotionHelix(mod, chat, ctx) {
     mod.querySelectorAll('[data-motion-chart]').forEach(replayChart);
     runStream();
     runFly();
-    applyCarHeight(100);
+    applyCarWidth(CAR_W_DEFAULT);
+    applyCarHeight(CAR_H_DEFAULT);
     mod.querySelectorAll('.mi-motion-stats .mi-stat').forEach((card) => card.click());
   };
   mod.__motionReplayAll = replayAll;
@@ -6814,7 +6862,7 @@ function moduleStyles() {
     }
     .mi-hero-text { min-width: 0; flex: 1 1 360px; }
     .mi-hero-title-row {
-      display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
     }
     .mi-hero-title {
       font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
@@ -6833,14 +6881,11 @@ function moduleStyles() {
     html.dark .mi-load-pct { color: var(--text-subtle); }
     html.dark .mi-load-bytes { color: var(--text-subtle); }
     .mi-load-pct[data-done="1"] { color: var(--text-subtle); }
-    .mi-hero-row {
-      display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap;
-      margin-top: 8px;
-    }
-    .mi-hero-lede { font-size: 0.95rem; color: var(--text-muted); margin: 0; max-width: 74ch; flex: 1 1 280px; }
-    .mi-hero-actions { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-    .mi-hero-btns { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
-    .mi-reeval-meta { font-size: 0.72rem; color: var(--text-subtle); text-align: right; max-width: 32ch; line-height: 1.35; }
+    .mi-hero-lede { font-size: 0.95rem; color: var(--text-muted); margin: 8px 0 0; max-width: 74ch; }
+    .mi-hero-btns { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
+    .mi-hero-title-row .adm-btn { height: 34px; padding: 0 14px; font-size: 12px; }
+    .mi-hero-title-row .adm-btn .material-symbols-outlined { font-size: 16px !important; }
+    .mi-reeval-meta { display: block; font-size: 0.72rem; color: var(--text-subtle); text-align: left; max-width: 60ch; line-height: 1.35; margin-top: 6px; }
     .mi-hard-btn .material-symbols-outlined { font-size: 18px !important; }
     .mi-hard-btn:disabled { opacity: 0.7; cursor: progress; }
 
@@ -6904,6 +6949,137 @@ function moduleStyles() {
     .mi-reeval-status code {
       font-family: var(--font-mono); font-size: 0.75rem;
       color: var(--text-subtle);
+    }
+
+    /* ---- Re-evaluate / Hard reload progress panel ---- */
+    .mi-scan-scrim {
+      position: fixed; inset: 0; z-index: 10050;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+      background: color-mix(in srgb, #0b1220 55%, transparent);
+      -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+      opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+    }
+    .mi-scan-scrim.is-open { opacity: 1; pointer-events: auto; }
+    .mi-scan-card {
+      width: min(760px, calc(100vw - 32px));
+      max-height: min(86vh, 880px);
+      display: flex; flex-direction: column; min-height: 0;
+      background: var(--surface); color: var(--text);
+      border: 1px solid var(--border-strong); border-radius: 18px;
+      box-shadow: var(--shadow-card, 0 24px 60px rgba(0,0,0,0.28));
+      overflow: hidden;
+      transform: translateY(10px) scale(0.98); transition: transform 0.22s cubic-bezier(0.2, 0.7, 0.2, 1);
+    }
+    .mi-scan-scrim.is-open .mi-scan-card { transform: none; }
+    html.dark .mi-scan-card {
+      background: #14242f; border-color: rgba(255,255,255,0.08);
+    }
+    .mi-scan-head {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 20px 22px 12px; flex: 0 0 auto;
+    }
+    .mi-scan-head > .material-symbols-outlined {
+      font-size: 22px; color: var(--primary); flex: 0 0 auto; margin-top: 4px;
+    }
+    html.dark .mi-scan-head > .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
+    .mi-scan-titles { flex: 1 1 auto; min-width: 0; }
+    .mi-scan-eyebrow {
+      font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--primary);
+    }
+    html.dark .mi-scan-eyebrow { color: var(--primary-bright, #7FB0E0); }
+    .mi-scan-title {
+      margin: 4px 0 0;
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-size: 1.28rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
+    }
+    .mi-scan-sub { margin: 6px 0 0; font-size: 0.85rem; color: var(--text-muted); line-height: 1.45; }
+    .mi-scan-now {
+      margin: 4px 0 0; font-family: var(--font-mono); font-size: 0.72rem;
+      color: var(--text-subtle); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .mi-scan-close {
+      border: 0; background: transparent; cursor: pointer; color: var(--text-muted);
+      border-radius: 8px; padding: 6px; line-height: 0; flex: 0 0 auto;
+    }
+    .mi-scan-close:hover { background: var(--surface-2); color: var(--text); }
+    html.dark .mi-scan-close:hover { background: rgba(255,255,255,0.06); }
+    .mi-scan-close[hidden] { display: none; }
+    .mi-scan-score {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+      padding: 0 22px 8px;
+    }
+    .mi-scan-pct {
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em;
+      color: var(--text); font-variant-numeric: tabular-nums; line-height: 1;
+    }
+    .mi-scan-frac { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .mi-scan-bar {
+      height: 8px; margin: 0 22px; border-radius: 999px;
+      background: var(--surface-2); overflow: hidden;
+      box-shadow: inset 0 0 0 1px var(--border);
+    }
+    .mi-scan-fill {
+      display: block; height: 100%; width: 0%; border-radius: 999px;
+      background: var(--primary); transition: width 0.2s ease;
+    }
+    html.dark .mi-scan-fill { background: var(--primary-bright, #8B9FAF); }
+    .mi-scan-log {
+      margin: 14px 22px 0; padding: 0; list-style: none;
+      flex: 1 1 auto; min-height: 180px; overflow-y: auto;
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--surface-2);
+    }
+    html.dark .mi-scan-log { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
+    .mi-scan-phase {
+      display: flex; flex-direction: column; gap: 2px;
+      padding: 10px 12px 8px;
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-size: 0.82rem; font-weight: 800; color: var(--text);
+      background: color-mix(in srgb, var(--primary) 8%, transparent);
+      border-bottom: 1px solid var(--border);
+    }
+    html.dark .mi-scan-phase {
+      background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 12%, #14242f);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .mi-scan-phase span { font-family: inherit; font-weight: 500; font-size: 0.72rem; color: var(--text-muted); }
+    .mi-scan-row {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 7px 12px; border-bottom: 1px solid var(--border);
+      font-size: 0.75rem; color: var(--text-subtle);
+    }
+    html.dark .mi-scan-row { border-color: rgba(255,255,255,0.06); }
+    .mi-scan-row:last-child { border-bottom: 0; }
+    .mi-scan-row .material-symbols-outlined { font-size: 16px !important; flex: 0 0 auto; margin-top: 1px; }
+    .mi-scan-row-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+    .mi-scan-row-name {
+      font-family: var(--font-mono); font-size: 0.72rem; font-weight: 600; color: inherit;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .mi-scan-row-detail { font-size: 0.7rem; color: var(--text-muted); line-height: 1.35; }
+    .mi-scan-row[data-state="pending"] { color: var(--text-subtle); }
+    .mi-scan-row[data-state="run"] { color: var(--text); }
+    .mi-scan-row[data-state="run"] .material-symbols-outlined { color: var(--primary); animation: mi-reeval-spin 0.8s linear infinite; }
+    .mi-scan-row[data-state="ok"] { color: var(--text); }
+    .mi-scan-row[data-state="ok"] .material-symbols-outlined { color: var(--sec-green, #16A34A); }
+    html.dark .mi-scan-row[data-state="ok"] .material-symbols-outlined { color: #4ADE80; }
+    .mi-scan-row[data-state="skip"] { color: var(--text-muted); }
+    .mi-scan-row[data-state="skip"] .material-symbols-outlined { color: var(--text-subtle); }
+    .mi-scan-row[data-state="err"] { color: var(--text); }
+    .mi-scan-row[data-state="err"] .material-symbols-outlined { color: var(--ter-red, #dc2626); }
+    html.dark .mi-scan-row[data-state="err"] .material-symbols-outlined { color: #fca5a5; }
+    .mi-scan-row[data-state="info"] { color: var(--text-muted); }
+    .mi-scan-row[data-state="info"] .material-symbols-outlined { color: var(--primary); }
+    .mi-scan-foot {
+      padding: 12px 22px 18px; display: flex; align-items: center;
+      justify-content: space-between; gap: 12px; flex: 0 0 auto;
+    }
+    .mi-scan-note { font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; min-width: 0; }
+    .mi-scan-foot .adm-btn--primary .material-symbols-outlined {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
     }
 
     /* ---- View toggle (Grid ⇄ Carousel) ---- */
@@ -7217,6 +7393,7 @@ function moduleStyles() {
        (including before JS wraps it in .mi-acc-body) so sections never flash open. */
     .mi-module.is-collapsed .mi-module-lede { display: none; }
     .mi-module.is-collapsed > :not(.mi-module-head) { display: none; }
+    .mi-module.mi-acc:not(.is-collapsed) > .mi-acc-body { display: block; }
     .mi-module.mi-acc > .mi-module-head:focus-visible {
       outline: none; border-radius: 12px;
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
@@ -7987,9 +8164,8 @@ function moduleStyles() {
 
     /* ---- Component Library ---- */
     .dsc-grid {
-      display: grid; gap: 14px;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      align-items: start;
+      display: flex; flex-direction: column; gap: 8px;
+      align-items: stretch;
     }
     .dsc-card {
       display: flex; flex-direction: column;
@@ -7998,6 +8174,20 @@ function moduleStyles() {
       transition: border-color 0.16s ease, box-shadow 0.16s ease;
     }
     .dsc-card:hover { border-color: color-mix(in srgb, var(--primary) 40%, var(--border)); box-shadow: var(--shadow-2); }
+    .dsc-card-head {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px; cursor: pointer; user-select: none;
+    }
+    .dsc-card-head:hover .mi-acc-chevron { color: var(--primary); }
+    .dsc-card-head:focus-visible {
+      outline: none;
+      box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+    }
+    .dsc-card-head .dsc-head { flex: 1 1 auto; min-width: 0; padding: 0; }
+    .dsc-card-head .dsc-ready { padding: 0; flex: 0 0 auto; }
+    .dsc-card.dsc-card--acc.is-collapsed > .dsc-card-body { display: none; }
+    .dsc-card.dsc-card--acc:not(.is-collapsed) > .dsc-card-body { display: block; padding-bottom: 12px; }
+    .dsc-card.dsc-card--acc.is-collapsed .mi-acc-chevron { transform: rotate(-90deg); }
     /* Thin top bar — Dev Ready toggle, right-aligned above each component.
        OFF keeps the shared pink brand-toggle look; ON uses --sec-green. */
     .dsc-ready {
@@ -8027,7 +8217,10 @@ function moduleStyles() {
       background: #fff;
     }
     .dsc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 10px 16px 10px; flex-wrap: wrap; }
-    .dsc-name { font-size: 0.9rem; font-weight: 800; color: var(--text); }
+    .dsc-name {
+      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
+    }
     .dsc-class { font-size: 0.625rem; color: var(--text-muted); word-break: break-word; }
     /* Light + Dark are first-class versions — each card stages both, using
        the same tokens as :root / html.dark so a dark page still shows a true
@@ -8093,6 +8286,7 @@ function moduleStyles() {
       --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.35);
     }
     .dsc-demo {
+      position: relative; isolation: isolate; contain: layout;
       display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
       padding: 18px 16px; margin: 0;
       border-radius: 12px; border: 1px dashed var(--border-strong);
@@ -8134,11 +8328,6 @@ function moduleStyles() {
     .dsc-refs { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 0; }
     .dsc-refs .mi-pane-comps { max-height: none; margin: 0; box-shadow: none; }
     .dsc-card[hidden] { display: none; }
-
-    /* Full-width cards for components that need the room (tables, charts,
-       modals, stat boards). They span the whole grid row and reinforce that
-       the component reflows across the available width. */
-    .dsc-card--wide { grid-column: 1 / -1; }
 
     /* The shared "rule" behind a component (esp. how it stays responsive). */
     .dsc-note {
@@ -8778,9 +8967,21 @@ function moduleStyles() {
     }
     .dsc-demo .wai-img-body img { display: block; width: 100%; height: auto; }
 
-    .dsc-demo .mi-welcome-demo {
-      display: flex; flex-direction: column; align-items: center; gap: 8px;
+    /* Chat welcome is a viewport overlay in the real dock (position:absolute;
+       inset:0; z-index:10 on .sc-welcome). Pin the library copy in the demo
+       stage so opening the Component Library section cannot paint that overlay
+       across #agent-main and blank the page. #mi-components beats later
+       chat CSS (triple-class helix / full-bleed rules). */
+    #mi-components .dsc-demo .sc-welcome,
+    #mi-components .dsc-demo .mi-welcome-demo {
+      position: relative;
+      inset: auto;
+      z-index: 0;
+      background: transparent;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 8px;
       padding: 18px 12px; text-align: center;
+      overflow: visible; min-height: 0;
     }
     .dsc-demo .ws-logo-wrap { position: relative; width: 72px; height: 72px; }
     .dsc-demo .ws-logo {
@@ -8993,7 +9194,7 @@ function moduleStyles() {
 
     .dsc-demo .mi-cwr {
       display: inline-flex; padding: 4px; border-radius: 999px;
-      background: var(--surface); border: 1px solid var(--border-strong);
+      background: var(--surface); border: 1px solid rgb(219, 39, 119);
     }
     .dsc-demo .mi-cwr .cwr-btn {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -9828,10 +10029,22 @@ function moduleStyles() {
     @media (prefers-reduced-motion: reduce) { .mi-motion-width-pane { transition: none; } }
 
     .mi-motion-car { display: flex; flex-direction: column; align-items: stretch; gap: 10px; width: 100%; }
-    .mi-motion-car .mi-motion-helix-opacity { flex: 1 1 auto; min-width: 0; }
+    .mi-motion-car-knobs {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; width: 100%;
+    }
+    .mi-motion-car .mi-motion-helix-opacity { flex: 1 1 220px; min-width: 180px; }
+    .mi-motion-car-stage {
+      width: 100%; padding: 8px; border-radius: 14px;
+      background: color-mix(in srgb, var(--text) 5%, var(--surface-2, var(--surface)));
+      border: 1px dashed var(--border);
+    }
+    html.dark .mi-motion-car-stage {
+      background: color-mix(in srgb, #fff 4%, transparent);
+    }
     .mi-motion-car-browser {
-      --car-pct: 100;
-      width: 100%; border: 1px solid var(--border); border-radius: 12px;
+      width: 56%; min-width: 260px; max-width: 100%;
+      margin-right: auto;
+      border: 1px solid var(--border); border-radius: 12px;
       overflow: hidden; background: var(--surface);
     }
     html.dark .mi-motion-car-browser { background: rgba(255,255,255,0.03); }
@@ -9851,10 +10064,9 @@ function moduleStyles() {
     }
     .mi-motion-car-row {
       display: flex; gap: 8px; align-items: stretch;
-      height: calc(176px * var(--car-pct) / 100);
-      min-height: 72px; overflow-x: auto; overflow-y: hidden;
-      padding: 8px; scrollbar-width: thin;
-      transition: height 0.12s ease;
+      height: 176px; min-height: 72px;
+      overflow-x: auto; overflow-y: hidden;
+      padding: 8px; scrollbar-width: thin; scrollbar-gutter: stable;
     }
     .mi-motion-car-row::-webkit-scrollbar { height: 8px; }
     .mi-motion-car-row::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
@@ -10182,25 +10394,21 @@ export function renderAllModules(mainEl) {
         <div class="mi-hero-text">
           <div class="mi-hero-title-row">
             <h1 class="mi-hero-title">All Modules</h1>
+            <div class="mi-hero-btns">
+              <button type="button" class="adm-btn adm-btn--primary mi-reeval-btn" data-mi-reeval title="Scan HTML, JavaScript, CSS and Python files and account for each HTML page. Does not run on its own — click when you want a fresh count.">
+                <span class="material-symbols-outlined" aria-hidden="true">autorenew</span>
+                <span data-mi-reeval-label>Re-evaluate</span>
+              </button>
+              <button type="button" class="adm-btn adm-btn--ghost mi-hard-btn" data-mi-hard-reload title="Bypass the cache and reload this page from disk. Live reload is off on All Modules, so file saves do not keep remounting it.">
+                <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>
+                <span data-mi-hard-label>Hard reload</span>
+              </button>
+            </div>
             <span class="mi-load-pct no-countup" id="mi-load-pct" data-no-countup aria-live="polite" title="Bytes received for this page’s files"${loadDone ? ' data-done="1"' : ''}>${esc(loadLabel)}</span>
             <span class="mi-load-bytes no-countup" id="mi-load-bytes" data-no-countup>${esc(loadBytes)}</span>
           </div>
-          <div class="mi-hero-row">
-            <p class="mi-hero-lede">Every module, component, icon, design token, animation and drag/resize interaction in the WISE app — indexed, rendered live, and one tap away. Re-evaluate scans the project when you click it — it does not run on load.</p>
-            <div class="mi-hero-actions">
-              <div class="mi-hero-btns">
-                <button type="button" class="adm-btn adm-btn--primary mi-reeval-btn" data-mi-reeval title="Scan HTML, JavaScript, CSS and Python files and account for each HTML page. Does not run on its own — click when you want a fresh count.">
-                  <span class="material-symbols-outlined" aria-hidden="true">autorenew</span>
-                  <span data-mi-reeval-label>Re-evaluate</span>
-                </button>
-                <button type="button" class="adm-btn adm-btn--ghost mi-hard-btn" data-mi-hard-reload title="Bypass the cache and reload this page from disk. Live reload is off on All Modules, so file saves do not keep remounting it.">
-                  <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>
-                  <span data-mi-hard-label>Hard reload</span>
-                </button>
-              </div>
-              <span class="mi-reeval-meta" data-mi-reeval-meta></span>
-            </div>
-          </div>
+          <p class="mi-hero-lede">Every module, component, icon, design token, animation and drag/resize interaction in the WISE app — indexed, rendered live, and one tap away. Re-evaluate scans the project when you click it — it does not run on load.</p>
+          <span class="mi-reeval-meta" data-mi-reeval-meta></span>
         </div>
       </header>
       <div class="mi-reeval-status" id="mi-reeval-status" hidden></div>
@@ -10324,7 +10532,20 @@ function setupAccordion(root) {
 
     const toggle = (e) => {
       if (e.target.closest('.panel-controls, .dsc-ready')) return; // let the ⋯ menu and Dev Ready toggle work
-      setSectionCollapsed(root, sec, !sec.classList.contains('is-collapsed'));
+      const opening = sec.classList.contains('is-collapsed');
+      setSectionCollapsed(root, sec, !opening);
+      /* Last sections (Component Library) sit at the bottom of the pane.
+         Opening them adds the body below the fold — keep the header in view. */
+      if (opening) {
+        requestAnimationFrame(() => {
+          const scroller = sec.closest('.agent-main-scroll');
+          const body = sec.querySelector(':scope > .mi-acc-body');
+          if (!scroller || !body) return;
+          const sr = scroller.getBoundingClientRect();
+          const br = body.getBoundingClientRect();
+          if (br.top > sr.bottom - 96) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
     };
     head.addEventListener('click', toggle);
     head.addEventListener('keydown', (e) => {
@@ -11000,13 +11221,13 @@ function wireLinkValidation(root) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Re-evaluate — crawl the whole project once a day. Discovers every   */
-/* HTML / JS / CSS / Python file from directory listings, recounts     */
-/* lines of code (generated blobs excluded), probes each HTML page,    */
-/* and injects anything missing into Unaccounted so the directory is   */
-/* complete for this session. Manual click always runs; otherwise it   */
-/* auto-runs on the first visit of a local calendar day, at midnight,  */
-/* and when the tab comes back on a new day.                           */
+/* Re-evaluate — crawl the whole project when you click it. Discovers  */
+/* every HTML / JS / CSS / Python file from directory listings,        */
+/* recounts lines of code (generated blobs excluded), probes each HTML */
+/* page, and injects anything missing into Unaccounted so the          */
+/* directory is complete for this session. A live modal walks through  */
+/* every directory, file, and page as it happens. Hard reload uses the */
+/* same panel to list every cache-busted script and stylesheet.        */
 /* ------------------------------------------------------------------ */
 
 const OMITTED_PAGES = {
@@ -11171,7 +11392,218 @@ function pushProjectFile(files, seenFile, abs, name, ext, rel) {
   files.push({ url: abs.href, name, ext, rel });
 }
 
-async function discoverRootCodeFiles(files, seenFile) {
+function extLabel(ext) {
+  return ({ html: 'HTML', js: 'JavaScript', css: 'CSS', py: 'Python' })[ext] || String(ext || '').toUpperCase();
+}
+
+function fmtScanBytes(n) {
+  const x = Number(n) || 0;
+  if (x < 1024) return x + ' B';
+  if (x < 1024 * 1024) return (x / 1024).toFixed(x < 10 * 1024 ? 1 : 0) + ' KB';
+  return (x / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function displayPath(href) {
+  try {
+    const abs = new URL(href, location.href);
+    if (urlUnderRepo(abs)) {
+      const rel = projectRelFromUrl(abs);
+      return rel || abs.pathname.replace(/^\//, '') || abs.href;
+    }
+    return abs.host + abs.pathname + (abs.search.length > 48 ? abs.search.slice(0, 44) + '…' : abs.search);
+  } catch (_) {
+    return String(href || '');
+  }
+}
+
+function dirDisplayPath(dirUrl) {
+  try {
+    const abs = new URL(dirUrl);
+    const rel = projectRelFromUrl(abs);
+    if (!rel) return '(repo root)';
+    return rel.endsWith('/') ? rel : rel + '/';
+  } catch (_) {
+    return String(dirUrl || '');
+  }
+}
+
+let scanModalEl = null;
+let scanBusy = false;
+
+function closeScanModal() {
+  const el = scanModalEl;
+  if (!el) return;
+  scanModalEl = null;
+  document.body.style.overflow = el._prevOverflow || '';
+  if (el._onKey) document.removeEventListener('keydown', el._onKey);
+  el.classList.remove('is-open');
+  setTimeout(() => { if (el.parentNode) el.remove(); }, 220);
+}
+
+function openScanModal(opts) {
+  const {
+    eyebrow = 'All Modules',
+    title = 'Working',
+    icon = 'autorenew',
+    sub = 'Starting…',
+    locked = false,
+  } = opts || {};
+  closeScanModal();
+
+  const scrim = document.createElement('div');
+  scrim.className = 'mi-scan-scrim';
+  scrim._prevOverflow = document.body.style.overflow;
+  document.body.style.overflow = 'hidden';
+  scrim.innerHTML = `
+    <div class="mi-scan-card" role="dialog" aria-modal="true" aria-labelledby="mi-scan-title">
+      <div class="mi-scan-head">
+        <span class="material-symbols-outlined" aria-hidden="true">${esc(icon)}</span>
+        <div class="mi-scan-titles">
+          <div class="mi-scan-eyebrow">${esc(eyebrow)}</div>
+          <h2 class="mi-scan-title" id="mi-scan-title">${esc(title)}</h2>
+          <p class="mi-scan-sub" data-scan-sub>${esc(sub)}</p>
+          <p class="mi-scan-now" data-scan-now></p>
+        </div>
+        <button type="button" class="mi-scan-close" data-scan-close aria-label="Close" hidden>
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="mi-scan-score">
+        <span class="mi-scan-pct no-countup" data-scan-pct data-no-countup>0%</span>
+        <span class="mi-scan-frac" data-scan-frac>Starting</span>
+      </div>
+      <div class="mi-scan-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-scan-bar>
+        <span class="mi-scan-fill" data-scan-fill></span>
+      </div>
+      <ul class="mi-scan-log" data-scan-log role="log" aria-live="polite" aria-relevant="additions"></ul>
+      <div class="mi-scan-foot">
+        <span class="mi-scan-note" data-scan-note>Keep this tab open while it runs.</span>
+        <button type="button" class="adm-btn adm-btn--primary" data-scan-done disabled>
+          <span class="material-symbols-outlined">hourglass_top</span>
+          <span data-scan-done-label>Working…</span>
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(scrim);
+  scanModalEl = scrim;
+  requestAnimationFrame(() => scrim.classList.add('is-open'));
+
+  let pctNow = 0;
+  let logCount = 0;
+  let finished = false;
+  const list = scrim.querySelector('[data-scan-log]');
+  const fill = scrim.querySelector('[data-scan-fill]');
+  const bar = scrim.querySelector('[data-scan-bar]');
+  const pctEl = scrim.querySelector('[data-scan-pct]');
+  const fracEl = scrim.querySelector('[data-scan-frac]');
+  const subEl = scrim.querySelector('[data-scan-sub]');
+  const nowEl = scrim.querySelector('[data-scan-now]');
+  const noteEl = scrim.querySelector('[data-scan-note]');
+  const doneBtn = scrim.querySelector('[data-scan-done]');
+  const doneLabel = scrim.querySelector('[data-scan-done-label]');
+  const closeBtn = scrim.querySelector('[data-scan-close]');
+  const rowIcon = { run: 'autorenew', ok: 'check_circle', err: 'error', skip: 'block', info: 'info', pending: 'schedule' };
+
+  const canClose = () => finished && !locked;
+
+  const close = () => {
+    if (!canClose()) return;
+    closeScanModal();
+  };
+
+  const onKey = (e) => {
+    if (e.key !== 'Escape') return;
+    if (!canClose()) { e.preventDefault(); return; }
+    e.preventDefault();
+    close();
+  };
+  scrim._onKey = onKey;
+  document.addEventListener('keydown', onKey);
+  closeBtn.addEventListener('click', close);
+  scrim.addEventListener('click', (e) => { if (e.target === scrim && canClose()) close(); });
+  doneBtn.addEventListener('click', () => { if (!doneBtn.disabled) close(); });
+
+  const api = {
+    setProgress(pct, frac) {
+      const next = Math.max(pctNow, Math.max(0, Math.min(100, Math.round(pct))));
+      pctNow = next;
+      if (fill) fill.style.width = next + '%';
+      if (bar) bar.setAttribute('aria-valuenow', String(next));
+      if (pctEl) pctEl.textContent = next + '%';
+      if (frac && fracEl) fracEl.textContent = frac;
+    },
+    setSub(text) {
+      if (subEl) subEl.textContent = text || '';
+    },
+    setNote(text) {
+      if (noteEl) noteEl.textContent = text || '';
+    },
+    phase(title, detail) {
+      if (!list) return;
+      list.insertAdjacentHTML('beforeend',
+        `<li class="mi-scan-phase">${esc(title)}${detail ? `<span>${esc(detail)}</span>` : ''}</li>`);
+      list.lastElementChild.scrollIntoView({ block: 'nearest' });
+      if (subEl) subEl.textContent = detail || title;
+    },
+    log(entry) {
+      if (!list) return;
+      const state = (entry && entry.state) || 'info';
+      const name = (entry && entry.name) || '';
+      const detail = (entry && entry.detail) || '';
+      if (state !== 'run' && name) {
+        const prev = Array.from(list.querySelectorAll('.mi-scan-row[data-state="run"]'))
+          .find((r) => (r.querySelector('.mi-scan-row-name') || {}).textContent === name);
+        if (prev) {
+          prev.dataset.state = state;
+          const ic = prev.querySelector('.material-symbols-outlined');
+          if (ic) ic.textContent = rowIcon[state] || 'info';
+          const detailEl = prev.querySelector('.mi-scan-row-detail');
+          if (detailEl) detailEl.textContent = detail;
+          else if (detail) {
+            const span = document.createElement('span');
+            span.className = 'mi-scan-row-detail';
+            span.textContent = detail;
+            (prev.querySelector('.mi-scan-row-main') || prev).appendChild(span);
+          }
+          prev.scrollIntoView({ block: 'nearest' });
+          if (nowEl) nowEl.textContent = name;
+          return;
+        }
+      }
+      logCount += 1;
+      list.insertAdjacentHTML('beforeend', `
+        <li class="mi-scan-row" data-state="${esc(state)}">
+          <span class="material-symbols-outlined">${rowIcon[state] || 'info'}</span>
+          <span class="mi-scan-row-main">
+            <span class="mi-scan-row-name">${esc(name)}</span>
+            ${detail ? `<span class="mi-scan-row-detail">${esc(detail)}</span>` : ''}
+          </span>
+        </li>`);
+      list.lastElementChild.scrollIntoView({ block: 'nearest' });
+      if (nowEl && (state === 'run' || state === 'ok')) nowEl.textContent = name;
+      if (noteEl && !finished) noteEl.textContent = logCount + (logCount === 1 ? ' event' : ' events');
+    },
+    finish(kind, title, note) {
+      finished = true;
+      api.setProgress(100, title || 'Done');
+      if (subEl && title) subEl.textContent = title;
+      if (noteEl && note) noteEl.textContent = note;
+      if (doneBtn) {
+        doneBtn.disabled = false;
+        const ic = doneBtn.querySelector('.material-symbols-outlined');
+        if (ic) ic.textContent = kind === 'err' ? 'error' : (kind === 'warn' ? 'warning' : 'check');
+        if (doneLabel) doneLabel.textContent = locked ? 'Reloading…' : 'Done';
+        if (locked) doneBtn.disabled = true;
+      }
+      if (closeBtn && !locked) closeBtn.hidden = false;
+      if (nowEl && !locked) nowEl.textContent = '';
+    },
+    close,
+  };
+  return api;
+}
+
+async function discoverRootCodeFiles(files, seenFile, scan) {
   /* `/` serves index.html, so the root never returns a directory listing.
      Probe catalog / omitted root pages plus the handful of root-level code
      files the Python scanner counts. */
@@ -11181,20 +11613,39 @@ async function discoverRootCodeFiles(files, seenFile) {
     const key = canonicalPageHref(h);
     if (key.startsWith('../')) names.add(key.slice(3));
   });
+  scan?.log({
+    state: 'info',
+    name: '(repo root)',
+    detail: 'Not a directory listing — probing ' + names.size + ' known root files (index, marketing CSS, catalog root pages, tooling).',
+  });
   await mapPool(Array.from(names), REEVAL_CONCURRENCY, async (name) => {
     if (!name || name.includes('/')) return;
     const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
-    if (!CODE_EXTS.has(ext) || CODE_SKIP_FILES.has(name) || name.startsWith('.')) return;
+    if (!CODE_EXTS.has(ext) || CODE_SKIP_FILES.has(name) || name.startsWith('.')) {
+      scan?.log({
+        state: 'skip',
+        name,
+        detail: CODE_SKIP_FILES.has(name) ? 'Generated data blob — excluded from line counts' : 'Not a counted code file',
+      });
+      return;
+    }
     const abs = new URL(name, root);
+    scan?.log({ state: 'run', name, detail: 'Probing repo root' });
     try {
       const res = await fetch(abs.href + (abs.href.includes('?') ? '&' : '?') + 'mi=' + Date.now(), { cache: 'no-store' });
-      if (!res.ok) return;
+      if (!res.ok) {
+        scan?.log({ state: 'skip', name, detail: 'HTTP ' + res.status + ' — not at repo root' });
+        return;
+      }
       pushProjectFile(files, seenFile, abs, name, ext, name);
-    } catch (_) { /* missing at root */ }
+      scan?.log({ state: 'ok', name, detail: extLabel(ext) + ' · queued for a line count' });
+    } catch (_) {
+      scan?.log({ state: 'skip', name, detail: 'Not reachable at repo root' });
+    }
   });
 }
 
-async function discoverProjectFiles(signal) {
+async function discoverProjectFiles(signal, scan) {
   const files = [];
   const seenDir = new Set();
   const seenFile = new Set();
@@ -11207,19 +11658,43 @@ async function discoverProjectFiles(signal) {
     new URL('scripts/', root).href,
     root.href,
   ];
+  scan?.log({
+    state: 'info',
+    name: 'Seed folders',
+    detail: 'js/, pages/, scripts/, and the repo root. Hidden folders, node_modules, screenshots, assets, and generated blobs are skipped.',
+  });
 
+  let dirsListed = 0;
   while (queue.length) {
-    if (signal && signal.aborted) break;
+    if (signal && signal.aborted) {
+      scan?.log({ state: 'err', name: 'Directory walk', detail: 'Stopped — time budget ran out' });
+      break;
+    }
     const dirUrl = queue.shift();
     let dirKey;
     try { dirKey = new URL(dirUrl).pathname; } catch (_) { continue; }
     if (seenDir.has(dirKey)) continue;
     seenDir.add(dirKey);
+    const label = dirDisplayPath(dirUrl);
+    scan?.log({ state: 'run', name: label, detail: 'Reading directory listing' });
 
     let html;
-    try { html = await fetchText(dirUrl, signal); } catch (_) { continue; }
-    if (!isDirListing(html)) continue;
+    try { html = await fetchText(dirUrl, signal); } catch (_) {
+      scan?.log({ state: 'err', name: label, detail: 'Could not fetch this listing' });
+      continue;
+    }
+    if (!isDirListing(html)) {
+      scan?.log({
+        state: 'skip',
+        name: label,
+        detail: label === '(repo root)'
+          ? 'Server returned the homepage instead of a listing — root files are probed by name next'
+          : 'Not a directory listing (the server returned a page)',
+      });
+      continue;
+    }
 
+    let kept = 0, queued = 0, skippedDir = 0, skippedFile = 0, ignored = 0;
     for (const raw of listingEntries(html)) {
       let abs;
       try { abs = new URL(raw, dirUrl); } catch (_) { continue; }
@@ -11227,35 +11702,83 @@ async function discoverProjectFiles(signal) {
 
       const isDir = raw.endsWith('/') || abs.pathname.endsWith('/');
       const name = abs.pathname.split('/').filter(Boolean).pop() || '';
-      if (!name || name.startsWith('.') || CODE_SKIP_DIRS.has(name)) continue;
+      if (!name || name.startsWith('.')) { ignored += 1; continue; }
+      if (CODE_SKIP_DIRS.has(name)) {
+        skippedDir += 1;
+        scan?.log({ state: 'skip', name: (label === '(repo root)' ? '' : label) + name + '/', detail: 'Excluded folder' });
+        continue;
+      }
 
       if (isDir) {
         const next = abs.href.endsWith('/') ? abs.href : abs.href + '/';
         let nextKey;
         try { nextKey = new URL(next).pathname; } catch (_) { continue; }
-        if (!seenDir.has(nextKey)) queue.push(next);
+        if (!seenDir.has(nextKey)) {
+          queue.push(next);
+          queued += 1;
+        }
         continue;
       }
 
       const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
-      if (!CODE_EXTS.has(ext) || CODE_SKIP_FILES.has(name)) continue;
-      pushProjectFile(files, seenFile, abs, name, ext, projectRelFromUrl(abs));
+      const rel = projectRelFromUrl(abs);
+      if (CODE_SKIP_FILES.has(name)) {
+        skippedFile += 1;
+        scan?.log({ state: 'skip', name: rel, detail: 'Generated data blob — excluded from line counts' });
+        continue;
+      }
+      if (!CODE_EXTS.has(ext)) { ignored += 1; continue; }
+      const before = files.length;
+      pushProjectFile(files, seenFile, abs, name, ext, rel);
+      if (files.length > before) {
+        kept += 1;
+        scan?.log({ state: 'ok', name: rel, detail: extLabel(ext) + ' · queued for a line count' });
+      }
     }
+    dirsListed += 1;
+    scan?.log({
+      state: 'ok',
+      name: label,
+      detail: 'Listed — ' + kept + ' code file' + (kept === 1 ? '' : 's')
+        + ', ' + queued + ' folder' + (queued === 1 ? '' : 's') + ' queued'
+        + (skippedDir ? ', ' + skippedDir + ' excluded folder' + (skippedDir === 1 ? '' : 's') : '')
+        + (skippedFile ? ', ' + skippedFile + ' generated blob' + (skippedFile === 1 ? '' : 's') : '')
+        + (ignored ? ', ' + ignored + ' other file' + (ignored === 1 ? '' : 's') + ' ignored' : ''),
+    });
+    scan?.setProgress(Math.min(18, 4 + dirsListed), dirsListed + ' folder' + (dirsListed === 1 ? '' : 's') + ' listed');
   }
-  await discoverRootCodeFiles(files, seenFile);
+  await discoverRootCodeFiles(files, seenFile, scan);
+  scan?.log({
+    state: 'ok',
+    name: 'Project walk',
+    detail: files.length + ' code file' + (files.length === 1 ? '' : 's') + ' in the working tree (HTML, JavaScript, CSS, Python)',
+  });
   return files;
 }
 
-async function scanProjectLineCounts(files, signal) {
+async function scanProjectLineCounts(files, signal, scan) {
   const lines = { html: 0, js: 0, css: 0, py: 0 };
   const counts = { html: 0, js: 0, css: 0, py: 0 };
+  const totalFiles = files.length || 1;
+  let done = 0;
   await mapPool(files, REEVAL_CONCURRENCY, async (f) => {
     if (signal && signal.aborted) return;
+    scan?.log({ state: 'run', name: f.rel, detail: 'Counting ' + extLabel(f.ext) + ' lines (cache-busted fetch)' });
     try {
       const text = await fetchText(f.url, signal);
-      lines[f.ext] += countFileLines(text);
+      const n = countFileLines(text);
+      lines[f.ext] += n;
       counts[f.ext] += 1;
-    } catch (_) { /* unreachable file */ }
+      scan?.log({
+        state: 'ok',
+        name: f.rel,
+        detail: fmtNum(n) + ' line' + (n === 1 ? '' : 's') + ' · ' + extLabel(f.ext) + ' · ' + fmtScanBytes(text.length),
+      });
+    } catch (_) {
+      scan?.log({ state: 'err', name: f.rel, detail: 'Unreachable — not counted' });
+    }
+    done += 1;
+    scan?.setProgress(22 + Math.round((done / totalFiles) * 48), done + ' of ' + files.length + ' files counted');
   });
   return {
     total: lines.html + lines.js + lines.css + lines.py,
@@ -11268,27 +11791,53 @@ async function scanProjectLineCounts(files, signal) {
   };
 }
 
-async function discoverHtmlPages(extraHrefs, signal) {
+async function discoverHtmlPages(extraHrefs, signal, scan) {
   const found = new Set();
+  const catalogN = catalogHrefList().length;
   catalogHrefList().forEach((h) => found.add(canonicalPageHref(h)));
   Object.keys(OMITTED_PAGES).forEach((h) => found.add(canonicalPageHref(h)));
   (extraHrefs || []).forEach((h) => {
     const key = canonicalPageHref(h);
     if (key) found.add(key);
   });
+  scan?.log({
+    state: 'info',
+    name: 'HTML set',
+    detail: catalogN + ' catalog pages + ' + Object.keys(OMITTED_PAGES).length + ' intentionally omitted + ' + (extraHrefs || []).length + ' from the file walk',
+  });
 
   const tryList = async (url, kind) => {
+    const label = kind === 'pages' ? 'pages/' : '(repo root)';
+    scan?.log({ state: 'run', name: label, detail: 'Looking for extra HTML in the directory listing' });
     try {
       const html = await fetchText(url, signal);
-      if (!isDirListing(html)) return;
+      if (!isDirListing(html)) {
+        scan?.log({ state: 'skip', name: label, detail: 'No directory listing — using the catalog and the file walk' });
+        return;
+      }
+      const before = found.size;
       hrefsFromListing(html, kind).forEach((h) => found.add(canonicalPageHref(h)));
-    } catch (_) { /* listing not available (livereload 403, etc.) */ }
+      const added = found.size - before;
+      scan?.log({
+        state: 'ok',
+        name: label,
+        detail: added ? ('Found ' + added + ' additional HTML page' + (added === 1 ? '' : 's')) : 'No HTML beyond what was already queued',
+      });
+    } catch (_) {
+      scan?.log({ state: 'skip', name: label, detail: 'Listing not available' });
+    }
   };
   await Promise.all([
     tryList(new URL('./', location.href).href, 'pages'),
     tryList(new URL('../', location.href).href, 'root'),
   ]);
-  return Array.from(found).filter(Boolean).sort();
+  const pages = Array.from(found).filter(Boolean).sort();
+  scan?.log({
+    state: 'ok',
+    name: 'HTML pages to probe',
+    detail: pages.length + ' unique page' + (pages.length === 1 ? '' : 's'),
+  });
+  return pages;
 }
 
 async function probePage(href, signal) {
@@ -11375,8 +11924,6 @@ function setReevalStatus(root, kind, title, bodyHtml) {
   el.innerHTML = `<div class="mi-reeval-status-head"><span class="material-symbols-outlined">${icons[kind] || 'info'}</span><span>${esc(title)}</span></div>${bodyHtml || ''}`;
 }
 
-let reevalBusy = false;
-
 function reevalMetaText() {
   const store = readReevalStore();
   const off = 'Live reload off';
@@ -11391,17 +11938,36 @@ function paintReevalMeta(root) {
 }
 
 async function reevaluateProject(root, opts) {
-  if (reevalBusy) return;
+  if (scanBusy) return;
   const reason = (opts && opts.reason) || 'manual';
   const btn = root.querySelector('[data-mi-reeval]');
   const label = root.querySelector('[data-mi-reeval-label]');
+  const scan = openScanModal({
+    eyebrow: 'Re-evaluate',
+    title: 'Re-evaluating the project',
+    icon: 'autorenew',
+    sub: 'Walking every HTML, JavaScript, CSS and Python file, then probing each page.',
+  });
+  scan.log({
+    state: 'info',
+    name: 'How this scan works',
+    detail: 'Reads three files at a time with cache-busted fetches. Skips generated blobs (icon inventory, code stats, Guiding Stars) and folders like node_modules, screenshots, and assets. Stops after 20 seconds so this page stays usable. Does not run on load — only when you click.',
+  });
+
   if (location.protocol === 'file:') {
+    scan.phase('Cannot scan from a file URL', 'A local server is required so the browser can fetch the project.');
+    scan.log({
+      state: 'err',
+      name: location.href,
+      detail: 'Opened as a file. Start python3 -m http.server or python3 dev_server.py and reload this page over http.',
+    });
+    scan.finish('warn', 'Serve this page over http', 'Start a local server, then click Re-evaluate again.');
     setReevalStatus(root, 'warn', 'Serve this page over http',
       '<p>Live re-evaluate needs a local server so it can fetch the project. Start <code>python3 -m http.server</code> or <code>python3 dev_server.py</code> and reload.</p>');
     return;
   }
 
-  reevalBusy = true;
+  scanBusy = true;
   if (btn) {
     btn.disabled = true;
     btn.classList.add('is-busy');
@@ -11415,12 +11981,55 @@ async function reevaluateProject(root, opts) {
   const ac = new AbortController();
   const budget = setTimeout(() => ac.abort(), REEVAL_BUDGET_MS);
   try {
-    const files = await discoverProjectFiles(ac.signal);
+    scan.phase('Discover project files', 'Listing js/, pages/, scripts/, and the repo root.');
+    scan.setProgress(2, 'Walking directories');
+    const files = await discoverProjectFiles(ac.signal, scan);
+
+    scan.phase('Discover HTML pages', 'Catalog, omitted pages, and anything the file walk found.');
+    scan.setProgress(20, 'Collecting HTML pages');
     const htmlFromWalk = files.filter((f) => f.ext === 'html').map((f) => pageHrefFromRel(f.rel));
-    const pages = await discoverHtmlPages(htmlFromWalk, ac.signal);
-    const codeNow = files.length ? await scanProjectLineCounts(files, ac.signal) : null;
-    const results = await mapPool(pages, REEVAL_CONCURRENCY, (href) => probePage(href, ac.signal));
+    scan.log({
+      state: 'info',
+      name: 'HTML from the file walk',
+      detail: htmlFromWalk.length + ' HTML file' + (htmlFromWalk.length === 1 ? '' : 's') + ' already queued from directory listings',
+    });
+    const pages = await discoverHtmlPages(htmlFromWalk, ac.signal, scan);
+
+    scan.phase('Count lines of code', 'Fetching each file fresh and counting newlines. Generated blobs stay out.');
+    scan.setProgress(22, files.length ? ('0 of ' + files.length + ' files counted') : 'No code files');
+    const codeNow = files.length ? await scanProjectLineCounts(files, ac.signal, scan) : null;
+    if (codeNow) {
+      scan.log({
+        state: 'ok',
+        name: 'Line totals',
+        detail: fmtNum(codeNow.total) + ' lines across ' + fmtNum(codeNow.files) + ' files — HTML ' + fmtNum(codeNow.html) + ', JavaScript ' + fmtNum(codeNow.js) + ', CSS ' + fmtNum(codeNow.css) + ', Python ' + fmtNum(codeNow.py),
+      });
+    }
+
+    scan.phase('Probe every HTML page', 'Cache-busted GET of each page. Classifies catalog, omitted, unaccounted, and unreachable.');
+    scan.setProgress(70, '0 of ' + pages.length + ' pages probed');
+    let probed = 0;
+    const results = await mapPool(pages, REEVAL_CONCURRENCY, async (href) => {
+      const name = displayPath(href) || href;
+      scan.log({ state: 'run', name, detail: 'Fetching HTML (cache-busted)' });
+      const r = await probePage(href, ac.signal);
+      probed += 1;
+      scan.setProgress(70 + Math.round((probed / Math.max(pages.length, 1)) * 22), probed + ' of ' + pages.length + ' pages probed');
+      if (r.ok) {
+        scan.log({
+          state: 'ok',
+          name,
+          detail: (r.title || labelFromPath(href)) + ' · reachable · ' + fmtScanBytes(r.size),
+        });
+      } else {
+        scan.log({ state: 'err', name, detail: 'Unreachable — the fetch failed or the server did not return the page' });
+      }
+      return r;
+    });
     if (ac.signal.aborted) throw new DOMException('Timed out', 'AbortError');
+
+    scan.phase('Apply results', 'Update Unaccounted, Codebase scorecards, and today’s scan stamp.');
+    scan.setProgress(93, 'Classifying pages');
     const catalog = catalogPageSet();
     const live = results.filter((r) => r.ok);
     const unreachable = results.filter((r) => !r.ok);
@@ -11432,6 +12041,22 @@ async function reevaluateProject(root, opts) {
     const catalogMissing = unreachable.filter((r) => catalog.has(canonicalPageHref(r.href)));
     const omittedMissing = unreachable.filter((r) => OMITTED_PAGES[canonicalPageHref(r.href)]);
 
+    scan.log({
+      state: 'info',
+      name: 'Classification',
+      detail: live.length + ' reachable · ' + unreachable.length + ' unreachable · ' + omitted.length + ' omitted on purpose · ' + unaccounted.length + ' unaccounted · ' + catalogMissing.length + ' catalog entries missing',
+    });
+    omitted.forEach((r) => {
+      const key = canonicalPageHref(r.href);
+      scan.log({ state: 'skip', name: key, detail: 'Intentionally omitted — ' + (OMITTED_PAGES[key] || 'kept out of the directory') });
+    });
+    catalogMissing.forEach((r) => {
+      scan.log({ state: 'err', name: displayPath(r.href) || r.href, detail: 'In the module directory but the page did not resolve' });
+    });
+    omittedMissing.forEach((r) => {
+      scan.log({ state: 'err', name: displayPath(r.href) || r.href, detail: 'Omitted page is now unreachable' });
+    });
+
     unaccounted.forEach((r) => {
       injectUnaccounted(root, {
         label: r.title || labelFromPath(r.href),
@@ -11439,17 +12064,43 @@ async function reevaluateProject(root, opts) {
         href: r.href,
         badge: 'New',
       });
+      scan.log({
+        state: 'ok',
+        name: displayPath(r.href) || r.href,
+        detail: 'Added to Unaccounted as “' + (r.title || labelFromPath(r.href)) + '”',
+      });
     });
 
     if (unaccounted.length || catalogMissing.length) {
       expandAccordionSection(root, 'mi-directory');
+      scan.log({ state: 'info', name: 'Module Directory', detail: 'Opened the directory accordion and re-checking card links' });
       runLinkValidation(root);
+    } else {
+      scan.log({ state: 'ok', name: 'Module Directory', detail: 'Every reachable HTML page is already in the catalog or omitted on purpose' });
     }
 
     const day = localDayIso();
     const codeComplete = codeScanLooksComplete(codeNow);
     if (codeComplete) {
       applyLiveCodeScan(root, codeNow, day);
+      scan.log({
+        state: 'ok',
+        name: 'Codebase scorecards',
+        detail: 'Live counts replaced the last snapshot — ' + fmtNum(codeNow.total) + ' lines across ' + fmtNum(codeNow.files) + ' files, scanned ' + day,
+      });
+    } else if (codeNow && codeNow.files) {
+      const bakedNow = (CODE_STATS && CODE_STATS.now) || {};
+      scan.log({
+        state: 'skip',
+        name: 'Codebase scorecards',
+        detail: 'Only ' + fmtNum(codeNow.files) + ' files were reachable — short of the full project — so the last complete scan stays (' + fmtNum(bakedNow.total) + ' lines across ' + fmtNum(bakedNow.files) + ' files). Serve the repo with directory listings enabled.',
+      });
+    } else {
+      scan.log({
+        state: 'skip',
+        name: 'Codebase scorecards',
+        detail: 'Directory listing was not available, so Codebase kept the last generated scan.',
+      });
     }
 
     writeReevalStore({
@@ -11461,6 +12112,11 @@ async function reevaluateProject(root, opts) {
       now: codeComplete ? codeNow : readReevalStore().now,
     });
     paintReevalMeta(root);
+    scan.log({
+      state: 'ok',
+      name: 'Scan stamp',
+      detail: 'Saved for ' + day + ' · reason: ' + reason + ' · ' + files.length + ' files walked · ' + pages.length + ' HTML pages probed',
+    });
 
     const accounted = live.length - omitted.length;
     const gaps = unaccounted.length + catalogMissing.length + omittedMissing.length;
@@ -11504,12 +12160,27 @@ async function reevaluateProject(root, opts) {
       ).join(', ') + '.</p>');
     }
     setReevalStatus(root, kind, title, bits.join(''));
+    scan.finish(kind, title, 'Directory now holds ' + moduleTotal() + ' modules. The summary also stays on the page behind this panel.');
     if (btn && kind === 'ok') {
       btn.classList.add('is-done');
       setTimeout(() => btn.classList.remove('is-done'), 2200);
     }
   } catch (err) {
     const timedOut = err && (err.name === 'AbortError' || /timed out/i.test(err.message || ''));
+    scan.log({
+      state: 'err',
+      name: timedOut ? 'Time budget' : 'Scan failed',
+      detail: timedOut
+        ? 'Stopped after 20 seconds so this page stays usable. The directory and Codebase cards still show the last complete pass.'
+        : (err && err.message) || String(err),
+    });
+    scan.finish(
+      timedOut ? 'warn' : 'err',
+      timedOut ? 'Re-evaluate stopped so this page stays usable' : 'Re-evaluate failed',
+      timedOut
+        ? 'Click Re-evaluate again when the page is idle, or serve the repo with directory listings enabled.'
+        : ((err && err.message) || String(err)),
+    );
     setReevalStatus(root, timedOut ? 'warn' : 'err',
       timedOut ? 'Re-evaluate stopped so this page stays usable' : 'Re-evaluate failed',
       timedOut
@@ -11517,7 +12188,7 @@ async function reevaluateProject(root, opts) {
         : `<p>${esc(err.message || String(err))}</p>`);
   } finally {
     clearTimeout(budget);
-    reevalBusy = false;
+    scanBusy = false;
     if (btn) {
       btn.disabled = false;
       btn.classList.remove('is-busy');
@@ -11527,50 +12198,136 @@ async function reevaluateProject(root, opts) {
   }
 }
 
-function collectHardReloadUrls() {
+function collectHardReloadPlan() {
   const seen = new Set();
   const urls = [];
-  const add = (raw) => {
+  const skipped = [];
+  const consider = (raw, source) => {
     if (!raw) return;
     let href;
     try { href = new URL(raw, location.href).href.split('#')[0]; }
     catch { return; }
     if (!href || seen.has(href)) return;
-    if (/^(data:|blob:|chrome-extension:|safari-extension:)/i.test(href)) return;
-    if (/livereload|\/sockjs\//i.test(href)) return;
-    if (/[?&]preview=1(?:&|$)/.test(href)) return;
-    if (href.indexOf(location.origin) !== 0) return;
     seen.add(href);
-    urls.push(href);
+    if (/^(data:|blob:)/i.test(href)) {
+      skipped.push({ href, source, reason: 'Embedded data or blob URL — nothing to refetch' });
+      return;
+    }
+    if (/^(chrome-extension:|safari-extension:)/i.test(href)) {
+      skipped.push({ href, source, reason: 'Browser extension asset' });
+      return;
+    }
+    if (/livereload|\/sockjs\//i.test(href)) {
+      skipped.push({ href, source, reason: 'Live-reload socket — All Modules blocks this on purpose' });
+      return;
+    }
+    if (/[?&]preview=1(?:&|$)/.test(href)) {
+      skipped.push({ href, source, reason: 'Rail preview iframe — not part of this page’s own load' });
+      return;
+    }
+    if (href.indexOf(location.origin) !== 0) {
+      skipped.push({ href, source, reason: 'Different origin — left cached' });
+      return;
+    }
+    urls.push({ href, source });
   };
-  add(location.href);
-  document.querySelectorAll('script[src], link[rel="stylesheet"][href], link[rel="modulepreload"][href]')
-    .forEach((el) => add(el.src || el.href));
+  consider(location.href, 'This page');
+  document.querySelectorAll('script[src]').forEach((el) => consider(el.src, 'Script'));
+  document.querySelectorAll('link[rel="stylesheet"][href]').forEach((el) => consider(el.href, 'Stylesheet'));
+  document.querySelectorAll('link[rel="modulepreload"][href]').forEach((el) => consider(el.href, 'Module preload'));
   try {
     performance.getEntriesByType('resource').forEach((e) => {
       const kind = String(e.initiatorType || '');
       if (kind !== 'script' && kind !== 'link' && kind !== 'css') return;
-      add(e.name);
+      consider(e.name, 'Already loaded (' + kind + ')');
     });
   } catch (_) { /* performance timeline unavailable */ }
-  return urls;
+  return { urls, skipped };
 }
 
 async function hardReloadAllModules(root) {
+  if (scanBusy) return;
   const btn = root.querySelector('[data-mi-hard-reload]');
   const label = root.querySelector('[data-mi-hard-label]');
+  scanBusy = true;
   if (btn) {
     btn.disabled = true;
     btn.setAttribute('aria-busy', 'true');
   }
   if (label) label.textContent = 'Reloading…';
-  try {
-    const urls = collectHardReloadUrls();
-    await Promise.all(urls.map((u) => fetch(u, { cache: 'reload', credentials: 'same-origin' }).catch(() => {})));
-  } catch (_) { /* still navigate — cache-bust query is the fallback */ }
+
+  const scan = openScanModal({
+    eyebrow: 'Hard reload',
+    title: 'Bypassing the cache',
+    icon: 'restart_alt',
+    sub: 'Refetching this page and every script and stylesheet it loaded, then navigating to a fresh copy.',
+    locked: true,
+  });
+  scan.log({
+    state: 'info',
+    name: 'How hard reload works',
+    detail: 'Live reload is off on All Modules, so file saves do not remount it. This collects same-origin scripts, stylesheets, and module preloads, fetches each with cache:reload, then replaces the URL with a cache-bust query so the next paint is from disk.',
+  });
+  scan.setProgress(4, 'Collecting loaded files');
+
   const url = new URL(location.href);
   url.searchParams.set('hard', String(Date.now()));
-  location.replace(url.pathname + url.search + url.hash);
+  const nextHref = url.pathname + url.search + url.hash;
+
+  try {
+    const plan = collectHardReloadPlan();
+    scan.phase('Collect loaded files', 'This page, plus every script, stylesheet, and module preload still in memory.');
+    scan.log({
+      state: 'ok',
+      name: 'Inventory',
+      detail: plan.urls.length + ' file' + (plan.urls.length === 1 ? '' : 's') + ' to refetch'
+        + (plan.skipped.length ? ' · ' + plan.skipped.length + ' skipped' : ''),
+    });
+    plan.skipped.forEach((s) => {
+      scan.log({ state: 'skip', name: displayPath(s.href) || s.href, detail: s.source + ' — ' + s.reason });
+    });
+
+    scan.phase('Refetch with cache bypass', 'cache:reload on each URL so the HTTP cache is replaced before navigation.');
+    const total = Math.max(plan.urls.length, 1);
+    let done = 0;
+    await mapPool(plan.urls, REEVAL_CONCURRENCY, async (item) => {
+      const name = displayPath(item.href) || item.href;
+      scan.log({ state: 'run', name, detail: item.source + ' · fetch(cache: reload)' });
+      try {
+        const res = await fetch(item.href, { cache: 'reload', credentials: 'same-origin' });
+        const buf = await res.arrayBuffer();
+        const ctype = (res.headers.get('content-type') || '').split(';')[0].trim();
+        scan.log({
+          state: res.ok ? 'ok' : 'err',
+          name,
+          detail: item.source + ' · HTTP ' + res.status + (ctype ? ' · ' + ctype : '') + ' · ' + fmtScanBytes(buf.byteLength),
+        });
+      } catch (err) {
+        scan.log({
+          state: 'err',
+          name,
+          detail: item.source + ' · ' + ((err && err.message) || 'fetch failed') + ' — navigation will still cache-bust the URL',
+        });
+      }
+      done += 1;
+      scan.setProgress(8 + Math.round((done / total) * 82), done + ' of ' + plan.urls.length + ' files refetched');
+    });
+  } catch (_) {
+    scan.log({
+      state: 'err',
+      name: 'Prefetch',
+      detail: 'A refetch failed. Navigation still continues with a cache-bust query as the fallback.',
+    });
+  }
+
+  scan.phase('Navigate', 'Replace this tab with a cache-busted URL so the browser loads a fresh copy.');
+  scan.log({
+    state: 'run',
+    name: displayPath(nextHref) || nextHref,
+    detail: 'location.replace — query includes hard=' + url.searchParams.get('hard') + ' so nothing is served from the HTTP cache',
+  });
+  scan.finish('ok', 'Reloading this page now', 'A fresh copy of All Modules is about to load.');
+  setTimeout(() => { location.replace(nextHref); }, 1400);
 }
 
 function wireHardReload(root) {
@@ -13148,25 +13905,59 @@ function wireComponentLibrary(root) {
     });
   }
 
-  /* Live-wire the stacked composer demo once this section opens — the chat
-     module is not imported on load. */
+  /* Live-wire the stacked composer demo once that component accordion opens —
+     the chat module is not imported on load. */
   const compMod = root.querySelector('#mi-components');
-  const bootComposers = () => {
+  const bootComposersIn = (scope) => {
     if (!compMod || !compMod.isConnected) return;
     if (compMod.classList.contains('is-collapsed')) return;
-    if (compMod.dataset.composerBooted === '1') return;
-    compMod.dataset.composerBooted = '1';
+    const host = scope || compMod;
+    const rails = host.querySelectorAll('.dsc-demo [data-wise-composer]');
+    if (!rails.length) return;
+    const pending = Array.from(rails).filter((rail) => rail.dataset.composerBooted !== '1');
+    if (!pending.length) return;
+    pending.forEach((rail) => { rail.dataset.composerBooted = '1'; });
     import('./wiseai-chat.js').then((chat) => {
-      root.querySelectorAll('.dsc-demo [data-wise-composer]').forEach((rail) => {
-        chat.wireChatComposer(rail);
-      });
+      pending.forEach((rail) => { chat.wireChatComposer(rail); });
     }).catch((err) => {
       console.error('[all-modules] composer demo failed', err);
-      delete compMod.dataset.composerBooted;
+      pending.forEach((rail) => { delete rail.dataset.composerBooted; });
     });
   };
-  bootComposers();
-  if (compMod) new MutationObserver(bootComposers).observe(compMod, { attributes: true, attributeFilter: ['class'] });
+  grid._bootComposersIn = bootComposersIn;
+
+  /* Each component is its own accordion. The title row toggles; Dev Ready
+     and links inside the header keep their own actions. */
+  const toggleCompCard = (card) => {
+    if (!card) return;
+    const opening = card.classList.contains('is-collapsed');
+    setCompCardCollapsed(card, !opening);
+    if (opening) {
+      bootComposersIn(card);
+      requestAnimationFrame(() => {
+        const scroller = card.closest('.agent-main-scroll');
+        const body = card.querySelector(':scope > .dsc-card-body');
+        if (!scroller || !body) return;
+        const sr = scroller.getBoundingClientRect();
+        const br = body.getBoundingClientRect();
+        if (br.top > sr.bottom - 96) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+  };
+  grid.addEventListener('click', (e) => {
+    if (e.target.closest('.dsc-ready, a, button, input, textarea, select')) return;
+    const head = e.target.closest('.dsc-card-head');
+    if (!head || !grid.contains(head)) return;
+    toggleCompCard(head.closest('[data-ds-comp]'));
+  });
+  grid.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    if (e.target.closest('.dsc-ready, a, button, input')) return;
+    const head = e.target.closest('.dsc-card-head');
+    if (!head || !grid.contains(head)) return;
+    e.preventDefault();
+    toggleCompCard(head.closest('[data-ds-comp]'));
+  });
 
   /* Demo switches (brand toggle, admin popover switch) flip on click so their
      on/off states can be inspected live. Purely local — no persistence. */
@@ -13395,6 +14186,9 @@ function jumpToComponent(root, name) {
   const card = Array.from(root.querySelectorAll('[data-ds-comp]'))
     .find((el) => el.dataset.compName === name);
   if (!card) return;
+  setCompCardCollapsed(card, false);
+  const grid = root.querySelector('#dsc-grid');
+  if (grid && typeof grid._bootComposersIn === 'function') grid._bootComposersIn(card);
   card.classList.remove('is-flash');
   void card.offsetWidth;
   card.classList.add('is-flash');

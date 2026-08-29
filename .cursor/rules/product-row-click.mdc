@@ -1,0 +1,39 @@
+---
+description: Clicking a product-table row opens View Product; icons and other controls keep their own actions
+alwaysApply: true
+---
+
+# Product Row Click
+
+By default, **clicking the row of any product table opens View Product** for
+that SKU. Icons, checkboxes, menus, size links, claim/verify buttons, and any
+other control that already does a job keep doing that job.
+
+## What this means on the surface
+
+- Click the product name, photo, UPC, a status chip that is not a button, a
+  date, or empty space on the row → go to View Product, already focused on
+  that product.
+- Click a checkbox, the ⋮ menu, the reports icon, a pack-size link, Reformulate,
+  Review & Claim, Verify ingredients, or any other control → that control’s
+  own action. The row click stands down.
+
+## How it is wired
+
+Shared module: `js/product-row-click.js`. It attaches itself (same pattern as
+sortable headers and load-more). Import it next to `sortable-tables.js` /
+`table-pagination.js`. Do not reimplement row-click per page.
+
+Opt out of a table or row with `data-no-row-click` — only when the row is
+genuinely not a product (ingredient moves, invoice lines, org/user rows).
+
+## Rules for the agent
+
+- Never leave a new product table with a dead row. If the row is a product,
+  clicking it must open View Product unless the click landed on a control.
+- Do not steal clicks from icons or existing actions. Skip `a`, `button`,
+  inputs, the checkbox / ⋮ / reports columns, size links, and Material icons.
+- Do not add a parallel “click the name only” link and call it done — the
+  whole row is the hit target.
+- Non-product lists (invoices, organizations, users, ingredients, audit,
+  alerts) must not navigate to View Product.

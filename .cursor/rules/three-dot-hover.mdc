@@ -1,0 +1,38 @@
+---
+description: Three-dot menus open their popover on hover, not tap
+alwaysApply: true
+---
+
+# Three-Dot Hover
+
+Every three-dot control (⋮ / ⋯) that owns a menu **opens that popover on hover**.
+The user does not tap or click first. Touch and keyboard still toggle on tap /
+Enter.
+
+## What this means on the surface
+
+- Hover the ⋮ → the menu appears, anchored above or to the right of the icon
+  (never directly below — see the popover conventions rule).
+- Move onto the menu → it stays open.
+- Leave both the icon and the menu → it closes.
+- Tap on a touch device, or press Enter while focused → the same menu toggles,
+  same as before.
+
+## How it is wired
+
+Shared module: `js/kebab-hover.js`, injected from `js/agent-menu.js` on every
+page that renders the WISE nav. It clicks the existing trigger so each
+surface’s own open handler still runs. Do not reimplement hover-open per page.
+
+Row ⋮ buttons are excluded from the icon-label tooltip (`js/lir-tooltip.js`) —
+the menu **is** the hover result, not an “Actions” card.
+
+## Rules for the agent
+
+- Never leave a new three-dot without a popover. If the control is a ⋮, hovering
+  it must open a menu.
+- Do not make a three-dot menu click-only. Hover is the default on pointer
+  devices.
+- Do not show a separate “Actions” / “More options” tooltip on a ⋮ that already
+  opens a menu.
+- Touch must still work: no hover, tap toggles.

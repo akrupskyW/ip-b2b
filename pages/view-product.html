@@ -98,10 +98,13 @@
     #welcome-screen .ws-chips { margin-bottom: 1rem; }
     .chat-input-rail { padding: 14px 26px 18px; }
 
-    /* In-chat reply / intent chips row (same as the other WISE chat pages). */
+    /* In-chat reply / intent chips row (same as the other WISE chat pages).
+       Intent chips use .ws-intent-chip — gold leading glyph, fly-in label. */
     .sc-reply-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: -2px 0 14px 42px; }
     .sc-reply-chips .chip { text-align: left; max-width: 100%; }
     .sc-reply-chips .chip .material-symbols-outlined { align-self: center; flex-shrink: 0; }
+    .sc-reply-chips .ws-intent-chip > .material-symbols-outlined { color: var(--ter-amber, #E3C878); }
+    html.dark .sc-reply-chips .ws-intent-chip > .material-symbols-outlined { color: var(--ter-amber, #E3C878); }
     @media (max-width: 720px) { .sc-reply-chips { margin-left: 0; } }
 
     /* Message lines reuse the shared .sc-line* classes from wise.css. Small

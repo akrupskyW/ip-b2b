@@ -292,11 +292,13 @@ function paint() {
     <div class="pf-wrap">
       <div class="pf-head">
         <div class="pf-head-copy">
-          <h1 class="pf-title">Organization Profile</h1>
+          <div class="pf-title-row">
+            <h1 class="pf-title">Organization Profile</h1>
+            <div class="pf-head-actions">
+              <button type="button" class="pf-btn pf-btn--primary" data-pf-save disabled aria-disabled="true"><span class="material-symbols-outlined">save</span>Save Changes</button>
+            </div>
+          </div>
           <p class="pf-lede">Edit organization details, contact information, and brands.</p>
-        </div>
-        <div class="pf-head-actions">
-          <button type="button" class="pf-btn pf-btn--primary" data-pf-save><span class="material-symbols-outlined">save</span>Save Changes</button>
         </div>
       </div>
 
@@ -412,6 +414,7 @@ function applyField(key, rawValue, source) {
   }
 
   toast(`${f.label} updated`);
+  syncHeadSave();
   const shown = value ? `<strong>${esc(value)}</strong>` : '<em>(cleared)</em>';
   const verb = prev ? 'Updated' : 'Set';
   return `${verb} <strong>${esc(f.label)}</strong> to ${shown}. Don\u2019t forget to <strong>Save Changes</strong> when you\u2019re done.`;
@@ -422,6 +425,7 @@ function setUpload(kind, entry, source) {
   dirty.add(kind);
   pendingUpload = null;
   repaintUpload(kind);
+  syncHeadSave();
   const label = kind === 'logo' ? 'Brand logo' : 'Brand banner';
   const via = entry.kind === 'url' ? 'from the URL' : 'from your device';
   toast(`${label} set`, 'image');
@@ -436,8 +440,10 @@ function setAvatar(src, name, source) {
   state.avatar = src;
   state.avatarName = name || '';
   pendingUpload = null;
+  dirty.add('avatar');
   setUserAvatar(src);
   repaintAvatar();
+  syncHeadSave();
   const via = name ? 'from your device' : 'from the URL';
   toast('Avatar picture set', 'account_circle');
   const html = `Set your <strong>avatar picture</strong> ${via}. It now shows in the primary navigation and on your chat messages.`;
@@ -452,8 +458,10 @@ function setAvatarPreset(preset, source) {
   state.avatar = presetSrc(preset);
   state.avatarName = '';
   pendingUpload = null;
+  dirty.add('avatar');
   setUserAvatar(state.avatar);
   repaintAvatar();
+  syncHeadSave();
   toast(preset.src ? 'Avatar picture set' : 'Avatar pattern set', 'account_circle');
   const html = `Set your <strong>avatar picture</strong> to the <strong>${esc(preset.label)}</strong> ${kind}. It now shows in the primary navigation and on your chat messages.`;
   if (source === 'form') pushChat(html); else return html;
@@ -465,23 +473,79 @@ function removeAvatar(source) {
   state.avatar = null;
   state.avatarName = '';
   pendingUpload = null;
+  dirty.add('avatar');
   clearUserAvatar();
   repaintAvatar();
+  syncHeadSave();
   toast('Avatar picture removed', 'account_circle');
   const html = 'Removed your <strong>avatar picture</strong>. Your initials are back in the primary navigation and on your chat messages.';
   if (source === 'form') pushChat(html); else return html;
   return html;
 }
 
+const DIRTY_LABEL = { logo: 'Brand logo', banner: 'Brand banner', avatar: 'Avatar picture' };
+let savedSnap = '';
+
+function formSnap() {
+  const snap = {};
+  for (const key of Object.keys(FIELD)) {
+    const el = hostEl?.querySelector(`[data-pf-field="${key}"]`);
+    snap[key] = el ? String(el.value ?? '') : String(state[key] ?? '');
+  }
+  snap.logo = JSON.stringify(state.logo);
+  snap.banner = JSON.stringify(state.banner);
+  snap.avatar = String(state.avatar ?? '');
+  return JSON.stringify(snap);
+}
+
+/* Pull in-progress field values into state so Save (especially the
+   headline button, which is type=button and does not blur the field)
+   writes what is on screen, not only what has already committed. */
+function commitPendingFields() {
+  if (!hostEl) return;
+  for (const el of hostEl.querySelectorAll('[data-pf-field]')) {
+    const key = el.dataset.pfField;
+    if (!FIELD[key]) continue;
+    let value = String(el.value ?? '').trim();
+    if (key === 'orgType') {
+      const match = ORG_TYPES.find((o) => o.toLowerCase() === value.toLowerCase());
+      if (match) value = match;
+    }
+    if (value !== String(state[key] ?? '')) {
+      state[key] = value;
+      dirty.add(key);
+    }
+  }
+}
+
 function doSave(source) {
-  const changed = [...dirty].map((k) => FIELD[k]?.label || (k === 'logo' ? 'Brand logo' : k === 'banner' ? 'Brand banner' : k));
+  commitPendingFields();
+  const changed = [...dirty].map((k) => FIELD[k]?.label || DIRTY_LABEL[k] || k);
   dirty.clear();
+  savedSnap = formSnap();
   toast('Profile saved', 'cloud_done');
+  syncHeadSave();
   const html = changed.length
     ? `Saved your organization profile. Updated: ${changed.map((c) => `<strong>${esc(c)}</strong>`).join(', ')}.`
     : 'Saved your organization profile \u2014 everything is up to date.';
   if (source === 'form') pushChat(html); else return html;
   return html;
+}
+
+/* The headline Save stays disabled until something on the form actually
+   differs from the last save — in-progress typing counts, and so do
+   committed field / upload / avatar edits. The footer Save is unchanged. */
+function hasUnsavedEdits() {
+  if (!hostEl || !savedSnap) return dirty.size > 0;
+  return formSnap() !== savedSnap;
+}
+
+function syncHeadSave() {
+  const btn = hostEl?.querySelector('[data-pf-save]');
+  if (!btn) return;
+  const on = hasUnsavedEdits();
+  btn.disabled = !on;
+  btn.setAttribute('aria-disabled', on ? 'false' : 'true');
 }
 
 /* ==================================================================== */
@@ -501,6 +565,13 @@ export function renderProfile(mainEl) {
   state.avatar = getUserAvatar();
   if (!state.avatar) state.avatarName = '';
   paint();
+  savedSnap = formSnap();
+  syncHeadSave();
+
+  /* In-progress typing enables the headline Save before the field commits. */
+  mainEl.addEventListener('input', (e) => {
+    if (e.target.closest('[data-pf-field]')) syncHeadSave();
+  });
 
   /* Field commits — a real change narrates into the chat. */
   mainEl.addEventListener('change', (e) => {

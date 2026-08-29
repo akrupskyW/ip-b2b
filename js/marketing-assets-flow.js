@@ -5,17 +5,17 @@ import './date-column.js';
  *
  * A self-contained, nested-table file browser rendered into #agent-main-scroll
  * on marketing-assets.html (an app-nav shell page). The whole asset library is
- * modelled as a deep tree and rendered as literal "tables within tables": every
- * folder row that is opened drops a nested <table> of its children into a
- * full-width cell, so the hierarchy nests visibly as many levels as the data
- * runs. A breadcrumb, serif title, and Sort control mirror the rest of the app
- * (see the verification/portfolio surfaces).
+ * modelled as a deep tree and rendered with the same CSS-grid table the rest
+ * of the app uses (portfolio / invoices). Opening a folder drops a nested
+ * list of rows indented under it, so the hierarchy nests visibly as many
+ * levels as the data runs.
  *
  * Behaviour:
- *   - Click a folder row (or its chevron) to expand/collapse its nested table.
+ *   - Click a folder row (or the chevron in the first column) to expand/collapse its nested table.
  *   - Sort by Name / Size / Date from the table column headers (folders stay first).
  *   - Filters live in a tune icon inside the search pill (type + expand/collapse).
  *   - Preview (images + SVG) opens a lightbox; Download fires a confirmation.
+ *   - A brand chip sits left of the module ⋯ (same switcher as Product Portfolio).
  */
 
 /* ------------------------------------------------------------------ */
@@ -223,6 +223,15 @@ const TREE = folder('Marketing Assets', [
 /* State                                                               */
 /* ------------------------------------------------------------------ */
 
+/* Same catalog as the Product Portfolio brand chip (Flax4Life first). */
+const BRANDS = [
+  { name: 'Flax4Life', color: '#2E7D5B', avatar: null, claimed: 5, discovered: 47 },
+  { name: 'Simple Truth', color: '#4E7D5A', avatar: '../assets/compare/simpletruth.png', claimed: 10, discovered: 10 },
+  { name: 'Purely Elizabeth', color: '#C9736B', avatar: '../assets/compare/sug_purely.jpg', claimed: 10, discovered: 10 },
+  { name: 'Siete', color: '#C0392B', avatar: '../assets/compare/sug_siete.jpg', claimed: 10, discovered: 10 },
+  { name: 'KIND', color: '#E0A100', avatar: '../assets/compare/kind.jpg', claimed: 10, discovered: 10 },
+];
+
 const state = {
   sortKey: 'name',   // 'name' | 'size' | 'date'
   sortDir: 1,        // 1 asc, -1 desc
@@ -231,7 +240,9 @@ const state = {
   typeFilter: null,  // null | 'image' | 'vector' | 'pdf' | 'doc' — score-card / popover filter
   filterOpen: false, // in-search filter popover
   dateLead: 'updated',
+  brand: 'Flax4Life',
 };
+const currentBrand = () => BRANDS.find((b) => b.name === state.brand) || BRANDS[0];
 let dateLeadBound = false;
 function dc() { return window.WiseDateCol; }
 function nodeDates(node) {
@@ -402,7 +413,7 @@ function countChildren(node) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Rendering — nested tables                                           */
+/* Rendering — CSS-grid table (same shell as invoices / portfolio)      */
 /* ------------------------------------------------------------------ */
 
 function renderThead() {
@@ -412,14 +423,15 @@ function renderThead() {
     const dir = active ? ` data-ma-dir="${state.sortDir === 1 ? 'asc' : 'desc'}"` : '';
     const inner = (key === 'date' && D) ? D.headerHtml({ kinds: 'asset', lead: state.dateLead }) : esc(label);
     const dateCls = key === 'date' ? ' w-date-th' : '';
-    return `<th class="ma-th ma-th--sortable ${extraCls}${dateCls}" role="columnheader" tabindex="0" data-ma-sort="${key}"${dir} aria-sort="${active ? (state.sortDir === 1 ? 'ascending' : 'descending') : 'none'}">${inner}<span class="ma-sort-arrow">${ARROW_SVG}</span></th>`;
+    return `<span class="ma-th ma-th--sortable ${extraCls}${dateCls}" role="columnheader" tabindex="0" data-ma-sort="${key}"${dir} aria-sort="${active ? (state.sortDir === 1 ? 'ascending' : 'descending') : 'none'}">${inner}<span class="ma-sort-arrow">${ARROW_SVG}</span></span>`;
   };
-  return `<tr>
-    <th class="ma-th ma-th-actions" scope="col" aria-label="Actions"></th>
+  return `<div class="ma-thead">
+    <span class="ma-th ma-th-expand" aria-label="Expand"></span>
+    <span class="ma-th ma-th-actions" aria-label="Actions"></span>
     ${th('name', 'Name')}
     ${th('size', 'Size', 'ma-th-size ma-th--num')}
     ${th('date', 'Date', 'ma-th-date')}
-  </tr>`;
+  </div>`;
 }
 
 function rowMenuItem(act, path, icon, label) {
@@ -442,7 +454,7 @@ function renderRowMenu(node, open) {
 function renderRows(children) {
   if (!children.length) {
     const msg = filtering() ? 'No assets match the current filter.' : 'This folder is empty.';
-    return `<tr><td colspan="4" class="ma-empty">${msg}</td></tr>`;
+    return `<div class="ma-row ma-row--empty"><span class="ma-empty">${msg}</span></div>`;
   }
   return sortChildren(children).map((node) =>
     node.type === 'folder' ? renderFolderRow(node) : renderFileRow(node)
@@ -455,29 +467,27 @@ function renderFolderRow(node) {
      manual open state. */
   const open = filtering() ? true : state.open.has(node._path);
   const nested = open
-    ? `<tr class="ma-nest-row"><td colspan="4">
-         <div class="ma-nest-cell"><div class="ma-nest-inner">
-           <table class="ma-table ma-table--nested" data-no-sort><tbody>${renderRows(visibleChildren(node))}</tbody></table>
-         </div></div>
-       </td></tr>`
+    ? `<div class="ma-nest">${renderRows(visibleChildren(node))}</div>`
     : '';
   return `
-    <tr class="ma-row ma-row--folder ${open ? 'is-open' : ''}" data-folder="${esc(node._path)}"
+    <div class="ma-row ma-row--folder ${open ? 'is-open' : ''}" data-folder="${esc(node._path)}"
         role="button" tabindex="0" aria-expanded="${open}">
-      <td class="ma-cell-actions">${renderRowMenu(node, open)}</td>
-      <td class="ma-cell-main">
+      <span class="ma-td ma-cell-expand">
+        <span class="ma-chevron"><span class="material-symbols-outlined">chevron_right</span></span>
+      </span>
+      <span class="ma-td ma-cell-actions">${renderRowMenu(node, open)}</span>
+      <span class="ma-td ma-cell-main">
         <span class="ma-name-wrap">
-          <span class="ma-chevron"><span class="material-symbols-outlined">chevron_right</span></span>
           <span class="ma-ic ma-ic--folder"><span class="material-symbols-outlined">${folderIcon(node.name)}</span></span>
           <span class="ma-name-block">
             <span class="ma-name">${highlight(node.name)}</span>
             <span class="ma-count-pill">${esc(countChildren(node))}</span>
           </span>
         </span>
-      </td>
-      <td class="ma-cell-size">${esc(fmtNodeBytes(node))}</td>
-      <td class="ma-cell-date"><span class="w-datecell">${dc() ? dc().cellHtml(nodeDates(node), 'asset', state.dateLead) : esc(fmtNodeDate(node))}</span></td>
-    </tr>${nested}`;
+      </span>
+      <span class="ma-td ma-cell-size">${esc(fmtNodeBytes(node))}</span>
+      <span class="ma-td ma-cell-date"><span class="w-datecell">${dc() ? dc().cellHtml(nodeDates(node), 'asset', state.dateLead) : esc(fmtNodeDate(node))}</span></span>
+    </div>${nested}`;
 }
 
 function renderFileRow(node) {
@@ -485,19 +495,20 @@ function renderFileRow(node) {
   const icon = `<span class="ma-ic ${m.tone || ''}"><span class="material-symbols-outlined">${m.icon}</span></span>`;
   const warn = isImportant(node) ? ' ma-name--warn' : '';
   return `
-    <tr class="ma-row ma-row--file" data-file="${esc(node._path)}">
-      <td class="ma-cell-actions">${renderRowMenu(node, false)}</td>
-      <td class="ma-cell-main">
+    <div class="ma-row ma-row--file" data-file="${esc(node._path)}">
+      <span class="ma-td ma-cell-expand"></span>
+      <span class="ma-td ma-cell-actions">${renderRowMenu(node, false)}</span>
+      <span class="ma-td ma-cell-main">
         <span class="ma-name-wrap">
           ${icon}
           <span class="ma-name-block">
             <span class="ma-name${warn}">${highlight(node.name)}</span>
           </span>
         </span>
-      </td>
-      <td class="ma-cell-size">${esc(fmtNodeBytes(node))}</td>
-      <td class="ma-cell-date"><span class="w-datecell">${dc() ? dc().cellHtml(nodeDates(node), 'asset', state.dateLead) : esc(fmtNodeDate(node))}</span></td>
-    </tr>`;
+      </span>
+      <span class="ma-td ma-cell-size">${esc(fmtNodeBytes(node))}</span>
+      <span class="ma-td ma-cell-date"><span class="w-datecell">${dc() ? dc().cellHtml(nodeDates(node), 'asset', state.dateLead) : esc(fmtNodeDate(node))}</span></span>
+    </div>`;
 }
 
 /* Score cards — one per file type in the library (plus an "All assets" card),
@@ -553,13 +564,188 @@ function renderFilterPop() {
     </div>`;
 }
 
+function brandAvatarHTML(b, cls) {
+  const letter = esc(b.name.charAt(0));
+  const bg = `style="background:${esc(b.color || 'var(--primary)')}"`;
+  if (b.avatar) {
+    return `<span class="${cls}" ${bg}><img src="${esc(b.avatar)}" alt="" onerror="this.parentNode.textContent='${letter}'"></span>`;
+  }
+  return `<span class="${cls}" ${bg}>${letter}</span>`;
+}
+
+function brandOptMeta(b) {
+  return `${b.claimed} claimed · ${b.discovered} discovered`;
+}
+
+function brandChipHTML() {
+  const b = currentBrand();
+  const opts = BRANDS.map((brand) => {
+    const on = brand.name === b.name;
+    return `<button type="button" class="pf-brand-opt${on ? ' is-active' : ''}" role="option"` +
+      ` data-ma="select-brand" data-brand="${esc(brand.name)}" data-name="${esc(brand.name.toLowerCase())}"` +
+      ` aria-selected="${on ? 'true' : 'false'}">` +
+      `${brandAvatarHTML(brand, 'pf-brand-opt-avatar')}` +
+      `<span class="pf-brand-opt-text"><span class="pf-brand-opt-name">${esc(brand.name)}</span>` +
+      `<span class="pf-brand-opt-meta">${esc(brandOptMeta(brand))}</span></span>` +
+      `<span class="material-symbols-outlined pf-brand-opt-check" aria-hidden="true">check</span></button>`;
+  }).join('');
+  return `
+    <div class="pf-brand" id="ma-brand">
+      <button type="button" class="pf-brand-chip" id="ma-brand-chip" aria-haspopup="listbox"
+        aria-expanded="false" aria-controls="ma-brand-opts" data-ma="toggle-brand">
+        ${brandAvatarHTML(b, 'pf-brand-avatar')}
+        <span class="pf-brand-name" id="ma-brand-name">${esc(b.name)}</span>
+        <span class="material-symbols-outlined pf-brand-caret" aria-hidden="true">expand_more</span>
+      </button>
+      <div class="pf-brand-menu" id="ma-brand-menu" hidden>
+        <div class="pf-brand-search">
+          <span class="material-symbols-outlined" aria-hidden="true">search</span>
+          <input type="search" id="ma-brand-search" data-ma="brand-search" placeholder="Search brands…" aria-label="Search brands" autocomplete="off" />
+        </div>
+        <div class="pf-brand-opts" id="ma-brand-opts" role="listbox" aria-label="Select a brand">${opts}</div>
+        <div class="pf-brand-empty" id="ma-brand-empty" hidden>No brands match</div>
+      </div>
+    </div>`;
+}
+
+function brandMenuEl() {
+  return document.getElementById('ma-brand-menu')
+    || Array.from(document.querySelectorAll('.pf-brand-menu')).find((m) => m.__plHost?.id === 'ma-brand')
+    || null;
+}
+
+function filterBrandMenu(query) {
+  const q = String(query || '').trim().toLowerCase();
+  const list = document.getElementById('ma-brand-opts')
+    || brandMenuEl()?.querySelector('.pf-brand-opts');
+  if (!list) return;
+  let shown = 0;
+  list.querySelectorAll('.pf-brand-opt').forEach((o) => {
+    const match = !q || (o.getAttribute('data-name') || '').indexOf(q) !== -1;
+    o.hidden = !match;
+    if (match) shown++;
+  });
+  const empty = document.getElementById('ma-brand-empty')
+    || brandMenuEl()?.querySelector('.pf-brand-empty');
+  if (empty) empty.hidden = shown > 0;
+}
+
+function resetBrandSearch() {
+  const input = document.getElementById('ma-brand-search')
+    || brandMenuEl()?.querySelector('#ma-brand-search');
+  if (input) input.value = '';
+  filterBrandMenu('');
+}
+
+function closeBrandMenu() {
+  const menu = brandMenuEl();
+  const chip = document.getElementById('ma-brand-chip');
+  if (chip) chip.setAttribute('aria-expanded', 'false');
+  if (!menu) return;
+  menu.setAttribute('hidden', '');
+  resetBrandSearch();
+}
+
+function toggleBrandMenu() {
+  const menu = brandMenuEl();
+  const chip = document.getElementById('ma-brand-chip');
+  if (!menu) return;
+  const open = menu.hasAttribute('hidden');
+  if (open) {
+    resetBrandSearch();
+    menu.removeAttribute('hidden');
+    const input = document.getElementById('ma-brand-search')
+      || menu.querySelector('#ma-brand-search');
+    if (input) setTimeout(() => input.focus(), 0);
+  } else {
+    menu.setAttribute('hidden', '');
+    resetBrandSearch();
+  }
+  if (chip) chip.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
+function applyBrand(name) {
+  const next = BRANDS.find((b) => b.name === name);
+  if (!next) return;
+  state.brand = next.name;
+  const chip = document.getElementById('ma-brand-chip');
+  if (chip) {
+    const av = chip.querySelector('.pf-brand-avatar');
+    const label = chip.querySelector('#ma-brand-name');
+    if (av) av.outerHTML = brandAvatarHTML(next, 'pf-brand-avatar');
+    if (label) label.textContent = next.name;
+  }
+  const list = document.getElementById('ma-brand-opts')
+    || brandMenuEl()?.querySelector('.pf-brand-opts');
+  list?.querySelectorAll('.pf-brand-opt').forEach((o) => {
+    const on = o.getAttribute('data-brand') === next.name;
+    o.classList.toggle('is-active', on);
+    o.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  const meta = document.querySelector('.ma-head-meta');
+  if (meta) {
+    meta.textContent = `Marketing materials, shield resources, and templates for ${next.name}.`;
+  }
+  closeBrandMenu();
+}
+
+function mountBrandSwitcher() {
+  const controls = document.querySelector('#agent-main-header .panel-controls');
+  if (!controls) {
+    requestAnimationFrame(mountBrandSwitcher);
+    return;
+  }
+  let trail = controls.querySelector('#ma-brand-trail');
+  if (!trail) {
+    trail = document.createElement('div');
+    trail.id = 'ma-brand-trail';
+    trail.className = 'pf-head-trail ma-brand-trail';
+    controls.insertBefore(trail, controls.firstChild);
+  }
+  trail.innerHTML = brandChipHTML();
+}
+
+function wireBrandSwitcher() {
+  if (typeof document === 'undefined' || document.__maBrandWired) return;
+  document.__maBrandWired = true;
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!(t instanceof Element)) return;
+    if (t.closest('[data-ma="toggle-brand"]')) {
+      e.stopPropagation();
+      toggleBrandMenu();
+      return;
+    }
+    const pick = t.closest('[data-ma="select-brand"]');
+    if (pick) {
+      e.stopPropagation();
+      applyBrand(pick.getAttribute('data-brand'));
+      return;
+    }
+    if (!t.closest('#ma-brand, .pf-brand-menu')) closeBrandMenu();
+  });
+  document.addEventListener('input', (e) => {
+    if (e.target && e.target.id === 'ma-brand-search') filterBrandMenu(e.target.value);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { closeBrandMenu(); return; }
+    if (e.key !== 'Enter' || e.target?.id !== 'ma-brand-search') return;
+    e.preventDefault();
+    const first = (document.getElementById('ma-brand-opts')
+      || brandMenuEl()?.querySelector('.pf-brand-opts'))
+      ?.querySelector('.pf-brand-opt:not([hidden])');
+    if (first) applyBrand(first.getAttribute('data-brand'));
+  });
+}
+
 function renderShell() {
+  const brand = currentBrand();
   return `
     <div data-w-date-root data-ma-board>
     <header class="ma-head">
       <div class="ma-head-titles">
         <h1 class="ma-head-title">Marketing Assets</h1>
-        <p class="ma-head-meta">Marketing materials, shield resources, and templates for your verified products.</p>
+        <p class="ma-head-meta">Marketing materials, shield resources, and templates for ${esc(brand.name)}.</p>
       </div>
     </header>
     <div class="ma-body">
@@ -584,10 +770,10 @@ function renderShell() {
       </div>
       <div class="ma-searchbar-meta" id="ma-search-meta" hidden></div>
       <div class="ma-card">
-        <table class="ma-table" id="ma-root-table" data-no-sort>
-          <thead>${renderThead()}</thead>
-          <tbody>${renderRows(visibleChildren(TREE))}</tbody>
-        </table>
+        <div class="ma-table" id="ma-root-table" data-no-sort data-no-cards>
+          ${renderThead()}
+          <div class="ma-tbody">${renderRows(visibleChildren(TREE))}</div>
+        </div>
       </div>
     </div>
     </div>`;
@@ -793,9 +979,9 @@ function allFolderPaths() {
 function repaint(host) {
   const table = host.querySelector('#ma-root-table');
   if (table) {
-    const thead = table.querySelector('thead');
-    const tbody = table.querySelector('tbody');
-    if (thead) thead.innerHTML = renderThead();
+    const thead = table.querySelector('.ma-thead');
+    const tbody = table.querySelector('.ma-tbody');
+    if (thead) thead.outerHTML = renderThead();
     if (tbody) tbody.innerHTML = renderRows(visibleChildren(TREE));
   }
   syncExpandLabel(host);
@@ -898,6 +1084,8 @@ function syncExpandLabel(host) {
 export function renderMarketingAssets(host) {
   if (!host) return;
   host.innerHTML = renderShell();
+  mountBrandSwitcher();
+  wireBrandSwitcher();
   syncExpandLabel(host);
   syncScorecards(host);
   syncFilterUi(host);

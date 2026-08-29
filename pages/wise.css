@@ -94,6 +94,7 @@
 .adm-icon-btn--primary .material-symbols-outlined,
 .pf-btn--primary .material-symbols-outlined,
 .dash-btn--primary .material-symbols-outlined,
+.vf-cta .material-symbols-outlined,
 .vf-modal-btn--primary .material-symbols-outlined,
 .gv-btn--primary .material-symbols-outlined,
 .wmod-btn--primary .material-symbols-outlined,
@@ -11884,8 +11885,17 @@ body[data-nav-id="verification"] { padding-left: 12px; }
   color: var(--text);
 }
 
-/* ---------- Header (serif title + meta line, product-portfolio style) ---------- */
-.vf-head { padding: 26px 40px 0; position: relative; }
+/* ---------- Header (serif title, then CTA immediately after — not a far-right float) ---------- */
+.vf-head {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 26px 40px 0;
+  position: relative;
+}
+.vf-head-actions { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
 /* Back control — a simple icon button pinned to the very top-left, aligned with
    the shell's top controls. Absolutely positioned so showing/hiding it between
    steps never shifts the headline. */
@@ -11918,9 +11928,107 @@ html.dark .vf-back:hover { background: rgba(255, 255, 255, 0.06); }
   line-height: 1.15;
   margin: 0;
 }
-.vf-head-meta { font-size: 0.78rem; color: var(--text-muted); margin: 4px 0 0; }
 
-/* ---------- Toolbar (search pill + primary CTA) ---------- */
+/* Brand switcher — same chip + searchable list as Product Portfolio. Lives
+   here so verification (and any other surface) can reuse it. */
+.pf-brand { position: relative; flex-shrink: 0; }
+.pf-brand-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 34px; box-sizing: border-box; padding: 3px 10px 3px 4px;
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 15%, var(--border));
+  border-radius: var(--radius-pill, 999px);
+  cursor: pointer;
+  font-family: inherit; color: var(--text); appearance: none;
+  transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+}
+.pf-brand-chip:hover { border-color: var(--primary); background: var(--primary-soft); }
+.pf-brand-chip[aria-expanded="true"] { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+html.dark .pf-brand-chip {
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
+  border-color: color-mix(in srgb, #fff 15%, transparent);
+}
+html.dark .pf-brand-chip:hover, html.dark .pf-brand-chip[aria-expanded="true"] { background: rgba(37,80,124,0.28); }
+.pf-brand-avatar {
+  flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 12px; color: #fff; letter-spacing: -0.01em;
+  background: var(--primary); overflow: hidden;
+}
+.pf-brand-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.pf-brand-name {
+  font-size: 12px; font-weight: 700; color: var(--text); line-height: 1;
+  white-space: nowrap; max-width: 160px; overflow: hidden; text-overflow: ellipsis;
+}
+.pf-brand-caret { font-size: 18px !important; color: var(--text-muted); transition: transform .15s ease; flex: 0 0 auto; }
+.pf-brand-chip[aria-expanded="true"] .pf-brand-caret { transform: rotate(180deg); color: var(--primary-ink, var(--primary)); }
+
+.pf-brand-menu {
+  position: absolute; top: calc(100% + 8px); right: 0; left: auto; z-index: 60;
+  display: flex; flex-direction: column;
+  min-width: 300px; max-width: 340px; max-height: 380px;
+  padding: 6px; background: var(--surface-2);
+  border: 1px solid var(--border-strong); border-radius: 14px;
+  box-shadow: var(--shadow-card); animation: vfBrandMenuIn 0.15s ease-out both;
+}
+.pf-brand-menu[hidden] { display: none; }
+@keyframes vfBrandMenuIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+html.dark .pf-brand-menu {
+  background: linear-gradient(155deg, #1A2339 0%, #1A2339 100%);
+  border-color: rgba(37,80,124,0.28); box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+}
+.pf-brand-search {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  margin: 2px 4px 6px; padding: 0 10px 0 12px; height: 34px; box-sizing: border-box;
+  background: var(--surface); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+}
+html.dark .pf-brand-search { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+.pf-brand-search > .material-symbols-outlined {
+  font-size: 18px; color: var(--text-subtle); pointer-events: none; flex-shrink: 0;
+}
+.pf-brand-search input {
+  flex: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent;
+  font-family: inherit; font-size: 0.8125rem; font-weight: 400; color: var(--text);
+  appearance: none; -webkit-appearance: none;
+}
+.pf-brand-search input::placeholder {
+  color: color-mix(in srgb, var(--text-subtle) 55%, transparent); font-style: italic;
+}
+.pf-brand-search:focus-within {
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+.pf-brand-opts { overflow-y: auto; min-height: 0; flex: 1 1 auto; }
+.pf-brand-empty {
+  padding: 18px 12px; text-align: center;
+  font-size: 0.8125rem; color: var(--text-muted);
+}
+.pf-brand-empty[hidden] { display: none; }
+.pf-brand-opt {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 9px 10px; border: none; background: none; cursor: pointer;
+  border-radius: 10px; text-align: left; color: var(--text);
+}
+.pf-brand-opt[hidden] { display: none; }
+.pf-brand-opt:hover, .pf-brand-opt.is-active { background: var(--primary-soft); }
+html.dark .pf-brand-opt:hover, html.dark .pf-brand-opt.is-active { background: rgba(255,255,255,0.06); }
+.pf-brand-opt-avatar {
+  flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 13px; color: #fff; background: var(--primary); overflow: hidden;
+}
+.pf-brand-opt-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.pf-brand-opt-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+.pf-brand-opt-name { font-size: 0.9rem; font-weight: 700; }
+.pf-brand-opt-meta { font-size: 11px; color: var(--text-muted); }
+.pf-brand-opt-check { margin-left: auto; color: var(--primary-ink, var(--primary)); font-size: 20px !important; opacity: 0; }
+.pf-brand-opt.is-active .pf-brand-opt-check { opacity: 1; }
+
+/* ---------- Toolbar (search pill) ---------- */
 .vf-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -11928,7 +12036,6 @@ html.dark .vf-back:hover { background: rgba(255, 255, 255, 0.06); }
   gap: 8px;
   padding: 18px 0 16px;
 }
-.vf-tool-spacer { display: none; }
 .vf-search-inline { position: relative; display: inline-flex; align-items: center; flex: 1 1 auto; min-width: 220px; }
 .vf-search-inline .material-symbols-outlined {
   position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
@@ -11948,14 +12055,17 @@ html.dark .vf-search { background: rgba(255,255,255,0.05); border-color: rgba(25
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
 }
 
-/* ---------- Board card (glance stats + table) ---------- */
+/* Scorecards live above the table card, never inside it. */
+.vf-glance { margin: 0 0 16px; }
+
+/* ---------- Board card (table only) ---------- */
 .vf-board {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-md);
   box-shadow: var(--shadow-1);
   padding: 14px;
-  overflow: hidden;
+  overflow: visible;
 }
 .vf-stats-bar { padding: 0 2px 10px; }
 .vf-stats-label { font-size: 0.625rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); }
@@ -11963,20 +12073,35 @@ html.dark .vf-search { background: rgba(255,255,255,0.05); border-color: rgba(25
 .vf-stat {
   flex: 1 1 120px; min-width: 108px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  margin: 0;
   padding: 12px 14px;
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--r-sm);
   box-shadow: var(--shadow-1);
-  text-align: center;
+  font: inherit; color: inherit; text-align: center;
+  cursor: pointer;
+  -webkit-appearance: none; appearance: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 /* Scorecard fill mirrors the chat module (.sc-card) across every theme so the
    stat tiles share the chat surface, set apart only by their hairline border. */
 html.dark .vf-stat { background: #1A2339; }
 html.chat-tint:not(.dark) .vf-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
 html.dark.chat-tint .vf-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
-.vf-stat--active { border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); background: color-mix(in srgb, var(--primary) 7%, var(--surface)); }
+.vf-stat:hover { transform: translateY(-1px); box-shadow: var(--shadow-card); border-color: var(--border-strong); }
+.vf-stat:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+.vf-stat.is-active,
+.vf-stat--active {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+  box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1);
+}
+html.dark .vf-stat.is-active,
+html.dark .vf-stat--active { background: color-mix(in srgb, var(--primary) 26%, transparent); }
 .vf-stat-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1; }
+.vf-stat.is-active .vf-stat-num,
 .vf-stat--active .vf-stat-num { color: var(--primary); }
+html.dark .vf-stat.is-active .vf-stat-num,
 html.dark .vf-stat--active .vf-stat-num { color: var(--vf-ink); }
 /* Scorecard number colors — each matches its Non-UPF Shield chip below. */
 .vf-stat--warn .vf-stat-num { color: #8a6400; }
@@ -12001,9 +12126,9 @@ html.dark .vf-stat--verified .vf-stat-label .material-symbols-outlined { color: 
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: 40px;
+  height: 34px;
   box-sizing: border-box;
-  padding: 0 18px;
+  padding: 0 16px;
   border: 0;
   border-radius: var(--radius-pill, 999px);
   background: var(--primary);
@@ -12011,6 +12136,7 @@ html.dark .vf-stat--verified .vf-stat-label .material-symbols-outlined { color: 
   font-family: inherit;
   font-size: 0.8125rem;
   font-weight: 700;
+  white-space: nowrap;
   cursor: pointer;
   box-shadow: var(--shadow-1);
   transition: filter 0.15s ease, transform 0.1s ease, opacity 0.15s ease;
@@ -14680,6 +14806,9 @@ html.dark .wmod-stat--verified .wmod-stat-label .material-symbols-outlined { col
 .pf-td { font-size: 12px; color: var(--text-muted); min-width: 0; }
 .pf-col-product { display: flex; align-items: center; gap: 10px; }
 .pf-col-check { display: flex; align-items: center; justify-content: center; }
+.pf-col-menu { display: flex; align-items: center; justify-content: center; }
+.pf-col-action { display: flex; align-items: center; justify-content: flex-start; min-width: 0; }
+.pf-col-action .pf-claim-btn { max-width: 100%; }
 .pf-thumb {
   width: 40px; height: 40px; flex-shrink: 0;
   border-radius: var(--w-prod-thumb-r, 8px);
@@ -14699,11 +14828,11 @@ html.dark .pf-thumb { background: rgba(37,80,124,0.28); color: #9DC0E6; border-c
 .pf-pname { font-size: 12.5px; font-weight: 600; color: var(--text); line-height: 1.3; }
 .pf-upc { font-size: 11px; color: var(--text-subtle); font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
 
-/* Verification — same table, checkbox / product / shield / dates columns. */
+/* Verification — checkbox · ⋮ · row action · product · shield · dates. */
 .pf-table--verify .pf-thead,
-.pf-table--verify .pf-trow { grid-template-columns: 44px minmax(0, 2.2fr) 168px minmax(150px, 1.4fr); }
+.pf-table--verify .pf-trow { grid-template-columns: 44px 34px minmax(148px, 0.9fr) minmax(0, 2.2fr) 168px minmax(150px, 1.4fr); }
 .pf-table--verify-attest .pf-thead,
-.pf-table--verify-attest .pf-trow { grid-template-columns: 40px 44px minmax(0, 2.2fr) 168px minmax(150px, 1.4fr); }
+.pf-table--verify-attest .pf-trow { grid-template-columns: 44px 34px 40px minmax(0, 2.2fr) 168px minmax(150px, 1.4fr); }
 .pf-trow--detail { display: block; padding: 0 12px 12px; border-bottom: 1px solid var(--border); }
 .pf-trow--detail:not(.is-open) { display: none; }
 .pf-table .pf-empty { grid-column: 1 / -1; text-align: center; color: var(--text-subtle); padding: 26px 12px; font-size: 0.85rem; }
@@ -14723,6 +14852,49 @@ a.pf-claim-btn:hover, a.pf-claim-btn:focus { color: inherit; text-decoration: no
   border-color: var(--primary);
 }
 .pf-claim-btn .material-symbols-outlined { font-size: 14px; }
+
+/* Per-row ⋮ menu — same shell as Product Portfolio, shared so verification
+   (and any other .pf-table) can open View / Edit without page-local CSS. */
+.pf-rowmenu { position: relative; }
+.pf-rowmenu-btn {
+  width: 30px; height: 30px; max-width: 44px; max-height: 44px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid transparent; background: transparent; color: var(--text-subtle);
+  cursor: pointer; overflow: hidden; transition: background 0.15s ease, color 0.15s ease;
+}
+.pf-rowmenu-btn:hover, .pf-rowmenu.is-open .pf-rowmenu-btn { background: var(--surface-2); color: var(--text); }
+html.dark .pf-rowmenu-btn:hover, html.dark .pf-rowmenu.is-open .pf-rowmenu-btn { background: rgba(255,255,255,0.06); }
+.pf-rowmenu-btn .material-symbols-outlined { font-size: 18px !important; line-height: 1; }
+.pf-rowmenu-pop {
+  position: absolute; top: auto; bottom: calc(100% + 6px); left: 0; z-index: 40; min-width: 208px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: var(--shadow-2, 0 12px 32px rgba(0,0,0,0.18)); padding: 6px;
+}
+.pf-rowmenu-pop[hidden] { display: none; }
+.pf-rowmenu-item {
+  width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+  border: none; background: transparent; cursor: pointer; border-radius: 8px;
+  font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--text); text-align: left;
+  text-decoration: none; box-sizing: border-box;
+}
+a.pf-rowmenu-item, a.pf-rowmenu-item:link, a.pf-rowmenu-item:visited,
+a.pf-rowmenu-item:hover, a.pf-rowmenu-item:focus { color: inherit; text-decoration: none; }
+.pf-rowmenu-item:hover { background: var(--surface-2); }
+html.dark .pf-rowmenu-item:hover { background: rgba(255,255,255,0.06); }
+.pf-rowmenu-item .material-symbols-outlined {
+  font-size: 16px !important; line-height: 1 !important; color: var(--text-subtle);
+  width: 18px; height: 18px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.pf-rowmenu-item:hover .material-symbols-outlined { color: var(--primary-ink, var(--primary)); }
+.pf-rowmenu-sep { height: 1px; margin: 5px 4px; background: var(--border); }
+.pf-rowmenu-info { display: flex; align-items: center; gap: 8px; padding: 4px 10px; font-size: 11px; color: var(--text-muted); }
+.pf-rowmenu-info .material-symbols-outlined {
+  font-size: 14px !important; line-height: 1 !important; color: var(--text-subtle);
+  width: 16px; height: 16px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+
 .wmod-thead { border-bottom: 1px solid var(--border); }
 .wmod-th { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); min-width: 0; }
 .wmod-trow { border-bottom: 1px solid var(--border); transition: background 0.15s ease; }

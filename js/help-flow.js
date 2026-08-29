@@ -30,7 +30,7 @@ const FAQS = [
   { topic: 'verification', q: 'How does Non-UPF verification work?', a: 'You select pre-qualified SKUs, sign an attestation that your ingredient data matches the packaging, then pay per SKU. WISE mints a Non-UPF Verified™ shield you can use on packaging and marketing.' },
   { topic: 'verification', q: 'What\u2019s the difference between Non-UPF and GRAS verification?', a: 'Non-UPF verification classifies finished products against the NOVA scale. GRAS verification works at the ingredient level, documenting Generally Recognized As Safe status for each additive.' },
   { topic: 'reports', q: 'How is my portfolio UPF score calculated?', a: 'Each product is classified against the NOVA scale; your score is the share of your line-up that lands as Non-UPF. Open any report to see the per-product and per-ingredient breakdown.' },
-  { topic: 'billing', q: 'How do I download an invoice?', a: 'Invoices live under Organization → Invoices & Downloads. Each is available as a PDF the moment it\u2019s issued.' },
+  { topic: 'billing', q: 'How do I download an invoice?', a: 'Invoices live under Organization → Invoices. Each is available as a PDF the moment it\u2019s issued.' },
   { topic: 'api', q: 'Where do I find my API keys?', a: 'Open API keys from your profile menu or the Account section of the nav. You can create and revoke keys there, and view your usage and rate limits. A key\u2019s full value is shown only once, when you create it \u2014 copy it right away, because it can\u2019t be revealed again.' },
   { topic: 'account', q: 'How do I enable two-factor authentication?', a: 'Go to My profile → Security → Manage 2FA. We recommend an authenticator app over SMS.' },
   { topic: 'getting-started', q: 'How do I add products to my portfolio?', a: 'The Data Ingestion Agent accepts files, URLs, ERP exports, and product images. Start from Product Portfolio and choose Add products.' },
@@ -229,7 +229,7 @@ export const HELP_WISEAI = {
     getting_started: 'To get started, add products with the <strong>Data Ingestion Agent</strong> (files, URLs, ERP exports or images), then run verification. I\u2019ve pulled the getting-started articles up for you.',
     walkthrough: 'Opening the <strong>WISEowl walkthrough</strong> \u2014 I\u2019ll walk the real pages with you. Skip a group or go one by one; I\u2019ll remember what you\u2019ve already seen.',
     verification_help: '<strong>Non-UPF verification</strong> classifies finished products on the NOVA scale; <strong>GRAS verification</strong> documents ingredient-level safety. Filtered the help articles to verification.',
-    billing_help: 'Invoices live under <strong>Organization → Invoices & Downloads</strong> and download as PDFs. I\u2019ve surfaced the billing FAQs.',
+    billing_help: 'Invoices live under <strong>Organization → Invoices</strong> and download as PDFs. I\u2019ve surfaced the billing FAQs.',
     contact: 'Opened the <strong>Contact support</strong> form on the right \u2014 pick what\u2019s going on, tell us what happened, and Send Email. I\u2019m still here if you\u2019d rather chat.',
   },
   onIntent: (intent) => {

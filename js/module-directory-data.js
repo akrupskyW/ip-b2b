@@ -16,8 +16,10 @@
  *
  * page-gallery.html is a full-screen viewer launched from this catalog.
  * It is not a product module — keep it out of MODULE_SECTIONS (and list
- * it in OMITTED_PAGES in all-modules-flow.js) so Re-evaluate does not
- * add it as unaccounted, and so the gallery never iframes itself.
+ * it in OMITTED_PAGES in all-modules-flow.js and page-gallery.js) so
+ * Re-evaluate does not add it as unaccounted, and so the gallery never
+ * cards itself. The gallery also live-lists pages/ and the repo root
+ * so a newly added HTML file appears even before this catalog is edited.
  */
 
 export const MODULE_SECTIONS = [
@@ -35,7 +37,6 @@ export const MODULE_SECTIONS = [
       { label: 'Product Portfolio', icon: 'handyman', href: 'product-portfolio.html' },
       { label: 'Comparison', icon: 'compare', href: 'product-comparison.html' },
       { label: 'NON-UPF Dashboard', icon: 'dashboard', href: 'non-upf-dashboard.html' },
-      { label: 'Marketing Assets', icon: 'photo_library', href: 'marketing-assets.html' },
       { label: 'Add Product', icon: 'add_box', href: 'add-product.html' },
       { label: 'Add Catalog', icon: 'upload_file', href: 'add-catalog.html' },
       { label: 'View Product', icon: 'inventory_2', href: 'view-product.html' },
@@ -89,7 +90,8 @@ export const MODULE_SECTIONS = [
     tone: 'admin',
     modules: [
       { label: 'My profile', icon: 'account_circle', href: 'profile.html' },
-      { label: 'Invoices & Downloads', icon: 'receipt_long', href: 'invoices.html' },
+      { label: 'Invoices', icon: 'receipt_long', href: 'invoices.html' },
+      { label: 'Marketing Assets', icon: 'photo_library', href: 'marketing-assets.html' },
       { label: 'Organizations', icon: 'apartment', href: 'organizations.html' },
       { label: 'Quick Invite', icon: 'bolt', href: 'quick-invite.html' },
       { label: 'User Management', icon: 'group', href: 'user-management.html' },

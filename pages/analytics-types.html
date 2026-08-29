@@ -103,6 +103,7 @@
        but keep the shared two-column grid so the "Where to focus" scatter stays
        in column one (the hidden side card leaves column two empty). */
     .dash-scatter-side { display: none !important; }
+    .dash-scatter-row[data-att-orient="v"] .dash-scatter-side { display: flex !important; }
 
     /* "Where to focus" header: stack the description beneath the headline instead
        of letting it wrap to the right of it (the shared topbar lead is a flex row). */
@@ -727,7 +728,10 @@
       .ah-export,
       .ah-toast,
       #pmx-tip,
-      #dash-donut-tip { display: none !important; }
+      #dash-donut-tip,
+      .inf-orient,
+      .att-orient,
+      .att-orient-bar { display: none !important; }
       /* Pagination strategy: do NOT force whole cards/sections onto one page —
          that's what left large empty gaps at the foot of a page whenever a tall
          chart card couldn't fit in the remaining space. Instead let the big
@@ -752,7 +756,8 @@
       .dash-claim-col,
       .dash-breakdown-bar,
       .dash-pillar-row,
-      .att-legend {
+      .att-legend,
+      .inf-chart {
         break-inside: avoid;
         page-break-inside: avoid;
       }
@@ -2481,16 +2486,57 @@
         return card;
       }
 
+      let transposed = false;
+
       function render(stage) {
         stage.innerHTML = '';
         const grid = document.createElement('div');
-        grid.className = 'pmx';
+        const sorted = SKUS.slice().sort((a, b) => b.score - a.score);
+        const rows = expanded ? sorted : sorted.slice(0, COLLAPSED_ROWS);
+        grid.className = 'pmx' + (transposed ? ' is-transposed' : '');
+        if (transposed) grid.style.setProperty('--pmx-cols', String(rows.length));
         const frag = document.createDocumentFragment();
+
+        if (transposed) {
+          /* Metrics as rows, products as columns — the vertical reading of
+             the same heat-map. */
+          const headMeta = document.createElement('div');
+          headMeta.className = 'pmx-corner';
+          frag.appendChild(headMeta);
+          rows.forEach((s) => {
+            const x = document.createElement('div');
+            x.className = 'pmx-xlabel';
+            x.innerHTML = `<span>${esc(s.name)}</span>`;
+            frag.appendChild(x);
+          });
+          METRICS.forEach((metric, i) => {
+            const meta = document.createElement('div');
+            meta.className = 'pmx-rowmeta';
+            meta.innerHTML = `<span class="pmx-rowname">${esc(metric)}</span>`;
+            frag.appendChild(meta);
+            rows.forEach((s) => {
+              const rating = s.r[i];
+              const tier = TIERS[RATING_TIER[rating]];
+              const cell = document.createElement('div');
+              cell.className = 'pmx-cell' + (rating >= 4 ? ' pmx-cell--fix' : '');
+              cell.style.cssText = `background:${tier.fill};color:${tier.ink};`;
+              cell.dataset.sku = s.name;
+              cell.dataset.skuScore = s.score;
+              cell.dataset.metric = i;
+              cell.dataset.rating = rating;
+              cell.innerHTML = `<span>${tier.label.charAt(0)}</span>` +
+                (rating >= 4 ? fixToastHTML(metric, rating) : '');
+              frag.appendChild(cell);
+            });
+          });
+          grid.appendChild(frag);
+          stage.appendChild(grid);
+          schedulePos(stage);
+          return grid;
+        }
 
         /* Body: one row per product (best overall score first, to honour the
            "sorted highest to lowest" read of the matrix). Collapsed by default. */
-        const sorted = SKUS.slice().sort((a, b) => b.score - a.score);
-        const rows = expanded ? sorted : sorted.slice(0, COLLAPSED_ROWS);
 
         rows.forEach((s) => {
           const avatar = document.createElement('div');
@@ -2726,6 +2772,18 @@
         if (viewport) viewport.addEventListener('scroll', () => schedulePos(stage), { passive: true });
         return true;
       }
+
+      window.__attPmxSetOrient = function (orient) {
+        const stage = document.querySelector('#att-stage');
+        const card = document.getElementById('att-tree-card');
+        if (!stage || !card) return;
+        transposed = orient === 'v';
+        const grid = render(stage);
+        wireAvatars(stage);
+        const moreBtn = card.querySelector('#att-more');
+        if (moreBtn) syncMore(moreBtn);
+        animateCells(grid);
+      };
 
       /* The dashboard content is injected by agent-overview.js on DOMContentLoaded;
          wait for it to land, then append the treemap below all charts. */
@@ -3811,6 +3869,7 @@
       const SIZE = 460, CX = 230, CY = 230, MAX_R = 145, LABEL_R = MAX_R + 20;
       const LEVELS = [20, 40, 60, 80, 100];
       const NS = 'http://www.w3.org/2000/svg';
+      const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
       const rad = (deg) => (deg * Math.PI) / 180;
       const P = (deg, r) => [CX + r * Math.cos(rad(deg)), CY + r * Math.sin(rad(deg))];
       const f = (v) => Number(v).toFixed(1);
@@ -4000,6 +4059,22 @@
         });
       }
 
+      function buildBars(axes) {
+        const wrap = document.createElement('div');
+        wrap.className = 'pa-bars';
+        wrap.setAttribute('aria-label', 'Pillar metrics as bars');
+        axes.forEach((a) => {
+          const row = document.createElement('div');
+          row.className = 'pa-bar-row';
+          const label = a.full || a.short || '';
+          row.innerHTML =
+            `<div class="pa-bar-head"><span>${esc(label)}</span><span class="pa-bar-val">${Math.round(a.value)}</span></div>` +
+            `<div class="pa-bar-track"><div class="pa-bar-fill" style="width:${Math.max(0, Math.min(100, a.value))}%;background:${a.color}"></div></div>`;
+          wrap.appendChild(row);
+        });
+        return wrap;
+      }
+
       function convert(radar) {
         if (!radar || radar.dataset.polar === '1') return false;
         const axes = readAxes(radar);
@@ -4008,7 +4083,9 @@
         const { svg, wedges } = buildSvg(axes);
         radar.innerHTML = '';
         radar.appendChild(svg);
+        radar.appendChild(buildBars(axes));
         radar._paWedges = wedges;
+        radar._paAxes = axes;
         recolorLegend(radar);
         if (window.IntersectionObserver) {
           const io = new IntersectionObserver((entries) => {
@@ -4050,6 +4127,12 @@
       }
       window.addEventListener('wise:finalize-charts', finalizeForExport);
       window.addEventListener('beforeprint', finalizeForExport);
+
+      window.__attPolarSetOrient = function (orient) {
+        document.querySelectorAll('.dash-radar[data-polar="1"]').forEach((radar) => {
+          radar.classList.toggle('is-bars', orient === 'v');
+        });
+      };
 
       function init() {
         scan();
@@ -4102,6 +4185,7 @@
         { sel: '#gras-class-card',        label: 'Historical & GRAS Ingredients' },
         { sel: '#proc-class-card',        label: 'Ingredient Processing Details' },
         { sel: '#gras-prod-card',         label: 'Product-Level GRAS Classification' },
+        { sel: '#inf-funnel-card',        label: 'Ingredient Funnel' },
       ];
 
       const nav = document.getElementById('az-nav');
@@ -4356,6 +4440,448 @@
     html.dark .att-mhc-group .att-mhc-row + .att-mhc-row { border-top-color: rgba(255, 255, 255, 0.08); }
   </style>
 
+  <style>
+    /* =====================================================================
+       Ingredient normalization funnel (analytics-types.html only).
+       A three-stage organic funnel that pours into a segmented canon-ingredient
+       bar. Vertical (funnel top→bottom, bar left→right) and horizontal
+       (funnel left→right, bar top→bottom) are first-class layouts, not a
+       CSS rotate — the toggle in the card head swaps them.
+    ===================================================================== */
+    #inf-funnel-card {
+      --inf-s1: color-mix(in srgb, var(--primary) 42%, #d8e8f5);
+      --inf-s2: color-mix(in srgb, var(--primary) 72%, #8fb6d4);
+      --inf-s3: var(--primary);
+      --inf-s1-ink: #1B3348;
+      --inf-s2-ink: #fff;
+      --inf-s3-ink: #fff;
+      --inf-ref: var(--primary);
+      --inf-unref: var(--chart-status-fair);
+      --inf-fema: var(--sec-green);
+      --inf-other: var(--ter-amber);
+      --inf-ref-ink: #fff;
+      --inf-unref-ink: #fff;
+      --inf-fema-ink: #fff;
+      --inf-other-ink: #5A3A00;
+      --inf-flow: color-mix(in srgb, var(--primary) 46%, transparent);
+    }
+    html.dark #inf-funnel-card {
+      --inf-s1: color-mix(in srgb, var(--primary) 50%, #7a9bb8);
+      --inf-s2: color-mix(in srgb, var(--primary) 72%, #8aabca);
+      --inf-s3: #4A7FA8;
+      --inf-s1-ink: #F2F7FB;
+      --inf-s2-ink: #fff;
+      --inf-s3-ink: #fff;
+      --inf-other-ink: #3D2800;
+      --inf-flow: color-mix(in srgb, var(--primary) 52%, transparent);
+    }
+
+    #inf-funnel-card .att-head--split {
+      justify-content: space-between;
+      align-items: center;
+    }
+    #inf-funnel-card .att-head--split .att-title { flex: 1 1 auto; min-width: 0; }
+
+    .att-orient,
+    .inf-orient {
+      display: inline-flex;
+      flex: none;
+      padding: 3px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--border) 35%, var(--surface));
+      gap: 2px;
+    }
+    .att-orient-btn,
+    .inf-orient-btn {
+      appearance: none;
+      border: none;
+      background: transparent;
+      padding: 6px 13px;
+      border-radius: 999px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      color: var(--text-muted);
+      cursor: pointer;
+      line-height: 1.2;
+      transition: background .14s ease, color .14s ease;
+    }
+    .att-orient-btn:hover,
+    .att-orient-btn:focus-visible,
+    .inf-orient-btn:hover,
+    .inf-orient-btn:focus-visible {
+      color: var(--text);
+      outline: none;
+    }
+    .att-orient-btn.is-on,
+    .inf-orient-btn.is-on {
+      background: var(--primary);
+      color: #fff;
+    }
+    html.dark .att-orient-btn.is-on,
+    html.dark .inf-orient-btn.is-on {
+      background: var(--primary-bright, var(--primary));
+      color: #0E1A26;
+    }
+    .att-orient-bar {
+      display: flex;
+      justify-content: flex-end;
+      margin: 0 0 10px;
+    }
+    .dash-card-topbar .att-orient,
+    .att-head .att-orient,
+    .dash-section-head .att-orient,
+    .dash-pillars-heading .att-orient,
+    .dash-top5-section .att-orient {
+      margin-left: auto;
+    }
+    .dash-section-head:has(.att-orient),
+    .dash-pillars-heading:has(.att-orient),
+    .dash-top5-section:has(.att-orient) > .dash-section-title {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .att-card:has(.att-orient) .upf-controls { display: none; }
+
+    /* ---- Orientation flips (analytics-types.html only) ---- */
+    .pscale[data-att-orient="v"] {
+      grid-template-columns: 1fr;
+    }
+    .pscale[data-att-orient="v"] .pscale-col + .pscale-col {
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18);
+    }
+    .dash-claim[data-att-orient="v"],
+    .dash-claim.dash-top5-claim[data-att-orient="v"],
+    .dash-claim.dash-top5-hero-claim[data-att-orient="v"] {
+      grid-template-columns: 1fr !important;
+      row-gap: 22px;
+    }
+    .dash-claim[data-att-orient="v"] > .dash-claim-divider {
+      width: 100%;
+      height: 1px;
+      min-height: 1px;
+    }
+    .dash-pillars-section[data-att-orient="v"] .dash-pillars {
+      grid-template-columns: 1fr !important;
+      gap: 22px;
+    }
+    .dash-pillars-section[data-att-orient="v"] .dash-pillars > .dash-claim-divider {
+      width: 100%;
+      height: 1px;
+    }
+    .dash-pillars-breakdown[data-att-orient="v"] .dash-breakdown-grid {
+      grid-template-columns: 1fr !important;
+      gap: 28px;
+    }
+    .dash-donut-card[data-att-orient="v"] .dash-donut-row {
+      grid-template-columns: 1fr;
+      justify-items: center;
+    }
+
+    /* Horizontal ranked bars → vertical columns */
+    .dash-gras-bar-card[data-att-orient="v"] .dash-gras-bars,
+    .dash-ingredients-card[data-att-orient="v"] .dash-ing-table,
+    .dash-flag-card[data-att-orient="v"] .dash-ing-table {
+      flex-direction: row;
+      align-items: stretch;
+      overflow-x: auto;
+      gap: 12px;
+      padding-bottom: 6px;
+    }
+    .dash-gras-bar-card[data-att-orient="v"] .dash-gras-bar-item,
+    .dash-ingredients-card[data-att-orient="v"] .dash-ing-row,
+    .dash-flag-card[data-att-orient="v"] .dash-ing-row {
+      flex: 1 1 0;
+      min-width: 72px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .dash-ingredients-card[data-att-orient="v"] .dash-ing-row--linked {
+      flex-direction: column;
+      align-items: center;
+    }
+    .dash-ingredients-card[data-att-orient="v"] .dash-ing-report { display: none; }
+    .dash-gras-bar-card[data-att-orient="v"] .dash-gras-bar-head,
+    .dash-ingredients-card[data-att-orient="v"] .dash-ing-bar-head,
+    .dash-flag-card[data-att-orient="v"] .dash-ing-bar-head {
+      order: 2;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-top: 8px;
+      width: 100%;
+    }
+    .dash-gras-bar-card[data-att-orient="v"] .dash-ws-health-bar,
+    .dash-ingredients-card[data-att-orient="v"] .dash-ws-health-bar,
+    .dash-flag-card[data-att-orient="v"] .dash-ws-health-bar {
+      width: 28px;
+      align-self: center;
+    }
+    .dash-gras-bar-card[data-att-orient="v"] .dash-ws-health-track,
+    .dash-ingredients-card[data-att-orient="v"] .dash-ws-health-track,
+    .dash-flag-card[data-att-orient="v"] .dash-ws-health-track {
+      width: 28px;
+      height: 160px;
+      display: flex;
+      flex-direction: column-reverse;
+    }
+    .dash-gras-bar-card[data-att-orient="v"] .dash-ws-health-fill,
+    .dash-ingredients-card[data-att-orient="v"] .dash-ws-health-fill,
+    .dash-flag-card[data-att-orient="v"] .dash-ws-health-fill {
+      width: 100% !important;
+      height: var(--att-fill, 50%);
+      min-width: 0;
+      min-height: 1.4rem;
+      padding: 4px 0;
+      justify-content: center;
+    }
+
+    /* Segmented bars stand up */
+    .dash-seg-section[data-att-orient="v"] .dash-seg-row,
+    .dash-mrow-section[data-att-orient="v"] .dash-seg-row {
+      align-items: flex-end;
+    }
+    .dash-seg-section[data-att-orient="v"] .dash-seg-track,
+    .dash-mrow-section[data-att-orient="v"] .dash-seg-track {
+      flex-direction: column;
+      height: 240px;
+      width: 52px;
+    }
+    .dash-seg-section[data-att-orient="v"] .dash-seg-legend,
+    .dash-mrow-section[data-att-orient="v"] .dash-seg-legend {
+      flex-direction: column;
+      height: 240px;
+      margin-left: 10px;
+    }
+    .dash-seg-section[data-att-orient="v"] .dash-seg-bars,
+    .dash-mrow-section[data-att-orient="v"] .dash-seg-bars {
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+    }
+    .dash-seg-section[data-att-orient="v"] .dash-seg-leg-line,
+    .dash-mrow-section[data-att-orient="v"] .dash-seg-leg-line {
+      width: 14px;
+      height: 2px;
+      margin-top: 0;
+      margin-left: -1px;
+    }
+    .dash-seg-section[data-att-orient="v"] .dash-charts-pending .dash-seg-track:not(.is-seg-ready),
+    .dash-mrow-section[data-att-orient="v"] .dash-charts-pending .dash-seg-track:not(.is-seg-ready) {
+      clip-path: inset(100% 0 0 0);
+    }
+
+    /* Polar → metric bars */
+    .dash-radar.is-bars .pa-svg { display: none; }
+    .dash-radar:not(.is-bars) .pa-bars { display: none; }
+    .pa-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      padding: 8px 4px 4px;
+    }
+    .pa-bar-row { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .pa-bar-head {
+      display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+      font-size: 12px; font-weight: 600; color: var(--text);
+    }
+    .pa-bar-val { font-variant-numeric: tabular-nums; color: var(--text-muted); }
+    .pa-bar-track {
+      height: 10px; border-radius: 999px;
+      background: color-mix(in srgb, var(--border) 70%, transparent);
+      overflow: hidden;
+    }
+    .pa-bar-fill { height: 100%; border-radius: inherit; }
+
+    /* Transposed performance matrix: metrics as rows, products as columns */
+    .pmx.is-transposed {
+      grid-template-columns: minmax(110px, 168px) repeat(var(--pmx-cols, 6), minmax(52px, 1fr));
+      min-width: 0;
+    }
+    .pmx.is-transposed .pmx-xlabel span { writing-mode: horizontal-tb; }
+
+    .inf-chart {
+      position: relative;
+      width: 100%;
+      cursor: pointer;
+    }
+    .inf-svg {
+      width: 100%;
+      height: auto;
+      display: block;
+      overflow: visible;
+    }
+    .inf-band,
+    .inf-ribbon,
+    .inf-seg {
+      opacity: 0;
+    }
+    .inf-chart.is-ready .inf-band,
+    .inf-chart.is-ready .inf-ribbon,
+    .inf-chart.is-ready .inf-seg {
+      animation: infIn .72s cubic-bezier(.22, 1, .36, 1) both;
+      animation-delay: var(--d, 0s);
+    }
+    @keyframes infIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .inf-band {
+      stroke: var(--surface);
+      stroke-width: 1.4;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 3px 6px rgba(8, 15, 26, 0.16));
+      transition: filter .15s ease, opacity .15s ease;
+    }
+    .inf-band:hover { filter: brightness(1.05) drop-shadow(0 6px 10px rgba(8, 15, 26, 0.22)); }
+    html.dark .inf-band { filter: drop-shadow(0 3px 7px rgba(0, 0, 0, 0.45)); }
+    .inf-ribbon { fill: url(#inf-flow-g); }
+    .inf-seg { transition: filter .15s ease; }
+    .inf-seg:hover { filter: brightness(1.06); }
+    .inf-leader {
+      fill: none;
+      stroke: var(--text-subtle);
+      stroke-width: 1.2;
+      stroke-linecap: round;
+      opacity: 0;
+    }
+    .inf-chart.is-ready .inf-leader {
+      animation: infIn .5s ease both;
+      animation-delay: .45s;
+    }
+
+    .inf-labels {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .inf-label {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.25;
+      max-width: 42%;
+    }
+    .inf-label--callout {
+      transform: translate(0, -50%);
+      text-align: left;
+      max-width: 28%;
+    }
+    .inf-label--callout-below {
+      transform: translate(-50%, 0);
+      text-align: center;
+      max-width: 36%;
+    }
+    .inf-label--bar-title {
+      transform: translate(0, -100%);
+      text-align: left;
+      max-width: none;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .inf-label--bar-title-side {
+      transform: translate(0, 0);
+      white-space: normal;
+      max-width: 18%;
+      line-height: 1.35;
+    }
+    .inf-label--group {
+      transform: translate(-50%, -100%);
+      text-align: center;
+      max-width: 46%;
+      color: var(--text);
+    }
+    .inf-label--group-side {
+      transform: translate(0, -50%);
+      text-align: left;
+      max-width: 22%;
+      color: var(--text);
+    }
+    .inf-num {
+      display: block;
+      font-family: 'WISE Digits', var(--font-serif, Georgia, serif);
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.05;
+    }
+    .inf-label--group .inf-num,
+    .inf-label--group-side .inf-num { font-size: 16px; }
+    .inf-label--bar-title .inf-num {
+      display: inline;
+      font-size: 13px;
+      letter-spacing: 0;
+    }
+    .inf-cap {
+      display: block;
+      margin-top: 3px;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.35;
+      opacity: 0.92;
+    }
+    .inf-label--group .inf-cap,
+    .inf-label--group-side .inf-cap {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      opacity: 0.78;
+    }
+
+    .inf-legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 14px 22px;
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--text-subtle);
+    }
+    .inf-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .inf-legend .att-dot { width: 10px; height: 10px; }
+    .inf-legend-n {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .inf-note {
+      margin: 12px 0 0;
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .inf-chart.is-ready .inf-band,
+      .inf-chart.is-ready .inf-ribbon,
+      .inf-chart.is-ready .inf-seg,
+      .inf-chart.is-ready .inf-leader { animation: none; opacity: 1; }
+      .inf-orient-btn { transition: none; }
+    }
+    @container dash (max-width: 640px) {
+      .inf-num { font-size: 18px; }
+      .inf-label--group .inf-num,
+      .inf-label--group-side .inf-num { font-size: 14px; }
+      .inf-cap { font-size: 11px; }
+      .inf-label--bar-title { white-space: normal; max-width: 90%; }
+    }
+  </style>
+
   <script>
     /* =====================================================================
        Metrics Highlight chart (analytics-types.html only).
@@ -4577,6 +5103,631 @@
         if (mount()) return;
         const obs = new MutationObserver(() => { if (mount()) obs.disconnect(); });
         obs.observe(document.getElementById('agent-main-scroll') || document.body, { childList: true, subtree: true });
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+      else init();
+    })();
+  </script>
+
+  <script>
+    /* =====================================================================
+       Ingredient normalization funnel (analytics-types.html only).
+       Three square-root-scaled funnel stages (package terms → canon terms →
+       label-recognized ingredients) pour into a linear segmented bar of every
+       current canon ingredient. The card owns a Vertical / Horizontal toggle:
+       vertical is the source layout (funnel top-to-bottom, bar left-to-right);
+       horizontal is a first-class remount (funnel left-to-right, bar top-to-
+       bottom), not a CSS rotate. Numbers count up; click the chart to replay.
+    ===================================================================== */
+    (function () {
+      const NS = 'http://www.w3.org/2000/svg';
+      const ORIENT_KEY = 'az-funnel-orient';
+      const STAGES = [
+        { value: 272708, cap: 'distinct package terms encountered', fill: 'var(--inf-s1)', ink: 'var(--inf-s1-ink)' },
+        { value: 32849,  cap: 'canon terms',                        fill: 'var(--inf-s2)', ink: 'var(--inf-s2-ink)' },
+        { value: 5181,   cap: 'label-recognized canon ingredients', fill: 'var(--inf-s3)', ink: 'var(--inf-s3-ink)', callout: true },
+      ];
+      const GROUPS = [
+        { cap: 'Label-recognized', value: 5181 },
+        { cap: 'Not recognized',   value: 3477 },
+      ];
+      const SEGS = [
+        { value: 4982, cap: 'Referenced by foods',     fill: 'var(--inf-ref)',   ink: 'var(--inf-ref-ink)' },
+        { value: 199,  cap: 'Not yet referenced',      fill: 'var(--inf-unref)', ink: 'var(--inf-unref-ink)' },
+        { value: 2414, cap: 'FEMA GRAS flavor library', fill: 'var(--inf-fema)',  ink: 'var(--inf-fema-ink)' },
+        { value: 1063, cap: 'Other regulatory inventory', fill: 'var(--inf-other)', ink: 'var(--inf-other-ink)' },
+      ];
+      const BAR_TOTAL = 8658;
+      const GROUP_SPLIT = GROUPS[0].value / BAR_TOTAL;
+      const MAX_V = STAGES[0].value;
+      const JUNCTION_W = STAGES.map((s) => Math.sqrt(s.value / MAX_V)).concat([Math.sqrt(STAGES[2].value / MAX_V)]);
+      /* Four junctions: top of s1, s1/s2, s2/s3, bottom of s3. Last two share
+         the recognized-ingredient width so the pour stays as narrow as stage 3. */
+      JUNCTION_W[3] = JUNCTION_W[2];
+
+      const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      const fmt = (n) => Math.round(n).toLocaleString('en-US');
+      const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      function readOrient() {
+        try { return localStorage.getItem(ORIENT_KEY) === 'h' ? 'h' : 'v'; }
+        catch (_) { return 'v'; }
+      }
+      function writeOrient(o) {
+        try { localStorage.setItem(ORIENT_KEY, o); } catch (_) {}
+      }
+
+      function smoothstep(t) { return t * t * (3 - 2 * t); }
+      function widthAt(t) {
+        const n = JUNCTION_W.length - 1;
+        const x = Math.max(0, Math.min(1, t)) * n;
+        const i = Math.min(n - 1, Math.floor(x));
+        const f = smoothstep(x - i);
+        const base = JUNCTION_W[i] * (1 - f) + JUNCTION_W[i + 1] * f;
+        const wave = Math.sin(t * Math.PI * 2.15) * Math.sin(t * Math.PI) * Math.max(0.016, base * 0.055);
+        return base + wave;
+      }
+      function swayAt(t) {
+        return Math.sin(t * Math.PI * 1.35 + 0.7) * Math.sin(t * Math.PI) * 0.024;
+      }
+
+      function sampleBand(t0, t1, axis, center, start, span, maxThick) {
+        const pts = [];
+        const steps = 28;
+        for (let i = 0; i <= steps; i++) {
+          const t = t0 + (t1 - t0) * (i / steps);
+          const pos = start + span * t;
+          const half = widthAt(t) * maxThick / 2;
+          const sway = swayAt(t) * maxThick;
+          if (axis === 'v') {
+            pts.push({
+              a: { x: center - half + sway, y: pos },
+              b: { x: center + half + sway * 0.4, y: pos },
+            });
+          } else {
+            pts.push({
+              a: { x: pos, y: center - half + sway },
+              b: { x: pos, y: center + half + sway * 0.4 },
+            });
+          }
+        }
+        return pts;
+      }
+
+      function bandPath(pts, axis) {
+        const first = pts[0], last = pts[pts.length - 1];
+        let d = `M ${first.a.x.toFixed(1)} ${first.a.y.toFixed(1)}`;
+        for (let i = 1; i < pts.length; i++) d += ` L ${pts[i].a.x.toFixed(1)} ${pts[i].a.y.toFixed(1)}`;
+        if (axis === 'v') {
+          const midX = (last.a.x + last.b.x) / 2;
+          d += ` Q ${midX.toFixed(1)} ${(last.a.y + 7).toFixed(1)} ${last.b.x.toFixed(1)} ${last.b.y.toFixed(1)}`;
+        } else {
+          const midY = (last.a.y + last.b.y) / 2;
+          d += ` Q ${(last.a.x + 7).toFixed(1)} ${midY.toFixed(1)} ${last.b.x.toFixed(1)} ${last.b.y.toFixed(1)}`;
+        }
+        for (let i = pts.length - 2; i >= 0; i--) d += ` L ${pts[i].b.x.toFixed(1)} ${pts[i].b.y.toFixed(1)}`;
+        if (axis === 'v') {
+          const midX = (first.a.x + first.b.x) / 2;
+          d += ` Q ${midX.toFixed(1)} ${(first.a.y - 10).toFixed(1)} ${first.a.x.toFixed(1)} ${first.a.y.toFixed(1)}`;
+        } else {
+          const midY = (first.a.y + first.b.y) / 2;
+          d += ` Q ${(first.a.x - 10).toFixed(1)} ${midY.toFixed(1)} ${first.a.x.toFixed(1)} ${first.a.y.toFixed(1)}`;
+        }
+        return d + ' Z';
+      }
+
+      function ribbonPath(a0, b0, a1, b1, axis) {
+        if (axis === 'v') {
+          const mid = (a0.y + a1.y) / 2;
+          return `M ${a0.x.toFixed(1)} ${a0.y.toFixed(1)} C ${a0.x.toFixed(1)} ${mid.toFixed(1)}, ${a1.x.toFixed(1)} ${mid.toFixed(1)}, ${a1.x.toFixed(1)} ${a1.y.toFixed(1)} L ${b1.x.toFixed(1)} ${b1.y.toFixed(1)} C ${b1.x.toFixed(1)} ${mid.toFixed(1)}, ${b0.x.toFixed(1)} ${mid.toFixed(1)}, ${b0.x.toFixed(1)} ${b0.y.toFixed(1)} Z`;
+        }
+        const mid = (a0.x + a1.x) / 2;
+        return `M ${a0.x.toFixed(1)} ${a0.y.toFixed(1)} C ${mid.toFixed(1)} ${a0.y.toFixed(1)}, ${mid.toFixed(1)} ${a1.y.toFixed(1)}, ${a1.x.toFixed(1)} ${a1.y.toFixed(1)} L ${b1.x.toFixed(1)} ${b1.y.toFixed(1)} C ${mid.toFixed(1)} ${b1.y.toFixed(1)}, ${mid.toFixed(1)} ${b0.y.toFixed(1)}, ${b0.x.toFixed(1)} ${b0.y.toFixed(1)} Z`;
+      }
+
+      function mk(tag, attrs) {
+        const el = document.createElementNS(NS, tag);
+        for (const k in attrs) el.setAttribute(k, attrs[k]);
+        return el;
+      }
+
+      function layout(orient) {
+        if (orient === 'h') {
+          const VW = 1040, VH = 500;
+          const funnelX = 24, funnelW = 540, cy = 228, maxThick = 300;
+          const barX = 748, barW = 46, barY = 72, barH = 368;
+          return { VW, VH, axis: 'h', funnelX, funnelW, cy, maxThick, barX, barY, barW, barH };
+        }
+        const VW = 900, VH = 600;
+        const funnelY = 16, funnelH = 258, cx = 368, maxThick = 552;
+        const barX = 36, barW = 828, barY = 468, barH = 46;
+        return { VW, VH, axis: 'v', funnelY, funnelH, cx, maxThick, barX, barY, barW, barH };
+      }
+
+      function numSpan(value, extraClass) {
+        return `<span class="inf-num${extraClass ? ' ' + extraClass : ''}" data-count-to="${value}">0</span>`;
+      }
+
+      function renderChart(host, orient) {
+        const L = layout(orient);
+        const axis = L.axis;
+        const start = axis === 'v' ? L.funnelY : L.funnelX;
+        const span = axis === 'v' ? L.funnelH : L.funnelW;
+        const center = axis === 'v' ? L.cx : L.cy;
+        const stageTs = [[0, 1 / 3], [1 / 3, 2 / 3], [2 / 3, 1]];
+        const bands = stageTs.map(([t0, t1]) => sampleBand(t0, t1, axis, center, start, span, L.maxThick));
+        const last = bands[2][bands[2].length - 1];
+
+        const svg = mk('svg', {
+          class: 'inf-svg',
+          viewBox: `0 0 ${L.VW} ${L.VH}`,
+          role: 'img',
+          'aria-label': 'Ingredient normalization funnel: 272,708 package terms narrow to 5,181 label-recognized canon ingredients, then split across all 8,658 current canon ingredients',
+        });
+        const defs = mk('defs', {});
+        const clip = mk('clipPath', { id: 'inf-bar-clip' });
+        clip.appendChild(mk('rect', {
+          x: String(L.barX), y: String(L.barY),
+          width: String(L.barW), height: String(L.barH), rx: '10',
+        }));
+        defs.appendChild(clip);
+        const grad = mk('linearGradient', {
+          id: 'inf-flow-g',
+          x1: axis === 'v' ? '0' : '0',
+          y1: axis === 'v' ? '0' : '0',
+          x2: axis === 'v' ? '0' : '1',
+          y2: axis === 'v' ? '1' : '0',
+        });
+        grad.appendChild(mk('stop', { offset: '0%', 'stop-color': 'var(--inf-s3)', 'stop-opacity': '0.55' }));
+        grad.appendChild(mk('stop', { offset: '100%', 'stop-color': 'var(--inf-ref)', 'stop-opacity': '0.28' }));
+        defs.appendChild(grad);
+        svg.appendChild(defs);
+
+        bands.forEach((pts, i) => {
+          const path = mk('path', {
+            class: 'inf-band',
+            d: bandPath(pts, axis),
+            fill: STAGES[i].fill,
+            style: `--d:${0.06 + i * 0.14}s`,
+          });
+          path.appendChild(mk('title', {})).textContent =
+            `${fmt(STAGES[i].value)} ${STAGES[i].cap}`;
+          svg.appendChild(path);
+        });
+
+        let a1, b1;
+        if (axis === 'v') {
+          a1 = { x: L.barX, y: L.barY };
+          b1 = { x: L.barX + L.barW * GROUP_SPLIT, y: L.barY };
+        } else {
+          a1 = { x: L.barX, y: L.barY };
+          b1 = { x: L.barX, y: L.barY + L.barH * GROUP_SPLIT };
+        }
+        const ribbon = mk('path', {
+          class: 'inf-ribbon',
+          d: ribbonPath(last.a, last.b, a1, b1, axis),
+          fill: 'url(#inf-flow-g)',
+          style: '--d:.48s',
+        });
+        svg.appendChild(ribbon);
+
+        const gBar = mk('g', { 'clip-path': 'url(#inf-bar-clip)' });
+        let acc = 0;
+        SEGS.forEach((seg, i) => {
+          const frac = seg.value / BAR_TOTAL;
+          let x, y, w, h;
+          if (axis === 'v') {
+            x = L.barX + acc * L.barW; y = L.barY; w = frac * L.barW; h = L.barH;
+          } else {
+            x = L.barX; y = L.barY + acc * L.barH; w = L.barW; h = frac * L.barH;
+          }
+          acc += frac;
+          const r = mk('rect', {
+            class: 'inf-seg',
+            x: x.toFixed(1), y: y.toFixed(1),
+            width: Math.max(0.5, w).toFixed(1), height: Math.max(0.5, h).toFixed(1),
+            fill: seg.fill,
+            style: `--d:${0.62 + i * 0.08}s`,
+          });
+          r.appendChild(mk('title', {})).textContent = `${seg.cap} ${fmt(seg.value)}`;
+          gBar.appendChild(r);
+        });
+        svg.appendChild(gBar);
+
+        /* Callout leader from stage 3 to its label. */
+        const s3 = bands[2];
+        const mid3 = s3[Math.floor(s3.length / 2)];
+        let leader;
+        if (axis === 'v') {
+          const x0 = Math.max(mid3.a.x, mid3.b.x) + 8;
+          const y0 = (mid3.a.y + mid3.b.y) / 2;
+          leader = mk('path', {
+            class: 'inf-leader',
+            d: `M ${x0.toFixed(1)} ${y0.toFixed(1)} H ${(x0 + 28).toFixed(1)}`,
+          });
+        } else {
+          const x0 = (mid3.a.x + mid3.b.x) / 2;
+          const y0 = Math.max(mid3.a.y, mid3.b.y) + 8;
+          leader = mk('path', {
+            class: 'inf-leader',
+            d: `M ${x0.toFixed(1)} ${y0.toFixed(1)} V ${(y0 + 16).toFixed(1)}`,
+          });
+        }
+        svg.appendChild(leader);
+
+        const labels = document.createElement('div');
+        labels.className = 'inf-labels';
+
+        function pct(x, y) {
+          return { left: (x / L.VW * 100).toFixed(2) + '%', top: (y / L.VH * 100).toFixed(2) + '%' };
+        }
+        function place(el, x, y) {
+          const p = pct(x, y);
+          el.style.left = p.left;
+          el.style.top = p.top;
+        }
+
+        STAGES.forEach((st, i) => {
+          const pts = bands[i];
+          const mid = pts[Math.floor(pts.length / 2)];
+          const el = document.createElement('div');
+          const inside = !st.callout;
+          el.className = 'inf-label' + (st.callout
+            ? (axis === 'v' ? ' inf-label--callout' : ' inf-label--callout-below')
+            : '');
+          el.style.color = inside ? st.ink : 'var(--text)';
+          el.innerHTML = `${numSpan(st.value)}<span class="inf-cap">${esc(st.cap)}</span>`;
+          if (st.callout && axis === 'v') {
+            place(el, Math.max(mid.a.x, mid.b.x) + 42, (mid.a.y + mid.b.y) / 2);
+          } else if (st.callout) {
+            place(el, (mid.a.x + mid.b.x) / 2, Math.max(mid.a.y, mid.b.y) + 28);
+          } else {
+            place(el, (mid.a.x + mid.b.x) / 2, (mid.a.y + mid.b.y) / 2);
+          }
+          labels.appendChild(el);
+        });
+
+        const title = document.createElement('div');
+        title.className = 'inf-label inf-label--bar-title' + (axis === 'h' ? ' inf-label--bar-title-side' : '');
+        title.innerHTML = `All ${numSpan(BAR_TOTAL)} current canon ingredients`;
+        if (axis === 'v') place(title, L.barX, L.barY - 52);
+        else place(title, L.barX + L.barW + 14, L.barY);
+        labels.appendChild(title);
+
+        GROUPS.forEach((g, i) => {
+          const el = document.createElement('div');
+          el.className = 'inf-label ' + (axis === 'v' ? 'inf-label--group' : 'inf-label--group-side');
+          el.innerHTML = `${numSpan(g.value)}<span class="inf-cap">${esc(g.cap)}</span>`;
+          const startFrac = i === 0 ? 0 : GROUP_SPLIT;
+          const endFrac = i === 0 ? GROUP_SPLIT : 1;
+          const midFrac = (startFrac + endFrac) / 2;
+          if (axis === 'v') {
+            place(el, L.barX + L.barW * midFrac, L.barY - 6);
+          } else {
+            place(el, L.barX + L.barW + 14, L.barY + L.barH * midFrac);
+          }
+          labels.appendChild(el);
+        });
+
+        host.innerHTML = '';
+        host.dataset.orient = orient;
+        host.appendChild(svg);
+        host.appendChild(labels);
+      }
+
+      function countUp(el, to, dur) {
+        if (reduced) { el.textContent = fmt(to); return; }
+        const start = performance.now();
+        (function tick(now) {
+          const p = Math.min(1, (now - start) / dur);
+          el.textContent = fmt(to * (1 - Math.pow(1 - p, 3)));
+          if (p < 1) requestAnimationFrame(tick);
+        })(start);
+      }
+
+      function snapNums(card) {
+        card.querySelectorAll('.inf-num[data-count-to]').forEach((n) => {
+          n.textContent = fmt(parseInt(n.getAttribute('data-count-to'), 10) || 0);
+        });
+      }
+
+      function play(card) {
+        const chart = card.querySelector('.inf-chart');
+        if (!chart) return;
+        chart.classList.remove('is-ready');
+        card.querySelectorAll('.inf-num[data-count-to]').forEach((n) => { n.textContent = '0'; });
+        void chart.offsetWidth;
+        chart.classList.add('is-ready');
+        if (reduced) { snapNums(card); return; }
+        card.querySelectorAll('.inf-num[data-count-to]').forEach((n) => {
+          countUp(n, parseInt(n.getAttribute('data-count-to'), 10) || 0, 1400);
+        });
+      }
+
+      function setOrient(card, orient) {
+        writeOrient(orient);
+        card.querySelectorAll('.inf-orient-btn').forEach((b) => {
+          const on = b.dataset.orient === orient;
+          b.classList.toggle('is-on', on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        const chart = card.querySelector('.inf-chart');
+        renderChart(chart, orient);
+        play(card);
+      }
+
+      function buildCard() {
+        const card = document.createElement('section');
+        card.className = 'att-card';
+        card.id = 'inf-funnel-card';
+        card.innerHTML = `
+          <div class="att-head att-head--split">
+            <span class="att-title">Ingredient normalization funnel</span>
+            <div class="att-orient inf-orient" role="group" aria-label="Chart orientation">
+              <button type="button" class="inf-orient-btn is-on" data-orient="v" aria-pressed="true">Vertical</button>
+              <button type="button" class="inf-orient-btn" data-orient="h" aria-pressed="false">Horizontal</button>
+            </div>
+          </div>
+          <p class="att-intro">From terms printed on packages to matched canon ingredients. The funnel narrows
+            what appears on labels; the bar then places those recognized ingredients beside the rest of the
+            current canon — foods that already cite them, flavors still waiting, and regulatory inventories.</p>
+          <div class="inf-chart" id="inf-chart"></div>
+          <div class="inf-legend">${
+            SEGS.map((s) =>
+              `<span><span class="att-dot" style="background:${s.fill}"></span>${esc(s.cap)} <span class="inf-legend-n inf-num" data-count-to="${s.value}">0</span></span>`
+            ).join('')
+          }</div>
+          <p class="inf-note">Funnel stage widths are square-root scaled for readability; the numbers are exact. Click the chart to replay.</p>`;
+        return card;
+      }
+
+      function wire(card) {
+        card.querySelectorAll('.inf-orient-btn').forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setOrient(card, btn.dataset.orient);
+          });
+        });
+        const chart = card.querySelector('.inf-chart');
+        chart.addEventListener('click', (e) => {
+          if (e.target.closest('.inf-orient')) return;
+          play(card);
+        });
+        window.addEventListener('wise:finalize-charts', () => {
+          const ch = card.querySelector('.inf-chart');
+          if (ch) ch.classList.add('is-ready');
+          snapNums(card);
+        });
+        window.addEventListener('beforeprint', () => {
+          const ch = card.querySelector('.inf-chart');
+          if (ch) ch.classList.add('is-ready');
+          snapNums(card);
+        });
+        if (window.IntersectionObserver) {
+          const io = new IntersectionObserver((entries) => {
+            entries.forEach((en) => {
+              if (en.isIntersecting) { play(card); io.disconnect(); }
+            });
+          }, { threshold: 0.2 });
+          io.observe(card);
+        } else {
+          play(card);
+        }
+      }
+
+      function mount() {
+        const scroll = document.getElementById('agent-main-scroll');
+        const dash = scroll && scroll.querySelector('.dash');
+        if (!dash || document.getElementById('inf-funnel-card')) return !!document.getElementById('inf-funnel-card');
+        const anchor = document.getElementById('gras-prod-card')
+          || document.getElementById('proc-class-card')
+          || document.getElementById('gras-class-card')
+          || document.getElementById('upf-class-card')
+          || document.getElementById('att-tree-card');
+        if (!anchor) return false;
+        const card = buildCard();
+        anchor.insertAdjacentElement('afterend', card);
+        const orient = readOrient();
+        renderChart(card.querySelector('.inf-chart'), orient);
+        card.querySelectorAll('.inf-orient-btn').forEach((b) => {
+          const on = b.dataset.orient === orient;
+          b.classList.toggle('is-on', on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        wire(card);
+        return true;
+      }
+
+      function init() {
+        if (mount()) return;
+        const obs = new MutationObserver(() => { if (mount()) obs.disconnect(); });
+        obs.observe(document.getElementById('agent-main-scroll') || document.body, { childList: true, subtree: true });
+        setTimeout(() => obs.disconnect(), 12000);
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+      else init();
+    })();
+  </script>
+
+  <script>
+    /* =====================================================================
+       Chart orientation (analytics-types.html only). Every chart gets the
+       same Vertical / Horizontal pill. Default keeps the existing layout;
+       the other value flips the primary axis (or, for tables / polar /
+       scatter / the matrix, the already-built alternate reading).
+    ===================================================================== */
+    (function () {
+      const KEY = 'az-chart-orient';
+      function store() {
+        try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; }
+        catch (_) { return {}; }
+      }
+      function persist(id, orient) {
+        const all = store();
+        all[id] = orient;
+        try { localStorage.setItem(KEY, JSON.stringify(all)); } catch (_) {}
+      }
+
+      function tableFlip(toggleId) {
+        return function (host, orient) {
+          const btn = host.querySelector('#' + toggleId);
+          if (!btn) return;
+          const wantCards = orient === 'v';
+          const isCards = btn.getAttribute('aria-checked') === 'true';
+          if (wantCards !== isCards) btn.click();
+        };
+      }
+
+      const CHARTS = [
+        { id: 'pscale',     sel: ':scope > .pscale, .pscale', def: 'h', place: 'before' },
+        { id: 'claim',      sel: ':scope > .dash-claim:not(.att-overview-claim)', def: 'h', place: 'before' },
+        { id: 'overview',   sel: '.att-overview-claim', def: 'h', place: 'before' },
+        { id: 'top5',       sel: '.dash-top5-section:not(.dash-top5-hero-section)', def: 'h', place: 'head' },
+        { id: 'top5hero',   sel: '.dash-top5-hero-section', def: 'h', place: 'head' },
+        { id: 'upf-donut',  sel: '#dash-charts .dash-donut-card:first-child', def: 'h', place: 'topbar' },
+        { id: 'gras-donut', sel: '#dash-charts .dash-donut-card:last-child', def: 'h', place: 'topbar' },
+        { id: 'pillars',    sel: '.dash-pillars-section', def: 'h', place: 'head' },
+        { id: 'breakdown',  sel: '.dash-pillars-breakdown', def: 'h', place: 'head' },
+        { id: 'polar',      sel: '.dash-radar-card', def: 'h', place: 'topbar',
+          onChange: function (_h, o) { if (window.__attPolarSetOrient) window.__attPolarSetOrient(o); } },
+        { id: 'grasbars',   sel: '.dash-gras-bar-card', def: 'h', place: 'topbar' },
+        { id: 'hotspots',   sel: '.dash-ingredients-section .dash-ingredients-card', def: 'h', place: 'topbar' },
+        { id: 'antiinf',    sel: '.dash-products-section .dash-ingredients-card', def: 'h', place: 'topbar' },
+        { id: 'mhc',        sel: '.dash-mrow-section', def: 'h', place: 'before-inner' },
+        { id: 'unsafe',     sel: '.dash-flag-card:first-child', def: 'h', place: 'topbar' },
+        { id: 'unknown',    sel: '.dash-flag-card:last-child', def: 'h', place: 'topbar' },
+        { id: 'seg',        sel: '.dash-seg-section', def: 'h', place: 'head' },
+        { id: 'scatter',    sel: '.dash-scatter-section', def: 'h', place: 'topbar' },
+        { id: 'matrix',     sel: '#att-tree-card', def: 'h', place: 'head',
+          onChange: function (_h, o) { if (window.__attPmxSetOrient) window.__attPmxSetOrient(o); } },
+        { id: 'upf-table',  sel: '#upf-class-card', def: 'h', place: 'head', onChange: tableFlip('upf-view-toggle') },
+        { id: 'gras-table', sel: '#gras-class-card', def: 'h', place: 'head', onChange: tableFlip('gras-view-toggle') },
+        { id: 'proc-table', sel: '#proc-class-card', def: 'h', place: 'head', onChange: tableFlip('proc-view-toggle') },
+        { id: 'gras-prod',  sel: '#gras-prod-card', def: 'h', place: 'head', onChange: tableFlip('gras-prod-view-toggle') },
+      ];
+
+      function syncFills(host) {
+        host.querySelectorAll('.dash-ws-health-fill, .dash-metric-fill').forEach((el) => {
+          const w = el.style.width;
+          if (w) el.style.setProperty('--att-fill', w);
+        });
+      }
+
+      function toggleRoot(host) {
+        const prev = host.previousElementSibling;
+        if (prev && prev.classList.contains('att-orient-bar')) return prev;
+        return host;
+      }
+
+      function apply(host, spec, orient) {
+        host.dataset.attOrient = orient;
+        if (spec.id === 'scatter') {
+          const row = host.closest('.dash-scatter-row');
+          if (row) row.dataset.attOrient = orient;
+        }
+        if (spec.id === 'top5' || spec.id === 'top5hero') {
+          const claim = host.querySelector('.dash-claim');
+          if (claim) claim.dataset.attOrient = orient;
+        }
+        syncFills(host);
+        if (spec.onChange) spec.onChange(host, orient);
+        toggleRoot(host).querySelectorAll('.att-orient-btn').forEach((b) => {
+          const on = b.dataset.orient === orient;
+          b.classList.toggle('is-on', on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+      }
+
+      function buildToggle(host, spec, orient) {
+        const wrap = document.createElement('div');
+        wrap.className = 'att-orient';
+        wrap.setAttribute('role', 'group');
+        wrap.setAttribute('aria-label', 'Chart orientation');
+        wrap.innerHTML =
+          '<button type="button" class="att-orient-btn" data-orient="h" aria-pressed="false">Horizontal</button>' +
+          '<button type="button" class="att-orient-btn" data-orient="v" aria-pressed="false">Vertical</button>';
+        wrap.addEventListener('click', (e) => {
+          const btn = e.target.closest('.att-orient-btn');
+          if (!btn) return;
+          e.stopPropagation();
+          persist(spec.id, btn.dataset.orient);
+          apply(host, spec, btn.dataset.orient);
+        });
+        return wrap;
+      }
+
+      function placeToggle(host, toggle, place) {
+        if (place === 'before') {
+          if (host.previousElementSibling && host.previousElementSibling.classList.contains('att-orient-bar')) return;
+          const bar = document.createElement('div');
+          bar.className = 'att-orient-bar';
+          bar.appendChild(toggle);
+          host.parentNode.insertBefore(bar, host);
+          return;
+        }
+        if (place === 'before-inner') {
+          if (host.querySelector(':scope > .att-orient-bar')) return;
+          const bar = document.createElement('div');
+          bar.className = 'att-orient-bar';
+          bar.appendChild(toggle);
+          host.insertBefore(bar, host.firstChild);
+          return;
+        }
+        if (place === 'topbar') {
+          const topbar = host.querySelector('.dash-card-topbar');
+          if (topbar) {
+            const kebab = topbar.querySelector('.dash-kebab-wrap');
+            if (kebab) topbar.insertBefore(toggle, kebab);
+            else topbar.appendChild(toggle);
+            return;
+          }
+        }
+        if (place === 'head') {
+          const head = host.querySelector('.att-head, .dash-breakdown-title, .dash-pillars-heading, .dash-seg-head, .dash-section-head:not(.dash-mrow-head)');
+          if (head) { head.appendChild(toggle); return; }
+          const title = host.querySelector('.dash-top5-title, .att-title');
+          if (title) {
+            const bar = document.createElement('div');
+            bar.className = 'att-orient-bar';
+            bar.appendChild(toggle);
+            title.insertAdjacentElement('afterend', bar);
+            return;
+          }
+        }
+        const bar = document.createElement('div');
+        bar.className = 'att-orient-bar';
+        bar.appendChild(toggle);
+        host.insertBefore(bar, host.firstChild);
+      }
+
+      function attach(spec) {
+        const root = document.querySelector('#agent-main-scroll .dash') || document;
+        const host = root.querySelector(spec.sel);
+        if (!host || host.dataset.attOrientBound === '1') return !!host;
+        if (toggleRoot(host).querySelector('.att-orient')) {
+          host.dataset.attOrientBound = '1';
+          return true;
+        }
+        const saved = store()[spec.id];
+        const orient = saved === 'v' || saved === 'h' ? saved : spec.def;
+        const toggle = buildToggle(host, spec, orient);
+        placeToggle(host, toggle, spec.place);
+        host.dataset.attOrientBound = '1';
+        apply(host, spec, orient);
+        return true;
+      }
+
+      function scan() {
+        let all = true;
+        CHARTS.forEach((spec) => { if (!attach(spec)) all = false; });
+        return all;
+      }
+
+      function init() {
+        if (scan()) return;
+        const obs = new MutationObserver(() => { if (scan()) obs.disconnect(); });
+        obs.observe(document.getElementById('agent-main-scroll') || document.body, { childList: true, subtree: true });
+        setTimeout(() => obs.disconnect(), 14000);
       }
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
       else init();

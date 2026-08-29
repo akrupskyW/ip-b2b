@@ -20,3 +20,5 @@ alwaysApply: true
   primary nav), the popover must **reposition** so it stays correctly attached
   to its trigger.
 - Popover text must be legible in both light and dark mode.
+- Every three-dot (⋮ / ⋯) that owns a menu opens that popover **on hover**, not
+  on tap. See the three-dot-hover rule. Touch and keyboard still toggle.

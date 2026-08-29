@@ -990,11 +990,12 @@ export function restoreChatTint() {
 }
 
 /* Roll · Crawl · Walk · Run — the floating rollout-mode switch pinned to the right
-   edge of every page (js/cwr-toggle.js). Shown by default (mode: Run); this
-   Appearance toggle hides it. Driven by a `cwr-ui-on` class on <html> —
+   edge of every page (js/cwr-toggle.js). Shown by default; this Appearance
+   toggle hides it. Load default is Run on wiseai / view-product / add-product
+   and Roll everywhere else. Driven by a `cwr-ui-on` class on <html> —
    cwr-toggle.js gates BOTH the widget and the crawl/walk mode CSS on that
    class, so turning this off also suspends any chat-hiding the mode was
-   doing (the stored mode is kept for when the switch comes back on). */
+   doing (the in-session mode is kept for when the switch comes back on). */
 const CWR_UI_KEY = 'wise-cwr-ui';
 
 /** True when the floating Roll · Crawl · Walk · Run switch is shown. Defaults ON. */

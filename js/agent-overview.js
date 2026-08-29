@@ -81,7 +81,7 @@ const APP_NAV_FLOWS = {
     wiseai: (m) => m.API_KEYS_WISEAI,
   },
   invoices: {
-    title: 'WISE · Invoices & Downloads',
+    title: 'WISE · Invoices',
     load: () => import('./invoices-flow.js'),
     render: (m) => m.renderInvoices,
     wiseai: (m) => m.INVOICES_WISEAI,
@@ -169,10 +169,12 @@ async function ensureDashApi() {
 
 /* App-wide, self-initialising table helpers: consistent sortable headers
    (up/down chevron) + a matching "load more" pagination footer on every data
-   table. Both are side-effecting IIFE modules — importing runs them. */
+   table, plus row-click → View Product on product lists. Side-effecting
+   IIFE modules — importing runs them. */
 import './sortable-tables.js';
 import './table-pagination.js';
 import './responsive-tables.js';
+import './product-row-click.js';
 import './date-column.js';
 
 function escHtml(s) {
@@ -1749,6 +1751,7 @@ function openAvatarPopover(anchor) {
         agents: 'agents.html',
         profile: 'profile.html',
         invoices: 'invoices.html',
+        'marketing-assets': 'marketing-assets.html',
         prefs: 'preferences.html',
         apikeys: 'api-keys.html',
         help: 'help.html',

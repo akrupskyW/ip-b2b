@@ -34,7 +34,7 @@
   <link rel="stylesheet" href="wise.css" />
   <style>
     /* =====================================================================
-       Marketing Assets — a nested-table asset browser rendered by
+       Marketing Assets — a grid-table asset browser rendered by
        js/marketing-assets-flow.js into #agent-main-scroll. Mirrors the
        verification-flow shell: the shared pane header is hidden and the
        content supplies its own breadcrumb + serif title, so the module reads
@@ -65,6 +65,24 @@
       line-height: 1.15; margin: 0; letter-spacing: -0.01em;
     }
     .ma-head-meta { font-size: 0.85rem; color: var(--text-muted); margin: 8px 0 0; max-width: 60ch; }
+
+    /* Brand chip sits in the floated ⋯ cluster, compact like Product Portfolio. */
+    body[data-nav-id="marketing-assets"] .panel-controls .ma-brand-trail {
+      display: inline-flex; align-items: center; gap: 6px;
+      flex-shrink: 0; margin-right: 4px;
+    }
+    body[data-nav-id="marketing-assets"] .panel-controls .pf-brand-chip {
+      height: 28px; padding: 2px 8px 2px 3px; gap: 6px;
+    }
+    body[data-nav-id="marketing-assets"] .panel-controls .pf-brand-avatar {
+      width: 20px; height: 20px; font-size: 10px;
+    }
+    body[data-nav-id="marketing-assets"] .panel-controls .pf-brand-name {
+      font-size: 11px; max-width: 120px;
+    }
+    body[data-nav-id="marketing-assets"] .panel-controls .pf-brand-caret {
+      font-size: 15px !important;
+    }
 
     /* ---------- Toolbar (search + in-pill filter) ----------
        One search field that fills the row. Filters live in a tune icon floated
@@ -239,19 +257,30 @@
       overflow: visible;
     }
 
-    /* ---------- Nested tables ---------- */
-    .ma-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    .ma-table--nested { border-top: 0; }
-    .ma-table thead th {
-      padding: 10px 14px; text-align: left; vertical-align: middle;
-      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-      color: var(--text-subtle); border-bottom: 1px solid var(--border);
-      background: var(--surface); white-space: nowrap;
+    /* Same CSS-grid table as invoices / portfolio: one template for the
+       header and every row so columns cannot drift. */
+    .ma-table { width: 100%; }
+    .ma-thead, .ma-row {
+      display: grid;
+      align-items: center;
+      gap: 10px 14px;
+      padding: 10px 12px;
+      /* Name caps so Size / Updated sit beside it; leftover width is the
+         last track (to the right), not a hole between Name and Size. */
+      grid-template-columns: 28px 34px minmax(160px, 22rem) 88px 188px minmax(0, 1fr);
+    }
+    .ma-thead {
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 5;
+      background: var(--surface);
+    }
+    .ma-th {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-subtle); min-width: 0; white-space: nowrap;
     }
     .ma-th--sortable { cursor: pointer; user-select: none; }
     .ma-th--sortable:hover { color: var(--text-muted); }
     .ma-th--num { text-align: right; }
-    .ma-th--end { text-align: right; }
     .ma-sort-arrow {
       display: inline-flex; width: 12px; height: 12px; margin-left: 5px; vertical-align: middle;
       opacity: 0.3; transition: opacity 0.12s ease, transform 0.12s ease;
@@ -259,42 +288,32 @@
     .ma-sort-arrow svg { width: 12px; height: 12px; }
     .ma-th--sortable[data-ma-dir="asc"] .ma-sort-arrow { opacity: 1; color: var(--primary-ink, var(--primary)); transform: rotate(180deg); }
     .ma-th--sortable[data-ma-dir="desc"] .ma-sort-arrow { opacity: 1; color: var(--primary-ink, var(--primary)); }
-    /* A folder's children live in a nested <table> dropped into a full-width
-       cell — literal "tables within tables". Each level indents from the left
-       and gains a soft guide rail so the hierarchy reads at a glance. */
-    .ma-nest-cell {
-      padding: 0 0 0 22px;
-      border-left: 2px solid color-mix(in srgb, var(--primary) 22%, transparent);
-      margin-left: 20px;
-    }
-    .ma-nest-inner { padding: 2px 0 6px 12px; }
 
-    .ma-row { transition: background 0.15s ease; }
-    .ma-row > td {
-      padding: 12px 14px;
-      border-top: 1px solid var(--border);
-      vertical-align: middle;
-    }
-    .ma-table > tbody > tr.ma-row:first-child > td { border-top: 0; }
-    .ma-row:hover > td { background: var(--surface-2); }
-    html.dark .ma-row:hover > td { background: rgba(255,255,255,0.04); }
+    .ma-row { border-bottom: 1px solid var(--border); transition: background 0.15s ease; }
+    .ma-tbody > .ma-row:last-child,
+    .ma-nest > .ma-row:last-child { border-bottom: 0; }
+    .ma-row:hover { background: var(--primary-soft); }
     .ma-row--folder { cursor: pointer; }
-    .ma-nest-row > td { padding: 0; border-top: 1px solid var(--border); }
+    .ma-td { font-size: 12px; color: var(--text-muted); min-width: 0; }
+
+    /* Open folder: children indent under the same columns. */
+    .ma-nest {
+      padding: 0 0 4px 22px;
+      margin: 0 0 2px 14px;
+      border-left: 2px solid color-mix(in srgb, var(--primary) 22%, transparent);
+    }
 
     /* Pulse a folder row when a WISEcodeAI chip jumps you to it. */
-    .ma-row.ma-flash > td { animation: maFlash 1.4s ease; }
+    .ma-row.ma-flash { animation: maFlash 1.4s ease; }
     @keyframes maFlash {
       0%, 100% { background: transparent; }
       15%, 45% { background: color-mix(in srgb, var(--primary) 14%, transparent); }
     }
 
-    .ma-cell-icon { width: 44px; }
-    .ma-cell-size, .ma-th-size { width: 92px; }
-    .ma-cell-date, .ma-th-date { width: 128px; }
-    .ma-cell-actions, .ma-table thead th.ma-th-actions { width: 44px; padding-left: 8px; padding-right: 4px; }
-    .ma-cell-size { text-align: right; font-variant-numeric: tabular-nums; font-size: 0.8rem; color: var(--text-muted); }
-    .ma-cell-date { font-size: 0.8rem; color: var(--text-muted); }
-    .ma-cell-actions { white-space: nowrap; text-align: center; }
+    .ma-cell-expand, .ma-th-expand,
+    .ma-cell-actions, .ma-th-actions { display: flex; align-items: center; justify-content: center; }
+    .ma-cell-size, .ma-th-size { text-align: right; font-variant-numeric: tabular-nums; }
+    .ma-cell-size { font-size: 12px; color: var(--text-muted); }
 
     /* Leading ⋮ actions — same shell as .pf-rowmenu / .adm-rowmenu. The
        popover opens to the right of the icon (never directly below). */
@@ -358,7 +377,7 @@
     html.dark .ma-count-pill { background: rgba(255,255,255,0.05); }
     .ma-name--warn { color: var(--sec-red-text); }
 
-    /* Disclosure caret on folder names — not an action, just open/closed state. */
+    /* Disclosure caret — first column, open/closed state for a folder row. */
     .ma-chevron {
       display: inline-flex; align-items: center; justify-content: center;
       width: 18px; height: 18px; flex-shrink: 0; color: var(--text-subtle);
@@ -388,8 +407,9 @@
     .ma-btn--ghost:hover { color: var(--text); background: var(--surface-2); }
     html.dark .ma-btn--ghost:hover { background: rgba(255,255,255,0.05); }
 
+    .ma-row--empty { display: block; padding: 18px 14px; }
     .ma-empty {
-      padding: 18px 14px; font-size: 0.8rem; color: var(--text-muted);
+      font-size: 0.8rem; color: var(--text-muted);
       font-style: italic; text-align: left;
     }
 

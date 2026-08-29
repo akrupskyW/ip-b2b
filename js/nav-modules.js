@@ -231,6 +231,13 @@ function concealHistoryModule() {
   const api = historyApi();
   if (!api) return;
   try {
+    /* Roll / Crawl: chat is gone, so History must actually close — not sit
+       as a collapsed rail in the gutter. */
+    if (!historyAllowed()) {
+      if (api.close) api.close();
+      else if (isHistoryShowing(api) && api.toggle) api.toggle();
+      return;
+    }
     if (api.isDocked && api.isDocked()) {
       if (api.isRail && api.isRail() && typeof api.setRail === 'function') {
         api.setRail(true, false);

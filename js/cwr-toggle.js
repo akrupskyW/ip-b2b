@@ -1,21 +1,28 @@
 /* Roll / Crawl / Walk / Run rollout toggle — a floating segmented control pinned to
    the right edge, vertically centered, present on every pages/*.html.
 
-   The chosen mode is stored in localStorage ('wise-cwr-mode') and applied as
-   a class on <html> (cwr-roll / cwr-crawl / cwr-walk / cwr-run) so every page
-   picks the same mode up. What each mode gates:
+   Load default is per page, not a shared last-used mode:
+     run  — pages/wiseai.html, pages/view-product.html, pages/add-product.html
+     roll — every other page
+   Clicking a mode still applies it for this visit; the next load (or a
+   different page) re-applies that page's default. localStorage
+   ('wise-cwr-mode') is a snapshot of the in-session choice only.
+
+   What each mode gates:
 
      roll  — Crawl, plus a stripped primary nav: Overview, Product Portfolio,
-             Reports, Profile, Invoices, and WISEcode Admin (Organizations,
-             User Management, Audit Queue, Quick Invite, Admin Utils). Studio,
-             comparison, dashboards, and the upgrade card are hidden. History
-             is gone from the primary nav (same as Crawl).
+             Reports, Profile, Invoices, Marketing Assets, and WISEcode Admin
+             (Organizations, User Management, Audit Queue, Quick Invite, Admin
+             Utils). Studio, comparison, dashboards, and the upgrade card are
+             hidden. History is gone entirely (same as Crawl) — no History
+             module, no History-in-nav section, no History chevron, no new-chat
+             circle.
      crawl — SaaS only. Every WISEcodeAI chat surface is hidden AND taken out
              of the a11y/focus tree (inert + aria-hidden). Remaining modules
              grow to fill the modules-row — no leftover empty width. The
              primary nav has no borders; the first remaining module keeps its
-             card border and rounded corners. History does not appear in the
-             nav at all — no History-in-nav section, no History chevron, no
+             card border and rounded corners. History is gone entirely — no
+             History module, no History-in-nav section, no History chevron, no
              new-chat circle.
      walk  — Chat turns on. Four-tier widths (single / double / triple / fill)
              stay fluid. The composer rail is hidden and inert; intent chips
@@ -24,9 +31,9 @@
              Focus goes to the actual <textarea>, while .fl-input-wrap (the
              focus container) shows the focused UI via :focus-within.
 
-   The floating widget is ON by default, with the mode set to Run. The
-   Appearance popover switch persists 'wise-cwr-ui' and toggles `cwr-ui-on`
-   on <html>. While the widget is hidden, mode gating is suspended too.
+   The floating widget is ON by default. The Appearance popover switch
+   persists 'wise-cwr-ui' and toggles `cwr-ui-on` on <html>. While the
+   widget is hidden, mode gating is suspended too.
 
    Chrome lives in a Shadow DOM so page-level button / .material-symbols-outlined
    rules cannot restyle it. One component, one look, every page. Drag it
@@ -43,17 +50,65 @@
   var EDGE = 8;
   var DRAG_THRESHOLD = 6;
   var MODES = ['roll', 'crawl', 'walk', 'run'];
+  var RUN_PAGES = ['wiseai.html', 'view-product.html', 'add-product.html'];
   var META = {
-    roll: { icon: 'cached', label: 'Roll', desc: 'SaaS nav only — crawl without extra destinations' },
-    crawl: { icon: 'child_care', label: 'Crawl', desc: 'SaaS modules fill the row — no chat' },
-    walk: { icon: 'directions_walk', label: 'Walk', desc: 'Chat on — chips, four-tier widths, no composer' },
-    run: { icon: 'directions_run', label: 'Run', desc: 'Unlock the composer at the bottom' }
+    roll: {
+      icon: 'cached',
+      label: 'Roll',
+      desc: 'SaaS core only — no chat, no extra destinations',
+      includes: 'Overview, Product Portfolio, Reports, Profile, Invoices, Marketing Assets, and WISEcode Admin (Organizations, User Management, Audit Queue, Quick Invite, Admin Utils). Remaining modules fill the row.',
+      excludes: 'Chat, the composer, History (the History module, the History chevron, History in the nav, and the new-chat circle), WISEcodeAI (Chat, Library, Ingredient Browser), Comparison, NON-UPF Dashboard, AI Dashboard, Reformulation, and the Studio & AI upgrade card.'
+    },
+    crawl: {
+      icon: 'child_care',
+      label: 'Crawl',
+      desc: 'Full SaaS nav — still no chat',
+      includes: 'Every primary-nav destination (the full SaaS set). Remaining modules fill the row.',
+      excludes: 'Chat surfaces, the composer, and History (the History module, the History chevron, History in the nav, and the new-chat circle).'
+    },
+    walk: {
+      icon: 'directions_walk',
+      label: 'Walk',
+      desc: 'Chat on — chips and widths, no typing',
+      includes: 'Chat, intent chips, four-tier widths (single, double, triple, fill), and the full primary nav including History.',
+      excludes: 'The composer — the typing rail is hidden, so you cannot type or send.'
+    },
+    run: {
+      icon: 'directions_run',
+      label: 'Run',
+      desc: 'Full experience — unlocked composer',
+      includes: 'Everything in Walk, plus an unlocked composer docked at the bottom of the chat. You can type and send.',
+      excludes: 'Nothing — this is the full experience.'
+    }
   };
 
   var hostRef = null;
   var pillRef = null;
   var shadowRef = null;
+  var tipRef = null;
   var dragLive = false;
+  var liveMode = null;
+
+  function pageFile() {
+    try {
+      var path = (location.pathname || '').replace(/\\/g, '/');
+      return (path.split('/').pop() || '').toLowerCase();
+    } catch (e) { return ''; }
+  }
+
+  function pageDefaultMode() {
+    return RUN_PAGES.indexOf(pageFile()) !== -1 ? 'run' : 'roll';
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function modeAria(meta) {
+    return meta.label + '. ' + meta.desc + '. Includes: ' + meta.includes + ' Excludes: ' + meta.excludes;
+  }
 
   function cwrButtons() {
     if (pillRef) return Array.prototype.slice.call(pillRef.querySelectorAll('.cwr-btn'));
@@ -78,10 +133,8 @@
   var ACTUAL_INPUT_SEL = RAIL_SEL + ' textarea.fl-input, ' + RAIL_SEL + ' input.fl-input, ' + RAIL_SEL + ' .fl-input';
 
   function readMode() {
-    try {
-      var v = localStorage.getItem(KEY);
-      return MODES.indexOf(v) !== -1 ? v : 'run';
-    } catch (e) { return 'run'; }
+    if (liveMode && MODES.indexOf(liveMode) !== -1) return liveMode;
+    return pageDefaultMode();
   }
 
   function isUiOn() {
@@ -102,6 +155,7 @@
     var root = document.documentElement;
     var prev = MODES.filter(function (m) { return root.classList.contains('cwr-' + m); })[0] || '';
     MODES.forEach(function (m) { root.classList.toggle('cwr-' + m, m === mode); });
+    liveMode = mode;
     try { localStorage.setItem(KEY, mode); } catch (e) { /* private mode */ }
     gateA11y(mode);
     if (isSaasMode(mode) && isUiOn()) fillCrawlLeftover();
@@ -571,7 +625,6 @@
     'html.cwr-ui-on.cwr-roll .menu-nav [data-nav-id="comparison"],',
     'html.cwr-ui-on.cwr-roll .menu-nav [data-nav-id="non-upf-dashboard"],',
     'html.cwr-ui-on.cwr-roll .menu-nav [data-nav-id="ai-dashboard"],',
-    'html.cwr-ui-on.cwr-roll .menu-nav [data-nav-id="marketing-assets"],',
     'html.cwr-ui-on.cwr-roll .menu-nav [data-nav-id="reformulation"],',
     'html.cwr-ui-on.cwr-roll .menu-nav [data-nav-id="studio-ai"],',
     'html.cwr-ui-on.cwr-roll .menu-nav [data-nav-id="wiseai"],',
@@ -586,15 +639,12 @@
 
     /* ===== ROLL / CRAWL — History is a chat surface. Drop it from the
        primary nav: the History-in-nav group, the new-chat circle, and the
-       collapsed-rail chevron that would otherwise open History. The chevron
-       stays when the labelled nav is open so it can close back. ===== */
+       History chevron (it only ever opens History — the hamburger owns the
+       labelled nav, so the chevron has nothing to do here). ===== */
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) .menu-nav-group[data-group="nav-history"],',
-    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) .menu-modules-new {',
-    '  display: none !important;',
-    '}',
-    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl).nav-modules #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) #topbar-menu-toggle,',
-    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl).nav-modules #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) #topbar-menu-toggle,',
-    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl).nav-modules #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) #topbar-menu-toggle {',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) .menu-modules-new,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl).nav-modules #topbar-menu-toggle,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl).nav-modules .topbar-menu-toggle {',
     '  display: none !important;',
     '}',
 
@@ -674,6 +724,7 @@
     '  html.cwr-ui-on.cwr-walk.cwr-walking :is(.wch-chat-anchor, .ap-chat, .rf-chat, .sa-chat, .gs-chat, .wa-chat, #wa-chat, #chat-shell, .wiseai-dock),',
     '  html.cwr-ui-on.cwr-run.cwr-unlocking .chat-input-rail,',
     '  html.cwr-ui-on.cwr-run.cwr-unlocking .fl-input-wrap { animation: none !important; filter: none !important; }',
+    '  html.cwr-ui-on #cwr-toggle-anchor { transition: none; }',
     '}',
 
     /* ===== Widget host — transform lives on the OUTER anchor, never on
@@ -686,11 +737,16 @@
     '  position: fixed; right: 26px; top: 50%; transform: translateY(-50%);',
     '  z-index: 10500;',
     '  filter: drop-shadow(0 6px 16px rgba(17, 24, 39, 0.18));',
+    '  transition: filter 0.18s ease;',
     '  touch-action: none;',
     '}',
     'html.cwr-ui-on #cwr-toggle-anchor.cwr-custom {',
     '  transform: none;',
     '  right: auto;',
+    '}',
+    'html.cwr-ui-on #cwr-toggle-anchor:hover,',
+    'html.cwr-ui-on #cwr-toggle-anchor.is-dragging {',
+    '  filter: drop-shadow(0 10px 8px rgba(17, 24, 39, 0.22)) drop-shadow(0 28px 52px rgba(17, 24, 39, 0.4));',
     '}',
     'html.cwr-ui-on #cwr-toggle-anchor.is-dragging {',
     '  z-index: 10600;',
@@ -698,7 +754,60 @@
     '}',
     'html.dark.cwr-ui-on #cwr-toggle-anchor {',
     '  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.5));',
-    '}'
+    '}',
+    'html.dark.cwr-ui-on #cwr-toggle-anchor:hover,',
+    'html.dark.cwr-ui-on #cwr-toggle-anchor.is-dragging {',
+    '  filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.55)) drop-shadow(0 28px 56px rgba(0, 0, 0, 0.82));',
+    '}',
+
+    /* Tooltip lives in the light DOM (document.body) so host filter/transform
+       cannot turn position:fixed into a host-relative box. */
+    '.cwr-tip {',
+    '  position: fixed; z-index: 10650;',
+    '  box-sizing: border-box;',
+    '  width: max-content; max-width: min(320px, calc(100vw - 24px));',
+    '  padding: 10px 12px 12px;',
+    '  background: var(--surface, #fff);',
+    '  color: var(--text, #1a2332);',
+    '  border: 1px solid var(--border, rgba(37, 80, 124, 0.22));',
+    '  border-radius: 12px;',
+    '  box-shadow: var(--shadow-card, 0 8px 28px rgba(17, 24, 39, 0.14));',
+    '  font-family: "DM Sans", system-ui, sans-serif;',
+    '  pointer-events: none;',
+    '  opacity: 0;',
+    '  transform: translateX(6px);',
+    '  transition: opacity 0.08s ease, transform 0.08s ease;',
+    '}',
+    '.cwr-tip.is-vis { opacity: 1; transform: none; }',
+    '.cwr-tip[hidden] { display: none; }',
+    '.cwr-tip-title {',
+    '  font-family: var(--module-title-family, "Noto Serif", Georgia, serif);',
+    '  font-size: 15px; font-weight: 700; line-height: 1.2;',
+    '  letter-spacing: 0.02em; color: var(--text, #1a2332);',
+    '}',
+    '.cwr-tip-desc {',
+    '  margin: 4px 0 10px; font-size: 12px; font-weight: 500;',
+    '  line-height: 1.4; color: var(--text-muted, #444B55);',
+    '}',
+    '.cwr-tip-block + .cwr-tip-block { margin-top: 8px; }',
+    '.cwr-tip-k {',
+    '  font-size: 10px; font-weight: 700; letter-spacing: 0.08em;',
+    '  text-transform: uppercase; color: var(--primary, #25507C);',
+    '  margin-bottom: 2px;',
+    '}',
+    '.cwr-tip-block p {',
+    '  margin: 0; font-size: 12px; font-weight: 500;',
+    '  line-height: 1.45; color: var(--text, #1a2332);',
+    '}',
+    'html.dark .cwr-tip {',
+    '  background: var(--surface, #1A2339);',
+    '  color: var(--text, #e8eefb);',
+    '  border-color: var(--border, rgba(37, 80, 124, 0.28));',
+    '}',
+    'html.dark .cwr-tip-title { color: var(--text, #e8eefb); }',
+    'html.dark .cwr-tip-desc { color: var(--text-muted, #9aa8bb); }',
+    'html.dark .cwr-tip-k { color: var(--primary-bright, #8B9FAF); }',
+    'html.dark .cwr-tip-block p { color: var(--text, #e8eefb); }'
   ].join('\n');
 
   /* Shadow-tree chrome — px sizes, full Material Symbols face, no rem.
@@ -713,7 +822,7 @@
     '  overflow: hidden;',
     '  isolation: isolate;',
     '  background: var(--surface, #fff);',
-    '  border: 1px solid var(--border-strong, rgba(37, 80, 124, 0.28));',
+    '  border: 1px solid rgb(219, 39, 119);',
     '  font-family: "DM Sans", system-ui, sans-serif;',
     '  outline: none;',
     '  -webkit-user-select: none; user-select: none;',
@@ -771,6 +880,9 @@
     '  -webkit-font-smoothing: antialiased;',
     '  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;',
     '}',
+    '.cwr-btn[aria-checked="true"] .material-symbols-outlined {',
+    '  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;',
+    '}',
     '.cwr-btn .cwr-btn-label {',
     '  display: block;',
     '  font-family: inherit;',
@@ -800,21 +912,68 @@
     wrap.id = 'cwr-toggle';
     wrap.setAttribute('role', 'radiogroup');
     wrap.setAttribute('aria-label', 'Rollout mode. Drag to move. Double-click to restore the default position.');
-    wrap.setAttribute('title', 'Drag to move · Double-click to restore');
     wrap.innerHTML = MODES.map(function (m) {
       var meta = META[m];
       return '<button type="button" class="cwr-btn" role="radio" id="cwr-btn-' + m + '"' +
         ' data-mode="' + m + '"' +
-        ' aria-label="' + meta.label + ' — ' + meta.desc + '"' +
-        ' title="' + meta.label + ' — ' + meta.desc + '">' +
+        ' aria-label="' + esc(modeAria(meta)) + '">' +
         '<span class="material-symbols-outlined" aria-hidden="true">' + meta.icon + '</span>' +
         '<span class="cwr-btn-label" aria-hidden="true">' + meta.label + '</span>' +
         '</button>';
     }).join('');
 
+    var tip = document.createElement('div');
+    tip.className = 'cwr-tip';
+    tip.id = 'cwr-tip';
+    tip.setAttribute('role', 'tooltip');
+    tip.hidden = true;
+
     hostRef = anchor;
     pillRef = wrap;
     shadowRef = shadow;
+    tipRef = tip;
+
+    function tipHtml(meta) {
+      return '<div class="cwr-tip-title">' + esc(meta.label) + '</div>' +
+        '<p class="cwr-tip-desc">' + esc(meta.desc) + '</p>' +
+        '<div class="cwr-tip-block"><div class="cwr-tip-k">Includes</div><p>' + esc(meta.includes) + '</p></div>' +
+        '<div class="cwr-tip-block"><div class="cwr-tip-k">Excludes</div><p>' + esc(meta.excludes) + '</p></div>';
+    }
+
+    function hideTip() {
+      if (!tipRef) return;
+      tipRef.classList.remove('is-vis');
+      tipRef.hidden = true;
+    }
+
+    function placeTip(btn) {
+      if (!tipRef || !btn) return;
+      var r = btn.getBoundingClientRect();
+      var gap = 10;
+      var margin = 8;
+      var tw = tipRef.offsetWidth;
+      var th = tipRef.offsetHeight;
+      var vw = window.innerWidth;
+      var vh = window.innerHeight;
+      var left = r.left - gap - tw;
+      if (left < margin) left = Math.min(r.right + gap, vw - tw - margin);
+      var top = r.top + (r.height / 2) - (th / 2);
+      if (top < margin) top = margin;
+      if (top + th > vh - margin) top = Math.max(margin, vh - th - margin);
+      tipRef.style.left = Math.round(left) + 'px';
+      tipRef.style.top = Math.round(top) + 'px';
+    }
+
+    function showTip(btn) {
+      if (!tipRef || !btn || dragLive) return;
+      var meta = META[btn.dataset.mode];
+      if (!meta) return;
+      tipRef.innerHTML = tipHtml(meta);
+      tipRef.hidden = false;
+      placeTip(btn);
+      tipRef.offsetWidth;
+      tipRef.classList.add('is-vis');
+    }
 
     function sync() {
       var mode = readMode();
@@ -842,6 +1001,7 @@
       if (!dragLive) {
         if ((dx * dx + dy * dy) < DRAG_THRESHOLD * DRAG_THRESHOLD) return;
         dragLive = true;
+        hideTip();
         anchor.classList.add('is-dragging');
         applyCustomPos(dragOrigin.left, dragOrigin.top);
       }
@@ -901,9 +1061,26 @@
       }
       var btn = e.target.closest('.cwr-btn');
       if (!btn) return;
+      hideTip();
       select(btn.dataset.mode, true);
       btn.focus();
     });
+
+    wrap.addEventListener('mouseover', function (e) {
+      var btn = e.target.closest && e.target.closest('.cwr-btn');
+      if (btn) showTip(btn);
+    });
+    wrap.addEventListener('mouseout', function (e) {
+      var btn = e.target.closest && e.target.closest('.cwr-btn');
+      if (!btn) return;
+      if (e.relatedTarget && btn.contains(e.relatedTarget)) return;
+      hideTip();
+    });
+    wrap.addEventListener('focusin', function (e) {
+      var btn = e.target.closest && e.target.closest('.cwr-btn');
+      if (btn) showTip(btn);
+    });
+    wrap.addEventListener('focusout', function () { hideTip(); });
 
     wrap.addEventListener('keydown', function (e) {
       var btns = cwrButtons();
@@ -924,14 +1101,15 @@
     shadow.appendChild(wrap);
     sync();
     document.body.appendChild(anchor);
+    document.body.appendChild(tip);
     gateA11y(readMode());
     schedulePlace();
     setTimeout(placeToggle, 400);
-    window.addEventListener('resize', schedulePlace);
+    window.addEventListener('resize', function () { hideTip(); schedulePlace(); });
+    window.addEventListener('scroll', hideTip, true);
 
     window.addEventListener('storage', function (e) {
-      if (e.key === KEY) { applyMode(readMode()); sync(); }
-      else if (e.key === UI_KEY) { applyUi(); gateA11y(readMode()); }
+      if (e.key === UI_KEY) { applyUi(); gateA11y(readMode()); }
       else if (e.key === POS_KEY) { schedulePlace(); }
     });
   }

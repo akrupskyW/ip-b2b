@@ -1,7 +1,7 @@
 import './date-column.js';
 
 /**
- * Invoices & Downloads module.
+ * Invoices module.
  *
  * A self-contained account surface rendered into #agent-main-scroll on
  * invoices.html (an app-nav shell page). It presents the signed-in
@@ -30,6 +30,17 @@ function esc(s) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 }
+
+/* Same catalog as the Product Portfolio / Marketing Assets brand chip
+   (Flax4Life first). Switching updates the chip; the seeded
+   invoice rows stay the Flax4Life sample set. */
+const BRANDS = [
+  { name: 'Flax4Life', color: '#2E7D5B', avatar: null, invoices: 6 },
+  { name: 'Simple Truth', color: '#4E7D5A', avatar: '../assets/compare/simpletruth.png', invoices: 4 },
+  { name: 'Purely Elizabeth', color: '#C9736B', avatar: '../assets/compare/sug_purely.jpg', invoices: 3 },
+  { name: 'Siete', color: '#C0392B', avatar: '../assets/compare/sug_siete.jpg', invoices: 5 },
+  { name: 'KIND', color: '#E0A100', avatar: '../assets/compare/kind.jpg', invoices: 4 },
+];
 
 /* ---- Invoice data — seeded to match the Flax4Life sample org --------- */
 const INVOICES = [
@@ -63,6 +74,8 @@ let activeStatus = null; // null = show all; otherwise a status key
 let query = '';          // current search text (lowercased)
 let dateLead = 'issued';
 let dateLeadBound = false;
+let currentBrandName = 'Flax4Life';
+const currentBrand = () => BRANDS.find((b) => b.name === currentBrandName) || BRANDS[0];
 
 function dc() { return window.WiseDateCol; }
 function invDates(inv) {
@@ -252,14 +265,187 @@ function statsHtml() {
   }).join('');
 }
 
+function brandAvatarHTML(b, cls) {
+  const letter = esc(b.name.charAt(0));
+  const bg = `style="background:${esc(b.color || 'var(--primary)')}"`;
+  if (b.avatar) {
+    return `<span class="${cls}" ${bg}><img src="${esc(b.avatar)}" alt="" onerror="this.parentNode.textContent='${letter}'"></span>`;
+  }
+  return `<span class="${cls}" ${bg}>${letter}</span>`;
+}
+
+function brandOptMeta(b) {
+  const n = b.invoices == null ? INVOICES.length : b.invoices;
+  return `${n} invoice${n === 1 ? '' : 's'}`;
+}
+
+function brandChipHTML() {
+  const b = currentBrand();
+  const opts = BRANDS.map((brand) => {
+    const on = brand.name === b.name;
+    return `<button type="button" class="pf-brand-opt${on ? ' is-active' : ''}" role="option"` +
+      ` data-inv="select-brand" data-brand="${esc(brand.name)}" data-name="${esc(brand.name.toLowerCase())}"` +
+      ` aria-selected="${on ? 'true' : 'false'}">` +
+      `${brandAvatarHTML(brand, 'pf-brand-opt-avatar')}` +
+      `<span class="pf-brand-opt-text"><span class="pf-brand-opt-name">${esc(brand.name)}</span>` +
+      `<span class="pf-brand-opt-meta">${esc(brandOptMeta(brand))}</span></span>` +
+      `<span class="material-symbols-outlined pf-brand-opt-check" aria-hidden="true">check</span></button>`;
+  }).join('');
+  return `
+    <div class="pf-brand" id="inv-brand">
+      <button type="button" class="pf-brand-chip" id="inv-brand-chip" aria-haspopup="listbox"
+        aria-expanded="false" aria-controls="inv-brand-opts" data-inv="toggle-brand">
+        ${brandAvatarHTML(b, 'pf-brand-avatar')}
+        <span class="pf-brand-name" id="inv-brand-name">${esc(b.name)}</span>
+        <span class="material-symbols-outlined pf-brand-caret" aria-hidden="true">expand_more</span>
+      </button>
+      <div class="pf-brand-menu" id="inv-brand-menu" hidden>
+        <div class="pf-brand-search">
+          <span class="material-symbols-outlined" aria-hidden="true">search</span>
+          <input type="search" id="inv-brand-search" data-inv="brand-search" placeholder="Search brands…" aria-label="Search brands" autocomplete="off" />
+        </div>
+        <div class="pf-brand-opts" id="inv-brand-opts" role="listbox" aria-label="Select a brand">${opts}</div>
+        <div class="pf-brand-empty" id="inv-brand-empty" hidden>No brands match</div>
+      </div>
+    </div>`;
+}
+
+function brandMenuEl() {
+  return document.getElementById('inv-brand-menu')
+    || Array.from(document.querySelectorAll('.pf-brand-menu')).find((m) => m.__plHost?.id === 'inv-brand')
+    || null;
+}
+
+function filterBrandMenu(q) {
+  const query = String(q || '').trim().toLowerCase();
+  const list = document.getElementById('inv-brand-opts')
+    || brandMenuEl()?.querySelector('.pf-brand-opts');
+  if (!list) return;
+  let shown = 0;
+  list.querySelectorAll('.pf-brand-opt').forEach((o) => {
+    const match = !query || (o.getAttribute('data-name') || '').indexOf(query) !== -1;
+    o.hidden = !match;
+    if (match) shown++;
+  });
+  const empty = document.getElementById('inv-brand-empty')
+    || brandMenuEl()?.querySelector('.pf-brand-empty');
+  if (empty) empty.hidden = shown > 0;
+}
+
+function resetBrandSearch() {
+  const input = document.getElementById('inv-brand-search')
+    || brandMenuEl()?.querySelector('#inv-brand-search');
+  if (input) input.value = '';
+  filterBrandMenu('');
+}
+
+function closeBrandMenu() {
+  const menu = brandMenuEl();
+  const chip = document.getElementById('inv-brand-chip');
+  if (chip) chip.setAttribute('aria-expanded', 'false');
+  if (!menu) return;
+  menu.setAttribute('hidden', '');
+  resetBrandSearch();
+}
+
+function toggleBrandMenu() {
+  const menu = brandMenuEl();
+  const chip = document.getElementById('inv-brand-chip');
+  if (!menu) return;
+  const open = menu.hasAttribute('hidden');
+  if (open) {
+    resetBrandSearch();
+    menu.removeAttribute('hidden');
+    const input = document.getElementById('inv-brand-search')
+      || menu.querySelector('#inv-brand-search');
+    if (input) setTimeout(() => input.focus(), 0);
+  } else {
+    menu.setAttribute('hidden', '');
+    resetBrandSearch();
+  }
+  if (chip) chip.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
+function applyBrand(name) {
+  const next = BRANDS.find((b) => b.name === name);
+  if (!next) return;
+  currentBrandName = next.name;
+  const chip = document.getElementById('inv-brand-chip');
+  if (chip) {
+    const av = chip.querySelector('.pf-brand-avatar');
+    const label = chip.querySelector('#inv-brand-name');
+    if (av) av.outerHTML = brandAvatarHTML(next, 'pf-brand-avatar');
+    if (label) label.textContent = next.name;
+  }
+  const list = document.getElementById('inv-brand-opts')
+    || brandMenuEl()?.querySelector('.pf-brand-opts');
+  list?.querySelectorAll('.pf-brand-opt').forEach((o) => {
+    const on = o.getAttribute('data-brand') === next.name;
+    o.classList.toggle('is-active', on);
+    o.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  closeBrandMenu();
+}
+
+function mountBrandSwitcher() {
+  const controls = document.querySelector('#agent-main-header .panel-controls');
+  if (!controls) {
+    requestAnimationFrame(mountBrandSwitcher);
+    return;
+  }
+  let trail = controls.querySelector('#inv-brand-trail');
+  if (!trail) {
+    trail = document.createElement('div');
+    trail.id = 'inv-brand-trail';
+    trail.className = 'pf-head-trail inv-brand-trail';
+    controls.insertBefore(trail, controls.firstChild);
+  }
+  trail.innerHTML = brandChipHTML();
+}
+
+function wireBrandSwitcher() {
+  if (typeof document === 'undefined' || document.__invBrandWired) return;
+  document.__invBrandWired = true;
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!(t instanceof Element)) return;
+    if (t.closest('[data-inv="toggle-brand"]')) {
+      e.stopPropagation();
+      toggleBrandMenu();
+      return;
+    }
+    const pick = t.closest('[data-inv="select-brand"]');
+    if (pick) {
+      e.stopPropagation();
+      applyBrand(pick.getAttribute('data-brand'));
+      return;
+    }
+    if (!t.closest('#inv-brand, .pf-brand-menu')) closeBrandMenu();
+  });
+  document.addEventListener('input', (e) => {
+    if (e.target && e.target.id === 'inv-brand-search') filterBrandMenu(e.target.value);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { closeBrandMenu(); return; }
+    if (e.key !== 'Enter' || e.target?.id !== 'inv-brand-search') return;
+    e.preventDefault();
+    const first = (document.getElementById('inv-brand-opts')
+      || brandMenuEl()?.querySelector('.pf-brand-opts'))
+      ?.querySelector('.pf-brand-opt:not([hidden])');
+    if (first) applyBrand(first.getAttribute('data-brand'));
+  });
+}
+
 function paint() {
   if (!hostEl) return;
   closeMenus(null);
   hostEl.innerHTML = `
     <div class="inv-wrap" data-w-date-root>
       <header class="inv-head">
-        <h1 class="inv-title">Invoices &amp; Downloads</h1>
-        <p class="inv-lede">Flax4Life · Manage your invoices and download marketing resources.</p>
+        <div class="inv-head-row">
+          <h1 class="inv-title">Invoices</h1>
+          <button type="button" class="inv-btn inv-btn--primary" data-inv-action="download-all"><span class="material-symbols-outlined">download</span>Download all</button>
+        </div>
       </header>
 
       <div class="inv-toolbar">
@@ -267,7 +453,6 @@ function paint() {
           <span class="material-symbols-outlined">search</span>
           <input type="text" class="inv-search" data-inv-search placeholder="Search by description or invoice #" aria-label="Search invoices" value="${esc(query)}" />
         </div>
-        <button type="button" class="inv-btn inv-btn--primary" data-inv-action="download-all"><span class="material-symbols-outlined">download</span>Download all</button>
       </div>
 
       <div class="inv-stats" role="group" aria-label="Filter invoices by status">
@@ -283,6 +468,7 @@ function paint() {
       </div>
     </div>`;
   applyFilter();
+  mountBrandSwitcher();
 }
 
 /* ==================================================================== */
@@ -395,6 +581,7 @@ export function renderInvoices(mainEl) {
     });
   }
   paint();
+  wireBrandSwitcher();
 
   mainEl.addEventListener('click', (e) => {
     const filter = e.target.closest('[data-inv-filter]');

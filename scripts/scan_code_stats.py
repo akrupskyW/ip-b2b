@@ -30,8 +30,9 @@ SKIP_FILES = {"icon-inventory-data.js", "code-stats-data.js", "gs-data.js"}
 
 # Directories never worth scanning in the working tree. `_WISEdesigns` is a
 # symlink out of the repo — os.walk won't follow it, but keep it listed so a
-# later followlinks change cannot pull in the sibling tree.
-SKIP_DIRS = {".git", "node_modules", "__pycache__", "_WISEdesigns"}
+# later followlinks change cannot pull in the sibling tree. `_to_delete` is
+# scratch, not the app.
+SKIP_DIRS = {".git", "node_modules", "__pycache__", "_WISEdesigns", "_to_delete"}
 
 
 def ext_of(path):

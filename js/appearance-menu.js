@@ -632,8 +632,9 @@ export function buildAppearanceBody({
  * chat/report pages, the live auth user on the agent shell) and how the lock
  * glyphs fell out of sync.
  *
- * Live surfaces (no lock): My profile and Invoices & Downloads, each carrying a
- * data-pop-action so the shell's click handler can route them. Coming-soon
+ * Live surfaces (no lock): My profile, Invoices, and Marketing
+ * Assets, each carrying a data-pop-action so the shell's click handler can
+ * route them. Coming-soon
  * rows (Alerts / Agents, Preferences, API keys, Help, Docs) are Admin-badged:
  * they hide when Admin controls is off, and show a pink Admin badge (and a
  * lock) when it is on. Sign out always works.
@@ -660,7 +661,8 @@ export function buildUserMenuBody({ name = 'Arthur Krupsky' } = {}) {
     <div class="wise-popover-divider"></div>
     `)}
     <div class="wise-popover-item" data-pop-action="profile"><span class="material-symbols-outlined">person</span>My profile</div>
-    <div class="wise-popover-item" data-pop-action="invoices"><span class="material-symbols-outlined">receipt_long</span>Invoices &amp; Downloads</div>
+    <div class="wise-popover-item" data-pop-action="invoices"><span class="material-symbols-outlined">receipt_long</span>Invoices</div>
+    <div class="wise-popover-item" data-pop-action="marketing-assets"><span class="material-symbols-outlined">photo_library</span>Marketing Assets</div>
     ${locked('tune', 'Preferences')}
     ${locked('key', 'API keys')}
     ${locked('help', 'Help')}
@@ -692,6 +694,32 @@ export function performSignOut() {
    (or swallowed) by each shell's popover bubble listener. Same pattern as
    topbar.js's colorblind-type picker: intercept in CAPTURE so every page
    signs out identically, even when a shell only does `location.href = login`. */
+function pagesHref(file) {
+  try {
+    if (location.pathname.indexOf('/pages/') !== -1) return file;
+  } catch (_) { /* non-browser — keep the pages/ prefix */ }
+  return 'pages/' + file;
+}
+
+/* Marketing Assets is a live avatar-menu destination on every shell. A capture
+   listener matches Sign out so a page that only wired profile / invoices still
+   reaches the library. */
+function wireMarketingAssetsNav() {
+  if (typeof document === 'undefined' || document.__wiseMaNavBound) return;
+  document.__wiseMaNavBound = true;
+  document.addEventListener(
+    'click',
+    (e) => {
+      const item = e.target?.closest?.('[data-pop-action="marketing-assets"]');
+      if (!item) return;
+      e.stopPropagation();
+      e.preventDefault();
+      window.location.href = pagesHref('marketing-assets.html');
+    },
+    true
+  );
+}
+
 function wireSignOut() {
   if (typeof document === 'undefined' || document.__wiseSignOutBound) return;
   document.__wiseSignOutBound = true;
@@ -711,6 +739,7 @@ function wireSignOut() {
 
 if (typeof document !== 'undefined') {
   wireSignOut();
+  wireMarketingAssetsNav();
   /* Rebuild an open avatar menu when Admin controls flips, so locked rows
      appear or collapse in place the same way Appearance does. */
   if (!document.__wiseUserMenuAdminBound) {
