@@ -11,35 +11,37 @@
  * Every icon-only control in the app is covered (reports, checks, module
  * header ⋯ / width, composer icons, …) except the X / close glyph — that
  * mark is self-explanatory, so it never gets a hover card or a native
- * `title` bubble. Row ⋮ buttons that open a menu are excluded — the menu is
- * the hover result (js/kebab-hover.js), not a tooltip. The label is read from `data-tip`, then
- * `.lir-label`, then `aria-label` / `title`. Listeners are delegated on the
- * document so dynamically-rendered buttons are included.
+ * `title` bubble. Intent chips are excluded too — their label is already on
+ * the chip, so a hover card or native title is banned. Row ⋮ buttons that
+ * open a menu are excluded — the menu is the hover result (js/kebab-hover.js),
+ * not a tooltip. The label is read from `data-tip`, then `.lir-label`, then
+ * `aria-label` / `title`. Listeners are delegated on the document so
+ * dynamically-rendered buttons are included.
  */
 
 /* Named controls that always get the card (including a few that carry visible
-   text — intent chips, Appearance terms). Icon-only buttons elsewhere are
-   picked up by isIconOnly() so every glyph in the app labels itself on hover
-   without a click. */
+   text — Appearance terms). Icon-only buttons elsewhere are picked up by
+   isIconOnly() so every glyph in the app labels itself on hover without a
+   click. Intent chips never get a tooltip — their label is already on the chip. */
 const TOOLTIP_SELECTOR =
   '.lir-btn, .topbar-menu-toggle, .menu-modules-btn, .panel-flip-btn, .panel-width-toggle-btn, ' +
   '.panel-more-btn, .panel-ctrl-btn, .wiseai-dock-flip, .dash-term, ' +
   '.topbar-appearance-btn, #menu-footer-layout-btn, ' +
   '.wise-popover--appearance [data-tip], ' +
   '.rf-tool-ico, .rf-rpt-plus, .wa-titledrop-plus, ' +
-  '.ws-intent-chip, .sc-reply-chips .chip, .sc-inline-chips .chip, ' +
   '.pf-datemenu-btn, .pf-module-menu-btn, ' +
   '.vf-check, .pf-ico, .fl-icon-btn, .sc-send, .adm-icon-btn';
 
 const CANDIDATE_SELECTOR =
-  'button, a[href], [role="button"], [data-tip], .lir-btn, .ws-intent-chip, ' +
-  '.sc-reply-chips .chip, .sc-inline-chips .chip, .dash-term';
+  'button, a[href], [role="button"], [data-tip], .lir-btn, .dash-term';
 
-/* Status chips have their own explainer card (chip-tooltip.js). Menu rows carry
+/* Status chips have their own explainer card (chip-tooltip.js). Intent chips
+   already show their label — no hover card, no native title. Menu rows carry
    a text label already. Text CTAs (Review & Claim, Complete details) are not
    icon-only. Three-dot triggers that open a menu are skipped — the menu is
    the hover result (js/kebab-hover.js), not an "Actions" / "More options" card. */
 const SKIP_SELECTOR =
+  '.ws-intent-chip, .sc-reply-chips .chip, .sc-inline-chips .chip, .ws-chips .chip, .chip-dive, ' +
   '.pf-chip, .vf-chip, .gv-chip, .ib-gras, .ib-pl, .pf-claim-btn, .pf-row-act, ' +
   '.pf-head-btn, .pf-loadmore, ' +
   '.pf-rowmenu-btn, .pf-reports-btn, .adm-rowmenu-btn, .inv-rowmenu-btn, .ma-rowmenu-btn, .nud-rowmenu-btn, ' +
@@ -111,6 +113,14 @@ function isIconOnly(el) {
   return hasIcon || el.hasAttribute('data-tip');
 }
 
+function isIntentChip(btn) {
+  if (!btn || !btn.matches) return false;
+  return btn.matches(
+    '.ws-intent-chip, .sc-reply-chips .chip, .sc-inline-chips .chip, ' +
+    '.ws-chips .chip, .chip-dive'
+  );
+}
+
 function isKebabTrigger(btn) {
   if (!btn || !btn.matches) return false;
   if (btn.matches(
@@ -133,6 +143,10 @@ function tipTarget(start) {
   if (!btn) return null;
   if (btn.closest && btn.closest('#lir-tooltip, .ct-card')) return null;
   if (isCloseControl(btn)) {
+    suppressNativeTitle(btn);
+    return null;
+  }
+  if (isIntentChip(btn)) {
     suppressNativeTitle(btn);
     return null;
   }
@@ -176,6 +190,8 @@ const GLYPH_LABELS = {
   notifications: 'Alerts',
   expand_more: 'Show more',
   chevron_right: 'Open',
+  history: 'Open History',
+  history_off: 'Close History',
   menu: 'Menu',
   chat_add_on: 'New conversation',
   unfold_more: 'Resize',
@@ -242,11 +258,9 @@ export function initLirTooltip() {
     const tipRight = (btn.classList.contains('topbar-menu-toggle') ||
       btn.classList.contains('menu-modules-btn')) &&
       !btn.closest('.mp-pivot');
-    const isIntentChip = !!(btn.matches && btn.matches('.ws-intent-chip, .sc-reply-chips .chip, .sc-inline-chips .chip'));
     const isStudioTool = !!(btn.matches && btn.matches('.rf-tool-ico'));
     const isReportPlus = !!(btn.matches && btn.matches('.rf-rpt-plus, .wa-titledrop-plus'));
-    const preferAbove = !!(btn.closest('.wise-popover--appearance') || isAppearanceTrigger(btn) || isIntentChip || isStudioTool || isReportPlus);
-    tip.classList.toggle('lir-tip-wrap', isIntentChip);
+    const preferAbove = !!(btn.closest('.wise-popover--appearance') || isAppearanceTrigger(btn) || isStudioTool || isReportPlus);
     tip.classList.remove('lir-tip-right', 'lir-tip-above');
     if (tipRight) {
       tip.classList.add('lir-tip-right');
@@ -279,14 +293,14 @@ export function initLirTooltip() {
       current.removeAttribute('data-lir-title');
     }
     current = null;
-    tip.classList.remove('lir-tip-visible', 'lir-tip-right', 'lir-tip-above', 'lir-tip-wrap');
+    tip.classList.remove('lir-tip-visible', 'lir-tip-right', 'lir-tip-above');
   }
 
   /* Capture-phase so the native `title` is gone before History's tooltip
      (or the browser bubble) can read it. */
   document.addEventListener('pointerover', (e) => {
     const el = e.target && e.target.closest && e.target.closest(CANDIDATE_SELECTOR);
-    if (el && isCloseControl(el)) suppressNativeTitle(el);
+    if (el && (isCloseControl(el) || isIntentChip(el))) suppressNativeTitle(el);
   }, true);
 
   document.addEventListener('mouseover', (e) => {

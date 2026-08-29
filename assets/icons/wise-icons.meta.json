@@ -9,7 +9,7 @@
     "symbols": "@material-symbols/svg-400/rounded — mirror of google/material-design-icons (Apache-2.0)",
     "legacy": "@material-icons/svg — classic Material Icons, for the glyph names the Symbols SVG export renamed (Apache-2.0)"
   },
-  "count": 478,
+  "count": 479,
   "fillTwins": 319,
   "legacyCount": 32,
   "legacy": [
@@ -257,6 +257,7 @@
     "help",
     "help_outline",
     "history",
+    "history_off",
     "home",
     "hourglass_bottom",
     "hourglass_top",

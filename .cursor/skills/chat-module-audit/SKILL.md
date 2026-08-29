@@ -18,13 +18,14 @@ Search for the shared chat module usage across pages:
 
 ## Parity checklist (per page)
 
-- [ ] Three-dot menu opens the sticky history module (no sticky on/off toggle)
+- [ ] Three-dot menu opens the sticky history module (no sticky on/off toggle); History starts collapsed to the icon rail
 - [ ] "What can I ask?" panel opens in-window and breaks out; headline is serif
 - [ ] Intent chips: clickable, actionable, each opens a real transcript
-- [ ] Intent chip icon is gold; right-side label animates
+- [ ] Intent chips have no tooltip (no hover card, no native title, no data-tip)
+- [ ] Intent chip icon is brand blue (gold only on What can I ask?); right-side label animates
 - [ ] Every transcript / answer ends on related intent chips (never a dead end)
 - [ ] Streaming paragraph-by-paragraph (then thumbs row, then intent chips)
-- [ ] Helix animation ON by default at 20% opacity
+- [ ] Helix matches wiseai.html (published Scene pose; no per-page defaults)
 - [ ] Composer unlocked (no lock icon / readonly); typing a chip word plays that transcript
 - [ ] Right-hand module actions reflected in the chat
 

@@ -2,7 +2,7 @@ import { applyMinimalUi } from './topbar.js';
 import { initLirTooltip } from './lir-tooltip.js';
 import { parkNavHistory, refreshNavHistory } from './nav-history.js';
 import { isNavHamburgerActive } from './nav-hamburger.js';
-import { isNavModulesOn, syncNavModulesChrome } from './nav-modules.js';
+import { isNavModulesOn, applyNavModules, syncNavModulesChrome } from './nav-modules.js';
 /* Side-effect: overlay the streaming helix on assembling boards. No Appearance
    toggle — the overlay boots on every page that renders the WISE nav. */
 import './load-anim.js';
@@ -1158,8 +1158,8 @@ function setupMenuRail(navEl) {
   const apply = (railed) => {
     panel.classList.toggle('mp-rail', railed);
     if (isNavModulesOn()) {
-      /* Chevron opens History from the collapsed rail and closes whichever
-         module is open; hamburger/new-chat hide while a module is open. */
+      /* History icon opens History from the collapsed rail and closes
+         whichever module is open; hamburger/new-chat hide while a module is open. */
       applyHamburgerSkin();
       if (!railed) scheduleNavTrees(navEl);
       try { syncNavModulesChrome(); } catch (_) { /* optional on first paint */ }
@@ -1393,7 +1393,11 @@ export function isMenuPivoted() {
   return !!panel && panel.classList.contains('mp-pivot');
 }
 
-/** Toggle the nav module between the vertical panel and the horizontal bar. */
+/** Toggle the nav module between the vertical panel and the horizontal bar.
+ *  Turning pivot ON always brings Minimal UI with it (logo, Appearance, and
+ *  you in the top bar). Nav & History icons stands Minimal UI down, so it
+ *  has to drop too or the four-icon chrome would hide that strip. Off stays
+ *  independent — the chevron can still expand the bar without leaving pivot. */
 export function setMenuPivot(on) {
   const panel = document.getElementById('menu-panel');
   if (!panel) return;
@@ -1405,6 +1409,11 @@ export function setMenuPivot(on) {
      same top-level products as the left-hand nav (no flattened sub-sections
      or duplicate report icons). */
   syncGroupChildrenInert(panel);
+
+  if (on) {
+    try { applyMinimalUi(true); } catch (_) { /* panel already painted */ }
+    try { applyNavModules(false); } catch (_) { /* chrome already down */ }
+  }
 
   try { localStorage.setItem(MENU_PIVOT_STORE_KEY, on ? '1' : '0'); } catch (_) {}
   try {

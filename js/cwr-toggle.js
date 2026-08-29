@@ -1,5 +1,7 @@
 /* Roll / Crawl / Walk / Run rollout toggle — a floating segmented control pinned to
-   the right edge, vertically centered, present on every pages/*.html.
+   the right edge of the screen (12px inset), vertically centered, on every
+   pages/*.html. That seat is the load default. Drag moves it for the session
+   (and later loads, until a double-click restores the default).
 
    Load default is per page, not a shared last-used mode:
      run  — pages/wiseai.html, pages/view-product.html, pages/add-product.html
@@ -15,14 +17,14 @@
              (Organizations, User Management, Audit Queue, Quick Invite, Admin
              Utils). Studio, comparison, dashboards, and the upgrade card are
              hidden. History is gone entirely (same as Crawl) — no History
-             module, no History-in-nav section, no History chevron, no new-chat
+             module, no History-in-nav section, no History icon, no new-chat
              circle.
      crawl — SaaS only. Every WISEcodeAI chat surface is hidden AND taken out
              of the a11y/focus tree (inert + aria-hidden). Remaining modules
              grow to fill the modules-row — no leftover empty width. The
              primary nav has no borders; the first remaining module keeps its
              card border and rounded corners. History is gone entirely — no
-             History module, no History-in-nav section, no History chevron, no
+             History              module, no History-in-nav section, no History icon, no
              new-chat circle.
      walk  — Chat turns on. Four-tier widths (single / double / triple / fill)
              stay fluid. The composer rail is hidden and inert; intent chips
@@ -38,7 +40,9 @@
    Chrome lives in a Shadow DOM so page-level button / .material-symbols-outlined
    rules cannot restyle it. One component, one look, every page. Drag it
    anywhere; the spot is stored in localStorage ('wise-cwr-pos') so every page
-   opens it where you left it. Double-click restores the default right-edge seat.
+   opens it where you left it. Double-click restores the default seat:
+   vertically centered, 12px from the right edge of the viewport. Do not
+   dock it to a module, a rail, or the modules-row.
 
    Include with: <script src="../js/cwr-toggle.js"></script> in <head>. */
 (function () {
@@ -48,6 +52,7 @@
   var UI_KEY = 'wise-cwr-ui';
   var POS_KEY = 'wise-cwr-pos';
   var EDGE = 8;
+  var DEFAULT_RIGHT = 12;
   var DRAG_THRESHOLD = 6;
   var MODES = ['roll', 'crawl', 'walk', 'run'];
   var RUN_PAGES = ['wiseai.html', 'view-product.html', 'add-product.html'];
@@ -57,14 +62,14 @@
       label: 'Roll',
       desc: 'SaaS core only — no chat, no extra destinations',
       includes: 'Overview, Product Portfolio, Reports, Profile, Invoices, Marketing Assets, and WISEcode Admin (Organizations, User Management, Audit Queue, Quick Invite, Admin Utils). Remaining modules fill the row.',
-      excludes: 'Chat, the composer, History (the History module, the History chevron, History in the nav, and the new-chat circle), WISEcodeAI (Chat, Library, Ingredient Browser), Comparison, NON-UPF Dashboard, AI Dashboard, Reformulation, and the Studio & AI upgrade card.'
+      excludes: 'Chat, the composer, History (the History module, the History icon, History in the nav, and the new-chat circle), WISEcodeAI (Chat, Library, Ingredient Browser), Comparison, NON-UPF Dashboard, AI Dashboard, Reformulation, and the Studio & AI upgrade card.'
     },
     crawl: {
       icon: 'child_care',
       label: 'Crawl',
       desc: 'Full SaaS nav — still no chat',
       includes: 'Every primary-nav destination (the full SaaS set). Remaining modules fill the row.',
-      excludes: 'Chat surfaces, the composer, and History (the History module, the History chevron, History in the nav, and the new-chat circle).'
+      excludes: 'Chat surfaces, the composer, and History (the History module, the History icon, History in the nav, and the new-chat circle).'
     },
     walk: {
       icon: 'directions_walk',
@@ -317,11 +322,6 @@
     schedulePlace();
   }
 
-  /* Keep the stadium off 1px module seams and thin right-hand rails
-     (progress tracker, resize handle). A straight border in the cap
-     pockets is what reads as "the pill's border going past the radius". */
-  var RAIL_MAX_W = 88;
-  var PLACE_GAP = 32;
   var placeRaf = 0;
 
   function schedulePlace() {
@@ -330,39 +330,6 @@
       placeRaf = 0;
       requestAnimationFrame(placeToggle);
     });
-  }
-
-  function isThinRail(el, box) {
-    if (!el) return false;
-    if (el.id === 'ap-progress') return true;
-    var cls = (el.className && el.className.toString) ? el.className.toString() : '';
-    if (el.classList && el.classList.contains('vf-progress-pane')) return true;
-    if (el.classList && el.classList.contains('gv-progress-pane')) return true;
-    return !!(box && box.width > 0 && box.width < RAIL_MAX_W && cls.indexOf('progress') !== -1);
-  }
-
-  function seamInsidePill(pillBox) {
-    var row = document.getElementById('modules-row') || document.querySelector('.modules-row');
-    if (!row) return 0;
-    var x0 = pillBox.left;
-    var x1 = pillBox.right;
-    var nodes = row.querySelectorAll('*');
-    for (var i = 0; i < nodes.length; i++) {
-      var el = nodes[i];
-      if (el.id === 'cwr-toggle' || el.id === 'cwr-toggle-anchor') continue;
-      var b = el.getBoundingClientRect();
-      if (b.height < 80 || b.width < 1) continue;
-      if (b.bottom < pillBox.top || b.top > pillBox.bottom) continue;
-      var st = getComputedStyle(el);
-      var bl = parseFloat(st.borderLeftWidth) || 0;
-      var br = parseFloat(st.borderRightWidth) || 0;
-      var ol = st.outlineStyle !== 'none' ? (parseFloat(st.outlineWidth) || 0) : 0;
-      if (bl >= 1 && b.left >= x0 && b.left <= x1) return b.left;
-      if (br >= 1 && b.right >= x0 && b.right <= x1) return b.right;
-      if (ol >= 1 && b.right >= x0 && b.right <= x1) return b.right;
-      if (ol >= 1 && b.left >= x0 && b.left <= x1) return b.left;
-    }
-    return 0;
   }
 
   function readPos() {
@@ -439,45 +406,7 @@
       return;
     }
     clearCustomPosStyle();
-    var vw = window.innerWidth;
-    var pillW = pill.offsetWidth || 40;
-    var rightPx = 24;
-    var row = document.getElementById('modules-row') || document.querySelector('.modules-row');
-    if (row) {
-      var rightmost = null;
-      var maxR = 0;
-      for (var c = row.firstElementChild; c; c = c.nextElementSibling) {
-        if (!isVisiblePane(c)) continue;
-        var b = c.getBoundingClientRect();
-        if (b.right >= maxR) { maxR = b.right; rightmost = c; }
-      }
-      if (rightmost) {
-        var rb = rightmost.getBoundingClientRect();
-        var targetRight = isThinRail(rightmost, rb)
-          ? rb.left - PLACE_GAP
-          : rb.right - PLACE_GAP;
-        rightPx = vw - targetRight;
-      }
-    }
-    if (rightPx < EDGE) rightPx = EDGE;
-    if (rightPx + pillW > vw - EDGE) rightPx = EDGE;
-    anchor.style.right = Math.round(rightPx) + 'px';
-
-    var box = pill.getBoundingClientRect();
-    var n = 0;
-    while (n < 6) {
-      var seam = seamInsidePill(box);
-      if (!seam) break;
-      var onRight = seam >= box.right - 8;
-      var onLeft = seam <= box.left + 8;
-      if (!onRight && !onLeft) break;
-      if (onRight) rightPx += 8;
-      else rightPx = Math.max(EDGE, rightPx - 8);
-      if (rightPx + pillW > vw - EDGE) break;
-      anchor.style.right = Math.round(rightPx) + 'px';
-      box = pill.getBoundingClientRect();
-      n += 1;
-    }
+    anchor.style.right = DEFAULT_RIGHT + 'px';
   }
 
   /* ---- mode CSS + widget chrome (injected so it works on every page) ---- */
@@ -639,8 +568,8 @@
 
     /* ===== ROLL / CRAWL — History is a chat surface. Drop it from the
        primary nav: the History-in-nav group, the new-chat circle, and the
-       History chevron (it only ever opens History — the hamburger owns the
-       labelled nav, so the chevron has nothing to do here). ===== */
+       History icon (it only ever opens History — the hamburger owns the
+       labelled nav, so the History toggle has nothing to do here). ===== */
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) .menu-nav-group[data-group="nav-history"],',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) .menu-modules-new,',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl).nav-modules #topbar-menu-toggle,',
@@ -734,7 +663,7 @@
     '#cwr-toggle-anchor { display: none; }',
     'html.cwr-ui-on #cwr-toggle-anchor {',
     '  display: block;',
-    '  position: fixed; right: 26px; top: 50%; transform: translateY(-50%);',
+    '  position: fixed; right: ' + DEFAULT_RIGHT + 'px; top: 50%; transform: translateY(-50%);',
     '  z-index: 10500;',
     '  filter: drop-shadow(0 6px 16px rgba(17, 24, 39, 0.18));',
     '  transition: filter 0.18s ease;',

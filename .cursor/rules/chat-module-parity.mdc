@@ -13,13 +13,17 @@ any chat surface, all others must still match.
 
 - **Three-dot menu** with the ability to open/view the sticky history module,
   plus the standard options. Sticky modules are the only mode — do not add a
-  toggle to switch sticky on/off.
+  toggle to switch sticky on/off. History starts **collapsed** to the icon
+  rail on every load; the history icon expands it in-session, and
+  history off collapses it.
 - **"What can I ask?"** panel that opens inside the chat window and can break
   out. Its headline uses the brand **serif** font. It must actually open (not
   just render content behind the scenes).
 - **Intent chips** that are clickable, actionable, and each open a real
-  transcript. The chip icon is **gold**, and the right-side text label animates
-  like the reference.
+  transcript. The chip icon is **brand blue** (gold only on “What can I ask?”),
+  and the right-side text label animates like the reference. Intent chips
+  **never have a tooltip** — no hover card, no native `title`, no `data-tip`.
+  The label on the chip is the whole story.
 - **Every transcript ends on topic chips.** Regardless of which chat or
   which answer just landed, the thread must close with intent chips related
   to that transcript and topic — never a dead-end reply. Prefer the chip's
@@ -31,8 +35,9 @@ any chat surface, all others must still match.
 - **Streaming** paragraph-by-paragraph output (then the thumbs row, then
   intent chips). Do not regress to word-by-word typing or the old pulsating
   three-dot loader as the primary style.
-- **Helix animation** toggled ON by default on the published **Scene** pose
-  (3D look, ~50% opacity). Close-up stays available as a Load chip.
+- **Helix animation** matches `pages/wiseai.html` — the published **Scene**
+  pose in `BGANIM_PUBLISH_POSE` (see the helix-settings-from-wiseai rule).
+  Close-up stays available as a Load chip. Never invent a per-page pose.
 - **Unlocked composer** — no lock icon, no readonly input. Typing is live.
   Sending any distinctive word from an intent chip (label, ask, or intent id)
   plays that chip's transcript, the same as clicking the chip.

@@ -300,8 +300,8 @@
   }
   function chipsRow(chips) {
     if (!chips || !chips.length) return '';
-    /* Same `.ws-intent-chip` surface as every other WISE chat: gold-comment /
-       brand leading glyph, fly-in label, clickable. A chip flagged `primary`
+    /* Same `.ws-intent-chip` surface as every other WISE chat: brand-blue
+       leading glyph, fly-in label, clickable. A chip flagged `primary`
        is the conclusive action for the step (Confirm, Test, Save) — the
        solid brand-blue pill. "What can I ask?" wears the gold ask-help twin. */
     return `<div class="sc-reply-chips">${chips.map((c) => {
@@ -731,7 +731,7 @@
   }
   function productBackgroundSrc() {
     /* New products have no photo yet — do not invent a sample muffin. The
-       identity strip paints a still of the food helix instead. */
+       identity strip paints a frozen, enlarged strand-only helix instead. */
     return activeProductImage() || '';
   }
   function productBgImgHTML(src) {
@@ -742,8 +742,9 @@
       : DEFAULT_PRODUCT_IMAGE;
     return `<img src="${esc(used)}" alt="" data-nfp-bg-fallback="${esc(fallback)}" onerror="if(!this.dataset.fell){this.dataset.fell='1';this.src=this.dataset.nfpBgFallback}">`;
   }
-  /* Still frame of the shared DNA/RNA product helix, used as the identity-strip
-     background until a real product photo exists. */
+  /* Frozen, enlarged still of the streaming DNA/RNA strand — no product
+     circles — used as the identity-strip background until a real photo exists.
+     Decorative, not the chat Scene pose. */
   let nfpHelix = null;
   function syncNfpHelixBg() {
     const host = nfpBody && nfpBody.querySelector('.nfp-fi-strip-photo--helix');
@@ -769,14 +770,16 @@
       nfpHelix = createHelixBgAnim({
         host: h,
         getBody: () => (nfpBody && nfpBody.querySelector('.nfp-fi-strip-photo--helix')) || h,
-        getOpacity: () => 0.52,
+        getOpacity: () => 0.78,
         getAngle: () => 10,
-        getScale: () => ({ x: 1, y: 1, z: 1 }),
-        getPitch: () => 1,
-        getNodes: () => 1.1,
-        getLength: () => 1,
-        getThickness: () => 1,
-        getDepth: () => 1,
+        getScale: () => ({ x: 1.55, y: 1.55, z: 1.35 }),
+        getPitch: () => 0.72,
+        getDots: () => 1.85,
+        getLength: () => 1.05,
+        getThickness: () => 2.6,
+        getDepth: () => 1.25,
+        getCenterY: () => 0.5,
+        hideProducts: true,
         reducedMotion: true,
         isOn: () => true,
         isPaused: () => true,
@@ -1059,10 +1062,12 @@
     const unitActive = state.view === 'product';
     const unitLabel = state.unitLabel || '1 ct';
     const unitThumb = `
-      <div class="nfp-fi-thumb${unitActive ? ' active' : ''}" data-nfp="pick-image" data-arg="0" title="${esc(unitLabel)} (default)">
+      <div class="nfp-fi-thumb${unitActive ? ' active' : ''}" data-nfp="pick-image" data-arg="0" aria-label="${esc(unitLabel)} (default)">
+        <span class="nfp-fi-thumb-frame">
         ${state.image
           ? `<img class="nfp-fi-thumb-img" src="${esc(state.image)}" alt="${esc(unitLabel)}" onerror="this.src='https://placehold.co/40x40/f3f4f6/9ca3af?text=?'">`
           : `<span class="nfp-fi-thumb-img nfp-fi-thumb-icon"><span class="material-symbols-outlined">nutrition</span></span>`}
+        </span>
         <span class="nfp-fi-thumb-label">${esc(unitLabel)}</span>
       </div>`;
     const identity = useHeaderIdentity();
@@ -1087,12 +1092,17 @@
     /* Barcode sits immediately after the selected size so picking an earlier
        count slides it left instead of leaving it parked at the end of the row. */
     const packThumbs = state.packs.map((p, i) => {
+      const label = p.label || 'Size';
       const thumb = `
-      <div class="nfp-fi-thumb${(state.view === 'pack' && i === state.activePack) ? ' active' : ''}" data-nfp="pick-pack" data-arg="${i}" title="${esc(p.label || 'Size')}">
+      <div class="nfp-fi-thumb${(state.view === 'pack' && i === state.activePack) ? ' active' : ''}" data-nfp="pick-pack" data-arg="${i}" aria-label="${esc(label)}">
+        <span class="nfp-fi-thumb-frame">
         ${p.image
-          ? `<img class="nfp-fi-thumb-img" src="${esc(p.image)}" alt="${esc(p.label || '')}" onerror="this.src='https://placehold.co/40x40/f3f4f6/9ca3af?text=?'">`
+          ? `<img class="nfp-fi-thumb-img" src="${esc(p.image)}" alt="${esc(label)}" onerror="this.src='https://placehold.co/40x40/f3f4f6/9ca3af?text=?'">`
           : `<span class="nfp-fi-thumb-img nfp-fi-thumb-icon"><span class="material-symbols-outlined">inventory_2</span></span>`}
-        <span class="nfp-fi-thumb-label">${esc(p.label || 'Size')}</span>
+        ${packDeleteAffordanceHTML(i, label)}
+        </span>
+        ${packDeletePopHTML(i, label)}
+        <span class="nfp-fi-thumb-label">${esc(label)}</span>
       </div>`;
       return (identity && !foldUpc && packIdx === i) ? `<div class="nfp-fi-thumb-upc">${thumb}${upcBlock}</div>` : thumb;
     }).join('');
@@ -1532,13 +1542,11 @@
   function codesPanelHTML() {
     const rows = iaCodesRows();
     return `<div class="nfp-ia-table nfp-ia-table--codes">
-      <div class="nfp-ia-th nfp-ia-th--codes"><span>Code</span><span>Interpretation / Score</span></div>
+      <div class="nfp-ia-th nfp-ia-th--codes"><span>Code</span><span>Interpretation</span><span>Score</span></div>
       ${rows.map((r, i) => `<div class="nfp-ia-row nfp-ia-code-row" style="--i:${i}">
         <div class="nfp-ia-td">${esc(r.code)}</div>
-        <div class="nfp-ia-td nfp-ia-td--mapstack">
-          <span class="nfp-ia-pill nfp-ia-pill--${r.tone}">${esc(r.interp)}</span>
-          <span class="nfp-ia-td--num"><span class="nfp-ia-score" data-countup>${r.score}</span><span class="nfp-ia-den">/100</span></span>
-        </div>
+        <div class="nfp-ia-td"><span class="nfp-ia-pill nfp-ia-pill--${r.tone}">${esc(r.interp)}</span></div>
+        <div class="nfp-ia-td nfp-ia-td--num"><span class="nfp-ia-score" data-countup>${r.score}</span><span class="nfp-ia-den">/100</span></div>
       </div>`).join('')}
     </div>`;
   }
@@ -3427,6 +3435,86 @@
     renderNFP(); renderProgress();
     return pack;
   }
+  function packDeleteAffordanceHTML(i, label) {
+    const name = label || 'Size';
+    return `<button type="button" class="nfp-fi-thumb-del" data-nfp="del-pack" data-arg="${i}" aria-label="Delete ${esc(name)}" aria-haspopup="dialog" aria-expanded="false"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button>`;
+  }
+  function packDeletePopHTML(i, label) {
+    const name = label || 'Size';
+    return `<div class="topbar-popover nfp-fi-thumb-del-pop hidden" data-nfp="del-pack-hold" role="dialog" aria-label="Delete this size?">
+      <div class="nfp-fi-thumb-del-pop-title">Delete this size?</div>
+      <p class="nfp-fi-thumb-del-pop-text">This permanently removes <strong>${esc(name)}</strong> from this product — its barcode, Nutrition Facts, and photo. You can&rsquo;t undo this.</p>
+      <div class="nfp-fi-thumb-del-pop-acts">
+        <button type="button" class="nfp-fi-thumb-del-keep" data-nfp="del-pack-cancel">Keep</button>
+        <button type="button" class="nfp-fi-thumb-del-go" data-nfp="del-pack-confirm" data-arg="${i}">Delete</button>
+      </div>
+    </div>`;
+  }
+  function closePackDeleteConfirm() {
+    document.querySelectorAll('.nfp-fi-thumb.is-del-open').forEach((el) => {
+      el.classList.remove('is-del-open');
+      const btn = el.querySelector('[data-nfp="del-pack"]');
+      const pop = el.querySelector('.nfp-fi-thumb-del-pop');
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+      if (pop) pop.classList.add('hidden');
+    });
+  }
+  function openPackDeleteConfirm(arg) {
+    const i = Number(arg);
+    const panel = document.getElementById('nfp-panel');
+    const btn = panel && panel.querySelector(`[data-nfp="del-pack"][data-arg="${i}"]`);
+    const thumb = btn && btn.closest('.nfp-fi-thumb');
+    const pop = thumb && thumb.querySelector('.nfp-fi-thumb-del-pop');
+    if (!thumb || !pop) return;
+    const already = thumb.classList.contains('is-del-open');
+    closePackDeleteConfirm();
+    if (already) return;
+    thumb.classList.add('is-del-open');
+    pop.classList.remove('hidden');
+    btn.setAttribute('aria-expanded', 'true');
+  }
+  function confirmDeletePack(arg) {
+    const i = Number(arg);
+    if (isNaN(i) || !state.packs[i]) return;
+    const p = state.packs[i];
+    const label = (p.label || '').trim() || 'Size';
+    const wasActive = state.view === 'pack' && state.activePack === i;
+    const wasAwaiting = state.awaiting === 'packSize' && wasActive;
+    state.packs.splice(i, 1);
+    const nextErrors = {};
+    Object.keys(state.errors).forEach((k) => {
+      const m = /^packs\.(\d+)\.(.*)$/.exec(k);
+      if (!m) { nextErrors[k] = state.errors[k]; return; }
+      const idx = Number(m[1]);
+      if (idx === i) return;
+      const ni = idx > i ? idx - 1 : idx;
+      nextErrors['packs.' + ni + '.' + m[2]] = state.errors[k];
+    });
+    state.errors = nextErrors;
+    if (!state.packs.length) {
+      state.view = 'product';
+      state.activePack = 0;
+    } else if (state.view === 'pack') {
+      if (state.activePack > i) state.activePack -= 1;
+      else if (state.activePack >= state.packs.length) state.activePack = state.packs.length - 1;
+    } else if (state.activePack > i) {
+      state.activePack -= 1;
+    }
+    if (wasAwaiting) {
+      state.awaiting = null;
+      if (inputEl) inputEl.placeholder = 'Type a value, paste a URL, or ask me anything…';
+    }
+    closePackDeleteConfirm();
+    renderNFP();
+    renderProgress();
+    addUser('Delete the ' + label + ' size');
+    wiseSay(
+      `Removed the <strong>${esc(label)}</strong> size — its barcode, Nutrition Facts, and photo are gone.` +
+      (state.packs.length
+        ? ' The other sizes are still here.'
+        : ' This product is back to a single size.'),
+      nfpIntentChips());
+  }
   function startAddPack() {
     addUser('Add a pack format');
     createPack();
@@ -4134,12 +4222,16 @@
         handleNfpClick(nfpBtn.dataset.nfp, nfpBtn.dataset.arg);
         return;
       }
+      if (!e.target.closest('.nfp-fi-thumb.is-del-open')) closePackDeleteConfirm();
       // Progress module minimize/maximize toggle
       const minBtn = e.target.closest('[data-ap-min]');
       if (minBtn && progressEl.contains(minBtn)) { progressMin = !progressMin; renderProgress(); return; }
       // Progress step jump
       const goto = e.target.closest('[data-goto]');
       if (goto && progressEl.contains(goto)) { goStep(goto.dataset.goto); return; }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closePackDeleteConfirm();
     });
 
     // Progress step keyboard
@@ -4606,6 +4698,10 @@
       case 'pick-image': { const i = Number(arg); if (!isNaN(i)) { state.view = 'product'; state.activeImage = i; renderNFP(); } break; }
       case 'add-pack': startAddPack(); break;
       case 'pick-pack': { const i = Number(arg); if (!isNaN(i)) { state.view = 'pack'; state.activePack = i; renderNFP(); } break; }
+      case 'del-pack': openPackDeleteConfirm(arg); break;
+      case 'del-pack-cancel': closePackDeleteConfirm(); break;
+      case 'del-pack-confirm': confirmDeletePack(arg); break;
+      case 'del-pack-hold': break;
       case 'upload-pack': { const i = Number(arg); if (!isNaN(i)) { state.view = 'pack'; state.activePack = i; renderNFP(); openPhotoModal(i); } break; }
       case 'pack-upc-edit': { const i = Number(arg); if (!isNaN(i)) { state.view = 'pack'; state.activePack = i; } openPicker('packUpc'); break; }
       case 'ia-toggle': toggleIaSection(arg); break;

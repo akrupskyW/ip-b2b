@@ -11054,12 +11054,14 @@
         historyKey: 'wise-chat-history:wiseai',
         /* History is a first-class, broken-out module on WISEcodeAI (docked to the
            left of the chat as a real flex sibling in #modules-row) rather than
-           an in-chat overlay popover. It carries pane-style header chrome (a
-           three-dot menu + width changer) and stays open as its own module. */
+           an in-chat overlay popover. It carries pane-style header chrome and
+           starts collapsed to the icon rail; the chevron expands it. */
         historyBreakout: true,
-        /* This is the only surface where sticky History starts visible, docked
-           to the left of the chat. Every other chat keeps it tucked until the
-           three-dot "History & Projects" switch reveals it. */
+        /* This is the only surface where sticky History starts visible when
+           Nav & History icons is off (collapsed to the icon rail). With that
+           mode on — the load default — the module stays tucked so it does not
+           duplicate the nav chevron. Every other chat keeps it tucked until
+           the three-dot "History & Projects" switch reveals it. */
         historyBreakoutDefault: true,
         historyBreakoutHidden: false,
         /* Dress the broken-out History header like the result panes: serif

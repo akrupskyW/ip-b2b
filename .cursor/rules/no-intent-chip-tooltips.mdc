@@ -1,0 +1,40 @@
+---
+description: Intent chips never have a tooltip — the label on the chip is the whole story
+alwaysApply: true
+---
+
+# No Tooltips on Intent Chips
+
+Intent chips must **never** have a tooltip, by any means. The label on the
+chip is already the message. This is a permanent, non-negotiable design rule
+— especially in the chat module.
+
+## What is banned
+
+- The shared hover card (`#lir-tooltip` / `js/lir-tooltip.js`) on an intent chip
+- A native browser `title` bubble
+- A `data-tip` (or any other hover-card attribute) on the chip
+- A CSS-only tip (`::after`, `[title]:hover`, etc.) on the chip
+- Re-adding `.ws-intent-chip`, `.sc-reply-chips .chip`, `.sc-inline-chips .chip`,
+  `.ws-chips .chip`, or `.chip-dive` to the tooltip allow-list
+
+## What still gets a tooltip
+
+Icon-only controls (nav, module header, composer send, …) and data/status
+chips (Shield / GRAS pills via `chip-tooltip.js`) keep their hover cards.
+Those are not intent chips.
+
+## How it is wired
+
+`js/wiseai-chat.js` renders chips with no `title` and no `data-tip`.
+`js/lir-tooltip.js` skips intent chips and strips a leftover native `title`
+on hover so a stray attribute cannot surface a bubble.
+
+## Rules for the agent
+
+- Never put `title` or `data-tip` on an intent chip.
+- Never wire an intent chip into the shared tooltip selector.
+- A longer ask / description is not a hover caption — it belongs in the
+  transcript when the chip is tapped, not on a card above the chip.
+- `aria-label` is only for the “What can I ask?” chip, whose visible text is
+  aria-hidden shimmer. Regular chips use their visible label.

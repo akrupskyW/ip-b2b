@@ -62,11 +62,15 @@
   function isKebab(el) {
     if (!el || !el.matches) return false;
     if (el.closest && el.closest(SKIP_ANCESTOR)) return false;
+    /* History's collapse chevron reuses .panel-more-btn for header chrome.
+       It is not a menu — hovering it must not synthesize a click. */
+    if (el.matches('.wch-rail-btn')) return false;
+    var g = glyphName(el);
+    if (g === 'chevron_left' || g === 'chevron_right') return false;
     if (el.matches(KNOWN_BTN)) return true;
     if (!el.matches('button, [role="button"]')) return false;
     var popup = el.getAttribute('aria-haspopup');
     if (popup !== 'true' && popup !== 'menu') return false;
-    var g = glyphName(el);
     return g === 'more_vert' || g === 'more_horiz';
   }
 

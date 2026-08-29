@@ -13,3 +13,4 @@ savings
 speed_camera
 local_florist
 width_normal
+history_off

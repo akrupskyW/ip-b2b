@@ -1,0 +1,36 @@
+---
+description: Helix settings on wiseai.html are the source of truth for every other helix
+alwaysApply: true
+---
+
+# Helix Settings Come From wiseai.html
+
+`pages/wiseai.html` is the single source of truth for Helix. Whatever pose
+is set there — on, opacity, angle, camera, scale, knobs, look, spin, style —
+is the pose every other page that has Helix must use.
+
+The published load default lives in `BGANIM_PUBLISH_POSE` in
+`js/wiseai-chat.js` (the Scene chip). Close-up stays a Load chip. A member
+change on wiseai writes the shared `wise:chat-bg-anim-*` keys and every
+other chat helix follows.
+
+## What this means on the surface
+
+- Open any chat with Helix → it matches the wiseai helix, not a local look.
+- Fresh load (no saved preference) → Scene: on, 3D, ~50% opacity.
+- Change a slider on wiseai → the same values land on every other helix.
+
+## Rules for the agent
+
+- Never invent a per-page Helix default (no `20%` / `10°` / `30%` fallbacks).
+- If wiseai and another page disagree, wiseai wins — bring the other page
+  into line, not the reverse.
+- Read `BGANIM_PUBLISH_POSE` / `readBgAnimOpacityPct()` / `readBgAnimAngle()`
+  (and the other `readBgAnim*` helpers). Do not hardcode pose numbers.
+- Decorative still-frame helices (e.g. the paused product-photo strip on
+  Add / View Product) are not the chat helix. Do not retune them to Scene.
+
+## When in doubt
+
+Open `pages/wiseai.html`, confirm the published Scene pose in
+`js/wiseai-chat.js`, and mirror it.

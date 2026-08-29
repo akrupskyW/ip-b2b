@@ -149,7 +149,7 @@ export const FEATURE_SIGNALS = [
     on: 'History can live inside the primary navigation as an expandable section — search, projects, and All conversations stay usable there.',
     off: 'History no longer merges into the primary navigation.' },
   { id: 'navModules', cat: 'features', re: /nav-modules|data-navmodules|Nav & History icons/,
-    on: 'Navigation and History open as four icons — the logo, a menu, a chevron, and a new-chat circle. The menu opens the labelled navigation; the chevron opens History. While either is open, those extra icons hide and the chevron closes back to the rail.',
+    on: 'Navigation and History open as four icons — the logo, a menu, History, and a new-chat circle. The menu opens the labelled navigation; the History icon opens History, and history off closes it. While either is open, those extra icons hide and History closes back to the rail.',
     off: 'The four-icon Navigation and History rail is gone.' },
   { id: 'navHamburger', cat: 'ux', re: /nav-hamburger|data-navhamburger/,
     on: 'When Search is on and the nav is collapsed, a menu icon sits left of the wordmark instead of the icon rail.',
@@ -194,7 +194,7 @@ const MODULE_TITLE_SEL = [
   '.sc-heading',
 ].join(',');
 
-const ICON_ONLY = /^(more_vert|width_normal|width_wide|width_full|autorenew|close|check|add|edit|search|tune|chevron_left|chevron_right|expand_more|unfold_more|unfold_less|restart_alt|edit_note|today|widgets|bolt|note_add|trending_up|delete|forum|history|hub|alt_route)$/i;
+const ICON_ONLY = /^(more_vert|width_normal|width_wide|width_full|autorenew|close|check|add|edit|search|tune|chevron_left|chevron_right|expand_more|unfold_more|unfold_less|restart_alt|edit_note|today|widgets|bolt|note_add|trending_up|delete|forum|history|history_off|hub|alt_route)$/i;
 
 export function hashStr(s) {
   let h = 5381;
@@ -231,7 +231,7 @@ export const SCRIPT_PURPOSES = {
   'feedback.js': 'on-page comments — press C, click a spot, leave a threaded note pinned to it',
   'feedback-setting.js': 'the Appearance Comments switch, a site-wide on/off held by the server and locked to the owner',
   'nav-history.js': 'History inside the primary navigation as an expandable section',
-  'nav-modules.js': 'Navigation and History open as the logo, menu, History chevron, and a circular new-chat control; the menu opens the labelled navigation, the chevron opens History, and while either is open the extra icons hide so the chevron can close back to the rail',
+  'nav-modules.js': 'Navigation and History open as the logo, menu, History on and off icons, and a circular new-chat control; the menu opens the labelled navigation, History opens and closes from its icon, and while either is open the extra icons hide so History can close back to the rail',
   'nav-hamburger.js': 'a menu icon to the left of the wordmark when Search is on and the nav is collapsed',
   'trace-helix.js': 'the DNA helix every WISEcodeAI turn draws while it thinks',
   'welcome-orbit.js': 'the welcome owl as a living node network instead of pulse rings',

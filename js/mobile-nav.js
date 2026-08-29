@@ -83,6 +83,9 @@ function syncNavIcon() {
     btn.setAttribute('title', label);
     btn.setAttribute('aria-expanded', open ? 'true' : 'false');
   } else {
+    /* Nav & History icons owns this control on desktop — don't stomp its
+       history / history_off glyphs with nav-collapse chevrons. */
+    if (document.documentElement.classList.contains('nav-modules')) return;
     const p = panel();
     if (p && !p.classList.contains('minimal-ui') && !p.classList.contains('mp-pivot')) {
       const hamburger = document.documentElement.classList.contains('nav-hamburger')

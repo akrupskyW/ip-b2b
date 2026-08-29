@@ -17,6 +17,10 @@
   var KEY = 'wise-minimal-ui-v2';
   function wantOn() {
     try {
+      /* Pivot Navigation always comes on with Minimal UI. If the top bar
+         is persisted, paint the strip even when Nav & History icons is on
+         so the four-icon rail cannot flash first. */
+      if (localStorage.getItem('wise-menu-pivot') === '1') return true;
       /* Nav & History icons owns the collapsed chrome (default ON); don't
          paint Minimal UI over that four-icon rail. Keep in sync with
          isNavModulesOn() in js/nav-modules.js. */

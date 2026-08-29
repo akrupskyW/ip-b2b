@@ -2223,11 +2223,13 @@ const BGANIM_SCALE_AXIS_KEYS = {
 };
 const BGANIM_SCALE_AXES = ['x', 'y', 'z'];
 const BGANIM_SCALE_PCT_DEFAULT = 100;
-/* Published Helix pose — Scene. Fresh loads (empty localStorage) open on this
-   look so a committed deploy matches the dialed-in reference: 3D tubes, the
-   smaller strand in the pane, reverse spin, pulse beads. Close-up stays a
-   Load chip; this is only the no-pref default. */
-const BGANIM_PUBLISH_POSE = Object.freeze({
+/* Published Helix pose — Scene. This is the wiseai.html source of truth:
+   every other page that runs a chat helix must load this look (or the one
+   shared localStorage override the member set on wiseai). Fresh loads open
+   on 3D tubes, the smaller strand, reverse spin, pulse beads. Close-up
+   stays a Load chip; this is only the no-pref default. Never invent a
+   per-page opacity / angle / pose. */
+export const BGANIM_PUBLISH_POSE = Object.freeze({
   look: '3d',
   mats: Object.freeze({ rough: 36, metal: 17, coat: 26, sheen: 46, fuzz: 22 }),
   opacity: 50,
@@ -3219,6 +3221,22 @@ const BGANIM_SNAP_PAUSED_KEY = 'wise:chat-bg-anim-paused';
 const BGANIM_SNAP_STYLE_KEY = 'wise:chat-bg-anim-style';
 const BGANIM_SNAP_STYLES = ['helix', 'helix-ten', 'orbit'];
 
+export function readBgAnimOpacityPct() {
+  try {
+    const n = parseInt(localStorage.getItem(BGANIM_SNAP_OPACITY_KEY), 10);
+    if (!isNaN(n)) return Math.max(10, Math.min(100, n));
+  } catch (_) {}
+  return BGANIM_PUBLISH_POSE.opacity;
+}
+
+export function readBgAnimAngle() {
+  try {
+    const n = parseInt(localStorage.getItem(BGANIM_SNAP_ANGLE_KEY), 10);
+    if (!isNaN(n)) return Math.max(-90, Math.min(90, n));
+  } catch (_) {}
+  return BGANIM_PUBLISH_POSE.angle;
+}
+
 function bgAnimFactorySnap(id, name, patch) {
   return Object.assign({
     id, name, builtIn: true,
@@ -3291,8 +3309,8 @@ function cloneBgAnimSnap(s) {
 function clampBgAnimSnap(raw) {
   const s = cloneBgAnimSnap(raw);
   if (!s) return null;
-  s.opacity = Math.max(10, Math.min(100, Math.round(Number(s.opacity) || 20)));
-  s.angle = Math.max(-90, Math.min(90, Math.round(Number(s.angle) || 0)));
+  s.opacity = Math.max(10, Math.min(100, Math.round(Number(s.opacity) || BGANIM_PUBLISH_POSE.opacity)));
+  s.angle = Math.max(-90, Math.min(90, Math.round(Number.isFinite(Number(s.angle)) ? Number(s.angle) : BGANIM_PUBLISH_POSE.angle)));
   s.camera = clampBgAnimCamera(s.camera);
   s.azimuth = clampBgAnimAzimuth(s.azimuth);
   s.shift = clampBgAnimShift(s.shift);
@@ -3311,16 +3329,8 @@ function clampBgAnimSnap(raw) {
 }
 
 function captureBgAnimSnapshot() {
-  let opacity = 20;
-  try {
-    const n = parseInt(localStorage.getItem(BGANIM_SNAP_OPACITY_KEY), 10);
-    if (!isNaN(n)) opacity = Math.max(10, Math.min(100, n));
-  } catch (_) {}
-  let angle = 10;
-  try {
-    const n = parseInt(localStorage.getItem(BGANIM_SNAP_ANGLE_KEY), 10);
-    if (!isNaN(n)) angle = Math.max(-90, Math.min(90, n));
-  } catch (_) {}
+  const opacity = readBgAnimOpacityPct();
+  const angle = readBgAnimAngle();
   let on = true;
   try { if (localStorage.getItem(BGANIM_SNAP_ON_KEY) === '0') on = false; } catch (_) {}
   let paused = false;
@@ -4164,6 +4174,14 @@ export function createHelixBgAnim(cfg) {
   const reducedMotion = !!cfg.reducedMotion;
   const isOn = typeof cfg.isOn === 'function' ? cfg.isOn : () => true;
   const isPaused = typeof cfg.isPaused === 'function' ? cfg.isPaused : () => false;
+  /* Strand-only stills (empty product-photo tile) skip food circles, owl
+     bugs, and hover cards — just the streaming DNA/RNA rope, frozen. */
+  const hideProducts = !!(typeof cfg.hideProducts === 'function' ? cfg.hideProducts() : cfg.hideProducts);
+  const getCenterY = () => {
+    const raw = typeof cfg.getCenterY === 'function' ? cfg.getCenterY() : 0.36;
+    const n = Number(raw);
+    return Number.isFinite(n) ? Math.max(0.15, Math.min(0.85, n)) : 0.36;
+  };
   const getDensity = () => {
     const raw = typeof cfg.getDensity === 'function' ? cfg.getDensity() : cfg.density;
     return (raw === 'ten' || raw === 'few') ? 'ten' : 'full';
@@ -4719,7 +4737,7 @@ export function createHelixBgAnim(cfg) {
     if (canvas) return;
     const body = getBody();
     if (!body) return;
-    loadImages();
+    if (!hideProducts) loadImages();
     canvas = document.createElement('canvas');
     canvas.className = 'sc-bganim-canvas';
     canvas.setAttribute('aria-hidden', 'true');
@@ -4727,18 +4745,20 @@ export function createHelixBgAnim(cfg) {
     ctx = canvas.getContext('2d');
     buf = document.createElement('canvas');            // offscreen: draw opaque, blit at opacity
     bctx = buf.getContext('2d');
-    buildCard(body);
+    if (!hideProducts) buildCard(body);
     resize();
     try { ro = new ResizeObserver(resize); ro.observe(body); } catch (_) {}
     /* Hover only — listen on the body so we get coordinates even though the
        canvas sits behind the (transparent) welcome. Hovering a product circle
        pins its card (food sheet, brand insight, or look-closer fact). */
-    body.addEventListener('mousemove', onMove);
-    body.addEventListener('mouseleave', () => { if (hoverPinned && !overCard) hideCard(); });
-    body.addEventListener('pointerdown', onPointerDown);
-    document.addEventListener('pointermove', onPointerMove);
-    document.addEventListener('pointerup', onPointerUp);
-    document.addEventListener('pointercancel', onPointerUp);
+    if (!hideProducts) {
+      body.addEventListener('mousemove', onMove);
+      body.addEventListener('mouseleave', () => { if (hoverPinned && !overCard) hideCard(); });
+      body.addEventListener('pointerdown', onPointerDown);
+      document.addEventListener('pointermove', onPointerMove);
+      document.addEventListener('pointerup', onPointerUp);
+      document.addEventListener('pointercancel', onPointerUp);
+    }
   }
 
   /* Product or insight card: round thumb over the bug. Food mode is name/brand +
@@ -5232,7 +5252,7 @@ export function createHelixBgAnim(cfg) {
     ctx = bctx;
     ctx.clearRect(0, 0, w, h);
     const [r, g, b] = rgb;
-    const cx = w / 2 + (getShift() / 100) * w * SHIFT_SPAN, cy = h * 0.36;
+    const cx = w / 2 + (getShift() / 100) * w * SHIFT_SPAN, cy = h * getCenterY();
     const intro = 1 - Math.pow(1 - Math.min(1, t / 3.2), 3);   // gentle grow-in over ~3.2s
     /* Angled axis that slowly sways around the member's chosen tilt (degrees from
        the shared Angle slider; default 10° so the strand rides high on the left
@@ -5393,37 +5413,39 @@ export function createHelixBgAnim(cfg) {
     /* Every food on the strand is UNIQUE: `pi` walks the (session-shuffled) pool
        once and never rewinds, so no product can appear twice in a frame. Should a
        huge canvas ever outrun the pool, the owl mark stands in — never a repeat. */
-    if (few) {
-      const slots = [];
-      for (let i = 0; i <= N; i += nodeEvery) {
-        if (A[i]) slots.push(A[i]);
-        if (B[i]) slots.push(B[i]);
-      }
-      const wantProd = Math.min(10, slots.length);
-      const prodAt = new Set(pickClustered(wantProd, slots.length));
-      let pi = 0;
-      for (let i = 0; i < slots.length; i++) {
-        const s = slots[i];
-        if (prodAt.has(i)) {
-          const p = PRODUCTS[pi++];
-          nodes.push({ x: s.x, y: s.y, z: s.z, alpha: s.alpha, owl: !p, prod: p || null });
-        } else {
-          nodes.push({ x: s.x, y: s.y, z: s.z, alpha: s.alpha, owl: true, prod: null });
+    if (!hideProducts) {
+      if (few) {
+        const slots = [];
+        for (let i = 0; i <= N; i += nodeEvery) {
+          if (A[i]) slots.push(A[i]);
+          if (B[i]) slots.push(B[i]);
+        }
+        const wantProd = Math.min(10, slots.length);
+        const prodAt = new Set(pickClustered(wantProd, slots.length));
+        let pi = 0;
+        for (let i = 0; i < slots.length; i++) {
+          const s = slots[i];
+          if (prodAt.has(i)) {
+            const p = PRODUCTS[pi++];
+            nodes.push({ x: s.x, y: s.y, z: s.z, alpha: s.alpha, owl: !p, prod: p || null });
+          } else {
+            nodes.push({ x: s.x, y: s.y, z: s.z, alpha: s.alpha, owl: true, prod: null });
+          }
+        }
+      } else {
+        let ni = 0, pi = 0;
+        for (let i = 0; i <= N; i += nodeEvery) {
+          const owlA = (ni % 7 === 3), owlB = (ni % 7 === 0);
+          const a = A[i], b = B[i];
+          const pa = owlA ? null : PRODUCTS[pi++];
+          const pb = owlB ? null : PRODUCTS[pi++];
+          nodes.push({ x: a.x, y: a.y, z: a.z, alpha: a.alpha, owl: owlA || !pa, prod: pa || null });
+          nodes.push({ x: b.x, y: b.y, z: b.z, alpha: b.alpha, owl: owlB || !pb, prod: pb || null });
+          ni++;
         }
       }
-    } else {
-      let ni = 0, pi = 0;
-      for (let i = 0; i <= N; i += nodeEvery) {
-        const owlA = (ni % 7 === 3), owlB = (ni % 7 === 0);
-        const a = A[i], b = B[i];
-        const pa = owlA ? null : PRODUCTS[pi++];
-        const pb = owlB ? null : PRODUCTS[pi++];
-        nodes.push({ x: a.x, y: a.y, z: a.z, alpha: a.alpha, owl: owlA || !pa, prod: pa || null });
-        nodes.push({ x: b.x, y: b.y, z: b.z, alpha: b.alpha, owl: owlB || !pb, prod: pb || null });
-        ni++;
-      }
+      nodes.sort((p, q) => p.z - q.z);
     }
-    nodes.sort((p, q) => p.z - q.z);
     /* Little beads along both backbones — the nucleotides between product
        circles. They sit on a finer stride than the photos (and on every rung
        end), skip anything that would land under a large node, and honour the
@@ -5434,7 +5456,9 @@ export function createHelixBgAnim(cfg) {
     const customRgb = parseDotsRgb(getDotsColorHex());
     const [dr, dg, db] = customRgb || [r, g, b];
     const occupiedI = new Set();
-    for (let i = 0; i <= N; i += nodeEvery) occupiedI.add(i);
+    if (!hideProducts) {
+      for (let i = 0; i <= N; i += nodeEvery) occupiedI.add(i);
+    }
     const beadI = new Set();
     const dotEvery = Math.max(2, Math.round(16 / STEP));
     for (let i = 0; i <= N; i += dotEvery) beadI.add(i);
@@ -5495,7 +5519,7 @@ export function createHelixBgAnim(cfg) {
       }
     }
     hitNodes = [];
-    for (const n of nodes) {
+    for (const n of hideProducts ? [] : nodes) {
       if (n.alpha <= 0.02) continue;
       const d = shade(n.z);                                    // 0 (far) → 1 (near)
       const size = prodSize * (0.74 + 0.54 * d) * breathe;     // near circles are larger
@@ -5582,8 +5606,10 @@ export function createHelixBgAnim(cfg) {
       running = false; paused = false; if (raf) { cancelAnimationFrame(raf); raf = 0; }
       t0 = 0; draw(3);
       /* Photos/owl may still be loading — repaint once they arrive so the still frame fills in. */
-      const pending = images ? PRODUCTS.map((p) => images[p.img]).concat(owlImg ? [owlImg] : []) : [];
-      pending.forEach((im) => { if (im && !im.complete) im.addEventListener('load', () => { if (!running) draw(3); }, { once: true }); });
+      if (!hideProducts) {
+        const pending = images ? PRODUCTS.map((p) => images[p.img]).concat(owlImg ? [owlImg] : []) : [];
+        pending.forEach((im) => { if (im && !im.complete) im.addEventListener('load', () => { if (!running) draw(3); }, { once: true }); });
+      }
       return;
     }
     /* Start FROZEN when playback is paused app-wide: run the field but hold it on a
@@ -5591,8 +5617,10 @@ export function createHelixBgAnim(cfg) {
     if (isPaused()) {
       if (raf) { cancelAnimationFrame(raf); raf = 0; }
       running = true; paused = true; t0 = 0; lastT = 3; draw(3);
-      const pending = images ? PRODUCTS.map((p) => images[p.img]).concat(owlImg ? [owlImg] : []) : [];
-      pending.forEach((im) => { if (im && !im.complete) im.addEventListener('load', () => { if (paused) draw(lastT); }, { once: true }); });
+      if (!hideProducts) {
+        const pending = images ? PRODUCTS.map((p) => images[p.img]).concat(owlImg ? [owlImg] : []) : [];
+        pending.forEach((im) => { if (im && !im.complete) im.addEventListener('load', () => { if (paused) draw(lastT); }, { once: true }); });
+      }
       return;
     }
     if (running && !paused) return;
@@ -7341,16 +7369,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   let welcomeChipsExpanding = false;
   const WELCOME_CHIP_MAX_ROWS = 2;
 
-  const chipHoverStatus = (c) => {
-    if (!c) return '';
-    const ask = String(c.ask || '').replace(/\s+/g, ' ').trim();
-    const label = String(c.label || '').replace(/\s+/g, ' ').trim();
-    const desc = String(c.desc || '').replace(/\s+/g, ' ').trim();
-    if (c.intent === ASK_HELP_INTENT) return ask || label || 'Open What can I ask?';
-    if (ask && ask.toLowerCase() !== label.toLowerCase()) return ask;
-    if (desc) return desc;
-    return label ? `Ask WISEcodeAI: ${label}` : '';
-  };
+  /* Intent chips never carry a tooltip — the label is already on the chip.
+     No title, no data-tip, no hover card. The ask-help chip is the only one
+     that needs an aria-label, because its visible text is aria-hidden shimmer. */
   const buildChipsHtml = () => intents.map((c, i) => {
     const spent = !!(c && c.intent && usedIntents.has(c.intent));
     /* The "What can I ask?" chip wears the gold border that pairs it with the
@@ -7363,10 +7384,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const labelHtml = isAsk
       ? `<span class="sc-ask-shimmer" aria-hidden="true">${shimmerLetters(c.label)}</span>`
       : esc(c.label);
-    const status = chipHoverStatus(c);
-    const tip = status ? ` data-tip="${esc(status)}" title="${esc(status)}"` : '';
-    const aria = isAsk ? ` aria-label="${esc(c.label)}"` : (status ? ` aria-label="${esc(status)}"` : '');
-    return `<button type="button" class="chip ws-intent-chip${gold}${spent ? ' is-used' : ''}" data-intent="${i}"${aria}${tip}${spent ? ' aria-disabled="true" tabindex="-1"' : ''}><span class="material-symbols-outlined">${esc(c.icon || 'bolt')}</span>${labelHtml}</button>`;
+    const aria = isAsk ? ` aria-label="${esc(c.label)}"` : '';
+    return `<button type="button" class="chip ws-intent-chip${gold}${spent ? ' is-used' : ''}" data-intent="${i}"${aria}${spent ? ' aria-disabled="true" tabindex="-1"' : ''}><span class="material-symbols-outlined">${esc(c.icon || 'bolt')}</span>${labelHtml}</button>`;
   }).join('');
   let chipsHtml = buildChipsHtml();
 
@@ -7461,7 +7480,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   /* Opacity of the background animation (0.1–1). Shared APP-WIDE (one key, broadcast
      on wise:chat-bg-anim-opacity), adjustable from the slider below the toggle. */
   const BGANIM_OPACITY_KEY = 'wise:chat-bg-anim-opacity';
-  /* Published default matches Scene (50%). Holds until the member drags the
+  /* Published default matches Scene. Holds until the member drags the
      opacity slider, at which point their explicit choice takes over app-wide. */
   let bgAnimOpacity = BGANIM_PUBLISH_POSE.opacity / 100;
   let bgAnimOpacityUserSet = false;
@@ -7469,12 +7488,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   /* Axis tilt of the helix in degrees (−90…90). Shared APP-WIDE (one key,
      broadcast on wise:chat-bg-anim-angle). Published default matches Scene. */
   const BGANIM_ANGLE_KEY = 'wise:chat-bg-anim-angle';
-  const BGANIM_ANGLE_DEFAULT = BGANIM_PUBLISH_POSE.angle;
-  let bgAnimAngle = BGANIM_ANGLE_DEFAULT;
-  try {
-    const s = parseInt(localStorage.getItem(BGANIM_ANGLE_KEY), 10);
-    if (!isNaN(s)) bgAnimAngle = Math.max(-90, Math.min(90, s));
-  } catch (_) {}
+  let bgAnimAngle = readBgAnimAngle();
   let bgAnimCamera = readBgAnimCamera();
   let bgAnimAzimuth = readBgAnimAzimuth();
   let bgAnimShift = readBgAnimShift();
@@ -10096,7 +10110,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (!s) return;
     bgAnimLook = normalizeBgAnimLook(s.look);
     Object.assign(bgAnimMats, s.mats);
-    bgAnimOpacity = Math.max(0.1, Math.min(1, (s.opacity || 20) / 100));
+    bgAnimOpacity = Math.max(0.1, Math.min(1, (s.opacity || BGANIM_PUBLISH_POSE.opacity) / 100));
     bgAnimOpacityUserSet = true;
     bgAnimAngle = Math.max(-90, Math.min(90, s.angle));
     bgAnimCamera = clampBgAnimCamera(s.camera);
@@ -12481,11 +12495,7 @@ export function wireStandardChatMenu(cfg = {}) {
     const s = parseInt(localStorage.getItem(BGANIM_OPACITY_KEY), 10);
     if (!isNaN(s)) { bgOpacity = Math.max(0.1, Math.min(1, s / 100)); bgUserSet = true; }
   } catch (_) {}
-  let bgAngle = BGANIM_PUBLISH_POSE.angle;
-  try {
-    const a = parseInt(localStorage.getItem(BGANIM_ANGLE_KEY), 10);
-    if (!isNaN(a)) bgAngle = Math.max(-90, Math.min(90, a));
-  } catch (_) {}
+  let bgAngle = readBgAnimAngle();
   let bgCamera = readBgAnimCamera();
   let bgAzimuth = readBgAnimAzimuth();
   let bgShift = readBgAnimShift();
@@ -12559,8 +12569,8 @@ export function wireStandardChatMenu(cfg = {}) {
     const playbackNow = q('.sc-bganim-playback');
     const angleHtml = '<div class="sc-bganim-detail sc-bganim-angle">'
       + '<span class="sc-bganim-detail-label">Angle</span>'
-      + '<input type="range" class="sc-bganim-angle-range" min="-90" max="90" step="1" value="10" aria-label="Helix angle">'
-      + '<span class="sc-bganim-angle-val">10°</span>'
+      + '<input type="range" class="sc-bganim-angle-range" min="-90" max="90" step="1" value="' + BGANIM_PUBLISH_POSE.angle + '" aria-label="Helix angle">'
+      + '<span class="sc-bganim-angle-val">' + BGANIM_PUBLISH_POSE.angle + '°</span>'
       + '</div>';
     if (opacityRow) opacityRow.insertAdjacentHTML('afterend', angleHtml);
     else if (styleRowNow) styleRowNow.insertAdjacentHTML('beforebegin', angleHtml);
@@ -12924,7 +12934,7 @@ export function wireStandardChatMenu(cfg = {}) {
     if (!s) return;
     bgLook = normalizeBgAnimLook(s.look);
     Object.assign(bgMats, s.mats);
-    bgOpacity = Math.max(0.1, Math.min(1, (s.opacity || 20) / 100));
+    bgOpacity = Math.max(0.1, Math.min(1, (s.opacity || BGANIM_PUBLISH_POSE.opacity) / 100));
     bgUserSet = true;
     bgAngle = Math.max(-90, Math.min(90, s.angle));
     bgCamera = clampBgAnimCamera(s.camera);

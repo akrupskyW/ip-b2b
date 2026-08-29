@@ -5,14 +5,14 @@
  * Appearance ▸ Layout ▸ Nav & History icons (Admin-badged). Sibling of
  * History in navigation: that mode merges History into the nav; this one
  * keeps them as two default modules and gives them a shared collapsed
- * chrome — logo bug, menu, expand chevron, new chat (blue circle).
+ * chrome — logo bug, menu, History on/off, new chat (blue circle).
  *
  * Collapsed (icon rail): those four icons. The hamburger toggles the labelled
- * navigation; the chevron toggles History. They are independent — opening one
- * leaves the other as it was, so the labelled nav and History can be open at
- * the same time, and clicking a control only closes its own module. While
- * History is open the chevron and new-chat hide (History carries its own
- * collapse and new conversation), but the hamburger stays so the nav can
+ * navigation; the History icon toggles History. They are independent — opening
+ * one leaves the other as it was, so the labelled nav and History can be open
+ * at the same time, and clicking a control only closes its own module. While
+ * History is open the History-off icon and new-chat hide (History carries its
+ * own collapse and new conversation), but the hamburger stays so the nav can
  * still be opened or collapsed alongside it. New conversation starts a thread
  * without forcing either module open. The new-chat control is a circle,
  * matching History.
@@ -51,10 +51,17 @@ export function applyNavModules(on, persist = true) {
   document.documentElement.classList.toggle(HTML_CLASS, val);
   if (val) {
     /* This chrome replaces Minimal UI's logo+chevron strip. Always stand
-       Minimal UI down so the four icons actually show. Icons only is the
-       load default for this mode — paint the rail even on restore so a
-       leftover expanded preference cannot hide it. */
-    try { applyMinimalUi(false, persist); } catch (_) { /* already expanded */ }
+       Minimal UI down so the four icons actually show — unless Pivot
+       Navigation is on, which always brings Minimal UI with it. Icons
+       only is the load default for this mode — paint the rail even on
+       restore so a leftover expanded preference cannot hide it. */
+    let pivoted = false;
+    try { pivoted = localStorage.getItem('wise-menu-pivot') === '1'; } catch (_) {}
+    /* Restore must not fight a persisted pivot (that mode owns Minimal
+       UI). An explicit in-session ON still stands the strip down. */
+    if (!(pivoted && !persist)) {
+      try { applyMinimalUi(false, persist); } catch (_) { /* already expanded */ }
+    }
     /* Always persist Icons only on with this mode: hamburger expand is
        in-session only (persist false), so a leftover "0" cannot hide the
        four-icon rail on the next load. */
@@ -74,7 +81,7 @@ export function restoreNavModules() {
   applyNavModules(isNavModulesOn(), false);
 }
 
-/** Place (or remove) the menu + new-chat icons around the collapse chevron. */
+/** Place (or remove) the menu + new-chat icons around the History toggle. */
 export function syncNavModulesChrome() {
   const brand = document.querySelector('#menu-panel .menu-brand-bar');
   if (!brand) return;
@@ -108,7 +115,7 @@ export function syncNavModulesChrome() {
     });
   }
 
-  /* Order: logo bug, menu, chevron, new chat. */
+  /* Order: logo bug, menu, History toggle, new chat. */
   const logo = brand.querySelector('.menu-brand-logo');
   if (logo) brand.insertBefore(menuBtn, logo.nextSibling);
   else brand.insertBefore(menuBtn, brand.firstChild);
@@ -146,8 +153,8 @@ function navIsCollapsed() {
 
 /** Parked live History API (the mount event can fire before this module boots). */
 let liveApi = null;
-/** Layout the last hamburger/chevron click asked for, so a late History mount
- *  still opens in the right mode (full vs collapsed rail). */
+/** Layout the last hamburger/History-toggle click asked for, so a late History
+ *  mount still opens in the right mode (full vs collapsed rail). */
 let pendingLayout = null;
 
 function historyApi() {
@@ -259,8 +266,8 @@ function toggleNavModule() {
   syncNavModulesChrome();
 }
 
-/** Chevron: toggle History. Independent of the nav — the labelled nav keeps
- *  whatever state it was in, so this control only ever opens or closes
+/** History icon: toggle History. Independent of the nav — the labelled nav
+ *  keeps whatever state it was in, so this control only ever opens or closes
  *  History. */
 function toggleHistoryModule() {
   if (!isNavModulesOn() || !historyAllowed()) return;
@@ -285,8 +292,8 @@ function isDesktop() {
   try { return !window.matchMedia('(max-width: 768px)').matches; } catch (_) { return true; }
 }
 
-/** Mark when History is fully open so CSS can drop the repeated chevron
- *  and new-chat on the nav rail (History has its own of both). */
+/** Mark when History is fully open so CSS can drop the repeated History
+ *  toggle and new-chat on the nav rail (History has its own of both). */
 function syncOpenChrome() {
   const on = isNavModulesOn() && isHistoryFull();
   document.documentElement.classList.toggle('nav-modules-hist-open', on);
@@ -304,7 +311,7 @@ function syncChevronLabel() {
   btn.setAttribute('data-tip', label);
   btn.setAttribute('aria-pressed', histOpen ? 'true' : 'false');
   const icon = btn.querySelector('.material-symbols-outlined');
-  if (icon) icon.textContent = histOpen ? 'chevron_left' : 'chevron_right';
+  if (icon) icon.textContent = histOpen ? 'history_off' : 'history';
 }
 
 function syncMenuLabel() {
@@ -332,8 +339,8 @@ function onChevronClick(e) {
   e.preventDefault();
   e.stopPropagation();
   e.stopImmediatePropagation();
-  /* The chevron only ever toggles History, whatever the nav is doing — the
-     hamburger owns the nav. Roll / Crawl can take History out of the nav
+  /* The History icon only ever toggles History, whatever the nav is doing —
+     the hamburger owns the nav. Roll / Crawl can take History out of the nav
      entirely, in which case there is nothing to toggle. */
   if (historyAllowed()) toggleHistoryModule();
 }

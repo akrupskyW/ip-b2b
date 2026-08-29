@@ -61,8 +61,8 @@ export const TOPBAR_LOGO_HTML = `
 /* Menu toggle (far left) — opens/closes the navigation rail. Identical
    on every page. */
 const MENU_TOGGLE_HTML = `
-  <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false">
-    <span class="material-symbols-outlined">chevron_left</span>
+  <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Open History" aria-label="Open History" aria-pressed="false">
+    <span class="material-symbols-outlined">history</span>
     <span class="lir-label">Menu</span>
   </button>`;
 
@@ -459,6 +459,12 @@ export function applyMinimalUi(on, persist = true) {
     Keep the stored check in sync with isNavModulesOn() in js/nav-modules.js. */
 export function restoreMinimalUi() {
   try {
+    /* Pivot Navigation always comes on with Minimal UI — don't let
+       Nav & History icons stand the strip down while the top bar is on. */
+    if (localStorage.getItem('wise-menu-pivot') === '1') {
+      applyMinimalUi(true, false);
+      return;
+    }
     const v = localStorage.getItem('wise-nav-modules-v2');
     if (v === null ? true : v === '1') {
       applyMinimalUi(false, false);
@@ -989,9 +995,10 @@ export function restoreChatTint() {
   applyChatTint(isChatTintOn());
 }
 
-/* Roll · Crawl · Walk · Run — the floating rollout-mode switch pinned to the right
-   edge of every page (js/cwr-toggle.js). Shown by default; this Appearance
-   toggle hides it. Load default is Run on wiseai / view-product / add-product
+/* Roll · Crawl · Walk · Run — the floating rollout-mode switch pinned to the
+   right edge of the screen (12px inset, vertically centered) on every page
+   (js/cwr-toggle.js). Shown by default; this Appearance toggle hides it.
+   Load default is Run on wiseai / view-product / add-product
    and Roll everywhere else. Driven by a `cwr-ui-on` class on <html> —
    cwr-toggle.js gates BOTH the widget and the crawl/walk mode CSS on that
    class, so turning this off also suspends any chat-hiding the mode was

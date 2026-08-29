@@ -1,0 +1,38 @@
+---
+description: Pivot Navigation and Minimal UI always turn on together
+alwaysApply: true
+---
+
+# Pivot Navigation Comes On With Minimal UI
+
+Turning **Pivot Navigation** on always turns **Minimal UI** on with it.
+Turning **Minimal UI** on always pivots the nav to the horizontal top bar.
+The two Appearance rows come on as a pair. Off stays independent — the
+chevron can still expand the bar without leaving pivot.
+
+## What this means on the surface
+
+- Toggle Pivot Navigation on → the nav becomes a horizontal top bar of
+  logo, Appearance, and you (Minimal UI).
+- Toggle Minimal UI on → same top bar, not a vertical logo strip.
+- Toggle either off on its own → the other stays as it was.
+- The chevron beside the logo still reveals the full nav (Minimal UI off)
+  while the bar stays pivoted.
+
+## How it is wired
+
+`setMenuPivot(true)` in `js/agent-menu.js` applies Minimal UI and stands
+down Nav & History icons (that mode hides the Minimal UI strip). The
+Appearance Minimal UI row in `js/appearance-menu.js` calls `setMenuPivot(true)`
+when turning on. First paint (`js/text-size-fouc.js`) and
+`restoreMinimalUi()` honor a stored pivot so the four-icon rail cannot
+flash over the strip.
+
+## Rules for the agent
+
+- Never turn Pivot on without also turning Minimal UI on.
+- Never turn Minimal UI on from Appearance without also pivoting.
+- Do not force them off together — expand-via-chevron and a solo off
+  must keep working.
+- Do not reintroduce a path that paints Nav & History icons over a
+  pivoted Minimal UI bar on load.

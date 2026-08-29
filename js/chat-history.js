@@ -196,9 +196,10 @@
       /* History module width changer is permanently removed — never render it. */
       '.wch-sidebar .wch-width-btn{display:none !important;}',
       '.wch-sidebar.wch-rail .wch-controls{margin:0 !important;}',
-      /* Same glyph + hit target as the primary nav collapse toggle
-         (.topbar-menu-toggle in #menu-panel.mp-rail): 20px chevron in a
-         32×28 control, colour-only hover, equal air above and below. */
+      /* Same hit target as the primary nav History toggle
+         (.topbar-menu-toggle in #menu-panel.mp-rail): 20px history /
+         history_off in a 32×28 control, colour-only hover, equal air
+         above and below. */
       '.wch-rail-btn .material-symbols-outlined{font-size:20px !important;line-height:1 !important;}',
       '.wch-sidebar.wch-rail .wch-rail-btn{width:32px;height:28px;min-height:28px;padding:2px 0;border-radius:0;background:transparent;opacity:1;color:var(--text-muted);}',
       '.wch-sidebar.wch-rail .wch-rail-btn:hover,.wch-sidebar.wch-rail .wch-rail-btn.is-open{background:transparent;opacity:1;color:var(--primary,#2F6DF6);}',
@@ -230,7 +231,7 @@
          the panel instead, where those controls live. !important beats the base
          `:hover`/`:focus-within` reveal rules, which share this specificity. */
       '.wch-sidebar.wch-rail .wch-item-actions,.wch-sidebar.wch-rail .wch-del,.wch-sidebar.wch-rail .wch-proj-menu{display:none !important;}',
-      /* Collapsed sticky rail: only New conversation + the expand chevron stay
+      /* Collapsed sticky rail: only New conversation + the History icon stay
          at full strength. Folders and chats recede to ~30%. Hover matches the
          primary nav: that one glyph lights in brand blue on a circular soft
          disc — not full --text, which read too dark. */
@@ -640,9 +641,11 @@
     var widthTier = 0;
     /* Icon-rail (minimized) mode for the docked module — collapses the module to
        a slim column of icons + project dots, like the primary nav's icon rail.
-       Toggled from the module's three-dot menu; persisted per surface. */
-    var railMode = !!stored.rail;
-    /* Last user-chosen rail state — kept across a temporary expand while History
+       Load default is collapsed on every visit; the history icon expands it
+       in-session, and history_off collapses it. A prior session's maximize is
+       not restored (same pattern as chat width). */
+    var railMode = true;
+    /* Last in-session rail state — kept across a temporary expand while History
        is embedded in the primary nav, so writeStore never clobbers the pref. */
     var railPersist = railMode;
     /* Loose-chats folder (ungrouped threads). Default expanded. */
@@ -699,7 +702,7 @@
        the classic overlay break-out + close buttons. */
     var headControlsHtml = dockedControls
       ? '<div class="wch-controls">' +
-          '<button type="button" class="panel-more-btn wch-rail-btn" aria-pressed="false" title="Minimize panel" aria-label="Minimize panel"><span class="material-symbols-outlined">chevron_left</span></button>' +
+          '<button type="button" class="panel-more-btn wch-rail-btn" aria-pressed="false" title="Open History" aria-label="Open History"><span class="material-symbols-outlined">history</span></button>' +
         '</div>'
       : (breakout ? '<button type="button" class="wch-dock" title="Break out as a side panel" aria-label="Break out history as a side panel"><span class="material-symbols-outlined">vertical_split</span></button>' : '') +
         '<button type="button" class="wch-close" aria-label="Close history"><span class="material-symbols-outlined">close</span></button>';
@@ -711,7 +714,13 @@
       : '';
 
     var sidebar = document.createElement('aside');
-    sidebar.className = 'wch-sidebar' + (side === 'right' ? ' wch-right' : '');
+    /* Paint the collapsed rail immediately so the wide panel cannot flash, unless
+       Nav & History icons already owns that chrome (then the sticky module
+       starts tucked instead). */
+    var navOwnsAtMount = false;
+    try { navOwnsAtMount = document.documentElement.classList.contains('nav-modules'); } catch (_) {}
+    sidebar.className = 'wch-sidebar' + (side === 'right' ? ' wch-right' : '') + (railMode && !navOwnsAtMount ? ' wch-rail' : '');
+    if (railMode && !navOwnsAtMount) sidebar.setAttribute('data-pr-lock', '');
     sidebar.setAttribute('aria-label', titleText);
     sidebar.innerHTML =
       '<div class="wch-head">' +
@@ -1712,7 +1721,7 @@
     }
     function navModulesOwnsHistoryChrome() {
       /* Appearance ▸ Nav & History icons: the primary nav already has the
-         collapsed History chrome (chevron + new-chat). A History icon-rail
+         collapsed History chrome (history icon + new-chat). A History icon-rail
          beside the chat would duplicate it. */
       try {
         return document.documentElement.classList.contains('nav-modules')
@@ -1946,11 +1955,12 @@
       var btn = sidebar.querySelector('.wch-rail-btn');
       if (!btn) return;
       var ic = btn.querySelector('.material-symbols-outlined');
-      /* Match the primary navigation module's collapse toggle: chevron_left to
-         minimize (collapse toward the edge), chevron_right to maximize. */
+      /* history (on) when collapsed — turn History on. history_off when
+         open — turn it off. Same pair as the nav History toggle. */
       var navOwns = navModulesOwnsHistoryChrome();
-      if (ic) ic.textContent = (railMode && !navOwns) ? 'chevron_right' : 'chevron_left';
-      var label = navOwns ? 'Close History' : (railMode ? 'Maximize panel' : 'Minimize panel');
+      var collapsed = railMode && !navOwns;
+      if (ic) ic.textContent = collapsed ? 'history' : 'history_off';
+      var label = collapsed ? 'Open History' : 'Close History';
       btn.title = label;
       btn.setAttribute('aria-label', label);
       btn.setAttribute('aria-pressed', railMode ? 'true' : 'false');
@@ -2181,26 +2191,38 @@
       sidebar.classList.add('wch-docked-hidden');
     }
 
-    /* Restore the icon-rail (minimized) state, but only where it applies — the
-       docked module that carries pane-style chrome. Nav & History icons already
-       owns that collapsed chrome, so a restored rail would sit as a duplicate
-       strip beside the primary nav — drop it and keep the load default. */
+    /* Load default: collapsed. The sticky module is an icon rail when it owns
+       that chrome; Nav & History icons already has the History icon + new-chat, so
+       a rail beside the chat would be a duplicate — tuck the module instead
+       (no enter/exit animation on first paint). */
     if (docked && dockedControls && railMode) {
       if (navModulesOwnsHistoryChrome()) {
         dropRailChrome();
         railPersist = false;
+        if (!sidebar.classList.contains('wch-in-nav')) {
+          sidebar.classList.add('wch-docked-hidden');
+        }
       } else {
         setRail(true);
       }
     } else if (!(docked && dockedControls)) railMode = false;
 
     document.addEventListener('wise:nav-modules', function (ev) {
-      if (!(ev && ev.detail && ev.detail.on)) {
-        updateRailItem();
+      var on = !!(ev && ev.detail && ev.detail.on);
+      if (on) {
+        if (railMode && !sidebar.classList.contains('wch-in-nav')) setRail(true);
+        else updateRailItem();
         return;
       }
-      if (railMode && !sidebar.classList.contains('wch-in-nav')) setRail(true);
-      else updateRailItem();
+      /* Icons off: if this surface starts History visible, restore the
+         collapsed sticky rail rather than leaving the module tucked. */
+      if (sidebar.hasAttribute('data-wch-open-default') && docked && dockedControls
+          && !sidebar.classList.contains('wch-in-nav')) {
+        sidebar.classList.remove('wch-docked-hidden', 'wch-dock-conceal');
+        setRail(true);
+      } else {
+        updateRailItem();
+      }
     });
 
     /* Arm the width transition only AFTER the initial layout has settled (dock,

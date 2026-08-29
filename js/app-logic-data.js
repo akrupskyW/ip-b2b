@@ -109,7 +109,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Roll · Crawl · Walk · Run gates the chat',
-        how: 'Each page loads a default mode onto <code>&lt;html&gt;</code> as <code>cwr-roll</code> / <code>cwr-crawl</code> / <code>cwr-walk</code> / <code>cwr-run</code>: <strong>Run</strong> on <code>wiseai.html</code>, <code>view-product.html</code>, and <code>add-product.html</code>; <strong>Roll</strong> on every other page. A click still applies for that visit; the next load reapplies the page default. <code>wise-cwr-mode</code> is only a snapshot of the in-session choice. Roll is Crawl with a stripped SaaS nav that still keeps Marketing Assets. Crawl hides chat surfaces with <code>inert</code> + <code>aria-hidden</code>. Roll and Crawl also drop History from the primary nav (the History-in-nav section, the History chevron, and the new-chat circle). Walk hides the composer rail, Run unlocks everything. Hovering a mode shows what it includes and excludes. Turning the widget off (<code>wise-cwr-ui</code>) suspends the gating entirely.',
+        how: 'Each page loads a default mode onto <code>&lt;html&gt;</code> as <code>cwr-roll</code> / <code>cwr-crawl</code> / <code>cwr-walk</code> / <code>cwr-run</code>: <strong>Run</strong> on <code>wiseai.html</code>, <code>view-product.html</code>, and <code>add-product.html</code>; <strong>Roll</strong> on every other page. A click still applies for that visit; the next load reapplies the page default. <code>wise-cwr-mode</code> is only a snapshot of the in-session choice. Roll is Crawl with a stripped SaaS nav that still keeps Marketing Assets. Crawl hides chat surfaces with <code>inert</code> + <code>aria-hidden</code>. Roll and Crawl also drop History from the primary nav (the History-in-nav section, the History icon, and the new-chat circle). Walk hides the composer rail, Run unlocks everything. Hovering a mode shows what it includes and excludes. Turning the widget off (<code>wise-cwr-ui</code>) suspends the gating entirely.',
       },
     ],
   },
@@ -146,7 +146,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'History can merge into the nav, or share a four-icon rail',
-        how: '<code>nav-history.js</code> relocates the live History module into an expandable nav section (Appearance ▸ History in navigation). <code>nav-modules.js</code> is the sibling and the load default: collapsed, the rail shows only the logo bug, menu, History chevron and a circular new-chat icon. The menu opens the labelled navigation; the chevron opens History in full with the navigation collapsed. While either is open, the hamburger and new-chat hide so they are not repeated inside the opened module, and the chevron closes back to the rail. The two modes are mutually exclusive.',
+        how: '<code>nav-history.js</code> relocates the live History module into an expandable nav section (Appearance ▸ History in navigation). <code>nav-modules.js</code> is the sibling and the load default: collapsed, the rail shows only the logo bug, menu, History on icon and a circular new-chat icon. The menu opens the labelled navigation; the History icon opens History in full with the navigation collapsed. While either is open, the hamburger and new-chat hide so they are not repeated inside the opened module, and the history-off icon closes back to the rail. The two modes are mutually exclusive.',
       },
       {
         title: 'App Search re-plumbs the shell',
@@ -249,7 +249,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Tooltips resolve a label chain',
-        how: '<code>initLirTooltip()</code> delegates on icon-only controls and reads the label from <code>data-tip</code>, then <code>.lir-label</code>, then <code>aria-label</code>, then <code>title</code> — suppressing the native tooltip while its own is visible. Placement is below by default, right for the menu toggle, and above for Appearance rows and intent chips (<code>lir-tip-above</code>).',
+        how: '<code>initLirTooltip()</code> delegates on icon-only controls and reads the label from <code>data-tip</code>, then <code>.lir-label</code>, then <code>aria-label</code>, then <code>title</code> — suppressing the native tooltip while its own is visible. Placement is below by default, right for the menu toggle, and above for Appearance rows (<code>lir-tip-above</code>). Intent chips never get a tooltip: their label is already on the chip, so a hover card (or a native <code>title</code>) is banned.',
       },
       {
         title: 'Status chips explain themselves',
@@ -409,6 +409,10 @@ export const APP_LOGIC = [
       {
         title: 'One picture hides the tiny preview; the barcode leads the size row',
         how: 'The size row is any extra-count squares, then the barcode (<code>.nfp-fi-upc</code>), then Add size. Extra packs still get a square so you can switch. If <code>state.packs</code> is empty, the 1 ct square is omitted — the lead photo already shows that picture — so the row is barcode, then plus.',
+      },
+      {
+        title: 'Hover a size to delete it',
+        how: 'Each extra size square shows a trash icon on hover. Clicking the square still switches the barcode and Nutrition Facts to that size. Clicking the trash opens a confirm popover (Keep / Delete) to the right of the square. Confirming removes that size and echoes the deletion in chat.',
       },
     ],
   },
@@ -603,7 +607,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'History and Turns are docked drawers',
-        how: 'The three-dot <em>History &amp; Projects</em> switch reveals the History module as a sticky drawer on the chat\u2019s <strong>left</strong>; <em>Turns</em> docks on the <strong>right</strong>. History starts visible only on <code>pages/wiseai.html</code> (<code>historyBreakoutHidden: false</code>); every other surface tucks it on load. Turns always starts tucked. Neither is an in-chat overlay. History persists per surface under <code>wise-chat-history:{surface}</code>, capped at 60 threads.',
+        how: 'The three-dot <em>History &amp; Projects</em> switch reveals the History module as a sticky drawer on the chat\u2019s <strong>left</strong>; <em>Turns</em> docks on the <strong>right</strong>. History starts visible only on <code>pages/wiseai.html</code> (<code>historyBreakoutHidden: false</code>), collapsed to the icon rail; every other surface tucks it on load. Turns always starts tucked. Neither is an in-chat overlay. History persists per surface under <code>wise-chat-history:{surface}</code>, capped at 60 threads.',
       },
       {
         title: 'Surface actions mirror into the thread',

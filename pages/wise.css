@@ -1251,16 +1251,6 @@ html.full-bleed.fb-chat-only:not(.brand-inset) #chat-shell-wrap.menu-brand-integ
 #lir-tooltip.lir-tip-above.lir-tip-visible {
   transform: translateX(-50%) translateY(-100%);
 }
-/* Intent-chip hover status — the ask/description can be a short sentence, so
-   the card is allowed to wrap instead of stretching off-screen. */
-#lir-tooltip.lir-tip-wrap {
-  white-space: normal;
-  max-width: min(280px, calc(100vw - 24px));
-  text-align: left;
-  font-weight: 500;
-  line-height: 1.35;
-}
-
 .sc-topbar-titles .topbar-title {
   flex-shrink: 0;
   white-space: nowrap;
@@ -4212,10 +4202,10 @@ html.dark .menu-nav .menu-nav-group[data-open="true"] > .menu-nav-product .menu-
 }
 
 /* Nav & History icons (Appearance ▸ Layout). Collapsed rail is the logo
-   bug, hamburger, History chevron, and new-chat (blue circle). The hamburger
-   opens only the labelled nav; the chevron opens only History. While either
-   is open, hamburger and new-chat hide so they are not repeated inside the
-   opened module — the chevron stays to close. */
+   bug, hamburger, History on icon, and new-chat (blue circle). The hamburger
+   opens only the labelled nav; the History icon opens only History. While
+   either is open, hamburger and new-chat hide so they are not repeated
+   inside the opened module — history off stays to close. */
 .menu-modules-btn {
   display: none;
   flex-shrink: 0;
@@ -4284,9 +4274,9 @@ html.nav-modules #menu-panel.mp-pivot .menu-modules-btn {
 }
 
 /* Open labelled nav: drop only new-chat — the nav items already cover it.
-   The hamburger stays so it can collapse the nav back. The chevron stays
-   (unless History is open — see below) so it can open History alongside;
-   both sit at the right of the wordmark, hamburger first. */
+   The hamburger stays so it can collapse the nav back. The History icon
+   stays (unless History is open — see below) so it can open History
+   alongside; both sit at the right of the wordmark, hamburger first. */
 html.nav-modules #menu-panel:not(.mp-rail):not(.mp-pivot):not(.minimal-ui) .menu-modules-new {
   display: none !important;
 }
@@ -4298,8 +4288,8 @@ html.nav-modules #menu-panel:not(.mp-rail):not(.mp-pivot):not(.minimal-ui) .menu
 }
 
 /* Open History: hide new-chat (History carries its own) and the nav
-   chevron (History has its own collapse). The hamburger stays so the
-   labelled nav can be opened or collapsed beside History. */
+   History toggle (History has its own collapse). The hamburger stays so
+   the labelled nav can be opened or collapsed beside History. */
 html.nav-modules.nav-modules-hist-open #menu-panel .menu-modules-new,
 html.nav-modules.nav-modules-hist-open #menu-panel .topbar-menu-toggle {
   display: none !important;
@@ -5573,11 +5563,8 @@ html.full-bleed.dark.fb-chat-tint .ws-scorecard {
   border-color: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 28%, transparent);
   color: var(--fb-chat-fg, #16233B);
 }
-/* Intent-chip icons stay gold (chat-module-parity). Hover wash + ring follow
-   the surface accent so Default (green chat / gold icons) is not leftover navy. */
-html.full-bleed.fb-chat-tint .ws-intent-chip > .material-symbols-outlined {
-  color: var(--ter-amber, #E3C878) !important;
-}
+/* Intent-chip icons stay brand blue. Gold is only the “What can I ask?” chip.
+   Hover wash + ring follow the surface accent. */
 html.full-bleed.fb-chat-tint .chip:hover,
 html.full-bleed.fb-chat-tint .ws-intent-chip:hover {
   background: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 16%, var(--fb-chat-bg)) !important;
@@ -6914,7 +6901,7 @@ html.dark .ws-intent-chip:hover {
 .chip.chip-primary:hover { background: color-mix(in srgb, var(--primary) 90%, #000); border-color: color-mix(in srgb, var(--primary) 90%, #000); color: #fff; }
 .chip.chip-primary .material-symbols-outlined { color: #fff !important; font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 html.dark .chip.chip-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
-/* Welcome / shortcut intent chips share the same 28px .chip size. Gold
+/* Welcome / shortcut intent chips share the same 28px .chip size. Brand-blue
    leading glyph; the trailing .ws-lock badge keeps its own colours. */
 .ws-intent-chip { background: color-mix(in srgb, var(--primary) 10%, #fff); border-color: var(--border-strong); color: var(--text-muted); font-weight: 500; }
 /* Leading intent glyph always reads in brand blue (the trailing .ws-lock badge
@@ -11928,6 +11915,57 @@ html.dark .vf-back:hover { background: rgba(255, 255, 255, 0.06); }
   line-height: 1.15;
   margin: 0;
 }
+
+/* Compact header-trail buttons — Marketing Assets ghost and the brand chip
+   sit left of the module ⋯. 34px is the module-head size (verify / Add);
+   inside .pf-head-trail they shrink to 28px so they match the kebab. */
+.pf-head-trail {
+  display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.panel-controls .pf-head-trail {
+  flex-wrap: nowrap; margin-right: 4px;
+}
+.pf-head-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 34px; box-sizing: border-box; padding: 0 14px;
+  border-radius: 999px; border: 1px solid transparent; cursor: pointer;
+  font-family: inherit; font-size: 12px; font-weight: 700; line-height: 1;
+  text-decoration: none; white-space: nowrap;
+  transition: filter 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.pf-head-btn .material-symbols-outlined { font-size: 16px !important; line-height: 1 !important; }
+a.pf-head-btn, a.pf-head-btn:link, a.pf-head-btn:visited, a.pf-head-btn:hover, a.pf-head-btn:focus {
+  text-decoration: none;
+}
+.pf-head-btn--primary { background: var(--primary); color: #fff; }
+.pf-head-btn--primary:hover { filter: brightness(1.08); color: #fff; }
+.pf-head-btn--primary .material-symbols-outlined {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+.pf-head-btn--ghost { background: transparent; color: var(--text-muted); border-color: var(--border-strong); }
+.pf-head-btn--ghost:hover { color: var(--text); background: var(--surface-2); }
+html.dark .pf-head-btn--ghost:hover { background: rgba(255,255,255,0.06); }
+.pf-head-btn:disabled, .pf-brand-chip:disabled {
+  opacity: 0.45; cursor: not-allowed; pointer-events: none;
+}
+.pf-head-trail .pf-head-btn {
+  height: 28px; padding: 0 11px; font-size: 11px; gap: 5px;
+}
+.pf-head-trail .pf-head-btn .material-symbols-outlined { font-size: 14px !important; }
+/* Compact brand chip when it rides the same trail as Marketing Assets
+   (Marketing Assets, Invoices). Portfolio keeps the 34px chip unless the
+   trail also carries this tighter padding via the page's own rule. */
+.pf-head-trail.pf-head-trail--compact .pf-brand-chip {
+  height: 28px; padding: 2px 8px 2px 3px; gap: 6px;
+}
+.pf-head-trail.pf-head-trail--compact .pf-brand-avatar {
+  width: 20px; height: 20px; font-size: 10px;
+}
+.pf-head-trail.pf-head-trail--compact .pf-brand-name {
+  font-size: 11px; max-width: 120px;
+}
+.pf-head-trail.pf-head-trail--compact .pf-brand-caret { font-size: 15px !important; }
 
 /* Brand switcher — same chip + searchable list as Product Portfolio. Lives
    here so verification (and any other surface) can reuse it. */

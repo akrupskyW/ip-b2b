@@ -1454,6 +1454,29 @@ function demoYouAvatar() {
 function demoWiseAvatar() {
   return `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEcodeAI">${DEMO_OWL_BUG}</span>`;
 }
+/* Compact header trail — Marketing Assets ghost + brand chip + ⋯, the cluster
+   that sits left of the module kebab on Portfolio / Marketing Assets / Invoices. */
+function demoHeadTrail({ hover, open, disabled } = {}) {
+  const hov = hover ? ' is-hover' : '';
+  const dis = disabled ? ' disabled' : '';
+  const exp = open ? 'true' : 'false';
+  return `
+    <div class="pf-head-trail pf-head-trail--compact">
+      <button type="button" class="pf-head-btn pf-head-btn--ghost${hov}"${dis}>
+        <span class="material-symbols-outlined">photo_library</span>Marketing Assets
+      </button>
+      <div class="pf-brand">
+        <button type="button" class="pf-brand-chip${hov}" aria-haspopup="listbox" aria-expanded="${exp}"${dis}>
+          <span class="pf-brand-avatar" style="background:#2E7D5B">F</span>
+          <span class="pf-brand-name">Flax4Life</span>
+          <span class="material-symbols-outlined pf-brand-caret" aria-hidden="true">expand_more</span>
+        </button>
+      </div>
+      <button type="button" class="panel-more-btn"${dis} aria-label="Module options">
+        <span class="material-symbols-outlined">more_vert</span>
+      </button>
+    </div>`;
+}
 function demoFbBtn({ fb, tip, icon, on, more, hover }) {
   const cls = ['sc-fb-btn', more ? 'sc-fb-more' : '', on ? 'is-on' : '', hover ? 'is-hover' : ''].filter(Boolean).join(' ');
   const dataFb = fb ? ` data-fb="${esc(fb)}"` : '';
@@ -1521,9 +1544,10 @@ function demoJamEq(n) {
 const COMPONENTS = [
   {
     name: 'Buttons',
-    cls: '.dash-btn --primary / --ghost · .dash-text-link',
-    used: 'Non-UPF Dashboard · Reports · Verification CTAs · Reformulation',
-    note: 'Every interactive control in this library shows its states side by side. Default is rest; Hover is forced with <code>.is-hover</code> so it stays visible; Disabled uses the native attribute. Text links are the tertiary action — not a button.',
+    wide: true,
+    cls: '.dash-btn --primary / --ghost · .dash-text-link · .pf-head-btn --ghost · .pf-brand-chip',
+    used: 'Non-UPF Dashboard · Reports · Verification CTAs · Reformulation · Product Portfolio · Marketing Assets · Invoices',
+    note: 'Every interactive control in this library shows its states side by side. Default is rest; Hover is forced with <code>.is-hover</code> so it stays visible; Disabled uses the native attribute. Text links are the tertiary action — not a button. The <strong>header trail</strong> is the compact 28px pair that sits left of the module ⋯: Marketing Assets (ghost pill) and the brand chip.',
     noteIcon: 'smart_button',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -1549,6 +1573,27 @@ const COMPONENTS = [
             <button type="button" class="dash-btn dash-btn--primary" disabled><span class="material-symbols-outlined">rocket_launch</span>Primary action</button>
             <button type="button" class="dash-btn dash-btn--ghost" disabled>Ghost action</button>
             <button type="button" class="dash-text-link" disabled>View full report<span class="material-symbols-outlined">north_east</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="dsc-sub" style="width:100%;margin-top:8px">
+        <div class="dsc-sub-label">Header trail · 28px, left of ⋯</div>
+        <div class="dsc-states" style="width:100%">
+          <div class="dsc-state-col">
+            <div class="dsc-sub-label">Default</div>
+            ${demoHeadTrail()}
+          </div>
+          <div class="dsc-state-col">
+            <div class="dsc-sub-label">Hover</div>
+            ${demoHeadTrail({ hover: true })}
+          </div>
+          <div class="dsc-state-col">
+            <div class="dsc-sub-label">Open</div>
+            ${demoHeadTrail({ open: true })}
+          </div>
+          <div class="dsc-state-col">
+            <div class="dsc-sub-label">Disabled</div>
+            ${demoHeadTrail({ disabled: true })}
           </div>
         </div>
       </div>`,
@@ -2425,7 +2470,7 @@ const COMPONENTS = [
     cat: 'Navigation',
     cls: '#cwr-toggle \u00b7 .cwr-btn [aria-checked] \u00b7 html.cwr-roll / -crawl / -walk / -run',
     used: 'Floating segmented control on every app page \u2014 Run on WISEcodeAI, Add Product, and View Product; Roll everywhere else',
-    note: 'Four rollout modes: <strong>Roll</strong> (stripped nav), <strong>Crawl</strong> (no chat, modules fill), <strong>Walk</strong> (chat on, composer locked), <strong>Run</strong> (composer unlocked). Each page loads its own default; hovering a mode shows what it includes and excludes. The live widget lives in shadow DOM so page button styles cannot restyle it; this demo mirrors the same four states. Drag to move; double-click restores the right-edge seat.',
+    note: 'Four rollout modes: <strong>Roll</strong> (stripped nav), <strong>Crawl</strong> (no chat, modules fill), <strong>Walk</strong> (chat on, composer locked), <strong>Run</strong> (composer unlocked). Each page loads its own default; hovering a mode shows what it includes and excludes. The live widget lives in shadow DOM so page button styles cannot restyle it; this demo mirrors the same four states. The load default is the right edge of the screen, vertically centered, 12px in. Drag to move; double-click restores that seat.',
     noteIcon: 'directions_run',
     demo: `
       <div class="dsc-states">
@@ -5381,13 +5426,13 @@ const MOTION_ITEMS = [
           </button>
           <label class="mi-motion-helix-opacity">
             <span class="mi-motion-helix-opacity-label">Opacity</span>
-            <input type="range" class="sc-bganim-opacity" data-helix-opacity min="10" max="100" step="5" value="20" aria-label="Background animation opacity">
-            <span class="sc-bganim-opacity-val" data-helix-opacity-val>20%</span>
+            <input type="range" class="sc-bganim-opacity" data-helix-opacity min="10" max="100" step="5" value="50" aria-label="Background animation opacity">
+            <span class="sc-bganim-opacity-val" data-helix-opacity-val>50%</span>
           </label>
           <label class="mi-motion-helix-opacity">
             <span class="mi-motion-helix-opacity-label">Angle</span>
-            <input type="range" class="sc-bganim-angle-range" data-helix-angle min="-90" max="90" step="1" value="10" aria-label="Helix angle">
-            <span class="sc-bganim-angle-val" data-helix-angle-val>10°</span>
+            <input type="range" class="sc-bganim-angle-range" data-helix-angle min="-90" max="90" step="1" value="-89" aria-label="Helix angle">
+            <span class="sc-bganim-angle-val" data-helix-angle-val>-89°</span>
           </label>
           <label class="mi-motion-helix-opacity">
             <span class="mi-motion-helix-opacity-label">Camera</span>
@@ -5900,6 +5945,7 @@ function runMotionHelix(mod, chat, ctx) {
     createHelixBgAnim, readBgAnimScaleAxes, readBgAnimKnobs, readBgAnimDotsColor,
     readBgAnimDotsMotion, readBgAnimSpinDir, readBgAnimLook, readBgAnimCamera,
     readBgAnimAzimuth, readBgAnimShift, readBgAnimMotionKnobs, readBgAnimRungsMatch,
+    readBgAnimOpacityPct, readBgAnimAngle,
     bgAnimPctToStop, bgAnimStopToPct,
   } = chat;
 
@@ -5952,20 +5998,8 @@ function runMotionHelix(mod, chat, ctx) {
     r.step = '1';
   });
   const clampHelixPct = (n) => bgAnimStopToPct(bgAnimPctToStop(n));
-  const readHelixPct = () => {
-    try {
-      const s = parseInt(localStorage.getItem(BGANIM_OPACITY_KEY), 10);
-      if (!isNaN(s)) return Math.max(10, Math.min(100, s));
-    } catch (_) { /* ignore */ }
-    return 20;
-  };
-  const readHelixAngle = () => {
-    try {
-      const s = parseInt(localStorage.getItem(BGANIM_ANGLE_KEY), 10);
-      if (!isNaN(s)) return Math.max(-90, Math.min(90, s));
-    } catch (_) { /* ignore */ }
-    return 10;
-  };
+  const readHelixPct = () => readBgAnimOpacityPct();
+  const readHelixAngle = () => readBgAnimAngle();
   let helixPct = readHelixPct();
   let helixAngle = readHelixAngle();
   let helixCamera = readBgAnimCamera();
@@ -8399,7 +8433,15 @@ function moduleStyles() {
     .dsc-demo .dash-text-link[disabled],
     .dsc-demo .adm-btn[disabled],
     .dsc-demo .adm-icon-btn[disabled],
-    .dsc-demo .lir-btn[disabled] { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+    .dsc-demo .lir-btn[disabled],
+    .dsc-demo .pf-head-btn[disabled],
+    .dsc-demo .pf-brand-chip[disabled],
+    .dsc-demo .panel-more-btn[disabled] { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+    .dsc-demo .pf-head-trail { flex-wrap: nowrap; }
+    .dsc-demo .pf-head-btn--ghost.is-hover { color: var(--text); background: var(--surface-2); }
+    html.dark .dsc-demo .pf-head-btn--ghost.is-hover { background: rgba(255,255,255,0.06); }
+    .dsc-demo .pf-brand-chip.is-hover { border-color: var(--primary); background: var(--primary-soft); }
+    html.dark .dsc-demo .pf-brand-chip.is-hover { background: rgba(37,80,124,0.28); }
     .dsc-demo .adm-btn--primary.is-hover { filter: brightness(1.08); }
     .dsc-demo .adm-btn--ghost.is-hover { color: var(--text); background: var(--surface-2); }
     .dsc-demo .adm-btn--danger.is-hover { background: var(--sec-red-10); }

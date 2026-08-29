@@ -97,6 +97,7 @@ import {
   isCommentsUnlocked,
   applyComments,
 } from './feedback-setting.js';
+import { setMenuPivot } from './agent-menu.js';
 
 /**
  * A binary on/off setting row. Instead of highlighting the whole row when
@@ -193,7 +194,7 @@ function adminOnly(html) {
 /** "Pivot Navigation" row — only for shells whose nav rail can pivot to the top. */
 function pivotSection(showPivot, isPivoted) {
   if (!showPivot) return '';
-  return adminOnly(adminToggle('data-pivot="1"', isPivoted, 'Pivot Navigation', 'Horizontal top bar', 'Move the navigation to a horizontal top bar', false, false, 'view_quilt'));
+  return adminOnly(adminToggle('data-pivot="1"', isPivoted, 'Pivot Navigation', 'Horizontal top bar', 'Move the navigation to a horizontal top bar — also turns on Minimal UI', false, false, 'view_quilt'));
 }
 
 /** "Colorblind type" segmented control — only revealed once the colorblind
@@ -328,6 +329,23 @@ function pageGallerySection() {
   return `
     <a class="wise-popover-item" href="${href}" data-pop-action="page-gallery" data-admin-item="1"${tipAttrs('Open a full-screen gallery of every unique page')}>
       <span class="material-symbols-outlined">browse_gallery</span>${rowCopy('Page gallery', 'Screenshots of every page')}
+      <span class="wise-popover-badge">Admin</span>
+      <span class="wise-popover-ext material-symbols-outlined" aria-hidden="true">arrow_outward</span>
+    </a>`;
+}
+
+/** Link out to the "Analytics types" admin page — the catalog of every chart,
+    graph, and scorecard used across the app. Sits beneath the Page gallery row
+    and, like it, is an Admin-only destination. Path resolves the same way as
+    the other Admin destinations. */
+function analyticsTypesSection() {
+  let href = 'pages/analytics-types.html';
+  try {
+    if (location.pathname.indexOf('/pages/') !== -1) href = 'analytics-types.html';
+  } catch (e) { /* non-browser context — keep the default */ }
+  return `
+    <a class="wise-popover-item" href="${href}" data-pop-action="analytics-types" data-admin-item="1"${tipAttrs('Open the catalog of analytics charts and graphs')}>
+      <span class="material-symbols-outlined">insights</span>${rowCopy('Analytics types', 'Charts, graphs, and scorecards')}
       <span class="wise-popover-badge">Admin</span>
       <span class="wise-popover-ext material-symbols-outlined" aria-hidden="true">arrow_outward</span>
     </a>`;
@@ -571,7 +589,7 @@ export function buildAppearanceBody({
         ${adminOnly(adminToggle('data-minimal="1"', isMinimalUiOn(), 'Minimal UI', 'Logo, Appearance, and you', 'Show only the logo, Appearance, and your profile', false, false, 'crop_free'))}
         ${adminOnly(adminToggle('data-iconrail="1"', isIconRailOn(), 'Icons only', 'Collapse nav to icons', 'Collapse the navigation to icons', false, false, 'apps'))}
         ${adminOnly(adminToggle('data-navhistory="1"', isNavHistoryOn(), 'History in navigation', 'History inside the nav', 'Merge the History module into an expandable section of the primary navigation — search, projects, and All conversations stay fully usable', false, false, 'history'))}
-        ${adminOnly(adminToggle('data-navmodules="1"', isNavModulesOn(), 'Nav &amp; History icons', 'Logo, menu, History, new chat', 'Menu opens the labelled navigation; the chevron opens History. While either is open, the extra icons hide and the chevron closes back to the four-icon rail. New chat is a circle and starts a conversation', false, false, 'view_sidebar'))}
+        ${adminOnly(adminToggle('data-navmodules="1"', isNavModulesOn(), 'Nav &amp; History icons', 'Logo, menu, History, new chat', 'Menu opens the labelled navigation; the History icon opens History, and history off closes it. While either is open, the extra icons hide and History closes back to the four-icon rail. New chat is a circle and starts a conversation', false, false, 'view_sidebar'))}
       `);
   const experience = apGroup('Experience', `
         ${tourSection()}
@@ -611,6 +629,7 @@ export function buildAppearanceBody({
         ${adminOnly(allModulesSection())}
         ${adminOnly(progressLogSection())}
         ${adminOnly(pageGallerySection())}
+        ${adminOnly(analyticsTypesSection())}
       `);
   const leftHasRows = !!(layout || experience);
   return `
@@ -831,11 +850,23 @@ export function wireAppearancePopover(pop, ctx = {}) {
     if (within('.wise-appearance-group.is-locked')) { ev.stopPropagation(); return; }
     if (within('.wise-popover-item.is-locked')) { ev.stopPropagation(); return; }
 
-    /* Nav pivot — shells whose rail can pivot to a top bar. */
+    /* Nav pivot — shells whose rail can pivot to a top bar. Turning pivot
+       ON also turns Minimal UI on (setMenuPivot enforces the pair). */
     if (within('[data-pivot]')) { ev.stopPropagation(); ctx.togglePivot?.(); render(); return; }
 
-    /* Universal on/off toggles — handled here so no shell can miss one. */
-    if (within('[data-minimal]'))     { ev.stopPropagation(); applyMinimalUi(!isMinimalUiOn());   render(); return; }
+    /* Universal on/off toggles — handled here so no shell can miss one.
+       Minimal UI ON also pivots the nav, so the two Appearance rows
+       always come on together. Off stays independent. */
+    if (within('[data-minimal]')) {
+      ev.stopPropagation();
+      const next = !isMinimalUiOn();
+      applyMinimalUi(next);
+      if (next) {
+        try { setMenuPivot(true); } catch (_) { ctx.togglePivot?.(); }
+      }
+      render();
+      return;
+    }
     if (within('[data-iconrail]'))    { ev.stopPropagation(); applyIconRail(!isIconRailOn());     render(); return; }
     if (within('[data-navhistory]'))  {
       ev.stopPropagation();
@@ -946,12 +977,13 @@ export function wireAppearancePopover(pop, ctx = {}) {
       return;
     }
 
-    /* The accessibility-review, all-modules, progress-log and page-gallery
-       rows are real links — let the click navigate. */
+    /* The accessibility-review, all-modules, progress-log, page-gallery
+       and analytics-types rows are real links — let the click navigate. */
     if (within('[data-pop-action="a11y-review"]')) return;
     if (within('[data-pop-action="all-modules"]')) return;
     if (within('[data-pop-action="progress-log"]')) return;
     if (within('[data-pop-action="page-gallery"]')) return;
+    if (within('[data-pop-action="analytics-types"]')) return;
 
     /* Non-interactive chrome (labels, dividers, the text-size row wrapper):
        swallow the click so it neither toggles nor closes the popover. */
