@@ -4730,7 +4730,7 @@
     const ta = el || (nfpBody && nfpBody.querySelector('textarea.nfp-ingred-edit'));
     if (!ta) return;
     ta.style.height = '0px';
-    ta.style.height = ta.scrollHeight + 'px';
+    ta.style.height = Math.max(38, ta.scrollHeight) + 'px';
   }
 
   function replaceIaPanel() {
