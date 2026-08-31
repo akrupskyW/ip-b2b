@@ -73,6 +73,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="wise.css" />
+  <link rel="stylesheet" href="all-modules.css" />
   <style>
     /* ═══════════ All Modules — shell spacing matches wiseai.html ═══════════
        The shared wise.css body rule leaves 0 horizontal padding and a shorter
@@ -171,7 +172,7 @@
                 <div class="mi-hero-text">
                   <div class="mi-hero-title-row">
                     <h1 class="mi-hero-title">All Modules</h1>
-                    <span class="mi-load-pct no-countup" id="mi-load-pct" data-no-countup aria-live="polite" title="How much of the whole project has arrived">0%</span>
+                    <span class="mi-load-pct no-countup" id="mi-load-pct" data-no-countup aria-live="polite" title="How much of this page has arrived">0%</span>
                     <span class="mi-load-bytes no-countup" id="mi-load-bytes" data-no-countup></span>
                   </div>
                 </div>
@@ -182,16 +183,13 @@
       </main>
     </div>
   </div>
-  <script src="../js/project-inventory-data.js"></script>
   <script>
-    /* Load meter: expected size is the whole shippable project on disk
-       (WISE_PROJECT_INVENTORY from scripts/scan_code_stats.py). The percent
-       is how much of THAT project has arrived in this tab — every file in
-       the tree, not this page’s boot graph. Completions paint across frames
-       so the headline climbs instead of jumping once. */
+    /* Load meter: this page’s own boot graph (HTML, CSS, the shell, the
+       catalog module, the chat dock, the icon sprite). Completions paint
+       across frames so the headline climbs instead of jumping once.
+       Icon / app-logic catalogs and the project inventory are not in this
+       graph — they arrive when a section opens or Re-evaluate runs. */
     (function () {
-      var inv = window.WISE_PROJECT_INVENTORY || null;
-      var invMap = Object.create(null);
       var arrived = Object.create(null);
       var lastPct = 0;
       var lastLoaded = 0;
@@ -200,23 +198,33 @@
       var shownPct = 0;
       var shownLoaded = 0;
       var displayRaf = 0;
-      var SKIP_KIND = { beacon: 1, ping: 1 };
+      var bootReady = false;
+      var loadFired = false;
+      var SKIP_KIND = { beacon: 1, ping: 1, img: 1, image: 1, video: 1, audio: 1 };
+      var COUNT_KIND = { script: 1, link: 1, css: 1, navigation: 1, fetch: 1, xmlhttprequest: 1 };
+      var LAZY_RE = /icon-inventory-data|app-logic-data|project-inventory-data/;
+      var MEDIA_RE = /\.(mp4|webm|mov|m4v|mp3|wav|png|jpe?g|webp|gif|avif)(\?|#|$)/i;
 
-      function rebuildInvMap() {
-        invMap = Object.create(null);
-        var list = (inv && inv.list) || [];
-        for (var i = 0; i < list.length; i++) {
-          if (list[i] && list[i].path) invMap[list[i].path] = list[i].bytes || 0;
-        }
-      }
-      rebuildInvMap();
+      /* Same-origin files on first paint. Sizes are hints so the meter has a
+         denominator before Resource Timing reports the real transfer. */
+      var BOOT_HINT = {
+        'pages/all-modules.html': 16000,
+        'pages/wise.css': 668251,
+        'pages/all-modules.css': 223244,
+        'js/auth-guard.js': 1073,
+        'js/cwr-toggle.js': 47900,
+        'js/icon-svg-shim.js': 16592,
+        'js/agent-overview.js': 91685,
+        'js/agent-menu.js': 62009,
+        'js/all-modules-flow.js': 630000,
+        'js/code-stats-data.js': 9097,
+        'js/module-directory-data.js': 7763,
+        'js/wiseai-dock.js': 18103,
+        'js/wiseai-chat.js': 699427,
+        'js/chat-history.js': 134921,
+        'assets/icons/wise-icons.svg': 480475
+      };
 
-      function expectedBytes() {
-        return (inv && inv.bytes) || 0;
-      }
-      function expectedFiles() {
-        return (inv && inv.files) || 0;
-      }
       function projectPath(url) {
         try {
           var abs = new URL(url, location.href);
@@ -228,12 +236,14 @@
         var n = (entry && (entry.encodedBodySize || entry.decodedBodySize || entry.transferSize)) || 0;
         if (n) return n;
         var p = projectPath(entry && entry.name);
-        return (p && invMap[p]) || 0;
+        return (p && BOOT_HINT[p]) || 0;
       }
       function skipUrl(url) {
         if (!url || url.indexOf('data:') === 0 || url.indexOf('blob:') === 0) return true;
         if (/livereload|\/sockjs\/|browser-sync/i.test(url)) return true;
         if (/^chrome-extension:|^safari-extension:/i.test(url)) return true;
+        if (LAZY_RE.test(url)) return true;
+        if (MEDIA_RE.test(url)) return true;
         try {
           var abs = new URL(url, location.href);
           if (abs.origin !== location.origin) return true;
@@ -244,9 +254,10 @@
       function applyEntry(entry) {
         if (!entry || !entry.name) return;
         if (SKIP_KIND[entry.initiatorType]) return;
+        if (entry.initiatorType && !COUNT_KIND[entry.initiatorType]) return;
         if (skipUrl(entry.name)) return;
         var path = projectPath(entry.name);
-        var n = sizeOf(entry) || (path && invMap[path]) || 0;
+        var n = sizeOf(entry) || (path && BOOT_HINT[path]) || 0;
         if (!n) return;
         var key = path || String(entry.name).split('#')[0];
         if ((arrived[key] || 0) >= n) return;
@@ -257,6 +268,25 @@
         var n = 0;
         Object.keys(arrived).forEach(function (k) { n += arrived[k]; });
         return n;
+      }
+      function hintTotal() {
+        var n = 0;
+        var seen = Object.create(null);
+        Object.keys(arrived).forEach(function (k) {
+          n += arrived[k];
+          seen[k] = 1;
+        });
+        if (!isComplete()) {
+          Object.keys(BOOT_HINT).forEach(function (k) {
+            if (!seen[k]) n += BOOT_HINT[k];
+          });
+        }
+        return n;
+      }
+      function isComplete() {
+        /* Catalog headers + jump tiles are up. Chat media can keep arriving
+           after that — do not hold 99% for a helix video. */
+        return bootReady;
       }
       function fmtBytes(n) {
         n = Math.max(0, n || 0);
@@ -269,15 +299,17 @@
       }
       function targets() {
         var loaded = arrivedTotal();
-        var expected = expectedBytes();
-        var complete = expected > 0 && loaded >= expected;
+        var expected = hintTotal();
+        var complete = isComplete();
         var pct = 0;
-        if (complete) pct = 100;
-        else if (expected > 0) pct = Math.round(100 * loaded / expected);
+        if (complete) {
+          expected = loaded;
+          pct = 100;
+        } else if (expected > 0) pct = Math.round(100 * loaded / expected);
         if (!complete && pct > 99) pct = 99;
         lastPct = pct;
         lastLoaded = loaded;
-        return { loaded: loaded, expected: expected, files: expectedFiles(), complete: complete, pct: pct };
+        return { loaded: loaded, expected: expected, files: Object.keys(arrived).length, complete: complete, pct: pct };
       }
       function writeDom(t) {
         lastLabel = shownPct + '%';
@@ -286,15 +318,15 @@
         var bytesEl = document.getElementById('mi-load-bytes');
         if (el) {
           el.textContent = lastLabel;
-          el.setAttribute('aria-label', fmtBytes(t.loaded) + ' arrived of ' + (t.expected ? fmtBytes(t.expected) : 'the project') + ', ' + t.pct + ' percent');
-          el.setAttribute('title', fmtBytes(t.loaded) + ' arrived of ' + (t.expected ? fmtBytes(t.expected) + ' · ' + t.files + ' files in the project' : 'unknown project size'));
+          el.setAttribute('aria-label', fmtBytes(t.loaded) + ' arrived of ' + (t.expected ? fmtBytes(t.expected) : 'this page') + ', ' + t.pct + ' percent');
+          el.setAttribute('title', fmtBytes(t.loaded) + ' arrived of this page' + (t.expected ? ' · ' + fmtBytes(t.expected) : ''));
           if (t.complete && shownPct >= 100) el.setAttribute('data-done', '1');
           else el.removeAttribute('data-done');
         }
         if (bytesEl) {
           bytesEl.textContent = lastBytes;
           bytesEl.setAttribute('title', t.expected
-            ? (fmtBytes(t.loaded) + ' arrived · ' + t.files + ' files · ' + fmtBytes(t.expected) + ' on disk')
+            ? (fmtBytes(t.loaded) + ' arrived · ' + t.files + ' files on this page')
             : 'Arrived in this tab');
         }
       }
@@ -335,7 +367,7 @@
         }
       } catch (e) { /* best-effort */ }
 
-      window.addEventListener('load', paint);
+      window.addEventListener('load', function () { loadFired = true; paint(); });
       document.addEventListener('readystatechange', paint);
       setInterval(function () {
         try {
@@ -349,13 +381,8 @@
         label: function () { return lastLabel; },
         bytes: function () { return lastBytes; },
         scan: function () { paint(); },
-        setInventory: function (next) {
-          if (next && next.bytes) {
-            inv = next;
-            if (next.list) rebuildInvMap();
-          }
-          paint();
-        },
+        markReady: function () { bootReady = true; paint(); },
+        setInventory: function () { paint(); },
         snapshot: function () {
           var t = targets();
           return {
