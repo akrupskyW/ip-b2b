@@ -355,14 +355,28 @@ function toggleLineTime(el) {
   }
 }
 
+/* Default a stamp to relative ("3 min ago"). Clock is one click away. */
+function paintStampRel(el) {
+  if (!el) return;
+  const ms = stampMs(el);
+  if (!el.getAttribute('data-clock')) el.setAttribute('data-clock', clockLabel(ms));
+  const rel = relativeLabel(ms);
+  el.textContent = rel;
+  el.setAttribute('data-mode', 'rel');
+  el.setAttribute('title', 'Show time');
+  el.setAttribute('aria-label', `Sent ${rel}. Activate to show the time.`);
+}
+
 /* Markup for a clickable transcript stamp. Extra class (e.g. sc-fb-time)
-   is appended as-is — callers pass a known token, never user input. */
+   is appended as-is — callers pass a known token, never user input.
+   Default is time-ago; click swaps to the wall clock. */
 function timeStampHtml(ms, extraClass) {
   const t = ms == null ? Date.now() : Number(ms);
   const when = Number.isFinite(t) ? t : Date.now();
   const clock = clockLabel(when);
+  const rel = relativeLabel(when);
   const cls = extraClass ? `sc-line-time ${extraClass}` : 'sc-line-time';
-  return `<span class="${cls}" role="button" tabindex="0" data-ts="${when}" data-clock="${esc(clock)}" data-mode="clock" title="Show time ago" aria-label="Sent at ${esc(clock)}. Activate to show how long ago.">${esc(clock)}</span>`;
+  return `<span class="${cls}" role="button" tabindex="0" data-ts="${when}" data-clock="${esc(clock)}" data-mode="rel" title="Show time" aria-label="Sent ${esc(rel)}. Activate to show the time.">${esc(rel)}</span>`;
 }
 
 /* One document-level listener so EVERY chat surface that loads this module
@@ -387,9 +401,13 @@ export function wireTranscriptTimes() {
 }
 if (typeof document !== 'undefined') {
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', wireTranscriptTimes, { once: true });
+    document.addEventListener('DOMContentLoaded', () => {
+      wireTranscriptTimes();
+      document.querySelectorAll('.sc-line-time').forEach(paintStampRel);
+    }, { once: true });
   } else {
     wireTranscriptTimes();
+    document.querySelectorAll('.sc-line-time').forEach(paintStampRel);
   }
 }
 
@@ -1119,11 +1137,11 @@ export function injectChatExtras() {
     html.dark .sc-fb-menu::after { border-top-color: #1A2339; }
     .sc-fb-menu[hidden] { display: none; }
     .sc-line-time { cursor: pointer; user-select: none;
-      color: var(--primary-ink, var(--primary)); text-decoration: none;
+      color: color-mix(in srgb, var(--text-subtle) 62%, transparent); text-decoration: none;
       transition: color .14s ease; }
-    .sc-line-time:hover { color: color-mix(in srgb, var(--primary) 62%, #fff); text-decoration: none; }
-    html.dark .sc-line-time { color: var(--primary-bright, #8B9FAF); }
-    html.dark .sc-line-time:hover { color: #AEC8ED; }
+    .sc-line-time:hover { color: var(--text); text-decoration: none; }
+    html.dark .sc-line-time { color: color-mix(in srgb, var(--text-subtle) 70%, transparent); }
+    html.dark .sc-line-time:hover { color: var(--text); }
     .sc-line-time:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .sc-fb-menu-actions { display: inline-flex; align-items: center; gap: 1px; }
     /* The three-dot "more" control reads as a proper round chip — its hover /
@@ -8277,6 +8295,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       el.classList.add('sc-fb-time');
       copy.insertAdjacentElement('beforebegin', el);
     });
+    root.querySelectorAll('.sc-line-time').forEach(paintStampRel);
   }
 
   /* ── Paragraph-by-paragraph reveal ───────────────────────────────────────

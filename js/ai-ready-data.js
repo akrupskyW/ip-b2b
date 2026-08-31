@@ -3,8 +3,17 @@
  * ('wise-dsc-ai-ready') holds only the diff against this map.
  */
 export const AI_READY_SEED = {
+  "Activity strip": true,
+  "App search": true,
+  "Attachments": true,
+  "Avatars": true,
+  "Charts & graphs": true,
+  "Chat composer": true,
+  "Database roster": true,
+  "Tooltip": true,
   "Transcript actions": true,
   "Transcript lines": true,
+  "Turns module": true,
   "What can I ask?": true,
   "Width toggle": true,
   "ds:Brand": true,
@@ -33,6 +42,7 @@ export const AI_READY_SEED = {
   "mi-design": true,
   "mi-icons": true,
   "mi-motion": true,
+  "mi-trace": true,
   "motion:Accordion &amp; panel open": true,
   "motion:Activity strip ticks": true,
   "motion:Carousel rail": true,
@@ -53,4 +63,8 @@ export const AI_READY_SEED = {
   "motion:Toast": true,
   "motion:Welcome helix": true,
   "motion:Width tiers": true,
+  "trace:detail": true,
+  "trace:done": true,
+  "trace:live": true,
+  "trace:mid": true,
 };

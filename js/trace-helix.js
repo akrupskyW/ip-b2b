@@ -13,6 +13,12 @@
 export const TRACE_STRAND_MARKUP = '<div class="sc-trace-strand" aria-hidden="true">'
   + '<span class="sc-trace-dna"></span></div>';
 
+/* Shared twist clock — every live rope (transcript rail + output loader)
+   advances at this rate so they move at the same speed. Sign is direction:
+   +1 is the transcript default; the output loader passes −1 so the two
+   spin opposite each other. */
+export const TRACE_TWIST_SPEED = 0.0018;
+
 function prefersReduced() {
   try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
   catch (_) { return false; }
@@ -191,6 +197,8 @@ export function scBuildHelixSVG(H, phase, rungsY, greenCount, uid, geom) {
 export function makeTraceHelix(bodyEl, opts = {}) {
   const reduced = opts.prefersReducedMotion != null ? !!opts.prefersReducedMotion : prefersReduced();
   const geom = opts.geom || null;
+  const dir = opts.dir < 0 ? -1 : 1;
+  const speed = Number.isFinite(opts.speed) ? opts.speed : TRACE_TWIST_SPEED;
   let raf = null, phase = Number.isFinite(opts.phase) ? opts.phase : 0, last = 0, lastDraw = 0, running = false;
   let mode = 'live', staticRungs = null, greenCount = 0;
   const uid = 'h' + Math.random().toString(36).slice(2, 7);   /* unique gradient ns */
@@ -213,7 +221,7 @@ export function makeTraceHelix(bodyEl, opts = {}) {
     if (!running) return;
     raf = requestAnimationFrame(frame);
     if (!last) last = t;
-    phase += (t - last) * 0.0018;   /* twist speed — dots orbit the strand a touch faster */
+    phase += (t - last) * speed * dir;
     last = t;
     if (t - lastDraw < 33) return;   /* ~30fps redraw */
     lastDraw = t;

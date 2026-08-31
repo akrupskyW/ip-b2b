@@ -901,7 +901,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Only the diff from the seed is stored',
-        how: 'WIP Ready and AI Ready each have their own baseline seed. localStorage holds just the overrides that differ from that seed. On the local livereload origin a toggle writes the matching seed file so the next commit / Ubuntu pull ships the same flags. Module Directory and Table Gallery have WIP Ready only. AI Ready has no k/n count.',
+        how: 'WIP Ready and AI Ready each have their own baseline seed. The AI switch reads <strong>Not for AI</strong> when off (the default) and <strong>AI Ready</strong> in green when on. localStorage holds just the overrides that differ from that seed. On the local livereload origin a toggle writes the matching seed file so the next commit / Ubuntu pull ships the same flags. Module Directory and Table Gallery have WIP Ready only. Only the Component Library AI switch shows a k/n count.',
       },
       {
         title: 'Re-evaluate crawls once a day',

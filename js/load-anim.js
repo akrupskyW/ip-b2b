@@ -8,7 +8,7 @@
  * portfolio, and the copy on the WISEcodeAI page).
  */
 
-import { makeTraceHelix, TRACE_STRAND_MARKUP } from './trace-helix.js';
+import { makeTraceHelix, TRACE_STRAND_MARKUP, TRACE_TWIST_SPEED } from './trace-helix.js';
 
 const KEY = 'wise-helix-loading';
 const HOST_SEL = '.wa-pane-skel, .cmp-empty';
@@ -88,7 +88,9 @@ function ensure(host) {
   wrap.setAttribute('aria-hidden', 'true');
   wrap.innerHTML = TRACE_STRAND_MARKUP;
   host.appendChild(wrap);
-  const helix = makeTraceHelix(wrap, { geom: LOAD_GEOM });
+  /* Same twist clock as the transcript rail, opposite spin so the two
+     ropes turn against each other while a board is assembling. */
+  const helix = makeTraceHelix(wrap, { geom: LOAD_GEOM, speed: TRACE_TWIST_SPEED, dir: -1 });
   const rec = { el: wrap, helix, ro: null };
   if (typeof ResizeObserver !== 'undefined') {
     rec.ro = new ResizeObserver(() => setRunning(host, rec));

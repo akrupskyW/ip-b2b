@@ -1429,29 +1429,13 @@
     .dsc-ready .dash-brand-toggle[aria-checked="true"] .dash-brand-toggle-thumb {
       background: #fff;
     }
-    /* AI Ready — darker forest green so it reads apart from WIP Ready. */
+    /* Not for AI (off, the default) keeps the pink brand pill. AI Ready (on)
+       is a darker green so it reads apart from WIP Ready. */
     .dsc-ready--ai {
-      --dsc-ai-ready: color-mix(in srgb, var(--sec-green, #32A966) 38%, #082214);
+      --dsc-ai-ready: color-mix(in srgb, var(--sec-green, #32A966) 68%, #0a1c10);
     }
     html.dark .dsc-ready--ai {
-      --dsc-ai-ready: color-mix(in srgb, var(--sec-green, #32A966) 48%, #04160c);
-    }
-    .dsc-ready--ai .dash-brand-toggle {
-      background: color-mix(in srgb, var(--dsc-ai-ready) 12%, transparent);
-      border-color: color-mix(in srgb, var(--dsc-ai-ready) 46%, transparent);
-      color: var(--dsc-ai-ready);
-    }
-    .dsc-ready--ai .dash-brand-toggle-track {
-      background: color-mix(in srgb, var(--dsc-ai-ready) 28%, transparent);
-    }
-    .dsc-ready--ai .dash-brand-toggle-thumb {
-      background: var(--dsc-ai-ready);
-    }
-    .dsc-ready--ai .dash-brand-toggle:hover {
-      background: color-mix(in srgb, var(--dsc-ai-ready) 20%, transparent);
-      border-color: color-mix(in srgb, var(--dsc-ai-ready) 62%, transparent);
-      color: var(--dsc-ai-ready);
-      box-shadow: 0 0 0 2px color-mix(in srgb, var(--dsc-ai-ready) 18%, transparent);
+      --dsc-ai-ready: color-mix(in srgb, var(--sec-green, #32A966) 58%, #07140b);
     }
     .dsc-ready--ai .dash-brand-toggle.is-on,
     .dsc-ready--ai .dash-brand-toggle[aria-checked="true"] {
@@ -1462,13 +1446,18 @@
     }
     .dsc-ready--ai .dash-brand-toggle.is-on:hover,
     .dsc-ready--ai .dash-brand-toggle[aria-checked="true"]:hover {
-      background: color-mix(in srgb, var(--dsc-ai-ready) 88%, #000);
+      background: color-mix(in srgb, var(--dsc-ai-ready) 86%, #000);
       border-color: color-mix(in srgb, var(--dsc-ai-ready) 70%, #000);
       color: #fff;
       box-shadow: 0 1px 8px color-mix(in srgb, var(--dsc-ai-ready) 50%, transparent);
     }
-    html.dark .dsc-ready--ai .dash-brand-toggle:not(.is-on):not([aria-checked="true"]) {
-      color: color-mix(in srgb, var(--sec-green, #32A966) 70%, #d7eee0);
+    .dsc-ready--ai .dash-brand-toggle.is-on .dash-brand-toggle-track,
+    .dsc-ready--ai .dash-brand-toggle[aria-checked="true"] .dash-brand-toggle-track {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    .dsc-ready--ai .dash-brand-toggle.is-on .dash-brand-toggle-thumb,
+    .dsc-ready--ai .dash-brand-toggle[aria-checked="true"] .dash-brand-toggle-thumb {
+      background: #fff;
     }
     /* Card headers are tight — stack WIP above AI so the pair does not
        stretch the title row. Module heads stay a horizontal pair. */
@@ -1921,7 +1910,6 @@
     .dsc-card[data-comp-name="Action scorecards"] .dsc-demo,
     .dsc-card[data-comp-name="KPI scorecards"] .dsc-demo,
     .dsc-card[data-comp-name="Claim scorecards"] .dsc-demo,
-    .dsc-card[data-comp-name="Used-in links"] .dsc-demo,
     .dsc-card[data-comp-name="Buttons"] .dsc-demo,
     .dsc-card[data-comp-name="Admin buttons"] .dsc-demo,
     .dsc-card[data-comp-name="Intent chips"] .dsc-demo,
@@ -2108,7 +2096,8 @@
       display: flex; align-items: center; gap: 6px; margin-top: 4px;
       font-size: 10.5px; font-weight: 600; color: var(--text-subtle);
     }
-    .dsc-demo .sc-line-time { cursor: default; color: var(--primary-ink, var(--primary)); }
+    .dsc-demo .sc-line-time { cursor: default; color: color-mix(in srgb, var(--text-subtle) 62%, transparent); }
+    html.dark .dsc-demo .sc-line-time { color: color-mix(in srgb, var(--text-subtle) 70%, transparent); }
     .dsc-demo .sc-event-label { color: var(--text-muted); }
     .dsc-demo .sc-avatar {
       flex-shrink: 0; width: 30px; height: 30px; margin-top: 1px; border-radius: 50%;
@@ -3364,6 +3353,7 @@
     }
     .dsc-ready-progress .material-symbols-outlined { font-size: 16px !important; line-height: 1 !important; }
     .dsc-ready-progress.is-complete { color: var(--sec-green, #32A966); }
+    .dsc-ready--ai .dsc-ready-progress.is-complete { color: var(--dsc-ai-ready, var(--sec-green, #32A966)); }
     .dsc-ready-label { font-weight: 700; color: inherit; opacity: 0.78; }
     @keyframes dsc-nudge {
       0%, 100% { transform: translateX(0); }

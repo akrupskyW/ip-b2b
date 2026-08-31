@@ -1607,10 +1607,10 @@ html.dark .sc-trust-badge .material-symbols-outlined { color: var(--primary-brig
 .sc-line-you .sc-line-meta { justify-content: flex-start; }
 .sc-line-time { font-size: 0.625rem; font-weight: 500; letter-spacing: 0.02em;
   cursor: pointer; user-select: none; text-decoration: none;
-  color: var(--primary-ink, var(--primary)); transition: color .14s ease; }
-.sc-line-time:hover { color: color-mix(in srgb, var(--primary) 62%, #fff); text-decoration: none; }
-html.dark .sc-line-time { color: var(--primary-bright, #8B9FAF); }
-html.dark .sc-line-time:hover { color: #AEC8ED; }
+  color: color-mix(in srgb, var(--text-subtle) 62%, transparent); transition: color .14s ease; }
+.sc-line-time:hover { color: var(--text); text-decoration: none; }
+html.dark .sc-line-time { color: color-mix(in srgb, var(--text-subtle) 70%, transparent); }
+html.dark .sc-line-time:hover { color: var(--text); }
 .sc-line-time:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .sc-trust-chip {
   display: inline-flex; align-items: center; gap: 4px;

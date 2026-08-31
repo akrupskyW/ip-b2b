@@ -1519,7 +1519,6 @@ const CAT_BY_NAME = {
   'KPI scorecards': 'Tables & data',
   'Claim scorecards': 'Tables & data',
   'Filter toolbar': 'Filters',
-  'Used-in links': 'Navigation',
   'Menu popover': 'Overlays',
   'Row action menu': 'Overlays',
   'Modal dialog': 'Overlays',
@@ -2171,7 +2170,7 @@ function demoReasonsPop(kind, open) {
 function demoFbRow({ hoverCopy, upOpen, downOpen, moreOpen, upOn, downOn } = {}) {
   return `<div class="sc-fb-wrap">
     <div class="sc-fb" role="group" aria-label="Answer actions">
-      <span class="sc-line-time sc-fb-time" role="button" tabindex="0">2:14 PM</span>
+      <span class="sc-line-time sc-fb-time" role="button" tabindex="0">3 min ago</span>
       <span class="sc-fb-copy-wrap">
         ${demoFbBtn({ fb: 'copy', tip: 'Copy answer', icon: 'content_copy', hover: hoverCopy })}
         <span class="sc-fb-copied${hoverCopy ? ' is-vis' : ''}" role="status"${hoverCopy ? '' : ' aria-hidden="true"'}><span class="material-symbols-outlined">check</span>Copied</span>
@@ -2804,15 +2803,15 @@ const COMPONENTS = [
       <div class="dsc-states" style="width:100%">
         <div class="dsc-state-col" style="flex:1 1 280px">
           <div class="dsc-sub-label">You</div>
-          <div class="sc-line sc-line-you">${demoYouAvatar()}<div class="sc-line-body">Compare oat milk vs almond milk on processing.<div class="sc-line-meta"><span class="sc-line-time" role="button" tabindex="0">2:11 PM</span></div></div></div>
+          <div class="sc-line sc-line-you">${demoYouAvatar()}<div class="sc-line-body">Compare oat milk vs almond milk on processing.<div class="sc-line-meta"><span class="sc-line-time" role="button" tabindex="0">5 min ago</span></div></div></div>
         </div>
         <div class="dsc-state-col" style="flex:1 1 280px">
           <div class="dsc-sub-label">WISEcodeAI</div>
-          <div class="sc-line sc-line-wiseai">${demoWiseAvatar()}<div class="sc-line-body"><span class="sc-para">Oat milk scores higher on processing; almond milk wins on additives. Both sit in the same WISEscore band.</span><div class="sc-line-meta"><span class="sc-line-time" role="button" tabindex="0">2:12 PM</span></div></div></div>
+          <div class="sc-line sc-line-wiseai">${demoWiseAvatar()}<div class="sc-line-body"><span class="sc-para">Oat milk scores higher on processing; almond milk wins on additives. Both sit in the same WISEscore band.</span><div class="sc-line-meta"><span class="sc-line-time" role="button" tabindex="0">4 min ago</span></div></div></div>
         </div>
         <div class="dsc-state-col" style="flex:1 1 280px">
           <div class="dsc-sub-label">Event · database switched</div>
-          <div class="sc-line sc-line-you sc-line-event" data-activity="database" role="note">${demoYouAvatar()}<div class="sc-line-body"><span class="sc-event-label">Switched database from</span> <strong>Postgres (DEV)</strong> to <strong>Postgres (UAT)</strong><div class="sc-line-meta"><span class="sc-line-time" role="button" tabindex="0">2:13 PM</span><span class="sc-fb-id" data-tip="Turn ID" tabindex="0">#6d7a</span></div></div></div>
+          <div class="sc-line sc-line-you sc-line-event" data-activity="database" role="note">${demoYouAvatar()}<div class="sc-line-body"><span class="sc-event-label">Switched database from</span> <strong>Postgres (DEV)</strong> to <strong>Postgres (UAT)</strong><div class="sc-line-meta"><span class="sc-line-time" role="button" tabindex="0">3 min ago</span><span class="sc-fb-id" data-tip="Turn ID" tabindex="0">#6d7a</span></div></div></div>
         </div>
         <div class="dsc-state-col" style="flex:1 1 280px">
           <div class="dsc-sub-label">Forked-from banner</div>
@@ -3744,47 +3743,6 @@ const COMPONENTS = [
       </section>`,
   },
 
-  /* ---- Used-in links — tiny plain-text jump links ----------------- */
-  {
-    name: 'Used-in links',
-    wide: true,
-    cls: '.dsc-used-link (+ .dsc-used-link--plain, .is-hover, .is-open)',
-    used: 'Component Library “Used in” rows · Module Directory cross-links — tiny text links that point at (or name) a module',
-    note: 'Not a chip. <strong>Link</strong> is a tiny text jump target; <strong>Plain</strong> is the same type, not clickable. States: Default, Hover (<code>.is-hover</code>), Open (<code>.is-open</code> when the linked surface is the one in view).',
-    noteIcon: 'link',
-    demo: `
-      <div class="dsc-states" style="width:100%">
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Link · Default</div>
-          <span class="dsc-used-list dsc-used-list--links">
-            <a class="dsc-used-link" href="#" onclick="return false">Product Portfolio</a>
-            <a class="dsc-used-link" href="#" onclick="return false">NON-UPF Dashboard</a>
-          </span>
-        </div>
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Link · Hover</div>
-          <span class="dsc-used-list dsc-used-list--links">
-            <a class="dsc-used-link is-hover" href="#" onclick="return false">Product Portfolio</a>
-            <a class="dsc-used-link is-hover" href="#" onclick="return false">Reports</a>
-          </span>
-        </div>
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Link · Open</div>
-          <span class="dsc-used-list dsc-used-list--links">
-            <a class="dsc-used-link is-open" href="#" onclick="return false">Overview</a>
-            <a class="dsc-used-link" href="#" onclick="return false">Comparison</a>
-          </span>
-        </div>
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Plain text</div>
-          <span class="dsc-used-list dsc-used-list--links">
-            <span class="dsc-used-link dsc-used-link--plain">Marketing Assets</span>
-            <span class="dsc-used-link dsc-used-link--plain">Add Catalog</span>
-          </span>
-        </div>
-      </div>`,
-  },
-
   /* ---- Charts & graphs — pointer to analytics-types + written rules -- */
   {
     name: 'Charts & graphs',
@@ -4519,7 +4477,8 @@ const READY_KIND = {
     exportName: 'AI_READY_SEED',
     file: 'js/ai-ready-data.js',
     label: 'AI Ready',
-    titleOn: 'Ready for AI',
+    labelOff: 'Not for AI',
+    titleOn: 'AI Ready',
     markOne: (name) => `Mark ${name} ready for AI`,
     markAll: (name) => `Mark every part in ${name} as AI Ready`,
     progressTitle: (stats) => stats.total
@@ -4535,6 +4494,14 @@ const READY_KIND = {
 
 function readySpec(kind) {
   return READY_KIND[kind] || READY_KIND.dev;
+}
+
+/* Visible switch caption. AI flips between "Not for AI" (off, the default)
+   and "AI Ready" (on). WIP Ready keeps one label in both states. */
+function readySwitchText(kind, on) {
+  const spec = readySpec(kind);
+  if (kind === 'ai') return on ? spec.label : (spec.labelOff || 'Not for AI');
+  return spec.label;
 }
 
 function readReadyOverrides(kind) {
@@ -4765,18 +4732,20 @@ function readyToggleOneHTML(id, label, opts) {
   const ready = hasKids ? complete : isDscReady(id, map);
   const cls = 'dash-brand-toggle' + (ready ? ' is-on' : '');
   const title = hasKids && !complete ? spec.markAll(label) : (ready ? spec.titleOn : spec.markOne(label));
-  const progress = (hasKids && kind !== 'ai') ? readyProgressHTML(id, stats, kind) : '';
+  const showProgress = hasKids && (kind !== 'ai' || id === 'mi-components');
+  const progress = showProgress ? readyProgressHTML(id, stats, kind) : '';
+  const switchText = readySwitchText(kind, ready);
   return `
     <div class="dsc-ready dsc-ready--${level} dsc-ready--${kind}">
       ${progress}
       <button type="button" class="${cls}" role="switch"
         aria-checked="${ready ? 'true' : 'false'}"
-        aria-label="${esc(spec.label)} for ${esc(label)}" title="${esc(title)}"
+        aria-label="${esc(switchText)} for ${esc(label)}" title="${esc(title)}"
         data-dsc-ready data-ready-id="${esc(id)}" data-ready-level="${esc(level)}"
         data-ready-kind="${kind}"
         data-ready-label="${esc(label)}"${parent ? ` data-ready-parent="${esc(parent)}"` : ''}>
         <span class="dash-brand-toggle-track"><span class="dash-brand-toggle-thumb"></span></span>
-        <span class="dash-brand-toggle-text">${esc(spec.label)}</span>
+        <span class="dash-brand-toggle-text">${esc(switchText)}</span>
       </button>
     </div>`;
 }
@@ -11883,6 +11852,14 @@ function readyKindOf(el) {
 function paintItemReady(btn, on) {
   btn.classList.toggle('is-on', !!on);
   btn.setAttribute('aria-checked', on ? 'true' : 'false');
+  const kind = readyKindOf(btn);
+  const spec = readySpec(kind);
+  const text = btn.querySelector('.dash-brand-toggle-text');
+  const switchText = readySwitchText(kind, on);
+  if (text) text.textContent = switchText;
+  const label = btn.dataset.readyLabel || '';
+  btn.setAttribute('aria-label', switchText + (label ? ' for ' + label : ''));
+  btn.title = on ? spec.titleOn : spec.markOne(label);
 }
 
 function syncItemReadyButtons(root, id, on, kind) {
@@ -11942,6 +11919,10 @@ function wireDevReady(root) {
       if (btn.dataset.readyId !== moduleId || readyKindOf(btn) !== kind) return;
       btn.classList.remove('is-gated');
       btn.removeAttribute('aria-disabled');
+      const switchText = readySwitchText(kind, complete);
+      const textEl = btn.querySelector('.dash-brand-toggle-text');
+      if (textEl) textEl.textContent = switchText;
+      btn.setAttribute('aria-label', switchText + (label ? ' for ' + label : ''));
       if (complete) {
         btn.classList.add('is-on');
         btn.setAttribute('aria-checked', 'true');
@@ -12068,10 +12049,7 @@ function wireDevReady(root) {
       saveReadyMap(kind, map);
 
       if (level === 'item') syncItemReadyButtons(root, id, next, kind);
-      else {
-        btn.setAttribute('aria-checked', next ? 'true' : 'false');
-        btn.classList.toggle('is-on', next);
-      }
+      else paintItemReady(btn, next);
 
       /* A flipped child re-scores its parent. */
       const parent = btn.dataset.readyParent;
