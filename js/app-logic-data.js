@@ -901,7 +901,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Only the diff from the seed is stored',
-        how: 'The baseline lives in <code>DEV_READY_SEED</code>; <code>wise-dsc-dev-ready</code> holds just the overrides that differ from it. <code>window.WiseDevReady.dumpSeed()</code> copies a paste-ready seed export so today\u2019s state can be promoted into the committed baseline.',
+        how: 'The baseline lives in <code>DEV_READY_SEED</code>; <code>wise-dsc-dev-ready</code> holds just the overrides that differ from it. On the local livereload origin a toggle writes the seed file so the next commit / Ubuntu pull ships the same greens. <code>window.WiseDevReady.dumpSeed()</code> is the manual fallback from any other origin.',
       },
       {
         title: 'Re-evaluate crawls once a day',

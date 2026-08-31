@@ -1893,8 +1893,8 @@ function demoWchPane(inner) {
     <div class="dsc-wch">
       <div class="wch-projects">
         <div class="wch-projects-head">
-          <span class="wch-projects-title">Projects</span>
-          <button type="button" class="wch-proj-add" tabindex="-1" aria-label="New project"><span class="material-symbols-outlined">create_new_folder</span></button>
+          <span class="wch-projects-title">Folders</span>
+          <button type="button" class="wch-proj-add" tabindex="-1" title="New folder" aria-label="New folder"><span class="material-symbols-outlined">create_new_folder</span></button>
         </div>
         ${inner}
       </div>
@@ -4449,22 +4449,63 @@ function saveDscReadyMap(map) {
   try {
     localStorage.setItem(DSC_READY_KEY, JSON.stringify(overrides));
   } catch (e) { /* quota / private mode — ignore */ }
+  persistDevReadySeedToRepo(map);
+}
+
+function readyIdsFromMap(map) {
+  return Object.keys(map).filter((k) => map[k] === true).sort();
+}
+
+function formatDevReadySeedExport(ids) {
+  const body = ids.map((id) => `  ${JSON.stringify(id)}: true,`).join('\n');
+  return `export const DEV_READY_SEED = {\n${body}\n};\n`;
+}
+
+/* Every Dev Ready flip on the local livereload origin writes
+   js/dev-ready-data.js immediately. Other origins stay storage-only
+   (the deployed box must not accept writes). */
+function persistDevReadySeedToRepo(map, attempt) {
+  if (typeof location === 'undefined' || location.protocol === 'file:') return;
+  const host = location.hostname;
+  if (host !== '127.0.0.1' && host !== 'localhost') return;
+  const ids = readyIdsFromMap(map || loadDscReadyMap());
+  const tryN = attempt || 0;
+  fetch('/__wise/dev-ready', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids }),
+  }).then((res) => {
+    if (res.ok) return;
+    if (tryN < 4) {
+      setTimeout(() => persistDevReadySeedToRepo(map, tryN + 1), 400 * (tryN + 1));
+      return;
+    }
+    console.warn('Dev Ready seed did not write (' + res.status + '). Restart python3 dev_server.py and flip the switch again.');
+  }).catch(() => {
+    if (tryN < 4) {
+      setTimeout(() => persistDevReadySeedToRepo(map, tryN + 1), 400 * (tryN + 1));
+      return;
+    }
+    console.warn('Dev Ready seed did not write. Restart python3 dev_server.py and flip the switch again.');
+  });
 }
 
 /* Turn the live state into a paste-ready replacement for js/dev-ready-data.js,
    so the browser holding the real state can hand it to the repo. */
 function dumpDevReadySeed() {
-  const map = loadDscReadyMap();
-  const ids = Object.keys(map).filter((k) => map[k] === true).sort();
-  const body = ids.map((id) => `  ${JSON.stringify(id)}: true,`).join('\n');
-  const text = `export const DEV_READY_SEED = {\n${body}\n};\n`;
+  const text = formatDevReadySeedExport(readyIdsFromMap(loadDscReadyMap()));
   try { navigator.clipboard?.writeText(text); } catch (e) { /* no clipboard permission */ }
-  console.log(`${ids.length} Dev Ready ids — paste over the export in js/dev-ready-data.js:\n\n${text}`);
+  console.log(`${text.match(/: true/g)?.length || 0} Dev Ready ids — paste over the export in js/dev-ready-data.js:\n\n${text}`);
   return text;
 }
 
 if (typeof window !== 'undefined') {
-  window.WiseDevReady = { dumpSeed: dumpDevReadySeed, map: loadDscReadyMap };
+  window.WiseDevReady = {
+    dumpSeed: dumpDevReadySeed,
+    map: loadDscReadyMap,
+    persist: persistDevReadySeedToRepo,
+  };
+  persistDevReadySeedToRepo();
 }
 
 function isDscReady(name, map) {

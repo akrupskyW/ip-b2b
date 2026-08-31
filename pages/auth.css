@@ -4,27 +4,55 @@
    every numeral renders in mono while letters fall through to the normal face. */
 @font-face {
   font-family: 'WISE Digits';
+  font-style: normal;
   src: url('https://fonts.gstatic.com/s/dmmono/v16/aFTR7PB1QTsUX8KYvrGyEYOtbQ.woff2') format('woff2');
   unicode-range: U+0030-0039;
   font-weight: 100 450;
 }
 @font-face {
   font-family: 'WISE Digits';
+  font-style: normal;
   src: url('https://fonts.gstatic.com/s/dmmono/v16/aFTU7PB1QTsUX8KYthqQBA.woff2') format('woff2');
   unicode-range: U+0030-0039;
   font-weight: 451 570;
 }
 @font-face {
   font-family: 'WISE Digits';
+  font-style: normal;
   src: url('https://fonts.gstatic.com/s/dmmono/v16/aFTR7PB1QTsUX8KYvumzEYOtbQ.woff2') format('woff2');
   unicode-range: U+0030-0039;
   font-weight: 571 650;
 }
 @font-face {
   font-family: 'WISE Digits';
+  font-style: normal;
   src: url('https://fonts.gstatic.com/s/dmmono/v16/aFTR7PB1QTsUX8KYvumzEYOtbQ.woff2') format('woff2');
   unicode-range: U+0030-0039;
   font-weight: 651 900;
+}
+/* Italic twins — same mono files. Without a declared italic face, a
+   unicode-range miss on a letter can fall through to italic DM Sans and
+   slant the whole page while font-style stays "normal". */
+@font-face {
+  font-family: 'WISE Digits';
+  font-style: italic;
+  src: url('https://fonts.gstatic.com/s/dmmono/v16/aFTR7PB1QTsUX8KYvrGyEYOtbQ.woff2') format('woff2');
+  unicode-range: U+0030-0039;
+  font-weight: 100 450;
+}
+@font-face {
+  font-family: 'WISE Digits';
+  font-style: italic;
+  src: url('https://fonts.gstatic.com/s/dmmono/v16/aFTU7PB1QTsUX8KYthqQBA.woff2') format('woff2');
+  unicode-range: U+0030-0039;
+  font-weight: 451 570;
+}
+@font-face {
+  font-family: 'WISE Digits';
+  font-style: italic;
+  src: url('https://fonts.gstatic.com/s/dmmono/v16/aFTR7PB1QTsUX8KYvumzEYOtbQ.woff2') format('woff2');
+  unicode-range: U+0030-0039;
+  font-weight: 571 900;
 }
 
 /* =============================================================

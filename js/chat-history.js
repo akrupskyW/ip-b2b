@@ -1168,8 +1168,8 @@
          empty history) ── */
       html += '<div class="wch-projects">' +
         '<div class="wch-projects-head">' +
-          '<span class="wch-projects-title">Projects</span>' +
-          '<button type="button" class="wch-proj-add" title="New project" aria-label="New project"><span class="material-symbols-outlined">create_new_folder</span></button>' +
+          '<span class="wch-projects-title">Folders</span>' +
+          '<button type="button" class="wch-proj-add" title="New folder" aria-label="New folder"><span class="material-symbols-outlined">create_new_folder</span></button>' +
         '</div>';
       if (creatingProject) html += projEditRowHtml('', 'new');
       projects.forEach(function (p) {
