@@ -1,31 +1,8 @@
-/* Dev Ready seed — the committed default for the green "Dev Ready" switches on
- * pages/all-modules.html. localStorage ('wise-dsc-dev-ready') holds only the
- * diff against this map. A local toggle writes this file so the next commit
- * / Ubuntu pull ships the same greens.
+/* AI Ready seed — the committed default for the "AI Ready" switches on
+ * pages/all-modules.html. Same persist rules as Dev Ready. localStorage
+ * ('wise-dsc-ai-ready') holds only the diff against this map.
  */
-export const DEV_READY_SEED = {
-  "Action scorecards": true,
-  "Activity strip": true,
-  "App search": true,
-  "Attachments": true,
-  "Avatars": true,
-  "Buttons": true,
-  "Chat composer": true,
-  "Chat ⋯ menu": true,
-  "Claim scorecards": true,
-  "Data table": true,
-  "Filter tiles": true,
-  "Form fields": true,
-  "History": true,
-  "Intent chips": true,
-  "Large intent cards": true,
-  "Left-nav item": true,
-  "Output chips": true,
-  "Segmented control": true,
-  "Status chips (domain)": true,
-  "Status pills": true,
-  "Switch": true,
-  "Toast": true,
+export const AI_READY_SEED = {
   "Transcript actions": true,
   "Transcript lines": true,
   "What can I ask?": true,
@@ -56,7 +33,6 @@ export const DEV_READY_SEED = {
   "mi-design": true,
   "mi-icons": true,
   "mi-motion": true,
-  "mi-trace": true,
   "motion:Accordion &amp; panel open": true,
   "motion:Activity strip ticks": true,
   "motion:Carousel rail": true,
@@ -68,7 +44,6 @@ export const DEV_READY_SEED = {
   "motion:Drag to found a folder": true,
   "motion:Drag to reorder": true,
   "motion:Gold chip shimmer": true,
-  "motion:Jam equalizer": true,
   "motion:Jam visualizers": true,
   "motion:Module drag-resize": true,
   "motion:Output chip fan": true,
@@ -78,8 +53,4 @@ export const DEV_READY_SEED = {
   "motion:Toast": true,
   "motion:Welcome helix": true,
   "motion:Width tiers": true,
-  "trace:detail": true,
-  "trace:done": true,
-  "trace:live": true,
-  "trace:mid": true,
 };

@@ -200,28 +200,27 @@
       var displayRaf = 0;
       var bootReady = false;
       var loadFired = false;
-      var SKIP_KIND = { beacon: 1, ping: 1, img: 1, image: 1, video: 1, audio: 1 };
-      var COUNT_KIND = { script: 1, link: 1, css: 1, navigation: 1, fetch: 1, xmlhttprequest: 1 };
-      var LAZY_RE = /icon-inventory-data|app-logic-data|project-inventory-data/;
-      var MEDIA_RE = /\.(mp4|webm|mov|m4v|mp3|wav|png|jpe?g|webp|gif|avif)(\?|#|$)/i;
-
-      /* Same-origin files on first paint. Sizes are hints so the meter has a
-         denominator before Resource Timing reports the real transfer. */
+      /* Only this page’s first-paint graph. Fetching the project inventory,
+         opening a section, or loading helix media must not grow the
+         denominator — that is what pinned the headline at 38% of 139 MB. */
       var BOOT_HINT = {
-        'pages/all-modules.html': 16000,
-        'pages/wise.css': 668251,
-        'pages/all-modules.css': 223244,
+        'pages/all-modules.html': 18134,
+        'pages/wise.css': 670487,
+        'pages/all-modules.css': 223355,
         'js/auth-guard.js': 1073,
-        'js/cwr-toggle.js': 47900,
+        'js/cwr-toggle.js': 47932,
         'js/icon-svg-shim.js': 16592,
+        'js/text-size-fouc.js': 22577,
         'js/agent-overview.js': 91685,
-        'js/agent-menu.js': 62009,
-        'js/all-modules-flow.js': 630000,
-        'js/code-stats-data.js': 9097,
-        'js/module-directory-data.js': 7763,
+        'js/agent-menu.js': 62025,
+        'js/all-modules-flow.js': 641048,
+        'js/code-stats-data.js': 9666,
+        'js/module-directory-data.js': 7844,
+        'js/dev-ready-data.js': 3549,
+        'js/ai-ready-data.js': 491,
         'js/wiseai-dock.js': 18103,
-        'js/wiseai-chat.js': 699427,
-        'js/chat-history.js': 134921,
+        'js/wiseai-chat.js': 707316,
+        'js/chat-history.js': 134918,
         'assets/icons/wise-icons.svg': 480475
       };
 
@@ -232,55 +231,39 @@
           return String(abs.pathname || '').replace(/^\//, '');
         } catch (e) { return ''; }
       }
-      function sizeOf(entry) {
-        var n = (entry && (entry.encodedBodySize || entry.decodedBodySize || entry.transferSize)) || 0;
-        if (n) return n;
-        var p = projectPath(entry && entry.name);
-        return (p && BOOT_HINT[p]) || 0;
+      function hintKey(url) {
+        var path = projectPath(url);
+        if (!path) return '';
+        if (BOOT_HINT[path] != null) return path;
+        var keys = Object.keys(BOOT_HINT);
+        for (var i = 0; i < keys.length; i++) {
+          var k = keys[i];
+          if (path.slice(-(k.length + 1)) === '/' + k) return k;
+        }
+        return '';
       }
-      function skipUrl(url) {
-        if (!url || url.indexOf('data:') === 0 || url.indexOf('blob:') === 0) return true;
-        if (/livereload|\/sockjs\/|browser-sync/i.test(url)) return true;
-        if (/^chrome-extension:|^safari-extension:/i.test(url)) return true;
-        if (LAZY_RE.test(url)) return true;
-        if (MEDIA_RE.test(url)) return true;
-        try {
-          var abs = new URL(url, location.href);
-          if (abs.origin !== location.origin) return true;
-          if (abs.pathname.slice(-1) === '/') return true;
-        } catch (e) { return true; }
-        return false;
+      function sizeOf(entry, key) {
+        var n = (entry && (entry.encodedBodySize || entry.decodedBodySize || entry.transferSize)) || 0;
+        return n || (key && BOOT_HINT[key]) || 0;
       }
       function applyEntry(entry) {
         if (!entry || !entry.name) return;
-        if (SKIP_KIND[entry.initiatorType]) return;
-        if (entry.initiatorType && !COUNT_KIND[entry.initiatorType]) return;
-        if (skipUrl(entry.name)) return;
-        var path = projectPath(entry.name);
-        var n = sizeOf(entry) || (path && BOOT_HINT[path]) || 0;
+        var key = hintKey(entry.name);
+        if (!key) return;
+        var n = sizeOf(entry, key);
         if (!n) return;
-        var key = path || String(entry.name).split('#')[0];
         if ((arrived[key] || 0) >= n) return;
         arrived[key] = n;
         scheduleDisplay();
       }
       function arrivedTotal() {
         var n = 0;
-        Object.keys(arrived).forEach(function (k) { n += arrived[k]; });
+        Object.keys(BOOT_HINT).forEach(function (k) { n += arrived[k] || 0; });
         return n;
       }
       function hintTotal() {
         var n = 0;
-        var seen = Object.create(null);
-        Object.keys(arrived).forEach(function (k) {
-          n += arrived[k];
-          seen[k] = 1;
-        });
-        if (!isComplete()) {
-          Object.keys(BOOT_HINT).forEach(function (k) {
-            if (!seen[k]) n += BOOT_HINT[k];
-          });
-        }
+        Object.keys(BOOT_HINT).forEach(function (k) { n += BOOT_HINT[k]; });
         return n;
       }
       function isComplete() {
@@ -303,7 +286,8 @@
         var complete = isComplete();
         var pct = 0;
         if (complete) {
-          expected = loaded;
+          expected = Math.max(loaded, hintTotal());
+          loaded = expected;
           pct = 100;
         } else if (expected > 0) pct = Math.round(100 * loaded / expected);
         if (!complete && pct > 99) pct = 99;
@@ -382,7 +366,7 @@
         bytes: function () { return lastBytes; },
         scan: function () { paint(); },
         markReady: function () { bootReady = true; paint(); },
-        setInventory: function () { paint(); },
+        setInventory: function () { /* project size is not this page’s load */ paint(); },
         snapshot: function () {
           var t = targets();
           return {

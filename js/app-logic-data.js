@@ -627,7 +627,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Every answer carries copy, thumbs, and a more menu',
-        how: '<code>feedbackRowHtml()</code> sits under the last paragraph, before intent chips. Copy flashes Copied. Accurate / Not accurate each open a reason popover; submitting posts a follow-up turn in the thread. The \u22ef spills timestamp (clock \u2194 relative), Re-run in new chat, Edit in new chat, Fork a turn, and the turn ID. Hover uses the shared theme-aware tip card, never a native title bubble and never a second always-dark card.',
+        how: '<code>feedbackRowHtml()</code> sits under the last paragraph, before intent chips. The timestamp (clock \u2194 relative) sits immediately left of Copy. Copy flashes Copied. Accurate / Not accurate each open a reason popover; submitting posts a follow-up turn in the thread. The \u22ef spills Re-run in new chat, Edit in new chat, Fork a turn, and the turn ID. Hover uses the shared theme-aware tip card, never a native title bubble and never a second always-dark card.',
       },
       {
         title: 'Output chips preview the sticky pane',
@@ -896,12 +896,12 @@ export const APP_LOGIC = [
         how: '<code>setupAccordion()</code> wraps everything after each <code>.mi-module-head</code> in a <code>.mi-acc-body</code> and collapses it on <strong>every</strong> load — the page is a high-level index first. Expanded state is in-session only and is never restored. Clicks inside <code>.panel-controls</code> or <code>.dsc-ready</code> do not toggle the section.',
       },
       {
-        title: 'Dev Ready is a two-level tree',
-        how: '<code>buildDevReadyTree()</code> registers each module\u2019s children (directory areas, tables, motion items, icon groups, design groups, components). A module switch turns itself on only when every child is ready, and clicking an incomplete one opens a two-step verify modal rather than toggling silently. App Logic is a leaf — it has a module switch and no per-page children. Intent Chip Logic is an audit index and has no Dev Ready chrome.',
+        title: 'WIP Ready is a two-level tree',
+        how: '<code>buildDevReadyTree()</code> registers each module\u2019s children (directory areas, tables, motion items, icon groups, design groups, components). A module switch turns itself on only when every child is ready, and clicking an incomplete one opens a two-step verify modal rather than toggling silently. App Logic is a leaf — it has a module switch and no per-page children. Intent Chip Logic is an audit index and has no WIP Ready chrome. Module Directory and Table Gallery show WIP Ready only.',
       },
       {
         title: 'Only the diff from the seed is stored',
-        how: 'The baseline lives in <code>DEV_READY_SEED</code>; <code>wise-dsc-dev-ready</code> holds just the overrides that differ from it. On the local livereload origin a toggle writes the seed file so the next commit / Ubuntu pull ships the same greens. <code>window.WiseDevReady.dumpSeed()</code> is the manual fallback from any other origin.',
+        how: 'WIP Ready and AI Ready each have their own baseline seed. localStorage holds just the overrides that differ from that seed. On the local livereload origin a toggle writes the matching seed file so the next commit / Ubuntu pull ships the same flags. Module Directory and Table Gallery have WIP Ready only. AI Ready has no k/n count.',
       },
       {
         title: 'Re-evaluate crawls once a day',

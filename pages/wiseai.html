@@ -1976,13 +1976,13 @@
     html.dark .sc-surface-ver { color: var(--primary-bright, #8B9FAF); background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 16%, transparent); border-color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 32%, transparent); }
     .sc-surface-ver-count { font-weight: 600; opacity: .85; }
 
-    /* ── Surface chip meta (timestamp + version live in the turn's ⋯ menu) ── */
+    /* ── Surface chip meta (version lives in the turn's ⋯ menu) ── */
     .sc-surface-metabar { display: inline-flex; align-items: center; gap: 8px; }
     .sc-surface-ver-num {
       font-size: 10px; font-weight: 600; letter-spacing: .02em; white-space: nowrap;
       color: var(--text-subtle); font-variant-numeric: tabular-nums;
     }
-    /* Version tag tucked into the three-dot menu, right after the timestamp. */
+    /* Version tag tucked into the three-dot menu, ahead of the turn actions. */
     .sc-fb-menu-ver {
       margin-right: 4px; padding-right: 6px; white-space: nowrap;
       border-right: 1px solid var(--border);
@@ -9773,10 +9773,9 @@
        string ("v1.0.0", "v1.0.1", …) instead of a bare "v1" chip. */
     function verLabel(n) { return `v1.0.${Math.max(0, (n | 0) - 1)}`; }
 
-    /* The timestamp + version live INSIDE the turn's three-dot ("more") menu —
-       the same collapsed popover that already carries the wall-clock stamp. Drop
-       the version number in right after the time so both read together when the
-       menu is opened. */
+    /* Version lives INSIDE the turn's three-dot ("more") menu. The wall-clock
+       stamp sits on the row, left of copy; drop the version number at the
+       start of the menu so it still reads when the popover opens. */
     function decorateSurfaceMeta(line, o) {
       if (!line) return;
       const metaEl = line.querySelector('.sc-line-meta');
@@ -9787,9 +9786,7 @@
       const ver = document.createElement('span');
       ver.className = 'sc-fb-menu-ver';
       ver.textContent = verLabel(o.version) + (o.count > 1 ? ` · ${o.count} versions` : '');
-      const timeEl = menu.querySelector('.sc-fb-menu-time');
-      if (timeEl) timeEl.insertAdjacentElement('afterend', ver);
-      else menu.insertBefore(ver, menu.firstChild);
+      menu.insertBefore(ver, menu.firstChild);
     }
 
     /* ── Conversation manifest (floating Outputs / Sources box) ───────────────

@@ -355,7 +355,7 @@ function toggleLineTime(el) {
   }
 }
 
-/* Markup for a clickable transcript stamp. Extra class (e.g. sc-fb-menu-time)
+/* Markup for a clickable transcript stamp. Extra class (e.g. sc-fb-time)
    is appended as-is — callers pass a known token, never user input. */
 function timeStampHtml(ms, extraClass) {
   const t = ms == null ? Date.now() : Number(ms);
@@ -1096,15 +1096,16 @@ export function injectChatExtras() {
     .sc-line-body > .sc-para { display: block; }
     .sc-line-body > .sc-para + .sc-para { margin-top: 1em; }
 
-    /* Feedback actions (copy / thumbs) sit INLINE, directly to the right of the
-       timestamp inside .sc-line-meta — quiet outlined glyphs at rest. */
+    /* Feedback actions sit INLINE — timestamp immediately left of copy, then
+       thumbs — quiet outlined glyphs at rest. */
     .sc-fb-wrap { margin: 0; align-self: center; flex: 1 1 auto; min-width: 0; }
     .sc-fb { display: flex; align-items: center; gap: 1px; width: 100%; }
+    /* Timestamp sits on the row, immediately to the LEFT of the copy icon. */
+    .sc-fb-time { margin-right: 6px; white-space: nowrap; flex-shrink: 0; }
     /* Three-dot ("more") control — sits directly to the RIGHT of thumbs-down
-       (not floated to the far edge of the row). It holds the timestamp + the
-       re-run / edit / fork controls + the turn ID, spilling them into a small
-       floating menu on click so the row itself stays down to copy / thumbs up /
-       thumbs down. */
+       (not floated to the far edge of the row). It holds the re-run / edit /
+       fork controls + the turn ID, spilling them into a small floating menu
+       on hover so the row itself stays down to timestamp / copy / thumbs. */
     .sc-fb-more-wrap { position: relative; display: inline-flex; padding-left: 2px; }
     .sc-fb-menu { position: absolute; bottom: calc(100% + 8px); right: -4px; z-index: 80;
       display: inline-flex; align-items: center; gap: 2px; width: max-content;
@@ -1117,8 +1118,6 @@ export function injectChatExtras() {
     html.dark .sc-fb-menu { background: #1A2339; border-color: rgba(37,80,124,0.22); }
     html.dark .sc-fb-menu::after { border-top-color: #1A2339; }
     .sc-fb-menu[hidden] { display: none; }
-    .sc-fb-menu-time { margin-right: 4px; padding-right: 6px; white-space: nowrap;
-      border-right: 1px solid var(--border); }
     .sc-line-time { cursor: pointer; user-select: none;
       color: var(--primary-ink, var(--primary)); text-decoration: none;
       transition: color .14s ease; }
@@ -8233,13 +8232,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const upPop = reasonsPopoverHtml('up', accurateReasons, 'What was accurate?', 'What worked? (optional)');
     const downPop = reasonsPopoverHtml('down', feedbackReasons, 'What wasn\u2019t right?', 'Tell us more (optional)');
     const t = typeof timeMs === 'number' && Number.isFinite(timeMs) ? timeMs : Date.now();
-    /* The timestamp and the turn controls (re-run / edit / fork + turn ID) no
-       longer sit strewn across the meta row — they're tucked behind a single
-       horizontal three-dot button floated to the far right of the thumbs, and
-       spill out into a small floating menu on click. The left of the row stays
-       the quick-hit trio: copy, thumbs up, thumbs down. */
+    /* Timestamp sits immediately to the LEFT of copy. The turn controls
+       (re-run / edit / fork + turn ID) stay behind the three-dot button to
+       the right of thumbs-down. */
     return `<div class="sc-fb-wrap">
         <div class="sc-fb" role="group" aria-label="Answer actions">
+          ${timeStampHtml(t, 'sc-fb-time')}
           <span class="sc-fb-copy-wrap">
             <button type="button" class="sc-fb-btn" data-fb="copy" data-tip="Copy answer" aria-label="Copy answer"><span class="material-symbols-outlined">content_copy</span></button>
             <span class="sc-fb-copied" role="status" aria-hidden="true"><span class="material-symbols-outlined">check</span>Copied</span>
@@ -8255,7 +8253,6 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           <span class="sc-fb-more-wrap">
             <button type="button" class="sc-fb-btn sc-fb-more" data-fb-more aria-label="More actions" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">more_horiz</span></button>
             <div class="sc-fb-menu" role="menu" hidden>
-              ${timeStampHtml(t, 'sc-fb-menu-time')}
               <span class="sc-fb-menu-actions">
                 <button type="button" class="sc-fb-btn" data-fb="replay" data-tip="Re-run in new chat" aria-label="Re-run this prompt in a new conversation"><span class="material-symbols-outlined">auto_read_play</span></button>
                 <button type="button" class="sc-fb-btn" data-fb="edit" data-tip="Edit in new chat" aria-label="Edit this prompt in a new conversation"><span class="material-symbols-outlined">bubble</span></button>
@@ -8267,6 +8264,19 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
         </div>
         <div class="sc-fb-note" hidden></div>
       </div>`;
+  }
+  /* Saved threads still have the stamp inside the three-dot menu. Lift it
+     onto the row, immediately left of copy, so restore matches live turns. */
+  function hoistFeedbackTimes(root) {
+    if (!root || !root.querySelectorAll) return;
+    root.querySelectorAll('.sc-fb-menu .sc-line-time, .sc-fb-menu .sc-fb-menu-time').forEach((el) => {
+      const fb = el.closest('.sc-fb');
+      const copy = fb && fb.querySelector('.sc-fb-copy-wrap');
+      if (!copy) return;
+      el.classList.remove('sc-fb-menu-time');
+      el.classList.add('sc-fb-time');
+      copy.insertAdjacentElement('beforebegin', el);
+    });
   }
 
   /* ── Paragraph-by-paragraph reveal ───────────────────────────────────────
@@ -11159,6 +11169,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       stripSelectors: ['.sc-inline-chips', '.sc-line-typing', '.sc-line-trace'],
       setHTML: (html) => {
         messages.innerHTML = html || '';
+        hoistFeedbackTimes(messages);
         /* Retire the welcome-only DNA/RNA helix field the same way hideWelcome()
            does — otherwise restoring a saved thread leaves `sc-bganim-live` on
            the host and the animated background bleeds through behind the restored
@@ -11426,7 +11437,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       if (btn) btn.setAttribute('aria-expanded', 'false');
     });
   }
-  /* Collapse any open three-dot (timestamp + turn controls) menu. */
+  /* Collapse any open three-dot (turn controls) menu. */
   function menuOfWrap(wrap) {
     if (!wrap) return null;
     if (wrap._fbMenu && wrap._fbMenu.isConnected) return wrap._fbMenu;
@@ -11493,10 +11504,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        click that lands on the trigger is handled by its own toggle above. */
     if (!e.target.closest('.sc-fb-more-wrap, .sc-fb-menu')) closeMoreMenus();
   });
-  /* Hover-reveal for the three-dot menu — the timestamp + turn controls spill
-     open as soon as the pointer lands on the "more" control (no tooltip, no
-     click needed). A short close delay bridges the small gap between the
-     trigger and the floating menu so moving into it never flickers it shut.
+  /* Hover-reveal for the three-dot menu — the turn controls spill open as
+     soon as the pointer lands on the "more" control (no tooltip, no click
+     needed). A short close delay bridges the small gap between the trigger
+     and the floating menu so moving into it never flickers it shut.
      The menu portals to <body> while open (js/popover-layer.js), so hover
      tracking has to recognize both the wrap and the detached menu. */
   let scMoreCloseTimer = null;

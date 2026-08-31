@@ -440,8 +440,8 @@
     .mi-pane-comp-link:hover { color: var(--primary-ink, var(--primary)); text-decoration: underline; }
     html.dark .mi-pane-comp-link:hover { color: var(--primary-bright, #93C5FD); }
     .mi-pane-comp--empty { font-size: 0.72rem; font-weight: 600; color: var(--text-muted); border-bottom: 0; }
+    .mi-pane-comps .dsc-ready-row,
     .mi-pane-comps .dsc-ready { padding: 0; flex: 0 0 auto; margin-left: auto; }
-    .mi-pane-comps .dash-brand-toggle { transform: scale(0.92); transform-origin: right center; }
 
     .dsc-card.is-flash,
     .mi-card.is-flash,
@@ -1008,6 +1008,7 @@
     @media (max-width: 720px) {
       .ds-type-row { flex-direction: column; align-items: flex-start; gap: 6px; }
       .ds-type-sample { white-space: normal; }
+      .ds-type-row .dsc-ready-row,
       .ds-type-row .dsc-ready--item { margin-left: 0; align-self: flex-start; }
     }
 
@@ -1365,29 +1366,60 @@
       box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
     }
     .dsc-card-head .dsc-head { flex: 1 1 auto; min-width: 0; padding: 0; }
+    .dsc-card-head .dsc-ready-row,
     .dsc-card-head .dsc-ready { padding: 0; flex: 0 0 auto; }
     .dsc-card.dsc-card--acc.is-collapsed > .dsc-card-body { display: none; }
     .dsc-card.dsc-card--acc:not(.is-collapsed) > .dsc-card-body { display: block; padding-bottom: 12px; }
     .dsc-card.dsc-card--acc.is-collapsed .mi-acc-chevron { transform: rotate(-90deg); }
-    /* Thin top bar — Dev Ready toggle, right-aligned above each component.
-       OFF keeps the shared pink brand-toggle look; ON uses --sec-green. */
+    /* Ready pills — compact everywhere. OFF keeps the shared pink brand-toggle
+       look; ON uses --sec-green. Inside a card the pair stacks (see below). */
+    .dsc-ready-row {
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: 6px; flex-shrink: 0; margin-left: auto;
+    }
+    .dsc-ready-row .dsc-ready { padding: 0; margin-left: 0; }
     .dsc-ready {
       display: flex; align-items: center; justify-content: flex-end;
       padding: 10px 12px 0; flex-shrink: 0;
     }
-    .dsc-ready .dash-brand-toggle { font-size: 11px; }
+    .dsc-ready .dash-brand-toggle {
+      font-size: 10px;
+      gap: 5px;
+      padding: 2px 7px 2px 2px;
+      border-radius: 14px;
+      border-width: 1px;
+    }
+    .dsc-ready .dash-brand-toggle-text { font-size: 10px; font-weight: 700; }
+    .dsc-ready .dash-brand-toggle-track {
+      width: 18px;
+      height: 11px;
+      border-radius: 6px;
+    }
+    .dsc-ready .dash-brand-toggle-thumb {
+      width: 7px;
+      height: 7px;
+      top: 2px;
+      left: 2px;
+    }
+    .dsc-ready .dash-brand-toggle.is-on .dash-brand-toggle-thumb,
+    .dsc-ready .dash-brand-toggle[aria-checked="true"] .dash-brand-toggle-thumb {
+      transform: translateX(7px);
+    }
+    .dsc-ready .dash-brand-toggle:hover {
+      box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.12);
+    }
     .dsc-ready .dash-brand-toggle.is-on,
     .dsc-ready .dash-brand-toggle[aria-checked="true"] {
       background: var(--sec-green, #32A966);
       border-color: color-mix(in srgb, var(--sec-green, #32A966) 78%, #000);
       color: #fff;
-      box-shadow: 0 2px 10px color-mix(in srgb, var(--sec-green, #32A966) 40%, transparent);
+      box-shadow: 0 1px 6px color-mix(in srgb, var(--sec-green, #32A966) 36%, transparent);
     }
     .dsc-ready .dash-brand-toggle.is-on:hover,
     .dsc-ready .dash-brand-toggle[aria-checked="true"]:hover {
       background: color-mix(in srgb, var(--sec-green, #32A966) 88%, #000);
       border-color: color-mix(in srgb, var(--sec-green, #32A966) 70%, #000);
-      box-shadow: 0 2px 14px color-mix(in srgb, var(--sec-green, #32A966) 50%, transparent);
+      box-shadow: 0 1px 8px color-mix(in srgb, var(--sec-green, #32A966) 46%, transparent);
     }
     .dsc-ready .dash-brand-toggle.is-on .dash-brand-toggle-track,
     .dsc-ready .dash-brand-toggle[aria-checked="true"] .dash-brand-toggle-track {
@@ -1396,6 +1428,67 @@
     .dsc-ready .dash-brand-toggle.is-on .dash-brand-toggle-thumb,
     .dsc-ready .dash-brand-toggle[aria-checked="true"] .dash-brand-toggle-thumb {
       background: #fff;
+    }
+    /* AI Ready — darker forest green so it reads apart from WIP Ready. */
+    .dsc-ready--ai {
+      --dsc-ai-ready: color-mix(in srgb, var(--sec-green, #32A966) 38%, #082214);
+    }
+    html.dark .dsc-ready--ai {
+      --dsc-ai-ready: color-mix(in srgb, var(--sec-green, #32A966) 48%, #04160c);
+    }
+    .dsc-ready--ai .dash-brand-toggle {
+      background: color-mix(in srgb, var(--dsc-ai-ready) 12%, transparent);
+      border-color: color-mix(in srgb, var(--dsc-ai-ready) 46%, transparent);
+      color: var(--dsc-ai-ready);
+    }
+    .dsc-ready--ai .dash-brand-toggle-track {
+      background: color-mix(in srgb, var(--dsc-ai-ready) 28%, transparent);
+    }
+    .dsc-ready--ai .dash-brand-toggle-thumb {
+      background: var(--dsc-ai-ready);
+    }
+    .dsc-ready--ai .dash-brand-toggle:hover {
+      background: color-mix(in srgb, var(--dsc-ai-ready) 20%, transparent);
+      border-color: color-mix(in srgb, var(--dsc-ai-ready) 62%, transparent);
+      color: var(--dsc-ai-ready);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--dsc-ai-ready) 18%, transparent);
+    }
+    .dsc-ready--ai .dash-brand-toggle.is-on,
+    .dsc-ready--ai .dash-brand-toggle[aria-checked="true"] {
+      background: var(--dsc-ai-ready);
+      border-color: color-mix(in srgb, var(--dsc-ai-ready) 78%, #000);
+      color: #fff;
+      box-shadow: 0 1px 6px color-mix(in srgb, var(--dsc-ai-ready) 40%, transparent);
+    }
+    .dsc-ready--ai .dash-brand-toggle.is-on:hover,
+    .dsc-ready--ai .dash-brand-toggle[aria-checked="true"]:hover {
+      background: color-mix(in srgb, var(--dsc-ai-ready) 88%, #000);
+      border-color: color-mix(in srgb, var(--dsc-ai-ready) 70%, #000);
+      color: #fff;
+      box-shadow: 0 1px 8px color-mix(in srgb, var(--dsc-ai-ready) 50%, transparent);
+    }
+    html.dark .dsc-ready--ai .dash-brand-toggle:not(.is-on):not([aria-checked="true"]) {
+      color: color-mix(in srgb, var(--sec-green, #32A966) 70%, #d7eee0);
+    }
+    /* Card headers are tight — stack WIP above AI so the pair does not
+       stretch the title row. Module heads stay a horizontal pair. */
+    .dsc-card-head .dsc-ready-row,
+    .mi-motion-card-head .dsc-ready-row,
+    .mi-trace-card-head .dsc-ready-row,
+    .ds-font-head .dsc-ready-row,
+    .ds-group-head .dsc-ready-row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 4px;
+      width: max-content;
+    }
+    .dsc-card-head .dsc-ready-row .dash-brand-toggle,
+    .mi-motion-card-head .dsc-ready-row .dash-brand-toggle,
+    .mi-trace-card-head .dsc-ready-row .dash-brand-toggle,
+    .ds-font-head .dsc-ready-row .dash-brand-toggle,
+    .ds-group-head .dsc-ready-row .dash-brand-toggle {
+      width: 100%;
+      justify-content: flex-start;
     }
     .dsc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 10px 16px 10px; flex-wrap: wrap; }
     .dsc-name {
@@ -2043,6 +2136,7 @@
     .dsc-demo .sc-fb-up-wrap,
     .dsc-demo .sc-fb-down-wrap,
     .dsc-demo .sc-fb-more-wrap { position: relative; display: inline-flex; flex-wrap: wrap; align-items: center; }
+    .dsc-demo .sc-fb-time { margin-right: 6px; white-space: nowrap; flex-shrink: 0; }
     .dsc-demo .sc-fb-btn {
       display: inline-flex; align-items: center; justify-content: center;
       width: 22px; height: 22px; border: 0; border-radius: 50%;
@@ -2091,10 +2185,6 @@
     .dsc-demo .sc-fb-menu.is-demo-open { display: inline-flex; }
     .dsc-demo .sc-fb-menu[hidden]:not(.is-demo-open) { display: none; }
     .dsc-demo .sc-fb-menu-actions { display: inline-flex; align-items: center; gap: 1px; }
-    .dsc-demo .sc-fb-menu-time {
-      margin-right: 4px; padding-right: 6px; white-space: nowrap;
-      border-right: 1px solid var(--border);
-    }
     .dsc-demo .sc-fb-id {
       margin-left: 3px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em;
       color: var(--text-subtle); cursor: default;
@@ -3255,16 +3345,18 @@
       -webkit-text-fill-color: var(--sc-shimmer-base, #FFC434);
       color: var(--sc-shimmer-base, #FFC434);
     }
-    /* Dev Ready sits in the module header next to the ⋯ cluster. Don't let a
-       click on it collapse/expand the accordion. */
+    /* Ready switches sit in the module header next to the ⋯ cluster. Don't let a
+       click on them collapse/expand the accordion. */
+    .mi-module-head .dsc-ready-row,
     .mi-module-head .dsc-ready {
       padding: 0; flex: 0 0 auto; align-self: flex-start; margin-top: 4px;
     }
+    .mi-module.is-collapsed > .mi-module-head .dsc-ready-row,
     .mi-module.is-collapsed > .mi-module-head .dsc-ready { align-self: center; margin-top: 0; }
 
     /* ---- Dev Ready hierarchy — progress pill, gated state, child toggles ---- */
     /* Module toggles carry a "k/n ready" pill; keep the pill + switch on one row. */
-    .dsc-ready { gap: 10px; }
+    .dsc-ready { gap: 6px; }
     .dsc-ready-progress {
       display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto;
       font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.02em;
@@ -3310,6 +3402,16 @@
     }
 
     /* Lower-level (item) toggles that sit inline in a card / section head. */
+    .mi-motion-card-head .dsc-ready-row,
+    .mi-dir-head .dsc-ready-row,
+    .ds-group-head .dsc-ready-row,
+    .ds-block-head .dsc-ready-row,
+    .ds-font-head .dsc-ready-row,
+    .ds-type-row .dsc-ready-row,
+    .mi-pane-comp .dsc-ready-row,
+    .dsc-refs .dsc-ready-row,
+    .mi-tpane-bar .dsc-ready-row,
+    .mi-trace-card-head .dsc-ready-row,
     .mi-motion-card-head .dsc-ready--item,
     .mi-dir-head .dsc-ready--item,
     .ds-group-head .dsc-ready--item,
@@ -3322,6 +3424,15 @@
     .mi-trace-card-head .dsc-ready--item {
       padding: 0; margin-left: auto; flex: 0 0 auto; align-self: flex-start;
     }
+    .mi-dir-head .dsc-ready-row,
+    .ds-group-head .dsc-ready-row,
+    .ds-block-head .dsc-ready-row,
+    .ds-font-head .dsc-ready-row,
+    .ds-type-row .dsc-ready-row,
+    .mi-pane-comp .dsc-ready-row,
+    .dsc-refs .dsc-ready-row,
+    .mi-tpane-bar .dsc-ready-row,
+    .mi-trace-card-head .dsc-ready-row,
     .mi-dir-head .dsc-ready--item,
     .ds-group-head .dsc-ready--item,
     .ds-block-head .dsc-ready--item,

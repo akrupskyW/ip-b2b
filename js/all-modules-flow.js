@@ -57,6 +57,7 @@ import './date-column.js';
 import { makeTraceHelix, measureTraceRungCentres, TRACE_STRAND_MARKUP } from './trace-helix.js';
 import { MODULE_SECTIONS, AREA_ICONS } from './module-directory-data.js';
 import { DEV_READY_SEED } from './dev-ready-data.js';
+import { AI_READY_SEED } from './ai-ready-data.js';
 import { AVATAR_PRESETS, avatarPresetSrc } from './avatar-presets.js';
 import { JAM_SONGS, eqBarsMarkup, helixVizMarkup, selectJam, toggleJam } from './jam-strip.js';
 
@@ -145,7 +146,7 @@ function moduleCard(m) {
         </span>
         <span class="mi-card-go material-symbols-outlined" aria-hidden="true">arrow_outward</span>
       </a>
-      ${paneCompsHTML(comps, 'Components used')}
+      ${paneCompsHTML(comps, 'Components used', { ai: false })}
     </div>`;
 }
 
@@ -205,7 +206,7 @@ function paneCard(m) {
         ${frameMarkup(src, m.label + ' preview')}
         <span class="mi-pane-open material-symbols-outlined">open_in_new</span>
       </a>
-      ${paneCompsHTML(comps)}
+      ${paneCompsHTML(comps, 'Components used', { ai: false })}
     </div>`;
 }
 
@@ -330,7 +331,7 @@ function directorySection(sec) {
       <div class="mi-dir-head">
         <h3 class="mi-dir-title">${esc(title)}</h3>
         <span class="mi-dir-count">${modules.length}</span>
-        ${readyToggleHTML('dir:' + tone, title, { level: 'item', parent: 'mi-directory' })}
+        ${readyToggleHTML('dir:' + tone, title, { level: 'item', parent: 'mi-directory', ai: false })}
       </div>
       <div class="mi-card-grid">${modules.map(moduleCard).join('')}</div>
     </section>`;
@@ -340,7 +341,7 @@ function renderDirectory(opts) {
   if (opts && opts.headOnly) {
     return miHeadOnly('mi-directory', 'Module Directory',
       'Every module and screen in the app, grouped by area. Pages that host more than one module — the WISEcodeAI studio (Chat, History, Data Sources, Turns) and Reformulation (Studio + Dashboard) — are broken out so each module appears exactly once.',
-      moduleReadyToggleHTML('mi-directory', 'Module Directory') + moduleControlsHTML('mi-directory'));
+      moduleReadyToggleHTML('mi-directory', 'Module Directory', { ai: false }) + moduleControlsHTML('mi-directory'));
   }
   /* De-dupe by full href (hash included) so a module never appears twice, while
      letting two modules that live on the same page but at different anchors —
@@ -375,7 +376,7 @@ function renderDirectory(opts) {
             than one module — the WISEcodeAI studio (Chat, History, Data Sources, Turns) and Reformulation
             (Studio + Dashboard) — are broken out so each module appears exactly once.</p>
         </div>
-        ${moduleReadyToggleHTML('mi-directory', 'Module Directory')}
+        ${moduleReadyToggleHTML('mi-directory', 'Module Directory', { ai: false })}
         ${moduleControlsHTML('mi-directory')}
       </header>
 
@@ -515,7 +516,7 @@ function tablePane(t) {
           <span class="mi-pane-name">${esc(t.label)}</span>
           <span class="mi-pane-area">${esc(t.areaTitle)}</span>
         </a>
-        ${readyToggleHTML(tableReadyId(t), t.label, { level: 'item', parent: 'mi-tables' })}
+        ${readyToggleHTML(tableReadyId(t), t.label, { level: 'item', parent: 'mi-tables', ai: false })}
       </div>
       <div class="mi-pane-viewport">
         ${frameMarkup(previewSrc(path), t.label + ' table preview', `data-focus="${esc(t.selector)}"`)}
@@ -534,7 +535,7 @@ function renderTableGallery(opts) {
   if (opts && opts.headOnly) {
     return miHeadOnly('mi-tables', 'Table Gallery',
       'Every data table in the app — portfolio grids, verification and analytics tables, admin boards, the ingredient registry and more — rendered live and lined up in one carousel. Each pane isolates the real table from its page; open the preview or the <strong>Used on</strong> link to jump to where it lives.',
-      moduleReadyToggleHTML('mi-tables', 'Table Gallery') + moduleControlsHTML('mi-tables'));
+      moduleReadyToggleHTML('mi-tables', 'Table Gallery', { ai: false }) + moduleControlsHTML('mi-tables'));
   }
   const total = TABLE_CATALOG.length;
   return `
@@ -547,7 +548,7 @@ function renderTableGallery(opts) {
             isolates the real table from its page; open the preview or the <strong>Used on</strong> link to jump to
             where it lives.</p>
         </div>
-        ${moduleReadyToggleHTML('mi-tables', 'Table Gallery')}
+        ${moduleReadyToggleHTML('mi-tables', 'Table Gallery', { ai: false })}
         ${moduleControlsHTML('mi-tables')}
       </header>
 
@@ -2170,6 +2171,7 @@ function demoReasonsPop(kind, open) {
 function demoFbRow({ hoverCopy, upOpen, downOpen, moreOpen, upOn, downOn } = {}) {
   return `<div class="sc-fb-wrap">
     <div class="sc-fb" role="group" aria-label="Answer actions">
+      <span class="sc-line-time sc-fb-time" role="button" tabindex="0">2:14 PM</span>
       <span class="sc-fb-copy-wrap">
         ${demoFbBtn({ fb: 'copy', tip: 'Copy answer', icon: 'content_copy', hover: hoverCopy })}
         <span class="sc-fb-copied${hoverCopy ? ' is-vis' : ''}" role="status"${hoverCopy ? '' : ' aria-hidden="true"'}><span class="material-symbols-outlined">check</span>Copied</span>
@@ -2185,7 +2187,6 @@ function demoFbRow({ hoverCopy, upOpen, downOpen, moreOpen, upOn, downOn } = {})
       <span class="sc-fb-more-wrap">
         ${demoFbBtn({ more: true, tip: 'More actions', icon: 'more_horiz', on: moreOpen })}
         <div class="sc-fb-menu${moreOpen ? ' is-demo-open' : ''}" role="menu"${moreOpen ? '' : ' hidden'}>
-          <span class="sc-line-time sc-fb-menu-time" role="button" tabindex="0">2:14 PM</span>
           <span class="sc-fb-menu-actions">
             ${demoFbBtn({ fb: 'replay', tip: 'Re-run in new chat', icon: 'auto_read_play' })}
             ${demoFbBtn({ fb: 'edit', tip: 'Edit in new chat', icon: 'bubble' })}
@@ -2825,7 +2826,7 @@ const COMPONENTS = [
     cat: 'Chat & drawers',
     cls: '.sc-fb · .sc-fb-btn · .sc-fb-reasons · .sc-fb-menu · .sc-tip · .sc-fb-id',
     used: 'Every WISEcodeAI answer — the row under the last paragraph, before intent chips',
-    note: 'Left cluster is the quick trio: <strong>Copy</strong> (flashes Copied), <strong>Accurate</strong> and <strong>Not accurate</strong> (each opens a reason popover with chips + optional note; submitting posts a follow-up turn). The far-right <strong>\u22ef</strong> spills timestamp (clock \u2194 relative), Re-run in new chat, Edit in new chat, Fork a turn, and the turn ID. Hover/focus uses the shared theme-aware tip card — never a native title bubble and never a second always-dark card. Icons are outlined at rest and fill when on.',
+    note: 'Timestamp sits immediately left of <strong>Copy</strong> (clock \u2194 relative). Then the quick trio: <strong>Copy</strong> (flashes Copied), <strong>Accurate</strong> and <strong>Not accurate</strong> (each opens a reason popover with chips + optional note; submitting posts a follow-up turn). The far-right <strong>\u22ef</strong> spills Re-run in new chat, Edit in new chat, Fork a turn, and the turn ID. Hover/focus uses the shared theme-aware tip card — never a native title bubble and never a second always-dark card. Icons are outlined at rest and fill when on.',
     noteIcon: 'thumbs_up_down',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -2846,7 +2847,7 @@ const COMPONENTS = [
           ${demoFbRow({ downOn: true, downOpen: true })}
         </div>
         <div class="dsc-state-col">
-          <div class="dsc-sub-label">More \u00b7 timestamp, re-run, edit, fork, ID</div>
+          <div class="dsc-sub-label">More \u00b7 re-run, edit, fork, ID</div>
           ${demoFbRow({ moreOpen: true })}
         </div>
         <div class="dsc-state-col">
@@ -3046,7 +3047,6 @@ const COMPONENTS = [
   },
   {
     name: 'What can I ask?',
-    stackThemes: true,
     cat: 'Chat & drawers',
     cls: '.wch-ask-panel \u00b7 .wch-ask-cap \u00b7 .wch-ask-prompt \u00b7 .wch-ask-insert \u00b7 .sc-ask-help',
     used: 'Every chat \u2014 gold link under the composer and matching intent chip open this overlay inside the chat',
@@ -3063,7 +3063,7 @@ const COMPONENTS = [
               <span class="sc-ask-shimmer" aria-hidden="true">${motionShimmer('What can I ask?')}</span>
             </button>
           </div>
-          ${themedDemoHTML(demoAskLiveHtml(), { stack: true })}
+          ${demoAskLiveHtml()}
         </div>`;
     },
   },
@@ -4479,7 +4479,7 @@ function paneCompsHTML(comps, title, opts) {
     ? comps.map((c) => `
         <li class="mi-pane-comp">
           <a class="mi-pane-comp-link" href="#${esc(compDomId(c.name))}" data-jump-comp="${esc(c.name)}">${esc(c.name)}</a>
-          ${opts.hideReady ? '' : readyToggleHTML(c.name, c.name, { level: 'item', parent: 'mi-components' })}
+          ${opts.hideReady ? '' : readyToggleHTML(c.name, c.name, { level: 'item', parent: 'mi-components', ai: opts.ai !== false })}
         </li>`).join('')
     : '<li class="mi-pane-comp mi-pane-comp--empty">No catalogued components</li>';
   return `
@@ -4489,18 +4489,57 @@ function paneCompsHTML(comps, title, opts) {
     </div>`;
 }
 
-/* Persist Dev Ready flags per component name. The committed DEV_READY_SEED
-   (js/dev-ready-data.js) is the baseline, so state ships with the code instead
-   of being trapped in one origin's localStorage. localStorage holds only the
-   diff against the seed — an entry is written there when, and only when, it
-   disagrees with the seed. That way a newly pushed seed still reaches browsers
-   that have already flipped switches, and a switch turned off against a green
-   seed stays off. Missing keys default to off. */
-const DSC_READY_KEY = 'wise-dsc-dev-ready';
+/* Persist Dev Ready / AI Ready flags per component name. Each kind has its
+   own committed seed so state ships with the code, and localStorage holds
+   only the *diff* against that seed. */
+const READY_KIND = {
+  dev: {
+    id: 'dev',
+    storageKey: 'wise-dsc-dev-ready',
+    seed: DEV_READY_SEED,
+    exportName: 'DEV_READY_SEED',
+    file: 'js/dev-ready-data.js',
+    label: 'WIP Ready',
+    titleOn: 'WIP ready',
+    markOne: (name) => `Mark ${name} WIP ready`,
+    markAll: (name) => `Mark every part in ${name} as WIP Ready`,
+    progressTitle: (stats) => stats.total
+      ? (stats.ready + ' of ' + stats.total + ' parts WIP ready')
+      : 'No parts to mark WIP Ready',
+    verifyTitle: (name) => 'Mark all of ' + name + ' WIP Ready?',
+    verifyContinue: 'Continuing marks every one WIP Ready.',
+    verifyConfirm: (n, name) => 'This turns on WIP Ready for all <strong>' + n
+      + '</strong> parts inside ' + name + ' and flips the accordion switch on.',
+    confirmLabel: 'Mark all WIP Ready',
+  },
+  ai: {
+    id: 'ai',
+    storageKey: 'wise-dsc-ai-ready',
+    seed: AI_READY_SEED,
+    exportName: 'AI_READY_SEED',
+    file: 'js/ai-ready-data.js',
+    label: 'AI Ready',
+    titleOn: 'Ready for AI',
+    markOne: (name) => `Mark ${name} ready for AI`,
+    markAll: (name) => `Mark every part in ${name} as AI Ready`,
+    progressTitle: (stats) => stats.total
+      ? (stats.ready + ' of ' + stats.total + ' parts ready for AI')
+      : 'No parts to mark AI Ready',
+    verifyTitle: (name) => 'Mark all of ' + name + ' AI Ready?',
+    verifyContinue: 'Continuing marks every one AI Ready.',
+    verifyConfirm: (n, name) => 'This turns on AI Ready for all <strong>' + n
+      + '</strong> parts inside ' + name + ' and flips the accordion switch on.',
+    confirmLabel: 'Mark all AI Ready',
+  },
+};
 
-function readReadyOverrides() {
+function readySpec(kind) {
+  return READY_KIND[kind] || READY_KIND.dev;
+}
+
+function readReadyOverrides(kind) {
   try {
-    const raw = localStorage.getItem(DSC_READY_KEY);
+    const raw = localStorage.getItem(readySpec(kind).storageKey);
     if (!raw) return {};
     const parsed = JSON.parse(raw);
     return parsed && typeof parsed === 'object' ? parsed : {};
@@ -4509,13 +4548,11 @@ function readReadyOverrides() {
   }
 }
 
-/* Seed + overrides, flattened so every caller can keep testing `=== true`.
-   Pre-seed localStorage (an all-`true` map) merges as true-overrides, which is
-   exactly what it meant, so no migration is needed. */
-function loadDscReadyMap() {
+function loadReadyMap(kind) {
+  const spec = readySpec(kind);
   const map = {};
-  Object.keys(DEV_READY_SEED).forEach((k) => { if (DEV_READY_SEED[k] === true) map[k] = true; });
-  const overrides = readReadyOverrides();
+  Object.keys(spec.seed).forEach((k) => { if (spec.seed[k] === true) map[k] = true; });
+  const overrides = readReadyOverrides(kind);
   Object.keys(overrides).forEach((k) => {
     if (overrides[k] === true) map[k] = true;
     else delete map[k];
@@ -4523,73 +4560,77 @@ function loadDscReadyMap() {
   return map;
 }
 
-function saveDscReadyMap(map) {
+function saveReadyMap(kind, map) {
+  const spec = readySpec(kind);
   const overrides = {};
-  const keys = new Set([...Object.keys(DEV_READY_SEED), ...Object.keys(map)]);
+  const keys = new Set([...Object.keys(spec.seed), ...Object.keys(map)]);
   keys.forEach((k) => {
     const on = map[k] === true;
-    if (on !== (DEV_READY_SEED[k] === true)) overrides[k] = on;
+    if (on !== (spec.seed[k] === true)) overrides[k] = on;
   });
   try {
-    localStorage.setItem(DSC_READY_KEY, JSON.stringify(overrides));
+    localStorage.setItem(spec.storageKey, JSON.stringify(overrides));
   } catch (e) { /* quota / private mode — ignore */ }
-  persistDevReadySeedToRepo(map);
+  persistReadySeed(kind, map);
 }
+
+function loadDscReadyMap() { return loadReadyMap('dev'); }
+function saveDscReadyMap(map) { saveReadyMap('dev', map); }
 
 function readyIdsFromMap(map) {
   return Object.keys(map).filter((k) => map[k] === true).sort();
 }
 
-function formatDevReadySeedExport(ids) {
-  const body = ids.map((id) => `  ${JSON.stringify(id)}: true,`).join('\n');
-  return `export const DEV_READY_SEED = {\n${body}\n};\n`;
-}
-
-/* Every Dev Ready flip on the local livereload origin writes
-   js/dev-ready-data.js immediately. Other origins stay storage-only
-   (the deployed box must not accept writes). */
-function persistDevReadySeedToRepo(map, attempt) {
+function persistReadySeed(kind, map, attempt) {
   if (typeof location === 'undefined' || location.protocol === 'file:') return;
   const host = location.hostname;
   if (host !== '127.0.0.1' && host !== 'localhost') return;
-  const ids = readyIdsFromMap(map || loadDscReadyMap());
+  const spec = readySpec(kind);
+  const ids = readyIdsFromMap(map || loadReadyMap(kind));
   const tryN = attempt || 0;
-  fetch('/__wise/dev-ready', {
+  fetch('/__wise/ready', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ids }),
+    body: JSON.stringify({ kind: spec.id, ids }),
   }).then((res) => {
     if (res.ok) return;
     if (tryN < 4) {
-      setTimeout(() => persistDevReadySeedToRepo(map, tryN + 1), 400 * (tryN + 1));
+      setTimeout(() => persistReadySeed(kind, map, tryN + 1), 400 * (tryN + 1));
       return;
     }
-    console.warn('Dev Ready seed did not write (' + res.status + '). Restart python3 dev_server.py and flip the switch again.');
+    console.warn(spec.label + ' seed did not write (' + res.status + '). Restart python3 dev_server.py and flip the switch again.');
   }).catch(() => {
     if (tryN < 4) {
-      setTimeout(() => persistDevReadySeedToRepo(map, tryN + 1), 400 * (tryN + 1));
+      setTimeout(() => persistReadySeed(kind, map, tryN + 1), 400 * (tryN + 1));
       return;
     }
-    console.warn('Dev Ready seed did not write. Restart python3 dev_server.py and flip the switch again.');
+    console.warn(spec.label + ' seed did not write. Restart python3 dev_server.py and flip the switch again.');
   });
 }
 
-/* Turn the live state into a paste-ready replacement for js/dev-ready-data.js,
-   so the browser holding the real state can hand it to the repo. */
-function dumpDevReadySeed() {
-  const text = formatDevReadySeedExport(readyIdsFromMap(loadDscReadyMap()));
+function dumpReadySeed(kind) {
+  const spec = readySpec(kind);
+  const ids = readyIdsFromMap(loadReadyMap(kind));
+  const body = ids.map((id) => `  ${JSON.stringify(id)}: true,`).join('\n');
+  const text = `export const ${spec.exportName} = {\n${body}\n};\n`;
   try { navigator.clipboard?.writeText(text); } catch (e) { /* no clipboard permission */ }
-  console.log(`${text.match(/: true/g)?.length || 0} Dev Ready ids — paste over the export in js/dev-ready-data.js:\n\n${text}`);
+  console.log(`${ids.length} ${spec.label} ids — paste over the export in ${spec.file}:\n\n${text}`);
   return text;
 }
 
 if (typeof window !== 'undefined') {
   window.WiseDevReady = {
-    dumpSeed: dumpDevReadySeed,
-    map: loadDscReadyMap,
-    persist: persistDevReadySeedToRepo,
+    dumpSeed: () => dumpReadySeed('dev'),
+    map: () => loadReadyMap('dev'),
+    persist: (map) => persistReadySeed('dev', map),
   };
-  persistDevReadySeedToRepo();
+  window.WiseAiReady = {
+    dumpSeed: () => dumpReadySeed('ai'),
+    map: () => loadReadyMap('ai'),
+    persist: (map) => persistReadySeed('ai', map),
+  };
+  persistReadySeed('dev');
+  persistReadySeed('ai');
 }
 
 function isDscReady(name, map) {
@@ -4622,9 +4663,8 @@ function readyChildStats(moduleId, map) {
   return { ready, total: kids.length };
 }
 
-function readyProgressTitle(stats) {
-  if (!stats.total) return 'No parts to mark Dev Ready';
-  return stats.ready + ' of ' + stats.total + ' parts ready for dev';
+function readyProgressTitle(stats, kind) {
+  return readySpec(kind).progressTitle(stats);
 }
 
 function readyProgressInner(stats) {
@@ -4634,17 +4674,18 @@ function readyProgressInner(stats) {
     + (gated ? '' : '<span class="dsc-ready-label">ready</span>');
 }
 
-function readyProgressHTML(moduleId, stats) {
+function readyProgressHTML(moduleId, stats, kind) {
   const gated = stats.ready < stats.total;
-  return `<span class="dsc-ready-progress${gated ? '' : ' is-complete'}" data-ready-progress-for="${esc(moduleId)}" title="${esc(readyProgressTitle(stats))}">
+  const spec = readySpec(kind);
+  return `<span class="dsc-ready-progress${gated ? '' : ' is-complete'}" data-ready-progress-for="${esc(moduleId)}" data-ready-kind="${spec.id}" title="${esc(readyProgressTitle(stats, kind))}">
         ${readyProgressInner(stats)}
       </span>`;
 }
 
-function paintReadyProgress(pill, stats) {
+function paintReadyProgress(pill, stats, kind) {
   if (!pill) return;
   pill.classList.toggle('is-complete', stats.ready >= stats.total && stats.total > 0);
-  pill.setAttribute('title', readyProgressTitle(stats));
+  pill.setAttribute('title', readyProgressTitle(stats, kind || pill.getAttribute('data-ready-kind') || 'dev'));
   pill.innerHTML = readyProgressInner(stats);
 }
 
@@ -4708,43 +4749,55 @@ function buildDevReadyTree() {
   registerReadyChildren('mi-components', COMPONENTS.filter((c) => c.status !== 'not-now').map((c) => ({ id: c.name, label: c.name })));
 }
 
-/* One Dev Ready switch. `level` is 'module' (a higher-level component — on
-   when every child is ready) or 'item' (a lower-level part). A module that
-   owns children renders a live "k/n" progress pill; the accordion switch
-   follows that count. Clicking an incomplete accordion switch opens the
-   two-step verify modal instead of toggling directly. */
-function readyToggleHTML(id, label, opts) {
+/* One switch for one kind. `level` is 'module' (on when every child is
+   ready) or 'item'. A module that owns children renders a live "k/n" pill. */
+function readyToggleOneHTML(id, label, opts) {
   opts = opts || {};
+  const kind = opts.kind === 'ai' ? 'ai' : 'dev';
+  const spec = readySpec(kind);
   const level = opts.level || 'item';
   const parent = opts.parent || '';
-  const map = loadDscReadyMap();
+  const map = loadReadyMap(kind);
   const kids = level === 'module' ? (DEV_READY_CHILDREN[id] || []) : [];
   const hasKids = kids.length > 0;
   const stats = hasKids ? readyChildStats(id, map) : null;
   const complete = hasKids ? stats.ready >= stats.total : isDscReady(id, map);
   const ready = hasKids ? complete : isDscReady(id, map);
   const cls = 'dash-brand-toggle' + (ready ? ' is-on' : '');
-  const title = hasKids && !complete
-    ? `Mark every part in ${label} as Dev Ready`
-    : (ready ? 'Ready for dev' : `Mark ${label} ready for dev`);
-  const progress = hasKids ? readyProgressHTML(id, stats) : '';
+  const title = hasKids && !complete ? spec.markAll(label) : (ready ? spec.titleOn : spec.markOne(label));
+  const progress = (hasKids && kind !== 'ai') ? readyProgressHTML(id, stats, kind) : '';
   return `
-    <div class="dsc-ready dsc-ready--${level}" data-ready-wrap>
+    <div class="dsc-ready dsc-ready--${level} dsc-ready--${kind}">
       ${progress}
       <button type="button" class="${cls}" role="switch"
         aria-checked="${ready ? 'true' : 'false'}"
-        aria-label="Dev Ready for ${esc(label)}" title="${esc(title)}"
+        aria-label="${esc(spec.label)} for ${esc(label)}" title="${esc(title)}"
         data-dsc-ready data-ready-id="${esc(id)}" data-ready-level="${esc(level)}"
+        data-ready-kind="${kind}"
         data-ready-label="${esc(label)}"${parent ? ` data-ready-parent="${esc(parent)}"` : ''}>
         <span class="dash-brand-toggle-track"><span class="dash-brand-toggle-thumb"></span></span>
-        <span class="dash-brand-toggle-text">Dev Ready</span>
+        <span class="dash-brand-toggle-text">${esc(spec.label)}</span>
       </button>
     </div>`;
 }
 
+/* WIP Ready + AI Ready, WIP on the left. Pass `ai: false` to omit AI Ready
+   (Module Directory and Table Gallery). */
+function readyToggleHTML(id, label, opts) {
+  opts = opts || {};
+  if (opts.kind) return readyToggleOneHTML(id, label, opts);
+  const wip = readyToggleOneHTML(id, label, Object.assign({}, opts, { kind: 'dev' }));
+  if (opts.ai === false) {
+    return `<div class="dsc-ready-row" data-ready-wrap>${wip}</div>`;
+  }
+  return `<div class="dsc-ready-row" data-ready-wrap>${wip}${
+    readyToggleOneHTML(id, label, Object.assign({}, opts, { kind: 'ai' }))
+  }</div>`;
+}
+
 /* A higher-level module toggle — on when every child is ready. */
-function moduleReadyToggleHTML(moduleId, label) {
-  return readyToggleHTML(moduleId, label, { level: 'module' });
+function moduleReadyToggleHTML(moduleId, label, opts) {
+  return readyToggleHTML(moduleId, label, Object.assign({ level: 'module' }, opts || {}));
 }
 
 function themePaneHTML(mode, demo) {
@@ -8094,7 +8147,7 @@ function setupAccordion(root) {
     head.setAttribute('aria-expanded', 'false');
 
     const toggle = (e) => {
-      if (e.target.closest('.panel-controls, .dsc-ready')) return; // let the ⋯ menu and Dev Ready toggle work
+      if (e.target.closest('.panel-controls, .dsc-ready, .dsc-ready-row')) return; // let the ⋯ menu and ready toggles work
       const opening = sec.classList.contains('is-collapsed');
       const apply = () => {
         setSectionCollapsed(root, sec, !opening);
@@ -8117,7 +8170,7 @@ function setupAccordion(root) {
     head.addEventListener('click', toggle);
     head.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter' && e.key !== ' ') return;
-      if (e.target.closest('.panel-controls, .dsc-ready')) return;
+      if (e.target.closest('.panel-controls, .dsc-ready, .dsc-ready-row')) return;
       e.preventDefault();
       toggle(e);
     });
@@ -11745,16 +11798,24 @@ function wireComponentLibrary(root) {
     if (card) wireAskOpenAll(card);
     if (!pending.length) return;
     pending.forEach((el) => { el.dataset.askBooted = '1'; });
-    import('./wiseai-chat.js').then((chat) => {
-      chat.injectChatExtras();
-      ensureWchStyles();
-      patchLibraryThemeSheets();
-      pending.forEach((stage) => mountAskDemo(stage));
-      if (card) wireAskOpenAll(card);
-    }).catch((err) => {
-      console.error('[all-modules] What can I ask? demo failed', err);
-      pending.forEach((el) => { delete el.dataset.askBooted; });
-    });
+    /* Load only the ask panel + catalog — not the full chat module. Importing
+       wiseai-chat.js here froze the page for several seconds on first open.
+       Wait a frame so the accordion can paint before the catalog hydrates. */
+    const hydrateAsk = () => {
+      Promise.all([
+        import('./chat-history.js'),
+        import('./chat-ask.js'),
+        import('./ask-catalog.js'),
+      ]).then(() => {
+        ensureWchStyles();
+        pending.forEach((stage) => mountAskDemo(stage));
+        if (card) wireAskOpenAll(card);
+      }).catch((err) => {
+        console.error('[all-modules] What can I ask? demo failed', err);
+        pending.forEach((el) => { delete el.dataset.askBooted; });
+      });
+    };
+    requestAnimationFrame(() => { requestAnimationFrame(hydrateAsk); });
   };
   grid._bootAskDemoIn = bootAskDemoIn;
 
@@ -11780,14 +11841,14 @@ function wireComponentLibrary(root) {
     }
   };
   grid.addEventListener('click', (e) => {
-    if (e.target.closest('.dsc-ready, a, button, input, textarea, select')) return;
+    if (e.target.closest('.dsc-ready, .dsc-ready-row, a, button, input, textarea, select')) return;
     const head = e.target.closest('.dsc-card-head');
     if (!head || !grid.contains(head)) return;
     toggleCompCard(head.closest('[data-ds-comp]'));
   });
   grid.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
-    if (e.target.closest('.dsc-ready, a, button, input')) return;
+    if (e.target.closest('.dsc-ready, .dsc-ready-row, a, button, input')) return;
     const head = e.target.closest('.dsc-card-head');
     if (!head || !grid.contains(head)) return;
     e.preventDefault();
@@ -11815,14 +11876,19 @@ function wireComponentLibrary(root) {
 /* turns off with it. Clicking an incomplete accordion switch opens a   */
 /* two-step verify modal; confirming marks every child ready.           */
 /* ------------------------------------------------------------------ */
+function readyKindOf(el) {
+  return el && el.dataset && el.dataset.readyKind === 'ai' ? 'ai' : 'dev';
+}
+
 function paintItemReady(btn, on) {
   btn.classList.toggle('is-on', !!on);
   btn.setAttribute('aria-checked', on ? 'true' : 'false');
 }
 
-function syncItemReadyButtons(root, id, on) {
+function syncItemReadyButtons(root, id, on, kind) {
+  const want = kind === 'ai' ? 'ai' : 'dev';
   root.querySelectorAll('[data-dsc-ready]').forEach((b) => {
-    if (b.dataset.readyId === id && (b.dataset.readyLevel || 'item') === 'item') {
+    if (b.dataset.readyId === id && (b.dataset.readyLevel || 'item') === 'item' && readyKindOf(b) === want) {
       paintItemReady(b, on);
     }
   });
@@ -11842,64 +11908,69 @@ function readyVerifyKeyHandler(e) {
 }
 
 function wireDevReady(root) {
-  const moduleBtn = (moduleId) =>
+  const moduleBtn = (moduleId, kind) =>
     Array.from(root.querySelectorAll('[data-dsc-ready][data-ready-level="module"]'))
-      .find((b) => b.dataset.readyId === moduleId);
+      .find((b) => b.dataset.readyId === moduleId && readyKindOf(b) === kind);
 
   /* Recompute a parent module's progress pill + switch from its children.
      Directory rows, rail panes, and library cards all share these ids —
      paint every copy, not just the first accordion header. */
-  function refreshParent(moduleId) {
+  function refreshParent(moduleId, kind) {
+    kind = kind === 'ai' ? 'ai' : 'dev';
+    const spec = readySpec(kind);
     const kids = DEV_READY_CHILDREN[moduleId] || [];
     if (!kids.length) return;
-    const map = loadDscReadyMap();
+    const map = loadReadyMap(kind);
     const { ready, total } = readyChildStats(moduleId, map);
     const complete = ready === total;
-    const firstBtn = moduleBtn(moduleId);
+    const firstBtn = moduleBtn(moduleId, kind);
     const label = (firstBtn && firstBtn.dataset.readyLabel) || moduleId;
 
     if (complete) {
-      if (map[moduleId] !== true) { map[moduleId] = true; saveDscReadyMap(map); }
+      if (map[moduleId] !== true) { map[moduleId] = true; saveReadyMap(kind, map); }
     } else if (map[moduleId]) {
       delete map[moduleId];
-      saveDscReadyMap(map);
+      saveReadyMap(kind, map);
     }
 
     root.querySelectorAll('[data-ready-progress-for]').forEach((pill) => {
-      if (pill.getAttribute('data-ready-progress-for') === moduleId) {
-        paintReadyProgress(pill, { ready, total });
+      if (pill.getAttribute('data-ready-progress-for') === moduleId && readyKindOf(pill) === kind) {
+        paintReadyProgress(pill, { ready, total }, kind);
       }
     });
     root.querySelectorAll('[data-dsc-ready][data-ready-level="module"]').forEach((btn) => {
-      if (btn.dataset.readyId !== moduleId) return;
+      if (btn.dataset.readyId !== moduleId || readyKindOf(btn) !== kind) return;
       btn.classList.remove('is-gated');
       btn.removeAttribute('aria-disabled');
       if (complete) {
         btn.classList.add('is-on');
         btn.setAttribute('aria-checked', 'true');
-        btn.title = 'Ready for dev';
+        btn.title = spec.titleOn;
       } else {
         btn.classList.remove('is-on');
         btn.setAttribute('aria-checked', 'false');
-        btn.title = 'Mark every part in ' + label + ' as Dev Ready';
+        btn.title = spec.markAll(label);
       }
     });
   }
 
-  function markModuleChildrenReady(moduleId) {
+  function markModuleChildrenReady(moduleId, kind) {
+    kind = kind === 'ai' ? 'ai' : 'dev';
     const kids = DEV_READY_CHILDREN[moduleId] || [];
-    const map = loadDscReadyMap();
+    const map = loadReadyMap(kind);
     kids.forEach((c) => { map[c.id] = true; });
     map[moduleId] = true;
-    saveDscReadyMap(map);
-    kids.forEach((c) => syncItemReadyButtons(root, c.id, true));
-    refreshParent(moduleId);
+    saveReadyMap(kind, map);
+    kids.forEach((c) => syncItemReadyButtons(root, c.id, true, kind));
+    refreshParent(moduleId, kind);
   }
 
-  function openReadyVerifyModal(moduleId, label) {
+  function openReadyVerifyModal(moduleId, label, kind) {
+    kind = kind === 'ai' ? 'ai' : 'dev';
+    const spec = readySpec(kind);
     const kids = DEV_READY_CHILDREN[moduleId] || [];
     if (!kids.length) return;
-    const stats = readyChildStats(moduleId, loadDscReadyMap());
+    const stats = readyChildStats(moduleId, loadReadyMap(kind));
     if (stats.ready >= stats.total) return;
     const pending = stats.total - stats.ready;
     closeReadyVerifyModal();
@@ -11911,15 +11982,14 @@ function wireDevReady(root) {
     function paint(step) {
       const first = step === 1;
       const title = first
-        ? 'Mark all of ' + label + ' Dev Ready?'
+        ? spec.verifyTitle(label)
         : 'Confirm you want every part ready';
       const sub = first
         ? (esc(label) + ' has <strong>' + stats.total + '</strong> parts. <strong>'
           + pending + '</strong> ' + (pending === 1 ? 'is' : 'are') + ' still off'
           + (stats.ready ? ', <strong>' + stats.ready + '</strong> already on' : '')
-          + '. Continuing marks every one Dev Ready.')
-        : ('This turns on Dev Ready for all <strong>' + stats.total
-          + '</strong> parts inside ' + esc(label) + ' and flips the accordion switch on.');
+          + '. ' + spec.verifyContinue)
+        : spec.verifyConfirm(stats.total, esc(label));
       scrim.innerHTML = `
         <div class="adm-modal" role="dialog" aria-modal="true" aria-labelledby="dsc-ready-verify-title">
           <button type="button" class="adm-modal-x" data-ready-verify-act="close" aria-label="Close">
@@ -11939,7 +12009,7 @@ function wireDevReady(root) {
               <button type="button" class="adm-btn adm-btn--ghost" data-ready-verify-act="close">Cancel</button>
               <button type="button" class="adm-btn adm-btn--primary" data-ready-verify-act="${first ? 'next' : 'confirm'}">
                 <span class="material-symbols-outlined">${first ? 'arrow_forward' : 'task_alt'}</span>
-                ${first ? 'Continue' : 'Mark all Dev Ready'}
+                ${first ? 'Continue' : spec.confirmLabel}
               </button>
             </div>
           </div>
@@ -11955,12 +12025,12 @@ function wireDevReady(root) {
       if (e.target === scrim) { closeReadyVerifyModal(); return; }
       const act = e.target.closest('[data-ready-verify-act]');
       if (!act) return;
-      const kind = act.getAttribute('data-ready-verify-act');
-      if (kind === 'close') closeReadyVerifyModal();
-      else if (kind === 'next') paint(2);
-      else if (kind === 'confirm') {
+      const actKind = act.getAttribute('data-ready-verify-act');
+      if (actKind === 'close') closeReadyVerifyModal();
+      else if (actKind === 'next') paint(2);
+      else if (actKind === 'confirm') {
         closeReadyVerifyModal();
-        markModuleChildrenReady(moduleId);
+        markModuleChildrenReady(moduleId, kind);
       }
     });
     document.addEventListener('keydown', readyVerifyKeyHandler);
@@ -11972,7 +12042,7 @@ function wireDevReady(root) {
 
   /* One delegated handler so rail copies, library cards, and panes injected
      by Re-evaluate all flip the same stored flag — and every matching switch
-     (green = Dev Ready) stays in sync. */
+     stays in sync for its own kind. */
   if (!root._dscReadyWired) {
     root._dscReadyWired = true;
     root.addEventListener('click', (e) => {
@@ -11981,22 +12051,23 @@ function wireDevReady(root) {
       e.stopPropagation();
       const id = btn.dataset.readyId;
       if (!id) return;
+      const kind = readyKindOf(btn);
       const level = btn.dataset.readyLevel || 'item';
 
       /* Accordion switch with parts: already complete is a no-op; otherwise
          the two-step verify modal marks every child ready. */
       if (level === 'module' && (DEV_READY_CHILDREN[id] || []).length) {
         if (btn.getAttribute('aria-checked') === 'true') return;
-        root._openReadyVerifyModal(id, btn.dataset.readyLabel || id);
+        root._openReadyVerifyModal(id, btn.dataset.readyLabel || id, kind);
         return;
       }
 
       const next = btn.getAttribute('aria-checked') !== 'true';
-      const map = loadDscReadyMap();
+      const map = loadReadyMap(kind);
       if (next) map[id] = true; else delete map[id];
-      saveDscReadyMap(map);
+      saveReadyMap(kind, map);
 
-      if (level === 'item') syncItemReadyButtons(root, id, next);
+      if (level === 'item') syncItemReadyButtons(root, id, next, kind);
       else {
         btn.setAttribute('aria-checked', next ? 'true' : 'false');
         btn.classList.toggle('is-on', next);
@@ -12005,14 +12076,17 @@ function wireDevReady(root) {
       /* A flipped child re-scores its parent. */
       const parent = btn.dataset.readyParent;
       if (parent && typeof root._refreshReadyParent === 'function') {
-        root._refreshReadyParent(parent);
+        root._refreshReadyParent(parent, kind);
       }
     });
   }
 
   /* Initial pass so every parent reflects its stored children (and can never
      start "on" while a part is still unfinished). */
-  Object.keys(DEV_READY_CHILDREN).forEach(refreshParent);
+  Object.keys(DEV_READY_CHILDREN).forEach((id) => {
+    refreshParent(id, 'dev');
+    refreshParent(id, 'ai');
+  });
 }
 
 async function jumpToComponent(root, name) {
