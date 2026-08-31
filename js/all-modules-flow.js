@@ -1478,8 +1478,7 @@ const CAT_BY_NAME = {
   'Intent chips': 'Chips & badges',
   'Output chips': 'Chips & badges',
   'Large intent cards': 'Chips & badges',
-  'Status pills': 'Chips & badges',
-  'Status chips (domain)': 'Chips & badges',
+  'Status chips': 'Chips & badges',
   'Chat composer': 'Inputs & forms',
   'Transcript lines': 'Chat & drawers',
   'Transcript actions': 'Chat & drawers',
@@ -3551,17 +3550,6 @@ const COMPONENTS = [
         <p style="margin:0;font-size:0.8125rem;color:var(--text-muted)">62% of the portfolio is verified Non-UPF, up 4 points this quarter.</p>
       </div>`,
   },
-  {
-    name: 'Status pills',
-    cls: 'token-built · var(--sec-*-10) fill + var(--sec-*-text) ink',
-    used: 'Portfolio table · Verification & GRAS statuses · Audit Queue · Invoices',
-    demo: `
-      <div style="display:flex;flex-wrap:wrap;gap:8px">
-        <span class="ds-pill" style="background:var(--sec-green-10);color:var(--sec-green-text)"><span class="material-symbols-outlined">verified</span>Verified</span>
-        <span class="ds-pill" style="background:var(--ter-amber-10);color:var(--ter-amber-text)"><span class="material-symbols-outlined">pending</span>Pending</span>
-        <span class="ds-pill" style="background:var(--sec-red-10);color:var(--sec-red-text)"><span class="material-symbols-outlined">error</span>Failed</span>
-      </div>`,
-  },
   /* ---- Data table — the ONE shared grid "table", fully loaded ----- */
   {
     name: 'Data table',
@@ -3632,7 +3620,7 @@ const COMPONENTS = [
     wide: true,
     cls: '.adm-vf-stat (+ .is-active, .adm-stat--*) · .adm-chip · .adm-btn',
     used: 'Non-UPF Dashboard — status chip + caption + optional ghost action pinned to the bottom',
-    note: 'Dashboard action cards, not filter tiles. Each carries a big numeral, a status chip, a caption, and optionally a ghost button. <code>.is-active</code> marks the focused card. Reuses <em>Status chips (domain)</em> and <em>Admin buttons</em> — those stay separate catalog entries.',
+    note: 'Dashboard action cards, not filter tiles. Each carries a big numeral, a status chip, a caption, and optionally a ghost button. <code>.is-active</code> marks the focused card. Reuses <em>Status chips</em> and <em>Admin buttons</em> — those stay separate catalog entries.',
     noteIcon: 'bolt',
     demo: `
       <div class="adm-vf-stats" style="width:100%">
@@ -3815,21 +3803,35 @@ const COMPONENTS = [
       </div>`,
   },
 
-  /* ---- Chips (domain status) ------------------------------------- */
+  /* ---- Status chips (domain + token pills, one catalog card) ----- */
   {
-    name: 'Status chips (domain)',
-    cls: '.adm-chip (+ --green/--red/--amber/--blue/--muted/--outline/--canon)',
-    used: 'Admin table cells · Organizations · User Management · Audit Queue — richer than the generic .ds-pill',
-    note: 'Color comes only from tokens (<code>--sec-*</code>, <code>--ter-*</code>) so light/dark and status semantics stay consistent across every table.',
+    name: 'Status chips',
+    aliases: ['Status chips (domain)', 'Status pills'],
+    cls: '.adm-chip (+ --green/--red/--amber/--blue/--muted/--outline/--canon) · .ds-pill',
+    used: 'Admin table cells · Organizations · User Management · Audit Queue · Portfolio table · Verification & GRAS statuses · Invoices',
+    note: 'One status family. <strong>Domain</strong> (<code>.adm-chip</code>) is the live table and card chip — color from tokens (<code>--sec-*</code>, <code>--ter-*</code>) so light/dark and status semantics stay consistent. <strong>Token pills</strong> (<code>.ds-pill</code>) are the same Verified / Pending / Failed pattern built straight off the semantic fills.',
     noteIcon: 'label',
     demo: `
-      <div style="display:flex;flex-wrap:wrap;gap:8px">
-        <span class="adm-chip adm-chip--green"><span class="material-symbols-outlined">verified</span>Verified</span>
-        <span class="adm-chip adm-chip--amber"><span class="material-symbols-outlined">pending</span>Pending</span>
-        <span class="adm-chip adm-chip--red"><span class="material-symbols-outlined">error</span>At risk</span>
-        <span class="adm-chip adm-chip--blue"><span class="material-symbols-outlined">bolt</span>Active</span>
-        <span class="adm-chip adm-chip--muted">Draft</span>
-        <span class="adm-chip adm-chip--outline">Archived</span>
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col" style="flex:1 1 100%">
+          <div class="dsc-sub-label">Domain · .adm-chip</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <span class="adm-chip adm-chip--green"><span class="material-symbols-outlined">verified</span>Verified</span>
+            <span class="adm-chip adm-chip--amber"><span class="material-symbols-outlined">pending</span>Pending</span>
+            <span class="adm-chip adm-chip--red"><span class="material-symbols-outlined">error</span>At risk</span>
+            <span class="adm-chip adm-chip--blue"><span class="material-symbols-outlined">bolt</span>Active</span>
+            <span class="adm-chip adm-chip--muted">Draft</span>
+            <span class="adm-chip adm-chip--outline">Archived</span>
+          </div>
+        </div>
+        <div class="dsc-state-col" style="flex:1 1 100%">
+          <div class="dsc-sub-label">Token pills · .ds-pill</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <span class="ds-pill" style="background:var(--sec-green-10);color:var(--sec-green-text)"><span class="material-symbols-outlined">verified</span>Verified</span>
+            <span class="ds-pill" style="background:var(--ter-amber-10);color:var(--ter-amber-text)"><span class="material-symbols-outlined">pending</span>Pending</span>
+            <span class="ds-pill" style="background:var(--sec-red-10);color:var(--sec-red-text)"><span class="material-symbols-outlined">error</span>Failed</span>
+          </div>
+        </div>
       </div>`,
   },
 
@@ -4809,7 +4811,7 @@ function componentCard(c, readyMap) {
   const parts = partsOf(c.name);
   const hosts = usedByComps(c.name);
   const shelved = c.status === 'not-now';
-  const search = `${c.name} ${c.cls} ${c.used} ${c.note || ''} ${cat} ${parts.map((p) => p.name).join(' ')} ${hosts.map((h) => h.name).join(' ')}${shelved ? ' not now locked' : ''}`.toLowerCase();
+  const search = `${c.name} ${(c.aliases || []).join(' ')} ${c.cls} ${c.used} ${c.note || ''} ${cat} ${parts.map((p) => p.name).join(' ')} ${hosts.map((h) => h.name).join(' ')}${shelved ? ' not now locked' : ''}`.toLowerCase();
   const cardCls = `dsc-card dsc-card--acc is-collapsed${c.wide ? ' dsc-card--wide' : ''}${shelved ? ' is-locked' : ''}`;
   const bodyId = 'acc-body-' + compDomId(c.name);
   const note = c.note
@@ -7890,7 +7892,7 @@ function wireMotion(root) {
   new MutationObserver(bootHelix).observe(mod, { attributes: true, attributeFilter: ['class'] });
 }
 
-/* Styles live in pages/all-modules.css — linked from the host page so
+/* Styles live in pages/wise.css (All Modules catalog section) so
    this module does not rebuild a 4,000-rule stylesheet as a string. */
 
 /* ------------------------------------------------------------------ */
@@ -7979,7 +7981,10 @@ export function renderAllModules(mainEl) {
       });
     });
   } else if (hashId) {
-    const comp = COMPONENTS.find((c) => compDomId(c.name) === hashId);
+    const comp = COMPONENTS.find((c) => {
+      if (compDomId(c.name) === hashId) return true;
+      return (c.aliases || []).some((a) => compDomId(a) === hashId);
+    });
     if (comp) jumpToComponent(mainEl, comp.name);
   }
 
@@ -8325,7 +8330,7 @@ function buildGlobalIndex() {
   COMPONENTS.forEach((c) => add({
     kind: 'component', section: 'mi-components', group: 'Components', icon: c.noteIcon || 'widgets',
     title: c.name, sub: c.cls, key: c.name, searchSel: '#dsc-search',
-    q: `${c.name} ${c.cls} ${c.used} ${stripSearchText(c.note)} ${catOf(c)}`,
+    q: `${c.name} ${(c.aliases || []).join(' ')} ${c.cls} ${c.used} ${stripSearchText(c.note)} ${catOf(c)}`,
   }));
 
   CODE_METRICS.forEach((m) => add({

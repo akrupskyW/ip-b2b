@@ -286,7 +286,7 @@ function visibleFoods(list) {
 
 /* ---------- Right-hand progress module ----------
    A separate pane docked to the right of the flow (mirrors the account-creation
-   "Account setup" pane: sp-/vs-step in auth.css). It replaces the old inline
+   "Account setup" pane: sp-/vs-step in wise.css). It replaces the old inline
    horizontal stepper so progress lives beside the flow, not on top of it. */
 
 /* Whether each macro step counts as complete, in flow order. */

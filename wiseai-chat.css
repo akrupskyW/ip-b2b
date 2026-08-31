@@ -871,7 +871,7 @@ html.dark .sc-card .ws-scorecards-wrap::after { background: linear-gradient(to l
 /* Result / terminal chip (e.g. the "Done" chip that closes out a step) — a
    solid brand-blue pill so the conclusive action reads as the emphasized,
    primary choice among the reply chips. Reuses the app-wide `chip-primary`
-   convention (see auth.css). Scoped to plain `.chip` so welcome intent chips
+   convention. Scoped to plain `.chip` so welcome intent chips
    keep their neutral, equal-weight look. */
 .chip.chip-primary {
   background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600;

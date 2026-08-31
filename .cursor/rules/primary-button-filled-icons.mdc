@@ -55,7 +55,7 @@ filled sibling (`help` not `help_outline`, `star` not `star_outline`).
 ## Rules for the agent
 
 - When adding or editing a primary (solid blue) button or chip, set the icon
-  to filled. Prefer the shared CSS hook already in `wise.css` / `auth.css` /
+  to filled. Prefer the shared CSS hook already in `wise.css` /
   `marketing.css` / `wiseai-chat.css` — do not invent a parallel fill system.
 - When promoting a chip to `chip-primary` (or any `--primary` / `btn-primary`
   class), do not leave the icon outlined.

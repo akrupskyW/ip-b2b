@@ -1828,11 +1828,6 @@ window.WISE_PROJECT_INVENTORY = {
       "kind": "code"
     },
     {
-      "path": "pages/auth.css",
-      "bytes": 58778,
-      "kind": "code"
-    },
-    {
       "path": "pages/conversation-library.html",
       "bytes": 158748,
       "kind": "code"
@@ -1969,7 +1964,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "pages/wise.css",
-      "bytes": 668251,
+      "bytes": 914441,
       "kind": "code"
     },
     {

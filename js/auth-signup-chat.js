@@ -11,7 +11,7 @@
    (WiseAuthForms.mountNav).
 
    Depends on: window.WiseAuth (js/auth.js), WiseAuthForms.mountNav
-   (js/auth-forms.js), wiseai-chat.css + auth.css.
+   (js/auth-forms.js), pages/wise.css.
    Usage:  WiseAuthChat.initSignup();
 ============================================================= */
 (function () {

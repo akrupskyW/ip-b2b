@@ -1821,11 +1821,6 @@
       "kind": "code"
     },
     {
-      "path": "pages/auth.css",
-      "bytes": 58778,
-      "kind": "code"
-    },
-    {
       "path": "pages/conversation-library.html",
       "bytes": 158748,
       "kind": "code"
@@ -1962,7 +1957,7 @@
     },
     {
       "path": "pages/wise.css",
-      "bytes": 668251,
+      "bytes": 914441,
       "kind": "code"
     },
     {

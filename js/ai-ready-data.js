@@ -10,6 +10,7 @@ export const AI_READY_SEED = {
   "Charts & graphs": true,
   "Chat composer": true,
   "Database roster": true,
+  "Segmented control": true,
   "Tooltip": true,
   "Transcript actions": true,
   "Transcript lines": true,
