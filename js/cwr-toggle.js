@@ -4,7 +4,7 @@
    (and later loads, until a double-click restores the default).
 
    Load default is per page, not a shared last-used mode:
-     run  — pages/wiseai.html, pages/view-product.html, pages/add-product.html
+     run  — pages/wiseai.html, pages/view-product.html, pages/add-product.html, pages/helix.html
      roll — every other page
    Clicking a mode still applies it for this visit; the next load (or a
    different page) re-applies that page's default. localStorage
@@ -55,7 +55,7 @@
   var DEFAULT_RIGHT = 12;
   var DRAG_THRESHOLD = 6;
   var MODES = ['roll', 'crawl', 'walk', 'run'];
-  var RUN_PAGES = ['wiseai.html', 'view-product.html', 'add-product.html'];
+  var RUN_PAGES = ['wiseai.html', 'view-product.html', 'add-product.html', 'helix.html'];
   var META = {
     roll: {
       icon: 'cached',
@@ -218,7 +218,11 @@
     var ui = isUiOn();
     var hideChat = ui && isSaasMode(mode);
     var hideRail = ui && (isSaasMode(mode) || mode === 'walk');
-    each(CHAT_SEL, function (el) { setInert(el, hideChat); });
+    each(CHAT_SEL, function (el) {
+      if (el.closest && el.closest('.dsc-ask-live, [data-cwr-keep]')) return;
+      if (el.hasAttribute && el.hasAttribute('data-cwr-keep')) return;
+      setInert(el, hideChat);
+    });
     each(RAIL_SEL, function (el) { setInert(el, hideRail); });
     evictFocus();
   }
@@ -426,7 +430,7 @@
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #wiseai-dock-panel,',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #wiseai-panel,',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #pf-chat-panel,',
-    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) .wch-sidebar,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) .wch-sidebar:not([data-cwr-keep]),',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) .chat-input-rail { display: none !important; }',
 
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row,',

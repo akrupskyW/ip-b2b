@@ -74,7 +74,7 @@ export const FEATURE_SIGNALS = [
     on: 'Past conversations are kept: open History & Projects from the chat’s three-dot menu to pick one back up.',
     off: 'Past conversations are no longer reachable from here.' },
   { id: 'filelib', cat: 'features', re: /File to Library|file-library|wise-library-store|WiseLibraryStore/,
-    on: 'You can file the conversation you are in to the WISEcodeAI library from the chat’s three-dot menu, then open it from Library.',
+    on: 'You can file the conversation you are in into a Library folder from the chat’s three-dot menu, then open it from Library.',
     off: 'Filing a conversation to the WISEcodeAI library from chat is gone.' },
   { id: 'sticky', cat: 'features', re: /sticky-modules|modules-sticky|stickyModules/,
     on: 'Everything to the right of the chat tucks away as a drawer you can pull open, so the screen never gets crowded.',
@@ -98,7 +98,7 @@ export const FEATURE_SIGNALS = [
     on: 'You can widen any panel through five steps — single, double, triple, fill the screen, then a custom size you drag.',
     off: 'You can no longer widen the panels here.' },
   { id: 'appearance', cat: 'features', re: /buildAppearanceBody|appearance-menu/,
-    on: 'Appearance & Admin opens from the navigation, so theme, text size, serif headlines, and admin switches are one click away.',
+    on: 'Appearance & Admin opens from the navigation, so theme, text and icon size, serif headlines, and admin switches are one click away.',
     off: 'Appearance & Admin no longer opens from here.' },
   { id: 'helixload', cat: 'ux', re: /isHelixLoadOn|load-anim\.js/,
     on: 'While a board is still assembling you see the streaming helix instead of stripes.',
@@ -137,7 +137,7 @@ export const FEATURE_SIGNALS = [
     on: 'The message box is locked, so you can only tap the suggested questions.',
     off: 'The message box is unlocked — you can type anything into it.' },
   { id: 'jam', cat: 'features', re: /jam-strip|isJamStripOn/,
-    on: 'The jam strip is available — play, skip, and a live equalizer in the navigation.',
+    on: 'The jam strip is available — play, skip, and a live equalizer in Appearance, under Sound.',
     off: 'The jam strip is gone.' },
   { id: 'comments', cat: 'features', re: /js\/feedback\.js|WiseFeedback|data-comments/,
     on: 'You can leave an on-page comment: press C, click a spot, and pin a note there. Anyone can reply, so it is a thread, not a one-way box.',
@@ -194,7 +194,7 @@ const MODULE_TITLE_SEL = [
   '.sc-heading',
 ].join(',');
 
-const ICON_ONLY = /^(more_vert|width_normal|width_wide|width_full|autorenew|close|check|add|edit|search|tune|chevron_left|chevron_right|expand_more|unfold_more|unfold_less|restart_alt|edit_note|today|widgets|bolt|note_add|trending_up|delete|forum|history|history_off|hub|alt_route)$/i;
+const ICON_ONLY = /^(more_vert|width_normal|width_wide|width_full|fit_width|picture_in_picture_center|autorenew|close|check|add|edit|search|tune|chevron_left|chevron_right|expand_more|unfold_more|unfold_less|restart_alt|edit_note|today|widgets|bolt|note_add|trending_up|delete|forum|history|history_off|hub|alt_route)$/i;
 
 export function hashStr(s) {
   let h = 5381;
@@ -216,8 +216,8 @@ const DECOR_ONLY = /^[\s*\/=─═\-–—·+|]+$/;
    is usually already plain enough. Add an entry the moment a card reads like
    code instead of English. */
 export const SCRIPT_PURPOSES = {
-  'text-size-fouc.js': 'the text size you picked is applied before the page paints, so nothing jumps',
-  'text-size.js': 'the app-wide text-size setting',
+  'text-size-fouc.js': 'the text and icon size you picked is applied before the page paints, so nothing jumps',
+  'text-size.js': 'the app-wide text and icon size setting',
   'wiseai-chat.js': 'the one shared WISEcodeAI chat — welcome screen, question chips, streaming answers — that every page mounts',
   'agent-menu.js': 'the app’s shared primary navigation',
   'auth-guard.js': 'anyone who is not signed in is sent to the sign-in screen before the page paints',
@@ -227,7 +227,7 @@ export const SCRIPT_PURPOSES = {
   'sticky-modules.js': 'modules to the right of the chat tuck in as drawers, and each one carries a three-dot menu',
   'load-anim.js': 'while a board is assembling you see the streaming helix instead of stripes',
   'marketing-shell.js': 'the shared marketing shell — the same navigation and footer on every marketing page',
-  'jam-strip.js': 'the jam strip in the navigation — play, skip, and a live equalizer',
+  'jam-strip.js': 'the jam strip in Appearance, under Sound — play, skip, and a live equalizer',
   'feedback.js': 'on-page comments — press C, click a spot, leave a threaded note pinned to it',
   'feedback-setting.js': 'the Appearance Comments switch, a site-wide on/off held by the server and locked to the owner',
   'nav-history.js': 'History inside the primary navigation as an expandable section',
@@ -237,7 +237,7 @@ export const SCRIPT_PURPOSES = {
   'welcome-orbit.js': 'the welcome owl as a living node network instead of pulse rings',
   'app-logic-data.js': 'the written catalog of behavioral rules the app actually runs, grouped by page',
   'chat-history.js': 'History & Projects — past conversations, folders, and the drawer beside chat',
-  'wise-library-store.js': 'File to Library copies the conversation you are in onto the WISEcodeAI Library shelf',
+  'wise-library-store.js': 'File to Library lets you pick a Library folder for the conversation you are in',
   'app-search.js': 'app-wide search in the top band across conversations, live output, and reports',
   'reformulation-store.js': 'the shared recipe Reformulation writes and the product pages read',
   'date-column.js': 'every date column stacks two dates (updated over last edited, or whichever pair you pick) and a three-dot menu in the header lists every date type',
@@ -248,6 +248,7 @@ export const SCRIPT_PURPOSES = {
   'sticky-report.js': 'the Product Details and UPF reports that open as a module beside Product Portfolio',
   'icon-svg-shim.js': 'every Material Symbols icon draws as an inline SVG from one sprite, with the webfont kept only as fallback for a name the sprite does not carry',
   'icon-svg-data.js': 'the per-glyph SVG paths the icon inventory uses to preview Font versus SVG side by side',
+  'project-inventory-data.js': 'the list of every shippable file in the project, so All Modules can show the real size instead of only what this tab downloaded',
   'help-flow.js': 'the Help center — search, topic cards, FAQs, and a contact form that emails support with optional attachments',
   'user-avatar.js': 'the photo you set on your profile shows in the navigation and in every chat as you',
 };
@@ -382,6 +383,7 @@ function capabilityNames(list) {
 function labelMap() {
   const map = {
     'page-gallery.html': 'Page Gallery',
+    'helix.html': 'Helix',
     'app-vision-deck.html': 'App Vision Deck',
     'wise.css': 'Platform-wide',
     '../js/wiseai-chat.js': 'Shared chat',

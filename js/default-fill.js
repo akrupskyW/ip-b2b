@@ -31,13 +31,11 @@
 
   /* The button's title is the one truly universal signal of a module's current
      tier — every page's width control renders the same "Width (single|double|
-     triple|fill|custom) — …" text (pane-width.js). We read the tier from the
-     title rather than the icon because the width_* icon family only has three
-     glyphs, so the fill tier reuses `width_full` and the icon alone can't tell
-     triple from fill. The icon map stays as a fallback for the unambiguous
-     tiers. Custom uses `crop_free`. */
+     triple|fill|custom) — …" text (pane-width.js). Title first; the icon map
+     is a fallback. Single, fill, and custom each have their own glyph;
+     double and triple still share `width_wide`. */
   var TITLE_TIER = { single: 0, double: 1, triple: 2, fill: 3, custom: 4 };
-  var ICON_TIER = { width_normal: 0, width_wide: 1, width_full: 2, crop_free: 4 };
+  var ICON_TIER = { width_normal: 0, width_wide: 1, width_full: 3, fit_width: 4 };
 
   /* ── element helpers ──────────────────────────────────────────────────── */
   function isVisible(el) {
@@ -74,8 +72,8 @@
     // Title first — it names the tier unambiguously (…"(fill)"… etc).
     var m = /\((single|double|triple|fill|custom)\)/.exec(btn.getAttribute('title') || '');
     if (m) return TITLE_TIER[m[1]];
-    // Fallback: the icon glyph resolves the non-fill tiers (fill shares
-    // width_full with triple, so it can't be told apart here — hence title first).
+    // Fallback: the icon glyph resolves single / fill / custom. Double and
+    // triple share width_wide, so they can't be told apart here.
     var ic = btn.querySelector('.material-symbols-outlined');
     if (!ic) return 0;
     var t = ICON_TIER[(ic.textContent || '').trim()];

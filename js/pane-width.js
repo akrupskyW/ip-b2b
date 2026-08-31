@@ -72,11 +72,15 @@
     try { document.documentElement.setAttribute('data-chat-width-user-set', '1'); } catch (_) {}
   }
 
-  /* Material Symbols from the width_* family for the four presets. Custom is
-     none of those sizes, so it uses `crop_free` (an unconstrained frame) rather
-     than borrowing `fit_screen`, which reads as "maximize". Tiers are still
-     distinguished by the button's pressed state + title. */
-  var ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
+  /* Four distinct glyphs for the control (triple shares double's wide frame):
+       single  width_normal
+       double  width_wide
+       triple  width_wide
+       fill    width_full
+       custom  fit_width
+     Triple and double share a glyph, so titles remain the unambiguous signal
+     between those two. Fill and custom each have their own icon. */
+  var ICONS = ['width_normal', 'width_wide', 'width_wide', 'width_full', 'fit_width'];
 
   /* Titles carry the state + the next action. Every module reads the SAME text
      so the control is self-describing and identical wherever it appears. */
@@ -197,20 +201,29 @@
     syncCarousel(el);
   }
 
+  /* Reflect a tier onto a glyph. Used by the header button and by menu-row
+     width changers. Clear any leftover FILL 1 from the old fill treatment. */
+  function applyIcon(ic, tier) {
+    if (!ic) return;
+    tier = clamp(tier);
+    if (ic.style.fontVariationSettings) ic.style.fontVariationSettings = '';
+    /* Write only on a real change. This runs from observers, and an
+       unconditional textContent assignment replaces the text node even when the
+       string is identical — a fresh childList mutation that re-fires the
+       observer. Same guard as syncProgressWidthItem() in add-product-flow.js. */
+    if (ic.textContent !== ICONS[tier]) ic.textContent = ICONS[tier];
+  }
+
   /* Reflect a tier onto a toggle button — identical icon/pressed/title logic
      everywhere. */
   function syncButton(btn, tier) {
     if (!btn) return;
     tier = clamp(tier);
     btn.classList.toggle('is-on', tier >= 1);
+    btn.classList.toggle('is-width-fill', tier === FILL);
     btn.setAttribute('aria-pressed', tier >= 1 ? 'true' : 'false');
     btn.title = TITLES[tier];
-    var ic = btn.querySelector('.material-symbols-outlined');
-    /* Write only on a real change. This runs from observers, and an
-       unconditional textContent assignment replaces the text node even when the
-       string is identical — a fresh childList mutation that re-fires the
-       observer. Same guard as syncProgressWidthItem() in add-product-flow.js. */
-    if (ic && ic.textContent !== ICONS[tier]) ic.textContent = ICONS[tier];
+    applyIcon(btn.querySelector('.material-symbols-outlined'), tier);
   }
 
   /* Universal "fill" + "custom" tiers.
@@ -282,6 +295,7 @@
     CUSTOM: CUSTOM,
     PRESET_TIERS: PRESET_TIERS,
     ICONS: ICONS,
+    applyIcon: applyIcon,
     TITLES: TITLES,
     NAMES: NAMES,
     CHAT_SINGLE_MAX_PX: CHAT_SINGLE_MAX_PX,

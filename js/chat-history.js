@@ -336,17 +336,18 @@
       '.wch-pop-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
       '.wch-pop-div{height:1px;margin:5px 6px;background:rgba(255,255,255,0.10);}',
       'html:not(.dark) .wch-pop-div{background:rgba(0,0,0,0.08);}',
-      /* Styled hover/focus tooltip for module controls — a small dark card
-         floated just above the control, matching the chat's thumbs-up/down
-         (.sc-tip) tooltips. Replaces the native title bubble. */
-      '.wch-tip{position:fixed;z-index:5000;pointer-events:none;max-width:240px;background:#1f2430;color:#fff;',
-        'font-size:11.5px;font-weight:600;line-height:1.25;letter-spacing:0.01em;padding:5px 9px;border-radius:7px;',
-        'white-space:nowrap;box-shadow:0 8px 22px rgba(0,0,0,0.30);border:1px solid rgba(255,255,255,0.08);opacity:0;',
+      /* Styled hover/focus tooltip for module controls — theme-aware card
+         matching #lir-tooltip (surface in light, dark in dark). Replaces
+         the native title bubble. #lir-tooltip stands down inside `.wch-sidebar`
+         so the two never stack. */
+      '.wch-tip{position:fixed;z-index:5000;pointer-events:none;max-width:240px;background:var(--surface,#fff);color:var(--text,#1F2733);',
+        'font-size:11px;font-weight:600;line-height:1.25;letter-spacing:0.01em;padding:5px 10px;border-radius:8px;',
+        'white-space:nowrap;box-shadow:var(--shadow-card,0 8px 22px rgba(20,30,60,0.14));border:1px solid var(--border,rgba(0,0,0,0.10));opacity:0;',
         'transform:translate(-50%,calc(-100% - 4px)) scale(0.96);transform-origin:bottom center;',
         'transition:opacity .12s ease,transform .12s ease;}',
       '.wch-tip.is-vis{opacity:1;transform:translate(-50%,-100%) scale(1);}',
       '.wch-tip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);',
-        'border:5px solid transparent;border-top-color:#1f2430;}',
+        'border:5px solid transparent;border-top-color:var(--surface,#fff);}',
       /* Icon-rail tooltip variant — styled to match a collapsed navigation
          module: a light surface card that floats to the RIGHT of the icon,
          vertically centred (not below it), with no arrow. Higher class-count
@@ -430,10 +431,10 @@
 
   /* ── Styled control tooltip (shared, once) ──────────────────────────────────
      Gives every control inside a History / Turns module (both `.wch-sidebar`)
-     the same dark hover/focus tooltip the chat's thumbs-up/down buttons use,
-     instead of the browser's native `title` bubble. The element's `title` is
-     stashed + removed while hovered (so the OS tip is suppressed) and restored
-     on leave; `data-tip` is honoured too when present. */
+     the theme-aware hover card (#lir-tooltip stands down here so the two
+     never stack). Replaces the browser's native `title` bubble. The element's
+     `title` is stashed + removed while hovered and restored on leave;
+     `data-tip` is honoured too when present. */
   var TIP_SEL = '.wch-sidebar button, .wch-sidebar [role="button"], .wch-sidebar .wch-fork-badge, .wch-sidebar .wch-mcp-badge, .wch-sidebar [data-tip]';
   function initTooltip() {
     if (global.__wchTipInit) return;
@@ -1875,7 +1876,7 @@
 
     /* ── Width changer (docked module) — the canonical five-step cycle
        (single → double → triple → fill → custom), identical to every other module. ── */
-    var WCH_W_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
+    var WCH_W_ICONS = ['width_normal', 'width_wide', 'width_wide', 'width_full', 'fit_width'];
     var WCH_W_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to widen', 'Width (custom) — drag to any size'];
     /* Slim column width used while the module is minimized to its icon rail. */
     var RAIL_W = 66;

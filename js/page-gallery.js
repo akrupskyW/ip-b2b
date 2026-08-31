@@ -38,9 +38,17 @@ const ORDER_KEY = 'wise-page-gallery-order';
 const DIM_KEY = 'wise-page-gallery-dimmed';
 const EXTRAS_KEY = 'wise-page-gallery-extras';
 const REEVAL_STORE_KEY = 'wise-pg-reeval';
-const REEVAL_FETCH_MS = 8000;
-const REEVAL_BUDGET_MS = 20000;
-const REEVAL_CONCURRENCY = 3;
+const REEVAL_FETCH_MS = 30000;
+const REEVAL_BUDGET_MS = 90000;
+const REEVAL_CONCURRENCY = 6;
+
+function reevalBudgetLabel() {
+  return Math.round(REEVAL_BUDGET_MS / 1000) + ' seconds';
+}
+
+function isAbortError(err, signal) {
+  return !!(err && err.name === 'AbortError') || !!(signal && signal.aborted);
+}
 
 let scanBusy = false;
 let scanModalEl = null;
@@ -597,13 +605,14 @@ async function fetchText(url, signal) {
   }
 }
 
-async function mapPool(items, limit, fn) {
+async function mapPool(items, limit, fn, signal) {
   const list = Array.from(items || []);
   const out = new Array(list.length);
   let i = 0;
   const n = Math.max(0, Math.min(limit || 1, list.length));
   async function worker() {
     while (i < list.length) {
+      if (signal && signal.aborted) return;
       const idx = i++;
       out[idx] = await fn(list[idx], idx);
     }
@@ -655,12 +664,10 @@ async function listHtmlHrefs(signal, scan) {
 
 async function probePage(href, signal) {
   try {
-    const sep = href.includes('?') ? '&' : '?';
-    const res = await fetch(href + sep + 'pg=' + Date.now(), { cache: 'no-store', signal });
-    if (!res.ok) return { href, ok: false };
-    const text = await res.text();
+    const text = await fetchText(href, signal);
     return { href, ok: true, title: titleFromHtml(text, labelFromPath(href)), size: text.length };
-  } catch (_) {
+  } catch (err) {
+    if (isAbortError(err, signal)) return { href, ok: false, skipped: true };
     return { href, ok: false };
   }
 }
@@ -930,7 +937,7 @@ async function reevaluateGallery(root, opts) {
   scan.log({
     state: 'info',
     name: 'How this scan works',
-    detail: 'Reads the pages/ and repo-root directory listings, then probes each HTML file with a cache-busted fetch. Skips this gallery and the pitch deck. Remounts the live card previews so they show the current screens, not leftover shots. Stops after 20 seconds so this page stays usable.',
+    detail: 'Reads the pages/ and repo-root directory listings, then probes each HTML file with a cache-busted fetch. Skips this gallery and the pitch deck. Remounts the live card previews so they show the current screens, not leftover shots. Gives the scan ' + reevalBudgetLabel() + '.',
   });
 
   if (location.protocol === 'file:') {
@@ -967,13 +974,16 @@ async function reevaluateGallery(root, opts) {
     scan.phase('Probe every HTML page', 'Cache-busted GET of each page. Classifies catalog, omitted, new, and unreachable.');
     scan.setProgress(22, '0 of ' + pages.length + ' pages probed');
     let probed = 0;
-    const results = await mapPool(pages, REEVAL_CONCURRENCY, async (href) => {
+    const raw = await mapPool(pages, REEVAL_CONCURRENCY, async (href) => {
+      if (ac.signal.aborted) return { href, ok: false, skipped: true };
       const name = href;
       scan.log({ state: 'run', name, detail: 'Fetching HTML (cache-busted)' });
       const r = await probePage(href, ac.signal);
       probed += 1;
       scan.setProgress(22 + Math.round((probed / Math.max(pages.length, 1)) * 70), probed + ' of ' + pages.length + ' pages probed');
-      if (r.ok) {
+      if (r.skipped) {
+        scan.log({ state: 'skip', name, detail: 'Not reached — scan stopped' });
+      } else if (r.ok) {
         scan.log({
           state: 'ok',
           name,
@@ -983,14 +993,26 @@ async function reevaluateGallery(root, opts) {
         scan.log({ state: 'err', name, detail: 'Unreachable — the fetch failed or the server did not return the page' });
       }
       return r;
-    });
-    if (ac.signal.aborted) throw new DOMException('Timed out', 'AbortError');
+    }, ac.signal);
+    const results = pages.map((href, i) => raw[i] || { href, ok: false, skipped: true });
+    const skippedN = results.filter((r) => r.skipped).length;
+    if (skippedN) {
+      scan.log({
+        state: 'skip',
+        name: 'Time budget',
+        detail: 'Stopped after ' + reevalBudgetLabel() + '. ' + skippedN + ' page' + (skippedN === 1 ? ' was' : 's were') + ' not reached this pass — not marked unreachable.',
+      });
+    }
+    const reached = results.filter((r) => !r.skipped);
+    if (!reached.length && ac.signal.aborted) {
+      throw new DOMException('Timed out', 'AbortError');
+    }
 
     scan.phase('Apply results', 'Update the gallery cards and today’s scan stamp.');
     scan.setProgress(94, 'Classifying pages');
     const catalog = catalogHrefSet();
     const live = results.filter((r) => r.ok);
-    const unreachable = results.filter((r) => !r.ok);
+    const unreachable = results.filter((r) => !r.ok && !r.skipped);
     const omitted = live.filter((r) => OMITTED_PAGES[canonicalPageHref(r.href)]);
     const unaccounted = live.filter((r) => {
       const key = canonicalPageHref(r.href);
@@ -1002,7 +1024,9 @@ async function reevaluateGallery(root, opts) {
     scan.log({
       state: 'info',
       name: 'Classification',
-      detail: live.length + ' reachable · ' + unreachable.length + ' unreachable · ' + omitted.length + ' omitted on purpose · ' + unaccounted.length + ' new · ' + catalogMissing.length + ' catalog entries missing',
+      detail: live.length + ' reachable · ' + unreachable.length + ' unreachable'
+        + (skippedN ? (' · ' + skippedN + ' not reached') : '')
+        + ' · ' + omitted.length + ' omitted on purpose · ' + unaccounted.length + ' new · ' + catalogMissing.length + ' catalog entries missing',
     });
     omitted.forEach((r) => {
       const key = canonicalPageHref(r.href);
@@ -1046,15 +1070,20 @@ async function reevaluateGallery(root, opts) {
     const gaps = unaccounted.length + catalogMissing.length + omittedMissing.length;
     const kind = (catalogMissing.length || omittedMissing.length)
       ? 'err'
-      : (unaccounted.length ? 'warn' : 'ok');
-    const title = !gaps
-      ? `All ${shown} gallery pages are current`
-      : (unaccounted.length && !catalogMissing.length
-        ? `Added ${unaccounted.length} missing page${unaccounted.length === 1 ? '' : 's'}`
-        : `${gaps} page${gaps === 1 ? '' : 's'} need attention`);
+      : ((unaccounted.length || skippedN) ? 'warn' : 'ok');
+    const title = skippedN && !gaps
+      ? `Reached ${live.length} of ${pages.length} pages`
+      : !gaps
+        ? `All ${shown} gallery pages are current`
+        : (unaccounted.length && !catalogMissing.length
+          ? `Added ${unaccounted.length} missing page${unaccounted.length === 1 ? '' : 's'}`
+          : `${gaps} page${gaps === 1 ? '' : 's'} need attention`);
 
     const bits = [];
-    bits.push(`<p>Probed <strong>${results.length}</strong> HTML files · <strong>${live.length}</strong> reachable · gallery now holds <strong>${shown}</strong> pages. Visible cards remount a live preview of the current page.</p>`);
+    bits.push(`<p>Probed <strong>${reached.length}</strong> of <strong>${pages.length}</strong> HTML files · <strong>${live.length}</strong> reachable · gallery now holds <strong>${shown}</strong> pages. Visible cards remount a live preview of the current page.</p>`);
+    if (skippedN) {
+      bits.push(`<p>${skippedN} page${skippedN === 1 ? ' was' : 's were'} not reached before the time budget — ${skippedN === 1 ? 'it is' : 'they are'} not marked unreachable. Click Re-evaluate again to finish.</p>`);
+    }
     if (unaccounted.length) {
       bits.push('<ul>' + unaccounted.map((r) =>
         `<li>Added <a href="${esc(r.href)}">${esc(r.title || labelFromPath(r.href))}</a> <code>${esc(r.href)}</code></li>`
@@ -1087,7 +1116,7 @@ async function reevaluateGallery(root, opts) {
       state: 'err',
       name: timedOut ? 'Time budget' : 'Scan failed',
       detail: timedOut
-        ? 'Stopped after 20 seconds so this page stays usable. The gallery still shows the last complete pass.'
+        ? 'Stopped after ' + reevalBudgetLabel() + ' before any page could be reached. The gallery still shows the last complete pass.'
         : (err && err.message) || String(err),
     });
     scan.finish(

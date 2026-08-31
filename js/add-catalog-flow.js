@@ -825,7 +825,7 @@
     });
 
     // Chat width toggle — the canonical five-step cycle (matches Add Product).
-    const WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
+    const WIDTH_ICONS = ['width_normal', 'width_wide', 'width_wide', 'width_full', 'fit_width'];
     const WIDTH_TITLES = [
       'Width (single) — tap to widen',
       'Width (double) — tap to widen',

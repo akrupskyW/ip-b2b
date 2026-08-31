@@ -1120,7 +1120,7 @@
 <body>
   <!-- Hidden host for the shared menu controls (mirrors studio-ai.html). -->
   <div id="topbar-row" hidden aria-hidden="true">
-    <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-symbols-outlined">chevron_left</span></button>
+    <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-symbols-outlined">dock_to_left</span></button>
     <button type="button" class="topbar-appearance-btn" id="topbar-appearance-btn" title="Appearance" aria-label="Appearance settings" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">crossword</span></button>
     <div class="topbar-profile has-dot" id="topbar-profile" title="Arthur Krupsky · akrupsky@wisecode.ai" data-action="user-menu" role="button" tabindex="0" aria-label="User menu">AK</div>
   </div>
@@ -1291,7 +1291,7 @@
                 <button type="button" class="topbar-menu-item" role="menuitem" onclick="rfShowPicker(); rfCloseModuleMenus()"><span class="material-symbols-outlined topbar-menu-icon">swap_horiz</span><span>Change product</span></button>
               </div>
             </div>
-            <button type="button" class="panel-width-toggle-btn is-on" id="rf-dash-width" aria-pressed="true" title="Width (fill) — tap to reset" aria-label="Dashboard width"><span class="material-symbols-outlined">width_full</span></button>
+            <button type="button" class="panel-width-toggle-btn is-on is-width-fill" id="rf-dash-width" aria-pressed="true" title="Width (fill) — tap to reset" aria-label="Dashboard width"><span class="material-symbols-outlined">width_full</span></button>
           </div>
           <div class="rf-head-titles">
             <h2 class="rf-head-title" id="rf-dash-title">Reformulation Overview</h2>
@@ -3118,7 +3118,7 @@
          page then blinks — so we drive the control through window.WPaneWidth
          (with a canonical fallback if it hasn't loaded yet) rather than a bespoke
          title/icon scheme. ── */
-      const CANON_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
+      const CANON_ICONS = ['width_normal', 'width_wide', 'width_wide', 'width_full', 'fit_width'];
       const CANON_TITLES = [
         'Width (single) — tap to widen',
         'Width (double) — tap to widen',

@@ -139,7 +139,7 @@
     .nfp-inner {
       display: flex; flex-direction: column; flex: 1; min-height: 0; width: 100%;
       border-radius: 16px; border: 1px solid var(--border);
-      background: var(--surface); overflow: hidden; box-shadow: var(--shadow-card);
+      background: var(--bg); overflow: hidden; box-shadow: var(--shadow-card);
     }
     /* Product Details header, styled as a brand banner — same format as the
        overview hero (.dash-hero): embossed WISE-bug watermark on primary blue,
@@ -235,13 +235,16 @@
     .nfp-brand-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .nfp-brand-logo-mono { font-weight: 800; font-size: 0.62rem; letter-spacing: -0.02em; color: var(--primary); }
 
-    /* Scrollable body — same --bg canvas as other right-of-chat modules
-       (.agent-main-scroll). The Nutrition Facts panel itself stays white.
-       Also the query container the single-pane split (.nfp-sp) responds to,
-       so the two-column layout tracks the module's own width rather than
-       the viewport. */
+    /* Scrollable body — page cream canvas (ingredients column). The product
+       image + Nutrition Facts column paints its own white sheet (.nfp-sp-facts).
+       Also the query container the single-pane split (.nfp-sp) responds to. */
     .nfp-scroll-body { flex: 1 1 0%; overflow-y: auto; min-height: 0; background: var(--bg); padding-bottom: 56px; container-type: size; container-name: nfp-body; }
-    html.dark .nfp-scroll-body { background: transparent; }
+    html.dark .nfp-scroll-body { background: var(--surface); }
+
+    /* Right column (flip default): identity + Non-UPF + Nutrition Facts — white
+       sheet. Ingredients stay on the cream module canvas. */
+    .nfp-sp-facts { background: #fff; }
+    html.dark .nfp-sp-facts { background: var(--surface); }
 
     /* ── Single-pane responsive split ──────────────────────────────────────
        Default: Nutrition Facts and ingredients stack (and the identity
@@ -277,13 +280,21 @@
        and shield are nested inside the facts column here (not full-width grid
        rows), so no top rail is drawn above the masthead. */
     .nfp-sp--flip .nfp-sp-facts { border-top: 0; }
-    .nfp-sp--flip .nfp-sp-strip--folded { padding-top: 4px; }
-    .nfp-sp--flip .nfp-sp-strip--folded .nfp-fi-group--identity { padding-top: 4px; }
+    /* Match Ingredient List card side inset (.nfp-ia-head is 12px). Keep top
+       breathing; sides must not stack with a second column pad (was 10+14=24). */
+    .nfp-sp--flip .nfp-sp-strip--folded { padding-top: 0; }
+    .nfp-sp--flip .nfp-sp-strip--folded .nfp-fi-group--identity,
+    .nfp-sp--flip .nfp-fi-group--identity {
+      padding: 20px 12px 18px;
+    }
+    .nfp-sp--flip .nfp-sp-facts .nfp-sp-shield,
+    .nfp-sp--flip .nfp-sp-facts .nfp-sp-shield--folded {
+      padding-left: 12px; padding-right: 12px;
+    }
     .nfp-sp--flip .nfp-sp-facts .nfp-nf-panel { margin-top: 12px; }
-    /* Folded identity — photo + name on row 1, top-aligned so the product
-       name starts at the top of the square (not mid-photo); a wrapping
-       title still grows the row. Description, price, counts, barcode and
-       category span the full width under both on row 2. */
+    /* Folded identity — photo + name on row 1; name vertically centered on
+       the square. A wrapping title still grows the row. Description, price,
+       counts, barcode and category span the full width under both on row 2. */
     .nfp-sp--flip .nfp-fi-group--identity {
       display: grid; grid-template-columns: auto minmax(0, 1fr);
       align-items: start; column-gap: 14px; row-gap: 10px;
@@ -292,7 +303,7 @@
     .nfp-sp--flip .nfp-fi-copy { display: contents; }
     .nfp-sp--flip .nfp-fi-group--identity .nfp-fi-header {
       grid-column: 2; grid-row: 1; flex-wrap: wrap; min-width: 0;
-      align-items: flex-start; align-self: start; margin-bottom: 0;
+      align-items: center; align-self: center; margin-bottom: 0;
     }
     html.header-float .nfp-sp--flip .nfp-fi-group--identity .nfp-fi-header { padding-right: 72px; }
     .nfp-sp--flip .nfp-fi-title {
@@ -395,14 +406,26 @@
         border-top: 1px solid var(--border-strong);
       }
       .nfp-sp--noidentity .nfp-sp-ingred { padding-top: 10px; }
-      .nfp-sp-ingred { padding: 12px 10px 8px 4px; }
+      /* Ingredients keep a side gutter around the card; facts is the white
+         sheet itself — identity/shield supply the 12px content inset. In flip
+         mode the 16px seam between columns showed cream; pull the white sheet
+         left across that seam. Equal 16px side padding so Nutrition Facts
+         (and the rest of the column) aren’t flush on one side only. */
+      .nfp-sp-ingred { padding: 12px 10px 8px 10px; }
+      .nfp-sp-facts { padding: 0 0 8px; }
+      .nfp-sp--flip .nfp-sp-facts {
+        margin-left: -16px;
+        width: calc(100% + 16px);
+        padding: 0 16px 8px 16px;
+        box-sizing: border-box;
+      }
       .nfp-sp-ingred .nfp-ingred-wrap > *:not(.nfp-ia-analyze),
       .nfp-sp-ingred .nfp-ia { max-width: none; margin-left: 0; margin-right: 0; }
       .nfp-sp-facts-pin {
         position: sticky; top: 0; z-index: 2;
-        background: var(--bg);
+        background: #fff;
       }
-      html.dark .nfp-sp-facts-pin { background: var(--bg); }
+      html.dark .nfp-sp-facts-pin { background: var(--surface); }
       /* Photo stays at about half the module body so the Non-UPF shield sits
          directly underneath. */
       .nfp-sp-media .nfp-hero--rich:not(.nfp-hero--empty) {
@@ -735,7 +758,7 @@
        the real one once all 12 digits are entered. ── */
     .nfp-upc-entry {
       display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; box-sizing: border-box;
-      background: rgba(255, 255, 255, 0.85); border: 1px solid var(--border); border-radius: 14px;
+      background: rgba(255, 255, 255, 0.85); border: 2px solid #111; border-radius: 6px;
       padding: 16px 10px 14px; box-shadow: 0 1px 2px rgba(7,12,26,0.06);
     }
     /* Barcode slot — a large, full-width barcode across the top of the card.
@@ -1011,7 +1034,7 @@
       flex-shrink: 0; box-sizing: border-box;
     }
     .nfp-fi-upc .nfp-upc-entry {
-      padding: 6px 8px 5px; gap: 4px; border-radius: 8px;
+      padding: 6px 8px 5px; gap: 4px; border-radius: 6px;
       background: color-mix(in srgb, var(--surface) 92%, transparent);
     }
     .nfp-fi-upc .nfp-upc-barcode { height: 24px; flex-shrink: 0; }
@@ -1155,12 +1178,13 @@
     .nfp-rcol-empty .nfp-rcol-brand { color: var(--text-muted); margin-top: 0; }
 
     /* Product Data (Nutrition Facts) — faithful US label (always light). Boxed
-       in the heavy black rule a printed label carries, and held to a readable
-       column so it doesn't stretch across the whole (now much wider) module. */
+       in the heavy black rule a printed label carries. Full width of the facts
+       content box; side inset comes from the column’s equal 16px padding. */
     .nfp-nf-panel {
       background: #fff; font-family: 'WISE Digits', 'DM Sans', system-ui, sans-serif; color: #000;
-      width: calc(100% - 24px); max-width: 460px; margin: 12px auto 14px;
+      width: 100%; max-width: none; margin: 12px 0 14px;
       border: 3px solid #000;
+      box-sizing: border-box;
     }
     .nfp-nf-title { font-size: 1.45rem; font-weight: 900; line-height: 1.05; padding: 5px 10px 3px; border-bottom: 1px solid #000; display: flex; align-items: center; justify-content: space-between; }
     .nfp-nf-serving { padding: 2px 10px 3px; border-bottom: 8px solid #000; }
@@ -1188,20 +1212,17 @@
       font-family: 'WISE Digits', 'DM Sans', system-ui, sans-serif;
     }
 
-    /* Ingredients stay in their own column. Allergens + Contains sit under
-       the Nutrition Facts panel — both on the module --bg canvas (only the
-       Nutrition Facts label itself stays the white printed sheet). */
+    /* Ingredients stay in their own column on the cream module canvas.
+       Allergens + Contains sit under Nutrition Facts on the white facts sheet. */
     .nfp-ingred-wrap { background: transparent; font-family: 'WISE Digits', 'DM Sans', system-ui, sans-serif; }
     .nfp-ingred-body { padding: 8px 12px 9px; }
-    /* Pill field — same language as app search / .adm-input: 38px resting
-       height, full pill radius, surface-2 + strong border, outer primary ring.
-       Textarea so long lists can grow; empty/short still reads as a single-line
-       pill, not a fat text block. */
+    /* Rounded rectangle at every height — same 22px corner empty or full,
+       so a long list never gets clipped by a stadium pill. */
     .nfp-ingred-edit {
       display: block; width: 100%; box-sizing: border-box; margin: 0;
       min-height: 38px; height: 38px; resize: none; overflow: hidden;
       padding: 9px 16px;
-      border: 1px solid var(--border-strong); border-radius: 999px;
+      border: 1px solid var(--border-strong); border-radius: 22px;
       background: var(--surface-2); color: var(--text);
       font-family: inherit; font-size: 0.8125rem; font-weight: 400; line-height: 1.25;
       outline: none;
@@ -1350,7 +1371,7 @@
        standalone UPC chip, and the compare-view barcode cards. The on-photo
        (`--onphoto`) barcode cards stay light since they float on the photo. */
     html.dark .nfp-upc-entry:not(.nfp-upc-entry--onphoto) {
-      background: var(--surface-2); border-color: var(--border);
+      background: var(--surface-2); border-color: #111;
       box-shadow: 0 1px 2px rgba(0,0,0,0.4);
     }
     html.dark .nfp-upc-entry:not(.nfp-upc-entry--onphoto) .nfp-upc-bc { fill: var(--text); }
@@ -1595,7 +1616,7 @@
       .nfp-ia-chev { transition: none; }
     }
 
-    /* Save footer — same canvas as the module body, not a tinted bar. */
+    /* Save footer — matches the cream module canvas (ingredients side). */
     .nfp-foot { flex-shrink: 0; border-top: 1px solid var(--border); background: var(--bg); padding: 10px 12px 12px; }
     html.dark .nfp-foot { background: transparent; }
     .nfp-foot-status { display: flex; align-items: flex-start; gap: 6px; font-size: 0.68rem; line-height: 1.4; color: var(--text-muted); margin-bottom: 8px; }
@@ -1704,7 +1725,7 @@
 <body data-ap-mode="view">
   <!-- Hidden host for the shared menu controls (mirrors reformulation.html). -->
   <div id="topbar-row" hidden aria-hidden="true">
-    <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-symbols-outlined">chevron_left</span></button>
+    <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-symbols-outlined">dock_to_left</span></button>
     <button type="button" class="topbar-appearance-btn" id="topbar-appearance-btn" title="Appearance" aria-label="Appearance settings" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">crossword</span></button>
     <div class="topbar-profile has-dot" id="topbar-profile" title="Arthur Krupsky · akrupsky@wisecode.ai" data-action="user-menu" role="button" tabindex="0" aria-label="User menu">AK</div>
   </div>
@@ -1947,7 +1968,7 @@
                 <button type="button" class="panel-more-btn" id="nfp-menu-btn" title="Module options" aria-haspopup="menu" aria-expanded="false" aria-controls="nfp-menu" aria-label="Module options"><span class="material-symbols-outlined">more_vert</span></button>
                 <div class="topbar-popover hidden" id="nfp-menu" role="menu"></div>
               </div>
-              <button type="button" class="panel-width-toggle-btn" id="nfp-width" aria-pressed="true" title="Width (fill) — tap to reset" aria-label="Product Details width"><span class="material-symbols-outlined">width_full</span></button>
+              <button type="button" class="panel-width-toggle-btn is-on is-width-fill" id="nfp-width" aria-pressed="true" title="Width (fill) — tap to reset" aria-label="Product Details width"><span class="material-symbols-outlined">width_full</span></button>
             </div>
           </div>
           <div class="nfp-scroll-body" id="nfp-body"><!-- rendered by add-product-flow.js --></div>

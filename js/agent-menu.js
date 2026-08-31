@@ -1004,6 +1004,7 @@ const EXISTING_PAGES = new Set([
   'audit-queue.html',
   'admin-utils.html',
   'all-modules.html',
+  'helix.html',
 ]);
 
 /** True when a nav slug maps to a page that exists under `pages/`. Slugless
@@ -1152,7 +1153,7 @@ function setupMenuRail(navEl) {
     const label = 'Open navigation';
     btn.setAttribute('aria-label', label);
     btn.setAttribute('title', label);
-    if (icon) icon.textContent = 'menu';
+    if (icon) icon.textContent = 'dock_to_right';
   };
 
   const apply = (railed) => {
@@ -1171,18 +1172,19 @@ function setupMenuRail(navEl) {
     btn.setAttribute('title', label);
     btn.setAttribute('data-tip', label);
     const icon = btn.querySelector('.material-symbols-outlined');
-    if (icon) icon.textContent = railed ? 'chevron_right' : 'chevron_left';
+    /* dock_to_right = open / expand; dock_to_left = close / collapse. */
+    if (icon) icon.textContent = railed ? 'dock_to_right' : 'dock_to_left';
     applyHamburgerSkin();
     if (!railed) scheduleNavTrees(navEl);
   };
 
   /* The menu button sits to the right of the logo and reflects the nav state:
-       • Minimal UI ON (vertical column OR pivoted top bar) → a RIGHT chevron
+       • Minimal UI ON (vertical column OR pivoted top bar) → dock_to_right
          ("Show navigation") that reveals the full nav, i.e. turns Minimal UI
          off. This is the single, consistent way out of Minimal UI on every page.
-       • Pivot bar, Minimal UI OFF → a LEFT chevron ("Hide navigation") that
+       • Pivot bar, Minimal UI OFF → dock_to_left ("Hide navigation") that
          collapses the bar back to minimal (turns Minimal UI on).
-       • Vertical column, Minimal UI OFF → the usual rail-collapse chevron. */
+       • Vertical column, Minimal UI OFF → the usual rail open/close dock icons. */
   const refreshToggleSkin = () => {
     const icon = btn.querySelector('.material-symbols-outlined');
     if (panel.classList.contains('minimal-ui')) {
@@ -1190,13 +1192,13 @@ function setupMenuRail(navEl) {
       btn.setAttribute('aria-label', label);
       btn.setAttribute('title', label);
       btn.setAttribute('aria-expanded', 'false');
-      if (icon) icon.textContent = 'chevron_right';
+      if (icon) icon.textContent = 'dock_to_right';
     } else if (panel.classList.contains('mp-pivot')) {
       const label = 'Hide navigation';
       btn.setAttribute('aria-label', label);
       btn.setAttribute('title', label);
       btn.setAttribute('aria-expanded', 'true');
-      if (icon) icon.textContent = 'chevron_left';
+      if (icon) icon.textContent = 'dock_to_left';
     } else {
       btn.removeAttribute('aria-expanded');
       apply(panel.classList.contains('mp-rail'));
@@ -1263,7 +1265,7 @@ function setupMenuRail(navEl) {
     document.addEventListener('wise:minimal-ui', refreshToggleSkin);
     document.addEventListener('wise:menu-pivot', refreshToggleSkin);
     /* The Appearance popover's "Icons only" toggle flips `.mp-rail` directly;
-       re-skin the chevron so it reflects the new collapsed/expanded state. */
+       re-skin the dock icon so it reflects the new collapsed/expanded state. */
     document.addEventListener('wise:menu-rail', refreshToggleSkin);
     document.addEventListener('wise:nav-hamburger', refreshToggleSkin);
     document.addEventListener('wise:app-search', refreshToggleSkin);

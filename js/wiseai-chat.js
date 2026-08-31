@@ -393,19 +393,12 @@ if (typeof document !== 'undefined') {
   }
 }
 
-/* Stylized hover/focus tooltip for per-answer action icons (.sc-fb-btn /
-   .sc-fb-id). The three-dot "more" menu portals onto <body> while open
-   (js/popover-layer.js), so these listeners MUST be document-level — a
-   mouseover bound to the transcript never sees the portaled icons. */
-const SC_TIP_SELECTOR = '.sc-fb-btn[data-tip], .sc-fb-id[data-tip], .sc-fb-menu [data-tip], .sc-fb-menu [title], .sc-fb-menu [data-sc-title]';
+/* Momentary confirmation toast for answer-action copy (turn ID, etc.).
+   Hover labels on those icons are the shared theme-aware #lir-tooltip —
+   this card is flash-only so the two never stack. */
 let scTipEl = null;
 let scTipFor = null;
 let scTipFlashTimer = null;
-
-function scTipLabel(el) {
-  return (el.getAttribute('data-tip') || el.getAttribute('title') ||
-          el.getAttribute('data-sc-title') || '').trim();
-}
 
 function placeScTip(el, label) {
   if (!scTipEl) return;
@@ -415,19 +408,6 @@ function placeScTip(el, label) {
   scTipEl.style.top = `${Math.round(r.top - 8)}px`;
   scTipEl.offsetWidth; /* reflow so the enter transition plays */
   scTipEl.classList.add('is-vis');
-}
-
-function showScTip(target) {
-  const label = scTipLabel(target);
-  if (!label) return;
-  scTipFor = target;
-  /* Suppress the native `title` bubble while the styled card is up. */
-  const nativeTitle = target.getAttribute('title');
-  if (nativeTitle != null) {
-    target.setAttribute('data-sc-title', nativeTitle);
-    target.removeAttribute('title');
-  }
-  placeScTip(target, label);
 }
 
 function hideScTip() {
@@ -452,25 +432,52 @@ function flashScTip(target, label) {
   });
 }
 
-/* File the live thread onto the WISEcodeAI Library shelf. History already
-   saves the conversation; this copies that saved item so it shows up with
-   reports and dashboards on conversation-library.html. */
+/* File the live thread onto the WISEcodeAI Library shelf. Opens the same
+   folder picker History uses for "Move to project" / the Library page uses
+   for "Move to folder", then copies the saved item into the chosen folder. */
 function fileConversationToLibrary(opts) {
   opts = opts || {};
   const store = typeof window !== 'undefined' ? window.WiseLibraryStore : null;
   if (!store || typeof store.fileCurrent !== 'function') {
     return { ok: false };
   }
-  const result = store.fileCurrent({
+  const fileOpts = {
     chatHistory: opts.chatHistory || (typeof window !== 'undefined' ? window.__wiseChatHistory : null),
     messagesEl: opts.messagesEl,
     historyKey: opts.historyKey,
-  });
-  const tip = result && result.empty
-    ? 'Nothing to file yet'
-    : (result && result.updated ? 'Updated in Library' : 'Filed to Library');
-  flashScTip(opts.trigger, tip);
-  return result || { ok: false };
+  };
+  if (typeof store.canFile === 'function' && !store.canFile(fileOpts)) {
+    flashScTip(opts.trigger, 'Nothing to file yet');
+    return { empty: true };
+  }
+  const commit = (folderId) => {
+    const result = store.fileCurrent({ ...fileOpts, folderId: folderId || null });
+    const folder = folderId && typeof store.findFolder === 'function' ? store.findFolder(folderId) : null;
+    const tip = result && result.empty
+      ? 'Nothing to file yet'
+      : folder
+        ? (result && result.updated ? `Updated in ${folder.name}` : `Filed to ${folder.name}`)
+        : (result && result.updated ? 'Updated in Library' : 'Filed to Library');
+    flashScTip(opts.trigger, tip);
+    return result || { ok: false };
+  };
+  if (typeof store.openFolderPicker === 'function') {
+    let historyKey = fileOpts.historyKey || '';
+    if (!historyKey && fileOpts.chatHistory && typeof fileOpts.chatHistory.storageKey === 'function') {
+      try { historyKey = fileOpts.chatHistory.storageKey() || ''; } catch (_) { historyKey = ''; }
+    }
+    const existing = typeof store.findByHistory === 'function' ? store.findByHistory(historyKey) : null;
+    const hosted = existing && typeof store.foldersOf === 'function' ? store.foldersOf(existing.id) : [];
+    store.openFolderPicker(opts.trigger, {
+      title: 'File to Library',
+      currentIds: hosted.map((f) => f.id),
+      unfiled: true,
+      unfiledLabel: 'Library',
+      unfiledCurrent: !!(existing && !hosted.length),
+    }, commit);
+    return { picking: true };
+  }
+  return commit(null);
 }
 
 function injectFileToLibraryMenuItem(pop) {
@@ -507,26 +514,6 @@ export function wireAnswerTips() {
     scTipEl.setAttribute('aria-hidden', 'true');
     (document.body || document.documentElement).appendChild(scTipEl);
   }
-  document.addEventListener('mouseover', (e) => {
-    const t = e.target.closest && e.target.closest(SC_TIP_SELECTOR);
-    if (t && t !== scTipFor) showScTip(t);
-  });
-  document.addEventListener('mouseout', (e) => {
-    const t = e.target.closest && e.target.closest(SC_TIP_SELECTOR);
-    /* Only dismiss the hover tip (scTipFor === t). A flash toast clears
-       scTipFor so moving the pointer after Copy doesn't kill "Copied!". */
-    if (t && t === scTipFor && !t.contains(e.relatedTarget)) hideScTip();
-  });
-  document.addEventListener('focusin', (e) => {
-    const t = e.target.closest && e.target.closest(SC_TIP_SELECTOR);
-    if (t) showScTip(t);
-  });
-  document.addEventListener('focusout', hideScTip);
-  document.addEventListener('click', (e) => {
-    if (e.target.closest && e.target.closest(SC_TIP_SELECTOR)) hideScTip();
-  });
-  window.addEventListener('scroll', hideScTip, true);
-  window.addEventListener('resize', hideScTip);
 }
 
 /* Standing reminder under the input that WISEcodeAI is an assistant, not the
@@ -1213,19 +1200,19 @@ export function injectChatExtras() {
     .sc-fb-id { cursor: pointer; }
     .sc-fb-id:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
 
-    /* Stylized hover/focus tooltip for the answer-action icons — a small dark
-       card floated just above the control, captioned from its data-tip.
-       z-index sits above js/popover-layer.js (2147483000) so a tip on an icon
-       inside the portaled .sc-fb-menu still paints on top of that popover. */
+    /* Flash toast for answer-action copy ("Copied!"). Hover labels live on
+       #lir-tooltip. Theme tokens so the card is surface-colored in light
+       mode and dark in dark mode — never a second always-dark hover tip.
+       z-index sits above js/popover-layer.js (2147483000). */
     .sc-tip { position: fixed; z-index: 2147483646; pointer-events: none; max-width: 220px;
-      background: #1f2430; color: #fff; font-size: 11.5px; font-weight: 600; line-height: 1.25;
-      letter-spacing: 0.01em; padding: 5px 9px; border-radius: 7px; white-space: nowrap;
-      box-shadow: 0 8px 22px rgba(0,0,0,0.30); border: 1px solid rgba(255,255,255,0.08);
+      background: var(--surface, #fff); color: var(--text, #1F2733); font-size: 11px; font-weight: 600; line-height: 1.25;
+      letter-spacing: 0.01em; padding: 5px 10px; border-radius: 8px; white-space: nowrap;
+      box-shadow: var(--shadow-card, 0 8px 22px rgba(20,30,60,0.14)); border: 1px solid var(--border, rgba(0,0,0,0.10));
       opacity: 0; transform: translate(-50%, calc(-100% - 4px)) scale(0.96); transform-origin: bottom center;
       transition: opacity .12s ease, transform .12s ease; }
     .sc-tip.is-vis { opacity: 1; transform: translate(-50%, -100%) scale(1); }
     .sc-tip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
-      border: 5px solid transparent; border-top-color: #1f2430; }
+      border: 5px solid transparent; border-top-color: var(--surface, #fff); }
 
     /* "Forked from …" lineage banner pinned to the top of a forked transcript.
        It persists in the saved thread so the lineage sticks no matter how far
@@ -1345,7 +1332,8 @@ export function injectChatExtras() {
       box-shadow: 0 10px 30px rgba(0,0,0,0.30); text-align: left;
       opacity: 0; pointer-events: none; visibility: hidden;
       transition: opacity .16s ease, transform .16s ease, visibility 0s linear .16s; }
-    .sc-activity-wrap:hover .sc-activity-pop, .sc-activity-wrap:focus-within .sc-activity-pop {
+    .sc-activity-wrap:hover .sc-activity-pop, .sc-activity-wrap:focus-within .sc-activity-pop,
+    .sc-activity.is-open .sc-activity-pop {
       opacity: 1; transform: translate(-50%, 0); visibility: visible; transition-delay: 0s; }
     .sc-activity-pop::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
       border: 6px solid transparent; border-top-color: #1f2733; }
@@ -2060,6 +2048,39 @@ export function injectChatExtras() {
     html.dark .sc-helix-float .sc-menu-group--helix > .sc-menu-group-head { background: #1A2339; }
     .sc-helix-float.is-dragging .sc-menu-group--helix > .sc-menu-group-head { cursor: grabbing; }
     .sc-helix-float.is-dragging { user-select: none; }
+    .sc-helix-studio-bar {
+      position: sticky; bottom: 0; z-index: 2;
+      display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+      margin: 8px 4px 0; padding: 8px 4px 2px;
+      background: linear-gradient(180deg, transparent 0%, var(--surface-2) 28%);
+    }
+    html.dark .sc-helix-studio-bar {
+      background: linear-gradient(180deg, transparent 0%, #1A2339 28%);
+    }
+    .sc-helix-float .sc-helix-studio-bar { margin: 10px 0 0; padding: 10px 2px 2px; }
+    .sc-helix-undo, .sc-helix-apply {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      height: 32px; padding: 0 12px; border-radius: 999px;
+      font: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+      transition: background .15s ease, color .15s ease, border-color .15s ease, opacity .15s ease;
+    }
+    .sc-helix-undo .material-symbols-outlined,
+    .sc-helix-apply .material-symbols-outlined { font-size: 16px !important; line-height: 1 !important; }
+    .sc-helix-undo {
+      border: 1px solid var(--border-strong, rgba(15,30,55,.18));
+      background: transparent; color: var(--text);
+    }
+    .sc-helix-undo:hover:not(:disabled) { background: var(--surface-3); }
+    html.dark .sc-helix-undo:hover:not(:disabled) { background: rgba(255,255,255,0.07); }
+    .sc-helix-apply.btn-primary {
+      border: 0; background: var(--primary); color: #fff;
+    }
+    .sc-helix-apply.btn-primary .material-symbols-outlined {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .sc-helix-undo:disabled, .sc-helix-apply:disabled {
+      opacity: .42; cursor: default; pointer-events: none;
+    }
 
     /* Nested Admin popover — a kebab in the grouped menu's top-right opens a
        small card with the master "Admin controls" switch. Off hides every
@@ -2253,6 +2274,43 @@ export const BGANIM_PUBLISH_POSE = Object.freeze({
   on: true,
   paused: false,
 });
+/* Helix studio (pages/helix.html) — slider writes stay in a draft map so
+   messing around does not publish to every other chat until Apply. Named
+   snapshots still hit real storage; they are saved looks, not the live pose. */
+const BGANIM_STUDIO_SKIP = { 'wise:chat-bg-anim-snaps-v1': 1 };
+let helixStudioDraft = null;
+let helixStudioPublished = null;
+let helixStudioUndo = null;
+
+function isBgAnimStudioKey(key) {
+  return typeof key === 'string' && key.indexOf('wise:chat-bg-anim') === 0 && !BGANIM_STUDIO_SKIP[key];
+}
+
+function bgAnimGet(key) {
+  if (helixStudioDraft && isBgAnimStudioKey(key) && helixStudioDraft.has(key)) {
+    return helixStudioDraft.get(key);
+  }
+  try { return localStorage.getItem(key); } catch (_) { return null; }
+}
+
+function bgAnimSet(key, val) {
+  if (helixStudioDraft && isBgAnimStudioKey(key)) {
+    helixStudioDraft.set(key, val == null ? null : String(val));
+    syncHelixStudioChrome();
+    return;
+  }
+  try { localStorage.setItem(key, val); } catch (_) {}
+}
+
+function bgAnimRemove(key) {
+  if (helixStudioDraft && isBgAnimStudioKey(key)) {
+    helixStudioDraft.set(key, null);
+    syncHelixStudioChrome();
+    return;
+  }
+  try { localStorage.removeItem(key); } catch (_) {}
+}
+
 /* Slider STOPS — 1% steps through 100%, then 2 / 5 / 10 out at the extremes.
    A plain linear 1–800 input would squeeze the shrink half of the window into
    a few pixels of a menu-width track; these stops spread the whole range
@@ -2297,10 +2355,10 @@ const BGANIM_RANGE_ATTRS = `min="0" max="${BGANIM_STOP_LAST}" step="1" value="${
 
 export function readBgAnimScaleAxis(axis) {
   try {
-    const keyed = parseInt(localStorage.getItem(BGANIM_SCALE_AXIS_KEYS[axis]), 10);
+    const keyed = parseInt(bgAnimGet(BGANIM_SCALE_AXIS_KEYS[axis]), 10);
     if (!isNaN(keyed)) return clampBgAnimScalePct(keyed);
     if (axis === 'y') {
-      const legacy = parseInt(localStorage.getItem(BGANIM_SCALE_LEGACY_KEY), 10);
+      const legacy = parseInt(bgAnimGet(BGANIM_SCALE_LEGACY_KEY), 10);
       if (!isNaN(legacy)) return clampBgAnimScalePct(legacy);
     }
   } catch (_) {}
@@ -2317,7 +2375,7 @@ export function readBgAnimScaleAxes() {
 }
 
 function persistBgAnimScaleAxis(axis, pct) {
-  try { localStorage.setItem(BGANIM_SCALE_AXIS_KEYS[axis], String(pct)); } catch (_) {}
+  try { bgAnimSet(BGANIM_SCALE_AXIS_KEYS[axis], String(pct)); } catch (_) {}
 }
 
 /* The three axes plus a MASTER row above them. Dragging the master scales
@@ -2400,7 +2458,7 @@ const BGANIM_KNOB_KEYS = BGANIM_KNOBS.reduce((m, k) => { m[k.id] = k.key; return
 
 export function readBgAnimKnob(id) {
   try {
-    const n = parseInt(localStorage.getItem(BGANIM_KNOB_KEYS[id]), 10);
+    const n = parseInt(bgAnimGet(BGANIM_KNOB_KEYS[id]), 10);
     if (!isNaN(n)) return clampBgAnimScalePct(n);
   } catch (_) {}
   const pub = BGANIM_PUBLISH_POSE.knobs[id];
@@ -2414,7 +2472,7 @@ export function readBgAnimKnobs() {
 }
 
 function persistBgAnimKnob(id, pct) {
-  try { localStorage.setItem(BGANIM_KNOB_KEYS[id], String(pct)); } catch (_) {}
+  try { bgAnimSet(BGANIM_KNOB_KEYS[id], String(pct)); } catch (_) {}
 }
 
 function broadcastBgAnimKnob(id, pct) {
@@ -2632,13 +2690,13 @@ function normalizeBgAnimDotsHex(raw) {
 }
 
 export function readBgAnimDotsColor() {
-  try { return normalizeBgAnimDotsHex(localStorage.getItem(BGANIM_DOTS_COLOR_KEY)); }
+  try { return normalizeBgAnimDotsHex(bgAnimGet(BGANIM_DOTS_COLOR_KEY)); }
   catch (_) { return ''; }
 }
 
 export function readBgAnimDotsMotion() {
   try {
-    const s = localStorage.getItem(BGANIM_DOTS_MOTION_KEY);
+    const s = bgAnimGet(BGANIM_DOTS_MOTION_KEY);
     if (BGANIM_DOTS_MOTIONS.includes(s)) return s;
   } catch (_) {}
   return BGANIM_PUBLISH_POSE.dotsMotion;
@@ -2646,13 +2704,13 @@ export function readBgAnimDotsMotion() {
 
 function persistBgAnimDotsColor(hex) {
   try {
-    if (hex) localStorage.setItem(BGANIM_DOTS_COLOR_KEY, hex);
-    else localStorage.removeItem(BGANIM_DOTS_COLOR_KEY);
+    if (hex) bgAnimSet(BGANIM_DOTS_COLOR_KEY, hex);
+    else bgAnimRemove(BGANIM_DOTS_COLOR_KEY);
   } catch (_) {}
 }
 
 function persistBgAnimDotsMotion(motion) {
-  try { localStorage.setItem(BGANIM_DOTS_MOTION_KEY, motion); } catch (_) {}
+  try { bgAnimSet(BGANIM_DOTS_MOTION_KEY, motion); } catch (_) {}
 }
 
 function broadcastBgAnimDots(state) {
@@ -2923,14 +2981,14 @@ const BGANIM_SPIN_DIRS = ['fwd', 'rev'];
 
 export function readBgAnimSpinDir() {
   try {
-    const s = localStorage.getItem(BGANIM_SPIN_KEY);
+    const s = bgAnimGet(BGANIM_SPIN_KEY);
     if (BGANIM_SPIN_DIRS.includes(s)) return s;
   } catch (_) {}
   return BGANIM_PUBLISH_POSE.spin;
 }
 
 function persistBgAnimSpinDir(dir) {
-  try { localStorage.setItem(BGANIM_SPIN_KEY, dir); } catch (_) {}
+  try { bgAnimSet(BGANIM_SPIN_KEY, dir); } catch (_) {}
 }
 
 function broadcastBgAnimSpin(dir) {
@@ -3005,9 +3063,9 @@ function normalizeBgAnimLook(look) {
 
 export function readBgAnimLook() {
   try {
-    const s = localStorage.getItem(BGANIM_LOOK_KEY);
+    const s = bgAnimGet(BGANIM_LOOK_KEY);
     if (s === 'tripo') {
-      try { localStorage.setItem(BGANIM_LOOK_KEY, '3d'); } catch (_) {}
+      try { bgAnimSet(BGANIM_LOOK_KEY, '3d'); } catch (_) {}
       return '3d';
     }
     if (BGANIM_LOOKS.includes(s)) return s;
@@ -3016,7 +3074,7 @@ export function readBgAnimLook() {
 }
 
 function persistBgAnimLook(look) {
-  try { localStorage.setItem(BGANIM_LOOK_KEY, normalizeBgAnimLook(look)); } catch (_) {}
+  try { bgAnimSet(BGANIM_LOOK_KEY, normalizeBgAnimLook(look)); } catch (_) {}
 }
 
 function broadcastBgAnimLook(look) {
@@ -3223,7 +3281,7 @@ const BGANIM_SNAP_STYLES = ['helix', 'helix-ten', 'orbit'];
 
 export function readBgAnimOpacityPct() {
   try {
-    const n = parseInt(localStorage.getItem(BGANIM_SNAP_OPACITY_KEY), 10);
+    const n = parseInt(bgAnimGet(BGANIM_SNAP_OPACITY_KEY), 10);
     if (!isNaN(n)) return Math.max(10, Math.min(100, n));
   } catch (_) {}
   return BGANIM_PUBLISH_POSE.opacity;
@@ -3231,7 +3289,7 @@ export function readBgAnimOpacityPct() {
 
 export function readBgAnimAngle() {
   try {
-    const n = parseInt(localStorage.getItem(BGANIM_SNAP_ANGLE_KEY), 10);
+    const n = parseInt(bgAnimGet(BGANIM_SNAP_ANGLE_KEY), 10);
     if (!isNaN(n)) return Math.max(-90, Math.min(90, n));
   } catch (_) {}
   return BGANIM_PUBLISH_POSE.angle;
@@ -3332,12 +3390,12 @@ function captureBgAnimSnapshot() {
   const opacity = readBgAnimOpacityPct();
   const angle = readBgAnimAngle();
   let on = true;
-  try { if (localStorage.getItem(BGANIM_SNAP_ON_KEY) === '0') on = false; } catch (_) {}
+  try { if (bgAnimGet(BGANIM_SNAP_ON_KEY) === '0') on = false; } catch (_) {}
   let paused = false;
-  try { if (localStorage.getItem(BGANIM_SNAP_PAUSED_KEY) === '1') paused = true; } catch (_) {}
+  try { if (bgAnimGet(BGANIM_SNAP_PAUSED_KEY) === '1') paused = true; } catch (_) {}
   let style = 'helix';
   try {
-    const st = localStorage.getItem(BGANIM_SNAP_STYLE_KEY);
+    const st = bgAnimGet(BGANIM_SNAP_STYLE_KEY);
     if (BGANIM_SNAP_STYLES.includes(st)) style = st;
   } catch (_) {}
   return clampBgAnimSnap({
@@ -3383,14 +3441,14 @@ function equalBgAnimSnap(a, b) {
 
 function readUserBgAnimSnaps() {
   try {
-    const raw = JSON.parse(localStorage.getItem(BGANIM_SNAPS_KEY) || '[]');
+    const raw = JSON.parse(bgAnimGet(BGANIM_SNAPS_KEY) || '[]');
     if (!Array.isArray(raw)) return [];
     return raw.map(clampBgAnimSnap).filter(Boolean).slice(0, BGANIM_SNAPS_MAX_USER);
   } catch (_) { return []; }
 }
 
 function persistUserBgAnimSnaps(list) {
-  try { localStorage.setItem(BGANIM_SNAPS_KEY, JSON.stringify(list)); } catch (_) {}
+  try { bgAnimSet(BGANIM_SNAPS_KEY, JSON.stringify(list)); } catch (_) {}
 }
 
 function listedBgAnimSnaps() {
@@ -3413,8 +3471,8 @@ function activeBgAnimSnapId() {
 function persistBgAnimSnapshotState(s) {
   persistBgAnimLook(s.look);
   BGANIM_MAT_IDS.forEach((id) => persistBgAnimMat(id, s.mats[id]));
-  try { localStorage.setItem(BGANIM_SNAP_OPACITY_KEY, String(s.opacity)); } catch (_) {}
-  try { localStorage.setItem(BGANIM_SNAP_ANGLE_KEY, String(s.angle)); } catch (_) {}
+  try { bgAnimSet(BGANIM_SNAP_OPACITY_KEY, String(s.opacity)); } catch (_) {}
+  try { bgAnimSet(BGANIM_SNAP_ANGLE_KEY, String(s.angle)); } catch (_) {}
   persistBgAnimCamera(s.camera);
   persistBgAnimAzimuth(s.azimuth);
   persistBgAnimShift(s.shift);
@@ -3425,9 +3483,9 @@ function persistBgAnimSnapshotState(s) {
   BGANIM_MOTION_KNOBS.forEach((k) => persistBgAnimMotionKnob(k.motion, k.id, s.motionKnobs[k.motion][k.id]));
   persistBgAnimSpinDir(s.spin);
   persistBgAnimRungsMatch(s.rungsMatch);
-  try { localStorage.setItem(BGANIM_SNAP_STYLE_KEY, s.style); } catch (_) {}
-  try { localStorage.setItem(BGANIM_SNAP_ON_KEY, s.on ? '1' : '0'); } catch (_) {}
-  try { localStorage.setItem(BGANIM_SNAP_PAUSED_KEY, s.paused ? '1' : '0'); } catch (_) {}
+  try { bgAnimSet(BGANIM_SNAP_STYLE_KEY, s.style); } catch (_) {}
+  try { bgAnimSet(BGANIM_SNAP_ON_KEY, s.on ? '1' : '0'); } catch (_) {}
+  try { bgAnimSet(BGANIM_SNAP_PAUSED_KEY, s.paused ? '1' : '0'); } catch (_) {}
 }
 
 function broadcastBgAnimSnapshotState(s) {
@@ -3455,6 +3513,150 @@ function applyBgAnimSnapshot(raw) {
   if (!s) return;
   persistBgAnimSnapshotState(s);
   broadcastBgAnimSnapshotState(s);
+}
+
+function helixStudioEqualsPublished(cur) {
+  if (!helixStudioPublished || !cur) return false;
+  if (!equalBgAnimSnap(cur, helixStudioPublished)) return false;
+  if (!!cur.on !== !!helixStudioPublished.on) return false;
+  if (!!cur.paused !== !!helixStudioPublished.paused) return false;
+  return true;
+}
+
+export function isHelixStudioOn() {
+  return !!helixStudioDraft;
+}
+
+export function isHelixStudioDirty() {
+  if (!helixStudioDraft || !helixStudioPublished) return false;
+  return !helixStudioEqualsPublished(captureBgAnimSnapshot());
+}
+
+export function canHelixStudioUndo() {
+  if (!helixStudioDraft) return false;
+  return isHelixStudioDirty() || !!helixStudioUndo;
+}
+
+export function beginHelixStudio() {
+  if (helixStudioDraft) return;
+  helixStudioPublished = captureBgAnimSnapshot();
+  helixStudioUndo = null;
+  helixStudioDraft = new Map();
+}
+
+function flushHelixStudioDraftToStorage() {
+  if (!helixStudioDraft) return;
+  helixStudioDraft.forEach((val, key) => {
+    try {
+      if (val == null) localStorage.removeItem(key);
+      else localStorage.setItem(key, val);
+    } catch (_) {}
+  });
+}
+
+export function applyHelixStudio() {
+  if (!helixStudioDraft || !isHelixStudioDirty()) return false;
+  const next = captureBgAnimSnapshot();
+  helixStudioUndo = cloneBgAnimSnap(helixStudioPublished);
+  flushHelixStudioDraftToStorage();
+  helixStudioPublished = cloneBgAnimSnap(next);
+  helixStudioDraft.clear();
+  broadcastBgAnimSnapshotState(next);
+  syncHelixStudioChrome();
+  return true;
+}
+
+export function undoHelixStudio() {
+  if (!helixStudioDraft) return false;
+  if (isHelixStudioDirty()) {
+    helixStudioDraft.clear();
+    persistBgAnimSnapshotState(helixStudioPublished);
+    helixStudioDraft.clear();
+    broadcastBgAnimSnapshotState(helixStudioPublished);
+    syncHelixStudioChrome();
+    return true;
+  }
+  if (!helixStudioUndo) return false;
+  const restore = cloneBgAnimSnap(helixStudioUndo);
+  helixStudioUndo = null;
+  helixStudioDraft = null;
+  persistBgAnimSnapshotState(restore);
+  helixStudioDraft = new Map();
+  helixStudioPublished = cloneBgAnimSnap(restore);
+  broadcastBgAnimSnapshotState(restore);
+  syncHelixStudioChrome();
+  return true;
+}
+
+function syncHelixStudioChrome() {
+  if (typeof document === 'undefined') return;
+  const dirty = isHelixStudioDirty();
+  const canUndo = canHelixStudioUndo();
+  document.querySelectorAll('.sc-helix-studio-bar').forEach((bar) => {
+    const apply = bar.querySelector('.sc-helix-apply');
+    const undo = bar.querySelector('.sc-helix-undo');
+    if (apply) {
+      apply.disabled = !dirty;
+      apply.setAttribute('aria-disabled', dirty ? 'false' : 'true');
+    }
+    if (undo) {
+      undo.disabled = !canUndo;
+      undo.setAttribute('aria-disabled', canUndo ? 'false' : 'true');
+    }
+    bar.classList.toggle('is-dirty', dirty);
+  });
+}
+
+function mountHelixStudioBar(root) {
+  if (!helixStudioDraft || !root) return;
+  const host = root.querySelector ? (root.querySelector('.sc-menu-group--helix') || root) : root;
+  if (!host || !host.appendChild) return;
+  let bar = host.querySelector('.sc-helix-studio-bar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.className = 'sc-helix-studio-bar';
+    bar.innerHTML =
+      '<button type="button" class="sc-helix-undo" disabled aria-disabled="true" title="Restore the last published Helix">' +
+        '<span class="material-symbols-outlined" aria-hidden="true">undo</span>Undo' +
+      '</button>' +
+      '<button type="button" class="sc-helix-apply btn btn-primary" disabled aria-disabled="true" title="Publish this Helix to every chat">' +
+        '<span class="material-symbols-outlined" aria-hidden="true">done</span>Apply' +
+      '</button>';
+    host.appendChild(bar);
+    const applyBtn = bar.querySelector('.sc-helix-apply');
+    const undoBtn = bar.querySelector('.sc-helix-undo');
+    if (applyBtn) applyBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      applyHelixStudio();
+    });
+    if (undoBtn) undoBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      undoHelixStudio();
+    });
+  }
+  syncHelixStudioChrome();
+}
+
+function openHelixStudioFloat(pop, chatEl) {
+  if (!pop) return null;
+  groupifyChatMenu(pop);
+  pop.setAttribute('data-admin-demo', 'on');
+  applyChatMenuAdminGate(pop);
+  const group = queryChatMenu(pop, '.sc-menu-group--helix');
+  if (!group) return null;
+  popOutHelixColumn(group, pop);
+  const shell = helixFloatForPop(pop);
+  if (!shell) return null;
+  shell.setAttribute('data-admin-demo', 'on');
+  applyChatMenuAdminGate(shell);
+  mountHelixStudioBar(shell);
+  const r = chatEl && chatEl.getBoundingClientRect ? chatEl.getBoundingClientRect() : { right: 420, top: 72 };
+  const w = shell.offsetWidth || 320;
+  const left = Math.max(16, Math.min((r.right || 420) - 36, window.innerWidth - w - 20));
+  clampHelixFloat(shell, left, Math.max(16, (r.top || 72) + 48));
+  return shell;
 }
 
 function saveCurrentBgAnimSnap() {
@@ -3692,7 +3894,7 @@ const BGANIM_RUNGS_MATCH_KEY = 'wise:chat-bg-anim-rungs-match';
 
 export function readBgAnimRungsMatch() {
   try {
-    const s = localStorage.getItem(BGANIM_RUNGS_MATCH_KEY);
+    const s = bgAnimGet(BGANIM_RUNGS_MATCH_KEY);
     if (s === '1') return true;
     if (s === '0') return false;
   } catch (_) {}
@@ -3701,8 +3903,8 @@ export function readBgAnimRungsMatch() {
 
 function persistBgAnimRungsMatch(on) {
   try {
-    if (on) localStorage.setItem(BGANIM_RUNGS_MATCH_KEY, '1');
-    else localStorage.removeItem(BGANIM_RUNGS_MATCH_KEY);
+    if (on) bgAnimSet(BGANIM_RUNGS_MATCH_KEY, '1');
+    else bgAnimRemove(BGANIM_RUNGS_MATCH_KEY);
   } catch (_) {}
 }
 
@@ -3803,7 +4005,7 @@ function clampBgAnimShift(n) {
 
 export function readBgAnimCamera() {
   try {
-    const s = parseInt(localStorage.getItem(BGANIM_CAMERA_KEY), 10);
+    const s = parseInt(bgAnimGet(BGANIM_CAMERA_KEY), 10);
     if (!isNaN(s)) return clampBgAnimCamera(s);
   } catch (_) {}
   return BGANIM_CAMERA_DEFAULT;
@@ -3811,7 +4013,7 @@ export function readBgAnimCamera() {
 
 export function readBgAnimAzimuth() {
   try {
-    const s = parseInt(localStorage.getItem(BGANIM_AZIMUTH_KEY), 10);
+    const s = parseInt(bgAnimGet(BGANIM_AZIMUTH_KEY), 10);
     if (!isNaN(s)) return clampBgAnimAzimuth(s);
   } catch (_) {}
   return BGANIM_AZIMUTH_DEFAULT;
@@ -3819,22 +4021,22 @@ export function readBgAnimAzimuth() {
 
 export function readBgAnimShift() {
   try {
-    const s = parseInt(localStorage.getItem(BGANIM_SHIFT_KEY), 10);
+    const s = parseInt(bgAnimGet(BGANIM_SHIFT_KEY), 10);
     if (!isNaN(s)) return clampBgAnimShift(s);
   } catch (_) {}
   return BGANIM_SHIFT_DEFAULT;
 }
 
 function persistBgAnimCamera(deg) {
-  try { localStorage.setItem(BGANIM_CAMERA_KEY, String(deg)); } catch (_) {}
+  try { bgAnimSet(BGANIM_CAMERA_KEY, String(deg)); } catch (_) {}
 }
 
 function persistBgAnimAzimuth(deg) {
-  try { localStorage.setItem(BGANIM_AZIMUTH_KEY, String(deg)); } catch (_) {}
+  try { bgAnimSet(BGANIM_AZIMUTH_KEY, String(deg)); } catch (_) {}
 }
 
 function persistBgAnimShift(pct) {
-  try { localStorage.setItem(BGANIM_SHIFT_KEY, String(pct)); } catch (_) {}
+  try { bgAnimSet(BGANIM_SHIFT_KEY, String(pct)); } catch (_) {}
 }
 
 function broadcastBgAnimCamera(deg) {
@@ -5831,7 +6033,11 @@ function isChatMenuAdminGated(el) {
 }
 function applyChatMenuAdminGate(pop) {
   if (!pop) return;
-  const on = isChatAdminUiOn();
+  /* Catalog specimens can pin a state with data-admin-demo so All Modules
+     can show the member-facing menu without inheriting this browser's
+     Internal admins setting (or the reverse). */
+  const lock = pop.getAttribute && pop.getAttribute('data-admin-demo');
+  const on = lock === 'on' ? true : lock === 'off' ? false : isChatAdminUiOn();
   pop.classList.toggle('sc-menu-admin-off', !on);
   const wrap = pop.querySelector('.sc-menu-admin-wrap');
   const btn = wrap && (wrap.__adminBtn || wrap.querySelector('.sc-menu-admin-btn'));
@@ -6270,6 +6476,11 @@ function popOutHelixColumn(group, pop) {
   clampHelixFloat(shell, rect.left, rect.top);
   wireHelixFloatDrag(shell);
   if (host) applyChatMenuAdminGate(host);
+  if (helixStudioDraft) {
+    shell.setAttribute('data-admin-demo', 'on');
+    applyChatMenuAdminGate(shell);
+    mountHelixStudioBar(shell);
+  }
 }
 
 function wireHelixFloatDrag(shell) {
@@ -6338,6 +6549,7 @@ function decorateHelixHead(group, pop) {
       if (shell) dockHelixColumn(shell);
     });
   }
+  if (helixStudioDraft) mountHelixStudioBar(group);
 }
 
 function finishChatMenuLayout(pop) {
@@ -7027,6 +7239,7 @@ if (typeof window !== 'undefined') window.WiseTypeInTranscript = typeInTranscrip
  */
 export function mountWISEcodeAIChat(rootEl, opts = {}) {
   if (!rootEl) return null;
+  if (opts.helixStudio === true) beginHelixStudio();
   injectChatExtras();
   /* Tag the chat root so the shared docked/sticky-module CSS (injected by
      chat-history.js) can layer the chat ABOVE its flanking History / Turns
@@ -7476,7 +7689,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      key, broadcast on wise:chat-bg-anim) so every mounted chat's switch follows. */
   const BGANIM_PREF_KEY = 'wise:chat-bg-anim';
   let bgAnimOn = true;
-  try { if (localStorage.getItem(BGANIM_PREF_KEY) === '0') bgAnimOn = false; } catch (_) {}
+  try { if (bgAnimGet(BGANIM_PREF_KEY) === '0') bgAnimOn = false; } catch (_) {}
   /* Opacity of the background animation (0.1–1). Shared APP-WIDE (one key, broadcast
      on wise:chat-bg-anim-opacity), adjustable from the slider below the toggle. */
   const BGANIM_OPACITY_KEY = 'wise:chat-bg-anim-opacity';
@@ -7484,7 +7697,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      opacity slider, at which point their explicit choice takes over app-wide. */
   let bgAnimOpacity = BGANIM_PUBLISH_POSE.opacity / 100;
   let bgAnimOpacityUserSet = false;
-  try { const s = parseInt(localStorage.getItem(BGANIM_OPACITY_KEY), 10); if (!isNaN(s)) { bgAnimOpacity = Math.max(0.1, Math.min(1, s / 100)); bgAnimOpacityUserSet = true; } } catch (_) {}
+  try { const s = parseInt(bgAnimGet(BGANIM_OPACITY_KEY), 10); if (!isNaN(s)) { bgAnimOpacity = Math.max(0.1, Math.min(1, s / 100)); bgAnimOpacityUserSet = true; } } catch (_) {}
   /* Axis tilt of the helix in degrees (−90…90). Shared APP-WIDE (one key,
      broadcast on wise:chat-bg-anim-angle). Published default matches Scene. */
   const BGANIM_ANGLE_KEY = 'wise:chat-bg-anim-angle';
@@ -7524,7 +7737,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      one shared setting; plays by default, a stored '1' restores the paused state. */
   const BGANIM_PAUSED_KEY = 'wise:chat-bg-anim-paused';
   let bgAnimPaused = false;
-  try { if (localStorage.getItem(BGANIM_PAUSED_KEY) === '1') bgAnimPaused = true; } catch (_) {}
+  try { if (bgAnimGet(BGANIM_PAUSED_KEY) === '1') bgAnimPaused = true; } catch (_) {}
   /* Which background-animation STYLE runs — the food-DNA 'helix' (default),
      the same helix with about ten products ('helix-ten'), or the owl 'orbit'.
      Shared APP-WIDE (one key, broadcast on wise:chat-bg-anim-style) so every
@@ -7535,8 +7748,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   const isHelixStyle = (s) => s === 'helix' || s === 'helix-ten';
   let bgAnimStyle = BGANIM_PUBLISH_POSE.style;
   try {
-    const s = localStorage.getItem(BGANIM_STYLE_KEY);
-    if (s === 'stamp') { try { localStorage.setItem(BGANIM_STYLE_KEY, 'helix'); } catch (_) {} }
+    const s = bgAnimGet(BGANIM_STYLE_KEY);
+    if (s === 'stamp') { try { bgAnimSet(BGANIM_STYLE_KEY, 'helix'); } catch (_) {} }
     else if (BGANIM_STYLES.includes(s)) bgAnimStyle = s;
   } catch (_) {}
   /* "Response streaming" (three-dot menu) — how much of WISEcodeAI's thinking is
@@ -9384,7 +9597,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
 
   /* Width changer for the broken-out Turns module. Cycles the canonical five
      tiers shared by every module: single → double → triple → fill → custom. */
-  const TURNS_W_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
+  const TURNS_W_ICONS = ['width_normal', 'width_wide', 'width_wide', 'width_full', 'fit_width'];
   const TURNS_W_TITLES = [
     'Width (single) — tap to widen',
     'Width (double) — tap to widen',
@@ -9965,7 +10178,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       const pct = Math.max(10, Math.min(100, parseInt(bgOpacityRange.value, 10) || 100));
       bgAnimOpacity = pct / 100;
       bgAnimOpacityUserSet = true;                 // an explicit drag overrides the pane-count default
-      try { localStorage.setItem(BGANIM_OPACITY_KEY, String(pct)); } catch (_) {}
+      try { bgAnimSet(BGANIM_OPACITY_KEY, String(pct)); } catch (_) {}
       try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-opacity', { detail: { opacity: bgAnimOpacity } })); } catch (_) {}
       const val = menuSel('.sc-bganim-opacity-val');
       if (val) val.textContent = pct + '%';
@@ -9989,7 +10202,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     bgAngleRange.addEventListener('input', () => {
       const deg = Math.max(-90, Math.min(90, parseInt(bgAngleRange.value, 10) || 0));
       bgAnimAngle = deg;
-      try { localStorage.setItem(BGANIM_ANGLE_KEY, String(deg)); } catch (_) {}
+      try { bgAnimSet(BGANIM_ANGLE_KEY, String(deg)); } catch (_) {}
       try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-angle', { detail: { angle: bgAnimAngle } })); } catch (_) {}
       const aval = menuSel('.sc-bganim-angle-val');
       if (aval) aval.textContent = deg + '°';
@@ -10185,7 +10398,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   if (bgPlaybackBtn) {
     bgPlaybackBtn.addEventListener('click', () => {
       bgAnimPaused = !bgAnimPaused;
-      try { localStorage.setItem(BGANIM_PAUSED_KEY, bgAnimPaused ? '1' : '0'); } catch (_) {}
+      try { bgAnimSet(BGANIM_PAUSED_KEY, bgAnimPaused ? '1' : '0'); } catch (_) {}
       try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-paused', { detail: { paused: bgAnimPaused } })); } catch (_) {}
       syncBgAnimMenu();
       applyBgAnimPaused();
@@ -11311,9 +11524,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (e.key === 'Escape') { closeReasonPopovers(); closeMoreMenus(); }
   });
 
-  /* Answer-action tooltips (copy / thumbs / the icons inside the three-dot
-     menu) are wired once at document level by wireAnswerTips() — the more-menu
-     portals onto <body>, so a listener on `messages` would miss those icons. */
+  /* Answer-action hover labels are the shared #lir-tooltip. wireAnswerTips()
+     only mounts the flash toast used after copying a turn ID. */
 
   /* Persistent intent chips — same routing as the welcome chips, but always
      available beneath the thread so any conversational route stays one tap
@@ -11476,7 +11688,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   /* Module width toggle (mirrors the .panel-width-toggle-btn on the other
      modules). Width is the canonical five-tier cycle: 0 single, 1 double,
      2 triple, 3 fill, 4 custom. Custom keeps the current width until dragged. */
-  const SC_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
+  const SC_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_wide', 'width_full', 'fit_width'];
   const SC_WIDTH_TITLES = [
     'Width (single) — tap to widen',
     'Width (double) — tap to widen',
@@ -11957,7 +12169,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
          switch sync + start/stop (here and on every sibling chat). Keep the menu
          open so the pink switch reads back its new state. */
       bgAnimOn = !bgAnimOn;
-      try { localStorage.setItem(BGANIM_PREF_KEY, bgAnimOn ? '1' : '0'); } catch (_) {}
+      try { bgAnimSet(BGANIM_PREF_KEY, bgAnimOn ? '1' : '0'); } catch (_) {}
       try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim', { detail: { on: bgAnimOn } })); } catch (_) {}
     }
     else if (action === 'bg-anim-style') {
@@ -11968,7 +12180,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       const s = item.dataset.style;
       if (BGANIM_STYLES.includes(s)) {
         if (s !== bgAnimStyle) {
-          try { localStorage.setItem(BGANIM_STYLE_KEY, s); } catch (_) {}
+          try { bgAnimSet(BGANIM_STYLE_KEY, s); } catch (_) {}
           try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-style', { detail: { style: s } })); } catch (_) {}
         }
         /* Picking a style is also the one-tap way to SEE it: if the field was
@@ -11976,7 +12188,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
            control. Broadcast so every sibling chat + this menu's switch follow. */
         if (!bgAnimOn) {
           bgAnimOn = true;
-          try { localStorage.setItem(BGANIM_PREF_KEY, '1'); } catch (_) {}
+          try { bgAnimSet(BGANIM_PREF_KEY, '1'); } catch (_) {}
           try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim', { detail: { on: true } })); } catch (_) {}
         }
       }
@@ -12372,6 +12584,17 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     try { opts.onToggleOutputs && opts.onToggleOutputs(outputsHidden); } catch (_) {}
   }
 
+  /* Helix studio — pop the full Helix column out on load so the playground
+     opens with every control already in the draggable card. */
+  if (opts.helixStudio === true && morePop) {
+    const bootStudio = () => openHelixStudioFloat(morePop, rootEl);
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(() => requestAnimationFrame(bootStudio));
+    } else {
+      bootStudio();
+    }
+  }
+
   /* `respond` is the streamed host-reply path: it runs the same full reasoning
      trace as a chip-driven turn before posting the given reply, so hosts that
      post their own answers (bridged engines, board mirrors) never skip the
@@ -12489,10 +12712,10 @@ export function wireStandardChatMenu(cfg = {}) {
   const BGANIM_ANGLE_KEY = 'wise:chat-bg-anim-angle';
   const BGANIM_PAUSED_KEY = 'wise:chat-bg-anim-paused';
   let bgOn = true;
-  try { if (localStorage.getItem(BGANIM_KEY) === '0') bgOn = false; } catch (_) {}
+  try { if (bgAnimGet(BGANIM_KEY) === '0') bgOn = false; } catch (_) {}
   let bgOpacity = BGANIM_PUBLISH_POSE.opacity / 100, bgUserSet = false;
   try {
-    const s = parseInt(localStorage.getItem(BGANIM_OPACITY_KEY), 10);
+    const s = parseInt(bgAnimGet(BGANIM_OPACITY_KEY), 10);
     if (!isNaN(s)) { bgOpacity = Math.max(0.1, Math.min(1, s / 100)); bgUserSet = true; }
   } catch (_) {}
   let bgAngle = readBgAnimAngle();
@@ -12508,7 +12731,7 @@ export function wireStandardChatMenu(cfg = {}) {
   let bgLook = readBgAnimLook();
   const bgMats = readBgAnimMats();
   let bgPaused = false;
-  try { if (localStorage.getItem(BGANIM_PAUSED_KEY) === '1') bgPaused = true; } catch (_) {}
+  try { if (bgAnimGet(BGANIM_PAUSED_KEY) === '1') bgPaused = true; } catch (_) {}
   const effOpacity = () => (bgUserSet ? bgOpacity : BGANIM_PUBLISH_POSE.opacity / 100);
   /* Background-animation STYLE (helix · helix-ten · orbit) — shared app-wide,
      same key/event as the mounted module so every surface swaps in lockstep. A
@@ -12518,8 +12741,8 @@ export function wireStandardChatMenu(cfg = {}) {
   const isHelixStyle = (s) => s === 'helix' || s === 'helix-ten';
   let bgStyle = BGANIM_PUBLISH_POSE.style;
   try {
-    const s = localStorage.getItem(BGANIM_STYLE_KEY);
-    if (s === 'stamp') { try { localStorage.setItem(BGANIM_STYLE_KEY, 'helix'); } catch (_) {} }
+    const s = bgAnimGet(BGANIM_STYLE_KEY);
+    if (s === 'stamp') { try { bgAnimSet(BGANIM_STYLE_KEY, 'helix'); } catch (_) {} }
     else if (BGANIM_STYLES.includes(s)) bgStyle = s;
   } catch (_) {}
   /* Inline chats copied the menu markup before the Style row existed; inject it
@@ -12722,7 +12945,7 @@ export function wireStandardChatMenu(cfg = {}) {
   };
   if (bgItem) bgItem.addEventListener('click', () => {
     bgOn = !bgOn;
-    try { localStorage.setItem(BGANIM_KEY, bgOn ? '1' : '0'); } catch (_) {}
+    try { bgAnimSet(BGANIM_KEY, bgOn ? '1' : '0'); } catch (_) {}
     try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim', { detail: { on: bgOn } })); } catch (_) {}
   });
   document.addEventListener('wise:chat-bg-anim', (e) => {
@@ -12735,7 +12958,7 @@ export function wireStandardChatMenu(cfg = {}) {
     const pct = Math.max(10, Math.min(100, parseInt(bgRange.value, 10) || 100));
     bgOpacity = pct / 100;
     bgUserSet = true;
-    try { localStorage.setItem(BGANIM_OPACITY_KEY, String(pct)); } catch (_) {}
+    try { bgAnimSet(BGANIM_OPACITY_KEY, String(pct)); } catch (_) {}
     try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-opacity', { detail: { opacity: bgOpacity } })); } catch (_) {}
     const val = q('.sc-bganim-opacity-val');
     if (val) val.textContent = pct + '%';
@@ -12753,7 +12976,7 @@ export function wireStandardChatMenu(cfg = {}) {
   if (bgAngleRange) bgAngleRange.addEventListener('input', () => {
     const deg = Math.max(-90, Math.min(90, parseInt(bgAngleRange.value, 10) || 0));
     bgAngle = deg;
-    try { localStorage.setItem(BGANIM_ANGLE_KEY, String(deg)); } catch (_) {}
+    try { bgAnimSet(BGANIM_ANGLE_KEY, String(deg)); } catch (_) {}
     try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-angle', { detail: { angle: bgAngle } })); } catch (_) {}
     const aval = q('.sc-bganim-angle-val');
     if (aval) aval.textContent = deg + '°';
@@ -12960,7 +13183,7 @@ export function wireStandardChatMenu(cfg = {}) {
   const bgPlaybackBtn = q('[data-sc="bg-anim-playback"]');
   if (bgPlaybackBtn) bgPlaybackBtn.addEventListener('click', () => {
     bgPaused = !bgPaused;
-    try { localStorage.setItem(BGANIM_PAUSED_KEY, bgPaused ? '1' : '0'); } catch (_) {}
+    try { bgAnimSet(BGANIM_PAUSED_KEY, bgPaused ? '1' : '0'); } catch (_) {}
     try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-paused', { detail: { paused: bgPaused } })); } catch (_) {}
     syncBg();
     applyBgPaused();
@@ -12975,14 +13198,14 @@ export function wireStandardChatMenu(cfg = {}) {
       const s = btn.dataset.style;
       if (BGANIM_STYLES.includes(s)) {
         if (s !== bgStyle) {
-          try { localStorage.setItem(BGANIM_STYLE_KEY, s); } catch (_) {}
+          try { bgAnimSet(BGANIM_STYLE_KEY, s); } catch (_) {}
           try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-style', { detail: { style: s } })); } catch (_) {}
         }
         /* Picking a style is also the one-tap way to SEE it: turn the field on
            if it was off so "Orbit" (or "Helix" / "Ten") isn't a dead control. */
         if (!bgOn) {
           bgOn = true;
-          try { localStorage.setItem(BGANIM_KEY, '1'); } catch (_) {}
+          try { bgAnimSet(BGANIM_KEY, '1'); } catch (_) {}
           try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim', { detail: { on: true } })); } catch (_) {}
         }
       }

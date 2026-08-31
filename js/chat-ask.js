@@ -124,7 +124,7 @@
     var askRevealTimer = null;
     var askMorePop = null;
     var overlayBaseW = 300;
-    var WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
+    var WIDTH_ICONS = ['width_normal', 'width_wide', 'width_wide', 'width_full', 'fit_width'];
     var WIDTH_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to widen', 'Width (custom) — drag to any size'];
     function defaultAskTier() {
       if (global.WPaneWidth && typeof global.WPaneWidth.defaultChatTier === 'function') {

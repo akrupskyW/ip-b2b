@@ -171,7 +171,7 @@
                 <div class="mi-hero-text">
                   <div class="mi-hero-title-row">
                     <h1 class="mi-hero-title">All Modules</h1>
-                    <span class="mi-load-pct no-countup" id="mi-load-pct" data-no-countup aria-live="polite" title="Bytes received for this page’s files">0%</span>
+                    <span class="mi-load-pct no-countup" id="mi-load-pct" data-no-countup aria-live="polite" title="How much of the whole project has arrived">0%</span>
                     <span class="mi-load-bytes no-countup" id="mi-load-bytes" data-no-countup></span>
                   </div>
                 </div>
@@ -182,82 +182,81 @@
       </main>
     </div>
   </div>
+  <script src="../js/project-inventory-data.js"></script>
   <script>
-    /* Real load meter for All Modules: bytes actually received for THIS page
-       becoming usable — the document, its scripts, styles and fonts. 100%
-       means the kitchen-sink UI can paint, not that every chat-helix photo
-       or recursively discovered import has arrived. Lazy catalog preview
-       iframes, dock product photos, and import-graph fetches are excluded. */
+    /* Load meter: expected size is the whole shippable project on disk
+       (WISE_PROJECT_INVENTORY from scripts/scan_code_stats.py). The percent
+       is how much of THAT project has arrived in this tab — every file in
+       the tree, not this page’s boot graph. Completions paint across frames
+       so the headline climbs instead of jumping once. */
     (function () {
-      var files = Object.create(null);
-      var winLoaded = false;
-      var fontsReady = !document.fonts;
-      var finished = false;
+      var inv = window.WISE_PROJECT_INVENTORY || null;
+      var invMap = Object.create(null);
+      var arrived = Object.create(null);
       var lastPct = 0;
+      var lastLoaded = 0;
       var lastLabel = '0%';
       var lastBytes = '';
-      var SKIP_KIND = { xmlhttprequest: 1, fetch: 1, beacon: 1, ping: 1, img: 1, image: 1, iframe: 1 };
+      var shownPct = 0;
+      var shownLoaded = 0;
+      var displayRaf = 0;
+      var SKIP_KIND = { beacon: 1, ping: 1 };
 
-      function abs(url) {
-        try { return new URL(url, location.href).href.split('#')[0]; }
-        catch (e) { return String(url || ''); }
+      function rebuildInvMap() {
+        invMap = Object.create(null);
+        var list = (inv && inv.list) || [];
+        for (var i = 0; i < list.length; i++) {
+          if (list[i] && list[i].path) invMap[list[i].path] = list[i].bytes || 0;
+        }
       }
-      function skip(url) {
+      rebuildInvMap();
+
+      function expectedBytes() {
+        return (inv && inv.bytes) || 0;
+      }
+      function expectedFiles() {
+        return (inv && inv.files) || 0;
+      }
+      function projectPath(url) {
+        try {
+          var abs = new URL(url, location.href);
+          if (abs.origin !== location.origin) return '';
+          return String(abs.pathname || '').replace(/^\//, '');
+        } catch (e) { return ''; }
+      }
+      function sizeOf(entry) {
+        var n = (entry && (entry.encodedBodySize || entry.decodedBodySize || entry.transferSize)) || 0;
+        if (n) return n;
+        var p = projectPath(entry && entry.name);
+        return (p && invMap[p]) || 0;
+      }
+      function skipUrl(url) {
         if (!url || url.indexOf('data:') === 0 || url.indexOf('blob:') === 0) return true;
         if (/livereload|\/sockjs\/|browser-sync/i.test(url)) return true;
         if (/^chrome-extension:|^safari-extension:/i.test(url)) return true;
-        if (/[?&]preview=1(?:&|$)/.test(url)) return true;
-        /* Chat helix / component thumbs / capture CDNs are not this page’s load. */
-        if (/\/assets\//i.test(url)) return true;
-        if (/cdn\.jsdelivr\.net/i.test(url)) return true;
+        try {
+          var abs = new URL(url, location.href);
+          if (abs.origin !== location.origin) return true;
+          if (abs.pathname.slice(-1) === '/') return true;
+        } catch (e) { return true; }
         return false;
-      }
-      function rec(url, kind) {
-        url = abs(url);
-        if (skip(url)) return null;
-        if (!files[url]) files[url] = { expect: 0, got: 0, done: false, kind: kind || 'other' };
-        else if (kind && files[url].kind === 'other') files[url].kind = kind;
-        return files[url];
-      }
-      function sizeOf(entry) {
-        return (entry && (entry.encodedBodySize || entry.decodedBodySize || entry.transferSize)) || 0;
       }
       function applyEntry(entry) {
         if (!entry || !entry.name) return;
         if (SKIP_KIND[entry.initiatorType]) return;
-        if (entry.initiatorType === 'iframe') return;
-        var f = rec(entry.name, entry.initiatorType);
-        if (!f) return;
-        var n = sizeOf(entry);
-        if (n) {
-          f.got = Math.max(f.got, n);
-          f.expect = Math.max(f.expect, n);
-        }
-        f.done = true;
-        paint();
+        if (skipUrl(entry.name)) return;
+        var path = projectPath(entry.name);
+        var n = sizeOf(entry) || (path && invMap[path]) || 0;
+        if (!n) return;
+        var key = path || String(entry.name).split('#')[0];
+        if ((arrived[key] || 0) >= n) return;
+        arrived[key] = n;
+        scheduleDisplay();
       }
-      function scanDom() {
-        rec(location.href, 'document');
-        document.querySelectorAll('script[src]').forEach(function (el) {
-          rec(el.src, 'script');
-          if (el.dataset.miLoadBound) return;
-          el.dataset.miLoadBound = '1';
-          el.addEventListener('load', function () {
-            var x = rec(el.src, 'script');
-            if (x) x.done = true;
-            paint();
-          });
-        });
-        document.querySelectorAll('link[rel="stylesheet"][href], link[rel="preload"][href], link[rel="modulepreload"][href]').forEach(function (el) {
-          rec(el.href, el.rel === 'stylesheet' ? 'css' : 'script');
-          if (el.dataset.miLoadBound) return;
-          el.dataset.miLoadBound = '1';
-          el.addEventListener('load', function () {
-            var x = rec(el.href, el.rel === 'stylesheet' ? 'css' : 'script');
-            if (x) x.done = true;
-            paint();
-          });
-        });
+      function arrivedTotal() {
+        var n = 0;
+        Object.keys(arrived).forEach(function (k) { n += arrived[k]; });
+        return n;
       }
       function fmtBytes(n) {
         n = Math.max(0, n || 0);
@@ -268,55 +267,52 @@
         }
         return (n / (1024 * 1024)).toFixed(1) + ' MB';
       }
-      function pendingCount() {
-        var n = 0;
-        Object.keys(files).forEach(function (u) { if (!files[u].done) n++; });
-        return n;
-      }
-      function paint() {
-        var loaded = 0, expected = 0, n = 0;
-        Object.keys(files).forEach(function (u) {
-          var f = files[u];
-          n++;
-          loaded += f.got;
-          expected += Math.max(f.expect, f.got);
-        });
-        if (loaded > expected) expected = loaded;
-        var pending = pendingCount();
-        var complete = winLoaded && fontsReady && pending === 0 && n > 0;
-        /* Pending files have no byte size until they finish, so a pure
-           loaded/expected ratio sticks at 99%. Reserve an equal share of the
-           bar for each file that is still arriving. */
+      function targets() {
+        var loaded = arrivedTotal();
+        var expected = expectedBytes();
+        var complete = expected > 0 && loaded >= expected;
         var pct = 0;
         if (complete) pct = 100;
-        else if (n > 0) {
-          var byteFrac = expected > 0 ? loaded / expected : 0;
-          var reserved = pending / n;
-          pct = Math.round(100 * byteFrac * (1 - reserved));
-        }
+        else if (expected > 0) pct = Math.round(100 * loaded / expected);
         if (!complete && pct > 99) pct = 99;
-        if (!complete && pending && pct >= 100) pct = 99;
-        /* Before window load we have not seen the full file list yet — don't
-           sit at 99% just because the few files in the HTML have finished. */
-        if (!winLoaded && pending === 0) pct = Math.min(pct, 80);
         lastPct = pct;
-        lastLabel = pct + '%';
-        lastBytes = fmtBytes(loaded);
-        if (!complete && expected > loaded) lastBytes += ' / ' + fmtBytes(expected);
+        lastLoaded = loaded;
+        return { loaded: loaded, expected: expected, files: expectedFiles(), complete: complete, pct: pct };
+      }
+      function writeDom(t) {
+        lastLabel = shownPct + '%';
+        lastBytes = t.expected ? (fmtBytes(shownLoaded) + ' / ' + fmtBytes(t.expected)) : fmtBytes(shownLoaded);
         var el = document.getElementById('mi-load-pct');
         var bytesEl = document.getElementById('mi-load-bytes');
         if (el) {
           el.textContent = lastLabel;
-          el.setAttribute('aria-label', 'All Modules loaded ' + pct + ' percent, ' + lastBytes);
-          el.setAttribute('title', n + ' files · ' + lastBytes + (pending ? ' · ' + pending + ' still arriving' : ''));
-          if (complete) el.setAttribute('data-done', '1');
+          el.setAttribute('aria-label', fmtBytes(t.loaded) + ' arrived of ' + (t.expected ? fmtBytes(t.expected) : 'the project') + ', ' + t.pct + ' percent');
+          el.setAttribute('title', fmtBytes(t.loaded) + ' arrived of ' + (t.expected ? fmtBytes(t.expected) + ' · ' + t.files + ' files in the project' : 'unknown project size'));
+          if (t.complete && shownPct >= 100) el.setAttribute('data-done', '1');
           else el.removeAttribute('data-done');
         }
-        if (bytesEl) bytesEl.textContent = lastBytes;
-        if (complete && !finished) {
-          finished = true;
-          if (poll) { clearInterval(poll); poll = null; }
+        if (bytesEl) {
+          bytesEl.textContent = lastBytes;
+          bytesEl.setAttribute('title', t.expected
+            ? (fmtBytes(t.loaded) + ' arrived · ' + t.files + ' files · ' + fmtBytes(t.expected) + ' on disk')
+            : 'Arrived in this tab');
         }
+      }
+      function stepDisplay() {
+        displayRaf = 0;
+        var t = targets();
+        if (shownPct < t.pct) shownPct = Math.min(t.pct, shownPct + Math.max(1, Math.ceil((t.pct - shownPct) / 6)));
+        if (shownLoaded < t.loaded) shownLoaded = Math.min(t.loaded, shownLoaded + Math.max(16 * 1024, Math.ceil((t.loaded - shownLoaded) / 6)));
+        writeDom(t);
+        if (shownPct < t.pct || shownLoaded < t.loaded) scheduleDisplay();
+      }
+      function scheduleDisplay() {
+        if (displayRaf) return;
+        displayRaf = requestAnimationFrame(stepDisplay);
+      }
+      function paint() {
+        targets();
+        scheduleDisplay();
       }
 
       try {
@@ -339,59 +335,37 @@
         }
       } catch (e) { /* best-effort */ }
 
-      scanDom();
-      if (document.fonts) {
-        document.fonts.ready.then(function () { fontsReady = true; paint(); });
-        if (document.fonts.addEventListener) {
-          document.fonts.addEventListener('loadingdone', function () { fontsReady = true; paint(); });
-        }
-      }
-      window.addEventListener('load', function () { winLoaded = true; scanDom(); paint(); });
-      document.addEventListener('readystatechange', function () {
-        if (document.readyState === 'complete') winLoaded = true;
-        scanDom();
-        paint();
-      });
-      if (typeof MutationObserver === 'function') {
-        var moTimer = null;
-        var mo = new MutationObserver(function () {
-          if (moTimer) return;
-          moTimer = setTimeout(function () {
-            moTimer = null;
-            scanDom();
-            paint();
-          }, 120);
-        });
-        mo.observe(document.documentElement, { childList: true, subtree: true });
-      }
-      var poll = setInterval(function () {
-        if (finished) { clearInterval(poll); poll = null; return; }
+      window.addEventListener('load', paint);
+      document.addEventListener('readystatechange', paint);
+      setInterval(function () {
         try {
           (performance.getEntriesByType('navigation') || []).forEach(applyEntry);
           (performance.getEntriesByType('resource') || []).forEach(applyEntry);
         } catch (e) { /* ignore */ }
-        scanDom();
         paint();
-      }, 200);
+      }, 400);
 
       window.WiseMiLoad = {
         label: function () { return lastLabel; },
         bytes: function () { return lastBytes; },
-        scan: function () { scanDom(); paint(); },
+        scan: function () { paint(); },
+        setInventory: function (next) {
+          if (next && next.bytes) {
+            inv = next;
+            if (next.list) rebuildInvMap();
+          }
+          paint();
+        },
         snapshot: function () {
-          var pending = pendingCount();
-          var loaded = 0, n = 0;
-          Object.keys(files).forEach(function (u) {
-            n++;
-            loaded += files[u].got;
-          });
+          var t = targets();
           return {
             label: lastLabel,
             bytes: lastBytes,
-            files: n,
-            pending: pending,
-            loaded: loaded,
-            done: !!(finished || (winLoaded && fontsReady && pending === 0 && n > 0))
+            files: t.files,
+            pending: 0,
+            loaded: t.loaded,
+            expected: t.expected,
+            done: t.complete
           };
         }
       };

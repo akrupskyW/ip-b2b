@@ -70,6 +70,17 @@ import {
 import {
   isJamStripOn,
   applyJamStrip,
+  JAM_SONGS,
+  toggleJam,
+  selectJam,
+  isJamPlaying,
+  currentJamSongId,
+  currentJamSongLabel,
+  onJamState,
+  getJamVizMode,
+  setJamVizMode,
+  eqBarsMarkup,
+  helixVizMarkup,
 } from './jam-strip.js';
 import { getStoredFontSize, setTextSize } from './text-size.js';
 import {
@@ -78,7 +89,6 @@ import {
 } from './chat-activity-strip.js';
 import {
   isAppSearchOn,
-  applyAppSearch,
 } from './app-search.js';
 import {
   isNavHistoryOn,
@@ -173,6 +183,84 @@ function escAttr(s) {
 function tipAttrs(text) {
   const t = escAttr(text);
   return t ? ` data-tip="${t}" title="${t}"` : '';
+}
+
+function jamEscape(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/** The Jam player, shown inline in Appearance ▸ Sound under the toggle.
+    Play starts only from the play button. Track chips pick a song silently
+    unless a tune is already looping. Bars are the default visualizer;
+    Helix is the second. Never mounts in the primary nav. */
+function jamPlayerSection() {
+  if (!isJamStripOn()) return '';
+  const playing = isJamPlaying();
+  const curId = currentJamSongId();
+  const curLabel = currentJamSongLabel();
+  const viz = getJamVizMode();
+  const songs = JAM_SONGS.map(
+    (s) => `<button type="button" class="jam-pop-song${s.id === curId ? ' is-active' : ''}" data-jam-song="${s.id}" aria-pressed="${s.id === curId ? 'true' : 'false'}"${tipAttrs(s.tip)}>${jamEscape(s.label)}</button>`
+  ).join('');
+  const nowText = playing && curLabel ? jamEscape(curLabel) : (curLabel ? jamEscape(curLabel) : 'Pick a track, then play');
+  const playTip = playing ? 'Pause' : 'Play';
+  return `
+    <div class="jam-pop${playing ? ' is-playing' : ''} jam-viz-${viz}" data-jam-viz-host data-jam-viz="${viz}" data-admin-item="1">
+      <div class="jam-pop-head">
+        <button type="button" class="jam-pop-play" data-jam-play aria-label="${playTip}"${tipAttrs(playTip)}>
+          <span class="material-symbols-outlined">${playing ? 'pause' : 'play_arrow'}</span>
+        </button>
+        <div class="jam-pop-now">
+          <div class="jam-pop-eq" aria-hidden="true">${eqBarsMarkup(18)}</div>
+          ${helixVizMarkup()}
+          <div class="jam-pop-title">${nowText}</div>
+        </div>
+      </div>
+      <div class="jam-viz-seg" role="group" aria-label="Visualizer">
+        <button type="button" class="jam-viz-btn${viz === 'bars' ? ' is-on' : ''}" data-jam-viz-mode="bars" aria-pressed="${viz === 'bars' ? 'true' : 'false'}">Bars</button>
+        <button type="button" class="jam-viz-btn${viz === 'helix' ? ' is-on' : ''}" data-jam-viz-mode="helix" aria-pressed="${viz === 'helix' ? 'true' : 'false'}">Helix</button>
+      </div>
+      <div class="jam-pop-songs" role="group" aria-label="Pick a track">${songs}</div>
+    </div>`;
+}
+
+function syncJamPop(root) {
+  const pop = root.querySelector('.jam-pop');
+  if (!pop) return false;
+  const playing = isJamPlaying();
+  const curId = currentJamSongId();
+  const curLabel = currentJamSongLabel();
+  const viz = getJamVizMode();
+
+  pop.classList.toggle('is-playing', playing);
+  pop.classList.toggle('jam-viz-helix', viz === 'helix');
+  pop.classList.toggle('jam-viz-bars', viz === 'bars');
+  pop.dataset.jamViz = viz;
+
+  const playBtn = pop.querySelector('[data-jam-play]');
+  if (playBtn) {
+    const playTip = playing ? 'Pause' : 'Play';
+    playBtn.setAttribute('aria-label', playTip);
+    playBtn.setAttribute('data-tip', playTip);
+    playBtn.setAttribute('title', playTip);
+    const icon = playBtn.querySelector('.material-symbols-outlined');
+    if (icon) icon.textContent = playing ? 'pause' : 'play_arrow';
+  }
+
+  const title = pop.querySelector('.jam-pop-title');
+  if (title) title.textContent = curLabel || 'Pick a track, then play';
+
+  pop.querySelectorAll('.jam-pop-song').forEach((chip) => {
+    const active = chip.dataset.jamSong === curId;
+    chip.classList.toggle('is-active', active);
+    chip.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+  pop.querySelectorAll('[data-jam-viz-mode]').forEach((btn) => {
+    const on = btn.dataset.jamVizMode === viz;
+    btn.classList.toggle('is-on', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+  return true;
 }
 
 /** True when a chunk of Appearance markup is an Admin-badged row (or nested
@@ -351,6 +439,23 @@ function analyticsTypesSection() {
     </a>`;
 }
 
+/** Link out to the Helix studio — a chat that is only the helix, with the
+    full draggable control card open so you can tune the look and Apply it
+    to every other chat. Path resolves the same way as the other Admin
+    destinations. */
+function helixStudioSection() {
+  let href = 'pages/helix.html';
+  try {
+    if (location.pathname.indexOf('/pages/') !== -1) href = 'helix.html';
+  } catch (e) { /* non-browser context — keep the default */ }
+  return `
+    <a class="wise-popover-item" href="${href}" data-pop-action="helix-studio" data-admin-item="1"${tipAttrs('Open the Helix playground — tune the look, then apply it to every chat')}>
+      <span class="material-symbols-outlined">animation</span>${rowCopy('Helix', 'Tune the chat helix')}
+      <span class="wise-popover-badge">Admin</span>
+      <span class="wise-popover-ext material-symbols-outlined" aria-hidden="true">arrow_outward</span>
+    </a>`;
+}
+
 /** "Surfaces" section — the segmented control that switches the app's surface
     treatment between the flat default, "Sharper edges" (inset stamp, hairline
     borders, tighter corners), and "Borderless" (every module except the chat
@@ -418,14 +523,14 @@ function commentsSection() {
 function textSizeSection() {
   const fz = getStoredFontSize();
   const sizes = {
-    sm: { short: 'S', tip: 'Small text' },
-    md: { short: 'M', tip: 'Medium text' },
-    lg: { short: 'L', tip: 'Large text' },
-    xl: { short: 'XL', tip: 'Extra-large text' },
+    sm: { short: 'S', tip: 'Small type and icons' },
+    md: { short: 'M', tip: 'Medium type and icons' },
+    lg: { short: 'L', tip: 'Large type and icons' },
+    xl: { short: 'XL', tip: 'Extra-large type and icons' },
   };
   return `
     <div class="fz-size">
-      <span class="fz-size-label"${tipAttrs('Text size')}>${rowIcon('format_size')}${rowCopy('Text size', 'Scale the interface type')}</span>
+      <span class="fz-size-label"${tipAttrs('Text size')}>${rowIcon('format_size')}${rowCopy('Text size', 'Scale type and icons')}</span>
       <div class="fz-seg" role="group" aria-label="Text size">
         ${Object.keys(sizes)
           .map((s) => `<button type="button" class="fz-seg-btn${fz === s ? ' is-active' : ''}" data-fz="${s}" aria-pressed="${fz === s ? 'true' : 'false'}"${tipAttrs(sizes[s].tip)}>${sizes[s].short}</button>`)
@@ -590,6 +695,7 @@ export function buildAppearanceBody({
         ${adminOnly(adminToggle('data-iconrail="1"', isIconRailOn(), 'Icons only', 'Collapse nav to icons', 'Collapse the navigation to icons', false, false, 'apps'))}
         ${adminOnly(adminToggle('data-navhistory="1"', isNavHistoryOn(), 'History in navigation', 'History inside the nav', 'Merge the History module into an expandable section of the primary navigation — search, projects, and All conversations stay fully usable', false, false, 'history'))}
         ${adminOnly(adminToggle('data-navmodules="1"', isNavModulesOn(), 'Nav &amp; History icons', 'Logo, menu, History, new chat', 'Menu opens the labelled navigation; the History icon opens History, and history off closes it. While either is open, the extra icons hide and History closes back to the four-icon rail. New chat is a circle and starts a conversation', false, false, 'view_sidebar'))}
+        ${adminOnly(helixStudioSection())}
       `);
   const experience = apGroup('Experience', `
         ${tourSection()}
@@ -611,7 +717,8 @@ export function buildAppearanceBody({
         ${adminOnly(adminToggle('data-activitystrip="1"', isActivityStripOn(), 'Activity strip', 'Live strip on chat', 'Show the live activity strip on the chat edge', false, false, 'timeline'))}
       `);
   const sound = apGroup('Sound', `
-        ${adminOnly(adminToggle('data-jam="1"', isJamStripOn(), 'Jam strip', 'Music in the nav', 'Show the music player in the navigation', false, false, 'music_note'))}
+        ${adminOnly(adminToggle('data-jam="1"', isJamStripOn(), 'Jam strip', 'Player in Appearance', 'Show the music player in this Sound section — never in the primary navigation', false, false, 'music_note'))}
+        ${adminOnly(jamPlayerSection())}
       `);
   const a11y = apGroup('Accessibility', `
         ${themeSection(isDark)}
@@ -623,8 +730,8 @@ export function buildAppearanceBody({
       `);
   const adminRows = apGroup('Admin', `
         ${commentsSection()}
-        ${adminOnly(adminToggle('data-appsearch="1"', isAppSearchOn(), 'Search', 'Search beside the logo', 'Show a search field aligned with the nav logo for transcripts, outputs, and reports', false, false, 'search'))}
-        ${adminOnly(adminToggle('data-navhamburger="1"', isNavHamburgerOn(), 'Menu icon', 'Hamburger when collapsed', isAppSearchOn() ? 'When the navigation is collapsed, show a menu icon to the left of the logo instead of the icon rail' : 'Unavailable while Search is off', !isAppSearchOn(), false, 'menu'))}
+        ${adminOnly(adminToggle('data-appsearch="1"', false, 'Search', 'Search beside the logo', 'Locked off — Search beside the logo stays off', true, true, 'search'))}
+        ${adminOnly(adminToggle('data-navhamburger="1"', isNavHamburgerOn(), 'Menu icon', 'Dock icon when collapsed', isAppSearchOn() ? 'When the navigation is collapsed, show a dock icon to the left of the logo instead of the icon rail' : 'Unavailable while Search is off', !isAppSearchOn(), false, 'dock_to_right'))}
         ${adminOnly(accessibilityReviewSection())}
         ${adminOnly(allModulesSection())}
         ${adminOnly(progressLogSection())}
@@ -838,6 +945,13 @@ export function wireAppearancePopover(pop, ctx = {}) {
       render();
     });
   }
+  if (!pop.__jamStateBound) {
+    pop.__jamStateBound = true;
+    onJamState(() => {
+      if (!pop.isConnected || !pop.classList.contains('open')) return;
+      syncJamPop(pop);
+    });
+  }
 
   pop.addEventListener('click', (ev) => {
     const within = (sel) => {
@@ -887,6 +1001,11 @@ export function wireAppearancePopover(pop, ctx = {}) {
     if (within('[data-fullbleed]'))   { ev.stopPropagation(); if (isAppSearchOn()) return; applyFullBleedMode(isFullBleedEverythingOn() ? '' : 'all'); render(); return; }
     if (within('[data-fbchatonly]'))  { ev.stopPropagation(); if (isAppSearchOn()) return; applyFullBleedMode(isChatOnlyFullBleedOn() ? '' : 'chat'); render(); return; }
     if (within('[data-jam]'))         { ev.stopPropagation(); applyJamStrip(!isJamStripOn());      render(); return; }
+    if (within('[data-jam-play]'))    { ev.stopPropagation(); toggleJam(); if (!syncJamPop(pop)) render(); return; }
+    const jamSong = within('[data-jam-song]');
+    if (jamSong) { ev.stopPropagation(); selectJam(jamSong.dataset.jamSong); if (!syncJamPop(pop)) render(); return; }
+    const jamViz = within('[data-jam-viz-mode]');
+    if (jamViz) { ev.stopPropagation(); setJamVizMode(jamViz.dataset.jamVizMode); if (!syncJamPop(pop)) render(); return; }
     if (within('[data-chattint]'))    { ev.stopPropagation(); applyChatTint(!isChatTintOn());      render(); return; }
     if (within('[data-activitystrip]')) { ev.stopPropagation(); applyActivityStrip(!isActivityStripOn()); render(); return; }
     if (within('[data-cwrui]'))       { ev.stopPropagation(); applyCwrUi(!isCwrUiOn());          render(); return; }
@@ -903,7 +1022,7 @@ export function wireAppearancePopover(pop, ctx = {}) {
     if (within('[data-colorblind]'))  { ev.stopPropagation(); applyColorblind(!isColorblindOn());  render(); return; }
     if (within('[data-serif]'))       { ev.stopPropagation(); applySerifHeadlines(!isSerifHeadlinesOn()); render(); return; }
     if (within('[data-adminui]'))     { ev.stopPropagation(); applyAdminControls(!isAdminControlsOn()); render(); return; }
-    if (within('[data-appsearch]'))   { ev.stopPropagation(); applyAppSearch(!isAppSearchOn());         render(); return; }
+    if (within('[data-appsearch]'))   { ev.stopPropagation(); return; }
     if (within('[data-navhamburger]')) {
       ev.stopPropagation();
       if (!isAppSearchOn()) return;
@@ -977,17 +1096,19 @@ export function wireAppearancePopover(pop, ctx = {}) {
       return;
     }
 
-    /* The accessibility-review, all-modules, progress-log, page-gallery
-       and analytics-types rows are real links — let the click navigate. */
+    /* The accessibility-review, all-modules, progress-log, page-gallery,
+       analytics-types, and helix-studio rows are real links — let the
+       click navigate. */
     if (within('[data-pop-action="a11y-review"]')) return;
     if (within('[data-pop-action="all-modules"]')) return;
     if (within('[data-pop-action="progress-log"]')) return;
     if (within('[data-pop-action="page-gallery"]')) return;
     if (within('[data-pop-action="analytics-types"]')) return;
+    if (within('[data-pop-action="helix-studio"]')) return;
 
     /* Non-interactive chrome (labels, dividers, the text-size row wrapper):
        swallow the click so it neither toggles nor closes the popover. */
-    if (within('.wise-appearance-group, .fz-row, .fz-size, .mg-size, .fb-opts, .fb-color-row, .fb-presets, .wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
+    if (within('.wise-appearance-group, .fz-row, .fz-size, .mg-size, .fb-opts, .fb-color-row, .fb-presets, .jam-pop, .wise-popover-header, .wise-popover-divider')) { ev.stopPropagation(); return; }
 
     /* Anything else = a click on blank popover space → close. */
     ctx.onClose?.();

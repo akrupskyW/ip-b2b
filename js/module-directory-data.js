@@ -100,6 +100,7 @@ export const MODULE_SECTIONS = [
       { label: 'Accessibility Review', icon: 'accessibility_new', href: 'accessibility-review.html', badge: 'Admin' },
       { label: 'All Modules', icon: 'apps', href: 'all-modules.html', badge: 'Admin' },
       { label: 'Progress Log', icon: 'timeline', href: 'progress-log.html', badge: 'Admin' },
+      { label: 'Helix', icon: 'animation', href: 'helix.html', badge: 'Admin' },
     ],
   },
   {

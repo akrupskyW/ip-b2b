@@ -110,7 +110,8 @@
 
     /* ── Module header — scrolls with the board (not pinned) ── */
     .ar-head { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 22px 26px 14px; flex-shrink: 0; }
-    .ar-head-titles { min-width: 0; }
+    .ar-head-titles { min-width: 0; flex: 1 1 auto; }
+    .ar-head-title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .ar-head-title {
       font-family: var(--module-title-family, 'WISE Digits', 'Noto Serif', Georgia, serif);
       font-weight: var(--module-title-weight, 800);
@@ -131,27 +132,8 @@
     .skip-link:focus { top: 12px; }
 
     /* ── Re-evaluate ── */
-    #ar-audit .reeval-btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 9px 14px; border-radius: var(--radius-pill);
-      border: 1px solid var(--primary); background: var(--primary); color: #fff;
-      font-family: inherit; font-size: 0.8125rem; font-weight: 600;
-      cursor: pointer; transition: filter 0.15s, opacity 0.15s;
-    }
-    #ar-audit .reeval-btn:hover { filter: brightness(1.06); }
-    #ar-audit .reeval-btn:disabled { opacity: 0.6; cursor: progress; }
-    #ar-audit .reeval-btn .material-symbols-outlined { font-size: 18px; }
-    #ar-audit .reeval-btn.is-loading .material-symbols-outlined { animation: arReevalSpin 0.8s linear infinite; }
+    .ar-reeval-btn.is-loading .material-symbols-outlined { animation: arReevalSpin 0.8s linear infinite; }
     @keyframes arReevalSpin { to { transform: rotate(360deg); } }
-    .ar-reeval-icon {
-      width: 32px; height: 32px; border-radius: 50%;
-      display: inline-flex; align-items: center; justify-content: center;
-      border: 1px solid var(--border-strong); background: var(--surface);
-      color: var(--text); cursor: pointer;
-    }
-    .ar-reeval-icon:hover { border-color: var(--primary); color: var(--primary); }
-    .ar-reeval-icon.is-loading .material-symbols-outlined { animation: arReevalSpin 0.8s linear infinite; }
-    .ar-reeval-icon .material-symbols-outlined { font-size: 18px; }
 
     #ar-audit .reeval-status {
       display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
@@ -168,10 +150,143 @@
     #ar-audit .reeval-status.is-busy { background: var(--surface-2); color: var(--text-muted); }
     #ar-audit .reeval-status.is-busy .material-symbols-outlined { color: var(--text-muted); }
 
+    /* ── Re-evaluate progress modal (same pattern as All Modules / Page Gallery) ── */
+    .ar-scan-scrim {
+      position: fixed; inset: 0; z-index: 10050;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+      background: color-mix(in srgb, #0b1220 55%, transparent);
+      -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+      opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+    }
+    .ar-scan-scrim.is-open { opacity: 1; pointer-events: auto; }
+    .ar-scan-card {
+      width: min(760px, calc(100vw - 32px));
+      max-height: min(86vh, 880px);
+      display: flex; flex-direction: column; min-height: 0;
+      background: var(--surface); color: var(--text);
+      border: 1px solid var(--border-strong); border-radius: 18px;
+      box-shadow: var(--shadow-card, 0 24px 60px rgba(0,0,0,0.28));
+      overflow: hidden;
+      transform: translateY(10px) scale(0.98); transition: transform 0.22s cubic-bezier(0.2, 0.7, 0.2, 1);
+    }
+    .ar-scan-scrim.is-open .ar-scan-card { transform: none; }
+    html.dark .ar-scan-card {
+      background: #14242f; border-color: rgba(255,255,255,0.08);
+    }
+    .ar-scan-head {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 20px 22px 12px; flex: 0 0 auto;
+    }
+    .ar-scan-head > .material-symbols-outlined {
+      font-size: 22px; color: var(--primary); flex: 0 0 auto; margin-top: 4px;
+    }
+    html.dark .ar-scan-head > .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
+    .ar-scan-titles { flex: 1 1 auto; min-width: 0; }
+    .ar-scan-eyebrow {
+      font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--primary);
+    }
+    html.dark .ar-scan-eyebrow { color: var(--primary-bright, #7FB0E0); }
+    .ar-scan-title {
+      margin: 4px 0 0;
+      font-family: var(--module-title-family, 'WISE Digits', 'Noto Serif', Georgia, serif);
+      font-weight: var(--module-title-weight, 800);
+      font-size: 1.28rem; letter-spacing: -0.01em; color: var(--text);
+    }
+    .ar-scan-sub { margin: 6px 0 0; font-size: 0.85rem; color: var(--text-muted); line-height: 1.45; }
+    .ar-scan-now {
+      margin: 4px 0 0; font-family: var(--font-mono); font-size: 0.72rem;
+      color: var(--text-subtle); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .ar-scan-close {
+      border: 0; background: transparent; cursor: pointer; color: var(--text-muted);
+      border-radius: 50%; padding: 6px; line-height: 0; flex: 0 0 auto;
+    }
+    .ar-scan-close:hover { background: var(--surface-2); color: var(--text); }
+    html.dark .ar-scan-close:hover { background: rgba(255,255,255,0.06); }
+    .ar-scan-close[hidden] { display: none; }
+    .ar-scan-score {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+      padding: 0 22px 8px;
+    }
+    .ar-scan-pct {
+      font-family: var(--module-title-family, 'WISE Digits', 'Noto Serif', Georgia, serif);
+      font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em;
+      color: var(--text); font-variant-numeric: tabular-nums; line-height: 1;
+    }
+    .ar-scan-frac { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .ar-scan-bar {
+      height: 8px; margin: 0 22px; border-radius: 999px;
+      background: var(--surface-2); overflow: hidden;
+      box-shadow: inset 0 0 0 1px var(--border);
+    }
+    .ar-scan-fill {
+      display: block; height: 100%; width: 0%; border-radius: 999px;
+      background: var(--primary); transition: width 0.2s ease;
+    }
+    html.dark .ar-scan-fill { background: var(--primary-bright, #8B9FAF); }
+    .ar-scan-log {
+      margin: 14px 22px 0; padding: 0; list-style: none;
+      flex: 1 1 auto; min-height: 180px; overflow-y: auto;
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--surface-2);
+    }
+    html.dark .ar-scan-log { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
+    .ar-scan-phase {
+      display: flex; flex-direction: column; gap: 2px;
+      padding: 10px 12px 8px;
+      font-family: var(--module-title-family, 'WISE Digits', 'Noto Serif', Georgia, serif);
+      font-size: 0.82rem; font-weight: 800; color: var(--text);
+      background: color-mix(in srgb, var(--primary) 8%, transparent);
+      border-bottom: 1px solid var(--border);
+    }
+    html.dark .ar-scan-phase {
+      background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 12%, #14242f);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .ar-scan-phase span { font-family: inherit; font-weight: 500; font-size: 0.72rem; color: var(--text-muted); }
+    .ar-scan-row {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 7px 12px; border-bottom: 1px solid var(--border);
+      font-size: 0.75rem; color: var(--text-subtle);
+    }
+    html.dark .ar-scan-row { border-color: rgba(255,255,255,0.06); }
+    .ar-scan-row:last-child { border-bottom: 0; }
+    .ar-scan-row .material-symbols-outlined { font-size: 16px !important; flex: 0 0 auto; margin-top: 1px; }
+    .ar-scan-row-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+    .ar-scan-row-name {
+      font-family: var(--font-mono); font-size: 0.72rem; font-weight: 600; color: inherit;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .ar-scan-row-detail { font-size: 0.7rem; color: var(--text-muted); line-height: 1.35; }
+    .ar-scan-row[data-state="pending"] { color: var(--text-subtle); }
+    .ar-scan-row[data-state="run"] { color: var(--text); }
+    .ar-scan-row[data-state="run"] .material-symbols-outlined { color: var(--primary); animation: arReevalSpin 0.8s linear infinite; }
+    .ar-scan-row[data-state="ok"] { color: var(--text); }
+    .ar-scan-row[data-state="ok"] .material-symbols-outlined { color: var(--sec-green, #16A34A); }
+    html.dark .ar-scan-row[data-state="ok"] .material-symbols-outlined { color: #4ADE80; }
+    .ar-scan-row[data-state="skip"] { color: var(--text-muted); }
+    .ar-scan-row[data-state="skip"] .material-symbols-outlined { color: var(--text-subtle); }
+    .ar-scan-row[data-state="err"] { color: var(--text); }
+    .ar-scan-row[data-state="err"] .material-symbols-outlined { color: var(--ter-red, #dc2626); }
+    html.dark .ar-scan-row[data-state="err"] .material-symbols-outlined { color: #fca5a5; }
+    .ar-scan-row[data-state="info"] { color: var(--text-muted); }
+    .ar-scan-row[data-state="info"] .material-symbols-outlined { color: var(--primary); }
+    .ar-scan-foot {
+      padding: 12px 22px 18px; display: flex; align-items: center;
+      justify-content: space-between; gap: 12px; flex: 0 0 auto;
+    }
+    .ar-scan-note { font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; min-width: 0; }
+    .ar-scan-foot .adm-btn:disabled { opacity: 0.6; cursor: progress; }
+    .ar-scan-foot .adm-btn--primary .material-symbols-outlined {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
     /* ── Hero ── */
     #ar-audit .hero {
-      margin-top: 8px; padding: 28px 26px;
-      border-radius: var(--r-lg);
+      margin-top: 0; padding: 12px 14px;
+      border-radius: var(--r-md);
       background: linear-gradient(135deg, var(--primary-soft) 0%, transparent 70%);
       border: 1px solid var(--border);
     }
@@ -179,13 +294,17 @@
       background: linear-gradient(135deg, rgba(37, 80, 124, 0.20) 0%, rgba(37, 80, 124, 0.10) 60%, transparent 100%);
       border-color: rgba(37, 80, 124, 0.18);
     }
-    #ar-audit .hero h1,
     #ar-audit .hero h2 {
       font-family: var(--module-title-family, 'WISE Digits', 'Noto Serif', Georgia, serif);
-      font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 800; letter-spacing: -0.025em; margin: 0 0 12px;
+      font-size: 0.95rem; font-weight: 800; letter-spacing: -0.015em; margin: 0 0 6px;
     }
-    #ar-audit .hero p { font-size: 1rem; color: var(--text-muted); max-width: 760px; margin: 0; line-height: 1.65; }
-    #ar-audit .hero-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+    #ar-audit .hero-list {
+      margin: 0; padding-left: 1.15em; list-style: disc;
+      font-size: 0.75rem; color: var(--text-muted); line-height: 1.4; max-width: 680px;
+    }
+    #ar-audit .hero-list li + li { margin-top: 2px; }
+    #ar-audit .hero-list strong { color: var(--text); font-weight: 650; }
+    #ar-audit .hero-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
     #ar-audit .hero-pill {
       display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
       border-radius: var(--radius-pill); background: var(--surface);
@@ -400,10 +519,10 @@
     html.dark #ar-audit .demo-btn:focus-visible { outline-color: var(--primary-bright); }
 
     /* ── TOC ── */
-    #ar-audit .toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+    #ar-audit .toc { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
     #ar-audit .toc a {
-      display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px;
-      border-radius: var(--radius-pill); font-size: 0.75rem; font-weight: 600; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px;
+      border-radius: var(--radius-pill); font-size: 0.6875rem; font-weight: 600; text-decoration: none;
       background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
       transition: color 0.15s, border-color 0.15s;
     }
@@ -422,11 +541,21 @@
       display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
       margin-bottom: 16px;
     }
+    #ar-audit .page-card.is-pending { opacity: 0.72; }
+    #ar-audit .page-card.is-pending .page-grade { background: var(--surface-2); color: var(--text-muted); }
     #ar-audit .auto-pill {
       display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px;
       border-radius: var(--radius-pill); font-size: 0.6875rem; font-weight: 700;
-      letter-spacing: 0.02em; background: var(--pass-bg); color: var(--pass);
-      border: 1px solid color-mix(in srgb, var(--pass) 28%, transparent);
+      letter-spacing: 0.02em; background: var(--surface-2); color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+    #ar-audit .auto-pill.is-live {
+      background: var(--pass-bg); color: var(--pass);
+      border-color: color-mix(in srgb, var(--pass) 28%, transparent);
+    }
+    #ar-audit .auto-pill.is-done {
+      background: var(--pass-bg); color: var(--pass);
+      border-color: color-mix(in srgb, var(--pass) 28%, transparent);
     }
     #ar-audit .auto-pill .dot {
       width: 7px; height: 7px; border-radius: 50%; background: var(--pass);
@@ -504,7 +633,7 @@
 
   <!-- Hidden host for the shared menu controls (mirrors progress-log.html). -->
   <div id="topbar-row" hidden aria-hidden="true">
-    <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-symbols-outlined">chevron_left</span></button>
+    <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-symbols-outlined">dock_to_left</span></button>
     <button type="button" class="topbar-appearance-btn" id="topbar-appearance-btn" title="Appearance" aria-label="Appearance settings" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">crossword</span></button>
     <div class="topbar-profile has-dot" id="topbar-profile" title="Arthur Krupsky · akrupsky@wisecode.ai" data-action="user-menu" role="button" tabindex="0" aria-label="User menu">AK</div>
   </div>
@@ -528,17 +657,20 @@
       <section class="ar-card ar-audit" id="ar-audit">
         <header class="ar-head">
           <div class="ar-head-titles">
-            <h1 class="ar-head-title">Accessibility Review</h1>
-            <p class="ar-head-meta">WCAG 2.1 AAA / 2.2 · live token &amp; page audit</p>
+            <div class="ar-head-title-row">
+              <h1 class="ar-head-title">Accessibility Review</h1>
+              <button type="button" class="adm-btn adm-btn--primary ar-reeval-btn" id="reevalBtn" title="Fetch every HTML page and re-read pages/wise.css. Does not run on its own.">
+                <span class="material-symbols-outlined" aria-hidden="true">autorenew</span>
+                <span data-ar-reeval-label>Re-evaluate</span>
+              </button>
+            </div>
+            <p class="ar-head-meta">WCAG 2.1 AAA / 2.2 · click Re-evaluate to audit every page</p>
           </div>
           <div class="ar-head-controls">
-            <button class="ar-reeval-icon" id="reevalBtn" type="button" title="Re-read the design tokens from pages/wise.css and recompute every ratio" aria-label="Re-evaluate against source">
-              <span class="material-symbols-outlined">sync</span>
-            </button>
             <div class="panel-more-wrap" id="ar-menu-wrap">
               <button type="button" id="ar-menu-btn" class="panel-more-btn" onclick="arToggleModuleMenu(event)" title="Module options" aria-haspopup="menu" aria-expanded="false" aria-controls="ar-menu" aria-label="Module options"><span class="material-symbols-outlined">more_vert</span></button>
               <div id="ar-menu" class="topbar-popover hidden" role="menu">
-                <button type="button" class="topbar-menu-item" role="menuitem" onclick="document.getElementById('reevalBtn').click(); arCloseModuleMenu()"><span class="material-symbols-outlined topbar-menu-icon">sync</span><span>Re-evaluate against source</span></button>
+                <button type="button" class="topbar-menu-item" role="menuitem" onclick="document.getElementById('reevalBtn').click(); arCloseModuleMenu()"><span class="material-symbols-outlined topbar-menu-icon">autorenew</span><span>Re-evaluate</span></button>
                 <div class="topbar-menu-divider"></div>
                 <a class="topbar-menu-item" role="menuitem" href="#summary" onclick="arCloseModuleMenu()"><span class="material-symbols-outlined topbar-menu-icon">summarize</span><span>Jump to summary</span></a>
                 <a class="topbar-menu-item" role="menuitem" href="#pages" onclick="arCloseModuleMenu()"><span class="material-symbols-outlined topbar-menu-icon">grade</span><span>Jump to page grades</span></a>
@@ -550,24 +682,15 @@
         </header>
         <div class="ar-body" id="main">
   <div class="hero">
-    <h2>Is the WISE palette, type &amp; spacing accessible?</h2>
-    <p>
-      This module does two things, live in your browser. First, it <strong>fetches and grades every
-      shipping HTML page</strong> against a battery of automated WCAG checks, listing each page with a
-      letter grade (see <a href="#pages">Page grades</a>) — and it keeps re-checking so the grades stay
-      current as pages change. Second, it audits every design token shipped in
-      <code>pages/wise.css</code> against the <strong>Web Content Accessibility Guidelines</strong>
-      — targeting <strong>Level AAA</strong> (SC 1.4.6 Contrast Enhanced: 7:1 for normal text, 4.5:1
-      for large). Color-contrast ratios are recomputed using the WCAG relative-luminance formula, so the
-      verdicts can never drift from the actual hex values. Toggle the theme in Appearance to re-run the audit against
-      the dark palette.
-    </p>
-    <div class="hero-meta">
-      <span class="hero-pill"><span class="material-symbols-outlined">contrast</span>SC 1.4.6 Contrast (Enhanced)</span>
-      <span class="hero-pill"><span class="material-symbols-outlined">text_fields</span>SC 1.4.4 Resize Text</span>
-      <span class="hero-pill"><span class="material-symbols-outlined">touch_app</span>SC 2.5.8 Target Size</span>
-      <span class="hero-pill"><span class="material-symbols-outlined">center_focus_strong</span>SC 2.4.7 Focus Visible</span>
-    </div>
+    <h2>What Re-evaluate checks</h2>
+    <ul class="hero-list">
+      <li><strong>Every HTML page</strong> — fetched live, then graded for language, title, zoom, image alt, control names, field labels, headings, and landmarks</li>
+      <li><strong>Design tokens</strong> in <code>pages/wise.css</code> — light and dark, not a cached copy</li>
+      <li><strong>Text contrast</strong> at AAA 7:1 (AA 4.5:1 floor)</li>
+      <li><strong>Non-text / UI contrast</strong> at 3:1 — borders, focus, icons</li>
+      <li><strong>Type, spacing, and 24px targets</strong></li>
+      <li><strong>Both themes</strong> — toggle Appearance to flip the live ratios</li>
+    </ul>
     <nav class="toc" aria-label="Sections">
       <a href="#summary"><span class="material-symbols-outlined">summarize</span>Summary</a>
       <a href="#pages"><span class="material-symbols-outlined">grade</span>Page grades</a>
@@ -588,8 +711,8 @@
     </div>
     <div class="scorecard" id="scorecard"><!-- injected --></div>
     <div class="concerns" id="concerns" role="region" aria-live="polite" aria-label="Open concerns"><!-- injected --></div>
-    <div class="reeval-status is-busy" id="reevalStatus" role="status" aria-live="polite">
-      <span class="material-symbols-outlined">hourglass_top</span> Reading tokens from source…
+    <div class="reeval-status" id="reevalStatus" role="status" aria-live="polite">
+      <span class="material-symbols-outlined">info</span> Not yet evaluated — click <strong>Re-evaluate</strong> to read <code>wise.css</code> and grade every HTML page.
     </div>
   </section>
 
@@ -597,15 +720,11 @@
   <section id="pages">
     <div class="section-head">
       <h2>HTML pages reviewed &amp; graded</h2>
-      <p>Every shipping HTML page is fetched live and run through a set of automated WCAG checks
-      (document language, page title, zoomable viewport, image alt text, accessible names on
-      controls, labelled form fields, heading structure and landmarks). Each page gets a letter
-      grade. This re-runs on load, on demand, when you return to the tab, and on a timer — so a
-      page is re-graded shortly after it changes.</p>
+      <p>Click Re-evaluate to fetch every HTML page (catalog plus anything the directory listing finds) and run language, title, zoom, alt text, names, labels, headings, and landmarks. Each page gets a letter grade from that pass — nothing is graded until you ask.</p>
     </div>
     <div class="page-audit-bar">
-      <span class="auto-pill"><span class="dot"></span>Auto-reviewing</span>
-      <span class="page-checked" id="pagesChecked">Reviewing pages…</span>
+      <span class="auto-pill" id="pagesPill">Not yet reviewed</span>
+      <span class="page-checked" id="pagesChecked">Click Re-evaluate to fetch and grade every HTML page.</span>
     </div>
     <div class="page-grid" id="pageGrid"><!-- injected --></div>
   </section>
@@ -715,12 +834,10 @@
   </section>
 
   <div class="ar-foot">
-    Generated audit of the WISE design tokens (<code>pages/wise.css</code>) plus a live, per-page WCAG review of every shipping HTML page in the project.
-    Pages are fetched with <code>cache: no-store</code> on load, on demand, on tab focus and on a polling timer, then
-    parsed and graded in the browser — so grades re-evaluate shortly after any page is updated. Contrast ratios use the
-    WCAG 2.1 relative-luminance algorithm; translucent tokens (<code>rgba</code> borders, soft tints) are
-    alpha-composited over their resolved background before measuring. This is an automated review and complements, but
-    does not replace, testing with assistive technology and real users.
+    Click Re-evaluate to fetch <code>pages/wise.css</code> and every HTML page (cache-busted), then grade them in the browser.
+    Contrast ratios use the WCAG 2.1 relative-luminance algorithm; translucent tokens are alpha-composited over their
+    resolved background before measuring. This is an automated review and complements, but does not replace, testing with
+    assistive technology and real users.
   </div>
 
         </div><!-- /.ar-body -->
@@ -1410,12 +1527,11 @@ function renderFindings() {
 
 /* =====================================================================
    PER-PAGE WCAG AUDIT
-   Fetches every shipping HTML page live, parses it, runs a battery of
-   automated accessibility heuristics and assigns a letter grade. Re-runs
-   on load, on demand, on tab focus and on a poll timer so the grades
-   re-evaluate shortly after any page is edited. Paths are relative to
-   this file (pages/accessibility-review.html): same-dir pages resolve
-   directly, root pages via '../'.
+   Only runs when you click Re-evaluate. Discovers every HTML page from
+   the catalog plus the pages/ and repo-root directory listings, fetches
+   each one cache-busted, parses it, and assigns a letter grade. Paths
+   are relative to this file: same-dir pages resolve directly, root
+   pages via '../'.
 ===================================================================== */
 // Every shipping *.html page in the project. The dev-only iframe seeder
 // (pages/__seed.html) is intentionally omitted — it is a harness, not a page.
@@ -1464,6 +1580,9 @@ const PAGES = [
   { title: 'Admin Utilities',          path: 'admin-utils.html' },
   { title: 'Marketing Assets',         path: 'marketing-assets.html' },
   { title: 'All Modules',              path: 'all-modules.html' },
+  { title: 'Progress Log',             path: 'progress-log.html' },
+  { title: 'Add Catalog',              path: 'add-catalog.html' },
+  { title: 'Page Gallery',             path: 'page-gallery.html' },
   { title: 'Help',                     path: 'help.html' },
   { title: 'Docs',                     path: 'docs.html' },
   { title: 'Product Vision Deck',      path: 'app-vision-deck.html' },
@@ -1474,6 +1593,75 @@ const PAGES = [
   { title: 'Create Account',           path: 'create-account.html' },
   { title: 'Reset Password',           path: 'forgot-password.html' },
 ];
+
+const PAGE_SKIP = { '__seed.html': true };
+function pageKey(path) {
+  return String(path || '').replace(/^\.\.\//, '').toLowerCase();
+}
+function titleFromFile(path) {
+  const name = pageKey(path).replace(/\.html$/i, '');
+  return name.split(/[-_]+/).filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || path;
+}
+function isDirListing(html) {
+  return /Directory listing/i.test(html) || /<title>\s*Index of/i.test(html);
+}
+function hrefsFromListing(html, kind) {
+  const out = [];
+  const re = /href=["']([^"'#?]+?\.html)["']/gi;
+  let m;
+  while ((m = re.exec(html))) {
+    const name = m[1].split('/').pop();
+    if (!name || PAGE_SKIP[name] || name.startsWith('_') || name.startsWith('.')) continue;
+    if (kind === 'pages') out.push(name);
+    else if (name === 'index.html' || name.startsWith('marketing-')) out.push('../' + name);
+  }
+  return out;
+}
+async function discoverHtmlPages(scan) {
+  const byKey = new Map();
+  PAGES.forEach((p) => byKey.set(pageKey(p.path), { title: p.title, path: p.path }));
+  const tryList = async (url, kind) => {
+    const label = kind === 'pages' ? 'pages/' : '(repo root)';
+    if (scan) scan.log({ state: 'run', name: label, detail: 'Reading the directory listing for HTML files' });
+    try {
+      const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'ar=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const html = await res.text();
+      if (!isDirListing(html)) {
+        if (scan) scan.log({ state: 'skip', name: label, detail: 'No directory listing — using the catalog' });
+        return;
+      }
+      let added = 0;
+      hrefsFromListing(html, kind).forEach((path) => {
+        const key = pageKey(path);
+        if (byKey.has(key)) return;
+        byKey.set(key, { title: titleFromFile(path), path });
+        added += 1;
+      });
+      if (scan) {
+        scan.log({
+          state: 'ok',
+          name: label,
+          detail: added
+            ? ('Found ' + added + ' additional HTML page' + (added === 1 ? '' : 's'))
+            : 'No HTML beyond what was already queued',
+        });
+      }
+    } catch (err) {
+      if (scan) scan.log({ state: 'skip', name: label, detail: (err && err.message) || 'Listing not available' });
+    }
+  };
+  await Promise.all([
+    tryList(new URL('./', location.href).href, 'pages'),
+    tryList(new URL('../', location.href).href, 'root'),
+  ]);
+  const extras = [];
+  const catalogKeys = new Set(PAGES.map((p) => pageKey(p.path)));
+  byKey.forEach((p, key) => { if (!catalogKeys.has(key)) extras.push(p); });
+  extras.sort((a, b) => a.path.localeCompare(b.path));
+  return PAGES.concat(extras);
+}
 
 // Per-page running state: last content signature + last grade.
 const pageState = {};
@@ -1683,37 +1871,71 @@ function renderPageError(page, msg) {
     '<div class="page-card-err">Couldn\u2019t fetch: ' + msg + '</div>' +
   '</div>';
 }
+function renderPagePending(page) {
+  return '<div class="page-card is-pending">' +
+    '<div class="page-card-top">' +
+      '<div class="page-grade g-d">…</div>' +
+      '<div class="page-card-meta">' +
+        '<div class="page-name">' + page.title + '</div>' +
+        '<div class="page-path">' + page.path.replace('../', '') + '</div>' +
+        '<div class="page-score-line"><span class="page-pct">Fetching…</span></div>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+function setPagesPill(kind, label) {
+  const el = document.getElementById('pagesPill');
+  if (!el) return;
+  el.className = 'auto-pill' + (kind === 'live' ? ' is-live' : (kind === 'done' ? ' is-done' : ''));
+  el.textContent = label;
+}
 
 let pageStats = null;
 window.pageStats = pageStats;
 let pageIssues = [];
 let pageAuditRunning = false;
+let scanBusy = false;
+
+function pagePathLabel(path) {
+  return String(path || '').replace(/^\.\.\//, '');
+}
+
 async function auditAllPages(opts) {
   opts = opts || {};
-  if (pageAuditRunning) return;
+  const scan = opts.scan || null;
+  const pages = (opts.pages && opts.pages.length) ? opts.pages : PAGES;
+  if (opts.silent && scanBusy) return null;
+  if (pageAuditRunning) return null;
   pageAuditRunning = true;
   const grid = document.getElementById('pageGrid');
   const checkedEl = document.getElementById('pagesChecked');
-  if (!opts.silent && !grid.children.length) {
-    checkedEl.textContent = 'Reviewing ' + PAGES.length + ' pages…';
+  setPagesPill('live', 'Reviewing');
+  if (checkedEl) checkedEl.textContent = 'Fetching 0 of ' + pages.length + ' pages…';
+  if (scan) {
+    scan.phase('Grade every HTML page', pages.length + ' pages — each one is fetched, parsed, and checked for language, title, zoom, alt text, names, labels, headings, landmarks.');
+    scan.setProgress(22, '0 of ' + pages.length + ' pages graded');
   }
 
   const parser = new DOMParser();
-  const cards = [];
+  const cards = pages.map((page) => renderPagePending(page));
+  const paint = () => { if (grid) grid.innerHTML = cards.join(''); };
+  paint();
   let graded = 0, sum = 0, changedCount = 0, errored = 0;
-  // label -> { sc, fail: [titles], warn: [titles], detail }
   const byCheck = new Map();
   const lowGrades = [];
   const unreachable = [];
 
-  for (const page of PAGES) {
+  for (let i = 0; i < pages.length; i++) {
+    const page = pages[i];
+    const name = pagePathLabel(page.path);
+    if (checkedEl) checkedEl.textContent = 'Fetching ' + (i + 1) + ' of ' + pages.length + ' · ' + page.title;
+    if (scan) scan.log({ state: 'run', name, detail: 'Fetching HTML · ' + page.title });
     try {
-      const res = await fetch(page.path + '?t=' + Date.now(), { cache: 'no-store' });
+      const res = await fetch(page.path + '?ar=' + Date.now() + '&n=' + i, { cache: 'no-store' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const html = await res.text();
-      // Cheap content signature for change detection.
       let sig = 0;
-      for (let i = 0; i < html.length; i++) { sig = (sig * 31 + html.charCodeAt(i)) | 0; }
+      for (let j = 0; j < html.length; j++) { sig = (sig * 31 + html.charCodeAt(j)) | 0; }
       sig = html.length + ':' + sig;
 
       const prev = pageState[page.path];
@@ -1721,7 +1943,8 @@ async function auditAllPages(opts) {
       const result = auditDoc(parser.parseFromString(html, 'text/html'));
       if (changed) changedCount++;
       pageState[page.path] = { sig, pct: result.pct, justUpdated: changed };
-      cards.push(renderPageCard(page, result));
+      cards[i] = renderPageCard(page, result);
+      paint();
       graded++; sum += result.pct;
 
       for (const c of result.checks) {
@@ -1731,41 +1954,57 @@ async function auditAllPages(opts) {
         byCheck.get(c.label)[v].push(page.title);
       }
       if (result.pct < 80) lowGrades.push({ title: page.title, pct: result.pct });
+      if (scan) {
+        const letter = letterFor(result.pct).g;
+        scan.log({
+          state: 'ok',
+          name,
+          detail: page.title + ' · ' + letter + ' · ' + result.pct + '%' + (changed ? ' · changed since last check' : ''),
+        });
+        scan.setProgress(22 + Math.round(((i + 1) / pages.length) * 74), (i + 1) + ' of ' + pages.length + ' pages graded');
+      }
     } catch (err) {
       errored++;
       unreachable.push(page.title);
-      cards.push(renderPageError(page, err.message));
+      cards[i] = renderPageError(page, err.message);
+      paint();
       pageState[page.path] = pageState[page.path] || {};
+      if (scan) {
+        scan.log({ state: 'err', name, detail: page.title + ' · ' + (err && err.message ? err.message : 'unreachable') });
+        scan.setProgress(22 + Math.round(((i + 1) / pages.length) * 74), (i + 1) + ' of ' + pages.length + ' pages graded');
+      }
     }
   }
 
-  grid.innerHTML = cards.join('');
   const avg = graded ? Math.round(sum / graded) : 0;
-  pageStats = { graded, total: PAGES.length, avg, errored };
+  pageStats = { graded, total: pages.length, avg, errored, changedCount };
   window.pageStats = pageStats;
   pageIssues = buildPageIssues(byCheck, lowGrades, unreachable, graded);
   renderScorecard();
   renderConcerns();
 
   const now = new Date().toLocaleTimeString();
-  if (errored === PAGES.length) {
+  if (errored === pages.length) {
+    setPagesPill('', 'Unreachable');
     checkedEl.innerHTML = '<span style="color:var(--warn);">Couldn\u2019t fetch pages — serve the folder over http (e.g. <code>python3 -m http.server</code>) to enable the live page audit.</span>';
   } else {
-    checkedEl.innerHTML = graded + ' of ' + PAGES.length + ' pages graded · avg ' + avg + '% · last checked ' + now +
+    setPagesPill('done', 'Graded');
+    checkedEl.innerHTML = graded + ' of ' + pages.length + ' pages graded · avg ' + avg + '% · last checked ' + now +
       (changedCount ? ' · <strong>' + changedCount + ' page' + (changedCount > 1 ? 's' : '') + ' changed</strong>' : '') +
       (errored ? ' · ' + errored + ' unreachable' : '');
   }
 
-  // Clear the "updated" flash after a few seconds.
   if (changedCount) {
     setTimeout(() => {
       for (const k in pageState) if (pageState[k]) pageState[k].justUpdated = false;
       const g2 = document.getElementById('pageGrid');
+      if (!g2) return;
       g2.querySelectorAll('.page-card.is-updated').forEach(c => c.classList.remove('is-updated'));
       g2.querySelectorAll('.page-updated-tag').forEach(c => c.remove());
     }, 6000);
   }
   pageAuditRunning = false;
+  return pageStats;
 }
 
 /* =====================================================================
@@ -1794,16 +2033,16 @@ renderTargets();
 renderFindings();
 // Live (theme-dependent) renders now + on every toggle.
 rerenderLive();
-// Live per-page WCAG audit — fetch + grade every shipping HTML page now.
-auditAllPages();
 
 /* =====================================================================
    Re-evaluate against the real source tokens.
-   Fetches pages/agent-page.css, parses its :root + html.dark custom
+   Fetches pages/wise.css, parses its :root + html.dark custom
    properties, injects them as an override <style> so getComputedStyle
    (and therefore every ratio) reflects the live source — never the
-   page's mirrored copy — then recomputes. Falls back gracefully to the
-   mirror when the file can't be fetched (e.g. opened via file://).
+   page's mirrored copy — then recomputes. A manual click opens the same
+   scan modal used on All Modules / Page Gallery so the reader can see
+   each token pass and each HTML page as it is graded. Falls back
+   gracefully to the mirror when the file can't be fetched (file://).
 ===================================================================== */
 const SOURCE_CSS = 'wise.css';
 function cssBlock(css, selector) {
@@ -1820,86 +2059,352 @@ function cssVars(block) {
 }
 function setStatus(kind, html) {
   const el = document.getElementById('reevalStatus');
+  if (!el) return;
   el.className = 'reeval-status ' + kind;
   el.innerHTML = html;
 }
-async function reevaluate() {
+function setReevalBusy(on) {
   const btn = document.getElementById('reevalBtn');
-  btn.disabled = true;
-  btn.classList.add('is-loading');
-  btn.setAttribute('aria-busy', 'true');
-  setStatus('is-busy', '<span class="material-symbols-outlined">hourglass_top</span> Reading tokens from <code>' + SOURCE_CSS + '</code>…');
-  try {
-    const res = await fetch(SOURCE_CSS + '?t=' + Date.now(), { cache: 'no-store' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const css = await res.text();
-    const light = cssVars(cssBlock(css, ':root'));
-    const dark = cssVars(cssBlock(css, 'html\\.dark'));
-    if (!Object.keys(light).length) throw new Error('no :root tokens found');
+  if (!btn) return;
+  btn.disabled = !!on;
+  btn.classList.toggle('is-loading', !!on);
+  if (on) btn.setAttribute('aria-busy', 'true');
+  else btn.removeAttribute('aria-busy');
+  const label = btn.querySelector('[data-ar-reeval-label]');
+  if (label) label.textContent = on ? 'Re-evaluating…' : 'Re-evaluate';
+}
+function tokenStatusHtml(kind, result) {
+  if (kind === 'warn') {
+    return '<span class="material-symbols-outlined">info</span> Couldn\u2019t read <code>' + SOURCE_CSS + '</code>' +
+      (result && result.error ? ' (' + result.error + ')' : '') +
+      '. Showing the page\u2019s mirrored tokens — serve this folder over http (e.g. <code>python3 -m http.server</code>) to evaluate against the live source.';
+  }
+  const t = new Date().toLocaleTimeString();
+  const n = result && result.n != null ? result.n : 0;
+  const changed = (result && result.changed) || [];
+  const driftNote = changed.length
+    ? ' · <strong>' + changed.length + ' token' + (changed.length > 1 ? 's' : '') + ' changed</strong> (' + changed.slice(0, 6).join(', ') + (changed.length > 6 ? '…' : '') + ')'
+    : ' · in sync';
+  return '<span class="material-symbols-outlined">verified</span> Re-evaluated against <code>' + SOURCE_CSS + '</code> — ' + n + ' tokens · ' + t + driftNote;
+}
+async function fetchAndApplyTokens() {
+  const res = await fetch(SOURCE_CSS + '?t=' + Date.now(), { cache: 'no-store' });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const css = await res.text();
+  const light = cssVars(cssBlock(css, ':root'));
+  const dark = cssVars(cssBlock(css, 'html\\.dark'));
+  if (!Object.keys(light).length) throw new Error('no :root tokens found');
 
-    // Detect drift vs whatever the page is currently showing (its mirror or
-    // a previous sync), for the active theme, BEFORE applying the override.
-    const isDark = document.documentElement.classList.contains('dark');
-    const incoming = isDark ? dark : light;
-    const before = getComputedStyle(document.documentElement);
-    const changed = [];
-    for (const k in incoming) {
-      const was = before.getPropertyValue(k).trim();
-      if (was && was.toLowerCase() !== incoming[k].toLowerCase()) changed.push(k);
+  // Detect drift vs whatever the page is currently showing (its mirror or
+  // a previous sync), for the active theme, BEFORE applying the override.
+  const isDark = document.documentElement.classList.contains('dark');
+  const incoming = isDark ? dark : light;
+  const before = getComputedStyle(document.documentElement);
+  const changed = [];
+  for (const k in incoming) {
+    const was = before.getPropertyValue(k).trim();
+    if (was && was.toLowerCase() !== incoming[k].toLowerCase()) changed.push(k);
+  }
+
+  let s = document.getElementById('source-tokens');
+  if (!s) { s = document.createElement('style'); s.id = 'source-tokens'; document.head.appendChild(s); }
+  const ser = o => Object.entries(o).map(([k, v]) => k + ':' + v + ';').join('');
+  s.textContent = ':root{' + ser(light) + '} html.dark{' + ser(dark) + '}';
+
+  return { light, dark, changed, n: Object.keys(light).length };
+}
+
+function scanEsc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+let scanModalEl = null;
+function closeScanModal() {
+  const el = scanModalEl;
+  if (!el) return;
+  scanModalEl = null;
+  document.body.style.overflow = el._prevOverflow || '';
+  if (el._onKey) document.removeEventListener('keydown', el._onKey);
+  el.classList.remove('is-open');
+  setTimeout(() => { if (el.parentNode) el.remove(); }, 220);
+}
+
+function openScanModal(opts) {
+  const {
+    eyebrow = 'Re-evaluate',
+    title = 'Working',
+    icon = 'autorenew',
+    sub = 'Starting…',
+  } = opts || {};
+  closeScanModal();
+
+  const scrim = document.createElement('div');
+  scrim.className = 'ar-scan-scrim';
+  scrim._prevOverflow = document.body.style.overflow;
+  document.body.style.overflow = 'hidden';
+  scrim.innerHTML = `
+    <div class="ar-scan-card" role="dialog" aria-modal="true" aria-labelledby="ar-scan-title">
+      <div class="ar-scan-head">
+        <span class="material-symbols-outlined" aria-hidden="true">${scanEsc(icon)}</span>
+        <div class="ar-scan-titles">
+          <div class="ar-scan-eyebrow">${scanEsc(eyebrow)}</div>
+          <h2 class="ar-scan-title" id="ar-scan-title">${scanEsc(title)}</h2>
+          <p class="ar-scan-sub" data-scan-sub>${scanEsc(sub)}</p>
+          <p class="ar-scan-now" data-scan-now></p>
+        </div>
+        <button type="button" class="ar-scan-close" data-scan-close aria-label="Close" hidden>
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="ar-scan-score">
+        <span class="ar-scan-pct no-countup" data-scan-pct data-no-countup>0%</span>
+        <span class="ar-scan-frac" data-scan-frac>Starting</span>
+      </div>
+      <div class="ar-scan-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-scan-bar>
+        <span class="ar-scan-fill" data-scan-fill></span>
+      </div>
+      <ul class="ar-scan-log" data-scan-log role="log" aria-live="polite" aria-relevant="additions"></ul>
+      <div class="ar-scan-foot">
+        <span class="ar-scan-note" data-scan-note>Keep this tab open while it runs.</span>
+        <button type="button" class="adm-btn adm-btn--primary" data-scan-done disabled>
+          <span class="material-symbols-outlined">hourglass_top</span>
+          <span data-scan-done-label>Working…</span>
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(scrim);
+  scanModalEl = scrim;
+  requestAnimationFrame(() => scrim.classList.add('is-open'));
+
+  let pctNow = 0;
+  let logCount = 0;
+  let finished = false;
+  const list = scrim.querySelector('[data-scan-log]');
+  const fill = scrim.querySelector('[data-scan-fill]');
+  const bar = scrim.querySelector('[data-scan-bar]');
+  const pctEl = scrim.querySelector('[data-scan-pct]');
+  const fracEl = scrim.querySelector('[data-scan-frac]');
+  const subEl = scrim.querySelector('[data-scan-sub]');
+  const nowEl = scrim.querySelector('[data-scan-now]');
+  const noteEl = scrim.querySelector('[data-scan-note]');
+  const doneBtn = scrim.querySelector('[data-scan-done]');
+  const doneLabel = scrim.querySelector('[data-scan-done-label]');
+  const closeBtn = scrim.querySelector('[data-scan-close]');
+  const rowIcon = { run: 'autorenew', ok: 'check_circle', err: 'error', skip: 'block', info: 'info', pending: 'schedule' };
+
+  const close = () => {
+    if (!finished) return;
+    closeScanModal();
+  };
+
+  const onKey = (e) => {
+    if (e.key !== 'Escape') return;
+    if (!finished) { e.preventDefault(); e.stopPropagation(); return; }
+    e.preventDefault();
+    e.stopPropagation();
+    close();
+  };
+  scrim._onKey = onKey;
+  document.addEventListener('keydown', onKey);
+  closeBtn.addEventListener('click', close);
+  scrim.addEventListener('click', (e) => { if (e.target === scrim && finished) close(); });
+  doneBtn.addEventListener('click', () => { if (!doneBtn.disabled) close(); });
+
+  const api = {
+    setProgress(pct, frac) {
+      const next = Math.max(pctNow, Math.max(0, Math.min(100, Math.round(pct))));
+      pctNow = next;
+      if (fill) fill.style.width = next + '%';
+      if (bar) bar.setAttribute('aria-valuenow', String(next));
+      if (pctEl) pctEl.textContent = next + '%';
+      if (frac && fracEl) fracEl.textContent = frac;
+    },
+    phase(titleText, detail) {
+      if (!list) return;
+      list.insertAdjacentHTML('beforeend',
+        `<li class="ar-scan-phase">${scanEsc(titleText)}${detail ? `<span>${scanEsc(detail)}</span>` : ''}</li>`);
+      list.lastElementChild.scrollIntoView({ block: 'nearest' });
+      if (subEl) subEl.textContent = detail || titleText;
+    },
+    log(entry) {
+      if (!list) return;
+      const state = (entry && entry.state) || 'info';
+      const name = (entry && entry.name) || '';
+      const detail = (entry && entry.detail) || '';
+      if (state !== 'run' && name) {
+        const prev = Array.from(list.querySelectorAll('.ar-scan-row[data-state="run"]'))
+          .find((r) => (r.querySelector('.ar-scan-row-name') || {}).textContent === name);
+        if (prev) {
+          prev.dataset.state = state;
+          const ic = prev.querySelector('.material-symbols-outlined');
+          if (ic) ic.textContent = rowIcon[state] || 'info';
+          const detailEl = prev.querySelector('.ar-scan-row-detail');
+          if (detailEl) detailEl.textContent = detail;
+          else if (detail) {
+            const span = document.createElement('span');
+            span.className = 'ar-scan-row-detail';
+            span.textContent = detail;
+            (prev.querySelector('.ar-scan-row-main') || prev).appendChild(span);
+          }
+          prev.scrollIntoView({ block: 'nearest' });
+          if (nowEl) nowEl.textContent = name;
+          return;
+        }
+      }
+      logCount += 1;
+      list.insertAdjacentHTML('beforeend', `
+        <li class="ar-scan-row" data-state="${scanEsc(state)}">
+          <span class="material-symbols-outlined">${rowIcon[state] || 'info'}</span>
+          <span class="ar-scan-row-main">
+            <span class="ar-scan-row-name">${scanEsc(name)}</span>
+            ${detail ? `<span class="ar-scan-row-detail">${scanEsc(detail)}</span>` : ''}
+          </span>
+        </li>`);
+      list.lastElementChild.scrollIntoView({ block: 'nearest' });
+      if (nowEl && (state === 'run' || state === 'ok')) nowEl.textContent = name;
+      if (noteEl && !finished) noteEl.textContent = logCount + (logCount === 1 ? ' event' : ' events');
+    },
+    finish(kind, finishTitle, note) {
+      finished = true;
+      api.setProgress(100, finishTitle || 'Done');
+      if (subEl && finishTitle) subEl.textContent = finishTitle;
+      if (noteEl && note) noteEl.textContent = note;
+      if (doneBtn) {
+        doneBtn.disabled = false;
+        const ic = doneBtn.querySelector('.material-symbols-outlined');
+        if (ic) ic.textContent = kind === 'err' ? 'error' : (kind === 'warn' ? 'warning' : 'check');
+        if (doneLabel) doneLabel.textContent = 'Done';
+      }
+      if (closeBtn) closeBtn.hidden = false;
+      if (nowEl) nowEl.textContent = '';
+    },
+    close,
+  };
+  return api;
+}
+
+async function waitWhile(pred) {
+  while (pred()) await new Promise((r) => setTimeout(r, 40));
+}
+
+async function reevaluateManual() {
+  if (scanBusy) return;
+  scanBusy = true;
+  setReevalBusy(true);
+  setStatus('is-busy', '<span class="material-symbols-outlined">hourglass_top</span> Re-evaluating tokens and every HTML page…');
+
+  const scan = openScanModal({
+    eyebrow: 'Re-evaluate',
+    title: 'Re-evaluating accessibility',
+    icon: 'autorenew',
+    sub: 'Reading design tokens from pages/wise.css, then fetching and grading every HTML page. Nothing is pre-scanned — this pass is the audit.',
+  });
+  scan.log({
+    state: 'info',
+    name: 'How this scan works',
+    detail: 'Does not run on load. Lists pages/ and the repo root, then cache-bust fetches each HTML file and runs language, title, zoom, alt text, names, labels, headings, and landmarks. Tokens come from the live stylesheet. The scorecard, swatches, contrast tables, page grades, and concerns all refresh from this pass.',
+  });
+
+  if (location.protocol === 'file:') {
+    scan.phase('Cannot scan from a file URL', 'A local server is required so the browser can fetch the stylesheet and every page.');
+    scan.log({
+      state: 'err',
+      name: location.href,
+      detail: 'Opened as a file. Start python3 -m http.server or python3 dev_server.py and reload this page over http.',
+    });
+    scan.finish('warn', 'Serve this page over http', 'Start a local server, then click Re-evaluate again.');
+    setStatus('warn', tokenStatusHtml('warn', { error: 'opened as a file' }));
+    setReevalBusy(false);
+    scanBusy = false;
+    return;
+  }
+
+  let tokenResult = null;
+  let tokenWarn = false;
+  try {
+    await waitWhile(() => pageAuditRunning);
+
+    scan.phase('Read design tokens', 'pages/wise.css — light :root and html.dark custom properties.');
+    scan.setProgress(8, 'Reading tokens');
+    scan.log({ state: 'run', name: SOURCE_CSS, detail: 'Fetching stylesheet (cache-busted)' });
+    try {
+      tokenResult = await fetchAndApplyTokens();
+      const drift = tokenResult.changed.length
+        ? tokenResult.changed.length + ' token' + (tokenResult.changed.length > 1 ? 's' : '') + ' changed (' + tokenResult.changed.slice(0, 6).join(', ') + (tokenResult.changed.length > 6 ? '…' : '') + ')'
+        : 'in sync with the live source';
+      scan.log({
+        state: 'ok',
+        name: SOURCE_CSS,
+        detail: tokenResult.n + ' light tokens · ' + Object.keys(tokenResult.dark).length + ' dark tokens · ' + drift,
+      });
+    } catch (err) {
+      tokenWarn = true;
+      scan.log({
+        state: 'err',
+        name: SOURCE_CSS,
+        detail: err.message + ' — using the page’s mirrored tokens',
+      });
     }
 
-    // Apply the source tokens as an override so all live math tracks source.
-    let s = document.getElementById('source-tokens');
-    if (!s) { s = document.createElement('style'); s.id = 'source-tokens'; document.head.appendChild(s); }
-    const ser = o => Object.entries(o).map(([k, v]) => k + ':' + v + ';').join('');
-    s.textContent = ':root{' + ser(light) + '} html.dark{' + ser(dark) + '}';
-
+    scan.phase('Recompute live surfaces', 'Swatches, text contrast, non-text contrast, scorecard, and open concerns.');
+    scan.setProgress(18, 'Recomputing ratios');
+    scan.log({ state: 'run', name: 'Contrast matrix', detail: 'WCAG relative luminance on every text pairing' });
     rerenderLive();
+    const s = window.lastStats || lastStats || {};
+    const aaa = s.aaaNormalPass, tot = s.total, aa = s.aaNormalPass;
+    scan.log({
+      state: 'ok',
+      name: 'Contrast matrix',
+      detail: tot
+        ? (aaa + '/' + tot + ' text pairings meet AAA 7:1 · ' + aa + '/' + tot + ' meet AA 4.5:1')
+        : 'Ratios recomputed',
+    });
+    scan.log({ state: 'ok', name: 'Palette swatches', detail: 'Updated from the live tokens' });
+    scan.log({ state: 'ok', name: 'Non-text contrast', detail: 'Borders, focus, and UI boundaries rechecked at 3:1' });
 
-    const t = new Date().toLocaleTimeString();
-    const n = Object.keys(light).length;
-    const driftNote = changed.length
-      ? ' · <strong>' + changed.length + ' token' + (changed.length > 1 ? 's' : '') + ' changed</strong> (' + changed.slice(0, 6).join(', ') + (changed.length > 6 ? '…' : '') + ')'
-      : ' · in sync';
-    setStatus('ok', '<span class="material-symbols-outlined">verified</span> Re-evaluated against <code>' + SOURCE_CSS + '</code> — ' + n + ' tokens · ' + t + driftNote);
+    scan.phase('Find every HTML page', 'Catalog plus directory listings for pages/ and the repo root.');
+    scan.setProgress(20, 'Listing pages');
+    const found = await discoverHtmlPages(scan);
+    const pages = await auditAllPages({ scan, pages: found });
+
+    const bits = [];
+    if (tokenResult) {
+      bits.push(tokenResult.n + ' tokens' + (tokenResult.changed.length ? ', ' + tokenResult.changed.length + ' changed' : ' in sync'));
+    } else if (tokenWarn) {
+      bits.push('tokens used the on-page mirror');
+    }
+    if (pages) {
+      bits.push(pages.graded + ' of ' + pages.total + ' pages graded (avg ' + pages.avg + '%)');
+      if (pages.changedCount) bits.push(pages.changedCount + ' page' + (pages.changedCount > 1 ? 's' : '') + ' changed');
+      if (pages.errored) bits.push(pages.errored + ' unreachable');
+    }
+    const finishKind = tokenWarn || (pages && pages.errored === (pages && pages.total)) ? 'warn' : 'ok';
+    const finishTitle = finishKind === 'warn' ? 'Re-evaluate finished with warnings' : 'Accessibility re-evaluated';
+    scan.finish(finishKind, finishTitle, bits.join(' · ') || 'Done.');
+    setStatus(finishKind === 'warn' ? 'warn' : 'ok', tokenResult
+      ? tokenStatusHtml('ok', tokenResult)
+      : tokenStatusHtml('warn', { error: 'could not read source' }));
   } catch (err) {
-    setStatus('warn', '<span class="material-symbols-outlined">info</span> Couldn\u2019t read <code>' + SOURCE_CSS + '</code> (' + err.message + '). Showing the page\u2019s mirrored tokens — serve this folder over http (e.g. <code>python3 -m http.server</code>) to evaluate against the live source.');
+    scan.finish('err', 'Re-evaluate failed', err && err.message ? err.message : 'The scan stopped before it could finish.');
+    setStatus('warn', tokenStatusHtml('warn', { error: err && err.message ? err.message : 'scan failed' }));
   } finally {
-    btn.disabled = false;
-    btn.classList.remove('is-loading');
-    btn.removeAttribute('aria-busy');
+    setReevalBusy(false);
+    scanBusy = false;
   }
 }
-document.getElementById('reevalBtn').addEventListener('click', () => {
-  reevaluate();
-  auditAllPages();
-});
-// Auto-sync on load so the page opens already evaluated against source.
-reevaluate();
 
-/* =====================================================================
-   Keep the page audit fresh: re-grade whenever the tab regains focus
-   and on a steady poll, so grades re-evaluate shortly after any page is
-   edited (fetches use cache: no-store + cache-buster). Polling pauses
-   while the tab is hidden to avoid pointless background work.
-===================================================================== */
-const PAGE_POLL_MS = 20000;
-let pagePoll = null;
-function startPagePoll() {
-  if (pagePoll) return;
-  pagePoll = setInterval(() => {
-    if (!document.hidden) auditAllPages({ silent: true });
-  }, PAGE_POLL_MS);
+async function reevaluate(opts) {
+  return reevaluateManual();
 }
-function stopPagePoll() {
-  if (pagePoll) { clearInterval(pagePoll); pagePoll = null; }
-}
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) { stopPagePoll(); }
-  else { auditAllPages({ silent: true }); startPagePoll(); }
+window.arReevaluate = () => reevaluateManual();
+document.getElementById('reevalBtn').addEventListener('click', () => {
+  reevaluateManual();
 });
-window.addEventListener('focus', () => auditAllPages({ silent: true }));
-startPagePoll();
 
 /* In-module section jumps: the board (not the window) is the scroller. */
 document.getElementById('ar-audit').addEventListener('click', (e) => {
@@ -1942,7 +2447,7 @@ document.addEventListener('keydown', (e) => {
   const wBtn = document.getElementById('ar-width');
   const moduleEl = document.getElementById('ar-audit');
   if (!wBtn || !moduleEl) return;
-  const CANON_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
+  const CANON_ICONS = ['width_normal', 'width_wide', 'width_wide', 'width_full', 'fit_width'];
   const CANON_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to widen', 'Width (custom) — drag to any size'];
   const W = window.WPaneWidth;
   const applyTier = (t) => {
@@ -1987,14 +2492,14 @@ document.addEventListener('keydown', (e) => {
         { intent: 'ar:pages', label: 'Page grades', icon: 'grade', nextIntents: ['ar:score', 'ar:findings', 'ar:contrast'] },
         { intent: 'ar:contrast', label: 'Contrast issues', icon: 'contrast', nextIntents: ['ar:findings', 'ar:score', 'ar:reeval'] },
         { intent: 'ar:findings', label: 'Findings', icon: 'fact_check', nextIntents: ['ar:contrast', 'ar:pages', 'ar:score'] },
-        { intent: 'ar:reeval', label: 'Re-evaluate tokens', icon: 'sync', nextIntents: ['ar:score', 'ar:contrast', 'ar:findings'] },
+        { intent: 'ar:reeval', label: 'Re-evaluate', icon: 'autorenew', nextIntents: ['ar:score', 'ar:contrast', 'ar:findings'] },
       ];
       const INTENT_REPLIES = {
         'ar:score': () => { document.getElementById('summary')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return scoreLine(); },
         'ar:pages': () => {
           document.getElementById('pages')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
           const p = window.pageStats;
-          if (!p) return 'Page grades are still loading — they refresh live as each HTML page is fetched.';
+          if (!p) return 'No pages have been graded yet. Click Re-evaluate beside the headline — it fetches every HTML page and grades each one in the modal.';
           return `<b>${p.graded}</b> of <b>${p.total}</b> pages graded · average <b>${p.avg}%</b>${p.errored ? ` · ${p.errored} unreachable` : ''}. Open Page grades in the board for the letter-grade cards.`;
         },
         'ar:contrast': () => {
@@ -2010,7 +2515,7 @@ document.addEventListener('keydown', (e) => {
         },
         'ar:reeval': () => {
           document.getElementById('reevalBtn')?.click();
-          return 'Re-reading tokens from <code>pages/wise.css</code> and recomputing every ratio. Watch the status line under the scorecard.';
+          return 'Starting Re-evaluate now. It does not run on load — this click lists every HTML page, fetches each one, and grades it. The modal shows each file as it is checked.';
         },
       };
 

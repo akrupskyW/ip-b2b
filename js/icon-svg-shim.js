@@ -56,7 +56,15 @@
       'line-height:0;vertical-align:middle;font-variation-settings:normal}' +
       /* The ligature text kept for textContent compatibility: readable to JS,
          invisible to the page and to the accessibility tree. */
-      '.wise-icon-lig{display:none}';
+      '.wise-icon-lig{display:none}' +
+      /* Appearance ▸ Text size (S/M/L/XL) scales icons from their authored
+         size — a 13px chip glyph stays a chip glyph, a 24px scorecard mark
+         stays a scorecard mark. Zoom (not a 24px floor) keeps each role's
+         size and still grows or shrinks with type. Regions that already
+         zoom their body (--wise-icon-scale: 1 there) must not compound. */
+      'html{--wise-icon-scale:var(--wise-text-scale,1)}' +
+      '[class*="material-symbols"],[class~="material-icons"]{' +
+      'zoom:var(--wise-icon-scale,var(--wise-text-scale,1))}';
 
 
   var have = null;            // Set of symbol ids present in the sprite

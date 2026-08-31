@@ -64,6 +64,7 @@ PAGES = [
     "pages/page-gallery.html",
     "pages/progress-log.html",
     "pages/accessibility-review.html",
+    "pages/helix.html",
     # Account / support
     "pages/profile.html",
     "pages/invoices.html",

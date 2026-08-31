@@ -757,7 +757,8 @@
       .dash-breakdown-bar,
       .dash-pillar-row,
       .att-legend,
-      .inf-chart {
+      .inf-chart,
+      .cf-chart {
         break-inside: avoid;
         page-break-inside: avoid;
       }
@@ -4186,6 +4187,8 @@
         { sel: '#proc-class-card',        label: 'Ingredient Processing Details' },
         { sel: '#gras-prod-card',         label: 'Product-Level GRAS Classification' },
         { sel: '#inf-funnel-card',        label: 'Ingredient Funnel' },
+        { sel: '#inf-funnel-card-claim',  label: 'Product Claim Funnel' },
+        { sel: '#cf-funnel-card',         label: 'GRAS Conversion Funnel' },
       ];
 
       const nav = document.getElementById('az-nav');
@@ -4442,13 +4445,15 @@
 
   <style>
     /* =====================================================================
-       Ingredient normalization funnel (analytics-types.html only).
-       A three-stage organic funnel that pours into a segmented canon-ingredient
-       bar. Vertical (funnel top→bottom, bar left→right) and horizontal
-       (funnel left→right, bar top→bottom) are first-class layouts, not a
-       CSS rotate — the toggle in the card head swaps them.
+       Organic pour-into-bar funnel (analytics-types.html only).
+       One drawing: three stages that pour into a segmented bar. Vertical
+       (funnel top→bottom, bar left→right) and horizontal (funnel left→right,
+       bar top→bottom) are first-class layouts, not a CSS rotate. The fill
+       is one userSpaceOnUse wash along that axis. Two cards share this
+       drawing and swap the numbers — ingredients, then the product-claim
+       path. The GRAS conversion funnel below is a different chart type.
     ===================================================================== */
-    #inf-funnel-card {
+    .inf-funnel {
       --inf-s1: color-mix(in srgb, var(--primary) 42%, #d8e8f5);
       --inf-s2: color-mix(in srgb, var(--primary) 72%, #8fb6d4);
       --inf-s3: var(--primary);
@@ -4465,7 +4470,7 @@
       --inf-other-ink: #5A3A00;
       --inf-flow: color-mix(in srgb, var(--primary) 46%, transparent);
     }
-    html.dark #inf-funnel-card {
+    html.dark .inf-funnel {
       --inf-s1: color-mix(in srgb, var(--primary) 50%, #7a9bb8);
       --inf-s2: color-mix(in srgb, var(--primary) 72%, #8aabca);
       --inf-s3: #4A7FA8;
@@ -4475,12 +4480,45 @@
       --inf-other-ink: #3D2800;
       --inf-flow: color-mix(in srgb, var(--primary) 52%, transparent);
     }
+    .inf-funnel--claim {
+      --inf-s1: color-mix(in srgb, var(--sec-green) 40%, #d6f0e2);
+      --inf-s2: color-mix(in srgb, var(--sec-green) 68%, #7ec9a0);
+      --inf-s3: var(--sec-green);
+      --inf-s1-ink: #143326;
+      --inf-s2-ink: #fff;
+      --inf-s3-ink: #fff;
+      --inf-ref: #2E8B57;
+      --inf-unref: color-mix(in srgb, var(--sec-green) 70%, #9ad4b4);
+      --inf-fema: var(--chart-status-fair);
+      --inf-other: var(--chart-status-poor);
+      --inf-ref-ink: #fff;
+      --inf-unref-ink: #143326;
+      --inf-fema-ink: #fff;
+      --inf-other-ink: #fff;
+      --inf-flow: color-mix(in srgb, var(--sec-green) 46%, transparent);
+    }
+    html.dark .inf-funnel--claim {
+      --inf-s1: color-mix(in srgb, var(--sec-green) 48%, #6a9e82);
+      --inf-s2: color-mix(in srgb, var(--sec-green) 70%, #7eb896);
+      --inf-s3: #3d9a68;
+      --inf-s1-ink: #F2FBF6;
+      --inf-unref-ink: #0E1A14;
+      --inf-flow: color-mix(in srgb, var(--sec-green) 52%, transparent);
+    }
 
-    #inf-funnel-card .att-head--split {
+    .inf-funnel .att-head--split {
       justify-content: space-between;
       align-items: center;
     }
-    #inf-funnel-card .att-head--split .att-title { flex: 1 1 auto; min-width: 0; }
+    .inf-funnel .inf-head-lead {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .inf-funnel .att-head--split .att-title { flex: 1 1 auto; min-width: 0; }
 
     .att-orient,
     .inf-orient {
@@ -4712,37 +4750,45 @@
       width: 100%;
       cursor: pointer;
     }
+    .inf-reveal {
+      position: relative;
+      width: 100%;
+    }
     .inf-svg {
       width: 100%;
       height: auto;
       display: block;
       overflow: visible;
     }
-    .inf-band,
-    .inf-ribbon,
-    .inf-seg {
-      opacity: 0;
+    .inf-chart[data-orient="v"] .inf-reveal {
+      clip-path: inset(0 0 100% 0);
     }
-    .inf-chart.is-ready .inf-band,
-    .inf-chart.is-ready .inf-ribbon,
-    .inf-chart.is-ready .inf-seg {
-      animation: infIn .72s cubic-bezier(.22, 1, .36, 1) both;
-      animation-delay: var(--d, 0s);
+    .inf-chart[data-orient="h"] .inf-reveal {
+      clip-path: inset(0 100% 0 0);
     }
-    @keyframes infIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+    .inf-chart[data-orient="v"].is-ready .inf-reveal {
+      animation: infWipeV 1.65s cubic-bezier(.16, 1, .3, 1) both;
+    }
+    .inf-chart[data-orient="h"].is-ready .inf-reveal {
+      animation: infWipeH 1.65s cubic-bezier(.16, 1, .3, 1) both;
+    }
+    @keyframes infWipeV {
+      from { clip-path: inset(0 0 100% 0); }
+      to   { clip-path: inset(-32px); }
+    }
+    @keyframes infWipeH {
+      from { clip-path: inset(0 100% 0 0); }
+      to   { clip-path: inset(-32px); }
     }
     .inf-band {
       stroke: var(--surface);
       stroke-width: 1.4;
       stroke-linejoin: round;
       filter: drop-shadow(0 3px 6px rgba(8, 15, 26, 0.16));
-      transition: filter .15s ease, opacity .15s ease;
+      transition: filter .15s ease;
     }
     .inf-band:hover { filter: brightness(1.05) drop-shadow(0 6px 10px rgba(8, 15, 26, 0.22)); }
     html.dark .inf-band { filter: drop-shadow(0 3px 7px rgba(0, 0, 0, 0.45)); }
-    .inf-ribbon { fill: url(#inf-flow-g); }
     .inf-seg { transition: filter .15s ease; }
     .inf-seg:hover { filter: brightness(1.06); }
     .inf-leader {
@@ -4750,11 +4796,14 @@
       stroke: var(--text-subtle);
       stroke-width: 1.2;
       stroke-linecap: round;
-      opacity: 0;
     }
-    .inf-chart.is-ready .inf-leader {
-      animation: infIn .5s ease both;
-      animation-delay: .45s;
+    .inf-chart.is-ready .inf-label {
+      animation: infLabelIn 0.7s cubic-bezier(.16, 1, .3, 1) both;
+      animation-delay: var(--ld, 0.35s);
+    }
+    @keyframes infLabelIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
     }
 
     .inf-labels {
@@ -4768,6 +4817,7 @@
       text-align: center;
       line-height: 1.25;
       max-width: 42%;
+      opacity: 0;
     }
     .inf-label--callout {
       transform: translate(0, -50%);
@@ -4867,10 +4917,13 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .inf-chart.is-ready .inf-band,
-      .inf-chart.is-ready .inf-ribbon,
-      .inf-chart.is-ready .inf-seg,
-      .inf-chart.is-ready .inf-leader { animation: none; opacity: 1; }
+      .inf-chart[data-orient="v"] .inf-reveal,
+      .inf-chart[data-orient="h"] .inf-reveal,
+      .inf-chart.is-ready .inf-reveal {
+        animation: none;
+        clip-path: none;
+      }
+      .inf-chart.is-ready .inf-label { animation: none; opacity: 1; }
       .inf-orient-btn { transition: none; }
     }
     @container dash (max-width: 640px) {
@@ -4879,6 +4932,120 @@
       .inf-label--group-side .inf-num { font-size: 14px; }
       .inf-cap { font-size: 11px; }
       .inf-label--bar-title { white-space: normal; max-width: 90%; }
+    }
+
+    /* ---- GRAS conversion funnel: stacked trapezoids, not the organic pour ---- */
+    .cf-funnel {
+      --cf-s1: color-mix(in srgb, var(--sec-green) 36%, #d8f0e4);
+      --cf-s2: color-mix(in srgb, var(--sec-green) 56%, #9ad4b4);
+      --cf-s3: color-mix(in srgb, var(--sec-green) 78%, #5bb888);
+      --cf-s4: var(--sec-green);
+      --cf-ink-1: #143326;
+      --cf-ink-2: #143326;
+      --cf-ink-3: #fff;
+      --cf-ink-4: #fff;
+      --cf-drop: var(--text-muted);
+    }
+    html.dark .cf-funnel {
+      --cf-s1: color-mix(in srgb, var(--sec-green) 36%, #9ec9b0);
+      --cf-s2: color-mix(in srgb, var(--sec-green) 58%, #6eae8a);
+      --cf-s3: color-mix(in srgb, var(--sec-green) 82%, #3d8f64);
+      --cf-s4: #2c7a52;
+      --cf-ink-1: #0E1A14;
+      --cf-ink-2: #0E1A14;
+    }
+    .cf-funnel .att-head--split {
+      justify-content: space-between;
+      align-items: center;
+    }
+    .cf-funnel .inf-head-lead {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .cf-funnel .att-head--split .att-title { flex: 1 1 auto; min-width: 0; }
+    .cf-chart {
+      position: relative;
+      width: 100%;
+      cursor: pointer;
+    }
+    .cf-reveal { position: relative; width: 100%; }
+    .cf-svg {
+      width: 100%;
+      height: auto;
+      display: block;
+      overflow: visible;
+    }
+    .cf-chart[data-orient="v"] .cf-reveal { clip-path: inset(0 0 100% 0); }
+    .cf-chart[data-orient="h"] .cf-reveal { clip-path: inset(0 100% 0 0); }
+    .cf-chart[data-orient="v"].is-ready .cf-reveal {
+      animation: infWipeV 1.65s cubic-bezier(.16, 1, .3, 1) both;
+    }
+    .cf-chart[data-orient="h"].is-ready .cf-reveal {
+      animation: infWipeH 1.65s cubic-bezier(.16, 1, .3, 1) both;
+    }
+    .cf-band {
+      stroke: var(--surface);
+      stroke-width: 1.6;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 3px 6px rgba(8, 15, 26, 0.16));
+    }
+    .cf-band:hover { filter: brightness(1.05) drop-shadow(0 6px 10px rgba(8, 15, 26, 0.22)); }
+    html.dark .cf-band { filter: drop-shadow(0 3px 7px rgba(0, 0, 0, 0.45)); }
+    .cf-labels {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .cf-label {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.25;
+      max-width: 36%;
+      opacity: 0;
+    }
+    .cf-chart.is-ready .cf-label {
+      opacity: 1;
+      animation: infLabelIn 0.7s cubic-bezier(.16, 1, .3, 1) both;
+      animation-delay: var(--ld, 0.35s);
+    }
+    .cf-drop {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--cf-drop);
+      opacity: 0;
+      white-space: nowrap;
+    }
+    .cf-chart.is-ready .cf-drop {
+      opacity: 1;
+      animation: infLabelIn 0.7s cubic-bezier(.16, 1, .3, 1) both;
+      animation-delay: var(--ld, 0.8s);
+    }
+    .cf-drop-n {
+      font-family: 'WISE Digits', var(--font-serif, Georgia, serif);
+      font-variant-numeric: tabular-nums;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .cf-chart[data-orient="v"] .cf-reveal,
+      .cf-chart[data-orient="h"] .cf-reveal,
+      .cf-chart.is-ready .cf-reveal {
+        animation: none;
+        clip-path: none;
+      }
+      .cf-chart.is-ready .cf-label,
+      .cf-chart.is-ready .cf-drop { animation: none; opacity: 1; }
+    }
+    @container dash (max-width: 640px) {
+      .cf-label { max-width: 48%; }
+      .cf-drop { font-size: 10px; }
     }
   </style>
 
@@ -5111,118 +5278,190 @@
 
   <script>
     /* =====================================================================
-       Ingredient normalization funnel (analytics-types.html only).
-       Three square-root-scaled funnel stages (package terms → canon terms →
-       label-recognized ingredients) pour into a linear segmented bar of every
-       current canon ingredient. The card owns a Vertical / Horizontal toggle:
-       vertical is the source layout (funnel top-to-bottom, bar left-to-right);
-       horizontal is a first-class remount (funnel left-to-right, bar top-to-
-       bottom), not a CSS rotate. Numbers count up; click the chart to replay.
+       Organic pour-into-bar funnel (analytics-types.html only).
+       One drawing — three square-root-scaled stages pouring into a
+       segmented bar — used twice with different numbers. Vertical is a
+       full-height wash (top→bottom); horizontal is a full-width wash
+       (left→right). Reveal is a clip wipe along that same axis. Click
+       to replay. River / Lobed / Cascade shape variants are gone.
     ===================================================================== */
     (function () {
       const NS = 'http://www.w3.org/2000/svg';
-      const ORIENT_KEY = 'az-funnel-orient';
-      const STAGES = [
-        { value: 272708, cap: 'distinct package terms encountered', fill: 'var(--inf-s1)', ink: 'var(--inf-s1-ink)' },
-        { value: 32849,  cap: 'canon terms',                        fill: 'var(--inf-s2)', ink: 'var(--inf-s2-ink)' },
-        { value: 5181,   cap: 'label-recognized canon ingredients', fill: 'var(--inf-s3)', ink: 'var(--inf-s3-ink)', callout: true },
+      const SHAPE = {
+        steps: 56,
+        waveAmp: 0.048, waveFreq: 2.15, waveAmp2: 0.016, waveFreq2: 4.4, wavePhase2: 1.1,
+        swayAmp: 0.02, swayFreq: 1.35, swayPhase: 0.7,
+        swayAmp2: 0.008, swayFreq2: 2.6, swayPhase2: 0.3,
+        lobeAmp: 0.045, sideSkew: 0.14,
+      };
+      const DATASETS = [
+        {
+          id: 'classic',
+          cardId: 'inf-funnel-card',
+          className: 'att-card inf-funnel',
+          title: 'Ingredient normalization funnel',
+          intro: 'From terms printed on packages to matched canon ingredients. The funnel narrows what appears on labels; the bar then places those recognized ingredients beside the rest of the current canon — foods that already cite them, flavors still waiting, and regulatory inventories.',
+          ariaLabel: 'Ingredient normalization funnel: 272,708 package terms narrow to 5,181 label-recognized canon ingredients, then split across all 8,658 current canon ingredients',
+          barTitle: 'All {n} current canon ingredients',
+          note: 'Funnel stage widths are square-root scaled for readability; the numbers are exact. Click the chart to replay.',
+          stages: [
+            { value: 272708, cap: 'distinct package terms encountered', ink: 'var(--inf-s1-ink)' },
+            { value: 32849,  cap: 'canon terms',                        ink: 'var(--inf-s2-ink)' },
+            { value: 5181,   cap: 'label-recognized canon ingredients', ink: 'var(--inf-s3-ink)', callout: true },
+          ],
+          groups: [
+            { cap: 'Label-recognized', value: 5181 },
+            { cap: 'Not recognized',   value: 3477 },
+          ],
+          segs: [
+            { value: 4982, cap: 'Referenced by foods',        fill: 'var(--inf-ref)',   ink: 'var(--inf-ref-ink)' },
+            { value: 199,  cap: 'Not yet referenced',         fill: 'var(--inf-unref)', ink: 'var(--inf-unref-ink)' },
+            { value: 2414, cap: 'FEMA GRAS flavor library',   fill: 'var(--inf-fema)',  ink: 'var(--inf-fema-ink)' },
+            { value: 1063, cap: 'Other regulatory inventory', fill: 'var(--inf-other)', ink: 'var(--inf-other-ink)' },
+          ],
+          barTotal: 8658,
+        },
+        {
+          id: 'claim',
+          cardId: 'inf-funnel-card-claim',
+          className: 'att-card inf-funnel inf-funnel--claim',
+          title: 'Product claim funnel',
+          intro: 'From products found across retail to the ones that qualify as Non-UPF. The funnel is the claim path; the bar is how those 24 analyzed foods sit on the processing spectrum.',
+          ariaLabel: 'Product claim funnel: 47 discovered products narrow to 24 in the portfolio and 22 that qualify as Non-UPF, then split across processing levels',
+          barTitle: 'All {n} analyzed foods',
+          note: 'Same drawing as the ingredient funnel, with the portfolio claim numbers. Stage widths are square-root scaled; the numbers are exact. Click the chart to replay.',
+          stages: [
+            { value: 47, cap: 'products discovered across retail',     ink: 'var(--inf-s1-ink)' },
+            { value: 24, cap: 'foods in the analyzed portfolio',       ink: 'var(--inf-s2-ink)' },
+            { value: 22, cap: 'qualify for Non-UPF verification',      ink: 'var(--inf-s3-ink)', callout: true },
+          ],
+          groups: [
+            { cap: 'Non-UPF', value: 22 },
+            { cap: 'UPF',     value: 2 },
+          ],
+          segs: [
+            { value: 14, cap: 'Minimally processed',      fill: 'var(--inf-ref)',   ink: 'var(--inf-ref-ink)' },
+            { value: 8,  cap: 'Lightly processed',        fill: 'var(--inf-unref)', ink: 'var(--inf-unref-ink)' },
+            { value: 1,  cap: 'Ultra-processed',          fill: 'var(--inf-fema)',  ink: 'var(--inf-fema-ink)' },
+            { value: 1,  cap: 'Super ultra-processed',    fill: 'var(--inf-other)', ink: 'var(--inf-other-ink)' },
+          ],
+          barTotal: 24,
+        },
       ];
-      const GROUPS = [
-        { cap: 'Label-recognized', value: 5181 },
-        { cap: 'Not recognized',   value: 3477 },
-      ];
-      const SEGS = [
-        { value: 4982, cap: 'Referenced by foods',     fill: 'var(--inf-ref)',   ink: 'var(--inf-ref-ink)' },
-        { value: 199,  cap: 'Not yet referenced',      fill: 'var(--inf-unref)', ink: 'var(--inf-unref-ink)' },
-        { value: 2414, cap: 'FEMA GRAS flavor library', fill: 'var(--inf-fema)',  ink: 'var(--inf-fema-ink)' },
-        { value: 1063, cap: 'Other regulatory inventory', fill: 'var(--inf-other)', ink: 'var(--inf-other-ink)' },
-      ];
-      const BAR_TOTAL = 8658;
-      const GROUP_SPLIT = GROUPS[0].value / BAR_TOTAL;
-      const MAX_V = STAGES[0].value;
-      const JUNCTION_W = STAGES.map((s) => Math.sqrt(s.value / MAX_V)).concat([Math.sqrt(STAGES[2].value / MAX_V)]);
-      /* Four junctions: top of s1, s1/s2, s2/s3, bottom of s3. Last two share
-         the recognized-ingredient width so the pour stays as narrow as stage 3. */
-      JUNCTION_W[3] = JUNCTION_W[2];
 
       const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
       const fmt = (n) => Math.round(n).toLocaleString('en-US');
       const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const pt = (p) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
 
-      function readOrient() {
-        try { return localStorage.getItem(ORIENT_KEY) === 'h' ? 'h' : 'v'; }
+      function metrics(ds) {
+        const maxV = ds.stages[0].value;
+        const jw = ds.stages.map((s) => Math.sqrt(s.value / maxV));
+        jw.push(Math.sqrt(ds.stages[ds.stages.length - 1].value / maxV));
+        jw[jw.length - 1] = jw[jw.length - 2];
+        return {
+          barTotal: ds.barTotal,
+          groupSplit: ds.groups[0].value / ds.barTotal,
+          junctionW: jw,
+        };
+      }
+
+      function orientKey(id) { return id === 'classic' ? 'az-funnel-orient' : 'az-funnel-orient-' + id; }
+      function readOrient(id) {
+        try { return localStorage.getItem(orientKey(id)) === 'h' ? 'h' : 'v'; }
         catch (_) { return 'v'; }
       }
-      function writeOrient(o) {
-        try { localStorage.setItem(ORIENT_KEY, o); } catch (_) {}
+      function writeOrient(id, o) {
+        try { localStorage.setItem(orientKey(id), o); } catch (_) {}
       }
 
       function smoothstep(t) { return t * t * (3 - 2 * t); }
-      function widthAt(t) {
-        const n = JUNCTION_W.length - 1;
+
+      function widthAt(t, shape, side, junctionW) {
+        const n = junctionW.length - 1;
         const x = Math.max(0, Math.min(1, t)) * n;
         const i = Math.min(n - 1, Math.floor(x));
         const f = smoothstep(x - i);
-        const base = JUNCTION_W[i] * (1 - f) + JUNCTION_W[i + 1] * f;
-        const wave = Math.sin(t * Math.PI * 2.15) * Math.sin(t * Math.PI) * Math.max(0.016, base * 0.055);
-        return base + wave;
-      }
-      function swayAt(t) {
-        return Math.sin(t * Math.PI * 1.35 + 0.7) * Math.sin(t * Math.PI) * 0.024;
+        const base = junctionW[i] * (1 - f) + junctionW[i + 1] * f;
+        const stageT = x - i;
+        const lobe = Math.sin(stageT * Math.PI) * shape.lobeAmp * Math.max(0.08, base);
+        const wave = Math.sin(t * Math.PI * shape.waveFreq) * Math.sin(t * Math.PI) * Math.max(0.012, base * shape.waveAmp);
+        const wave2 = Math.sin(t * Math.PI * shape.waveFreq2 + shape.wavePhase2) * Math.sin(t * Math.PI) * base * shape.waveAmp2;
+        const skew = side === 'r' ? 1 + shape.sideSkew : 1 - shape.sideSkew * 0.42;
+        return Math.max(0.045, Math.min(1.16, (base + lobe + wave + wave2) * skew));
       }
 
-      function sampleBand(t0, t1, axis, center, start, span, maxThick) {
+      function swayAt(t, shape, side) {
+        const s = Math.sin(t * Math.PI * shape.swayFreq + shape.swayPhase) * Math.sin(t * Math.PI) * shape.swayAmp
+          + Math.sin(t * Math.PI * shape.swayFreq2 + shape.swayPhase2) * Math.sin(t * Math.PI) * shape.swayAmp2;
+        return side === 'r' ? s * 0.52 : s;
+      }
+
+      function sampleBand(t0, t1, axis, center, start, span, maxThick, shape, junctionW) {
         const pts = [];
-        const steps = 28;
+        const steps = shape.steps || 56;
         for (let i = 0; i <= steps; i++) {
           const t = t0 + (t1 - t0) * (i / steps);
           const pos = start + span * t;
-          const half = widthAt(t) * maxThick / 2;
-          const sway = swayAt(t) * maxThick;
+          const halfL = widthAt(t, shape, 'l', junctionW) * maxThick / 2;
+          const halfR = widthAt(t, shape, 'r', junctionW) * maxThick / 2;
+          const swayL = swayAt(t, shape, 'l') * maxThick;
+          const swayR = swayAt(t, shape, 'r') * maxThick;
           if (axis === 'v') {
             pts.push({
-              a: { x: center - half + sway, y: pos },
-              b: { x: center + half + sway * 0.4, y: pos },
+              a: { x: center - halfL + swayL, y: pos },
+              b: { x: center + halfR + swayR, y: pos },
             });
           } else {
             pts.push({
-              a: { x: pos, y: center - half + sway },
-              b: { x: pos, y: center + half + sway * 0.4 },
+              a: { x: pos, y: center - halfL + swayL },
+              b: { x: pos, y: center + halfR + swayR },
             });
           }
         }
         return pts;
       }
 
+      function catmull(pts) {
+        const n = pts.length;
+        if (!n) return '';
+        let d = `M ${pt(pts[0])}`;
+        for (let i = 0; i < n - 1; i++) {
+          const p0 = pts[Math.max(0, i - 1)];
+          const p1 = pts[i];
+          const p2 = pts[i + 1];
+          const p3 = pts[Math.min(n - 1, i + 2)];
+          const c1 = { x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6 };
+          const c2 = { x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6 };
+          d += ` C ${pt(c1)}, ${pt(c2)}, ${pt(p2)}`;
+        }
+        return d;
+      }
+
       function bandPath(pts, axis) {
         const first = pts[0], last = pts[pts.length - 1];
-        let d = `M ${first.a.x.toFixed(1)} ${first.a.y.toFixed(1)}`;
-        for (let i = 1; i < pts.length; i++) d += ` L ${pts[i].a.x.toFixed(1)} ${pts[i].a.y.toFixed(1)}`;
-        if (axis === 'v') {
-          const midX = (last.a.x + last.b.x) / 2;
-          d += ` Q ${midX.toFixed(1)} ${(last.a.y + 7).toFixed(1)} ${last.b.x.toFixed(1)} ${last.b.y.toFixed(1)}`;
-        } else {
-          const midY = (last.a.y + last.b.y) / 2;
-          d += ` Q ${(last.a.x + 7).toFixed(1)} ${midY.toFixed(1)} ${last.b.x.toFixed(1)} ${last.b.y.toFixed(1)}`;
-        }
-        for (let i = pts.length - 2; i >= 0; i--) d += ` L ${pts[i].b.x.toFixed(1)} ${pts[i].b.y.toFixed(1)}`;
-        if (axis === 'v') {
-          const midX = (first.a.x + first.b.x) / 2;
-          d += ` Q ${midX.toFixed(1)} ${(first.a.y - 10).toFixed(1)} ${first.a.x.toFixed(1)} ${first.a.y.toFixed(1)}`;
-        } else {
-          const midY = (first.a.y + first.b.y) / 2;
-          d += ` Q ${(first.a.x - 10).toFixed(1)} ${midY.toFixed(1)} ${first.a.x.toFixed(1)} ${first.a.y.toFixed(1)}`;
-        }
-        return d + ' Z';
+        const cap = axis === 'v'
+          ? { x: (last.a.x + last.b.x) / 2, y: last.a.y + 8 }
+          : { x: last.a.x + 8, y: (last.a.y + last.b.y) / 2 };
+        const open = axis === 'v'
+          ? { x: (first.a.x + first.b.x) / 2, y: first.a.y - 10 }
+          : { x: first.a.x - 10, y: (first.a.y + first.b.y) / 2 };
+        const loop = [
+          ...pts.map((p) => p.a),
+          cap,
+          ...pts.slice().reverse().map((p) => p.b),
+          open,
+        ];
+        return catmull(loop) + ' Z';
       }
 
       function ribbonPath(a0, b0, a1, b1, axis) {
         if (axis === 'v') {
           const mid = (a0.y + a1.y) / 2;
-          return `M ${a0.x.toFixed(1)} ${a0.y.toFixed(1)} C ${a0.x.toFixed(1)} ${mid.toFixed(1)}, ${a1.x.toFixed(1)} ${mid.toFixed(1)}, ${a1.x.toFixed(1)} ${a1.y.toFixed(1)} L ${b1.x.toFixed(1)} ${b1.y.toFixed(1)} C ${b1.x.toFixed(1)} ${mid.toFixed(1)}, ${b0.x.toFixed(1)} ${mid.toFixed(1)}, ${b0.x.toFixed(1)} ${b0.y.toFixed(1)} Z`;
+          return `M ${pt(a0)} C ${a0.x.toFixed(1)} ${mid.toFixed(1)}, ${a1.x.toFixed(1)} ${mid.toFixed(1)}, ${pt(a1)} L ${pt(b1)} C ${b1.x.toFixed(1)} ${mid.toFixed(1)}, ${b0.x.toFixed(1)} ${mid.toFixed(1)}, ${pt(b0)} Z`;
         }
         const mid = (a0.x + a1.x) / 2;
-        return `M ${a0.x.toFixed(1)} ${a0.y.toFixed(1)} C ${mid.toFixed(1)} ${a0.y.toFixed(1)}, ${mid.toFixed(1)} ${a1.y.toFixed(1)}, ${a1.x.toFixed(1)} ${a1.y.toFixed(1)} L ${b1.x.toFixed(1)} ${b1.y.toFixed(1)} C ${mid.toFixed(1)} ${b1.y.toFixed(1)}, ${mid.toFixed(1)} ${b0.y.toFixed(1)}, ${b0.x.toFixed(1)} ${b0.y.toFixed(1)} Z`;
+        return `M ${pt(a0)} C ${mid.toFixed(1)} ${a0.y.toFixed(1)}, ${mid.toFixed(1)} ${a1.y.toFixed(1)}, ${pt(a1)} L ${pt(b1)} C ${mid.toFixed(1)} ${b1.y.toFixed(1)}, ${mid.toFixed(1)} ${b0.y.toFixed(1)}, ${pt(b0)} Z`;
       }
 
       function mk(tag, attrs) {
@@ -5248,73 +5487,96 @@
         return `<span class="inf-num${extraClass ? ' ' + extraClass : ''}" data-count-to="${value}">0</span>`;
       }
 
-      function renderChart(host, orient) {
+      function renderChart(host, ds, orient) {
         const L = layout(orient);
+        const M = metrics(ds);
         const axis = L.axis;
         const start = axis === 'v' ? L.funnelY : L.funnelX;
         const span = axis === 'v' ? L.funnelH : L.funnelW;
         const center = axis === 'v' ? L.cx : L.cy;
-        const stageTs = [[0, 1 / 3], [1 / 3, 2 / 3], [2 / 3, 1]];
-        const bands = stageTs.map(([t0, t1]) => sampleBand(t0, t1, axis, center, start, span, L.maxThick));
-        const last = bands[2][bands[2].length - 1];
+        const n = ds.stages.length;
+        const stageTs = ds.stages.map((_, i) => [i / n, (i + 1) / n]);
+        const bands = stageTs.map(([t0, t1]) => sampleBand(t0, t1, axis, center, start, span, L.maxThick, SHAPE, M.junctionW));
+        const last = bands[n - 1][bands[n - 1].length - 1];
+        const uid = ds.id;
 
         const svg = mk('svg', {
           class: 'inf-svg',
           viewBox: `0 0 ${L.VW} ${L.VH}`,
           role: 'img',
-          'aria-label': 'Ingredient normalization funnel: 272,708 package terms narrow to 5,181 label-recognized canon ingredients, then split across all 8,658 current canon ingredients',
+          'aria-label': ds.ariaLabel,
         });
         const defs = mk('defs', {});
-        const clip = mk('clipPath', { id: 'inf-bar-clip' });
+        const clip = mk('clipPath', { id: 'inf-bar-clip-' + uid });
         clip.appendChild(mk('rect', {
           x: String(L.barX), y: String(L.barY),
           width: String(L.barW), height: String(L.barH), rx: '10',
         }));
         defs.appendChild(clip);
-        const grad = mk('linearGradient', {
-          id: 'inf-flow-g',
-          x1: axis === 'v' ? '0' : '0',
-          y1: axis === 'v' ? '0' : '0',
-          x2: axis === 'v' ? '0' : '1',
-          y2: axis === 'v' ? '1' : '0',
+
+        /* One wash across the whole funnel — vertical = top→bottom of the
+           funnel span; horizontal = left→right of the funnel span. */
+        const bandG = mk('linearGradient', {
+          id: 'inf-band-g-' + uid,
+          gradientUnits: 'userSpaceOnUse',
+          x1: String(axis === 'v' ? L.cx : L.funnelX),
+          y1: String(axis === 'v' ? L.funnelY : L.cy),
+          x2: String(axis === 'v' ? L.cx : L.funnelX + L.funnelW),
+          y2: String(axis === 'v' ? L.funnelY + L.funnelH : L.cy),
         });
-        grad.appendChild(mk('stop', { offset: '0%', 'stop-color': 'var(--inf-s3)', 'stop-opacity': '0.55' }));
-        grad.appendChild(mk('stop', { offset: '100%', 'stop-color': 'var(--inf-ref)', 'stop-opacity': '0.28' }));
-        defs.appendChild(grad);
+        bandG.appendChild(mk('stop', { offset: '0%', 'stop-color': 'var(--inf-s1)' }));
+        bandG.appendChild(mk('stop', { offset: '38%', 'stop-color': 'var(--inf-s2)' }));
+        bandG.appendChild(mk('stop', { offset: '72%', 'stop-color': 'var(--inf-s3)' }));
+        bandG.appendChild(mk('stop', { offset: '100%', 'stop-color': 'var(--inf-s3)' }));
+        defs.appendChild(bandG);
+
+        const mouth = axis === 'v'
+          ? { x: center, y: start + span }
+          : { x: start + span, y: center };
+        const barMid = axis === 'v'
+          ? { x: L.barX + L.barW * M.groupSplit * 0.5, y: L.barY }
+          : { x: L.barX, y: L.barY + L.barH * M.groupSplit * 0.5 };
+        const flowG = mk('linearGradient', {
+          id: 'inf-flow-g-' + uid,
+          gradientUnits: 'userSpaceOnUse',
+          x1: String(mouth.x), y1: String(mouth.y),
+          x2: String(barMid.x), y2: String(barMid.y),
+        });
+        flowG.appendChild(mk('stop', { offset: '0%', 'stop-color': 'var(--inf-s3)', 'stop-opacity': '0.58' }));
+        flowG.appendChild(mk('stop', { offset: '100%', 'stop-color': 'var(--inf-ref)', 'stop-opacity': '0.22' }));
+        defs.appendChild(flowG);
         svg.appendChild(defs);
 
         bands.forEach((pts, i) => {
           const path = mk('path', {
             class: 'inf-band',
             d: bandPath(pts, axis),
-            fill: STAGES[i].fill,
-            style: `--d:${0.06 + i * 0.14}s`,
+            fill: 'url(#inf-band-g-' + uid + ')',
           });
           path.appendChild(mk('title', {})).textContent =
-            `${fmt(STAGES[i].value)} ${STAGES[i].cap}`;
+            `${fmt(ds.stages[i].value)} ${ds.stages[i].cap}`;
           svg.appendChild(path);
         });
 
         let a1, b1;
         if (axis === 'v') {
           a1 = { x: L.barX, y: L.barY };
-          b1 = { x: L.barX + L.barW * GROUP_SPLIT, y: L.barY };
+          b1 = { x: L.barX + L.barW * M.groupSplit, y: L.barY };
         } else {
           a1 = { x: L.barX, y: L.barY };
-          b1 = { x: L.barX, y: L.barY + L.barH * GROUP_SPLIT };
+          b1 = { x: L.barX, y: L.barY + L.barH * M.groupSplit };
         }
         const ribbon = mk('path', {
           class: 'inf-ribbon',
           d: ribbonPath(last.a, last.b, a1, b1, axis),
-          fill: 'url(#inf-flow-g)',
-          style: '--d:.48s',
+          fill: 'url(#inf-flow-g-' + uid + ')',
         });
         svg.appendChild(ribbon);
 
-        const gBar = mk('g', { 'clip-path': 'url(#inf-bar-clip)' });
+        const gBar = mk('g', { 'clip-path': 'url(#inf-bar-clip-' + uid + ')' });
         let acc = 0;
-        SEGS.forEach((seg, i) => {
-          const frac = seg.value / BAR_TOTAL;
+        ds.segs.forEach((seg) => {
+          const frac = seg.value / M.barTotal;
           let x, y, w, h;
           if (axis === 'v') {
             x = L.barX + acc * L.barW; y = L.barY; w = frac * L.barW; h = L.barH;
@@ -5327,15 +5589,13 @@
             x: x.toFixed(1), y: y.toFixed(1),
             width: Math.max(0.5, w).toFixed(1), height: Math.max(0.5, h).toFixed(1),
             fill: seg.fill,
-            style: `--d:${0.62 + i * 0.08}s`,
           });
           r.appendChild(mk('title', {})).textContent = `${seg.cap} ${fmt(seg.value)}`;
           gBar.appendChild(r);
         });
         svg.appendChild(gBar);
 
-        /* Callout leader from stage 3 to its label. */
-        const s3 = bands[2];
+        const s3 = bands[n - 1];
         const mid3 = s3[Math.floor(s3.length / 2)];
         let leader;
         if (axis === 'v') {
@@ -5367,7 +5627,7 @@
           el.style.top = p.top;
         }
 
-        STAGES.forEach((st, i) => {
+        ds.stages.forEach((st, i) => {
           const pts = bands[i];
           const mid = pts[Math.floor(pts.length / 2)];
           const el = document.createElement('div');
@@ -5376,6 +5636,7 @@
             ? (axis === 'v' ? ' inf-label--callout' : ' inf-label--callout-below')
             : '');
           el.style.color = inside ? st.ink : 'var(--text)';
+          el.style.setProperty('--ld', (0.28 + i * 0.22) + 's');
           el.innerHTML = `${numSpan(st.value)}<span class="inf-cap">${esc(st.cap)}</span>`;
           if (st.callout && axis === 'v') {
             place(el, Math.max(mid.a.x, mid.b.x) + 42, (mid.a.y + mid.b.y) / 2);
@@ -5389,17 +5650,19 @@
 
         const title = document.createElement('div');
         title.className = 'inf-label inf-label--bar-title' + (axis === 'h' ? ' inf-label--bar-title-side' : '');
-        title.innerHTML = `All ${numSpan(BAR_TOTAL)} current canon ingredients`;
+        title.style.setProperty('--ld', '1.05s');
+        title.innerHTML = esc(ds.barTitle).replace('{n}', numSpan(M.barTotal));
         if (axis === 'v') place(title, L.barX, L.barY - 52);
         else place(title, L.barX + L.barW + 14, L.barY);
         labels.appendChild(title);
 
-        GROUPS.forEach((g, i) => {
+        ds.groups.forEach((g, i) => {
           const el = document.createElement('div');
           el.className = 'inf-label ' + (axis === 'v' ? 'inf-label--group' : 'inf-label--group-side');
+          el.style.setProperty('--ld', (1.12 + i * 0.1) + 's');
           el.innerHTML = `${numSpan(g.value)}<span class="inf-cap">${esc(g.cap)}</span>`;
-          const startFrac = i === 0 ? 0 : GROUP_SPLIT;
-          const endFrac = i === 0 ? GROUP_SPLIT : 1;
+          const startFrac = i === 0 ? 0 : M.groupSplit;
+          const endFrac = i === 0 ? M.groupSplit : 1;
           const midFrac = (startFrac + endFrac) / 2;
           if (axis === 'v') {
             place(el, L.barX + L.barW * midFrac, L.barY - 6);
@@ -5409,10 +5672,14 @@
           labels.appendChild(el);
         });
 
+        const reveal = document.createElement('div');
+        reveal.className = 'inf-reveal';
+        reveal.appendChild(svg);
+        reveal.appendChild(labels);
+
         host.innerHTML = '';
         host.dataset.orient = orient;
-        host.appendChild(svg);
-        host.appendChild(labels);
+        host.appendChild(reveal);
       }
 
       function countUp(el, to, dur) {
@@ -5434,13 +5701,329 @@
       function play(card) {
         const chart = card.querySelector('.inf-chart');
         if (!chart) return;
+        card._infPlayGen = (card._infPlayGen || 0) + 1;
+        const gen = card._infPlayGen;
+        const reveal = chart.querySelector('.inf-reveal');
+        if (reveal) reveal.style.clipPath = '';
         chart.classList.remove('is-ready');
         card.querySelectorAll('.inf-num[data-count-to]').forEach((n) => { n.textContent = '0'; });
         void chart.offsetWidth;
         chart.classList.add('is-ready');
+        if (reveal && !reduced) {
+          reveal.addEventListener('animationend', function onEnd(ev) {
+            if (ev.target !== reveal || card._infPlayGen !== gen) return;
+            reveal.style.clipPath = 'none';
+          }, { once: true });
+        }
         if (reduced) { snapNums(card); return; }
         card.querySelectorAll('.inf-num[data-count-to]').forEach((n) => {
-          countUp(n, parseInt(n.getAttribute('data-count-to'), 10) || 0, 1400);
+          countUp(n, parseInt(n.getAttribute('data-count-to'), 10) || 0, 1650);
+        });
+      }
+
+      function setOrient(card, variant, orient) {
+        writeOrient(variant.id, orient);
+        card.querySelectorAll('.inf-orient-btn').forEach((b) => {
+          const on = b.dataset.orient === orient;
+          b.classList.toggle('is-on', on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        renderChart(card.querySelector('.inf-chart'), variant, orient);
+        play(card);
+      }
+
+      function buildCard(ds) {
+        const card = document.createElement('section');
+        card.className = ds.className;
+        card.id = ds.cardId;
+        card.innerHTML = `
+          <div class="att-head att-head--split">
+            <div class="inf-head-lead"><span class="att-title">${esc(ds.title)}</span></div>
+            <div class="att-orient inf-orient" role="group" aria-label="Chart orientation">
+              <button type="button" class="inf-orient-btn is-on" data-orient="v" aria-pressed="true">Vertical</button>
+              <button type="button" class="inf-orient-btn" data-orient="h" aria-pressed="false">Horizontal</button>
+            </div>
+          </div>
+          <p class="att-intro">${esc(ds.intro)}</p>
+          <div class="inf-chart"></div>
+          <div class="inf-legend">${
+            ds.segs.map((s) =>
+              `<span><span class="att-dot" style="background:${s.fill}"></span>${esc(s.cap)} <span class="inf-legend-n inf-num" data-count-to="${s.value}">0</span></span>`
+            ).join('')
+          }</div>
+          <p class="inf-note">${esc(ds.note)}</p>`;
+        return card;
+      }
+
+      function wire(card, variant) {
+        card.querySelectorAll('.inf-orient-btn').forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setOrient(card, variant, btn.dataset.orient);
+          });
+        });
+        const chart = card.querySelector('.inf-chart');
+        chart.addEventListener('click', (e) => {
+          if (e.target.closest('.inf-orient')) return;
+          play(card);
+        });
+        const finalize = () => {
+          const ch = card.querySelector('.inf-chart');
+          const rev = ch && ch.querySelector('.inf-reveal');
+          if (ch) ch.classList.add('is-ready');
+          if (rev) rev.style.clipPath = 'none';
+          snapNums(card);
+        };
+        window.addEventListener('wise:finalize-charts', finalize);
+        window.addEventListener('beforeprint', finalize);
+        if (window.IntersectionObserver) {
+          const io = new IntersectionObserver((entries) => {
+            entries.forEach((en) => {
+              if (en.isIntersecting) { play(card); io.disconnect(); }
+            });
+          }, { threshold: 0.2 });
+          io.observe(card);
+        } else {
+          play(card);
+        }
+      }
+
+      function mountOne(variant, after) {
+        if (document.getElementById(variant.cardId)) return document.getElementById(variant.cardId);
+        const card = buildCard(variant);
+        after.insertAdjacentElement('afterend', card);
+        const orient = readOrient(variant.id);
+        renderChart(card.querySelector('.inf-chart'), variant, orient);
+        card.querySelectorAll('.inf-orient-btn').forEach((b) => {
+          const on = b.dataset.orient === orient;
+          b.classList.toggle('is-on', on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        wire(card, variant);
+        return card;
+      }
+
+      function mount() {
+        const scroll = document.getElementById('agent-main-scroll');
+        const dash = scroll && scroll.querySelector('.dash');
+        if (!dash) return false;
+        if (document.getElementById('inf-funnel-card-claim')) return true;
+        const anchor = document.getElementById('gras-prod-card')
+          || document.getElementById('proc-class-card')
+          || document.getElementById('gras-class-card')
+          || document.getElementById('upf-class-card')
+          || document.getElementById('att-tree-card');
+        if (!anchor) return false;
+        let last = anchor;
+        DATASETS.forEach((v) => { last = mountOne(v, last); });
+        return true;
+      }
+
+      function init() {
+        if (mount()) return;
+        const obs = new MutationObserver(() => { if (mount()) obs.disconnect(); });
+        obs.observe(document.getElementById('agent-main-scroll') || document.body, { childList: true, subtree: true });
+        setTimeout(() => obs.disconnect(), 12000);
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+      else init();
+    })();
+  </script>
+
+  <script>
+    /* =====================================================================
+       GRAS conversion funnel (analytics-types.html only).
+       A different chart type from the organic pour: stacked trapezoids
+       sized linearly to the remaining count, with the drop-off written
+       between bands. Vertical stacks top→bottom; horizontal runs
+       left→right. Click to replay.
+    ===================================================================== */
+    (function () {
+      const NS = 'http://www.w3.org/2000/svg';
+      const STAGES = [
+        { value: 24, cap: 'SKUs in the analyzed portfolio', fill: 'var(--cf-s1)', ink: 'var(--cf-ink-1)' },
+        { value: 23, cap: 'no unsafe ingredients',          fill: 'var(--cf-s2)', ink: 'var(--cf-ink-2)' },
+        { value: 21, cap: 'GRAS or historical-use class',   fill: 'var(--cf-s3)', ink: 'var(--cf-ink-3)' },
+        { value: 15, cap: 'FDA GRAS-affirmed',              fill: 'var(--cf-s4)', ink: 'var(--cf-ink-4)' },
+      ];
+      const CARD_ID = 'cf-funnel-card';
+      const KEY = 'az-funnel-orient-cf';
+
+      const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      const fmt = (n) => Math.round(n).toLocaleString('en-US');
+      const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      function readOrient() {
+        try { return localStorage.getItem(KEY) === 'h' ? 'h' : 'v'; }
+        catch (_) { return 'v'; }
+      }
+      function writeOrient(o) {
+        try { localStorage.setItem(KEY, o); } catch (_) {}
+      }
+
+      function mk(tag, attrs) {
+        const el = document.createElementNS(NS, tag);
+        for (const k in attrs) el.setAttribute(k, attrs[k]);
+        return el;
+      }
+
+      function trapV(cx, y, w0, w1, h) {
+        const tL = (cx - w0 / 2).toFixed(1), tR = (cx + w0 / 2).toFixed(1);
+        const bL = (cx - w1 / 2).toFixed(1), bR = (cx + w1 / 2).toFixed(1);
+        const y0 = y.toFixed(1), y1 = (y + h).toFixed(1);
+        return `M ${tL} ${y0} L ${tR} ${y0} L ${bR} ${y1} L ${bL} ${y1} Z`;
+      }
+      function trapH(x, cy, h0, h1, w) {
+        const tT = (cy - h0 / 2).toFixed(1), tB = (cy + h0 / 2).toFixed(1);
+        const rT = (cy - h1 / 2).toFixed(1), rB = (cy + h1 / 2).toFixed(1);
+        const x0 = x.toFixed(1), x1 = (x + w).toFixed(1);
+        return `M ${x0} ${tT} L ${x1} ${rT} L ${x1} ${rB} L ${x0} ${tB} Z`;
+      }
+
+      function geom(orient) {
+        const n = STAGES.length;
+        const maxV = STAGES[0].value;
+        if (orient === 'h') {
+          const VW = 1040, VH = 440;
+          const left = 28, right = VW - 28, gap = 22;
+          const span = right - left;
+          const stageW = (span - gap * (n - 1)) / n;
+          const cy = VH * 0.42;
+          const maxH = VH * 0.58;
+          return {
+            VW, VH, axis: 'h',
+            dropY: VH * 0.86,
+            stages: STAGES.map((s, i) => {
+              const next = STAGES[i + 1];
+              const h0 = maxH * (s.value / maxV);
+              const h1 = maxH * ((next ? next.value : s.value * 0.82) / maxV);
+              return { x: left + i * (stageW + gap), cy, w: stageW, h0, h1, gap };
+            }),
+          };
+        }
+        const VW = 900, VH = 560;
+        const top = 24, bot = VH - 16, gap = 18;
+        const span = bot - top;
+        const stageH = (span - gap * (n - 1)) / n;
+        const cx = VW * 0.44;
+        const maxW = VW * 0.62;
+        return {
+          VW, VH, axis: 'v',
+          dropX: cx + maxW / 2 + 70,
+          stages: STAGES.map((s, i) => {
+            const next = STAGES[i + 1];
+            const w0 = maxW * (s.value / maxV);
+            const w1 = maxW * ((next ? next.value : s.value * 0.82) / maxV);
+            return { cx, y: top + i * (stageH + gap), w0, w1, h: stageH, gap };
+          }),
+        };
+      }
+
+      function numSpan(value) {
+        return `<span class="inf-num" data-count-to="${value}">0</span>`;
+      }
+
+      function renderChart(host, orient) {
+        const L = geom(orient);
+        const axis = L.axis;
+        const svg = mk('svg', {
+          class: 'cf-svg',
+          viewBox: `0 0 ${L.VW} ${L.VH}`,
+          role: 'img',
+          'aria-label': 'GRAS conversion funnel: 24 analyzed SKUs narrow to 15 that are FDA GRAS-affirmed',
+        });
+
+        L.stages.forEach((g, i) => {
+          const st = STAGES[i];
+          const d = axis === 'v'
+            ? trapV(g.cx, g.y, g.w0, g.w1, g.h)
+            : trapH(g.x, g.cy, g.h0, g.h1, g.w);
+          const path = mk('path', { class: 'cf-band', d, fill: st.fill });
+          path.appendChild(mk('title', {})).textContent = `${fmt(st.value)} ${st.cap}`;
+          svg.appendChild(path);
+        });
+
+        const labels = document.createElement('div');
+        labels.className = 'cf-labels';
+
+        function place(el, x, y) {
+          el.style.left = (x / L.VW * 100).toFixed(2) + '%';
+          el.style.top = (y / L.VH * 100).toFixed(2) + '%';
+        }
+
+        L.stages.forEach((g, i) => {
+          const st = STAGES[i];
+          const el = document.createElement('div');
+          el.className = 'cf-label';
+          el.style.color = st.ink;
+          el.style.setProperty('--ld', (0.22 + i * 0.16) + 's');
+          el.innerHTML = `${numSpan(st.value)}<span class="inf-cap">${esc(st.cap)}</span>`;
+          if (axis === 'v') place(el, g.cx, g.y + g.h / 2);
+          else place(el, g.x + g.w / 2, g.cy);
+          labels.appendChild(el);
+
+          if (i === L.stages.length - 1) return;
+          const next = STAGES[i + 1];
+          const drop = st.value - next.value;
+          const keep = Math.round((next.value / st.value) * 100);
+          const dropEl = document.createElement('div');
+          dropEl.className = 'cf-drop';
+          dropEl.style.setProperty('--ld', (0.7 + i * 0.12) + 's');
+          dropEl.innerHTML = `<span class="cf-drop-n">${keep}%</span> remain · −${drop}`;
+          if (axis === 'v') {
+            place(dropEl, L.dropX, g.y + g.h + g.gap / 2);
+          } else {
+            place(dropEl, g.x + g.w + g.gap / 2, L.dropY);
+          }
+          labels.appendChild(dropEl);
+        });
+
+        const reveal = document.createElement('div');
+        reveal.className = 'cf-reveal';
+        reveal.appendChild(svg);
+        reveal.appendChild(labels);
+
+        host.innerHTML = '';
+        host.dataset.orient = orient;
+        host.appendChild(reveal);
+      }
+
+      function countUp(el, to, dur) {
+        if (reduced) { el.textContent = fmt(to); return; }
+        const start = performance.now();
+        (function tick(now) {
+          const p = Math.min(1, (now - start) / dur);
+          el.textContent = fmt(to * (1 - Math.pow(1 - p, 3)));
+          if (p < 1) requestAnimationFrame(tick);
+        })(start);
+      }
+
+      function snapNums(card) {
+        card.querySelectorAll('.inf-num[data-count-to]').forEach((n) => {
+          n.textContent = fmt(parseInt(n.getAttribute('data-count-to'), 10) || 0);
+        });
+      }
+
+      function play(card) {
+        const chart = card.querySelector('.cf-chart');
+        if (!chart) return;
+        card._cfPlayGen = (card._cfPlayGen || 0) + 1;
+        const gen = card._cfPlayGen;
+        const reveal = chart.querySelector('.cf-reveal');
+        if (reveal) reveal.style.clipPath = '';
+        chart.classList.remove('is-ready');
+        card.querySelectorAll('.inf-num[data-count-to]').forEach((n) => { n.textContent = '0'; });
+        void chart.offsetWidth;
+        chart.classList.add('is-ready');
+        if (reveal && !reduced) {
+          reveal.addEventListener('animationend', function onEnd(ev) {
+            if (ev.target !== reveal || card._cfPlayGen !== gen) return;
+            reveal.style.clipPath = 'none';
+          }, { once: true });
+        }
+        if (reduced) { snapNums(card); return; }
+        card.querySelectorAll('.inf-num[data-count-to]').forEach((n) => {
+          countUp(n, parseInt(n.getAttribute('data-count-to'), 10) || 0, 1650);
         });
       }
 
@@ -5451,33 +6034,25 @@
           b.classList.toggle('is-on', on);
           b.setAttribute('aria-pressed', on ? 'true' : 'false');
         });
-        const chart = card.querySelector('.inf-chart');
-        renderChart(chart, orient);
+        renderChart(card.querySelector('.cf-chart'), orient);
         play(card);
       }
 
       function buildCard() {
         const card = document.createElement('section');
-        card.className = 'att-card';
-        card.id = 'inf-funnel-card';
+        card.className = 'att-card cf-funnel';
+        card.id = CARD_ID;
         card.innerHTML = `
           <div class="att-head att-head--split">
-            <span class="att-title">Ingredient normalization funnel</span>
+            <div class="inf-head-lead"><span class="att-title">GRAS conversion funnel</span></div>
             <div class="att-orient inf-orient" role="group" aria-label="Chart orientation">
               <button type="button" class="inf-orient-btn is-on" data-orient="v" aria-pressed="true">Vertical</button>
               <button type="button" class="inf-orient-btn" data-orient="h" aria-pressed="false">Horizontal</button>
             </div>
           </div>
-          <p class="att-intro">From terms printed on packages to matched canon ingredients. The funnel narrows
-            what appears on labels; the bar then places those recognized ingredients beside the rest of the
-            current canon — foods that already cite them, flavors still waiting, and regulatory inventories.</p>
-          <div class="inf-chart" id="inf-chart"></div>
-          <div class="inf-legend">${
-            SEGS.map((s) =>
-              `<span><span class="att-dot" style="background:${s.fill}"></span>${esc(s.cap)} <span class="inf-legend-n inf-num" data-count-to="${s.value}">0</span></span>`
-            ).join('')
-          }</div>
-          <p class="inf-note">Funnel stage widths are square-root scaled for readability; the numbers are exact. Click the chart to replay.</p>`;
+          <p class="att-intro">How the 24 analyzed SKUs survive a GRAS safety screen. Each trapezoid is sized to the count that remains; the leak between bands is the drop-off — not a pour into a bar.</p>
+          <div class="cf-chart"></div>
+          <p class="inf-note">Band width is linear to the count — unlike the ingredient funnel, which is square-root scaled. Click the chart to replay.</p>`;
         return card;
       }
 
@@ -5488,21 +6063,19 @@
             setOrient(card, btn.dataset.orient);
           });
         });
-        const chart = card.querySelector('.inf-chart');
-        chart.addEventListener('click', (e) => {
+        card.querySelector('.cf-chart').addEventListener('click', (e) => {
           if (e.target.closest('.inf-orient')) return;
           play(card);
         });
-        window.addEventListener('wise:finalize-charts', () => {
-          const ch = card.querySelector('.inf-chart');
+        const finalize = () => {
+          const ch = card.querySelector('.cf-chart');
+          const rev = ch && ch.querySelector('.cf-reveal');
           if (ch) ch.classList.add('is-ready');
+          if (rev) rev.style.clipPath = 'none';
           snapNums(card);
-        });
-        window.addEventListener('beforeprint', () => {
-          const ch = card.querySelector('.inf-chart');
-          if (ch) ch.classList.add('is-ready');
-          snapNums(card);
-        });
+        };
+        window.addEventListener('wise:finalize-charts', finalize);
+        window.addEventListener('beforeprint', finalize);
         if (window.IntersectionObserver) {
           const io = new IntersectionObserver((entries) => {
             entries.forEach((en) => {
@@ -5516,19 +6089,14 @@
       }
 
       function mount() {
-        const scroll = document.getElementById('agent-main-scroll');
-        const dash = scroll && scroll.querySelector('.dash');
-        if (!dash || document.getElementById('inf-funnel-card')) return !!document.getElementById('inf-funnel-card');
-        const anchor = document.getElementById('gras-prod-card')
-          || document.getElementById('proc-class-card')
-          || document.getElementById('gras-class-card')
-          || document.getElementById('upf-class-card')
-          || document.getElementById('att-tree-card');
-        if (!anchor) return false;
+        if (document.getElementById(CARD_ID)) return true;
+        const after = document.getElementById('inf-funnel-card-claim')
+          || document.getElementById('inf-funnel-card');
+        if (!after) return false;
         const card = buildCard();
-        anchor.insertAdjacentElement('afterend', card);
+        after.insertAdjacentElement('afterend', card);
         const orient = readOrient();
-        renderChart(card.querySelector('.inf-chart'), orient);
+        renderChart(card.querySelector('.cf-chart'), orient);
         card.querySelectorAll('.inf-orient-btn').forEach((b) => {
           const on = b.dataset.orient === orient;
           b.classList.toggle('is-on', on);

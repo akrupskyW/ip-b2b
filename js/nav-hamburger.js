@@ -9,8 +9,8 @@
  *
  * When this is on, Search is on, and the primary nav is collapsed
  * (`.mp-rail`, not Minimal UI, not pivoted): hide the icon rail and put a
- * three-line `menu` icon to the left of the unchanged wordmark. Clicking
- * it expands the nav the same way the chevron already does.
+ * `dock_to_right` icon to the left of the unchanged wordmark. Clicking
+ * it expands the nav the same way the open/close dock icons already do.
  *
  * Default OFF.
  */

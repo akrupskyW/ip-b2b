@@ -6,6 +6,7 @@
     var s = localStorage.getItem('chat-font-size');
     if (!scales[s]) s = 'md';
     document.documentElement.style.setProperty('--wise-text-scale', String(scales[s]));
+    document.documentElement.style.setProperty('--wise-icon-scale', String(scales[s]));
     document.documentElement.style.setProperty('--chat-line-height', String(lines[s]));
   } catch (_) {}
 })();
@@ -61,9 +62,10 @@
       mode = (everything && chatOnly === '0') ? 'all' : 'chat';
     }
     var root = document.documentElement;
-    /* Search (wise-app-search) suspends both full-bleed modes — keep the first
-       paint contained so the search row does not flash edge-to-edge. */
-    if (mode === 'off' || localStorage.getItem('wise-app-search') === '1') {
+    /* Search is locked off. Drop a leftover wise-app-search=1 so it cannot
+       suppress full-bleed on first paint. */
+    try { localStorage.removeItem('wise-app-search'); } catch (_) {}
+    if (mode === 'off') {
       root.classList.remove('full-bleed', 'fb-chat-only');
     } else {
       root.classList.add('full-bleed');

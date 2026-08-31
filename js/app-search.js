@@ -3,8 +3,9 @@
 /* ------------------------------------------------------------------ */
 /*
  * Admin-gated search field that sits in the shell's top band, horizontally
- * aligned with the primary-nav logo. Toggled from Appearance ▸ Admin ▸
- * Search. Default OFF.
+ * aligned with the primary-nav logo. Appearance ▸ Admin ▸ Search is locked
+ * off — the published load default is OFF and the row cannot turn it on.
+ * A leftover wise-app-search=1 from an earlier session is ignored.
  *
  * The index is strictly transcripts (AI chat history + the live thread),
  * outputs (live panes, titles extracted from transcripts, generated-report
@@ -35,6 +36,7 @@ const HISTORY_SURFACES = [
   { key: 'wise-chat-history:guiding-stars', page: 'report-guiding-stars.html', label: 'Guiding Stars', where: 'Guiding Stars · Chat' },
   { key: 'wise-chat-history:progress-log', page: 'progress-log.html', label: 'Progress log', where: 'Progress log · Chat' },
   { key: 'wise-chat-history:accessibility-review', page: 'accessibility-review.html', label: 'Accessibility', where: 'Accessibility · Chat' },
+  { key: 'wise-chat-history:helix', page: 'helix.html', label: 'Helix', where: 'Helix · Chat' },
   { key: 'wise-mkt-chat-history', page: 'wiseai.html', label: 'WISEcodeAI', where: 'WISEcodeAI · Chat' },
 ];
 
@@ -86,21 +88,21 @@ function currentPageFile() {
   return parts[parts.length - 1] || '';
 }
 
-/** True when the user explicitly turned Search on (default off). */
+/** Always false — Search is locked to the published off default. */
 export function isAppSearchOn() {
-  try { return localStorage.getItem(LS_KEY) === '1'; } catch { return false; }
+  return false;
 }
 
 /**
- * Turn the search row on/off.
- * @param {boolean} on
- * @param {boolean} [persist=true]  Restore on load must not write, or a default would lock in.
+ * Search is locked off. `on` is ignored so a leftover toggle or stored
+ * preference cannot mount the row. Clears the old wise-app-search key so
+ * FOUC / full-bleed never treat Search as on.
+ * @param {boolean} [_on]
+ * @param {boolean} [_persist]
  */
-export function applyAppSearch(on, persist = true) {
-  const val = !!on;
-  if (persist) {
-    try { localStorage.setItem(LS_KEY, val ? '1' : '0'); } catch (_) { /* session-only */ }
-  }
+export function applyAppSearch(_on, _persist = true) {
+  const val = false;
+  try { localStorage.removeItem(LS_KEY); } catch (_) { /* session-only */ }
   document.documentElement.classList.toggle(HTML_CLASS, val);
   if (val) {
     document.documentElement.classList.remove('full-bleed', 'fb-chat-only');
@@ -114,9 +116,9 @@ export function applyAppSearch(on, persist = true) {
   try { document.dispatchEvent(new CustomEvent('wise:app-search', { detail: { on: val } })); } catch (_) {}
 }
 
-/** Restore the persisted on/off state without writing storage. */
+/** Re-apply the locked-off default and drop any leftover stored on-state. */
 export function restoreAppSearch() {
-  applyAppSearch(isAppSearchOn(), false);
+  applyAppSearch(false, false);
 }
 
 /* ------------------------------------------------------------------ */

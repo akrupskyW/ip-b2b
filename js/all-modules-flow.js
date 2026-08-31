@@ -27,17 +27,19 @@
  *      exact surfaces where it is used. Chat chrome (activity strip, transcript
  *      actions, sticky drawers / the utility belt) lives here as its own family.
  *   5. Codebase — score cards for the size of the app itself: lines of code
- *      by file type with an up/down trend (one git snapshot per day) and the
- *      HTML page count. scripts/scan_code_stats.py writes the git series into
- *      js/code-stats-data.js. Re-evaluate also live-crawls every HTML / JS /
- *      CSS / Python file in the project when you click Re-evaluate so the "now"
- *      numbers and the scanned date never sit on a stale snapshot. It does not
- *      run on page load.
- *      the scanned date never sit on a stale snapshot.
+ *      by file type with an up/down trend (one git snapshot per day), the
+ *      HTML page count, and the real project size on disk (every shippable
+ *      file — images, video, and the rest — not just the scripts this tab
+ *      downloaded). scripts/scan_code_stats.py writes the git series into
+ *      js/code-stats-data.js and the byte inventory into
+ *      js/project-inventory-data.js. Re-evaluate live-crawls from that
+ *      inventory when you click it so the "now" numbers never sit on a stale
+ *      snapshot. It does not run on page load.
  *   6. Motion & Resize — every animation (count-up, chart replay, streaming,
- *      chip shimmer / fly-in, welcome helix, thinking helix, accordion) and
- *      every drag/resize interaction (module splitter, width tiers, carousel
- *      rail, reorder, drag-to-file), explained and rendered live.
+ *      chip shimmer / fly-in, toast rise/leave, chat composer sheen, welcome
+ *      helix, thinking helix, accordion) and every drag/resize interaction
+ *      (module splitter, width tiers, carousel rail, reorder, drag-to-file),
+ *      explained and rendered live.
  *   7. App Logic — the app's general behavioral rules written down and grouped
  *      by page: auth, theme, nav, panes, tables, wizard gating, scoring math,
  *      filter semantics and persistence. Sits directly above Intent Chip
@@ -52,6 +54,8 @@ import { makeTraceHelix, measureTraceRungCentres, TRACE_STRAND_MARKUP } from './
 import { MODULE_SECTIONS, AREA_ICONS } from './module-directory-data.js';
 import { APP_LOGIC, LOGIC_AREAS } from './app-logic-data.js';
 import { DEV_READY_SEED } from './dev-ready-data.js';
+import { AVATAR_PRESETS, avatarPresetSrc } from './avatar-presets.js';
+import { JAM_SONGS, eqBarsMarkup, helixVizMarkup, selectJam, toggleJam } from './jam-strip.js';
 
 function esc(s) {
   return String(s == null ? '' : s)
@@ -505,6 +509,11 @@ function fmtNum(n) {
   return Number(n || 0).toLocaleString('en-US');
 }
 
+function fmtCodeValue(key, n) {
+  if (key === 'bytes' || String(key).endsWith('Bytes')) return fmtScanBytes(n);
+  return fmtNum(n);
+}
+
 /* The smaller per-type score cards under the hero LOC card. Each key matches
    both CODE_STATS.now and every series snapshot, so the same key drives the
    number AND its trend pill. */
@@ -519,16 +528,55 @@ const CODE_METRICS = [
 /* Live daily scan overlay. The generated CODE_STATS file is the git trend
    plus the last Python pass; Re-evaluate crawls the working tree once a
    local day and wins whenever that crawl is newer. */
-const CODE_SKIP_FILES = new Set(['icon-inventory-data.js', 'code-stats-data.js', 'gs-data.js']);
-const CODE_SKIP_DIRS = new Set(['.git', 'node_modules', '__pycache__', '_WISEdesigns', 'screenshots', 'assets', '_to_delete']);
-const REEVAL_FETCH_MS = 8000;
-const REEVAL_BUDGET_MS = 20000;
-const REEVAL_CONCURRENCY = 3;
+const CODE_SKIP_FILES = new Set(['icon-inventory-data.js', 'code-stats-data.js', 'gs-data.js', 'project-inventory-data.js']);
+const CODE_SKIP_DIRS = new Set(['.git', 'node_modules', '__pycache__', '_WISEdesigns', 'screenshots', '_to_delete']);
+const REEVAL_FETCH_MS = 30000;
+const REEVAL_BUDGET_MS = 90000;
+const REEVAL_CONCURRENCY = 6;
 const CODE_EXTS = new Set(['html', 'js', 'css', 'py']);
+const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'ico', 'avif']);
+const VIDEO_EXTS = new Set(['mp4', 'webm', 'mov', 'm4v']);
+const FONT_EXTS = new Set(['woff', 'woff2', 'ttf', 'otf', 'eot']);
+
+function projectInventory() {
+  try { return (typeof window !== 'undefined' && window.WISE_PROJECT_INVENTORY) || null; }
+  catch { return null; }
+}
+
+function kindFromExt(ext) {
+  const e = String(ext || '').toLowerCase();
+  if (CODE_EXTS.has(e) || e === 'mjs') return 'code';
+  if (IMAGE_EXTS.has(e)) return 'image';
+  if (VIDEO_EXTS.has(e)) return 'video';
+  if (FONT_EXTS.has(e)) return 'font';
+  return 'other';
+}
+
+function inventoryNowPatch() {
+  const inv = projectInventory();
+  if (!inv) return {};
+  const kinds = inv.kinds || {};
+  return {
+    bytes: inv.bytes || 0,
+    allFiles: inv.files || 0,
+    codeBytes: (kinds.code && kinds.code.bytes) || 0,
+    imageBytes: (kinds.image && kinds.image.bytes) || 0,
+    videoBytes: (kinds.video && kinds.video.bytes) || 0,
+    otherBytes: ((kinds.other && kinds.other.bytes) || 0) + ((kinds.font && kinds.font.bytes) || 0),
+  };
+}
 const REEVAL_STORE_KEY = 'wise-mi-reeval';
 
+function reevalBudgetLabel() {
+  return Math.round(REEVAL_BUDGET_MS / 1000) + ' seconds';
+}
+
+function isAbortError(err, signal) {
+  return !!(err && err.name === 'AbortError') || !!(signal && signal.aborted);
+}
+
 const codeState = {
-  now: Object.assign({}, (CODE_STATS && CODE_STATS.now) || {}),
+  now: Object.assign({}, inventoryNowPatch(), (CODE_STATS && CODE_STATS.now) || {}),
   scannedAt: (CODE_STATS && CODE_STATS.generatedAt) || '',
 };
 
@@ -556,19 +604,22 @@ function codeScanLooksComplete(scan) {
   if (!scan || !scan.files) return false;
   const bakedFiles = Number(((CODE_STATS && CODE_STATS.now) || {}).files || 0);
   if (bakedFiles && scan.files < bakedFiles * 0.75) return false;
+  const bakedAll = Number(((CODE_STATS && CODE_STATS.now) || {}).allFiles || 0)
+    || Number((projectInventory() || {}).files || 0);
+  if (bakedAll && scan.allFiles && scan.allFiles < bakedAll * 0.75) return false;
   return true;
 }
 
 function syncCodeStateFromStore() {
   const bakedAt = (CODE_STATS && CODE_STATS.generatedAt) || '';
-  const baked = Object.assign({}, (CODE_STATS && CODE_STATS.now) || {});
+  const baked = Object.assign({}, inventoryNowPatch(), (CODE_STATS && CODE_STATS.now) || {});
   const live = readReevalStore();
   const liveOk = !!(live.now && live.day && live.day >= bakedAt && codeScanLooksComplete(live.now));
   /* Same calendar day: a morning Re-evaluate must not hide a later baked
      snapshot that counted more of the tree. */
   const bakedNewer = liveOk && live.day === bakedAt && (baked.total || 0) > (live.now.total || 0);
   if (liveOk && !bakedNewer) {
-    codeState.now = Object.assign({}, live.now);
+    codeState.now = Object.assign({}, inventoryNowPatch(), live.now);
     codeState.scannedAt = live.day;
   } else {
     codeState.now = baked;
@@ -620,10 +671,10 @@ function renderCodebase() {
       <header class="mi-module-head">
         <div class="mi-module-head-text">
           <h2 class="mi-module-title">Codebase</h2>
-          <p class="mi-module-lede">How big the app itself is — lines of hand-written HTML, JavaScript, CSS and
-            Python (generated data blobs excluded) with an up/down trend from one git snapshot per day, plus the
-            HTML page count. Re-evaluate crawls the whole project when you ask it to; the git trend is written by
-            <code>scripts/scan_code_stats.py</code>.</p>
+          <p class="mi-module-lede">How big the app itself is — the whole project on disk (code, images, and
+            video), plus lines of hand-written HTML, JavaScript, CSS and Python with an up/down trend from
+            one git snapshot per day. Re-evaluate recounts every file when you ask it to; the git trend is
+            written by <code>scripts/scan_code_stats.py</code>.</p>
         </div>
         ${moduleControlsHTML('mi-code')}
       </header>
@@ -634,7 +685,7 @@ function renderCodebase() {
           <button type="button" class="ii-filter" data-code-win="30" aria-pressed="false">30 days</button>
           <button type="button" class="ii-filter" data-code-win="all" aria-pressed="false">All time</button>
         </div>
-        <span class="mi-code-updated" data-code-scanned><span class="material-symbols-outlined">history</span>Scanned ${esc(scannedAt)} · ${fmtNum(now.files)} files</span>
+        <span class="mi-code-updated" data-code-scanned><span class="material-symbols-outlined">history</span>Scanned ${esc(scannedAt)} · ${fmtNum(now.allFiles || now.files)} files · ${fmtScanBytes(now.bytes)}</span>
       </div>
 
       <div class="mi-code-grid">
@@ -655,6 +706,22 @@ function renderCodebase() {
               <span data-code-spark-now>${fmtNum(first.total)} → ${fmtNum(now.total)} lines</span>
               <span data-code-spark-end>${esc(scannedAt)}</span>
             </div>` : ''}
+          </div>
+        </article>
+        <article class="mi-code-card mi-code-hero" data-code-metric="bytes">
+          <div class="mi-code-hero-main">
+            <div class="mi-code-top">
+              <span class="mi-code-ic"><span class="material-symbols-outlined">hard_drive</span></span>
+            </div>
+            <div class="mi-code-num" data-code-num="bytes">${fmtScanBytes(now.bytes)}</div>
+            <div class="mi-code-label">Project size</div>
+            <div class="mi-code-sub" data-code-bytes-sub>Every shippable file — ${fmtNum(now.allFiles)} files. Git, screenshots, and scratch folders left out.</div>
+          </div>
+          <div class="mi-code-kinds" data-code-kinds>
+            <div class="mi-code-kind"><span>Code</span><strong data-code-kind="code">${fmtScanBytes(now.codeBytes)}</strong></div>
+            <div class="mi-code-kind"><span>Images</span><strong data-code-kind="image">${fmtScanBytes(now.imageBytes)}</strong></div>
+            <div class="mi-code-kind"><span>Video</span><strong data-code-kind="video">${fmtScanBytes(now.videoBytes)}</strong></div>
+            <div class="mi-code-kind"><span>Other</span><strong data-code-kind="other">${fmtScanBytes(now.otherBytes)}</strong></div>
           </div>
         </article>
         ${cards}
@@ -690,7 +757,8 @@ function wireCodebase(root) {
     const base = baselineFor(win);
     mod.querySelectorAll('[data-code-pill]').forEach((pill) => {
       const key = pill.getAttribute('data-code-pill');
-      if (!base) { pill.hidden = true; return; }
+      if (!base || base[key] == null) { pill.hidden = true; return; }
+      pill.hidden = false;
       const delta = (now[key] || 0) - (base[key] || 0);
       const tone = delta > 0 ? 'is-up' : delta < 0 ? 'is-down' : 'is-flat';
       const icon = delta > 0 ? 'trending_up' : delta < 0 ? 'trending_down' : 'trending_flat';
@@ -723,12 +791,28 @@ function applyLiveCodeScan(root, now, scannedAt) {
   if (mod) {
     mod.querySelectorAll('[data-code-num]').forEach((el) => {
       const key = el.getAttribute('data-code-num');
-      el.textContent = fmtNum(now[key]);
+      el.textContent = fmtCodeValue(key, now[key]);
     });
     const scanned = mod.querySelector('[data-code-scanned]');
     if (scanned) {
-      scanned.innerHTML = `<span class="material-symbols-outlined">history</span>Scanned ${esc(scannedAt)} · ${fmtNum(now.files)} files`;
+      scanned.innerHTML = `<span class="material-symbols-outlined">history</span>Scanned ${esc(scannedAt)} · ${fmtNum(now.allFiles || now.files)} files · ${fmtScanBytes(now.bytes)}`;
     }
+    const bytesSub = mod.querySelector('[data-code-bytes-sub]');
+    if (bytesSub) {
+      bytesSub.textContent = `Every shippable file — ${fmtNum(now.allFiles)} files. Git, screenshots, and scratch folders left out.`;
+    }
+    const kindMap = { code: now.codeBytes, image: now.imageBytes, video: now.videoBytes, other: now.otherBytes };
+    mod.querySelectorAll('[data-code-kind]').forEach((el) => {
+      el.textContent = fmtScanBytes(kindMap[el.getAttribute('data-code-kind')]);
+    });
+    try {
+      if (window.WiseMiLoad && typeof window.WiseMiLoad.setInventory === 'function' && now.bytes) {
+        window.WiseMiLoad.setInventory({
+          bytes: now.bytes,
+          files: now.allFiles || now.files,
+        });
+      }
+    } catch (_) { /* load meter is optional */ }
     const heroSub = mod.querySelector('[data-code-hero-sub]');
     if (heroSub) heroSub.textContent = `HTML · JavaScript · CSS · Python across ${fmtNum(now.files)} files`;
     const sparkNow = mod.querySelector('[data-code-spark-now]');
@@ -742,7 +826,7 @@ function applyLiveCodeScan(root, now, scannedAt) {
     const num = jump.querySelector('.dsc-jump-num');
     if (num) num.textContent = fmtNum(now.total);
     const sub = jump.querySelector('.dsc-jump-sub');
-    if (sub) sub.textContent = `${fmtNum(now.pages)} HTML pages`;
+    if (sub) sub.textContent = `${fmtScanBytes(now.bytes)} · ${fmtNum(now.allFiles || now.files)} files`;
   }
 }
 
@@ -830,7 +914,10 @@ function renderIconInventory() {
           <p class="mi-module-lede">Every Material Symbols glyph used in the live app — a representative
             label, and the exact placements (file and line). Preview each glyph as outlined,
             filled, or light weight with rounded corners, and flip Font/SVG to compare the
-            live webfont against Google\u2019s SVG export of the same glyph. This page and the Module Directory catalog data are excluded
+            live webfont against Google\u2019s SVG export of the same glyph. The
+            <strong>expectation</strong> — what the app actually paints — is the
+            <strong>light (rounded) SVG at weight 400</strong>, with a few per-glyph
+            exceptions where that weight reads too thin or too heavy. This page and the Module Directory catalog data are excluded
             from the scan so the catalog is not polluted by its own chrome. Toggle a group to see
             just the chat module, primary nav, and so on.
             Generated by <code>scripts/scan_icons.py</code>.</p>
@@ -851,13 +938,18 @@ function renderIconInventory() {
         <div class="ii-sort" role="group" aria-label="Icon style preview">
           <button type="button" class="ii-filter is-active" data-ii-style="outlined" aria-pressed="true">Outlined</button>
           <button type="button" class="ii-filter" data-ii-style="filled" aria-pressed="false">Filled</button>
-          <button type="button" class="ii-filter" data-ii-style="light" aria-pressed="false" title="Light weight, rounded corners">Light</button>
+          <button type="button" class="ii-filter" data-ii-style="light" aria-pressed="false" title="App look: rounded terminals (the live sprite is this family at weight 400, with a few exceptions)">Light</button>
         </div>
         <div class="ii-sort" role="group" aria-label="Icon render mode" id="ii-render-switch">
           <button type="button" class="ii-filter is-active" data-ii-render="font" aria-pressed="true" title="The Material Symbols variable font, served from fonts.googleapis.com \u2014 exempt from the app-wide SVG shim so this column stays a true comparison">Font</button>
-          <button type="button" class="ii-filter" data-ii-render="svg" aria-pressed="false" title="The same glyphs as inline SVG, from Google\u2019s own SVG export \u2014 no webfont, no network">SVG</button>
+          <button type="button" class="ii-filter" data-ii-render="svg" aria-pressed="false" title="The same glyphs as inline SVG, from Google\u2019s own SVG export \u2014 no webfont, no network. Light + SVG is the app expectation.">SVG</button>
         </div>
       </div>
+
+      <aside class="ii-expect" aria-label="Icon SVG expectation">
+        <h3 class="ii-expect-title">Expectation: light SVG, weight 400</h3>
+        <p class="ii-expect-body">The live app draws every icon as the <strong>light (rounded) SVG</strong> — not the outlined webfont. Default stroke is weight <strong>400</strong>. A handful of glyphs are exceptions when 400 looks too thin or too heavy next to its neighbors (the three-dot menu is one). Flip <strong>Light</strong> and <strong>SVG</strong> to preview that family; Outlined and Filled stay here so you can compare.</p>
+      </aside>
 
       <p class="ii-render-note" id="ii-render-note" hidden></p>
 
@@ -948,6 +1040,7 @@ const COLOR_GROUPS = [
       { token: '--surface', use: 'Cards, panels, popovers' },
       { token: '--surface-2', use: 'Inset fills — inputs, hover rows, code chips' },
       { token: '--surface-3', use: 'Deepest inset — pressed / active fills' },
+      { token: '--scorecard-fill', use: 'Action / filter scorecard tile (chat navy in dark)' },
     ],
   },
   {
@@ -958,6 +1051,11 @@ const COLOR_GROUPS = [
       { token: '--text', kind: 'ink', use: 'Primary text and headings' },
       { token: '--text-muted', kind: 'ink', use: 'Secondary copy, ledes, menu items, eyebrows, captions, placeholders' },
       { token: '--text-subtle', kind: 'ink', use: 'Alias of --text-muted (same color)' },
+      { token: '--score-ink', kind: 'ink', use: 'Default scorecard numeral' },
+      { token: '--score-ink-red', kind: 'ink', use: 'Action-required scorecard numeral and chip' },
+      { token: '--score-ink-green', kind: 'ink', use: 'Verified scorecard numeral and chip' },
+      { token: '--score-ink-amber', kind: 'ink', use: 'Warning scorecard numeral and chip' },
+      { token: '--score-ink-blue', kind: 'ink', use: 'Pending / brand scorecard numeral and chip' },
     ],
   },
   {
@@ -1292,7 +1390,6 @@ const COMPONENT_CATS = [
 const CAT_BY_NAME = {
   'Buttons': 'Actions',
   'Admin buttons': 'Actions',
-  'Top-bar icon button': 'Actions',
   'Intent chips': 'Chips & badges',
   'Output chips': 'Chips & badges',
   'Large intent cards': 'Chips & badges',
@@ -1311,7 +1408,6 @@ const CAT_BY_NAME = {
   'Database roster': 'Chat & drawers',
   'Attachments': 'Chat & drawers',
   'Image lightbox': 'Overlays',
-  'Chat welcome': 'Chat & drawers',
   'Segmented control': 'Actions',
   'Switch': 'Actions',
   'Width toggle': 'Actions',
@@ -1319,18 +1415,16 @@ const CAT_BY_NAME = {
   'Nutrition Facts': 'Chat & drawers',
   'Product identity strip': 'Chat & drawers',
   'Progress tracker': 'Chat & drawers',
-  'Jam strip': 'Navigation',
+  'Jam strip': 'Overlays',
   'App search': 'Navigation',
-  'Crawl · Walk · Run': 'Navigation',
+  'Roll · Crawl · Walk · Run': 'Navigation',
   'Owl walkthrough': 'Chat & drawers',
   'Form fields': 'Inputs & forms',
   'Data table': 'Tables & data',
   'Charts & graphs': 'Tables & data',
-  'Distribution bar': 'Tables & data',
   'Dashboard card': 'Tables & data',
   'Pagination footer': 'Tables & data',
-  'History conversation': 'Library & reports',
-  'History project': 'Library & reports',
+  'History': 'Library & reports',
   'Library cards': 'Library & reports',
   'Library folders': 'Library & reports',
   'Report posters': 'Library & reports',
@@ -1349,7 +1443,6 @@ const CAT_BY_NAME = {
   'Toast': 'Feedback',
   'Notification rows': 'Feedback',
   'Left-nav item': 'Navigation',
-  'Avatar button': 'Navigation',
   'Avatars': 'Navigation',
 };
 
@@ -1394,7 +1487,7 @@ function idStripDemoHTML({ single }) {
         </div>
         <div class="panel-controls">
           <div class="panel-more-wrap"><button type="button" class="panel-more-btn" title="Module options" aria-label="Module options"><span class="material-symbols-outlined">more_vert</span></button></div>
-          <button type="button" class="panel-width-toggle-btn" title="Width (fill)" aria-label="Product Details width"><span class="material-symbols-outlined">width_full</span></button>
+          <button type="button" class="panel-width-toggle-btn is-on is-width-fill" title="Width (fill)" aria-label="Product Details width"><span class="material-symbols-outlined">width_full</span></button>
         </div>
       </div>
       <p class="nfp-fi-desc">${single ? 'Add a short product description' : 'A bakery favorite with a moist crumb, simple ingredients, and flavor that holds from the first bite to the last.'}</p>
@@ -1454,6 +1547,485 @@ function demoYouAvatar() {
 function demoWiseAvatar() {
   return `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEcodeAI">${DEMO_OWL_BUG}</span>`;
 }
+
+/* Live avatar (account) popover from js/appearance-menu.js buildUserMenuBody,
+   member-facing only — no Admin-locked Alerts / Agents / Preferences rows.
+   data-pop-action is omitted so catalog clicks cannot navigate or sign out. */
+function demoAvatarMenuPop() {
+  return `
+    <div class="wise-popover open" data-popover-static inert>
+      <div class="wise-popover-header">Arthur Krupsky</div>
+      <div class="wise-popover-item"><span class="material-symbols-outlined">person</span>My profile</div>
+      <div class="wise-popover-item"><span class="material-symbols-outlined">receipt_long</span>Invoices</div>
+      <div class="wise-popover-item"><span class="material-symbols-outlined">photo_library</span>Marketing Assets</div>
+      <div class="wise-popover-divider"></div>
+      <div class="wise-popover-item danger"><span class="material-symbols-outlined">logout</span>Sign out</div>
+    </div>`;
+}
+
+function demoAvatarButtonStates() {
+  return `
+    <div class="dsc-states">
+      <div class="dsc-state-col">
+        <div class="dsc-sub-label">Default</div>
+        <button type="button" class="topbar-profile" aria-label="Profile" tabindex="-1">MC</button>
+      </div>
+      <div class="dsc-state-col">
+        <div class="dsc-sub-label">Hover</div>
+        <button type="button" class="topbar-profile is-hover" aria-label="Profile" tabindex="-1">MC</button>
+      </div>
+      <div class="dsc-state-col">
+        <div class="dsc-sub-label">Open</div>
+        <button type="button" class="topbar-profile is-open" aria-label="Profile" aria-expanded="true" tabindex="-1">MC</button>
+      </div>
+      <div class="dsc-state-col">
+        <div class="dsc-sub-label">Unread</div>
+        <button type="button" class="topbar-profile has-dot" aria-label="Profile" tabindex="-1">MC</button>
+      </div>
+    </div>`;
+}
+
+/* Organization Profile → Avatar picture. Same markup as avatarUploadHtml()
+   in js/profile-flow.js, including every built-in preset swatch. */
+function demoAvatarPicker({ tab = 'file', activeId = 'aurora', showPresets = true } = {}) {
+  const active = AVATAR_PRESETS.find((p) => p.id === activeId) || AVATAR_PRESETS[0];
+  const src = avatarPresetSrc(active);
+  const preview = `<img src="${esc(src)}" alt="Your avatar" />`;
+  const body = tab === 'url'
+    ? `<div class="pf-uprow">
+         <input class="pf-url-input" type="url" placeholder="https://example.com/me.jpg" value="" readonly tabindex="-1" />
+         <button type="button" class="pf-file-btn" tabindex="-1"><span class="material-symbols-outlined">download</span>Import</button>
+       </div>`
+    : `<div class="pf-uprow">
+         <span class="pf-file-btn"><span class="material-symbols-outlined">upload_file</span>Choose File</span>
+         <span class="pf-file-name">No file chosen</span>
+       </div>`;
+  const presets = AVATAR_PRESETS.map((p) => {
+    const url = avatarPresetSrc(p);
+    const on = p.id === active.id ? ' is-active' : '';
+    const kind = p.src ? 'portrait' : 'pattern';
+    return `<button type="button" class="pf-avatar-preset${on}" tabindex="-1" aria-label="${esc(p.label)} ${kind}" aria-pressed="${p.id === active.id ? 'true' : 'false'}"><img src="${esc(url)}" alt="" /></button>`;
+  }).join('');
+  return `
+    <div class="pf-upload pf-avatar-upload" data-avatar-static inert>
+      <div class="pf-upload-head">
+        <div class="pf-upload-title">Avatar picture</div>
+        <div class="pf-upload-sub">Your personal photo. Once set it appears in the primary navigation and on your messages in the chat. Until you add one, your initials are used.</div>
+      </div>
+      <div class="pf-avatar-row">
+        <div class="pf-avatar-preview is-set">${preview}</div>
+        <div class="pf-avatar-controls">
+          <div class="pf-uptabs" role="tablist">
+            <button type="button" class="pf-uptab${tab === 'file' ? ' is-active' : ''}" role="tab" tabindex="-1"><span class="material-symbols-outlined">description</span>Browse File</button>
+            <button type="button" class="pf-uptab${tab === 'url' ? ' is-active' : ''}" role="tab" tabindex="-1"><span class="material-symbols-outlined">link</span>Import from URL</button>
+          </div>
+          ${body}
+          <button type="button" class="pf-file-btn pf-avatar-remove" tabindex="-1"><span class="material-symbols-outlined">delete</span>Remove picture</button>
+        </div>
+      </div>
+      ${showPresets ? `<div class="pf-avatar-presets">
+        <span class="pf-avatar-presets-label">Or start from a pattern or photo</span>
+        <div class="pf-avatar-presets-row" role="group" aria-label="Avatar starting images">${presets}</div>
+      </div>` : ''}
+      <div class="pf-hint">JPEG, PNG, WebP, HEIC and more. Square images look best.</div>
+    </div>`;
+}
+
+function demoAvatarCatalog() {
+  const photo = avatarPresetSrc(AVATAR_PRESETS.find((p) => p.id === 'portrait-m'));
+  const photoImg = `<img class="wise-avatar-img" src="${esc(photo)}" alt="" />`;
+  return `
+    <div class="dsc-avatar-catalog">
+      <div class="dsc-state-col">
+        <div class="dsc-sub-label">Top-bar button</div>
+        ${demoAvatarButtonStates()}
+      </div>
+      <div class="dsc-states">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Initials · fallback</div>
+          <div class="dsc-avatar-chip-row">
+            <span class="adm-avatar">AF</span>
+            <span class="adm-avatar">MC</span>
+            <span class="adm-avatar">GP</span>
+            <button type="button" class="topbar-profile" aria-label="Profile" tabindex="-1">JR</button>
+            ${demoYouAvatar()}
+          </div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Photo · set</div>
+          <div class="dsc-avatar-chip-row">
+            <span class="adm-avatar adm-avatar--photo">${photoImg}</span>
+            <button type="button" class="topbar-profile has-avatar-img" aria-label="Profile" data-initials="MC" tabindex="-1">${photoImg}</button>
+            <span class="sc-avatar sc-avatar-you has-avatar-img" role="img" aria-label="You" data-initials="AK">${photoImg}</span>
+          </div>
+        </div>
+      </div>
+      <div class="dsc-avatar-catalog-row">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Avatar popover</div>
+          ${demoAvatarMenuPop()}
+        </div>
+        <div class="dsc-state-col dsc-avatar-catalog-picker">
+          <div class="dsc-sub-label">Organization Profile · Avatar picture</div>
+          ${demoAvatarPicker({ tab: 'file', activeId: 'aurora' })}
+        </div>
+      </div>
+      <div class="dsc-state-col dsc-avatar-catalog-picker">
+        <div class="dsc-sub-label">Import from URL</div>
+        ${demoAvatarPicker({ tab: 'url', activeId: 'portrait-f', showPresets: false })}
+      </div>
+    </div>`;
+}
+
+function demoDataTable() {
+  return `
+      <div class="adm-table-card adm-card" style="width:100%">
+        <div class="adm-table" data-wtp-skip data-no-paginate data-w-date-root style="--adm-cols: 36px minmax(150px, 1.5fr) 108px 168px 52px 56px 78px 64px">
+          <div class="adm-thead">
+            <span class="adm-th" title="Actions"> </span>
+            <span class="adm-th adm-th--sortable" data-adm-dir="asc">Identity ${ARROW_SVG_DEMO}</span>
+            <span class="adm-th adm-th--sortable">Status ${ARROW_SVG_DEMO}</span>
+            <span class="adm-th adm-th--sortable w-date-th">${(window.WiseDateCol && window.WiseDateCol.headerHtml({ kinds: 'org', lead: 'joined' })) || 'Date'}${ARROW_SVG_DEMO}</span>
+            <span class="adm-th adm-th--num adm-th--sortable">Count ${ARROW_SVG_DEMO}</span>
+            <span class="adm-th adm-th--num adm-th--sortable">Score ${ARROW_SVG_DEMO}</span>
+            <span class="adm-th">Stars</span>
+            <span class="adm-th adm-th--num adm-th--sortable">Amount ${ARROW_SVG_DEMO}</span>
+          </div>
+          <div class="adm-trow">
+            <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
+            <span class="adm-td"><span class="adm-idcell"><span class="adm-avatar">AB</span><span class="adm-idcell-body"><span class="adm-idcell-name"><a href="#" onclick="return false">Abbot's Butcher</a></span><span class="adm-idcell-sub">Independent Food/Beverage Brand</span></span></span></span>
+            <span class="adm-td"><span class="adm-chip adm-chip--green"><span class="material-symbols-outlined">check</span>Active</span></span>
+            <span class="adm-td"><span class="w-datecell">${(window.WiseDateCol && window.WiseDateCol.cellHtml(window.WiseDateCol.complete({ joined: 'Jun 26, 2026' }, 'org'), 'org', 'joined')) || 'Jun 26, 2026'}</span></span>
+            <span class="adm-td adm-td--num is-hot">6</span>
+            <span class="adm-td adm-td--num dsc-score">82</span>
+            <span class="adm-td adm-td--metric"><span class="dsc-gs" aria-label="3 Guiding Stars"><span class="material-symbols-outlined dsc-gs-on">star</span><span class="material-symbols-outlined dsc-gs-on">star</span><span class="material-symbols-outlined dsc-gs-on">star</span></span></span>
+            <span class="adm-td adm-td--num dsc-amt">$1,284</span>
+          </div>
+          <div class="adm-trow">
+            <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
+            <span class="adm-td"><span class="adm-idcell"><span class="adm-avatar adm-avatar--round">MC</span><span class="adm-idcell-body"><span class="adm-idcell-name">maya.chen</span><span class="adm-idcell-sub">maya@flax4life.com</span><span class="adm-idcell-sub">ID: 10482</span></span></span></span>
+            <span class="adm-td"><span class="adm-chip adm-chip--amber"><span class="material-symbols-outlined">hourglass_top</span>Pending</span></span>
+            <span class="adm-td"><span class="w-datecell">${(window.WiseDateCol && window.WiseDateCol.cellHtml(window.WiseDateCol.complete({ joined: 'Apr 18, 2026' }, 'org'), 'org', 'joined')) || 'Apr 18, 2026'}</span></span>
+            <span class="adm-td adm-td--num is-hot">3</span>
+            <span class="adm-td adm-td--num dsc-score">64</span>
+            <span class="adm-td adm-td--metric"><span class="dsc-gs" aria-label="2 Guiding Stars"><span class="material-symbols-outlined dsc-gs-on">star</span><span class="material-symbols-outlined dsc-gs-on">star</span><span class="material-symbols-outlined dsc-gs-off">star</span></span></span>
+            <span class="adm-td adm-td--num dsc-amt">$420</span>
+          </div>
+          <div class="adm-trow">
+            <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
+            <span class="adm-td"><span class="adm-idcell"><span class="adm-idcell-body"><span class="adm-idcell-name">Toasted Coconut Brownies</span><span class="adm-idcell-sub dsc-mono">UPC · 8 57287 00420 3</span></span></span></span>
+            <span class="adm-td"><span class="adm-chip adm-chip--blue"><span class="material-symbols-outlined">gpp_good</span>Verified</span></span>
+            <span class="adm-td"><span class="w-datecell">${(window.WiseDateCol && window.WiseDateCol.cellHtml(window.WiseDateCol.complete({ joined: 'May 2, 2026' }, 'org'), 'org', 'joined')) || 'May 2, 2026'}</span></span>
+            <span class="adm-td adm-td--num is-hot">12</span>
+            <span class="adm-td adm-td--num dsc-score">71</span>
+            <span class="adm-td adm-td--metric"><span class="dsc-gs" aria-label="1 Guiding Star"><span class="material-symbols-outlined dsc-gs-on">star</span><span class="material-symbols-outlined dsc-gs-off">star</span><span class="material-symbols-outlined dsc-gs-off">star</span></span></span>
+            <span class="adm-td adm-td--num dsc-amt">$86</span>
+          </div>
+          <div class="adm-trow">
+            <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
+            <span class="adm-td"><span class="adm-idcell"><span class="adm-avatar">BF</span><span class="adm-idcell-body"><span class="adm-idcell-name">Brave Foods</span><span class="adm-idcell-sub">Independent Food/Beverage Brand</span></span></span></span>
+            <span class="adm-td"><span class="adm-chip adm-chip--outline">Invited</span></span>
+            <span class="adm-td"><span class="w-datecell">${(window.WiseDateCol && window.WiseDateCol.cellHtml({ joined: '—', created: '—', active: '—', edited: '—' }, 'org', 'joined')) || '—'}</span></span>
+            <span class="adm-td adm-td--num">0</span>
+            <span class="adm-td adm-td--num" style="color:var(--text-subtle)">—</span>
+            <span class="adm-td adm-td--metric"><span class="dsc-gs" aria-label="0 Guiding Stars"><span class="material-symbols-outlined dsc-gs-off">star</span><span class="material-symbols-outlined dsc-gs-off">star</span><span class="material-symbols-outlined dsc-gs-off">star</span></span></span>
+            <span class="adm-td adm-td--num" style="color:var(--text-subtle)">—</span>
+          </div>
+        </div>
+        <div class="wtp-foot">
+          <span class="wtp-count">Showing <b>4</b> of <b>315</b> organizations</span>
+          <button type="button" class="wtp-more">Load more<span class="material-symbols-outlined">expand_more</span></button>
+        </div>
+      </div>`;
+}
+
+/* Filter funnel popover — one specimen of every control type used in a
+   list-filter pop across the app (select, date, exclusive chips, icon
+   chips, stars, toggle, multi-select). */
+function demoFilterToolbar() {
+  return `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Closed</div>
+          <div class="adm-search-inline has-filter" style="width:min(100%,280px)">
+            <span class="material-symbols-outlined">search</span>
+            <input type="search" class="adm-search" placeholder="Search\u2026" aria-label="Demo search closed" />
+            <button type="button" class="adm-search-filter" aria-label="Filters"><span class="material-symbols-outlined">tune</span></button>
+          </div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Hover \u00b7 active filters</div>
+          <div class="adm-search-inline has-filter" style="width:min(100%,280px)">
+            <span class="material-symbols-outlined">search</span>
+            <input type="search" class="adm-search" placeholder="Search\u2026" aria-label="Demo search hover" />
+            <button type="button" class="adm-search-filter is-hover has-dot" aria-label="Filters"><span class="material-symbols-outlined">tune</span></button>
+          </div>
+        </div>
+        <div class="dsc-state-col" style="flex:1 1 100%">
+          <div class="dsc-sub-label">Open \u00b7 every filter type</div>
+          <div class="adm-toolbar" style="width:100%;max-width:420px;position:relative">
+            <div class="adm-search-inline has-filter" style="flex:1 1 auto">
+              <span class="material-symbols-outlined">search</span>
+              <input type="search" class="adm-search" placeholder="Search organizations\u2026" aria-label="Demo search open" />
+              <button type="button" class="adm-search-filter is-active has-dot" aria-label="Filters" aria-expanded="true"><span class="material-symbols-outlined">tune</span></button>
+            </div>
+            <div class="adm-filter-pop" data-popover-static>
+              <div class="wmod-filter-pop-head">
+                <span class="wmod-filter-pop-title">Filter</span>
+                <button type="button" class="adm-filter-clear">Clear all</button>
+              </div>
+              <div class="adm-field">
+                <span class="adm-field-label">Select \u00b7 User Management \u00b7 Audit \u00b7 Quick Invite</span>
+                <select class="adm-select" aria-label="Plan"><option>All plans</option><option>Enterprise</option><option>Growth</option></select>
+              </div>
+              <div class="wmod-filter-group">
+                <div class="wmod-filter-label">Date range \u00b7 Audit Queue</div>
+                <div class="dsc-filter-dates">
+                  <div class="adm-field">
+                    <span class="adm-field-label">After</span>
+                    <input type="date" class="adm-input" value="2026-03-01" aria-label="Flagged after" />
+                  </div>
+                  <div class="adm-field">
+                    <span class="adm-field-label">Before</span>
+                    <input type="date" class="adm-input" value="2026-08-01" aria-label="Flagged before" />
+                  </div>
+                </div>
+              </div>
+              <div class="wmod-filter-group">
+                <div class="wmod-filter-label">Chips \u00b7 exclusive \u00b7 Portfolio \u00b7 API Keys</div>
+                <div class="wmod-filter-chips" role="group" aria-label="Status">
+                  <button type="button" class="wmod-fchip is-on">All</button>
+                  <button type="button" class="wmod-fchip">Active</button>
+                  <button type="button" class="wmod-fchip">Pending</button>
+                  <button type="button" class="wmod-fchip">Invited</button>
+                </div>
+              </div>
+              <div class="wmod-filter-group">
+                <div class="wmod-filter-label">Chips \u00b7 icons \u00b7 Library</div>
+                <div class="wmod-filter-chips" role="group" aria-label="Type">
+                  <button type="button" class="wmod-fchip is-on"><span class="material-symbols-outlined">description</span>Reports</button>
+                  <button type="button" class="wmod-fchip"><span class="material-symbols-outlined">bar_chart</span>Dashboards</button>
+                  <button type="button" class="wmod-fchip"><span class="material-symbols-outlined">forum</span>Chats</button>
+                </div>
+              </div>
+              <div class="wmod-filter-group">
+                <div class="wmod-filter-label">Chips \u00b7 stars \u00b7 Guiding Stars</div>
+                <div class="wmod-filter-chips" role="group" aria-label="Rating">
+                  <button type="button" class="wmod-fchip is-on">All</button>
+                  <button type="button" class="wmod-fchip">0 <span class="material-symbols-outlined">star</span></button>
+                  <button type="button" class="wmod-fchip">1 <span class="material-symbols-outlined">star</span></button>
+                  <button type="button" class="wmod-fchip">2 <span class="material-symbols-outlined">star</span></button>
+                  <button type="button" class="wmod-fchip">3 <span class="material-symbols-outlined">star</span></button>
+                </div>
+              </div>
+              <div class="wmod-filter-group">
+                <div class="wmod-filter-label">Chip \u00b7 toggle \u00b7 Portfolio near-miss</div>
+                <div class="wmod-filter-chips">
+                  <button type="button" class="wmod-fchip is-on"><span class="material-symbols-outlined">bolt</span>Near-miss \u2605\u2605 \u2192 \u2605\u2605\u2605</button>
+                </div>
+              </div>
+              <div class="wmod-filter-group">
+                <div class="wmod-filter-label">Chips \u00b7 multi-select \u00b7 Ingredient Browser</div>
+                <div class="wmod-filter-chips" role="group" aria-label="Flags">
+                  <button type="button" class="wmod-fchip is-on">High intensity</button>
+                  <button type="button" class="wmod-fchip">Natural</button>
+                  <button type="button" class="wmod-fchip is-on">Sugar alcohol</button>
+                  <button type="button" class="wmod-fchip">Added sugar</button>
+                </div>
+              </div>
+              <div class="adm-filter-pop-foot">
+                <button type="button" class="adm-filter-clear">Clear all</button>
+                <button type="button" class="adm-btn adm-btn--primary adm-btn--sm">Apply</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+}
+
+/* Live History module language from js/chat-history.js — color chat-dot,
+   folder / folder_open toggle, tree elbows, hover actions (no inline meta). */
+function demoWchItem({ title, color = '#12B981', active, live, fork, mcp, hover } = {}) {
+  const forkBadge = fork
+    ? '<span class="wch-fork-badge"><span class="material-symbols-outlined">alt_route</span></span>'
+    : '';
+  const mcpBadge = mcp
+    ? '<span class="wch-mcp-badge"><span class="material-symbols-outlined">dns</span></span>'
+    : '';
+  const dot = live
+    ? '<span class="wch-chat-dot wch-live-dot" aria-hidden="true"></span>'
+    : `<span class="wch-chat-dot" style="color:${esc(color)}" aria-hidden="true"></span>`;
+  return `
+    <div class="wch-item${active ? ' wch-active' : ''}${live ? ' wch-item-live' : ''}${hover ? ' is-hover' : ''}" role="listitem" tabindex="-1" draggable="true">
+      ${dot}
+      <div class="wch-item-title">${forkBadge}${mcpBadge}${esc(title)}</div>
+      <div class="wch-item-actions">
+        <button type="button" class="wch-iact wch-drag-handle" tabindex="-1" aria-label="Drag conversation into a project"><span class="material-symbols-outlined">drag_indicator</span></button>
+        <button type="button" class="wch-iact" tabindex="-1" aria-label="Rename conversation"><span class="material-symbols-outlined">edit</span></button>
+        <button type="button" class="wch-iact" tabindex="-1" aria-label="Move to project"><span class="material-symbols-outlined">drive_file_move</span></button>
+        <button type="button" class="wch-iact" tabindex="-1" aria-label="Delete conversation"><span class="material-symbols-outlined">delete_outline</span></button>
+      </div>
+    </div>`;
+}
+
+function demoWchProject({ name, color, count, collapsed, dropOn, loose, children } = {}) {
+  const tone = loose ? '' : ` style="color:${esc(color || '#2F6DF6')}"`;
+  const menu = loose
+    ? ''
+    : '<button type="button" class="wch-proj-menu" tabindex="-1" aria-label="Project options"><span class="material-symbols-outlined">more_horiz</span></button>';
+  const body = children == null
+    ? '<div class="wch-project-empty">Empty — drag a chat here, or use a chat’s move button.</div>'
+    : children;
+  return `
+    <div class="wch-project${collapsed ? ' wch-collapsed' : ''}${dropOn ? ' wch-drop-on' : ''}${loose ? ' wch-loose wch-ungrouped' : ''}">
+      <div class="wch-project-head" role="button" tabindex="-1" aria-expanded="${collapsed ? 'false' : 'true'}">
+        <button type="button" class="wch-proj-toggle" tabindex="-1" aria-label="Expand or collapse"${tone}><span class="material-symbols-outlined">${collapsed ? 'folder' : 'folder_open'}</span></button>
+        <span class="wch-proj-name">${esc(name)}</span>
+        <span class="wch-proj-count">${count == null ? '' : count}</span>
+        ${menu}
+      </div>
+      <div class="wch-project-body">${body}</div>
+    </div>`;
+}
+
+function demoWchPane(inner) {
+  return `
+    <div class="dsc-wch">
+      <div class="wch-projects">
+        <div class="wch-projects-head">
+          <span class="wch-projects-title">Projects</span>
+          <button type="button" class="wch-proj-add" tabindex="-1" aria-label="New project"><span class="material-symbols-outlined">create_new_folder</span></button>
+        </div>
+        ${inner}
+      </div>
+    </div>`;
+}
+
+function demoWchInfo({ title = 'Compare oat milk vs almond milk', when = 'Today · 2:11 PM', msgs = '8 messages', live, fork, mcp } = {}) {
+  return `
+    <div class="wch-info is-vis" aria-hidden="true">
+      <div class="wch-info-title">${esc(title)}</div>
+      ${live ? '<div class="wch-info-row is-live"><span class="material-symbols-outlined">bolt</span><span>Responding now…</span></div>' : ''}
+      <div class="wch-info-row"><span class="material-symbols-outlined">schedule</span><span>${esc(when)}</span></div>
+      <div class="wch-info-row"><span class="material-symbols-outlined">forum</span><span>${esc(msgs)}</span></div>
+      ${fork ? `<div class="wch-info-row"><span class="material-symbols-outlined">alt_route</span><span>Forked from ${esc(fork)}</span></div>` : ''}
+      ${mcp ? '<div class="wch-info-row"><span class="material-symbols-outlined">dns</span><span>Used the MCP server</span></div>' : ''}
+    </div>`;
+}
+
+function demoHistoryCatalog() {
+  const extreme = demoWchPane(
+    demoWchProject({
+      name: 'Q3 verification', color: '#2F6DF6', count: 11,
+      children:
+        demoWchItem({ title: 'Compare oat milk vs almond milk', color: '#2F6DF6', active: true, hover: true }) +
+        demoWchItem({ title: 'UPF report for granola', color: '#F59E0B', fork: true }) +
+        demoWchItem({ title: 'Non-UPF attestation for oat bars', color: '#12B981' }) +
+        demoWchItem({ title: 'Sodium claim on soup', color: '#EC4899' }) +
+        demoWchProject({
+          name: 'Claims', color: '#8B5CF6', count: 4,
+          children:
+            demoWchItem({ title: 'Fiber claim — granola', color: '#8B5CF6' }) +
+            demoWchItem({ title: 'Whole grain wording', color: '#06B6D4' }) +
+            demoWchProject({
+              name: 'Reformulation', color: '#EF4444', count: 2,
+              children:
+                demoWchItem({ title: 'Swap maltodextrin', color: '#EF4444' }) +
+                demoWchItem({ title: 'Cut added sugar 12%', color: '#84CC16' }),
+            }),
+        }) +
+        demoWchItem({ title: 'GRAS letter for new enzyme', color: '#06B6D4', mcp: true }),
+    }) +
+    demoWchProject({
+      name: 'Reports', color: '#12B981', count: 4, dropOn: true,
+      children:
+        demoWchItem({ title: 'Guiding Stars vs category', color: '#12B981' }) +
+        demoWchItem({ title: 'Portfolio UPF share', color: '#2F6DF6' }) +
+        demoWchItem({ title: 'Processing (NOVA) board', color: '#F59E0B' }) +
+        demoWchItem({ title: 'Ingredient audit queue', color: '#EC4899' }),
+    }) +
+    demoWchProject({ name: 'Parked', color: '#F59E0B', count: 0 }) +
+    demoWchProject({
+      name: 'All conversations', count: 3, loose: true,
+      children:
+        demoWchItem({ title: 'What can I ask about oat milk?', color: '#12B981', live: true }) +
+        demoWchItem({ title: 'Draft a verification email', color: '#8B5CF6', mcp: true }) +
+        demoWchItem({ title: 'Yesterday’s granola thread', color: '#06B6D4' }),
+    }),
+  );
+  const empty = demoWchPane(
+    demoWchProject({
+      name: 'All conversations', count: 0, loose: true,
+      children: '<div class="wch-project-empty">No saved conversations yet. Start chatting, then use “New conversation” to file this one here.</div>',
+    }),
+  );
+  const noFolders = `
+    <div class="dsc-wch-with-info">
+      ${demoWchPane(
+        demoWchProject({
+          name: 'All conversations', count: 6, loose: true,
+          children:
+            demoWchItem({ title: 'Compare oat milk vs almond milk', color: '#12B981', active: true, hover: true }) +
+            demoWchItem({ title: 'UPF report for granola', color: '#F59E0B', fork: true }) +
+            demoWchItem({ title: 'What can I ask about oat milk?', color: '#2F6DF6', live: true }) +
+            demoWchItem({ title: 'Draft a verification email', color: '#8B5CF6', mcp: true }) +
+            demoWchItem({ title: 'Sodium claim on soup', color: '#EC4899' }) +
+            demoWchItem({ title: 'Guiding Stars vs category', color: '#06B6D4' }),
+        }),
+      )}
+      ${demoWchInfo()}
+    </div>`;
+  const nested = demoWchPane(
+    demoWchProject({
+      name: 'Portfolio', color: '#2F6DF6', count: 4,
+      children:
+        demoWchProject({
+          name: 'Claimed', color: '#12B981', count: 2,
+          children:
+            demoWchProject({ name: 'Oat', color: '#06B6D4', count: 0, collapsed: true, children: '' }) +
+            demoWchProject({ name: 'Granola', color: '#F59E0B', count: 0, collapsed: true, children: '' }),
+        }) +
+        demoWchProject({ name: 'Discovered', color: '#8B5CF6', count: 0, collapsed: true, children: '' }) +
+        demoWchProject({
+          name: 'Needs info', color: '#EC4899', count: 1,
+          children:
+            demoWchProject({ name: 'Soup', color: '#84CC16', count: 0, collapsed: true, children: '' }),
+        }),
+    }) +
+    demoWchProject({
+      name: 'Reports', color: '#EF4444', count: 2,
+      children:
+        demoWchProject({ name: 'Guiding Stars', color: '#F59E0B', count: 0, collapsed: true, children: '' }) +
+        demoWchProject({ name: 'GRAS', color: '#84CC16', count: 0, collapsed: true, children: '' }),
+    }) +
+    demoWchProject({
+      name: 'All conversations', count: 0, loose: true, collapsed: true,
+      children: '',
+    }),
+  );
+  return `
+    <div class="dsc-wch-catalog">
+      <div class="dsc-state-col dsc-wch-catalog-extreme">
+        <div class="dsc-sub-label">Extreme</div>
+        ${extreme}
+      </div>
+      <div class="dsc-wch-catalog-grid">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Empty</div>
+          ${empty}
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">No folders</div>
+          ${noFolders}
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Nested folders</div>
+          ${nested}
+        </div>
+      </div>
+    </div>`;
+}
+
 /* Compact header trail — Marketing Assets ghost + brand chip + ⋯, the cluster
    that sits left of the module kebab on Portfolio / Marketing Assets / Invoices. */
 function demoHeadTrail({ hover, open, disabled } = {}) {
@@ -1476,6 +2048,16 @@ function demoHeadTrail({ hover, open, disabled } = {}) {
         <span class="material-symbols-outlined">more_vert</span>
       </button>
     </div>`;
+}
+
+/* Icon-only .lir-btn — one glyph, four states. Appearance (crossword) is the
+   live leftover of this shape on the portfolio rail; do not invent a bell or
+   kebab here. Those live on the avatar and the module ⋯, not this primitive. */
+function demoLirBtn({ hover, open, disabled } = {}) {
+  const cls = ['lir-btn', hover ? 'is-hover' : '', open ? 'is-open' : ''].filter(Boolean).join(' ');
+  const dis = disabled ? ' disabled' : '';
+  const exp = open ? ' aria-expanded="true"' : '';
+  return `<button type="button" class="${cls}" aria-label="Appearance"${exp}${dis}><span class="material-symbols-outlined">crossword</span></button>`;
 }
 function demoFbBtn({ fb, tip, icon, on, more, hover }) {
   const cls = ['sc-fb-btn', more ? 'sc-fb-more' : '', on ? 'is-on' : '', hover ? 'is-hover' : ''].filter(Boolean).join(' ');
@@ -1538,16 +2120,380 @@ function demoActTick(type, { stacked, hover, id } = {}) {
   return `<span class="wa-activity-tick-stack${hover ? ' is-hover' : ''}">${tick}${tick}</span>`;
 }
 function demoJamEq(n) {
-  return Array.from({ length: n }, () => '<span></span>').join('');
+  return eqBarsMarkup(n);
+}
+
+function demoJamStrip(viz, playing, chips) {
+  const chipHtml = (chips || JAM_SONGS.slice(0, 4)).map((s, i) => {
+    const song = typeof s === 'string' ? { id: s, label: s } : s;
+    const on = playing && i === 0;
+    return `<button type="button" class="jam-song${on ? ' is-active' : ''}">${esc(song.label)}</button>`;
+  }).join('');
+  return `
+    <div class="jam-strip mi-jam-demo${playing ? ' is-playing' : ''} jam-viz-${viz}" data-jam-viz="${viz}" role="group" aria-label="${playing ? 'Playing' : 'Idle'} ${viz} jam bar">
+      <button type="button" class="jam-play" data-jam-catalog-play aria-label="${playing ? 'Pause the jam' : 'Play the jam'}" aria-pressed="${playing ? 'true' : 'false'}">
+        <span class="material-symbols-outlined jam-play-icon">${playing ? 'pause' : 'play_arrow'}</span>
+      </button>
+      <div class="jam-eq" aria-hidden="true">${eqBarsMarkup(20)}</div>
+      ${helixVizMarkup()}
+      <div class="jam-songs" role="group">${chipHtml}</div>
+    </div>`;
+}
+
+function demoJamCrate() {
+  const rows = JAM_SONGS.map((s) => `
+    <tr>
+      <td><button type="button" class="jam-song${s.id === 'tetris' ? ' is-active' : ''}" data-jam-catalog-select="${esc(s.id)}">${esc(s.label)}</button></td>
+      <td>${esc(s.artist || '—')}</td>
+      <td>${esc(s.durationLabel)}</td>
+      <td><code>${esc(s.fileName)}</code></td>
+      <td>${esc(s.fileSizeLabel)}</td>
+      <td>${esc(s.type)}</td>
+      <td>${s.bpm}</td>
+    </tr>`).join('');
+  return `
+    <div class="mi-jam-crate-wrap">
+      <div class="dsc-sub-label">Crate — every track</div>
+      <table class="mi-jam-crate" data-wtp-skip data-no-row-click>
+        <thead>
+          <tr>
+            <th>Track</th>
+            <th>Artist</th>
+            <th>Length</th>
+            <th>File</th>
+            <th>Size</th>
+            <th>Wave</th>
+            <th>BPM</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function wireJamCatalog(root) {
+  if (!root || root.__jamCatalogBound) return;
+  root.__jamCatalogBound = true;
+  root.addEventListener('click', (e) => {
+    const play = e.target.closest('[data-jam-catalog-play]');
+    if (play) {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleJam();
+      return;
+    }
+    const pick = e.target.closest('[data-jam-catalog-select]');
+    if (pick) {
+      e.preventDefault();
+      e.stopPropagation();
+      selectJam(pick.dataset.jamCatalogSelect);
+    }
+  });
+}
+
+/* Flat chat ⋮ menu matching pages/wiseai.html + js/wiseai-chat.js. groupifyChatMenu
+   (booted when this card opens) turns it into the live Conversation / Data /
+   Display / Helix / Activity columns, Admin kebab, and row hints. This
+   specimen pins data-admin-demo="off" so it stays the member-facing menu —
+   Admin-badged rows are gated by Appearance on the live chat, not shown here. */
+function demoChatMenuPop() {
+  const row = (sc, icon, label, extra) =>
+    `<button type="button" class="topbar-menu-item${extra || ''}" data-sc="${esc(sc)}">` +
+    `<span class="material-symbols-outlined topbar-menu-icon">${esc(icon)}</span>` +
+    `<span>${label}</span></button>`;
+  const sw = ({ sc, icon, label, on, admin, pink, cls }) => {
+    const klass = [
+      'topbar-menu-item',
+      admin ? 'topbar-menu-item--admin' : '',
+      'sc-mcp-item',
+      on ? 'is-on' : '',
+      cls || '',
+    ].filter(Boolean).join(' ');
+    const badge = admin ? '<span class="topbar-menu-badge">Admin</span>' : '';
+    const swCls = pink ? 'sc-switch sc-switch--pink' : 'sc-switch';
+    return `<button type="button" class="${klass}" data-sc="${esc(sc)}" role="menuitemcheckbox" aria-checked="${on ? 'true' : 'false'}">` +
+      `<span class="material-symbols-outlined topbar-menu-icon">${esc(icon)}</span>` +
+      `<span>${label}</span>${badge}` +
+      `<span class="${swCls}" aria-hidden="true"></span></button>`;
+  };
+  return `<div class="topbar-popover" data-popover-static data-chat-menu-demo data-admin-demo="off">
+    ${sw({ sc: 'history', icon: 'history', label: 'History &amp; Projects', on: false })}
+    ${row('new', 'add', 'Start new conversation')}
+    ${row('export', 'download', 'Export conversation')}
+    ${row('share', 'share', 'Share')}
+    ${row('file-library', 'auto_stories', 'File to Library')}
+    <div class="topbar-menu-divider"></div>
+    ${sw({ sc: 'turns', icon: 'alt_route', label: 'Turns', on: false, admin: true })}
+    ${sw({ sc: 'outputs', icon: 'dashboard_customize', label: 'Hide outputs &amp; sources', on: true, admin: true })}
+    <button type="button" class="topbar-menu-item topbar-menu-item--admin" data-sc="connect">
+      <span class="material-symbols-outlined topbar-menu-icon">hub</span>
+      <span>Connect a data source</span>
+      <span class="topbar-menu-badge">Admin</span>
+    </button>
+    <div class="topbar-menu-divider"></div>
+    ${sw({ sc: 'toggle-cards', icon: 'dashboard', label: 'Overview cards', on: false, admin: true, pink: true })}
+    ${sw({ sc: 'toggle-intent-chips', icon: 'label', label: 'Intent chips', on: true, admin: true, pink: true })}
+    ${sw({ sc: 'compact', icon: 'density_small', label: 'Compact spacing', on: true, admin: true, pink: true, cls: 'sc-compact-item' })}
+    ${sw({ sc: 'brandtext', icon: 'format_color_text', label: 'Brand AI text', on: false, admin: true, pink: true, cls: 'sc-brandtext-item' })}
+    ${sw({ sc: 'sheen', icon: 'auto_awesome', label: 'Input glow', on: true, admin: true, pink: true, cls: 'sc-sheen-item' })}
+    ${sw({ sc: 'bg-anim', icon: 'animation', label: 'Animation', on: true, admin: true, pink: true, cls: 'sc-bganim-item' })}
+    ${sw({ sc: 'activity-strip', icon: 'timeline', label: 'Activity strip', on: true, admin: true, pink: true, cls: 'sc-actstrip-item' })}
+    <div class="sc-stream-detail sc-actside-detail" data-admin-item="1">
+      <span class="sc-stream-detail-label">Strip side</span>
+      <div class="sc-stream-seg" role="radiogroup" aria-label="Activity strip side">
+        <button type="button" class="sc-stream-seg-btn is-on" data-sc="activity-strip-side" data-actside="left" role="radio" aria-checked="true">Left</button>
+        <button type="button" class="sc-stream-seg-btn" data-sc="activity-strip-side" data-actside="right" role="radio" aria-checked="false">Right</button>
+      </div>
+    </div>
+    <div class="topbar-menu-divider"></div>
+    ${sw({ sc: 'stream-toggle', icon: 'stream', label: 'Response streaming', on: true, cls: 'sc-stream-item' })}
+    <div class="sc-stream-detail">
+      <span class="sc-stream-detail-label">Streaming detail</span>
+      <div class="sc-stream-seg" role="radiogroup" aria-label="Response streaming detail">
+        <button type="button" class="sc-stream-seg-btn is-on" data-sc="stream-level" data-stream="full" role="radio" aria-checked="true">Full</button>
+        <button type="button" class="sc-stream-seg-btn" data-sc="stream-level" data-stream="steps" role="radio" aria-checked="false">Steps</button>
+        <button type="button" class="sc-stream-seg-btn" data-sc="stream-level" data-stream="final" role="radio" aria-checked="false">Final</button>
+      </div>
+    </div>
+    <div class="topbar-menu-divider"></div>
+    ${row('close', 'close', 'Close conversation', ' topbar-menu-item--danger')}
+  </div>`;
+}
+
+/* Stacked chat composer — same markup mountWISEcodeAIChat / wireChatComposer
+   expect. Leave `.fl-model-row` empty so wireChatComposer injects the live
+   database selector (never embed a data-popover-static Databases stub here —
+   that leaked into the default state). */
+function demoComposerAttachChip({ name, src, icon }) {
+  const thumb = src
+    ? `<span class="fl-attach-thumb" style="background-image:url('${esc(src)}')"></span>`
+    : `<span class="fl-attach-thumb fl-attach-thumb--icon"><span class="material-symbols-outlined">${esc(icon || 'image')}</span></span>`;
+  return `<span class="fl-attach-chip" title="${esc(name)}"><button type="button" class="fl-attach-x" aria-label="Remove ${esc(name)}"><span class="material-symbols-outlined">close</span></button><span class="fl-attach-name">${esc(name)}</span>${thumb}</span>`;
+}
+function demoComposerHtml({ value = '', attachments = [] } = {}) {
+  const hasAtt = attachments.length > 0;
+  const attHtml = hasAtt ? attachments.map(demoComposerAttachChip).join('') : '';
+  const text = value ? esc(value) : '';
+  return `
+      <div class="sc-input-row" data-wise-composer>
+        <div class="fl-input-wrap fl-input-wrap--lead fl-input-wrap--stacked${hasAtt ? ' has-attachments' : ''}">
+          <div class="fl-more-wrap">
+            <button type="button" class="fl-icon-btn fl-more-btn" title="Attach" aria-haspopup="menu" aria-expanded="false" aria-label="Attach"><span class="material-symbols-outlined">add</span></button>
+            <div class="fl-more-popover fl-more-popover--left" role="menu">
+              <button type="button" class="fl-more-item"><span class="material-symbols-outlined">attach_file</span><span>Attach</span></button>
+              <button type="button" class="fl-more-item"><span class="material-symbols-outlined">photo_camera</span><span>Camera</span></button>
+              <button type="button" class="fl-more-item"><span class="material-symbols-outlined">mic</span><span>Voice</span></button>
+              <div class="fl-more-divider" role="separator"></div>
+              <button type="button" class="fl-more-item"><span class="material-symbols-outlined">burst_mode</span><span>Load 3 example images</span></button>
+            </div>
+          </div>
+          <div class="fl-input-col">
+            <div class="fl-model-row"></div>
+            <div class="fl-input-line">
+              <textarea class="fl-input" rows="1" autocomplete="off" placeholder="Ask WISEcodeAI about any food\u2026">${text}</textarea>
+            </div>
+            <div class="fl-attachments" aria-label="Pending attachments">${attHtml}</div>
+          </div>
+          <button type="button" class="sc-send" title="Send"><span class="material-symbols-outlined">send</span></button>
+        </div>
+      </div>`;
+}
+const DEMO_COMPOSER_LONG =
+  "I'll walk you through building this product — photo, category, ingredients, the Nutrition Facts panel, allergens and the UPC. Start any way you like: upload a label, paste a URL, or type it in. Everything shows up live in Product Details on the right. It stays a draft until you hit Save to Portfolio.";
+const DEMO_COMPOSER_ATTS = [
+  { name: 'muffin-front.png', src: '../assets/portfolio/blueberry_muffins.png' },
+  { name: 'nutrition-panel.jpg', src: '../assets/portfolio/chocolate_chip_muffins.png' },
+  { name: 'ingredients.jpg', src: '../assets/portfolio/apple_cinnamon_muffins.png' },
+];
+
+/* Catalog App search — same groups as js/app-search.js (Transcripts /
+   Outputs / Reports). Default query is "oat milk" so the open list shows
+   several hits; typing filters this sample set. Hits stay in the card. */
+const DEMO_APP_SEARCH_Q = 'oat milk';
+const DEMO_APP_SEARCH_ROWS = [
+  { kind: 'transcript', icon: 'forum', title: 'Compare oat milk vs almond milk', where: 'WISEcodeAI · today', text: 'Compare oat milk vs almond milk. Scanning oat-milk products, added sugars, oils and gums.' },
+  { kind: 'transcript', icon: 'forum', title: 'Compare oat-milk brands for gut health', where: 'WISEcodeAI · yesterday', text: 'Compare the top oat-milk brands for gut health. Oatly Barista leads on gut-health score.' },
+  { kind: 'transcript', icon: 'forum', title: 'Best chocolate chip cookie with the least chocolate', where: 'WISEcodeAI · last week', text: 'Best chocolate chip cookie with the least chocolate. Show me a pretty report.' },
+  { kind: 'output', icon: 'bar_chart', title: 'Oat milk comparison', where: 'Visuals · v2', text: 'Side-by-side oat milk vs almond milk macros and gums.' },
+  { kind: 'output', icon: 'image', title: 'Oat milk nutrition panel', where: 'Results · today', text: 'Label photo from the oat milk reformulation.' },
+  { kind: 'output', icon: 'analytics', title: 'Worst-ranked cupcake · detail', where: 'Visuals · v1', text: 'Worst-ranked cupcake charts and trends.' },
+  { kind: 'report', icon: 'star', title: 'Guiding Stars Action Plan', where: 'Reports · Portfolio reports', text: 'Oat milk SKUs two stars from the next band. Prioritized path to more stars.' },
+  { kind: 'report', icon: 'verified_user', title: 'Portfolio GRAS', where: 'Reports · Portfolio reports', text: 'GRAS notes on oat milk gums and oils.', locked: true },
+  { kind: 'report', icon: 'description', title: 'Portfolio UPF', where: 'Reports · Portfolio reports', text: 'Ultra-processed food classification across the portfolio.' },
+];
+const DEMO_APP_SEARCH_LABELS = { transcript: 'Transcripts', output: 'Outputs', report: 'Reports' };
+
+function demoSearchToks(q) {
+  return String(q || '').toLowerCase().split(/[^\p{L}\p{N}%+.-]+/u).map((t) => t.trim()).filter(Boolean);
+}
+function demoSearchMark(text, toks) {
+  const raw = esc(text);
+  if (!toks.length) return raw;
+  const parts = toks.slice().sort((a, b) => b.length - a.length).map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  return raw.replace(new RegExp(`(${parts.join('|')})`, 'ig'), '<mark>$1</mark>');
+}
+function demoSearchHitHTML(row, toks) {
+  const lock = row.locked ? '<span class="wise-app-search-lock material-symbols-outlined" aria-hidden="true">lock</span>' : '';
+  const snip = row.text ? `<span class="wise-app-search-hit-snip">${demoSearchMark(row.text, toks)}</span>` : '';
+  return `<button type="button" class="wise-app-search-hit" role="option">
+    <span class="material-symbols-outlined wise-app-search-hit-ico" aria-hidden="true">${esc(row.icon || 'search')}</span>
+    <span class="wise-app-search-hit-body">
+      <span class="wise-app-search-hit-title">${demoSearchMark(row.title, toks)}${lock}</span>
+      <span class="wise-app-search-hit-where">${esc(row.where)}</span>
+      ${snip}
+    </span>
+  </button>`;
+}
+function demoSearchResultsHTML(q) {
+  const toks = demoSearchToks(q);
+  if (!toks.length) return '';
+  const hay = (row) => `${row.title} ${row.where} ${row.text}`.toLowerCase();
+  const hits = DEMO_APP_SEARCH_ROWS.filter((row) => toks.every((t) => hay(row).includes(t)));
+  if (!hits.length) {
+    return `<div class="wise-app-search-empty">No files, reports, or documents match <strong>${esc(String(q).trim())}</strong>.</div>`;
+  }
+  return ['transcript', 'output', 'report'].map((kind) => {
+    const items = hits.filter((row) => row.kind === kind);
+    if (!items.length) return '';
+    return `<section class="wise-app-search-group">
+      <h3 class="wise-app-search-group-title">${esc(DEMO_APP_SEARCH_LABELS[kind])}</h3>
+      ${items.map((row) => demoSearchHitHTML(row, toks)).join('')}
+    </section>`;
+  }).join('');
+}
+function demoAppSearchHtml(q = DEMO_APP_SEARCH_Q) {
+  const has = String(q || '').trim().length > 0;
+  const results = demoSearchResultsHTML(q);
+  return `
+      <div class="wise-app-search mi-search-demo${has ? ' has-q is-open' : ''}" data-app-search-demo>
+        <div class="wise-app-search-inner">
+          <div class="wise-app-search-field">
+            <span class="wise-app-search-ph" aria-hidden="true">
+              <span class="material-symbols-outlined">search</span>
+              <span class="wise-app-search-ph-label">Search reports, files, and documents</span>
+            </span>
+            <input type="search" class="wise-app-search-input" value="${esc(q)}"
+              placeholder="Search reports, files, and documents"
+              autocomplete="off" spellcheck="false"
+              aria-label="Search reports, files, and documents" />
+            <button type="button" class="wise-app-search-clear" ${has ? '' : 'hidden '}aria-label="Clear search">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+        </div>
+        <div class="wise-app-search-results" role="listbox" aria-label="Search results"${has && results ? '' : ' hidden'}>${results}</div>
+      </div>`;
+}
+function wireAppSearchDemo(root) {
+  if (!root || root.dataset.searchDemoBooted === '1') return;
+  const input = root.querySelector('.wise-app-search-input');
+  const clear = root.querySelector('.wise-app-search-clear');
+  const panel = root.querySelector('.wise-app-search-results');
+  if (!input || !panel) return;
+  root.dataset.searchDemoBooted = '1';
+  const render = () => {
+    const q = input.value;
+    const has = q.trim().length > 0;
+    root.classList.toggle('has-q', has);
+    if (clear) clear.hidden = !has;
+    if (!has) {
+      panel.innerHTML = '';
+      panel.hidden = true;
+      root.classList.remove('is-open');
+      return;
+    }
+    panel.innerHTML = demoSearchResultsHTML(q);
+    panel.hidden = false;
+    root.classList.add('is-open');
+  };
+  input.addEventListener('input', render);
+  input.addEventListener('focus', () => { if (input.value.trim()) render(); });
+  clear?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    input.value = '';
+    render();
+    input.focus();
+  });
+  panel.addEventListener('mousedown', (e) => {
+    if (e.target.closest('.wise-app-search-hit')) e.preventDefault();
+  });
+}
+
+/* Catalog twin of the floating Roll · Crawl · Walk · Run stadium
+   (js/cwr-toggle.js). The live widget is a vertical column; this helper
+   freezes Run-selected plus hover on every mode, with the include /
+   exclude card that the live hover opens. Copy stays in lockstep with META. */
+const CWR_DEMO_MODES = [
+  {
+    id: 'roll', icon: 'cached', label: 'Roll',
+    desc: 'SaaS core only — no chat, no extra destinations',
+    includes: 'Overview, Product Portfolio, Reports, Profile, Invoices, Marketing Assets, and WISEcode Admin (Organizations, User Management, Audit Queue, Quick Invite, Admin Utils). Remaining modules fill the row.',
+    excludes: 'Chat, the composer, History (the History module, the History icon, History in the nav, and the new-chat circle), WISEcodeAI (Chat, Library, Ingredient Browser), Comparison, NON-UPF Dashboard, AI Dashboard, Reformulation, and the Studio & AI upgrade card.',
+  },
+  {
+    id: 'crawl', icon: 'child_care', label: 'Crawl',
+    desc: 'Full SaaS nav — still no chat',
+    includes: 'Every primary-nav destination (the full SaaS set). Remaining modules fill the row.',
+    excludes: 'Chat surfaces, the composer, and History (the History module, the History icon, History in the nav, and the new-chat circle).',
+  },
+  {
+    id: 'walk', icon: 'directions_walk', label: 'Walk',
+    desc: 'Chat on — chips and widths, no typing',
+    includes: 'Chat, intent chips, four-tier widths (single, double, triple, fill), and the full primary nav including History.',
+    excludes: 'The composer — the typing rail is hidden, so you cannot type or send.',
+  },
+  {
+    id: 'run', icon: 'directions_run', label: 'Run',
+    desc: 'Full experience — unlocked composer',
+    includes: 'Everything in Walk, plus an unlocked composer docked at the bottom of the chat. You can type and send.',
+    excludes: 'Nothing — this is the full experience.',
+  },
+];
+
+function demoCwrPill(hoverId, selectedId = 'run') {
+  return `<div class="mi-cwr" role="radiogroup" aria-label="Rollout mode">` +
+    CWR_DEMO_MODES.map((m) => {
+      const checked = m.id === selectedId;
+      const hover = m.id === hoverId;
+      return `<button type="button" class="cwr-btn${hover ? ' is-hover' : ''}" role="radio" aria-checked="${checked ? 'true' : 'false'}" tabindex="-1">` +
+        `<span class="material-symbols-outlined" aria-hidden="true">${m.icon}</span>` +
+        `<span class="cwr-btn-label">${esc(m.label)}</span>` +
+        `</button>`;
+    }).join('') +
+    `</div>`;
+}
+
+function demoCwrTip(mode) {
+  return `<div class="mi-cwr-tip" role="tooltip">` +
+    `<div class="mi-cwr-tip-title">${esc(mode.label)}</div>` +
+    `<p class="mi-cwr-tip-desc">${esc(mode.desc)}</p>` +
+    `<div class="mi-cwr-tip-block"><div class="mi-cwr-tip-k">Includes</div><p>${esc(mode.includes)}</p></div>` +
+    `<div class="mi-cwr-tip-block"><div class="mi-cwr-tip-k">Excludes</div><p>${esc(mode.excludes)}</p></div>` +
+    `</div>`;
+}
+
+function demoCwrCatalog() {
+  const rest = `<div class="dsc-state-col">
+          <div class="dsc-sub-label">Run selected</div>
+          ${demoCwrPill(null)}
+        </div>`;
+  const hovers = CWR_DEMO_MODES.map((m) => `<div class="dsc-state-col mi-cwr-hover-col">
+          <div class="dsc-sub-label">Hover on ${esc(m.label)}</div>
+          <div class="mi-cwr-hover-pair">
+            ${demoCwrPill(m.id)}
+            ${demoCwrTip(m)}
+          </div>
+        </div>`).join('');
+  return `<div class="dsc-states dsc-states--cwr">${rest}${hovers}</div>`;
 }
 
 const COMPONENTS = [
   {
     name: 'Buttons',
     wide: true,
-    cls: '.dash-btn --primary / --ghost · .dash-text-link · .pf-head-btn --ghost · .pf-brand-chip',
-    used: 'Non-UPF Dashboard · Reports · Verification CTAs · Reformulation · Product Portfolio · Marketing Assets · Invoices',
-    note: 'Every interactive control in this library shows its states side by side. Default is rest; Hover is forced with <code>.is-hover</code> so it stays visible; Disabled uses the native attribute. Text links are the tertiary action — not a button. The <strong>header trail</strong> is the compact 28px pair that sits left of the module ⋯: Marketing Assets (ghost pill) and the brand chip.',
+    cls: '.dash-btn --primary / --ghost · .dash-text-link · .pf-head-btn --ghost · .pf-brand-chip · .lir-btn',
+    used: 'Non-UPF Dashboard · Reports · Verification CTAs · Reformulation · Product Portfolio · Marketing Assets · Invoices · Comparison',
+    note: 'Every interactive control in this library shows its states side by side. Default is rest; Hover is forced with <code>.is-hover</code> so it stays visible; Disabled uses the native attribute. Text links are the tertiary action — not a button. The <strong>header trail</strong> is the compact 28px pair that sits left of the module ⋯: Marketing Assets (ghost pill) and the brand chip. <strong>Icon-only</strong> is the same state set for a glyph with no label \u2014 Appearance on the portfolio rail, and dock toggles. One icon, four states. The hover card that names the glyph is <em>Tooltip</em>; alerts live on the avatar, and ⋯ is <em>Module \u22ef menu</em>.',
     noteIcon: 'smart_button',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -1596,6 +2542,27 @@ const COMPONENTS = [
             ${demoHeadTrail({ disabled: true })}
           </div>
         </div>
+      </div>
+      <div class="dsc-sub" style="width:100%;margin-top:8px">
+        <div class="dsc-sub-label">Icon-only · Appearance</div>
+        <div class="dsc-states" style="width:100%">
+          <div class="dsc-state-col">
+            <div class="dsc-sub-label">Default</div>
+            ${demoLirBtn()}
+          </div>
+          <div class="dsc-state-col">
+            <div class="dsc-sub-label">Hover</div>
+            ${demoLirBtn({ hover: true })}
+          </div>
+          <div class="dsc-state-col">
+            <div class="dsc-sub-label">Open</div>
+            ${demoLirBtn({ open: true })}
+          </div>
+          <div class="dsc-state-col">
+            <div class="dsc-sub-label">Disabled</div>
+            ${demoLirBtn({ disabled: true })}
+          </div>
+        </div>
       </div>`,
   },
   {
@@ -1603,7 +2570,7 @@ const COMPONENTS = [
     wide: true,
     cls: '.chip · .ws-intent-chip · .sc-reply-chips .chip (+ .chip-primary, .chip-dive, .chip--match, .ms-chip.is-selected)',
     used: 'WISEcodeAI dock & Studio welcome, module shortcuts, Auth signup, Comparison, in-conversation reply chips',
-    note: 'The compact 28px chip. Welcome shortcuts, module intents, and reply chips all share <code>.chip</code> at <code>height: 28px</code> with <code>--fs-label</code> type. States: Default, Hover, Open/selected (<code>.is-selected</code> / match). Not the same as <em>Output chips</em> — those are the in-transcript previews that open the sticky Output module. Its large-format sibling — <em>Large intent cards</em> — sits beside it.',
+    note: 'The compact 28px chip. Welcome shortcuts, module intents, and reply chips all share <code>.chip</code> at <code>height: 28px</code> with <code>--fs-label</code> type. States: Default, Hover, Open/selected (<code>.is-selected</code> / match). <strong>Primary rule:</strong> a solid blue <code>.chip-primary</code> always uses a <strong>filled</strong> icon (<code>FILL 1</code>), never outlined — ghost / tinted / welcome chips stay outlined. Not the same as <em>Output chips</em> — those are the in-transcript previews that open the sticky Output module. Its large-format sibling — <em>Large intent cards</em> — sits beside it.',
     noteIcon: 'straighten',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -1638,7 +2605,7 @@ const COMPONENTS = [
     wide: true,
     cls: '.sc-surface-card · .sc-surface-stack · .sc-surface-vtag · .wa-merge-chip',
     used: 'WISEcodeAI Studio Chat · WISEcodeAI dock · sticky Output rail',
-    note: 'When a turn opens Results or Visuals, a chip lands in the transcript: a <strong>52px</strong> preview on the left, the output name on the right, gold stroke. Every chip is versioned — a compact <code>vN</code> badge rides the thumb, even on the first pass. Redo the same output and the chip stacks every version at that same 52px (oldest first, newest raised). Hover fans the stack; the version currently open on the right wears a stronger ring. Tapping a thumb opens <em>that</em> version in the sticky Output module — and the rail on the right shows <strong>one chip per version</strong>, same size, same badge, so the stack and the pane never disagree.',
+    note: 'When a turn opens Results or Visuals, a chip lands in the transcript: a <strong>52px</strong> preview on the left, the output name on the right, gold stroke. Every chip is versioned — a compact <code>vN</code> badge rides the thumb, even on the first pass. Redo the same output and the chip stacks every version at that same 52px (oldest first, newest raised). <strong>Hover fans the stack</strong> (tight −28px overlap → −4px peek); the gold stroke brightens. The version currently open on the right wears a stronger ring. Tapping a thumb opens <em>that</em> version in the sticky Output module — and the rail on the right shows <strong>one chip per version</strong>, same size, same badge, so the stack and the pane never disagree. Live fan + Replay live in <em>Motion &amp; Resize → Output chip fan</em>.',
     noteIcon: 'layers',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -1717,43 +2684,26 @@ const COMPONENTS = [
   {
     name: 'Chat composer',
     wide: true,
-    cls: '.fl-input-wrap--stacked · .fl-more-btn · .fl-db-trigger · .fl-input · .sc-send',
+    cls: '.fl-input-wrap--stacked · .fl-more-btn · .fl-db-trigger · .fl-input · .sc-send · .fl-attachments',
     used: 'WISEcodeAI dock (every page) · Studio Chat · Reformulation / Add Product / Studio&AI panes',
-    note: 'The stacked composer from the chat module — not a one-line pill. <code>+</code> attach on the left (Voice lives in that menu), database selector left of send, lock beside the placeholder, send uses the <code>send</code> glyph. Same markup <code>mountWISEcodeAIChat</code> builds in <code>js/wiseai-chat.js</code>. The full database picker is <em>Database roster</em>; pending files are <em>Attachments</em>.',
+    note: 'The stacked composer from the chat module — same markup <code>mountWISEcodeAIChat</code> builds. Shown at <strong>single-pane width</strong> (\u2264420px), where text sits on its own row and <code>+</code> / database / send hold the bottom line. <strong>Default</strong> is empty; <strong>Lots of text</strong> soft-wraps and grows the pill upward; <strong>Images attached</strong> opens a chip row between the text and the controls. The living brand sheen on the pill edge lives in <em>Motion &amp; Resize \u2192 Chat composer sheen</em>. The full database picker is <em>Database roster</em>; chip anatomy alone is <em>Attachments</em>.',
     noteIcon: 'chat',
     demo: `
-      <div class="sc-input-row" data-wise-composer>
-        <div class="fl-input-wrap fl-input-wrap--lead fl-input-wrap--stacked">
-          <div class="fl-more-wrap">
-            <button type="button" class="fl-icon-btn fl-more-btn" title="Attach" aria-haspopup="menu" aria-expanded="false" aria-label="Attach"><span class="material-symbols-outlined">add</span></button>
-            <div class="fl-more-popover fl-more-popover--left" role="menu" data-popover-static>
-              <button type="button" class="fl-more-item"><span class="material-symbols-outlined">attach_file</span><span>Attach</span></button>
-              <button type="button" class="fl-more-item"><span class="material-symbols-outlined">photo_camera</span><span>Camera</span></button>
-              <button type="button" class="fl-more-item"><span class="material-symbols-outlined">mic</span><span>Voice</span></button>
-              <div class="fl-more-divider" role="separator"></div>
-              <button type="button" class="fl-more-item"><span class="material-symbols-outlined">burst_mode</span><span>Load 3 example images</span></button>
-            </div>
-          </div>
-          <div class="fl-input-col">
-            <div class="fl-model-row">
-              <div class="fl-model-wrap fl-model-wrap--lead">
-                <button type="button" class="fl-db-trigger fl-model-btn" title="Active database — click to switch" aria-haspopup="menu" aria-expanded="false">
-                  <span class="fl-db-trigger-label">Postgres (DEV)</span>
-                  <span class="material-symbols-outlined fl-db-trigger-caret" aria-hidden="true">expand_more</span>
-                </button>
-                <div class="fl-model-popover fl-db-popover fl-db-popover--lead" role="menu" data-popover-static>
-                  <div class="fl-db-top">
-                    <div class="fl-db-pop-head"><span class="fl-db-pop-title">Databases</span></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="fl-input-line">
-              <textarea class="fl-input" rows="1" autocomplete="off" placeholder="Ask WISEcodeAI about any food\u2026"></textarea>
-            </div>
-            <div class="fl-attachments" aria-label="Pending attachments"></div>
-          </div>
-          <button type="button" class="sc-send" title="Send"><span class="material-symbols-outlined">send</span></button>
+      <div class="dsc-states dsc-states--composer" style="width:100%">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Default</div>
+          ${demoComposerHtml()}
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Lots of text</div>
+          ${demoComposerHtml({ value: DEMO_COMPOSER_LONG })}
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Images attached</div>
+          ${demoComposerHtml({
+            value: 'Check these three label photos for the muffin reformulation.',
+            attachments: DEMO_COMPOSER_ATTS,
+          })}
         </div>
       </div>`,
   },
@@ -1791,7 +2741,7 @@ const COMPONENTS = [
     cat: 'Chat & drawers',
     cls: '.sc-fb · .sc-fb-btn · .sc-fb-reasons · .sc-fb-menu · .sc-tip · .sc-fb-id',
     used: 'Every WISEcodeAI answer — the row under the last paragraph, before intent chips',
-    note: 'Left cluster is the quick trio: <strong>Copy</strong> (flashes Copied), <strong>Accurate</strong> and <strong>Not accurate</strong> (each opens a reason popover with chips + optional note; submitting posts a follow-up turn). The far-right <strong>\u22ef</strong> spills timestamp (clock \u2194 relative), Re-run in new chat, Edit in new chat, Fork a turn, and the turn ID. Hover/focus uses the styled tip card — never a native title bubble. Icons are outlined at rest and fill when on.',
+    note: 'Left cluster is the quick trio: <strong>Copy</strong> (flashes Copied), <strong>Accurate</strong> and <strong>Not accurate</strong> (each opens a reason popover with chips + optional note; submitting posts a follow-up turn). The far-right <strong>\u22ef</strong> spills timestamp (clock \u2194 relative), Re-run in new chat, Edit in new chat, Fork a turn, and the turn ID. Hover/focus uses the shared theme-aware tip card — never a native title bubble and never a second always-dark card. Icons are outlined at rest and fill when on.',
     noteIcon: 'thumbs_up_down',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -1819,7 +2769,7 @@ const COMPONENTS = [
           <div class="dsc-sub-label">Hover tip</div>
           <span style="position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:10px">
             ${demoFbBtn({ fb: 'copy', tip: 'Copy answer', icon: 'content_copy' })}
-            <span class="dsc-tip sc-tip is-vis" style="position:static;transform:none;opacity:1">Copy answer</span>
+            <span class="dsc-tip is-vis" style="position:static;transform:none;opacity:1">Copy answer</span>
           </span>
         </div>
       </div>`,
@@ -1884,13 +2834,14 @@ const COMPONENTS = [
   },
   {
     name: 'Token readout',
+    wide: true,
     cat: 'Chat & drawers',
     cls: '.sc-activity · .sc-activity-dots · .sc-activity-pop',
     used: 'Under the composer on every chat when activity: true — this-turn and conversation tokens',
     note: 'Three dots under the input. Idle is quiet; thinking pulses brand-blue. Hover opens a read-out of this-turn and conversation tokens, cache share, and a demo cost. Not the edge landmark rail \u2014 that is <em>Activity strip</em>.',
     noteIcon: 'more_horiz',
     demo: `
-      <div class="dsc-states">
+      <div class="dsc-states dsc-states--token">
         <div class="dsc-state-col">
           <div class="dsc-sub-label">Idle</div>
           <div class="sc-activity">
@@ -1907,14 +2858,14 @@ const COMPONENTS = [
             </div>
           </div>
         </div>
-        <div class="dsc-state-col">
+        <div class="dsc-state-col dsc-state-col--token-open">
           <div class="dsc-sub-label">Hover \u00b7 read-out open</div>
           <div class="sc-activity is-open">
             <div class="sc-activity-wrap">
               <div class="sc-activity-dots" tabindex="0" role="button" aria-label="WISEcodeAI activity"><span></span><span></span><span></span></div>
               <div class="sc-activity-pop" role="tooltip">
-                <div class="sc-activity-row"><span class="sc-activity-key">This turn</span><span class="sc-activity-val">1,284 in \u00b7 412 out</span></div>
-                <div class="sc-activity-row"><span class="sc-activity-key">Conversation</span><span class="sc-activity-val">8.1k tokens \u00b7 $0.04</span></div>
+                <div class="sc-activity-row"><span class="sc-activity-key">This turn</span><span class="sc-activity-val">1.3k in / 412 out \u00b7 <em>1.0k cached (78%)</em> \u00b7 <b>$0.0030</b></span></div>
+                <div class="sc-activity-row"><span class="sc-activity-key">Conversation</span><span class="sc-activity-val">8.1k in / 2.4k out \u00b7 <em>6.4k cached (79%)</em> \u00b7 <b>$0.04</b> \u00b7 3 turns</span></div>
               </div>
             </div>
           </div>
@@ -1925,9 +2876,9 @@ const COMPONENTS = [
     name: 'Chat \u22ef menu',
     wide: true,
     cat: 'Chat & drawers',
-    cls: '.panel-more-btn \u00b7 .topbar-popover \u00b7 .sc-mcp-item \u00b7 .sc-switch \u00b7 .sc-stream-seg',
-    used: 'The three-dot on every chat module \u2014 History, File to Library, Turns, Activity strip, streaming, helix, Share, Export',
-    note: 'Same compact <code>.topbar-popover</code> shell as other module menus. Toggle rows use a switch, not a row highlight. Activity strip and Response streaming each grow a segmented picker underneath (Left/Right, Full/Steps/Final). Helix knobs live in this menu too \u2014 the field itself is in Motion &amp; Resize. Admin rows wear the pink switch + Admin badge.',
+    cls: '.panel-more-btn \u00b7 .topbar-popover.sc-menu-grouped \u00b7 .sc-menu-group \u00b7 .sc-mcp-item \u00b7 .sc-switch \u00b7 .sc-menu-admin-btn',
+    used: 'The three-dot on every chat module \u2014 Conversation, streaming, Close. Admin-badged rows stay off this specimen',
+    note: 'Same <code>.topbar-popover</code> shell, grouped the way the live chat does. This card is the <strong>member-facing</strong> menu: History, new, Export, Share, File to Library, Response streaming, and Close. Admin-badged rows (Turns, Hide outputs, Connect a data source, Overview cards, Intent chips, Compact spacing, Brand AI text, Input glow, Animation, Activity strip) are not part of this menu. They appear on the live chat when <em>Internal admins</em> is on in Appearance, or from the kebab in the menu\u2019s top-right.',
     noteIcon: 'more_vert',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -1939,36 +2890,11 @@ const COMPONENTS = [
           <div class="dsc-sub-label">Hover</div>
           <button type="button" class="panel-more-btn is-hover" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>
         </div>
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Open \u00b7 drawers, strip, streaming</div>
-          <div class="panel-more-wrap" style="position:relative">
+        <div class="dsc-state-col" style="flex:1 1 100%">
+          <div class="dsc-sub-label">Open \u00b7 everyone</div>
+          <div class="panel-more-wrap dsc-chat-menu-demo" style="position:relative">
             <button type="button" class="panel-more-btn is-open" aria-label="More options" aria-expanded="true"><span class="material-symbols-outlined">more_vert</span></button>
-            <div class="topbar-popover" data-popover-static style="position:static;margin-top:8px;max-width:280px">
-              <button type="button" class="topbar-menu-item"><span class="material-symbols-outlined topbar-menu-icon">add</span><span>Start new conversation</span></button>
-              <button type="button" class="topbar-menu-item"><span class="material-symbols-outlined topbar-menu-icon">auto_stories</span><span>File to Library</span></button>
-              <button type="button" class="topbar-menu-item sc-mcp-item is-on" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">history</span><span>History &amp; Projects</span><span class="sc-switch" aria-hidden="true"></span></button>
-              <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">alt_route</span><span>Turns</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>
-              <div class="topbar-menu-divider"></div>
-              <button type="button" class="topbar-menu-item sc-mcp-item is-on" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">timeline</span><span>Activity strip</span><span class="sc-switch" aria-hidden="true"></span></button>
-              <div class="sc-stream-detail">
-                <span class="sc-stream-detail-label">Strip side</span>
-                <div class="sc-stream-seg" role="radiogroup" aria-label="Activity strip side">
-                  <button type="button" class="sc-stream-seg-btn is-on" role="radio" aria-checked="true">Left</button>
-                  <button type="button" class="sc-stream-seg-btn" role="radio" aria-checked="false">Right</button>
-                </div>
-              </div>
-              <button type="button" class="topbar-menu-item sc-mcp-item is-on" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">stream</span><span>Response streaming</span><span class="sc-switch" aria-hidden="true"></span></button>
-              <div class="sc-stream-detail">
-                <span class="sc-stream-detail-label">Streaming detail</span>
-                <div class="sc-stream-seg" role="radiogroup" aria-label="Response streaming detail">
-                  <button type="button" class="sc-stream-seg-btn is-on" role="radio" aria-checked="true">Full</button>
-                  <button type="button" class="sc-stream-seg-btn" role="radio" aria-checked="false">Steps</button>
-                  <button type="button" class="sc-stream-seg-btn" role="radio" aria-checked="false">Final</button>
-                </div>
-              </div>
-              <div class="topbar-menu-divider"></div>
-              <button type="button" class="topbar-menu-item topbar-menu-item--danger"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close conversation</span></button>
-            </div>
+            ${demoChatMenuPop()}
           </div>
         </div>
       </div>`,
@@ -2008,9 +2934,9 @@ const COMPONENTS = [
     name: 'Sticky modules',
     wide: true,
     cat: 'Chat & drawers',
-    cls: '.sticky-chat \u00b7 .sticky-mod.is-sticky \u00b7 #modules-row (z-index 3 / 1 / 0)',
+    cls: '.sticky-chat \u00b7 .sticky-mod.is-sticky \u00b7 #modules-row (z-index 3 / 2 / 1 / 0)',
     used: 'Every #modules-row page with a chat \u2014 History left, Output / NFP / Turns right, progress and Report nested one layer deeper',
-    note: 'Sticky is the only drawer mode \u2014 no on/off switch. Think of it as a <strong>WISE utility belt</strong>: the chat is the buckle (z-index 3). Drawers to its right tuck behind it, shorter and centred, with the chat-facing corners squared so they read as emerging from the card, not floating beside it. History tucks left. Next-level drawers (progress tracker, Help contact, generated Report) sit one layer under their parent (z-index 0, ~30px shorter still). Opening a module \u22ef never lifts a drawer over the chat.',
+    note: 'Sticky is the only drawer mode \u2014 no on/off switch. Think of it as a <strong>WISE utility belt</strong>: the chat is the buckle (z-index 3). Output sits at z-index 2, under the chat and over peer drawers. Drawers to its right tuck behind it, shorter and centred, with the chat-facing corners squared so they read as emerging from the card, not floating beside it. History tucks left. Next-level drawers (progress tracker, Help contact, generated Report) sit one layer under their parent (z-index 0, ~30px shorter still). Opening a module \u22ef never lifts a drawer over the chat.',
     noteIcon: 'layers',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -2019,7 +2945,7 @@ const COMPONENTS = [
           <div class="mi-belt" aria-label="Sticky module stack">
             <aside class="mi-belt-mod mi-belt-hist"><span class="mi-belt-name">History</span><span class="mi-belt-z">left of chat</span></aside>
             <section class="mi-belt-chat"><span class="mi-belt-name">Chat</span><span class="mi-belt-z">z 3 \u00b7 buckle</span></section>
-            <aside class="mi-belt-mod mi-belt-out"><span class="mi-belt-name">Output</span><span class="mi-belt-z">z 1</span></aside>
+            <aside class="mi-belt-mod mi-belt-out"><span class="mi-belt-name">Output</span><span class="mi-belt-z">z 2</span></aside>
             <aside class="mi-belt-mod mi-belt-nfp"><span class="mi-belt-name">Nutrition Facts</span><span class="mi-belt-z">z 1</span></aside>
             <aside class="mi-belt-mod mi-belt-prog"><span class="mi-belt-name">Progress</span><span class="mi-belt-z">z 0 \u00b7 nested</span></aside>
           </div>
@@ -2036,35 +2962,26 @@ const COMPONENTS = [
   },
   {
     name: 'What can I ask?',
-    wide: true,
+    stackThemes: true,
     cat: 'Chat & drawers',
-    cls: '.wch-ask-panel \u00b7 .wch-ask-card \u00b7 .wch-ask-insert \u00b7 .sc-ask-help',
-    used: 'Every chat \u2014 gold link under the composer, matching intent chip, and a break-out-able sticky panel',
-    note: 'Opens as a right-of-chat drawer (same shell as History / Turns). Tap a card to ask it now; the insert icon drops the prompt into the composer to tweak first. The panel can break out as its own sticky module. Headline is serif. The gold shimmer on the below-input link lives in Motion &amp; Resize.',
+    cls: '.wch-ask-panel \u00b7 .wch-ask-cap \u00b7 .wch-ask-prompt \u00b7 .wch-ask-insert \u00b7 .sc-ask-help',
+    used: 'Every chat \u2014 gold link under the composer and matching intent chip open this overlay inside the chat',
+    note: 'The overlay that opens inside the chat \u2014 same panel as WISEcodeAI. Headline is serif. Search, topic filters, and Catalog / A\u2013Z are live. Tap a prompt or use the insert icon; the gold shimmer lives in Motion &amp; Resize.',
     noteIcon: 'help',
-    demo: `
-      <div class="dsc-states" style="width:100%">
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Below-input link</div>
-          <button type="button" class="sc-ask-help" aria-label="What can I ask?"><span aria-hidden="true">${motionShimmer('What can I ask?')}</span></button>
-        </div>
-        <div class="dsc-state-col" style="flex:1 1 280px">
-          <div class="dsc-sub-label">Card \u00b7 default</div>
-          <button type="button" class="wch-ask-card" title="Ask: Look up a product by barcode">
-            <span class="wch-ask-ico"><span class="material-symbols-outlined">qr_code_scanner</span></span>
-            <span class="wch-ask-card-body"><span class="wch-ask-card-title">Look up a product by barcode</span><span class="wch-ask-card-desc">Paste a UPC or point the camera at the package.</span></span>
-            <span class="wch-ask-insert" title="Insert into the message box"><span class="material-symbols-outlined">chat_add_on</span></span>
-          </button>
-        </div>
-        <div class="dsc-state-col" style="flex:1 1 280px">
-          <div class="dsc-sub-label">Card \u00b7 hover (insert shows)</div>
-          <button type="button" class="wch-ask-card is-hover" title="Ask: Compare two products">
-            <span class="wch-ask-ico"><span class="material-symbols-outlined">compare</span></span>
-            <span class="wch-ask-card-body"><span class="wch-ask-card-title">Compare two products</span><span class="wch-ask-card-desc">Side-by-side processing, additives, and stars.</span></span>
-            <span class="wch-ask-insert" title="Insert into the message box" style="opacity:.7"><span class="material-symbols-outlined">chat_add_on</span></span>
-          </button>
-        </div>
-      </div>`,
+    demoCustom() {
+      return `
+        <div class="dsc-ask-catalog">
+          <div class="dsc-sub-label">Triggers \u2014 gold link and matching intent chip</div>
+          <div class="dsc-ask-triggers">
+            <button type="button" class="sc-ask-help" data-ask-open-all aria-label="What can I ask?"><span aria-hidden="true">${motionShimmer('What can I ask?')}</span></button>
+            <button type="button" class="chip ws-intent-chip ws-intent-chip--askhelp" data-ask-open-all aria-label="What can I ask?">
+              <span class="material-symbols-outlined">help</span>
+              <span class="sc-ask-shimmer" aria-hidden="true">${motionShimmer('What can I ask?')}</span>
+            </button>
+          </div>
+          ${themedDemoHTML(demoAskLiveHtml(), { stack: true })}
+        </div>`;
+    },
   },
   {
     name: 'Turns module',
@@ -2140,7 +3057,7 @@ const COMPONENTS = [
       <div class="dsc-states" style="width:100%">
         <div class="dsc-state-col">
           <div class="dsc-sub-label">Pending in composer</div>
-          <div class="fl-attachments" style="display:flex;flex-wrap:wrap;gap:6px">
+          <div class="fl-attachments">
             <span class="fl-attach-chip"><span class="fl-attach-thumb" style="background-image:url('../assets/portfolio/blueberry_muffins.png')"></span><span class="fl-attach-name">muffin-front.png</span><button type="button" class="fl-attach-x" aria-label="Remove"><span class="material-symbols-outlined">close</span></button></span>
             <span class="fl-attach-chip"><span class="fl-attach-thumb fl-attach-thumb--icon"><span class="material-symbols-outlined">description</span></span><span class="fl-attach-name">spec.pdf</span><button type="button" class="fl-attach-x" aria-label="Remove"><span class="material-symbols-outlined">close</span></button></span>
           </div>
@@ -2157,35 +3074,38 @@ const COMPONENTS = [
   {
     name: 'Image lightbox',
     cat: 'Overlays',
-    cls: '.wai-img-scrim \u00b7 .wai-img-modal \u00b7 .wai-img-close',
-    used: 'Chat \u2014 opened from an attachment thumbnail in the thread or the composer',
-    note: 'Full-size preview on a scrim. Closes on backdrop click, the close button, or Escape. Same shell in light and dark.',
+    wide: true,
+    cls: '.dash-modal--panel \u00b7 .dash-banner-preview \u00b7 .dash-banner-drop \u00b7 .dash-banner-url \u00b7 .wai-img-modal',
+    used: 'View / Add Product photo editor \u00b7 Chat attachment preview (image only \u2014 no fields)',
+    note: 'The full photo editor from View Product: preview, upload / drag-and-drop, a paste-a-URL field, then Cancel and Replace. Chat attachments reuse the same preview shell without the bottom fields. Closes on backdrop, the close button, or Escape.',
     noteIcon: 'photo',
     demo: `
-      <div class="wai-img-modal" data-modal-static style="position:relative;max-width:280px;width:100%">
-        <div class="wai-img-head">
-          <span class="wai-img-name">muffin-front.png</span>
-          <button type="button" class="wai-img-close" aria-label="Close preview"><span class="material-symbols-outlined">close</span></button>
+      <div class="dash-modal dash-modal--panel" data-modal-static role="dialog" aria-label="Replace product photo">
+        <header class="dash-modal-head">
+          <div class="dash-modal-titles">
+            <span class="dash-modal-eyebrow">Product photo</span>
+            <h2 class="dash-modal-title">Replace product photo</h2>
+          </div>
+          <button class="dash-modal-close" type="button" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
+        </header>
+        <div class="dash-modal-body">
+          <div class="dash-banner-preview dash-banner-preview--photo">
+            <div class="dash-banner-preview-img" style="display:block;background-image:url('../assets/portfolio/blueberry_muffins.png')"></div>
+          </div>
+          <label class="dash-banner-drop">
+            <span class="material-symbols-outlined">cloud_upload</span>
+            <span class="dash-banner-drop-text"><strong>Upload an image</strong> or drag &amp; drop<br><span class="dash-banner-drop-hint">PNG, JPG or WEBP</span></span>
+          </label>
+          <div class="dash-banner-or"><span>or paste a URL</span></div>
+          <input type="url" class="dash-banner-url" placeholder="https://\u2026/product.jpg" autocomplete="off" readonly tabindex="-1">
         </div>
-        <div class="wai-img-body"><img src="../assets/portfolio/blueberry_muffins.png" alt="muffin-front.png"></div>
-      </div>`,
-  },
-  {
-    name: 'Chat welcome',
-    cat: 'Chat & drawers',
-    cls: '.sc-welcome \u00b7 .ws-logo-wrap \u00b7 .ws-heading \u00b7 .ws-pulse-ring',
-    used: 'Every chat before the first message \u2014 owl, serif headline, intent chips',
-    note: 'The owl sits in pulse rings (the helix field behind it is Motion &amp; Resize). Headline is brand serif. First keystroke or chip dismisses the welcome and unlocks the thread. Large intent cards and 28px chips are their own components.',
-    noteIcon: 'waving_hand',
-    demo: `
-      <div class="sc-welcome mi-welcome-demo">
-        <div class="ws-logo-wrap">
-          <span class="ws-pulse-ring" aria-hidden="true"></span>
-          <span class="ws-pulse-ring" aria-hidden="true"></span>
-          <div class="ws-logo">${DEMO_OWL_BUG}</div>
-        </div>
-        <h1 class="ws-heading">Ask WISEcodeAI<sup class="ws-tm">TM</sup></h1>
-        <p class="ws-sub">Any food, any label, any reformulation.</p>
+        <footer class="dash-modal-foot">
+          <span></span>
+          <div class="dash-modal-foot-right">
+            <button class="dash-btn dash-btn--ghost" type="button">Cancel</button>
+            <button class="dash-btn dash-btn--primary" type="button"><span class="material-symbols-outlined">check</span>Replace photo</button>
+          </div>
+        </footer>
       </div>`,
   },
   {
@@ -2250,31 +3170,36 @@ const COMPONENTS = [
   {
     name: 'Width toggle',
     cat: 'Actions',
-    cls: '.panel-width-toggle-btn (+ .is-on) \u00b7 panel-wide / panel-triple / panel-fill / panel-custom',
+    cls: '.panel-width-toggle-btn (+ .is-on / .is-width-fill) \u00b7 width_normal / width_wide / width_full / fit_width',
     used: 'Every module header except Navigation and the minimized History rail',
-    note: 'One control, five rest states: single \u2192 double \u2192 triple \u2192 fill \u2192 custom, then back. The Motion &amp; Resize card for Width tiers is the same control running live. Chat load default is a property of the display, not the last toggle.',
+    note: 'One control, five rest states: single \u2192 double \u2192 triple \u2192 fill \u2192 custom, then back. Icons: <code>width_normal</code> (single), <code>width_wide</code> (double and triple), <code>width_full</code> (fill), and <code>fit_width</code> (custom drag). The Motion &amp; Resize card for Width tiers is the same control running live. Chat load default is a property of the display, not the last toggle.',
     noteIcon: 'width_wide',
     demo: `
       <div class="dsc-states">
         <div class="dsc-state-col">
           <div class="dsc-sub-label">Single</div>
           <button type="button" class="panel-width-toggle-btn" aria-pressed="false" title="Width (single)" aria-label="Module width, single"><span class="material-symbols-outlined">width_normal</span></button>
+          <code class="dsc-icon-name">width_normal</code>
         </div>
         <div class="dsc-state-col">
           <div class="dsc-sub-label">Hover</div>
           <button type="button" class="panel-width-toggle-btn is-hover" aria-pressed="false" title="Width (single)" aria-label="Module width, hover"><span class="material-symbols-outlined">width_normal</span></button>
+          <code class="dsc-icon-name">width_normal</code>
         </div>
         <div class="dsc-state-col">
           <div class="dsc-sub-label">Double / on</div>
           <button type="button" class="panel-width-toggle-btn is-on" aria-pressed="true" title="Width (double)" aria-label="Module width, double"><span class="material-symbols-outlined">width_wide</span></button>
+          <code class="dsc-icon-name">width_wide</code>
         </div>
         <div class="dsc-state-col">
           <div class="dsc-sub-label">Fill</div>
-          <button type="button" class="panel-width-toggle-btn is-on" aria-pressed="true" title="Width (fill)" aria-label="Module width, fill"><span class="material-symbols-outlined">width_full</span></button>
+          <button type="button" class="panel-width-toggle-btn is-on is-width-fill" aria-pressed="true" title="Width (fill)" aria-label="Module width, fill"><span class="material-symbols-outlined">width_full</span></button>
+          <code class="dsc-icon-name">width_full</code>
         </div>
         <div class="dsc-state-col">
           <div class="dsc-sub-label">Custom</div>
-          <button type="button" class="panel-width-toggle-btn is-on" aria-pressed="true" title="Width (custom)" aria-label="Module width, custom"><span class="material-symbols-outlined">tune</span></button>
+          <button type="button" class="panel-width-toggle-btn is-on" aria-pressed="true" title="Width (custom)" aria-label="Module width, custom"><span class="material-symbols-outlined">fit_width</span></button>
+          <code class="dsc-icon-name">fit_width</code>
         </div>
       </div>`,
   },
@@ -2392,38 +3317,39 @@ const COMPONENTS = [
   {
     name: 'Jam strip',
     wide: true,
-    cat: 'Navigation',
-    cls: '.jam-strip \u00b7 .jam-play \u00b7 .jam-eq \u00b7 .jam-song (+ .is-playing, .is-active)',
-    used: 'Primary nav on every app page \u2014 off by default; Appearance switch turns it on',
-    note: 'Play/pause pill, live equalizer, track chips. Idle shimmer when paused; bounce plus a brand-gradient pill while a tune plays. The collapsed icon rail keeps only the pill + a compact EQ. Not a boxed icon tile \u2014 the play control is a circle.',
+    stackThemes: true,
+    cat: 'Overlays',
+    cls: '.jam-pop \u00b7 .jam-eq \u00b7 .jam-helix \u00b7 .jam-pop-song (+ .is-playing, .is-active, .jam-viz-bars / .jam-viz-helix)',
+    used: 'Appearance \u203a Sound on every app page \u2014 off by default; the player lives in that popover, never the primary navigation',
+    note: 'Play starts only from the play button and then loops. Track chips pick a song without starting it. Two visualizers: proper equalizer bars (default) and a horizontal helix that twists and sparks with the music. The crate lists every synthesized track with length, file name, and size.',
     noteIcon: 'graphic_eq',
-    demo: `
-      <div class="dsc-states" style="width:100%">
-        <div class="dsc-state-col" style="flex:1 1 100%">
-          <div class="dsc-sub-label">Idle</div>
-          <div class="jam-strip mi-jam-demo" role="group" aria-label="WISE jam bar">
-            <button type="button" class="jam-play" aria-label="Play the jam" aria-pressed="false"><span class="material-symbols-outlined jam-play-icon">play_arrow</span></button>
-            <div class="jam-eq" aria-hidden="true">${demoJamEq(24)}</div>
-            <div class="jam-songs" role="group">
-              <button type="button" class="jam-song">WISE</button>
-              <button type="button" class="jam-song">Orbit</button>
-              <button type="button" class="jam-song">Helix</button>
-            </div>
+    demoCustom() {
+      const stage = () => `
+        <div class="dsc-states" style="width:100%">
+          <div class="dsc-state-col" style="flex:1 1 100%">
+            <div class="dsc-sub-label">Bars \u00b7 Idle (default)</div>
+            ${demoJamStrip('bars', false, JAM_SONGS.slice(0, 5))}
+          </div>
+          <div class="dsc-state-col" style="flex:1 1 100%">
+            <div class="dsc-sub-label">Bars \u00b7 Playing</div>
+            ${demoJamStrip('bars', true, JAM_SONGS.slice(0, 5))}
+          </div>
+          <div class="dsc-state-col" style="flex:1 1 100%">
+            <div class="dsc-sub-label">Helix \u00b7 Idle</div>
+            ${demoJamStrip('helix', false, JAM_SONGS.slice(5, 10))}
+          </div>
+          <div class="dsc-state-col" style="flex:1 1 100%">
+            <div class="dsc-sub-label">Helix \u00b7 Playing</div>
+            ${demoJamStrip('helix', true, JAM_SONGS.slice(5, 10))}
           </div>
         </div>
-        <div class="dsc-state-col" style="flex:1 1 100%">
-          <div class="dsc-sub-label">Playing</div>
-          <div class="jam-strip mi-jam-demo is-playing" role="group" aria-label="WISE jam bar">
-            <button type="button" class="jam-play" aria-label="Pause the jam" aria-pressed="true"><span class="material-symbols-outlined jam-play-icon">pause</span></button>
-            <div class="jam-eq" aria-hidden="true">${demoJamEq(24)}</div>
-            <div class="jam-songs" role="group">
-              <button type="button" class="jam-song is-active">WISE</button>
-              <button type="button" class="jam-song">Orbit</button>
-              <button type="button" class="jam-song">Helix</button>
-            </div>
-          </div>
-        </div>
-      </div>`,
+        ${demoJamCrate()}`;
+      return `
+        <div class="dsc-themes dsc-themes--stack">
+          ${themePaneHTML('light', stage())}
+          ${themePaneHTML('dark', stage())}
+        </div>`;
+    },
   },
   {
     name: 'App search',
@@ -2431,68 +3357,30 @@ const COMPONENTS = [
     cat: 'Navigation',
     cls: '.wise-app-search \u00b7 .wise-app-search-hit \u00b7 .wise-app-search-empty',
     used: 'Nav footer search on every app page when Appearance \u203a Search is on',
-    note: 'Indexes transcripts, outputs, and reports. Results group by type; locked hits wear a lock. Empty names the query. Hands off through session keys so a hit can reopen the matching chat or report.',
+    note: 'Indexes transcripts, outputs, and reports. Results group by type; locked hits wear a lock. Empty names the query. Default is the idle field, full width of its container. Type in it — the <em>oat milk</em> query opens a multi-group list. Hands off through session keys so a hit can reopen the matching chat or report.',
     noteIcon: 'search',
     demo: `
       <div class="dsc-states" style="width:100%">
-        <div class="dsc-state-col" style="flex:1 1 260px">
-          <div class="dsc-sub-label">Idle</div>
-          <div class="wise-app-search mi-search-demo">
-            <div class="wise-app-search-inner">
-              <div class="wise-app-search-field">
-                <span class="wise-app-search-ph" aria-hidden="true"><span class="material-symbols-outlined">search</span><span class="wise-app-search-ph-label">Search reports, files, and documents</span></span>
-                <input type="search" class="wise-app-search-input" placeholder="" aria-label="Search reports, files, and documents" />
-              </div>
-            </div>
-          </div>
+        <div class="dsc-state-col" style="flex:1 1 100%;width:100%">
+          <div class="dsc-sub-label">Default</div>
+          ${demoAppSearchHtml('')}
         </div>
-        <div class="dsc-state-col" style="flex:1 1 260px">
-          <div class="dsc-sub-label">Results</div>
-          <div class="wise-app-search mi-search-demo">
-            <div class="wise-app-search-results" role="listbox" style="display:block">
-              <section class="wise-app-search-group">
-                <h3 class="wise-app-search-group-title">Chats</h3>
-                <button type="button" class="wise-app-search-hit" role="option">
-                  <span class="material-symbols-outlined wise-app-search-hit-ico">forum</span>
-                  <span class="wise-app-search-hit-body">
-                    <span class="wise-app-search-hit-title">Compare oat milk vs almond milk</span>
-                    <span class="wise-app-search-hit-where">WISEcodeAI \u00b7 today</span>
-                  </span>
-                </button>
-              </section>
-            </div>
-          </div>
+        <div class="dsc-state-col" style="flex:1 1 100%;width:100%">
+          <div class="dsc-sub-label">Type a query</div>
+          ${demoAppSearchHtml()}
         </div>
       </div>`,
   },
   {
-    name: 'Crawl \u00b7 Walk \u00b7 Run',
+    name: 'Roll \u00b7 Crawl \u00b7 Walk \u00b7 Run',
+    wide: true,
+    stackThemes: true,
     cat: 'Navigation',
     cls: '#cwr-toggle \u00b7 .cwr-btn [aria-checked] \u00b7 html.cwr-roll / -crawl / -walk / -run',
     used: 'Floating segmented control on every app page \u2014 Run on WISEcodeAI, Add Product, and View Product; Roll everywhere else',
-    note: 'Four rollout modes: <strong>Roll</strong> (stripped nav), <strong>Crawl</strong> (no chat, modules fill), <strong>Walk</strong> (chat on, composer locked), <strong>Run</strong> (composer unlocked). Each page loads its own default; hovering a mode shows what it includes and excludes. The live widget lives in shadow DOM so page button styles cannot restyle it; this demo mirrors the same four states. The load default is the right edge of the screen, vertically centered, 12px in. Drag to move; double-click restores that seat.',
+    note: 'A <strong>vertical</strong> stadium of four rollout modes: <strong>Roll</strong> (stripped nav), <strong>Crawl</strong> (no chat, modules fill), <strong>Walk</strong> (chat on, composer locked), <strong>Run</strong> (composer unlocked). Icon above label, 48px circular radios, stacked top to bottom \u2014 never a horizontal pill. Each page loads its own default; hovering any mode opens its include / exclude card. This catalog freezes the hover on all four so every card stays visible. The live widget lives in shadow DOM so page button styles cannot restyle it. The load default is the right edge of the screen, vertically centered, 12px in. Drag to move; double-click restores that seat.',
     noteIcon: 'directions_run',
-    demo: `
-      <div class="dsc-states">
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Run selected</div>
-          <div class="mi-cwr" role="radiogroup" aria-label="Rollout mode">
-            <button type="button" class="cwr-btn" role="radio" aria-checked="false"><span class="material-symbols-outlined">cached</span><span class="cwr-btn-label">Roll</span></button>
-            <button type="button" class="cwr-btn" role="radio" aria-checked="false"><span class="material-symbols-outlined">child_care</span><span class="cwr-btn-label">Crawl</span></button>
-            <button type="button" class="cwr-btn" role="radio" aria-checked="false"><span class="material-symbols-outlined">directions_walk</span><span class="cwr-btn-label">Walk</span></button>
-            <button type="button" class="cwr-btn" role="radio" aria-checked="true"><span class="material-symbols-outlined">directions_run</span><span class="cwr-btn-label">Run</span></button>
-          </div>
-        </div>
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Hover on Crawl</div>
-          <div class="mi-cwr" role="radiogroup" aria-label="Rollout mode">
-            <button type="button" class="cwr-btn" role="radio" aria-checked="false"><span class="material-symbols-outlined">cached</span><span class="cwr-btn-label">Roll</span></button>
-            <button type="button" class="cwr-btn is-hover" role="radio" aria-checked="false"><span class="material-symbols-outlined">child_care</span><span class="cwr-btn-label">Crawl</span></button>
-            <button type="button" class="cwr-btn" role="radio" aria-checked="false"><span class="material-symbols-outlined">directions_walk</span><span class="cwr-btn-label">Walk</span></button>
-            <button type="button" class="cwr-btn" role="radio" aria-checked="true"><span class="material-symbols-outlined">directions_run</span><span class="cwr-btn-label">Run</span></button>
-          </div>
-        </div>
-      </div>`,
+    demo: demoCwrCatalog(),
   },
   {
     name: 'Owl walkthrough',
@@ -2524,9 +3412,31 @@ const COMPONENTS = [
   },
   {
     name: 'Toast',
-    cls: '.ag-toast',
-    used: 'Global notifications via the agent shell (#ag-toast-wrap, js/agent-overview.js) — saves, invites, errors',
-    demo: `<div class="ag-toast" style="max-width:320px"><span class="material-symbols-outlined">check_circle</span>Saved to your workspace</div>`,
+    cls: '.ag-toast \u00b7 #ag-toast-wrap (js/agent-overview.js \u00b7 agToast)',
+    used: 'Global notifications via the agent shell (#ag-toast-wrap, js/agent-overview.js) — saves, invites, errors. Same seat on admin / module wraps (.wmod-toast-wrap, #adm-toast-wrap)',
+    note: 'One seat only: the <strong>bottom centre</strong> of the viewport \u2014 22px up from the edge, horizontally centred (<code>#ag-toast-wrap</code>). It does not sit at the top, in a corner, or next to the control that fired it. Arrival is a 0.25s rise of 10px with a fade-in (<code>agToastIn</code>). It holds 2.6s, then fades and drops 8px and is removed. A second toast stacks above the first (column, 8px gap). The wrap does not take clicks. Admin / module wraps use the same seat, 28px up. Live arrival + leave are in <em>Motion &amp; Resize \u2192 Toast</em>.',
+    noteIcon: 'vertical_align_bottom',
+    demo: `
+      <div class="dsc-states dsc-states--toast" style="width:100%">
+        <div class="dsc-state-col dsc-toast-seat-col">
+          <div class="dsc-sub-label">Seat \u2014 bottom centre</div>
+          <div class="dsc-toast-stage" aria-hidden="true">
+            <div class="ag-toast dsc-toast-seated"><span class="material-symbols-outlined">check_circle</span>Saved to your workspace</div>
+          </div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Enter \u2014 rises 10px</div>
+          <div class="ag-toast dsc-toast-enter"><span class="material-symbols-outlined">check_circle</span>Saved to your workspace</div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Rest</div>
+          <div class="ag-toast"><span class="material-symbols-outlined">check_circle</span>Saved to your workspace</div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Leave \u2014 drops 8px</div>
+          <div class="ag-toast dsc-toast-leave"><span class="material-symbols-outlined">check_circle</span>Saved to your workspace</div>
+        </div>
+      </div>`,
   },
   {
     name: 'Left-nav item',
@@ -2544,58 +3454,6 @@ const COMPONENTS = [
             <a class="menu-nav-item is-active" href="#" onclick="return false"><span class="menu-nav-icon"><span class="material-symbols-outlined">handyman</span></span><span class="menu-nav-label">Product Portfolio</span></a>
             <a class="menu-nav-item menu-nav-locked" href="#" onclick="return false"><span class="menu-nav-icon"><span class="material-symbols-outlined">description</span></span><span class="menu-nav-label">Studio</span><span class="menu-nav-lock"><span class="material-symbols-outlined">lock</span></span></a>
           </nav>
-        </div>
-      </div>`,
-  },
-  {
-    name: 'Top-bar icon button',
-    cls: '.lir-btn (+ .is-hover, .is-open, [disabled])',
-    used: 'Top-bar trailing rail on every page — alerts, appearance, minimal UI, dock toggles',
-    note: 'Icon-only control. States: Default, Hover, Open (popover anchored), Disabled. Always carries an <code>aria-label</code>.',
-    noteIcon: 'touch_app',
-    demo: `
-      <div class="dsc-states">
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Default</div>
-          <button type="button" class="lir-btn" aria-label="Alerts"><span class="material-symbols-outlined">notifications</span></button>
-        </div>
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Hover</div>
-          <button type="button" class="lir-btn is-hover" aria-label="Appearance"><span class="material-symbols-outlined">palette</span></button>
-        </div>
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Open</div>
-          <button type="button" class="lir-btn is-open" aria-label="More" aria-expanded="true"><span class="material-symbols-outlined">more_vert</span></button>
-        </div>
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Disabled</div>
-          <button type="button" class="lir-btn" disabled aria-label="Alerts"><span class="material-symbols-outlined">notifications</span></button>
-        </div>
-      </div>`,
-  },
-  {
-    name: 'Avatar button',
-    cls: '.topbar-profile (+ .has-dot unread, .is-hover, .is-open)',
-    used: 'Top bar on every app page — opens the profile popover',
-    note: 'States: Default, Hover, Open (menu up), Unread dot. Initials only — no photo tile.',
-    noteIcon: 'account_circle',
-    demo: `
-      <div class="dsc-states">
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Default</div>
-          <button type="button" class="topbar-profile" aria-label="Profile">MC</button>
-        </div>
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Hover</div>
-          <button type="button" class="topbar-profile is-hover" aria-label="Profile">MC</button>
-        </div>
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Open</div>
-          <button type="button" class="topbar-profile is-open" aria-label="Profile" aria-expanded="true">MC</button>
-        </div>
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Unread</div>
-          <button type="button" class="topbar-profile has-dot" aria-label="Profile">MC</button>
         </div>
       </div>`,
   },
@@ -2621,25 +3479,6 @@ const COMPONENTS = [
         <span class="ds-pill" style="background:var(--sec-red-10);color:var(--sec-red-text)"><span class="material-symbols-outlined">error</span>Failed</span>
       </div>`,
   },
-  {
-    name: 'Distribution bar',
-    cls: '.dash-seg · .dash-seg-piece · .dash-seg-tags · .dash-dot',
-    used: 'Non-UPF Dashboard · Reports — portfolio composition strips',
-    demo: `
-      <div style="max-width:320px;width:100%">
-        <div class="dash-seg">
-          <span class="dash-seg-piece" style="width:56%;background:var(--chart-status-excellent)"></span>
-          <span class="dash-seg-piece" style="width:28%;background:var(--chart-status-okay)"></span>
-          <span class="dash-seg-piece" style="width:16%;background:var(--chart-status-poor)"></span>
-        </div>
-        <div class="dash-seg-tags">
-          <span class="dash-seg-tag"><span class="dash-dot" style="background:var(--chart-status-excellent)"></span>Non-UPF</span>
-          <span class="dash-seg-tag"><span class="dash-dot" style="background:var(--chart-status-okay)"></span>At risk</span>
-          <span class="dash-seg-tag"><span class="dash-dot" style="background:var(--chart-status-poor)"></span>UPF</span>
-        </div>
-      </div>`,
-  },
-
   /* ---- Data table — the ONE shared grid "table", fully loaded ----- */
   {
     name: 'Data table',
@@ -2647,98 +3486,29 @@ const COMPONENTS = [
     wide: true,
     cls: '.adm-table · .adm-thead / .adm-trow · .adm-th(--sortable/--num) · .adm-td(--actions/--num) · .adm-idcell · .adm-avatar · .adm-chip · .adm-rowmenu · .wtp-foot',
     used: 'Organizations · User Management · Audit Queue · Non-UPF Dashboard · Quick Invite · Invoices · Portfolio · Ingredient Browser · Guiding Stars · Reformulation — every admin & module list',
-    note: 'One CSS-grid pattern (no <code>&lt;table&gt;</code>) driven by <code>--adm-cols</code>. Cell types, left to right: <strong>bare kebab</strong> (no circled chip), <strong>identity</strong> (avatar + name + sub), <strong>status chip</strong>, <strong>stacked dates</strong> (two lines, header ⋮ picks created / joined / last active / last edited), <strong>numeric</strong> (hot vs zero), <strong>score</strong> (serif numeral), <strong>Guiding Stars</strong>, <strong>currency</strong>. Sort + paging attach app-wide. The demo is marked <code>data-wtp-skip</code> so the shared pager does not inject a second footer.',
+    note: 'One CSS-grid pattern (no <code>&lt;table&gt;</code>) driven by <code>--adm-cols</code>. Cell types, left to right: <strong>bare kebab</strong> (no circled chip), <strong>identity</strong> (avatar + name + sub), <strong>status chip</strong>, <strong>stacked dates</strong> (two lines, header ⋮ picks created / joined / last active / last edited), <strong>numeric</strong> (hot vs zero), <strong>score</strong> (serif numeral), <strong>Guiding Stars</strong>, <strong>currency</strong>. Sort + paging attach app-wide. Full width keeps every column in one row. At the width of a docked module — these Light / Dark panes already are — rows become stacked cards and the header hides, the same container-query collapse live admin lists use. The status chip and dates share <strong>one row</strong> (chip left, dates right) until the card is too tight. Count-like cells (numeric, score, stars, amount) stay on <strong>one strip</strong> that fits one, two, or three across and wraps. The demo is marked <code>data-wtp-skip</code> so the shared pager does not inject a second footer.',
     noteIcon: 'table_rows',
-    demo: `
-      <div class="adm-table-card adm-card" style="width:100%">
-        <div class="adm-table" data-wtp-skip data-no-paginate data-w-date-root style="--adm-cols: 36px minmax(150px, 1.5fr) 108px 168px 52px 56px 78px 64px">
-          <div class="adm-thead">
-            <span class="adm-th" title="Actions"> </span>
-            <span class="adm-th adm-th--sortable" data-adm-dir="asc">Identity ${ARROW_SVG_DEMO}</span>
-            <span class="adm-th adm-th--sortable">Status ${ARROW_SVG_DEMO}</span>
-            <span class="adm-th adm-th--sortable w-date-th">${(window.WiseDateCol && window.WiseDateCol.headerHtml({ kinds: 'org', lead: 'joined' })) || 'Date'}${ARROW_SVG_DEMO}</span>
-            <span class="adm-th adm-th--num adm-th--sortable">Count ${ARROW_SVG_DEMO}</span>
-            <span class="adm-th adm-th--num adm-th--sortable">Score ${ARROW_SVG_DEMO}</span>
-            <span class="adm-th">Stars</span>
-            <span class="adm-th adm-th--num adm-th--sortable">Amount ${ARROW_SVG_DEMO}</span>
-          </div>
-          <div class="adm-trow">
-            <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
-            <span class="adm-td"><span class="adm-idcell"><span class="adm-avatar">AB</span><span class="adm-idcell-body"><span class="adm-idcell-name"><a href="#" onclick="return false">Abbot's Butcher</a></span><span class="adm-idcell-sub">Independent Food/Beverage Brand</span></span></span></span>
-            <span class="adm-td"><span class="adm-chip adm-chip--green"><span class="material-symbols-outlined">check</span>Active</span></span>
-            <span class="adm-td"><span class="w-datecell">${(window.WiseDateCol && window.WiseDateCol.cellHtml(window.WiseDateCol.complete({ joined: 'Jun 26, 2026' }, 'org'), 'org', 'joined')) || 'Jun 26, 2026'}</span></span>
-            <span class="adm-td adm-td--num is-hot">6</span>
-            <span class="adm-td adm-td--num dsc-score">82</span>
-            <span class="adm-td"><span class="dsc-gs" aria-label="3 Guiding Stars"><span class="material-symbols-outlined dsc-gs-on">star</span><span class="material-symbols-outlined dsc-gs-on">star</span><span class="material-symbols-outlined dsc-gs-on">star</span></span></span>
-            <span class="adm-td adm-td--num dsc-amt">$1,284</span>
-          </div>
-          <div class="adm-trow">
-            <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
-            <span class="adm-td"><span class="adm-idcell"><span class="adm-avatar adm-avatar--round">MC</span><span class="adm-idcell-body"><span class="adm-idcell-name">maya.chen</span><span class="adm-idcell-sub">maya@flax4life.com</span><span class="adm-idcell-sub">ID: 10482</span></span></span></span>
-            <span class="adm-td"><span class="adm-chip adm-chip--amber"><span class="material-symbols-outlined">hourglass_top</span>Pending</span></span>
-            <span class="adm-td"><span class="w-datecell">${(window.WiseDateCol && window.WiseDateCol.cellHtml(window.WiseDateCol.complete({ joined: 'Apr 18, 2026' }, 'org'), 'org', 'joined')) || 'Apr 18, 2026'}</span></span>
-            <span class="adm-td adm-td--num is-hot">3</span>
-            <span class="adm-td adm-td--num dsc-score">64</span>
-            <span class="adm-td"><span class="dsc-gs" aria-label="2 Guiding Stars"><span class="material-symbols-outlined dsc-gs-on">star</span><span class="material-symbols-outlined dsc-gs-on">star</span><span class="material-symbols-outlined dsc-gs-off">star</span></span></span>
-            <span class="adm-td adm-td--num dsc-amt">$420</span>
-          </div>
-          <div class="adm-trow">
-            <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
-            <span class="adm-td"><span class="adm-idcell"><span class="adm-idcell-body"><span class="adm-idcell-name">Toasted Coconut Brownies</span><span class="adm-idcell-sub dsc-mono">UPC · 8 57287 00420 3</span></span></span></span>
-            <span class="adm-td"><span class="adm-chip adm-chip--blue"><span class="material-symbols-outlined">gpp_good</span>Verified</span></span>
-            <span class="adm-td"><span class="w-datecell">${(window.WiseDateCol && window.WiseDateCol.cellHtml(window.WiseDateCol.complete({ joined: 'May 2, 2026' }, 'org'), 'org', 'joined')) || 'May 2, 2026'}</span></span>
-            <span class="adm-td adm-td--num is-hot">12</span>
-            <span class="adm-td adm-td--num dsc-score">71</span>
-            <span class="adm-td"><span class="dsc-gs" aria-label="1 Guiding Star"><span class="material-symbols-outlined dsc-gs-on">star</span><span class="material-symbols-outlined dsc-gs-off">star</span><span class="material-symbols-outlined dsc-gs-off">star</span></span></span>
-            <span class="adm-td adm-td--num dsc-amt">$86</span>
-          </div>
-          <div class="adm-trow">
-            <span class="adm-td adm-td--actions"><span class="adm-rowmenu"><button type="button" class="adm-rowmenu-btn" aria-label="Row actions"><span class="material-symbols-outlined">more_vert</span></button></span></span>
-            <span class="adm-td"><span class="adm-idcell"><span class="adm-avatar">BF</span><span class="adm-idcell-body"><span class="adm-idcell-name">Brave Foods</span><span class="adm-idcell-sub">Independent Food/Beverage Brand</span></span></span></span>
-            <span class="adm-td"><span class="adm-chip adm-chip--outline">Invited</span></span>
-            <span class="adm-td"><span class="w-datecell">${(window.WiseDateCol && window.WiseDateCol.cellHtml({ joined: '—', created: '—', active: '—', edited: '—' }, 'org', 'joined')) || '—'}</span></span>
-            <span class="adm-td adm-td--num">0</span>
-            <span class="adm-td adm-td--num" style="color:var(--text-subtle)">—</span>
-            <span class="adm-td"><span class="dsc-gs" aria-label="0 Guiding Stars"><span class="material-symbols-outlined dsc-gs-off">star</span><span class="material-symbols-outlined dsc-gs-off">star</span><span class="material-symbols-outlined dsc-gs-off">star</span></span></span>
-            <span class="adm-td adm-td--num" style="color:var(--text-subtle)">—</span>
-          </div>
-        </div>
-        <div class="wtp-foot">
-          <span class="wtp-count">Showing <b>4</b> of <b>315</b> organizations</span>
-          <button type="button" class="wtp-more">Load more<span class="material-symbols-outlined">expand_more</span></button>
-        </div>
-      </div>`,
+    demo: demoDataTable(),
+    demoCustom() {
+      return `
+        <div class="dsc-table-catalog">
+          <div class="dsc-sub-label">Full width</div>
+          ${themedDemoHTML(`<div class="dsc-adm-stage dsc-adm-stage--wide">${demoDataTable()}</div>`, { stack: true })}
+          <div class="dsc-sub-label">Responsive · stacked cards</div>
+          ${themedDemoHTML(`<div class="dsc-adm-stage dsc-adm-stage--narrow">${demoDataTable()}</div>`)}
+        </div>`;
+    },
   },
 
   /* ---- Filter toolbar — search pill + funnel + popover ------------ */
   {
     name: 'Filter toolbar',
-    cls: '.adm-toolbar · .adm-search-inline.has-filter · .adm-search-filter · .adm-filter-pop (= .pf-toolbar / .pf-filter-pop)',
-    used: 'Organizations · User Management · Audit Queue · Portfolio · Invoices · Conversation Library — the shared list-filter pattern',
-    note: 'Same shape on every list: one search pill with a funnel button inside it that opens a filter popover. A dot on the funnel (<code>.has-dot</code>) signals active filters. The popover stacks <code>.adm-field</code> + <code>.adm-select</code> rows with a Clear link.',
+    wide: true,
+    cls: '.adm-toolbar · .adm-search-inline.has-filter · .adm-search-filter · .adm-filter-pop · .adm-select · .adm-input · .wmod-fchip (= .pf-fchip / .lib-fchip)',
+    used: 'Organizations · User Management · Audit Queue · Quick Invite · Non-UPF Dashboard · Portfolio · Conversation Library · API Keys · Marketing Assets · Ingredient Browser',
+    note: 'Same search pill + funnel on every list. A dot on the funnel signals active filters. The open popover is not one generic dropdown \u2014 it carries every control type the app actually uses: <strong>select</strong> (User Management, Non-UPF, Audit, Quick Invite), <strong>date range</strong> (Audit Queue), <strong>exclusive chips</strong> (Portfolio, API Keys), <strong>icon chips</strong> (Library), <strong>star chips</strong> (Portfolio Guiding Stars), a <strong>toggle chip</strong> (near-miss), and <strong>multi-select chips</strong> (Ingredient Browser flags). Clear all + Apply close the admin pops; chip pops apply as you tap.',
     noteIcon: 'filter_alt',
-    demo: `
-      <div class="adm-toolbar" style="width:100%;position:relative">
-        <div class="adm-search-inline has-filter" style="flex:1 1 auto">
-          <span class="material-symbols-outlined">search</span>
-          <input type="search" class="adm-search" placeholder="Search organizations…" aria-label="Demo search" />
-          <button type="button" class="adm-search-filter is-active has-dot" aria-label="Filters"><span class="material-symbols-outlined">tune</span></button>
-        </div>
-        <div class="adm-filter-pop" data-popover-static>
-          <div class="adm-field">
-            <span class="adm-field-label">Plan</span>
-            <select class="adm-select"><option>All plans</option><option>Enterprise</option><option>Growth</option></select>
-          </div>
-          <div class="adm-field">
-            <span class="adm-field-label">Status</span>
-            <select class="adm-select"><option>Any status</option><option>Verified</option><option>Pending</option></select>
-          </div>
-          <div class="adm-filter-pop-foot">
-            <button type="button" class="adm-filter-clear">Clear all</button>
-            <button type="button" class="adm-btn adm-btn--primary adm-btn--sm">Apply</button>
-          </div>
-        </div>
-      </div>`,
+    demo: demoFilterToolbar(),
   },
 
   /* ---- Score & metric cards — each shape is its own reusable part ---- */
@@ -2789,19 +3559,19 @@ const COMPONENTS = [
           <span class="adm-vf-stat-sub">Items in Registry</span>
         </div>
         <div class="adm-vf-stat adm-stat--red is-hover" role="button" tabindex="0">
-          <span class="adm-vf-stat-num" style="color:var(--sec-red)">10</span>
+          <span class="adm-vf-stat-num">10</span>
           <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--red"><span class="material-symbols-outlined">warning</span>Action Required</span></span>
           <span class="adm-vf-stat-sub">Missing mandatory data</span>
           <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm">Edit</button>
         </div>
-        <div class="adm-vf-stat" role="button" tabindex="0">
-          <span class="adm-vf-stat-num" style="color:var(--primary-ink, var(--primary))">19</span>
+        <div class="adm-vf-stat adm-stat--blue" role="button" tabindex="0">
+          <span class="adm-vf-stat-num">19</span>
           <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--blue"><span class="material-symbols-outlined">fact_check</span>Pending Attestation</span></span>
           <span class="adm-vf-stat-sub">Selected products need review and attestation</span>
           <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm">Attest</button>
         </div>
         <div class="adm-vf-stat adm-stat--green" role="button" tabindex="0">
-          <span class="adm-vf-stat-num" style="color:var(--sec-green)">8</span>
+          <span class="adm-vf-stat-num">8</span>
           <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--green"><span class="material-symbols-outlined">verified</span>Verified</span></span>
           <span class="adm-vf-stat-sub">Fully verified (shield verification)</span>
         </div>
@@ -2860,9 +3630,9 @@ const COMPONENTS = [
   {
     name: 'Claim scorecards',
     wide: true,
-    cls: '.dash-claim · .dash-claim-col · .dash-bignum · .dash-btn-row',
+    cls: '.dash-claim · .dash-claim-col · .dash-bignum · .dash-stamp-icon · .dash-btn-row',
     used: 'Overview · Analytics Types — big-numeral discovery row with a CTA underneath',
-    note: 'Two-column claim band: big numeral + caption, then a button row. Reuses <em>Buttons</em> for the CTA — that stays a separate component. Distinct from KPI cards (no CTA) and filter tiles (no filter).',
+    note: 'Two-column claim band: big numeral + caption, then a button row. The faint inset disc at the far right of each score is the same stamped icon Overview uses. Reuses <em>Buttons</em> for the CTA — that stays a separate component. Distinct from KPI cards (no CTA) and filter tiles (no filter).',
     noteIcon: 'featured_play_list',
     demo: `
       <section class="dash-claim dsc-claim-demo">
@@ -2870,6 +3640,7 @@ const COMPONENTS = [
           <div class="dash-bignum-row">
             <span class="dash-bignum">47</span>
             <span class="dash-bignum-cap"><strong>Products Discovered</strong><br>across retail &amp; distribution</span>
+            <span class="dash-stamp-icon" aria-hidden="true"><span class="material-symbols-outlined">search</span></span>
           </div>
           <div class="dash-btn-row">
             <button class="dash-btn dash-btn--ghost" type="button"><span class="material-symbols-outlined">verified_user</span>Claim your products</button>
@@ -2880,6 +3651,7 @@ const COMPONENTS = [
           <div class="dash-bignum-row">
             <span class="dash-bignum">9</span>
             <span class="dash-bignum-cap"><strong>Products Qualify</strong><br>for Non&#8209;UPF verification shield</span>
+            <span class="dash-stamp-icon" aria-hidden="true"><span class="material-symbols-outlined">verified</span></span>
           </div>
           <div class="dash-btn-row">
             <button class="dash-btn dash-btn--primary" type="button"><span class="material-symbols-outlined">verified</span>Start Non&#8209;UPF Verification</button>
@@ -2929,46 +3701,25 @@ const COMPONENTS = [
       </div>`,
   },
 
-  /* ---- Charts & graphs — donut / bars / progress ----------------- */
+  /* ---- Charts & graphs — pointer to analytics-types + written rules -- */
   {
     name: 'Charts & graphs',
     wide: true,
-    cls: '.adm-chart-card · .adm-bars / .adm-bar-fill · .adm-legend · .adm-vrow (= .dash-donut / .dash-metric-*)',
+    cls: '.adm-chart-card · .adm-bars / .adm-bar-fill · .adm-legend · .adm-vrow · .dash-seg / .dash-seg-piece / .dash-seg-tags · .dash-dot (= .dash-donut / .dash-metric-*)',
     used: 'Non-UPF Dashboard · Overview · Analytics Types · Reports — every data-viz surface',
-    note: 'Each chart card is its OWN size container (<code>container-type: inline-size</code>), so bars and labels shrink to stay legible three-up, two-up, or docked beside the chat — never a viewport media query. Bars/rings animate in on load and respect <code>prefers-reduced-motion</code>.',
+    note: '<strong>Analytics Types</strong> is the visual source of truth. Do not invent a chart or report look here — open that page and mirror it. The written rules (same rules, in prose) live in <code>chart-and-report-design.md</code>, linked below. Includes donuts, bars, rings, heat cells, funnels, polar area, scatter, and distribution / segmented bars. Each live chart card is its own size container (<code>container-type: inline-size</code>), so bars and labels shrink to stay legible three-up, two-up, or docked beside the chat — never a viewport media query. Bars/rings animate in on load, replay on tap, and respect <code>prefers-reduced-motion</code>.',
     noteIcon: 'bar_chart',
     download: {
       href: '../assets/chart-and-report-design.md',
       file: 'chart-and-report-design.md',
       label: 'Download chart & report design rules (.md)',
+      openLabel: 'Open chart & report design rules (.md)',
+      source: {
+        href: 'analytics-types.html',
+        icon: 'insights',
+        label: 'Open Analytics Types — visual source of truth',
+      },
     },
-    demo: `
-      <div style="display:flex;flex-wrap:wrap;gap:14px;width:100%">
-        <div class="adm-chart-card" style="flex:1 1 240px">
-          <h4 class="adm-chart-title">Processing spectrum</h4>
-          <div class="adm-chart-body">
-            <div class="adm-bars" style="height:150px">
-              <div class="adm-bar"><div class="adm-bar-track"><div class="adm-bar-fill" style="height:72%;background:var(--chart-status-excellent)"><span class="adm-bar-val">54</span></div></div><span class="adm-bar-label">Minimally processed</span></div>
-              <div class="adm-bar"><div class="adm-bar-track"><div class="adm-bar-fill" style="height:48%;background:var(--chart-status-okay)"><span class="adm-bar-val">31</span></div></div><span class="adm-bar-label">Processed</span></div>
-              <div class="adm-bar"><div class="adm-bar-track"><div class="adm-bar-fill" style="height:34%;background:var(--chart-status-poor)"><span class="adm-bar-val">18</span></div></div><span class="adm-bar-label">Ultra-processed</span></div>
-            </div>
-          </div>
-        </div>
-        <div class="adm-chart-card" style="flex:1 1 220px">
-          <h4 class="adm-chart-title">Verification status</h4>
-          <div class="adm-chart-body">
-            <div class="adm-vstatus">
-              <div class="adm-vrow"><span class="adm-vrow-ic material-symbols-outlined" style="color:var(--chart-status-excellent)">verified</span><div class="adm-vrow-main"><div class="adm-vrow-label">Verified</div><div class="adm-vrow-bar"><span style="width:62%;background:var(--chart-status-excellent)"></span></div></div><span class="adm-vrow-val">62</span></div>
-              <div class="adm-vrow"><span class="adm-vrow-ic material-symbols-outlined" style="color:var(--chart-status-okay)">pending</span><div class="adm-vrow-main"><div class="adm-vrow-label">Pending</div><div class="adm-vrow-bar"><span style="width:32%;background:var(--chart-status-okay)"></span></div></div><span class="adm-vrow-val">41</span></div>
-              <div class="adm-vrow"><span class="adm-vrow-ic material-symbols-outlined" style="color:var(--chart-status-poor)">error</span><div class="adm-vrow-main"><div class="adm-vrow-label">At risk</div><div class="adm-vrow-bar"><span style="width:18%;background:var(--chart-status-poor)"></span></div></div><span class="adm-vrow-val">25</span></div>
-            </div>
-            <div class="adm-legend">
-              <div class="adm-legend-row"><span class="adm-legend-dot" style="background:var(--chart-status-excellent)"></span><span class="adm-legend-label">Non-UPF</span><span class="adm-legend-val">48%</span></div>
-              <div class="adm-legend-row"><span class="adm-legend-dot" style="background:var(--chart-status-okay)"></span><span class="adm-legend-label">At risk</span><span class="adm-legend-val">32%</span></div>
-            </div>
-          </div>
-        </div>
-      </div>`,
   },
 
   /* ---- Secondary popovers ---------------------------------------- */
@@ -3163,6 +3914,7 @@ const COMPONENTS = [
   /* ---- Bottom sheet / drawer ------------------------------------- */
   {
     name: 'Bottom sheet',
+    status: 'not-now',
     wide: true,
     cls: '.ag-sheet-scrim · .ag-sheet · .ag-sheet-handle / -head / -icon / -titles / -body · .ag-detail-row · .agent-cta',
     used: 'Locked / upsell nav items and agent flows (agent shell, js/agent-overview.js)',
@@ -3192,117 +3944,57 @@ const COMPONENTS = [
   /* ---- Tooltip ---------------------------------------------------- */
   {
     name: 'Tooltip',
+    wide: true,
     cls: '#lir-tooltip / .lir-tip-visible (js/lir-tooltip.js) · .dash-status-tip · chip explainer .ct-card (js/chip-tooltip.js)',
-    used: 'Every icon button (.lir-btn, panel controls) · dashboard score terms · data chips app-wide',
-    note: 'One dark tooltip for every icon-only control (labels the glyph on hover/focus), plus a richer explainer card that data chips open on click. Positioned centrally so tooltips never clip.',
+    used: 'Every icon-only control (Appearance, width toggle, panel docks) · dashboard score terms · data chips app-wide',
+    note: 'One tooltip for every icon-only control. It sits below the icon by default and shifts inward at the left or right edge of its container so the card never clips. Appearance and studio tools sit above; if there is no room they flip to the right. Data chips open a richer explainer on click. The button states themselves live on <em>Buttons</em>.',
     noteIcon: 'chat_bubble',
     demo: `
-      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-        <span style="position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:8px">
-          <button type="button" class="lir-btn" aria-label="Alerts"><span class="material-symbols-outlined">notifications</span></button>
-          <span class="dsc-tip">Alerts</span>
-        </span>
-        <span style="position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:8px">
-          <button type="button" class="lir-btn" aria-label="Appearance"><span class="material-symbols-outlined">palette</span></button>
-          <span class="dsc-tip">Appearance</span>
-        </span>
+      <div class="dsc-tip-stage" aria-label="Tooltip landing at container edges">
+        <div class="dsc-tip-pin dsc-tip-pin--left">
+          <div class="dsc-sub-label">Left edge</div>
+          <div class="dsc-tip-anchor dsc-tip-anchor--left">
+            <button type="button" class="lir-btn" aria-label="Appearance" tabindex="-1"><span class="material-symbols-outlined">crossword</span></button>
+            <span class="dsc-tip">Appearance</span>
+          </div>
+        </div>
+        <div class="dsc-tip-pin dsc-tip-pin--center">
+          <div class="dsc-sub-label">Center</div>
+          <div class="dsc-tip-anchor dsc-tip-anchor--center">
+            <button type="button" class="panel-width-toggle-btn is-on is-width-fill" aria-label="Module width, fill" tabindex="-1"><span class="material-symbols-outlined">width_full</span></button>
+            <span class="dsc-tip">Width (fill)</span>
+          </div>
+        </div>
+        <div class="dsc-tip-pin dsc-tip-pin--right">
+          <div class="dsc-sub-label">Right edge</div>
+          <div class="dsc-tip-anchor dsc-tip-anchor--right">
+            <button type="button" class="panel-ctrl-btn" aria-label="Help" tabindex="-1"><span class="material-symbols-outlined">help</span></button>
+            <span class="dsc-tip">Help</span>
+          </div>
+        </div>
       </div>`,
   },
 
   /* ---- Avatars ---------------------------------------------------- */
   {
     name: 'Avatars',
-    cls: '.adm-avatar (+ --photo) · .topbar-profile',
-    used: 'Table identity cells · owner columns · brand pickers · top-bar profile · chat “you” chip',
-    note: 'One avatar primitive, one circle size (34px) — token-tinted initials by default, photo optional. <strong>Every avatar is a circle</strong> — no square, no rounded-square, no second size, anywhere in the app. Falls back to initials when there is no image.',
+    wide: true,
+    cls: '.adm-avatar (+ --photo) · .topbar-profile (+ .has-dot unread, .is-hover, .is-open) · .sc-avatar-you · .pf-avatar-upload · .pf-avatar-preset · .wise-popover',
+    used: 'Top bar on every app page · nav-footer avatar menu · Organization Profile (Avatar picture) · table identity cells · chat “you” chip',
+    note: 'One circle primitive everywhere — initials until a picture is set, then the same chip fills with the photo. The top-bar button cycles Default, Hover, Open, and Unread. The avatar popover is the live account menu (My profile, Invoices, Marketing Assets, Sign out). Organization Profile owns the abilities: live preview, Browse File / Import from URL, Remove, and every built-in pattern and portrait (Aurora, Prism, Orbit, Tide, Bloom, plus the two professional photos).',
     noteIcon: 'account_circle',
-    demo: `
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <span class="adm-avatar">AF</span>
-        <span class="adm-avatar">MC</span>
-        <span class="adm-avatar">GP</span>
-        <span class="adm-avatar adm-avatar--photo"><img src="https://i.pravatar.cc/80?img=12" alt="" /></span>
-        <button type="button" class="topbar-profile" aria-label="Profile" style="position:static;transform:none">JR</button>
-      </div>`,
+    demo: demoAvatarCatalog(),
   },
 
   /* ---- History / Library / Reports — missing from the first pass ---- */
   {
-    name: 'History conversation',
+    name: 'History',
     wide: true,
-    cls: '.wch-item · .wch-item-title · .wch-item-meta · .wch-item-actions · .wch-drag-handle',
-    used: 'WISEcodeAI History module (wiseai.html#history) — every conversation row',
-    note: 'A History row is the whole conversation: title, timestamp, and hover actions (drag handle, move to project, delete). The row itself is draggable — drop it on a <em>History project</em> to file it. The drag handle is the discoverable grip; grabbing anywhere on the row also works.',
+    cls: '.wch-item · .wch-chat-dot · .wch-item-actions · .wch-project · .wch-proj-toggle · .wch-loose · .wch-info',
+    used: 'WISEcodeAI History module on every chat · Conversation Library folder panel (same row language)',
+    note: 'One list: colored <strong>folder</strong> projects with a tick tree, and conversation rows that are a color dot + title. Timestamp and message count live on the hover card, not the row. Hover reveals drag, rename, move, and delete. Nested folders use the same tree as the Conversation Library. Ungrouped threads sit in <strong>All conversations</strong> — drop a row on a project to file it, or back here to unfile.',
     noteIcon: 'history',
-    demo: `
-      <div class="dsc-wch">
-        <div class="wch-item wch-active" role="listitem" tabindex="0" draggable="true">
-          <div class="wch-item-title">Compare oat milk vs almond milk</div>
-          <div class="wch-item-meta">Today · 8 messages</div>
-          <div class="wch-item-actions">
-            <button type="button" class="wch-iact wch-drag-handle" title="Drag into a project" aria-label="Drag conversation into a project"><span class="material-symbols-outlined">drag_indicator</span></button>
-            <button type="button" class="wch-iact" title="Move to project" aria-label="Move to project"><span class="material-symbols-outlined">drive_file_move</span></button>
-            <button type="button" class="wch-iact" title="Delete" aria-label="Delete conversation"><span class="material-symbols-outlined">delete_outline</span></button>
-          </div>
-        </div>
-        <div class="wch-item" role="listitem" tabindex="0" draggable="true">
-          <div class="wch-item-title"><span class="wch-fork-badge" title="Forked"><span class="material-symbols-outlined">alt_route</span></span>UPF report for granola</div>
-          <div class="wch-item-meta">Yesterday · 3 messages</div>
-          <div class="wch-item-actions">
-            <button type="button" class="wch-iact wch-drag-handle" title="Drag into a project" aria-label="Drag conversation into a project"><span class="material-symbols-outlined">drag_indicator</span></button>
-            <button type="button" class="wch-iact" title="Move to project" aria-label="Move to project"><span class="material-symbols-outlined">drive_file_move</span></button>
-            <button type="button" class="wch-iact" title="Delete" aria-label="Delete conversation"><span class="material-symbols-outlined">delete_outline</span></button>
-          </div>
-        </div>
-      </div>`,
-  },
-  {
-    name: 'History project',
-    wide: true,
-    cls: '.wch-project · .wch-proj-dot · .wch-proj-add · .wch-proj-edit · .wch-drop-on',
-    used: 'WISEcodeAI History — Projects section. Create with the folder button, or file a chat by dropping it on a project (or back on Ungrouped).',
-    note: 'History groups chats into <strong>projects</strong> (the History equivalent of Library folders). New project opens an inline name + color editor. Drop a conversation on a project to file it; drop on the ungrouped zone to unfile. Card-on-card folder founding lives in the Library — see <em>Drag to found a folder</em> in Motion &amp; Resize.',
-    noteIcon: 'create_new_folder',
-    demo: `
-      <div class="dsc-wch">
-        <div class="wch-projects-head">
-          <span class="wch-projects-title">Projects</span>
-          <button type="button" class="wch-proj-add" title="New project" aria-label="New project"><span class="material-symbols-outlined">create_new_folder</span></button>
-        </div>
-        <div class="wch-project">
-          <div class="wch-project-head">
-            <button type="button" class="wch-proj-toggle" aria-label="Collapse"><span class="material-symbols-outlined">expand_more</span></button>
-            <span class="wch-proj-dot" style="color:#25507C"></span>
-            <span class="wch-proj-name">Q3 verification</span>
-            <span class="wch-proj-count">2</span>
-          </div>
-          <div class="wch-project-body">
-            <div class="wch-item" role="listitem">
-              <div class="wch-item-title">Non-UPF attestation for oat bars</div>
-              <div class="wch-item-meta">Mon · 5 messages</div>
-            </div>
-          </div>
-        </div>
-        <div class="wch-project wch-drop-on">
-          <div class="wch-project-head">
-            <button type="button" class="wch-proj-toggle" aria-label="Collapse"><span class="material-symbols-outlined">expand_more</span></button>
-            <span class="wch-proj-dot" style="color:#32A966"></span>
-            <span class="wch-proj-name">Reports</span>
-            <span class="wch-proj-count">4</span>
-          </div>
-          <div class="wch-project-empty">Drop a chat here to file it</div>
-        </div>
-        <div class="wch-proj-edit">
-          <span class="wch-proj-dot" style="color:#D27326"></span>
-          <input type="text" class="wch-proj-edit-input" maxlength="60" placeholder="Project name…" value="New project">
-          <div class="wch-proj-swatches">
-            <button type="button" class="wch-proj-swatch is-sel" style="color:#25507C" aria-label="Navy"></button>
-            <button type="button" class="wch-proj-swatch" style="color:#32A966" aria-label="Green"></button>
-            <button type="button" class="wch-proj-swatch" style="color:#D27326" aria-label="Amber"></button>
-            <button type="button" class="wch-proj-swatch" style="color:#DC3038" aria-label="Red"></button>
-          </div>
-        </div>
-      </div>`,
+    demo: demoHistoryCatalog(),
   },
   {
     name: 'Library cards',
@@ -3436,6 +4128,17 @@ const COMPONENTS = [
       </div>`,
   },
 ];
+
+/* Catalog accordion is A–Z by title. New cards can append above; this
+   sort is what the grid, search index, and Dev Ready children all read.
+   Decorative glyphs (⋯ ·) are spaces so "Chat ⋯ menu" sorts with Chat*. */
+function catalogNameKey(name) {
+  return String(name || '').replace(/[\u22ef\u00b7\u2022\u2026]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+COMPONENTS.sort((a, b) => catalogNameKey(a.name).localeCompare(catalogNameKey(b.name), 'en', {
+  sensitivity: 'base',
+  ignorePunctuation: true,
+}));
 
 /* ------------------------------------------------------------------ */
 /* Composition graph — which library cards are built from which.       */
@@ -3614,6 +4317,7 @@ const USED_HREF_RULES = [
   { re: /api keys/, hrefs: ['api-keys.html'] },
   { re: /accessibility/, hrefs: ['accessibility-review.html'] },
   { re: /progress log/, hrefs: ['progress-log.html'] },
+  { re: /\bhelix\b/, hrefs: ['helix.html'] },
   { re: /all modules|this page/, hrefs: ['all-modules.html'] },
   { re: /\bhelp\b/, hrefs: ['help.html'] },
   { re: /portfolio table|\.pf-stats|\.pf-rowmenu|portfolio \(\.pf/, hrefs: ['product-portfolio.html'] },
@@ -3876,7 +4580,7 @@ function buildDevReadyTree() {
   /* Icon Inventory is one library — Dev Ready is the module switch, not a
      per-group count. */
   registerReadyChildren('mi-design', designReadyGroups());
-  registerReadyChildren('mi-components', COMPONENTS.map((c) => ({ id: c.name, label: c.name })));
+  registerReadyChildren('mi-components', COMPONENTS.filter((c) => c.status !== 'not-now').map((c) => ({ id: c.name, label: c.name })));
 }
 
 /* One Dev Ready switch. `level` is 'module' (a higher-level component — on
@@ -3918,18 +4622,22 @@ function moduleReadyToggleHTML(moduleId, label) {
   return readyToggleHTML(moduleId, label, { level: 'module' });
 }
 
-function themedDemoHTML(demo) {
-  const stage = String(demo || '');
+function themePaneHTML(mode, demo) {
+  const label = mode === 'dark' ? 'Dark' : 'Light';
   return `
-    <div class="dsc-themes">
-      <div class="dsc-theme dsc-theme-light">
-        <div class="dsc-sub-label">Light</div>
-        <div class="dsc-demo">${stage}</div>
-      </div>
-      <div class="dsc-theme dsc-theme-dark">
-        <div class="dsc-sub-label">Dark</div>
-        <div class="dsc-demo">${stage}</div>
-      </div>
+    <div class="dsc-theme dsc-theme-${mode}">
+      <div class="dsc-sub-label">${label}</div>
+      <div class="dsc-demo">${demo}</div>
+    </div>`;
+}
+
+function themedDemoHTML(demo, { stack = false } = {}) {
+  const stage = String(demo || '');
+  const cls = stack ? 'dsc-themes dsc-themes--stack' : 'dsc-themes';
+  return `
+    <div class="${cls}">
+      ${themePaneHTML('light', stage)}
+      ${themePaneHTML('dark', stage)}
     </div>`;
 }
 
@@ -3939,35 +4647,56 @@ function setCompCardCollapsed(card, collapsed) {
   card.querySelector(':scope > .dsc-card-head')?.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
 }
 
+function notNowStatusHTML() {
+  return `
+    <div class="dsc-ready dsc-ready--item dsc-ready--not-now">
+      <span class="dash-brand-toggle" aria-disabled="true">
+        <span class="dash-brand-toggle-track"><span class="dash-brand-toggle-thumb"></span></span>
+        <span class="dash-brand-toggle-text">Not Now</span>
+      </span>
+    </div>`;
+}
+
 function componentCard(c, readyMap) {
   const cat = catOf(c);
   const parts = partsOf(c.name);
   const hosts = usedByComps(c.name);
-  const search = `${c.name} ${c.cls} ${c.used} ${c.note || ''} ${cat} ${parts.map((p) => p.name).join(' ')} ${hosts.map((h) => h.name).join(' ')}`.toLowerCase();
-  const cardCls = `dsc-card dsc-card--acc is-collapsed${c.wide ? ' dsc-card--wide' : ''}`;
+  const shelved = c.status === 'not-now';
+  const search = `${c.name} ${c.cls} ${c.used} ${c.note || ''} ${cat} ${parts.map((p) => p.name).join(' ')} ${hosts.map((h) => h.name).join(' ')}${shelved ? ' not now locked' : ''}`.toLowerCase();
+  const cardCls = `dsc-card dsc-card--acc is-collapsed${c.wide ? ' dsc-card--wide' : ''}${shelved ? ' is-locked' : ''}`;
   const bodyId = 'acc-body-' + compDomId(c.name);
   const note = c.note
     ? `<div class="dsc-note"><span class="material-symbols-outlined">${esc(c.noteIcon || 'aspect_ratio')}</span><span>${c.note}</span></div>`
     : '';
-  const download = c.download
+  const dl = c.download;
+  const download = dl
     ? `<div class="dsc-download-row">
-        <a class="dash-btn dash-btn--ghost dsc-download" href="${esc(c.download.href)}" download="${esc(c.download.file)}">
-          <span class="material-symbols-outlined">download</span>${esc(c.download.label)}
+        ${dl.source ? `<a class="dash-btn dash-btn--ghost dsc-download" href="${esc(dl.source.href)}">
+          <span class="material-symbols-outlined">${esc(dl.source.icon || 'open_in_new')}</span>${esc(dl.source.label)}
+        </a>` : ''}
+        ${dl.openLabel ? `<a class="dash-btn dash-btn--ghost dsc-download" href="${esc(dl.href)}">
+          <span class="material-symbols-outlined">description</span>${esc(dl.openLabel)}
+        </a>` : ''}
+        <a class="dash-btn dash-btn--ghost dsc-download" href="${esc(dl.href)}"${dl.file ? ` download="${esc(dl.file)}"` : ''}>
+          <span class="material-symbols-outlined">download</span>${esc(dl.label)}
         </a>
       </div>`
     : '';
+  const headAttrs = shelved
+    ? 'aria-disabled="true"'
+    : `role="button" tabindex="0" aria-expanded="false" aria-controls="${esc(bodyId)}"`;
   return `
-    <div class="${cardCls}" id="${esc(compDomId(c.name))}" data-ds-comp data-comp-name="${esc(c.name)}" data-cat="${esc(cat)}" data-search="${esc(search)}">
-      <div class="dsc-card-head" role="button" tabindex="0" aria-expanded="false" aria-controls="${esc(bodyId)}">
+    <div class="${cardCls}" id="${esc(compDomId(c.name))}" data-ds-comp data-comp-name="${esc(c.name)}" data-cat="${esc(cat)}" data-search="${esc(search)}"${shelved ? ' data-comp-status="not-now"' : ''}>
+      <div class="dsc-card-head" ${headAttrs}>
         <span class="mi-acc-chevron material-symbols-outlined" aria-hidden="true">expand_more</span>
         <div class="dsc-head">
           <span class="dsc-name">${esc(c.name)}</span>
           <code class="dsc-class">${esc(c.cls)}</code>
         </div>
-        ${readyToggleHTML(c.name, c.name, { level: 'item', parent: 'mi-components' })}
+        ${shelved ? notNowStatusHTML() : readyToggleHTML(c.name, c.name, { level: 'item', parent: 'mi-components' })}
       </div>
       <div class="dsc-card-body" id="${esc(bodyId)}">
-        ${themedDemoHTML(c.demo)}
+        ${typeof c.demoCustom === 'function' ? c.demoCustom() : (c.demoCustom || (c.demo ? themedDemoHTML(c.demo, { stack: !!c.stackThemes }) : ''))}
         ${note}
         ${download}
         <div class="dsc-refs">
@@ -4012,12 +4741,12 @@ const CONVENTIONS = [
   {
     icon: 'layers',
     title: 'Two popover shapes',
-    body: 'All menus reduce to two shells — <code>.topbar-popover</code> (compact top-bar / row menus, including chat and module \u22ef) and <code>.wise-popover</code> (settings / profile). Both are opened and dismissed centrally by <code>js/popover-layer.js</code>. Transcript action tips are the dark <code>.sc-tip</code> card, not a third menu shell.',
+    body: 'All menus reduce to two shells — <code>.topbar-popover</code> (compact top-bar / row menus, including chat and module \u22ef) and <code>.wise-popover</code> (settings / profile). Both are opened and dismissed centrally by <code>js/popover-layer.js</code>. Transcript action tips are the shared theme-aware <code>#lir-tooltip</code> card, not a third menu shell.',
   },
   {
     icon: 'view_sidebar',
     title: 'Sticky drawers are a utility belt',
-    body: 'Any module to the right of the chat tucks behind it like a drawer \u2014 always on, no toggle. The chat is the buckle (z-index 3). Peer drawers (Output, Nutrition Facts, Turns) sit at z-index 1, shorter and centred, with the chat-facing corners squared. Nested drawers (progress, Help contact, Report) sit one layer under their parent (z-index 0, shorter still). History tucks left. Opening a \u22ef never lifts a drawer over the chat.',
+    body: 'Any module to the right of the chat tucks behind it like a drawer \u2014 always on, no toggle. The chat is the buckle (z-index 3). Output sits at z-index 2. Peer drawers (Nutrition Facts, Turns, Help) sit at z-index 1, shorter and centred, with the chat-facing corners squared. Nested drawers (progress, Help contact, Report) sit one layer under their parent (z-index 0, shorter still). History tucks left. Opening a \u22ef never lifts a drawer over the chat.',
   },
   {
     icon: 'accessibility_new',
@@ -5309,10 +6038,11 @@ function wireStreamingTrace(root) {
 /*                                                                     */
 /* A live catalog of how things move in the app: count-ups, chart      */
 /* replay, paragraph streaming, gold chip shimmer, chip fly-in,        */
-/* the welcome helix, the thinking helix, and accordion open — plus    */
-/* the drag/resize systems (module splitter, width tiers, carousel     */
-/* rail, reorder, drag-to-file). Each card explains the rule and runs  */
-/* real behaviour (or a faithful mini of it) so you can try it here.   */
+/* output chip fan, chat composer sheen, the welcome helix, the        */
+/* thinking helix, and accordion open — plus the drag/resize systems   */
+/* (module splitter, width tiers, carousel rail, reorder,              */
+/* drag-to-file). Each card explains the rule and runs real behaviour  */
+/* (or a faithful mini of it) so you can try it here.                  */
 /* ------------------------------------------------------------------ */
 
 function motionShimmer(label) {
@@ -5409,6 +6139,43 @@ const MOTION_ITEMS = [
         <button type="button" class="mi-trace-run" data-fly-run>
           <span class="material-symbols-outlined">replay</span><span>Replay fly-in</span>
         </button>
+      </div>`,
+  },
+  {
+    id: 'toast', group: 'anim', icon: 'vertical_align_bottom', title: 'Toast',
+    src: 'js/agent-overview.js \u00b7 agToast \u00b7 #ag-toast-wrap',
+    used: 'Every save, invite, copy, and error \u2014 agent shell and the matching admin / module wraps',
+    lede: 'One seat: bottom centre of the viewport, 22px up (28px on admin / module wraps). It rises 10px and fades in (0.25s), holds 2.6s, then fades and drops 8px and is removed. A second toast stacks above the first. Not top, not a corner, not next to the control. Replay to watch the path.',
+    demo: `
+      <div class="mi-motion-toast" data-motion-toast>
+        <div class="mi-motion-toast-stage" data-toast-stage></div>
+        <button type="button" class="mi-trace-run" data-toast-run>
+          <span class="material-symbols-outlined">replay</span><span>Replay toast</span>
+        </button>
+        <p class="mi-motion-hint">Rises into the bottom centre, holds, then drops and fades. Click again to stack another.</p>
+      </div>`,
+  },
+  {
+    id: 'outfan', group: 'anim', icon: 'layers', title: 'Output chip fan',
+    src: '.sc-surface-card · .sc-surface-stack',
+    used: 'WISEcodeAI transcript — versioned Results / Visuals chips',
+    lede: 'When an output has been redone, its chip stacks every version at 52px (oldest first, newest raised). Hover fans the cascade — tight −28px overlap opens to −4px so earlier versions peek — and the gold stroke brightens. Replay runs the fan once; leave the chip to rest, or hover it live. Reduced motion snaps to the open pose.',
+    demo: `
+      <div class="mi-motion-outfan" data-motion-outfan>
+        <div class="mi-motion-outfan-row">
+          <div class="mi-motion-outfan-col">
+            <div class="dsc-sub-label">Rest — hover to fan</div>
+            ${outputChipHTML({ title: OUTPUT_CHIP_TITLE, versions: OUTPUT_CHIP_VERS })}
+          </div>
+          <div class="mi-motion-outfan-col">
+            <div class="dsc-sub-label">Hover locked (fan)</div>
+            ${outputChipHTML({ title: OUTPUT_CHIP_TITLE, versions: OUTPUT_CHIP_VERS, hover: true })}
+          </div>
+        </div>
+        <button type="button" class="mi-trace-run" data-outfan-run>
+          <span class="material-symbols-outlined">replay</span><span>Replay fan</span>
+        </button>
+        <p class="mi-motion-hint">Replay fans the left chip, holds, then returns to rest. Hover either chip anytime.</p>
       </div>`,
   },
   {
@@ -5607,7 +6374,7 @@ const MOTION_ITEMS = [
       <div class="dsc-demo mi-motion-sticky" data-motion-sticky>
         <div class="mi-belt" aria-label="Sticky slide-in">
           <section class="mi-belt-chat"><span class="mi-belt-name">Chat</span><span class="mi-belt-z">z 3 \u00b7 buckle</span></section>
-          <aside class="mi-belt-mod mi-motion-sticky-slide" data-sticky-slide><span class="mi-belt-name">Output</span><span class="mi-belt-z">z 1 \u00b7 slide-in</span></aside>
+          <aside class="mi-belt-mod mi-belt-out mi-motion-sticky-slide" data-sticky-slide><span class="mi-belt-name">Output</span><span class="mi-belt-z">z 2 \u00b7 slide-in</span></aside>
         </div>
         <button type="button" class="mi-trace-run" data-sticky-run>
           <span class="material-symbols-outlined">replay</span><span>Replay slide-in</span>
@@ -5638,24 +6405,29 @@ const MOTION_ITEMS = [
       </div>`,
   },
   {
-    id: 'jameq', group: 'anim', icon: 'graphic_eq', title: 'Jam equalizer',
-    src: '.jam-eq · jamEqIdle / jamEq',
-    used: 'Primary nav jam strip — idle shimmer when paused, bounce while a tune plays',
-    lede: 'The 24-bar equalizer never sits still. Idle is a slow shimmer. Playing switches to a staggered bounce and the play pill picks up the brand gradient pulse. Reduced motion freezes the bars.',
+    id: 'jameq', group: 'anim', icon: 'graphic_eq', title: 'Jam visualizers',
+    src: '.jam-eq · .jam-helix · Appearance ▸ Sound',
+    used: 'Appearance ▸ Sound — bars by default, helix as the second mode',
+    lede: 'Two live visualizers share the synth. <strong>Bars</strong> (default) are a proper equalizer standing on a baseline. <strong>Helix</strong> is a horizontal DNA strand that twists and sends a spark along the rungs while a tune plays. Music starts only from the play button.',
     demo: `
       <div class="mi-motion-jam">
-        <div class="jam-strip mi-jam-demo" role="group" aria-label="Idle equalizer">
-          <button type="button" class="jam-play" aria-label="Play" aria-pressed="false"><span class="material-symbols-outlined jam-play-icon">play_arrow</span></button>
-          <div class="jam-eq" aria-hidden="true">${demoJamEq(24)}</div>
-          <div class="jam-songs"><button type="button" class="jam-song">WISE</button></div>
-        </div>
-        <div class="jam-strip mi-jam-demo is-playing" role="group" aria-label="Playing equalizer">
-          <button type="button" class="jam-play" aria-label="Pause" aria-pressed="true"><span class="material-symbols-outlined jam-play-icon">pause</span></button>
-          <div class="jam-eq" aria-hidden="true">${demoJamEq(24)}</div>
-          <div class="jam-songs"><button type="button" class="jam-song is-active">WISE</button></div>
-        </div>
+        ${demoJamStrip('bars', false, JAM_SONGS.slice(0, 3))}
+        ${demoJamStrip('bars', true, JAM_SONGS.slice(0, 3))}
+        ${demoJamStrip('helix', false, JAM_SONGS.slice(3, 6))}
+        ${demoJamStrip('helix', true, JAM_SONGS.slice(3, 6))}
       </div>
-      <p class="mi-motion-hint">Top bar is idle. Bottom bar is playing.</p>`,
+      <p class="mi-motion-hint">Top pair is bars (idle, then playing). Bottom pair is the horizontal helix.</p>`,
+  },
+  {
+    id: 'composersheen', group: 'anim', icon: 'flare', title: 'Chat composer sheen',
+    src: 'pages/wise.css · .fl-input-wrap::before · wise-sheen-rotate / wise-sheen-breathe',
+    used: 'Every chat composer — WISEcodeAI dock, Studio Chat, Reformulation / Add Product / Studio&AI panes',
+    lede: 'The composer pill keeps a light brand-wash stroke, not a heavy border. A specular highlight travels the edge on a 9s rotate while brightness breathes on a 4.5s pulse — the same living sheen in light and dark. The three-dot menu’s <strong>Input glow</strong> toggle sets <code>html.chat-sheen-off</code> to kill the ring app-wide; reduced motion freezes it at a steady opacity. Anatomy of the pill itself is in <em>Components → Chat composer</em>.',
+    demo: `
+      <div class="mi-motion-composer" data-motion-composer>
+        ${demoComposerHtml()}
+      </div>
+      <p class="mi-motion-hint">The sheen travels the pill edge continuously. Turn off Input glow in any chat’s ⋯ menu to remove it app-wide.</p>`,
   },
   {
     id: 'splitter', group: 'drag', icon: 'width_normal', title: 'Module drag-resize', wide: true,
@@ -5704,7 +6476,7 @@ const MOTION_ITEMS = [
     id: 'carousel', group: 'drag', icon: 'view_carousel', title: 'Carousel rail', wide: true,
     src: 'js/pane-width.js · #modules-row.modules-carousel',
     used: 'Every #modules-row page once any module is at custom width',
-    lede: 'Custom width pins each module at the size it already had (or the size you drag to) and puts the whole row on a <strong>carousel rail</strong> you scroll sideways. <strong>Narrow the browser</strong> — that is the important one — and the pinned modules overflow instead of squeezing: the row never restacks, and you scroll the rail. Shorten the window and the inner work surface of every module compresses — lists, charts and forms get shorter and scroll inside the card — but chips, type and controls keep their designed size.',
+    lede: 'Custom width pins each module at the size it already had (or the size you drag to) and puts the whole row on a <strong>carousel rail</strong> you scroll sideways. The rail is the same utility belt as <em>Sticky modules</em> — History left of chat, then Chat (z 3), Output (z 2), Nutrition Facts (z 1), Progress (z 0) — tuck and layers stay put. <strong>Narrow the browser</strong> — that is the important one — and the pinned modules overflow instead of squeezing: the row never restacks, and you scroll the rail. Shorten the window and the inner work surface of every module compresses — lists, charts and forms get shorter and scroll inside the card — but chips, type and controls keep their designed size, and the belt’s height steps (chat tallest, drawers shorter, nested shortest) stay in proportion.',
     demo: `
       <div class="mi-motion-car" data-motion-car>
         <div class="mi-motion-car-knobs">
@@ -5721,52 +6493,64 @@ const MOTION_ITEMS = [
         </div>
         <div class="mi-motion-car-stage">
           <div class="mi-motion-car-browser" data-car-browser>
-          <div class="mi-motion-car-chrome">
-            <span class="mi-motion-car-dots" aria-hidden="true"><i></i><i></i><i></i></span>
-            <span class="mi-motion-car-url">app · modules row</span>
-          </div>
-          <div class="mi-motion-car-row" data-car-row>
-            <article class="mi-motion-car-mod" style="--car-w:260px">
-              <header class="mi-motion-car-mod-head">Chat</header>
-              <div class="mi-motion-car-body">
-                <div class="mi-motion-car-line"></div>
-                <div class="mi-motion-car-line mi-motion-car-line--short"></div>
-                <div class="mi-motion-car-bars" aria-hidden="true"><i style="height:72%"></i><i style="height:48%"></i><i style="height:34%"></i></div>
-                <div class="mi-motion-car-chips"><span>Ask</span><span>Compare</span></div>
-              </div>
-            </article>
-            <article class="mi-motion-car-mod" style="--car-w:300px">
-              <header class="mi-motion-car-mod-head">History</header>
-              <div class="mi-motion-car-body">
-                <div class="mi-motion-car-rowline"></div>
-                <div class="mi-motion-car-rowline"></div>
-                <div class="mi-motion-car-rowline"></div>
-                <div class="mi-motion-car-rowline"></div>
-                <div class="mi-motion-car-chips"><span>Open</span></div>
-              </div>
-            </article>
-            <article class="mi-motion-car-mod" style="--car-w:280px">
-              <header class="mi-motion-car-mod-head">Details</header>
-              <div class="mi-motion-car-body">
-                <div class="mi-motion-car-score no-countup" data-no-countup>86</div>
-                <div class="mi-motion-car-bars" aria-hidden="true"><i style="height:80%"></i><i style="height:55%"></i><i style="height:28%"></i></div>
-                <div class="mi-motion-car-chips"><span>Verify</span><span>Report</span></div>
-              </div>
-            </article>
-            <article class="mi-motion-car-mod" style="--car-w:240px">
-              <header class="mi-motion-car-mod-head">Reports</header>
-              <div class="mi-motion-car-body">
-                <div class="mi-motion-car-line"></div>
-                <div class="mi-motion-car-line mi-motion-car-line--short"></div>
-                <div class="mi-motion-car-rowline"></div>
-                <div class="mi-motion-car-chips"><span>Export</span></div>
-              </div>
-            </article>
-          </div>
+            <div class="mi-motion-car-chrome">
+              <span class="mi-motion-car-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span class="mi-motion-car-url">app · modules row</span>
+            </div>
+            <div class="mi-motion-car-row" data-car-row aria-label="Sticky module stack on the carousel rail">
+              <aside class="mi-motion-car-mod mi-car-hist" style="--car-w:200px">
+                <header class="mi-motion-car-mod-head">History</header>
+                <span class="mi-motion-car-z">left of chat</span>
+                <div class="mi-motion-car-body">
+                  <div class="mi-motion-car-rowline"></div>
+                  <div class="mi-motion-car-rowline"></div>
+                  <div class="mi-motion-car-rowline"></div>
+                  <div class="mi-motion-car-rowline"></div>
+                  <div class="mi-motion-car-chips"><span>Open</span></div>
+                </div>
+              </aside>
+              <section class="mi-motion-car-mod mi-car-chat" style="--car-w:260px">
+                <header class="mi-motion-car-mod-head">Chat</header>
+                <span class="mi-motion-car-z">z 3 · buckle</span>
+                <div class="mi-motion-car-body">
+                  <div class="mi-motion-car-line"></div>
+                  <div class="mi-motion-car-line mi-motion-car-line--short"></div>
+                  <div class="mi-motion-car-bars" aria-hidden="true"><i style="height:72%"></i><i style="height:48%"></i><i style="height:34%"></i></div>
+                  <div class="mi-motion-car-chips"><span>Ask</span><span>Compare</span></div>
+                </div>
+              </section>
+              <aside class="mi-motion-car-mod mi-car-out" style="--car-w:240px">
+                <header class="mi-motion-car-mod-head">Output</header>
+                <span class="mi-motion-car-z">z 2</span>
+                <div class="mi-motion-car-body">
+                  <div class="mi-motion-car-score no-countup" data-no-countup>86</div>
+                  <div class="mi-motion-car-bars" aria-hidden="true"><i style="height:80%"></i><i style="height:55%"></i><i style="height:28%"></i></div>
+                  <div class="mi-motion-car-chips"><span>Verify</span><span>Report</span></div>
+                </div>
+              </aside>
+              <aside class="mi-motion-car-mod mi-car-nfp" style="--car-w:220px">
+                <header class="mi-motion-car-mod-head">Nutrition Facts</header>
+                <span class="mi-motion-car-z">z 1</span>
+                <div class="mi-motion-car-body">
+                  <div class="mi-motion-car-line"></div>
+                  <div class="mi-motion-car-line mi-motion-car-line--short"></div>
+                  <div class="mi-motion-car-rowline"></div>
+                </div>
+              </aside>
+              <aside class="mi-motion-car-mod mi-car-prog" style="--car-w:200px">
+                <header class="mi-motion-car-mod-head">Progress</header>
+                <span class="mi-motion-car-z">z 0 · nested</span>
+                <div class="mi-motion-car-body">
+                  <div class="mi-motion-car-rowline"></div>
+                  <div class="mi-motion-car-rowline"></div>
+                  <div class="mi-motion-car-rowline"></div>
+                </div>
+              </aside>
+            </div>
           </div>
         </div>
       </div>
-      <p class="mi-motion-hint">Drag <strong>width</strong> first — modules keep their size and the rail appears. Height shortens inner surfaces; chips stay the same size. Scroll the row sideways.</p>`,
+      <p class="mi-motion-hint">Same belt as Sticky modules. Drag <strong>width</strong> first — layers stay tucked and the rail appears. Height shortens inner surfaces in proportion; chips stay the same size. Scroll the row sideways.</p>`,
   },
   {
     id: 'reorder', group: 'drag', icon: 'drag_indicator', title: 'Drag to reorder',
@@ -5852,7 +6636,7 @@ function renderMotion() {
         <div class="mi-module-head-text">
           <h2 class="mi-module-title">Motion &amp; Resize</h2>
           <p class="mi-module-lede">Every animation and every drag/resize interaction in the app — explained and
-            running live. Count-ups, chart replay, streaming, chip shimmer and fly-in, both helixes, accordion
+            running live. Count-ups, chart replay, streaming, chip shimmer and fly-in, output chip fan, chat composer sheen, both helixes, accordion
             open, sticky drawer slide-in, activity-strip ticks, and the jam equalizer sit next to the module splitter, the five width tiers, the carousel rail, drag-to-reorder,
             drag-to-file, and drag-to-found-a-folder (Library card-on-card).
             All of it honors <code>prefers-reduced-motion</code>.</p>
@@ -5940,6 +6724,8 @@ function runMotionHelix(mod, chat, ctx) {
   const reduced = ctx.reduced;
   const runStream = ctx.runStream;
   const runFly = ctx.runFly;
+  const runToast = ctx.runToast;
+  const runOutfan = ctx.runOutfan;
   const replayChart = ctx.replayChart;
   const {
     createHelixBgAnim, readBgAnimScaleAxes, readBgAnimKnobs, readBgAnimDotsColor,
@@ -6737,6 +7523,8 @@ function runMotionHelix(mod, chat, ctx) {
     mod.querySelectorAll('[data-motion-chart]').forEach(replayChart);
     runStream();
     runFly();
+    if (typeof runToast === 'function') runToast();
+    if (typeof runOutfan === 'function') runOutfan();
     applyCarWidth(CAR_W_DEFAULT);
     applyCarHeight(CAR_H_DEFAULT);
     mod.querySelectorAll('.mi-motion-stats .mi-stat').forEach((card) => card.click());
@@ -6751,6 +7539,8 @@ function runMotionHelix(mod, chat, ctx) {
     }
     runStream();
     runFly();
+    if (typeof runToast === 'function') runToast();
+    if (typeof runOutfan === 'function') runOutfan();
     mod.querySelectorAll('[data-motion-chart]').forEach(replayChart);
     if (helix) helix.start();
   };
@@ -6857,10 +7647,55 @@ function wireMotion(root) {
   };
   mod.querySelector('[data-fly-run]')?.addEventListener('click', runFly);
 
+  /* ---- Toast rise / hold / leave (bottom centre) ---- */
+  const toastHost = mod.querySelector('[data-motion-toast]');
+  const runToast = () => {
+    const stage = toastHost && toastHost.querySelector('[data-toast-stage]');
+    if (!stage) return;
+    const t = document.createElement('div');
+    t.className = 'ag-toast';
+    t.innerHTML = '<span class="material-symbols-outlined">check_circle</span><span>Saved to your workspace</span>';
+    if (reduced) {
+      t.style.animation = 'none';
+      t.style.opacity = '1';
+      t.style.transform = 'none';
+    }
+    stage.appendChild(t);
+    const hold = reduced ? 900 : 2600;
+    setTimeout(() => {
+      t.style.transition = 'opacity .3s ease, transform .3s ease';
+      t.style.opacity = '0';
+      t.style.transform = 'translateY(8px)';
+      setTimeout(() => t.remove(), 320);
+    }, hold);
+  };
+  toastHost?.querySelector('[data-toast-run]')?.addEventListener('click', runToast);
+
+  /* ---- Output chip fan ---- */
+  const outfanLive = mod.querySelector('[data-motion-outfan] .sc-surface-card:not(.is-hover)');
+  let outfanTimer = 0;
+  const runOutfan = () => {
+    if (!outfanLive) return;
+    clearTimeout(outfanTimer);
+    outfanLive.classList.remove('is-hover');
+    void outfanLive.offsetWidth;
+    if (reduced) {
+      outfanLive.classList.add('is-hover');
+      return;
+    }
+    requestAnimationFrame(() => {
+      outfanLive.classList.add('is-hover');
+      outfanTimer = setTimeout(() => outfanLive.classList.remove('is-hover'), 1400);
+    });
+  };
+  mod.querySelector('[data-outfan-run]')?.addEventListener('click', runOutfan);
+
   const replayAll = () => {
     mod.querySelectorAll('[data-motion-chart]').forEach(replayChart);
     runStream();
     runFly();
+    runToast();
+    runOutfan();
   };
   mod.__motionReplayAll = replayAll;
 
@@ -6872,7 +7707,7 @@ function wireMotion(root) {
     if (mod.dataset.helixBooted === '1') return;
     mod.dataset.helixBooted = '1';
     import('./wiseai-chat.js').then((chat) => {
-      runMotionHelix(mod, chat, { reduced, runStream, runFly, replayChart });
+      runMotionHelix(mod, chat, { reduced, runStream, runFly, runToast, runOutfan, replayChart });
     }).catch((err) => {
       console.error('[all-modules] motion helix failed', err);
       delete mod.dataset.helixBooted;
@@ -7658,7 +8493,7 @@ function moduleStyles() {
     }
     /* Scorecard fill mirrors the chat module (.sc-card) across every theme. */
     html.dark .mi-stat { background: #1A2339; }
-    html.chat-tint:not(.dark) .mi-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+    html.chat-tint:not(.dark) .mi-stat { background: var(--scorecard-fill, color-mix(in srgb, var(--primary) 5%, var(--surface))); }
     html.dark.chat-tint .mi-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
     .mi-stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); border-color: var(--border-strong); }
     .mi-stat:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
@@ -7769,6 +8604,26 @@ function moduleStyles() {
       background: var(--surface-3, var(--surface-2));
     }
     #ii-render-switch.is-loading .ii-filter { opacity: 0.55; pointer-events: none; }
+
+    .ii-expect {
+      margin: 0 2px 12px; padding: 12px 16px 14px; border-radius: 12px;
+      background: color-mix(in srgb, var(--primary) 8%, var(--surface-2));
+      border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--border));
+    }
+    html.dark .ii-expect {
+      background: color-mix(in srgb, var(--primary) 14%, var(--surface-2));
+      border-color: color-mix(in srgb, var(--primary) 36%, var(--border));
+    }
+    .ii-expect-title {
+      font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
+      margin: 0 0 6px; font-size: 1.05rem; font-weight: 700;
+      letter-spacing: -0.01em; color: var(--text);
+    }
+    .ii-expect-body {
+      margin: 0; font-size: 0.8125rem; line-height: 1.55;
+      color: var(--text-muted); max-width: 82ch;
+    }
+    .ii-expect-body strong { color: var(--text); font-weight: 700; }
 
     .ii-render-note {
       margin: 0 2px 16px; padding: 9px 12px; border-radius: 10px;
@@ -8208,6 +9063,13 @@ function moduleStyles() {
       transition: border-color 0.16s ease, box-shadow 0.16s ease;
     }
     .dsc-card:hover { border-color: color-mix(in srgb, var(--primary) 40%, var(--border)); box-shadow: var(--shadow-2); }
+    .dsc-card.is-locked {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+    .dsc-card.is-locked:hover { border-color: var(--border); box-shadow: var(--shadow-1); }
+    .dsc-card.is-locked .dsc-card-head { cursor: default; }
+    .dsc-ready--not-now .dash-brand-toggle { cursor: default; pointer-events: none; }
     .dsc-card-head {
       display: flex; align-items: center; gap: 10px;
       padding: 12px 14px; cursor: pointer; user-select: none;
@@ -8263,8 +9125,20 @@ function moduleStyles() {
       display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
       padding: 0 12px; align-items: stretch;
     }
+    .dsc-themes--stack,
     .dsc-card:not(.dsc-card--wide) .dsc-themes { grid-template-columns: 1fr; }
     @media (max-width: 860px) { .dsc-themes { grid-template-columns: 1fr; } }
+    .dsc-table-catalog {
+      display: flex; flex-direction: column; gap: 14px; width: 100%; padding: 0 12px 4px;
+    }
+    .dsc-table-catalog > .dsc-sub-label { padding: 8px 8px 0; }
+    .dsc-table-catalog > .dsc-themes { padding: 0; }
+    .dsc-adm-stage { width: 100%; min-width: 0; }
+    .dsc-adm-stage--wide { overflow-x: auto; }
+    .dsc-adm-stage--narrow {
+      container-type: inline-size; container-name: adm;
+      max-width: 400px;
+    }
     .dsc-theme {
       display: flex; flex-direction: column; gap: 8px; min-width: 0;
       padding: 8px 8px 10px; border-radius: 12px;
@@ -8291,6 +9165,12 @@ function moduleStyles() {
       --sec-green-text: #245E3B;
       --ter-amber-text: #75360A;
       --sec-red-text: #831F23;
+      --scorecard-fill: #FFFFFF;
+      --score-ink: #111827;
+      --score-ink-red: #831F23;
+      --score-ink-green: #245E3B;
+      --score-ink-amber: #75360A;
+      --score-ink-blue: var(--primary);
       --shadow-1: 0 1px 2px rgba(17,24,39,.04), 0 1px 3px rgba(17,24,39,.04);
       --shadow-2: 0 1px 2px rgba(17,24,39,.04), 0 8px 24px rgba(17,24,39,.06);
       --shadow-card: var(--shadow-2);
@@ -8315,6 +9195,12 @@ function moduleStyles() {
       --sec-green-text: #B6C9BE;
       --ter-amber-text: #D7BE91;
       --sec-red-text: #FFE1DC;
+      --scorecard-fill: #1A2339;
+      --score-ink: #F3F4F6;
+      --score-ink-red: #FF9E96;
+      --score-ink-green: #6FE0A0;
+      --score-ink-amber: #D7BE91;
+      --score-ink-blue: #93C5FD;
       --shadow-1: 0 1px 2px rgba(0,0,0,.4);
       --shadow-2: 0 4px 12px rgba(0,0,0,.35), 0 12px 32px rgba(0,0,0,.35);
       --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.35);
@@ -8375,7 +9261,70 @@ function moduleStyles() {
     /* Demo neutralizers — components that are absolutely positioned or animated
        in situ render inline + inert inside the demo stage. */
     .dsc-demo .topbar-popover { position: static; animation: none; display: block; }
+    .dsc-demo .topbar-popover.sc-menu-grouped {
+      position: relative; display: flex; flex-direction: row; flex-wrap: wrap;
+      align-items: start; gap: 8px; padding: 8px;
+      width: max-content; max-width: min(920px, 100%);
+    }
+    .dsc-demo .sc-menu-col { flex: 0 0 250px; width: 250px; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+    .dsc-demo .sc-menu-col--helix { flex: 0 1 280px; width: 280px; min-width: 220px; }
+    .dsc-demo .sc-menu-group {
+      display: block; margin: 0; padding: 2px 0 6px; min-width: 0;
+      border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2);
+    }
+    html.dark .dsc-demo .sc-menu-group { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.09); }
+    .dsc-demo .sc-menu-group-head {
+      padding: 8px 12px 4px; font-size: 11px; letter-spacing: 0.08em; font-weight: 700;
+      text-transform: uppercase; color: var(--text-subtle);
+    }
+    .dsc-demo .sc-menu-grouped .topbar-menu-item { margin: 0 4px; width: calc(100% - 8px); border-radius: 9px; padding: 6px 7px; gap: 6px; }
+    .dsc-demo .sc-menu-grouped .topbar-menu-divider { display: none; }
+    .dsc-demo .topbar-menu-copy { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; min-width: 0; }
+    .dsc-demo .topbar-menu-title { display: block; line-height: 1.2; }
+    .dsc-demo .topbar-menu-desc { display: block; font-size: 10px; font-weight: 500; line-height: 1.25; color: var(--text-muted); }
+    .dsc-demo .sc-menu-admin-wrap { position: absolute; top: 4px; right: 4px; z-index: 3; }
+    .dsc-demo .sc-menu-admin-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%;
+      background: transparent; color: var(--text-subtle);
+    }
+    .dsc-demo .sc-menu-admin-btn.is-admin-on { color: rgb(219, 39, 119); }
     .dsc-demo .ag-toast { animation: none; }
+    .dsc-states.dsc-states--toast {
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 16px 18px;
+    }
+    .dsc-states.dsc-states--toast .dsc-toast-seat-col {
+      flex: 1 1 100%;
+      width: 100%;
+    }
+    .dsc-demo .dsc-toast-stage {
+      position: relative;
+      width: 100%;
+      min-height: 148px;
+      border: 1px dashed var(--border-strong);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--border) 22%, transparent);
+    }
+    .dsc-demo .dsc-toast-stage .ag-toast,
+    .dsc-demo .ag-toast.dsc-toast-seated {
+      position: absolute;
+      left: 50%;
+      bottom: 14px;
+      transform: translateX(-50%);
+      max-width: calc(100% - 24px);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .dsc-demo .ag-toast.dsc-toast-enter {
+      opacity: 0.5;
+      transform: translateY(10px);
+    }
+    .dsc-demo .ag-toast.dsc-toast-leave {
+      opacity: 0.36;
+      transform: translateY(8px);
+    }
     /* relative (not static) so the unread-dot ::after anchors to the chip —
        static would let it escape to the module's top-right corner and float
        there as a stray red dot. */
@@ -8385,17 +9334,96 @@ function moduleStyles() {
     .dsc-demo .adm-avatar,
     .dsc-demo .adm-avatar--photo,
     .dsc-demo .topbar-profile { border-radius: 50%; }
+    .dsc-demo .dsc-avatar-catalog { display: flex; flex-direction: column; gap: 18px; width: 100%; }
+    .dsc-demo .dsc-avatar-chip-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .dsc-demo .dsc-avatar-catalog-row {
+      display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; width: 100%;
+    }
+    .dsc-demo .dsc-avatar-catalog-picker { flex: 1 1 320px; min-width: 0; width: 100%; }
+    .dsc-demo .dsc-avatar-catalog .wise-popover { max-width: 260px; width: 260px; }
+    /* Organization Profile avatar picker — page-local on profile.html, so the
+       catalog restates the same rules under .dsc-demo. */
+    .dsc-demo .pf-upload { border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px 16px; background: var(--surface-2); }
+    html.dark .dsc-demo .pf-upload { background: rgba(255,255,255,0.03); }
+    .dsc-demo .pf-upload-head { margin-bottom: 12px; }
+    .dsc-demo .pf-upload-title { font-size: 0.88rem; font-weight: 600; color: var(--text); }
+    .dsc-demo .pf-upload-sub { font-size: 0.78rem; color: var(--text-muted); margin-top: 3px; }
+    .dsc-demo .pf-uptabs { display: flex; gap: 18px; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+    .dsc-demo .pf-uptab { display: inline-flex; align-items: center; gap: 6px; border: 0; background: transparent; cursor: default; padding: 8px 2px; margin-bottom: -1px; border-bottom: 2px solid transparent; color: var(--text-muted); font-family: inherit; font-size: 0.8rem; font-weight: 600; }
+    .dsc-demo .pf-uptab .material-symbols-outlined { font-size: 16px; }
+    .dsc-demo .pf-uptab.is-active { color: var(--primary-ink, var(--primary)); border-bottom-color: var(--primary); }
+    .dsc-demo .pf-uprow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .dsc-demo .pf-file-btn { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 0.82rem; font-weight: 600; }
+    html.dark .dsc-demo .pf-file-btn { background: rgba(255,255,255,0.05); }
+    .dsc-demo .pf-file-btn .material-symbols-outlined { font-size: 17px; }
+    .dsc-demo .pf-file-name { font-size: 0.82rem; color: var(--text-muted); }
+    .dsc-demo .pf-url-input { flex: 1; min-width: 180px; height: 38px; box-sizing: border-box; padding: 0 16px; font-family: inherit; font-size: 0.85rem; color: var(--text); background: var(--surface); border: 1px solid var(--border-strong); border-radius: 999px; outline: none; }
+    html.dark .dsc-demo .pf-url-input { background: rgba(255,255,255,0.05); }
+    .dsc-demo .pf-hint { font-size: 0.74rem; color: var(--text-subtle); margin-top: 10px; }
+    .dsc-demo .pf-avatar-row { display: flex; align-items: flex-start; gap: 18px; }
+    .dsc-demo .pf-avatar-preview {
+      flex-shrink: 0; width: 76px; height: 76px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+      background: var(--surface); border: 1.5px dashed var(--border-strong); color: var(--text-subtle);
+    }
+    html.dark .dsc-demo .pf-avatar-preview { background: rgba(255,255,255,0.05); }
+    .dsc-demo .pf-avatar-preview.is-set { border-style: solid; border-color: var(--border); }
+    .dsc-demo .pf-avatar-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .dsc-demo .pf-avatar-controls { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .dsc-demo .pf-avatar-controls .pf-uptabs { margin-bottom: 12px; }
+    .dsc-demo .pf-avatar-remove { align-self: flex-start; margin-top: 12px; }
+    .dsc-demo .pf-avatar-presets { margin-top: 16px; }
+    .dsc-demo .pf-avatar-presets-label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-muted); margin-bottom: 9px; }
+    .dsc-demo .pf-avatar-presets-row { display: flex; flex-wrap: wrap; gap: 12px; }
+    .dsc-demo .pf-avatar-preset {
+      width: 46px; height: 46px; padding: 0; border-radius: 50%; overflow: hidden;
+      background: var(--surface); border: 2px solid var(--border-strong);
+    }
+    .dsc-demo .pf-avatar-preset img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .dsc-demo .pf-avatar-preset.is-active { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
     .dsc-demo .dash-btn-row { align-self: stretch; align-items: center; }
     .dsc-demo .dash-text-link { margin-top: 0; }
     .dsc-demo .fl-input-wrap { width: 100%; }
     .dsc-demo .sc-input-row { width: 100%; align-self: stretch; }
     /* Composer popovers open upward out of the dashed stage — don't clip them. */
     .dsc-card:has([data-wise-composer]) { overflow: visible; }
+    /* Three composer states stack full-width. nowrap + flex:none so a
+       stretched Light/Dark pane cannot wrap the column sideways. */
+    .dsc-states.dsc-states--composer {
+      flex-direction: column;
+      flex-wrap: nowrap;
+      gap: 18px;
+      align-items: stretch;
+      height: auto !important;
+    }
+    .dsc-states.dsc-states--composer .dsc-state-col {
+      width: 100%;
+      flex: 0 0 auto;
+    }
+    /* Pin demos to single-pane chat width so the real ≤420px composer grid
+       applies: text on its own row, "+" / database / send on the bottom —
+       matching Add Product / docked WISEcodeAI, not the wide welcome-chat row. */
+    .dsc-demo [data-wise-composer] {
+      width: 380px;
+      max-width: 100%;
+      min-width: 0;
+    }
+    .dsc-card:has([data-wise-composer]) .dsc-demo { overflow-x: visible; }
+    /* Attachment chips stay at composer size — compact pills, not catalog-scale cards. */
+    .dsc-demo .fl-attach-chip,
+    .dsc-demo .sc-att-chip { animation: none; }
     .dsc-demo .ws-scorecards { flex-wrap: wrap; overflow: visible; padding: 0; gap: 10px; }
     .dsc-demo .ws-scorecard { flex: 1 1 220px; min-width: 200px; max-width: 280px; }
     .dsc-demo .mi-search-inline { width: 100%; }
     /* New in-situ components: render the popovers/menus/modal inline + inert. */
-    .dsc-demo .adm-filter-pop { position: static; margin-top: 10px; width: 100%; box-shadow: none; }
+    .dsc-demo .adm-filter-pop { position: static; margin-top: 10px; width: 100%; max-width: 420px; box-shadow: none; }
+    .dsc-demo .adm-filter-pop .wmod-filter-pop-head { margin-bottom: 4px; }
+    .dsc-demo .adm-filter-pop .wmod-filter-pop-title {
+      font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
+      font-size: 1rem; font-weight: 800; letter-spacing: -0.01em;
+    }
+    .dsc-demo .dsc-filter-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .dsc-demo .adm-search-filter.is-hover { color: var(--text); background: var(--surface-3, var(--surface-2)); }
     .dsc-demo .adm-rowmenu-pop { position: static; box-shadow: none; }
     .dsc-demo .wise-popover { position: static; box-shadow: none; }
     .dsc-demo .adm-modal { transform: none; box-shadow: var(--shadow-2); }
@@ -8403,8 +9431,8 @@ function moduleStyles() {
     .dsc-demo .adm-bar-fill,
     .dsc-demo .adm-vrow-bar span { transition: none; }
 
-    /* Download affordance (e.g. the Charts & graphs design-rules .md). */
-    .dsc-download-row { padding: 0 16px 4px; }
+    /* Download / open affordance (e.g. the Charts & graphs design-rules .md). */
+    .dsc-download-row { padding: 0 16px 12px; display: flex; flex-wrap: wrap; gap: 10px; }
     a.dsc-download { text-decoration: none; }
     a.dsc-download .material-symbols-outlined { font-size: 18px !important; }
 
@@ -8421,6 +9449,12 @@ function moduleStyles() {
     }
     .dsc-state-col {
       display: flex; flex-direction: column; gap: 8px; min-width: 0;
+    }
+    .dsc-icon-name {
+      font-family: var(--font-mono); font-size: 0.5625rem; font-weight: 600;
+      letter-spacing: 0; text-transform: none; color: var(--text-muted);
+      padding: 1px 6px; border-radius: 6px; background: var(--surface-2);
+      word-break: break-word; max-width: 11rem;
     }
     .dsc-state-col .dash-btn-row { margin: 0; flex-wrap: wrap; }
     /* Forced hover / open for demos (mirrors :hover so all states stay visible). */
@@ -8480,7 +9514,32 @@ function moduleStyles() {
       box-shadow: var(--shadow-card);
     }
     html.dark .dsc-demo .dsc-claim-demo { background: var(--surface); }
+    /* Stamp disc is html.dark-scoped in wise.css. Pin the engraved cut to the
+       Dark pane (and restore the paper cut on a Light pane when the page is dark). */
+    .dsc-theme-dark .dash-stamp-icon:not(.dash-stamp-num) {
+      border-color: color-mix(in srgb, #fff 9%, transparent);
+      color: color-mix(in srgb, var(--primary-bright) 58%, var(--surface-3));
+      box-shadow:
+        inset 0 2px 3px rgba(0, 0, 0, 0.5),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.09),
+        0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    .dsc-theme-dark .dash-stamp-icon:not(.dash-stamp-num) .material-symbols-outlined {
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+    }
+    html.dark .dsc-theme-light .dash-stamp-icon:not(.dash-stamp-num) {
+      border-color: color-mix(in srgb, var(--primary) 14%, var(--surface-3));
+      color: color-mix(in srgb, var(--primary) 26%, var(--surface-3));
+      box-shadow:
+        inset 0 1px 1px rgba(17, 24, 39, 0.07),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.55),
+        0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+    html.dark .dsc-theme-light .dash-stamp-icon:not(.dash-stamp-num) .material-symbols-outlined {
+      text-shadow: none;
+    }
     .dsc-card[data-comp-name="Filter tiles"] .dsc-demo,
+    .dsc-card[data-comp-name="App search"] .dsc-demo,
     .dsc-card[data-comp-name="Action scorecards"] .dsc-demo,
     .dsc-card[data-comp-name="KPI scorecards"] .dsc-demo,
     .dsc-card[data-comp-name="Claim scorecards"] .dsc-demo,
@@ -8511,10 +9570,15 @@ function moduleStyles() {
     }
     .dsc-demo .sc-reply-chips .chip.ms-chip.is-selected .material-symbols-outlined { color: #fff !important; }
 
-    /* Output chips — transcript + sticky Output rail. Copied from wiseai.html
-       so this catalog can render them live (those rules are page-scoped). */
-    .dsc-demo .sc-surface-slot { display: block; min-width: 0; max-width: 100%; }
-    .dsc-demo .sc-surface-card {
+    /* Output chips — transcript + sticky Output rail. Mirrored from wiseai.html
+       so this catalog (and Motion & Resize) can render them live — those rules
+       are page-scoped on wiseai. Scoped to .dsc-demo and #mi-motion. */
+    .dsc-card[data-comp-name="Output chips"] { overflow: visible; }
+    .dsc-card[data-comp-name="Output chips"] .dsc-demo { contain: none; overflow: visible; }
+    .dsc-demo .sc-surface-slot,
+    #mi-motion .sc-surface-slot { display: block; min-width: 0; max-width: 100%; }
+    .dsc-demo .sc-surface-card,
+    #mi-motion .sc-surface-card {
       position: relative; box-sizing: border-box;
       display: inline-flex; flex-direction: column; align-items: stretch;
       width: min(240px, 100%); max-width: 100%; min-width: 0;
@@ -8522,59 +9586,96 @@ function moduleStyles() {
       background: var(--surface);
       border: 1px solid color-mix(in srgb, var(--ter-amber, #FFC434) 50%, transparent);
       border-radius: 14px; cursor: pointer; font-family: inherit;
-      transition: border-color .15s ease, box-shadow .15s ease;
+      transition: border-color .15s ease, box-shadow .15s ease, width .22s cubic-bezier(0.22, 1, 0.36, 1);
     }
-    .dsc-demo .sc-surface-head { display: flex; align-items: center; gap: 12px; min-width: 0; width: 100%; }
-    html.dark .dsc-demo .sc-surface-card { background: #1A2339; }
+    .dsc-demo .sc-surface-head,
+    #mi-motion .sc-surface-head { display: flex; align-items: center; gap: 12px; min-width: 0; width: 100%; }
+    html.dark .dsc-demo .sc-surface-card,
+    html.dark #mi-motion .sc-surface-card,
+    .dsc-theme-dark .sc-surface-card { background: #1A2339; }
     .dsc-demo .sc-surface-card:hover,
-    .dsc-demo .sc-surface-card.is-hover {
+    .dsc-demo .sc-surface-card.is-hover,
+    #mi-motion .sc-surface-card:hover,
+    #mi-motion .sc-surface-card.is-hover {
       border-color: color-mix(in srgb, var(--ter-amber, #FFC434) 80%, transparent);
       box-shadow: 0 4px 12px rgba(255,196,52,0.12);
     }
+    .dsc-demo .sc-surface-card:has(.sc-surface-stack):hover,
+    .dsc-demo .sc-surface-card:has(.sc-surface-stack).is-hover,
+    #mi-motion .sc-surface-card:has(.sc-surface-stack):hover,
+    #mi-motion .sc-surface-card:has(.sc-surface-stack).is-hover {
+      width: min(288px, 100%);
+    }
     .dsc-demo .sc-surface-thumb,
-    .dsc-demo .wa-merge-chip-thumb {
+    .dsc-demo .wa-merge-chip-thumb,
+    #mi-motion .sc-surface-thumb,
+    #mi-motion .wa-merge-chip-thumb {
       width: 52px; height: 52px; flex: 0 0 auto; border-radius: 10px; overflow: hidden;
       position: relative; background: var(--surface); border: 1px solid var(--border);
     }
     .dsc-demo .sc-surface-thumb-inner,
-    .dsc-demo .wa-merge-chip-thumb-inner {
+    .dsc-demo .wa-merge-chip-thumb-inner,
+    #mi-motion .sc-surface-thumb-inner,
+    #mi-motion .wa-merge-chip-thumb-inner {
       position: absolute; top: 0; left: 0; width: 360px;
       transform: scale(0.1444); transform-origin: top left; pointer-events: none;
     }
-    .dsc-demo .mi-out-thumb-fill {
+    .dsc-demo .mi-out-thumb-fill,
+    #mi-motion .mi-out-thumb-fill {
       width: 360px; height: 360px; overflow: hidden; background: var(--surface-2);
     }
-    .dsc-demo .mi-out-thumb-fill img {
+    .dsc-demo .mi-out-thumb-fill img,
+    #mi-motion .mi-out-thumb-fill img {
       width: 360px; height: 360px; object-fit: cover; display: block;
     }
-    .dsc-demo .sc-surface-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
-    .dsc-demo .sc-surface-title {
+    .dsc-demo .sc-surface-body,
+    #mi-motion .sc-surface-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+    .dsc-demo .sc-surface-title,
+    #mi-motion .sc-surface-title {
       min-width: 0; width: 100%; font-size: 14px; font-weight: 700; color: var(--text);
       line-height: 1.3; overflow: hidden;
       display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
     }
-    .dsc-demo .sc-surface-stack { display: inline-flex; align-items: center; flex: 0 0 auto; padding-left: 4px; }
-    .dsc-demo .sc-surface-stack .sc-surface-thumb {
-      margin-left: -24px;
+    .dsc-demo .sc-surface-stack,
+    #mi-motion .sc-surface-stack { display: inline-flex; align-items: center; flex: 0 0 auto; padding-left: 4px; }
+    .dsc-demo .sc-surface-stack .sc-surface-thumb,
+    #mi-motion .sc-surface-stack .sc-surface-thumb {
+      margin-left: -28px; z-index: 1;
       box-shadow: -3px 2px 8px rgba(0,0,0,0.16); background: var(--surface-2);
-      transition: transform .15s ease, margin .15s ease;
+      transition: transform .22s cubic-bezier(0.22, 1, 0.36, 1), margin .22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow .22s ease;
     }
-    .dsc-demo .sc-surface-stack .sc-surface-thumb:first-child { margin-left: 0; }
-    .dsc-demo .sc-surface-stack .sc-surface-thumb.is-old { filter: saturate(.85) brightness(.98); opacity: .9; }
-    .dsc-demo .sc-surface-stack .sc-surface-thumb.is-latest {
+    .dsc-demo .sc-surface-stack .sc-surface-thumb:first-child,
+    #mi-motion .sc-surface-stack .sc-surface-thumb:first-child { margin-left: 0; }
+    .dsc-demo .sc-surface-stack .sc-surface-thumb.is-old,
+    #mi-motion .sc-surface-stack .sc-surface-thumb.is-old { filter: saturate(.85) brightness(.98); opacity: .9; }
+    .dsc-demo .sc-surface-stack .sc-surface-thumb.is-latest,
+    #mi-motion .sc-surface-stack .sc-surface-thumb.is-latest {
+      z-index: 2;
       border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));
       box-shadow: -3px 2px 10px rgba(37,80,124,0.28), 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent);
     }
-    .dsc-demo .sc-surface-stack .sc-surface-thumb.is-active {
+    .dsc-demo .sc-surface-stack .sc-surface-thumb.is-active,
+    #mi-motion .sc-surface-stack .sc-surface-thumb.is-active {
       z-index: 3;
       border-color: color-mix(in srgb, var(--primary) 70%, var(--border-strong));
       box-shadow: -3px 2px 12px rgba(37,80,124,0.34), 0 0 0 2px color-mix(in srgb, var(--primary) 45%, transparent);
     }
     .dsc-demo .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb,
-    .dsc-demo .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb { margin-left: -12px; }
+    .dsc-demo .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb,
+    #mi-motion .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb,
+    #mi-motion .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb { margin-left: -4px; }
     .dsc-demo .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb:first-child,
-    .dsc-demo .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb:first-child { margin-left: 0; }
-    .dsc-demo .sc-surface-vtag {
+    .dsc-demo .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb:first-child,
+    #mi-motion .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb:first-child,
+    #mi-motion .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb:first-child { margin-left: 0; }
+    .dsc-demo .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb.is-old,
+    .dsc-demo .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb.is-old,
+    #mi-motion .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb.is-old,
+    #mi-motion .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb.is-old {
+      transform: translateY(-2px); opacity: 1; filter: none;
+    }
+    .dsc-demo .sc-surface-vtag,
+    #mi-motion .sc-surface-vtag {
       position: absolute; right: 1px; bottom: 1px; z-index: 2;
       padding: 0 3px; border-radius: 5px; min-width: 12px; text-align: center;
       font-size: 8px; font-weight: 800; line-height: 13px; letter-spacing: 0;
@@ -8582,14 +9683,18 @@ function moduleStyles() {
       border: 1px solid var(--border); font-variant-numeric: tabular-nums;
     }
     .dsc-demo .sc-surface-thumb.is-latest .sc-surface-vtag,
-    .dsc-demo .wa-merge-chip.is-active .sc-surface-vtag {
+    .dsc-demo .wa-merge-chip.is-active .sc-surface-vtag,
+    #mi-motion .sc-surface-thumb.is-latest .sc-surface-vtag,
+    #mi-motion .wa-merge-chip.is-active .sc-surface-vtag {
       color: #fff; background: var(--primary); border-color: var(--primary);
     }
-    .dsc-demo .wa-merge-chips {
+    .dsc-demo .wa-merge-chips,
+    #mi-motion .wa-merge-chips {
       display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
       padding: 2px;
     }
-    .dsc-demo .wa-merge-chip {
+    .dsc-demo .wa-merge-chip,
+    #mi-motion .wa-merge-chip {
       flex: 0 0 auto; box-sizing: border-box; width: min(240px, 100%); max-width: 240px;
       display: inline-flex; align-items: center; gap: 12px; padding: 8px 12px 8px 8px;
       background: var(--surface);
@@ -8598,8 +9703,11 @@ function moduleStyles() {
       font-family: inherit; font-size: 14px; font-weight: 700; color: var(--text);
       text-align: left;
     }
-    html.dark .dsc-demo .wa-merge-chip { background: #1A2339; }
-    .dsc-demo .wa-merge-chip.is-active {
+    html.dark .dsc-demo .wa-merge-chip,
+    html.dark #mi-motion .wa-merge-chip,
+    .dsc-theme-dark .wa-merge-chip { background: #1A2339; }
+    .dsc-demo .wa-merge-chip.is-active,
+    #mi-motion .wa-merge-chip.is-active {
       border-color: var(--primary); color: var(--primary-ink, var(--primary));
       box-shadow: inset 0 0 0 1px var(--primary);
     }
@@ -8707,16 +9815,31 @@ function moduleStyles() {
       color: var(--text-subtle); cursor: default;
     }
     .dsc-demo .sc-tip {
-      display: inline-flex; align-items: center; padding: 5px 9px; border-radius: 7px;
-      background: #1f2430; color: #fff; font-size: 11.5px; font-weight: 600;
-      box-shadow: 0 8px 22px rgba(0,0,0,0.30); white-space: nowrap;
+      display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 8px;
+      background: var(--surface); color: var(--text); font-size: 11px; font-weight: 600;
+      box-shadow: var(--shadow-card, 0 8px 22px rgba(20,30,60,0.14));
+      border: 1px solid var(--border); white-space: nowrap;
     }
 
+    .dsc-card[data-comp-name="Token readout"] .dsc-demo { contain: none; overflow: visible; width: 100%; }
+    .dsc-states.dsc-states--token {
+      width: 100%; flex-wrap: nowrap; align-items: flex-end; justify-content: flex-start;
+    }
+    .dsc-state-col--token-open { margin-left: auto; align-items: flex-end; }
     .dsc-demo .sc-activity { display: flex; justify-content: center; margin: 0; }
     .dsc-demo .sc-activity-wrap { position: relative; display: inline-flex; flex-direction: column; align-items: center; }
+    .dsc-demo .sc-activity.is-open .sc-activity-wrap { flex-direction: column-reverse; }
     .dsc-demo .sc-activity-dots {
       display: inline-flex; align-items: center; gap: 4px; padding: 5px 8px;
       border-radius: 999px; cursor: default;
+    }
+    .dsc-demo .sc-activity.is-open .sc-activity-dots,
+    .dsc-demo .sc-activity-wrap:hover .sc-activity-dots {
+      background: var(--surface-3, rgba(20,40,80,0.05));
+    }
+    html.dark .dsc-demo .sc-activity.is-open .sc-activity-dots,
+    html.dark .dsc-demo .sc-activity-wrap:hover .sc-activity-dots {
+      background: rgba(255,255,255,0.06);
     }
     .dsc-demo .sc-activity-dots > span {
       width: 5px; height: 5px; border-radius: 50%; flex: 0 0 auto;
@@ -8727,17 +9850,42 @@ function moduleStyles() {
     }
     .dsc-demo .sc-activity.is-thinking .sc-activity-dots > span:nth-child(2) { animation-delay: .16s; }
     .dsc-demo .sc-activity.is-thinking .sc-activity-dots > span:nth-child(3) { animation-delay: .32s; }
-    .dsc-demo .sc-activity-pop {
-      position: static; margin-top: 8px; min-width: 200px; padding: 8px 10px;
-      border-radius: 12px; text-align: left;
-      background: var(--surface); border: 1px solid var(--border-strong); box-shadow: var(--shadow-2);
+    /* Pin the hover card open in the catalog — chat extras hide it until
+       :hover and then slide it 50% left (absolute + translate). Neutralize
+       that and sit the dark card above the dots, matching the live readout. */
+    .dsc-demo .sc-activity-pop,
+    .dsc-demo .sc-activity.is-open .sc-activity-pop,
+    .dsc-demo .sc-activity-wrap:hover .sc-activity-pop,
+    .dsc-demo .sc-activity-wrap:focus-within .sc-activity-pop {
+      position: relative; left: auto; bottom: auto; transform: none;
+      opacity: 1; visibility: visible; pointer-events: none;
+      margin: 0 0 8px; min-width: 220px; max-width: 280px; padding: 10px 13px;
+      border-radius: 11px; z-index: 2; text-align: left;
+      background: #1f2733; color: #e7ecf3;
+      border: 1px solid rgba(255,255,255,0.10);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.30);
+    }
+    .dsc-demo .sc-activity-pop::after {
+      content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+      border: 6px solid transparent; border-top-color: #1f2733;
     }
     .dsc-demo .sc-activity-row {
-      display: flex; justify-content: space-between; gap: 12px; font-size: 11.5px;
+      display: flex; gap: 8px; font-size: 11px; line-height: 1.5;
+      font-variant-numeric: tabular-nums;
     }
-    .dsc-demo .sc-activity-key { color: var(--text-muted); font-weight: 600; }
-    .dsc-demo .sc-activity-val { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .dsc-demo .sc-activity-row + .sc-activity-row {
+      margin-top: 5px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .dsc-demo .sc-activity-key { flex: 0 0 auto; color: #cfd7e2; font-weight: 700; letter-spacing: .01em; }
+    .dsc-demo .sc-activity-val { flex: 1 1 auto; color: #aab6c6; font-weight: 400; }
+    .dsc-demo .sc-activity-val b { color: #6bd68a; font-weight: 700; }
+    .dsc-demo .sc-activity-val em { color: #7fb0ff; font-style: normal; }
 
+    .dsc-demo .dsc-chat-menu-demo { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; width: 100%; }
+    .dsc-demo .dsc-chat-menu-demo > .topbar-popover[data-chat-menu-demo] {
+      position: relative; margin-top: 0; max-width: min(920px, 100%);
+    }
+    .dsc-card[data-comp-name="Chat \u22ef menu"] .dsc-demo { contain: none; overflow: visible; }
     .dsc-demo .panel-more-btn.is-hover { background: var(--surface-3); color: var(--text); opacity: 1; }
     .dsc-demo .sc-mcp-item { justify-content: flex-start; }
     .dsc-demo .sc-mcp-item .sc-switch { margin-left: auto; }
@@ -8860,6 +10008,8 @@ function moduleStyles() {
       height: 110px; margin-left: -14px; padding-left: 18px;
       border-radius: 0 16px 16px 0; border-left: 0; background: var(--surface-2);
     }
+    .dsc-demo .mi-belt-out { z-index: 2; }
+    .dsc-demo .mi-belt--nested .mi-belt-out { z-index: 1; }
     .dsc-demo .mi-belt-hist {
       z-index: 2; margin-left: 0; margin-right: -14px; padding-left: 12px; padding-right: 18px;
       border-radius: 16px 0 0 16px; border-left: 1px solid var(--border); border-right: 0;
@@ -8872,24 +10022,8 @@ function moduleStyles() {
     }
     .dsc-demo .mi-belt-z { font-size: 0.68rem; font-weight: 600; color: var(--text-muted); }
 
-    .dsc-demo .wch-ask-card {
-      position: relative; display: flex; align-items: flex-start; gap: 11px; width: 100%;
-      padding: 11px 12px; border: 1px solid var(--border); background: var(--surface);
-      border-radius: 12px; cursor: default; text-align: left; color: inherit; font-family: inherit;
-    }
-    .dsc-demo .wch-ask-card.is-hover { background: var(--surface-2); }
-    .dsc-demo .wch-ask-ico { color: var(--primary-ink, var(--primary)); }
-    .dsc-demo .wch-ask-ico .material-symbols-outlined { font-size: 22px; }
-    .dsc-demo .wch-ask-card-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding-right: 26px; }
-    .dsc-demo .wch-ask-card-title { font-size: 14px; font-weight: 600; line-height: 1.35; }
-    .dsc-demo .wch-ask-card-desc { font-size: 13px; line-height: 1.45; opacity: .8; }
-    .dsc-demo .wch-ask-insert {
-      position: absolute; top: 9px; right: 9px; display: inline-flex;
-      width: 22px; height: 22px; border: 0; background: none; color: var(--text-muted); opacity: 0;
-    }
-    .dsc-demo .wch-ask-card.is-hover .wch-ask-insert { opacity: .7; }
     .dsc-demo .sc-ask-help {
-      border: 0; background: none; cursor: default; padding: 0;
+      border: 0; background: none; cursor: pointer; padding: 0;
       font-family: inherit; font-size: 0.75rem; font-weight: 700;
       color: var(--ter-amber, #C9A227);
     }
@@ -8926,6 +10060,71 @@ function moduleStyles() {
     #mi-motion .chip.ws-intent-chip--askhelp > .material-symbols-outlined {
       color: var(--ter-amber, #FFC434);
     }
+
+    /* In-chat “What can I ask?” overlay — chat-pane width, not a docked module. */
+    .dsc-ask-catalog { width: 100%; padding: 0 12px 4px; display: flex; flex-direction: column; gap: 10px; }
+    .dsc-ask-catalog > .dsc-sub-label { padding: 8px 8px 0; }
+    .dsc-ask-catalog > .dsc-themes { padding: 0; }
+    .dsc-ask-triggers { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 18px; padding: 0 8px 6px; }
+    .dsc-card[data-comp-name="What can I ask?"] { overflow: visible; }
+    .dsc-card[data-comp-name="What can I ask?"] .dsc-demo {
+      contain: none; overflow: visible; align-items: flex-start;
+    }
+    .dsc-ask-live {
+      position: relative; width: 380px; max-width: 100%; height: 520px;
+      border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
+      background: var(--surface);
+    }
+    .dsc-ask-host { position: relative; width: 100%; height: 100%; }
+    .dsc-ask-live .wch-sidebar.wch-open,
+    .dsc-ask-live .wch-scrim.wch-open { animation: none; }
+    .dsc-ask-live .wch-ask-width-btn,
+    .dsc-ask-live .panel-width-toggle-btn,
+    .dsc-ask-live .wch-ask-breakout,
+    .dsc-ask-live .wch-ask-more-pop .topbar-menu-divider { display: none !important; }
+    html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) .dsc-ask-live .wch-sidebar {
+      display: flex !important;
+    }
+    .dsc-theme-light .dsc-ask-live .wch-sidebar {
+      background: #fff; color: #1F2733; border-color: rgba(0,0,0,0.08); --wch-tree-bg: #fff;
+    }
+    .dsc-theme-light .dsc-ask-live .wch-ask-panel .wch-head { background: #fff; }
+    .dsc-theme-light .dsc-ask-live .wch-ask-card,
+    .dsc-theme-light .dsc-ask-live .wch-ask-prompt {
+      border-color: rgba(20,40,80,0.10); background: rgba(20,40,80,0.015); color: inherit;
+    }
+    .dsc-theme-light .dsc-ask-live .wch-ask-search-input {
+      background: rgba(20,40,80,0.04); border-color: rgba(20,40,80,0.10); color: inherit;
+    }
+    .dsc-theme-light .dsc-ask-live .wch-ask-filter {
+      background: color-mix(in srgb, var(--primary) 10%, #fff); border-color: var(--border-strong); color: var(--text-muted);
+    }
+    .dsc-theme-light .dsc-ask-live .wch-ask-filter.is-active {
+      background: var(--primary); border-color: var(--primary); color: #fff;
+    }
+    .dsc-theme-light .dsc-ask-live .wch-ask-prompt-text { color: inherit; }
+    .dsc-theme-light .dsc-ask-live .wch-ask-group + .wch-ask-group { border-top-color: rgba(20,40,80,0.10); }
+    .dsc-theme-dark .dsc-ask-live .wch-sidebar {
+      background: var(--surface); color: var(--text); border-color: rgba(255,255,255,0.10); --wch-tree-bg: var(--surface);
+    }
+    .dsc-theme-dark .dsc-ask-live .wch-ask-panel .wch-head { background: var(--surface); }
+    .dsc-theme-dark .dsc-ask-live .wch-ask-card,
+    .dsc-theme-dark .dsc-ask-live .wch-ask-prompt {
+      border-color: rgba(255,255,255,0.09); background: rgba(255,255,255,0.02); color: inherit;
+    }
+    .dsc-theme-dark .dsc-ask-live .wch-ask-search-input {
+      background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); color: inherit;
+    }
+    .dsc-theme-dark .dsc-ask-live .wch-ask-filter {
+      background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent);
+      border-color: var(--primary); color: var(--text-muted);
+    }
+    .dsc-theme-dark .dsc-ask-live .wch-ask-filter.is-active {
+      background: var(--primary); border-color: var(--primary); color: #fff;
+    }
+    .dsc-theme-dark .dsc-ask-live .wch-ask-prompt-text { color: #cfe0ff; }
+    .dsc-theme-dark .dsc-ask-live .wch-ask-group + .wch-ask-group { border-top-color: rgba(255,255,255,0.10); }
+    .dsc-theme-dark .dsc-ask-live .wch-ask-cap-tools { border-top-color: rgba(255,255,255,0.09); }
 
     .dsc-demo .wt-turn {
       border: 1px solid var(--border); border-radius: 12px; padding: 11px 12px;
@@ -8970,30 +10169,6 @@ function moduleStyles() {
       position: static; display: flex; flex-direction: column; animation: none;
       max-width: 360px; width: 100%;
     }
-    .dsc-demo .fl-attach-chip,
-    .dsc-demo .sc-att-chip {
-      display: inline-flex; align-items: center; gap: 6px; max-width: 220px;
-      padding: 4px 10px 4px 4px; border-radius: 999px;
-      background: var(--surface-2); border: 1px solid var(--border-strong);
-    }
-    .dsc-demo .sc-att-row { display: flex; flex-wrap: wrap; gap: 6px; }
-    .dsc-demo .fl-attach-thumb,
-    .dsc-demo .sc-att-thumb {
-      width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%;
-      background-size: cover; background-position: center; background-color: var(--surface-3);
-      display: inline-flex; align-items: center; justify-content: center;
-    }
-    .dsc-demo .fl-attach-thumb--icon .material-symbols-outlined,
-    .dsc-demo .sc-att-thumb--icon .material-symbols-outlined { font-size: 14px; color: var(--text-muted); }
-    .dsc-demo .fl-attach-name,
-    .dsc-demo .sc-att-name { font-size: 12px; font-weight: 500; }
-    .dsc-demo .fl-attach-x {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 16px; height: 16px; border: 0; border-radius: 50%;
-      background: transparent; color: var(--text-subtle); padding: 0;
-    }
-    .dsc-demo .fl-attach-x .material-symbols-outlined { font-size: 12px; }
-
     .dsc-demo .wai-img-modal {
       border-radius: 14px; overflow: hidden; background: var(--surface);
       border: 1px solid var(--border); box-shadow: var(--shadow-2);
@@ -9008,42 +10183,19 @@ function moduleStyles() {
       background: transparent; color: var(--text-muted);
     }
     .dsc-demo .wai-img-body img { display: block; width: 100%; height: auto; }
-
-    /* Chat welcome is a viewport overlay in the real dock (position:absolute;
-       inset:0; z-index:10 on .sc-welcome). Pin the library copy in the demo
-       stage so opening the Component Library section cannot paint that overlay
-       across #agent-main and blank the page. #mi-components beats later
-       chat CSS (triple-class helix / full-bleed rules). */
-    #mi-components .dsc-demo .sc-welcome,
-    #mi-components .dsc-demo .mi-welcome-demo {
-      position: relative;
-      inset: auto;
-      z-index: 0;
-      background: transparent;
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; gap: 8px;
-      padding: 18px 12px; text-align: center;
-      overflow: visible; min-height: 0;
+    /* Product-photo editor — the view-product lightbox, pinned inline. */
+    .dsc-demo .dash-modal.dash-modal--panel[data-modal-static] {
+      position: relative; width: 100%; max-width: 380px; height: auto;
+      border-radius: 18px; border: 1px solid var(--border-strong);
+      background: var(--surface); box-shadow: var(--shadow-2);
     }
-    .dsc-demo .ws-logo-wrap { position: relative; width: 72px; height: 72px; }
-    .dsc-demo .ws-logo {
-      position: relative; z-index: 1; width: 72px; height: 72px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      background: var(--primary); color: #fff;
-    }
-    .dsc-demo .ws-logo svg { width: 42px; height: auto; }
-    .dsc-demo .ws-pulse-ring {
-      position: absolute; inset: 0; border-radius: 50%;
-      border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
-      animation: scBlink 2.4s ease-in-out infinite;
-    }
-    .dsc-demo .ws-pulse-ring:nth-child(2) { inset: -8px; animation-delay: .4s; opacity: .6; }
-    .dsc-demo .ws-heading {
-      font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
-      font-size: 1.35rem; font-weight: 800; margin: 8px 0 0; letter-spacing: -0.02em;
-    }
-    .dsc-demo .ws-sub { margin: 0; font-size: 0.82rem; color: var(--text-muted); }
-    .dsc-demo .ws-tm { font-size: 0.45em; vertical-align: super; }
+    .dsc-demo .dash-banner-preview--photo { max-width: 168px; max-height: 168px; }
+    .dsc-theme-dark .dash-modal-eyebrow { color: var(--primary-bright); }
+    .dsc-theme-dark .dash-banner-url { background: rgba(255, 255, 255, 0.03); }
+    .dsc-theme-dark .dash-modal-foot { border-color: rgba(255, 255, 255, 0.08); }
+    html.dark .dsc-theme-light .dash-modal-eyebrow { color: var(--primary); }
+    html.dark .dsc-theme-light .dash-banner-url { background: var(--surface); }
+    html.dark .dsc-theme-light .dash-modal-foot { border-color: var(--border); }
 
     .dsc-demo .nfp-nf-panel.mi-nfp-demo {
       background: #fff; color: #000; border: 1px solid #111; max-width: 220px; text-align: left;
@@ -9199,57 +10351,110 @@ function moduleStyles() {
       width: 100%; padding: 10px 12px; border-radius: 12px;
       background: var(--surface-2); border: 1px solid var(--border);
     }
-    .dsc-demo .mi-jam-demo .jam-eq { flex: 1 1 0%; min-width: 48px; display: flex; }
+    .dsc-demo .mi-jam-demo .jam-eq,
+    .dsc-demo .mi-jam-demo.jam-viz-bars .jam-eq { flex: 1 1 0%; min-width: 48px; display: flex; }
+    .dsc-demo .mi-jam-demo.jam-viz-helix .jam-eq { display: none; }
+    .dsc-demo .mi-jam-demo .jam-helix { min-width: 72px; }
     .dsc-demo .mi-jam-demo .jam-songs { max-width: none; flex: 0 1 auto; }
+    .dsc-demo .mi-jam-crate-wrap { width: 100%; margin-top: 12px; }
+    .dsc-demo .mi-jam-crate {
+      width: 100%; border-collapse: collapse; font-size: 0.72rem;
+    }
+    .dsc-demo .mi-jam-crate th,
+    .dsc-demo .mi-jam-crate td {
+      text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border);
+      vertical-align: middle; white-space: nowrap;
+    }
+    .dsc-demo .mi-jam-crate th {
+      font-size: 0.64rem; letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--text-muted); font-weight: 700;
+    }
+    .dsc-demo .mi-jam-crate td:nth-child(2) { white-space: normal; }
+    .dsc-demo .mi-jam-crate code { font-size: 0.7rem; }
 
-    .dsc-demo .mi-search-demo { width: 100%; max-width: 320px; text-align: left; }
-    .dsc-demo .wise-app-search-field {
-      position: relative; display: flex; align-items: center;
-      height: 38px; padding: 0 12px; border-radius: 999px;
-      border: 1px solid var(--border); background: var(--surface);
+    /* App search uses the real pill + placeholder from wise.css. Results
+       sit in flow (the live row is position:absolute under the nav). The
+       live band centers a 600px cap; the catalog stretches the field to
+       the demo column so Default reads as the full-width idle input. */
+    .dsc-card[data-comp-name="App search"] { overflow: visible; }
+    .dsc-card[data-comp-name="App search"] .dsc-demo { overflow: visible; contain: none; }
+    .dsc-card[data-comp-name="App search"] .dsc-state-col { width: 100%; }
+    .dsc-demo .mi-search-demo {
+      width: 100%; max-width: none; text-align: left;
+      position: relative; padding: 0; margin: 0;
+      align-self: stretch; align-items: stretch;
     }
-    .dsc-demo .wise-app-search-ph {
-      position: absolute; left: 12px; display: inline-flex; align-items: center; gap: 8px;
-      font-size: 0.78rem; color: var(--text-subtle); pointer-events: none;
+    .dsc-demo .mi-search-demo .wise-app-search-inner,
+    .dsc-demo .mi-search-demo .wise-app-search-field {
+      max-width: none; width: 100%; min-width: 0;
+      align-self: stretch; flex: 1 1 auto;
     }
-    .dsc-demo .wise-app-search-ph .material-symbols-outlined { font-size: 18px; }
-    .dsc-demo .wise-app-search-input {
-      width: 100%; border: 0; background: transparent; outline: none; font: inherit; font-size: 0.78rem;
+    .dsc-demo .mi-search-demo .wise-app-search-input { width: 100%; }
+    .dsc-demo .mi-search-demo .wise-app-search-results {
+      position: static; transform: none; left: auto; top: auto;
+      width: 100%; max-height: none; margin-top: 8px; z-index: 1;
     }
-    .dsc-demo .wise-app-search-results {
-      margin-top: 8px; padding: 8px; border-radius: 12px;
-      border: 1px solid var(--border); background: var(--surface);
+    .dsc-theme-dark .mi-search-demo .wise-app-search-results {
+      background: #0D1B24;
+      border-color: rgba(37, 80, 124, 0.22);
     }
-    .dsc-demo .wise-app-search-group-title {
-      margin: 0 0 6px; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em;
-      text-transform: uppercase; color: var(--text-subtle);
-    }
-    .dsc-demo .wise-app-search-hit {
-      display: flex; align-items: flex-start; gap: 10px; width: 100%;
-      padding: 8px; border: 0; border-radius: 10px; background: transparent;
-      text-align: left; font: inherit; color: inherit; cursor: default;
-    }
-    .dsc-demo .wise-app-search-hit-ico { font-size: 18px; color: var(--text-muted); }
-    .dsc-demo .wise-app-search-hit-title { display: block; font-size: 0.82rem; font-weight: 700; }
-    .dsc-demo .wise-app-search-hit-where { display: block; font-size: 0.72rem; color: var(--text-muted); }
-    .dsc-demo .wise-app-search-empty { padding: 16px 10px; font-size: 0.82rem; color: var(--text-muted); }
 
+    .dsc-states.dsc-states--cwr { align-items: flex-start; }
+    .dsc-demo .mi-cwr-hover-pair {
+      display: flex; align-items: flex-start; gap: 10px;
+    }
     .dsc-demo .mi-cwr {
-      display: inline-flex; padding: 4px; border-radius: 999px;
+      display: inline-flex; flex-direction: column; align-items: center;
+      gap: 2px; padding: 4px; border-radius: 999px;
       background: var(--surface); border: 1px solid rgb(219, 39, 119);
     }
     .dsc-demo .mi-cwr .cwr-btn {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 2px; width: 48px; height: 48px; margin: 0; padding: 0;
+      gap: 2px; width: 48px; height: 48px; min-width: 48px; min-height: 48px;
+      max-width: 48px; max-height: 48px; margin: 0; padding: 0; flex-shrink: 0;
       border: none; border-radius: 999px; background: transparent;
       color: var(--text-muted); font-family: inherit; cursor: default;
     }
-    .dsc-demo .mi-cwr .cwr-btn .material-symbols-outlined { font-size: 20px; }
+    .dsc-demo .mi-cwr .cwr-btn .material-symbols-outlined {
+      font-size: 20px;
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
     .dsc-demo .mi-cwr .cwr-btn-label {
       font-size: 8px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
     }
     .dsc-demo .mi-cwr .cwr-btn.is-hover { background: var(--primary-soft); color: var(--primary); }
-    .dsc-demo .mi-cwr .cwr-btn[aria-checked="true"] { background: var(--primary); color: #fff; }
+    .dsc-theme-dark .mi-cwr .cwr-btn.is-hover { color: var(--primary-bright, #8B9FAF); }
+    .dsc-demo .mi-cwr .cwr-btn[aria-checked="true"],
+    .dsc-demo .mi-cwr .cwr-btn[aria-checked="true"].is-hover { background: var(--primary); color: #fff; }
+    .dsc-demo .mi-cwr .cwr-btn[aria-checked="true"] .material-symbols-outlined {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .dsc-demo .mi-cwr-tip {
+      box-sizing: border-box; width: max-content; max-width: 240px;
+      padding: 10px 12px 12px; text-align: left;
+      background: var(--surface); color: var(--text);
+      border: 1px solid var(--border); border-radius: 12px;
+      box-shadow: var(--shadow-card, 0 8px 28px rgba(17, 24, 39, 0.14));
+      pointer-events: none;
+    }
+    .dsc-demo .mi-cwr-tip-title {
+      font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
+      font-size: 15px; font-weight: 700; line-height: 1.2; letter-spacing: 0.02em;
+      color: var(--text);
+    }
+    .dsc-demo .mi-cwr-tip-desc {
+      margin: 4px 0 10px; font-size: 12px; font-weight: 500; line-height: 1.4;
+      color: var(--text-muted);
+    }
+    .dsc-demo .mi-cwr-tip-block + .mi-cwr-tip-block { margin-top: 8px; }
+    .dsc-demo .mi-cwr-tip-k {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--primary); margin-bottom: 2px;
+    }
+    .dsc-theme-dark .mi-cwr-tip-k { color: var(--primary-bright, #8B9FAF); }
+    .dsc-demo .mi-cwr-tip-block p {
+      margin: 0; font-size: 12px; font-weight: 500; line-height: 1.45; color: var(--text);
+    }
 
     .dsc-demo .mi-owt {
       max-width: 320px; padding: 14px 16px 16px; border-radius: 16px;
@@ -9275,7 +10480,7 @@ function moduleStyles() {
     .dsc-card[data-comp-name="Activity strip"] .dsc-demo,
     .dsc-card[data-comp-name="Sticky modules"] .dsc-demo,
     .dsc-card[data-comp-name="Chat \u22ef menu"] .dsc-demo,
-    .dsc-card[data-comp-name="What can I ask?"] .dsc-demo,
+    .dsc-card[data-comp-name="Token readout"] .dsc-demo,
     .dsc-card[data-comp-name="Database roster"] .dsc-demo,
     .dsc-card[data-comp-name="Jam strip"] .dsc-demo,
     .dsc-card[data-comp-name="Nutrition Facts"] .dsc-demo,
@@ -9304,8 +10509,10 @@ function moduleStyles() {
     html.dark .dsc-demo .wtp-more { color: var(--primary-bright, #93C5FD); }
     .dsc-demo .wtp-more:hover { text-decoration: underline; }
     .dsc-demo .wtp-more .material-symbols-outlined { font-size: 16px !important; }
-    .dsc-demo .adm-table-card { overflow-x: auto; }
-    .dsc-demo .adm-table { min-width: 760px; }
+    .dsc-card[data-comp-name="Data table"] .dsc-demo,
+    .dsc-card[data-comp-name="History"] .dsc-demo { contain: none; align-items: stretch; width: 100%; }
+    .dsc-card[data-comp-name="Data table"] .dsc-demo .adm-table-card { width: 100%; overflow: visible; }
+    .dsc-card[data-comp-name="Data table"] .dsc-adm-stage--wide .adm-table-card { overflow-x: auto; }
     .dsc-demo .dsc-score {
       font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
       font-weight: 800; letter-spacing: -0.02em;
@@ -9317,11 +10524,32 @@ function moduleStyles() {
     .dsc-demo .dsc-gs-on { font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20; }
     .dsc-demo .dsc-gs-off { color: var(--border-strong); font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20; }
 
-    /* Static tooltip bubble in the Tooltip demo — mirrors the dark #lir-tooltip. */
+    /* Static tooltip bubble in the Tooltip demo — mirrors theme-aware #lir-tooltip.
+       The stage stretches the dashed container so Left / Center / Right show
+       how the card lands at each edge (inward shift, never clipped). */
+    .dsc-card[data-comp-name="Tooltip"] .dsc-demo {
+      contain: none; overflow: visible; width: 100%; align-items: stretch;
+    }
+    .dsc-tip-stage {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      width: 100%; min-height: 92px; gap: 16px;
+    }
+    .dsc-tip-pin {
+      display: flex; flex-direction: column; gap: 8px; min-width: 0;
+    }
+    .dsc-tip-pin--left { align-items: flex-start; }
+    .dsc-tip-pin--center { align-items: center; }
+    .dsc-tip-pin--right { align-items: flex-end; }
+    .dsc-tip-anchor {
+      position: relative; display: inline-flex; flex-direction: column; gap: 8px;
+    }
+    .dsc-tip-anchor--left { align-items: flex-start; }
+    .dsc-tip-anchor--center { align-items: center; }
+    .dsc-tip-anchor--right { align-items: flex-end; }
     .dsc-tip {
-      display: inline-flex; align-items: center; padding: 4px 9px; border-radius: 7px;
-      background: var(--text); color: var(--bg); font-size: 0.6875rem; font-weight: 600;
-      box-shadow: var(--shadow-2); white-space: nowrap;
+      display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 8px;
+      background: var(--surface); color: var(--text); font-size: 0.6875rem; font-weight: 600;
+      box-shadow: var(--shadow-card, var(--shadow-2)); border: 1px solid var(--border); white-space: nowrap;
     }
 
     /* ---- Section quick-nav (scorecards at the very top) ---- */
@@ -9413,6 +10641,16 @@ function moduleStyles() {
     .mi-code-hero { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; gap: 22px; align-items: stretch; }
     .mi-code-hero-main { flex: 1 1 220px; min-width: 200px; display: flex; flex-direction: column; gap: 3px; }
     .mi-code-hero-chart { flex: 2 1 320px; min-width: 240px; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; }
+    .mi-code-kinds {
+      flex: 2 1 280px; min-width: 220px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px;
+      align-content: center;
+    }
+    .mi-code-kind { display: flex; flex-direction: column; gap: 2px; }
+    .mi-code-kind span { font-size: 0.7rem; font-weight: 700; color: var(--text-subtle); letter-spacing: 0.02em; }
+    .mi-code-kind strong {
+      font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif'), Georgia, serif;
+      font-size: 1.15rem; font-weight: 800; color: var(--text);
+    }
     .mi-code-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
     .mi-code-ic {
       flex: 0 0 auto; display: inline-flex; align-items: center;
@@ -9914,7 +11152,31 @@ function moduleStyles() {
       margin: 0; font-size: 0.88rem; line-height: 1.45; color: var(--text);
     }
 
+    .mi-motion-toast { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; width: 100%; }
+    .mi-motion-toast-stage {
+      position: relative;
+      width: 100%;
+      min-height: 168px;
+      display: flex;
+      flex-direction: column-reverse;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 12px 14px;
+      box-sizing: border-box;
+      border: 1px dashed var(--border-strong);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--border) 18%, transparent);
+    }
+    .mi-motion-toast-stage .ag-toast {
+      pointer-events: none;
+      max-width: calc(100% - 16px);
+      white-space: nowrap;
+    }
+
     .mi-motion-fly { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; width: 100%; }
+    .mi-motion-outfan { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; width: 100%; }
+    .mi-motion-outfan-row { display: flex; flex-wrap: wrap; gap: 18px 28px; align-items: flex-start; width: 100%; }
+    .mi-motion-outfan-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
     /* Same row as the chat welcome (.ws-chips): wrap, 10px gap, chips hug
        their label. Do not use .sc-reply-chips here — that row is the
        in-conversation indent and stretches pills in this stage. */
@@ -10020,6 +11282,8 @@ function moduleStyles() {
       background: var(--surface-2); border: 1px solid var(--border);
     }
     #mi-motion .mi-jam-demo .jam-eq { display: flex; flex: 1 1 0%; min-width: 48px; }
+    #mi-motion .mi-jam-demo.jam-viz-helix .jam-eq { display: none; }
+    #mi-motion .mi-jam-demo .jam-helix { min-width: 72px; }
     #mi-motion .mi-jam-demo .jam-songs { max-width: none; }
 
     .mi-motion-split {
@@ -10105,7 +11369,7 @@ function moduleStyles() {
       letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .mi-motion-car-row {
-      display: flex; gap: 8px; align-items: stretch;
+      display: flex; gap: 0; align-items: center;
       height: 176px; min-height: 72px;
       overflow-x: auto; overflow-y: hidden;
       padding: 8px; scrollbar-width: thin; scrollbar-gutter: stable;
@@ -10114,25 +11378,40 @@ function moduleStyles() {
     .mi-motion-car-row::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
     .mi-motion-car-mod {
       flex: 0 0 var(--car-w); width: var(--car-w);
-      display: flex; flex-direction: column; min-width: 0; min-height: 0; height: 100%;
-      border: 1px solid var(--border); border-radius: 10px;
-      background: color-mix(in srgb, var(--primary) 7%, var(--surface));
+      display: flex; flex-direction: column; min-width: 0; min-height: 0;
+      position: relative;
+      border: 1px solid var(--border);
       overflow: hidden;
     }
-    .mi-motion-car-mod:nth-child(2) {
-      background: color-mix(in srgb, var(--ter-amber, #FFC434) 10%, var(--surface));
+    .mi-car-chat {
+      z-index: 3; height: 100%;
+      border-radius: 16px; background: var(--surface);
+      box-shadow: var(--shadow-2);
     }
-    .mi-motion-car-mod:nth-child(3) {
-      background: color-mix(in srgb, var(--sec-green, #32A966) 8%, var(--surface));
+    .mi-car-hist {
+      z-index: 2; height: 78%;
+      margin-right: -14px; padding-right: 8px;
+      border-radius: 16px 0 0 16px; border-right: 0;
+      background: var(--surface-2);
     }
-    .mi-motion-car-mod:nth-child(4) {
-      background: color-mix(in srgb, var(--primary) 4%, var(--surface));
+    .mi-car-out, .mi-car-nfp, .mi-car-prog {
+      margin-left: -14px; padding-left: 8px;
+      border-radius: 0 16px 16px 0; border-left: 0;
+      background: var(--surface-2);
     }
+    .mi-car-out { z-index: 2; height: 78%; }
+    .mi-car-nfp { z-index: 1; height: 78%; }
+    .mi-car-prog { z-index: 0; height: 63%; }
     .mi-motion-car-mod-head {
       flex: 0 0 auto;
-      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
       font-size: 0.78rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
-      padding: 8px 10px 6px;
+      padding: 8px 10px 0;
+    }
+    .mi-motion-car-z {
+      flex: 0 0 auto;
+      padding: 2px 10px 6px;
+      font-size: 0.62rem; font-weight: 600; color: var(--text-muted);
     }
     .mi-motion-car-body {
       flex: 1 1 0%; min-height: 0; overflow: hidden;
@@ -10242,31 +11521,66 @@ function moduleStyles() {
     html.dark .mi-motion-found-name { background: rgba(255,255,255,0.06); }
 
     /* ---- History / Library / Reports demos (page-scoped classes, restaged) ---- */
+    .dsc-wch-catalog { display: flex; flex-direction: column; gap: 18px; width: 100%; }
+    .dsc-wch-catalog-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px; width: 100%; align-items: start;
+    }
+    .dsc-wch-catalog-extreme { width: 100%; }
+    .dsc-wch-with-info { display: flex; flex-direction: column; gap: 10px; width: 100%; }
     .dsc-wch {
+      --wch-tree: color-mix(in srgb, var(--text-subtle) 52%, transparent);
+      --wch-tree-bg: var(--surface);
+      --wch-tree-end: 16px;
+      --wch-tree-radius: 10px;
       width: 100%; max-width: 420px;
-      padding: 8px 10px 12px;
+      padding: 4px 6px 10px;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--r-md, 16px);
       box-shadow: var(--shadow-card);
     }
-    .dsc-demo .wch-item { position: relative; padding: 9px 14px; border-radius: 10px; cursor: pointer; margin: 2px 0; }
-    .dsc-demo .wch-item:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
-    .dsc-demo .wch-item.wch-active { background: color-mix(in srgb, var(--primary) 16%, transparent); outline: 1px solid color-mix(in srgb, var(--primary) 40%, transparent); }
-    .dsc-demo .wch-item-title { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .dsc-demo .wch-item-meta { font-size: 11px; opacity: .62; margin-top: 2px; }
-    .dsc-demo .wch-fork-badge {
+    .dsc-theme-dark .dsc-wch { --wch-tree: rgba(255,255,255,0.20); }
+    .dsc-demo .wch-item {
+      position: relative; display: flex; align-items: center;
+      padding: 4px 14px 4px 12px; border-radius: 10px; cursor: pointer; margin: 0;
+    }
+    .dsc-demo .wch-item.wch-active .wch-item-title { font-weight: 700; }
+    .dsc-demo .wch-item-title {
+      flex: 1; min-width: 0; font-size: 12px; font-weight: 400;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .dsc-demo .wch-chat-dot {
+      display: inline-block; flex: 0 0 auto; width: 7px; height: 7px; border-radius: 50%;
+      margin-right: 10px; background: currentColor; position: relative; z-index: 2;
+    }
+    .dsc-demo .wch-chat-dot::after {
+      content: ""; position: absolute; inset: -3px; border-radius: 50%; box-sizing: border-box;
+      pointer-events: none; border: 2px solid color-mix(in srgb, var(--text-subtle) 28%, transparent);
+    }
+    .dsc-demo .wch-chat-dot.wch-live-dot {
+      color: var(--primary); animation: none;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+    }
+    .dsc-demo .wch-chat-dot.wch-live-dot::after {
+      border: 2px solid color-mix(in srgb, #8CB8FF 26%, transparent); border-top-color: #8CB8FF;
+    }
+    .dsc-demo .wch-fork-badge, .dsc-demo .wch-mcp-badge {
       display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;
       margin-right: 5px; width: 17px; height: 17px; border-radius: 50%;
       background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary-ink, var(--primary));
     }
-    .dsc-demo .wch-fork-badge .material-symbols-outlined { font-size: 12px; }
+    .dsc-demo .wch-fork-badge .material-symbols-outlined,
+    .dsc-demo .wch-mcp-badge .material-symbols-outlined { font-size: 12px; }
     .dsc-demo .wch-item-actions {
       position: absolute; top: 50%; right: 5px; transform: translateY(-50%);
       display: none; align-items: center; gap: 3px; padding: 3px; border-radius: 999px;
-      background: var(--surface); box-shadow: var(--shadow-card);
+      background: var(--surface); box-shadow: 0 2px 10px rgba(20,30,60,0.16); z-index: 3;
     }
-    .dsc-demo .wch-item:hover .wch-item-actions, .dsc-demo .wch-item:focus-within .wch-item-actions { display: flex; }
+    .dsc-theme-dark .dsc-demo .wch-item-actions { box-shadow: 0 2px 10px rgba(0,0,0,0.34); }
+    .dsc-demo .wch-item:hover .wch-item-actions,
+    .dsc-demo .wch-item:focus-within .wch-item-actions,
+    .dsc-demo .wch-item.is-hover .wch-item-actions { display: flex; }
     .dsc-demo .wch-iact {
       width: 26px; height: 26px; border: 0; border-radius: 50%; background: transparent;
       color: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: .7;
@@ -10274,7 +11588,7 @@ function moduleStyles() {
     .dsc-demo .wch-iact:hover { background: color-mix(in srgb, var(--primary) 10%, transparent); opacity: 1; }
     .dsc-demo .wch-iact .material-symbols-outlined { font-size: 16px; }
     .dsc-demo .wch-drag-handle { cursor: grab; }
-    .dsc-demo .wch-projects-head { display: flex; align-items: center; gap: 6px; padding: 8px 4px 4px; }
+    .dsc-demo .wch-projects-head { display: flex; align-items: center; gap: 6px; padding: 12px 8px 4px 12px; }
     .dsc-demo .wch-projects-title { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; opacity: .5; flex: 1; }
     .dsc-demo .wch-proj-add {
       width: 24px; height: 24px; border: 0; border-radius: 50%; background: transparent;
@@ -10282,16 +11596,71 @@ function moduleStyles() {
     }
     .dsc-demo .wch-proj-add:hover { background: color-mix(in srgb, var(--primary) 10%, transparent); opacity: 1; color: var(--primary); }
     .dsc-demo .wch-proj-add .material-symbols-outlined { font-size: 18px; }
-    .dsc-demo .wch-project { border-radius: 10px; margin: 1px 0; }
+    .dsc-demo .wch-project { position: relative; margin: 1px 0; overflow: visible; }
     .dsc-demo .wch-project.wch-drop-on { background: color-mix(in srgb, var(--primary) 14%, transparent); outline: 1px dashed color-mix(in srgb, var(--primary) 55%, transparent); }
-    .dsc-demo .wch-project-head { display: flex; align-items: center; gap: 6px; padding: 8px 6px; border-radius: 10px; }
-    .dsc-demo .wch-proj-toggle { width: 22px; height: 22px; border: 0; border-radius: 6px; background: transparent; color: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: .7; }
-    .dsc-demo .wch-proj-toggle .material-symbols-outlined { font-size: 18px; }
-    .dsc-demo .wch-proj-dot { flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
-    .dsc-demo .wch-proj-name { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .dsc-demo .wch-proj-count { font-size: 11px; font-weight: 600; opacity: .55; padding: 0 4px; font-variant-numeric: tabular-nums; }
-    .dsc-demo .wch-project-body { padding-left: 8px; }
+    .dsc-demo .wch-project-head {
+      position: relative; z-index: 2; display: flex; align-items: center; gap: 6px;
+      padding: 8px 34px 8px 6px; border-radius: 0; cursor: pointer;
+    }
+    .dsc-demo .wch-proj-toggle {
+      position: relative; z-index: 3; width: 22px; height: 22px; flex: 0 0 auto;
+      border: 0; border-radius: 50%; background: var(--wch-tree-bg); color: inherit;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .dsc-demo .wch-proj-toggle .material-symbols-outlined {
+      font-size: 18px !important; line-height: 1 !important;
+      font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 20;
+    }
+    .dsc-demo .wch-project.wch-loose > .wch-project-head .wch-proj-toggle { color: var(--text-muted); }
+    .dsc-demo .wch-proj-name { flex: 1; min-width: 0; font-size: 13px; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dsc-demo .wch-proj-count { flex: 0 0 auto; font-size: 11px; font-weight: 600; opacity: .55; padding: 0 4px; font-variant-numeric: tabular-nums; }
+    .dsc-demo .wch-proj-menu {
+      position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+      width: 24px; height: 24px; border: 0; border-radius: 50%; background: transparent;
+      color: inherit; cursor: pointer; display: none; align-items: center; justify-content: center; opacity: .6;
+    }
+    .dsc-demo .wch-project-head:hover .wch-proj-menu { display: flex; }
+    .dsc-demo .wch-project-body {
+      position: relative; z-index: 0; padding-left: 22px;
+    }
+    .dsc-demo .wch-project.wch-collapsed .wch-project-body { display: none; }
+    .dsc-demo .wch-project:not(.wch-collapsed) > .wch-project-body:not(:empty):not(:has(> .wch-project-empty))::before {
+      content: ""; position: absolute; z-index: 0; left: 16px; top: -11px; bottom: 14px;
+      width: 1px; background: var(--wch-tree); pointer-events: none;
+    }
+    .dsc-demo .wch-project-body > .wch-item,
+    .dsc-demo .wch-project-body > .wch-project,
+    .dsc-demo .wch-project-body > .wch-project-empty { position: relative; }
+    .dsc-demo .wch-project-body > .wch-item::before,
+    .dsc-demo .wch-project-body > .wch-project > .wch-project-head::before {
+      content: ""; position: absolute; z-index: 0; left: -6px;
+      width: var(--wch-elbow-w, 28px);
+      height: calc(var(--wch-tree-radius) + 6px);
+      top: calc(var(--wch-elbow-h, 16px) - var(--wch-tree-radius) - 6px);
+      border: 0; border-left: 1px solid var(--wch-tree); border-bottom: 1px solid var(--wch-tree);
+      border-bottom-left-radius: var(--wch-tree-radius); box-sizing: border-box; pointer-events: none;
+    }
     .dsc-demo .wch-project-empty { font-size: 11px; opacity: .5; padding: 4px 12px 8px 20px; }
+    .dsc-demo .wch-info {
+      position: relative; z-index: 2; min-width: 196px; max-width: 264px;
+      padding: 12px 14px; border-radius: 14px;
+      background: var(--surface); color: var(--text);
+      border: 1px solid var(--border); box-shadow: var(--shadow-card);
+    }
+    .dsc-theme-dark .dsc-demo .wch-info {
+      background: #0F1830; color: #C5CFD7;
+      border-color: rgba(255,255,255,0.12);
+      box-shadow: 0 18px 44px rgba(0,0,0,0.46);
+    }
+    .dsc-demo .wch-info-title {
+      font-family: "WISE Digits", "Noto Serif", Georgia, serif;
+      font-weight: 700; font-size: 13.5px; line-height: 1.26; letter-spacing: -.01em; margin-bottom: 9px;
+    }
+    .dsc-demo .wch-info-row { display: flex; align-items: center; gap: 9px; font-size: 12px; line-height: 1.5; opacity: .82; }
+    .dsc-demo .wch-info-row + .wch-info-row { margin-top: 4px; }
+    .dsc-demo .wch-info-row .material-symbols-outlined { font-size: 16px; opacity: .66; flex: 0 0 auto; }
+    .dsc-demo .wch-info-row.is-live { opacity: 1; color: #12B981; font-weight: 600; }
+    .dsc-demo .wch-info-row.is-live .material-symbols-outlined { opacity: 1; color: #12B981; }
     .dsc-demo .wch-proj-edit { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 8px 6px; }
     .dsc-demo .wch-proj-edit-input {
       flex: 1; min-width: 0; height: 30px; box-sizing: border-box; padding: 0 10px; border-radius: 8px;
@@ -10437,7 +11806,7 @@ export function renderAllModules(mainEl) {
           <div class="mi-hero-title-row">
             <h1 class="mi-hero-title">All Modules</h1>
             <div class="mi-hero-btns">
-              <button type="button" class="adm-btn adm-btn--primary mi-reeval-btn" data-mi-reeval title="Scan HTML, JavaScript, CSS and Python files and account for each HTML page. Does not run on its own — click when you want a fresh count.">
+              <button type="button" class="adm-btn adm-btn--primary mi-reeval-btn" data-mi-reeval title="Count every shippable file in the project, then account for each HTML page. Does not run on its own — click when you want a fresh count.">
                 <span class="material-symbols-outlined" aria-hidden="true">autorenew</span>
                 <span data-mi-reeval-label>Re-evaluate</span>
               </button>
@@ -10446,10 +11815,10 @@ export function renderAllModules(mainEl) {
                 <span data-mi-hard-label>Hard reload</span>
               </button>
             </div>
-            <span class="mi-load-pct no-countup" id="mi-load-pct" data-no-countup aria-live="polite" title="Bytes received for this page’s files"${loadDone ? ' data-done="1"' : ''}>${esc(loadLabel)}</span>
-            <span class="mi-load-bytes no-countup" id="mi-load-bytes" data-no-countup>${esc(loadBytes)}</span>
+            <span class="mi-load-pct no-countup" id="mi-load-pct" data-no-countup aria-live="polite" title="How much of the project has arrived"${loadDone ? ' data-done="1"' : ''}>${esc(loadLabel)}</span>
+            <span class="mi-load-bytes no-countup" id="mi-load-bytes" data-no-countup title="Entire project">${esc(loadBytes)}</span>
           </div>
-          <p class="mi-hero-lede">Every module, component, icon, design token, animation and drag/resize interaction in the WISE app — indexed, rendered live, and one tap away. Re-evaluate scans the project when you click it — it does not run on load.</p>
+          <p class="mi-hero-lede">Every module, component, icon, design token, animation and drag/resize interaction in the WISE app — indexed, rendered live, and one tap away. The pair next to the title is how much of the whole project has arrived, against the project total on disk. Re-evaluate scans when you click it — it does not run on load.</p>
           <span class="mi-reeval-meta" data-mi-reeval-meta></span>
         </div>
       </header>
@@ -10494,6 +11863,7 @@ export function renderAllModules(mainEl) {
   safeWire('iconInventory', () => wireIconInventory(mainEl));
   safeWire('designSystem', () => wireDesignSystem(mainEl));
   safeWire('componentLibrary', () => wireComponentLibrary(mainEl));
+  safeWire('jamCatalog', () => wireJamCatalog(mainEl));
   safeWire('devReady', () => wireDevReady(mainEl));
   safeWire('paneCompJumps', () => wirePaneCompJumps(mainEl));
   safeWire('moduleControls', () => wireModuleControls(mainEl));
@@ -10616,7 +11986,7 @@ function moduleTotal() {
 function sectionNavTiles() {
   const tokenCount = COLOR_GROUPS.reduce((n, g) => n + g.swatches.length, 0) + TYPE_SCALE.length;
   return [
-    { id: 'mi-code', icon: 'code', num: fmtNum(codeState.now?.total), label: 'Lines of code', sub: `${fmtNum(codeState.now?.pages)} HTML pages` },
+    { id: 'mi-code', icon: 'code', num: fmtNum(codeState.now?.total), label: 'Lines of code', sub: `${fmtScanBytes(codeState.now?.bytes)} · ${fmtNum(codeState.now?.allFiles)} files` },
     { id: 'mi-directory', icon: 'apps', num: moduleTotal(), label: 'Modules', sub: 'Every screen in the app' },
     { id: 'mi-tables', icon: 'table_chart', num: TABLE_CATALOG.length, label: 'Tables', sub: 'Every data table, live' },
     { id: 'mi-logic', icon: 'rule', num: logicRuleCount(), label: 'App logic', sub: 'Every rule, by page' },
@@ -11364,13 +12734,14 @@ async function fetchText(url, signal) {
   }
 }
 
-async function mapPool(items, limit, fn) {
+async function mapPool(items, limit, fn, signal) {
   const list = Array.from(items || []);
   const out = new Array(list.length);
   let i = 0;
   const n = Math.max(0, Math.min(limit || 1, list.length));
   async function worker() {
     while (i < list.length) {
+      if (signal && signal.aborted) return;
       const idx = i++;
       out[idx] = await fn(list[idx], idx);
     }
@@ -11428,10 +12799,69 @@ function countFileLines(text) {
   return n;
 }
 
-function pushProjectFile(files, seenFile, abs, name, ext, rel) {
+function pushProjectFile(files, seenFile, abs, name, ext, rel, extra) {
   if (seenFile.has(rel)) return;
   seenFile.add(rel);
-  files.push({ url: abs.href, name, ext, rel });
+  files.push(Object.assign({
+    url: abs.href,
+    name,
+    ext,
+    rel,
+    kind: kindFromExt(ext),
+  }, extra || {}));
+}
+
+function seedFromInventory(files, seenFile, scan) {
+  const inv = projectInventory();
+  const list = inv && Array.isArray(inv.list) ? inv.list : [];
+  if (!list.length) {
+    scan?.log({
+      state: 'skip',
+      name: 'Project inventory',
+      detail: 'No baked file list — falling back to directory listings only',
+    });
+    return 0;
+  }
+  const root = repoRootUrl();
+  for (const item of list) {
+    const rel = String(item.path || '');
+    const name = rel.split('/').pop() || '';
+    if (!name) continue;
+    const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
+    let abs;
+    try { abs = new URL(rel, root); } catch (_) { continue; }
+    pushProjectFile(files, seenFile, abs, name, ext, rel, {
+      kind: item.kind || kindFromExt(ext),
+      bakedBytes: item.bytes || 0,
+    });
+  }
+  scan?.log({
+    state: 'ok',
+    name: 'Project inventory',
+    detail: list.length + ' files · ' + fmtScanBytes(inv.bytes) + ' — every shippable file, not just HTML, JavaScript, CSS and Python',
+  });
+  return list.length;
+}
+
+function scanProjectBytes(files) {
+  const kinds = { code: 0, image: 0, video: 0, font: 0, other: 0 };
+  let bytes = 0;
+  let allFiles = 0;
+  for (const f of files) {
+    const n = Number(f.bakedBytes) || 0;
+    const kind = f.kind || kindFromExt(f.ext);
+    bytes += n;
+    kinds[kind] = (kinds[kind] || 0) + n;
+    allFiles += 1;
+  }
+  return {
+    bytes,
+    allFiles,
+    codeBytes: kinds.code,
+    imageBytes: kinds.image,
+    videoBytes: kinds.video,
+    otherBytes: (kinds.other || 0) + (kinds.font || 0),
+  };
 }
 
 function extLabel(ext) {
@@ -11645,7 +13075,7 @@ function openScanModal(opts) {
   return api;
 }
 
-async function discoverRootCodeFiles(files, seenFile, scan) {
+async function discoverRootCodeFiles(files, seenFile, scan, signal) {
   /* `/` serves index.html, so the root never returns a directory listing.
      Probe catalog / omitted root pages plus the handful of root-level code
      files the Python scanner counts. */
@@ -11661,6 +13091,7 @@ async function discoverRootCodeFiles(files, seenFile, scan) {
     detail: 'Not a directory listing — probing ' + names.size + ' known root files (index, marketing CSS, catalog root pages, tooling).',
   });
   await mapPool(Array.from(names), REEVAL_CONCURRENCY, async (name) => {
+    if (signal && signal.aborted) return;
     if (!name || name.includes('/')) return;
     const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
     if (!CODE_EXTS.has(ext) || CODE_SKIP_FILES.has(name) || name.startsWith('.')) {
@@ -11684,7 +13115,7 @@ async function discoverRootCodeFiles(files, seenFile, scan) {
     } catch (_) {
       scan?.log({ state: 'skip', name, detail: 'Not reachable at repo root' });
     }
-  });
+  }, signal);
 }
 
 async function discoverProjectFiles(signal, scan) {
@@ -11698,12 +13129,15 @@ async function discoverProjectFiles(signal, scan) {
     new URL('js/', root).href,
     new URL('pages/', root).href,
     new URL('scripts/', root).href,
+    new URL('assets/', root).href,
+    new URL('server/', root).href,
     root.href,
   ];
+  seedFromInventory(files, seenFile, scan);
   scan?.log({
     state: 'info',
     name: 'Seed folders',
-    detail: 'js/, pages/, scripts/, and the repo root. Hidden folders, node_modules, screenshots, assets, and generated blobs are skipped.',
+    detail: 'js/, pages/, scripts/, assets/, server/, and the repo root. Hidden folders, node_modules, screenshots, and scratch are skipped.',
   });
 
   let dirsListed = 0;
@@ -11764,17 +13198,20 @@ async function discoverProjectFiles(signal, scan) {
 
       const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
       const rel = projectRelFromUrl(abs);
-      if (CODE_SKIP_FILES.has(name)) {
-        skippedFile += 1;
-        scan?.log({ state: 'skip', name: rel, detail: 'Generated data blob — excluded from line counts' });
-        continue;
-      }
-      if (!CODE_EXTS.has(ext)) { ignored += 1; continue; }
       const before = files.length;
-      pushProjectFile(files, seenFile, abs, name, ext, rel);
+      pushProjectFile(files, seenFile, abs, name, ext, rel, { kind: kindFromExt(ext) });
       if (files.length > before) {
         kept += 1;
-        scan?.log({ state: 'ok', name: rel, detail: extLabel(ext) + ' · queued for a line count' });
+        const kind = kindFromExt(ext);
+        scan?.log({
+          state: 'ok',
+          name: rel,
+          detail: CODE_SKIP_FILES.has(name)
+            ? 'Generated blob — counted in project size, excluded from line counts'
+            : (CODE_EXTS.has(ext) ? extLabel(ext) + ' · queued for a line count' : kind + ' · counted in project size'),
+        });
+      } else {
+        ignored += 1;
       }
     }
     dirsListed += 1;
@@ -11789,39 +13226,52 @@ async function discoverProjectFiles(signal, scan) {
     });
     scan?.setProgress(Math.min(18, 4 + dirsListed), dirsListed + ' folder' + (dirsListed === 1 ? '' : 's') + ' listed');
   }
-  await discoverRootCodeFiles(files, seenFile, scan);
+  await discoverRootCodeFiles(files, seenFile, scan, signal);
   scan?.log({
     state: 'ok',
     name: 'Project walk',
-    detail: files.length + ' code file' + (files.length === 1 ? '' : 's') + ' in the working tree (HTML, JavaScript, CSS, Python)',
+    detail: files.length + ' file' + (files.length === 1 ? '' : 's') + ' in the working tree (code, images, video, and the rest)',
   });
   return files;
 }
 
-async function scanProjectLineCounts(files, signal, scan) {
+async function scanProjectLineCounts(files, signal, scan, htmlCache) {
   const lines = { html: 0, js: 0, css: 0, py: 0 };
   const counts = { html: 0, js: 0, css: 0, py: 0 };
   const totalFiles = files.length || 1;
   let done = 0;
   await mapPool(files, REEVAL_CONCURRENCY, async (f) => {
     if (signal && signal.aborted) return;
-    scan?.log({ state: 'run', name: f.rel, detail: 'Counting ' + extLabel(f.ext) + ' lines (cache-busted fetch)' });
+    const cacheKey = f.ext === 'html' ? canonicalPageHref(pageHrefFromRel(f.rel)) : '';
+    const cached = (cacheKey && htmlCache) ? htmlCache.get(cacheKey) : null;
+    scan?.log({
+      state: 'run',
+      name: f.rel,
+      detail: cached != null
+        ? 'Counting HTML lines from the page probe'
+        : ('Counting ' + extLabel(f.ext) + ' lines (cache-busted fetch)'),
+    });
     try {
-      const text = await fetchText(f.url, signal);
+      const text = cached != null ? cached : await fetchText(f.url, signal);
       const n = countFileLines(text);
       lines[f.ext] += n;
       counts[f.ext] += 1;
       scan?.log({
         state: 'ok',
         name: f.rel,
-        detail: fmtNum(n) + ' line' + (n === 1 ? '' : 's') + ' · ' + extLabel(f.ext) + ' · ' + fmtScanBytes(text.length),
+        detail: fmtNum(n) + ' line' + (n === 1 ? '' : 's') + ' · ' + extLabel(f.ext) + ' · ' + fmtScanBytes(text.length)
+          + (cached != null ? ' · reused' : ''),
       });
-    } catch (_) {
+    } catch (err) {
+      if (isAbortError(err, signal)) {
+        scan?.log({ state: 'skip', name: f.rel, detail: 'Not reached — scan stopped' });
+        return;
+      }
       scan?.log({ state: 'err', name: f.rel, detail: 'Unreachable — not counted' });
     }
     done += 1;
-    scan?.setProgress(22 + Math.round((done / totalFiles) * 48), done + ' of ' + files.length + ' files counted');
-  });
+    scan?.setProgress(70 + Math.round((done / totalFiles) * 22), done + ' of ' + files.length + ' files counted');
+  }, signal);
   return {
     total: lines.html + lines.js + lines.css + lines.py,
     html: lines.html,
@@ -11884,12 +13334,10 @@ async function discoverHtmlPages(extraHrefs, signal, scan) {
 
 async function probePage(href, signal) {
   try {
-    const sep = href.includes('?') ? '&' : '?';
-    const res = await fetch(href + sep + 'mi=' + Date.now(), { cache: 'no-store', signal });
-    if (!res.ok) return { href, ok: false };
-    const text = await res.text();
-    return { href, ok: true, title: titleFromHtml(text, labelFromPath(href)), size: text.length };
-  } catch (_) {
+    const text = await fetchText(href, signal);
+    return { href, ok: true, title: titleFromHtml(text, labelFromPath(href)), size: text.length, text };
+  } catch (err) {
+    if (isAbortError(err, signal)) return { href, ok: false, skipped: true };
     return { href, ok: false };
   }
 }
@@ -11988,12 +13436,12 @@ async function reevaluateProject(root, opts) {
     eyebrow: 'Re-evaluate',
     title: 'Re-evaluating the project',
     icon: 'autorenew',
-    sub: 'Walking every HTML, JavaScript, CSS and Python file, then probing each page.',
+    sub: 'Counting every shippable file, then probing each HTML page and recounting lines of code.',
   });
   scan.log({
     state: 'info',
     name: 'How this scan works',
-    detail: 'Reads three files at a time with cache-busted fetches. Skips generated blobs (icon inventory, code stats, Guiding Stars) and folders like node_modules, screenshots, and assets. Stops after 20 seconds so this page stays usable. Does not run on load — only when you click.',
+    detail: 'Starts from the baked project inventory so images and video are counted even when the server will not list folders. Then reads six files at a time. Each HTML page is fetched once and reused for the line count. Generated blobs stay out of line counts but stay in the project size. Skips git, node_modules, screenshots, and scratch. Gives the scan ' + reevalBudgetLabel() + '. Does not run on load — only when you click.',
   });
 
   if (location.protocol === 'file:') {
@@ -12018,12 +13466,12 @@ async function reevaluateProject(root, opts) {
   }
   if (label) label.textContent = 'Re-evaluating…';
   setReevalStatus(root, 'busy', 'Re-evaluating the whole project',
-    '<p>Walking HTML, JavaScript, CSS and Python files, then probing each page…</p>');
+    '<p>Probing every HTML page, then counting lines in the working tree…</p>');
 
   const ac = new AbortController();
   const budget = setTimeout(() => ac.abort(), REEVAL_BUDGET_MS);
   try {
-    scan.phase('Discover project files', 'Listing js/, pages/, scripts/, and the repo root.');
+    scan.phase('Discover project files', 'Inventory of every shippable file, then listings for anything new.');
     scan.setProgress(2, 'Walking directories');
     const files = await discoverProjectFiles(ac.signal, scan);
 
@@ -12037,27 +13485,19 @@ async function reevaluateProject(root, opts) {
     });
     const pages = await discoverHtmlPages(htmlFromWalk, ac.signal, scan);
 
-    scan.phase('Count lines of code', 'Fetching each file fresh and counting newlines. Generated blobs stay out.');
-    scan.setProgress(22, files.length ? ('0 of ' + files.length + ' files counted') : 'No code files');
-    const codeNow = files.length ? await scanProjectLineCounts(files, ac.signal, scan) : null;
-    if (codeNow) {
-      scan.log({
-        state: 'ok',
-        name: 'Line totals',
-        detail: fmtNum(codeNow.total) + ' lines across ' + fmtNum(codeNow.files) + ' files — HTML ' + fmtNum(codeNow.html) + ', JavaScript ' + fmtNum(codeNow.js) + ', CSS ' + fmtNum(codeNow.css) + ', Python ' + fmtNum(codeNow.py),
-      });
-    }
-
     scan.phase('Probe every HTML page', 'Cache-busted GET of each page. Classifies catalog, omitted, unaccounted, and unreachable.');
-    scan.setProgress(70, '0 of ' + pages.length + ' pages probed');
+    scan.setProgress(22, '0 of ' + pages.length + ' pages probed');
     let probed = 0;
-    const results = await mapPool(pages, REEVAL_CONCURRENCY, async (href) => {
+    const raw = await mapPool(pages, REEVAL_CONCURRENCY, async (href) => {
+      if (ac.signal.aborted) return { href, ok: false, skipped: true };
       const name = displayPath(href) || href;
       scan.log({ state: 'run', name, detail: 'Fetching HTML (cache-busted)' });
       const r = await probePage(href, ac.signal);
       probed += 1;
-      scan.setProgress(70 + Math.round((probed / Math.max(pages.length, 1)) * 22), probed + ' of ' + pages.length + ' pages probed');
-      if (r.ok) {
+      scan.setProgress(22 + Math.round((probed / Math.max(pages.length, 1)) * 48), probed + ' of ' + pages.length + ' pages probed');
+      if (r.skipped) {
+        scan.log({ state: 'skip', name, detail: 'Not reached — scan stopped' });
+      } else if (r.ok) {
         scan.log({
           state: 'ok',
           name,
@@ -12067,14 +13507,58 @@ async function reevaluateProject(root, opts) {
         scan.log({ state: 'err', name, detail: 'Unreachable — the fetch failed or the server did not return the page' });
       }
       return r;
+    }, ac.signal);
+    const results = pages.map((href, i) => raw[i] || { href, ok: false, skipped: true });
+    const skippedN = results.filter((r) => r.skipped).length;
+    if (skippedN) {
+      scan.log({
+        state: 'skip',
+        name: 'Time budget',
+        detail: 'Stopped after ' + reevalBudgetLabel() + '. ' + skippedN + ' page' + (skippedN === 1 ? ' was' : 's were') + ' not reached this pass — not marked unreachable.',
+      });
+    }
+
+    const htmlCache = new Map();
+    results.forEach((r) => {
+      if (r && r.ok && r.text) {
+        htmlCache.set(canonicalPageHref(r.href), r.text);
+        r.text = '';
+      }
     });
-    if (ac.signal.aborted) throw new DOMException('Timed out', 'AbortError');
+
+    let codeNow = null;
+    if (files.length && (!ac.signal.aborted || htmlCache.size)) {
+      const codeFiles = files.filter((f) => CODE_EXTS.has(f.ext) && !CODE_SKIP_FILES.has(f.name));
+      scan.phase('Count lines of code', 'Reuses probed HTML. Fetches JavaScript, CSS and Python fresh. Generated blobs stay out of line counts.');
+      scan.setProgress(70, '0 of ' + codeFiles.length + ' code files counted');
+      codeNow = await scanProjectLineCounts(codeFiles, ac.signal, scan, htmlCache);
+      const byteNow = scanProjectBytes(files);
+      if (codeNow) Object.assign(codeNow, byteNow);
+      else codeNow = Object.assign({ total: 0, html: 0, js: 0, css: 0, py: 0, pages: 0, files: 0 }, byteNow);
+      if (codeNow && codeNow.files) {
+        scan.log({
+          state: 'ok',
+          name: 'Line totals',
+          detail: fmtNum(codeNow.total) + ' lines across ' + fmtNum(codeNow.files) + ' code files — HTML ' + fmtNum(codeNow.html) + ', JavaScript ' + fmtNum(codeNow.js) + ', CSS ' + fmtNum(codeNow.css) + ', Python ' + fmtNum(codeNow.py),
+        });
+      }
+      scan.log({
+        state: 'ok',
+        name: 'Project size',
+        detail: fmtScanBytes(byteNow.bytes) + ' across ' + fmtNum(byteNow.allFiles) + ' files — code ' + fmtScanBytes(byteNow.codeBytes) + ', images ' + fmtScanBytes(byteNow.imageBytes) + ', video ' + fmtScanBytes(byteNow.videoBytes),
+      });
+    }
+
+    const reached = results.filter((r) => !r.skipped);
+    if (!reached.length && ac.signal.aborted) {
+      throw new DOMException('Timed out', 'AbortError');
+    }
 
     scan.phase('Apply results', 'Update Unaccounted, Codebase scorecards, and today’s scan stamp.');
     scan.setProgress(93, 'Classifying pages');
     const catalog = catalogPageSet();
     const live = results.filter((r) => r.ok);
-    const unreachable = results.filter((r) => !r.ok);
+    const unreachable = results.filter((r) => !r.ok && !r.skipped);
     const omitted = live.filter((r) => OMITTED_PAGES[canonicalPageHref(r.href)]);
     const unaccounted = live.filter((r) => {
       const key = canonicalPageHref(r.href);
@@ -12086,7 +13570,9 @@ async function reevaluateProject(root, opts) {
     scan.log({
       state: 'info',
       name: 'Classification',
-      detail: live.length + ' reachable · ' + unreachable.length + ' unreachable · ' + omitted.length + ' omitted on purpose · ' + unaccounted.length + ' unaccounted · ' + catalogMissing.length + ' catalog entries missing',
+      detail: live.length + ' reachable · ' + unreachable.length + ' unreachable'
+        + (skippedN ? (' · ' + skippedN + ' not reached') : '')
+        + ' · ' + omitted.length + ' omitted on purpose · ' + unaccounted.length + ' unaccounted · ' + catalogMissing.length + ' catalog entries missing',
     });
     omitted.forEach((r) => {
       const key = canonicalPageHref(r.href);
@@ -12128,7 +13614,7 @@ async function reevaluateProject(root, opts) {
       scan.log({
         state: 'ok',
         name: 'Codebase scorecards',
-        detail: 'Live counts replaced the last snapshot — ' + fmtNum(codeNow.total) + ' lines across ' + fmtNum(codeNow.files) + ' files, scanned ' + day,
+        detail: 'Live counts replaced the last snapshot — ' + fmtNum(codeNow.total) + ' lines · ' + fmtScanBytes(codeNow.bytes) + ' across ' + fmtNum(codeNow.allFiles || codeNow.files) + ' files, scanned ' + day,
       });
     } else if (codeNow && codeNow.files) {
       const bakedNow = (CODE_STATS && CODE_STATS.now) || {};
@@ -12164,23 +13650,28 @@ async function reevaluateProject(root, opts) {
     const gaps = unaccounted.length + catalogMissing.length + omittedMissing.length;
     const kind = (catalogMissing.length || omittedMissing.length)
       ? 'err'
-      : (unaccounted.length ? 'warn' : 'ok');
-    const title = !gaps
-      ? `All ${accounted} HTML pages are accounted for`
-      : (unaccounted.length && !catalogMissing.length
-        ? `Accounted for ${unaccounted.length} missing page${unaccounted.length === 1 ? '' : 's'}`
-        : `${gaps} page${gaps === 1 ? '' : 's'} need attention`);
+      : ((unaccounted.length || skippedN) ? 'warn' : 'ok');
+    const title = skippedN && !gaps
+      ? `Reached ${live.length} of ${pages.length} pages`
+      : !gaps
+        ? `All ${accounted} HTML pages are accounted for`
+        : (unaccounted.length && !catalogMissing.length
+          ? `Accounted for ${unaccounted.length} missing page${unaccounted.length === 1 ? '' : 's'}`
+          : `${gaps} page${gaps === 1 ? '' : 's'} need attention`);
 
     const bits = [];
     if (codeComplete) {
-      bits.push(`<p>Scanned <strong>${fmtNum(codeNow.files)}</strong> project files · <strong>${fmtNum(codeNow.total)}</strong> lines (HTML ${fmtNum(codeNow.html)}, JS ${fmtNum(codeNow.js)}, CSS ${fmtNum(codeNow.css)}, Python ${fmtNum(codeNow.py)}).</p>`);
+      bits.push(`<p>Project size <strong>${fmtScanBytes(codeNow.bytes)}</strong> across <strong>${fmtNum(codeNow.allFiles)}</strong> files (code ${fmtScanBytes(codeNow.codeBytes)}, images ${fmtScanBytes(codeNow.imageBytes)}, video ${fmtScanBytes(codeNow.videoBytes)}). <strong>${fmtNum(codeNow.files)}</strong> code files · <strong>${fmtNum(codeNow.total)}</strong> lines (HTML ${fmtNum(codeNow.html)}, JS ${fmtNum(codeNow.js)}, CSS ${fmtNum(codeNow.css)}, Python ${fmtNum(codeNow.py)}).</p>`);
     } else if (codeNow && codeNow.files) {
       const bakedNow = (CODE_STATS && CODE_STATS.now) || {};
       bits.push(`<p>Only <strong>${fmtNum(codeNow.files)}</strong> code files were reachable via directory listing — well short of the full project — so Codebase kept the last complete scan (<strong>${fmtNum(bakedNow.total)}</strong> lines across <strong>${fmtNum(bakedNow.files)}</strong> files). Serve the repo root with directory listings enabled (e.g. <code>python3 -m http.server</code>, not a live-reload wrapper) to recount lines live.</p>`);
     } else {
       bits.push('<p>Directory listing was not available, so Codebase kept the last generated scan. Serve the repo root (not a live-reload wrapper) to recount lines live.</p>');
     }
-    bits.push(`<p>Probed <strong>${results.length}</strong> HTML files · <strong>${live.length}</strong> reachable · directory now holds <strong>${moduleTotal()}</strong> modules.</p>`);
+    bits.push(`<p>Probed <strong>${reached.length}</strong> of <strong>${pages.length}</strong> HTML files · <strong>${live.length}</strong> reachable · directory now holds <strong>${moduleTotal()}</strong> modules.</p>`);
+    if (skippedN) {
+      bits.push(`<p>${skippedN} page${skippedN === 1 ? ' was' : 's were'} not reached before the time budget — ${skippedN === 1 ? 'it is' : 'they are'} not marked unreachable. Click Re-evaluate again to finish.</p>`);
+    }
     if (unaccounted.length) {
       bits.push('<ul>' + unaccounted.map((r) =>
         `<li>Added <a href="${esc(r.href)}">${esc(r.title || labelFromPath(r.href))}</a> <code>${esc(r.href)}</code></li>`
@@ -12213,7 +13704,7 @@ async function reevaluateProject(root, opts) {
       state: 'err',
       name: timedOut ? 'Time budget' : 'Scan failed',
       detail: timedOut
-        ? 'Stopped after 20 seconds so this page stays usable. The directory and Codebase cards still show the last complete pass.'
+        ? 'Stopped after ' + reevalBudgetLabel() + ' before any page could be reached. The directory and Codebase cards still show the last complete pass.'
         : (err && err.message) || String(err),
     });
     scan.finish(
@@ -13204,10 +14695,10 @@ function wireIconInventory(root) {
     if (state.render !== 'svg' || !svgData) return '';
     const legacy = (svgData.legacy || []).length;
     const miss = (svgData.missing || []).length;
-    let txt = `${svgData.count} inline SVGs from <code>@material-symbols/svg-400</code> + <code>svg-300</code>`;
+    let txt = `These inventory twins come from <code>@material-symbols/svg-400</code> (Outlined / Filled) and <code>svg-300</code> (the Light sample). The <strong>live sprite is light / rounded at 400</strong>, with a few per-glyph exceptions. ${svgData.count} inline SVGs`;
     if (legacy) txt += ` \u2014 ${legacy} tagged <strong>MI legacy</strong> fall back to <code>@material-icons/svg</code>`;
     if (miss) txt += ` \u2014 ${miss} with no vector twin`;
-    return txt + '. No webfont, no network. Regenerate with <code>python3 scripts/gen_icon_svgs.py</code>.';
+    return txt + '. No webfont, no network. Regenerate inventory twins with <code>python3 scripts/gen_icon_svgs.py</code>; the app sprite with <code>python3 scripts/gen_icon_sprite.py</code>.';
   };
 
   const applyNote = () => {
@@ -13887,6 +15378,63 @@ function patchLibraryThemeSheets() {
   });
 }
 
+function demoAskLiveHtml() {
+  return `
+    <div class="dsc-ask-live" data-ask-demo>
+      <div class="dsc-ask-host wch-host" data-ask-host></div>
+    </div>`;
+}
+
+function ensureWchStyles() {
+  if (document.getElementById('wch-styles')) return;
+  if (!window.WiseChatHistory) return;
+  const probe = document.createElement('div');
+  window.WiseChatHistory.mount(probe, { storageKey: null });
+}
+
+function mountAskDemo(stage) {
+  const host = stage.querySelector('[data-ask-host]');
+  if (!host || !window.WiseChatAsk) return;
+  const keepOpen = () => { queueMicrotask(() => { if (stage._askApi) stage._askApi.open(); }); };
+  const api = window.WiseChatAsk.mount({
+    host,
+    container: host,
+    catalog: window.WISE_ASK_CATALOG,
+    stickyDefault: false,
+    farRight: false,
+    onInsert: keepOpen,
+    onAsk: keepOpen,
+  });
+  if (!api) return;
+  stage._askApi = api;
+  const panel = api.root;
+  if (panel) {
+    panel.setAttribute('data-cwr-keep', '');
+    panel.removeAttribute('inert');
+    panel.removeAttribute('aria-hidden');
+    panel.querySelectorAll('.wch-ask-width-btn, .panel-width-toggle-btn').forEach((btn) => {
+      btn.hidden = true;
+      btn.setAttribute('aria-hidden', 'true');
+    });
+  }
+  api.open();
+}
+
+function wireAskOpenAll(card) {
+  if (!card) return;
+  card.querySelectorAll('[data-ask-open-all]').forEach((btn) => {
+    if (btn.dataset.askOpenBound === '1') return;
+    btn.dataset.askOpenBound = '1';
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      card.querySelectorAll('[data-ask-demo]').forEach((stage) => {
+        if (stage._askApi) stage._askApi.open();
+      });
+    });
+  });
+}
+
 function wireComponentLibrary(root) {
   patchLibraryThemeSheets();
   const grid = root.querySelector('#dsc-grid');
@@ -13959,8 +15507,17 @@ function wireComponentLibrary(root) {
     const pending = Array.from(rails).filter((rail) => rail.dataset.composerBooted !== '1');
     if (!pending.length) return;
     pending.forEach((rail) => { rail.dataset.composerBooted = '1'; });
+    /* Composer v2 is always-on app-wide; pin it here too so a race before
+       topbar restore can't leave the catalog on the retired stacked layout. */
+    document.documentElement.classList.add('composer-v2');
     import('./wiseai-chat.js').then((chat) => {
-      pending.forEach((rail) => { chat.wireChatComposer(rail); });
+      pending.forEach((rail) => {
+        chat.wireChatComposer(rail);
+        /* Pre-filled "Lots of text" / "Images attached" demos need a grow
+           sync — setting .value in markup does not fire 'input'. */
+        const ta = rail.querySelector('textarea.fl-input');
+        if (ta && ta.value) ta.dispatchEvent(new Event('input', { bubbles: true }));
+      });
     }).catch((err) => {
       console.error('[all-modules] composer demo failed', err);
       pending.forEach((rail) => { delete rail.dataset.composerBooted; });
@@ -13968,14 +15525,73 @@ function wireComponentLibrary(root) {
   };
   grid._bootComposersIn = bootComposersIn;
 
+  /* Group the Chat ⋮ menu demo with the live chat helper so columns, Admin
+     kebab, and row hints stay in lock-step with wiseai.html. */
+  const bootChatMenuIn = (scope) => {
+    if (!compMod || !compMod.isConnected) return;
+    if (compMod.classList.contains('is-collapsed')) return;
+    const host = scope || compMod;
+    const pops = host.querySelectorAll('.dsc-demo .topbar-popover[data-chat-menu-demo]');
+    if (!pops.length) return;
+    const pending = Array.from(pops).filter((pop) => pop.dataset.chatMenuBooted !== '1');
+    if (!pending.length) return;
+    pending.forEach((pop) => { pop.dataset.chatMenuBooted = '1'; });
+    import('./wiseai-chat.js').then((chat) => {
+      chat.injectChatExtras();
+      pending.forEach((pop) => {
+        pop.classList.remove('hidden');
+        chat.groupifyChatMenu(pop);
+      });
+    }).catch((err) => {
+      console.error('[all-modules] chat menu demo failed', err);
+      pending.forEach((pop) => { delete pop.dataset.chatMenuBooted; });
+    });
+  };
+  grid._bootChatMenuIn = bootChatMenuIn;
+
+  const bootAppSearchIn = (scope) => {
+    if (!compMod || !compMod.isConnected) return;
+    if (compMod.classList.contains('is-collapsed')) return;
+    const host = scope || compMod;
+    host.querySelectorAll('[data-app-search-demo]').forEach((el) => wireAppSearchDemo(el));
+  };
+  grid._bootAppSearchIn = bootAppSearchIn;
+
+  const bootAskDemoIn = (scope) => {
+    if (!compMod || !compMod.isConnected) return;
+    if (compMod.classList.contains('is-collapsed')) return;
+    const host = scope || compMod;
+    const stages = host.querySelectorAll('[data-ask-demo]');
+    if (!stages.length) return;
+    const pending = Array.from(stages).filter((el) => el.dataset.askBooted !== '1');
+    const card = host.closest ? (host.closest('[data-ds-comp]') || host.querySelector('[data-comp-name="What can I ask?"]')) : null;
+    if (card) wireAskOpenAll(card);
+    if (!pending.length) return;
+    pending.forEach((el) => { el.dataset.askBooted = '1'; });
+    import('./wiseai-chat.js').then((chat) => {
+      chat.injectChatExtras();
+      ensureWchStyles();
+      patchLibraryThemeSheets();
+      pending.forEach((stage) => mountAskDemo(stage));
+      if (card) wireAskOpenAll(card);
+    }).catch((err) => {
+      console.error('[all-modules] What can I ask? demo failed', err);
+      pending.forEach((el) => { delete el.dataset.askBooted; });
+    });
+  };
+  grid._bootAskDemoIn = bootAskDemoIn;
+
   /* Each component is its own accordion. The title row toggles; Dev Ready
      and links inside the header keep their own actions. */
   const toggleCompCard = (card) => {
-    if (!card) return;
+    if (!card || card.classList.contains('is-locked')) return;
     const opening = card.classList.contains('is-collapsed');
     setCompCardCollapsed(card, !opening);
     if (opening) {
       bootComposersIn(card);
+      bootChatMenuIn(card);
+      bootAppSearchIn(card);
+      bootAskDemoIn(card);
       requestAnimationFrame(() => {
         const scroller = card.closest('.agent-main-scroll');
         const body = card.querySelector(':scope > .dsc-card-body');
@@ -14228,9 +15844,21 @@ function jumpToComponent(root, name) {
   const card = Array.from(root.querySelectorAll('[data-ds-comp]'))
     .find((el) => el.dataset.compName === name);
   if (!card) return;
+  if (card.classList.contains('is-locked')) {
+    card.classList.remove('is-flash');
+    void card.offsetWidth;
+    card.classList.add('is-flash');
+    requestAnimationFrame(() => {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    return;
+  }
   setCompCardCollapsed(card, false);
   const grid = root.querySelector('#dsc-grid');
   if (grid && typeof grid._bootComposersIn === 'function') grid._bootComposersIn(card);
+  if (grid && typeof grid._bootChatMenuIn === 'function') grid._bootChatMenuIn(card);
+  if (grid && typeof grid._bootAppSearchIn === 'function') grid._bootAppSearchIn(card);
+  if (grid && typeof grid._bootAskDemoIn === 'function') grid._bootAskDemoIn(card);
   card.classList.remove('is-flash');
   void card.offsetWidth;
   card.classList.add('is-flash');
@@ -14292,7 +15920,7 @@ export const ALL_MODULES_WISEAI = {
   intentReplies: {
     codebase: () => {
       const now = codeState.now || {};
-      return `The app is <strong>${fmtNum(now.total)} lines of code</strong> across <strong>${fmtNum(now.files)} files</strong> — ${fmtNum(now.html)} HTML, ${fmtNum(now.js)} JavaScript, ${fmtNum(now.css)} CSS and ${fmtNum(now.py)} Python — shipping <strong>${fmtNum(now.pages)} HTML pages</strong>. The Codebase score cards above the directory show the up/down trend.`;
+      return `The project on disk is <strong>${fmtScanBytes(now.bytes)}</strong> across <strong>${fmtNum(now.allFiles)} files</strong> — code ${fmtScanBytes(now.codeBytes)}, images ${fmtScanBytes(now.imageBytes)}, video ${fmtScanBytes(now.videoBytes)}. Hand-written code is <strong>${fmtNum(now.total)} lines</strong> in <strong>${fmtNum(now.files)} files</strong> — ${fmtNum(now.html)} HTML, ${fmtNum(now.js)} JavaScript, ${fmtNum(now.css)} CSS and ${fmtNum(now.py)} Python — shipping <strong>${fmtNum(now.pages)} HTML pages</strong>. The Codebase score cards above the directory show both the size and the line-count trend.`;
     },
     directory: 'The <strong>Module Directory</strong> lists every workspace, account, chat, report, product, auth and marketing screen in the app.',
     tables: `The <strong>Table Gallery</strong> collects all <strong>${TABLE_CATALOG.length} data tables</strong> in the app — portfolio grids, verification and analytics tables, admin boards, the ingredient registry and more — rendered live in one carousel, each isolated from its page.`,
@@ -14306,10 +15934,10 @@ export const ALL_MODULES_WISEAI = {
         ? `I audited all <strong>${s.chips} intent chips</strong> across <strong>${s.surfaces} surfaces</strong>: <strong>${s.wired} are fully wired</strong> (transcript + logic), while <strong>${s.gaps} are missing a half</strong> — ${s.talk} need logic, ${s.act} need their own transcript${s.none ? `, ${s.none} are fully unwired` : ''}. The <strong>Intent Chip Logic</strong> module calls each one out.`
         : `All <strong>${s.chips} intent chips</strong> across <strong>${s.surfaces} surfaces</strong> are fully wired — every one carries both its own transcript and its own logic. See the <strong>Intent Chip Logic</strong> module.`;
     },
-    icons: 'The <strong>Icon Inventory</strong> catalogs every Material Symbols glyph used in the live app (this page excluded), grouped by surface — chat module, primary nav, top bar and so on — with label and exact placements. Preview each glyph as outlined, filled, or light weight with rounded corners, and flip <strong>Font/SVG</strong> to compare the live Material Symbols webfont against Google\u2019s SVG export of the same glyph \u2014 the vectors are generated locally by <code>scripts/gen_icon_svgs.py</code>, so SVG mode needs no network at all.',
+    icons: 'The <strong>Icon Inventory</strong> catalogs every Material Symbols glyph used in the live app (this page excluded), grouped by surface — chat module, primary nav, top bar and so on — with label and exact placements. The expectation is the <strong>light (rounded) SVG at weight 400</strong>, with a few per-glyph exceptions; preview outlined, filled, or light, and flip <strong>Font/SVG</strong> to compare the live webfont against Google\u2019s SVG export \u2014 the vectors are generated locally by <code>scripts/gen_icon_svgs.py</code>, so SVG mode needs no network at all.',
     design: 'The <strong>Design System</strong> documents the app’s fonts (families, sizes, usage) and every color, line, elevation and radius token — with live swatches that follow the current theme.',
     components: 'The <strong>Component Library</strong> renders every reusable component in its default state with its real classes, its variations, and the surfaces where it’s used.',
-    motion: `The <strong>Motion &amp; Resize</strong> module catalogs all <strong>${MOTION_ITEMS.length} motion systems</strong> — count-up, chart replay, streaming, chip shimmer and fly-in, both helixes, accordion open, sticky drawer slide-in, activity-strip ticks, the jam equalizer, plus the module splitter, five width tiers, drag-to-reorder and drag-to-file — each running live.`,
+    motion: `The <strong>Motion &amp; Resize</strong> module catalogs all <strong>${MOTION_ITEMS.length} motion systems</strong> — count-up, chart replay, streaming, chip shimmer and fly-in, output chip fan, chat composer sheen, both helixes, accordion open, sticky drawer slide-in, activity-strip ticks, the jam equalizer, plus the module splitter, five width tiers, drag-to-reorder and drag-to-file — each running live.`,
     counts: `There are <strong>${ICON_INVENTORY?.totalUniqueIcons || 0} unique icons</strong> across <strong>${ICON_INVENTORY?.totalUses || 0} placements</strong> in the app.`,
   },
   onIntent: (intent) => {

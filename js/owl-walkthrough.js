@@ -476,7 +476,7 @@
   var screenIntro = false;
   var lastFocus = null;
   var widthTier = 0;
-  var WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
+  var WIDTH_ICONS = ['width_normal', 'width_wide', 'width_wide', 'width_full', 'fit_width'];
   var WIDTH_TITLES = [
     'Width (single) — tap to widen',
     'Width (double) — tap to widen',

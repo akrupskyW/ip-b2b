@@ -37,7 +37,7 @@ function widthMeta() {
   const W = window.WPaneWidth;
   if (W) return W;
   return {
-    ICONS: ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'],
+    ICONS: ['width_normal', 'width_wide', 'width_wide', 'width_full', 'fit_width'],
     TITLES: ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to widen', 'Width (custom) — drag to any size'],
     CUSTOM: 4,
     clamp: (v) => {

@@ -13,4 +13,9 @@ savings
 speed_camera
 local_florist
 width_normal
+width_wide
+width_full
+fit_width
+picture_in_picture_center
 history_off
+dock_to_left

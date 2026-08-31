@@ -69,7 +69,7 @@ function toggleNav() {
   else openNav();
 }
 
-/** Reflect the expand toggle's glyph: menu/close on mobile, chevron on desktop. */
+/** Reflect the expand toggle's glyph: dock_to_right open, dock_to_left close. */
 function syncNavIcon() {
   const btn = toggleBtn();
   if (!btn) return;
@@ -77,21 +77,21 @@ function syncNavIcon() {
   if (!icon) return;
   if (isMobile()) {
     const open = navOpen();
-    icon.textContent = open ? 'close' : 'menu';
+    icon.textContent = open ? 'dock_to_left' : 'dock_to_right';
     const label = open ? 'Close menu' : 'Open menu';
     btn.setAttribute('aria-label', label);
     btn.setAttribute('title', label);
     btn.setAttribute('aria-expanded', open ? 'true' : 'false');
   } else {
     /* Nav & History icons owns this control on desktop — don't stomp its
-       history / history_off glyphs with nav-collapse chevrons. */
+       history / history_off glyphs with nav-collapse dock icons. */
     if (document.documentElement.classList.contains('nav-modules')) return;
     const p = panel();
     if (p && !p.classList.contains('minimal-ui') && !p.classList.contains('mp-pivot')) {
       const hamburger = document.documentElement.classList.contains('nav-hamburger')
         && document.documentElement.classList.contains('app-search-on')
         && p.classList.contains('mp-rail');
-      icon.textContent = hamburger ? 'menu' : (p.classList.contains('mp-rail') ? 'chevron_right' : 'chevron_left');
+      icon.textContent = p.classList.contains('mp-rail') ? 'dock_to_right' : 'dock_to_left';
       if (hamburger) {
         btn.setAttribute('aria-label', 'Open navigation');
         btn.setAttribute('title', 'Open navigation');

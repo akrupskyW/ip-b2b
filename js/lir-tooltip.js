@@ -30,7 +30,8 @@ const TOOLTIP_SELECTOR =
   '.wise-popover--appearance [data-tip], ' +
   '.rf-tool-ico, .rf-rpt-plus, .wa-titledrop-plus, ' +
   '.pf-datemenu-btn, .pf-module-menu-btn, ' +
-  '.vf-check, .pf-ico, .fl-icon-btn, .sc-send, .adm-icon-btn';
+  '.vf-check, .pf-ico, .fl-icon-btn, .sc-send, .adm-icon-btn, ' +
+  '.sc-fb-btn, .sc-fb-id';
 
 const CANDIDATE_SELECTOR =
   'button, a[href], [role="button"], [data-tip], .lir-btn, .dash-term';
@@ -44,18 +45,22 @@ const SKIP_SELECTOR =
   '.ws-intent-chip, .sc-reply-chips .chip, .sc-inline-chips .chip, .ws-chips .chip, .chip-dive, ' +
   '.pf-chip, .vf-chip, .gv-chip, .ib-gras, .ib-pl, .pf-claim-btn, .pf-row-act, ' +
   '.pf-head-btn, .pf-loadmore, ' +
-  '.pf-rowmenu-btn, .pf-reports-btn, .adm-rowmenu-btn, .inv-rowmenu-btn, .ma-rowmenu-btn, .nud-rowmenu-btn, ' +
-  '[aria-haspopup="true"], [aria-haspopup="menu"]';
+  '.pf-rowmenu-btn, .pf-reports-btn, .adm-rowmenu-btn, .inv-rowmenu-btn, .ma-rowmenu-btn, .nud-rowmenu-btn';
 const SKIP_ANCESTOR =
   '[role="menu"], .pf-module-menu-pop, .pf-reports-pop, .pf-rowmenu-pop, .inv-rowmenu-pop, .pf-datemenu-pop, ' +
   '.topbar-popover, .wise-popover, #lir-tooltip, .ct-card, .nudge-dismiss-pop';
 
-/* The History / Turns modules (`.wch-sidebar`) run their own dark tooltip in
-   chat-history.js, so we stand down for their controls to avoid a double tip.
-   Collapsed / pivoted nav rows already get `#menu-rail-tip` — don't stack a
-   second card on the Appearance footer button in those states. */
+/* Surfaces that already paint their own hover card — stand down so two
+   cards never stack. History / Turns use `.wch-tip` (chat-history.js).
+   Library uses `.lib-tip`. Chat answer-action hover is this card; `.sc-tip`
+   is flash-only ("Copied!"). Collapsed / pivoted nav rows already get
+   `#menu-rail-tip` — don't stack a second card on the Appearance footer
+   button in those states. */
 function ownedElsewhere(btn) {
   if (btn.closest && btn.closest('.wch-sidebar')) return true;
+  if (btn.matches && btn.matches(
+    '.lib-filter-btn, .lib-fstat-add, .lib-place-tag, .lib-folder-swatch, [data-lib-tip]'
+  )) return true;
   if (btn.id === 'menu-footer-layout-btn' &&
       btn.closest('#menu-panel.mp-rail, #menu-panel.mp-pivot, .menu-footer--search-float')) {
     return true;
@@ -126,7 +131,8 @@ function isKebabTrigger(btn) {
   if (btn.matches(
     '.panel-more-btn, .pf-rowmenu-btn, .adm-rowmenu-btn, .inv-rowmenu-btn, ' +
     '.ma-rowmenu-btn, .nud-rowmenu-btn, .pf-datemenu-btn, .w-datemenu-btn, ' +
-    '.pf-module-menu-btn, .dash-kebab, .sc-fb-more'
+    '.pf-module-menu-btn, .dash-kebab, .sc-fb-more, ' +
+    '.lib-card-menu, .lib-fp-menu, .lib-fstat-menu, .wch-proj-menu'
   )) return true;
   const popup = btn.getAttribute('aria-haspopup');
   if (popup !== 'true' && popup !== 'menu') return false;
@@ -176,6 +182,8 @@ const GLYPH_LABELS = {
   width_normal: 'Width',
   width_wide: 'Width',
   width_full: 'Width',
+  fit_width: 'Width',
+  picture_in_picture_center: 'Width',
   close: 'Close',
   search: 'Search',
   settings: 'Settings',

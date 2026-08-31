@@ -2508,7 +2508,7 @@
      in the module's three-dot menu rather than a header button — the collapsed
      rail is too narrow for one. The control is hidden while the module is
      collapsed. */
-  const AP_PW_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
+  const AP_PW_ICONS = ['width_normal', 'width_wide', 'width_wide', 'width_full', 'fit_width'];
   const AP_PW_LABELS = ['Single width', 'Double width', 'Triple width', 'Fill width', 'Custom width'];
   let progressWidthTier = 0;
   try {
@@ -2540,7 +2540,13 @@
        when the string is identical — a fresh childList mutation that re-fires
        the observer in an infinite microtask loop and freezes the page. */
     const ic = item.querySelector('.topbar-menu-icon');
-    if (ic && ic.textContent !== AP_PW_ICONS[progressWidthTier]) ic.textContent = AP_PW_ICONS[progressWidthTier];
+    if (ic) {
+      if (window.WPaneWidth && window.WPaneWidth.applyIcon) {
+        window.WPaneWidth.applyIcon(ic, progressWidthTier);
+      } else if (ic.textContent !== AP_PW_ICONS[progressWidthTier]) {
+        ic.textContent = AP_PW_ICONS[progressWidthTier];
+      }
+    }
     const lbl = item.querySelector('.ap-pw-label');
     if (lbl && lbl.textContent !== AP_PW_LABELS[progressWidthTier]) lbl.textContent = AP_PW_LABELS[progressWidthTier];
     const title = 'Panel width — ' + AP_PW_LABELS[progressWidthTier].toLowerCase();
@@ -4373,7 +4379,7 @@
 
     // Chat width toggle — the canonical five-step cycle (single → double →
     // triple → fill → custom), identical to every other module in the app.
-    const WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
+    const WIDTH_ICONS = ['width_normal', 'width_wide', 'width_wide', 'width_full', 'fit_width'];
     const WIDTH_TITLES = [
       'Width (single) — tap to widen',
       'Width (double) — tap to widen',
@@ -4437,7 +4443,7 @@
       if (W) W.syncButton(nfpWidthBtn, nfpWidthTier);
       else if (nfpWidthBtn) {
         const ic = nfpWidthBtn.querySelector('.material-symbols-outlined');
-        if (ic) ic.textContent = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'][nfpWidthTier];
+        if (ic) ic.textContent = ['width_normal', 'width_wide', 'width_wide', 'width_full', 'fit_width'][nfpWidthTier];
         nfpWidthBtn.classList.toggle('is-on', nfpWidthTier >= 1);
         nfpWidthBtn.setAttribute('aria-pressed', nfpWidthTier >= 1 ? 'true' : 'false');
         nfpWidthBtn.title = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to widen', 'Width (custom) — drag to any size'][nfpWidthTier];

@@ -52,7 +52,7 @@
             '</a>' +
           '</div>' +
           '<button type="button" id="auth-menu-toggle" class="topbar-menu-toggle" aria-pressed="false" title="Collapse menu to icons" aria-label="Collapse menu to icons">' +
-            '<span class="material-symbols-outlined">chevron_left</span>' +
+            '<span class="material-symbols-outlined">dock_to_left</span>' +
           '</button>' +
         '</div>' +
         '<div class="menu-panel-body"></div>' +
@@ -116,7 +116,7 @@
       btn.setAttribute('aria-label', label);
       btn.setAttribute('title', label);
       var icon = btn.querySelector('.material-symbols-outlined');
-      if (icon) icon.textContent = railed ? 'chevron_right' : 'chevron_left';
+      if (icon) icon.textContent = railed ? 'dock_to_right' : 'dock_to_left';
     };
 
     /* The nav opens collapsed to its bare icon rail by DEFAULT (matching the

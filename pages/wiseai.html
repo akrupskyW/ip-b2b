@@ -368,6 +368,7 @@
       cursor: text; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       border-bottom: 1px dashed color-mix(in srgb, var(--text-muted) 55%, transparent);
       padding-bottom: 1px;
+      text-transform: capitalize;
       transition: border-color .15s ease, box-shadow .15s ease;
     }
     #wa-report .wa-pane-title:empty { display: block; min-height: 1.2em; }
@@ -1130,15 +1131,29 @@
        is open. The shared pane-resize rule lifts any #modules-row child with an
        open popover to z-index 500 (so its inline menu clears its neighbours) —
        but that also floats the whole pane over the chat, breaking the tuck.
-       Pin the pane at z-index 1 (same as its resting sticky layer). Chat is
-       z-index 3 !important, so it always paints on top — including when the
-       Output N / M titledrop is open on the pane's LEFT edge. Higher
+       Pin each pane at its resting sticky layer (Output 2, Report / peers 1).
+       Chat is z-index 3 !important, so it always paints on top — including when
+       the Output N / M titledrop is open on the pane's LEFT edge. Higher
        specificity + !important beats the generic 500 rule. */
     #modules-row .wa-pane.is-sticky:has(.panel-more-btn.is-open),
     #modules-row .wa-pane.is-sticky:has(.topbar-popover:not(.hidden)),
     #modules-row .wa-pane.is-sticky:has(.wa-titledrop-pop),
     #modules-row .wa-pane.is-sticky:has([role="menu"]:not(.hidden):not([hidden])) {
       z-index: 1 !important;
+    }
+    #modules-row #wa-unified.is-sticky:has(.panel-more-btn.is-open),
+    #modules-row #wa-unified.is-sticky:has(.topbar-popover:not(.hidden)),
+    #modules-row #wa-unified.is-sticky:has(.wa-titledrop-pop),
+    #modules-row #wa-unified.is-sticky:has([role="menu"]:not(.hidden):not([hidden])),
+    #modules-row #wa-results.is-sticky:has(.panel-more-btn.is-open),
+    #modules-row #wa-results.is-sticky:has(.topbar-popover:not(.hidden)),
+    #modules-row #wa-results.is-sticky:has(.wa-titledrop-pop),
+    #modules-row #wa-results.is-sticky:has([role="menu"]:not(.hidden):not([hidden])),
+    #modules-row #wa-visuals.is-sticky:has(.panel-more-btn.is-open),
+    #modules-row #wa-visuals.is-sticky:has(.topbar-popover:not(.hidden)),
+    #modules-row #wa-visuals.is-sticky:has(.wa-titledrop-pop),
+    #modules-row #wa-visuals.is-sticky:has([role="menu"]:not(.hidden):not([hidden])) {
+      z-index: 2 !important;
     }
 
     .wa-sec-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 15px; font-weight: 700; color: var(--text); margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
@@ -2074,22 +2089,37 @@
        chip and wears the same vN tag. */
     .sc-surface-stack { display: inline-flex; align-items: center; flex: 0 0 auto; padding-left: 4px; }
     .sc-surface-stack .sc-surface-thumb {
-      margin-left: -24px;
+      margin-left: -28px; z-index: 1;
       box-shadow: -3px 2px 8px rgba(0,0,0,0.16); background: var(--surface-2);
-      transition: transform .15s ease, margin .15s ease;
+      transition: transform .22s cubic-bezier(0.22, 1, 0.36, 1), margin .22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow .22s ease;
     }
     html.dark .sc-surface-stack .sc-surface-thumb { box-shadow: -3px 2px 10px rgba(0,0,0,0.45); }
     .sc-surface-stack .sc-surface-thumb:first-child { margin-left: 0; }
     /* Newest version is emphasized: full opacity + brand ring, the rest recede. */
     .sc-surface-stack .sc-surface-thumb.is-old { filter: saturate(.85) brightness(.98); opacity: .9; }
-    .sc-surface-stack .sc-surface-thumb.is-latest { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: -3px 2px 10px rgba(37,80,124,0.28), 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent); }
+    .sc-surface-stack .sc-surface-thumb.is-latest { z-index: 2; border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: -3px 2px 10px rgba(37,80,124,0.28), 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent); }
     /* The version currently mirrored into the pane gets a stronger ring so the
        stack and the pane agree. */
     .sc-surface-stack .sc-surface-thumb.is-active { z-index: 3; border-color: color-mix(in srgb, var(--primary) 70%, var(--border-strong)); box-shadow: -3px 2px 12px rgba(37,80,124,0.34), 0 0 0 2px color-mix(in srgb, var(--primary) 45%, transparent); }
+    /* Hover fans the cascade — rest is tightly overlapped (−28px); open spreads
+       to −4px so earlier versions clearly peek. .is-hover locks the same pose
+       for demos / Motion & Resize. */
     .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb,
-    .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb { margin-left: -12px; }
+    .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb { margin-left: -4px; }
     .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb:first-child,
     .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb:first-child { margin-left: 0; }
+    .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb.is-old,
+    .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb.is-old {
+      transform: translateY(-2px); opacity: 1; filter: none;
+    }
+    /* Give a stacked chip room to fan without crushing the title. */
+    .sc-surface-card:has(.sc-surface-stack) {
+      transition: border-color .15s ease, box-shadow .15s ease, transform .05s ease, width .22s cubic-bezier(0.22, 1, 0.36, 1), max-width .22s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .sc-surface-card:has(.sc-surface-stack):hover,
+    .sc-surface-card:has(.sc-surface-stack).is-hover {
+      width: min(288px, 100%);
+    }
     /* Each stacked version thumb is its own click target — tapping it opens that
        exact version on the right. Give it a clear hover/focus affordance so it
        reads as individually clickable, not just part of the card. */
@@ -3908,7 +3938,7 @@
 <body>
   <!-- Hidden host for the shared menu controls (mirrors studio-ai.html). -->
   <div id="topbar-row" hidden aria-hidden="true">
-    <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-symbols-outlined">chevron_left</span></button>
+    <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-symbols-outlined">dock_to_left</span></button>
     <button type="button" class="topbar-appearance-btn" id="topbar-appearance-btn" title="Appearance" aria-label="Appearance settings" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">crossword</span></button>
     <div class="topbar-profile has-dot" id="topbar-profile" title="Arthur Krupsky · akrupsky@wisecode.ai" data-action="user-menu" role="button" tabindex="0" aria-label="User menu">AK</div>
   </div>
@@ -5134,7 +5164,7 @@
     /* Per-pane three-dot menu + width control (their own, independent of the chat).
        Cycles the canonical five tiers shared by every module in the app:
        single → double → triple → fill → custom → single. */
-    const PANE_W_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
+    const PANE_W_ICONS = ['width_normal', 'width_wide', 'width_wide', 'width_full', 'fit_width'];
     const PANE_W_TITLES = [
       'Width (single) — tap to widen',
       'Width (double) — tap to widen',
@@ -5426,6 +5456,9 @@
       });
       return list;
     }
+    function toInitialCaps(s) {
+      return String(s || '').replace(/\S+/g, (w) => w.charAt(0).toUpperCase() + w.slice(1));
+    }
     function bindEditableTitle(el, onCommit) {
       if (!el) return;
       el.dataset.orig = el.textContent || '';
@@ -5438,7 +5471,7 @@
         }
       });
       el.addEventListener('blur', () => {
-        const next = (el.textContent || '').replace(/\s+/g, ' ').trim();
+        const next = toInitialCaps((el.textContent || '').replace(/\s+/g, ' ').trim());
         if (!next) {
           el.textContent = el.dataset.orig || '';
           return;
@@ -5460,10 +5493,10 @@
       setTimeout(cleanup, 2500);
     }
     function reportNameForCount(n) {
-      const words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
-        'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+      const words = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
+        'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
       const word = (n >= 0 && n < words.length) ? words[n] : String(n);
-      return n === 1 ? word + ' output' : word + ' outputs';
+      return n === 1 ? word + ' Output' : word + ' Outputs';
     }
     function reportItemCount() {
       return paneBody.report ? paneBody.report.querySelectorAll('.wa-rpt-item').length : 0;
@@ -5722,8 +5755,8 @@
       return item;
     }
     function snapshotGeneratedReport() {
-      const title = ((paneTitle.report && paneTitle.report.textContent) || '').trim()
-        || reportNameForCount(reportItemCount());
+      const title = toInitialCaps(((paneTitle.report && paneTitle.report.textContent) || '').trim()
+        || reportNameForCount(reportItemCount()));
       const items = paneBody.report
         ? Array.from(paneBody.report.querySelectorAll('.wa-rpt-item')).map((item, i) =>
             ((item.querySelector('.wa-rpt-item-title') || {}).textContent || '').trim() || ('Output ' + (i + 1)))
@@ -6011,7 +6044,7 @@
     }
 
     function reportShareTitle() {
-      const t = (paneTitle.report && paneTitle.report.textContent || '').trim();
+      const t = toInitialCaps((paneTitle.report && paneTitle.report.textContent || '').trim());
       return t || 'Report';
     }
 

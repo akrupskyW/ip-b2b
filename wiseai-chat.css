@@ -899,10 +899,28 @@ html.dark .ws-intent-chip.is-used:hover {
 .chat-input-rail {
   border-top: none; background: var(--bg);
   padding: 12px 32px; flex-shrink: 0;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  --sc-rail-pad-b: 12px;
+  transition: background-color 0.3s ease, border-color 0.3s ease, padding-bottom 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+  /* Empty-welcome lift — extra space under the whole rail (composer +
+     "What can I ask?" + token dots) so the title, lede, chips, and input
+     sit higher. Ask + dots stay tucked under the input, same as before.
+     Collapses the moment the thread starts or the composer has text /
+     an attachment. */
+  --sc-welcome-raise: clamp(5.5rem, 16vh, 11rem);
 }
 html.dark .chat-input-rail { background: transparent; border-top-color: transparent; }
 .sc-input-row { display: flex; gap: 8px; align-items: center; }
+/* Visible welcome as a direct child of the body, rail as a following sibling
+   (persist-chips may sit between them). `#welcome-screen` covers the older
+   comparison / portfolio overlay that never took `.sc-welcome`.
+   `:placeholder-shown` is the empty composer; an attach chip means the
+   member has started a turn. */
+*:has(> .sc-welcome:not(.sc-hidden), > #welcome-screen:not(.sc-hidden):not(.ws-hidden)) ~ .chat-input-rail:not(:has(.sc-input-row .fl-input:not(:placeholder-shown))):not(:has(.fl-attach-chip)) {
+  padding-bottom: calc(var(--sc-welcome-raise) + var(--sc-rail-pad-b, 12px));
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-input-rail { transition: background-color 0.3s ease, border-color 0.3s ease; }
+}
 .fl-input-wrap {
   /* Light tint of the brand blue (--primary #25507C) — a step deeper than the
      chat-tint container wash (5%) so the composer reads as its own blue
@@ -1051,25 +1069,25 @@ html.dark .fl-attach-chip { background: rgba(255,255,255,0.06); border-color: rg
 /* `has-attachments` is toggled on the wrap by js/wiseai-chat.js whenever chips
    are pending — the narrow composer-v2 grid uses it to open a chip row. */
 
-/* ===== Sent attachments — the same previews carried into a user's transcript
-   line, above the message text. ===== */
-.sc-att-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+/* ===== Sent attachments — the same compact button as the pending chip,
+   minus the remove, riding a user's transcript line above the message. ===== */
+.sc-att-row { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
 .sc-att-chip {
-  display: inline-flex; align-items: center; gap: 6px; max-width: 220px;
-  padding: 4px 10px 4px 4px; border-radius: 999px;
-  background: var(--surface-2); border: 1px solid var(--border-strong);
+  display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; max-width: 160px;
+  padding: 1px 8px 1px 2px; border-radius: 999px;
+  background: var(--surface-3, var(--surface)); border: 1px solid var(--border-strong);
 }
 html.dark .sc-att-chip { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.14); }
 .sc-att-thumb {
-  width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%;
+  width: 16px; height: 16px; flex-shrink: 0; border-radius: 50%;
   background-size: cover; background-position: center; background-repeat: no-repeat;
-  background-color: var(--surface-3); box-shadow: inset 0 0 0 1px var(--border);
+  background-color: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border);
   display: inline-flex; align-items: center; justify-content: center;
 }
 .sc-att-thumb--icon { color: var(--text-muted); }
-.sc-att-thumb--icon .material-symbols-outlined { font-size: 15px !important; }
+.sc-att-thumb--icon .material-symbols-outlined { font-size: 11px !important; }
 .sc-att-name {
-  font-size: 12px; font-weight: 500; color: var(--text); line-height: 1;
+  font-size: 10.5px; font-weight: 500; color: var(--text); line-height: 1;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
 }
 
@@ -1396,7 +1414,7 @@ html.chat-compact .chat-messages-area {
   padding: 0.85rem max(20px, calc((100% - var(--sc-transcript-max, 860px)) / 2));
 }
 html.chat-compact .sc-line { margin-bottom: 0.7rem; }
-html.chat-compact .chat-input-rail { padding: 8px 14px; }
+html.chat-compact .chat-input-rail { padding: 8px 14px; --sc-rail-pad-b: 8px; --sc-welcome-raise: clamp(5rem, 14vh, 9.5rem); }
 html.chat-compact .sc-welcome { padding: 1.25rem; }
 html.chat-compact .sc-welcome--cards { padding-top: 1.25rem; }
 html.chat-compact .sc-settings .ss-body { padding: 12px; }

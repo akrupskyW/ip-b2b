@@ -1543,7 +1543,7 @@
     .lir-btn.has-dot.is-read::after { display: none; }
     #lir-tooltip {
       position: fixed;
-      z-index: 10000;
+      z-index: 2147483646;
       background: var(--surface);
       color: var(--text);
       font-size: var(--fs-ui);
@@ -8875,7 +8875,7 @@
       applyStoredTextSize();
     </script>
     <div id="topbar-row" hidden aria-hidden="true">
-      <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-symbols-outlined">chevron_left</span></button>
+      <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-symbols-outlined">dock_to_left</span></button>
       <div class="topbar-logo">
         <a href="product-comparison.html" aria-label="WISE home">
         <!-- Full wordmark — desktop -->
@@ -20227,33 +20227,6 @@
       document.getElementById('verification-sidebar')?.classList.toggle('sp-collapsed');
     }
 
-    (function initLirTooltip() {
-      const tip = document.getElementById('lir-tooltip');
-      if (!tip) return;
-      let hideTimer = null;
-      function showTip(btn) {
-        const label = btn.getAttribute('data-tip');
-        if (!label) return;
-        clearTimeout(hideTimer);
-        tip.textContent = label;
-        const r = btn.getBoundingClientRect();
-        tip.style.top = `${Math.round(r.bottom + 10)}px`;
-        tip.style.left = `${Math.round(r.left + r.width / 2)}px`;
-        tip.offsetWidth;
-        tip.classList.add('lir-tip-visible');
-      }
-      function hideTip() {
-        tip.classList.remove('lir-tip-visible');
-      }
-      document.querySelectorAll('.lir-btn[data-tip]').forEach((btn) => {
-        btn.addEventListener('mouseenter', () => showTip(btn));
-        btn.addEventListener('mouseleave', hideTip);
-        btn.addEventListener('click', hideTip);
-        btn.addEventListener('focus', () => showTip(btn));
-        btn.addEventListener('blur', hideTip);
-      });
-    })();
-
     document.addEventListener('click', (e) => {
       if (!document.getElementById('topbar-menu-wrap')?.contains(e.target)) closeTopbarMenu();
       /* The wiseai popover is body-portalled while open, so clicks inside it
@@ -20598,7 +20571,7 @@
          (take the rest of the row), 4 = custom (keep current width; drag to
          any size). The control cycles 0 → 1 → 2 → 3 → 4 → 0. Legacy boolean
          values (true/false) map to 1/0. */
-      const WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
+      const WIDTH_ICONS = ['width_normal', 'width_wide', 'width_wide', 'width_full', 'fit_width'];
       const WIDTH_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to widen', 'Width (custom) — drag to any size'];
 
       function tierOf(v) {
@@ -20686,7 +20659,7 @@
        and agent pages — and back — so WISEcodeAI is always the same size. */
     /* WISEcodeAI width is also a three-tier cycle (0 single · 1 double · 2 triple),
        persisted as a number under `wide`. Legacy booleans map true→1, false→0. */
-    const WISEAI_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
+    const WISEAI_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_wide', 'width_full', 'fit_width'];
     const WISEAI_WIDTH_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to widen', 'Width (custom) — drag to any size'];
     function wiseaiTierOf(v) {
       if (window.WPaneWidth) return window.WPaneWidth.clamp(v);

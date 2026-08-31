@@ -301,14 +301,14 @@ function statCardsHtml() {
     { key: null, num: TOTAL_PRODUCTS, icon: 'inventory_2', label: 'Products', sub: 'Items in Registry', primary: true },
     ...STATUSES.map((s) => ({
       key: s.key, num: s.num, icon: s.icon, label: s.label, sub: s.sub, action: s.action,
-      accent: s.key === 'action' ? 'adm-stat--red' : s.key === 'ineligible' ? 'adm-stat--amber' : s.key === 'verified' ? 'adm-stat--blue' : s.key === 'pre_qualified' ? 'adm-stat--green' : '',
+      accent: s.key === 'action' ? 'adm-stat--red' : s.key === 'ineligible' || s.key === 'pending_pay' ? 'adm-stat--amber' : s.key === 'pending_att' || s.key === 'att_complete' ? 'adm-stat--blue' : s.key === 'pre_qualified' || s.key === 'verified' ? 'adm-stat--green' : '',
     })),
   ];
   return cards.map((c) => {
     const chipCls = STAT_CHIP[c.key == null ? '' : c.key] || 'adm-chip--muted';
     return `
     <div class="adm-vf-stat${c.primary ? ' is-active' : ''}${c.accent ? ' ' + c.accent : ''}" data-adm-vf="${c.key == null ? '' : esc(c.key)}" role="button" tabindex="0">
-      <span class="adm-vf-stat-num" data-count-to="${c.num}" style="${c.key === 'action' ? 'color:var(--sec-red)' : c.key === 'ineligible' ? 'color:var(--ter-amber-text)' : c.key === 'pending_att' || c.key === 'att_complete' ? 'color:var(--primary-ink, var(--primary))' : c.key === 'pre_qualified' || c.key === 'verified' ? 'color:var(--sec-green)' : ''}">0</span>
+      <span class="adm-vf-stat-num" data-count-to="${c.num}">0</span>
       <span class="adm-vf-stat-chipwrap"><span class="adm-chip ${chipCls}"><span class="material-symbols-outlined">${esc(c.icon)}</span>${esc(c.label)}</span></span>
       <span class="adm-vf-stat-sub">${esc(c.sub)}</span>
       ${c.action ? `<button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" data-adm-action="${esc(c.action.toLowerCase())}">${esc(c.action)}</button>` : ''}

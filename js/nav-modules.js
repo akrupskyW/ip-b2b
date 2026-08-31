@@ -7,18 +7,18 @@
  * keeps them as two default modules and gives them a shared collapsed
  * chrome — logo bug, menu, History on/off, new chat (blue circle).
  *
- * Collapsed (icon rail): those four icons. The hamburger toggles the labelled
+ * Collapsed (icon rail): those four icons. The dock icon toggles the labelled
  * navigation; the History icon toggles History. They are independent — opening
  * one leaves the other as it was, so the labelled nav and History can be open
  * at the same time, and clicking a control only closes its own module. While
  * History is open the History-off icon and new-chat hide (History carries its
- * own collapse and new conversation), but the hamburger stays so the nav can
+ * own collapse and new conversation), but the dock control stays so the nav can
  * still be opened or collapsed alongside it. New conversation starts a thread
  * without forcing either module open. The new-chat control is a circle,
  * matching History.
  *
  * Default ON (no stored value). v2 key — the v1 key was written to "0"
- * whenever the labelled nav opened (hamburger) or History-in-nav turned on,
+ * whenever the labelled nav opened (dock expand) or History-in-nav turned on,
  * which locked later visits into the old off default. An explicit off on
  * this key still stays off. Keep the FOUC guard in js/text-size-fouc.js
  * in sync with this key and default.
@@ -62,7 +62,7 @@ export function applyNavModules(on, persist = true) {
     if (!(pivoted && !persist)) {
       try { applyMinimalUi(false, persist); } catch (_) { /* already expanded */ }
     }
-    /* Always persist Icons only on with this mode: hamburger expand is
+    /* Always persist Icons only on with this mode: dock expand is
        in-session only (persist false), so a leftover "0" cannot hide the
        four-icon rail on the next load. */
     try { applyIconRail(true); } catch (_) { /* already railed */ }
@@ -99,7 +99,8 @@ export function syncNavModulesChrome() {
   }
 
   if (!menuBtn) {
-    menuBtn = makeChromeBtn('menu-modules-menu', 'menu', 'Open navigation', 'Open navigation');
+    /* dock_to_right = open (collapsed); dock_to_left = close (expanded). */
+    menuBtn = makeChromeBtn('menu-modules-menu', 'dock_to_right', 'Open navigation', 'Open navigation');
     menuBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -153,7 +154,7 @@ function navIsCollapsed() {
 
 /** Parked live History API (the mount event can fire before this module boots). */
 let liveApi = null;
-/** Layout the last hamburger/History-toggle click asked for, so a late History
+/** Layout the last dock/History-toggle click asked for, so a late History
  *  mount still opens in the right mode (full vs collapsed rail). */
 let pendingLayout = null;
 
@@ -317,10 +318,13 @@ function syncChevronLabel() {
 function syncMenuLabel() {
   const btn = document.querySelector('.menu-modules-menu');
   if (!btn) return;
-  const label = navIsCollapsed() ? 'Open navigation' : 'Close navigation';
+  const collapsed = navIsCollapsed();
+  const label = collapsed ? 'Open navigation' : 'Close navigation';
   btn.setAttribute('aria-label', label);
   btn.setAttribute('title', label);
   btn.setAttribute('data-tip', label);
+  const icon = btn.querySelector('.material-symbols-outlined');
+  if (icon) icon.textContent = collapsed ? 'dock_to_right' : 'dock_to_left';
 }
 
 function onMenuRail() {
@@ -340,7 +344,7 @@ function onChevronClick(e) {
   e.stopPropagation();
   e.stopImmediatePropagation();
   /* The History icon only ever toggles History, whatever the nav is doing —
-     the hamburger owns the nav. Roll / Crawl can take History out of the nav
+     the dock control owns the nav. Roll / Crawl can take History out of the nav
      entirely, in which case there is nothing to toggle. */
   if (historyAllowed()) toggleHistoryModule();
 }

@@ -2,10 +2,11 @@
 /* WISE Jam Strip                                                      */
 /* ------------------------------------------------------------------ */
 /*
- * When the navigation is collapsed to the Minimal-UI top bar, the long
- * stretch where the nav icons used to live sits empty. This module fills
- * that gap with a fun, musical "pump up the jam" strip: a wide animated
- * equalizer and a row of branded tracks you can play right in the bar.
+ * The music player lives in Appearance ▸ Sound — never in the primary
+ * navigation. Turning the jam strip on from that popover reveals the
+ * transport, a visualizer, and the track crate right there. Two viz
+ * modes share the same analyser: proper equalizer bars (default) and a
+ * horizontal DNA helix that twists and sparks with the music.
  *
  * The tunes are synthesized live with the Web Audio API (no audio files /
  * licensing needed) so each riff ships as a few lines of note data. The
@@ -25,10 +26,8 @@
  *   - "Pirates"          Pirates of the Caribbean · He's a Pirate
  *   - "Never Gonna…"     Rick Astley · Never Gonna Give You Up
  *
- * The strip mounts into #menu-panel .menu-inner and is CSS-gated so it
- * only shows when the panel is BOTH pivoted (horizontal top bar) and in
- * Minimal UI. Turning the jam strip on from Appearance starts Tetris;
- * other tracks start only on an explicit play / chip click.
+ * Playback starts only from the play button and then loops until pause.
+ * Turning the strip on, picking a track, or clicking anything else is silent.
  */
 
 /* ---- Note helpers -------------------------------------------------- */
@@ -411,81 +410,58 @@ const SONG_ORDER = [
 /** Default when the jam strip is switched on, or when nothing has been picked. */
 const DEFAULT_SONG_ID = 'tetris';
 
-/* ---- Iconic click stabs ---------------------------------------------- */
-/* Hand-picked micro-phrases — the instantly recognizable hook of each track,
-   boiled down to 3–5 notes. While the Jam strip is on, every button click in
-   the app plays one of these (see the global click listener at the bottom of
-   this file) instead of the whole tune. Each button hashes to one stab so a
-   given button always makes the same sound. Format matches SONGS.notes:
-   [name|null, beats], played at the parent song's bpm and timbre. */
+function songBeats(song) {
+  return song.notes.reduce((n, row) => n + (Number(row[1]) || 0), 0);
+}
+function songDurationSec(song) {
+  return songBeats(song) * (60 / song.bpm);
+}
+function formatDuration(sec) {
+  const s = Math.max(0, Math.round(sec));
+  const m = Math.floor(s / 60);
+  return `${m}:${String(s % 60).padStart(2, '0')}`;
+}
+function formatBytes(n) {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) {
+    const kb = n / 1024;
+    return `${kb < 10 ? kb.toFixed(1) : Math.round(kb)} KB`;
+  }
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+function songFileName(id) {
+  return `${id}.chiptune`;
+}
+function songByteSize(song) {
+  try { return new Blob([JSON.stringify(song.notes)]).size; }
+  catch (_) { return JSON.stringify(song.notes).length; }
+}
+function songTip(song) {
+  const name = song.title || song.label;
+  return song.artist ? `${name} — ${song.artist}` : name;
+}
 
-const STABS = {
-  tetris: [
-    [['E5', 0.5], ['B4', 0.25], ['C5', 0.25], ['D5', 0.5]],
-    [['A4', 0.5], ['A4', 0.25], ['C5', 0.25], ['E5', 0.5]],
-    [['B4', 0.5], ['C5', 0.25], ['D5', 0.5]],
-  ],
-  imperial: [
-    [['G4', 0.5], ['G4', 0.5], ['G4', 0.5]],
-    [['Eb4', 0.5], ['Bb4', 0.25], ['G4', 0.75]],
-    [['D5', 0.5], ['D5', 0.5], ['D5', 0.5]],
-  ],
-  axelf: [
-    [['F4', 0.75], ['Ab4', 0.5], ['F4', 0.25]],
-    [['F4', 0.5], ['Bb4', 0.5], ['F4', 0.5], ['Eb4', 0.5]],
-    [['F4', 0.5], ['C5', 0.5], ['F5', 0.5]],
-  ],
-  ode: [
-    [['E4', 0.5], ['E4', 0.5], ['F4', 0.5], ['G4', 0.5]],
-    [['G4', 0.5], ['F4', 0.5], ['E4', 0.5], ['D4', 0.5]],
-    [['E4', 0.75], ['D4', 0.25], ['D4', 0.75]],
-  ],
-  sonic: [
-    [['C5', 0.5], ['A4', 0.5], ['C5', 0.5], ['B4', 0.5]],
-    [['G4', 0.5], ['E5', 0.5], ['D5', 0.5], ['C5', 0.5]],
-    [['B4', 0.25], ['C5', 0.25], ['E5', 0.75]],
-  ],
-  mario: [
-    [['E5', 0.5], ['E5', 0.5], [null, 0.5], ['E5', 0.5]],
-    [['B5', 0.3], ['E6', 1.0]],
-    [['C5', 0.25], ['E5', 0.25], ['G5', 0.75]],
-  ],
-  seven: [
-    [['E4', 0.75], ['E4', 0.25], ['G4', 0.25], ['E4', 0.25]],
-    [['D4', 0.5], ['C4', 0.75], ['B3', 0.75]],
-    [['E4', 0.5], ['G4', 0.25], ['E4', 0.25], ['D4', 0.5]],
-  ],
-  smoke: [
-    [['G4', 0.5], ['Bb4', 0.5], ['C5', 0.75]],
-    [['G4', 0.5], ['Bb4', 0.5], ['Db5', 0.25], ['C5', 0.75]],
-    [['C5', 0.5], ['Bb4', 0.5], ['G4', 0.75]],
-  ],
-  megalovania: [
-    [['D4', 0.25], ['D4', 0.25], ['D5', 0.5], ['A4', 0.5]],
-    [['Ab4', 0.375], ['G4', 0.375], ['F4', 0.375]],
-    [['F4', 0.25], ['D4', 0.25], ['F4', 0.25], ['G4', 0.5]],
-  ],
-  pirates: [
-    [['E4', 0.25], ['G4', 0.25], ['A4', 0.5]],
-    [['A4', 0.25], ['C5', 0.25], ['D5', 0.5]],
-    [['E5', 0.5], ['F5', 0.5], ['E5', 0.25], ['G5', 0.5]],
-  ],
-  takeonme: [
-    [['F#5', 0.5], ['F#5', 0.5], ['D5', 0.5], ['B4', 0.5]],
-    [['E5', 0.5], ['E5', 0.5], ['G#5', 0.5], ['G#5', 0.5]],
-    [['A5', 0.5], ['B5', 0.5], ['A5', 0.5]],
-  ],
-  dancing: [
-    [['C#5', 0.5], ['B4', 0.5], ['B4', 1.0]],
-    [['G#4', 0.5], ['A4', 0.5], ['A4', 0.75]],
-    [['E5', 0.25], ['F#5', 0.25], ['G#5', 0.25], ['A5', 0.5]],
-  ],
-  rickroll: [
-    [['A4', 0.25], ['B4', 0.25], ['D5', 0.25], ['B4', 0.25], ['F#5', 0.5]],
-    [['F#5', 0.5], ['F#5', 0.5], ['E5', 0.75]],
-    [['E5', 0.5], ['E5', 0.5], ['D5', 0.75]],
-  ],
-};
+function catalogEntry(id) {
+  const s = SONGS[id];
+  const durationSec = songDurationSec(s);
+  const fileBytes = songByteSize(s);
+  return {
+    id,
+    label: s.label,
+    artist: s.artist || '',
+    title: s.title || s.label,
+    tip: songTip(s),
+    bpm: s.bpm,
+    type: s.type,
+    notes: s.notes.length,
+    beats: songBeats(s),
+    durationSec,
+    durationLabel: formatDuration(durationSec),
+    fileName: songFileName(id),
+    fileBytes,
+    fileSizeLabel: formatBytes(fileBytes),
+  };
+}
 
 
 /* ---- Tiny synth ----------------------------------------------------- */
@@ -580,18 +556,39 @@ function scheduleSong(songId, startAt) {
   return t - startAt;
 }
 
-/* ---- Sound-reactive equalizer -------------------------------------- */
-/* The EQ bars (.jam-pop-eq / .jam-eq) idle on a CSS shimmer, but while a tune
-   is playing we drive them from the AnalyserNode's live frequency data so the
-   levels actually rise and fall with the music. We add an `is-live` class to
-   each bar group (CSS then drops its keyframe animation and reads the per-bar
-   `--lvl` for opacity + glow) and write scaleY inline every frame. */
+/* ---- Sound-reactive visualizer ------------------------------------- */
+/* Two modes share the same AnalyserNode:
+   - bars (default): a proper equalizer — full-height tracks, scaleY from
+     the baseline, attack-fast / release-slow so beats punch.
+   - helix: a horizontal DNA double helix that twists, breathes, and
+     sends a spark down the strand with the music. */
 
-const viz = { raf: 0, data: null };
+const viz = { raf: 0, data: null, last: 0, phase: 0 };
+const HELIX = { W: 320, H: 32, mid: 16, pairs: 14, steps: 48 };
+const JAM_VIZ_KEY = 'wise-jam-viz-v1';
 
 function prefersReducedMotion() {
   try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
   catch (_) { return false; }
+}
+
+export function getJamVizMode() {
+  try { return localStorage.getItem(JAM_VIZ_KEY) === 'helix' ? 'helix' : 'bars'; }
+  catch (_) { return 'bars'; }
+}
+export function setJamVizMode(mode) {
+  const next = mode === 'helix' ? 'helix' : 'bars';
+  try { localStorage.setItem(JAM_VIZ_KEY, next); } catch (_) {}
+  applyJamVizMode(next);
+  emitJamState();
+}
+function applyJamVizMode(mode) {
+  const next = mode === 'helix' ? 'helix' : 'bars';
+  document.querySelectorAll('[data-jam-viz-host]').forEach((el) => {
+    el.dataset.jamViz = next;
+    el.classList.toggle('jam-viz-helix', next === 'helix');
+    el.classList.toggle('jam-viz-bars', next === 'bars');
+  });
 }
 
 /** Peak level (0..1) for bar `i` of `n`, from a log-spaced slice of the FFT so
@@ -617,8 +614,6 @@ function paintEq(container, data) {
   for (let i = 0; i < n; i++) {
     const bar = bars[i];
     const raw = barLevel(data, i, n);
-    // Gentle curve for punch, then attack fast / release slow so the bars snap
-    // up on a beat and glide back down instead of flickering.
     const target = 0.16 + 0.84 * Math.pow(raw, 0.72);
     const prev = bar._lvl || 0.16;
     const v = prev + (target - prev) * (target > prev ? 0.6 : 0.16);
@@ -628,11 +623,89 @@ function paintEq(container, data) {
   }
 }
 
-function vizFrame() {
-  if (!player.playing || !player.analyser) { viz.raf = 0; return; }
+function helixPoints(phase, amp, turns) {
+  const { W, mid, steps } = HELIX;
+  const period = W / turns;
+  const a = [];
+  const b = [];
+  for (let i = 0; i <= steps; i++) {
+    const x = (i / steps) * W;
+    const th = (x / period) * Math.PI * 2 + phase;
+    a.push([x, mid + amp * Math.sin(th), Math.cos(th)]);
+    b.push([x, mid - amp * Math.sin(th), -Math.cos(th)]);
+  }
+  return { a, b, period };
+}
+function helixPath(pts) {
+  let d = '';
+  for (let i = 0; i < pts.length; i++) {
+    d += `${i ? 'L' : 'M'}${pts[i][0].toFixed(2)},${pts[i][1].toFixed(2)}`;
+  }
+  return d;
+}
+
+function paintHelix(container, data, dt) {
+  const svg = container.querySelector('.jam-helix-svg');
+  if (!svg) return;
+  container.classList.add('is-live');
+  const bass = barLevel(data, 0, 8);
+  const midE = barLevel(data, 3, 8);
+  const high = barLevel(data, 6, 8);
+  const energy = 0.35 * bass + 0.4 * midE + 0.25 * high;
+  viz.phase += dt * (1.35 + energy * 4.4);
+  const amp = 5.2 + 7.2 * bass;
+  const turns = 3.05 + energy * 0.55;
+  const { a, b, period } = helixPoints(viz.phase, amp, turns);
+  const pathA = svg.querySelector('.jam-helix-strand.a');
+  const pathB = svg.querySelector('.jam-helix-strand.b');
+  if (pathA) pathA.setAttribute('d', helixPath(a));
+  if (pathB) pathB.setAttribute('d', helixPath(b));
+
+  const sparkX = ((viz.phase / (Math.PI * 2)) % 1) * HELIX.W;
+  const sparkTh = (sparkX / period) * Math.PI * 2 + viz.phase;
+  const spark = svg.querySelector('.jam-helix-spark');
+  if (spark) {
+    spark.setAttribute('cx', sparkX.toFixed(2));
+    spark.setAttribute('cy', (HELIX.mid + amp * Math.sin(sparkTh)).toFixed(2));
+    spark.setAttribute('r', (2.6 + 2.4 * energy).toFixed(2));
+    spark.style.opacity = String(0.55 + 0.45 * energy);
+  }
+
+  const rungs = svg.querySelectorAll('.jam-helix-rung');
+  const nodes = svg.querySelectorAll('.jam-helix-node');
+  const pairN = HELIX.pairs;
+  for (let p = 0; p < pairN; p++) {
+    const x = ((p + 0.5) / pairN) * HELIX.W;
+    const th = (x / period) * Math.PI * 2 + viz.phase;
+    const yA = HELIX.mid + amp * Math.sin(th);
+    const yB = HELIX.mid - amp * Math.sin(th);
+    const rung = rungs[p];
+    if (rung) {
+      rung.setAttribute('x1', x.toFixed(2));
+      rung.setAttribute('y1', yA.toFixed(2));
+      rung.setAttribute('x2', x.toFixed(2));
+      rung.setAttribute('y2', yB.toFixed(2));
+      const dist = Math.min(Math.abs(x - sparkX), HELIX.W - Math.abs(x - sparkX));
+      const bloom = Math.max(0, 1 - dist / 42);
+      rung.style.strokeOpacity = String(0.28 + 0.72 * bloom + 0.2 * high);
+      rung.style.strokeWidth = (1 + 1.8 * bloom + 0.6 * midE).toFixed(2);
+    }
+    const n0 = nodes[p * 2];
+    const n1 = nodes[p * 2 + 1];
+    if (n0) { n0.setAttribute('cx', x.toFixed(2)); n0.setAttribute('cy', yA.toFixed(2)); }
+    if (n1) { n1.setAttribute('cx', x.toFixed(2)); n1.setAttribute('cy', yB.toFixed(2)); }
+  }
+  container.style.setProperty('--jam-hx-glow', energy.toFixed(3));
+}
+
+function vizFrame(now) {
+  if (!player.playing || !player.analyser) { viz.raf = 0; viz.last = 0; return; }
+  const t = now || performance.now();
+  const dt = viz.last ? Math.min(0.05, (t - viz.last) / 1000) : 0.016;
+  viz.last = t;
   player.analyser.getByteFrequencyData(viz.data);
-  const groups = document.querySelectorAll('.jam-pop-eq, .jam-eq');
-  for (const g of groups) paintEq(g, viz.data);
+  document.querySelectorAll('.jam-pop-eq, .jam-eq').forEach((g) => paintEq(g, viz.data));
+  document.querySelectorAll('.jam-helix').forEach((g) => paintHelix(g, viz.data, dt));
   viz.raf = requestAnimationFrame(vizFrame);
 }
 
@@ -640,13 +713,14 @@ function startViz() {
   if (viz.raf || prefersReducedMotion()) return;
   if (!player.analyser) return;
   viz.data = new Uint8Array(player.analyser.frequencyBinCount);
+  viz.last = 0;
   viz.raf = requestAnimationFrame(vizFrame);
 }
 
 function stopViz() {
   if (viz.raf) cancelAnimationFrame(viz.raf);
   viz.raf = 0;
-  // Hand the bars back to the CSS idle shimmer.
+  viz.last = 0;
   document.querySelectorAll('.jam-pop-eq.is-live, .jam-eq.is-live').forEach((g) => {
     g.classList.remove('is-live');
     for (const bar of g.children) {
@@ -655,6 +729,55 @@ function stopViz() {
       bar._lvl = 0;
     }
   });
+  document.querySelectorAll('.jam-helix.is-live').forEach((g) => {
+    g.classList.remove('is-live');
+    g.style.removeProperty('--jam-hx-glow');
+  });
+}
+
+export function eqBarsMarkup(n = 24) {
+  return Array.from({ length: n }, (_, i) =>
+    `<span style="animation-delay:${(-0.13 * (i % 8)).toFixed(2)}s"></span>`
+  ).join('');
+}
+
+let helixUid = 0;
+export function helixVizMarkup() {
+  const id = `jamhx${++helixUid}`;
+  const { W, H, mid, pairs } = HELIX;
+  const amp = 6.4;
+  const turns = 3.2;
+  const { a, b, period } = helixPoints(0, amp, turns);
+  const rungs = [];
+  const nodes = [];
+  for (let p = 0; p < pairs; p++) {
+    const x = ((p + 0.5) / pairs) * W;
+    const th = (x / period) * Math.PI * 2;
+    const yA = mid + amp * Math.sin(th);
+    const yB = mid - amp * Math.sin(th);
+    rungs.push(`<line class="jam-helix-rung" x1="${x.toFixed(1)}" y1="${yA.toFixed(1)}" x2="${x.toFixed(1)}" y2="${yB.toFixed(1)}"/>`);
+    nodes.push(`<circle class="jam-helix-node" cx="${x.toFixed(1)}" cy="${yA.toFixed(1)}" r="1.55"/>`);
+    nodes.push(`<circle class="jam-helix-node" cx="${x.toFixed(1)}" cy="${yB.toFixed(1)}" r="1.55"/>`);
+  }
+  return `<div class="jam-helix" data-jam-helix aria-hidden="true">
+    <svg class="jam-helix-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="${id}-a" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="var(--primary)"/>
+          <stop offset="1" stop-color="var(--ter-violet, #6b5b95)"/>
+        </linearGradient>
+        <linearGradient id="${id}-b" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="var(--ter-violet, #6b5b95)"/>
+          <stop offset="1" stop-color="var(--primary)"/>
+        </linearGradient>
+      </defs>
+      <path class="jam-helix-strand a" fill="none" d="${helixPath(a)}" stroke="url(#${id}-a)"/>
+      <path class="jam-helix-strand b" fill="none" d="${helixPath(b)}" stroke="url(#${id}-b)"/>
+      <g class="jam-helix-rungs">${rungs.join('')}</g>
+      <g class="jam-helix-nodes">${nodes.join('')}</g>
+      <circle class="jam-helix-spark" cx="0" cy="${mid}" r="3"/>
+    </svg>
+  </div>`;
 }
 
 function stopVoices() {
@@ -697,119 +820,56 @@ function stop() {
   emitJamState();
 }
 
-function toggle(songId) {
-  if (player.playing && (!songId || songId === player.songId)) {
-    stop();
-  } else {
-    play(songId || player.songId || DEFAULT_SONG_ID);
+/* Play / pause only. A songId is never a reason to start from silence —
+   that is exclusively the play button. */
+function togglePlay() {
+  if (player.playing) stop();
+  else play(player.songId || DEFAULT_SONG_ID);
+}
+
+function selectSong(songId) {
+  if (!songId || !SONGS[songId]) return;
+  player.songId = songId;
+  try { localStorage.setItem(JAM_SONG_KEY, songId); } catch (_) {}
+  if (player.playing) play(songId);
+  else {
+    player.onState?.(false, songId);
+    emitJamState();
   }
 }
 
 /* ---- Popover player API --------------------------------------------- */
-/* The player UI now lives INSIDE the Appearance popover (not the nav module),
-   so the transport + track list are driven from there. These exports give that
-   UI the song catalogue, the play/stop transport, the current state, and a
-   subscription so the open popover can reflect play/stop as it happens. */
-function songTip(song) {
-  const name = song.title || song.label;
-  return song.artist ? `${name} — ${song.artist}` : name;
-}
+/* The player lives in Appearance ▸ Sound. These exports give that UI the
+   catalogue, play/pause, track selection, viz mode, and a subscription. */
 
-export const JAM_SONGS = SONG_ORDER.map((id) => {
-  const s = SONGS[id];
-  return { id, label: s.label, artist: s.artist, tip: songTip(s) };
-});
+export const JAM_SONGS = SONG_ORDER.map(catalogEntry);
 
 let jamStateSubs = [];
 function emitJamState() {
-  const snap = { playing: player.playing, songId: player.songId };
+  const snap = { playing: player.playing, songId: player.songId, viz: getJamVizMode() };
   for (const cb of jamStateSubs) { try { cb(snap); } catch (_) {} }
 }
-/** Subscribe to play/stop/track changes. Returns an unsubscribe function. */
 export function onJamState(cb) {
   if (typeof cb !== 'function') return () => {};
   jamStateSubs.push(cb);
   return () => { jamStateSubs = jamStateSubs.filter((x) => x !== cb); };
 }
-/** Play a track (or resume the last), toggling it off if it's already playing. */
-export function toggleJam(songId) { toggle(songId); }
-export function playJam(songId) { play(songId || player.songId || DEFAULT_SONG_ID); }
+/** Play / pause. Ignores a song id so a chip click cannot start playback. */
+export function toggleJam() { togglePlay(); }
+export function playJam() { play(player.songId || DEFAULT_SONG_ID); }
 export function stopJam() { stop(); }
+/** Pick a track. Silent when paused; if already playing, the session continues on the new track. */
+export function selectJam(songId) { selectSong(songId); }
 export function isJamPlaying() { return !!player.playing; }
 export function currentJamSongId() { return player.songId || null; }
 export function currentJamSongLabel() { return player.songId ? SONGS[player.songId].label : ''; }
 
-/* ---- DOM ------------------------------------------------------------ */
-
-const EQ_BARS = 48;
-
-function buildStrip() {
-  const strip = document.createElement('div');
-  strip.className = 'jam-strip';
-  strip.setAttribute('role', 'group');
-  strip.setAttribute('aria-label', 'WISE jam bar — play a tune');
-
-  const eqBars = Array.from({ length: EQ_BARS }, () => '<span></span>').join('');
-
-  const songChips = SONG_ORDER
-    .map((id) => {
-      const s = SONGS[id];
-      const tip = songTip(s).replace(/"/g, '&quot;');
-      return `<button type="button" class="jam-song" data-song="${id}" data-tip="${tip}" title="${tip}">${s.label}</button>`;
-    })
-    .join('');
-
-  strip.innerHTML = `
-    <button type="button" class="jam-play" data-jam-toggle aria-label="Play the jam" title="Play / pause">
-      <span class="material-symbols-outlined jam-play-icon">play_arrow</span>
-    </button>
-    <div class="jam-eq" aria-hidden="true">${eqBars}</div>
-    <div class="jam-songs" role="group" aria-label="Pick a track">${songChips}</div>`;
-
-  wireStrip(strip);
-  return strip;
-}
-
-function wireStrip(strip) {
-  const playBtn = strip.querySelector('[data-jam-toggle]');
-  const playIcon = strip.querySelector('.jam-play-icon');
-
-  const syncUi = (playing, songId) => {
-    strip.classList.toggle('is-playing', playing);
-    if (playIcon) playIcon.textContent = playing ? 'pause' : 'play_arrow';
-    if (playBtn) {
-      playBtn.setAttribute('aria-label', playing ? 'Pause the jam' : 'Play the jam');
-      playBtn.setAttribute('aria-pressed', playing ? 'true' : 'false');
-    }
-    strip.querySelectorAll('.jam-song').forEach((chip) => {
-      chip.classList.toggle('is-active', playing && chip.dataset.song === songId);
-    });
-  };
-  player.onState = syncUi;
-
-  playBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    toggle();
-  });
-
-  strip.querySelectorAll('.jam-song').forEach((chip) => {
-    chip.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggle(chip.dataset.song);
-    });
-  });
-}
-
-/* ---- Enable / disable (Appearance popover toggle) ------------------- */
-/* The jam strip can be switched off from the Appearance (crossword) popover,
-   just like Minimal UI. When off, a `jam-off` class on #menu-panel hides the
-   strip (CSS) and any playback is stopped. The choice persists across pages. */
-/* v2 key — the v1 key got auto-written to "1" on restore (back when the strip
-   defaulted on), so a fresh key guarantees the off-by-default actually sticks. */
+/* ---- Enable / disable (Appearance ▸ Sound) -------------------------- */
+/* The jam player lives in the Appearance popover, never the primary nav.
+   Turning the switch on reveals the player under the toggle. It does not
+   start a tune — only the play button does that. Turning it off stops
+   anything that was already looping. */
 const JAM_KEY = 'wise-jam-strip-v2';
-
-/* Last track the user picked — persisted so the button click stabs keep the
-   chosen flavour across pages and reloads, even when nothing is playing. */
 const JAM_SONG_KEY = 'wise-jam-song-v1';
 
 function storedSongId() {
@@ -819,154 +879,28 @@ function storedSongId() {
   } catch (_) { return null; }
 }
 
-// Seed the in-memory choice: honour the user's last explicit pick if there is
-// one, otherwise Tetris — the track that starts when the jam strip is turned on.
 player.songId = storedSongId() || DEFAULT_SONG_ID;
 
-/** True only when the user explicitly turned the jam strip on (default off). */
 export function isJamStripOn() {
   try { return localStorage.getItem(JAM_KEY) === '1'; } catch { return false; }
 }
 
 /**
- * Reflect the on/off choice onto the panel.
- * @param {boolean} on
- * @param {boolean} [persist=true]  Only an explicit user toggle persists; the
- *   initial restore must NOT write, or it would lock in a default forever.
+ * Persist the on/off choice and stop playback when turning off.
+ * Never autoplays. Play starts only from the play button.
  */
 export function applyJamStrip(on, persist = true) {
-  if (on) mountJamStrip();
   const panel = document.getElementById('menu-panel');
   if (panel) panel.classList.toggle('jam-off', !on);
   if (persist) { try { localStorage.setItem(JAM_KEY, on ? '1' : '0'); } catch (_) {} }
   if (!on && player.playing) stop();
-  // User toggle only (`persist`): a restore on load must not autoplay.
-  if (on && persist) play(DEFAULT_SONG_ID);
 }
 
-/** Restore the persisted on/off state onto the panel (without persisting). */
 export function restoreJamStrip() {
   applyJamStrip(isJamStripOn(), false);
 }
 
-/** Insert the strip into the nav panel's inner row, once. */
+/** Kept so older shells that still import it do not throw. Does not inject into the nav. */
 export function mountJamStrip() {
-  const inner = document.querySelector('#menu-panel .menu-inner');
-  if (!inner || inner.querySelector('.jam-strip')) return;
-
-  const strip = buildStrip();
-  const body = inner.querySelector('.menu-panel-body');
-  if (body && body.nextSibling) inner.insertBefore(strip, body.nextSibling);
-  else if (body) body.after(strip);
-  else inner.appendChild(strip);
-
   restoreJamStrip();
-
-  // Stop the music if the user leaves Minimal UI (the strip hides).
-  const panel = document.getElementById('menu-panel');
-  if (panel && !panel.dataset.jamObserved) {
-    panel.dataset.jamObserved = '1';
-    new MutationObserver(() => {
-      const visible = panel.classList.contains('minimal-ui') && panel.classList.contains('mp-pivot');
-      if (!visible && player.playing) stop();
-    }).observe(panel, { attributes: true, attributeFilter: ['class'] });
-  }
-}
-
-/* Mount into the nav as soon as #menu-panel .menu-inner exists. The Appearance
-   popover only toggles the strip on/off — the transport + track list live here,
-   not inside that popover (turning Jam on must not grow or reflow the menu). */
-function bootJamStrip() {
-  if (document.querySelector('#menu-panel .menu-inner')) {
-    mountJamStrip();
-    return;
-  }
-  if (typeof MutationObserver === 'undefined' || !document.documentElement) return;
-  const mo = new MutationObserver(() => {
-    if (!document.querySelector('#menu-panel .menu-inner')) return;
-    mountJamStrip();
-    mo.disconnect();
-  });
-  mo.observe(document.documentElement, { childList: true, subtree: true });
-}
-if (typeof document !== 'undefined') {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bootJamStrip);
-  } else {
-    bootJamStrip();
-  }
-}
-
-/* ---- App-wide button click stabs ------------------------------------ */
-/* While the Jam strip is switched on, EVERY button click in the app plays a
-   short, iconic riff snippet from the chosen track (see STABS above) — not
-   the whole tune. Each button hashes to one of the track's stabs, so a given
-   button always answers with the same sound. This module is imported by
-   js/topbar.js on every page, so wiring the listener here makes it global.
-
-   Rules:
-   - Jam strip off → silent (and no AudioContext is ever created).
-   - Full track already playing → stabs stay out of the way (no clashing).
-   - The jam player's own transport/chips are excluded — clicking them starts
-     or stops real playback, which is feedback enough. */
-
-const STAB_SELECTOR =
-  'button, [role="button"], input[type="button"], input[type="submit"], input[type="reset"], summary';
-const STAB_SKIP =
-  '[data-jam-play], [data-jam-song], [data-jam], .jam-strip, .jam-pop';
-
-/** Play stab #`which` (mod the track's stab count) of a song, softly. */
-function playStab(songId, which) {
-  const song = SONGS[songId];
-  const stabs = STABS[songId];
-  if (!song || !stabs || !stabs.length) return;
-  const ctx = ensureContext();
-  if (!ctx) return;
-  if (ctx.state === 'suspended') ctx.resume();
-
-  const notes = stabs[Math.abs(which) % stabs.length];
-  // A touch quicker than the source tune so it reads as UI feedback.
-  const beat = (60 / song.bpm) / 1.15;
-  let t = ctx.currentTime + 0.02;
-  for (const [name, beats] of notes) {
-    const dur = beats * beat;
-    if (name) playNote(noteFreq(name), t, dur, song.type, 0.65);
-    t += dur;
-  }
-}
-
-/** Stable per-button hash so each button keeps its own signature stab. */
-function stabHash(el) {
-  const s = [
-    el.id || '',
-    el.getAttribute('aria-label') || '',
-    typeof el.className === 'string' ? el.className : '',
-    (el.textContent || '').trim().slice(0, 40),
-  ].join('|');
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-  return Math.abs(h);
-}
-
-let lastStabAt = 0;
-
-function onGlobalButtonClick(ev) {
-  if (!isJamStripOn()) return;
-  if (player.playing) return;
-  const target = ev.target instanceof Element ? ev.target : null;
-  const el = target ? target.closest(STAB_SELECTOR) : null;
-  if (!el || el.closest(STAB_SKIP)) return;
-
-  // Debounce rapid double-fires (e.g. label+input both dispatching).
-  const now = performance.now();
-  if (now - lastStabAt < 120) return;
-  lastStabAt = now;
-
-  playStab(player.songId || storedSongId() || DEFAULT_SONG_ID, stabHash(el));
-}
-
-// Capture phase so stopPropagation() in feature code can't mute the fun.
-if (!window.__wiseJamClickStabs) {
-  window.__wiseJamClickStabs = true;
-  document.addEventListener('click', onGlobalButtonClick, true);
 }

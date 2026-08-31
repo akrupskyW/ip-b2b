@@ -378,7 +378,7 @@
 <body>
   <!-- Hidden host for the shared menu controls (mirrors reformulation.html). -->
   <div id="topbar-row" hidden aria-hidden="true">
-    <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-symbols-outlined">chevron_left</span></button>
+    <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-symbols-outlined">dock_to_left</span></button>
     <button type="button" class="topbar-appearance-btn" id="topbar-appearance-btn" title="Appearance" aria-label="Appearance settings" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">crossword</span></button>
     <div class="topbar-profile has-dot" id="topbar-profile" title="Arthur Krupsky · akrupsky@wisecode.ai" data-action="user-menu" role="button" tabindex="0" aria-label="User menu">AK</div>
   </div>
@@ -3176,7 +3176,7 @@
       });
 
       /* ── Width toggle — canonical four-step cycle via the shared pane-width helper ── */
-      const CANON_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
+      const CANON_ICONS = ['width_normal', 'width_wide', 'width_wide', 'width_full', 'fit_width'];
       const CANON_TITLES = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to widen', 'Width (custom) — drag to any size'];
       (function wireWidth() {
         const wBtn = document.getElementById('pl-width');

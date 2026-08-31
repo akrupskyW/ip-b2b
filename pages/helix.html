@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WISE · Helix</title>
+  <meta name="description" content="Tune the chat Helix in a dedicated playground, then apply the look to every WISEcodeAI chat." />
+  <script src="../js/auth-guard.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/text-size-fouc.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <script defer src="../js/icon-svg-shim.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="wise.css" />
+  <style>
+    /* ═══════════ Helix studio — chat fills the modules row, like wiseai welcome ═══════════
+       Canonical nav / shell / chat card from wiseai.html. No result panes. The
+       Helix control card pops out on load so every slider is already in the
+       draggable popover. Apply publishes the draft to every other chat. */
+
+    :root {
+      --sec-green-10: rgba(50, 169, 102, 0.12);
+      --sec-red-10: rgba(220, 48, 56, 0.12);
+      --ter-amber-10: rgba(255, 196, 52, 0.14);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: var(--modules-bottom-pad, 12px);
+      font-family: 'WISE Digits', 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+    #chat-shell-wrap { flex: 1 1 0%; min-height: 0; height: 100%; width: 100%; overflow: visible; }
+    #chat-shell-wrap.menu-brand-integrated #modules-row {
+      grid-area: modules;
+      display: flex;
+      gap: 8px;
+      min-width: 0;
+      min-height: 0;
+      height: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      margin-top: 0;
+      padding: 0 2px;
+    }
+
+    #chat-shell-wrap #menu-panel:not(.mp-pivot) .menu-brand-bar { min-height: var(--panel-header-h); margin-bottom: 0; }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-bar { height: var(--panel-header-h); min-height: var(--panel-header-h); max-height: var(--panel-header-h); margin-bottom: 0; }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo,
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo a { height: 100%; display: flex; align-items: center; justify-content: center; }
+    #chat-shell-wrap #menu-panel.mp-rail:not(.mp-pivot) .menu-brand-logo svg.tl-bug { transform: translateY(16px); }
+
+    .wa-chat {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      width: auto;
+      min-width: 380px;
+      height: 100%;
+      min-height: 0;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      transform-origin: left center;
+      animation: panelBounceLeft 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s backwards;
+    }
+
+    .sc-reply-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 4px 42px; }
+    .sc-reply-chips .chip { text-align: left; max-width: 100%; }
+    @media (max-width: 720px) { .sc-reply-chips { margin-left: 0; } }
+    html.header-float .wa-chat .chat-topbar { z-index: 12 !important; }
+    html.header-float #wa-chat.sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-more-btn,
+    html.header-float #wa-chat.sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn {
+      background: var(--bg);
+    }
+    html.dark.header-float #wa-chat.sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-more-btn,
+    html.dark.header-float #wa-chat.sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn {
+      background: #1A2339;
+    }
+    html.chat-tint:not(.dark).header-float #wa-chat.sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-more-btn,
+    html.chat-tint:not(.dark).header-float #wa-chat.sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn {
+      background: color-mix(in srgb, var(--primary) 5%, #fff);
+    }
+    html.dark.chat-tint.header-float #wa-chat.sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-more-btn,
+    html.dark.chat-tint.header-float #wa-chat.sc-card.sc-scrolled .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn {
+      background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339);
+    }
+    #wa-chat.sc-card .chat-topbar > .sc-topbar-controls .panel-more-btn:hover,
+    #wa-chat.sc-card .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn:hover { background: var(--surface-3); }
+    #wa-chat.sc-card .chat-topbar > .sc-topbar-controls .panel-more-btn.is-open,
+    #wa-chat.sc-card .chat-topbar > .sc-topbar-controls .panel-width-toggle-btn.is-on { background: color-mix(in srgb, var(--primary) 16%, var(--surface-2)); }
+
+    /* This page is the Helix. Roll / Crawl hide every other chat — keep this
+       one up so the playground is never an empty card. */
+    html.cwr-ui-on:is(.cwr-roll, .cwr-crawl) body[data-helix-studio] #wa-chat,
+    html.cwr-ui-on:is(.cwr-roll, .cwr-crawl) body[data-helix-studio] .wa-chat,
+    html.cwr-ui-on:is(.cwr-roll, .cwr-crawl) body[data-helix-studio] .wch-chat-anchor {
+      display: flex !important;
+    }
+    html.cwr-ui-on:is(.cwr-roll, .cwr-crawl) body[data-helix-studio] .chat-input-rail,
+    html.cwr-ui-on.cwr-walk body[data-helix-studio] .chat-input-rail {
+      display: flex !important;
+    }
+  </style>
+  <script src="../js/cwr-toggle.js"></script>
+</head>
+<body data-helix-studio="1">
+  <div id="topbar-row" hidden aria-hidden="true">
+    <button type="button" id="topbar-menu-toggle" class="topbar-menu-toggle" title="Collapse menu to icons" aria-label="Collapse menu to icons" aria-pressed="false"><span class="material-symbols-outlined">dock_to_left</span></button>
+    <button type="button" class="topbar-appearance-btn" id="topbar-appearance-btn" title="Appearance" aria-label="Appearance settings" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined">crossword</span></button>
+    <div class="topbar-profile has-dot" id="topbar-profile" title="Arthur Krupsky · akrupsky@wisecode.ai" data-action="user-menu" role="button" tabindex="0" aria-label="User menu">AK</div>
+  </div>
+
+  <div id="chat-shell-wrap" class="menu-brand-integrated">
+    <div id="menu-panel" class="mp-open">
+      <div class="menu-inner">
+        <div class="menu-panel-body">
+          <nav class="menu-nav" id="agent-menu-nav" aria-label="WISE platform navigation"></nav>
+        </div>
+      </div>
+    </div>
+
+    <div id="modules-row" class="modules-sticky">
+      <main class="wa-chat" id="wa-chat" data-pr-fill></main>
+    </div>
+  </div>
+
+  <script type="module">
+    import { mountAgentMenu, toggleMenuPivot, isMenuPivoted } from '../js/agent-menu.js';
+    import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, restoreHeaderFloat, applyFullBleed, isFullBleedOn, restoreFullBleed, applyColorblind, isColorblindOn, restoreColorblind } from '../js/topbar.js';
+    import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';
+    import { isJamStripOn, applyJamStrip } from '../js/jam-strip.js';
+    import { buildAppearanceBody, wireAppearancePopover, buildUserMenuBody } from '../js/appearance-menu.js';
+
+    Object.assign(window, {
+      isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar,
+      setTextSize, setChatFontSize: setTextSize, getStoredFontSize,
+      toggleMenuPivot, isMenuPivoted,
+      applyMinimalUi, isMinimalUiOn,
+      applyHeaderFloat, isHeaderFloatOn,
+      applyFullBleed, isFullBleedOn,
+      applyColorblind, isColorblindOn,
+      isJamStripOn, applyJamStrip,
+      buildAppearanceBody, wireAppearancePopover, buildUserMenuBody,
+    });
+
+    restoreMinimalUi();
+    restoreColorblind();
+    restoreHeaderFloat();
+    restoreFullBleed();
+
+    mountMenuBrand({
+      logoHref: 'overview.html',
+      profileName: 'Arthur Krupsky',
+      profileEmail: 'akrupsky@wisecode.ai',
+      avatarText: 'AK',
+    });
+
+    const navEl = document.getElementById('agent-menu-nav');
+    if (navEl) {
+      mountAgentMenu(navEl, null, { fromAgentPage: true, appNav: true, activeNavId: 'helix' });
+    }
+
+    applyStoredTextSize();
+  </script>
+
+  <script>
+    (function () {
+      function applyChatTheme(theme) {
+        const isDark = theme === 'dark';
+        document.documentElement.classList.toggle('dark', isDark);
+        try { localStorage.setItem('wise-theme', theme); } catch (_) {}
+      }
+      window.toggleChatTheme = function () {
+        applyChatTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
+      };
+      (function bootTheme() {
+        let theme = 'light';
+        try { theme = localStorage.getItem('wise-theme') || (localStorage.getItem('chat-theme') === 'dark' ? 'dark' : 'light'); } catch (_) {}
+        applyChatTheme(theme === 'dark' ? 'dark' : 'light');
+      })();
+
+      let activePopover = null, activeAnchor = null;
+      function closePopover() {
+        if (!activePopover) return;
+        activeAnchor?.classList.remove('is-open');
+        activeAnchor?.setAttribute('aria-expanded', 'false');
+        activePopover.classList.remove('open');
+        const p = activePopover;
+        setTimeout(() => p.remove(), 210);
+        activePopover = null; activeAnchor = null;
+      }
+      function positionWisePopover(pop, anchor) {
+        if (window.isMenuFooterAnchor?.(anchor)) window.positionPopoverInMenuPanel?.(pop, anchor);
+        else window.positionPopoverForTopbar?.(pop, anchor);
+      }
+      function renderAppearanceBody(pop) {
+        pop.innerHTML = window.buildAppearanceBody({
+          showPivot: true,
+          isPivoted: !!window.isMenuPivoted?.(),
+          isDark: document.documentElement.classList.contains('dark'),
+          showWISEcodeAIDock: false,
+        });
+      }
+      function openAppearancePopover(anchor) {
+        if (activeAnchor === anchor) { closePopover(); return; }
+        closePopover();
+        const pop = document.createElement('div');
+        pop.className = 'wise-popover';
+        document.body.appendChild(pop);
+        renderAppearanceBody(pop);
+        positionWisePopover(pop, anchor);
+        requestAnimationFrame(() => pop.classList.add('open'));
+        activePopover = pop; activeAnchor = anchor;
+        anchor.classList.add('is-open'); anchor.setAttribute('aria-expanded', 'true');
+        window.wireAppearancePopover(pop, {
+          render: () => renderAppearanceBody(pop),
+          onClose: closePopover,
+          togglePivot: () => window.toggleMenuPivot?.(),
+          toggleTheme: () => window.toggleChatTheme?.(),
+        });
+      }
+      function openUserMenu(anchor) {
+        if (activeAnchor === anchor) { closePopover(); return; }
+        closePopover();
+        const pop = document.createElement('div');
+        pop.className = 'wise-popover';
+        document.body.appendChild(pop);
+        pop.innerHTML = window.buildUserMenuBody({ name: 'Arthur Krupsky' });
+        positionWisePopover(pop, anchor);
+        requestAnimationFrame(() => pop.classList.add('open'));
+        activePopover = pop; activeAnchor = anchor;
+        anchor.classList.add('is-open');
+        pop.addEventListener('click', (ev) => {
+          const profile = ev.target.closest('[data-pop-action="profile"]');
+          if (profile && pop.contains(profile)) { ev.stopPropagation(); location.href = 'profile.html'; return; }
+          const invoices = ev.target.closest('[data-pop-action="invoices"]');
+          if (invoices && pop.contains(invoices)) { ev.stopPropagation(); location.href = 'invoices.html'; return; }
+          const signout = ev.target.closest('[data-pop-action="signout"]');
+          if (signout && pop.contains(signout)) { ev.stopPropagation(); window.performSignOut(); return; }
+          if (ev.target.closest('.wise-popover-header, .wise-popover-divider, .wise-popover-actions, .wise-pop-vline')) { ev.stopPropagation(); return; }
+          closePopover();
+        });
+      }
+      document.getElementById('topbar-appearance-btn')?.addEventListener('click', (e) => { e.stopPropagation(); openAppearancePopover(e.currentTarget); });
+      document.getElementById('topbar-profile')?.addEventListener('click', (e) => { e.stopPropagation(); openUserMenu(e.currentTarget); });
+      document.addEventListener('wise:menu-footer-layout', (e) => openAppearancePopover(e.detail.anchor));
+      document.addEventListener('wise:menu-footer-profile', (e) => openUserMenu(e.detail.anchor));
+      document.addEventListener('click', (e) => {
+        if (activePopover && !activePopover.contains(e.target) && !activeAnchor?.contains(e.target)) closePopover();
+      });
+      window.addEventListener('resize', closePopover);
+    })();
+  </script>
+
+  <script type="module">
+    import {
+      mountWISEcodeAIChat,
+      applyHelixStudio,
+      undoHelixStudio,
+      isHelixStudioDirty,
+      canHelixStudioUndo,
+    } from '../js/wiseai-chat.js';
+
+    const INTENTS = [
+      { intent: 'hx:scene', label: 'Load Scene', icon: 'view_in_ar', nextIntents: ['hx:closeup', 'hx:apply', 'hx:undo'] },
+      { intent: 'hx:closeup', label: 'Load Close-up', icon: 'zoom_in', nextIntents: ['hx:scene', 'hx:apply', 'hx:undo'] },
+      { intent: 'hx:apply', label: 'Apply everywhere', icon: 'done', nextIntents: ['hx:undo', 'hx:scene', 'hx:closeup'] },
+      { intent: 'hx:undo', label: 'Undo', icon: 'undo', nextIntents: ['hx:apply', 'hx:scene', 'hx:closeup'] },
+    ];
+
+    function clickSnap(name) {
+      const btn = Array.from(document.querySelectorAll('[data-sc="bg-anim-snap"]'))
+        .find((el) => (el.textContent || '').trim() === name);
+      if (btn) btn.click();
+      return !!btn;
+    }
+
+    const INTENT_REPLIES = {
+      'hx:scene': () => {
+        clickSnap('Scene');
+        return 'Scene is loaded in the card — the published default. Drag anything, then <strong>Apply</strong> to send it to every chat.';
+      },
+      'hx:closeup': () => {
+        clickSnap('Close-up');
+        return 'Close-up is loaded. The strand fills the pane. <strong>Apply</strong> publishes it everywhere; <strong>Undo</strong> takes it back.';
+      },
+      'hx:apply': () => {
+        if (!isHelixStudioDirty()) return 'Nothing new to publish — this look is already what every chat uses. Change a slider, then Apply.';
+        applyHelixStudio();
+        return 'Applied. Every WISEcodeAI chat will open with this Helix. <strong>Undo</strong> restores what was live before you applied.';
+      },
+      'hx:undo': () => {
+        if (!canHelixStudioUndo()) return 'Nothing to undo — the live Helix matches what every chat already uses.';
+        const dirty = isHelixStudioDirty();
+        undoHelixStudio();
+        return dirty
+          ? 'Reverted the card to the last published look. Other chats were never changed.'
+          : 'Undid the last Apply. Every chat is back to the previous Helix.';
+      },
+    };
+
+    function reply(text) {
+      const t = String(text || '').toLowerCase();
+      if (/close-?up|fill the pane/.test(t)) return INTENT_REPLIES['hx:closeup']();
+      if (/scene|default look/.test(t)) return INTENT_REPLIES['hx:scene']();
+      if (/apply|publish|everywhere/.test(t)) return INTENT_REPLIES['hx:apply']();
+      if (/undo|revert|take it back/.test(t)) return INTENT_REPLIES['hx:undo']();
+      return 'This chat is only the Helix. Use the card to change opacity, angle, camera, scale, and the rest — then <strong>Apply</strong> to publish it to every chat, or <strong>Undo</strong> to go back.';
+    }
+
+    mountWISEcodeAIChat(document.getElementById('wa-chat'), {
+      title: 'WISEcodeAI\u2122',
+      heading: 'Tune the Helix',
+      sub: 'Drag the card, change anything, then Apply to publish it to every chat.',
+      placeholder: 'Ask about Scene, Close-up, Apply, or Undo\u2026',
+      userInitials: 'AK',
+      sourceLabel: '',
+      statusLabel: 'WISEcodeAI is tuning the Helix',
+      chipsFlow: 'wrap',
+      inlineChips: true,
+      historyKey: 'wise-chat-history:helix',
+      activity: true,
+      turns: true,
+      turnsSearch: true,
+      turnsBreakout: true,
+      turnsDockedControls: true,
+      turnsBreakoutDefault: false,
+      historyBreakout: true,
+      historyBreakoutDefault: true,
+      historyDockedControls: true,
+      historyBreakoutHidden: true,
+      stickyModules: true,
+      stickyModulesDefault: true,
+      stickyModulesMenu: false,
+      helixStudio: true,
+      intents: INTENTS,
+      intentReplies: INTENT_REPLIES,
+      reply: (text) => reply(text),
+    });
+  </script>
+  <script defer src="../js/sticky-modules.js"></script>
+  <script defer src="../js/count-up-all.js"></script>
+  <script defer src="../js/feedback.js"></script>
+</body>
+</html>

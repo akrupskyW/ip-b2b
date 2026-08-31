@@ -165,6 +165,19 @@
   --sec-red-10: rgba(220, 48, 56, 0.12);
   --ter-amber-10: rgba(255, 196, 52, 0.14);
 
+  /* Scorecard surface — paper in light, chat-module navy in dark. Catalog
+     panes (.dsc-theme-*) override this so a dark demo on a light page keeps
+     fill and ink in the same theme (never light text on a white tile). */
+  --scorecard-fill: var(--surface);
+  /* WCAG AA+ ink for big numerals and status chips on --scorecard-fill.
+     The vibrant --sec-green / --sec-red fills fail as text; these are the
+     readable pair. Catalog dark panes remap the same values. */
+  --score-ink: var(--text);
+  --score-ink-red: var(--sec-red-text);
+  --score-ink-green: var(--sec-green-text);
+  --score-ink-amber: var(--ter-amber-text);
+  --score-ink-blue: var(--primary-ink, var(--primary));
+
   --r-sm: 10px;
   --r-md: 16px;
   --r-lg: 24px;
@@ -194,6 +207,7 @@
   --radius-pill: 9999px;
   --panel-header-h: 60px;
   --wise-text-scale: 1;
+  --wise-icon-scale: var(--wise-text-scale);
   --chat-line-height: 1.6;
 
   /* Canonical single-pane chat width — every chat module (Family A #chat-shell,
@@ -264,6 +278,12 @@ html.dark {
   --sec-green-text: #B6C9BE;
   --ter-amber-text: #D7BE91;
   --sec-red-text: #FFE1DC;
+  --scorecard-fill: #1A2339;
+  --score-ink: var(--text);
+  --score-ink-red: #FF9E96;
+  --score-ink-green: #6FE0A0;
+  --score-ink-amber: var(--ter-amber-text);
+  --score-ink-blue: #93C5FD;
   --shadow-1: 0 1px 2px rgba(0,0,0,.4);
   --shadow-2: 0 4px 12px rgba(0,0,0,.35), 0 12px 32px rgba(0,0,0,.35);
   --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.35);
@@ -1214,7 +1234,9 @@ html.full-bleed.fb-chat-only:not(.brand-inset) #chat-shell-wrap.menu-brand-integ
    (default) or pinned to the right for the left-nav collapse toggle. */
 #lir-tooltip {
   position: fixed;
-  z-index: 10000;
+  /* Above js/popover-layer.js (2147483000) so a tip on an icon inside a
+     portaled menu still paints on top of that popover. */
+  z-index: 2147483646;
   background: var(--surface);
   color: var(--text);
   font-size: 11px;
@@ -2165,7 +2187,9 @@ html.dark .fb-color-reset:hover { color: var(--text); }
 }
 
 /* Text-size accessibility — scale readable module bodies via --wise-text-scale.
-   Chrome (top bar, menu nav, module headers) stays at authored size.
+   Chrome (top bar, menu nav, module headers) stays at authored size; icons in
+   that chrome follow --wise-icon-scale (same S/M/L/XL factor) from their
+   authored size so a 16px nav glyph and a 20px header control stay in role.
 
    Header note: module headers must NOT scale, or they stop matching the shared
    --panel-header-h contract. That bit WISEcodeAI before; notifications follow the
@@ -2220,6 +2244,9 @@ html.dark .fb-color-reset:hover { color: var(--text); }
 .wa-chat .chat-input-rail,
 .sa-chat .chat-input-rail {
   zoom: var(--wise-text-scale);
+  /* Body already zooms. Cancel the per-icon zoom from the SVG shim so
+     chip / composer / scorecard glyphs do not scale twice. */
+  --wise-icon-scale: 1;
 }
 
 /* Alerts list rows */
@@ -2386,6 +2413,16 @@ html.mod-gap-xl #modules-row { gap: var(--modules-gap) !important; }
 #modules-row #nfp-panel.sticky-mod.is-sticky {
   z-index: 1 !important;
 }
+/* Output is the first drawer after chat: under the buckle (3), over peer
+   drawers (1) and nested drawers (0). Covers #agent-main on every page and
+   the wiseai Results / Visuals / merged Output panes. */
+#modules-row #agent-main,
+#modules-row #agent-main.sticky-mod.is-sticky,
+#modules-row #wa-unified.is-open.is-sticky,
+#modules-row #wa-results.is-open.is-sticky,
+#modules-row #wa-visuals.is-open.is-sticky {
+  z-index: 2;
+}
 #modules-row .sticky-mod.is-sticky {
   position: relative;
   z-index: 1;
@@ -2450,10 +2487,15 @@ html.mod-gap-xl #modules-row { gap: var(--modules-gap) !important; }
   z-index: 0;
 }
 /* When a module's menu popover is open, keep it tucked BELOW the chat so the
-   drawer never pops on top of the chat card while its menu is showing. */
+   drawer never pops on top of the chat card while its menu is showing.
+   Output stays at its resting layer (2) — do not drop it under a peer drawer. */
 #modules-row .sticky-mod.is-sticky:has(.panel-more-btn.is-open),
 #modules-row .sticky-mod.is-sticky:has(.topbar-popover:not(.hidden)) {
   z-index: 1;
+}
+#modules-row #agent-main.sticky-mod.is-sticky:has(.panel-more-btn.is-open),
+#modules-row #agent-main.sticky-mod.is-sticky:has(.topbar-popover:not(.hidden)) {
+  z-index: 2;
 }
 /* Some pages pin #agent-main to the row's FULL height with id-level !important
    rules (reports.html, conversation-library.html, ingredient-browser.html do
@@ -2462,6 +2504,7 @@ html.mod-gap-xl #modules-row { gap: var(--modules-gap) !important; }
    above and made Sticky mode read as a flush full-height panel there — restate
    the drawer inset at higher (id+classes) specificity so it wins everywhere. */
 #modules-row #agent-main.sticky-mod.is-sticky {
+  z-index: 2;
   height: calc(100% - 30px) !important;
   max-height: calc(100% - 30px) !important;
   align-self: center !important;
@@ -2483,10 +2526,11 @@ html.mod-gap-xl #modules-row { gap: var(--modules-gap) !important; }
 /* Progress trackers are a "supporting" module: they tuck one level DEEPER than
    the module they sit behind (Product Details / the flow's main pane). Two
    fixes ride on that:
-     1) z-index 0 — a plain .sticky-mod is z-index 1, so with equal z-index the
-        LATER progress pane painted OVER its left neighbour, and its 14px
-        tucked-in surface-2 strip showed as a lighter seam that read as a gap.
-        Dropping it under z-index 1 makes it slide cleanly UNDER the neighbour.
+     1) z-index 0 — a plain .sticky-mod is z-index 1 and Output is z-index 2,
+        so with equal z-index the LATER progress pane painted OVER its left
+        neighbour, and its 14px tucked-in surface-2 strip showed as a lighter
+        seam that read as a gap. Dropping it under z-index 1 makes it slide
+        cleanly UNDER the neighbour.
      2) shorter — a plain drawer is calc(100% - 30px); the progress tracker is
         held ~30px shorter still so it reads as nested BELOW the taller module
         to its left rather than the same height. */
@@ -2510,8 +2554,11 @@ html.mod-gap-xl #modules-row { gap: var(--modules-gap) !important; }
   box-shadow: none !important;
   background: var(--surface) !important;
 }
-/* Help sits ON TOP of Contact. Keep Help's open (right) corners rounded —
-   the drawer tucks under that radius, it does not square the parent card. */
+/* Help sits ON TOP of Contact (parent layer, not Output). Keep Help's open
+   (right) corners rounded — the drawer tucks under that radius, it does not
+   square the parent card. Matches with or without `.sticky-mod` so a late
+   class attach cannot leave Help at Output's z 2. */
+#modules-row:has(#help-contact) #agent-main,
 #modules-row:has(#help-contact) #agent-main.sticky-mod.is-sticky {
   z-index: 1;
 }
@@ -3000,92 +3047,21 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
 }
 
 /* ===== JAM STRIP =====
-   A fun, musical equalizer + branded play controls injected once into
-   .menu-inner by js/jam-strip.js. It surfaces wherever there's room for it in
-   the current nav layout (see the per-mode rules below). */
-/* Shown whenever the jam strip is switched ON from the Appearance menu
-   (default OFF). In the normal vertical nav it docks as a slim player under
-   the nav list; in the Minimal-UI pivot bar it stretches to fill the empty
-   center; in a plain pivot bar it rides inline at the end of the bar. So
-   turning it on ALWAYS surfaces it, in every nav mode. */
+   Catalog / specimen chrome. The live player lives in Appearance ▸ Sound
+   (.jam-pop), never in the primary navigation. */
+#menu-panel .jam-strip { display: none !important; }
+
+/* Minimal-UI pivot bar: hide the nav body. With no jam strip in the nav,
+   push the footer to the far right so Appearance + avatar float right. */
+#menu-panel.minimal-ui.mp-pivot .menu-panel-body { display: none !important; }
+#menu-panel.minimal-ui.mp-pivot .menu-footer { margin-left: auto; }
+
 .jam-strip {
   display: flex;
   align-items: center;
   gap: 10px;
   min-width: 0;
 }
-#menu-panel.jam-off .jam-strip { display: none; }
-/* The collapsed icon rail is too narrow for the full player, but turning the
-   jam strip on must still surface SOMETHING here (the nav opens railed by
-   default) — so show just the play/pause pill, centered, and drop the wide
-   equalizer and track chips. Clicking the pill still starts the tunes. */
-#menu-panel.mp-rail:not(.mp-pivot) .jam-strip {
-  flex-direction: column;
-  justify-content: center;
-  gap: 6px;
-  margin: 6px 0 10px;
-  padding: 0;
-}
-/* The track chips can't fit the narrow rail, but a compact equalizer stacked
-   under the pill gives an unmistakable "it's on / it's playing" signal — idle
-   shimmer when paused, a lively bounce while a tune plays. */
-#menu-panel.mp-rail:not(.mp-pivot) .jam-songs { display: none; }
-#menu-panel.mp-rail:not(.mp-pivot) .jam-eq {
-  display: flex;
-  flex: 0 0 auto;
-  width: 46px;
-  height: 16px;
-  gap: 2px;
-  justify-content: flex-start;
-  overflow: hidden;
-}
-
-/* Expanded vertical panel: widget chrome so it reads as a dockable player. */
-#menu-panel:not(.mp-pivot):not(.mp-rail) .jam-strip {
-  margin: 6px 10px 10px;
-  padding: 10px 12px;
-  border-radius: var(--r-sm);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-}
-
-/* Minimal-UI pivot bar: hide the nav body and let the strip fill the center. */
-#menu-panel.minimal-ui.mp-pivot .menu-panel-body { display: none !important; }
-/* With the nav body hidden — and no jam strip mounted to fill the gap — the
-   footer would otherwise sit flush against the brand strip, clustering the
-   Appearance icon + avatar on the left beside the owl. Push the footer to the
-   far right so it floats right while the logo + chevron stay left. (Harmless
-   when a jam strip IS present: it already grows to fill via flex.) */
-#menu-panel.minimal-ui.mp-pivot .menu-footer { margin-left: auto; }
-#menu-panel.minimal-ui.mp-pivot .jam-strip {
-  flex: 1 1 0%;
-  gap: 12px;
-  height: var(--shell-topbar-h);
-  padding: 0 14px;
-  overflow: hidden;
-}
-/* Plain pivot bar (nav body still shown): ride inline, compact. */
-#menu-panel.mp-pivot:not(.minimal-ui) .jam-strip {
-  flex: 0 1 auto;
-  gap: 10px;
-  height: var(--shell-topbar-h);
-  max-width: 380px;
-  padding: 0 12px;
-  overflow: hidden;
-}
-
-/* The wide 48-bar equalizer only fits the full-width minimal pivot bar; in the
-   narrow vertical panel and the compact pivot slot, drop it and let the track
-   chips take the room (they scroll), so the player stays legible. */
-#menu-panel:not(.minimal-ui) .jam-eq,
-#menu-panel:not(.mp-pivot) .jam-eq { display: none; }
-#menu-panel:not(.minimal-ui) .jam-songs,
-#menu-panel:not(.mp-pivot) .jam-songs { max-width: none; flex: 1 1 0%; }
-
-/* Off in the minimal pivot bar only: keep the reserved flex space so the brand
-   and avatar don't jump, but hide the contents. Everywhere else, off = gone. */
-#menu-panel.jam-off.minimal-ui.mp-pivot .jam-strip { display: flex; pointer-events: none; }
-#menu-panel.jam-off.minimal-ui.mp-pivot .jam-strip > * { visibility: hidden !important; }
 
 /* Round play/pause pill — the one bit of brand color in the idle strip. */
 .jam-play {
@@ -3110,6 +3086,10 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
   animation: jamPulse 1.4s ease-in-out infinite;
 }
 .jam-play .jam-play-icon { font-size: 20px; }
+.jam-play .material-symbols-outlined,
+.jam-pop-play .material-symbols-outlined {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
 .jam-play:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 @keyframes jamPulse {
@@ -3117,39 +3097,33 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
   50% { box-shadow: 0 0 0 8px rgba(37, 80, 124, 0.04), 0 2px 14px rgba(37, 80, 124, 0.5); }
 }
 
-/* Equalizer — staggered bouncing bars. Stretches across the whole middle of
-   the strip (where the hype ticker used to be). Idle = a calm shimmer,
-   playing = a lively bounce. */
-.jam-eq {
+/* Equalizer — proper vertical bars standing on a baseline. Always full
+   height; scaleY is the only motion, so they read as an EQ, not dashes. */
+.jam-eq,
+.jam-pop-eq {
   flex: 1 1 0%;
   min-width: 0;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 3px;
-  height: 24px;
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  gap: 2.5px;
+  height: 28px;
 }
-.jam-eq span {
+.jam-eq span,
+.jam-pop-eq span {
   flex: 1 1 0%;
-  min-width: 2px;
-  height: 30%;
-  border-radius: 3px;
-  background: linear-gradient(to top, var(--primary) 0%, var(--blue-300, #8B9FAF) 100%);
-  transform-origin: bottom;
-  animation: jamEqIdle 2.4s ease-in-out infinite;
-}
-.jam-strip.is-playing .jam-eq span { animation: jamEq 0.7s ease-in-out infinite; }
-.jam-eq span:nth-child(odd) { animation-delay: -0.2s; }
-.jam-eq span:nth-child(3n) { animation-delay: -0.45s; }
-.jam-eq span:nth-child(4n) { animation-delay: -0.7s; }
-.jam-eq span:nth-child(5n) { animation-delay: -0.95s; }
-/* Sound-reactive mode: JS drives scaleY + --lvl from the live audio spectrum,
-   so we hand the bars a full-height track and drop the canned keyframes. The
-   loudest bars brighten and glow so a strong beat reads at a glance. */
-.jam-eq.is-live span {
+  min-width: 3px;
+  max-width: 8px;
   height: 100%;
+  border-radius: 2px 2px 1px 1px;
+  background: linear-gradient(to top, var(--primary) 0%, var(--blue-300, #8B9FAF) 100%);
+  transform-origin: bottom center;
+  animation: jamEqIdle 1.8s ease-in-out infinite;
+}
+.jam-strip.is-playing .jam-eq span,
+.jam-pop.is-playing .jam-pop-eq span { animation: jamEq 0.7s ease-in-out infinite; }
+.jam-eq.is-live span,
+.jam-pop-eq.is-live span {
   animation: none !important;
   opacity: calc(0.42 + 0.58 * var(--lvl, 0.3));
   filter: saturate(calc(1 + 0.6 * var(--lvl, 0)));
@@ -3158,15 +3132,71 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
 }
 
 @keyframes jamEqIdle {
-  0%, 100% { transform: scaleY(0.35); opacity: 0.55; }
-  50% { transform: scaleY(0.6); opacity: 0.8; }
+  0%, 100% { transform: scaleY(0.22); opacity: 0.5; }
+  50% { transform: scaleY(0.58); opacity: 0.88; }
 }
 @keyframes jamEq {
-  0%, 100% { transform: scaleY(0.3); }
-  20% { transform: scaleY(1); }
-  40% { transform: scaleY(0.5); }
-  60% { transform: scaleY(0.95); }
-  80% { transform: scaleY(0.4); }
+  0%, 100% { transform: scaleY(0.18); }
+  15% { transform: scaleY(1); }
+  35% { transform: scaleY(0.4); }
+  55% { transform: scaleY(0.9); }
+  75% { transform: scaleY(0.28); }
+}
+
+/* Horizontal DNA helix — idle twist via dash travel; live JS drives
+   the strand, rungs, and spark from the analyser. */
+.jam-helix {
+  flex: 1 1 0%;
+  min-width: 0;
+  height: 28px;
+  display: none;
+  position: relative;
+}
+.jam-viz-helix .jam-helix,
+[data-jam-viz="helix"] .jam-helix { display: block; }
+.jam-viz-helix .jam-eq,
+.jam-viz-helix .jam-pop-eq,
+[data-jam-viz="helix"] .jam-eq,
+[data-jam-viz="helix"] .jam-pop-eq { display: none; }
+.jam-helix-svg { width: 100%; height: 100%; overflow: visible; display: block; }
+.jam-helix-strand {
+  fill: none;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 18 10;
+  animation: jamHelixTravel 2.8s linear infinite;
+}
+.jam-helix-strand.b { stroke-width: 1.45; opacity: 0.72; animation-duration: 3.4s; animation-direction: reverse; }
+.jam-helix-rung {
+  stroke: var(--primary);
+  stroke-width: 1.1;
+  stroke-linecap: round;
+  opacity: 0.45;
+}
+.jam-helix-node {
+  fill: var(--primary);
+  opacity: 0.7;
+}
+.jam-helix-spark {
+  fill: var(--ter-violet, #6b5b95);
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--ter-violet, #6b5b95) 70%, transparent));
+  animation: jamHelixSpark 2.2s linear infinite;
+}
+.jam-strip.is-playing .jam-helix-strand,
+.jam-pop.is-playing .jam-helix-strand { animation-duration: 1.15s; }
+.jam-strip.is-playing .jam-helix-spark,
+.jam-pop.is-playing .jam-helix-spark { animation-duration: 0.85s; }
+.jam-helix.is-live .jam-helix-strand,
+.jam-helix.is-live .jam-helix-spark { animation: none; }
+html.dark .jam-helix-spark { fill: #c9b6ff; }
+@keyframes jamHelixTravel {
+  to { stroke-dashoffset: -56; }
+}
+@keyframes jamHelixSpark {
+  0% { opacity: 0.35; }
+  50% { opacity: 1; }
+  100% { opacity: 0.35; }
 }
 
 /* Branded track chips. */
@@ -3215,7 +3245,11 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
 
 @media (prefers-reduced-motion: reduce) {
   .jam-eq span,
-  .jam-play { animation: none !important; }
+  .jam-pop-eq span,
+  .jam-helix-strand,
+  .jam-helix-spark,
+  .jam-play,
+  .jam-pop-play { animation: none !important; }
 }
 
 /* ===== JAM PLAYER — inside the Appearance popover =====
@@ -3255,31 +3289,40 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
   animation: jamPulse 1.4s ease-in-out infinite;
 }
 .jam-pop-now { flex: 1 1 0%; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
-.jam-pop-eq { display: flex; align-items: flex-end; gap: 2px; height: 18px; }
-.jam-pop-eq span {
+.jam-pop-now .jam-pop-eq {
+  flex: 0 0 auto;
+  width: 100%;
+  height: 28px;
+}
+.jam-pop-now .jam-helix {
+  flex: 0 0 auto;
+  width: 100%;
+  height: 28px;
+}
+.jam-viz-seg {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+.jam-viz-btn {
   flex: 1 1 0%;
-  min-width: 2px;
-  height: 30%;
-  border-radius: 3px;
-  background: linear-gradient(to top, var(--primary) 0%, var(--blue-300, #8B9FAF) 100%);
-  transform-origin: bottom;
-  animation: jamEqIdle 2.4s ease-in-out infinite;
+  padding: 4px 8px;
+  border-radius: var(--radius-pill, 999px);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
 }
-.jam-pop.is-playing .jam-pop-eq span { animation: jamEq 0.7s ease-in-out infinite; }
-.jam-pop-eq span:nth-child(odd) { animation-delay: -0.2s; }
-.jam-pop-eq span:nth-child(3n) { animation-delay: -0.45s; }
-.jam-pop-eq span:nth-child(4n) { animation-delay: -0.7s; }
-/* Sound-reactive mode: JS drives scaleY + --lvl from the live audio spectrum,
-   so we hand the bars a full-height track and drop the canned keyframes. The
-   loudest bars brighten and glow so a strong beat reads at a glance. */
-.jam-pop-eq.is-live span {
-  height: 100%;
-  animation: none !important;
-  opacity: calc(0.42 + 0.58 * var(--lvl, 0.3));
-  filter: saturate(calc(1 + 0.6 * var(--lvl, 0)));
-  box-shadow: 0 0 calc(8px * var(--lvl, 0)) rgba(37, 80, 124, calc(0.55 * var(--lvl, 0)));
-  will-change: transform, opacity;
+.jam-viz-btn:hover { color: var(--primary-ink, var(--primary)); border-color: var(--border-strong); }
+.jam-viz-btn.is-on {
+  color: #fff;
+  background: var(--primary);
+  border-color: var(--primary);
 }
+.jam-viz-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .jam-pop-title {
   font-size: 0.72rem;
   font-weight: 700;
@@ -3295,9 +3338,8 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 10px;
-  max-height: 132px;
-  overflow-y: auto;
-  scrollbar-width: thin;
+  max-height: none;
+  overflow: visible;
 }
 .jam-pop-song {
   flex: 0 0 auto;
@@ -3322,7 +3364,6 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
 }
 .jam-pop-song:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) {
-  .jam-pop-eq span,
   .jam-pop-play { animation: none !important; }
 }
 
@@ -5687,7 +5728,8 @@ html.full-bleed.dark.fb-chat-only.fb-chat-tint :is(.sc-card, .wa-chat) .wch-side
 html.full-bleed:not(.fb-chat-only).fb-rmod-tint #modules-row > :not(:is(
   .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
-  #pf-chat-panel, #wiseai-dock-panel, .sticky-chat, .wa-pane
+  #pf-chat-panel, #wiseai-dock-panel, .sticky-chat, .wa-pane,
+  #nfp-panel
 )):not(.wch-sidebar:not(.wch-right)):not([class*="scrim"]):not([class*="resize"]):not([class*="handle"]):not([class*="grip"]) {
   --bg: var(--fb-rmod-bg);
   --surface: var(--fb-rmod-bg);
@@ -5702,7 +5744,8 @@ html.full-bleed:not(.fb-chat-only).fb-rmod-tint #modules-row > :not(:is(
 html.full-bleed:not(.fb-chat-only).fb-rmod-tint #modules-row > :not(:is(
   .sc-card, #wa-chat, .wa-chat, #rf-chat, #sa-chat, #aid-chat,
   #pl-chat, #ar-chat, .ap-chat, #gs-chat, #chat-shell,
-  #pf-chat-panel, #wiseai-dock-panel, .sticky-chat, .wa-pane
+  #pf-chat-panel, #wiseai-dock-panel, .sticky-chat, .wa-pane,
+  #nfp-panel
 )):not(.wch-sidebar:not(.wch-right)):not([class*="scrim"]):not([class*="resize"]):not([class*="handle"]):not([class*="grip"]) :is(
   .panel-inner, [class*="-inner"], .wch-head,
   .agent-main-inner, .pf-module-inner, .vf-progress-pane, .gv-progress-pane
@@ -6921,10 +6964,28 @@ html.dark .ws-intent-chip { background: color-mix(in srgb, var(--primary-bright,
 .chat-input-rail {
   border-top: none; background: var(--bg);
   padding: 12px 32px; flex-shrink: 0;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  --sc-rail-pad-b: 12px;
+  transition: background-color 0.3s ease, border-color 0.3s ease, padding-bottom 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+  /* Empty-welcome lift — extra space under the whole rail (composer +
+     "What can I ask?" + token dots) so the title, lede, chips, and input
+     sit higher. Ask + dots stay tucked under the input, same as before.
+     Collapses the moment the thread starts or the composer has text /
+     an attachment. KEEP IN SYNC with wiseai-chat.css. */
+  --sc-welcome-raise: clamp(5.5rem, 16vh, 11rem);
 }
 html.dark .chat-input-rail { background: transparent; border-top-color: transparent; }
 .sc-input-row { display: flex; gap: 8px; align-items: center; }
+/* Visible welcome as a direct child of the body, rail as a following sibling
+   (persist-chips may sit between them). `#welcome-screen` covers the older
+   comparison / portfolio overlay that never took `.sc-welcome`.
+   `:placeholder-shown` is the empty composer; an attach chip means the
+   member has started a turn. */
+*:has(> .sc-welcome:not(.sc-hidden), > #welcome-screen:not(.sc-hidden):not(.ws-hidden)) ~ .chat-input-rail:not(:has(.sc-input-row .fl-input:not(:placeholder-shown))):not(:has(.fl-attach-chip)) {
+  padding-bottom: calc(var(--sc-welcome-raise) + var(--sc-rail-pad-b, 12px));
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-input-rail { transition: background-color 0.3s ease, border-color 0.3s ease; }
+}
 .fl-input-wrap {
   /* Light tint of the brand blue (--primary #25507C) — a step deeper than the
      chat-tint container wash (5%) so the composer reads as its own blue
@@ -7073,25 +7134,25 @@ html.dark .fl-attach-chip { background: rgba(255,255,255,0.06); border-color: rg
 /* `has-attachments` is toggled on the wrap by js/wiseai-chat.js whenever chips
    are pending — the narrow composer-v2 grid uses it to open a chip row. */
 
-/* ===== Sent attachments — the same previews carried into a user's transcript
-   line, above the message text. ===== */
-.sc-att-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+/* ===== Sent attachments — the same compact button as the pending chip,
+   minus the remove, riding a user's transcript line above the message. ===== */
+.sc-att-row { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
 .sc-att-chip {
-  display: inline-flex; align-items: center; gap: 6px; max-width: 220px;
-  padding: 4px 10px 4px 4px; border-radius: 999px;
-  background: var(--surface-2); border: 1px solid var(--border-strong);
+  display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; max-width: 160px;
+  padding: 1px 8px 1px 2px; border-radius: 999px;
+  background: var(--surface-3, var(--surface)); border: 1px solid var(--border-strong);
 }
 html.dark .sc-att-chip { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.14); }
 .sc-att-thumb {
-  width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%;
+  width: 16px; height: 16px; flex-shrink: 0; border-radius: 50%;
   background-size: cover; background-position: center; background-repeat: no-repeat;
-  background-color: var(--surface-3); box-shadow: inset 0 0 0 1px var(--border);
+  background-color: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border);
   display: inline-flex; align-items: center; justify-content: center;
 }
 .sc-att-thumb--icon { color: var(--text-muted); }
-.sc-att-thumb--icon .material-symbols-outlined { font-size: 15px !important; }
+.sc-att-thumb--icon .material-symbols-outlined { font-size: 11px !important; }
 .sc-att-name {
-  font-size: 12px; font-weight: 500; color: var(--text); line-height: 1;
+  font-size: 10.5px; font-weight: 500; color: var(--text); line-height: 1;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
 }
 
@@ -7434,6 +7495,12 @@ html.composer-v2 .sc-input-row { container-type: inline-size; container-name: wi
    page background while the input still reads a step deeper than its
    surroundings. Dark mode instead lifts the navy card toward the bright
    accent. ===== */
+html.chat-tint:not(.dark) {
+  --scorecard-fill: color-mix(in srgb, var(--primary) 5%, var(--surface));
+}
+html.dark.chat-tint {
+  --scorecard-fill: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339);
+}
 html.chat-tint:not(.dark) .sc-card,
 html.chat-tint:not(.dark) .chat-messages-area,
 html.chat-tint:not(.dark) .chat-input-rail,
@@ -7468,7 +7535,7 @@ html.chat-compact .chat-messages-area {
   padding: 0.85rem max(20px, calc((100% - var(--sc-transcript-max, 860px)) / 2));
 }
 html.chat-compact .sc-line { margin-bottom: 0.7rem; }
-html.chat-compact .chat-input-rail { padding: 8px 14px; }
+html.chat-compact .chat-input-rail { padding: 8px 14px; --sc-rail-pad-b: 8px; --sc-welcome-raise: clamp(5rem, 14vh, 9.5rem); }
 html.chat-compact .sc-welcome { padding: 1.25rem; }
 html.chat-compact .sc-welcome--cards { padding-top: 1.25rem; }
 html.chat-compact .sc-settings .ss-body { padding: 12px; }
@@ -11719,7 +11786,7 @@ html.dark .dash-modal-foot { border-color: rgba(255, 255, 255, 0.08); }
 }
 /* Scorecard fill mirrors the chat module (.sc-card) across every theme. */
 html.dark .dash-report-stat { background: #1A2339; }
-html.chat-tint:not(.dark) .dash-report-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+html.chat-tint:not(.dark) .dash-report-stat { background: var(--scorecard-fill, color-mix(in srgb, var(--primary) 5%, var(--surface))); }
 html.dark.chat-tint .dash-report-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
 .dash-report-stat-val {
   font-size: 1.45rem;
@@ -12124,7 +12191,7 @@ html.dark .vf-search { background: rgba(255,255,255,0.05); border-color: rgba(25
 /* Scorecard fill mirrors the chat module (.sc-card) across every theme so the
    stat tiles share the chat surface, set apart only by their hairline border. */
 html.dark .vf-stat { background: #1A2339; }
-html.chat-tint:not(.dark) .vf-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+html.chat-tint:not(.dark) .vf-stat { background: var(--scorecard-fill, color-mix(in srgb, var(--primary) 5%, var(--surface))); }
 html.dark.chat-tint .vf-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
 .vf-stat:hover { transform: translateY(-1px); box-shadow: var(--shadow-card); border-color: var(--border-strong); }
 .vf-stat:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
@@ -13048,7 +13115,7 @@ html.dark .gv-fopt:hover { background: rgba(255,255,255,0.05); }
 }
 /* Scorecard fill mirrors the chat module (.sc-card) across every theme. */
 html.dark .gv-stat { background: #1A2339; }
-html.chat-tint:not(.dark) .gv-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+html.chat-tint:not(.dark) .gv-stat { background: var(--scorecard-fill, color-mix(in srgb, var(--primary) 5%, var(--surface))); }
 html.dark.chat-tint .gv-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
 .gv-stat-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1; }
 .gv-stat--verified .gv-stat-num { color: var(--gv-ink); }
@@ -13601,13 +13668,10 @@ html.dark .adm-stat.is-active { background: color-mix(in srgb, var(--primary) 22
 .adm-stat-label { display: inline-flex; align-items: center; gap: 5px; font-size: 0.76rem; font-weight: 700; color: var(--text); }
 .adm-stat-label .material-symbols-outlined { font-size: 14px; }
 .adm-stat-sub { font-size: 0.68rem; color: var(--text-subtle); }
-.adm-stat--green .adm-stat-num, .adm-stat--green .adm-stat-label .material-symbols-outlined { color: var(--sec-green); }
-html.dark .adm-stat--green .adm-stat-num { color: #6FE0A0; }
-.adm-stat--red .adm-stat-num, .adm-stat--red .adm-stat-label .material-symbols-outlined { color: var(--sec-red); }
-html.dark .adm-stat--red .adm-stat-num { color: #FF9E96; }
-.adm-stat--amber .adm-stat-num, .adm-stat--amber .adm-stat-label .material-symbols-outlined { color: var(--ter-amber-text); }
-.adm-stat--blue .adm-stat-num, .adm-stat--blue .adm-stat-label .material-symbols-outlined { color: var(--primary); }
-html.dark .adm-stat--blue .adm-stat-num, html.dark .adm-stat--blue .adm-stat-label .material-symbols-outlined { color: #93C5FD; }
+.adm-stat--green .adm-stat-num, .adm-stat--green .adm-stat-label .material-symbols-outlined { color: var(--score-ink-green, var(--sec-green-text)); }
+.adm-stat--red .adm-stat-num, .adm-stat--red .adm-stat-label .material-symbols-outlined { color: var(--score-ink-red, var(--sec-red-text)); }
+.adm-stat--amber .adm-stat-num, .adm-stat--amber .adm-stat-label .material-symbols-outlined { color: var(--score-ink-amber, var(--ter-amber-text)); }
+.adm-stat--blue .adm-stat-num, .adm-stat--blue .adm-stat-label .material-symbols-outlined { color: var(--score-ink-blue, var(--primary-ink, var(--primary))); }
 
 /* ---- Grid "table" (rows align without a real <table>) --------------- */
 .adm-table-card { padding: 6px 6px 4px; }
@@ -13679,13 +13743,10 @@ html.dark .adm-idcell-name a { color: #93C5FD; }
 /* Status chips. */
 .adm-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
 .adm-chip .material-symbols-outlined { font-size: 13px; }
-.adm-chip--green { background: var(--sec-green-10); color: var(--sec-green); }
-html.dark .adm-chip--green { color: #6FE0A0; }
-.adm-chip--red { background: var(--sec-red-10); color: var(--sec-red); }
-html.dark .adm-chip--red { color: #FF9E96; }
-.adm-chip--amber { background: var(--ter-amber-10); color: var(--ter-amber-text); }
-.adm-chip--blue { background: rgba(37,80,124,0.10); color: var(--primary); }
-html.dark .adm-chip--blue { background: rgba(96,165,250,0.16); color: #93C5FD; }
+.adm-chip--green { background: var(--sec-green-10); color: var(--score-ink-green, var(--sec-green-text)); }
+.adm-chip--red { background: var(--sec-red-10); color: var(--score-ink-red, var(--sec-red-text)); }
+.adm-chip--amber { background: var(--ter-amber-10); color: var(--score-ink-amber, var(--ter-amber-text)); }
+.adm-chip--blue { background: color-mix(in srgb, var(--score-ink-blue, var(--primary)) 16%, transparent); color: var(--score-ink-blue, var(--primary-ink, var(--primary))); }
 .adm-chip--muted { background: var(--surface-3, var(--surface-2)); color: var(--text-muted); }
 html.dark .adm-chip--muted { background: rgba(255,255,255,0.08); }
 .adm-chip--outline { background: transparent; border: 1px solid var(--border-strong); color: var(--text-muted); }
@@ -13840,11 +13901,7 @@ html.dark .adm-donut-center::before { background: #14242f; border-color: rgba(25
 @container adm (max-width: 1093px) { .adm-vf-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @container adm (max-width: 541px)  { .adm-vf-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @container adm (max-width: 265px)  { .adm-vf-stats { grid-template-columns: 1fr; } }
-.adm-vf-stat { display: flex; flex-direction: column; align-items: center; gap: 5px; height: 100%; padding: 16px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-1); text-align: center; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease; }
-/* Scorecard fill mirrors the chat module (.sc-card) in dark + chat-tint too. */
-html.dark .adm-vf-stat { background: #1A2339; }
-html.chat-tint:not(.dark) .adm-vf-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
-html.dark.chat-tint .adm-vf-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
+.adm-vf-stat { display: flex; flex-direction: column; align-items: center; gap: 5px; height: 100%; padding: 16px 12px; background: var(--scorecard-fill, var(--surface)); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-1); text-align: center; cursor: pointer; color: var(--text); transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease; }
 /* Fixed-height chip slot so the chip (whether it wraps to one or two lines)
    always occupies the same vertical band — this keeps the description text
    below it on the same axis across every scorecard. */
@@ -13853,13 +13910,17 @@ html.dark.chat-tint .adm-vf-stat { background: color-mix(in srgb, var(--primary-
    equal height (grid), so all buttons land on the same axis. */
 .adm-vf-stat .adm-btn { margin-top: auto; }
 .adm-vf-stat:hover { transform: translateY(-1px); box-shadow: var(--shadow-card, var(--shadow-1)); border-color: var(--border-strong); }
-.adm-vf-stat.is-active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, var(--surface)); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1); }
-html.dark .adm-vf-stat.is-active { background: color-mix(in srgb, var(--primary) 20%, transparent); }
-.adm-vf-stat-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.7rem; font-weight: 800; line-height: 1; color: var(--text); }
+.adm-vf-stat.is-active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, var(--scorecard-fill, var(--surface))); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1); }
+.adm-vf-stat-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.7rem; font-weight: 800; line-height: 1; color: var(--score-ink, var(--text)); }
+.adm-vf-stat.adm-stat--red .adm-vf-stat-num { color: var(--score-ink-red); }
+.adm-vf-stat.adm-stat--green .adm-vf-stat-num { color: var(--score-ink-green); }
+.adm-vf-stat.adm-stat--amber .adm-vf-stat-num { color: var(--score-ink-amber); }
+.adm-vf-stat.adm-stat--blue .adm-vf-stat-num { color: var(--score-ink-blue); }
 .adm-vf-stat-label { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; color: var(--text); }
 .adm-vf-stat-label .material-symbols-outlined { font-size: 14px; }
 .adm-vf-stat .adm-chip { max-width: 100%; white-space: normal; text-align: center; justify-content: center; line-height: 1.25; }
 .adm-vf-stat-sub { font-size: 0.66rem; color: var(--text-subtle); line-height: 1.3; }
+.adm-vf-stat .adm-btn--ghost { color: var(--text); border-color: var(--border-strong); }
 
 /* Verification-status list (icon + label + mini progress line + count). */
 .adm-vstatus { display: flex; flex-direction: column; gap: 4px; }
@@ -14348,14 +14409,51 @@ html.dark .dash-stars-cat-panel { background: transparent; border: none; }
 }
 
 /* Narrow container (docked beside chat): collapse the grid tables into
-   stacked cards and let toolbars wrap. */
+   stacked cards and let toolbars wrap. Identity stays full width. Status
+   chip + dates share one row (chip left, dates right) until the card is
+   too tight. Count-like cells share one strip that wraps. */
 @container adm (max-width: 720px) {
   .adm-thead { display: none; }
-  .adm-trow { grid-template-columns: 1fr !important; gap: 6px; position: relative; padding: 14px 12px; }
+  .adm-trow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    position: relative;
+    padding: 14px 12px;
+  }
+  .adm-trow > .adm-td:not(.adm-td--num):not(.adm-td--metric) { flex: 1 1 100%; min-width: 0; }
+  .adm-trow > .adm-td:not(.adm-td--num):not(.adm-td--metric):has(.adm-chip):not(:has(.adm-idcell)) {
+    flex: 0 1 auto;
+  }
+  .adm-trow > .adm-td:not(.adm-td--num):not(.adm-td--metric):has(.w-datecell) {
+    flex: 1 1 calc(100% - 6.5rem);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    min-width: 8rem;
+  }
+  .adm-trow > .adm-td--num,
+  .adm-trow > .adm-td--metric,
+  .adm-trow > .adm-td:has(.dsc-gs) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    flex: 1 1 3.75rem;
+    min-width: 0;
+  }
   .adm-actions { justify-content: flex-start; }
-  .adm-td--num { justify-content: flex-start; text-align: left; }
-  .adm-trow .adm-td--end, .adm-trow .adm-td--actions { position: absolute; top: 10px; right: 10px; padding: 0; }
+  .adm-trow .adm-td--end, .adm-trow .adm-td--actions {
+    position: absolute; top: 10px; right: 10px; padding: 0;
+    flex: 0 0 auto; width: auto;
+  }
   .adm-trow .adm-td--actions .adm-rowmenu-pop { left: auto; right: 0; }
+}
+@container adm (max-width: 300px) {
+  .adm-trow > .adm-td:not(.adm-td--num):not(.adm-td--metric):has(.adm-chip):not(:has(.adm-idcell)),
+  .adm-trow > .adm-td:not(.adm-td--num):not(.adm-td--metric):has(.w-datecell) { flex: 1 1 100%; }
+  .adm-trow > .adm-td:not(.adm-td--num):not(.adm-td--metric):has(.w-datecell) { justify-content: flex-start; }
 }
 @media (max-width: 640px) {
   .adm-wrap { padding: 20px 20px 48px; }
@@ -14763,7 +14861,10 @@ html.dark .wmod-fchip { background: rgba(255,255,255,0.05); border-color: rgba(2
 .wmod-fchip .material-symbols-outlined { font-size: 13px !important; line-height: 1 !important; }
 .wmod-fchip:hover { color: var(--text); border-color: var(--primary); }
 .wmod-fchip.is-on { color: #fff; border-color: var(--primary); background: var(--primary); }
-.wmod-fchip.is-on .material-symbols-outlined { color: #fff; }
+.wmod-fchip.is-on .material-symbols-outlined {
+  color: #fff;
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
 
 /* ── Scorecard filters — flat rectangular tiles that wrap onto rows and act
       as single-select filters (exactly like .pf-stat). No eyebrow. ── */
@@ -14781,7 +14882,7 @@ html.dark .wmod-fchip { background: rgba(255,255,255,0.05); border-color: rgba(2
   transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 html.dark .wmod-stat { background: #1A2339; }
-html.chat-tint:not(.dark) .wmod-stat { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+html.chat-tint:not(.dark) .wmod-stat { background: var(--scorecard-fill, color-mix(in srgb, var(--primary) 5%, var(--surface))); }
 html.dark.chat-tint .wmod-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
 .wmod-stat:hover { transform: translateY(-1px); box-shadow: var(--shadow-card, var(--shadow-2)); border-color: var(--border-strong); }
 .wmod-stat:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }

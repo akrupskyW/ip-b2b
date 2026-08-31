@@ -93,7 +93,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Text size is a scale, not a font size',
-        how: '<code>setTextSize()</code> stores <code>sm|md|lg|xl</code> in <code>chat-font-size</code> and sets the CSS variables <code>--wise-text-scale</code> and <code>--chat-line-height</code> on <code>&lt;html&gt;</code> plus <code>dataset.textSize</code>. Components size off the variable rather than hard pixel values.',
+        how: '<code>setTextSize()</code> stores <code>sm|md|lg|xl</code> in <code>chat-font-size</code> and sets the CSS variables <code>--wise-text-scale</code>, <code>--wise-icon-scale</code> and <code>--chat-line-height</code> on <code>&lt;html&gt;</code> plus <code>dataset.textSize</code>. Type and icons size off the variable from their authored size rather than a single pixel floor.',
       },
       {
         title: 'Serif headlines can switch to DM Sans',
@@ -150,7 +150,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'App Search re-plumbs the shell',
-        how: '<code>wise-app-search</code> adds <code>app-search-on</code>, mounts <code>#wise-app-search</code>, drops the full-bleed classes and floats the menu footer into the search row above <code>769px</code>. It indexes transcripts, outputs and reports out of the chat-history keys plus the live DOM, and hands off through the sessionStorage keys <code>wise-search-open-chat</code> / <code>wise-search-open-report</code>.',
+        how: 'Search is locked off — the published load default is off and the Appearance row cannot turn it on. When it is on, <code>wise-app-search</code> adds <code>app-search-on</code>, mounts <code>#wise-app-search</code>, drops the full-bleed classes and floats the menu footer into the search row above <code>769px</code>. It indexes transcripts, outputs and reports out of the chat-history keys plus the live DOM, and hands off through the sessionStorage keys <code>wise-search-open-chat</code> / <code>wise-search-open-report</code>.',
       },
     ],
   },
@@ -191,7 +191,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Drawers stack as a utility belt under the chat',
-        how: 'The chat is the buckle at <strong>z-index 3</strong>. Peer drawers to its right (Output, Nutrition Facts, Turns, Help) sit at <strong>z-index 1</strong>: shorter, vertically centred, chat-facing corners squared, tucked with a negative left margin so they read as emerging from the card. History tucks left of the chat. Nested drawers — progress, Help contact, generated Report (<code>#help-contact</code>, <code>#wa-report</code>, <code>#pf-report-panel</code>, <code>.vf-progress-pane</code>) — sit at <strong>z-index 0</strong> and are ~30px shorter still. Opening a module \u22ef must never lift a drawer over the chat.',
+        how: 'The chat is the buckle at <strong>z-index 3</strong>. Output (<code>#agent-main</code>, <code>#wa-unified</code> / Results / Visuals) sits at <strong>z-index 2</strong>, under the chat and over peer drawers. Peer drawers to its right (Nutrition Facts, Turns, Help) sit at <strong>z-index 1</strong>: shorter, vertically centred, chat-facing corners squared, tucked with a negative left margin so they read as emerging from the card. History tucks left of the chat. Nested drawers — progress, Help contact, generated Report (<code>#help-contact</code>, <code>#wa-report</code>, <code>#pf-report-panel</code>, <code>.vf-progress-pane</code>) — sit at <strong>z-index 0</strong> and are ~30px shorter still. Opening a module \u22ef must never lift a drawer over the chat.',
       },
       {
         title: 'Dock side is a pane count, not a side',
@@ -249,7 +249,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Tooltips resolve a label chain',
-        how: '<code>initLirTooltip()</code> delegates on icon-only controls and reads the label from <code>data-tip</code>, then <code>.lir-label</code>, then <code>aria-label</code>, then <code>title</code> — suppressing the native tooltip while its own is visible. Placement is below by default, right for the menu toggle, and above for Appearance rows (<code>lir-tip-above</code>). Intent chips never get a tooltip: their label is already on the chip, so a hover card (or a native <code>title</code>) is banned.',
+        how: '<code>initLirTooltip()</code> delegates on icon-only controls and reads the label from <code>data-tip</code>, then <code>.lir-label</code>, then <code>aria-label</code>, then <code>title</code> — suppressing the native tooltip while its own is visible. One card, theme-aware (surface in light, dark in dark). Placement is below by default, right for the menu toggle, and above for Appearance rows (<code>lir-tip-above</code>). Intent chips never get a tooltip: their label is already on the chip, so a hover card (or a native <code>title</code>) is banned. Parallel always-dark hover cards are a bug.',
       },
       {
         title: 'Status chips explain themselves',
@@ -603,7 +603,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'File to Library puts the live thread on the Library shelf',
-        how: 'The three-dot <em>File to Library</em> row first saves the thread into History (the same store History &amp; Projects already uses), then copies a card onto the WISEcodeAI Library shelf. Re-filing the same thread updates that card. An empty welcome cannot be filed. Opening the card on the Library page restores the transcript in the docked chat.',
+        how: 'The three-dot <em>File to Library</em> row opens the same folder picker History uses for Move to project. Picking a folder (or Library, or New folder) first saves the thread into History, then copies a card onto that shelf. Re-filing the same thread updates that card and can move it. An empty welcome cannot be filed. Opening the card on the Library page restores the transcript in the docked chat.',
       },
       {
         title: 'History and Turns are docked drawers',
@@ -627,7 +627,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Every answer carries copy, thumbs, and a more menu',
-        how: '<code>feedbackRowHtml()</code> sits under the last paragraph, before intent chips. Copy flashes Copied. Accurate / Not accurate each open a reason popover; submitting posts a follow-up turn in the thread. The \u22ef spills timestamp (clock \u2194 relative), Re-run in new chat, Edit in new chat, Fork a turn, and the turn ID. Hover uses the styled <code>.sc-tip</code> card, never a native title bubble.',
+        how: '<code>feedbackRowHtml()</code> sits under the last paragraph, before intent chips. Copy flashes Copied. Accurate / Not accurate each open a reason popover; submitting posts a follow-up turn in the thread. The \u22ef spills timestamp (clock \u2194 relative), Re-run in new chat, Edit in new chat, Fork a turn, and the turn ID. Hover uses the shared theme-aware tip card, never a native title bubble and never a second always-dark card.',
       },
       {
         title: 'Output chips preview the sticky pane',
@@ -653,7 +653,7 @@ export const APP_LOGIC = [
     rules: [
       {
         title: 'Conversations filed from chat appear on the shelf',
-        how: 'Items written by the chat\u2019s <em>File to Library</em> row hydrate as cards on the grid, using the same folder drag, copy, and link menus as the rest of the shelf. Clicking a filed chat restores it in the docked WISEcodeAI chat.',
+        how: 'Items written by the chat\u2019s <em>File to Library</em> row hydrate as cards on the grid, already sitting in the folder that was picked (or unfiled on the shelf). They use the same folder drag, copy, and link menus as the rest of the shelf. Clicking a filed chat restores it in the docked WISEcodeAI chat.',
       },
       {
         title: 'Chips apply real filters',

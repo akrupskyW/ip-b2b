@@ -777,20 +777,22 @@
     .lib-info-row + .lib-info-row { margin-top: 4px; }
     .lib-info-row .material-symbols-outlined { font-size: 16px !important; opacity: .66; flex: 0 0 auto; }
 
-    /* Dark control tooltip — match History .wch-tip (sits above, caret down). */
+    /* Theme-aware control tooltip — match #lir-tooltip / History .wch-tip.
+       #lir-tooltip stands down on these targets so the two never stack. */
     .lib-tip {
       position: fixed; z-index: 5000; pointer-events: none; max-width: 240px;
-      background: #1f2430; color: #fff;
-      font-size: 11.5px; font-weight: 600; line-height: 1.25; letter-spacing: 0.01em;
-      padding: 5px 9px; border-radius: 7px; white-space: nowrap;
-      box-shadow: 0 8px 22px rgba(0,0,0,0.30); border: 1px solid rgba(255,255,255,0.08);
+      background: var(--surface, #fff); color: var(--text, #1F2733);
+      font-size: 11px; font-weight: 600; line-height: 1.25; letter-spacing: 0.01em;
+      padding: 5px 10px; border-radius: 8px; white-space: nowrap;
+      box-shadow: var(--shadow-card, 0 8px 22px rgba(20,30,60,0.14));
+      border: 1px solid var(--border, rgba(0,0,0,0.10));
       opacity: 0; transform: translate(-50%, calc(-100% - 4px)) scale(0.96); transform-origin: bottom center;
       transition: opacity .12s ease, transform .12s ease;
     }
     .lib-tip.is-vis { opacity: 1; transform: translate(-50%, -100%) scale(1); }
     .lib-tip::after {
       content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
-      border: 5px solid transparent; border-top-color: #1f2430;
+      border: 5px solid transparent; border-top-color: var(--surface, #fff);
     }
 
     /* ===================================================================
@@ -1432,18 +1434,6 @@
         }
         return false;
       }
-      function folderTree(excludeId) {
-        const rows = [];
-        const walk = (parentId, depth) => {
-          childrenOf(parentId).forEach((f) => {
-            if (excludeId && isSelfOrDescendant(excludeId, f.id)) return;
-            rows.push({ f, depth });
-            walk(f.id, depth + 1);
-          });
-        };
-        walk(null, 0);
-        return rows;
-      }
 
       /* Restore copied artifacts (cloned DOM cards) so membership in folders
          survives reloads. Copies are applied in creation order so a copy-of-a
@@ -1805,6 +1795,9 @@
 
       document.addEventListener('wise:library-change', () => {
         const store = window.WiseLibraryStore;
+        if (store && typeof store.listFolders === 'function') {
+          folders = store.listFolders();
+        }
         const filed = (store && store.list && store.list()) || [];
         filed.forEach((item) => {
           if (mountFiledItem(item)) {
@@ -1812,6 +1805,7 @@
             if (rec) ensureCardMenu(rec.el);
           }
         });
+        refreshFolderCounts();
         recountTypes();
         apply();
       });
@@ -2150,6 +2144,8 @@
         document.removeEventListener('keydown', onPopKey, true);
         window.removeEventListener('scroll', closePop, true);
         window.removeEventListener('resize', closePop);
+        const store = window.WiseLibraryStore;
+        if (store && typeof store.closeFolderPicker === 'function') store.closeFolderPicker();
       }
       function onPopOutside(e) {
         if (!popMenuEl) return;
@@ -2208,8 +2204,9 @@
         return popMenuEl;
       }
 
-      /* Dark control tooltip — History .wch-tip. */
-      const LIB_TIP_SEL = '.lib-fp-menu, .lib-fstat-menu, .lib-card-menu, .lib-filter-btn, .lib-fstat-add, .lib-place-tag, .lib-folder-swatch, [data-lib-tip]';
+      /* Theme-aware control tooltip. Three-dot menus are skipped — the menu
+         is the hover result. #lir-tooltip stands down on these targets. */
+      const LIB_TIP_SEL = '.lib-filter-btn, .lib-fstat-add, .lib-place-tag, .lib-folder-swatch, [data-lib-tip]';
       let tipEl = null;
       let tipFor = null;
       function ensureTip() {
@@ -2479,49 +2476,24 @@
         });
       }
 
-      /* Destination picker — same layout as History's "Move to project" popover:
-         uppercase head, dotted list with a check on the current folder, optional
-         Remove, then a divider and New folder…. Nested folders stay indented. */
+      /* Destination picker — same popover History uses for "Move to project"
+         (and File to Library in chat). The shared store owns the markup so
+         this page cannot drift. */
       function openFolderPicker(anchor, title, opts, onPick) {
         opts = opts || {};
-        const currentIds = opts.currentIds || [];
-        const rows = folderTree(opts.excludeId);
-        let html = '<div class="lib-pop-head">' + escHtml(title) + '</div><div class="lib-pop-list">';
-        if (!rows.length) {
-          html += '<div class="lib-pop-head" style="opacity:.5;font-weight:400;text-transform:none;letter-spacing:0">No folders yet.</div>';
-        } else {
-          rows.forEach(({ f, depth }) => {
-            const cur = currentIds.indexOf(f.id) !== -1;
-            html += '<button type="button" class="lib-pop-item' + (cur ? ' is-current' : '') + '" data-pick="' + f.id + '" role="menuitem" style="padding-left:' + (10 + depth * 14) + 'px">' +
-              '<span class="lib-fp-dot" style="color:' + f.color + '"></span>' +
-              '<span class="lib-pop-name">' + escHtml(f.name) + '</span>' +
-              (cur ? '<span class="material-symbols-outlined">check</span>' : '') +
-            '</button>';
-          });
+        closePop();
+        const store = window.WiseLibraryStore;
+        if (store && typeof store.openFolderPicker === 'function') {
+          store.openFolderPicker(anchor, {
+            title: title,
+            currentIds: opts.currentIds,
+            excludeId: opts.excludeId,
+            removeLabel: opts.removeLabel,
+            onRemove: opts.onRemove,
+            onNew: opts.onNew
+          }, onPick);
+          return;
         }
-        if (opts.removeLabel) {
-          html += '<button type="button" class="lib-pop-item" data-pick-remove role="menuitem">' +
-            '<span class="material-symbols-outlined">remove_circle_outline</span><span class="lib-pop-name">' + escHtml(opts.removeLabel) + '</span></button>';
-        }
-        html += '</div><div class="lib-pop-div"></div>' +
-          '<button type="button" class="lib-pop-item" data-pick-new role="menuitem"><span class="material-symbols-outlined">create_new_folder</span><span class="lib-pop-name">New folder\u2026</span></button>';
-        const pop = showPop(anchor, html, null, 'below');
-        pop.addEventListener('click', (e) => {
-          if (e.target.closest('[data-pick-new]')) {
-            closePop();
-            if (opts.onNew) opts.onNew();
-            return;
-          }
-          if (e.target.closest('[data-pick-remove]')) {
-            closePop();
-            if (opts.onRemove) opts.onRemove();
-            return;
-          }
-          const b = e.target.closest('[data-pick]');
-          if (!b) return;
-          closePop();
-          onPick(b.dataset.pick);
-        });
       }
 
       function openDropChooser(anchor, cardId, folderId) {

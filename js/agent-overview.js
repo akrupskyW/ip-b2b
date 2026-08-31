@@ -467,7 +467,7 @@ function collapseNavRail() {
     btn.setAttribute('aria-label', 'Expand menu');
     btn.setAttribute('title', 'Expand menu');
     const icon = btn.querySelector('.material-symbols-outlined');
-    if (icon) icon.textContent = 'chevron_right';
+    if (icon) icon.textContent = 'dock_to_right';
   }
 }
 
@@ -1469,7 +1469,7 @@ function syncDashToggleItems() {
    steps it down through triple / double / single reading widths, then custom,
    before wrapping back to fill. Tier → class: 0 narrow · 1 wide · 2 triple ·
    3 fill (no class) · 4 custom (pinned current width). */
-const MAIN_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_full', 'width_full', 'crop_free'];
+const MAIN_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_wide', 'width_full', 'fit_width'];
 const MAIN_WIDTH_TITLES = [
   'Width (single) — tap to widen',
   'Width (double) — tap to widen',
@@ -1553,7 +1553,7 @@ function mainPanelControlsHTML() {
         <button type="button" class="panel-more-btn" id="agent-main-more-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="agent-main-more-pop" title="More options" aria-label="Panel options"><span class="material-symbols-outlined">more_vert</span></button>
         <div class="topbar-popover hidden" id="agent-main-more-pop" role="menu">${renderMorePopover()}</div>
       </div>
-      <button type="button" class="panel-width-toggle-btn" id="agent-main-width-btn" aria-pressed="false" title="${escHtml(MAIN_WIDTH_TITLES[3])}" aria-label="Panel width"><span class="material-symbols-outlined">${MAIN_WIDTH_ICONS[3]}</span></button>
+      <button type="button" class="panel-width-toggle-btn is-on is-width-fill" id="agent-main-width-btn" aria-pressed="true" title="${escHtml(MAIN_WIDTH_TITLES[3])}" aria-label="Panel width"><span class="material-symbols-outlined">${MAIN_WIDTH_ICONS[3]}</span></button>
     </div>`;
 }
 

@@ -16,9 +16,7 @@
  *   .topbar-profile, #pf-module-rail, .lir-layout-btn …
  */
 
-/* Musical "pump up the jam" strip for the Minimal-UI top bar. Named import so
-   the footer mount can place the strip once #menu-panel .menu-inner exists. */
-import { mountJamStrip } from './jam-strip.js';
+/* Jam player lives in Appearance ▸ Sound, never the primary nav. */
 
 /* Mobile primary navigation (≤768px): collapses the nav to an owl + expand
    rail and opens the full nav / History as full-screen pop-overs. Side-effect
@@ -257,7 +255,6 @@ export function mountMenuFooter({
     </div>`;
 
   wireMenuFooter();
-  mountJamStrip();
   syncSearchFloatedFooter();
   return footer;
 }
@@ -585,11 +582,11 @@ function resolveFullBleedMode() {
   }
 }
 
-/** Search (Appearance ▸ Admin) suspends both full-bleed modes. Same key as
-    js/app-search.js (`wise-app-search`) — read here so this module never
-    imports the search row (avoids a cycle through appearance-menu.js). */
+/** Search (Appearance ▸ Admin) is locked off. The live class is the only
+    signal — a leftover wise-app-search=1 must not suppress full-bleed.
+    Read the class here so this module never imports the search row. */
 function isSearchSuppressingFullBleed() {
-  try { return localStorage.getItem('wise-app-search') === '1'; } catch { return false; }
+  try { return document.documentElement.classList.contains('app-search-on'); } catch { return false; }
 }
 
 /** Drop the live full-bleed classes without rewriting the stored mode. */
