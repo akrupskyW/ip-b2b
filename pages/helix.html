@@ -465,8 +465,8 @@
     import { mountHelixMetrics } from '../js/helix-metrics.js';
 
     const INTENTS = [
-      { intent: 'hx:scene', label: 'Load Scene', icon: 'view_in_ar', nextIntents: ['hx:closeup', 'hx:apply', 'hx:undo'] },
-      { intent: 'hx:closeup', label: 'Load Close-up', icon: 'zoom_in', nextIntents: ['hx:scene', 'hx:apply', 'hx:undo'] },
+      { intent: 'hx:scene', label: 'Load Scene', icon: 'view_in_ar', keepWelcome: true },
+      { intent: 'hx:closeup', label: 'Load Close-up', icon: 'zoom_in', keepWelcome: true },
       { intent: 'hx:apply', label: 'Apply everywhere', icon: 'done', nextIntents: ['hx:undo', 'hx:scene', 'hx:closeup'] },
       { intent: 'hx:undo', label: 'Undo', icon: 'undo', nextIntents: ['hx:apply', 'hx:scene', 'hx:closeup'] },
     ];
@@ -541,6 +541,11 @@
       intents: INTENTS,
       intentReplies: INTENT_REPLIES,
       reply: (text) => reply(text),
+      onIntent: (intent) => {
+        if (intent === 'hx:scene') { clickSnap('Scene'); return true; }
+        if (intent === 'hx:closeup') { clickSnap('Close-up'); return true; }
+        return false;
+      },
     });
   </script>
   <script defer src="../js/sticky-modules.js"></script>

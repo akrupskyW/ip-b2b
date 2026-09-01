@@ -7730,7 +7730,7 @@ if (typeof window !== 'undefined') window.WiseTypeInTranscript = typeInTranscrip
  *                          [{id,name,version,group,icon,color,bg,tagline,desc,tags,required,on}]
  *   heading      {string}  welcome heading (default 'What can WISEcodeAI help with?')
  *   sub          {string}  welcome subheading
- *   intents      {Array}   welcome intent chips [{intent,label,icon,ask?,nextIntents?,carryTopic?}]
+ *   intents      {Array}   welcome intent chips [{intent,label,icon,ask?,nextIntents?,carryTopic?,keepWelcome?}]
  *                          — `ask` (optional) is the full question posted as
  *                          the user's line; the chip face still shows the
  *                          shorter label. `nextIntents` (ids or chip objects)
@@ -7739,6 +7739,9 @@ if (typeof window !== 'undefined') window.WiseTypeInTranscript = typeInTranscrip
  *                          `carryTopic` keeps the previous turn's topic so a
  *                          generic follow-up (compare / report / spider) stays
  *                          about what was just discussed.
+ *                          `keepWelcome` runs the host side-effect (onIntent)
+ *                          and leaves the welcome / background helix up —
+ *                          no user line, no reply, chip stays reusable.
  *   followups    {object}  intent-id → [ids|chips] map used when a chip has
  *                          no `nextIntents` of its own
  *   intentReplies{object}  intent-id → reply (string|fn) so a clicked chip
@@ -9860,6 +9863,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
         input.dispatchEvent(new Event('input', { bubbles: true }));
       },
       onAsk: (text, intent) => {
+        if (applyKeepWelcomeChip(intent, text)) return;
         const handled = opts.onIntent ? opts.onIntent(intent, text) : false;
         if (intent) markIntentUsed(intent);
         hideWelcome();
@@ -11378,6 +11382,22 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     wiseaiRespond(v);
   }
 
+  /* A keepWelcome chip changes the surface (Helix pose, a control) and
+     stays on the welcome — no transcript, chip not spent, helix stays up. */
+  function applyKeepWelcomeChip(defOrIntent, text) {
+    const def = typeof defOrIntent === 'string'
+      ? (intents.find((c) => c && c.intent === defOrIntent)
+        || sessionIntents.find((c) => c && c.intent === defOrIntent)
+        || intentCatalog.get(defOrIntent))
+      : defOrIntent;
+    if (!def || def.keepWelcome !== true) return false;
+    const line = text || def.ask || def.label || '';
+    if (typeof opts.onIntent === 'function') {
+      try { opts.onIntent(def.intent, line); } catch (_) { /* host hook */ }
+    }
+    return true;
+  }
+
   /* Drive an intent turn programmatically — exactly as if the matching chip had
      been clicked. Lets a host (e.g. the marketing shell) mirror a body-content
      CTA into the chat so the two stay in sync: run onIntent for side-effects
@@ -11390,6 +11410,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (intent === ASK_HELP_INTENT) openAskHelp();
     const found = intents.find((c) => c && c.intent === intent);
     const text = (label != null ? label : (found ? (found.ask || found.label) : '')) || String(intent);
+    if (applyKeepWelcomeChip(found || intent, text)) return;
     const handled = opts.onIntent ? opts.onIntent(intent, text) : false;
     markIntentUsed(intent);
     closeAgents();
@@ -11855,6 +11876,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     /* A chip can carry an `ask` — the full question posted as the user's line —
        while its face keeps the shorter label (same contract as scorecards). */
     const text = def.ask || def.label;
+    if (applyKeepWelcomeChip(def, text)) return;
     const handled = opts.onIntent ? opts.onIntent(def.intent, text) : false;
     /* "Choose Agents" opens the in-chat settings panel rather than starting a
        chat turn — it's a control, not a question. */
@@ -11881,6 +11903,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (def.intent === 'choose_agents') { openAgents(); return; }
     if (def.intent === ASK_HELP_INTENT) openAskHelp();
     const text = def.ask || def.label;
+    if (applyKeepWelcomeChip(def, text)) return;
     const handled = opts.onIntent ? opts.onIntent(def.intent, text) : false;
     markIntentUsed(def.intent);
     hideWelcome();
@@ -12198,6 +12221,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (def.intent === 'choose_agents') { openAgents(); return; }
     if (def.intent === ASK_HELP_INTENT) openAskHelp();
     const text = def.ask || def.label;
+    if (applyKeepWelcomeChip(def, text)) return;
     const handled = opts.onIntent ? opts.onIntent(def.intent, text) : false;
     markIntentUsed(def.intent);
     hideWelcome();
