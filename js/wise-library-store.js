@@ -446,7 +446,21 @@
       '.lib-pop-new .material-symbols-outlined{font-size:17px;opacity:.8;}',
       '.lib-pop-new-input{flex:1;min-width:0;height:30px;padding:0 8px;border-radius:8px;font:inherit;font-size:13px;font-weight:600;',
         'color:inherit;outline:none;background:rgba(255,255,255,0.06);border:1px solid var(--primary,#2F6DF6);}',
-      'html:not(.dark) .lib-pop-new-input{background:rgba(20,40,80,0.05);}'
+      'html:not(.dark) .lib-pop-new-input{background:rgba(20,40,80,0.05);}',
+      /* Inline expand inside the chat Conversation menu — no second popover. */
+      '.lib-pop-inline{display:block;padding:0 0 4px;background:transparent;border:0;box-shadow:none;min-width:0;max-width:none;position:static;z-index:auto;}',
+      'html:not(.dark) .lib-pop-inline{background:transparent;border:0;box-shadow:none;}',
+      '.lib-pop-inline .lib-pop-head{display:none;}',
+      '.lib-pop-inline .lib-pop-list{max-height:220px;overflow-y:auto;}',
+      /* Same type as Conversation rows — do not let 13px / weight 600 drift. */
+      '.lib-pop-inline .lib-pop-item,.lib-pop-inline .lib-pop-new{font-size:var(--fs-ui,0.75rem);font-weight:500;color:var(--text-muted);line-height:1.2;}',
+      '.lib-pop-inline .lib-pop-item.is-current{font-weight:500;}',
+      '.lib-pop-inline .lib-pop-name{font-size:inherit;font-weight:inherit;line-height:inherit;}',
+      '.lib-pop-inline .lib-pop-item .material-symbols-outlined,.lib-pop-inline .lib-pop-new .material-symbols-outlined{font-size:17px!important;}',
+      '.sc-menu-grouped .lib-pop-inline .lib-pop-item{margin:0 4px;width:calc(100% - 8px);border-radius:9px;padding:6px 7px;gap:6px;}',
+      '.sc-menu-grouped .lib-pop-inline .lib-pop-div{margin:4px 8px;}',
+      '.sc-menu-grouped .lib-pop-inline .lib-pop-new{margin:0 4px;padding:4px 7px;}',
+      '.topbar-menu-item[data-sc="file-library"].is-open{color:var(--text);}'
     ].join('');
     var el = global.document.createElement('style');
     el.id = 'wise-lib-pop-css';
@@ -455,8 +469,15 @@
   }
 
   function closeFolderPicker() {
+    if (pickerEl && pickerEl.__mo) {
+      try { pickerEl.__mo.disconnect(); } catch (_) {}
+      pickerEl.__mo = null;
+    }
     if (pickerEl && pickerEl.__anchor && pickerEl.__anchor.classList) {
       pickerEl.__anchor.classList.remove('is-open');
+      if (pickerEl.__anchor.hasAttribute && pickerEl.__anchor.hasAttribute('aria-expanded')) {
+        pickerEl.__anchor.setAttribute('aria-expanded', 'false');
+      }
     }
     if (pickerEl && pickerEl.parentNode) pickerEl.parentNode.removeChild(pickerEl);
     pickerEl = null;
@@ -485,14 +506,21 @@
     if (!pickerEl || !anchor || !anchor.getBoundingClientRect) return;
     var r = anchor.getBoundingClientRect();
     if (r.width < 1 && r.height < 1 && anchor.closest) {
-      var fallback = anchor.closest('.panel-more-wrap, .lib-fp-row, .lib-card, [data-folder-id]');
+      var fallback = anchor.closest('.panel-more-wrap, .sc-fb-more-wrap, .lib-fp-row, .lib-card, [data-folder-id]');
       if (fallback) r = fallback.getBoundingClientRect();
     }
     var pw = pickerEl.offsetWidth, ph = pickerEl.offsetHeight;
     var left = Math.min(r.left, global.innerWidth - pw - 8);
     left = Math.max(8, left);
-    var top = r.bottom + 6;
-    if (top + ph > global.innerHeight - 8) top = Math.max(8, r.top - ph - 6);
+    var preferAbove = !!(pickerEl.__preferAbove);
+    var top;
+    if (preferAbove) {
+      top = r.top - ph - 6;
+      if (top < 8) top = Math.min(global.innerHeight - ph - 8, r.bottom + 6);
+    } else {
+      top = r.bottom + 6;
+      if (top + ph > global.innerHeight - 8) top = Math.max(8, r.top - ph - 6);
+    }
     pickerEl.style.left = left + 'px';
     pickerEl.style.top = top + 'px';
   }
@@ -518,21 +546,20 @@
       if (e.key === 'Escape') { e.stopPropagation(); closeFolderPicker(); }
     });
     try { input.focus(); } catch (_) {}
-    placeFolderPicker(pickerEl.__anchor);
+    if (!pickerEl.classList.contains('lib-pop-inline')) placeFolderPicker(pickerEl.__anchor);
   }
 
-  function openFolderPicker(anchor, opts, onPick) {
+  function pickerMarkup(opts) {
     opts = opts || {};
-    if (!global.document) return null;
-    ensurePickerCss();
-    closeFolderPicker();
     var currentIds = opts.currentIds || [];
     var rows = folderTree(opts.excludeId);
     var title = opts.title || 'File to Library';
+    var inline = !!opts.host;
+    var basePad = inline ? 7 : 10;
     var h = '<div class="lib-pop-head">' + esc(title) + '</div><div class="lib-pop-list">';
     if (opts.unfiled) {
       h += '<button type="button" class="lib-pop-item' + (opts.unfiledCurrent ? ' is-current' : '') + '" data-pick="" role="menuitem">' +
-        '<span class="material-symbols-outlined">auto_stories</span>' +
+        '<span class="material-symbols-outlined topbar-menu-icon">folder_open</span>' +
         '<span class="lib-pop-name">' + esc(opts.unfiledLabel || 'Library') + '</span>' +
         (opts.unfiledCurrent ? '<span class="material-symbols-outlined">check</span>' : '') +
       '</button>';
@@ -543,7 +570,7 @@
       rows.forEach(function (row) {
         var f = row.f;
         var cur = currentIds.indexOf(f.id) !== -1;
-        h += '<button type="button" class="lib-pop-item' + (cur ? ' is-current' : '') + '" data-pick="' + esc(f.id) + '" role="menuitem" style="padding-left:' + (10 + row.depth * 14) + 'px">' +
+        h += '<button type="button" class="lib-pop-item' + (cur ? ' is-current' : '') + '" data-pick="' + esc(f.id) + '" role="menuitem" style="padding-left:' + (basePad + row.depth * 14) + 'px">' +
           '<span class="lib-fp-dot" style="color:' + esc(f.color) + '"></span>' +
           '<span class="lib-pop-name">' + esc(f.name) + '</span>' +
           (cur ? '<span class="material-symbols-outlined">check</span>' : '') +
@@ -555,18 +582,16 @@
         '<span class="material-symbols-outlined">remove_circle_outline</span><span class="lib-pop-name">' + esc(opts.removeLabel) + '</span></button>';
     }
     h += '</div><div class="lib-pop-div"></div>' +
-      '<button type="button" class="lib-pop-item" data-pick-new role="menuitem"><span class="material-symbols-outlined">create_new_folder</span><span class="lib-pop-name">New folder\u2026</span></button>';
-    pickerEl = global.document.createElement('div');
-    pickerEl.className = 'lib-pop';
-    pickerEl.setAttribute('role', 'menu');
-    pickerEl.__anchor = anchor || null;
-    pickerEl.innerHTML = h;
-    global.document.body.appendChild(pickerEl);
-    if (anchor && anchor.classList) anchor.classList.add('is-open');
-    placeFolderPicker(anchor);
+      '<button type="button" class="lib-pop-item" data-pick-new role="menuitem"><span class="material-symbols-outlined topbar-menu-icon">create_new_folder</span><span class="lib-pop-name">New folder\u2026</span></button>';
+    return h;
+  }
+
+  function bindPickerClicks(opts, onPick) {
+    if (!pickerEl) return;
     pickerEl.addEventListener('click', function (e) {
       if (e.target.closest('[data-pick-new]')) {
         e.preventDefault();
+        e.stopPropagation();
         if (typeof opts.onNew === 'function') {
           closeFolderPicker();
           opts.onNew();
@@ -577,6 +602,7 @@
       }
       if (e.target.closest('[data-pick-remove]')) {
         e.preventDefault();
+        e.stopPropagation();
         closeFolderPicker();
         if (typeof opts.onRemove === 'function') opts.onRemove();
         return;
@@ -584,16 +610,69 @@
       var b = e.target.closest('[data-pick]');
       if (!b) return;
       e.preventDefault();
+      e.stopPropagation();
       var id = b.getAttribute('data-pick');
       closeFolderPicker();
       if (typeof onPick === 'function') onPick(id || null);
     });
-    setTimeout(function () {
-      global.document.addEventListener('mousedown', onPickerOutside, true);
-      global.document.addEventListener('keydown', onPickerKey, true);
-      global.window.addEventListener('scroll', closeFolderPicker, true);
-      global.window.addEventListener('resize', closeFolderPicker, true);
-    }, 0);
+  }
+
+  function watchHostMenu(host) {
+    if (!pickerEl || !host || !host.closest) return;
+    var pop = host.closest('.topbar-popover, [role="menu"]');
+    if (!pop) return;
+    var mo = new MutationObserver(function () {
+      if (pop.classList.contains('hidden')) closeFolderPicker();
+    });
+    mo.observe(pop, { attributes: true, attributeFilter: ['class'] });
+    pickerEl.__mo = mo;
+  }
+
+  function openFolderPicker(anchor, opts, onPick) {
+    opts = opts || {};
+    if (!global.document) return null;
+    ensurePickerCss();
+    var host = opts.host || null;
+    /* Clicking File to Library again collapses the in-menu list. */
+    if (host && pickerEl && pickerEl.__anchor === host && pickerEl.classList.contains('lib-pop-inline')) {
+      closeFolderPicker();
+      return null;
+    }
+    closeFolderPicker();
+    pickerEl = global.document.createElement('div');
+    pickerEl.className = host ? 'lib-pop lib-pop-inline' : 'lib-pop';
+    pickerEl.setAttribute('role', host ? 'group' : 'menu');
+    if (host) pickerEl.setAttribute('aria-label', opts.title || 'File to Library');
+    pickerEl.__anchor = host || anchor || null;
+    pickerEl.__preferAbove = !!opts.preferAbove;
+    pickerEl.innerHTML = pickerMarkup(opts);
+    if (host) {
+      if (host.parentNode) host.parentNode.insertBefore(pickerEl, host.nextSibling);
+      else global.document.body.appendChild(pickerEl);
+    } else {
+      global.document.body.appendChild(pickerEl);
+    }
+    /* Skip is-open on a kebab trigger — that class is how hover-open decides
+       the three-dot menu is showing, and must not collide with this picker. */
+    if (opts.markOpen !== false && pickerEl.__anchor && pickerEl.__anchor.classList) {
+      pickerEl.__anchor.classList.add('is-open');
+      if (host) pickerEl.__anchor.setAttribute('aria-expanded', 'true');
+    }
+    bindPickerClicks(opts, onPick);
+    if (host) {
+      watchHostMenu(host);
+      setTimeout(function () {
+        global.document.addEventListener('keydown', onPickerKey, true);
+      }, 0);
+    } else {
+      placeFolderPicker(anchor);
+      setTimeout(function () {
+        global.document.addEventListener('mousedown', onPickerOutside, true);
+        global.document.addEventListener('keydown', onPickerKey, true);
+        global.window.addEventListener('scroll', closeFolderPicker, true);
+        global.window.addEventListener('resize', closeFolderPicker, true);
+      }, 0);
+    }
     return pickerEl;
   }
 

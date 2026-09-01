@@ -10,6 +10,10 @@
    different page) re-applies that page's default. localStorage
    ('wise-cwr-mode') is a snapshot of the in-session choice only.
 
+   pages/helix.html is Run-only. Roll, Crawl, and Walk lock on that page
+   (dimmed, not-allowed, aria-disabled) so the playground cannot hide
+   itself. A click or arrow on a locked mode is ignored.
+
    What each mode gates:
 
      roll  — Crawl, plus a stripped primary nav: Overview, Product Portfolio,
@@ -56,6 +60,7 @@
   var DRAG_THRESHOLD = 6;
   var MODES = ['roll', 'crawl', 'walk', 'run'];
   var RUN_PAGES = ['wiseai.html', 'view-product.html', 'add-product.html', 'helix.html'];
+  var RUN_ONLY_PAGES = ['helix.html'];
   var META = {
     roll: {
       icon: 'cached',
@@ -105,14 +110,23 @@
     return RUN_PAGES.indexOf(pageFile()) !== -1 ? 'run' : 'roll';
   }
 
+  function isRunOnlyPage() {
+    return RUN_ONLY_PAGES.indexOf(pageFile()) !== -1;
+  }
+
+  function isModeLocked(mode) {
+    return isRunOnlyPage() && mode !== 'run';
+  }
+
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
 
-  function modeAria(meta) {
-    return meta.label + '. ' + meta.desc + '. Includes: ' + meta.includes + ' Excludes: ' + meta.excludes;
+  function modeAria(meta, locked) {
+    var base = meta.label + '. ' + meta.desc + '. Includes: ' + meta.includes + ' Excludes: ' + meta.excludes;
+    return locked ? meta.label + '. Locked on this page. Helix stays on Run. ' + base : base;
   }
 
   function cwrButtons() {
@@ -138,6 +152,7 @@
   var ACTUAL_INPUT_SEL = RAIL_SEL + ' textarea.fl-input, ' + RAIL_SEL + ' input.fl-input, ' + RAIL_SEL + ' .fl-input';
 
   function readMode() {
+    if (isRunOnlyPage()) return 'run';
     if (liveMode && MODES.indexOf(liveMode) !== -1) return liveMode;
     return pageDefaultMode();
   }
@@ -157,6 +172,7 @@
 
   function applyMode(mode, opts) {
     opts = opts || {};
+    if (isRunOnlyPage()) mode = 'run';
     var root = document.documentElement;
     var prev = MODES.filter(function (m) { return root.classList.contains('cwr-' + m); })[0] || '';
     MODES.forEach(function (m) { root.classList.toggle('cwr-' + m, m === mode); });
@@ -766,6 +782,7 @@
     '#cwr-toggle:focus, #cwr-toggle:focus-visible, #cwr-toggle:focus-within { outline: none; }',
     '.cwr-btn {',
     '  -webkit-appearance: none; appearance: none;',
+    '  position: relative;',
     '  display: flex; flex-direction: column; align-items: center; justify-content: center;',
     '  gap: 2px;',
     '  box-sizing: border-box;',
@@ -776,10 +793,23 @@
     '  background: transparent; cursor: grab;',
     '  color: var(--text-muted, #444B55);',
     '  font-family: inherit; font-size: 8px; line-height: 1;',
-    '  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;',
+    '  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;',
     '  outline: none;',
     '}',
     '.cwr-btn:hover { background: var(--primary-soft, rgba(37, 80, 124, 0.08)); color: var(--primary, #25507C); }',
+    '.cwr-btn.is-locked {',
+    '  opacity: 0.42;',
+    '  cursor: not-allowed;',
+    '  color: var(--text-muted, #444B55);',
+    '}',
+    '.cwr-btn.is-locked:hover {',
+    '  background: transparent;',
+    '  color: var(--text-muted, #444B55);',
+    '}',
+    ':host-context(html.dark) .cwr-btn.is-locked:hover {',
+    '  background: transparent;',
+    '  color: var(--text-muted, #9aa8bb);',
+    '}',
     '.cwr-btn[aria-checked="true"],',
     '.cwr-btn[aria-checked="true"]:hover { background: var(--primary, #25507C); color: #fff; }',
     ':host-context(html.dark) .cwr-btn:hover { color: var(--primary-bright, #8B9FAF); }',
@@ -813,9 +843,17 @@
     '  -webkit-font-smoothing: antialiased;',
     '  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;',
     '}',
-    '.cwr-btn[aria-checked="true"] .material-symbols-outlined {',
+    '.cwr-btn[aria-checked="true"] .material-symbols-outlined:not(.cwr-lock) {',
     '  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;',
     '}',
+    '.cwr-btn .cwr-lock.material-symbols-outlined {',
+    '  display: none;',
+    '  position: absolute;',
+    '  top: 3px; right: 3px;',
+    '  font-size: 11px; line-height: 1;',
+    '  pointer-events: none;',
+    '}',
+    '.cwr-btn.is-locked .cwr-lock.material-symbols-outlined { display: block; }',
     '.cwr-btn .cwr-btn-label {',
     '  display: block;',
     '  font-family: inherit;',
@@ -847,11 +885,14 @@
     wrap.setAttribute('aria-label', 'Rollout mode. Drag to move. Double-click to restore the default position.');
     wrap.innerHTML = MODES.map(function (m) {
       var meta = META[m];
-      return '<button type="button" class="cwr-btn" role="radio" id="cwr-btn-' + m + '"' +
+      var locked = isModeLocked(m);
+      return '<button type="button" class="cwr-btn' + (locked ? ' is-locked' : '') + '" role="radio" id="cwr-btn-' + m + '"' +
         ' data-mode="' + m + '"' +
-        ' aria-label="' + esc(modeAria(meta)) + '">' +
+        (locked ? ' aria-disabled="true"' : '') +
+        ' aria-label="' + esc(modeAria(meta, locked)) + '">' +
         '<span class="material-symbols-outlined" aria-hidden="true">' + meta.icon + '</span>' +
         '<span class="cwr-btn-label" aria-hidden="true">' + meta.label + '</span>' +
+        '<span class="cwr-lock material-symbols-outlined" aria-hidden="true">lock</span>' +
         '</button>';
     }).join('');
 
@@ -866,9 +907,13 @@
     shadowRef = shadow;
     tipRef = tip;
 
-    function tipHtml(meta) {
+    function tipHtml(meta, locked) {
+      var lock = locked
+        ? '<div class="cwr-tip-block"><div class="cwr-tip-k">Locked</div><p>This page stays on Run. Roll, Crawl, and Walk would hide the Helix.</p></div>'
+        : '';
       return '<div class="cwr-tip-title">' + esc(meta.label) + '</div>' +
         '<p class="cwr-tip-desc">' + esc(meta.desc) + '</p>' +
+        lock +
         '<div class="cwr-tip-block"><div class="cwr-tip-k">Includes</div><p>' + esc(meta.includes) + '</p></div>' +
         '<div class="cwr-tip-block"><div class="cwr-tip-k">Excludes</div><p>' + esc(meta.excludes) + '</p></div>';
     }
@@ -901,7 +946,7 @@
       if (!tipRef || !btn || dragLive) return;
       var meta = META[btn.dataset.mode];
       if (!meta) return;
-      tipRef.innerHTML = tipHtml(meta);
+      tipRef.innerHTML = tipHtml(meta, isModeLocked(btn.dataset.mode));
       tipRef.hidden = false;
       placeTip(btn);
       tipRef.offsetWidth;
@@ -911,15 +956,22 @@
     function sync() {
       var mode = readMode();
       cwrButtons().forEach(function (btn) {
-        var on = btn.dataset.mode === mode;
+        var m = btn.dataset.mode;
+        var locked = isModeLocked(m);
+        var on = m === mode;
+        var meta = META[m];
         btn.setAttribute('aria-checked', on ? 'true' : 'false');
-        /* Roving tabindex: only the selected radio is in the tab order.
-           Arrow keys move between them. Focus stays on the actual button. */
-        btn.tabIndex = on ? 0 : -1;
+        btn.setAttribute('aria-disabled', locked ? 'true' : 'false');
+        btn.classList.toggle('is-locked', locked);
+        if (meta) btn.setAttribute('aria-label', modeAria(meta, locked));
+        /* Roving tabindex: only the selected unlocked radio is in the tab
+           order. Locked modes stay out of the keyboard path. */
+        btn.tabIndex = locked ? -1 : (on ? 0 : -1);
       });
     }
 
     function select(mode, fromUser) {
+      if (isModeLocked(mode)) return;
       applyMode(mode, { fromUser: !!fromUser });
       sync();
     }
@@ -994,6 +1046,11 @@
       }
       var btn = e.target.closest('.cwr-btn');
       if (!btn) return;
+      if (isModeLocked(btn.dataset.mode)) {
+        e.preventDefault();
+        showTip(btn);
+        return;
+      }
       hideTip();
       select(btn.dataset.mode, true);
       btn.focus();
@@ -1016,9 +1073,12 @@
     wrap.addEventListener('focusout', function () { hideTip(); });
 
     wrap.addEventListener('keydown', function (e) {
-      var btns = cwrButtons();
+      var btns = cwrButtons().filter(function (b) {
+        return b.getAttribute('aria-disabled') !== 'true';
+      });
+      if (!btns.length) return;
       var i = btns.indexOf(shadow.activeElement);
-      if (i < 0) return;
+      if (i < 0) i = 0;
       var next = -1;
       if (e.key === 'ArrowDown' || e.key === 'ArrowRight') next = (i + 1) % btns.length;
       else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') next = (i - 1 + btns.length) % btns.length;

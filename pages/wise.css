@@ -122,6 +122,7 @@
 .adm-btn--primary .material-symbols-outlined,
 .adm-icon-btn--primary .material-symbols-outlined,
 .pf-btn--primary .material-symbols-outlined,
+.pf-head-btn--primary .material-symbols-outlined,
 .dash-btn--primary .material-symbols-outlined,
 .vf-cta .material-symbols-outlined,
 .vf-modal-btn--primary .material-symbols-outlined,
@@ -132,7 +133,14 @@
 .demo-btn.primary .material-symbols-outlined,
 .chip.chip-primary .material-symbols-outlined,
 .sc-reply-chips .chip.ms-chip.is-selected .material-symbols-outlined,
-.sc-send .material-symbols-outlined {
+.sc-send .material-symbols-outlined,
+.nfp-ia-analyze .material-symbols-outlined,
+.nfp-ins-next-btn .material-symbols-outlined,
+.rf-ia-btn .material-symbols-outlined,
+.rf-save-btn .material-symbols-outlined,
+.inv-btn--primary .material-symbols-outlined,
+.ma-btn--primary .material-symbols-outlined,
+.um-btn-primary .material-symbols-outlined {
   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
@@ -6362,9 +6370,8 @@ html.dark .ag-toast { background: #1A2339; border-color: rgba(37, 80, 124,0.3); 
 
 .sc-card {
   --fs-welcome-title: 1.0625rem;
-  /* Conversation copy reads a step larger than the 12px UI chrome so the
-     dialogue itself is the most legible thing in the panel. */
-  --fs-chat: 0.9375rem;
+  /* Conversation copy — one step above the 12px UI chrome (body-small 14px). */
+  --fs-chat: 0.875rem;
   --sc-shadow-pop: 0 12px 40px rgba(0, 0, 0, 0.45);
   flex: 1 1 0%;
   min-width: 0;
@@ -6574,14 +6581,18 @@ html.dark .chat-messages-area { background: transparent; }
    the "WISEcodeAI™" title. */
 .sc-line {
   display: flex; align-items: flex-start; gap: 12px;
-  margin-bottom: 1.1rem; color: var(--text);
+  margin-bottom: 0.85rem; color: var(--text);
 }
 .sc-line-body {
   flex: 1 1 0%; min-width: 0;
   /* High-contrast conversation copy — the dialogue is the most legible thing in
      the panel (the small, quiet meta row below carries the timestamp). */
-  font-size: var(--fs-chat, 0.9375rem); line-height: 1.6; color: var(--text);
+  font-size: var(--fs-chat, 0.875rem); line-height: 1.6; color: var(--text);
 }
+/* Member asks in brand blue; WISEcodeAI answers in the default ink. */
+.sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary); }
+html.dark .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary-bright, #8B9FAF); }
+.sc-line-wiseai .sc-line-body { color: var(--text); }
 /* Paragraph-by-paragraph transcript reveal — each prose run is wrapped so it
    can fade in as a block. Consecutive paras keep the gap a <br><br> used to. */
 .sc-line-body > .sc-para { display: block; }
@@ -6613,7 +6624,7 @@ html.dark .sc-avatar-wiseai { background: #fff; color: #141414; }
   background: transparent; color: var(--text-muted);
   border: 1.5px solid var(--border-strong);
 }
-.sc-line strong { color: var(--primary-ink, var(--primary)); font-weight: 700; }
+.sc-line strong, .sc-line b { color: inherit; font-weight: 700; }
 .sc-typing { display: inline-flex; gap: 4px; vertical-align: middle; }
 .sc-typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--text-subtle); animation: scBlink 1.2s infinite; }
 .sc-typing span:nth-child(2) { animation-delay: 0.2s; }
@@ -6731,6 +6742,10 @@ html.dark .ws-logo-wrap .ws-pulse-ring { --ws-track: rgba(174, 200, 237, 0.55); 
 @keyframes wsTrackSpin { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .ws-logo-wrap .ws-pulse-ring { animation: none; } }
 .ws-heading { font-family: 'WISE Digits', var(--module-title-family, var(--font-serif, 'Noto Serif', Georgia, serif)); font-size: clamp(1.5rem, 1rem + 1.6vw, 2rem); font-weight: 700; letter-spacing: -0.02em; color: var(--text); text-align: center; margin: 0 0 0.5rem; }
+.sc-welcome:not(.ws-in) > .ws-heading,
+.sc-welcome:not(.ws-in) > .ws-sub,
+.sc-welcome:not(.ws-in) .ws-chips .chip,
+.sc-welcome:not(.ws-in) .ws-scorecard { opacity: 0; }
 /* Trademark mark in the welcome heading: dropped a size and nudged up so it
    reads as a superscript ™ rather than a full-height glyph. */
 .ws-heading .ws-tm { font-size: 0.55em; vertical-align: 0.42em; font-weight: 600; letter-spacing: 0; }
@@ -6742,7 +6757,7 @@ html.dark .ws-logo-wrap .ws-pulse-ring { --ws-track: rgba(174, 200, 237, 0.55); 
 .ws-chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 100%; width: 100%; margin-bottom: 2rem; }
 .ws-chips .chip { width: fit-content; max-width: 100%; flex: 0 0 auto; }
 /* Welcome intent chips. Cap at TWO wrapping rows; overflow is revealed by a
-   trailing "Load more" chip (see clampWelcomeChips in js/wiseai-chat.js) —
+   trailing "Show more" chip (see clampWelcomeChips in js/wiseai-chat.js) —
    never a one-line horizontal carousel or a scrollable chip well. */
 .sc-welcome > .ws-chips-scroll {
   --ws-chip-h: 28px;
@@ -6811,7 +6826,7 @@ html.dark .sc-card .ws-chips-wrap::after { background: linear-gradient(to left, 
   display: flex; flex-wrap: wrap; gap: 8px;
   justify-content: flex-start;
   width: auto; max-width: 100%;
-  margin: -0.4rem 0 1.1rem; padding-left: 42px;
+  margin: -0.4rem 0 0.85rem; padding-left: 42px;
 }
 .sc-inline-chips .chip { width: fit-content; max-width: 100%; flex: 0 0 auto; margin: 0; }
 
@@ -6973,6 +6988,15 @@ html.dark .ws-intent-chip:hover {
 .chip.chip-primary:hover { background: color-mix(in srgb, var(--primary) 90%, #000); border-color: color-mix(in srgb, var(--primary) 90%, #000); color: #fff; }
 .chip.chip-primary .material-symbols-outlined { color: #fff !important; font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 html.dark .chip.chip-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+.chip.chip-primary.ws-intent-chip--more {
+  background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600;
+}
+.chip.chip-primary.ws-intent-chip--more:hover {
+  background: color-mix(in srgb, var(--primary) 90%, #000); border-color: color-mix(in srgb, var(--primary) 90%, #000); color: #fff;
+}
+.chip.chip-primary.ws-intent-chip--more .material-symbols-outlined {
+  color: #fff !important; font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
 /* Welcome / shortcut intent chips share the same 28px .chip size. Brand-blue
    leading glyph; the trailing .ws-lock badge keeps its own colours. */
 .ws-intent-chip { background: color-mix(in srgb, var(--primary) 10%, #fff); border-color: var(--border-strong); color: var(--text-muted); font-weight: 500; }
@@ -7092,7 +7116,7 @@ html.chat-sheen-off .fl-input-wrap::before { display: none; }
 /* The text field is a 1-row <textarea> (so composer-v2 can grow it) but is
    locked to single-line input behaviour by default: wrap="off" + hidden
    overflow scroll horizontally exactly like the old <input>. */
-.fl-input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; font-size: 13px; font-weight: 400; line-height: 18px; padding: 8px 0; color: var(--text); font-family: inherit; resize: none; overflow: hidden; }
+.fl-input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; font-size: var(--fs-chat, 0.875rem); font-weight: 400; line-height: 1.45; padding: 8px 0; color: var(--text); font-family: inherit; resize: none; overflow: hidden; }
 .fl-input::placeholder { color: color-mix(in srgb, var(--text-subtle) 45%, transparent); font-style: italic; }
 .fl-icon-btn {
   width: 32px; height: 32px; border-radius: 9999px; color: var(--text-muted); cursor: pointer;
@@ -7452,70 +7476,40 @@ html.dark .fl-db-module .fl-db-top { background: transparent; }
   transform: translate(2px, 0);
 }
 
-/* ===== Composer v2 — Appearance ▸ "New chat input" (Admin toggle). One pill
-   row: "+" far left, the text field beside it, then the database selector
-   docked bottom-right just LEFT of the send button. The field soft-wraps and
-   grows (see wireComposerGrow in js/wiseai-chat.js); the rail is bottom-
-   anchored so the pill grows UPWARD while "+", the selector and send hold the
-   bottom line. ===== */
-/* Pill becomes a rounded-corner rectangle matching the module's own corners
-   (.sc-card uses --r-md), so the container reads clean when the field grows. */
-html.composer-v2 .fl-input-wrap--stacked { align-items: flex-end; border-radius: var(--r-md, 16px); }
-html.composer-v2 .fl-input-wrap--stacked .fl-more-wrap { margin-bottom: 1px; }
-html.composer-v2 .fl-input-wrap--stacked .fl-input-col { flex-direction: row; align-items: flex-end; gap: 6px; flex-wrap: wrap; }
-/* DOM order keeps the selector row first (v1 stacks it on top) — flip it
-   visually so the text field leads and the selector trails next to send.
-   The line box stretches the pill's full height and centers the field, so a
-   single-line placeholder sits dead-center against the controls (matching the
-   canonical wiseai.html composer) no matter how each page's font metrics
-   round; once the field grows IT defines the height and nothing shifts. */
-html.composer-v2 .fl-input-wrap--stacked .fl-input-line { order: 1; flex: 1 1 auto; min-width: 0; align-self: stretch; align-items: center; }
-html.composer-v2 .fl-input-wrap--stacked .fl-model-row { order: 2; flex: 0 0 auto; flex-wrap: nowrap; margin-bottom: 8px; }
-html.composer-v2 .fl-model-wrap--lead { align-self: auto; }
-/* Single line sits centered against the 34px send circle; past ~7 lines the
-   field stops growing and scrolls internally. */
-html.composer-v2 .fl-input-wrap--stacked .fl-input { padding: 7px 0; max-height: 140px; overflow-y: auto; }
-html.composer-v2 .fl-input-wrap--stacked .sc-send { align-self: flex-end; }
-/* Pending chips claim their own full-width row beneath the text field: the
-   wrap opens a new flex line, so every extra chip row grows the pill upward
-   while "+", the selector and send keep holding the bottom line. */
-html.composer-v2 .fl-input-wrap--stacked .fl-attachments { order: 3; flex: 1 1 100%; padding: 0 0 6px; }
-
-/* Narrow composers (side-panel chats, squeezed modules): there isn't room for
-   text + selector + send on one line, so the text field moves to its OWN row
-   ABOVE the controls — "+" bottom-left, DB selector + send bottom-right.
-   Sized by a container query on the input row so each module responds to its
-   own width, not the viewport's. */
-html.composer-v2 .sc-input-row { container-type: inline-size; container-name: wise-composer; }
-@container wise-composer (max-width: 420px) {
-  html.composer-v2 .fl-input-wrap--stacked {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    grid-template-areas:
-      "text text text"
-      "plus db   send";
-    align-items: center;
-    row-gap: 2px;
-  }
-  /* With chips pending, open a dedicated full-width row for them between the
-     text line and the bottom controls (the row costs nothing when absent —
-     `has-attachments` comes off the wrap as soon as the chips clear). */
-  html.composer-v2 .fl-input-wrap--stacked.has-attachments {
-    grid-template-areas:
-      "text text text"
-      "att  att  att"
-      "plus db   send";
-  }
-  /* Dissolve the flex column so the selector row, text line and chip row
-     become grid items of the wrap itself. */
-  html.composer-v2 .fl-input-wrap--stacked .fl-input-col { display: contents; }
-  html.composer-v2 .fl-input-wrap--stacked .fl-attachments { grid-area: att; padding: 0 4px 2px 8px; }
-  html.composer-v2 .fl-input-wrap--stacked .fl-input-line { grid-area: text; margin: 0; }
-  html.composer-v2 .fl-input-wrap--stacked .fl-more-wrap { grid-area: plus; margin: 0; }
-  html.composer-v2 .fl-input-wrap--stacked .fl-model-row { grid-area: db; justify-self: end; margin: 0; }
-  html.composer-v2 .fl-input-wrap--stacked .sc-send { grid-area: send; }
-  html.composer-v2 .fl-input-wrap--stacked .fl-input { padding: 6px 4px 2px 8px; }
+/* ===== Composer v2 — always the stacked grid, at every width. Text is its
+   own full-width row. "+" / database / send hold the bottom line. The field
+   soft-wraps and grows (see wireComposerGrow in js/wiseai-chat.js); the rail
+   is bottom-anchored so the pill grows UPWARD. Do not put the last line of
+   copy beside the controls — that was the old wide-welcome flex wrap. ===== */
+html.composer-v2 .fl-input-wrap--stacked {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "text text text"
+    "plus db   send";
+  align-items: center;
+  row-gap: 2px;
+  border-radius: var(--r-md, 16px);
 }
+/* Pending chips open a dedicated full-width row between the text and the
+   bottom controls (`has-attachments` comes off the wrap when chips clear). */
+html.composer-v2 .fl-input-wrap--stacked.has-attachments {
+  grid-template-areas:
+    "text text text"
+    "att  att  att"
+    "plus db   send";
+}
+/* Dissolve the flex column so the selector row, text line and chip row
+   become grid items of the wrap itself. */
+html.composer-v2 .fl-input-wrap--stacked .fl-input-col { display: contents; }
+html.composer-v2 .fl-input-wrap--stacked .fl-attachments { grid-area: att; padding: 0 4px 2px 8px; }
+html.composer-v2 .fl-input-wrap--stacked .fl-input-line { grid-area: text; margin: 0; }
+html.composer-v2 .fl-input-wrap--stacked .fl-more-wrap { grid-area: plus; margin: 0; }
+html.composer-v2 .fl-input-wrap--stacked .fl-model-row { grid-area: db; justify-self: end; margin: 0; flex-wrap: nowrap; }
+html.composer-v2 .fl-model-wrap--lead { align-self: auto; }
+html.composer-v2 .fl-input-wrap--stacked .sc-send { grid-area: send; }
+/* Past ~7 lines the field stops growing and scrolls internally. */
+html.composer-v2 .fl-input-wrap--stacked .fl-input { padding: 6px 4px 2px 8px; max-height: 140px; overflow-y: auto; }
 
 /* ===== Chat tint — Appearance ▸ "Blue chat surface" (Admin toggle). Washes
    the chat module's surfaces (card, messages area, input rail) with the
@@ -7570,16 +7564,14 @@ html.chat-compact .sc-welcome--cards { padding-top: 1.25rem; }
 html.chat-compact .sc-settings .ss-body { padding: 12px; }
 
 /* ===== Brand AI text — three-dot menu ▸ "Brand AI text" (Admin, pink).
-   Recolours every WISEcodeAI transcript line to the brand blue APP-WIDE, while
-   the member's own lines keep the default (near-black) ink so the two speakers
-   read as distinct. A single global class (html.chat-brandtext) so every chat
-   module — and every transcript that uses the shared .sc-line-* classes —
-   recolours at once. Dark mode uses the brighter brand tone (--primary-bright)
-   so the AI copy stays legible on the navy card. KEEP IN SYNC with
+   Same pairing as the default: member lines in brand blue, WISEcodeAI in the
+   default ink. The class stays so the switch still tracks; it must not put
+   blue back on the assistant. Dark mode uses --primary-bright on the member
+   so the ask stays legible on the navy card. KEEP IN SYNC with
    wiseai-chat.css. */
-html.chat-brandtext .sc-line-wiseai .sc-line-body { color: var(--primary); }
-html.dark.chat-brandtext .sc-line-wiseai .sc-line-body { color: var(--primary-bright, #8B9FAF); }
-html.chat-brandtext .sc-line-you .sc-line-body { color: var(--text); }
+html.chat-brandtext .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary); }
+html.dark.chat-brandtext .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary-bright, #8B9FAF); }
+html.chat-brandtext .sc-line-wiseai .sc-line-body { color: var(--text); }
 
 /* ===== Brand connectors — a centered, wrapping rail of data-source pills
    docked beneath the input (retailer & food-data APIs: Kroger, Walmart,
@@ -7725,7 +7717,7 @@ html.dark .sc-trust-badge .material-symbols-outlined { color: var(--primary-brig
    so the inherited 1.6 chat leading doesn't pad the stamp like a blank line. */
 .sc-line-meta {
   display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px;
-  margin-top: 2px; margin-bottom: 8px; line-height: 1.2;
+  margin-top: 1px; margin-bottom: 4px; line-height: 1.2;
 }
 .sc-line-you .sc-line-meta { justify-content: flex-start; }
 .sc-line-time { font-size: 0.625rem; font-weight: 500; letter-spacing: 0.02em;
@@ -9293,6 +9285,51 @@ html.dark .dash-score-toast::after { background: #5A8BB8; }
   .dash-score-toast.is-portaled {
     animation: dash-score-toast-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
+}
+
+/* Gold nudge — same floaty as the navy score toast, for a new surface. Dark
+   brown ink on WISE gold so the card stays readable in both themes. */
+.dash-score-toast--gold {
+  background: linear-gradient(135deg, #C4890A 0%, #E8B020 48%, var(--ter-amber, #FFC434) 100%);
+  color: #3D2208;
+  box-shadow: 0 14px 34px rgba(196, 137, 10, 0.42), 0 4px 10px rgba(0, 0, 0, 0.14);
+  animation:
+    dash-score-toast-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both,
+    dash-score-toast-float-gold 3.6s ease-in-out 0.32s infinite;
+}
+.dash-score-toast--gold::after { background: #E8B020; }
+html.dark .dash-score-toast--gold {
+  background: linear-gradient(135deg, #D4A017 0%, var(--ter-amber, #FFC434) 100%);
+  color: #3D2208;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5), 0 4px 14px rgba(255, 196, 52, 0.28);
+}
+html.dark .dash-score-toast--gold::after { background: var(--ter-amber, #FFC434); }
+.dash-score-toast--gold .dash-score-toast-icon .material-symbols-outlined,
+.dash-score-toast--gold .dash-score-toast-link,
+.dash-score-toast--gold .dash-score-toast-close { color: #3D2208; }
+.dash-score-toast--gold .dash-score-toast-text { color: rgba(61, 34, 8, 0.88); }
+.dash-score-toast--gold .dash-score-toast-close { background: rgba(61, 34, 8, 0.12); }
+.dash-score-toast--gold .dash-score-toast-close:hover { background: rgba(61, 34, 8, 0.22); }
+.dash-score-toast--gold .dash-score-toast-link:hover { color: rgba(61, 34, 8, 0.7); }
+.dash-score-toast--gold.is-portaled .dash-score-toast-link,
+.dash-score-toast--gold.is-portaled .dash-score-toast-link:link,
+.dash-score-toast--gold.is-portaled .dash-score-toast-link:visited,
+.dash-score-toast--gold.is-portaled .dash-score-toast-link:hover,
+.dash-score-toast--gold.is-portaled .dash-score-toast-link:focus {
+  color: #3D2208;
+}
+@keyframes dash-score-toast-float-gold {
+  0%, 100% {
+    transform: translateY(0);
+    box-shadow: 0 14px 34px rgba(196, 137, 10, 0.42), 0 4px 10px rgba(0, 0, 0, 0.14);
+  }
+  50% {
+    transform: translateY(-11px);
+    box-shadow: 0 28px 52px rgba(196, 137, 10, 0.34), 0 12px 22px rgba(0, 0, 0, 0.12);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-score-toast--gold { animation: dash-score-toast-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
 }
 
 /* Tiny “Dismiss for now / session” menu, portaled to body and anchored above
@@ -16480,7 +16517,9 @@ html.dark .mi-pane-comp-link:hover { color: var(--primary-bright, #93C5FD); }
 .ds-type-row.is-flash,
 .mi-code-card.is-flash,
 .ds-color-group.is-flash,
-.ds-font-card.is-flash {
+.ds-font-card.is-flash,
+#mi-tarch [data-tarch-target].is-flash,
+#mi-tarch [data-tarch-label].is-flash {
   border-color: var(--sec-green, #32A966);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--sec-green, #32A966) 40%, transparent);
 }
@@ -16573,6 +16612,12 @@ html.dark .mi-module-eyebrow { color: var(--primary-bright, #93C5FD); }
    (including before JS wraps it in .mi-acc-body) so sections never flash open. */
 .mi-module.is-collapsed .mi-module-lede { display: none; }
 .mi-module.is-collapsed > :not(.mi-module-head) { display: none; }
+/* Accordion labels never carry a ⋯. Ready pills stay. */
+.mi-module > .mi-module-head > .panel-controls,
+.mi-module > .mi-module-head .panel-more-wrap,
+.mi-module > .mi-module-head .panel-more-btn {
+  display: none !important;
+}
 .mi-module.mi-acc:not(.is-collapsed) > .mi-acc-body { display: block; }
 .mi-module.mi-acc > .mi-module-head:focus-visible {
   outline: none; border-radius: 12px;
@@ -17485,6 +17530,34 @@ html.dark .dsc-ready--ai {
 .dsc-ready--ai .dash-brand-toggle[aria-checked="true"] .dash-brand-toggle-thumb {
   background: #fff;
 }
+/* More than one part ready for AI, not all — Not for AI shifts from pink
+   to a lighter orange. Counters stay unchanged. WIP Ready stays pink. */
+.dsc-ready--ai.is-partial {
+  --dsc-ai-partial: #E59A3C;
+}
+html.dark .dsc-ready--ai.is-partial {
+  --dsc-ai-partial: #F0B25A;
+}
+.dsc-ready--ai.is-partial .dash-brand-toggle:not(.is-on):not([aria-checked="true"]) {
+  background: color-mix(in srgb, var(--dsc-ai-partial) 16%, transparent);
+  border-color: color-mix(in srgb, var(--dsc-ai-partial) 48%, transparent);
+  color: #D4842A;
+}
+.dsc-ready--ai.is-partial .dash-brand-toggle:not(.is-on):not([aria-checked="true"]):hover {
+  background: color-mix(in srgb, var(--dsc-ai-partial) 26%, transparent);
+  border-color: color-mix(in srgb, var(--dsc-ai-partial) 68%, transparent);
+  color: #fff;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--dsc-ai-partial) 16%, transparent);
+}
+.dsc-ready--ai.is-partial .dash-brand-toggle:not(.is-on):not([aria-checked="true"]) .dash-brand-toggle-track {
+  background: color-mix(in srgb, var(--dsc-ai-partial) 36%, transparent);
+}
+.dsc-ready--ai.is-partial .dash-brand-toggle:not(.is-on):not([aria-checked="true"]) .dash-brand-toggle-thumb {
+  background: var(--dsc-ai-partial);
+}
+html.dark .dsc-ready--ai.is-partial .dash-brand-toggle:not(.is-on):not([aria-checked="true"]) {
+  color: #F0B25A;
+}
 /* Card headers are tight — stack WIP above AI so the pair does not
    stretch the title row. Module heads stay a horizontal pair. */
 .dsc-card-head .dsc-ready-row,
@@ -17623,8 +17696,11 @@ html.dark .dsc-ready--ai {
   display: inline;
   padding: 0; border: 0; border-radius: 0; background: none;
   color: var(--text-muted); font-size: 0.625rem; font-weight: 600; line-height: 1.45;
-  text-decoration: none;
-  transition: color 0.15s ease;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--text-muted) 42%, transparent);
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
 }
 .dsc-used-link:hover,
 .dsc-used-link.is-hover { color: var(--primary-ink, var(--primary)); text-decoration: underline; }
@@ -17655,7 +17731,7 @@ html.dark .dsc-note > .material-symbols-outlined { color: var(--primary-bright, 
    in situ render inline + inert inside the demo stage. */
 .dsc-demo .topbar-popover { position: static; animation: none; display: block; }
 .dsc-demo .topbar-popover.sc-menu-grouped {
-  position: relative; display: flex; flex-direction: row; flex-wrap: wrap;
+  position: relative; display: flex; flex-direction: row; flex-wrap: nowrap;
   align-items: start; gap: 8px; padding: 8px;
   width: max-content; max-width: min(920px, 100%);
 }
@@ -17793,9 +17869,9 @@ html.dark .dsc-demo .pf-avatar-preview { background: rgba(255,255,255,0.05); }
   width: 100%;
   flex: 0 0 auto;
 }
-/* Pin demos to single-pane chat width so the real ≤420px composer grid
-   applies: text on its own row, "+" / database / send on the bottom —
-   matching Add Product / docked WISEcodeAI, not the wide welcome-chat row. */
+/* Pin demos to single-pane chat width as a representative size. The stacked
+   grid (text on its own row, "+" / database / send on the bottom) now
+   applies at every width — including the wide welcome / Helix chat. */
 .dsc-demo [data-wise-composer] {
   width: 380px;
   max-width: 100%;
@@ -18115,8 +18191,12 @@ html.dark #mi-motion .wa-merge-chip,
 }
 .dsc-demo .sc-line-body {
   flex: 1 1 0%; min-width: 0;
-  font-size: var(--fs-chat, 0.9375rem); line-height: 1.6; color: var(--text);
+  font-size: var(--fs-chat, 0.875rem); line-height: 1.6; color: var(--text);
 }
+.dsc-demo .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary); }
+.dsc-theme-dark .dsc-demo .sc-line-you:not(.sc-line-event) .sc-line-body,
+html.dark .dsc-demo .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary-bright, #8B9FAF); }
+.dsc-demo .sc-line-wiseai .sc-line-body { color: var(--text); }
 .dsc-demo .sc-line-body > .sc-para { display: block; }
 .dsc-demo .sc-line-meta {
   display: flex; align-items: center; gap: 6px; margin-top: 4px;
@@ -18151,7 +18231,7 @@ html.dark .dsc-demo .sc-line-time { color: color-mix(in srgb, var(--text-subtle)
 .dsc-demo .sc-fb-up-wrap,
 .dsc-demo .sc-fb-down-wrap,
 .dsc-demo .sc-fb-more-wrap { position: relative; display: inline-flex; flex-wrap: wrap; align-items: center; }
-.dsc-demo .sc-fb-time { margin-right: 6px; white-space: nowrap; flex-shrink: 0; }
+.dsc-demo .sc-fb-time { margin-left: 6px; white-space: nowrap; flex-shrink: 0; }
 .dsc-demo .sc-fb-btn {
   display: inline-flex; align-items: center; justify-content: center;
   width: 22px; height: 22px; border: 0; border-radius: 50%;
@@ -18194,12 +18274,23 @@ html.dark .dsc-demo .sc-line-time { color: color-mix(in srgb, var(--text-subtle)
 .dsc-demo .sc-fb-send { align-self: flex-end; font-size: 11.5px !important; padding: 5px 14px !important; font-weight: 700; }
 .dsc-demo .sc-fb-menu {
   display: none; position: static; z-index: 3;
-  align-items: center; gap: 6px; margin-top: 8px; padding: 6px 8px; border-radius: 12px;
+  flex-direction: column; align-items: stretch; gap: 0;
+  margin-top: 8px; padding: 6px 8px 7px; border-radius: 12px;
+  min-width: 220px; max-width: 340px;
   background: var(--surface); border: 1px solid var(--border-strong); box-shadow: var(--shadow-2);
 }
-.dsc-demo .sc-fb-menu.is-demo-open { display: inline-flex; }
+.dsc-demo .sc-fb-menu.is-demo-open { display: flex; }
 .dsc-demo .sc-fb-menu[hidden]:not(.is-demo-open) { display: none; }
 .dsc-demo .sc-fb-menu-actions { display: inline-flex; align-items: center; gap: 1px; }
+.dsc-demo .sc-fb-menu-div { display: block; height: 1px; margin: 6px 0 5px; background: var(--border); }
+html.dark .dsc-demo .sc-fb-menu-div { background: rgba(255,255,255,0.10); }
+.dsc-demo .sc-fb-menu-tokens {
+  display: block; font-size: 10.5px; line-height: 1.45;
+  font-variant-numeric: tabular-nums; color: var(--text-subtle); text-align: left;
+}
+.dsc-demo .sc-fb-menu-tokens em { color: var(--primary-ink, var(--primary)); font-style: normal; }
+html.dark .dsc-demo .sc-fb-menu-tokens em { color: #7fb0ff; }
+.dsc-demo .sc-fb-menu-tokens b { color: var(--sec-green-text, #1E7A34); font-weight: 700; }
 .dsc-demo .sc-fb-id {
   margin-left: 3px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em;
   color: var(--text-subtle); cursor: default;
@@ -18216,6 +18307,15 @@ html.dark .dsc-demo .sc-line-time { color: color-mix(in srgb, var(--text-subtle)
   width: 100%; flex-wrap: nowrap; align-items: flex-end; justify-content: flex-start;
 }
 .dsc-state-col--token-open { margin-left: auto; align-items: flex-end; }
+.dsc-states.dsc-states--token-transcript {
+  width: 100%; flex-wrap: wrap; align-items: flex-end; justify-content: flex-start;
+}
+.dsc-demo .dsc-token-transcript-open .sc-fb-more-wrap {
+  flex-direction: column-reverse; flex-wrap: nowrap; align-items: center; gap: 8px;
+}
+.dsc-demo .dsc-token-transcript-open .sc-fb-menu {
+  margin-top: 0; margin-bottom: 0;
+}
 .dsc-demo .sc-activity { display: flex; justify-content: center; margin: 0; }
 .dsc-demo .sc-activity-wrap { position: relative; display: inline-flex; flex-direction: column; align-items: center; }
 .dsc-demo .sc-activity.is-open .sc-activity-wrap { flex-direction: column-reverse; }
@@ -19066,13 +19166,96 @@ html.dark .mi-code-ic { color: var(--primary-bright, #93C5FD); }
 html.dark .mi-code-pill.is-up { color: #4ADE80; }
 html.dark .mi-code-pill.is-down { color: #F87171; }
 .mi-code-pill-win { font-weight: 600; opacity: 0.75; }
-.mi-code-spark { width: 100%; height: 84px; display: block; }
+.mi-code-spark-wrap {
+  position: relative; width: 100%; cursor: crosshair; touch-action: none;
+  outline: none;
+}
+.mi-code-spark-hit {
+  position: absolute; inset: 0; z-index: 2;
+}
+.mi-code-spark-wrap:focus-visible {
+  border-radius: 8px;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 45%, transparent);
+}
+.mi-code-spark { width: 100%; height: 84px; display: block; pointer-events: none; }
 .mi-code-spark-line {
   fill: none; stroke: var(--primary); stroke-width: 1.6;
   vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round;
 }
 html.dark .mi-code-spark-line { stroke: var(--primary-bright, #93C5FD); }
 .mi-code-spark-fill { fill: color-mix(in srgb, var(--primary) 14%, transparent); stroke: none; }
+.mi-code-spark-cursor {
+  position: absolute; top: 0; bottom: 0; width: 0;
+  transform: translateX(-50%); pointer-events: none; z-index: 1;
+}
+.mi-code-spark-rule {
+  position: absolute; left: 50%; top: 0; bottom: 0; width: 1px;
+  background: var(--primary); opacity: 0.45; transform: translateX(-50%);
+}
+html.dark .mi-code-spark-rule { background: var(--primary-bright, #93C5FD); }
+.mi-code-spark-dot {
+  position: absolute; left: 50%; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--primary); border: 2px solid var(--surface);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 30%, transparent);
+}
+html.dark .mi-code-spark-dot {
+  background: var(--primary-bright, #93C5FD);
+  border-color: #14242f;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-bright, #93C5FD) 35%, transparent);
+}
+.mi-code-spark-live {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+#mi-code-spark-tip {
+  position: fixed; z-index: 10000; left: 0; top: 0;
+  min-width: 168px; max-width: 240px; padding: 10px 13px 11px;
+  border-radius: 10px; background: var(--surface); color: var(--text);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card, 0 8px 24px rgba(0, 0, 0, 0.18));
+  font-family: inherit; pointer-events: none;
+  opacity: 0; transform: translateY(4px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+#mi-code-spark-tip.is-visible { opacity: 1; transform: translateY(0); }
+html.dark #mi-code-spark-tip {
+  background: #14242f; border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+.mi-code-spark-tip-date {
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif'), Georgia, serif;
+  font-size: 0.92rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
+  line-height: 1.15;
+}
+.mi-code-spark-tip-num {
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif'), Georgia, serif;
+  font-size: 1.15rem; font-weight: 800; color: var(--text);
+  font-variant-numeric: tabular-nums; line-height: 1.2; margin-top: 2px;
+}
+.mi-code-spark-tip-num span {
+  font-family: inherit; font-size: 0.7rem; font-weight: 600; color: var(--text-subtle);
+}
+.mi-code-spark-tip-delta {
+  font-size: 0.7rem; font-weight: 700; margin-top: 3px;
+}
+.mi-code-spark-tip-delta.is-up { color: #15803D; }
+.mi-code-spark-tip-delta.is-down { color: #B91C1C; }
+.mi-code-spark-tip-delta.is-flat { color: var(--text-subtle); }
+html.dark .mi-code-spark-tip-delta.is-up { color: #4ADE80; }
+html.dark .mi-code-spark-tip-delta.is-down { color: #F87171; }
+.mi-code-spark-tip-rows {
+  display: grid; gap: 2px 12px; margin-top: 8px; padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.mi-code-spark-tip-rows > div {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+}
+.mi-code-spark-tip-rows span { font-size: 0.68rem; font-weight: 600; color: var(--text-subtle); }
+.mi-code-spark-tip-rows strong {
+  font-size: 0.74rem; font-weight: 700; color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
 .mi-code-spark-cap { display: flex; justify-content: space-between; gap: 10px; font-size: 0.68rem; color: var(--text-subtle); }
 .mi-code-updated { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; color: var(--text-subtle); }
 .mi-code-updated .material-symbols-outlined { font-size: 15px !important; }
@@ -20190,3 +20373,362 @@ html.dark .dsc-demo .rp-view { color: var(--primary-bright, var(--primary)); }
 .dsc-demo .rp-waitlist .material-symbols-outlined { font-size: 15px !important; }
 .dsc-demo .rp-card.is-locked { background: color-mix(in srgb, var(--surface-2) 55%, var(--surface)); }
 .dsc-demo .rp-card.is-locked .rp-name { color: var(--text-muted); }
+
+/* ------------------------------------------------------------------ */
+/* Transcript Architecture — frozen labeled conversation               */
+/* ------------------------------------------------------------------ */
+#mi-tarch .mi-module-lede { max-width: 88ch; }
+.mi-tarch { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+.mi-tarch-stage {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(128px, 168px) minmax(0, 1fr) minmax(128px, 168px);
+  gap: 6px 10px;
+  align-items: start;
+  overflow: hidden;
+}
+.mi-tarch-arrows {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 4; overflow: hidden;
+  color: color-mix(in srgb, var(--primary) 55%, var(--text-subtle));
+}
+.mi-tarch-arrow {
+  stroke: currentColor; stroke-width: 1.2; fill: none;
+  opacity: 0.78;
+}
+.mi-tarch-arrow.is-hot {
+  color: var(--primary);
+  stroke-width: 1.85;
+  opacity: 1;
+}
+html.dark .mi-tarch-arrows { color: color-mix(in srgb, var(--primary-bright, #93C5FD) 62%, var(--text-subtle)); }
+html.dark .mi-tarch-arrow.is-hot { color: var(--primary-bright, #93C5FD); }
+
+.mi-tarch-col { display: flex; flex-direction: column; gap: 10px; padding-top: 8px; }
+.mi-tarch-col--left { align-items: stretch; }
+.mi-tarch-col--right { align-items: stretch; }
+.mi-tarch-label {
+  position: relative;
+  display: flex; align-items: flex-start; gap: 6px;
+  width: 100%; margin: 0; padding: 6px 8px;
+  border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface); color: inherit; text-align: left;
+  box-shadow: var(--shadow-1); cursor: pointer;
+  font: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.mi-tarch-col--left .mi-tarch-label { padding-right: 12px; }
+.mi-tarch-col--right .mi-tarch-label { padding-left: 12px; flex-direction: row-reverse; text-align: right; }
+.mi-tarch-col--right .mi-tarch-label-copy { align-items: flex-end; }
+.mi-tarch-label:hover,
+.mi-tarch-label:focus-visible,
+.mi-tarch-label.is-hot {
+  border-color: color-mix(in srgb, var(--primary) 48%, var(--border));
+  box-shadow: var(--shadow-2);
+  background: color-mix(in srgb, var(--primary) 7%, var(--surface));
+  outline: none;
+}
+html.dark .mi-tarch-label { background: rgba(255,255,255,0.03); }
+html.dark .mi-tarch-label:hover,
+html.dark .mi-tarch-label:focus-visible,
+html.dark .mi-tarch-label.is-hot {
+  background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 10%, var(--surface));
+}
+.mi-tarch-label-ic {
+  flex: 0 0 auto; width: 16px; height: 16px;
+  display: grid; place-items: center; color: var(--primary);
+}
+.mi-tarch-label-ic .material-symbols-outlined { font-size: 15px !important; }
+html.dark .mi-tarch-label-ic { color: var(--primary-bright, #93C5FD); }
+.mi-tarch-label-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mi-tarch-label-title {
+  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-size: 0.78rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text); line-height: 1.2;
+}
+.mi-tarch-label-body {
+  font-size: 0.625rem; line-height: 1.3; color: var(--text-muted);
+}
+.mi-tarch-jump {
+  display: inline-block;
+  margin-top: 3px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  pointer-events: auto;
+}
+html.dark .mi-tarch-jump { color: var(--primary-bright, #93C5FD); }
+.mi-tarch-jump:hover,
+.mi-tarch-jump:focus-visible { color: var(--primary-ink, var(--primary)); }
+.mi-tarch-dot {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 22%, transparent);
+}
+.mi-tarch-col--left .mi-tarch-dot { right: -3px; }
+.mi-tarch-col--right .mi-tarch-dot { left: -3px; }
+.mi-tarch-label.is-hot .mi-tarch-dot {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 28%, transparent);
+}
+
+/* Hit hugs the real control. Pin sits on the facing edge so arrows
+   land on the chip / stack / dots / rail — not the row gutter. */
+.mi-tarch-hit {
+  position: relative;
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
+  vertical-align: top;
+}
+.mi-tarch-hit[data-tarch-target="chats"],
+.mi-tarch-hit[data-tarch-target="lines"],
+.mi-tarch-hit[data-tarch-target="fork"],
+.mi-tarch-hit[data-tarch-target="activity"],
+.mi-tarch-hit[data-tarch-target="composer"] {
+  display: block;
+  width: 100%;
+}
+.mi-tarch-strip .wa-activity-rail.mi-tarch-hit {
+  display: block;
+  width: 3px;
+}
+.mi-tarch-pin {
+  position: absolute;
+  top: 50%;
+  width: 1px;
+  height: 1px;
+  margin-top: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.mi-tarch-pin[data-tarch-side="left"] { left: 0; }
+.mi-tarch-pin[data-tarch-side="right"] { right: 0; }
+
+.mi-tarch-specimen {
+  display: grid;
+  grid-template-columns: minmax(108px, 148px) minmax(0, 1fr) minmax(120px, 168px);
+  gap: 8px;
+  min-width: 0;
+  pointer-events: none;
+  user-select: none;
+}
+.mi-tarch-history {
+  max-width: none !important; width: auto; min-width: 0;
+  padding: 6px 4px 8px; align-self: start;
+  font-size: 0.72rem;
+}
+.mi-tarch-history .wch-projects-head { padding: 2px 6px 6px; }
+.mi-tarch-history .wch-projects-title { font-size: 0.68rem; }
+.mi-tarch-history .wch-item { padding: 4px 6px; gap: 6px; }
+.mi-tarch-history .wch-item-title { font-size: 0.72rem; }
+.mi-tarch-history .wch-item-actions { display: none; }
+.mi-tarch-history.is-hot,
+.mi-tarch-chat.is-hot,
+[data-tarch-target].is-hot {
+  outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent);
+  outline-offset: 3px;
+  border-radius: 12px;
+}
+.mi-tarch-history.is-flash,
+[data-tarch-target].is-flash {
+  animation: mi-tarch-flash 1.1s ease;
+}
+@keyframes mi-tarch-flash {
+  0%, 100% { box-shadow: none; }
+  30% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 38%, transparent); }
+}
+
+.mi-tarch-chat {
+  position: relative;
+  min-width: 0;
+  display: flex; flex-direction: column;
+  border-radius: var(--r-md, 16px);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  font-size: 0.78rem;
+}
+html.dark .mi-tarch-chat {
+  background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+  border-color: rgba(37, 80, 124, 0.18);
+}
+.mi-tarch-cwr {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  z-index: 5;
+}
+#mi-tarch .mi-cwr { transform: scale(0.72); transform-origin: right center; }
+
+.mi-tarch-turns {
+  align-self: start;
+  padding: 8px 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  min-width: 0;
+}
+html.dark .mi-tarch-turns { background: rgba(255,255,255,0.03); }
+.mi-tarch-turns-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  margin-bottom: 8px;
+}
+.mi-tarch-turns-title {
+  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-size: 0.78rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
+}
+.mi-tarch-turns-admin {
+  font-size: 0.5625rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--primary);
+}
+html.dark .mi-tarch-turns-admin { color: var(--primary-bright, #93C5FD); }
+#mi-tarch .mi-tarch-turns .wt-turn { padding: 7px 8px; margin-bottom: 6px; }
+#mi-tarch .mi-tarch-turns .wt-turn:last-of-type { margin-bottom: 0; }
+#mi-tarch .mi-tarch-turns .wt-turn-q { font-size: 0.68rem; }
+#mi-tarch .mi-tarch-turns .wt-turn-a { display: none; }
+
+.mi-tarch-chat .chat-topbar { padding: 6px 10px; height: 40px; min-height: 40px; }
+.mi-tarch-chat .topbar-title { font-size: 0.85rem; }
+.mi-tarch-chat .sc-bug { width: 36px; height: 18px; }
+.mi-tarch-chat .sc-avatar { width: 22px; height: 22px; font-size: 0.62rem; }
+
+.mi-tarch-thread {
+  position: relative;
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 10px 12px 10px 22px;
+  background: var(--bg);
+}
+html.dark .mi-tarch-thread { background: transparent; }
+.mi-tarch-thread .sc-line { margin-bottom: 0.35rem; }
+.mi-tarch-thread .sc-para { font-size: 0.78rem; line-height: 1.4; }
+.mi-tarch-thread .sc-reply-chips { margin: 6px 0 2px; display: flex; flex-wrap: wrap; gap: 4px; }
+.mi-tarch-thread .sc-reply-chips .chip { font-size: 0.68rem; padding: 3px 8px; }
+.mi-tarch-thread .sc-fb-wrap { margin: 6px 0 2px; }
+.mi-tarch-thread .sc-surface-slot { margin: 6px 0 2px; }
+#mi-tarch .sc-surface-card { width: min(188px, 100%); padding: 6px 8px 6px 6px; border-radius: 10px; }
+#mi-tarch .sc-surface-stack.mi-tarch-hit { position: relative; display: inline-flex; }
+#mi-tarch .sc-surface-title { font-size: 0.72rem; }
+#mi-tarch .sc-surface-thumb,
+#mi-tarch .wa-merge-chip-thumb { width: 40px; height: 40px; border-radius: 8px; }
+#mi-tarch .sc-surface-thumb-inner { transform: scale(0.1111); }
+#mi-tarch .sc-surface-vtag { font-size: 8px; }
+
+.mi-tarch-strip {
+  position: absolute; left: 0; top: 10px; bottom: 10px; width: 22px; z-index: 2;
+}
+.mi-tarch-strip .wa-activity-rail {
+  position: absolute; left: 7px; top: 0; bottom: 0; width: 3px;
+  border-radius: 999px; background: color-mix(in srgb, var(--text-subtle) 38%, transparent);
+}
+.mi-tarch-tick {
+  position: absolute; left: 0; width: 22px;
+  display: flex; justify-content: center; transform: translateY(-50%);
+}
+.mi-tarch-tick .wa-activity-tick,
+.mi-tarch-tick .wa-activity-tick-stack { position: relative; top: auto; }
+.mi-tarch-strip .wa-activity-tick {
+  width: 10px; height: 14px; padding: 0; border: 0; border-radius: 2px 6px 6px 2px;
+  cursor: default;
+}
+.mi-tarch-strip .wa-activity-tick--output { background: #C9A227; }
+.mi-tarch-strip .wa-activity-tick--source { background: #12B981; }
+.mi-tarch-strip .wa-activity-tick--database { background: #F59E0B; }
+.mi-tarch-strip .wa-activity-tick-stack { display: flex; flex-direction: column; align-items: flex-start; }
+.mi-tarch-strip .wa-activity-tick-stack .wa-activity-tick + .wa-activity-tick { margin-top: -7px; }
+.mi-tarch-strip .wa-activity-tick-id {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  font-size: 8px; font-weight: 700; color: var(--text-subtle); white-space: nowrap;
+  pointer-events: none;
+}
+
+.mi-tarch-turn {
+  display: flex; flex-direction: column;
+  padding: 6px 8px 4px; margin: 0 -4px 4px;
+  border-radius: 10px;
+  border: 1px dashed color-mix(in srgb, var(--primary) 22%, transparent);
+  background: color-mix(in srgb, var(--primary) 4%, transparent);
+}
+html.dark .mi-tarch-turn {
+  border-color: color-mix(in srgb, var(--primary-bright, #93C5FD) 28%, transparent);
+  background: color-mix(in srgb, var(--primary-bright, #93C5FD) 6%, transparent);
+}
+#mi-tarch .mi-tarch-chat .chat-input-rail {
+  display: block !important;
+  padding: 8px 10px 10px; border-top: 1px solid var(--border);
+  background: var(--surface-2);
+}
+html.dark .mi-tarch-chat .chat-input-rail { background: transparent; border-top-color: rgba(255,255,255,0.06); }
+.mi-tarch-chat .sc-belowinput { display: flex; justify-content: center; padding-top: 6px; }
+.mi-tarch-tokens {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 3px 8px 3px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.mi-tarch-tokens .sc-activity-dots {
+  display: inline-flex !important; align-items: center; gap: 4px;
+  padding: 2px 0; line-height: 0;
+}
+.mi-tarch-tokens .sc-activity-dots > span {
+  width: 5px; height: 5px; border-radius: 50%; flex: 0 0 auto;
+  background: var(--text-subtle);
+}
+.mi-tarch-tokens-val {
+  font-size: 0.625rem; line-height: 1.2; color: var(--text-muted);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.mi-tarch-tokens-val b { color: var(--text); font-weight: 700; }
+html.dark .mi-tarch-tokens { background: rgba(255,255,255,0.04); }
+html.dark .mi-tarch-tokens-val b { color: var(--text); }
+
+.mi-tarch-notes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.mi-tarch-note {
+  padding: 12px 14px; border-radius: 14px; border: 1px solid var(--border);
+  background: var(--surface); cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+html.dark .mi-tarch-note { background: rgba(255,255,255,0.03); }
+.mi-tarch-note:hover,
+.mi-tarch-note.is-hot {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  box-shadow: var(--shadow-1);
+}
+.mi-tarch-note-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px;
+}
+.mi-tarch-note-title {
+  display: inline-flex; align-items: center; gap: 6px; margin: 0;
+  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-size: 0.95rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
+}
+.mi-tarch-note-title .material-symbols-outlined { font-size: 18px !important; color: var(--primary); }
+html.dark .mi-tarch-note-title .material-symbols-outlined { color: var(--primary-bright, #93C5FD); }
+.mi-tarch-note-body { margin: 0; font-size: 0.78rem; line-height: 1.45; color: var(--text-muted); }
+
+@media (max-width: 900px) {
+  .mi-tarch-stage {
+    grid-template-columns: 1fr;
+  }
+  .mi-tarch-col { flex-direction: row; flex-wrap: wrap; padding-top: 0; }
+  .mi-tarch-col--left .mi-tarch-label,
+  .mi-tarch-col--right .mi-tarch-label {
+    flex: 1 1 200px; padding: 10px 12px; flex-direction: row; text-align: left;
+  }
+  .mi-tarch-col--right .mi-tarch-label-copy { align-items: flex-start; }
+  .mi-tarch-dot { display: none; }
+  .mi-tarch-arrows { display: none; }
+  .mi-tarch-specimen { grid-template-columns: 1fr; }
+  .mi-tarch-history { max-width: 420px; }
+}
+
+@media (max-width: 720px) {
+  .mi-tarch-thread { padding-left: 22px; }
+  .mi-tarch-label-body { display: none; }
+}

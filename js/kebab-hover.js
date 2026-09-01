@@ -206,6 +206,8 @@
     if (btn && (el === btn || (btn.contains && btn.contains(el)))) return true;
     var pop = popFor(btn);
     if (pop && (pop === el || (pop.contains && pop.contains(el)))) return true;
+    /* Folder picker opened from a three-dot File action lives on <body>. */
+    if (el.closest && el.closest('.lib-pop')) return true;
     return false;
   }
 

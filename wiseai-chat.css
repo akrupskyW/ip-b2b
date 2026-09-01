@@ -241,9 +241,8 @@
 
 .sc-card {
   --fs-welcome-title: 1.0625rem;
-  /* Conversation copy reads a step larger than the 12px UI chrome so the
-     dialogue itself is the most legible thing in the panel. */
-  --fs-chat: 0.9375rem;
+  /* Conversation copy — one step above the 12px UI chrome (body-small 14px). */
+  --fs-chat: 0.875rem;
   --sc-shadow-pop: 0 12px 40px rgba(0, 0, 0, 0.45);
   flex: 1 1 0%;
   min-width: 0;
@@ -464,14 +463,18 @@ html.dark .chat-messages-area { background: transparent; }
    the "WISEcodeAI™" title. */
 .sc-line {
   display: flex; align-items: flex-start; gap: 12px;
-  margin-bottom: 1.1rem; color: var(--text);
+  margin-bottom: 0.85rem; color: var(--text);
 }
 .sc-line-body {
   flex: 1 1 0%; min-width: 0;
   /* High-contrast conversation copy — the dialogue is the most legible thing in
      the panel (the small, quiet meta row below carries the timestamp). */
-  font-size: var(--fs-chat, 0.9375rem); line-height: 1.6; color: var(--text);
+  font-size: var(--fs-chat, 0.875rem); line-height: 1.6; color: var(--text);
 }
+/* Member asks in brand blue; WISEcodeAI answers in the default ink. */
+.sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary); }
+html.dark .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary-bright, #8B9FAF); }
+.sc-line-wiseai .sc-line-body { color: var(--text); }
 /* Paragraph-by-paragraph transcript reveal — each prose run is wrapped so it
    can fade in as a block. Consecutive paras keep the gap a <br><br> used to. */
 .sc-line-body > .sc-para { display: block; }
@@ -511,7 +514,7 @@ html.dark .sc-avatar-wiseai { background: #fff; color: #141414; }
 .sc-avatar-you.has-avatar-img {
   background: transparent; padding: 0;
 }
-.sc-line strong { color: var(--primary-ink, var(--primary)); font-weight: 700; }
+.sc-line strong, .sc-line b { color: inherit; font-weight: 700; }
 .sc-typing { display: inline-flex; gap: 4px; vertical-align: middle; }
 .sc-typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--text-subtle); animation: scBlink 1.2s infinite; }
 .sc-typing span:nth-child(2) { animation-delay: 0.2s; }
@@ -643,6 +646,12 @@ html.dark .ws-logo-wrap .ws-pulse-ring { --ws-track: rgba(174, 200, 237, 0.55); 
 @media (prefers-reduced-motion: reduce) { .ws-logo-wrap .ws-pulse-ring { animation: none; } }
 .ws-heading { font-family: 'WISE Digits', var(--module-title-family, var(--font-serif, 'Noto Serif', Georgia, serif)); font-size: clamp(1.5rem, 1rem + 1.6vw, 2rem); font-weight: 700; letter-spacing: -0.02em; color: #05070d; text-align: center; margin: 0 0 0.5rem; }
 html.dark .ws-heading { color: var(--text); }
+/* Hold welcome copy + chips at 0 until revealWelcome() primes and plays them,
+   so they never flash fully painted then disappear. */
+.sc-welcome:not(.ws-in) > .ws-heading,
+.sc-welcome:not(.ws-in) > .ws-sub,
+.sc-welcome:not(.ws-in) .ws-chips .chip,
+.sc-welcome:not(.ws-in) .ws-scorecard { opacity: 0; }
 /* Trademark mark in the welcome heading: dropped a size and nudged up so it
    reads as a superscript ™ rather than a full-height glyph. */
 .ws-heading .ws-tm { font-size: 0.55em; vertical-align: 0.42em; font-weight: 600; letter-spacing: 0; }
@@ -654,7 +663,7 @@ html.dark .ws-heading { color: var(--text); }
 .ws-chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 100%; width: 100%; margin-bottom: 2rem; }
 .ws-chips .chip { width: fit-content; max-width: 100%; flex: 0 0 auto; }
 /* Welcome intent chips. Cap at TWO wrapping rows; overflow is revealed by a
-   trailing "Load more" chip (see clampWelcomeChips in js/wiseai-chat.js) —
+   trailing "Show more" chip (see clampWelcomeChips in js/wiseai-chat.js) —
    never a one-line horizontal carousel or a scrollable chip well. */
 .sc-welcome > .ws-chips-scroll {
   --ws-chip-h: 28px;
@@ -723,7 +732,7 @@ html.dark .sc-card .ws-chips-wrap::after { background: linear-gradient(to left, 
   display: flex; flex-wrap: wrap; gap: 8px;
   justify-content: flex-start;
   width: auto; max-width: 100%;
-  margin: -0.4rem 0 1.1rem; padding-left: 42px;
+  margin: -0.4rem 0 0.85rem; padding-left: 42px;
 }
 .sc-inline-chips .chip { width: fit-content; max-width: 100%; flex: 0 0 auto; margin: 0; }
 
@@ -879,6 +888,18 @@ html.dark .sc-card .ws-scorecards-wrap::after { background: linear-gradient(to l
 .chip.chip-primary:hover { background: color-mix(in srgb, var(--primary) 90%, #000); border-color: color-mix(in srgb, var(--primary) 90%, #000); color: #fff; }
 .chip.chip-primary .material-symbols-outlined { color: #fff !important; font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 html.dark .chip.chip-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+/* Welcome "Show more" is a primary chip (solid blue, filled trailing
+   chevron) so it reads as the action that reveals the rest of the row —
+   not another intent. The same chip flips to "Show less". */
+.chip.chip-primary.ws-intent-chip--more {
+  background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600;
+}
+.chip.chip-primary.ws-intent-chip--more:hover {
+  background: color-mix(in srgb, var(--primary) 90%, #000); border-color: color-mix(in srgb, var(--primary) 90%, #000); color: #fff;
+}
+.chip.chip-primary.ws-intent-chip--more .material-symbols-outlined {
+  color: #fff !important; font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
 /* Welcome / shortcut intent chips share the same 28px .chip size. Gold
    leading glyph; the trailing .ws-lock badge keeps its own colours. */
 .ws-intent-chip { background: color-mix(in srgb, var(--primary) 10%, #fff); border-color: var(--border-strong); color: var(--text-muted); font-weight: 500;
@@ -1026,7 +1047,7 @@ html.chat-sheen-off .fl-input-wrap::before { display: none; }
 /* The text field is a 1-row <textarea> (so composer-v2 can grow it) but is
    locked to single-line input behaviour by default: wrap="off" + hidden
    overflow scroll horizontally exactly like the old <input>. */
-.fl-input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; font-size: 13px; font-weight: 400; line-height: 18px; padding: 8px 0; color: var(--text); font-family: inherit; resize: none; overflow: hidden; }
+.fl-input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; font-size: var(--fs-chat, 0.875rem); font-weight: 400; line-height: 1.45; padding: 8px 0; color: var(--text); font-family: inherit; resize: none; overflow: hidden; }
 .fl-input::placeholder { color: color-mix(in srgb, var(--text-subtle) 45%, transparent); font-style: italic; }
 .fl-icon-btn {
   width: 32px; height: 32px; border-radius: 9999px; color: var(--text-muted); cursor: pointer;
@@ -1337,70 +1358,40 @@ html.dark .fl-db-module .fl-db-top { background: transparent; }
   transform: translate(2px, 0);
 }
 
-/* ===== Composer v2 — Appearance ▸ "New chat input" (Admin toggle). One pill
-   row: "+" far left, the text field beside it, then the database selector
-   docked bottom-right just LEFT of the send button. The field soft-wraps and
-   grows (see wireComposerGrow in js/wiseai-chat.js); the rail is bottom-
-   anchored so the pill grows UPWARD while "+", the selector and send hold the
-   bottom line. ===== */
-/* Pill becomes a rounded-corner rectangle matching the module's own corners
-   (.sc-card uses --r-md), so the container reads clean when the field grows. */
-html.composer-v2 .fl-input-wrap--stacked { align-items: flex-end; border-radius: var(--r-md, 16px); }
-html.composer-v2 .fl-input-wrap--stacked .fl-more-wrap { margin-bottom: 1px; }
-html.composer-v2 .fl-input-wrap--stacked .fl-input-col { flex-direction: row; align-items: flex-end; gap: 6px; flex-wrap: wrap; }
-/* DOM order keeps the selector row first (v1 stacks it on top) — flip it
-   visually so the text field leads and the selector trails next to send.
-   The line box stretches the pill's full height and centers the field, so a
-   single-line placeholder sits dead-center against the controls (matching the
-   canonical wiseai.html composer) no matter how each page's font metrics
-   round; once the field grows IT defines the height and nothing shifts. */
-html.composer-v2 .fl-input-wrap--stacked .fl-input-line { order: 1; flex: 1 1 auto; min-width: 0; align-self: stretch; align-items: center; }
-html.composer-v2 .fl-input-wrap--stacked .fl-model-row { order: 2; flex: 0 0 auto; flex-wrap: nowrap; margin-bottom: 8px; }
-html.composer-v2 .fl-model-wrap--lead { align-self: auto; }
-/* Single line sits centered against the 34px send circle; past ~7 lines the
-   field stops growing and scrolls internally. */
-html.composer-v2 .fl-input-wrap--stacked .fl-input { padding: 7px 0; max-height: 140px; overflow-y: auto; }
-html.composer-v2 .fl-input-wrap--stacked .sc-send { align-self: flex-end; }
-/* Pending chips claim their own full-width row beneath the text field: the
-   wrap opens a new flex line, so every extra chip row grows the pill upward
-   while "+", the selector and send keep holding the bottom line. */
-html.composer-v2 .fl-input-wrap--stacked .fl-attachments { order: 3; flex: 1 1 100%; padding: 0 0 6px; }
-
-/* Narrow composers (side-panel chats, squeezed modules): there isn't room for
-   text + selector + send on one line, so the text field moves to its OWN row
-   ABOVE the controls — "+" bottom-left, DB selector + send bottom-right.
-   Sized by a container query on the input row so each module responds to its
-   own width, not the viewport's. */
-html.composer-v2 .sc-input-row { container-type: inline-size; container-name: wise-composer; }
-@container wise-composer (max-width: 420px) {
-  html.composer-v2 .fl-input-wrap--stacked {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    grid-template-areas:
-      "text text text"
-      "plus db   send";
-    align-items: center;
-    row-gap: 2px;
-  }
-  /* With chips pending, open a dedicated full-width row for them between the
-     text line and the bottom controls (the row costs nothing when absent —
-     `has-attachments` comes off the wrap as soon as the chips clear). */
-  html.composer-v2 .fl-input-wrap--stacked.has-attachments {
-    grid-template-areas:
-      "text text text"
-      "att  att  att"
-      "plus db   send";
-  }
-  /* Dissolve the flex column so the selector row, text line and chip row
-     become grid items of the wrap itself. */
-  html.composer-v2 .fl-input-wrap--stacked .fl-input-col { display: contents; }
-  html.composer-v2 .fl-input-wrap--stacked .fl-attachments { grid-area: att; padding: 0 4px 2px 8px; }
-  html.composer-v2 .fl-input-wrap--stacked .fl-input-line { grid-area: text; margin: 0; }
-  html.composer-v2 .fl-input-wrap--stacked .fl-more-wrap { grid-area: plus; margin: 0; }
-  html.composer-v2 .fl-input-wrap--stacked .fl-model-row { grid-area: db; justify-self: end; margin: 0; }
-  html.composer-v2 .fl-input-wrap--stacked .sc-send { grid-area: send; }
-  html.composer-v2 .fl-input-wrap--stacked .fl-input { padding: 6px 4px 2px 8px; }
+/* ===== Composer v2 — always the stacked grid, at every width. Text is its
+   own full-width row. "+" / database / send hold the bottom line. The field
+   soft-wraps and grows (see wireComposerGrow in js/wiseai-chat.js); the rail
+   is bottom-anchored so the pill grows UPWARD. Do not put the last line of
+   copy beside the controls — that was the old wide-welcome flex wrap. ===== */
+html.composer-v2 .fl-input-wrap--stacked {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "text text text"
+    "plus db   send";
+  align-items: center;
+  row-gap: 2px;
+  border-radius: var(--r-md, 16px);
 }
+/* Pending chips open a dedicated full-width row between the text and the
+   bottom controls (`has-attachments` comes off the wrap when chips clear). */
+html.composer-v2 .fl-input-wrap--stacked.has-attachments {
+  grid-template-areas:
+    "text text text"
+    "att  att  att"
+    "plus db   send";
+}
+/* Dissolve the flex column so the selector row, text line and chip row
+   become grid items of the wrap itself. */
+html.composer-v2 .fl-input-wrap--stacked .fl-input-col { display: contents; }
+html.composer-v2 .fl-input-wrap--stacked .fl-attachments { grid-area: att; padding: 0 4px 2px 8px; }
+html.composer-v2 .fl-input-wrap--stacked .fl-input-line { grid-area: text; margin: 0; }
+html.composer-v2 .fl-input-wrap--stacked .fl-more-wrap { grid-area: plus; margin: 0; }
+html.composer-v2 .fl-input-wrap--stacked .fl-model-row { grid-area: db; justify-self: end; margin: 0; flex-wrap: nowrap; }
+html.composer-v2 .fl-model-wrap--lead { align-self: auto; }
+html.composer-v2 .fl-input-wrap--stacked .sc-send { grid-area: send; }
+/* Past ~7 lines the field stops growing and scrolls internally. */
+html.composer-v2 .fl-input-wrap--stacked .fl-input { padding: 6px 4px 2px 8px; max-height: 140px; overflow-y: auto; }
 
 /* ===== Chat tint — Appearance ▸ "Blue chat surface" (Admin toggle). Washes
    the chat module's surfaces (card, messages area, input rail) with the
@@ -1448,15 +1439,13 @@ html.chat-compact .sc-welcome--cards { padding-top: 1.25rem; }
 html.chat-compact .sc-settings .ss-body { padding: 12px; }
 
 /* ===== Brand AI text — three-dot menu ▸ "Brand AI text" (Admin, pink).
-   Recolours every WISEcodeAI transcript line to the brand blue APP-WIDE, while
-   the member's own lines keep the default (near-black) ink so the two speakers
-   read as distinct. A single global class (html.chat-brandtext) so every chat
-   module — and every transcript that uses the shared .sc-line-* classes —
-   recolours at once. Dark mode uses the brighter brand tone (--primary-bright)
-   so the AI copy stays legible on the navy card. KEEP IN SYNC with wise.css. */
-html.chat-brandtext .sc-line-wiseai .sc-line-body { color: var(--primary); }
-html.dark.chat-brandtext .sc-line-wiseai .sc-line-body { color: var(--primary-bright, #8B9FAF); }
-html.chat-brandtext .sc-line-you .sc-line-body { color: var(--text); }
+   Same pairing as the default: member lines in brand blue, WISEcodeAI in the
+   default ink. The class stays so the switch still tracks; it must not put
+   blue back on the assistant. Dark mode uses --primary-bright on the member
+   so the ask stays legible on the navy card. KEEP IN SYNC with wise.css. */
+html.chat-brandtext .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary); }
+html.dark.chat-brandtext .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary-bright, #8B9FAF); }
+html.chat-brandtext .sc-line-wiseai .sc-line-body { color: var(--text); }
 
 /* ===== Brand connectors — a centered, wrapping rail of data-source pills
    docked beneath the input (retailer & food-data APIs: Kroger, Walmart,
@@ -1602,7 +1591,7 @@ html.dark .sc-trust-badge .material-symbols-outlined { color: var(--primary-brig
    so the inherited 1.6 chat leading doesn't pad the stamp like a blank line. */
 .sc-line-meta {
   display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px;
-  margin-top: 2px; margin-bottom: 8px; line-height: 1.2;
+  margin-top: 1px; margin-bottom: 4px; line-height: 1.2;
 }
 .sc-line-you .sc-line-meta { justify-content: flex-start; }
 .sc-line-time { font-size: 0.625rem; font-weight: 500; letter-spacing: 0.02em;

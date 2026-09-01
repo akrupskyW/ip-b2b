@@ -46,6 +46,9 @@
  *      Logic, which audits the one narrow slice of logic the chips own.
  *      Catalog in js/app-logic-data.js — loaded the first time that
  *      accordion opens, not on first paint.
+ *   8. Transcript Architecture — one frozen conversation that shows the
+ *      whole stack at once: chats, activity, the landmark strip, turns,
+ *      tokens, outputs, and versions, each labeled with an arrow.
  *
  * First paint is the hero, jump tiles, and section headers only. Each
  * accordion body (and the Icon Inventory / App Logic catalogs) is built
@@ -53,6 +56,7 @@
  */
 
 import { CODE_STATS } from './code-stats-data.js';
+import { isNudgeDismissed } from './nudge-toast-dismiss.js';
 import './date-column.js';
 import { makeTraceHelix, measureTraceRungCentres, TRACE_STRAND_MARKUP } from './trace-helix.js';
 import { MODULE_SECTIONS, AREA_ICONS } from './module-directory-data.js';
@@ -308,19 +312,9 @@ function moduleMoreItems(moduleId) {
   ];
 }
 
-function moduleControlsHTML(moduleId) {
-  const items = moduleMoreItems(moduleId).map((it) =>
-    `<button type="button" class="topbar-menu-item" data-mi-action="${esc(it.action)}">
-      <span class="material-symbols-outlined topbar-menu-icon">${esc(it.icon)}</span>
-      <span>${esc(it.label)}</span>
-    </button>`).join('');
-  return `
-    <div class="panel-controls" data-mi-controls="${esc(moduleId)}">
-      <div class="panel-more-wrap">
-        <button type="button" class="panel-more-btn" data-mi-more aria-haspopup="menu" aria-expanded="false" title="More options" aria-label="Module options"><span class="material-symbols-outlined">more_vert</span></button>
-        <div class="topbar-popover hidden" data-mi-more-pop role="menu">${items}</div>
-      </div>
-    </div>`;
+function moduleControlsHTML(_moduleId) {
+  /* Accordion headers never carry a ⋯. Do not restore this markup. */
+  return '';
 }
 
 function directorySection(sec) {
@@ -697,28 +691,183 @@ function syncCodeStateFromStore() {
   }
 }
 
-/* All-time sparkline of total LOC — one point per daily git snapshot. */
-function codeSparkline(series) {
-  const vals = series.map((e) => e.total);
-  if (vals.length < 2) return '';
-  const W = 100;
-  const H = 32;
-  const PAD = 2;
+/* All-time sparkline of total LOC — one point per daily git snapshot.
+   Hover (or keyboard arrows) snaps to the nearest snapshot and names it. */
+const SPARK_W = 100;
+const SPARK_H = 32;
+const SPARK_PAD = 2;
+
+function codeSparkGeom(series) {
+  const vals = series.map((e) => Number(e.total) || 0);
+  if (vals.length < 2) return null;
   const min = Math.min(...vals);
   const span = Math.max(1, Math.max(...vals) - min);
-  const pts = vals.map((v, i) => [
-    (i / (vals.length - 1)) * W,
-    PAD + (1 - (v - min) / span) * (H - PAD * 2),
-  ]);
-  const line = pts.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(' ');
-  const area = `M${pts[0][0].toFixed(2)},${H} ` +
-    pts.map(([x, y]) => `L${x.toFixed(2)},${y.toFixed(2)}`).join(' ') +
-    ` L${pts[pts.length - 1][0].toFixed(2)},${H} Z`;
+  const last = vals.length - 1;
+  return {
+    min,
+    span,
+    pts: vals.map((v, i) => ({
+      x: (i / last) * SPARK_W,
+      y: SPARK_PAD + (1 - (v - min) / span) * (SPARK_H - SPARK_PAD * 2),
+      entry: series[i],
+      i,
+    })),
+  };
+}
+
+function codeSparkline(series) {
+  const geom = codeSparkGeom(series);
+  if (!geom) return '';
+  const pts = geom.pts;
+  const line = pts.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
+  const area = `M${pts[0].x.toFixed(2)},${SPARK_H} ` +
+    pts.map((p) => `L${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ') +
+    ` L${pts[pts.length - 1].x.toFixed(2)},${SPARK_H} Z`;
+  const first = series[0];
+  const last = series[series.length - 1];
+  const label = `Lines of code from ${first.date} to ${last.date}. Move across the chart for each day's count.`;
   return `
-    <svg class="mi-code-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
-      <path class="mi-code-spark-fill" d="${area}"></path>
-      <polyline class="mi-code-spark-line" points="${line}"></polyline>
-    </svg>`;
+    <div class="mi-code-spark-wrap" tabindex="0" role="img" aria-label="${esc(label)}">
+      <svg class="mi-code-spark" viewBox="0 0 ${SPARK_W} ${SPARK_H}" preserveAspectRatio="none" aria-hidden="true">
+        <path class="mi-code-spark-fill" d="${area}"></path>
+        <polyline class="mi-code-spark-line" points="${line}"></polyline>
+      </svg>
+      <div class="mi-code-spark-cursor" hidden>
+        <span class="mi-code-spark-rule"></span>
+        <span class="mi-code-spark-dot"></span>
+      </div>
+      <div class="mi-code-spark-hit"></div>
+      <div class="mi-code-spark-live" aria-live="polite"></div>
+    </div>`;
+}
+
+function codeSparkTipHTML(entry, prev) {
+  const delta = prev ? (Number(entry.total) || 0) - (Number(prev.total) || 0) : 0;
+  const tone = !prev ? 'is-flat' : delta > 0 ? 'is-up' : delta < 0 ? 'is-down' : 'is-flat';
+  const sign = delta > 0 ? '+' : delta < 0 ? '\u2212' : '\u00b1';
+  const deltaHtml = prev
+    ? `<div class="mi-code-spark-tip-delta ${tone}">${sign}${fmtNum(Math.abs(delta))} vs previous</div>`
+    : `<div class="mi-code-spark-tip-delta is-flat">First snapshot</div>`;
+  const rows = [
+    ['HTML', entry.html],
+    ['JavaScript', entry.js],
+    ['CSS', entry.css],
+    ['Python', entry.py],
+    ['Pages', entry.pages],
+  ].filter(([, n]) => n != null);
+  return `
+    <div class="mi-code-spark-tip-date">${esc(entry.date)}</div>
+    <div class="mi-code-spark-tip-num">${fmtNum(entry.total)} <span>lines</span></div>
+    ${deltaHtml}
+    <div class="mi-code-spark-tip-rows">
+      ${rows.map(([label, n]) => `<div><span>${esc(label)}</span><strong>${fmtNum(n)}</strong></div>`).join('')}
+    </div>`;
+}
+
+function wireCodeSparkHover(mod, series) {
+  const wrap = mod.querySelector('.mi-code-spark-wrap');
+  const geom = codeSparkGeom(series);
+  if (!wrap || !geom) return;
+
+  let tip = document.getElementById('mi-code-spark-tip');
+  if (!tip) {
+    tip = document.createElement('div');
+    tip.id = 'mi-code-spark-tip';
+    tip.setAttribute('role', 'tooltip');
+    tip.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(tip);
+  }
+
+  const cursor = wrap.querySelector('.mi-code-spark-cursor');
+  const dot = wrap.querySelector('.mi-code-spark-dot');
+  const live = wrap.querySelector('.mi-code-spark-live');
+  let lastIdx = -1;
+
+  const hide = () => {
+    lastIdx = -1;
+    wrap.classList.remove('is-scrubbing');
+    if (cursor) cursor.hidden = true;
+    tip.classList.remove('is-visible');
+    tip.setAttribute('aria-hidden', 'true');
+  };
+
+  const placeTip = (clientX, clientY) => {
+    const pad = 14;
+    const r = tip.getBoundingClientRect();
+    let left = clientX - r.width / 2;
+    let top = clientY - r.height - pad;
+    /* Sit above the cursor. If that clips the top of the viewport, move
+       to the right of the point — never park the card directly below. */
+    if (top < 8) {
+      top = Math.max(8, clientY - r.height / 2);
+      left = clientX + pad;
+    }
+    if (left + r.width > window.innerWidth - 8) left = window.innerWidth - r.width - 8;
+    if (left < 8) left = 8;
+    if (top + r.height > window.innerHeight - 8) top = window.innerHeight - r.height - 8;
+    if (top < 8) top = 8;
+    tip.style.left = `${left}px`;
+    tip.style.top = `${top}px`;
+  };
+
+  const showAt = (idx, clientX, clientY) => {
+    const pt = geom.pts[idx];
+    if (!pt) return;
+    if (idx !== lastIdx) {
+      lastIdx = idx;
+      const prev = idx > 0 ? series[idx - 1] : null;
+      tip.innerHTML = codeSparkTipHTML(pt.entry, prev);
+      if (live) live.textContent = `${pt.entry.date}: ${fmtNum(pt.entry.total)} lines`;
+      if (cursor) {
+        cursor.hidden = false;
+        cursor.style.left = `${pt.x}%`;
+        if (dot) dot.style.top = `${(pt.y / SPARK_H) * 100}%`;
+      }
+    }
+    wrap.classList.add('is-scrubbing');
+    tip.classList.add('is-visible');
+    tip.setAttribute('aria-hidden', 'false');
+    placeTip(clientX, clientY);
+  };
+
+  const idxFromClientX = (clientX) => {
+    const rect = wrap.getBoundingClientRect();
+    if (rect.width <= 0) return 0;
+    const t = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    return Math.round(t * (geom.pts.length - 1));
+  };
+
+  wrap.addEventListener('pointerenter', (e) => {
+    showAt(idxFromClientX(e.clientX), e.clientX, e.clientY);
+  });
+  wrap.addEventListener('pointermove', (e) => {
+    showAt(idxFromClientX(e.clientX), e.clientX, e.clientY);
+  });
+  wrap.addEventListener('pointerleave', hide);
+  wrap.addEventListener('pointercancel', hide);
+  wrap.addEventListener('blur', hide);
+  window.addEventListener('scroll', hide, true);
+  wrap.addEventListener('keydown', (e) => {
+    const max = geom.pts.length - 1;
+    let next = lastIdx < 0 ? max : lastIdx;
+    if (e.key === 'ArrowLeft' || e.key === 'Home') {
+      e.preventDefault();
+      next = e.key === 'Home' ? 0 : Math.max(0, next - 1);
+    } else if (e.key === 'ArrowRight' || e.key === 'End') {
+      e.preventDefault();
+      next = e.key === 'End' ? max : Math.min(max, next + 1);
+    } else if (e.key === 'Escape') {
+      hide();
+      return;
+    } else {
+      return;
+    }
+    const rect = wrap.getBoundingClientRect();
+    const pt = geom.pts[next];
+    const x = rect.left + (pt.x / SPARK_W) * rect.width;
+    const y = rect.top + (pt.y / SPARK_H) * rect.height;
+    showAt(next, x, y);
+  });
 }
 
 function renderCodebase(opts) {
@@ -855,6 +1004,7 @@ function wireCodebase(root) {
   });
   mod._applyCodeWindow = () => applyWindow(currentWin);
   applyWindow('7');
+  wireCodeSparkHover(mod, series);
 }
 
 function applyLiveCodeScan(root, now, scannedAt) {
@@ -2166,10 +2316,25 @@ function demoReasonsPop(kind, open) {
     </div>
   </div>`;
 }
+function demoTranscriptTokenMore({ open } = {}) {
+  return `<span class="sc-fb-more-wrap">
+    ${demoFbBtn({ more: true, tip: 'More actions', icon: 'more_horiz', on: open })}
+    <div class="sc-fb-menu${open ? ' is-demo-open' : ''}" role="menu"${open ? '' : ' hidden'}>
+      <span class="sc-fb-menu-actions">
+        ${demoFbBtn({ fb: 'replay', tip: 'Re-run in new chat', icon: 'auto_read_play' })}
+        ${demoFbBtn({ fb: 'edit', tip: 'Edit in new chat', icon: 'bubble' })}
+        ${demoFbBtn({ fb: 'turn', tip: 'Fork a turn', icon: 'alt_route' })}
+        ${demoFbBtn({ fb: 'file', tip: 'File to folder', icon: 'drive_file_move' })}
+        <span class="sc-fb-id" data-tip="Turn ID" tabindex="0">#6d7a</span>
+      </span>
+      <span class="sc-fb-menu-div" aria-hidden="true"></span>
+      <span class="sc-fb-menu-tokens" role="status">1.3k in / 412 out · <em>1.0k cached (78%)</em> · <b>$0.0030</b> · 3s · 2 ops · 1 tools</span>
+    </div>
+  </span>`;
+}
 function demoFbRow({ hoverCopy, upOpen, downOpen, moreOpen, upOn, downOn } = {}) {
   return `<div class="sc-fb-wrap">
     <div class="sc-fb" role="group" aria-label="Answer actions">
-      <span class="sc-line-time sc-fb-time" role="button" tabindex="0">3 min ago</span>
       <span class="sc-fb-copy-wrap">
         ${demoFbBtn({ fb: 'copy', tip: 'Copy answer', icon: 'content_copy', hover: hoverCopy })}
         <span class="sc-fb-copied${hoverCopy ? ' is-vis' : ''}" role="status"${hoverCopy ? '' : ' aria-hidden="true"'}><span class="material-symbols-outlined">check</span>Copied</span>
@@ -2182,17 +2347,8 @@ function demoFbRow({ hoverCopy, upOpen, downOpen, moreOpen, upOn, downOn } = {})
         ${demoFbBtn({ fb: 'down', tip: 'Not accurate', icon: 'thumb_down', on: !!downOn })}
         ${demoReasonsPop('down', downOpen)}
       </span>
-      <span class="sc-fb-more-wrap">
-        ${demoFbBtn({ more: true, tip: 'More actions', icon: 'more_horiz', on: moreOpen })}
-        <div class="sc-fb-menu${moreOpen ? ' is-demo-open' : ''}" role="menu"${moreOpen ? '' : ' hidden'}>
-          <span class="sc-fb-menu-actions">
-            ${demoFbBtn({ fb: 'replay', tip: 'Re-run in new chat', icon: 'auto_read_play' })}
-            ${demoFbBtn({ fb: 'edit', tip: 'Edit in new chat', icon: 'bubble' })}
-            ${demoFbBtn({ fb: 'turn', tip: 'Fork a turn', icon: 'alt_route' })}
-            <span class="sc-fb-id" data-tip="Turn ID" tabindex="0">#6d7a</span>
-          </span>
-        </div>
-      </span>
+      ${demoTranscriptTokenMore({ open: moreOpen })}
+      <span class="sc-line-time sc-fb-time" role="button" tabindex="0">3 min ago</span>
     </div>
   </div>`;
 }
@@ -2275,10 +2431,11 @@ function wireJamCatalog(root) {
 }
 
 /* Flat chat ⋮ menu matching pages/wiseai.html + js/wiseai-chat.js. groupifyChatMenu
-   (booted when this card opens) turns it into the live Conversation / Data /
-   Display / Helix / Activity columns, Admin kebab, and row hints. This
-   specimen pins data-admin-demo="off" so it stays the member-facing menu —
-   Admin-badged rows are gated by Appearance on the live chat, not shown here. */
+   (booted when this card opens) turns it into the live one-column Conversation /
+   Activity stack, Admin kebab, and row hints. Helix joins as a second column
+   only when Internal admins is on. This specimen pins data-admin-demo="off"
+   so it stays the member-facing menu — Admin-badged rows are gated by
+   Appearance on the live chat, not shown here. */
 function demoChatMenuPop() {
   const row = (sc, icon, label, extra) =>
     `<button type="button" class="topbar-menu-item${extra || ''}" data-sc="${esc(sc)}">` +
@@ -2571,8 +2728,12 @@ function demoCwrCatalog() {
 }
 
 const COMPONENTS = [
+  /* `ai: false` — chrome / chrome-adjacent cards. They keep WIP Ready but
+     have no Not for AI / AI Ready switch and do not count toward the
+     Component Library AI k/n. */
   {
     name: 'Buttons',
+    ai: false,
     wide: true,
     cls: '.dash-btn --primary / --ghost · .dash-text-link · .pf-head-btn --ghost · .pf-brand-chip · .lir-btn',
     used: 'Non-UPF Dashboard · Reports · Verification CTAs · Reformulation · Product Portfolio · Marketing Assets · Invoices · Comparison',
@@ -2769,7 +2930,7 @@ const COMPONENTS = [
     wide: true,
     cls: '.fl-input-wrap--stacked · .fl-more-btn · .fl-db-trigger · .fl-input · .sc-send · .fl-attachments',
     used: 'WISEcodeAI dock (every page) · Studio Chat · Reformulation / Add Product / Studio&AI panes',
-    note: 'The stacked composer from the chat module — same markup <code>mountWISEcodeAIChat</code> builds. Shown at <strong>single-pane width</strong> (\u2264420px), where text sits on its own row and <code>+</code> / database / send hold the bottom line. <strong>Default</strong> is empty; <strong>Lots of text</strong> soft-wraps and grows the pill upward; <strong>Images attached</strong> opens a chip row between the text and the controls. The living brand sheen on the pill edge lives in <em>Motion &amp; Resize \u2192 Chat composer sheen</em>. The full database picker is <em>Database roster</em>; chip anatomy alone is <em>Attachments</em>.',
+    note: 'The stacked composer from the chat module — same markup <code>mountWISEcodeAIChat</code> builds. Text sits on its own full-width row at every module width; <code>+</code> / database / send hold the bottom line. <strong>Default</strong> is empty; <strong>Lots of text</strong> soft-wraps and grows the pill upward; <strong>Images attached</strong> opens a chip row between the text and the controls. The living brand sheen on the pill edge lives in <em>Motion &amp; Resize \u2192 Chat composer sheen</em>. The full database picker is <em>Database roster</em>; chip anatomy alone is <em>Attachments</em>.',
     noteIcon: 'chat',
     demo: `
       <div class="dsc-states dsc-states--composer" style="width:100%">
@@ -2822,9 +2983,9 @@ const COMPONENTS = [
     name: 'Transcript actions',
     wide: true,
     cat: 'Chat & drawers',
-    cls: '.sc-fb · .sc-fb-btn · .sc-fb-reasons · .sc-fb-menu · .sc-tip · .sc-fb-id',
+    cls: '.sc-fb · .sc-fb-btn · .sc-fb-reasons · .sc-fb-menu · .sc-fb-menu-tokens · .sc-tip · .sc-fb-id',
     used: 'Every WISEcodeAI answer — the row under the last paragraph, before intent chips',
-    note: 'Timestamp sits immediately left of <strong>Copy</strong> (clock \u2194 relative). Then the quick trio: <strong>Copy</strong> (flashes Copied), <strong>Accurate</strong> and <strong>Not accurate</strong> (each opens a reason popover with chips + optional note; submitting posts a follow-up turn). The far-right <strong>\u22ef</strong> spills Re-run in new chat, Edit in new chat, Fork a turn, and the turn ID. Hover/focus uses the shared theme-aware tip card — never a native title bubble and never a second always-dark card. Icons are outlined at rest and fill when on.',
+    note: 'The quick trio: <strong>Copy</strong> (flashes Copied), <strong>Accurate</strong> and <strong>Not accurate</strong> (each opens a reason popover with chips + optional note; submitting posts a follow-up turn). The <strong>\u22ef</strong> spills Re-run in new chat, Edit in new chat, Fork a turn, File to folder, and the turn ID, then a divider and the token read-out for that answer (see <em>Token readout</em>). The timestamp (clock \u2194 relative) sits immediately right of that three-dot. Hover/focus uses the shared theme-aware tip card — never a native title bubble and never a second always-dark card. Icons are outlined at rest and fill when on.',
     noteIcon: 'thumbs_up_down',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -2845,7 +3006,7 @@ const COMPONENTS = [
           ${demoFbRow({ downOn: true, downOpen: true })}
         </div>
         <div class="dsc-state-col">
-          <div class="dsc-sub-label">More \u00b7 re-run, edit, fork, ID</div>
+          <div class="dsc-sub-label">More \u00b7 actions + this-message tokens</div>
           ${demoFbRow({ moreOpen: true })}
         </div>
         <div class="dsc-state-col">
@@ -2863,7 +3024,7 @@ const COMPONENTS = [
     cat: 'Chat & drawers',
     cls: '.wa-activity-strip · .wa-activity-rail · .wa-activity-tick (--output / --source / --database) · .wa-activity-tick-stack',
     used: 'Every chat module — pinned to the transcript edge, toggled from the chat \u22ef menu and Appearance',
-    note: 'A 3px landmark rail on the chat\u2019s <strong>left</strong> edge by default (right is opt-in). Ticks sit at each event as a fraction of the transcript: gold <strong>output</strong>, green <strong>source</strong>, amber <strong>database</strong>. Multi-version outputs draw a stacked pair \u2014 two tabs mean \u201cmore than one\u201d, never a count. Click a tick to scroll that landmark into view and flash it. Hover widens the tab and shows the turn ID. Not the token readout under the composer \u2014 that is <em>Token readout</em>.',
+    note: 'A 3px landmark rail on the chat\u2019s <strong>left</strong> edge by default (right is opt-in). Ticks sit at each event as a fraction of the transcript: gold <strong>output</strong>, green <strong>source</strong>, amber <strong>database</strong>. Multi-version outputs draw a stacked pair \u2014 two tabs mean \u201cmore than one\u201d, never a count. Click a tick to scroll that landmark into view and flash it. Hover widens the tab and shows the turn ID. Not the token readout under the composer or in the transcript \u22ef \u2014 that is <em>Token readout</em>.',
     noteIcon: 'timeline',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -2919,38 +3080,54 @@ const COMPONENTS = [
     name: 'Token readout',
     wide: true,
     cat: 'Chat & drawers',
-    cls: '.sc-activity · .sc-activity-dots · .sc-activity-pop',
-    used: 'Under the composer on every chat when activity: true — this-turn and conversation tokens',
-    note: 'Three dots under the input. Idle is quiet; thinking pulses brand-blue. Hover opens a read-out of this-turn and conversation tokens, cache share, and a demo cost. Not the edge landmark rail \u2014 that is <em>Activity strip</em>.',
+    cls: '.sc-activity · .sc-activity-dots · .sc-activity-pop · .sc-fb-more · .sc-fb-menu-tokens',
+    used: 'Under the composer on every chat when activity: true \u00b7 inside the transcript \u22ef on every WISEcodeAI answer',
+    note: 'Two homes. Under the input, three quiet dots idle and pulse brand-blue while thinking \u2014 hover opens this-turn and conversation tokens, cache share, and a demo cost. Inside the transcript, the <strong>\u22ef</strong> on every WISEcodeAI answer opens the same this-message numbers (plus duration, ops, and tools) under the action icons. Not the edge landmark rail \u2014 that is <em>Activity strip</em>.',
     noteIcon: 'more_horiz',
     demo: `
-      <div class="dsc-states dsc-states--token">
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Idle</div>
-          <div class="sc-activity">
-            <div class="sc-activity-wrap">
-              <div class="sc-activity-dots" tabindex="0" role="button" aria-label="WISEcodeAI activity"><span></span><span></span><span></span></div>
-            </div>
-          </div>
-        </div>
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Thinking</div>
-          <div class="sc-activity is-thinking">
-            <div class="sc-activity-wrap">
-              <div class="sc-activity-dots" tabindex="0" role="button" aria-label="WISEcodeAI activity"><span></span><span></span><span></span></div>
-            </div>
-          </div>
-        </div>
-        <div class="dsc-state-col dsc-state-col--token-open">
-          <div class="dsc-sub-label">Hover \u00b7 read-out open</div>
-          <div class="sc-activity is-open">
-            <div class="sc-activity-wrap">
-              <div class="sc-activity-dots" tabindex="0" role="button" aria-label="WISEcodeAI activity"><span></span><span></span><span></span></div>
-              <div class="sc-activity-pop" role="tooltip">
-                <div class="sc-activity-row"><span class="sc-activity-key">This turn</span><span class="sc-activity-val">1.3k in / 412 out \u00b7 <em>1.0k cached (78%)</em> \u00b7 <b>$0.0030</b></span></div>
-                <div class="sc-activity-row"><span class="sc-activity-key">Conversation</span><span class="sc-activity-val">8.1k in / 2.4k out \u00b7 <em>6.4k cached (79%)</em> \u00b7 <b>$0.04</b> \u00b7 3 turns</span></div>
+      <div class="dsc-sub" style="width:100%">
+        <div class="dsc-sub-label">Under the composer</div>
+        <div class="dsc-states dsc-states--token">
+          <div class="dsc-state-col">
+            <div class="dsc-sub-label">Idle</div>
+            <div class="sc-activity">
+              <div class="sc-activity-wrap">
+                <div class="sc-activity-dots" tabindex="0" role="button" aria-label="WISEcodeAI activity"><span></span><span></span><span></span></div>
               </div>
             </div>
+          </div>
+          <div class="dsc-state-col">
+            <div class="dsc-sub-label">Thinking</div>
+            <div class="sc-activity is-thinking">
+              <div class="sc-activity-wrap">
+                <div class="sc-activity-dots" tabindex="0" role="button" aria-label="WISEcodeAI activity"><span></span><span></span><span></span></div>
+              </div>
+            </div>
+          </div>
+          <div class="dsc-state-col dsc-state-col--token-open">
+            <div class="dsc-sub-label">Hover \u00b7 read-out open</div>
+            <div class="sc-activity is-open">
+              <div class="sc-activity-wrap">
+                <div class="sc-activity-dots" tabindex="0" role="button" aria-label="WISEcodeAI activity"><span></span><span></span><span></span></div>
+                <div class="sc-activity-pop" role="tooltip">
+                  <div class="sc-activity-row"><span class="sc-activity-key">This turn</span><span class="sc-activity-val">1.3k in / 412 out \u00b7 <em>1.0k cached (78%)</em> \u00b7 <b>$0.0030</b></span></div>
+                  <div class="sc-activity-row"><span class="sc-activity-key">Conversation</span><span class="sc-activity-val">8.1k in / 2.4k out \u00b7 <em>6.4k cached (79%)</em> \u00b7 <b>$0.04</b> \u00b7 3 turns</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="dsc-sub" style="width:100%;margin-top:8px">
+        <div class="dsc-sub-label">In the transcript \u22ef</div>
+        <div class="dsc-states dsc-states--token-transcript">
+          <div class="dsc-state-col">
+            <div class="dsc-sub-label">Closed</div>
+            ${demoFbBtn({ more: true, tip: 'More actions', icon: 'more_horiz' })}
+          </div>
+          <div class="dsc-state-col dsc-token-transcript-open">
+            <div class="dsc-sub-label">Hover \u00b7 this-message tokens</div>
+            ${demoTranscriptTokenMore({ open: true })}
           </div>
         </div>
       </div>`,
@@ -2961,7 +3138,7 @@ const COMPONENTS = [
     cat: 'Chat & drawers',
     cls: '.panel-more-btn \u00b7 .topbar-popover.sc-menu-grouped \u00b7 .sc-menu-group \u00b7 .sc-mcp-item \u00b7 .sc-switch \u00b7 .sc-menu-admin-btn',
     used: 'The three-dot on every chat module \u2014 Conversation, streaming, Close. Admin-badged rows stay off this specimen',
-    note: 'Same <code>.topbar-popover</code> shell, grouped the way the live chat does. This card is the <strong>member-facing</strong> menu: History, new, Export, Share, File to Library, Response streaming, and Close. Admin-badged rows (Turns, Hide outputs, Connect a data source, Overview cards, Intent chips, Compact spacing, Brand AI text, Input glow, Animation, Activity strip) are not part of this menu. They appear on the live chat when <em>Internal admins</em> is on in Appearance, or from the kebab in the menu\u2019s top-right.',
+    note: 'Same <code>.topbar-popover</code> shell, grouped the way the live chat does \u2014 one column hung from the kebab. This card is the <strong>member-facing</strong> menu: History, new, Export, Share, File to Library, Response streaming, and Close. Admin-badged rows (Turns, Hide outputs, Connect a data source, Overview cards, Intent chips, Compact spacing, Brand AI text, Input glow, Animation, Activity strip) are not part of this menu. They appear on the live chat when <em>Internal admins</em> is on in Appearance, or from the kebab in the menu\u2019s top-right, and Helix then sits in a second column beside the stack.',
     noteIcon: 'more_vert',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -2984,6 +3161,7 @@ const COMPONENTS = [
   },
   {
     name: 'Module \u22ef menu',
+    ai: false,
     cat: 'Overlays',
     cls: '.panel-more-wrap \u00b7 [data-sticky-act] \u00b7 .topbar-menu-item--danger',
     used: 'Every module to the right of the chat \u2014 Share, Copy link, Export; progress panes also get Remove panel',
@@ -3155,6 +3333,7 @@ const COMPONENTS = [
   },
   {
     name: 'Image lightbox',
+    ai: false,
     cat: 'Overlays',
     wide: true,
     cls: '.dash-modal--panel \u00b7 .dash-banner-preview \u00b7 .dash-banner-drop \u00b7 .dash-banner-url \u00b7 .wai-img-modal',
@@ -3192,6 +3371,7 @@ const COMPONENTS = [
   },
   {
     name: 'Segmented control',
+    ai: false,
     cat: 'Actions',
     cls: '.sc-stream-seg \u00b7 .sc-stream-seg-btn (+ .is-on)',
     used: 'Chat \u22ef \u2014 Activity strip side, streaming detail, helix style \u00b7 Appearance text size / spacing',
@@ -3228,6 +3408,7 @@ const COMPONENTS = [
   },
   {
     name: 'Switch',
+    ai: false,
     cat: 'Actions',
     cls: '.sc-switch (+ .sc-switch--pink) \u00b7 .sc-mcp-item.is-on',
     used: 'Chat \u22ef toggles \u00b7 Appearance rows \u00b7 History filters \u2014 on/off, not a segmented pick',
@@ -3310,6 +3491,7 @@ const COMPONENTS = [
   },
   {
     name: 'Nutrition Facts',
+    ai: false,
     wide: true,
     cat: 'Chat & drawers',
     cls: '#nfp-panel \u00b7 .nfp-nf-panel \u00b7 .nfp-barcode-svg \u00b7 .nfp-hero',
@@ -3348,6 +3530,7 @@ const COMPONENTS = [
   },
   {
     name: 'Product identity strip',
+    ai: false,
     wide: true,
     cat: 'Chat & drawers',
     cls: '.nfp-fi-group--identity \u00b7 .nfp-fi-cat--dock \u00b7 .nfp-fi-upc \u00b7 .nfp-fi-thumbs',
@@ -3368,6 +3551,7 @@ const COMPONENTS = [
   },
   {
     name: 'Progress tracker',
+    ai: false,
     wide: true,
     cat: 'Chat & drawers',
     cls: '.vf-progress-pane \u00b7 .vfp-step (--done / --active / --err) \u00b7 .vfp-progress-fill',
@@ -3455,17 +3639,19 @@ const COMPONENTS = [
   },
   {
     name: 'Roll \u00b7 Crawl \u00b7 Walk \u00b7 Run',
+    ai: false,
     wide: true,
     stackThemes: true,
     cat: 'Navigation',
     cls: '#cwr-toggle \u00b7 .cwr-btn [aria-checked] \u00b7 html.cwr-roll / -crawl / -walk / -run',
-    used: 'Floating segmented control on every app page \u2014 Run on WISEcodeAI, Add Product, and View Product; Roll everywhere else',
-    note: 'A <strong>vertical</strong> stadium of four rollout modes: <strong>Roll</strong> (stripped nav), <strong>Crawl</strong> (no chat, modules fill), <strong>Walk</strong> (chat on, composer locked), <strong>Run</strong> (composer unlocked). Icon above label, 48px circular radios, stacked top to bottom \u2014 never a horizontal pill. Each page loads its own default; hovering any mode opens its include / exclude card. This catalog freezes the hover on all four so every card stays visible. The live widget lives in shadow DOM so page button styles cannot restyle it. The load default is the right edge of the screen, vertically centered, 12px in. Drag to move; double-click restores that seat.',
+    used: 'Floating segmented control on every app page \u2014 Run on WISEcodeAI, Add Product, View Product, and Helix; Roll everywhere else. Helix locks Roll, Crawl, and Walk.',
+    note: 'A <strong>vertical</strong> stadium of four rollout modes: <strong>Roll</strong> (stripped nav), <strong>Crawl</strong> (no chat, modules fill), <strong>Walk</strong> (chat on, composer locked), <strong>Run</strong> (composer unlocked). Icon above label, 48px circular radios, stacked top to bottom \u2014 never a horizontal pill. Each page loads its own default; hovering any mode opens its include / exclude card. Helix stays on Run \u2014 the other three lock (dimmed, padlock, not-allowed). This catalog freezes the hover on all four so every card stays visible. The live widget lives in shadow DOM so page button styles cannot restyle it. The load default is the right edge of the screen, vertically centered, 12px in. Drag to move; double-click restores that seat.',
     noteIcon: 'directions_run',
     demo: demoCwrCatalog(),
   },
   {
     name: 'Owl walkthrough',
+    ai: false,
     wide: true,
     cat: 'Chat & drawers',
     cls: '.owt-mod \u00b7 .owt-copy \u00b7 .owt-nav-link \u00b7 .owt-chips',
@@ -3494,6 +3680,7 @@ const COMPONENTS = [
   },
   {
     name: 'Toast',
+    ai: false,
     cls: '.ag-toast \u00b7 #ag-toast-wrap (js/agent-overview.js \u00b7 agToast)',
     used: 'Global notifications via the agent shell (#ag-toast-wrap, js/agent-overview.js) — saves, invites, errors. Same seat on admin / module wraps (.wmod-toast-wrap, #adm-toast-wrap)',
     note: 'One seat only: the <strong>bottom centre</strong> of the viewport \u2014 22px up from the edge, horizontally centred (<code>#ag-toast-wrap</code>). It does not sit at the top, in a corner, or next to the control that fired it. Arrival is a 0.25s rise of 10px with a fade-in (<code>agToastIn</code>). It holds 2.6s, then fades and drops 8px and is removed. A second toast stacks above the first (column, 8px gap). The wrap does not take clicks. Admin / module wraps use the same seat, 28px up. Live arrival + leave are in <em>Motion &amp; Resize \u2192 Toast</em>.',
@@ -3522,6 +3709,7 @@ const COMPONENTS = [
   },
   {
     name: 'Left-nav item',
+    ai: false,
     cls: '.menu-nav-item · .menu-nav-icon (+ .is-active, .menu-nav-locked, .is-hover)',
     used: 'Primary navigation rail on every app page (js/agent-menu.js)',
     note: 'States: Default, Hover, Open/active (<code>.is-active</code>), Locked. One row shape for the whole rail.',
@@ -3541,6 +3729,7 @@ const COMPONENTS = [
   },
   {
     name: 'Dashboard card',
+    ai: false,
     cls: '.dash-card · .dash-eyebrow · .dash-card-title',
     used: 'Non-UPF Dashboard · Reports · Verification · AI Dashboard widgets',
     demo: `
@@ -3617,6 +3806,7 @@ const COMPONENTS = [
   },
   {
     name: 'Action scorecards',
+    ai: false,
     wide: true,
     cls: '.adm-vf-stat (+ .is-active, .adm-stat--*) · .adm-chip · .adm-btn',
     used: 'Non-UPF Dashboard — status chip + caption + optional ghost action pinned to the bottom',
@@ -3650,6 +3840,7 @@ const COMPONENTS = [
   },
   {
     name: 'Compact metrics',
+    ai: false,
     cls: '.adm-metric (+ .adm-metric--accent)',
     used: 'Admin utils · denser at-a-glance rows where a full filter tile is too heavy',
     note: 'Read-only metric strip — icon + label, numeral, caption. Not clickable and not a filter. Accent marks the primary figure in the row.',
@@ -3675,6 +3866,7 @@ const COMPONENTS = [
   },
   {
     name: 'KPI scorecards',
+    ai: false,
     wide: true,
     cls: '.dash-score-card · .dash-score-num · .dash-badge · .dash-score-note',
     used: 'Analytics Types · Overview · Non-UPF Dashboard — the dashboard score band',
@@ -3755,6 +3947,7 @@ const COMPONENTS = [
   /* ---- Secondary popovers ---------------------------------------- */
   {
     name: 'Menu popover',
+    ai: false,
     cls: '.wise-popover · .wise-popover-item (+ .wise-toggle-item, .is-on, .danger, .wise-popover-badge)',
     used: 'Avatar menu · Appearance menu (every page) — the settings/profile popover, distinct from .topbar-popover',
     note: 'The second popover shape: a rounded floating card of full-width rows with a leading icon. Toggle rows show state via the switch glyph, not a row highlight. Anchored & dismissed centrally by <code>js/popover-layer.js</code>.',
@@ -3771,6 +3964,7 @@ const COMPONENTS = [
   },
   {
     name: 'Row action menu',
+    ai: false,
     cls: '.adm-rowmenu · .adm-rowmenu-btn · .adm-rowmenu-pop · .adm-rowmenu-item (+ --primary, --danger, .is-open)',
     used: 'Every table row kebab — Organizations, User Management, Audit Queue, Portfolio (.pf-rowmenu)',
     note: 'The per-row ⋯ menu that collapses row actions into a popover. States: Default (closed), Open (<code>.is-open</code>). Portalled floating variant (<code>.adm-menu</code>) is used when a row menu would clip inside the table card.',
@@ -3806,6 +4000,7 @@ const COMPONENTS = [
   /* ---- Status chips (domain + token pills, one catalog card) ----- */
   {
     name: 'Status chips',
+    ai: false,
     aliases: ['Status chips (domain)', 'Status pills'],
     cls: '.adm-chip (+ --green/--red/--amber/--blue/--muted/--outline/--canon) · .ds-pill',
     used: 'Admin table cells · Organizations · User Management · Audit Queue · Portfolio table · Verification & GRAS statuses · Invoices',
@@ -3858,6 +4053,7 @@ const COMPONENTS = [
   /* ---- Admin buttons (parallel button system) -------------------- */
   {
     name: 'Admin buttons',
+    ai: false,
     cls: '.adm-btn (+ --primary/--ghost/--danger/--good/--sm) · .adm-icon-btn',
     used: 'Admin module headers & rows · Invoices (.inv-btn mirror) — the pill button set beside the app .dash-btn',
     note: 'The admin/list surfaces use this pill button family; content surfaces use <code>.dash-btn</code>. Same tokens, two shapes — pick by surface. States shown: Default, Hover, Disabled.',
@@ -3900,6 +4096,7 @@ const COMPONENTS = [
   /* ---- Modal / dialog -------------------------------------------- */
   {
     name: 'Modal dialog',
+    ai: false,
     wide: true,
     cls: '.adm-modal-scrim · .adm-modal · .adm-modal-head / -body · .adm-modal-eyebrow / -title / -sub',
     used: 'Admin CRUD flows — create / edit / duplicate / confirm across Organizations, User Management, Admin Utils',
@@ -3942,6 +4139,7 @@ const COMPONENTS = [
   /* ---- Notifications ---------------------------------------------- */
   {
     name: 'Notification rows',
+    ai: false,
     cls: '.notif-row · .notif-row-icon (.notif-ic-red/-amber/-green/-blue) · .notif-row-title / -sub · .notif-view-all',
     used: 'Alerts / notifications popout from the top-bar bell (every page, via the agent shell)',
     note: 'The alerts feed: a colored status icon + title + timestamp per row, capped by a "View all" pill. Icon tone comes from the same status tokens as chips and pills.',
@@ -3958,6 +4156,7 @@ const COMPONENTS = [
   /* ---- Bottom sheet / drawer ------------------------------------- */
   {
     name: 'Bottom sheet',
+    ai: false,
     status: 'not-now',
     wide: true,
     cls: '.ag-sheet-scrim · .ag-sheet · .ag-sheet-handle / -head / -icon / -titles / -body · .ag-detail-row · .agent-cta',
@@ -4127,6 +4326,7 @@ const COMPONENTS = [
   },
   {
     name: 'Report posters',
+    ai: false,
     wide: true,
     cls: '.rp-card · .rp-poster · .rp-name · .rp-badge · .rp-view (+ .is-locked)',
     used: 'Reports (reports.html) — the studio shelf of standardized reports',
@@ -4285,14 +4485,56 @@ function modulesForUsed(used) {
   return out;
 }
 
-function usedSurfacesHTML(used) {
+/* First live CSS selectors from a catalog card — class / id tokens only,
+   skipping modifier fragments (“--primary”) and overly generic singles. */
+const USED_GENERIC_SEL = new Set(['.chip', '.btn', '.card', '.icon']);
+
+function compLiveSels(comp) {
+  if (comp && comp.liveSel) return [String(comp.liveSel)];
+  const raw = String((comp && comp.cls) || '');
+  const found = raw.match(/#[A-Za-z][\w-]+|\.[A-Za-z_][\w-]{2,}/g) || [];
+  const seen = new Set();
+  const out = [];
+  found.forEach((s) => {
+    if (seen.has(s)) return;
+    seen.add(s);
+    out.push(s);
+  });
+  const preferred = out.filter((s) => !USED_GENERIC_SEL.has(s));
+  return (preferred.length ? preferred : out).slice(0, 6);
+}
+
+function hrefWithHighlight(href, params) {
+  const raw = String(href || '');
+  const hashIdx = raw.indexOf('#');
+  const hash = hashIdx >= 0 ? raw.slice(hashIdx) : '';
+  const base = hashIdx >= 0 ? raw.slice(0, hashIdx) : raw;
+  const qIdx = base.indexOf('?');
+  const path = qIdx >= 0 ? base.slice(0, qIdx) : base;
+  const existing = qIdx >= 0 ? base.slice(qIdx + 1) : '';
+  const usp = new URLSearchParams(existing);
+  Object.keys(params || {}).forEach((k) => {
+    const v = params[k];
+    if (v == null || v === '') return;
+    usp.set(k, v);
+  });
+  const qs = usp.toString();
+  return path + (qs ? '?' + qs : '') + hash;
+}
+
+function usedSurfacesHTML(used, comp) {
   const mods = modulesForUsed(used);
   if (!mods.length) {
     return `<div class="dsc-used"><span class="dsc-used-label">Used in</span><span class="dsc-used-list">${esc(used)}</span></div>`;
   }
-  const links = mods.map((m) =>
-    `<a class="dsc-used-link" href="#mi-directory" data-jump-mod="${esc(m.href)}">${esc(m.label)}</a>`
-  ).join('');
+  const sels = compLiveSels(comp);
+  const links = mods.map((m) => {
+    const href = hrefWithHighlight(m.href, {
+      'wise-hl': sels.join(','),
+      'wise-comp': (comp && comp.name) || '',
+    });
+    return `<a class="dsc-used-link" href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(m.label)}</a>`;
+  }).join('');
   return `<div class="dsc-used"><span class="dsc-used-label">Used in</span><span class="dsc-used-list dsc-used-list--links">${links}</span></div>`;
 }
 
@@ -4439,7 +4681,7 @@ function paneCompsHTML(comps, title, opts) {
     ? comps.map((c) => `
         <li class="mi-pane-comp">
           <a class="mi-pane-comp-link" href="#${esc(compDomId(c.name))}" data-jump-comp="${esc(c.name)}">${esc(c.name)}</a>
-          ${opts.hideReady ? '' : readyToggleHTML(c.name, c.name, { level: 'item', parent: 'mi-components', ai: opts.ai !== false })}
+          ${opts.hideReady ? '' : readyToggleHTML(c.name, c.name, { level: 'item', parent: 'mi-components', ai: opts.ai !== false && c.ai !== false })}
         </li>`).join('')
     : '<li class="mi-pane-comp mi-pane-comp--empty">No catalogued components</li>';
   return `
@@ -4624,9 +4866,16 @@ function registerReadyChildren(moduleId, children) {
   children.forEach((c) => { DEV_READY_PARENT[c.id] = moduleId; });
 }
 
-/* How many of a module's children are Dev Ready right now. */
-function readyChildStats(moduleId, map) {
+/* AI children skip catalog cards marked `ai: false` (no switch, no k/n). */
+function readyKids(moduleId, kind) {
   const kids = DEV_READY_CHILDREN[moduleId] || [];
+  if (kind === 'ai') return kids.filter((c) => c.ai !== false);
+  return kids;
+}
+
+/* How many of a module's children are ready right now for this kind. */
+function readyChildStats(moduleId, map, kind) {
+  const kids = readyKids(moduleId, kind);
   let ready = 0;
   kids.forEach((c) => { if (map[c.id] === true) ready++; });
   return { ready, total: kids.length };
@@ -4634,6 +4883,15 @@ function readyChildStats(moduleId, map) {
 
 function readyProgressTitle(stats, kind) {
   return readySpec(kind).progressTitle(stats);
+}
+
+function readyProgressPartial(stats) {
+  return !!(stats && stats.ready > 1 && stats.ready < stats.total);
+}
+
+function readyProgressClass(stats) {
+  const complete = stats.ready >= stats.total && stats.total > 0;
+  return 'dsc-ready-progress' + (complete ? ' is-complete' : '');
 }
 
 function readyProgressInner(stats) {
@@ -4644,9 +4902,8 @@ function readyProgressInner(stats) {
 }
 
 function readyProgressHTML(moduleId, stats, kind) {
-  const gated = stats.ready < stats.total;
   const spec = readySpec(kind);
-  return `<span class="dsc-ready-progress${gated ? '' : ' is-complete'}" data-ready-progress-for="${esc(moduleId)}" data-ready-kind="${spec.id}" title="${esc(readyProgressTitle(stats, kind))}">
+  return `<span class="${readyProgressClass(stats)}" data-ready-progress-for="${esc(moduleId)}" data-ready-kind="${spec.id}" title="${esc(readyProgressTitle(stats, kind))}">
         ${readyProgressInner(stats)}
       </span>`;
 }
@@ -4654,8 +4911,11 @@ function readyProgressHTML(moduleId, stats, kind) {
 function paintReadyProgress(pill, stats, kind) {
   if (!pill) return;
   pill.classList.toggle('is-complete', stats.ready >= stats.total && stats.total > 0);
+  pill.classList.remove('is-partial');
   pill.setAttribute('title', readyProgressTitle(stats, kind || pill.getAttribute('data-ready-kind') || 'dev'));
   pill.innerHTML = readyProgressInner(stats);
+  const wrap = pill.closest('.dsc-ready--ai');
+  if (wrap) wrap.classList.toggle('is-partial', readyProgressPartial(stats));
 }
 
 /* Stable child ids — MUST match the ids the child toggles render with. */
@@ -4673,6 +4933,50 @@ function traceReadyChildren() {
     { id: 'trace:detail', label: 'Streaming detail' },
   ];
 }
+const TARCH_LAYERS = [
+  { id: 'chats', side: 'left', icon: 'history', title: 'History',
+    body: 'The conversation list. Each row is a thread.',
+    jump: 'History' },
+  { id: 'fork', side: 'left', icon: 'alt_route', title: 'Fork banner',
+    body: 'This chat branched from another thread.',
+    jump: 'Transcript lines' },
+  { id: 'lines', side: 'left', icon: 'forum', title: 'Transcript lines',
+    body: 'You, WISEcodeAI, or an event — never a bubble.',
+    jump: 'Transcript lines' },
+  { id: 'strips', side: 'left', icon: 'timeline', title: 'Activity strip',
+    body: 'Landmark rail. Gold = output, green = source, amber = database.',
+    jump: 'Activity strip' },
+  { id: 'activity', side: 'left', icon: 'swap_horiz', title: 'Event line',
+    body: 'A mid-thread database switch or data source.',
+    jump: 'Transcript lines' },
+  { id: 'composer', side: 'left', icon: 'chat', title: 'Composer',
+    body: 'The unlocked typing rail under the thread.',
+    jump: 'Chat composer' },
+  { id: 'menu', side: 'right', icon: 'more_vert', title: 'Chat menu',
+    body: 'The ⋮ on the chat. Turns is an Admin row in here.',
+    jump: 'Chat \u22ef menu' },
+  { id: 'outputs', side: 'right', icon: 'dashboard_customize', title: 'Output chips',
+    body: 'A Results / Visuals chip that opens the pane.',
+    jump: 'Output chips' },
+  { id: 'actions', side: 'right', icon: 'thumbs_up_down', title: 'Transcript actions',
+    body: 'Copy, accurate / not, and the answer ⋮.',
+    jump: 'Transcript actions' },
+  { id: 'chips', side: 'right', icon: 'bolt', title: 'Intent chips',
+    body: 'Reply chips that open the next transcript.',
+    jump: 'Intent chips' },
+  { id: 'versions', side: 'right', icon: 'layers', title: 'Versions',
+    body: 'Redo stacks every version at 52px. Hover fans the stack.',
+    jump: 'Output chips' },
+  { id: 'tokens', side: 'right', icon: 'more_horiz', title: 'Token readout',
+    body: 'Three dots under the composer — this-turn cost.',
+    jump: 'Token readout' },
+  { id: 'turns', side: 'right', icon: 'alt_route', title: 'Turns',
+    body: 'Admin sticky drawer. Fork or jump any turn from here.',
+    jump: 'Turns module' },
+  { id: 'cwr', side: 'right', icon: 'directions_run', title: 'Roll · Crawl · Walk · Run',
+    body: 'Admin rollout stadium. Not Turns — four page modes.',
+    jump: 'Roll · Crawl · Walk · Run' },
+];
 
 /* De-duped directory sections — shared by the directory render and the tree so
    the area children always match the areas actually shown. */
@@ -4715,7 +5019,7 @@ function buildDevReadyTree() {
   /* Icon Inventory is one library — Dev Ready is the module switch, not a
      per-group count. */
   registerReadyChildren('mi-design', designReadyGroups());
-  registerReadyChildren('mi-components', COMPONENTS.filter((c) => c.status !== 'not-now').map((c) => ({ id: c.name, label: c.name })));
+  registerReadyChildren('mi-components', COMPONENTS.filter((c) => c.status !== 'not-now').map((c) => ({ id: c.name, label: c.name, ai: c.ai !== false })));
 }
 
 /* One switch for one kind. `level` is 'module' (on when every child is
@@ -4727,9 +5031,9 @@ function readyToggleOneHTML(id, label, opts) {
   const level = opts.level || 'item';
   const parent = opts.parent || '';
   const map = loadReadyMap(kind);
-  const kids = level === 'module' ? (DEV_READY_CHILDREN[id] || []) : [];
+  const kids = level === 'module' ? readyKids(id, kind) : [];
   const hasKids = kids.length > 0;
-  const stats = hasKids ? readyChildStats(id, map) : null;
+  const stats = hasKids ? readyChildStats(id, map, kind) : null;
   const complete = hasKids ? stats.ready >= stats.total : isDscReady(id, map);
   const ready = hasKids ? complete : isDscReady(id, map);
   const cls = 'dash-brand-toggle' + (ready ? ' is-on' : '');
@@ -4737,8 +5041,9 @@ function readyToggleOneHTML(id, label, opts) {
   const showProgress = hasKids && (kind !== 'ai' || id === 'mi-components');
   const progress = showProgress ? readyProgressHTML(id, stats, kind) : '';
   const switchText = readySwitchText(kind, ready);
+  const partial = kind === 'ai' && hasKids && readyProgressPartial(stats);
   return `
-    <div class="dsc-ready dsc-ready--${level} dsc-ready--${kind}">
+    <div class="dsc-ready dsc-ready--${level} dsc-ready--${kind}${partial ? ' is-partial' : ''}">
       ${progress}
       <button type="button" class="${cls}" role="switch"
         aria-checked="${ready ? 'true' : 'false'}"
@@ -4753,7 +5058,7 @@ function readyToggleOneHTML(id, label, opts) {
 }
 
 /* WIP Ready + AI Ready, WIP on the left. Pass `ai: false` to omit AI Ready
-   (Module Directory and Table Gallery). */
+   (Module Directory, Table Gallery, and chrome catalog cards). */
 function readyToggleHTML(id, label, opts) {
   opts = opts || {};
   if (opts.kind) return readyToggleOneHTML(id, label, opts);
@@ -4842,7 +5147,7 @@ function componentCard(c, readyMap) {
           <span class="dsc-name">${esc(c.name)}</span>
           <code class="dsc-class">${esc(c.cls)}</code>
         </div>
-        ${shelved ? notNowStatusHTML() : readyToggleHTML(c.name, c.name, { level: 'item', parent: 'mi-components' })}
+        ${shelved ? notNowStatusHTML() : readyToggleHTML(c.name, c.name, { level: 'item', parent: 'mi-components', ai: c.ai !== false })}
       </div>
       <div class="dsc-card-body" id="${esc(bodyId)}">
         ${typeof c.demoCustom === 'function' ? c.demoCustom() : (c.demoCustom || (c.demo ? themedDemoHTML(c.demo, { stack: !!c.stackThemes }) : ''))}
@@ -4852,7 +5157,7 @@ function componentCard(c, readyMap) {
           ${paneCompsHTML(parts, 'Made of', { hideEmpty: true, hideReady: true })}
           ${paneCompsHTML(hosts, 'Used by', { hideEmpty: true, hideReady: true })}
         </div>
-        ${usedSurfacesHTML(c.used)}
+        ${usedSurfacesHTML(c.used, c)}
       </div>
     </div>`;
 }
@@ -5264,7 +5569,7 @@ const INTENT_AUDIT = [
   },
   {
     label: 'All Modules', icon: 'apps', href: 'all-modules.html', src: 'all-modules-flow.js',
-    note: 'This very page. The “Jump to…” chips scroll to (and expand) a module and suppress their reply on success; their transcript is a fallback for when the target isn’t found. “How many icons are there?” is the one answer-only chip — it narrates the count without moving the page. “Show animations & resize” opens the Motion & Resize catalog.',
+    note: 'This very page. The “Jump to…” chips scroll to (and expand) a module and suppress their reply on success; their transcript is a fallback for when the target isn’t found. “How many icons are there?” is the one answer-only chip — it narrates the count without moving the page. “Show animations & resize” opens the Motion & Resize catalog. “Show the transcript architecture” opens the frozen labeled conversation.',
     chips: [
       { i: 'codebase',   label: 'How big is the codebase?',      t: true, l: true, does: 'Expands and scrolls to the Codebase scorecards, then posts the sizing answer.' },
       { i: 'directory',  label: 'Jump to the Module Directory',  t: true, l: true, does: 'Expands and scrolls to the Module Directory (suppresses the reply on success).' },
@@ -5274,6 +5579,7 @@ const INTENT_AUDIT = [
       { i: 'design',     label: 'Jump to the Design System',     t: true, l: true, does: 'Expands and scrolls to the Design System.' },
       { i: 'components', label: 'Jump to the Component Library', t: true, l: true, does: 'Expands and scrolls to the Component Library.' },
       { i: 'motion',     label: 'Show animations & resize',      t: true, l: true, does: 'Expands and scrolls to Motion & Resize.' },
+      { i: 'tarch',      label: 'Show the transcript architecture', t: true, l: true, does: 'Expands and scrolls to Transcript Architecture, then posts the layer answer.' },
       { i: 'counts',     label: 'How many icons are there?',     t: true, l: false, does: 'Answer-only — narrates the unique-icon and placement counts. Does not scroll.' },
     ],
   },
@@ -6201,6 +6507,439 @@ function wireStreamingTrace(root) {
   };
   startWhenOpen();
   new MutationObserver(startWhenOpen).observe(mod, { attributes: true, attributeFilter: ['class'] });
+}
+
+/* ------------------------------------------------------------------ */
+/* Transcript Architecture — one frozen conversation, every layer     */
+/* labeled. Chats → activity → strip → turns → tokens / outputs →    */
+/* versions. Arrows are measured to the live targets when the         */
+/* accordion opens, and again if the stage is resized.                */
+/* ------------------------------------------------------------------ */
+
+function tarchLabelHtml(layer) {
+  const jump = layer.jump
+    ? `<a class="mi-tarch-jump" href="#${esc(compDomId(layer.jump))}" data-tarch-jump="${esc(layer.jump)}">${esc(layer.jump)}</a>`
+    : '';
+  return `
+    <div class="mi-tarch-label" data-tarch-label="${esc(layer.id)}" data-tarch-side="${esc(layer.side)}" role="button" tabindex="0">
+      <span class="mi-tarch-label-ic" aria-hidden="true"><span class="material-symbols-outlined">${esc(layer.icon)}</span></span>
+      <span class="mi-tarch-label-copy">
+        <span class="mi-tarch-label-title">${esc(layer.title)}</span>
+        <span class="mi-tarch-label-body">${esc(layer.body)}</span>
+        ${jump}
+      </span>
+      <span class="mi-tarch-dot" aria-hidden="true"></span>
+    </div>`;
+}
+
+function tarchPin(side) {
+  return `<i class="mi-tarch-pin" data-tarch-side="${esc(side)}" aria-hidden="true"></i>`;
+}
+
+function tarchHit(id, side, inner) {
+  return `<span class="mi-tarch-hit" data-tarch-target="${esc(id)}" id="mi-tarch-target-${esc(id)}">${inner}${tarchPin(side)}</span>`;
+}
+
+/* Pin the arrow on the chip itself (or the version stack), not the
+   full-width slot that wraps it. */
+function tarchChip(id, side, opts) {
+  const pin = tarchPin(side);
+  const hitAttr = ` data-tarch-target="${esc(id)}" id="mi-tarch-target-${esc(id)}"`;
+  const html = outputChipHTML(opts);
+  if ((opts.versions || []).length > 1) {
+    return html
+      .replace('<div class="sc-surface-stack">', `<div class="sc-surface-stack mi-tarch-hit"${hitAttr}>`)
+      .replace('</div>\n        <div class="sc-surface-body">', pin + '</div>\n        <div class="sc-surface-body">');
+  }
+  return html
+    .replace('<div class="sc-surface-card', `<div class="sc-surface-card mi-tarch-hit`)
+    .replace(' role="button"', hitAttr + ' role="button"')
+    .replace('</div>\n    </div>\n  </div>', '</div>\n    ' + pin + '</div>\n  </div>');
+}
+
+function tarchTick(type, opts) {
+  return `<span class="mi-tarch-tick" data-tarch-tick="${esc(opts.tick)}">${demoActTick(type, opts)}</span>`;
+}
+
+function tarchTokensHtml() {
+  return '<div class="mi-tarch-tokens">'
+    + '<div class="sc-activity-dots" aria-hidden="true"><span></span><span></span><span></span></div>'
+    + '<span class="mi-tarch-tokens-val">1.3k in / 412 out · <b>$0.003</b></span>'
+    + '</div>';
+}
+
+function tarchReplyChips(items) {
+  return `<div class="sc-reply-chips">${items.map((c) =>
+    `<button type="button" class="chip" tabindex="-1"><span class="material-symbols-outlined">${esc(c.icon)}</span>${esc(c.label)}</button>`
+  ).join('')}</div>`;
+}
+
+function tarchHistoryHtml() {
+  return `
+    <aside class="mi-tarch-history dsc-wch">
+      <div class="wch-projects">
+        <div class="wch-projects-head"><span class="wch-projects-title">Conversations</span></div>
+        ${tarchHit('chats', 'left', demoWchItem({ title: 'Compare oat milk vs almond milk', color: '#2F6DF6', active: true }))}
+        ${demoWchItem({ title: 'UPF report for granola', color: '#F59E0B', fork: true })}
+        ${demoWchItem({ title: 'What can I ask about oat milk?', color: '#06B6D4', live: true })}
+      </div>
+    </aside>`;
+}
+
+function tarchTurnsHtml() {
+  return `
+    <aside class="mi-tarch-turns dsc-demo" data-tarch-target="turns" id="mi-tarch-target-turns">
+      <div class="mi-tarch-turns-head">
+        <span class="mi-tarch-turns-title">Turns</span>
+        <span class="mi-tarch-turns-admin">Admin</span>
+      </div>
+      <div class="wt-turn">
+        <div class="wt-turn-head"><span class="wt-turn-num">1</span><span class="wt-turn-q">Compare oat milk vs almond milk on processing.</span></div>
+        <div class="wt-actions">
+          <button type="button" class="wt-fork" tabindex="-1" aria-label="Fork from here"><span class="material-symbols-outlined">alt_route</span></button>
+          <span class="wt-fork-id">#3a1c</span>
+        </div>
+      </div>
+      <div class="wt-turn">
+        <div class="wt-turn-head"><span class="wt-turn-num">2</span><span class="wt-turn-q">Redo that comparison with gums called out.</span></div>
+        <div class="wt-actions">
+          <button type="button" class="wt-fork" tabindex="-1" aria-label="Fork from here"><span class="material-symbols-outlined">alt_route</span></button>
+          <span class="wt-fork-id">#6d7a</span>
+        </div>
+      </div>
+      ${tarchPin('right')}
+    </aside>`;
+}
+
+function tarchCwrHtml() {
+  return `<div class="mi-tarch-cwr" data-tarch-target="cwr" id="mi-tarch-target-cwr">${demoCwrPill(null, 'run')}${tarchPin('right')}</div>`;
+}
+
+function tarchSpecimenHtml() {
+  return `
+    <div class="mi-tarch-specimen dsc-demo" aria-hidden="true">
+      ${tarchHistoryHtml()}
+      <div class="mi-tarch-chat">
+        <div class="chat-topbar">
+          <div class="sc-topbar-lead">
+            <div class="sc-bug">${DEMO_OWL_BUG}</div>
+            <div class="sc-topbar-titles"><span class="topbar-title">WISEcodeAI</span></div>
+          </div>
+          <div class="sc-topbar-controls">
+            ${tarchHit('menu', 'right', `<button type="button" class="panel-more-btn" tabindex="-1" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>`)}
+          </div>
+        </div>
+        <div class="mi-tarch-thread">
+          <div class="mi-tarch-strip">
+            <div class="wa-activity-rail mi-tarch-hit" data-tarch-target="strips" id="mi-tarch-target-strips">${tarchPin('left')}</div>
+            ${tarchTick('output', { id: '3a1c', tick: 'outputs' })}
+            ${tarchTick('output', { stacked: true, id: '6d7a', tick: 'versions' })}
+            ${tarchTick('database', { id: '9f04', tick: 'activity' })}
+            ${tarchTick('source', { id: 'b12e', tick: 'source' })}
+          </div>
+          ${tarchHit('fork', 'left', `<div class="sc-fork-banner"><span class="material-symbols-outlined sc-fork-banner-ic">alt_route</span><span class="sc-fork-banner-txt">Forked from <strong>Compare oat-milk brands for gut health</strong></span></div>`)}
+          ${tarchHit('lines', 'left', `<div class="sc-line sc-line-you">${demoYouAvatar()}<div class="sc-line-body">Compare oat milk vs almond milk on processing.<div class="sc-line-meta"><span class="sc-line-time">12 min ago</span></div></div></div>`)}
+          <div class="sc-line sc-line-wiseai">${demoWiseAvatar()}<div class="sc-line-body">
+            <span class="sc-para">Oat milk scores higher on processing; almond milk wins on additives. Both sit in the same WISEscore band — the split is <strong>gellan</strong> versus <strong>locust bean</strong>.</span>
+            ${tarchChip('outputs', 'right', { title: 'Oat milk vs almond milk', versions: [OUTPUT_CHIP_VERS[0]] })}
+            ${tarchHit('actions', 'right', demoFbRow())}
+            ${tarchHit('chips', 'right', tarchReplyChips([
+              { icon: 'science', label: 'Break down the gums' },
+              { icon: 'replay', label: 'Redo with oils called out' },
+            ]))}
+          </div></div>
+          ${tarchHit('activity', 'left', `<div class="sc-line sc-line-you sc-line-event" data-activity="database" role="note">${demoYouAvatar()}<div class="sc-line-body"><span class="sc-event-label">Switched database from</span> <strong>Postgres (DEV)</strong> to <strong>Postgres (UAT)</strong><div class="sc-line-meta"><span class="sc-line-time">8 min ago</span><span class="sc-fb-id">#9f04</span></div></div></div>`)}
+          <div class="sc-line sc-line-you">${demoYouAvatar()}<div class="sc-line-body">Redo that comparison with gums called out.<div class="sc-line-meta"><span class="sc-line-time">6 min ago</span></div></div></div>
+          <div class="sc-line sc-line-wiseai">${demoWiseAvatar()}<div class="sc-line-body">
+            <span class="sc-para">Same pair. v1 was the first pass, v2 added oils, v3 is the gum stack — the one open on the right.</span>
+            ${tarchChip('versions', 'right', { title: 'Oat milk vs almond milk', versions: OUTPUT_CHIP_VERS, hover: true, activeVer: 3 })}
+            ${demoFbRow()}
+            ${tarchReplyChips([
+              { icon: 'restaurant', label: 'Which SKU should I reformulate?' },
+              { icon: 'verified', label: 'Check GRAS on the gums' },
+            ])}
+          </div></div>
+        </div>
+        <div class="chat-input-rail">
+          ${tarchHit('composer', 'left', demoComposerHtml({ value: 'Compare these three oat milks on gums.' }))}
+          <div class="sc-belowinput">
+            ${tarchHit('tokens', 'right', tarchTokensHtml())}
+          </div>
+        </div>
+        ${tarchCwrHtml()}
+      </div>
+      ${tarchTurnsHtml()}
+    </div>`;
+}
+
+function renderTranscriptArch(opts) {
+  if (opts && opts.headOnly) {
+    return miHeadOnly('mi-tarch', 'Transcript Architecture',
+      'One frozen conversation. Every visible piece is labeled — History, the strip, transcript lines, output chips, the admin <strong>Turns</strong> drawer, Roll · Crawl · Walk · Run — with an arrow to the element and a link to its card in the Component Library.');
+  }
+  const left = TARCH_LAYERS.filter((l) => l.side === 'left');
+  const right = TARCH_LAYERS.filter((l) => l.side === 'right');
+  return `
+    <section class="mi-module is-collapsed" id="mi-tarch">
+      <header class="mi-module-head">
+        <div class="mi-module-head-text">
+          <h2 class="mi-module-title">Transcript Architecture</h2>
+          <p class="mi-module-lede">One frozen conversation. Every visible piece is labeled, with an arrow to that
+            element and a link that opens its card in the Component Library. <strong>Turns</strong> is the admin
+            sticky drawer on the right — not a question and answer in the thread.</p>
+        </div>
+      </header>
+      <div class="mi-tarch">
+        <div class="mi-tarch-stage" id="mi-tarch-stage">
+          <svg class="mi-tarch-arrows" aria-hidden="true"></svg>
+          <div class="mi-tarch-col mi-tarch-col--left">${left.map(tarchLabelHtml).join('')}</div>
+          ${tarchSpecimenHtml()}
+          <div class="mi-tarch-col mi-tarch-col--right">${right.map(tarchLabelHtml).join('')}</div>
+        </div>
+      </div>
+    </section>`;
+}
+
+function wireTranscriptArch(root) {
+  const mod = root.querySelector('#mi-tarch');
+  if (!mod) return;
+  const stage = mod.querySelector('#mi-tarch-stage');
+  if (!stage) return;
+  const svg = stage.querySelector('.mi-tarch-arrows');
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Prefer the real control inside the hit — version thumbs, the chip,
+     the three dots, the rail — never the full-width row that wraps it. */
+  const TARCH_AIM = {
+    chats: '.wch-item',
+    fork: '.sc-fork-banner',
+    lines: '.sc-avatar-you, .sc-line-you',
+    strips: null,
+    activity: '.sc-line-event, .sc-avatar-you',
+    composer: '.fl-input-wrap, [data-wise-composer]',
+    menu: '.panel-more-btn',
+    outputs: '.sc-surface-thumb, .sc-surface-card',
+    actions: '.sc-fb, .sc-fb-wrap',
+    chips: '.sc-reply-chips, .chip',
+    versions: '.sc-surface-thumb.is-active, .sc-surface-stack, .sc-surface-thumb',
+    tokens: '.sc-activity-dots, .mi-tarch-tokens',
+    turns: '.wt-turn, .mi-tarch-turns-head',
+    cwr: '.mi-cwr, .cwr-btn',
+  };
+
+  const boxOk = (el) => {
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return (r.width > 2 && r.height > 2) ? el : null;
+  };
+
+  const pinOf = (id) => {
+    const hit = stage.querySelector('[data-tarch-target="' + id + '"]');
+    if (!hit) return null;
+    if (id === 'strips') return boxOk(hit.closest('.wa-activity-rail')) || boxOk(hit);
+    const sel = TARCH_AIM[id];
+    if (sel) {
+      for (const part of sel.split(',').map((s) => s.trim())) {
+        if (hit.matches && hit.matches(part) && boxOk(hit)) return hit;
+        const inner = boxOk(hit.querySelector(part));
+        if (inner) return inner;
+      }
+    }
+    return boxOk(hit.querySelector('.mi-tarch-pin')) || boxOk(hit) || hit;
+  };
+
+  const aimPoint = (id, el, sr, w, h) => {
+    const layer = TARCH_LAYERS.find((l) => l.id === id);
+    const side = layer ? layer.side : 'left';
+    const pr = el.getBoundingClientRect();
+    const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+    const inset = Math.min(12, Math.max(3, pr.width * 0.35));
+    const x = side === 'left'
+      ? pr.left - sr.left + inset
+      : pr.right - sr.left - inset;
+    const y = pr.top + pr.height / 2 - sr.top;
+    return { x: clamp(x, 2, w - 2), y: clamp(y, 2, h - 2) };
+  };
+
+  const placeTicks = () => {
+    const strip = stage.querySelector('.mi-tarch-strip');
+    if (!strip) return;
+    const sr = strip.getBoundingClientRect();
+    if (!sr.height) return;
+    stage.querySelectorAll('[data-tarch-tick]').forEach((tick) => {
+      const id = tick.getAttribute('data-tarch-tick');
+      const target = pinOf(id);
+      if (!target) return;
+      const tr = target.getBoundingClientRect();
+      const top = tr.top + tr.height / 2 - sr.top;
+      tick.style.top = Math.max(8, Math.min(sr.height - 8, top)) + 'px';
+    });
+  };
+
+  const placeLabels = (wide) => {
+    const cols = {
+      left: stage.querySelector('.mi-tarch-col--left'),
+      right: stage.querySelector('.mi-tarch-col--right'),
+    };
+    stage.querySelectorAll('[data-tarch-label]').forEach((el) => {
+      el.style.position = '';
+      el.style.top = '';
+      el.style.left = '';
+      el.style.right = '';
+    });
+    Object.values(cols).forEach((col) => {
+      if (col) { col.style.position = ''; col.style.minHeight = ''; }
+    });
+    if (!wide) return;
+    ['left', 'right'].forEach((side) => {
+      const col = cols[side];
+      if (!col) return;
+      col.style.position = 'relative';
+      const cr = col.getBoundingClientRect();
+      const placed = Array.from(col.querySelectorAll('[data-tarch-label]')).map((label) => {
+        const pin = pinOf(label.getAttribute('data-tarch-label'));
+        const pr = pin ? pin.getBoundingClientRect() : cr;
+        const h = label.offsetHeight || 56;
+        let top = pr.top + pr.height / 2 - cr.top - h / 2;
+        top = Math.max(0, top);
+        return { label, top, h };
+      }).sort((a, b) => a.top - b.top);
+      for (let i = 1; i < placed.length; i++) {
+        const minTop = placed[i - 1].top + placed[i - 1].h + 4;
+        if (placed[i].top < minTop) placed[i].top = minTop;
+      }
+      placed.forEach((p) => {
+        p.label.style.position = 'absolute';
+        p.label.style.left = '0';
+        p.label.style.right = '0';
+        p.label.style.top = p.top + 'px';
+      });
+      if (placed.length) {
+        const last = placed[placed.length - 1];
+        col.style.minHeight = (last.top + last.h) + 'px';
+      }
+    });
+  };
+
+  const draw = () => {
+    if (!svg) return;
+    let sr = stage.getBoundingClientRect();
+    if (sr.width < 8 || sr.height < 8) return;
+    const wide = sr.width >= 900;
+    placeLabels(wide);
+    placeTicks();
+    sr = stage.getBoundingClientRect();
+    const w = sr.width;
+    const h = sr.height;
+    svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    svg.setAttribute('width', String(w));
+    svg.setAttribute('height', String(h));
+    const ns = 'http://www.w3.org/2000/svg';
+    const frag = document.createDocumentFragment();
+    const defs = document.createElementNS(ns, 'defs');
+    const marker = document.createElementNS(ns, 'marker');
+    marker.setAttribute('id', 'mi-tarch-head');
+    marker.setAttribute('viewBox', '0 0 10 10');
+    marker.setAttribute('refX', '9');
+    marker.setAttribute('refY', '5');
+    marker.setAttribute('markerWidth', '6');
+    marker.setAttribute('markerHeight', '6');
+    marker.setAttribute('orient', 'auto');
+    const tip = document.createElementNS(ns, 'path');
+    tip.setAttribute('d', 'M 0 0 L 10 5 L 0 10 z');
+    tip.setAttribute('fill', 'currentColor');
+    marker.appendChild(tip);
+    defs.appendChild(marker);
+    frag.appendChild(defs);
+    const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+    if (wide) {
+      stage.querySelectorAll('[data-tarch-label]').forEach((label) => {
+        const id = label.getAttribute('data-tarch-label');
+        const pin = pinOf(id);
+        const dot = label.querySelector('.mi-tarch-dot');
+        if (!pin || !dot) return;
+        const dr = dot.getBoundingClientRect();
+        const x1 = clamp(dr.left + dr.width / 2 - sr.left, 2, w - 2);
+        const y1 = clamp(dr.top + dr.height / 2 - sr.top, 2, h - 2);
+        const tip = aimPoint(id, pin, sr, w, h);
+        const x2 = tip.x;
+        const y2 = tip.y;
+        const mid = x1 + (x2 - x1) * 0.38;
+        const path = document.createElementNS(ns, 'path');
+        path.setAttribute('d', 'M ' + x1.toFixed(1) + ' ' + y1.toFixed(1)
+          + ' C ' + mid.toFixed(1) + ' ' + y1.toFixed(1) + ', '
+          + mid.toFixed(1) + ' ' + y2.toFixed(1) + ', '
+          + x2.toFixed(1) + ' ' + y2.toFixed(1));
+        path.setAttribute('class', 'mi-tarch-arrow');
+        path.setAttribute('data-tarch-arrow', id);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('marker-end', 'url(#mi-tarch-head)');
+        frag.appendChild(path);
+      });
+    }
+    svg.replaceChildren(frag);
+  };
+
+  const setHot = (id, on) => {
+    stage.querySelectorAll('[data-tarch-label="' + id + '"], [data-tarch-target="' + id + '"], [data-tarch-arrow="' + id + '"]')
+      .forEach((el) => el.classList.toggle('is-hot', !!on));
+  };
+
+  stage.addEventListener('pointerenter', (e) => {
+    const label = e.target.closest('[data-tarch-label]');
+    if (label && stage.contains(label)) setHot(label.getAttribute('data-tarch-label'), true);
+  }, true);
+  stage.addEventListener('pointerleave', (e) => {
+    const label = e.target.closest('[data-tarch-label]');
+    if (label && stage.contains(label)) setHot(label.getAttribute('data-tarch-label'), false);
+  }, true);
+  stage.addEventListener('focusin', (e) => {
+    const label = e.target.closest('[data-tarch-label]');
+    if (label) setHot(label.getAttribute('data-tarch-label'), true);
+  });
+  stage.addEventListener('focusout', (e) => {
+    const label = e.target.closest('[data-tarch-label]');
+    if (label) setHot(label.getAttribute('data-tarch-label'), false);
+  });
+  stage.addEventListener('click', (e) => {
+    const jump = e.target.closest('[data-tarch-jump]');
+    if (jump && stage.contains(jump)) {
+      e.preventDefault();
+      e.stopPropagation();
+      jumpToComponent(document, jump.getAttribute('data-tarch-jump'));
+      return;
+    }
+    const label = e.target.closest('[data-tarch-label]');
+    if (!label || !stage.contains(label)) return;
+    const target = stage.querySelector('[data-tarch-target="' + label.getAttribute('data-tarch-label') + '"]');
+    if (target) flashEl(target);
+  });
+  stage.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    if (e.target.closest('[data-tarch-jump]')) return;
+    const label = e.target.closest('[data-tarch-label]');
+    if (!label || !stage.contains(label)) return;
+    e.preventDefault();
+    const target = stage.querySelector('[data-tarch-target="' + label.getAttribute('data-tarch-label') + '"]');
+    if (target) flashEl(target);
+  });
+  const startWhenOpen = () => {
+    if (mod.classList.contains('is-collapsed')) return;
+    requestAnimationFrame(() => requestAnimationFrame(draw));
+  };
+  startWhenOpen();
+  new MutationObserver(startWhenOpen).observe(mod, { attributes: true, attributeFilter: ['class'] });
+  if (typeof ResizeObserver === 'function') {
+    const ro = new ResizeObserver(() => {
+      if (mod.classList.contains('is-collapsed')) return;
+      if (reduced) draw();
+      else requestAnimationFrame(draw);
+    });
+    ro.observe(stage);
+  }
+  window.addEventListener('resize', () => {
+    if (!mod.classList.contains('is-collapsed')) draw();
+  });
 }
 
 /* ------------------------------------------------------------------ */
@@ -7950,6 +8689,7 @@ export function renderAllModules(mainEl) {
       ${renderAppLogic({ headOnly: true })}
       ${renderIntentAudit({ headOnly: true })}
       ${renderStreamingTrace({ headOnly: true })}
+      ${renderTranscriptArch({ headOnly: true })}
       ${renderMotion({ headOnly: true })}
       ${renderIconInventory({ headOnly: true })}
       ${renderDesignSystem({ headOnly: true })}
@@ -7964,6 +8704,7 @@ export function renderAllModules(mainEl) {
      runs when that accordion actually opens (fillSectionBody). */
   safeWire('accordion', () => setupAccordion(mainEl));
   safeWire('sectionNav', () => wireSectionNav(mainEl));
+  safeWire('tarchNudge', () => wireTarchNudge(mainEl));
   safeWire('globalSearch', () => wireGlobalSearch(mainEl));
   safeWire('devReady', () => wireDevReady(mainEl));
   safeWire('paneCompJumps', () => wirePaneCompJumps(mainEl));
@@ -8009,7 +8750,7 @@ export function renderAllModules(mainEl) {
 /* Clicks on the header's trailing ⋯ controls (and the Dev Ready       */
 /* toggle, when present) never expand or collapse the section.         */
 /* ------------------------------------------------------------------ */
-const ACC_SECTION_IDS = ['mi-code', 'mi-directory', 'mi-tables', 'mi-logic', 'mi-intents', 'mi-trace', 'mi-motion', 'mi-icons', 'mi-design', 'mi-components'];
+const ACC_SECTION_IDS = ['mi-code', 'mi-directory', 'mi-tables', 'mi-logic', 'mi-intents', 'mi-trace', 'mi-tarch', 'mi-motion', 'mi-icons', 'mi-design', 'mi-components'];
 
 const SECTION_FILL = {
   'mi-code': { render: () => renderCodebase(), wire: wireCodebase },
@@ -8027,6 +8768,7 @@ const SECTION_FILL = {
   'mi-logic': { catalog: 'logic', render: () => renderAppLogic(), wire: wireAppLogic },
   'mi-intents': { render: () => renderIntentAudit(), wire: wireIntentAudit },
   'mi-trace': { render: () => renderStreamingTrace(), wire: wireStreamingTrace },
+  'mi-tarch': { render: () => renderTranscriptArch(), wire: wireTranscriptArch },
   'mi-motion': {
     render: () => renderMotion(),
     wire: (root) => { wireMotion(root); wireJamCatalog(root); },
@@ -8080,6 +8822,7 @@ function setSectionCollapsed(root, sec, collapsed) {
   sec.classList.toggle('is-collapsed', collapsed);
   sec.querySelector(':scope > .mi-module-head')?.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
   if (!collapsed) {
+    if (sec.id === 'mi-tarch') takeTarchNudge();
     fillSectionBody(root, sec).then(() => observePreviewFrames(sec));
   }
 }
@@ -8088,6 +8831,7 @@ function setSectionCollapsed(root, sec, collapsed) {
 async function expandAccordionSection(root, id) {
   const sec = (root || document).querySelector('#' + id);
   if (!sec) return;
+  if (id === 'mi-tarch') takeTarchNudge();
   await fillSectionBody(root || document, sec);
   if (!sec.classList.contains('is-collapsed')) return;
   sec.classList.remove('is-collapsed');
@@ -8174,6 +8918,7 @@ function sectionNavTiles() {
     { id: 'mi-logic', icon: 'rule', num: logicRuleCount(), label: 'App logic', sub: 'Every rule, by page' },
     { id: 'mi-intents', icon: 'bolt', num: intentAuditStats().chips, label: 'Intent chip logic', sub: 'Transcript + logic audit' },
     { id: 'mi-trace', icon: 'psychology', num: TRACE_MILESTONES.length, label: 'Trace sections', sub: 'Playing, paused, finished' },
+    { id: 'mi-tarch', icon: 'account_tree', num: TARCH_LAYERS.length, label: 'Transcript architecture', sub: 'Every piece, linked' },
     { id: 'mi-motion', icon: 'animation', num: MOTION_ITEMS.length, label: 'Motion & resize', sub: 'Animations + drag/resize' },
     { id: 'mi-icons', icon: 'emoji_symbols', num: (ICON_INVENTORY && ICON_INVENTORY.totalUniqueIcons) || ICON_UNIQUE_FALLBACK, label: 'Icons', sub: 'Material Symbols inventory' },
     { id: 'mi-design', icon: 'palette', num: tokenCount, label: 'Design tokens', sub: 'Type scale + color tokens' },
@@ -8213,6 +8958,163 @@ function wireSectionNav(root) {
   });
 }
 
+/* Gold “This is new!” floaty on the Transcript Architecture accordion label.
+   Same body-portaled nudge as Product Portfolio / Analyze Ingredients. */
+const TARCH_NUDGE_ID = 'mi-tarch-new';
+let tarchNudgeTaken = false;
+let tarchNudgeWired = false;
+let tarchNudgeRo = null;
+
+function tarchNudgeDismissed() {
+  return !!(isNudgeDismissed(TARCH_NUDGE_ID) ||
+    (window.WiseNudgeToast && typeof window.WiseNudgeToast.isDismissed === 'function'
+      && window.WiseNudgeToast.isDismissed(TARCH_NUDGE_ID)));
+}
+
+function takeTarchNudge() {
+  tarchNudgeTaken = true;
+  const toast = document.getElementById('mi-tarch-nudge');
+  if (!toast) return;
+  toast.hidden = true;
+  toast.setAttribute('hidden', '');
+  toast.style.visibility = '';
+  toast.style.pointerEvents = '';
+}
+
+function tarchNudgeAnchor(root) {
+  const sec = (root || hostEl || document).querySelector('#mi-tarch');
+  if (!sec || sec.hidden) return null;
+  return sec.querySelector(':scope > .mi-module-head .mi-module-title');
+}
+
+function ensureTarchNudgeToast() {
+  let toast = document.getElementById('mi-tarch-nudge');
+  if (toast) return toast;
+  toast = document.createElement('div');
+  toast.id = 'mi-tarch-nudge';
+  toast.className = 'dash-score-toast dash-score-toast--gold is-portaled';
+  toast.setAttribute('data-nudge-id', TARCH_NUDGE_ID);
+  toast.setAttribute('role', 'status');
+  toast.hidden = true;
+  toast.innerHTML =
+    '<span class="dash-score-toast-icon"><span class="material-symbols-outlined">new_releases</span></span>' +
+    '<div class="dash-score-toast-body">' +
+      '<div class="dash-score-toast-title">This is new!</div>' +
+      '<p class="dash-score-toast-text">Transcript Architecture freezes one conversation and labels every visible piece — History, the strip, chips, composer, Turns, and Roll · Crawl · Walk · Run.</p>' +
+      '<button type="button" class="dash-score-toast-link" data-tarch-nudge-go>Open Transcript Architecture<span class="material-symbols-outlined dash-score-toast-link-arrow">arrow_outward</span></button>' +
+    '</div>' +
+    '<button class="dash-score-toast-close" type="button" aria-label="Dismiss" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined">close</span></button>';
+  document.body.appendChild(toast);
+  toast.addEventListener('click', (e) => {
+    const go = e.target.closest('[data-tarch-nudge-go]');
+    if (!go) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const root = hostEl || document;
+    takeTarchNudge();
+    expandAccordionSection(root, 'mi-tarch').then(() => {
+      document.getElementById('mi-tarch')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+  return toast;
+}
+
+function placeTarchNudgeToast(toast, anchor) {
+  if (!toast || !anchor || toast.hidden) return;
+  const br = anchor.getBoundingClientRect();
+  if (br.width < 8 || br.height < 8) {
+    toast.style.visibility = 'hidden';
+    toast.style.pointerEvents = 'none';
+    return;
+  }
+  const onScreen = br.bottom > 8 && br.top < window.innerHeight - 8
+    && br.right > 8 && br.left < window.innerWidth - 8;
+  if (!onScreen) {
+    toast.style.visibility = 'hidden';
+    toast.style.pointerEvents = 'none';
+    return;
+  }
+  toast.style.visibility = '';
+  toast.style.pointerEvents = '';
+  const gap = 12;
+  const th = toast.offsetHeight || 148;
+  const tw = toast.offsetWidth || 320;
+  const canAbove = br.top >= th + gap + 8;
+  const canBelow = window.innerHeight - br.bottom >= th + gap + 8;
+  const canRight = window.innerWidth - br.right >= tw + gap + 8;
+  const canLeft = br.left >= tw + gap + 8;
+  toast.classList.remove('is-below', 'is-right', 'is-left');
+  let top;
+  let left;
+  const placeAbove = () => { top = br.top - th - gap; left = br.left; };
+  const placeBelow = () => { toast.classList.add('is-below'); top = br.bottom + gap; left = br.left; };
+  const placeRight = () => { toast.classList.add('is-right'); top = br.top + br.height / 2 - th / 2; left = br.right + gap; };
+  const placeLeft = () => { toast.classList.add('is-left'); top = br.top + br.height / 2 - th / 2; left = br.left - tw - gap; };
+  const order = [
+    ['right', canRight, placeRight],
+    ['above', canAbove, placeAbove],
+    ['left', canLeft, placeLeft],
+    ['below', canBelow, placeBelow],
+  ];
+  const pick = order.find((entry) => entry[1]) || order[0];
+  pick[2]();
+  left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+  top = Math.max(8, Math.min(top, window.innerHeight - th - 8));
+  toast.style.top = Math.round(top) + 'px';
+  toast.style.left = Math.round(left) + 'px';
+  const caretX = br.left + br.width / 2 - left - 7;
+  const caretY = br.top + br.height / 2 - top - 7;
+  toast.style.setProperty('--nudge-toast-caret', Math.round(Math.max(16, Math.min(tw - 24, caretX))) + 'px');
+  toast.style.setProperty('--nudge-toast-caret-y', Math.round(Math.max(16, Math.min(th - 24, caretY))) + 'px');
+}
+
+function refreshTarchNudge() {
+  const toast = ensureTarchNudgeToast();
+  const root = hostEl || document;
+  const label = tarchNudgeAnchor(root);
+  const labelLive = !!(label && !label.hidden && label.getClientRects().length);
+  const show = !tarchNudgeTaken && !tarchNudgeDismissed() && labelLive;
+  if (!show) {
+    toast.hidden = true;
+    toast.setAttribute('hidden', '');
+    toast.style.visibility = '';
+    toast.style.pointerEvents = '';
+    return;
+  }
+  toast.hidden = false;
+  toast.removeAttribute('hidden');
+  if (tarchNudgeRo) {
+    tarchNudgeRo.disconnect();
+    tarchNudgeRo = null;
+  }
+  if (typeof ResizeObserver !== 'undefined' && label) {
+    tarchNudgeRo = new ResizeObserver(() => placeTarchNudgeToast(toast, label));
+    tarchNudgeRo.observe(label);
+  }
+  placeTarchNudgeToast(toast, label);
+  requestAnimationFrame(() => placeTarchNudgeToast(toast, label));
+}
+
+function wireTarchNudge(root) {
+  if (tarchNudgeWired) {
+    refreshTarchNudge();
+    return;
+  }
+  tarchNudgeWired = true;
+  ensureTarchNudgeToast();
+  const place = () => {
+    const toast = document.getElementById('mi-tarch-nudge');
+    placeTarchNudgeToast(toast, tarchNudgeAnchor(root));
+  };
+  window.addEventListener('resize', place);
+  window.addEventListener('scroll', place, { passive: true, capture: true });
+  root.querySelector('.agent-main-scroll')?.addEventListener('scroll', place, { passive: true });
+  document.getElementById('agent-main-scroll')?.addEventListener('scroll', place, { passive: true });
+  refreshTarchNudge();
+  setTimeout(refreshTarchNudge, 200);
+  setTimeout(refreshTarchNudge, 700);
+}
+
 /* ------------------------------------------------------------------ */
 /* Page-wide search — indexes every catalog this page already renders */
 /* ------------------------------------------------------------------ */
@@ -8221,7 +9123,7 @@ const GLOBAL_SEARCH_PER_GROUP = 6;
 const GLOBAL_SEARCH_MAX = 36;
 const GLOBAL_SEARCH_GROUPS = [
   'Scorecards', 'Modules', 'Tables', 'App logic', 'Intent chips',
-  'Trace', 'Motion', 'Icons', 'Type', 'Tokens', 'Components', 'Codebase',
+  'Trace', 'Transcript', 'Motion', 'Icons', 'Type', 'Tokens', 'Components', 'Codebase',
 ];
 const GLOBAL_SECTION_SEARCH = [
   '#mi-dir-search', '#mi-tbl-search', '#mi-logic-search',
@@ -8287,6 +9189,12 @@ function buildGlobalIndex() {
     title: (m.keys || [])[0] || ('Section ' + (i + 1)),
     sub: (m.keys || []).slice(1).join(' · '), key: String(i),
     q: `${(m.keys || []).join(' ')} ${(m.haiku || []).flat().join(' ')} trace helix streaming`,
+  }));
+
+  TARCH_LAYERS.forEach((l) => add({
+    kind: 'tarch', section: 'mi-tarch', group: 'Transcript', icon: l.icon,
+    title: l.title, sub: l.body, key: l.id,
+    q: `${l.title} ${l.id} ${l.body} ${l.jump || ''} transcript architecture history turns composer chips outputs versions tokens strip cwr`,
   }));
 
   MOTION_ITEMS.forEach((item) => add({
@@ -8389,6 +9297,15 @@ async function jumpGlobalHit(root, hit, q) {
       el.hidden = !!(needle && (el.dataset.search || '').indexOf(needle) === -1);
     });
   }
+  if (hit.kind === 'tarch') {
+    const el = findByAttr(root, '[data-tarch-target]', 'data-tarch-target', hit.key);
+    if (el) flashEl(el);
+    else {
+      const sec = root.querySelector('#' + hit.section);
+      if (sec) requestAnimationFrame(() => sec.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    }
+    return;
+  }
   if (hit.kind === 'more' || hit.kind === 'section' || hit.kind === 'trace') {
     const sec = root.querySelector('#' + hit.section);
     if (sec) requestAnimationFrame(() => sec.scrollIntoView({ behavior: 'smooth', block: 'start' }));
@@ -8422,6 +9339,7 @@ function filterScorecards(root, hits) {
   if (!hits) {
     nav.classList.remove('is-filtered');
     nav.querySelectorAll('[data-jump]').forEach((t) => { t.hidden = false; });
+    refreshTarchNudge();
     return;
   }
   const sections = new Set(hits.map((h) => h.section));
@@ -8429,6 +9347,7 @@ function filterScorecards(root, hits) {
   nav.querySelectorAll('[data-jump]').forEach((t) => {
     t.hidden = !sections.has(t.dataset.jump);
   });
+  refreshTarchNudge();
 }
 
 function groupedGlobalHits(matches) {
@@ -11900,10 +12819,10 @@ function wireDevReady(root) {
   function refreshParent(moduleId, kind) {
     kind = kind === 'ai' ? 'ai' : 'dev';
     const spec = readySpec(kind);
-    const kids = DEV_READY_CHILDREN[moduleId] || [];
+    const kids = readyKids(moduleId, kind);
     if (!kids.length) return;
     const map = loadReadyMap(kind);
-    const { ready, total } = readyChildStats(moduleId, map);
+    const { ready, total } = readyChildStats(moduleId, map, kind);
     const complete = ready === total;
     const firstBtn = moduleBtn(moduleId, kind);
     const label = (firstBtn && firstBtn.dataset.readyLabel) || moduleId;
@@ -11937,12 +12856,14 @@ function wireDevReady(root) {
         btn.setAttribute('aria-checked', 'false');
         btn.title = spec.markAll(label);
       }
+      const wrap = btn.closest('.dsc-ready--ai');
+      if (wrap) wrap.classList.toggle('is-partial', kind === 'ai' && readyProgressPartial({ ready, total }));
     });
   }
 
   function markModuleChildrenReady(moduleId, kind) {
     kind = kind === 'ai' ? 'ai' : 'dev';
-    const kids = DEV_READY_CHILDREN[moduleId] || [];
+    const kids = readyKids(moduleId, kind);
     const map = loadReadyMap(kind);
     kids.forEach((c) => { map[c.id] = true; });
     map[moduleId] = true;
@@ -11954,9 +12875,9 @@ function wireDevReady(root) {
   function openReadyVerifyModal(moduleId, label, kind) {
     kind = kind === 'ai' ? 'ai' : 'dev';
     const spec = readySpec(kind);
-    const kids = DEV_READY_CHILDREN[moduleId] || [];
+    const kids = readyKids(moduleId, kind);
     if (!kids.length) return;
-    const stats = readyChildStats(moduleId, loadReadyMap(kind));
+    const stats = readyChildStats(moduleId, loadReadyMap(kind), kind);
     if (stats.ready >= stats.total) return;
     const pending = stats.total - stats.ready;
     closeReadyVerifyModal();
@@ -12042,7 +12963,7 @@ function wireDevReady(root) {
 
       /* Accordion switch with parts: already complete is a no-op; otherwise
          the two-step verify modal marks every child ready. */
-      if (level === 'module' && (DEV_READY_CHILDREN[id] || []).length) {
+      if (level === 'module' && readyKids(id, kind).length) {
         if (btn.getAttribute('aria-checked') === 'true') return;
         root._openReadyVerifyModal(id, btn.dataset.readyLabel || id, kind);
         return;
@@ -12137,7 +13058,7 @@ function wirePaneCompJumps(root) {
 /* WISEcodeAI dock config for this page — a light welcome that points at the four
    modules and can jump to any of them. */
 export const ALL_MODULES_WISEAI = {
-  sub: 'Your app’s codebase stats, module map, icon inventory, design system, component library, and motion catalog.',
+  sub: 'Your app’s codebase stats, module map, icon inventory, design system, component library, transcript architecture, and motion catalog.',
   chipsFlow: 'wrap',
   intents: [
     { intent: 'codebase', label: 'How big is the codebase?', icon: 'code' },
@@ -12148,6 +13069,7 @@ export const ALL_MODULES_WISEAI = {
     { intent: 'icons', label: 'Jump to the Icon Inventory', icon: 'emoji_symbols' },
     { intent: 'design', label: 'Jump to the Design System', icon: 'palette' },
     { intent: 'components', label: 'Jump to the Component Library', icon: 'widgets' },
+    { intent: 'tarch', label: 'Show the transcript architecture', icon: 'account_tree' },
     { intent: 'motion', label: 'Show animations & resize', icon: 'animation' },
     { intent: 'counts', label: 'How many icons are there?', icon: 'tag' },
   ],
@@ -12175,6 +13097,7 @@ export const ALL_MODULES_WISEAI = {
     icons: 'The <strong>Icon Inventory</strong> catalogs every Material Symbols glyph used in the live app (this page excluded), grouped by surface — chat module, primary nav, top bar and so on — with label and exact placements. The expectation is the <strong>light (rounded) SVG at weight 400</strong>, with a few per-glyph exceptions; preview outlined, filled, or light, and flip <strong>Font/SVG</strong> to compare the live webfont against Google\u2019s SVG export \u2014 the vectors are generated locally by <code>scripts/gen_icon_svgs.py</code>, so SVG mode needs no network at all.',
     design: 'The <strong>Design System</strong> documents the app’s fonts (families, sizes, usage) and every color, line, elevation and radius token — with live swatches that follow the current theme.',
     components: 'The <strong>Component Library</strong> renders every reusable component in its default state with its real classes, its variations, and the surfaces where it’s used.',
+    tarch: 'The <strong>Transcript Architecture</strong> freezes one thread and labels every visible piece — History, transcript lines, the landmark strip, output chips, intent chips, the composer, the token readout, the admin <strong>Turns</strong> sticky drawer, and Roll · Crawl · Walk · Run. Each card links to that component in the library.',
     motion: `The <strong>Motion &amp; Resize</strong> module catalogs all <strong>${MOTION_ITEMS.length} motion systems</strong> — count-up, chart replay, streaming, chip shimmer and fly-in, output chip fan, chat composer sheen, both helixes, accordion open, sticky drawer slide-in, activity-strip ticks, the jam equalizer, plus the module splitter, five width tiers, drag-to-reorder and drag-to-file — each running live.`,
     counts: () => {
       const n = ICON_INVENTORY && ICON_INVENTORY.totalUniqueIcons;
@@ -12207,6 +13130,12 @@ export const ALL_MODULES_WISEAI = {
     if (intent === 'intents') {
       expandAccordionSection(document, 'mi-intents').then(() => {
         document.getElementById('mi-intents')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      return false;
+    }
+    if (intent === 'tarch') {
+      expandAccordionSection(document, 'mi-tarch').then(() => {
+        document.getElementById('mi-tarch')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
       return false;
     }

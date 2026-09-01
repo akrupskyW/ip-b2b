@@ -1242,6 +1242,12 @@
     .nfp-ingred-edit::placeholder {
       color: color-mix(in srgb, var(--text-subtle) 55%, transparent); font-style: italic;
     }
+    .nfp-ingred-lede {
+      margin: 0 0 10px; font-size: 0.78rem; line-height: 1.45; color: var(--text-muted);
+    }
+    .nfp-ingred-wrap.is-empty .nfp-ingred-edit {
+      min-height: 96px; height: 96px;
+    }
     .nfp-allergen-wrap { padding: 2px 0 10px; border-bottom: 1px solid #e5e7eb; }
     .nfp-allergen-heading { font-size: 0.65rem; font-weight: 700; color: #535964; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
     .nfp-allergen-tags { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
@@ -1433,7 +1439,10 @@
       appearance: none; -webkit-appearance: none;
     }
     .nfp-ins-next-btn:hover { filter: brightness(1.07); text-decoration: none; }
-    .nfp-ins-next-btn .material-symbols-outlined { font-size: 18px !important; }
+    .nfp-ins-next-btn .material-symbols-outlined {
+      font-size: 18px !important;
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
     .nfp-ins-next--claim .nfp-ins-next-btn {
       white-space: normal; text-align: center; line-height: 1.25;
       height: auto; min-height: 40px; padding: 8px 16px;
@@ -1506,7 +1515,10 @@
     }
     .nfp-ia-analyze:hover { filter: brightness(1.07); }
     .nfp-ia-analyze:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.25); }
-    .nfp-ia-analyze .material-symbols-outlined { font-size: 17px !important; }
+    .nfp-ia-analyze .material-symbols-outlined {
+      font-size: 17px !important;
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
     .nfp-ia-banner {
       display: flex; align-items: flex-start; gap: 7px; padding: 8px 10px; margin-bottom: 8px;
       border-radius: 10px; font-size: 0.7rem; line-height: 1.4; font-weight: 600;

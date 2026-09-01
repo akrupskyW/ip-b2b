@@ -227,7 +227,7 @@
        edge-to-edge and the cards left-float. Let the card cluster shrink to its
        content and center it (the welcome column is already align-items:center);
        the max-width fits the full set on wide screens. Welcome chips clamp to
-       two wrapping rows with a trailing "Load more" chip for the rest. */
+       two wrapping rows with a trailing "Show more" chip for the rest. */
     #wa-chat .sc-welcome > .ws-scorecards-section,
     #wa-chat .sc-welcome > .ws-chips-wrap,
     #wa-chat .sc-welcome > .ws-chips {
@@ -4663,11 +4663,47 @@
         if (typeof recomputeSoloPaneWidth === 'function') recomputeSoloPaneWidth();
       }, DOCK_ANIM_MS + 40);
     }
-    /* While the chat is thinking, the Output sticky module is already open
-       (onEngage) but no .wa-block has landed yet. Fill that gap with the
-       product-comparison loading pose — pending ghost bars and a scan sweep;
-       js/load-anim.js overlays the larger streaming helix on top (and hides
-       the stripes). */
+    /* First output of a conversation is parked in the closed pane and only
+       revealed once the transcript has finished typing (onReplyDone). A
+       re-clamp / reduced-motion race can settle the answer before surface()
+       inserts, so replySettled lets that late insert open immediately. */
+    let pendingPaneOpen = null;
+    let replySettled = false;
+    function holdFirstOutput(el, dest) {
+      if (!el || el.classList.contains('is-open')) return false;
+      if (anyOtherPaneOpen(el)) return false;
+      if (replySettled) return false;
+      pendingPaneOpen = dest;
+      return true;
+    }
+    function revealPendingOutput() {
+      replySettled = true;
+      const dest = pendingPaneOpen;
+      pendingPaneOpen = null;
+      if (!dest) return;
+      const el = paneEl[dest];
+      if (!el || el.classList.contains('is-open')) return;
+      hideOutputSkeleton(dest);
+      ensurePaneOpen(el);
+      /* Charts/tables were inserted while the pane was display:none — boot
+         them now that it has a real box. */
+      const body = paneBody[dest];
+      if (body) {
+        requestAnimationFrame(() => {
+          waBootDashCharts(body);
+          body.querySelectorAll('.wa-tbl:not([data-ready])').forEach((tbl) => initTable(tbl));
+          body.querySelectorAll('.cmp-host:not([data-ready])').forEach((h) => bootCompareEngine(h));
+        });
+      }
+    }
+    function openPaneIfReady(el, dest) {
+      if (!el || el.classList.contains('is-open')) return;
+      if (holdFirstOutput(el, dest)) return;
+      ensurePaneOpen(el);
+    }
+    /* Placeholder shown only when Output is already open and a later turn
+       has not dropped a .wa-block yet. First-load never uses this — the
+       pane stays closed until the transcript concludes. */
     function outputSkelMarkup() {
       const cell = '<div class="cmp-cell cmp-cell--entity is-pending"><span class="cmp-ghost cmp-ghost--bar"></span></div>';
       const tile = '<div class="cmp-cell cmp-cell--entity is-pending wa-pane-skel-tile"><span class="cmp-ghost cmp-ghost--bar"></span></div>';
@@ -4705,9 +4741,10 @@
       });
     }
     function engageConversationLayout() {
-      const dest = mergedMode ? 'unified' : 'results';
-      showOutputSkeleton(dest);
-      ensurePaneOpen(paneEl[dest]);
+      /* First type / chip leaves the welcome, but the Output pane stays
+         closed until a turn actually surfaces a chart — and only after
+         that transcript has finished. Opening a helix placeholder here
+         was the empty-OUTPUT flash on first load. */
     }
     function disengageConversationLayout() {
       const dest = mergedMode ? 'unified' : 'results';
@@ -4773,7 +4810,7 @@
          just landed (seeds the scope + renders the full interactive board). */
       paneBody[dest].querySelectorAll('.cmp-host:not([data-ready])').forEach((h) => bootCompareEngine(h));
       if (!el.classList.contains('is-open')) {
-        ensurePaneOpen(el);
+        openPaneIfReady(el, dest);
       }
       /* Rebuild the thumbnail rail; make the just-surfaced block the active slide
          once the pane holds 2+ outputs. */
@@ -9773,20 +9810,19 @@
        string ("v1.0.0", "v1.0.1", …) instead of a bare "v1" chip. */
     function verLabel(n) { return `v1.0.${Math.max(0, (n | 0) - 1)}`; }
 
-    /* Version lives INSIDE the turn's three-dot ("more") menu. The wall-clock
-       stamp sits on the row, left of copy; drop the version number at the
-       start of the menu so it still reads when the popover opens. */
+    /* Version lives INSIDE the turn's three-dot ("more") menu — on the same
+       row as the action icons, floated left. Only when this turn has a version. */
     function decorateSurfaceMeta(line, o) {
-      if (!line) return;
+      if (!line || !o || !o.version) return;
       const metaEl = line.querySelector('.sc-line-meta');
       if (!metaEl) return;
       metaEl.classList.add('sc-line-meta--output');
-      const menu = metaEl.querySelector('.sc-fb-menu');
-      if (!menu) return;
+      const actions = metaEl.querySelector('.sc-fb-menu-actions');
+      if (!actions || actions.querySelector('.sc-fb-menu-ver')) return;
       const ver = document.createElement('span');
       ver.className = 'sc-fb-menu-ver';
       ver.textContent = verLabel(o.version) + (o.count > 1 ? ` · ${o.count} versions` : '');
-      menu.insertBefore(ver, menu.firstChild);
+      actions.insertBefore(ver, actions.firstChild);
     }
 
     /* ── Conversation manifest (floating Outputs / Sources box) ───────────────
@@ -10024,7 +10060,7 @@
 
       body.querySelectorAll('.wa-tbl:not([data-ready])').forEach((tbl) => initTable(tbl));
       body.querySelectorAll('.cmp-host:not([data-ready])').forEach((h) => bootCompareEngine(h));
-      if (!el.classList.contains('is-open')) ensurePaneOpen(el);
+      if (!el.classList.contains('is-open')) openPaneIfReady(el, dest);
       if (dest === 'unified') refreshUnifiedCarousel({ activate: latestNode });
       else refreshPaneCarousel(which, { activate: latestNode });
       if (paneBlocks(dest).length > tallyBefore) bumpPaneTally(dest);
@@ -11314,17 +11350,23 @@
         },
         /* Fired once the reasoning trace completes, right as the answer lands.
            This is where the large output surfaces (result/visual panes + their
-           inline transcript cards) so nothing renders until the glob is done. */
+           inline transcript cards) so nothing renders until the glob is done.
+           The pane itself stays closed on first load until onReplyDone. */
         onReply(intent, text, ctx) {
+          replySettled = false;
           surface(intent, ctx);
         },
-        /* First type / chip / send leaves the full-width welcome and docks the
-           chat to its single column while the output pane eases in. Clearing
-           the composer before a turn starts (welcome still up) expands back.
-           A new conversation restores the full-screen welcome. */
+        /* First type / chip / send leaves the welcome. The Output pane does
+           not open here — a chart waits until the transcript has finished. */
         onEngage() { engageConversationLayout(); },
         onDisengage() { disengageConversationLayout(); },
-        onReset() { resetMyfoodsState(); resetConversationLayout(); },
+        onReplyDone() { revealPendingOutput(); },
+        onReset() {
+          pendingPaneOpen = null;
+          replySettled = false;
+          resetMyfoodsState();
+          resetConversationLayout();
+        },
         onDbChange(dbId) { activeDbId = dbId || MYFOODS_LIVE; },
         /* An answer's "Opened … in Results & Details / Visuals →" narration
            renders as a clickable chip; tapping it re-opens that pane's most

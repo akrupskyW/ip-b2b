@@ -166,10 +166,34 @@
     var aRect = anchor.getBoundingClientRect();
     var w = el.offsetWidth || 0;
     var h = el.offsetHeight || 0;
-    // Desired position in VIEWPORT space: the anchor's live position plus the
-    // offset the popover had from it when floated.
-    var left = clamp(aRect.left + el.__plDX, 8, window.innerWidth - w - 8);
-    var top = clamp(aRect.top + el.__plDY, 8, window.innerHeight - h - 8);
+    var left;
+    var top;
+    /* Grouped chat ⋮ grows when Internal admins reveals Helix. Re-hang from
+       the kebab's right edge using the live width so the panel does not keep
+       the offset captured for the one-column member menu. */
+    if (el.classList && el.classList.contains('sc-menu-grouped') &&
+        !el.classList.contains('sc-helix-float')) {
+      var host = el.__plHost;
+      var btn = host && host.querySelector &&
+        host.querySelector('.panel-more-btn, [aria-haspopup="menu"]');
+      if (btn) {
+        var bRect = btn.getBoundingClientRect();
+        left = clamp(bRect.right - w, 8, window.innerWidth - w - 8);
+        top = clamp(bRect.bottom + 6, 8, window.innerHeight - h - 8);
+        if (bRect.bottom + 6 + h > window.innerHeight - 8 &&
+            bRect.top - h - 6 >= 8) {
+          top = bRect.top - h - 6;
+        }
+        el.__plDX = left - aRect.left;
+        el.__plDY = top - aRect.top;
+      }
+    }
+    if (left == null) {
+      // Desired position in VIEWPORT space: the anchor's live position plus the
+      // offset the popover had from it when floated.
+      left = clamp(aRect.left + el.__plDX, 8, window.innerWidth - w - 8);
+      top = clamp(aRect.top + el.__plDY, 8, window.innerHeight - h - 8);
+    }
     // A `position:fixed` box is normally viewport-relative — UNLESS an ancestor
     // establishes a containing block (any non-`none` transform/filter/perspective/
     // will-change/contain). Several surfaces have exactly that: e.g. the chat card
@@ -258,6 +282,12 @@
   /* Accessible colors on/off changes whether a filter containing block exists.
      Re-pin any open menus so they stay on their anchors in both palettes. */
   document.addEventListener('wise:colorblind', refresh);
+  /* Internal admins on/off changes the grouped chat ⋮ width (Helix column).
+     Wait two frames so applyChatMenuAdminGate can finish hiding/showing
+     columns before we re-measure. */
+  document.addEventListener('wise:admin-ui', function () {
+    requestAnimationFrame(function () { requestAnimationFrame(refresh); });
+  });
 
   /* ── Click-off / Escape dismiss ───────────────────────────────────────
      Capture so a click that another handler stopPropagates still closes the

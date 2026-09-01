@@ -130,7 +130,7 @@
     nfpFlip: true,        // ⋯ menu → fold the masthead into the Nutrition Facts column and swap it to the right, ingredients on the left. On by default.
     /* Ingredient analysis (third column). Accordions remember open/closed;
        Analyze increments `iaTick` so row + score animations replay.
-       Only Ingredient List starts open; Parsed / Codes / Nutrients / Scout
+       Only the ingredients list starts open; Parsed / Codes / Nutrients / Scout
        start collapsed so the nested tree is a deliberate open. */
     iaOpen: { list: true, parsed: false, codes: false, nutrients: false, scout: false },
     iaRan: false,
@@ -1587,12 +1587,15 @@
 
   function ingredientsHTML() {
     const err = state.errors.ingredients;
-    const listInner = `<div class="nfp-ingred-wrap">
+    const hasList = !!(state.ingredients || '').trim();
+    const listTitle = hasList ? 'Ingredient List' : 'Add your ingredients list';
+    const listInner = `<div class="nfp-ingred-wrap${hasList ? '' : ' is-empty'}">
+      ${hasList ? '' : '<p class="nfp-ingred-lede">Paste the full list from the label — or type it — and I\u2019ll map every nested ingredient.</p>'}
       <div class="nfp-ingred-body${err ? ' nfp-block-err' : ''}">
-        <textarea class="nfp-ingred-edit" data-field="ingredients" rows="1" placeholder="Paste or type the ingredient list">${esc(state.ingredients)}</textarea>
+        <textarea class="nfp-ingred-edit" data-field="ingredients" rows="${hasList ? 1 : 5}" placeholder="${hasList ? 'Paste or type the ingredient list' : 'Water, Cane Sugar, Wheat Flour, \u2026'}">${esc(state.ingredients)}</textarea>
         ${err ? `<div class="nfp-field-note"><span class="material-symbols-outlined">error_outline</span>${esc(err)}</div>` : ''}
       </div>
-      <button type="button" class="nfp-ia-analyze" id="nfp-ia-analyze-btn" data-nfp="ia-analyze"${state.ingredients ? '' : ' disabled'}>
+      <button type="button" class="nfp-ia-analyze" id="nfp-ia-analyze-btn" data-nfp="ia-analyze">
         <span class="material-symbols-outlined">science</span>Analyze Ingredients
       </button>
     </div>`;
@@ -1605,7 +1608,7 @@
         + iaAccord('scout', 'Wise Code AI Engine Flavor Results', scoutPanelHTML(tree))
       : '';
     return `<div class="nfp-ia" data-ia-tick="${state.iaTick}">
-      ${iaAccord('list', 'Ingredient List', listInner)}
+      ${iaAccord('list', listTitle, listInner)}
       ${extras}
     </div>`;
   }
@@ -1889,35 +1892,138 @@
   function nextStepHTML() {
     return isClaimPending() ? claimHTML() : shieldHTML();
   }
+  function nfAmount(key) {
+    const v = (state.nf || {})[key];
+    if (v == null) return null;
+    const raw = typeof v === 'object' ? v.amt : v;
+    const n = parseFloat(String(raw || '').replace(/[^\d.]/g, ''));
+    return Number.isFinite(n) ? n : null;
+  }
+  function hasNutritionFacts() {
+    const nf = state.nf || {};
+    if (String(nf.calories || '').trim() || String(nf.servingSize || '').trim()) return true;
+    return NF_ROWS.concat(NF_MICRO).some((r) => {
+      const v = nf[r.key];
+      return !!(v && String(v.amt || '').trim());
+    });
+  }
+  function nutritionFillCount() {
+    const nf = state.nf || {};
+    let n = 0;
+    if (String(nf.calories || '').trim()) n += 1;
+    NF_ROWS.concat(NF_MICRO).forEach((r) => {
+      const v = nf[r.key];
+      if (v && String(v.amt || '').trim()) n += 1;
+    });
+    return n;
+  }
+  function nutritionQualityScore() {
+    /* A single cell (e.g. calories) is not enough to score the panel —
+       wait until a few nutrients are in so one edit cannot yank WISEscore. */
+    if (nutritionFillCount() < 3) return null;
+    let s = 62;
+    const sodium = nfAmount('sodium');
+    const added = nfAmount('addedSugars');
+    const fiber = nfAmount('fiber');
+    const protein = nfAmount('protein');
+    const sat = nfAmount('satFat');
+    if (sodium != null) {
+      if (sodium >= 800) s -= 18;
+      else if (sodium >= 400) s -= 8;
+      else s += 6;
+    }
+    if (added != null) {
+      if (added >= 10) s -= 14;
+      else if (added >= 5) s -= 6;
+      else s += 5;
+    }
+    if (fiber != null) {
+      if (fiber >= 5) s += 8;
+      else if (fiber >= 3) s += 4;
+    }
+    if (protein != null && protein >= 10) s += 6;
+    if (sat != null) {
+      if (sat >= 10) s -= 8;
+      else if (sat >= 5) s -= 3;
+    }
+    return Math.max(0, Math.min(100, s));
+  }
+  /* Live Non-UPF / GRAS / WISEscore for the score row. A brand-new product
+     has nothing to score yet, so all three stay at 0 until ingredients or
+     Nutrition Facts land; each commit re-reads the current list and panel. */
+  function insightScores() {
+    const name = esc(state.productName || 'this product');
+    const tree = parseIngredientTree(state.ingredients);
+    const stats = iaMatchStats(tree);
+    const leaves = stats.leaves;
+    const hasIng = leaves.length > 0;
+
+    let upf = 0;
+    let upfCap = 'Add ingredients to score processing';
+    let gras = 0;
+    let grasCap = 'Add ingredients to screen GRAS status';
+    if (hasIng) {
+      const mini = leaves.filter((r) => Number(r.pl) === 1).length;
+      upf = Math.round((mini / leaves.length) * 100);
+      if (upf === 100) {
+        upfCap = 'Minimally processed · Qualifies for the verification shield';
+      } else if (upf === 0) {
+        upfCap = 'No minimally processed ingredients in this list yet';
+      } else {
+        upfCap = mini + ' of ' + leaves.length + ' ingredients are minimally processed';
+      }
+      const grasN = stats.ok;
+      const unclear = stats.part + stats.bad;
+      gras = Math.round((grasN / leaves.length) * 100);
+      grasCap = grasN + ' of ' + leaves.length + ' screened ingredients are GRAS';
+      if (unclear) grasCap += ' · ' + unclear + ' flagged Unclear';
+    }
+
+    const nfQ = nutritionQualityScore();
+    const parts = [];
+    if (hasIng) { parts.push(upf); parts.push(gras); }
+    if (nfQ != null) parts.push(nfQ);
+    const wise = parts.length ? Math.round(parts.reduce((s, n) => s + n, 0) / parts.length) : 0;
+    const wiseCap = parts.length ? ('for ' + name) : 'Add ingredients or Nutrition Facts to score';
+    return { upf, gras, wise, upfCap, grasCap, wiseCap };
+  }
   function insightsGridHTML() {
     /* Same claim-row chrome as the top scorecards on overview.html
        (.dash-claim / .dash-bignum / stamp discs) — no rating chips. */
-    const name = esc(state.productName || 'this product');
+    const s = insightScores();
     return `<section class="dash-claim nfp-ins-scores">
         <div class="dash-claim-col">
           <div class="dash-progress-pct">
-            <span class="dash-pct-wrap"><span class="dash-bignum" data-countup>100</span><span class="dash-pct">%</span></span>
-            <span class="dash-bignum-cap"><strong>Non-UPF</strong><br>Minimally processed · Qualifies for the verification shield</span>
+            <span class="dash-pct-wrap"><span class="dash-bignum" data-countup>${s.upf}</span><span class="dash-pct">%</span></span>
+            <span class="dash-bignum-cap"><strong>Non-UPF</strong><br>${s.upfCap}</span>
             <span class="dash-stamp-icon" aria-hidden="true"><span class="material-symbols-outlined">eco</span></span>
           </div>
         </div>
         <div class="dash-claim-divider"></div>
         <div class="dash-claim-col">
           <div class="dash-progress-pct">
-            <span class="dash-pct-wrap"><span class="dash-bignum" data-countup>67</span><span class="dash-pct">%</span></span>
-            <span class="dash-bignum-cap"><strong>GRAS</strong><br>2 of 3 screened ingredients are GRAS · 1 flagged Unclear</span>
+            <span class="dash-pct-wrap"><span class="dash-bignum" data-countup>${s.gras}</span><span class="dash-pct">%</span></span>
+            <span class="dash-bignum-cap"><strong>GRAS</strong><br>${s.grasCap}</span>
             <span class="dash-stamp-icon" aria-hidden="true"><span class="material-symbols-outlined">biotech</span></span>
           </div>
         </div>
         <div class="dash-claim-divider"></div>
         <div class="dash-claim-col">
           <div class="dash-bignum-row">
-            <span class="dash-bignum" data-countup>84</span>
-            <span class="dash-bignum-cap"><strong>WISEscore&#8482;</strong><br>for ${name}</span>
+            <span class="dash-bignum" data-countup>${s.wise}</span>
+            <span class="dash-bignum-cap"><strong>WISEscore&#8482;</strong><br>${s.wiseCap}</span>
             <span class="dash-stamp-icon" aria-hidden="true"><span class="material-symbols-outlined">verified</span></span>
           </div>
         </div>
       </section>`;
+  }
+  function refreshInsightsGrid() {
+    const host = nfpBody && nfpBody.querySelector('.nfp-ins-scores');
+    if (!host) return;
+    const wrap = document.createElement('div');
+    wrap.innerHTML = insightsGridHTML();
+    const next = wrap.firstElementChild;
+    if (next) host.replaceWith(next);
   }
   function insightsCardsHTML() {
     return `<div class="nfp-ins">${insightsGridHTML()}</div>`;
@@ -2853,7 +2959,7 @@
     }
     /* Panel edits of a nutrition cell update in place so focus/caret survive
        while fixing several flagged rows; everything else rebuilds the card. */
-    if (opts.inPlace) { clearNfFieldVisual(path); renderProgress(); updateSaveState(); }
+    if (opts.inPlace) { clearNfFieldVisual(path); renderProgress(); updateSaveState(); refreshInsightsGrid(); }
     else { renderNFP(); renderProgress(); }
     if (opts.advance) maybeAdvanceAfter(path);
   }
@@ -4270,8 +4376,6 @@
       const ing = e.target.closest('textarea[data-field="ingredients"]');
       if (ing) {
         sizeIngredEdit(ing);
-        const btn = nfpBody.querySelector('.nfp-ia-analyze');
-        if (btn) btn.disabled = !ing.value.trim();
         refreshIaNudgeToast();
         return;
       }
@@ -4735,8 +4839,9 @@
   function sizeIngredEdit(el) {
     const ta = el || (nfpBody && nfpBody.querySelector('textarea.nfp-ingred-edit'));
     if (!ta) return;
+    const empty = !String(ta.value || '').trim();
     ta.style.height = '0px';
-    ta.style.height = Math.max(38, ta.scrollHeight) + 'px';
+    ta.style.height = Math.max(empty ? 96 : 38, ta.scrollHeight) + 'px';
   }
 
   function replaceIaPanel() {
@@ -4746,6 +4851,7 @@
     wrap.innerHTML = ingredientsHTML();
     const next = wrap.firstElementChild;
     if (next) host.replaceWith(next);
+    refreshInsightsGrid();
     requestAnimationFrame(() => { sizeIngredEdit(); syncIngredColHeight(); refreshIaNudgeToast(); });
   }
 
@@ -4914,13 +5020,45 @@
     }
   }
 
+  function readClipboardText() {
+    if (!navigator.clipboard || typeof navigator.clipboard.readText !== 'function') {
+      return Promise.resolve('');
+    }
+    return navigator.clipboard.readText()
+      .then((t) => String(t || '').trim())
+      .catch(() => '');
+  }
+
+  function applyIngredientsText(val) {
+    const next = String(val || '').trim();
+    if (!next) return false;
+    state.ingredients = next;
+    delete state.errors.ingredients;
+    const ta = nfpBody && nfpBody.querySelector('textarea.nfp-ingred-edit');
+    if (ta) {
+      ta.value = next;
+      sizeIngredEdit(ta);
+    }
+    return true;
+  }
+
   function runIngredientAnalysis(fromUser, echoUser) {
     flushIngredientsFromPanel();
     if (!state.ingredients) {
-      if (fromUser) {
+      if (!fromUser) return;
+      readClipboardText().then((clip) => {
+        if (applyIngredientsText(clip)) {
+          runIngredientAnalysis(fromUser, echoUser);
+          return;
+        }
+        const ta = nfpBody && nfpBody.querySelector('textarea.nfp-ingred-edit');
+        if (ta) {
+          ta.focus();
+          sizeIngredEdit(ta);
+        }
         if (echoUser !== false) addUser('Analyze the ingredients.');
-        wiseSay('There isn\'t an ingredient list yet. Paste or type one in the <strong>Ingredient List</strong> panel, then hit Analyze.');
-      }
+        wiseSay('Add your ingredients list first — paste it from the label or type it in, then hit Analyze. A label photo works too.');
+      });
       return;
     }
     const wasRan = !!state.iaRan;
@@ -5048,7 +5186,7 @@
 
   function openIaSection(id, echoUser) {
     const titles = {
-      list: 'Ingredient List',
+      list: (state.ingredients || '').trim() ? 'Ingredient List' : 'Add your ingredients list',
       parsed: 'Parsed Ingredients',
       codes: 'Codes',
       nutrients: 'Nutrients',

@@ -937,13 +937,12 @@ export function restoreFullBleedSurfaces() {
   applyRightModuleMode(getRightModuleMode());
 }
 
-/* Composer v2 — the redesigned chat-module input: one pill row with "+" far
-   left, the growing text field beside it, and the database selector docked
-   bottom-right just left of send. The text field grows upward as you type
-   while the controls hold the bottom line. This is now the ONE chat input
-   everywhere — it's always on (driven by a permanent `composer-v2` class on
-   <html>) and the old input has been retired, so the Appearance popover no
-   longer carries a toggle for it. */
+/* Composer v2 — the redesigned chat-module input: text on its own full-width
+   row, "+" bottom-left, database selector + send on the bottom-right. The
+   text field grows upward as you type while the controls hold the bottom
+   line. This is now the ONE chat input everywhere — it's always on (driven
+   by a permanent `composer-v2` class on <html>) and the old input has been
+   retired, so the Appearance popover no longer carries a toggle for it. */
 
 /** The new chat input is the default everywhere now — always on. */
 export function isComposerV2On() {

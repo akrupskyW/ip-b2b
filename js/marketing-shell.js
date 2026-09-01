@@ -962,3 +962,16 @@ function watchLiveTranscript(host) {
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
 else boot();
+
+/* All Modules “Used in” → live page + pink glow. Self-guards; a no-op
+   unless this tab was opened with ?wise-hl=. */
+(function loadCompHighlight() {
+  try {
+    if (typeof document === 'undefined' || window.__wiseCompHighlightLoaded) return;
+    window.__wiseCompHighlightLoaded = true;
+    var s = document.createElement('script');
+    s.src = new URL('./comp-highlight.js', import.meta.url).href;
+    s.defer = true;
+    (document.head || document.documentElement).appendChild(s);
+  } catch (_) {}
+})();

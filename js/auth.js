@@ -163,3 +163,17 @@
     initialsFrom: initialsFrom
   };
 })();
+
+/* All Modules “Used in” → live page + pink glow. Self-guards; a no-op
+   unless this tab was opened with ?wise-hl=. */
+(function loadCompHighlight() {
+  try {
+    if (typeof document === 'undefined' || window.__wiseCompHighlightLoaded) return;
+    window.__wiseCompHighlightLoaded = true;
+    var s = document.createElement('script');
+    var here = document.currentScript && document.currentScript.src;
+    s.src = here ? here.replace(/[^/]+$/, 'comp-highlight.js') : '../js/comp-highlight.js';
+    s.defer = true;
+    (document.head || document.documentElement).appendChild(s);
+  } catch (_) {}
+})();

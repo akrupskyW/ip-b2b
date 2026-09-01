@@ -1,0 +1,37 @@
+---
+description: All Modules accordion headers never have a three-dot menu
+alwaysApply: true
+---
+
+# No Three-Dots on Accordion Headers
+
+The accordion section headers on All Modules (`pages/all-modules.html` /
+`js/all-modules-flow.js`) must **never** show a ⋮ / ⋯.
+
+This is a permanent, non-negotiable rule. The user has asked for these gone
+more than once. Do not put them back.
+
+## What is banned
+
+- `moduleControlsHTML(...)` rendering a `.panel-more-btn` / `more_vert` on
+  `.mi-module-head`
+- A sticky-modules fallback ⋯ on an accordion header
+- Any other kebab, more-options control, or “module options” cluster on the
+  accordion label row
+
+`moduleControlsHTML` returns an empty string on purpose. Do not restore the
+old markup.
+
+## What still stays
+
+- Ready pills (WIP Ready / AI Ready) on the header
+- The expand chevron
+- ⋮ menus **inside** an opened section (catalog specimens, table row menus,
+  the chat demo) — those are not accordion labels
+- The page-level module ⋯ on `#agent-main` itself
+
+## Rules for the agent
+
+- Never add a three-dot to `.mi-module-head`.
+- If you touch an accordion header, confirm it has no `.panel-more-btn`.
+- If a ⋮ reappears on those rows, remove it — do not restyle it.

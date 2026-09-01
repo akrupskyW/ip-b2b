@@ -109,7 +109,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Roll · Crawl · Walk · Run gates the chat',
-        how: 'Each page loads a default mode onto <code>&lt;html&gt;</code> as <code>cwr-roll</code> / <code>cwr-crawl</code> / <code>cwr-walk</code> / <code>cwr-run</code>: <strong>Run</strong> on <code>wiseai.html</code>, <code>view-product.html</code>, and <code>add-product.html</code>; <strong>Roll</strong> on every other page. A click still applies for that visit; the next load reapplies the page default. <code>wise-cwr-mode</code> is only a snapshot of the in-session choice. Roll is Crawl with a stripped SaaS nav that still keeps Marketing Assets. Crawl hides chat surfaces with <code>inert</code> + <code>aria-hidden</code>. Roll and Crawl also drop History from the primary nav (the History-in-nav section, the History icon, and the new-chat circle). Walk hides the composer rail, Run unlocks everything. Hovering a mode shows what it includes and excludes. Turning the widget off (<code>wise-cwr-ui</code>) suspends the gating entirely.',
+        how: 'Each page loads a default mode onto <code>&lt;html&gt;</code> as <code>cwr-roll</code> / <code>cwr-crawl</code> / <code>cwr-walk</code> / <code>cwr-run</code>: <strong>Run</strong> on <code>wiseai.html</code>, <code>view-product.html</code>, <code>add-product.html</code>, and <code>helix.html</code>; <strong>Roll</strong> on every other page. A click still applies for that visit; the next load reapplies the page default. <code>helix.html</code> is Run-only — Roll, Crawl, and Walk lock so the playground cannot hide itself. <code>wise-cwr-mode</code> is only a snapshot of the in-session choice. Roll is Crawl with a stripped SaaS nav that still keeps Marketing Assets. Crawl hides chat surfaces with <code>inert</code> + <code>aria-hidden</code>. Roll and Crawl also drop History from the primary nav (the History-in-nav section, the History icon, and the new-chat circle). Walk hides the composer rail, Run unlocks everything. Hovering a mode shows what it includes and excludes. Turning the widget off (<code>wise-cwr-ui</code>) suspends the gating entirely.',
       },
     ],
   },
@@ -575,7 +575,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Every answer takes the traced path',
-        how: 'Chip clicks, typed matches, host <code>chat.respond()</code> calls and mirrored surface actions all funnel through <code>respondWithTrace()</code>, which runs <code>runReasoningTrace()</code> and then <code>addWISEcodeAI()</code>. Host <code>onReply</code> hooks fire in <code>onTraceDone</code>, so a companion pane opens as the answer arrives, not before it.',
+        how: 'Chip clicks, typed matches, host <code>chat.respond()</code> calls and mirrored surface actions all funnel through <code>respondWithTrace()</code>, which runs <code>runReasoningTrace()</code> and then <code>addWISEcodeAI()</code>. Host <code>onReply</code> hooks fire in <code>onTraceDone</code> so preview cards land with the answer. The first Output pane of a conversation stays closed until that reply has finished typing (<code>onReplyDone</code>) — no empty helix placeholder while the transcript is still working.',
       },
       {
         title: 'Streaming is paragraph by paragraph',
@@ -603,7 +603,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'File to Library puts the live thread on the Library shelf',
-        how: 'The three-dot <em>File to Library</em> row opens the same folder picker History uses for Move to project. Picking a folder (or Library, or New folder) first saves the thread into History, then copies a card onto that shelf. Re-filing the same thread updates that card and can move it. An empty welcome cannot be filed. Opening the card on the Library page restores the transcript in the docked chat.',
+        how: 'The three-dot <em>File to Library</em> row expands the folder list inside the Conversation menu. Picking a folder (or Library, or New folder) first saves the thread into History, then copies a card onto that shelf. Re-filing the same thread updates that card and can move it. An empty welcome cannot be filed. Opening the card on the Library page restores the transcript in the docked chat.',
       },
       {
         title: 'History and Turns are docked drawers',
@@ -627,7 +627,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Every answer carries copy, thumbs, and a more menu',
-        how: '<code>feedbackRowHtml()</code> sits under the last paragraph, before intent chips. The timestamp (clock \u2194 relative) sits immediately left of Copy. Copy flashes Copied. Accurate / Not accurate each open a reason popover; submitting posts a follow-up turn in the thread. The \u22ef spills Re-run in new chat, Edit in new chat, Fork a turn, and the turn ID. Hover uses the shared theme-aware tip card, never a native title bubble and never a second always-dark card.',
+        how: '<code>feedbackRowHtml()</code> sits under the last paragraph, before intent chips. Copy flashes Copied. Accurate / Not accurate each open a reason popover; submitting posts a follow-up turn in the thread. The \u22ef spills Re-run in new chat, Edit in new chat, Fork a turn, File to folder (the Library folder picker), and the turn ID, then a divider and the token read-out for that answer (in / out / cached / cost / duration / ops / tools), frozen to that message. The timestamp (clock \u2194 relative) sits immediately right of that three-dot. Hover uses the shared theme-aware tip card, never a native title bubble and never a second always-dark card.',
       },
       {
         title: 'Output chips preview the sticky pane',
@@ -901,7 +901,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Only the diff from the seed is stored',
-        how: 'WIP Ready and AI Ready each have their own baseline seed. The AI switch reads <strong>Not for AI</strong> when off (the default) and <strong>AI Ready</strong> in green when on. localStorage holds just the overrides that differ from that seed. On the local livereload origin a toggle writes the matching seed file so the next commit / Ubuntu pull ships the same flags. Module Directory and Table Gallery have WIP Ready only. Only the Component Library AI switch shows a k/n count.',
+        how: 'WIP Ready and AI Ready each have their own baseline seed. The AI switch reads <strong>Not for AI</strong> when off (the default, pink) and <strong>AI Ready</strong> in green when on. When more than one part is ready but not all, Not for AI turns a lighter orange. localStorage holds just the overrides that differ from that seed. On the local livereload origin a toggle writes the matching seed file so the next commit / Ubuntu pull ships the same flags. Module Directory and Table Gallery have WIP Ready only. Chrome catalog cards (toasts, switches, dialogs, nav items, and the other <code>ai: false</code> entries) keep WIP Ready and are left out of the AI count. Only the Component Library AI switch shows a k/n count.',
       },
       {
         title: 'Re-evaluate crawls once a day',

@@ -274,6 +274,70 @@ function makeTurnId() {
   return d() + l() + d() + l();
 }
 
+/* Illustrative per-turn token meter — same figures the composer activity
+   read-out uses. Seeded so a given answer keeps the same numbers after
+   restore instead of re-rolling on every load. */
+function fmtTok(n) {
+  if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
+  if (n >= 1e3) return `${(n / 1e3).toFixed(1)}k`;
+  return String(Math.round(n));
+}
+function fmtDur(ms) {
+  const s = Math.max(1, Math.round(ms / 1000));
+  return s >= 60 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${s}s`;
+}
+function seedFrom(ms, tid) {
+  let h = Number(ms) || 0;
+  const s = String(tid || '');
+  for (let i = 0; i < s.length; i++) h = (Math.imul(h, 33) + s.charCodeAt(i)) >>> 0;
+  return h || 1;
+}
+function synthesizeTurnTokens(seed) {
+  let x = Math.abs(Number(seed) || 1) || 1;
+  const rnd = (a, b) => {
+    x = (Math.imul(x, 1664525) + 1013904223) >>> 0;
+    return a + (x / 0x100000000) * (b - a);
+  };
+  const tokIn = Math.round(rnd(6000, 22000));
+  const tokOut = Math.round(rnd(400, 2600));
+  const cached = Math.round(tokIn * rnd(0.7, 0.9));
+  const cost = +(tokIn / 1e6 * 0.9 + tokOut / 1e6 * 4.5).toFixed(4);
+  const ops = Math.round(rnd(1, 4));
+  const tools = Math.round(rnd(0, 3));
+  const dur = Math.round(rnd(2000, 9000));
+  return { tokIn, tokOut, cached, cost, ops, tools, dur };
+}
+function tokensFromEl(el) {
+  if (!el || !el.getAttribute) return null;
+  const tokIn = Number(el.getAttribute('data-tok-in'));
+  if (!Number.isFinite(tokIn) || tokIn <= 0) return null;
+  return {
+    tokIn,
+    tokOut: Number(el.getAttribute('data-tok-out')) || 0,
+    cached: Number(el.getAttribute('data-tok-cached')) || 0,
+    cost: Number(el.getAttribute('data-tok-cost')) || 0,
+    ops: Number(el.getAttribute('data-tok-ops')) || 0,
+    tools: Number(el.getAttribute('data-tok-tools')) || 0,
+    dur: Number(el.getAttribute('data-tok-dur')) || 0,
+  };
+}
+function formatTurnTokensHtml(t) {
+  if (!t) return '';
+  const pct = t.tokIn ? Math.round((t.cached / t.tokIn) * 100) : 0;
+  return `${fmtTok(t.tokIn)} in / ${fmtTok(t.tokOut)} out · <em>${fmtTok(t.cached)} cached (${pct}%)</em> · `
+    + `<b>$${Number(t.cost).toFixed(4)}</b> · ${fmtDur(t.dur)} · ${t.ops} ops · ${t.tools} tools`;
+}
+function tokenAttrs(t) {
+  if (!t) return '';
+  return ` data-tok-in="${t.tokIn}" data-tok-out="${t.tokOut}" data-tok-cached="${t.cached}"`
+    + ` data-tok-cost="${t.cost}" data-tok-ops="${t.ops}" data-tok-tools="${t.tools}" data-tok-dur="${t.dur}"`;
+}
+function tokenRowHtml(t) {
+  if (!t) return '';
+  return `<span class="sc-fb-menu-div" aria-hidden="true"></span>`
+    + `<span class="sc-fb-menu-tokens" role="status"${tokenAttrs(t)}>${formatTurnTokensHtml(t)}</span>`;
+}
+
 /* Short, locale-aware clock label (e.g. "9:42 AM") for message timestamps —
    a small accountability cue so every line is attributable to a moment. */
 function clockLabel(ms) {
@@ -450,9 +514,9 @@ function flashScTip(target, label) {
   });
 }
 
-/* File the live thread onto the WISEcodeAI Library shelf. Opens the same
-   folder picker History uses for "Move to project" / the Library page uses
-   for "Move to folder", then copies the saved item into the chosen folder. */
+/* File the live thread onto the WISEcodeAI Library shelf. Expands the folder
+   list inside the Conversation menu (not a second popover). Picking a folder
+   copies the saved item onto that shelf. */
 function fileConversationToLibrary(opts) {
   opts = opts || {};
   const store = typeof window !== 'undefined' ? window.WiseLibraryStore : null;
@@ -476,7 +540,8 @@ function fileConversationToLibrary(opts) {
       : folder
         ? (result && result.updated ? `Updated in ${folder.name}` : `Filed to ${folder.name}`)
         : (result && result.updated ? 'Updated in Library' : 'Filed to Library');
-    flashScTip(opts.trigger, tip);
+    if (typeof opts.onFiled === 'function') opts.onFiled(result);
+    flashScTip(opts.tipTarget || opts.trigger, tip);
     return result || { ok: false };
   };
   if (typeof store.openFolderPicker === 'function') {
@@ -486,12 +551,17 @@ function fileConversationToLibrary(opts) {
     }
     const existing = typeof store.findByHistory === 'function' ? store.findByHistory(historyKey) : null;
     const hosted = existing && typeof store.foldersOf === 'function' ? store.foldersOf(existing.id) : [];
+    const menu = opts.menu;
+    const host = (menu && menu.querySelector && menu.querySelector('[data-sc="file-library"]')) || null;
     store.openFolderPicker(opts.trigger, {
       title: 'File to Library',
       currentIds: hosted.map((f) => f.id),
       unfiled: true,
       unfiledLabel: 'Library',
       unfiledCurrent: !!(existing && !hosted.length),
+      host: host || undefined,
+      preferAbove: opts.preferAbove === true,
+      markOpen: opts.markOpen,
     }, commit);
     return { picking: true };
   }
@@ -780,12 +850,11 @@ export function wireComposerGrow(input) {
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') later(); });
   /* Flipping the Appearance toggle re-flows every mounted composer live. */
   document.addEventListener('wise:composer-v2', sync);
-  /* Re-measure whenever the field's WIDTH changes (module width toggle, panel
-     resize, crossing the narrow-composer container breakpoint): line wrapping
-     and the state's paddings change with width, so a height measured at the
-     old width goes stale and leaves the placeholder sitting off-center. Only
-     react to width — sync() itself changes the height, and re-syncing on that
-     would loop the observer. */
+  /* Re-measure whenever the field's WIDTH changes (module width toggle,
+     panel resize): line wrapping and paddings change with width, so a height
+     measured at the old width goes stale and leaves the placeholder sitting
+     off-center. Only react to width — sync() itself changes the height, and
+     re-syncing on that would loop the observer. */
   if (typeof ResizeObserver !== 'undefined') {
     let lastW = input.offsetWidth;
     const ro = new ResizeObserver(() => {
@@ -1040,6 +1109,10 @@ export function injectChatExtras() {
   wireAnswerTips();
   if (typeof document === 'undefined' || document.getElementById('wiseai-chat-extras')) return;
   const css = `
+    .sc-welcome:not(.ws-in) > .ws-heading,
+    .sc-welcome:not(.ws-in) > .ws-sub,
+    .sc-welcome:not(.ws-in) .ws-chips .chip,
+    .sc-welcome:not(.ws-in) .ws-scorecard { opacity: 0; }
     .ws-scorecard--locked { cursor: default; opacity: .7; }
     .ws-scorecard--locked:hover { background: color-mix(in srgb, var(--primary) 10%, #fff); border-color: var(--border-strong); box-shadow: none; transform: none; }
     html.dark .ws-scorecard--locked:hover { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); }
@@ -1114,20 +1187,21 @@ export function injectChatExtras() {
     .sc-line-body > .sc-para { display: block; }
     .sc-line-body > .sc-para + .sc-para { margin-top: 1em; }
 
-    /* Feedback actions sit INLINE — timestamp immediately left of copy, then
-       thumbs — quiet outlined glyphs at rest. */
+    /* Feedback actions sit INLINE — copy + thumbs, then the three-dot, then
+       the timestamp to the right of more. Quiet outlined glyphs at rest. */
     .sc-fb-wrap { margin: 0; align-self: center; flex: 1 1 auto; min-width: 0; }
     .sc-fb { display: flex; align-items: center; gap: 1px; width: 100%; }
-    /* Timestamp sits on the row, immediately to the LEFT of the copy icon. */
-    .sc-fb-time { margin-right: 6px; white-space: nowrap; flex-shrink: 0; }
+    /* Timestamp sits on the row, immediately to the RIGHT of the three-dot. */
+    .sc-fb-time { margin-left: 6px; white-space: nowrap; flex-shrink: 0; }
     /* Three-dot ("more") control — sits directly to the RIGHT of thumbs-down
        (not floated to the far edge of the row). It holds the re-run / edit /
-       fork controls + the turn ID, spilling them into a small floating menu
-       on hover so the row itself stays down to timestamp / copy / thumbs. */
+       fork / file controls + the turn ID on the first row, then a divider and
+       this-message token read-out. */
     .sc-fb-more-wrap { position: relative; display: inline-flex; padding-left: 2px; }
     .sc-fb-menu { position: absolute; bottom: calc(100% + 8px); right: -4px; z-index: 80;
-      display: inline-flex; align-items: center; gap: 2px; width: max-content;
-      padding: 4px 7px; background: var(--surface); border: 1px solid var(--border-strong);
+      display: flex; flex-direction: column; align-items: stretch; gap: 0;
+      width: max-content; min-width: 220px; max-width: min(340px, calc(100vw - 24px));
+      padding: 6px 8px 7px; background: var(--surface); border: 1px solid var(--border-strong);
       border-radius: 10px; box-shadow: var(--shadow-3, var(--sc-shadow-pop)); }
     .sc-fb-menu::before { content: ''; position: absolute; top: 100%; right: 11px;
       border: 6px solid transparent; border-top-color: var(--border-strong); }
@@ -1143,7 +1217,24 @@ export function injectChatExtras() {
     html.dark .sc-line-time { color: color-mix(in srgb, var(--text-subtle) 70%, transparent); }
     html.dark .sc-line-time:hover { color: var(--text); }
     .sc-line-time:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-    .sc-fb-menu-actions { display: inline-flex; align-items: center; gap: 1px; }
+    .sc-fb-menu-actions { display: flex; align-items: center; gap: 1px; width: 100%; }
+    /* Optional output version — same row as the icons, left side, only when
+       the host stamped one (e.g. a surfaced Visuals/Results card). */
+    .sc-fb-menu-ver {
+      margin-right: 6px; padding-right: 7px; white-space: nowrap; flex-shrink: 0;
+      border-right: 1px solid var(--border, rgba(20,40,80,0.12));
+      font-size: 11px; font-weight: 600; letter-spacing: .02em;
+      color: var(--text-subtle); font-variant-numeric: tabular-nums;
+    }
+    html.dark .sc-fb-menu-ver { border-right-color: rgba(255,255,255,0.10); }
+    .sc-fb-menu-div { display: block; height: 1px; margin: 6px 0 5px;
+      background: var(--border, rgba(20,40,80,0.12)); }
+    html.dark .sc-fb-menu-div { background: rgba(255,255,255,0.10); }
+    .sc-fb-menu-tokens { display: block; font-size: 10.5px; line-height: 1.45;
+      font-variant-numeric: tabular-nums; color: var(--text-subtle); }
+    .sc-fb-menu-tokens em { color: var(--primary-ink, var(--primary)); font-style: normal; }
+    html.dark .sc-fb-menu-tokens em { color: #7fb0ff; }
+    .sc-fb-menu-tokens b { color: var(--sec-green-text, #1E7A34); font-weight: 700; }
     /* The three-dot "more" control reads as a proper round chip — its hover /
        open background is a full circle, never a rounded square. */
     .sc-fb-more { border-radius: 50%; }
@@ -1654,8 +1745,19 @@ export function injectChatExtras() {
        input; it only fades in while live, and the welcome panel drops its opaque
        fill so the strip reads behind the copy. */
     .sc-bganim-canvas { position: absolute; inset: 0; width: 100%; height: 100%;
-      z-index: 1; pointer-events: none; opacity: 0; transition: opacity .55s ease; }
+      z-index: 1; pointer-events: none; opacity: 0;
+      transform: scale(1); transform-origin: 50% 36%;
+      transition: opacity .55s ease; }
     .sc-bganim-live .sc-bganim-canvas { opacity: 1; }
+    /* First click / send leaves by blooming out — fade + expand, never a
+       collapse. Origin sits on the strand centre (getCenterY ≈ 0.36). */
+    .sc-bganim-live.sc-bganim-leaving .sc-bganim-canvas {
+      opacity: 0; transform: scale(1.55);
+      transition: opacity 1.55s ease, transform 1.45s cubic-bezier(0.16, 1, 0.3, 1); }
+    @media (prefers-reduced-motion: reduce) {
+      .sc-bganim-live.sc-bganim-leaving .sc-bganim-canvas {
+        transition: none; transform: none; }
+    }
     .sc-bganim-live.sc-bganim-panning { cursor: grabbing; user-select: none; }
     /* The class is repeated to out-rank page-level skin rules such as
        html.chat-tint:not(.dark) #welcome-screen (product portfolio/comparison,
@@ -1799,17 +1901,16 @@ export function injectChatExtras() {
     .sc-bganim-look .sc-stream-seg-btn { font-size: 10.5px; }
     .sc-bganim-dots-motion.is-disabled, .sc-bganim-spin.is-disabled, .sc-bganim-look.is-disabled { opacity: .45; pointer-events: none; }
 
-    /* ── Grouped three-column three-dot menu ─────────────────────────────────
-       The chat "More options" popover buckets rows into titled GROUP CARDS
-       across three flex columns — Conversation/Data/Display on the left,
-       Helix alone in the middle, Activity on the right. Width is max-content
-       so hiding Admin-badged groups (and their empty columns) shrinks the
-       panel instead of leaving blank tracks. Flex (not CSS column-width)
-       keeps hit-testing honest: Chromium multi-column layouts often swallow
-       clicks in later columns. groupifyChatMenu() reorganizes the flat rows
-       into these cards and tags the popover with .sc-menu-grouped.
-       Helix gets its own column so its clusters can sit two-up without
-       stacking under Activity. Scrolls if it would run off the screen. */
+    /* ── Grouped chat three-dot menu ─────────────────────────────────────────
+       Member-facing cards (Conversation, Activity, Close) stack in ONE column
+       so the menu hangs from the kebab instead of spanning two tracks.
+       Internal-admins on reveals Helix in a second column beside that stack;
+       applyChatMenuAdminGate() then re-pins the popover so its right edge
+       stays on the trigger. Width is max-content so hiding Admin-badged
+       groups (and their empty columns) shrinks the panel instead of leaving
+       blank tracks. Flex (not CSS column-width) keeps hit-testing honest.
+       groupifyChatMenu() reorganizes the flat rows into these cards and tags
+       the popover with .sc-menu-grouped. Scrolls if it would run off screen. */
     .topbar-popover.sc-menu-grouped {
       width: max-content; min-width: 0; max-width: min(920px, calc(100vw - 16px));
       padding: 8px;
@@ -1822,7 +1923,7 @@ export function injectChatExtras() {
        .topbar-popover.hidden { display:none } (same specificity, later sheet
        wins) and the menu could never close after the first open. */
     .topbar-popover.sc-menu-grouped:not(.hidden) {
-      display: flex; flex-direction: row; flex-wrap: wrap;
+      display: flex; flex-direction: row; flex-wrap: nowrap;
     }
     .topbar-popover.sc-menu-grouped.hidden { display: none; }
     .sc-menu-col { flex: 0 0 250px; width: 250px; min-width: 0; max-width: 300px; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -2026,6 +2127,7 @@ export function injectChatExtras() {
     }
     .sc-helix-head-label { flex: 1 1 auto; min-width: 0; }
     .sc-helix-head-actions { flex: 0 0 auto; display: inline-flex; align-items: center; }
+    .sc-helix-drag { display: none; }
     .sc-helix-pop-btn {
       display: inline-flex; align-items: center; justify-content: center;
       width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%;
@@ -2038,9 +2140,14 @@ export function injectChatExtras() {
     .sc-helix-dock { display: none; }
     .sc-helix-float .sc-helix-popout { display: none; }
     .sc-helix-float .sc-helix-dock { display: inline-flex; }
+    body[data-helix-studio] .sc-helix-float .sc-helix-dock,
+    .sc-helix-float[data-helix-studio] .sc-helix-dock,
+    body[data-helix-studio] .sc-helix-float .sc-helix-head-actions,
+    .sc-helix-float[data-helix-studio] .sc-helix-head-actions { display: none; }
     .sc-helix-float {
       position: fixed; z-index: 2147483600;
-      width: min(320px, calc(100vw - 16px));
+      width: min(460px, calc(100vw - 24px));
+      min-width: min(460px, calc(100vw - 24px));
       max-height: min(86vh, calc(100vh - 16px));
       overflow-x: hidden; overflow-y: auto;
       padding: 8px; box-sizing: border-box;
@@ -2060,44 +2167,89 @@ export function injectChatExtras() {
     .sc-helix-float .sc-menu-group--helix > .sc-menu-group-head {
       cursor: grab; user-select: none; touch-action: none;
       position: sticky; top: -8px; z-index: 2;
+      flex-wrap: wrap;
+      margin: -8px -8px 6px; padding: 8px 10px 10px;
       background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+      font-size: 11px; letter-spacing: 0.08em;
     }
     html.dark .sc-helix-float .sc-menu-group--helix > .sc-menu-group-head { background: #1A2339; }
+    .sc-helix-float .sc-helix-grabber-pill {
+      flex: 1 1 100%; display: flex; align-items: center; justify-content: center;
+      height: 12px; margin: 0 0 4px; pointer-events: none;
+    }
+    .sc-helix-float .sc-helix-grabber-pill::before {
+      content: ''; width: 44px; height: 5px; border-radius: 999px;
+      background: var(--text-muted); opacity: 0.55;
+    }
+    .sc-helix-float .sc-helix-drag {
+      display: inline-flex; align-items: center; justify-content: center;
+      flex: 0 0 auto; width: 24px; height: 24px; color: var(--text-muted);
+      pointer-events: none;
+    }
+    .sc-helix-float .sc-helix-drag .material-symbols-outlined {
+      font-size: 22px !important; line-height: 1 !important;
+    }
     .sc-helix-float.is-dragging .sc-menu-group--helix > .sc-menu-group-head { cursor: grabbing; }
     .sc-helix-float.is-dragging { user-select: none; }
+    .sc-helix-float .sc-menu-group--helix .sc-bganim-detail-label,
+    .sc-helix-float .sc-menu-group--helix .sc-bganim-style-label,
+    .sc-helix-float .sc-menu-group--helix .sc-bganim-playback-label {
+      min-width: 52px; font-size: 10px;
+    }
+    .sc-helix-float .sc-menu-group--helix .sc-bganim-opacity-val,
+    .sc-helix-float .sc-menu-group--helix .sc-bganim-angle-val,
+    .sc-helix-float .sc-menu-group--helix .sc-bganim-camera-val,
+    .sc-helix-float .sc-menu-group--helix .sc-bganim-azimuth-val,
+    .sc-helix-float .sc-menu-group--helix .sc-bganim-shift-val,
+    .sc-helix-float .sc-menu-group--helix .sc-bganim-scale-val,
+    .sc-helix-float .sc-menu-group--helix .sc-bganim-knob-val,
+    .sc-helix-float .sc-menu-group--helix .sc-bganim-motion-knob-val,
+    .sc-helix-float .sc-menu-group--helix .sc-bganim-mat-val { width: 42px; font-size: 10px; }
     .sc-helix-studio-bar {
       position: sticky; bottom: 0; z-index: 2;
       display: flex; align-items: center; justify-content: flex-end; gap: 8px;
-      margin: 8px 4px 0; padding: 8px 4px 2px;
-      background: linear-gradient(180deg, transparent 0%, var(--surface-2) 28%);
+      margin: 8px -8px 0; padding: 10px 10px 4px;
+      background: var(--surface-2);
+      border-top: 1px solid var(--border);
     }
-    html.dark .sc-helix-studio-bar {
-      background: linear-gradient(180deg, transparent 0%, #1A2339 28%);
-    }
-    .sc-helix-float .sc-helix-studio-bar { margin: 10px 0 0; padding: 10px 2px 2px; }
-    .sc-helix-undo, .sc-helix-apply {
-      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-      height: 32px; padding: 0 12px; border-radius: 999px;
-      font: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+    html.dark .sc-helix-studio-bar { background: #1A2339; }
+    .sc-helix-float .sc-helix-studio-bar { margin: 10px -8px 0; padding: 10px 8px 2px; }
+    .sc-helix-undo, .sc-helix-save {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; padding: 0; border-radius: 50%;
+      border: 1.5px solid color-mix(in srgb, var(--primary) 34%, #B8BFC8);
+      background: var(--surface, #fff); color: var(--text);
+      cursor: pointer;
       transition: background .15s ease, color .15s ease, border-color .15s ease, opacity .15s ease;
     }
-    .sc-helix-undo .material-symbols-outlined,
-    .sc-helix-apply .material-symbols-outlined { font-size: 16px !important; line-height: 1 !important; }
-    .sc-helix-undo {
-      border: 1px solid var(--border-strong, rgba(15,30,55,.18));
-      background: transparent; color: var(--text);
+    html.dark .sc-helix-undo, html.dark .sc-helix-save {
+      background: #E8EEF6; border-color: transparent; color: #0E1824;
     }
-    .sc-helix-undo:hover:not(:disabled) { background: var(--surface-3); }
-    html.dark .sc-helix-undo:hover:not(:disabled) { background: rgba(255,255,255,0.07); }
+    .sc-helix-undo:hover:not(:disabled),
+    .sc-helix-save:hover:not(:disabled) { background: var(--surface-3); }
+    html.dark .sc-helix-undo:hover:not(:disabled),
+    html.dark .sc-helix-save:hover:not(:disabled) { background: #F3F6FA; }
+    .sc-helix-undo .material-symbols-outlined,
+    .sc-helix-save .material-symbols-outlined { font-size: 20px !important; line-height: 1 !important; }
+    .sc-helix-apply {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      height: 36px; padding: 0 14px; border-radius: 999px;
+      font: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+      transition: background .15s ease, color .15s ease, opacity .15s ease;
+    }
+    .sc-helix-apply .material-symbols-outlined { font-size: 18px !important; line-height: 1 !important; }
     .sc-helix-apply.btn-primary {
       border: 0; background: var(--primary); color: #fff;
     }
     .sc-helix-apply.btn-primary .material-symbols-outlined {
       font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
     }
-    .sc-helix-undo:disabled, .sc-helix-apply:disabled {
-      opacity: .42; cursor: default; pointer-events: none;
+    .sc-helix-undo:disabled, .sc-helix-save:disabled {
+      color: var(--text-muted); cursor: default; pointer-events: none;
     }
+    html.dark .sc-helix-undo:disabled, html.dark .sc-helix-save:disabled { color: #5A6B80; }
+    .sc-helix-apply:disabled { cursor: default; pointer-events: none; }
 
     /* Nested Admin popover — a kebab in the grouped menu's top-right opens a
        small card with the master "Admin controls" switch. Off hides every
@@ -2294,7 +2446,10 @@ export const BGANIM_PUBLISH_POSE = Object.freeze({
 /* Helix studio (pages/helix.html) — slider writes stay in a draft map so
    messing around does not publish to every other chat until Apply. Named
    snapshots still hit real storage; they are saved looks, not the live pose. */
-const BGANIM_STUDIO_SKIP = { 'wise:chat-bg-anim-snaps-v1': 1 };
+const BGANIM_STUDIO_SKIP = {
+  'wise:chat-bg-anim-snaps-v1': 1,
+  'wise:chat-bg-anim-instances-v1': 1,
+};
 let helixStudioDraft = null;
 let helixStudioPublished = null;
 let helixStudioUndo = null;
@@ -3571,7 +3726,180 @@ function flushHelixStudioDraftToStorage() {
   });
 }
 
-export function applyHelixStudio() {
+const HELIX_INSTANCES_KEY = 'wise:chat-bg-anim-instances-v1';
+const HELIX_INSTANCES_MAX = 16;
+
+function helixInstanceStamp(ms) {
+  try {
+    return new Date(ms).toLocaleString(undefined, {
+      month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+    });
+  } catch (_) {
+    return '';
+  }
+}
+
+function clampHelixInstance(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const snap = clampBgAnimSnap(raw.snap);
+  if (!snap) return null;
+  const at = Number(raw.at) || Date.now();
+  const name = String(raw.name || (raw.published ? 'Published' : 'Saved')).trim() || 'Saved';
+  return {
+    id: String(raw.id || ('i' + at.toString(36))),
+    name,
+    at,
+    published: !!raw.published,
+    snap,
+  };
+}
+
+export function listHelixInstances() {
+  try {
+    const raw = JSON.parse(bgAnimGet(HELIX_INSTANCES_KEY) || '[]');
+    if (!Array.isArray(raw)) return [];
+    return raw.map(clampHelixInstance).filter(Boolean).slice(0, HELIX_INSTANCES_MAX);
+  } catch (_) { return []; }
+}
+
+function persistHelixInstances(list) {
+  try { bgAnimSet(HELIX_INSTANCES_KEY, JSON.stringify(list.slice(0, HELIX_INSTANCES_MAX))); } catch (_) {}
+  try { document.dispatchEvent(new CustomEvent('wise:helix-instances')); } catch (_) {}
+}
+
+function recordHelixInstance(opts) {
+  const snap = clampBgAnimSnap(opts && opts.snap ? opts.snap : captureBgAnimSnapshot());
+  if (!snap) return null;
+  const list = listHelixInstances();
+  if (list[0] && equalBgAnimSnap(snap, list[0].snap) && !!list[0].published === !!opts.published) {
+    return list[0];
+  }
+  const at = Date.now();
+  const item = {
+    id: 'i' + at.toString(36),
+    name: String((opts && opts.name) || (opts && opts.published ? 'Published' : 'Saved')),
+    at,
+    published: !!(opts && opts.published),
+    snap,
+  };
+  list.unshift(item);
+  persistHelixInstances(list);
+  return item;
+}
+
+export function saveHelixInstance(name) {
+  return recordHelixInstance({
+    name: name || 'Saved',
+    published: false,
+    snap: captureBgAnimSnapshot(),
+  });
+}
+
+export function deleteHelixInstance(id) {
+  if (!id) return false;
+  const next = listHelixInstances().filter((x) => x.id !== id);
+  persistHelixInstances(next);
+  return true;
+}
+
+/* Load a saved look into the studio card. Does not publish — Apply still
+   has to confirm twice before every other chat picks it up. */
+export function revertHelixInstance(id) {
+  const item = listHelixInstances().find((x) => x.id === id);
+  if (!item) return false;
+  applyBgAnimSnapshot(item.snap);
+  syncHelixStudioChrome();
+  return true;
+}
+
+export function formatHelixInstanceLabel(item) {
+  if (!item) return '';
+  const when = helixInstanceStamp(item.at);
+  return item.name + (when ? (' · ' + when) : '');
+}
+
+function helixVerifyEsc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function closeHelixApplyVerify() {
+  const el = document.getElementById('hx-apply-verify');
+  if (!el) return;
+  el.classList.remove('is-open');
+  const gone = () => { if (el.parentNode) el.parentNode.removeChild(el); };
+  el.addEventListener('transitionend', gone, { once: true });
+  setTimeout(gone, 240);
+  if (closeHelixApplyVerify._onKey) {
+    document.removeEventListener('keydown', closeHelixApplyVerify._onKey);
+    closeHelixApplyVerify._onKey = null;
+  }
+}
+
+function openHelixApplyVerify(cfg) {
+  if (typeof document === 'undefined') return;
+  closeHelixApplyVerify();
+  const scrim = document.createElement('div');
+  scrim.id = 'hx-apply-verify';
+  scrim.className = 'adm-modal-scrim dsc-ready-scrim';
+  const title = cfg && cfg.title ? cfg.title : 'Publish this Helix everywhere?';
+  const first = cfg && cfg.first ? cfg.first : '';
+  const second = cfg && cfg.second ? cfg.second : first;
+  const confirmLabel = cfg && cfg.confirmLabel ? cfg.confirmLabel : 'Apply everywhere';
+  const onConfirm = cfg && typeof cfg.onConfirm === 'function' ? cfg.onConfirm : null;
+
+  function paint(step) {
+    const isFirst = step === 1;
+    scrim.innerHTML =
+      '<div class="adm-modal" role="dialog" aria-modal="true" aria-labelledby="hx-apply-verify-title">'
+      + '<button type="button" class="adm-modal-x" data-hx-verify="close" aria-label="Close">'
+      + '<span class="material-symbols-outlined">close</span></button>'
+      + '<div class="adm-modal-head">'
+      + '<div class="adm-modal-eyebrow">' + (isFirst ? 'Verify · 1 of 2' : 'Verify again · 2 of 2') + '</div>'
+      + '<h2 class="adm-modal-title" id="hx-apply-verify-title">' + helixVerifyEsc(title) + '</h2>'
+      + '<p class="adm-modal-sub">' + helixVerifyEsc(isFirst ? first : second) + '</p>'
+      + '</div>'
+      + '<div class="adm-modal-body">'
+      + '<div class="dsc-ready-verify-steps" aria-hidden="true">'
+      + '<span class="dsc-ready-verify-dot' + (isFirst ? ' is-on' : ' is-done') + '"></span>'
+      + '<span class="dsc-ready-verify-dot' + (isFirst ? '' : ' is-on') + '"></span>'
+      + '</div>'
+      + '<div class="dsc-ready-verify-actions">'
+      + '<button type="button" class="adm-btn adm-btn--ghost" data-hx-verify="close">Cancel</button>'
+      + '<button type="button" class="adm-btn adm-btn--primary" data-hx-verify="' + (isFirst ? 'next' : 'confirm') + '">'
+      + '<span class="material-symbols-outlined">' + (isFirst ? 'arrow_forward' : 'done') + '</span>'
+      + (isFirst ? 'Continue' : helixVerifyEsc(confirmLabel))
+      + '</button></div></div></div>';
+    const primary = scrim.querySelector('.adm-btn--primary');
+    if (primary) {
+      primary.style.fontVariationSettings = "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24";
+      primary.focus();
+    }
+  }
+
+  document.body.appendChild(scrim);
+  paint(1);
+  requestAnimationFrame(() => scrim.classList.add('is-open'));
+  const onKey = (e) => { if (e.key === 'Escape') closeHelixApplyVerify(); };
+  closeHelixApplyVerify._onKey = onKey;
+  document.addEventListener('keydown', onKey);
+  scrim.addEventListener('click', (e) => {
+    if (e.target === scrim) { closeHelixApplyVerify(); return; }
+    const act = e.target.closest('[data-hx-verify]');
+    if (!act) return;
+    const kind = act.getAttribute('data-hx-verify');
+    if (kind === 'close') closeHelixApplyVerify();
+    else if (kind === 'next') paint(2);
+    else if (kind === 'confirm') {
+      closeHelixApplyVerify();
+      if (onConfirm) onConfirm();
+    }
+  });
+}
+
+function commitHelixStudioApply() {
   if (!helixStudioDraft || !isHelixStudioDirty()) return false;
   const next = captureBgAnimSnapshot();
   helixStudioUndo = cloneBgAnimSnap(helixStudioPublished);
@@ -3579,8 +3907,24 @@ export function applyHelixStudio() {
   helixStudioPublished = cloneBgAnimSnap(next);
   helixStudioDraft.clear();
   broadcastBgAnimSnapshotState(next);
+  recordHelixInstance({ name: 'Published', published: true, snap: next });
   syncHelixStudioChrome();
   return true;
+}
+
+/* Apply always asks twice before writing the look to every other chat.
+   Pass { confirmed: true } only after the two-step verify (or tests). */
+export function applyHelixStudio(opts) {
+  if (!helixStudioDraft || !isHelixStudioDirty()) return false;
+  if (opts && opts.confirmed) return commitHelixStudioApply();
+  openHelixApplyVerify({
+    title: 'Publish this Helix everywhere?',
+    first: 'This look will become the Helix on every WISEcodeAI chat — this page and every other file that runs one.',
+    second: 'Last check. Apply writes this Helix to every chat file. Undo can take the last published look back.',
+    confirmLabel: 'Apply everywhere',
+    onConfirm: () => commitHelixStudioApply(),
+  });
+  return 'pending';
 }
 
 export function undoHelixStudio() {
@@ -3633,15 +3977,19 @@ function mountHelixStudioBar(root) {
     bar = document.createElement('div');
     bar.className = 'sc-helix-studio-bar';
     bar.innerHTML =
-      '<button type="button" class="sc-helix-undo" disabled aria-disabled="true" title="Restore the last published Helix">' +
-        '<span class="material-symbols-outlined" aria-hidden="true">undo</span>Undo' +
+      '<button type="button" class="sc-helix-undo" disabled aria-disabled="true" aria-label="Undo" data-tip="Restore the last published Helix">' +
+        '<span class="material-symbols-outlined" aria-hidden="true">undo</span>' +
       '</button>' +
-      '<button type="button" class="sc-helix-apply btn btn-primary" disabled aria-disabled="true" title="Publish this Helix to every chat">' +
+      '<button type="button" class="sc-helix-save" aria-label="Save instance" data-tip="Save this Helix as an instance you can revert to">' +
+        '<span class="material-symbols-outlined" aria-hidden="true">bookmark</span>' +
+      '</button>' +
+      '<button type="button" class="sc-helix-apply btn btn-primary" disabled aria-disabled="true">' +
         '<span class="material-symbols-outlined" aria-hidden="true">done</span>Apply' +
       '</button>';
     host.appendChild(bar);
     const applyBtn = bar.querySelector('.sc-helix-apply');
     const undoBtn = bar.querySelector('.sc-helix-undo');
+    const saveBtn = bar.querySelector('.sc-helix-save');
     if (applyBtn) applyBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -3651,6 +3999,11 @@ function mountHelixStudioBar(root) {
       e.preventDefault();
       e.stopPropagation();
       undoHelixStudio();
+    });
+    if (saveBtn) saveBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      saveHelixInstance('Saved');
     });
   }
   syncHelixStudioChrome();
@@ -3667,10 +4020,11 @@ function openHelixStudioFloat(pop, chatEl) {
   const shell = helixFloatForPop(pop);
   if (!shell) return null;
   shell.setAttribute('data-admin-demo', 'on');
+  shell.setAttribute('data-helix-studio', '1');
   applyChatMenuAdminGate(shell);
   mountHelixStudioBar(shell);
   const r = chatEl && chatEl.getBoundingClientRect ? chatEl.getBoundingClientRect() : { right: 420, top: 72 };
-  const w = shell.offsetWidth || 320;
+  const w = shell.offsetWidth || 460;
   const left = Math.max(16, Math.min((r.right || 420) - 36, window.innerWidth - w - 20));
   clampHelixFloat(shell, left, Math.max(16, (r.top || 72) + 48));
   return shell;
@@ -4304,7 +4658,9 @@ function applyScaleEventToAxes(axes, detail) {
      getDensity    {fn}   () => 'full' (default roster) or 'ten' (same node
                           density; ~10 foods swell a bit larger; every other
                           circle is the WISE owl logo bug)
-   Returns { start, stop, pause, resume, redraw }. */
+   Returns { start, stop, pause, resume, redraw }.
+     stop() blooms the field out (fade + expand). Pass { immediate: true }
+     to tear down without the leave (history restore, style swap). */
 export function createHelixBgAnim(cfg) {
   const host = cfg.host;
   const getBody = cfg.getBody;
@@ -4852,6 +5208,9 @@ export function createHelixBgAnim(cfg) {
      Speed or Spin never jumps the phase, and Reverse unwinds from here. */
   let spinT = 0, lastSpinT = null;
   let hoverPinned = false;
+  /* Leave bloom: fade + expand on first engage. Never shrink the strand. */
+  let leaving = false, leaveTimer = 0;
+  const LEAVE_MS = 1650;
 
   /* Resolve assets/ relative to THIS module so the photos load no matter how deep
      the host page sits; falls back to the project's ../assets convention. */
@@ -5291,12 +5650,12 @@ export function createHelixBgAnim(cfg) {
      the loop isn't running (the reduced-motion still frame), and when Helix ↔ Ten
      flips density on a live field. */
   function redraw() {
-    if (!canvas || !ctx) return;
+    if (!canvas || !ctx || leaving) return;
     draw(lastT || 3);
   }
 
   function resize() {
-    if (!canvas || !ctx) return;
+    if (!canvas || !ctx || leaving) return;
     const body = canvas.parentElement;
     if (!body) return;
     dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -5816,6 +6175,7 @@ export function createHelixBgAnim(cfg) {
 
   function start() {
     if (!isOn() || typeof document === 'undefined') return;
+    cancelLeave();
     ensure();
     if (!canvas || !ctx) return;
     rgb = readColor();
@@ -5871,7 +6231,45 @@ export function createHelixBgAnim(cfg) {
     resumeLoop();
   }
 
-  function stop() {
+  function unfreezeCanvasBox() {
+    if (!canvas) return;
+    canvas.style.left = '';
+    canvas.style.top = '';
+    canvas.style.width = '';
+    canvas.style.height = '';
+    canvas.style.right = '';
+    canvas.style.bottom = '';
+    canvas.style.inset = '';
+  }
+
+  /* Pin the canvas to its current box so a chat-column or composer reflow
+     cannot shrink the strand (that read as a collapse). The bloom scales
+     this frozen frame, then hardStop clears the pin. */
+  function freezeCanvasBox() {
+    if (!canvas) return;
+    const body = canvas.parentElement;
+    if (!body) return;
+    const r = canvas.getBoundingClientRect();
+    const br = body.getBoundingClientRect();
+    canvas.style.left = (r.left - br.left) + 'px';
+    canvas.style.top = (r.top - br.top) + 'px';
+    canvas.style.width = r.width + 'px';
+    canvas.style.height = r.height + 'px';
+    canvas.style.right = 'auto';
+    canvas.style.bottom = 'auto';
+    canvas.style.inset = 'auto';
+  }
+
+  function cancelLeave() {
+    if (!leaving && !leaveTimer) return;
+    leaving = false;
+    if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = 0; }
+    host.classList.remove('sc-bganim-leaving');
+    unfreezeCanvasBox();
+  }
+
+  function hardStop() {
+    cancelLeave();
     running = false; paused = false;
     if (raf) { cancelAnimationFrame(raf); raf = 0; }
     overCard = false; hoverPinned = false; hoverImg = null; hoverX = hoverY = -1; ptrX = ptrY = -1;
@@ -5879,10 +6277,42 @@ export function createHelixBgAnim(cfg) {
     const cbody = canvas && canvas.parentElement;
     if (cbody) cbody.style.cursor = '';
     endPan();
-    host.classList.remove('sc-bganim-live', 'sc-bganim-panning');
+    host.classList.remove('sc-bganim-live', 'sc-bganim-panning', 'sc-bganim-leaving');
     if (ctx) ctx.clearRect(0, 0, w, h);
     spinT = 0; lastSpinT = null;
     lastFrame = 0;
+  }
+
+  /* First engage: keep the last frame, freeze its size, then fade + expand.
+     `immediate` skips the bloom (history restore, style swap, reduced motion). */
+  function beginLeave() {
+    if (leaving) return;
+    if (!canvas || !host.classList.contains('sc-bganim-live')) {
+      hardStop();
+      return;
+    }
+    leaving = true;
+    running = false; paused = false;
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
+    overCard = false; hoverPinned = false; hoverImg = null; hoverX = hoverY = -1; ptrX = ptrY = -1;
+    if (card) card.hidden = true;
+    const cbody = canvas.parentElement;
+    if (cbody) cbody.style.cursor = '';
+    endPan();
+    freezeCanvasBox();
+    void canvas.offsetWidth;
+    host.classList.add('sc-bganim-leaving');
+    leaveTimer = setTimeout(hardStop, LEAVE_MS);
+  }
+
+  function stop(opts) {
+    const immediate = !!(opts && opts.immediate);
+    if (immediate || reducedMotion) {
+      hardStop();
+      return;
+    }
+    if (leaving) return;
+    beginLeave();
   }
 
   /* Preset / colour-picker changes while the field is paused (or on a still
@@ -5893,7 +6323,7 @@ export function createHelixBgAnim(cfg) {
     document.addEventListener('wise:fb-surfaces', () => {
       rgb = readColor();
       if (!canvas || !ctx) return;
-      if (host.classList.contains('sc-bganim-live')) draw(lastT || 3);
+      if (host.classList.contains('sc-bganim-live') && !leaving) draw(lastT || 3);
     });
   }
 
@@ -5920,13 +6350,14 @@ export function createOrbitBgAnim(cfg) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Grouped three-column three-dot menu (shared)                        */
+/* Grouped chat three-dot menu (shared)                                */
 /* ------------------------------------------------------------------ */
 /* Reorganize a chat "More options" popover's flat row list into titled GROUP
-   CARDS that flow through a three-column layout, matching the primary-nav
-   Appearance popover. It MOVES the existing row nodes (never re-creates them) so
-   every wired listener + captured reference stays valid, then tags the popover
-   with .sc-menu-grouped.
+   CARDS. Member-facing cards stack in one column so the menu hangs from the
+   kebab; Helix joins as a second column only when Internal admins is on.
+   It MOVES the existing row nodes (never re-creates them) so every wired
+   listener + captured reference stays valid, then tags the popover with
+   .sc-menu-grouped.
 
    Columns are REAL flex wrappers — not CSS `column-width`. Chromium's
    multi-column hit-testing often maps a click in a later column onto
@@ -5937,13 +6368,13 @@ export function createOrbitBgAnim(cfg) {
    no data-sc and simply follow whichever toggle preceded them, so they land in
    that toggle's group. Unknown rows fall through to a "More" group so nothing is
    ever dropped.
-   Helix sits in its own middle column so its clustered sliders are not stacked
-   under Activity. Idempotent — a second call is a no-op. */
+   Helix sits in its own column so its clustered sliders are not stacked under
+   Conversation. Idempotent — a second call is a no-op. */
 const CHAT_MENU_GROUP_ORDER = ['navigate', 'conversation', 'data', 'display', 'helix', 'motion', 'more', 'danger'];
 const CHAT_MENU_COL = {
   navigate: 1, conversation: 1, data: 1, display: 1,
   helix: 2,
-  motion: 3, more: 3, danger: 3,
+  motion: 1, more: 1, danger: 1,
 };
 const CHAT_MENU_GROUP_TITLE = {
   navigate: 'Go to', conversation: 'Conversation', data: 'Data & agents',
@@ -6092,12 +6523,73 @@ function applyChatMenuAdminGate(pop) {
   if (visibleCols.length) visibleCols[visibleCols.length - 1].classList.add('sc-menu-col--trail');
   pop.classList.toggle('sc-menu-one-col', visibleCols.length < 2);
   pop.classList.toggle('sc-menu-two-col', visibleCols.length === 2);
+  /* Width just changed (Helix column appeared or collapsed). Re-pin so the
+     menu stays hung from the kebab instead of keeping the old left offset. */
+  scheduleGroupedChatMenuPlace(pop);
+}
+
+/* Right-align a grouped chat ⋮ to its kebab. popover-layer captures the
+   in-flow offset once; a later width change (Internal admins on/off) would
+   leave the panel floating off the trigger unless we recompute from the
+   live size and write the new __plDX / __plDY. */
+function chatMenuTrigger(pop) {
+  if (!pop) return null;
+  const host = pop.__plHost
+    || (pop.__plMarker && pop.__plMarker.parentNode)
+    || pop.closest('.panel-more-wrap');
+  if (!host || !host.querySelector) return null;
+  return host.querySelector('.panel-more-btn, [aria-haspopup="menu"]');
+}
+function placeGroupedChatMenu(pop) {
+  if (!pop || !pop.isConnected) return;
+  if (pop.hasAttribute('data-popover-static')) return;
+  if (pop.classList.contains('sc-helix-float')) return;
+  if (pop.classList.contains('hidden')) return;
+  const btn = chatMenuTrigger(pop);
+  if (!btn) return;
+  const r = btn.getBoundingClientRect();
+  const w = pop.offsetWidth || 250;
+  const h = pop.offsetHeight || 0;
+  const gap = 6;
+  const pad = 8;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  /* Hang from the kebab's right edge (the proper side of a right-edge
+     trigger). Prefer below; if that clips the bottom, sit above. */
+  let left = r.right - w;
+  let top = r.bottom + gap;
+  if (top + h > vh - pad && r.top - h - gap >= pad) {
+    top = r.top - h - gap;
+  }
+  left = Math.max(pad, Math.min(left, vw - w - pad));
+  top = Math.max(pad, Math.min(top, vh - h - pad));
+  pop.style.right = 'auto';
+  pop.style.bottom = 'auto';
+  pop.style.left = '0px';
+  pop.style.top = '0px';
+  const origin = pop.getBoundingClientRect();
+  pop.style.left = Math.round(left - origin.left) + 'px';
+  pop.style.top = Math.round(top - origin.top) + 'px';
+  if (pop.__plAnchor && pop.__plAnchor.isConnected) {
+    const aRect = pop.__plAnchor.getBoundingClientRect();
+    pop.__plDX = left - aRect.left;
+    pop.__plDY = top - aRect.top;
+  }
+  pop.__reposition = () => placeGroupedChatMenu(pop);
+}
+function scheduleGroupedChatMenuPlace(pop) {
+  const go = () => placeGroupedChatMenu(pop);
+  go();
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(go);
 }
 function ensureChatMenuAdminDocWire() {
   if (typeof document === 'undefined' || document.__wiseChatAdminMenuWired) return;
   document.__wiseChatAdminMenuWired = true;
   document.addEventListener('wise:admin-ui', () => {
-    document.querySelectorAll('.topbar-popover.sc-menu-grouped').forEach(applyChatMenuAdminGate);
+    document.querySelectorAll('.topbar-popover.sc-menu-grouped').forEach((el) => {
+      applyChatMenuAdminGate(el);
+      scheduleGroupedChatMenuPlace(el);
+    });
   });
   document.addEventListener('click', (e) => {
     document.querySelectorAll('.sc-menu-admin-wrap').forEach((wrap) => {
@@ -6178,6 +6670,7 @@ function mountChatMenuAdminPopover(pop) {
     applyChatAdminUi(!isChatAdminUiOn());
     applyChatMenuAdminGate(pop);
     if (!panel.classList.contains('hidden')) placeChatMenuAdminPop(btn, panel);
+    scheduleGroupedChatMenuPlace(pop);
   });
   const mo = new MutationObserver(() => {
     if (pop.classList.contains('hidden')) closeChatMenuAdminPop(wrap);
@@ -6489,12 +6982,12 @@ function popOutHelixColumn(group, pop) {
   col.__helixHostPop = host;
   shell.appendChild(col);
   document.body.appendChild(shell);
-  shell.style.width = Math.max(240, Math.round(rect.width)) + 'px';
   clampHelixFloat(shell, rect.left, rect.top);
   wireHelixFloatDrag(shell);
   if (host) applyChatMenuAdminGate(host);
   if (helixStudioDraft) {
     shell.setAttribute('data-admin-demo', 'on');
+    shell.setAttribute('data-helix-studio', '1');
     applyChatMenuAdminGate(shell);
     mountHelixStudioBar(shell);
   }
@@ -6544,9 +7037,32 @@ function decorateHelixHead(group, pop) {
       '<button type="button" class="sc-helix-pop-btn sc-helix-dock" aria-label="Return Helix to menu">' +
         '<span class="material-symbols-outlined" aria-hidden="true">close</span>' +
       '</button>';
+    const pill = document.createElement('span');
+    pill.className = 'sc-helix-grabber-pill';
+    pill.setAttribute('aria-hidden', 'true');
+    const grip = document.createElement('span');
+    grip.className = 'sc-helix-drag';
+    grip.setAttribute('aria-hidden', 'true');
+    grip.innerHTML = '<span class="material-symbols-outlined">drag_indicator</span>';
+    head.appendChild(pill);
+    head.appendChild(grip);
     head.appendChild(label);
     head.appendChild(actions);
   }
+  if (!head.querySelector('.sc-helix-drag')) {
+    const grip = document.createElement('span');
+    grip.className = 'sc-helix-drag';
+    grip.setAttribute('aria-hidden', 'true');
+    grip.innerHTML = '<span class="material-symbols-outlined">drag_indicator</span>';
+    head.insertBefore(grip, head.firstChild);
+  }
+  if (!head.querySelector('.sc-helix-grabber-pill')) {
+    const pill = document.createElement('span');
+    pill.className = 'sc-helix-grabber-pill';
+    pill.setAttribute('aria-hidden', 'true');
+    head.insertBefore(pill, head.firstChild);
+  }
+  if (!head.getAttribute('aria-label')) head.setAttribute('aria-label', 'Helix, drag to move');
   const popBtn = head.querySelector('.sc-helix-popout');
   const dockBtn = head.querySelector('.sc-helix-dock');
   if (popBtn && !popBtn.__helixWired) {
@@ -6557,7 +7073,13 @@ function decorateHelixHead(group, pop) {
       popOutHelixColumn(group, pop);
     });
   }
-  if (dockBtn && !dockBtn.__helixWired) {
+  const studioLocked = !!helixStudioDraft
+    || !!(document.body && document.body.hasAttribute('data-helix-studio'));
+  if (dockBtn) {
+    dockBtn.hidden = studioLocked;
+    if (studioLocked) dockBtn.setAttribute('aria-hidden', 'true');
+  }
+  if (dockBtn && !dockBtn.__helixWired && !studioLocked) {
     dockBtn.__helixWired = true;
     dockBtn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -6620,9 +7142,7 @@ export function groupifyChatMenu(pop) {
   col1.className = 'sc-menu-col';
   const col2 = document.createElement('div');
   col2.className = 'sc-menu-col sc-menu-col--helix';
-  const col3 = document.createElement('div');
-  col3.className = 'sc-menu-col';
-  const cols = { 1: col1, 2: col2, 3: col3 };
+  const cols = { 1: col1, 2: col2 };
   CHAT_MENU_GROUP_ORDER.forEach((key) => {
     const nodes = buckets[key];
     if (!nodes || !nodes.length) return;
@@ -6636,12 +7156,11 @@ export function groupifyChatMenu(pop) {
       section.appendChild(head);
     }
     nodes.forEach((n) => section.appendChild(n));
-    const colN = CHAT_MENU_COL[key] || 3;
-    cols[colN].appendChild(section);
+    const colN = CHAT_MENU_COL[key] || 1;
+    (cols[colN] || col1).appendChild(section);
   });
   if (col1.childNodes.length) frag.appendChild(col1);
   if (col2.childNodes.length) frag.appendChild(col2);
-  if (col3.childNodes.length) frag.appendChild(col3);
   pop.appendChild(frag);
   pop.classList.add('sc-menu-grouped');
   pop.dataset.scGrouped = '1';
@@ -7239,9 +7758,14 @@ if (typeof window !== 'undefined') window.WiseTypeInTranscript = typeInTranscrip
  *   sourceLabel  {string}  grounding caption appended to each WISEcodeAI reply ('' hides)
  *   statusLabel  {string}  what WISEcodeAI is "doing" while the typing dots show
  *   onIntent     {fn}      (intent,label) => boolean — return true to suppress default reply
- *   onReply      {fn}      (intent, text, ctx) — fires when the answer lands;
+ *   onReply      {fn}      (intent, text, ctx) — fires when the answer lands
+ *                          (after the thinking trace, as the reply starts);
  *                          ctx.topic is this turn's subject (previous topic
  *                          when the chip carried it forward)
+ *   onReplyDone  {fn}      (intent) — fires once that reply has finished
+ *                          typing (paragraphs, thumbs, trailing chips). Hosts
+ *                          that hold a companion pane closed until the
+ *                          transcript settles open it here.
  *   onAddMember  {fn}      () => void — "Add team member to chat" popover item
  *   onHistory    {fn}      () => void — "History & Projects" popover item
  *   onToggleWidth{fn}      (isWide) => void — fired when the width toggle flips
@@ -7590,13 +8114,22 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
 
   /* Intent chips render as a wrapped flex grid (the chevron carousel is retired,
      so `opts.chipsFlow` is ignored). Welcome chips show at most TWO wrapping
-     rows; overflow is behind a trailing "Load more" chip that reveals the rest.
-     Inline / follow-up chips are unaffected. */
+     rows; overflow is behind a trailing "Show more" chip that reveals the rest
+     inline after it. Inline / follow-up chips are unaffected. */
 
-  /* Once the user taps "Load more", keep the full set visible until the next
-     fresh welcome (reset / setIntents). Resize still re-clamps while collapsed. */
+  /* Once the user taps "Show more", keep the full set visible (and the same
+     chip parked as "Show less") until they collapse or the next fresh welcome
+     (reset / setIntents). Resize still re-clamps while collapsed. */
   let welcomeChipsExpanded = false;
   let welcomeChipsExpanding = false;
+  /* How many intent chips sit before the Show more chip. Survives a re-render
+     while expanded so the control does not jump. */
+  let welcomeChipsCutoff = 0;
+  /* True from the first welcome prime through the fly-in cascade. Re-clamp
+     during that window (font load, width tweak) used to un-hide the last
+     chip before Show more at full opacity — so the boundary chip appeared
+     first even though it is last in order. */
+  let welcomeChipsRevealing = false;
   const WELCOME_CHIP_MAX_ROWS = 2;
 
   /* Intent chips never carry a tooltip — the label is already on the chip.
@@ -7666,11 +8199,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (localStorage.getItem(COMPACT_PREF_KEY) === '0') compactDefaultOn = false;
   } catch (_) {}
   document.documentElement.classList.toggle('chat-compact', compactDefaultOn);
-  /* "Brand AI text" (three-dot ▸ Admin, pink) recolours the transcript APP-WIDE:
-     every WISEcodeAI line's copy takes the brand blue, while the member's own
-     lines keep the default (near-black) ink. Like Compact spacing it flips one
-     global class on <html> (chat-brandtext) so every mounted chat module — and
-     every transcript across the app — responds at once; the shared preference is
+  /* "Brand AI text" (three-dot ▸ Admin, pink) tracks the shared scheme APP-WIDE:
+     member lines stay brand blue and WISEcodeAI stays in the default ink. Like
+     Compact spacing it flips one global class on <html> (chat-brandtext) so
+     every mounted chat module responds at once; the shared preference is
      persisted and re-applied on mount so a reload keeps the chosen scheme. */
   const BRANDTEXT_PREF_KEY = 'wise:chat-brandtext';
   /* OFF by default — the standard scheme keeps both speakers in the same ink.
@@ -8056,15 +8588,6 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   const activityTurnEl = rootEl.querySelector(`#${id}-activity-turn`);
   const activityConvEl = rootEl.querySelector(`#${id}-activity-conv`);
   const telemetry = { turns: 0, ops: 0, tools: 0, tokIn: 0, tokOut: 0, cached: 0, cost: 0, turnStart: 0, last: null };
-  const fmtTok = (n) => {
-    if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
-    if (n >= 1e3) return `${(n / 1e3).toFixed(1)}k`;
-    return String(Math.round(n));
-  };
-  const fmtDur = (ms) => {
-    const s = Math.max(1, Math.round(ms / 1000));
-    return s >= 60 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${s}s`;
-  };
   function renderActivity() {
     if (!activityEl) return;
     if (telemetry.last) {
@@ -8087,9 +8610,37 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       }
     }
   }
-  /* Fold a finished turn's usage into the running conversation totals. Values are
-     synthesized (with a little jitter) so the read-out reads like a real meter. */
+  /* Fold a finished turn's usage into the running conversation totals. Prefer
+     the numbers already stamped on that answer's three-dot menu so the
+     composer meter and the per-message read-out stay in lock-step. */
+  function foldTelemetry(t) {
+    if (!t) return;
+    telemetry.turns += 1;
+    telemetry.tokIn += t.tokIn;
+    telemetry.tokOut += t.tokOut;
+    telemetry.cached += t.cached;
+    telemetry.cost += t.cost;
+    telemetry.ops += t.ops;
+    telemetry.tools += t.tools;
+    telemetry.last = t;
+  }
   function accrueTurn() {
+    const pending = messages
+      ? Array.from(messages.querySelectorAll('.sc-fb-menu-tokens[data-tok-in]:not([data-tok-accrued])'))
+      : [];
+    if (pending.length) {
+      pending.forEach((el) => {
+        const stamped = tokensFromEl(el);
+        if (!stamped) return;
+        if (telemetry.turnStart) stamped.dur = Math.max(stamped.dur, Date.now() - telemetry.turnStart);
+        foldTelemetry(stamped);
+        el.setAttribute('data-tok-accrued', '1');
+        el.setAttribute('data-tok-dur', String(stamped.dur));
+        el.innerHTML = formatTurnTokensHtml(stamped);
+      });
+      renderActivity();
+      return;
+    }
     const rnd = (a, b) => a + Math.random() * (b - a);
     const tokIn = Math.round(rnd(6000, 22000));
     const tokOut = Math.round(rnd(400, 2600));
@@ -8098,10 +8649,19 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const ops = Math.round(rnd(1, 4));
     const tools = Math.round(rnd(0, 3));
     const dur = telemetry.turnStart ? (Date.now() - telemetry.turnStart) : Math.round(rnd(2000, 9000));
-    telemetry.turns += 1;
-    telemetry.tokIn += tokIn; telemetry.tokOut += tokOut; telemetry.cached += cached;
-    telemetry.cost += cost; telemetry.ops += ops; telemetry.tools += tools;
-    telemetry.last = { tokIn, tokOut, cached, cost, ops, tools, dur };
+    foldTelemetry({ tokIn, tokOut, cached, cost, ops, tools, dur });
+    renderActivity();
+  }
+  function syncTelemetryFromTranscript() {
+    Object.assign(telemetry, { turns: 0, ops: 0, tools: 0, tokIn: 0, tokOut: 0, cached: 0, cost: 0, turnStart: 0, last: null });
+    if (messages) {
+      messages.querySelectorAll('.sc-fb-menu-tokens[data-tok-in]').forEach((el) => {
+        const stamped = tokensFromEl(el);
+        if (!stamped) return;
+        foldTelemetry(stamped);
+        el.setAttribute('data-tok-accrued', '1');
+      });
+    }
     renderActivity();
   }
   /* Watch the transcript for the presence of a typing line and mirror it onto
@@ -8225,10 +8785,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   }
   /* Actions row appended beneath a WISEcodeAI answer. Left cluster: copy + thumbs
      up / thumbs down (thumbs down reveals the reason chips, see feedbackReasons).
-     Right cluster (pinned far-right): re-run this prompt in a new chat
-     (auto_read_play), edit-then-run in a new chat (bubble), fork the whole turn
-     (alt_route), and the turn's ID (e.g. #6d7a). Rendered with Material Symbols
-     so the idle state reads as outlined glyphs and the active state fills in. */
+     Then the three-dot (re-run / edit / fork / file-to-folder + turn ID, then a
+     divider and this-message tokens) and the timestamp immediately to its right. */
   /* A reason pop-over (chip set + optional free-form note) anchored to a
      thumbs button. `kind` is 'up' | 'down' so the up / down flows can host
      their own intents and share one set of interaction handlers. */
@@ -8250,12 +8808,13 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const upPop = reasonsPopoverHtml('up', accurateReasons, 'What was accurate?', 'What worked? (optional)');
     const downPop = reasonsPopoverHtml('down', feedbackReasons, 'What wasn\u2019t right?', 'Tell us more (optional)');
     const t = typeof timeMs === 'number' && Number.isFinite(timeMs) ? timeMs : Date.now();
-    /* Timestamp sits immediately to the LEFT of copy. The turn controls
-       (re-run / edit / fork + turn ID) stay behind the three-dot button to
-       the right of thumbs-down. */
+    /* Timestamp sits immediately to the RIGHT of the three-dot. The turn
+       controls (re-run / edit / fork / file-to-folder + turn ID) stay behind
+       that button; a divider then the token read-out for THIS answer. */
+    const tokens = synthesizeTurnTokens(seedFrom(t, tid));
+    if (telemetry.turnStart) tokens.dur = Math.max(1000, Date.now() - telemetry.turnStart);
     return `<div class="sc-fb-wrap">
         <div class="sc-fb" role="group" aria-label="Answer actions">
-          ${timeStampHtml(t, 'sc-fb-time')}
           <span class="sc-fb-copy-wrap">
             <button type="button" class="sc-fb-btn" data-fb="copy" data-tip="Copy answer" aria-label="Copy answer"><span class="material-symbols-outlined">content_copy</span></button>
             <span class="sc-fb-copied" role="status" aria-hidden="true"><span class="material-symbols-outlined">check</span>Copied</span>
@@ -8275,27 +8834,63 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
                 <button type="button" class="sc-fb-btn" data-fb="replay" data-tip="Re-run in new chat" aria-label="Re-run this prompt in a new conversation"><span class="material-symbols-outlined">auto_read_play</span></button>
                 <button type="button" class="sc-fb-btn" data-fb="edit" data-tip="Edit in new chat" aria-label="Edit this prompt in a new conversation"><span class="material-symbols-outlined">bubble</span></button>
                 <button type="button" class="sc-fb-btn" data-fb="turn" data-tip="Fork a turn" aria-label="Fork a turn from here"><span class="material-symbols-outlined">alt_route</span></button>
+                <button type="button" class="sc-fb-btn" data-fb="file" data-tip="File to folder" aria-label="File this conversation to a folder" aria-haspopup="true"><span class="material-symbols-outlined">drive_file_move</span></button>
                 <span class="sc-fb-id" data-tip="Turn ID" tabindex="0">#${esc(tid)}</span>
               </span>
+              ${tokenRowHtml(tokens)}
             </div>
           </span>
+          ${timeStampHtml(t, 'sc-fb-time')}
         </div>
         <div class="sc-fb-note" hidden></div>
       </div>`;
   }
-  /* Saved threads still have the stamp inside the three-dot menu. Lift it
-     onto the row, immediately left of copy, so restore matches live turns. */
+  /* Saved threads may still have the stamp inside the three-dot menu, or
+     left of copy from an earlier layout. Park it to the right of more. */
+  function ensureFileMenuBtn(fb) {
+    const actions = fb && fb.querySelector && fb.querySelector('.sc-fb-menu-actions');
+    if (!actions || actions.querySelector('[data-fb="file"]')) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'sc-fb-btn';
+    btn.setAttribute('data-fb', 'file');
+    btn.setAttribute('data-tip', 'File to folder');
+    btn.setAttribute('aria-label', 'File this conversation to a folder');
+    btn.setAttribute('aria-haspopup', 'true');
+    btn.innerHTML = '<span class="material-symbols-outlined">drive_file_move</span>';
+    const idEl = actions.querySelector('.sc-fb-id');
+    if (idEl) actions.insertBefore(btn, idEl);
+    else actions.appendChild(btn);
+  }
+  function ensureTokenRow(fb) {
+    const menu = fb && fb.querySelector && fb.querySelector('.sc-fb-menu');
+    if (!menu || menu.querySelector('.sc-fb-menu-tokens')) return;
+    const tid = ((fb.querySelector('.sc-fb-id') || {}).textContent || '').replace('#', '');
+    const stamp = fb.querySelector('.sc-fb-time, .sc-line-time');
+    const ms = stamp ? Number(stamp.getAttribute('data-ts')) : Date.now();
+    const tokens = synthesizeTurnTokens(seedFrom(Number.isFinite(ms) ? ms : Date.now(), tid));
+    menu.insertAdjacentHTML('beforeend', tokenRowHtml(tokens));
+  }
   function hoistFeedbackTimes(root) {
     if (!root || !root.querySelectorAll) return;
-    root.querySelectorAll('.sc-fb-menu .sc-line-time, .sc-fb-menu .sc-fb-menu-time').forEach((el) => {
-      const fb = el.closest('.sc-fb');
-      const copy = fb && fb.querySelector('.sc-fb-copy-wrap');
-      if (!copy) return;
-      el.classList.remove('sc-fb-menu-time');
-      el.classList.add('sc-fb-time');
-      copy.insertAdjacentElement('beforebegin', el);
+    root.querySelectorAll('.sc-fb').forEach((fb) => {
+      const more = fb.querySelector('.sc-fb-more-wrap');
+      if (more) {
+        fb.querySelectorAll('.sc-line-time, .sc-fb-menu-time, .sc-fb-time').forEach((el) => {
+          el.classList.remove('sc-fb-menu-time');
+          el.classList.add('sc-fb-time');
+          more.insertAdjacentElement('afterend', el);
+        });
+      }
+      ensureFileMenuBtn(fb);
+      ensureTokenRow(fb);
+      const menu = fb.querySelector('.sc-fb-menu');
+      const actions = menu && menu.querySelector('.sc-fb-menu-actions');
+      const ver = menu && menu.querySelector(':scope > .sc-fb-menu-ver');
+      if (ver && actions && ver.parentElement !== actions) actions.insertBefore(ver, actions.firstChild);
     });
     root.querySelectorAll('.sc-line-time').forEach(paintStampRel);
+    syncTelemetryFromTranscript();
   }
 
   /* ── Paragraph-by-paragraph reveal ───────────────────────────────────────
@@ -8342,60 +8937,64 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   }
 
   /* Prime an element to FLY IN from the right; `revealStaggered` then clears the
-     transform so it sails right→left and lands in place. Used by the welcome
-     intent chips so they arrive only after the heading + sub have typed in. */
+     transform so it sails right→left and lands in place. Used by welcome intent
+     chips (and Show more) after the heading + sub have faded in. */
   function primeRevealFromRight(el) {
     if (!el) return;
     el.style.opacity = '0';
     el.style.transform = 'translateX(30px)';
-    el.style.transition = 'opacity .28s ease, transform .38s cubic-bezier(0.22, 0.85, 0.25, 1)';
+    el.style.transition = 'opacity .22s ease, transform .28s cubic-bezier(0.22, 0.85, 0.25, 1)';
   }
-  /* Welcome-screen reveal. The owl + rings are already breathing; here we
-     fade the heading, then the sub (same paragraph reveal as every WISEcodeAI
-     answer), and only once that copy has landed do we fly the intent chips
-     in from the right so they arrive AFTER the copy — never sitting there
-     before it. Honors reduced-motion (everything just shows). Safe to re-run
-     whenever the welcome is shown again (see reset()). */
+  /* Welcome headline / sub — fade up in place (not the slow transcript
+     paragraph type-in, which held the chips back for most of a second). */
+  function primeRevealUp(el) {
+    if (!el) return;
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(8px)';
+    el.style.transition = 'opacity .26s ease, transform .3s cubic-bezier(0.22, 0.85, 0.25, 1)';
+  }
+  function clearReveal(el) {
+    if (!el) return;
+    el.style.opacity = '';
+    el.style.transform = '';
+    el.style.transition = '';
+  }
+  /* Welcome-screen reveal. Heading, then the sub, fade up; the intent chips
+     (and any visible overview cards) fly in from the right right after, so
+     the copy always leads and the chips do not sit idle waiting on type-in.
+     Honors reduced-motion. Safe to re-run on reset(). */
   function revealWelcome() {
     if (!welcome || welcome.classList.contains('sc-hidden')) return;
-    /* Arm the admin background field whenever the welcome is (re)shown — mount or
-       a fresh conversation. start() no-ops unless the toggle is on. */
     bgAnim.start();
     const heading = welcome.querySelector('.ws-heading');
     const subEl = welcome.querySelector('.ws-sub');
-    /* Cap at two rows (+ Load more) before measuring the fly-in set, so only the
-       visible chips animate — hidden overflow chips stay out of the cascade. */
     clampWelcomeChips();
-    /* The larger "at a glance" scorecards and the small intent chips share ONE
-       fly-in: after the text types, they all sail in from the right in a single
-       top-to-bottom cascade (cards first, then chips) so every card and chip
-       animates identically — never one style for the big ones and another for
-       the small. */
     const scWrap = welcome.querySelector(`#${id}-scorecards`) || welcome.querySelector('.ws-scorecards');
-    const cards = scWrap ? Array.from(scWrap.querySelectorAll('.ws-scorecard')) : [];
+    const cardsOn = !!(scWrap && !rootEl.classList.contains('sc-cards-hidden'));
+    const visibleCards = () => cardsOn
+      ? Array.from(scWrap.querySelectorAll('.ws-scorecard')).filter((c) => !c.hidden)
+      : [];
     const chipsWrap = welcome.querySelector(`#${id}-chips`) || welcome.querySelector('.ws-chips');
     const visibleChips = () => chipsWrap
       ? Array.from(chipsWrap.querySelectorAll('.chip')).filter((c) => !c.hidden)
       : [];
-    /* Include Load more in the same primed set as every other welcome chip. */
-    let chips = visibleChips();
-    const all = cards.concat(chips);
+    const text = [heading, subEl].filter(Boolean);
+    const flyNow = visibleCards().concat(visibleChips());
     if (prefersReducedMotion) {
-      all.forEach((c) => { c.style.opacity = ''; c.style.transform = ''; c.style.transition = ''; });
+      text.concat(flyNow).forEach(clearReveal);
+      welcome.classList.add('ws-in');
       return;
     }
-    /* Hold every card + chip back (invisible, nudged right) until the text finishes. */
-    all.forEach(primeRevealFromRight);
-    const typeText = (el, next, wordDelay) => { if (el) typeInLine(el, next, wordDelay); else next(); };
-    typeText(heading, () => typeText(subEl, () => {
-      /* Width/resize may have re-clamped during the type-in. Re-read the visible
-         set (Load more included) and re-prime so every chip shares one cascade —
-         never a Load more that was sitting fully opaque while the others flew in. */
+    text.forEach(primeRevealUp);
+    flyNow.forEach(primeRevealFromRight);
+    welcome.classList.add('ws-in');
+    welcomeChipsRevealing = true;
+    revealStaggered(text, 40, 110, () => {
       clampWelcomeChips();
-      const fly = cards.concat(visibleChips());
+      const fly = visibleCards().concat(visibleChips());
       fly.forEach(primeRevealFromRight);
-      revealStaggered(fly, 90, 60, null);
-    }, 38)); // sub line types a bit faster than the heading
+      revealStaggered(fly, 30, 28, () => { welcomeChipsRevealing = false; });
+    });
   }
   /* Hide the thumbs / meta row up-front so it lands as one unit after the
      last paragraph — never icon-by-icon, and never before the copy. */
@@ -8919,6 +9518,15 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       : reasoningTraceFor(routeText, meta.intent);
     const lineMeta = { ...meta, source: meta.source === false ? false : sourceName };
     delete lineMeta.traceText; delete lineMeta.milestones; delete lineMeta.intent; delete lineMeta.onTraceDone;
+    const hostOnDone = lineMeta.onDone;
+    lineMeta.onDone = () => {
+      if (typeof hostOnDone === 'function') { try { hostOnDone(); } catch (_) { /* host hook */ } }
+      /* Fires after paragraphs + thumbs + trailing chips have settled, so a
+         host can open a companion pane only once the transcript is done. */
+      if (typeof opts.onReplyDone === 'function') {
+        try { opts.onReplyDone(meta.intent); } catch (_) { /* host hook */ }
+      }
+    };
     const done = () => {
       /* Park topic-related follow-up chips BEFORE the host's onReply so a
          curated setIntents() can still override, and so the answer never
@@ -8926,7 +9534,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       applyTopicFollowups(meta.intent, html, routeText);
       /* Host side-effects that render output (e.g. opening the result/visual
          panes) are deferred to here so they land WITH the answer, never during
-         the thinking globs. */
+         the thinking globs. The pane itself stays closed until onReplyDone
+         when this is the first output of the conversation. */
       if (typeof meta.onTraceDone === 'function') { try { meta.onTraceDone(); } catch (_) { /* host hook */ } }
       addWISEcodeAI(html, lineMeta);
     };
@@ -10043,8 +10652,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      brighten, far ones shrink and fade. Thick paints the backbones fatter or
      finer. Rungs / Bar set how many cross-lines sit between the two strands
      and how heavy those lines paint. The canvas is created lazily the first time the animation is turned on,
-     lives behind the welcome content (which goes transparent while live), and is
-     torn down to a cleared, faded layer the instant the transcript advances. */
+     lives behind the welcome content (which goes transparent while live), and
+     blooms out (fade + expand) the moment the transcript advances. */
   /* The welcome-only ambient field. Helix and orbit share one facade so all the
      start/stop/pause/resume call sites below stay style-agnostic: the DNA/RNA
      product 'helix' (createHelixBgAnim — the SAME engine every other chat
@@ -10114,7 +10723,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
         const e = bgAnimEngines.helix;
         if (e && e.redraw) { e.redraw(); return; }
       }
-      this.stop();
+      this.stop({ immediate: true });
       if (bgAnimOn && live) bgAnimEngine(bgAnimStyle).start();
     },
   };
@@ -10676,10 +11285,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      thread here first. */
   let chatHistory = null;
   function hideWelcome() {
-    /* The transcript has advanced to its next state — retire the welcome-only
-       background animation (if it was armed) so it never bleeds into a live thread. */
+    /* The transcript has advanced — bloom the welcome helix out (fade + expand),
+       never collapse it with the chat column. The Helix playground keeps the
+       strand running so sliders still have something to drive. */
     const first = !!(welcome && !welcome.classList.contains('sc-hidden'));
-    bgAnim.stop();
+    if (opts.helixStudio !== true) bgAnim.stop();
     welcome?.classList.add('sc-hidden');
     /* A clicked intent chip starts a fresh turn, so drop any half-typed copy
        left in the composer — the placeholder returns so the input reads clean
@@ -10704,12 +11314,13 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     clearThread();
     welcomeChipsExpanded = false;
     welcomeChipsExpanding = false;
+    welcomeChipsCutoff = 0;
+    welcomeChipsRevealing = false;
     renderChips();
-    welcome?.classList.remove('sc-hidden');
+    welcome?.classList.remove('sc-hidden', 'ws-in');
     if (welcome) welcome.style.display = '';
     rootEl.classList.remove('sc-conversing');
-    /* Re-play the welcome reveal (text types in, then chips fly in from the
-       right) so returning to a fresh welcome feels alive, not pre-populated. */
+    /* Re-play the welcome reveal (heading + sub fade up, then chips fly in). */
     revealWelcome();
     /* Clear the live-activity meter so a fresh conversation starts from zero. */
     if (activityEl) {
@@ -11194,7 +11805,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
            the host and the animated background bleeds through behind the restored
            transcript (it only draws while the welcome is up, but nothing stops it
            on this path). */
-        bgAnim.stop();
+        bgAnim.stop({ immediate: true });
         welcome?.classList.add('sc-hidden');
         if (welcome) welcome.style.display = '';
         closeAgents();
@@ -11227,11 +11838,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
 
   /* Intent chips */
   welcome?.addEventListener('click', (e) => {
-    /* "Load more" expands the welcome grid past the two-row cap — not an intent. */
+    /* "Show more" / "Show less" toggles the two-row cap — not an intent. */
     const more = e.target.closest('[data-chip-more]');
     if (more && welcome.contains(more)) {
       e.preventDefault();
-      expandWelcomeChips(more);
+      if (welcomeChipsExpanded) collapseWelcomeChips(more);
+      else expandWelcomeChips(more);
       return;
     }
     const chip = e.target.closest('.ws-intent-chip[data-intent]');
@@ -11385,6 +11997,20 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       if (verdict === 'turn') { forkFromLine(line); return; }
       if (verdict === 'replay') { rerunFromLine(line, true); return; }
       if (verdict === 'edit') { rerunFromLine(line, false); return; }
+      if (verdict === 'file') {
+        const moreBtn = wrap.querySelector('.sc-fb-more');
+        closeMoreMenus();
+        fileConversationToLibrary({
+          chatHistory,
+          messagesEl: messages,
+          historyKey: opts.historyKey || 'wise-wiseai-chat-history',
+          trigger: moreBtn || fbBtn,
+          tipTarget: moreBtn || fbBtn,
+          preferAbove: true,
+          markOpen: false,
+        });
+        return;
+      }
       const up = wrap.querySelector('[data-fb="up"]');
       const down = wrap.querySelector('[data-fb="down"]');
       const upReasons = wrap.querySelector('.sc-fb-reasons--up');
@@ -11511,9 +12137,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     });
   }
   document.addEventListener('click', (e) => {
-    /* Replay / edit / fork / turn-id live inside `.sc-fb-menu`, which portals
-       onto <body> while open — a listener on `messages` never sees those
-       clicks. Route them through the same handler, scoped to this chat. */
+    /* Replay / edit / fork / file / turn-id live inside `.sc-fb-menu`, which
+       portals onto <body> while open — a listener on `messages` never sees
+       those clicks. Route them through the same handler, scoped to this chat. */
     const portaled = e.target.closest('.sc-fb-menu, .sc-fb-reasons');
     if (portaled && messages && !messages.contains(portaled) && isThisChatFb(e.target)) {
       onFbClick(e);
@@ -11521,7 +12147,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (!e.target.closest('.sc-fb-down-wrap, .sc-fb-up-wrap, .sc-fb-reasons')) closeReasonPopovers();
     /* Leave the menu open while interacting inside it (copy turn ID, etc.); a
        click that lands on the trigger is handled by its own toggle above. */
-    if (!e.target.closest('.sc-fb-more-wrap, .sc-fb-menu')) closeMoreMenus();
+    if (!e.target.closest('.sc-fb-more-wrap, .sc-fb-menu, .lib-pop')) closeMoreMenus();
   });
   /* Hover-reveal for the three-dot menu — the turn controls spill open as
      soon as the pointer lands on the "more" control (no tooltip, no click
@@ -11610,7 +12236,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
 
   /* Intent chips always render as a wrapped flex grid now — the chevron
      carousel is retired. Welcome chips clamp to two rows with a trailing
-     "Load more" chip; overflow is revealed on tap. */
+     "Show more" chip; overflow is revealed on tap, inline after it. */
 
   /* Persistent intent-chip rail — same horizontal scroll controls + edge fades
      as the welcome carousel. `refreshPersistChips` is exposed so hideWelcome can
@@ -11651,11 +12277,18 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   input?.addEventListener('input', () => {
     const typed = !!(input.value && input.value.trim());
     const welcomeUp = !!(welcome && !welcome.classList.contains('sc-hidden'));
+    if (typed && opts.helixStudio !== true) bgAnim.stop();
     if (typed && typeof opts.onEngage === 'function') {
       try { opts.onEngage(); } catch (_) { /* host layout hook */ }
     } else if (!typed && welcomeUp && typeof opts.onDisengage === 'function') {
       try { opts.onDisengage(); } catch (_) { /* host layout hook */ }
     }
+  });
+  /* First click / focus in the composer also retires the helix — waiting for
+     hideWelcome() let a click collapse the strand with the body reflow. */
+  input?.addEventListener('focus', () => {
+    if (opts.helixStudio === true) return;
+    if (welcome && !welcome.classList.contains('sc-hidden')) bgAnim.stop();
   });
 
   /* Keep the caret in the TEXT field whenever the user clicks the input pill.
@@ -11693,16 +12326,19 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   moreBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
     const open = morePop.classList.contains('hidden');
-    /* Reflow the flat menu into titled group cards + three columns (Helix
-       gets its own middle column) on first open — deferred to here so every
-       row that other mount code injects (history, connectors, intent toggles)
-       already exists and is bucketed. Moves the existing nodes, so all wiring
-       keeps working; idempotent, so subsequent opens are a no-op. */
+    /* Reflow the flat menu into titled group cards on first open — deferred
+       to here so every row that other mount code injects (history, connectors,
+       intent toggles) already exists and is bucketed. Moves the existing
+       nodes, so all wiring keeps working; idempotent, so subsequent opens
+       are a no-op. */
     if (open) groupifyChatMenu(morePop);
     morePop.classList.toggle('hidden', !open);
     moreBtn.classList.toggle('is-open', open);
     moreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-    if (open) syncHistoryMenu();
+    if (open) {
+      syncHistoryMenu();
+      scheduleGroupedChatMenuPlace(morePop);
+    }
   });
 
   /* "Go to" destinations (opts.menuLinks) — hand the clicked key back to the
@@ -11767,7 +12403,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       if (prefersReducedMotion && bgAnimOn && (rootEl.classList.contains('sc-bganim-live') || rootEl.classList.contains('sc-orbit-live'))) bgAnim.start();
     }
     /* Pane width changes the chip grid's measure — re-clamp while collapsed so
-       Load more stays on row 2 (expanded stays fully open). */
+       Show more stays on row 2 (expanded stays fully open). */
     requestAnimationFrame(() => clampWelcomeChips());
   };
   rootEl.addEventListener('click', (e) => {
@@ -12315,13 +12951,16 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
         else if (navigator.clipboard) navigator.clipboard.writeText(url).catch(() => {});
       }
     } else if (action === 'file-library') {
-      /* History already saves the thread; this copies it onto the Library shelf. */
-      closeMore();
+      /* History already saves the thread; this copies it onto the Library shelf.
+         Folder pick expands inside this Conversation card — do not close. */
       fileConversationToLibrary({
         chatHistory,
         messagesEl: messages,
         historyKey: opts.historyKey || 'wise-wiseai-chat-history',
-        trigger: moreBtn,
+        trigger: item,
+        tipTarget: moreBtn,
+        menu: morePop,
+        onFiled: closeMore,
       });
     } else if (action === 'close') {
       closeMore();
@@ -12369,7 +13008,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      it's rendered. */
   /* Cap the welcome chip grid at two wrapping rows. Chips that would fall on
      row 3+ stay in the DOM (so renderChips can rebuild freely) but are hidden;
-     a trailing "Load more" chip takes the last slot on row 2 and reveals them.
+     a trailing "Show more" chip takes the last slot on row 2 and reveals them
+     inline after it (wrapping onto the next row when the current one is full).
      Measurement is layout-based — chip labels vary in width, so a fixed count
      would leave uneven rows. */
   function welcomeChipRowCount(els) {
@@ -12381,20 +13021,75 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     });
     return tops.length;
   }
+  function paintMoreBtn(btn, expanded) {
+    if (!btn) return;
+    const icon = btn.querySelector('.material-symbols-outlined');
+    const label = expanded ? 'Show less' : 'Show more';
+    btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    btn.setAttribute('aria-label', expanded ? 'Show fewer intents' : 'Show more intents');
+    btn.removeAttribute('aria-hidden');
+    btn.style.pointerEvents = '';
+    if (icon) icon.textContent = expanded ? 'chevron_left' : 'chevron_right';
+    const textNode = Array.from(btn.childNodes).find((n) => n.nodeType === Node.TEXT_NODE);
+    if (textNode) textNode.textContent = label;
+    else if (icon) btn.insertBefore(document.createTextNode(label), icon);
+    else btn.insertBefore(document.createTextNode(label), btn.firstChild);
+  }
+  function ensureMoreBtn(wrap, holdPrime) {
+    let moreBtn = wrap.querySelector('[data-chip-more]');
+    if (!moreBtn) {
+      wrap.insertAdjacentHTML('beforeend',
+        `<button type="button" class="chip chip-primary ws-intent-chip--more" data-chip-more aria-expanded="false" aria-label="Show more intents">Show more<span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>`);
+      moreBtn = wrap.querySelector('[data-chip-more]');
+      if (moreBtn && holdPrime) primeRevealFromRight(moreBtn);
+    }
+    return moreBtn;
+  }
+  function placeMoreBtnAfter(moreBtn, afterChip, wrap) {
+    if (!moreBtn) return;
+    if (afterChip) {
+      if (afterChip.nextSibling !== moreBtn) afterChip.after(moreBtn);
+    } else if (wrap && wrap.firstChild !== moreBtn) {
+      wrap.insertBefore(moreBtn, wrap.firstChild);
+    }
+  }
   function clampWelcomeChips() {
     const wrap = rootEl.querySelector(`#${id}-chips`);
     if (!wrap) return;
-    /* Don't interrupt a Load-more fly-in mid-cascade. */
+    /* Don't interrupt a Show-more fly-in mid-cascade. */
     if (welcomeChipsExpanding) return;
-    /* Reuse the Load more node when present — destroying it on every re-clamp
+    /* Reuse the Show more node when present — destroying it on every re-clamp
        (width toggle, ResizeObserver) drops its primed fly-in styles and leaves
        a brand-new chip sitting fully opaque while the others animate. */
     let moreBtn = wrap.querySelector('[data-chip-more]');
     if (moreBtn) moreBtn.hidden = true;
     const chips = Array.from(wrap.querySelectorAll('.ws-intent-chip:not([data-chip-more])'));
-    chips.forEach((c) => { c.hidden = false; });
-    if (welcomeChipsExpanded || !chips.length) {
+    /* The last chip before Show more sits on the two-row cutoff. Un-hiding
+       it at full opacity while the rest are still primed (opacity 0) is why
+       that boundary chip "showed up first". Keep every chip invisible when
+       the welcome is mid-reveal, or when any sibling is already held back. */
+    const holdPrime = welcomeChipsRevealing || chips.some((c) => c.style.opacity === '0')
+      || (moreBtn && moreBtn.style.opacity === '0');
+    chips.forEach((c) => {
+      c.hidden = false;
+      if (holdPrime) primeRevealFromRight(c);
+    });
+    if (moreBtn && holdPrime) primeRevealFromRight(moreBtn);
+    if (!chips.length) {
       moreBtn?.remove();
+      return;
+    }
+    /* Expanded: keep the same chip parked at its original slot and leave
+       overflow visible after it. Recreate it after a re-render so it cannot
+       jump to the end of the row. */
+    if (welcomeChipsExpanded) {
+      moreBtn = moreBtn || ensureMoreBtn(wrap, holdPrime);
+      const cut = Math.max(0, Math.min(welcomeChipsCutoff, chips.length));
+      placeMoreBtnAfter(moreBtn, cut ? chips[cut - 1] : null, wrap);
+      if (moreBtn) {
+        moreBtn.hidden = false;
+        paintMoreBtn(moreBtn, true);
+      }
       return;
     }
     /* Welcome is off-screen (conversation underway) — skip measurement; the
@@ -12409,18 +13104,19 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     }
     if (welcomeChipRowCount(chips) <= WELCOME_CHIP_MAX_ROWS) {
       moreBtn?.remove();
+      welcomeChipsCutoff = chips.length;
       return;
     }
 
-    if (!moreBtn) {
-      wrap.insertAdjacentHTML('beforeend',
-        `<button type="button" class="chip ws-intent-chip ws-intent-chip--more" data-chip-more aria-label="Load more intents"><span class="material-symbols-outlined" aria-hidden="true">expand_more</span>Load more</button>`);
-      moreBtn = wrap.querySelector('[data-chip-more]');
-    }
+    moreBtn = moreBtn || ensureMoreBtn(wrap, holdPrime);
     if (!moreBtn) return;
+    /* Park at the end so the binary search measures a trailing control —
+       leftover placement from a prior expand would sit mid-list. */
+    wrap.appendChild(moreBtn);
     moreBtn.hidden = false;
+    paintMoreBtn(moreBtn, false);
 
-    /* Binary search the largest prefix of chips that, together with Load more,
+    /* Binary search the largest prefix of chips that, together with Show more,
        still fits in two rows. Showing chips[0..n) keeps list order stable. */
     let lo = 0;
     let hi = chips.length;
@@ -12433,15 +13129,20 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       else hi = mid - 1;
     }
     chips.forEach((c, i) => { c.hidden = i >= lo; });
-    /* Everything already fits alongside Load more — drop the control and show
-       the full set (Load more would be a no-op). */
+    /* Everything already fits alongside Show more — drop the control and show
+       the full set (Show more would be a no-op). */
     if (lo >= chips.length) {
       moreBtn.remove();
       chips.forEach((c) => { c.hidden = false; });
+      welcomeChipsCutoff = chips.length;
+      return;
     }
+    welcomeChipsCutoff = lo;
+    placeMoreBtnAfter(moreBtn, chips[lo - 1], wrap);
   }
   /* Reveal the clipped welcome chips with the same right→left fly-in the
-     welcome uses — Load more fades out, then the rest cascade in. */
+     welcome uses. Show more stays put and becomes Show less; overflow
+     cascades in after it. */
   function expandWelcomeChips(fromBtn) {
     if (welcomeChipsExpanded || welcomeChipsExpanding) return;
     const wrap = rootEl.querySelector(`#${id}-chips`);
@@ -12451,40 +13152,64 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const more = fromBtn || wrap.querySelector('[data-chip-more]');
     welcomeChipsExpanded = true;
     welcomeChipsExpanding = true;
+    paintMoreBtn(more, true);
 
     const done = () => { welcomeChipsExpanding = false; };
 
-    const showPending = () => {
-      if (more && more.parentNode) more.remove();
-      if (!pending.length) { done(); return; }
-      if (prefersReducedMotion) {
-        pending.forEach((c) => {
-          c.hidden = false;
-          c.style.opacity = '';
-          c.style.transform = '';
-          c.style.transition = '';
-        });
-        done();
-        return;
-      }
+    if (!pending.length) { done(); return; }
+    if (prefersReducedMotion) {
       pending.forEach((c) => {
         c.hidden = false;
-        primeRevealFromRight(c);
+        c.style.opacity = '';
+        c.style.transform = '';
+        c.style.transition = '';
       });
-      void wrap.offsetHeight;
-      revealStaggered(pending, 40, 48, done);
+      done();
+      return;
+    }
+    pending.forEach((c) => {
+      c.hidden = false;
+      primeRevealFromRight(c);
+    });
+    void wrap.offsetHeight;
+    revealStaggered(pending, 40, 48, done);
+  }
+  /* Hide the chips that landed after Show more and restore the two-row cap.
+     The control stays in its slot and flips back to Show more. */
+  function collapseWelcomeChips(fromBtn) {
+    if (!welcomeChipsExpanded || welcomeChipsExpanding) return;
+    const wrap = rootEl.querySelector(`#${id}-chips`);
+    if (!wrap) return;
+    const more = fromBtn || wrap.querySelector('[data-chip-more]');
+    const overflow = more
+      ? Array.from(wrap.querySelectorAll('.ws-intent-chip:not([data-chip-more])'))
+          .filter((c) => !!(more.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING))
+      : [];
+    welcomeChipsExpanding = true;
+
+    const finish = () => {
+      overflow.forEach((c) => {
+        c.hidden = true;
+        c.style.opacity = '';
+        c.style.transform = '';
+        c.style.transition = '';
+      });
+      welcomeChipsExpanded = false;
+      welcomeChipsExpanding = false;
+      paintMoreBtn(more, false);
+      clampWelcomeChips();
     };
 
-    if (more && !prefersReducedMotion) {
-      more.style.pointerEvents = 'none';
-      more.setAttribute('aria-hidden', 'true');
-      more.style.opacity = '0';
-      more.style.transform = 'translateY(6px) scale(0.96)';
-      more.style.transition = 'opacity .18s ease, transform .18s ease';
-      setTimeout(showPending, 170);
-    } else {
-      showPending();
+    if (prefersReducedMotion || !overflow.length) {
+      finish();
+      return;
     }
+    overflow.forEach((c) => {
+      c.style.opacity = '0';
+      c.style.transform = 'translateX(16px)';
+      c.style.transition = 'opacity .16s ease, transform .16s ease';
+    });
+    setTimeout(finish, 180);
   }
   function renderChips() {
     chipsHtml = buildChipsHtml();
@@ -12520,6 +13245,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     usedIntents.clear();
     welcomeChipsExpanded = false;
     welcomeChipsExpanding = false;
+    welcomeChipsCutoff = 0;
     catalogizeNext(intents);
     renderChips();
     skipAutoFollowups = true;
@@ -12548,6 +13274,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (!scroll || typeof ResizeObserver !== 'function') return;
     let lastW = scroll.clientWidth;
     const ro = new ResizeObserver(() => {
+      if (welcomeChipsRevealing || welcomeChipsExpanding) return;
       const w = scroll.clientWidth;
       if (w === lastW) return;
       lastW = w;
@@ -12556,8 +13283,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     try { ro.observe(scroll); } catch (_) {}
   })();
 
-  /* Play the welcome in: heading + sub fade in as paragraphs, then the intent
-     chips fly in from the right and land — so the chips always trail the copy. */
+  /* Play the welcome in: heading + sub fade up, then the intent chips fly in. */
   revealWelcome();
 
   /* WISEcodeAI: pre-dock the Turns module so it lives as its own broken-out module
@@ -13424,24 +14150,28 @@ export function wireStandardChatMenu(cfg = {}) {
       const messagesNode = (typeof msgSel === 'string')
         ? ((chatEl || document).querySelector(msgSel) || document.querySelector('.chat-messages-area, #chat-messages'))
         : msgSel;
-      pop.classList.add('hidden');
       const wrap = pop.closest('.panel-more-wrap') || pop.__plHost;
       const moreBtnEl = wrap && wrap.querySelector('.panel-more-btn');
-      if (moreBtnEl) {
-        moreBtnEl.classList.remove('is-open');
-        moreBtnEl.setAttribute('aria-expanded', 'false');
-      }
       fileConversationToLibrary({
         chatHistory: (api && api.history) || window.__wiseChatHistory,
         messagesEl: messagesNode,
         historyKey: h.storageKey,
-        trigger: moreBtnEl || fileLibItem,
+        trigger: fileLibItem,
+        tipTarget: moreBtnEl || fileLibItem,
+        menu: pop,
+        onFiled: () => {
+          pop.classList.add('hidden');
+          if (moreBtnEl) {
+            moreBtnEl.classList.remove('is-open');
+            moreBtnEl.setAttribute('aria-expanded', 'false');
+          }
+        },
       });
     });
   }
 
   /* Reflow the (now fully assembled, incl. injected Style + Angle + History
-     rows) flat menu into the shared three-column group cards — run last so every
+     rows) flat menu into the shared group cards — run last so every
      dynamically added row is bucketed. Moves existing nodes, so all wiring
      above stays live. */
   groupifyChatMenu(pop);

@@ -135,6 +135,19 @@ import './load-anim.js';
   } catch (_) {}
 })();
 
+/* All Modules “Used in” → live page + pink glow (js/comp-highlight.js).
+   Self-guards; a no-op unless the tab was opened with ?wise-hl=. */
+(function loadCompHighlight() {
+  try {
+    if (typeof document === 'undefined' || window.__wiseCompHighlightLoaded) return;
+    window.__wiseCompHighlightLoaded = true;
+    var s = document.createElement('script');
+    s.src = new URL('./comp-highlight.js', import.meta.url).href;
+    s.defer = true;
+    (document.head || document.documentElement).appendChild(s);
+  } catch (_) {}
+})();
+
 /**
  * Single source of truth for the agent hierarchy and product navigation.
  *

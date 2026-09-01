@@ -31,7 +31,7 @@ const TOOLTIP_SELECTOR =
   '.rf-tool-ico, .rf-rpt-plus, .wa-titledrop-plus, ' +
   '.pf-datemenu-btn, .pf-module-menu-btn, ' +
   '.vf-check, .pf-ico, .fl-icon-btn, .sc-send, .adm-icon-btn, ' +
-  '.sc-fb-btn, .sc-fb-id';
+  '.sc-fb-btn, .sc-fb-id, .sc-helix-undo, .sc-helix-save';
 
 const CANDIDATE_SELECTOR =
   'button, a[href], [role="button"], [data-tip], .lir-btn, .dash-term';
@@ -59,7 +59,7 @@ const SKIP_ANCESTOR =
 function ownedElsewhere(btn) {
   if (btn.closest && btn.closest('.wch-sidebar')) return true;
   if (btn.matches && btn.matches(
-    '.lib-filter-btn, .lib-fstat-add, .lib-place-tag, .lib-folder-swatch, [data-lib-tip]'
+    '.lib-filter-btn, .pl-filter-btn, .lib-fstat-add, .lib-place-tag, .lib-folder-swatch, [data-lib-tip]'
   )) return true;
   if (btn.id === 'menu-footer-layout-btn' &&
       btn.closest('#menu-panel.mp-rail, #menu-panel.mp-pivot, .menu-footer--search-float')) {
@@ -198,6 +198,7 @@ const GLYPH_LABELS = {
   notifications: 'Alerts',
   expand_more: 'Show more',
   chevron_right: 'Open',
+  drag_indicator: 'Drag to move',
   history: 'Open History',
   history_off: 'Close History',
   menu: 'Menu',
@@ -266,7 +267,7 @@ export function initLirTooltip() {
     const tipRight = (btn.classList.contains('topbar-menu-toggle') ||
       btn.classList.contains('menu-modules-btn')) &&
       !btn.closest('.mp-pivot');
-    const isStudioTool = !!(btn.matches && btn.matches('.rf-tool-ico'));
+    const isStudioTool = !!(btn.matches && btn.matches('.rf-tool-ico, .sc-helix-undo, .sc-helix-save'));
     const isReportPlus = !!(btn.matches && btn.matches('.rf-rpt-plus, .wa-titledrop-plus'));
     const preferAbove = !!(btn.closest('.wise-popover--appearance') || isAppearanceTrigger(btn) || isStudioTool || isReportPlus);
     tip.classList.remove('lir-tip-right', 'lir-tip-above');

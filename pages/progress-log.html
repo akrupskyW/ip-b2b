@@ -120,9 +120,10 @@
     .pl-log.panel-wide { min-width: 720px; }
     .pl-log.panel-triple { min-width: 900px; }
 
-    /* ── Module header — serif headline + meta, controls to the right (mirrors .rf-head) ── */
+    /* ── Module header — serif headline + Re-evaluate beside it, controls to the right (mirrors .rf-head) ── */
     .pl-head { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 22px 26px 14px; flex-shrink: 0; }
     .pl-head-titles { min-width: 0; }
+    .pl-head-title-row { display: flex; align-items: center; gap: 10px; min-width: 0; flex-wrap: wrap; }
     .pl-head-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.2rem; color: var(--text); margin: 0; letter-spacing: -.01em; line-height: 1.15; }
     .pl-head-meta { font-size: 11.5px; color: var(--text-muted); margin: 3px 0 0; line-height: 1.3; }
     .pl-head-controls { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
@@ -130,24 +131,31 @@
     /* ── Scrolling body — sizes to content; the .pl-log card is the scroller ── */
     .pl-body { flex: 0 0 auto; min-height: auto; overflow: visible; padding: 4px 26px 22px; }
 
-    /* ── Toolbar + canonical search (mirrors reformulation's .rf-search) ──
-       Search fills the row; Re-evaluate sits to its right and writes notes
-       for every page/day. No in-search page picker. */
-    .pl-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 0 2px; }
-    .pl-search-inline { position: relative; display: inline-flex; align-items: center; flex: 1 1 auto; min-width: 200px; }
+    /* ── Toolbar + canonical search (mirrors Conversation Library / Portfolio) ──
+       Search fills the row. A funnel inside the field opens every filter this
+       board already supports (show / category / day / surface). */
+    .pl-toolbar { display: flex; align-items: center; padding: 6px 0 2px; }
+    .pl-search-inline {
+      position: relative; z-index: 2; display: flex; align-items: center;
+      flex: 1 1 auto; width: 100%; min-width: 0;
+    }
+    .pl-search-inline > .material-symbols-outlined {
+      position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+      font-size: 18px !important; color: var(--text-subtle); pointer-events: none;
+    }
     .pl-search {
-      width: 100%; height: 38px; box-sizing: border-box; padding: 0 16px;
+      width: 100%; height: 38px; box-sizing: border-box; padding: 0 44px 0 42px;
       font-family: inherit; font-size: 0.8125rem; color: var(--text);
       background: var(--surface-2); border: 1px solid var(--border-strong);
       border-radius: var(--radius-pill, 9999px); outline: none;
       transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
     }
-    .pl-search-inline.has-query .pl-search { padding-right: 40px; }
+    .pl-search-inline.has-query .pl-search { padding-right: 72px; }
     html.dark .pl-search { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
     .pl-search::placeholder { color: color-mix(in srgb, var(--text-subtle) 55%, transparent); font-style: italic; }
     .pl-search:focus { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
     .pl-search-clear {
-      position: absolute; right: 6px; top: 50%; transform: translateY(-50%); z-index: 1;
+      position: absolute; right: 36px; top: 50%; transform: translateY(-50%); z-index: 1;
       width: 28px; height: 28px; border-radius: 50%; display: none;
       align-items: center; justify-content: center;
       border: 0; background: transparent; color: var(--text-subtle); cursor: pointer;
@@ -158,7 +166,7 @@
     html.dark .pl-search-clear:hover { background: rgba(255,255,255,0.08); }
     .pl-search-clear-x { font-size: 18px; line-height: 1; font-weight: 400; }
     .pl-review-btn {
-      flex: 0 0 auto; height: 38px; padding: 0 16px;
+      flex: 0 0 auto;
       box-shadow: 0 4px 12px rgba(37, 80, 124, 0.25);
     }
     .pl-review-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(37, 80, 124, 0.3); }
@@ -166,6 +174,76 @@
     .pl-review-btn.is-busy .material-symbols-outlined { animation: pl-spin .8s linear infinite; }
     .pl-review-btn.is-done { background: var(--sec-green); border-color: var(--sec-green); box-shadow: 0 4px 12px rgba(50, 169, 102, 0.28); }
     @keyframes pl-spin { to { transform: rotate(360deg); } }
+
+    /* Funnel inside the search field — same chrome as .lib-filter-btn / .pf-filter-btn. */
+    .pl-search-inline .pl-filter-btn {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%); z-index: 1;
+      width: 28px; height: 28px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: none; background: transparent; color: var(--text-subtle); cursor: pointer;
+      transition: background .15s ease, color .15s ease;
+    }
+    .pl-search-inline .pl-filter-btn:hover { background: var(--surface-3); color: var(--text); }
+    html.dark .pl-search-inline .pl-filter-btn:hover { background: rgba(255,255,255,0.08); }
+    .pl-search-inline .pl-filter-btn .material-symbols-outlined { font-size: 18px !important; }
+    .pl-filter-btn.has-filters { color: var(--primary); }
+    html.dark .pl-filter-btn.has-filters { color: var(--primary-bright, var(--primary)); }
+    .pl-filter-btn .pl-filter-dot {
+      position: absolute; top: 3px; right: 3px; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--primary); border: 1.5px solid var(--surface-2); display: none;
+    }
+    .pl-filter-btn.has-filters .pl-filter-dot { display: block; }
+    .pl-filter-pop {
+      position: absolute; z-index: 80; top: calc(100% + 8px); left: 0; right: 0;
+      max-height: min(70vh, 560px); overflow-y: auto;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      box-shadow: var(--shadow-2, 0 12px 32px rgba(0,0,0,0.18)); padding: 14px;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;
+      align-items: start;
+    }
+    .pl-filter-pop[hidden] { display: none; }
+    .pl-filter-pop-head {
+      grid-column: 1 / -1;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: -14px; background: var(--surface); padding: 14px 0 8px; margin: -14px 0 -4px;
+      z-index: 1;
+    }
+    .pl-filter-pop-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 13px; font-weight: 800; color: var(--text); }
+    .pl-filter-clear { border: none; background: transparent; color: var(--primary); font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
+    html.dark .pl-filter-clear { color: var(--primary-bright, var(--primary)); }
+    .pl-filter-clear:hover { text-decoration: underline; }
+    .pl-filter-group { min-width: 0; }
+    .pl-filter-group--wide { grid-column: 1 / -1; }
+    .pl-filter-label { font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); margin-bottom: 7px; }
+    .pl-filter-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .pl-filter-chips.is-scroll {
+      max-height: 148px; overflow-y: auto; padding-right: 2px;
+    }
+    .pl-fchip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 5px 11px; border-radius: 999px; cursor: pointer;
+      border: 1px solid var(--border-strong); background: var(--surface-2);
+      font-family: inherit; font-size: 11.5px; font-weight: 700; color: var(--text-muted);
+      transition: all 0.15s ease;
+    }
+    html.dark .pl-fchip { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
+    .pl-fchip .material-symbols-outlined { font-size: 13px !important; line-height: 1 !important; }
+    .pl-fchip:hover { color: var(--text); border-color: var(--primary); }
+    html.dark .pl-fchip:hover { border-color: var(--primary-bright, var(--primary)); }
+    .pl-fchip.is-on { color: #fff; border-color: var(--primary); background: var(--primary); }
+    .pl-fchip.is-on .material-symbols-outlined {
+      color: #fff;
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    html.dark .pl-fchip.is-on,
+    html.dark .pl-fchip.is-on:hover {
+      color: #fff; border-color: var(--primary); background: var(--primary);
+    }
+    html.dark .pl-fchip.is-on .material-symbols-outlined { color: #fff; }
+    .pl-fchip:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+    }
 
     /* ── Scorecards — the canonical clickable stat card (mirrors .rf-stat).
        Summary cards are read-outs; category cards double as list filters.
@@ -403,7 +481,13 @@
       <section class="pl-card pl-log" id="pl-log">
         <header class="pl-head">
           <div class="pl-head-titles">
-            <h2 class="pl-head-title">Progress Log</h2>
+            <div class="pl-head-title-row">
+              <h2 class="pl-head-title">Progress Log</h2>
+              <button type="button" class="adm-btn adm-btn--primary adm-btn--sm pl-review-btn" id="pl-eval-btn" title="Evaluate every HTML file and write full feature, UX, and module details">
+                <span class="material-symbols-outlined" aria-hidden="true">autorenew</span>
+                <span class="pl-review-btn-label">Re-evaluate</span>
+              </button>
+            </div>
             <p class="pl-head-meta" id="pl-head-meta">Day-by-day build journal · re-evaluates every hour</p>
           </div>
           <div class="pl-head-controls">
@@ -425,13 +509,15 @@
         <div class="pl-body">
           <div class="pl-toolbar">
             <div class="pl-search-inline" id="pl-search-wrap">
+              <span class="material-symbols-outlined" aria-hidden="true">search</span>
               <input type="text" class="pl-search" id="pl-search-input" placeholder="Search entries, pages, components…" aria-label="Search the progress log" autocomplete="off" />
               <button type="button" class="pl-search-clear" id="pl-search-clear" aria-label="Clear search"><span class="pl-search-clear-x" aria-hidden="true">×</span></button>
+              <button type="button" class="pl-filter-btn" id="pl-filter-btn" aria-haspopup="dialog" aria-expanded="false" title="Filter the log" aria-label="Filter the log">
+                <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+                <span class="pl-filter-dot" aria-hidden="true"></span>
+              </button>
+              <div class="pl-filter-pop" id="pl-filter-pop" role="dialog" aria-label="Filter the progress log" hidden></div>
             </div>
-            <button type="button" class="adm-btn adm-btn--primary pl-review-btn" id="pl-eval-btn" title="Evaluate every HTML file and write full feature, UX, and module details">
-              <span class="material-symbols-outlined" aria-hidden="true">autorenew</span>
-              <span class="pl-review-btn-label">Re-evaluate</span>
-            </button>
           </div>
           <!-- Read-out summary scorecards -->
           <div class="pl-stats" id="pl-summary" aria-label="Summary"></div>
@@ -2076,10 +2162,14 @@
 
       /* ── State ──
          catFilter is single-select (null = all categories), so the category
-         scorecards read like the app's other .rf-stat filter cards. */
+         scorecards read like the app's other .rf-stat filter cards. The
+         in-search funnel owns the same state plus day and show (new / notes). */
       let catFilter = null;
       let pageFilter = '__all';
+      let dayFilter = '__all';
+      let kindFilter = null;
       let searchTerm = '';
+      let filterPopOpen = false;
       /* Empty = collapsed. User opens a day or page by adding it here. */
       const expandedDays = new Set();
       const expandedPages = new Set();
@@ -2252,6 +2342,28 @@
         if (Array.isArray(entry[catFilter]) && entry[catFilter].length) return true;
         return entryParagraphs(entry).length > 0;
       }
+      function entryPassesKind(entry) {
+        if (kindFilter === 'new') return !!entry.isNew;
+        return true;
+      }
+      function dayPassesFilters(day) {
+        if (dayFilter !== '__all' && day.date !== dayFilter) return false;
+        if (kindFilter === 'notes' && !notesForDay(day.date).length) return false;
+        return true;
+      }
+      function uniquePages() {
+        const names = new Set();
+        LOG.forEach((d) => (d.entries || []).forEach((e) => { if (e && e.page) names.add(e.page); }));
+        return [...names].sort((a, b) => a.localeCompare(b));
+      }
+      function fmtDateShort(iso) {
+        const [y, m, d] = String(iso || '').split('-').map(Number);
+        if (!y || !m || !d) return iso;
+        return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+      }
+      function anyBoardFilter() {
+        return !!(catFilter || pageFilter !== '__all' || dayFilter !== '__all' || kindFilter);
+      }
       /* Rank a day's cards by how much actually moved for the reader —
          features first, then components / logic / UX / UI, then notes. Alphabetical
          is only the last tie-break. Used by the board, Copy, and chat. */
@@ -2400,10 +2512,12 @@
         let visible = 0;
         let visibleNotes = 0;
         LOG.forEach((day) => {
+          if (!dayPassesFilters(day)) return;
           const allEntries = day.entries || [];
           const entries = rankedEntries(allEntries.filter((e) =>
-            (pageFilter === '__all' || e.page === pageFilter) && matchesSearch(e) && entryPassesCat(e)));
+            (pageFilter === '__all' || e.page === pageFilter) && matchesSearch(e) && entryPassesCat(e) && entryPassesKind(e)));
           const cards = entries.map((e, i) => renderPageCard(day.date, e, i < 5 ? i + 1 : 0)).filter(Boolean);
+          if (kindFilter === 'new' && !cards.length) return;
           const editingHere = !!(noteEditor && noteEditor.day === day.date);
           visible += cards.length;
           visibleNotes += notesForDay(day.date).length;
@@ -2444,6 +2558,9 @@
         if (visibleNotes) parts.push(`${visibleNotes} ${visibleNotes === 1 ? 'note' : 'notes'}`);
         if (catFilter) parts.push(`category: ${CAT_BY_ID[catFilter].label}`);
         if (pageFilter !== '__all') parts.push(`page: ${pageFilter}`);
+        if (dayFilter !== '__all') parts.push(`day: ${fmtDateShort(dayFilter)}`);
+        if (kindFilter === 'new') parts.push('new surfaces');
+        if (kindFilter === 'notes') parts.push('days with notes');
         if (searchTerm) parts.push(`search: “${searchTerm}”`);
         note.textContent = parts.join(' · ');
         restoreNoteComposer();
@@ -2504,7 +2621,7 @@
         return isNewLocalDay() || evalNotesNeedRefresh() || !lastEvalAt;
       }
 
-      function renderAll() { renderSummary(); renderCatStats(); renderTimeline(); }
+      function renderAll() { renderSummary(); renderCatStats(); syncFilterPop(); renderTimeline(); }
 
       /* Paint the board from the current LOG + persisted notes. A full
          evaluateAllPages() is a separate pass — boot / restore call that
@@ -2517,12 +2634,15 @@
         if (reset) {
           catFilter = null;
           pageFilter = '__all';
+          dayFilter = '__all';
+          kindFilter = null;
           searchTerm = '';
           collapseAllAccordions();
           noteEditor = null;
           noteWantFocus = false;
           if (searchInput) searchInput.value = '';
           syncSearchWrap();
+          syncFilterPop();
         }
         renderAll();
       }
@@ -2932,13 +3052,99 @@
         if (!wrap) return;
         wrap.classList.toggle('has-query', !!searchTerm);
       }
+      function fchip(attrs, label, on) {
+        return `<button type="button" class="pl-fchip${on ? ' is-on' : ''}" ${attrs}>${label}</button>`;
+      }
+      function renderFilterPop() {
+        const pop = document.getElementById('pl-filter-pop');
+        if (!pop) return;
+        const cats = CATS.filter((c) => catTotals[c.id] > 0);
+        const pages = uniquePages();
+        const days = LOG.map((d) => d.date);
+        const kindAll = !kindFilter;
+        pop.innerHTML = `
+          <div class="pl-filter-pop-head">
+            <span class="pl-filter-pop-title">Filter the log</span>
+            <button type="button" class="pl-filter-clear" id="pl-filter-clear"${anyBoardFilter() ? '' : ' hidden'}>Clear all</button>
+          </div>
+          <div class="pl-filter-group">
+            <div class="pl-filter-label">Show</div>
+            <div class="pl-filter-chips" role="group" aria-label="Show">
+              ${fchip('data-pl-kind=""', 'All', kindAll)}
+              ${fchip('data-pl-kind="new"', '<span class="material-symbols-outlined" aria-hidden="true">fiber_new</span>New surfaces', kindFilter === 'new')}
+              ${fchip('data-pl-kind="notes"', '<span class="material-symbols-outlined" aria-hidden="true">edit_note</span>Days with notes', kindFilter === 'notes')}
+            </div>
+          </div>
+          <div class="pl-filter-group">
+            <div class="pl-filter-label">Category</div>
+            <div class="pl-filter-chips" role="group" aria-label="Category">
+              ${fchip('data-pl-cat=""', 'All', !catFilter)}
+              ${cats.map((c) => fchip(`data-pl-cat="${esc(c.id)}"`, esc(c.label), catFilter === c.id)).join('')}
+            </div>
+          </div>
+          <div class="pl-filter-group">
+            <div class="pl-filter-label">Day</div>
+            <div class="pl-filter-chips${days.length > 8 ? ' is-scroll' : ''}" role="group" aria-label="Day">
+              ${fchip('data-pl-day="__all"', 'All days', dayFilter === '__all')}
+              ${days.map((iso) => fchip(`data-pl-day="${esc(iso)}"`, esc(fmtDateShort(iso)), dayFilter === iso)).join('')}
+            </div>
+          </div>
+          <div class="pl-filter-group pl-filter-group--wide">
+            <div class="pl-filter-label">Surface</div>
+            <div class="pl-filter-chips${pages.length > 16 ? ' is-scroll' : ''}" role="group" aria-label="Surface">
+              ${fchip('data-pl-page="__all"', 'All surfaces', pageFilter === '__all')}
+              ${pages.map((p) => fchip(`data-pl-page="${esc(p)}"`, esc(p), pageFilter === p)).join('')}
+            </div>
+          </div>`;
+      }
+      function syncFilterBtn() {
+        const btn = document.getElementById('pl-filter-btn');
+        if (!btn) return;
+        btn.classList.toggle('has-filters', anyBoardFilter());
+        btn.setAttribute('aria-expanded', filterPopOpen ? 'true' : 'false');
+      }
+      function syncFilterPop() {
+        renderFilterPop();
+        syncFilterBtn();
+        const pop = document.getElementById('pl-filter-pop');
+        if (pop) pop.hidden = !filterPopOpen;
+      }
+      function setFilterPop(open) {
+        filterPopOpen = !!open;
+        const pop = document.getElementById('pl-filter-pop');
+        if (pop) pop.hidden = !filterPopOpen;
+        syncFilterBtn();
+      }
+      function clearBoardFilters() {
+        catFilter = null;
+        pageFilter = '__all';
+        dayFilter = '__all';
+        kindFilter = null;
+      }
+      function applyFilters() {
+        renderCatStats();
+        syncFilterPop();
+        renderTimeline();
+      }
       function setSearch(v) { searchTerm = String(v || '').trim().toLowerCase(); const inp = document.getElementById('pl-search-input'); if (inp) inp.value = v || ''; syncSearchWrap(); renderTimeline(); }
-      function setPage(p) { pageFilter = p || '__all'; renderTimeline(); }
-      function setCatOnly(catId) { catFilter = catId; renderCatStats(); renderTimeline(); }
+      function setPage(p) { pageFilter = p || '__all'; applyFilters(); }
+      function setCatOnly(catId) { catFilter = catId; applyFilters(); }
+      function setDayFilter(iso) {
+        dayFilter = iso || '__all';
+        if (dayFilter !== '__all') expandedDays.add(dayFilter);
+        applyFilters();
+      }
+      function setKindFilter(kind) {
+        kindFilter = kind || null;
+        if (kindFilter === 'notes') {
+          LOG.forEach((d) => { if (notesForDay(d.date).length) expandedDays.add(d.date); });
+        }
+        applyFilters();
+      }
       function focusDay(iso) { expandedDays.clear(); expandedDays.add(iso); renderTimeline(); const el = document.getElementById('pl-day-' + iso); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
       window.plExpandAll = () => { expandAllAccordions(); renderTimeline(); };
       window.plCollapseAll = () => { collapseAllAccordions(); renderTimeline(); };
-      window.plResetFilters = () => { catFilter = null; pageFilter = '__all'; searchTerm = ''; collapseAllAccordions(); const inp = document.getElementById('pl-search-input'); if (inp) inp.value = ''; syncSearchWrap(); renderCatStats(); renderTimeline(); };
+      window.plResetFilters = () => { clearBoardFilters(); searchTerm = ''; collapseAllAccordions(); const inp = document.getElementById('pl-search-input'); if (inp) inp.value = ''; syncSearchWrap(); applyFilters(); };
       window.plEvaluatePages = () => evaluateAllPages({ scroll: true });
 
       /* ── Note editor ── */
@@ -3013,9 +3219,13 @@
         window.plCloseModuleMenu();
         if (willOpen) { m.classList.remove('hidden'); document.getElementById('pl-menu-btn')?.setAttribute('aria-expanded', 'true'); }
       };
-      document.addEventListener('click', (e) => { if (!e.target.closest('#pl-menu-wrap')) window.plCloseModuleMenu(); });
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('#pl-menu-wrap')) window.plCloseModuleMenu();
+        if (!e.target.closest('#pl-search-wrap')) setFilterPop(false);
+      });
       document.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape') return;
+        if (filterPopOpen) { e.preventDefault(); setFilterPop(false); return; }
         window.plCloseModuleMenu();
         if (noteEditor) { e.preventDefault(); cancelNoteEditor(); }
       });
@@ -3030,6 +3240,37 @@
       });
       document.getElementById('pl-search-clear').addEventListener('click', () => { setSearch(''); searchInput.focus(); });
       searchInput.addEventListener('focus', () => { noteWantFocus = false; });
+      (function wireFilterPop() {
+        const btn = document.getElementById('pl-filter-btn');
+        const pop = document.getElementById('pl-filter-pop');
+        if (!btn || !pop) return;
+        btn.addEventListener('click', (e) => { e.stopPropagation(); setFilterPop(!filterPopOpen); });
+        pop.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (e.target.closest('#pl-filter-clear')) { clearBoardFilters(); applyFilters(); return; }
+          const chip = e.target.closest('.pl-fchip');
+          if (!chip) return;
+          if (chip.hasAttribute('data-pl-kind')) {
+            const v = chip.getAttribute('data-pl-kind') || '';
+            setKindFilter((!v || kindFilter === v) ? null : v);
+            return;
+          }
+          if (chip.hasAttribute('data-pl-cat')) {
+            const v = chip.getAttribute('data-pl-cat') || '';
+            setCatOnly((!v || catFilter === v) ? null : v);
+            return;
+          }
+          if (chip.hasAttribute('data-pl-day')) {
+            const v = chip.getAttribute('data-pl-day') || '__all';
+            setDayFilter((v === '__all' || dayFilter === v) ? '__all' : v);
+            return;
+          }
+          if (chip.hasAttribute('data-pl-page')) {
+            const v = chip.getAttribute('data-pl-page') || '__all';
+            setPage((v === '__all' || pageFilter === v) ? '__all' : v);
+          }
+        });
+      })();
       (function wireEvalBtn() {
         const btn = document.getElementById('pl-eval-btn');
         if (!btn) return;
@@ -3064,7 +3305,7 @@
         if (!card) return;
         const id = card.dataset.cat;
         catFilter = (catFilter === id) ? null : id;
-        renderCatStats(); renderTimeline();
+        applyFilters();
       });
       const timelineEl = document.getElementById('pl-timeline');
       function toggleDay(head) { const key = head.dataset.day; if (expandedDays.has(key)) expandedDays.delete(key); else expandedDays.add(key); renderTimeline(); }
@@ -3248,10 +3489,12 @@
           LOG.forEach((d) => d.entries.forEach((e) => { if (e.isNew) news.push({ page: e.page, path: e.path, date: d.date }); }));
           if (!news.length) return 'No brand-new pages were added in this window — the work was on existing pages.';
           setSearch('');
+          setKindFilter('new');
           return `<b>${news.length}</b> new page${news.length === 1 ? '' : 's'} in this window:<ul class="sc-reply-list">${news.map((n) => `<li><b>${esc(n.page)}</b> <span style="opacity:.7">(${esc(n.path)})</span> — ${fmtDate(n.date)}</li>`).join('')}</ul>`;
         },
         'pl:notes': () => {
           if (!notes.length) return 'You have no notes yet. Tap <b>Add a note</b> on any day — same Save / Cancel composer as the rest of the app. You can also type <b>note:</b> followed by your text.';
+          setKindFilter('notes');
           const items = notes.slice(0, 8).map((n) => `<li><b>${fmtDate(n.day)}</b> — ${esc(n.text)}</li>`).join('');
           const more = notes.length > 8 ? `<li>+ ${notes.length - 8} more…</li>` : '';
           return `You have <b>${notes.length}</b> note${notes.length === 1 ? '' : 's'} on this log.<ul class="sc-reply-list">${items}${more}</ul>`;
