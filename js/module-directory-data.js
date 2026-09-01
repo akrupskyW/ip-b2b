@@ -6,8 +6,9 @@
  * Intentionally hand-maintained (rather than flattened off the left-rail
  * nav model) for two reasons the nav model can't express:
  *   • Several pages host more than one module. The WISEcodeAI studio
- *     (wiseai.html) hosts Chat, History, Data Sources and Turns as
- *     distinct docked modules; Reformulation hosts Studio + Dashboard.
+ *     (wiseai.html) hosts Chat, History, Data Sources, Turns and the
+ *     Report builder as distinct docked modules; Reformulation hosts
+ *     Studio + Dashboard.
  *     Each gets its own directory entry (a `#hash` keeps them distinct
  *     and still resolves to the real page).
  *   • The nav model listed some surfaces (e.g. My profile) in more than
@@ -50,6 +51,7 @@ export const MODULE_SECTIONS = [
       { label: 'History', icon: 'history', href: 'wiseai.html#history' },
       { label: 'Data Sources', icon: 'hub', href: 'wiseai.html#data-sources' },
       { label: 'Turns', icon: 'alt_route', href: 'wiseai.html#turns' },
+      { label: 'Report builder', icon: 'description', href: 'wiseai.html#report' },
       { label: 'Library', icon: 'auto_stories', href: 'conversation-library.html' },
       { label: 'Ingredient Browser', icon: 'science', href: 'ingredient-browser.html' },
       { label: 'AI Dashboard', icon: 'space_dashboard', href: 'ai-dashboard.html' },
@@ -86,11 +88,18 @@ export const MODULE_SECTIONS = [
     ],
   },
   {
+    title: 'Organization',
+    tone: 'org',
+    modules: [
+      { label: 'Profile', icon: 'account_circle', href: 'profile.html' },
+      { label: 'Team', icon: 'group', href: 'teams.html' },
+      { label: 'Invoices & Downloads', icon: 'receipt_long', href: 'invoices.html' },
+    ],
+  },
+  {
     title: 'Admin',
     tone: 'admin',
     modules: [
-      { label: 'My profile', icon: 'account_circle', href: 'profile.html' },
-      { label: 'Invoices', icon: 'receipt_long', href: 'invoices.html' },
       { label: 'Marketing Assets', icon: 'photo_library', href: 'marketing-assets.html' },
       { label: 'Organizations', icon: 'apartment', href: 'organizations.html' },
       { label: 'Quick Invite', icon: 'bolt', href: 'quick-invite.html' },
@@ -151,6 +160,7 @@ export const AREA_ICONS = {
   reform: 'auto_fix_high',
   report: 'insights',
   verify: 'verified',
+  org: 'group',
   admin: 'shield',
   account: 'account_circle',
   auth: 'lock',
@@ -159,8 +169,8 @@ export const AREA_ICONS = {
 };
 
 /* Unique HTML files from the catalog. First occurrence wins (so Chat
-   keeps wiseai.html; History / Data Sources / Turns do not repeat the
-   same file). The gallery page itself is never included. */
+   keeps wiseai.html; History / Data Sources / Turns / Report builder do
+   not repeat the same file). The gallery page itself is never included. */
 export function pageGalleryEntries() {
   const seen = new Set();
   const out = [];

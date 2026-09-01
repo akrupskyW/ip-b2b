@@ -109,7 +109,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Roll · Crawl · Walk · Run gates the chat',
-        how: 'Each page loads a default mode onto <code>&lt;html&gt;</code> as <code>cwr-roll</code> / <code>cwr-crawl</code> / <code>cwr-walk</code> / <code>cwr-run</code>: <strong>Run</strong> on <code>wiseai.html</code>, <code>view-product.html</code>, <code>add-product.html</code>, and <code>helix.html</code>; <strong>Roll</strong> on every other page. A click still applies for that visit; the next load reapplies the page default. <code>helix.html</code> is Run-only — Roll, Crawl, and Walk lock so the playground cannot hide itself. <code>wise-cwr-mode</code> is only a snapshot of the in-session choice. Roll is Crawl with a stripped SaaS nav that still keeps Marketing Assets. Crawl hides chat surfaces with <code>inert</code> + <code>aria-hidden</code>. Roll and Crawl also drop History from the primary nav (the History-in-nav section, the History icon, and the new-chat circle). Walk hides the composer rail, Run unlocks everything. Hovering a mode shows what it includes and excludes. Turning the widget off (<code>wise-cwr-ui</code>) suspends the gating entirely.',
+        how: 'Each page loads a default mode onto <code>&lt;html&gt;</code> as <code>cwr-roll</code> / <code>cwr-crawl</code> / <code>cwr-walk</code> / <code>cwr-run</code>: <strong>Run</strong> on <code>wiseai.html</code>, <code>view-product.html</code>, <code>add-product.html</code>, and <code>helix.html</code>; <strong>Roll</strong> on every other page. A click still applies for that visit; the next load reapplies the page default. <code>helix.html</code> is Run-only — Roll, Crawl, and Walk lock so the playground cannot hide itself. <code>wise-cwr-mode</code> is only a snapshot of the in-session choice. Roll is Crawl with a stripped SaaS nav that still keeps Marketing Assets, Team, and Reports under Studio. Crawl hides chat surfaces with <code>inert</code> + <code>aria-hidden</code>. Roll and Crawl also drop History from the primary nav (the History-in-nav section, the History icon, and the new-chat circle). Walk hides the composer rail, Run unlocks everything. Hovering a mode shows what it includes and excludes. Turning the widget off (<code>wise-cwr-ui</code>) suspends the gating entirely.',
       },
     ],
   },
@@ -644,6 +644,45 @@ export const APP_LOGIC = [
     ],
   },
   {
+    id: 'report-builder',
+    label: 'Report builder',
+    icon: 'description',
+    href: 'wiseai.html#report',
+    area: 'ai',
+    src: ['pages/wiseai.html', 'js/generated-reports.js', 'pages/reformulation.html'],
+    note: 'The nested drawer that assembles plus-selected outputs into a named, shareable report. Reformulation hosts the same drawer off section pluses.',
+    rules: [
+      {
+        title: 'Plus-select in the Output titledrop builds the pick list',
+        how: 'The Output title dropdown keeps a <code>titledropSelected</code> set of keys from <code>titledropKey(block, i)</code> (the block id, or <code>idx:i</code>). The plus column toggles a pick; the check survives closing the pop. The footer stays hidden until at least one pick, then reads <strong>Generate Report</strong> or <strong>Generate Report (n)</strong>.',
+      },
+      {
+        title: 'Generate Report clones the painted outputs',
+        how: '<code>generateReportFromTitledrop()</code> filters the unified pane by that set and calls <code>openReportPane(blocks)</code>. Each pick becomes a <code>.wa-rpt-item</code>. <code>nodesForReport()</code> prefers the live slide\u2019s SVG / bar fills so the report is not an empty card; unbooted slides fall back to the stored surface HTML.',
+      },
+      {
+        title: 'The Report is a nested sticky drawer, never fill',
+        how: '<code>#wa-report</code> sits at <strong>z-index 0</strong>, ~30px shorter, tucked off Output. It is marked <code>data-no-fill-default</code>; <code>openReportPane()</code> forces width tier 0 so it never inherits Output\u2019s fill. Reformulation\u2019s <code>#rf-report</code> is the same drawer.',
+      },
+      {
+        title: 'Items are editable, swappable, and deletable',
+        how: 'The report name and each chart title are contenteditable. The default name is the pick count (\u201cTwo Outputs\u201d) until <code>dataset.userNamed</code> is set. Each item has an annotation field and a \u22ef for Rename, Swap output (the conversation\u2019s other outputs via <code>reportCatalog()</code>), and Delete.',
+      },
+      {
+        title: 'Save writes the capped generated-reports store',
+        how: '<code>persistGeneratedReport()</code> calls <code>saveGeneratedReport()</code> into <code>wise-generated-reports</code> (at most 40, upsert by id). <strong>Save or Share Report</strong> persists, then opens Share mounted <em>inside</em> <code>#wa-report</code> \u2014 same form as chat Share, scoped to the report name and its charts. \u22ef Export as PDF adds <code>html.wa-print-report</code> and prints the pane.',
+      },
+      {
+        title: 'Saved reports land on the Reports shelf',
+        how: '<code>reports.html</code> hydrates from the same store. A builder report appears there as a poster; filed into the Library it becomes a Library card. App search can reopen one through <code>wise-search-open-report</code>.',
+      },
+      {
+        title: 'Reformulation pluses sections, not Output rows',
+        how: 'Each Reformulation section title carries <code>.rf-rpt-plus</code>. Picked sections light the same Generate Report foot and open <code>#rf-report</code> \u2014 same item rename / swap / delete, same store as WISEcodeAI.',
+      },
+    ],
+  },
+  {
     id: 'conversation-library',
     label: 'Library',
     icon: 'auto_stories',
@@ -729,6 +768,10 @@ export const APP_LOGIC = [
         title: 'Sliders debounce into the chat',
         how: 'A slider change waits 700ms before calling <code>respond()</code> with a &ldquo;Rescoring&rdquo; milestone, so dragging produces one narrated turn instead of a stream of them.',
       },
+      {
+        title: 'The report builder is the same nested drawer as WISEcodeAI',
+        how: 'Each section title carries a plus (<code>.rf-rpt-plus</code>). Picked sections light the Generate Report foot; that opens <code>#rf-report</code> as a tertiary sticky drawer \u2014 same four-tier rail, same item rename / swap / delete, same <code>wise-generated-reports</code> store as <code>#wa-report</code>.',
+      },
     ],
   },
 
@@ -743,7 +786,7 @@ export const APP_LOGIC = [
     rules: [
       {
         title: 'Generated reports are a capped store',
-        how: '<code>wise-generated-reports</code> holds at most <strong>40</strong> records sorted by <code>createdAt</code> descending. <code>saveGeneratedReport()</code> upserts by id and preserves the original <code>createdAt</code> on update. If the key has never been written, four seed reports are created so the shelf is never empty.',
+        how: '<code>wise-generated-reports</code> holds at most <strong>40</strong> records sorted by <code>createdAt</code> descending. <code>saveGeneratedReport()</code> upserts by id and preserves the original <code>createdAt</code> on update. If the key has never been written, four seed reports are created so the shelf is never empty. New records are written by the Report builder on WISEcodeAI and Reformulation \u2014 this shelf is the reading surface.',
       },
       {
         title: 'Three ways to open a report',
@@ -1009,8 +1052,8 @@ export const APP_LOGIC = [
     icon: 'shield',
     href: 'organizations.html',
     area: 'admin',
-    src: ['js/organizations-flow.js', 'js/quick-invite-flow.js', 'js/user-management-flow.js', 'js/audit-queue-flow.js', 'js/admin-utils-flow.js'],
-    note: 'Organizations, Quick Invite, User Management, Audit Queue and Admin Utilities share one board pattern.',
+    src: ['js/organizations-flow.js', 'js/quick-invite-flow.js', 'js/teams-flow.js', 'js/user-management-flow.js', 'js/audit-queue-flow.js', 'js/admin-utils-flow.js'],
+    note: 'Organizations, Team, Quick Invite, User Management, Audit Queue and Admin Utilities share one board pattern.',
     rules: [
       {
         title: 'Status chips toggle off',

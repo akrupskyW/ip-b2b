@@ -160,6 +160,9 @@ export const FEATURE_SIGNALS = [
   { id: 'chatWidthDefault', cat: 'ux', re: /defaultChatTier|WISE_CHAT_SINGLE_MAX_PX|chat-default-double/,
     on: 'The chat opens at a width that matches the screen: single on a 14-inch-class display, double when there is more room. You can still cycle wider in the session; the next load puts it back.',
     off: 'The chat no longer picks a default width from the screen size.' },
+  { id: 'responsiveness', cat: 'features', re: /id=["']mi-responsive["']|RESPONSIVE_SURFACES|How responsive is the platform/,
+    on: 'You can open Responsiveness and see how every surface behaves on a phone, on a 14-inch laptop, and on a wider display — including a live stage that restyles the shell at each size.',
+    off: 'The Responsiveness catalog is gone.' },
 ];
 
 /* Named pieces from the component catalog. Presence becomes a batched
@@ -252,6 +255,7 @@ export const SCRIPT_PURPOSES = {
   'project-inventory-data.js': 'the list of every shippable file in the project, so All Modules can show the real size instead of only what this tab downloaded',
   'help-flow.js': 'the Help center — search, topic cards, FAQs, and a contact form that emails support with optional attachments',
   'user-avatar.js': 'the photo you set on your profile shows in the navigation and in every chat as you',
+  'teams-flow.js': 'the people on your brand — who has a seat, who is invited, and who can change a role',
 };
 
 /* The first real sentence of a script's own header comment — the file's

@@ -30,6 +30,7 @@ export const DEV_READY_SEED = {
   "Menu popover": true,
   "Output chips": true,
   "Pagination footer": true,
+  "Report posters": true,
   "Row action menu": true,
   "Segmented control": true,
   "Status chips": true,

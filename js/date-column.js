@@ -51,7 +51,8 @@
     key:      ['created', 'used', 'updated', 'edited', 'expires'],
     alert:    ['occurred', 'read', 'created', 'updated', 'edited'],
     activity: ['active', 'used', 'created', 'updated', 'joined', 'edited'],
-    invite:   ['sent', 'created', 'edited', 'expires', 'accepted']
+    invite:   ['sent', 'created', 'edited', 'expires', 'accepted'],
+    team:     ['joined', 'sent', 'accepted', 'active', 'created', 'edited']
   };
 
   /* When the lead kind is X, the second stacked line is PAIR[X] (falling back
@@ -76,6 +77,12 @@
     expires: 'created',
     sent: 'expires',
     accepted: 'sent'
+  };
+
+  /* Team stacks Joined over Sent (invite day), not Last active — so invited
+     rows still show two real dates, and "Joined by" sits under that pair. */
+  var PRESET_PAIRS = {
+    team: { joined: 'sent', sent: 'joined', accepted: 'joined', active: 'joined', created: 'joined', edited: 'joined' }
   };
 
   /* Offsets in days from a seed date, used to fill missing kinds in demo data. */
@@ -196,8 +203,9 @@
     return src;
   }
 
-  function pairOf(lead, ids) {
-    var p = PAIR[lead];
+  function pairOf(lead, ids, kinds) {
+    var preset = typeof kinds === 'string' ? PRESET_PAIRS[kinds] : null;
+    var p = (preset && preset[lead]) || PAIR[lead];
     if (p && ids.indexOf(p) !== -1) return p;
     var i = ids.indexOf(lead);
     if (i === -1) return ids[1] || ids[0];
@@ -207,7 +215,7 @@
   function lines(dates, kinds, lead) {
     var ids = kindIds(kinds);
     var L = ids.indexOf(lead) === -1 ? ids[0] : lead;
-    var S = pairOf(L, ids);
+    var S = pairOf(L, ids, kinds);
     if (S === L && ids.length > 1) S = ids[1];
     var src = dates || {};
     return [

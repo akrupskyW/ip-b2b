@@ -10,9 +10,9 @@
  *      report, verification, admin, account, auth and marketing surface in the
  *      app, as linked poster cards grouped by area. Driven off one curated map
  *      (MODULE_SECTIONS) so pages that host several modules (the WISEcodeAI studio's
- *      Chat / History / Data Sources / Turns, and Reformulation's Studio +
- *      Dashboard) each get their own card, with a final de-dup pass so nothing
- *      appears twice.
+ *      Chat / History / Data Sources / Turns / Report builder, and Reformulation's
+ *      Studio + Dashboard) each get their own card, with a final de-dup pass so
+ *      nothing appears twice.
  *   2. Icon Inventory — every Material Icons / Symbols glyph used in the live
  *      app (this page excluded), grouped by surface (chat, primary nav, …),
  *      with family, label, and placements. Scanned by
@@ -40,6 +40,9 @@
  *      helix, thinking helix, accordion) and every drag/resize interaction
  *      (module splitter, width tiers, carousel rail, reorder, drag-to-file),
  *      explained and rendered live.
+ *   6b. Responsiveness — how every surface adapts on a phone, on a 14-inch
+ *      laptop, and on anything larger: nav drawer, stacked modules, carded
+ *      tables, chat width default, marketing collapse. Live stage + catalog.
  *   7. App Logic — the app's general behavioral rules written down and grouped
  *      by page: auth, theme, nav, panes, tables, wizard gating, scoring math,
  *      filter semantics and persistence. Sits directly above Intent Chip
@@ -72,7 +75,7 @@ let ICON_INVENTORY = null;
 let APP_LOGIC = [];
 let LOGIC_AREAS = [];
 const ICON_UNIQUE_FALLBACK = 397;
-const LOGIC_RULES_FALLBACK = 197;
+const LOGIC_RULES_FALLBACK = 205;
 
 async function ensureIconInventory() {
   if (ICON_INVENTORY) return ICON_INVENTORY;
@@ -302,6 +305,13 @@ function moduleMoreItems(moduleId) {
       { action: 'motion-drag', icon: 'drag_indicator', label: 'Show drag & resize' },
     ];
   }
+  if (moduleId === 'mi-responsive') {
+    return [
+      { action: 'resp-mobile', icon: 'smartphone', label: 'Show mobile' },
+      { action: 'resp-laptop', icon: 'laptop_mac', label: 'Show laptop' },
+      { action: 'resp-larger', icon: 'desktop_windows', label: 'Show larger' },
+    ];
+  }
   return [
     { action: 'dir-reeval', icon: 'autorenew', label: 'Re-evaluate project' },
     { action: 'dir-hard', icon: 'restart_alt', label: 'Hard reload page' },
@@ -334,7 +344,7 @@ function directorySection(sec) {
 function renderDirectory(opts) {
   if (opts && opts.headOnly) {
     return miHeadOnly('mi-directory', 'Module Directory',
-      'Every module and screen in the app, grouped by area. Pages that host more than one module — the WISEcodeAI studio (Chat, History, Data Sources, Turns) and Reformulation (Studio + Dashboard) — are broken out so each module appears exactly once.',
+      'Every module and screen in the app, grouped by area. Pages that host more than one module — the WISEcodeAI studio (Chat, History, Data Sources, Turns, Report builder) and Reformulation (Studio + Dashboard) — are broken out so each module appears exactly once.',
       moduleReadyToggleHTML('mi-directory', 'Module Directory', { ai: false }) + moduleControlsHTML('mi-directory'));
   }
   /* De-dupe by full href (hash included) so a module never appears twice, while
@@ -367,8 +377,8 @@ function renderDirectory(opts) {
         <div class="mi-module-head-text">
           <h2 class="mi-module-title">Module Directory</h2>
           <p class="mi-module-lede">Every module and screen in the app, grouped by area. Pages that host more
-            than one module — the WISEcodeAI studio (Chat, History, Data Sources, Turns) and Reformulation
-            (Studio + Dashboard) — are broken out so each module appears exactly once.</p>
+            than one module — the WISEcodeAI studio (Chat, History, Data Sources, Turns, Report builder)
+            and Reformulation (Studio + Dashboard) — are broken out so each module appears exactly once.</p>
         </div>
         ${moduleReadyToggleHTML('mi-directory', 'Module Directory', { ai: false })}
         ${moduleControlsHTML('mi-directory')}
@@ -449,6 +459,7 @@ const TABLE_CATALOG = [
   { label: 'GRAS · Ingredients', href: 'gras-verification.html', selector: '.gv-table', icon: 'shield', area: 'verify', areaTitle: 'Verification', desc: 'Ingredient-level GRAS documentation table.' },
 
   /* Admin */
+  { label: 'Team', href: 'teams.html', selector: '.adm-table', icon: 'group', area: 'org', areaTitle: 'Organization', desc: 'People on the signed-in brand — seats, invites, and roles.' },
   { label: 'Organizations', href: 'organizations.html', selector: '.adm-table', icon: 'apartment', area: 'admin', areaTitle: 'Admin', desc: 'Customer org directory with member counts.' },
   { label: 'User Management', href: 'user-management.html', selector: '.adm-table', icon: 'group', area: 'admin', areaTitle: 'Admin', desc: 'Users and roles across the workspace.' },
   { label: 'Audit Queue', href: 'audit-queue.html', selector: '.adm-table', icon: 'fact_check', area: 'admin', areaTitle: 'Admin', desc: 'Ingredient audit review queue.' },
@@ -1661,6 +1672,7 @@ const CAT_BY_NAME = {
   'History': 'Library & reports',
   'Library cards': 'Library & reports',
   'Library folders': 'Library & reports',
+  'Report builder': 'Library & reports',
   'Report posters': 'Library & reports',
   'Filter tiles': 'Filters',
   'Action scorecards': 'Tables & data',
@@ -2727,6 +2739,82 @@ function demoCwrCatalog() {
   return `<div class="dsc-states dsc-states--cwr">${rest}${hovers}</div>`;
 }
 
+function demoReportMiniBars(heights) {
+  return `<span class="dsc-rpt-mini-bars" aria-hidden="true">${heights.map((h) => `<i style="height:${h}%"></i>`).join('')}</span>`;
+}
+
+function demoReportBuilderHTML() {
+  const plus = (on) =>
+    `<button type="button" class="wa-titledrop-plus${on ? ' is-on' : ''}" aria-pressed="${on ? 'true' : 'false'}" aria-label="${on ? 'Remove from report' : 'Add to report'}" tabindex="-1">` +
+      `<span class="material-symbols-outlined">${on ? 'check' : 'add'}</span>` +
+    `</button>`;
+  const row = ({ n, label, ver, on, active, bars }) =>
+    `<div class="wa-titledrop-item${active ? ' is-active' : ''}" role="option" aria-selected="${active ? 'true' : 'false'}">` +
+      `<span class="wa-titledrop-num">${n}</span>` +
+      `<span class="wa-merge-chip-thumb">${demoReportMiniBars(bars)}</span>` +
+      `<span class="wa-titledrop-text">` +
+        `<span class="wa-titledrop-label">${esc(label)}</span>` +
+        (ver ? `<span class="wa-titledrop-ver">${esc(ver)}</span>` : '') +
+      `</span>` +
+      plus(on) +
+    `</div>`;
+  const item = ({ title, bars, note }) =>
+    `<article class="wa-rpt-item">` +
+      `<header class="wa-rpt-item-head">` +
+        `<h3 class="wa-rpt-item-title">${esc(title)}</h3>` +
+        `<div class="panel-more-wrap wa-rpt-more">` +
+          `<button type="button" class="panel-more-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Chart options" tabindex="-1">` +
+            `<span class="material-symbols-outlined">more_vert</span>` +
+          `</button>` +
+        `</div>` +
+      `</header>` +
+      `<div class="wa-rpt-item-body"><div class="dsc-rpt-chart">${demoReportMiniBars(bars)}</div></div>` +
+      `<div class="wa-rpt-note"><input type="text" class="adm-input wa-rpt-note-input" placeholder="Add an annotation…" aria-label="Annotation" value="${esc(note || '')}" tabindex="-1"></div>` +
+    `</article>`;
+  return `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col" style="flex:1 1 100%">
+          <div class="dsc-rpt-flow">
+            <div>
+              <div class="dsc-sub-label">Output titledrop \u00b7 plus to pick</div>
+              <div class="wa-titledrop-pop dsc-rpt-titledrop" role="listbox" aria-label="Choose outputs for a report">
+                <div class="wa-titledrop-list">
+                  ${row({ n: 1, label: 'Kraft UPF breakdown by category', ver: 'v1', on: true, active: true, bars: [38, 64, 88, 52, 70] })}
+                  ${row({ n: 2, label: 'Kraft vs Kraft Heinz', ver: 'v2', on: true, active: false, bars: [70, 44, 58, 32, 80] })}
+                  ${row({ n: 3, label: 'Top Kraft categories', on: false, active: false, bars: [22, 48, 36, 74, 41] })}
+                </div>
+                <div class="wa-titledrop-foot">
+                  <button type="button" class="adm-btn adm-btn--primary wa-titledrop-gen" tabindex="-1">Generate Report (2)</button>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="dsc-sub-label">Report drawer \u00b7 nested off Output</div>
+              <section class="dsc-rpt-pane" aria-label="Report">
+                <header class="dsc-rpt-pane-top">
+                  <div class="dsc-rpt-pane-mast">
+                    <p class="dash-eyebrow">Report</p>
+                    <h2 class="dsc-rpt-pane-title">Two Outputs</h2>
+                  </div>
+                  <div class="dsc-rpt-pane-ctrls">
+                    <button type="button" class="panel-more-btn" aria-haspopup="menu" aria-expanded="false" aria-label="More options" tabindex="-1"><span class="material-symbols-outlined">more_vert</span></button>
+                    <button type="button" class="panel-width-toggle-btn" aria-pressed="false" aria-label="Report pane width" tabindex="-1"><span class="material-symbols-outlined">width_normal</span></button>
+                  </div>
+                </header>
+                <div class="dsc-rpt-pane-body">
+                  ${item({ title: 'Kraft UPF breakdown by category', bars: [38, 64, 88, 52, 70], note: 'Category share is the headline.' })}
+                  ${item({ title: 'Kraft vs Kraft Heinz', bars: [70, 44, 58, 32, 80], note: '' })}
+                </div>
+                <div class="wa-rpt-foot">
+                  <button type="button" class="adm-btn adm-btn--primary" tabindex="-1">Save or Share Report</button>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>`;
+}
+
 const COMPONENTS = [
   /* `ai: false` — chrome / chrome-adjacent cards. They keep WIP Ready but
      have no Not for AI / AI Ready switch and do not count toward the
@@ -3217,6 +3305,14 @@ const COMPONENTS = [
             <section class="mi-belt-chat"><span class="mi-belt-name">Chat</span><span class="mi-belt-z">z 3</span></section>
             <aside class="mi-belt-mod mi-belt-out"><span class="mi-belt-name">Help</span><span class="mi-belt-z">z 1 \u00b7 parent</span></aside>
             <aside class="mi-belt-mod mi-belt-prog"><span class="mi-belt-name">Contact</span><span class="mi-belt-z">z 0 \u00b7 shorter</span></aside>
+          </div>
+        </div>
+        <div class="dsc-state-col" style="flex:1 1 100%">
+          <div class="dsc-sub-label">Report builder \u00b7 nested off Output</div>
+          <div class="mi-belt" aria-label="Report builder nested off Output">
+            <section class="mi-belt-chat"><span class="mi-belt-name">Chat</span><span class="mi-belt-z">z 3</span></section>
+            <aside class="mi-belt-mod mi-belt-out"><span class="mi-belt-name">Output</span><span class="mi-belt-z">z 2 \u00b7 parent</span></aside>
+            <aside class="mi-belt-mod mi-belt-prog"><span class="mi-belt-name">Report</span><span class="mi-belt-z">z 0 \u00b7 nested</span></aside>
           </div>
         </div>
       </div>`,
@@ -4325,12 +4421,22 @@ const COMPONENTS = [
       </div>`,
   },
   {
+    name: 'Report builder',
+    wide: true,
+    cat: 'Library & reports',
+    cls: '#wa-report \u00b7 .wa-titledrop-plus \u00b7 .wa-rpt-item \u00b7 .wa-rpt-foot \u00b7 #rf-report',
+    used: 'WISEcodeAI Chat (wiseai.html#report) \u00b7 Reformulation Studio \u00b7 Reports',
+    note: 'How a conversation becomes a report. In Output, open the title dropdown and plus the charts you want \u2014 the plus survives closing the menu. <strong>Generate Report</strong> clones those painted outputs into a nested sticky drawer on Output\u2019s right (z-index 0, shorter, never fill). Click the report name or any chart title to rename; each chart has an annotation field and a \u22ef for Rename, Swap output (any other chart from this thread), and Delete. The default name is the pick count (\u201cTwo Outputs\u201d) until you name it. <strong>Save or Share Report</strong> writes the capped generated-reports store and opens Share inside the drawer; \u22ef Export as PDF prints the pane. Saved reports land on the Reports shelf as <em>Report posters</em>; filed into the Library they become <em>Library cards</em>. Reformulation uses the same drawer, plusing section titles instead of Output rows.',
+    noteIcon: 'description',
+    demo: demoReportBuilderHTML(),
+  },
+  {
     name: 'Report posters',
     ai: false,
     wide: true,
     cls: '.rp-card · .rp-poster · .rp-name · .rp-badge · .rp-view (+ .is-locked)',
     used: 'Reports (reports.html) — the studio shelf of standardized reports',
-    note: 'Reports read as a shelf of posters: cinematic header (genre tone + icon, no plate behind the glyph), serif title, short desc, and a View Report affordance. Live cards glow in their genre color; locked ones sit greyed with a lock badge. Saved into the Library they become <em>Library cards</em>.',
+    note: 'Reports read as a shelf of posters: cinematic header (genre tone + icon, no plate behind the glyph), serif title, short desc, and a View Report affordance. Live cards glow in their genre color; locked ones sit greyed with a lock badge. A report assembled in the <em>Report builder</em> lands here first; filed into the Library it becomes a <em>Library card</em>.',
     noteIcon: 'description',
     demo: `
       <div class="dsc-rp-row">
@@ -4546,7 +4652,7 @@ function usedSurfacesHTML(used, comp) {
 /* toggle id as the Component Library card so the two stay in sync.    */
 /* ------------------------------------------------------------------ */
 
-const APP_DIR_TONES = new Set(['workspace', 'portfolio', 'ai', 'reform', 'report', 'verify', 'admin', 'account']);
+const APP_DIR_TONES = new Set(['workspace', 'portfolio', 'ai', 'reform', 'report', 'verify', 'org', 'admin', 'account']);
 
 function compDomId(name) {
   return 'dsc-comp-' + String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -4578,6 +4684,7 @@ const USED_HREF_RULES = [
   { re: /add catalog/, hrefs: ['add-catalog.html'] },
   { re: /add product/, hrefs: ['add-product.html'] },
   { re: /quick invite/, hrefs: ['quick-invite.html'] },
+  { re: /\bteams\.html\b|\bteam module\b/, hrefs: ['teams.html'] },
   { re: /user management/, hrefs: ['user-management.html'] },
   { re: /audit queue/, hrefs: ['audit-queue.html'] },
   { re: /admin utils/, hrefs: ['admin-utils.html'] },
@@ -4585,6 +4692,7 @@ const USED_HREF_RULES = [
   { re: /\binvoices\b/, hrefs: ['invoices.html'] },
   { re: /\bcomparison\b/, hrefs: ['product-comparison.html'] },
   { re: /\boverview\b/, hrefs: ['overview.html'] },
+  { re: /report builder|wiseai\.html#report/, hrefs: ['wiseai.html#report'] },
   { re: /reports\.html|\breports\b/, hrefs: ['reports.html'] },
   { re: /\bverification\b/, hrefs: ['verification.html', 'gras-verification.html'] },
   { re: /\bgras\b/, hrefs: ['gras-verification.html', 'verification.html'] },
@@ -5016,6 +5124,8 @@ function buildDevReadyTree() {
      tree and has no Dev Ready chrome. */
   registerReadyChildren('mi-trace', traceReadyChildren());
   registerReadyChildren('mi-motion', MOTION_ITEMS.map((i) => ({ id: motionReadyId(i), label: i.title })));
+  /* Responsiveness is an index, like Codebase — it is not in this tree
+     and has no Dev Ready chrome. */
   /* Icon Inventory is one library — Dev Ready is the module switch, not a
      per-group count. */
   registerReadyChildren('mi-design', designReadyGroups());
@@ -5200,7 +5310,7 @@ const CONVENTIONS = [
   {
     icon: 'view_sidebar',
     title: 'Sticky drawers are a utility belt',
-    body: 'Any module to the right of the chat tucks behind it like a drawer \u2014 always on, no toggle. The chat is the buckle (z-index 3). Output sits at z-index 2. Peer drawers (Nutrition Facts, Turns, Help) sit at z-index 1, shorter and centred, with the chat-facing corners squared. Nested drawers (progress, Help contact, Report) sit one layer under their parent (z-index 0, shorter still). History tucks left. Opening a \u22ef never lifts a drawer over the chat.',
+    body: 'Any module to the right of the chat tucks behind it like a drawer \u2014 always on, no toggle. The chat is the buckle (z-index 3). Output sits at z-index 2. Peer drawers (Nutrition Facts, Turns, Help) sit at z-index 1, shorter and centred, with the chat-facing corners squared. Nested drawers (progress, Help contact, Report builder) sit one layer under their parent (z-index 0, shorter still). History tucks left. Opening a \u22ef never lifts a drawer over the chat.',
   },
   {
     icon: 'accessibility_new',
@@ -5513,6 +5623,17 @@ const INTENT_AUDIT = [
     ],
   },
   {
+    label: 'Team', icon: 'group', href: 'teams.html', src: 'teams-flow.js',
+    chips: [
+      { i: 'show_active',  label: 'Show active teammates', t: true, l: true, does: 'Filters the team table to active seats.' },
+      { i: 'show_invited', label: 'Show invited',          t: true, l: true, does: 'Filters the team table to open invites.' },
+      { i: 'show_pending', label: 'Show pending',          t: true, l: true, does: 'Filters the team table to pending confirmation.' },
+      { i: 'show_all',     label: 'Show everyone',         t: true, l: true, does: 'Clears the team status filter.' },
+      { i: 'invite',       label: 'Invite a teammate',     t: true, l: true, does: 'Starts the invite-a-teammate flow.' },
+      { i: 'export',       label: 'Export CSV',            t: true, l: true, does: 'Exports the team table as CSV.' },
+    ],
+  },
+  {
     label: 'Quick Invite', icon: 'bolt', href: 'quick-invite.html', src: 'quick-invite-flow.js',
     chips: [
       { i: 'need_attention', label: 'What needs attention?', t: true, l: true, does: 'Filters invites to items that need attention.' },
@@ -5569,7 +5690,7 @@ const INTENT_AUDIT = [
   },
   {
     label: 'All Modules', icon: 'apps', href: 'all-modules.html', src: 'all-modules-flow.js',
-    note: 'This very page. The “Jump to…” chips scroll to (and expand) a module and suppress their reply on success; their transcript is a fallback for when the target isn’t found. “How many icons are there?” is the one answer-only chip — it narrates the count without moving the page. “Show animations & resize” opens the Motion & Resize catalog. “Show the transcript architecture” opens the frozen labeled conversation.',
+    note: 'This very page. The “Jump to…” chips scroll to (and expand) a module and suppress their reply on success; their transcript is a fallback for when the target isn’t found. “How many icons are there?” is the one answer-only chip — it narrates the count without moving the page. “Show animations & resize” opens the Motion & Resize catalog. “How responsive is the platform?” opens Responsiveness. “Show the transcript architecture” opens the frozen labeled conversation. “How does the report builder work?” opens the Report builder card and posts the how-it-works answer.',
     chips: [
       { i: 'codebase',   label: 'How big is the codebase?',      t: true, l: true, does: 'Expands and scrolls to the Codebase scorecards, then posts the sizing answer.' },
       { i: 'directory',  label: 'Jump to the Module Directory',  t: true, l: true, does: 'Expands and scrolls to the Module Directory (suppresses the reply on success).' },
@@ -5578,7 +5699,9 @@ const INTENT_AUDIT = [
       { i: 'icons',      label: 'Jump to the Icon Inventory',    t: true, l: true, does: 'Expands and scrolls to the Icon Inventory.' },
       { i: 'design',     label: 'Jump to the Design System',     t: true, l: true, does: 'Expands and scrolls to the Design System.' },
       { i: 'components', label: 'Jump to the Component Library', t: true, l: true, does: 'Expands and scrolls to the Component Library.' },
+      { i: 'reportbuilder', label: 'How does the report builder work?', t: true, l: true, does: 'Opens the Report builder card in the Component Library and posts the how-it-works answer.' },
       { i: 'motion',     label: 'Show animations & resize',      t: true, l: true, does: 'Expands and scrolls to Motion & Resize.' },
+      { i: 'responsive', label: 'How responsive is the platform?', t: true, l: true, does: 'Expands and scrolls to Responsiveness, then posts the three-size answer.' },
       { i: 'tarch',      label: 'Show the transcript architecture', t: true, l: true, does: 'Expands and scrolls to Transcript Architecture, then posts the layer answer.' },
       { i: 'counts',     label: 'How many icons are there?',     t: true, l: false, does: 'Answer-only — narrates the unique-icon and placement counts. Does not scroll.' },
     ],
@@ -5600,7 +5723,7 @@ const INTENT_AUDIT = [
       { i: 'cupcake',      label: 'Tell me about the worst cupcake', t: true, l: true, does: 'Opens the worst-cupcake product card.' },
       { i: 'cookie',       label: 'Best cookie, least chocolate',  t: true, l: true, does: 'Opens the best-cookie / least-chocolate comparison card.' },
       { i: 'compare',      label: 'Compare products side by side',  t: true, l: true, does: 'Opens the side-by-side product comparison pane.' },
-      { i: 'report',       label: 'Show me a pretty report',       t: true, l: true, does: 'Opens a formatted report pane in the studio.' },
+      { i: 'report',       label: 'Show me a pretty report',       t: true, l: true, does: 'Opens the Report builder as a nested sticky drawer and fills it with the conversation\u2019s formatted outputs.' },
       { i: 'cat',          label: 'If I identified as a cat…',     t: true, l: true, does: 'Easter egg — opens the cat-food card and posts the deadpan reply.' },
       { i: 'catnutrients', label: 'What nutrients do cats require?', t: true, l: true, does: 'Opens the cat-nutrient explainer card.' },
     ],
@@ -8631,6 +8754,444 @@ function wireMotion(root) {
   new MutationObserver(bootHelix).observe(mod, { attributes: true, attributeFilter: ['class'] });
 }
 
+/* ------------------------------------------------------------------ */
+/* Responsiveness — phone, 14-inch laptop, and everything larger       */
+/*                                                                     */
+/* Three device classes the platform actually codes for:               */
+/*   • Mobile  — viewport ≤768 (nav drawer) and ≤560 (stack / cards)   */
+/*   • Laptop  — display ≤1512 CSS px (14" MacBook Pro). Chat single.  */
+/*   • Larger  — display >1512. Same desktop shell. Chat opens double. */
+/* A live stage restyles a schematic shell; the catalog names what     */
+/* each surface does at each class.                                    */
+/* ------------------------------------------------------------------ */
+
+const RESP_CHAT_SINGLE_MAX = 1512;
+const RESP_MOBILE_NAV = 768;
+const RESP_STACK = 560;
+
+function respScreenWidth() {
+  if (typeof window.WISE_CHAT_SCREEN_WIDTH_PX === 'function') {
+    return window.WISE_CHAT_SCREEN_WIDTH_PX();
+  }
+  try {
+    const w = window.screen && +window.screen.width;
+    if (w > 0) return w;
+  } catch (_) { /* no screen */ }
+  return window.innerWidth || 0;
+}
+
+function respViewportWidth() {
+  return window.innerWidth || 0;
+}
+
+function respDisplayClass() {
+  return respScreenWidth() > RESP_CHAT_SINGLE_MAX ? 'larger' : 'laptop';
+}
+
+function respLayoutClass() {
+  const view = respViewportWidth();
+  if (view <= RESP_STACK) return 'mobile';
+  if (view <= RESP_MOBILE_NAV) return 'mobile';
+  return respDisplayClass();
+}
+
+function respHereHTML() {
+  const view = respViewportWidth();
+  const screen = respScreenWidth();
+  const chat = screen > RESP_CHAT_SINGLE_MAX ? 'double' : 'single';
+  const display = screen > RESP_CHAT_SINGLE_MAX
+    ? 'larger than a 14-inch laptop'
+    : '14-inch laptop class';
+  let layout = 'desktop';
+  if (view <= RESP_STACK) layout = 'stacked phone';
+  else if (view <= RESP_MOBILE_NAV) layout = 'phone nav';
+  return `This window is <strong>${view}&nbsp;px</strong> wide (${layout}). The display is <strong>${screen}&nbsp;px</strong> — ${display} — so chat loads <strong>${chat}</strong>.`;
+}
+
+const RESPONSIVE_SURFACES = [
+  {
+    id: 'nav', icon: 'menu', title: 'Primary navigation',
+    src: 'js/mobile-nav.js',
+    used: 'Every signed-in page',
+    changes: ['mobile'],
+    lede: 'On a phone the labelled rail stands down. A floating owl and an expand icon sit top-left so the chat stays the centre of the screen. Tap expand and the full menu slides in over a dimming scrim; leave phone width and the drawer closes on its own.',
+    mobile: 'Owl + expand, pinned top-left. The full menu is a left drawer over a scrim. Scroll locks while it is open.',
+    laptop: 'Left rail or labelled nav — the same desktop shell as every other signed-in page. Pivot and Minimal UI still apply.',
+    larger: 'Same desktop nav. Extra width goes to the modules, not the rail.',
+  },
+  {
+    id: 'brand', icon: 'cruelty_free', title: 'Brand wordmark',
+    src: 'pages/wise.css',
+    used: 'Top bar and nav brand strip',
+    changes: ['mobile'],
+    lede: 'The full WISE wordmark holds on tablet and laptop. Only at true phone width does it collapse to the compact owl, so the brand never fights the chat for space.',
+    mobile: 'At 560px and below, the wordmark and tagline hide. The owl bug is the brand.',
+    laptop: 'Full wordmark on the nav and top bar.',
+    larger: 'Full wordmark. Same size — it does not grow with the display.',
+  },
+  {
+    id: 'chat', icon: 'chat', title: 'Chat width default',
+    src: 'js/pane-width.js',
+    used: 'Every chat module — WISEcodeAI, Add Product, Reformulation, Studio',
+    changes: ['laptop', 'larger'],
+    lede: 'Chat opens at a width that belongs to the <em>display</em>, not the browser window. A 14-inch MacBook Pro class stays single. Anything wider opens double. Resize or un-maximise the window and the default does not flip. You can still cycle single → double → triple → fill → custom in the session; the next load puts it back.',
+    mobile: 'The chat is the page — full width, no neighbour beside it once the row stacks. The load default is still single, because the display is a phone.',
+    laptop: 'Opens single (the 380px pane). The module to its right fills the rest of the row.',
+    larger: 'Opens double. Same five-tier control; the extra default width is the only load difference from a laptop.',
+  },
+  {
+    id: 'row', icon: 'view_column', title: 'Modules row',
+    src: 'pages/wise.css',
+    used: 'Every workspace page with a modules row',
+    changes: ['mobile'],
+    lede: 'Above phone width the row is a horizontal belt: chat in the middle, History tucked left, Output and the rest tucked right. Narrow the browser and pinned widths overflow sideways as a carousel — they never squeeze. Only at 560px does the row stack into a single column.',
+    mobile: 'At 560px the row becomes a vertical stack. Chat is full width; History, Output, and the rest sit above or below. Fill defaults stand down.',
+    laptop: 'Side-by-side belt. Chat single, neighbour fill. Shortening the window shortens the work surface inside each card — widths stay put.',
+    larger: 'Same belt. Chat opens double, so the neighbour has less leftover, but the row does not restack.',
+  },
+  {
+    id: 'tables', icon: 'table_rows', title: 'Tables',
+    src: 'js/responsive-tables.js',
+    used: 'Portfolio, verification, analytics, admin, ingredient registry',
+    changes: ['mobile'],
+    lede: 'A table watches its own container, not the window. Below 560px each visible cell becomes a labelled field on a card, so a grid beside the chat cards up even when the page itself is still desktop-wide.',
+    mobile: 'Rows become cards. Each field carries its column name. Sort and load-more still work.',
+    laptop: 'Full grid. Columns stay columns.',
+    larger: 'Full grid. Extra width is more of each column, not a new layout.',
+  },
+  {
+    id: 'fill', icon: 'width_full', title: 'Right-of-chat fill',
+    src: 'js/default-fill.js',
+    used: 'Output, Results, Nutrition Facts, Turns — anything right of chat',
+    changes: ['mobile'],
+    lede: 'On a laptop or larger display, every module to the right of chat opens at fill so the row has no dead strip against the edge. That is a load default, not a saved choice. Below 560px the helper stands down — there is no leftover row to fill.',
+    mobile: 'Stood down. Stacked modules are already full width.',
+    laptop: 'On every load, the module to the right of chat opens fill. Cycle freely in-session; the next visit is fill again.',
+    larger: 'Same fill default. Chat is wider, so fill has less leftover to absorb.',
+  },
+  {
+    id: 'height', icon: 'height', title: 'Browser height',
+    src: 'pages/wise.css',
+    used: 'The shared shell on every workspace page',
+    changes: ['laptop', 'larger'],
+    lede: 'Shorten the window and each module’s inner surface gets shorter — lists, charts, and forms scroll inside the card. Widths, chips, and type stay the size they were designed. A shorter window never wraps or restacks the row. Stacking is a width rule, not a height one.',
+    mobile: 'Once stacked, each card grows with its content. Height is just more page to scroll.',
+    laptop: 'The shell fills the window. Shorten it and the work surface inside each module shrinks. Overflow still goes sideways on the rail.',
+    larger: 'Same height rule. A taller display just gives each card more inner room.',
+  },
+  {
+    id: 'marketing', icon: 'campaign', title: 'Marketing site',
+    src: 'js/marketing.js',
+    used: 'Public marketing pages, the docked chat, the scanner rail',
+    changes: ['mobile'],
+    lede: 'The marketing bar does not wait for a pixel number. It measures whether the links actually fit the row — docked chat, a crowded set of items, a narrow window — and flips to a hamburger the moment they would overflow. On a phone the chat is a full overlay, not a side rail.',
+    mobile: 'Hamburger as soon as the links cannot fit. Chat slides in as a full overlay so the reply is seen. The scanner rail stands down.',
+    laptop: 'Full link row when it fits. Chat can dock as a rail. Collapse still trips if the rail eats the bar.',
+    larger: 'Same overflow rule. A wide display usually keeps the full bar, unless something else is crowding it.',
+  },
+  {
+    id: 'dash', icon: 'dashboard', title: 'Scorecards & dashboards',
+    src: 'pages/wise.css',
+    used: 'Overview, Non-UPF Dashboard, Admin, Reformulation',
+    changes: ['mobile'],
+    lede: 'Dashboard tiles follow the card they sit in, not the window. Inside a narrow pane — or on a phone — a two- or three-across row drops to a single column so the numbers stay readable.',
+    mobile: 'Tiles stack. Hero numbers stay large; supporting rows go one-across.',
+    laptop: 'The designed grid — two, three, or four across, matching the page.',
+    larger: 'Same grid. Extra width is more air, not a fourth layout.',
+  },
+  {
+    id: 'auth', icon: 'login', title: 'Sign-in & forms',
+    src: 'pages/wise.css',
+    used: 'Sign in, create account, waitlist, settings forms',
+    changes: ['mobile'],
+    lede: 'Two-column form grids collapse to one column on a phone so fields stay full-width and tappable. Step labels hide when they would crowd the progress row. The primary action stays a filled brand-blue button.',
+    mobile: 'One column. Step names hide if they do not fit. Inputs stay full width.',
+    laptop: 'Two-column grids where the form was designed that way.',
+    larger: 'Same form. Fields do not stretch into unreadably long lines.',
+  },
+  {
+    id: 'drawers', icon: 'bottom_sheets', title: 'Drawers & overlays',
+    src: 'js/sticky-modules.js',
+    used: 'Output, Nutrition Facts, Turns, Help, Verify, Compare',
+    changes: ['mobile'],
+    lede: 'On a laptop the flanking modules tuck behind the chat as a utility belt. On a phone there is no belt — a focused task rises as a full-width sheet or stacked card instead of a crushed side drawer.',
+    mobile: 'No side tuck. A task is a stacked card or a bottom sheet with a grab handle, a scrollable body, and an action row.',
+    laptop: 'Sticky belt: History left of chat, Output under the chat, peers to the right, nested drawers shorter still.',
+    larger: 'Same belt. The wider chat is still the buckle; drawers do not grow over it.',
+  },
+  {
+    id: 'chips', icon: 'bolt', title: 'Intent chips & composer',
+    src: 'pages/wise.css',
+    used: 'Every chat module',
+    changes: ['mobile'],
+    lede: 'Chips keep their size. On a phone the reply-chip row loses its left indent so it uses the full card. The composer stays unlocked and full width — never a cramped desktop leftover.',
+    mobile: 'Chips wrap. The row sits flush. The composer is the full card width.',
+    laptop: 'Chips sit in the designed indent under the reply. Composer is the chat pane width.',
+    larger: 'Same chip size in a wider chat. They do not scale up with the pane.',
+  },
+];
+
+function respCol(label, text, cls) {
+  return `
+    <div class="mi-resp-col mi-resp-col--${cls}">
+      <div class="mi-resp-col-label">${esc(label)}</div>
+      <p class="mi-resp-col-body">${text}</p>
+    </div>`;
+}
+
+function respSurfaceCard(item) {
+  const search = `${item.title} ${item.src} ${item.used} ${item.lede} ${item.mobile} ${item.laptop} ${item.larger} ${(item.changes || []).join(' ')} mobile laptop larger responsive`.toLowerCase();
+  return `
+    <article class="mi-resp-card" data-resp-card data-resp-id="${esc(item.id)}" data-resp-changes="${esc((item.changes || []).join(' '))}" data-search="${esc(search)}">
+      <header class="mi-resp-card-head">
+        <span class="material-symbols-outlined" aria-hidden="true">${esc(item.icon)}</span>
+        <div class="mi-resp-card-head-text">
+          <h3 class="mi-resp-card-title">${esc(item.title)}</h3>
+          <code class="mi-resp-card-src">${esc(item.src)}</code>
+        </div>
+      </header>
+      <p class="mi-resp-card-lede">${item.lede}</p>
+      <div class="mi-resp-cols" aria-label="How this surface behaves at each size">
+        ${respCol('Mobile', item.mobile, 'mobile')}
+        ${respCol('Laptop', item.laptop, 'laptop')}
+        ${respCol('Larger', item.larger, 'larger')}
+      </div>
+      <div class="mi-resp-used"><span class="mi-resp-used-label">Used in</span><span>${esc(item.used)}</span></div>
+    </article>`;
+}
+
+function respStageHTML() {
+  return `
+    <div class="mi-resp-stage" data-resp-stage>
+      <p class="mi-resp-here" data-resp-here>${respHereHTML()}</p>
+      <div class="mi-resp-presets" role="group" aria-label="Preview a device class">
+        <button type="button" class="mi-resp-preset" data-resp-size="mobile" aria-pressed="false">
+          <span class="material-symbols-outlined" aria-hidden="true">smartphone</span>
+          <span class="mi-resp-preset-text">
+            <span class="mi-resp-preset-title">Mobile</span>
+            <span class="mi-resp-preset-sub">390 × 844 · phone</span>
+          </span>
+        </button>
+        <button type="button" class="mi-resp-preset" data-resp-size="laptop" aria-pressed="false">
+          <span class="material-symbols-outlined" aria-hidden="true">laptop_mac</span>
+          <span class="mi-resp-preset-text">
+            <span class="mi-resp-preset-title">Laptop</span>
+            <span class="mi-resp-preset-sub">1512 · 14″ MacBook</span>
+          </span>
+        </button>
+        <button type="button" class="mi-resp-preset" data-resp-size="larger" aria-pressed="false">
+          <span class="material-symbols-outlined" aria-hidden="true">desktop_windows</span>
+          <span class="mi-resp-preset-text">
+            <span class="mi-resp-preset-title">Larger</span>
+            <span class="mi-resp-preset-sub">1728+ · wide display</span>
+          </span>
+        </button>
+      </div>
+      <div class="mi-resp-frame-wrap">
+        <div class="mi-resp-frame" data-resp-frame data-size="laptop">
+          <div class="mi-resp-chrome">
+            <span class="mi-resp-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="mi-resp-url" data-resp-url>app · 14″ laptop · chat single</span>
+          </div>
+          <div class="mi-resp-shell">
+            <aside class="mi-resp-nav" aria-hidden="true">
+              <span class="mi-resp-owl" aria-hidden="true"></span>
+              <span class="mi-resp-nav-ic"></span>
+              <span class="mi-resp-nav-ic"></span>
+              <span class="mi-resp-nav-ic"></span>
+              <span class="mi-resp-nav-ic"></span>
+            </aside>
+            <div class="mi-resp-row">
+              <section class="mi-resp-mod mi-resp-chat">
+                <header class="mi-resp-mod-head">Chat</header>
+                <span class="mi-resp-mod-meta" data-resp-chat-meta>single · buckle</span>
+                <div class="mi-resp-mod-body">
+                  <div class="mi-resp-line"></div>
+                  <div class="mi-resp-line mi-resp-line--short"></div>
+                  <div class="mi-resp-chips"><span>Ask</span><span>Compare</span></div>
+                </div>
+              </section>
+              <aside class="mi-resp-mod mi-resp-out">
+                <header class="mi-resp-mod-head">Output</header>
+                <span class="mi-resp-mod-meta">fill</span>
+                <div class="mi-resp-mod-body">
+                  <div class="mi-resp-score no-countup" data-no-countup>86</div>
+                  <div class="mi-resp-line"></div>
+                  <div class="mi-resp-line mi-resp-line--short"></div>
+                </div>
+              </aside>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="mi-resp-caption" data-resp-caption>Laptop — desktop shell, chat opens single, neighbour fills the row.</p>
+    </div>`;
+}
+
+const RESP_CAPTIONS = {
+  mobile: 'Mobile — owl nav, chat is the page, modules stack, tables become cards.',
+  laptop: 'Laptop — desktop shell, chat opens single, neighbour fills the row.',
+  larger: 'Larger — same desktop shell, chat opens double, neighbour still fills.',
+};
+const RESP_URLS = {
+  mobile: 'app · phone · stacked',
+  laptop: 'app · 14″ laptop · chat single',
+  larger: 'app · wide display · chat double',
+};
+const RESP_CHAT_META = {
+  mobile: 'full width',
+  laptop: 'single · buckle',
+  larger: 'double · buckle',
+};
+
+function renderResponsive(opts) {
+  if (opts && opts.headOnly) {
+    return miHeadOnly('mi-responsive', 'Responsiveness',
+      'How every surface on the platform adapts — phone, 14-inch laptop, and everything larger. Nav, chat width, the modules row, tables, marketing, dashboards, and forms, each named at the three sizes the app actually codes for.',
+      moduleControlsHTML('mi-responsive'));
+  }
+  const mobileN = RESPONSIVE_SURFACES.filter((i) => (i.changes || []).includes('mobile')).length;
+  const laptopN = RESPONSIVE_SURFACES.filter((i) => (i.changes || []).includes('laptop')).length;
+  const largerN = RESPONSIVE_SURFACES.filter((i) => (i.changes || []).includes('larger')).length;
+  return `
+    <section class="mi-module is-collapsed" id="mi-responsive">
+      <header class="mi-module-head">
+        <div class="mi-module-head-text">
+          <h2 class="mi-module-title">Responsiveness</h2>
+          <p class="mi-module-lede">How every surface on the platform adapts — phone, 14-inch laptop, and everything
+            larger. The live stage restyles a schematic shell. The catalog names what the nav, chat, modules row,
+            tables, marketing site, dashboards, and forms actually do at each size. Laptop and larger share the
+            desktop shell; the one load default that flips is chat width.</p>
+        </div>
+        ${moduleControlsHTML('mi-responsive')}
+      </header>
+
+      <div class="dsc-conventions" aria-label="Responsiveness conventions">
+        <div class="dsc-conv-head">
+          <span class="material-symbols-outlined">devices</span>
+          <div>
+            <div class="dsc-conv-title">Three sizes, two kinds of measurement</div>
+            <div class="dsc-conv-sub">Phone layout follows the <strong>window</strong>. Chat width follows the <strong>display</strong>. Shrinking a laptop browser is not the same as being on a phone.</div>
+          </div>
+        </div>
+        <div class="dsc-conv-grid">
+          <div class="dsc-conv-item">
+            <span class="material-symbols-outlined" aria-hidden="true">smartphone</span>
+            <div class="dsc-conv-body">
+              <div class="dsc-conv-item-title">Mobile is the window</div>
+              <p class="dsc-conv-item-desc">At 768px the nav becomes an owl drawer. At 560px the modules row stacks and tables become cards. Those are viewport rules — they fire when the browser is that narrow, on any machine.</p>
+            </div>
+          </div>
+          <div class="dsc-conv-item">
+            <span class="material-symbols-outlined" aria-hidden="true">laptop_mac</span>
+            <div class="dsc-conv-body">
+              <div class="dsc-conv-item-title">Laptop is the display</div>
+              <p class="dsc-conv-item-desc">A 14-inch MacBook Pro is 1512 CSS pixels. That class of screen keeps chat at single. Un-maximising the window must never flip the default — the measurement is the screen, not the browser.</p>
+            </div>
+          </div>
+          <div class="dsc-conv-item">
+            <span class="material-symbols-outlined" aria-hidden="true">desktop_windows</span>
+            <div class="dsc-conv-body">
+              <div class="dsc-conv-item-title">Larger opens chat double</div>
+              <p class="dsc-conv-item-desc">Anything wider than 1512 CSS pixels is the same desktop shell, with chat opening double. You can still cycle every width in-session; the next load puts it back.</p>
+            </div>
+          </div>
+          <div class="dsc-conv-item">
+            <span class="material-symbols-outlined" aria-hidden="true">view_week</span>
+            <div class="dsc-conv-body">
+              <div class="dsc-conv-item-title">Narrowing is a carousel, not a squeeze</div>
+              <p class="dsc-conv-item-desc">Above 560px, pinned modules keep their width and overflow sideways. The row never crushes to fit. Stacking is the phone rule only.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      ${respStageHTML()}
+
+      <div class="mi-stats" id="mi-resp-stats" role="group" aria-label="Filter surfaces by the size they change at">
+        <button type="button" class="mi-stat is-active" data-resp-filter="all" aria-pressed="true">
+          <span class="mi-stat-num">${RESPONSIVE_SURFACES.length}</span>
+          <span class="mi-stat-label"><span class="mi-stat-text">All</span><span class="material-symbols-outlined">devices</span></span>
+        </button>
+        <button type="button" class="mi-stat" data-resp-filter="mobile" aria-pressed="false">
+          <span class="mi-stat-num">${mobileN}</span>
+          <span class="mi-stat-label"><span class="mi-stat-text">Change on mobile</span><span class="material-symbols-outlined">smartphone</span></span>
+        </button>
+        <button type="button" class="mi-stat" data-resp-filter="laptop" aria-pressed="false">
+          <span class="mi-stat-num">${laptopN}</span>
+          <span class="mi-stat-label"><span class="mi-stat-text">Change on laptop</span><span class="material-symbols-outlined">laptop_mac</span></span>
+        </button>
+        <button type="button" class="mi-stat" data-resp-filter="larger" aria-pressed="false">
+          <span class="mi-stat-num">${largerN}</span>
+          <span class="mi-stat-label"><span class="mi-stat-text">Change when larger</span><span class="material-symbols-outlined">desktop_windows</span></span>
+        </button>
+      </div>
+
+      <div class="mi-resp-grid" id="mi-resp-grid">
+        ${RESPONSIVE_SURFACES.map(respSurfaceCard).join('')}
+      </div>
+    </section>`;
+}
+
+function setRespSize(mod, size) {
+  if (!mod || !RESP_CAPTIONS[size]) return;
+  const frame = mod.querySelector('[data-resp-frame]');
+  if (frame) frame.setAttribute('data-size', size);
+  const url = mod.querySelector('[data-resp-url]');
+  if (url) url.textContent = RESP_URLS[size];
+  const cap = mod.querySelector('[data-resp-caption]');
+  if (cap) cap.textContent = RESP_CAPTIONS[size];
+  const meta = mod.querySelector('[data-resp-chat-meta]');
+  if (meta) meta.textContent = RESP_CHAT_META[size];
+  mod.querySelectorAll('[data-resp-size]').forEach((b) => {
+    const on = b.getAttribute('data-resp-size') === size;
+    b.classList.toggle('is-active', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+  mod.querySelectorAll('[data-resp-card]').forEach((card) => {
+    card.classList.toggle('is-focus-size', (card.getAttribute('data-resp-changes') || '').split(/\s+/).includes(size));
+  });
+}
+
+function wireResponsive(root) {
+  const mod = root.querySelector('#mi-responsive');
+  if (!mod) return;
+
+  const applyFilter = (filter) => {
+    mod.querySelectorAll('[data-resp-card]').forEach((card) => {
+      const changes = (card.getAttribute('data-resp-changes') || '').split(/\s+/);
+      card.hidden = filter !== 'all' && changes.indexOf(filter) === -1;
+    });
+    mod.querySelectorAll('[data-resp-filter]').forEach((b) => {
+      const on = b.getAttribute('data-resp-filter') === filter;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  };
+  mod.querySelector('#mi-resp-stats')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-resp-filter]');
+    if (!btn) return;
+    applyFilter(btn.getAttribute('data-resp-filter'));
+  });
+
+  const start = respLayoutClass();
+  setRespSize(mod, start);
+  const here = mod.querySelector('[data-resp-here]');
+  if (here) here.innerHTML = respHereHTML();
+  mod.querySelector('.mi-resp-presets')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-resp-size]');
+    if (!btn) return;
+    setRespSize(mod, btn.getAttribute('data-resp-size'));
+  });
+  const refreshHere = () => {
+    if (here) here.innerHTML = respHereHTML();
+  };
+  window.addEventListener('resize', refreshHere);
+  if (window.screen && typeof window.screen.addEventListener === 'function') {
+    try { window.screen.addEventListener('change', refreshHere); } catch (_) { /* no Screen.change */ }
+  }
+}
+
 /* Styles live in pages/wise.css (All Modules catalog section) so
    this module does not rebuild a 4,000-rule stylesheet as a string. */
 
@@ -8670,7 +9231,7 @@ export function renderAllModules(mainEl) {
             <span class="mi-load-pct no-countup" id="mi-load-pct" data-no-countup aria-live="polite" title="How much of this page has arrived"${loadDone ? ' data-done="1"' : ''}>${esc(loadLabel)}</span>
             <span class="mi-load-bytes no-countup" id="mi-load-bytes" data-no-countup title="This page">${esc(loadBytes)}</span>
           </div>
-          <p class="mi-hero-lede">Every module, component, icon, design token, animation and drag/resize interaction in the WISE app — indexed, rendered live, and one tap away. The pair next to the title is how much of this page has arrived. Open a section to load it. Re-evaluate scans when you click it — it does not run on load.</p>
+          <p class="mi-hero-lede">Every module, component, icon, design token, animation, drag/resize interaction, and how the platform responds from a phone to a wide display — indexed, rendered live, and one tap away. The pair next to the title is how much of this page has arrived. Open a section to load it. Re-evaluate scans when you click it — it does not run on load.</p>
           <span class="mi-reeval-meta" data-mi-reeval-meta></span>
         </div>
       </header>
@@ -8691,6 +9252,7 @@ export function renderAllModules(mainEl) {
       ${renderStreamingTrace({ headOnly: true })}
       ${renderTranscriptArch({ headOnly: true })}
       ${renderMotion({ headOnly: true })}
+      ${renderResponsive({ headOnly: true })}
       ${renderIconInventory({ headOnly: true })}
       ${renderDesignSystem({ headOnly: true })}
       ${renderComponentLibrary({ headOnly: true })}
@@ -8705,6 +9267,8 @@ export function renderAllModules(mainEl) {
   safeWire('accordion', () => setupAccordion(mainEl));
   safeWire('sectionNav', () => wireSectionNav(mainEl));
   safeWire('tarchNudge', () => wireTarchNudge(mainEl));
+  safeWire('compsNudge', () => wireCompsNudge(mainEl));
+  safeWire('rptNudge', () => wireRptNudge(mainEl));
   safeWire('globalSearch', () => wireGlobalSearch(mainEl));
   safeWire('devReady', () => wireDevReady(mainEl));
   safeWire('paneCompJumps', () => wirePaneCompJumps(mainEl));
@@ -8750,7 +9314,7 @@ export function renderAllModules(mainEl) {
 /* Clicks on the header's trailing ⋯ controls (and the Dev Ready       */
 /* toggle, when present) never expand or collapse the section.         */
 /* ------------------------------------------------------------------ */
-const ACC_SECTION_IDS = ['mi-code', 'mi-directory', 'mi-tables', 'mi-logic', 'mi-intents', 'mi-trace', 'mi-tarch', 'mi-motion', 'mi-icons', 'mi-design', 'mi-components'];
+const ACC_SECTION_IDS = ['mi-code', 'mi-directory', 'mi-tables', 'mi-logic', 'mi-intents', 'mi-trace', 'mi-tarch', 'mi-motion', 'mi-responsive', 'mi-icons', 'mi-design', 'mi-components'];
 
 const SECTION_FILL = {
   'mi-code': { render: () => renderCodebase(), wire: wireCodebase },
@@ -8773,6 +9337,7 @@ const SECTION_FILL = {
     render: () => renderMotion(),
     wire: (root) => { wireMotion(root); wireJamCatalog(root); },
   },
+  'mi-responsive': { render: () => renderResponsive(), wire: wireResponsive },
   'mi-icons': { catalog: 'icons', render: () => renderIconInventory(), wire: wireIconInventory },
   'mi-design': { render: () => renderDesignSystem(), wire: wireDesignSystem },
   'mi-components': { render: () => renderComponentLibrary(), wire: wireComponentLibrary },
@@ -8807,6 +9372,12 @@ async function fillSectionBody(root, sec) {
     spec.wire(root);
     sec.dataset.miFilled = '1';
     observePreviewFrames(sec);
+    if (id === 'mi-components') {
+      refreshCompsNudge();
+      refreshRptNudge();
+      requestAnimationFrame(() => { refreshCompsNudge(); refreshRptNudge(); });
+      setTimeout(() => { refreshCompsNudge(); refreshRptNudge(); }, 200);
+    }
   })();
   _fillInflight.set(id, work);
   try { await work; }
@@ -8920,6 +9491,7 @@ function sectionNavTiles() {
     { id: 'mi-trace', icon: 'psychology', num: TRACE_MILESTONES.length, label: 'Trace sections', sub: 'Playing, paused, finished' },
     { id: 'mi-tarch', icon: 'account_tree', num: TARCH_LAYERS.length, label: 'Transcript architecture', sub: 'Every piece, linked' },
     { id: 'mi-motion', icon: 'animation', num: MOTION_ITEMS.length, label: 'Motion & resize', sub: 'Animations + drag/resize' },
+    { id: 'mi-responsive', icon: 'devices', num: RESPONSIVE_SURFACES.length, label: 'Responsiveness', sub: 'Mobile, laptop, larger' },
     { id: 'mi-icons', icon: 'emoji_symbols', num: (ICON_INVENTORY && ICON_INVENTORY.totalUniqueIcons) || ICON_UNIQUE_FALLBACK, label: 'Icons', sub: 'Material Symbols inventory' },
     { id: 'mi-design', icon: 'palette', num: tokenCount, label: 'Design tokens', sub: 'Type scale + color tokens' },
     { id: 'mi-components', icon: 'widgets', num: COMPONENTS.length, label: 'Components', sub: 'Reusable, live-rendered' },
@@ -9019,7 +9591,7 @@ function ensureTarchNudgeToast() {
   return toast;
 }
 
-function placeTarchNudgeToast(toast, anchor) {
+function placeTarchNudgeToast(toast, anchor, prefer) {
   if (!toast || !anchor || toast.hidden) return;
   const br = anchor.getBoundingClientRect();
   if (br.width < 8 || br.height < 8) {
@@ -9050,14 +9622,17 @@ function placeTarchNudgeToast(toast, anchor) {
   const placeBelow = () => { toast.classList.add('is-below'); top = br.bottom + gap; left = br.left; };
   const placeRight = () => { toast.classList.add('is-right'); top = br.top + br.height / 2 - th / 2; left = br.right + gap; };
   const placeLeft = () => { toast.classList.add('is-left'); top = br.top + br.height / 2 - th / 2; left = br.left - tw - gap; };
-  const order = [
-    ['right', canRight, placeRight],
-    ['above', canAbove, placeAbove],
-    ['left', canLeft, placeLeft],
-    ['below', canBelow, placeBelow],
-  ];
-  const pick = order.find((entry) => entry[1]) || order[0];
-  pick[2]();
+  const slots = {
+    above: [canAbove, placeAbove],
+    right: [canRight, placeRight],
+    left: [canLeft, placeLeft],
+    below: [canBelow, placeBelow],
+  };
+  const order = prefer === 'above'
+    ? ['above', 'right', 'below', 'left']
+    : ['right', 'above', 'left', 'below'];
+  const pick = order.find((key) => slots[key][0]) || order[0];
+  slots[pick][1]();
   left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
   top = Math.max(8, Math.min(top, window.innerHeight - th - 8));
   toast.style.top = Math.round(top) + 'px';
@@ -9115,6 +9690,222 @@ function wireTarchNudge(root) {
   setTimeout(refreshTarchNudge, 700);
 }
 
+/* Gold “This is new!” on the Component Library accordion — first-paint
+   header, same as Transcript Architecture. Stays until they dismiss it. */
+const COMPS_NUDGE_ID = 'mi-comps-new';
+let compsNudgeTaken = false;
+let compsNudgeWired = false;
+let compsNudgeRo = null;
+
+function compsNudgeDismissed() {
+  return !!(isNudgeDismissed(COMPS_NUDGE_ID) ||
+    (window.WiseNudgeToast && typeof window.WiseNudgeToast.isDismissed === 'function'
+      && window.WiseNudgeToast.isDismissed(COMPS_NUDGE_ID)));
+}
+
+function takeCompsNudge() {
+  compsNudgeTaken = true;
+  const toast = document.getElementById('mi-comps-nudge');
+  if (!toast) return;
+  toast.hidden = true;
+  toast.setAttribute('hidden', '');
+  toast.style.visibility = '';
+  toast.style.pointerEvents = '';
+}
+
+function compsNudgeAnchor(root) {
+  const sec = (root || hostEl || document).querySelector('#mi-components');
+  if (!sec || sec.hidden) return null;
+  return sec.querySelector(':scope > .mi-module-head .mi-module-title');
+}
+
+function ensureCompsNudgeToast() {
+  let toast = document.getElementById('mi-comps-nudge');
+  if (toast) return toast;
+  toast = document.createElement('div');
+  toast.id = 'mi-comps-nudge';
+  toast.className = 'dash-score-toast dash-score-toast--gold is-portaled';
+  toast.setAttribute('data-nudge-id', COMPS_NUDGE_ID);
+  toast.setAttribute('role', 'status');
+  toast.hidden = true;
+  toast.innerHTML =
+    '<span class="dash-score-toast-icon"><span class="material-symbols-outlined">new_releases</span></span>' +
+    '<div class="dash-score-toast-body">' +
+      '<div class="dash-score-toast-title">This is new!</div>' +
+      '<p class="dash-score-toast-text">The Component Library now includes the Report builder — plus the charts you want, generate, then save or share.</p>' +
+      '<button type="button" class="dash-score-toast-link" data-comps-nudge-go>Open Component Library<span class="material-symbols-outlined dash-score-toast-link-arrow">arrow_outward</span></button>' +
+    '</div>' +
+    '<button class="dash-score-toast-close" type="button" aria-label="Dismiss" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined">close</span></button>';
+  document.body.appendChild(toast);
+  toast.addEventListener('click', (e) => {
+    const go = e.target.closest('[data-comps-nudge-go]');
+    if (!go) return;
+    e.preventDefault();
+    e.stopPropagation();
+    jumpToComponent(hostEl || document, 'Report builder');
+  });
+  return toast;
+}
+
+function refreshCompsNudge() {
+  const toast = ensureCompsNudgeToast();
+  const root = hostEl || document;
+  const label = compsNudgeAnchor(root);
+  const dismissed = compsNudgeTaken || compsNudgeDismissed();
+  const labelLive = !!(label && !label.hidden && label.getClientRects().length);
+  const show = !dismissed && labelLive;
+  if (!show) {
+    toast.hidden = true;
+    toast.setAttribute('hidden', '');
+    toast.style.visibility = '';
+    toast.style.pointerEvents = '';
+    return;
+  }
+  toast.hidden = false;
+  toast.removeAttribute('hidden');
+  if (compsNudgeRo) {
+    compsNudgeRo.disconnect();
+    compsNudgeRo = null;
+  }
+  if (typeof ResizeObserver !== 'undefined' && label) {
+    compsNudgeRo = new ResizeObserver(() => placeTarchNudgeToast(toast, label));
+    compsNudgeRo.observe(label);
+  }
+  placeTarchNudgeToast(toast, label);
+  requestAnimationFrame(() => placeTarchNudgeToast(toast, label));
+}
+
+function wireCompsNudge(root) {
+  if (compsNudgeWired) {
+    refreshCompsNudge();
+    return;
+  }
+  compsNudgeWired = true;
+  ensureCompsNudgeToast();
+  const place = () => refreshCompsNudge();
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-nudge-dismiss]')) setTimeout(place, 0);
+  });
+  window.addEventListener('resize', place);
+  window.addEventListener('scroll', place, { passive: true, capture: true });
+  root.querySelector('.agent-main-scroll')?.addEventListener('scroll', place, { passive: true });
+  document.getElementById('agent-main-scroll')?.addEventListener('scroll', place, { passive: true });
+  refreshCompsNudge();
+  setTimeout(refreshCompsNudge, 200);
+  setTimeout(refreshCompsNudge, 700);
+}
+
+/* Gold “This is new!” floaty on the Report builder accordion label.
+   Same body-portaled nudge as Transcript Architecture. The card only
+   exists after Component Library opens, so the toast stays hidden until
+   that label is on screen. */
+const RPT_NUDGE_ID = 'mi-rpt-new';
+let rptNudgeTaken = false;
+let rptNudgeWired = false;
+let rptNudgeRo = null;
+
+function rptNudgeDismissed() {
+  return !!(isNudgeDismissed(RPT_NUDGE_ID) ||
+    (window.WiseNudgeToast && typeof window.WiseNudgeToast.isDismissed === 'function'
+      && window.WiseNudgeToast.isDismissed(RPT_NUDGE_ID)));
+}
+
+function takeRptNudge() {
+  rptNudgeTaken = true;
+  const toast = document.getElementById('mi-rpt-nudge');
+  if (!toast) return;
+  toast.hidden = true;
+  toast.setAttribute('hidden', '');
+  toast.style.visibility = '';
+  toast.style.pointerEvents = '';
+}
+
+function rptNudgeAnchor(root) {
+  const card = (root || hostEl || document).querySelector('[data-comp-name="Report builder"]');
+  if (!card || card.hidden) return null;
+  /* Stay on the accordion label whether the card is open or shut —
+     only × dismisses it. */
+  return card.querySelector(':scope > .dsc-card-head .dsc-name');
+}
+
+function ensureRptNudgeToast() {
+  let toast = document.getElementById('mi-rpt-nudge');
+  if (toast) return toast;
+  toast = document.createElement('div');
+  toast.id = 'mi-rpt-nudge';
+  toast.className = 'dash-score-toast dash-score-toast--gold is-portaled';
+  toast.setAttribute('data-nudge-id', RPT_NUDGE_ID);
+  toast.setAttribute('role', 'status');
+  toast.hidden = true;
+  toast.innerHTML =
+    '<span class="dash-score-toast-icon"><span class="material-symbols-outlined">new_releases</span></span>' +
+    '<div class="dash-score-toast-body">' +
+      '<div class="dash-score-toast-title">This is new!</div>' +
+      '<p class="dash-score-toast-text">The Report builder is how a conversation becomes a report — plus the charts you want, generate, then save or share.</p>' +
+      '<button type="button" class="dash-score-toast-link" data-rpt-nudge-go>Open Report builder<span class="material-symbols-outlined dash-score-toast-link-arrow">arrow_outward</span></button>' +
+    '</div>' +
+    '<button class="dash-score-toast-close" type="button" aria-label="Dismiss" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined">close</span></button>';
+  document.body.appendChild(toast);
+  toast.addEventListener('click', (e) => {
+    const go = e.target.closest('[data-rpt-nudge-go]');
+    if (!go) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const root = hostEl || document;
+    jumpToComponent(root, 'Report builder');
+    refreshRptNudge();
+  });
+  return toast;
+}
+
+function refreshRptNudge() {
+  const toast = ensureRptNudgeToast();
+  const root = hostEl || document;
+  const label = rptNudgeAnchor(root);
+  const dismissed = rptNudgeTaken || rptNudgeDismissed();
+  const labelLive = !!(label && !label.hidden && label.getClientRects().length);
+  const show = !dismissed && labelLive;
+  if (!show) {
+    toast.hidden = true;
+    toast.setAttribute('hidden', '');
+    toast.style.visibility = '';
+    toast.style.pointerEvents = '';
+    return;
+  }
+  toast.hidden = false;
+  toast.removeAttribute('hidden');
+  if (rptNudgeRo) {
+    rptNudgeRo.disconnect();
+    rptNudgeRo = null;
+  }
+  if (typeof ResizeObserver !== 'undefined' && label) {
+    rptNudgeRo = new ResizeObserver(() => placeTarchNudgeToast(toast, label));
+    rptNudgeRo.observe(label);
+  }
+  placeTarchNudgeToast(toast, label);
+  requestAnimationFrame(() => placeTarchNudgeToast(toast, label));
+}
+
+function wireRptNudge(root) {
+  if (rptNudgeWired) {
+    refreshRptNudge();
+    return;
+  }
+  rptNudgeWired = true;
+  ensureRptNudgeToast();
+  const place = () => refreshRptNudge();
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-nudge-dismiss]')) setTimeout(place, 0);
+  });
+  window.addEventListener('resize', place);
+  window.addEventListener('scroll', place, { passive: true, capture: true });
+  root.querySelector('.agent-main-scroll')?.addEventListener('scroll', place, { passive: true });
+  document.getElementById('agent-main-scroll')?.addEventListener('scroll', place, { passive: true });
+  refreshRptNudge();
+  setTimeout(refreshRptNudge, 200);
+  setTimeout(refreshRptNudge, 700);
+}
+
 /* ------------------------------------------------------------------ */
 /* Page-wide search — indexes every catalog this page already renders */
 /* ------------------------------------------------------------------ */
@@ -9123,7 +9914,7 @@ const GLOBAL_SEARCH_PER_GROUP = 6;
 const GLOBAL_SEARCH_MAX = 36;
 const GLOBAL_SEARCH_GROUPS = [
   'Scorecards', 'Modules', 'Tables', 'App logic', 'Intent chips',
-  'Trace', 'Transcript', 'Motion', 'Icons', 'Type', 'Tokens', 'Components', 'Codebase',
+  'Trace', 'Transcript', 'Motion', 'Responsiveness', 'Icons', 'Type', 'Tokens', 'Components', 'Codebase',
 ];
 const GLOBAL_SECTION_SEARCH = [
   '#mi-dir-search', '#mi-tbl-search', '#mi-logic-search',
@@ -9201,6 +9992,12 @@ function buildGlobalIndex() {
     kind: 'motion', section: 'mi-motion', group: 'Motion', icon: item.icon || 'animation',
     title: item.title, sub: item.used || item.src || '', key: item.id,
     q: `${item.title} ${item.id} ${item.group} ${item.src || ''} ${item.used || ''} ${stripSearchText(item.lede)}`,
+  }));
+
+  RESPONSIVE_SURFACES.forEach((item) => add({
+    kind: 'resp', section: 'mi-responsive', group: 'Responsiveness', icon: item.icon || 'devices',
+    title: item.title, sub: item.used || item.src || '', key: item.id,
+    q: `${item.title} ${item.id} ${item.src || ''} ${item.used || ''} ${stripSearchText(item.lede)} ${stripSearchText(item.mobile)} ${stripSearchText(item.laptop)} ${stripSearchText(item.larger)} ${(item.changes || []).join(' ')} mobile laptop larger responsive breakpoint`,
   }));
 
   ((ICON_INVENTORY && ICON_INVENTORY.icons) || []).forEach((ic) => add({
@@ -9281,6 +10078,7 @@ function clearSectionQueries(root) {
     }
   });
   root.querySelectorAll('[data-motion-card]').forEach((el) => { el.hidden = false; });
+  root.querySelectorAll('[data-resp-card]').forEach((el) => { el.hidden = false; });
 }
 
 function findByAttr(root, sel, attr, key) {
@@ -9294,6 +10092,12 @@ async function jumpGlobalHit(root, hit, q) {
   if (hit.kind === 'motion') {
     const needle = String(q || '').trim().toLowerCase();
     root.querySelectorAll('[data-motion-card]').forEach((el) => {
+      el.hidden = !!(needle && (el.dataset.search || '').indexOf(needle) === -1);
+    });
+  }
+  if (hit.kind === 'resp') {
+    const needle = String(q || '').trim().toLowerCase();
+    root.querySelectorAll('[data-resp-card]').forEach((el) => {
       el.hidden = !!(needle && (el.dataset.search || '').indexOf(needle) === -1);
     });
   }
@@ -9319,6 +10123,7 @@ async function jumpGlobalHit(root, hit, q) {
   else if (hit.kind === 'logic') el = findByAttr(root, '[data-logic-rule]', 'data-logic-title', hit.key);
   else if (hit.kind === 'intent') el = findByAttr(root, '[data-int-row]', 'data-int-id', hit.key);
   else if (hit.kind === 'motion') el = findByAttr(root, '[data-motion-card]', 'data-motion-id', hit.key);
+  else if (hit.kind === 'resp') el = findByAttr(root, '[data-resp-card]', 'data-resp-id', hit.key);
   else if (hit.kind === 'icon') el = findByAttr(root, '[data-icon-card]', 'data-name', hit.key);
   else if (hit.kind === 'font') el = findByAttr(root, '[data-ds-font]', 'data-ds-font', hit.key);
   else if (hit.kind === 'type') el = findByAttr(root, '[data-ds-type]', 'data-ds-type', hit.key);
@@ -9340,6 +10145,8 @@ function filterScorecards(root, hits) {
     nav.classList.remove('is-filtered');
     nav.querySelectorAll('[data-jump]').forEach((t) => { t.hidden = false; });
     refreshTarchNudge();
+    refreshCompsNudge();
+    refreshRptNudge();
     return;
   }
   const sections = new Set(hits.map((h) => h.section));
@@ -9348,6 +10155,8 @@ function filterScorecards(root, hits) {
     t.hidden = !sections.has(t.dataset.jump);
   });
   refreshTarchNudge();
+  refreshCompsNudge();
+  refreshRptNudge();
 }
 
 function groupedGlobalHits(matches) {
@@ -9509,6 +10318,7 @@ const ACTION_SECTION = {
   'tbl-clear': 'mi-tables', 'tbl-start': 'mi-tables',
   'trace-replay': 'mi-trace',
   'motion-replay': 'mi-motion', 'motion-anim': 'mi-motion', 'motion-drag': 'mi-motion',
+  'resp-mobile': 'mi-responsive', 'resp-laptop': 'mi-responsive', 'resp-larger': 'mi-responsive',
   'dir-grid': 'mi-directory', 'dir-rail': 'mi-directory', 'dir-clear': 'mi-directory', 'dir-gallery': 'mi-directory',
 };
 
@@ -9561,6 +10371,16 @@ async function runModuleAction(root, action) {
     }
     case 'motion-anim': expandAccordionSection(root, 'mi-motion'); click('#mi-motion [data-motion-filter="anim"]'); break;
     case 'motion-drag': expandAccordionSection(root, 'mi-motion'); click('#mi-motion [data-motion-filter="drag"]'); break;
+    case 'resp-mobile':
+    case 'resp-laptop':
+    case 'resp-larger': {
+      expandAccordionSection(root, 'mi-responsive').then(() => {
+        const sec = root.querySelector('#mi-responsive');
+        const size = action.replace('resp-', '');
+        if (sec) setRespSize(sec, size);
+      });
+      break;
+    }
   }
 }
 
@@ -12579,6 +13399,7 @@ function wireComponentLibrary(root) {
       if (vis) shown++;
     });
     if (emptyEl) emptyEl.hidden = shown !== 0;
+    refreshRptNudge();
   };
 
   dscRevealAll = () => {
@@ -12593,6 +13414,7 @@ function wireComponentLibrary(root) {
       });
     }
     apply();
+    refreshRptNudge();
   };
 
   if (searchInput) {
@@ -12732,6 +13554,7 @@ function wireComponentLibrary(root) {
         if (br.top > sr.bottom - 96) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     }
+    if (card.dataset.compName === 'Report builder') refreshRptNudge();
   };
   grid.addEventListener('click', (e) => {
     if (e.target.closest('.dsc-ready, .dsc-ready-row, a, button, input, textarea, select')) return;
@@ -12757,6 +13580,7 @@ function wireComponentLibrary(root) {
     });
   });
 
+  refreshRptNudge();
 }
 
 /* ------------------------------------------------------------------ */
@@ -13009,6 +13833,7 @@ async function jumpToComponent(root, name) {
     return;
   }
   setCompCardCollapsed(card, false);
+  if (name === 'Report builder') refreshRptNudge();
   const grid = root.querySelector('#dsc-grid');
   if (grid && typeof grid._bootComposersIn === 'function') grid._bootComposersIn(card);
   if (grid && typeof grid._bootChatMenuIn === 'function') grid._bootChatMenuIn(card);
@@ -13058,7 +13883,7 @@ function wirePaneCompJumps(root) {
 /* WISEcodeAI dock config for this page — a light welcome that points at the four
    modules and can jump to any of them. */
 export const ALL_MODULES_WISEAI = {
-  sub: 'Your app’s codebase stats, module map, icon inventory, design system, component library, transcript architecture, and motion catalog.',
+  sub: 'Your app’s codebase stats, module map, icon inventory, design system, component library, transcript architecture, motion catalog, and how the platform responds from phone to a wide display.',
   chipsFlow: 'wrap',
   intents: [
     { intent: 'codebase', label: 'How big is the codebase?', icon: 'code' },
@@ -13069,8 +13894,10 @@ export const ALL_MODULES_WISEAI = {
     { intent: 'icons', label: 'Jump to the Icon Inventory', icon: 'emoji_symbols' },
     { intent: 'design', label: 'Jump to the Design System', icon: 'palette' },
     { intent: 'components', label: 'Jump to the Component Library', icon: 'widgets' },
+    { intent: 'reportbuilder', label: 'How does the report builder work?', icon: 'description' },
     { intent: 'tarch', label: 'Show the transcript architecture', icon: 'account_tree' },
     { intent: 'motion', label: 'Show animations & resize', icon: 'animation' },
+    { intent: 'responsive', label: 'How responsive is the platform?', icon: 'devices' },
     { intent: 'counts', label: 'How many icons are there?', icon: 'tag' },
   ],
   intentReplies: {
@@ -13097,8 +13924,15 @@ export const ALL_MODULES_WISEAI = {
     icons: 'The <strong>Icon Inventory</strong> catalogs every Material Symbols glyph used in the live app (this page excluded), grouped by surface — chat module, primary nav, top bar and so on — with label and exact placements. The expectation is the <strong>light (rounded) SVG at weight 400</strong>, with a few per-glyph exceptions; preview outlined, filled, or light, and flip <strong>Font/SVG</strong> to compare the live webfont against Google\u2019s SVG export \u2014 the vectors are generated locally by <code>scripts/gen_icon_svgs.py</code>, so SVG mode needs no network at all.',
     design: 'The <strong>Design System</strong> documents the app’s fonts (families, sizes, usage) and every color, line, elevation and radius token — with live swatches that follow the current theme.',
     components: 'The <strong>Component Library</strong> renders every reusable component in its default state with its real classes, its variations, and the surfaces where it’s used.',
+    reportbuilder: 'The <strong>Report builder</strong> is how a conversation becomes a report. In Output, open the title dropdown, plus the charts you want, and tap <strong>Generate Report</strong>. That opens a nested drawer to the right of Output. You can rename the report and each chart, add a note, swap a chart for another output from the same thread, or delete one. <strong>Save or Share</strong> writes it to the Reports shelf — the same store Reformulation uses. Export as PDF prints the drawer. The card below is the live specimen.',
     tarch: 'The <strong>Transcript Architecture</strong> freezes one thread and labels every visible piece — History, transcript lines, the landmark strip, output chips, intent chips, the composer, the token readout, the admin <strong>Turns</strong> sticky drawer, and Roll · Crawl · Walk · Run. Each card links to that component in the library.',
     motion: `The <strong>Motion &amp; Resize</strong> module catalogs all <strong>${MOTION_ITEMS.length} motion systems</strong> — count-up, chart replay, streaming, chip shimmer and fly-in, output chip fan, chat composer sheen, both helixes, accordion open, sticky drawer slide-in, activity-strip ticks, the jam equalizer, plus the module splitter, five width tiers, drag-to-reorder and drag-to-file — each running live.`,
+    responsive: () => {
+      const screen = respScreenWidth();
+      const chat = screen > RESP_CHAT_SINGLE_MAX ? 'double' : 'single';
+      const display = screen > RESP_CHAT_SINGLE_MAX ? 'larger than a 14-inch laptop' : 'a 14-inch laptop class display';
+      return `The platform codes for three sizes. On a <strong>phone</strong> the nav becomes an owl drawer, the modules stack, and tables become cards. On a <strong>14-inch laptop</strong> you get the desktop shell and chat opens single. On anything <strong>larger</strong> the shell stays the same and chat opens double. This display is ${screen}&nbsp;px — ${display} — so chat loads <strong>${chat}</strong>. The <strong>Responsiveness</strong> catalog names what each surface does at each size.`;
+    },
     counts: () => {
       const n = ICON_INVENTORY && ICON_INVENTORY.totalUniqueIcons;
       if (!n) {
@@ -13137,6 +13971,16 @@ export const ALL_MODULES_WISEAI = {
       expandAccordionSection(document, 'mi-tarch').then(() => {
         document.getElementById('mi-tarch')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
+      return false;
+    }
+    if (intent === 'responsive') {
+      expandAccordionSection(document, 'mi-responsive').then(() => {
+        document.getElementById('mi-responsive')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      return false;
+    }
+    if (intent === 'reportbuilder') {
+      jumpToComponent(document, 'Report builder');
       return false;
     }
     const id = intent === 'icons' ? 'mi-icons'

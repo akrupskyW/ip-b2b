@@ -17,12 +17,13 @@
    What each mode gates:
 
      roll  — Crawl, plus a stripped primary nav: Overview, Product Portfolio,
-             Reports, Profile, Invoices, Marketing Assets, and WISEcode Admin
-             (Organizations, User Management, Audit Queue, Quick Invite, Admin
-             Utils). Studio, comparison, dashboards, and the upgrade card are
-             hidden. History is gone entirely (same as Crawl) — no History
-             module, no History-in-nav section, no History icon, no new-chat
-             circle.
+             Reports, Profile, Team, Invoices & Downloads, Marketing Assets,
+             and WISEcode Admin (Organizations, User Management, Audit Queue,
+             Quick Invite, Admin Utils). Comparison, dashboards, WISEcodeAI,
+             Reformulation, and the upgrade card are hidden. Studio stays so
+             Reports keeps its section. History is gone entirely (same as
+             Crawl) — no History module, no History-in-nav section, no History
+             icon, no new-chat circle.
      crawl — SaaS only. Every WISEcodeAI chat surface is hidden AND taken out
              of the a11y/focus tree (inert + aria-hidden). Remaining modules
              grow to fill the modules-row — no leftover empty width. The
@@ -66,7 +67,7 @@
       icon: 'cached',
       label: 'Roll',
       desc: 'SaaS core only — no chat, no extra destinations',
-      includes: 'Overview, Product Portfolio, Reports, Profile, Invoices, Marketing Assets, and WISEcode Admin (Organizations, User Management, Audit Queue, Quick Invite, Admin Utils). Remaining modules fill the row.',
+      includes: 'Overview, Product Portfolio, Reports, Profile, Team, Invoices & Downloads, Marketing Assets, and WISEcode Admin (Organizations, User Management, Audit Queue, Quick Invite, Admin Utils). Remaining modules fill the row.',
       excludes: 'Chat, the composer, History (the History module, the History icon, History in the nav, and the new-chat circle), WISEcodeAI (Chat, Library, Ingredient Browser), Comparison, NON-UPF Dashboard, AI Dashboard, Reformulation, and the Studio & AI upgrade card.'
     },
     crawl: {
@@ -581,8 +582,7 @@
     'html.cwr-ui-on.cwr-roll .menu-nav [data-nav-id="library"],',
     'html.cwr-ui-on.cwr-roll .menu-nav [data-nav-id="ingredients"],',
     'html.cwr-ui-on.cwr-roll .menu-nav-group[data-group="wiseai"],',
-    'html.cwr-ui-on.cwr-roll .menu-nav-upgrade,',
-    'html.cwr-ui-on.cwr-roll .menu-nav-section[data-nav-section="studio"] {',
+    'html.cwr-ui-on.cwr-roll .menu-nav-upgrade {',
     '  display: none !important;',
     '}',
 

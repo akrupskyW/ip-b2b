@@ -325,7 +325,7 @@ function runAction(action, org) {
     case 'add-org': toast('New organization', 'add'); pushChat('Let\u2019s create a new organization. Give me the <strong>company name</strong> and I\u2019ll set up the workspace and a first admin seat.'); break;
     case 'filters': toast('Filters', 'filter_list'); break;
     case 'manage': toast(`Opening ${org}`, 'dashboard_customize'); pushChat(`Opening the admin console for <strong>${esc(org)}</strong> — products, users, verification, and billing in one place.`); break;
-    case 'users': toast(`Users · ${org}`, 'group'); pushChat(`Showing the users on <strong>${esc(org)}</strong>. You can add a seat, resend an invite, or change roles from here.`); break;
+    case 'users': window.location.href = 'teams.html'; break;
     case 'invite': window.location.href = 'quick-invite.html'; break;
     case 'edit': toast(`Editing ${org}`, 'edit'); pushChat(`Editing <strong>${esc(org)}</strong> — update the brand name, type, contact and Studio access.`); break;
     default: break;

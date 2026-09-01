@@ -57,6 +57,7 @@ PAGES = [
     "pages/audit-queue.html",
     "pages/organizations.html",
     "pages/quick-invite.html",
+    "pages/teams.html",
     "pages/user-management.html",
     "pages/admin-utils.html",
     "pages/studio-ai.html",

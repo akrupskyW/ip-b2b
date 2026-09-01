@@ -25,6 +25,7 @@ export const AI_READY_SEED = {
   "Library folders": true,
   "Output chips": true,
   "Pagination footer": true,
+  "Report builder": true,
   "Sticky modules": true,
   "Token readout": true,
   "Tooltip": true,

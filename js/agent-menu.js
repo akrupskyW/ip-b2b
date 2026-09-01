@@ -514,7 +514,7 @@ export const TOP_LEVEL_PRODUCT_IDS = [
 /**
  * WISE workspace navigation model — the sectioned dashboard nav.
  *
- * This is the new information architecture (Overview / Portfolio / Studio /
+ * This is the information architecture (Overview / Portfolio / Studio /
  * Organization / Admin). It is rendered by `mountAgentMenu` only when the
  * caller opts in with `{ appNav: true }`, so the legacy product/agent nav on
  * every other page keeps working untouched until those pages migrate.
@@ -553,9 +553,12 @@ export const WISE_APP_NAV = [
   { type: 'item', id: 'reports', label: 'Reports', icon: 'description', slug: 'reports.html' },
   { type: 'item', id: 'reformulation', label: 'Reformulation', icon: 'auto_fix_high', slug: 'reformulation.html', locked: true },
 
+  { type: 'section', label: 'Organization' },
+  { type: 'item', id: 'profile', label: 'Profile', icon: 'account_circle', slug: 'profile.html' },
+  { type: 'item', id: 'team', label: 'Team', icon: 'group', slug: 'teams.html' },
+  { type: 'item', id: 'invoices', label: 'Invoices & Downloads', icon: 'receipt_long', slug: 'invoices.html' },
+
   { type: 'section', label: 'Admin' },
-  { type: 'item', id: 'profile', label: 'My profile', icon: 'account_circle', slug: 'profile.html' },
-  { type: 'item', id: 'invoices', label: 'Invoices', icon: 'receipt_long', slug: 'invoices.html' },
   { type: 'item', id: 'marketing-assets', label: 'Marketing Assets', icon: 'photo_library', slug: 'marketing-assets.html' },
   {
     type: 'group',
@@ -1012,6 +1015,7 @@ const EXISTING_PAGES = new Set([
   'organizations.html',
   'quick-invite.html',
   'user-management.html',
+  'teams.html',
   'non-upf-dashboard.html',
   'ai-dashboard.html',
   'audit-queue.html',

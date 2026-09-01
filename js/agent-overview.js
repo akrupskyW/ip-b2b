@@ -125,6 +125,20 @@ const APP_NAV_FLOWS = {
     wiseai: (m) => m.QUICK_INVITE_WISEAI,
     setChat: (m) => m.setQuickInviteChat,
   },
+  team: {
+    title: 'WISE · Team',
+    load: () => import('./teams-flow.js'),
+    render: (m) => m.renderTeam,
+    wiseai: (m) => m.TEAM_WISEAI,
+    setChat: (m) => m.setTeamChat,
+  },
+  teams: {
+    title: 'WISE · Team',
+    load: () => import('./teams-flow.js'),
+    render: (m) => m.renderTeam,
+    wiseai: (m) => m.TEAM_WISEAI,
+    setChat: (m) => m.setTeamChat,
+  },
   'user-management': {
     title: 'WISE · User Management',
     load: () => import('./user-management-flow.js'),

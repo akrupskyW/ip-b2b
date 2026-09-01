@@ -306,8 +306,8 @@
       id: 'account',
       label: 'You & the org',
       icon: 'manage_accounts',
-      pages: ['profile.html', 'preferences.html', 'invoices.html', 'marketing-assets.html', 'api-keys.html', 'alerts.html', 'agents.html', 'help.html', 'docs.html', 'organizations.html', 'quick-invite.html', 'user-management.html', 'audit-queue.html', 'admin-utils.html', 'studio-ai.html'],
-      navIds: ['profile', 'invoices', 'marketing-assets', 'preferences', 'api-keys', 'help', 'docs', 'organizations', 'quick-invite', 'user-management', 'audit-queue', 'admin-utils', 'studio-ai', 'wisecode-admin'],
+      pages: ['profile.html', 'teams.html', 'preferences.html', 'invoices.html', 'marketing-assets.html', 'api-keys.html', 'alerts.html', 'agents.html', 'help.html', 'docs.html', 'organizations.html', 'quick-invite.html', 'user-management.html', 'audit-queue.html', 'admin-utils.html', 'studio-ai.html'],
+      navIds: ['profile', 'team', 'invoices', 'marketing-assets', 'preferences', 'api-keys', 'help', 'docs', 'organizations', 'quick-invite', 'user-management', 'audit-queue', 'admin-utils', 'studio-ai', 'wisecode-admin'],
       steps: [
         {
           id: 'ac-you',
