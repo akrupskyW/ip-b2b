@@ -14,7 +14,7 @@ export const AI_READY_SEED = {
   "Data table": true,
   "Database roster": true,
   "Empty states": true,
-  "Filter tiles": true,
+  "Filter tiles/scorecards": true,
   "Filter toolbar": true,
   "Form fields": true,
   "History": true,

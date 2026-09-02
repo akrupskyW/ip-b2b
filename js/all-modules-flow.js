@@ -1813,7 +1813,7 @@ const CAT_BY_NAME = {
   'Library folders': 'Library & reports',
   'Report builder': 'Library & reports',
   'Report posters': 'Library & reports',
-  'Filter tiles': 'Filters',
+  'Filter tiles/scorecards': 'Filters',
   'Action scorecards': 'Tables & data',
   'Compact metrics': 'Tables & data',
   'KPI scorecards': 'Tables & data',
@@ -2583,10 +2583,11 @@ function wireJamCatalog(root) {
 
 /* Flat chat ⋮ menu matching pages/wiseai.html + js/wiseai-chat.js. groupifyChatMenu
    (booted when this card opens) turns it into the live one-column Conversation /
-   Activity stack, Admin kebab, and row hints. Helix joins as a second column
-   only when Internal admins is on. This specimen pins data-admin-demo="off"
-   so it stays the member-facing menu — Admin-badged rows are gated by
-   Appearance on the live chat, not shown here. */
+   Helix play/pause / Activity stack and row hints. The nested Internal admins
+   kebab stays off this specimen. The full Helix studio joins as a second
+   column only when Internal admins is on. This specimen pins
+   data-admin-demo="off" so it stays the member-facing menu — Admin-badged
+   rows are gated by Appearance on the live chat, not shown here. */
 function demoChatMenuPop() {
   const row = (sc, icon, label, extra) =>
     `<button type="button" class="topbar-menu-item${extra || ''}" data-sc="${esc(sc)}">` +
@@ -2628,6 +2629,13 @@ function demoChatMenuPop() {
     ${sw({ sc: 'brandtext', icon: 'format_color_text', label: 'Brand AI text', on: false, admin: true, pink: true, cls: 'sc-brandtext-item' })}
     ${sw({ sc: 'sheen', icon: 'auto_awesome', label: 'Input glow', on: true, admin: true, pink: true, cls: 'sc-sheen-item' })}
     ${sw({ sc: 'bg-anim', icon: 'animation', label: 'Animation', on: true, admin: true, pink: true, cls: 'sc-bganim-item' })}
+    <div class="sc-bganim-playback">
+      <span class="sc-bganim-playback-label">Playback</span>
+      <button type="button" class="sc-bganim-pp" data-sc="bg-anim-playback" aria-pressed="false" aria-label="Pause background animation">
+        <span class="sc-bganim-pp-pause"><span class="material-symbols-outlined">pause</span>Pause</span>
+        <span class="sc-bganim-pp-play"><span class="material-symbols-outlined">play_arrow</span>Play</span>
+      </button>
+    </div>
     ${sw({ sc: 'activity-strip', icon: 'timeline', label: 'Activity strip', on: true, admin: true, pink: true, cls: 'sc-actstrip-item' })}
     <div class="sc-stream-detail sc-actside-detail" data-admin-item="1">
       <span class="sc-stream-detail-label">Strip side</span>
@@ -3118,7 +3126,7 @@ const COMPONENTS = [
     wide: true,
     cls: '.ws-scorecard · .ws-sc-action (+ --intro, --wiseai, locked)',
     used: 'WISEcodeAI welcome rail · Product Portfolio · Comparison — the large-format sibling of the 28px intent chips',
-    note: 'The large-format intent chip, not a scorecard: the whole card is one tap and the footer (<code>.ws-sc-action</code>) is the visible affordance. Same family as the 28px <code>.chip</code> above — one carries an eyebrow/metric and a CTA, the other is the in-conversation pill. Click-to-filter <em>Filter tiles</em>, dashboard <em>KPI</em> / <em>Claim</em> / <em>Action</em> cards, and <em>Compact metrics</em> are each their own component.',
+    note: 'The large-format intent chip, not a scorecard: the whole card is one tap and the footer (<code>.ws-sc-action</code>) is the visible affordance. Same family as the 28px <code>.chip</code> above — one carries an eyebrow/metric and a CTA, the other is the in-conversation pill. Click-to-filter <em>Filter tiles/scorecards</em>, dashboard <em>KPI</em> / <em>Claim</em> / <em>Action</em> cards, and <em>Compact metrics</em> are each their own component.',
     noteIcon: 'bolt',
     demo: `
       <div class="ws-scorecards" style="overflow:visible;padding:0;width:100%">
@@ -3364,8 +3372,8 @@ const COMPONENTS = [
     wide: true,
     cat: 'Chat & drawers',
     cls: '.panel-more-btn \u00b7 .topbar-popover.sc-menu-grouped \u00b7 .sc-menu-group \u00b7 .sc-mcp-item \u00b7 .sc-switch \u00b7 .sc-menu-admin-btn',
-    used: 'The three-dot on every chat module \u2014 Conversation, streaming, Close. Admin-badged rows stay off this specimen',
-    note: 'Same <code>.topbar-popover</code> shell, grouped the way the live chat does \u2014 one column hung from the kebab. This card is the <strong>member-facing</strong> menu: History, new, Export, Share, File to Library, Response streaming, and Close. Admin-badged rows (Turns, Hide outputs, Connect a data source, Overview cards, Intent chips, Compact spacing, Brand AI text, Input glow, Animation, Activity strip) are not part of this menu. They appear on the live chat when <em>Internal admins</em> is on in Appearance, or from the kebab in the menu\u2019s top-right, and Helix then sits in a second column beside the stack.',
+    used: 'The three-dot on every chat module \u2014 Conversation, Helix play/pause, streaming, Close. Admin-badged rows stay off this specimen',
+    note: 'Same <code>.topbar-popover</code> shell, grouped the way the live chat does \u2014 one column hung from the kebab. This card is the <strong>member-facing</strong> menu: History, new, Export, Share, File to Library, Helix play/pause, Response streaming, and Close. The nested Internal admins kebab is not part of this menu. Admin-badged rows (Turns, Hide outputs, Connect a data source, Overview cards, Intent chips, Compact spacing, Brand AI text, Input glow, Animation, Activity strip) appear on the live chat when <em>Internal admins</em> is on in Appearance, and the full Helix studio then sits in a second column beside the stack.',
     noteIcon: 'more_vert',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -4008,7 +4016,8 @@ const COMPONENTS = [
 
   /* ---- Score & metric cards — each shape is its own reusable part ---- */
   {
-    name: 'Filter tiles',
+    name: 'Filter tiles/scorecards',
+    aliases: ['Filter tiles'],
     wide: true,
     cls: '.adm-stat (+ .is-active, .adm-stat--green/--amber/--red) (= .pf-stat)',
     used: 'Organizations · User Management · Audit Queue · Portfolio (.pf-stats) · Conversation Library — click-to-filter row above every list',

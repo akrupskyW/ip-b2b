@@ -1947,15 +1947,16 @@ export function injectChatExtras() {
     .sc-bganim-dots-motion.is-disabled, .sc-bganim-spin.is-disabled, .sc-bganim-look.is-disabled { opacity: .45; pointer-events: none; }
 
     /* ── Grouped chat three-dot menu ─────────────────────────────────────────
-       Member-facing cards (Conversation, Activity, Close) stack in ONE column
-       so the menu hangs from the kebab instead of spanning two tracks.
-       Internal-admins on reveals Helix in a second column beside that stack;
-       applyChatMenuAdminGate() then re-pins the popover so its right edge
-       stays on the trigger. Width is max-content so hiding Admin-badged
-       groups (and their empty columns) shrinks the panel instead of leaving
-       blank tracks. Flex (not CSS column-width) keeps hit-testing honest.
-       groupifyChatMenu() reorganizes the flat rows into these cards and tags
-       the popover with .sc-menu-grouped. Scrolls if it would run off screen. */
+       Member-facing cards (Conversation, Helix play/pause, Activity, Close)
+       stack in ONE column so the menu hangs from the kebab instead of
+       spanning two tracks. Internal-admins on reveals the full Helix studio
+       in a second column beside that stack; applyChatMenuAdminGate() then
+       re-pins the popover so its right edge stays on the trigger. Width is
+       max-content so hiding Admin-badged groups (and their empty columns)
+       shrinks the panel instead of leaving blank tracks. Flex (not CSS
+       column-width) keeps hit-testing honest. groupifyChatMenu() reorganizes
+       the flat rows into these cards and tags the popover with
+       .sc-menu-grouped. Scrolls if it would run off screen. */
     .topbar-popover.sc-menu-grouped {
       width: max-content; min-width: 0; max-width: min(920px, calc(100vw - 16px));
       padding: 8px;
@@ -2301,11 +2302,17 @@ export function injectChatExtras() {
     .sc-helix-apply:disabled { cursor: default; pointer-events: none; }
 
     /* Nested Admin popover — a kebab in the grouped menu's top-right opens a
-       small card with the master "Admin controls" switch. Off hides every
-       Admin-badged row (and chrome that belongs to one) so the menu shows only
-       the real member-facing items. Trigger is a full circle, never a tile. */
+       small card with the master "Admin controls" switch. That kebab is
+       admin chrome: it hides with Internal admins, so the member-facing
+       menu never shows it. Off also hides every Admin-badged row (and chrome
+       that belongs to one) so the menu shows only member items plus Helix
+       play/pause. Trigger is a full circle, never a tile. */
     .topbar-popover.sc-menu-grouped { position: relative; }
     .sc-menu-admin-wrap { position: absolute; top: 4px; right: 4px; z-index: 3; }
+    .topbar-popover.sc-menu-admin-off .sc-menu-admin-wrap { display: none !important; }
+    .topbar-popover.sc-menu-admin-off.sc-menu-grouped > .sc-menu-col--trail > .sc-menu-group:first-child > .sc-menu-group-head {
+      padding-right: 12px;
+    }
     .sc-menu-admin-btn {
       display: inline-flex; align-items: center; justify-content: center;
       width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%;
@@ -2371,11 +2378,36 @@ export function injectChatExtras() {
     .topbar-popover.sc-menu-admin-off .sc-bganim-spin,
     .topbar-popover.sc-menu-admin-off .sc-bganim-look,
     .topbar-popover.sc-menu-admin-off .sc-bganim-snapshots,
-    .topbar-popover.sc-menu-admin-off .sc-bganim-playback,
     .topbar-popover.sc-menu-admin-off .sc-bganim-subhead,
-    .topbar-popover.sc-menu-admin-off .sc-bganim-cluster,
+    .topbar-popover.sc-menu-admin-off .sc-bganim-cluster:not(:has(.sc-bganim-playback)),
+    .topbar-popover.sc-menu-admin-off .sc-bganim-cluster > :not(.sc-bganim-playback),
     .topbar-popover.sc-menu-admin-off .sc-actside-detail,
     .topbar-popover.sc-menu-admin-off .topbar-menu-badge { display: none !important; }
+    /* Member-facing Helix card is play/pause only — sit it in the same
+       column as Conversation, drop the studio chrome, and let the row
+       read like the other member items. */
+    .topbar-popover.sc-menu-admin-off .sc-menu-group--helix { padding: 2px 0 6px; }
+    .topbar-popover.sc-menu-admin-off .sc-menu-group--helix > .sc-menu-group-head {
+      font-size: 11px; letter-spacing: 0.08em; padding: 8px 12px 4px;
+    }
+    .topbar-popover.sc-menu-admin-off .sc-helix-head-actions,
+    .topbar-popover.sc-menu-admin-off .sc-helix-drag,
+    .topbar-popover.sc-menu-admin-off .sc-helix-grabber-pill { display: none !important; }
+    .topbar-popover.sc-menu-admin-off .sc-menu-group--helix .sc-bganim-cluster:has(.sc-bganim-playback) {
+      display: block; margin: 0; padding: 0; border: 0; background: transparent;
+    }
+    .topbar-popover.sc-menu-admin-off .sc-menu-group--helix .sc-bganim-playback {
+      margin: 0 4px 6px; width: calc(100% - 8px); padding: 6px 7px;
+    }
+    .topbar-popover.sc-menu-admin-off .sc-menu-group--helix .sc-bganim-playback-label {
+      min-width: 0; font-size: 12px; letter-spacing: 0; text-transform: none; font-weight: 600;
+    }
+    .topbar-popover.sc-menu-admin-off .sc-menu-group--helix .sc-bganim-pp {
+      padding: 4px 11px; font-size: 11px;
+    }
+    .topbar-popover.sc-menu-admin-off .sc-menu-group--helix .sc-bganim-playback .sc-bganim-row-icon {
+      display: inline-flex;
+    }
     .topbar-popover.sc-menu-grouped .sc-menu-group.is-empty,
     .topbar-popover.sc-menu-grouped .sc-menu-col.is-empty { display: none !important; }
     .topbar-popover.sc-menu-grouped.sc-menu-one-col,
@@ -6556,10 +6588,11 @@ export function createOrbitBgAnim(cfg) {
 /* ------------------------------------------------------------------ */
 /* Reorganize a chat "More options" popover's flat row list into titled GROUP
    CARDS. Member-facing cards stack in one column so the menu hangs from the
-   kebab; Helix joins as a second column only when Internal admins is on.
-   It MOVES the existing row nodes (never re-creates them) so every wired
-   listener + captured reference stays valid, then tags the popover with
-   .sc-menu-grouped.
+   kebab; play/pause stays in that stack as the only non-admin Helix row.
+   The full Helix studio joins as a second column only when Internal admins
+   is on. It MOVES the existing row nodes (never re-creates them) so every
+   wired listener + captured reference stays valid, then tags the popover
+   with .sc-menu-grouped.
 
    Columns are REAL flex wrappers — not CSS `column-width`. Chromium's
    multi-column hit-testing often maps a click in a later column onto
@@ -6610,10 +6643,13 @@ function chatMenuGroupKey(el) {
 /* ── Chat ⋯ nested Admin popover ───────────────────────────────────────────
    A kebab in the grouped menu's top-right opens a small card with the same
    master "Admin controls" switch the Appearance popover uses (wise-admin-ui).
-   Off hides every Admin-badged row and the chrome that belongs to one, so the
-   menu shows only member-facing items. The live feature state of anything
-   already on is left alone, including the selected Roll · Crawl · Walk · Run
-   mode. Off Internal admins only hides the floating CWR widget. */
+   That kebab is itself admin chrome — it hides when Internal admins is off,
+   so the member-facing menu never offers a way to turn admin items on.
+   Off hides every Admin-badged row and the chrome that belongs to one, so
+   the menu shows only member-facing items plus Helix play/pause. The live
+   feature state of anything already on is left alone, including the selected
+   Roll · Crawl · Walk · Run mode. Off Internal admins only hides the
+   floating CWR widget. */
 const CHAT_ADMIN_UI_KEY = 'wise-admin-ui';
 function isChatAdminUiOn() {
   try { return localStorage.getItem(CHAT_ADMIN_UI_KEY) !== '0'; } catch (_) { return true; }
@@ -6675,13 +6711,39 @@ function closeChatMenuAdminPop(wrap) {
 function isChatMenuAdminGated(el) {
   if (!el || !el.classList) return false;
   if (el.classList.contains('topbar-menu-item--admin')) return true;
-  if (el.classList.contains('sc-bganim-detail') || el.classList.contains('sc-bganim-style') || el.classList.contains('sc-bganim-look') || el.classList.contains('sc-bganim-dots-motion') || el.classList.contains('sc-bganim-spin') || el.classList.contains('sc-bganim-playback') || el.classList.contains('sc-bganim-snapshots') || el.classList.contains('sc-bganim-subhead') || el.classList.contains('sc-bganim-cluster') || el.classList.contains('sc-actside-detail')) return true;
+  if (el.classList.contains('sc-bganim-playback')) return false;
+  if (el.classList.contains('sc-bganim-cluster')) {
+    try { if (el.querySelector('.sc-bganim-playback')) return false; } catch (_) {}
+    return true;
+  }
+  if (el.classList.contains('sc-bganim-detail') || el.classList.contains('sc-bganim-style') || el.classList.contains('sc-bganim-look') || el.classList.contains('sc-bganim-dots-motion') || el.classList.contains('sc-bganim-spin') || el.classList.contains('sc-bganim-snapshots') || el.classList.contains('sc-bganim-subhead') || el.classList.contains('sc-actside-detail')) return true;
   if (el.hasAttribute && el.hasAttribute('data-admin-item')) return true;
   try {
     if (el.classList.contains('topbar-menu-item') && el.querySelector('.topbar-menu-badge')) return true;
   } catch (_) {}
   return false;
 }
+/* When Internal admins is off, Helix is a slim play/pause card in the
+   member column (Conversation / Activity / Close). When it is on, the
+   full studio returns to the second column. Skip a group that has been
+   popped out into a floating Helix shell. */
+function placeHelixGroupForAdmin(pop, on) {
+  if (!pop || !pop.querySelector) return;
+  const group = pop.querySelector(':scope > .sc-menu-col .sc-menu-group--helix, :scope > .sc-menu-group--helix');
+  if (!group || group.closest('.sc-helix-float')) return;
+  const helixCol = pop.querySelector(':scope > .sc-menu-col--helix');
+  const col1 = pop.querySelector(':scope > .sc-menu-col:not(.sc-menu-col--helix)');
+  if (!helixCol || !col1) return;
+  if (on) {
+    if (group.parentElement !== helixCol) helixCol.appendChild(group);
+    return;
+  }
+  if (group.parentElement === col1) return;
+  const before = col1.querySelector('.sc-menu-group--motion, .sc-menu-group--more, .sc-menu-group--danger');
+  if (before) col1.insertBefore(group, before);
+  else col1.appendChild(group);
+}
+
 function applyChatMenuAdminGate(pop) {
   if (!pop) return;
   /* Catalog specimens can pin a state with data-admin-demo so All Modules
@@ -6690,7 +6752,9 @@ function applyChatMenuAdminGate(pop) {
   const lock = pop.getAttribute && pop.getAttribute('data-admin-demo');
   const on = lock === 'on' ? true : lock === 'off' ? false : isChatAdminUiOn();
   pop.classList.toggle('sc-menu-admin-off', !on);
+  placeHelixGroupForAdmin(pop, on);
   const wrap = pop.querySelector('.sc-menu-admin-wrap');
+  if (!on) closeChatMenuAdminPop(wrap);
   const btn = wrap && (wrap.__adminBtn || wrap.querySelector('.sc-menu-admin-btn'));
   if (btn) {
     btn.classList.toggle('is-admin-on', on);
