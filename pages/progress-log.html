@@ -675,6 +675,7 @@
       scriptPurpose, SYNOPSIS_LABELS, SYNOPSIS_ORDER, SYNOPSIS_SEP, collectLocalScriptPaths,
     } from '../js/progress-log-eval.js';
     import { PROGRESS_LOG_SEED } from '../js/progress-log-seed.js';
+    import { PROGRESS_LOG_GIT_DAYS } from '../js/progress-log-git-days.js';
     (function () {
       let chat = null;
       const esc = (s) => String(s).replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
@@ -2826,10 +2827,75 @@
         if (syn.length) entry.synopsis = syn;
         return entry;
       }
+      const GIT_DAY_INDEX = (() => {
+        const idx = Object.create(null);
+        Object.keys(PROGRESS_LOG_GIT_DAYS || {}).forEach((iso) => {
+          (PROGRESS_LOG_GIT_DAYS[iso] || []).forEach((f) => {
+            const base = String(f).split('/').pop();
+            const aliases = [
+              f,
+              f.replace(/^pages\//, ''),
+              '../' + f,
+              '../' + f.replace(/^pages\//, ''),
+              base,
+            ];
+            aliases.forEach((k) => { if (!idx[k] || iso > idx[k]) idx[k] = iso; });
+          });
+        });
+        return idx;
+      })();
+      function latestGitDay(path) {
+        if (!path) return '';
+        const raw = String(path);
+        const disp = displayPath(raw);
+        const base = raw.split('/').pop();
+        return GIT_DAY_INDEX[raw] || GIT_DAY_INDEX[disp] || GIT_DAY_INDEX[base]
+          || GIT_DAY_INDEX['pages/' + disp] || GIT_DAY_INDEX['js/' + disp] || '';
+      }
+      function crawlFpForGitPath(gitPath, pages) {
+        if (!pages || !gitPath) return null;
+        const base = gitPath.split('/').pop();
+        const cands = [
+          gitPath,
+          gitPath.replace(/^pages\//, ''),
+          '../' + gitPath,
+          '../' + gitPath.replace(/^pages\//, ''),
+          '../js/' + base,
+          base,
+        ];
+        for (let i = 0; i < cands.length; i++) {
+          if (pages[cands[i]]) return pages[cands[i]];
+        }
+        const keys = Object.keys(pages);
+        for (let i = 0; i < keys.length; i++) {
+          const k = keys[i];
+          if (k === gitPath || k.endsWith('/' + gitPath) || k.endsWith('/' + base) || k === base) return pages[k];
+        }
+        return null;
+      }
+      function backfillThinGitDays() {
+        const pages = (loadCrawlSnap() || {}).pages;
+        if (!pages) return;
+        const ctx = { scriptPurposes: purposesFromCrawl(Object.keys(pages).map((k) => pages[k])) };
+        Object.keys(PROGRESS_LOG_GIT_DAYS || {}).forEach((iso) => {
+          if (AUTHORED_DATES.has(iso)) return;
+          const files = PROGRESS_LOG_GIT_DAYS[iso] || [];
+          const have = (liveDays[iso] && liveDays[iso].entries && liveDays[iso].entries.length) || 0;
+          if (files.length <= have + 2) return;
+          const added = [];
+          files.forEach((gp) => {
+            const fp = crawlFpForGitPath(gp, pages);
+            if (fp && !fp.missing) added.push(fp);
+          });
+          if (added.length) writeLiveDay(iso, entriesFromBucket(added, [], ctx), added.length);
+        });
+        persistLiveDays();
+        persistNotes();
+      }
       function fileMtimeDay(fp) {
         const today = localDayIso();
-        if (!fp || !fp.mtime) return today;
-        const iso = localDayIso(new Date(fp.mtime));
+        const git = latestGitDay(fp && fp.path);
+        const iso = git || (fp && fp.mtime ? localDayIso(new Date(fp.mtime)) : today);
         if (iso > today) return today;
         const first = AUTHORED.length ? AUTHORED[AUTHORED.length - 1].date : today;
         if (first && iso < first) return first;
@@ -2848,15 +2914,25 @@
         next.sort(cmpEntryWeightFor(null));
         return next;
       }
+      function mergeDayEntries(prev, next) {
+        const by = new Map();
+        (prev || []).forEach((e) => { if (e) by.set(e.path || e.page, e); });
+        (next || []).forEach((e) => {
+          if (!e) return;
+          const k = e.path || e.page;
+          if (!by.has(k)) by.set(k, e);
+        });
+        return [...by.values()].sort(cmpEntryWeightFor(null));
+      }
       function writeLiveDay(iso, entries, htmlCount) {
         if (AUTHORED_DATES.has(iso)) return false;
         const today = localDayIso();
         if (iso !== today && !entries.length) return false;
-        const prevN = (liveDays[iso] && liveDays[iso].entries && liveDays[iso].entries.length) || 0;
-        if (entries.length < prevN) return false;
         if (!liveDays[iso]) liveDays[iso] = emptyLiveDay(iso);
         const day = liveDays[iso];
-        day.entries = entries;
+        const merged = mergeDayEntries(day.entries, entries);
+        if (!merged.length && iso !== today) return false;
+        day.entries = merged;
         day.summary = liveDaySummary(day, htmlCount);
         day.live = true;
         day.gap = false;
@@ -3574,6 +3650,8 @@
       syncBoardLog();
       dropJournalNotes();
       lastCrawlAt = (loadCrawlSnap() || {}).at || 0;
+      backfillThinGitDays();
+      syncBoardLog();
       if (shouldEvaluateAll()) evaluateAllPages({ scroll: false });
       else { reevaluate(); updateEvalMeta(); }
       startHourlyPoll();

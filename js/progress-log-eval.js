@@ -257,6 +257,7 @@ export const SCRIPT_PURPOSES = {
   'user-avatar.js': 'the photo you set on your profile shows in the navigation and in every chat as you',
   'teams-flow.js': 'the people on your brand — who has a seat, who is invited, and who can change a role',
   'progress-log-seed.js': 'the shared Progress Log board — the days, notes, and last crawl so every origin opens the same journal',
+  'progress-log-git-days.js': 'which files were saved on which day, so the Progress Log can put work on the day it happened instead of the day it was deployed',
 };
 
 /* The first real sentence of a script's own header comment — the file's
