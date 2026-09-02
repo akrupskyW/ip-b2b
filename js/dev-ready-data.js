@@ -4,7 +4,6 @@
  * / Ubuntu pull ships the same greens.
  */
 export const DEV_READY_SEED = {
-  "Action scorecards": true,
   "Activity strip": true,
   "App search": true,
   "Attachments": true,
@@ -13,11 +12,10 @@ export const DEV_READY_SEED = {
   "Charts & graphs": true,
   "Chat composer": true,
   "Chat ⋯ menu": true,
-  "Claim scorecards": true,
+  "Dashboard scores": true,
   "Data table": true,
   "Database roster": true,
   "Empty states": true,
-  "Filter tiles/scorecards": true,
   "Filter toolbar": true,
   "Form fields": true,
   "History": true,
@@ -33,6 +31,7 @@ export const DEV_READY_SEED = {
   "Report posters": true,
   "Row action menu": true,
   "Segmented control": true,
+  "Stat tiles": true,
   "Status chips": true,
   "Sticky modules": true,
   "Switch": true,

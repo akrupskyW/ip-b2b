@@ -1813,11 +1813,8 @@ const CAT_BY_NAME = {
   'Library folders': 'Library & reports',
   'Report builder': 'Library & reports',
   'Report posters': 'Library & reports',
-  'Filter tiles/scorecards': 'Filters',
-  'Action scorecards': 'Tables & data',
-  'Compact metrics': 'Tables & data',
-  'KPI scorecards': 'Tables & data',
-  'Claim scorecards': 'Tables & data',
+  'Stat tiles': 'Filters',
+  'Dashboard scores': 'Tables & data',
   'Filter toolbar': 'Filters',
   'Menu popover': 'Overlays',
   'Row action menu': 'Overlays',
@@ -3126,7 +3123,7 @@ const COMPONENTS = [
     wide: true,
     cls: '.ws-scorecard · .ws-sc-action (+ --intro, --wiseai, locked)',
     used: 'WISEcodeAI welcome rail · Product Portfolio · Comparison — the large-format sibling of the 28px intent chips',
-    note: 'The large-format intent chip, not a scorecard: the whole card is one tap and the footer (<code>.ws-sc-action</code>) is the visible affordance. Same family as the 28px <code>.chip</code> above — one carries an eyebrow/metric and a CTA, the other is the in-conversation pill. Click-to-filter <em>Filter tiles/scorecards</em>, dashboard <em>KPI</em> / <em>Claim</em> / <em>Action</em> cards, and <em>Compact metrics</em> are each their own component.',
+    note: 'The large-format intent chip, not a scorecard: the whole card is one tap and the footer (<code>.ws-sc-action</code>) is the visible affordance. Same family as the 28px <code>.chip</code> above — one carries an eyebrow/metric and a CTA, the other is the in-conversation pill. Click-to-filter and dashboard numbers live on <em>Stat tiles</em> and <em>Dashboard scores</em>.',
     noteIcon: 'bolt',
     demo: `
       <div class="ws-scorecards" style="overflow:visible;padding:0;width:100%">
@@ -4014,157 +4011,144 @@ const COMPONENTS = [
     demo: demoFilterToolbar(),
   },
 
-  /* ---- Score & metric cards — each shape is its own reusable part ---- */
+  /* ---- Score & metric cards — two families: stat tiles and dashboard scores ---- */
   {
-    name: 'Filter tiles/scorecards',
-    aliases: ['Filter tiles'],
+    name: 'Stat tiles',
+    aliases: ['Filter tiles', 'Filter tiles/scorecards', 'Action scorecards', 'Compact metrics'],
     wide: true,
-    cls: '.adm-stat (+ .is-active, .adm-stat--green/--amber/--red) (= .pf-stat)',
-    used: 'Organizations · User Management · Audit Queue · Portfolio (.pf-stats) · Conversation Library — click-to-filter row above every list',
-    note: 'Click-to-filter tiles that sit above tables and scope the list. <code>.is-active</code> is the selected/open state; Hover lifts the card. These are not KPI displays — tapping one filters. No eyebrows.',
+    cls: '.adm-stat (+ .is-active, .adm-stat--green/--amber/--red) (= .pf-stat) · .adm-vf-stat · .adm-metric',
+    used: 'Organizations · User Management · Audit Queue · Teams · Quick Invite · Portfolio (.pf-stats) · Conversation Library · Non-UPF Dashboard — click-to-filter, action, and compact rows above lists',
+    note: 'One tile, three states. <strong>Filter</strong> sits above a table and scopes the list — <code>.is-active</code> is selected; hover lifts the card. <strong>Action</strong> is the same card with a status chip, a caption, and an optional ghost button. <strong>Compact</strong> is the denser read-only row. No eyebrows. Reuses <em>Status chips</em> and <em>Admin buttons</em> on the action state — those stay separate catalog entries.',
     noteIcon: 'filter_alt',
     demo: `
-      <div class="dsc-states" style="width:100%">
-        <div class="dsc-state-col" style="flex:1 1 100%">
-          <div class="dsc-sub-label">Default · Hover · Open (selected)</div>
-          <div class="adm-stats" style="width:100%">
-            <button type="button" class="adm-stat">
-              <span class="adm-stat-num">128</span>
-              <span class="adm-stat-label"><span class="material-symbols-outlined">apps</span>All</span>
-            </button>
-            <button type="button" class="adm-stat adm-stat--green is-hover">
-              <span class="adm-stat-num">62</span>
-              <span class="adm-stat-label"><span class="material-symbols-outlined">verified</span>Verified</span>
-            </button>
-            <button type="button" class="adm-stat adm-stat--amber is-active">
-              <span class="adm-stat-num">41</span>
-              <span class="adm-stat-label"><span class="material-symbols-outlined">pending</span>Pending</span>
-            </button>
-            <button type="button" class="adm-stat adm-stat--red">
-              <span class="adm-stat-num">25</span>
-              <span class="adm-stat-label"><span class="material-symbols-outlined">error</span>At risk</span>
-            </button>
+      <div class="dsc-sub" style="width:100%">
+        <div class="dsc-sub-label">Filter</div>
+        <div class="dsc-states" style="width:100%">
+          <div class="dsc-state-col" style="flex:1 1 100%">
+            <div class="dsc-sub-label">Default · Hover · Open (selected)</div>
+            <div class="adm-stats" style="width:100%">
+              <button type="button" class="adm-stat">
+                <span class="adm-stat-num">128</span>
+                <span class="adm-stat-label"><span class="material-symbols-outlined">apps</span>All</span>
+              </button>
+              <button type="button" class="adm-stat adm-stat--green is-hover">
+                <span class="adm-stat-num">62</span>
+                <span class="adm-stat-label"><span class="material-symbols-outlined">verified</span>Verified</span>
+              </button>
+              <button type="button" class="adm-stat adm-stat--amber is-active">
+                <span class="adm-stat-num">41</span>
+                <span class="adm-stat-label"><span class="material-symbols-outlined">pending</span>Pending</span>
+              </button>
+              <button type="button" class="adm-stat adm-stat--red">
+                <span class="adm-stat-num">25</span>
+                <span class="adm-stat-label"><span class="material-symbols-outlined">error</span>At risk</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="dsc-sub" style="width:100%;margin-top:8px">
+        <div class="dsc-sub-label">Action</div>
+        <div class="adm-vf-stats" style="width:100%">
+          <div class="adm-vf-stat is-active" role="button" tabindex="0">
+            <span class="adm-vf-stat-num">90</span>
+            <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--blue"><span class="material-symbols-outlined">inventory_2</span>Products</span></span>
+            <span class="adm-vf-stat-sub">Items in Registry</span>
+          </div>
+          <div class="adm-vf-stat adm-stat--red is-hover" role="button" tabindex="0">
+            <span class="adm-vf-stat-num">10</span>
+            <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--red"><span class="material-symbols-outlined">warning</span>Action Required</span></span>
+            <span class="adm-vf-stat-sub">Missing mandatory data</span>
+            <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm">Edit</button>
+          </div>
+          <div class="adm-vf-stat adm-stat--blue" role="button" tabindex="0">
+            <span class="adm-vf-stat-num">19</span>
+            <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--blue"><span class="material-symbols-outlined">fact_check</span>Pending Attestation</span></span>
+            <span class="adm-vf-stat-sub">Selected products need review and attestation</span>
+            <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm">Attest</button>
+          </div>
+          <div class="adm-vf-stat adm-stat--green" role="button" tabindex="0">
+            <span class="adm-vf-stat-num">8</span>
+            <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--green"><span class="material-symbols-outlined">verified</span>Verified</span></span>
+            <span class="adm-vf-stat-sub">Fully verified (shield verification)</span>
+          </div>
+        </div>
+      </div>
+      <div class="dsc-sub" style="width:100%;margin-top:8px">
+        <div class="dsc-sub-label">Compact</div>
+        <div class="adm-metrics" style="width:100%">
+          <div class="adm-metric adm-metric--accent">
+            <span class="adm-metric-top"><span class="material-symbols-outlined">verified</span>Verified</span>
+            <span class="adm-metric-num">62</span>
+            <span class="adm-metric-sub">Ready to publish</span>
+          </div>
+          <div class="adm-metric">
+            <span class="adm-metric-top"><span class="material-symbols-outlined">pending</span>Pending</span>
+            <span class="adm-metric-num">41</span>
+            <span class="adm-metric-sub">Awaiting review</span>
+          </div>
+          <div class="adm-metric">
+            <span class="adm-metric-top"><span class="material-symbols-outlined">error</span>At risk</span>
+            <span class="adm-metric-num">25</span>
+            <span class="adm-metric-sub">Needs a fix</span>
           </div>
         </div>
       </div>`,
   },
   {
-    name: 'Action scorecards',
-    ai: false,
+    name: 'Dashboard scores',
+    aliases: ['KPI scorecards', 'Claim scorecards'],
     wide: true,
-    cls: '.adm-vf-stat (+ .is-active, .adm-stat--*) · .adm-chip · .adm-btn',
-    used: 'Non-UPF Dashboard — status chip + caption + optional ghost action pinned to the bottom',
-    note: 'Dashboard action cards, not filter tiles. Each carries a big numeral, a status chip, a caption, and optionally a ghost button. <code>.is-active</code> marks the focused card. Reuses <em>Status chips</em> and <em>Admin buttons</em> — those stay separate catalog entries.',
-    noteIcon: 'bolt',
-    demo: `
-      <div class="adm-vf-stats" style="width:100%">
-        <div class="adm-vf-stat is-active" role="button" tabindex="0">
-          <span class="adm-vf-stat-num">90</span>
-          <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--blue"><span class="material-symbols-outlined">inventory_2</span>Products</span></span>
-          <span class="adm-vf-stat-sub">Items in Registry</span>
-        </div>
-        <div class="adm-vf-stat adm-stat--red is-hover" role="button" tabindex="0">
-          <span class="adm-vf-stat-num">10</span>
-          <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--red"><span class="material-symbols-outlined">warning</span>Action Required</span></span>
-          <span class="adm-vf-stat-sub">Missing mandatory data</span>
-          <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm">Edit</button>
-        </div>
-        <div class="adm-vf-stat adm-stat--blue" role="button" tabindex="0">
-          <span class="adm-vf-stat-num">19</span>
-          <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--blue"><span class="material-symbols-outlined">fact_check</span>Pending Attestation</span></span>
-          <span class="adm-vf-stat-sub">Selected products need review and attestation</span>
-          <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm">Attest</button>
-        </div>
-        <div class="adm-vf-stat adm-stat--green" role="button" tabindex="0">
-          <span class="adm-vf-stat-num">8</span>
-          <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--green"><span class="material-symbols-outlined">verified</span>Verified</span></span>
-          <span class="adm-vf-stat-sub">Fully verified (shield verification)</span>
-        </div>
-      </div>`,
-  },
-  {
-    name: 'Compact metrics',
-    ai: false,
-    cls: '.adm-metric (+ .adm-metric--accent)',
-    used: 'Admin utils · denser at-a-glance rows where a full filter tile is too heavy',
-    note: 'Read-only metric strip — icon + label, numeral, caption. Not clickable and not a filter. Accent marks the primary figure in the row.',
-    noteIcon: 'speed',
-    demo: `
-      <div class="adm-metrics" style="width:100%">
-        <div class="adm-metric adm-metric--accent">
-          <span class="adm-metric-top"><span class="material-symbols-outlined">verified</span>Verified</span>
-          <span class="adm-metric-num">62</span>
-          <span class="adm-metric-sub">Ready to publish</span>
-        </div>
-        <div class="adm-metric">
-          <span class="adm-metric-top"><span class="material-symbols-outlined">pending</span>Pending</span>
-          <span class="adm-metric-num">41</span>
-          <span class="adm-metric-sub">Awaiting review</span>
-        </div>
-        <div class="adm-metric">
-          <span class="adm-metric-top"><span class="material-symbols-outlined">error</span>At risk</span>
-          <span class="adm-metric-num">25</span>
-          <span class="adm-metric-sub">Needs a fix</span>
-        </div>
-      </div>`,
-  },
-  {
-    name: 'KPI scorecards',
-    ai: false,
-    wide: true,
-    cls: '.dash-score-card · .dash-score-num · .dash-badge · .dash-score-note',
-    used: 'Analytics Types · Overview · Non-UPF Dashboard — the dashboard score band',
-    note: 'Dashboard KPI cards: big numeral, status badge, short note. Display-only — no filter, no CTA button. No eyebrows. Count-up animates the numeral on load.',
+    cls: '.dash-score-card · .dash-score-num · .dash-badge · .dash-score-note · .dash-claim · .dash-claim-col · .dash-bignum · .dash-stamp-icon · .dash-btn-row',
+    used: 'Overview · Analytics Types · Add Product · View Product — the dashboard score band',
+    note: 'One score, two layouts. <strong>Card</strong> is the display-only KPI: big numeral, status badge, short note, count-up on load. <strong>Band</strong> is the multi-column claim row: huge numeral, caption, stamp icon, and a button row. Reuses <em>Buttons</em> for the CTA — that stays a separate component. No eyebrows.',
     noteIcon: 'monitoring',
     demo: `
-      <div class="dash-score-band">
-        <article class="dash-card dash-score-card">
-          <div class="dash-score-top">
-            <div class="dash-score-num"><span class="n">62<span class="dash-pct">%</span></span><span class="d">Non-UPF</span></div>
+      <div class="dsc-sub" style="width:100%">
+        <div class="dsc-sub-label">Card</div>
+        <div class="dash-score-band">
+          <article class="dash-card dash-score-card">
+            <div class="dash-score-top">
+              <div class="dash-score-num"><span class="n">62<span class="dash-pct">%</span></span><span class="d">Non-UPF</span></div>
+            </div>
+            <span class="dash-badge dash-badge--good"><span class="material-symbols-outlined" style="font-size:13px;">check</span>Good</span>
+            <p class="dash-score-note"><strong>9 of 12</strong> analyzed products are Non&#8209;UPF.</p>
+          </article>
+          <article class="dash-card dash-score-card">
+            <div class="dash-score-top">
+              <div class="dash-score-num"><span class="n">79</span><span class="d">/100</span></div>
+            </div>
+            <span class="dash-badge dash-badge--good"><span class="material-symbols-outlined" style="font-size:13px;">check</span>Good</span>
+            <p class="dash-score-note">Average WISEscore&#8482; across all <strong>discovered products</strong></p>
+          </article>
+        </div>
+      </div>
+      <div class="dsc-sub" style="width:100%;margin-top:8px">
+        <div class="dsc-sub-label">Band</div>
+        <section class="dash-claim dsc-claim-demo">
+          <div class="dash-claim-col">
+            <div class="dash-bignum-row">
+              <span class="dash-bignum">47</span>
+              <span class="dash-bignum-cap"><strong>Products Discovered</strong><br>across retail &amp; distribution</span>
+              <span class="dash-stamp-icon" aria-hidden="true"><span class="material-symbols-outlined">search</span></span>
+            </div>
+            <div class="dash-btn-row">
+              <button class="dash-btn dash-btn--ghost" type="button"><span class="material-symbols-outlined">verified_user</span>Claim your products</button>
+            </div>
           </div>
-          <span class="dash-badge dash-badge--good"><span class="material-symbols-outlined" style="font-size:13px;">check</span>Good</span>
-          <p class="dash-score-note"><strong>9 of 12</strong> analyzed products are Non&#8209;UPF.</p>
-        </article>
-        <article class="dash-card dash-score-card">
-          <div class="dash-score-top">
-            <div class="dash-score-num"><span class="n">79</span><span class="d">/100</span></div>
+          <div class="dash-claim-divider"></div>
+          <div class="dash-claim-col">
+            <div class="dash-bignum-row">
+              <span class="dash-bignum">9</span>
+              <span class="dash-bignum-cap"><strong>Products Qualify</strong><br>for Non&#8209;UPF verification shield</span>
+              <span class="dash-stamp-icon" aria-hidden="true"><span class="material-symbols-outlined">verified</span></span>
+            </div>
+            <div class="dash-btn-row">
+              <button class="dash-btn dash-btn--primary" type="button"><span class="material-symbols-outlined">verified</span>Start Non&#8209;UPF Verification</button>
+            </div>
           </div>
-          <span class="dash-badge dash-badge--good"><span class="material-symbols-outlined" style="font-size:13px;">check</span>Good</span>
-          <p class="dash-score-note">Average WISEscore&#8482; across all <strong>discovered products</strong></p>
-        </article>
+        </section>
       </div>`,
-  },
-  {
-    name: 'Claim scorecards',
-    wide: true,
-    cls: '.dash-claim · .dash-claim-col · .dash-bignum · .dash-stamp-icon · .dash-btn-row',
-    used: 'Overview · Analytics Types — big-numeral discovery row with a CTA underneath',
-    note: 'Two-column claim band: big numeral + caption, then a button row. The faint inset disc at the far right of each score is the same stamped icon Overview uses. Reuses <em>Buttons</em> for the CTA — that stays a separate component. Distinct from KPI cards (no CTA) and filter tiles (no filter).',
-    noteIcon: 'featured_play_list',
-    demo: `
-      <section class="dash-claim dsc-claim-demo">
-        <div class="dash-claim-col">
-          <div class="dash-bignum-row">
-            <span class="dash-bignum">47</span>
-            <span class="dash-bignum-cap"><strong>Products Discovered</strong><br>across retail &amp; distribution</span>
-            <span class="dash-stamp-icon" aria-hidden="true"><span class="material-symbols-outlined">search</span></span>
-          </div>
-          <div class="dash-btn-row">
-            <button class="dash-btn dash-btn--ghost" type="button"><span class="material-symbols-outlined">verified_user</span>Claim your products</button>
-          </div>
-        </div>
-        <div class="dash-claim-divider"></div>
-        <div class="dash-claim-col">
-          <div class="dash-bignum-row">
-            <span class="dash-bignum">9</span>
-            <span class="dash-bignum-cap"><strong>Products Qualify</strong><br>for Non&#8209;UPF verification shield</span>
-            <span class="dash-stamp-icon" aria-hidden="true"><span class="material-symbols-outlined">verified</span></span>
-          </div>
-          <div class="dash-btn-row">
-            <button class="dash-btn dash-btn--primary" type="button"><span class="material-symbols-outlined">verified</span>Start Non&#8209;UPF Verification</button>
-          </div>
-        </div>
-      </section>`,
   },
 
   /* ---- Charts & graphs — live thumbs from the shared catalog -------- */
@@ -4677,7 +4661,7 @@ function compSignature(c) {
 function demoHasSignature(demo, sig) {
   if (!sig) return false;
   /* Require the base class token itself. A shared modifier like
-     adm-stat--red on .adm-vf-stat must not count as "made of Filter tiles". */
+     adm-stat--red on .adm-vf-stat must not count as "made of Stat tiles". */
   return classesInHtml(demo).has(sig);
 }
 
@@ -4825,7 +4809,7 @@ const USED_HREF_RULES = [
   { re: /add catalog/, hrefs: ['add-catalog.html'] },
   { re: /add product/, hrefs: ['add-product.html'] },
   { re: /quick invite/, hrefs: ['quick-invite.html'] },
-  { re: /\bteams\.html\b|\bteam module\b/, hrefs: ['teams.html'] },
+  { re: /\bteams\.html\b|\bteam module\b|\bteams\b/, hrefs: ['teams.html'] },
   { re: /user management/, hrefs: ['user-management.html'] },
   { re: /audit queue/, hrefs: ['audit-queue.html'] },
   { re: /admin utils/, hrefs: ['admin-utils.html'] },
@@ -14388,11 +14372,16 @@ function wireDevReady(root) {
   });
 }
 
+function compByNameOrAlias(name) {
+  return COMPONENTS.find((c) => c.name === name || (c.aliases || []).includes(name));
+}
+
 async function jumpToComponent(root, name) {
   await expandAccordionSection(root, 'mi-components');
   if (typeof dscRevealAll === 'function') dscRevealAll();
+  const resolved = (compByNameOrAlias(name) || {}).name || name;
   const card = Array.from(root.querySelectorAll('[data-ds-comp]'))
-    .find((el) => el.dataset.compName === name);
+    .find((el) => el.dataset.compName === resolved);
   if (!card) return;
   if (card.classList.contains('is-locked')) {
     card.classList.remove('is-flash');

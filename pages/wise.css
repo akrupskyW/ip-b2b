@@ -18263,6 +18263,7 @@ html.dark .dsc-demo .lir-btn.is-open { color: var(--primary-bright, #93C5FD); }
 /* Score & metric cards: live grids squash a demo, so the stage uses auto-fit.
    Claim demo is two columns. */
 .dsc-demo .adm-vf-stats { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.dsc-demo .adm-metrics { width: 100%; }
 .dsc-demo .dash-score-band { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); width: 100%; }
 .dsc-demo .dsc-claim-demo {
   grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
@@ -18298,11 +18299,9 @@ html.dark .dsc-theme-light .dash-stamp-icon:not(.dash-stamp-num) {
 html.dark .dsc-theme-light .dash-stamp-icon:not(.dash-stamp-num) .material-symbols-outlined {
   text-shadow: none;
 }
-.dsc-card[data-comp-name="Filter tiles/scorecards"] .dsc-demo,
+.dsc-card[data-comp-name="Stat tiles"] .dsc-demo,
 .dsc-card[data-comp-name="App search"] .dsc-demo,
-.dsc-card[data-comp-name="Action scorecards"] .dsc-demo,
-.dsc-card[data-comp-name="KPI scorecards"] .dsc-demo,
-.dsc-card[data-comp-name="Claim scorecards"] .dsc-demo,
+.dsc-card[data-comp-name="Dashboard scores"] .dsc-demo,
 .dsc-card[data-comp-name="Buttons"] .dsc-demo,
 .dsc-card[data-comp-name="Admin buttons"] .dsc-demo,
 .dsc-card[data-comp-name="Intent chips"] .dsc-demo,
