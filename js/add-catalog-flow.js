@@ -212,7 +212,10 @@
     if (force || target > messagesEl.scrollTop) messagesEl.scrollTop = target;
     messagesEl.__followPos = messagesEl.scrollTop;
   }
-  function hideWelcome() { if (welcomeEl) welcomeEl.classList.add('sc-hidden'); }
+  function hideWelcome() {
+    try { document.dispatchEvent(new CustomEvent('wise:chat-engage')); } catch (_) {}
+    if (welcomeEl) welcomeEl.classList.add('sc-hidden');
+  }
 
   const prefersReducedMotion = (() => {
     try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }

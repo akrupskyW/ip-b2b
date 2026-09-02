@@ -7,9 +7,9 @@
    (pane-* classes), the product utility panels (panel-* classes, flipped into
    #panels-row-right), the reformulation studio (rf-* cards), etc. Rather than
    teach every page a new default, this file expresses the rule ONCE against the
-   one thing they all share: the canonical five-tier width control
+   one thing they all share: the canonical four-tier width control
    (.panel-width-toggle-btn) whose per-tier title text is identical everywhere
-   ("Width (single|double|triple|fill|custom) — …" — see pane-width.js).
+   ("Width (single|double|fill|custom) — …" — see pane-width.js).
 
    How: for each module positioned to the right of the chat, we drive that
    module's OWN width toggle (by clicking it) up to the fill tier. Going through
@@ -31,10 +31,10 @@
 
   /* The button's title is the one truly universal signal of a module's current
      tier — every page's width control renders the same "Width (single|double|
-     triple|fill|custom) — …" text (pane-width.js). Title first; the icon map
-     is a fallback. Single, fill, and custom each have their own glyph;
-     double and triple still share `width_wide`. */
-  var TITLE_TIER = { single: 0, double: 1, triple: 2, fill: 3, custom: 4 };
+     fill|custom) — …" text (pane-width.js). Title first; the icon map
+     is a fallback. Triple is gone from the cycle; a leftover "(triple)" title
+     reads as double. */
+  var TITLE_TIER = { single: 0, double: 1, triple: 1, fill: 3, custom: 4 };
   var ICON_TIER = { width_normal: 0, width_wide: 1, width_full: 3, fit_width: 4 };
 
   /* ── element helpers ──────────────────────────────────────────────────── */
@@ -102,8 +102,16 @@
   }
 
   /* ── the rule ─────────────────────────────────────────────────────────── */
+  function isClosed(el) {
+    if (!el || !document.body.contains(el)) return true;
+    if (el.hasAttribute('hidden')) return true;
+    var cs = getComputedStyle(el);
+    return cs.display === 'none';
+  }
+
   function apply(row) {
     if (!document.body.contains(row)) return;
+    if (window.WPaneWidth && window.WPaneWidth.isMeasuring && window.WPaneWidth.isMeasuring()) return;
     if (window.innerWidth <= STACK_BP) return;
     var cs = getComputedStyle(row);
     var horizontal = cs.display.indexOf('flex') >= 0 && cs.flexDirection.indexOf('row') === 0;
@@ -128,6 +136,7 @@
          right of Output, not a second fill column. */
       if (root.id === 'wa-report' || root.hasAttribute('data-no-fill-default')) continue;
       if (!isVisible(root) || !isRightOfChat(root)) continue;
+      if (root.getAttribute('data-width-user-set') === '1') continue; // user owns this module
       if (root.dataset.fillDefaulted) continue;    // already defaulted this open
       // Mark before clicking so the mutations our click triggers don't re-enter.
       root.dataset.fillDefaulted = '1';
@@ -140,12 +149,14 @@
       if (tries < 6) delete root.dataset.fillDefaulted;   // keep flag once capped
     }
 
-    // Release the flag once a module leaves the right side (closed, hidden, or
-    // flipped left) so a fresh open re-applies the fill default.
+    // Release the flag only when the module is actually closed/hidden — never
+    // because a neighbour resized, a measure pass flickered isRightOfChat, or
+    // the window changed size. Those used to re-drive a user-set module to fill.
     var flagged = row.querySelectorAll('[data-fill-defaulted]');
     for (var j = 0; j < flagged.length; j++) {
       var el = flagged[j];
-      if (!isVisible(el) || !isRightOfChat(el)) {
+      if (el.getAttribute('data-width-user-set') === '1') continue;
+      if (isClosed(el)) {
         delete el.dataset.fillDefaulted;
         delete el.dataset.fillAttempts;
       }

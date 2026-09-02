@@ -275,10 +275,10 @@
       display: inline-flex; align-items: center; justify-content: center; gap: 5px;
       height: 30px; padding: 0 13px; border-radius: 9999px; cursor: pointer; white-space: nowrap;
       font-family: inherit; font-weight: 700; font-size: 11px; text-decoration: none;
-      border: 1px solid var(--border-strong); background: transparent; color: var(--text);
+      border: 1px solid var(--primary); background: transparent; color: var(--text);
       transition: background .15s ease, color .15s ease, border-color .15s ease;
     }
-    html.dark .gs-cta { border-color: var(--border-strong); background: transparent; color: var(--text); }
+    html.dark .gs-cta { border-color: var(--primary); background: transparent; color: var(--text); }
     .gs-cta:hover { background: var(--primary-soft); color: var(--primary-ink, var(--primary)); border-color: var(--primary); }
     .gs-cta .material-symbols-outlined { font-size: 14px; }
     .gs-cta--ghost { background: transparent; color: var(--text-muted); }
@@ -692,7 +692,17 @@
        other chat surface.) Lives HERE in the module script because the import
        only exists in module scope — calling it from the classic chat script
        below threw a ReferenceError and killed the whole wiring block. */
-    window.__wiseStdMenu = wireStandardChatMenu({ pop: document.getElementById('gs-chat-menu') });
+    window.__wiseStdMenu = wireStandardChatMenu({
+      pop: document.getElementById('gs-chat-menu'),
+      bgAnim: {
+        host: document.getElementById('gs-chat'),
+        getBody: () => document.getElementById('gs-chat'),
+        isWide: () => {
+          const c = document.getElementById('gs-chat');
+          return !!(c && (c.classList.contains('panel-triple') || c.classList.contains('panel-fill')));
+        },
+      },
+    });
 
     /* Activity strip — mount the landmark rail on this page's chat and wire
        the three-dot switch to the shared app-wide preference, exactly like

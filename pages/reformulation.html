@@ -250,8 +250,8 @@
        white in light (not the cream sticky fill); dark keeps --surface. */
     #modules-row:not(.is-picking) .rf-dash.sticky-mod.is-sticky {
       z-index: 0;
-      height: calc(100% - 60px);
-      max-height: calc(100% - 60px);
+      height: calc(100% - 30px);
+      max-height: calc(100% - 30px);
       align-self: center;
       background: var(--surface);
     }
@@ -259,22 +259,22 @@
       padding-top: 22px;
       padding-bottom: 32px;
     }
-    /* Report is the tertiary drawer: one more step shorter than the dashboard
-       so the three cards read as stacked layers (studio 30 → dash 60 →
-       report 90). Paper white, tucked under the dashboard's right edge. */
+    /* Report is the tertiary drawer. Same 15px inset as studio and dash —
+       not a shorter nested height. Deeper tuck lives in wise.css
+       (--sticky-nested-tuck). Paper white, tucked under the dashboard. */
     #modules-row #rf-report.sticky-mod.is-sticky {
       z-index: 0;
       background: var(--surface);
     }
     #modules-row:not(.is-picking) #rf-report.sticky-mod.is-sticky.is-open {
-      height: calc(100% - 90px);
-      max-height: calc(100% - 90px);
+      height: calc(100% - 30px);
+      max-height: calc(100% - 30px);
       align-self: center;
     }
     /* Overview (no studio): report is the second drawer under the picker. */
     #modules-row.is-picking #rf-report.sticky-mod.is-sticky.is-open {
-      height: calc(100% - 60px);
-      max-height: calc(100% - 60px);
+      height: calc(100% - 30px);
+      max-height: calc(100% - 30px);
       align-self: center;
     }
     #modules-row:has(#rf-report.is-open) .rf-dash.sticky-mod.is-sticky {
@@ -1048,10 +1048,10 @@
       display: inline-flex; align-items: center; justify-content: center; gap: 4px;
       height: 28px; padding: 0 12px; border-radius: 9999px; cursor: pointer;
       font-family: inherit; font-weight: 700; font-size: 11px; white-space: nowrap;
-      border: 1px solid var(--border-strong); background: transparent; color: var(--text);
+      border: 1px solid var(--primary); background: transparent; color: var(--text);
       transition: background .16s, color .16s, border-color .16s;
     }
-    html.dark .rf-reformulate { border-color: var(--border-strong); background: transparent; color: var(--text); }
+    html.dark .rf-reformulate { border-color: var(--primary); background: transparent; color: var(--text); }
     .rf-reformulate:hover { background: var(--primary-soft); color: var(--primary-ink, var(--primary)); border-color: var(--primary); }
     html.dark .rf-reformulate:hover { background: var(--primary-soft); color: var(--primary-ink, var(--primary)); border-color: var(--primary); }
     .rf-reformulate .material-symbols-outlined { font-size: 14px; }

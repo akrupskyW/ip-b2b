@@ -10,15 +10,15 @@
      grows/shrinks to match the direction you drag.
    • THE PRESET RULE: any module that carries the canonical width changer
      (.panel-width-toggle-btn — the width icon in the module's top-right)
-     and is sitting at one of the four PRESET widths (single, double, triple,
-     fill) may only REST at one of those four. A drag on such a module is a
-     live preview only; on release it SNAPS to whichever of those four is
+     and is sitting at one of the three PRESET widths (single, double, fill)
+     may only REST at one of those three. A drag on such a module is a
+     live preview only; on release it SNAPS to whichever of those three is
      closest to the dragged width. The width changer is then walked from its
      CURRENT tier to the snapped one (zero clicks when they already match).
      Dragged pixel widths are never saved for preset tiers, and a click on
      the width icon always releases any leftover drag pin so the changer
-     stays in charge.
-   • CUSTOM (the fifth width setting): a module at the custom tier does NOT
+     stays in charge. Triple is gone — it is not a snap target.
+   • CUSTOM (the fourth width setting): a module at the custom tier does NOT
      snap. It keeps whatever width it had when custom was chosen (the
      default), and the first drag is what it then maintains — a free pixel
      width, remembered per-page in localStorage. Custom panes put the row on
@@ -148,7 +148,7 @@
     return (n && n.parentElement && isRowContainer(n.parentElement, row)) ? n : null;
   }
   // The pane's OWN width changer, if it has one. Modules with this button
-  // follow the preset rule (see header) while at single/double/triple/fill:
+  // follow the preset rule (see header) while at single/double/fill:
   // drags snap to the nearest of those four. At the custom tier they keep a
   // free pixel width instead. A button belonging to a NESTED module (e.g. a
   // panel inside the #panels-row rail) resolves to that inner module, not to
@@ -241,7 +241,7 @@
     var stored = readPage();
     ps.forEach(function (el) {
       // Preset rule: a module with its own width changer at single/double/
-      // triple/fill is sized ONLY by that preset. Never restore a saved
+      // fill is sized ONLY by that preset. Never restore a saved
       // pixel width onto it. Custom is the exception: the dragged width
       // is what it maintains, so we restore that pin.
       var btn = widthBtnOf(el, row);
@@ -348,9 +348,8 @@
       var top = rr.top + ins;
       var height = Math.max(24, rr.height - ins * 2);
       if (sp.mode === 'split') {
-        var lr = sp.left.getBoundingClientRect(), rl = sp.right.getBoundingClientRect();
-        x = (lr.right + rl.left) / 2;
-        w = Math.min(24, Math.max(16, (rl.left - lr.right) + 12)); // generous, easy to catch
+        x = seamX(sp.left, sp.right);
+        w = seamHitW(sp.left, sp.right);
       } else {
         x = sp.mode === 'outerL' ? sp.right.getBoundingClientRect().left
                                  : sp.left.getBoundingClientRect().right;
@@ -371,13 +370,29 @@
   }
   function hide(h) { h.style.display = 'none'; h._spec = null; }
 
-  /* ── four-tier snapping (presets only; custom never snaps) ────────────── */
+  /* Sticky tuck pulls the right pane under the left one (negative margin),
+     so the boxes overlap. The visible seam is the covering pane's right
+     edge — never the tucked pane's left edge, which sits under the card
+     and would hide the handle. */
+  function seamX(left, right) {
+    var lr = left.getBoundingClientRect().right;
+    var rl = right.getBoundingClientRect().left;
+    return (rl < lr - 1) ? lr : (lr + rl) / 2;
+  }
+  function seamHitW(left, right) {
+    var gap = right.getBoundingClientRect().left - left.getBoundingClientRect().right;
+    if (gap < 0) return 22;
+    return Math.min(24, Math.max(16, gap + 12));
+  }
+
+  /* ── preset snapping (single / double / fill; custom never snaps) ─────── */
   // The width button's title names its tier unambiguously on every page —
-  // pane-width.js renders the same "Width (single|double|triple|fill|custom) — …"
+  // pane-width.js renders the same "Width (single|double|fill|custom) — …"
   // text app-wide. Reading the BUTTON (with the pane's classes as fallback)
   // also covers pages that put the tier classes on an inner card rather than
   // on the row child itself (mirrors js/default-fill.js's tierOfBtn).
-  var TITLE_TIER = { single: 0, double: 1, triple: 2, fill: 3, custom: 4 };
+  // Leftover "(triple)" titles read as double — triple is not a rest state.
+  var TITLE_TIER = { single: 0, double: 1, triple: 1, fill: 3, custom: 4 };
   function tierOf(el, btn) {
     var m = /\((single|double|triple|fill|custom)\)/.exec(btn.getAttribute('title') || '');
     if (m) return TITLE_TIER[m[1]];
@@ -396,27 +411,32 @@
     return 'panel';
   }
 
-  /* Measure the pane at every tier by applying the shared classes in place —
+  /* Measure the pane at every PRESET by applying the shared classes in place —
      never by clicking the width button. Clicking through the cycle was wiping
      the user's setting (and its persistence) on every drag release, so they
      had to start the width changer over from single. Layout is forced by
-     getBoundingClientRect; nothing paints until this task ends. */
+     getBoundingClientRect; nothing paints until this task ends. Neighbours
+     are not measured or rewritten. */
   function measureTierWidths(el, btn) {
     var W = window.WPaneWidth;
     var alias = classAlias(el, btn);
-    var current = W.tierOfEl(el);
-    var n = W.PRESET_TIERS || 4;
-    var widths = [];
-    for (var t = 0; t < n; t++) {
-      W.applyClasses(el, t, alias);
-      widths[t] = rectW(el);
-    }
-    W.applyClasses(el, current, alias);
-    return widths;
+    var current = W.clamp(W.tierOfEl(el));
+    var presets = W.PRESETS || [0, 1, 3];
+    var widths = {};
+    var run = function () {
+      for (var i = 0; i < presets.length; i++) {
+        var t = presets[i];
+        W.applyClasses(el, t, alias);
+        widths[t] = rectW(el);
+      }
+      W.applyClasses(el, current, alias);
+      return widths;
+    };
+    return (W.measure ? W.measure(run) : run());
   }
 
-  /* Snap a just-dragged pane onto the canonical four-tier PRESET scale
-     (single / double / triple / fill). Custom never comes through here —
+  /* Snap a just-dragged pane onto the canonical PRESET scale
+     (single / double / fill). Custom never comes through here —
      a custom pane keeps the dragged pixel width. Pixel pins are released
      first so the width changer's CSS limits size the pane again. We measure
      each preset by applying classes (not by clicking), pick the closest to
@@ -424,7 +444,7 @@
      current tier to that one — zero clicks when they already match, never a
      full lap. Going through the native control inherits the page's icon /
      pressed state and persistence. Never saves a pixel width: for preset
-     modules those four sizes are the only widths that exist. */
+     modules those three sizes are the only widths that exist. */
   function snapToTier(row, el, btn, targetW) {
     var W = window.WPaneWidth;
     if (!W) { var w0 = targetW != null ? targetW : rectW(el); pin(el, w0); saveWidth(keyOf(row, el), w0); return; }
@@ -435,27 +455,30 @@
     el.style.setProperty('transition', 'none', 'important');
 
     var widths = measureTierWidths(el, btn);
-    var best = 0, bd = Infinity;
-    var n = (W.PRESET_TIERS || 4);
-    for (var k = 0; k < n; k++) {
-      if (widths[k] == null) continue;
-      var d = Math.abs(widths[k] - target);
-      if (d < bd) { bd = d; best = k; }
+    var presets = W.PRESETS || [0, 1, 3];
+    var best = presets[0], bd = Infinity;
+    for (var k = 0; k < presets.length; k++) {
+      var t = presets[k];
+      if (widths[t] == null) continue;
+      var d = Math.abs(widths[t] - target);
+      if (d < bd) { bd = d; best = t; }
     }
 
-    // Walk forward from the current tier to `best` only. Custom is past fill
-    // on the cycle, so hops that would pass through custom are taken via the
-    // native button the same as any other hop. A click that does not advance
-    // the reported tier ends the loop so a stuck control can never be
-    // clicked forever.
-    var tier = tierOf(el, btn);
-    var hops = (best - tier + W.TIERS) % W.TIERS;
-    for (var g = 0; g < hops; g++) {
+    // Walk with next() so the cycle (single → double → fill → custom) is the
+    // only path. Hop-count math assumed a contiguous 0–4 ladder and would
+    // land on the removed triple stop. A click that does not advance the
+    // reported tier ends the loop so a stuck control can never spin.
+    var tier = W.clamp(tierOf(el, btn));
+    var guard = 0;
+    while (tier !== best && guard < 6) {
       btn.click();
-      var now = tierOf(el, btn);
+      var now = W.clamp(tierOf(el, btn));
       if (now === tier) break;
       tier = now;
+      guard++;
     }
+    if (W.markModuleUserSet) W.markModuleUserSet(el);
+    if (W.saveTier) W.saveTier(el, W.clamp(tierOf(el, btn)));
 
     el.style.removeProperty('transition');
   }
@@ -550,10 +573,10 @@
       if (Math.abs(dx) > 1) moved = true;
       if (mode === 'split' && absorbRight) {
         pin(left, Math.max(minL, Math.min(lw0 + dx, capMax)));
-        place(left.getBoundingClientRect().right);
+        place(seamX(left, right));
       } else if (mode === 'split' && absorbLeft) {
         pin(right, Math.max(minR, Math.min(rw0 - dx, capMax)));
-        place(right.getBoundingClientRect().left);
+        place(seamX(left, right));
       } else if (mode === 'split') {
         var newL, newR;
         if (scrollable) {
@@ -569,7 +592,7 @@
         }
         pin(left, newL);
         pin(right, newR);
-        place((left.getBoundingClientRect().right + right.getBoundingClientRect().left) / 2);
+        place(seamX(left, right));
       } else if (mode === 'outerL') {
         pin(right, Math.max(minR, Math.min(rw0 - dx, capMax)));   // drag right → narrower
         place(right.getBoundingClientRect().left);

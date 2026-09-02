@@ -4410,9 +4410,10 @@
       flex: 0 0 auto;
     }
     /* Intent chips on the Product Portfolio welcome screen are ALWAYS inline —
-       they wrap onto multiple centered rows and never become a horizontal
-       carousel. The scroll arrows + edge fades are suppressed accordingly. The
-       wrap matches the score-card rail width so both line up. */
+       they wrap onto centered rows and never become a horizontal carousel.
+       Overflow past two rows sits behind a trailing Show more chip (same
+       clamp as the shared WISEcodeAI chat). The scroll arrows + edge fades
+       are suppressed. The wrap matches the score-card rail width. */
     .ws-chips-wrap {
       position: relative;
       width: 100%;
@@ -5091,9 +5092,10 @@
     }
     /* WISEcodeAI welcome-screen intent chips must read with equal visual weight —
        no chip should look pre-selected. This locks them to the neutral
-       `.chip` look even if `chip-primary` (or similar) is added downstream. */
-    .ws-intent-chip,
-    .ws-intent-chip.chip-primary {
+       `.chip` look even if `chip-primary` (or similar) is added downstream.
+       Show more is the exception — it stays the solid primary chip. */
+    .ws-intent-chip:not(.ws-intent-chip--more),
+    .ws-intent-chip.chip-primary:not(.ws-intent-chip--more) {
       background: color-mix(in srgb, var(--primary) 10%, #fff);
       border-color: var(--border-strong);
       color: var(--text-muted);
@@ -5102,27 +5104,45 @@
     /* Dark mode: the composer's brightened brand-blue tint (matches
        html.dark .fl-input-wrap) — needed here because the two-class
        selectors above outrank the shared html.dark .ws-intent-chip rule. */
-    html.dark .ws-intent-chip,
-    html.dark .ws-intent-chip.chip-primary {
+    html.dark .ws-intent-chip:not(.ws-intent-chip--more),
+    html.dark .ws-intent-chip.chip-primary:not(.ws-intent-chip--more) {
       background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent);
       border-color: var(--primary);
+    }
+    .ws-chips .ws-intent-chip[hidden] { display: none !important; }
+    .chip.chip-primary.ws-intent-chip--more {
+      background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600;
+    }
+    .chip.chip-primary.ws-intent-chip--more:hover {
+      background: color-mix(in srgb, var(--primary) 90%, #000);
+      border-color: color-mix(in srgb, var(--primary) 90%, #000);
+      color: #fff;
+    }
+    .chip.chip-primary.ws-intent-chip--more .material-symbols-outlined {
+      color: #fff !important;
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
     }
     /* Guiding Stars intent chips only appear while the portfolio module's
        Guiding Stars switch (three-dot menu) is on; pfSyncIntentChips() toggles
        the [hidden] attribute. This rule makes [hidden] win over the chip's own
        display so they truly disappear when the mode is off. */
     .ws-intent-chip--gs[hidden] { display: none !important; }
-    .ws-intent-chip:hover,
-    .ws-intent-chip.chip-primary:hover {
+    .ws-intent-chip:not(.ws-intent-chip--more):hover,
+    .ws-intent-chip.chip-primary:not(.ws-intent-chip--more):hover {
       background: color-mix(in srgb, var(--primary) 16%, #fff);
       border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong));
       color: var(--text);
       filter: none;
     }
-    html.dark .ws-intent-chip:hover,
-    html.dark .ws-intent-chip.chip-primary:hover {
+    html.dark .ws-intent-chip:not(.ws-intent-chip--more):hover,
+    html.dark .ws-intent-chip.chip-primary:not(.ws-intent-chip--more):hover {
       background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 22%, transparent);
     }
+    .pf-sys-note {
+      display: flex; align-items: center; gap: 7px; margin: 2px 0 12px 42px;
+      font-size: 0.74rem; color: var(--text-muted);
+    }
+    .pf-sys-note .material-symbols-outlined { font-size: 15px; color: var(--primary); }
 
     /* ── Locked intent chips & score cards ────────────────────────────────
        Locked entry points read as dimmed (a translucent scrim mutes the
@@ -7736,7 +7756,7 @@
     .pf-head-btn--primary .material-symbols-outlined {
       font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
     }
-    .pf-head-btn--ghost { background: transparent; color: var(--text-muted); border-color: var(--border-strong); }
+    .pf-head-btn--ghost { background: transparent; color: var(--text-muted); border-color: var(--primary); }
     .pf-head-btn--ghost:hover { color: var(--text); background: var(--surface-2); }
     html.dark .pf-head-btn--ghost:hover { background: rgba(255,255,255,0.06); }
 
@@ -7753,7 +7773,7 @@
        and the Pre-qualified scorecard (to the right). Portalled to <body>
        (position:fixed) so the module's overflow cannot clip them, then flipped
        so the caret always faces the anchor and the card stays in the viewport.
-       Same bob as the overview score toasts. */
+       Same bob as the overview score toasts. Gated by Appearance ▸ Guides. */
     .pf-nudge-toast.dash-score-toast {
       position: fixed;
       left: 0; top: 0; right: auto; bottom: auto;
@@ -8568,7 +8588,7 @@
     html.dark .pf-rowmenu-btn:hover, html.dark .pf-rowmenu.is-open .pf-rowmenu-btn { background: rgba(255,255,255,0.06); }
     .pf-rowmenu-btn .material-symbols-outlined { font-size: 18px !important; line-height: 1; }
     .pf-rowmenu-pop {
-      position: absolute; top: calc(100% + 4px); left: 0; z-index: 40; min-width: 208px;
+      position: absolute; top: auto; bottom: calc(100% + 6px); left: 0; z-index: 40; min-width: 208px;
       background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
       box-shadow: var(--shadow-2, 0 12px 32px rgba(0,0,0,0.18)); padding: 6px;
     }
@@ -8670,7 +8690,7 @@
     .pf-claim-btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap;
       padding: 7px 14px; border-radius: 999px; cursor: pointer;
-      border: 1px solid var(--border-strong); background: transparent; color: var(--text);
+      border: 1px solid var(--primary); background: transparent; color: var(--text);
       font-family: inherit; font-size: 11.5px; font-weight: 700;
       text-decoration: none; line-height: 1; box-sizing: border-box;
       transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
@@ -8764,7 +8784,7 @@
         pop: document.getElementById('wiseai-menu'),
         bgAnim: {
           host: document.getElementById('chat-shell'),
-          getBody: () => { const m = document.getElementById('chat-messages'); return m ? m.parentElement : null; },
+          getBody: () => document.getElementById('chat-shell'),
           welcomeEl: document.getElementById('welcome-screen'),
           isWide: () => {
             const s = document.getElementById('chat-shell');
@@ -9596,6 +9616,12 @@
                 </button>
                 <button class="chip ws-intent-chip" onclick="startAddProduct()">
                     <span class="material-symbols-outlined" style="font-size:16px">add_box</span>Add a Product
+                </button>
+                <button class="chip ws-intent-chip" onclick="startAddCatalogIntent()">
+                    <span class="material-symbols-outlined" style="font-size:16px">upload_file</span>Add a Catalog
+                </button>
+                <button class="chip ws-intent-chip" onclick="startDownloadMarketing()">
+                    <span class="material-symbols-outlined" style="font-size:16px">photo_library</span>Download Marketing Assets
                 </button>
                 <button class="chip ws-intent-chip" onclick="startSearchPortfolio()">
                     <span class="material-symbols-outlined" style="font-size:16px">search</span>Search Portfolio
@@ -12595,6 +12621,7 @@
     }
 
     function hideWelcomeScreen(callback) {
+      try { document.dispatchEvent(new CustomEvent('wise:chat-engage')); } catch (_) {}
       const ws = document.getElementById('welcome-screen');
       if (!ws || ws.classList.contains('ws-hidden')) {
         if (callback) callback();
@@ -12791,6 +12818,266 @@
       }).observe(box, { childList: true });
     }
 
+    /* Cap the welcome chip grid at two wrapping rows. Overflow stays in the
+       DOM but hidden; a trailing Show more chip takes the last slot on row 2
+       and reveals the rest inline — same clamp as js/wiseai-chat.js. */
+    const WELCOME_CHIP_MAX_ROWS = 2;
+    const WELCOME_CHIP_LAYOUT_MS = 340;
+    const WELCOME_CHIP_LAYOUT_EASE = 'cubic-bezier(0.22, 0.85, 0.25, 1)';
+    let welcomeChipsExpanded = false;
+    let welcomeChipsExpanding = false;
+    let welcomeChipsRevealing = false;
+    let welcomeChipsCutoff = 0;
+    function welcomeChipRowCount(els) {
+      const tops = [];
+      els.forEach((el) => {
+        if (!el || el.hidden) return;
+        const t = el.offsetTop;
+        if (!tops.some((rt) => Math.abs(rt - t) < 2)) tops.push(t);
+      });
+      return tops.length;
+    }
+    function paintMoreBtn(btn, expanded) {
+      if (!btn) return;
+      const icon = btn.querySelector('.material-symbols-outlined');
+      const label = expanded ? 'Show less' : 'Show more';
+      btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      btn.setAttribute('aria-label', expanded ? 'Show fewer intents' : 'Show more intents');
+      btn.removeAttribute('aria-hidden');
+      btn.style.pointerEvents = '';
+      if (icon) icon.textContent = expanded ? 'chevron_left' : 'chevron_right';
+      const textNode = Array.from(btn.childNodes).find((n) => n.nodeType === Node.TEXT_NODE);
+      if (textNode) textNode.textContent = label;
+      else if (icon) btn.insertBefore(document.createTextNode(label), icon);
+      else btn.insertBefore(document.createTextNode(label), btn.firstChild);
+    }
+    function ensureMoreBtn(wrap) {
+      let moreBtn = wrap.querySelector('[data-chip-more]');
+      if (!moreBtn) {
+        wrap.insertAdjacentHTML('beforeend',
+          '<button type="button" class="chip chip-primary ws-intent-chip ws-intent-chip--more" data-chip-more aria-expanded="false" aria-label="Show more intents">Show more<span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>');
+        moreBtn = wrap.querySelector('[data-chip-more]');
+      }
+      return moreBtn;
+    }
+    function placeMoreBtnAfter(moreBtn, afterChip, wrap) {
+      if (!moreBtn) return;
+      if (afterChip) {
+        if (afterChip.nextSibling !== moreBtn) afterChip.after(moreBtn);
+      } else if (wrap && wrap.firstChild !== moreBtn) {
+        wrap.insertBefore(moreBtn, wrap.firstChild);
+      }
+    }
+    function gsStarsOn() {
+      return !!document.getElementById('portfolio-panel')?.classList.contains('pf-stars-on');
+    }
+    function welcomeIntentChips(wrap) {
+      return Array.from(wrap.querySelectorAll('.ws-intent-chip:not([data-chip-more])'))
+        .filter((c) => !(c.classList.contains('ws-intent-chip--gs') && !gsStarsOn()));
+    }
+    function clampWelcomeChips() {
+      const wrap = document.getElementById('ws-chips');
+      if (!wrap) return;
+      if (welcomeChipsExpanding || welcomeChipsRevealing) return;
+      let moreBtn = wrap.querySelector('[data-chip-more]');
+      if (moreBtn) moreBtn.hidden = true;
+      const intents = welcomeIntentChips(wrap);
+      intents.forEach((c) => { c.hidden = false; });
+      if (!intents.length) {
+        moreBtn?.remove();
+        return;
+      }
+      if (welcomeChipsExpanded) {
+        moreBtn = moreBtn || ensureMoreBtn(wrap);
+        const cut = Math.max(0, Math.min(welcomeChipsCutoff, intents.length));
+        placeMoreBtnAfter(moreBtn, cut ? intents[cut - 1] : null, wrap);
+        if (moreBtn) {
+          moreBtn.hidden = false;
+          paintMoreBtn(moreBtn, true);
+        }
+        return;
+      }
+      const ws = document.getElementById('welcome-screen');
+      if (ws && (ws.classList.contains('ws-hidden') || ws.style.display === 'none')) {
+        moreBtn?.remove();
+        return;
+      }
+      if (wrap.clientWidth < 80) {
+        moreBtn?.remove();
+        return;
+      }
+      if (welcomeChipRowCount(intents) <= WELCOME_CHIP_MAX_ROWS) {
+        moreBtn?.remove();
+        welcomeChipsCutoff = intents.length;
+        return;
+      }
+      moreBtn = moreBtn || ensureMoreBtn(wrap);
+      if (!moreBtn) return;
+      moreBtn.hidden = false;
+      paintMoreBtn(moreBtn, false);
+      let lo = 0;
+      let hi = intents.length;
+      while (lo < hi) {
+        const mid = Math.ceil((lo + hi) / 2);
+        intents.forEach((c, i) => { c.hidden = i >= mid; });
+        placeMoreBtnAfter(moreBtn, mid ? intents[mid - 1] : null, wrap);
+        void wrap.offsetHeight;
+        const visible = intents.filter((c) => !c.hidden).concat(moreBtn);
+        if (welcomeChipRowCount(visible) <= WELCOME_CHIP_MAX_ROWS) lo = mid;
+        else hi = mid - 1;
+      }
+      intents.forEach((c, i) => { c.hidden = i >= lo; });
+      if (lo >= intents.length) {
+        moreBtn.remove();
+        intents.forEach((c) => { c.hidden = false; });
+        welcomeChipsCutoff = intents.length;
+        return;
+      }
+      /* Narrow chat (~314px) can fit only one long chip beside Show more on
+         two rows. Still keep a few intents visible — Show more is for the
+         overflow after a handful, not after the first chip. */
+      if (lo < 4 && intents.length > 4) {
+        lo = 4;
+        intents.forEach((c, i) => { c.hidden = i >= lo; });
+      }
+      welcomeChipsCutoff = lo;
+      placeMoreBtnAfter(moreBtn, intents[lo - 1], wrap);
+    }
+    function welcomeLayoutMovers() {
+      const ws = document.getElementById('welcome-screen');
+      if (!ws) return [];
+      return [
+        ws.querySelector('.ws-logo-wrap'),
+        ws.querySelector('.ws-heading'),
+        ws.querySelector('.ws-sub'),
+        ws.querySelector('.ws-scorecards-section') || ws.querySelector('.ws-scorecards-wrap'),
+        document.getElementById('ws-chips'),
+      ].filter(Boolean);
+    }
+    function snapshotRects(els) {
+      return (els || []).map((el) => ({ el, r: el.getBoundingClientRect() }));
+    }
+    function playWelcomeLayoutFlip(snaps, done) {
+      if (WISEAI_REDUCED_MOTION || !snaps || !snaps.length) {
+        if (done) done();
+        return;
+      }
+      const running = [];
+      snaps.forEach(({ el, r }) => {
+        if (!el || typeof el.animate !== 'function') return;
+        const last = el.getBoundingClientRect();
+        const dx = r.left - last.left;
+        const dy = r.top - last.top;
+        if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+        running.push(el.animate(
+          [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }],
+          { duration: WELCOME_CHIP_LAYOUT_MS, easing: WELCOME_CHIP_LAYOUT_EASE }
+        ));
+      });
+      if (!running.length) { if (done) done(); return; }
+      let left = running.length;
+      const mark = () => { if (--left <= 0 && done) done(); };
+      running.forEach((anim) => { anim.onfinish = mark; anim.oncancel = mark; });
+    }
+    function expandWelcomeChips(fromBtn) {
+      if (welcomeChipsExpanded || welcomeChipsExpanding) return;
+      const wrap = document.getElementById('ws-chips');
+      if (!wrap) return;
+      const pending = welcomeIntentChips(wrap).filter((c) => c.hidden);
+      const more = fromBtn || wrap.querySelector('[data-chip-more]');
+      const snaps = snapshotRects(welcomeLayoutMovers());
+      welcomeChipsExpanded = true;
+      welcomeChipsExpanding = true;
+      paintMoreBtn(more, true);
+      const done = () => { welcomeChipsExpanding = false; };
+      if (!pending.length) { done(); return; }
+      if (WISEAI_REDUCED_MOTION) {
+        pending.forEach((c) => {
+          c.hidden = false;
+          c.style.opacity = '';
+          c.style.transform = '';
+          c.style.transition = '';
+        });
+        done();
+        return;
+      }
+      pending.forEach((c) => {
+        c.hidden = false;
+        wiseaiPrimeRight(c);
+      });
+      void wrap.offsetHeight;
+      let waiting = 2;
+      const partDone = () => { if (--waiting <= 0) done(); };
+      playWelcomeLayoutFlip(snaps, partDone);
+      wiseaiRevealStaggered(pending, 40, 48, partDone);
+    }
+    function collapseWelcomeChips(fromBtn) {
+      if (!welcomeChipsExpanded || welcomeChipsExpanding) return;
+      const wrap = document.getElementById('ws-chips');
+      if (!wrap) return;
+      const more = fromBtn || wrap.querySelector('[data-chip-more]');
+      const overflow = more
+        ? welcomeIntentChips(wrap)
+            .filter((c) => !!(more.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING))
+        : [];
+      welcomeChipsExpanding = true;
+      const finish = () => {
+        overflow.forEach((c) => {
+          c.hidden = true;
+          c.style.opacity = '';
+          c.style.transform = '';
+          c.style.transition = '';
+        });
+        welcomeChipsExpanded = false;
+        paintMoreBtn(more, false);
+        clampWelcomeChips();
+      };
+      if (WISEAI_REDUCED_MOTION || !overflow.length) {
+        finish();
+        welcomeChipsExpanding = false;
+        return;
+      }
+      overflow.forEach((c) => {
+        c.style.opacity = '0';
+        c.style.transform = 'translateX(16px)';
+        c.style.transition = 'opacity .16s ease, transform .16s ease';
+      });
+      setTimeout(() => {
+        const snaps = snapshotRects(welcomeLayoutMovers());
+        finish();
+        playWelcomeLayoutFlip(snaps, () => { welcomeChipsExpanding = false; });
+      }, 180);
+    }
+    function initWelcomeChipClamp() {
+      const wrap = document.getElementById('ws-chips');
+      if (!wrap || wrap.dataset.moreBound) return;
+      wrap.dataset.moreBound = '1';
+      wrap.addEventListener('click', (e) => {
+        const more = e.target.closest('[data-chip-more]');
+        if (!more || !wrap.contains(more)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (welcomeChipsExpanded) collapseWelcomeChips(more);
+        else expandWelcomeChips(more);
+      });
+      window.addEventListener('resize', () => {
+        if (!welcomeChipsExpanded) clampWelcomeChips();
+      });
+      if (typeof ResizeObserver !== 'undefined') {
+        const ro = new ResizeObserver(() => {
+          if (!welcomeChipsExpanded && !welcomeChipsRevealing) clampWelcomeChips();
+        });
+        ro.observe(wrap);
+        const host = wrap.closest('.ws-chips-wrap') || wrap.parentElement;
+        if (host && host !== wrap) ro.observe(host);
+      }
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(() => {
+          if (!welcomeChipsExpanded && !welcomeChipsRevealing) clampWelcomeChips();
+        });
+      }
+    }
+
     /* Welcome-screen reveal. Type the heading WORD-BY-WORD (exactly like every
        WISEcodeAI answer), and only once the copy has landed do the score cards and
        intent chips fly in from the right in a single top-to-bottom cascade —
@@ -12803,22 +13090,32 @@
       if (!ws || ws.classList.contains('ws-hidden') || ws.style.display === 'none') return;
       const heading = ws.querySelector('.ws-heading');
       const cards = Array.from(ws.querySelectorAll('#ws-scorecards .ws-scorecard'));
-      const chips = Array.from(ws.querySelectorAll('#ws-chips .chip')).filter((c) => !c.hidden);
-      const all = cards.concat(chips);
-      if (WISEAI_REDUCED_MOTION) {
-        all.forEach((c) => { c.style.opacity = ''; c.style.transform = ''; c.style.transition = ''; });
-        return;
-      }
-      /* Remember the heading's plain text so a re-run starts clean (the typed
-         reveal wraps each word in a span, which would otherwise compound). */
-      if (heading) {
-        if (wiseaiWelcomeHeadingText == null) wiseaiWelcomeHeadingText = heading.innerHTML;
-        else heading.innerHTML = wiseaiWelcomeHeadingText;
-      }
-      /* Hold every card + chip back (invisible, nudged right) until the text lands. */
-      all.forEach(wiseaiPrimeRight);
-      const typeText = (el, next) => { if (el) wiseaiTypeInLine(el, next); else next(); };
-      typeText(heading, () => { wiseaiRevealStaggered(all, 90, 60, null); });
+      const startCascade = () => {
+        clampWelcomeChips();
+        const chips = Array.from(ws.querySelectorAll('#ws-chips .chip')).filter((c) => !c.hidden);
+        const all = cards.concat(chips);
+        if (WISEAI_REDUCED_MOTION) {
+          all.forEach((c) => { c.style.opacity = ''; c.style.transform = ''; c.style.transition = ''; });
+          welcomeChipsRevealing = false;
+          return;
+        }
+        /* Remember the heading's plain text so a re-run starts clean (the typed
+           reveal wraps each word in a span, which would otherwise compound). */
+        if (heading) {
+          if (wiseaiWelcomeHeadingText == null) wiseaiWelcomeHeadingText = heading.innerHTML;
+          else heading.innerHTML = wiseaiWelcomeHeadingText;
+        }
+        welcomeChipsRevealing = true;
+        /* Hold every card + chip back (invisible, nudged right) until the text lands. */
+        all.forEach(wiseaiPrimeRight);
+        const typeText = (el, next) => { if (el) wiseaiTypeInLine(el, next); else next(); };
+        typeText(heading, () => {
+          wiseaiRevealStaggered(all, 90, 60, () => { welcomeChipsRevealing = false; });
+        });
+      };
+      const wrap = document.getElementById('ws-chips');
+      if (wrap && wrap.clientWidth >= 80) startCascade();
+      else requestAnimationFrame(() => requestAnimationFrame(startCascade));
     }
 
     function addWISEcodeAIMessage(html, opts = {}) {
@@ -13232,6 +13529,31 @@
       return null;
     }
 
+    /* Chat-only intents (catalog import + marketing downloads) play a
+       transcript instead of opening a portfolio tab. Checked before PF_ROUTES
+       so "add a catalog" does not fall through to Add a product, and
+       "download the shield" does not fall through to Search. */
+    const PF_CHAT_INTENTS = [
+      { id: 'catalogTpl', test: /(csv template|catalog template|download (the )?(csv|template))/, fn: 'startDownloadCatalogTemplate' },
+      { id: 'onesheet', test: /(one-?sheet)/, fn: 'startDownloadOnesheet' },
+      { id: 'shieldPack', test: /(shield pack|download.{0,24}shield|get the (non-?upf )?shield)/, fn: 'startDownloadShieldPack' },
+      { id: 'assets', test: /(marketing assets?|co-?branded|brand standards|social media toolkit|email.?sms)/, fn: 'startDownloadMarketing' },
+      { id: 'catalog', test: /(add (a |an )?(new )?catalog|upload (a )?(csv|catalog|spreadsheet)|bulk.?upload|import.*(catalog|csv)|catalog builder)/, fn: 'startAddCatalogIntent' },
+    ];
+    function pfMatchChatIntent(text, intent) {
+      if (intent && PF_CHAT_INTENTS.some((r) => r.id === intent)) return intent;
+      const q = String(text).toLowerCase();
+      for (let i = 0; i < PF_CHAT_INTENTS.length; i++) {
+        if (PF_CHAT_INTENTS[i].test.test(q)) return PF_CHAT_INTENTS[i].id;
+      }
+      return null;
+    }
+    function pfRunChatIntent(id, skipUser) {
+      const row = PF_CHAT_INTENTS.find((r) => r.id === id);
+      const fn = row && window[row.fn];
+      if (typeof fn === 'function') fn(!!skipUser);
+    }
+
     /* Free-text send handler. A recognised portfolio intent opens the board on
        the matching segment (no duplicate user bubble — the user's own line is
        already shown) and offers the same next-step chips its intent chip would;
@@ -13250,6 +13572,8 @@
       };
       if (intent && byIntent[intent]) return byIntent[intent];
       const q = String(text || '').toLowerCase();
+      if (/(marketing assets?|one-?sheet|shield pack|brand standards)/.test(q)) return ['Opening your marketing library'];
+      if (/(add (a |an )?(new )?catalog|upload (a )?(csv|catalog)|csv template)/.test(q)) return ['Opening the catalog importer'];
       if (/(portfolio|catalog|inventory|claimed|discover|needs info|missing data)/.test(q)) return ['Opening your portfolio', 'Gathering the details'];
       if (/(dashboard|chart|graph|trend|score|analy|metric|\bdata\b|insight|report|breakdown)/.test(q)) return ['Building your dashboard', 'Crunching the numbers'];
       if (/(compar|versus|\bvs\b|benchmark|side by side)/.test(q)) return ['Assembling the comparison', 'Lining up the numbers'];
@@ -13276,6 +13600,11 @@
       setTimeout(next, STEP);
     }
     function wiseaiRespond(text, intent) {
+      const chatId = pfMatchChatIntent(text, intent);
+      if (chatId) {
+        pfRunChatIntent(chatId, true);
+        return;
+      }
       const route = pfMatchRoute(text, intent);
       if (route) {
         openPortfolioModule(route.tab, null, route.reply, route.chips);
@@ -13497,11 +13826,13 @@
       document.addEventListener('DOMContentLoaded', initScorecardScroller);
       document.addEventListener('DOMContentLoaded', initChipScroller);
       document.addEventListener('DOMContentLoaded', initChipLocks);
+      document.addEventListener('DOMContentLoaded', initWelcomeChipClamp);
       document.addEventListener('DOMContentLoaded', revealWelcome);
     } else {
       initScorecardScroller();
       initChipScroller();
       initChipLocks();
+      initWelcomeChipClamp();
       revealWelcome();
     }
 
@@ -15463,6 +15794,7 @@
       document.querySelectorAll('.pf-rowmenu.is-open').forEach((rm) => {
         if (rm === except) return;
         rm.classList.remove('is-open');
+        rm._pfPop = null;
         rm.querySelector('.pf-rowmenu-btn')?.setAttribute('aria-expanded', 'false');
       });
       /* The open popup is portaled onto <body> (js/popover-layer.js), so a
@@ -15484,6 +15816,7 @@
       pfInjectAddPacks(pop);
       pfInjectClaimedExtras(pop);
       rm.classList.add('is-open');
+      rm._pfPop = pop;
       btn.setAttribute('aria-expanded', 'true');
       pop.removeAttribute('hidden');
     }
@@ -15675,6 +16008,7 @@
       const panel = document.getElementById('portfolio-panel');
       const on = !!(panel && panel.classList.contains('pf-stars-on'));
       document.querySelectorAll('.ws-intent-chip--gs').forEach((c) => { c.hidden = !on; });
+      if (typeof clampWelcomeChips === 'function') clampWelcomeChips();
     }
     window.pfSyncIntentChips = pfSyncIntentChips;
     function pfToggleStars() {
@@ -16888,6 +17222,13 @@
       claim:      { fn: 'startClaimProducts',     icon: 'bookmark_add',    label: 'Claim a product' },
       ineligible: { fn: 'startResolveIneligible', icon: 'gpp_maybe',       label: 'Resolve ineligible' },
       add:        { fn: 'startAddProduct',        icon: 'add_box',         label: 'Add a product' },
+      catalog:    { fn: 'startAddCatalogIntent',  icon: 'upload_file',     label: 'Add a catalog' },
+      catalogGo:  { fn: 'goAddCatalog',           icon: 'upload_file',     label: 'Open catalog builder' },
+      catalogTpl: { fn: 'startDownloadCatalogTemplate', icon: 'download',  label: 'Download CSV template' },
+      assets:     { fn: 'startDownloadMarketing', icon: 'photo_library',   label: 'Download marketing assets' },
+      assetsGo:   { fn: 'goMarketingAssets',      icon: 'photo_library',   label: 'Open Marketing Assets' },
+      onesheet:   { fn: 'startDownloadOnesheet',  icon: 'description',     label: 'Download the one-sheet kit' },
+      shieldPack: { fn: 'startDownloadShieldPack', icon: 'verified_user',  label: 'Download the shield pack' },
       filter:     { fn: 'startFilterPortfolio',   icon: 'tune',            label: 'Filter by Guiding Stars' },
       guidingstars: { fn: 'startGuidingStars',    icon: 'star',            label: 'Guiding Stars ratings' },
       nearmiss:   { fn: 'startNearMiss',          icon: 'trending_up',     label: 'Near-miss \u2605\u2605 \u2192 \u2605\u2605\u2605' },
@@ -16964,14 +17305,101 @@
          progress module beside it. Nothing persists until the user saves. */
       window.location.href = 'add-product.html';
     }
-    /* Add Catalog opens the bulk-upload builder: a WISEcodeAI chat that reads a
-       CSV of up to 500 products, matches its columns to our fields, imports what
-       validates and lists the rows to fix — then verifies the whole catalog's
-       ingredients in one pass. Nothing persists until the user confirms import. */
-    function startAddCatalog() {
+    /* Add Catalog — the header Add ▾ menu still jumps straight to the builder.
+       The chat intent plays a mock transcript first, then offers the same jump. */
+    function goAddCatalog() {
       window.location.href = 'add-catalog.html';
     }
+    function startAddCatalog() {
+      goAddCatalog();
+    }
     window.startAddCatalog = startAddCatalog;
+    window.goAddCatalog = goAddCatalog;
+    function goMarketingAssets() {
+      window.location.href = 'marketing-assets.html';
+    }
+    window.goMarketingAssets = goMarketingAssets;
+
+    const CATALOG_TEMPLATE_CSV = [
+      'UPC,Product name,Brand,Category,Ingredient list,Allergens,Contains statement,Serving size (metric),Serving size (household),Servings per container,Calories,Total Fat,Total Fat %DV,Saturated Fat,Saturated Fat %DV,Trans Fat,Cholesterol,Cholesterol %DV,Sodium,Sodium %DV,Total Carbohydrate,Total Carbohydrate %DV,Dietary Fiber,Dietary Fiber %DV,Total Sugars,Added Sugars,Added Sugars %DV,Protein,Vitamin D,Vitamin D %DV,Calcium,Calcium %DV,Iron,Iron %DV,Potassium,Potassium %DV,Product image URL',
+      '',
+    ].join('\n');
+    function pfDownloadNamed(filename, text, mime) {
+      const blob = new Blob([text || ''], { type: mime || 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 800);
+    }
+    function pfSysNote(text, icon) {
+      const box = document.getElementById('chat-messages');
+      if (!box) return;
+      const safe = String(text).replace(/</g, '&lt;');
+      box.insertAdjacentHTML('beforeend',
+        `<div class="pf-sys-note"><span class="material-symbols-outlined">${icon || 'download'}</span><span>${safe}</span></div>`);
+      wiseaiFollowChat(box);
+    }
+    function playChatIntent(userMsg, replyHtml, chips, status, onReply) {
+      hideWelcomeScreen(() => {
+        if (userMsg) addUserMessage(userMsg);
+        const typing = showWISEcodeAITyping(status || 'Gathering the details');
+        setTimeout(() => {
+          typing?.remove();
+          addWISEcodeAIMessage(replyHtml, { source: false });
+          if (typeof onReply === 'function') onReply();
+          pfOfferChips(chips);
+        }, 620);
+      });
+    }
+    const CATALOG_REPLY = 'I can import a whole catalog at once — a CSV of up to <strong>500 products</strong>. I’ll match your columns to ours (UPC, name, brand, ingredients, both serving sizes, and the full Nutrition Facts set), import what validates, and list the rows to fix. Then I can verify the whole catalog’s ingredients in one pass. Nothing lands in <strong>Claimed</strong> until you confirm. Grab the template, or open the catalog builder and drop your file in.';
+    const ASSETS_REPLY = 'Your <strong>Flax4Life</strong> marketing library is ready — co-branded Non-UPF one-sheets (Templates A, B and C), the <strong>WISEcode Non-UPF Verified™ Shield</strong> in web PNG and print vectors, social and email toolkits, and the trademark / brand-standards guide. I can send you a kit from here, or open the full library so you can pick file by file.';
+    function startAddCatalogIntent(skipUser) {
+      playChatIntent(skipUser ? null : 'Add a catalog of products', CATALOG_REPLY,
+        ['catalogGo', 'catalogTpl', 'add', 'assets'], 'Opening the catalog importer');
+    }
+    function startDownloadCatalogTemplate(skipUser) {
+      playChatIntent(skipUser ? null : 'Download the CSV template',
+        'Here’s the catalog template — every column the importer accepts, empty so you can fill it in. Drop it on the catalog builder when you’re ready, or add a single product by hand if you only have one SKU.',
+        ['catalogGo', 'catalog', 'add'], 'Preparing the catalog template',
+        () => {
+          pfDownloadNamed('wisecode-catalog-template.csv', CATALOG_TEMPLATE_CSV, 'text/csv;charset=utf-8');
+          pfSysNote('Downloaded wisecode-catalog-template.csv.', 'download');
+        });
+    }
+    function startDownloadMarketing(skipUser) {
+      playChatIntent(skipUser ? null : 'Download marketing assets', ASSETS_REPLY,
+        ['onesheet', 'shieldPack', 'assetsGo', 'catalog'], 'Opening your marketing library');
+    }
+    function startDownloadOnesheet(skipUser) {
+      playChatIntent(skipUser ? null : 'Download the one-sheet kit',
+        'Packing the <strong>One-Sheet Toolkit</strong> — Templates A, B and C as print-ready PNGs plus the editable PSDs, and the setup guide. Use these for retailer sell-sheets once a SKU is Non-UPF Verified.',
+        ['shieldPack', 'assetsGo', 'catalog'], 'Packing the one-sheet kit',
+        () => {
+          pfDownloadNamed('WISEcode-One-Sheet-Toolkit.txt',
+            'WISEcode One-Sheet Toolkit (mock)\n\nTemplates A, B and C — print-ready PNGs and editable PSDs.\nOpen Marketing Assets for the live files.',
+            'text/plain;charset=utf-8');
+          pfSysNote('Downloaded WISEcode-One-Sheet-Toolkit (mock pack).', 'download');
+        });
+    }
+    function startDownloadShieldPack(skipUser) {
+      playChatIntent(skipUser ? null : 'Download the Non-UPF Verified™ shield pack',
+        'Here’s the <strong>WISEcode Non-UPF Verified™ Shield</strong> pack — web PNGs plus print-ready AI / EPS / SVG. Black and white lockups are marked use-with-permission-only. Pair it with the brand-standards guide before it goes on pack.',
+        ['onesheet', 'assetsGo', 'catalog'], 'Packing the shield artwork',
+        () => {
+          pfDownloadNamed('WISEcode-Non-UPF-Verified-Shield.txt',
+            'WISEcode Non-UPF Verified™ Shield pack (mock)\n\nDigital PNG + print AI/EPS/SVG.\nOpen Marketing Assets for the live artwork.',
+            'text/plain;charset=utf-8');
+          pfSysNote('Downloaded WISEcode Non-UPF Verified™ Shield pack (mock).', 'download');
+        });
+    }
+    window.startAddCatalogIntent = startAddCatalogIntent;
+    window.startDownloadCatalogTemplate = startDownloadCatalogTemplate;
+    window.startDownloadMarketing = startDownloadMarketing;
+    window.startDownloadOnesheet = startDownloadOnesheet;
+    window.startDownloadShieldPack = startDownloadShieldPack;
     function startSearchPortfolio() {
       openPortfolioModule('claimed', 'Search my portfolio',
         'Every view has a search box — filter by product name or UPC across <strong>Missing data</strong>, <strong>Discovered</strong>, and <strong>Claimed</strong>. Tell me what you’re looking for and I’ll jump you straight to it.',
@@ -17013,12 +17441,12 @@
     function portfolioTour() {
       openPortfolioModule('claimed', 'Give me a quick tour of my portfolio',
         'Welcome to your <strong>Product Portfolio</strong>. It has three surfaces: <strong>Claimed</strong> (5 complete products), <strong>Discovered</strong> (47 public matches to review &amp; claim), and <strong>Missing data</strong> (18 products missing details, including 5 waiting on ingredient verification). Switch tabs on the right anytime — where would you like to begin?',
-        ['claimed', 'discovered', 'needsinfo']);
+        ['claimed', 'discovered', 'catalog', 'assets']);
     }
     function askWiseAiPortfolio() {
       openPortfolioModule('claimed', 'How can WISEcodeAI help me work through my portfolio?',
-        'I can do the heavy lifting across your whole portfolio — open a product to verify its ingredients, attest and activate Non-UPF Shields, claim the right discovered products, and complete the ones missing info. Your board is on the right; pick a task below and I’ll drive it.',
-        ['claimed', 'shields', 'discovered', 'needsinfo']);
+        'I can do the heavy lifting across your whole portfolio — open a product to verify its ingredients, attest and activate Non-UPF Shields, claim the right discovered products, complete the ones missing info, import a catalog, or pull marketing assets. Your board is on the right; pick a task below and I’ll drive it.',
+        ['claimed', 'catalog', 'assets', 'needsinfo']);
     }
     /* Gold "What can I ask?" affordance (chip + below-input link) — starts a
        page-specific listing of everything you can ask on THIS surface, grounded
@@ -17040,6 +17468,8 @@
             ['Claim a product', 'I want to claim a product'],
             ['Resolve ineligible product', 'Why can\u2019t this product earn a Non-UPF Shield yet?'],
             ['Add a product', 'Add a product manually'],
+            ['Add a catalog', 'Add a catalog of products'],
+            ['Download marketing assets', 'Download marketing assets'],
             ['Search the portfolio', 'Search my portfolio by name or UPC'],
             ['Guiding Stars ratings', 'Show my Guiding Stars ratings'],
             ['Tour my portfolio', 'Give me a quick tour of my portfolio'],
@@ -21065,6 +21495,7 @@
         document.querySelectorAll('.pf-reports-wrap.is-open').forEach((m) => {
           m.classList.remove('is-open');
           m.querySelector('.pf-reports-btn')?.setAttribute('aria-expanded', 'false');
+          m._pfPop = null;
         });
         /* The popover may be portalled onto <body>, so look it up globally. */
         document.querySelectorAll('.pf-reports-pop').forEach((pop) => restoreReportsPop(pop));
@@ -21229,6 +21660,8 @@
             const pop = wrap.querySelector('.pf-reports-pop');
             if (pop) {
               pop._home = { parent: pop.parentNode, next: pop.nextSibling };
+              wrap._pfPop = pop;
+              pop.__plHost = wrap;
               document.body.appendChild(pop);
               pop.classList.add('is-portalled');
               pop.style.position = 'fixed';

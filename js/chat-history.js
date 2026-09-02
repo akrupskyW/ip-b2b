@@ -393,10 +393,10 @@
          Mirrors the same guards in pages/wiseai.html\'s own copy. */
       '#modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-unsticky){z-index:1;background:var(--surface-2,var(--surface,#fff));--wch-tree-bg:var(--surface-2,var(--surface,#fff));box-shadow:none;align-self:center;height:calc(100% - 30px);}',
       /* History (left of chat): flush + tucked under the chat\'s LEFT edge. */
-      '#modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-right):not(.wch-unsticky){margin-right:calc(-14px - var(--modules-gap, 8px));padding-right:14px;',
+      '#modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-right):not(.wch-unsticky){margin-right:calc(-1 * var(--sticky-tuck, 14px) - var(--modules-gap, 8px));padding-right:var(--sticky-pad, 14px);',
         'border-top-right-radius:0;border-bottom-right-radius:0;border-right:0;animation:none;}',
       /* Turns (right of chat): flush + tucked under the chat\'s RIGHT edge. */
-      '#modules-row.modules-sticky .wch-sidebar.wch-docked.wch-right:not(.wch-unsticky){margin-left:calc(-14px - var(--modules-gap, 8px));padding-left:14px;',
+      '#modules-row.modules-sticky .wch-sidebar.wch-docked.wch-right:not(.wch-unsticky){margin-left:calc(-1 * var(--sticky-tuck, 14px) - var(--modules-gap, 8px));padding-left:var(--sticky-pad, 14px);',
         'border-top-left-radius:0;border-bottom-left-radius:0;border-left:0;animation:none;}',
       '#modules-row:has(.wa-pane.is-open) .wch-sidebar.wch-docked.wch-right,',
       '#modules-row.modules-sticky:has(.wa-pane.is-open) .wch-sidebar.wch-docked.wch-right:not(.wch-unsticky){border-left:1px solid var(--border-strong,var(--border,rgba(0,0,0,0.14)));}',

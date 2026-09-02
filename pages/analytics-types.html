@@ -1009,7 +1009,7 @@
 
     /* =====================================================================
        Product-Level UPF Classification (analytics-types.html only).
-       A sortable table of every active SKU with its UPF classification, NOVA
+       A sortable table of every active SKU with its UPF classification, WISEcode
        processing level, and Non-UPF shield status. Every column header sorts
        (click to toggle asc/desc); a pink switch flips the whole table into a
        responsive grid of cards — same rows, same sort order, card layout.
@@ -1179,7 +1179,7 @@
        UPF Processing Spectrum (analytics-types.html only).
        The dashboard's first row: a six-segment scale that frames the whole
        report. The leading segment is the brand-blue "Non-UPF Verified" tier
-       (the WISEcode Shield); the remaining five run the NOVA-style processing
+       (the WISEcode Shield); the remaining five run the WISEcode processing
        ladder from Minimal → Super Ultra, each segment a solid status colour.
        Injected as the first child of .dash by the inline script below.
     ===================================================================== */
@@ -2319,7 +2319,7 @@
         'Clean':    { full: 'Clean Label',             cat: 'Ingredient Quality',  desc: 'How recognizable and minimally-processed the ingredient list is.' },
         'Banned':   { full: 'Banned Additives',        cat: 'Ingredient Quality',  desc: 'Freedom from additives restricted or banned in major markets.' },
         'Emulsif':  { full: 'Emulsifiers',             cat: 'Ingredient Quality',  desc: 'Use of synthetic emulsifiers linked to gut-microbiome disruption.' },
-        'UPF':      { full: 'Ultra-Processing (NOVA)', cat: 'Ingredient Quality',  desc: 'Degree of industrial processing on the NOVA classification scale.' },
+        'UPF':      { full: 'Ultra-Processing (WISEcode)', cat: 'Ingredient Quality',  desc: 'Degree of industrial processing on the WISEcode processing spectrum.' },
         'Seeds':    { full: 'Seed Oils',               cat: 'Ingredient Quality',  desc: 'Presence of refined, high-omega-6 industrial seed oils.' },
         'Anti-Inf': { full: 'Anti-Inflammatory',       cat: 'Health Outcomes',     desc: 'Net effect of the formulation on systemic inflammation markers.' },
         'Muscle':   { full: 'Muscle & Metabolic',      cat: 'Health Outcomes',     desc: 'Support for lean-muscle maintenance and metabolic health.' },
@@ -2341,7 +2341,7 @@
         'Clean':    { title: 'Clean up the label', text: 'Shorten the ingredient list to recognizable whole foods and drop cosmetic additives.' },
         'Banned':   { title: 'Remove banned additives', text: 'Audit the formula against restricted-additive lists and swap flagged ingredients.' },
         'Emulsif':  { title: 'Drop synthetic emulsifiers', text: 'Remove lecithin substitutes and gums linked to gut disruption; rely on whole-food binders.' },
-        'UPF':      { title: 'Reduce processing level', text: 'Move toward NOVA 1–2 by cutting industrial isolates and cosmetic reformulation steps.' },
+        'UPF':      { title: 'Reduce processing level', text: 'Move toward minimally or lightly processed by cutting industrial isolates and cosmetic reformulation steps.' },
         'Seeds':    { title: 'Swap seed oils', text: 'Replace refined high-omega-6 seed oils with olive, coconut, or nut-based fats.' },
         'Anti-Inf': { title: 'Lower inflammation load', text: 'Cut refined carbs, seed oils, and additives that drive inflammatory markers.' },
         'Muscle':   { title: 'Support muscle & metabolism', text: 'Balance protein with complex carbs and cut empty calories that drag metabolic scores.' },
@@ -2801,7 +2801,7 @@
   <script>
     /* =====================================================================
        Product-Level UPF Classification (analytics-types.html only).
-       A sortable table of every active SKU: UPF classification, NOVA
+       A sortable table of every active SKU: UPF classification, WISEcode
        processing level, and Non-UPF shield status. Every column header sorts
        (click to toggle asc/desc) and a matching sort dropdown stays in sync;
        the pink switch flips the same rows — in the same sort order — into a
@@ -2943,7 +2943,7 @@
             <span class="att-title">Product-Level UPF Classification</span>
           </div>
           <p class="att-intro">Every active SKU in the portfolio with its ultra-processed-food classification,
-            NOVA processing level, and Non-UPF shield status. Click any column header to sort, or flip the pink
+            WISEcode processing level, and Non-UPF shield status. Click any column header to sort, or flip the pink
             toggle to view each row as a card. Click a row's report action to open its SKU NFP+ report.</p>
           <div class="upf-controls">
             <button type="button" class="upf-toggle" id="upf-view-toggle" role="switch" aria-checked="false" aria-label="Card view" title="Toggle card view">
@@ -3309,7 +3309,7 @@
        Ingredient Processing Details (analytics-types.html only).
        A third sortable table built on the exact same shell as the GRAS card
        above — same controls, pills and card view — listing every unique
-       portfolio ingredient with its NOVA-style processing level, a 1–4
+       portfolio ingredient with its WISEcode processing level, a 1–4
        processing score, and the basis for that classification. Defaults to
        highest-to-lowest processing level. Appended directly below the GRAS
        card so it stays last.
@@ -3395,7 +3395,7 @@
           <div class="att-head">
             <span class="att-title">Ingredient Processing Details</span>
           </div>
-          <p class="att-intro">Every unique ingredient across the portfolio with its NOVA-style processing level, a
+          <p class="att-intro">Every unique ingredient across the portfolio with its WISEcode processing level, a
             1\u20134 processing score (1 = lowest, 4 = highest), and the basis for that classification. Click any column
             header to sort, or flip the pink toggle to view each row as a card.</p>
           <div class="upf-controls">
@@ -4145,7 +4145,7 @@
     })();
   </script>
 
-  <script>
+  <script type="module">
     /* =====================================================================
        Floating section navigation (analytics-types.html only). Builds a fixed
        right-edge rail listing every chart / section on the page and wires it
@@ -4153,43 +4153,18 @@
        pane (#agent-main-scroll) to that section, and an IntersectionObserver
        keeps the item for the section currently in view highlighted.
 
+       The list of sections lives in js/analytics-types-catalog.js — the same
+       file All Modules uses for its thumbnail gallery. Add a chart there
+       (and render it on this page) and both surfaces stay in sync.
+
        The dashboard body is injected asynchronously by agent-overview.js, and
        two of the sections (the Portfolio Overview stats row and the
        Performance Matrix card) are added later still by the inline scripts
        above — so we (re)build whenever the DOM changes until every known
        section has appeared, sorting the rail by true document order.
     ===================================================================== */
+    import { ANALYTICS_NAV as SECTIONS } from '../js/analytics-types-catalog.js';
     (function () {
-      /* Known sections, in render order, each with a stable label. Selectors
-         are resolved against the rendered `.dash` container. */
-      const SECTIONS = [
-        { sel: '.ah-topbar',              label: 'Page Header', doc: true },
-        { sel: '#att-hero',               label: 'Hero Section' },
-        { sel: '#rpt-gras-hero',          label: 'GRAS Report' },
-        { sel: '#rpt-insights-hero',      label: 'Portfolio Insights Report' },
-        { sel: ':scope > .pscale',        label: 'Processing Spectrum' },
-        { sel: ':scope > .dash-claim:not(.att-overview-claim)', label: 'Discovery & Claims' },
-        { sel: '.att-overview-claim',     label: 'Portfolio Overview' },
-        { sel: '.dash-top5-section',      label: 'Top Five Products' },
-        { sel: '#dash-charts',            label: 'UPF & GRAS Status' },
-        { sel: '.dash-pillars-section',   label: 'WISEscore Pillars' },
-        { sel: '.dash-pillars-breakdown', label: 'Pillar Breakdown' },
-        { sel: '.dash-radar-section',     label: 'Pillar Metrics' },
-        { sel: '.dash-ingredients-section', label: 'Processing Hotspots' },
-        { sel: '.dash-products-section',  label: 'Anti-Inflammatory' },
-        { sel: '.dash-mrow-section',      label: 'Metrics Highlight' },
-        { sel: '.dash-flags-section',     label: 'Ingredient Flags' },
-        { sel: '.dash-seg-section',       label: 'Score Distribution' },
-        { sel: '.dash-scatter-row',       label: 'Where to Focus' },
-        { sel: '#att-tree-card',          label: 'Performance Matrix' },
-        { sel: '#upf-class-card',         label: 'Product-Level UPF Classification' },
-        { sel: '#gras-class-card',        label: 'Historical & GRAS Ingredients' },
-        { sel: '#proc-class-card',        label: 'Ingredient Processing Details' },
-        { sel: '#gras-prod-card',         label: 'Product-Level GRAS Classification' },
-        { sel: '#inf-funnel-card',        label: 'Ingredient Funnel' },
-        { sel: '#inf-funnel-card-claim',  label: 'Product Claim Funnel' },
-        { sel: '#cf-funnel-card',         label: 'GRAS Conversion Funnel' },
-      ];
 
       const nav = document.getElementById('az-nav');
       const list = document.getElementById('az-nav-inner');
@@ -5101,7 +5076,7 @@
           dist: { excellent: 38, good: 38, okay: 17, fair: 7 },
           top: { name: 'Original Oatmeal', score: 92 }, low: { name: 'Blueberry Muffin Mix', score: 49 } },
         { kind: 'metric', name: 'Ultra-Processed Food', tone: 'good', score: 61,
-          desc: 'Measures degree of industrial processing using NOVA classification. Non-UPF products score highest.',
+          desc: 'Measures degree of industrial processing on the WISEcode spectrum. Non-UPF products score highest.',
           dist: { excellent: 29, good: 33, okay: 21, fair: 13, poor: 4 },
           top: { name: 'Original Granola', score: 88 }, low: { name: 'Protein Bar', score: 31 } },
         { kind: 'metric', name: 'Seed Oils of Concern', tone: 'okay', score: 58,

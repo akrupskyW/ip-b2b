@@ -969,6 +969,41 @@ html.app-search-on #modules-row .sa-panel {
   max-height: 100% !important;
 }
 
+/* Every non-chat drawer — z-index 0 / 1 / 2 — uses the same 15px top/bottom
+   inset as Output. Does not wait for `.is-sticky` (progress / Report used to
+   stretch to the full row until JS attached that class, and looked taller
+   than Product Details). Chat stays the full-height buckle. Search-on and
+   full-bleed restretch later in this file. */
+html:not(.app-search-on) #modules-row > *:not(.sticky-chat):not(.ap-chat):not(.rf-chat):not(.sa-chat):not(.gs-chat):not(.aid-chat):not(.wa-chat):not(#wa-chat):not(#rf-chat):not(#sa-chat):not(#aid-chat):not(#pl-chat):not(#ar-chat):not(#gs-chat):not(#chat-shell):not(#pf-chat-panel):not(#wiseai-dock-panel):not(#panels-row):not(#panels-row-right):not(#intent-stack-column):not(#menu-panel):not([class*="scrim"]):not([class*="resize"]):not([class*="handle"]):not([class*="grip"]):not(.wise-progress-restore),
+html:not(.app-search-on) #modules-row .sticky-mod,
+html:not(.app-search-on) #modules-row .sticky-mod.is-sticky,
+html:not(.app-search-on) #modules-row #agent-main,
+html:not(.app-search-on) #modules-row #nfp-panel,
+html:not(.app-search-on) #modules-row #ap-progress,
+html:not(.app-search-on) #modules-row #vf-progress-pane,
+html:not(.app-search-on) #modules-row #gv-progress-pane,
+html:not(.app-search-on) #modules-row .vf-progress-pane,
+html:not(.app-search-on) #modules-row .gv-progress-pane,
+html:not(.app-search-on) #modules-row #help-contact,
+html:not(.app-search-on) #modules-row .rf-studio,
+html:not(.app-search-on) #modules-row .rf-dash,
+html:not(.app-search-on) #modules-row #rf-report,
+html:not(.app-search-on) #modules-row #rf-report.is-open,
+html:not(.app-search-on) #modules-row .wa-pane.is-open,
+html:not(.app-search-on) #modules-row #wa-report,
+html:not(.app-search-on) #modules-row #wa-report.wa-pane.is-open,
+html:not(.app-search-on) #modules-row #pf-report-panel,
+html:not(.app-search-on) #modules-row #pf-report-panel.pf-rpt-open,
+html:not(.app-search-on) #modules-row .wch-sidebar.wch-docked,
+html:not(.app-search-on) #modules-row.modules-sticky .wch-sidebar.wch-docked,
+html:not(.app-search-on) #modules-row .sa-panel,
+html:not(.app-search-on) #panels-row-right > *:not([class*="scrim"]),
+html:not(.app-search-on) #intent-stack-column > *:not([class*="scrim"]) {
+  height: calc(100% - 30px) !important;
+  max-height: calc(100% - 30px) !important;
+  align-self: center !important;
+}
+
 html.wa-print-report #wise-app-search { display: none !important; }
 
 @media print {
@@ -1600,10 +1635,12 @@ html.dark .topbar-menu-item--admin:hover { background: rgba(236, 72, 153, 0.16);
 /* Appearance popover packs GROUP CARDS into one column per stack. Tracks
    are created only for columns that actually rendered (empty Admin groups
    omit their column entirely), so turning Admin controls off shrinks the
-   panel instead of leaving blank grid tracks. Column width stays in the
-   same band as the old four-track layout so titles still fit on one line.
-   Narrow viewports wrap to two tracks. Scoped to the appearance popover
-   only (wireAppearancePopover() tags it) so the shorter avatar menu is
+   panel instead of leaving blank grid tracks. Internal admins off leaves
+   one column (Experience + the master switch + Accessibility). Column
+   width stays in the same band as the old four-track layout so titles
+   still fit on one line. Narrow viewports wrap to two tracks when more
+   than one column rendered. Scoped to the appearance popover only
+   (wireAppearancePopover() tags it) so the shorter avatar menu is
    unaffected. */
 .wise-popover.wise-popover--appearance {
   min-width: 260px;
@@ -1625,6 +1662,11 @@ html.dark .topbar-menu-item--admin:hover { background: rgba(236, 72, 153, 0.16);
     grid-auto-flow: row;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-auto-columns: unset;
+  }
+  .wise-popover.wise-popover--appearance:has(> .wise-appearance-col:only-child) {
+    width: max-content;
+    max-width: min(260px, calc(100vw - 16px));
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 .wise-appearance-col {
@@ -2373,6 +2415,21 @@ html.dark .topbar-trailing .lir-btn.lir-active {
   align-items: stretch;
   overflow-x: auto;
   overflow-y: hidden;
+  /* Page canvas behind every module card — linen in light, navy in dark.
+     Paper (`--surface`) stays on the cards themselves. */
+  background: var(--bg);
+  /* Two-tier sticky tuck. Chat-side drawers (Output, Product Details, studio,
+     Turns, History) use --sticky-tuck. Nested drawers (progress, Report,
+     Contact, dashboard, portfolio report) use the deeper nested pair so they
+     start behind their left neighbour's 16px corner. Do not mix these. */
+  --sticky-tuck: 14px;
+  --sticky-pad: 14px;
+  --sticky-nested-tuck: 50px;
+  --sticky-nested-pad: 30px;
+  --sticky-nested-inner: 20px;
+  /* Paper drawers (Report, Contact, dash): the inner face starts at the
+     covering module's right edge, not under its 16px radius. Equal to tuck. */
+  --sticky-nested-face-pad: 50px;
   /* No bottom padding here: the body already frames the shell with a uniform
      inset on all four sides. A bottom padding on the row stacks on top of that
      body inset (the negative-margin cancel below never fires under the fixed
@@ -2408,6 +2465,29 @@ html.mod-gap-xl #modules-row { gap: var(--modules-gap) !important; }
   height: 100%;
   max-height: 100%;
   align-self: stretch;
+}
+/* Direct children that are drawers (not chat, not group wrappers) share
+   Output's 15px inset even before `.is-sticky` lands. Restates the earlier
+   html:not(.app-search-on) rule next to the stretch default so page copies
+   of `#modules-row > * { height: 100% }` cannot leave progress taller. */
+html:not(.app-search-on) #modules-row > .sticky-mod,
+html:not(.app-search-on) #modules-row > .vf-progress-pane,
+html:not(.app-search-on) #modules-row > .gv-progress-pane,
+html:not(.app-search-on) #modules-row > #ap-progress,
+html:not(.app-search-on) #modules-row > #nfp-panel,
+html:not(.app-search-on) #modules-row > #agent-main,
+html:not(.app-search-on) #modules-row > #help-contact,
+html:not(.app-search-on) #modules-row > #wa-report,
+html:not(.app-search-on) #modules-row > #rf-report,
+html:not(.app-search-on) #modules-row > #pf-report-panel,
+html:not(.app-search-on) #modules-row > .wa-pane,
+html:not(.app-search-on) #modules-row > .rf-studio,
+html:not(.app-search-on) #modules-row > .rf-dash,
+html:not(.app-search-on) #modules-row > .sa-panel,
+html:not(.app-search-on) #modules-row > .wch-sidebar {
+  height: calc(100% - 30px) !important;
+  max-height: calc(100% - 30px) !important;
+  align-self: center !important;
 }
 /* Portfolio / comparison wrap optional side modules in #panels-row (left of
    chat) and #panels-row-right. When those wrappers are empty they still sit
@@ -2464,7 +2544,7 @@ html.mod-gap-xl #modules-row { gap: var(--modules-gap) !important; }
 #modules-row .sticky-mod.is-sticky {
   position: relative;
   z-index: 1;
-  background: var(--surface-2);
+  background: var(--surface);
   box-shadow: none;
   /* Shorter + vertically centred so the module reads as a DRAWER emerging from
      behind the chat — exactly like the docked Turns module (chat-history.js
@@ -2472,8 +2552,8 @@ html.mod-gap-xl #modules-row { gap: var(--modules-gap) !important; }
      Appearance ▸ Search removes this inset (see html.app-search-on rules). */
   align-self: center;
   height: calc(100% - 30px);
-  margin-left: calc(-14px - var(--modules-gap, 8px)); /* cancels the REAL row gap + ~14px tuck */
-  padding-left: 14px;                 /* keep content clear of the tucked edge */
+  margin-left: calc(-1 * var(--sticky-tuck) - var(--modules-gap, 8px));
+  padding-left: var(--sticky-pad);
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   /* Match the inner card's open (right) corners so this fill doesn't sit as a
@@ -2495,13 +2575,25 @@ html.mod-gap-xl #modules-row { gap: var(--modules-gap) !important; }
    edge too. (!important because some pages restate the inner frame with
    !important id-level rules.) */
 #modules-row .sticky-mod.is-sticky > .panel-inner,
-#modules-row .sticky-mod.is-sticky > [class*="-inner"] {
+#modules-row .sticky-mod.is-sticky > [class*="-inner"],
+#modules-row .vf-progress-pane > .vfp-inner,
+#modules-row .gv-progress-pane > .gvp-inner,
+#modules-row #ap-progress > .vfp-inner {
   border-top-left-radius: 0 !important;
   border-bottom-left-radius: 0 !important;
   border-top-right-radius: var(--r-md, 16px) !important;
   border-bottom-right-radius: var(--r-md, 16px) !important;
   border-left: 0 !important;
   box-shadow: none !important;
+}
+/* The card face starts 20px under the neighbour (tuck 50 − pad 30) so the
+   neighbour's 16px corner never shows the drawer edge. Shift the icons/copy
+   that same 20px so they sit in the visible peek, not in the overlap. */
+#modules-row .vf-progress-pane.sticky-mod.is-sticky > .vfp-inner,
+#modules-row .gv-progress-pane.sticky-mod.is-sticky > .gvp-inner,
+#modules-row #ap-progress.sticky-mod.is-sticky > .vfp-inner {
+  padding-left: var(--sticky-nested-inner);
+  box-sizing: border-box;
 }
 /* The wrapper's full-box `background: var(--surface-2)` is the drawer fill for
    DIRECT-card modules (the element IS the card). On wrapper-based modules that
@@ -2519,8 +2611,8 @@ html.mod-gap-xl #modules-row { gap: var(--modules-gap) !important; }
   top: 0;
   bottom: 0;
   left: 0;
-  width: 14px;
-  background: var(--surface-2);
+  width: var(--sticky-pad);
+  background: var(--surface);
   pointer-events: none;
   z-index: 0;
 }
@@ -2569,23 +2661,64 @@ html.mod-gap-xl #modules-row { gap: var(--modules-gap) !important; }
         neighbour, and its 14px tucked-in surface-2 strip showed as a lighter
         seam that read as a gap. Dropping it under z-index 1 makes it slide
         cleanly UNDER the neighbour.
-     2) shorter — a plain drawer is calc(100% - 30px); the progress tracker is
-        held ~30px shorter still so it reads as nested BELOW the taller module
-        to its left rather than the same height. */
+     2) same 15px top/bottom inset as the module it tucks behind — never a
+        second, shorter nested height. */
 #modules-row .vf-progress-pane.sticky-mod.is-sticky,
 #modules-row .gv-progress-pane.sticky-mod.is-sticky,
-#modules-row #help-contact.sticky-mod.is-sticky {
+#modules-row #ap-progress.sticky-mod.is-sticky,
+#modules-row #help-contact.sticky-mod.is-sticky,
+#modules-row #wa-report.wa-pane.is-open.is-sticky,
+#modules-row #rf-report.sticky-mod.is-sticky,
+#modules-row #pf-report-panel.sticky-mod.is-sticky,
+#modules-row #workflow-panel.sticky-mod.is-sticky,
+#modules-row:not(.is-picking) .rf-dash.sticky-mod.is-sticky {
   z-index: 0;
-  height: calc(100% - 60px) !important;
-  max-height: calc(100% - 60px) !important;
+  height: calc(100% - 30px) !important;
+  max-height: calc(100% - 30px) !important;
   align-self: center !important;
+  margin-left: calc(-1 * var(--sticky-nested-tuck) - var(--modules-gap, 8px)) !important;
+  padding-left: var(--sticky-nested-pad) !important;
+}
+/* Paper nested drawers: the tucked strip is the SAME color as the visible
+   face (--surface). A second fill in the overlap showed as a third color
+   through the covering module's 16px radius. Tuck an extra radius deep so
+   that face color, not the page, is what sits in the corner. */
+#modules-row #help-contact.sticky-mod.is-sticky,
+#modules-row #wa-report.wa-pane.is-open.is-sticky,
+#modules-row #rf-report.sticky-mod.is-sticky,
+#modules-row #pf-report-panel.sticky-mod.is-sticky,
+#modules-row #workflow-panel.sticky-mod.is-sticky,
+#modules-row:not(.is-picking) .rf-dash.sticky-mod.is-sticky {
+  margin-left: calc(-1 * var(--sticky-nested-tuck) - var(--r-md, 16px) - var(--modules-gap, 8px)) !important;
+  padding-left: calc(var(--sticky-nested-face-pad) + var(--r-md, 16px)) !important;
+  background: var(--surface) !important;
+}
+#modules-row #wa-report.is-sticky > .wa-pane-top,
+#modules-row #wa-report.is-sticky > .wa-pane-body,
+#modules-row #wa-report.is-sticky > .wa-rpt-foot,
+#modules-row #rf-report.sticky-mod.is-sticky > .rf-head,
+#modules-row #rf-report.sticky-mod.is-sticky > .rf-body,
+#modules-row #help-contact.sticky-mod.is-sticky > .wch-head,
+#modules-row #help-contact.sticky-mod.is-sticky > .hc-mail-body,
+#modules-row #help-contact.sticky-mod.is-sticky > .hc-mail-foot,
+#modules-row:not(.is-picking) .rf-dash.sticky-mod.is-sticky > .rf-head,
+#modules-row:not(.is-picking) .rf-dash.sticky-mod.is-sticky > .rf-body {
+  background: var(--surface) !important;
+}
+#modules-row .vf-progress-pane.sticky-mod.is-sticky:has(> [class*="-inner"])::before,
+#modules-row .gv-progress-pane.sticky-mod.is-sticky:has(> [class*="-inner"])::before,
+#modules-row #ap-progress.sticky-mod.is-sticky:has(> [class*="-inner"])::before,
+#modules-row #pf-report-panel.sticky-mod.is-sticky:has(> [class*="-inner"])::before,
+#modules-row #workflow-panel.sticky-mod.is-sticky:has(> [class*="-inner"])::before {
+  width: calc(var(--sticky-nested-face-pad) + var(--r-md, 16px));
+  background: var(--surface);
 }
 /* Contact is a next-level drawer off Help (same tuck as #wa-report off Output):
    paper surface, no left seam, square chat-facing corners. Page-level
    `#help-contact` card rules must not win and turn it back into a peer module. */
 #modules-row #help-contact.sticky-mod.is-sticky {
-  margin-left: calc(-14px - var(--modules-gap, 8px));
-  padding-left: 14px;
+  margin-left: calc(-1 * var(--sticky-nested-tuck) - var(--r-md, 16px) - var(--modules-gap, 8px)) !important;
+  padding-left: calc(var(--sticky-nested-face-pad) + var(--r-md, 16px)) !important;
   border-left: 0 !important;
   border-top-left-radius: 0 !important;
   border-bottom-left-radius: 0 !important;
@@ -4282,9 +4415,10 @@ html.dark .menu-nav .menu-nav-group[data-open="true"] > .menu-nav-product .menu-
 
 /* Nav & History icons (Appearance ▸ Layout). Collapsed rail is the logo
    bug, hamburger, History on icon, and new-chat (blue circle). The hamburger
-   opens only the labelled nav; the History icon opens only History. While
-   either is open, hamburger and new-chat hide so they are not repeated
-   inside the opened module — history off stays to close. */
+   opens only the labelled nav; the History icon opens only History. They
+   are independent — both can be open at once. While History is open the
+   rail hides the duplicate History / new-chat icons; the labelled nav
+   keeps the History slot so the hamburger does not jump. */
 .menu-modules-btn {
   display: none;
   flex-shrink: 0;
@@ -4366,12 +4500,21 @@ html.nav-modules #menu-panel:not(.mp-rail):not(.mp-pivot):not(.minimal-ui) .menu
   margin-left: 0;
 }
 
-/* Open History: hide new-chat (History carries its own) and the nav
-   History toggle (History has its own collapse). The hamburger stays so
-   the labelled nav can be opened or collapsed beside History. */
-html.nav-modules.nav-modules-hist-open #menu-panel .menu-modules-new,
-html.nav-modules.nav-modules-hist-open #menu-panel .topbar-menu-toggle {
+/* Open History + collapsed rail: hide duplicate History / new-chat
+   (History carries its own of both). The hamburger stays so the
+   labelled nav can still be opened or collapsed beside History.
+
+   Open History + labelled nav: do NOT display:none the History toggle.
+   That slot is what parks the hamburger to the right of the wordmark.
+   Removing it lets the wordmark grow and the dock icon jumps to the
+   trailing edge. Keep the slot, hide the glyph. */
+html.nav-modules.nav-modules-hist-open #menu-panel.mp-rail .menu-modules-new,
+html.nav-modules.nav-modules-hist-open #menu-panel.mp-rail .topbar-menu-toggle {
   display: none !important;
+}
+html.nav-modules.nav-modules-hist-open #menu-panel:not(.mp-rail) .topbar-menu-toggle {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 html.nav-modules #agent-shell-wrap #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) .menu-brand-bar,
@@ -5596,6 +5739,8 @@ html.full-bleed.fb-chat-tint #welcome-screen {
 }
 html.full-bleed.fb-chat-tint .sc-bganim-live .sc-welcome,
 html.full-bleed.fb-chat-tint .sc-bganim-live #welcome-screen,
+html.full-bleed.fb-chat-tint .sc-bganim-live .chat-messages-area,
+html.full-bleed.fb-chat-tint .sc-bganim-live .chat-input-rail,
 html.full-bleed.fb-chat-tint .sc-orbit-live .sc-welcome,
 html.full-bleed.fb-chat-tint .sc-orbit-live #welcome-screen,
 html.full-bleed.fb-chat-tint.chat-tint .sc-bganim-live #welcome-screen,
@@ -6097,7 +6242,7 @@ html.dark .agent-empty { background: rgba(255,255,255,0.03); border-color: rgba(
 }
 .agent-cta .material-symbols-outlined { font-size: 16px !important; flex-shrink: 0; }
 
-.agent-cta--ghost { background: transparent; color: var(--text-muted); }
+.agent-cta--ghost { background: transparent; color: var(--text-muted); border-color: var(--primary); }
 .agent-card.is-interactive { cursor: pointer; }
 .agent-card.is-interactive:focus-visible,
 .agent-child[role="button"]:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
@@ -7518,22 +7663,54 @@ html.composer-v2 .fl-input-wrap--stacked .fl-input { padding: 6px 4px 2px 8px; m
    composer's 10% input fill — so the chat container stands out from the plain
    page background while the input still reads a step deeper than its
    surroundings. Dark mode instead lifts the navy card toward the bright
-   accent. ===== */
+   accent.
+
+   Hosts remap --bg / --surface to the wash so page-level rules like
+   `.wa-chat { background: var(--bg) }` and `#chat-shell { background:
+   var(--surface) }` inherit the tint. Full-bleed custom chat colours
+   (`fb-chat-tint`) keep their own tokens. Host list stays in sync with
+   js/sticky-modules.js CHAT_SEL. ===== */
 html.chat-tint:not(.dark) {
   --scorecard-fill: color-mix(in srgb, var(--primary) 5%, var(--surface));
 }
 html.dark.chat-tint {
   --scorecard-fill: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339);
 }
+html.chat-tint:not(.dark):not(.fb-chat-tint) :is(
+  .sc-card, .wa-chat, .ap-chat, .rf-chat, .sa-chat, .gs-chat, .aid-chat, .sticky-chat,
+  #wa-chat, #rf-chat, #sa-chat, #aid-chat, #pl-chat, #ar-chat, #gs-chat,
+  #chat-shell, #pf-chat-panel, #wiseai-dock-panel
+) {
+  --wise-chat-tint: color-mix(in srgb, var(--primary) 5%, #fff);
+  --bg: var(--wise-chat-tint);
+  --surface: var(--wise-chat-tint);
+}
+html.dark.chat-tint:not(.fb-chat-tint) :is(
+  .sc-card, .wa-chat, .ap-chat, .rf-chat, .sa-chat, .gs-chat, .aid-chat, .sticky-chat,
+  #wa-chat, #rf-chat, #sa-chat, #aid-chat, #pl-chat, #ar-chat, #gs-chat,
+  #chat-shell, #pf-chat-panel, #wiseai-dock-panel
+) {
+  --wise-chat-tint: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339);
+  --bg: var(--wise-chat-tint);
+  --surface: var(--wise-chat-tint);
+}
 html.chat-tint:not(.dark) .sc-card,
+html.chat-tint:not(.dark) .wa-chat,
+html.chat-tint:not(.dark) .ap-chat,
+html.chat-tint:not(.dark) .rf-chat,
 html.chat-tint:not(.dark) .chat-messages-area,
 html.chat-tint:not(.dark) .chat-input-rail,
 /* The welcome and settings screens are OPAQUE overlays (absolute, inset 0)
    painted over the card in var(--bg)/var(--surface) — without tinting them
    too, a fresh chat module never shows the blue base layer beneath. */
 html.chat-tint:not(.dark) .sc-welcome,
+html.chat-tint:not(.dark) #welcome-screen,
 html.chat-tint:not(.dark) .sc-settings { background: color-mix(in srgb, var(--primary) 5%, #fff); }
-html.dark.chat-tint .sc-card { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
+html.dark.chat-tint .sc-card,
+html.dark.chat-tint .wa-chat,
+html.dark.chat-tint .ap-chat,
+html.dark.chat-tint .rf-chat,
+html.dark.chat-tint #chat-shell { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
 /* Carousel edge fades (large scorecards + small intent chips) must blend into
    the tinted welcome surface — with the default fades (var(--bg)) they read as
    linen bands at the rail edges over the blue-washed chat. */
@@ -9140,6 +9317,14 @@ html.dark .dash-top5-hero-claim .dash-stamp-icon.dash-stamp-num { text-shadow: 0
    context so the absolutely-placed toast pops over this column. */
 .dash-claim-col--nudge { position: relative; }
 
+/* Guides (Appearance ▸ Experience) — floating nudge toasts stay hidden
+   until Guides is on. Markup and placement JS stay so they can come back.
+   All Modules is the catalog: its specimen toasts stay on regardless. */
+html:not(.guides-on) .dash-score-toast { display: none !important; }
+html:not(.guides-on) body[data-nav-id="all-modules"] .dash-score-toast:not([hidden]) {
+  display: flex !important;
+}
+
 /* Nudge toast — pops up just over the column it belongs to (e.g. the "products
    qualify" count) to push the next action. The × opens a tiny menu: dismiss
    for now or dismiss for the current session. */
@@ -9475,7 +9660,7 @@ html.dark .dash-bignum { color: var(--text); }
 .dash-btn .material-symbols-outlined { font-size: 16px; flex-shrink: 0; }
 .dash-btn--primary { background: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(37, 80, 124, 0.25); }
 .dash-btn--primary:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(37, 80, 124, 0.3); }
-.dash-btn--ghost { background: transparent; color: var(--text); border-color: var(--border-strong); }
+.dash-btn--ghost { background: transparent; color: var(--text); border-color: var(--primary); }
 .dash-btn--ghost:hover { background: var(--surface-2); }
 
 .dash-text-link {
@@ -12083,7 +12268,7 @@ a.pf-head-btn, a.pf-head-btn:link, a.pf-head-btn:visited, a.pf-head-btn:hover, a
 .pf-head-btn--primary .material-symbols-outlined {
   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
-.pf-head-btn--ghost { background: transparent; color: var(--text-muted); border-color: var(--border-strong); }
+.pf-head-btn--ghost { background: transparent; color: var(--text-muted); border-color: var(--primary); }
 .pf-head-btn--ghost:hover { color: var(--text); background: var(--surface-2); }
 html.dark .pf-head-btn--ghost:hover { background: rgba(255,255,255,0.06); }
 .pf-head-btn:disabled, .pf-brand-chip:disabled {
@@ -12331,7 +12516,9 @@ html.dark .vf-stat--verified .vf-stat-label .material-symbols-outlined { color: 
 .vf-progress-pane {
   flex: 0 0 300px;
   width: 300px;
-  align-self: stretch;
+  align-self: center;
+  height: calc(100% - 30px);
+  max-height: calc(100% - 30px);
   min-height: 0;
   display: flex;
   animation: vfPaneIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
@@ -12459,7 +12646,7 @@ html.dark .vfp-pct-ring {
 .vfp-pct-ring span { position: relative; font-size: 0.6rem; font-weight: 700; color: var(--text); }
 
 /* Rail (collapsed) — shrink the pane to an icon column. */
-.vf-progress-pane:has(.vfp-inner.is-min) { flex: 0 0 64px; width: 64px; }
+.vf-progress-pane:has(.vfp-inner.is-min) { flex: 0 0 114px; width: 114px; }
 .vfp-inner.is-min .vfp-header { flex-direction: column; gap: 8px; padding: 12px 6px; }
 .vfp-inner.is-min .vfp-header-text { display: none; }
 .vfp-inner.is-min .vfp-min-btn { order: -1; }
@@ -12953,7 +13140,7 @@ html.dark .vf-select-el {
   font-size: 0.86rem;
   font-weight: 600;
   cursor: pointer;
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--primary);
 }
 .vf-modal-btn--ghost { background: var(--surface); color: var(--text); }
 .vf-modal-btn--ghost:hover { background: var(--surface-2); }
@@ -13162,7 +13349,7 @@ html.dark .gv-fopt:hover { background: rgba(255,255,255,0.05); }
 .gv-cta:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(0.35); box-shadow: none; }
 .gv-cta:disabled:hover { filter: grayscale(0.35); transform: none; }
 .gv-cta--ghost {
-  background: var(--surface); color: var(--text); border: 1px solid var(--border-strong);
+  background: var(--surface); color: var(--text); border: 1px solid var(--primary);
 }
 .gv-cta--ghost:hover { background: var(--surface-2); filter: none; }
 
@@ -13256,14 +13443,14 @@ html.dark .gv-chip--info { background: rgba(45, 212, 191, 0.15); }
 /* ---------- Row action buttons (ghost, never solid primary) ---------- */
 .gv-row-cta {
   display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px;
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--primary);
   border-radius: var(--radius-pill, 999px); background: transparent; color: var(--text);
   font-family: inherit; font-size: 0.75rem; font-weight: 700; cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 .gv-row-cta .material-symbols-outlined { font-size: 15px; }
 .gv-row-cta:hover { background: var(--primary-soft); color: var(--primary-ink, var(--primary)); border-color: var(--primary); }
-.gv-row-cta--ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border-strong); }
+.gv-row-cta--ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--primary); }
 .gv-row-cta--ghost:hover { color: var(--text); background: var(--primary-soft); }
 .gv-row-done { display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; font-weight: 700; color: var(--gv-ok); }
 .gv-row-done .material-symbols-outlined { font-size: 16px; }
@@ -13419,7 +13606,7 @@ html.dark .gv-input { background: rgba(255,255,255,0.05); border-color: rgba(255
 .gv-btn--primary { background: var(--primary); color: #fff; box-shadow: var(--shadow-1); }
 .gv-btn--primary:hover { filter: brightness(1.07); }
 .gv-btn--primary:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(0.35); }
-.gv-btn--ghost { background: transparent; color: var(--text-muted); }
+.gv-btn--ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--primary); }
 .gv-btn--ghost:hover { color: var(--text); background: var(--surface-2); }
 
 /* ---------- Outcome (confirm / result) ---------- */
@@ -13459,7 +13646,7 @@ html.dark .gv-input { background: rgba(255,255,255,0.05); border-color: rgba(255
 
 /* ---------- Right-hand progress module ---------- */
 .gv-progress-pane {
-  flex: 0 0 300px; width: 300px; align-self: stretch; min-height: 0; display: flex;
+  flex: 0 0 300px; width: 300px; align-self: center; height: calc(100% - 30px); max-height: calc(100% - 30px); min-height: 0; display: flex;
   animation: gvPaneIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   transition: flex-basis 0.25s ease, width 0.25s ease;
 }
@@ -13548,7 +13735,7 @@ html.dark .gvp-pct-ring {
 .gvp-pct-ring::before { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--surface); }
 .gvp-pct-ring span { position: relative; font-size: 0.6rem; font-weight: 700; color: var(--text); }
 
-.gv-progress-pane:has(.gvp-inner.is-min) { flex: 0 0 64px; width: 64px; }
+.gv-progress-pane:has(.gvp-inner.is-min) { flex: 0 0 114px; width: 114px; }
 .gvp-inner.is-min .gvp-header { flex-direction: column; gap: 8px; padding: 12px 6px; }
 .gvp-inner.is-min .gvp-header-text { display: none; }
 .gvp-inner.is-min .gvp-min-btn { order: -1; }
@@ -13680,7 +13867,7 @@ a.adm-btn, a.adm-btn:link, a.adm-btn:visited, a.adm-btn:hover, a.adm-btn:focus {
 .adm-btn .material-symbols-outlined { font-size: 16px; }
 .adm-btn--primary { background: var(--primary); color: #fff; }
 .adm-btn--primary:hover { filter: brightness(1.08); }
-.adm-btn--ghost { background: transparent; color: var(--text-muted); border-color: var(--border-strong); }
+.adm-btn--ghost { background: transparent; color: var(--text-muted); border-color: var(--primary); }
 .adm-btn--ghost:hover { color: var(--text); background: var(--surface-2); }
 html.dark .adm-btn--ghost:hover { background: rgba(255,255,255,0.06); }
 .adm-btn--danger { background: transparent; color: var(--sec-red); border-color: var(--sec-red-10); }
@@ -13763,7 +13950,7 @@ html.dark .adm-stat.is-active { background: color-mix(in srgb, var(--primary) 22
 .wmod-trow .wmod-btn--primary {
   background: transparent;
   color: var(--text);
-  border-color: var(--border-strong);
+  border-color: var(--primary);
   box-shadow: none;
 }
 .adm-trow .adm-btn--primary:hover,
@@ -13993,7 +14180,7 @@ html.dark .adm-donut-center::before { background: #14242f; border-color: rgba(25
 .adm-vf-stat-label .material-symbols-outlined { font-size: 14px; }
 .adm-vf-stat .adm-chip { max-width: 100%; white-space: normal; text-align: center; justify-content: center; line-height: 1.25; }
 .adm-vf-stat-sub { font-size: 0.66rem; color: var(--text-subtle); line-height: 1.3; }
-.adm-vf-stat .adm-btn--ghost { color: var(--text); border-color: var(--border-strong); }
+.adm-vf-stat .adm-btn--ghost { color: var(--text); border-color: var(--primary); }
 
 /* Verification-status list (icon + label + mini progress line + count). */
 .adm-vstatus { display: flex; flex-direction: column; gap: 4px; }
@@ -15055,7 +15242,7 @@ html.dark .pf-thumb { background: rgba(37,80,124,0.28); color: #9DC0E6; border-c
 .pf-claim-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap;
   padding: 7px 14px; border-radius: 999px; cursor: pointer;
-  border: 1px solid var(--border-strong); background: transparent; color: var(--text);
+  border: 1px solid var(--primary); background: transparent; color: var(--text);
   font-family: inherit; font-size: 11.5px; font-weight: 700;
   text-decoration: none; line-height: 1; box-sizing: border-box;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
@@ -15139,7 +15326,7 @@ html.dark .wmod-pill--muted { background: rgba(255,255,255,0.05); }
 .wmod-btn .material-symbols-outlined { font-size: 18px; }
 .wmod-btn--primary { background: var(--primary); color: #fff; box-shadow: var(--shadow-1); }
 .wmod-btn--primary:hover { filter: brightness(1.08); }
-.wmod-btn--ghost { background: transparent; color: var(--text-muted); border-color: var(--border-strong); }
+.wmod-btn--ghost { background: transparent; color: var(--text-muted); border-color: var(--primary); }
 .wmod-btn--ghost:hover:not(:disabled) { color: var(--text); background: var(--surface-2); }
 html.dark .wmod-btn--ghost:hover:not(:disabled) { background: rgba(255,255,255,0.05); }
 .wmod-btn:disabled { opacity: 0.45; cursor: default; }
@@ -15780,8 +15967,8 @@ html.dark .auth-affix-btn:hover { color: var(--primary-bright); }
 .auth-page .btn-primary { background: var(--primary); color: #fff; }
 .auth-page .btn-primary .material-symbols-outlined { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 .auth-page .btn-primary:hover { background: color-mix(in srgb, var(--primary) 88%, #000); color: #fff; }
-.auth-page .btn-ghost { background: transparent; color: var(--text); border-color: var(--border-strong); }
-.auth-page .btn-ghost:hover { background: var(--surface-2); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); color: var(--text); }
+.auth-page .btn-ghost { background: transparent; color: var(--text); border-color: var(--primary); }
+.auth-page .btn-ghost:hover { background: var(--surface-2); border-color: var(--primary); color: var(--text); }
 html.dark .auth-page .btn-ghost:hover { background: rgba(255,255,255,0.05); }
 .auth-page .btn-secondary { background: var(--surface-2); color: var(--text); border-color: var(--border-strong); }
 .auth-page .btn-secondary:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); }
@@ -16513,6 +16700,7 @@ html.dark .mi-pane-comp-link:hover { color: var(--primary-bright, #93C5FD); }
 .dsc-card.is-flash,
 .mi-card.is-flash,
 .mi-pane.is-flash,
+.mi-az-thumb.is-flash,
 .ii-card.is-flash,
 .mi-resp-card.is-flash,
 .mi-motion-card.is-flash,
@@ -16575,6 +16763,78 @@ html.dark .mi-tpane-src { color: var(--primary-bright, #93C5FD); }
 }
 .mi-tbl-count span { color: var(--text); }
 
+/* ---- Analytics Types: wrapping thumbnail grid, click → full-size lightbox ---- */
+.mi-az-grid {
+  display: flex; flex-wrap: wrap; gap: 16px 18px; margin-top: 8px;
+  --frame-w: 900px; --frame-h: 560px; --pane-scale: 0.28;
+  --pane-w: calc(var(--frame-w) * var(--pane-scale));
+  --pane-h: calc(var(--frame-h) * var(--pane-scale));
+}
+.mi-az-thumb { width: var(--pane-w); scroll-snap-align: unset; }
+.mi-az-thumb-bar {
+  display: flex; align-items: center; gap: 8px; padding: 0 2px;
+}
+.mi-az-thumb-bar .mi-pane-head { flex: 1 1 auto; min-width: 0; padding: 0; }
+button.mi-pane-head {
+  appearance: none; border: 0; background: none; cursor: pointer;
+  font: inherit; color: inherit; text-align: left;
+}
+button.mi-pane-hit {
+  appearance: none; border: 0; background: transparent; cursor: pointer; padding: 0;
+}
+.mi-az-thumb .mi-pane-viewport { background: var(--surface-2, var(--surface)); }
+.mi-az-thumb .mi-pane-frame { background: var(--surface); }
+.mi-az-thumb-desc {
+  margin: 2px 2px 0; font-size: 0.75rem; line-height: 1.35; color: var(--text-muted);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.mi-az-thumb-src {
+  display: inline-flex; align-items: center; gap: 4px; margin: 0 2px;
+  font-size: 0.75rem; font-weight: 700; line-height: 1.3;
+  color: var(--primary-ink, var(--primary)); text-decoration: none;
+}
+.mi-az-thumb-src:hover { text-decoration: underline; }
+html.dark .mi-az-thumb-src { color: var(--primary-bright, #93C5FD); }
+.mi-az-thumb-src .material-symbols-outlined { font-size: 15px !important; }
+.mi-az-thumb .mi-pane-viewport::after {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--primary) 8%, transparent) 50%, transparent 70%);
+  background-size: 200% 100%; animation: mi-tbl-shimmer 1.2s ease-in-out infinite;
+  opacity: 1; transition: opacity 0.3s ease;
+}
+.mi-az-thumb.is-focused .mi-pane-viewport::after,
+.mi-az-thumb.is-unfocused .mi-pane-viewport::after { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .mi-az-thumb .mi-pane-viewport::after { animation: none; }
+}
+.dsc-card--wide .mi-az-grid { margin-top: 4px; }
+
+.dash-modal-scrim.dash-modal-scrim--chart {
+  padding: 20px;
+}
+.dash-modal-scrim.dash-modal-scrim--chart .dash-modal--chart {
+  width: min(1100px, calc(100vw - 40px));
+  max-width: min(1100px, calc(100vw - 40px));
+  height: min(820px, calc(100vh - 40px));
+  max-height: calc(100vh - 40px);
+  display: flex; flex-direction: column;
+}
+.dash-modal--chart .dash-modal-title {
+  font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
+}
+.dash-modal-scrim.dash-modal-scrim--chart .dash-modal-body { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.mi-az-lb-body { padding: 0 18px 14px !important; }
+.mi-az-lb-stage {
+  position: relative; flex: 1 1 auto; min-height: 0; height: min(68vh, 680px);
+  overflow: auto; border-radius: 12px; border: 1px solid var(--border);
+  background: var(--surface);
+}
+html.dark .mi-az-lb-stage { border-color: rgba(255, 255, 255, 0.08); }
+.mi-az-lb-stage .mi-pane-frame {
+  position: relative; inset: auto; width: 100%; height: 100%; min-height: 560px;
+  transform: none; pointer-events: auto;
+}
+
 .mi-module { margin-top: 40px; }
 .mi-module-head {
   margin-bottom: 20px;
@@ -16593,6 +16853,10 @@ html.dark .mi-module-eyebrow { color: var(--primary-bright, #93C5FD); }
   font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
   margin: 4px 0 0; font-size: 1.35rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
 }
+.mi-module-blurb {
+  font-size: 0.8125rem; font-weight: 500; color: var(--text-muted);
+  margin: 3px 0 0; line-height: 1.35; max-width: 48ch;
+}
 .mi-module-lede { font-size: 0.875rem; color: var(--text-muted); margin: 6px 0 0; max-width: 76ch; }
 .mi-module-lede code {
   font-family: var(--font-mono); font-size: 0.8em;
@@ -16603,6 +16867,22 @@ html.dark .mi-module-eyebrow { color: var(--primary-bright, #93C5FD); }
 /* Turn the module header into a toggle bar. The whole header is clickable
    except its trailing ⋯ controls cluster. */
 .mi-module.mi-acc { margin-top: 22px; border-top: 1px solid var(--border); padding-top: 22px; }
+/* Codebase sits a little apart; the alphabetical catalog is its own stack. */
+#mi-code.mi-module.mi-acc,
+#mi-code.mi-acc--index {
+  margin-top: 28px;
+}
+.mi-acc-catalog {
+  margin-top: 40px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+html.dark .mi-acc-catalog { border-top-color: color-mix(in srgb, var(--border) 80%, #fff); }
+.mi-acc-catalog > .mi-module:first-child {
+  margin-top: 12px;
+  border-top: none;
+  padding-top: 12px;
+}
 .mi-module.mi-acc > .mi-module-head { cursor: pointer; user-select: none; margin-bottom: 20px; }
 .mi-module.mi-acc > .mi-module-head > .mi-module-head-text { margin-right: auto; }
 .mi-acc-chevron {
@@ -16613,9 +16893,10 @@ html.dark .mi-module-eyebrow { color: var(--primary-bright, #93C5FD); }
 .mi-module.mi-acc > .mi-module-head:hover .mi-acc-chevron { color: var(--primary); }
 .mi-module.is-collapsed > .mi-module-head { margin-bottom: 0; align-items: center; }
 .mi-module.is-collapsed .mi-acc-chevron { transform: rotate(-90deg); align-self: center; margin-top: 0; }
-/* Closed = title row only. Hide the lede and everything under the header
-   (including before JS wraps it in .mi-acc-body) so sections never flash open. */
+/* Closed = title + short blurb. Hide the long lede and everything under the
+   header (including before JS wraps it in .mi-acc-body) so sections never flash open. */
 .mi-module.is-collapsed .mi-module-lede { display: none; }
+.mi-module:not(.is-collapsed) .mi-module-blurb { display: none; }
 .mi-module.is-collapsed > :not(.mi-module-head) { display: none; }
 /* Accordion labels never carry a ⋯. Ready pills stay. */
 .mi-module > .mi-module-head > .panel-controls,

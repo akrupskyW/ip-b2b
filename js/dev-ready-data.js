@@ -41,7 +41,6 @@ export const DEV_READY_SEED = {
   "Tooltip": true,
   "Transcript actions": true,
   "Transcript lines": true,
-  "Turns module": true,
   "What can I ask?": true,
   "Width toggle": true,
   "ds:Brand": true,

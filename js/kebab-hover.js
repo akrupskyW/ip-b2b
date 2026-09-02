@@ -24,19 +24,19 @@
   var GRACE_MS = 180;
 
   var KNOWN_BTN =
-    '.panel-more-btn, .pf-rowmenu-btn, .adm-rowmenu-btn, .inv-rowmenu-btn, ' +
+    '.panel-more-btn, .pf-rowmenu-btn, .pf-reports-btn, .adm-rowmenu-btn, .inv-rowmenu-btn, ' +
     '.ma-rowmenu-btn, .nud-rowmenu-btn, .pf-datemenu-btn, .w-datemenu-btn, ' +
     '.pf-module-menu-btn, .dash-kebab, .sc-fb-more, .sc-connector-more';
 
   var WRAP_SEL =
-    '.pf-rowmenu, .adm-rowmenu, .inv-rowmenu, .ma-rowmenu, ' +
+    '.pf-rowmenu, .pf-reports-wrap, .adm-rowmenu, .inv-rowmenu, .ma-rowmenu, ' +
     '.panel-more-wrap, .dash-kebab-wrap, .pf-datemenu, .w-datemenu, ' +
     '.pf-module-menu, .sc-fb-more-wrap, .nud-actions';
 
   var POP_SEL =
     '[role="menu"], .topbar-popover, .pf-rowmenu-pop, .adm-rowmenu-pop, ' +
     '.inv-rowmenu-pop, .ma-rowmenu-pop, .pf-datemenu-pop, .w-datemenu-pop, ' +
-    '.pf-module-menu-pop, .dash-kebab-menu, .sc-fb-menu, .wt-more-pop, ' +
+    '.pf-module-menu-pop, .pf-reports-pop, .dash-kebab-menu, .sc-fb-menu, .wt-more-pop, ' +
     '.wch-more-pop';
 
   var SKIP_ANCESTOR =
@@ -105,6 +105,7 @@
     if (wrap) {
       var inner = wrap.querySelector(POP_SEL);
       if (inner && inner !== btn && !btn.contains(inner)) return inner;
+      if (wrap._pfPop && wrap._pfPop.isConnected) return wrap._pfPop;
     }
     var pops = document.querySelectorAll(POP_SEL);
     for (var i = 0; i < pops.length; i++) {
@@ -112,6 +113,7 @@
       if (p.__plHost && (p.__plHost === wrap || (p.__plHost.contains && p.__plHost.contains(btn)))) {
         return p;
       }
+      if (p._home && wrap && p._home.parent === wrap) return p;
       if (p.__dateRoot && wrap && (p.__dateRoot === wrap || wrap.contains(p.__dateRoot))) {
         /* date-column stashes the live pop on the wrap */
       }
@@ -225,6 +227,9 @@
 
   document.addEventListener('pointerout', function (e) {
     if (isTouch(e)) return;
+    /* Portalling a menu onto <body> (js/popover-layer.js) fires pointerout
+       with no relatedTarget. Treat that as still-inside, not a leave. */
+    if (!e.relatedTarget) return;
     var btn = kebabFrom(e.target);
     var fromPop = current && popFor(current) &&
       e.target.closest && e.target.closest(POP_SEL);

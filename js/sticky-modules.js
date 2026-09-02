@@ -68,7 +68,10 @@
      always treat as right-of-chat so a mid-layout probe cannot strip `.is-sticky`
      and leave them as a flush peer card. Do NOT add Remove-panel — that is
      progress-tracker only. */
-  var NESTED_DRAWER_SEL = '#help-contact,#wa-report,#pf-report-panel';
+  /* Nested drawers (progress + this list) use --sticky-nested-tuck in wise.css.
+     Chat-adjacent drawers (Output, NFP, studio, Turns) stay on --sticky-tuck.
+     Do not mix the two. */
+  var NESTED_DRAWER_SEL = '#help-contact,#wa-report,#rf-report,#pf-report-panel,#workflow-panel,.rf-dash';
   var REMOVE_TOGGLE_ATTR = 'data-progress-remove';
 
   function isProgressPane(el) { return !!(el && el.matches && el.matches(PROGRESS_SEL)); }

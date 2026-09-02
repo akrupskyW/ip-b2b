@@ -129,7 +129,7 @@ function isIntentChip(btn) {
 function isKebabTrigger(btn) {
   if (!btn || !btn.matches) return false;
   if (btn.matches(
-    '.panel-more-btn, .pf-rowmenu-btn, .adm-rowmenu-btn, .inv-rowmenu-btn, ' +
+    '.panel-more-btn, .pf-rowmenu-btn, .pf-reports-btn, .adm-rowmenu-btn, .inv-rowmenu-btn, ' +
     '.ma-rowmenu-btn, .nud-rowmenu-btn, .pf-datemenu-btn, .w-datemenu-btn, ' +
     '.pf-module-menu-btn, .dash-kebab, .sc-fb-more, ' +
     '.lib-card-menu, .lib-fp-menu, .lib-fstat-menu, .wch-proj-menu'
@@ -250,7 +250,7 @@ export function initLirTooltip() {
     current = btn;
     /* Suppress the browser's native `title` bubble while our card is up, so the
        two don't stack. We stash it on `data-lir-title` and put it back on hide,
-       which keeps dynamic titles (e.g. the width toggle's single/double/triple
+       which keeps dynamic titles (e.g. the width toggle's single/double/fill
        caption) intact. */
     const nativeTitle = btn.getAttribute('title');
     if (nativeTitle != null) {

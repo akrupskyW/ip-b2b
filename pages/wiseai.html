@@ -443,19 +443,27 @@
     }
     #modules-row #wa-report.wa-pane.is-open.is-sticky {
       z-index: 1 !important;
-      /* One step shorter than Output so the taller pane overlaps it. */
-      height: calc(100% - 62px);
+      /* Same 15px top/bottom inset as Output — the module to its left. */
+      height: calc(100% - 30px);
+      max-height: calc(100% - 30px);
+      align-self: center;
       /* Same tuck as every other sticky drawer: slide under the neighbour,
          drop the facing corners / left border so Output's right edge is
          the only seam. */
-      margin-left: calc(-14px - var(--modules-gap, 8px));
-      padding-left: 14px;
+      margin-left: calc(-1 * var(--sticky-nested-tuck) - var(--r-md, 16px) - var(--modules-gap, 8px));
+      padding-left: calc(var(--sticky-nested-face-pad) + var(--r-md, 16px));
       border-left: 0 !important;
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
       box-shadow: none;
-      /* Paper white (or the dark-mode surface) — not the linen sticky fill. */
+      /* Same color as the visible report face — this fill is what shows
+         through Output's rounded corner, not the page and not Output. */
       background: var(--surface) !important;
+    }
+    html.sticky-flush #modules-row #wa-report.wa-pane.is-open.is-sticky {
+      height: calc(100% - 30px) !important;
+      max-height: calc(100% - 30px) !important;
+      align-self: center !important;
     }
     #modules-row #wa-report.is-sticky .wa-pane-top,
     #wa-report .wa-pane-body,
@@ -554,8 +562,8 @@
     }
     /* History (left of chat): flush + tucked under the chat's LEFT edge. */
     #modules-row.modules-sticky .wch-sidebar.wch-docked:not(.wch-right):not(.wch-unsticky) {
-      margin-right: calc(-14px - var(--modules-gap, 8px)); /* cancels the REAL row gap + ~14px tuck */
-      padding-right: 14px;                 /* keep content clear of the tucked edge */
+      margin-right: calc(-1 * var(--sticky-tuck) - var(--modules-gap, 8px));
+      padding-right: var(--sticky-pad);
       border-top-right-radius: 0;
       border-bottom-right-radius: 0;
       border-right: 0;
@@ -567,8 +575,8 @@
     }
     /* Turns (right of chat): flush + tucked under the chat's RIGHT edge. */
     #modules-row.modules-sticky .wch-sidebar.wch-docked.wch-right:not(.wch-unsticky) {
-      margin-left: calc(-14px - var(--modules-gap, 8px));
-      padding-left: 14px;
+      margin-left: calc(-1 * var(--sticky-tuck) - var(--modules-gap, 8px));
+      padding-left: var(--sticky-pad);
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
       border-left: 0;
@@ -1115,8 +1123,8 @@
       z-index: 1;
       background: var(--surface-2);
       box-shadow: none;
-      margin-left: calc(-14px - var(--modules-gap, 8px)); /* cancels the REAL row gap + ~14px tuck */
-      padding-left: 14px;                 /* keep content clear of the tucked edge */
+      margin-left: calc(-1 * var(--sticky-tuck) - var(--modules-gap, 8px));
+      padding-left: var(--sticky-pad);
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
       border-left: 0;
@@ -2060,11 +2068,45 @@
        the output block, never inside the table. */
     .wa-pane-body .wa-block:has(.wa-chart-card) { position: relative; }
     .wa-chart-toolbar {
-      display: flex; justify-content: flex-end; align-items: center;
-      min-height: 28px; margin: 0 0 10px;
+      display: flex; justify-content: flex-start; align-items: center;
+      gap: 8px; min-height: 30px; margin: 0 0 10px;
+      container-type: inline-size; container-name: wacharttb;
+    }
+    /* Chart-type pill on the far left. Which types appear depends on the
+       plot (rankings → bars/columns, mixes → donut, multi-series → spider /
+       parallel / stacked). Expand stays on the right. */
+    .wa-chart-toolbar .cmp-chart-toggle { flex: 0 1 auto; min-width: 0; }
+    .wa-chart-toolbar .cmp-chart-btn.is-active .material-symbols-outlined {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    html.dark .wa-chart-toolbar .cmp-chart-toggle {
+      background: #1A2339; border-color: rgba(37,80,124,0.32);
+    }
+    @container wacharttb (min-width: 420px) {
+      .wa-chart-toolbar .cmp-chart-label { display: inline; }
+      .wa-chart-toolbar .cmp-chart-btn { width: auto; gap: 5px; padding: 0 10px; }
+    }
+    .wa-chart-plot { min-width: 0; }
+    .wa-ctype-group + .wa-ctype-group { margin-top: 14px; }
+    .wa-ctype-group-lbl {
+      font-size: 11px; font-weight: 700; color: var(--text-muted);
+      margin: 0 0 6px;
+    }
+    .wa-ctype-stack { display: flex; flex-direction: column; gap: 12px; }
+    .wa-ctype-stack-row { display: flex; flex-direction: column; gap: 5px; }
+    .wa-ctype-stack-lbl { font-size: 12.5px; font-weight: 600; color: var(--text); }
+    .wa-ctype-stack-track {
+      display: flex; height: 22px; border-radius: 999px; overflow: hidden;
+      background: var(--surface-3);
+    }
+    .wa-ctype-stack-seg {
+      height: 100%; min-width: 0; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: #fff;
+      font-variant-numeric: tabular-nums;
     }
     .wa-chart-expand-btn {
-      position: relative; z-index: 4; flex: 0 0 auto;
+      position: relative; z-index: 4; flex: 0 0 auto; margin-left: auto;
       display: inline-flex; align-items: center; justify-content: center;
       width: 28px; height: 28px; padding: 0; border-radius: 50%;
       border: 1px solid var(--border); background: var(--surface); color: var(--text-subtle);
@@ -2409,15 +2451,15 @@
     .wa-sh-foot { flex-shrink: 0; display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px 14px; border-top: 1px solid var(--border); }
     html.dark .wa-sh-foot { border-top-color: rgba(255,255,255,0.08); }
 
-    /* Success view — a "Share created" card (link + copy) above the running
-       "Existing shares" list. Copy uses the app's primary pill button. */
+    /* Success view — "Share created" card: full URL on its own wrapping row,
+       then an icon-only copy (same control as the Existing shares list). */
     .wa-sh-done { display: flex; flex-direction: column; gap: 16px; }
-    .wa-sh-created { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--sec-green) 42%, var(--border)); background: color-mix(in srgb, var(--sec-green) 7%, var(--surface)); }
+    .wa-sh-created { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--sec-green) 42%, var(--border)); background: color-mix(in srgb, var(--sec-green) 7%, var(--surface)); }
     html.dark .wa-sh-created { background: color-mix(in srgb, var(--sec-green) 14%, var(--surface-2)); }
     .wa-sh-created-title { font-size: 1rem; font-weight: 700; color: var(--sec-green-text, var(--sec-green)); }
-    .wa-sh-linkrow { display: flex; gap: 8px; }
-    .wa-sh-linkrow .adm-input { flex: 1 1 auto; min-width: 0; font-size: 0.76rem; }
-    .wa-sh-linkrow .adm-btn { flex: 0 0 auto; }
+    .wa-sh-link { width: 100%; box-sizing: border-box; margin: 0; padding: 8px 10px; font-size: 0.76rem; line-height: 1.45; color: var(--text); background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 10px; word-break: break-all; overflow-wrap: anywhere; user-select: all; }
+    html.dark .wa-sh-link { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+    .wa-sh-created .wa-sh-share-act { align-self: flex-start; }
 
     .wa-sh-existing { display: flex; flex-direction: column; padding-top: 14px; border-top: 1px solid var(--border); }
     .wa-sh-existing-label { font-size: 0.9rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
@@ -2446,8 +2488,17 @@
       background: var(--surface);
     }
     html.dark #wa-report #wa-share-panel { background: var(--surface); }
-    #wa-report #wa-share-panel .wa-sh-body { padding: 12px 14px 6px; }
-    #wa-report #wa-share-panel .wa-sh-foot { padding: 10px 14px 12px; }
+    /* Share is position:absolute from the report's left padding edge. On a
+       sticky report that tuck sits under Output — so the form's own
+       padding vanished into the seam. Keep Share in the visible
+       drawer and use the same 24px content inset as History / Turns. */
+    #modules-row #wa-report.is-sticky #wa-share-panel {
+      left: calc(var(--sticky-nested-face-pad) + var(--r-md, 16px));
+      width: auto;
+    }
+    #wa-report #wa-share-panel .wch-head { padding: 16px 16px 14px 24px; }
+    #wa-report #wa-share-panel .wa-sh-body { padding: 14px 16px 6px 24px; }
+    #wa-report #wa-share-panel .wa-sh-foot { padding: 12px 16px 14px 24px; }
     #wa-report > .wch-scrim { display: none !important; }
 
     /* ===== PORTED COMPARE ENGINE CSS (from product-comparison.html) ===== */
@@ -2771,6 +2822,9 @@
     .cmp-chart-btn .material-symbols-outlined { font-size: 17px !important; }
     .cmp-chart-btn:hover:not(.is-active) { color: var(--text); }
     .cmp-chart-btn.is-active { background: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(37,80,124,0.25); }
+    .cmp-chart-btn.is-active .material-symbols-outlined {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
 
     /* Spider (radar) chart */
     .cmp-radar-wrap {
@@ -6132,8 +6186,8 @@
           '<div class="wa-sh-done" data-done hidden>' +
             '<div class="wa-sh-created">' +
               '<div class="wa-sh-created-title">Share created</div>' +
-              '<div class="wa-sh-linkrow"><input type="text" class="adm-input" data-link readonly aria-label="Share link">' +
-                '<button type="button" class="adm-btn adm-btn--primary" data-copy><span class="material-symbols-outlined">content_copy</span><span data-copylabel>Copy link</span></button></div>' +
+              '<div class="wa-sh-link" data-link tabindex="0" aria-label="Share link"></div>' +
+              '<button type="button" class="wa-sh-share-act" data-copy title="Copy link" aria-label="Copy link"><span class="material-symbols-outlined">content_copy</span></button>' +
             '</div>' +
             '<div class="wa-sh-existing">' +
               '<div class="wa-sh-existing-label">Existing shares</div>' +
@@ -6150,7 +6204,7 @@
         org: q('[data-org]'), outputsWrap: q('[data-outwrap]'), outputs: q('[data-outs]'),
         outLabel: q('[data-outlabel]'),
         message: q('[data-message]'), create: q('[data-create]'), link: q('[data-link]'),
-        copy: q('[data-copy]'), copyLabel: q('[data-copylabel]'), existing: q('[data-existing]'),
+        copy: q('[data-copy]'), existing: q('[data-existing]'),
       };
       wireSharePanel();
     }
@@ -6346,7 +6400,7 @@
         : 'link only';
       const scope = shareContext === 'report' ? 'report · ' + scopeBase : scopeBase;
 
-      shareEls.link.value = url;
+      shareEls.link.textContent = url;
       shareExisting.unshift({ id: ++shareSeq, time: Date.now(), scope, url, outputs: outTitles.length });
       renderShareExisting();
 
@@ -6439,12 +6493,9 @@
         createShareLink();
       });
       shareEls.copy.addEventListener('click', () => {
-        navigator.clipboard?.writeText(shareEls.link.value).catch(() => {});
-        shareEls.link.select();
-        if (shareEls.copyLabel) {
-          shareEls.copyLabel.textContent = 'Copied';
-          setTimeout(() => { if (shareEls.copyLabel) shareEls.copyLabel.textContent = 'Copy link'; }, 1600);
-        }
+        navigator.clipboard?.writeText((shareEls.link.textContent || '').trim()).catch(() => {});
+        const ic = shareEls.copy.querySelector('.material-symbols-outlined');
+        if (ic) { ic.textContent = 'check'; setTimeout(() => { ic.textContent = 'content_copy'; }, 1400); }
       });
 
       sharePanel.querySelector('.wch-close').addEventListener('click', closeShareModal);
@@ -10191,8 +10242,525 @@
       applyPaneFs(el, !paneIsFs(el));
     }
 
+    /* Chart-type switcher (far left of the output toolbar) + expand (far right).
+       The pill is not a fixed four-type strip — it offers only views that fit
+       this plot's data (a ranking does not get a race; a mix can become a
+       donut; multi-series comparisons can become a spider or stacked bars). */
+    const WA_CHART_CATALOG = {
+      bars:     { id: 'bars',     icon: 'align_horizontal_left', label: 'Bars',     title: 'Bar view' },
+      columns:  { id: 'columns',  icon: 'bar_chart',             label: 'Columns',  title: 'Column view' },
+      stacked:  { id: 'stacked',  icon: 'stacked_bar_chart',     label: 'Stacked',  title: 'Stacked bar view' },
+      donut:    { id: 'donut',    icon: 'pie_chart',             label: 'Donut',    title: 'Donut view' },
+      radar:    { id: 'radar',    icon: 'radar',                 label: 'Spider',   title: 'Spider chart view' },
+      parallel: { id: 'parallel', icon: 'ssid_chart',            label: 'Parallel', title: 'Parallel coordinates view' },
+      heat:     { id: 'heat',     icon: 'grid_on',               label: 'Heat',     title: 'Heatmap view' },
+      line:     { id: 'line',     icon: 'show_chart',            label: 'Line',     title: 'Line view' },
+      table:    { id: 'table',    icon: 'table_chart',           label: 'Table',    title: 'Table view' },
+    };
+    const WA_CHART_MODE_ORDER = ['bars', 'columns', 'stacked', 'donut', 'radar', 'parallel', 'heat', 'line', 'table'];
+    const WA_CHART_PALETTE = ['var(--primary)', '#4C7FB0', '#86AAD0', 'var(--sec-green)', 'var(--ter-amber)', 'var(--sec-red)', '#8B6F9E', '#4A9B8E'];
+    const WA_CHART_TIER_RE = /processed|gras|excellent|good|fair|poor|okay|\bok\b|star|score|verified|–|\d+\s*[–-]\s*\d+/i;
+    const waChartCache = new WeakMap();
+
+    function waChartNum(s) {
+      const m = String(s || '').replace(/,/g, '').match(/-?\d+(?:\.\d+)?/);
+      return m ? parseFloat(m[0]) : NaN;
+    }
+    function waChartPaint(items) {
+      items.forEach((it, i) => { if (!it.color) it.color = WA_CHART_PALETTE[i % WA_CHART_PALETTE.length]; });
+      return items;
+    }
+    function waChartNormalize(items) {
+      const vals = items.map((it) => it.value).filter((v) => !isNaN(v));
+      const max = Math.max(1, ...vals);
+      items.forEach((it) => {
+        if (it.pct == null && !isNaN(it.value)) it.pct = Math.round((it.value / max) * 100);
+        if (!it.display && !isNaN(it.value)) {
+          it.display = Number.isInteger(it.value) ? it.value.toLocaleString('en-US') : String(it.value);
+        }
+      });
+      return waChartPaint(items);
+    }
+    function waChartSumNear100(vals) {
+      const sum = vals.reduce((a, b) => a + (Number(b) || 0), 0);
+      return sum > 90 && sum < 110 && vals.every((v) => (Number(v) || 0) <= 100);
+    }
+    function waChartLooksShare(items) {
+      return !!(items && items.length >= 2 && waChartSumNear100(items.map((it) => it.value)));
+    }
+    function waChartIsRateSeries(items) {
+      if (!items || items.length < 2) return false;
+      if (!items.every((it) => String(it.display || '').includes('%'))) return false;
+      return !waChartLooksShare(items);
+    }
+    function waChartIsBreakdown(items) {
+      if (!items || !items.length) return false;
+      const hits = items.filter((it) => WA_CHART_TIER_RE.test(it.label || '')).length;
+      return hits >= Math.ceil(items.length * 0.6);
+    }
+    function waChartAnnotate(data) {
+      if (!data) return data;
+      if (data.kind === 'series' && data.items) {
+        data.share = data.native === 'donut' || waChartLooksShare(data.items);
+      }
+      if (data.kind === 'grouped' && data.groups && data.series) {
+        data.sharePerGroup = data.groups.every((g) => waChartSumNear100(g.vals));
+        data.shareAcrossGroups = data.series.every((_, si) =>
+          waChartSumNear100(data.groups.map((g) => g.vals[si])));
+      }
+      return data;
+    }
+    function waChartNiceMax(v) {
+      if (v <= 0) return 1;
+      const mag = Math.pow(10, Math.floor(Math.log10(v)));
+      const n = v / mag;
+      const nice = n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10;
+      return nice * mag;
+    }
+
+    function waChartExtract(root) {
+      if (!root) return null;
+      const bars = root.querySelectorAll('.dash-breakdown-bar');
+      if (bars.length >= 2) {
+        const items = [...bars].map((bar) => {
+          const fill = bar.querySelector('.dash-ws-health-fill');
+          const display = (bar.querySelector('.dash-ws-health-num')?.textContent || '').trim();
+          const tw = fill?.getAttribute('data-target-width') || fill?.style.width || '';
+          const value = waChartNum(display);
+          return {
+            label: (bar.querySelector('.dash-breakdown-bar-name')?.textContent || '').trim(),
+            value: isNaN(value) ? parseFloat(tw) : value,
+            display,
+            pct: parseFloat(tw) || undefined,
+            color: fill?.style.background || fill?.getAttribute('data-color') || '',
+          };
+        }).filter((it) => it.label);
+        if (items.length >= 2) return { kind: 'series', native: 'bars', items: waChartNormalize(items) };
+      }
+
+      const arcs = root.querySelectorAll('.dash-donut-arc[data-label]');
+      if (arcs.length >= 2) {
+        const items = [...arcs].map((a) => ({
+          label: a.getAttribute('data-label') || '',
+          value: parseFloat(a.getAttribute('data-value')) || 0,
+          pct: parseFloat(a.getAttribute('data-pct')) || undefined,
+          color: a.getAttribute('data-color') || a.getAttribute('fill') || '',
+          display: (parseFloat(a.getAttribute('data-value')) || 0).toLocaleString('en-US'),
+        }));
+        const donutMeta = {
+          num: (root.querySelector('.dash-donut-num')?.textContent || '').trim(),
+          label: (root.querySelector('.dash-donut-label')?.textContent || '').trim() || 'total',
+          sub: (root.querySelector('.dash-donut-sub')?.textContent || '').trim(),
+          legendTitle: (root.querySelector('.dash-donut-legend-title')?.textContent || '').trim(),
+        };
+        return { kind: 'series', native: 'donut', items: waChartNormalize(items), donutMeta };
+      }
+
+      const heat = root.querySelector('.wa-heat');
+      if (heat) {
+        const series = [...heat.querySelectorAll('.wa-heat-head .wa-heat-col')].map((c, i) => ({
+          name: c.textContent.trim(),
+          color: i === 0 ? 'var(--sec-red)' : 'var(--sec-green)',
+        }));
+        const groups = [...heat.querySelectorAll('.wa-heat-row:not(.wa-heat-head)')].map((row) => ({
+          label: (row.querySelector('.wa-heat-rowlabel')?.textContent || '').trim(),
+          vals: [...row.querySelectorAll('.wa-heat-val')].map((v) => waChartNum(v.textContent)),
+        })).filter((g) => g.label && g.vals.length);
+        if (series.length && groups.length >= 2) return { kind: 'grouped', native: 'heat', series, groups };
+      }
+
+      if (root.querySelector('.wa-radar-wrap')) {
+        const scoreRoot = root.querySelector('.wa-radar-scores') || root;
+        const nested = waChartExtract(scoreRoot);
+        if (nested && nested.kind === 'series') return { ...nested, native: 'radar' };
+      }
+
+      const legendKeys = [...root.querySelectorAll('.wa-chart-legend .k')];
+      const svg = root.querySelector('svg');
+      if (svg && svg.querySelector('rect')) {
+        const rects = [...svg.querySelectorAll('rect')];
+        const texts = [...svg.querySelectorAll('text')];
+        const vbH = (svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.height) || 220;
+        const labelFloor = vbH * 0.8;
+        const groupLabels = texts.filter((t) => {
+          const y = parseFloat(t.getAttribute('y') || '0');
+          return y > labelFloor && /[A-Za-z]/.test(t.textContent || '');
+        });
+        if (legendKeys.length >= 2 && groupLabels.length >= 2) {
+          const series = legendKeys.map((k) => ({
+            name: k.textContent.trim(),
+            color: k.querySelector('.wa-dot')?.style.background || 'var(--primary)',
+          }));
+          const n = series.length;
+          const groups = groupLabels.map((lab, i) => {
+            const vals = [];
+            for (let s = 0; s < n; s++) {
+              const r = rects[i * n + s];
+              const nxt = r && r.nextElementSibling;
+              const fromText = nxt && nxt.tagName === 'text' ? waChartNum(nxt.textContent) : NaN;
+              vals.push(!isNaN(fromText) ? fromText : (r ? parseFloat(r.getAttribute('height')) || 0 : 0));
+            }
+            return { label: lab.textContent.trim(), vals };
+          });
+          if (groups.length >= 2) return { kind: 'grouped', native: 'columns', series, groups };
+        }
+        if (rects.length >= 2 && groupLabels.length >= 2) {
+          const items = rects.slice(0, groupLabels.length).map((r, i) => {
+            const nxt = r.nextElementSibling;
+            const display = (nxt && nxt.tagName === 'text') ? nxt.textContent.trim() : '';
+            return {
+              label: groupLabels[i].textContent.trim(),
+              value: waChartNum(display),
+              display,
+              color: r.getAttribute('fill') || '',
+            };
+          }).filter((it) => it.label && !isNaN(it.value));
+          if (items.length >= 2) return { kind: 'series', native: 'columns', items: waChartNormalize(items) };
+        }
+      }
+
+      if (svg && svg.querySelector('polyline') && !svg.querySelector('rect')) {
+        const poly = svg.querySelector('polyline');
+        const pairs = String(poly.getAttribute('points') || '').trim().split(/\s+/).map((p) => {
+          const [x, y] = p.split(',').map(Number);
+          return { x, y };
+        }).filter((p) => !isNaN(p.x) && !isNaN(p.y));
+        if (pairs.length >= 3) {
+          const ys = pairs.map((p) => p.y);
+          const yMin = Math.min(...ys), yMax = Math.max(...ys);
+          const items = pairs.map((p, i) => {
+            const t = yMax === yMin ? 0.5 : (yMax - p.y) / (yMax - yMin);
+            const value = Math.round(t * 100);
+            return { label: 'Rank ' + (i + 1), value, display: String(value), pct: value };
+          });
+          return { kind: 'series', native: 'line', items: waChartNormalize(items) };
+        }
+      }
+
+      const gridRows = [...root.children].filter((el) => el.nodeType === 1 && /grid/i.test(el.style.display || ''));
+      if (gridRows.length >= 3) {
+        const items = gridRows.slice(1).map((row) => {
+          const spans = [...row.querySelectorAll('span')];
+          const label = (spans[0]?.textContent || '').trim();
+          if (/^top\s*\d/i.test(label) || /^total$/i.test(label)) return null;
+          const value = waChartNum(spans[1]?.textContent);
+          return { label, value, display: (spans[1]?.textContent || '').trim() };
+        }).filter((it) => it && it.label && !isNaN(it.value));
+        if (items.length >= 2) return { kind: 'series', native: 'table', items: waChartNormalize(items) };
+      }
+      return null;
+    }
+
+    function waChartEnsurePlot(card) {
+      let plot = card.querySelector(':scope > .wa-chart-plot');
+      if (plot) return plot;
+      plot = document.createElement('div');
+      plot.className = 'wa-chart-plot';
+      const movers = [...card.childNodes].filter((n) => {
+        if (n.nodeType !== 1) return true;
+        return !n.matches('.wa-report-title, .wa-chart-title');
+      });
+      movers.forEach((n) => plot.appendChild(n));
+      card.appendChild(plot);
+      return plot;
+    }
+
+    function waChartStore(card) {
+      let s = waChartCache.get(card);
+      if (s) return s;
+      const plot = waChartEnsurePlot(card);
+      const data = waChartAnnotate(waChartExtract(plot) || waChartExtract(card));
+      const ok = !!(data && ((data.kind === 'series' && data.items && data.items.length >= 2)
+        || (data.kind === 'grouped' && data.groups && data.groups.length >= 2)));
+      const modes = ok ? waChartModesFor(data) : [];
+      const mode = (data && modes.some((m) => m.id === data.native)) ? data.native : (modes[0] && modes[0].id);
+      s = { ok: ok && modes.length >= 2, plot, original: plot.innerHTML, data, native: data ? data.native : null, mode, modes };
+      waChartCache.set(card, s);
+      return s;
+    }
+
+    function waChartAsSeries(data) {
+      if (data.kind === 'series') return data.items;
+      return waChartNormalize(data.groups.map((g, i) => ({
+        label: g.label,
+        value: g.vals.reduce((a, b) => a + (Number(b) || 0), 0),
+        color: (data.series[i] && data.series[i].color) || WA_CHART_PALETTE[i % WA_CHART_PALETTE.length],
+      })));
+    }
+
+    function waChartLegend(series) {
+      if (!series || series.length < 2) return '';
+      return `<div class="wa-chart-legend">${series.map((s) =>
+        `<span class="k"><span class="wa-dot" style="background:${s.color}"></span>${esc(s.name)}</span>`
+      ).join('')}</div>`;
+    }
+
+    function waChartSpider(axes, seriesList) {
+      const size = 300, cx = size / 2, cy = size / 2, R = size / 2 - 58;
+      const M = axes.length;
+      const ang = (i) => (Math.PI * 2 * i) / M - Math.PI / 2;
+      const pt = (i, t) => [cx + R * t * Math.cos(ang(i)), cy + R * t * Math.sin(ang(i))];
+      const ptsAt = (t) => axes.map((_, i) => pt(i, t).map((v) => v.toFixed(1)).join(',')).join(' ');
+      let svg = `<svg viewBox="0 0 ${size} ${size}" width="100%" class="cmp-radar-svg" style="max-width:320px;display:block;margin:0 auto" role="img" aria-label="Spider chart">`;
+      [0.25, 0.5, 0.75, 1].forEach((t) => {
+        svg += `<polygon points="${ptsAt(t)}" class="cmp-radar-ring" fill="none"/>`;
+      });
+      axes.forEach((a, i) => {
+        const [x, y] = pt(i, 1);
+        svg += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" class="cmp-radar-spoke"/>`;
+        const [lx, ly] = pt(i, 1.22);
+        const anchor = Math.abs(lx - cx) < 8 ? 'middle' : lx > cx ? 'start' : 'end';
+        svg += `<text x="${lx.toFixed(1)}" y="${(ly + 4).toFixed(1)}" text-anchor="${anchor}" class="cmp-radar-label">${esc(a.label)}</text>`;
+      });
+      const allVals = seriesList.flatMap((s) => s.vals);
+      const max = Math.max(1, ...allVals);
+      seriesList.forEach((s, si) => {
+        const poly = axes.map((_, i) => pt(i, Math.max(0.04, (s.vals[i] || 0) / max)).map((v) => v.toFixed(1)).join(',')).join(' ');
+        svg += `<polygon points="${poly}" class="cmp-radar-area" fill="${s.color}" stroke="${s.color}" style="--delay:${si * 80}ms"/>`;
+        axes.forEach((_, i) => {
+          const [x, y] = pt(i, Math.max(0.04, (s.vals[i] || 0) / max));
+          svg += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.2" fill="${s.color}" class="cmp-radar-series"/>`;
+        });
+      });
+      svg += `</svg>`;
+      return `<div class="cmp-radar-wrap"><div class="cmp-radar-canvas">${svg}</div>${waChartLegend(seriesList.map((s) => ({ name: s.name, color: s.color })))}</div>`;
+    }
+
+    function waChartParallel(axes, seriesList) {
+      const W = 560, H = 220, padL = 28, padR = 28, padT = 16, padB = 36;
+      const n = axes.length;
+      const x = (i) => padL + (n === 1 ? 0 : i * (W - padL - padR) / (n - 1));
+      const allVals = seriesList.flatMap((s) => s.vals);
+      const max = Math.max(1, ...allVals);
+      const y = (v) => padT + (1 - (v || 0) / max) * (H - padT - padB);
+      let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" class="cmp-par-svg" role="img" aria-label="Parallel coordinates">`;
+      axes.forEach((a, i) => {
+        const xx = x(i);
+        svg += `<line x1="${xx.toFixed(1)}" y1="${padT}" x2="${xx.toFixed(1)}" y2="${H - padB}" class="cmp-par-axis"/>`;
+        svg += `<text x="${xx.toFixed(1)}" y="${H - 10}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text-muted)">${esc(a.label)}</text>`;
+      });
+      seriesList.forEach((s, si) => {
+        const line = axes.map((_, i) => `${x(i).toFixed(1)},${y(s.vals[i]).toFixed(1)}`).join(' ');
+        svg += `<polyline points="${line}" fill="none" stroke="${s.color}" stroke-width="2.2" class="cmp-par-series" style="--delay:${si * 70}ms"/>`;
+        axes.forEach((_, i) => {
+          svg += `<circle cx="${x(i).toFixed(1)}" cy="${y(s.vals[i]).toFixed(1)}" r="3.4" fill="${s.color}"/>`;
+        });
+      });
+      svg += `</svg>`;
+      return `<div class="cmp-radar-wrap"><div class="cmp-par-plot"><div class="cmp-par-canvas">${svg}</div></div>${waChartLegend(seriesList.map((s) => ({ name: s.name, color: s.color })))}</div>`;
+    }
+
+    function waChartStackedHtml(data) {
+      let rows;
+      let legend;
+      if (data.shareAcrossGroups && !data.sharePerGroup) {
+        const gColors = data.groups.map((_, i) => WA_CHART_PALETTE[i % WA_CHART_PALETTE.length]);
+        legend = data.groups.map((g, i) => ({ name: g.label, color: gColors[i] }));
+        rows = data.series.map((s, si) => ({
+          label: s.name,
+          segs: data.groups.map((g, gi) => ({
+            label: g.label, value: g.vals[si] || 0, color: gColors[gi],
+          })),
+        }));
+      } else {
+        legend = data.series;
+        rows = data.groups.map((g) => ({
+          label: g.label,
+          segs: data.series.map((s, i) => ({
+            label: s.name, value: g.vals[i] || 0, color: s.color,
+          })),
+        }));
+      }
+      const body = rows.map((row) => {
+        const total = row.segs.reduce((a, s) => a + (Number(s.value) || 0), 0) || 1;
+        const segs = row.segs.map((s) => {
+          const pct = ((Number(s.value) || 0) / total) * 100;
+          const label = pct >= 10 ? (Number.isInteger(s.value) ? s.value : s.value) : '';
+          return `<span class="wa-ctype-stack-seg" style="width:${pct}%;background:${s.color}" title="${esc(s.label)}: ${s.value}">${label === '' ? '' : esc(String(label))}</span>`;
+        }).join('');
+        return `<div class="wa-ctype-stack-row"><div class="wa-ctype-stack-lbl">${esc(row.label)}</div><div class="wa-ctype-stack-track">${segs}</div></div>`;
+      }).join('');
+      return `<div class="wa-ctype-stack">${body}</div>${waChartLegend(legend)}`;
+    }
+
+    function waChartRender(mode, data) {
+      const asSeries = () => waChartAsSeries(data);
+      if (mode === 'bars') {
+        if (data.kind === 'grouped') {
+          return data.groups.map((g) => {
+            const max = Math.max(1, ...g.vals);
+            const rows = data.series.map((s, i) => ({
+              label: s.name,
+              pct: Math.round(((g.vals[i] || 0) / max) * 100),
+              val: g.vals[i] == null ? '' : String(g.vals[i]),
+              color: s.color,
+            }));
+            return `<div class="wa-ctype-group"><div class="wa-ctype-group-lbl">${esc(g.label)}</div>${pctBars(rows)}</div>`;
+          }).join('');
+        }
+        return pctBars(asSeries().map((it) => ({
+          label: it.label, pct: it.pct, val: it.display, color: it.color,
+        })));
+      }
+      if (mode === 'columns') {
+        if (data.kind === 'grouped') {
+          const maxV = waChartNiceMax(Math.max(1, ...data.groups.flatMap((g) => g.vals)));
+          const { svg, legend } = groupedColumns({
+            groups: data.groups.map((g) => ({ label: g.label, vals: g.vals })),
+            series: data.series.map((s) => s.name),
+            colors: data.series.map((s) => s.color),
+            maxV,
+          });
+          return `${svg}<div class="wa-chart-legend">${legend}</div>`;
+        }
+        const items = asSeries();
+        const maxV = waChartNiceMax(Math.max(1, ...items.map((it) => it.value)));
+        return countColumns({
+          rows: items.map((it) => ({ label: it.label, count: it.value, color: it.color })),
+          maxV,
+          aria: 'Column chart',
+        });
+      }
+      if (mode === 'stacked' && data.kind === 'grouped') {
+        return waChartStackedHtml(data);
+      }
+      if (mode === 'donut') {
+        const items = asSeries();
+        const total = items.reduce((a, it) => a + (Number(it.value) || 0), 0);
+        const meta = data.donutMeta || {};
+        const rows = items.map((it) => ({ label: it.label, count: it.value, color: it.color }));
+        return `<div class="dash-donut-row dash-donut-row--compact">${
+          waDashDonut({
+            rows,
+            num: meta.num || total.toLocaleString('en-US'),
+            label: meta.label || 'total',
+            sub: meta.sub || '',
+            aria: 'Chart as a donut',
+            ringName: meta.legendTitle || 'Share',
+          })
+        }${waDonutLegend(meta.legendTitle || 'Share', rows)}</div>`;
+      }
+      if (mode === 'radar') {
+        if (data.kind === 'grouped') {
+          const axes = data.groups.map((g) => ({ label: g.label }));
+          const seriesList = data.series.map((s, si) => ({
+            name: s.name, color: s.color, vals: data.groups.map((g) => g.vals[si] || 0),
+          }));
+          return waChartSpider(axes, seriesList);
+        }
+        const items = asSeries();
+        return waChartSpider(items.map((it) => ({ label: it.label })), [{
+          name: 'Value', color: 'var(--primary)', vals: items.map((it) => it.value),
+        }]);
+      }
+      if (mode === 'parallel') {
+        if (data.kind === 'grouped') {
+          const axes = data.groups.map((g) => ({ label: g.label }));
+          const seriesList = data.series.map((s, si) => ({
+            name: s.name, color: s.color, vals: data.groups.map((g) => g.vals[si] || 0),
+          }));
+          return waChartParallel(axes, seriesList);
+        }
+        const items = asSeries();
+        return waChartParallel(items.map((it) => ({ label: it.label })), [{
+          name: 'Value', color: 'var(--primary)', vals: items.map((it) => it.value),
+        }]);
+      }
+      return null;
+    }
+
+    function waChartModesFor(data) {
+      if (!data) return [];
+      const want = new Set();
+      const add = (id) => { if (id && WA_CHART_CATALOG[id]) want.add(id); };
+      add(data.native);
+      if (data.kind === 'grouped') {
+        add('bars');
+        add('columns');
+        if (data.sharePerGroup || data.shareAcrossGroups || data.native === 'heat') add('stacked');
+        const g = data.groups.length;
+        const s = (data.series || []).length;
+        if (g >= 3 && g <= 8 && s >= 2) {
+          add('radar');
+          add('parallel');
+        }
+      } else if (data.items) {
+        const n = data.items.length;
+        const rates = waChartIsRateSeries(data.items);
+        const share = !!data.share;
+        const breakdown = waChartIsBreakdown(data.items);
+        add('bars');
+        if (n <= 12 && data.native !== 'line') add('columns');
+        if (!rates && n >= 2 && n <= 7) add('donut');
+        if (data.native === 'radar' || (n >= 3 && n <= 6 && (share || breakdown))) add('radar');
+      }
+      const rest = WA_CHART_MODE_ORDER.filter((id) => want.has(id) && id !== data.native);
+      const ids = [];
+      if (data.native && want.has(data.native)) ids.push(data.native);
+      ids.push(...rest);
+      return ids.map((id) => WA_CHART_CATALOG[id]).filter(Boolean);
+    }
+
+    function waChartApply(card, mode) {
+      const store = waChartStore(card);
+      if (!store.ok) return;
+      const restore = mode === store.native;
+      const html = restore ? store.original : waChartRender(mode, store.data);
+      if (html == null) return;
+      store.mode = mode;
+      store.plot.innerHTML = html;
+      waBootDashCharts(store.plot);
+      waReplayChartCard(card);
+    }
+
+    function waChartSyncToggle(bar, mode) {
+      bar.querySelectorAll('[data-wa-chart-type]').forEach((btn) => {
+        const on = btn.getAttribute('data-wa-chart-type') === mode;
+        btn.classList.toggle('is-active', on);
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    }
+
+    function waChartSetBlockType(block, mode) {
+      const cards = [...block.querySelectorAll('.wa-chart-card')];
+      cards.forEach((card) => waChartApply(card, mode));
+      const bar = block.querySelector(':scope > .wa-chart-toolbar');
+      if (bar) waChartSyncToggle(bar, mode);
+    }
+
+    function waChartEnsureTypeToggle(block, bar) {
+      if (bar.querySelector('[data-wa-chart-type]')) return;
+      const cards = [...block.querySelectorAll('.wa-chart-card')];
+      const stores = cards.map((c) => waChartStore(c));
+      const first = stores.find((s) => s.ok);
+      if (!first || !first.modes || first.modes.length < 2) return;
+      const toggle = document.createElement('div');
+      toggle.className = 'cmp-chart-toggle';
+      toggle.setAttribute('role', 'group');
+      toggle.setAttribute('aria-label', 'Chart type');
+      toggle.innerHTML = first.modes.map((m) => {
+        const on = m.id === first.mode;
+        return `<button type="button" class="cmp-chart-btn${on ? ' is-active' : ''}" data-wa-chart-type="${m.id}" title="${m.title}" aria-label="${m.title}" aria-pressed="${on ? 'true' : 'false'}"><span class="material-symbols-outlined">${m.icon}</span><span class="cmp-chart-label">${m.label}</span></button>`;
+      }).join('');
+      bar.insertBefore(toggle, bar.firstChild);
+    }
+
+    if (!document.documentElement.hasAttribute('data-wa-chart-type-wired')) {
+      document.documentElement.setAttribute('data-wa-chart-type-wired', '1');
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-wa-chart-type]');
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const block = btn.closest('.wa-block');
+        const mode = btn.getAttribute('data-wa-chart-type');
+        if (block && mode) waChartSetBlockType(block, mode);
+      });
+    }
+
     /* Top-right open_in_full control for each chart output — parked in a
-       toolbar on the block, above the card/table, never inside the table. */
+       toolbar on the block, above the card/table, never inside the table.
+       Chart-type switcher sits on the far left of the same toolbar. */
     function ensureChartExpandBtns(root) {
       if (!root) return;
       root.querySelectorAll('.wa-chart-card').forEach((card) => {
@@ -10214,15 +10782,17 @@
           }
           block.insertBefore(bar, insertBefore || block.firstElementChild);
         }
-        if (bar.querySelector('.wa-chart-expand-btn')) return;
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'wa-chart-expand-btn';
-        btn.setAttribute('data-chart-expand', '');
-        btn.setAttribute('aria-label', 'Expand output module to full screen');
-        btn.title = 'Expand module to full screen';
-        btn.innerHTML = '<span class="material-symbols-outlined">open_in_full</span>';
-        bar.appendChild(btn);
+        waChartEnsureTypeToggle(block, bar);
+        if (!bar.querySelector('.wa-chart-expand-btn')) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'wa-chart-expand-btn';
+          btn.setAttribute('data-chart-expand', '');
+          btn.setAttribute('aria-label', 'Expand output module to full screen');
+          btn.title = 'Expand module to full screen';
+          btn.innerHTML = '<span class="material-symbols-outlined">open_in_full</span>';
+          bar.appendChild(btn);
+        }
       });
       syncChartExpandBtns(root);
     }

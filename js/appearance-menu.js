@@ -20,8 +20,8 @@
  * Everything else renders the same on every page.
  *
  * Click handling stays in each shell: every row keys off a stable data-*
- * attribute (data-pivot / data-minimal / data-navhistory / data-navmodules / data-fullbleed /
- * data-fbchatonly / data-jam / data-appsearch / data-navhamburger / data-colorblind / data-serif / data-fz /
+ * attribute (data-pivot / data-minimal / data-navhistory / data-navmodules / data-stickyflush / data-fullbleed /
+ * data-fbchatonly / data-jam / data-appsearch / data-navhamburger / data-colorblind / data-serif / data-guides / data-fz /
  * data-pop-action), so the existing per-shell listeners keep working unchanged.
  */
 
@@ -59,8 +59,12 @@ import {
   applyChatTint,
   getModuleGap,
   applyModuleGap,
+  isStickyFlushOn,
+  applyStickyFlush,
   isCwrUiOn,
   applyCwrUi,
+  isGuidesOn,
+  applyGuides,
   getBrandStyle,
   applyBrandStyle,
   isAdminControlsOn,
@@ -695,17 +699,17 @@ export function buildAppearanceBody({
         ${adminOnly(adminToggle('data-iconrail="1"', isIconRailOn(), 'Icons only', 'Collapse nav to icons', 'Collapse the navigation to icons', false, false, 'apps'))}
         ${adminOnly(adminToggle('data-navhistory="1"', isNavHistoryOn(), 'History in navigation', 'History inside the nav', 'Merge the History module into an expandable section of the primary navigation — search, projects, and All conversations stay fully usable', false, false, 'history'))}
         ${adminOnly(adminToggle('data-navmodules="1"', isNavModulesOn(), 'Nav &amp; History icons', 'Logo, menu, History, new chat', 'Menu opens the labelled navigation; the History icon opens History, and history off closes it. While either is open, the extra icons hide and History closes back to the four-icon rail. New chat is a circle and starts a conversation', false, false, 'view_sidebar'))}
+        ${adminOnly(adminToggle('data-stickyflush="1"', isStickyFlushOn(), 'Flush sticky modules', 'Match the primary drawer', 'Make the secondary sticky module the same height as the primary one it tucks behind', false, false, 'height'))}
         ${adminOnly(helixStudioSection())}
       `);
   const experience = apGroup('Experience', `
+        ${plainToggle('data-guides="1"', isGuidesOn(), 'Guides', 'Floating page hints', 'Show floating guides that point to what you can do next', false, false, 'signpost')}
         ${tourSection()}
         ${adminOnly(adminToggle('data-cwrui="1"', isCwrUiOn(), 'Roll · Crawl · Walk · Run', 'Show the mode switch', 'Show the floating Roll · Crawl · Walk · Run switch', false, false, 'speed'))}
       `);
-  /* Master Internal-admins switch. Lives at the bottom of the leftmost
-     column when that column still has Layout / Experience; otherwise it
-     stacks under Accessibility so a lone switch does not sit in an empty
-     track beside a taller card. The rest of the Admin rows stay in the
-     right-hand column and shift up to fill. */
+  /* Master Internal-admins switch. Always last in its stack: bottom of
+     the leftmost column when Admin is on, or under Accessibility when
+     Admin is off (one column). Never sits between member groups. */
   const adminSwitch = adminMasterSwitch();
   const fullBleed = apGroup('Full bleed', `
         ${adminOnly(adminToggle('data-fullbleed="1"', isFullBleedEverythingOn(), 'Full bleed', 'Stretch every module', isAppSearchOn() ? 'Unavailable while Search is on' : 'Stretch every module edge-to-edge', isAppSearchOn(), false, 'fullscreen'))}
@@ -731,14 +735,18 @@ export function buildAppearanceBody({
   const adminRows = apGroup('Admin', `
         ${commentsSection()}
         ${adminOnly(adminToggle('data-appsearch="1"', false, 'Search', 'Search beside the logo', 'Locked off — Search beside the logo stays off', true, true, 'search'))}
-        ${adminOnly(adminToggle('data-navhamburger="1"', isNavHamburgerOn(), 'Menu icon', 'Dock icon when collapsed', isAppSearchOn() ? 'When the navigation is collapsed, show a dock icon to the left of the logo instead of the icon rail' : 'Unavailable while Search is off', !isAppSearchOn(), false, 'dock_to_right'))}
+        ${adminOnly(adminToggle('data-navhamburger="1"', isAppSearchOn() && isNavHamburgerOn(), 'Menu icon', 'Dock icon when collapsed', isAppSearchOn() ? 'When the navigation is collapsed, show a dock icon to the left of the logo instead of the icon rail' : 'Unavailable while Search is off', !isAppSearchOn(), false, 'dock_to_right'))}
         ${adminOnly(accessibilityReviewSection())}
         ${adminOnly(allModulesSection())}
         ${adminOnly(progressLogSection())}
         ${adminOnly(pageGallerySection())}
         ${adminOnly(analyticsTypesSection())}
       `);
+  const adminOn = isAdminControlsOn();
   const leftHasRows = !!(layout || experience);
+  if (!adminOn) {
+    return apCol(layout, experience, fullBleed, chat, sound, a11y, adminRows, adminSwitch);
+  }
   return `
     ${leftHasRows ? apCol(layout, experience, adminSwitch) : ''}
     ${apCol(fullBleed, chat)}
@@ -998,6 +1006,7 @@ export function wireAppearancePopover(pop, ctx = {}) {
       render();
       return;
     }
+    if (within('[data-stickyflush]')) { ev.stopPropagation(); applyStickyFlush(!isStickyFlushOn()); render(); return; }
     if (within('[data-fullbleed]'))   { ev.stopPropagation(); if (isAppSearchOn()) return; applyFullBleedMode(isFullBleedEverythingOn() ? '' : 'all'); render(); return; }
     if (within('[data-fbchatonly]'))  { ev.stopPropagation(); if (isAppSearchOn()) return; applyFullBleedMode(isChatOnlyFullBleedOn() ? '' : 'chat'); render(); return; }
     if (within('[data-jam]'))         { ev.stopPropagation(); applyJamStrip(!isJamStripOn());      render(); return; }
@@ -1009,6 +1018,7 @@ export function wireAppearancePopover(pop, ctx = {}) {
     if (within('[data-chattint]'))    { ev.stopPropagation(); applyChatTint(!isChatTintOn());      render(); return; }
     if (within('[data-activitystrip]')) { ev.stopPropagation(); applyActivityStrip(!isActivityStripOn()); render(); return; }
     if (within('[data-cwrui]'))       { ev.stopPropagation(); applyCwrUi(!isCwrUiOn());          render(); return; }
+    if (within('[data-guides]'))      { ev.stopPropagation(); applyGuides(!isGuidesOn());        render(); return; }
     if (within('[data-tour]')) {
       ev.stopPropagation();
       const flip = () => {

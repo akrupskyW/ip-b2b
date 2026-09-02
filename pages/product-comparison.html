@@ -2084,12 +2084,13 @@
        Chat-driven board that renders the reference "Compare Foods" grid. Opens
        wider than the workflow modules because it carries a metric rail plus up
        to five entity columns; the grid scrolls horizontally inside the body. */
-    #compare-panel { display: none; flex-shrink: 0; }
-    #compare-panel.cp-open { display: flex; width: 640px; }
-    #compare-panel.panel-wide.cp-open { width: 860px; }
-    #compare-panel.panel-wide.panel-triple.cp-open { width: 1080px; }
+    #compare-panel { display: none; flex-shrink: 1; min-width: 0; }
+    #compare-panel.cp-open { display: flex; width: min(640px, 100%); max-width: 100%; }
+    #compare-panel.panel-wide.cp-open { width: min(860px, 100%); }
+    #compare-panel.panel-wide.panel-triple.cp-open { width: min(1080px, 100%); }
     #compare-panel .cmp-inner {
-      width: 640px;
+      width: 100%;
+      min-width: 0;
       min-height: 100%;
       height: 100%;
       display: flex;
@@ -2101,8 +2102,6 @@
       transform-origin: right center;
       font-size: var(--fs-ui);
     }
-    #compare-panel.panel-wide .cmp-inner { width: 860px; }
-    #compare-panel.panel-wide.panel-triple .cmp-inner { width: 1080px; }
     #compare-panel.cp-open .cmp-inner { animation: panelBounceRight 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
     @media (prefers-reduced-motion: reduce) { #compare-panel.cp-open .cmp-inner { animation: none !important; } }
     html:not(.dark) #compare-panel .cmp-inner {
@@ -2183,6 +2182,21 @@
       padding: 2px 0; border-radius: 0;
       background: transparent; border: none;
     }
+    /* Full-width bar above the grid — watches its own width so chart labels
+       and the Add pill reflow whether the board is docked narrow or fill. */
+    .cmp-toolbar--bar {
+      width: 100%;
+      container-type: inline-size;
+      container-name: cmptoolbar;
+    }
+    @container cmptoolbar (min-width: 420px) {
+      .cmp-toolbar--bar .cmp-chart-label { display: inline; }
+      .cmp-toolbar--bar .cmp-chart-btn { width: auto; gap: 5px; padding: 0 10px; }
+    }
+    @container cmptoolbar (max-width: 419px) {
+      .cmp-toolbar--bar .cmp-tool-spacer { display: none; }
+      .cmp-toolbar--bar .cmp-add-wrap { margin-left: 0; }
+    }
     .cmp-tool-btn {
       display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
       padding: 6px 11px; border-radius: 999px; font-size: var(--fs-label); font-weight: 600;
@@ -2253,14 +2267,25 @@
       padding-left: 9px; padding-right: 9px; gap: 0;
     }
     .cmp-add-split .cmp-add-caret .material-symbols-outlined { font-size: 18px !important; }
+    #chat-shell-wrap .cmp-add-split { border-radius: 999px !important; }
+    #chat-shell-wrap .cmp-add-split .cmp-tool-btn { border-radius: 0 !important; }
+    .cmp-add-menu-item.is-active { color: var(--primary-ink, var(--primary)); background: color-mix(in srgb, var(--primary) 9%, transparent); }
+    .cmp-add-menu-item.is-active .material-symbols-outlined { color: var(--primary-ink, var(--primary)); }
     /* Body-portalled dropdown — fixed + high z-index so it floats above every
        board element instead of being clipped beneath them. Positioned in JS. */
     .cmp-add-menu {
       position: fixed; z-index: 5000;
-      min-width: 190px; padding: 6px; border-radius: 12px;
+      width: min(268px, calc(100vw - 24px)); min-width: 220px; padding: 6px;
+      border-radius: 12px;
       background: var(--surface); border: 1px solid var(--border-strong);
       box-shadow: 0 16px 40px rgba(8, 12, 20, 0.24);
       display: flex; flex-direction: column; gap: 2px;
+    }
+    .cmp-add-menu-note {
+      margin: 6px 4px 2px; padding: 8px 8px 6px;
+      border-top: 1px solid var(--border);
+      font-size: 11.5px; font-weight: 500; line-height: 1.4;
+      color: var(--text-muted);
     }
     .cmp-add-menu-item {
       display: flex; align-items: center; gap: 9px; width: 100%; text-align: left;
@@ -2302,7 +2327,10 @@
       width: 40px; height: 40px; border-radius: 50%;
       display: inline-flex; align-items: center; justify-content: center;
       background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary-ink, var(--primary));
+      border: none; padding: 0; cursor: pointer;
     }
+    #chat-shell-wrap .cmp-addcol-plus { border-radius: 50% !important; }
+    .cmp-addcol-plus:hover { background: color-mix(in srgb, var(--primary) 20%, transparent); }
     .cmp-addcol-plus .material-symbols-outlined { font-size: 24px !important; color: var(--primary-ink, var(--primary)); }
     .cmp-addcol-title { font-size: calc(var(--fs-ui) + 3px); font-weight: 800; color: var(--text); line-height: 1.2; }
     .cmp-addcol-sub { font-size: calc(var(--fs-label) + 1px); color: var(--text-muted); line-height: 1.45; max-width: 210px; }
@@ -2384,7 +2412,6 @@
       border-bottom: 1px solid var(--border);
     }
     .cmp-board-title { font-family: 'WISE Digits', var(--font-serif); font-size: 1.2rem; font-weight: 800; color: var(--text); line-height: 1.15; }
-    .cmp-board-meta { font-size: var(--fs-label); color: var(--text-muted); margin-top: 1px; }
 
     /* Chart-type toggle — segmented pill sitting left of the Add button.
        Health bars (default) · spider · parallel coordinates. */
@@ -3138,25 +3165,87 @@
       margin: -6px -10px -6px 0;
     }
 
-    /* Per-slot type toggle — the proper floating dropdown the kind chip opens.
-       Appended to <body> and fixed-positioned so it never clips inside the
-       grid. Two type tabs + the specific-item list live in the one popover. */
+    /* Per-slot type toggle + Add picker — searchable roster popover, same
+       grammar as the composer database selector (search, filter chips, scroll
+       list with thumb + name + desc). Appended to <body> and fixed-positioned
+       so it never clips inside the grid. Anchors above or to the right of the
+       trigger. */
     .cmp-kind-menu {
-      position: fixed; z-index: 200; width: 246px; max-height: 340px;
-      display: flex; flex-direction: column; overflow: hidden;
-      padding: 8px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border-strong);
-      box-shadow: var(--shadow-card, 0 12px 40px rgba(0,0,0,0.4));
+      position: fixed; z-index: 5000;
+      width: min(360px, calc(100vw - 24px));
+      max-height: min(420px, calc(100vh - 16px));
+      display: flex; flex-direction: column; overflow: hidden; padding: 0; gap: 0;
+      border-radius: 14px; background: var(--surface); border: 1px solid var(--border-strong);
+      box-shadow: var(--shadow-card, 0 16px 40px rgba(8, 12, 20, 0.24));
     }
-    .cmp-kind-menu-hd { font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); padding: 4px 4px 7px; }
-    .cmp-kind-menu-tabs { display: flex; gap: 4px; margin-bottom: 7px; }
-    .cmp-kind-menu-tab {
+    .cmp-pick-top {
+      flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;
+      padding: 12px 12px 10px; border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    html.dark .cmp-pick-top { background: #1A2339; }
+    .cmp-pick-hd {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-subtle);
+    }
+    .cmp-kind-menu-tabs, .cmp-pick-tabs { display: flex; gap: 4px; }
+    .cmp-kind-menu-tab, .cmp-pick-tab {
       flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 4px;
       padding: 6px 4px; border: 1px solid var(--border-strong); border-radius: 8px;
       background: var(--surface); color: var(--text); font-size: 11px; font-weight: 700; cursor: pointer;
     }
-    .cmp-kind-menu-tab .material-symbols-outlined { font-size: 14px !important; }
-    .cmp-kind-menu-tab:hover { background: var(--surface-2); }
-    .cmp-kind-menu-tab.is-active { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .cmp-kind-menu-tab .material-symbols-outlined,
+    .cmp-pick-tab .material-symbols-outlined { font-size: 14px !important; }
+    .cmp-kind-menu-tab:hover, .cmp-pick-tab:hover { background: var(--surface-2); }
+    .cmp-kind-menu-tab.is-active, .cmp-pick-tab.is-active { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .cmp-pick-search {
+      display: flex; align-items: center; gap: 8px;
+      padding: 0 14px; height: 36px; border-radius: 999px;
+      border: 1px solid rgba(0,0,0,0.10); background: rgba(20,40,80,0.04);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    html.dark .cmp-pick-search { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
+    .cmp-pick-search:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
+    .cmp-pick-search .material-symbols-outlined { font-size: 18px !important; opacity: 0.5; flex-shrink: 0; }
+    .cmp-pick-search-input {
+      flex: 1; min-width: 0; border: 0; background: transparent; outline: none;
+      font: inherit; font-size: 13px; color: inherit; border-radius: 0 !important;
+    }
+    .cmp-pick-search-input::placeholder { opacity: 0.6; }
+    .cmp-pick-filters { display: flex; gap: 6px; }
+    .cmp-pick-chip {
+      padding: 4px 11px; border-radius: 9999px; cursor: pointer; font-family: inherit;
+      font-size: 11.5px; font-weight: 600; color: var(--text-muted);
+      border: 1px solid var(--border-strong); background: transparent;
+    }
+    .cmp-pick-chip:hover { background: var(--surface-2); }
+    .cmp-pick-chip.is-active { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .cmp-pick-scroll { overflow-y: auto; flex: 1 1 auto; min-height: 0; padding: 6px; }
+    .cmp-pick-item {
+      display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+      padding: 8px 10px; border: none; border-radius: 10px !important; background: transparent;
+      color: var(--text); font-family: inherit; cursor: pointer;
+      transition: background 0.12s ease;
+    }
+    .cmp-pick-item:hover { background: var(--surface-2); }
+    .cmp-pick-item.is-on { background: color-mix(in srgb, var(--primary) 9%, transparent); cursor: default; }
+    .cmp-pick-item[hidden] { display: none; }
+    .cmp-pick-thumb {
+      flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; overflow: hidden;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--primary); color: #fff; font-size: 11px; font-weight: 800;
+    }
+    .cmp-pick-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .cmp-pick-thumb .material-symbols-outlined { font-size: 18px !important; color: #fff; }
+    .cmp-pick-meta { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+    .cmp-pick-name { font-size: var(--fs-ui); font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cmp-pick-item.is-on .cmp-pick-name { color: var(--primary-ink, var(--primary)); }
+    .cmp-pick-desc { font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cmp-pick-star { font-size: 18px !important; color: var(--primary-ink, var(--primary)); flex-shrink: 0; }
+    .cmp-pick-check { font-size: 22px !important; color: var(--primary-ink, var(--primary)); flex-shrink: 0; }
+    .cmp-pick-empty { padding: 18px 12px; text-align: center; font-size: 12.5px; color: var(--text-subtle); }
+    .cmp-pick-empty[hidden] { display: none; }
+    .cmp-kind-menu-hd { font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); padding: 4px 4px 7px; }
     .cmp-kind-menu-list { overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
     .cmp-kind-menu-item {
       display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
@@ -3382,9 +3471,18 @@
     @container cmpbody (max-width: 600px) {
       .cmp-takeaways { grid-template-columns: repeat(2, 1fr); }
     }
+    @container cmpbody (max-width: 520px) {
+      .cmp-toolbar--bar { gap: 6px; }
+      .cmp-recalc-bar { flex-wrap: wrap; }
+      .cmp-recalc-btn { width: 100%; justify-content: center; }
+      .cmp-addcol-inner { padding: 16px 10px; }
+      .cmp-addcol-sub { max-width: 100%; }
+    }
     @container cmpbody (max-width: 360px) {
       .cmp-takeaways { grid-template-columns: 1fr; }
       .cmp-rank-bar { width: 64px; }
+      .cmp-body { padding: 10px; gap: 10px; }
+      .cmp-addcol-sub { display: none; }
     }
 
     /* ── Per-column responsiveness ────────────────────────────────────────
@@ -3441,7 +3539,6 @@
     /* Fixed popovers live on <body>, outside the board container, so they cap
        against the viewport instead — on a phone the type / takeaway menus never
        spill past the screen edge. */
-    .cmp-kind-menu { width: min(246px, calc(100vw - 24px)); }
     .cmp-takeaway-menu { max-width: min(360px, calc(100vw - 24px)); }
 
     /* ── Guiding Stars ────────────────────────────────────────────────────
@@ -5652,7 +5749,8 @@
       #vault-panel:not(.vt-open),
       #nfp-panel:not(.nfp-open),
       #notif-panel:not(.notif-open),
-      #settings-screen:not(.ss-open) {
+      #settings-screen:not(.ss-open),
+      #compare-panel:not(.cp-open) {
         display: none !important;
       }
       /* Every visible module — full-width row card. Reset the desktop
@@ -5670,7 +5768,8 @@
       #notif-panel.notif-open,
       #settings-screen.ss-open,
       #modules-row > #chat-shell,
-      #modules-row > #verification-sidebar {
+      #modules-row > #verification-sidebar,
+      #modules-row > #compare-panel.cp-open {
         display: flex !important;
         flex-direction: column;
         position: relative !important;
@@ -5701,7 +5800,8 @@
       #nfp-panel .nfp-inner,
       #notif-panel .notif-inner,
       #settings-screen .ss-inner,
-      #verification-sidebar .vs-inner {
+      #verification-sidebar .vs-inner,
+      #compare-panel .cmp-inner {
         width: 100% !important;
         min-height: 0;
       }
@@ -5726,6 +5826,28 @@
       #settings-screen.ss-open {
         min-height: 280px;
         max-height: 60dvh !important;
+      }
+      #modules-row > #compare-panel.cp-open,
+      #modules-row.report-mode > #compare-panel.cp-open {
+        flex: 0 0 auto !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        min-height: 70dvh;
+        max-height: 80dvh !important;
+        height: auto !important;
+        align-self: stretch !important;
+      }
+      #modules-row.report-mode {
+        flex-direction: column !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+      }
+      #modules-row.report-mode > #chat-shell {
+        flex: 0 0 auto !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
       }
       /* Verification sidebar — show on mobile/tablet too, but as a
          stacked card; Tailwind's `hidden md:flex` is overridden here. */
@@ -7447,7 +7569,7 @@
         pop: document.getElementById('wiseai-menu'),
         bgAnim: {
           host: document.getElementById('chat-shell'),
-          getBody: () => { const m = document.getElementById('chat-messages'); return m ? m.parentElement : null; },
+          getBody: () => document.getElementById('chat-shell'),
           welcomeEl: document.getElementById('welcome-screen'),
           isWide: () => {
             const s = document.getElementById('chat-shell');
@@ -9336,7 +9458,6 @@
           </div>
           <div class="flex-1 min-w-0">
             <div class="text-xs font-bold text-oyster-100">Compare Foods</div>
-            <p class="text-xs text-oyster-600 mt-0.5" id="cmp-subtitle">WISEcode Intelligence · Competitive Comparison</p>
           </div>
           <div class="panel-controls">
             <div class="panel-flip" data-panel="compare" role="group" aria-label="Dock Compare Foods panel">
@@ -10426,6 +10547,7 @@
     }
 
     function hideWelcomeScreen(callback) {
+      try { document.dispatchEvent(new CustomEvent('wise:chat-engage')); } catch (_) {}
       const ws = document.getElementById('welcome-screen');
       if (!ws || ws.classList.contains('ws-hidden')) {
         if (callback) callback();
@@ -11932,6 +12054,11 @@
        the scope's default noun so existing single-kind boards are untouched. */
     function cmpEntKind(ent, scope) { return (ent && ent.kind) || (scope ? scope.noun : 'product'); }
     function cmpKindLabel(kind) { return kind === 'portfolio' ? 'portfolio' : kind === 'category' ? 'category' : 'product'; }
+    function cmpEsc(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
     function cmpKindIcon(kind) { return kind === 'portfolio' ? 'business' : kind === 'category' ? 'category' : 'inventory_2'; }
     /* The SEED column is the comparison's first/anchor column — the primary
        "YOU" entity when one exists, otherwise the first column on the board.
@@ -12267,6 +12394,7 @@
       gsAlgoMenuOpen: false,
       followDone: {},
       takeawaySlots: ['perf', 'prot', 'clean', 'val'],   /* which takeaway lives in each of the four cards (swappable) */
+      addKind: null,   /* type the Add control is set to; null follows the board */
     };
 
     /* ── Module open / close ──────────────────────────────────────────── */
@@ -12318,6 +12446,7 @@
         guidingStars: keepGuidingStars,
         gsAlgorithm: keepGsAlgorithm, gsRows: keepGsRows, gsAlgoMenuOpen: false,
         takeawaySlots: ['perf', 'prot', 'clean', 'val'],
+        addKind: null,
       };
       const body = document.getElementById('cmp-body');
       if (body) {
@@ -12326,8 +12455,6 @@
           '<div class="cmp-owl-loader" role="status" aria-label="Loading comparison">' + WISEAI_OWL_BUG + '</div>' +
           '</div>';
       }
-      const sub = document.getElementById('cmp-subtitle');
-      if (sub) sub.textContent = 'WISEcode Intelligence · Competitive Comparison';
       document.querySelectorAll('#cmp-scopebar .cmp-scope-btn').forEach(b => b.classList.remove('is-active'));
     }
 
@@ -12346,10 +12473,9 @@
       compareState.metrics = CMP_DEFAULT_METRICS.slice();
       if (scope.emphasis && !compareState.metrics.includes(scope.emphasis)) compareState.metrics.push(scope.emphasis);
       compareState.shown = scope.entities.slice(0, scope.initShown).map(e => e.id);
+      compareState.addKind = null;
       const tabKey = scope.tab || key;
       document.querySelectorAll('#cmp-scopebar .cmp-scope-btn').forEach(b => b.classList.toggle('is-active', b.dataset.scope === tabKey));
-      const sub = document.getElementById('cmp-subtitle');
-      if (sub) sub.textContent = scope.label + ' · WISEcode Intelligence';
       renderCompare();
       scrollPanelIntoView('compare-panel');
     }
@@ -12375,6 +12501,7 @@
     let cmpCatMenuEl = null;
     function cmpToggleCatMenu(btn) {
       if (cmpCatMenuEl) { cmpCloseCatMenu(); return; }
+      if (typeof cmpCloseKindMenu === 'function') cmpCloseKindMenu();
       const anchor = btn || document.getElementById('cmp-cat-btn');
       if (!anchor) return;
       const menu = document.createElement('div');
@@ -12456,18 +12583,19 @@
       renderCompare();
     }
 
-    /* Split "＋ Add" control: the main face opens the guided add chat, while the
-       caret opens a dropdown to jump straight to adding a Product / Portfolio /
-       Category. Rendered inside the toolbar; the menu re-renders with the board
-       so its open state survives a re-render (mirrors the metric menu). */
-    /* Add is locked to the board's kind, so there's no "what kind?" chooser —
-       just one button that adds another of the same kind (product / portfolio
-       / category) the comparison started as. */
+    /* Split "＋ Add" control: the main face opens the searchable picker; the
+       caret switches the add type between product / portfolio / category. */
+    function cmpAddKind() {
+      return compareState.addKind || cmpLockedKind();
+    }
     function cmpAddSplit(disabled) {
       const dis = disabled ? ' disabled' : '';
-      const label = cmpKindLabel(cmpLockedKind());
+      const label = cmpKindLabel(cmpAddKind());
       return '<div class="cmp-add-wrap">' +
-        `<button type="button" class="cmp-tool-btn cmp-tool-btn--primary cmp-add-main cmp-add-solo" onclick="cmpPromptAddEntity()"${dis}><span class="material-symbols-outlined">add</span>Add ${label}</button>` +
+        '<div class="cmp-add-split">' +
+          `<button type="button" class="cmp-tool-btn cmp-tool-btn--primary cmp-add-main" onclick="cmpToggleAddPicker(this)" aria-haspopup="menu" aria-expanded="false"${dis}><span class="material-symbols-outlined">add</span>Add ${label}</button>` +
+          `<button type="button" class="cmp-tool-btn cmp-tool-btn--primary cmp-add-caret" onclick="event.stopPropagation();cmpToggleAddMenu(this)" aria-haspopup="menu" aria-expanded="false" aria-label="Change add type"${dis}><span class="material-symbols-outlined">expand_more</span></button>` +
+        '</div>' +
       '</div>';
     }
     /* Body-portalled type dropdown for the split Add button — lives on <body>
@@ -12475,15 +12603,17 @@
     let cmpAddMenuEl = null;
     function cmpToggleAddMenu(btn) {
       if (cmpAddMenuEl) { cmpCloseAddMenu(); return; }
-      const anchor = btn || document.getElementById('cmp-add-caret');
+      const anchor = btn || document.querySelector('.cmp-add-caret');
       if (!anchor) return;
       const kinds = [['product', 'Product', 'inventory_2'], ['portfolio', 'Portfolio', 'business'], ['category', 'Category', 'category']];
+      const cur = cmpAddKind();
       const menu = document.createElement('div');
       menu.className = 'cmp-add-menu';
       menu.setAttribute('role', 'menu');
       menu.innerHTML = kinds.map(([k, l, ic]) =>
-        `<button type="button" role="menuitem" class="cmp-add-menu-item" onclick="cmpAddPickKind('${k}')"><span class="material-symbols-outlined">${ic}</span>Add ${l}</button>`
-      ).join('');
+        `<button type="button" role="menuitem" class="cmp-add-menu-item${k === cur ? ' is-active' : ''}" onclick="cmpAddPickKind('${k}')"><span class="material-symbols-outlined">${ic}</span>Add ${l}</button>`
+      ).join('') +
+        '<p class="cmp-add-menu-note">Switching type rebuilds the whole board as a product, portfolio, or category comparison — you can’t mix those against each other.</p>';
       document.body.appendChild(menu);
       cmpAddMenuEl = menu;
       cmpPositionAddMenu(anchor);
@@ -12495,12 +12625,21 @@
     function cmpPositionAddMenu(anchor) {
       if (!cmpAddMenuEl || !anchor) return;
       const r = anchor.getBoundingClientRect();
-      const mw = cmpAddMenuEl.offsetWidth || 190;
-      const mh = cmpAddMenuEl.offsetHeight || 150;
-      let left = Math.min(r.right - mw, window.innerWidth - mw - 8);
-      left = Math.max(8, left);
-      let top = r.bottom + 6;
-      if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 6);
+      const mw = cmpAddMenuEl.offsetWidth || 268;
+      const mh = cmpAddMenuEl.offsetHeight || 220;
+      const spaceAbove = r.top - 8;
+      const spaceRight = window.innerWidth - r.right - 8;
+      let left, top;
+      if (spaceAbove >= mh) {
+        top = Math.max(8, r.top - mh - 6);
+        left = Math.min(Math.max(8, r.right - mw), window.innerWidth - mw - 8);
+      } else if (spaceRight >= mw) {
+        left = r.right + 6;
+        top = Math.max(8, Math.min(r.top, window.innerHeight - mh - 8));
+      } else {
+        top = Math.max(8, Math.min(r.top - mh - 6, window.innerHeight - mh - 8));
+        left = Math.min(Math.max(8, r.right - mw), window.innerWidth - mw - 8);
+      }
       cmpAddMenuEl.style.left = left + 'px';
       cmpAddMenuEl.style.top = top + 'px';
     }
@@ -12518,14 +12657,15 @@
     }
     function cmpAddPickKind(kind) {
       cmpCloseAddMenu();
-      if (compareState.shown.length >= 5) {
+      compareState.addKind = kind;
+      renderCompare();
+      const switching = kind !== cmpLockedKind();
+      if (!switching && compareState.shown.length >= 5) {
         addWISEcodeAIMessage('You’ve hit the <strong>5-item limit</strong> for one comparison (1 primary + 4 comparators). Remove one on the board to add another.', { source: false });
         return;
       }
-      /* Locked to the board's kind so a comparison can never become mixed. */
-      kind = cmpLockedKind();
-      addUserMessage('Add a ' + cmpKindLabel(kind) + ' to the comparison');
-      cmpPromptAddOfKind(kind);
+      const anchor = document.querySelector('.cmp-add-main');
+      if (anchor) cmpToggleAddPicker(anchor);
     }
 
     function cmpToggleMetricMenu() {
@@ -12598,19 +12738,31 @@
        first, then the deep-bench suggestion pool for this scope's noun. Deduped
        by name and capped at 10 so the chat always offers a real menu of
        competitors — even when the current shelf set is fully on the board. */
-    function cmpAddCandidates(scope, kind) {
+    function cmpAddCandidates(scope, kind, opts) {
       kind = kind || scope.noun;
+      opts = opts || {};
+      const cap = opts.all ? 80 : 10;
       /* Category picks come straight from the synthesised category set — one
          chip per category not already on the board. */
       if (kind === 'category') {
         const shownIds = new Set(compareState.shown);
-        const list = CMP_CATEGORY_ENTITIES.filter(e => !shownIds.has(e.id)).slice(0, 10);
+        const list = CMP_CATEGORY_ENTITIES.filter(e => !shownIds.has(e.id)).slice(0, cap);
         return { list, realCount: 0, matchCount: Math.min(3, list.length) };
       }
       const shownNames = new Set(
         compareState.shown.map(id => (scope.entities.find(e => e.id === id) || {}).name).filter(Boolean)
       );
       const pool = kind === 'portfolio' ? CMP_BRAND_SUGGESTIONS : CMP_PRODUCT_SUGGESTIONS;
+      const extra = [];
+      if (opts.all) {
+        Object.keys(CMP_SCOPES).forEach(k => {
+          const s = CMP_SCOPES[k];
+          if (!s || s === scope) return;
+          (s.entities || []).forEach(e => {
+            if (cmpEntKind(e, s) === kind) extra.push(e);
+          });
+        });
+      }
       const realAvail = scope.entities.filter(e => !compareState.shown.includes(e.id) && !e.primary && cmpEntKind(e, scope) === kind);
       const realSet = new Set(realAvail);
       /* Bias suggestions toward what's actually being compared: for products,
@@ -12628,7 +12780,7 @@
       };
       const seen = new Set();
       const merged = [];
-      [...realAvail, ...pool].forEach(e => {
+      [...realAvail, ...extra, ...pool].forEach(e => {
         if (shownNames.has(e.name) || seen.has(e.name)) return;
         seen.add(e.name);
         merged.push(e);
@@ -12638,7 +12790,7 @@
       const scored = merged.map((e, i) => ({ e, i, rel: relevance(e), real: realSet.has(e) ? 1 : 0 }));
       scored.sort((a, b) => (b.rel - a.rel) || (b.real - a.real) || (a.i - b.i));
       const relevantCount = scored.filter(s => s.rel).length;
-      const list = scored.map(s => s.e).slice(0, 10);
+      const list = scored.map(s => s.e).slice(0, cap);
       /* How many leading chips to flag as "closest matches": the relevant ones
          if we found any, else the real shelf-set members, else a sensible few. */
       const matchCount = Math.min(list.length, relevantCount || realAvail.length || Math.min(3, list.length));
@@ -12737,6 +12889,18 @@
       for (const [pool, kind] of tagged) {
         const src = pool.find(e => e.id === id);
         if (src) { const clone = Object.assign({}, src); clone.kind = src.kind || kind; scope.entities.push(clone); return clone; }
+      }
+      for (const k of Object.keys(CMP_SCOPES)) {
+        const s = CMP_SCOPES[k];
+        if (!s || s === scope) continue;
+        const src = (s.entities || []).find(e => e.id === id);
+        if (src) {
+          const clone = Object.assign({}, src);
+          clone.kind = cmpEntKind(src, s);
+          delete clone.primary;
+          scope.entities.push(clone);
+          return clone;
+        }
       }
       return null;
     }
@@ -12900,96 +13064,211 @@
       }, 520);
     }
 
-    /* ── Per-slot type toggle — PROPER ON-BOARD DROPDOWN ──────────────────
-       The column's kind chip opens a real floating menu anchored to it — no
-       "copy in the chat". Step 1 (three type tabs) and step 2 (the specific
-       item for that type) both live inside the one dropdown; picking an item
-       swaps the slot in place and re-ranks via the usual recalc. */
+    /* ── Searchable add / swap picker ────────────────────────────────────
+       Shared by the Add button and the per-column kind chip. Same grammar as
+       the composer database popover: sticky search, All / Closest chips, and
+       a scrollable roster of thumbnails already sitting there. Anchored above
+       or to the right of the trigger. */
     let cmpKindMenuEl = null;
-    let cmpKindMenuState = null;   /* { slotId, kind, anchor } */
+    let cmpKindMenuState = null;   /* { mode, slotId, kind, anchor, isSeed } */
 
     function cmpCloseKindMenu() {
       if (cmpKindMenuEl) { cmpKindMenuEl.remove(); cmpKindMenuEl = null; }
       cmpKindMenuState = null;
+      document.querySelectorAll('.cmp-add-main[aria-expanded="true"]').forEach(b => b.setAttribute('aria-expanded', 'false'));
       document.removeEventListener('mousedown', cmpKindMenuOutside, true);
       document.removeEventListener('keydown', cmpKindMenuKey, true);
-      window.removeEventListener('scroll', cmpCloseKindMenu, true);
-      window.removeEventListener('resize', cmpCloseKindMenu, true);
+      window.removeEventListener('scroll', cmpPickOnScroll, true);
+      window.removeEventListener('resize', cmpPickOnResize, true);
     }
     function cmpKindMenuOutside(e) {
-      if (cmpKindMenuEl && !cmpKindMenuEl.contains(e.target)) cmpCloseKindMenu();
+      if (cmpKindMenuEl && cmpKindMenuEl.contains(e.target)) return;
+      if (e.target.closest && (e.target.closest('.cmp-add-wrap') || e.target.closest('.cmp-kind-chip'))) return;
+      cmpCloseKindMenu();
     }
     function cmpKindMenuKey(e) { if (e.key === 'Escape') cmpCloseKindMenu(); }
-
-    function cmpToggleKindMenu(slotId, btn) {
-      /* Second click on the same chip closes the menu. */
-      if (cmpKindMenuEl && cmpKindMenuState && cmpKindMenuState.slotId === slotId) { cmpCloseKindMenu(); return; }
+    function cmpPickOnScroll(e) {
+      if (cmpKindMenuEl && cmpKindMenuEl.contains(e.target)) return;
       cmpCloseKindMenu();
-      const scope = CMP_SCOPES[compareState.scope];
-      if (!scope) return;
-      const ent = scope.entities.find(e => e.id === slotId) || {};
-      const isSeed = slotId === cmpSeedId();
-      cmpKindMenuState = { slotId, kind: cmpEntKind(ent, scope), anchor: btn, isSeed };
+    }
+    function cmpPickOnResize() {
+      if (cmpKindMenuEl && cmpKindMenuState) cmpPositionKindMenu(cmpKindMenuState.anchor);
+    }
+
+    function cmpOpenPickMenu(state) {
+      cmpCloseKindMenu();
+      if (typeof cmpCloseCatMenu === 'function') cmpCloseCatMenu();
+      if (typeof cmpCloseAddMenu === 'function') cmpCloseAddMenu();
+      cmpKindMenuState = state;
       const menu = document.createElement('div');
       menu.className = 'cmp-kind-menu';
       menu.setAttribute('role', 'menu');
       cmpKindMenuEl = menu;
       document.body.appendChild(menu);
       cmpRenderKindMenu();
-      cmpPositionKindMenu(btn);
+      cmpPositionKindMenu(state.anchor);
+      if (state.anchor && state.anchor.setAttribute) state.anchor.setAttribute('aria-expanded', 'true');
       document.addEventListener('mousedown', cmpKindMenuOutside, true);
       document.addEventListener('keydown', cmpKindMenuKey, true);
-      window.addEventListener('scroll', cmpCloseKindMenu, true);
-      window.addEventListener('resize', cmpCloseKindMenu, true);
+      window.addEventListener('scroll', cmpPickOnScroll, true);
+      window.addEventListener('resize', cmpPickOnResize, true);
+      const search = menu.querySelector('.cmp-pick-search-input');
+      if (search) setTimeout(() => search.focus(), 0);
+    }
+
+    function cmpToggleAddPicker(btn) {
+      const kind = cmpAddKind();
+      const switching = kind !== cmpLockedKind();
+      if (!switching && compareState.shown.length >= 5) {
+        addWISEcodeAIMessage('You’ve hit the <strong>5-item limit</strong> for one comparison (1 primary + 4 comparators). Remove one on the board to add another.', { source: false });
+        return;
+      }
+      const anchor = btn || document.querySelector('.cmp-add-main');
+      if (!anchor) return;
+      if (cmpKindMenuEl && cmpKindMenuState && cmpKindMenuState.mode === 'add' && cmpKindMenuState.anchor === anchor) {
+        cmpCloseKindMenu();
+        return;
+      }
+      const scope = CMP_SCOPES[compareState.scope];
+      if (!scope) return;
+      cmpOpenPickMenu({ mode: 'add', kind: kind, anchor: anchor, isSeed: false });
+    }
+
+    function cmpToggleKindMenu(slotId, btn) {
+      if (cmpKindMenuEl && cmpKindMenuState && cmpKindMenuState.mode === 'swap' && cmpKindMenuState.slotId === slotId) {
+        cmpCloseKindMenu();
+        return;
+      }
+      const scope = CMP_SCOPES[compareState.scope];
+      if (!scope) return;
+      const ent = scope.entities.find(e => e.id === slotId) || {};
+      cmpOpenPickMenu({
+        mode: 'swap',
+        slotId: slotId,
+        kind: cmpEntKind(ent, scope),
+        anchor: btn,
+        isSeed: slotId === cmpSeedId(),
+      });
     }
 
     function cmpPositionKindMenu(btn) {
       if (!cmpKindMenuEl || !btn) return;
       const r = btn.getBoundingClientRect();
-      const mw = cmpKindMenuEl.offsetWidth || 244;
-      const mh = cmpKindMenuEl.offsetHeight || 260;
-      let left = Math.min(r.right - mw, window.innerWidth - mw - 8);
-      left = Math.max(8, left);
-      let top = r.bottom + 6;
-      if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 6);
+      const mw = cmpKindMenuEl.offsetWidth || 360;
+      const mh = cmpKindMenuEl.offsetHeight || 380;
+      const spaceAbove = r.top - 8;
+      const spaceRight = window.innerWidth - r.right - 8;
+      let left, top;
+      if (spaceAbove >= Math.min(mh, 240)) {
+        top = Math.max(8, r.top - mh - 6);
+        left = Math.min(Math.max(8, r.right - mw), window.innerWidth - mw - 8);
+      } else if (spaceRight >= mw) {
+        left = r.right + 6;
+        top = Math.max(8, Math.min(r.top, window.innerHeight - mh - 8));
+      } else {
+        top = Math.max(8, Math.min(r.top - mh - 6, window.innerHeight - mh - 8));
+        left = Math.min(Math.max(8, r.right - mw), window.innerWidth - mw - 8);
+      }
       cmpKindMenuEl.style.left = left + 'px';
       cmpKindMenuEl.style.top = top + 'px';
+    }
+
+    function cmpPickThumbHtml(e) {
+      const url = cmpImgUrl(e);
+      if (url) return '<span class="cmp-pick-thumb"><img src="' + cmpEsc(url) + '" alt="" onerror="this.style.display=\'none\'"></span>';
+      if (e.icon) return '<span class="cmp-pick-thumb" style="background:' + cmpEsc(e.color || '#7C8A99') + '"><span class="material-symbols-outlined">' + cmpEsc(e.icon) + '</span></span>';
+      const abbr = e.abbr || String(e.name || '?').slice(0, 2);
+      return '<span class="cmp-pick-thumb" style="background:' + cmpEsc(e.color || 'var(--primary)') + '">' + cmpEsc(abbr) + '</span>';
+    }
+
+    function cmpPickItemHtml(e, opts) {
+      opts = opts || {};
+      const on = !!opts.on;
+      const isMatch = !!opts.isMatch;
+      const search = (e.name + ' ' + (e.cat || e.catName || '') + ' ' + (e.top || '')).toLowerCase();
+      const desc = [e.cat || e.catName || '', e.top || ''].filter(Boolean).join(' · ');
+      const trail = on
+        ? '<span class="material-symbols-outlined cmp-pick-check" aria-hidden="true">check</span>'
+        : (isMatch ? '<span class="material-symbols-outlined cmp-pick-star" aria-hidden="true">auto_awesome</span>' : '');
+      const click = on ? '' : ' onclick="cmpKindMenuPick(\'' + e.id + '\')"';
+      return '<button type="button" role="menuitem" class="cmp-pick-item' + (on ? ' is-on' : '') + (isMatch ? ' is-match' : '') + '"' +
+        ' data-search="' + cmpEsc(search) + '"' + (on ? ' aria-disabled="true"' : '') + click + '>' +
+        cmpPickThumbHtml(e) +
+        '<span class="cmp-pick-meta"><span class="cmp-pick-name">' + cmpEsc(e.name) + '</span>' +
+        (desc ? '<span class="cmp-pick-desc">' + cmpEsc(desc) + '</span>' : '') +
+        '</span>' + trail + '</button>';
     }
 
     function cmpRenderKindMenu() {
       if (!cmpKindMenuEl || !cmpKindMenuState) return;
       const scope = CMP_SCOPES[compareState.scope];
       if (!scope) return;
+      const mode = cmpKindMenuState.mode || 'swap';
       const isSeed = !!cmpKindMenuState.isSeed;
-      /* The SEED (first/anchor) column can change TYPE — product / portfolio /
-         category — which re-keys the whole board. Every other column is locked
-         to the board's kind and can only be swapped for another of that kind
-         (no type tabs). */
       let kind, tabs = '', hd;
-      if (isSeed) {
+      if (mode === 'swap' && isSeed) {
         kind = cmpKindMenuState.kind || cmpLockedKind();
         const kinds = [['product', 'Product', 'inventory_2'], ['portfolio', 'Portfolio', 'business'], ['category', 'Category', 'category']];
-        tabs = '<div class="cmp-kind-menu-tabs">' + kinds.map(([k, l, ic]) =>
-          `<button type="button" role="menuitemradio" aria-checked="${k === kind}" class="cmp-kind-menu-tab ${k === kind ? 'is-active' : ''}" onclick="cmpKindMenuSetKind('${k}')"><span class="material-symbols-outlined">${ic}</span>${l}</button>`
+        tabs = '<div class="cmp-pick-tabs">' + kinds.map(([k, l, ic]) =>
+          '<button type="button" role="menuitemradio" aria-checked="' + (k === kind) + '" class="cmp-pick-tab' + (k === kind ? ' is-active' : '') + '" onclick="cmpKindMenuSetKind(\'' + k + '\')"><span class="material-symbols-outlined">' + ic + '</span>' + l + '</button>'
         ).join('') + '</div>';
         hd = 'Change this comparison to…';
       } else {
-        kind = cmpLockedKind();
+        kind = mode === 'add' ? (cmpKindMenuState.kind || cmpLockedKind()) : cmpLockedKind();
         cmpKindMenuState.kind = kind;
-        hd = 'Swap in another ' + cmpKindLabel(kind);
+        hd = mode === 'add' ? ('Add a ' + cmpKindLabel(kind)) : ('Swap in another ' + cmpKindLabel(kind));
       }
-      const { list, matchCount } = cmpAddCandidates(scope, kind);
-      const items = list.length
-        ? list.map((e, i) => {
-            const isMatch = i < matchCount;
-            const ic = isMatch ? 'auto_awesome' : 'add';
-            return `<button type="button" role="menuitem" class="cmp-kind-menu-item ${isMatch ? 'is-match' : ''}" onclick="cmpKindMenuPick('${e.id}')"><span class="material-symbols-outlined">${ic}</span><span class="cmp-kind-menu-item-name">${e.name}</span></button>`;
-          }).join('')
-        : '<div class="cmp-kind-menu-empty">No other ' + cmpKindLabel(kind) + ' is available to place here.</div>';
+      const noun = cmpKindLabel(kind);
+      const { list, matchCount } = cmpAddCandidates(scope, kind, { all: true });
+      const onBoard = compareState.shown
+        .map(id => scope.entities.find(e => e.id === id))
+        .filter(e => e && cmpEntKind(e, scope) === kind);
+      const items = onBoard.map(e => cmpPickItemHtml(e, { on: true }))
+        .concat(list.map((e, i) => cmpPickItemHtml(e, { isMatch: i < matchCount })))
+        .join('');
+      const empty = (!onBoard.length && !list.length)
+        ? '<div class="cmp-pick-empty">No other ' + noun + ' is available to place here.</div>'
+        : '<div class="cmp-pick-empty" hidden>No ' + noun + 's match your search.</div>';
       cmpKindMenuEl.innerHTML =
-        '<div class="cmp-kind-menu-hd">' + hd + '</div>' +
-        tabs +
-        '<div class="cmp-kind-menu-list">' + items + '</div>';
+        '<div class="cmp-pick-top">' +
+          '<div class="cmp-pick-hd">' + hd + '</div>' +
+          tabs +
+          '<label class="cmp-pick-search"><span class="material-symbols-outlined" aria-hidden="true">search</span>' +
+            '<input type="text" class="cmp-pick-search-input" placeholder="Search ' + noun + 's…" aria-label="Search ' + noun + 's" autocomplete="off">' +
+          '</label>' +
+          '<div class="cmp-pick-filters" role="group" aria-label="Filter">' +
+            '<button type="button" class="cmp-pick-chip is-active" data-filter="all">All</button>' +
+            '<button type="button" class="cmp-pick-chip" data-filter="match">Closest</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="cmp-pick-scroll">' + items + empty + '</div>';
+      cmpWirePickSearch(cmpKindMenuEl);
+    }
+
+    function cmpWirePickSearch(menu) {
+      const input = menu.querySelector('.cmp-pick-search-input');
+      const empty = menu.querySelector('.cmp-pick-empty');
+      let filter = 'all';
+      const apply = () => {
+        const q = (input ? input.value : '').trim().toLowerCase();
+        let n = 0;
+        menu.querySelectorAll('.cmp-pick-item').forEach(el => {
+          const hitQ = !q || (el.dataset.search || '').indexOf(q) !== -1;
+          const hitF = filter === 'all' || el.classList.contains('is-match') || el.classList.contains('is-on');
+          const show = hitQ && hitF;
+          el.hidden = !show;
+          if (show) n++;
+        });
+        if (empty) empty.hidden = n > 0;
+      };
+      if (input) input.addEventListener('input', apply);
+      menu.querySelectorAll('.cmp-pick-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          filter = chip.getAttribute('data-filter') || 'all';
+          menu.querySelectorAll('.cmp-pick-chip').forEach(c => c.classList.toggle('is-active', c === chip));
+          apply();
+        });
+      });
     }
 
     function cmpKindMenuSetKind(kind) {
@@ -12997,12 +13276,25 @@
       cmpKindMenuState.kind = kind;
       cmpRenderKindMenu();
       cmpPositionKindMenu(cmpKindMenuState.anchor);
+      const search = cmpKindMenuEl && cmpKindMenuEl.querySelector('.cmp-pick-search-input');
+      if (search) search.focus();
     }
 
     function cmpKindMenuPick(pickId) {
       const st = cmpKindMenuState;
       cmpCloseKindMenu();
-      if (st) cmpConfirmSwapSlot(st.slotId, pickId, null);
+      if (!st) return;
+      if (st.mode === 'add') {
+        if (st.kind && st.kind !== cmpLockedKind()) {
+          const seed = cmpSeedId();
+          if (seed) cmpConfirmSwapSlot(seed, pickId, null);
+          else cmpConfirmAddEntity(pickId, null);
+        } else {
+          cmpConfirmAddEntity(pickId, null);
+        }
+        return;
+      }
+      cmpConfirmSwapSlot(st.slotId, pickId, null);
     }
 
     /* Visible recompute: runs a scanning sweep over the board, then folds any
@@ -13947,19 +14239,6 @@
           cmpAddSplit(compareState.shown.length >= 5) +
         '</div>';
 
-      /* The module header (top strip, in line with the ⋯ controls) keeps the
-         "Compare Foods" title; this live meta becomes its subtitle — how many
-         products/portfolios and metrics are in play, plus the active category
-         filter when one is applied. */
-      const nounPlural = scope.noun === 'portfolio' ? 'Portfolios' : 'Products';
-      const pendMeta = pendingEnts.length ? ` · ${pendingEnts.length} pending` : '';
-      const catMeta = (compareState.category && compareState.category !== 'all') ? ' · ' + compareState.category : '';
-      const metaText = gs
-        ? (rankable.length + ' ' + nounPlural + pendMeta + ' · Guiding Stars · ' + cmpGsAlgoLabel(compareState.gsAlgorithm || 'auto'))
-        : (rankable.length + ' ' + nounPlural + pendMeta + ' · ' + M + ' Metrics' + catMeta);
-      const cmpSub = document.getElementById('cmp-subtitle');
-      if (cmpSub) cmpSub.textContent = metaText;
-
       /* Fallback in-board header — shown only when "Header float" appearance
          mode collapses the real panel header. Without this, float mode would
          leave the board with no visible "Compare Foods" title at all (the old
@@ -13967,7 +14246,6 @@
       const boardHead =
         '<div class="cmp-board-head" aria-hidden="true">' +
           '<div class="cmp-board-title">Compare Foods</div>' +
-          '<div class="cmp-board-meta">' + metaText + '</div>' +
         '</div>';
 
       /* ── The aligned grid ── */
@@ -13986,7 +14264,7 @@
          is one obvious click away, using the same split Add control as the top
          toolbar. Suppressed once a second entity (or a pending entrant) exists. */
       const showAddCol = ordered.length === 1;
-      const cols = 'minmax(150px, 1.05fr) repeat(' + ordered.length + ', minmax(0, 1fr))'
+      const cols = 'minmax(min(132px, 28%), 1.05fr) repeat(' + ordered.length + ', minmax(0, 1fr))'
         + (showAddCol ? ' minmax(0, 0.9fr)' : '');
       const cells = [];
       /* The trailing "add a competitor" column is painted as ONE continuous cell
@@ -14187,16 +14465,14 @@
          per metric and the insight row. */
       if (showAddCol) {
         const primName = ordered[0] ? ordered[0].name : 'your food';
-        const lockedLabel = cmpKindLabel(cmpLockedKind());
         /* Rows: header + (health-bar view) one per metric + insight. The old
            standalone score row is gone (scores now ride on the header tiles). */
         const addColRows = chartOverlay ? 1 : (gs ? (cmpGsVisibleRows().length + 1) : (metrics.length + 2));
         cells.push(
           '<div class="cmp-cell cmp-addcol cmp-addcol-span" style="grid-column:-2 / -1;grid-row:1 / span ' + addColRows + ';">' +
             '<div class="cmp-addcol-inner">' +
-              '<div class="cmp-addcol-plus"><span class="material-symbols-outlined">add</span></div>' +
-              '<div class="cmp-addcol-title">Add a ' + lockedLabel + '</div>' +
-              '<div class="cmp-addcol-sub">Drop another ' + lockedLabel + ' in beside <strong>' + primName + '</strong> to build the head-to-head.</div>' +
+              '<button type="button" class="cmp-addcol-plus" onclick="cmpToggleAddPicker(this)" aria-label="Add a product, portfolio, or category"><span class="material-symbols-outlined">add</span></button>' +
+              '<div class="cmp-addcol-sub">Drop a product, portfolio, or category in beside <strong>' + primName + '</strong> to build the head-to-head.</div>' +
               cmpAddSplit(false) +
             '</div>' +
           '</div>');
@@ -16835,15 +17111,10 @@
     /* Pre-fill History with a couple of restorable conversations (inline +
        floating-module styles) so Views/History aren't empty on first load. */
     try { seedSavedViews(); } catch (_) {}
-    /* This page is dedicated to the comparison workflow — land members straight
-       in the single-pane Compare Foods chat module rather than the welcome
-       screen. Hide the welcome screen synchronously first so it never flashes,
-       then let startComparisonWorkflow() run its callback immediately. */
-    try {
-      const ws = document.getElementById('welcome-screen');
-      if (ws) { ws.classList.add('ws-hidden'); ws.style.display = 'none'; }
-      startComparisonWorkflow();
-    } catch (_) {}
+    /* Welcome + helix first — same as wiseai.html. Compare Foods is a chip
+       (and startComparisonWorkflow); that hides the welcome and blooms the
+       field out. Do not auto-start the transcript or the helix never shows. */
+    try { if (typeof revealWelcome === 'function') revealWelcome(); } catch (_) {}
     (function initChatTheme() {
       let theme = localStorage.getItem('wise-theme');
       if (theme !== 'light' && theme !== 'dark') {

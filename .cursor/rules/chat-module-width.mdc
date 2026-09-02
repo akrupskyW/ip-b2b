@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Chat Module Width
 
-The chat module's **load default** depends on the **size of the display**, not the size of the browser window. The user can still cycle single → double → triple → fill → custom in-session; the next load reapplies this default (do not restore the last toggle).
+The chat module's **load default** depends on the **size of the display**, not the size of the browser window. The user can still cycle single → double → fill → custom in-session; the next load reapplies this default (do not restore the last toggle). Triple is not a rest state.
 
 ## Breakpoint
 
@@ -32,5 +32,5 @@ Moving the window to a different monitor is the only thing that can legitimately
 - Apply the default through the existing `panel-wide` / `panel-triple` / `panel-fill` classes and the width-toggle button. Do not invent a parallel width system.
 - When the user cycles back to single, drop `html.chat-default-double` so the FOUC class cannot pin the chat wide.
 - Right-of-chat modules still default to **fill** (`js/default-fill.js`). That rule is unchanged.
-- **The right module's fill is a load default too — never a restored session choice.** `#agent-main` owns its own control instead of being driven by `default-fill.js`, and it used to restore its last tier from `localStorage` (`wise-main-width` / `wise-all-modules-width`). One stray narrowing then pinned it to a capped `max-width` on every later load, leaving dead space against the right edge while the chat beside it reset itself — the two halves of the row disagreeing about what "width" means. It now opens at `MAIN_WIDTH_DEFAULT` (fill) every load, cycles freely in-session, and persists nothing. Do not reintroduce a width read from storage for either half of the row.
+- **Chat still does not restore a session choice.** `#agent-main` and every other non-chat module persist their own rest state per page (`wise-module-width-tiers-v1`), keyed by the module, so changing or resizing a neighbour cannot write this one. Do not revive the old shared keys (`wise-main-width` / `wise-all-modules-width`) that pinned every page to one width.
 - On `wiseai.html`, the welcome chat still fills the row; `panel-wide` only sizes the docked column once a result pane is open.

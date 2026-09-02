@@ -1740,14 +1740,54 @@ export function injectChatExtras() {
     .wai-img-body img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; display: block; }
 
     /* "Background animation" (Admin) — the welcome-only ambient canvas of a
-       rotating food-item DNA/RNA helix. It sits above the card surface but below
-       the welcome content (z-index 10) and the transcript, never taking pointer
-       input; it only fades in while live, and the welcome panel drops its opaque
-       fill so the strip reads behind the copy. */
+       rotating food-item DNA/RNA helix. On the chat card it is a full-container
+       background (mounted on the card, behind welcome + composer). It never
+       takes pointer input; it only fades in while live, and the welcome panel
+       and composer rail drop their opaque fill so the strand reads behind
+       the copy. --fill adds the vertical fade over the headline / chips /
+       composer, leaving a visible sliver at the bottom edge. */
     .sc-bganim-canvas { position: absolute; inset: 0; width: 100%; height: 100%;
       z-index: 1; pointer-events: none; opacity: 0;
       transform: scale(1); transform-origin: 50% 36%;
       transition: opacity .55s ease; }
+    .sc-bganim-live { position: relative; }
+    .sc-bganim-canvas--fill { z-index: 0;
+      --sc-fill-0: 1; --sc-fill-1: 1; --sc-fill-2: 0.22;
+      --sc-fill-3: 0.08; --sc-fill-4: 0.06; --sc-fill-5: 0.28;
+      -webkit-mask-image: linear-gradient(to bottom,
+        rgb(0 0 0 / var(--sc-fill-0)) 0%, rgb(0 0 0 / var(--sc-fill-1)) 32%,
+        rgb(0 0 0 / var(--sc-fill-2)) 48%, rgb(0 0 0 / var(--sc-fill-3)) 64%,
+        rgb(0 0 0 / var(--sc-fill-4)) 82%, rgb(0 0 0 / var(--sc-fill-5)) 100%);
+      mask-image: linear-gradient(to bottom,
+        rgb(0 0 0 / var(--sc-fill-0)) 0%, rgb(0 0 0 / var(--sc-fill-1)) 32%,
+        rgb(0 0 0 / var(--sc-fill-2)) 48%, rgb(0 0 0 / var(--sc-fill-3)) 64%,
+        rgb(0 0 0 / var(--sc-fill-4)) 82%, rgb(0 0 0 / var(--sc-fill-5)) 100%); }
+    .sc-bganim-live > .sc-body,
+    .sc-bganim-live > .ap-chat-body { position: relative; z-index: 2; }
+    .sc-bganim-live > .chat-input-rail { position: relative; z-index: 2; }
+    /* Composer wash — the helix fade behind the typed text is a gradient
+       whose strength is the Wash slider (0 = helix fully visible, 50 = the
+       published Scene look, 100 = a heavier veil). The field itself becomes
+       a vertical gradient so the strand can still read through the top. */
+    .sc-bganim-live.sc-bganim-live .fl-input-wrap {
+      background: linear-gradient(to top,
+        color-mix(in srgb, var(--primary) calc(var(--sc-bganim-wash, 50) * 0.20%), #fff) 0%,
+        color-mix(in srgb, var(--primary) calc(var(--sc-bganim-wash, 50) * 0.12%), #fff) 55%,
+        color-mix(in srgb, var(--primary) calc(var(--sc-bganim-wash, 50) * 0.04%), transparent) 100%);
+    }
+    html.dark .sc-bganim-live.sc-bganim-live .fl-input-wrap {
+      background: linear-gradient(to top,
+        color-mix(in srgb, var(--primary-bright, #8B9FAF) calc(var(--sc-bganim-wash, 50) * 0.28%), transparent) 0%,
+        color-mix(in srgb, var(--primary-bright, #8B9FAF) calc(var(--sc-bganim-wash, 50) * 0.16%), transparent) 55%,
+        color-mix(in srgb, var(--primary-bright, #8B9FAF) calc(var(--sc-bganim-wash, 50) * 0.04%), transparent) 100%);
+    }
+    html.full-bleed.fb-chat-tint .sc-bganim-live .fl-input-wrap,
+    html.full-bleed.dark.fb-chat-tint .sc-bganim-live .fl-input-wrap {
+      background: linear-gradient(to top,
+        color-mix(in srgb, var(--fb-chat-fg, #16233B) calc(var(--sc-bganim-wash, 50) * 0.20%), var(--fb-chat-bg)) 0%,
+        color-mix(in srgb, var(--fb-chat-fg, #16233B) calc(var(--sc-bganim-wash, 50) * 0.10%), var(--fb-chat-bg)) 55%,
+        color-mix(in srgb, var(--fb-chat-fg, #16233B) calc(var(--sc-bganim-wash, 50) * 0.03%), transparent) 100%) !important;
+    }
     .sc-bganim-live .sc-bganim-canvas { opacity: 1; }
     /* First click / send leaves by blooming out — fade + expand, never a
        collapse. Origin sits on the strand centre (getCenterY ≈ 0.36). */
@@ -1769,34 +1809,39 @@ export function injectChatExtras() {
        in light or dark. */
     .sc-bganim-live.sc-bganim-live.sc-bganim-live .sc-welcome,
     .sc-bganim-live.sc-bganim-live.sc-bganim-live #welcome-screen,
+    .sc-bganim-live.sc-bganim-live.sc-bganim-live .chat-messages-area,
+    .sc-bganim-live.sc-bganim-live.sc-bganim-live .chat-input-rail,
     html.full-bleed.fb-chat-tint .sc-bganim-live .sc-welcome,
     html.full-bleed.fb-chat-tint .sc-bganim-live #welcome-screen,
+    html.full-bleed.fb-chat-tint .sc-bganim-live .chat-messages-area,
+    html.full-bleed.fb-chat-tint .sc-bganim-live .chat-input-rail,
     html.full-bleed.fb-chat-tint .sc-orbit-live .sc-welcome,
     html.full-bleed.fb-chat-tint .sc-orbit-live #welcome-screen,
     html.full-bleed.fb-chat-tint.chat-tint .sc-bganim-live #welcome-screen,
     html.full-bleed.fb-chat-tint.chat-tint .sc-orbit-live #welcome-screen { background: transparent !important; }
 
-    /* Opacity / angle / camera / scale / shape controls that sit just under the
+    /* Opacity / wash / angle / camera / scale / shape controls that sit just under the
        Helix "Animation" toggle. Mirror the streaming-detail sub-row; admin
        pink accent matches the toggle. The rows share .sc-bganim-detail so they
        disable together. Angle, Camera, Pitch, Length, Thick, Rungs, Bar and Depth
-       are helix-only (hidden while Orbit is selected); Scale and Nodes drive both
+       are helix-only (hidden while Orbit is selected); Scale, Nodes and Wash drive both
        fields. Dots (size, colour, motion of the small beads between product
        circles) are helix-only too. Pulse and Spark each keep their own Rate / Size
-       knobs. Rungs / Bar are the cross-lines between the two strands. */
+       knobs. Rungs / Bar are the cross-lines between the two strands. Wash is the
+       gradient behind composer text. */
     .sc-bganim-detail { display: flex; align-items: center; gap: 10px;
       margin: 2px 12px 8px 42px; transition: opacity .15s ease; }
     .sc-bganim-detail-label { font-size: 8px; font-weight: 700; letter-spacing: 0.04em;
       text-transform: uppercase; color: var(--text-muted); white-space: nowrap;
       min-width: 38px; }
-    .sc-bganim-opacity, .sc-bganim-angle-range, .sc-bganim-camera-range, .sc-bganim-azimuth-range, .sc-bganim-shift-range, .sc-bganim-scale-range,
+    .sc-bganim-opacity, .sc-bganim-wash-range, .sc-bganim-angle-range, .sc-bganim-camera-range, .sc-bganim-azimuth-range, .sc-bganim-shift-range, .sc-bganim-scale-range,
     .sc-bganim-knob-range, .sc-bganim-motion-knob-range, .sc-bganim-mat-range { flex: 1 1 auto; min-width: 54px; height: 4px; cursor: pointer;
       accent-color: rgb(219, 39, 119); }
     /* The master Scale row leads the three axes — a touch stronger so it reads
        as the one that moves them all. */
     .sc-bganim-scale-all .sc-bganim-detail-label,
     .sc-bganim-scale-all .sc-bganim-scale-val { color: var(--text); }
-    .sc-bganim-opacity-val, .sc-bganim-angle-val, .sc-bganim-camera-val, .sc-bganim-azimuth-val, .sc-bganim-shift-val, .sc-bganim-scale-val,
+    .sc-bganim-opacity-val, .sc-bganim-wash-val, .sc-bganim-angle-val, .sc-bganim-camera-val, .sc-bganim-azimuth-val, .sc-bganim-shift-val, .sc-bganim-scale-val,
     .sc-bganim-knob-val, .sc-bganim-motion-knob-val, .sc-bganim-mat-val { font-size: 11px; font-weight: 700; color: var(--text-muted);
       width: 44px; text-align: right; font-variant-numeric: tabular-nums; }
     .sc-bganim-detail.is-disabled { opacity: .45; pointer-events: none; }
@@ -1983,12 +2028,13 @@ export function injectChatExtras() {
     .sc-menu-grouped .sc-bganim-playback-label { min-width: 38px; font-size: 10px; letter-spacing: 0.04em; }
     .sc-menu-group--helix > .sc-menu-group-head,
     .sc-menu-group--background > .sc-menu-group-head { font-size: 9px; letter-spacing: 0.06em; padding: 4px 8px 2px; }
-    .sc-menu-grouped .sc-bganim-opacity-val, .sc-menu-grouped .sc-bganim-angle-val,
+    .sc-menu-grouped .sc-bganim-opacity-val, .sc-menu-grouped .sc-bganim-wash-val, .sc-menu-grouped .sc-bganim-angle-val,
     .sc-menu-grouped .sc-bganim-camera-val, .sc-menu-grouped .sc-bganim-azimuth-val, .sc-menu-grouped .sc-bganim-shift-val, .sc-menu-grouped .sc-bganim-scale-val,
     .sc-menu-grouped .sc-bganim-knob-val, .sc-menu-grouped .sc-bganim-motion-knob-val, .sc-menu-grouped .sc-bganim-mat-val {
       font-size: 10px; width: 40px;
     }
     .sc-menu-grouped .sc-bganim-opacity,
+    .sc-menu-grouped .sc-bganim-wash-range,
     .sc-menu-grouped .sc-bganim-angle-range,
     .sc-menu-grouped .sc-bganim-camera-range,
     .sc-menu-grouped .sc-bganim-azimuth-range,
@@ -2101,6 +2147,7 @@ export function injectChatExtras() {
     .sc-menu-group--helix .sc-bganim-style-label,
     .sc-menu-group--helix .sc-bganim-playback-label { min-width: 32px; font-size: 9px; }
     .sc-menu-group--helix .sc-bganim-opacity-val,
+    .sc-menu-group--helix .sc-bganim-wash-val,
     .sc-menu-group--helix .sc-bganim-angle-val,
     .sc-menu-group--helix .sc-bganim-camera-val,
     .sc-menu-group--helix .sc-bganim-azimuth-val,
@@ -2110,6 +2157,7 @@ export function injectChatExtras() {
     .sc-menu-group--helix .sc-bganim-motion-knob-val,
     .sc-menu-group--helix .sc-bganim-mat-val { font-size: 9px; width: 34px; }
     .sc-menu-group--helix .sc-bganim-opacity,
+    .sc-menu-group--helix .sc-bganim-wash-range,
     .sc-menu-group--helix .sc-bganim-angle-range,
     .sc-menu-group--helix .sc-bganim-camera-range,
     .sc-menu-group--helix .sc-bganim-azimuth-range,
@@ -2198,6 +2246,7 @@ export function injectChatExtras() {
       min-width: 52px; font-size: 10px;
     }
     .sc-helix-float .sc-menu-group--helix .sc-bganim-opacity-val,
+    .sc-helix-float .sc-menu-group--helix .sc-bganim-wash-val,
     .sc-helix-float .sc-menu-group--helix .sc-bganim-angle-val,
     .sc-helix-float .sc-menu-group--helix .sc-bganim-camera-val,
     .sc-helix-float .sc-menu-group--helix .sc-bganim-azimuth-val,
@@ -2423,6 +2472,7 @@ export const BGANIM_PUBLISH_POSE = Object.freeze({
   look: '3d',
   mats: Object.freeze({ rough: 36, metal: 17, coat: 26, sheen: 46, fuzz: 22 }),
   opacity: 50,
+  wash: 50,
   angle: -89,
   camera: 9,
   azimuth: -59,
@@ -3446,6 +3496,7 @@ const BGANIM_SNAPS_KEY = 'wise:chat-bg-anim-snaps-v1';
 const BGANIM_SNAPS_MAX_USER = 8;
 const BGANIM_SNAP_ON_KEY = 'wise:chat-bg-anim';
 const BGANIM_SNAP_OPACITY_KEY = 'wise:chat-bg-anim-opacity';
+const BGANIM_SNAP_WASH_KEY = 'wise:chat-bg-anim-wash';
 const BGANIM_SNAP_ANGLE_KEY = 'wise:chat-bg-anim-angle';
 const BGANIM_SNAP_PAUSED_KEY = 'wise:chat-bg-anim-paused';
 const BGANIM_SNAP_STYLE_KEY = 'wise:chat-bg-anim-style';
@@ -3457,6 +3508,90 @@ export function readBgAnimOpacityPct() {
     if (!isNaN(n)) return Math.max(10, Math.min(100, n));
   } catch (_) {}
   return BGANIM_PUBLISH_POSE.opacity;
+}
+
+export function clampBgAnimWash(n) {
+  const v = Number(n);
+  return Number.isFinite(v)
+    ? Math.max(0, Math.min(100, Math.round(v)))
+    : BGANIM_PUBLISH_POSE.wash;
+}
+
+export function readBgAnimWash() {
+  try {
+    const n = parseInt(bgAnimGet(BGANIM_SNAP_WASH_KEY), 10);
+    if (!isNaN(n)) return clampBgAnimWash(n);
+  } catch (_) {}
+  return BGANIM_PUBLISH_POSE.wash;
+}
+
+function persistBgAnimWash(pct) {
+  try { bgAnimSet(BGANIM_SNAP_WASH_KEY, String(pct)); } catch (_) {}
+}
+
+function broadcastBgAnimWash(pct) {
+  try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-wash', { detail: { wash: pct } })); } catch (_) {}
+}
+
+/* 0 = helix fully visible behind the composer; 50 = the published Scene
+   fade (current mask); 100 = a heavier veil. Always a gradient — never a
+   hard cut — so lowering Wash makes the fade gentler rather than flipping
+   a solid block off. */
+function bgAnimWashMaskStops(pct) {
+  const cur = [1, 1, 0.22, 0.08, 0.06, 0.28];
+  const none = [1, 1, 1, 1, 1, 1];
+  const heavy = [1, 0.62, 0.08, 0.02, 0.015, 0.10];
+  const t = clampBgAnimWash(pct) / 100;
+  const mix = (a, b, u) => a.map((v, i) => +(v + (b[i] - v) * u).toFixed(3));
+  if (t <= 0.5) return mix(none, cur, t / 0.5);
+  return mix(cur, heavy, (t - 0.5) / 0.5);
+}
+
+export function applyBgAnimWash(pct) {
+  const n = clampBgAnimWash(pct);
+  const stops = bgAnimWashMaskStops(n);
+  if (typeof document === 'undefined') return n;
+  const root = document.documentElement;
+  root.style.setProperty('--sc-bganim-wash', String(n));
+  const paint = (el) => {
+    if (!el || !el.style) return;
+    el.style.setProperty('--sc-bganim-wash', String(n));
+    el.style.setProperty('--sc-fill-0', String(stops[0]));
+    el.style.setProperty('--sc-fill-1', String(stops[1]));
+    el.style.setProperty('--sc-fill-2', String(stops[2]));
+    el.style.setProperty('--sc-fill-3', String(stops[3]));
+    el.style.setProperty('--sc-fill-4', String(stops[4]));
+    el.style.setProperty('--sc-fill-5', String(stops[5]));
+  };
+  paint(root);
+  document.querySelectorAll('.sc-bganim-live, .sc-orbit-live, .sc-bganim-canvas--fill').forEach(paint);
+  return n;
+}
+
+function bgAnimWashRowHtml() {
+  const v = BGANIM_PUBLISH_POSE.wash;
+  return `<div class="sc-bganim-detail sc-bganim-wash">
+            <span class="sc-bganim-detail-label">Wash</span>
+            <input type="range" class="sc-bganim-wash-range" min="0" max="100" step="1" value="${v}" aria-label="Composer wash" title="How much the helix fades behind the composer text">
+            <span class="sc-bganim-wash-val">${v}%</span>
+          </div>`;
+}
+
+function ensureBgAnimWashRow(pop) {
+  if (!pop) return;
+  if (!pop.querySelector('.sc-bganim-wash')) {
+    const html = bgAnimWashRowHtml();
+    const opacity = pop.querySelector('.sc-bganim-detail:has(.sc-bganim-opacity)');
+    if (opacity) opacity.insertAdjacentHTML('afterend', html);
+    else {
+      const angle = pop.querySelector('.sc-bganim-angle');
+      if (angle) angle.insertAdjacentHTML('beforebegin', html);
+    }
+  }
+  pop.querySelectorAll('.sc-bganim-wash-range').forEach((r) => {
+    r.min = '0';
+    r.max = '100';
+  });
 }
 
 export function readBgAnimAngle() {
@@ -3473,6 +3608,7 @@ function bgAnimFactorySnap(id, name, patch) {
     look: BGANIM_PUBLISH_POSE.look,
     mats: Object.assign({}, BGANIM_PUBLISH_POSE.mats),
     opacity: BGANIM_PUBLISH_POSE.opacity,
+    wash: BGANIM_PUBLISH_POSE.wash,
     angle: BGANIM_PUBLISH_POSE.angle,
     camera: BGANIM_PUBLISH_POSE.camera,
     azimuth: BGANIM_PUBLISH_POSE.azimuth,
@@ -3518,7 +3654,7 @@ function cloneBgAnimSnap(s) {
     id: s.id, name: s.name, builtIn: !!s.builtIn,
     look: normalizeBgAnimLook(s.look),
     mats: Object.assign({}, s.mats),
-    opacity: s.opacity, angle: s.angle, camera: s.camera,
+    opacity: s.opacity, wash: s.wash, angle: s.angle, camera: s.camera,
     azimuth: s.azimuth, shift: s.shift,
     scale: Object.assign({}, s.scale),
     knobs: Object.assign({}, s.knobs),
@@ -3540,6 +3676,7 @@ function clampBgAnimSnap(raw) {
   const s = cloneBgAnimSnap(raw);
   if (!s) return null;
   s.opacity = Math.max(10, Math.min(100, Math.round(Number(s.opacity) || BGANIM_PUBLISH_POSE.opacity)));
+  s.wash = clampBgAnimWash(s.wash);
   s.angle = Math.max(-90, Math.min(90, Math.round(Number.isFinite(Number(s.angle)) ? Number(s.angle) : BGANIM_PUBLISH_POSE.angle)));
   s.camera = clampBgAnimCamera(s.camera);
   s.azimuth = clampBgAnimAzimuth(s.azimuth);
@@ -3560,6 +3697,7 @@ function clampBgAnimSnap(raw) {
 
 function captureBgAnimSnapshot() {
   const opacity = readBgAnimOpacityPct();
+  const wash = readBgAnimWash();
   const angle = readBgAnimAngle();
   let on = true;
   try { if (bgAnimGet(BGANIM_SNAP_ON_KEY) === '0') on = false; } catch (_) {}
@@ -3573,7 +3711,7 @@ function captureBgAnimSnapshot() {
   return clampBgAnimSnap({
     look: readBgAnimLook(),
     mats: readBgAnimMats(),
-    opacity, angle,
+    opacity, wash, angle,
     camera: readBgAnimCamera(),
     azimuth: readBgAnimAzimuth(),
     shift: readBgAnimShift(),
@@ -3593,7 +3731,7 @@ function equalBgAnimSnap(a, b) {
   if (a.look !== b.look || a.style !== b.style || a.spin !== b.spin) return false;
   if (a.dotsMotion !== b.dotsMotion || !!a.rungsMatch !== !!b.rungsMatch) return false;
   if ((a.dotsColor || '') !== (b.dotsColor || '')) return false;
-  if (a.opacity !== b.opacity || a.angle !== b.angle) return false;
+  if (a.opacity !== b.opacity || a.wash !== b.wash || a.angle !== b.angle) return false;
   if (a.camera !== b.camera || a.azimuth !== b.azimuth || a.shift !== b.shift) return false;
   if (a.scale.x !== b.scale.x || a.scale.y !== b.scale.y || a.scale.z !== b.scale.z) return false;
   for (let i = 0; i < BGANIM_MAT_IDS.length; i++) {
@@ -3644,6 +3782,7 @@ function persistBgAnimSnapshotState(s) {
   persistBgAnimLook(s.look);
   BGANIM_MAT_IDS.forEach((id) => persistBgAnimMat(id, s.mats[id]));
   try { bgAnimSet(BGANIM_SNAP_OPACITY_KEY, String(s.opacity)); } catch (_) {}
+  persistBgAnimWash(s.wash);
   try { bgAnimSet(BGANIM_SNAP_ANGLE_KEY, String(s.angle)); } catch (_) {}
   persistBgAnimCamera(s.camera);
   persistBgAnimAzimuth(s.azimuth);
@@ -3664,6 +3803,7 @@ function broadcastBgAnimSnapshotState(s) {
   try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-snapshot', { detail: s })); } catch (_) {}
   try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim', { detail: { on: s.on } })); } catch (_) {}
   try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-opacity', { detail: { opacity: s.opacity / 100 } })); } catch (_) {}
+  broadcastBgAnimWash(s.wash);
   try { document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-angle', { detail: { angle: s.angle } })); } catch (_) {}
   broadcastBgAnimCamera(s.camera);
   broadcastBgAnimAzimuth(s.azimuth);
@@ -4470,6 +4610,7 @@ function ensureBgAnimSubheads(pop) {
 
 function ensureBgAnimCameraRow(pop) {
   if (!pop) return;
+  ensureBgAnimWashRow(pop);
   if (!pop.querySelector('.sc-bganim-camera')) {
     const html = bgAnimCameraRowHtml();
     const angle = pop.querySelector('.sc-bganim-angle');
@@ -4658,9 +4799,28 @@ function applyScaleEventToAxes(axes, detail) {
      getDensity    {fn}   () => 'full' (default roster) or 'ten' (same node
                           density; ~10 foods swell a bit larger; every other
                           circle is the WISE owl logo bug)
+     fillHost      {bool} chat welcome only — grow a steep strand so its
+                          faded tips reach the host's top and bottom (the
+                          Length knob can still run it longer). Pairs with
+                          the --fill canvas mask that fades behind copy.
    Returns { start, stop, pause, resume, redraw }.
      stop() blooms the field out (fade + expand). Pass { immediate: true }
      to tear down without the leave (history restore, style swap). */
+/* Keep the strand's visual centre in the chat body (the published 0.36)
+   after the canvas remounts on the full card. Without this, 0.36 of the
+   taller card (header + body + composer) would pull the helix down. */
+function helixFillCenterY(host) {
+  if (!host || !host.getBoundingClientRect) return 0.36;
+  const body = host.querySelector('.sc-body, .ap-chat-body');
+  if (!body || body === host) return 0.36;
+  try {
+    const cr = host.getBoundingClientRect();
+    const br = body.getBoundingClientRect();
+    if (cr.height < 8) return 0.36;
+    return (br.top - cr.top + br.height * 0.36) / cr.height;
+  } catch (_) { return 0.36; }
+}
+
 export function createHelixBgAnim(cfg) {
   const host = cfg.host;
   const getBody = cfg.getBody;
@@ -4752,6 +4912,7 @@ export function createHelixBgAnim(cfg) {
   /* Strand-only stills (empty product-photo tile) skip food circles, owl
      bugs, and hover cards — just the streaming DNA/RNA rope, frozen. */
   const hideProducts = !!(typeof cfg.hideProducts === 'function' ? cfg.hideProducts() : cfg.hideProducts);
+  const fillHost = !!cfg.fillHost;
   const getCenterY = () => {
     const raw = typeof cfg.getCenterY === 'function' ? cfg.getCenterY() : 0.36;
     const n = Number(raw);
@@ -5317,9 +5478,10 @@ export function createHelixBgAnim(cfg) {
     if (!body) return;
     if (!hideProducts) loadImages();
     canvas = document.createElement('canvas');
-    canvas.className = 'sc-bganim-canvas';
+    canvas.className = 'sc-bganim-canvas' + (fillHost ? ' sc-bganim-canvas--fill' : '');
     canvas.setAttribute('aria-hidden', 'true');
     body.insertBefore(canvas, body.firstChild);
+    if (fillHost) applyBgAnimWash(readBgAnimWash());
     ctx = canvas.getContext('2d');
     buf = document.createElement('canvas');            // offscreen: draw opaque, blit at opacity
     bctx = buf.getContext('2d');
@@ -5654,6 +5816,11 @@ export function createHelixBgAnim(cfg) {
     draw(lastT || 3);
   }
 
+  function hostHasBox() {
+    const body = canvas && canvas.parentElement;
+    return !!(body && body.clientWidth >= 8 && body.clientHeight >= 8);
+  }
+
   function resize() {
     if (!canvas || !ctx || leaving) return;
     const body = canvas.parentElement;
@@ -5669,6 +5836,18 @@ export function createHelixBgAnim(cfg) {
     }
     /* Keep a shown card glued to its bug after a resize/reflow. */
     if (card && !card.hidden && hoverX >= 0) placeCard({ x: hoverX, y: hoverY, r: 17 });
+    /* Roll / Crawl hide the chat (display:none → 0×0). start() may have
+       armed the field there; when the host gets a real box, paint. */
+    if (host.classList.contains('sc-bganim-live') && isOn() && hostHasBox()) {
+      if (reducedMotion || isPaused()) { draw(lastT || 3); return; }
+      if (running && !paused) {
+        if (!raf) raf = requestAnimationFrame(frame);
+        return;
+      }
+      running = true; paused = false; t0 = 0;
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(frame);
+    }
   }
 
   /* Smootherstep for the soft fade at the strand's two ends. */
@@ -5838,13 +6017,21 @@ export function createHelixBgAnim(cfg) {
     const theta = (getAngle() * Math.PI / 180) + 0.06 * Math.sin(st * 0.045);
     const ax = Math.cos(theta), ay = Math.sin(theta);          // along-axis unit vector
     const px = -Math.sin(theta), py = Math.cos(theta);         // perpendicular unit vector
-    /* Strand length — the default covers the tilted diagonal; the Length knob
-       runs it further past the edges or pulls it into a short, central span. */
-    const L = Math.hypot(w, h) * 1.2 * getLengthMul();
     /* Coil volume "breathes" on an ultra-slow, irregular cycle (~2–3 min): the
        helix opens and closes how wide the corkscrew is. Scale Z amplifies that
        volume. Thick and Depth are separate — stroke weight and 3-D pop. */
     const sc = getScaleAxes();
+    /* Strand length — the default covers the tilted diagonal; the Length knob
+       runs it further past the edges or pulls it into a short, central span.
+       On a chat card (fillHost) a steep Scene pose also grows so the faded
+       tips reach the host's top and bottom — the helix is the container
+       background, not a mid-pane ribbon. */
+    const Lknob = Math.hypot(w, h) * 1.2 * getLengthMul();
+    let L = Lknob;
+    if (fillHost && Math.abs(ay) > 0.45) {
+      const yAlong = Math.max(0.08, Math.abs(ay) * sc.y);
+      L = Math.max(Lknob, 2 * Math.max(cy, h - cy) / yAlong * 1.16);
+    }
     const thick = getThicknessMul();
     const depth3d = getDepthMul();
     const volume = 1 + (0.16 * Math.sin(st * 0.02) + 0.07 * Math.sin(st * 0.009 + 1.3)) * sc.z;
@@ -6180,6 +6367,10 @@ export function createHelixBgAnim(cfg) {
     if (!canvas || !ctx) return;
     rgb = readColor();
     host.classList.add('sc-bganim-live');
+    /* Hidden (Roll / Crawl) or not yet laid out — CSS is live so the
+       welcome goes transparent, but do not spin a 1×1 canvas. resize()
+       kicks the loop the moment the host has a box. */
+    if (!hostHasBox()) return;
     /* Reduced-motion: honour the calm by painting a single still frame of the strip. */
     if (reducedMotion) {
       running = false; paused = false; if (raf) { cancelAnimationFrame(raf); raf = 0; }
@@ -6326,6 +6517,17 @@ export function createHelixBgAnim(cfg) {
       if (host.classList.contains('sc-bganim-live') && !leaving) draw(lastT || 3);
     });
   }
+  /* Walk / Run (or CWR off) un-hides the chat. ResizeObserver usually
+     fires; this is the backup so a 0×0 start cannot stay blank. */
+  if (typeof window !== 'undefined' && !host.__helixCwrWakeBound) {
+    host.__helixCwrWakeBound = true;
+    const wake = () => {
+      if (typeof requestAnimationFrame !== 'function') { resize(); return; }
+      requestAnimationFrame(() => { if (!leaving) resize(); });
+    };
+    window.addEventListener('wise:cwr-mode', wake);
+    document.addEventListener('wise:cwr-ui', wake);
+  }
 
   return { start, stop, pause, resume, redraw, resize };
 }
@@ -6410,7 +6612,8 @@ function chatMenuGroupKey(el) {
    master "Admin controls" switch the Appearance popover uses (wise-admin-ui).
    Off hides every Admin-badged row and the chrome that belongs to one, so the
    menu shows only member-facing items. The live feature state of anything
-   already on is left alone. */
+   already on is left alone, including the selected Roll · Crawl · Walk · Run
+   mode. Off Internal admins only hides the floating CWR widget. */
 const CHAT_ADMIN_UI_KEY = 'wise-admin-ui';
 function isChatAdminUiOn() {
   try { return localStorage.getItem(CHAT_ADMIN_UI_KEY) !== '0'; } catch (_) { return true; }
@@ -6744,6 +6947,7 @@ function decorateChatMenuAdminDescs(pop) {
 /* Tiny 2–4 word hint under every Helix slider / segment. Idempotent. */
 const HELIX_HINTS = [
   ['.sc-bganim-detail:has(.sc-bganim-opacity)', 'How faint it sits'],
+  ['.sc-bganim-wash', 'Behind the composer'],
   ['.sc-bganim-angle', 'Tilt of the coil'],
   ['.sc-bganim-camera', 'Above or below'],
   ['.sc-bganim-azimuth', 'Around the coil'],
@@ -8254,6 +8458,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      broadcast on wise:chat-bg-anim-angle). Published default matches Scene. */
   const BGANIM_ANGLE_KEY = 'wise:chat-bg-anim-angle';
   let bgAnimAngle = readBgAnimAngle();
+  let bgAnimWash = readBgAnimWash();
+  applyBgAnimWash(bgAnimWash);
   let bgAnimCamera = readBgAnimCamera();
   let bgAnimAzimuth = readBgAnimAzimuth();
   let bgAnimShift = readBgAnimShift();
@@ -8401,6 +8607,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
             <input type="range" class="sc-bganim-opacity" min="10" max="100" step="1" value="${BGANIM_PUBLISH_POSE.opacity}" aria-label="Helix opacity">
             <span class="sc-bganim-opacity-val">${BGANIM_PUBLISH_POSE.opacity}%</span>
           </div>
+          ${bgAnimWashRowHtml()}
           <div class="sc-bganim-detail sc-bganim-angle">
             <span class="sc-bganim-detail-label">Angle</span>
             <input type="range" class="sc-bganim-angle-range" min="-90" max="90" step="1" value="${BGANIM_PUBLISH_POSE.angle}" aria-label="Helix angle">
@@ -10668,7 +10875,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      canvas so the ten product bugs can swell into the leftover node space. */
   const bgAnimCommon = {
     host: rootEl,
-    getBody: () => rootEl.querySelector('.sc-body'),
+    getBody: () => rootEl,
+    getCenterY: () => helixFillCenterY(rootEl),
+    fillHost: true,
     getOpacity: effectiveBgAnimOpacity,
     getAngle: () => bgAnimAngle,
     getCamera: () => bgAnimCamera,
@@ -10767,6 +10976,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (range && document.activeElement !== range) range.value = String(pct);
     const val = menuSel('.sc-bganim-opacity-val');
     if (val) val.textContent = pct + '%';
+    const washRange = menuSel('.sc-bganim-wash-range');
+    if (washRange && document.activeElement !== washRange) washRange.value = String(bgAnimWash);
+    const washVal = menuSel('.sc-bganim-wash-val');
+    if (washVal) washVal.textContent = bgAnimWash + '%';
     const angleRange = menuSel('.sc-bganim-angle-range');
     if (angleRange && document.activeElement !== angleRange) angleRange.value = String(bgAnimAngle);
     const angleVal = menuSel('.sc-bganim-angle-val');
@@ -10834,6 +11047,27 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     bgAnimOpacityUserSet = true;                    // mirror the sibling chat's explicit choice
     syncBgAnimMenu();
     if (prefersReducedMotion && bgAnimOn) bgAnim.start();
+  });
+  /* Wash slider — how strongly the helix fades behind composer text. The
+     canvas mask and the composer field gradient both follow this one value. */
+  const bgWashRange = rootEl.querySelector('.sc-bganim-wash-range');
+  if (bgWashRange) {
+    bgWashRange.addEventListener('input', () => {
+      const pct = clampBgAnimWash(parseInt(bgWashRange.value, 10));
+      bgAnimWash = pct;
+      persistBgAnimWash(pct);
+      applyBgAnimWash(pct);
+      broadcastBgAnimWash(pct);
+      const wval = menuSel('.sc-bganim-wash-val');
+      if (wval) wval.textContent = pct + '%';
+    });
+  }
+  document.addEventListener('wise:chat-bg-anim-wash', (e) => {
+    const v = e && e.detail && e.detail.wash;
+    if (typeof v !== 'number') return;
+    bgAnimWash = clampBgAnimWash(v);
+    applyBgAnimWash(bgAnimWash);
+    syncBgAnimMenu();
   });
   /* Angle slider — tilt the whole helix. Persist + broadcast so every mounted
      chat's slider (and its live canvas) follows the one shared setting. A
@@ -10967,6 +11201,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     Object.assign(bgAnimMats, s.mats);
     bgAnimOpacity = Math.max(0.1, Math.min(1, (s.opacity || BGANIM_PUBLISH_POSE.opacity) / 100));
     bgAnimOpacityUserSet = true;
+    bgAnimWash = clampBgAnimWash(s.wash);
+    applyBgAnimWash(bgAnimWash);
     bgAnimAngle = Math.max(-90, Math.min(90, s.angle));
     bgAnimCamera = clampBgAnimCamera(s.camera);
     bgAnimAzimuth = clampBgAnimAzimuth(s.azimuth);
@@ -12590,6 +12826,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const changed = dbId !== currentDbId;
     const prev = dbItemById(currentDbId);
     currentDbId = dbId;
+    if (changed && opts.helixStudio !== true) bgAnim.stop();
     if (changed && conversationStarted()) addDbChangeNote(prev, next);
     const cb = opts.onDbChange || opts.onModelChange;
     if (changed && typeof cb === 'function') cb(dbId);
@@ -13164,9 +13401,52 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     welcomeChipsCutoff = lo;
     placeMoreBtnAfter(moreBtn, chips[lo - 1], wrap);
   }
+  /* Welcome is bottom-anchored (`justify-content: safe flex-end`). Un-hiding
+     overflow chips grows the stack and the heading / existing chips jump to
+     their new slots — or `safe` snaps the whole stack to the top once it
+     overflows. FLIP the blocks that sit before the new chips so they slide
+     to the new layout instead of appearing there. */
+  const WELCOME_CHIP_LAYOUT_MS = 340;
+  const WELCOME_CHIP_LAYOUT_EASE = 'cubic-bezier(0.22, 0.85, 0.25, 1)';
+  function welcomeLayoutMovers() {
+    if (!welcome) return [];
+    return [
+      welcome.querySelector('.ws-logo-wrap'),
+      welcome.querySelector('.ws-heading'),
+      welcome.querySelector('.ws-sub'),
+      welcome.querySelector('.ws-scorecards-section'),
+      rootEl.querySelector(`#${id}-chips-scroll`) || rootEl.querySelector(`#${id}-chips`),
+    ].filter(Boolean);
+  }
+  function snapshotRects(els) {
+    return (els || []).map((el) => ({ el, r: el.getBoundingClientRect() }));
+  }
+  function playWelcomeLayoutFlip(snaps, done) {
+    if (prefersReducedMotion || !snaps || !snaps.length) {
+      if (done) done();
+      return;
+    }
+    const running = [];
+    snaps.forEach(({ el, r }) => {
+      if (!el || typeof el.animate !== 'function') return;
+      const last = el.getBoundingClientRect();
+      const dx = r.left - last.left;
+      const dy = r.top - last.top;
+      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+      running.push(el.animate(
+        [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }],
+        { duration: WELCOME_CHIP_LAYOUT_MS, easing: WELCOME_CHIP_LAYOUT_EASE }
+      ));
+    });
+    if (!running.length) { if (done) done(); return; }
+    let left = running.length;
+    const mark = () => { if (--left <= 0 && done) done(); };
+    running.forEach((anim) => { anim.onfinish = mark; anim.oncancel = mark; });
+  }
   /* Reveal the clipped welcome chips with the same right→left fly-in the
      welcome uses. Show more stays put and becomes Show less; overflow
-     cascades in after it. */
+     cascades in after it. The heading and chips already on screen slide
+     up to make room — they do not snap. */
   function expandWelcomeChips(fromBtn) {
     if (welcomeChipsExpanded || welcomeChipsExpanding) return;
     const wrap = rootEl.querySelector(`#${id}-chips`);
@@ -13174,6 +13454,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const pending = Array.from(wrap.querySelectorAll('.ws-intent-chip:not([data-chip-more])'))
       .filter((c) => c.hidden);
     const more = fromBtn || wrap.querySelector('[data-chip-more]');
+    const snaps = snapshotRects(welcomeLayoutMovers());
     welcomeChipsExpanded = true;
     welcomeChipsExpanding = true;
     paintMoreBtn(more, true);
@@ -13196,10 +13477,14 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       primeRevealFromRight(c);
     });
     void wrap.offsetHeight;
-    revealStaggered(pending, 40, 48, done);
+    let waiting = 2;
+    const partDone = () => { if (--waiting <= 0) done(); };
+    playWelcomeLayoutFlip(snaps, partDone);
+    revealStaggered(pending, 40, 48, partDone);
   }
   /* Hide the chips that landed after Show more and restore the two-row cap.
-     The control stays in its slot and flips back to Show more. */
+     The control stays in its slot and flips back to Show more. Overflow
+     fades first; then the heading and remaining chips slide back down. */
   function collapseWelcomeChips(fromBtn) {
     if (!welcomeChipsExpanded || welcomeChipsExpanding) return;
     const wrap = rootEl.querySelector(`#${id}-chips`);
@@ -13219,13 +13504,13 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
         c.style.transition = '';
       });
       welcomeChipsExpanded = false;
-      welcomeChipsExpanding = false;
       paintMoreBtn(more, false);
       clampWelcomeChips();
     };
 
     if (prefersReducedMotion || !overflow.length) {
       finish();
+      welcomeChipsExpanding = false;
       return;
     }
     overflow.forEach((c) => {
@@ -13233,7 +13518,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       c.style.transform = 'translateX(16px)';
       c.style.transition = 'opacity .16s ease, transform .16s ease';
     });
-    setTimeout(finish, 180);
+    setTimeout(() => {
+      const snaps = snapshotRects(welcomeLayoutMovers());
+      finish();
+      playWelcomeLayoutFlip(snaps, () => { welcomeChipsExpanding = false; });
+    }, 180);
   }
   function renderChips() {
     chipsHtml = buildChipsHtml();
@@ -13309,6 +13598,15 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
 
   /* Play the welcome in: heading + sub fade up, then the intent chips fly in. */
   revealWelcome();
+  /* Roll / Crawl hide this chat on pages that default to them. When the
+     member walks or runs — or turns CWR off — restart the field so a
+     0×0 start cannot leave a blank canvas. */
+  const wakeBgAnim = () => {
+    if (!bgAnimOn || !welcome || welcome.classList.contains('sc-hidden')) return;
+    bgAnim.start();
+  };
+  window.addEventListener('wise:cwr-mode', wakeBgAnim);
+  document.addEventListener('wise:cwr-ui', wakeBgAnim);
 
   /* WISEcodeAI: pre-dock the Turns module so it lives as its own broken-out module
      from the start (never an in-chat popover) — a real flex sibling docked to
@@ -13400,8 +13698,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
                    copied from the shared module template — same data-sc
                    attributes, classes and Admin badges)
      bgAnim  {obj?} enables the LIVE welcome helix on this surface:
-       host      {el}  gets `sc-bganim-live` while the field runs
-       getBody   {fn}  () => the chat-body element the canvas mounts into
+       host      {el}  gets `sc-bganim-live` while the field runs; the
+                       canvas mounts here so the strand can run behind
+                       the composer as well as the welcome
+       getBody   {fn}  unused — the canvas always mounts on host
        welcomeEl {el}  the welcome screen — the field only runs while it
                        is visible (class/style watched via MutationObserver)
        isWide    {fn?} () => true when the chat spans 3+ panes (bolder
@@ -13499,6 +13799,8 @@ export function wireStandardChatMenu(cfg = {}) {
     if (!isNaN(s)) { bgOpacity = Math.max(0.1, Math.min(1, s / 100)); bgUserSet = true; }
   } catch (_) {}
   let bgAngle = readBgAnimAngle();
+  let bgWash = readBgAnimWash();
+  applyBgAnimWash(bgWash);
   let bgCamera = readBgAnimCamera();
   let bgAzimuth = readBgAnimAzimuth();
   let bgShift = readBgAnimShift();
@@ -13590,22 +13892,32 @@ export function wireStandardChatMenu(cfg = {}) {
   ensureBgAnimSnapshotsChrome(pop);
   ensureBgAnimSubheads(pop);
   const welcomeEl = cfg.bgAnim && cfg.bgAnim.welcomeEl;
-  const welcomeVisible = () => !!(welcomeEl
-    && !welcomeEl.classList.contains('ws-hidden')
-    && !welcomeEl.classList.contains('sc-hidden')
-    && welcomeEl.style.display !== 'none');
+  const bgHost = cfg.bgAnim && cfg.bgAnim.host;
+  /* Welcome-only, same as mountWISEcodeAIChat: the field paints on the
+     welcome, then blooms out the moment the member moves the conversation
+     (chip, type, send, database). A hidden welcome or an engage flag
+     keeps it from sitting behind a live transcript. */
+  let bgEngaged = false;
+  const welcomeVisible = () => {
+    if (!welcomeEl) return !bgEngaged;
+    return !welcomeEl.classList.contains('ws-hidden')
+      && !welcomeEl.classList.contains('sc-hidden')
+      && welcomeEl.style.display !== 'none';
+  };
   /* One lazily-built engine per family (helix + helix-ten share a canvas;
      orbit is its own), exposed through a small facade so the start/stop below
      stay style-agnostic (mirrors the mounted module). */
   const bgEngines = {};
   const bgEngineKey = (style) => (style === 'orbit' ? 'orbit' : 'helix');
   const bgEngine = (style) => {
-    if (!cfg.bgAnim || !cfg.bgAnim.host || !cfg.bgAnim.getBody) return null;
+    if (!cfg.bgAnim || !cfg.bgAnim.host) return null;
     const key = bgEngineKey(style);
     if (!bgEngines[key]) {
       const common = {
         host: cfg.bgAnim.host,
-        getBody: cfg.bgAnim.getBody,
+        getBody: () => cfg.bgAnim.host,
+        getCenterY: () => helixFillCenterY(cfg.bgAnim.host),
+        fillHost: true,
         getOpacity: effOpacity,
         getAngle: () => bgAngle,
         getCamera: () => bgCamera,
@@ -13639,10 +13951,10 @@ export function wireStandardChatMenu(cfg = {}) {
     }
     return bgEngines[key];
   };
-  const stopAllBg = () => Object.keys(bgEngines).forEach((k) => bgEngines[k].stop());
+  const stopAllBg = (opts) => Object.keys(bgEngines).forEach((k) => bgEngines[k].stop(opts));
   function maybeRunBgAnim() {
-    if (!cfg.bgAnim || !cfg.bgAnim.host || !cfg.bgAnim.getBody) return;
-    if (bgOn && welcomeVisible()) {
+    if (!cfg.bgAnim || !cfg.bgAnim.host) return;
+    if (bgOn && !bgEngaged && welcomeVisible()) {
       const e = bgEngine(bgStyle);
       if (!e) return;
       const liveHelix = cfg.bgAnim.host.classList.contains('sc-bganim-live');
@@ -13650,17 +13962,60 @@ export function wireStandardChatMenu(cfg = {}) {
         e.redraw();
         return;
       }
-      stopAllBg();
+      stopAllBg({ immediate: true });
       e.start();
     } else {
       stopAllBg();
     }
   }
+  function retireBgAnim() {
+    bgEngaged = true;
+    stopAllBg();
+  }
+  function restoreBgAnim() {
+    bgEngaged = false;
+    maybeRunBgAnim();
+  }
   if (welcomeEl) {
     try {
-      new MutationObserver(maybeRunBgAnim)
-        .observe(welcomeEl, { attributes: true, attributeFilter: ['class', 'style'] });
+      new MutationObserver(() => {
+        if (welcomeVisible()) restoreBgAnim();
+        else retireBgAnim();
+      }).observe(welcomeEl, { attributes: true, attributeFilter: ['class', 'style'] });
     } catch (_) {}
+  }
+  const wakeBgAnim = () => {
+    if (bgOn && !bgEngaged && welcomeVisible()) maybeRunBgAnim();
+  };
+  window.addEventListener('wise:cwr-mode', wakeBgAnim);
+  document.addEventListener('wise:cwr-ui', wakeBgAnim);
+  document.addEventListener('wise:chat-engage', retireBgAnim);
+
+  /* First chip / keystroke / focus / send / database pick blooms the field
+     out — same moments hideWelcome() and the composer listeners use on the
+     shared mount. Scope to this chat host so a ⋮ or slider does not retire. */
+  if (bgHost && !bgHost.__wiseBgEngageWired) {
+    bgHost.__wiseBgEngageWired = true;
+    const ENGAGE_SEL = [
+      '.ws-intent-chip', '.chip-dive', '.ws-scorecard',
+      '.sc-reply-chips .chip', '.sc-inline-chips .chip', '.ws-chips .chip',
+      '.gs-chip', '[data-chip]',
+      '.sc-send', '.chat-input-rail [data-send]',
+      '.fl-db-item',
+    ].join(',');
+    bgHost.addEventListener('click', (e) => {
+      const t = e.target;
+      if (!t || !t.closest) return;
+      if (t.closest('.topbar-popover, .panel-more-btn, .panel-more-wrap, [data-sc]')) return;
+      if (t.closest(ENGAGE_SEL)) retireBgAnim();
+    });
+    const input = bgHost.querySelector('.chat-input-rail textarea.fl-input, .chat-input-rail input.fl-input, textarea.fl-input, #chat-input');
+    if (input) {
+      input.addEventListener('input', () => {
+        if (input.value && String(input.value).trim()) retireBgAnim();
+      });
+      input.addEventListener('focus', retireBgAnim);
+    }
   }
   const bgItem = q('[data-sc="bg-anim"]');
   const syncBg = () => {
@@ -13675,6 +14030,10 @@ export function wireStandardChatMenu(cfg = {}) {
     if (range && document.activeElement !== range) range.value = String(pct);
     const val = q('.sc-bganim-opacity-val');
     if (val) val.textContent = pct + '%';
+    const washRange = q('.sc-bganim-wash-range');
+    if (washRange && document.activeElement !== washRange) washRange.value = String(bgWash);
+    const washVal = q('.sc-bganim-wash-val');
+    if (washVal) washVal.textContent = bgWash + '%';
     const angleRange = q('.sc-bganim-angle-range');
     if (angleRange && document.activeElement !== angleRange) angleRange.value = String(bgAngle);
     const angleVal = q('.sc-bganim-angle-val');
@@ -13751,6 +14110,23 @@ export function wireStandardChatMenu(cfg = {}) {
     bgUserSet = true;
     syncBg();
     if (reducedMotion && bgOn) maybeRunBgAnim();
+  });
+  const bgWashRange = q('.sc-bganim-wash-range');
+  if (bgWashRange) bgWashRange.addEventListener('input', () => {
+    const pct = clampBgAnimWash(parseInt(bgWashRange.value, 10));
+    bgWash = pct;
+    persistBgAnimWash(pct);
+    applyBgAnimWash(pct);
+    broadcastBgAnimWash(pct);
+    const wval = q('.sc-bganim-wash-val');
+    if (wval) wval.textContent = pct + '%';
+  });
+  document.addEventListener('wise:chat-bg-anim-wash', (e) => {
+    const v = e && e.detail && e.detail.wash;
+    if (typeof v !== 'number') return;
+    bgWash = clampBgAnimWash(v);
+    applyBgAnimWash(bgWash);
+    syncBg();
   });
   const bgAngleRange = q('.sc-bganim-angle-range');
   if (bgAngleRange) bgAngleRange.addEventListener('input', () => {
@@ -13939,6 +14315,8 @@ export function wireStandardChatMenu(cfg = {}) {
     Object.assign(bgMats, s.mats);
     bgOpacity = Math.max(0.1, Math.min(1, (s.opacity || BGANIM_PUBLISH_POSE.opacity) / 100));
     bgUserSet = true;
+    bgWash = clampBgAnimWash(s.wash);
+    applyBgAnimWash(bgWash);
     bgAngle = Math.max(-90, Math.min(90, s.angle));
     bgCamera = clampBgAnimCamera(s.camera);
     bgAzimuth = clampBgAnimAzimuth(s.azimuth);
@@ -14052,7 +14430,11 @@ export function wireStandardChatMenu(cfg = {}) {
   });
   syncStream();
 
-  const api = { stream: () => ({ on: streamOn, level: streamLevel }) };
+  const api = {
+    stream: () => ({ on: streamOn, level: streamLevel }),
+    retireBg: retireBgAnim,
+    restoreBg: restoreBgAnim,
+  };
 
   /* ── History & Projects — the shared sticky History module ──────────────────
      Opt-in via cfg.history so EVERY chat module (not just the flagship shared

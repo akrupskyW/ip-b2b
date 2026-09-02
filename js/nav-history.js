@@ -497,7 +497,7 @@ if (typeof document !== 'undefined') {
   });
   window.addEventListener('storage', (e) => {
     if (!e.key) return;
-    if (e.key === 'wise-cwr-mode' || e.key === 'wise-cwr-ui') {
+    if (e.key === 'wise-cwr-mode' || e.key === 'wise-cwr-ui' || e.key === 'wise-admin-ui') {
       refreshNavHistory();
       return;
     }
@@ -505,6 +505,7 @@ if (typeof document !== 'undefined') {
     if (/chat-history|wise-nav-history/.test(e.key)) refreshNavHistory();
   });
   document.addEventListener('wise:cwr-ui', refreshNavHistory);
+  document.addEventListener('wise:admin-ui', refreshNavHistory);
   window.addEventListener('wise:cwr-mode', refreshNavHistory);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();

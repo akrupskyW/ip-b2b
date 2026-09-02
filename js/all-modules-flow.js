@@ -21,12 +21,18 @@
  *      and every color/radius/shadow token from pages/wise.css, rendered as
  *      live swatches that resolve their computed value in the current theme
  *      (and re-resolve when the theme flips).
+ *   3b. Analytics Types — every chart and graph from analytics-types.html,
+ *      as live thumbnails that open full size. The list lives in
+ *      js/analytics-types-catalog.js so a new chart on that page is one
+ *      catalog entry away from appearing here (and on that page’s rail).
  *   4. Component Library — every reusable component rendered LIVE using the
  *      real global classes from pages/wise.css, with interaction states
  *      (Default / Hover / Open), Light and Dark theme versions, and the
  *      exact surfaces where it is used. Chat chrome (activity strip, transcript
  *      actions, sticky drawers / the utility belt) lives here as its own family.
- *   5. Codebase — score cards for the size of the app itself: lines of code
+ *      Charts & graphs is its own category — the same thumbnail catalog.
+ *   5. Codebase — sits apart above the alphabetical catalog. Score cards for the
+ *      size of the app itself: lines of code
  *      by file type with an up/down trend (one git snapshot per day), the
  *      HTML page count, and the real project size on disk (every shippable
  *      file — images, video, and the rest — not just the scripts this tab
@@ -67,6 +73,13 @@ import { DEV_READY_SEED } from './dev-ready-data.js';
 import { AI_READY_SEED } from './ai-ready-data.js';
 import { AVATAR_PRESETS, avatarPresetSrc } from './avatar-presets.js';
 import { JAM_SONGS, eqBarsMarkup, helixVizMarkup, selectJam, toggleJam } from './jam-strip.js';
+import {
+  ANALYTICS_GALLERY,
+  ANALYTICS_HREF,
+  analyticsById,
+  analyticsFocusSel,
+  analyticsOpenHref,
+} from './analytics-types-catalog.js';
 
 /* Icon Inventory (~400 KB) and App Logic (~90 KB) stay off the first-paint
    graph. They load the first time that accordion, search, or a chat chip
@@ -112,11 +125,47 @@ function ensureProjectInventory() {
   return _invLoad;
 }
 
+const SECTION_BLURBS = {
+  'mi-code': 'Size, files, and daily trend',
+  'mi-directory': 'Every screen, grouped by area',
+  'mi-tables': 'Every live data table, collected',
+  'mi-analytics': 'Every chart, as thumbnails',
+  'mi-logic': 'Rules the app actually runs',
+  'mi-intents': 'Welcome chips and their wiring',
+  'mi-trace': 'Thinking animation in three states',
+  'mi-tarch': 'One conversation, every piece labeled',
+  'mi-motion': 'Every animation and resize interaction',
+  'mi-responsive': 'How layouts adapt across sizes',
+  'mi-icons': 'Every Material glyph in use',
+  'mi-design': 'Fonts, type scale, and tokens',
+  'mi-components': 'Reusable components rendered with real classes',
+};
+
+/* Codebase sits apart as the size index. Everything else is A–Z by title. */
+const ACC_CATALOG_IDS = [
+  'mi-analytics',
+  'mi-logic',
+  'mi-components',
+  'mi-design',
+  'mi-icons',
+  'mi-intents',
+  'mi-directory',
+  'mi-motion',
+  'mi-responsive',
+  'mi-trace',
+  'mi-tables',
+  'mi-tarch',
+];
+const ACC_SECTION_IDS = ['mi-code'].concat(ACC_CATALOG_IDS);
+
 function miHeadOnly(id, title, lede, extras) {
-  return `<section class="mi-module is-collapsed" id="${id}">
+  const blurb = SECTION_BLURBS[id] || '';
+  const cls = 'mi-module is-collapsed' + (id === 'mi-code' ? ' mi-acc--index' : '');
+  return `<section class="${cls}" id="${id}">
     <header class="mi-module-head">
       <div class="mi-module-head-text">
         <h2 class="mi-module-title">${title}</h2>
+        ${blurb ? `<p class="mi-module-blurb">${blurb}</p>` : ''}
         <p class="mi-module-lede">${lede}</p>
       </div>
       ${extras || ''}
@@ -293,6 +342,11 @@ function moduleMoreItems(moduleId) {
       { action: 'tbl-clear', icon: 'restart_alt', label: 'Clear search' },
     ];
   }
+  if (moduleId === 'mi-analytics') {
+    return [
+      { action: 'az-clear', icon: 'restart_alt', label: 'Clear search' },
+    ];
+  }
   if (moduleId === 'mi-trace') {
     return [
       { action: 'trace-replay', icon: 'replay', label: 'Replay trace' },
@@ -451,7 +505,7 @@ const TABLE_CATALOG = [
   { label: 'Guiding Stars', href: 'report-guiding-stars.html', selector: '#gs-table', icon: 'star', area: 'report', areaTitle: 'Reports', desc: 'Every product scored on the Guiding Stars scale.' },
   { label: 'Analytics · UPF', href: 'analytics-types.html', selector: '#upf-table-wrap', icon: 'insights', area: 'report', areaTitle: 'Reports', desc: 'Portfolio UPF classification matrix.' },
   { label: 'Analytics · GRAS status', href: 'analytics-types.html', selector: '#gras-table-wrap', icon: 'verified', area: 'report', areaTitle: 'Reports', desc: 'GRAS status broken down across the portfolio.' },
-  { label: 'Analytics · Processing', href: 'analytics-types.html', selector: '#proc-table-wrap', icon: 'blender', area: 'report', areaTitle: 'Reports', desc: 'Processing-level (NOVA) distribution table.' },
+  { label: 'Analytics · Processing', href: 'analytics-types.html', selector: '#proc-table-wrap', icon: 'blender', area: 'report', areaTitle: 'Reports', desc: 'WISEcode processing-level distribution table.' },
   { label: 'Analytics · GRAS by product', href: 'analytics-types.html', selector: '#gras-prod-table-wrap', icon: 'table_rows', area: 'report', areaTitle: 'Reports', desc: 'GRAS documentation status per product.' },
 
   /* Verification */
@@ -573,6 +627,90 @@ function renderTableGallery(opts) {
         <button type="button" class="mi-rail-nav" data-trail-next aria-label="Scroll right"><span class="material-symbols-outlined">chevron_right</span></button>
         <div class="mi-rail-empty" id="mi-tbl-empty" hidden>No tables match your search.</div>
       </div>
+    </section>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Analytics Types — every chart from analytics-types.html, as thumbs */
+/* ------------------------------------------------------------------ */
+
+function analyticsReadyId(t) { return 'az:' + t.id; }
+
+function analyticsReadyChildren() {
+  return ANALYTICS_GALLERY.map((t) => ({ id: analyticsReadyId(t), label: t.label, ai: false }));
+}
+
+function analyticsThumbPane(t, opts) {
+  opts = opts || {};
+  const path = ANALYTICS_HREF;
+  const open = analyticsOpenHref(t);
+  const focus = analyticsFocusSel(t);
+  const search = `${t.label} ${path} ${t.desc || ''} ${t.id} chart graph`.toLowerCase();
+  const ready = opts.hideReady
+    ? ''
+    : readyToggleHTML(analyticsReadyId(t), t.label, { level: 'item', parent: 'mi-analytics', ai: false });
+  return `
+    <div class="mi-pane mi-az-thumb" data-pane data-az-thumb data-az-id="${esc(t.id)}" data-href="${esc(path)}" data-search="${esc(search)}">
+      <div class="mi-az-thumb-bar">
+        <button type="button" class="mi-pane-head" data-az-open="${esc(t.id)}" aria-label="Open ${esc(t.label)} full size">
+          <span class="mi-pane-ic material-symbols-outlined" aria-hidden="true">${esc(t.icon || 'bar_chart')}</span>
+          <span class="mi-pane-name">${esc(t.label)}</span>
+        </button>
+        ${ready}
+      </div>
+      <div class="mi-pane-viewport">
+        ${frameMarkup(previewSrc(path), t.label + ' chart preview', (focus ? `data-focus="${esc(focus)}" ` : '') + 'data-focus-mode="chart" data-az-lazy="1"')}
+        <button type="button" class="mi-pane-hit" data-az-open="${esc(t.id)}" aria-label="Open ${esc(t.label)} full size"></button>
+        <span class="mi-pane-open material-symbols-outlined" aria-hidden="true">open_in_full</span>
+      </div>
+      ${t.desc ? `<p class="mi-az-thumb-desc">${esc(t.desc)}</p>` : ''}
+      <a class="mi-az-thumb-src" href="${esc(open)}">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_outward</span>
+        Open on Analytics Types
+      </a>
+    </div>`;
+}
+
+function analyticsThumbGridHTML(opts) {
+  opts = opts || {};
+  const id = opts.id || 'mi-az-grid';
+  return `<div class="mi-az-grid" id="${esc(id)}">
+      ${ANALYTICS_GALLERY.map((t) => analyticsThumbPane(t, opts)).join('')}
+    </div>`;
+}
+
+function renderAnalyticsTypes(opts) {
+  if (opts && opts.headOnly) {
+    return miHeadOnly('mi-analytics', 'Analytics Types',
+      'Every chart and graph from <strong>Analytics Types</strong>, with the same sample data, as thumbnails. Tap one to open it full size. Add a chart on that page and one entry in the shared catalog — it lands here automatically.',
+      moduleReadyToggleHTML('mi-analytics', 'Analytics Types') + moduleControlsHTML('mi-analytics'));
+  }
+  const total = ANALYTICS_GALLERY.length;
+  return `
+    <section class="mi-module is-collapsed" id="mi-analytics">
+      <header class="mi-module-head">
+        <div class="mi-module-head-text">
+          <h2 class="mi-module-title">Analytics Types</h2>
+          <p class="mi-module-blurb">${SECTION_BLURBS['mi-analytics']}</p>
+          <p class="mi-module-lede">Every chart and graph from <strong>Analytics Types</strong>, with the same
+            sample data, as thumbnails — not a stacked report. Tap a thumbnail to open that chart full size
+            (the same isolate used by the Table Gallery). Add a chart on that page and one entry in the
+            shared catalog; the rail there and this gallery stay in lock-step.</p>
+        </div>
+        ${moduleReadyToggleHTML('mi-analytics', 'Analytics Types')}
+        ${moduleControlsHTML('mi-analytics')}
+      </header>
+
+      <div class="mi-toolbar">
+        <div class="mi-search-inline">
+          <span class="material-symbols-outlined">search</span>
+          <input type="search" class="mi-search" id="mi-az-search" placeholder="Search charts by name or type…" aria-label="Search charts" autocomplete="off" />
+        </div>
+        <div class="mi-tbl-count"><span id="mi-az-shown">${total}</span> of ${total} charts</div>
+      </div>
+
+      ${analyticsThumbGridHTML({ id: 'mi-az-grid' })}
+      <div class="mi-dir-empty" id="mi-az-empty" hidden>No charts match your search.</div>
     </section>`;
 }
 
@@ -1620,6 +1758,7 @@ const ARROW_SVG_DEMO = '<span class="adm-sort-arrow"><svg viewBox="0 0 12 12" fi
    here is the order the tiles render in. */
 const COMPONENT_CATS = [
   { key: 'Chat & drawers', icon: 'view_sidebar' },
+  { key: 'Charts & graphs', icon: 'bar_chart' },
   { key: 'Tables & data', icon: 'table_rows' },
   { key: 'Library & reports', icon: 'auto_stories' },
   { key: 'Filters', icon: 'filter_alt' },
@@ -1666,7 +1805,7 @@ const CAT_BY_NAME = {
   'Owl walkthrough': 'Chat & drawers',
   'Form fields': 'Inputs & forms',
   'Data table': 'Tables & data',
-  'Charts & graphs': 'Tables & data',
+  'Charts & graphs': 'Charts & graphs',
   'Dashboard card': 'Tables & data',
   'Pagination footer': 'Tables & data',
   'History': 'Library & reports',
@@ -2186,7 +2325,7 @@ function demoHistoryCatalog() {
       children:
         demoWchItem({ title: 'Guiding Stars vs category', color: '#12B981' }) +
         demoWchItem({ title: 'Portfolio UPF share', color: '#2F6DF6' }) +
-        demoWchItem({ title: 'Processing (NOVA) board', color: '#F59E0B' }) +
+        demoWchItem({ title: 'WISEcode processing board', color: '#F59E0B' }) +
         demoWchItem({ title: 'Ingredient audit queue', color: '#EC4899' }),
     }) +
     demoWchProject({ name: 'Parked', color: '#F59E0B', count: 0 }) +
@@ -2691,7 +2830,7 @@ const CWR_DEMO_MODES = [
   {
     id: 'walk', icon: 'directions_walk', label: 'Walk',
     desc: 'Chat on — chips and widths, no typing',
-    includes: 'Chat, intent chips, four-tier widths (single, double, triple, fill), and the full primary nav including History.',
+    includes: 'Chat, intent chips, four-tier widths (single, double, fill, custom), and the full primary nav including History.',
     excludes: 'The composer — the typing rail is hidden, so you cannot type or send.',
   },
   {
@@ -3531,7 +3670,7 @@ const COMPONENTS = [
     cat: 'Actions',
     cls: '.panel-width-toggle-btn (+ .is-on / .is-width-fill) \u00b7 width_normal / width_wide / width_full / fit_width',
     used: 'Every module header except Navigation and the minimized History rail',
-    note: 'One control, five rest states: single \u2192 double \u2192 triple \u2192 fill \u2192 custom, then back. Icons: <code>width_normal</code> (single), <code>width_wide</code> (double and triple), <code>width_full</code> (fill), and <code>fit_width</code> (custom drag). The Motion &amp; Resize card for Width tiers is the same control running live. Chat load default is a property of the display, not the last toggle.',
+    note: 'One control, four rest states: single \u2192 double \u2192 fill \u2192 custom, then back. Icons: <code>width_normal</code> (single), <code>width_wide</code> (double), <code>width_full</code> (fill), and <code>fit_width</code> (custom drag). Each module remembers its own rest state \u2014 changing or resizing one never writes another. The Motion &amp; Resize card for Width tiers is the same control running live. Chat load default is a property of the display, not the last toggle.',
     noteIcon: 'width_wide',
     demo: `
       <div class="dsc-states">
@@ -4019,14 +4158,16 @@ const COMPONENTS = [
       </section>`,
   },
 
-  /* ---- Charts & graphs — pointer to analytics-types + written rules -- */
+  /* ---- Charts & graphs — live thumbs from the shared catalog -------- */
   {
     name: 'Charts & graphs',
     wide: true,
+    cat: 'Charts & graphs',
     cls: '.adm-chart-card · .adm-bars / .adm-bar-fill · .adm-legend · .adm-vrow · .dash-seg / .dash-seg-piece / .dash-seg-tags · .dash-dot (= .dash-donut / .dash-metric-*)',
     used: 'Non-UPF Dashboard · Overview · Analytics Types · Reports — every data-viz surface',
-    note: '<strong>Analytics Types</strong> is the visual source of truth. Do not invent a chart or report look here — open that page and mirror it. The written rules (same rules, in prose) live in <code>chart-and-report-design.md</code>, linked below. Includes donuts, bars, rings, heat cells, funnels, polar area, scatter, and distribution / segmented bars. Each live chart card is its own size container (<code>container-type: inline-size</code>), so bars and labels shrink to stay legible three-up, two-up, or docked beside the chat — never a viewport media query. Bars/rings animate in on load, replay on tap, and respect <code>prefers-reduced-motion</code>.',
+    note: '<strong>Analytics Types</strong> is the visual source of truth. Every chart on that page is a thumbnail here — same sample data, same isolate the Table Gallery uses. Tap a thumbnail to open it full size. Add a chart on that page and one entry in the shared catalog; this card, the Analytics Types accordion, and that page’s rail stay in lock-step. Do not invent a chart look — open that page and mirror it. The written rules live in <code>chart-and-report-design.md</code>. Bars/rings animate on load, replay on tap, and respect <code>prefers-reduced-motion</code>.',
     noteIcon: 'bar_chart',
+    demoCustom: () => analyticsThumbGridHTML({ id: 'dsc-az-grid', hideReady: true }),
     download: {
       href: '../assets/chart-and-report-design.md',
       file: 'chart-and-report-design.md',
@@ -4495,8 +4636,10 @@ COMPONENTS.sort((a, b) => catalogNameKey(a.name).localeCompare(catalogNameKey(b.
 /*                                                                     */
 /* Each component's demo is the source of truth: if it renders another */
 /* component's signature class, that other card is a part. Toggles and */
-/* jump links on "Made of" / "Used by" rows share the same Dev Ready   */
-/* id as the part's own card, so flipping one flips every copy.        */
+/* jump links on "Made of" rows share the same Dev Ready id as the     */
+/* part's own card, so flipping one flips every copy. Where the        */
+/* control appears in the product is "Used in", not a second catalog   */
+/* list.                                                               */
 /* ------------------------------------------------------------------ */
 
 function classesInHtml(html) {
@@ -4534,27 +4677,16 @@ let COMP_GRAPH = null;
 function buildCompGraph() {
   const sigs = COMPONENTS.map((c) => ({ c, sig: compSignature(c) }));
   const parts = new Map();
-  const usedBy = new Map();
   COMPONENTS.forEach((c) => {
     const found = sigs.filter((o) => o.c.name !== c.name && demoHasSignature(c.demo, o.sig)).map((o) => o.c);
     parts.set(c.name, found);
-    found.forEach((o) => {
-      const list = usedBy.get(o.name) || [];
-      list.push(c);
-      usedBy.set(o.name, list);
-    });
   });
-  COMP_GRAPH = { parts, usedBy };
+  COMP_GRAPH = { parts };
 }
 
 function partsOf(name) {
   if (!COMP_GRAPH) buildCompGraph();
   return COMP_GRAPH.parts.get(name) || [];
-}
-
-function usedByComps(name) {
-  if (!COMP_GRAPH) buildCompGraph();
-  return COMP_GRAPH.usedBy.get(name) || [];
 }
 
 /* Directory modules named in a component's "Used in" prose.
@@ -5120,12 +5252,13 @@ function buildDevReadyTree() {
   DEV_READY_PARENT = {};
   registerReadyChildren('mi-directory', dedupedDirSections().map((s) => ({ id: 'dir:' + s.tone, label: s.title })));
   registerReadyChildren('mi-tables', tableReadyChildren());
+  registerReadyChildren('mi-analytics', analyticsReadyChildren());
   /* Intent Chip Logic is an audit index, like Codebase — it is not in this
      tree and has no Dev Ready chrome. */
   registerReadyChildren('mi-trace', traceReadyChildren());
   registerReadyChildren('mi-motion', MOTION_ITEMS.map((i) => ({ id: motionReadyId(i), label: i.title })));
-  /* Responsiveness is an index, like Codebase — it is not in this tree
-     and has no Dev Ready chrome. */
+  /* Responsiveness is a leaf AI Ready switch (off by default). It is not
+     in the WIP tree and has no per-surface count. */
   /* Icon Inventory is one library — Dev Ready is the module switch, not a
      per-group count. */
   registerReadyChildren('mi-design', designReadyGroups());
@@ -5224,9 +5357,8 @@ function notNowStatusHTML() {
 function componentCard(c, readyMap) {
   const cat = catOf(c);
   const parts = partsOf(c.name);
-  const hosts = usedByComps(c.name);
   const shelved = c.status === 'not-now';
-  const search = `${c.name} ${(c.aliases || []).join(' ')} ${c.cls} ${c.used} ${c.note || ''} ${cat} ${parts.map((p) => p.name).join(' ')} ${hosts.map((h) => h.name).join(' ')}${shelved ? ' not now locked' : ''}`.toLowerCase();
+  const search = `${c.name} ${(c.aliases || []).join(' ')} ${c.cls} ${c.used} ${c.note || ''} ${cat} ${parts.map((p) => p.name).join(' ')}${shelved ? ' not now locked' : ''}`.toLowerCase();
   const cardCls = `dsc-card dsc-card--acc is-collapsed${c.wide ? ' dsc-card--wide' : ''}${shelved ? ' is-locked' : ''}`;
   const bodyId = 'acc-body-' + compDomId(c.name);
   const note = c.note
@@ -5265,7 +5397,6 @@ function componentCard(c, readyMap) {
         ${download}
         <div class="dsc-refs">
           ${paneCompsHTML(parts, 'Made of', { hideEmpty: true, hideReady: true })}
-          ${paneCompsHTML(hosts, 'Used by', { hideEmpty: true, hideReady: true })}
         </div>
         ${usedSurfacesHTML(c.used, c)}
       </div>
@@ -5690,8 +5821,9 @@ const INTENT_AUDIT = [
   },
   {
     label: 'All Modules', icon: 'apps', href: 'all-modules.html', src: 'all-modules-flow.js',
-    note: 'This very page. The “Jump to…” chips scroll to (and expand) a module and suppress their reply on success; their transcript is a fallback for when the target isn’t found. “How many icons are there?” is the one answer-only chip — it narrates the count without moving the page. “Show animations & resize” opens the Motion & Resize catalog. “How responsive is the platform?” opens Responsiveness. “Show the transcript architecture” opens the frozen labeled conversation. “How does the report builder work?” opens the Report builder card and posts the how-it-works answer.',
+    note: 'This very page. The “Jump to…” chips scroll to (and expand) a module and suppress their reply on success; their transcript is a fallback for when the target isn’t found. “What’s new…” is the first chip — it posts a same-day / other-day rundown and does not jump. “How many icons are there?” is the one answer-only count chip. “Show animations & resize” opens the Motion & Resize catalog. “How responsive is the platform?” opens Responsiveness. “Show the transcript architecture” opens the frozen labeled conversation. “How does the report builder work?” opens the Report builder card and posts the how-it-works answer.',
     chips: [
+      { i: 'whatsnew',   label: 'Tell me everything that’s new from the past day or the other day.', t: true, l: true, does: 'Posts a rundown of what landed yesterday and the day before. Does not jump.' },
       { i: 'codebase',   label: 'How big is the codebase?',      t: true, l: true, does: 'Expands and scrolls to the Codebase scorecards, then posts the sizing answer.' },
       { i: 'directory',  label: 'Jump to the Module Directory',  t: true, l: true, does: 'Expands and scrolls to the Module Directory (suppresses the reply on success).' },
       { i: 'tables',     label: 'Show every table',             t: true, l: true, does: 'Expands and scrolls to the Table Gallery.' },
@@ -7465,7 +7597,7 @@ const MOTION_ITEMS = [
     id: 'splitter', group: 'drag', icon: 'width_normal', title: 'Module drag-resize', wide: true,
     src: 'js/pane-resize.js',
     used: 'Every #modules-row page — hover the seam between two modules',
-    lede: 'Nothing shows at rest. Hover the edge between two panes and a grip fades in. Drag to preview any width; on release, modules with a width changer <strong>snap to the nearest of four presets</strong> (single / double / triple / fill) unless the fifth setting — <strong>custom</strong> — is on, which keeps the dragged size. Custom also puts the row on the carousel rail (next card). Modules without a width changer keep a free-form width. Double-click a handle to reset. Navigation is never resized.',
+    lede: 'Nothing shows at rest. Hover the edge between two panes and a grip fades in. Drag to preview any width; on release, modules with a width changer <strong>snap to the nearest of three presets</strong> (single / double / fill) unless the fourth setting — <strong>custom</strong> — is on, which keeps the dragged size. Custom also puts the row on the carousel rail (next card). Modules without a width changer keep a free-form width. Double-click a handle to reset. Navigation is never resized.',
     demo: `
       <div class="mi-motion-split" data-motion-split>
         <div class="mi-motion-pane" data-split-pane="a" style="flex: 1 1 46%">
@@ -7486,7 +7618,7 @@ const MOTION_ITEMS = [
     id: 'width', group: 'drag', icon: 'width_wide', title: 'Width tiers',
     src: 'js/pane-width.js · .panel-width-toggle-btn',
     used: 'Every module ⋯ / width button except Navigation and the minimized History rail',
-    lede: 'One control, five rest states: <strong>single → double → triple → fill → custom</strong>, then back. Fill absorbs leftover row space. Custom keeps the current width so you can drag it to any size — that is what puts the row on the <strong>carousel rail</strong> (next card). Drag-resize on a preset is only a preview — release snaps to the closest of the four named sizes.',
+    lede: 'One control, four rest states: <strong>single → double → fill → custom</strong>, then back. Fill absorbs leftover row space. Custom keeps the current width so you can drag it to any size — that is what puts the row on the <strong>carousel rail</strong> (next card). Each module remembers its own rest state; changing or resizing a neighbour does not write it. Drag-resize on a preset is only a preview — release snaps to the closest of the three named sizes.',
     demo: `
       <div class="mi-motion-width" data-motion-width>
         <div class="mi-motion-width-row">
@@ -7502,7 +7634,7 @@ const MOTION_ITEMS = [
           <span class="material-symbols-outlined">width_normal</span>
         </button>
       </div>
-      <p class="mi-motion-hint">Tap the width icon to cycle single → double → triple → fill → custom.</p>`,
+      <p class="mi-motion-hint">Tap the width icon to cycle single → double → fill → custom.</p>`,
   },
   {
     id: 'carousel', group: 'drag', icon: 'view_carousel', title: 'Carousel rail', wide: true,
@@ -7708,8 +7840,8 @@ function renderMotion(opts) {
           <div class="dsc-conv-item">
             <span class="material-symbols-outlined" aria-hidden="true">width_wide</span>
             <div class="dsc-conv-body">
-              <div class="dsc-conv-item-title">Five-tier rest</div>
-              <p class="dsc-conv-item-desc">A module with a width changer rests at single, double, triple, or fill — drag is a preview, release snaps. <strong>Custom</strong> is the fifth rest state: no snap, free pixel width, and the row becomes a carousel rail.</p>
+              <div class="dsc-conv-item-title">Four-tier rest</div>
+              <p class="dsc-conv-item-desc">A module with a width changer rests at single, double, or fill — drag is a preview, release snaps. <strong>Custom</strong> is the fourth rest state: no snap, free pixel width, and the row becomes a carousel rail. Each module keeps its own setting when you change or resize another.</p>
             </div>
           </div>
           <div class="dsc-conv-item">
@@ -8346,7 +8478,7 @@ function runMotionHelix(mod, chat, ctx) {
   const widthPane = mod.querySelector('[data-width-pane]');
   const widthBtn = mod.querySelector('[data-width-btn]');
   const widthLab = mod.querySelector('[data-width-label]');
-  const TIER_NAMES = ['single', 'double', 'triple', 'fill', 'custom'];
+  const TIER_NAMES = ['single', 'double', 'double', 'fill', 'custom'];
   let widthTier = 0;
   const applyWidth = () => {
     if (window.WPaneWidth) {
@@ -8354,14 +8486,18 @@ function runMotionHelix(mod, chat, ctx) {
       window.WPaneWidth.syncButton(widthBtn, widthTier);
     } else if (widthPane) {
       widthPane.classList.toggle('panel-wide', widthTier >= 1 && widthTier < 4);
-      widthPane.classList.toggle('panel-triple', widthTier >= 2 && widthTier < 4);
+      widthPane.classList.toggle('panel-triple', widthTier === 3);
       widthPane.classList.toggle('panel-fill', widthTier === 3);
       widthPane.classList.toggle('panel-custom', widthTier === 4);
     }
-    if (widthLab) widthLab.textContent = TIER_NAMES[widthTier];
+    if (widthLab) widthLab.textContent = TIER_NAMES[widthTier] || 'single';
   };
   widthBtn?.addEventListener('click', () => {
-    widthTier = window.WPaneWidth ? window.WPaneWidth.next(widthTier) : (widthTier + 1) % 5;
+    if (window.WPaneWidth) widthTier = window.WPaneWidth.next(widthTier);
+    else if (widthTier <= 0) widthTier = 1;
+    else if (widthTier === 1 || widthTier === 2) widthTier = 3;
+    else if (widthTier === 3) widthTier = 4;
+    else widthTier = 0;
     applyWidth();
   });
 
@@ -8834,10 +8970,10 @@ const RESPONSIVE_SURFACES = [
     src: 'js/pane-width.js',
     used: 'Every chat module — WISEcodeAI, Add Product, Reformulation, Studio',
     changes: ['laptop', 'larger'],
-    lede: 'Chat opens at a width that belongs to the <em>display</em>, not the browser window. A 14-inch MacBook Pro class stays single. Anything wider opens double. Resize or un-maximise the window and the default does not flip. You can still cycle single → double → triple → fill → custom in the session; the next load puts it back.',
+    lede: 'Chat opens at a width that belongs to the <em>display</em>, not the browser window. A 14-inch MacBook Pro class stays single. Anything wider opens double. Resize or un-maximise the window and the default does not flip. You can still cycle single → double → fill → custom in the session; the next load puts it back.',
     mobile: 'The chat is the page — full width, no neighbour beside it once the row stacks. The load default is still single, because the display is a phone.',
     laptop: 'Opens single (the 380px pane). The module to its right fills the rest of the row.',
-    larger: 'Opens double. Same five-tier control; the extra default width is the only load difference from a laptop.',
+    larger: 'Opens double. Same four-tier control; the extra default width is the only load difference from a laptop.',
   },
   {
     id: 'row', icon: 'view_column', title: 'Modules row',
@@ -9048,7 +9184,7 @@ function renderResponsive(opts) {
   if (opts && opts.headOnly) {
     return miHeadOnly('mi-responsive', 'Responsiveness',
       'How every surface on the platform adapts — phone, 14-inch laptop, and everything larger. Nav, chat width, the modules row, tables, marketing, dashboards, and forms, each named at the three sizes the app actually codes for.',
-      moduleControlsHTML('mi-responsive'));
+      moduleReadyToggleHTML('mi-responsive', 'Responsiveness', { kind: 'ai' }) + moduleControlsHTML('mi-responsive'));
   }
   const mobileN = RESPONSIVE_SURFACES.filter((i) => (i.changes || []).includes('mobile')).length;
   const laptopN = RESPONSIVE_SURFACES.filter((i) => (i.changes || []).includes('laptop')).length;
@@ -9063,6 +9199,7 @@ function renderResponsive(opts) {
             tables, marketing site, dashboards, and forms actually do at each size. Laptop and larger share the
             desktop shell; the one load default that flips is chat width.</p>
         </div>
+        ${moduleReadyToggleHTML('mi-responsive', 'Responsiveness', { kind: 'ai' })}
         ${moduleControlsHTML('mi-responsive')}
       </header>
 
@@ -9245,17 +9382,20 @@ export function renderAllModules(mainEl) {
       </div>
       ${renderSectionNav()}
       ${renderCodebase({ headOnly: true })}
-      ${renderDirectory({ headOnly: true })}
-      ${renderTableGallery({ headOnly: true })}
-      ${renderAppLogic({ headOnly: true })}
-      ${renderIntentAudit({ headOnly: true })}
-      ${renderStreamingTrace({ headOnly: true })}
-      ${renderTranscriptArch({ headOnly: true })}
-      ${renderMotion({ headOnly: true })}
-      ${renderResponsive({ headOnly: true })}
-      ${renderIconInventory({ headOnly: true })}
-      ${renderDesignSystem({ headOnly: true })}
-      ${renderComponentLibrary({ headOnly: true })}
+      <div class="mi-acc-catalog">
+        ${renderAnalyticsTypes({ headOnly: true })}
+        ${renderAppLogic({ headOnly: true })}
+        ${renderComponentLibrary({ headOnly: true })}
+        ${renderDesignSystem({ headOnly: true })}
+        ${renderIconInventory({ headOnly: true })}
+        ${renderIntentAudit({ headOnly: true })}
+        ${renderDirectory({ headOnly: true })}
+        ${renderMotion({ headOnly: true })}
+        ${renderResponsive({ headOnly: true })}
+        ${renderStreamingTrace({ headOnly: true })}
+        ${renderTableGallery({ headOnly: true })}
+        ${renderTranscriptArch({ headOnly: true })}
+      </div>
     </div>`;
 
   const safeWire = (name, fn) => {
@@ -9265,10 +9405,14 @@ export function renderAllModules(mainEl) {
   /* First paint is hero + jump tiles + section headers only. Body wire-up
      runs when that accordion actually opens (fillSectionBody). */
   safeWire('accordion', () => setupAccordion(mainEl));
+  safeWire('nudgeLayout', () => wireModuleNudgeLayout(mainEl));
   safeWire('sectionNav', () => wireSectionNav(mainEl));
   safeWire('tarchNudge', () => wireTarchNudge(mainEl));
+  safeWire('azNudge', () => wireAzNudge(mainEl));
   safeWire('compsNudge', () => wireCompsNudge(mainEl));
   safeWire('rptNudge', () => wireRptNudge(mainEl));
+  safeWire('azCompNudge', () => wireAzCompNudge(mainEl));
+  safeWire('azLightbox', () => wireAnalyticsLightbox(mainEl));
   safeWire('globalSearch', () => wireGlobalSearch(mainEl));
   safeWire('devReady', () => wireDevReady(mainEl));
   safeWire('paneCompJumps', () => wirePaneCompJumps(mainEl));
@@ -9304,18 +9448,14 @@ export function renderAllModules(mainEl) {
 /* ------------------------------------------------------------------ */
 /* Accordion — every module section collapses from its own header.    */
 /*                                                                    */
-/* Each section already ships as <section class="mi-module"> with a   */
-/* leading <header class="mi-module-head">. We reuse that header as    */
-/* the toggle (adding a chevron + a11y) and wrap everything after it   */
-/* in a collapsible .mi-acc-body, so no per-section render function    */
-/* changes. Clicks on the header's trailing ⋯ controls never toggle.  */
-/* Every load starts fully collapsed — a high-level index. Expanded    */
-/* state is in-session only and is not restored on the next visit.     */
-/* Clicks on the header's trailing ⋯ controls (and the Dev Ready       */
-/* toggle, when present) never expand or collapse the section.         */
+/* Codebase is the size index and sits slightly apart. The remaining  */
+/* sections are alphabetical by title inside .mi-acc-catalog. Each     */
+/* already ships as <section class="mi-module"> with a leading         */
+/* <header class="mi-module-head">. We reuse that header as the        */
+/* toggle (adding a chevron + a11y) and wrap everything after it in a  */
+/* collapsible .mi-acc-body. Every load starts fully collapsed.        */
+/* Clicks on the header's ready toggles never expand or collapse.      */
 /* ------------------------------------------------------------------ */
-const ACC_SECTION_IDS = ['mi-code', 'mi-directory', 'mi-tables', 'mi-logic', 'mi-intents', 'mi-trace', 'mi-tarch', 'mi-motion', 'mi-responsive', 'mi-icons', 'mi-design', 'mi-components'];
-
 const SECTION_FILL = {
   'mi-code': { render: () => renderCodebase(), wire: wireCodebase },
   'mi-directory': {
@@ -9329,6 +9469,7 @@ const SECTION_FILL = {
     },
   },
   'mi-tables': { render: () => renderTableGallery(), wire: wireTableGallery },
+  'mi-analytics': { render: () => renderAnalyticsTypes(), wire: wireAnalyticsTypes },
   'mi-logic': { catalog: 'logic', render: () => renderAppLogic(), wire: wireAppLogic },
   'mi-intents': { render: () => renderIntentAudit(), wire: wireIntentAudit },
   'mi-trace': { render: () => renderStreamingTrace(), wire: wireStreamingTrace },
@@ -9372,12 +9513,7 @@ async function fillSectionBody(root, sec) {
     spec.wire(root);
     sec.dataset.miFilled = '1';
     observePreviewFrames(sec);
-    if (id === 'mi-components') {
-      refreshCompsNudge();
-      refreshRptNudge();
-      requestAnimationFrame(() => { refreshCompsNudge(); refreshRptNudge(); });
-      setTimeout(() => { refreshCompsNudge(); refreshRptNudge(); }, 200);
-    }
+    scheduleModuleNudgeRefresh();
   })();
   _fillInflight.set(id, work);
   try { await work; }
@@ -9389,12 +9525,49 @@ async function fillSectionBody(root, sec) {
   finally { _fillInflight.delete(id); }
 }
 
+function refreshAllModuleNudges() {
+  refreshTarchNudge();
+  refreshAzNudge();
+  refreshCompsNudge();
+  refreshRptNudge();
+  refreshAzCompNudge();
+}
+
+function scheduleModuleNudgeRefresh() {
+  refreshAllModuleNudges();
+  requestAnimationFrame(() => {
+    refreshAllModuleNudges();
+    requestAnimationFrame(refreshAllModuleNudges);
+  });
+  setTimeout(refreshAllModuleNudges, 80);
+  setTimeout(refreshAllModuleNudges, 240);
+}
+
+let moduleNudgeLayoutRo = null;
+function wireModuleNudgeLayout(root) {
+  const wrap = (root && root.querySelector) ? (root.querySelector('.mi-wrap') || root) : null;
+  if (!wrap || typeof ResizeObserver === 'undefined') return;
+  if (moduleNudgeLayoutRo) {
+    moduleNudgeLayoutRo.disconnect();
+    moduleNudgeLayoutRo = null;
+  }
+  moduleNudgeLayoutRo = new ResizeObserver(() => refreshAllModuleNudges());
+  moduleNudgeLayoutRo.observe(wrap);
+  const scroller = wrap.closest('.agent-main-scroll') || document.getElementById('agent-main-scroll');
+  if (scroller) moduleNudgeLayoutRo.observe(scroller);
+}
+
 function setSectionCollapsed(root, sec, collapsed) {
   sec.classList.toggle('is-collapsed', collapsed);
   sec.querySelector(':scope > .mi-module-head')?.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  scheduleModuleNudgeRefresh();
   if (!collapsed) {
     if (sec.id === 'mi-tarch') takeTarchNudge();
-    fillSectionBody(root, sec).then(() => observePreviewFrames(sec));
+    if (sec.id === 'mi-analytics') takeAzNudge();
+    fillSectionBody(root, sec).then(() => {
+      observePreviewFrames(sec);
+      scheduleModuleNudgeRefresh();
+    });
   }
 }
 
@@ -9403,11 +9576,13 @@ async function expandAccordionSection(root, id) {
   const sec = (root || document).querySelector('#' + id);
   if (!sec) return;
   if (id === 'mi-tarch') takeTarchNudge();
+  if (id === 'mi-analytics') takeAzNudge();
   await fillSectionBody(root || document, sec);
   if (!sec.classList.contains('is-collapsed')) return;
   sec.classList.remove('is-collapsed');
   sec.querySelector(':scope > .mi-module-head')?.setAttribute('aria-expanded', 'true');
   observePreviewFrames(sec);
+  scheduleModuleNudgeRefresh();
 }
 
 function setupAccordion(root) {
@@ -9482,20 +9657,22 @@ function moduleTotal() {
 
 function sectionNavTiles() {
   const tokenCount = COLOR_GROUPS.reduce((n, g) => n + g.swatches.length, 0) + TYPE_SCALE.length;
-  return [
-    { id: 'mi-code', icon: 'code', num: fmtNum(codeState.now?.total), label: 'Lines of code', sub: `${fmtScanBytes(codeState.now?.bytes)} · ${fmtNum(codeState.now?.allFiles)} files` },
-    { id: 'mi-directory', icon: 'apps', num: moduleTotal(), label: 'Modules', sub: 'Every screen in the app' },
-    { id: 'mi-tables', icon: 'table_chart', num: TABLE_CATALOG.length, label: 'Tables', sub: 'Every data table, live' },
-    { id: 'mi-logic', icon: 'rule', num: logicRuleCount(), label: 'App logic', sub: 'Every rule, by page' },
-    { id: 'mi-intents', icon: 'bolt', num: intentAuditStats().chips, label: 'Intent chip logic', sub: 'Transcript + logic audit' },
-    { id: 'mi-trace', icon: 'psychology', num: TRACE_MILESTONES.length, label: 'Trace sections', sub: 'Playing, paused, finished' },
-    { id: 'mi-tarch', icon: 'account_tree', num: TARCH_LAYERS.length, label: 'Transcript architecture', sub: 'Every piece, linked' },
-    { id: 'mi-motion', icon: 'animation', num: MOTION_ITEMS.length, label: 'Motion & resize', sub: 'Animations + drag/resize' },
-    { id: 'mi-responsive', icon: 'devices', num: RESPONSIVE_SURFACES.length, label: 'Responsiveness', sub: 'Mobile, laptop, larger' },
-    { id: 'mi-icons', icon: 'emoji_symbols', num: (ICON_INVENTORY && ICON_INVENTORY.totalUniqueIcons) || ICON_UNIQUE_FALLBACK, label: 'Icons', sub: 'Material Symbols inventory' },
-    { id: 'mi-design', icon: 'palette', num: tokenCount, label: 'Design tokens', sub: 'Type scale + color tokens' },
-    { id: 'mi-components', icon: 'widgets', num: COMPONENTS.length, label: 'Components', sub: 'Reusable, live-rendered' },
-  ];
+  const byId = {
+    'mi-code': { id: 'mi-code', icon: 'code', num: fmtNum(codeState.now?.total), label: 'Lines of code', sub: `${fmtScanBytes(codeState.now?.bytes)} · ${fmtNum(codeState.now?.allFiles)} files` },
+    'mi-analytics': { id: 'mi-analytics', icon: 'bar_chart', num: ANALYTICS_GALLERY.length, label: 'Analytics types', sub: 'Every chart, as thumbnails' },
+    'mi-logic': { id: 'mi-logic', icon: 'rule', num: logicRuleCount(), label: 'App logic', sub: 'Every rule, by page' },
+    'mi-components': { id: 'mi-components', icon: 'widgets', num: COMPONENTS.length, label: 'Components', sub: 'Reusable, live-rendered' },
+    'mi-design': { id: 'mi-design', icon: 'palette', num: tokenCount, label: 'Design tokens', sub: 'Type scale + color tokens' },
+    'mi-icons': { id: 'mi-icons', icon: 'emoji_symbols', num: (ICON_INVENTORY && ICON_INVENTORY.totalUniqueIcons) || ICON_UNIQUE_FALLBACK, label: 'Icons', sub: 'Material Symbols inventory' },
+    'mi-intents': { id: 'mi-intents', icon: 'bolt', num: intentAuditStats().chips, label: 'Intent chip logic', sub: 'Transcript + logic audit' },
+    'mi-directory': { id: 'mi-directory', icon: 'apps', num: moduleTotal(), label: 'Modules', sub: 'Every screen in the app' },
+    'mi-motion': { id: 'mi-motion', icon: 'animation', num: MOTION_ITEMS.length, label: 'Motion & resize', sub: 'Animations + drag/resize' },
+    'mi-responsive': { id: 'mi-responsive', icon: 'devices', num: RESPONSIVE_SURFACES.length, label: 'Responsiveness', sub: 'Mobile, laptop, larger' },
+    'mi-trace': { id: 'mi-trace', icon: 'psychology', num: TRACE_MILESTONES.length, label: 'Trace sections', sub: 'Playing, paused, finished' },
+    'mi-tables': { id: 'mi-tables', icon: 'table_chart', num: TABLE_CATALOG.length, label: 'Tables', sub: 'Every data table, live' },
+    'mi-tarch': { id: 'mi-tarch', icon: 'account_tree', num: TARCH_LAYERS.length, label: 'Transcript architecture', sub: 'Every piece, linked' },
+  };
+  return ACC_SECTION_IDS.map((id) => byId[id]).filter(Boolean);
 }
 
 function renderSectionNav() {
@@ -9690,7 +9867,7 @@ function wireTarchNudge(root) {
   setTimeout(refreshTarchNudge, 700);
 }
 
-/* Gold “This is new!” on the Component Library accordion — first-paint
+/* Gold “New component added” on the Component Library accordion — first-paint
    header, same as Transcript Architecture. Stays until they dismiss it. */
 const COMPS_NUDGE_ID = 'mi-comps-new';
 let compsNudgeTaken = false;
@@ -9731,7 +9908,7 @@ function ensureCompsNudgeToast() {
   toast.innerHTML =
     '<span class="dash-score-toast-icon"><span class="material-symbols-outlined">new_releases</span></span>' +
     '<div class="dash-score-toast-body">' +
-      '<div class="dash-score-toast-title">This is new!</div>' +
+      '<div class="dash-score-toast-title">New component added</div>' +
       '<p class="dash-score-toast-text">The Component Library now includes the Report builder — plus the charts you want, generate, then save or share.</p>' +
       '<button type="button" class="dash-score-toast-link" data-comps-nudge-go>Open Component Library<span class="material-symbols-outlined dash-score-toast-link-arrow">arrow_outward</span></button>' +
     '</div>' +
@@ -9906,6 +10083,218 @@ function wireRptNudge(root) {
   setTimeout(refreshRptNudge, 700);
 }
 
+/* Gold “This is new!” floaty on the Analytics Types accordion label. */
+const AZ_NUDGE_ID = 'mi-az-new';
+let azNudgeTaken = false;
+let azNudgeWired = false;
+let azNudgeRo = null;
+
+function azNudgeDismissed() {
+  return !!(isNudgeDismissed(AZ_NUDGE_ID) ||
+    (window.WiseNudgeToast && typeof window.WiseNudgeToast.isDismissed === 'function'
+      && window.WiseNudgeToast.isDismissed(AZ_NUDGE_ID)));
+}
+
+function takeAzNudge() {
+  azNudgeTaken = true;
+  const toast = document.getElementById('mi-az-nudge');
+  if (!toast) return;
+  toast.hidden = true;
+  toast.setAttribute('hidden', '');
+  toast.style.visibility = '';
+  toast.style.pointerEvents = '';
+}
+
+function azNudgeAnchor(root) {
+  const sec = (root || hostEl || document).querySelector('#mi-analytics');
+  if (!sec || sec.hidden) return null;
+  return sec.querySelector(':scope > .mi-module-head .mi-module-title');
+}
+
+function ensureAzNudgeToast() {
+  let toast = document.getElementById('mi-az-nudge');
+  if (toast) return toast;
+  toast = document.createElement('div');
+  toast.id = 'mi-az-nudge';
+  toast.className = 'dash-score-toast dash-score-toast--gold is-portaled';
+  toast.setAttribute('data-nudge-id', AZ_NUDGE_ID);
+  toast.setAttribute('role', 'status');
+  toast.hidden = true;
+  toast.innerHTML =
+    '<span class="dash-score-toast-icon"><span class="material-symbols-outlined">new_releases</span></span>' +
+    '<div class="dash-score-toast-body">' +
+      '<div class="dash-score-toast-title">This is new!</div>' +
+      '<p class="dash-score-toast-text">Analytics Types is now a thumbnail gallery — every chart from the catalog, tap to open full size.</p>' +
+      '<button type="button" class="dash-score-toast-link" data-az-nudge-go>Open Analytics Types<span class="material-symbols-outlined dash-score-toast-link-arrow">arrow_outward</span></button>' +
+    '</div>' +
+    '<button class="dash-score-toast-close" type="button" aria-label="Dismiss" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined">close</span></button>';
+  document.body.appendChild(toast);
+  toast.addEventListener('click', (e) => {
+    const go = e.target.closest('[data-az-nudge-go]');
+    if (!go) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const root = hostEl || document;
+    expandAccordionSection(root, 'mi-analytics').then(() => {
+      document.getElementById('mi-analytics')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+  return toast;
+}
+
+function refreshAzNudge() {
+  const toast = ensureAzNudgeToast();
+  const root = hostEl || document;
+  const label = azNudgeAnchor(root);
+  const dismissed = azNudgeTaken || azNudgeDismissed();
+  const labelLive = !!(label && !label.hidden && label.getClientRects().length);
+  const show = !dismissed && labelLive;
+  if (!show) {
+    toast.hidden = true;
+    toast.setAttribute('hidden', '');
+    toast.style.visibility = '';
+    toast.style.pointerEvents = '';
+    return;
+  }
+  toast.hidden = false;
+  toast.removeAttribute('hidden');
+  if (azNudgeRo) {
+    azNudgeRo.disconnect();
+    azNudgeRo = null;
+  }
+  if (typeof ResizeObserver !== 'undefined' && label) {
+    azNudgeRo = new ResizeObserver(() => placeTarchNudgeToast(toast, label));
+    azNudgeRo.observe(label);
+  }
+  placeTarchNudgeToast(toast, label);
+  requestAnimationFrame(() => placeTarchNudgeToast(toast, label));
+}
+
+function wireAzNudge(root) {
+  if (azNudgeWired) {
+    refreshAzNudge();
+    return;
+  }
+  azNudgeWired = true;
+  ensureAzNudgeToast();
+  const place = () => refreshAzNudge();
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-nudge-dismiss]')) setTimeout(place, 0);
+  });
+  window.addEventListener('resize', place);
+  window.addEventListener('scroll', place, { passive: true, capture: true });
+  root.querySelector('.agent-main-scroll')?.addEventListener('scroll', place, { passive: true });
+  document.getElementById('agent-main-scroll')?.addEventListener('scroll', place, { passive: true });
+  refreshAzNudge();
+  setTimeout(refreshAzNudge, 200);
+  setTimeout(refreshAzNudge, 700);
+}
+
+/* Gold “This is new!” on the Charts & graphs card inside Component Library. */
+const AZ_COMP_NUDGE_ID = 'mi-az-comp-new';
+let azCompNudgeTaken = false;
+let azCompNudgeWired = false;
+let azCompNudgeRo = null;
+
+function azCompNudgeDismissed() {
+  return !!(isNudgeDismissed(AZ_COMP_NUDGE_ID) ||
+    (window.WiseNudgeToast && typeof window.WiseNudgeToast.isDismissed === 'function'
+      && window.WiseNudgeToast.isDismissed(AZ_COMP_NUDGE_ID)));
+}
+
+function takeAzCompNudge() {
+  azCompNudgeTaken = true;
+  const toast = document.getElementById('mi-az-comp-nudge');
+  if (!toast) return;
+  toast.hidden = true;
+  toast.setAttribute('hidden', '');
+  toast.style.visibility = '';
+  toast.style.pointerEvents = '';
+}
+
+function azCompNudgeAnchor(root) {
+  const card = (root || hostEl || document).querySelector('[data-comp-name="Charts & graphs"]');
+  if (!card || card.hidden) return null;
+  return card.querySelector(':scope > .dsc-card-head .dsc-name');
+}
+
+function ensureAzCompNudgeToast() {
+  let toast = document.getElementById('mi-az-comp-nudge');
+  if (toast) return toast;
+  toast = document.createElement('div');
+  toast.id = 'mi-az-comp-nudge';
+  toast.className = 'dash-score-toast dash-score-toast--gold is-portaled';
+  toast.setAttribute('data-nudge-id', AZ_COMP_NUDGE_ID);
+  toast.setAttribute('role', 'status');
+  toast.hidden = true;
+  toast.innerHTML =
+    '<span class="dash-score-toast-icon"><span class="material-symbols-outlined">new_releases</span></span>' +
+    '<div class="dash-score-toast-body">' +
+      '<div class="dash-score-toast-title">This is new!</div>' +
+      '<p class="dash-score-toast-text">Charts &amp; graphs is its own library section — every chart type as a thumbnail, tap to open full size.</p>' +
+      '<button type="button" class="dash-score-toast-link" data-az-comp-nudge-go>Open Charts &amp; graphs<span class="material-symbols-outlined dash-score-toast-link-arrow">arrow_outward</span></button>' +
+    '</div>' +
+    '<button class="dash-score-toast-close" type="button" aria-label="Dismiss" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined">close</span></button>';
+  document.body.appendChild(toast);
+  toast.addEventListener('click', (e) => {
+    const go = e.target.closest('[data-az-comp-nudge-go]');
+    if (!go) return;
+    e.preventDefault();
+    e.stopPropagation();
+    jumpToComponent(hostEl || document, 'Charts & graphs');
+    refreshAzCompNudge();
+  });
+  return toast;
+}
+
+function refreshAzCompNudge() {
+  const toast = ensureAzCompNudgeToast();
+  const root = hostEl || document;
+  const label = azCompNudgeAnchor(root);
+  const dismissed = azCompNudgeTaken || azCompNudgeDismissed();
+  const labelLive = !!(label && !label.hidden && label.getClientRects().length);
+  const show = !dismissed && labelLive;
+  if (!show) {
+    toast.hidden = true;
+    toast.setAttribute('hidden', '');
+    toast.style.visibility = '';
+    toast.style.pointerEvents = '';
+    return;
+  }
+  toast.hidden = false;
+  toast.removeAttribute('hidden');
+  if (azCompNudgeRo) {
+    azCompNudgeRo.disconnect();
+    azCompNudgeRo = null;
+  }
+  if (typeof ResizeObserver !== 'undefined' && label) {
+    azCompNudgeRo = new ResizeObserver(() => placeTarchNudgeToast(toast, label));
+    azCompNudgeRo.observe(label);
+  }
+  placeTarchNudgeToast(toast, label);
+  requestAnimationFrame(() => placeTarchNudgeToast(toast, label));
+}
+
+function wireAzCompNudge(root) {
+  if (azCompNudgeWired) {
+    refreshAzCompNudge();
+    return;
+  }
+  azCompNudgeWired = true;
+  ensureAzCompNudgeToast();
+  const place = () => refreshAzCompNudge();
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-nudge-dismiss]')) setTimeout(place, 0);
+  });
+  window.addEventListener('resize', place);
+  window.addEventListener('scroll', place, { passive: true, capture: true });
+  root.querySelector('.agent-main-scroll')?.addEventListener('scroll', place, { passive: true });
+  document.getElementById('agent-main-scroll')?.addEventListener('scroll', place, { passive: true });
+  refreshAzCompNudge();
+  setTimeout(refreshAzCompNudge, 200);
+  setTimeout(refreshAzCompNudge, 700);
+}
+
 /* ------------------------------------------------------------------ */
 /* Page-wide search — indexes every catalog this page already renders */
 /* ------------------------------------------------------------------ */
@@ -9913,11 +10302,11 @@ function wireRptNudge(root) {
 const GLOBAL_SEARCH_PER_GROUP = 6;
 const GLOBAL_SEARCH_MAX = 36;
 const GLOBAL_SEARCH_GROUPS = [
-  'Scorecards', 'Modules', 'Tables', 'App logic', 'Intent chips',
+  'Scorecards', 'Modules', 'Tables', 'Analytics', 'App logic', 'Intent chips',
   'Trace', 'Transcript', 'Motion', 'Responsiveness', 'Icons', 'Type', 'Tokens', 'Components', 'Codebase',
 ];
 const GLOBAL_SECTION_SEARCH = [
-  '#mi-dir-search', '#mi-tbl-search', '#mi-logic-search',
+  '#mi-dir-search', '#mi-tbl-search', '#mi-az-search', '#mi-logic-search',
   '#mi-int-search', '#ii-search-input', '#dsc-search',
 ];
 
@@ -9959,6 +10348,12 @@ function buildGlobalIndex() {
     kind: 'table', section: 'mi-tables', group: 'Tables', icon: t.icon || 'table_chart',
     title: t.label, sub: t.desc || t.areaTitle, key: t.label, searchSel: '#mi-tbl-search',
     q: `${t.label} ${t.href} ${t.areaTitle || ''} ${t.desc || ''} ${t.selector || ''}`,
+  }));
+
+  ANALYTICS_GALLERY.forEach((t) => add({
+    kind: 'analytics', section: 'mi-analytics', group: 'Analytics', icon: t.icon || 'bar_chart',
+    title: t.label, sub: t.desc || 'Analytics Types', key: t.id, searchSel: '#mi-az-search',
+    q: `${t.label} ${t.id} ${t.desc || ''} chart graph analytics ${analyticsFocusSel(t)}`,
   }));
 
   APP_LOGIC.forEach((page) => {
@@ -10120,6 +10515,7 @@ async function jumpGlobalHit(root, hit, q) {
 
   let el = null;
   if (hit.kind === 'table') el = findByAttr(root, '[data-tpane]', 'data-tbl', hit.key);
+  else if (hit.kind === 'analytics') el = findByAttr(root, '[data-az-thumb]', 'data-az-id', hit.key);
   else if (hit.kind === 'logic') el = findByAttr(root, '[data-logic-rule]', 'data-logic-title', hit.key);
   else if (hit.kind === 'intent') el = findByAttr(root, '[data-int-row]', 'data-int-id', hit.key);
   else if (hit.kind === 'motion') el = findByAttr(root, '[data-motion-card]', 'data-motion-id', hit.key);
@@ -10145,8 +10541,10 @@ function filterScorecards(root, hits) {
     nav.classList.remove('is-filtered');
     nav.querySelectorAll('[data-jump]').forEach((t) => { t.hidden = false; });
     refreshTarchNudge();
+    refreshAzNudge();
     refreshCompsNudge();
     refreshRptNudge();
+    refreshAzCompNudge();
     return;
   }
   const sections = new Set(hits.map((h) => h.section));
@@ -10155,8 +10553,10 @@ function filterScorecards(root, hits) {
     t.hidden = !sections.has(t.dataset.jump);
   });
   refreshTarchNudge();
+  refreshAzNudge();
   refreshCompsNudge();
   refreshRptNudge();
+  refreshAzCompNudge();
 }
 
 function groupedGlobalHits(matches) {
@@ -10316,6 +10716,7 @@ const ACTION_SECTION = {
   'logic-all': 'mi-logic', 'logic-shared': 'mi-logic', 'logic-clear': 'mi-logic', 'logic-intents': 'mi-intents',
   'int-all': 'mi-intents', 'int-talk': 'mi-intents', 'int-act': 'mi-intents', 'int-clear': 'mi-intents',
   'tbl-clear': 'mi-tables', 'tbl-start': 'mi-tables',
+  'az-clear': 'mi-analytics',
   'trace-replay': 'mi-trace',
   'motion-replay': 'mi-motion', 'motion-anim': 'mi-motion', 'motion-drag': 'mi-motion',
   'resp-mobile': 'mi-responsive', 'resp-laptop': 'mi-responsive', 'resp-larger': 'mi-responsive',
@@ -10361,6 +10762,7 @@ async function runModuleAction(root, action) {
     case 'int-act': click('#mi-intents [data-int-filter="act"]'); break;
     case 'int-clear': clearInput('#mi-int-search'); click('#mi-intents [data-int-filter="all"]'); break;
     case 'tbl-clear': clearInput('#mi-tbl-search'); break;
+    case 'az-clear': clearInput('#mi-az-search'); break;
     case 'tbl-start': root.querySelector('#mi-tbl-track')?.scrollTo({ left: 0, behavior: 'smooth' }); break;
     case 'trace-replay': expandAccordionSection(root, 'mi-trace'); click('#mi-trace [data-trace-run]'); break;
     case 'motion-replay': {
@@ -11908,7 +12310,32 @@ function railReveal(node) {
 /* Inside a (same-origin) preview frame, hide everything except the target table
    and its ancestors, then relax any clipping/height on that path so the table
    shows in full. Returns true only once the table actually exists in the DOM. */
-function focusFrameTable(doc, selector) {
+const CHART_FOCUS_CSS = `
+  .dash-card-topbar,
+  .dash-card-topbar-lead,
+  .dash-card-title,
+  .dash-section-head,
+  .dash-section-title,
+  .dash-pillars-heading,
+  .dash-breakdown-title,
+  .dash-top5-title,
+  .att-title,
+  .att-head,
+  .att-orient,
+  .att-orient-bar,
+  .az-nav,
+  .ah-topbar,
+  .att-hero,
+  #att-hero,
+  #rpt-gras-hero,
+  #rpt-insights-hero,
+  .dash-score-toast,
+  .att-intro,
+  .panel-more-btn,
+  .panel-more-wrap { display: none !important; }
+`;
+
+function focusFrameTable(doc, selector, opts) {
   const el = doc.querySelector(selector);
   if (!el) return false;
 
@@ -11929,11 +12356,13 @@ function focusFrameTable(doc, selector) {
     node = parent;
   }
 
+  const chart = opts && opts.mode === 'chart';
   const iso = doc.createElement('style');
   iso.id = 'mi-embed-focus';
   iso.textContent = `
     html, body { overflow: hidden !important; }
-    body { margin: 0 !important; padding: 22px !important; }
+    body { margin: 0 !important; padding: ${chart ? '8px' : '22px'} !important; }
+    ${chart ? CHART_FOCUS_CSS : ''}
   `;
   (doc.head || doc.documentElement).appendChild(iso);
   return true;
@@ -11950,7 +12379,7 @@ function tryFocusFrameTable(frame, selector, attempt) {
   if (doc.getElementById('mi-embed-focus')) return;
 
   const pane = frame.closest('.mi-pane');
-  if (focusFrameTable(doc, selector)) {
+  if (focusFrameTable(doc, selector, { mode: frame.dataset.focusMode || '' })) {
     if (pane) pane.classList.add('is-focused');
     return;
   }
@@ -11988,6 +12417,9 @@ function frameIsEligible(frame) {
   if (rail && rail.hidden) return false;
   const mod = frame.closest('.mi-module');
   if (mod && mod.classList.contains('is-collapsed')) return false;
+  const card = frame.closest('.dsc-card');
+  if (card && card.classList.contains('is-collapsed')) return false;
+  if (frame.closest('#mi-az-lightbox')) return true;
   return true;
 }
 
@@ -12001,6 +12433,7 @@ function hydrateFrame(frame) {
 }
 
 let frameObserver = null;
+let azFrameObserver = null;
 
 function ensureFrameObserver() {
   if (frameObserver) return frameObserver;
@@ -12014,11 +12447,27 @@ function ensureFrameObserver() {
   return frameObserver;
 }
 
+/* Chart thumbs only boot when they actually enter the module scroller —
+   opening the accordion must not fetch every analytics-types.html at once. */
+function ensureAzFrameObserver() {
+  if (azFrameObserver) return azFrameObserver;
+  const root = document.getElementById('agent-main-scroll') || null;
+  azFrameObserver = new IntersectionObserver((entries) => {
+    entries.forEach((en) => {
+      if (!en.isIntersecting) return;
+      hydrateFrame(en.target);
+      azFrameObserver.unobserve(en.target);
+    });
+  }, { root, rootMargin: '80px 0px', threshold: 0.12 });
+  return azFrameObserver;
+}
+
 function observePreviewFrames(scope) {
   const root = scope || document;
   if (!root || !root.querySelectorAll) return;
-  const obs = ensureFrameObserver();
+  const railObs = ensureFrameObserver();
   root.querySelectorAll('.mi-pane-frame[data-src]').forEach((f) => {
+    const obs = f.dataset.azLazy ? ensureAzFrameObserver() : railObs;
     if (f.getAttribute('src')) {
       obs.unobserve(f);
       return;
@@ -12166,6 +12615,112 @@ function wireTableGallery(root) {
   root.querySelector('[data-trail-next]')?.addEventListener('click', () => track.scrollBy({ left: step(), behavior: 'smooth' }));
 
   apply();
+}
+
+/* ------------------------------------------------------------------ */
+/* Analytics Types wiring — search + thumbnail → full-size lightbox   */
+/* ------------------------------------------------------------------ */
+
+function wireAnalyticsTypes(root) {
+  const grid = root.querySelector('#mi-az-grid');
+  if (!grid) return;
+
+  const thumbs = Array.from(grid.querySelectorAll('[data-az-thumb]'));
+  const searchInput = root.querySelector('#mi-az-search');
+  const emptyEl = root.querySelector('#mi-az-empty');
+  const shownEl = root.querySelector('#mi-az-shown');
+
+  const apply = () => {
+    const q = (searchInput?.value || '').trim().toLowerCase();
+    let shown = 0;
+    thumbs.forEach((p) => {
+      const vis = !q || (p.dataset.search || '').indexOf(q) !== -1;
+      p.hidden = !vis;
+      if (vis) shown++;
+    });
+    if (emptyEl) emptyEl.hidden = shown !== 0;
+    if (shownEl) shownEl.textContent = String(shown);
+  };
+
+  if (searchInput) searchInput.addEventListener('input', apply);
+  apply();
+  wireAnalyticsLightbox(root);
+}
+
+function closeAnalyticsLightbox() {
+  const scrim = document.getElementById('mi-az-lightbox');
+  if (!scrim) return;
+  scrim.classList.remove('is-open');
+  setTimeout(() => scrim.remove(), 220);
+}
+
+function openAnalyticsLightbox(chart) {
+  if (!chart) return;
+  closeAnalyticsLightbox();
+  const focus = analyticsFocusSel(chart);
+  const open = analyticsOpenHref(chart);
+  const src = previewSrc(ANALYTICS_HREF);
+  const scrim = document.createElement('div');
+  scrim.id = 'mi-az-lightbox';
+  scrim.className = 'dash-modal-scrim dash-modal-scrim--panel dash-modal-scrim--chart';
+  scrim.innerHTML = `
+    <div class="dash-modal dash-modal--panel dash-modal--chart" role="dialog" aria-modal="true" aria-labelledby="mi-az-lb-title">
+      <header class="dash-modal-head">
+        <div class="dash-modal-titles">
+          <span class="dash-modal-eyebrow">Analytics Types</span>
+          <h2 class="dash-modal-title" id="mi-az-lb-title">${esc(chart.label)}</h2>
+        </div>
+        <button class="dash-modal-close" type="button" data-az-lb-close aria-label="Close"><span class="material-symbols-outlined">close</span></button>
+      </header>
+      <div class="dash-modal-body mi-az-lb-body">
+        <div class="mi-az-lb-stage">
+          ${frameMarkup(src, chart.label + ' full size', (focus ? `data-focus="${esc(focus)}" ` : '') + 'data-focus-mode="chart"')}
+        </div>
+      </div>
+      <footer class="dash-modal-foot">
+        ${chart.desc ? `<span class="ds-prop-frac">${esc(chart.desc)}</span>` : '<span></span>'}
+        <div class="dash-modal-foot-right">
+          <a class="dash-btn dash-btn--ghost" href="${esc(open)}">
+            <span class="material-symbols-outlined">arrow_outward</span>Open on Analytics Types
+          </a>
+        </div>
+      </footer>
+    </div>`;
+  document.body.appendChild(scrim);
+  requestAnimationFrame(() => scrim.classList.add('is-open'));
+
+  const close = () => {
+    document.removeEventListener('keydown', onKey);
+    closeAnalyticsLightbox();
+  };
+  const onKey = (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      close();
+    }
+  };
+  scrim.querySelector('[data-az-lb-close]')?.addEventListener('click', close);
+  scrim.addEventListener('click', (e) => { if (e.target === scrim) close(); });
+  document.addEventListener('keydown', onKey);
+
+  const frame = scrim.querySelector('.mi-pane-frame');
+  if (frame) {
+    frame.removeAttribute('data-src');
+    frame.src = src;
+    attachRailFrame(frame);
+  }
+}
+
+function wireAnalyticsLightbox(root) {
+  if (!root || root._azLbWired) return;
+  root._azLbWired = true;
+  root.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-az-open]');
+    if (!btn || !root.contains(btn)) return;
+    e.preventDefault();
+    const chart = analyticsById(btn.getAttribute('data-az-open'));
+    if (chart) openAnalyticsLightbox(chart);
+  });
 }
 
 /* ------------------------------------------------------------------ */
@@ -13400,6 +13955,7 @@ function wireComponentLibrary(root) {
     });
     if (emptyEl) emptyEl.hidden = shown !== 0;
     refreshRptNudge();
+    refreshAzCompNudge();
   };
 
   dscRevealAll = () => {
@@ -13415,6 +13971,7 @@ function wireComponentLibrary(root) {
     }
     apply();
     refreshRptNudge();
+    refreshAzCompNudge();
   };
 
   if (searchInput) {
@@ -13545,6 +14102,10 @@ function wireComponentLibrary(root) {
       bootChatMenuIn(card);
       bootAppSearchIn(card);
       bootAskDemoIn(card);
+      if (card.dataset.compName === 'Charts & graphs') {
+        takeAzCompNudge();
+        observePreviewFrames(card);
+      }
       requestAnimationFrame(() => {
         const scroller = card.closest('.agent-main-scroll');
         const body = card.querySelector(':scope > .dsc-card-body');
@@ -13555,6 +14116,7 @@ function wireComponentLibrary(root) {
       });
     }
     if (card.dataset.compName === 'Report builder') refreshRptNudge();
+    if (card.dataset.compName === 'Charts & graphs') refreshAzCompNudge();
   };
   grid.addEventListener('click', (e) => {
     if (e.target.closest('.dsc-ready, .dsc-ready-row, a, button, input, textarea, select')) return;
@@ -13834,6 +14396,11 @@ async function jumpToComponent(root, name) {
   }
   setCompCardCollapsed(card, false);
   if (name === 'Report builder') refreshRptNudge();
+  if (name === 'Charts & graphs') {
+    takeAzCompNudge();
+    observePreviewFrames(card);
+    refreshAzCompNudge();
+  }
   const grid = root.querySelector('#dsc-grid');
   if (grid && typeof grid._bootComposersIn === 'function') grid._bootComposersIn(card);
   if (grid && typeof grid._bootChatMenuIn === 'function') grid._bootChatMenuIn(card);
@@ -13886,6 +14453,7 @@ export const ALL_MODULES_WISEAI = {
   sub: 'Your app’s codebase stats, module map, icon inventory, design system, component library, transcript architecture, motion catalog, and how the platform responds from phone to a wide display.',
   chipsFlow: 'wrap',
   intents: [
+    { intent: 'whatsnew', label: 'Tell me everything that’s new from the past day or the other day.', icon: 'new_releases' },
     { intent: 'codebase', label: 'How big is the codebase?', icon: 'code' },
     { intent: 'directory', label: 'Jump to the Module Directory', icon: 'apps' },
     { intent: 'tables', label: 'Show every table', icon: 'table_chart' },
@@ -13901,6 +14469,7 @@ export const ALL_MODULES_WISEAI = {
     { intent: 'counts', label: 'How many icons are there?', icon: 'tag' },
   ],
   intentReplies: {
+    whatsnew: 'From the <strong>past day</strong>: <strong>Analytics Types</strong> is a new accordion on this page — every chart from the Analytics Types catalog as thumbnails, tap one to open it full size. The same gallery is a new <strong>Charts &amp; graphs</strong> section in the Component Library, with a gold “This is new!” on both. From <strong>the other day</strong>: <strong>Transcript Architecture</strong> (one frozen conversation, every piece labeled) and the <strong>Report builder</strong> (plus the charts you want, generate, then save or share). Open any of those from the chips below, or the Progress Log for the day-by-day write-up.',
     codebase: () => {
       const now = codeState.now || {};
       return `The project on disk is <strong>${fmtScanBytes(now.bytes)}</strong> across <strong>${fmtNum(now.allFiles)} files</strong> — code ${fmtScanBytes(now.codeBytes)}, images ${fmtScanBytes(now.imageBytes)}, video ${fmtScanBytes(now.videoBytes)}. Hand-written code is <strong>${fmtNum(now.total)} lines</strong> in <strong>${fmtNum(now.files)} files</strong> — ${fmtNum(now.html)} HTML, ${fmtNum(now.js)} JavaScript, ${fmtNum(now.css)} CSS and ${fmtNum(now.py)} Python — shipping <strong>${fmtNum(now.pages)} HTML pages</strong>. The Codebase score cards above the directory show both the size and the line-count trend.`;
@@ -13945,6 +14514,7 @@ export const ALL_MODULES_WISEAI = {
   onIntent: (intent) => {
     /* "How big is the codebase?" is a question, not just a jump — open + scroll
        the score cards into view AND let the sizing answer post in the thread. */
+    if (intent === 'whatsnew') return false;
     if (intent === 'codebase') {
       expandAccordionSection(document, 'mi-code').then(() => {
         document.getElementById('mi-code')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -13986,6 +14556,7 @@ export const ALL_MODULES_WISEAI = {
     const id = intent === 'icons' ? 'mi-icons'
       : intent === 'directory' ? 'mi-directory'
       : intent === 'tables' ? 'mi-tables'
+      : intent === 'analytics' ? 'mi-analytics'
       : intent === 'design' ? 'mi-design'
       : intent === 'components' ? 'mi-components'
       : intent === 'motion' ? 'mi-motion'

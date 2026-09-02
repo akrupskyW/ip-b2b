@@ -81,7 +81,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'FOUC guard applies chrome pre-paint',
-        how: '<code>js/text-size-fouc.js</code> runs in <code>&lt;head&gt;</code> and applies theme, text scale, Minimal UI, full-bleed mode, nav-hamburger, serif headlines and the chat width default <em>before</em> first paint, so the shell never flashes the wrong state. It is a deliberate twin of the runtime logic in <code>topbar.js</code> — change one, change the other.',
+        how: '<code>js/text-size-fouc.js</code> runs in <code>&lt;head&gt;</code> and applies theme, text scale, Minimal UI, full-bleed mode, nav-hamburger, serif headlines, Guides, flush sticky modules and the chat width default <em>before</em> first paint, so the shell never flashes the wrong state. It is a deliberate twin of the runtime logic in <code>topbar.js</code> — change one, change the other.',
       },
       {
         title: 'One Appearance popover for the whole app',
@@ -89,7 +89,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Appearance defaults that are ON',
-        how: 'Unset means on for <strong>Minimal UI</strong> (<code>wise-minimal-ui-v2</code>), the <strong>icon nav rail</strong> (<code>wise-menu-rail</code>), <strong>Nav &amp; History icons</strong> (<code>wise-nav-modules-v2</code>), <strong>chat tint</strong> (<code>wise-chat-tint</code>), the <strong>activity strip</strong> (<code>wise-activity-strip</code>) and <strong>serif headlines</strong> (<code>wise-serif-headlines</code>). <strong>History in navigation</strong> stays off. <strong>Header float</strong> is unconditional — <code>isHeaderFloatOn()</code> always returns true, so module header strips are gone app-wide and <code>.panel-controls</code> float over the content.',
+        how: 'Unset means on for <strong>Minimal UI</strong> (<code>wise-minimal-ui-v2</code>), the <strong>icon nav rail</strong> (<code>wise-menu-rail</code>), <strong>Nav &amp; History icons</strong> (<code>wise-nav-modules-v2</code>), <strong>chat tint</strong> (<code>wise-chat-tint</code>), the <strong>activity strip</strong> (<code>wise-activity-strip</code>) and <strong>serif headlines</strong> (<code>wise-serif-headlines</code>). <strong>History in navigation</strong> stays off. <strong>Guides</strong> stays off. <strong>Flush sticky modules</strong> stays off. <strong>Header float</strong> is unconditional — <code>isHeaderFloatOn()</code> always returns true, so module header strips are gone app-wide and <code>.panel-controls</code> float over the content.',
       },
       {
         title: 'Text size is a scale, not a font size',
@@ -104,12 +104,20 @@ export const APP_LOGIC = [
         how: '<code>wise-fb-mode</code> is <code>&#39;chat&#39;</code> by default (also <code>&#39;all&#39;</code> or <code>&#39;off&#39;</code>), driving <code>full-bleed</code> and <code>fb-chat-only</code> on <code>&lt;html&gt;</code>. Legacy <code>wise-full-bleed</code> / <code>wise-fb-chat-only</code> are read only to migrate. Turning App Search on suspends the classes without changing the stored mode.',
       },
       {
+        title: 'Flush sticky modules matches the primary drawer',
+        how: 'Every non-chat drawer (Output, Product Details, progress, Report, dashboard, Contact, Turns) uses the same 15px top/bottom inset. Matching is always on — it does not wait for a toggle or for <code>.is-sticky</code>. Appearance ▸ Layout ▸ Flush sticky modules is on by default and writes <code>wise-sticky-flush</code>. Chat stays the full-height buckle. The FOUC twin in <code>text-size-fouc.js</code> applies the class before first paint.',
+      },
+      {
         title: 'Colorblind mode filters the shell only',
         how: '<code>wise-colorblind</code> toggles the <code>colorblind</code> class and <code>wise-colorblind-mode</code> picks <code>deuter</code> (default), <code>protan</code> or <code>tritan</code>. The injected daltonization SVG filters are scoped to <code>#chat-shell-wrap, #agent-shell-wrap</code> and deliberately never applied to <code>&lt;body&gt;</code>, which would break fixed popovers.',
       },
       {
         title: 'Roll · Crawl · Walk · Run gates the chat',
-        how: 'Each page loads a default mode onto <code>&lt;html&gt;</code> as <code>cwr-roll</code> / <code>cwr-crawl</code> / <code>cwr-walk</code> / <code>cwr-run</code>: <strong>Run</strong> on <code>wiseai.html</code>, <code>view-product.html</code>, <code>add-product.html</code>, and <code>helix.html</code>; <strong>Roll</strong> on every other page. A click still applies for that visit; the next load reapplies the page default. <code>helix.html</code> is Run-only — Roll, Crawl, and Walk lock so the playground cannot hide itself. <code>wise-cwr-mode</code> is only a snapshot of the in-session choice. Roll is Crawl with a stripped SaaS nav that still keeps Marketing Assets, Team, and Reports under Studio. Crawl hides chat surfaces with <code>inert</code> + <code>aria-hidden</code>. Roll and Crawl also drop History from the primary nav (the History-in-nav section, the History icon, and the new-chat circle). Walk hides the composer rail, Run unlocks everything. Hovering a mode shows what it includes and excludes. Turning the widget off (<code>wise-cwr-ui</code>) suspends the gating entirely.',
+        how: 'Each page loads a default mode onto <code>&lt;html&gt;</code> as <code>cwr-roll</code> / <code>cwr-crawl</code> / <code>cwr-walk</code> / <code>cwr-run</code>: <strong>Run</strong> on every page that mounts a WISEcodeAI chat (so the helix has a visible box on first paint); <strong>Roll</strong> on pages with no chat — login, create-account, forgot-password, analytics-types (chat opted out), and the vision-deck slide mock. A click still applies for that visit; the next load reapplies the page default. <code>helix.html</code> is Run-only — Roll, Crawl, and Walk lock so the playground cannot hide itself. <code>wise-cwr-mode</code> is only a snapshot of the in-session choice. Roll is Crawl with a stripped SaaS nav that still keeps Marketing Assets, Team, and Reports under Studio. Crawl hides chat surfaces with <code>inert</code> + <code>aria-hidden</code>. Roll and Crawl also drop History from the primary nav (the History-in-nav section, the History icon, and the new-chat circle). Walk hides the composer rail, Run unlocks everything. Hovering a mode shows what it includes and excludes. Turning the widget off (<code>wise-cwr-ui</code>) suspends the gating entirely. Turning Internal admins off hides the floating widget but leaves the selected mode applied.',
+      },
+      {
+        title: 'Guides are off until you turn them on',
+        how: 'Appearance ▸ Experience ▸ Guides writes <code>wise-guides</code> and toggles <code>guides-on</code> on <code>&lt;html&gt;</code>. Unset means off, so the floating hint cards (ready-to-verify, pre-qualified, “This is new!”, Analyze Ingredients) stay hidden. <strong>All Modules</strong> is the exception — its catalog toasts stay on even when Guides is off. The FOUC twin in <code>text-size-fouc.js</code> paints a stored-on preference before first paint.',
       },
     ],
   },
@@ -162,8 +170,8 @@ export const APP_LOGIC = [
     src: ['js/pane-width.js', 'js/pane-resize.js', 'js/default-fill.js', 'js/sticky-modules.js', 'js/wiseai-dock.js', 'pages/wise.css'],
     rules: [
       {
-        title: 'Five width tiers, one control',
-        how: 'Every module uses the same <code>window.WPaneWidth</code> ladder — <strong>single → double → triple → fill → custom</strong> (tiers 0–4) — expressed as <code>panel-wide</code>, <code>panel-triple</code>, <code>panel-fill</code>, <code>panel-custom</code> and cycled by <code>.panel-width-toggle-btn</code>. Custom keeps the current width until you drag; that dragged size is what it then maintains. Do not invent a parallel width system for a new module.',
+        title: 'Four width tiers, one control',
+        how: 'Every module uses the same <code>window.WPaneWidth</code> ladder — <strong>single → double → fill → custom</strong> (tiers 0, 1, 3, 4) — expressed as <code>panel-wide</code>, <code>panel-fill</code>, <code>panel-custom</code> and cycled by <code>.panel-width-toggle-btn</code>. Triple is gone. Each module persists its own rest state; changing or resizing a neighbour does not write it. Custom keeps the current width until you drag; that dragged size is what it then maintains. Do not invent a parallel width system for a new module.',
       },
       {
         title: 'Chat width default is viewport-based',
@@ -175,7 +183,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Drag-resize snaps back to a preset, unless custom',
-        how: '<code>pane-resize.js</code> mounts handles in a body-level <code>.pr-overlay</code> so they escape overflow clipping. A pane at single/double/triple/fill snaps to the nearest of those four on release. A pane at <strong>custom</strong> keeps the free pixel width, persisted per page in <code>wise-pane-widths-v1</code>. Minimum width is 300px.',
+        how: '<code>pane-resize.js</code> mounts handles in a body-level <code>.pr-overlay</code> so they escape overflow clipping. A pane at single/double/fill snaps to the nearest of those three on release. A pane at <strong>custom</strong> keeps the free pixel width, persisted per page in <code>wise-pane-widths-v1</code>. Minimum width is 300px.',
       },
       {
         title: 'Custom width turns the row into a carousel rail',
@@ -191,7 +199,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Drawers stack as a utility belt under the chat',
-        how: 'The chat is the buckle at <strong>z-index 3</strong>. Output (<code>#agent-main</code>, <code>#wa-unified</code> / Results / Visuals) sits at <strong>z-index 2</strong>, under the chat and over peer drawers. Peer drawers to its right (Nutrition Facts, Turns, Help) sit at <strong>z-index 1</strong>: shorter, vertically centred, chat-facing corners squared, tucked with a negative left margin so they read as emerging from the card. History tucks left of the chat. Nested drawers — progress, Help contact, generated Report (<code>#help-contact</code>, <code>#wa-report</code>, <code>#pf-report-panel</code>, <code>.vf-progress-pane</code>) — sit at <strong>z-index 0</strong> and are ~30px shorter still. Opening a module \u22ef must never lift a drawer over the chat.',
+        how: 'The chat is the buckle at <strong>z-index 3</strong>. Output (<code>#agent-main</code>, <code>#wa-unified</code> / Results / Visuals) sits at <strong>z-index 2</strong>, under the chat and over peer drawers. Peer drawers to its right (Nutrition Facts, Turns, Help) sit at <strong>z-index 1</strong>: the same height as Output, vertically centred, chat-facing corners squared, tucked with a negative left margin so they read as emerging from the card. History tucks left of the chat. Nested drawers — progress, Help contact, generated Report (<code>#help-contact</code>, <code>#wa-report</code>, <code>#pf-report-panel</code>, <code>.vf-progress-pane</code>) — sit at <strong>z-index 0</strong> and match that same height. Opening a module \u22ef must never lift a drawer over the chat.',
       },
       {
         title: 'Dock side is a pane count, not a side',
@@ -662,7 +670,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'The Report is a nested sticky drawer, never fill',
-        how: '<code>#wa-report</code> sits at <strong>z-index 0</strong>, ~30px shorter, tucked off Output. It is marked <code>data-no-fill-default</code>; <code>openReportPane()</code> forces width tier 0 so it never inherits Output\u2019s fill. Reformulation\u2019s <code>#rf-report</code> is the same drawer.',
+        how: '<code>#wa-report</code> sits at <strong>z-index 0</strong>, the same height as Output, tucked off that pane. It is marked <code>data-no-fill-default</code>; <code>openReportPane()</code> forces width tier 0 so it never inherits Output\u2019s fill. Reformulation\u2019s <code>#rf-report</code> is the same drawer.',
       },
       {
         title: 'Items are editable, swappable, and deletable',

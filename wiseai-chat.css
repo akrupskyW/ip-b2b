@@ -958,6 +958,10 @@ html.dark .ws-intent-chip.is-used:hover {
   --sc-welcome-raise: clamp(5.5rem, 16vh, 11rem);
 }
 html.dark .chat-input-rail { background: transparent; border-top-color: transparent; }
+/* Helix as a full-card background — the rail and transcript wash drop so
+   the strand can read behind the composer. The input pill keeps its own fill. */
+.sc-bganim-live .chat-messages-area,
+.sc-bganim-live .chat-input-rail { background: transparent; }
 .sc-input-row { display: flex; gap: 8px; align-items: center; }
 /* Visible welcome as a direct child of the body, rail as a following sibling
    (persist-chips may sit between them). `#welcome-screen` covers the older
@@ -1399,16 +1403,45 @@ html.composer-v2 .fl-input-wrap--stacked .fl-input { padding: 6px 4px 2px 8px; m
    composer's 10% input fill — so the chat container stands out from the plain
    page background while the input still reads a step deeper than its
    surroundings. Dark mode instead lifts the navy card toward the bright
-   accent. ===== */
+   accent. KEEP IN SYNC with wise.css — hosts remap --bg / --surface so
+   page-level `background: var(--bg)` rules inherit the wash. ===== */
+html.chat-tint:not(.dark):not(.fb-chat-tint) :is(
+  .sc-card, .wa-chat, .ap-chat, .rf-chat, .sa-chat, .gs-chat, .aid-chat, .sticky-chat,
+  #wa-chat, #rf-chat, #sa-chat, #aid-chat, #pl-chat, #ar-chat, #gs-chat,
+  #chat-shell, #pf-chat-panel, #wiseai-dock-panel
+) {
+  --wise-chat-tint: color-mix(in srgb, var(--primary) 5%, #fff);
+  --bg: var(--wise-chat-tint);
+  --surface: var(--wise-chat-tint);
+}
+html.dark.chat-tint:not(.fb-chat-tint) :is(
+  .sc-card, .wa-chat, .ap-chat, .rf-chat, .sa-chat, .gs-chat, .aid-chat, .sticky-chat,
+  #wa-chat, #rf-chat, #sa-chat, #aid-chat, #pl-chat, #ar-chat, #gs-chat,
+  #chat-shell, #pf-chat-panel, #wiseai-dock-panel
+) {
+  --wise-chat-tint: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339);
+  --bg: var(--wise-chat-tint);
+  --surface: var(--wise-chat-tint);
+}
 html.chat-tint:not(.dark) .sc-card,
+html.chat-tint:not(.dark) .wa-chat,
+html.chat-tint:not(.dark) .ap-chat,
+html.chat-tint:not(.dark) .rf-chat,
 html.chat-tint:not(.dark) .chat-messages-area,
 html.chat-tint:not(.dark) .chat-input-rail,
 /* The welcome and settings screens are OPAQUE overlays (absolute, inset 0)
    painted over the card in var(--bg)/var(--surface) — without tinting them
    too, a fresh chat module never shows the blue base layer beneath. */
 html.chat-tint:not(.dark) .sc-welcome,
+html.chat-tint:not(.dark) #welcome-screen,
 html.chat-tint:not(.dark) .sc-settings { background: color-mix(in srgb, var(--primary) 5%, #fff); }
-html.dark.chat-tint .sc-card { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
+html.chat-tint:not(.dark) .sc-bganim-live .chat-messages-area,
+html.chat-tint:not(.dark) .sc-bganim-live .chat-input-rail { background: transparent; }
+html.dark.chat-tint .sc-card,
+html.dark.chat-tint .wa-chat,
+html.dark.chat-tint .ap-chat,
+html.dark.chat-tint .rf-chat,
+html.dark.chat-tint #chat-shell { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
 /* Carousel edge fades (large scorecards + small intent chips) must blend into
    the tinted welcome surface — with the default fades (var(--bg)) they read as
    linen bands at the rail edges over the blue-washed chat. */

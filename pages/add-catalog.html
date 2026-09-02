@@ -256,10 +256,18 @@
     .ac-import-btn .material-symbols-outlined { font-size: 17px; }
 
     /* Progress module (shared vf-progress-pane / vfp-*). Always visible. */
-    #ap-progress { flex: 0 0 288px; width: 288px; align-self: stretch; min-height: 0; display: flex; }
+    #ap-progress { flex: 0 0 288px; width: 288px; align-self: center; height: calc(100% - 30px); max-height: calc(100% - 30px); min-height: 0; display: flex; }
+    #modules-row #ap-progress.vf-progress-pane {
+      z-index: 0;
+      height: calc(100% - 30px);
+      max-height: calc(100% - 30px);
+      align-self: center;
+      margin-left: calc(-1 * var(--sticky-nested-tuck) - var(--modules-gap, 8px));
+      padding-left: var(--sticky-nested-pad);
+    }
     #ap-progress { --vf-ink: var(--primary); }
     html.dark #ap-progress { --vf-ink: #93C5FD; }
-    #ap-progress:has(.vfp-inner.is-min) { flex: 0 0 64px; width: 64px; }
+    #ap-progress:has(.vfp-inner.is-min) { flex: 0 0 114px; width: 114px; }
     #ap-progress .vfp-inner { border-radius: 16px; box-shadow: var(--shadow-card); }
     .vfp-step-done-icon { color: var(--sec-green); }
     .vfp-field--err .material-symbols-outlined { color: var(--sec-red); }
@@ -508,7 +516,7 @@
       pop: document.getElementById('ap-chat-menu'),
       bgAnim: {
         host: document.querySelector('.ap-chat'),
-        getBody: () => document.querySelector('.ap-chat-body'),
+        getBody: () => document.querySelector('.ap-chat'),
         welcomeEl: document.getElementById('welcome-screen'),
         isWide: () => {
           const c = document.querySelector('.ap-chat');

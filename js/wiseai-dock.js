@@ -31,8 +31,9 @@ import { mountWISEcodeAIChat, OWL_BUG } from './wiseai-chat.js';
 
 export const WISEAI_DOCK_KEY = 'wise-wiseai-dock';
 
-/* Width is a five-tier cycle stored under `wide`: 0 single, 1 double, 2 triple,
-   3 fill, 4 custom. Legacy booleans map true → 1, false → 0. */
+/* Width is a four-tier cycle stored under `wide`: 0 single, 1 double,
+   3 fill, 4 custom. Triple (2) is gone — clamp folds it to double.
+   Legacy booleans map true → 1, false → 0. */
 function widthMeta() {
   const W = window.WPaneWidth;
   if (W) return W;
@@ -167,7 +168,7 @@ export function applyWISEcodeAIDockState(dock, state = readWISEcodeAIDockState()
 
   /* Collapsed = the whole WISEcodeAI module folds away to a floating circle (the
      WISE-owl bug). The dock is pulled out of the modules row entirely so the
-     remaining modules re-flow and resize across their single/double/triple
+     remaining modules re-flow and resize across their single/double/fill
      widths; the circle reopens it. Everything below (width/panes/solo) only
      matters in the expanded state, so bail early once the circle is shown.
      Clear any pane ordering we imposed so the remaining modules reflow. */
@@ -331,7 +332,7 @@ export function mountWISEcodeAIDock(dock, opts = {}) {
 
   /* Chat width is a screen default, not a restored session choice: laptop-class
      (≤1512 CSS px) opens single; wider screens open double. The user can still
-     cycle double/triple/fill in-session; the next load reapplies this default
+     cycle double/fill/custom in-session; the next load reapplies this default
      so the chat is the same size every time it loads on a given screen. (The
      right-pane count is still restored below.) */
   const defaultWide = (window.WPaneWidth && typeof window.WPaneWidth.defaultChatTier === 'function')

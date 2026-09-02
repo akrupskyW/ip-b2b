@@ -4,8 +4,11 @@
    (and later loads, until a double-click restores the default).
 
    Load default is per page, not a shared last-used mode:
-     run  — pages/wiseai.html, pages/view-product.html, pages/add-product.html, pages/helix.html
-     roll — every other page
+     run  — every page that mounts a WISEcodeAI chat (dock or inline). Helix
+            needs a visible box on first paint; Roll hid the chat and left
+            the welcome looking like Orbit.
+     roll — pages with no chat: login, create-account, forgot-password,
+            analytics-types (chat opted out), app-vision-deck (slide mock)
    Clicking a mode still applies it for this visit; the next load (or a
    different page) re-applies that page's default. localStorage
    ('wise-cwr-mode') is a snapshot of the in-session choice only.
@@ -39,8 +42,13 @@
              focus container) shows the focused UI via :focus-within.
 
    The floating widget is ON by default. The Appearance popover switch
-   persists 'wise-cwr-ui' and toggles `cwr-ui-on` on <html>. While the
-   widget is hidden, mode gating is suspended too.
+   persists 'wise-cwr-ui' and toggles `cwr-ui-on` on <html>. Turning that
+   switch off hides the widget and suspends mode gating.
+
+   Internal admins (`wise-admin-ui`) only hides the widget (and the
+   Appearance row). The selected mode stays applied, and the CWR
+   preference stays on, so turning Internal admins back on restores the
+   same switch in the same mode.
 
    Chrome lives in a Shadow DOM so page-level button / .material-symbols-outlined
    rules cannot restyle it. One component, one look, every page. Drag it
@@ -55,12 +63,13 @@
 
   var KEY = 'wise-cwr-mode';
   var UI_KEY = 'wise-cwr-ui';
+  var ADMIN_KEY = 'wise-admin-ui';
   var POS_KEY = 'wise-cwr-pos';
   var EDGE = 8;
   var DEFAULT_RIGHT = 12;
   var DRAG_THRESHOLD = 6;
   var MODES = ['roll', 'crawl', 'walk', 'run'];
-  var RUN_PAGES = ['wiseai.html', 'view-product.html', 'add-product.html', 'helix.html'];
+  var ROLL_PAGES = ['login.html', 'create-account.html', 'forgot-password.html', 'analytics-types.html', 'app-vision-deck.html'];
   var RUN_ONLY_PAGES = ['helix.html'];
   var META = {
     roll: {
@@ -81,7 +90,7 @@
       icon: 'directions_walk',
       label: 'Walk',
       desc: 'Chat on — chips and widths, no typing',
-      includes: 'Chat, intent chips, four-tier widths (single, double, triple, fill), and the full primary nav including History.',
+      includes: 'Chat, intent chips, four-tier widths (single, double, fill, custom), and the full primary nav including History.',
       excludes: 'The composer — the typing rail is hidden, so you cannot type or send.'
     },
     run: {
@@ -108,7 +117,7 @@
   }
 
   function pageDefaultMode() {
-    return RUN_PAGES.indexOf(pageFile()) !== -1 ? 'run' : 'roll';
+    return ROLL_PAGES.indexOf(pageFile()) !== -1 ? 'roll' : 'run';
   }
 
   function isRunOnlyPage() {
@@ -146,6 +155,8 @@
     '.wch-chat-anchor', '.wiseai-dock', '.wiseai-dock-fab',
     '#chat-shell', '#wa-chat', '.wa-chat',
     '.ap-chat', '.rf-chat', '.gs-chat', '.sa-chat', '.aid-chat',
+    '#pl-chat', '.pl-chat',
+    '#ar-chat', '.ar-chat',
     '#wiseai-dock-panel', '#wiseai-panel', '#pf-chat-panel',
     '.wch-sidebar'
   ].join(',');
@@ -158,8 +169,32 @@
     return pageDefaultMode();
   }
 
-  function isUiOn() {
+  function isAdminOn() {
+    try { return localStorage.getItem(ADMIN_KEY) !== '0'; } catch (e) { return true; }
+  }
+
+  function isCwrPrefOn() {
     try { return localStorage.getItem(UI_KEY) !== '0'; } catch (e) { return true; }
+  }
+
+  /* Mode gating follows the CWR switch alone. The floating widget also
+     needs Internal admins on — off hides the pill, not the mode. */
+  function isUiOn() {
+    return isCwrPrefOn();
+  }
+
+  function isWidgetOn() {
+    return isCwrPrefOn() && isAdminOn();
+  }
+
+  function onUiChange() {
+    applyUi();
+    var mode = readMode();
+    gateA11y(mode);
+    if (isUiOn() && isSaasMode(mode)) fillCrawlLeftover();
+    else clearCrawlFill();
+    reflow();
+    schedulePlace();
   }
 
   function prefersReduced() {
@@ -169,6 +204,7 @@
 
   function applyUi() {
     document.documentElement.classList.toggle('cwr-ui-on', isUiOn());
+    document.documentElement.classList.toggle('cwr-widget-on', isWidgetOn());
   }
 
   function applyMode(mode, opts) {
@@ -417,7 +453,7 @@
   function placeToggle() {
     var anchor = hostRef || document.getElementById('cwr-toggle-anchor');
     var pill = pillRef;
-    if (!anchor || !pill || !isUiOn() || dragLive) return;
+    if (!anchor || !pill || !isWidgetOn() || dragLive) return;
     var saved = readPos();
     if (saved) {
       var placed = applyCustomPos(saved.left, saved.top);
@@ -444,6 +480,10 @@
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) .gs-chat,',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) .sa-chat,',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) .aid-chat,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #pl-chat,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) .pl-chat,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #ar-chat,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) .ar-chat,',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #wiseai-dock-panel,',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #wiseai-panel,',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #pf-chat-panel,',
@@ -498,16 +538,44 @@
     '}',
     /* Nested drawers stay tucked in Roll / Crawl (chat is gone; they still
        sit behind their left neighbour). Beat any leftover un-tuck. */
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #help-contact,',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #help-contact.sticky-mod.is-sticky,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row .vf-progress-pane,',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row .vf-progress-pane.sticky-mod.is-sticky,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row .gv-progress-pane,',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row .gv-progress-pane.sticky-mod.is-sticky,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #ap-progress,',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #ap-progress.sticky-mod.is-sticky,',
-    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #wa-report.wa-pane.is-open.is-sticky {',
-    '  margin-left: calc(-14px - var(--modules-gap, 8px)) !important;',
-    '  padding-left: 14px !important;',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #wa-report,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #wa-report.wa-pane.is-open.is-sticky,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #rf-report,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #pf-report-panel,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #workflow-panel,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row:not(.is-picking) .rf-dash {',
+    '  margin-left: calc(-1 * var(--sticky-nested-tuck, 50px) - var(--modules-gap, 8px)) !important;',
     '  border-left: 0 !important;',
     '  border-top-left-radius: 0 !important;',
     '  border-bottom-left-radius: 0 !important;',
+    '  height: 100% !important;',
+    '  max-height: 100% !important;',
+    '  align-self: stretch !important;',
+    '}',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row .vf-progress-pane,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row .vf-progress-pane.sticky-mod.is-sticky,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row .gv-progress-pane,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row .gv-progress-pane.sticky-mod.is-sticky,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #ap-progress,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #ap-progress.sticky-mod.is-sticky {',
+    '  padding-left: var(--sticky-nested-pad, 30px) !important;',
+    '}',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #help-contact,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #wa-report,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #rf-report,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #pf-report-panel,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #workflow-panel,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row:not(.is-picking) .rf-dash {',
+    '  margin-left: calc(-1 * var(--sticky-nested-tuck, 50px) - var(--r-md, 16px) - var(--modules-gap, 8px)) !important;',
+    '  padding-left: calc(var(--sticky-nested-face-pad, 50px) + var(--r-md, 16px)) !important;',
     '}',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row .vf-progress-pane.sticky-mod.is-sticky > .vfp-inner,',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row .gv-progress-pane.sticky-mod.is-sticky > .gvp-inner,',
@@ -673,7 +741,7 @@
     '  html.cwr-ui-on.cwr-walk.cwr-walking :is(.wch-chat-anchor, .ap-chat, .rf-chat, .sa-chat, .gs-chat, .wa-chat, #wa-chat, #chat-shell, .wiseai-dock),',
     '  html.cwr-ui-on.cwr-run.cwr-unlocking .chat-input-rail,',
     '  html.cwr-ui-on.cwr-run.cwr-unlocking .fl-input-wrap { animation: none !important; filter: none !important; }',
-    '  html.cwr-ui-on #cwr-toggle-anchor { transition: none; }',
+    '  html.cwr-widget-on #cwr-toggle-anchor { transition: none; }',
     '}',
 
     /* ===== Widget host — transform lives on the OUTER anchor, never on
@@ -681,7 +749,7 @@
        a straight edge past the radius (the spike at the caps). The pill
        itself is styled inside the shadow tree so page CSS cannot leak in. ===== */
     '#cwr-toggle-anchor { display: none; }',
-    'html.cwr-ui-on #cwr-toggle-anchor {',
+    'html.cwr-widget-on #cwr-toggle-anchor {',
     '  display: block;',
     '  position: fixed; right: ' + DEFAULT_RIGHT + 'px; top: 50%; transform: translateY(-50%);',
     '  z-index: 10500;',
@@ -689,23 +757,23 @@
     '  transition: filter 0.18s ease;',
     '  touch-action: none;',
     '}',
-    'html.cwr-ui-on #cwr-toggle-anchor.cwr-custom {',
+    'html.cwr-widget-on #cwr-toggle-anchor.cwr-custom {',
     '  transform: none;',
     '  right: auto;',
     '}',
-    'html.cwr-ui-on #cwr-toggle-anchor:hover,',
-    'html.cwr-ui-on #cwr-toggle-anchor.is-dragging {',
+    'html.cwr-widget-on #cwr-toggle-anchor:hover,',
+    'html.cwr-widget-on #cwr-toggle-anchor.is-dragging {',
     '  filter: drop-shadow(0 10px 8px rgba(17, 24, 39, 0.22)) drop-shadow(0 28px 52px rgba(17, 24, 39, 0.4));',
     '}',
-    'html.cwr-ui-on #cwr-toggle-anchor.is-dragging {',
+    'html.cwr-widget-on #cwr-toggle-anchor.is-dragging {',
     '  z-index: 10600;',
     '  cursor: grabbing;',
     '}',
-    'html.dark.cwr-ui-on #cwr-toggle-anchor {',
+    'html.dark.cwr-widget-on #cwr-toggle-anchor {',
     '  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.5));',
     '}',
-    'html.dark.cwr-ui-on #cwr-toggle-anchor:hover,',
-    'html.dark.cwr-ui-on #cwr-toggle-anchor.is-dragging {',
+    'html.dark.cwr-widget-on #cwr-toggle-anchor:hover,',
+    'html.dark.cwr-widget-on #cwr-toggle-anchor.is-dragging {',
     '  filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.55)) drop-shadow(0 28px 56px rgba(0, 0, 0, 0.82));',
     '}',
 
@@ -1102,20 +1170,13 @@
     window.addEventListener('scroll', hideTip, true);
 
     window.addEventListener('storage', function (e) {
-      if (e.key === UI_KEY) { applyUi(); gateA11y(readMode()); }
+      if (e.key === UI_KEY || e.key === ADMIN_KEY) onUiChange();
       else if (e.key === POS_KEY) { schedulePlace(); }
     });
   }
 
-  document.addEventListener('wise:cwr-ui', function () {
-    applyUi();
-    var mode = readMode();
-    gateA11y(mode);
-    if (isUiOn() && isSaasMode(mode)) fillCrawlLeftover();
-    else clearCrawlFill();
-    reflow();
-    schedulePlace();
-  });
+  document.addEventListener('wise:cwr-ui', onUiChange);
+  document.addEventListener('wise:admin-ui', onUiChange);
 
   /* Late-mounted chats (dock, shared mount) need the same inert/aria-hidden. */
   if (typeof MutationObserver !== 'undefined') {

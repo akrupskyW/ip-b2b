@@ -2,10 +2,10 @@
 /* Collapsed nav → menu icon (Appearance ▸ Admin)                      */
 /* ------------------------------------------------------------------ */
 /*
- * Appearance ▸ Admin ▸ Menu icon (Admin-badged). Depends on Search being
- * on: while Search is off the row is locked, matching Full bleed's lock
- * while Search is on. The preference still persists, so turning Search
- * back on restores the chrome without flipping the toggle.
+ * Appearance ▸ Admin ▸ Menu icon (Admin-badged). Stays in lockstep with
+ * Search: off while Search is off, and the row stays locked until Search
+ * is on. A leftover on-state is forced off so the switch cannot read as
+ * on under an unavailable tooltip.
  *
  * When this is on, Search is on, and the primary nav is collapsed
  * (`.mp-rail`, not Minimal UI, not pivoted): hide the icon rail and put a
@@ -15,26 +15,33 @@
  * Default OFF.
  */
 
+import { isAppSearchOn } from './app-search.js';
+
 const LS_KEY = 'wise-nav-hamburger';
 const HTML_CLASS = 'nav-hamburger';
 
-/** True when the user explicitly turned Menu icon on (default off). */
-export function isNavHamburgerOn() {
+function storedHamburgerOn() {
   try { return localStorage.getItem(LS_KEY) === '1'; } catch { return false; }
+}
+
+/** True when Menu icon is on. Search off always reads as off. */
+export function isNavHamburgerOn() {
+  return isAppSearchOn() && storedHamburgerOn();
 }
 
 /** True when the collapsed hamburger chrome should actually paint. */
 export function isNavHamburgerActive() {
-  return isNavHamburgerOn() && document.documentElement.classList.contains('app-search-on');
+  return isNavHamburgerOn();
 }
 
 /**
  * Reflect the on/off choice onto <html>.
+ * Search off forces the switch off so the two stay in sync.
  * @param {boolean} on
  * @param {boolean} [persist=true]  Restore on load must not write.
  */
 export function applyNavHamburger(on, persist = true) {
-  const val = !!on;
+  const val = isAppSearchOn() && !!on;
   if (persist) {
     try { localStorage.setItem(LS_KEY, val ? '1' : '0'); } catch (_) { /* session-only */ }
   }
@@ -42,13 +49,21 @@ export function applyNavHamburger(on, persist = true) {
   try { document.dispatchEvent(new CustomEvent('wise:nav-hamburger', { detail: { on: val } })); } catch (_) {}
 }
 
-/** Restore the persisted on/off state without writing storage. */
+/** Restore the on/off state. Search off writes off so a leftover cannot stick. */
 export function restoreNavHamburger() {
-  applyNavHamburger(isNavHamburgerOn(), false);
+  if (!isAppSearchOn()) {
+    applyNavHamburger(false, true);
+    return;
+  }
+  applyNavHamburger(storedHamburgerOn(), false);
 }
 
 function boot() {
   restoreNavHamburger();
+  document.addEventListener('wise:app-search', () => {
+    if (!isAppSearchOn()) applyNavHamburger(false, true);
+    else restoreNavHamburger();
+  });
 }
 
 if (typeof document !== 'undefined') {

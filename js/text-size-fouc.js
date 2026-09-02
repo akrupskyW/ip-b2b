@@ -76,11 +76,16 @@
 
 /** FOUC guard — Menu icon (wise-nav-hamburger) paints from <html> so the
     collapsed search+rail wordmark does not flash the 54px icon list first.
-    Keep in sync with isNavHamburgerOn() in js/nav-hamburger.js. */
+    Keep in sync with isNavHamburgerOn() in js/nav-hamburger.js: only on
+    when Search is also on. Search off clears a leftover on-state. */
 (function () {
   try {
-    if (localStorage.getItem('wise-nav-hamburger') === '1') {
+    var searchOn = localStorage.getItem('wise-app-search') === '1';
+    if (localStorage.getItem('wise-nav-hamburger') === '1' && searchOn) {
       document.documentElement.classList.add('nav-hamburger');
+    } else {
+      document.documentElement.classList.remove('nav-hamburger');
+      if (!searchOn) localStorage.removeItem('wise-nav-hamburger');
     }
   } catch (_) {}
 })();
@@ -558,6 +563,42 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', stop);
   else stop();
+})();
+
+/** FOUC guard — Guides are off by default. Keep in sync with isGuidesOn()
+    / applyGuides() in js/topbar.js so a stored-on preference paints
+    `guides-on` before the first toast can flash hidden. */
+(function () {
+  try {
+    if (localStorage.getItem('wise-guides') === '1') {
+      document.documentElement.classList.add('guides-on');
+    }
+  } catch (_) {}
+})();
+
+/** FOUC guard — Flush sticky modules is on by default. Keep in sync with
+    isStickyFlushOn() / applyStickyFlush() in js/topbar.js. Only a stored
+    off (`0`) skips the class. */
+(function () {
+  try {
+    if (localStorage.getItem('wise-sticky-flush') !== '0') {
+      document.documentElement.classList.add('sticky-flush');
+    }
+  } catch (_) {}
+})();
+
+/** FOUC guard — Blue chat surface (wise-chat-tint) is on by default. Keep
+    in sync with isChatTintOn() / applyChatTint() in js/topbar.js so the
+    brand-blue wash is on the first paint of every page, not only after
+    the Appearance module restores. Only a stored off (`0`) skips it. */
+(function () {
+  try {
+    if (localStorage.getItem('wise-chat-tint') !== '0') {
+      document.documentElement.classList.add('chat-tint');
+    }
+  } catch (_) {
+    document.documentElement.classList.add('chat-tint');
+  }
 })();
 
 /** FOUC guard — Helix loading is on by default. Keep in sync with

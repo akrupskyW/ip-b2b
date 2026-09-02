@@ -991,6 +991,10 @@ export function restoreChatTint() {
   applyChatTint(isChatTintOn());
 }
 
+/* First-paint twin lives in js/text-size-fouc.js. Apply here too so a
+   late-loaded module still stamps the class if DOMContentLoaded already ran. */
+if (typeof document !== 'undefined') restoreChatTint();
+
 /* Roll · Crawl · Walk · Run — the floating rollout-mode switch pinned to the
    right edge of the screen (12px inset, vertically centered) on every page
    (js/cwr-toggle.js). Shown by default; this Appearance toggle hides it.
@@ -998,7 +1002,9 @@ export function restoreChatTint() {
    and Roll everywhere else. Driven by a `cwr-ui-on` class on <html> —
    cwr-toggle.js gates BOTH the widget and the crawl/walk mode CSS on that
    class, so turning this off also suspends any chat-hiding the mode was
-   doing (the in-session mode is kept for when the switch comes back on). */
+   doing (the in-session mode is kept for when the switch comes back on).
+   Internal admins only hides the floating widget — the selected mode
+   stays applied. */
 const CWR_UI_KEY = 'wise-cwr-ui';
 
 /** True when the floating Roll · Crawl · Walk · Run switch is shown. Defaults ON. */
@@ -1008,8 +1014,8 @@ export function isCwrUiOn() {
 
 /** Toggle the cwr-ui-on class on <html> and persist it. */
 export function applyCwrUi(on) {
-  document.documentElement.classList.toggle('cwr-ui-on', !!on);
   try { localStorage.setItem(CWR_UI_KEY, on ? '1' : '0'); } catch {}
+  document.documentElement.classList.toggle('cwr-ui-on', !!on);
   try {
     document.dispatchEvent(new CustomEvent('wise:cwr-ui', { detail: { on: !!on } }));
   } catch {}
@@ -1082,6 +1088,34 @@ export function restoreSerifHeadlines() {
   applySerifHeadlines(isSerifHeadlinesOn());
 }
 
+/* Guides — the floating nudge toasts (ready-to-verify cards, “This is new!”,
+   Analyze Ingredients, and the rest of the dash-score-toast family). Off by
+   default. Appearance ▸ Experience ▸ Guides writes `wise-guides` and toggles
+   `guides-on` on <html>. Keep in sync with the FOUC twin in
+   js/text-size-fouc.js. */
+const GUIDES_KEY = 'wise-guides';
+
+/** True when floating page guides are shown. Defaults OFF. */
+export function isGuidesOn() {
+  try { return localStorage.getItem(GUIDES_KEY) === '1'; } catch { return false; }
+}
+
+/** Toggle the guides-on class on <html> and persist it. */
+export function applyGuides(on) {
+  document.documentElement.classList.toggle('guides-on', !!on);
+  try { localStorage.setItem(GUIDES_KEY, on ? '1' : '0'); } catch {}
+  try {
+    document.dispatchEvent(new CustomEvent('wise:guides', { detail: { on: !!on } }));
+  } catch {}
+  /* Portaled toasts measure while hidden; a resize re-anchors them. */
+  try { window.dispatchEvent(new Event('resize')); } catch {}
+}
+
+/** Restore the persisted guides state onto the document. */
+export function restoreGuides() {
+  applyGuides(isGuidesOn());
+}
+
 /* Module spacing — admin-only control for the horizontal gap BETWEEN the modules
    in #modules-row. Four steps (mirroring Text size): Small (12px) / Medium (24px)
    / Large (36px) / XL (48px). Driven by a `mod-gap-<size>` class on <html>;
@@ -1120,6 +1154,36 @@ export function applyModuleGap(size) {
 /** Restore the persisted module-spacing step onto the document (no popover needed). */
 export function restoreModuleGap() {
   applyModuleGap(getModuleGap());
+}
+
+/* Flush sticky modules — every non-chat drawer already shares the same
+   15px inset (wise.css). Appearance ▸ Layout still writes `wise-sticky-flush`
+   and `sticky-flush` on <html>. On by default. Keep in sync with the FOUC
+   twin in js/text-size-fouc.js. */
+const STICKY_FLUSH_KEY = 'wise-sticky-flush';
+
+/** True when sticky modules match the primary drawer. Defaults ON. */
+export function isStickyFlushOn() {
+  try { return localStorage.getItem(STICKY_FLUSH_KEY) !== '0'; } catch { return true; }
+}
+
+/** Toggle the sticky-flush class on <html> and persist it.
+    @param {boolean} on
+    @param {boolean} [persist=true]  Restore must not write, or a first visit
+      would lock the default off into storage. */
+export function applyStickyFlush(on, persist = true) {
+  document.documentElement.classList.toggle('sticky-flush', !!on);
+  if (persist) {
+    try { localStorage.setItem(STICKY_FLUSH_KEY, on ? '1' : '0'); } catch {}
+  }
+  try {
+    document.dispatchEvent(new CustomEvent('wise:sticky-flush', { detail: { on: !!on } }));
+  } catch {}
+}
+
+/** Restore the persisted flush-sticky state onto the document. */
+export function restoreStickyFlush() {
+  applyStickyFlush(isStickyFlushOn(), false);
 }
 
 /* Colorblind-friendly palettes — remap the semantic status colors (success
@@ -1661,9 +1725,10 @@ export function restoreBrandStyle() {
    chat ⋯ menu's nested Admin popover. When off, every row that carries an
    Admin badge is omitted (Appearance) or hidden (chat ⋯), plus nested chrome
    that belongs to a badged parent (Jam player, Full-bleed colour pickers,
-   background-animation sub-controls, Elevation). Everything else stays:
-   unbadged rows, the left-nav Admin section, and the live feature state of
-   anything that was already on. Defaults ON. */
+   background-animation sub-controls, Elevation).    Unbadged rows, the left-nav Admin section, and the live feature
+   state of anything already on stay — including the selected
+   Roll · Crawl · Walk · Run mode. Off Internal admins only hides the
+   floating CWR widget. Defaults ON. */
 const ADMIN_UI_KEY = 'wise-admin-ui';
 
 /** True when admin-only Appearance rows should be shown. */
@@ -1769,8 +1834,10 @@ if (typeof document !== 'undefined') {
     restoreComposerV2();
     restoreChatTint();
     restoreModuleGap();
+    restoreStickyFlush();
     restoreColorblind();
     restoreSerifHeadlines();
+    restoreGuides();
     restoreSharpEdges();
     restoreBrandStyle();
     restoreAdminControls();

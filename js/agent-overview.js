@@ -1476,60 +1476,57 @@ function syncDashToggleItems() {
      so the main panel reads + behaves like every other pane.
 ==================================================================== */
 
-/* The canonical five-tier width control shared by every module in the app:
-   single → double → triple → fill → custom. `#agent-main` shares
+/* The canonical four-tier width control shared by every module in the app:
+   single → double → fill → custom. `#agent-main` shares
    the row with the fixed WISEcodeAI dock, so it DEFAULTS to fill (tier 3) — the
    full-width surface every admin/overview page opens with — and the control
-   steps it down through triple / double / single reading widths, then custom,
-   before wrapping back to fill. Tier → class: 0 narrow · 1 wide · 2 triple ·
-   3 fill (no class) · 4 custom (pinned current width). */
+   steps it through double / single reading widths, then custom,
+   before wrapping back to fill. On All Modules (no chat neighbour) the
+   rest state is persisted per module. Tier → class: 0 narrow · 1 wide ·
+   3 fill · 4 custom (pinned current width). Triple is gone. */
 const MAIN_WIDTH_ICONS = ['width_normal', 'width_wide', 'width_wide', 'width_full', 'fit_width'];
 const MAIN_WIDTH_TITLES = [
   'Width (single) — tap to widen',
   'Width (double) — tap to widen',
-  'Width (triple) — tap to widen',
+  'Width (double) — tap to widen',
   'Width (fill) — tap to widen',
   'Width (custom) — drag to any size',
 ];
 
-/* FILL is the load default for the main module, on every page, every load.
-
-   This used to restore the last toggle from localStorage ('wise-main-width' /
-   'wise-all-modules-width'). One stray narrowing therefore pinned #agent-main
-   to a capped max-width on every subsequent load, leaving dead space between
-   it and the right edge — while the chat beside it re-applied its own default
-   each load. The two halves of the row disagreed about whether width is a
-   session choice or a load default.
-
-   It is a load default. The module to the RIGHT of the chat opens filling
-   whatever the chat leaves, which is the same rule js/default-fill.js states
-   for every other right-of-chat module; #agent-main is simply the one that
-   owns its own control instead of being driven by that script. In-session
-   cycling is unchanged — the next navigation puts it back to fill. */
+/* FILL is the load default for the main module when nothing has been saved
+   for this page. Each module persists its own rest state (see WPaneWidth);
+   a leftover shared key ('wise-main-width' / 'wise-all-modules-width') must
+   never come back — that is what pinned every page to one stray width. */
 const MAIN_WIDTH_DEFAULT = 3;   // fill — see WPaneWidth tiers in js/pane-width.js
 let mainWidthTier = MAIN_WIDTH_DEFAULT;
 
 function readMainWidth() {
-  return window.WPaneWidth
-    ? window.WPaneWidth.clamp(mainWidthTier)
-    : Math.max(0, Math.min(4, mainWidthTier));
+  const main = document.getElementById('agent-main');
+  const W = window.WPaneWidth;
+  if (W && W.readSavedTier && main) {
+    const saved = W.readSavedTier(main);
+    if (saved != null) return W.clamp(saved);
+  }
+  return W
+    ? W.clamp(mainWidthTier)
+    : Math.max(0, Math.min(4, mainWidthTier === 2 ? 1 : mainWidthTier));
 }
 
 /* Reflect the width tier onto the module container itself (drives the WHOLE
    module's width in CSS — header, border + body, not just the inner content)
    and the toggle button's icon/state. */
 function applyMainWidth(tier) {
-  /* tier 0 = single (820 reading) · 1 = double (1180) · 2 = triple (1480) ·
-     3 = fill (no cap, whole row). Apply to #agent-main — the outer flex
-     slot/card — so the entire module resizes; the inner content fills whatever
-     width the module ends up at. The toggle "is on" whenever the width is capped
-     (tiers 0–2); fill is the neutral/reset state. */
-  mainWidthTier = window.WPaneWidth ? window.WPaneWidth.clamp(tier) : Math.max(0, Math.min(4, tier | 0));
+  /* tier 0 = single (820 reading) · 1 = double (1180) ·
+     3 = fill (no cap, whole row) · 4 = custom. Apply to #agent-main — the outer
+     flex slot/card — so the entire module resizes; the inner content fills
+     whatever width the module ends up at. */
+  mainWidthTier = window.WPaneWidth ? window.WPaneWidth.clamp(tier) : Math.max(0, Math.min(4, tier === 2 ? 1 : (tier | 0)));
+  tier = mainWidthTier;
   const main = document.getElementById('agent-main');
   if (main) {
     main.classList.toggle('main-w-narrow', tier === 0);
     main.classList.toggle('main-w-wide', tier === 1);
-    main.classList.toggle('main-w-triple', tier === 2);
+    main.classList.toggle('main-w-triple', false);
     const W = window.WPaneWidth;
     if (W) W.applyClasses(main, tier, 'panel');
     else {
@@ -1553,9 +1550,21 @@ function applyMainWidth(tier) {
   }
 }
 
+function nextMainWidth(tier) {
+  if (window.WPaneWidth) return window.WPaneWidth.next(tier);
+  if (tier <= 0) return 1;
+  if (tier === 1 || tier === 2) return 3;
+  if (tier === 3) return 4;
+  return 0;
+}
+
 function cycleMainWidth() {
-  const next = window.WPaneWidth ? window.WPaneWidth.next(readMainWidth()) : (readMainWidth() + 1) % 5;
-  applyMainWidth(next);   // in-session only — never persisted (see MAIN_WIDTH_DEFAULT)
+  const next = nextMainWidth(readMainWidth());
+  applyMainWidth(next);
+  const main = document.getElementById('agent-main');
+  if (window.WPaneWidth && window.WPaneWidth.saveTier && main) {
+    window.WPaneWidth.saveTier(main, next);
+  }
 }
 
 /* Markup for the main-panel control cluster — same classes (so the same

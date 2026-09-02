@@ -1530,7 +1530,7 @@
       display: inline-flex; align-items: center; gap: 5px; border-radius: 999px;
       padding: 5px 10px; font-size: 0.66rem; font-weight: 700; cursor: pointer;
     }
-    .nfp-ia-btn--ghost { border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+    .nfp-ia-btn--ghost { border: 1px solid var(--primary); background: var(--surface); color: var(--text); }
     .nfp-ia-btn--ghost:hover { border-color: var(--primary); }
     .nfp-ia-btn--ok { border: none; background: var(--sec-green); color: #fff; }
     .nfp-ia-btn--ok:hover { filter: brightness(1.06); }
@@ -1665,17 +1665,18 @@
 
     /* Progress module (shared .vf-progress-pane / vfp-* in wise.css). Always
        visible on this page — override the default hidden state. */
-    #ap-progress { flex: 0 0 288px; width: 288px; align-self: stretch; min-height: 0; display: flex; }
+    #ap-progress { flex: 0 0 288px; width: 288px; align-self: center; height: calc(100% - 30px); max-height: calc(100% - 30px); min-height: 0; display: flex; }
     /* Progress is a supporting drawer under Product Details. Restate the
        shared sticky inset at #id so this page's align-self:stretch cannot
        flatten it back into a same-plane column. */
     #modules-row #nfp-panel.sticky-mod.is-sticky { z-index: 1; }
     #modules-row #ap-progress.vf-progress-pane.sticky-mod.is-sticky {
       z-index: 0;
-      height: calc(100% - 60px);
-      max-height: calc(100% - 60px);
+      height: calc(100% - 30px);
+      max-height: calc(100% - 30px);
       align-self: center;
-      margin-left: calc(-14px - var(--modules-gap, 8px));
+      margin-left: calc(-1 * var(--sticky-nested-tuck) - var(--modules-gap, 8px));
+      padding-left: var(--sticky-nested-pad);
     }
     /* In-progress chrome (--vf-ink on step subs / footer) is brand blue.
        Completed steps and the health bar come from wise.css (--sec-green).
@@ -1694,7 +1695,7 @@
        (the shared .vf-progress-pane:has() rule is outranked by the #id above).
        Also wins over the width-tier classes above (same specificity, declared
        later) so a widened module still collapses to the rail. */
-    #ap-progress:has(.vfp-inner.is-min) { flex: 0 0 64px; width: 64px; }
+    #ap-progress:has(.vfp-inner.is-min) { flex: 0 0 114px; width: 114px; }
     #ap-progress .vfp-inner { border-radius: 16px; box-shadow: var(--shadow-card); }
     .vfp-step-done-icon { color: var(--sec-green); }
     .vfp-field--err .material-symbols-outlined { color: var(--sec-red); }
@@ -2027,7 +2028,7 @@
       pop: document.getElementById('ap-chat-menu'),
       bgAnim: {
         host: document.querySelector('.ap-chat'),
-        getBody: () => document.querySelector('.ap-chat-body'),
+        getBody: () => document.querySelector('.ap-chat'),
         welcomeEl: document.getElementById('welcome-screen'),
         isWide: () => {
           const c = document.querySelector('.ap-chat');

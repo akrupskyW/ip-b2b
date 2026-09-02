@@ -298,6 +298,15 @@ function isDesktop() {
 function syncOpenChrome() {
   const on = isNavModulesOn() && isHistoryFull();
   document.documentElement.classList.toggle('nav-modules-hist-open', on);
+  /* Labelled nav keeps the History toggle in-flow (visibility only) so
+     the hamburger stays put. Mark it inert for AT while History is open. */
+  const toggle = document.getElementById('topbar-menu-toggle');
+  if (toggle) {
+    const hide = on && !navIsCollapsed();
+    toggle.setAttribute('aria-hidden', hide ? 'true' : 'false');
+    if (hide) toggle.setAttribute('tabindex', '-1');
+    else toggle.removeAttribute('tabindex');
+  }
 }
 
 function syncChevronLabel() {
@@ -372,9 +381,10 @@ function boot() {
   document.addEventListener('wise:minimal-ui', syncNavModulesChrome);
   document.addEventListener('wise:menu-pivot', syncNavModulesChrome);
   document.addEventListener('wise:cwr-ui', syncCwrHistory);
+  document.addEventListener('wise:admin-ui', syncCwrHistory);
   window.addEventListener('wise:cwr-mode', syncCwrHistory);
   window.addEventListener('storage', (e) => {
-    if (e.key === 'wise-cwr-mode' || e.key === 'wise-cwr-ui') syncCwrHistory();
+    if (e.key === 'wise-cwr-mode' || e.key === 'wise-cwr-ui' || e.key === 'wise-admin-ui') syncCwrHistory();
   });
   document.addEventListener('wise:chat-history-ready', (ev) => {
     const api = ev?.detail?.api;
