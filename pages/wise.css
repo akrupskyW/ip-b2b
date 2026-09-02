@@ -6900,7 +6900,7 @@ html.dark .ws-logo-wrap .ws-pulse-ring { --ws-track: rgba(174, 200, 237, 0.55); 
    (fixed-width) mono figures — every digit occupies the same advance width,
    keeping the surrounding sentence from shifting as the number changes. */
 .ws-count { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; font-family: var(--font-mono); }
-.ws-chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 100%; width: 100%; margin-bottom: 2rem; }
+.ws-chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 100%; width: 100%; min-width: 0; margin-bottom: 2rem; }
 .ws-chips .chip { width: fit-content; max-width: 100%; flex: 0 0 auto; }
 /* Welcome intent chips. Cap at TWO wrapping rows; overflow is revealed by a
    trailing "Show more" chip (see clampWelcomeChips in js/wiseai-chat.js) —
@@ -6921,11 +6921,16 @@ html.dark .ws-logo-wrap .ws-pulse-ring { --ws-track: rgba(174, 200, 237, 0.55); 
 .sc-welcome > .ws-chips-scroll > .ws-chips {
   margin-bottom: 0;
   width: 100%;
-  max-width: none;
+  max-width: 100%;
+  min-width: 0;
   flex-wrap: wrap;
   justify-content: center;
 }
-.sc-welcome > .ws-chips-scroll > .ws-chips .chip { max-width: 100%; }
+.sc-welcome > .ws-chips-scroll > .ws-chips .chip {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .sc-welcome > .ws-chips-scroll > .ws-chips .chip[hidden] { display: none !important; }
 /* Intent chips, carousel variant — a single horizontal row with left/right
    controls + edge fades (mirrors ai-chat.html), so every module-shortcut chip

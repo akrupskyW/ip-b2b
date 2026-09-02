@@ -5821,9 +5821,9 @@ const INTENT_AUDIT = [
   },
   {
     label: 'All Modules', icon: 'apps', href: 'all-modules.html', src: 'all-modules-flow.js',
-    note: 'This very page. The “Jump to…” chips scroll to (and expand) a module and suppress their reply on success; their transcript is a fallback for when the target isn’t found. “What’s new…” is the first chip — it posts a same-day / other-day rundown and does not jump. “How many icons are there?” is the one answer-only count chip. “Show animations & resize” opens the Motion & Resize catalog. “How responsive is the platform?” opens Responsiveness. “Show the transcript architecture” opens the frozen labeled conversation. “How does the report builder work?” opens the Report builder card and posts the how-it-works answer.',
+    note: 'This very page. The “Jump to…” chips scroll to (and expand) a module and suppress their reply on success; their transcript is a fallback for when the target isn’t found. “Latest updates” is the first chip — it posts a same-day / other-day rundown and does not jump. “How many icons are there?” is the one answer-only count chip. “Show animations & resize” opens the Motion & Resize catalog. “How responsive is the platform?” opens Responsiveness. “Show the transcript architecture” opens the frozen labeled conversation. “How does the report builder work?” opens the Report builder card and posts the how-it-works answer.',
     chips: [
-      { i: 'whatsnew',   label: 'Tell me everything that’s new from the past day or the other day.', t: true, l: true, does: 'Posts a rundown of what landed yesterday and the day before. Does not jump.' },
+      { i: 'whatsnew',   label: 'Latest updates', t: true, l: true, does: 'Posts a rundown of what landed yesterday and the day before. Does not jump.' },
       { i: 'codebase',   label: 'How big is the codebase?',      t: true, l: true, does: 'Expands and scrolls to the Codebase scorecards, then posts the sizing answer.' },
       { i: 'directory',  label: 'Jump to the Module Directory',  t: true, l: true, does: 'Expands and scrolls to the Module Directory (suppresses the reply on success).' },
       { i: 'tables',     label: 'Show every table',             t: true, l: true, does: 'Expands and scrolls to the Table Gallery.' },
@@ -14453,7 +14453,7 @@ export const ALL_MODULES_WISEAI = {
   sub: 'Your app’s codebase stats, module map, icon inventory, design system, component library, transcript architecture, motion catalog, and how the platform responds from phone to a wide display.',
   chipsFlow: 'wrap',
   intents: [
-    { intent: 'whatsnew', label: 'Tell me everything that’s new from the past day or the other day.', icon: 'new_releases' },
+    { intent: 'whatsnew', label: 'Latest updates', icon: 'new_releases' },
     { intent: 'codebase', label: 'How big is the codebase?', icon: 'code' },
     { intent: 'directory', label: 'Jump to the Module Directory', icon: 'apps' },
     { intent: 'tables', label: 'Show every table', icon: 'table_chart' },
