@@ -703,7 +703,7 @@ export function buildAppearanceBody({
         ${adminOnly(helixStudioSection())}
       `);
   const experience = apGroup('Experience', `
-        ${plainToggle('data-guides="1"', isGuidesOn(), 'Guides', 'Floating page hints', 'Show floating guides that point to what you can do next', false, false, 'signpost')}
+        ${plainToggle('data-guides="1"', isGuidesOn(), 'Guides', 'Floating page hints (not on all pages)', 'Show floating guides that point to what you can do next', false, false, 'signpost')}
         ${tourSection()}
         ${adminOnly(adminToggle('data-cwrui="1"', isCwrUiOn(), 'Roll · Crawl · Walk · Run', 'Show the mode switch', 'Show the floating Roll · Crawl · Walk · Run switch', false, false, 'speed'))}
       `);
@@ -766,9 +766,9 @@ export function buildAppearanceBody({
  * chat/report pages, the live auth user on the agent shell) and how the lock
  * glyphs fell out of sync.
  *
- * Live surfaces (no lock): My profile, Invoices, and Marketing
- * Assets, each carrying a data-pop-action so the shell's click handler can
- * route them. Coming-soon
+ * Live surfaces (no lock): My profile, Invoices, Marketing
+ * Assets, and Support, each carrying a data-pop-action so the shell's click
+ * handler can route them. Coming-soon
  * rows (Alerts / Agents, Preferences, API keys, Help, Docs) are Admin-badged:
  * they hide when Admin controls is off, and show a pink Admin badge (and a
  * lock) when it is on. Sign out always works.
@@ -797,6 +797,7 @@ export function buildUserMenuBody({ name = 'Arthur Krupsky' } = {}) {
     <div class="wise-popover-item" data-pop-action="profile"><span class="material-symbols-outlined">person</span>My profile</div>
     <div class="wise-popover-item" data-pop-action="invoices"><span class="material-symbols-outlined">receipt_long</span>Invoices</div>
     <div class="wise-popover-item" data-pop-action="marketing-assets"><span class="material-symbols-outlined">photo_library</span>Marketing Assets</div>
+    <div class="wise-popover-item" data-pop-action="support"><span class="material-symbols-outlined">support_agent</span>Support</div>
     ${locked('tune', 'Preferences')}
     ${locked('key', 'API keys')}
     ${locked('help', 'Help')}
@@ -838,20 +839,28 @@ function pagesHref(file) {
 /* Marketing Assets is a live avatar-menu destination on every shell. A capture
    listener matches Sign out so a page that only wired profile / invoices still
    reaches the library. */
-function wireMarketingAssetsNav() {
-  if (typeof document === 'undefined' || document.__wiseMaNavBound) return;
-  document.__wiseMaNavBound = true;
+function wireAccountNavAction(action, file, boundFlag) {
+  if (typeof document === 'undefined' || document[boundFlag]) return;
+  document[boundFlag] = true;
   document.addEventListener(
     'click',
     (e) => {
-      const item = e.target?.closest?.('[data-pop-action="marketing-assets"]');
+      const item = e.target?.closest?.(`[data-pop-action="${action}"]`);
       if (!item) return;
       e.stopPropagation();
       e.preventDefault();
-      window.location.href = pagesHref('marketing-assets.html');
+      window.location.href = pagesHref(file);
     },
     true
   );
+}
+
+function wireMarketingAssetsNav() {
+  wireAccountNavAction('marketing-assets', 'marketing-assets.html', '__wiseMaNavBound');
+}
+
+function wireSupportNav() {
+  wireAccountNavAction('support', 'support.html', '__wiseSupportNavBound');
 }
 
 function wireSignOut() {
@@ -874,6 +883,7 @@ function wireSignOut() {
 if (typeof document !== 'undefined') {
   wireSignOut();
   wireMarketingAssetsNav();
+  wireSupportNav();
   /* Rebuild an open avatar menu when Admin controls flips, so locked rows
      appear or collapse in place the same way Appearance does. */
   if (!document.__wiseUserMenuAdminBound) {

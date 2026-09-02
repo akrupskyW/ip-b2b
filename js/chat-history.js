@@ -372,12 +372,12 @@
         '--wch-tree-bg:var(--surface,#fff);',
         'box-shadow:var(--shadow-card,0 12px 32px rgba(20,30,60,0.12));border-radius:16px;overflow:hidden;flex-shrink:0;position:relative;z-index:1;',
         'align-self:center;height:calc(100% - 30px);}',
-      '#modules-row .wch-sidebar.wch-docked .wch-head{padding:18px 14px 16px 24px;border-bottom:1px solid var(--border,rgba(0,0,0,0.08));align-items:flex-start;}',
+      '#modules-row .wch-sidebar.wch-docked .wch-head{padding:var(--module-head-pad-t,26px) var(--module-head-ctrl-inset,12px) var(--module-head-pad-b,14px) var(--module-head-pad-l,20px);border-bottom:1px solid var(--border,rgba(0,0,0,0.08));align-items:flex-start;}',
       '#modules-row .wch-sidebar.wch-docked.wch-rail .wch-head{padding:4px 0 !important;border-bottom:0;}',
       '#modules-row .wch-sidebar.wch-docked.wch-rail .wch-controls{margin:0 !important;}',
-      '#modules-row .wch-sidebar.wch-docked .wch-head-title{font-family:"WISE Digits","Noto Serif",Georgia,serif;font-weight:800;font-size:1.2rem;letter-spacing:-.01em;line-height:1.16;align-items:center;}',
+      '#modules-row .wch-sidebar.wch-docked .wch-head-title{font-family:"WISE Digits",var(--module-title-family,"Noto Serif",Georgia,serif);font-weight:var(--module-title-weight,800);font-size:var(--module-title-size,1.2rem);letter-spacing:-.01em;line-height:var(--module-title-lh,1.16);align-items:center;}',
       '#modules-row .wch-sidebar.wch-docked .wch-head-title .material-symbols-outlined{display:none;}',
-      '#modules-row .wch-sidebar.wch-docked .wch-controls{margin-top:1px;}',
+      '#modules-row .wch-sidebar.wch-docked .wch-controls{margin-top:0;}',
       /* The chat rides above the docked drawers so they read as tucking behind
          it. Sticky must NOT drop the chat to 2 — that ties add/view-product's
          NFP (also 2) and the later panel paints over the chat. Keep 3 in both

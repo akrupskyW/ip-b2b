@@ -41,7 +41,7 @@
     body[data-nav-id="help"] #modules-row { margin-top: 0; }
     body[data-nav-id="help"] .wmod-wrap { max-width: 960px; }
     /* Keep the serif masthead clear of the pinned ⋯ / width cluster. */
-    body[data-nav-id="help"] .wmod-masthead { padding-right: 56px; }
+    body[data-nav-id="help"] .wmod-masthead { padding-right: calc(var(--module-head-ctrl-inset, 12px) + 60px); }
 
     /* FAQ accordion — a list inside the standard table card. */
     .hc-faq { border-top: 1px solid var(--border); }
@@ -55,6 +55,18 @@
     .hc-faq.is-open .hc-faq-a { max-height: 360px; padding: 0 18px 18px; }
     .hc-hl { background: color-mix(in srgb, var(--ter-amber, #e0a800) 40%, transparent); border-radius: 3px; padding: 0 2px; color: inherit; }
 
+    /* Section title — same serif headline as Help center, not the eyebrow group label. */
+    body[data-nav-id="help"] .hc-support-head {
+      font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+      font-size: var(--module-title-size, 1.35rem);
+      font-weight: var(--module-title-weight, 800);
+      letter-spacing: -0.01em;
+      line-height: 1.15;
+      text-transform: none;
+      color: var(--text);
+      gap: 0;
+    }
+
     /* Support rows — a bare leading icon (no boxed backdrop), label, arrow. */
     .hc-support-row { width: 100%; display: flex; align-items: center; gap: 14px; text-align: left; padding: 16px 20px; border: 0; border-top: 1px solid var(--border); background: transparent; cursor: pointer; font-family: inherit; }
     .hc-support-row:first-child { border-top: 0; }
@@ -66,6 +78,90 @@
         .hc-support-title { display: block; font-size: 0.9rem; font-weight: 700; color: var(--text); }
         .hc-support-desc { display: block; font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
     .hc-support-arrow { color: var(--text-subtle); font-size: 20px; }
+    .hc-support-row.is-locked,
+    .hc-support-row:disabled {
+      opacity: 0.42;
+      cursor: not-allowed;
+    }
+    .hc-support-row.is-locked:hover,
+    .hc-support-row:disabled:hover {
+      background: transparent;
+    }
+    html.dark .hc-support-row.is-locked:hover,
+    html.dark .hc-support-row:disabled:hover { background: transparent; }
+
+    /* Point-at glow for Chat composer + the Write (email) sticky module.
+       Inset ring stays visible even when a parent card clips overflow. */
+    @keyframes hc-spot-fade {
+      0%, 45% {
+        box-shadow: inset 0 0 0 3px var(--primary),
+                    0 0 0 4px color-mix(in srgb, var(--primary) 55%, transparent),
+                    0 0 28px 8px color-mix(in srgb, var(--primary) 38%, transparent);
+        border-color: var(--primary);
+      }
+      100% {
+        box-shadow: none;
+        border-color: var(--border);
+      }
+    }
+    @keyframes hc-spot-fade-dark {
+      0%, 45% {
+        box-shadow: inset 0 0 0 3px var(--primary-bright, #8B9FAF),
+                    0 0 0 4px color-mix(in srgb, var(--primary-bright, #8B9FAF) 55%, transparent),
+                    0 0 32px 10px color-mix(in srgb, var(--primary-bright, #8B9FAF) 40%, transparent);
+        border-color: var(--primary-bright, #8B9FAF);
+      }
+      100% {
+        box-shadow: none;
+        border-color: var(--border);
+      }
+    }
+    .hc-spot {
+      border-color: var(--primary) !important;
+      box-shadow: inset 0 0 0 3px var(--primary),
+                  0 0 0 4px color-mix(in srgb, var(--primary) 55%, transparent),
+                  0 0 28px 8px color-mix(in srgb, var(--primary) 38%, transparent) !important;
+      animation: hc-spot-fade 3.2s ease-out forwards;
+      position: relative;
+      z-index: 5;
+    }
+    html.dark .hc-spot {
+      border-color: var(--primary-bright, #8B9FAF) !important;
+      box-shadow: inset 0 0 0 3px var(--primary-bright, #8B9FAF),
+                  0 0 0 4px color-mix(in srgb, var(--primary-bright, #8B9FAF) 55%, transparent),
+                  0 0 32px 10px color-mix(in srgb, var(--primary-bright, #8B9FAF) 40%, transparent) !important;
+      animation-name: hc-spot-fade-dark;
+    }
+    .hc-spot-host { overflow: visible !important; }
+    /* Contact is a tucked drawer: overflow must stay hidden so the square
+       head/body/foot clip to the card radius. Sticky also forces
+       box-shadow: none, so paint the ring on a matching-radius overlay. */
+    #help-contact.hc-spot {
+      position: relative;
+      overflow: hidden !important;
+      box-shadow: none !important;
+    }
+    #help-contact.hc-spot::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      z-index: 30;
+      box-shadow: inset 0 0 0 3px var(--primary);
+      animation: hc-spot-ring-fade 3.2s ease-out forwards;
+    }
+    html.dark #help-contact.hc-spot::after {
+      box-shadow: inset 0 0 0 3px var(--primary-bright, #8B9FAF);
+    }
+    @keyframes hc-spot-ring-fade {
+      0%, 45% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .hc-spot, html.dark .hc-spot,
+      #help-contact.hc-spot::after { animation: none; }
+    }
 
     /* Contact support — a next-level sticky drawer off Help (the aside IS the
        card, so generic `.sticky-mod.is-sticky` tucks it under Help). Form
@@ -91,16 +187,24 @@
     }
     #help-contact.panel-wide { flex-basis: 520px; width: 520px; }
     #help-contact.panel-wide.panel-triple { flex-basis: 680px; width: 680px; }
-    #help-contact .wch-head { align-items: flex-start; padding: 16px 12px 14px 18px; }
+    #help-contact .wch-head {
+      align-items: flex-start;
+      padding: var(--module-head-pad-t) var(--module-head-ctrl-inset) var(--module-head-pad-b) var(--module-head-pad-l);
+    }
     #help-contact .wch-head-title {
-      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
-      font-weight: 800; font-size: 1.2rem; letter-spacing: -0.01em; line-height: 1.16;
+      font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+      font-weight: var(--module-title-weight, 800); font-size: var(--module-title-size, 1.2rem);
+      letter-spacing: -0.01em; line-height: var(--module-title-lh, 1.16);
       color: var(--text);
     }
-    .hc-mail-head-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-    .hc-mail-sub { margin: 0; font-size: 12.5px; line-height: 1.4; color: var(--text-subtle); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hc-mail-head-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 0; }
+    .hc-mail-sub {
+      margin: var(--module-sub-gap, 3px) 0 0; font-size: var(--module-sub-size, 0.78125rem);
+      line-height: var(--module-sub-lh, 1.35); color: var(--text-subtle);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
     #help-contact .wch-head .panel-controls,
-    #help-contact .wch-controls { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0; }
+    #help-contact .wch-controls { margin-left: auto; display: inline-flex; align-items: center; gap: var(--module-head-ctrl-gap, 2px); flex-shrink: 0; }
     .hc-mail-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 14px 16px 6px; display: flex; flex-direction: column; gap: 16px; }
     .hc-mail-form { display: flex; flex-direction: column; gap: 16px; }
     .hc-mail .adm-input { width: 100%; }
@@ -116,8 +220,6 @@
       background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 22%, transparent);
       border-color: var(--primary-bright, #8B9FAF);
     }
-    .hc-mail-chips .ws-intent-chip > .material-symbols-outlined { color: var(--ter-amber, #E3C878); }
-    html.dark .hc-mail-chips .ws-intent-chip > .material-symbols-outlined { color: var(--ter-amber, #E3C878); }
     .hc-mail-textarea {
       width: 100%; box-sizing: border-box; min-height: 92px; padding: 10px 14px;
       font-family: inherit; font-size: 0.8125rem; line-height: 1.45; color: var(--text);
@@ -160,14 +262,21 @@
     html.dark .hc-mail-foot { border-top-color: rgba(255,255,255,0.08); }
     .hc-mail-done { display: flex; flex-direction: column; gap: 16px; }
     .hc-mail-created {
-      display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 12px;
-      border: 1px solid color-mix(in srgb, var(--sec-green) 42%, var(--border));
-      background: color-mix(in srgb, var(--sec-green) 7%, var(--surface));
+      display: flex; flex-direction: column; gap: 12px; padding: 16px 4px 4px;
     }
-    html.dark .hc-mail-created { background: color-mix(in srgb, var(--sec-green) 14%, var(--surface-2)); }
-    .hc-mail-created-title { font-size: 1rem; font-weight: 700; color: var(--sec-green-text, var(--sec-green)); }
-    .hc-mail-created-sub { margin: 0; font-size: 0.82rem; line-height: 1.45; color: var(--text-muted); }
-    .hc-mail-created-sub strong { color: var(--text); font-weight: 600; }
+    .hc-mail-created-title {
+      font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+      font-size: 1.2rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.16;
+      color: var(--text);
+    }
+    .hc-mail-created-sub { margin: 0; font-size: 0.86rem; line-height: 1.45; color: var(--text-muted); }
+    .hc-mail-receipt { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
+    .hc-mail-receipt-row { display: flex; flex-direction: column; gap: 3px; }
+    .hc-mail-receipt-k {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--text-subtle);
+    }
+    .hc-mail-receipt-v { font-size: 0.88rem; line-height: 1.45; color: var(--text); white-space: pre-wrap; overflow-wrap: anywhere; }
 
     @media (max-width: 760px) {
       body[data-nav-id="help"] .wmod-wrap { padding: 20px 20px 48px; }

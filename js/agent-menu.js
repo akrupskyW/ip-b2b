@@ -592,7 +592,8 @@ export const WISE_ACCOUNT_NAV = [
   { type: 'item', id: 'alerts', label: 'Alerts', icon: 'notifications', slug: 'alerts.html' },
   { type: 'item', id: 'preferences', label: 'Preferences', icon: 'tune', slug: 'preferences.html' },
   { type: 'item', id: 'api-keys', label: 'API keys', icon: 'key', slug: 'api-keys.html' },
-  { type: 'item', id: 'help', label: 'Help', icon: 'help', slug: 'help.html' },
+  { type: 'item', id: 'support', label: 'Support', icon: 'support_agent', slug: 'support.html' },
+  { type: 'item', id: 'help', label: 'Help', icon: 'help', slug: 'support.html' },
   { type: 'item', id: 'docs', label: 'Docs', icon: 'menu_book', slug: 'docs.html' },
 ];
 
@@ -1007,7 +1008,7 @@ const EXISTING_PAGES = new Set([
   'invoices.html',
   'preferences.html',
   'api-keys.html',
-  'help.html',
+  'support.html',
   'docs.html',
   'agents.html',
   'alerts.html',

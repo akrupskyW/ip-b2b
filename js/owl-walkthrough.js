@@ -136,7 +136,7 @@
           id: 'pf-add',
           page: 'add-product.html',
           title: 'Adding a product is a conversation.',
-          body: 'Add Product is three modules that move as one: chat on the left, a live Nutrition Facts panel in the middle, progress on the right. Photos, serving size, nutrients, ingredients \u2014 edit the panel or answer me, it\u2019s the same draft. Nothing is saved until you hit Save to Portfolio.',
+          body: 'Add Product is three modules that move as one: chat on the left, Product Details in the middle, and Ingredients Analyzer tucked to the right. Photos, serving size, nutrients, ingredients \u2014 edit a panel or answer me, it\u2019s the same draft. Progress lives in the conversation. Nothing is saved until you hit Save to Portfolio.',
           bullets: [
             'Chat collects the fields; the NFP card is the source of truth you can edit',
             'Pack sizes can diverge from the base product',
@@ -306,8 +306,8 @@
       id: 'account',
       label: 'You & the org',
       icon: 'manage_accounts',
-      pages: ['profile.html', 'teams.html', 'preferences.html', 'invoices.html', 'marketing-assets.html', 'api-keys.html', 'alerts.html', 'agents.html', 'help.html', 'docs.html', 'organizations.html', 'quick-invite.html', 'user-management.html', 'audit-queue.html', 'admin-utils.html', 'studio-ai.html'],
-      navIds: ['profile', 'team', 'invoices', 'marketing-assets', 'preferences', 'api-keys', 'help', 'docs', 'organizations', 'quick-invite', 'user-management', 'audit-queue', 'admin-utils', 'studio-ai', 'wisecode-admin'],
+      pages: ['profile.html', 'teams.html', 'preferences.html', 'invoices.html', 'marketing-assets.html', 'api-keys.html', 'alerts.html', 'agents.html', 'support.html', 'docs.html', 'organizations.html', 'quick-invite.html', 'user-management.html', 'audit-queue.html', 'admin-utils.html', 'studio-ai.html'],
+      navIds: ['profile', 'team', 'invoices', 'marketing-assets', 'support', 'preferences', 'api-keys', 'help', 'docs', 'organizations', 'quick-invite', 'user-management', 'audit-queue', 'admin-utils', 'studio-ai', 'wisecode-admin'],
       steps: [
         {
           id: 'ac-you',
@@ -322,7 +322,7 @@
         },
         {
           id: 'ac-again',
-          page: 'help.html',
+          page: 'support.html',
           title: 'You can always take this again.',
           body: 'First time on a screen you haven\u2019t finished, I\u2019ll open this module on just that group. After you\u2019ve seen everything \u2014 or skipped it on purpose \u2014 I stay quiet until you ask.',
           bullets: [

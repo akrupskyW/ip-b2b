@@ -1853,7 +1853,7 @@ window.WISE_PROJECT_INVENTORY = {
       "kind": "code"
     },
     {
-      "path": "pages/help.html",
+      "path": "pages/support.html",
       "bytes": 12106,
       "kind": "code"
     },

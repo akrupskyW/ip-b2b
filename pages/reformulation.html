@@ -162,10 +162,10 @@
        Mirrors the product-portfolio board header (.pf-head): a serif headline
        with a small meta line, sitting on the card surface with the same inset
        as the body below it — no boxed icon, no shaded topbar strip. */
-    .rf-head { position: relative; isolation: isolate; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 22px 26px 14px; flex-shrink: 0; }
+    .rf-head { position: relative; isolation: isolate; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: var(--module-head-pad-t) var(--module-head-ctrl-inset) var(--module-head-pad-b) 26px; flex-shrink: 0; }
     .rf-head-titles { min-width: 0; }
-    .rf-head-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.2rem; color: var(--text); margin: 0; letter-spacing: -.01em; line-height: 1.15; }
-    .rf-head-meta { font-size: 11.5px; color: var(--text-muted); margin: 3px 0 0; line-height: 1.3; }
+    .rf-head-title { font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif); font-weight: var(--module-title-weight, 800); font-size: var(--module-title-size, 1.2rem); color: var(--text); margin: 0; letter-spacing: -.01em; line-height: var(--module-title-lh, 1.16); }
+    .rf-head-meta { font-size: var(--module-sub-size, 0.78125rem); color: var(--text-muted); margin: var(--module-sub-gap, 3px) 0 0; line-height: var(--module-sub-lh, 1.35); }
 
     /* ── Dashboard brand chrome ──
        Once a food is loaded, the dashboard header wears its brand's banner:
@@ -217,7 +217,7 @@
        module. The product badge sits on the far left, so the control cluster
        stays on the far right; on the brand banner the icons go light against
        the scrim. */
-    .rf-head-controls { position: absolute; top: 14px; right: 16px; z-index: 3; display: inline-flex; align-items: center; gap: 4px; }
+    .rf-head-controls { position: absolute; top: var(--module-head-pad-t); right: var(--module-head-ctrl-inset); z-index: 3; display: inline-flex; align-items: center; gap: var(--module-head-ctrl-gap, 2px); }
     .rf-head-titles { padding-right: 74px; }
     .rf-head--badged .rf-head-titles { padding-left: 78px; }
     .rf-head-controls .panel-more-wrap { position: relative; }

@@ -141,15 +141,15 @@
        shared .agent-main-header) — same component as product-portfolio's .pf-head:
        a Noto Serif display title with a muted meta subline. */
     .sa-panel-head {
-      display: flex; align-items: center; gap: 12px;
-      padding: var(--module-head-pad-t, 26px) var(--module-head-pad-x, 40px) 0; flex-shrink: 0;
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: var(--module-head-pad-t, 26px) var(--module-head-ctrl-inset, 12px) var(--module-head-pad-b, 14px) var(--module-head-pad-x, 40px); flex-shrink: 0;
     }
     .sa-panel-head-titles { flex: 1 1 auto; min-width: 0; }
-    .sa-panel-head-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.2rem; color: var(--text); margin: 0; letter-spacing: -.01em; }
-    .sa-panel-head-meta { font-size: 12px; color: var(--text-muted); margin: 3px 0 0; }
+    .sa-panel-head-title { font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif); font-weight: var(--module-title-weight, 800); font-size: var(--module-title-size, 1.2rem); color: var(--text); margin: 0; letter-spacing: -.01em; line-height: var(--module-title-lh, 1.16); }
+    .sa-panel-head-meta { font-size: var(--module-sub-size, 0.78125rem); line-height: var(--module-sub-lh, 1.35); color: var(--text-muted); margin: var(--module-sub-gap, 3px) 0 0; }
     /* [⋯ menu][width changer] cluster, pinned to the head's right edge — the
        same control pair every module right of the chat carries. */
-    .sa-head-controls { display: inline-flex; align-items: center; gap: 2px; flex: 0 0 auto; }
+    .sa-head-controls { display: inline-flex; align-items: center; gap: var(--module-head-ctrl-gap, 2px); flex: 0 0 auto; }
     .sa-head-controls .panel-more-wrap { margin-left: 0; }
     .sa-soon-pill {
       display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;

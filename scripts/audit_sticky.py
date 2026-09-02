@@ -16,7 +16,7 @@ PAGES = [
     "ai-dashboard.html", "add-product.html", "view-product.html",
     "report-guiding-stars.html", "product-portfolio.html", "product-comparison.html",
     "verification.html", "gras-verification.html", "agents.html", "alerts.html",
-    "reports.html", "docs.html", "help.html", "profile.html", "preferences.html",
+    "reports.html", "docs.html", "support.html", "profile.html", "preferences.html",
     "invoices.html", "api-keys.html", "user-management.html", "organizations.html",
     "quick-invite.html", "admin-utils.html", "audit-queue.html",
     "conversation-library.html", "ingredient-browser.html", "all-modules.html",

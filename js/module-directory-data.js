@@ -120,7 +120,7 @@ export const MODULE_SECTIONS = [
       { label: 'Alerts', icon: 'notifications', href: 'alerts.html' },
       { label: 'Preferences', icon: 'tune', href: 'preferences.html' },
       { label: 'API keys', icon: 'key', href: 'api-keys.html' },
-      { label: 'Help', icon: 'help', href: 'help.html' },
+      { label: 'Help', icon: 'help', href: 'support.html' },
       { label: 'Docs', icon: 'menu_book', href: 'docs.html' },
     ],
   },

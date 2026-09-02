@@ -121,12 +121,12 @@
     .pl-log.panel-triple { min-width: 900px; }
 
     /* ── Module header — serif headline + Re-evaluate beside it, controls to the right (mirrors .rf-head) ── */
-    .pl-head { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 22px 26px 14px; flex-shrink: 0; }
+    .pl-head { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: var(--module-head-pad-t) var(--module-head-ctrl-inset) var(--module-head-pad-b) 26px; flex-shrink: 0; }
     .pl-head-titles { min-width: 0; }
     .pl-head-title-row { display: flex; align-items: center; gap: 10px; min-width: 0; flex-wrap: wrap; }
-    .pl-head-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.2rem; color: var(--text); margin: 0; letter-spacing: -.01em; line-height: 1.15; }
-    .pl-head-meta { font-size: 11.5px; color: var(--text-muted); margin: 3px 0 0; line-height: 1.3; }
-    .pl-head-controls { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .pl-head-title { font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif); font-weight: var(--module-title-weight, 800); font-size: var(--module-title-size, 1.2rem); color: var(--text); margin: 0; letter-spacing: -.01em; line-height: var(--module-title-lh, 1.16); }
+    .pl-head-meta { font-size: var(--module-sub-size, 0.78125rem); color: var(--text-muted); margin: var(--module-sub-gap, 3px) 0 0; line-height: var(--module-sub-lh, 1.35); }
+    .pl-head-controls { display: flex; align-items: center; gap: var(--module-head-ctrl-gap, 2px); flex-shrink: 0; }
 
     /* ── Scrolling body — sizes to content; the .pl-log card is the scroller ── */
     .pl-body { flex: 0 0 auto; min-height: auto; overflow: visible; padding: 4px 26px 22px; }
@@ -903,7 +903,7 @@
                 'Features — View Product is the same sheet as Add Product: photo beside the name, pack sizes, Nutrition Facts setting ingredients height, next-step banner. The original image edit control sits immediately left of the photo.',
                 'UX — The blurb fills its column as the module widens. The barcode chip stays a fixed chip.',
               ] },
-            { page: 'Help', path: 'help.html',
+            { page: 'Help', path: 'support.html',
               features: [
                 'Help is a real center: search, browse-by-topic cards (Getting started, Verification, Reports & analytics, Billing & plans, API & integrations, Account & security), expandable FAQs, and Contact support',
                 'Contact support docks as the next sticky module — a Share-style email form with optional attachments. Intent chips search the FAQs, expand a topic, or open that form, and each on-page action narrates back in chat',
@@ -1770,7 +1770,7 @@
                 'Loaded once from the shared nav on every logged-in page, self-guarded so it never double-mounts',
               ],
               ux: ['Chips for every chapter, skip-without-losing-progress, and copy that talks like the owl — no boxed icon tiles, no separate missions UI'] },
-            { page: 'Help', path: 'help.html',
+            { page: 'Help', path: 'support.html',
               features: ['A “Replay the WISEowl walkthrough” support row and a matching intent chip, plus a getting-started FAQ that points at Help, Preferences, and ?walkthrough=1'],
               logic: ['Replay waits for wise:walkthrough-ready if the owl script has not finished loading, then calls WiseWalkthrough.open({ force: true })'] },
             { page: 'Preferences', path: 'preferences.html',

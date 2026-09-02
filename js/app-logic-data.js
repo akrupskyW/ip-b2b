@@ -383,8 +383,8 @@ export const APP_LOGIC = [
     src: ['js/add-product-flow.js'],
     rules: [
       {
-        title: 'Eight steps drive one progress number',
-        how: '<code>STEPS</code> is <code>photo, category, upc, nutrition, ingredients, allergens, photos, save</code>. <code>stepFilled(id)</code> decides completion per step — nutrition needs both <code>nf.calories</code> and <code>nf.servingSize</code>; UPC counts as done if entered <em>or</em> explicitly skipped — and progress is simply completed ÷ 8.',
+        title: 'Eight steps live in the transcript',
+        how: '<code>STEPS</code> is <code>photo, category, upc, nutrition, ingredients, allergens, photos, save</code>. <code>stepFilled(id)</code> decides completion per step — nutrition needs both <code>nf.calories</code> and <code>nf.servingSize</code>; UPC counts as done if entered <em>or</em> explicitly skipped. There is no side progress pane: leftover unused steps trail the reply as chips, and “still needed” copy lists what is left before save.',
       },
       {
         title: 'Save is gated on five required fields',
@@ -403,12 +403,8 @@ export const APP_LOGIC = [
         how: 'Upload and URL parse both apply <code>SAMPLE_PARSE</code> rather than reading the file — including deliberately unreadable micronutrients that seed <code>state.errors</code>, so the &ldquo;fix these fields&rdquo; path is always demonstrable.',
       },
       {
-        title: 'Column widths persist per layout',
-        how: 'The Nutrition Facts panel splitter stores its columns in <code>wise-nfp-cols-v4</code> (three-column) or <code>wise-nfp-cols-noidentity-v1</code> (two-column). Double-clicking the splitter resets to <code>NFP_COL_DEFAULT</code>.',
-      },
-      {
-        title: 'Nutrition Facts height drives the ingredients column',
-        how: 'In the side-by-side Product Details split, the ingredients column matches the Nutrition Facts column (the printed label plus allergens). The label can grow — extra nutrient rows, a longer serving line — and the ingredients column grows with it. It never shrinks below the remaining height of the module body (from the column top to the save bar), so a short label does not leave a gap. Below <strong>900px</strong> of module width the columns stack and each grows with its own content. View Product uses the same rule.',
+        title: 'Ingredients Analyzer is its own sticky module',
+        how: 'The ingredient list, Analyze button, and Parsed / Codes / Nutrients / Scout accordions render in <code>#ia-panel</code>, a nested sticky drawer to the right of Product Details. <code>renderIA()</code> writes that module; Product Details no longer hosts an ingredients column. The analyzer does not take the fill-width default.',
       },
       {
         title: 'Category docks with the ⋯, not in the size row',
@@ -438,19 +434,19 @@ export const APP_LOGIC = [
       },
       {
         title: 'Deep links focus a sub-task',
-        how: '<code>packs=1</code> or <code>focus=packs</code> retitles the topbar to &ldquo;Product sizes&rdquo;, runs <code>startAddPack()</code> and scrolls to the packs group; <code>compare=1</code> turns on the comparison matrix and widens the progress pane via <code>wise-ap-progress-width</code>.',
+        how: '<code>packs=1</code> or <code>focus=packs</code> retitles the topbar to &ldquo;Product sizes&rdquo;, runs <code>startAddPack()</code> and scrolls to the packs group; <code>compare=1</code> turns on the comparison matrix.',
       },
       {
         title: 'Saved reformulations overlay the label',
         how: '<code>applySavedReformulation()</code> looks the product up in <code>WISEReformulationStore</code> by UPC or name and writes the reformulated sodium, saturated fat and fiber into <code>state.nf</code>, so the panel shows the current recipe rather than the printed label.',
       },
       {
-        title: 'Discovered products claim instead of the Non-UPF Shield',
-        how: 'Opening a product from Portfolio \u2192 Discovered passes <code>from=discovered</code>. Until it is claimed, the next-step banner uses the existing panel chrome with the copy <em>Reviewing a discovered product</em> / <em>Check the details below. If everything looks right, claim it into your portfolio.</em> / <em>Everything looks right, claim this product</em>. Claimed and newly-added products still see Get the Non-UPF Shield. Claiming writes the UPC to <code>wise-portfolio-claimed</code>, flips the banner to the shield, and drops the row from Discovered on the next visit.',
+        title: 'The next-step banner follows the portfolio action',
+        how: 'Portfolio row actions pass <code>from=</code> so View / Add Product opens on the matching banner: Discovered \u2192 Review &amp; claim, Claimed \u2192 finish a claimed product, Missing data \u2192 Complete details or Verify ingredients, Add a product \u2192 save a new product, ineligible \u2192 why the shield is blocked. Claimed products that already qualify still see Get the Non-UPF Shield. Five small dots mark progress through Discovered \u2192 Claimed \u2192 Data complete \u2192 Ingredients verified \u2192 Non-UPF Verified; there is no labelled stepper. Claiming writes the UPC to <code>wise-portfolio-claimed</code> and drops the row from Discovered on the next visit.',
       },
       {
-        title: 'Nutrition Facts height drives the ingredients column',
-        how: 'The printed Nutrition Facts label can grow with its content. In the two-column Product Details split that growth sets the ingredients column height — the right column matches the facts column, never the other way around. The ingredients column has a floor: the remaining height of the module body down to the save bar, which is the fill it already has on a typical product. Extra analysis in that column scrolls inside; it does not stretch the facts label.',
+        title: 'Ingredients Analyzer is its own sticky module',
+        how: 'Same as Add Product: the ingredient list and Analyze accordions live in <code>#ia-panel</code>, a nested sticky drawer to the right of Product Details, not in a second column inside the facts card.',
       },
       {
         title: 'Intent chips track the NFP analysis workflow',
@@ -1171,7 +1167,7 @@ export const APP_LOGIC = [
     id: 'help-docs',
     label: 'Help, Docs, Agents & Alerts',
     icon: 'help',
-    href: 'help.html',
+    href: 'support.html',
     area: 'account',
     src: ['js/help-flow.js', 'js/docs-flow.js', 'js/agents-flow.js', 'js/alerts-flow.js'],
     rules: [

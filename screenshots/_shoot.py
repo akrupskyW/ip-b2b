@@ -73,7 +73,7 @@ PAGES = [
     "pages/api-keys.html",
     "pages/agents.html",
     "pages/alerts.html",
-    "pages/help.html",
+    "pages/support.html",
     "pages/docs.html",
 ]
 
@@ -156,10 +156,10 @@ PIN_CHAT = f"""() => {{
 
 # Largest vertical overflow across any non-chat scroll pane (and the document).
 # The left chat is pinned; the right-hand module drives viewport growth.
-# .nfp-sp-ingred is intentionally a fixed-height scroller (matches the
-# Nutrition Facts label) — growing the viewport must not try to unclip it.
+# #ia-body is the Ingredients Analyzer scroller (its own nested module) —
+# growing the viewport must not try to unclip it.
 MAX_DELTA = f"""() => {{
-  const skip = el => el.closest && (el.closest({CHAT_HOST!r}) || el.closest('.nfp-sp-ingred'));
+  const skip = el => el.closest && (el.closest({CHAT_HOST!r}) || el.closest('#ia-body') || el.closest('.nfp-sp-ingred'));
   let max = 0;
   document.querySelectorAll('*').forEach(el => {{
     if (skip(el)) return;

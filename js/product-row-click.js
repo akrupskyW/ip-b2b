@@ -124,6 +124,9 @@
     if (img) params.set('img', img);
     if (row.closest && row.closest('#pf-view-discovered, .pf-table--discovered-cta, .pf-table--discovered')) {
       params.set('from', 'discovered');
+    } else if (row.closest && row.closest('#pf-view-needsinfo, .pf-table--needsinfo')) {
+      if (row.querySelector('.pf-row-act--verify, .pf-chip--verify')) params.set('from', 'verify');
+      else params.set('from', 'complete');
     }
     var qs = params.toString();
     return 'view-product.html' + (qs ? '?' + qs : '');

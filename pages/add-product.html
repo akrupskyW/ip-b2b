@@ -20,9 +20,11 @@
     /* ═══════════ Add Product — page-specific shell ═══════════
        Reuses the shared WISE palette + chat classes (wise.css). The chat
        column mirrors the Reformulation Studio (.ap-chat ≈ .rf-chat); the
-       Product Details (NFP) module reuses the portfolio's nfp-* label styles;
-       the right progress module reuses the shared .vf-progress-pane / vfp-*
-       component. Everything bespoke here is prefixed ap- / nfp-. */
+       Product Details (NFP) module reuses the portfolio's nfp-* label styles
+       and sits as the sticky drawer to the right of chat. Ingredients Analyzer
+       is its own nested sticky module to the right of Product Details.
+       Progress lives in the transcript. Everything bespoke here is prefixed
+       ap- / nfp- / ia-. */
     * { box-sizing: border-box; }
     html, body { height: 100%; margin: 0; }
     body {
@@ -130,12 +132,57 @@
 
     /* ── Product Details (NFP) module ──
        Four-tier width changer (single / double / triple / fill), same as every
-       other module. Fill (the default, via .panel-fill) absorbs leftover row
-       space; the narrower tiers are fixed. min-width stays 0 so a narrow
-       window can still shrink the pane instead of overflowing the row. */
-    #nfp-panel { flex: 0 0 520px; width: 520px; min-width: 0; display: flex; position: relative; z-index: 1; }
-    #nfp-panel.panel-wide { flex: 0 0 680px; width: 680px; }
-    #nfp-panel.panel-triple { flex: 0 0 860px; width: 860px; }
+       other module. Single pane is the load default; fill still absorbs
+       leftover row space when the user cycles to it. min-width stays 0 so a
+       narrow window can still shrink the pane instead of overflowing the row. */
+    /* Same width ladder as Help's Contact drawer (support.html #help-contact):
+       single 372 · double 520 · triple 680. */
+    #nfp-panel { flex: 0 0 372px; width: 372px; min-width: 0; display: flex; position: relative; z-index: 1; }
+    #nfp-panel.panel-wide { flex: 0 0 520px; width: 520px; }
+    #nfp-panel.panel-triple { flex: 0 0 680px; width: 680px; }
+    /* Ingredients Analyzer — the aside IS the card, same as #help-contact.
+       Do not wrap an inner card (that sits flush and reads as a third module). */
+    #ia-panel {
+      flex: 0 0 372px; width: 372px; min-width: 0; min-height: 0;
+      display: flex; flex-direction: column; overflow: hidden;
+      position: relative; z-index: 0;
+      align-self: center; height: calc(100% - 30px); max-height: calc(100% - 30px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md, 16px);
+      box-shadow: var(--shadow-card);
+    }
+    html.dark #ia-panel {
+      background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+      border-color: rgba(37, 80, 124, 0.18);
+    }
+    #ia-panel.panel-wide { flex: 0 0 520px; width: 520px; }
+    #ia-panel.panel-triple { flex: 0 0 680px; width: 680px; }
+    #ia-panel .wch-head {
+      align-items: flex-start;
+      padding: var(--module-head-pad-t) var(--module-head-ctrl-inset) var(--module-head-pad-b) var(--module-head-pad-l);
+    }
+    #ia-panel .wch-head-title {
+      font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+      font-weight: var(--module-title-weight, 800);
+      font-size: var(--module-title-size, 1.2rem);
+      letter-spacing: -0.01em;
+      line-height: var(--module-title-lh, 1.16);
+      color: var(--text);
+    }
+    #ia-panel .hc-mail-head-text {
+      flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 0;
+    }
+    #ia-panel .wch-head .panel-controls,
+    #ia-panel .wch-controls {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--module-head-ctrl-gap, 2px);
+      flex-shrink: 0;
+    }
+    .nfp-sp--facts-only { display: flex !important; flex-direction: column; }
+    #ia-body { padding: 10px 10px 16px; background: transparent; }
     .nfp-inner {
       display: flex; flex-direction: column; flex: 1; min-height: 0; width: 100%;
       border-radius: 16px; overflow: hidden;
@@ -207,11 +254,13 @@
     .nfp-header-photo.nfp-hero-drag {
       opacity: 1; background: rgba(255, 255, 255, 0.24);
     }
-    /* Header-float pins ⋯ / width at 8px — drop them to the sizes-title row
-       (14px strip padding). The headline reserves padding-right so it wraps
-       before these 28px actions instead of running under them. */
+    /* Header-float: identity name is the module title. Top-align ⋯ / width
+       with the first line so a wrapping name matches Ingredient List. */
     html.header-float #nfp-panel .nfp-panel-header .panel-controls {
-      top: 14px; right: 14px;
+      top: var(--module-head-pad-t); right: var(--module-head-ctrl-inset);
+    }
+    html.header-float #nfp-panel .nfp-fi-group--identity {
+      padding-top: var(--module-head-pad-t);
     }
     html.header-float #nfp-panel .nfp-header-photo { color: var(--text-muted); }
     html.header-float #nfp-panel .nfp-header-photo:hover,
@@ -292,32 +341,33 @@
     .nfp-sp--flip .nfp-fi-group--identity {
       padding: 20px 12px 18px;
     }
+    html.header-float .nfp-sp--flip .nfp-sp-strip--folded .nfp-fi-group--identity,
+    html.header-float .nfp-sp--flip .nfp-fi-group--identity {
+      padding-top: var(--module-head-pad-t);
+    }
     .nfp-sp--flip .nfp-sp-facts .nfp-sp-shield,
     .nfp-sp--flip .nfp-sp-facts .nfp-sp-shield--folded {
       padding-left: 12px; padding-right: 12px;
     }
     .nfp-sp--flip .nfp-sp-facts .nfp-nf-panel { margin-top: 12px; }
-    /* Folded identity — photo + name on row 1; name vertically centered on
-       the square. A wrapping title still grows the row. Description, price,
-       counts, barcode and category span the full width under both on row 2. */
+    /* Folded identity — title, then description, then size photos in one
+       row (selected a bit larger). Price, barcode and category sit below
+       and follow whichever size is selected. */
     .nfp-sp--flip .nfp-fi-group--identity {
-      display: grid; grid-template-columns: auto minmax(0, 1fr);
-      align-items: start; column-gap: 14px; row-gap: 10px;
+      display: flex; flex-direction: column; align-items: stretch; gap: 0;
     }
-    .nfp-sp--flip .nfp-fi-lead-photo { grid-column: 1; grid-row: 1; align-self: start; }
-    .nfp-sp--flip .nfp-fi-copy { display: contents; }
+    .nfp-sp--flip .nfp-fi-copy { display: block; min-width: 0; }
     .nfp-sp--flip .nfp-fi-group--identity .nfp-fi-header {
-      grid-column: 2; grid-row: 1; flex-wrap: wrap; min-width: 0;
-      align-items: center; align-self: center; margin-bottom: 0;
+      flex-wrap: wrap; min-width: 0;
+      align-items: flex-start; margin-bottom: 6px;
     }
     html.header-float .nfp-sp--flip .nfp-fi-group--identity .nfp-fi-header { padding-right: 72px; }
     .nfp-sp--flip .nfp-fi-title {
-      flex: 1 1 12ch; min-width: 12ch;
+      flex: 1 1 auto; min-width: 0;
       overflow-wrap: break-word; word-break: normal;
     }
     .nfp-sp--flip .nfp-fi-title .nfp-edit { display: block; width: 100%; }
     .nfp-sp--flip .nfp-fi-details {
-      grid-column: 1 / -1; grid-row: 2;
       display: flex; flex-direction: column; flex-wrap: nowrap;
       align-items: stretch; gap: 8px; min-width: 0;
     }
@@ -341,10 +391,11 @@
       gap: 10px 12px; align-items: start; justify-items: stretch;
       padding: 12px 14px;
     }
-    .nfp-sp--flip .nfp-sp-facts .nfp-ins-next-ic { grid-column: 1; grid-row: 1; }
-    .nfp-sp--flip .nfp-sp-facts .nfp-ins-next-body { grid-column: 2; grid-row: 1; flex: none; }
+    .nfp-sp--flip .nfp-sp-facts .nfp-ins-next-dots { grid-column: 1 / -1; grid-row: 1; }
+    .nfp-sp--flip .nfp-sp-facts .nfp-ins-next-ic { grid-column: 1; grid-row: 2; }
+    .nfp-sp--flip .nfp-sp-facts .nfp-ins-next-body { grid-column: 2; grid-row: 2; flex: none; }
     .nfp-sp--flip .nfp-sp-facts .nfp-ins-next-btn {
-      grid-column: 1 / -1; grid-row: 2;
+      grid-column: 1 / -1; grid-row: 3;
       margin: 0; width: 100%; justify-content: center; align-self: stretch;
     }
     .nfp-sp-ingred {
@@ -382,6 +433,10 @@
     html.nfp-col-dragging, html.nfp-col-dragging * { cursor: col-resize !important; user-select: none !important; -webkit-user-select: none !important; }
 
     @container nfp-body (min-width: 900px) {
+      .nfp-sp--facts-only {
+        display: flex !important; flex-direction: column; grid-template-columns: none;
+      }
+      .nfp-sp--facts-only .nfp-sp-facts { grid-column: auto; grid-row: auto; border-left: 0; }
       .nfp-sp {
         display: grid; align-items: stretch;
         grid-template-columns: minmax(120px, var(--nfp-w-media)) 16px minmax(200px, var(--nfp-w-facts)) 16px minmax(240px, var(--nfp-w-ingred));
@@ -755,49 +810,45 @@
     .nfp-barcode-svg { display: block; margin: 2px auto 0; max-width: 100%; height: auto; }
     .nfp-barcode-num { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.08em; color: var(--text-muted); text-align: center; margin-top: 3px; }
 
-    /* ── Segmented UPC-A entry — one white card holding a faded example barcode
-       above one box per digit (SSN / verification-code style), grouped the way
-       the number physically breaks down: 1 · 5 · 5 · 1 (number-system ·
-       manufacturer · product · check digit). The faded barcode is swapped for
-       the real one once all 12 digits are entered. ── */
+    /* ── Printed UPC-A card — bars over digits grouped 1 · 5 · 5 · 1.
+       Quiet-zone columns hold the outer digits; the bar block (and the two
+       5-digit runs) sit between them, split by the center-guard gutter. ── */
     .nfp-upc-entry {
-      display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; box-sizing: border-box;
-      background: rgba(255, 255, 255, 0.85); border: 2px solid #111; border-radius: 6px;
-      padding: 16px 10px 14px; box-shadow: 0 1px 2px rgba(7,12,26,0.06);
+      display: flex; flex-direction: column; align-items: center; gap: 0; width: 100%; box-sizing: border-box;
+      background: #fff; border: 2px solid #111; border-radius: 6px;
+      padding: 14px 12px 10px; box-shadow: 0 1px 2px rgba(7,12,26,0.06);
     }
-    /* Barcode slot — a large, full-width barcode across the top of the card.
-       Holds either the real bars (when 12 digits are known) or the faded
-       placeholder below, always in the same tall footprint so nothing shifts. */
+    .nfp-upc-mark { display: flex; flex-direction: column; align-items: stretch; width: 100%; }
     .nfp-upc-barcode {
-      width: 100%; height: 62px;
-      display: flex; align-items: center; justify-content: center;
+      width: auto; height: 72px;
+      margin: 0 1.3em -12px;
+      display: block;
     }
     .nfp-upc-bc { display: block; width: 100%; height: 100%; fill: #111; }
-    /* Faded example barcode — a placeholder look, not a real code, held light
-       until the actual barcode renders in its place. */
-    .nfp-upc-preview {
-      width: 100%; height: 100%; opacity: 0.2;
-      background-image: repeating-linear-gradient(90deg,
-        #1A2339 0 2px, transparent 2px 6px,
-        #1A2339 6px 8px, transparent 8px 12px,
-        #1A2339 12px 15px, transparent 15px 18px);
-      background-repeat: repeat-x; background-position: center; background-size: auto 100%;
+    .nfp-upc-bc--preview { opacity: 0.22; }
+    .nfp-upc-cells {
+      display: grid;
+      grid-template-columns: 1.3em minmax(0, 1fr) 0.95em minmax(0, 1fr) 1.3em;
+      align-items: end;
+      width: 100%;
+      column-gap: 0;
     }
-    /* Digit slots: plain underlines (no boxes), evenly sized, spaced out in the
-       1 · 5 · 5 · 1 sections the way digits sit beneath a real UPC barcode. Mono
-       font so every digit is the same width and reads like a printed code. */
-    .nfp-upc-cells { display: flex; align-items: flex-end; justify-content: center; gap: 7px; width: 100%; }
+    .nfp-upc-group {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 2px; min-width: 0; padding: 0 10%;
+    }
+    .nfp-upc-gutter { width: auto; min-width: 0; }
     .nfp-upc-cell {
-      flex: 1 1 0; min-width: 0; width: 100%; height: 32px; box-sizing: border-box;
+      flex: 1 1 0; min-width: 0; width: auto; height: 32px; box-sizing: border-box;
       font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700;
       letter-spacing: 0; text-align: center; padding: 0 0 3px;
       color: #111; background: transparent;
       border: none; border-bottom: 2px solid var(--border-strong); border-radius: 0; outline: none;
       transition: border-color 0.15s ease;
     }
-    /* Wider gap before a UPC-A section start (digits 2, 7, 12). A fixed margin,
-       so it never steals from the cells' equal shared width. */
-    .nfp-upc-cell--sep { margin-left: 13px; }
+    .nfp-upc-cell--lone {
+      flex: none; width: 100%; min-width: 0; max-width: none;
+    }
     .nfp-upc-cell::placeholder { color: var(--text-subtle); }
     .nfp-upc-cell:hover { border-bottom-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong)); }
     .nfp-upc-cell:focus { border-bottom-color: var(--primary); }
@@ -822,7 +873,7 @@
     .nfp-fi-header { display: flex; align-items: flex-start; justify-content: flex-start; gap: 8px; margin-bottom: 4px; min-width: 0; }
     .nfp-fi-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 0.95rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; color: var(--text); flex: 1 1 auto; min-width: 0; overflow-wrap: break-word; }
     .nfp-fi-title .nfp-edit {
-      font: inherit; letter-spacing: inherit; color: inherit; padding: 0 3px;
+      font: inherit; letter-spacing: inherit; color: inherit; padding: 0;
       overflow-wrap: inherit; white-space: normal;
     }
     .nfp-fi-title .nfp-edit:focus {
@@ -922,42 +973,40 @@
     html.dark .nfp-fi-add:hover .nfp-fi-add-sq { border-color: var(--primary-bright, var(--primary)); }
     html.dark .nfp-fi-add:hover .nfp-fi-add-label { color: var(--primary-bright, var(--primary)); }
     .nfp-fi-thumb-icon { border-radius: 50%; }
-    /* Identity strip — rounded-square product photo left of the headline,
-       description, price, and count thumbs. */
+    /* Identity strip — product title and description first (like every
+       module), then size photos in one row. The selected size is a bit
+       larger with a blue border; other sizes sit beside it, smaller. */
     .nfp-fi-group--identity {
       position: relative; isolation: isolate; padding: 14px 14px 18px;
-      display: flex; align-items: flex-start; gap: 14px;
+      display: flex; flex-direction: column; align-items: stretch; gap: 0;
     }
-    .nfp-fi-lead-photo {
-      flex: 0 0 112px; width: 112px; height: 112px; padding: 0; margin: 0;
-      border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
-      background: var(--surface-2); cursor: pointer; display: block; position: relative;
-    }
-    .nfp-fi-lead-photo img {
-      width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;
-    }
-    .nfp-fi-lead-photo:hover,
-    .nfp-fi-lead-photo:focus-visible { box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 40%, transparent); }
-    /* Pencil sits on the photo (top-left of the far-left square) — circle, not a tile. */
+    /* Pencil on the selected size photo — circle, not a tile. */
     .nfp-fi-lead-edit {
-      position: absolute; top: 6px; left: 6px; z-index: 3;
-      width: 28px; height: 28px; border-radius: 50%;
+      position: absolute; top: 4px; left: 4px; z-index: 3;
+      width: 22px; height: 22px; padding: 0; margin: 0; border: 0;
+      border-radius: 50%;
       display: inline-flex; align-items: center; justify-content: center;
-      background: rgba(0,0,0,0.55); color: #fff; pointer-events: none;
+      background: rgba(0,0,0,0.55); color: #fff; cursor: pointer;
       box-shadow: 0 1px 4px rgba(0,0,0,0.35);
     }
     .nfp-fi-lead-edit .material-symbols-outlined {
-      font-size: 16px !important; line-height: 1 !important;
+      font-size: 14px !important; line-height: 1 !important;
     }
-    .nfp-fi-lead-photo:hover .nfp-fi-lead-edit,
-    .nfp-fi-lead-photo:focus-visible .nfp-fi-lead-edit {
+    .nfp-fi-lead-edit:hover,
+    .nfp-fi-lead-edit:focus-visible {
       background: rgba(0,0,0,0.72);
     }
-    html.dark .nfp-fi-lead-photo { border-color: color-mix(in srgb, #fff 12%, var(--border)); }
     html.dark .nfp-fi-desc { color: var(--text-muted); }
-    .nfp-fi-copy { flex: 1 1 auto; min-width: 0; }
+    .nfp-fi-copy { min-width: 0; }
     .nfp-fi-group--identity .nfp-fi-header {
       margin-bottom: 6px; align-items: flex-start; gap: 10px; flex-wrap: nowrap;
+    }
+    .nfp-fi-group--identity .nfp-fi-title {
+      font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+      font-weight: var(--module-title-weight, 800);
+      font-size: var(--module-title-size, 1.2rem);
+      letter-spacing: -0.01em;
+      line-height: var(--module-title-lh, 1.16);
     }
     /* ⋯ + width (2×28px) float over the title row — keep the name clear. */
     html.header-float .nfp-fi-group--identity .nfp-fi-header { padding-right: 72px; }
@@ -968,6 +1017,21 @@
       width: 100%; max-width: none;
       text-wrap: pretty;
     }
+    .nfp-fi-group--identity .nfp-fi-header,
+    .nfp-fi-group--identity .nfp-fi-title,
+    .nfp-fi-group--identity .nfp-fi-details,
+    .nfp-fi-group--identity .nfp-fi-desc {
+      margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0;
+    }
+    .nfp-fi-group--identity .nfp-fi-title .nfp-edit,
+    .nfp-fi-group--identity .nfp-fi-desc .nfp-edit {
+      padding-left: 0; padding-right: 0;
+    }
+    .nfp-fi-group--identity .nfp-edit::after { left: 0; right: 0; }
+    html.header-float .nfp-fi-group--identity .nfp-fi-header,
+    html.header-float .nfp-fi-group--identity .nfp-fi-desc {
+      padding-right: 72px;
+    }
     .nfp-fi-desc .nfp-edit {
       display: block; width: 100%; box-sizing: border-box;
       font: inherit; color: inherit;
@@ -976,23 +1040,54 @@
       text-wrap: pretty;
     }
     .nfp-fi-price {
-      display: flex; align-items: baseline; gap: 2px; flex-wrap: wrap;
+      display: flex; align-items: baseline; justify-content: center; gap: 2px; flex-wrap: wrap;
       margin: 0 0 12px; font-size: 1.05rem; font-weight: 800; color: var(--text); letter-spacing: -0.01em;
+      text-align: center;
     }
     .nfp-fi-price .nfp-edit { font: inherit; font-weight: 800; letter-spacing: inherit; color: inherit; }
     .nfp-fi-price-size {
       margin-left: 8px; font-size: 0.68rem; font-weight: 600; color: var(--text-muted); letter-spacing: 0;
     }
+    .nfp-fi-group--identity .nfp-fi-price { margin-bottom: 0; }
     .nfp-fi-strip-photo--helix { background: color-mix(in srgb, var(--primary) 8%, var(--bg)); }
     .nfp-fi-strip-photo--helix .sc-bganim-canvas { z-index: 0; }
     .nfp-fi-strip-photo--helix.sc-bganim-live .sc-bganim-canvas { opacity: 1; }
     .nfp-fi-group--identity .nfp-fi-thumbs {
-      align-items: flex-start; flex-wrap: wrap; gap: 8px; row-gap: 10px;
+      justify-content: center; align-items: center; flex-wrap: wrap; gap: 10px; row-gap: 10px;
+      padding-bottom: 1.7rem;
+    }
+    /* Labels hang under the frames so the smaller photos and the + tile
+       center on the selected image, not on the whole column. */
+    .nfp-fi-group--identity .nfp-fi-thumb,
+    .nfp-fi-group--identity .nfp-fi-add {
+      position: relative;
+    }
+    .nfp-fi-group--identity .nfp-fi-thumb-label,
+    .nfp-fi-group--identity .nfp-fi-add-label {
+      position: absolute; top: calc(100% + 3px); left: 50%;
+      transform: translateX(-50%);
+    }
+    .nfp-fi-group--identity .nfp-fi-thumb.active {
+      width: 76px;
+    }
+    .nfp-fi-group--identity .nfp-fi-thumb.active .nfp-fi-thumb-frame,
+    .nfp-fi-group--identity .nfp-fi-thumb.active .nfp-fi-thumb-img {
+      width: 68px; height: 68px;
+    }
+    .nfp-fi-group--identity .nfp-fi-thumb.active .nfp-fi-thumb-img {
+      border-radius: 12px;
+    }
+    .nfp-fi-group--identity .nfp-fi-thumb.active .nfp-fi-thumb-icon .material-symbols-outlined {
+      font-size: 28px !important;
+    }
+    .nfp-fi-group--identity .nfp-fi-thumb--primary.nfp-hero-drag .nfp-fi-thumb-img {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 40%, transparent);
     }
     .nfp-fi-thumb-upc {
       display: flex; align-items: flex-start; gap: 8px; flex: 0 0 auto;
     }
-    .nfp-fi-group--identity .nfp-fi-add { align-self: flex-start; flex-shrink: 0; }
+    .nfp-fi-group--identity .nfp-fi-add { align-self: center; flex-shrink: 0; }
     /* Compact category — sits under the barcode, same width as the UPC card.
        Stack is centered in the details row so the barcode card and category
        read as a centered pair. */
@@ -1037,18 +1132,26 @@
       flex-shrink: 0; box-sizing: border-box;
     }
     .nfp-fi-upc .nfp-upc-entry {
-      padding: 6px 8px 5px; gap: 4px; border-radius: 6px;
-      background: color-mix(in srgb, var(--surface) 92%, transparent);
+      padding: 7px 8px 5px; gap: 0; border-radius: 6px;
+      background: #fff;
     }
-    .nfp-fi-upc .nfp-upc-barcode { height: 24px; flex-shrink: 0; }
-    .nfp-fi-upc .nfp-upc-cells { gap: 2px; width: 100%; justify-content: center; }
+    .nfp-fi-upc .nfp-upc-barcode { height: 44px; flex-shrink: 0; margin: 0 1.2em -8px; }
+    .nfp-fi-upc .nfp-upc-cells {
+      display: grid;
+      grid-template-columns: 1.2em minmax(0, 1fr) 0.9em minmax(0, 1fr) 1.2em;
+      width: 100%;
+    }
+    .nfp-fi-upc .nfp-upc-gutter { width: auto; flex: none; }
+    .nfp-fi-upc .nfp-upc-group { gap: 1px; padding: 0 8%; }
     .nfp-fi-upc .nfp-upc-cell {
-      flex: 0 0 14px; width: 14px; min-width: 14px; max-width: 14px;
+      flex: 1 1 0; width: auto; min-width: 0; max-width: none;
       height: 20px; font-size: 0.78rem; padding: 0 0 1px; border-bottom-width: 1px;
     }
-    .nfp-fi-upc .nfp-upc-cell--sep { margin-left: 6px; }
+    .nfp-fi-upc .nfp-upc-cell--lone {
+      flex: none; width: 100%; min-width: 0; max-width: none;
+    }
     html.dark .nfp-fi-upc .nfp-upc-entry:not(.nfp-upc-entry--onphoto) {
-      background: color-mix(in srgb, var(--surface-2) 92%, transparent);
+      background: #fff;
     }
 
     /* Pack Formats — an additional section (below Product Images) for products
@@ -1375,29 +1478,22 @@
     html.dark .nfp-rcol-name .nfp-edit:focus { background: #fff; color: #111; }
     html.dark .nfp-edit-empty { color: var(--text-subtle); }
 
-    /* Standalone barcodes on the panel surface flip to light bars on a dark
-       card — the segmented UPC-A entry (card, digit cells + faded preview), the
-       standalone UPC chip, and the compare-view barcode cards. The on-photo
-       (`--onphoto`) barcode cards stay light since they float on the photo. */
+    /* Printed UPC-A stays a white label with black bars in dark mode — same
+       as a real retail sticker. Compare-view cards follow the same rule. */
     html.dark .nfp-upc-entry:not(.nfp-upc-entry--onphoto) {
-      background: var(--surface-2); border-color: #111;
+      background: #fff; border-color: #111;
       box-shadow: 0 1px 2px rgba(0,0,0,0.4);
     }
-    html.dark .nfp-upc-entry:not(.nfp-upc-entry--onphoto) .nfp-upc-bc { fill: var(--text); }
-    html.dark .nfp-upc-entry:not(.nfp-upc-entry--onphoto) .nfp-upc-cell { color: var(--text); }
-    html.dark .nfp-upc-entry:not(.nfp-upc-entry--onphoto) .nfp-upc-preview {
-      background-image: repeating-linear-gradient(90deg,
-        var(--text-muted) 0 2px, transparent 2px 6px,
-        var(--text-muted) 6px 8px, transparent 8px 12px,
-        var(--text-muted) 12px 15px, transparent 15px 18px);
-    }
+    html.dark .nfp-upc-entry:not(.nfp-upc-entry--onphoto) .nfp-upc-bc { fill: #111; }
+    html.dark .nfp-upc-entry:not(.nfp-upc-entry--onphoto) .nfp-upc-cell { color: #111; }
     html.dark .nfp-upc-chip .nfp-barcode-svg rect { fill: var(--text); }
     html.dark .nfp-cmp-bc-card {
       background: var(--surface-2); border-color: var(--border);
       box-shadow: 0 1px 2px rgba(0,0,0,0.4);
     }
-    html.dark .nfp-cmp-bc .nfp-upc-bc { fill: var(--text); }
-    html.dark .nfp-cmp-bc-num { color: var(--text); }
+    html.dark .nfp-cmp-bc-card { background: #fff; }
+    html.dark .nfp-cmp-bc .nfp-upc-bc { fill: #111; }
+    html.dark .nfp-cmp-bc-num { color: #111; }
 
     /* ── Product Insights row ──────────────────────────────────────────────
        A summary strip appended below the product image + Nutrition Facts
@@ -1408,16 +1504,48 @@
     .nfp-ins { background: transparent; border-top: none; padding: 16px 14px 22px; display: flex; flex-direction: column; gap: 14px; }
 
     /* NEXT STEP banner — a soft primary-tinted panel (not the dark hero).
-       Claimed products that qualify show the Non-UPF shield lockup; a product
-       opened from Portfolio → Discovered uses the same chrome with a bookmark
-       mark and the claim copy. No boxed backdrop behind the icon. */
+       Copy follows the portfolio action that opened the page. Progress is
+       five small dots — no labelled stepper. No boxed backdrop behind the icon. */
     .nfp-ins-next {
-      position: relative; display: flex; flex-wrap: wrap; align-items: center;
-      gap: 12px 16px; padding: 16px 18px; border-radius: 16px;
+      position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr);
+      gap: 10px 12px; align-items: start; justify-items: stretch;
+      padding: 16px 18px; border-radius: 16px;
       background: var(--primary-soft); border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
     }
+    .nfp-ins-next-dots {
+      grid-column: 1 / -1; display: flex; align-items: center; justify-content: center;
+      gap: 7px; padding: 0 0 2px; margin: 0;
+    }
+    .nfp-ins-dot {
+      width: 7px; height: 7px; padding: 0; border-radius: 50%;
+      border: 1.5px solid color-mix(in srgb, var(--primary) 38%, var(--border));
+      background: transparent; box-shadow: none;
+      cursor: pointer; appearance: none; -webkit-appearance: none;
+      transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, width 0.15s ease, height 0.15s ease;
+    }
+    .nfp-ins-dot.is-done {
+      background: color-mix(in srgb, var(--primary) 55%, transparent);
+      border-color: color-mix(in srgb, var(--primary) 55%, transparent);
+    }
+    .nfp-ins-dot.is-current {
+      width: 9px; height: 9px;
+      background: var(--primary); border-color: var(--primary);
+    }
+    .nfp-ins-dot:hover { transform: scale(1.2); }
+    .nfp-ins-dot:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+    html.dark .nfp-ins-dot {
+      border-color: color-mix(in srgb, var(--primary-bright, var(--primary)) 45%, var(--border));
+    }
+    html.dark .nfp-ins-dot.is-done {
+      background: color-mix(in srgb, var(--primary-bright, var(--primary)) 50%, transparent);
+      border-color: color-mix(in srgb, var(--primary-bright, var(--primary)) 50%, transparent);
+    }
+    html.dark .nfp-ins-dot.is-current {
+      background: var(--primary-bright, var(--primary));
+      border-color: var(--primary-bright, var(--primary));
+    }
     .nfp-ins-next-ic {
-      align-self: flex-start; flex-shrink: 0; padding-top: 2px;
+      grid-column: 1; align-self: flex-start; flex-shrink: 0; padding-top: 2px;
       display: inline-flex; align-items: center; justify-content: center;
       background: none; box-shadow: none;
     }
@@ -1427,39 +1555,33 @@
       font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 48;
     }
     html.dark .nfp-ins-next-ic .material-symbols-outlined { color: var(--primary-bright, var(--primary)); }
-    .nfp-ins-next-body { flex: 1 1 240px; min-width: 0; }
+    .nfp-ins-next-body { grid-column: 2; min-width: 0; }
     .nfp-ins-next-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.15rem; font-weight: 700; color: var(--text); line-height: 1.2; }
     .nfp-ins-next-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.45; margin-top: 3px; max-width: none; }
     .nfp-ins-next-btn {
-      flex: 0 0 auto; margin-left: auto; align-self: center; white-space: nowrap;
-      display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+      grid-column: 1 / -1; margin: 0; width: 100%;
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer;
       border: none; border-radius: 999px; padding: 10px 18px;
       font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 0.82rem; font-weight: 700;
       background: var(--primary); color: #fff; text-decoration: none; transition: filter 0.15s;
       appearance: none; -webkit-appearance: none;
+      white-space: normal; text-align: center; line-height: 1.25;
+      height: auto; min-height: 40px;
     }
     .nfp-ins-next-btn:hover { filter: brightness(1.07); text-decoration: none; }
     .nfp-ins-next-btn .material-symbols-outlined {
       font-size: 18px !important;
       font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
     }
-    .nfp-ins-next--claim .nfp-ins-next-btn {
-      white-space: normal; text-align: center; line-height: 1.25;
-      height: auto; min-height: 40px; padding: 8px 16px;
-    }
     /* Shield CTA under the product photo — stack in the narrower media column
        so title, copy and button all fit, and never grow into the leftover
        column height (that read as a gap under the image). */
     .nfp-sp-media .nfp-ins-next {
-      flex: 0 0 auto; flex-direction: column; align-items: stretch;
-      justify-content: flex-start; width: auto; box-sizing: border-box;
+      flex: 0 0 auto; width: auto; box-sizing: border-box;
       margin: 10px var(--nfp-media-inline) 12px; padding: 12px 14px;
       border-radius: 0;
     }
-    .nfp-sp-media .nfp-ins-next-body { flex: 0 0 auto; }
-    .nfp-sp-media .nfp-ins-next-btn {
-      margin-left: 0; width: 100%; justify-content: center;
-    }
+    .nfp-sp-media .nfp-ins-next-btn { width: 100%; justify-content: center; }
 
     /* Score row — same .dash-claim band as overview's top scorecards. */
     .nfp-ins .dash-claim {
@@ -1475,7 +1597,7 @@
       .nfp-ins .dash-claim-divider { display: none; }
     }
 
-    /* Ingredient analysis — list + Parsed / Codes / Nutrients / Wise Code AI accordions. */
+    /* Ingredient analysis — always-open list + Parsed / Codes / Nutrients / Wise Code AI accordions. */
     .nfp-ia { display: flex; flex-direction: column; gap: 8px; padding: 0 2px 8px; min-width: 0; }
     .nfp-ia-sec {
       border: 1px solid var(--border); border-radius: 12px; background: var(--surface);
@@ -1664,44 +1786,20 @@
     .nfp-ia-analyze .material-symbols-outlined,
     .nfp-save-btn .material-symbols-outlined { font-size: 18px !important; }
 
-    /* Progress module (shared .vf-progress-pane / vfp-* in wise.css). Always
-       visible on this page — override the default hidden state. */
-    #ap-progress { flex: 0 0 288px; width: 288px; align-self: center; height: calc(100% - 30px); max-height: calc(100% - 30px); min-height: 0; display: flex; }
-    /* Progress is a supporting drawer under Product Details. Restate the
-       shared sticky inset at #id so this page's align-self:stretch cannot
-       flatten it back into a same-plane column. */
     #modules-row #nfp-panel.sticky-mod.is-sticky { z-index: 1; }
-    #modules-row #ap-progress.vf-progress-pane.sticky-mod.is-sticky {
+    #modules-row #ia-panel.sticky-mod.is-sticky {
       z-index: 0;
-      height: calc(100% - 30px);
-      max-height: calc(100% - 30px);
-      align-self: center;
-      margin-left: calc(-1 * var(--sticky-nested-tuck) - var(--modules-gap, 8px));
-      padding-left: var(--sticky-nested-pad);
+      height: calc(100% - 30px) !important;
+      max-height: calc(100% - 30px) !important;
+      align-self: center !important;
+      margin-left: calc(-1 * var(--sticky-nested-tuck) - var(--r-md, 16px) - var(--modules-gap, 8px)) !important;
+      padding-left: calc(var(--sticky-nested-face-pad) + var(--r-md, 16px)) !important;
+      border-left: 0 !important;
+      border-top-left-radius: 0 !important;
+      border-bottom-left-radius: 0 !important;
+      box-shadow: none !important;
+      background: var(--surface) !important;
     }
-    /* In-progress chrome (--vf-ink on step subs / footer) is brand blue.
-       Completed steps and the health bar come from wise.css (--sec-green).
-       --vf-ink is only defined for the verification page's body, so set it
-       here so "In progress" labels stay visible. */
-    #ap-progress { --vf-ink: var(--primary); }
-    html.dark #ap-progress { --vf-ink: #93C5FD; }
-    /* Width changer (lives in the ⋯ menu — see add-product-flow.js). The
-       expanded module rests at one of four tiers; `panel-fill` is the universal
-       grow rule injected by pane-width.js. These only apply while EXPANDED —
-       the collapsed rail rule below (:has(.is-min)) and the collapse handler
-       (which strips these classes) always win. */
-    #ap-progress.panel-wide { flex: 0 0 360px; width: 360px; }
-    #ap-progress.panel-triple { flex: 0 0 440px; width: 440px; }
-    /* Collapsed: shrink to a slim rail showing just the % ring + step numbers
-       (the shared .vf-progress-pane:has() rule is outranked by the #id above).
-       Also wins over the width-tier classes above (same specificity, declared
-       later) so a widened module still collapses to the rail. */
-    #ap-progress:has(.vfp-inner.is-min) { flex: 0 0 114px; width: 114px; }
-    #ap-progress .vfp-inner { border-radius: 16px; box-shadow: var(--shadow-card); }
-    .vfp-step-done-icon { color: var(--sec-green); }
-    .vfp-field--err .material-symbols-outlined { color: var(--sec-red); }
-    .vfp-field--err .vfp-field-val { color: var(--sec-red); }
-    .vfp-step--err .vfp-step-num { background: var(--sec-red); color: #fff; }
 
     /* Headerless (header-float) mode collapses the topbar and pins the width +
        ⋯ controls over the top-right of the card — but the welcome screen is an
@@ -1715,7 +1813,7 @@
        Mirrors the shared treatment (wise.css). */
     html.full-bleed .ap-chat,
     html.full-bleed:not(.fb-chat-only) .nfp-inner,
-    html.full-bleed:not(.fb-chat-only) #ap-progress .vfp-inner {
+    html.full-bleed:not(.fb-chat-only) #ia-panel {
       border-top: 0; border-bottom: 0; border-radius: 0; box-shadow: none; animation: none;
     }
     html.full-bleed:not(.fb-chat-only) body { padding-top: 0; padding-bottom: 0; }
@@ -1725,9 +1823,6 @@
     .ap-chat.panel-wide { flex-basis: 560px; width: 560px; }
     .ap-chat.panel-triple { flex-basis: 720px; width: 720px; }
 
-    @media (max-width: 1200px) {
-      #ap-progress { flex-basis: 250px; width: 250px; }
-    }
     /* Below this the chat has to give ground too, or Product Details is left
        too narrow to read the label in. */
     @media (max-width: 1100px) {
@@ -1754,7 +1849,7 @@
       </div>
     </div>
 
-    <!-- Chat + NFP + Progress share the shell's "modules" grid area -->
+    <!-- Chat + Product Details share the shell's "modules" grid area -->
     <div id="modules-row">
       <!-- Center chat -->
       <main class="ap-chat">
@@ -1966,7 +2061,7 @@
       </main>
 
       <!-- Product Details (NFP) module -->
-      <aside id="nfp-panel" class="panel-fill" aria-label="Product Details">
+      <aside id="nfp-panel" data-no-fill-default aria-label="Product Details">
         <div class="nfp-inner">
           <div class="nfp-panel-header">
             <div class="nfp-banner-pattern" aria-hidden="true">
@@ -1982,22 +2077,34 @@
                 <button type="button" class="panel-more-btn" id="nfp-menu-btn" title="Module options" aria-haspopup="menu" aria-expanded="false" aria-controls="nfp-menu" aria-label="Module options"><span class="material-symbols-outlined">more_vert</span></button>
                 <div class="topbar-popover hidden" id="nfp-menu" role="menu"></div>
               </div>
-              <button type="button" class="panel-width-toggle-btn is-on is-width-fill" id="nfp-width" aria-pressed="true" title="Width (fill) — tap to reset" aria-label="Product Details width"><span class="material-symbols-outlined">width_full</span></button>
+              <button type="button" class="panel-width-toggle-btn" id="nfp-width" aria-pressed="false" title="Width (single)" aria-label="Product Details width"><span class="material-symbols-outlined">width_normal</span></button>
             </div>
           </div>
           <div class="nfp-scroll-body" id="nfp-body"><!-- rendered by add-product-flow.js --></div>
           <div class="nfp-foot">
-            <div class="nfp-foot-status" id="nfp-save-status"><span class="material-symbols-outlined">info</span><span>Draft — not saved yet</span></div>
+            <div class="nfp-foot-status" id="nfp-save-status" hidden></div>
             <button type="button" class="nfp-save-btn" id="nfp-save-btn" disabled><span class="material-symbols-outlined">save</span>Save to Portfolio</button>
           </div>
         </div>
       </aside>
 
-      <!-- Right progress module (shared vf-progress-pane / vfp-*). Defaults to a
-           Sticky drawer (tucked behind Product Details, one level deeper) like
-           every progress tracker app-wide; the ⋯ menu carries the Sticky toggle
-           and a "Remove panel" option. -->
-      <aside id="ap-progress" class="vf-progress-pane" data-pr-min="200" aria-label="Add product progress"><!-- rendered by add-product-flow.js --></aside>
+      <!-- Ingredients Analyzer — nested sticky drawer to the right of Product Details. -->
+      <aside id="ia-panel" class="ia-pane panel-wide" data-no-fill-default data-pr-min="240" aria-label="Ingredient List">
+        <div class="wch-head ia-panel-header">
+          <span class="hc-mail-head-text">
+            <span class="wch-head-title">Ingredient List</span>
+          </span>
+          <div class="wch-controls panel-controls">
+            <div class="panel-more-wrap" id="ia-menu-wrap" data-sticky-menu="1">
+              <button type="button" class="panel-more-btn" id="ia-menu-btn" title="Module options" aria-haspopup="menu" aria-expanded="false" aria-controls="ia-menu" aria-label="Module options"><span class="material-symbols-outlined">more_vert</span></button>
+              <div class="topbar-popover hidden" id="ia-menu" role="menu"></div>
+            </div>
+            <button type="button" class="panel-width-toggle-btn is-on" id="ia-width" aria-pressed="true" title="Width (double) — tap to widen" aria-label="Ingredient List width"><span class="material-symbols-outlined">width_wide</span></button>
+          </div>
+        </div>
+        <div class="nfp-scroll-body" id="ia-body"><!-- rendered by add-product-flow.js --></div>
+      </aside>
+
     </div><!-- /#modules-row -->
   </div>
 
@@ -2194,8 +2301,8 @@
        ask panel is IDENTICAL to wiseai.html's. Must load before add-product-flow.js. -->
   <script src="../js/ask-catalog.js"></script>
   <!-- Same Product Details template as view-product.html: photo is a rounded
-       square left of the sizes headline; Nutrition Facts and ingredients sit
-       as two columns below. -->
+       square left of the sizes headline. Ingredients Analyzer is a separate
+       module to the right of Product Details. -->
   <script>window.WISE_HERO_BRAND = true;</script>
   <script src="../js/reformulation-store.js"></script>
   <script src="../js/add-product-flow.js"></script>

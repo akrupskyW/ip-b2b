@@ -109,17 +109,17 @@
     .ar-audit.panel-triple { min-width: 900px; }
 
     /* ── Module header — scrolls with the board (not pinned) ── */
-    .ar-head { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 22px 26px 14px; flex-shrink: 0; }
+    .ar-head { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: var(--module-head-pad-t) var(--module-head-ctrl-inset) var(--module-head-pad-b) 26px; flex-shrink: 0; }
     .ar-head-titles { min-width: 0; flex: 1 1 auto; }
     .ar-head-title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .ar-head-title {
       font-family: var(--module-title-family, 'WISE Digits', 'Noto Serif', Georgia, serif);
       font-weight: var(--module-title-weight, 800);
       font-size: var(--module-title-size, 1.2rem);
-      color: var(--text); margin: 0; letter-spacing: -.01em; line-height: 1.15;
+      color: var(--text); margin: 0; letter-spacing: -.01em; line-height: var(--module-title-lh, 1.16);
     }
-    .ar-head-meta { font-size: 11.5px; color: var(--text-muted); margin: 3px 0 0; line-height: 1.3; }
-    .ar-head-controls { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .ar-head-meta { font-size: var(--module-sub-size, 0.78125rem); color: var(--text-muted); margin: var(--module-sub-gap, 3px) 0 0; line-height: var(--module-sub-lh, 1.35); }
+    .ar-head-controls { display: flex; align-items: center; gap: var(--module-head-ctrl-gap, 2px); flex-shrink: 0; }
     .ar-audit .panel-more-wrap { position: relative; }
 
     .ar-body { flex: 0 0 auto; overflow: visible; padding: 4px 26px 22px; }
@@ -1584,7 +1584,7 @@ const PAGES = [
   { title: 'Progress Log',             path: 'progress-log.html' },
   { title: 'Add Catalog',              path: 'add-catalog.html' },
   { title: 'Page Gallery',             path: 'page-gallery.html' },
-  { title: 'Help',                     path: 'help.html' },
+  { title: 'Help',                     path: 'support.html' },
   { title: 'Docs',                     path: 'docs.html' },
   { title: 'Product Vision Deck',      path: 'app-vision-deck.html' },
   { title: 'Accessibility Review (this page)', path: 'accessibility-review.html' },

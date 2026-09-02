@@ -255,14 +255,23 @@
      WPaneWidth.defaultChatTier() in js/pane-width.js. */
   --chat-pane-w: 380px;
 
-  /* Canonical right-module headline — the display title of whatever module sits
-     to the right of the chat. Identical size/weight/face + top-left inset on
-     every page. */
+  /* Canonical module headline — every main module and the sticky drawer to
+     its right share this size/weight/face, the same title / subtitle inset,
+     and the same ⋯ / width cluster inset so adjacent headers sit on one
+     horizontal line. */
   --module-title-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
   --module-title-size: 1.2rem;
   --module-title-weight: 800;
+  --module-title-lh: 1.16;
   --module-head-pad-t: 26px;
+  --module-head-pad-b: 14px;
   --module-head-pad-x: 40px;
+  --module-head-pad-l: 20px;
+  --module-head-ctrl-inset: 12px;
+  --module-head-ctrl-gap: 2px;
+  --module-sub-size: 0.78125rem;
+  --module-sub-lh: 1.35;
+  --module-sub-gap: 3px;
 
   /* Full monospace — code, paths, UPCs, barcodes, token names. WISE Digits
      (above) uses the same DM Mono face for 0–9 only; use this for whole strings. */
@@ -953,6 +962,7 @@ html.app-search-on #modules-row .vf-progress-pane.sticky-mod.is-sticky,
 html.app-search-on #modules-row .gv-progress-pane.sticky-mod.is-sticky,
 html.app-search-on #modules-row #help-contact.sticky-mod.is-sticky,
 html.app-search-on #modules-row #nfp-panel.sticky-mod.is-sticky,
+html.app-search-on #modules-row #ia-panel.sticky-mod.is-sticky,
 html.app-search-on #modules-row #ap-progress.vf-progress-pane.sticky-mod.is-sticky,
 html.app-search-on #modules-row:not(.is-picking) .rf-studio.sticky-mod.is-sticky,
 html.app-search-on #modules-row:not(.is-picking) .rf-dash.sticky-mod.is-sticky,
@@ -979,6 +989,7 @@ html:not(.app-search-on) #modules-row .sticky-mod,
 html:not(.app-search-on) #modules-row .sticky-mod.is-sticky,
 html:not(.app-search-on) #modules-row #agent-main,
 html:not(.app-search-on) #modules-row #nfp-panel,
+html:not(.app-search-on) #modules-row #ia-panel,
 html:not(.app-search-on) #modules-row #ap-progress,
 html:not(.app-search-on) #modules-row #vf-progress-pane,
 html:not(.app-search-on) #modules-row #gv-progress-pane,
@@ -2474,6 +2485,7 @@ html:not(.app-search-on) #modules-row > .sticky-mod,
 html:not(.app-search-on) #modules-row > .vf-progress-pane,
 html:not(.app-search-on) #modules-row > .gv-progress-pane,
 html:not(.app-search-on) #modules-row > #ap-progress,
+html:not(.app-search-on) #modules-row > #ia-panel,
 html:not(.app-search-on) #modules-row > #nfp-panel,
 html:not(.app-search-on) #modules-row > #agent-main,
 html:not(.app-search-on) #modules-row > #help-contact,
@@ -2666,6 +2678,7 @@ html:not(.app-search-on) #modules-row > .wch-sidebar {
 #modules-row .vf-progress-pane.sticky-mod.is-sticky,
 #modules-row .gv-progress-pane.sticky-mod.is-sticky,
 #modules-row #ap-progress.sticky-mod.is-sticky,
+#modules-row #ia-panel.sticky-mod.is-sticky,
 #modules-row #help-contact.sticky-mod.is-sticky,
 #modules-row #wa-report.wa-pane.is-open.is-sticky,
 #modules-row #rf-report.sticky-mod.is-sticky,
@@ -2684,6 +2697,7 @@ html:not(.app-search-on) #modules-row > .wch-sidebar {
    through the covering module's 16px radius. Tuck an extra radius deep so
    that face color, not the page, is what sits in the corner. */
 #modules-row #help-contact.sticky-mod.is-sticky,
+#modules-row #ia-panel.sticky-mod.is-sticky,
 #modules-row #wa-report.wa-pane.is-open.is-sticky,
 #modules-row #rf-report.sticky-mod.is-sticky,
 #modules-row #pf-report-panel.sticky-mod.is-sticky,
@@ -2701,6 +2715,8 @@ html:not(.app-search-on) #modules-row > .wch-sidebar {
 #modules-row #help-contact.sticky-mod.is-sticky > .wch-head,
 #modules-row #help-contact.sticky-mod.is-sticky > .hc-mail-body,
 #modules-row #help-contact.sticky-mod.is-sticky > .hc-mail-foot,
+#modules-row #ia-panel.sticky-mod.is-sticky > .wch-head,
+#modules-row #ia-panel.sticky-mod.is-sticky > #ia-body,
 #modules-row:not(.is-picking) .rf-dash.sticky-mod.is-sticky > .rf-head,
 #modules-row:not(.is-picking) .rf-dash.sticky-mod.is-sticky > .rf-body {
   background: var(--surface) !important;
@@ -2716,7 +2732,8 @@ html:not(.app-search-on) #modules-row > .wch-sidebar {
 /* Contact is a next-level drawer off Help (same tuck as #wa-report off Output):
    paper surface, no left seam, square chat-facing corners. Page-level
    `#help-contact` card rules must not win and turn it back into a peer module. */
-#modules-row #help-contact.sticky-mod.is-sticky {
+#modules-row #help-contact.sticky-mod.is-sticky,
+#modules-row #ia-panel.sticky-mod.is-sticky {
   margin-left: calc(-1 * var(--sticky-nested-tuck) - var(--r-md, 16px) - var(--modules-gap, 8px)) !important;
   padding-left: calc(var(--sticky-nested-face-pad) + var(--r-md, 16px)) !important;
   border-left: 0 !important;
@@ -2733,15 +2750,20 @@ html:not(.app-search-on) #modules-row > .wch-sidebar {
 #modules-row:has(#help-contact) #agent-main.sticky-mod.is-sticky {
   z-index: 1;
 }
-/* Menu-open: lift just enough to clear the left neighbour so the popover isn't
-   clipped, but stay under the chat (z-index 3). */
+/* Nested drawers stay under their parent when the ⋮ is open. The menu is
+   portaled to body (js/popover-layer.js), so the card must not lift — lifting
+   Contact to 2 painted the whole drawer over Help. Beats the generic
+   `.sticky-mod:has(.is-open) { z-index: 1 }` which ties Help and then the
+   later-in-DOM drawer wins. */
 #modules-row .vf-progress-pane.sticky-mod.is-sticky:has(.panel-more-btn.is-open),
 #modules-row .vf-progress-pane.sticky-mod.is-sticky:has(.topbar-popover:not(.hidden)),
 #modules-row .gv-progress-pane.sticky-mod.is-sticky:has(.panel-more-btn.is-open),
 #modules-row .gv-progress-pane.sticky-mod.is-sticky:has(.topbar-popover:not(.hidden)),
 #modules-row #help-contact.sticky-mod.is-sticky:has(.panel-more-btn.is-open),
-#modules-row #help-contact.sticky-mod.is-sticky:has(.topbar-popover:not(.hidden)) {
-  z-index: 2;
+#modules-row #help-contact.sticky-mod.is-sticky:has(.topbar-popover:not(.hidden)),
+#modules-row #ia-panel.sticky-mod.is-sticky:has(.panel-more-btn.is-open),
+#modules-row #ia-panel.sticky-mod.is-sticky:has(.topbar-popover:not(.hidden)) {
+  z-index: 0;
 }
 
 /* Restore tab left behind after a progress module's "Remove panel" — a slim
@@ -5185,6 +5207,16 @@ html.header-float .notif-panel-header .panel-controls {
   margin: 0 !important;
   z-index: 51;
   pointer-events: auto;
+}
+/* Product Details in header-float: the identity name is the module title.
+   Top-align ⋯ / width with that first line so a wrapping name cannot drop
+   the icons below Ingredient List (and every other masthead). */
+html.header-float #nfp-panel .nfp-panel-header .panel-controls {
+  top: var(--module-head-pad-t);
+  right: var(--module-head-ctrl-inset);
+}
+html.header-float #nfp-panel .nfp-fi-group--identity {
+  padding-top: var(--module-head-pad-t);
 }
 /* Banner chrome is gone in header-float — drop the white-on-blue button
    colors so the ⋯ / width icons read on the module surface. */
@@ -7900,7 +7932,7 @@ html.dark .sc-trust-badge .material-symbols-outlined { color: var(--primary-brig
    so the inherited 1.6 chat leading doesn't pad the stamp like a blank line. */
 .sc-line-meta {
   display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px;
-  margin-top: 1px; margin-bottom: 4px; line-height: 1.2;
+  margin-top: 10px; margin-bottom: 4px; line-height: 1.2;
 }
 .sc-line-you .sc-line-meta { justify-content: flex-start; }
 .sc-line-time { font-size: 0.625rem; font-weight: 500; letter-spacing: 0.02em;
@@ -12238,11 +12270,12 @@ body[data-nav-id="verification"] { padding-left: 12px; }
 html.dark .vf-back:hover { background: rgba(255, 255, 255, 0.06); }
 .vf-back:focus-visible { outline: 2px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
 .vf-head-title {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
-  font-size: 1.2rem;
-  font-weight: 800;
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+  font-size: var(--module-title-size, 1.2rem);
+  font-weight: var(--module-title-weight, 800);
   color: var(--text);
-  line-height: 1.15;
+  line-height: var(--module-title-lh, 1.16);
+  letter-spacing: -0.01em;
   margin: 0;
 }
 
@@ -12548,16 +12581,28 @@ html.dark .vf-stat--verified .vf-stat-label .material-symbols-outlined { color: 
 }
 .vfp-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
-  padding: 14px;
+  padding: var(--module-head-pad-t) var(--module-head-ctrl-inset) var(--module-head-pad-b) var(--module-head-pad-l);
   flex-shrink: 0;
   border-bottom: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface-2) 65%, transparent);
 }
 .vfp-header-text { flex: 1; min-width: 0; }
-.vfp-title { font-size: 0.86rem; font-weight: 700; color: var(--text); line-height: 1.2; }
-.vfp-subtitle { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+.vfp-title {
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+  font-size: var(--module-title-size, 1.2rem);
+  font-weight: var(--module-title-weight, 800);
+  letter-spacing: -0.01em;
+  color: var(--text);
+  line-height: var(--module-title-lh, 1.16);
+}
+.vfp-subtitle {
+  font-size: var(--module-sub-size, 0.78125rem);
+  line-height: var(--module-sub-lh, 1.35);
+  color: var(--text-muted);
+  margin-top: var(--module-sub-gap, 3px);
+}
 
 .vfp-progress { padding: 12px 14px 8px; flex-shrink: 0; }
 .vfp-progress-head {
@@ -13255,11 +13300,16 @@ body[data-nav-id="gras-verification"] { padding-left: 12px; }
 html.dark .gv-back:hover { background: rgba(255, 255, 255, 0.06); }
 .gv-back:focus-visible { outline: 2px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
 .gv-head-title {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
-  font-size: 1.2rem; font-weight: 800; color: var(--text);
-  line-height: 1.15; margin: 0;
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+  font-size: var(--module-title-size, 1.2rem); font-weight: var(--module-title-weight, 800); color: var(--text);
+  line-height: var(--module-title-lh, 1.16); letter-spacing: -0.01em; margin: 0;
 }
-.gv-head-meta { font-size: 0.78rem; color: var(--text-muted); margin: 4px 0 0; }
+.gv-head-meta {
+  font-size: var(--module-sub-size, 0.78125rem);
+  line-height: var(--module-sub-lh, 1.35);
+  color: var(--text-muted);
+  margin: var(--module-sub-gap, 3px) 0 0;
+}
 
 /* ---------- Toolbar ---------- */
 .gv-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 18px 0 16px; }
@@ -13665,12 +13715,26 @@ html.dark .gv-input { background: rgba(255,255,255,0.05); border-color: rgba(255
   background: var(--surface); overflow: hidden; box-shadow: var(--shadow-1);
 }
 .gvp-header {
-  display: flex; align-items: center; gap: 10px; padding: 14px; flex-shrink: 0;
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: var(--module-head-pad-t) var(--module-head-ctrl-inset) var(--module-head-pad-b) var(--module-head-pad-l);
+  flex-shrink: 0;
   border-bottom: 1px solid var(--border); background: color-mix(in srgb, var(--surface-2) 65%, transparent);
 }
 .gvp-header-text { flex: 1; min-width: 0; }
-.gvp-title { font-size: 0.86rem; font-weight: 700; color: var(--text); line-height: 1.2; }
-.gvp-subtitle { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+.gvp-title {
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+  font-size: var(--module-title-size, 1.2rem);
+  font-weight: var(--module-title-weight, 800);
+  letter-spacing: -0.01em;
+  color: var(--text);
+  line-height: var(--module-title-lh, 1.16);
+}
+.gvp-subtitle {
+  font-size: var(--module-sub-size, 0.78125rem);
+  line-height: var(--module-sub-lh, 1.35);
+  color: var(--text-muted);
+  margin-top: var(--module-sub-gap, 3px);
+}
 
 .gvp-progress { padding: 12px 14px 8px; flex-shrink: 0; }
 .gvp-progress-head { display: flex; align-items: center; justify-content: space-between; font-size: 0.72rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
@@ -14336,11 +14400,92 @@ body[data-nav-id="marketing-assets"] #agent-main-header .panel-controls,
 body[data-nav-id="help"] #agent-main-header .panel-controls,
 body[data-nav-id="team"] #agent-main-header .panel-controls {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: var(--module-head-pad-t, 26px);
+  right: var(--module-head-ctrl-inset, 12px);
   margin: 0 !important;
   z-index: 51;
   pointer-events: auto;
+}
+
+/* Module header rhythm — titles, the line under them, and the ⋯ / width
+   cluster sit on the same horizontal lines across every main module and the
+   sticky drawer to its right. Rail-collapsed History / Turns keep their own
+   4px padding (!important in chat-history.js). Brand-banner headers
+   (.nfp-panel-header) and the 60px chat topbar stay on --panel-header-h. */
+#modules-row :is(
+  .wch-head,
+  .wa-pane-top,
+  .rf-head,
+  .ar-head,
+  .pl-head,
+  .sa-panel-head,
+  .vfp-header,
+  .gvp-header
+) {
+  display: flex;
+  align-items: flex-start;
+  box-sizing: border-box;
+  padding-top: var(--module-head-pad-t);
+  padding-right: var(--module-head-ctrl-inset);
+  padding-bottom: var(--module-head-pad-b);
+}
+#modules-row :is(.wch-head, .wa-pane-top, .vfp-header, .gvp-header) {
+  padding-left: var(--module-head-pad-l);
+}
+#modules-row :is(
+  .wch-head-title,
+  .wa-pane-title,
+  .wa-pane-name,
+  .rf-head-title,
+  .ar-head-title,
+  .pl-head-title,
+  .sa-panel-head-title,
+  .vfp-title,
+  .gvp-title,
+  .wmod-title,
+  .vf-head-title,
+  .gv-head-title,
+  .ma-head-title,
+  .pf-head-title,
+  .nfp-fi-title
+) {
+  font-family: 'WISE Digits', var(--module-title-family);
+  font-size: var(--module-title-size);
+  font-weight: var(--module-title-weight);
+  letter-spacing: -0.01em;
+  line-height: var(--module-title-lh);
+}
+#modules-row :is(
+  .hc-mail-sub,
+  .wa-sh-sub,
+  .wa-pane-meta,
+  .rf-head-meta,
+  .ar-head-meta,
+  .pl-head-meta,
+  .sa-panel-head-meta,
+  .vfp-subtitle,
+  .gvp-subtitle,
+  .wmod-sub,
+  .gv-head-meta
+) {
+  font-size: var(--module-sub-size);
+  line-height: var(--module-sub-lh);
+  margin-top: var(--module-sub-gap);
+}
+#modules-row :is(
+  .panel-controls,
+  .wch-controls,
+  .rf-head-controls,
+  .sa-head-controls,
+  .ar-head-controls,
+  .pl-head-controls,
+  .wa-pane-controls
+) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--module-head-ctrl-gap, 2px);
+  margin-top: 0;
+  flex-shrink: 0;
 }
 /* Shadow gutter via padding + equal negative margin — see the verification
    rule; keeps admin modules flush with the nav height while letting their
@@ -15060,10 +15205,16 @@ table.rtbl.rtbl-cards tbody > tr > td.rtbl-fld:not([data-rlabel]),
 .wmod-masthead-main { min-width: 0; }
 .wmod-title {
   font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
-  margin: 0; font-size: var(--module-title-size, 1.35rem);
-  font-weight: var(--module-title-weight, 800); letter-spacing: -0.01em; line-height: 1.15; color: var(--text);
+  margin: 0; font-size: var(--module-title-size, 1.2rem);
+  font-weight: var(--module-title-weight, 800); letter-spacing: -0.01em;
+  line-height: var(--module-title-lh, 1.16); color: var(--text);
 }
-.wmod-sub { font-size: 0.9375rem; color: var(--text-muted); margin: 6px 0 0; }
+.wmod-sub {
+  font-size: var(--module-sub-size, 0.78125rem);
+  line-height: var(--module-sub-lh, 1.35);
+  color: var(--text-muted);
+  margin: var(--module-sub-gap, 3px) 0 0;
+}
 .wmod-desc { font-size: 0.85rem; line-height: 1.6; color: var(--text-subtle); margin: 10px 0 0; max-width: 72ch; }
 .wmod-head-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
@@ -19007,33 +19158,30 @@ html.dark .dsc-theme-light .dash-modal-foot { border-color: var(--border); }
 /* Product identity strip — compact catalog twin of Add / View Product. */
 .dsc-demo .nfp-fi-group--identity {
   position: relative; isolation: isolate; width: 100%; box-sizing: border-box;
-  padding: 12px; display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px; display: flex; flex-direction: column; align-items: stretch; gap: 0;
   background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
 }
-.dsc-demo .nfp-fi-lead-photo {
-  flex: 0 0 88px; width: 88px; height: 88px; padding: 0; margin: 0;
-  border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
-  background: var(--surface-2); cursor: default; display: block; position: relative;
-}
-.dsc-demo .nfp-fi-lead-photo img {
-  width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;
-}
 .dsc-demo .nfp-fi-lead-edit {
-  position: absolute; top: 5px; left: 5px; z-index: 3;
-  width: 24px; height: 24px; border-radius: 50%;
+  position: absolute; top: 4px; left: 4px; z-index: 3;
+  width: 20px; height: 20px; padding: 0; margin: 0; border: 0;
+  border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
-  background: rgba(0,0,0,0.55); color: #fff; pointer-events: none;
+  background: rgba(0,0,0,0.55); color: #fff; cursor: pointer;
 }
-.dsc-demo .nfp-fi-lead-edit .material-symbols-outlined { font-size: 14px !important; line-height: 1 !important; }
-.dsc-demo .nfp-fi-copy { flex: 1 1 auto; min-width: 0; }
+.dsc-demo .nfp-fi-lead-edit .material-symbols-outlined { font-size: 13px !important; line-height: 1 !important; }
+.dsc-demo .nfp-fi-copy { min-width: 0; }
 .dsc-demo .nfp-fi-header {
-  display: flex; align-items: center; gap: 8px; margin-bottom: 4px; min-width: 0;
+  display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; min-width: 0;
 }
 .dsc-demo .nfp-fi-title {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
-  font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2;
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+  font-size: var(--module-title-size, 1.2rem); font-weight: var(--module-title-weight, 800);
+  letter-spacing: -0.01em; line-height: var(--module-title-lh, 1.16);
   color: var(--text); flex: 1 1 auto; min-width: 0;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  overflow-wrap: break-word;
+}
+.dsc-demo .nfp-fi-details {
+  display: flex; flex-direction: column; gap: 8px; min-width: 0;
 }
 .dsc-demo .nfp-fi-cat--dock {
   flex: 0 0 auto; display: flex; align-items: center; height: 28px;
@@ -19059,25 +19207,42 @@ html.dark .dsc-theme-light .dash-modal-foot { border-color: var(--border); }
   position: static; margin: 0;
 }
 .dsc-demo .nfp-fi-desc {
-  margin: 0 0 6px; font-size: 0.75rem; line-height: 1.4; color: var(--text-muted);
+  margin: 0; font-size: 0.75rem; line-height: 1.4; color: var(--text-muted);
 }
 .dsc-demo .nfp-fi-price {
-  margin: 0 0 10px; font-size: 0.95rem; font-weight: 800; color: var(--text);
+  margin: 0; font-size: 0.95rem; font-weight: 800; color: var(--text);
+  display: flex; justify-content: center; align-items: baseline; text-align: center;
 }
 .dsc-demo .nfp-fi-price-size {
   margin-left: 6px; font-size: 0.65rem; font-weight: 600; color: var(--text-muted);
 }
 .dsc-demo .nfp-fi-thumbs {
-  display: flex; align-items: flex-start; gap: 6px; flex-wrap: wrap;
+  display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding-bottom: 1.5rem;
 }
-.dsc-demo .nfp-fi-thumb { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 40px; }
+.dsc-demo .nfp-fi-thumb-label,
+.dsc-demo .nfp-fi-add-label {
+  position: absolute; top: calc(100% + 3px); left: 50%;
+  transform: translateX(-50%);
+}
+.dsc-demo .nfp-fi-thumb { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 40px; position: relative; }
+.dsc-demo .nfp-fi-thumb-frame { position: relative; width: 36px; height: 36px; flex-shrink: 0; }
 .dsc-demo .nfp-fi-thumb-img {
   width: 36px; height: 36px; border-radius: 8px; object-fit: cover;
   border: 2px solid var(--border); background: var(--surface-2); display: block;
 }
+.dsc-demo .nfp-fi-thumb.active { width: 64px; }
+.dsc-demo .nfp-fi-thumb.active .nfp-fi-thumb-frame,
 .dsc-demo .nfp-fi-thumb.active .nfp-fi-thumb-img {
+  width: 56px; height: 56px;
+}
+.dsc-demo .nfp-fi-thumb.active .nfp-fi-thumb-img {
+  border-radius: 10px;
   border-color: var(--primary);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 22%, transparent);
+}
+.dsc-demo .nfp-fi-upc-stack {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
 }
 .dsc-demo .nfp-fi-thumb-label {
   font-size: 0.55rem; font-weight: 600; color: var(--text-muted); white-space: nowrap;
@@ -19096,7 +19261,7 @@ html.dark .dsc-theme-light .dash-modal-foot { border-color: var(--border); }
 }
 .dsc-demo .nfp-fi-add {
   display: flex; flex-direction: column; align-items: center; gap: 2px;
-  width: 72px; color: var(--text-subtle);
+  width: 72px; color: var(--text-subtle); position: relative;
 }
 .dsc-demo .nfp-fi-add-sq {
   width: 36px; height: 36px; border-radius: 8px; border: 2px dashed var(--border-strong);

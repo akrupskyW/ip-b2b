@@ -53,7 +53,7 @@
     body[data-nav-id="marketing-assets"] #modules-row { margin-top: 0; }
 
     /* ---------- Head (serif title + subtitle) ---------- */
-    .ma-head { padding: 26px 40px 0; }
+    .ma-head { padding: var(--module-head-pad-t, 26px) var(--module-head-pad-x, 40px) 0; }
     .ma-head-row {
       display: flex; align-items: flex-end; justify-content: space-between;
       gap: 16px; flex-wrap: wrap;
@@ -62,7 +62,7 @@
     .ma-head-title {
       font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
       font-size: var(--module-title-size, 1.2rem); font-weight: var(--module-title-weight, 800); color: var(--text);
-      line-height: 1.15; margin: 0; letter-spacing: -0.01em;
+      line-height: var(--module-title-lh, 1.16); margin: 0; letter-spacing: -0.01em;
     }
     .ma-head-meta { font-size: 0.85rem; color: var(--text-muted); margin: 8px 0 0; max-width: 60ch; }
 

@@ -1797,6 +1797,7 @@ const CAT_BY_NAME = {
   'Width toggle': 'Actions',
   'Empty states': 'Feedback',
   'Nutrition Facts': 'Chat & drawers',
+  'Ingredients Analyzer': 'Chat & drawers',
   'Product identity strip': 'Chat & drawers',
   'Progress tracker': 'Chat & drawers',
   'Jam strip': 'Overlays',
@@ -1845,40 +1846,43 @@ function idStripUpcDemo(digits) {
   </div>`;
 }
 function idStripThumbDemo(label, src, active) {
-  return `<div class="nfp-fi-thumb${active ? ' active' : ''}">
-    <img class="nfp-fi-thumb-img" src="../assets/portfolio/${src}" alt="">
+  return `<div class="nfp-fi-thumb${active ? ' active nfp-fi-thumb--primary' : ''}">
+    <span class="nfp-fi-thumb-frame">
+      <img class="nfp-fi-thumb-img" src="../assets/portfolio/${src}" alt="">
+      ${active ? '<button type="button" class="nfp-fi-lead-edit" title="Replace product image" aria-label="Replace product image"><span class="material-symbols-outlined">edit</span></button>' : ''}
+    </span>
     <span class="nfp-fi-thumb-label">${esc(label)}</span>
   </div>`;
 }
 function idStripDemoHTML({ single }) {
   const src = 'chocolate_chip_muffins.png';
   const thumbs = single
-    ? ''
+    ? idStripThumbDemo('1 ct', src, true)
     : idStripThumbDemo('1 ct', src, true) + idStripThumbDemo('4 ct', src, false) + idStripThumbDemo('6 ct', src, false);
   return `<div class="nfp-fi-group nfp-fi-group--identity">
-    <button type="button" class="nfp-fi-lead-photo" title="Replace product image" aria-label="Replace product image">
-      <img src="../assets/portfolio/${src}" alt="">
-      <span class="nfp-fi-lead-edit" aria-hidden="true"><span class="material-symbols-outlined">edit</span></span>
-    </button>
     <div class="nfp-fi-copy">
       <div class="nfp-fi-header">
         <span class="nfp-fi-title">${single ? 'Product name' : 'Flax4Life Chocolate Chip Muffins'}</span>
-        <div class="nfp-fi-cat nfp-fi-cat--dock">
-          <span class="nfp-cat-select"><span class="material-symbols-outlined nfp-cat-select-ic">sell</span><span class="nfp-cat-native">${single ? 'Select a category…' : 'Bakery › Muffins'}</span><span class="material-symbols-outlined nfp-cat-select-caret">expand_more</span></span>
-        </div>
         <div class="panel-controls">
           <div class="panel-more-wrap"><button type="button" class="panel-more-btn" title="Module options" aria-label="Module options"><span class="material-symbols-outlined">more_vert</span></button></div>
           <button type="button" class="panel-width-toggle-btn is-on is-width-fill" title="Width (fill)" aria-label="Product Details width"><span class="material-symbols-outlined">width_full</span></button>
         </div>
       </div>
-      <p class="nfp-fi-desc">${single ? 'Add a short product description' : 'A bakery favorite with a moist crumb, simple ingredients, and flavor that holds from the first bite to the last.'}</p>
-      <div class="nfp-fi-price">${single ? '$0.00' : '$4.99'} <span class="nfp-fi-price-size">1 ct</span></div>
-      <div class="nfp-fi-thumbs">
-        ${thumbs}
-        ${idStripUpcDemo(single ? '— — — — — — — — — — — —' : '8 5 3 6 2 0 0 0 6 2 7 9')}
-        <div class="nfp-fi-add" title="Add size or variation" role="button">
-          <span class="nfp-fi-add-sq" aria-hidden="true"><span class="material-symbols-outlined">add</span></span>
-          <span class="nfp-fi-add-label">Add size or variation</span>
+      <div class="nfp-fi-details">
+        <p class="nfp-fi-desc">${single ? 'Add a short product description' : 'A bakery favorite with a moist crumb, simple ingredients, and flavor that holds from the first bite to the last.'}</p>
+        <div class="nfp-fi-thumbs">
+          ${thumbs}
+          <div class="nfp-fi-add" title="Add size or variation" role="button">
+            <span class="nfp-fi-add-sq" aria-hidden="true"><span class="material-symbols-outlined">add</span></span>
+            <span class="nfp-fi-add-label">Add size or variation</span>
+          </div>
+        </div>
+        <div class="nfp-fi-price">${single ? '$0.00' : '$4.99'} <span class="nfp-fi-price-size">1 ct</span></div>
+        <div class="nfp-fi-upc-stack">
+          ${idStripUpcDemo(single ? '— — — — — — — — — — — —' : '8 5 3 6 2 0 0 0 6 2 7 9')}
+          <div class="nfp-fi-cat nfp-fi-cat--dock">
+            <span class="nfp-cat-select"><span class="material-symbols-outlined nfp-cat-select-ic">sell</span><span class="nfp-cat-native">${single ? 'Select a category…' : 'Bakery › Muffins'}</span><span class="material-symbols-outlined nfp-cat-select-caret">expand_more</span></span>
+          </div>
         </div>
       </div>
     </div>
@@ -1939,6 +1943,7 @@ function demoAvatarMenuPop() {
       <div class="wise-popover-item"><span class="material-symbols-outlined">person</span>My profile</div>
       <div class="wise-popover-item"><span class="material-symbols-outlined">receipt_long</span>Invoices</div>
       <div class="wise-popover-item"><span class="material-symbols-outlined">photo_library</span>Marketing Assets</div>
+      <div class="wise-popover-item"><span class="material-symbols-outlined">support_agent</span>Support</div>
       <div class="wise-popover-divider"></div>
       <div class="wise-popover-item danger"><span class="material-symbols-outlined">logout</span>Sign out</div>
     </div>`;
@@ -2695,7 +2700,7 @@ function demoComposerHtml({ value = '', attachments = [] } = {}) {
       </div>`;
 }
 const DEMO_COMPOSER_LONG =
-  "I'll walk you through building this product — photo, category, ingredients, the Nutrition Facts panel, allergens and the UPC. Start any way you like: upload a label, paste a URL, or type it in. Everything shows up live in Product Details on the right. It stays a draft until you hit Save to Portfolio.";
+  "I'll walk you through building this product — photo, category, ingredients, the Nutrition Facts panel, allergens and the UPC. Start any way you like: upload a label, paste a URL, or type it in. Everything shows up live in Product Details and the Ingredients Analyzer to its right. It stays a draft until you hit Save to Portfolio.";
 const DEMO_COMPOSER_ATTS = [
   { name: 'muffin-front.png', src: '../assets/portfolio/blueberry_muffins.png' },
   { name: 'nutrition-panel.jpg', src: '../assets/portfolio/chocolate_chip_muffins.png' },
@@ -3736,7 +3741,7 @@ const COMPONENTS = [
     cat: 'Chat & drawers',
     cls: '#nfp-panel \u00b7 .nfp-nf-panel \u00b7 .nfp-barcode-svg \u00b7 .nfp-hero',
     used: 'Add Product \u00b7 View Product \u2014 sticky drawer to the right of chat',
-    note: 'The FDA-style facts label plus the product hero and barcode. Sits as a sticky drawer at z-index 1, under the chat and over the progress tracker. Count-up animates the calories numeral. The label itself stays black-on-white in both themes so it still reads as a printed panel. On Add / View Product the label can grow with extra nutrient rows; that height drives the ingredients column beside it, which never shrinks below the remaining module-body fill (the height it has on a typical product).',
+    note: 'The FDA-style facts label plus the product hero and barcode. Sits as a sticky drawer at z-index 1, under the chat. Count-up animates the calories numeral. The label itself stays black-on-white in both themes so it still reads as a printed panel. On Add / View Product the ingredient list and Analyze accordions live in the Ingredients Analyzer module to its right, not inside this card.',
     noteIcon: 'nutrition',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -3769,13 +3774,34 @@ const COMPONENTS = [
       </div>`,
   },
   {
+    name: 'Ingredients Analyzer',
+    ai: false,
+    wide: true,
+    cat: 'Chat & drawers',
+    cls: '#ia-panel \u00b7 .nfp-ia \u00b7 .nfp-ia-analyze \u00b7 .nfp-ia-sec',
+    used: 'Add Product \u00b7 View Product \u2014 nested sticky drawer to the right of Product Details',
+    note: 'Its own module, not a column inside Nutrition Facts. Paste or type the list, Analyze, then open Parsed, Codes, Nutrients, and Scout. Sits at z-index 0, tucked behind Product Details. Does not take the fill-width default.',
+    noteIcon: 'science',
+    demo: `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col" style="flex:1 1 100%">
+          <div class="dsc-sub-label">Own module \u00b7 right of Product Details</div>
+          <div class="mi-belt" aria-label="Add Product sticky stack">
+            <section class="mi-belt-chat"><span class="mi-belt-name">Chat</span><span class="mi-belt-z">z 3</span></section>
+            <aside class="mi-belt-mod mi-belt-nfp"><span class="mi-belt-name">Product Details</span><span class="mi-belt-z">z 1</span></aside>
+            <aside class="mi-belt-mod mi-belt-prog"><span class="mi-belt-name">Ingredients Analyzer</span><span class="mi-belt-z">z 0 \u00b7 nested</span></aside>
+          </div>
+        </div>
+      </div>`,
+  },
+  {
     name: 'Product identity strip',
     ai: false,
     wide: true,
     cat: 'Chat & drawers',
     cls: '.nfp-fi-group--identity \u00b7 .nfp-fi-cat--dock \u00b7 .nfp-fi-upc \u00b7 .nfp-fi-thumbs',
     used: 'Add Product \u00b7 View Product \u2014 the top of the Product Details drawer',
-    note: 'The category is a 28px pill in the title row, immediately left of ⋯ and width. The size row is extra-count squares, then the barcode, then Add size. A product with only one picture does not show a tiny 1 ct preview \u2014 the lead photo is enough \u2014 so that row is barcode, then plus. The pencil lives on the lead photo, not next to ⋯.',
+    note: 'The module opens with the product name, then the description. Size photos share one row: the selected size is a bit larger with a blue border and the pencil; the others sit beside it, smaller. Price, quantity, and the barcode below follow whichever size is selected.',
     noteIcon: 'id_card',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -3795,7 +3821,7 @@ const COMPONENTS = [
     wide: true,
     cat: 'Chat & drawers',
     cls: '.vf-progress-pane \u00b7 .vfp-step (--done / --active / --err) \u00b7 .vfp-progress-fill',
-    used: 'Add Product \u00b7 View Product \u00b7 Add Catalog \u00b7 Non-UPF and GRAS verification \u2014 the rightmost nested drawer',
+    used: 'Add Catalog \u00b7 Non-UPF and GRAS verification \u2014 the rightmost nested drawer',
     note: 'Always sticky, always one layer under the pane to its left (z-index 0, shorter). Steps: pending, active, done, error. The \u22ef menu can Remove panel; a restore tab stays on the row\u2019s right edge. Count-up on the percent.',
     noteIcon: 'checklist',
     demo: `
@@ -4454,7 +4480,7 @@ const COMPONENTS = [
     wide: true,
     cls: '.adm-avatar (+ --photo) · .topbar-profile (+ .has-dot unread, .is-hover, .is-open) · .sc-avatar-you · .pf-avatar-upload · .pf-avatar-preset · .wise-popover',
     used: 'Top bar on every app page · nav-footer avatar menu · Organization Profile (Avatar picture) · table identity cells · chat “you” chip',
-    note: 'One circle primitive everywhere — initials until a picture is set, then the same chip fills with the photo. The top-bar button cycles Default, Hover, Open, and Unread. The avatar popover is the live account menu (My profile, Invoices, Marketing Assets, Sign out). Organization Profile owns the abilities: live preview, Browse File / Import from URL, Remove, and every built-in pattern and portrait (Aurora, Prism, Orbit, Tide, Bloom, plus the two professional photos).',
+    note: 'One circle primitive everywhere — initials until a picture is set, then the same chip fills with the photo. The top-bar button cycles Default, Hover, Open, and Unread. The avatar popover is the live account menu (My profile, Invoices, Marketing Assets, Support, Sign out). Organization Profile owns the abilities: live preview, Browse File / Import from URL, Remove, and every built-in pattern and portrait (Aurora, Prism, Orbit, Tide, Bloom, plus the two professional photos).',
     noteIcon: 'account_circle',
     demo: demoAvatarCatalog(),
   },
@@ -4825,7 +4851,7 @@ const USED_HREF_RULES = [
   { re: /wiseai\.html#history|wisecodeai history/, hrefs: ['wiseai.html#history'] },
   { re: /wiseai\.html#turns|\bturns module\b/, hrefs: ['wiseai.html#turns'] },
   { re: /wiseai\.html#data-sources|data sources/, hrefs: ['wiseai.html#data-sources'] },
-  { re: /help or preferences|\bpreferences\b/, hrefs: ['help.html', 'preferences.html'] },
+  { re: /help or preferences|\bpreferences\b/, hrefs: ['support.html', 'preferences.html'] },
   { re: /add product \u00b7 view product|view product/, hrefs: ['add-product.html', 'view-product.html'] },
   { re: /\bauth\b|sign in|sign up|signup/, hrefs: ['login.html', 'create-account.html', 'forgot-password.html'] },
   { re: /\balerts\b/, hrefs: ['alerts.html'] },
@@ -4838,7 +4864,7 @@ const USED_HREF_RULES = [
   { re: /progress log/, hrefs: ['progress-log.html'] },
   { re: /\bhelix\b/, hrefs: ['helix.html'] },
   { re: /all modules|this page/, hrefs: ['all-modules.html'] },
-  { re: /\bhelp\b/, hrefs: ['help.html'] },
+  { re: /\bhelp\b/, hrefs: ['support.html'] },
   { re: /portfolio table|\.pf-stats|\.pf-rowmenu|portfolio \(\.pf/, hrefs: ['product-portfolio.html'] },
 ];
 
@@ -5434,7 +5460,7 @@ const CONVENTIONS = [
   {
     icon: 'view_sidebar',
     title: 'Sticky drawers are a utility belt',
-    body: 'Any module to the right of the chat tucks behind it like a drawer \u2014 always on, no toggle. The chat is the buckle (z-index 3). Output sits at z-index 2. Peer drawers (Nutrition Facts, Turns, Help) sit at z-index 1, shorter and centred, with the chat-facing corners squared. Nested drawers (progress, Help contact, Report builder) sit one layer under their parent (z-index 0, shorter still). History tucks left. Opening a \u22ef never lifts a drawer over the chat.',
+    body: 'Any module to the right of the chat tucks behind it like a drawer \u2014 always on, no toggle. The chat is the buckle (z-index 3). Output sits at z-index 2. Peer drawers (Nutrition Facts, Turns, Help) sit at z-index 1, shorter and centred, with the chat-facing corners squared. Nested drawers (Ingredients Analyzer, progress, Help contact, Report builder) sit one layer under their parent (z-index 0, shorter still). History tucks left. Opening a \u22ef never lifts a drawer over the chat.',
   },
   {
     icon: 'accessibility_new',
@@ -5698,7 +5724,7 @@ const INTENT_AUDIT = [
     ],
   },
   {
-    label: 'Help', icon: 'help', href: 'help.html', src: 'help-flow.js',
+    label: 'Help', icon: 'help', href: 'support.html', src: 'help-flow.js',
     chips: [
       { i: 'getting_started',   label: 'How do I get started?', t: true, l: true, does: 'Opens the Getting started article on Help.' },
       { i: 'verification_help', label: 'Explain verification',  t: true, l: true, does: 'Opens the verification explainer article.' },

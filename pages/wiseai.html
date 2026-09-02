@@ -292,7 +292,7 @@
        the count (see #wa-unified .wa-pane-mast below). */
     .wa-pane-top {
       display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
-      padding: 16px 12px 14px 20px; flex-shrink: 0;
+      padding: var(--module-head-pad-t) var(--module-head-ctrl-inset) var(--module-head-pad-b) var(--module-head-pad-l); flex-shrink: 0;
       border-bottom: 1px solid var(--border);
       background: var(--surface);
     }
@@ -304,11 +304,15 @@
     .wa-pane-meta { order: 2; flex-basis: 100%; }
     .wa-pane-title {
       font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
-      margin: 0; font-size: 1.2rem; font-weight: 800;
-      letter-spacing: -.01em; line-height: 1.16; color: var(--text);
+      margin: 0; font-size: var(--module-title-size, 1.2rem); font-weight: var(--module-title-weight, 800);
+      letter-spacing: -.01em; line-height: var(--module-title-lh, 1.16); color: var(--text);
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-    .wa-pane-meta { font-size: 12px; color: var(--text-muted); margin: 3px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wa-pane-meta {
+      font-size: var(--module-sub-size, 0.78125rem); line-height: var(--module-sub-lh, 1.35);
+      color: var(--text-muted); margin: var(--module-sub-gap, 3px) 0 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
     .wa-pane-title:empty, .wa-pane-meta:empty { display: none; }
     /* Merged Output pane: shared dash-eyebrow over the headline
        (count + chart name + dropdown chevron). Version + description sit
@@ -336,7 +340,7 @@
     #wa-unified .wa-pane-name {
       flex: 0 1 auto; min-width: 0; margin: 0;
       font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
-      font-weight: 800; font-size: 1.2rem; letter-spacing: -.01em; line-height: 1.16;
+      font-weight: var(--module-title-weight, 800); font-size: var(--module-title-size, 1.2rem); letter-spacing: -.01em; line-height: var(--module-title-lh, 1.16);
       color: var(--text);
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
@@ -348,7 +352,7 @@
     #wa-unified .wa-pane-ver { order: 0; }
     #wa-unified .wa-pane-meta {
       order: 1; flex: 1 1 8rem; min-width: 0; margin: 0;
-      font-size: 12.5px; font-style: italic; line-height: 1.35;
+      font-size: var(--module-sub-size, 0.78125rem); font-style: italic; line-height: var(--module-sub-lh, 1.35);
     }
     #wa-unified .wa-pane-name:empty { display: none; }
 
@@ -512,7 +516,7 @@
     }
     #modules-row .wch-sidebar.wch-docked.wch-docked-hidden { display: none !important; }
     #modules-row .wch-sidebar.wch-docked .wch-head {
-      padding: 18px 14px 16px 24px;
+      padding: var(--module-head-pad-t) var(--module-head-ctrl-inset) var(--module-head-pad-b) var(--module-head-pad-l);
       border-bottom: 1px solid var(--border);
       align-items: flex-start;
     }
@@ -522,17 +526,17 @@
     }
     #modules-row .wch-sidebar.wch-docked.wch-rail .wch-controls { margin: 0 !important; }
     #modules-row .wch-sidebar.wch-docked .wch-head-title {
-      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
-      font-weight: 800;
-      font-size: 1.2rem;
+      font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+      font-weight: var(--module-title-weight, 800);
+      font-size: var(--module-title-size, 1.2rem);
       letter-spacing: -.01em;
-      line-height: 1.16;
+      line-height: var(--module-title-lh, 1.16);
       color: var(--text);
       align-items: center;
     }
     #modules-row .wch-sidebar.wch-docked .wch-head-title .material-symbols-outlined { display: none; }
-    /* Header controls cluster (three-dot + width) sits top-right, like the panes. */
-    #modules-row .wch-sidebar.wch-docked .wch-controls { margin-top: 1px; }
+    /* Header controls cluster (three-dot + width) sits on the title line. */
+    #modules-row .wch-sidebar.wch-docked .wch-controls { margin-top: 0; }
 
     /* ── Sticky modules mode ──────────────────────────────────────────────────
        A toggle in the chat's three-dot menu (data-sc="sticky") turns the docked
@@ -2390,11 +2394,22 @@
     #wa-share-panel { width: 372px; }
     /* Editorial serif masthead — matches the result panes / docked modules. The
        title + conversation subtitle stack in the header (no leading icon). */
-    #wa-share-panel .wch-head { align-items: flex-start; padding: 16px 12px 14px 18px; }
-    #wa-share-panel .wch-head-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.2rem; letter-spacing: -0.01em; line-height: 1.16; color: var(--text); }
-    .wa-sh-head-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    #wa-share-panel .wch-head {
+      align-items: flex-start;
+      padding: var(--module-head-pad-t) var(--module-head-ctrl-inset) var(--module-head-pad-b) var(--module-head-pad-l);
+    }
+    #wa-share-panel .wch-head-title {
+      font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+      font-weight: var(--module-title-weight, 800); font-size: var(--module-title-size, 1.2rem);
+      letter-spacing: -0.01em; line-height: var(--module-title-lh, 1.16); color: var(--text);
+    }
+    .wa-sh-head-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 0; }
     .wa-sh-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 14px 16px 6px; display: flex; flex-direction: column; gap: 16px; }
-    .wa-sh-sub { margin: 0; font-size: 12.5px; line-height: 1.4; color: var(--text-subtle); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wa-sh-sub {
+      margin: var(--module-sub-gap, 3px) 0 0; font-size: var(--module-sub-size, 0.78125rem);
+      line-height: var(--module-sub-lh, 1.35); color: var(--text-subtle);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
     .wa-sh-form { display: flex; flex-direction: column; gap: 16px; }
     .wa-sh-form[hidden], .wa-sh-done[hidden] { display: none; }
 
@@ -2496,7 +2511,9 @@
       left: calc(var(--sticky-nested-face-pad) + var(--r-md, 16px));
       width: auto;
     }
-    #wa-report #wa-share-panel .wch-head { padding: 16px 16px 14px 24px; }
+    #wa-report #wa-share-panel .wch-head {
+      padding: var(--module-head-pad-t) var(--module-head-ctrl-inset) var(--module-head-pad-b) var(--module-head-pad-l);
+    }
     #wa-report #wa-share-panel .wa-sh-body { padding: 14px 16px 6px 24px; }
     #wa-report #wa-share-panel .wa-sh-foot { padding: 12px 16px 14px 24px; }
     #wa-report > .wch-scrim { display: none !important; }
@@ -9103,6 +9120,17 @@
       fedreg_gras:   { items: FEDREG_GRAS, icon: 'travel_explore', title: 'Federal Register \u00b7 GRAS proposed rule', meta: '91 FR 51834 \u00b7 Doc. 2026\u201316296 \u00b7 comments close Dec 9, 2026', statLabel: 'Notices', statIcon: 'article' },
     };
 
+    /* Superscript footnote marker for a news / law / Federal Register source,
+       matching catCite. newsCite('gras_announce', 1, 2) → a bracketed [1,2]
+       whose numbers each open that kind's References output and flash the card.
+       Display numbers are 1-based, matching the compact list and the cards. */
+    function newsCite(kind, ...nums) {
+      const inner = nums.map((n) =>
+        `<a class="wa-cite-n" role="button" tabindex="0" data-news-open="${kind}" data-news-i="${n - 1}" aria-label="Open reference ${n}">${n}</a>`
+      ).join('<span class="wa-cite-sep">,</span>');
+      return `<sup class="wa-cite">${inner}</sup>`;
+    }
+
     /* Compact footnotes trailing a news-sourced answer — same .wa-refs-mini
        pattern as catRefsMini. Each row opens the matching References output. */
     function newsRefsMini(kind) {
@@ -9540,13 +9568,13 @@
         const lead = prev === 'gras'
           ? 'Those GRAS counts are about to sit under a new federal rule. '
           : (prev === 'upf' ? 'That UPF question is exactly what the August announcement tried to settle. ' : '');
-        return lead + ('On <strong>Aug. 10</strong>, Secretary <strong>Robert F. Kennedy Jr.</strong> announced two linked food-policy moves (Acting FDA Commissioner <strong>Kyle Diamantas</strong> led the FDA side):'
+        return lead + ('On <strong>Aug. 10</strong>, Secretary <strong>Robert F. Kennedy Jr.</strong> announced two linked food-policy moves (Acting FDA Commissioner <strong>Kyle Diamantas</strong> led the FDA side)' + newsCite('gras_announce', 2) + ':'
         + '<ul style="margin:10px 0 4px;padding-left:20px">'
-        + '<li><strong>GRAS reform:</strong> FDA proposed requiring companies to <strong>notify FDA</strong> when they conclude a substance is Generally Recognized as Safe (GRAS), rather than letting self-GRAS decisions stay outside mandatory FDA visibility.</li>'
-        + '<li><strong>UPF definition:</strong> HHS and USDA sent the federal government\u2019s <strong>first proposed definition of ultra-processed foods (UPFs)</strong> for final review \u2014 intended to support future policy on labeling, school meals, hospital food, and nutrition education.</li>'
+        + '<li><strong>GRAS reform:</strong> FDA proposed requiring companies to <strong>notify FDA</strong> when they conclude a substance is Generally Recognized as Safe (GRAS), rather than letting self-GRAS decisions stay outside mandatory FDA visibility' + newsCite('gras_announce', 1, 2) + '.</li>'
+        + '<li><strong>UPF definition:</strong> HHS and USDA sent the federal government\u2019s <strong>first proposed definition of ultra-processed foods (UPFs)</strong> for final review \u2014 intended to support future policy on labeling, school meals, hospital food, and nutrition education' + newsCite('gras_announce', 1, 2) + '.</li>'
         + '</ul>'
         + 'The core message: HHS wants to close what Kennedy described as a <strong>self-GRAS loophole</strong> and create a <strong>standard federal UPF definition</strong> so policy and research use the same baseline. HHS framed both actions as part of the <strong>MAHA</strong> agenda and tied them to chronic-disease concerns.<br><br>'
-        + 'I found <strong>two HHS press releases</strong> on this, including a later <strong>Aug. 12 \u201cWTAS\u201d</strong> recap that repeats the same substance. I did <strong>not</strong> find matching trade-press coverage in the ingested set, and I did <strong>not</strong> find an OIRA pipeline hit in the current ingested review window.'
+        + 'I found <strong>two HHS press releases</strong>' + newsCite('gras_announce', 1, 2) + ' on this, including a later <strong>Aug. 12 \u201cWTAS\u201d</strong> recap' + newsCite('gras_announce', 1) + ' that repeats the same substance. I did <strong>not</strong> find matching trade-press coverage in the ingested set, and I did <strong>not</strong> find an OIRA pipeline hit in the current ingested review window.'
         + newsRefsMini('gras_announce'));
       },
       gras_change: 'The proposal turns today\u2019s <strong>voluntary</strong> GRAS notification into a <strong>mandatory</strong> one. Concretely:'
@@ -9559,10 +9587,10 @@
         + 'Notably, it <strong>does not</strong> create a brand-new premarket approval regime \u2014 it\u2019s a mandatory <em>disclosure</em> layer on top of the existing GRAS pathway. FDA itself flags that its authority to compel notifications is contested, and says it\u2019s working with Congress on statutory backing. Comment period closes <strong>Dec. 9, 2026</strong>.',
       gras_law: 'GRAS rests on a small, specific stack of primary law \u2014 the classification is a carve-out <em>within</em> the food-additive definition, not a separate program:'
         + '<ul style="margin:10px 0 4px;padding-left:20px">'
-        + '<li><strong>FD&C Act \u00a7 201(s)</strong> (21 U.S.C. 321(s)) \u2014 defines \u201cfood additive\u201d in two steps and <strong>excludes</strong> uses that are generally recognized as safe by qualified experts. It\u2019s the <em>use</em> of a substance, not the substance, that is GRAS.</li>'
-        + '<li><strong>FD&C Act \u00a7 409</strong> (21 U.S.C. 348) \u2014 the premarket-approval mandate a food additive must clear; a GRAS use is <strong>exempt</strong> from it.</li>'
-        + '<li><strong>2016 GRAS Final Rule</strong> (81 FR 54960) \u2014 clarified the criteria and set up today\u2019s <em>voluntary</em> notification procedure the 2026 proposal would make mandatory.</li>'
-        + '<li><strong>21 CFR 170.30 &amp; 170.3</strong> \u2014 the implementing regs spelling out eligibility (scientific procedures vs. pre-1958 common use).</li>'
+        + '<li><strong>FD&C Act \u00a7 201(s)</strong> (21 U.S.C. 321(s)) \u2014 defines \u201cfood additive\u201d in two steps and <strong>excludes</strong> uses that are generally recognized as safe by qualified experts. It\u2019s the <em>use</em> of a substance, not the substance, that is GRAS' + newsCite('gras_law', 1) + '.</li>'
+        + '<li><strong>FD&C Act \u00a7 409</strong> (21 U.S.C. 348) \u2014 the premarket-approval mandate a food additive must clear; a GRAS use is <strong>exempt</strong> from it' + newsCite('gras_law', 2) + '.</li>'
+        + '<li><strong>2016 GRAS Final Rule</strong> (81 FR 54960) \u2014 clarified the criteria and set up today\u2019s <em>voluntary</em> notification procedure the 2026 proposal would make mandatory' + newsCite('gras_law', 3) + '.</li>'
+        + '<li><strong>21 CFR 170.30 &amp; 170.3</strong> \u2014 the implementing regs spelling out eligibility (scientific procedures vs. pre-1958 common use)' + newsCite('gras_law', 4) + '.</li>'
         + '</ul>'
         + 'Opened the primary sources in Results &amp; Details \u2192'
         + newsRefsMini('gras_law'),
@@ -9572,10 +9600,10 @@
         + '<li>Its stated purpose is to give <strong>policy and research a shared baseline</strong> \u2014 so labeling, school meals, hospital food, nutrition education, and studies all measure \u201cultra-processed\u201d the same way (today most work leans on the academic <strong>NOVA</strong> framework instead).</li>'
         + '</ul>'
         + 'Once the definition clears review and publishes, I can line it up against WISEcode\u2019s own UPF tiers so you can see where they agree and diverge. Want me to set that comparison up when it lands?',
-      fedreg_search: 'Found it. The GRAS proposal is published in the <strong>Federal Register</strong> as <strong>\u201cSubstances Generally Recognized as Safe\u201d</strong>:'
+      fedreg_search: 'Found it. The GRAS proposal is published in the <strong>Federal Register</strong> as <strong>\u201cSubstances Generally Recognized as Safe\u201d</strong>' + newsCite('fedreg_gras', 1) + ':'
         + '<ul style="margin:10px 0 4px;padding-left:20px">'
-        + '<li>Citation <strong>91 FR 51834</strong> \u00b7 document <strong>2026\u201316296</strong> \u00b7 a <strong>proposed rule</strong> from FDA (HHS).</li>'
-        + '<li>Amends <strong>21 CFR parts 170 and 570</strong>; comment period closes <strong>December 9, 2026</strong> (120 days).</li>'
+        + '<li>Citation <strong>91 FR 51834</strong> \u00b7 document <strong>2026\u201316296</strong> \u00b7 a <strong>proposed rule</strong> from FDA (HHS)' + newsCite('fedreg_gras', 1) + '.</li>'
+        + '<li>Amends <strong>21 CFR parts 170 and 570</strong>; comment period closes <strong>December 9, 2026</strong> (120 days)' + newsCite('fedreg_gras', 1) + '.</li>'
         + '</ul>'
         + 'This matches the two HHS press releases from the announcement \u2014 same substance, now with the docket you can comment on. Opened the notice in Results &amp; Details \u2192'
         + newsRefsMini('fedreg_gras'),

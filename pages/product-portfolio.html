@@ -4930,7 +4930,7 @@
     .sc-avatar-you img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
     .sc-line-wiseai strong, .sc-line-wiseai b { color: inherit; font-weight: 700; }
 
-    .sc-line-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 2px; line-height: 1.2; }
+    .sc-line-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 10px; line-height: 1.2; }
     .sc-line-time { font-size: 0.625rem; font-weight: 500; letter-spacing: 0.02em;
       cursor: pointer; user-select: none; text-decoration: none;
       color: color-mix(in srgb, var(--text-subtle) 62%, transparent); transition: color .14s ease; }
@@ -7732,8 +7732,8 @@
     /* Title + Add + verify on the left. Marketing Assets + brand live in the
        floated panel-controls cluster (next to ⋯). */
     .pf-head { display: flex; align-items: center; justify-content: flex-start; gap: 8px; padding: 0; flex-wrap: wrap; }
-    .pf-head-title { font-family: 'WISE Digits', var(--font-serif); font-size: 1.2rem; font-weight: 800; color: var(--text); line-height: 1.15; margin: 0; }
-    .pf-head-meta { font-size: var(--fs-label); color: var(--text-muted); margin: 8px 0 0; }
+    .pf-head-title { font-family: 'WISE Digits', var(--module-title-family, var(--font-serif)); font-size: var(--module-title-size, 1.2rem); font-weight: var(--module-title-weight, 800); color: var(--text); line-height: var(--module-title-lh, 1.16); letter-spacing: -0.01em; margin: 0; }
+    .pf-head-meta { font-size: var(--module-sub-size, var(--fs-label)); line-height: var(--module-sub-lh, 1.35); color: var(--text-muted); margin: var(--module-sub-gap, 3px) 0 0; }
     .pf-head-actions { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
     .pf-head-trail {
       display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;
@@ -15570,7 +15570,21 @@
        NFP module for the product opened from the row (name / UPC / thumbnail
        travel over in the URL, exactly like the Reformulate link). Pass `size`
        to open a specific pack count (the 4 ct / 12 ct links under the UPC). */
-    function pfViewHref(row, size) {
+    /* Which portfolio action opened this row — the product page banner
+       follows this `from=` so Review & Claim, Complete details, Verify,
+       and Finish and Claim each land on their own step. */
+    function pfRowFrom(row) {
+      if (!row) return '';
+      if (row.closest('#pf-view-discovered') || row.closest('.pf-table--discovered-cta') || row.closest('.pf-table--discovered')) {
+        return 'discovered';
+      }
+      if (row.closest('#pf-view-needsinfo') || row.closest('.pf-table--needsinfo')) {
+        if (row.querySelector('.pf-row-act--verify, .pf-chip--verify')) return 'verify';
+        return 'complete';
+      }
+      return '';
+    }
+    function pfViewHref(row, size, fromOverride) {
       if (!row) return 'view-product.html';
       const name = (row.querySelector('.pf-pname')?.textContent || '').trim();
       const upc = (row.querySelector('.pf-upc')?.textContent || '').replace(/^\s*UPC\s*·?\s*/i, '').trim();
@@ -15584,9 +15598,8 @@
         params.set('sizes', pfOrderSizes(row, listed).join(','));
       }
       if (size) params.set('size', size);
-      if (row && (row.closest('#pf-view-discovered') || row.closest('.pf-table--discovered-cta'))) {
-        params.set('from', 'discovered');
-      }
+      const from = fromOverride || pfRowFrom(row);
+      if (from) params.set('from', from);
       const qs = params.toString();
       return 'view-product.html' + (qs ? ('?' + qs) : '');
     }
@@ -15601,7 +15614,7 @@
       const chip = document.querySelector('#portfolio-panel .pf-trow .pf-chip--inelig');
       const row = chip ? chip.closest('.pf-trow') : Array.from(document.querySelectorAll('#portfolio-panel .pf-trow'))
         .find((r) => /vegan blueberry/i.test((r.querySelector('.pf-pname')?.textContent || '').trim()));
-      return pfViewHref(row || null);
+      return pfViewHref(row || null, null, 'ineligible');
     }
     /* Edit uses the exact same page as View — just opened in edit mode, where the
        chat greets you asking what you'd like to change (mode=edit in the URL). */
@@ -16549,6 +16562,17 @@
       if (data === 'verify') return '<span class="pf-chip pf-chip--incomplete">Incomplete</span>';
       return '<span class="pf-chip pf-chip--complete">Complete</span>';
     }
+    function pfWithFrom(href, from, extra) {
+      try {
+        const u = new URL(href || 'view-product.html', location.href);
+        if (from) u.searchParams.set('from', from);
+        if (extra) Object.keys(extra).forEach((k) => u.searchParams.set(k, extra[k]));
+        const file = (u.pathname.split('/').pop() || 'view-product.html');
+        return file + u.search;
+      } catch (_) {
+        return href || 'view-product.html';
+      }
+    }
     function pfActionHtml(seg, data, href) {
       if (seg === 'claimed') return pfReportsHtml();
       if (seg === 'discovered') {
@@ -16556,9 +16580,11 @@
           pfEsc(href || 'view-product.html') + '">Review &amp; Claim</a></span>';
       }
       if (data === 'verify') {
-        return '<span class="pf-td pf-col-reports"><button type="button" class="pf-claim-btn pf-claim-btn--verify pf-row-act pf-row-act--verify">Verify ingredients</button></span>';
+        return '<span class="pf-td pf-col-reports"><a class="pf-claim-btn pf-claim-btn--verify pf-row-act pf-row-act--verify" href="' +
+          pfEsc(pfWithFrom(href, 'verify')) + '">Verify ingredients</a></span>';
       }
-      return '<span class="pf-td pf-col-reports"><button type="button" class="pf-claim-btn pf-row-act pf-row-act--complete">Complete details</button></span>';
+      return '<span class="pf-td pf-col-reports"><a class="pf-claim-btn pf-row-act pf-row-act--complete" href="' +
+        pfEsc(pfWithFrom(href, 'complete', { mode: 'edit' })) + '">Complete details</a></span>';
     }
     function pfClaimedActionHtml(name, upc, img) {
       const params = new URLSearchParams();
@@ -17166,7 +17192,9 @@
         const row = act.closest('.pf-trow');
         if (!row) return;
         e.preventDefault();
-        window.location.href = act.classList.contains('pf-row-act--verify') ? pfViewHref(row) : pfEditHref(row);
+        window.location.href = act.classList.contains('pf-row-act--verify')
+          ? pfViewHref(row, null, 'verify')
+          : pfEditHref(row);
         return;
       }
       const chip = e.target.closest('.pf-chip--verify, .pf-chip--attest, .pf-chip--prequal');
@@ -17175,7 +17203,7 @@
       if (!row) return;
       e.preventDefault();
       if (chip.classList.contains('pf-chip--verify')) {
-        window.location.href = pfViewHref(row);
+        window.location.href = pfViewHref(row, null, 'verify');
         return;
       }
       window.location.href = 'verification.html';
@@ -17303,7 +17331,7 @@
          collects the photo, category, ingredients, Nutrition Facts, allergens
          and UPC into a live, editable Product Details (NFP) card, with a
          progress module beside it. Nothing persists until the user saves. */
-      window.location.href = 'add-product.html';
+      window.location.href = 'add-product.html?from=add';
     }
     /* Add Catalog — the header Add ▾ menu still jumps straight to the builder.
        The chat intent plays a mock transcript first, then offers the same jump. */

@@ -1775,9 +1775,10 @@ function openAvatarPopover(anchor) {
         profile: 'profile.html',
         invoices: 'invoices.html',
         'marketing-assets': 'marketing-assets.html',
+        support: 'support.html',
         prefs: 'preferences.html',
         apikeys: 'api-keys.html',
-        help: 'help.html',
+        help: 'support.html',
         docs: 'docs.html',
       }[navItem.dataset.popAction];
       if (dest) {

@@ -55,13 +55,14 @@
      wait and inject only once their native menu appears (the observer re-scans). */
   var WAIT_FOR_NATIVE = '#agent-main';
 
-  /* Progress modules (the right-hand step tracker: verification, GRAS, add /
-     view product, add catalog). These share `.vf-progress-pane` / `.gv-progress-pane`
+  /* Progress modules (the right-hand step tracker: verification, GRAS,
+     add catalog). These share `.vf-progress-pane` / `.gv-progress-pane`
      and re-render their innerHTML constantly. They get two extra behaviours over
      a plain content module: they ALWAYS default to Sticky (tucked drawer) so the
      tracker reads as a slim drawer off its left neighbour rather than a full
      flat column, and they gain a "Remove panel" row to hide the tracker outright
-     (with a small restore tab left behind). */
+     (with a small restore tab left behind). Add / View Product keep progress
+     in the chat transcript instead. */
   var PROGRESS_SEL = '.vf-progress-pane,.gv-progress-pane';
   /* Next-level drawers that sit to the RIGHT of another sticky module (Help's
      contact form, the generated Report pane). Same geometry rule as progress:
@@ -71,7 +72,7 @@
   /* Nested drawers (progress + this list) use --sticky-nested-tuck in wise.css.
      Chat-adjacent drawers (Output, NFP, studio, Turns) stay on --sticky-tuck.
      Do not mix the two. */
-  var NESTED_DRAWER_SEL = '#help-contact,#wa-report,#rf-report,#pf-report-panel,#workflow-panel,.rf-dash';
+  var NESTED_DRAWER_SEL = '#help-contact,#wa-report,#rf-report,#pf-report-panel,#workflow-panel,.rf-dash,#ia-panel';
   var REMOVE_TOGGLE_ATTR = 'data-progress-remove';
 
   function isProgressPane(el) { return !!(el && el.matches && el.matches(PROGRESS_SEL)); }
@@ -88,6 +89,7 @@
      list (below) is tried, then a floating top-right menu as a last resort. */
   var MENU_INTO = [
     { sel: '#nfp-panel', into: '.nfp-panel-header .panel-controls' },
+    { sel: '#ia-panel', into: '.ia-panel-header .panel-controls' },
     { sel: '.aid-dash-card', into: '.aid-top-actions' },
     { sel: '.sa-panel', into: '.sa-panel-head' },
     { sel: '.vf-progress-pane', into: '.vfp-header' },
@@ -432,7 +434,7 @@
      "Remove panel" hides the tracker outright and drops a slim restore tab at
      the row's right edge so it can be brought back. The choice persists per
      page. Hidden state is enforced with an inline `display:none` because some
-     pages pin the pane's display at id-level (e.g. add-product's
+     pages pin the pane's display at id-level (e.g. add-catalog's
      `#ap-progress { display:flex }`), which out-ranks the shared
      `.vf-progress-pane[hidden]` rule. */
   function applyRemoved(mod) {

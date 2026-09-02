@@ -1,7 +1,7 @@
 /**
  * Help module.
  *
- * A help-center surface rendered into #agent-main-scroll on help.html: a search
+ * A help-center surface rendered into #agent-main-scroll on support.html: a search
  * box, browse-by-topic cards, expandable FAQs, and a contact-support panel. A
  * Share-style email form docks as the next sticky module to the right. The
  * persistent WISEcodeAI dock drives it — intent chips search the FAQs, expand a
@@ -79,7 +79,6 @@ function paint() {
       <div class="wmod-masthead">
         <div class="wmod-masthead-main">
           <h1 class="wmod-title">Help center</h1>
-          <p class="wmod-sub">Search the help articles, browse by topic, or reach our support team.</p>
           <p class="wmod-desc">Answers to the most common questions about getting started, verification, reports, billing, the API, and your account. Can\u2019t find it? The WISEcodeAI assistant on the right can answer directly.</p>
         </div>
       </div>
@@ -116,12 +115,12 @@ function paint() {
       </div>
 
       <section class="wmod-group" data-hc-anchor="support">
-        <h2 class="wmod-group-title"><span class="material-symbols-outlined">support_agent</span>Still need help?</h2>
+        <h2 class="wmod-group-title hc-support-head">Still need help?</h2>
         <div class="wmod-card">
-          <button type="button" class="hc-support-row" data-hc-action="tour">
+          <button type="button" class="hc-support-row is-locked" data-hc-action="tour" disabled aria-disabled="true">
             <span class="hc-support-ic"><span class="material-symbols-outlined">auto_awesome</span></span>
             <span class="hc-support-body"><span class="hc-support-title">Replay the WISEowl walkthrough</span><span class="hc-support-desc">Tour the real pages, skip a group or go one by one</span></span>
-            <span class="material-symbols-outlined hc-support-arrow">chevron_right</span>
+            <span class="material-symbols-outlined hc-support-arrow" aria-hidden="true">lock</span>
           </button>
           <button type="button" class="hc-support-row" data-hc-action="chat">
             <span class="hc-support-ic"><span class="material-symbols-outlined">forum</span></span>
@@ -157,7 +156,10 @@ export function renderHelp(mainEl) {
     const topic = e.target.closest('[data-hc-topic]');
     if (topic) { const v = topic.dataset.hcTopic; topicFilter = (topicFilter === v && v !== 'all') ? 'all' : v; paint(); return; }
     const act = e.target.closest('[data-hc-action]');
-    if (act) { runHelpIntent(act.dataset.hcAction); }
+    if (act) {
+      if (act.classList.contains('is-locked') || act.disabled || act.getAttribute('aria-disabled') === 'true') return;
+      runHelpIntent(act.dataset.hcAction);
+    }
   });
 
   mainEl.addEventListener('input', (e) => {
@@ -195,10 +197,10 @@ export function runHelpIntent(action) {
         document.addEventListener('wise:walkthrough-ready', () => window.WiseWalkthrough?.open({ force: true }), { once: true });
       }
       break;
-    case 'chat': document.getElementById('wiseai-dock-panel')?.querySelector('textarea, input')?.focus(); break;
-    case 'email': focusContactForm(); break;
+    case 'chat': spotChatComposer(); break;
+    case 'email': spotWriteModule(); break;
     case 'docs': window.location.href = 'docs.html'; break;
-    case 'support': focusContactForm(); break;
+    case 'support': spotWriteModule(); break;
     default: break;
   }
 }
@@ -237,7 +239,7 @@ export const HELP_WISEAI = {
     if (intent === 'walkthrough') { runHelpIntent('tour'); return false; }
     if (intent === 'verification_help') { setTopic('verification'); return false; }
     if (intent === 'billing_help') { setTopic('billing'); return false; }
-    if (intent === 'contact') { focusContactForm(); return false; }
+    if (intent === 'contact') { spotWriteModule(); return false; }
     return false;
   },
 };
@@ -266,6 +268,7 @@ let mailEl = null;
 let mailType = '';
 let mailFreq = '';
 let mailSent = false;
+let mailLast = null;
 let mailWired = false;
 let mailFiles = [];
 let mailFileSeq = 0;
@@ -380,34 +383,77 @@ function contactFormHTML(user) {
     </form>`;
 }
 
+function receiptRow(label, value) {
+  if (!value) return '';
+  return `<div class="hc-mail-receipt-row"><span class="hc-mail-receipt-k">${esc(label)}</span><span class="hc-mail-receipt-v">${esc(value)}</span></div>`;
+}
+
 function contactDoneHTML() {
-  const names = mailFiles.map((f) => f.name).filter(Boolean);
-  const attachNote = names.length
-    ? ` Attach <strong>${esc(names.join(', '))}</strong> in the message before you send \u2014 mail apps cannot pick the files up on their own.`
-    : '';
+  const d = mailLast || {};
+  const names = (d.files || []).filter(Boolean);
+  const attach = names.length ? names.join(', ') : '';
   return `
     <div class="hc-mail-done" data-mail-done>
       <div class="hc-mail-created">
-        <div class="hc-mail-created-title">Email ready to send</div>
-        <p class="hc-mail-created-sub">Your mail app should open with the message addressed to <strong>${esc(SUPPORT_TO)}</strong>.${attachNote} If it didn\u2019t, copy the details and send them yourself.</p>
-        <button type="button" class="adm-btn adm-btn--ghost" data-mail-again>Send another</button>
+        <p class="hc-mail-created-sub">Sent to ${esc(SUPPORT_TO)}${d.ref ? ` \u00b7 ${esc(d.ref)}` : ''}. Typically replies within a few hours.</p>
+        <div class="hc-mail-receipt">
+          ${receiptRow('What\u2019s going on', d.typeName)}
+          ${receiptRow('What happened', d.what)}
+          ${receiptRow('How often', d.freq ? freqLabel(d.freq) : '')}
+          ${receiptRow('Invoice', d.invoice)}
+          ${receiptRow('Product or UPC', d.sku)}
+          ${receiptRow('Attachments', attach)}
+          ${receiptRow('Name', d.name)}
+          ${receiptRow('Email', d.email)}
+          ${receiptRow('Organization', d.org)}
+        </div>
       </div>
     </div>`;
+}
+
+function syncMailHead() {
+  const title = mailEl && mailEl.querySelector('.wch-head-title');
+  const sub = mailEl && mailEl.querySelector('.hc-mail-sub');
+  if (title) title.textContent = mailSent ? 'Email sent' : 'Contact support';
+  if (sub) {
+    sub.textContent = mailSent ? 'We have your ticket' : '';
+    sub.hidden = !mailSent;
+  }
+}
+
+function paintContactFoot() {
+  const foot = mailEl && mailEl.querySelector('[data-mail-foot]');
+  if (!foot) return;
+  foot.hidden = false;
+  if (mailSent) {
+    foot.innerHTML = `
+      <button type="button" class="adm-btn adm-btn--ghost" data-mail-close>Close</button>
+      <button type="button" class="adm-btn adm-btn--primary" data-mail-again>
+        <span class="material-symbols-outlined">edit</span>
+        <span>Send another</span>
+      </button>`;
+    return;
+  }
+  foot.innerHTML = `
+    <button type="button" class="adm-btn adm-btn--primary" data-mail-send>
+      <span class="material-symbols-outlined">send</span>
+      <span>Send Email</span>
+    </button>`;
 }
 
 function paintContactBody() {
   if (!mailEl) return;
   const body = mailEl.querySelector('[data-mail-body]');
-  const foot = mailEl.querySelector('[data-mail-foot]');
-  if (!body || !foot) return;
+  if (!body) return;
+  syncMailHead();
   if (mailSent) {
     body.innerHTML = contactDoneHTML();
-    foot.hidden = true;
+    paintContactFoot();
     return;
   }
   const user = currentUser();
   body.innerHTML = contactFormHTML(user);
-  foot.hidden = false;
+  paintContactFoot();
   const page = body.querySelector('[data-mail-page]');
   if (page && !page.value) page.value = location.href;
   paintAttachList();
@@ -517,30 +563,14 @@ function sendSupportEmail() {
   if (!d.type) ok = false;
   if (!d.what) { qFocus('[data-mail-what]'); ok = false; }
   else if (!d.name) { qFocus('[data-mail-name]'); ok = false; }
-  else if (!d.email || !EMAIL_RE.test(d.email)) { qFocus('[data-mail-email]'); ok = false; }
+  else   if (!d.email || !EMAIL_RE.test(d.email)) { qFocus('[data-mail-email]'); ok = false; }
   if (!ok) return;
 
-  const lines = [
-    `What's going on: ${d.typeName}`,
-    `What happened: ${d.what}`,
-    '',
-    `Name: ${d.name}`,
-    `Email: ${d.email}`,
-    `Organization: ${d.org || '—'}`,
-  ];
-  if (d.page) lines.push(`Page: ${d.page}`);
-  if (d.freq) lines.push(`How often: ${freqLabel(d.freq)}`);
-  if (d.invoice) lines.push(`Invoice: ${d.invoice}`);
-  if (d.sku) lines.push(`Product / UPC: ${d.sku}`);
-  if (mailFiles.length) {
-    lines.push('', 'Attachments (please attach these files in your mail app):');
-    mailFiles.forEach((f) => lines.push(`- ${f.name} (${fmtMailSize(f.size)})`));
-  }
-  lines.push('', `Sent from Help · ${location.href}`);
-
-  const subject = encodeURIComponent(`WISE ${d.typeName}: ${d.what.slice(0, 72)}`);
-  const body = encodeURIComponent(lines.join('\n'));
-  window.location.href = `mailto:${SUPPORT_TO}?subject=${subject}&body=${body}`;
+  mailLast = {
+    ...d,
+    files: mailFiles.map((f) => f.name).filter(Boolean),
+    ref: `WISE-${1000 + (Date.now() % 9000)}`,
+  };
   mailSent = true;
   paintContactBody();
 }
@@ -549,12 +579,87 @@ function qFocus(sel) {
   mailEl?.querySelector(sel)?.focus();
 }
 
-function focusContactForm() {
+const SPOT_MS = 2800;
+
+function clearSpot(el) {
+  if (!el) return;
+  el.classList.remove('hc-spot');
+  const host = el._hcSpotHost;
+  if (host) host.classList.remove('hc-spot-host');
+  el._hcSpotHost = null;
+  if (el._hcSpotTimer) {
+    window.clearTimeout(el._hcSpotTimer);
+    el._hcSpotTimer = 0;
+  }
+}
+
+function spotEl(el, focusEl) {
+  if (!el) return;
+  document.querySelectorAll('.hc-spot').forEach((n) => { if (n !== el) clearSpot(n); });
+  el.classList.remove('hc-spot');
+  void el.offsetWidth;
+  const host = el.closest('.sc-card, .wiseai-dock, #wiseai-dock-panel');
+  if (host && host !== el) {
+    host.classList.add('hc-spot-host');
+    el._hcSpotHost = host;
+  }
+  el.classList.add('hc-spot');
+  try { el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }); } catch (_) {}
+  if (focusEl && typeof focusEl.focus === 'function') {
+    window.setTimeout(() => {
+      try { focusEl.focus({ preventScroll: true }); } catch (_) {
+        try { focusEl.focus(); } catch (_) {}
+      }
+    }, 40);
+  }
+  if (el._hcSpotTimer) window.clearTimeout(el._hcSpotTimer);
+  el._hcSpotTimer = window.setTimeout(() => clearSpot(el), SPOT_MS);
+}
+
+function spotChatComposer() {
+  const dock = document.getElementById('wiseai-dock-panel');
+  const composer = dock && (
+    dock.querySelector('.fl-input-wrap') ||
+    dock.querySelector('.sc-input-row') ||
+    dock.querySelector('.chat-input-rail') ||
+    dock.querySelector('[data-wise-composer]')
+  );
+  const input = dock && dock.querySelector('textarea.fl-input, textarea, input:not([type="hidden"])');
+  spotEl(composer || dock, input);
+}
+
+function showContactPane() {
   if (!mailEl) mountContactPane();
-  if (mailSent) { mailSent = false; paintContactBody(); }
-  mailEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
-  const first = mailEl?.querySelector('[data-mail-type].is-on, [data-mail-type], [data-mail-what]');
-  first?.focus();
+  if (!mailEl) return;
+  mailEl.hidden = false;
+  mailEl.removeAttribute('aria-hidden');
+}
+
+function closeContactPane() {
+  if (!mailEl) return;
+  mailEl.hidden = true;
+  mailEl.setAttribute('aria-hidden', 'true');
+}
+
+function resetContactForm() {
+  mailSent = false;
+  mailLast = null;
+  mailType = '';
+  mailFreq = '';
+  clearMailFiles();
+  paintContactBody();
+}
+
+function spotWriteModule() {
+  showContactPane();
+  const first = mailSent
+    ? mailEl.querySelector('[data-mail-again], [data-mail-close]')
+    : mailEl && mailEl.querySelector('[data-mail-type].is-on, [data-mail-type], [data-mail-what]');
+  spotEl(mailEl, first);
+}
+
+function focusContactForm() {
+  spotWriteModule();
 }
 
 function mountContactPane() {
@@ -562,6 +667,8 @@ function mountContactPane() {
   if (!row) return;
   mailEl = document.getElementById('help-contact');
   if (mailEl && mailEl.querySelector('[data-mail-body]')) {
+    mailEl.hidden = false;
+    mailEl.removeAttribute('aria-hidden');
     applyMailWidth(readMailWidth());
     return;
   }
@@ -579,7 +686,7 @@ function mountContactPane() {
       <div class="wch-head">
         <span class="hc-mail-head-text">
           <span class="wch-head-title">Contact support</span>
-          <span class="hc-mail-sub">Tell us what\u2019s going on</span>
+          <span class="hc-mail-sub" hidden></span>
         </span>
         <div class="wch-controls panel-controls">
           <div class="panel-more-wrap" data-sticky-menu>
@@ -693,9 +800,13 @@ function onMailClick(e) {
   }
   if (e.target.closest('[data-mail-send]')) { e.preventDefault(); sendSupportEmail(); return; }
   if (e.target.closest('[data-mail-again]')) {
-    mailSent = false;
-    clearMailFiles();
-    paintContactBody();
+    e.preventDefault();
+    resetContactForm();
+    return;
+  }
+  if (e.target.closest('[data-mail-close]')) {
+    e.preventDefault();
+    closeContactPane();
     return;
   }
   if (e.target.closest('.panel-width-toggle-btn')) { e.stopPropagation(); cycleMailWidth(); }

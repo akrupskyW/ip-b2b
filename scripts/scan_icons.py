@@ -89,7 +89,7 @@ FILE_GROUP_RULES = [
     (re.compile(r"report-guiding|analytics-types|(^|/)pages/reports\.html|app-vision"), "reports"),
     (re.compile(r"(^|/)(pages/)?(verification|gras-verification)"), "verify"),
     (re.compile(r"organizations|user-management|audit-queue|admin-utils|quick-invite|non-upf-dashboard|accessibility"), "admin"),
-    (re.compile(r"invoices|teams|(^|/)pages/teams\.html|api-keys|(^|/)pages/profile\.html|preferences|(^|/)pages/alerts\.html|(^|/)pages/agents\.html|(^|/)pages/help\.html|(^|/)pages/docs\.html"), "account"),
+    (re.compile(r"invoices|teams|(^|/)pages/teams\.html|api-keys|(^|/)pages/profile\.html|preferences|(^|/)pages/alerts\.html|(^|/)pages/agents\.html|(^|/)pages/support\.html|(^|/)pages/docs\.html"), "account"),
     (re.compile(r"login|create-account|forgot-password|auth-guard|auth\.css"), "auth"),
     (re.compile(r"marketing-|(^|/)index\.html$"), "marketing"),
 ]

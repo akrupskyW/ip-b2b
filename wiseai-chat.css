@@ -1629,7 +1629,7 @@ html.dark .sc-trust-badge .material-symbols-outlined { color: var(--primary-brig
    so the inherited 1.6 chat leading doesn't pad the stamp like a blank line. */
 .sc-line-meta {
   display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px;
-  margin-top: 1px; margin-bottom: 4px; line-height: 1.2;
+  margin-top: 10px; margin-bottom: 4px; line-height: 1.2;
 }
 .sc-line-you .sc-line-meta { justify-content: flex-start; }
 .sc-line-time { font-size: 0.625rem; font-weight: 500; letter-spacing: 0.02em;
