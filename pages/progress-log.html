@@ -674,6 +674,7 @@
       displayPath, isHtmlPath, crawlOverview, emptyCats,
       scriptPurpose, SYNOPSIS_LABELS, SYNOPSIS_ORDER, SYNOPSIS_SEP, collectLocalScriptPaths,
     } from '../js/progress-log-eval.js';
+    import { PROGRESS_LOG_SEED } from '../js/progress-log-seed.js';
     (function () {
       let chat = null;
       const esc = (s) => String(s).replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
@@ -2007,10 +2008,19 @@
       const NOTES_KEY = 'wise-progress-log-notes';
       const EVAL_META_KEY = 'wise-progress-log-eval-meta';
       function loadNotes() {
+        const byId = new Map();
+        const take = (list) => {
+          (Array.isArray(list) ? list : []).forEach((n) => {
+            if (!n || !n.id || !n.day || typeof n.text !== 'string') return;
+            const prev = byId.get(n.id);
+            if (!prev || String(n.text).length >= String(prev.text).length) byId.set(n.id, n);
+          });
+        };
+        take(PROGRESS_LOG_SEED && PROGRESS_LOG_SEED.notes);
         try {
-          const raw = JSON.parse(localStorage.getItem(NOTES_KEY) || '[]');
-          return Array.isArray(raw) ? raw.filter((n) => n && n.id && n.day && typeof n.text === 'string') : [];
-        } catch (_) { return []; }
+          take(JSON.parse(localStorage.getItem(NOTES_KEY) || '[]'));
+        } catch (_) { /* ignore */ }
+        return [...byId.values()];
       }
       function persistNotes() {
         try { localStorage.setItem(NOTES_KEY, JSON.stringify(notes)); } catch (_) {}
@@ -2060,22 +2070,24 @@
         }
         return out;
       }
+      function takeLiveDay(map, d) {
+        if (!d || typeof d.date !== 'string' || !Array.isArray(d.entries)) return;
+        const prev = map[d.date];
+        if (!prev || d.entries.length >= prev.entries.length) map[d.date] = d;
+      }
       function loadLiveDays() {
         const map = {};
+        const seeded = (PROGRESS_LOG_SEED && PROGRESS_LOG_SEED.liveDays) || {};
+        Object.keys(seeded).forEach((iso) => takeLiveDay(map, seeded[iso]));
         try {
           const raw = JSON.parse(localStorage.getItem(LIVE_DAYS_KEY) || 'null');
           if (raw && raw.days && typeof raw.days === 'object') {
-            Object.keys(raw.days).forEach((iso) => {
-              const d = raw.days[iso];
-              if (d && typeof d.date === 'string' && Array.isArray(d.entries)) map[iso] = d;
-            });
+            Object.keys(raw.days).forEach((iso) => takeLiveDay(map, raw.days[iso]));
           }
         } catch (_) {}
         try {
           const one = JSON.parse(localStorage.getItem(LIVE_DAY_KEY_LEGACY) || 'null');
-          if (one && typeof one.date === 'string' && Array.isArray(one.entries) && !map[one.date]) {
-            map[one.date] = one;
-          }
+          takeLiveDay(map, one);
         } catch (_) {}
         return map;
       }
@@ -2157,6 +2169,7 @@
         return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
       }
       let notes = loadNotes();
+      persistNotes();
       /* { day, id: string|null, text } — id is null when composing a new note. */
       let noteEditor = null;
 
@@ -2740,16 +2753,24 @@
         })();
         return authored || defaultFileLabel(path, title);
       }
+      function crawlPageCount(snap) {
+        return snap && snap.pages && typeof snap.pages === 'object' ? Object.keys(snap.pages).length : 0;
+      }
       function loadCrawlSnap() {
+        let local = null;
         try {
           const raw = JSON.parse(localStorage.getItem(CRAWL_KEY) || 'null');
-          if (raw && raw.pages && typeof raw.pages === 'object') return raw;
+          if (raw && raw.pages && typeof raw.pages === 'object') local = raw;
         } catch (_) {}
-        try {
-          const legacy = JSON.parse(localStorage.getItem(CRAWL_KEY_LEGACY) || 'null');
-          if (legacy && legacy.pages && typeof legacy.pages === 'object') return legacy;
-        } catch (_) {}
-        return null;
+        if (!local) {
+          try {
+            const legacy = JSON.parse(localStorage.getItem(CRAWL_KEY_LEGACY) || 'null');
+            if (legacy && legacy.pages && typeof legacy.pages === 'object') local = legacy;
+          } catch (_) {}
+        }
+        const seed = PROGRESS_LOG_SEED && PROGRESS_LOG_SEED.crawl;
+        if (crawlPageCount(seed) >= crawlPageCount(local)) return seed || local;
+        return local;
       }
       function persistCrawlSnap(snap) {
         const compactMap = (map) => {
@@ -2831,6 +2852,8 @@
         if (AUTHORED_DATES.has(iso)) return false;
         const today = localDayIso();
         if (iso !== today && !entries.length) return false;
+        const prevN = (liveDays[iso] && liveDays[iso].entries && liveDays[iso].entries.length) || 0;
+        if (entries.length < prevN) return false;
         if (!liveDays[iso]) liveDays[iso] = emptyLiveDay(iso);
         const day = liveDays[iso];
         day.entries = entries;

@@ -256,6 +256,7 @@ export const SCRIPT_PURPOSES = {
   'help-flow.js': 'the Help center — search, topic cards, FAQs, and a contact form that emails support with optional attachments',
   'user-avatar.js': 'the photo you set on your profile shows in the navigation and in every chat as you',
   'teams-flow.js': 'the people on your brand — who has a seat, who is invited, and who can change a role',
+  'progress-log-seed.js': 'the shared Progress Log board — the days, notes, and last crawl so every origin opens the same journal',
 };
 
 /* The first real sentence of a script's own header comment — the file's
