@@ -230,7 +230,11 @@ function openHistoryModule(opts = {}) {
   try {
     if (typeof api.setRail === 'function') api.setRail(!!opts.rail);
     if (api.isDocked && !api.isDocked()) api.setDocked(true);
-    if (api.root) api.root.classList.remove('wch-docked-hidden', 'wch-dock-conceal');
+    /* Do not lift `wch-docked-hidden` here. setRail() pins the resting
+       width while the module is still display:none; revealDocked() then
+       collapses to 0 and animates open. Un-hiding first showed the full
+       panel and the reveal keyframe faded it — a page blink when the
+       labelled nav had just resized the row. */
     api.open && api.open();
   } catch (_) { /* History is optional on pages without a chat */ }
 }

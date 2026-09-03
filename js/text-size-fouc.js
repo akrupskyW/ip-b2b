@@ -120,7 +120,9 @@
   function apply() {
     var panel = document.getElementById('menu-panel');
     if (!panel) return false;
-    panel.classList.toggle('mp-rail', wantOn());
+    var rail = wantOn();
+    panel.classList.toggle('mp-rail', rail);
+    panel.classList.toggle('mp-rail-settled', rail);
     return true;
   }
   if (apply()) return;

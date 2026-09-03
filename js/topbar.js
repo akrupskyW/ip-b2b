@@ -440,12 +440,15 @@ export function isMinimalUiOn() {
       the initial restore must NOT write, or it would lock in a default. */
 export function applyMinimalUi(on, persist = true) {
   const panel = document.getElementById('menu-panel');
-  if (panel) panel.classList.toggle('minimal-ui', !!on);
+  const next = !!on;
+  const changed = !panel || panel.classList.contains('minimal-ui') !== next;
+  if (panel) panel.classList.toggle('minimal-ui', next);
   if (persist) {
-    try { localStorage.setItem(MINIMAL_UI_KEY, on ? '1' : '0'); } catch {}
+    try { localStorage.setItem(MINIMAL_UI_KEY, next ? '1' : '0'); } catch {}
   }
+  if (!changed) return;
   try {
-    document.dispatchEvent(new CustomEvent('wise:minimal-ui', { detail: { on: !!on } }));
+    document.dispatchEvent(new CustomEvent('wise:minimal-ui', { detail: { on: next } }));
   } catch {}
 }
 
@@ -491,6 +494,40 @@ export function isIconRailOn() {
   } catch { return true; }
 }
 
+function clearRailSettle(panel) {
+  if (!panel) return;
+  if (panel._railSettleTimer) {
+    clearTimeout(panel._railSettleTimer);
+    panel._railSettleTimer = 0;
+  }
+  if (panel._railSettleOnEnd) {
+    panel.removeEventListener('transitionend', panel._railSettleOnEnd);
+    panel._railSettleOnEnd = null;
+  }
+}
+
+/** After the rail width eases shut, drop the card chrome. Doing it on the
+ *  same frame as `.mp-rail` punched a cream hole through a still-260px
+ *  nav — the page blink next to an open History. Expand removes this
+ *  immediately so the card is there while the width grows. */
+function scheduleRailSettle(panel) {
+  if (!panel) return;
+  clearRailSettle(panel);
+  const settle = () => {
+    clearRailSettle(panel);
+    if (panel.classList.contains('mp-rail')) panel.classList.add('mp-rail-settled');
+  };
+  const onEnd = (e) => {
+    const inner = panel.querySelector('.menu-inner');
+    if (e.target !== panel && e.target !== inner) return;
+    if (e.propertyName !== 'width' && e.propertyName !== 'min-width') return;
+    settle();
+  };
+  panel._railSettleOnEnd = onEnd;
+  panel.addEventListener('transitionend', onEnd);
+  panel._railSettleTimer = setTimeout(settle, 320);
+}
+
 /** Reflect icons-only-rail state onto the navigation panel. The Appearance
     popover reads isIconRailOn() to render its own toggle state; the dispatched
     event lets the nav's collapse chevron re-skin itself to match.
@@ -500,12 +537,29 @@ export function isIconRailOn() {
       opening the labelled nav would lock Icons only off on the next load. */
 export function applyIconRail(on, persist = true) {
   const panel = document.getElementById('menu-panel');
-  if (panel) panel.classList.toggle('mp-rail', !!on);
-  if (persist) {
-    try { localStorage.setItem(ICON_RAIL_KEY, on ? '1' : '0'); } catch {}
+  const next = !!on;
+  let changed = true;
+  if (panel) {
+    const was = panel.classList.contains('mp-rail');
+    changed = was !== next;
+    if (!changed) {
+      if (next) panel.classList.add('mp-rail-settled');
+    } else if (next) {
+      clearRailSettle(panel);
+      panel.classList.add('mp-rail');
+      panel.classList.remove('mp-rail-settled');
+      scheduleRailSettle(panel);
+    } else {
+      clearRailSettle(panel);
+      panel.classList.remove('mp-rail', 'mp-rail-settled');
+    }
   }
+  if (persist) {
+    try { localStorage.setItem(ICON_RAIL_KEY, next ? '1' : '0'); } catch {}
+  }
+  if (!changed) return;
   try {
-    document.dispatchEvent(new CustomEvent('wise:menu-rail', { detail: { on: !!on } }));
+    document.dispatchEvent(new CustomEvent('wise:menu-rail', { detail: { on: next } }));
   } catch {}
 }
 

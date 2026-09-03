@@ -1,4 +1,4 @@
-import { applyMinimalUi } from './topbar.js';
+import { applyMinimalUi, applyIconRail } from './topbar.js';
 import { initLirTooltip } from './lir-tooltip.js';
 import { parkNavHistory, refreshNavHistory } from './nav-history.js';
 import { isNavHamburgerActive } from './nav-hamburger.js';
@@ -1174,8 +1174,8 @@ function setupMenuRail(navEl) {
     if (icon) icon.textContent = 'dock_to_right';
   };
 
-  const apply = (railed) => {
-    panel.classList.toggle('mp-rail', railed);
+  const apply = (railed, persist = false) => {
+    applyIconRail(!!railed, persist);
     if (isNavModulesOn()) {
       /* History icon opens History from the collapsed rail and closes
          whichever module is open; hamburger/new-chat hide while a module is open. */
@@ -1266,13 +1266,9 @@ function setupMenuRail(navEl) {
         return;
       }
       const next = !panel.classList.contains('mp-rail');
-      apply(next);
       /* Nav & History icons owns the rail as a load default; expanding here
          is in-session only so the next page still opens as four icons. */
-      if (!isNavModulesOn()) {
-        try { localStorage.setItem(MENU_RAIL_STORE_KEY, next ? '1' : '0'); } catch (_) {}
-      }
-      try { document.dispatchEvent(new CustomEvent('wise:menu-rail', { detail: { on: next } })); } catch (_) {}
+      apply(next, !isNavModulesOn());
     });
   }
 

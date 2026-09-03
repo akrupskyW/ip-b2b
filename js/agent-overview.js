@@ -474,7 +474,7 @@ function renderMain(agent) {
 function collapseNavRail() {
   const panel = document.getElementById('menu-panel');
   if (!panel || panel.classList.contains('mp-rail')) return;
-  panel.classList.add('mp-rail');
+  panel.classList.add('mp-rail', 'mp-rail-settled');
   const btn = document.getElementById('topbar-menu-toggle');
   if (btn) {
     btn.setAttribute('aria-pressed', 'true');

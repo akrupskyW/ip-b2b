@@ -559,9 +559,9 @@
     scan();
     observe();
     var inner = document.querySelector('.agent-main-inner');
-    if (inner) settleAnim(inner);
-    var menuInner = document.querySelector('#menu-panel.mp-open .menu-inner');
-    if (menuInner) settleAnim(menuInner);
+    if (inner) inner.classList.add('is-entered');
+    var menuInner = document.querySelector('#menu-panel .menu-inner');
+    if (menuInner) menuInner.classList.add('is-entered');
   }
 
   if (document.readyState === 'loading') {

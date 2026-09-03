@@ -2922,7 +2922,8 @@ html:not(.app-search-on) #modules-row > .wch-sidebar {
 #menu-panel.mp-open .menu-inner {
   animation: panelBounceLeft 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
-#menu-panel.mp-open .menu-inner.is-entered { animation: none; }
+#menu-panel.mp-open .menu-inner.is-entered,
+#menu-panel.mp-rail .menu-inner { animation: none; }
 html.dark #menu-panel .menu-inner {
   background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
   border: 1px solid rgba(37, 80, 124, 0.18);
@@ -4377,8 +4378,12 @@ html.dark .menu-nav .menu-nav-group[data-open="true"] > .menu-nav-product .menu-
    scoped to the nav rail and driven by the icons-only toggle. Excludes the
    pivoted top bar (.mp-pivot), which reads as a floating pill and keeps its
    container. `!important` beats the dark-mode `.menu-inner` fill/border/shadow
-   rule above. */
-#menu-panel.mp-rail:not(.mp-pivot) .menu-inner {
+   rule above.
+
+   `.mp-rail-settled` is added after the 0.28s width ease (see applyIconRail).
+   Stripping chrome on the same frame as `.mp-rail` left a still-wide card
+   hollow — cream page showing through next to History, which reads as a blink. */
+#menu-panel.mp-rail.mp-rail-settled:not(.mp-pivot) .menu-inner {
   background: none !important;
   border: 0 !important;
   border-radius: 0 !important;
@@ -6759,12 +6764,15 @@ html.dark .chat-messages-area { background: transparent; }
    avatar column lines up under the topbar owl and the body text lines up under
    the "WISEcodeAI™" title. */
 .sc-line {
+  --sc-avatar-size: 30px;
   display: flex; align-items: flex-start; gap: 12px;
   margin-bottom: 0.85rem; color: var(--text);
   overflow: visible;
 }
 .sc-line-body {
   flex: 1 1 0%; min-width: 0;
+  /* First line of every transcript starts on the avatar's midline, not its top. */
+  padding-top: calc(var(--sc-avatar-size) / 2);
   /* High-contrast conversation copy — the dialogue is the most legible thing in
      the panel (the small, quiet meta row below carries the timestamp). */
   font-size: var(--fs-chat, 0.875rem); line-height: 1.6; color: var(--text);
@@ -6782,7 +6790,7 @@ html.dark .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary-
    You   = the member's initials, matching the top-bar .topbar-profile chip. */
 .sc-avatar {
   flex-shrink: 0;
-  width: 30px; height: 30px; margin-top: 1px;
+  width: var(--sc-avatar-size, 30px); height: var(--sc-avatar-size, 30px); margin-top: 0;
   border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
   font-weight: 700; font-size: 11px; letter-spacing: 0.02em;
@@ -8030,7 +8038,8 @@ html.chat-compact .sc-trace-thread .sc-line { margin-bottom: 0; margin-top: 0; }
 }
 .sc-line-trace .sc-trace-strand {
   left: 5px;
-  top: 32px;
+  /* Below the padded "Thinking" / "Worked for" head (avatar midline + head). */
+  top: calc(var(--sc-avatar-size, 30px) / 2 + 18px);
   bottom: 0;
   width: 20px;
   transition: opacity 0.38s ease;
@@ -18664,11 +18673,13 @@ html.dark #mi-motion .wa-merge-chip,
 
 /* ---- Chat & drawers catalog demos (scoped specimens on All Modules) ---- */
 .dsc-demo .sc-line {
+  --sc-avatar-size: 30px;
   display: flex; align-items: flex-start; gap: 12px;
   margin: 0; color: var(--text); text-align: left;
 }
 .dsc-demo .sc-line-body {
   flex: 1 1 0%; min-width: 0;
+  padding-top: calc(var(--sc-avatar-size, 30px) / 2);
   font-size: var(--fs-chat, 0.875rem); line-height: 1.6; color: var(--text);
 }
 .dsc-demo .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary); }
@@ -18684,7 +18695,7 @@ html.dark .dsc-demo .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(
 html.dark .dsc-demo .sc-line-time { color: color-mix(in srgb, var(--text-subtle) 70%, transparent); }
 .dsc-demo .sc-event-label { color: var(--text-muted); }
 .dsc-demo .sc-avatar {
-  flex-shrink: 0; width: 30px; height: 30px; margin-top: 1px; border-radius: 50%;
+  flex-shrink: 0; width: var(--sc-avatar-size, 30px); height: var(--sc-avatar-size, 30px); margin-top: 0; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
   font-weight: 700; font-size: 11px; letter-spacing: 0.02em; user-select: none;
 }
@@ -21199,7 +21210,7 @@ html.dark .mi-tarch-turns-admin { color: var(--primary-bright, #93C5FD); }
   background: var(--bg);
 }
 html.dark .mi-tarch-thread { background: transparent; }
-.mi-tarch-thread .sc-line { margin-bottom: 0.35rem; }
+.mi-tarch-thread .sc-line { --sc-avatar-size: 22px; margin-bottom: 0.35rem; }
 .mi-tarch-thread .sc-para { font-size: 0.78rem; line-height: 1.4; }
 .mi-tarch-thread .sc-reply-chips { margin: 6px 0 2px; display: flex; flex-wrap: wrap; gap: 4px; }
 .mi-tarch-thread .sc-reply-chips .chip { font-size: 0.68rem; padding: 3px 8px; }

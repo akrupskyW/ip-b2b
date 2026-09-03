@@ -4902,8 +4902,8 @@
        matching the top-bar .topbar-profile chip. */
     /* gap (12px) + avatar (30px) match the header icon→title spacing so the
        avatar lines up under the topbar owl and body text under "WISEcodeAI". */
-    .sc-line { display: flex; align-items: flex-start; gap: 12px; }
-    .sc-line-body { flex: 1 1 0%; min-width: 0; font-size: var(--fs-chat, 0.875rem); line-height: 1.6; color: var(--text); }
+    .sc-line { --sc-avatar-size: 30px; display: flex; align-items: flex-start; gap: 12px; }
+    .sc-line-body { flex: 1 1 0%; min-width: 0; padding-top: calc(var(--sc-avatar-size) / 2); font-size: var(--fs-chat, 0.875rem); line-height: 1.6; color: var(--text); }
     /* The member's very first line renders as a large serif headline (the
        message text only — the timestamp/meta row underneath stays small). */
     .sc-line-you--first .sc-you-text {
@@ -4913,7 +4913,7 @@
       color: var(--text);
     }
     .sc-avatar {
-      flex-shrink: 0; width: 30px; height: 30px; margin-top: 1px;
+      flex-shrink: 0; width: var(--sc-avatar-size, 30px); height: var(--sc-avatar-size, 30px); margin-top: 0;
       border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
       font-weight: 700; font-size: 11px; letter-spacing: 0.02em; user-select: none;
     }
@@ -11895,6 +11895,7 @@
       const expanded = force !== undefined ? !!force : panel.classList.contains('mp-rail');
       panel.classList.add('mp-open');
       panel.classList.toggle('mp-rail', !expanded);
+      panel.classList.toggle('mp-rail-settled', !expanded);
     }
 
     function toggleHistoryPanel(options) {

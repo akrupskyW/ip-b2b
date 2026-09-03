@@ -5860,19 +5860,28 @@ export function createHelixBgAnim(cfg) {
     if (!body) return;
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     w = body.clientWidth; h = body.clientHeight;
-    canvas.width = Math.max(1, Math.round(w * dpr));
-    canvas.height = Math.max(1, Math.round(h * dpr));
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    if (buf && bctx) {
-      buf.width = canvas.width; buf.height = canvas.height;
-      bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const nextCw = Math.max(1, Math.round(w * dpr));
+    const nextCh = Math.max(1, Math.round(h * dpr));
+    const sizeChanged = canvas.width !== nextCw || canvas.height !== nextCh;
+    /* Assigning canvas.width clears the bitmap. Skip when the box did not
+       change, and when it did, paint the last frame immediately so a nav /
+       History resize cannot leave a blank canvas for a frame (page blink). */
+    if (sizeChanged) {
+      canvas.width = nextCw;
+      canvas.height = nextCh;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (buf && bctx) {
+        buf.width = canvas.width; buf.height = canvas.height;
+        bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
     }
     /* Keep a shown card glued to its bug after a resize/reflow. */
     if (card && !card.hidden && hoverX >= 0) placeCard({ x: hoverX, y: hoverY, r: 17 });
     /* Roll / Crawl hide the chat (display:none → 0×0). start() may have
        armed the field there; when the host gets a real box, paint. */
     if (host.classList.contains('sc-bganim-live') && isOn() && hostHasBox()) {
-      if (reducedMotion || isPaused()) { draw(lastT || 3); return; }
+      if (sizeChanged || reducedMotion || isPaused()) draw(lastT || 3);
+      if (reducedMotion || isPaused()) return;
       if (running && !paused) {
         if (!raf) raf = requestAnimationFrame(frame);
         return;

@@ -1694,6 +1694,13 @@
       sidebar.style.setProperty('width', '0px', 'important');
       sidebar.style.setProperty('min-width', '0px', 'important');
     }
+    function isDockedAtRest() {
+      if (sidebar.classList.contains('wch-docked-hidden')) return false;
+      if (sidebar.classList.contains('wch-dock-conceal')) return false;
+      if (sidebar.classList.contains('wch-dock-reveal')) return false;
+      if (sidebar.style.width === '0px') return false;
+      return true;
+    }
     function revealDocked() {
       if (sidebar.classList.contains('wch-in-nav')) {
         sidebar.classList.remove('wch-docked-hidden', 'wch-dock-conceal', 'wch-dock-reveal');
@@ -1702,6 +1709,14 @@
       }
       if (navModulesOwnsHistoryChrome() && railMode) dropRailChrome();
       clearTimeout(concealTimer);
+      /* Already open, or a reveal already in flight — do not re-add
+         wch-dock-reveal. That keyframe starts at opacity 0, so a second
+         open() (nav rail toggle, a raced History click) fades the panel
+         and reads as the page blinking. */
+      if (isDockedAtRest() || sidebar.classList.contains('wch-dock-reveal')) {
+        if (isDockedAtRest()) applyDockWidth();
+        return;
+      }
       clearTimeout(revealTimer);
       sidebar.classList.remove('wch-dock-conceal', 'wch-dock-reveal');
       /* Expand from a collapsed width using the same `wch-anim` flex-basis /
