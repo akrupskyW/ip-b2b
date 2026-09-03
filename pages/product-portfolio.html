@@ -4869,7 +4869,7 @@
     /* gap (12px) + avatar (30px) match the header icon→title spacing so the
        avatar lines up under the topbar owl and body text under "WISEcodeAI". */
     .sc-line { --sc-avatar-size: 30px; display: flex; align-items: flex-start; gap: 12px; }
-    .sc-line-body { flex: 1 1 0%; min-width: 0; padding-top: calc(var(--sc-avatar-size) / 2); font-size: var(--fs-chat, 0.875rem); line-height: 1.6; color: var(--text); }
+    .sc-line-body { flex: 1 1 0%; min-width: 0; padding-top: max(0px, calc((var(--sc-avatar-size) - 1lh) / 2)); font-size: var(--fs-chat, 0.875rem); line-height: 1.6; color: var(--text); }
     /* The member's very first line renders as a large serif headline (the
        message text only — the timestamp/meta row underneath stays small). */
     .sc-line-you--first .sc-you-text {

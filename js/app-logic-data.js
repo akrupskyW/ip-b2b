@@ -404,7 +404,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Ingredients Analyzer is its own sticky module',
-        how: 'The ingredient list, Analyze button, and Parsed / Codes / Nutrients / Scout accordions render in <code>#ia-panel</code>, a nested sticky drawer to the right of Product Details. The drawer starts closed. Verify ingredients (banner, chip, or <code>from=verify</code>) and Analyze open it; Product Details\u2019 ⋯ can toggle it. There is no Save to Portfolio footer on the product module \u2014 save lives on the add banner and in chat. The analyzer does not take the fill-width default.',
+        how: 'The ingredient list, Analyze button, and Parsed / Codes / Nutrients / Scout accordions render in <code>#ia-panel</code>, a nested sticky drawer to the right of Product Details. The drawer starts closed. Verify ingredients (banner, chip, or <code>from=verify</code>) and Analyze open it at double pane width; Product Details\u2019 ⋯ can toggle it. There is no Save to Portfolio footer on the product module \u2014 save lives on the add banner and in chat. The analyzer does not take the fill-width default.',
       },
       {
         title: 'Category docks with the ⋯, not in the size row',

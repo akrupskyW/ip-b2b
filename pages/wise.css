@@ -7259,8 +7259,9 @@ html.dark .chat-messages-area { background: transparent; }
 }
 .sc-line-body {
   flex: 1 1 0%; min-width: 0;
-  /* First line of every transcript starts on the avatar's midline, not its top. */
-  padding-top: calc(var(--sc-avatar-size) / 2);
+  /* First line sits in the middle of the avatar (line-box centered on it),
+     not hanging from the top and not starting at the equator. */
+  padding-top: max(0px, calc((var(--sc-avatar-size) - 1lh) / 2));
   /* High-contrast conversation copy — the dialogue is the most legible thing in
      the panel (the small, quiet meta row below carries the timestamp). */
   font-size: var(--fs-chat, 0.875rem); line-height: 1.6; color: var(--text);
@@ -8526,8 +8527,8 @@ html.chat-compact .sc-trace-thread .sc-line { margin-bottom: 0; margin-top: 0; }
 }
 .sc-line-trace .sc-trace-strand {
   left: 5px;
-  /* Below the padded "Thinking" / "Worked for" head (avatar midline + head). */
-  top: calc(var(--sc-avatar-size, 30px) / 2 + 18px);
+  /* Below the first-line-centered "Thinking" / "Worked for" head. */
+  top: calc((var(--sc-avatar-size, 30px) - 1lh) / 2 + 20px);
   bottom: 0;
   width: 20px;
   transition: opacity 0.38s ease;
@@ -8607,7 +8608,7 @@ html.load-anim-helix .cmp-ghost {
 }
 .sc-trace-head {
   display: flex; align-items: center; gap: 6px; width: 100%;
-  background: none; border: 0; padding: 2px 0; margin: 0; cursor: pointer;
+  background: none; border: 0; padding: 0; margin: 0; cursor: pointer;
   color: var(--text-subtle); font: inherit; text-align: left; -webkit-tap-highlight-color: transparent;
 }
 /* Chevron sits inline right after the timer: points RIGHT when collapsed,
@@ -19070,7 +19071,7 @@ html.dark #mi-motion .wa-merge-chip,
 }
 .dsc-demo .sc-line-body {
   flex: 1 1 0%; min-width: 0;
-  padding-top: calc(var(--sc-avatar-size, 30px) / 2);
+  padding-top: max(0px, calc((var(--sc-avatar-size, 30px) - 1lh) / 2));
   font-size: var(--fs-chat, 0.875rem); line-height: 1.6; color: var(--text);
 }
 .dsc-demo .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary); }

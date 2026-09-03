@@ -2135,12 +2135,48 @@
       : `Next, verify the ingredients on <strong>${esc(state.productName)}</strong> so it can earn a Non-UPF Shield.`,
       nfpIntentChips());
   }
+  const IA_DOUBLE_TIER = 1;
+  let iaWidthTier = IA_DOUBLE_TIER;
+
+  function applyIaWidth() {
+    const panel = document.getElementById('ia-panel');
+    const btn = document.getElementById('ia-width');
+    const W = window.WPaneWidth;
+    if (panel) {
+      if (iaWidthTier !== 4) {
+        try { window.WisePaneResize && window.WisePaneResize.release && window.WisePaneResize.release([panel]); } catch (_) {}
+      }
+      if (W) W.applyClasses(panel, iaWidthTier, 'panel');
+      else {
+        panel.classList.toggle('panel-wide', iaWidthTier >= 1 && iaWidthTier < 4);
+        panel.classList.toggle('panel-triple', iaWidthTier >= 2 && iaWidthTier < 4);
+        panel.classList.toggle('panel-fill', iaWidthTier === 3);
+        panel.classList.toggle('panel-custom', iaWidthTier === 4);
+      }
+    }
+    if (W) W.syncButton(btn, iaWidthTier);
+    else if (btn) {
+      const ic = btn.querySelector('.material-symbols-outlined');
+      if (ic) ic.textContent = ['width_normal', 'width_wide', 'width_wide', 'width_full', 'fit_width'][iaWidthTier];
+      btn.classList.toggle('is-on', iaWidthTier >= 1);
+      btn.setAttribute('aria-pressed', iaWidthTier >= 1 ? 'true' : 'false');
+      btn.title = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to widen', 'Width (custom) — drag to any size'][iaWidthTier];
+    }
+  }
+  function setIngredientListDouble() {
+    iaWidthTier = IA_DOUBLE_TIER;
+    applyIaWidth();
+    const panel = document.getElementById('ia-panel');
+    try { window.WPaneWidth && window.WPaneWidth.saveTier(panel, IA_DOUBLE_TIER); } catch (_) {}
+  }
   function revealIngredientList() {
     setIaOpen(true);
+    setIngredientListDouble();
     try { window.WiseStickyModules && window.WiseStickyModules.scan(); } catch (_) {}
     const panel = iaPanelEl();
     if (panel) {
       requestAnimationFrame(() => {
+        sizeIngredEdit();
         panel.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
       });
     }
@@ -4695,39 +4731,14 @@
     });
     applyNfpWidth();
 
-    /* Ingredient List width — same cycle as Product Details. Double is the
-       load default; a saved per-module choice still wins. */
-    const iaPanelEl = $('ia-panel');
-    const savedIaTier = (window.WPaneWidth && iaPanelEl)
-      ? window.WPaneWidth.readSavedTier(iaPanelEl)
+    /* Ingredient List width — double is the load default (and the size
+       Verify ingredients always opens at). Fill / custom still persist. */
+    const iaPanelNode = $('ia-panel');
+    const savedIaTier = (window.WPaneWidth && iaPanelNode)
+      ? window.WPaneWidth.readSavedTier(iaPanelNode)
       : null;
-    let iaWidthTier = (savedIaTier == null) ? 1 : savedIaTier;
-    const iaWidthBtn = $('ia-width');
-    function applyIaWidth() {
-      const panel = $('ia-panel');
-      const W = window.WPaneWidth;
-      if (panel) {
-        if (iaWidthTier !== 4) {
-          try { window.WisePaneResize && window.WisePaneResize.release && window.WisePaneResize.release([panel]); } catch (_) {}
-        }
-        if (W) W.applyClasses(panel, iaWidthTier, 'panel');
-        else {
-          panel.classList.toggle('panel-wide', iaWidthTier >= 1 && iaWidthTier < 4);
-          panel.classList.toggle('panel-triple', iaWidthTier >= 2 && iaWidthTier < 4);
-          panel.classList.toggle('panel-fill', iaWidthTier === 3);
-          panel.classList.toggle('panel-custom', iaWidthTier === 4);
-        }
-      }
-      if (W) W.syncButton(iaWidthBtn, iaWidthTier);
-      else if (iaWidthBtn) {
-        const ic = iaWidthBtn.querySelector('.material-symbols-outlined');
-        if (ic) ic.textContent = ['width_normal', 'width_wide', 'width_wide', 'width_full', 'fit_width'][iaWidthTier];
-        iaWidthBtn.classList.toggle('is-on', iaWidthTier >= 1);
-        iaWidthBtn.setAttribute('aria-pressed', iaWidthTier >= 1 ? 'true' : 'false');
-        iaWidthBtn.title = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to widen', 'Width (custom) — drag to any size'][iaWidthTier];
-      }
-    }
-    iaWidthBtn?.addEventListener('click', () => {
+    iaWidthTier = (savedIaTier == null || savedIaTier === 0) ? IA_DOUBLE_TIER : savedIaTier;
+    $('ia-width')?.addEventListener('click', () => {
       const W = window.WPaneWidth;
       iaWidthTier = W ? W.next(iaWidthTier) : (iaWidthTier + 1) % 5;
       applyIaWidth();

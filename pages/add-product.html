@@ -390,6 +390,8 @@
     .nfp-sp--flip .nfp-sp-facts .nfp-ins-next {
       display: grid; grid-template-columns: minmax(0, 1fr);
       gap: 10px; align-items: start; justify-items: stretch;
+      width: 100%; max-width: 500px; margin-left: auto; margin-right: auto;
+      box-sizing: border-box;
       padding: 12px 14px;
     }
     .nfp-sp--flip .nfp-sp-facts .nfp-ins-next-dots { grid-column: 1; grid-row: 1; }
@@ -1284,11 +1286,11 @@
     .nfp-rcol-empty .nfp-rcol-brand { color: var(--text-muted); margin-top: 0; }
 
     /* Product Data (Nutrition Facts) — faithful US label (always light). Boxed
-       in the heavy black rule a printed label carries. Full width of the facts
-       content box; side inset comes from the column’s equal 16px padding. */
+       in the heavy black rule a printed label carries. 12px side inset matches
+       the identity strip, next-step banner, and allergen block. */
     .nfp-nf-panel {
       background: #fff; font-family: 'WISE Digits', 'DM Sans', system-ui, sans-serif; color: #000;
-      width: 100%; max-width: none; margin: 12px 0 14px;
+      width: calc(100% - 24px); max-width: 500px; margin: 12px auto 14px;
       border: 3px solid #000;
       box-sizing: border-box;
     }
@@ -1326,7 +1328,7 @@
        so a long list never gets clipped by a stadium pill. */
     .nfp-ingred-edit {
       display: block; width: 100%; box-sizing: border-box; margin: 0;
-      min-height: 38px; height: 38px; resize: none; overflow: hidden;
+      min-height: 38px; height: auto; resize: none; overflow: hidden;
       padding: 9px 16px;
       border: 1px solid var(--border-strong); border-radius: 22px;
       background: var(--surface-2); color: var(--text);
@@ -1509,6 +1511,8 @@
     .nfp-ins-next {
       position: relative; display: grid; grid-template-columns: minmax(0, 1fr);
       gap: 10px; align-items: start; justify-items: stretch;
+      width: 100%; max-width: 500px; margin-left: auto; margin-right: auto;
+      box-sizing: border-box;
       padding: 16px 18px; border-radius: 16px;
       background: var(--primary-soft); border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
     }
