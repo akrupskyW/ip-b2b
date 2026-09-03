@@ -58,14 +58,10 @@
 /* ===================================================================
    WISE — MARKETING stylesheet (front-end marketing site).
 
-   Standalone from the app's pages/wise.css so marketing can evolve its
-   own layout/components, BUT the PRIMARY design primitives below
-   (colors, fonts, elevation/shadows, radii, spacing) are duplicated
-   1:1 from pages/wise.css and MUST be kept in sync with it. When a
-   token changes in wise.css, mirror it here.
-
-   Everything under "SECTION 2 — MARKETING COMPONENTS" is new and lives
-   only here.
+   Marketing pages also load pages/wise.css (the one product stylesheet)
+   for the shared chat module and tokens. This file owns marketing layout
+   and components only. Tokens below stay as a first-paint fallback and
+   MUST stay in step with pages/wise.css :root.
 =================================================================== */
 
 
@@ -185,8 +181,9 @@ html.dark {
                    radial-gradient(120% 120% at 100% 10%, rgba(50,169,102,0.14) 0%, rgba(50,169,102,0) 50%);
 }
 
-/* Marketing base — NOTE: unlike the app (overflow:hidden shell) the
-   marketing site scrolls normally. */
+/* Marketing base — unlike the app (overflow:hidden shell) the
+   marketing site scrolls normally. Specificity beats leftover app
+   html/body rules if a future sheet forgets the :not(.mkt) fence. */
 * { box-sizing: border-box; }
 html.mkt {
   height: auto;
@@ -198,7 +195,12 @@ html.mkt {
 }
 body.mkt {
   margin: 0;
+  height: auto;
   min-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  display: block;
+  padding: 0;
   background-color: var(--bg);
   color: var(--text);
   font-family: 'WISE Digits', var(--font-body);
@@ -1255,7 +1257,7 @@ html.dark .mkt-galaxy-ring { border-color: color-mix(in srgb, var(--primary-brig
 }
 
 /* --- The WISE owl core (the sun) — the EXACT pulsating owl from the WISEcodeAI
-   chat welcome screen. It reuses .ws-logo / .ws-pulse-ring from wiseai-chat.css
+   chat welcome screen. It reuses .ws-logo / .ws-pulse-ring from pages/wise.css
    (same primary color, same breathing + ring-bloom animation, same UX); we only
    scale it up here to read as the galaxy's glowing center. --- */
 .mkt-galaxy-core {

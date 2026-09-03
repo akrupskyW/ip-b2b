@@ -9,8 +9,8 @@
  *   import { mountWISEcodeAIChat } from './wiseai-chat.js';
  *   mountWISEcodeAIChat(document.getElementById('host'), { ... });
  *
- * Requires the design tokens from agent-page.css and the styles in
- * wiseai-chat.css to be loaded on the host page.
+ * Requires the design tokens and chat styles in pages/wise.css
+ * to be loaded on the host page.
  */
 
 /* Side-effect import: registers window.WiseChatHistory (the shared in-module
@@ -49,8 +49,9 @@ import {
 } from './chat-activity-strip.js';
 import {
   makeTraceHelix as makeHelix,
-  measureTraceRungCentres as measureRungCentres,
   TRACE_STRAND_MARKUP,
+  stretchTraceHelixToNextAvatar,
+  dismissTraceHelix,
 } from './trace-helix.js';
 
 /* WISE-owl "bug" used in the topbar (inherits currentColor). Exported so the
@@ -1516,7 +1517,7 @@ export function injectChatExtras() {
        It rides at the end of every welcome chip set whenever the link is shown;
        clicking it starts a page-specific "here's what you can ask" chat turn.
        Doubled .chip selector so these outrank the base .ws-intent-chip rules in
-       wiseai-chat.css / wise.css. */
+       pages/wise.css. */
     .chip.ws-intent-chip--askhelp {
       border-color: color-mix(in srgb, var(--ter-amber, #FFC434) 75%, var(--border-strong));
       color: color-mix(in srgb, var(--ter-amber, #FFC434) 62%, #000);
@@ -9518,7 +9519,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
          narrative you can read top-to-bottom, never stopping to wipe & reset.
        • Delays are deliberately variable so no two turns feel identical.
 
-     When the last milestone lands, the globs are gone and the live block is
+     When the last milestone lands, the helix is gone and the live block is
      replaced by the quiet SUMMARY: each milestone's key + the m:ss elapsed when
      it landed, the header reading "Worked for m:ss". Collapsible via the header. */
   function runReasoningTrace(milestones, done, tail, sourceLine) {
@@ -9549,9 +9550,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        until they're done. */
     if (tail && tail.key) steps.push(tail);
 
-    /* The strand rail lives in the BODY's left gutter. A single .sc-trace-dna
+    /* The strand rail lives in the owl-avatar column. A single .sc-trace-dna
        host carries the live SVG helix: it spins (twists) while thinking, then
-       freezes aligned to the milestone rows and sweeps green top-to-bottom. */
+       is removed when the summary lands. */
     const strandMarkup = TRACE_STRAND_MARKUP;
 
     const el = document.createElement('div');
@@ -9578,6 +9579,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        re-pointed at the summary strand after the body is rebuilt. */
     const helix = makeHelix(bodyEl, { prefersReducedMotion });
     helix.startLive();
+    stretchTraceHelixToNextAvatar(el);
+    helix.refresh();
 
     /* The header collapses the whole trace (live glob or final summary) and back. */
     head.addEventListener('click', () => {
@@ -9591,14 +9594,32 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     /* The landmarks we've passed — key + the clock reading when each landed.
        Only surfaced at the very end, as the summary. */
     const landmarks = [];
-    /* The summary: the strand rail + the milestone list. No check marks — the
-       strand's green base-pair dots are the "done" signal, so a section reads as
-       complete once its dots have gone green. Pass revealed=true to mark them all
-       done at once (reduced motion / no sweep). */
-    const stepsHtml = (revealed) => strandMarkup + `<ul class="sc-trace-steps">${landmarks.map((l) =>
-      `<li class="sc-trace-step${revealed ? ' is-revealed' : ''}">`
+    /* The summary: milestone list. The helix stays just long enough to reach
+       the answer owl below, then fades — keys sit on the transcript's left edge. */
+    const stepsHtml = () => `<ul class="sc-trace-steps">${landmarks.map((l) =>
+      `<li class="sc-trace-step is-revealed">`
       + `<span class="sc-trace-step-key">${esc(l.key)}</span>`
       + `<span class="sc-trace-step-time" aria-hidden="true">${esc(l.time)}</span></li>`).join('')}</ul>`;
+
+    const landSummary = (extraHtml) => {
+      helix.stop();
+      bodyEl.innerHTML = TRACE_STRAND_MARKUP + (extraHtml || '') + stepsHtml();
+      titleEl.textContent = `Worked for ${landmarks.length ? landmarks[landmarks.length - 1].time : fmtTraceClock(now())}`;
+      timerEl.textContent = `${landmarks.length} step${landmarks.length === 1 ? '' : 's'}`;
+      trace.classList.add('is-complete');
+      el.classList.remove('sc-line-typing');
+      scrollDown();
+      if (done) done();
+      requestAnimationFrame(() => {
+        stretchTraceHelixToNextAvatar(el);
+        helix.refresh();
+        scrollDown();
+      });
+      dismissTraceHelix(helix, bodyEl, {
+        holdMs: prefersReducedMotion ? 0 : 720,
+        fadeMs: prefersReducedMotion ? 0 : 400,
+      });
+    };
 
     /* Reduced motion: skip the live streaming, show the finished summary at once
        with plausible stamps, then answer after a short beat. */
@@ -9607,17 +9628,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       steps.forEach((m) => { acc += 900 + Math.round(Math.random() * 1400); landmarks.push({ key: m.key, time: fmtTraceClock(acc) }); });
       const srcHtml = sourceLine
         ? `<div class="sc-trace-story"><span class="sc-trace-story-line sc-trace-story-source is-in">${sourceLine}</span></div>` : '';
-      bodyEl.innerHTML = srcHtml + stepsHtml(true);
-      titleEl.textContent = `Worked for ${landmarks.length ? landmarks[landmarks.length - 1].time : fmtTraceClock(acc)}`;
-      timerEl.textContent = `${landmarks.length} step${landmarks.length === 1 ? '' : 's'}`;
-      trace.classList.add('is-complete');
-      el.classList.remove('sc-line-typing');
-      /* No sweep in reduced motion — freeze the helix aligned to the rows with
-         every dot already green. */
-      helix.freezeAligned(measureRungCentres(bodyEl));
-      helix.setGreen(landmarks.length);
-      scrollDown();
-      setTimeout(() => { if (done) done(); }, 480);
+      landSummary(srcHtml);
       return;
     }
 
@@ -9626,27 +9637,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
 
     const finish = () => {
       clearInterval(timer);
-      bodyEl.innerHTML = stepsHtml(false);
-      titleEl.textContent = `Worked for ${landmarks.length ? landmarks[landmarks.length - 1].time : fmtTraceClock(now())}`;
-      timerEl.textContent = `${landmarks.length} step${landmarks.length === 1 ? '' : 's'}`;
-      trace.classList.add('is-complete');
-      el.classList.remove('sc-line-typing');
-      /* Freeze the twist and re-hang the helix so each base-pair dot lands on a
-         milestone row's centre — the green dots line up with the elements they
-         represent. */
-      helix.freezeAligned(measureRungCentres(bodyEl));
-      scrollDown();
-      if (done) done();
-      /* Sweep the strand green from the top, one dot at a time: each rung goes
-         green as its step "lands", the ones below staying blue until reached. */
-      const stepEls = Array.from(bodyEl.querySelectorAll('.sc-trace-step'));
-      stepEls.forEach((li, i) => {
-        setTimeout(() => {
-          helix.setGreen(i + 1);
-          li.classList.add('is-revealed');
-          scrollDown();
-        }, 160 + i * 420);
-      });
+      landSummary('');
     };
 
     const runMilestone = () => {
@@ -9662,6 +9653,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       block.innerHTML = `<div class="sc-trace-now"><span class="sc-trace-now-key">${esc(m.key)}</span></div>`
         + `<div class="sc-trace-story"></div>`;
       bodyEl.appendChild(block);
+      stretchTraceHelixToNextAvatar(el);
+      helix.refresh();
       scrollDown();
       const storyEl = block.querySelector('.sc-trace-story');
       /* Steps-only mode drops the glob story text (and the trailing grounding

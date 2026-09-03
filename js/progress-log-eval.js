@@ -51,7 +51,6 @@ export const SHARED_SCRIPTS = [
   '../js/sticky-report.js',
   '../js/nudge-toast-dismiss.js',
   'wise.css',
-  '../wiseai-chat.css',
 ];
 
 /* Product-language signals. Presence/absence becomes a full sentence, written
@@ -160,6 +159,9 @@ export const FEATURE_SIGNALS = [
   { id: 'chatWidthDefault', cat: 'ux', re: /defaultChatTier|WISE_CHAT_SINGLE_MAX_PX|chat-default-double/,
     on: 'The chat opens at a width that matches the screen: single on a 14-inch-class display, double when there is more room. You can still cycle wider in the session; the next load puts it back.',
     off: 'The chat no longer picks a default width from the screen size.' },
+  { id: 'actstripJump', cat: 'ux', re: /wa-activity-tick--prompt|lastAnsweredPrompt|scrollToPromptTop/,
+    on: 'A brand-blue mark on the activity strip jumps you to the top of the last question that already got an answer.',
+    off: 'The activity strip no longer jumps you back to the last answered question.' },
   { id: 'responsiveness', cat: 'features', re: /id=["']mi-responsive["']|RESPONSIVE_SURFACES|How responsive is the platform/,
     on: 'You can open Responsiveness and see how every surface behaves on a phone, on a 14-inch laptop, and on a wider display — including a live stage that restyles the shell at each size.',
     off: 'The Responsiveness catalog is gone.' },
@@ -248,6 +250,7 @@ export const SCRIPT_PURPOSES = {
   'date-column.js': 'every date column stacks two dates (updated over last edited, or whichever pair you pick) and a three-dot menu in the header lists every date type',
   'product-row-click.js': 'clicking a product in a table opens that product, unless you hit an icon or another control that does its own job',
   'kebab-hover.js': 'every three-dot menu opens its popover when you hover it — you do not have to tap first',
+  'chat-activity-strip.js': 'the landmark rail on the chat edge — gold, green, and amber ticks for outputs, sources, and database switches, plus a brand-blue tab that jumps you to the last answered question',
   'comp-highlight.js': 'opening a Used in link from All Modules lands on that page in a new tab and briefly glows the matching component pink',
   'page-gallery.js': 'a full-screen gallery of every unique screen that shows a live preview of the real page, with a Re-evaluate control that re-scans the project and remounts those previews',
   'nudge-toast-dismiss.js': 'the close button on a floating nudge asks whether to hide it for now or for this viewing — a hard refresh brings every nudge back',
@@ -420,7 +423,6 @@ function labelMap() {
     '../js/app-logic-data.js': 'App Logic',
     '../js/pane-width.js': 'Panel width',
     '../js/text-size-fouc.js': 'Platform-wide',
-    '../wiseai-chat.css': 'Shared chat',
   };
   pageGalleryEntries().forEach((m) => {
     const href = String(m.href || '').split('#')[0];

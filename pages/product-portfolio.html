@@ -647,7 +647,7 @@
       box-sizing: border-box;
     }
     /* WISEcodeAI header title — MUST be pixel-identical to the canonical WISEcodeAI module
-       on every other page (wiseai-chat.css `.sc-topbar-titles .topbar-title`):
+       on every other page (wise.css `.sc-topbar-titles .topbar-title`):
        var(--fs-ui) / weight 700 / line-height 1.2 to match the other module
        header titles. Two ai-chat-only rules fight this and
        both need beating with HIGHER specificity + !important:
@@ -4879,7 +4879,7 @@
     }
 
     /* ===== Microcopy & trust =====
-       Kept byte-for-byte in step with pages/wiseai-chat.css so the inline chat
+       Kept byte-for-byte in step with pages/wise.css so the inline chat
        on this page and the shared mountWISEcodeAIChat() surface read identically:
        welcome trust badges, per-line timestamps + grounding caption, a
        descriptive typing status, and the standing AI-limitations disclaimer. */
@@ -4897,7 +4897,7 @@
     html.dark .sc-trust-badge .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
 
     /* Message lines: profile-avatar column + larger, high-contrast body copy
-       (the timestamp / grounding meta row stays small). Mirrors wiseai-chat.css.
+       (the timestamp / grounding meta row stays small). Mirrors pages/wise.css.
        WISEcodeAI's avatar is the WISE-owl bug; "You" is the member's initials,
        matching the top-bar .topbar-profile chip. */
     /* gap (12px) + avatar (30px) match the header icon→title spacing so the
@@ -6513,7 +6513,7 @@
       border-color: color-mix(in srgb, var(--primary) 18%, transparent);
     }
     /* Stacked composer (canonical WISEcodeAI rail): the "+" sits left, the database
-       selector row sits atop the text input. Let wiseai-chat.css own the padding. */
+       selector row sits atop the text input. Let pages/wise.css own the padding. */
     .fl-input-wrap--stacked { min-height: 40px; }
     .fl-label { display: none !important; }
     .fl-input {

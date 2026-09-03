@@ -1,15 +1,14 @@
 /**
- * Streaming-trace DNA helix — the left-rail animation every WISEcodeAI turn
- * draws while it thinks. Shared by the live chat (`js/wiseai-chat.js`) and the
- * All Modules anatomy demo so both surfaces run the exact same rope.
+ * Streaming-trace DNA helix — the avatar-column animation every WISEcodeAI
+ * turn draws while it thinks. Shared by the live chat (`js/wiseai-chat.js`)
+ * and the All Modules anatomy demo so both surfaces run the exact same rope.
  *
  *   import { makeTraceHelix, measureTraceRungCentres, TRACE_STRAND_MARKUP } from './trace-helix.js';
  */
 
-/* Strand rail markup: a 20px gutter host, left-aligned under the
-   "Thinking" / "Worked for" label. A single .sc-trace-dna span carries
-   the live SVG helix — it twists while thinking, then freezes aligned to the
-   milestone rows and sweeps green top-to-bottom. */
+/* Strand rail markup: a 20px host centered under the owl avatar. A single
+   .sc-trace-dna span carries the live SVG helix — it twists while thinking,
+   then is removed when the summary lands. */
 export const TRACE_STRAND_MARKUP = '<div class="sc-trace-strand" aria-hidden="true">'
   + '<span class="sc-trace-dna"></span></div>';
 
@@ -50,10 +49,9 @@ export function scBuildHelixSVG(H, phase, rungsY, greenCount, uid, geom) {
   const g = geom || {};
   const W = Number.isFinite(g.width) ? g.width : 20;
   const PERIOD = Number.isFinite(g.period) ? g.period : 36;
-  /* Axis sits left of center so the helix's left swell lines up with the
-     "Thinking" / "Worked for" label, instead of floating in the rail.
+  /* Axis sits at the rail's midpoint so the twist is centered under the owl.
      Overlay loaders pass cx = width/2 so the rope sits in the middle. */
-  const cx = Number.isFinite(g.cx) ? g.cx : 7;
+  const cx = Number.isFinite(g.cx) ? g.cx : 10;
   uid = uid || 'h';
   const h = Math.max(20, Math.round(H));
   const AMP_BASE = Number.isFinite(g.amp) ? g.amp : 4.8;
@@ -192,8 +190,9 @@ export function scBuildHelixSVG(H, phase, rungsY, greenCount, uid, geom) {
     + `</svg>`;
 }
 
-/* Drives one strand element: spins the helix while thinking (rAF, ~30fps), then
-   freezes it aligned to the milestone rows and sweeps it green from the top. */
+/* Drives one strand element: spins the helix while thinking (rAF, ~30fps).
+   freezeAligned / setGreen remain for mid-run stills (All Modules paused card);
+   the live chat removes the rail when the summary lands. */
 export function makeTraceHelix(bodyEl, opts = {}) {
   const reduced = opts.prefersReducedMotion != null ? !!opts.prefersReducedMotion : prefersReduced();
   const geom = opts.geom || null;
@@ -253,8 +252,57 @@ export function makeTraceHelix(bodyEl, opts = {}) {
     freezeAligned(rungsY) { this.stop(); mode = 'static'; staticRungs = rungsY; attach(); draw(); },
     setGreen(n) { greenCount = n; draw(); },
     redraw: draw,
+    /* Re-observe the strand after a rebuild / stretch so the SVG matches the
+       new rail height (e.g. when it is pulled down to the next owl). */
+    refresh() { attach(); draw(); },
     destroy() { this.stop(); if (ro) { ro.disconnect(); ro = null; } },
   };
+}
+
+/* Pin the rail under the thinking owl and stretch it to the next owl (the
+   answer line) so the rope reads as a path between the two avatars. */
+export function stretchTraceHelixToNextAvatar(lineEl) {
+  if (!lineEl) return;
+  const strand = lineEl.querySelector('.sc-trace-strand');
+  if (!strand) return;
+  const topAv = lineEl.querySelector(':scope > .sc-avatar');
+  const head = lineEl.querySelector('.sc-trace-head');
+  /* Start the rail where the copy starts (under "Thinking" / "Worked for")
+     so the haiku and steps share the helix's vertical span instead of
+     hanging above it with empty rope below. Still reads as leaving the owl. */
+  if (head) {
+    strand.style.top = Math.round(head.offsetTop + head.offsetHeight) + 'px';
+  } else if (topAv) {
+    strand.style.top = Math.round(topAv.offsetTop + topAv.offsetHeight + 2) + 'px';
+  }
+  const next = lineEl.nextElementSibling;
+  const nextAv = (next && next.classList && next.classList.contains('sc-line'))
+    ? next.querySelector('.sc-avatar') : null;
+  if (!nextAv) {
+    strand.style.bottom = '0px';
+    return;
+  }
+  const extra = nextAv.getBoundingClientRect().top - lineEl.getBoundingClientRect().bottom - 2;
+  strand.style.bottom = (-Math.max(0, extra)) + 'px';
+}
+
+/* Hold the connecting pose, then fade the rail out and tear it down. */
+export function dismissTraceHelix(helix, bodyEl, opts = {}) {
+  const hold = Number.isFinite(opts.holdMs) ? opts.holdMs : 720;
+  const fade = Number.isFinite(opts.fadeMs) ? opts.fadeMs : 380;
+  const strand = bodyEl && bodyEl.querySelector('.sc-trace-strand');
+  const gone = () => {
+    try { if (helix && helix.destroy) helix.destroy(); } catch (_) {}
+    if (strand && strand.parentNode) strand.remove();
+    if (typeof opts.onGone === 'function') opts.onGone();
+  };
+  const fadeOut = () => {
+    if (strand) strand.classList.add('is-leaving');
+    if (fade <= 0) { gone(); return; }
+    setTimeout(gone, fade);
+  };
+  if (hold <= 0) fadeOut();
+  else setTimeout(fadeOut, hold);
 }
 
 /* Measure the vertical centre of each milestone row, in the strand's own

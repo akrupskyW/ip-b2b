@@ -16,6 +16,11 @@
  *   • output   — an output (result / visual / report) was created
  *   • source   — a data source was connected (added)
  *   • database — the active database was switched mid-conversation
+ *   • prompt   — brand-blue jump tab, always pinned to the same slot just
+ *                above the composer. Clicking it scrolls the transcript to the
+ *                top of the last answered prompt (the member line that already
+ *                has a completed WISEcodeAI reply). A tiny up-triangle sits
+ *                centered in the tab so it reads as "back to that ask".
  *
  * The strip is a compressed "minimap" of the whole transcript: each tick sits
  * at the event's vertical position as a fraction of the total scroll height, so
@@ -59,6 +64,7 @@ export const ACTIVITY_TYPES = {
   output: { label: 'Output created' },
   source: { label: 'Data source added' },
   database: { label: 'Database switched' },
+  prompt: { label: 'Last answered prompt' },
 };
 
 /* The single live strip on the page (the chat page mounts exactly one). Kept at
@@ -312,6 +318,29 @@ function ensureActivityStripStyles() {
     .wa-activity-tick--output   { background-color: var(--act-output, var(--ter-amber, #FFC434)); }
     .wa-activity-tick--source   { background-color: var(--act-source, #12b76a); }
     .wa-activity-tick--database { background-color: var(--act-database, #f79009); }
+    /* Jump-to-last-prompt tab: brand-blue fill, always the same slot on the
+       rail (just above the composer). A hair larger than a landmark tick so the
+       centered up-triangle stays readable; hover still widens like the others. */
+    .wa-activity-tick--prompt {
+      background-color: var(--act-prompt, var(--primary, #25507C));
+      width: 13px;
+      height: 17px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+    .wa-activity-tick--prompt:hover { width: 18px; }
+    .wa-activity-tick-tri {
+      display: block;
+      width: 0;
+      height: 0;
+      border-left: 2.5px solid transparent;
+      border-right: 2.5px solid transparent;
+      border-bottom: 3.5px solid #fff;
+      pointer-events: none;
+      flex: 0 0 auto;
+    }
     /* Landing flash on the landmark row a tick scrolls you to. */
     .wa-activity-flash {
       outline: 2px solid transparent;
@@ -321,6 +350,11 @@ function ensureActivityStripStyles() {
     }
     @keyframes waActivityFlash {
       0%, 35% { outline-color: var(--ter-amber, #FFC434); }
+      100%    { outline-color: transparent; }
+    }
+    .wa-activity-flash--prompt { animation-name: waActivityFlashPrompt; }
+    @keyframes waActivityFlashPrompt {
+      0%, 35% { outline-color: var(--primary, #25507C); }
       100%    { outline-color: transparent; }
     }
     @media (prefers-reduced-motion: reduce) {
@@ -423,9 +457,11 @@ function refresh(state) {
 
   /* Nothing to mark yet (fresh conversation / welcome screen) — keep the rail
      fully hidden rather than drawing an empty line down the module. It appears
-     the moment the first landmark lands (the MutationObserver re-runs this). */
+     the moment the first landmark lands, or as soon as a prompt has been
+     answered (the jump tab needs a home). The MutationObserver re-runs this. */
   const els = messages.querySelectorAll('[data-activity]');
-  if (!els.length) {
+  const promptEl = lastAnsweredPrompt(messages);
+  if (!els.length && !promptEl) {
     strip.style.display = 'none';
     strip.replaceChildren();
     return;
@@ -472,12 +508,17 @@ function refresh(state) {
      the rail itself — so the track still reads as edge-to-edge while the marks
      stay within the conversation's usable vertical span. */
   const EARMARK_INSET = 10;
-  const EARMARK_SPAN = 100 - EARMARK_INSET * 2;
+  /* Leave a slot at the bottom of the inner band so landmark ticks never
+     sit on top of the brand-blue jump tab (which is pinned just above the
+     composer). */
+  const JUMP_RESERVE = 6;
+  const EARMARK_SPAN = 100 - EARMARK_INSET * 2 - JUMP_RESERVE;
 
   els.forEach((el) => {
     const type = el.getAttribute('data-activity');
     const meta = ACTIVITY_TYPES[type];
-    if (!meta) return;
+    /* `prompt` is the jump tab, not a mapped landmark. */
+    if (!meta || type === 'prompt') return;
     const r = el.getBoundingClientRect();
     /* Absolute center of the landmark within the scroll content (independent of
        the current scrollTop), as a 0–1 fraction of the full transcript. */
@@ -520,6 +561,28 @@ function refresh(state) {
     frag.appendChild(host);
   });
 
+  if (promptEl) {
+    const jump = makePromptTick();
+    /* Same place every time: just above the composer, at the bottom of the
+       transcript pane. Landmark ticks keep mapping through the inner band;
+       this one is chrome, not a minimap mark. */
+    const msgRect = messages.getBoundingClientRect();
+    const jumpY = msgRect.bottom - chatRect.top - 16;
+    jump.style.top = `${Math.max(24, jumpY)}px`;
+    jump.title = ACTIVITY_TYPES.prompt.label;
+    jump.setAttribute('aria-label', 'Jump to last answered prompt');
+    jump.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      scrollToPromptTop(messages, promptEl);
+    });
+    const tag = document.createElement('span');
+    tag.className = 'wa-activity-tick-id';
+    tag.textContent = 'Last prompt';
+    jump.appendChild(tag);
+    frag.appendChild(jump);
+  }
+
   strip.replaceChildren(frag);
 }
 
@@ -527,6 +590,41 @@ function makeTickEl(type) {
   const tick = document.createElement('span');
   tick.className = `wa-activity-tick wa-activity-tick--${type}`;
   return tick;
+}
+
+/* Brand-blue jump tab — same ear-mark silhouette as a landmark tick, with a
+   tiny up-triangle centered in the fill. */
+function makePromptTick() {
+  const tick = makeTickEl('prompt');
+  const tri = document.createElement('span');
+  tri.className = 'wa-activity-tick-tri';
+  tri.setAttribute('aria-hidden', 'true');
+  tick.appendChild(tri);
+  return tick;
+}
+
+/* The member ask that already has a completed WISEcodeAI reply. Walk the
+   transcript in order; the last you-line followed by a finished answer wins.
+   Event / trace / typing lines are skipped so a mid-thread switch or an
+   in-flight reply never counts as "answered". */
+function lastAnsweredPrompt(messages) {
+  if (!messages) return null;
+  const lines = messages.querySelectorAll('.sc-line');
+  let lastYou = null;
+  let found = null;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const cls = line.classList;
+    if (cls.contains('sc-line-event') || cls.contains('sc-line-trace')) continue;
+    if (cls.contains('sc-line-you')) {
+      lastYou = line;
+      continue;
+    }
+    if (lastYou && cls.contains('sc-line-wiseai') && !cls.contains('sc-line-typing')) {
+      found = lastYou;
+    }
+  }
+  return found;
 }
 
 /* The turn ID a landmark belongs to, as shown in the transcript (e.g. "#6d7a").
@@ -556,9 +654,30 @@ function scrollToLandmark(messages, el) {
   messages.scrollTo({ top: Math.max(0, top), behavior: reduce ? 'auto' : 'smooth' });
 
   /* Restart the flash even if the same landmark is clicked twice in a row. */
-  el.classList.remove('wa-activity-flash');
+  flashLandmark(el);
+}
+
+/* Pin the last answered prompt to the TOP of the transcript viewport (not
+   centered — the ask is the thing you want to re-read from the start). */
+function scrollToPromptTop(messages, el) {
+  if (!el || !messages.contains(el)) return;
+  const cRect = messages.getBoundingClientRect();
+  const r = el.getBoundingClientRect();
+  const pad = 8;
+  const top = (r.top - cRect.top) + messages.scrollTop - pad;
+  const reduce = typeof matchMedia === 'function'
+    && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  messages.scrollTo({ top: Math.max(0, top), behavior: reduce ? 'auto' : 'smooth' });
+  flashLandmark(el, 'prompt');
+}
+
+function flashLandmark(el, kind) {
+  el.classList.remove('wa-activity-flash', 'wa-activity-flash--prompt');
   void el.offsetWidth;
   el.classList.add('wa-activity-flash');
+  if (kind === 'prompt') el.classList.add('wa-activity-flash--prompt');
   clearTimeout(el.__waFlashT);
-  el.__waFlashT = setTimeout(() => el.classList.remove('wa-activity-flash'), 1600);
+  el.__waFlashT = setTimeout(() => {
+    el.classList.remove('wa-activity-flash', 'wa-activity-flash--prompt');
+  }, 1600);
 }

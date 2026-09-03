@@ -2014,10 +2014,9 @@
     }).join('');
     return `<div class="nfp-ins-next-dots" role="navigation" aria-label="Product progress">${dots}</div>`;
   }
-  function bannerShell(kind, iconHTML, title, desc, actionHTML) {
+  function bannerShell(kind, title, desc, actionHTML) {
     return `<div class="nfp-ins-next nfp-ins-next--${esc(kind)}">
         ${lifecycleDotsHTML()}
-        <span class="nfp-ins-next-ic" aria-hidden="true">${iconHTML}</span>
         <div class="nfp-ins-next-body">
           <div class="nfp-ins-next-title">${title}</div>
           <div class="nfp-ins-next-desc">${desc}</div>
@@ -2025,62 +2024,56 @@
         ${actionHTML}
       </div>`;
   }
-  function bannerIcon(name) {
-    return `<span class="material-symbols-outlined">${name}</span>`;
-  }
   function bannerBtn(nfp, icon, label) {
     return `<button type="button" class="nfp-ins-next-btn" data-nfp="${esc(nfp)}"><span class="material-symbols-outlined">${icon}</span>${label}</button>`;
   }
   function bannerLink(href, icon, label) {
     return `<a class="nfp-ins-next-btn" href="${esc(href)}"><span class="material-symbols-outlined">${icon}</span>${label}</a>`;
   }
-  function shieldIconHTML() {
-    return `<img class="nfp-ins-next-shield" src="../assets/marketing/non-upf-shield.svg" alt="" width="52" height="45">`;
-  }
   function discoveredHTML() {
-    return bannerShell('discovered', bannerIcon('travel_explore'),
+    return bannerShell('discovered',
       'This product was discovered',
       'We found this product in public retail data. Review the details and claim it if it is yours.',
       bannerBtn('banner-claim-step', 'bookmark_add', 'Review and claim'));
   }
   function claimHTML() {
-    return bannerShell('claim', bannerIcon('bookmark_add'),
+    return bannerShell('claim',
       'Reviewing a discovered product',
       'Check the details below. If everything looks right, claim it into your portfolio.',
       bannerBtn('claim-product', 'bookmark_add', 'Everything looks right, claim this product'));
   }
   function claimedHTML() {
-    return bannerShell('claimed', bannerIcon('inventory_2'),
+    return bannerShell('claimed',
       'Finishing a claimed product',
       'This product is already in your portfolio. Confirm the details below, then continue so it can be verified.',
       bannerBtn('claimed-continue', 'arrow_forward', 'Details look right, continue'));
   }
   function completeHTML() {
-    return bannerShell('complete', bannerIcon('edit_note'),
+    return bannerShell('complete',
       'Complete the missing details',
       'A few fields are still empty. Fill them in below so this product can join your reports.',
       bannerBtn('complete-details', 'edit_note', "I've filled in the details"));
   }
   function addHTML() {
-    return bannerShell('add', bannerIcon('add_box'),
+    return bannerShell('add',
       'Adding a new product',
       'Fill in the details below. When everything required is in, save it to your portfolio.',
       bannerBtn('save-product', 'save', 'Save to Portfolio'));
   }
   function verifyHTML() {
-    return bannerShell('verify', bannerIcon('fact_check'),
+    return bannerShell('verify',
       'Verify the ingredients',
       'Walk through the ingredient list so we can confirm what is in this product before it earns a shield.',
       bannerBtn('verify-ingredients', 'fact_check', 'Verify ingredients'));
   }
   function shieldHTML() {
-    return bannerShell('shield', shieldIconHTML(),
+    return bannerShell('shield',
       'Get the Non-UPF Shield',
       'This product qualifies for Non-UPF verification. Earn the shield so it stands out on retail listings.',
       bannerLink('non-upf-dashboard.html', 'gpp_good', 'Get the Non-UPF Shield'));
   }
   function ineligibleHTML() {
-    return bannerShell('ineligible', bannerIcon('gpp_maybe'),
+    return bannerShell('ineligible',
       'This product cannot earn a shield yet',
       'Something on the label is blocking Non-UPF verification. Review the details below, or reformulate to fix it.',
       bannerLink(productReformulateHref(), 'science', 'See why and reformulate'));

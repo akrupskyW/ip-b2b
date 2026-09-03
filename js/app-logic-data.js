@@ -587,7 +587,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'The thinking trace has three parts',
-        how: 'The <strong>helix</strong> (<code>makeTraceHelix()</code>) twists while thinking then freezes with a green rung per completed step; the <strong>milestones</strong> are the keys the trace walks through one at a time; the <strong>glob</strong> is the subdued narration under the active key. The ⋯ <em>Response streaming</em> control picks <code>full</code> (steps + globs), <code>steps</code> or <code>final</code>, and resets to <code>full</code> on every load.',
+        how: 'The <strong>helix</strong> (<code>makeTraceHelix()</code>) twists under the owl while thinking, then disappears when the summary lands; the <strong>milestones</strong> are the keys the trace walks through one at a time; the <strong>glob</strong> is the subdued narration under the active key. The ⋯ <em>Response streaming</em> control picks <code>full</code> (steps + globs), <code>steps</code> or <code>final</code>, and resets to <code>full</code> on every load.',
       },
       {
         title: 'Typing a chip\u2019s words plays that chip',
@@ -627,7 +627,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'The activity strip marks transcript landmarks',
-        how: '<code>chat-activity-strip.js</code> paints a 3px rail on the chat\u2019s <strong>left</strong> edge by default (right is opt-in from the \u22ef menu or Appearance). Gold ticks are outputs, green are sources, amber are database switches. Multi-version outputs draw a stacked pair, never a count. Click a tick to scroll that row into view and flash it. Hover widens the tab and shows the turn ID.',
+        how: '<code>chat-activity-strip.js</code> paints a 3px rail on the chat\u2019s <strong>left</strong> edge by default (right is opt-in from the \u22ef menu or Appearance). Gold ticks are outputs, green are sources, amber are database switches. Multi-version outputs draw a stacked pair, never a count. A brand-blue tab with a tiny up-triangle always sits at the bottom of the rail; click it to jump to the top of the last answered prompt. Click a landmark tick to scroll that row into view and flash it. Hover widens the tab and shows the turn ID.',
       },
       {
         title: 'Every answer carries copy, thumbs, and a more menu',

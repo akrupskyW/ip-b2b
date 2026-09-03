@@ -2,7 +2,7 @@
    WISE — conversational account creation
 
    Runs the "create account" flow as a conversation inside the shared
-   WISEcodeAI chat surface (wiseai-chat.css), collecting every field the form
+   WISEcodeAI chat surface (pages/wise.css), collecting every field the form
    version gathered — grouped into 3 macro steps — while a right-hand
    "Account setup" progress pane mirrors the verification-sidebar stepper.
 
@@ -1221,7 +1221,7 @@
     kickoff();
   }
 
-  /* Chat card DOM (body + welcome + input rail) using wiseai-chat.css classes so
+  /* Chat card DOM (body + welcome + input rail) using shared chat classes so
      it matches the app's chat module. No topbar — the module is headerless. */
   function buildChatCard(root) {
     root.classList.add('sc-card');

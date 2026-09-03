@@ -67,7 +67,7 @@
 import { CODE_STATS } from './code-stats-data.js';
 import { isNudgeDismissed } from './nudge-toast-dismiss.js';
 import './date-column.js';
-import { makeTraceHelix, measureTraceRungCentres, TRACE_STRAND_MARKUP } from './trace-helix.js';
+import { makeTraceHelix, TRACE_STRAND_MARKUP, stretchTraceHelixToNextAvatar, dismissTraceHelix } from './trace-helix.js';
 import { MODULE_SECTIONS, AREA_ICONS } from './module-directory-data.js';
 import { DEV_READY_SEED } from './dev-ready-data.js';
 import { AI_READY_SEED } from './ai-ready-data.js';
@@ -2506,8 +2506,16 @@ function demoFbRow({ hoverCopy, upOpen, downOpen, moreOpen, upOn, downOn } = {})
   </div>`;
 }
 function demoActTick(type, { stacked, hover, id } = {}) {
+  const labels = {
+    output: 'Output created',
+    source: 'Data source added',
+    database: 'Database switched',
+    prompt: 'Last answered prompt',
+  };
+  const label = labels[type] || type;
   const cap = id ? `<span class="wa-activity-tick-id">#${esc(id)}</span>` : '';
-  const tick = `<button type="button" class="wa-activity-tick wa-activity-tick--${type}${hover ? ' is-hover' : ''}" title="${esc(type)}" aria-label="${esc(type)}">${cap}</button>`;
+  const tri = type === 'prompt' ? '<span class="wa-activity-tick-tri" aria-hidden="true"></span>' : '';
+  const tick = `<button type="button" class="wa-activity-tick wa-activity-tick--${type}${hover ? ' is-hover' : ''}" title="${esc(label)}" aria-label="${esc(label)}">${tri}${cap}</button>`;
   if (!stacked) return tick;
   return `<span class="wa-activity-tick-stack${hover ? ' is-hover' : ''}">${tick}${tick}</span>`;
 }
@@ -3259,9 +3267,9 @@ const COMPONENTS = [
     name: 'Activity strip',
     wide: true,
     cat: 'Chat & drawers',
-    cls: '.wa-activity-strip · .wa-activity-rail · .wa-activity-tick (--output / --source / --database) · .wa-activity-tick-stack',
+    cls: '.wa-activity-strip · .wa-activity-rail · .wa-activity-tick (--output / --source / --database / --prompt) · .wa-activity-tick-stack',
     used: 'Every chat module — pinned to the transcript edge, toggled from the chat \u22ef menu and Appearance',
-    note: 'A 3px landmark rail on the chat\u2019s <strong>left</strong> edge by default (right is opt-in). Ticks sit at each event as a fraction of the transcript: gold <strong>output</strong>, green <strong>source</strong>, amber <strong>database</strong>. Multi-version outputs draw a stacked pair \u2014 two tabs mean \u201cmore than one\u201d, never a count. Click a tick to scroll that landmark into view and flash it. Hover widens the tab and shows the turn ID. Not the token readout under the composer or in the transcript \u22ef \u2014 that is <em>Token readout</em>.',
+    note: 'A 3px landmark rail on the chat\u2019s <strong>left</strong> edge by default (right is opt-in). Ticks sit at each event as a fraction of the transcript: gold <strong>output</strong>, green <strong>source</strong>, amber <strong>database</strong>. Multi-version outputs draw a stacked pair \u2014 two tabs mean \u201cmore than one\u201d, never a count. A brand-blue <strong>last prompt</strong> tab always sits at the bottom of the rail with a tiny up-triangle; click it to jump to the top of the last answered question. Click a landmark tick to scroll that row into view and flash it. Hover widens the tab and shows the turn ID. Not the token readout under the composer or in the transcript \u22ef \u2014 that is <em>Token readout</em>.',
     noteIcon: 'timeline',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -3273,6 +3281,7 @@ const COMPONENTS = [
             ${demoActTick('output', { stacked: true, id: '6d7a' })}
             ${demoActTick('source', { id: 'b12e' })}
             ${demoActTick('database', { id: '9f04' })}
+            ${demoActTick('prompt')}
             <div class="mi-actstrip-ghost">
               <span>Output created</span>
               <span>Output \u00b7 2 versions</span>
@@ -3289,6 +3298,7 @@ const COMPONENTS = [
             ${demoActTick('output', { stacked: true, hover: true, id: '6d7a' })}
             ${demoActTick('source', { id: 'b12e' })}
             ${demoActTick('database', { id: '9f04' })}
+            ${demoActTick('prompt', { hover: true })}
             <div class="mi-actstrip-ghost">
               <span>Output created</span>
               <span>Output \u00b7 2 versions</span>
@@ -3304,6 +3314,7 @@ const COMPONENTS = [
             ${demoActTick('output', { id: '3a1c' })}
             ${demoActTick('source', { id: 'b12e' })}
             ${demoActTick('database', { id: '9f04' })}
+            ${demoActTick('prompt')}
             <div class="mi-actstrip-ghost">
               <span>Output created</span>
               <span>Data source added</span>
@@ -5203,7 +5214,7 @@ const TARCH_LAYERS = [
     body: 'You, WISEcodeAI, or an event — never a bubble.',
     jump: 'Transcript lines' },
   { id: 'strips', side: 'left', icon: 'timeline', title: 'Activity strip',
-    body: 'Landmark rail. Gold = output, green = source, amber = database.',
+    body: 'Landmark rail. Gold = output, green = source, amber = database. Blue = last prompt.',
     jump: 'Activity strip' },
   { id: 'activity', side: 'left', icon: 'swap_horiz', title: 'Event line',
     body: 'A mid-thread database switch or data source.',
@@ -6336,8 +6347,8 @@ function wireAppLogic(root) {
 /* Every WISEcodeAI turn streams a live trace while it works. It has    */
 /* three moving parts, named here:                                      */
 /*   • the HELIX — the DNA rail from js/trace-helix.js (the same rope   */
-/*     the live chat draws). It twists while thinking, then freezes     */
-/*     with green base-pair dots aligned to each completed step.        */
+/*     the live chat draws). It twists under the owl while thinking,    */
+/*     then disappears when the summary lands.                          */
 /*   • MAIN SECTIONS — the milestone keys the trace walks through, one   */
 /*     on screen at a time (Reading → Gathering → Cross-checking →       */
 /*     Composing). Each lands into the summary with the m:ss it took.    */
@@ -6407,6 +6418,25 @@ function traceStillHeadHtml(title, timer, open) {
     + `</button>`;
 }
 
+/* Same chat-line chrome the live transcript uses, so the helix sits under
+   the owl and the step text lines up with "Thinking" / "Worked for". */
+function wrapTraceLine(inner, extraClass) {
+  const cls = extraClass ? ` ${extraClass}` : '';
+  return `<div class="sc-line sc-line-wiseai sc-line-trace${cls}">`
+    + demoWiseAvatar()
+    + `<div class="sc-line-body">${inner}</div></div>`;
+}
+
+function wrapTraceAnswer(text) {
+  return `<div class="sc-line sc-line-wiseai">`
+    + demoWiseAvatar()
+    + `<div class="sc-line-body"><span class="sc-para">${text}</span></div></div>`;
+}
+
+function wrapTraceThread(...parts) {
+  return `<div class="sc-trace-thread">${parts.join('')}</div>`;
+}
+
 function traceStillMidHtml() {
   const a = TRACE_MILESTONES[0], b = TRACE_MILESTONES[1], c = TRACE_MILESTONES[2];
   return TRACE_STRAND_MARKUP
@@ -6417,8 +6447,7 @@ function traceStillMidHtml() {
 
 function traceStillDoneHtml() {
   const last = TRACE_STILL_TIMES[TRACE_STILL_TIMES.length - 1];
-  return TRACE_STRAND_MARKUP
-    + `<ul class="sc-trace-steps">${TRACE_MILESTONES.map((m, i) =>
+  return `<ul class="sc-trace-steps">${TRACE_MILESTONES.map((m, i) =>
       `<li class="sc-trace-step is-revealed"><span class="sc-trace-step-key">${esc(m.keys[0])}</span>`
       + `<span class="sc-trace-step-time" aria-hidden="true">${esc(TRACE_STILL_TIMES[i] || last)}</span></li>`
     ).join('')}</ul>`;
@@ -6427,7 +6456,7 @@ function traceStillDoneHtml() {
 function renderStreamingTrace(opts) {
   if (opts && opts.headOnly) {
     return miHeadOnly('mi-trace', 'Streaming Trace',
-      'The “thinking” trace every WISEcodeAI turn streams while it works, shown here in three states: the <strong>live animation</strong>, a <strong>mid-animation still</strong> (paused), and the <strong>finished</strong> summary. Rendered with the same <code>.sc-trace</code> classes the chat uses.',
+      'The “thinking” trace every WISEcodeAI turn streams while it works, shown here in three states: the <strong>live animation</strong>, a <strong>mid-animation still</strong> (paused), and the <strong>finished</strong> summary. The helix sits under the owl and disappears when the run finishes. Rendered with the same <code>.sc-trace</code> classes the chat uses.',
       moduleReadyToggleHTML('mi-trace', 'Streaming Trace') + moduleControlsHTML('mi-trace'));
   }
   const sections = TRACE_MILESTONES.length;
@@ -6439,13 +6468,13 @@ function renderStreamingTrace(opts) {
           <h2 class="mi-module-title">Streaming Trace</h2>
           <p class="mi-module-lede">The “thinking” trace every WISEcodeAI turn streams while it works, shown here in
             three states: the <strong>live animation</strong>, a <strong>mid-animation still</strong> (paused), and
-            the <strong>finished</strong> summary. The <strong>helix</strong> is the DNA rail that twists on the left —
-            the same animation the live chat draws. The <strong>main sections</strong> are the ${sections} milestones
-            — <em>Reading → Gathering → Cross-checking → Composing</em> — and beneath each, the <strong>glob</strong>
-            of subdued narration streams in line by line. On this page the glob is <strong>always a haiku</strong>
-            (5·7·5). How much of that appears in chat is a ⋯ menu choice: <strong>Response streaming</strong> on or
-            off, then <strong>Streaming detail</strong> — Full, Steps, or Final. Rendered with the same
-            <code>.sc-trace</code> classes the chat uses.</p>
+            the <strong>finished</strong> summary. The <strong>helix</strong> is the DNA rail that twists under the owl —
+            the same animation the live chat draws — and disappears when the run finishes. The <strong>main sections</strong>
+            are the ${sections} milestones — <em>Reading → Gathering → Cross-checking → Composing</em> — and beneath
+            each, the <strong>glob</strong> of subdued narration streams in line by line. On this page the glob is
+            <strong>always a haiku</strong> (5·7·5). How much of that appears in chat is a ⋯ menu choice:
+            <strong>Response streaming</strong> on or off, then <strong>Streaming detail</strong> — Full, Steps, or
+            Final. Rendered with the same <code>.sc-trace</code> classes the chat uses.</p>
         </div>
         ${moduleReadyToggleHTML('mi-trace', 'Streaming Trace')}
         ${moduleControlsHTML('mi-trace')}
@@ -6458,8 +6487,9 @@ function renderStreamingTrace(opts) {
               <h3 class="mi-trace-card-title">Live animation</h3>
               ${readyToggleHTML('trace:live', 'Live animation', { level: 'item', parent: 'mi-trace' })}
             </div>
-            <p class="mi-trace-card-lede">Playing — helix twists, sections land, glob streams. Replay to watch it again. The
-              Streaming detail control below changes how much of this run you see.</p>
+            <p class="mi-trace-card-lede">Playing — helix twists under the owl, sections land, glob streams. Replay to
+              watch it again. The Streaming detail control below changes how much of this run you see.</p>
+            ${wrapTraceThread(wrapTraceLine(`
             <div class="sc-trace" data-open="0" id="mi-trace-live">
               <button type="button" class="sc-trace-head" aria-expanded="false">
                 <span class="sc-trace-title">Thinking</span>
@@ -6467,7 +6497,7 @@ function renderStreamingTrace(opts) {
                 <span class="sc-trace-caret material-symbols-outlined" aria-hidden="true">chevron_right</span>
               </button>
               <div class="sc-trace-body">${TRACE_STRAND_MARKUP}</div>
-            </div>
+            </div>`))}
             <button type="button" class="mi-trace-run" data-trace-run>
               <span class="material-symbols-outlined">replay</span><span data-trace-run-label>Replay trace</span>
             </button>
@@ -6479,11 +6509,15 @@ function renderStreamingTrace(opts) {
               ${readyToggleHTML('trace:mid', 'Mid-animation · paused', { level: 'item', parent: 'mi-trace' })}
             </div>
             <p class="mi-trace-card-lede">Frozen mid-stream at Full detail: two sections done, the third still landing.
-              Helix, title pulse, and key shimmer are paused so you can read the pose.</p>
+              The helix sits under the owl; title pulse and key shimmer are paused so you can read the pose.</p>
+            ${wrapTraceThread(
+              wrapTraceLine(`
             <div class="sc-trace is-paused" data-open="1" id="mi-trace-mid">
               ${traceStillHeadHtml('Thinking', TRACE_STILL_TIMES[2], true)}
               <div class="sc-trace-body">${traceStillMidHtml()}</div>
-            </div>
+            </div>`),
+              wrapTraceAnswer('The answer is still landing…')
+            )}
           </article>
 
           <article class="mi-trace-card">
@@ -6492,11 +6526,15 @@ function renderStreamingTrace(opts) {
               ${readyToggleHTML('trace:done', 'Finished', { level: 'item', parent: 'mi-trace' })}
             </div>
             <p class="mi-trace-card-lede">The quiet summary after the last glob: each milestone key plus the m:ss it
-              took. Helix frozen, every base-pair dot green.</p>
+              took, aligned with the header. The helix is gone.</p>
+            ${wrapTraceThread(
+              wrapTraceLine(`
             <div class="sc-trace is-complete" data-open="1" id="mi-trace-done">
               ${traceStillHeadHtml(`Worked for ${last}`, `${sections} steps`, true)}
               <div class="sc-trace-body">${traceStillDoneHtml()}</div>
-            </div>
+            </div>`),
+              wrapTraceAnswer('Oat milk scores higher on processing; almond milk wins on additives.')
+            )}
           </article>
         </div>
 
@@ -6526,8 +6564,8 @@ function renderStreamingTrace(opts) {
           <ul class="mi-trace-legend">
             <li class="mi-trace-leg">
               <span class="mi-trace-leg-swatch mi-trace-leg-swatch--helix" aria-hidden="true"></span>
-              <span><strong>Helix</strong> — the DNA rail that twists while thinking, then freezes with green
-                base-pair dots aligned to each completed step.</span>
+              <span><strong>Helix</strong> — the DNA rail that twists under the owl while thinking, then
+                disappears when the summary lands.</span>
             </li>
             <li class="mi-trace-leg">
               <span class="mi-trace-leg-swatch mi-trace-leg-swatch--key" aria-hidden="true"></span>
@@ -6557,6 +6595,7 @@ function wireStreamingTrace(root) {
   const bodyEl = trace.querySelector('.sc-trace-body');
   const runBtn = mod.querySelector('[data-trace-run]');
   const runLabel = mod.querySelector('[data-trace-run-label]');
+  const liveLine = trace.closest('.sc-line-trace');
 
   const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -6571,7 +6610,6 @@ function wireStreamingTrace(root) {
   let token = 0;
   let helix = null;
   let midHelix = null;
-  let doneHelix = null;
   let started = false;
   let stillsPainted = false;
   /* Same three-way choice as the chat ⋯ menu (wise:chat-stream-level): full
@@ -6595,63 +6633,57 @@ function wireStreamingTrace(root) {
   };
   bindTraceToggle(trace, () => helix);
   bindTraceToggle(midTrace, () => midHelix);
-  bindTraceToggle(doneTrace, () => doneHelix);
+  bindTraceToggle(doneTrace, () => null);
 
   const paintStills = () => {
     if (mod.classList.contains('is-collapsed')) return;
     const midBody = midTrace && midTrace.querySelector('.sc-trace-body');
-    const doneBody = doneTrace && doneTrace.querySelector('.sc-trace-body');
     if (midBody) {
       if (midHelix) { midHelix.destroy(); midHelix = null; }
       /* Reduced-motion start = draw once and stay. A mid-twist phase so the
          paused rail doesn't sit at the symmetric 0° pose. */
       midHelix = makeTraceHelix(midBody, { prefersReducedMotion: true, phase: 1.15 });
       midHelix.startLive();
-    }
-    if (doneBody) {
-      if (doneHelix) { doneHelix.destroy(); doneHelix = null; }
-      doneHelix = makeTraceHelix(doneBody, { prefersReducedMotion: true });
-      const freezeDone = () => {
-        if (!doneHelix) return;
-        doneHelix.freezeAligned(measureTraceRungCentres(doneBody));
-        doneHelix.setGreen(TRACE_MILESTONES.length);
-      };
-      requestAnimationFrame(() => requestAnimationFrame(freezeDone));
-      setTimeout(freezeDone, 80);
+      requestAnimationFrame(() => {
+        stretchTraceHelixToNextAvatar(midTrace && midTrace.closest('.sc-line-trace'));
+        if (midHelix) midHelix.refresh();
+      });
     }
     stillsPainted = true;
   };
 
-  const stepsHtml = (landmarks, revealed) => TRACE_STRAND_MARKUP
-    + `<ul class="sc-trace-steps">${landmarks.map((l) =>
-      `<li class="sc-trace-step${revealed ? ' is-revealed' : ''}"><span class="sc-trace-step-key">${esc(l.key)}</span>`
+  const stepsHtml = (landmarks) => `<ul class="sc-trace-steps">${landmarks.map((l) =>
+      `<li class="sc-trace-step is-revealed"><span class="sc-trace-step-key">${esc(l.key)}</span>`
       + `<span class="sc-trace-step-time" aria-hidden="true">${esc(l.time)}</span></li>`).join('')}</ul>`;
 
   const finish = (landmarks, elapsed, myToken) => {
     if (myToken !== token) return;
     const total = landmarks.length ? landmarks[landmarks.length - 1].time : fmtClock(elapsed);
-    bodyEl.innerHTML = stepsHtml(landmarks, reduced);
+    if (helix) helix.stop();
+    bodyEl.innerHTML = TRACE_STRAND_MARKUP + stepsHtml(landmarks);
     titleEl.textContent = `Worked for ${total}`;
     timerEl.textContent = `${landmarks.length} step${landmarks.length === 1 ? '' : 's'}`;
     trace.classList.add('is-complete');
+    if (liveLine) {
+      liveLine.classList.remove('sc-line-typing');
+      const nxt = liveLine.nextElementSibling;
+      if (!nxt || !nxt.classList.contains('sc-line')) {
+        liveLine.insertAdjacentHTML('afterend', wrapTraceAnswer('Oat milk scores higher on processing; almond milk wins on additives.'));
+      }
+    }
+    if (!helix) helix = makeTraceHelix(bodyEl, { prefersReducedMotion: true });
+    requestAnimationFrame(() => {
+      if (myToken !== token) return;
+      stretchTraceHelixToNextAvatar(liveLine);
+      if (helix) helix.refresh();
+    });
+    dismissTraceHelix(helix, bodyEl, {
+      holdMs: reduced ? 0 : 720,
+      fadeMs: reduced ? 0 : 400,
+      onGone: () => { helix = null; },
+    });
     runBtn.disabled = false;
     if (runLabel) runLabel.textContent = 'Replay trace';
-    if (!helix) helix = makeTraceHelix(bodyEl, { prefersReducedMotion: reduced });
-    helix.freezeAligned(measureTraceRungCentres(bodyEl));
-    if (reduced) {
-      helix.setGreen(landmarks.length);
-      return;
-    }
-    /* Sweep the strand green from the top, one dot at a time — same cadence as
-       the live chat. */
-    const stepEls = Array.from(bodyEl.querySelectorAll('.sc-trace-step'));
-    stepEls.forEach((li, i) => {
-      setTimeout(() => {
-        if (myToken !== token) return;
-        helix.setGreen(i + 1);
-        li.classList.add('is-revealed');
-      }, 160 + i * 420);
-    });
   };
 
   const runFinal = (myToken) => {
@@ -6667,7 +6699,7 @@ function wireStreamingTrace(root) {
       if (myToken !== token) return;
       titleEl.textContent = 'Answer ready';
       timerEl.textContent = '';
-      bodyEl.innerHTML = '<p class="mi-trace-final-note">The answer lands next. No summary row, no green dots — Streaming detail is Final.</p>';
+      bodyEl.innerHTML = '<p class="mi-trace-final-note">The answer lands next. No summary row — Streaming detail is Final.</p>';
       runBtn.disabled = false;
       if (runLabel) runLabel.textContent = 'Replay beat';
     }, reduced ? 200 : 700);
@@ -6677,11 +6709,20 @@ function wireStreamingTrace(root) {
     const myToken = ++token;
     started = true;
     killHelix();
-    if (streamLevel === 'final') { runFinal(myToken); return; }
+    if (streamLevel === 'final') {
+      if (liveLine) liveLine.classList.remove('sc-line-typing');
+      runFinal(myToken);
+      return;
+    }
 
     const showGlobs = streamLevel === 'full';
     const steps = TRACE_MILESTONES.map((m) => ({ key: pick(m.keys), haiku: pick(m.haiku) }));
     trace.classList.remove('is-complete');
+    if (liveLine) {
+      liveLine.classList.add('sc-line-typing');
+      const nxt = liveLine.nextElementSibling;
+      if (nxt && nxt.classList.contains('sc-line') && !nxt.classList.contains('sc-line-trace')) nxt.remove();
+    }
     trace.setAttribute('data-open', '1');
     head.setAttribute('aria-expanded', 'true');
     titleEl.textContent = 'Thinking';
@@ -6692,6 +6733,8 @@ function wireStreamingTrace(root) {
 
     helix = makeTraceHelix(bodyEl, { prefersReducedMotion: reduced });
     helix.startLive();
+    stretchTraceHelixToNextAvatar(liveLine);
+    helix.refresh();
 
     const start = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
     const now = () => ((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()) - start;
@@ -6725,6 +6768,8 @@ function wireStreamingTrace(root) {
         + '<div class="sc-trace-story"></div>';
       block.querySelector('.sc-trace-now-key').textContent = m.key;
       bodyEl.appendChild(block);
+      stretchTraceHelixToNextAvatar(liveLine);
+      if (helix) helix.refresh();
       const storyEl = block.querySelector('.sc-trace-story');
       const lines = showGlobs ? m.haiku.slice() : [];
       let si = 0;
@@ -6773,10 +6818,7 @@ function wireStreamingTrace(root) {
   const startWhenOpen = () => {
     if (mod.classList.contains('is-collapsed')) return;
     if (!stillsPainted) paintStills();
-    else {
-      if (midHelix) midHelix.redraw();
-      if (doneHelix) doneHelix.redraw();
-    }
+    else if (midHelix) midHelix.redraw();
     if (!started) run();
   };
   startWhenOpen();
@@ -7525,7 +7567,7 @@ const MOTION_ITEMS = [
     id: 'tracehelix', group: 'anim', icon: 'psychology', title: 'Thinking helix',
     src: 'js/trace-helix.js · Streaming Trace',
     used: 'Every WISEcodeAI turn while it works',
-    lede: 'The DNA rail on the left of the thinking trace — twists while working, then freezes with green base-pair dots on each completed step. The full anatomy (playing · mid-paused · finished, plus the Full / Steps / Final streaming-detail toggle) lives in the <strong>Streaming Trace</strong> section above.',
+    lede: 'The DNA rail under the owl on the thinking trace — twists while working, then disappears when the summary lands. The full anatomy (playing · mid-paused · finished, plus the Full / Steps / Final streaming-detail toggle) lives in the <strong>Streaming Trace</strong> section above.',
     demo: `
       <button type="button" class="mi-trace-run" data-jump-trace>
         <span class="material-symbols-outlined">play_arrow</span><span>Open Streaming Trace</span>
@@ -7576,6 +7618,7 @@ const MOTION_ITEMS = [
           ${demoActTick('output', { hover: true, id: '3a1c' })}
           ${demoActTick('source', { id: 'b12e' })}
           ${demoActTick('database', { id: '9f04' })}
+          ${demoActTick('prompt')}
           <div class="mi-actstrip-ghost">
             <span class="wa-activity-flash-target">Output created</span>
             <span>Data source added</span>
@@ -11443,7 +11486,7 @@ async function discoverRootCodeFiles(files, seenFile, scan, signal) {
      Probe catalog / omitted root pages plus the handful of root-level code
      files the Python scanner counts. */
   const root = repoRootUrl();
-  const names = new Set(['index.html', 'dev_server.py', 'marketing.css', 'wiseai-chat.css', '_inject_countup.js']);
+  const names = new Set(['index.html', 'dev_server.py', 'marketing.css', '_inject_countup.js']);
   catalogHrefList().forEach((h) => {
     const key = canonicalPageHref(h);
     if (key.startsWith('../')) names.add(key.slice(3));

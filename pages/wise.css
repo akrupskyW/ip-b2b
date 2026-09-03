@@ -72,7 +72,7 @@
 
    Organized in sections; order preserves the original cascade:
      1) Design tokens + base shell   (was agent-page.css)
-     2) WISEcodeAI chat module           (was wiseai-chat.css)
+     2) WISEcodeAI chat module
      3) Dashboard / report widgets   (was dashboard.css)
      4) Page: Verification           (was verification.css)
      5) Page: GRAS Verification      (was gras-verification.css)
@@ -347,7 +347,9 @@ html.dark {
 
 * { box-sizing: border-box; }
 
-html {
+/* App workspace shell. Marketing pages (`html.mkt` / `body.mkt`) scroll
+   normally — they load this sheet for the shared chat + tokens only. */
+html:not(.mkt) {
   height: 100%;
   overflow: hidden;
   background-color: var(--bg) !important;
@@ -355,7 +357,7 @@ html {
 }
 code, kbd, samp, pre { font-family: var(--font-mono); }
 
-body {
+body:not(.mkt) {
   height: 100%;
   margin: 0;
   overflow: hidden;
@@ -372,12 +374,12 @@ body {
   transition: background-color 0.35s ease, color 0.25s ease;
 }
 @media (min-width: 1280px) {
-  body { padding: 0.75rem 0 var(--modules-bottom-pad); }
+  body:not(.mkt) { padding: 0.75rem 0 var(--modules-bottom-pad); }
 }
 /* Canonical app shell inset (wiseai.html): even 12px frame on all sides so the
    primary nav never glues to the window edge. Pages without the integrated
    shell keep the legacy top/bottom-only padding above. */
-body:has(.menu-brand-integrated) {
+body:not(.mkt):has(.menu-brand-integrated) {
   padding: var(--modules-bottom-pad, 12px);
 }
 
@@ -5110,8 +5112,7 @@ html.dark .agent-main-scroll { background: transparent; }
 /* Main-panel header control cluster (⋯ menu + width toggle) — floats right in
    the normal header and is pinned top-right by the header-float rules above, so
    every pane carries the same functions whether the header is shown or hidden.
-   The button + popover visuals come from wiseai-chat.css / the .topbar-popover
-   rules, both shared. */
+   The button + popover visuals come from the .topbar-popover rules, shared. */
 .agent-main-header .panel-controls {
   margin-left: auto;
   display: inline-flex;
@@ -6376,7 +6377,7 @@ html.dark .ag-toast { background: #1A2339; border-color: rgba(37, 80, 124,0.3); 
 
 
 /* ===================================================================
-   SECTION 2 — WISEcodeAI CHAT MODULE  (was wiseai-chat.css)
+   SECTION 2 — WISEcodeAI CHAT MODULE
 =================================================================== */
 /* =============================================================
    WISEcodeAI Chat Module — the ONE shared chat surface for WISE.
@@ -6595,8 +6596,8 @@ html:not(.full-bleed):not(.brand-inset) :is(.sc-card, .wa-chat, .ap-chat, .rf-ch
    inside the clip box, then pull the row back with a matching negative margin
    and give <body> the same bottom inset — the card stays aligned with the nav,
    and the shadow hangs into the page padding instead of being cropped. */
-html:not(.full-bleed):not(.brand-inset) body,
-html.full-bleed.fb-chat-only:not(.brand-inset) body {
+html:not(.mkt):not(.full-bleed):not(.brand-inset) body,
+html.full-bleed.fb-chat-only:not(.brand-inset):not(.mkt) body {
   padding-bottom: max(var(--modules-bottom-pad, 12px), var(--chat-elev-gutter, 48px));
 }
 html:not(.full-bleed):not(.brand-inset) #modules-row,
@@ -6760,6 +6761,7 @@ html.dark .chat-messages-area { background: transparent; }
 .sc-line {
   display: flex; align-items: flex-start; gap: 12px;
   margin-bottom: 0.85rem; color: var(--text);
+  overflow: visible;
 }
 .sc-line-body {
   flex: 1 1 0%; min-width: 0;
@@ -7206,7 +7208,7 @@ html.dark .ws-intent-chip { background: color-mix(in srgb, var(--primary-bright,
      "What can I ask?" + token dots) so the title, lede, chips, and input
      sit higher. Ask + dots stay tucked under the input, same as before.
      Collapses the moment the thread starts or the composer has text /
-     an attachment. KEEP IN SYNC with wiseai-chat.css. */
+     an attachment. */
   --sc-welcome-raise: clamp(5.5rem, 16vh, 11rem);
 }
 html.dark .chat-input-rail { background: transparent; border-top-color: transparent; }
@@ -7766,8 +7768,7 @@ html.dark.chat-tint .sc-card .ws-chips-wrap::after { background: linear-gradient
    and the composer all get more room. A single global class (html.chat-compact)
    so every mounted chat module tightens up at once. The transcript's horizontal
    inset and the topbar padding are kept equal (20px) so the transcript avatars
-   stay lined up under the header owl, exactly as they do at the default 48px.
-   KEEP IN SYNC with wiseai-chat.css. */
+   stay lined up under the header owl, exactly as they do at the default 48px. */
 html.chat-compact .chat-topbar { padding-left: 20px; padding-right: 20px; }
 html.chat-compact .chat-messages-area {
   padding: 0.85rem max(20px, calc((100% - var(--sc-transcript-max, 860px)) / 2));
@@ -7782,8 +7783,7 @@ html.chat-compact .sc-settings .ss-body { padding: 12px; }
    Same pairing as the default: member lines in brand blue, WISEcodeAI in the
    default ink. The class stays so the switch still tracks; it must not put
    blue back on the assistant. Dark mode uses --primary-bright on the member
-   so the ask stays legible on the navy card. KEEP IN SYNC with
-   wiseai-chat.css. */
+   so the ask stays legible on the navy card. */
 html.chat-brandtext .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary); }
 html.dark.chat-brandtext .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary-bright, #8B9FAF); }
 html.chat-brandtext .sc-line-wiseai .sc-line-body { color: var(--text); }
@@ -7986,18 +7986,56 @@ html.dark .sc-out-source-txt strong { color: var(--primary-bright, #AEC8ED); }
   position: relative;
   margin-top: 4px;
 }
-/* The DNA double-helix rail lives in the BODY's left gutter, so it sits UNDER
-   the "Worked for" line and runs down alongside the steps. A single .sc-trace-dna
-   host carries an inline <svg> helix rebuilt in js/wiseai-chat.js: while thinking
-   it TWISTS (spins about its vertical axis, backbones swapping front-to-back at
-   each crossover), and once `.is-complete` lands it freezes with a base-pair dot
-   aligned to each milestone row, sweeping green from the top as steps land. */
+/* The DNA double-helix rail sits in the owl-avatar column so it reads as a
+   strand running BETWEEN the thinking owl and the answer owl below. A single
+   .sc-trace-dna host carries the inline <svg> helix: it TWISTS while thinking
+   (backbones swapping front-to-back at each crossover), then disappears once
+   `.is-complete` lands — only the milestone text remains. */
 .sc-trace-strand {
   position: absolute;
   left: 0; top: 1px; bottom: 1px;
   width: 20px;
   pointer-events: none;
 }
+/* The rail is positioned against the thinking line so it can start under the
+   owl and stretch down to the next owl. 30px avatar, 20px rail → 5px inset. */
+.sc-line-trace { position: relative; overflow: visible; margin-bottom: 0; }
+.sc-line-trace + .sc-line { margin-top: 6px; }
+.sc-trace-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sc-trace-thread .sc-line { margin-bottom: 0; margin-top: 0; }
+/* Compact chat sets .sc-line { margin-bottom: 0.7rem } — that was the extra
+   gap under the haiku / steps. Beat it so the helix isn't padded past the copy. */
+html.chat-compact .sc-line.sc-line-trace { margin-bottom: 0; }
+html.chat-compact .sc-line-trace + .sc-line { margin-top: 6px; }
+html.chat-compact .sc-trace-thread .sc-line { margin-bottom: 0; margin-top: 0; }
+/* Flex kills the leftover line-box under the steps (the body inherits the
+   transcript's 1.6 line-height, which was padding the helix past the copy). */
+.sc-line-trace > .sc-line-body {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+.sc-line-trace .sc-trace { position: static; margin-top: 0; }
+.sc-line-trace .sc-trace-body {
+  position: static;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-top: 0;
+  line-height: 1.25;
+}
+.sc-line-trace .sc-trace-strand {
+  left: 5px;
+  top: 32px;
+  bottom: 0;
+  width: 20px;
+  transition: opacity 0.38s ease;
+}
+.sc-line-trace .sc-trace-strand.is-leaving { opacity: 0; }
 /* Let the helix's widest swells spill out of the 20px rail rather than being
    capped flat at the edge — the contraction/expansion has to read. */
 .sc-trace-dna {
@@ -8091,10 +8129,10 @@ html.load-anim-helix .cmp-ghost {
   white-space: nowrap; letter-spacing: .01em; color: var(--text-subtle);
 }
 .sc-trace[data-open="0"] .sc-trace-body { display: none; }
-/* The body carries the strand rail in its left gutter (position:relative host);
-   its content is inset just past the strand so the helix reads to the LEFT of
-   the globs / steps, left-aligned under the "Thinking" / "Worked for" label. */
-.sc-trace-body { position: relative; margin-top: 2px; padding-left: 18px; }
+/* The body is the position:relative host for the rail. Text is flush with the
+   "Thinking" / "Worked for" header and the transcript below — the helix lives
+   in the avatar column, not in a text gutter. */
+.sc-trace-body { position: relative; margin-top: 2px; padding-left: 0; }
 
 /* Live view — a status with its big streaming glob of narration. The globs
    build on each other: each milestone block is appended below the last. Keep
@@ -8191,10 +8229,9 @@ html.dark .sc-trace-story-line { color: #93B2DC; }
   .sc-trace-story-line { transition: none; opacity: 1; transform: none; }
 }
 
-/* Summary — the milestones + the clock reading when each one landed. There are
-   no check marks: the strand's green base-pair dots are the completion signal,
-   so a step reads as done once its section of the helix has gone green. */
-.sc-trace-steps { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; width: max-content; max-width: 100%; }
+/* Summary — the milestones + the clock reading when each one landed. The
+   helix is gone; the keys sit on the same left edge as the transcript. */
+.sc-trace-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; width: max-content; max-width: 100%; }
 .sc-trace-step {
   display: grid; grid-template-columns: max-content max-content; align-items: center;
   column-gap: 10px; padding: 1px 0;
@@ -16213,7 +16250,7 @@ html.dark .auth-otp input { background: rgba(255,255,255,0.05); border-color: rg
 }
 
 /* =============================================================
-   Conversational account creation — chat module (wiseai-chat.css)
+   Conversational account creation — chat module
    in the middle + an "Account setup" progress pane on the right.
 ============================================================= */
 /* Chat page fills the viewport so the message area scrolls internally. */
@@ -18625,7 +18662,7 @@ html.dark #mi-motion .wa-merge-chip,
   display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
 }
 
-/* ---- Chat & drawers catalog demos (wiseai-chat.css is not on this page) ---- */
+/* ---- Chat & drawers catalog demos (scoped specimens on All Modules) ---- */
 .dsc-demo .sc-line {
   display: flex; align-items: flex-start; gap: 12px;
   margin: 0; color: var(--text); text-align: left;
@@ -18892,8 +18929,27 @@ html.dark .dsc-demo .sc-activity-wrap:hover .sc-activity-dots {
 .dsc-demo .wa-activity-tick--output { background-color: var(--ter-amber, #FFC434); }
 .dsc-demo .wa-activity-tick--source { background-color: #12b76a; }
 .dsc-demo .wa-activity-tick--database { background-color: #f79009; }
+.dsc-demo .mi-actstrip .wa-activity-tick--prompt {
+  top: 90%;
+  width: 13px;
+  height: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--primary, #25507C);
+}
+.dsc-demo .wa-activity-tick-tri {
+  display: block;
+  width: 0;
+  height: 0;
+  border-left: 2.5px solid transparent;
+  border-right: 2.5px solid transparent;
+  border-bottom: 3.5px solid #fff;
+  pointer-events: none;
+}
 .dsc-demo .wa-activity-tick.is-hover,
 .dsc-demo .wa-activity-tick-stack.is-hover .wa-activity-tick { width: 14px; }
+.dsc-demo .wa-activity-tick--prompt.is-hover { width: 18px; }
 .dsc-demo .wa-activity-tick-id {
   position: absolute; top: 50%; left: 100%; transform: translateY(-50%);
   margin-left: 4px; font-size: 8px; font-weight: 700; letter-spacing: 0.02em;
@@ -19956,6 +20012,9 @@ html.dark .mi-trace-card { background: rgba(255,255,255,0.03); }
   margin: 0; font-size: 0.78rem; line-height: 1.45; color: var(--text-muted);
 }
 .mi-trace-card .sc-trace { min-height: 0; }
+.mi-trace-card .sc-line { margin-bottom: 0; }
+.mi-trace-card .sc-trace-thread { width: 100%; }
+.mi-trace-card .sc-line-trace { overflow: visible; }
 .mi-trace-card .mi-trace-run { align-self: flex-start; margin-top: 4px; }
 .mi-trace-notes {
   display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(240px, 1fr);
@@ -21174,6 +21233,17 @@ html.dark .mi-tarch-thread { background: transparent; }
 .mi-tarch-strip .wa-activity-tick--output { background: #C9A227; }
 .mi-tarch-strip .wa-activity-tick--source { background: #12B981; }
 .mi-tarch-strip .wa-activity-tick--database { background: #F59E0B; }
+.mi-tarch-strip .wa-activity-tick--prompt {
+  background: var(--primary, #25507C);
+  width: 13px; height: 17px;
+  display: flex; align-items: center; justify-content: center;
+}
+.mi-tarch-strip .wa-activity-tick-tri {
+  display: block; width: 0; height: 0;
+  border-left: 2.5px solid transparent;
+  border-right: 2.5px solid transparent;
+  border-bottom: 3.5px solid #fff;
+}
 .mi-tarch-strip .wa-activity-tick-stack { display: flex; flex-direction: column; align-items: flex-start; }
 .mi-tarch-strip .wa-activity-tick-stack .wa-activity-tick + .wa-activity-tick { margin-top: -7px; }
 .mi-tarch-strip .wa-activity-tick-id {
