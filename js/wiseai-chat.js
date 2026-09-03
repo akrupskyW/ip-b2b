@@ -39,6 +39,7 @@ import { openModal, closeModal, modalHTML } from './wise-modal.js';
 import { OWL_BUG, OWL_MARK } from './owl-mark.js';
 import {
   refineReply, withTimeout, toggleOllamaOn, probeOllama,
+  enrichReply,
   ensureOllamaMenuRow, syncOllamaMenu, ollamaRowHtml,
 } from './ollama-chat.js';
 
@@ -53,12 +54,10 @@ import {
   restoreActivityStrip,
   mountActivityStrip,
 } from './chat-activity-strip.js';
-import {
-  makeTraceHelix as makeHelix,
-  TRACE_STRAND_MARKUP,
-  stretchTraceHelixToNextAvatar,
-  dismissTraceHelix,
-} from './trace-helix.js';
+/* The streaming trace itself lives in one place so the hand-rolled page flows
+   (js/add-product-flow.js) stream the identical "Thinking" block rather than
+   standing in a bare spinner-and-label beat. */
+import { runTraceStream } from './trace-stream.js';
 export { OWL_BUG, OWL_MARK };
 
 /* Chat module elevation is locked to Little min — the same drop as the
@@ -857,6 +856,39 @@ export function wireComposerGrow(input) {
   sync();
 }
 
+/* Line the "What can I ask?" link up under the composer's placeholder text.
+   That inset is not a constant — it moves with the "+" button, the field's own
+   left padding and the composer variant — so measure the textarea's real text
+   edge and match it, minus the link's own left padding. Re-runs after fonts
+   land and on any composer resize.
+
+   Exported and called from BOTH the canonical mount and wireChatComposer, so a
+   surface that wires only the composer still gets the right inset and no page
+   ever needs its own alignment rule. Idempotent per link. */
+export function alignAskHelp(scopeEl) {
+  const scope = scopeEl || document;
+  const btn = scope.querySelector('.sc-ask-help');
+  const input = scope.querySelector('textarea.fl-input');
+  const row = btn && btn.closest('.sc-belowinput');
+  if (!btn || !input || !row) return;
+  const apply = () => {
+    const inRect = input.getBoundingClientRect();
+    const rowRect = row.getBoundingClientRect();
+    if (!inRect.width || !rowRect.width) return; /* hidden / not laid out yet */
+    const inPadL = parseFloat(getComputedStyle(input).paddingLeft) || 0;
+    const btnPadL = parseFloat(getComputedStyle(btn).paddingLeft) || 0;
+    btn.style.marginLeft = `${Math.max(0, Math.round((inRect.left + inPadL) - rowRect.left - btnPadL))}px`;
+  };
+  apply();
+  if (btn.dataset.askAligned === '1') return;
+  btn.dataset.askAligned = '1';
+  /* Fonts can reflow the composer after first paint. */
+  if (document.fonts?.ready) document.fonts.ready.then(apply).catch(() => {});
+  const wrap = input.closest('.fl-input-wrap') || input;
+  if (typeof ResizeObserver === 'function') new ResizeObserver(apply).observe(wrap);
+  window.addEventListener('resize', apply);
+}
+
 /* Wire a hand-rolled input rail so its database selector + "+" attach popover
    behave exactly like the canonical composer. Idempotent per rail.
 
@@ -882,6 +914,13 @@ export function wireChatComposer(railEl, opts = {}) {
 
   /* Auto-grow behaviour for the text field (composer-v2 only; see helper). */
   wireComposerGrow(railEl.querySelector('textarea.fl-input'));
+
+  /* Line the "What can I ask?" link up under this composer (shared measurement
+     — see alignAskHelp). Walk out to the nearest ancestor that owns the link so
+     a page with two chats aligns each against its own composer. */
+  let askScope = railEl.parentElement;
+  while (askScope && !askScope.querySelector('.sc-ask-help')) askScope = askScope.parentElement;
+  if (askScope) alignAskHelp(askScope);
 
   const trigger = railEl.querySelector('.fl-db-trigger');
   const pop = railEl.querySelector('.fl-db-popover');
@@ -1179,6 +1218,39 @@ export function injectChatExtras() {
        gap a <br><br> used to create. */
     .sc-line-body > .sc-para { display: block; }
     .sc-line-body > .sc-para + .sc-para { margin-top: 1em; }
+    .sc-inline-h {
+      font-family: inherit; font-size: 1.05em; font-weight: 700; line-height: 1.35;
+      margin: 0.9em 0 0.35em; color: inherit;
+    }
+    .sc-line-body > .sc-inline-h:first-child { margin-top: 0; }
+    .sc-inline-tbl {
+      display: flex; flex-direction: column; width: 100%;
+      margin: 0.55em 0 0.15em; padding: 0; border: 0; border-radius: 0;
+      background: none; box-shadow: none; font-size: 0.94em; line-height: 1.5;
+      container-type: inline-size;
+    }
+    .sc-inline-tbl-row {
+      display: grid; grid-template-columns: minmax(6.5em, 0.85fr) 1fr 1.4fr;
+      gap: 10px 18px; margin: 0; padding: 14px 0; border: 0;
+      border-top: 1px solid var(--border); border-radius: 0;
+      background: none; box-shadow: none;
+    }
+    .sc-inline-tbl-row:last-child { border-bottom: 1px solid var(--border); }
+    .sc-inline-tbl-row--head { font-weight: 600; }
+    .sc-inline-tbl-food { font-weight: 700; }
+    .sc-inline-tbl-cell { font-weight: 400; min-width: 0; }
+    .sc-inline-tbl-lab { display: none; }
+    html.dark .sc-inline-tbl-row { border-top-color: color-mix(in srgb, var(--text) 14%, transparent); }
+    html.dark .sc-inline-tbl-row:last-child { border-bottom-color: color-mix(in srgb, var(--text) 14%, transparent); }
+    @container (max-width: 520px) {
+      .sc-inline-tbl-row { grid-template-columns: 1fr; gap: 8px; padding: 16px 0; }
+      .sc-inline-tbl-row--head { display: none; }
+      .sc-inline-tbl-lab {
+        display: block; font-size: 0.68em; font-weight: 700;
+        letter-spacing: 0.06em; text-transform: uppercase;
+        color: var(--text-subtle); margin: 0 0 2px;
+      }
+    }
 
     /* Feedback actions sit INLINE — copy + thumbs, then the three-dot, then
        the timestamp to the right of more. Quiet outlined glyphs at rest. */
@@ -1475,15 +1547,22 @@ export function injectChatExtras() {
        view, so the infinite-loop seam is invisible. */
     .sc-ask-help .sc-ask-ch,
     .chip.ws-intent-chip--askhelp .sc-ask-ch { display: inline-block;
-      /* Darker gold FILL (deep amber) with the shimmer band riding a touch
-         brighter than the base — so the glyph interior stays the darker tone
-         while a lighter gold sweeps through. */
+      /* Gilded Grain FILL with the shimmer band riding a touch brighter than the
+         base — the glyph interior stays the deep brown-gold of the output
+         strokes and the ear marks, and a full Gilded Grain shoulder flanks the
+         bright band so the sweep shades through that same tone on its way in
+         and out. Mixing toward amber rather than black keeps it warm instead of
+         olive, and reads darker on paper than the old blackened gold did. */
+      --ask-gold-base: color-mix(in srgb, var(--warm-400, #946005) 78%, var(--ter-amber, #FFC434));
+      --ask-gold-deep: var(--warm-400, #946005);
       background: linear-gradient(105deg,
-        color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 0%,
-        color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 42%,
+        var(--ask-gold-base) 0%,
+        var(--ask-gold-base) 38%,
+        var(--ask-gold-deep) 44%,
         var(--ter-amber, #FFC434) 48%, #ffe08a 50%, var(--ter-amber, #FFC434) 52%,
-        color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 58%,
-        color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 100%);
+        var(--ask-gold-deep) 56%,
+        var(--ask-gold-base) 62%,
+        var(--ask-gold-base) 100%);
       background-size: 250% 100%; background-position: 100% 0;
       -webkit-background-clip: text; background-clip: text;
       -webkit-text-fill-color: transparent; color: transparent;
@@ -1492,6 +1571,13 @@ export function injectChatExtras() {
       -webkit-text-stroke: 0.4px color-mix(in srgb, var(--ter-amber, #FFC434) 45%, #fff);
       animation: sc-ask-shimmer 7.5s ease-in-out infinite;
       animation-delay: calc(var(--ch-i, 0) * 90ms); }
+    /* On navy the same deep mix goes muddy, so both stops lean back toward the
+       bright gold — still carrying Gilded Grain, just lifted enough to read. */
+    html.dark .sc-ask-help .sc-ask-ch,
+    html.dark .chip.ws-intent-chip--askhelp .sc-ask-ch {
+      --ask-gold-base: color-mix(in srgb, var(--warm-400, #946005) 42%, var(--ter-amber, #FFC434));
+      --ask-gold-deep: color-mix(in srgb, var(--warm-400, #946005) 78%, var(--ter-amber, #FFC434));
+    }
     /* Word gaps in the shimmer label are real elements (see shimmerLetters);
        white-space:pre keeps the lone space from collapsing away. */
     .sc-ask-sp { white-space: pre; }
@@ -7502,7 +7588,7 @@ function defaultReply(text, intent) {
     return 'Pick the product and I’ll open it for editing — NFP+, ingredients, images, and visibility.';
   if (/(agent|choose)/.test(q))
     return 'You can enable specialist agents — TIER, SHIELD, LENS, VAULT, PULSE — and I’ll orchestrate them automatically.';
-  return 'On it. The full conversational flow lives in the reference app; this surface mirrors the real WISEcodeAI™ layout and controls.';
+  return 'On it — ask about any food, ingredient, label, or diet question here, or tap a chip to run a demo.';
 }
 
 /* Pick 1–2 short, human status lines describing what WISEcodeAI is actually doing
@@ -7766,6 +7852,8 @@ function reasoningTraceFor(text, intent) {
     customer_profile: 'verify',
     resume_prompt: 'generic',
     faq_intro: 'generic',
+    playful: 'generic',
+    owls: 'generic',
     registry_home: 'search',
     add_food_intro: 'ingest',
     edit_food_select: 'portfolio',
@@ -7798,9 +7886,14 @@ function assemblyMilestoneFor(html) {
   const h = String(html || '').toLowerCase();
   const lines = [];
   if (/canvas|<svg|chart|graph|insights|spark/.test(h)) lines.push('The chart drawn so the data\u2019s shape reads at a glance.');
-  if (/<table|wa-tbl/.test(h)) lines.push('The table laid row by row, headers pinned to the top.');
+  if ((/<table/.test(h) && !/sc-inline-tbl/.test(h)) || /wa-tbl/.test(h)) {
+    lines.push('The table laid row by row, headers pinned to the top.');
+  }
+  if (/<video/.test(h)) lines.push('The film cued up, controls handed over to you.');
   if (/surface-card|report|summarize/.test(h)) lines.push('The report stitched together, section by section.');
-  if (/href=|<a\b/.test(h)) lines.push('Sources attached, so every number traces back to where it came from.');
+  if (/href=|<a\b|wa-cite|wa-refs-mini|data-web-ref|data-cat-ref|data-news-open/.test(h)) {
+    lines.push('Sources attached, so every number traces back to where it came from.');
+  }
   if (!lines.length) return null;
   lines.push('Suggested next steps brought in last, once the rest has settled.');
   const keys = ['Assembling', 'Laying it out', 'Bringing it together', 'Setting the stage'];
@@ -9554,199 +9647,24 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     };
     setTimeout(next, STEP);
   }
-  /* Format a millisecond span as a live m:ss stopwatch (0:04, 1:12). */
-  function fmtTraceClock(ms) {
-    const s = Math.max(0, Math.floor(ms / 1000));
-    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-  }
-
   /* Stream the behind-the-scenes streaming trace for a turn, then hand off to
-     `done()` (which posts the real answer). Instead of the answer landing the
-     instant you ask, the transcript first "thinks out loud":
-
-       • A live m:ss stopwatch ticks in the header the whole time.
-       • Each milestone is a 1–3 word key with a big GLOB of subdued story text
-         that streams in line by line beneath it. The globs BUILD ON EACH OTHER —
-         a new milestone is appended below the last, growing one continuous
-         narrative you can read top-to-bottom, never stopping to wipe & reset.
-       • Delays are deliberately variable so no two turns feel identical.
-
-     When the last milestone lands, the helix is gone and the live block is
-     replaced by the quiet SUMMARY: each milestone's key + the m:ss elapsed when
-     it landed, the header reading "Worked for m:ss". Collapsible via the header. */
+     `done()` (which posts the real answer) — the ONE implementation, shared with
+     the hand-rolled page flows via js/trace-stream.js. */
   function runReasoningTrace(milestones, done, tail, sourceLine) {
-    if (!messages) { if (done) done(); return; }
-    detachInlineChips();
-    /* Streaming switched OFF — no trace, no thinking beat: the answer lands
-       right away (one frame's delay keeps the transcript's ordering intact). */
-    if (!streamOn) {
-      setTimeout(() => { if (done) done(); }, prefersReducedMotion ? 0 : 120);
-      return;
-    }
-    /* "Final message only" — skip the reasoning trace entirely. A brief thinking
-       beat (the standard typing line) stands in for the work, then the answer
-       lands. No milestone steps, no glob story text. */
-    if (streamLevel === 'final') {
-      const typing = showTyping();
-      const wait = prefersReducedMotion ? 240 : 460 + Math.random() * 520;
-      setTimeout(() => { if (typing) typing.remove(); if (done) done(); }, wait);
-      return;
-    }
-    /* "Steps only" — show the milestone STEPS as they land, but suppress the
-       subdued glob story text that normally streams in beneath each one. */
-    const showGlobs = streamLevel !== 'steps';
-    const steps = (Array.isArray(milestones) && milestones.length)
-      ? milestones.slice() : [{ key: 'Thinking', story: ['Gathering the details.'] }];
-    /* A trailing "assembling" milestone (built from what the answer will contain)
-       so the globs keep narrating the pieces being laid out — and nothing loads
-       until they're done. */
-    if (tail && tail.key) steps.push(tail);
-
-    /* The strand rail lives in the owl-avatar column. A single .sc-trace-dna
-       host carries the live SVG helix: it spins (twists) while thinking, then
-       is removed when the summary lands. */
-    const strandMarkup = TRACE_STRAND_MARKUP;
-
-    const el = document.createElement('div');
-    el.className = 'sc-line sc-line-wiseai sc-line-typing sc-line-trace';
-    el.innerHTML = `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span>`
-      + `<div class="sc-line-body"><div class="sc-trace" data-open="1">`
-      + `<button type="button" class="sc-trace-head" aria-expanded="true">`
-      + `<span class="sc-trace-title">Thinking</span>`
-      + `<span class="sc-trace-timer" aria-hidden="true">0:00</span>`
-      + `<span class="sc-trace-caret material-symbols-outlined" aria-hidden="true">chevron_right</span>`
-      + `</button><div class="sc-trace-body">${strandMarkup}</div></div></div>`;
-    messages.appendChild(el);
-    scrollDown();
-
-    const start = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-    const now = () => ((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()) - start;
-    const trace = el.querySelector('.sc-trace');
-    const head = el.querySelector('.sc-trace-head');
-    const titleEl = el.querySelector('.sc-trace-title');
-    const timerEl = el.querySelector('.sc-trace-timer');
-    const bodyEl = el.querySelector('.sc-trace-body');
-
-    /* The helix controller for this trace — starts spinning right away and is
-       re-pointed at the summary strand after the body is rebuilt. */
-    const helix = makeHelix(bodyEl, { prefersReducedMotion });
-    helix.startLive();
-    stretchTraceHelixToNextAvatar(el);
-    helix.refresh();
-
-    /* The header collapses the whole trace (live glob or final summary) and back. */
-    head.addEventListener('click', () => {
-      const open = trace.getAttribute('data-open') === '1';
-      trace.setAttribute('data-open', open ? '0' : '1');
-      head.setAttribute('aria-expanded', open ? 'false' : 'true');
-      scrollDown();
+    runTraceStream({
+      messages,
+      avatarHtml: `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span>`,
+      milestones,
+      tail,
+      sourceLine,
+      done,
+      streamOn,
+      streamLevel,
+      prefersReducedMotion,
+      scrollDown,
+      showTyping,
+      onStart: detachInlineChips,
     });
-
-    const rnd = (a, b) => a + Math.random() * (b - a);
-    /* The landmarks we've passed — key + the clock reading when each landed.
-       Only surfaced at the very end, as the summary. */
-    const landmarks = [];
-    /* The summary: milestone list. The helix stays just long enough to reach
-       the answer owl below, then fades — keys sit on the transcript's left edge. */
-    const stepsHtml = () => `<ul class="sc-trace-steps">${landmarks.map((l) =>
-      `<li class="sc-trace-step is-revealed">`
-      + `<span class="sc-trace-step-key">${esc(l.key)}</span>`
-      + `<span class="sc-trace-step-time" aria-hidden="true">${esc(l.time)}</span></li>`).join('')}</ul>`;
-
-    const landSummary = (extraHtml) => {
-      helix.stop();
-      bodyEl.innerHTML = TRACE_STRAND_MARKUP + (extraHtml || '') + stepsHtml();
-      titleEl.textContent = `Worked for ${landmarks.length ? landmarks[landmarks.length - 1].time : fmtTraceClock(now())}`;
-      timerEl.textContent = `${landmarks.length} step${landmarks.length === 1 ? '' : 's'}`;
-      trace.classList.add('is-complete');
-      el.classList.remove('sc-line-typing');
-      scrollDown();
-      if (done) done();
-      requestAnimationFrame(() => {
-        stretchTraceHelixToNextAvatar(el);
-        helix.refresh();
-        scrollDown();
-      });
-      dismissTraceHelix(helix, bodyEl, {
-        holdMs: prefersReducedMotion ? 0 : 720,
-        fadeMs: prefersReducedMotion ? 0 : 400,
-      });
-    };
-
-    /* Reduced motion: skip the live streaming, show the finished summary at once
-       with plausible stamps, then answer after a short beat. */
-    if (prefersReducedMotion) {
-      let acc = 0;
-      steps.forEach((m) => { acc += 900 + Math.round(Math.random() * 1400); landmarks.push({ key: m.key, time: fmtTraceClock(acc) }); });
-      const srcHtml = sourceLine
-        ? `<div class="sc-trace-story"><span class="sc-trace-story-line sc-trace-story-source is-in">${sourceLine}</span></div>` : '';
-      landSummary(srcHtml);
-      return;
-    }
-
-    const timer = setInterval(() => { timerEl.textContent = fmtTraceClock(now()); }, 200);
-    let mi = 0;
-
-    const finish = () => {
-      clearInterval(timer);
-      landSummary('');
-    };
-
-    const runMilestone = () => {
-      if (mi >= steps.length) { finish(); return; }
-      const m = steps[mi];
-      /* Append a NEW milestone block BELOW the previous ones — the globs build
-         on each other into one continuous, growing narrative rather than each
-         status wiping the last. No inline spinner: the owl avatar to the left
-         already carries the "working" ring, so a status is just its key + glob.
-         Completed blocks get `is-done` so the live one can be told apart. */
-      const block = document.createElement('div');
-      block.className = 'sc-trace-live';
-      block.innerHTML = `<div class="sc-trace-now"><span class="sc-trace-now-key">${esc(m.key)}</span></div>`
-        + `<div class="sc-trace-story"></div>`;
-      bodyEl.appendChild(block);
-      stretchTraceHelixToNextAvatar(el);
-      helix.refresh();
-      scrollDown();
-      const storyEl = block.querySelector('.sc-trace-story');
-      /* Steps-only mode drops the glob story text (and the trailing grounding
-         line) so the trace reads as a clean list of steps landing one by one. */
-      const lines = showGlobs ? (m.story || []).slice() : [];
-      /* The very last glob line of the whole trace names the data source the
-         answer is grounded in (rendered as HTML so the source reads in bold). */
-      if (showGlobs && mi === steps.length - 1 && sourceLine) lines.push({ html: sourceLine });
-      let si = 0;
-      const streamLine = () => {
-        if (si >= lines.length) {
-          block.classList.add('is-done');
-          landmarks.push({ key: m.key, time: fmtTraceClock(now()) });
-          mi += 1;
-          /* Keep the flow continuous — a short beat, not a full stop, so the
-             next glob starts building right where the last one left off. In
-             steps-only mode there's no glob to read, so hold each step a touch
-             longer instead, keeping the sequence legible. */
-          setTimeout(runMilestone, showGlobs ? rnd(140, 320) : rnd(360, 640));
-          return;
-        }
-        const line = lines[si];
-        const sp = document.createElement('span');
-        sp.className = 'sc-trace-story-line';
-        if (line && typeof line === 'object' && line.html) {
-          sp.innerHTML = line.html;
-          sp.classList.add('sc-trace-story-source');
-        } else {
-          sp.textContent = line;
-        }
-        storyEl.appendChild(sp);
-        requestAnimationFrame(() => sp.classList.add('is-in'));
-        scrollDown();
-        si += 1;
-        setTimeout(streamLine, rnd(300, 720));
-      };
-      setTimeout(streamLine, rnd(120, 300));
-    };
-
-    setTimeout(runMilestone, rnd(220, 520));
   }
 
   /* The grounding chip names a data source, capped to 15 characters so a long
@@ -9782,11 +9700,15 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      in (rendered as HTML so the source reads in bold). '' when no source. */
   function sourceLineFor(name) {
     if (!name) return '';
+    const n = String(name);
+    if (/wikipedia|open food facts/i.test(n)) {
+      return `This answer is drawn from <strong>${n}</strong>.`;
+    }
     const templates = [
-      `Grounding this answer in <strong>${name}</strong> \u2014 the database that best fit what you asked.`,
-      `Read from <strong>${name}</strong> for this one; a different question might have pulled from another environment.`,
-      `Pulling the numbers behind this from <strong>${name}</strong>.`,
-      `This answer is drawn from <strong>${name}</strong>.`,
+      `Grounding this answer in <strong>${n}</strong> \u2014 the database that best fit what you asked.`,
+      `Read from <strong>${n}</strong> for this one; a different question might have pulled from another environment.`,
+      `Pulling the numbers behind this from <strong>${n}</strong>.`,
+      `This answer is drawn from <strong>${n}</strong>.`,
     ];
     return templates[Math.floor(Math.random() * templates.length)];
   }
@@ -9795,7 +9717,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      report card — the kind of artifact that warrants a "source of this output"
      caption pinned to its end. */
   function replyHasOutput(html) {
-    const h = String(html || '').toLowerCase();
+    const stripped = String(html || '').replace(/<table\b[^>]*sc-inline-tbl[\s\S]*?<\/table>/gi, '');
+    const h = stripped.toLowerCase();
     return /<canvas|<svg|chart|graph|insights|spark|<table|wa-tbl|surface-card|report|summarize/.test(h);
   }
 
@@ -9831,11 +9754,13 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       : String(html || '').replace(/<[^>]*>/g, ' ');
     /* One data source for this turn — resolved up front so the trace's closing
        glob line and the answer's trust chip always name the SAME place. */
-    const sourceName = meta.source === false ? '' : (meta.source || pickSourceName());
+    const sourceLockedOff = meta.source === false;
+    const givenSource = sourceLockedOff ? '' : (meta.source || '');
+    const sourceName = givenSource;
     const milestones = (Array.isArray(meta.milestones) && meta.milestones.length)
       ? meta.milestones
       : reasoningTraceFor(routeText, meta.intent);
-    const lineMeta = { ...meta, source: meta.source === false ? false : sourceName };
+    const lineMeta = { ...meta, source: sourceLockedOff ? false : givenSource };
     delete lineMeta.traceText; delete lineMeta.milestones; delete lineMeta.intent; delete lineMeta.onTraceDone;
     const hostOnDone = lineMeta.onDone;
     lineMeta.onDone = () => {
@@ -9846,26 +9771,53 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
         try { opts.onReplyDone(meta.intent); } catch (_) { /* host hook */ }
       }
     };
-    /* Start the local-model rewrite while the reasoning trace plays, so the
-       wait is usually hidden. If Ollama is off or unreachable, refineReply
-       returns the original copy and the turn is unchanged. */
+    /* Start the local-model pass while the reasoning trace plays. Simple
+       off-script questions become short food/nutrition answers; scripted
+       turns get a warmer rewrite. Falls back to the written copy on failure. */
     const polishStarted = Date.now();
     const polishP = (opts.ollama === false)
-      ? Promise.resolve(html)
-      : refineReply(html);
+      ? Promise.resolve({ html, chips: [], source: '' })
+      : enrichReply({
+        question: meta.enrichQuestion != null ? meta.enrichQuestion : routeText,
+        intent: meta.intent,
+        html,
+        pageHint: pageHintForChat(),
+      });
     const paintAnswer = (finalHtml) => {
-      const out = finalHtml || html;
+      const pack = (finalHtml && typeof finalHtml === 'object')
+        ? finalHtml
+        : { html: finalHtml || html, chips: [], source: '' };
+      const out = pack.html || html;
       if (thread) thread.html = out;
-      applyTopicFollowups(meta.intent, out, routeText);
+      if (lineMeta.source !== false) {
+        lineMeta.source = pack.source || givenSource || pickSourceName();
+      }
+      if (Array.isArray(pack.chips) && pack.chips.length) {
+        applyTopicFollowups(meta.intent, out, routeText, { nextIntents: pack.chips });
+      } else {
+        applyTopicFollowups(meta.intent, out, routeText);
+      }
       if (typeof meta.onTraceDone === 'function') { try { meta.onTraceDone(); } catch (_) { /* host hook */ } }
       addWISEcodeAI(out, lineMeta);
     };
     const done = () => {
-      const budget = (streamOn && streamLevel === 'full') ? 8500 : 4000;
-      const left = Math.max(400, budget - (Date.now() - polishStarted));
-      withTimeout(polishP, left, html).then(paintAnswer);
+      const budget = (streamOn && streamLevel === 'full') ? 14000 : 12000;
+      const left = Math.max(10000, budget - (Date.now() - polishStarted));
+      withTimeout(polishP, left, { html, chips: [], source: '' }).then(paintAnswer);
     };
     runReasoningTrace(milestones, done, assemblyMilestoneFor(html), sourceLineFor(sourceName));
+  }
+
+  function pageHintForChat() {
+    try {
+      const t = String(document.title || '');
+      let m = t.match(/^WISE\s*·\s*(.+)$/i);
+      if (m) return m[1].trim();
+      m = t.match(/^WISEcodeAI(?:\u2122)?\s*[—–-]\s*(.+)$/i);
+      return ((m ? m[1] : t).split('·')[0] || '').trim();
+    } catch (_) {
+      return '';
+    }
   }
 
   function wiseaiRespond(text, intent) {
@@ -9881,6 +9833,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     respondWithTrace(baseHtml, {
       traceText: text,
       intent,
+      enrichQuestion: text,
       onTraceDone: () => {
         if (typeof opts.onReply === 'function') {
           try { opts.onReply(intent, text, { intent, topic: thread.topic, prev }); }
@@ -11970,6 +11923,13 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     });
     if (phraseHit) return phraseHit;
 
+    /* A typed question is not a chip just because they share a word
+       ("chocolate" must not steal "can dogs eat chocolate"). Phrase
+       matches above still play the written transcript. */
+    if (/[?]|\b(why|how|can|could|should|is it|what|who|when|where|tell me|explain)\b/i.test(raw)) {
+      return null;
+    }
+
     const wordHit = (qw, cw) => {
       if (qw === cw) return qw.length >= 4 ? 3 : 2;
       if (qw.length >= 4 && cw.length >= 4 && (cw.startsWith(qw) || qw.startsWith(cw))) return 2;
@@ -12275,6 +12235,26 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (!chip) return;
     e.preventDefault();
     openModuleFor(chip.getAttribute('data-open-module'), chip);
+  });
+  /* Web-grounded replies reuse the same superscript cites + References list
+     as scripted answers. A data-web-ref row opens that source. */
+  function openWebRef(el) {
+    const raw = el && el.getAttribute && el.getAttribute('data-web-ref');
+    if (!raw || !/^https:\/\//i.test(raw)) return;
+    try { window.open(raw, '_blank', 'noopener,noreferrer'); } catch (_) { /* popup */ }
+  }
+  messages?.addEventListener('click', (e) => {
+    const hit = e.target.closest('[data-web-ref]');
+    if (!hit || !messages.contains(hit)) return;
+    e.preventDefault();
+    openWebRef(hit);
+  });
+  messages?.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const hit = e.target.closest('[data-web-ref]');
+    if (!hit || !messages.contains(hit)) return;
+    e.preventDefault();
+    openWebRef(hit);
   });
 
   /* Answer-feedback interactions (copy / thumbs up / thumbs down + reasons).
@@ -12812,34 +12792,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     openAskHelp();
   });
 
-  /* Keep "What can I ask?" text perfectly left-aligned with the composer's
-     placeholder, whatever the composer layout or module width. The placeholder
-     inset is composed of runtime-variable pieces ("+" button width, wrap
-     padding, and — in the narrow @container grid — the textarea's own left
-     padding), so instead of hard-coding it we measure the textarea's real text
-     edge and set the link's left margin to match (minus the link's own left
-     padding). Re-run on any composer size change. */
-  const askHelpRow = askHelpBtn?.closest('.sc-belowinput');
-  if (askHelpBtn && input && askHelpRow) {
-    const alignAskHelp = () => {
-      const inRect = input.getBoundingClientRect();
-      const rowRect = askHelpRow.getBoundingClientRect();
-      if (!inRect.width || !rowRect.width) return; /* hidden/unlaid-out */
-      const inPadL = parseFloat(getComputedStyle(input).paddingLeft) || 0;
-      const btnPadL = parseFloat(getComputedStyle(askHelpBtn).paddingLeft) || 0;
-      const margin = (inRect.left + inPadL) - rowRect.left - btnPadL;
-      askHelpBtn.style.marginLeft = `${Math.max(0, Math.round(margin))}px`;
-    };
-    alignAskHelp();
-    /* Fonts can reflow the composer after first paint. */
-    if (document.fonts?.ready) document.fonts.ready.then(alignAskHelp).catch(() => {});
-    const inputWrap2 = input.closest('.fl-input-wrap');
-    if (typeof ResizeObserver === 'function' && inputWrap2) {
-      const ro = new ResizeObserver(() => alignAskHelp());
-      ro.observe(inputWrap2);
-    }
-    window.addEventListener('resize', alignAskHelp);
-  }
+  /* Keep "What can I ask?" left-aligned with the composer's placeholder,
+     whatever the composer layout or module width (shared — see alignAskHelp). */
+  alignAskHelp(rootEl);
 
   /* Input attach ("+") popover — floated to the far left of the input. */
   const flMoreBtn = rootEl.querySelector(`#${id}-fl-more`);

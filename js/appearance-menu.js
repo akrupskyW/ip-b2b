@@ -111,6 +111,15 @@ import {
   isCommentsUnlocked,
   applyComments,
 } from './feedback-setting.js';
+import {
+  isOllamaOn,
+  toggleOllamaOn,
+  ollamaStatusText,
+  probeOllama,
+  OLLAMA_LABEL,
+  OLLAMA_ICON,
+  OLLAMA_TIP,
+} from './ollama-chat.js';
 import { setMenuPivot } from './agent-menu.js';
 
 /**
@@ -522,6 +531,41 @@ function commentsSection() {
   return adminOnly(adminToggle('data-comments="1"', isCommentsOn(), 'Comments', 'Pin notes on the page', tip, !unlocked, true, 'comment'));
 }
 
+/* The status line under the local-model row is only true once we have asked
+   Ollama whether it is running, and that answer arrives after the popover has
+   already painted. probeOllama() caches for 8s, so rebuilding the menu costs
+   one request; when the answer lands we re-render any open Appearance popover
+   so the hint settles in place. Re-rendering runs this again, so we only
+   re-render when the text actually changed — otherwise the pair would loop. */
+let ollamaProbeInFlight = false;
+let ollamaStatusPainted = '';
+function kickOllamaProbe() {
+  /* Switched off, the hint is a fixed string and the probe's answer is never
+     read — so do not reach for Ollama at all. Off must mean off. */
+  if (!isOllamaOn() || ollamaProbeInFlight) return;
+  ollamaProbeInFlight = true;
+  const done = () => {
+    ollamaProbeInFlight = false;
+    if (ollamaStatusText() === ollamaStatusPainted) return;
+    document.querySelectorAll('.wise-popover--appearance.open').forEach((p) => {
+      try { p.__apRender?.(); } catch (_) { /* shell owns the render */ }
+    });
+  };
+  try { probeOllama().then(done, done); } catch (_) { ollamaProbeInFlight = false; }
+}
+
+/** Local-model row — Admin-badged. The SAME switch the chat ⋯ menu owns, so it
+    can be turned off without opening a chat; flipping either surface moves the
+    other. Off, every transcript renders its written copy as-is. The hint under
+    the label is the live status (which model is answering, or that Ollama is
+    not running) rather than a restatement of the label. */
+function ollamaSection() {
+  const status = ollamaStatusText();
+  ollamaStatusPainted = status;
+  kickOllamaProbe();
+  return adminOnly(adminToggle('data-ollama="1"', isOllamaOn(), OLLAMA_LABEL, status, OLLAMA_TIP, false, false, OLLAMA_ICON));
+}
+
 /** Text-size segmented block (S / M / L / XL). Extracted so it can live inside
     the "Accessibility" group card alongside the color controls. */
 function textSizeSection() {
@@ -734,6 +778,7 @@ export function buildAppearanceBody({
       `);
   const adminRows = apGroup('Admin', `
         ${commentsSection()}
+        ${ollamaSection()}
         ${adminOnly(adminToggle('data-appsearch="1"', false, 'Search', 'Search beside the logo', 'Locked off — Search beside the logo stays off', true, true, 'search'))}
         ${adminOnly(adminToggle('data-navhamburger="1"', isAppSearchOn() && isNavHamburgerOn(), 'Menu icon', 'Dock icon when collapsed', isAppSearchOn() ? 'When the navigation is collapsed, show a dock icon to the left of the logo instead of the icon rail' : 'Unavailable while Search is off', !isAppSearchOn(), false, 'dock_to_right'))}
         ${adminOnly(accessibilityReviewSection())}
@@ -948,6 +993,9 @@ export function wireAppearancePopover(pop, ctx = {}) {
     place();
     if (typeof requestAnimationFrame === 'function') requestAnimationFrame(place);
   };
+  /* Stashed so a late async answer (the Ollama probe) can settle its row in
+     place without knowing which shell built this popover. */
+  pop.__apRender = render;
 
   /* The chat ⋯ Admin popover writes the same wise-admin-ui key. If Appearance
      is open at the same time, rebuild so its Admin-badged rows appear/disappear
@@ -959,6 +1007,12 @@ export function wireAppearancePopover(pop, ctx = {}) {
       render();
     });
     document.addEventListener('wise:app-search', () => {
+      if (!pop.isConnected || !pop.classList.contains('open')) return;
+      render();
+    });
+    /* The chat ⋯ menu carries the same local-model switch. Flipping it there
+       while Appearance is open must move this row too. */
+    document.addEventListener('wise:chat-ollama-on', () => {
       if (!pop.isConnected || !pop.classList.contains('open')) return;
       render();
     });
@@ -1058,6 +1112,11 @@ export function wireAppearancePopover(pop, ctx = {}) {
       applyComments(!isCommentsOn()).then(render, render);
       return;
     }
+
+    /* Local model. Instant — one stored flag and a broadcast, which the chat ⋯
+       menu picks up. A rewrite already in flight still lands; the next answer
+       is the written copy. */
+    if (within('[data-ollama]')) { ev.stopPropagation(); toggleOllamaOn(); render(); return; }
 
     /* Text size (connected segmented toggle). */
     const fz = within('[data-fz]');

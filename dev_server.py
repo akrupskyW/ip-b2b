@@ -11,6 +11,8 @@ expose this."""
 
 import json
 import os
+import subprocess
+from urllib.parse import urlparse
 
 from livereload import Server as LiveServer
 from tornado import web
@@ -133,12 +135,94 @@ class OllamaProxyHandler(web.RequestHandler):
         self.write(resp.body)
 
 
+_WEB_HOSTS = (
+    "world.openfoodfacts.org",
+    "search.openfoodfacts.org",
+    "en.wikipedia.org",
+    "en.m.wikipedia.org",
+)
+
+
+class WebLookupHandler(web.RequestHandler):
+    """Same-origin GET of an allow-listed public page. Localhost only."""
+
+    def set_default_headers(self):
+        self.set_header("Cache-Control", "no-store")
+
+    async def get(self):
+        if self.request.remote_ip not in ("127.0.0.1", "::1"):
+            self.set_status(403)
+            return
+        raw = self.get_argument("u", "")
+        if not raw.startswith("https://"):
+            self.set_status(400)
+            self.write({"ok": False, "error": "bad url"})
+            return
+        host = (urlparse(raw).hostname or "").lower()
+        if host not in _WEB_HOSTS:
+            self.set_status(400)
+            self.write({"ok": False, "error": "host not allowed"})
+            return
+        req = HTTPRequest(
+            url=raw,
+            method="GET",
+            headers={"User-Agent": "WISE-Demo/1.0 (local chat lookup)"},
+            connect_timeout=3,
+            request_timeout=8,
+        )
+        client = AsyncHTTPClient()
+        try:
+            resp = await client.fetch(req, raise_error=False)
+            if resp.code < 500:
+                self.set_status(resp.code)
+                content_type = resp.headers.get("Content-Type")
+                if content_type:
+                    self.set_header("Content-Type", content_type)
+                self.write(resp.body)
+                return
+        except Exception:
+            pass
+        # This Mac's Python cert store often fails HTTPS; curl is the fallback
+        # the rest of the demo already uses for Open Food Facts.
+        try:
+            proc = subprocess.run(
+                [
+                    "curl", "-sL", "--max-time", "8",
+                    "-A", "WISE-Demo/1.0 (local chat lookup)",
+                    "-H", "Accept: application/json",
+                    "-w", "\n__WISE_HTTP__%{http_code}",
+                    raw,
+                ],
+                capture_output=True,
+                timeout=10,
+                check=False,
+            )
+        except Exception:
+            self.set_status(502)
+            self.write({"ok": False, "error": "lookup failed"})
+            return
+        blob = proc.stdout or b""
+        if b"__WISE_HTTP__" not in blob:
+            self.set_status(502)
+            self.write({"ok": False, "error": "lookup failed"})
+            return
+        body, _, code = blob.rpartition(b"__WISE_HTTP__")
+        try:
+            status = int(code.decode("ascii", "replace").strip() or "502")
+        except ValueError:
+            status = 502
+        self.set_status(status)
+        self.set_header("Content-Type", "application/json")
+        self.write(body)
+
+
 class Server(LiveServer):
     def get_web_handlers(self, script):
         extra = [
             (r"/__wise/ready", ReadyWriteHandler),
             (r"/__wise/dev-ready", ReadyWriteHandler),
             (r"/__wise/ollama/(.*)", OllamaProxyHandler),
+            (r"/__wise/web", WebLookupHandler),
         ]
         return extra + super().get_web_handlers(script)
 

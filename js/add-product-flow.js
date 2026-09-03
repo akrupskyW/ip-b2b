@@ -246,6 +246,12 @@
   let uploadContext = 'main';
   function iaHost() { return iaBody || nfpBody; }
 
+  /* The live ingredient lookup — one per click of a row's owl, shared by BOTH
+     surfaces that show it: the chat transcript and the row's own expanded
+     options. Declared up here because the Ingredients Analyzer renders from it.
+     { rowId, name, all, shown, picked, panelOpen } */
+  let iaLookupState = null;
+
   /* ─────────────────────────── chat primitives ─────────────────────────── */
   /* Follow the conversation without losing the reader's place: advance the
      scroll toward the bottom, but never push the reader's latest message above
@@ -607,14 +613,14 @@
     }
     return chips;
   }
-  function addWISEcodeAI(html, chips) {
+  function paintWISEcodeAI(html, chips) {
     if (!chips || !chips.length) chips = fallbackChips();
     hideWelcome();
     const footer = `<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div>`;
     /* Insert the line WITHOUT its reply chips, reveal paragraphs, then the
        timestamp, then the chips (left→right) — content, meta, chips, in order. */
     messagesEl.insertAdjacentHTML('beforeend',
-      `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEcodeAI">${owlBug()}</span><div class="sc-line-body">${html}${footer}</div></div>`);
+      `<div class="sc-line sc-line-wiseai">${owlAvatarHtml()}<div class="sc-line-body">${html}${footer}</div></div>`);
     const line = messagesEl.lastElementChild;
     const body = line && line.querySelector('.sc-line-body');
     const metaEl = body && body.querySelector('.sc-line-meta');
@@ -638,6 +644,14 @@
       });
     });
   }
+  function addWISEcodeAI(html, chips) {
+    const api = window.WiseOllama;
+    if (api && typeof api.polishThen === 'function') {
+      api.polishThen(html, function (out) { paintWISEcodeAI(out, chips); });
+      return;
+    }
+    paintWISEcodeAI(html, chips);
+  }
   function addSysNote(text, icon) {
     messagesEl.insertAdjacentHTML('beforeend',
       `<div class="ap-sys-note"><span class="material-symbols-outlined">${esc(icon || 'check')}</span><span>${esc(text)}</span></div>`);
@@ -645,26 +659,71 @@
     scrollDown();
     typeInLine(note);
   }
+  function owlAvatarHtml() {
+    return `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEcodeAI">${owlBug()}</span>`;
+  }
+  /* The shared "Response streaming" preference (three-dot menu, synced
+     app-wide by wireStandardChatMenu). */
+  function streamPref() {
+    return (window.__wiseStdMenu && window.__wiseStdMenu.stream)
+      ? window.__wiseStdMenu.stream()
+      : { on: true, level: 'full' };
+  }
   function showTyping(label) {
     hideWelcome();
     const el = document.createElement('div');
     el.className = 'sc-line sc-line-wiseai sc-line-typing';
-    el.innerHTML = `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEcodeAI">${owlBug()}</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing-spin" aria-hidden="true"></span><span class="sc-typing-label">${esc(label || 'WISEcodeAI is thinking…')}</span></span></div>`;
+    el.innerHTML = `${owlAvatarHtml()}<div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing-spin" aria-hidden="true"></span><span class="sc-typing-label">${esc(label || 'WISEcodeAI is thinking…')}</span></span></div>`;
     messagesEl.appendChild(el);
     scrollDown();
     return el;
+  }
+  /* Stream the SAME behind-the-scenes "Thinking" trace every other WISEcodeAI
+     turn draws (js/trace-stream.js — collapsible milestone keys, glob story
+     text, and the DNA rail in the avatar column), then land the answer. Falls
+     back to the brief typing beat only if the shared module never loaded. */
+  function runChatTrace(milestones, opts) {
+    const o = opts || {};
+    const trace = window.WiseTraceStream;
+    const stream = streamPref();
+    if (!trace || typeof trace.run !== 'function') {
+      const t = stream.on ? showTyping(o.typingLabel) : null;
+      const wait = stream.on ? (stream.level === 'final' ? 300 : 560) : 0;
+      setTimeout(() => { if (t) t.remove(); if (o.done) o.done(); }, wait);
+      return null;
+    }
+    return trace.run({
+      messages: messagesEl,
+      avatarHtml: owlAvatarHtml(),
+      milestones,
+      sourceLine: o.sourceLine,
+      done: o.done,
+      streamOn: stream.on,
+      streamLevel: stream.level,
+      prefersReducedMotion,
+      scrollDown,
+      showTyping: () => showTyping(o.typingLabel),
+      onStart: hideWelcome,
+    });
   }
   /* Post a WISEcodeAI reply after a short "thinking" beat. Honours the shared
      "Response streaming" setting (three-dot menu, synced app-wide by
      wireStandardChatMenu): OFF lands the answer immediately, "Final only"
      keeps just a brief beat, "Full"/"Steps" keep the standard beat. */
   function wiseSay(html, chips, delay) {
-    const stream = (window.__wiseStdMenu && window.__wiseStdMenu.stream)
-      ? window.__wiseStdMenu.stream()
-      : { on: true, level: 'full' };
-    if (!stream.on) { addWISEcodeAI(html, chips); return; }
-    const t = showTyping();
-    setTimeout(() => { t.remove(); addWISEcodeAI(html, chips); }, stream.level === 'final' ? 300 : (delay || 560));
+    const stream = streamPref();
+    const wait = !stream.on ? 0 : (stream.level === 'final' ? 300 : (delay || 560));
+    const t = wait ? showTyping() : null;
+    const started = Date.now();
+    const paint = (out) => {
+      const left = Math.max(0, wait - (Date.now() - started));
+      setTimeout(() => { if (t) t.remove(); paintWISEcodeAI(out, chips); }, left);
+    };
+    if (window.WiseOllama && typeof window.WiseOllama.polishThen === 'function') {
+      window.WiseOllama.polishThen(html, paint);
+      return;
+    }
+    paint(html);
   }
 
   /* ─────────────────────────── NFP module render ─────────────────────────── */
@@ -1551,6 +1610,24 @@
     return `<button type="button" class="nfp-ia-owl" data-nfp="ia-lookup-row" data-arg="${esc(row.id)}" aria-label="Look up ${esc(name)}" data-tip="Look up ${esc(name)}">${owlBug()}</button>`;
   }
 
+  /* The row's own copy of the lookup: the same match options the chat lands,
+     offered right under the ingredient — the cards and the reveal, without the
+     transcript around them. Renders from iaLookupState, so a re-render of the
+     Ingredients Analyzer keeps the row open on whatever the member is looking at. */
+  function iaRowLookupHTML(rowId) {
+    const st = iaLookupState;
+    if (!st || !st.panelOpen || st.rowId !== rowId) return '';
+    const shown = st.all.slice(0, Math.max(1, st.shown || 5));
+    const more = st.picked == null && shown.length < st.all.length
+      ? `<button type="button" class="nfp-ia-lookup-more" data-nfp="ia-lookup-more">`
+        + `<span class="material-symbols-outlined" aria-hidden="true">expand_more</span>Show more results</button>`
+      : '';
+    return `<div class="nfp-ia-lookup" data-ia-lookup-for="${esc(rowId)}">`
+      + shown.map((r, i) => iaLookupCardHTML(r, i, { onPanel: true, picked: st.picked })).join('')
+      + more
+      + `</div>`;
+  }
+
   function iaCurrentNf() {
     if (state.view === 'pack' && state.packs.length) {
       const i = Math.min(state.activePack, state.packs.length - 1);
@@ -1636,11 +1713,15 @@
         <div class="nfp-ia-td nfp-ia-td--match"></div>
       </div>`;
       }
-      return `<div class="nfp-ia-row nfp-ia-parsed-row" style="--i:${Math.min(i, 18)};--d:${d}" data-depth="${d}" data-ia-id="${esc(row.id)}" data-ia-match="${match}">
+      /* A row whose options are expanded stays marked as the one being looked
+         up, so re-rendering the panel (show more, a taken mapping) cannot drop
+         the tie between the ingredient and the cards underneath it. */
+      const open = !!(iaLookupState && iaLookupState.panelOpen && iaLookupState.rowId === row.id);
+      return `<div class="nfp-ia-row nfp-ia-parsed-row${open ? ' is-lookup' : ''}" style="--i:${Math.min(i, 18)};--d:${d}" data-depth="${d}" data-ia-id="${esc(row.id)}" data-ia-match="${match}">
         <div class="nfp-ia-td nfp-ia-td--ing"><span class="nfp-ia-tree"><span class="nfp-ia-tree-name">${esc(row.raw)}</span>${iaOwlBtn(row)}</span></div>
         <div class="nfp-ia-td nfp-ia-td--mapped"><span class="nfp-ia-mapped">${esc(row.mapped)}</span></div>
         <div class="nfp-ia-td nfp-ia-td--match">${iaMatchPill(match, row.id)}</div>
-      </div>`;
+      </div>${iaRowLookupHTML(row.id)}`;
     }).join('');
     return `${banner}${actions}
       <div class="nfp-ia-table nfp-ia-table--parsed">
@@ -4452,7 +4533,7 @@
     });
     iaNudgeTaken = false;
     iaLookupState = null;
-    if (iaLookupTimer) { clearTimeout(iaLookupTimer); iaLookupTimer = 0; }
+    if (iaLookupTrace) { iaLookupTrace.cancel(); iaLookupTrace = null; }
     messagesEl.innerHTML = '';
     if (welcomeEl) { welcomeEl.classList.remove('sc-hidden'); welcomeEl.style.display = ''; }
     renderNFP();
@@ -5108,7 +5189,9 @@
       case 'ia-confirm': confirmIaRow(arg); break;
       case 'ia-confirm-all': confirmAllIaRows(); break;
       case 'ia-review': reviewIaMappings(true); break;
-      case 'ia-lookup-row': lookupIngredientInChat(arg); break;
+      case 'ia-lookup-row': toggleIaRowLookup(arg); break;
+      case 'ia-pick-lookup': pickIaLookup(arg); break;
+      case 'ia-lookup-more': showMoreIaLookup(); break;
       case 'claim-product': doClaim(); break;
       case 'banner-step': peekBannerStep(arg); break;
       case 'banner-claim-step': peekBannerStep(1); break;
@@ -5158,16 +5241,13 @@
   let iaNudgeWired = false;
   let iaNudgeRo = null;
   let iaAnalyzeTimer = 0;
-  let iaLookupTimer = 0;
-  let iaLookupState = null;
+  let iaLookupTrace = null;
   const IA_NUDGE_ID = 'nfp-ia-analyze';
 
   /* Match the chat stream beat so the module's run and the transcript land together. */
   function iaStreamDelay() {
     if (prefersReducedMotion) return 0;
-    const stream = (window.__wiseStdMenu && window.__wiseStdMenu.stream)
-      ? window.__wiseStdMenu.stream()
-      : { on: true, level: 'full' };
+    const stream = streamPref();
     if (!stream.on) return 160;
     return stream.level === 'final' ? 300 : 560;
   }
@@ -5557,37 +5637,89 @@
       ? (row.sub ? row.cat + ' · ' + row.sub : row.cat)
       : 'Exact Match';
     return [
-      { name: (row && row.mapped) || n, category: primaryCat, score: primaryScore, desc: primaryDesc },
-      { name: n + ' (ALT)', category: 'Alternate Form', score: 83, desc: 'Alternate labeling convention. Same compound under a different classification branch.' },
-      { name: first, category: 'Generic Parent', score: 70, desc: 'Broader parent-class entry. Less specific; use only when form cannot be confirmed.' },
-      { name: n + ' DERIVED', category: 'Derived / Processed', score: 58, desc: 'Processed or derived form. May include carriers, processing aids, or co-ingredients.' },
-      { name: n + ' NOS', category: 'Not Otherwise Specified', score: 44, desc: 'Catch-all record when exact form cannot be determined from label text alone.' },
-      { name: n + ' EXTRACT', category: 'Extract / Concentrate', score: 33, desc: 'Concentrated or extracted form. Typically higher potency per unit weight.' },
-      { name: 'SYNTHETIC ' + first, category: 'Synthetic Analog', score: 22, desc: 'Laboratory-synthesized equivalent. Functional parity but different origin declaration.' },
-      { name: n + ' BLEND', category: 'Blend / Mixture', score: 14, desc: 'Multi-component blend in which this ingredient is the primary component.' },
+      { name: (row && row.mapped) || n, category: primaryCat, score: primaryScore, desc: primaryDesc, icon: 'database' },
+      { name: n + ' (ALT)', category: 'Alternate Form', score: 83, desc: 'Alternate labeling convention. Same compound under a different classification branch.', icon: 'alt_route' },
+      { name: first, category: 'Generic Parent', score: 70, desc: 'Broader parent-class entry. Less specific; use only when form cannot be confirmed.', icon: 'account_tree' },
+      { name: n + ' DERIVED', category: 'Derived / Processed', score: 58, desc: 'Processed or derived form. May include carriers, processing aids, or co-ingredients.', icon: 'factory' },
+      { name: n + ' NOS', category: 'Not Otherwise Specified', score: 44, desc: 'Catch-all record when exact form cannot be determined from label text alone.', icon: 'help' },
+      { name: n + ' EXTRACT', category: 'Extract / Concentrate', score: 33, desc: 'Concentrated or extracted form. Typically higher potency per unit weight.', icon: 'science' },
+      { name: 'SYNTHETIC ' + first, category: 'Synthetic Analog', score: 22, desc: 'Laboratory-synthesized equivalent. Functional parity but different origin declaration.', icon: 'biotech' },
+      { name: n + ' BLEND', category: 'Blend / Mixture', score: 14, desc: 'Multi-component blend in which this ingredient is the primary component.', icon: 'blender' },
     ];
   }
 
-  function iaLookupCardHTML(r, i) {
-    const tone = r.score >= 85 ? 'ok' : r.score >= 60 ? 'part' : 'muted';
-    return `<div class="sc-il-wrap"><button type="button" class="sc-il-card sc-il-card--${tone}" data-action="ia-pick-lookup" data-arg="${i}">`
-      + `<span class="sc-il-card-main">`
-      + `<span class="sc-il-name">${esc(r.name)}</span>`
-      + `<span class="sc-il-cat">${esc(r.category)}</span>`
-      + `<span class="sc-il-desc">${esc(r.desc)}</span>`
-      + `<span class="sc-il-bar"><span class="sc-il-bar-fill" style="--il-w:${r.score}%"></span></span>`
-      + `</span>`
-      + `<span class="sc-il-score" data-countup>${r.score}%</span>`
-      + `</button></div>`;
+  /* Match confidence wears the same five WISEscore tiers the analytics health
+     bars do (see scoreColor in js/dashboard-home.js), so a 97% here reads the
+     same green a 97 does on a dashboard. */
+  function iaScoreColor(score) {
+    if (score >= 80) return 'var(--sec-green)';
+    if (score >= 60) return 'var(--chart-status-good)';
+    if (score >= 40) return 'var(--ter-amber)';
+    if (score >= 20) return 'var(--chart-status-fair)';
+    return 'var(--sec-red)';
   }
 
-  function iaLookupThinkDelay() {
-    if (prefersReducedMotion) return 0;
-    const stream = (window.__wiseStdMenu && window.__wiseStdMenu.stream)
-      ? window.__wiseStdMenu.stream()
-      : { on: true, level: 'full' };
-    if (!stream.on) return 0;
-    return stream.level === 'final' ? 300 : 2200;
+  /* One match candidate, as a full-width intent chip: brand-blue leading glyph,
+     the record's name / branch / note, and the confidence on a SLIM analytics
+     health bar — the score reads in the tier colour up beside the name and the
+     track stays a hairline, the way the analytics pages draw a skinny bar.
+     opts.onPanel routes the click through the Ingredients Analyzer's own
+     dispatcher, so the identical card works on the row as well as in the chat;
+     opts.picked (an index) paints the settled state after a mapping is taken. */
+  function iaLookupCardHTML(r, i, opts) {
+    const o = opts || {};
+    const pct = Math.max(0, Math.min(100, Math.round(r.score)));
+    const color = iaScoreColor(pct);
+    const attr = o.onPanel ? 'data-nfp' : 'data-action';
+    const settled = o.picked != null;
+    const settledCls = settled ? (Number(o.picked) === i ? ' is-picked' : ' is-dim') : '';
+    return `<div class="sc-il-wrap"><button type="button" class="sc-il-card${settledCls}"${settled ? ' disabled' : ''} ${attr}="ia-pick-lookup" data-arg="${i}">`
+      + `<span class="sc-il-ic material-symbols-outlined" aria-hidden="true">${esc(r.icon || 'database')}</span>`
+      + `<span class="sc-il-card-main">`
+      + `<span class="sc-il-head">`
+      + `<span class="sc-il-name">${esc(r.name)}</span>`
+      + `<span class="sc-il-score" style="color:${color}" data-countup>${pct}%</span>`
+      + `</span>`
+      + `<span class="sc-il-cat">${esc(r.category)}</span>`
+      + `<span class="sc-il-desc">${esc(r.desc)}</span>`
+      + `<span class="sc-il-bar dash-ws-health-bar">`
+      + `<span class="dash-ws-health-track" style="--bar-color:${color}">`
+      + `<span class="dash-ws-health-fill dash-metric-fill" style="width:${pct}%;background:${color}"></span>`
+      + `</span></span>`
+      + `</span></button></div>`;
+  }
+
+  /* The lookup's own streaming trace: what the matcher is actually doing to the
+     label text, milestone by milestone, in the same voice every other
+     WISEcodeAI trace narrates in. */
+  function iaLookupMilestones(name) {
+    const it = name ? `“${name}”` : 'the label text';
+    return [
+      { key: 'Tokenizing', story: [
+        `${it} broken into the pieces a matcher can hold.`,
+        'Casing, punctuation, and vendor shorthand set to one side.',
+        'What names the ingredient kept; what only describes the pack, dropped.',
+      ] },
+      { key: 'Normalizing', story: [
+        'Spelling variants folded down onto one canonical form.',
+        'Trade names and synonyms walked back to the compound underneath.',
+        'Plural, hyphen, and abbreviation all resolved to the same word.',
+      ] },
+      { key: 'Querying', story: [
+        'The compound records walked for everything this could plausibly be.',
+        'Parent classes pulled alongside the exact forms, in case the label runs loose.',
+        'Derived, extracted, and synthetic entries kept in the running for now.',
+      ] },
+      { key: 'Scoring', story: [
+        'Each candidate weighed on how much of the label it actually explains.',
+        'A close spelling counts for less than a matching classification branch.',
+        'The confident set apart from the merely plausible.',
+      ] },
+      { key: 'Ranking', story: [
+        'Candidates ordered best first, ties broken toward the verified record.',
+        'The top handful surfaced; the long tail held back until you ask for it.',
+      ] },
+    ];
   }
 
   function iaLookupChips() {
@@ -5612,13 +5744,28 @@
   function landIaLookupResults() {
     const st = iaLookupState;
     if (!st) return;
-    const first = st.all.slice(0, 5);
+    const first = st.all.slice(0, Math.max(1, st.shown || 5));
     st.shown = first.length;
     addWISEcodeAI(
       `<p>Found matches for <strong>${esc(st.name)}</strong>. Select the best mapping:</p>`
       + first.map((r, i) => iaLookupCardHTML(r, i)).join('')
       + `<p class="sc-il-hint">Select a match to update the normalized name and attest this mapping.</p>`,
       iaLookupChips());
+  }
+
+  /* The owl on a parsed row runs the lookup in the chat and expands the row's
+     own options with it. Clicking the same owl again tucks those options away
+     without asking the chat for the match a second time. */
+  function toggleIaRowLookup(id) {
+    const st = iaLookupState;
+    const row = findParsedLeaf(id);
+    if (st && st.panelOpen && row && st.rowId === row.id) {
+      st.panelOpen = false;
+      replaceIaPanel();
+      markIaLookupRow(null);
+      return;
+    }
+    lookupIngredientInChat(id);
   }
 
   function lookupIngredientInChat(id, echoUser) {
@@ -5633,40 +5780,25 @@
       lookupUnmatchedIa(echoUser);
       return;
     }
+    if (echoUser !== false) addUser('Look up ' + row.raw);
+    const results = mockIaLookupResults(row);
+    /* The options are decided now, and both surfaces show them from here:
+       the row expands with them immediately, the transcript lands them once
+       the trace finishes narrating the match. */
+    iaLookupState = { rowId: row.id, name: row.raw, all: results, shown: 5, picked: null, panelOpen: true };
+    state.iaOpen.parsed = true;
+    replaceIaPanel();
     const sec = expandIaSection('parsed');
     requestAnimationFrame(() => {
       scrollIaRowIntoView(sec || expandIaSection('parsed'), iaRowSel(row.id));
       markIaLookupRow(row.id);
     });
-    if (echoUser !== false) addUser('Look up ' + row.raw);
-    const results = mockIaLookupResults(row);
-    iaLookupState = { rowId: row.id, name: row.raw, all: results, shown: 0 };
-    if (iaLookupTimer) clearTimeout(iaLookupTimer);
-    const delay = iaLookupThinkDelay();
-    if (!delay) {
-      landIaLookupResults();
-      return;
-    }
-    const t = showTyping('Looking up WISEcode matches for ' + row.raw + '…');
-    const status = [
-      'Tokenizing label text…',
-      'Running NLP normalization…',
-      'Querying compound database…',
-      'Scoring similarity matches…',
-      'Ranking top candidates…',
-    ];
-    let msgIdx = 0;
-    const label = t.querySelector('.sc-typing-label');
-    const ticker = setInterval(() => {
-      if (!t.isConnected) { clearInterval(ticker); return; }
-      if (label && msgIdx < status.length) label.textContent = status[msgIdx++];
-    }, 420);
-    iaLookupTimer = setTimeout(() => {
-      clearInterval(ticker);
-      if (t.isConnected) t.remove();
-      iaLookupTimer = 0;
-      landIaLookupResults();
-    }, delay);
+    if (iaLookupTrace) { iaLookupTrace.cancel(); iaLookupTrace = null; }
+    iaLookupTrace = runChatTrace(iaLookupMilestones(row.raw), {
+      typingLabel: 'Looking up WISEcode matches for ' + row.raw + '…',
+      sourceLine: 'Read from the <strong>WISEcode compound registry</strong> — the record set every ingredient mapping is attested against.',
+      done: () => { iaLookupTrace = null; landIaLookupResults(); },
+    });
   }
 
   function pickIaLookup(idx, echoUser) {
@@ -5674,6 +5806,7 @@
     if (!st) return;
     const r = st.all[Number(idx)];
     if (!r) return;
+    st.picked = Number(idx);
     messagesEl.querySelectorAll('.sc-il-card').forEach((el) => {
       el.disabled = true;
       const mine = el.getAttribute('data-arg') === String(idx);
@@ -5712,7 +5845,12 @@
     if (!next.length) return;
     const start = st.shown;
     st.shown += next.length;
+    /* Both surfaces reveal the same candidates. The row re-renders from state;
+       the transcript only grows once its own cards have landed — while the
+       trace is still narrating there is nothing there yet to append to. */
+    if (st.panelOpen) replaceIaPanel();
     const body = lastWiseBody();
+    if (!body || !body.querySelector('.sc-il-card')) return;
     const hint = body && body.querySelector('.sc-il-hint');
     const html = next.map((r, i) => iaLookupCardHTML(r, start + i)).join('');
     const before = hint || (body && body.querySelector('.sc-line-meta'));

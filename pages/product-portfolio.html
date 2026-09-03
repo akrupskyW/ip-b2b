@@ -4412,11 +4412,6 @@
        docked below-left of the composer. Both start a page-specific "here's what
        you can ask" turn (startWhatCanIAsk). */
 
-    /* Below-input meta row — hosts the "What can I ask?" link on the left
-       and the shared live-activity dots in the center. */
-    .sc-belowinput { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
-    .sc-belowinput .sc-activity { grid-column: 2; }
-    .sc-belowinput .sc-ask-help { grid-column: 1; justify-self: start; margin-left: 0; }
     /* Live-activity indicator — the same quiet trio of dots used under the
        composer on the shared WISEcodeAI module. */
     .sc-activity { display: flex; justify-content: center; margin: 7px 0 1px; }
@@ -4446,79 +4441,9 @@
     @media (prefers-reduced-motion: reduce) {
       .sc-activity.is-thinking .sc-activity-dots > span { animation: none; opacity: 1; }
     }
-    /* The gold text link (no icon). Its left inset lines up under the composer's
-       placeholder text (the "+" button + input padding above it). */
-    .sc-ask-help {
-      display: inline-flex; align-items: center; margin: 8px 0 2px 4px;
-      padding: 3px 6px; border: 0; background: transparent; border-radius: 8px; cursor: pointer;
-      font: inherit; font-size: 12.5px; font-weight: 400; line-height: 1.2; letter-spacing: .01em;
-      color: color-mix(in srgb, var(--ter-amber, #FFC434) 78%, #000);
-      transition: background .15s ease, color .15s ease;
-    }
-    .sc-ask-help:hover { background: var(--surface-3, rgba(20,40,80,0.06)); }
-    html.dark .sc-ask-help { color: var(--ter-amber, #FFC434); }
-    html.dark .sc-ask-help:hover { background: rgba(255,255,255,0.07); }
-    /* Gold shimmer, clipped through the glyphs — a bright band sweeps L→R once
-       per cycle while each letter bubbles up ~1.5px; per-letter delay staggers
-       the phase. Both keyframe extremes show only flat gold, so the loop seam
-       is invisible. */
-    .sc-ask-help .sc-ask-ch,
-    .chip.ws-intent-chip--askhelp .sc-ask-ch {
-      display: inline-block;
-      background: linear-gradient(105deg,
-        color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 0%,
-        color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 42%,
-        var(--ter-amber, #FFC434) 48%, #ffe08a 50%, var(--ter-amber, #FFC434) 52%,
-        color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 58%,
-        color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 100%);
-      background-size: 250% 100%; background-position: 100% 0;
-      -webkit-background-clip: text; background-clip: text;
-      -webkit-text-fill-color: transparent; color: transparent;
-      -webkit-text-stroke: 0.4px color-mix(in srgb, var(--ter-amber, #FFC434) 45%, #fff);
-      animation: sc-ask-shimmer 7.5s ease-in-out infinite;
-      animation-delay: calc(var(--ch-i, 0) * 90ms);
-    }
-    /* Word gaps in the shimmer label are real elements; white-space:pre keeps
-       the lone space from collapsing away inside the flex button. */
-    .sc-ask-sp { white-space: pre; }
-    @keyframes sc-ask-shimmer {
-      0%, 8%    { background-position: 100% 0; transform: translateY(0); }
-      20%       { transform: translateY(-1.5px); }
-      34%, 100% { background-position: 0% 0; transform: translateY(0); }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .sc-ask-help .sc-ask-ch,
-      .chip.ws-intent-chip--askhelp .sc-ask-ch { animation: none; }
-    }
-
-    /* The gold-bordered intent chip — the twin of the link above. Doubled .chip
-       selector so it outranks the base .ws-intent-chip rules. */
-    .chip.ws-intent-chip--askhelp {
-      border-color: color-mix(in srgb, var(--ter-amber, #FFC434) 75%, var(--border-strong));
-      color: color-mix(in srgb, var(--ter-amber, #FFC434) 62%, #000);
-      background: color-mix(in srgb, var(--ter-amber, #FFC434) 9%, #fff);
-    }
-    /* Gold icon too — child combinator + dark twin so the glyph outranks the
-       dark-mode base rule and inherits the chip's gold in both themes. */
-    .chip.ws-intent-chip--askhelp > .material-symbols-outlined,
-    html.dark .chip.ws-intent-chip--askhelp > .material-symbols-outlined { color: inherit; }
-    .chip.ws-intent-chip--askhelp:hover {
-      background: color-mix(in srgb, var(--ter-amber, #FFC434) 18%, #fff);
-      border-color: var(--ter-amber, #FFC434);
-      color: color-mix(in srgb, var(--ter-amber, #FFC434) 50%, #000);
-    }
-    html.dark .chip.ws-intent-chip--askhelp {
-      background: color-mix(in srgb, var(--ter-amber, #FFC434) 12%, transparent);
-      border-color: color-mix(in srgb, var(--ter-amber, #FFC434) 70%, transparent);
-      color: var(--ter-amber, #FFC434);
-    }
-    html.dark .chip.ws-intent-chip--askhelp:hover {
-      background: color-mix(in srgb, var(--ter-amber, #FFC434) 20%, transparent);
-      border-color: var(--ter-amber, #FFC434);
-    }
-    /* The bulleted ask-list inside the "what can I ask" reply. */
-    .sc-line-body .sc-askhelp-list { margin: 8px 0; padding-left: 18px; }
-    .sc-line-body .sc-askhelp-list li { margin: 4px 0; }
+    /* The "What can I ask?" link, its shimmer, and the gold chip twin are all
+       dressed by the shared chat CSS (js/wiseai-chat.js), which this page pulls
+       in with wireChatComposer — nothing to restate here. */
     .ws-hint {
       font-size: var(--fs-ui);
       color: var(--text-subtle);
@@ -8256,22 +8181,11 @@
     html.dark #portfolio-panel.pf-scrolled .pf-head,
     html.dark #portfolio-panel.pf-scrolled .pf-toolbar,
     html.dark #portfolio-panel.pf-scrolled .pf-stats--seg { background: #1A2339; }
-    html.chat-tint:not(.dark) #portfolio-panel.pf-scrolled .pf-head,
-    html.chat-tint:not(.dark) #portfolio-panel.pf-scrolled .pf-toolbar,
-    html.chat-tint:not(.dark) #portfolio-panel.pf-scrolled .pf-stats--seg { background: color-mix(in srgb, var(--primary) 3%, var(--surface)); }
     /* Right padding keeps the title / Add / verify CTAs clear of the floated
        Marketing Assets + brand + ⋯ + width cluster in the top-right corner. */
     .pf-head { top: 0; z-index: 32; padding: var(--module-head-pad-t, 26px) 300px 8px 0; }
     .pf-toolbar { top: var(--pf-sticky-1, 56px); z-index: 31; padding: 6px 0; }
     .pf-stats--seg { top: var(--pf-sticky-2, 108px); z-index: 30; padding: 4px 0 12px; }
-    /* A hairline under the band only once something has scrolled beneath it,
-       so the resting board stays flat. */
-    .pf-stats--seg::after {
-      content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
-      background: var(--border); opacity: 0;
-      transition: opacity 0.15s ease; pointer-events: none;
-    }
-    #portfolio-panel.pf-scrolled .pf-stats--seg::after { opacity: 1; }
 
     .pf-card-title { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 16px; font-weight: 700; color: var(--text); margin: 0; }
     .pf-card-sub { font-size: 13.5px; color: var(--text-muted); margin: 7px 0 0; line-height: 1.55; }
@@ -12050,11 +11964,9 @@
       restoreViewSnapshot(view.snapshot);
       switchHistoryTab('views');
       renderViewsTab();
-      const typing = showWISEcodeAITyping('Restoring your saved view…');
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen('Restoring your saved view…', () => {
         addWISEcodeAIMessage('Restored <strong>' + view.title + '</strong> — the full chat transcript and every module or panel you had open are back exactly where you left them.', { source: false });
-      }, 500);
+      });
     }
 
     function renderViewsTab() {
@@ -12640,9 +12552,20 @@
       box.__followPos = box.scrollTop;
     }
 
+    /* Intent / follow-up chips only ever trail the LATEST answer, so the reader
+       can always choose right where the thread ends. Any chip row offered for a
+       previous turn is stale the moment a new turn begins — clear it before the
+       new line lands, otherwise a later reply strands the old chips mid-thread. */
+    function wiseaiClearOfferedChips() {
+      const box = document.getElementById('chat-messages');
+      if (!box) return;
+      box.querySelectorAll('.sc-reply-chips').forEach((r) => r.remove());
+    }
+
     function addUserMessage(text) {
       const box = document.getElementById('chat-messages');
       if (!box) return;
+      wiseaiClearOfferedChips();
       const safe = String(text).replace(/</g, '&lt;');
       /* The member's very first line reads as a large serif headline; any
          later lines stay in the normal chat size. */
@@ -13065,24 +12988,59 @@
     }
 
     function addWISEcodeAIMessage(html, opts = {}) {
+      /* A new answer means the previous turn's chips are stale — drop them so
+         this reply never lands beneath an old chip row. */
+      wiseaiClearOfferedChips();
+      const wantsOllama = opts.polish !== false && opts.instant !== true
+        && window.WiseOllama && typeof window.WiseOllama.polishThen === 'function';
+      if (!wantsOllama) return addWISEcodeAIMessagePaint(html, opts);
+      /* The local-model rewrite (Ollama) resolves SILENTLY behind our trace.
+         Reserve this line's slot in the transcript NOW and hold a fresh
+         "reply done" promise up front, so any chips offered right after this
+         call defer to THIS answer and always sit BELOW it — never above it
+         while Ollama is still thinking. */
+      const box = document.getElementById('chat-messages');
+      if (!box) return null;
+      let resolveDone;
+      wiseaiReplyDone = new Promise((r) => { resolveDone = r; });
+      const holder = document.createElement('div');
+      holder.className = 'sc-line sc-line-wiseai sc-line-pending';
+      holder.style.display = 'none';
+      box.appendChild(holder);
+      window.WiseOllama.polishThen(html, function (out) {
+        addWISEcodeAIMessagePaint(out, Object.assign({}, opts, { replace: holder, resolveDone }));
+      });
+      return holder;
+    }
+    function addWISEcodeAIMessagePaint(html, opts = {}) {
       const box = document.getElementById('chat-messages');
       if (!box) return null;
       wiseaiEnsureChipObserver();
       const withSource = opts.source !== false;
       const fb = opts.feedback ? wiseaiFeedbackBar() : '';
-      box.insertAdjacentHTML(
-        'beforeend',
-        `<div class="mb-3 sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEcodeAI">${WISEAI_OWL_BUG}</span><div class="sc-line-body">${html}${wiseaiMetaRow(withSource)}${fb}</div></div>`
-      );
-      const line = box.lastElementChild;
+      const markup = `<div class="mb-3 sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEcodeAI">${WISEAI_OWL_BUG}</span><div class="sc-line-body">${html}${wiseaiMetaRow(withSource)}${fb}</div></div>`;
+      /* Fill the reserved slot in place when present (the Ollama path), so the
+         answer keeps its position above any chips already offered for it;
+         otherwise append at the end. */
+      let line;
+      if (opts.replace && opts.replace.parentNode) {
+        opts.replace.insertAdjacentHTML('beforebegin', markup);
+        line = opts.replace.previousElementSibling;
+        opts.replace.remove();
+      } else {
+        box.insertAdjacentHTML('beforeend', markup);
+        line = box.lastElementChild;
+      }
       const body = line && line.querySelector('.sc-line-body');
       wiseaiFollowChat(box);
       /* Paragraphs first, then the thumbs / meta row as one unit. Trailing
-         chips wait on wiseaiReplyDone (see the chip observer). */
+         chips wait on wiseaiReplyDone (see the chip observer). Reuse a
+         caller-provided resolver (the reserved-slot path minted the promise up
+         front); otherwise mint one here. */
       const canType = body && !WISEAI_REDUCED_MOTION && opts.typewriter !== false && !wiseaiInstant;
+      let resolveDone = opts.resolveDone;
       if (canType) {
-        let resolveDone;
-        wiseaiReplyDone = new Promise((r) => { resolveDone = r; });
+        if (!resolveDone) { wiseaiReplyDone = new Promise((r) => { resolveDone = r; }); }
         const rowEls = [];
         const metaEl = body.querySelector('.sc-line-meta');
         const fbEl = body.querySelector('.sc-feedback');
@@ -13091,12 +13049,13 @@
         rowEls.forEach(wiseaiPrimeLeft);
         wiseaiFollowChat(box);
         wiseaiTypeInLine(body, () => {
-          wiseaiRevealStaggered(rowEls, 80, 0, () => { wiseaiFollowChat(box); resolveDone(); });
+          wiseaiRevealStaggered(rowEls, 80, 0, () => { wiseaiFollowChat(box); if (resolveDone) resolveDone(); });
         });
       } else {
         /* Non-typed line (reduced motion / { typewriter:false }): there's nothing
            to wait for, so any trailing chips may reveal immediately. */
-        wiseaiReplyDone = Promise.resolve();
+        if (resolveDone) resolveDone();
+        else wiseaiReplyDone = Promise.resolve();
       }
       return line;
     }
@@ -13381,6 +13340,60 @@
       return el;
     }
 
+    /* ── Our shared streaming trace for chat answers ──────────────────────
+       Every WISEcodeAI turn on this page draws the SAME behind-the-scenes
+       "Thinking" trace as wiseai.html and add-product (js/trace-stream.js —
+       collapsible milestone keys + the DNA rail in the avatar column), never a
+       bespoke spinner beat. The local-model rewrite (Ollama) runs SILENTLY
+       behind it: the trace lands a persistent summary and the answer paints in
+       its done() (addWISEcodeAIMessage's polishThen resolves against that),
+       so no Ollama pause is ever visible between chats. Falls back to the brief
+       typing beat only if the shared trace module never loaded or streaming is
+       off. `done()` posts the answer once the trace lands. */
+    function wiseaiTraceKey(label) {
+      const s = String(label || '').replace(/…+$/, '').replace(/^WISEcodeAI\s+is\s+/i, '').trim();
+      if (!s) return 'Thinking';
+      const key = s.split(/\s+/).slice(0, 3).join(' ');
+      return key.charAt(0).toUpperCase() + key.slice(1);
+    }
+    function wiseaiTraceMilestones(steps) {
+      const arr = (Array.isArray(steps) ? steps : [steps]).filter(Boolean);
+      const list = arr.length ? arr : ['Thinking'];
+      return list.map((s) => {
+        const label = String(s || '').replace(/…+$/, '').trim() || 'Thinking';
+        return { key: wiseaiTraceKey(label), story: [label + '.'] };
+      });
+    }
+    function wiseaiStreamPref() {
+      return (window.__wiseStdMenu && window.__wiseStdMenu.stream)
+        ? window.__wiseStdMenu.stream()
+        : { on: true, level: 'full' };
+    }
+    function wiseaiTraceThen(label, done, statusSteps) {
+      const lbl = label || WISEAI_STATUS_LABEL;
+      const run = () => { if (typeof done === 'function') { try { done(); } catch (_) { /* host body */ } } };
+      const stream = wiseaiStreamPref();
+      const trace = window.WiseTraceStream;
+      const box = document.getElementById('chat-messages');
+      if (!box || !trace || typeof trace.run !== 'function' || !stream.on) {
+        const t = stream.on ? showWISEcodeAITyping(lbl) : null;
+        const wait = stream.on ? (stream.level === 'final' ? 300 : 520) : 120;
+        setTimeout(() => { if (t) t.remove(); run(); }, wait);
+        return;
+      }
+      trace.run({
+        messages: box,
+        avatarHtml: `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEcodeAI">${WISEAI_OWL_BUG}</span>`,
+        milestones: wiseaiTraceMilestones(statusSteps && statusSteps.length ? statusSteps : lbl),
+        done: run,
+        streamOn: stream.on,
+        streamLevel: stream.level,
+        prefersReducedMotion: WISEAI_REDUCED_MOTION,
+        scrollDown: () => wiseaiFollowChat(box),
+        showTyping: () => showWISEcodeAITyping(lbl),
+      });
+    }
+
     /* Intent-keyed openers so a clicked welcome chip ALWAYS continues the
        conversation on its own feature — mirrors DEFAULT_INTENT_REPLIES in
        wiseai-chat.js. */
@@ -13556,28 +13569,17 @@
         openPortfolioModule(route.tab, null, route.reply, route.chips);
         return;
       }
-      /* Honour the shared "Response streaming" setting (three-dot menu, synced
-         app-wide by wireStandardChatMenu): OFF lands the answer after the
-         briefest beat, "Final only" shows a single short thinking beat, and
-         "Full"/"Steps" cycle the status lines exactly as before. */
-      const stream = (window.__wiseStdMenu && window.__wiseStdMenu.stream)
-        ? window.__wiseStdMenu.stream()
-        : { on: true, level: 'full' };
+      /* Draw OUR shared streaming trace (js/trace-stream.js) while the answer
+         resolves — the same "Thinking" block every other WISEcodeAI turn uses.
+         It honours the shared "Response streaming" setting and conceals the
+         local-model rewrite behind the trace, so no Ollama pause shows between
+         chats. */
       const finish = function () {
         addWISEcodeAIMessage('I’m your portfolio copilot. Right now you have <strong>5 claimed products</strong>, <strong>47 discovered matches</strong> to review &amp; claim, and <strong>18 products missing data</strong> (5 of those still need ingredient verification). Tell me what you’d like to do, or pick a task below.');
         pfOfferChips(['claimed', 'discovered', 'needsinfo', 'shields']);
       };
-      if (!stream.on || stream.level === 'final') {
-        const typing = stream.on ? showWISEcodeAITyping(statusStepsFor(text, intent)[0]) : null;
-        setTimeout(function () { if (typing) typing.remove(); finish(); }, stream.on ? 420 : 160);
-        return;
-      }
       const steps = statusStepsFor(text, intent);
-      const typing = showWISEcodeAITyping(steps[0]);
-      cycleWISEcodeAIStatus(typing, steps, function() {
-        if (typing) typing.remove();
-        finish();
-      });
+      wiseaiTraceThen(steps[0], finish, steps);
     }
 
     /* Each intent chip on the WISEcodeAI welcome screen pairs with the side
@@ -13981,12 +13983,10 @@
         dataVisited = new Set();
         dataStarted = true;
         addUserMessage('Explore My Data & Charts');
-        const typing = showWISEcodeAITyping('WISEcodeAI is pulling your portfolio data');
-        setTimeout(() => {
-          typing?.remove();
+        wiseaiTraceThen('WISEcodeAI is pulling your portfolio data', () => {
           addWISEcodeAIMessage('Let’s dig into your data. I’ll answer right here in the chat — every stat and chart renders <strong>inline</strong>, so we can keep building on the thread without leaving the conversation. What should we look at first?', { source: false });
           dataOfferChips(DATA_STARTERS);
-        }, 600);
+        });
       });
     }
 
@@ -14046,9 +14046,7 @@
       if (!node) return;
       btn?.closest('.sc-reply-chips')?.remove();
       addUserMessage(node.user);
-      const typing = showWISEcodeAITyping(node.status);
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen(node.status, () => {
         const viz = node.viz ? node.viz() : '';
         addWISEcodeAIMessage(node.reply + viz);
         dataVisited.add(id);
@@ -14056,7 +14054,7 @@
         if (!follow.length) follow = DATA_STARTERS.filter(f => !dataVisited.has(f));
         if (follow.length) dataOfferFollow(follow);
         else dataOfferRestart();
-      }, 680);
+      });
     }
 
     /* ════════════════════════════════════════════════════════════════════
@@ -14113,12 +14111,10 @@
         wfResetModule();
         openWorkflowPanel();
         addUserMessage('Build a Reformulation Plan');
-        const typing = showWISEcodeAITyping();
-        setTimeout(() => {
-          typing?.remove();
+        wiseaiTraceThen(null, () => {
           addWISEcodeAIMessage('Let’s build a <strong>Reformulation Plan</strong> together. I’ve opened a plan board on the right — it’s empty for now and we’ll fill it in one step at a time. First, which product are we reformulating?', { source: false });
           wfOfferStep(0);
-        }, 600);
+        });
       });
     }
 
@@ -14145,9 +14141,7 @@
       if (!step) return;
       document.getElementById('wf-chips-' + step.id)?.remove();
       addUserMessage(step.user);
-      const typing = showWISEcodeAITyping();
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen(null, () => {
         addWISEcodeAIMessage(step.reply);
         try { step.build(); } catch (_) {}
         wfStepIndex = Math.max(wfStepIndex, index + 1);
@@ -14157,7 +14151,7 @@
         } else {
           wfComplete();
         }
-      }, 650);
+      });
     }
 
     /* Final state — celebrate completion and offer terminal actions. */
@@ -14179,11 +14173,9 @@
       btn?.closest('.sc-reply-chips')?.remove();
       if (kind === 'export') {
         addUserMessage('Export the plan');
-        const typing = showWISEcodeAITyping();
-        setTimeout(() => {
-          typing?.remove();
+        wiseaiTraceThen(null, () => {
           addWISEcodeAIMessage('Exported your <strong>Reformulation Plan</strong> as a shareable brief — target product, flagged additives, clean-label swaps, and the projected <strong>88/100</strong> score are all included.', { source: false });
-        }, 600);
+        });
       } else {
         window.location.href = 'verification.html';
       }
@@ -15662,13 +15654,11 @@
         if (num && isFinite(n) && n > 0) num.textContent = String(n - 1);
       }
       if (typeof addUserMessage === 'function') addUserMessage('Remove ' + name);
-      const typing = (typeof showWISEcodeAITyping === 'function') ? showWISEcodeAITyping('WISEcodeAI') : null;
-      setTimeout(() => {
-        if (typing) typing.remove();
+      wiseaiTraceThen('WISEcodeAI', () => {
         if (typeof addWISEcodeAIMessage === 'function') {
           addWISEcodeAIMessage('Removed <strong>' + name + '</strong> from your portfolio. You can also delete a product from its edit view.');
         }
-      }, 420);
+      });
     }
     /* Inject an "Add pack formats / sizes" action into a claimed product's ⋮
        menu (rows that carry an Edit action — discovered/unclaimed rows don't get
@@ -17122,11 +17112,9 @@
       const msg = M[label];
       if (!msg) return;
       if (typeof addUserMessage === 'function') addUserMessage(msg[0]);
-      const typing = (typeof showWISEcodeAITyping === 'function') ? showWISEcodeAITyping('WISEcodeAI') : null;
-      setTimeout(() => {
-        if (typing) typing.remove();
+      wiseaiTraceThen('WISEcodeAI', () => {
         if (typeof addWISEcodeAIMessage === 'function') addWISEcodeAIMessage(msg[1]);
-      }, 520);
+      });
     }
     window.pfRowItemAction = pfRowItemAction;
 
@@ -17175,13 +17163,11 @@
         openPortfolioPanel();
         pfSwitchTab(tab);
         if (userMsg) addUserMessage(userMsg);
-        const typing = showWISEcodeAITyping('WISEcodeAI is opening your portfolio');
-        setTimeout(() => {
-          typing?.remove();
+        wiseaiTraceThen('WISEcodeAI is opening your portfolio', () => {
           addWISEcodeAIMessage(wiseaiMsg);
           pfOfferChips(chips);
           if (typeof onReady === 'function') onReady();
-        }, 620);
+        });
       });
     }
 
@@ -17240,11 +17226,9 @@
       hideWelcomeScreen(() => {
         revealPanel('shield');
         addUserMessage('Activate the Non-UPF Shields I’m eligible for');
-        const typing = showWISEcodeAITyping('Opening the Non-UPF Shield workspace…');
-        setTimeout(() => {
-          typing?.remove();
+        wiseaiTraceThen('Opening the Non-UPF Shield workspace…', () => {
           addWISEcodeAIMessage('<strong>9</strong> claimed products are eligible for a <strong>Non-UPF Shield</strong> and pending payment; <strong>1</strong> (Vegan Blueberry Mini Muffins) is ineligible for now. I’ve opened the <strong>SHIELD</strong> panel on the right — attest and pay and the shields switch on across all nine.', { source: false });
-        }, 620);
+        });
       });
     }
     function startReviewDiscovered() {
@@ -17319,13 +17303,11 @@
     function playChatIntent(userMsg, replyHtml, chips, status, onReply) {
       hideWelcomeScreen(() => {
         if (userMsg) addUserMessage(userMsg);
-        const typing = showWISEcodeAITyping(status || 'Gathering the details');
-        setTimeout(() => {
-          typing?.remove();
+        wiseaiTraceThen(status || 'Gathering the details', () => {
           addWISEcodeAIMessage(replyHtml, { source: false });
           if (typeof onReply === 'function') onReply();
           pfOfferChips(chips);
-        }, 620);
+        });
       });
     }
     const CATALOG_REPLY = 'I can import a whole catalog at once — a CSV of up to <strong>500 products</strong>. I’ll match your columns to ours (UPC, name, brand, ingredients, both serving sizes, and the full Nutrition Facts set), import what validates, and list the rows to fix. Then I can verify the whole catalog’s ingredients in one pass. Nothing lands in <strong>Claimed</strong> until you confirm. Grab the template, or open the catalog builder and drop your file in.';
@@ -17430,9 +17412,7 @@
       try { window.__wiseChatAsk?.open(); } catch (_) {}
       hideWelcomeScreen(() => {
         addUserMessage('What can I ask you here?');
-        const typing = showWISEcodeAITyping('WISEcodeAI is gathering what you can ask');
-        setTimeout(() => {
-          typing?.remove();
+        wiseaiTraceThen('WISEcodeAI is gathering what you can ask', () => {
           const rows = [
             ['Review discovered matches', 'Review the products you discovered for me'],
             ['Verify ingredients', 'Open a claimed product and verify its ingredients'],
@@ -17457,7 +17437,7 @@
             { source: false }
           );
           pfOfferChips(['discovered', 'claimed', 'shields', 'needsinfo']);
-        }, 620);
+        });
       });
     }
     window.startWhatCanIAsk = startWhatCanIAsk;
@@ -17831,9 +17811,7 @@
       document.getElementById('cmp-add-chips')?.remove();
       document.getElementById('cmp-add-kind-chips')?.remove();
       addUserMessage('Add to the comparison');
-      const typing = showWISEcodeAITyping('WISEcodeAI is getting your options');
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen('WISEcodeAI is getting your options', () => {
         addWISEcodeAIMessage('What would you like to add? You can compare <strong>products</strong>, whole <strong>portfolios</strong>, or a <strong>category average</strong> as a peer — mix any of them on one board.', { source: false });
         const box = document.getElementById('chat-messages');
         if (!box) return;
@@ -17843,7 +17821,7 @@
         row.innerHTML = cmpKindChips('cmpPromptAddOfKind');
         box.appendChild(row);
         wiseaiFollowChat(box);
-      }, 420);
+      });
     }
 
     /* Show the specific picks for the chosen kind. */
@@ -17855,9 +17833,7 @@
       const label = cmpKindLabel(kind);
       const { list, matchCount } = cmpAddCandidates(scope, kind);
       document.getElementById('cmp-add-chips')?.remove();
-      const typing = showWISEcodeAITyping('WISEcodeAI is finding ' + label + 's you can add');
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen('WISEcodeAI is finding ' + label + 's you can add', () => {
         if (!list.length) {
           addWISEcodeAIMessage('I couldn’t find another ' + label + ' to add here. Try a different type, or remove one on the board first.', { source: false });
           return;
@@ -17880,7 +17856,7 @@
         row.innerHTML = chips;
         box.appendChild(row);
         wiseaiFollowChat(box);
-      }, 480);
+      });
     }
 
     /* Resolve a picked id into the scope's working set, tagging its KIND from
@@ -17922,9 +17898,7 @@
         return;
       }
       addUserMessage('Add ' + ent.name);
-      const typing = showWISEcodeAITyping('Dropping ' + ent.name + ' onto the board');
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen('Dropping ' + ent.name + ' onto the board', () => {
         compareState.shown.push(id);
         (compareState.pending = compareState.pending || []).push(id);
         compareState.stale = true;
@@ -17935,7 +17909,7 @@
            waited on a manual "Recalculate" click, which left the column stuck
            as a shimmering skeleton if that button was never pressed. */
         setTimeout(() => cmpRecalculate({ auto: true }), 520);
-      }, 560);
+      });
     }
 
     /* ── Per-slot type toggle ─────────────────────────────────────────────
@@ -17949,9 +17923,7 @@
       document.getElementById('cmp-swap-chips')?.remove();
       document.getElementById('cmp-swap-pick-chips')?.remove();
       addUserMessage('Change a comparison slot to a different type');
-      const typing = showWISEcodeAITyping();
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen(null, () => {
         addWISEcodeAIMessage('Swap <strong>' + (ent.name || 'this slot') + '</strong> to a different type — a <strong>product</strong>, whole <strong>portfolio</strong>, or a <strong>category</strong> average. I’ll replace it and re-rank.', { source: false });
         const box = document.getElementById('chat-messages');
         if (!box) return;
@@ -17961,7 +17933,7 @@
         row.innerHTML = cmpKindChips('cmpPromptSwapPick', curKind, "'" + id + "',");
         box.appendChild(row);
         wiseaiFollowChat(box);
-      }, 360);
+      });
     }
 
     /* Step 2 — with the kind chosen, pick the specific entity for that slot. */
@@ -17972,9 +17944,7 @@
       if (!scope) return;
       const label = cmpKindLabel(kind);
       const { list, matchCount } = cmpAddCandidates(scope, kind);
-      const typing = showWISEcodeAITyping('WISEcodeAI is finding ' + label + 's');
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen('WISEcodeAI is finding ' + label + 's', () => {
         if (!list.length) {
           addWISEcodeAIMessage('No other ' + label + ' is available to place in that slot. Try a different type.', { source: false });
           return;
@@ -17994,7 +17964,7 @@
         row.innerHTML = chips;
         box.appendChild(row);
         wiseaiFollowChat(box);
-      }, 460);
+      });
     }
 
     /* Step 3 — replace the slot's occupant in place, carry the YOU anchor
@@ -18017,9 +17987,7 @@
       const old = scope.entities.find(e => e.id === slotId) || {};
       if (old.primary && ent.kind !== 'category') { ent.primary = true; old.primary = false; }
       addUserMessage('Swap in ' + ent.name);
-      const typing = showWISEcodeAITyping('Swapping in ' + ent.name);
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen('Swapping in ' + ent.name, () => {
         compareState.shown[idx] = pickId;
         (compareState.pending = compareState.pending || []).push(pickId);
         compareState.stale = true;
@@ -18027,7 +17995,7 @@
         scrollPanelIntoView('compare-panel');
         addWISEcodeAIMessage('Swapped in <strong>' + ent.name + '</strong> — scoring and re-ranking now…', { source: false });
         setTimeout(() => cmpRecalculate({ auto: true }), 520);
-      }, 520);
+      });
     }
 
     /* ── Per-slot type toggle — PROPER ON-BOARD DROPDOWN ──────────────────
@@ -18144,12 +18112,9 @@
       compareState.recalcing = true;
       renderCompare();
       scrollPanelIntoView('compare-panel');
-      const typing = showWISEcodeAITyping(auto
+      wiseaiTraceThen(auto
         ? ('WISEcodeAI is scoring the new ' + (scope.noun === 'portfolio' ? 'brand' : 'product') + ' and re-ranking')
-        : 'WISEcodeAI is recomputing scores and re-ranking');
-
-      setTimeout(() => {
-        typing?.remove();
+        : 'WISEcodeAI is recomputing scores and re-ranking', () => {
         compareState.recalcing = false;
         compareState.stale = false;
         compareState.pending = [];
@@ -18171,7 +18136,7 @@
 
         if (compareState.followDone) delete compareState.followDone.add;
         cmpOfferFollowChips();
-      }, 1050);
+      });
     }
 
     /* Category-average value for a metric (deterministic, filter-aware). */
@@ -19033,9 +18998,7 @@
         compareResetState();
         openComparePanel();
         addUserMessage('Compare my food');
-        const typing = showWISEcodeAITyping('WISEcodeAI is loading your food');
-        setTimeout(() => {
-          typing?.remove();
+        wiseaiTraceThen('WISEcodeAI is loading your food', () => {
           cmpSetScope('portfolio_vs_portfolio');   /* populates the scope + metrics */
           /* Start with only YOUR food on the board — no competitor yet. */
           const scope = CMP_SCOPES['portfolio_vs_portfolio'];
@@ -19045,7 +19008,7 @@
           scrollPanelIntoView('compare-panel');
           addWISEcodeAIMessage('You’re set up as <strong>Amy’s Kitchen</strong>, so I’ve loaded <strong>your</strong> food on the left — WISEscore, UPF, GRAS, ingredient and protein quality are all populated. When you’re ready, <strong>add a competitor</strong> to build the head-to-head — use the chip below or the <strong>Add</strong> button on the board.', { source: false });
           cmpOfferFollowChips();
-        }, 650);
+        });
       });
     }
 
@@ -19152,13 +19115,11 @@
       btn?.closest('#cmp-scope-chips')?.remove();
       compareState.followDone = {};
       addUserMessage(s.userMsg);
-      const typing = showWISEcodeAITyping('WISEcodeAI is assembling the comparison');
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen('WISEcodeAI is assembling the comparison', () => {
         addWISEcodeAIMessage(s.wiseaiReply);
         cmpApplyScenario(s);
         cmpOfferFollowChips();
-      }, 680);
+      });
     }
 
     function cmpChatScope(key, btn) {
@@ -19168,13 +19129,11 @@
       btn?.closest('.sc-reply-chips')?.remove();
       compareState.followDone = {};
       addUserMessage(scope.userMsg);
-      const typing = showWISEcodeAITyping('WISEcodeAI is assembling the comparison');
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen('WISEcodeAI is assembling the comparison', () => {
         addWISEcodeAIMessage(scope.wiseaiReply);
         cmpSetScope(key);
         cmpOfferFollowChips();
-      }, 680);
+      });
     }
 
     /* ── Comparison TYPE switch (chat intent chip) ────────────────────────
@@ -19183,9 +19142,7 @@
     function cmpPromptKind() {
       document.getElementById('cmp-kind-scope-chips')?.remove();
       addUserMessage('Change the comparison type');
-      const typing = showWISEcodeAITyping();
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen(null, () => {
         addWISEcodeAIMessage('What do you want to compare — individual <strong>products</strong>, whole <strong>portfolios</strong>, or <strong>categories</strong>? I’ll rebuild the board for that type.', { source: false });
         const box = document.getElementById('chat-messages');
         if (!box) return;
@@ -19202,7 +19159,7 @@
         row.innerHTML = chips;
         box.appendChild(row);
         wiseaiFollowChat(box);
-      }, 420);
+      });
     }
 
     function cmpChatKind(key, btn) {
@@ -19213,9 +19170,7 @@
       compareState.followDone = {};
       const noun = scope.noun;
       addUserMessage('Compare ' + (noun === 'category' ? 'categories' : noun + 's'));
-      const typing = showWISEcodeAITyping('WISEcodeAI is rebuilding the board');
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen('WISEcodeAI is rebuilding the board', () => {
         cmpSetScope(key);
         /* Products / portfolios start with only YOUR food, consistent with the
            default board; category-vs-category has no "yours", so keep its pair. */
@@ -19231,7 +19186,7 @@
         }
         addWISEcodeAIMessage(reply, { source: false });
         cmpOfferFollowChips();
-      }, 640);
+      });
     }
 
     /* Chat control surface — mirrors EVERY interactive control on the compare
@@ -19292,36 +19247,30 @@
       if (action === 'avg') {
         const on = !compareState.showAvg;
         addUserMessage(on ? 'Show the category average.' : 'Hide the category average.');
-        const typing = showWISEcodeAITyping();
-        setTimeout(() => {
-          typing?.remove();
+        wiseaiTraceThen(null, () => {
           compareState.showAvg = on; renderCompare(); scrollPanelIntoView('compare-panel');
           addWISEcodeAIMessage(on
             ? 'Turned on the <strong>category average</strong> — the dotted line on each metric bar marks where the category sits, so every gap reads at a glance. It works even with no named competitor selected.'
             : 'Hid the <strong>category average</strong> benchmark line.', { source: false });
           cmpOfferFollowChips();
-        }, delay);
+        });
         return;
       }
       if (action === 'rank') {
         addUserMessage('Rank the shelf set for me.');
-        const typing = showWISEcodeAITyping();
-        setTimeout(() => {
-          typing?.remove();
+        wiseaiTraceThen(null, () => {
           const live = cmpEntitiesShown().map(e => cmpResolveEntity(scope, e)).filter(e => !e.na).sort((a, b) => cmpScoreFor(b, 'wisescore') - cmpScoreFor(a, 'wisescore'));
           addWISEcodeAIMessage('Ranked by composite WISEscore: ' + live.map((e, i) => (i + 1) + '. <strong>' + e.name + '</strong> (' + Math.round(cmpScoreFor(e, 'wisescore')) + ')').join(' · ') + '.', { source: false });
           cmpOfferFollowChips();
-        }, delay);
+        });
         return;
       }
       if (action === 'switch') {
         addUserMessage('Let me try a different comparison.');
-        const typing = showWISEcodeAITyping();
-        setTimeout(() => {
-          typing?.remove();
+        wiseaiTraceThen(null, () => {
           addWISEcodeAIMessage('Sure — pick another comparison below and I’ll rebuild the board.', { source: false });
           cmpOfferScopeChips();
-        }, delay);
+        });
         return;
       }
     }
@@ -19338,9 +19287,7 @@
         return;
       }
       addUserMessage('Remove a ' + scope.noun + ' from the comparison');
-      const typing = showWISEcodeAITyping('WISEcodeAI is listing what you can remove');
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen('WISEcodeAI is listing what you can remove', () => {
         addWISEcodeAIMessage('Which ' + scope.noun + ' should I drop from the board?', { source: false });
         const box = document.getElementById('chat-messages');
         if (!box) return;
@@ -19353,7 +19300,7 @@
         row.innerHTML = chips;
         box.appendChild(row);
         wiseaiFollowChat(box);
-      }, 500);
+      });
     }
     function cmpConfirmRemoveEntity(id, btn) {
       btn?.closest('.sc-reply-chips')?.remove();
@@ -19362,14 +19309,12 @@
       const ent = scope && scope.entities.find(e => e.id === id);
       if (!ent) return;
       addUserMessage('Remove ' + ent.name);
-      const typing = showWISEcodeAITyping('Removing ' + ent.name + ' from the board');
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen('Removing ' + ent.name + ' from the board', () => {
         cmpRemoveEntity(id);
         scrollPanelIntoView('compare-panel');
         addWISEcodeAIMessage('Removed <strong>' + ent.name + '</strong> from the comparison and re-ranked the remaining ' + scope.noun + 's.', { source: false });
         cmpOfferFollowChips();
-      }, 500);
+      });
     }
 
     /* Choose the metric set from the chat (mirrors the board's Metrics menu).
@@ -19377,9 +19322,7 @@
     function cmpPromptMetrics() {
       document.getElementById('cmp-metric-chips')?.remove();
       addUserMessage('Choose which codes to compare');
-      const typing = showWISEcodeAITyping('WISEcodeAI is loading the codes');
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen('WISEcodeAI is loading the codes', () => {
         addWISEcodeAIMessage('Toggle any metric on or off and the board updates live. Tap <strong>Done</strong> when the set looks right.', { source: false });
         const box = document.getElementById('chat-messages');
         if (!box) return;
@@ -19389,7 +19332,7 @@
         box.appendChild(row);
         cmpRenderMetricChips();
         wiseaiFollowChat(box);
-      }, 500);
+      });
     }
     function cmpRenderMetricChips() {
       const row = document.getElementById('cmp-metric-chips');
@@ -19419,9 +19362,7 @@
       if (!scope || !scope.categories) return;
       document.getElementById('cmp-cat-chips')?.remove();
       addUserMessage('Filter the comparison by category');
-      const typing = showWISEcodeAITyping('WISEcodeAI is pulling the category filters');
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen('WISEcodeAI is pulling the category filters', () => {
         addWISEcodeAIMessage('Pick a category to narrow every portfolio to it — or choose <strong>All Categories</strong> for the full assortment.', { source: false });
         const box = document.getElementById('chat-messages');
         if (!box) return;
@@ -19436,7 +19377,7 @@
         row.innerHTML = chips;
         box.appendChild(row);
         wiseaiFollowChat(box);
-      }, 500);
+      });
     }
     function cmpChooseCategory(cat, btn) {
       btn?.closest('.sc-reply-chips')?.remove();
@@ -19445,14 +19386,12 @@
       if (!scope) return;
       const label = cat === 'all' ? 'all categories' : cat;
       addUserMessage(cat === 'all' ? 'Show all categories' : 'Filter to ' + cat);
-      const typing = showWISEcodeAITyping();
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen(null, () => {
         compareState.category = cat; renderCompare(); scrollPanelIntoView('compare-panel');
         const zero = cmpEntitiesShown().map(e => cmpResolveEntity(scope, e)).find(e => e.na);
         addWISEcodeAIMessage('Filtered to <strong>' + label + '</strong> — counts and scores narrowed accordingly.' + (cat !== 'all' && zero ? ' <strong>' + zero.name + '</strong> has no products here, so it reads <em>N/A</em> rather than a plotted zero.' : ''), { source: false });
         cmpOfferFollowChips();
-      }, 520);
+      });
     }
 
     /* "Learn more" pod on each metric in the board rail — routes straight into
@@ -19464,12 +19403,10 @@
       const label = cmpMetricShort(m);
       document.getElementById('cmp-follow-chips')?.remove();
       addUserMessage('Tell me more about ' + label + '.');
-      const typing = showWISEcodeAITyping('WISEcodeAI is pulling the ' + label + ' definition');
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen('WISEcodeAI is pulling the ' + label + ' definition', () => {
         addWISEcodeAIMessage(cmpMetricLong(id), { source: false, feedback: true });
         if (compareState.scope) cmpOfferFollowChips();
-      }, 640);
+      });
     }
 
     /* Key-takeaway metadata + AI "why" copy, shared by the board cards and the
@@ -19670,13 +19607,11 @@
       const score = Math.round(cmpScoreFor(ent, meta.metric));
       document.getElementById('cmp-follow-chips')?.remove();
       addUserMessage('Why is ' + ent.name + ' the ' + meta.topic + '?');
-      const typing = showWISEcodeAITyping('WISEcodeAI is breaking down ' + ent.name);
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen('WISEcodeAI is breaking down ' + ent.name, () => {
         addWISEcodeAIMessage(cmpTakeawayWhy(key, ent, score) +
           ' Want me to show the ingredients behind it, compare it against another product, or flag where it still has room to improve?', { source: false, feedback: true });
         if (compareState.scope) cmpOfferFollowChips();
-      }, 640);
+      });
     }
 
     /* Continue the conversation about the WHOLE board — opened from the chat
@@ -19690,13 +19625,11 @@
       const ordered = ents;
       document.getElementById('cmp-follow-chips')?.remove();
       addUserMessage('What’s the overall read on this comparison?');
-      const typing = showWISEcodeAITyping('WISEcodeAI is summarizing the board');
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen('WISEcodeAI is summarizing the board', () => {
         addWISEcodeAIMessage(cmpOverallInsight(scope, metrics, ordered, pendingSet) +
           ' Want me to break down what’s driving the leader, swap in another ' + (scope.noun || 'product') + ', or focus on a specific metric?', { source: false, feedback: true });
         if (compareState.scope) cmpOfferFollowChips();
-      }, 640);
+      });
     }
 
     /* Continue the conversation about one product's generated insight — opened
@@ -19709,14 +19642,12 @@
       const ent = cmpResolveEntity(scope, base);
       document.getElementById('cmp-follow-chips')?.remove();
       addUserMessage('Let’s talk about ' + ent.name + '.');
-      const typing = showWISEcodeAITyping('WISEcodeAI is pulling up ' + ent.name);
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen('WISEcodeAI is pulling up ' + ent.name, () => {
         const lead = ent.insight ? ' ' + ent.insight : '';
         addWISEcodeAIMessage('Happy to dig into <strong>' + ent.name + '</strong>.' + lead +
           ' Want me to break down the ingredients driving this, compare it on a specific metric, or flag where it could improve?', { source: false, feedback: true });
         if (compareState.scope) cmpOfferFollowChips();
-      }, 640);
+      });
     }
 
     /* ════════════════════════════════════════════════════════════════════
@@ -19839,9 +19770,7 @@
       addUserMessage(stage.user);
       /* Mark the stepper's current stage as actively working. */
       vfSetStepActive(index);
-      const typing = showWISEcodeAITyping(stage.status);
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen(stage.status, () => {
         addWISEcodeAIMessage(stage.reply);
         try { stage.build(); } catch (_) {}
         vfStageIndex = Math.max(vfStageIndex, index + 1);
@@ -19849,7 +19778,7 @@
         vfUpdateProgress();
         if (index + 1 < VF_STAGES.length) vfOfferStage(index + 1);
         else vfComplete();
-      }, 750);
+      });
     }
 
     function vfComplete() {
@@ -19876,12 +19805,10 @@
       btn?.closest('.sc-reply-chips')?.remove();
       if (kind === 'toolkit') {
         addUserMessage('Download the marketing toolkit');
-        const t = showWISEcodeAITyping('Packaging your NON-UPF toolkit…');
-        setTimeout(() => { t?.remove(); addWISEcodeAIMessage('Your <strong>NON-UPF Marketing Toolkit</strong> is ready — shelf badges, the Verified Shield lockup, and a quick-start guide for all 7 UPCs.', { source: false }); }, 600);
+        wiseaiTraceThen('Packaging your NON-UPF toolkit…', () => { addWISEcodeAIMessage('Your <strong>NON-UPF Marketing Toolkit</strong> is ready — shelf badges, the Verified Shield lockup, and a quick-start guide for all 7 UPCs.', { source: false }); });
       } else {
         addUserMessage('Show the verification certificate');
-        const t = showWISEcodeAITyping('Retrieving certificate…');
-        setTimeout(() => { t?.remove(); addWISEcodeAIMessage('Certificate <strong>WISE-VR-2026-0612</strong> is on the board — it lists all 7 Verified NON-UPF UPCs and is valid through <strong>Jun 2027</strong>.'); }, 600);
+        wiseaiTraceThen('Retrieving certificate…', () => { addWISEcodeAIMessage('Certificate <strong>WISE-VR-2026-0612</strong> is on the board — it lists all 7 Verified NON-UPF UPCs and is valid through <strong>Jun 2027</strong>.'); });
       }
     }
 
@@ -20193,12 +20120,10 @@
         lrResetModules();
         lrOpenClaimsPanel();
         addUserMessage('Prep Launch Readiness');
-        const typing = showWISEcodeAITyping('Setting up launch boards…');
-        setTimeout(() => {
-          typing?.remove();
+        wiseaiTraceThen('Setting up launch boards…', () => {
           addWISEcodeAIMessage('Let\'s get <strong>Chipotle Chicken Empanadas</strong> launch-ready. I\'ve opened <strong>Claims Review</strong> on the right — we\'ll fill it step by step. If label copy diverges from the claims, I\'ll open <strong>Packaging Checks</strong> beneath it, then pull in <strong>NFP+</strong>, <strong>SHIELD</strong>, and <strong>TIER</strong> from the top bar as the review deepens.', { source: false });
           lrOfferStep(0);
-        }, 600);
+        });
       });
     }
 
@@ -20224,9 +20149,7 @@
       addUserMessage(step.user);
       if (step.intentShift) lrOpenPackagingPanel();
       if (step.openNav) lrOpenNavPanels(step.openNav);
-      const typing = showWISEcodeAITyping(step.status || 'Working…');
-      setTimeout(() => {
-        typing?.remove();
+      wiseaiTraceThen(step.status || 'Working…', () => {
         addWISEcodeAIMessage(step.reply);
         try { step.build(); } catch (_) {}
         lrStepIndex = Math.max(lrStepIndex, index + 1);
@@ -20236,7 +20159,7 @@
         }
         if (index + 1 < LR_STEPS.length) lrOfferStep(index + 1);
         else lrComplete();
-      }, step.intentShift ? 850 : 650);
+      });
     }
 
     function lrComplete() {
@@ -20262,21 +20185,17 @@
       btn?.closest('.sc-reply-chips')?.remove();
       if (kind === 'brief') {
         addUserMessage('Export the launch brief');
-        const typing = showWISEcodeAITyping('Compiling launch brief…');
-        setTimeout(() => {
-          typing?.remove();
+        wiseaiTraceThen('Compiling launch brief…', () => {
           addWISEcodeAIMessage('Exported your <strong>Launch Readiness Brief</strong> — approved claims, reconciled label copy, SHIELD compliance, and TIER classification are bundled for legal review.', { source: false });
-        }, 600);
+        });
       } else if (kind === 'view') {
         addUserMessage('Open the saved view');
         switchHistoryTab('views');
         renderViewsTab();
         scrollPanelIntoView('history-panel');
-        const typing = showWISEcodeAITyping('Opening saved view…');
-        setTimeout(() => {
-          typing?.remove();
+        wiseaiTraceThen('Opening saved view…', () => {
           addWISEcodeAIMessage('Your view is in <strong>History → Views</strong>. Click it anytime to restore this exact chat and module layout.', { source: false });
-        }, 500);
+        });
       } else {
         window.location.href = 'verification.html';
       }
@@ -20498,11 +20417,9 @@
           const name = String(f.name).replace(/</g, '&lt;');
           hideWelcomeScreen(function() {
             addUserMessage('📎 ' + name);
-            const t = showWISEcodeAITyping('Reviewing ' + name);
-            setTimeout(function() {
-              if (t) t.remove();
+            wiseaiTraceThen('Reviewing ' + name, function() {
               addWISEcodeAIMessage('Got it — I’ve received <strong>' + name + '</strong> and can reference it in this conversation.', { source: false });
-            }, 600);
+            });
           });
           fi.value = '';
         });

@@ -10735,6 +10735,15 @@
     /* Drop a WISEcodeAI reply with a grounding caption + timestamp. Pass
        { source: false } for a plain acknowledgement that shouldn't claim a source. */
     function addWISEcodeAIMessage(html, opts = {}) {
+      if (opts.polish !== false && opts.instant !== true && window.WiseOllama && typeof window.WiseOllama.polishThen === 'function') {
+        window.WiseOllama.polishThen(html, function (out) {
+          addWISEcodeAIMessagePaint(out, opts);
+        });
+        return null;
+      }
+      return addWISEcodeAIMessagePaint(html, opts);
+    }
+    function addWISEcodeAIMessagePaint(html, opts = {}) {
       const box = document.getElementById('chat-messages');
       if (!box) return null;
       wiseaiEnsureChipObserver();
@@ -16373,10 +16382,10 @@
     });
 
     /* "What can I ask?" ask-help link (below-input, left) — the exact canonical
-       WISEcodeAI affordance. Paints the gold shimmer letters (per-letter --ch-i),
-       keeps its text left-aligned to the composer's placeholder at runtime (like
-       alignAskHelp() in js/wiseai-chat.js), and drives this page's own reply
-       engine so it behaves like sending "What can I ask?". */
+       WISEcodeAI affordance. Paints the gold shimmer letters (per-letter --ch-i)
+       and drives this page's own reply engine so it behaves like sending "What
+       can I ask?". The left alignment is handled by the shared alignAskHelp(),
+       which wireChatComposer runs for this composer. */
     (function wireAskHelp() {
       const btn = document.getElementById('cmp-ask-help');
       if (!btn) return;
@@ -16392,21 +16401,6 @@
         try { window.__wiseChatAsk?.open(); } catch (_) {}
         hideWelcomeScreen(() => { addUserMessage(label); wiseaiRespond(label); });
       });
-      const input = document.getElementById('chat-input');
-      const row = btn.closest('.sc-belowinput');
-      const align = () => {
-        if (!input || !row) return;
-        const inRect = input.getBoundingClientRect();
-        const rowRect = row.getBoundingClientRect();
-        if (!inRect.width || !rowRect.width) return;
-        const inPadL = parseFloat(getComputedStyle(input).paddingLeft) || 0;
-        const btnPadL = parseFloat(getComputedStyle(btn).paddingLeft) || 0;
-        btn.style.marginLeft = `${Math.max(0, Math.round((inRect.left + inPadL) - rowRect.left - btnPadL))}px`;
-      };
-      align();
-      setTimeout(align, 200);
-      window.addEventListener('resize', align);
-      if (document.fonts && document.fonts.ready) document.fonts.ready.then(align).catch(() => {});
     })();
 
     /* ── NFP+ toggle & variant selector ──────────────────────────────────── */

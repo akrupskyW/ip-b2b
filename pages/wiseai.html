@@ -876,20 +876,20 @@
     }
     .wa-merge-chips::-webkit-scrollbar { height: 6px; }
     /* Output chip — the same card as the transcript's .sc-surface-card: 52px
-       preview on the left, name on the right, gold stroke, vN badge on the
-       thumb. One chip per version. Clicking it reveals that version below. */
+       preview on the left, name on the right, Gilded Grain stroke, vN badge on
+       the thumb. One chip per version. Clicking it reveals that version below. */
     .wa-merge-chip {
       flex: 0 0 auto; scroll-snap-align: start;
       box-sizing: border-box; width: min(240px, 100%); max-width: 240px;
       display: inline-flex; align-items: center; gap: 12px; padding: 8px 12px 8px 8px;
       background: var(--surface);
-      border: 1px solid color-mix(in srgb, var(--ter-amber, #FFC434) 50%, transparent);
+      border: 1px solid var(--out-stroke, #946005);
       border-radius: 14px;
       font-family: inherit; font-size: 14px; font-weight: 700; color: var(--text);
       cursor: pointer; text-align: left;
       transition: border-color .15s ease, box-shadow .15s ease, transform .05s ease;
     }
-    .wa-merge-chip:hover { border-color: color-mix(in srgb, var(--ter-amber, #FFC434) 80%, transparent); box-shadow: 0 4px 12px rgba(255,196,52,0.12); }
+    .wa-merge-chip:hover { border-color: var(--out-stroke, #946005); box-shadow: 0 4px 12px color-mix(in srgb, var(--out-stroke, #946005) 20%, transparent); }
     .wa-merge-chip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .wa-merge-chip:active { transform: translateY(1px); }
     /* Same 52px snapshot as .sc-surface-thumb so rail chips and transcript
@@ -1634,12 +1634,19 @@
 
     /* ── Charts (SVG + div bars, app tokens only) ──
        Headline, lede, and caption sit on the pane. Only the plot itself is a
-       white (surface) card — matching dash-card chrome, not a full-bleed wrap. */
+       white (surface) card — matching dash-card chrome, not a full-bleed wrap.
+       Every chart type (table, bars, columns, donut, spider, parallel) caps
+       at 600px regardless of how wide the output module is, so the plot and
+       its legend stay a readable pair instead of stretching across the pane. */
     .wa-pane-body {
       --dash-donut-ring-h: calc(252px * 26 / 300);
+      --wa-chart-max: 600px;
     }
     .wa-pane-body .wa-chart-card {
       position: relative;
+      width: 100%;
+      max-width: var(--wa-chart-max);
+      margin-inline: auto;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--r-md, 16px);
@@ -1696,9 +1703,22 @@
       box-shadow: none;
       padding: 0;
     }
+    .wa-pane-body .dash-donut-legend-title {
+      font-size: var(--fs-label);
+    }
+    .wa-pane-body .dash-donut-legend-group .dash-legend-item {
+      font-size: var(--fs-ui);
+      gap: 16px;
+    }
     .wa-pane-body .dash-donut-legend-group .dash-legend-item strong {
       width: auto;
-      min-width: 36px;
+      min-width: 4.75ch;
+      text-align: right;
+      font-size: var(--fs-ui);
+      font-variant-numeric: tabular-nums;
+    }
+    .wa-pane-body .dash-legend-l {
+      font-size: inherit;
     }
     .wa-health-bars { display: flex; flex-direction: column; gap: 12px; }
     .wa-health-row {
@@ -1707,7 +1727,7 @@
       align-items: center;
       gap: 12px;
     }
-    .wa-health-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-align: right; line-height: 1.25; }
+    .wa-health-label { font-size: var(--fs-ui); font-weight: 600; color: var(--text-muted); text-align: right; line-height: 1.25; }
     .wa-pane-body .dash-ws-health-bar,
     .wa-pane-body .dash-ws-health-track { display: block; }
     .wa-pane-body .dash-ws-health-fill {
@@ -1717,7 +1737,7 @@
        normally divides stacked blocks when one sits beside it. */
     .wa-pane-body > .wa-block:has(> .wa-chart-card) + .wa-block,
     .wa-pane-body > .wa-block + .wa-block:has(> .wa-chart-card) { border-top: 0; }
-    .wa-chart-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 12px; font-size: 11px; color: var(--text-muted); }
+    .wa-chart-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 12px; font-size: var(--fs-ui); color: var(--text-muted); }
     .wa-chart-legend .k { display: inline-flex; align-items: center; gap: 6px; }
 
     /* Kraft UPF charts — donut with outside labels + share table. */
@@ -1811,16 +1831,16 @@
     .wa-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
     .wa-bars { display: flex; flex-direction: column; gap: 9px; }
     .wa-bar-row { display: grid; grid-template-columns: 92px 1fr 44px; align-items: center; gap: 10px; }
-    .wa-bar-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-align: right; }
+    .wa-bar-label { font-size: var(--fs-ui); font-weight: 600; color: var(--text-muted); text-align: right; }
     .wa-bar-track { height: 16px; border-radius: 9999px; background: var(--surface-3); overflow: hidden; }
     .wa-bar-fill { height: 100%; border-radius: 9999px; background: var(--chart-mono, var(--primary)); }
     .wa-bars-thin .wa-bar-track { height: 6px; }
-    .wa-bar-val { font-size: 11.5px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+    .wa-bar-val { font-size: var(--fs-ui); font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
     /* Stacked score rows: name on its own line, bar + value beneath it so each
        ranked item gets vertical room to breathe. */
     .wa-scorebars { display: flex; flex-direction: column; gap: 14px; }
     .wa-scorebar { display: flex; flex-direction: column; gap: 7px; }
-    .wa-scorebar-name { font-size: 12.5px; font-weight: 600; color: var(--text); line-height: 1.3; }
+    .wa-scorebar-name { font-size: var(--fs-ui); font-weight: 600; color: var(--text); line-height: 1.3; }
     .wa-scorebar-line { display: flex; align-items: center; gap: 12px; }
     .wa-scorebar-line .wa-bar-track { flex: 1 1 auto; height: 8px; }
     .wa-scorebar-line .wa-bar-val { flex: 0 0 auto; }
@@ -1931,10 +1951,10 @@
       display: inline-flex; flex-direction: column; align-items: stretch;
       width: min(240px, 100%); max-width: 100%; min-width: 0;
       text-align: left; margin: 4px 0 0; padding: 8px 12px 8px 8px;
-      /* Thin, light gold-yellow stroke so the output chips echo the amber
-         activity-strip ticks on the chat's right edge — but the fill matches the
-         chat container's own background so only the outline reads as gold. */
-      background: var(--surface); border: 1px solid color-mix(in srgb, var(--ter-amber, #FFC434) 50%, transparent);
+      /* Thin Gilded Grain stroke so the output chips echo the output ear marks
+         on the activity rail — but the fill matches the chat container's own
+         background so only the outline carries the color. */
+      background: var(--surface); border: 1px solid var(--out-stroke, #946005);
       border-radius: 14px; cursor: pointer; font-family: inherit;
       transition: border-color .15s ease, box-shadow .15s ease, transform .05s ease, max-width .35s ease;
     }
@@ -1944,7 +1964,7 @@
     /* Dark chat card uses #1A2339 (not --surface), so match it here too. */
     html.dark .sc-surface-card { background: #1A2339; }
     html.dark.chat-tint .sc-surface-card { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
-    .sc-surface-card:hover { border-color: color-mix(in srgb, var(--ter-amber, #FFC434) 80%, transparent); box-shadow: 0 4px 12px rgba(255,196,52,0.12); }
+    .sc-surface-card:hover { border-color: var(--out-stroke, #946005); box-shadow: 0 4px 12px color-mix(in srgb, var(--out-stroke, #946005) 20%, transparent); }
     .sc-surface-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .sc-surface-card:active { transform: translateY(1px); }
     /* Small clipped snapshot of the surfaced content, scaled way down. */
@@ -2039,21 +2059,24 @@
     #modules-row.output-fs > .wa-pane.pane-fs.is-sticky .wa-pane-top {
       background: var(--surface);
     }
-    /* Full-screen chart: drop the 300px / 70% caps and grow the plot so it
-       reads as the hero of the overlay, not a leftover docked thumbnail. */
+    /* Full-screen overlay: the module fills the viewport, but the plot
+       itself stays on the same 600px cap as the docked pane so a wide
+       overlay does not stretch the legend away from the chart. */
     #modules-row.output-fs > .wa-pane.pane-fs .wa-pane-body > .wa-block:has(> .wa-chart-card) {
       padding: 0;
     }
     #modules-row.output-fs > .wa-pane.pane-fs .wa-chart-card {
       padding: 28px 36px 32px;
+      max-width: var(--wa-chart-max, 600px);
+      margin-inline: auto;
     }
     #modules-row.output-fs > .wa-pane.pane-fs .wa-chart-card svg {
-      max-width: none !important;
-      width: 100% !important;
+      max-width: 100%;
+      width: 100%;
     }
     #modules-row.output-fs > .wa-pane.pane-fs .wa-radar-wrap > div {
-      max-width: min(640px, 80%) !important;
-      width: min(640px, 80%) !important;
+      max-width: 100%;
+      width: 100%;
     }
     #modules-row.output-fs > .wa-pane.pane-fs .wa-bars { gap: 18px; }
     #modules-row.output-fs > .wa-pane.pane-fs .wa-bar-row {
@@ -2090,15 +2113,34 @@
       .wa-chart-toolbar .cmp-chart-label { display: inline; }
       .wa-chart-toolbar .cmp-chart-btn { width: auto; gap: 5px; padding: 0 10px; }
     }
-    .wa-chart-plot { min-width: 0; }
+    .wa-chart-plot { min-width: 0; width: 100%; max-width: 100%; }
+    .wa-pane-body .wa-chart-card svg {
+      max-width: 100% !important;
+      width: 100%;
+    }
+    .wa-pane-body .wa-col-svg { overflow: visible; }
+    .wa-pane-body .dash-breakdown-bar-name {
+      overflow-wrap: break-word;
+      line-height: 1.25;
+    }
+    .wa-pane-body .dash-donut-legend-group .dash-legend-l {
+      white-space: normal;
+      overflow: visible;
+      text-overflow: unset;
+    }
+    .wa-pane-body .wa-block:not(:has(.wa-sprouts-donuts)) > .wa-chart-toolbar {
+      width: 100%;
+      max-width: var(--wa-chart-max, 600px);
+      margin-inline: auto;
+    }
     .wa-ctype-group + .wa-ctype-group { margin-top: 14px; }
     .wa-ctype-group-lbl {
-      font-size: 11px; font-weight: 700; color: var(--text-muted);
-      margin: 0 0 6px;
+      font-size: var(--fs-label); font-weight: 700; color: var(--text-muted);
+      margin: 0 0 6px; letter-spacing: 0.04em; text-transform: uppercase;
     }
     .wa-ctype-stack { display: flex; flex-direction: column; gap: 12px; }
     .wa-ctype-stack-row { display: flex; flex-direction: column; gap: 5px; }
-    .wa-ctype-stack-lbl { font-size: 12.5px; font-weight: 600; color: var(--text); }
+    .wa-ctype-stack-lbl { font-size: var(--fs-ui); font-weight: 600; color: var(--text); }
     .wa-ctype-stack-track {
       display: flex; height: 22px; border-radius: 999px; overflow: hidden;
       background: var(--surface-3);
@@ -5882,10 +5924,24 @@
       if (!el.classList.contains('is-open')) {
         ensurePaneOpen(el);
       }
-      /* Stay the smaller sticky drawer — never inherit Output's fill default. */
-      applyPaneWidth(el, 0);
+      /* A generated report always lands at DOUBLE — the builder needs the room
+         to read, and that is true on every display, so this does not consult
+         the screen-width default. Output steps down to double beside it so the
+         two drawers read as a pair instead of one fill column plus a sliver. */
+      applyPaneWidth(el, 1);
       const wb = document.querySelector('[data-pane-width="report"]');
-      if (wb) syncPaneWidthBtn(wb, 0);
+      if (wb) syncPaneWidthBtn(wb, 1);
+      ['unified', 'results', 'visuals'].forEach((k) => {
+        const out = paneEl[k];
+        if (!out || !out.classList.contains('is-open')) return;
+        applyPaneWidth(out, 1);
+        /* default-fill.js only re-drives a right-of-chat module to fill while
+           its own flag is clear (it clears on close), so hold it here or the
+           next row mutation would click Output straight back to fill. */
+        out.dataset.fillDefaulted = '1';
+        const ob = document.querySelector(`[data-pane-width="${k}"]`);
+        if (ob) syncPaneWidthBtn(ob, 1);
+      });
       setPaneSticky('report', true);
       window.WisePaneResize?.release?.([
         document.getElementById('wa-chat'),
@@ -7804,12 +7860,16 @@
         { label: 'PL3', a: 8, n: 0 },
         { label: 'PL4', a: 1, n: 1 },
       ];
-      const W = 520, H = 210, padL = 30, padR = 14, padT = 16, padB = 42;
-      const mxV = 8, plotW = W - padL - padR, plotH = H - padT - padB;
-      const y = (v) => padT + (1 - v / mxV) * plotH;
+      const W = 520, padL = 30, padR = 14, padT = 16;
+      const plotH = 152;
+      const mxV = 8, plotW = W - padL - padR;
       const gw = plotW / groups.length, bw = Math.min(34, gw / 3.2);
+      const axis = waChartAxisPlan(groups.map((g) => g.label), gw);
+      const padB = axis.pad;
+      const H = padT + plotH + padB;
+      const y = (v) => padT + (1 - v / mxV) * plotH;
       const cA = 'var(--primary)', cN = 'var(--sec-green)';
-      let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Artificial vs natural sweeteners by PL level">`;
+      let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" class="wa-col-svg" role="img" aria-label="Artificial vs natural sweeteners by PL level">`;
       for (let g = 0; g <= mxV; g += 2) {
         const yy = y(g);
         svg += `<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${W - padR}" y2="${yy.toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`;
@@ -7820,9 +7880,9 @@
         const x1 = cx - bw - 2, x2 = cx + 2;
         svg += `<rect x="${x1.toFixed(1)}" y="${y(grp.a).toFixed(1)}" width="${bw.toFixed(1)}" height="${(plotH * grp.a / mxV).toFixed(1)}" rx="3" fill="${cA}"/>`;
         svg += `<rect x="${x2.toFixed(1)}" y="${y(grp.n).toFixed(1)}" width="${bw.toFixed(1)}" height="${(plotH * grp.n / mxV).toFixed(1)}" rx="3" fill="${cN}"/>`;
-        if (grp.a) svg += `<text x="${(x1 + bw / 2).toFixed(1)}" y="${(y(grp.a) - 4).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="700" fill="var(--text)">${grp.a}</text>`;
-        if (grp.n) svg += `<text x="${(x2 + bw / 2).toFixed(1)}" y="${(y(grp.n) - 4).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="700" fill="var(--text)">${grp.n}</text>`;
-        svg += `<text x="${cx.toFixed(1)}" y="${(H - padB + 18).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--text-muted)">${grp.label}</text>`;
+        if (grp.a) svg += waChartValueLabel(grp.a, x1 + bw / 2, y(grp.a) - 4, bw + 4, 11);
+        if (grp.n) svg += waChartValueLabel(grp.n, x2 + bw / 2, y(grp.n) - 4, bw + 4, 11);
+        svg += waChartAxisLabel(grp.label, cx, H - padB + 14, axis, gw);
       });
       svg += `</svg>`;
       const legend = `<span class="k"><span class="wa-dot" style="background:${cA}"></span>Artificial (synthetic)</span><span class="k"><span class="wa-dot" style="background:${cN}"></span>Natural</span>`;
@@ -7882,32 +7942,112 @@
         : 'var(--sec-red)';
     }
 
+    /* Axis / value labels that stay readable as the slot shrinks: fit flat,
+       wrap to two lines, then tilt. One plan per chart so every tick matches. */
+    function waChartEstTextW(text, fs) {
+      return String(text || '').length * fs * 0.56;
+    }
+    function waChartWrapPair(label, slotW, fs) {
+      const raw = String(label || '').trim();
+      let words = raw.split(/\s+/);
+      if (words.length < 2 && raw.includes('-')) {
+        const parts = raw.split('-');
+        words = parts.map((w, i) => (i < parts.length - 1 ? w + '-' : w)).filter(Boolean);
+      }
+      if (words.length < 2) return null;
+      let best = null;
+      for (let i = 1; i < words.length; i++) {
+        const a = words.slice(0, i).join(' ');
+        const b = words.slice(i).join(' ');
+        const max = Math.max(waChartEstTextW(a, fs), waChartEstTextW(b, fs));
+        if (!best || max < best.max) best = { a, b, max };
+      }
+      return best && best.max <= slotW - 2 ? best : null;
+    }
+    function waChartAxisPlan(labels, slotW) {
+      const list = (labels || []).map((l) => String(l || ''));
+      const sizes = [12, 11, 10];
+      for (const fs of sizes) {
+        if (list.every((l) => waChartEstTextW(l, fs) <= slotW - 4)) {
+          return { mode: 'flat', angle: 0, fs, pad: 36 };
+        }
+      }
+      for (const fs of sizes) {
+        if (list.every((l) => waChartEstTextW(l, fs) <= slotW - 4 || waChartWrapPair(l, slotW, fs))) {
+          return { mode: 'wrap', angle: 0, fs, pad: 54 };
+        }
+      }
+      const fs = list.length >= 8 ? 11 : 12;
+      const longest = list.reduce((m, l) => Math.max(m, waChartEstTextW(l, fs)), 0);
+      const angle = list.length >= 8 ? -52 : -42;
+      const rise = Math.ceil(longest * Math.sin(Math.abs(angle) * Math.PI / 180)) + 16;
+      return { mode: 'tilt', angle, fs, pad: Math.min(128, Math.max(68, rise)) };
+    }
+    function waChartAxisLabel(label, x, y, plan, slotW) {
+      const fs = plan.fs;
+      const raw = String(label || '');
+      const tip = `<title>${esc(raw)}</title>`;
+      if (plan.mode === 'wrap') {
+        const pair = waChartWrapPair(raw, slotW, fs);
+        if (pair) {
+          return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="var(--text-muted)">${tip}<tspan x="${x.toFixed(1)}" dy="0">${esc(pair.a)}</tspan><tspan x="${x.toFixed(1)}" dy="${fs + 2}">${esc(pair.b)}</tspan></text>`;
+        }
+      }
+      if (plan.mode === 'tilt') {
+        return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="end" font-size="${fs}" font-weight="700" fill="var(--text-muted)" transform="rotate(${plan.angle} ${x.toFixed(1)} ${y.toFixed(1)})">${tip}${esc(raw)}</text>`;
+      }
+      return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="var(--text-muted)">${tip}${esc(raw)}</text>`;
+    }
+    function waChartValueLabel(text, x, y, slotW, fs) {
+      const raw = String(text);
+      let size = fs;
+      while (size > 9 && waChartEstTextW(raw, size) > slotW - 2) size -= 1;
+      return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" font-size="${size}" font-weight="800" fill="var(--text)" data-countup>${esc(raw)}</text>`;
+    }
+    function waChartRadarLabel(label, x, y, anchor) {
+      const raw = String(label || '');
+      const words = raw.trim().split(/\s+/);
+      const xx = Number(x).toFixed(1);
+      const yy = Number(y).toFixed(1);
+      if (words.length >= 2 && raw.length > 14) {
+        const mid = Math.ceil(words.length / 2);
+        const a = words.slice(0, mid).join(' ');
+        const b = words.slice(mid).join(' ');
+        return `<text x="${xx}" y="${yy}" text-anchor="${anchor}" class="cmp-radar-label"><title>${esc(raw)}</title><tspan x="${xx}" dy="0">${esc(a)}</tspan><tspan x="${xx}" dy="13">${esc(b)}</tspan></text>`;
+      }
+      return `<text x="${xx}" y="${yy}" text-anchor="${anchor}" class="cmp-radar-label"><title>${esc(raw)}</title>${esc(raw)}</text>`;
+    }
+
     /* Single-series vertical count columns (y-axis in food counts). */
     function countColumns({ rows, maxV, yLabel, aria }) {
-      const W = 560, H = 272, padL = 62, padR = 16, padT = 30, padB = 44;
-      const plotW = W - padL - padR, plotH = H - padT - padB;
-      const y = (v) => padT + (1 - v / maxV) * plotH;
+      const W = 560, padL = 62, padR = 16, padT = 30;
+      const plotH = 198;
+      const plotW = W - padL - padR;
       const gw = plotW / rows.length;
+      const axis = waChartAxisPlan(rows.map((r) => r.label), gw);
+      const padB = axis.pad;
+      const H = padT + plotH + padB;
+      const y = (v) => padT + (1 - v / maxV) * plotH;
       const bw = Math.min(78, gw * 0.46);
       const step = maxV <= 20 ? 5 : maxV <= 200 ? 20 : maxV <= 2000 ? 200 : maxV <= 20000 ? 2000 : 20000;
       const fmt = (n) => n.toLocaleString('en-US');
       const midY = padT + plotH / 2;
-      let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${esc(aria || yLabel || 'counts')}">`;
+      let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" class="wa-col-svg" role="img" aria-label="${esc(aria || yLabel || 'counts')}">`;
       if (yLabel) {
-        svg += `<text x="13" y="${midY.toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text-subtle)" transform="rotate(-90 13 ${midY.toFixed(1)})">${esc(yLabel)}</text>`;
+        svg += `<text x="13" y="${midY.toFixed(1)}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-subtle)" transform="rotate(-90 13 ${midY.toFixed(1)})">${esc(yLabel)}</text>`;
       }
       for (let g = 0; g <= maxV; g += step) {
         const yy = y(g);
         svg += `<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${W - padR}" y2="${yy.toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`;
-        svg += `<text x="${padL - 8}" y="${(yy + 3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--text-subtle)">${fmt(g)}</text>`;
+        svg += `<text x="${padL - 8}" y="${(yy + 3.5).toFixed(1)}" text-anchor="end" font-size="12" fill="var(--text-subtle)">${fmt(g)}</text>`;
       }
       rows.forEach((row, i) => {
         const cx = padL + gw * i + gw / 2;
         const x = cx - bw / 2;
         const h = (plotH * row.count) / maxV;
         svg += `<rect x="${x.toFixed(1)}" y="${y(row.count).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="6" fill="${row.color || 'var(--primary)'}"/>`;
-        svg += `<text x="${cx.toFixed(1)}" y="${(y(row.count) - 8).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="800" fill="var(--text)" data-countup>${fmt(row.count)}</text>`;
-        svg += `<text x="${cx.toFixed(1)}" y="${(H - padB + 18).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-muted)">${esc(row.label)}</text>`;
+        svg += waChartValueLabel(fmt(row.count), cx, y(row.count) - 8, gw, 13);
+        svg += waChartAxisLabel(row.label, cx, H - padB + 14, axis, gw);
       });
       svg += `</svg>`;
       return svg;
@@ -7915,17 +8055,21 @@
 
     /* Grouped-column SVG (1–3 series) shared by the comparison charts. */
     function groupedColumns({ groups, series, colors, maxV, suffix = '' }) {
-      const W = 520, H = 214, padL = 30, padR = 14, padT = 18, padB = 44;
-      const plotW = W - padL - padR, plotH = H - padT - padB;
-      const y = (v) => padT + (1 - v / maxV) * plotH;
+      const W = 520, padL = 30, padR = 14, padT = 18;
+      const plotH = 152;
+      const plotW = W - padL - padR;
       const gw = plotW / groups.length, n = series.length;
+      const axis = waChartAxisPlan(groups.map((g) => g.label), gw);
+      const padB = axis.pad;
+      const H = padT + plotH + padB;
+      const y = (v) => padT + (1 - v / maxV) * plotH;
       const bw = Math.min(30, gw / (n + 1.4));
       const step = maxV <= 10 ? 2 : maxV <= 50 ? 10 : 20;
-      let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${esc(series.join(' vs '))}">`;
+      let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" class="wa-col-svg" role="img" aria-label="${esc(series.join(' vs '))}">`;
       for (let g = 0; g <= maxV; g += step) {
         const yy = y(g);
         svg += `<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${W - padR}" y2="${yy.toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`;
-        svg += `<text x="${padL - 6}" y="${(yy + 3).toFixed(1)}" text-anchor="end" font-size="9" fill="var(--text-subtle)">${g}</text>`;
+        svg += `<text x="${padL - 6}" y="${(yy + 3).toFixed(1)}" text-anchor="end" font-size="12" fill="var(--text-subtle)">${g}</text>`;
       }
       groups.forEach((grp, i) => {
         const cx = padL + gw * i + gw / 2;
@@ -7934,9 +8078,9 @@
         grp.vals.forEach((v, s) => {
           const x = x0 + s * (bw + 2);
           svg += `<rect x="${x.toFixed(1)}" y="${y(v).toFixed(1)}" width="${bw.toFixed(1)}" height="${(plotH * v / maxV).toFixed(1)}" rx="3" fill="${colors[s]}"/>`;
-          if (v) svg += `<text x="${(x + bw / 2).toFixed(1)}" y="${(y(v) - 4).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="700" fill="var(--text)">${v}${suffix}</text>`;
+          if (v) svg += waChartValueLabel(`${v}${suffix}`, x + bw / 2, y(v) - 4, bw + 4, 12);
         });
-        svg += `<text x="${cx.toFixed(1)}" y="${(H - padB + 18).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text-muted)">${esc(grp.label)}</text>`;
+        svg += waChartAxisLabel(grp.label, cx, H - padB + 14, axis, gw);
       });
       svg += `</svg>`;
       const legend = series.map((s, i) => `<span class="k"><span class="wa-dot" style="background:${colors[i]}"></span>${esc(s)}</span>`).join('');
@@ -8560,7 +8704,7 @@
       axes.forEach((a, i) => {
         const [x, y] = pt(i, 1.2);
         const anchor = Math.abs(x - cx) < 6 ? 'middle' : x > cx ? 'start' : 'end';
-        svg += `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="${anchor}" font-size="10.5" font-weight="700" fill="var(--text)">${a.label}</text>`;
+        svg += waChartRadarLabel(a.label, x, y + 4, anchor);
       });
       svg += `</svg>`;
 
@@ -9191,6 +9335,7 @@
       { intent: 'proteinbars', icon: 'inventory_2', label: 'How many protein-bar SKUs?', ask: 'How many SKUs of protein bars do we have in the database?' },
       { intent: 'myfoods_sup', icon: 'kitchen',     label: 'Which of my foods are Super Ultra-Processed?', ask: 'Which of my foods are Super Ultra-Processed?' },
       { intent: 'sweeteners', icon: 'science',      label: 'Artificial sweeteners by PL level', ask: 'Artificial sweeteners scored in the WISEcode UPF code by PL level' },
+      { intent: 'playful', icon: 'auto_stories',   label: 'Tell me a playful story.', ask: 'Tell me a playful story.', nextIntents: ['cat', 'compare', 'cookie'] },
       { intent: 'brisket', icon: 'outdoor_grill',   label: 'Gut-healthy brisket recipe' },
       { intent: 'redochart', icon: 'refresh',       label: 'Redo the gut-health chart', ask: 'Redo the chart — promote sauerkraut and push the score higher' },
       { intent: 'upf',     icon: 'science',        label: 'Is this list ultra-processed?' },
@@ -9202,6 +9347,7 @@
       { intent: 'report',  icon: 'summarize',      label: 'Show me a pretty report', carryTopic: true },
       { intent: 'cat',     icon: 'pets',           label: 'If I identified as a cat\u2026', ask: 'If I told you that I identified as a cat, what type of food would you feed me?' },
       { intent: 'catnutrients', icon: 'menu_book', label: 'What nutrients do cats require?' },
+      { intent: 'owls',    icon: 'play_circle',    label: 'Meet the Owls', ask: 'Meet the Owls', nextIntents: ['playful', 'upf', 'gras_upf'] },
     ];
 
     /* Follow-up chips offered ONLY after the "artificial sweeteners by PL level"
@@ -9386,6 +9532,7 @@
       if (id === 'upf') return 'upf';
       if (id === 'worst' || id === 'cupcake' || id === 'cookie' || id === 'cat') return id;
       if (id === 'catnutrients') return 'cat';
+      if (id === 'playful') return 'playful';
       return id;
     }
     function contextualizeChip(chip, thread) {
@@ -9416,6 +9563,62 @@
     const COMPARE_REPLY = 'I grabbed a few comparable products and put them head-to-head on the same board we use on the <strong>Product Comparison</strong> page.<br><br>Ranked by WISEscore, the <strong>Aloha Organic Protein Bar</strong> leads at <strong>84</strong> \u2014 the cleanest formulation, strongest on ingredient integrity and nutrient density. The <strong>Simple Truth Trail Mix</strong> (71) holds up on whole-food ingredients but loses ground on added sugar, and <strong>SkinnyPop Popcorn</strong> (63) trails mostly on nutrient density and gut-health signals.<br><br>Opened the full comparison in Results &amp; Details \u2014 tap any gauge or metric to replay it, and add more products to the board. \u2192';
     const SPIDER_REPLY = 'I made the spider chart.<br><br>One important caveat: in the returned data for these 10 worst-WISEscore foods, every metric except <strong>WISEscore</strong> \u2014 <strong>Gut Health</strong>, <strong>Immune Support</strong>, <strong>Additive Load</strong> and <strong>Excellent Source</strong> \u2014 is missing across the set, so the visual is mostly showing their WISEscore spread plus the data-availability gap. That means there isn\u2019t enough returned score data here to meaningfully rank these ten by gut health or immune-support proxy yet.<br><br>Spider chart \u2192 Visuals · the 10-row table \u2192 Results &amp; Details';
     const REPORT_REPLY = 'Done \u2014 I turned it into a full visual report with charts, ranked views, a candidate shortlist, and \u201ctrend-style\u201d slope visuals built from the current cookie ranking rather than invented time trends.<br><br>One thing to keep in mind: the result set still contains some clearly noisy / incomplete ingredient lists, so the shortlist is best read as strong candidates plus package-verification candidates, not as a perfect final answer from ingredients alone.';
+    const PLAYFUL_REPLY = ''
+      + '<p>Here is a playful parody of WISEowl\u2019s ultra-processed food (UPF) detection platform, WISEcode, dialing its massive database of 15,000+ food attributes up to an absurd, existential level.</p>'
+      + '<p><strong>Introducing: UNWISEcode\u2122</strong><br>The Existential UPF Detector &amp; Food Panic Simulator</p>'
+      + '<p>Traditional nutrition labels only show 15 attributes, giving you less than 1% of the story. WISEcode gives you 15,000 attributes. But UNWISEcode\u2122 tracks 15,000,000 hyper-specific micro-existential metrics to tell you exactly how close your grocery cart is to turning you into a literal corporate cyborg.</p>'
+      + '<p>Why just look for \u201cseed oils\u201d when you can track the exact emotional state of the corn when it was processed?</p>'
+      + '<h3 class="sc-inline-h">Key Features of UNWISEcode AI</h3>'
+      + '<p><strong>The \u201cSuper-Duper-Ultra-Mega-Processed\u201d Shield (SDUMPF)</strong></p>'
+      + '<p>Instead of boring categories like \u201cminimal\u201d or \u201cultra-processed\u201d, our proprietary machine learning models sort your food into clear, anxiety-inducing buckets:</p>'
+      + '<ul style="margin:8px 0 0;padding-left:20px">'
+      + '<li><strong>Level 1: Straight from the Dirt</strong> (Leafy greens, probably contains actual spiders)</li>'
+      + '<li><strong>Level 4: Tastes Like Childhood</strong> (Moderate processing, heavy nostalgia)</li>'
+      + '<li><strong>Level 5: Lab-Grown Sentience</strong> (Your snack food has its own Twitter account and a slight existential dread)</li>'
+      + '</ul>'
+      + '<p><strong>The \u201cVibe Over Matter\u201d Barcode Scanner</strong></p>'
+      + '<p>Scan a bag of chips in seconds. Instead of boring metrics like protein density, our AI agent parses the ingredient text to reveal:</p>'
+      + '<ul style="margin:8px 0 0;padding-left:20px">'
+      + '<li><strong>Xantham Gum Content:</strong> 4.2g (Used to bind the chips, and also your student loan debt).</li>'
+      + '<li><strong>Molecular Cynicism Score:</strong> 94% (The food scientist who formulated this flavor profile did it entirely to spite their ex).</li>'
+      + '</ul>'
+      + '<p><strong>The Global $200 Hackathon (The UNWISE Code Hack\u2122)</strong></p>'
+      + '<p>While WISEcode runs a massive $200,000 global challenge for real nutrition scientists, we are offering a $20 gift card to a local organic farm to whichever software engineer can build an algorithm that successfully calculates how long a Twinkie can survive a direct nuclear strike.</p>'
+      + '<h3 class="sc-inline-h">Real Product Scan Examples</h3>'
+      + '<div class="sc-inline-tbl" role="table">'
+      + '<div class="sc-inline-tbl-row sc-inline-tbl-row--head" role="row">'
+      + '<div class="sc-inline-tbl-food" role="columnheader">Packaged Food</div>'
+      + '<div class="sc-inline-tbl-cell" role="columnheader">WISEcode\u2122 Analysis</div>'
+      + '<div class="sc-inline-tbl-cell" role="columnheader">UNWISEcode\u2122 AI Analysis</div>'
+      + '</div>'
+      + '<div class="sc-inline-tbl-row" role="row">'
+      + '<div class="sc-inline-tbl-food" role="rowheader">Organic Almond Milk</div>'
+      + '<div class="sc-inline-tbl-cell" role="cell"><span class="sc-inline-tbl-lab">WISEcode analysis</span>Lightly processed, check for emulsifiers or added gums.</div>'
+      + '<div class="sc-inline-tbl-cell" role="cell"><span class="sc-inline-tbl-lab">UNWISEcode analysis</span>Contains exactly three actual almonds. The rest is water that has been aggressively gaslit into thinking it\u2019s dairy.</div>'
+      + '</div>'
+      + '<div class="sc-inline-tbl-row" role="row">'
+      + '<div class="sc-inline-tbl-food" role="rowheader">Neon Orange Cheese Puffs</div>'
+      + '<div class="sc-inline-tbl-cell" role="cell"><span class="sc-inline-tbl-lab">WISEcode analysis</span><strong>Ultra-Processed Food (UPF).</strong> High sodium, artificial colors, and zero fiber density.</div>'
+      + '<div class="sc-inline-tbl-cell" role="cell"><span class="sc-inline-tbl-lab">UNWISEcode analysis</span>This is not food. This is an industrial insulation material that happens to look beautiful under a grocery store fluorescent light. Eat at your own psychological risk.</div>'
+      + '</div>'
+      + '<div class="sc-inline-tbl-row" role="row">'
+      + '<div class="sc-inline-tbl-food" role="rowheader">Artisanal Sourdough Bread</div>'
+      + '<div class="sc-inline-tbl-cell" role="cell"><span class="sc-inline-tbl-lab">WISEcode analysis</span>Non-UPF Verified. Great carb quality.</div>'
+      + '<div class="sc-inline-tbl-cell" role="cell"><span class="sc-inline-tbl-lab">UNWISEcode analysis</span>The baker went to a liberal arts college and listened to indie folk music while kneading this. The bread tastes like unfulfilled potential and hints of rosemary.</div>'
+      + '</div>'
+      + '</div>';
+    /* "Meet the Owls" — the brand film plays inside the transcript itself, with
+       its own controls. Nothing autoplays and nothing opens on the right; the
+       answer is the film. The <figure> is one unit to the paragraph reveal. */
+    const OWLS_REPLY = 'Meet the owls. This is the short WISEcode film that runs on our front door \u2014 the one behind <em>\u201CThe food truth\u2122 is out there, and we have it.\u201D</em><br><br>'
+      + '<figure class="sc-inline-film">'
+      + '<video class="sc-inline-film-media" controls playsinline preload="metadata">'
+      + '<source src="../assets/marketing/food-truth.mp4" type="video/mp4">'
+      + 'Your browser can\u2019t play this film.'
+      + '</video>'
+      + '<figcaption class="sc-inline-film-cap">Meet the Owls \u00b7 WISEcode brand film</figcaption>'
+      + '</figure>'
+      + 'Press play when you\u2019re ready \u2014 scrubbing, volume and full screen are all live, and it waits for you rather than starting on its own.';
     const SWEETENERS_REPLY = 'Among the ingredients currently classified as <strong>Artificial Sweetener</strong>, the PL split is:'
         + '<div class="wa-plsplit">'
         + '<span class="wa-plsplit-item"><span class="wa-ib-pill wa-ib-pl-2">PL2</span><b>6</b></span>'
@@ -9517,6 +9720,8 @@
         return REPORT_REPLY;
       },
       cat: 'Cat food.',
+      playful: PLAYFUL_REPLY,
+      owls: OWLS_REPLY,
       catnutrients: `Cats are <strong>obligate carnivores</strong>, so they need a nutrient profile built around animal-derived protein plus several nutrients they can\u2019t reliably make or get from plant precursors${catCite(1, 3, 5)}. The essentials the literature keeps flagging:`
         + `<ul style="margin:10px 0 4px;padding-left:20px">`
         + `<li><strong>Taurine</strong> \u2014 vital for the retina, heart &amp; reproduction; deficiency is classically tied to retinal degeneration and dilated cardiomyopathy${catCite(7, 8)}.</li>`
@@ -9756,6 +9961,8 @@
       if (/top\s*10\s*brands/.test(t)) return takeReply('topbrands_top10', text, 'topbrands_top10', ctx);
       if (/retailer/.test(t) && /(wisescore|top half|\u2265\s*50|>=\s*50|50 or higher)/.test(t)) return takeReply('topbrands_retail', text, 'topbrands_retail', ctx);
       if (/(top\s*(three|3)\s*brands|more than 50 upc|top half of (the )?wise)/.test(t)) return takeReply('topbrands', text, 'topbrands', ctx);
+      if (/\bowls?\b|food truth/.test(t)) return takeReply('owls', text, 'owls', ctx);
+      if (/playful|unwisecode/.test(t)) return takeReply('playful', text, 'playful', ctx);
       if (/cat/.test(t) && /(nutrient|require|taurine|amino|obligate|carnivore)/.test(t)) return takeReply('catnutrients', text, 'catnutrients', ctx);
       if (/identif.*cat|cat.*(food|feed)|feed me|as a cat/.test(t)) return takeReply('cat', text, 'cat', ctx);
       if (/(redo|re-?do|regenerate|rebuild|update)/.test(t) && /(chart|graph|visual|driver)/.test(t)) return takeReply('redochart', text, 'redochart', ctx);
@@ -10519,7 +10726,7 @@
         svg += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" class="cmp-radar-spoke"/>`;
         const [lx, ly] = pt(i, 1.22);
         const anchor = Math.abs(lx - cx) < 8 ? 'middle' : lx > cx ? 'start' : 'end';
-        svg += `<text x="${lx.toFixed(1)}" y="${(ly + 4).toFixed(1)}" text-anchor="${anchor}" class="cmp-radar-label">${esc(a.label)}</text>`;
+        svg += waChartRadarLabel(a.label, lx, ly + 4, anchor);
       });
       const allVals = seriesList.flatMap((s) => s.vals);
       const max = Math.max(1, ...allVals);
@@ -10536,17 +10743,22 @@
     }
 
     function waChartParallel(axes, seriesList) {
-      const W = 560, H = 220, padL = 28, padR = 28, padT = 16, padB = 36;
+      const W = 560, padL = 28, padR = 28, padT = 16;
+      const plotH = 168;
       const n = axes.length;
+      const slotW = n <= 1 ? W - padL - padR : (W - padL - padR) / Math.max(1, n - 1);
+      const axis = waChartAxisPlan(axes.map((a) => a.label), slotW);
+      const padB = axis.pad;
+      const H = padT + plotH + padB;
       const x = (i) => padL + (n === 1 ? 0 : i * (W - padL - padR) / (n - 1));
       const allVals = seriesList.flatMap((s) => s.vals);
       const max = Math.max(1, ...allVals);
-      const y = (v) => padT + (1 - (v || 0) / max) * (H - padT - padB);
-      let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" class="cmp-par-svg" role="img" aria-label="Parallel coordinates">`;
+      const y = (v) => padT + (1 - (v || 0) / max) * plotH;
+      let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" class="cmp-par-svg wa-col-svg" role="img" aria-label="Parallel coordinates">`;
       axes.forEach((a, i) => {
         const xx = x(i);
         svg += `<line x1="${xx.toFixed(1)}" y1="${padT}" x2="${xx.toFixed(1)}" y2="${H - padB}" class="cmp-par-axis"/>`;
-        svg += `<text x="${xx.toFixed(1)}" y="${H - 10}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text-muted)">${esc(a.label)}</text>`;
+        svg += waChartAxisLabel(a.label, xx, H - padB + 14, axis, slotW);
       });
       seriesList.forEach((s, si) => {
         const line = axes.map((_, i) => `${x(i).toFixed(1)},${y(s.vals[i]).toFixed(1)}`).join(' ');

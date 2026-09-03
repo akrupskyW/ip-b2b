@@ -385,6 +385,20 @@
               tools: ['analyze_retailer_private_label_brand_coverage'] },
           ],
         },
+        {
+          id: 'just-for-fun', title: 'Just for fun', icon: 'auto_stories',
+          desc: 'Not every question has to be a filter. Ask for a playful take and the answer stays in the conversation — paragraphs, lists, and a small comparison with horizontal rules, with no results board.',
+          items: [
+            { title: 'Tell me a playful story', icon: 'auto_stories',
+              desc: 'A parody of UPF detection — UNWISEcode™ — told as ordinary chat: paragraphs, bullets, and a simple comparison table in the transcript.',
+              prompts: ['Tell me a playful story.'],
+              tools: [] },
+            { title: 'Meet the Owls', icon: 'play_circle',
+              desc: 'The WISEcode brand film, played inside the answer itself. Full controls — press play, scrub, change the volume, go full screen — and nothing opens on the right.',
+              prompts: ['Meet the Owls'],
+              tools: [] },
+          ],
+        },
       ],
   };
 })(typeof window !== 'undefined' ? window : this);

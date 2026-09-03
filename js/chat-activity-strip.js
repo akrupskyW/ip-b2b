@@ -315,7 +315,7 @@ function ensureActivityStripStyles() {
       margin-right: 4px;
     }
     /* Distinct hues per landmark type (retunable per theme/palette). */
-    .wa-activity-tick--output   { background-color: var(--act-output, var(--ter-amber, #FFC434)); }
+    .wa-activity-tick--output   { background-color: var(--act-output, var(--warm-400, #946005)); }
     .wa-activity-tick--source   { background-color: var(--act-source, #12b76a); }
     .wa-activity-tick--database { background-color: var(--act-database, #f79009); }
     /* Jump-to-last-prompt tab: brand-blue fill, always the same slot on the

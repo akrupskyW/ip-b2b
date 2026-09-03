@@ -1757,7 +1757,42 @@
       color: var(--primary); cursor: pointer; line-height: 0; opacity: 0.72;
     }
     .nfp-ia-owl:hover, .nfp-ia-owl:focus-visible { opacity: 1; color: var(--primary-ink, var(--primary)); }
-    .nfp-ia-owl svg { height: 11px; width: auto; display: block; }
+    .nfp-ia-owl svg { height: 9px; width: auto; display: block; }
+    /* The row's own copy of the owl's lookup — the same match option cards the
+       chat lands, expanded under the ingredient, without the transcript. */
+    .nfp-ia-lookup {
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 8px 6px 10px;
+      border-bottom: 1px solid var(--border);
+      /* Carries the row's own lookup tint down over its options, so the
+         ingredient and its cards read as one highlighted stretch. */
+      background: color-mix(in srgb, var(--primary) 8%, transparent);
+      animation: nfp-ia-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    html.dark .nfp-ia-lookup { background: color-mix(in srgb, var(--primary) 16%, transparent); }
+    .nfp-ia-lookup:last-child { border-bottom: 0; }
+    .nfp-ia-lookup .sc-il-wrap { margin: 0; }
+    .nfp-ia-lookup .sc-il-card { border-radius: 12px; padding: 9px 11px; gap: 8px; }
+    .nfp-ia-lookup .sc-il-ic { font-size: 15px !important; }
+    .nfp-ia-lookup .sc-il-name { font-size: 0.74rem; }
+    .nfp-ia-lookup .sc-il-score { font-size: 0.72rem; }
+    .nfp-ia-lookup .sc-il-cat { font-size: 0.6rem; }
+    .nfp-ia-lookup .sc-il-desc { font-size: 0.66rem; margin-top: 4px; }
+    .nfp-ia-lookup-more {
+      align-self: flex-start; display: inline-flex; align-items: center; gap: 5px;
+      border: 1px solid var(--border-strong); border-radius: 999px;
+      background: color-mix(in srgb, var(--primary) 10%, #fff);
+      color: var(--text-muted); font-family: inherit;
+      padding: 4px 10px; font-size: 0.64rem; font-weight: 700; cursor: pointer;
+    }
+    .nfp-ia-lookup-more .material-symbols-outlined { font-size: 15px !important; color: var(--primary); }
+    .nfp-ia-lookup-more:hover { background: color-mix(in srgb, var(--primary) 16%, #fff); color: var(--text); }
+    html.dark .nfp-ia-lookup-more {
+      background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent);
+      border-color: var(--primary);
+    }
+    html.dark .nfp-ia-lookup-more:hover { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 22%, transparent); }
+    html.dark .nfp-ia-lookup-more .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
     .nfp-ia-parsed-row.is-lookup {
       background: color-mix(in srgb, var(--primary) 8%, transparent);
       outline: 1px solid color-mix(in srgb, var(--primary) 45%, transparent);

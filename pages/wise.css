@@ -152,6 +152,15 @@
   --surface: #FFFFFF;
   --surface-2: #F4F2EA;
   --surface-3: #EFEDE2;
+  /* The two deep steps of the Linen ramp. Brand values, identical in both
+     themes. Gilded Grain is the stroke on every output chip in the chat and
+     the fill of the output ear marks on the activity rail. */
+  --warm-300: #B69252;
+  --warm-400: #946005;
+  /* Semantic hooks so the ear marks and the output stroke can be retuned in one
+     place (and per theme) without touching the ramp itself. */
+  --act-output: var(--warm-400);
+  --out-stroke: var(--warm-400);
   --text: #111827;
   /* Quiet gray darkened to clear WCAG 1.4.3/1.4.6 AAA (7:1) on every light
      surface it appears on (down to surface-3 #EFEDE2). Subtle is the same ink. */
@@ -172,6 +181,11 @@
   --primary-10: rgba(37, 80, 124, 0.10);
   --primary-20: rgba(37, 80, 124, 0.20);
   --primary-soft: rgba(37, 80, 124, 0.08);
+  /* The blue the streaming-trace helix is drawn in (blueRGB in js/trace-helix.js).
+     The in-progress rings — around the owl avatar and around a live history
+     row's chat dot — read from this so the ring and the rope below it are the
+     same blue. Keep the two in sync. */
+  --helix-ink: #25507C;
   --sec-green: #32A966;
   --sec-red: #DC3038;
   --ter-amber: #FFC434;
@@ -304,6 +318,9 @@ html.dark {
   --text-subtle: var(--text-muted);
   /* Legible accent on dark gradient chrome (rails, nav) — primary is too dark on navy. AAA (9.7:1) on surface. */
   --primary-bright: #8B9FAF;
+  /* The helix lifts to a periwinkle on navy (blueRGB's dark branch); the
+     in-progress rings follow it. */
+  --helix-ink: #96B2DC;
   /* Brand-blue foregrounds go white on navy (see :root note). */
   --primary-ink: var(--text);
   /* These alias --primary (#25507C) in light mode, so on navy they inherit the
@@ -7751,68 +7768,195 @@ html.dark .chat-messages-area { background: transparent; }
 .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary); }
 html.dark .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary-bright, #8B9FAF); }
 .sc-line-wiseai .sc-line-body { color: var(--text); }
+/* Ollama polish must never paint assistant copy in link blue / legacy <font color>. */
+.sc-line-wiseai .sc-line-body font,
+.sc-line-wiseai .sc-line-body [color] { color: inherit; font: inherit; }
+/* Superscript cites + compact References list — same spots as the scripted
+   WISEcodeAI answers. Used when a turn is grounded in a live web source. */
+.sc-line-body .wa-cite { font-size: .62em; line-height: 0; font-weight: 700; vertical-align: super; white-space: nowrap; margin-left: 1px; color: var(--text-subtle); }
+.sc-line-body .wa-cite::before { content: '['; }
+.sc-line-body .wa-cite::after { content: ']'; }
+.sc-line-body .wa-cite-n { color: var(--primary); text-decoration: none; cursor: pointer; padding: 0 1px; border-radius: 3px; }
+html.dark .sc-line-body .wa-cite-n { color: var(--primary-bright, #8B9FAF); }
+.sc-line-body .wa-cite-n:hover, .sc-line-body .wa-cite-n:focus-visible { background: var(--primary-soft); color: var(--primary-ink, var(--primary)); outline: none; }
+.sc-line-body .wa-cite-n + .wa-cite-n { margin-left: 1px; }
+.sc-line-body .wa-cite-sep { color: var(--text-subtle); }
+.sc-line-body .wa-refs-mini { margin-top: 16px; padding-top: 13px; border-top: 1px solid var(--border); }
+.sc-line-body .wa-refs-mini-head { display: flex; align-items: center; font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 9px; }
+.sc-line-body .wa-refs-mini-list { display: grid; gap: 6px; }
+.sc-line-body .wa-refs-mini-item { display: flex; gap: 8px; align-items: baseline; font-size: 11px; line-height: 1.4; color: var(--text-muted); cursor: pointer; border-radius: 6px; padding: 2px 4px; margin: -2px -4px; }
+.sc-line-body .wa-refs-mini-item:hover { background: var(--surface-2); }
+html.dark .sc-line-body .wa-refs-mini-item:hover { background: rgba(255,255,255,0.04); }
+.sc-line-body .wa-refs-mini-n { flex: 0 0 auto; width: 16px; height: 16px; margin-top: 1px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 800; font-variant-numeric: tabular-nums; background: var(--primary-soft); color: var(--primary); }
+html.dark .sc-line-body .wa-refs-mini-n { color: var(--primary-bright, #8B9FAF); }
+.sc-line-body .wa-refs-mini-t { flex: 1 1 auto; min-width: 0; }
+.sc-line-body .wa-refs-mini-t b { color: var(--text); font-weight: 700; }
+.sc-line-body .wa-refs-mini-src { color: var(--text-subtle); font-style: italic; }
+.sc-line-body .wa-web-foods { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.sc-line-body .wa-web-food { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.sc-line-body .wa-web-food[data-web-ref] { cursor: pointer; }
+.sc-line-body .wa-web-food-thumb { width: 44px; height: 44px; flex: 0 0 auto; border-radius: 50%; overflow: hidden; border: 2px solid var(--primary); background: var(--surface-2, #f2f4f7); }
+html.dark .sc-line-body .wa-web-food-thumb { background: rgba(255,255,255,0.06); }
+.sc-line-body .wa-web-food-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sc-line-body .wa-web-food-copy { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sc-line-body .wa-web-food-brand { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--primary); }
+.sc-line-body .wa-web-food-name { font-size: 14px; font-weight: 700; line-height: 1.25; color: var(--text); }
+.sc-line-body .wa-web-food-qty { font-size: 11px; color: var(--text-muted); }
 /* Paragraph-by-paragraph transcript reveal — each prose run is wrapped so it
    can fade in as a block. Consecutive paras keep the gap a <br><br> used to. */
 .sc-line-body > .sc-para { display: block; }
 .sc-line-body > .sc-para + .sc-para { margin-top: 1em; }
-/* Ingredient lookup cards — Hungry-Man match results, in the shared chat. */
+/* A reply written as real paragraphs has to sit on the avatar exactly like one
+   written as text + <br><br>. The body's own padding-top does that centering,
+   so the leading <p> must carry no margin of its own — otherwise the first line
+   hangs below the owl. Between paragraphs, keep the gap .sc-para runs use. */
+.sc-line-body > p { margin: 0; }
+.sc-line-body > p + p,
+.sc-line-body > p + .sc-para,
+.sc-line-body > .sc-para + p { margin-top: 1em; }
+/* Small comparison tables that stay in the transcript — horizontal rules only. */
+.sc-line-body .sc-inline-h {
+  font-family: var(--module-title-family, "Noto Serif", Georgia, serif);
+  font-size: 1.05em;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0.9em 0 0.35em;
+  color: inherit;
+}
+.sc-line-body .sc-inline-h:first-child { margin-top: 0; }
+.sc-line-body .sc-inline-tbl {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  margin: 0.55em 0 0.15em;
+  font-size: 0.94em;
+  line-height: 1.5;
+}
+.sc-line-body .sc-inline-tbl th,
+.sc-line-body .sc-inline-tbl td {
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 12px 14px 12px 0;
+  text-align: left;
+  vertical-align: top;
+  font-weight: 400;
+}
+.sc-line-body .sc-inline-tbl th:last-child,
+.sc-line-body .sc-inline-tbl td:last-child { padding-right: 0; }
+.sc-line-body .sc-inline-tbl thead th { font-weight: 600; }
+.sc-line-body .sc-inline-tbl thead th:first-child,
+.sc-line-body .sc-inline-tbl tbody th { font-weight: 700; }
+.sc-line-body .sc-inline-tbl col.sc-inline-tbl-food { width: 26%; }
+html.dark .sc-line-body .sc-inline-tbl th,
+html.dark .sc-line-body .sc-inline-tbl td {
+  border-bottom-color: color-mix(in srgb, var(--text) 14%, transparent);
+}
+/* A film that plays inside the answer, with the browser's own controls. The
+   paragraph reveal already treats a <figure> / <video> as one block, so it
+   fades in as its own beat between the prose. */
+.sc-line-body .sc-inline-film { margin: 0.7em 0 0.15em; }
+.sc-line-body .sc-inline-film-media {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: #000;
+}
+html.dark .sc-line-body .sc-inline-film-media {
+  border-color: color-mix(in srgb, var(--text) 18%, transparent);
+}
+.sc-line-body .sc-inline-film-cap {
+  margin-top: 7px;
+  font-size: 0.78em;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+/* Ingredient lookup cards — WISEcode match results, in the shared chat. Each
+   candidate is a full-width INTENT CHIP: the same tinted surface, strong
+   border, brand-blue leading glyph and hover as the output intent chips
+   (.chip / .ws-intent-chip), grown to hold a record's name, branch, note, and
+   confidence. */
 .sc-line-body > .sc-il-wrap { margin-top: 8px; }
 .sc-line-body > p + .sc-il-wrap,
 .sc-line-body > .sc-para + .sc-il-wrap { margin-top: 10px; }
+/* …and the closing note gets the same breathing room off the last card. */
+.sc-line-body > .sc-il-wrap + p { margin-top: 10px; }
 .sc-il-card {
-  display: flex; align-items: flex-start; gap: 12px;
-  width: 100%; text-align: left;
-  border: 1.5px solid var(--border);
-  border-radius: 10px;
-  padding: 12px 14px;
-  background: var(--surface, var(--card, #fff));
-  color: inherit;
+  display: flex; align-items: flex-start; gap: 10px;
+  width: 100%; box-sizing: border-box; text-align: left;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  padding: 11px 13px;
+  background: color-mix(in srgb, var(--primary) 10%, #fff);
+  color: var(--text-muted);
   cursor: pointer;
   font: inherit;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 .sc-il-card:hover,
 .sc-il-card:focus-visible {
-  border-color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 6%, var(--surface, #fff));
+  background: color-mix(in srgb, var(--primary) 16%, #fff);
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong));
+  color: var(--text);
 }
-html.dark .sc-il-card { background: color-mix(in srgb, #fff 4%, transparent); }
+html.dark .sc-il-card {
+  background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent);
+  border-color: var(--primary);
+}
 html.dark .sc-il-card:hover,
 html.dark .sc-il-card:focus-visible {
-  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 22%, transparent);
+  border-color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 55%, var(--primary));
 }
 .sc-il-card.is-dim { opacity: 0.35; pointer-events: none; }
 .sc-il-card.is-picked { border-color: var(--primary); opacity: 1; }
+/* Leading glyph reads brand blue — the intent chip's convention. */
+.sc-il-ic {
+  flex-shrink: 0; margin-top: 1px;
+  font-size: 17px !important; line-height: 1;
+  color: var(--primary);
+}
+html.dark .sc-il-ic { color: var(--primary-bright, #8B9FAF); }
 .sc-il-card-main { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
-.sc-il-name { font-size: 0.81rem; font-weight: 800; letter-spacing: 0.01em; }
+/* Name row: the record on the left, its confidence on the right in the tier
+   colour. Above a slim bar the score sits in the head, not inside the fill —
+   the same relocation the analytics pages make for a skinny bar. */
+.sc-il-head { display: flex; align-items: baseline; gap: 8px; width: 100%; min-width: 0; }
+.sc-il-name { font-size: 0.81rem; font-weight: 800; letter-spacing: 0.01em; color: var(--text); }
+.sc-il-head .sc-il-name { flex: 1; min-width: 0; }
+.sc-il-score {
+  flex-shrink: 0;
+  font-size: 0.8rem; font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1; font-variant-numeric: tabular-nums;
+}
 .sc-il-cat {
   font-size: 0.68rem; font-weight: 600;
   color: var(--primary-ink, var(--primary));
   text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px;
 }
+html.dark .sc-il-cat { color: var(--primary-bright, #8B9FAF); }
 .sc-il-desc { font-size: 0.71rem; color: var(--text-muted); margin-top: 5px; line-height: 1.5; }
-.sc-il-bar {
-  display: block; width: 100%; height: 3px; border-radius: 999px;
-  background: color-mix(in srgb, var(--text) 8%, transparent);
-  overflow: hidden; margin-top: 8px;
+/* Match confidence rides the SAME health bar the analytics pages draw a
+   WISEscore on (.dash-ws-health-* — see pages/analytics-types.html), in its
+   SLIM form: a hairline track tinted from the tier colour, the fill in the
+   tier colour, and the score read off the head row above rather than crammed
+   inside the fill. Mirrors the skinny-bar mode on analytics-types.html
+   (body.az-skinny-bars), which collapses the same track and hoists the number.
+   The height is stated outright because the dashboard's own track height token
+   is declared on .dash, and this bar lives outside it. */
+.sc-il-bar.dash-ws-health-bar {
+  display: block; max-width: none; margin: 8px 0 2px;
 }
-.sc-il-bar-fill {
-  display: block; height: 100%; width: var(--il-w, 0); border-radius: inherit;
-  animation: sc-il-fill 0.55s cubic-bezier(.4, 0, .2, 1) both;
+.sc-il-bar .dash-ws-health-track { display: block; height: 4px; }
+.sc-il-bar .dash-ws-health-fill.dash-metric-fill {
+  min-width: 0; padding-right: 0;
+  animation: sc-il-fill 1.15s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-.sc-il-card--ok .sc-il-bar-fill { background: var(--sec-green); }
-.sc-il-card--part .sc-il-bar-fill { background: var(--ter-amber); }
-.sc-il-card--muted .sc-il-bar-fill { background: var(--text-muted); }
-.sc-il-score {
-  flex-shrink: 0; font-size: 0.72rem; font-weight: 800;
-  border-radius: 7px; padding: 4px 9px; line-height: 1.3;
-}
-.sc-il-card--ok .sc-il-score { background: var(--sec-green-10); color: var(--sec-green-text); }
-.sc-il-card--part .sc-il-score { background: var(--ter-amber-10); color: var(--ter-amber-text); }
-.sc-il-card--muted .sc-il-score { background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text-muted); }
 .sc-il-hint { font-size: 0.7rem; color: var(--text-muted); line-height: 1.5; }
 @keyframes sc-il-fill { from { width: 0; } }
 @media (prefers-reduced-motion: reduce) {
-  .sc-il-bar-fill { animation: none; }
+  .sc-il-bar .dash-ws-health-fill.dash-metric-fill { animation: none; }
 }
 /* Per-line profile avatars in place of the old "You" / "WISEcodeAI™" labels.
    WISEcodeAI = the WISE-owl bug (same mark as the header) in a brand-blue circle.
@@ -7857,15 +8001,16 @@ html.dark .sc-avatar-wiseai { background: #fff; color: #141414; }
 }
 @keyframes scSpin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .sc-typing-spin { animation: none; } }
-/* Conversation-in-progress indicator — a light-blue progress ring wrapped
-   around the WISEcodeAI owl avatar (the owl chip rides on top as a layer above the
-   ring), replacing the separate inline spinner. The status label sits directly
+/* Conversation-in-progress indicator — a progress ring wrapped around the
+   WISEcodeAI owl avatar (the owl chip rides on top as a layer above the
+   ring), replacing the separate inline spinner. It is drawn in the same blue
+   as the trace helix that hangs below it. The status label sits directly
    to its right (the flex .sc-line-body column). */
 .sc-line-typing .sc-avatar-wiseai { position: relative; }
 .sc-line-typing .sc-avatar-wiseai::after {
   content: ""; position: absolute; inset: -3px; border-radius: 50%; box-sizing: border-box;
-  border: 3px solid color-mix(in srgb, #8CB8FF 26%, transparent);
-  border-top-color: #8CB8FF; pointer-events: none;
+  border: 3px solid color-mix(in srgb, var(--helix-ink) 26%, transparent);
+  border-top-color: var(--helix-ink); pointer-events: none;
   animation: scSpin 0.8s linear infinite;
 }
 .sc-line-typing .sc-typing-spin { display: none; }
@@ -9285,8 +9430,7 @@ html.dark .sc-trace-story-line { color: #93B2DC; }
   display: grid; grid-template-columns: max-content max-content; align-items: center;
   column-gap: 10px; padding: 1px 0;
 }
-.sc-trace-step-key { font-size: 0.625rem; font-weight: 600; color: color-mix(in srgb, var(--primary, #25507C) 52%, #ffffff); }
-html.dark .sc-trace-step-key { color: #AEC8ED; }
+.sc-trace-step-key { font-size: 0.625rem; font-weight: 600; color: color-mix(in srgb, var(--text-subtle) 70%, transparent); }
 .sc-trace-step-time {
   font-size: 0.625rem; font-weight: 600; font-variant-numeric: tabular-nums;
   justify-self: end; text-align: right; white-space: nowrap;
@@ -18804,6 +18948,7 @@ html.dark .dsc-ready--ai.is-partial .dash-brand-toggle:not(.is-on):not([aria-che
   --text-subtle: var(--text-muted);
   --primary-ink: var(--primary);
   --primary-bright: var(--primary);
+  --helix-ink: #25507C;
   --ter-violet: #25507C;
   --ter-cyan: #25507C;
   --chart-mono: var(--primary);
@@ -18834,6 +18979,7 @@ html.dark .dsc-ready--ai.is-partial .dash-brand-toggle:not(.is-on):not([aria-che
   --text-subtle: var(--text-muted);
   --primary-bright: #8B9FAF;
   --primary-ink: var(--text);
+  --helix-ink: #96B2DC;
   --ter-violet: var(--primary-bright);
   --ter-cyan: var(--primary-bright);
   --chart-mono: var(--primary-bright);
@@ -19243,7 +19389,7 @@ html.dark .dsc-demo .chip.chip-dive .material-symbols-outlined { color: var(--pr
   width: min(240px, 100%); max-width: 100%; min-width: 0;
   text-align: left; margin: 0; padding: 8px 12px 8px 8px;
   background: var(--surface);
-  border: 1px solid color-mix(in srgb, var(--ter-amber, #FFC434) 50%, transparent);
+  border: 1px solid var(--out-stroke, #946005);
   border-radius: 14px; cursor: pointer; font-family: inherit;
   transition: border-color .15s ease, box-shadow .15s ease, width .22s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -19256,8 +19402,8 @@ html.dark #mi-motion .sc-surface-card,
 .dsc-demo .sc-surface-card.is-hover,
 #mi-motion .sc-surface-card:hover,
 #mi-motion .sc-surface-card.is-hover {
-  border-color: color-mix(in srgb, var(--ter-amber, #FFC434) 80%, transparent);
-  box-shadow: 0 4px 12px rgba(255,196,52,0.12);
+  border-color: var(--out-stroke, #946005);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--out-stroke, #946005) 20%, transparent);
 }
 .dsc-demo .sc-surface-card:has(.sc-surface-stack):hover,
 .dsc-demo .sc-surface-card:has(.sc-surface-stack).is-hover,
@@ -19357,7 +19503,7 @@ html.dark #mi-motion .sc-surface-card,
   flex: 0 0 auto; box-sizing: border-box; width: min(240px, 100%); max-width: 240px;
   display: inline-flex; align-items: center; gap: 12px; padding: 8px 12px 8px 8px;
   background: var(--surface);
-  border: 1px solid color-mix(in srgb, var(--ter-amber, #FFC434) 50%, transparent);
+  border: 1px solid var(--out-stroke, #946005);
   border-radius: 14px;
   font-family: inherit; font-size: 14px; font-weight: 700; color: var(--text);
   text-align: left;
@@ -19641,7 +19787,7 @@ html.dark .dsc-demo .sc-activity-wrap:hover .sc-activity-dots {
 .dsc-demo .mi-actstrip[data-ticks="3"] > .wa-activity-tick:nth-of-type(1) { top: 18%; }
 .dsc-demo .mi-actstrip[data-ticks="3"] > .wa-activity-tick:nth-of-type(2) { top: 50%; }
 .dsc-demo .mi-actstrip[data-ticks="3"] > .wa-activity-tick:nth-of-type(3) { top: 82%; }
-.dsc-demo .wa-activity-tick--output { background-color: var(--ter-amber, #FFC434); }
+.dsc-demo .wa-activity-tick--output { background-color: var(--act-output, var(--warm-400, #946005)); }
 .dsc-demo .wa-activity-tick--source { background-color: #12b76a; }
 .dsc-demo .wa-activity-tick--database { background-color: #f79009; }
 .dsc-demo .mi-actstrip .wa-activity-tick--prompt {
@@ -19734,18 +19880,33 @@ html.dark .dsc-demo .sc-activity-wrap:hover .sc-activity-dots {
 #mi-motion .sc-ask-help .sc-ask-ch,
 #mi-motion .chip.ws-intent-chip--askhelp .sc-ask-ch {
   display: inline-block;
+  /* Gilded Grain base + shoulders, bright amber band — mirrored from the shared
+     chat CSS in js/wiseai-chat.js. */
+  --ask-gold-base: color-mix(in srgb, var(--warm-400, #946005) 78%, var(--ter-amber, #FFC434));
+  --ask-gold-deep: var(--warm-400, #946005);
   background: linear-gradient(105deg,
-    color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 0%,
-    color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 42%,
+    var(--ask-gold-base) 0%,
+    var(--ask-gold-base) 38%,
+    var(--ask-gold-deep) 44%,
     var(--ter-amber, #FFC434) 48%, #ffe08a 50%, var(--ter-amber, #FFC434) 52%,
-    color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 58%,
-    color-mix(in srgb, var(--ter-amber, #FFC434) 68%, #000) 100%);
+    var(--ask-gold-deep) 56%,
+    var(--ask-gold-base) 62%,
+    var(--ask-gold-base) 100%);
   background-size: 250% 100%; background-position: 100% 0;
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent; color: transparent;
   -webkit-text-stroke: 0.4px color-mix(in srgb, var(--ter-amber, #FFC434) 45%, #fff);
   animation: sc-ask-shimmer 7.5s ease-in-out infinite;
   animation-delay: calc(var(--ch-i, 0) * 90ms);
+}
+html.dark .dsc-demo .sc-ask-help .sc-ask-ch,
+html.dark .dsc-demo .chip.ws-intent-chip--askhelp .sc-ask-ch,
+html.dark #mi-motion .sc-ask-help .sc-ask-ch,
+html.dark #mi-motion .chip.ws-intent-chip--askhelp .sc-ask-ch,
+.dsc-theme-dark .sc-ask-help .sc-ask-ch,
+.dsc-theme-dark .chip.ws-intent-chip--askhelp .sc-ask-ch {
+  --ask-gold-base: color-mix(in srgb, var(--warm-400, #946005) 42%, var(--ter-amber, #FFC434));
+  --ask-gold-deep: color-mix(in srgb, var(--warm-400, #946005) 78%, var(--ter-amber, #FFC434));
 }
 .dsc-demo .sc-ask-sp { white-space: pre; }
 @keyframes sc-ask-shimmer {
@@ -21412,7 +21573,8 @@ html.dark .mi-motion-found-name { background: rgba(255,255,255,0.06); }
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
 }
 .dsc-demo .wch-chat-dot.wch-live-dot::after {
-  border: 2px solid color-mix(in srgb, #8CB8FF 26%, transparent); border-top-color: #8CB8FF;
+  border: 2px solid color-mix(in srgb, var(--helix-ink) 26%, transparent);
+  border-top-color: var(--helix-ink);
 }
 .dsc-demo .wch-fork-badge, .dsc-demo .wch-mcp-badge {
   display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;
@@ -21971,7 +22133,7 @@ html.dark .mi-tarch-thread { background: transparent; }
   width: 10px; height: 14px; padding: 0; border: 0; border-radius: 2px 6px 6px 2px;
   cursor: default;
 }
-.mi-tarch-strip .wa-activity-tick--output { background: #C9A227; }
+.mi-tarch-strip .wa-activity-tick--output { background: var(--act-output, var(--warm-400, #946005)); }
 .mi-tarch-strip .wa-activity-tick--source { background: #12B981; }
 .mi-tarch-strip .wa-activity-tick--database { background: #F59E0B; }
 .mi-tarch-strip .wa-activity-tick--prompt {

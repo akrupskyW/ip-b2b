@@ -59,18 +59,26 @@
     `<span><span class="att-dot" style="background:${p[0]}"></span>${escq(p[1])}</span>`).join('');
 
   function card(opts) {
+    const wrap = document.createElement('div');
+    wrap.className = 'att-block';
+    if (opts.eyebrow) {
+      const type = document.createElement('h2');
+      type.className = 'att-type-title';
+      type.textContent = opts.eyebrow;
+      wrap.appendChild(type);
+    }
     const s = document.createElement('section');
     s.className = 'att-card atx-card';
     s.id = opts.id;
     s.innerHTML =
       `<div class="att-head">` +
-      (opts.eyebrow ? `<span class="att-eyebrow">${escq(opts.eyebrow)}</span>` : '') +
       `<span class="att-title">${escq(opts.title)}</span></div>` +
       `<p class="att-intro">${escq(opts.intro)}</p>` +
       `<div class="atx-stage" tabindex="0" role="img" aria-label="${escq(opts.title)}"></div>` +
       (opts.legend ? `<div class="att-legend atx-legend"><div class="att-legend-dots">${opts.legend}</div></div>` : '') +
       (opts.note ? `<p class="atx-note">${escq(opts.note)}</p>` : '');
-    return s;
+    wrap.appendChild(s);
+    return wrap;
   }
 
   function makePlay(stage, cfg) {

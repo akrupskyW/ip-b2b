@@ -191,15 +191,23 @@
       padding: 22px 24px;
       margin: 0 0 22px;
     }
-    .att-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .att-eyebrow {
-      display: inline-flex; align-items: center;
-      padding: 4px 11px; border-radius: var(--radius-pill, 999px);
-      background: color-mix(in srgb, var(--primary) 14%, transparent);
-      font-size: 11px; font-weight: 800; letter-spacing: .12em;
-      text-transform: uppercase; color: var(--primary);
+    /* Chart-type name sits above the card — serif title, never a chip inside. */
+    .att-block {
+      margin: 0 0 22px;
     }
-    html.dark .att-eyebrow { color: var(--primary-bright, var(--primary)); }
+    .att-block > .att-card {
+      margin-bottom: 0;
+    }
+    .att-type-title {
+      font-family: 'WISE Digits', var(--font-serif);
+      font-size: 21px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+      margin: 0 0 10px;
+    }
+    .att-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .att-title {
       font-family: 'WISE Digits', var(--font-serif);
       font-size: 21px; font-weight: 700; color: var(--text); letter-spacing: -0.01em;
@@ -207,6 +215,10 @@
     .att-intro {
       font-size: 13px; color: var(--text-subtle); line-height: 1.65;
       max-width: 760px; margin: 10px 0 18px;
+    }
+    .att-block > .att-card > .att-intro:first-child,
+    .att-card > .att-intro:first-child {
+      margin-top: 0;
     }
     .att-scroll { overflow-x: auto; overflow-y: visible; padding-bottom: 4px; }
     #att-tree-card .att-scroll {
@@ -785,189 +797,12 @@
     }
 
     /* =====================================================================
-       Floating section navigation (analytics-types.html only). A fixed
-       right-edge rail that lists every chart / section on the page; clicking
-       an item smooth-scrolls the report's scroll pane to that section.
-       Collapsed to a column of ticks by default, it expands to reveal the
-       labels on hover / keyboard focus. A scrollspy highlights whichever
-       section is currently in view. Hidden when printing and on narrow
-       viewports where it would crowd the report.
-    ===================================================================== */
-    .az-nav {
-      position: fixed;
-      top: 50%;
-      right: 16px;
-      transform: translateY(-50%);
-      z-index: 950;
-      display: flex;
-      max-height: 86vh;
-    }
-    .az-nav[hidden] { display: none; }
-    .az-nav-inner {
-      display: flex;
-      flex-direction: column;
-      gap: 1px;
-      padding: 8px;
-      border-radius: 14px;
-      border: 1px solid transparent;
-      background: transparent;
-      overflow-y: auto;
-      overflow-x: hidden;
-      scrollbar-width: none;
-      transition: background .18s ease, border-color .18s ease, box-shadow .18s ease;
-    }
-    .az-nav-inner::-webkit-scrollbar { width: 0; height: 0; }
-    .az-nav:hover .az-nav-inner,
-    .az-nav:focus-within .az-nav-inner {
-      background: var(--surface);
-      border-color: var(--border);
-      box-shadow: var(--shadow-card, 0 12px 32px rgba(0, 0, 0, .2));
-    }
-    html.dark .az-nav:hover .az-nav-inner,
-    html.dark .az-nav:focus-within .az-nav-inner {
-      background: #14242f;
-      border-color: rgba(255, 255, 255, .1);
-      box-shadow: 0 18px 44px rgba(0, 0, 0, .55);
-    }
-    .az-nav-item {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      width: 100%;
-      padding: 5px 4px;
-      border: none;
-      background: none;
-      border-radius: 9px;
-      cursor: pointer;
-      color: var(--text-subtle);
-      font-family: inherit;
-      text-align: right;
-      transition: background .12s ease, color .12s ease;
-    }
-    .az-nav-label {
-      font-size: 13px;
-      font-weight: 600;
-      line-height: 1.2;
-      white-space: nowrap;
-      max-width: 0;
-      margin-right: 0;
-      overflow: hidden;
-      opacity: 0;
-      transition: max-width .22s ease, opacity .16s ease, margin-right .22s ease;
-    }
-    .az-nav:hover .az-nav-label,
-    .az-nav:focus-within .az-nav-label {
-      max-width: 240px;
-      margin-right: 10px;
-      opacity: 1;
-    }
-    .az-nav-tick {
-      flex: none;
-      width: 18px;
-      height: 3px;
-      border-radius: 2px;
-      background: var(--border);
-      transition: background .14s ease, width .14s ease, height .14s ease;
-    }
-    html.dark .az-nav-tick { background: rgba(255, 255, 255, .2); }
-    .az-nav-item:hover,
-    .az-nav-item:focus-visible {
-      background: color-mix(in srgb, var(--primary) 9%, var(--surface));
-      color: var(--text);
-      outline: none;
-    }
-    .az-nav-item:hover .az-nav-tick,
-    .az-nav-item:focus-visible .az-nav-tick {
-      background: var(--text-subtle);
-      width: 22px;
-    }
-    .az-nav-item.is-active { color: var(--text); }
-    .az-nav-item.is-active .az-nav-label { font-weight: 800; color: var(--text); }
-    .az-nav-item.is-active .az-nav-tick {
-      background: var(--primary);
-      width: 24px;
-      height: 4px;
-    }
-    html.dark .az-nav-item.is-active .az-nav-tick {
-      background: var(--primary-bright, var(--primary));
-    }
-    @media (max-width: 1180px) { .az-nav { display: none !important; } }
-    @media print { .az-nav { display: none !important; } }
-    @media (prefers-reduced-motion: reduce) {
-      .az-nav-inner,
-      .az-nav-item,
-      .az-nav-tick,
-      .az-nav-label { transition: none; }
-    }
-
-    /* --- Pink "skinny bars" toggle, pinned to the top of the floating nav.
-       Flips every chunky WISEscore health bar (.dash-ws-health-bar) to a slim
-       track; the switch track turns pink when engaged. The label rides the same
-       hover-reveal behaviour as the section items below it. ------------------ */
-    .az-nav { --az-pink: #ec4899; }
-    .az-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      width: 100%;
-      padding: 6px 4px;
-      border: none;
-      background: none;
-      border-radius: 9px;
-      cursor: pointer;
-      color: var(--text-subtle);
-      font-family: inherit;
-      text-align: right;
-      transition: background .12s ease, color .12s ease;
-    }
-    .az-toggle:hover,
-    .az-toggle:focus-visible {
-      background: color-mix(in srgb, var(--az-pink) 14%, var(--surface));
-      color: var(--text);
-      outline: none;
-    }
-    .az-switch {
-      flex: none;
-      position: relative;
-      width: 26px;
-      height: 15px;
-      border-radius: 999px;
-      background: var(--border);
-      transition: background .16s ease;
-    }
-    html.dark .az-switch { background: rgba(255, 255, 255, .22); }
-    .az-switch-dot {
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 11px;
-      height: 11px;
-      border-radius: 50%;
-      background: #fff;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, .3);
-      transition: transform .16s ease;
-    }
-    .az-toggle[aria-checked="true"] .az-switch { background: var(--az-pink); }
-    .az-toggle[aria-checked="true"] .az-switch-dot { transform: translateX(11px); }
-    .az-toggle[aria-checked="true"] .az-nav-label { color: var(--az-pink); font-weight: 800; }
-    .az-nav-sep {
-      height: 1px;
-      margin: 5px 2px 6px;
-      background: var(--border);
-    }
-    html.dark .az-nav-sep { background: rgba(255, 255, 255, .1); }
-    @media (prefers-reduced-motion: reduce) {
-      .az-toggle,
-      .az-switch,
-      .az-switch-dot { transition: none; }
-    }
-
-    /* =====================================================================
-       Skinny health-bar mode (toggled by the pink switch above). Only the
-       "fat" WISEscore bars (.dash-ws-health-bar) are affected: the chunky
+       Skinny health-bar mode (toggled by the pink switch in the chart
+       palette). Only the "fat" WISEscore bars (.dash-ws-health-bar) are
+       affected: the chunky
        ~22px track collapses to a slim 8px pill, the score baked into the
        coloured fill is hidden, and the relocated score (.az-score-chip,
-       injected once per bar by the script below) surfaces in the row's head —
+       injected once per bar by js/analytics-palette.js) surfaces in the head —
        joining the existing rating / share chip, or standing in for it when the
        head has none. The slim, score-above layout mirrors the pillar-card
        metric bars. The segmented and pillar-metric bars are left untouched.
@@ -1684,12 +1519,9 @@
     </div>
   </div>
 
-  <!-- Floating chart/section navigation — a fixed right-edge scrollspy rail.
-       Populated by the script below once the dashboard content has rendered;
-       starts hidden so there's no empty flash before the sections exist. -->
-  <nav id="az-nav" class="az-nav" aria-label="Jump to a chart or section" hidden>
-    <div class="az-nav-inner" id="az-nav-inner"></div>
-  </nav>
+  <!-- Chart navigation, chart size, and the skinny-bar switch all live in the
+       draggable palette built by js/analytics-palette.js (loaded at the end of
+       the body, once the report has somewhere to mount against). -->
 
   <script>
     /* Minimum font-size floor (this page only): no rendered text ever drops
@@ -2460,28 +2292,26 @@
       };
 
       function buildCard() {
-        const card = document.createElement('section');
-        card.className = 'att-card';
-        card.id = 'att-tree-card';
-        card.innerHTML = `
-          <div class="att-head">
-            <span class="att-eyebrow">Portfolio</span>
-            <span class="att-title">Performance Matrix</span>
-          </div>
-          <p class="att-intro">Every product (row) cross-referenced against all 15 metric codes (columns).
-            Each cell is coloured by that product's status on that metric. Scan down a column to see which SKUs
-            drag a metric down; scan across a row for a product's full profile. Column codes are colour-coded by
-            category. Sorted highest to lowest overall performance.</p>
-          <div class="att-scroll">
-            <div class="att-stage" id="att-stage"></div>
-          </div>
-          <div class="att-legend" id="att-legend">
-            <button type="button" class="att-more" id="att-more"></button>
-            <div class="att-legend-dots">${
-              Object.values(TIERS).map((t) => `<span><span class="att-dot" style="background:${t.fill}"></span>${t.label}</span>`).join('')
-            }</div>
-          </div>`;
-        return card;
+        const wrap = document.createElement('div');
+        wrap.className = 'att-block';
+        wrap.innerHTML = `
+          <h2 class="att-type-title">Performance Matrix</h2>
+          <section class="att-card" id="att-tree-card">
+            <p class="att-intro">Every product (row) cross-referenced against all 15 metric codes (columns).
+              Each cell is coloured by that product's status on that metric. Scan down a column to see which SKUs
+              drag a metric down; scan across a row for a product's full profile. Column codes are colour-coded by
+              category. Sorted highest to lowest overall performance.</p>
+            <div class="att-scroll">
+              <div class="att-stage" id="att-stage"></div>
+            </div>
+            <div class="att-legend" id="att-legend">
+              <button type="button" class="att-more" id="att-more"></button>
+              <div class="att-legend-dots">${
+                Object.values(TIERS).map((t) => `<span><span class="att-dot" style="background:${t.fill}"></span>${t.label}</span>`).join('')
+              }</div>
+            </div>
+          </section>`;
+        return wrap;
       }
 
       let transposed = false;
@@ -4142,211 +3972,6 @@
     })();
   </script>
 
-  <script type="module">
-    /* =====================================================================
-       Floating section navigation (analytics-types.html only). Builds a fixed
-       right-edge rail listing every chart / section on the page and wires it
-       up as a scrollspy: clicking an item smooth-scrolls the report's scroll
-       pane (#agent-main-scroll) to that section, and an IntersectionObserver
-       keeps the item for the section currently in view highlighted.
-
-       The list of sections lives in js/analytics-types-catalog.js — the same
-       file All Modules uses for its thumbnail gallery. Add a chart there
-       (and render it on this page) and both surfaces stay in sync.
-
-       The dashboard body is injected asynchronously by agent-overview.js, and
-       two of the sections (the Portfolio Overview stats row and the
-       Performance Matrix card) are added later still by the inline scripts
-       above — so we (re)build whenever the DOM changes until every known
-       section has appeared, sorting the rail by true document order.
-    ===================================================================== */
-    import { ANALYTICS_NAV as SECTIONS } from '../js/analytics-types-catalog.js';
-    (function () {
-
-      const nav = document.getElementById('az-nav');
-      const list = document.getElementById('az-nav-inner');
-      if (!nav || !list) return;
-
-      const reduceMotion = () =>
-        window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-      const scroller = () => document.getElementById('agent-main-scroll');
-
-      /* ---- Skinny-bar toggle -------------------------------------------------
-         Flips every chunky .dash-ws-health-bar to a slim track and relocates the
-         score from inside the fill up into the row's head. The relocated score
-         is injected once per bar (hidden until skinny mode via CSS); we read the
-         final value off the count-up's data-count-to so it's correct regardless
-         of animation timing. State persists across reloads. */
-      const SKINNY_KEY = 'az-skinny-bars';
-
-      function readScore(num) {
-        const to = num.getAttribute('data-count-to') || (num.textContent || '').trim();
-        let suffix = num.getAttribute('data-count-suffix') || '';
-        if (!suffix && num.closest('.dash-pct-wrap')) suffix = '%';
-        return to + suffix;
-      }
-
-      function enhanceBars() {
-        const sc = scroller();
-        const root = (sc && sc.querySelector('.dash')) || document.body;
-        root.querySelectorAll('.dash-ws-health-bar').forEach((bar) => {
-          if (bar.dataset.azScore) return;
-          const num = bar.querySelector('.dash-ws-health-num');
-          if (!num) return;
-          bar.dataset.azScore = '1';
-          const chip = document.createElement('span');
-          chip.className = 'az-score-chip';
-          chip.textContent = readScore(num);
-          const fill = bar.querySelector('.dash-ws-health-fill');
-          if (fill && fill.style.background) chip.style.color = fill.style.background;
-          const head = bar.previousElementSibling;
-          if (head && head.nodeType === 1 && /-bar-head\b/.test(head.className || '')) {
-            head.appendChild(chip);
-          } else {
-            chip.classList.add('az-score-chip--overlay');
-            bar.appendChild(chip);
-          }
-        });
-      }
-
-      function applySkinny(on) {
-        document.body.classList.toggle('az-skinny-bars', on);
-        try { localStorage.setItem(SKINNY_KEY, on ? '1' : '0'); } catch (_) {}
-      }
-
-      let skinny = false;
-      try { skinny = localStorage.getItem(SKINNY_KEY) === '1'; } catch (_) {}
-
-      function buildToggle() {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'az-toggle';
-        btn.setAttribute('role', 'switch');
-        btn.setAttribute('aria-checked', skinny ? 'true' : 'false');
-        btn.title = 'Toggle slim health bars';
-        btn.innerHTML =
-          '<span class="az-nav-label">Skinny bars</span>' +
-          '<span class="az-switch"><span class="az-switch-dot"></span></span>';
-        btn.addEventListener('click', () => {
-          skinny = !skinny;
-          btn.setAttribute('aria-checked', skinny ? 'true' : 'false');
-          enhanceBars();
-          applySkinny(skinny);
-        });
-        list.appendChild(btn);
-        const sep = document.createElement('div');
-        sep.className = 'az-nav-sep';
-        list.appendChild(sep);
-      }
-
-      let entries = [];   /* [{ el, btn }] in document order */
-      let spy = null;
-      let activeEl = null;
-
-      function setActive(el) {
-        if (el === activeEl) return;
-        activeEl = el;
-        entries.forEach((e) => e.btn.classList.toggle('is-active', e.el === el));
-      }
-
-      function scrollTo(el, toTop) {
-        const sc = scroller();
-        if (!sc) return;
-        /* The page header sits above the scroll pane (it isn't a child of it),
-           so there's nothing to scroll *to* — jump the pane back to the top. */
-        if (toTop) {
-          sc.scrollTo({ top: 0, behavior: reduceMotion() ? 'auto' : 'smooth' });
-          return;
-        }
-        const top = el.getBoundingClientRect().top
-          - sc.getBoundingClientRect().top + sc.scrollTop - 18;
-        sc.scrollTo({ top: Math.max(0, top), behavior: reduceMotion() ? 'auto' : 'smooth' });
-      }
-
-      /* Scrollspy: a section is "current" while its top sits in the upper band
-         of the scroll pane. We keep the set of in-band sections and light up
-         the earliest one in document order. */
-      function wireSpy() {
-        const sc = scroller();
-        if (!sc || !('IntersectionObserver' in window)) return;
-        if (spy) spy.disconnect();
-        const visible = new Set();
-        spy = new IntersectionObserver((obs) => {
-          obs.forEach((o) => {
-            if (o.isIntersecting) visible.add(o.target);
-            else visible.delete(o.target);
-          });
-          for (const e of entries) {
-            if (visible.has(e.el)) { setActive(e.el); return; }
-          }
-        }, { root: sc, rootMargin: '-12% 0px -70% 0px', threshold: 0 });
-        /* Skip the page header — it lives outside the scroll root, so the
-           observer can never report it. It stays click-to-top only. */
-        entries.forEach((e) => { if (!e.doc) spy.observe(e.el); });
-      }
-
-      function build() {
-        const sc = scroller();
-        const dash = sc && sc.querySelector('.dash');
-        if (!dash) return false;
-
-        const found = [];
-        SECTIONS.forEach((s) => {
-          let el;
-          /* Most sections live inside `.dash`; the page header (doc:true) sits
-             above the scroll pane, so resolve it against the whole document. */
-          try { el = s.doc ? document.querySelector(s.sel) : dash.querySelector(s.sel); } catch (_) { el = null; }
-          if (el && !found.some((f) => f.el === el)) found.push({ el, label: s.label, doc: !!s.doc });
-        });
-        if (!found.length) return false;
-
-        found.sort((a, b) =>
-          (a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1);
-
-        /* Skip a rebuild if the same sections are already shown, so the live
-           MutationObserver doesn't thrash the rail on unrelated DOM churn. */
-        const sig = found.map((f) => f.label).join('|');
-        if (sig === list.dataset.sig) return found.length === SECTIONS.length;
-        list.dataset.sig = sig;
-
-        list.innerHTML = '';
-        buildToggle();
-        enhanceBars();
-        applySkinny(skinny);
-        entries = found.map((f) => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'az-nav-item';
-          btn.title = f.label;
-          btn.innerHTML =
-            '<span class="az-nav-label">' + f.label + '</span><span class="az-nav-tick"></span>';
-          btn.addEventListener('click', () => { setActive(f.el); scrollTo(f.el, f.doc); });
-          list.appendChild(btn);
-          return { el: f.el, btn, doc: f.doc };
-        });
-
-        nav.hidden = false;
-        activeEl = null;
-        wireSpy();
-        return found.length === SECTIONS.length;
-      }
-
-      function init() {
-        const complete = build();
-        const host = document.getElementById('agent-main-scroll') || document.body;
-        const obs = new MutationObserver(() => { if (build()) obs.disconnect(); });
-        obs.observe(host, { childList: true, subtree: true });
-        /* Stop watching after a grace period even if a section never appears,
-           so the observer doesn't run for the life of the page. */
-        if (!complete) setTimeout(() => obs.disconnect(), 12000);
-      }
-
-      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-      else init();
-    })();
-  </script>
-
   <style>
     /* =====================================================================
        Metrics Highlight chart (analytics-types.html only).
@@ -4426,9 +4051,11 @@
        path. The GRAS conversion funnel below is a different chart type.
     ===================================================================== */
     .inf-funnel {
-      --inf-s1: color-mix(in srgb, var(--primary) 42%, #d8e8f5);
-      --inf-s2: color-mix(in srgb, var(--primary) 72%, #8fb6d4);
+      --inf-s1: color-mix(in srgb, var(--primary) 38%, #e4eef6);
+      --inf-s2: color-mix(in srgb, var(--primary) 68%, #8fb6d4);
       --inf-s3: var(--primary);
+      --inf-s12: color-mix(in srgb, var(--inf-s1) 48%, var(--inf-s2));
+      --inf-s23: color-mix(in srgb, var(--inf-s2) 48%, var(--inf-s3));
       --inf-s1-ink: #1B3348;
       --inf-s2-ink: #fff;
       --inf-s3-ink: #fff;
@@ -4443,9 +4070,11 @@
       --inf-flow: color-mix(in srgb, var(--primary) 46%, transparent);
     }
     html.dark .inf-funnel {
-      --inf-s1: color-mix(in srgb, var(--primary) 50%, #7a9bb8);
-      --inf-s2: color-mix(in srgb, var(--primary) 72%, #8aabca);
+      --inf-s1: color-mix(in srgb, var(--primary) 46%, #8aabca);
+      --inf-s2: color-mix(in srgb, var(--primary) 70%, #6a94b8);
       --inf-s3: #4A7FA8;
+      --inf-s12: color-mix(in srgb, var(--inf-s1) 48%, var(--inf-s2));
+      --inf-s23: color-mix(in srgb, var(--inf-s2) 48%, var(--inf-s3));
       --inf-s1-ink: #F2F7FB;
       --inf-s2-ink: #fff;
       --inf-s3-ink: #fff;
@@ -4453,9 +4082,11 @@
       --inf-flow: color-mix(in srgb, var(--primary) 52%, transparent);
     }
     .inf-funnel--claim {
-      --inf-s1: color-mix(in srgb, var(--sec-green) 40%, #d6f0e2);
-      --inf-s2: color-mix(in srgb, var(--sec-green) 68%, #7ec9a0);
+      --inf-s1: color-mix(in srgb, var(--sec-green) 36%, #e4f5ec);
+      --inf-s2: color-mix(in srgb, var(--sec-green) 64%, #7ec9a0);
       --inf-s3: var(--sec-green);
+      --inf-s12: color-mix(in srgb, var(--inf-s1) 48%, var(--inf-s2));
+      --inf-s23: color-mix(in srgb, var(--inf-s2) 48%, var(--inf-s3));
       --inf-s1-ink: #143326;
       --inf-s2-ink: #fff;
       --inf-s3-ink: #fff;
@@ -4470,9 +4101,11 @@
       --inf-flow: color-mix(in srgb, var(--sec-green) 46%, transparent);
     }
     html.dark .inf-funnel--claim {
-      --inf-s1: color-mix(in srgb, var(--sec-green) 48%, #6a9e82);
-      --inf-s2: color-mix(in srgb, var(--sec-green) 70%, #7eb896);
+      --inf-s1: color-mix(in srgb, var(--sec-green) 44%, #7eb896);
+      --inf-s2: color-mix(in srgb, var(--sec-green) 68%, #5a9e78);
       --inf-s3: #3d9a68;
+      --inf-s12: color-mix(in srgb, var(--inf-s1) 48%, var(--inf-s2));
+      --inf-s23: color-mix(in srgb, var(--inf-s2) 48%, var(--inf-s3));
       --inf-s1-ink: #F2FBF6;
       --inf-unref-ink: #0E1A14;
       --inf-flow: color-mix(in srgb, var(--sec-green) 52%, transparent);
@@ -4752,15 +4385,18 @@
       from { clip-path: inset(0 100% 0 0); }
       to   { clip-path: inset(-32px); }
     }
-    .inf-band {
-      stroke: var(--surface);
-      stroke-width: 1.4;
-      stroke-linejoin: round;
+    .inf-svg {
       filter: drop-shadow(0 3px 6px rgba(8, 15, 26, 0.16));
-      transition: filter .15s ease;
     }
-    .inf-band:hover { filter: brightness(1.05) drop-shadow(0 6px 10px rgba(8, 15, 26, 0.22)); }
-    html.dark .inf-band { filter: drop-shadow(0 3px 7px rgba(0, 0, 0, 0.45)); }
+    html.dark .inf-svg {
+      filter: drop-shadow(0 3px 7px rgba(0, 0, 0, 0.45));
+    }
+    .inf-band {
+      stroke: none;
+    }
+    .inf-reveal:hover .inf-svg { filter: brightness(1.05) drop-shadow(0 6px 10px rgba(8, 15, 26, 0.22)); }
+    html.dark .inf-reveal:hover .inf-svg { filter: brightness(1.05) drop-shadow(0 6px 10px rgba(0, 0, 0, 0.55)); }
+    .inf-band-hit { fill: transparent; stroke: none; }
     .inf-seg { transition: filter .15s ease; }
     .inf-seg:hover { filter: brightness(1.06); }
     .inf-leader {
@@ -4908,10 +4544,13 @@
 
     /* ---- GRAS conversion funnel: stacked trapezoids, not the organic pour ---- */
     .cf-funnel {
-      --cf-s1: color-mix(in srgb, var(--sec-green) 36%, #d8f0e4);
-      --cf-s2: color-mix(in srgb, var(--sec-green) 56%, #9ad4b4);
-      --cf-s3: color-mix(in srgb, var(--sec-green) 78%, #5bb888);
+      --cf-s1: color-mix(in srgb, var(--sec-green) 32%, #e4f5ec);
+      --cf-s2: color-mix(in srgb, var(--sec-green) 52%, #9ad4b4);
+      --cf-s3: color-mix(in srgb, var(--sec-green) 74%, #5bb888);
       --cf-s4: var(--sec-green);
+      --cf-s12: color-mix(in srgb, var(--cf-s1) 40%, var(--cf-s2));
+      --cf-s23: color-mix(in srgb, var(--cf-s2) 40%, var(--cf-s3));
+      --cf-s34: color-mix(in srgb, var(--cf-s3) 40%, var(--cf-s4));
       --cf-ink-1: #143326;
       --cf-ink-2: #143326;
       --cf-ink-3: #fff;
@@ -4919,10 +4558,13 @@
       --cf-drop: var(--text-muted);
     }
     html.dark .cf-funnel {
-      --cf-s1: color-mix(in srgb, var(--sec-green) 36%, #9ec9b0);
-      --cf-s2: color-mix(in srgb, var(--sec-green) 58%, #6eae8a);
-      --cf-s3: color-mix(in srgb, var(--sec-green) 82%, #3d8f64);
+      --cf-s1: color-mix(in srgb, var(--sec-green) 34%, #9ec9b0);
+      --cf-s2: color-mix(in srgb, var(--sec-green) 56%, #6eae8a);
+      --cf-s3: color-mix(in srgb, var(--sec-green) 80%, #3d8f64);
       --cf-s4: #2c7a52;
+      --cf-s12: color-mix(in srgb, var(--cf-s1) 40%, var(--cf-s2));
+      --cf-s23: color-mix(in srgb, var(--cf-s2) 40%, var(--cf-s3));
+      --cf-s34: color-mix(in srgb, var(--cf-s3) 40%, var(--cf-s4));
       --cf-ink-1: #0E1A14;
       --cf-ink-2: #0E1A14;
     }
@@ -4959,14 +4601,17 @@
     .cf-chart[data-orient="h"].is-ready .cf-reveal {
       animation: infWipeH 1.65s cubic-bezier(.16, 1, .3, 1) both;
     }
-    .cf-band {
-      stroke: var(--surface);
-      stroke-width: 1.6;
-      stroke-linejoin: round;
+    .cf-svg {
       filter: drop-shadow(0 3px 6px rgba(8, 15, 26, 0.16));
     }
-    .cf-band:hover { filter: brightness(1.05) drop-shadow(0 6px 10px rgba(8, 15, 26, 0.22)); }
-    html.dark .cf-band { filter: drop-shadow(0 3px 7px rgba(0, 0, 0, 0.45)); }
+    html.dark .cf-svg {
+      filter: drop-shadow(0 3px 7px rgba(0, 0, 0, 0.45));
+    }
+    .cf-band {
+      stroke: none;
+    }
+    .cf-reveal:hover .cf-svg { filter: brightness(1.05) drop-shadow(0 6px 10px rgba(8, 15, 26, 0.22)); }
+    html.dark .cf-reveal:hover .cf-svg { filter: brightness(1.05) drop-shadow(0 6px 10px rgba(0, 0, 0, 0.55)); }
     .cf-labels {
       position: absolute;
       inset: 0;
@@ -5410,20 +5055,22 @@
         return d;
       }
 
-      function bandPath(pts, axis) {
+      function bandPath(pts, axis, opts) {
+        const openCap = !opts || opts.openCap !== false;
+        const endCap = !opts || opts.endCap !== false;
         const first = pts[0], last = pts[pts.length - 1];
-        const cap = axis === 'v'
-          ? { x: (last.a.x + last.b.x) / 2, y: last.a.y + 8 }
-          : { x: last.a.x + 8, y: (last.a.y + last.b.y) / 2 };
-        const open = axis === 'v'
-          ? { x: (first.a.x + first.b.x) / 2, y: first.a.y - 10 }
-          : { x: first.a.x - 10, y: (first.a.y + first.b.y) / 2 };
-        const loop = [
-          ...pts.map((p) => p.a),
-          cap,
-          ...pts.slice().reverse().map((p) => p.b),
-          open,
-        ];
+        const loop = [...pts.map((p) => p.a)];
+        if (endCap) {
+          loop.push(axis === 'v'
+            ? { x: (last.a.x + last.b.x) / 2, y: last.a.y + 8 }
+            : { x: last.a.x + 8, y: (last.a.y + last.b.y) / 2 });
+        }
+        loop.push(...pts.slice().reverse().map((p) => p.b));
+        if (openCap) {
+          loop.push(axis === 'v'
+            ? { x: (first.a.x + first.b.x) / 2, y: first.a.y - 10 }
+            : { x: first.a.x - 10, y: (first.a.y + first.b.y) / 2 });
+        }
         return catmull(loop) + ' Z';
       }
 
@@ -5487,7 +5134,9 @@
         defs.appendChild(clip);
 
         /* One wash across the whole funnel — vertical = top→bottom of the
-           funnel span; horizontal = left→right of the funnel span. */
+           funnel span; horizontal = left→right of the funnel span.
+           Soft mid-stops sit on the stage junctions so each section reads
+           clearly without a hard edge. */
         const bandG = mk('linearGradient', {
           id: 'inf-band-g-' + uid,
           gradientUnits: 'userSpaceOnUse',
@@ -5496,9 +5145,13 @@
           x2: String(axis === 'v' ? L.cx : L.funnelX + L.funnelW),
           y2: String(axis === 'v' ? L.funnelY + L.funnelH : L.cy),
         });
-        bandG.appendChild(mk('stop', { offset: '0%', 'stop-color': 'var(--inf-s1)' }));
-        bandG.appendChild(mk('stop', { offset: '38%', 'stop-color': 'var(--inf-s2)' }));
-        bandG.appendChild(mk('stop', { offset: '72%', 'stop-color': 'var(--inf-s3)' }));
+        bandG.appendChild(mk('stop', { offset: '0%',   'stop-color': 'var(--inf-s1)' }));
+        bandG.appendChild(mk('stop', { offset: '18%',  'stop-color': 'var(--inf-s1)' }));
+        bandG.appendChild(mk('stop', { offset: '33%',  'stop-color': 'var(--inf-s12)' }));
+        bandG.appendChild(mk('stop', { offset: '42%',  'stop-color': 'var(--inf-s2)' }));
+        bandG.appendChild(mk('stop', { offset: '55%',  'stop-color': 'var(--inf-s2)' }));
+        bandG.appendChild(mk('stop', { offset: '67%',  'stop-color': 'var(--inf-s23)' }));
+        bandG.appendChild(mk('stop', { offset: '78%',  'stop-color': 'var(--inf-s3)' }));
         bandG.appendChild(mk('stop', { offset: '100%', 'stop-color': 'var(--inf-s3)' }));
         defs.appendChild(bandG);
 
@@ -5519,15 +5172,23 @@
         defs.appendChild(flowG);
         svg.appendChild(defs);
 
+        /* One continuous pour — no per-stage stroke seams. Invisible stage
+           paths keep hover titles without drawing dividers. */
+        const fullBand = sampleBand(0, 1, axis, center, start, span, L.maxThick, SHAPE, M.junctionW);
+        const pour = mk('path', {
+          class: 'inf-band',
+          d: bandPath(fullBand, axis),
+          fill: 'url(#inf-band-g-' + uid + ')',
+        });
+        svg.appendChild(pour);
         bands.forEach((pts, i) => {
-          const path = mk('path', {
-            class: 'inf-band',
-            d: bandPath(pts, axis),
-            fill: 'url(#inf-band-g-' + uid + ')',
+          const hit = mk('path', {
+            class: 'inf-band-hit',
+            d: bandPath(pts, axis, { openCap: i === 0, endCap: i === n - 1 }),
           });
-          path.appendChild(mk('title', {})).textContent =
+          hit.appendChild(mk('title', {})).textContent =
             `${fmt(ds.stages[i].value)} ${ds.stages[i].cap}`;
-          svg.appendChild(path);
+          svg.appendChild(hit);
         });
 
         let a1, b1;
@@ -5813,10 +5474,10 @@
     (function () {
       const NS = 'http://www.w3.org/2000/svg';
       const STAGES = [
-        { value: 24, cap: 'SKUs in the analyzed portfolio', fill: 'var(--cf-s1)', ink: 'var(--cf-ink-1)' },
-        { value: 23, cap: 'no unsafe ingredients',          fill: 'var(--cf-s2)', ink: 'var(--cf-ink-2)' },
-        { value: 21, cap: 'GRAS or historical-use class',   fill: 'var(--cf-s3)', ink: 'var(--cf-ink-3)' },
-        { value: 15, cap: 'FDA GRAS-affirmed',              fill: 'var(--cf-s4)', ink: 'var(--cf-ink-4)' },
+        { value: 24, cap: 'SKUs in the analyzed portfolio', fill: 'var(--cf-s1)', toward: 'var(--cf-s2)', ink: 'var(--cf-ink-1)' },
+        { value: 23, cap: 'no unsafe ingredients',          fill: 'var(--cf-s2)', toward: 'var(--cf-s3)', ink: 'var(--cf-ink-2)' },
+        { value: 21, cap: 'GRAS or historical-use class',   fill: 'var(--cf-s3)', toward: 'var(--cf-s4)', ink: 'var(--cf-ink-3)' },
+        { value: 15, cap: 'FDA GRAS-affirmed',              fill: 'var(--cf-s4)', toward: 'var(--cf-s4)', ink: 'var(--cf-ink-4)' },
       ];
       const CARD_ID = 'cf-funnel-card';
       const KEY = 'az-funnel-orient-cf';
@@ -5857,7 +5518,7 @@
         const maxV = STAGES[0].value;
         if (orient === 'h') {
           const VW = 1040, VH = 440;
-          const left = 28, right = VW - 28, gap = 22;
+          const left = 28, right = VW - 28, gap = 0;
           const span = right - left;
           const stageW = (span - gap * (n - 1)) / n;
           const cy = VH * 0.42;
@@ -5874,7 +5535,7 @@
           };
         }
         const VW = 900, VH = 560;
-        const top = 24, bot = VH - 16, gap = 18;
+        const top = 24, bot = VH - 16, gap = 0;
         const span = bot - top;
         const stageH = (span - gap * (n - 1)) / n;
         const cx = VW * 0.44;
@@ -5904,16 +5565,32 @@
           role: 'img',
           'aria-label': 'GRAS conversion funnel: 24 analyzed SKUs narrow to 15 that are FDA GRAS-affirmed',
         });
+        const defs = mk('defs', {});
 
         L.stages.forEach((g, i) => {
           const st = STAGES[i];
+          const gid = 'cf-band-g-' + i;
+          const grad = mk('linearGradient', {
+            id: gid,
+            gradientUnits: 'userSpaceOnUse',
+            x1: String(axis === 'v' ? g.cx : g.x),
+            y1: String(axis === 'v' ? g.y : g.cy),
+            x2: String(axis === 'v' ? g.cx : g.x + g.w),
+            y2: String(axis === 'v' ? g.y + g.h : g.cy),
+          });
+          grad.appendChild(mk('stop', { offset: '0%', 'stop-color': st.fill }));
+          grad.appendChild(mk('stop', { offset: '42%', 'stop-color': st.fill }));
+          grad.appendChild(mk('stop', { offset: '100%', 'stop-color': st.toward }));
+          defs.appendChild(grad);
+
           const d = axis === 'v'
             ? trapV(g.cx, g.y, g.w0, g.w1, g.h)
             : trapH(g.x, g.cy, g.h0, g.h1, g.w);
-          const path = mk('path', { class: 'cf-band', d, fill: st.fill });
+          const path = mk('path', { class: 'cf-band', d, fill: 'url(#' + gid + ')' });
           path.appendChild(mk('title', {})).textContent = `${fmt(st.value)} ${st.cap}`;
           svg.appendChild(path);
         });
+        svg.insertBefore(defs, svg.firstChild);
 
         const labels = document.createElement('div');
         labels.className = 'cf-labels';
@@ -6138,7 +5815,7 @@
         { id: 'unknown',    sel: '.dash-flag-card:last-child', def: 'h', place: 'topbar' },
         { id: 'seg',        sel: '.dash-seg-section', def: 'h', place: 'head' },
         { id: 'scatter',    sel: '.dash-scatter-section', def: 'h', place: 'topbar' },
-        { id: 'matrix',     sel: '#att-tree-card', def: 'h', place: 'head',
+        { id: 'matrix',     sel: '#att-tree-card', def: 'h', place: 'before',
           onChange: function (_h, o) { if (window.__attPmxSetOrient) window.__attPmxSetOrient(o); } },
         { id: 'upf-table',  sel: '#upf-class-card', def: 'h', place: 'head', onChange: tableFlip('upf-view-toggle') },
         { id: 'gras-table', sel: '#gras-class-card', def: 'h', place: 'head', onChange: tableFlip('gras-view-toggle') },
@@ -6486,18 +6163,26 @@
         `<span><span class="att-dot" style="background:${p[0]}"></span>${escq(p[1])}</span>`).join('');
 
       function card(opts) {
+        const wrap = document.createElement('div');
+        wrap.className = 'att-block';
+        if (opts.eyebrow) {
+          const type = document.createElement('h2');
+          type.className = 'att-type-title';
+          type.textContent = opts.eyebrow;
+          wrap.appendChild(type);
+        }
         const s = document.createElement('section');
         s.className = 'att-card atx-card';
         s.id = opts.id;
         s.innerHTML =
           `<div class="att-head">` +
-          (opts.eyebrow ? `<span class="att-eyebrow">${escq(opts.eyebrow)}</span>` : '') +
           `<span class="att-title">${escq(opts.title)}</span></div>` +
           `<p class="att-intro">${escq(opts.intro)}</p>` +
           `<div class="atx-stage" tabindex="0" role="img" aria-label="${escq(opts.title)}"></div>` +
           (opts.legend ? `<div class="att-legend atx-legend"><div class="att-legend-dots">${opts.legend}</div></div>` : '') +
           (opts.note ? `<p class="atx-note">${escq(opts.note)}</p>` : '');
-        return s;
+        wrap.appendChild(s);
+        return wrap;
       }
 
       /* One shared player. `cfg` collects the animated primitives; toggling
@@ -6979,6 +6664,10 @@
   </script>
 
   <script src="../js/analytics-types-variations.js"></script>
+
+  <!-- Draggable chart palette: chart size, skinny bars, and the jump list.
+       Loads after the variation charts so its first build already sees them. -->
+  <script type="module" src="../js/analytics-palette.js"></script>
 
   <script src="/livereload.js?snipver=1"></script>
   <!-- App-wide "Sticky module" toggle for every module right of the chat. -->

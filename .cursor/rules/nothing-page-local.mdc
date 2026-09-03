@@ -1,0 +1,49 @@
+---
+description: Shared components are styled and wired once in shared code — never restated in a page
+alwaysApply: true
+---
+
+# Nothing Is Page-Local
+
+A shared component has exactly **one** definition. Its CSS lives in
+`pages/wise.css` or the stylesheet its own module injects; its behavior lives in
+that module. A page **hosts** the component — it never restates, ports, or forks
+it.
+
+This is permanent and non-negotiable. Every page-local copy silently drifts:
+the fork stops matching the shared original, and a change to the real component
+lands everywhere except the page that copied it.
+
+## Banned
+
+- Re-declaring a shared class in a page's `<style>` block (`.sc-*`, `.wch-*`,
+ `.ws-intent-*`, `.fl-*`, `.chip*`, `.wise-btn*`, and the rest).
+- Copying a shared helper into a page `<script>` (measurers, aligners, letter
+ splitters, formatters) instead of exporting and calling the shared one.
+- A comment that admits the fork — "ported from", "mirrored from", "kept in
+ lockstep with", "same as X in js/…" — is the smell, not the fix. Delete the
+ copy and use the original.
+- Overriding a shared rule from a page to undo it
+ (`.sc-belowinput .sc-ask-help { margin-left: 0 }`).
+
+## When a page needs different behavior
+
+The difference belongs in shared code, driven by a measurement, an option, or a
+token — not in a page.
+
+```js
+// ❌ BAD — page re-measures the composer itself
+btn.style.marginLeft = /* 15 lines copied out of wiseai-chat.js */;
+
+// ✅ GOOD — the shared module exports it and every host calls it
+import { alignAskHelp } from '../js/wiseai-chat.js';
+```
+
+If a surface only wires part of the shared module (e.g. `wireChatComposer`
+without `mountWISEcodeAIChat`), fix the shared entry point so that surface
+gets the behavior too. Do not patch the gap in the page.
+
+## Before you edit a page's `<style>`
+
+Search the shared sources for the class first. If it already exists there, edit
+it there and delete the page's copy.

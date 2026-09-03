@@ -1746,13 +1746,15 @@ const COLOR_GROUPS = [
   {
     id: 'surfaces',
     title: 'Surfaces',
-    note: 'The four-step elevation ramp. Warm paper in light mode, deep navy in dark.',
+    note: 'The four-step elevation ramp. Warm paper in light mode, deep navy in dark. The two deep steps close the ramp out — the same brand values in both themes.',
     swatches: [
       { token: '--bg', use: 'App background behind everything' },
       { token: '--surface', use: 'Cards, panels, popovers' },
       { token: '--surface-2', use: 'Inset fills — inputs, hover rows, code chips' },
       { token: '--surface-3', use: 'Deepest inset — pressed / active fills' },
       { token: '--scorecard-fill', use: 'Action / filter scorecard tile (chat navy in dark)' },
+      { token: '--warm-300', use: 'Warm mid-tone — the step above Gilded Grain' },
+      { token: '--warm-400', use: 'Gilded Grain — output chip strokes and the output ear marks on the chat activity rail' },
     ],
   },
   {
@@ -2114,6 +2116,7 @@ const CAT_BY_NAME = {
   'Status chips': 'Chips & badges',
   'Chat composer': 'Inputs & forms',
   'Transcript lines': 'Chat & drawers',
+  'Inline table': 'Chat & drawers',
   'Transcript actions': 'Chat & drawers',
   'Activity strip': 'Chat & drawers',
   'Token readout': 'Chat & drawers',
@@ -3304,6 +3307,29 @@ function demoReportBuilderHTML() {
       </div>`;
 }
 
+/* In-transcript comparison — same markup the playful-story chip posts. */
+function scInlineTblHtml(rows) {
+  const list = rows || [
+    ['Organic Almond Milk', 'Lightly processed, check for emulsifiers or added gums.', 'Contains exactly three actual almonds. The rest is water that has been aggressively gaslit into thinking it\u2019s dairy.'],
+    ['Neon Orange Cheese Puffs', '<strong>Ultra-Processed Food (UPF).</strong> High sodium, artificial colors, and zero fiber density.', 'This is not food. This is an industrial insulation material that happens to look beautiful under a grocery store fluorescent light. Eat at your own psychological risk.'],
+    ['Artisanal Sourdough Bread', 'Non-UPF Verified. Great carb quality.', 'The baker went to a liberal arts college and listened to indie folk music while kneading this. The bread tastes like unfulfilled potential and hints of rosemary.'],
+  ];
+  return '<div class="sc-inline-tbl" role="table">'
+    + '<div class="sc-inline-tbl-row sc-inline-tbl-row--head" role="row">'
+    + '<div class="sc-inline-tbl-food" role="columnheader">Packaged Food</div>'
+    + '<div class="sc-inline-tbl-cell" role="columnheader">WISEcode\u2122 Analysis</div>'
+    + '<div class="sc-inline-tbl-cell" role="columnheader">UNWISEcode\u2122 AI Analysis</div>'
+    + '</div>'
+    + list.map((r) => (
+      '<div class="sc-inline-tbl-row" role="row">'
+      + `<div class="sc-inline-tbl-food" role="rowheader">${r[0]}</div>`
+      + `<div class="sc-inline-tbl-cell" role="cell"><span class="sc-inline-tbl-lab">WISEcode analysis</span>${r[1]}</div>`
+      + `<div class="sc-inline-tbl-cell" role="cell"><span class="sc-inline-tbl-lab">UNWISEcode analysis</span>${r[2]}</div>`
+      + '</div>'
+    )).join('')
+    + '</div>';
+}
+
 const COMPONENTS = [
   /* `ai: false` — chrome / chrome-adjacent cards. They keep WIP Ready but
      have no Not for AI / AI Ready switch and do not count toward the
@@ -3553,6 +3579,26 @@ const COMPONENTS = [
         <div class="dsc-state-col" style="flex:1 1 280px">
           <div class="dsc-sub-label">Forked-from banner</div>
           <div class="sc-fork-banner"><span class="material-symbols-outlined sc-fork-banner-ic">alt_route</span><span class="sc-fork-banner-txt">Forked from <strong>Compare oat milk vs almond milk</strong> at turn #6d7a</span></div>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Inline table',
+    wide: true,
+    cat: 'Chat & drawers',
+    cls: '.sc-inline-tbl · .sc-inline-tbl-row · .sc-inline-h',
+    used: 'WISEcodeAI Studio Chat — comparisons that stay in the answer (Tell me a playful story.)',
+    note: 'A small comparison that lives in the transcript, not a Results board. No card, no outer box — only thin horizontal rules between rows. In a wide chat the three columns sit side by side; when the pane is narrow they stack, and each cell keeps a quiet column label so the read still works.',
+    noteIcon: 'table_rows',
+    demo: `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col" style="flex:2 1 420px;min-width:0">
+          <div class="dsc-sub-label">Wide chat</div>
+          <div class="sc-line sc-line-wiseai">${demoWiseAvatar()}<div class="sc-line-body"><h3 class="sc-inline-h">Real Product Scan Examples</h3>${scInlineTblHtml()}</div></div>
+        </div>
+        <div class="dsc-state-col" style="flex:1 1 260px;min-width:0">
+          <div class="dsc-sub-label">Narrow chat</div>
+          <div class="sc-line sc-line-wiseai" style="max-width:300px">${demoWiseAvatar()}<div class="sc-line-body"><h3 class="sc-inline-h">Real Product Scan Examples</h3>${scInlineTblHtml()}</div></div>
         </div>
       </div>`,
   },
@@ -5547,6 +5593,9 @@ const TARCH_LAYERS = [
   { id: 'lines', side: 'left', icon: 'forum', title: 'Transcript lines',
     body: 'You, WISEcodeAI, or an event — never a bubble.',
     jump: 'Transcript lines' },
+  { id: 'inlinetbl', side: 'left', icon: 'table_rows', title: 'Inline table',
+    body: 'A comparison that stays in the answer — horizontal rules, no card.',
+    jump: 'Inline table' },
   { id: 'strips', side: 'left', icon: 'timeline', title: 'Activity strip',
     body: 'Landmark rail. Gold = output, green = source, amber = database. Blue = last prompt.',
     jump: 'Activity strip' },
@@ -7292,6 +7341,10 @@ function tarchSpecimenHtml() {
           ${tarchHit('lines', 'left', `<div class="sc-line sc-line-you">${demoYouAvatar()}<div class="sc-line-body">Compare oat milk vs almond milk on processing.<div class="sc-line-meta"><span class="sc-line-time">12 min ago</span></div></div></div>`)}
           <div class="sc-line sc-line-wiseai">${demoWiseAvatar()}<div class="sc-line-body">
             <span class="sc-para">Oat milk scores higher on processing; almond milk wins on additives. Both sit in the same WISEscore band — the split is <strong>gellan</strong> versus <strong>locust bean</strong>.</span>
+            ${tarchHit('inlinetbl', 'left', scInlineTblHtml([
+              ['Oat milk', 'Lightly processed. Watch the gums.', 'The oats have been talked into being milk.'],
+              ['Almond milk', 'Lightly processed, check emulsifiers.', 'Three almonds. The rest is confident water.'],
+            ]))}
             ${tarchChip('outputs', 'right', { title: 'Oat milk vs almond milk', versions: [OUTPUT_CHIP_VERS[0]] })}
             ${tarchHit('actions', 'right', demoFbRow())}
             ${tarchHit('chips', 'right', tarchReplyChips([
@@ -9810,6 +9863,7 @@ export function renderAllModules(mainEl) {
   safeWire('compsNudge', () => wireCompsNudge(mainEl));
   safeWire('rptNudge', () => wireRptNudge(mainEl));
   safeWire('azCompNudge', () => wireAzCompNudge(mainEl));
+  safeWire('inlineTblNudge', () => wireInlineTblNudge(mainEl));
   safeWire('azLightbox', () => wireAnalyticsLightbox(mainEl));
   safeWire('globalSearch', () => wireGlobalSearch(mainEl));
   safeWire('devReady', () => wireDevReady(mainEl));
@@ -9930,6 +9984,7 @@ function refreshAllModuleNudges() {
   refreshCompsNudge();
   refreshRptNudge();
   refreshAzCompNudge();
+  refreshInlineTblNudge();
 }
 
 function scheduleModuleNudgeRefresh() {
@@ -10695,6 +10750,111 @@ function wireAzCompNudge(root) {
   setTimeout(refreshAzCompNudge, 700);
 }
 
+/* Gold “This is new!” on the Inline table card inside Component Library. */
+const INLINE_TBL_NUDGE_ID = 'mi-inline-tbl-new';
+let inlineTblNudgeTaken = false;
+let inlineTblNudgeWired = false;
+let inlineTblNudgeRo = null;
+
+function inlineTblNudgeDismissed() {
+  return !!(isNudgeDismissed(INLINE_TBL_NUDGE_ID) ||
+    (window.WiseNudgeToast && typeof window.WiseNudgeToast.isDismissed === 'function'
+      && window.WiseNudgeToast.isDismissed(INLINE_TBL_NUDGE_ID)));
+}
+
+function takeInlineTblNudge() {
+  inlineTblNudgeTaken = true;
+  const toast = document.getElementById('mi-inline-tbl-nudge');
+  if (!toast) return;
+  toast.hidden = true;
+  toast.setAttribute('hidden', '');
+  toast.style.visibility = '';
+  toast.style.pointerEvents = '';
+}
+
+function inlineTblNudgeAnchor(root) {
+  const card = (root || hostEl || document).querySelector('[data-comp-name="Inline table"]');
+  if (!card || card.hidden) return null;
+  return card.querySelector(':scope > .dsc-card-head .dsc-name');
+}
+
+function ensureInlineTblNudgeToast() {
+  let toast = document.getElementById('mi-inline-tbl-nudge');
+  if (toast) return toast;
+  toast = document.createElement('div');
+  toast.id = 'mi-inline-tbl-nudge';
+  toast.className = 'dash-score-toast dash-score-toast--gold is-portaled';
+  toast.setAttribute('data-nudge-id', INLINE_TBL_NUDGE_ID);
+  toast.setAttribute('role', 'status');
+  toast.hidden = true;
+  toast.innerHTML =
+    '<span class="dash-score-toast-icon"><span class="material-symbols-outlined">new_releases</span></span>' +
+    '<div class="dash-score-toast-body">' +
+      '<div class="dash-score-toast-title">This is new!</div>' +
+      '<p class="dash-score-toast-text">Inline table is a comparison that stays in the transcript — horizontal rules only, no card, and it stacks when the chat is narrow.</p>' +
+      '<button type="button" class="dash-score-toast-link" data-inline-tbl-nudge-go>Open Inline table<span class="material-symbols-outlined dash-score-toast-link-arrow">arrow_outward</span></button>' +
+    '</div>' +
+    '<button class="dash-score-toast-close" type="button" aria-label="Dismiss" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined">close</span></button>';
+  document.body.appendChild(toast);
+  toast.addEventListener('click', (e) => {
+    const go = e.target.closest('[data-inline-tbl-nudge-go]');
+    if (!go) return;
+    e.preventDefault();
+    e.stopPropagation();
+    jumpToComponent(hostEl || document, 'Inline table');
+    refreshInlineTblNudge();
+  });
+  return toast;
+}
+
+function refreshInlineTblNudge() {
+  const toast = ensureInlineTblNudgeToast();
+  const root = hostEl || document;
+  const label = inlineTblNudgeAnchor(root);
+  const dismissed = inlineTblNudgeTaken || inlineTblNudgeDismissed();
+  const labelLive = !!(label && !label.hidden && label.getClientRects().length);
+  const show = !dismissed && labelLive;
+  if (!show) {
+    toast.hidden = true;
+    toast.setAttribute('hidden', '');
+    toast.style.visibility = '';
+    toast.style.pointerEvents = '';
+    return;
+  }
+  toast.hidden = false;
+  toast.removeAttribute('hidden');
+  if (inlineTblNudgeRo) {
+    inlineTblNudgeRo.disconnect();
+    inlineTblNudgeRo = null;
+  }
+  if (typeof ResizeObserver !== 'undefined' && label) {
+    inlineTblNudgeRo = new ResizeObserver(() => placeTarchNudgeToast(toast, label));
+    inlineTblNudgeRo.observe(label);
+  }
+  placeTarchNudgeToast(toast, label);
+  requestAnimationFrame(() => placeTarchNudgeToast(toast, label));
+}
+
+function wireInlineTblNudge(root) {
+  if (inlineTblNudgeWired) {
+    refreshInlineTblNudge();
+    return;
+  }
+  inlineTblNudgeWired = true;
+  ensureInlineTblNudgeToast();
+  const place = () => refreshInlineTblNudge();
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-nudge-dismiss]')) setTimeout(place, 0);
+  });
+  window.addEventListener('resize', place);
+  window.addEventListener('scroll', place, { passive: true, capture: true });
+  root.querySelector('.agent-main-scroll')?.addEventListener('scroll', place, { passive: true });
+  document.getElementById('agent-main-scroll')?.addEventListener('scroll', place, { passive: true });
+  refreshInlineTblNudge();
+  setTimeout(refreshInlineTblNudge, 200);
+  setTimeout(refreshInlineTblNudge, 700);
+}
+
 /* ------------------------------------------------------------------ */
 /* Page-wide search — indexes every catalog this page already renders */
 /* ------------------------------------------------------------------ */
@@ -10945,6 +11105,7 @@ function filterScorecards(root, hits) {
     refreshCompsNudge();
     refreshRptNudge();
     refreshAzCompNudge();
+    refreshInlineTblNudge();
     return;
   }
   const sections = new Set(hits.map((h) => h.section));
@@ -10957,6 +11118,7 @@ function filterScorecards(root, hits) {
   refreshCompsNudge();
   refreshRptNudge();
   refreshAzCompNudge();
+  refreshInlineTblNudge();
 }
 
 function groupedGlobalHits(matches) {
@@ -14327,6 +14489,7 @@ function wireComponentLibrary(root) {
     if (emptyEl) emptyEl.hidden = shown !== 0;
     refreshRptNudge();
     refreshAzCompNudge();
+    refreshInlineTblNudge();
   };
 
   dscRevealAll = () => {
@@ -14343,6 +14506,7 @@ function wireComponentLibrary(root) {
     apply();
     refreshRptNudge();
     refreshAzCompNudge();
+    refreshInlineTblNudge();
   };
 
   if (searchInput) {
@@ -14488,6 +14652,7 @@ function wireComponentLibrary(root) {
     }
     if (card.dataset.compName === 'Report builder') refreshRptNudge();
     if (card.dataset.compName === 'Charts & graphs') refreshAzCompNudge();
+    if (card.dataset.compName === 'Inline table') refreshInlineTblNudge();
   };
   grid.addEventListener('click', (e) => {
     if (e.target.closest('.dsc-ready, .dsc-ready-row, a, button, input, textarea, select')) return;
@@ -14765,6 +14930,7 @@ async function jumpToComponent(root, name) {
     observePreviewFrames(card);
     refreshAzCompNudge();
   }
+  if (name === 'Inline table') refreshInlineTblNudge();
   const grid = root.querySelector('#dsc-grid');
   if (grid && typeof grid._bootComposersIn === 'function') grid._bootComposersIn(card);
   if (grid && typeof grid._bootChatMenuIn === 'function') grid._bootChatMenuIn(card);
@@ -14833,7 +14999,7 @@ export const ALL_MODULES_WISEAI = {
     { intent: 'counts', label: 'How many icons are there?', icon: 'tag' },
   ],
   intentReplies: {
-    whatsnew: 'From the <strong>past day</strong>: <strong>Analytics Types</strong> is a new accordion on this page — every chart from the Analytics Types catalog as thumbnails, tap one to open it full size. The same gallery is a new <strong>Charts &amp; graphs</strong> section in the Component Library, with a gold “This is new!” on both. From <strong>the other day</strong>: <strong>Transcript Architecture</strong> (one frozen conversation, every piece labeled) and the <strong>Report builder</strong> (plus the charts you want, generate, then save or share). Open any of those from the chips below, or the Progress Log for the day-by-day write-up.',
+    whatsnew: 'From the <strong>past day</strong>: answers can carry an <strong>Inline table</strong> — a comparison that stays in the transcript, with horizontal rules and no card. It lives in the Component Library under Chat &amp; drawers, with a gold “This is new!” on the card, and it is labeled in Transcript Architecture. <strong>Analytics Types</strong> is a thumbnail gallery of every chart from that catalog; the same gallery is <strong>Charts &amp; graphs</strong> in the Component Library. From <strong>the other day</strong>: <strong>Transcript Architecture</strong> (one frozen conversation, every piece labeled) and the <strong>Report builder</strong> (plus the charts you want, generate, then save or share). Open any of those from the chips below, or the Progress Log for the day-by-day write-up.',
     codebase: () => {
       const now = codeState.now || {};
       return `The project on disk is <strong>${fmtScanBytes(now.bytes)}</strong> across <strong>${fmtNum(now.allFiles)} files</strong> — code ${fmtScanBytes(now.codeBytes)}, images ${fmtScanBytes(now.imageBytes)}, video ${fmtScanBytes(now.videoBytes)}. Hand-written code is <strong>${fmtNum(now.total)} lines</strong> in <strong>${fmtNum(now.files)} files</strong> — ${fmtNum(now.html)} HTML, ${fmtNum(now.js)} JavaScript, ${fmtNum(now.css)} CSS and ${fmtNum(now.py)} Python — shipping <strong>${fmtNum(now.pages)} HTML pages</strong>. The Codebase score cards above the directory show both the size and the line-count trend.`;

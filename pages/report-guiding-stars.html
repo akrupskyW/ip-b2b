@@ -1207,9 +1207,18 @@
         const stream = (window.__wiseStdMenu && window.__wiseStdMenu.stream)
           ? window.__wiseStdMenu.stream()
           : { on: true, level: 'full' };
-        if (!stream.on) { addWISEcodeAI(html, { chips: true }); return; }
-        const t = showTyping();
-        setTimeout(() => { t.remove(); addWISEcodeAI(html, { chips: true }); }, stream.level === 'final' ? 300 : 480);
+        const wait = !stream.on ? 0 : (stream.level === 'final' ? 300 : 480);
+        const t = wait ? showTyping() : null;
+        const started = Date.now();
+        const paint = (out) => {
+          const left = Math.max(0, wait - (Date.now() - started));
+          setTimeout(() => { if (t) t.remove(); addWISEcodeAI(out, { chips: true }); }, left);
+        };
+        if (window.WiseOllama && typeof window.WiseOllama.polishThen === 'function') {
+          window.WiseOllama.polishThen(html, paint);
+          return;
+        }
+        paint(html);
       }
 
       /* Chip click → scroll/filter the report + continue the chat. */
