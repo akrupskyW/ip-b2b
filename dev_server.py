@@ -14,6 +14,7 @@ import os
 
 from livereload import Server as LiveServer
 from tornado import web
+from tornado.httpclient import AsyncHTTPClient, HTTPClientError, HTTPRequest
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 PORT = 8765
@@ -86,11 +87,58 @@ class ReadyWriteHandler(web.RequestHandler):
         self.write({"ok": True, "kind": kind, "count": len(unique)})
 
 
+class OllamaProxyHandler(web.RequestHandler):
+    """Same-origin pass-through to Ollama on this Mac. Localhost only."""
+
+    def set_default_headers(self):
+        self.set_header("Cache-Control", "no-store")
+
+    async def get(self, path=""):
+        await self._proxy(path)
+
+    async def post(self, path=""):
+        await self._proxy(path)
+
+    async def _proxy(self, path):
+        if self.request.remote_ip not in ("127.0.0.1", "::1"):
+            self.set_status(403)
+            return
+        dest = "http://127.0.0.1:11434/" + str(path or "").lstrip("/")
+        if self.request.query:
+            dest += "?" + self.request.query
+        req = HTTPRequest(
+            url=dest,
+            method=self.request.method,
+            headers={"Content-Type": self.request.headers.get("Content-Type", "application/json")},
+            body=self.request.body if self.request.method == "POST" else None,
+            connect_timeout=2,
+            request_timeout=60,
+            allow_nonstandard_methods=True,
+        )
+        client = AsyncHTTPClient()
+        try:
+            resp = await client.fetch(req, raise_error=False)
+        except HTTPClientError:
+            self.set_status(502)
+            self.write({"ok": False, "error": "ollama unavailable"})
+            return
+        except Exception:
+            self.set_status(502)
+            self.write({"ok": False, "error": "ollama unavailable"})
+            return
+        self.set_status(resp.code)
+        content_type = resp.headers.get("Content-Type")
+        if content_type:
+            self.set_header("Content-Type", content_type)
+        self.write(resp.body)
+
+
 class Server(LiveServer):
     def get_web_handlers(self, script):
         extra = [
             (r"/__wise/ready", ReadyWriteHandler),
             (r"/__wise/dev-ready", ReadyWriteHandler),
+            (r"/__wise/ollama/(.*)", OllamaProxyHandler),
         ]
         return extra + super().get_web_handlers(script)
 

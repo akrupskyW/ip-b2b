@@ -37,6 +37,10 @@ import { userAvatarImg } from './user-avatar.js';
 import { esc } from './escape-html.js';
 import { openModal, closeModal, modalHTML } from './wise-modal.js';
 import { OWL_BUG, OWL_MARK } from './owl-mark.js';
+import {
+  refineReply, withTimeout, toggleOllamaOn, probeOllama,
+  ensureOllamaMenuRow, syncOllamaMenu, ollamaRowHtml,
+} from './ollama-chat.js';
 
 /* Activity strip — the thin landmark rail pinned to the chat's edge. Mounted
    from here so EVERY page that uses this shared chat gets it (styles are
@@ -1154,6 +1158,8 @@ export function injectChatExtras() {
     .sc-stream-seg-btn:hover { background: var(--surface-3); color: var(--text); }
     .sc-stream-seg-btn.is-on { background: var(--primary); color: #fff; }
     .sc-stream-detail.is-disabled { opacity: .45; pointer-events: none; }
+    .sc-ollama-item .topbar-menu-copy { white-space: normal; }
+    .sc-ollama-item .topbar-menu-desc { white-space: normal; }
 
     .wch-conn-intro { margin: 2px 16px 8px; font-size: 12px; line-height: 1.45; opacity: .7; }
     .wch-conn-list { flex: 1; overflow-y: auto; padding: 2px 8px 12px; }
@@ -6668,7 +6674,7 @@ const CHAT_MENU_GROUP_OF = {
   turns: 'data', outputs: 'data', connect: 'data', 'mcp-toggle': 'data', sticky: 'data',
   'toggle-cards': 'display', 'toggle-intent-chips': 'display', compact: 'display', brandtext: 'display', sheen: 'display',
   'bg-anim': 'helix', 'bg-anim-snap': 'helix', 'bg-anim-snap-save': 'helix',
-  'activity-strip': 'motion', 'stream-toggle': 'motion',
+  'activity-strip': 'motion', 'stream-toggle': 'motion', 'ollama-toggle': 'motion',
   close: 'danger',
 };
 /* Resolve which group a menu ROW belongs to. Prefers the stable data-sc id used
@@ -8084,6 +8090,8 @@ if (typeof window !== 'undefined') window.WiseTypeInTranscript = typeInTranscrip
  *                          typing (paragraphs, thumbs, trailing chips). Hosts
  *                          that hold a companion pane closed until the
  *                          transcript settles open it here.
+ *   ollama       {false}   pass false to skip the local-model rewrite on this
+ *                          mount (Clearer reading stays available on others)
  *   onAddMember  {fn}      () => void — "Add team member to chat" popover item
  *   onHistory    {fn}      () => void — "History & Projects" popover item
  *   onToggleWidth{fn}      (isWide) => void — fired when the width toggle flips
@@ -8762,6 +8770,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
               <button type="button" class="sc-stream-seg-btn" data-sc="stream-level" data-stream="final" role="radio" aria-checked="false" title="Final only" aria-label="Final only">Final</button>
             </div>
           </div>
+          ${ollamaRowHtml()}
           <div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-sc="close"><span class="material-symbols-outlined topbar-menu-icon">close</span><span>Close conversation</span></button>
         </div>
@@ -9837,17 +9846,24 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
         try { opts.onReplyDone(meta.intent); } catch (_) { /* host hook */ }
       }
     };
-    const done = () => {
-      /* Park topic-related follow-up chips BEFORE the host's onReply so a
-         curated setIntents() can still override, and so the answer never
-         lands as a dead end. */
-      applyTopicFollowups(meta.intent, html, routeText);
-      /* Host side-effects that render output (e.g. opening the result/visual
-         panes) are deferred to here so they land WITH the answer, never during
-         the thinking globs. The pane itself stays closed until onReplyDone
-         when this is the first output of the conversation. */
+    /* Start the local-model rewrite while the reasoning trace plays, so the
+       wait is usually hidden. If Ollama is off or unreachable, refineReply
+       returns the original copy and the turn is unchanged. */
+    const polishStarted = Date.now();
+    const polishP = (opts.ollama === false)
+      ? Promise.resolve(html)
+      : refineReply(html);
+    const paintAnswer = (finalHtml) => {
+      const out = finalHtml || html;
+      if (thread) thread.html = out;
+      applyTopicFollowups(meta.intent, out, routeText);
       if (typeof meta.onTraceDone === 'function') { try { meta.onTraceDone(); } catch (_) { /* host hook */ } }
-      addWISEcodeAI(html, lineMeta);
+      addWISEcodeAI(out, lineMeta);
+    };
+    const done = () => {
+      const budget = (streamOn && streamLevel === 'full') ? 8500 : 4000;
+      const left = Math.max(400, budget - (Date.now() - polishStarted));
+      withTimeout(polishP, left, html).then(paintAnswer);
     };
     runReasoningTrace(milestones, done, assemblyMilestoneFor(html), sourceLineFor(sourceName));
   }
@@ -11428,6 +11444,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     streamOn = !(e && e.detail && e.detail.on === false);
     syncStreamMenu();
   });
+  document.addEventListener('wise:chat-ollama-on', () => {
+    syncOllamaMenu(document);
+  });
+  probeOllama().then(() => syncOllamaMenu(document));
   /* Sync the "Activity strip" switch + its Left/Right side segment to the
      shared state. Called on mount and whenever anything changes either (this
      menu, another chat's menu, or the Appearance popover — all via the
@@ -12694,6 +12714,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     moreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
     if (open) {
       syncHistoryMenu();
+      probeOllama().then(() => syncOllamaMenu(document));
       scheduleGroupedChatMenuPlace(morePop);
     }
   });
@@ -13237,6 +13258,13 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       try { document.dispatchEvent(new CustomEvent('wise:chat-stream-on', { detail: { on: streamOn } })); } catch (_) {}
       syncStreamMenu();
     }
+    else if (action === 'ollama-toggle') {
+      /* Local reading: rewrite answers on this Mac so they read more
+         clearly. Keep the menu open so the switch reads back; persist +
+         broadcast so every chat module follows. */
+      toggleOllamaOn();
+      syncOllamaMenu(document);
+    }
     else if (action === 'stream-level') {
       /* Pick how much of WISEcodeAI's thinking streams before an answer lands
          (full globs · steps only · final message only). Keep the menu open so
@@ -13721,6 +13749,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   syncSheenMenu();
   syncBgAnimMenu();
   syncStreamMenu();
+  syncOllamaMenu(document);
   syncActivityStripMenu();
 
   /* Activity strip — restore the saved on/off + side preferences onto <html>,
@@ -14523,6 +14552,23 @@ export function wireStandardChatMenu(cfg = {}) {
     syncStream();
   });
   syncStream();
+
+  /* Clearer reading — rewrite answers on this Mac (Ollama). Same shared
+     switch as the mounted module. Inject the row on hand-rolled menus that
+     were copied before it existed. */
+  ensureOllamaMenuRow(pop);
+  const ollamaToggle = q('[data-sc="ollama-toggle"]');
+  /* Mounted chats already flip this row from the shared [data-sc] handler.
+     Hand-rolled menus are the only ones that need a listener here. */
+  if (ollamaToggle && !pop.closest('.wch-chat-anchor')) {
+    ollamaToggle.addEventListener('click', () => {
+      toggleOllamaOn();
+      syncOllamaMenu(document);
+    });
+  }
+  document.addEventListener('wise:chat-ollama-on', () => syncOllamaMenu(document));
+  probeOllama().then(() => syncOllamaMenu(document));
+  syncOllamaMenu(document);
 
   const api = {
     stream: () => ({ on: streamOn, level: streamLevel }),

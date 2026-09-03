@@ -26,6 +26,7 @@ const EXTRA_HTML = ['page-gallery.html', 'app-vision-deck.html'];
 
 export const SHARED_SCRIPTS = [
   '../js/wiseai-chat.js',
+  '../js/ollama-chat.js',
   '../js/all-modules-flow.js',
   '../js/appearance-menu.js',
   '../js/load-anim.js',
@@ -66,6 +67,9 @@ export const FEATURE_SIGNALS = [
   { id: 'chips', cat: 'features', re: /intent-chip|setIntents\s*\(|nextIntents|ws-intent-chip|INTENT_REPLIES/,
     on: 'Ready-made questions sit under the chat as tappable chips, and every answer ends on more of them, so the conversation never dead-ends.',
     off: 'The tappable question chips are gone from here.' },
+  { id: 'ollama', cat: 'features', re: /ollama-chat\.js|Clearer reading|data-sc=["']ollama-toggle/,
+    on: 'Answers can be rewritten on this Mac so they read more naturally, using the model already running here.',
+    off: 'Answers are no longer rewritten on this Mac to read more clearly.' },
   { id: 'helix', cat: 'ux', re: /trace-helix|helix-canvas|bgAnim|helix\.js/,
     on: 'A faint helix drifts behind the chat while you work — on by default, quiet enough to read over.',
     off: 'The drifting helix backdrop is gone.' },
@@ -226,6 +230,7 @@ export const SCRIPT_PURPOSES = {
   'text-size-fouc.js': 'the text and icon size you picked is applied before the page paints, so nothing jumps',
   'text-size.js': 'the app-wide text and icon size setting',
   'wiseai-chat.js': 'the one shared WISEcodeAI chat — welcome screen, question chips, streaming answers — that every page mounts',
+  'ollama-chat.js': 'answers can be rewritten on this Mac so they read more naturally, when the local model is running',
   'agent-menu.js': 'the app’s shared primary navigation',
   'auth-guard.js': 'anyone who is not signed in is sent to the sign-in screen before the page paints',
   'count-up-all.js': 'every scorecard number animates from zero up to its value',
@@ -406,6 +411,7 @@ function labelMap() {
     'app-vision-deck.html': 'App Vision Deck',
     'wise.css': 'Platform-wide',
     '../js/wiseai-chat.js': 'Shared chat',
+    '../js/ollama-chat.js': 'Shared chat',
     '../js/all-modules-flow.js': 'All Modules',
     '../js/appearance-menu.js': 'Appearance & Admin',
     '../js/load-anim.js': 'Loading helix',
