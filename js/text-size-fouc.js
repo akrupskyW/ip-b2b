@@ -613,3 +613,16 @@
     document.documentElement.classList.toggle('load-anim-stripes', !helix);
   } catch (_) {}
 })();
+
+/** FOUC guard — chat background-animation style. Helix is the published
+    Scene default. Keep in sync with readBgAnimStyle() in js/wiseai-chat.js
+    so the welcome owl constellation cannot paint before the helix starts. */
+(function () {
+  try {
+    var s = localStorage.getItem('wise:chat-bg-anim-style');
+    if (s === 'stamp' || (s !== 'helix' && s !== 'helix-ten' && s !== 'orbit')) s = 'helix';
+    document.documentElement.setAttribute('data-chat-bg-style', s || 'helix');
+  } catch (_) {
+    document.documentElement.setAttribute('data-chat-bg-style', 'helix');
+  }
+})();

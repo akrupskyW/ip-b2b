@@ -6762,6 +6762,16 @@ html.full-bleed.fb-chat-tint.dark.chat-tint #chat-shell {
   background-image: none !important;
   background: var(--fb-chat-bg) !important;
 }
+/* Helix / Ten need a clear welcome sheet. This beats the tint paint above
+   (same #welcome-screen id, extra :not) so Orbit is the only style that
+   keeps an opaque overlay. */
+html.full-bleed.fb-chat-tint:not([data-chat-bg-style="orbit"]) .sc-welcome,
+html.full-bleed.fb-chat-tint:not([data-chat-bg-style="orbit"]) #welcome-screen,
+html.full-bleed.fb-chat-tint.chat-tint:not([data-chat-bg-style="orbit"]) #welcome-screen {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
 /* Composer + intent chips + scorecards stay on hardcoded brand-blue / #fff
    / navy washes (chat-tint + html.dark). Restain them from the chat surface
    so Chat-only presets actually recolour the containers inside the window. */
@@ -7863,7 +7873,7 @@ html.dark .sc-avatar-wiseai { background: #fff; color: #141414; }
 
 /* ===== Welcome screen ===== */
 .sc-welcome {
-  position: absolute; inset: 0; z-index: 10; background: var(--bg);
+  position: absolute; inset: 0; z-index: 10; background: transparent;
   display: flex; flex-direction: column; align-items: center;
   /* Bottom-anchored so the welcome (owl → heading → chips) sits just above the
      input rail and reads like the rest of the chat — content flowing UP from the
@@ -7884,6 +7894,13 @@ html.dark .sc-welcome { background: transparent; }
 .sc-welcome > .ws-scorecards-section { flex-shrink: 0; }
 
 .ws-logo-wrap { position: relative; width: 72px; height: 72px; margin-bottom: 1.75rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+/* Owl constellation is the Orbit style only. Helix / Ten hide it so the
+   Scene strand is the welcome field — including on first paint, before
+   sc-bganim-live lands. data-chat-bg-style is set by text-size-fouc.js. */
+html:not([data-chat-bg-style="orbit"]) .sc-welcome .ws-logo-wrap,
+html:not([data-chat-bg-style="orbit"]) #welcome-screen .ws-logo-wrap { display: none !important; }
+.auth-page .sc-welcome .ws-logo-wrap,
+.auth-page #welcome-screen .ws-logo-wrap { display: flex !important; }
 .ws-pulse-ring {
   position: absolute; left: 50%; top: 50%; width: 72px; height: 72px; margin-left: -36px; margin-top: -36px;
   border-radius: 50%; border: 1px solid rgba(37, 80, 124, 0.55);
@@ -8769,9 +8786,13 @@ html.chat-tint:not(.dark) .chat-input-rail,
 /* The welcome and settings screens are OPAQUE overlays (absolute, inset 0)
    painted over the card in var(--bg)/var(--surface) — without tinting them
    too, a fresh chat module never shows the blue base layer beneath. */
-html.chat-tint:not(.dark) .sc-welcome,
-html.chat-tint:not(.dark) #welcome-screen,
 html.chat-tint:not(.dark) .sc-settings { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+/* Welcome stays clear for Helix / Ten so the Scene strand shows through.
+   Orbit keeps the tinted sheet — the owl constellation sits on it. */
+html.chat-tint:not(.dark)[data-chat-bg-style="orbit"] .sc-welcome,
+html.chat-tint:not(.dark)[data-chat-bg-style="orbit"] #welcome-screen { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+html.chat-tint:not(.dark):not([data-chat-bg-style="orbit"]) .sc-welcome,
+html.chat-tint:not(.dark):not([data-chat-bg-style="orbit"]) #welcome-screen { background: transparent; }
 html.dark.chat-tint .sc-card,
 html.dark.chat-tint .wa-chat,
 html.dark.chat-tint .ap-chat,
@@ -17586,6 +17607,12 @@ html.dark .mi-tpane-src { color: var(--primary-bright, #93C5FD); }
   display: flex; align-items: center; gap: 8px; padding: 0 2px;
 }
 .mi-az-thumb-bar .mi-pane-head { flex: 1 1 auto; min-width: 0; padding: 0; }
+.mi-az-thumb .mi-pane-name {
+  font-size: 0.7rem; font-weight: 700; line-height: 1.25;
+  white-space: normal; display: -webkit-box;
+  -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; text-overflow: ellipsis;
+}
 button.mi-pane-head {
   appearance: none; border: 0; background: none; cursor: pointer;
   font: inherit; color: inherit; text-align: left;
@@ -17786,6 +17813,56 @@ html.dark .mi-acc-catalog { border-top-color: color-mix(in srgb, var(--border) 8
 .mi-card-go { font-size: 16px !important; color: var(--text-subtle); flex: 0 0 auto; transition: transform 0.16s ease; }
 .mi-card:hover .mi-card-go,
 .mi-card-main:hover .mi-card-go { transform: translate(2px, -2px); color: var(--primary-ink, var(--primary)); }
+
+/* ---- Page Readiness — a live example of every page, gallery-style ---- */
+.mi-page-grid {
+  display: grid; gap: 26px 14px;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+}
+.mi-page-card { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.mi-pp { display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: inherit; min-width: 0; }
+.mi-pp-view {
+  position: relative; display: block; width: 100%; aspect-ratio: 16 / 10;
+  overflow: hidden; border-radius: 14px; border: 1px solid var(--border);
+  background: var(--surface-2, var(--surface)); box-shadow: var(--shadow-1);
+  container-type: inline-size;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+html.dark .mi-pp-view { border-color: rgba(255,255,255,0.10); }
+.mi-page-card:hover .mi-pp-view {
+  transform: translateY(-3px); box-shadow: var(--shadow-2);
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+}
+.mi-pp-shot {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: top center; display: block;
+  pointer-events: none; z-index: 0; transition: opacity 0.22s ease;
+}
+.mi-pp-frame {
+  position: absolute; top: 0; left: 0; width: 1440px; height: 900px; border: 0;
+  transform-origin: top left; transform: scale(var(--pp-scale, calc(100cqw / 1440px)));
+  background: var(--surface); z-index: 1; opacity: 0;
+  transition: opacity 0.25s ease; pointer-events: none;
+}
+.mi-page-card.is-live .mi-pp-frame { opacity: 1; }
+.mi-page-card.is-live .mi-pp-shot { opacity: 0; }
+.mi-pp-meta { display: flex; flex-direction: column; gap: 1px; padding: 0 2px; min-width: 0; }
+.mi-pp-name {
+  font-family: 'WISE Digits', 'Noto Serif', serif; font-weight: 800; font-size: 0.9rem;
+  letter-spacing: -0.01em; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mi-pp:hover .mi-pp-name { color: var(--primary-ink, var(--primary)); }
+.mi-pp-badge {
+  font-family: inherit; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--primary); vertical-align: 1px;
+}
+html.dark .mi-pp-badge { color: var(--primary-bright, #93C5FD); }
+.mi-pp-href {
+  font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-subtle);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mi-page-card > .dsc-ready-row { margin: 0; padding: 0 2px; justify-content: flex-start; }
 
 /* ---- Broken-link state (flagged live by runLinkValidation) ---- */
 .mi-card--broken {

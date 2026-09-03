@@ -6270,6 +6270,625 @@
     })();
   </script>
 
+  <style>
+    /* =====================================================================
+       Additional chart types (analytics-types.html only).
+       Ten common analytics charts the portfolio gallery was missing —
+       line/trend, stacked columns, stacked area, histogram, KPI gauges,
+       combo dual-axis, waterfall, bubble, a U.S. tile-grid choropleth, and
+       box-and-whisker. All share the .att-card shell, the WISE status-colour
+       tokens (so light/dark parity is automatic), count-up numerics, an
+       entrance sweep on scroll-in, and click-to-replay.
+    ===================================================================== */
+    .atx-card .att-intro { margin-bottom: 10px; }
+    .atx-stage { position: relative; width: 100%; margin-top: 6px; cursor: pointer; outline: none; }
+    .atx-stage:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; border-radius: 10px; }
+    .atx-svg { display: block; width: 100%; height: auto; overflow: visible; }
+    .atx-grid { stroke: color-mix(in srgb, var(--border) 65%, transparent); stroke-width: 1; }
+    html.dark .atx-grid { stroke: rgba(255, 255, 255, 0.08); }
+    .atx-axis { stroke: var(--border); stroke-width: 1.25; }
+    html.dark .atx-axis { stroke: rgba(255, 255, 255, 0.16); }
+    .atx-tick { fill: var(--text-muted); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .atx-tick--x { font-size: 10.5px; }
+    .atx-alabel { fill: var(--text-subtle); font-size: 11px; font-weight: 800; letter-spacing: .02em; }
+    .atx-dot-lbl { fill: var(--text); font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .atx-white-lbl { fill: #fff; font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+    /* Bars grow from their own base for the entrance / replay sweep. */
+    .atx-bar { transform-box: fill-box; transform-origin: bottom; }
+    .atx-stage.is-in .atx-bar { animation: atxRise .72s cubic-bezier(.22,1,.36,1) both; }
+    @keyframes atxRise { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+
+    .atx-pop { transform-box: fill-box; transform-origin: center; opacity: 0; }
+    .atx-stage.is-in .atx-pop { animation: atxPop .55s cubic-bezier(.22,1,.36,1) both; }
+    @keyframes atxPop { from { opacity: 0; transform: scale(.15); } 60% { opacity: 1; } to { opacity: 1; transform: scale(1); } }
+
+    .atx-fade { opacity: 0; }
+    .atx-stage.is-in .atx-fade { animation: atxFade .5s ease both; }
+    @keyframes atxFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+    .atx-line { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .atx-stage.is-in .atx-bar,
+      .atx-stage.is-in .atx-pop,
+      .atx-stage.is-in .atx-fade,
+      .atx-stage.is-in .atx-geo-tile { animation: none; }
+      .atx-pop, .atx-fade, .atx-geo-tile { opacity: 1; }
+    }
+
+    /* KPI gauges */
+    .atx-gauges { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; }
+    .atx-gauge { flex: 1 1 180px; max-width: 240px; display: flex; flex-direction: column; align-items: center; }
+    .atx-gauge svg { width: 100%; height: auto; overflow: visible; display: block; }
+    .atx-gauge-track { fill: none; stroke: color-mix(in srgb, var(--border) 70%, var(--surface)); stroke-width: 14; stroke-linecap: round; }
+    html.dark .atx-gauge-track { stroke: rgba(255, 255, 255, 0.09); }
+    .atx-gauge-val { fill: none; stroke-width: 14; stroke-linecap: round; }
+    .atx-gauge-num { fill: var(--text); font-size: 27px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .atx-gauge-notch { stroke: var(--text); stroke-width: 2.5; opacity: .55; }
+    .atx-gauge-label { margin-top: 2px; font-size: 13px; font-weight: 800; color: var(--text); text-align: center; }
+    .atx-gauge-target { font-size: 11.5px; color: var(--text-subtle); font-weight: 600; }
+
+    /* U.S. tile-grid choropleth */
+    .atx-geo { display: grid; grid-template-columns: repeat(11, 1fr); gap: 6px; max-width: 620px; margin: 4px auto 0; }
+    .atx-geo-tile {
+      aspect-ratio: 1 / 1; border-radius: 8px; opacity: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,.14);
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .atx-stage.is-in .atx-geo-tile { animation: atxPopH .48s cubic-bezier(.22,1,.36,1) both; }
+    @keyframes atxPopH { from { opacity: 0; transform: scale(.3); } to { opacity: 1; transform: scale(1); } }
+    .atx-geo-tile:hover { transform: scale(1.12); box-shadow: var(--shadow-2); z-index: 2; }
+    .atx-geo-ab { font-size: 11px; font-weight: 800; line-height: 1; }
+    .atx-geo-v { font-size: 9.5px; font-weight: 700; opacity: .92; margin-top: 2px; font-variant-numeric: tabular-nums; }
+
+    .atx-note { margin: 14px 0 0; font-size: 12px; color: var(--text-subtle); line-height: 1.55; }
+  </style>
+
+  <script>
+    /* =====================================================================
+       Ten additional analytics chart types (analytics-types.html only).
+       Each is a self-contained .att-card appended into the dashboard's .dash
+       column, mirroring the Performance Matrix / funnel mount pattern.
+    ===================================================================== */
+    (function () {
+      const NS = 'http://www.w3.org/2000/svg';
+      const reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+      const escq = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      const NUM = (n) => Math.round(n).toLocaleString('en-US');
+
+      function m(tag, attrs, txt) {
+        const e = document.createElementNS(NS, tag);
+        if (attrs) for (const k in attrs) e.setAttribute(k, attrs[k]);
+        if (txt != null) e.textContent = txt;
+        return e;
+      }
+      const add = (parent, child) => (parent.appendChild(child), child);
+
+      function countUp(node, to, dur, fmtFn) {
+        const F = fmtFn || NUM;
+        if (reduced || !node) { if (node) node.textContent = F(to); return; }
+        const st = performance.now();
+        (function tick(now) {
+          const p = Math.min(1, (now - st) / dur);
+          node.textContent = F(to * (1 - Math.pow(1 - p, 3)));
+          if (p < 1) requestAnimationFrame(tick);
+        })(st);
+      }
+
+      /* Status-tier fill for a 0–100 value — the same five-stop scale every
+         other WISE chart uses, so a score's colour is identical everywhere. */
+      function tierVar(v) {
+        return v >= 80 ? 'var(--chart-status-excellent)'
+          : v >= 60 ? 'var(--chart-status-good)'
+          : v >= 40 ? 'var(--chart-status-okay)'
+          : v >= 20 ? 'var(--chart-status-fair)'
+          : 'var(--chart-status-poor)';
+      }
+      const TIER_LEGEND = [
+        ['var(--chart-status-excellent)', 'Excellent'],
+        ['var(--chart-status-good)', 'Good'],
+        ['var(--chart-status-okay)', 'OK'],
+        ['var(--chart-status-fair)', 'Fair'],
+        ['var(--chart-status-poor)', 'Poor'],
+      ];
+      const dotsHTML = (pairs) => pairs.map((p) =>
+        `<span><span class="att-dot" style="background:${p[0]}"></span>${escq(p[1])}</span>`).join('');
+
+      function card(opts) {
+        const s = document.createElement('section');
+        s.className = 'att-card atx-card';
+        s.id = opts.id;
+        s.innerHTML =
+          `<div class="att-head">` +
+          (opts.eyebrow ? `<span class="att-eyebrow">${escq(opts.eyebrow)}</span>` : '') +
+          `<span class="att-title">${escq(opts.title)}</span></div>` +
+          `<p class="att-intro">${escq(opts.intro)}</p>` +
+          `<div class="atx-stage" tabindex="0" role="img" aria-label="${escq(opts.title)}"></div>` +
+          (opts.legend ? `<div class="att-legend atx-legend"><div class="att-legend-dots">${opts.legend}</div></div>` : '') +
+          (opts.note ? `<p class="atx-note">${escq(opts.note)}</p>` : '');
+        return s;
+      }
+
+      /* One shared player. `cfg` collects the animated primitives; toggling
+         `.is-in` drives the CSS bar/pop/fade sweeps, and JS drives the line
+         draws, area wipes, gauge arcs and count-ups so replay always restarts. */
+      function makePlay(stage, cfg) {
+        cfg = cfg || {};
+        const draws = cfg.draws || [], wipes = cfg.wipes || [], gauges = cfg.gauges || [], nums = cfg.nums || [];
+        return function play(snap) {
+          if (snap || reduced) {
+            stage.classList.add('is-in');
+            draws.forEach((d) => { d.node.style.transition = 'none'; d.node.style.strokeDasharray = d.len; d.node.style.strokeDashoffset = '0'; });
+            wipes.forEach((w) => { w.style.transition = 'none'; w.style.clipPath = 'none'; });
+            gauges.forEach((g) => { g.node.style.transition = 'none'; g.node.style.strokeDashoffset = String(100 - g.value); });
+            nums.forEach((n) => { n.node.textContent = (n.fmt || NUM)(n.to); });
+            return;
+          }
+          stage.classList.remove('is-in');
+          draws.forEach((d) => { d.node.style.transition = 'none'; d.node.style.strokeDasharray = d.len; d.node.style.strokeDashoffset = d.len; });
+          wipes.forEach((w) => { w.style.transition = 'none'; w.style.clipPath = 'inset(0 100% 0 0)'; });
+          gauges.forEach((g) => { g.node.style.transition = 'none'; g.node.style.strokeDashoffset = '100'; });
+          nums.forEach((n) => { n.node.textContent = (n.fmt || NUM)(0); });
+          void stage.offsetWidth;
+          stage.classList.add('is-in');
+          draws.forEach((d) => { d.node.style.transition = 'stroke-dashoffset 1.15s cubic-bezier(.22,1,.36,1)'; d.node.style.transitionDelay = (d.delay || 0) + 'ms'; d.node.style.strokeDashoffset = '0'; });
+          wipes.forEach((w) => { w.style.transition = 'clip-path 1.15s cubic-bezier(.22,1,.36,1)'; w.style.transitionDelay = (w._delay || 0) + 'ms'; w.style.clipPath = 'inset(0 0 0 0)'; });
+          gauges.forEach((g) => { g.node.style.transition = 'stroke-dashoffset 1.2s cubic-bezier(.22,1,.36,1)'; g.node.style.strokeDashoffset = String(100 - g.value); });
+          nums.forEach((n) => { setTimeout(() => countUp(n.node, n.to, n.dur || 1300, n.fmt), n.delay || 0); });
+        };
+      }
+
+      function wire(cardEl, play) {
+        const stage = cardEl.querySelector('.atx-stage');
+        stage.addEventListener('click', () => play());
+        stage.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); play(); } });
+        const finalize = () => play(true);
+        window.addEventListener('wise:finalize-charts', finalize);
+        window.addEventListener('beforeprint', finalize);
+        if (window.IntersectionObserver) {
+          const io = new IntersectionObserver((entries) => {
+            entries.forEach((en) => { if (en.isIntersecting) { play(); io.disconnect(); } });
+          }, { threshold: 0.18 });
+          io.observe(cardEl);
+        } else { play(); }
+      }
+
+      const polyLen = (pts) => { let L = 0; for (let i = 1; i < pts.length; i++) L += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); return L; };
+      const ptsStr = (pts) => pts.map((p) => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+
+      /* ---- shared sample data ---------------------------------------- */
+      const MO = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const M24 = []; for (let i = 0; i < 24; i++) M24.push(MO[i % 12] + " '" + (24 + Math.floor(i / 12)));
+
+      /* Cartesian frame helper: gridlines + y-ticks + L-shaped axis. */
+      function frame(svg, A, vmin, vmax, ticks, fmtT) {
+        for (let i = 0; i <= ticks; i++) {
+          const v = vmin + (vmax - vmin) * i / ticks;
+          const y = A.y0 - (A.y0 - A.y1) * i / ticks;
+          add(svg, m('line', { class: 'atx-grid', x1: A.x0, y1: y.toFixed(1), x2: A.x1, y2: y.toFixed(1) }));
+          add(svg, m('text', { class: 'atx-tick', 'text-anchor': 'end', x: A.x0 - 8, y: (y + 4).toFixed(1) }, fmtT ? fmtT(v) : Math.round(v)));
+        }
+        add(svg, m('line', { class: 'atx-axis', x1: A.x0, y1: A.y1, x2: A.x0, y2: A.y0 }));
+        add(svg, m('line', { class: 'atx-axis', x1: A.x0, y1: A.y0, x2: A.x1, y2: A.y0 }));
+      }
+
+      /* ================= 1. Line / time-series ======================== */
+      function buildLine() {
+        const W = 720, H = 320, A = { x0: 44, x1: 690, y0: 278, y1: 18 };
+        const vmin = 40, vmax = 85;
+        const xf = (i) => A.x0 + (A.x1 - A.x0) * i / 23;
+        const yf = (v) => A.y0 - (A.y0 - A.y1) * (v - vmin) / (vmax - vmin);
+        const series = [
+          { name: 'Overall WISEscore', color: 'var(--primary)', w: 3.4, data: [58,57,59,60,61,60,62,63,64,63,65,66,66,68,67,69,70,71,70,72,73,73,74,75] },
+          { name: 'Nutrient Quality', color: 'var(--chart-status-excellent)', w: 2.4, data: [62,63,63,64,66,65,67,68,68,70,71,70,72,73,73,74,75,76,76,77,78,78,79,80] },
+          { name: 'Ingredient Quality', color: 'var(--chart-status-okay)', w: 2.4, data: [49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,63,64,65,66,67,68,69,70,71] },
+        ];
+        const el = card({
+          id: 'atx-line-card', eyebrow: 'Trend', title: 'Portfolio WISEscore over time',
+          intro: 'Average WISEscore across the whole portfolio, month by month, split by the three scoring pillars. The most-requested view of all: are we trending up? Click to replay.',
+          legend: dotsHTML(series.map((s) => [s.color, s.name])),
+          note: 'Sample data: 24 months of blended portfolio averages.',
+        });
+        const stage = el.querySelector('.atx-stage');
+        const svg = add(stage, m('svg', { class: 'atx-svg', viewBox: `0 0 ${W} ${H}` }));
+        frame(svg, A, vmin, vmax, 5);
+        for (let i = 0; i < 24; i += 3) add(svg, m('text', { class: 'atx-tick atx-tick--x', 'text-anchor': 'middle', x: xf(i), y: A.y0 + 20 }, M24[i]));
+        const draws = [], nums = [];
+        series.forEach((s) => {
+          const pts = s.data.map((v, i) => [xf(i), yf(v)]);
+          const line = add(svg, m('polyline', { class: 'atx-line', points: ptsStr(pts), stroke: s.color, 'stroke-width': s.w }));
+          draws.push({ node: line, len: polyLen(pts) });
+          const last = pts[pts.length - 1];
+          add(svg, m('circle', { class: 'atx-pop', cx: last[0], cy: last[1], r: 4, fill: s.color }));
+          const t = add(svg, m('text', { class: 'atx-dot-lbl', 'text-anchor': 'end', x: last[0] - 8, y: last[1] - 8, fill: s.color }, '0'));
+          nums.push({ node: t, to: s.data[s.data.length - 1], dur: 1200, delay: 400 });
+        });
+        wire(el, makePlay(stage, { draws, nums }));
+        return el;
+      }
+
+      /* ================= 2. Stacked column ============================ */
+      function buildColumns() {
+        const W = 720, H = 320, A = { x0: 44, x1: 700, y0: 272, y1: 18 };
+        const cats = ["Q1 '24", "Q2 '24", "Q3 '24", "Q4 '24", "Q1 '25", "Q2 '25", "Q3 '25", "Q4 '25"];
+        const segs = [
+          { key: 'Non-UPF', color: 'var(--chart-status-excellent)', data: [120,140,165,180,210,240,265,300] },
+          { key: 'Minimally UPF', color: 'var(--chart-status-okay)', data: [80,85,90,88,95,100,98,92] },
+          { key: 'UPF', color: 'var(--chart-status-poor)', data: [60,55,52,48,44,40,36,30] },
+        ];
+        const vmax = 450;
+        const yf = (v) => A.y0 - (A.y0 - A.y1) * v / vmax;
+        const n = cats.length, band = (A.x1 - A.x0) / n, bw = band * 0.56;
+        const el = card({
+          id: 'atx-col-card', eyebrow: 'Comparison', title: 'Products analyzed each quarter',
+          intro: 'Volume analyzed per quarter, stacked by UPF classification. Read the full height for throughput, each band for the mix. Click to replay.',
+          legend: dotsHTML(segs.map((s) => [s.color, s.key])),
+          note: 'Sample data: eight quarters of intake, split three ways.',
+        });
+        const stage = el.querySelector('.atx-stage');
+        const svg = add(stage, m('svg', { class: 'atx-svg', viewBox: `0 0 ${W} ${H}` }));
+        frame(svg, A, 0, vmax, 3);
+        cats.forEach((c, i) => {
+          const cx = A.x0 + band * i + band / 2;
+          add(svg, m('text', { class: 'atx-tick atx-tick--x', 'text-anchor': 'middle', x: cx, y: A.y0 + 20 }, c));
+          let acc = 0;
+          segs.forEach((s, si) => {
+            const v = s.data[i];
+            const yTop = yf(acc + v), yBot = yf(acc);
+            add(svg, m('rect', { class: 'atx-bar', x: cx - bw / 2, y: yTop, width: bw, height: (yBot - yTop).toFixed(1), fill: s.color, rx: 2, style: `animation-delay:${i * 70 + si * 60}ms` }));
+            acc += v;
+          });
+          const tt = add(svg, m('text', { class: 'atx-dot-lbl', 'text-anchor': 'middle', x: cx, y: yf(acc) - 8 }, String(acc)));
+          tt.classList.add('atx-fade'); tt.style.animationDelay = (i * 70 + 260) + 'ms';
+        });
+        wire(el, makePlay(stage));
+        return el;
+      }
+
+      /* ================= 3. Stacked area (100%) ======================= */
+      function buildArea() {
+        const W = 720, H = 320, A = { x0: 44, x1: 700, y0: 272, y1: 18 };
+        const xf = (i) => A.x0 + (A.x1 - A.x0) * i / 23;
+        const yf = (p) => A.y0 - (A.y0 - A.y1) * p / 100;
+        const nonPct = [42,43,44,45,46,47,48,49,50,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66];
+        const upfPct  = [34,33,33,32,31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12];
+        const bands = [
+          { key: 'Non-UPF', color: 'var(--chart-status-excellent)', lo: () => 0, hi: (i) => nonPct[i] },
+          { key: 'Minimally UPF', color: 'var(--chart-status-okay)', lo: (i) => nonPct[i], hi: (i) => 100 - upfPct[i] },
+          { key: 'UPF', color: 'var(--chart-status-poor)', lo: (i) => 100 - upfPct[i], hi: () => 100 },
+        ];
+        const el = card({
+          id: 'atx-area-card', eyebrow: 'Composition', title: 'Portfolio composition over time',
+          intro: 'The share of the catalog in each UPF class, as a 100% stacked area. Watch the Non-UPF band widen as the portfolio cleans up. Click to replay.',
+          legend: dotsHTML(bands.map((b) => [b.color, b.key])),
+          note: 'Sample data: monthly composition over 24 months (shares sum to 100%).',
+        });
+        const stage = el.querySelector('.atx-stage');
+        const svg = add(stage, m('svg', { class: 'atx-svg', viewBox: `0 0 ${W} ${H}` }));
+        frame(svg, A, 0, 100, 4, (v) => Math.round(v) + '%');
+        for (let i = 0; i < 24; i += 3) add(svg, m('text', { class: 'atx-tick atx-tick--x', 'text-anchor': 'middle', x: xf(i), y: A.y0 + 20 }, M24[i]));
+        const wrap = add(svg, m('g', {}));
+        bands.forEach((b) => {
+          const top = [], bot = [];
+          for (let i = 0; i < 24; i++) { top.push([xf(i), yf(b.hi(i))]); bot.push([xf(i), yf(b.lo(i))]); }
+          const poly = top.concat(bot.reverse());
+          add(wrap, m('polygon', { points: ptsStr(poly), fill: b.color, 'fill-opacity': 0.9, stroke: 'var(--surface)', 'stroke-width': 1 }));
+        });
+        wire(el, makePlay(stage, { wipes: [wrap] }));
+        return el;
+      }
+
+      /* ================= 4. Histogram ================================= */
+      function buildHistogram() {
+        const W = 720, H = 320, A = { x0: 44, x1: 700, y0: 272, y1: 18 };
+        const bins = [
+          { lbl: '0–9', v: 8 }, { lbl: '10–19', v: 14 }, { lbl: '20–29', v: 26 }, { lbl: '30–39', v: 45 },
+          { lbl: '40–49', v: 78 }, { lbl: '50–59', v: 132 }, { lbl: '60–69', v: 176 }, { lbl: '70–79', v: 149 },
+          { lbl: '80–89', v: 92 }, { lbl: '90–100', v: 41 },
+        ];
+        const mid = [4, 14, 24, 34, 44, 54, 64, 74, 84, 95];
+        const vmax = 200;
+        const yf = (v) => A.y0 - (A.y0 - A.y1) * v / vmax;
+        const n = bins.length, band = (A.x1 - A.x0) / n, bw = band * 0.82;
+        const el = card({
+          id: 'atx-hist-card', eyebrow: 'Distribution', title: 'WISEscore distribution',
+          intro: 'How the catalog\u2019s WISEscores are distributed, binned in tens. Bars are coloured by the status tier the bin falls in. Click to replay.',
+          legend: dotsHTML(TIER_LEGEND),
+          note: 'Sample data: 761 analyzed products across ten score bins.',
+        });
+        const stage = el.querySelector('.atx-stage');
+        const svg = add(stage, m('svg', { class: 'atx-svg', viewBox: `0 0 ${W} ${H}` }));
+        frame(svg, A, 0, vmax, 4);
+        const nums = [];
+        bins.forEach((b, i) => {
+          const cx = A.x0 + band * i + band / 2;
+          const yTop = yf(b.v);
+          add(svg, m('rect', { class: 'atx-bar', x: cx - bw / 2, y: yTop, width: bw, height: (A.y0 - yTop).toFixed(1), fill: tierVar(mid[i]), rx: 2, style: `animation-delay:${i * 55}ms` }));
+          add(svg, m('text', { class: 'atx-tick atx-tick--x', 'text-anchor': 'middle', x: cx, y: A.y0 + 20 }, b.lbl));
+          const tt = add(svg, m('text', { class: 'atx-dot-lbl', 'text-anchor': 'middle', x: cx, y: yTop - 8 }, '0'));
+          tt.classList.add('atx-fade'); tt.style.animationDelay = (i * 55 + 200) + 'ms';
+          nums.push({ node: tt, to: b.v, dur: 1100, delay: i * 55 + 200 });
+        });
+        wire(el, makePlay(stage, { nums }));
+        return el;
+      }
+
+      /* ================= 5. KPI gauges ================================ */
+      function buildGauges() {
+        const data = [
+          { label: 'Products verified', value: 68, suffix: '%', target: 75 },
+          { label: 'Avg WISEscore', value: 71, suffix: '', target: 80 },
+          { label: 'GRAS coverage', value: 84, suffix: '%', target: 90 },
+        ];
+        const el = card({
+          id: 'atx-gauge-card', eyebrow: 'KPIs', title: 'Headline metrics vs. target',
+          intro: 'Three portfolio KPIs on speedometer dials. Each arc fills to the current value and is coloured by its status tier; the notch marks the goal. Click to replay.',
+          note: 'Sample data: current portfolio KPIs against internal targets.',
+        });
+        const stage = el.querySelector('.atx-stage');
+        const wrapEl = document.createElement('div');
+        wrapEl.className = 'atx-gauges';
+        stage.appendChild(wrapEl);
+        const gauges = [], nums = [];
+        const cx = 90, cy = 100, r = 72;
+        const pt = (v, rr) => { const ang = Math.PI * (1 - v / 100); return [cx + rr * Math.cos(ang), cy - rr * Math.sin(ang)]; };
+        data.forEach((g) => {
+          const block = document.createElement('div');
+          block.className = 'atx-gauge';
+          wrapEl.appendChild(block);
+          const svg = add(block, m('svg', { viewBox: '0 0 180 112' }));
+          const arcPath = `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`;
+          add(svg, m('path', { class: 'atx-gauge-track', d: arcPath }));
+          const val = add(svg, m('path', { class: 'atx-gauge-val', d: arcPath, pathLength: 100, stroke: tierVar(g.value), 'stroke-dasharray': '100', 'stroke-dashoffset': '100' }));
+          const ip = pt(g.target, r - 11), op = pt(g.target, r + 5);
+          add(svg, m('line', { class: 'atx-gauge-notch', x1: ip[0].toFixed(1), y1: ip[1].toFixed(1), x2: op[0].toFixed(1), y2: op[1].toFixed(1) }));
+          const numT = add(svg, m('text', { class: 'atx-gauge-num', 'text-anchor': 'middle', x: cx, y: cy - 20 }, '0'));
+          gauges.push({ node: val, value: g.value });
+          nums.push({ node: numT, to: g.value, dur: 1300, fmt: (v) => NUM(v) + g.suffix });
+          const lab = document.createElement('div'); lab.className = 'atx-gauge-label'; lab.textContent = g.label; block.appendChild(lab);
+          const tgt = document.createElement('div'); tgt.className = 'atx-gauge-target'; tgt.textContent = 'Target ' + g.target + g.suffix; block.appendChild(tgt);
+        });
+        wire(el, makePlay(stage, { gauges, nums }));
+        return el;
+      }
+
+      /* ================= 6. Combo (bars + line, dual axis) ============ */
+      function buildCombo() {
+        const W = 720, H = 320, A = { x0: 48, x1: 672, y0: 272, y1: 18 };
+        const cats = MO.slice();
+        const barsD = [45,52,60,58,71,80,76,88,95,102,110,124];
+        const lineD = [61,62,63,65,64,67,69,70,71,72,73,74];
+        const leftMax = 140, rightMax = 100;
+        const yL = (v) => A.y0 - (A.y0 - A.y1) * v / leftMax;
+        const yR = (v) => A.y0 - (A.y0 - A.y1) * v / rightMax;
+        const n = cats.length, band = (A.x1 - A.x0) / n, bw = band * 0.5;
+        const xC = (i) => A.x0 + band * i + band / 2;
+        const el = card({
+          id: 'atx-combo-card', eyebrow: 'Dual axis', title: 'Volume vs. average score',
+          intro: 'Monthly products analyzed (bars, left axis) against the average WISEscore they earned (line, right axis). Two scales, one story. Click to replay.',
+          legend: dotsHTML([['var(--primary)', 'Products analyzed'], ['var(--chart-status-excellent)', 'Avg WISEscore']]),
+          note: 'Sample data: 12 months of intake volume and mean score.',
+        });
+        const stage = el.querySelector('.atx-stage');
+        const svg = add(stage, m('svg', { class: 'atx-svg', viewBox: `0 0 ${W} ${H}` }));
+        for (let i = 0; i <= 4; i++) {
+          const y = A.y0 - (A.y0 - A.y1) * i / 4;
+          add(svg, m('line', { class: 'atx-grid', x1: A.x0, y1: y.toFixed(1), x2: A.x1, y2: y.toFixed(1) }));
+          add(svg, m('text', { class: 'atx-tick', 'text-anchor': 'end', x: A.x0 - 8, y: (y + 4).toFixed(1) }, Math.round(leftMax * i / 4)));
+          add(svg, m('text', { class: 'atx-tick', 'text-anchor': 'start', x: A.x1 + 8, y: (y + 4).toFixed(1) }, Math.round(rightMax * i / 4)));
+        }
+        add(svg, m('line', { class: 'atx-axis', x1: A.x0, y1: A.y1, x2: A.x0, y2: A.y0 }));
+        add(svg, m('line', { class: 'atx-axis', x1: A.x1, y1: A.y1, x2: A.x1, y2: A.y0 }));
+        add(svg, m('line', { class: 'atx-axis', x1: A.x0, y1: A.y0, x2: A.x1, y2: A.y0 }));
+        cats.forEach((c, i) => {
+          const cx = xC(i), yTop = yL(barsD[i]);
+          add(svg, m('rect', { class: 'atx-bar', x: cx - bw / 2, y: yTop, width: bw, height: (A.y0 - yTop).toFixed(1), fill: 'var(--primary)', 'fill-opacity': 0.85, rx: 2, style: `animation-delay:${i * 55}ms` }));
+          add(svg, m('text', { class: 'atx-tick atx-tick--x', 'text-anchor': 'middle', x: cx, y: A.y0 + 20 }, c));
+        });
+        const pts = lineD.map((v, i) => [xC(i), yR(v)]);
+        const line = add(svg, m('polyline', { class: 'atx-line', points: ptsStr(pts), stroke: 'var(--chart-status-excellent)', 'stroke-width': 3 }));
+        pts.forEach((p, i) => { const c = m('circle', { class: 'atx-pop', cx: p[0], cy: p[1], r: 4, fill: 'var(--chart-status-excellent)' }); c.style.animationDelay = (700 + i * 40) + 'ms'; add(svg, c); });
+        wire(el, makePlay(stage, { draws: [{ node: line, len: polyLen(pts), delay: 300 }] }));
+        return el;
+      }
+
+      /* ================= 7. Waterfall ================================= */
+      function buildWaterfall() {
+        const W = 720, H = 320, A = { x0: 44, x1: 700, y0: 272, y1: 18 };
+        const steps = [
+          { lbl: 'Base', delta: 50, type: 'base' },
+          { lbl: 'Nutrient', delta: 12, type: 'up' },
+          { lbl: 'Ingredient', delta: 9, type: 'up' },
+          { lbl: 'Processing', delta: -7, type: 'down' },
+          { lbl: 'Additives', delta: -5, type: 'down' },
+          { lbl: 'Fortify', delta: 4, type: 'up' },
+          { lbl: 'Sugar', delta: -3, type: 'down' },
+          { lbl: 'Final', type: 'total' },
+        ];
+        const vmax = 70;
+        const yf = (v) => A.y0 - (A.y0 - A.y1) * v / vmax;
+        const n = steps.length, band = (A.x1 - A.x0) / n, bw = band * 0.56;
+        const xC = (i) => A.x0 + band * i + band / 2;
+        const UP = 'var(--chart-status-excellent)', DOWN = 'var(--chart-status-poor)', TOT = 'var(--primary)';
+        const el = card({
+          id: 'atx-waterfall-card', eyebrow: 'Bridge', title: 'How the average WISEscore is built',
+          intro: 'Start from a baseline, then add what each factor contributes and subtract what drags it down, landing on the final average. Green lifts, red cuts. Click to replay.',
+          legend: dotsHTML([[UP, 'Adds to score'], [DOWN, 'Reduces score'], [TOT, 'Baseline / total']]),
+          note: 'Sample data: pillar-level contributions to a 60-point portfolio average.',
+        });
+        const stage = el.querySelector('.atx-stage');
+        const svg = add(stage, m('svg', { class: 'atx-svg', viewBox: `0 0 ${W} ${H}` }));
+        frame(svg, A, 0, vmax, 7);
+        let run = 0;
+        steps.forEach((s, i) => {
+          const cx = xC(i);
+          let lo, hi, color, label;
+          if (s.type === 'base') { lo = 0; hi = s.delta; run = s.delta; color = TOT; label = '+' + s.delta; }
+          else if (s.type === 'total') { lo = 0; hi = run; color = TOT; label = String(run); }
+          else { color = s.delta >= 0 ? UP : DOWN; const start = run; run += s.delta; lo = Math.min(start, run); hi = Math.max(start, run); label = (s.delta >= 0 ? '+' : '\u2212') + Math.abs(s.delta); }
+          const yTop = yf(hi), yBot = yf(lo);
+          add(svg, m('rect', { class: 'atx-bar', x: cx - bw / 2, y: yTop, width: bw, height: Math.max(2, yBot - yTop).toFixed(1), fill: color, rx: 2, style: `animation-delay:${i * 90}ms` }));
+          if (i < n - 1) { const cn = m('line', { class: 'atx-grid', x1: cx + bw / 2, y1: yf(run), x2: xC(i + 1) - bw / 2, y2: yf(run), 'stroke-dasharray': '3 3' }); cn.classList.add('atx-fade'); cn.style.animationDelay = (i * 90 + 300) + 'ms'; add(svg, cn); }
+          add(svg, m('text', { class: 'atx-tick atx-tick--x', 'text-anchor': 'middle', x: cx, y: A.y0 + 20 }, s.lbl));
+          const tt = add(svg, m('text', { class: 'atx-dot-lbl', 'text-anchor': 'middle', x: cx, y: yTop - 8, fill: color }, label));
+          tt.classList.add('atx-fade'); tt.style.animationDelay = (i * 90 + 240) + 'ms';
+        });
+        wire(el, makePlay(stage));
+        return el;
+      }
+
+      /* ================= 8. Bubble ==================================== */
+      function buildBubble() {
+        const W = 720, H = 340, A = { x0: 48, x1: 700, y0: 288, y1: 18 };
+        const xf = (v) => A.x0 + (A.x1 - A.x0) * v / 100;
+        const yf = (v) => A.y0 - (A.y0 - A.y1) * v / 100;
+        const CAT = {
+          'Bars': 'var(--chart-status-excellent)', 'Cereals': 'var(--chart-status-okay)',
+          'Snacks': 'var(--chart-status-poor)', 'Beverages': 'var(--primary)', 'Dairy': 'var(--chart-status-good)',
+        };
+        const pts = [
+          { n: 'Dark Choc Date Bar', x: 22, y: 88, v: 4200, c: 'Bars' },
+          { n: 'Maple Granola Bar', x: 38, y: 74, v: 3100, c: 'Bars' },
+          { n: 'Almond Sea-Salt Bar', x: 29, y: 82, v: 3500, c: 'Bars' },
+          { n: 'Honey Oat Cereal', x: 55, y: 58, v: 5200, c: 'Cereals' },
+          { n: 'Frosted Corn Flakes', x: 78, y: 41, v: 6800, c: 'Cereals' },
+          { n: 'Bran Flakes', x: 48, y: 61, v: 3300, c: 'Cereals' },
+          { n: 'Cheddar Puffs', x: 88, y: 29, v: 5400, c: 'Snacks' },
+          { n: 'Sea-Salt Chips', x: 64, y: 47, v: 4700, c: 'Snacks' },
+          { n: 'Trail Mix', x: 44, y: 63, v: 2900, c: 'Snacks' },
+          { n: 'Sparkling Yuzu', x: 30, y: 71, v: 3600, c: 'Beverages' },
+          { n: 'Cola Classic', x: 82, y: 33, v: 9200, c: 'Beverages' },
+          { n: 'Protein Shake', x: 70, y: 44, v: 2600, c: 'Beverages' },
+          { n: 'Oat Milk', x: 34, y: 69, v: 4100, c: 'Dairy' },
+          { n: 'Greek Yogurt', x: 26, y: 79, v: 3800, c: 'Dairy' },
+        ];
+        const rf = (v) => 7 + Math.sqrt(v) / 7;
+        const el = card({
+          id: 'atx-bubble-card', eyebrow: 'Correlation', title: 'Score vs. processing, sized by volume',
+          intro: 'Every product placed by processing level (x) and WISEscore (y), with bubble size showing sales volume and colour showing category. Three dimensions in one plot. Click to replay.',
+          legend: dotsHTML(Object.keys(CAT).map((k) => [CAT[k], k])),
+          note: 'Sample data: 14 products; bubble area is proportional to units sold.',
+        });
+        const stage = el.querySelector('.atx-stage');
+        const svg = add(stage, m('svg', { class: 'atx-svg', viewBox: `0 0 ${W} ${H}` }));
+        frame(svg, A, 0, 100, 4);
+        for (let i = 0; i <= 4; i++) { const x = A.x0 + (A.x1 - A.x0) * i / 4; add(svg, m('text', { class: 'atx-tick atx-tick--x', 'text-anchor': 'middle', x: x, y: A.y0 + 20 }, i * 25)); }
+        add(svg, m('text', { class: 'atx-alabel', 'text-anchor': 'middle', x: (A.x0 + A.x1) / 2, y: A.y0 + 38 }, 'Processing level \u2192'));
+        add(svg, m('text', { class: 'atx-alabel', 'text-anchor': 'middle', x: 14, y: (A.y0 + A.y1) / 2, transform: `rotate(-90 14 ${(A.y0 + A.y1) / 2})` }, 'WISEscore \u2192'));
+        pts.slice().sort((a, b) => b.v - a.v).forEach((p, i) => {
+          const c = m('circle', { class: 'atx-pop', cx: xf(p.x).toFixed(1), cy: yf(p.y).toFixed(1), r: rf(p.v).toFixed(1), fill: CAT[p.c], 'fill-opacity': 0.62, stroke: CAT[p.c], 'stroke-width': 1.5 });
+          c.style.animationDelay = (i * 60) + 'ms';
+          add(svg, c);
+          const t = m('title', {}, `${p.n} \u2014 processing ${p.x}, score ${p.y}, ${NUM(p.v)} units`);
+          c.appendChild(t);
+        });
+        wire(el, makePlay(stage));
+        return el;
+      }
+
+      /* ================= 9. U.S. tile-grid choropleth ================= */
+      function buildGeo() {
+        const STATES = [
+          ['AK',0,0,61],['ME',0,10,74],
+          ['VT',1,9,80],['NH',1,10,77],
+          ['WA',2,0,78],['ID',2,1,58],['MT',2,2,55],['ND',2,3,49],['MN',2,4,72],['WI',2,5,66],['MI',2,7,63],['NY',2,9,71],['MA',2,10,82],
+          ['OR',3,0,79],['NV',3,1,52],['WY',3,2,50],['SD',3,3,53],['IA',3,4,64],['IL',3,5,67],['IN',3,6,59],['OH',3,7,60],['PA',3,8,65],['NJ',3,9,70],['CT',3,10,76],
+          ['CA',4,0,81],['UT',4,1,62],['CO',4,2,75],['NE',4,3,57],['MO',4,4,58],['KY',4,5,48],['WV',4,6,44],['VA',4,7,69],['MD',4,8,73],['DE',4,9,66],['RI',4,10,72],
+          ['AZ',5,1,60],['NM',5,2,56],['KS',5,3,54],['AR',5,4,46],['TN',5,5,51],['NC',5,6,63],['SC',5,7,55],['DC',5,8,70],
+          ['OK',6,3,45],['LA',6,4,41],['MS',6,5,38],['AL',6,6,43],['GA',6,7,57],
+          ['HI',7,0,77],['TX',7,2,59],['FL',7,8,62],
+        ];
+        const el = card({
+          id: 'atx-geo-card', eyebrow: 'Geographic', title: 'Average WISEscore by state',
+          intro: 'A tile-grid choropleth of the U.S. \u2014 each state is a square coloured by the average WISEscore of products sold there. Darker green is a stronger regional portfolio. Click to replay.',
+          legend: dotsHTML(TIER_LEGEND),
+          note: 'Sample data: mean WISEscore per state across 50 states + DC.',
+        });
+        const stage = el.querySelector('.atx-stage');
+        const grid = document.createElement('div');
+        grid.className = 'atx-geo';
+        stage.appendChild(grid);
+        STATES.forEach((s) => {
+          const [ab, r, c, v] = s;
+          const tile = document.createElement('div');
+          tile.className = 'atx-geo-tile';
+          tile.style.gridColumn = String(c + 1);
+          tile.style.gridRow = String(r + 1);
+          tile.style.background = tierVar(v);
+          tile.style.animationDelay = ((r * 11 + c) * 7) + 'ms';
+          tile.title = ab + ' \u2014 avg WISEscore ' + v;
+          tile.innerHTML = `<span class="atx-geo-ab">${ab}</span><span class="atx-geo-v">${v}</span>`;
+          grid.appendChild(tile);
+        });
+        wire(el, makePlay(stage));
+        return el;
+      }
+
+      /* ================= 10. Box-and-whisker ========================= */
+      function buildBox() {
+        const W = 720, H = 320, A = { x0: 44, x1: 700, y0: 272, y1: 18 };
+        const yf = (v) => A.y0 - (A.y0 - A.y1) * v / 100;
+        const cats = [
+          { name: 'Bars', min: 34, q1: 52, med: 64, q3: 76, max: 89, out: [18, 96] },
+          { name: 'Cereals', min: 28, q1: 44, med: 55, q3: 68, max: 82, out: [12] },
+          { name: 'Snacks', min: 20, q1: 38, med: 49, q3: 61, max: 78, out: [8, 91] },
+          { name: 'Beverages', min: 31, q1: 47, med: 58, q3: 70, max: 85, out: [] },
+          { name: 'Dairy', min: 40, q1: 56, med: 67, q3: 78, max: 90, out: [22] },
+          { name: 'Frozen', min: 25, q1: 41, med: 52, q3: 64, max: 80, out: [95] },
+        ];
+        const n = cats.length, band = (A.x1 - A.x0) / n, bw = Math.min(58, band * 0.5);
+        const xC = (i) => A.x0 + band * i + band / 2;
+        const el = card({
+          id: 'atx-box-card', eyebrow: 'Spread', title: 'WISEscore spread by category',
+          intro: 'For each category: the box spans the middle 50% of scores, the line inside is the median, the whiskers reach the range, and dots are outliers. Click to replay.',
+          legend: dotsHTML([['var(--primary)', 'Interquartile range'], ['var(--chart-status-excellent)', 'Median'], ['var(--chart-status-poor)', 'Outlier']]),
+          note: 'Sample data: score distribution across six product categories.',
+        });
+        const stage = el.querySelector('.atx-stage');
+        const svg = add(stage, m('svg', { class: 'atx-svg', viewBox: `0 0 ${W} ${H}` }));
+        frame(svg, A, 0, 100, 4);
+        cats.forEach((c, i) => {
+          const cx = xC(i);
+          const g = add(svg, m('g', { class: 'atx-fade' }));
+          g.style.animationDelay = (i * 90) + 'ms';
+          add(g, m('line', { class: 'atx-axis', x1: cx, y1: yf(c.max), x2: cx, y2: yf(c.min), stroke: 'var(--text-subtle)' }));
+          add(g, m('line', { class: 'atx-axis', x1: cx - bw / 4, y1: yf(c.max), x2: cx + bw / 4, y2: yf(c.max), stroke: 'var(--text-subtle)' }));
+          add(g, m('line', { class: 'atx-axis', x1: cx - bw / 4, y1: yf(c.min), x2: cx + bw / 4, y2: yf(c.min), stroke: 'var(--text-subtle)' }));
+          add(g, m('rect', { x: cx - bw / 2, y: yf(c.q3), width: bw, height: (yf(c.q1) - yf(c.q3)).toFixed(1), fill: 'var(--primary)', 'fill-opacity': 0.18, stroke: 'var(--primary)', 'stroke-width': 1.5, rx: 3 }));
+          add(g, m('line', { x1: cx - bw / 2, y1: yf(c.med), x2: cx + bw / 2, y2: yf(c.med), stroke: 'var(--chart-status-excellent)', 'stroke-width': 3 }));
+          c.out.forEach((o) => add(g, m('circle', { cx: cx, cy: yf(o), r: 3.5, fill: 'var(--chart-status-poor)' })));
+          add(svg, m('text', { class: 'atx-tick atx-tick--x', 'text-anchor': 'middle', x: cx, y: A.y0 + 20 }, c.name));
+        });
+        wire(el, makePlay(stage));
+        return el;
+      }
+
+      const BUILDERS = [buildLine, buildColumns, buildArea, buildHistogram, buildGauges, buildCombo, buildWaterfall, buildBubble, buildGeo, buildBox];
+
+      function mount() {
+        const scroll = document.getElementById('agent-main-scroll');
+        const dash = scroll && scroll.querySelector('.dash');
+        if (!dash) return false;
+        if (document.getElementById('atx-line-card')) return true;
+        const frag = document.createDocumentFragment();
+        BUILDERS.forEach((b) => { try { const c = b(); if (c) frag.appendChild(c); } catch (e) { /* one bad chart never blocks the rest */ } });
+        dash.appendChild(frag);
+        return true;
+      }
+
+      function init() {
+        if (mount()) return;
+        const obs = new MutationObserver(() => { if (mount()) obs.disconnect(); });
+        obs.observe(document.getElementById('agent-main-scroll') || document.body, { childList: true, subtree: true });
+        setTimeout(() => obs.disconnect(), 14000);
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+      else init();
+    })();
+  </script>
+
   <script src="/livereload.js?snipver=1"></script>
   <!-- App-wide "Sticky module" toggle for every module right of the chat. -->
   <script defer src="../js/sticky-modules.js"></script>

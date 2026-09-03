@@ -72,7 +72,7 @@ import { CODE_STATS } from './code-stats-data.js';
 import { isNudgeDismissed } from './nudge-toast-dismiss.js';
 import './date-column.js';
 import { makeTraceHelix, TRACE_STRAND_MARKUP, stretchTraceHelixToNextAvatar, dismissTraceHelix } from './trace-helix.js';
-import { MODULE_SECTIONS, AREA_ICONS } from './module-directory-data.js';
+import { MODULE_SECTIONS, AREA_ICONS, pageGalleryEntries } from './module-directory-data.js';
 import { DEV_READY_SEED } from './dev-ready-data.js';
 import { AI_READY_SEED } from './ai-ready-data.js';
 import { AVATAR_PRESETS, avatarPresetSrc } from './avatar-presets.js';
@@ -135,6 +135,7 @@ const SECTION_BLURBS = {
   'mi-tables': 'Every live data table, collected',
   'mi-analytics': 'Every chart, as thumbnails',
   'mi-logic': 'Rules the app actually runs',
+  'mi-pages': 'Every page, WIP + AI ready',
   'mi-intents': 'Welcome chips and their wiring',
   'mi-trace': 'Thinking animation in three states',
   'mi-tarch': 'One conversation, every piece labeled',
@@ -154,6 +155,7 @@ const ACC_CATALOG_IDS = [
   'mi-icons',
   'mi-intents',
   'mi-directory',
+  'mi-pages',
   'mi-motion',
   'mi-responsive',
   'mi-trace',
@@ -468,6 +470,343 @@ function renderDirectory(opts) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Page Readiness — every page in the app, each with its own WIP Ready  */
+/* and AI Ready switch.                                                 */
+/*                                                                     */
+/* This is the per-page twin of Module Directory: one row per unique    */
+/* HTML file (the same de-duped list the Page Gallery uses), grouped by  */
+/* area. Each row carries both the WIP Ready and AI Ready toggles from  */
+/* the shared ready system, so state persists and ships in the seeds    */
+/* exactly like the component and directory switches.                   */
+/*                                                                     */
+/* Not every page gets both switches — the auth screens and the public  */
+/* marketing site have no in-app AI surface to mark ready, so they get  */
+/* WIP Ready only (pageAllowsAi → false). Everything else gets both.    */
+/* ------------------------------------------------------------------ */
+
+/* Stable id per page — must match the id its toggles render with and the
+   id registered as a child of `mi-pages` in buildDevReadyTree. */
+function pageReadyId(entry) {
+  return 'page:' + pageFileName(entry.href);
+}
+
+/* Only the AI-facing surfaces carry an AI Ready switch — the WISEcodeAI chat,
+   the conversation library, and the ingredient browser. Every other page is
+   WIP Ready only. */
+const PAGE_AI_FILES = {
+  'wiseai.html': 1,
+  'conversation-library.html': 1,
+  'ingredient-browser.html': 1,
+};
+function pageAllowsAi(entry) {
+  return !!PAGE_AI_FILES[pageFileName(entry && entry.href)];
+}
+
+/* Every unique page, grouped by area in MODULE_SECTIONS order. */
+function pageReadyGroups() {
+  const order = [];
+  const byTone = {};
+  pageGalleryEntries().forEach((e) => {
+    const tone = e.area || 'other';
+    if (!byTone[tone]) {
+      byTone[tone] = { tone, title: e.areaTitle || 'Other', pages: [] };
+      order.push(tone);
+    }
+    byTone[tone].pages.push(e);
+  });
+  return order.map((t) => byTone[t]);
+}
+
+/* Flat list of every page → the children of the mi-pages module toggle. */
+function pageReadyChildren() {
+  return pageGalleryEntries().map((p) => ({
+    id: pageReadyId(p),
+    label: p.label,
+    ai: pageAllowsAi(p),
+  }));
+}
+
+/* ---- Live page previews (gallery-style) --------------------------------- */
+/* Same idea as pages/page-gallery.html: a screenshot placeholder shows at
+   once, and the real page loads in a scaled iframe when the card scrolls into
+   view — then unloads when it leaves, so the section never boots all 51
+   documents at once. The whole preview is one example of the page as it is
+   right now, helix / chrome and all. */
+const PP_SHOT_FOLDER = 'gallery-thumbs';
+const PP_LIVE_LIMIT = 3;
+let ppLiveInflight = 0;
+const ppLiveQueue = [];
+const ppUnloadTimers = new WeakMap();
+let ppLiveObserver = null;
+let ppScaleRo = null;
+
+/* _shoot.py names: pages/overview.html → pages__overview.png; a root
+   marketing file like ../marketing-app.html → marketing-app.png. */
+function pageShotStem(href) {
+  const path = String(href || '').split('#')[0].split('?')[0];
+  if (path.startsWith('../')) return path.slice(3).replace(/\.html$/i, '');
+  return 'pages__' + path.replace(/\.html$/i, '');
+}
+function pageShotCandidates(href, dark) {
+  const stem = pageShotStem(href);
+  const out = [];
+  if (dark) out.push(`../screenshots/${PP_SHOT_FOLDER}/${stem}__dark.png`);
+  out.push(`../screenshots/${PP_SHOT_FOLDER}/${stem}.png`);
+  if (dark) out.push(`../screenshots/${stem}__dark.png`);
+  out.push(`../screenshots/${stem}.png`);
+  return out;
+}
+function ppBindShot(img, href) {
+  const cands = pageShotCandidates(href, document.documentElement.classList.contains('dark'));
+  let i = 0;
+  const next = () => {
+    if (i >= cands.length) { img.hidden = true; return; }
+    img.src = cands[i++];
+  };
+  img.addEventListener('error', next);
+  next();
+}
+function ppEnsureObserver() {
+  if (ppLiveObserver) return ppLiveObserver;
+  const root = document.getElementById('agent-main-scroll') || null;
+  ppLiveObserver = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      const frame = e.target;
+      const pending = ppUnloadTimers.get(frame);
+      if (pending) { clearTimeout(pending); ppUnloadTimers.delete(frame); }
+      if (e.isIntersecting) ppEnqueue(frame);
+      else {
+        const wait = setTimeout(() => {
+          ppUnloadTimers.delete(frame);
+          if (frame.isConnected) ppUnload(frame);
+        }, 2800);
+        ppUnloadTimers.set(frame, wait);
+      }
+    });
+  }, { root, rootMargin: '360px 0px', threshold: 0.01 });
+  return ppLiveObserver;
+}
+function ppEnqueue(frame) {
+  if (!frame || frame.dataset.live === '1' || frame.dataset.queued === '1') return;
+  if (!frame.getAttribute('data-src')) return;
+  frame.dataset.queued = '1';
+  ppLiveQueue.push(frame);
+  ppPump();
+}
+function ppPump() {
+  while (ppLiveInflight < PP_LIVE_LIMIT && ppLiveQueue.length) {
+    const frame = ppLiveQueue.shift();
+    if (!frame || !frame.isConnected || frame.dataset.live === '1') continue;
+    ppStart(frame);
+  }
+}
+function ppStart(frame) {
+  const src = frame.getAttribute('data-src');
+  if (!src) return;
+  ppLiveInflight += 1;
+  frame.dataset.live = '1';
+  const done = () => { ppLiveInflight = Math.max(0, ppLiveInflight - 1); ppPump(); };
+  const cleanup = () => {
+    frame.removeEventListener('load', ok);
+    frame.removeEventListener('error', fail);
+  };
+  const ok = () => {
+    const card = frame.closest('.mi-page-card');
+    if (card) card.classList.add('is-live');
+    cleanup();
+    done();
+  };
+  const fail = () => {
+    frame.dataset.live = '';
+    delete frame.dataset.queued;
+    cleanup();
+    done();
+  };
+  frame.addEventListener('load', ok, { once: true });
+  frame.addEventListener('error', fail, { once: true });
+  frame.src = src;
+}
+function ppUnload(frame) {
+  if (!frame.getAttribute('src')) return;
+  const card = frame.closest('.mi-page-card');
+  if (card) card.classList.remove('is-live');
+  frame.removeAttribute('src');
+  frame.dataset.live = '';
+  delete frame.dataset.queued;
+}
+function ppSyncScale(view) {
+  if (!view) return;
+  const w = view.clientWidth;
+  if (w) view.style.setProperty('--pp-scale', String(w / 1440));
+}
+function wirePagePreviews(scope) {
+  const root = scope || document;
+  if (!root.querySelectorAll) return;
+  root.querySelectorAll('.mi-page-card').forEach((card) => {
+    const img = card.querySelector('.mi-pp-shot');
+    if (img && !img.getAttribute('src') && !img.hidden) ppBindShot(img, card.getAttribute('data-href'));
+  });
+  const views = root.querySelectorAll('.mi-pp-view');
+  if (views.length) {
+    if (typeof ResizeObserver === 'undefined') {
+      views.forEach(ppSyncScale);
+    } else {
+      if (!ppScaleRo) ppScaleRo = new ResizeObserver((entries) => entries.forEach((e) => ppSyncScale(e.target)));
+      views.forEach((v) => { ppSyncScale(v); ppScaleRo.observe(v); });
+    }
+  }
+  const obs = ppEnsureObserver();
+  root.querySelectorAll('.mi-pp-frame[data-src]').forEach((f) => obs.observe(f));
+}
+
+function pageReadyCard(p) {
+  const ai = pageAllowsAi(p);
+  const badge = p.badge ? ` <span class="mi-pp-badge">${esc(p.badge)}</span>` : '';
+  const search = `${p.label} ${p.href} ${p.areaTitle || ''}`.toLowerCase();
+  const live = canLivePreview(p.href) ? previewSrc(p.href) : '';
+  const frame = live
+    ? `<iframe class="mi-pp-frame" data-src="${esc(live)}" title="" tabindex="-1" aria-hidden="true"></iframe>`
+    : '';
+  return `
+    <div class="mi-page-card" data-page-card data-search="${esc(search)}" data-area="${esc(p.area || '')}" data-href="${esc(p.href)}">
+      <a class="mi-pp" href="${esc(p.href)}" aria-label="Open ${esc(p.label)}">
+        <span class="mi-pp-view">
+          <img class="mi-pp-shot" alt="" decoding="async" draggable="false" />
+          ${frame}
+        </span>
+        <span class="mi-pp-meta">
+          <span class="mi-pp-name">${esc(p.label)}${badge}</span>
+          <span class="mi-pp-href">${esc(p.href)}</span>
+        </span>
+      </a>
+      ${readyToggleHTML(pageReadyId(p), p.label, { level: 'item', parent: 'mi-pages', ai })}
+    </div>`;
+}
+
+function pageReadySection(group) {
+  if (!group.pages.length) return '';
+  return `
+    <section class="mi-dir-section mi-page-section" data-area="${esc(group.tone)}">
+      <div class="mi-dir-head">
+        <h3 class="mi-dir-title">${esc(group.title)}</h3>
+        <span class="mi-dir-count">${group.pages.length}</span>
+      </div>
+      <div class="mi-page-grid">${group.pages.map(pageReadyCard).join('')}</div>
+    </section>`;
+}
+
+function renderPages(opts) {
+  const groups = pageReadyGroups();
+  const total = groups.reduce((n, g) => n + g.pages.length, 0);
+  const lede = 'A live example of every page in the app — ' + total + ' in all — each with its own WIP Ready switch. '
+    + 'Only the AI surfaces (the WISEcodeAI chat, the conversation library, and the ingredient browser) also carry an AI Ready switch.';
+  if (opts && opts.headOnly) {
+    return miHeadOnly('mi-pages', 'Page Readiness', lede,
+      moduleReadyToggleHTML('mi-pages', 'Page Readiness') + moduleControlsHTML('mi-pages'));
+  }
+
+  const scorecards = [
+    `<button type="button" class="mi-stat is-active" data-area="all" aria-pressed="true">
+       <span class="mi-stat-num">${total}</span>
+       <span class="mi-stat-label"><span class="mi-stat-text">All pages</span><span class="material-symbols-outlined">description</span></span>
+     </button>`,
+    ...groups.map(
+      (g) => `<button type="button" class="mi-stat" data-area="${esc(g.tone)}" aria-pressed="false">
+        <span class="mi-stat-num">${g.pages.length}</span>
+        <span class="mi-stat-label"><span class="mi-stat-text">${esc(g.title)}</span><span class="material-symbols-outlined">${esc(AREA_ICONS[g.tone] || 'folder')}</span></span>
+      </button>`
+    ),
+  ].join('');
+
+  return `
+    <section class="mi-module is-collapsed" id="mi-pages">
+      <header class="mi-module-head">
+        <div class="mi-module-head-text">
+          <h2 class="mi-module-title">Page Readiness</h2>
+          <p class="mi-module-lede">${lede}</p>
+        </div>
+        ${moduleReadyToggleHTML('mi-pages', 'Page Readiness')}
+        ${moduleControlsHTML('mi-pages')}
+      </header>
+
+      <div class="mi-toolbar">
+        <div class="mi-search-inline">
+          <span class="material-symbols-outlined">search</span>
+          <input type="search" class="mi-search" id="mi-pages-search" placeholder="Search pages by name or file…" aria-label="Search pages" autocomplete="off" />
+        </div>
+      </div>
+
+      <div class="mi-stats" id="mi-pages-stats" role="group" aria-label="Filter pages by area">
+        ${scorecards}
+      </div>
+
+      <div class="mi-dir-empty" id="mi-pages-empty" hidden>No pages match your search.</div>
+      <div id="mi-pages-sections">
+        ${groups.map(pageReadySection).join('')}
+      </div>
+    </section>`;
+}
+
+function wirePages(root) {
+  const searchInput = root.querySelector('#mi-pages-search');
+  const stats = root.querySelector('#mi-pages-stats');
+  const emptyEl = root.querySelector('#mi-pages-empty');
+  const sectionsRoot = root.querySelector('#mi-pages-sections');
+  if (!sectionsRoot) return;
+
+  const state = { q: '', area: 'all' };
+
+  const matches = (c) => {
+    const matchQ = !state.q || (c.dataset.search || '').indexOf(state.q) !== -1;
+    const sec = c.closest('.mi-page-section');
+    const area = sec ? sec.dataset.area : c.dataset.area;
+    const matchA = state.area === 'all' || area === state.area;
+    return matchQ && matchA;
+  };
+
+  const apply = () => {
+    const cards = Array.from(sectionsRoot.querySelectorAll('[data-page-card]'));
+    const sections = Array.from(sectionsRoot.querySelectorAll('.mi-page-section'));
+    let shown = 0;
+    cards.forEach((c) => {
+      const vis = matches(c);
+      c.hidden = !vis;
+      if (vis) shown++;
+    });
+    sections.forEach((sec) => {
+      const any = Array.from(sec.querySelectorAll('[data-page-card]')).some((c) => !c.hidden);
+      sec.hidden = !any;
+    });
+    if (emptyEl) emptyEl.hidden = shown !== 0;
+    /* Newly-revealed cards need their preview frame observed / rescaled. */
+    wirePagePreviews(sectionsRoot);
+  };
+
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      state.q = searchInput.value.trim().toLowerCase();
+      apply();
+    });
+  }
+
+  if (stats) {
+    stats.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-area]');
+      if (!btn) return;
+      state.area = btn.dataset.area;
+      stats.querySelectorAll('[data-area]').forEach((b) => {
+        const on = b === btn;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      apply();
+    });
+  }
+
+  apply();
+}
+
+/* ------------------------------------------------------------------ */
 /* Table Gallery — every data table in the app, in one carousel rail   */
 /*                                                                     */
 /* The app ships ~two dozen table UIs, built two ways (real <table>s   */
@@ -648,7 +987,6 @@ function analyticsThumbPane(t, opts) {
     <div class="mi-pane mi-az-thumb" data-pane data-az-thumb data-az-id="${esc(t.id)}" data-href="${esc(path)}" data-search="${esc(search)}">
       <div class="mi-az-thumb-bar">
         <button type="button" class="mi-pane-head" data-az-open="${esc(t.id)}" aria-label="Open ${esc(t.label)} full size">
-          <span class="mi-pane-ic material-symbols-outlined" aria-hidden="true">${esc(t.icon || 'bar_chart')}</span>
           <span class="mi-pane-name">${esc(t.label)}</span>
         </button>
         ${ready}
@@ -5277,6 +5615,7 @@ function buildDevReadyTree() {
   DEV_READY_CHILDREN = {};
   DEV_READY_PARENT = {};
   registerReadyChildren('mi-directory', dedupedDirSections().map((s) => ({ id: 'dir:' + s.tone, label: s.title })));
+  registerReadyChildren('mi-pages', pageReadyChildren());
   registerReadyChildren('mi-tables', tableReadyChildren());
   registerReadyChildren('mi-analytics', analyticsReadyChildren());
   /* Intent Chip Logic is an audit index, like Codebase — it is not in this
@@ -9448,6 +9787,7 @@ export function renderAllModules(mainEl) {
         ${renderIconInventory({ headOnly: true })}
         ${renderIntentAudit({ headOnly: true })}
         ${renderDirectory({ headOnly: true })}
+        ${renderPages({ headOnly: true })}
         ${renderMotion({ headOnly: true })}
         ${renderResponsive({ headOnly: true })}
         ${renderStreamingTrace({ headOnly: true })}
@@ -9527,6 +9867,7 @@ const SECTION_FILL = {
     },
   },
   'mi-tables': { render: () => renderTableGallery(), wire: wireTableGallery },
+  'mi-pages': { render: () => renderPages(), wire: wirePages },
   'mi-analytics': { render: () => renderAnalyticsTypes(), wire: wireAnalyticsTypes },
   'mi-logic': { catalog: 'logic', render: () => renderAppLogic(), wire: wireAppLogic },
   'mi-intents': { render: () => renderIntentAudit(), wire: wireIntentAudit },
@@ -9724,6 +10065,7 @@ function sectionNavTiles() {
     'mi-icons': { id: 'mi-icons', icon: 'emoji_symbols', num: (ICON_INVENTORY && ICON_INVENTORY.totalUniqueIcons) || ICON_UNIQUE_FALLBACK, label: 'Icons', sub: 'Material Symbols inventory' },
     'mi-intents': { id: 'mi-intents', icon: 'bolt', num: intentAuditStats().chips, label: 'Intent chip logic', sub: 'Transcript + logic audit' },
     'mi-directory': { id: 'mi-directory', icon: 'apps', num: moduleTotal(), label: 'Modules', sub: 'Every screen in the app' },
+    'mi-pages': { id: 'mi-pages', icon: 'description', num: pageGalleryEntries().length, label: 'Page readiness', sub: 'Live example of every page' },
     'mi-motion': { id: 'mi-motion', icon: 'animation', num: MOTION_ITEMS.length, label: 'Motion & resize', sub: 'Animations + drag/resize' },
     'mi-responsive': { id: 'mi-responsive', icon: 'devices', num: RESPONSIVE_SURFACES.length, label: 'Responsiveness', sub: 'Mobile, laptop, larger' },
     'mi-trace': { id: 'mi-trace', icon: 'psychology', num: TRACE_MILESTONES.length, label: 'Trace sections', sub: 'Playing, paused, finished' },

@@ -4166,7 +4166,9 @@
       right: 0;
       bottom: 0;
       z-index: 10;
-      background: var(--bg);
+      /* Transparent so the default Scene helix (on #chat-shell) shows
+         through. The owl orbit is a Style choice, not the load default. */
+      background: transparent;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -4286,6 +4288,11 @@
     /* Light-mode left rail + popover now share design tokens — see the
        unified token block at the bottom of this <style> for the actual rules. */
 
+    /* Hide the owl constellation unless Orbit is the live style. Helix
+       already hides `.ws-logo-wrap`; this keeps the orbit from painting
+       as the default welcome when the strand has not tagged the host yet. */
+    #welcome-screen .ws-logo-wrap { display: none; }
+    #chat-shell.sc-orbit-live #welcome-screen .ws-logo-wrap { display: flex; }
     .ws-logo-wrap {
       position: relative;
       width: 72px;
@@ -6531,7 +6538,6 @@
     /* Light + chat tint: same 5% brand-blue wash the shared .sc-card /
        .sc-welcome get in wise.css, so the card and welcome overlay match
        overview.html instead of showing the cream var(--bg) page background. */
-    html.chat-tint:not(.dark) #welcome-screen,
     html.chat-tint:not(.dark) #chat-shell {
       background: color-mix(in srgb, var(--primary) 5%, #fff) !important;
     }
@@ -9542,7 +9548,7 @@
                     <span class="material-symbols-outlined" style="font-size:16px">verified_user</span>Activate Non-UPF Shields
                 </button>
                 <button class="chip ws-intent-chip" onclick="startCompleteNeedsInfo()">
-                    <span class="material-symbols-outlined" style="font-size:16px">pending_actions</span>Complete Missing Data (13)
+                    <span class="material-symbols-outlined" style="font-size:16px">pending_actions</span>Complete Missing Data (18)
                 </button>
                 <button class="chip ws-intent-chip" onclick="startViewClaimed()">
                     <span class="material-symbols-outlined" style="font-size:16px">inventory_2</span>View Claimed Portfolio
@@ -17237,7 +17243,7 @@
         const typing = showWISEcodeAITyping('Opening the Non-UPF Shield workspace…');
         setTimeout(() => {
           typing?.remove();
-          addWISEcodeAIMessage('<strong>9 of your 10</strong> claimed products are eligible for a <strong>Non-UPF Shield</strong> and are pending payment; <strong>1</strong> (Vegan Blueberry Mini Muffins) is ineligible for now. I’ve opened the <strong>SHIELD</strong> panel on the right — attest and pay and the shields switch on across all nine.', { source: false });
+          addWISEcodeAIMessage('<strong>9</strong> claimed products are eligible for a <strong>Non-UPF Shield</strong> and pending payment; <strong>1</strong> (Vegan Blueberry Mini Muffins) is ineligible for now. I’ve opened the <strong>SHIELD</strong> panel on the right — attest and pay and the shields switch on across all nine.', { source: false });
         }, 620);
       });
     }

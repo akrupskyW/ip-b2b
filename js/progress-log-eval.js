@@ -779,10 +779,7 @@ function applySignalSentences(out, signalIds, which) {
 function structureProse(fp) {
   const mods = (fp.modules || []).filter(Boolean);
   if (!mods.length) return '';
-  if (mods.length <= 8) {
-    return 'It is organised into the ' + oxford(mods.map((m) => '“' + m + '”')) + (mods.length === 1 ? ' section.' : ' sections.');
-  }
-  return '';
+  return 'It is organised into the ' + quoteSome(mods, 3) + (mods.length === 1 ? ' section.' : ' sections.');
 }
 
 /* A shared script described by what it does, never by its filename. `ctx`
@@ -801,48 +798,58 @@ function describeCurrentSurface(fp, isNew) {
   push(out, 'features', surfaceIntro(fp, isNew));
   applySignalSentences(out, fp.signals, 'on');
   if (fp.chips && fp.chips.length) {
-    pushQuoted(out, 'features', 'You can ask it ', fp.chips, 8,
-      fp.chips.length === 1 ? ', and it opens a real transcript.' : ', and each one opens a real transcript.');
+    pushQuoted(out, 'features', 'You can ask it ', fp.chips, 3,
+      fp.chips.length === 1 ? ', and it opens a real transcript.' : ', and each opens a real transcript.');
   }
   if (fp.compNames && fp.compNames.length) {
-    pushQuoted(out, 'components', 'It uses these components: ', fp.compNames, 8, '.');
+    pushQuoted(out, 'components', 'It uses ', fp.compNames, 3, '.');
   }
   const structure = structureProse(fp);
   if (structure) push(out, 'components', structure);
-  else if (fp.modules && fp.modules.length) {
-    pushQuoted(out, 'components', 'It is organised into these sections: ', fp.modules, 8, '.');
-  }
   const heads = (fp.headings || []).filter((h) => !(fp.modules || []).includes(h));
   if (heads.length) {
-    pushQuoted(out, 'ui', 'On the screen you see ', heads, 8, '.');
+    pushQuoted(out, 'ui', 'On the screen you see ', heads, 3, '.');
   }
   if (fp.buttons && fp.buttons.length) {
-    pushQuoted(out, 'ui', 'You act on it through ', fp.buttons, 8, '.');
+    pushQuoted(out, 'ui', 'You act on it through ', fp.buttons, 3, '.');
   }
-  pushNameBatches(out, 'logic', 'It knows how to ', capabilityNames(fp.functions), 8);
-  return out;
+  return capCats(out);
 }
 
-function pushQuoted(out, cat, lead, items, batch, tail) {
+/* One short sentence, never a stacked dump. At most `max` items are quoted;
+   the rest trail off in words ("among others") so a card stays a couple of
+   sentences, not a wall of quotes. */
+function pushQuoted(out, cat, lead, items, max, tail) {
   const list = (items || []).filter(Boolean);
   if (!list.length) return;
   const end = tail || '.';
-  const size = Math.max(1, batch || 8);
-  for (let i = 0; i < list.length; i += size) {
-    const slice = list.slice(i, i + size);
-    const prefix = i === 0 ? lead : 'Also: ';
-    push(out, cat, prefix + oxford(slice.map((s) => '“' + s + '”')) + end);
-  }
+  push(out, cat, lead + quoteSome(list, max || 3) + end);
 }
 
-function pushNameBatches(out, cat, lead, names, batch) {
+function pushNameBatches(out, cat, lead, names, max) {
   const list = names || [];
   if (!list.length) return;
-  for (let i = 0; i < list.length; i += batch) {
-    const slice = list.slice(i, i + batch);
-    const prefix = i === 0 ? lead : 'It also ';
-    push(out, cat, prefix + oxford(slice.map((n) => n)) + '.');
-  }
+  const cap = max || 3;
+  const shown = oxford(list.slice(0, cap));
+  const tail = list.length > cap ? ', among other things.' : '.';
+  push(out, cat, lead + shown + tail);
+}
+
+/* A card is a couple of sentences per bucket — no more. The first sentences
+   pushed into each category are the curated, plain-language ones (the surface
+   intro, then the feature signals), so keeping the head of each list keeps the
+   best writing and drops the long tail. */
+const CAT_CAP = {
+  features: 3, components: 2, logic: 2, ux: 2, ui: 2,
+  changes: 2, improvements: 2, updates: 2, deletions: 3,
+};
+function capCats(out) {
+  if (!out) return out;
+  Object.keys(out).forEach((k) => {
+    const lim = CAT_CAP[k] || 2;
+    if (Array.isArray(out[k]) && out[k].length > lim) out[k] = out[k].slice(0, lim);
+  });
+  return out;
 }
 
 export function describeInventoryDiff(fp, before, ctx) {
@@ -879,10 +886,10 @@ export function describeInventoryDiff(fp, before, ctx) {
     if (comps.added.length === 1) {
       push(out, 'components', 'A new component on this surface: “' + comps.added[0] + '.”');
     } else if (comps.added.length) {
-      pushQuoted(out, 'components', 'New components on this surface: ', comps.added, 8, '.');
+      pushQuoted(out, 'components', 'New components on this surface: ', comps.added, 3, '.');
     }
     if (comps.removed.length) {
-      pushQuoted(out, 'deletions', 'These components are gone: ', comps.removed, 8, '.');
+      pushQuoted(out, 'deletions', 'These components are gone: ', comps.removed, 3, '.');
     }
   }
 
@@ -893,23 +900,23 @@ export function describeInventoryDiff(fp, before, ctx) {
 
   const chips = addedRemoved(fp.chips, before.chips);
   if (chips.added.length) {
-    pushQuoted(out, 'features', 'You can now ask ', chips.added, 8,
+    pushQuoted(out, 'features', 'You can now ask ', chips.added, 3,
       chips.added.length === 1 ? ', and it opens a real transcript.' : ', and each one opens a real transcript.');
   }
   if (chips.removed.length) {
-    pushQuoted(out, 'deletions', 'These prompts are gone: ', chips.removed, 8, '.');
+    pushQuoted(out, 'deletions', 'These prompts are gone: ', chips.removed, 3, '.');
   }
 
   const mods = addedRemoved(fp.modules, before.modules);
   if (mods.added.length === 1) {
     push(out, 'components', 'A new section reads “' + mods.added[0] + '.”');
   } else if (mods.added.length) {
-    pushQuoted(out, 'components', 'New sections were added: ', mods.added, 8, '.');
+    pushQuoted(out, 'components', 'New sections were added: ', mods.added, 3, '.');
   }
   if (mods.removed.length === 1) {
     push(out, 'deletions', 'The section “' + mods.removed[0] + '” was dropped.');
   } else if (mods.removed.length) {
-    pushQuoted(out, 'deletions', 'Sections were dropped: ', mods.removed, 8, '.');
+    pushQuoted(out, 'deletions', 'Sections were dropped: ', mods.removed, 3, '.');
   }
 
   const modSet = new Set(mods.added);
@@ -918,37 +925,19 @@ export function describeInventoryDiff(fp, before, ctx) {
   if (newHeads.length === 1) {
     push(out, 'ui', 'A new heading reads “' + newHeads[0] + '.”');
   } else if (newHeads.length) {
-    pushQuoted(out, 'ui', 'New headings read ', newHeads, 8, '.');
+    pushQuoted(out, 'ui', 'New headings read ', newHeads, 3, '.');
   }
   const goneHeads = heads.removed.filter((h) => !(mods.removed || []).includes(h));
   if (goneHeads.length) {
-    pushQuoted(out, 'deletions', 'Headings no longer on the surface: ', goneHeads, 8, '.');
+    pushQuoted(out, 'deletions', 'Headings no longer on the surface: ', goneHeads, 3, '.');
   }
 
   const btns = addedRemoved(fp.buttons, before.buttons);
   if (btns.added.length) {
-    pushQuoted(out, 'ui', 'You can now act on it through ', btns.added, 8, '.');
+    pushQuoted(out, 'ui', 'You can now act on it through ', btns.added, 3, '.');
   }
   if (btns.removed.length) {
-    pushQuoted(out, 'deletions', 'These controls were taken away: ', btns.removed, 8, '.');
-  }
-
-  const copy = addedRemoved(fp.copy, before.copy);
-  if (copy.added.length) {
-    pushQuoted(out, 'ux', 'The wording it shows you changed, and now includes ', copy.added, 8, '.');
-  }
-  if (copy.removed.length) {
-    pushQuoted(out, 'ux', 'Wording that left: ', copy.removed, 8, '.');
-  }
-
-  const fns = addedRemoved(fp.functions, before.functions);
-  const newFns = capabilityNames(fns.added);
-  const goneFns = capabilityNames(fns.removed);
-  if (newFns.length) {
-    pushNameBatches(out, 'logic', 'It can now ', newFns, 8);
-  }
-  if (goneFns.length) {
-    pushNameBatches(out, 'deletions', 'It no longer needs to ', goneFns, 8);
+    pushQuoted(out, 'deletions', 'These controls were taken away: ', btns.removed, 3, '.');
   }
 
   if (!hasAny(out)) {
@@ -961,7 +950,7 @@ export function describeInventoryDiff(fp, before, ctx) {
     }
   }
 
-  return out;
+  return capCats(out);
 }
 
 export function catsHaveItems(cats) {

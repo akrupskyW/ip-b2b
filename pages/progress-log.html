@@ -373,17 +373,17 @@
     .pl-pcard-body { padding: 0 0 16px 28px; }
 
     /* Stacked synopsis paragraphs — never inline bullets, never one run-on line. */
-    .pl-syn { display: flex; flex-direction: column; gap: 12px; }
-    .pl-syn p { margin: 0; font-size: 13.5px; line-height: 1.65; color: var(--text); }
+    .pl-syn { display: flex; flex-direction: column; gap: 8px; }
+    .pl-syn p { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--text); }
     .pl-syn p + p { margin-top: 0; }
     /* Features / Components / Logic / UX / UI label above its paragraph. */
     .pl-syn-cat {
       display: block; font-family: 'WISE Digits', 'Noto Serif', serif;
-      font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em;
-      text-transform: uppercase; color: var(--text-subtle); margin-bottom: 3px;
+      font-size: 9px; font-weight: 800; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--text-subtle); margin-bottom: 2px;
     }
     .pl-syn mark { background: color-mix(in srgb, var(--primary) 24%, transparent); color: inherit; border-radius: 3px; padding: 0 2px; }
-    .pl-pcard-empty { font-size: 13px; line-height: 1.55; color: var(--text-muted); font-style: italic; }
+    .pl-pcard-empty { font-size: 11.5px; line-height: 1.5; color: var(--text-muted); font-style: italic; }
 
     /* ── Empty state ── */
     .pl-empty { margin-top: 26px; padding: 40px 22px; text-align: center; border-radius: var(--r-md, 16px); border: 1px dashed var(--border-strong); color: var(--text-muted); }
@@ -488,7 +488,7 @@
                 <span class="pl-review-btn-label">Re-evaluate</span>
               </button>
             </div>
-            <p class="pl-head-meta" id="pl-head-meta">Day-by-day build journal · re-evaluates every hour</p>
+            <p class="pl-head-meta" id="pl-head-meta">Day-by-day build journal · tap Re-evaluate to scan every page</p>
           </div>
           <div class="pl-head-controls">
             <div class="panel-more-wrap" id="pl-menu-wrap">
@@ -2346,6 +2346,42 @@
         if (fromCats.length > syn.length) return fromCats;
         return syn;
       }
+      /* A card is a couple of sentences per bucket — no walls of text. Each
+         bucket (Features, Components, Logic, UX, UI…) gets a small sentence
+         budget; hand-written prose is trimmed to its first sentences and any
+         extra paragraphs in the same bucket are dropped once the budget runs
+         out. Sentence boundaries are respected, so nothing is cut mid-thought. */
+      const SYN_SENTENCE_BUDGET = 2;
+      /* Some legacy/seeded cards captured raw code — inline-script string
+         literals ("${c.label}", "Copy ${esc(fmtDate(day.date))}") and
+         function-name dumps ("It knows how to add days iso, add note to
+         day…"). None of that is readable, so it never reaches the surface. */
+      function isJunkSentence(s) {
+        const t = String(s || '');
+        if (!t.trim()) return true;
+        if (/\$\{|`|\\u[0-9a-fA-F]{2}|\besc\(|fmtDate\(|=>|\)\s*\{|\bc\.label\b|\bisEdit\b/.test(t)) return true;
+        if (/^(It knows how to |It can now |It no longer needs to |It also |Also: |The wording it shows you changed)/.test(t)) return true;
+        return false;
+      }
+      function condenseParas(paras) {
+        const budget = {};
+        const out = [];
+        (paras || []).forEach((p) => {
+          const { label, text } = splitSynLabel(p);
+          const key = label || '__none__';
+          if (!(key in budget)) budget[key] = SYN_SENTENCE_BUDGET;
+          if (budget[key] <= 0) return;
+          const sents = String(text || '').trim().split(/(?<=[.!?…])\s+/)
+            .filter(Boolean).filter((s) => !isJunkSentence(s));
+          if (!sents.length) return;
+          const take = sents.slice(0, budget[key]);
+          budget[key] -= take.length;
+          const trimmed = take.join(' ').trim();
+          if (!trimmed) return;
+          out.push(label ? label + SYNOPSIS_SEP + trimmed : trimmed);
+        });
+        return out;
+      }
       function matchesSearch(entry) {
         if (!searchTerm) return true;
         const hay = (entry.page + ' ' + entry.path + ' ' + entryParagraphs(entry).join(' ') + ' ' + entryItems(entry).map((i) => i.text).join(' ')).toLowerCase();
@@ -2491,7 +2527,7 @@
 
       function renderPageCard(dayIso, entry, hotRank) {
         if (!entryPassesCat(entry)) return '';
-        const paras = entryParagraphs(entry);
+        const paras = condenseParas(entryParagraphs(entry));
         if (catFilter && !paras.length) return '';
         const key = pageAccKey(dayIso, entry);
         const isCollapsed = !expandedPages.has(key);
@@ -3082,13 +3118,14 @@
         const el = document.getElementById('pl-head-meta');
         if (!el) return;
         if (!lastEvalAt) {
-          el.textContent = 'Not yet evaluated · re-evaluates at the start of each day';
+          el.textContent = 'Not yet evaluated · tap Re-evaluate to scan every page';
           return;
         }
-        const remaining = Math.max(0, (lastEvalAt + HOUR_MS) - Date.now());
-        const mins = Math.round(remaining / 60000);
-        const nextLabel = mins <= 0 ? 'due now' : (mins === 1 ? 'in 1 min' : 'in ' + mins + ' min');
-        el.textContent = 'Last evaluated ' + fmtClock(lastEvalAt) + ' · next check ' + nextLabel;
+        const since = Date.now() - lastEvalAt;
+        const when = since < 90000 ? 'just now'
+          : since < HOUR_MS ? Math.max(1, Math.round(since / 60000)) + ' min ago'
+          : 'at ' + fmtClock(lastEvalAt);
+        el.textContent = 'Re-evaluated ' + when + ' · tap Re-evaluate to scan every page again';
       }
       async function journalStampMoved() {
         try {

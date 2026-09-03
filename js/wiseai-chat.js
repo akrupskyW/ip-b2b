@@ -26,9 +26,8 @@ import './chat-ask.js';
    wiseai.html does, unless a mount overrides it with its own askCatalog. */
 import './ask-catalog.js';
 
-/* Side-effect import: upgrades the welcome-owl's pulse/orbit rings into an
-   interconnected node constellation (nodes linked to each other AND to the owl
-   core), echoing the helix background. Auto-enhances every `.ws-logo-wrap`. */
+/* Side-effect import: the Orbit style's owl constellation. Chat welcomes only
+   paint it when the shared style is Orbit; Helix / Ten keep the Scene strand. */
 import './welcome-orbit.js';
 
 /* Shared user-avatar store — the "you" bubbles render the member's uploaded
@@ -1861,6 +1860,26 @@ export function injectChatExtras() {
        carries the owl instead. */
     .sc-bganim-live .ws-logo-wrap { display: none; }
 
+    /* Owl constellation is Orbit-only. Helix is the load default — hide the
+       welcome owl (and its JS web) unless Orbit is the shared style. Auth
+       pages keep the owl; they have no helix field. data-chat-bg-style is
+       set on <html> before first paint (text-size-fouc.js). */
+    html:not([data-chat-bg-style="orbit"]) .sc-welcome .ws-logo-wrap,
+    html:not([data-chat-bg-style="orbit"]) #welcome-screen .ws-logo-wrap { display: none !important; }
+    .auth-page .sc-welcome .ws-logo-wrap,
+    .auth-page #welcome-screen .ws-logo-wrap { display: flex !important; }
+
+    /* Opaque welcome washes (light .sc-welcome, page-level chat-tint
+       #welcome-screen, full-bleed tint) hide the helix canvas. Keep the
+       sheet clear whenever Helix / Ten is the style. */
+    html.chat-tint:not(.dark):not([data-chat-bg-style="orbit"]) .sc-welcome,
+    html.chat-tint:not(.dark):not([data-chat-bg-style="orbit"]) #welcome-screen,
+    html.full-bleed.fb-chat-tint:not([data-chat-bg-style="orbit"]) .sc-welcome,
+    html.full-bleed.fb-chat-tint:not([data-chat-bg-style="orbit"]) #welcome-screen,
+    html.full-bleed.fb-chat-tint.chat-tint:not([data-chat-bg-style="orbit"]) #welcome-screen {
+      background: transparent !important;
+    }
+
     /* "Style" segment (Helix / Ten / Orbit) — the row under the Opacity / Angle /
        Scale / shape sliders that picks WHICH ambient field runs. Mirrors the streaming
        "detail" segment; dims + locks with the toggle like the slider rows. */
@@ -3521,6 +3540,31 @@ const BGANIM_SNAP_ANGLE_KEY = 'wise:chat-bg-anim-angle';
 const BGANIM_SNAP_PAUSED_KEY = 'wise:chat-bg-anim-paused';
 const BGANIM_SNAP_STYLE_KEY = 'wise:chat-bg-anim-style';
 const BGANIM_SNAP_STYLES = ['helix', 'helix-ten', 'orbit'];
+
+export function readBgAnimStyle() {
+  try {
+    const s = bgAnimGet(BGANIM_SNAP_STYLE_KEY);
+    if (s === 'stamp') {
+      try { bgAnimSet(BGANIM_SNAP_STYLE_KEY, 'helix'); } catch (_) {}
+      return 'helix';
+    }
+    if (BGANIM_SNAP_STYLES.includes(s)) return s;
+  } catch (_) {}
+  return BGANIM_PUBLISH_POSE.style;
+}
+
+export function applyBgAnimStyleAttr(style) {
+  const s = BGANIM_SNAP_STYLES.includes(style) ? style : readBgAnimStyle();
+  try { document.documentElement.setAttribute('data-chat-bg-style', s); } catch (_) {}
+}
+
+if (typeof document !== 'undefined') {
+  applyBgAnimStyleAttr(readBgAnimStyle());
+  document.addEventListener('wise:chat-bg-anim-style', (e) => {
+    const s = e && e.detail && e.detail.style;
+    if (s) applyBgAnimStyleAttr(s);
+  });
+}
 
 export function readBgAnimOpacityPct() {
   try {
@@ -5537,12 +5581,14 @@ export function createHelixBgAnim(cfg) {
 
   /* Point-in-circle hit test against the last frame's product bugs, front-most first.
      Only the circle itself is interactive — a tiny pad forgives the moving target, but
-     hovering the surrounding strand does NOT trigger the popover. */
+     hovering the surrounding strand does NOT trigger the popover. Circles that sit
+     in the --fill fade (headline / chips / composer) are dead: they are behind
+     the wash gradient, not a hover target. */
   function hitTest(mx, my) {
     const pad = 2;
     for (let i = hitNodes.length - 1; i >= 0; i--) {
       const n = hitNodes[i];
-      if (insideNode(n, mx, my, pad)) return n;
+      if (insideNode(n, mx, my, pad) && nodeIsInteractive(n)) return n;
     }
     return null;
   }
@@ -5551,6 +5597,26 @@ export function createHelixBgAnim(cfg) {
     const rr = n.r + (pad || 0);
     return dx * dx + dy * dy <= rr * rr;
   }
+  /* Same stops as .sc-bganim-canvas--fill. Below ~0.45 the strand is the
+     veil over the headline, chips, and composer — not a hover surface. */
+  const FILL_MASK_POS = [0, 0.32, 0.48, 0.64, 0.82, 1];
+  function fillMaskAlphaAtY(y) {
+    if (!fillHost) return 1;
+    const body = canvas && canvas.parentElement;
+    const bh = (body && body.clientHeight) || h || 1;
+    const t = Math.max(0, Math.min(1, y / bh));
+    const stops = bgAnimWashMaskStops(readBgAnimWash());
+    for (let i = 1; i < FILL_MASK_POS.length; i++) {
+      if (t <= FILL_MASK_POS[i]) {
+        const u = (t - FILL_MASK_POS[i - 1]) / (FILL_MASK_POS[i] - FILL_MASK_POS[i - 1] || 1);
+        return stops[i - 1] + (stops[i] - stops[i - 1]) * u;
+      }
+    }
+    return stops[stops.length - 1];
+  }
+  function nodeIsInteractive(n) {
+    return fillMaskAlphaAtY(n.y) >= 0.45;
+  }
   /* Heading, chips, composer, menus — moving across those is not a helix hover. */
   function eventOverChrome(e) {
     const t = e && e.target;
@@ -5558,8 +5624,8 @@ export function createHelixBgAnim(cfg) {
     if (t.closest('.wch-helix-card')) return false;
     return !!t.closest(
       'button, a, input, textarea, select, .chip, ' +
-      '.ws-chips, .ws-chips-scroll, .ws-chips-wrap, .ws-scorecards-section, ' +
-      '.sc-input-row, .chat-input-rail, .sc-belowinput, .topbar-popover, ' +
+      '.ws-heading, .ws-sub, .ws-chips, .ws-chips-scroll, .ws-chips-wrap, .ws-scorecards-section, ' +
+      '.sc-input-row, .chat-input-rail, .fl-input-wrap, .sc-belowinput, .topbar-popover, ' +
       '.sc-helix-float, .wise-popover, .fl-more-popover, [role="menu"], .sc-ask-help'
     );
   }
@@ -5571,8 +5637,8 @@ export function createHelixBgAnim(cfg) {
     if (t.closest('.wch-helix-card')) return true;
     return !!t.closest(
       'button, a, input, textarea, select, .chip, ' +
-      '.ws-chips, .ws-chips-scroll, .ws-chips-wrap, .ws-scorecards-section, ' +
-      '.sc-input-row, .chat-input-rail, .sc-belowinput, .topbar-popover, ' +
+      '.ws-heading, .ws-sub, .ws-chips, .ws-chips-scroll, .ws-chips-wrap, .ws-scorecards-section, ' +
+      '.sc-input-row, .chat-input-rail, .fl-input-wrap, .sc-belowinput, .topbar-popover, ' +
       '.sc-helix-float, .wise-popover, .fl-more-popover, [role="menu"], .sc-ask-help'
     );
   }
@@ -6344,6 +6410,7 @@ export function createHelixBgAnim(cfg) {
       for (let i = hitNodes.length - 1; i >= 0; i--) {
         if (hitNodes[i].prod.img === hoverImg) { live = hitNodes[i]; break; }
       }
+      if (live && !nodeIsInteractive(live)) live = null;
       if (live) {
         hoverX = live.x; hoverY = live.y;
         if (card && !card.hidden) placeCard(live);
@@ -6548,13 +6615,11 @@ export function createHelixBgAnim(cfg) {
 
 /* Third ambient style: the owl "orbit" constellation. Unlike helix this
    engine paints nothing itself — the owl-centered node web is the welcome
-   screen's own decoration (js/welcome-orbit.js auto-enhances every
-   `.ws-logo-wrap`). That web is only ever HIDDEN by the helix live class
-   (which sets `.ws-logo-wrap { display:none }`); so "running" the orbit just means
-   leaving the owl visible — i.e. not adding that class. We still tag
-   the host with `sc-orbit-live` so the choice reads back and any future styling
-   can hook it. start() is effectively a no-op beyond that; the facade's stop()
-   (which tears down the helix engine) is what reveals the owl again. */
+   screen's own decoration (js/welcome-orbit.js enhances `.ws-logo-wrap`
+   only while Orbit is the shared style). Helix hides the wrap; running
+   orbit means tagging the host with `sc-orbit-live` so the owl can show.
+   start() is a no-op beyond that; the facade's stop() (which tears down
+   the helix engine) is what reveals the owl again. */
 export function createOrbitBgAnim(cfg) {
   const host = cfg.host;
   const isOn = typeof cfg.isOn === 'function' ? cfg.isOn : () => true;
@@ -8550,12 +8615,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   const BGANIM_STYLE_KEY = 'wise:chat-bg-anim-style';
   const BGANIM_STYLES = ['helix', 'helix-ten', 'orbit'];
   const isHelixStyle = (s) => s === 'helix' || s === 'helix-ten';
-  let bgAnimStyle = BGANIM_PUBLISH_POSE.style;
-  try {
-    const s = bgAnimGet(BGANIM_STYLE_KEY);
-    if (s === 'stamp') { try { bgAnimSet(BGANIM_STYLE_KEY, 'helix'); } catch (_) {} }
-    else if (BGANIM_STYLES.includes(s)) bgAnimStyle = s;
-  } catch (_) {}
+  let bgAnimStyle = readBgAnimStyle();
+  applyBgAnimStyleAttr(bgAnimStyle);
   /* "Response streaming" (three-dot menu) — how much of WISEcodeAI's thinking is
      shown before an answer lands. A three-way choice, shared APP-WIDE (one key,
      broadcast on the wise:chat-stream-level event) so every mounted chat module
@@ -13872,12 +13933,8 @@ export function wireStandardChatMenu(cfg = {}) {
   const BGANIM_STYLE_KEY = 'wise:chat-bg-anim-style';
   const BGANIM_STYLES = ['helix', 'helix-ten', 'orbit'];
   const isHelixStyle = (s) => s === 'helix' || s === 'helix-ten';
-  let bgStyle = BGANIM_PUBLISH_POSE.style;
-  try {
-    const s = bgAnimGet(BGANIM_STYLE_KEY);
-    if (s === 'stamp') { try { bgAnimSet(BGANIM_STYLE_KEY, 'helix'); } catch (_) {} }
-    else if (BGANIM_STYLES.includes(s)) bgStyle = s;
-  } catch (_) {}
+  let bgStyle = readBgAnimStyle();
+  applyBgAnimStyleAttr(bgStyle);
   /* Inline chats copied the menu markup before the Style row existed; inject it
      (before the playback row) so every hand-rolled surface gains the segment too,
      keeping the whole app's chat menus identical. Helix, Ten, and orbit ship here. */

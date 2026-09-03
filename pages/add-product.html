@@ -90,6 +90,9 @@
        above the input rail and grows upward (`safe` flips back to the top once
        it's taller than the pane so nothing is clipped behind the rail). */
     #welcome-screen.sc-welcome { justify-content: safe flex-end; overflow-y: auto; padding: 2.5rem 1.75rem 1.5rem; }
+    /* Owl constellation is Orbit-only. Helix is the load default. */
+    #welcome-screen .ws-logo-wrap { display: none; }
+    .ap-chat.sc-orbit-live #welcome-screen .ws-logo-wrap { display: flex; }
     #welcome-screen .ws-heading {
       font-family: 'WISE Digits', 'Noto Serif', serif;
       font-size: clamp(1.5rem, 1rem + 1.6vw, 2rem);

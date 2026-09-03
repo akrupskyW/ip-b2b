@@ -18,11 +18,10 @@
  * hull around the owl, Z sharpens or flattens the 4D perspective, and Nodes
  * sizes the food photos.
  *
- * Zero markup changes: it auto-enhances every `.ws-logo-wrap` on the page (and
- * any injected later by mountWISEcodeAIChat) by dropping an <svg> overlay behind
- * the owl. The CSS-only orbit rings stay as a graceful no-JS fallback and are
- * hidden once this takes over. The marketing galaxy core is untouched (it has no
- * `.ws-logo-wrap`).
+ * Chat welcomes (`.sc-welcome` / `#welcome-screen`) only paint this web when
+ * the shared style is Orbit. Helix / Ten — the load default — leave the owl
+ * alone so the Scene strand can show. Auth pages still get the constellation.
+ * The marketing galaxy core is untouched (it has no `.ws-logo-wrap`).
  */
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -277,8 +276,29 @@ function project(p, t) {
   };
 }
 
+const STYLE_KEY = 'wise:chat-bg-anim-style';
+function readOrbitStyle() {
+  try {
+    if (localStorage.getItem(STYLE_KEY) === 'orbit') return 'orbit';
+  } catch (_) {}
+  return 'helix';
+}
+function isChatWelcomeWrap(wrap) {
+  return !!(wrap && wrap.closest && wrap.closest('.sc-welcome, #welcome-screen'));
+}
+function isAuthSurface(wrap) {
+  if (wrap && wrap.closest && wrap.closest('.auth-page, .auth-chat, #ac-welcome, #ac-chat')) return true;
+  return !!(typeof document !== 'undefined' && document.body && document.body.classList.contains('auth-page'));
+}
+function shouldPaintOrbit(wrap) {
+  if (!wrap) return false;
+  if (isAuthSurface(wrap) || !isChatWelcomeWrap(wrap)) return true;
+  return readOrbitStyle() === 'orbit';
+}
+
 export function enhanceWelcomeOrbit(wrap) {
   if (!wrap || wrap.__wsOrbit) return;
+  if (!shouldPaintOrbit(wrap)) return;
   wrap.__wsOrbit = true;
   injectStyles();
   wrap.classList.add('is-orbit-js');
@@ -548,6 +568,9 @@ function init() {
     }
   });
   mo.observe(document.documentElement, { childList: true, subtree: true });
+  document.addEventListener('wise:chat-bg-anim-style', (e) => {
+    if (e && e.detail && e.detail.style === 'orbit') scan(document);
+  });
 }
 
 if (typeof document !== 'undefined') {
