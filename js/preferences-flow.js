@@ -1,3 +1,6 @@
+import { esc } from './escape-html.js';
+import { createToast } from './toast.js';
+const toast = createToast('wmod');
 /**
  * Preferences module.
  *
@@ -10,15 +13,6 @@
  *
  * Token-driven throughout so it tracks light/dark like the rest of the app.
  */
-
-function esc(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
 
 let hostEl = null;
 
@@ -71,17 +65,6 @@ function setTextSize(pct) {
   document.documentElement.style.setProperty('--text-scale', (v / 100).toFixed(3));
   try { document.documentElement.style.fontSize = (v / 100 * 16).toFixed(1) + 'px'; } catch (_) {}
   return v;
-}
-
-function toast(msg, icon = 'check') {
-  let wrap = document.getElementById('prefs-toast-wrap');
-  if (!wrap) { wrap = document.createElement('div'); wrap.id = 'prefs-toast-wrap'; wrap.className = 'wmod-toast-wrap'; document.body.appendChild(wrap); }
-  const t = document.createElement('div');
-  t.className = 'wmod-toast';
-  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
-  wrap.appendChild(t);
-  requestAnimationFrame(() => t.classList.add('is-in'));
-  setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
 }
 
 function toggleRow({ key, label, sub, on }) {

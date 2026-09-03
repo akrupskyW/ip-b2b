@@ -72,7 +72,7 @@ function ownedElsewhere(btn) {
    Captioned menu items ("Close pane") keep their label and are not skipped. */
 const CLOSE_SELECTOR =
   '.panel-close-btn, .wch-close, .wnote-x, .adm-modal-x, .vf-modal-x, ' +
-  '.dash-modal-close, .ag-sheet-close, .wai-img-close, .amm-close-btn, ' +
+  '.dash-modal-close, .wise-modal-close, .ag-sheet-close, .wai-img-close, .amm-close-btn, ' +
   '.mkt-scanner-close, .pg-close, .ma-modal-close, .mi-cap-close, ' +
   '.nfp-allergen-x, .fl-attach-x, .gv-file-x, .al-x, .dash-score-toast-close, ' +
   '.pmx-fix-toast-close, .wa-sh-chip-x, .hp-header-close-btn, ' +

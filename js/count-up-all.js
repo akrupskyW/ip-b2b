@@ -30,6 +30,8 @@
   var ENTRIES = [
     ['.ws-sc-metric', '.ws-scorecard'],
     ['.adm-stat-num', '.adm-stat'],
+    ['.adm-vf-stat-num', '.adm-vf-stat'],
+    ['.adm-donut-num', '.adm-chart-card'],
     ['.adm-metric-num', '.adm-metric'],
     ['.pf-stat-num', '.pf-stat'],
     ['.pf-state-num', '.pf-state'],

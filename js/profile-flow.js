@@ -1,3 +1,7 @@
+import { esc } from './escape-html.js';
+import { createToast } from './toast.js';
+import { createChatBridge } from './chat-bridge.js';
+const toast = createToast('pf');
 /**
  * Organization Profile module.
  *
@@ -25,15 +29,6 @@
    navigation chips and the chat "you" bubbles read app-wide. */
 import { getUserAvatar, setUserAvatar, clearUserAvatar } from './user-avatar.js';
 import { AVATAR_PRESETS, avatarPresetSrc } from './avatar-presets.js';
-
-function esc(s) {
-  return String(s == null ? '' : s)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
 
 /* ---- Organization types (the <select> options) --------------------- */
 const ORG_TYPES = [
@@ -106,34 +101,10 @@ const dirty = new Set(); // field keys changed since the last Save
 const uploadTab = { logo: 'file', banner: 'file' }; // which tab each uploader shows
 let avatarTab = 'file'; // which tab the avatar uploader shows ('file' | 'url')
 
-/* ---- Live chat bridge ---------------------------------------------- */
-let chatApi = null;
-export function setProfileChat(api) { chatApi = api; }
-
-/* Push an assistant note into the conversation (used for form → chat). */
-function pushChat(html) {
-  if (!chatApi || !html) return;
-  chatApi.hideWelcome?.();
-  /* respond() streams the shared reasoning trace before the reply lands, so a
-     mirrored action reads like any other WISEcodeAI turn — never an instant paste. */
-  (chatApi.respond || chatApi.addWISEcodeAI)(html);
-}
+const { setChat, pushChat } = createChatBridge();
+export const setProfileChat = setChat;
 
 /* ---- Toast --------------------------------------------------------- */
-function toast(msg, icon = 'check') {
-  let wrap = document.getElementById('pf-toast-wrap');
-  if (!wrap) {
-    wrap = document.createElement('div');
-    wrap.id = 'pf-toast-wrap';
-    document.body.appendChild(wrap);
-  }
-  const t = document.createElement('div');
-  t.className = 'pf-toast';
-  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
-  wrap.appendChild(t);
-  requestAnimationFrame(() => t.classList.add('is-in'));
-  setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
-}
 
 /* ==================================================================== */
 /* Rendering                                                            */

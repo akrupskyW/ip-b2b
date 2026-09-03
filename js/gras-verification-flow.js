@@ -1,3 +1,6 @@
+import { esc } from './escape-html.js';
+import { searchToolbarHTML } from './wise-toolbar.js';
+import { createChatBridge } from './chat-bridge.js';
 /**
  * GRAS Verification flow module.
  *
@@ -29,15 +32,6 @@
 /* ------------------------------------------------------------------ */
 /* Utilities                                                           */
 /* ------------------------------------------------------------------ */
-
-function esc(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
 
 function gvToast(msg, icon = 'check') {
   let wrap = document.getElementById('gv-toast-wrap');
@@ -467,18 +461,23 @@ function headActionHTML() {
    the same facets shown on the page (status, ingredient type, pathway). */
 function toolbarHTML() {
   const count = activeFilterCount();
-  return `
-    <div class="gv-toolbar">
-      <div class="gv-search-inline">
-        <span class="material-symbols-outlined">search</span>
-        <input id="gv-search" class="gv-search gv-search--hasfilter" type="text" placeholder="Search ingredients or type" value="${esc(state.search)}" data-gv="search" autocomplete="off" aria-label="Search ingredients" />
-        <button type="button" class="gv-filter-btn${count ? ' is-active' : ''}${state.filterOpen ? ' is-open' : ''}" data-gv="filter-open" aria-haspopup="dialog" aria-expanded="${state.filterOpen}" aria-label="Filter ingredients" title="Filter ingredients">
-          <span class="material-symbols-outlined">tune</span>
-          ${count ? `<span class="gv-filter-count">${count}</span>` : ''}
-        </button>
-        ${state.filterOpen ? filterPopoverHTML() : ''}
-      </div>
-    </div>`;
+  return searchToolbarHTML({
+    variant: 'gv',
+    placeholder: 'Search ingredients or type',
+    ariaLabel: 'Search ingredients',
+    value: state.search,
+    inputType: 'text',
+    inputId: 'gv-search',
+    inputAttrs: 'data-gv="search"',
+    filter: {
+      attrs: 'data-gv="filter-open"',
+      ariaLabel: 'Filter ingredients',
+      open: state.filterOpen,
+      active: count > 0,
+      count: count || '',
+      popHtml: state.filterOpen ? filterPopoverHTML() : '',
+    },
+  });
 }
 
 /* A single toggle row inside the filter popover. */
@@ -647,7 +646,7 @@ function wizardTopHTML() {
   const primary = st < STEP_DEFS.length - 1
     ? `<button class="gv-cta" type="button" data-gv="next" ${disabled ? 'disabled' : ''}>Continue<span class="material-symbols-outlined">arrow_forward</span></button>`
     : `<button class="gv-cta" type="button" data-gv="submit"><span class="material-symbols-outlined">verified_user</span>Submit for review</button>`;
-  return `<div class="gv-toolbar gv-toolbar--wizard">${primary}</div>`;
+  return `<div class="wise-toolbar gv-toolbar gv-toolbar--wizard wise-toolbar--wizard">${primary}</div>`;
 }
 
 function wizardHTML() {
@@ -1036,8 +1035,6 @@ function progressWizardHTML() {
 
 let rootEl = null;
 let progressEl = null;
-/* Guards the one-time document listeners that dismiss the filter popover. */
-let filterDismissBound = false;
 /* Progress module defaults to the minimal (collapsed) view; header button toggles it. */
 let progressMin = true;
 /* The entrance "pop" animation should only play when the step/screen actually
@@ -1160,21 +1157,12 @@ export function renderGrasVerificationFlow(mainEl) {
     if (fieldEl) setField(fieldEl.dataset.gvField, fieldEl.value);
   });
 
-  /* Dismiss the filter popover on an outside click or Escape. The re-render on
-     each toggle detaches the clicked node, but its old ancestors still carry the
-     popover/button markers, so closest() keeps those interactions from closing. */
-  if (!filterDismissBound) {
-    filterDismissBound = true;
-    document.addEventListener('click', (e) => {
-      if (!state.filterOpen) return;
-      if (e.target.closest('.gv-filter-pop') || e.target.closest('[data-gv="filter-open"]')) return;
-      state.filterOpen = false;
-      render();
-    });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && state.filterOpen) { state.filterOpen = false; render(); }
-    });
-  }
+  window.WisePopover?.bindFilterPop({
+    isOpen: () => state.filterOpen,
+    setOpen: (open) => { state.filterOpen = !!open; if (!open) render(); },
+    insideSel: '.gv-filter-pop, [data-gv="filter-open"]',
+    popSel: '.gv-filter-pop',
+  });
 
   /* Progress pane — jump back to a completed step (wizard) or open an
      ingredient (portfolio summary). */
@@ -1210,21 +1198,8 @@ export function renderGrasVerificationFlow(mainEl) {
 /* WISEcodeAI chat module (dock configuration)                             */
 /* ------------------------------------------------------------------ */
 
-/* The mounted shared-chat instance, handed over by agent-overview once the dock
-   is up, so a direct UI interaction can be mirrored into the conversation. */
-let chatApi = null;
-export function setGrasChat(api) { chatApi = api; }
-
-/* Post a mirrored turn into the chat — the action as a "you" line + WISEcodeAI's
-   narration — so clicking in the flow reads exactly like driving it from chat. */
-function pushChat(userLabel, replyHtml) {
-  if (!chatApi) return;
-  chatApi.hideWelcome?.();
-  if (userLabel) chatApi.addUser(userLabel);
-  /* respond() streams the shared reasoning trace before the reply lands, so a
-     mirrored action reads like any other WISEcodeAI turn — never an instant paste. */
-  if (replyHtml) (chatApi.respond || chatApi.addWISEcodeAI)(replyHtml);
-}
+const { setChat, pushChat } = createChatBridge();
+export const setGrasChat = setChat;
 
 /* Highest-leverage still-flagged ingredient (falls back to the first). */
 function topFlagged() {

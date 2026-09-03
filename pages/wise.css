@@ -262,8 +262,9 @@
   /* Canonical module headline — every main module and the sticky drawer to
      its right share this size/weight/face, the same title / subtitle inset,
      and the same ⋯ / width cluster inset so adjacent headers sit on one
-     horizontal line. */
-  --module-title-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+     horizontal line. Brand serif is Noto Serif (Appearance ▸ Serif headlines). */
+  --module-title-family: 'WISE Digits', 'Noto Serif', serif;
+  --font-serif: 'WISE Digits', 'Noto Serif', serif;
   --module-title-size: 1.2rem;
   --module-title-weight: 800;
   --module-title-lh: 1.16;
@@ -814,12 +815,474 @@ html.dark .inv-actions .wise-btn--ghost:hover {
   transform: translateY(1px);
 }
 
-/* Verification modal ghost sits on the dialog surface. */
+/* Verification / shared modal ghost sits on the dialog surface. */
+.wise-modal-actions .wise-btn--ghost,
 .vf-modal-actions .wise-btn--ghost,
 .vf-modal-btn--ghost {
   background: var(--surface);
   color: var(--text);
 }
+
+/* ===== WISE modal — one overlay language ============================
+   .wise-modal-scrim + .wise-modal
+
+   Full-bleed sheet by default. --panel (and .dsc-ready-scrim) centers
+   a card. Former families (.dash-modal, .vf-modal, .adm-modal,
+   .wmod-modal) are aliases so leftover markup still paints. */
+.wise-modal-scrim,
+.dash-modal-scrim,
+.vf-modal-overlay,
+.adm-modal-scrim,
+.wmod-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2200;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+  background: rgba(15, 26, 33, 0.48);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.wise-modal-scrim.is-open,
+.dash-modal-scrim.is-open,
+.vf-modal-overlay.is-open,
+.adm-modal-scrim.is-open,
+.wmod-modal-overlay.is-open,
+.wmod-modal-overlay.is-in {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.wise-modal,
+.dash-modal,
+.vf-modal,
+.adm-modal,
+.wmod-modal {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 18px;
+  box-shadow: var(--shadow-card, 0 24px 60px rgba(0, 0, 0, 0.28));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateY(10px) scale(0.98);
+  transition: transform 0.22s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+html.dark .wise-modal,
+html.dark .dash-modal,
+html.dark .vf-modal,
+html.dark .adm-modal,
+html.dark .wmod-modal {
+  background: #14242f;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Hosted in a scrim → full-bleed sheet. */
+.wise-modal-scrim .wise-modal,
+.dash-modal-scrim .dash-modal,
+.vf-modal-overlay .vf-modal,
+.adm-modal-scrim .adm-modal,
+.wmod-modal-overlay .wmod-modal {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  transform: translateY(8px);
+}
+.wise-modal-scrim.is-open .wise-modal,
+.dash-modal-scrim.is-open .dash-modal,
+.vf-modal-overlay.is-open .vf-modal,
+.adm-modal-scrim.is-open .adm-modal,
+.wmod-modal-overlay.is-open .wmod-modal,
+.wmod-modal-overlay.is-in .wmod-modal {
+  transform: none;
+}
+
+/* Centered card (photo picker, catalog specimen, verify confirm). */
+.wise-modal-scrim--panel,
+.dash-modal-scrim--panel {
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.wise-modal-scrim--panel .wise-modal,
+.wise-modal-scrim--panel .dash-modal,
+.dash-modal-scrim--panel .dash-modal,
+.dash-modal-scrim--panel .wise-modal {
+  width: min(520px, 100%);
+  height: auto;
+  max-width: 520px;
+  max-height: calc(100vh - 48px);
+  border-radius: 18px;
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-card, 0 24px 60px rgba(0, 0, 0, 0.28));
+}
+.wise-modal-scrim--panel .wise-modal-body,
+.dash-modal-scrim--panel .dash-modal-body,
+.dash-modal-scrim--panel .wise-modal-body {
+  flex: 0 1 auto;
+}
+
+.wise-modal-head,
+.dash-modal-head,
+.adm-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+  padding: 20px 22px 0;
+}
+.adm-modal-head { display: block; padding: 22px 24px 6px; }
+.wise-modal-titles,
+.dash-modal-titles { min-width: 0; }
+.wise-modal-eyebrow,
+.dash-modal-eyebrow,
+.adm-modal-eyebrow {
+  font-size: var(--fs-label, 0.68rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+html.dark .wise-modal-eyebrow,
+html.dark .dash-modal-eyebrow,
+html.dark .adm-modal-eyebrow { color: var(--primary-bright); }
+.wise-modal-title,
+.dash-modal-title,
+.vf-modal-title,
+.adm-modal-title,
+.wmod-modal-title {
+  margin: 4px 0 0;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.adm-modal-title { margin: 6px 0 0; }
+.vf-modal-title,
+.wmod-modal-title { margin: 0 0 6px; }
+.wise-modal-sub,
+.adm-modal-sub,
+.wmod-modal-sub,
+.vf-modal-text {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.vf-modal-text { margin: 0 0 18px; font-size: 0.88rem; line-height: 1.55; }
+.wmod-modal-sub { margin: 0 0 18px; }
+
+.wise-modal-close,
+.dash-modal-close,
+.adm-modal-x,
+.vf-modal-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-subtle);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.adm-modal-x,
+.vf-modal-x { position: absolute; top: 14px; right: 14px; }
+.vf-modal-x { width: 30px; height: 30px; border-radius: 8px; }
+.wise-modal-close:hover,
+.dash-modal-close:hover,
+.adm-modal-x:hover,
+.vf-modal-x:hover { background: var(--surface-2); color: var(--text); }
+html.dark .adm-modal-x:hover,
+html.dark .wise-modal-close:hover { background: rgba(255, 255, 255, 0.06); }
+.wise-modal-close .material-symbols-outlined,
+.dash-modal-close .material-symbols-outlined,
+.adm-modal-x .material-symbols-outlined { font-size: 20px; }
+
+.wise-modal-body,
+.dash-modal-body,
+.adm-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 22px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.adm-modal-body { gap: 12px; padding: 16px 24px 24px; }
+.wise-modal-scrim .wise-modal-body,
+.adm-modal-scrim .adm-modal-body { flex: 1; min-height: 0; overflow-y: auto; }
+
+.wise-modal-foot,
+.dash-modal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+  padding: 16px 22px;
+  border-top: 1px solid var(--border);
+}
+.wise-modal-foot-right,
+.dash-modal-foot-right { display: flex; align-items: center; gap: 10px; }
+html.dark .wise-modal-foot,
+html.dark .dash-modal-foot { border-color: rgba(255, 255, 255, 0.08); }
+
+.wise-modal-actions,
+.vf-modal-actions,
+.wmod-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: auto;
+}
+.wmod-modal-actions { gap: 10px; padding-top: 22px; }
+
+/* ===== WISE search pill — one toolbar language ======================
+   .wise-toolbar + .wise-search-inline + .wise-search + .wise-search-filter
+
+   Former families (.adm- / .vf- / .gv- / .wmod-) are aliases. Spacing
+   that belongs to the page chrome stays as a thin family override. */
+.wise-toolbar,
+.adm-toolbar,
+.vf-toolbar,
+.gv-toolbar,
+.wmod-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.wise-search-inline,
+.adm-search-inline,
+.vf-search-inline,
+.gv-search-inline,
+.wmod-search-inline {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 220px;
+}
+.wmod-search-inline { min-width: 200px; }
+.wise-search-inline > .material-symbols-outlined,
+.adm-search-inline > .material-symbols-outlined,
+.vf-search-inline .material-symbols-outlined,
+.gv-search-inline .material-symbols-outlined,
+.wmod-search-inline > .material-symbols-outlined {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: var(--text-subtle);
+  pointer-events: none;
+}
+.wmod-search-inline > .material-symbols-outlined { font-size: 18px !important; }
+
+.wise-search,
+.adm-search,
+.vf-search,
+.gv-search,
+.wmod-search-input {
+  width: 100%;
+  height: 40px;
+  box-sizing: border-box;
+  padding: 0 16px 0 42px;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill, 999px);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+html.dark .wise-search,
+html.dark .adm-search,
+html.dark .vf-search,
+html.dark .gv-search,
+html.dark .wmod-search-input {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+.wise-search::placeholder,
+.adm-search::placeholder,
+.vf-search::placeholder,
+.gv-search::placeholder,
+.wmod-search-input::placeholder {
+  color: color-mix(in srgb, var(--text-subtle) 55%, transparent);
+  font-style: italic;
+}
+.wise-search:focus,
+.adm-search:focus,
+.vf-search:focus,
+.gv-search:focus,
+.wmod-search-input:focus {
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+.wise-search-inline.has-filter .wise-search,
+.adm-search-inline.has-filter .adm-search,
+.adm-search-inline.has-filter .wise-search,
+.gv-search--hasfilter,
+.wmod-search-inline.has-filter .wmod-search-input,
+.wmod-search-inline.has-filter .wise-search {
+  padding-right: 46px;
+}
+
+.wise-search-filter,
+.adm-search-filter,
+.gv-filter-btn,
+.wmod-filter-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-subtle);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.gv-filter-btn { right: 5px; border: 0; }
+.wmod-filter-btn { width: 28px; height: 28px; border: none; }
+.wise-search-filter .material-symbols-outlined,
+.adm-search-filter .material-symbols-outlined,
+.gv-filter-btn .material-symbols-outlined,
+.wmod-filter-btn .material-symbols-outlined {
+  position: static;
+  transform: none;
+  font-size: 19px;
+  color: inherit;
+  pointer-events: none;
+}
+.gv-filter-btn .material-symbols-outlined { font-size: 18px; }
+.wmod-filter-btn .material-symbols-outlined { font-size: 18px !important; }
+.wise-search-filter:hover,
+.adm-search-filter:hover,
+.gv-filter-btn:hover,
+.wmod-filter-btn:hover {
+  color: var(--text);
+  background: var(--surface-3, var(--surface-2));
+}
+html.dark .wise-search-filter:hover,
+html.dark .adm-search-filter:hover,
+html.dark .gv-filter-btn:hover,
+html.dark .wmod-filter-btn:hover { background: rgba(255, 255, 255, 0.08); }
+.wise-search-filter.is-active,
+.wise-search-filter.is-open,
+.adm-search-filter.is-active,
+.gv-filter-btn.is-open,
+.gv-filter-btn.is-active,
+.wmod-filter-btn.has-filters {
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+}
+html.dark .wise-search-filter.is-active,
+html.dark .adm-search-filter.is-active,
+html.dark .wmod-filter-btn.has-filters { color: var(--primary-bright, #93C5FD); }
+.wise-search-filter.has-dot::after,
+.adm-search-filter.has-dot::after,
+.wmod-filter-btn.has-filters::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 1.5px solid var(--surface-2);
+}
+html.dark .wise-search-filter.has-dot::after,
+html.dark .adm-search-filter.has-dot::after,
+html.dark .wmod-filter-btn.has-filters::after {
+  background: var(--primary-bright, #93C5FD);
+  border-color: var(--surface);
+}
+.wise-filter-count,
+.gv-filter-count {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.5625rem;
+  font-weight: 800;
+  line-height: 1;
+}
+.gv-filter-btn:focus-visible,
+.wise-search-filter:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--primary) 45%, transparent);
+  outline-offset: 2px;
+}
+
+.wise-filter-pop,
+.adm-filter-pop,
+.gv-filter-pop,
+.wmod-filter-pop {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 268px;
+  width: min(340px, calc(100vw - 40px));
+  max-width: 92vw;
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  box-shadow: var(--shadow-card, 0 12px 32px rgba(0, 0, 0, 0.18));
+  padding: 14px;
+  box-sizing: border-box;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.gv-filter-pop { width: 300px; padding: 12px; border-radius: var(--r-md); animation: gvFilterPop 0.16s ease; }
+.wmod-filter-pop { width: 340px; border-color: var(--border); box-shadow: var(--shadow-2, 0 12px 32px rgba(0, 0, 0, 0.18)); }
+.wise-filter-pop[hidden],
+.adm-filter-pop[hidden],
+.wmod-filter-pop[hidden] { display: none; }
 
 /* Utility panels (profile / prefs / keys) — full-width row actions. */
 .um-row .wise-btn,
@@ -1040,7 +1503,7 @@ html.dark .wise-app-search-results {
 .wise-app-search-group + .wise-app-search-group { margin-top: 10px; }
 .wise-app-search-group-title {
   margin: 0 8px 6px;
-  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', serif);
   font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -1473,33 +1936,36 @@ html.app-search-on #modules-row .sa-panel {
    inset as Output. Does not wait for `.is-sticky` (progress / Report used to
    stretch to the full row until JS attached that class, and looked taller
    than Product Details). Chat stays the full-height buckle. Search-on and
-   full-bleed restretch later in this file. */
-html:not(.app-search-on) #modules-row > *:not(.sticky-chat):not(.ap-chat):not(.rf-chat):not(.sa-chat):not(.gs-chat):not(.aid-chat):not(.wa-chat):not(#wa-chat):not(#rf-chat):not(#sa-chat):not(#aid-chat):not(#pl-chat):not(#ar-chat):not(#gs-chat):not(#chat-shell):not(#pf-chat-panel):not(#wiseai-dock-panel):not(#panels-row):not(#panels-row-right):not(#intent-stack-column):not(#menu-panel):not([class*="scrim"]):not([class*="resize"]):not([class*="handle"]):not([class*="grip"]):not(.wise-progress-restore),
-html:not(.app-search-on) #modules-row .sticky-mod,
-html:not(.app-search-on) #modules-row .sticky-mod.is-sticky,
-html:not(.app-search-on) #modules-row #agent-main,
-html:not(.app-search-on) #modules-row #nfp-panel,
-html:not(.app-search-on) #modules-row #ia-panel,
-html:not(.app-search-on) #modules-row #ap-progress,
-html:not(.app-search-on) #modules-row #vf-progress-pane,
-html:not(.app-search-on) #modules-row #gv-progress-pane,
-html:not(.app-search-on) #modules-row .vf-progress-pane,
-html:not(.app-search-on) #modules-row .gv-progress-pane,
-html:not(.app-search-on) #modules-row #help-contact,
-html:not(.app-search-on) #modules-row .rf-studio,
-html:not(.app-search-on) #modules-row .rf-dash,
-html:not(.app-search-on) #modules-row #rf-report,
-html:not(.app-search-on) #modules-row #rf-report.is-open,
-html:not(.app-search-on) #modules-row .wa-pane.is-open,
-html:not(.app-search-on) #modules-row #wa-report,
-html:not(.app-search-on) #modules-row #wa-report.wa-pane.is-open,
-html:not(.app-search-on) #modules-row #pf-report-panel,
-html:not(.app-search-on) #modules-row #pf-report-panel.pf-rpt-open,
-html:not(.app-search-on) #modules-row .wch-sidebar.wch-docked,
-html:not(.app-search-on) #modules-row.modules-sticky .wch-sidebar.wch-docked,
-html:not(.app-search-on) #modules-row .sa-panel,
-html:not(.app-search-on) #panels-row-right > *:not([class*="scrim"]),
-html:not(.app-search-on) #intent-stack-column > *:not([class*="scrim"]) {
+   Full bleed ▸ Stretch every module (`html.full-bleed` without `.fb-chat-only`)
+   drop this inset so those modules can reach the window edges. Chat-only
+   keeps the contained-card inset. The `:not(#id)` list here outranks the
+   later restretch, so the inset must not apply in stretch-every-module. */
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > *:not(.sticky-chat):not(.ap-chat):not(.rf-chat):not(.sa-chat):not(.gs-chat):not(.aid-chat):not(.wa-chat):not(#wa-chat):not(#rf-chat):not(#sa-chat):not(#aid-chat):not(#pl-chat):not(#ar-chat):not(#gs-chat):not(#chat-shell):not(#pf-chat-panel):not(#wiseai-dock-panel):not(#panels-row):not(#panels-row-right):not(#intent-stack-column):not(#menu-panel):not([class*="scrim"]):not([class*="resize"]):not([class*="handle"]):not([class*="grip"]):not(.wise-progress-restore),
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row .sticky-mod,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row .sticky-mod.is-sticky,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row #agent-main,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row #nfp-panel,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row #ia-panel,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row #ap-progress,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row #vf-progress-pane,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row #gv-progress-pane,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row .vf-progress-pane,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row .gv-progress-pane,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row #help-contact,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row .rf-studio,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row .rf-dash,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row #rf-report,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row #rf-report.is-open,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row .wa-pane.is-open,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row #wa-report,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row #wa-report.wa-pane.is-open,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row #pf-report-panel,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row #pf-report-panel.pf-rpt-open,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row .wch-sidebar.wch-docked,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row.modules-sticky .wch-sidebar.wch-docked,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row .sa-panel,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #panels-row-right > *:not([class*="scrim"]),
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #intent-stack-column > *:not([class*="scrim"]) {
   height: calc(100% - 30px) !important;
   max-height: calc(100% - 30px) !important;
   align-self: center !important;
@@ -2971,22 +3437,22 @@ html.mod-gap-xl #modules-row { gap: var(--modules-gap) !important; }
    Output's 15px inset even before `.is-sticky` lands. Restates the earlier
    html:not(.app-search-on) rule next to the stretch default so page copies
    of `#modules-row > * { height: 100% }` cannot leave progress taller. */
-html:not(.app-search-on) #modules-row > .sticky-mod,
-html:not(.app-search-on) #modules-row > .vf-progress-pane,
-html:not(.app-search-on) #modules-row > .gv-progress-pane,
-html:not(.app-search-on) #modules-row > #ap-progress,
-html:not(.app-search-on) #modules-row > #ia-panel,
-html:not(.app-search-on) #modules-row > #nfp-panel,
-html:not(.app-search-on) #modules-row > #agent-main,
-html:not(.app-search-on) #modules-row > #help-contact,
-html:not(.app-search-on) #modules-row > #wa-report,
-html:not(.app-search-on) #modules-row > #rf-report,
-html:not(.app-search-on) #modules-row > #pf-report-panel,
-html:not(.app-search-on) #modules-row > .wa-pane,
-html:not(.app-search-on) #modules-row > .rf-studio,
-html:not(.app-search-on) #modules-row > .rf-dash,
-html:not(.app-search-on) #modules-row > .sa-panel,
-html:not(.app-search-on) #modules-row > .wch-sidebar {
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > .sticky-mod,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > .vf-progress-pane,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > .gv-progress-pane,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > #ap-progress,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > #ia-panel,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > #nfp-panel,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > #agent-main,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > #help-contact,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > #wa-report,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > #rf-report,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > #pf-report-panel,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > .wa-pane,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > .rf-studio,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > .rf-dash,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > .sa-panel,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > .wch-sidebar {
   height: calc(100% - 30px) !important;
   max-height: calc(100% - 30px) !important;
   align-self: center !important;
@@ -5615,8 +6081,8 @@ html.dark .agent-main-scroll { background: transparent; }
 }
 .agent-main-header .panel-more-wrap { position: relative; }
 
-/* Product Details (add/view product) — ⋯ + width sit after the brand logo
-   on the blue banner. Circle hover only (no rounded-square icon tile). */
+/* Product Details (add/view product) — brand logo sits left of ⋯ + width.
+   Circle hover only (no rounded-square icon tile). */
 .nfp-panel-header .panel-controls {
   display: inline-flex;
   align-items: center;
@@ -5963,7 +6429,12 @@ html.full-bleed:not(.fb-chat-only) #modules-row .gv-progress-pane.sticky-mod.is-
 html.full-bleed:not(.fb-chat-only) #modules-row .wa-pane.is-open,
 html.full-bleed:not(.fb-chat-only) #modules-row .wa-pane.is-open.is-sticky,
 html.full-bleed:not(.fb-chat-only) #modules-row .sa-panel,
-html.full-bleed:not(.fb-chat-only) #modules-row.modules-sticky .wch-sidebar.wch-docked {
+html.full-bleed:not(.fb-chat-only) #modules-row.modules-sticky .wch-sidebar.wch-docked,
+html.full-bleed:not(.fb-chat-only) #modules-row #compare-panel,
+html.full-bleed:not(.fb-chat-only) #modules-row #compare-panel.cp-open,
+html.full-bleed:not(.fb-chat-only) #modules-row #workflow-panel,
+html.full-bleed:not(.fb-chat-only) #modules-row #verify-flow-panel,
+html.full-bleed:not(.fb-chat-only) #modules-row #portfolio-panel {
   align-self: stretch !important;
   height: 100% !important;
   max-height: 100% !important;
@@ -7274,6 +7745,65 @@ html.dark .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary-
    can fade in as a block. Consecutive paras keep the gap a <br><br> used to. */
 .sc-line-body > .sc-para { display: block; }
 .sc-line-body > .sc-para + .sc-para { margin-top: 1em; }
+/* Ingredient lookup cards — Hungry-Man match results, in the shared chat. */
+.sc-line-body > .sc-il-wrap { margin-top: 8px; }
+.sc-line-body > p + .sc-il-wrap,
+.sc-line-body > .sc-para + .sc-il-wrap { margin-top: 10px; }
+.sc-il-card {
+  display: flex; align-items: flex-start; gap: 12px;
+  width: 100%; text-align: left;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: var(--surface, var(--card, #fff));
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+.sc-il-card:hover,
+.sc-il-card:focus-visible {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 6%, var(--surface, #fff));
+}
+html.dark .sc-il-card { background: color-mix(in srgb, #fff 4%, transparent); }
+html.dark .sc-il-card:hover,
+html.dark .sc-il-card:focus-visible {
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+}
+.sc-il-card.is-dim { opacity: 0.35; pointer-events: none; }
+.sc-il-card.is-picked { border-color: var(--primary); opacity: 1; }
+.sc-il-card-main { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
+.sc-il-name { font-size: 0.81rem; font-weight: 800; letter-spacing: 0.01em; }
+.sc-il-cat {
+  font-size: 0.68rem; font-weight: 600;
+  color: var(--primary-ink, var(--primary));
+  text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px;
+}
+.sc-il-desc { font-size: 0.71rem; color: var(--text-muted); margin-top: 5px; line-height: 1.5; }
+.sc-il-bar {
+  display: block; width: 100%; height: 3px; border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  overflow: hidden; margin-top: 8px;
+}
+.sc-il-bar-fill {
+  display: block; height: 100%; width: var(--il-w, 0); border-radius: inherit;
+  animation: sc-il-fill 0.55s cubic-bezier(.4, 0, .2, 1) both;
+}
+.sc-il-card--ok .sc-il-bar-fill { background: var(--sec-green); }
+.sc-il-card--part .sc-il-bar-fill { background: var(--ter-amber); }
+.sc-il-card--muted .sc-il-bar-fill { background: var(--text-muted); }
+.sc-il-score {
+  flex-shrink: 0; font-size: 0.72rem; font-weight: 800;
+  border-radius: 7px; padding: 4px 9px; line-height: 1.3;
+}
+.sc-il-card--ok .sc-il-score { background: var(--sec-green-10); color: var(--sec-green-text); }
+.sc-il-card--part .sc-il-score { background: var(--ter-amber-10); color: var(--ter-amber-text); }
+.sc-il-card--muted .sc-il-score { background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text-muted); }
+.sc-il-hint { font-size: 0.7rem; color: var(--text-muted); line-height: 1.5; }
+@keyframes sc-il-fill { from { width: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .sc-il-bar-fill { animation: none; }
+}
 /* Per-line profile avatars in place of the old "You" / "WISEcodeAI™" labels.
    WISEcodeAI = the WISE-owl bug (same mark as the header) in a brand-blue circle.
    You   = the member's initials, matching the top-bar .topbar-profile chip. */
@@ -7418,7 +7948,7 @@ html.dark .sc-welcome { background: transparent; }
 html.dark .ws-logo-wrap .ws-pulse-ring { --ws-track: rgba(174, 200, 237, 0.55); }
 @keyframes wsTrackSpin { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .ws-logo-wrap .ws-pulse-ring { animation: none; } }
-.ws-heading { font-family: 'WISE Digits', var(--module-title-family, var(--font-serif, 'Noto Serif', Georgia, serif)); font-size: clamp(1.5rem, 1rem + 1.6vw, 2rem); font-weight: 700; letter-spacing: -0.02em; color: var(--text); text-align: center; margin: 0 0 0.5rem; }
+.ws-heading { font-family: 'WISE Digits', var(--module-title-family, var(--font-serif, 'Noto Serif', serif)); font-size: clamp(1.5rem, 1rem + 1.6vw, 2rem); font-weight: 700; letter-spacing: -0.02em; color: var(--text); text-align: center; margin: 0 0 0.5rem; }
 .sc-welcome:not(.ws-in) > .ws-heading,
 .sc-welcome:not(.ws-in) > .ws-sub,
 .sc-welcome:not(.ws-in) .ws-chips .chip,
@@ -9942,7 +10472,7 @@ html.dark .dash-score-toast::after { background: #5A8BB8; }
 .dash-score-toast-icon .material-symbols-outlined { font-size: 20px; color: #fff; }
 .dash-score-toast-body { min-width: 0; }
 .dash-score-toast-title {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   font-size: 0.875rem;
   font-weight: 700;
   line-height: 1.25;
@@ -11537,7 +12067,7 @@ html.dark .dash-scatter-zone {
   fill: var(--text-muted);
   font-size: 12px;
   font-weight: 600;
-  font-family: 'WISE Digits', var(--font-serif, Georgia, 'Times New Roman', serif);
+  font-family: 'WISE Digits', var(--font-serif);
 }
 .dash-scatter-zone-label {
   fill: var(--text-subtle);
@@ -12359,62 +12889,9 @@ html.dark .dash-pillar-card-head .dash-stamp-icon:hover {
 
 /* =============================================================
    Modal panel — brand banner editor (opened from hero kebab)
+   Shell paints from the shared .wise-modal block; these are the
+   banner-picker contents that live inside it.
 ============================================================= */
-.dash-modal-scrim {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: stretch;
-  justify-content: stretch;
-  padding: 0;
-  background: rgba(6, 12, 22, 0.55);
-  -webkit-backdrop-filter: blur(3px);
-  backdrop-filter: blur(3px);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.18s ease;
-}
-.dash-modal-scrim.is-open { opacity: 1; pointer-events: auto; }
-.dash-modal {
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  max-height: none;
-  min-height: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  border-radius: 0;
-  background: var(--surface);
-  border: 0;
-  box-shadow: none;
-  transform: translateY(8px);
-  transition: transform 0.2s ease;
-}
-.dash-modal-scrim.is-open .dash-modal { transform: none; }
-html.dark .dash-modal { background: #14242f; border-color: rgba(255, 255, 255, 0.08); }
-/* Centered card (product photo editor) — the default dash-modal is full-bleed;
-   this modifier keeps a dialog like the all-modules verify panel. */
-.dash-modal-scrim.dash-modal-scrim--panel {
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-.dash-modal-scrim.dash-modal-scrim--panel .dash-modal {
-  width: min(480px, 100%);
-  height: auto;
-  max-width: 480px;
-  max-height: calc(100vh - 48px);
-  border-radius: 18px;
-  border: 1px solid var(--border-strong);
-  box-shadow: var(--shadow-card, 0 24px 60px rgba(0,0,0,0.28));
-}
-.dash-modal--panel .dash-modal-title {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
-  font-weight: 700;
-}
-.dash-modal-scrim.dash-modal-scrim--panel .dash-modal-body { flex: 0 1 auto; }
 .dash-banner-preview--photo {
   aspect-ratio: 1 / 1;
   width: 100%;
@@ -12423,46 +12900,6 @@ html.dark .dash-modal { background: #14242f; border-color: rgba(255, 255, 255, 0
   margin: 0 auto;
   border-radius: 14px;
 }
-
-.dash-modal-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  flex-shrink: 0;
-  padding: 20px 22px 0;
-}
-.dash-modal-eyebrow {
-  font-size: var(--fs-label);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--primary);
-}
-html.dark .dash-modal-eyebrow { color: var(--primary-bright); }
-.dash-modal-title {
-  margin: 4px 0 0;
-  font-size: 1.15rem;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  color: var(--text);
-}
-.dash-modal-close {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  border-radius: 9px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--text-subtle);
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-.dash-modal-close:hover { background: var(--surface-2); color: var(--text); }
-.dash-modal-close .material-symbols-outlined { font-size: 20px; }
-.dash-modal-body { display: flex; flex-direction: column; gap: 14px; padding: 18px 22px; flex: 1; min-height: 0; overflow-y: auto; }
 
 .dash-banner-preview {
   position: relative;
@@ -12556,18 +12993,6 @@ html.dark .dash-modal-eyebrow { color: var(--primary-bright); }
 }
 .dash-banner-url:focus { outline: none; border-color: var(--primary); }
 html.dark .dash-banner-url { background: rgba(255, 255, 255, 0.03); }
-
-.dash-modal-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-shrink: 0;
-  padding: 16px 22px;
-  border-top: 1px solid var(--border);
-}
-.dash-modal-foot-right { display: flex; align-items: center; gap: 10px; }
-html.dark .dash-modal-foot { border-color: rgba(255, 255, 255, 0.08); }
 
 /* =============================================================
    Full report modal — UPF / GRAS "View full report"
@@ -12672,8 +13097,9 @@ html.dark .dash-report-pending { background: rgba(255, 255, 255, 0.03); }
 /* The report title is a page-level header, so it carries the same serif
    display face as every other module masthead (not just where a page-scoped
    override happens to apply). */
-.dash-report-view-titles .dash-modal-title {
-  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+.dash-report-view-titles .dash-modal-title,
+.dash-report-view-titles .wise-modal-title {
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', serif);
   font-size: 1.5rem;
   letter-spacing: -0.01em;
 }
@@ -12682,7 +13108,7 @@ html.dark .dash-report-pending { background: rgba(255, 255, 255, 0.03); }
    page-scoped typography block; other hosts need it here). */
 .dash-report-view .dash-report-summary,
 .dash-report-view .dash-report-stat-val {
-  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', serif);
 }
 .dash-report-back .material-symbols-outlined { font-size: 18px; }
 .dash-report-view-export .material-symbols-outlined { font-size: 18px; }
@@ -12788,7 +13214,7 @@ body[data-nav-id="verification"] { padding-left: 12px; }
 html.dark .vf-back:hover { background: rgba(255, 255, 255, 0.06); }
 .vf-back:focus-visible { outline: 2px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
 .vf-head-title {
-  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', serif);
   font-size: var(--module-title-size, 1.2rem);
   font-weight: var(--module-title-weight, 800);
   color: var(--text);
@@ -12921,32 +13347,8 @@ html.dark .pf-brand-opt:hover, html.dark .pf-brand-opt.is-active { background: r
 .pf-brand-opt-check { margin-left: auto; color: var(--primary-ink, var(--primary)); font-size: 20px !important; opacity: 0; }
 .pf-brand-opt.is-active .pf-brand-opt-check { opacity: 1; }
 
-/* ---------- Toolbar (search pill) ---------- */
-.vf-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  padding: 18px 0 16px;
-}
-.vf-search-inline { position: relative; display: inline-flex; align-items: center; flex: 1 1 auto; min-width: 220px; }
-.vf-search-inline .material-symbols-outlined {
-  position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
-  font-size: 18px; color: var(--text-subtle); pointer-events: none;
-}
-.vf-search {
-  width: 100%; height: 40px; box-sizing: border-box; padding: 0 16px 0 42px;
-  font-family: inherit; font-size: 0.8125rem; font-weight: 400; color: var(--text);
-  background: var(--surface-2); border: 1px solid var(--border-strong);
-  border-radius: var(--radius-pill, 999px); outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-html.dark .vf-search { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
-.vf-search::placeholder { color: color-mix(in srgb, var(--text-subtle) 55%, transparent); font-style: italic; }
-.vf-search:focus {
-  border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
-}
+/* ---------- Toolbar (search pill) — paint is the shared .wise-toolbar block ---------- */
+.vf-toolbar { padding: 18px 0 16px; }
 
 /* Scorecards live above the table card, never inside it. */
 .vf-glance { margin: 0 0 16px; }
@@ -12991,7 +13393,7 @@ html.dark.chat-tint .vf-stat { background: color-mix(in srgb, var(--primary-brig
 }
 html.dark .vf-stat.is-active,
 html.dark .vf-stat--active { background: color-mix(in srgb, var(--primary) 26%, transparent); }
-.vf-stat-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1; }
+.vf-stat-num { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1; }
 .vf-stat.is-active .vf-stat-num,
 .vf-stat--active .vf-stat-num { color: var(--primary); }
 html.dark .vf-stat.is-active .vf-stat-num,
@@ -13082,7 +13484,7 @@ html.dark .vf-stat--verified .vf-stat-label .material-symbols-outlined { color: 
 }
 .vfp-header-text { flex: 1; min-width: 0; }
 .vfp-title {
-  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', serif);
   font-size: var(--module-title-size, 1.2rem);
   font-weight: var(--module-title-weight, 800);
   letter-spacing: -0.01em;
@@ -13159,7 +13561,7 @@ html.dark .vfp-progress-track { background: color-mix(in srgb, var(--sec-green) 
   font-size: 0.76rem; color: var(--text-muted); padding: 3px 0;
 }
 .vfp-foot-total { margin-top: 4px; padding-top: 8px; border-top: 1px dashed var(--border); font-weight: 700; color: var(--text); }
-.vfp-foot-amt { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.05rem; color: var(--vf-ink); }
+.vfp-foot-amt { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.05rem; color: var(--vf-ink); }
 
 @media (max-width: 560px) {
   .vf-progress-pane { flex: 1 1 auto; width: 100% !important; max-width: 100% !important; }
@@ -13397,7 +13799,7 @@ html.dark .vf-chip--inelig { background: rgba(255, 255, 255, 0.10); color: var(-
 .vf-pay-form { width: 100%; }
 
 .vf-pay-title {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   font-size: 1.15rem;
   font-weight: 700;
   margin: 0 0 8px;
@@ -13567,7 +13969,7 @@ html.dark .vf-select-el {
   border-radius: 999px;
   background: var(--primary);
   color: #fff;
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -13617,52 +14019,7 @@ html.dark .vf-select-el {
 .vfp-item-brand { font-size: 0.66rem; color: var(--text-subtle); }
 .vfp-item-cost { font-size: 0.78rem; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-/* ---------- Confirmation modal ---------- */
-.vf-modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 4000;
-  display: flex;
-  align-items: stretch;
-  justify-content: stretch;
-  padding: 0;
-  background: color-mix(in srgb, #05141c 55%, transparent);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-.vf-modal-overlay.is-open { opacity: 1; }
-.vf-modal {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  min-height: 0;
-  background: var(--surface);
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-  padding: 34px 40px 26px;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  transform: translateY(8px);
-  transition: transform 0.2s ease;
-}
-.vf-modal-overlay.is-open .vf-modal { transform: none; }
-.vf-modal-x {
-  position: absolute; top: 14px; right: 14px;
-  width: 30px; height: 30px; border: 0; background: transparent;
-  color: var(--text-subtle); cursor: pointer; border-radius: 8px;
-  display: inline-flex; align-items: center; justify-content: center;
-}
-.vf-modal-x:hover { background: var(--surface-2); }
-.vf-modal-title {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
-  font-size: 1.4rem;
-  font-weight: 700;
-  margin: 0 0 14px;
-}
-.vf-modal-text { margin: 0 0 18px; font-size: 0.88rem; color: var(--text-muted); line-height: 1.55; }
+/* ---------- Confirmation modal — shell is the shared .wise-modal block ---------- */
 .vf-modal-callout {
   text-align: left;
   padding: 12px 16px;
@@ -13674,7 +14031,6 @@ html.dark .vf-select-el {
   line-height: 1.5;
   margin-bottom: 22px;
 }
-.vf-modal-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: auto; }
 /* .vf-modal-btn is a .wise-btn alias — surface ghost stays in the shared block. */
 
 /* ---------- Toast ---------- */
@@ -13780,7 +14136,7 @@ body[data-nav-id="gras-verification"] { padding-left: 12px; }
 html.dark .gv-back:hover { background: rgba(255, 255, 255, 0.06); }
 .gv-back:focus-visible { outline: 2px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
 .gv-head-title {
-  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', serif);
   font-size: var(--module-title-size, 1.2rem); font-weight: var(--module-title-weight, 800); color: var(--text);
   line-height: var(--module-title-lh, 1.16); letter-spacing: -0.01em; margin: 0;
 }
@@ -13791,58 +14147,9 @@ html.dark .gv-back:hover { background: rgba(255, 255, 255, 0.06); }
   margin: var(--module-sub-gap, 3px) 0 0;
 }
 
-/* ---------- Toolbar ---------- */
-.gv-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 18px 0 16px; }
+/* ---------- Toolbar — paint is the shared .wise-toolbar block ---------- */
+.gv-toolbar { padding: 18px 0 16px; }
 .gv-tool-spacer { display: none; }
-.gv-search-inline { position: relative; display: inline-flex; align-items: center; flex: 1 1 auto; min-width: 220px; }
-.gv-search-inline .material-symbols-outlined {
-  position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
-  font-size: 18px; color: var(--text-subtle); pointer-events: none;
-}
-.gv-search {
-  width: 100%; height: 40px; box-sizing: border-box; padding: 0 16px 0 42px;
-  font-family: inherit; font-size: 0.8125rem; color: var(--text);
-  background: var(--surface-2); border: 1px solid var(--border-strong);
-  border-radius: var(--radius-pill, 999px); outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-html.dark .gv-search { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
-.gv-search::placeholder { color: color-mix(in srgb, var(--text-subtle) 55%, transparent); font-style: italic; }
-.gv-search:focus {
-  border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
-}
-/* Room for the trailing filter control inside the pill. */
-.gv-search--hasfilter { padding-right: 46px; }
-
-/* ---------- Filter control + popover ---------- */
-.gv-filter-btn {
-  position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
-  width: 30px; height: 30px; padding: 0;
-  display: inline-flex; align-items: center; justify-content: center;
-  border: 0; border-radius: 50%; background: transparent; color: var(--text-subtle);
-  cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
-}
-.gv-filter-btn .material-symbols-outlined { font-size: 18px; }
-.gv-filter-btn:hover { background: color-mix(in srgb, var(--text) 9%, transparent); color: var(--text); }
-html.dark .gv-filter-btn:hover { background: rgba(255,255,255,0.08); }
-.gv-filter-btn.is-open, .gv-filter-btn.is-active { color: var(--primary); }
-.gv-filter-btn:focus-visible { outline: 2px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
-.gv-filter-count {
-  position: absolute; top: -1px; right: -1px; min-width: 15px; height: 15px; padding: 0 3px;
-  display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
-  border-radius: 999px; background: var(--primary); color: #fff;
-  font-size: 0.5625rem; font-weight: 800; line-height: 1;
-}
-
-.gv-filter-pop {
-  position: absolute; top: calc(100% + 8px); right: 0; z-index: 600;
-  width: 300px; max-width: min(340px, calc(100vw - 40px));
-  background: var(--surface); border: 1px solid var(--border-strong);
-  border-radius: var(--r-md); box-shadow: var(--shadow-3, 0 14px 34px rgba(0,0,0,0.24));
-  padding: 12px; box-sizing: border-box; text-align: left;
-  animation: gvFilterPop 0.16s ease;
-}
 @keyframes gvFilterPop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 .gv-filter-pop-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .gv-filter-pop-title { font-size: 0.625rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); }
@@ -13890,7 +14197,8 @@ html.dark .gv-fopt:hover { background: rgba(255,255,255,0.05); }
 
 /* The wizard's primary action sits alone in a top toolbar, right-aligned — the
    step-advance button lives at the TOP like the other flows, not in a footer. */
-.gv-toolbar--wizard { justify-content: flex-end; padding-top: 0; }
+.gv-toolbar--wizard,
+.wise-toolbar--wizard { justify-content: flex-end; padding-top: 0; }
 
 /* ---------- Board (glance + table) ---------- */
 .gv-board {
@@ -13912,7 +14220,7 @@ html.dark .gv-fopt:hover { background: rgba(255,255,255,0.05); }
 html.dark .gv-stat { background: #1A2339; }
 html.chat-tint:not(.dark) .gv-stat { background: var(--scorecard-fill, color-mix(in srgb, var(--primary) 5%, var(--surface))); }
 html.dark.chat-tint .gv-stat { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
-.gv-stat-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1; }
+.gv-stat-num { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1; }
 .gv-stat--verified .gv-stat-num { color: var(--gv-ink); }
 .gv-stat--verified .gv-stat-label .material-symbols-outlined { color: var(--gv-ink); }
 .gv-stat--warn .gv-stat-num { color: var(--gv-warn); }
@@ -13955,7 +14263,7 @@ html.dark .gv-glyph { background: rgba(96, 165, 250, 0.14); color: #9DC0E6; bord
 .gv-glyph .material-symbols-outlined { font-size: 19px; }
 
 .gv-impact-cell { display: flex; flex-direction: column; gap: 1px; }
-.gv-impact-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.1rem; font-weight: 800; color: var(--text); line-height: 1; }
+.gv-impact-num { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.1rem; font-weight: 800; color: var(--text); line-height: 1; }
 .gv-impact-cap { font-size: 0.68rem; color: var(--text-subtle); }
 
 .gv-empty { text-align: center; color: var(--text-subtle); padding: 26px 12px !important; font-size: 0.85rem; }
@@ -14003,7 +14311,7 @@ html.dark .gv-chip--info { background: rgba(45, 212, 191, 0.15); }
 
 .gv-step-anim { animation: gvPop 0.24s ease both; }
 @keyframes gvPop { from { opacity: 0; transform: translateY(6px) scale(0.995); } to { opacity: 1; transform: none; } }
-.gv-step-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.15rem; font-weight: 700; margin: 0 0 6px; color: var(--text); }
+.gv-step-title { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.15rem; font-weight: 700; margin: 0 0 6px; color: var(--text); }
 .gv-step-desc { margin: 0 0 20px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.55; }
 
 /* ---------- Step 1 — Impact ---------- */
@@ -14015,7 +14323,7 @@ html.dark .gv-chip--info { background: rgba(45, 212, 191, 0.15); }
 .gv-impact-tile--primary { background: color-mix(in srgb, var(--primary) 8%, var(--surface-2)); border-color: color-mix(in srgb, var(--primary) 30%, var(--border)); }
 .gv-impact-tile-cap { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); }
 .gv-impact-tile--primary .gv-impact-tile-cap { color: var(--gv-ink); }
-.gv-impact-tile-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-weight: 800; font-size: 1.9rem; color: var(--text); margin-top: 4px; line-height: 1; }
+.gv-impact-tile-num { font-family: 'WISE Digits', 'Noto Serif', serif; font-weight: 800; font-size: 1.9rem; color: var(--text); margin-top: 4px; line-height: 1; }
 .gv-impact-tile--primary .gv-impact-tile-num { color: var(--gv-ink); }
 .gv-impact-tile-num--warn { font-size: 1.3rem; color: var(--gv-warn); }
 .gv-impact-tile-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; }
@@ -14152,7 +14460,7 @@ html.dark .gv-input { background: rgba(255,255,255,0.05); border-color: rgba(255
 .gv-outcome-icon .material-symbols-outlined { font-size: 34px; }
 .gv-outcome-icon--info { background: rgba(14, 116, 144, 0.12); color: var(--gv-info); box-shadow: 0 0 0 8px rgba(14, 116, 144, 0.06); }
 .gv-outcome-icon--ok { background: rgba(50, 169, 102, 0.14); color: var(--gv-ok); box-shadow: 0 0 0 8px rgba(50, 169, 102, 0.07); }
-.gv-outcome-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.6rem; font-weight: 700; margin: 0 auto 14px; color: var(--text); }
+.gv-outcome-title { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.6rem; font-weight: 700; margin: 0 auto 14px; color: var(--text); }
 .gv-outcome-text { margin: 0 auto 20px; font-size: 0.94rem; color: var(--text-muted); line-height: 1.6; }
 .gv-outcome-text strong { color: var(--text); }
 .gv-outcome-actions { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border); }
@@ -14161,8 +14469,8 @@ html.dark .gv-input { background: rgba(255,255,255,0.05); border-color: rgba(255
   padding: 12px 20px; margin-bottom: 22px; border-radius: var(--r-sm);
   background: color-mix(in srgb, var(--primary) 7%, var(--surface-2));
 }
-.gv-jump-from { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.2rem; font-weight: 700; color: var(--text-subtle); }
-.gv-jump-to { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.6rem; font-weight: 800; color: var(--gv-ok); }
+.gv-jump-from { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.2rem; font-weight: 700; color: var(--text-subtle); }
+.gv-jump-to { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.6rem; font-weight: 800; color: var(--gv-ok); }
 .gv-outcome-jump .material-symbols-outlined { color: var(--text-subtle); }
 .gv-jump-cap { font-size: 0.72rem; color: var(--text-muted); width: 100%; }
 .gv-outcome .gv-subhead, .gv-outcome .gv-prod-list { text-align: left; }
@@ -14190,7 +14498,7 @@ html.dark .gv-input { background: rgba(255,255,255,0.05); border-color: rgba(255
 }
 .gvp-header-text { flex: 1; min-width: 0; }
 .gvp-title {
-  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', serif);
   font-size: var(--module-title-size, 1.2rem);
   font-weight: var(--module-title-weight, 800);
   letter-spacing: -0.01em;
@@ -14246,7 +14554,7 @@ html.dark .gvp-progress-track { background: color-mix(in srgb, var(--sec-green) 
 .gvp-foot-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 0.76rem; color: var(--text-muted); padding: 3px 0; }
 .gvp-foot-row span:last-child { font-weight: 600; color: var(--text); max-width: 60%; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gvp-foot-total { margin-top: 4px; padding-top: 8px; border-top: 1px dashed var(--border); font-weight: 700; color: var(--text); }
-.gvp-foot-amt { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.05rem; color: var(--gv-ink) !important; }
+.gvp-foot-amt { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.05rem; color: var(--gv-ink) !important; }
 
 
 @media (max-width: 560px) {
@@ -14330,7 +14638,7 @@ html.dark .gvp-pct-ring {
    optional actions cluster sits to the right of the title. */
 .adm-head { padding: 2px 2px 0; margin-bottom: 18px; }
 .adm-head-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-.adm-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.5rem; font-weight: 800; color: var(--text); margin: 0; letter-spacing: -0.01em; line-height: 1.12; }
+.adm-title { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.5rem; font-weight: 800; color: var(--text); margin: 0; letter-spacing: -0.01em; line-height: 1.12; }
 .adm-lede { font-size: 0.9rem; color: var(--text-muted); margin: 6px 0 0; max-width: 68ch; }
 .adm-head-actions { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
@@ -14344,28 +14652,8 @@ html.dark .adm-back { color: var(--primary-bright, #93C5FD); }
 .adm-section-label { display: flex; align-items: center; gap: 7px; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.02em; color: var(--text); margin: 22px 2px 12px; }
 .adm-section-label .material-symbols-outlined { font-size: 17px; color: var(--text-subtle); }
 
-/* Toolbar / search — the search fills the row and actions sit to its
-   right, mirroring .pf-toolbar. */
-.adm-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
-.adm-search-inline { position: relative; display: inline-flex; align-items: center; flex: 1 1 auto; min-width: 220px; }
-.adm-search-inline > .material-symbols-outlined { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-subtle); pointer-events: none; }
-.adm-search { width: 100%; height: 42px; box-sizing: border-box; padding: 0 16px 0 42px; font-family: inherit; font-size: 0.8125rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: var(--radius-pill, 999px); outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease; }
-html.dark .adm-search { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
-.adm-search::placeholder { color: color-mix(in srgb, var(--text-subtle) 55%, transparent); font-style: italic; }
-.adm-search:focus { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
-/* Filter control that lives inside the search pill (single tune icon that opens
-   a popover of all filters) so the toolbar stays a clean search bar. */
-.adm-search-inline.has-filter .adm-search { padding-right: 46px; }
-.adm-search-filter { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; color: var(--text-subtle); cursor: pointer; transition: background 0.15s ease, color 0.15s ease; }
-.adm-search-filter .material-symbols-outlined { position: static; transform: none; font-size: 19px; color: inherit; pointer-events: none; }
-.adm-search-filter:hover { color: var(--text); background: var(--surface-3, var(--surface-2)); }
-html.dark .adm-search-filter:hover { background: rgba(255,255,255,0.08); }
-.adm-search-filter.is-active { color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, transparent); }
-html.dark .adm-search-filter.is-active { color: var(--primary-bright, #93C5FD); }
-.adm-search-filter.has-dot::after { content: ''; position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); border: 1.5px solid var(--surface-2); }
-html.dark .adm-search-filter.has-dot::after { background: var(--primary-bright, #93C5FD); border-color: var(--surface); }
-.adm-filter-pop { position: absolute; z-index: 60; top: calc(100% + 8px); right: 0; min-width: 268px; padding: 14px; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 14px; box-shadow: var(--shadow-card, 0 12px 32px rgba(0,0,0,0.18)); display: flex; flex-direction: column; gap: 12px; }
-.adm-filter-pop[hidden] { display: none; }
+/* Toolbar / search — paint is the shared .wise-toolbar block. */
+.adm-toolbar { gap: 10px; margin-bottom: 16px; }
 .adm-filter-pop .adm-field { display: flex; flex-direction: column; gap: 6px; }
 .adm-filter-pop .adm-field-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle); }
 .adm-filter-pop .adm-select { width: 100%; }
@@ -14432,7 +14720,7 @@ html.dark .adm-icon-btn:hover { background: rgba(255,255,255,0.06); }
 .adm-metric:hover .adm-metric-grip { opacity: 0.7; }
 .adm-metric-top { display: inline-flex; align-items: center; gap: 7px; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); }
 .adm-metric-top .material-symbols-outlined { font-size: 15px; color: var(--text-subtle); }
-.adm-metric-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.5rem; font-weight: 800; line-height: 1.05; color: var(--text); }
+.adm-metric-num { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.5rem; font-weight: 800; line-height: 1.05; color: var(--text); }
 .adm-metric-sub { font-size: 0.7rem; color: var(--text-subtle); }
 .adm-metric--accent .adm-metric-num { color: var(--sec-green); }
 html.dark .adm-metric--accent .adm-metric-num { color: #6FE0A0; }
@@ -14444,7 +14732,7 @@ html.dark .adm-metric--accent .adm-metric-num { color: #6FE0A0; }
 .adm-stat:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
 .adm-stat.is-active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, var(--surface)); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1); }
 html.dark .adm-stat.is-active { background: color-mix(in srgb, var(--primary) 22%, transparent); }
-.adm-stat-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.65rem; font-weight: 800; line-height: 1.02; color: var(--text); }
+.adm-stat-num { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.65rem; font-weight: 800; line-height: 1.02; color: var(--text); }
 .adm-stat-label { display: inline-flex; align-items: center; gap: 5px; font-size: 0.76rem; font-weight: 700; color: var(--text); }
 .adm-stat-label .material-symbols-outlined { font-size: 14px; }
 .adm-stat-sub { font-size: 0.68rem; color: var(--text-subtle); }
@@ -14587,7 +14875,7 @@ html.dark .adm-rowmenu-btn { background: transparent; }
 .adm-rowmenu-btn:hover, .adm-rowmenu.is-open .adm-rowmenu-btn { color: var(--text); background: var(--surface-2); }
 html.dark .adm-rowmenu-btn:hover, html.dark .adm-rowmenu.is-open .adm-rowmenu-btn { background: rgba(255,255,255,0.06); }
 .adm-rowmenu-btn .material-symbols-outlined { font-size: 18px; }
-.adm-rowmenu-pop { position: absolute; top: calc(100% + 4px); left: 0; z-index: 40; min-width: 210px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-2, 0 12px 32px rgba(0,0,0,0.18)); padding: 6px; }
+.adm-rowmenu-pop { position: absolute; top: auto; bottom: calc(100% + 6px); left: 0; z-index: 40; min-width: 210px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-2, 0 12px 32px rgba(0,0,0,0.18)); padding: 6px; }
 .adm-rowmenu-pop[hidden] { display: none; }
 .adm-rowmenu-item { width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: none; background: transparent; cursor: pointer; border-radius: 8px; font-family: inherit; font-size: 0.8rem; font-weight: 600; color: var(--text); text-align: left; white-space: nowrap; }
 .adm-rowmenu-item:hover { background: var(--surface-2); }
@@ -14607,7 +14895,7 @@ html.dark .adm-rowmenu-item--danger .material-symbols-outlined { color: #FF9E96;
 /* Each card is its own size container so its chart adapts to the card's own
    width — the charts stay legible whether three, two, or one sit per row. */
 .adm-chart-card { flex: 1 1 280px; min-width: 0; container-type: inline-size; container-name: adm-chart; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-1); padding: 18px 20px; display: flex; flex-direction: column; }
-.adm-chart-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1rem; font-weight: 700; color: var(--text); margin: 0 0 4px; }
+.adm-chart-title { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1rem; font-weight: 700; color: var(--text); margin: 0 0 4px; }
 .adm-chart-body { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; }
 
 /* Donut — thick segmented ring of rounded annular-sector <path>s, mirroring the
@@ -14632,7 +14920,7 @@ html.dark .adm-rowmenu-item--danger .material-symbols-outlined { color: #FF9E96;
 .adm-donut-center::before { content: ""; position: absolute; inset: 0; margin: auto; width: 76%; height: 76%; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 8px 20px rgba(8, 15, 26, 0.20), 0 3px 8px rgba(8, 15, 26, 0.14); z-index: 0; }
 html.dark .adm-donut-center::before { background: #14242f; border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5), 0 3px 8px rgba(0, 0, 0, 0.4); }
 .adm-donut-center > * { position: relative; z-index: 1; max-width: 120px; }
-.adm-donut-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 2.1rem; font-weight: 800; line-height: 1; letter-spacing: -0.02em; color: var(--ter-cyan); }
+.adm-donut-num { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 2.1rem; font-weight: 800; line-height: 1; letter-spacing: -0.02em; color: var(--ter-cyan); }
 .adm-donut-label { font-size: 0.8125rem; font-weight: 700; color: var(--text); margin-top: 3px; }
 .adm-donut-sub { font-size: 0.68rem; line-height: 1.25; color: var(--text-muted); }
 
@@ -14651,7 +14939,7 @@ html.dark .adm-donut-center::before { background: #14242f; border-color: rgba(25
 .adm-bar { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 8px; height: 100%; min-width: 0; }
 .adm-bar-track { position: relative; width: 100%; max-width: 60px; flex: 1 1 auto; display: flex; align-items: end; }
 .adm-bar-fill { width: 100%; border-radius: 8px 8px 4px 4px; min-height: 6px; transition: height 0.9s cubic-bezier(0.22,1,0.36,1); position: relative; }
-.adm-bar-val { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 0.95rem; font-weight: 800; color: var(--text); }
+.adm-bar-val { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 0.95rem; font-weight: 800; color: var(--text); }
 /* Fixed-height label band (fits up to three wrapped lines, e.g. "Super
    Ultra-Processed") with the text top-aligned. This keeps every bar's track
    ending on the same line, so all the bar baselines — and the label tops —
@@ -14696,7 +14984,7 @@ html.dark .adm-donut-center::before { background: #14242f; border-color: rgba(25
 .adm-vf-stat .wise-btn { margin-top: auto; }
 .adm-vf-stat:hover { transform: translateY(-1px); box-shadow: var(--shadow-card, var(--shadow-1)); border-color: var(--border-strong); }
 .adm-vf-stat.is-active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, var(--scorecard-fill, var(--surface))); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1); }
-.adm-vf-stat-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.7rem; font-weight: 800; line-height: 1; color: var(--score-ink, var(--text)); }
+.adm-vf-stat-num { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.7rem; font-weight: 800; line-height: 1; color: var(--score-ink, var(--text)); }
 .adm-vf-stat.adm-stat--red .adm-vf-stat-num { color: var(--score-ink-red); }
 .adm-vf-stat.adm-stat--green .adm-vf-stat-num { color: var(--score-ink-green); }
 .adm-vf-stat.adm-stat--amber .adm-vf-stat-num { color: var(--score-ink-amber); }
@@ -14717,7 +15005,7 @@ html.dark .adm-donut-center::before { background: #14242f; border-color: rgba(25
 .adm-vrow-bar { height: 4px; border-radius: 999px; background: var(--surface-3, var(--surface-2)); overflow: hidden; }
 html.dark .adm-vrow-bar { background: rgba(255,255,255,0.08); }
 .adm-vrow-bar span { display: block; height: 100%; border-radius: 999px; transition: width 0.9s cubic-bezier(0.22,1,0.36,1); }
-.adm-vrow-val { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1rem; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.adm-vrow-val { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1rem; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
 
 /* ---- Admin Utils — database strip + stacked utility cards ----------- */
 .adm-db { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow-1); }
@@ -14740,29 +15028,12 @@ html.dark .adm-util-ic { color: #93C5FD; }
 .adm-util-desc { font-size: 0.82rem; color: var(--text-muted); margin: 0 0 12px; max-width: 74ch; line-height: 1.5; }
 
 /* ---- Toast (shared across the admin modules) ----------------------- */
-#adm-toast-wrap { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 2100; display: flex; flex-direction: column; gap: 8px; align-items: center; }
-.adm-toast { display: inline-flex; align-items: center; gap: 9px; padding: 11px 18px; border-radius: 999px; background: var(--text); color: var(--bg); font-size: 0.8rem; font-weight: 600; box-shadow: var(--shadow-3); opacity: 0; transform: translateY(8px); transition: opacity 0.25s ease, transform 0.25s ease; }
-.adm-toast.is-in { opacity: 1; transform: none; }
-.adm-toast .material-symbols-outlined { font-size: 17px; }
+#adm-toast-wrap, #inv-toast-wrap, #pf-toast-wrap, #ma-toast-wrap { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 2100; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.adm-toast, .inv-toast, .pf-toast, .ma-toast { display: inline-flex; align-items: center; gap: 9px; padding: 11px 18px; border-radius: 999px; background: var(--text); color: var(--bg); font-size: 0.8rem; font-weight: 600; box-shadow: var(--shadow-3); opacity: 0; transform: translateY(8px); transition: opacity 0.25s ease, transform 0.25s ease; }
+.adm-toast.is-in, .inv-toast.is-in, .pf-toast.is-in, .ma-toast.is-in { opacity: 1; transform: none; }
+.adm-toast .material-symbols-outlined, .inv-toast .material-symbols-outlined, .pf-toast .material-symbols-outlined, .ma-toast .material-symbols-outlined { font-size: 17px; }
 
-/* ---- Modal (shared across the admin modules) ----------------------- */
-.adm-modal-scrim { position: fixed; inset: 0; z-index: 2200; display: flex; align-items: stretch; justify-content: stretch; padding: 0; background: rgba(15, 26, 33, 0.42); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); opacity: 0; transition: opacity 0.2s ease; }
-.adm-modal-scrim.is-open { opacity: 1; }
-.adm-modal { position: relative; width: 100%; max-width: 520px; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 18px; box-shadow: var(--shadow-card, 0 24px 60px rgba(0,0,0,0.28)); transform: translateY(10px) scale(0.98); transition: transform 0.22s cubic-bezier(0.2, 0.7, 0.2, 1); }
-.adm-modal-scrim .adm-modal { width: 100%; height: 100%; max-width: none; min-height: 0; border-radius: 0; border: 0; box-shadow: none; display: flex; flex-direction: column; overflow: hidden; transform: translateY(8px); }
-.adm-modal-scrim.is-open .adm-modal { transform: none; }
-html.dark .adm-modal { background: #14242f; border-color: rgba(255,255,255,0.08); }
-.adm-modal-x { position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 9px; background: transparent; color: var(--text-subtle); cursor: pointer; }
-.adm-modal-x:hover { background: var(--surface-2); color: var(--text); }
-html.dark .adm-modal-x:hover { background: rgba(255,255,255,0.06); }
-.adm-modal-x .material-symbols-outlined { font-size: 20px; }
-.adm-modal-head { padding: 22px 24px 6px; }
-.adm-modal-eyebrow { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--primary); }
-html.dark .adm-modal-eyebrow { color: var(--primary-bright, #7FB0E0); }
-.adm-modal-title { margin: 6px 0 0; font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.28rem; font-weight: 800; color: var(--text); }
-.adm-modal-sub { margin: 6px 0 0; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
-.adm-modal-body { display: flex; flex-direction: column; gap: 12px; padding: 16px 24px 24px; }
-.adm-modal-scrim .adm-modal-body { flex: 1; min-height: 0; overflow-y: auto; }
+/* ---- Modal — shell is the shared .wise-modal block ----------------- */
 
 /* Duplicate-flow option cards. */
 .adm-dup-opt { display: flex; align-items: flex-start; gap: 14px; width: 100%; box-sizing: border-box; padding: 16px; border: 1px solid var(--border-strong); border-radius: 14px; background: var(--surface-2); font: inherit; text-align: left; cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease; }
@@ -14789,7 +15060,7 @@ html.dark .adm-qi-suggest-row:hover { background: rgba(255,255,255,0.06); }
 
 .adm-qi-summary { display: flex; align-items: center; gap: 26px; flex-wrap: wrap; }
 .adm-qi-stat { display: flex; flex-direction: column; gap: 1px; }
-.adm-qi-stat-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.35rem; font-weight: 800; line-height: 1; color: var(--text); }
+.adm-qi-stat-num { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.35rem; font-weight: 800; line-height: 1; color: var(--text); }
 .adm-qi-stat-label { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); }
 
 .adm-invite-chips { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -15051,7 +15322,7 @@ html.dark .dash-star-mover { background: rgba(255, 255, 255, 0.025); border-colo
 }
 .dash-star-mover-cta .material-symbols-outlined { font-size: 14px; }
 .dash-star-mover-num {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, 'Times New Roman', serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   font-size: 2.4rem;
   font-weight: 800;
   line-height: 1.05;
@@ -15088,7 +15359,7 @@ html.dark .dash-star-tile { background: rgba(255, 255, 255, 0.025); border-color
 button.dash-star-tile { cursor: pointer; font: inherit; transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s; }
 button.dash-star-tile:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); border-color: var(--border-strong); }
 .dash-star-tile-num {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, 'Times New Roman', serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   font-size: 1.9rem;
   font-weight: 800;
   line-height: 1;
@@ -15655,13 +15926,13 @@ table.rtbl.rtbl-cards tbody > tr > td.rtbl-fld:not([data-rlabel]),
   padding: var(--module-head-pad-t, 26px) var(--module-head-pad-x, 40px) 56px;
   display: flex; flex-direction: column;
 }
-.wmod-serif { font-family: 'WISE Digits', 'Noto Serif', Georgia, 'Times New Roman', serif; }
+.wmod-serif { font-family: 'WISE Digits', 'Noto Serif', serif; }
 
 /* ── Masthead: serif title, subtext, and an optional longer description ── */
 .wmod-masthead { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
 .wmod-masthead-main { min-width: 0; }
 .wmod-title {
-  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', serif);
   margin: 0; font-size: var(--module-title-size, 1.2rem);
   font-weight: var(--module-title-weight, 800); letter-spacing: -0.01em;
   line-height: var(--module-title-lh, 1.16); color: var(--text);
@@ -15675,48 +15946,10 @@ table.rtbl.rtbl-cards tbody > tr > td.rtbl-fld:not([data-rlabel]),
 .wmod-desc { font-size: 0.85rem; line-height: 1.6; color: var(--text-subtle); margin: 10px 0 0; max-width: 72ch; }
 .wmod-head-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
-/* ── Toolbar + canonical search field with an inline funnel filter ── */
-.wmod-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 2px 0; margin-top: 22px; }
-.wmod-search-inline { position: relative; display: inline-flex; align-items: center; flex: 1 1 auto; min-width: 200px; }
-.wmod-search-inline > .material-symbols-outlined {
-  position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
-  font-size: 18px !important; color: var(--text-subtle); pointer-events: none;
-}
-.wmod-search-input {
-  width: 100%; height: 38px; box-sizing: border-box; padding: 0 44px 0 42px;
-  font-family: inherit; font-size: 0.8125rem; font-weight: 400; color: var(--text);
-  background: var(--surface-2); border: 1px solid var(--border-strong);
-  border-radius: var(--radius-pill, 999px); outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-}
-html.dark .wmod-search-input { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
-.wmod-search-input::placeholder { color: color-mix(in srgb, var(--text-subtle) 55%, transparent); font-style: italic; }
-.wmod-search-input:focus {
-  border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
-}
-.wmod-filter-btn {
-  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
-  width: 28px; height: 28px; border-radius: 50%;
-  display: inline-flex; align-items: center; justify-content: center;
-  border: none; background: transparent; color: var(--text-subtle); cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-.wmod-filter-btn:hover { background: var(--surface-3); color: var(--text); }
-html.dark .wmod-filter-btn:hover { background: rgba(255,255,255,0.08); }
-.wmod-filter-btn .material-symbols-outlined { font-size: 18px !important; }
-.wmod-filter-btn.has-filters { color: var(--primary-ink, var(--primary)); }
-html.dark .wmod-filter-btn.has-filters { color: var(--primary-bright, #93C5FD); }
+/* ── Toolbar — paint is the shared .wise-toolbar block ── */
+.wmod-toolbar { padding: 2px 0; margin-top: 22px; }
 .wmod-filter-dot { position: absolute; top: 3px; right: 3px; width: 7px; height: 7px; border-radius: 50%; background: var(--primary); border: 1.5px solid var(--surface-2); display: none; }
 .wmod-filter-btn.has-filters .wmod-filter-dot { display: block; }
-
-.wmod-filter-pop {
-  position: absolute; z-index: 60; top: calc(100% + 8px); right: 0; width: 340px; max-width: 92vw;
-  max-height: min(70vh, 560px); overflow-y: auto;
-  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-  box-shadow: var(--shadow-2, 0 12px 32px rgba(0,0,0,0.18)); padding: 14px;
-}
-.wmod-filter-pop[hidden] { display: none; }
 .wmod-filter-pop-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .wmod-filter-pop-title { font-size: 13px; font-weight: 800; color: var(--text); }
 .wmod-filter-clear { border: none; background: transparent; color: var(--primary-ink, var(--primary)); font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
@@ -15976,19 +16209,12 @@ html.dark .wmod-step { background: rgba(255,255,255,0.05); }
 .wmod-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 56px 20px; color: var(--text-muted); font-size: 0.9rem; text-align: center; }
 .wmod-empty .material-symbols-outlined { font-size: 42px; color: var(--text-subtle); }
 
-/* ── Modal ── */
-.wmod-modal-overlay { position: fixed; inset: 0; z-index: 3000; display: flex; align-items: stretch; justify-content: stretch; padding: 0; background: color-mix(in srgb, #0b1220 55%, transparent); backdrop-filter: blur(2px); opacity: 0; transition: opacity 0.18s ease; }
-.wmod-modal-overlay.is-in { opacity: 1; }
-.wmod-modal { width: 100%; height: 100%; max-width: none; min-height: 0; background: var(--surface); border: 0; border-radius: 0; box-shadow: none; padding: 28px 32px; display: flex; flex-direction: column; transform: translateY(8px); transition: transform 0.18s ease; }
-.wmod-modal-overlay.is-in .wmod-modal { transform: none; }
-.wmod-modal-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.25rem; font-weight: 800; color: var(--text); margin: 0 0 6px; letter-spacing: -0.01em; }
-.wmod-modal-sub { font-size: 0.85rem; color: var(--text-muted); margin: 0 0 18px; line-height: 1.5; }
+/* ── Modal — shell is the shared .wise-modal block ── */
 .wmod-modal-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
 .wmod-modal-flabel { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--text-subtle); }
 .wmod-input { height: 40px; box-sizing: border-box; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text); font-family: inherit; font-size: 0.9rem; outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
 html.dark .wmod-input { background: rgba(255,255,255,0.05); }
 .wmod-input:focus { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
-.wmod-modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: auto; padding-top: 22px; }
 .wmod-secret { display: flex; align-items: center; gap: 8px; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 10px; padding: 10px 12px; }
 html.dark .wmod-secret { background: rgba(0,0,0,0.25); }
 .wmod-secret code { font-size: 0.82rem; color: var(--text); word-break: break-all; flex: 1; }
@@ -16038,7 +16264,7 @@ body > .owt-mod.wch-sidebar.wch-docked {
 .owt-mod .wch-controls .panel-more-wrap { margin-left: 0; }
 .owt-mod .wch-head-title {
   display: block;
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   font-size: 1.28rem;
   font-weight: 800;
   letter-spacing: -0.01em;
@@ -16055,7 +16281,7 @@ body > .owt-mod.wch-sidebar.wch-docked {
 }
 .owt-mod .owt-kicker {
   margin: 0;
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -16857,11 +17083,11 @@ html.dark .ac-route-ico { color: var(--primary-bright); }
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
 }
 .mi-hero-title {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   margin: 0; font-size: 1.7rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
 }
 .mi-load-pct {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em;
   color: var(--text-muted); line-height: 1.2; white-space: nowrap;
   font-variant-numeric: tabular-nums;
@@ -16921,7 +17147,7 @@ html.dark .mi-reeval-status.is-ok {
 }
 .mi-reeval-status-head {
   display: flex; align-items: flex-start; gap: 8px;
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   font-size: 0.95rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text);
 }
 .mi-reeval-status-head .material-symbols-outlined { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
@@ -16983,7 +17209,7 @@ html.dark .mi-scan-head > .material-symbols-outlined { color: var(--primary-brig
 html.dark .mi-scan-eyebrow { color: var(--primary-bright, #7FB0E0); }
 .mi-scan-title {
   margin: 4px 0 0;
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   font-size: 1.28rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
 }
 .mi-scan-sub { margin: 6px 0 0; font-size: 0.85rem; color: var(--text-muted); line-height: 1.45; }
@@ -17003,7 +17229,7 @@ html.dark .mi-scan-close:hover { background: rgba(255,255,255,0.06); }
   padding: 0 22px 8px;
 }
 .mi-scan-pct {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em;
   color: var(--text); font-variant-numeric: tabular-nums; line-height: 1;
 }
@@ -17028,7 +17254,7 @@ html.dark .mi-scan-log { background: rgba(255,255,255,0.03); border-color: rgba(
 .mi-scan-phase {
   display: flex; flex-direction: column; gap: 2px;
   padding: 10px 12px 8px;
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   font-size: 0.82rem; font-weight: 800; color: var(--text);
   background: color-mix(in srgb, var(--primary) 8%, transparent);
   border-bottom: 1px solid var(--border);
@@ -17260,7 +17486,7 @@ html.dark .mi-pane-ic { color: var(--primary-bright, #93C5FD); }
 }
 html.dark .mi-pane-comps { background: rgba(255,255,255,0.03); }
 .mi-pane-comps-head {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   font-size: 0.78rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text);
   padding: 0 2px 4px;
 }
@@ -17394,20 +17620,24 @@ html.dark .mi-az-thumb-src { color: var(--primary-bright, #93C5FD); }
 }
 .dsc-card--wide .mi-az-grid { margin-top: 4px; }
 
-.dash-modal-scrim.dash-modal-scrim--chart {
+.dash-modal-scrim.dash-modal-scrim--chart,
+.wise-modal-scrim.wise-modal-scrim--chart {
   padding: 20px;
 }
-.dash-modal-scrim.dash-modal-scrim--chart .dash-modal--chart {
+.dash-modal-scrim.dash-modal-scrim--chart .dash-modal--chart,
+.wise-modal-scrim.wise-modal-scrim--chart .wise-modal--chart {
   width: min(1100px, calc(100vw - 40px));
   max-width: min(1100px, calc(100vw - 40px));
   height: min(820px, calc(100vh - 40px));
   max-height: calc(100vh - 40px);
   display: flex; flex-direction: column;
 }
-.dash-modal--chart .dash-modal-title {
-  font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
+.dash-modal--chart .dash-modal-title,
+.wise-modal--chart .wise-modal-title {
+  font-family: var(--module-title-family), 'Noto Serif', serif;
 }
-.dash-modal-scrim.dash-modal-scrim--chart .dash-modal-body { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.dash-modal-scrim.dash-modal-scrim--chart .dash-modal-body,
+.wise-modal-scrim.wise-modal-scrim--chart .wise-modal-body { flex: 1 1 auto; min-height: 0; overflow: hidden; }
 .mi-az-lb-body { padding: 0 18px 14px !important; }
 .mi-az-lb-stage {
   position: relative; flex: 1 1 auto; min-height: 0; height: min(68vh, 680px);
@@ -17435,7 +17665,7 @@ html.dark .mi-az-lb-stage { border-color: rgba(255, 255, 255, 0.08); }
 }
 html.dark .mi-module-eyebrow { color: var(--primary-bright, #93C5FD); }
 .mi-module-title {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   margin: 4px 0 0; font-size: 1.35rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
 }
 .mi-module-blurb {
@@ -17690,7 +17920,7 @@ html.dark .mi-global-hit .material-symbols-outlined { color: var(--primary-brigh
 }
 .mi-ready-kids { margin: 0 0 18px; }
 .mi-ready-kids-title {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   margin: 0 0 10px; font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
 }
 .mi-ready-kids-row { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -17733,7 +17963,7 @@ html.dark .mi-stat.is-active { background: color-mix(in srgb, var(--primary) 26%
 .mi-stat:disabled { cursor: default; }
 .mi-stat:disabled:hover { transform: none; box-shadow: var(--shadow-1); border-color: var(--border); }
 .mi-stat-num {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.5rem; font-weight: 800;
+  font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.5rem; font-weight: 800;
   line-height: 1.05; color: var(--text);
 }
 /* Label text sits above its icon (icon below the label) on every scorecard. */
@@ -17842,7 +18072,7 @@ html.dark .ii-expect {
   border-color: color-mix(in srgb, var(--primary) 36%, var(--border));
 }
 .ii-expect-title {
-  font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
+  font-family: var(--module-title-family), 'Noto Serif', serif;
   margin: 0 0 6px; font-size: 1.05rem; font-weight: 700;
   letter-spacing: -0.01em; color: var(--text);
 }
@@ -18195,15 +18425,19 @@ html.dark .ds-swatch-apply:hover:not(:disabled) { color: var(--primary-bright, #
 .ds-token-reset-all[hidden] { display: none; }
 
 /* Color apply modal — progress + page list. Icon is bare (no tile). */
-.dash-modal-scrim--panel .dash-modal.ds-prop-modal {
+.dash-modal-scrim--panel .dash-modal.ds-prop-modal,
+.wise-modal-scrim--panel .wise-modal.ds-prop-modal {
   width: min(520px, 100%); max-width: 520px;
 }
-.ds-prop-modal .dash-modal-titles { min-width: 0; }
-.ds-prop-modal .dash-modal-title {
-  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+.ds-prop-modal .dash-modal-titles,
+.ds-prop-modal .wise-modal-titles { min-width: 0; }
+.ds-prop-modal .dash-modal-title,
+.ds-prop-modal .wise-modal-title {
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', serif);
   font-weight: 800;
 }
-.ds-prop-modal .dash-modal-eyebrow {
+.ds-prop-modal .dash-modal-eyebrow,
+.ds-prop-modal .wise-modal-eyebrow {
   text-transform: none;
   letter-spacing: 0;
   font-family: var(--font-mono);
@@ -18242,7 +18476,7 @@ html.dark .ds-prop-chip-well {
   display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
 }
 .ds-prop-pct {
-  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', serif);
   font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em;
   color: var(--text); font-variant-numeric: tabular-nums; line-height: 1;
 }
@@ -18451,7 +18685,7 @@ html.dark .dsc-ready--ai.is-partial .dash-brand-toggle:not(.is-on):not([aria-che
 }
 .dsc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 10px 16px 10px; flex-wrap: wrap; }
 .dsc-name {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
 }
 .dsc-class { font-size: 0.625rem; color: var(--text-muted); word-break: break-word; }
@@ -18693,7 +18927,7 @@ html.dark .dsc-demo .pf-upload { background: rgba(255,255,255,0.03); }
 .dsc-demo .pf-uptab .material-symbols-outlined { font-size: 16px; }
 .dsc-demo .pf-uptab.is-active { color: var(--primary-ink, var(--primary)); border-bottom-color: var(--primary); }
 .dsc-demo .pf-uprow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.dsc-demo .pf-file-btn { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 0.82rem; font-weight: 600; }
+.dsc-demo .pf-file-btn { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 0.82rem; font-weight: 600; }
 html.dark .dsc-demo .pf-file-btn { background: rgba(255,255,255,0.05); }
 .dsc-demo .pf-file-btn .material-symbols-outlined { font-size: 17px; }
 .dsc-demo .pf-file-name { font-size: 0.82rem; color: var(--text-muted); }
@@ -18759,14 +18993,15 @@ html.dark .dsc-demo .pf-avatar-preview { background: rgba(255,255,255,0.05); }
 .dsc-demo .adm-filter-pop { position: static; margin-top: 10px; width: 100%; max-width: 420px; box-shadow: none; }
 .dsc-demo .adm-filter-pop .wmod-filter-pop-head { margin-bottom: 4px; }
 .dsc-demo .adm-filter-pop .wmod-filter-pop-title {
-  font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
+  font-family: var(--module-title-family), 'Noto Serif', serif;
   font-size: 1rem; font-weight: 800; letter-spacing: -0.01em;
 }
 .dsc-demo .dsc-filter-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .dsc-demo .adm-search-filter.is-hover { color: var(--text); background: var(--surface-3, var(--surface-2)); }
 .dsc-demo .adm-rowmenu-pop { position: static; box-shadow: none; }
 .dsc-demo .wise-popover { position: static; box-shadow: none; }
-.dsc-demo .adm-modal { transform: none; box-shadow: var(--shadow-2); }
+.dsc-demo .adm-modal,
+.dsc-demo .wise-modal { transform: none; box-shadow: var(--shadow-2); }
 .dsc-demo .adm-donut-arc,
 .dsc-demo .adm-bar-fill,
 .dsc-demo .adm-vrow-bar span { transition: none; }
@@ -19407,7 +19642,7 @@ html.dark .dsc-demo .sc-activity-wrap:hover .sc-activity-dots {
 }
 .dsc-demo .mi-belt-prog { z-index: 0; height: 88px; }
 .dsc-demo .mi-belt-name {
-  font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
+  font-family: var(--module-title-family), 'Noto Serif', serif;
   font-size: 0.85rem; font-weight: 800; color: var(--text);
 }
 .dsc-demo .mi-belt-z { font-size: 0.68rem; font-weight: 600; color: var(--text-muted); }
@@ -19574,18 +19809,23 @@ html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) .dsc-ask-live .wch-sidebar {
 }
 .dsc-demo .wai-img-body img { display: block; width: 100%; height: auto; }
 /* Product-photo editor — the view-product lightbox, pinned inline. */
-.dsc-demo .dash-modal.dash-modal--panel[data-modal-static] {
+.dsc-demo .dash-modal.dash-modal--panel[data-modal-static],
+.dsc-demo .wise-modal[data-modal-static] {
   position: relative; width: 100%; max-width: 380px; height: auto;
   border-radius: 18px; border: 1px solid var(--border-strong);
   background: var(--surface); box-shadow: var(--shadow-2);
 }
 .dsc-demo .dash-banner-preview--photo { max-width: 168px; max-height: 168px; }
-.dsc-theme-dark .dash-modal-eyebrow { color: var(--primary-bright); }
+.dsc-theme-dark .dash-modal-eyebrow,
+.dsc-theme-dark .wise-modal-eyebrow { color: var(--primary-bright); }
 .dsc-theme-dark .dash-banner-url { background: rgba(255, 255, 255, 0.03); }
-.dsc-theme-dark .dash-modal-foot { border-color: rgba(255, 255, 255, 0.08); }
-html.dark .dsc-theme-light .dash-modal-eyebrow { color: var(--primary); }
+.dsc-theme-dark .dash-modal-foot,
+.dsc-theme-dark .wise-modal-foot { border-color: rgba(255, 255, 255, 0.08); }
+html.dark .dsc-theme-light .dash-modal-eyebrow,
+html.dark .dsc-theme-light .wise-modal-eyebrow { color: var(--primary); }
 html.dark .dsc-theme-light .dash-banner-url { background: var(--surface); }
-html.dark .dsc-theme-light .dash-modal-foot { border-color: var(--border); }
+html.dark .dsc-theme-light .dash-modal-foot,
+html.dark .dsc-theme-light .wise-modal-foot { border-color: var(--border); }
 
 .dsc-demo .nfp-nf-panel.mi-nfp-demo {
   background: #fff; color: #000; border: 1px solid #111; max-width: 220px; text-align: left;
@@ -19629,11 +19869,18 @@ html.dark .dsc-theme-light .dash-modal-foot { border-color: var(--border); }
 }
 .dsc-demo .nfp-fi-lead-edit .material-symbols-outlined { font-size: 13px !important; line-height: 1 !important; }
 .dsc-demo .nfp-fi-copy { min-width: 0; }
+.dsc-demo .nfp-brand-logo {
+  flex-shrink: 0; width: 28px; height: 28px; padding: 0; border: 0;
+  border-radius: 50%; overflow: hidden; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; background: #fff;
+  box-shadow: 0 0 0 1px var(--border);
+}
+.dsc-demo .nfp-brand-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .dsc-demo .nfp-fi-header {
   display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; min-width: 0;
 }
 .dsc-demo .nfp-fi-title {
-  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', serif);
   font-size: var(--module-title-size, 1.2rem); font-weight: var(--module-title-weight, 800);
   letter-spacing: -0.01em; line-height: var(--module-title-lh, 1.16);
   color: var(--text); flex: 1 1 auto; min-width: 0;
@@ -19643,24 +19890,35 @@ html.dark .dsc-theme-light .dash-modal-foot { border-color: var(--border); }
   display: flex; flex-direction: column; gap: 8px; min-width: 0;
 }
 .dsc-demo .nfp-fi-cat--dock {
-  flex: 0 0 auto; display: flex; align-items: center; height: 28px;
+  flex: 0 0 auto; display: flex; align-items: center; height: auto;
 }
 .dsc-demo .nfp-fi-cat--dock .nfp-cat-select {
-  position: relative; display: inline-flex; align-items: center; height: 28px;
+  position: relative; display: inline-flex; align-items: center; height: auto;
 }
 .dsc-demo .nfp-fi-cat--dock .nfp-cat-native {
-  display: inline-flex; align-items: center; height: 28px; box-sizing: border-box;
-  padding: 0 22px 0 24px; border-radius: 999px;
-  font-size: 0.65rem; font-weight: 700; line-height: 26px; white-space: nowrap;
-  color: var(--text); background: var(--surface-2); border: 1px solid var(--border);
+  display: inline-flex; align-items: center; height: auto; box-sizing: border-box;
+  padding: 2px 18px 2px 20px; border-radius: 0;
+  font-size: 0.72rem; font-weight: 650; line-height: 1.3; white-space: nowrap;
+  color: var(--primary); background: transparent; border: none; box-shadow: none;
+  cursor: pointer;
+}
+.dsc-demo .nfp-fi-cat--dock .nfp-cat-native:hover,
+.dsc-demo .nfp-fi-cat--dock .nfp-cat-native:focus {
+  background: transparent; text-decoration: underline; text-underline-offset: 2px;
 }
 .dsc-demo .nfp-fi-cat--dock .nfp-cat-select-ic,
 .dsc-demo .nfp-fi-cat--dock .nfp-cat-select-caret {
   position: absolute; top: 50%; transform: translateY(-50%);
-  color: var(--text-muted); pointer-events: none;
+  color: var(--primary); pointer-events: none;
 }
-.dsc-demo .nfp-fi-cat--dock .nfp-cat-select-ic { left: 6px; font-size: 14px !important; }
-.dsc-demo .nfp-fi-cat--dock .nfp-cat-select-caret { right: 3px; font-size: 16px !important; }
+.dsc-demo .nfp-fi-cat--dock .nfp-cat-select-ic { left: 0; font-size: 14px !important; }
+.dsc-demo .nfp-fi-cat--dock .nfp-cat-select-caret { right: 0; font-size: 16px !important; }
+html.dark .dsc-demo .nfp-fi-cat--dock .nfp-cat-native,
+html.dark .dsc-demo .nfp-fi-cat--dock .nfp-cat-select-ic,
+html.dark .dsc-demo .nfp-fi-cat--dock .nfp-cat-select-caret {
+  color: var(--primary-bright, var(--primary));
+  background: transparent;
+}
 .dsc-demo .nfp-fi-group--identity .panel-controls {
   display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0;
   position: static; margin: 0;
@@ -19733,7 +19991,7 @@ html.dark .dsc-theme-light .dash-modal-foot { border-color: var(--border); }
 }
 
 .dsc-demo .mi-vfp-demo .vfp-title {
-  font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
+  font-family: var(--module-title-family), 'Noto Serif', serif;
   font-weight: 800;
 }
 .dsc-demo .vfp-pct-ring {
@@ -19842,7 +20100,7 @@ html.dark .dsc-theme-light .dash-modal-foot { border-color: var(--border); }
   pointer-events: none;
 }
 .dsc-demo .mi-cwr-tip-title {
-  font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
+  font-family: var(--module-title-family), 'Noto Serif', serif;
   font-size: 15px; font-weight: 700; line-height: 1.2; letter-spacing: 0.02em;
   color: var(--text);
 }
@@ -19865,7 +20123,7 @@ html.dark .dsc-theme-light .dash-modal-foot { border-color: var(--border); }
   background: var(--surface); border: 1px solid var(--border); text-align: left;
 }
 .dsc-demo .mi-owt .wch-head-title {
-  font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
+  font-family: var(--module-title-family), 'Noto Serif', serif;
   font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em;
 }
 .dsc-demo .owt-kicker { margin: 4px 0 0; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); }
@@ -19918,7 +20176,7 @@ html.dark .dsc-demo .wtp-more { color: var(--primary-bright, #93C5FD); }
 .dsc-card[data-comp-name="Data table"] .dsc-demo .adm-table-card { width: 100%; overflow: visible; }
 .dsc-card[data-comp-name="Data table"] .dsc-adm-stage--wide .adm-table-card { overflow-x: auto; }
 .dsc-demo .dsc-score {
-  font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
+  font-family: var(--module-title-family), 'Noto Serif', serif;
   font-weight: 800; letter-spacing: -0.02em;
 }
 .dsc-demo .dsc-amt { font-variant-numeric: tabular-nums; font-weight: 700; }
@@ -19976,7 +20234,7 @@ html.dark .dsc-jump-tile { background: rgba(255,255,255,0.03); }
 html.dark .dsc-jump-ic { color: var(--primary-bright, #93C5FD); }
 .dsc-jump-ic .material-symbols-outlined { font-size: 26px !important; }
 .dsc-jump-body { min-width: 0; display: flex; flex-direction: column; line-height: 1.15; }
-.dsc-jump-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.4rem; font-weight: 800; color: var(--text); }
+.dsc-jump-num { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.4rem; font-weight: 800; color: var(--text); }
 .dsc-jump-label { font-size: 0.82rem; font-weight: 700; color: var(--text); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dsc-jump-sub { font-size: 0.68rem; color: var(--text-subtle); margin-top: 2px; }
 .dsc-jump-go { margin-left: auto; flex: 0 0 auto; font-size: 18px !important; color: var(--text-subtle); transition: transform 0.15s ease, color 0.15s ease; }
@@ -20052,7 +20310,7 @@ html.dark .mi-code-card { background: rgba(255,255,255,0.03); }
 .mi-code-kind { display: flex; flex-direction: column; gap: 2px; }
 .mi-code-kind span { font-size: 0.7rem; font-weight: 700; color: var(--text-subtle); letter-spacing: 0.02em; }
 .mi-code-kind strong {
-  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif'), Georgia, serif;
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif'), serif;
   font-size: 1.15rem; font-weight: 800; color: var(--text);
 }
 .mi-code-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
@@ -20063,7 +20321,7 @@ html.dark .mi-code-card { background: rgba(255,255,255,0.03); }
 html.dark .mi-code-ic { color: var(--primary-bright, #93C5FD); }
 .mi-code-ic .material-symbols-outlined { font-size: 20px !important; }
 .mi-code-num {
-  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif'), Georgia, serif;
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif'), serif;
   font-size: 1.65rem; font-weight: 800; color: var(--text); line-height: 1.05;
 }
 .mi-code-hero .mi-code-num { font-size: 2.3rem; }
@@ -20138,12 +20396,12 @@ html.dark #mi-code-spark-tip {
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
 }
 .mi-code-spark-tip-date {
-  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif'), Georgia, serif;
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif'), serif;
   font-size: 0.92rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
   line-height: 1.15;
 }
 .mi-code-spark-tip-num {
-  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif'), Georgia, serif;
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif'), serif;
   font-size: 1.15rem; font-weight: 800; color: var(--text);
   font-variant-numeric: tabular-nums; line-height: 1.2; margin-top: 2px;
 }
@@ -20408,7 +20666,7 @@ html.dark .mi-trace-card { background: rgba(255,255,255,0.03); }
   display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
 }
 .mi-trace-card-title {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   margin: 0; font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
 }
 .mi-trace-card-lede {
@@ -20493,14 +20751,16 @@ html.dark .mi-trace-card { background: rgba(255,255,255,0.03); }
 .dsc-ready-scrim {
   align-items: center; justify-content: center; padding: 24px; z-index: 2400;
 }
-.dsc-ready-scrim .adm-modal {
+.dsc-ready-scrim .adm-modal,
+.dsc-ready-scrim .wise-modal {
   width: min(440px, 100%); height: auto; max-width: 440px;
   max-height: calc(100vh - 48px); border-radius: 18px;
   border: 1px solid var(--border-strong);
   box-shadow: var(--shadow-card, 0 24px 60px rgba(0,0,0,0.28));
   overflow: auto;
 }
-html.dark .dsc-ready-scrim .adm-modal {
+html.dark .dsc-ready-scrim .adm-modal,
+html.dark .dsc-ready-scrim .wise-modal {
   background: #14242f; border-color: rgba(255,255,255,0.08);
 }
 .dsc-ready-verify-steps {
@@ -20595,7 +20855,7 @@ html.dark .mi-trace-leg-swatch--helix {
   background: none; border-radius: 0; padding: 0;
 }
 #mi-motion .dsc-conv-title {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
 }
 #mi-motion .dsc-conv-item > .material-symbols-outlined {
   flex: 0 0 auto; margin-top: 2px; color: var(--primary);
@@ -20626,7 +20886,7 @@ html.dark .mi-motion-card { background: rgba(255,255,255,0.03); }
 html.dark .mi-motion-card-head > .material-symbols-outlined { color: var(--primary-bright, #93C5FD); }
 .mi-motion-card-head-text { min-width: 0; }
 .mi-motion-card-title {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   margin: 0; font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
 }
 .mi-motion-card-src {
@@ -20776,7 +21036,7 @@ html.dark .mi-motion-helix-stage { background: color-mix(in srgb, var(--primary)
 }
 .mi-motion-acc-head[aria-expanded="false"] .mi-motion-acc-chevron { transform: rotate(-90deg); }
 .mi-motion-acc-title {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   font-size: 0.98rem; font-weight: 800;
 }
 .mi-motion-acc-body { padding: 0 14px 14px; font-size: 0.8rem; line-height: 1.5; color: var(--text-muted); }
@@ -20916,7 +21176,7 @@ html.dark .mi-motion-car-browser { background: rgba(255,255,255,0.03); }
 .mi-car-prog { z-index: 0; height: 63%; }
 .mi-motion-car-mod-head {
   flex: 0 0 auto;
-  font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
+  font-family: var(--module-title-family), 'Noto Serif', serif;
   font-size: 0.78rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
   padding: 8px 10px 0;
 }
@@ -20935,7 +21195,7 @@ html.dark .mi-motion-car-browser { background: rgba(255,255,255,0.03); }
 }
 .mi-motion-car-line--short { width: 62%; }
 .mi-motion-car-score {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   font-size: 1.15rem; font-weight: 800; color: var(--text); line-height: 1;
   flex: 0 0 auto;
 }
@@ -21165,7 +21425,7 @@ html.dark .mi-motion-found-name { background: rgba(255,255,255,0.06); }
   box-shadow: 0 18px 44px rgba(0,0,0,0.46);
 }
 .dsc-demo .wch-info-title {
-  font-family: "WISE Digits", "Noto Serif", Georgia, serif;
+  font-family: "WISE Digits", "Noto Serif", serif;
   font-weight: 700; font-size: 13.5px; line-height: 1.26; letter-spacing: -.01em; margin-bottom: 9px;
 }
 .dsc-demo .wch-info-row { display: flex; align-items: center; gap: 9px; font-size: 12px; line-height: 1.5; opacity: .82; }
@@ -21280,7 +21540,7 @@ html.dark .mi-motion-found-name { background: rgba(255,255,255,0.06); }
 .dsc-demo a.rp-card:hover .rp-poster-open { opacity: 1; }
 .dsc-demo .rp-poster-open .material-symbols-outlined { font-size: 18px !important; }
 .dsc-demo .rp-body { display: flex; flex-direction: column; gap: 8px; padding: 16px 18px 16px; flex: 1; }
-.dsc-demo .rp-name { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text); line-height: 1.2; }
+.dsc-demo .rp-name { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text); line-height: 1.2; }
 .dsc-demo .rp-desc { margin: 0; font-size: 0.8125rem; line-height: 1.5; color: var(--text-muted); }
 .dsc-demo .rp-foot { margin-top: auto; padding-top: 10px; display: flex; justify-content: flex-end; }
 .dsc-demo .rp-view { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8125rem; font-weight: 700; color: var(--primary); }
@@ -21352,7 +21612,7 @@ html.dark .dsc-demo .rp-view { color: var(--primary-bright, var(--primary)); }
 }
 .dsc-rpt-pane-mast { min-width: 0; }
 .dsc-rpt-pane-title {
-  margin: 4px 0 0; font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
+  margin: 4px 0 0; font-family: var(--module-title-family), 'Noto Serif', serif;
   font-weight: 800; font-size: 1.15rem; letter-spacing: -0.01em; line-height: 1.2; color: var(--text);
 }
 .dsc-rpt-pane-ctrls { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
@@ -21361,7 +21621,7 @@ html.dark .dsc-demo .rp-view { color: var(--primary-bright, var(--primary)); }
 .dsc-demo .wa-rpt-item-head { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
 .dsc-demo .wa-rpt-item-title {
   flex: 1 1 auto; min-width: 0; margin: 0;
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   font-weight: 800; font-size: 1.05rem; line-height: 1.2; letter-spacing: -0.01em; color: var(--text);
 }
 .dsc-rpt-chart {
@@ -21444,7 +21704,7 @@ html.dark .mi-tarch-label.is-hot {
 html.dark .mi-tarch-label-ic { color: var(--primary-bright, #93C5FD); }
 .mi-tarch-label-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .mi-tarch-label-title {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   font-size: 0.78rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text); line-height: 1.2;
 }
 .mi-tarch-label-body {
@@ -21578,7 +21838,7 @@ html.dark .mi-tarch-turns { background: rgba(255,255,255,0.03); }
   margin-bottom: 8px;
 }
 .mi-tarch-turns-title {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   font-size: 0.78rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
 }
 .mi-tarch-turns-admin {
@@ -21718,7 +21978,7 @@ html.dark .mi-tarch-note { background: rgba(255,255,255,0.03); }
 }
 .mi-tarch-note-title {
   display: inline-flex; align-items: center; gap: 6px; margin: 0;
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   font-size: 0.95rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
 }
 .mi-tarch-note-title .material-symbols-outlined { font-size: 18px !important; color: var(--primary); }
@@ -21751,7 +22011,7 @@ html.dark .mi-tarch-note-title .material-symbols-outlined { color: var(--primary
   background: none; border-radius: 0; padding: 0;
 }
 #mi-responsive .dsc-conv-title {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
 }
 #mi-responsive .dsc-conv-item > .material-symbols-outlined {
   flex: 0 0 auto; margin-top: 2px; color: var(--primary);
@@ -21796,7 +22056,7 @@ html.dark .mi-resp-stage { background: rgba(255,255,255,0.03); }
 html.dark .mi-resp-preset > .material-symbols-outlined { color: var(--primary-bright, #93C5FD); }
 .mi-resp-preset-text { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; }
 .mi-resp-preset-title {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   font-size: 0.88rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
 }
 .mi-resp-preset-sub { font-size: 0.68rem; font-weight: 600; color: var(--text-subtle); }
@@ -21895,7 +22155,7 @@ html.dark .mi-resp-frame { background: rgba(255,255,255,0.03); }
   flex: 1 1 0%;
 }
 .mi-resp-mod-head {
-  font-family: var(--module-title-family), 'Noto Serif', Georgia, serif;
+  font-family: var(--module-title-family), 'Noto Serif', serif;
   font-size: 0.78rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
   padding: 8px 10px 0;
 }
@@ -21913,7 +22173,7 @@ html.dark .mi-resp-frame { background: rgba(255,255,255,0.03); }
 }
 .mi-resp-line--short { width: 62%; }
 .mi-resp-score {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   font-size: 1.15rem; font-weight: 800; color: var(--text); line-height: 1;
 }
 .mi-resp-chips { display: flex; flex-wrap: nowrap; gap: 6px; }
@@ -21971,7 +22231,7 @@ html.dark .mi-resp-card { background: rgba(255,255,255,0.03); }
 html.dark .mi-resp-card-head > .material-symbols-outlined { color: var(--primary-bright, #93C5FD); }
 .mi-resp-card-head-text { min-width: 0; }
 .mi-resp-card-title {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   margin: 0; font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
 }
 .mi-resp-card-src {
@@ -21997,7 +22257,7 @@ html.dark .mi-resp-cols { background: rgba(255,255,255,0.03); }
 }
 html.dark .mi-resp-col { background: rgba(255,255,255,0.03); }
 .mi-resp-col-label {
-  font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+  font-family: 'WISE Digits', 'Noto Serif', serif;
   font-size: 0.78rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
   margin-bottom: 4px;
 }

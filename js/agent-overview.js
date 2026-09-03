@@ -190,15 +190,10 @@ import './table-pagination.js';
 import './responsive-tables.js';
 import './product-row-click.js';
 import './date-column.js';
-
-function escHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
+import { esc as escHtml } from './escape-html.js';
+import { createToast } from './toast.js';
+import './wise-modal.js';
+import './wise-toolbar.js';
 
 /* ====================================================================
    Shared toast + bottom sheet for every agent overview page.
@@ -206,20 +201,7 @@ function escHtml(s) {
    results (the same bottom-sheet / progress-flow language app-wide).
 ==================================================================== */
 
-function agToast(msg, icon = 'check') {
-  let wrap = document.getElementById('ag-toast-wrap');
-  if (!wrap) { wrap = document.createElement('div'); wrap.id = 'ag-toast-wrap'; document.body.appendChild(wrap); }
-  const t = document.createElement('div');
-  t.className = 'ag-toast';
-  t.innerHTML = `<span class="material-symbols-outlined">${escHtml(icon)}</span><span>${escHtml(msg)}</span>`;
-  wrap.appendChild(t);
-  setTimeout(() => {
-    t.style.transition = 'opacity .3s ease, transform .3s ease';
-    t.style.opacity = '0';
-    t.style.transform = 'translateY(8px)';
-    setTimeout(() => t.remove(), 320);
-  }, 2600);
-}
+const agToast = createToast('ag');
 
 let agSheetEls = null;
 let agPendingDownload = null;

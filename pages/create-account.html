@@ -73,7 +73,14 @@
 
   <script src="../js/auth-forms.js"></script>
   <script src="../js/auth-signup-chat.js"></script>
-  <script>WiseAuthChat.initSignup();</script>
+  <script type="module">
+    import '../js/escape-html.js';
+    import '../js/owl-mark.js';
+    import '../js/user-avatar.js';
+    import { typeInTranscript } from '../js/wiseai-chat.js';
+    window.WiseTypeInTranscript = typeInTranscript;
+    WiseAuthChat.initSignup();
+  </script>
   <script type="module" src="../js/welcome-orbit.js"></script>
   <script defer src="../js/count-up-all.js"></script>
   <script defer src="../js/feedback.js"></script>

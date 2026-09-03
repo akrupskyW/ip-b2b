@@ -1,4 +1,10 @@
 import './date-column.js';
+import { esc, initials } from './escape-html.js';
+import { ARROW_SVG } from './sort-arrow.js';
+import { createToast } from './toast.js';
+import { searchToolbarHTML } from './wise-toolbar.js';
+import { createChatBridge } from './chat-bridge.js';
+const toast = createToast('adm');
 
 /**
  * Organizations — WISEcode Admin module.
@@ -12,12 +18,6 @@ import './date-column.js';
  * All classes are the shared, token-driven `adm-*` set in wise.css, so the
  * surface tracks light/dark exactly like the rest of the app.
  */
-
-function esc(s) {
-  return String(s == null ? '' : s)
-    .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
 
 /* ---- At-a-glance organization counts (top metric strip) ------------- */
 const COUNTS = [
@@ -87,10 +87,6 @@ const ORGS = [
   { name: 'Vive Juicery',   type: TYPE, status: 'invited',  joined: '—',            via: 'Invite sent',       users: 0, products: 0,   claimed: 0 },
 ];
 
-function initials(name) {
-  return String(name).replace(/[^A-Za-z0-9 ]/g, '').trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
-}
-
 /* ---- Sorting -------------------------------------------------------- */
 const COLS = [
   { key: 'actions',  label: 'Actions',        sortable: false },
@@ -110,8 +106,6 @@ const ROW_ACTIONS = [
   { action: 'edit',   icon: 'edit',                label: 'Edit' },
 ];
 
-const ARROW_SVG = '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-
 let hostEl = null;
 let activeStatus = null;
 let query = '';
@@ -129,23 +123,8 @@ function orgDates(o) {
   return D ? D.complete(partial, 'org') : { joined };
 }
 
-/* ---- Chat bridge + toast -------------------------------------------- */
-let chatApi = null;
-export function setOrganizationsChat(api) { chatApi = api; }
-/* respond() streams the shared reasoning trace before the reply lands, so a
-   mirrored action reads like any other WISEcodeAI turn — never an instant paste. */
-function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); (chatApi.respond || chatApi.addWISEcodeAI)(html); } }
-
-function toast(msg, icon = 'check') {
-  let wrap = document.getElementById('adm-toast-wrap');
-  if (!wrap) { wrap = document.createElement('div'); wrap.id = 'adm-toast-wrap'; document.body.appendChild(wrap); }
-  const t = document.createElement('div');
-  t.className = 'adm-toast';
-  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
-  wrap.appendChild(t);
-  requestAnimationFrame(() => t.classList.add('is-in'));
-  setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
-}
+const { setChat, pushChat } = createChatBridge();
+export const setOrganizationsChat = setChat;
 
 /* ==================================================================== */
 function metricsHtml() {
@@ -246,13 +225,15 @@ function paint() {
         </div>
       </header>
 
-      <div class="adm-toolbar">
-        <div class="adm-search-inline has-filter">
-          <span class="material-symbols-outlined">search</span>
-          <input type="text" class="adm-search" data-adm-search placeholder="Search organization, brand, contact, or email…" aria-label="Search organizations" value="${esc(query)}" />
-          <button type="button" class="adm-search-filter" data-adm-action="filters" title="Filters" aria-label="Filters"><span class="material-symbols-outlined">filter_list</span></button>
-        </div>
-      </div>
+      ${searchToolbarHTML({
+        variant: 'adm',
+        placeholder: 'Search organization, brand, contact, or email…',
+        ariaLabel: 'Search organizations',
+        value: query,
+        inputType: 'text',
+        inputAttrs: 'data-adm-search',
+        filter: { attrs: 'data-adm-action="filters"', icon: 'filter_list' },
+      })}
 
       <div class="adm-metrics">${metricsHtml()}</div>
 
@@ -334,39 +315,8 @@ function runAction(action, org) {
 
 let dragId = null;
 
-function closeRowMenus(keep) {
-  if (!hostEl) return;
-  hostEl.querySelectorAll('.adm-rowmenu.is-open').forEach((menu) => {
-    if (menu === keep) return;
-    menu.classList.remove('is-open');
-    const btn = menu.querySelector('.adm-rowmenu-btn');
-    if (btn) btn.setAttribute('aria-expanded', 'false');
-    const pop = menu.querySelector('.adm-rowmenu-pop');
-    if (pop) { pop.hidden = true; pop.style.cssText = ''; }
-  });
-}
-
-/* Anchor the menu to the button with fixed positioning so it can never be
-   clipped by the scrollable main pane (or any other overflow ancestor). */
-function placeRowMenu(menuBtn, pop) {
-  const PAD = 8;
-  pop.style.position = 'fixed';
-  pop.style.zIndex = '1000';
-  pop.style.visibility = 'hidden';
-  pop.style.right = 'auto';
-  pop.hidden = false;
-  const btnRect = menuBtn.getBoundingClientRect();
-  const w = pop.offsetWidth, h = pop.offsetHeight;
-  // Right-align to the button, then clamp inside the viewport.
-  let left = btnRect.right - w;
-  left = Math.max(PAD, Math.min(left, window.innerWidth - w - PAD));
-  // Open below; flip above if there isn't room.
-  let top = btnRect.bottom + 4;
-  if (top + h > window.innerHeight - PAD) top = Math.max(PAD, btnRect.top - h - 4);
-  pop.style.left = `${left}px`;
-  pop.style.top = `${top}px`;
-  pop.style.visibility = '';
-}
+const ADM_MENU = { menuSel: '.adm-rowmenu', btnSel: '.adm-rowmenu-btn', popSel: '.adm-rowmenu-pop' };
+function closeRowMenus() { window.WisePopover?.closeAll(hostEl, null, ADM_MENU); }
 
 function repaintMetrics() {
   const grid = hostEl?.querySelector('.adm-metrics');
@@ -427,37 +377,16 @@ export function renderOrganizations(mainEl) {
   }
   paint();
   wireMetricDnD(mainEl);
+  window.WisePopover?.bindRowMenus(mainEl, ADM_MENU);
 
   mainEl.addEventListener('click', (e) => {
-    const menuBtn = e.target.closest('.adm-rowmenu-btn');
-    if (menuBtn) {
-      const menu = menuBtn.closest('.adm-rowmenu');
-      const open = !menu.classList.contains('is-open');
-      closeRowMenus(open ? menu : null);
-      menu.classList.toggle('is-open', open);
-      menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      const pop = menu.querySelector('.adm-rowmenu-pop');
-      if (pop) {
-        if (open) placeRowMenu(menuBtn, pop);
-        else { pop.hidden = true; pop.style.cssText = ''; }
-      }
-      return;
-    }
     const filter = e.target.closest('[data-adm-filter]');
     if (filter) { const s = filter.dataset.admFilter || null; setOrgFilter(s && s === activeStatus ? null : s); return; }
     const sortH = e.target.closest('[data-adm-sort]');
     if (sortH && !e.target.closest('.w-datemenu, .pf-datemenu')) { toggleSort(sortH.dataset.admSort); return; }
     const act = e.target.closest('[data-adm-action]');
-    if (act) { closeRowMenus(null); runAction(act.dataset.admAction, act.dataset.admOrg || ''); return; }
+    if (act) { closeRowMenus(); runAction(act.dataset.admAction, act.dataset.admOrg || ''); return; }
   });
-  document.addEventListener('click', (e) => {
-    if (!hostEl) return;
-    if (e.target.closest && e.target.closest('.adm-rowmenu')) return;
-    closeRowMenus(null);
-  });
-  // Fixed-position menus don't track their button while scrolling — close them.
-  window.addEventListener('scroll', () => closeRowMenus(null), { capture: true, passive: true });
-  window.addEventListener('resize', () => closeRowMenus(null));
   mainEl.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     const sortH = e.target.closest('[data-adm-sort]');

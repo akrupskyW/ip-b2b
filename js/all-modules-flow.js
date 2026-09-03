@@ -1,3 +1,7 @@
+import { esc } from './escape-html.js';
+import { ARROW_SVG } from './sort-arrow.js';
+import { OWL_BUG } from './owl-mark.js';
+import { openModal, closeModal, modalHTML, modalFoot } from './wise-modal.js';
 /**
  * All Modules — an admin "kitchen sink" that indexes every module in the app
  * and hosts the brand-new Icon Inventory module.
@@ -171,15 +175,6 @@ function miHeadOnly(id, title, lede, extras) {
       ${extras || ''}
     </header>
   </section>`;
-}
-
-function esc(s) {
-  return String(s == null ? '' : s)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
 }
 
 /* Module Directory catalog lives in js/module-directory-data.js so the
@@ -1362,7 +1357,7 @@ const FONT_FAMILIES = [
   },
   {
     name: 'Noto Serif',
-    css: "'Noto Serif', Georgia, serif",
+    css: "'Noto Serif', serif",
     weights: 'Loaded 400 · 500 · 600 · 700 · 800 · 900 (+ italics)',
     use: 'The display face. Hero and module titles (via --module-title-family), section headings, and scorecard numerals.',
     sample: 'Reformulate with confidence.',
@@ -1751,7 +1746,7 @@ function renderDesignSystem(opts) {
 
 /* Sort caret used inside table headers app-wide (mirrors ARROW_SVG in the
    admin flows) so the Data table demo shows the real sortable affordance. */
-const ARROW_SVG_DEMO = '<span class="adm-sort-arrow"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+const ARROW_SVG_DEMO = `<span class="adm-sort-arrow">${ARROW_SVG}</span>`;
 
 /* Categories power the click-to-filter scorecards at the top of the Component
    Library, so you can jump straight to a family instead of scrolling. Order
@@ -1864,6 +1859,7 @@ function idStripDemoHTML({ single }) {
       <div class="nfp-fi-header">
         <span class="nfp-fi-title">${single ? 'Product name' : 'Flax4Life Chocolate Chip Muffins'}</span>
         <div class="panel-controls">
+          <button type="button" class="nfp-brand-logo" title="Replace brand logo" aria-label="Replace brand logo"><img src="../assets/brand-flax4life-logo.png" alt=""></button>
           <div class="panel-more-wrap"><button type="button" class="panel-more-btn" title="Module options" aria-label="Module options"><span class="material-symbols-outlined">more_vert</span></button></div>
           <button type="button" class="panel-width-toggle-btn is-on is-width-fill" title="Width (fill)" aria-label="Product Details width"><span class="material-symbols-outlined">width_full</span></button>
         </div>
@@ -1921,10 +1917,8 @@ const OUTPUT_CHIP_VERS = [
 ];
 const OUTPUT_CHIP_TITLE = 'Worst-ranked cupcake · detail';
 
-/* Compact WISE-owl bug for transcript / welcome demos — same mark the chat
-   mounts (js/wiseai-chat.js OWL_BUG), inlined so this catalog never imports
-   the chat engine. */
-const DEMO_OWL_BUG = '<svg viewBox="0 0 193 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/></svg>';
+/* Compact WISE-owl bug for transcript / welcome demos — same mark as the chat. */
+const DEMO_OWL_BUG = OWL_BUG;
 
 function demoYouAvatar() {
   return '<span class="sc-avatar sc-avatar-you" role="img" aria-label="You" data-initials="AK">AK</span>';
@@ -2133,29 +2127,29 @@ function demoFilterToolbar() {
       <div class="dsc-states" style="width:100%">
         <div class="dsc-state-col">
           <div class="dsc-sub-label">Closed</div>
-          <div class="adm-search-inline has-filter" style="width:min(100%,280px)">
+          <div class="wise-search-inline adm-search-inline has-filter" style="width:min(100%,280px)">
             <span class="material-symbols-outlined">search</span>
-            <input type="search" class="adm-search" placeholder="Search\u2026" aria-label="Demo search closed" />
-            <button type="button" class="adm-search-filter" aria-label="Filters"><span class="material-symbols-outlined">tune</span></button>
+            <input type="search" class="wise-search adm-search" placeholder="Search\u2026" aria-label="Demo search closed" />
+            <button type="button" class="wise-search-filter adm-search-filter" aria-label="Filters"><span class="material-symbols-outlined">tune</span></button>
           </div>
         </div>
         <div class="dsc-state-col">
           <div class="dsc-sub-label">Hover \u00b7 active filters</div>
-          <div class="adm-search-inline has-filter" style="width:min(100%,280px)">
+          <div class="wise-search-inline adm-search-inline has-filter" style="width:min(100%,280px)">
             <span class="material-symbols-outlined">search</span>
-            <input type="search" class="adm-search" placeholder="Search\u2026" aria-label="Demo search hover" />
-            <button type="button" class="adm-search-filter is-hover has-dot" aria-label="Filters"><span class="material-symbols-outlined">tune</span></button>
+            <input type="search" class="wise-search adm-search" placeholder="Search\u2026" aria-label="Demo search hover" />
+            <button type="button" class="wise-search-filter adm-search-filter is-hover has-dot" aria-label="Filters"><span class="material-symbols-outlined">tune</span></button>
           </div>
         </div>
         <div class="dsc-state-col" style="flex:1 1 100%">
           <div class="dsc-sub-label">Open \u00b7 every filter type</div>
-          <div class="adm-toolbar" style="width:100%;max-width:420px;position:relative">
-            <div class="adm-search-inline has-filter" style="flex:1 1 auto">
+          <div class="wise-toolbar adm-toolbar" style="width:100%;max-width:420px;position:relative">
+            <div class="wise-search-inline adm-search-inline has-filter" style="flex:1 1 auto">
               <span class="material-symbols-outlined">search</span>
-              <input type="search" class="adm-search" placeholder="Search organizations\u2026" aria-label="Demo search open" />
-              <button type="button" class="adm-search-filter is-active has-dot" aria-label="Filters" aria-expanded="true"><span class="material-symbols-outlined">tune</span></button>
+              <input type="search" class="wise-search adm-search" placeholder="Search organizations\u2026" aria-label="Demo search open" />
+              <button type="button" class="wise-search-filter adm-search-filter is-active has-dot" aria-label="Filters" aria-expanded="true"><span class="material-symbols-outlined">tune</span></button>
             </div>
-            <div class="adm-filter-pop" data-popover-static>
+            <div class="wise-filter-pop adm-filter-pop" data-popover-static>
               <div class="wmod-filter-pop-head">
                 <span class="wmod-filter-pop-title">Filter</span>
                 <button type="button" class="adm-filter-clear">Clear all</button>
@@ -3592,20 +3586,20 @@ const COMPONENTS = [
     ai: false,
     cat: 'Overlays',
     wide: true,
-    cls: '.dash-modal--panel \u00b7 .dash-banner-preview \u00b7 .dash-banner-drop \u00b7 .dash-banner-url \u00b7 .wai-img-modal',
+    cls: '.wise-modal \u00b7 .dash-banner-preview \u00b7 .dash-banner-drop \u00b7 .dash-banner-url \u00b7 .wai-img-modal',
     used: 'View / Add Product photo editor \u00b7 Chat attachment preview (image only \u2014 no fields)',
     note: 'The full photo editor from View Product: preview, upload / drag-and-drop, a paste-a-URL field, then Cancel and Replace. Chat attachments reuse the same preview shell without the bottom fields. Closes on backdrop, the close button, or Escape.',
     noteIcon: 'photo',
     demo: `
-      <div class="dash-modal dash-modal--panel" data-modal-static role="dialog" aria-label="Replace product photo">
-        <header class="dash-modal-head">
-          <div class="dash-modal-titles">
-            <span class="dash-modal-eyebrow">Product photo</span>
-            <h2 class="dash-modal-title">Replace product photo</h2>
+      <div class="wise-modal" data-modal-static role="dialog" aria-label="Replace product photo">
+        <header class="wise-modal-head">
+          <div class="wise-modal-titles">
+            <span class="wise-modal-eyebrow">Product photo</span>
+            <h2 class="wise-modal-title">Replace product photo</h2>
           </div>
-          <button class="dash-modal-close" type="button" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
+          <button class="wise-modal-close" type="button" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
         </header>
-        <div class="dash-modal-body">
+        <div class="wise-modal-body">
           <div class="dash-banner-preview dash-banner-preview--photo">
             <div class="dash-banner-preview-img" style="display:block;background-image:url('../assets/portfolio/blueberry_muffins.png')"></div>
           </div>
@@ -3616,9 +3610,9 @@ const COMPONENTS = [
           <div class="dash-banner-or"><span>or paste a URL</span></div>
           <input type="url" class="dash-banner-url" placeholder="https://\u2026/product.jpg" autocomplete="off" readonly tabindex="-1">
         </div>
-        <footer class="dash-modal-foot">
+        <footer class="wise-modal-foot">
           <span></span>
-          <div class="dash-modal-foot-right">
+          <div class="wise-modal-foot-right">
             <button class="wise-btn wise-btn--ghost" type="button">Cancel</button>
             <button class="wise-btn wise-btn--primary" type="button"><span class="material-symbols-outlined">check</span>Replace photo</button>
           </div>
@@ -4041,9 +4035,9 @@ const COMPONENTS = [
   {
     name: 'Filter toolbar',
     wide: true,
-    cls: '.adm-toolbar · .adm-search-inline.has-filter · .adm-search-filter · .adm-filter-pop · .adm-select · .adm-input · .wmod-fchip (= .pf-fchip / .lib-fchip)',
-    used: 'Organizations · User Management · Audit Queue · Quick Invite · Non-UPF Dashboard · Portfolio · Conversation Library · API Keys · Marketing Assets · Ingredient Browser',
-    note: 'Same search pill + funnel on every list. A dot on the funnel signals active filters. The open popover is not one generic dropdown \u2014 it carries every control type the app actually uses: <strong>select</strong> (User Management, Non-UPF, Audit, Quick Invite), <strong>date range</strong> (Audit Queue), <strong>exclusive chips</strong> (Portfolio, API Keys), <strong>icon chips</strong> (Library), <strong>star chips</strong> (Portfolio Guiding Stars), a <strong>toggle chip</strong> (near-miss), and <strong>multi-select chips</strong> (Ingredient Browser flags). Clear all + Apply close the admin pops; chip pops apply as you tap.',
+    cls: '.wise-toolbar · .wise-search-inline.has-filter · .wise-search · .wise-search-filter · .wise-filter-pop (= .adm- / .vf- / .gv- / .wmod- aliases) · .adm-select · .adm-input · .wmod-fchip (= .pf-fchip / .lib-fchip)',
+    used: 'Organizations · User Management · Audit Queue · Quick Invite · Non-UPF Dashboard · Portfolio · Conversation Library · API Keys · Marketing Assets · Ingredient Browser · Verification · GRAS · Docs · Help · Alerts · Agents',
+    note: 'One search pill + funnel on every list \u2014 the four former families (admin, verification, GRAS, canonical modules) now share the same markup and paint. A dot on the funnel signals active filters. The open popover is not one generic dropdown \u2014 it carries every control type the app actually uses: <strong>select</strong> (User Management, Non-UPF, Audit, Quick Invite), <strong>date range</strong> (Audit Queue), <strong>exclusive chips</strong> (Portfolio, API Keys), <strong>icon chips</strong> (Library), <strong>star chips</strong> (Portfolio Guiding Stars), a <strong>toggle chip</strong> (near-miss), and <strong>multi-select chips</strong> (Ingredient Browser flags). Clear all + Apply close the admin pops; chip pops apply as you tap.',
     noteIcon: 'filter_alt',
     demo: demoFilterToolbar(),
   },
@@ -4365,19 +4359,21 @@ const COMPONENTS = [
     name: 'Modal dialog',
     ai: false,
     wide: true,
-    cls: '.adm-modal-scrim · .adm-modal · .adm-modal-head / -body · .adm-modal-eyebrow / -title / -sub',
-    used: 'Admin CRUD flows — create / edit / duplicate / confirm across Organizations, User Management, Admin Utils',
-    note: 'One centered dialog shell with a scrim, eyebrow + serif title + sub, a body of shared form fields, and a footer of <code>.wise-btn</code>s. Caps at 520px and shrinks to fit small screens.',
+    cls: '.wise-modal-scrim · .wise-modal · .wise-modal-head / -body / -foot · .wise-modal-eyebrow / -title / -sub (= .dash- / .vf- / .adm- / .wmod- aliases)',
+    used: 'Overview banner editor · Add Product photo · Verification attest · API keys · Non-UPF duplicate · All Modules verify / chart / token · Helix publish',
+    note: 'One overlay language for every dialog. Full-bleed by default; <code>--panel</code> (and the verify confirm) centers a card. Eyebrow + serif title + sub, a body, and a footer of <code>.wise-btn</code>s. Former dash- / vf- / adm- / wmod- families alias the same paint.',
     noteIcon: 'web_asset',
     demo: `
-      <div class="adm-modal" data-modal-static style="max-width:420px;width:100%">
-        <button type="button" class="adm-modal-x" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
-        <div class="adm-modal-head">
-          <div class="adm-modal-eyebrow">New organization</div>
-          <h3 class="adm-modal-title">Add an organization</h3>
-          <p class="adm-modal-sub">Create a workspace and invite its first admin.</p>
-        </div>
-        <div class="adm-modal-body">
+      <div class="wise-modal" data-modal-static style="max-width:420px;width:100%">
+        <header class="wise-modal-head">
+          <div class="wise-modal-titles">
+            <div class="wise-modal-eyebrow">New organization</div>
+            <h3 class="wise-modal-title">Add an organization</h3>
+            <p class="wise-modal-sub">Create a workspace and invite its first admin.</p>
+          </div>
+          <button type="button" class="wise-modal-close" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
+        </header>
+        <div class="wise-modal-body">
           <div class="adm-field"><span class="adm-field-label">Name</span><input class="adm-input" placeholder="Acme Foods" /></div>
           <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
             <button type="button" class="wise-btn wise-btn--ghost">Cancel</button>
@@ -12710,10 +12706,7 @@ function wireAnalyticsTypes(root) {
 }
 
 function closeAnalyticsLightbox() {
-  const scrim = document.getElementById('mi-az-lightbox');
-  if (!scrim) return;
-  scrim.classList.remove('is-open');
-  setTimeout(() => scrim.remove(), 220);
+  closeModal('mi-az-lightbox');
 }
 
 function openAnalyticsLightbox(chart) {
@@ -12722,48 +12715,30 @@ function openAnalyticsLightbox(chart) {
   const focus = analyticsFocusSel(chart);
   const open = analyticsOpenHref(chart);
   const src = previewSrc(ANALYTICS_HREF);
-  const scrim = document.createElement('div');
-  scrim.id = 'mi-az-lightbox';
-  scrim.className = 'dash-modal-scrim dash-modal-scrim--panel dash-modal-scrim--chart';
-  scrim.innerHTML = `
-    <div class="dash-modal dash-modal--panel dash-modal--chart" role="dialog" aria-modal="true" aria-labelledby="mi-az-lb-title">
-      <header class="dash-modal-head">
-        <div class="dash-modal-titles">
-          <span class="dash-modal-eyebrow">Analytics Types</span>
-          <h2 class="dash-modal-title" id="mi-az-lb-title">${esc(chart.label)}</h2>
-        </div>
-        <button class="dash-modal-close" type="button" data-az-lb-close aria-label="Close"><span class="material-symbols-outlined">close</span></button>
-      </header>
-      <div class="dash-modal-body mi-az-lb-body">
+  const { scrim } = openModal({
+    id: 'mi-az-lightbox',
+    panel: true,
+    extraScrimClass: 'wise-modal-scrim--chart dash-modal-scrim--chart',
+    html: modalHTML({
+      eyebrow: 'Analytics Types',
+      title: esc(chart.label),
+      titleId: 'mi-az-lb-title',
+      closeAttrs: 'data-az-lb-close data-wise-modal-close',
+      modalClass: 'wise-modal--chart dash-modal--chart dash-modal--panel',
+      bodyClass: 'mi-az-lb-body',
+      body: `
         <div class="mi-az-lb-stage">
           ${frameMarkup(src, chart.label + ' full size', (focus ? `data-focus="${esc(focus)}" ` : '') + 'data-focus-mode="chart"')}
-        </div>
-      </div>
-      <footer class="dash-modal-foot">
-        ${chart.desc ? `<span class="ds-prop-frac">${esc(chart.desc)}</span>` : '<span></span>'}
-        <div class="dash-modal-foot-right">
+        </div>`,
+      foot: modalFoot({
+        left: chart.desc ? `<span class="ds-prop-frac">${esc(chart.desc)}</span>` : '<span></span>',
+        actions: `
           <a class="wise-btn wise-btn--ghost" href="${esc(open)}">
             <span class="material-symbols-outlined">arrow_outward</span>Open on Analytics Types
-          </a>
-        </div>
-      </footer>
-    </div>`;
-  document.body.appendChild(scrim);
-  requestAnimationFrame(() => scrim.classList.add('is-open'));
-
-  const close = () => {
-    document.removeEventListener('keydown', onKey);
-    closeAnalyticsLightbox();
-  };
-  const onKey = (e) => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      close();
-    }
-  };
-  scrim.querySelector('[data-az-lb-close]')?.addEventListener('click', close);
-  scrim.addEventListener('click', (e) => { if (e.target === scrim) close(); });
-  document.addEventListener('keydown', onKey);
+          </a>`,
+      }),
+    }),
+  });
 
   const frame = scrim.querySelector('.mi-pane-frame');
   if (frame) {
@@ -13614,18 +13589,17 @@ function openTokenApplyModal(sw, opts) {
   const fromHex = formatSwatchColor(fromRaw || toRaw, fmt);
   const toHex = formatSwatchColor(toRaw, fmt);
   const instant = !!(opts && opts.instant);
-  const scrim = document.createElement('div');
-  scrim.className = 'dash-modal-scrim dash-modal-scrim--panel';
-  scrim.innerHTML = `
-    <div class="dash-modal dash-modal--panel ds-prop-modal" role="dialog" aria-modal="true" aria-labelledby="ds-prop-title">
-      <header class="dash-modal-head">
-        <div class="dash-modal-titles">
-          <span class="dash-modal-eyebrow">${esc(token)}</span>
-          <h2 class="dash-modal-title" id="ds-prop-title">Apply across the app</h2>
-        </div>
-        <button class="dash-modal-close" type="button" data-prop-close aria-label="Close"><span class="material-symbols-outlined">close</span></button>
-      </header>
-      <div class="dash-modal-body">
+  const { scrim, close: hide } = openModal({
+    panel: true,
+    closeOnScrim: false,
+    closeOnEscape: false,
+    html: modalHTML({
+      eyebrow: esc(token),
+      title: 'Apply across the app',
+      titleId: 'ds-prop-title',
+      closeAttrs: 'data-prop-close',
+      modalClass: 'ds-prop-modal dash-modal--panel',
+      body: `
         <div class="ds-prop-compare">
           <span class="ds-prop-chip">
             <span class="ds-prop-chip-well"><span class="ds-prop-chip-fill" style="background:${esc(fromHex)}"></span></span>
@@ -13651,24 +13625,17 @@ function openTokenApplyModal(sw, opts) {
               <span class="ds-prop-row-name">${esc(p.label)}</span>
               <span class="ds-prop-row-href">${esc(p.href)}</span>
             </li>`).join('')}
-        </ul>
-      </div>
-      <footer class="dash-modal-foot">
-        <span class="ds-prop-frac" data-prop-note>Writing ${esc(token)} into every page that loads the design tokens.</span>
-        <div class="dash-modal-foot-right">
-          <button type="button" class="wise-btn wise-btn--primary" data-prop-done disabled>Working…</button>
-        </div>
-      </footer>
-    </div>`;
-  document.body.appendChild(scrim);
-  requestAnimationFrame(() => scrim.classList.add('is-open'));
+        </ul>`,
+      foot: modalFoot({
+        left: `<span class="ds-prop-frac" data-prop-note>Writing ${esc(token)} into every page that loads the design tokens.</span>`,
+        actions: `<button type="button" class="wise-btn wise-btn--primary" data-prop-done disabled>Working…</button>`,
+      }),
+    }),
+  });
 
   const doneBtn = scrim.querySelector('[data-prop-done]');
-  const close = () => {
-    scrim.classList.remove('is-open');
-    setTimeout(() => scrim.remove(), 220);
-  };
-  scrim.querySelector('[data-prop-close]').addEventListener('click', close);
+  const close = () => hide();
+  scrim.querySelector('[data-prop-close]').addEventListener('click', () => { if (!doneBtn.disabled) close(); });
   scrim.addEventListener('click', (e) => { if (e.target === scrim && !doneBtn.disabled) close(); });
   const onKey = (e) => {
     if (e.key === 'Escape') {
@@ -14248,12 +14215,7 @@ function closeReadyVerifyModal() {
   const scrim = readyVerifyEl;
   if (!scrim) return;
   readyVerifyEl = null;
-  scrim.classList.remove('is-open');
-  setTimeout(() => scrim.remove(), 220);
-  document.removeEventListener('keydown', readyVerifyKeyHandler);
-}
-function readyVerifyKeyHandler(e) {
-  if (e.key === 'Escape') closeReadyVerifyModal();
+  closeModal(scrim);
 }
 
 function wireDevReady(root) {
@@ -14330,9 +14292,12 @@ function wireDevReady(root) {
     const pending = stats.total - stats.ready;
     closeReadyVerifyModal();
 
-    const scrim = document.createElement('div');
-    scrim.className = 'adm-modal-scrim dsc-ready-scrim';
+    const { scrim } = openModal({
+      extraScrimClass: 'dsc-ready-scrim',
+      html: '',
+    });
     scrim.setAttribute('data-ready-verify', moduleId);
+    readyVerifyEl = scrim;
 
     function paint(step) {
       const first = step === 1;
@@ -14345,17 +14310,13 @@ function wireDevReady(root) {
           + (stats.ready ? ', <strong>' + stats.ready + '</strong> already on' : '')
           + '. ' + spec.verifyContinue)
         : spec.verifyConfirm(stats.total, esc(label));
-      scrim.innerHTML = `
-        <div class="adm-modal" role="dialog" aria-modal="true" aria-labelledby="dsc-ready-verify-title">
-          <button type="button" class="adm-modal-x" data-ready-verify-act="close" aria-label="Close">
-            <span class="material-symbols-outlined">close</span>
-          </button>
-          <div class="adm-modal-head">
-            <div class="adm-modal-eyebrow">${first ? 'Verify · 1 of 2' : 'Verify again · 2 of 2'}</div>
-            <h2 class="adm-modal-title" id="dsc-ready-verify-title">${esc(title)}</h2>
-            <p class="adm-modal-sub">${sub}</p>
-          </div>
-          <div class="adm-modal-body">
+      scrim.innerHTML = modalHTML({
+        eyebrow: first ? 'Verify · 1 of 2' : 'Verify again · 2 of 2',
+        title: esc(title),
+        titleId: 'dsc-ready-verify-title',
+        sub,
+        closeAttrs: 'data-ready-verify-act="close" data-wise-modal-close',
+        body: `
             <div class="dsc-ready-verify-steps" aria-hidden="true">
               <span class="dsc-ready-verify-dot${first ? ' is-on' : ' is-done'}"></span>
               <span class="dsc-ready-verify-dot${first ? '' : ' is-on'}"></span>
@@ -14366,18 +14327,13 @@ function wireDevReady(root) {
                 <span class="material-symbols-outlined">${first ? 'arrow_forward' : 'task_alt'}</span>
                 ${first ? 'Continue' : spec.confirmLabel}
               </button>
-            </div>
-          </div>
-        </div>`;
+            </div>`,
+      });
       scrim.querySelector('.wise-btn--primary')?.focus();
     }
 
-    document.body.appendChild(scrim);
-    readyVerifyEl = scrim;
     paint(1);
-    requestAnimationFrame(() => scrim.classList.add('is-open'));
     scrim.addEventListener('click', (e) => {
-      if (e.target === scrim) { closeReadyVerifyModal(); return; }
       const act = e.target.closest('[data-ready-verify-act]');
       if (!act) return;
       const actKind = act.getAttribute('data-ready-verify-act');
@@ -14388,7 +14344,6 @@ function wireDevReady(root) {
         markModuleChildrenReady(moduleId, kind);
       }
     });
-    document.addEventListener('keydown', readyVerifyKeyHandler);
   }
 
   root._markModuleChildrenReady = markModuleChildrenReady;

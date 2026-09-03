@@ -164,7 +164,7 @@
       padding: var(--module-head-pad-t) var(--module-head-ctrl-inset) var(--module-head-pad-b) var(--module-head-pad-l);
     }
     #ia-panel .wch-head-title {
-      font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+      font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', serif);
       font-weight: var(--module-title-weight, 800);
       font-size: var(--module-title-size, 1.2rem);
       letter-spacing: -0.01em;
@@ -281,15 +281,28 @@
       font-size: 0.68rem; color: rgba(255, 255, 255, 0.78); margin-top: 1px;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-    /* Circular brand-logo badge — a smaller sibling of the overview hero logo.
-       Holds a brand image if one is set; falls back to a clean monogram. */
+    /* Brand mark — same 28px circle hit as ⋯ / width, left of the kebab. */
     .nfp-brand-logo {
-      flex-shrink: 0; width: 38px; height: 38px; border-radius: 50%; overflow: hidden;
-      display: flex; align-items: center; justify-content: center; background: #fff;
-      box-shadow: 0 4px 12px rgba(7, 12, 26, 0.30), 0 0 0 3px rgba(255, 255, 255, 0.18);
+      flex-shrink: 0; width: 28px; height: 28px; padding: 0; border: 0;
+      border-radius: 50%; overflow: hidden; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; background: #fff;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.28);
     }
     .nfp-brand-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .nfp-brand-logo-mono { font-weight: 800; font-size: 0.62rem; letter-spacing: -0.02em; color: var(--primary); }
+    .nfp-brand-logo-mono { font-weight: 800; font-size: 0.5rem; letter-spacing: -0.02em; color: var(--primary); }
+    .nfp-brand-logo:hover,
+    .nfp-brand-logo:focus-visible,
+    .nfp-brand-logo.nfp-hero-drag {
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.55);
+    }
+    html.header-float .nfp-brand-logo {
+      box-shadow: 0 0 0 1px var(--border);
+    }
+    html.header-float .nfp-brand-logo:hover,
+    html.header-float .nfp-brand-logo:focus-visible,
+    html.header-float .nfp-brand-logo.nfp-hero-drag {
+      box-shadow: 0 0 0 2px var(--primary);
+    }
 
     /* Scrollable body — same surface gradient as the portfolio container
        (.nfp-inner). The printed Nutrition Facts label keeps its own sheet
@@ -362,7 +375,8 @@
       flex-wrap: wrap; min-width: 0;
       align-items: flex-start; margin-bottom: 6px;
     }
-    html.header-float .nfp-sp--flip .nfp-fi-group--identity .nfp-fi-header { padding-right: 72px; }
+    html.header-float .nfp-sp--flip .nfp-fi-group--identity .nfp-fi-header,
+    html.header-float .nfp-sp--flip .nfp-fi-group--identity .nfp-fi-desc { padding-right: 100px; }
     .nfp-sp--flip .nfp-fi-title {
       flex: 1 1 auto; min-width: 0;
       overflow-wrap: break-word; word-break: normal;
@@ -817,7 +831,7 @@
        5-digit runs) sit between them, split by the center-guard gutter. ── */
     .nfp-upc-entry {
       display: flex; flex-direction: column; align-items: center; gap: 0; width: 100%; box-sizing: border-box;
-      background: #fff; border: 1px solid #111; border-radius: 0;
+      background: #fff; border: 1px solid #d2d8e0; border-radius: 0;
       padding: 14px 12px 10px; box-shadow: 0 1px 2px rgba(7,12,26,0.06);
     }
     .nfp-upc-mark { display: flex; flex-direction: column; align-items: stretch; width: 100%; }
@@ -873,7 +887,7 @@
     .nfp-fi { background: transparent; border-bottom: none; padding: 14px 14px 14px; }
     .nfp-fi:has(.nfp-fi-group--identity) { padding: 0; overflow: visible; }
     .nfp-fi-header { display: flex; align-items: flex-start; justify-content: flex-start; gap: 8px; margin-bottom: 4px; min-width: 0; }
-    .nfp-fi-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 0.95rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; color: var(--text); flex: 1 1 auto; min-width: 0; overflow-wrap: break-word; }
+    .nfp-fi-title { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 0.95rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; color: var(--text); flex: 1 1 auto; min-width: 0; overflow-wrap: break-word; }
     .nfp-fi-title .nfp-edit {
       font: inherit; letter-spacing: inherit; color: inherit; padding: 0;
       overflow-wrap: inherit; white-space: normal;
@@ -932,7 +946,7 @@
       min-width: 232px; max-width: min(260px, 70vw); padding: 10px 10px 8px;
     }
     .nfp-fi-thumb-del-pop-title {
-      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-family: 'WISE Digits', 'Noto Serif', serif;
       font-size: 0.88rem; font-weight: 700; letter-spacing: -0.01em;
       color: var(--text); padding: 2px 4px 4px;
     }
@@ -1004,14 +1018,14 @@
       margin-bottom: 6px; align-items: flex-start; gap: 10px; flex-wrap: nowrap;
     }
     .nfp-fi-group--identity .nfp-fi-title {
-      font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+      font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', serif);
       font-weight: var(--module-title-weight, 800);
       font-size: var(--module-title-size, 1.2rem);
       letter-spacing: -0.01em;
       line-height: var(--module-title-lh, 1.16);
     }
-    /* ⋯ + width (2×28px) float over the title row — keep the name clear. */
-    html.header-float .nfp-fi-group--identity .nfp-fi-header { padding-right: 72px; }
+    /* Logo + ⋯ + width (3×28px) float over the title row — keep the name clear. */
+    html.header-float .nfp-fi-group--identity .nfp-fi-header { padding-right: 100px; }
     /* Fill the copy column (not a fixed 72ch) so the blurb tracks module width.
        pretty wrap keeps a leftover word from sitting short of the line above. */
     .nfp-fi-desc {
@@ -1032,7 +1046,7 @@
     .nfp-fi-group--identity .nfp-edit::after { left: 0; right: 0; }
     html.header-float .nfp-fi-group--identity .nfp-fi-header,
     html.header-float .nfp-fi-group--identity .nfp-fi-desc {
-      padding-right: 72px;
+      padding-right: 100px;
     }
     .nfp-fi-desc .nfp-edit {
       display: block; width: 100%; box-sizing: border-box;
@@ -1100,23 +1114,46 @@
     .nfp-fi-upc-stack .nfp-fi-upc { margin: 0; }
     .nfp-fi-cat--dock {
       flex: 0 0 auto; align-self: center; margin: 0; min-width: 0;
-      display: flex; align-items: center; justify-content: center; height: 28px;
-      width: 232px; max-width: 100%;
+      display: flex; align-items: center; justify-content: center; height: auto;
+      width: auto; max-width: 100%;
     }
     .nfp-fi-cat--dock .nfp-hero-cat {
-      width: 100%; max-width: none; height: 28px;
+      width: auto; max-width: 100%; height: auto;
       align-items: center; flex-wrap: nowrap; margin: 0; justify-content: center;
     }
-    .nfp-fi-cat--dock .nfp-cat-select { width: 100%; height: 28px; }
+    .nfp-fi-cat--dock .nfp-cat-select { width: auto; max-width: 100%; height: auto; }
     .nfp-fi-cat--dock .nfp-cat-native {
-      width: 100%; max-width: none; height: 28px; box-sizing: border-box;
-      padding: 0 22px 0 24px; line-height: 26px; font-size: 0.65rem;
+      width: auto; max-width: 100%; height: auto; min-height: 0;
+      box-sizing: border-box; padding: 2px 18px 2px 20px; line-height: 1.3;
+      font-size: 0.72rem; font-weight: 650;
+      background: transparent; border: none; border-radius: 0;
+      color: var(--primary); box-shadow: none; cursor: pointer;
+    }
+    .nfp-fi-cat--dock .nfp-cat-native:hover,
+    .nfp-fi-cat--dock .nfp-cat-native:focus {
+      background: transparent; border: none; box-shadow: none;
+      color: var(--primary); text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .nfp-fi-cat--dock.nfp-cat-select--err .nfp-cat-native,
+    .nfp-fi-cat--dock .nfp-cat-select--err .nfp-cat-native {
+      box-shadow: none; color: var(--sec-red);
     }
     .nfp-fi-cat--dock .nfp-cat-select-ic {
-      left: 6px; top: 50%; transform: translateY(-50%); font-size: 14px !important;
+      left: 0; top: 50%; transform: translateY(-50%); font-size: 14px !important;
+      color: var(--primary);
     }
     .nfp-fi-cat--dock .nfp-cat-select-caret {
-      right: 3px; top: 50%; transform: translateY(-50%); font-size: 16px !important;
+      right: 0; top: 50%; transform: translateY(-50%); font-size: 16px !important;
+      color: var(--primary);
+    }
+    html.dark .nfp-fi-cat--dock .nfp-cat-native,
+    html.dark .nfp-fi-cat--dock .nfp-cat-native:hover,
+    html.dark .nfp-fi-cat--dock .nfp-cat-native:focus,
+    html.dark .nfp-fi-cat--dock .nfp-cat-select-ic,
+    html.dark .nfp-fi-cat--dock .nfp-cat-select-caret {
+      color: var(--primary-bright, var(--primary));
+      background: transparent;
     }
     .nfp-fi-cat--dock .nfp-hero-field-note { display: none; }
     /* Barcode sits in the thumbs row: after the size squares, before +. */
@@ -1187,7 +1224,7 @@
        line up for a side-by-side read (mirrors pages/product-comparison.html). */
     .nfp-cmp { padding: 16px 14px 18px; background: var(--surface); }
     /* Headline — proper serif header (matches .nfp-fi-title), no leading icon. */
-    .nfp-cmp-intro { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.375rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; color: var(--text); margin-bottom: 14px; }
+    .nfp-cmp-intro { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.375rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; color: var(--text); margin-bottom: 14px; }
     .nfp-cmp-note { display: flex; align-items: flex-start; gap: 6px; font-size: 0.66rem; line-height: 1.4; color: var(--text-muted); background: var(--primary-soft); border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent); border-radius: 10px; padding: 8px 10px; margin-bottom: 12px; }
     .nfp-cmp-note .material-symbols-outlined { font-size: 15px !important; color: var(--primary-ink, var(--primary)); flex-shrink: 0; margin-top: 1px; }
     /* Table shell — mirrors product-comparison's .cmp-grid-wrap (rounded 14px,
@@ -1372,7 +1409,7 @@
       min-width: 232px; max-height: min(420px, 70vh); overflow-y: auto;
     }
     .nfp-allergen-pop-title {
-      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-family: 'WISE Digits', 'Noto Serif', serif;
       font-size: 0.88rem; font-weight: 700; letter-spacing: -0.01em;
       color: var(--text); padding: 8px 12px 6px;
     }
@@ -1483,7 +1520,7 @@
     /* Printed UPC-A stays a white label with black bars in dark mode — same
        as a real retail sticker. Compare-view cards follow the same rule. */
     html.dark .nfp-upc-entry:not(.nfp-upc-entry--onphoto) {
-      background: #fff; border-color: #111;
+      background: #fff; border-color: #d2d8e0;
       box-shadow: 0 1px 2px rgba(0,0,0,0.4);
     }
     html.dark .nfp-upc-entry:not(.nfp-upc-entry--onphoto) .nfp-upc-bc { fill: #111; }
@@ -1560,13 +1597,13 @@
     }
     html.dark .nfp-ins-next-ic .material-symbols-outlined { color: var(--primary-bright, var(--primary)); }
     .nfp-ins-next-body { grid-column: 1; min-width: 0; text-align: center; }
-    .nfp-ins-next-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.15rem; font-weight: 700; color: var(--text); line-height: 1.2; text-align: center; }
+    .nfp-ins-next-title { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.15rem; font-weight: 700; color: var(--text); line-height: 1.2; text-align: center; }
     .nfp-ins-next-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.45; margin-top: 3px; max-width: none; text-align: center; }
     .nfp-ins-next-btn {
       grid-column: 1 / -1; margin: 0; width: 100%;
       display: inline-flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer;
       border: none; border-radius: 999px; padding: 10px 18px;
-      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 0.82rem; font-weight: 700;
+      font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 0.82rem; font-weight: 700;
       background: var(--primary); color: #fff; text-decoration: none; transition: filter 0.15s;
       appearance: none; -webkit-appearance: none;
       white-space: normal; text-align: center; line-height: 1.25;
@@ -1593,7 +1630,7 @@
       padding: 18px 8px 4px;
     }
     .nfp-ins .dash-bignum {
-      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-family: 'WISE Digits', 'Noto Serif', serif;
     }
     .nfp-ins .dash-claim-col { cursor: pointer; }
     @container nfp-body (max-width: 720px) {
@@ -1615,7 +1652,7 @@
     }
     .nfp-ia-head:hover { background: color-mix(in srgb, var(--primary) 6%, transparent); }
     .nfp-ia-title {
-      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif;
+      font-family: 'WISE Digits', 'Noto Serif', serif;
       font-size: 0.95rem; font-weight: 700; letter-spacing: -0.01em; flex: 1 1 8rem; min-width: 0;
     }
     .nfp-ia-head-pills {
@@ -1636,14 +1673,30 @@
       width: fit-content; max-width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px;
       margin-left: auto; margin-right: auto;
       border: none; border-radius: 999px; padding: 9px 14px; cursor: pointer;
-      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 0.8rem; font-weight: 700;
+      font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 0.8rem; font-weight: 700;
       background: var(--primary); color: #fff; transition: filter 0.15s, opacity 0.15s;
     }
     .nfp-ia-analyze:hover { filter: brightness(1.07); }
-    .nfp-ia-analyze:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.25); }
+    .nfp-ia-analyze:disabled:not(.is-running) { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.25); }
+    .nfp-ia-analyze.is-running { opacity: 1; filter: none; cursor: progress; }
     .nfp-ia-analyze .material-symbols-outlined {
       font-size: 17px !important;
       font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .nfp-ia-spin {
+      width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; box-sizing: border-box;
+      border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff;
+      animation: nfp-ia-spin 0.7s linear infinite;
+    }
+    @keyframes nfp-ia-spin { to { transform: rotate(360deg); } }
+    .nfp-ia.is-running .nfp-ia-actions { pointer-events: none; opacity: 0.45; }
+    .nfp-ia-sec.is-rerunning .nfp-ia-banner { opacity: 0.55; }
+    .nfp-ia-sec.is-rerunning .nfp-ia-row {
+      animation: nfp-ia-scan 0.85s ease-in-out infinite;
+    }
+    @keyframes nfp-ia-scan {
+      0%, 100% { opacity: 0.28; }
+      50% { opacity: 1; }
     }
     .nfp-ia-banner {
       display: flex; align-items: flex-start; gap: 7px; padding: 8px 10px; margin-bottom: 8px;
@@ -1689,9 +1742,32 @@
     }
     .nfp-ia-row:last-child { border-bottom: 0; }
     .nfp-ia-tree {
-      display: block; position: relative;
+      display: flex; align-items: baseline; flex-wrap: wrap; gap: 5px 6px; position: relative;
       padding-left: calc(4px + min(12, var(--d, 0)) * 8px);
       text-transform: capitalize;
+    }
+    .nfp-ia-tree-name { min-width: 0; overflow-wrap: anywhere; }
+    .nfp-ia-owl {
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: center;
+      margin: 0; padding: 0; border: 0; background: none;
+      color: var(--primary); cursor: pointer; line-height: 0; opacity: 0.72;
+    }
+    .nfp-ia-owl:hover, .nfp-ia-owl:focus-visible { opacity: 1; color: var(--primary-ink, var(--primary)); }
+    .nfp-ia-owl svg { height: 11px; width: auto; display: block; }
+    .nfp-ia-parsed-row.is-lookup {
+      background: color-mix(in srgb, var(--primary) 8%, transparent);
+      outline: 1px solid color-mix(in srgb, var(--primary) 45%, transparent);
+      outline-offset: -1px;
+    }
+    .nfp-ia-parsed-row.is-attested {
+      background: color-mix(in srgb, var(--sec-green) 12%, transparent);
+    }
+    html.dark .nfp-ia-parsed-row.is-lookup {
+      background: color-mix(in srgb, var(--primary) 16%, transparent);
+    }
+    html.dark .nfp-ia-parsed-row.is-attested {
+      background: color-mix(in srgb, var(--sec-green) 18%, transparent);
     }
     .nfp-ia-parsed-row[data-depth="0"] .nfp-ia-tree,
     .nfp-ia-scout-row[data-depth="0"] .nfp-ia-tree { font-weight: 700; padding-left: 2px; }
@@ -1753,6 +1829,8 @@
     @media (prefers-reduced-motion: reduce) {
       .nfp-ia-row { animation: none; }
       .nfp-ia-chev { transition: none; }
+      .nfp-ia-spin { animation: none; }
+      .nfp-ia-sec.is-rerunning .nfp-ia-row { animation: none; opacity: 0.55; }
     }
 
     /* Save footer — matches the cream module canvas (ingredients side). */
@@ -1765,7 +1843,7 @@
       width: fit-content; max-width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;
       margin-left: auto; margin-right: auto;
       border: 1.5px solid var(--primary); border-radius: 999px; padding: 9px 14px; cursor: pointer;
-      font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 0.82rem; font-weight: 700;
+      font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 0.82rem; font-weight: 700;
       background: transparent; color: var(--primary-ink, var(--primary));
       transition: background 0.15s, opacity 0.15s, border-color 0.15s, color 0.15s;
     }
@@ -2075,8 +2153,8 @@
               <div class="nfp-banner-title">Product Details</div>
               <div class="nfp-banner-sub"><span id="nfp-brand-name">Flax4Life</span> · click any field to edit</div>
             </div>
-            <span class="nfp-brand-logo" id="nfp-brand-logo" title="Flax4Life" aria-label="Flax4Life logo"><img src="../assets/brand-flax4life-logo.png" alt="" onerror="this.style.display='none';this.nextElementSibling.hidden=false"><span class="nfp-brand-logo-mono" hidden>F4L</span></span>
             <div class="panel-controls">
+              <button type="button" class="nfp-brand-logo" id="nfp-brand-logo" data-nfp="upload-brand" title="Replace brand logo" aria-label="Replace brand logo"><img src="../assets/brand-flax4life-logo.png" alt="" onerror="this.style.display='none';this.nextElementSibling.hidden=false"><span class="nfp-brand-logo-mono" hidden>F4L</span></button>
               <div class="panel-more-wrap" id="nfp-menu-wrap" data-sticky-menu="1">
                 <button type="button" class="panel-more-btn" id="nfp-menu-btn" title="Module options" aria-haspopup="menu" aria-expanded="false" aria-controls="nfp-menu" aria-label="Module options"><span class="material-symbols-outlined">more_vert</span></button>
                 <div class="topbar-popover hidden" id="nfp-menu" role="menu"></div>
@@ -2113,6 +2191,7 @@
 
   <!-- Shared WISE navigation + appearance (mirrors reformulation.html). -->
   <script type="module">
+    import '../js/wise-modal.js';
     import { mountAgentMenu, toggleMenuPivot, isMenuPivoted } from '../js/agent-menu.js';
     import { mountMenuBrand, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, restoreHeaderFloat, applyFullBleed, isFullBleedOn, restoreFullBleed, applyColorblind, isColorblindOn, restoreColorblind } from '../js/topbar.js';
     import { setTextSize, applyStoredTextSize, getStoredFontSize } from '../js/text-size.js';

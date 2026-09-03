@@ -729,7 +729,7 @@ export function buildAppearanceBody({
         ${plainToggle('data-colorblind="1"', isColorblindOn(), 'Accessible colors', 'Color-vision-safe palette', 'Use a color-vision-safe palette', false, false, 'visibility')}
         ${colorblindTypeSection()}
         ${textSizeSection()}
-        ${adminOnly(adminToggle('data-serif="1"', isSerifHeadlinesOn(), 'Serif headlines', 'Brand display type', 'Use the brand serif for titles. Turn off to switch titles to DM Sans', false, false, 'title'))}
+        ${adminOnly(adminToggle('data-serif="1"', isSerifHeadlinesOn(), 'Serif headlines', 'Noto Serif titles', 'Use Noto Serif for titles. Turn off to switch titles to DM Sans', false, false, 'title'))}
         ${adminOnly(brandingSection())}
       `);
   const adminRows = apGroup('Admin', `

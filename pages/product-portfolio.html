@@ -6557,7 +6557,7 @@
        agent-page.css isn't touched on other pages.
        ===================================================================== */
     body.ai-chat-page {
-      --font-serif: 'WISE Digits', 'Noto Serif', 'Noto Serif Fallback', Georgia, 'Times New Roman', serif;
+      --font-serif: 'WISE Digits', 'Noto Serif', serif;
     }
     /* H1 / H2-level headings */
     body.ai-chat-page .ws-heading,
@@ -7533,7 +7533,7 @@
     .pf-rpt-hero-copy { min-width: 0; flex: 1; }
     .pf-rpt-title {
       margin: 0;
-      font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+      font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', serif);
       font-size: 1.35rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.15;
       color: var(--text);
     }
@@ -7553,7 +7553,7 @@
     .pf-rpt-sec { display: flex; flex-direction: column; gap: 8px; }
     .pf-rpt-sec-title {
       margin: 0;
-      font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+      font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', serif);
       font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text);
     }
     .pf-rpt-sec-lede, .pf-rpt-body { margin: 0; font-size: 0.8125rem; line-height: 1.55; color: var(--text-muted); }
@@ -8503,7 +8503,7 @@
       top: auto; bottom: calc(100% + 6px); left: 0; right: auto; min-width: 244px;
     }
     .pf-reports-pop .pf-reports-pop-title {
-      font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif);
+      font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', serif);
       font-size: 13px;
       font-weight: 700;
       letter-spacing: -0.01em;
@@ -18374,7 +18374,7 @@
       if (M < 3) {
         return '<div class="cmp-radar-wrap"><div class="cmp-radar-note">' +
           '<span class="material-symbols-outlined">radar</span>' +
-          'Add at least 3 metrics from the <strong>Metrics</strong> menu to plot a spider chart.' +
+          'Add at least 3 codes from the <strong>Codes</strong> menu to plot a spider chart.' +
           '</div></div>';
       }
       if (!ents.length) {
@@ -18450,8 +18450,8 @@
       const legend = cmpLegendHTML(ents, showAvg);
 
       return '<div class="cmp-radar-wrap">' +
-        '<div class="cmp-radar-head"><span class="cmp-radar-title">All metrics overlaid</span>' +
-        '<span class="cmp-radar-sub">' + M + ' metrics · ' + ents.length + ' ' + (scope.noun === 'portfolio' ? 'brands' : 'products') + '</span></div>' +
+        '<div class="cmp-radar-head"><span class="cmp-radar-title">All codes overlaid</span>' +
+        '<span class="cmp-radar-sub">' + M + ' codes · ' + ents.length + ' ' + (scope.noun === 'portfolio' ? 'brands' : 'products') + '</span></div>' +
         '<div class="cmp-radar-canvas">' +
           '<div class="cmp-radar-stage">' +
             `<svg viewBox="0 0 ${size} ${size}" class="cmp-radar-svg" role="img" aria-label="Spider chart overlaying all metrics for each ${scope.noun}">` +
@@ -18473,7 +18473,7 @@
       if (M < 2) {
         return '<div class="cmp-radar-wrap"><div class="cmp-radar-note">' +
           '<span class="material-symbols-outlined">ssid_chart</span>' +
-          'Add at least 2 metrics from the <strong>Metrics</strong> menu to plot parallel coordinates.' +
+          'Add at least 2 codes from the <strong>Codes</strong> menu to plot parallel coordinates.' +
           '</div></div>';
       }
       if (!ents.length) {
@@ -18562,7 +18562,7 @@
 
       return '<div class="cmp-radar-wrap">' +
         '<div class="cmp-radar-head"><span class="cmp-radar-title">Parallel coordinates</span>' +
-        '<span class="cmp-radar-sub">' + M + ' metrics · ' + ents.length + ' ' + (scope.noun === 'portfolio' ? 'brands' : 'products') + '</span></div>' +
+        '<span class="cmp-radar-sub">' + M + ' codes · ' + ents.length + ' ' + (scope.noun === 'portfolio' ? 'brands' : 'products') + '</span></div>' +
         '<div class="cmp-par-plot">' +
           '<div class="cmp-radar-canvas cmp-par-canvas">' +
             `<svg viewBox="0 0 ${W} ${H}" class="cmp-par-svg" role="img" aria-label="Parallel coordinates plot threading every metric for each ${scope.noun}">` +
@@ -18587,7 +18587,7 @@
       if (!M) {
         return '<div class="cmp-radar-wrap"><div class="cmp-radar-note">' +
           '<span class="material-symbols-outlined">sports_score</span>' +
-          'Add at least 1 metric from the <strong>Metrics</strong> menu to line up the race.' +
+          'Add at least 1 code from the <strong>Codes</strong> menu to line up the race.' +
           '</div></div>';
       }
       if (!ents.length) {
@@ -18630,8 +18630,8 @@
       const legend = cmpLegendHTML(ents, showAvg);
 
       return '<div class="cmp-radar-wrap">' +
-        '<div class="cmp-radar-head"><span class="cmp-radar-title">Metric race</span>' +
-        '<span class="cmp-radar-sub">' + M + ' metrics · ' + ents.length + ' ' + (scope.noun === 'portfolio' ? 'brands' : 'products') + '</span></div>' +
+        '<div class="cmp-radar-head"><span class="cmp-radar-title">Code race</span>' +
+        '<span class="cmp-radar-sub">' + M + ' codes · ' + ents.length + ' ' + (scope.noun === 'portfolio' ? 'brands' : 'products') + '</span></div>' +
         rows +
         '<div class="cmp-radar-legend">' + legend + '</div>' +
       '</div>';
@@ -18727,7 +18727,7 @@
       const toolbar =
         '<div class="cmp-toolbar cmp-toolbar--bar">' +
           '<div id="cmp-metric-wrap" class="cmp-tool-item" style="position:relative">' +
-            `<button type="button" class="wise-btn wise-btn--secondary" onclick="cmpToggleMetricMenu()"><span class="material-symbols-outlined">tune</span>Metrics · ${M}</button>` +
+            `<button type="button" class="wise-btn wise-btn--secondary" onclick="cmpToggleMetricMenu()"><span class="material-symbols-outlined">tune</span>Codes · ${M}</button>` +
             metricMenu +
           '</div>' +
           (scope.categories ? cmpCatControl() : '') +
@@ -19254,7 +19254,7 @@
       }
       if (compareState.shown.length > 2)
         chips.push(`<button type="button" class="chip" onclick="cmpFollow('remove', this)"><span class="material-symbols-outlined">remove_circle</span>Remove an item</button>`);
-      chips.push(`<button type="button" class="chip" onclick="cmpFollow('metrics', this)"><span class="material-symbols-outlined">tune</span>Metrics · ${compareState.metrics.length}</button>`);
+      chips.push(`<button type="button" class="chip" onclick="cmpFollow('metrics', this)"><span class="material-symbols-outlined">tune</span>Codes · ${compareState.metrics.length}</button>`);
       if (scope.categories) {
         const cur = compareState.category === 'all' ? 'All' : compareState.category;
         chips.push(`<button type="button" class="chip" onclick="cmpFollow('category', this)"><span class="material-symbols-outlined">filter_alt</span>Category · ${cur}</button>`);
@@ -19370,8 +19370,8 @@
        Every metric is a live toggle chip; the board updates on each tap. */
     function cmpPromptMetrics() {
       document.getElementById('cmp-metric-chips')?.remove();
-      addUserMessage('Choose which metrics to compare');
-      const typing = showWISEcodeAITyping('WISEcodeAI is loading the metric set');
+      addUserMessage('Choose which codes to compare');
+      const typing = showWISEcodeAITyping('WISEcodeAI is loading the codes');
       setTimeout(() => {
         typing?.remove();
         addWISEcodeAIMessage('Toggle any metric on or off and the board updates live. Tap <strong>Done</strong> when the set looks right.', { source: false });
@@ -19403,7 +19403,7 @@
       btn?.closest('.sc-reply-chips')?.remove();
       document.getElementById('cmp-metric-chips')?.remove();
       const names = compareState.metrics.map(id => cmpMetricShort(CMP_METRIC_BY_ID[id])).filter(Boolean).join(', ');
-      addWISEcodeAIMessage('Metric set updated — now comparing on <strong>' + names + '</strong>.', { source: false });
+      addWISEcodeAIMessage('Codes updated — now comparing on <strong>' + names + '</strong>.', { source: false });
       cmpOfferFollowChips();
     }
 

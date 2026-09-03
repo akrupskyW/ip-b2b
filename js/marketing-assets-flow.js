@@ -1,4 +1,8 @@
 import './date-column.js';
+import { esc } from './escape-html.js';
+import { ARROW_SVG } from './sort-arrow.js';
+import { createToast } from './toast.js';
+const toast = createToast('ma');
 
 /**
  * Marketing Assets browser.
@@ -21,15 +25,6 @@ import './date-column.js';
 /* ------------------------------------------------------------------ */
 /* Utilities                                                           */
 /* ------------------------------------------------------------------ */
-
-function esc(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
 
 const KB = (n) => Math.round(n * 1024);
 const MB = (n) => Math.round(n * 1024 * 1024);
@@ -115,24 +110,6 @@ function folderIcon(name) {
   if (n.includes('header')) return 'web_asset';
   if (/post\b/.test(n)) return 'collections';
   return 'folder';
-}
-
-function toast(msg, icon = 'check') {
-  let wrap = document.getElementById('ma-toast-wrap');
-  if (!wrap) {
-    wrap = document.createElement('div');
-    wrap.id = 'ma-toast-wrap';
-    document.body.appendChild(wrap);
-  }
-  const t = document.createElement('div');
-  t.className = 'ma-toast';
-  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
-  wrap.appendChild(t);
-  requestAnimationFrame(() => t.classList.add('is-in'));
-  setTimeout(() => {
-    t.classList.remove('is-in');
-    setTimeout(() => t.remove(), 320);
-  }, 2800);
 }
 
 /* ------------------------------------------------------------------ */
@@ -250,8 +227,6 @@ function nodeDates(node) {
   const partial = { updated: node._updated, created: node._created, viewed: node._viewed || node._updated };
   return D ? D.complete(partial, 'asset') : partial;
 }
-
-const ARROW_SVG = '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 const TYPE_CHIP = [
   { key: null,     label: 'All',      icon: 'apps' },
@@ -1001,24 +976,8 @@ function setFilterOpen(host, open) {
   syncFilterUi(host);
 }
 
-function popOfRowMenu(menu) {
-  if (!menu) return null;
-  const inner = menu.querySelector('.ma-rowmenu-pop');
-  if (inner) return inner;
-  return Array.from(document.querySelectorAll('.ma-rowmenu-pop')).find((p) => p.__plHost === menu) || null;
-}
-
-function closeRowMenus(host, keep) {
-  if (!host) return;
-  host.querySelectorAll('.ma-rowmenu.is-open').forEach((menu) => {
-    if (menu === keep) return;
-    menu.classList.remove('is-open');
-    const btn = menu.querySelector('.ma-rowmenu-btn');
-    if (btn) btn.setAttribute('aria-expanded', 'false');
-    const pop = popOfRowMenu(menu);
-    if (pop) pop.hidden = true;
-  });
-}
+const MA_MENU = { menuSel: '.ma-rowmenu', btnSel: '.ma-rowmenu-btn', popSel: '.ma-rowmenu-pop' };
+function closeRowMenus(host) { window.WisePopover?.closeAll(host, null, MA_MENU); }
 
 function toggleFolder(host, path) {
   if (state.open.has(path)) state.open.delete(path);
@@ -1086,6 +1045,16 @@ export function renderMarketingAssets(host) {
   host.innerHTML = renderShell();
   mountBrandSwitcher();
   wireBrandSwitcher();
+  window.WisePopover?.bindRowMenus(host, MA_MENU);
+  if (!window.__maFilterBound) {
+    window.__maFilterBound = true;
+    window.WisePopover?.bindFilterPop({
+      isOpen: () => state.filterOpen,
+      setOpen: (open) => { if (activeHost || host) setFilterOpen(activeHost || host, open); },
+      insideSel: '.ma-search-inline',
+      popSel: '.ma-filter-pop',
+    });
+  }
   syncExpandLabel(host);
   syncScorecards(host);
   syncFilterUi(host);
@@ -1149,22 +1118,10 @@ export function renderMarketingAssets(host) {
       repaint(host);
       return;
     }
-    const menuBtn = e.target.closest('.ma-rowmenu-btn');
-    if (menuBtn) {
-      e.stopPropagation();
-      const menu = menuBtn.closest('.ma-rowmenu');
-      const open = !menu.classList.contains('is-open');
-      closeRowMenus(host, open ? menu : null);
-      menu.classList.toggle('is-open', open);
-      menuBtn.setAttribute('aria-expanded', String(open));
-      const pop = popOfRowMenu(menu);
-      if (pop) pop.hidden = !open;
-      return;
-    }
     const menuAct = e.target.closest('[data-ma-act]');
     if (menuAct) {
       e.stopPropagation();
-      closeRowMenus(host, null);
+      closeRowMenus(host);
       const node = NODE_BY_PATH.get(menuAct.dataset.maPath);
       const act = menuAct.dataset.maAct;
       if (act === 'preview' && node) openPreview(node);
@@ -1233,7 +1190,7 @@ export function renderMarketingAssets(host) {
 
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    if (host.querySelector('.ma-rowmenu.is-open')) { closeRowMenus(host, null); return; }
+    if (host.querySelector('.ma-rowmenu.is-open')) { closeRowMenus(host); return; }
     if (state.filterOpen) { setFilterOpen(host, false); return; }
     closePreview();
   });
@@ -1246,10 +1203,6 @@ let activeHost = null;
 if (typeof document !== 'undefined' && !window.__maReplyChipsWired) {
   window.__maReplyChipsWired = true;
   document.addEventListener('click', (e) => {
-    if (state.filterOpen && activeHost && !e.target.closest('.ma-search-inline')) {
-      setFilterOpen(activeHost, false);
-    }
-    if (activeHost && !e.target.closest('.ma-rowmenu') && !e.target.closest('.ma-rowmenu-pop')) closeRowMenus(activeHost, null);
     const chip = e.target.closest('.ma-do-chip[data-ma-do]');
     if (!chip) return;
     e.preventDefault();

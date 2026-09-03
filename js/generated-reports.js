@@ -220,8 +220,8 @@ function viewHTML(rec) {
         <span class="material-symbols-outlined">arrow_back</span>Back to reports
       </button>
       <div class="dash-report-view-titles">
-        <span class="dash-modal-eyebrow">${eyebrow}</span>
-        <h2 class="dash-modal-title">${esc(rec.title)}</h2>
+        <span class="wise-modal-eyebrow">${eyebrow}</span>
+        <h2 class="wise-modal-title">${esc(rec.title)}</h2>
       </div>
       <a class="wise-btn wise-btn--primary" href="${esc(openHref)}">
         <span class="material-symbols-outlined">${openIcon}</span>${openLabel}

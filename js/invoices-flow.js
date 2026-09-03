@@ -1,4 +1,9 @@
 import './date-column.js';
+import { esc } from './escape-html.js';
+import { ARROW_SVG } from './sort-arrow.js';
+import { createToast } from './toast.js';
+import { createChatBridge } from './chat-bridge.js';
+const toast = createToast('inv');
 
 /**
  * Invoices module.
@@ -21,15 +26,6 @@ import './date-column.js';
  * All classes are token-driven (var(--surface) / var(--border) / var(--text) …)
  * so the module tracks light/dark exactly like the rest of the app.
  */
-
-function esc(s) {
-  return String(s == null ? '' : s)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
 
 /* Same catalog as the Product Portfolio / Marketing Assets brand chip
    (Flax4Life first). Switching updates the chip; the seeded
@@ -84,32 +80,10 @@ function invDates(inv) {
   return D ? D.complete(partial, 'invoice') : partial;
 }
 
-/* ---- Live chat bridge ---------------------------------------------- */
-let chatApi = null;
-export function setInvoicesChat(api) { chatApi = api; }
-function pushChat(html) {
-  if (!chatApi || !html) return;
-  chatApi.hideWelcome?.();
-  /* respond() streams the shared reasoning trace before the reply lands, so a
-     mirrored action reads like any other WISEcodeAI turn — never an instant paste. */
-  (chatApi.respond || chatApi.addWISEcodeAI)(html);
-}
+const { setChat, pushChat } = createChatBridge();
+export const setInvoicesChat = setChat;
 
 /* ---- Toast --------------------------------------------------------- */
-function toast(msg, icon = 'check') {
-  let wrap = document.getElementById('inv-toast-wrap');
-  if (!wrap) {
-    wrap = document.createElement('div');
-    wrap.id = 'inv-toast-wrap';
-    document.body.appendChild(wrap);
-  }
-  const t = document.createElement('div');
-  t.className = 'inv-toast';
-  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
-  wrap.appendChild(t);
-  requestAnimationFrame(() => t.classList.add('is-in'));
-  setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
-}
 
 /* ==================================================================== */
 /* Rendering                                                            */
@@ -188,11 +162,6 @@ const SORT_COLS = [
 
 let sortKey = null;   // null = original seeded order
 let sortDir = 1;      // 1 asc, -1 desc
-
-const ARROW_SVG =
-  '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true">' +
-  '<path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" ' +
-  'stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 function theadHtml() {
   const D = dc();
@@ -582,6 +551,7 @@ export function renderInvoices(mainEl) {
   }
   paint();
   wireBrandSwitcher();
+  window.WisePopover?.bindRowMenus(mainEl, INV_MENU);
 
   mainEl.addEventListener('click', (e) => {
     const filter = e.target.closest('[data-inv-filter]');
@@ -597,31 +567,15 @@ export function renderInvoices(mainEl) {
       toggleSort(sortHeader.dataset.invSort);
       return;
     }
-    /* Row-actions three-dot menu (leading column). */
-    const menuBtn = e.target.closest('.inv-rowmenu-btn');
-    if (menuBtn) {
-      const menu = menuBtn.closest('.inv-rowmenu');
-      const open = !menu.classList.contains('is-open');
-      closeMenus(open ? menu : null);
-      menu.classList.toggle('is-open', open);
-      menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      const pop = popOfRowMenu(menu);
-      if (pop) pop.hidden = !open;
-      return;
-    }
     const actionBtn = e.target.closest('[data-inv-action]');
     if (actionBtn) {
       runAction(actionBtn.dataset.invAction, actionBtn.dataset.invId || null, 'form');
-      closeMenus(null);
+      closeMenus();
       return;
     }
-    /* A click anywhere else on the board closes any open row menu. */
-    if (e.target.closest('.inv-rowmenu') || e.target.closest('.inv-rowmenu-pop')) return;
-    closeMenus(null);
   });
 
   mainEl.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { closeMenus(null); return; }
     if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
     const sortHeader = e.target.closest('[data-inv-sort]');
     if (!sortHeader || e.target.closest('.w-datemenu, .pf-datemenu')) return;
@@ -636,50 +590,19 @@ export function renderInvoices(mainEl) {
     applyFilter();
   });
 
-  /* Close an open row menu when clicking outside the board entirely. A
-     portaled popover lives on <body>, so also handle its actions here. */
+  /* A portaled popover lives on <body>, so its actions are handled here. */
   document.addEventListener('click', (e) => {
     if (!hostEl) return;
     const menuAct = e.target.closest && e.target.closest('.inv-rowmenu-pop [data-inv-action]');
     if (menuAct && !hostEl.contains(menuAct)) {
       runAction(menuAct.dataset.invAction, menuAct.dataset.invId || null, 'form');
-      closeMenus(null);
-      return;
+      closeMenus();
     }
-    if (e.target.closest && (e.target.closest('.inv-rowmenu') || e.target.closest('.inv-rowmenu-pop'))) return;
-    closeMenus(null);
   });
 }
 
-/* After popover-layer portals the menu onto <body>, querySelector on the wrap
-   misses it — look it up by the layer's __plHost marker instead. */
-function popOfRowMenu(menu) {
-  if (!menu) return null;
-  const inner = menu.querySelector('.inv-rowmenu-pop');
-  if (inner) return inner;
-  return Array.from(document.querySelectorAll('.inv-rowmenu-pop')).find((p) => p.__plHost === menu) || null;
-}
-
-/* Close every open row-actions menu except `keep` (pass null to close all). */
-function closeMenus(keep) {
-  if (!hostEl) return;
-  hostEl.querySelectorAll('.inv-rowmenu.is-open').forEach((menu) => {
-    if (menu === keep) return;
-    menu.classList.remove('is-open');
-    const btn = menu.querySelector('.inv-rowmenu-btn');
-    if (btn) btn.setAttribute('aria-expanded', 'false');
-    const pop = popOfRowMenu(menu);
-    if (pop) pop.hidden = true;
-  });
-  /* Drop any popover left on <body> whose row was rewritten away. */
-  document.querySelectorAll('body > .inv-rowmenu-pop').forEach((pop) => {
-    const host = pop.__plHost;
-    if (keep && host === keep) return;
-    if (host && host.isConnected && hostEl.contains(host) && host.classList.contains('is-open')) return;
-    pop.hidden = true;
-    if (!host || !host.isConnected) pop.remove();
-  });
-}
+const INV_MENU = { menuSel: '.inv-rowmenu', btnSel: '.inv-rowmenu-btn', popSel: '.inv-rowmenu-pop' };
+function closeMenus() { window.WisePopover?.closeAll(hostEl, null, INV_MENU); }
 
 /* ==================================================================== */
 /* WISEcodeAI bridge (chat → board)                                         */

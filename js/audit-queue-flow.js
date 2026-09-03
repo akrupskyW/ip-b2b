@@ -1,4 +1,10 @@
 import './date-column.js';
+import { esc } from './escape-html.js';
+import { ARROW_SVG } from './sort-arrow.js';
+import { createToast } from './toast.js';
+import { searchToolbarHTML } from './wise-toolbar.js';
+import { createChatBridge } from './chat-bridge.js';
+const toast = createToast('adm');
 
 /**
  * Ingredient Audit Review (Audit Queue) — WISEcode Admin module.
@@ -10,12 +16,6 @@ import './date-column.js';
  * with a per-row Resolve action. Uses the shared token-driven `adm-*`
  * component set from wise.css.
  */
-
-function esc(s) {
-  return String(s == null ? '' : s)
-    .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
 
 /* Status filter tiles across the top — single-line num + icon-label tiles,
    matching the shared admin scorecard style used across the platform. */
@@ -88,7 +88,6 @@ const COLS = [
 /* min:0 tracks let every flexible column shrink so the table fits the narrow
    board beside the WISEcodeAI dock (text truncates/clamps). */
 const GRID_COLS = 'minmax(0,1.4fr) minmax(0,1fr) minmax(0,0.85fr) 156px minmax(0,2.3fr) 168px 112px';
-const ARROW_SVG = '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 let hostEl = null;
 let activeStatus = 'open';
@@ -110,22 +109,8 @@ function auditDates(a) {
   return D ? D.complete({ flagged, created, edited }, 'audit') : { flagged };
 }
 
-let chatApi = null;
-export function setAuditQueueChat(api) { chatApi = api; }
-/* respond() streams the shared reasoning trace before the reply lands, so a
-   mirrored action reads like any other WISEcodeAI turn — never an instant paste. */
-function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); (chatApi.respond || chatApi.addWISEcodeAI)(html); } }
-
-function toast(msg, icon = 'check') {
-  let wrap = document.getElementById('adm-toast-wrap');
-  if (!wrap) { wrap = document.createElement('div'); wrap.id = 'adm-toast-wrap'; document.body.appendChild(wrap); }
-  const t = document.createElement('div');
-  t.className = 'adm-toast';
-  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
-  wrap.appendChild(t);
-  requestAnimationFrame(() => t.classList.add('is-in'));
-  setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
-}
+const { setChat, pushChat } = createChatBridge();
+export const setAuditQueueChat = setChat;
 
 /* ==================================================================== */
 function matches(a) {
@@ -252,14 +237,20 @@ function paint() {
         </div>
       </header>
 
-      <div class="adm-toolbar">
-        <div class="adm-search-inline has-filter">
-          <span class="material-symbols-outlined">search</span>
-          <input type="text" class="adm-search" data-adm-search placeholder="Search ingredient, food, or notes…" aria-label="Search audits" value="${esc(query)}" />
-          <button type="button" class="adm-search-filter${activeFilterCount() ? ' has-dot' : ''}${filterOpen ? ' is-active' : ''}" data-adm-action="toggle-filters" aria-haspopup="true" aria-expanded="${filterOpen}" title="Filters" aria-label="Filters"><span class="material-symbols-outlined">tune</span></button>
-          ${filterPopHtml()}
-        </div>
-      </div>
+      ${searchToolbarHTML({
+        variant: 'adm',
+        placeholder: 'Search ingredient, food, or notes…',
+        ariaLabel: 'Search audits',
+        value: query,
+        inputType: 'text',
+        inputAttrs: 'data-adm-search',
+        filter: {
+          attrs: 'data-adm-action="toggle-filters"',
+          open: filterOpen,
+          active: activeFilterCount() > 0,
+          popHtml: filterPopHtml(),
+        },
+      })}
 
       <div class="adm-stats" style="margin:0 0 16px">${statsHtml()}</div>
 
@@ -384,10 +375,11 @@ export function renderAuditQueue(mainEl) {
   /* Dismiss the filter popover on any outside click (attached once). */
   if (!docListenersBound) {
     docListenersBound = true;
-    document.addEventListener('click', (e) => {
-      if (filterOpen && !e.target.closest('.adm-search-inline')) setFilterOpen(false);
+    window.WisePopover?.bindFilterPop({
+      isOpen: () => filterOpen,
+      setOpen: setFilterOpen,
+      insideSel: '.wise-search-inline, .adm-search-inline',
     });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setFilterOpen(false); });
   }
 }
 

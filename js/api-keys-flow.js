@@ -1,4 +1,9 @@
 import './date-column.js';
+import { esc } from './escape-html.js';
+import { createToast } from './toast.js';
+import { searchToolbarHTML } from './wise-toolbar.js';
+import { openModal, closeModal, modalHTML, modalFoot } from './wise-modal.js';
+const toast = createToast('wmod');
 
 /**
  * API keys module.
@@ -15,15 +20,6 @@ import './date-column.js';
  * and there is no reveal. Lose one and you regenerate it. Everything lives only
  * in memory (demo) — nothing is persisted or sent anywhere.
  */
-
-function esc(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
 
 function randKey() {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -60,17 +56,6 @@ const KEYS = [
 
 const SCOPES = ['Full access', 'Read-only', 'Write'];
 
-function toast(msg, icon = 'check') {
-  let wrap = document.getElementById('ak-toast-wrap');
-  if (!wrap) { wrap = document.createElement('div'); wrap.id = 'ak-toast-wrap'; wrap.className = 'wmod-toast-wrap'; document.body.appendChild(wrap); }
-  const t = document.createElement('div');
-  t.className = 'wmod-toast';
-  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
-  wrap.appendChild(t);
-  requestAnimationFrame(() => t.classList.add('is-in'));
-  setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
-}
-
 function statusPill(status) {
   if (status === 'stale') return '<span class="wmod-pill wmod-pill--warn">Rotate soon</span>';
   if (status === 'revoked') return '<span class="wmod-pill wmod-pill--off">Revoked</span>';
@@ -106,14 +91,18 @@ function paint() {
         </div>
       </div>
 
-      <div class="wmod-toolbar">
-        <div class="wmod-search-inline">
-          <span class="material-symbols-outlined">search</span>
-          <input type="search" class="wmod-search-input" placeholder="Search keys by name, scope, or status" aria-label="Search API keys" value="${esc(query)}" data-ak-search />
-          <button type="button" class="wmod-filter-btn${anyFilter() ? ' has-filters' : ''}" data-ak-filter-btn aria-haspopup="dialog" aria-expanded="${filterOpen}" title="Filter keys" aria-label="Filter keys">
-            <span class="material-symbols-outlined">tune</span>
-            <span class="wmod-filter-dot" aria-hidden="true"></span>
-          </button>
+      ${searchToolbarHTML({
+        variant: 'wmod',
+        placeholder: 'Search keys by name, scope, or status',
+        ariaLabel: 'Search API keys',
+        value: query,
+        inputAttrs: 'data-ak-search',
+        filter: {
+          attrs: 'data-ak-filter-btn',
+          ariaLabel: 'Filter keys',
+          open: filterOpen,
+          active: anyFilter(),
+          popHtml: `
           <div class="wmod-filter-pop" role="dialog" aria-label="Filter keys"${filterOpen ? '' : ' hidden'}>
             <div class="wmod-filter-pop-head">
               <span class="wmod-filter-pop-title">Filter keys</span>
@@ -133,9 +122,9 @@ function paint() {
                 ${SCOPES.map((s) => `<button type="button" class="wmod-fchip${scopeFilter === s ? ' is-on' : ''}" data-ak-scope="${esc(s)}">${esc(s)}</button>`).join('')}
               </div>
             </div>
-          </div>
-        </div>
-      </div>
+          </div>`,
+        },
+      })}
 
       <div class="wmod-stats-wrap" data-ak-anchor="usage">
         <div class="wmod-stats" style="--wmod-cols:4">
@@ -176,15 +165,26 @@ function paint() {
 
 /* ---- Create-key modal — generates a fresh secret, shows it once. ---- */
 function openCreateModal() {
-  closeModal();
+  closeModal('ak-modal');
   const full = randKey();
-  const overlay = document.createElement('div');
-  overlay.className = 'wmod-modal-overlay';
-  overlay.id = 'ak-modal';
-  overlay.innerHTML = `
-    <div class="wmod-modal" role="dialog" aria-modal="true" aria-labelledby="ak-modal-title">
-      <h2 class="wmod-modal-title" id="ak-modal-title">Your new secret key</h2>
-      <p class="wmod-modal-sub">Copy this key now and store it somewhere safe. For security, WISE will never show the full value again — if you lose it, revoke this key and generate a new one.</p>
+  let committed = false;
+  const commit = (overlay) => {
+    if (committed || !overlay) return;
+    committed = true;
+    const name = (overlay.querySelector('[data-ak-modal-name]')?.value || 'New key').trim() || 'New key';
+    KEYS.unshift({ id: 'k' + Date.now(), name, preview: maskFrom(overlay.dataset.full || full), created: 'Just now', lastUsed: 'Never', scope: 'Full access', status: 'active' });
+    overlay.dataset.full = '';
+    paint();
+    toast('New API key created', 'vpn_key');
+  };
+  const { scrim } = openModal({
+    id: 'ak-modal',
+    html: modalHTML({
+      title: 'Your new secret key',
+      titleId: 'ak-modal-title',
+      sub: 'Copy this key now and store it somewhere safe. For security, WISE will never show the full value again — if you lose it, revoke this key and generate a new one.',
+      closeAttrs: 'data-ak-action="modal_done" data-wise-modal-close',
+      body: `
       <div class="wmod-modal-field">
         <span class="wmod-modal-flabel">Key name</span>
         <input class="wmod-input" type="text" value="New key" maxlength="48" data-ak-modal-name aria-label="Key name" />
@@ -192,50 +192,23 @@ function openCreateModal() {
       <div class="wmod-modal-field">
         <span class="wmod-modal-flabel">Secret key</span>
         <div class="wmod-secret"><code data-ak-modal-key>${esc(full)}</code><button type="button" class="wmod-icon-btn" data-ak-action="copy_modal" title="Copy key"><span class="material-symbols-outlined">content_copy</span></button></div>
-      </div>
-      <div class="wmod-modal-actions">
+      </div>`,
+      foot: modalFoot({
+        actions: `
         <button type="button" class="wise-btn wise-btn--ghost" data-ak-action="copy_modal"><span class="material-symbols-outlined">content_copy</span>Copy</button>
-        <button type="button" class="wise-btn wise-btn--primary" data-ak-action="modal_done">Done</button>
-      </div>
-    </div>`;
-  document.body.appendChild(overlay);
-  overlay.dataset.full = full;
-  requestAnimationFrame(() => overlay.classList.add('is-in'));
-
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) { finalizeCreate(overlay); return; }
+        <button type="button" class="wise-btn wise-btn--primary" data-ak-action="modal_done">Done</button>`,
+      }),
+    }),
+    onClose: () => commit(document.getElementById('ak-modal') || scrim),
+  });
+  scrim.dataset.full = full;
+  scrim.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-ak-action]');
     if (!btn) return;
-    if (btn.dataset.akAction === 'copy_modal') { copyVal(overlay.dataset.full); return; }
-    if (btn.dataset.akAction === 'modal_done') { finalizeCreate(overlay); }
+    if (btn.dataset.akAction === 'copy_modal') { copyVal(scrim.dataset.full); return; }
+    if (btn.dataset.akAction === 'modal_done') { closeModal(scrim); }
   });
-  setTimeout(() => overlay.querySelector('[data-ak-modal-name]')?.focus(), 40);
-  document.addEventListener('keydown', modalEsc, true);
-}
-
-function modalEsc(e) {
-  if (e.key !== 'Escape') return;
-  const overlay = document.getElementById('ak-modal');
-  if (overlay) { e.stopPropagation(); finalizeCreate(overlay); }
-}
-
-/* Commit the key into the table as a masked-only record and drop the plaintext. */
-function finalizeCreate(overlay) {
-  const full = overlay.dataset.full;
-  const name = (overlay.querySelector('[data-ak-modal-name]')?.value || 'New key').trim() || 'New key';
-  KEYS.unshift({ id: 'k' + Date.now(), name, preview: maskFrom(full), created: 'Just now', lastUsed: 'Never', scope: 'Full access', status: 'active' });
-  closeModal();
-  paint();
-  toast('New API key created', 'vpn_key');
-}
-
-function closeModal() {
-  document.removeEventListener('keydown', modalEsc, true);
-  const overlay = document.getElementById('ak-modal');
-  if (!overlay) return;
-  overlay.classList.remove('is-in');
-  overlay.dataset.full = '';
-  setTimeout(() => overlay.remove(), 200);
+  setTimeout(() => scrim.querySelector('[data-ak-modal-name]')?.focus(), 40);
 }
 
 export function renderApiKeys(mainEl) {
@@ -282,7 +255,12 @@ export function renderApiKeys(mainEl) {
     if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (_) {} }
   });
 
-  document.addEventListener('click', () => { if (filterOpen) { filterOpen = false; paint(); } });
+  window.WisePopover?.bindFilterPop({
+    isOpen: () => filterOpen,
+    setOpen: (open) => { filterOpen = open; paint(); },
+    insideSel: '.wmod-filter-pop, [data-ak-filter-btn]',
+    popSel: '.wmod-filter-pop',
+  });
 }
 
 function copyVal(val) {

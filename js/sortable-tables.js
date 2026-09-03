@@ -24,10 +24,14 @@
 (function () {
   'use strict';
 
-  var ARROW_SVG =
-    '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true">' +
-    '<path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" ' +
-    'stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  /* Prefer the shared caret (js/sort-arrow.js) when a module has set it;
+     keep a local fallback so classic-script pages still decorate headers. */
+  function arrowSvg() {
+    return (typeof window !== 'undefined' && window.WISE_ARROW_SVG) ||
+      '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true">' +
+      '<path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" ' +
+      'stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  }
 
   /* ── Injected styles ──────────────────────────────────────────────────── */
   function injectStyles() {
@@ -128,7 +132,7 @@
     var arrow = document.createElement('span');
     arrow.className = 'srt-arrow';
     arrow.setAttribute('aria-hidden', 'true');
-    arrow.innerHTML = ARROW_SVG;
+    arrow.innerHTML = arrowSvg();
     header.appendChild(arrow);
     header.addEventListener('click', function (e) {
       if (e.target && e.target.closest && e.target.closest('.w-datemenu, .pf-datemenu')) return;

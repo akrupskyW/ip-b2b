@@ -802,7 +802,7 @@
     '.cwr-tip.is-vis { opacity: 1; transform: none; }',
     '.cwr-tip[hidden] { display: none; }',
     '.cwr-tip-title {',
-    '  font-family: var(--module-title-family, "Noto Serif", Georgia, serif);',
+    '  font-family: var(--module-title-family, "Noto Serif", serif);',
     '  font-size: 15px; font-weight: 700; line-height: 1.2;',
     '  letter-spacing: 0.02em; color: var(--text, #1a2332);',
     '}',

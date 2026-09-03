@@ -9,19 +9,19 @@
 export const CODE_STATS = {
   "generatedAt": "2026-09-02",
   "now": {
-    "total": 213629,
-    "html": 95042,
-    "js": 89513,
-    "css": 23714,
+    "total": 214009,
+    "html": 95024,
+    "js": 89472,
+    "css": 24153,
     "py": 5360,
     "pages": 53,
-    "files": 170,
-    "bytes": 148120898,
-    "allFiles": 432,
-    "codeBytes": 13900601,
+    "files": 175,
+    "bytes": 148113825,
+    "allFiles": 437,
+    "codeBytes": 13891888,
     "imageBytes": 73206917,
     "videoBytes": 60326232,
-    "otherBytes": 687148
+    "otherBytes": 688788
   },
   "series": [
     {
@@ -548,10 +548,10 @@ export const CODE_STATS = {
     },
     {
       "date": "2026-09-02",
-      "total": 213629,
-      "html": 95042,
-      "js": 89513,
-      "css": 23714,
+      "total": 214009,
+      "html": 95024,
+      "js": 89472,
+      "css": 24153,
       "py": 5360,
       "pages": 53
     }

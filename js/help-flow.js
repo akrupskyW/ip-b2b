@@ -1,3 +1,5 @@
+import { esc } from './escape-html.js';
+import { searchToolbarHTML } from './wise-toolbar.js';
 /**
  * Help module.
  *
@@ -7,15 +9,6 @@
  * persistent WISEcodeAI dock drives it — intent chips search the FAQs, expand a
  * topic, or open the contact form — and each on-page action narrates back.
  */
-
-function esc(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
 
 const TOPICS = [
   { id: 'getting-started', icon: 'rocket_launch', title: 'Getting started', sub: 'Set up your workspace and add your first products' },
@@ -83,12 +76,13 @@ function paint() {
         </div>
       </div>
 
-      <div class="wmod-toolbar">
-        <div class="wmod-search-inline">
-          <span class="material-symbols-outlined">search</span>
-          <input type="search" class="wmod-search-input" placeholder="Search help articles" aria-label="Search help articles" value="${esc(query)}" data-hc-search />
-        </div>
-      </div>
+      ${searchToolbarHTML({
+        variant: 'wmod',
+        placeholder: 'Search help articles',
+        ariaLabel: 'Search help articles',
+        value: query,
+        inputAttrs: 'data-hc-search',
+      })}
 
       <div class="wmod-stats-wrap">
         <div class="wmod-stats" style="--wmod-cols:${statCols(cards.length)}" role="group" aria-label="Filter help by topic">

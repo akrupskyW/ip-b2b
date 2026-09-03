@@ -1,3 +1,9 @@
+import { esc, initials } from './escape-html.js';
+import { ARROW_SVG } from './sort-arrow.js';
+import { createToast } from './toast.js';
+import { searchToolbarHTML } from './wise-toolbar.js';
+import { createChatBridge } from './chat-bridge.js';
+const toast = createToast('adm');
 /**
  * User & Role Management — WISEcode Admin module.
  *
@@ -7,12 +13,6 @@
  * first column stacks each user's handle, email, ID, and name. Uses the shared
  * token-driven `adm-*` component set from wise.css.
  */
-
-function esc(s) {
-  return String(s == null ? '' : s)
-    .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
 
 /* beta: '' none · 'wait' waiting for access (*) · 'granted' access granted (**) */
 const USERS = [
@@ -83,9 +83,6 @@ function dimMatch(dim, val, u) {
 }
 function statCount(s) { return s.dim == null ? USERS.length : USERS.filter((u) => dimMatch(s.dim, s.val, u)).length; }
 
-function initials(name) {
-  return String(name).trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
-}
 function betaMark(b) { return b === 'granted' ? '**' : b === 'wait' ? '*' : ''; }
 function handle(email) { return String(email).split('@')[0]; }
 
@@ -98,7 +95,6 @@ const COLS = [
   { key: 'actions', label: 'Actions',      sortable: false, end: true },
 ];
 const GRID_COLS = 'minmax(240px, 2.6fr) 96px 132px 108px 64px 84px';
-const ARROW_SVG = '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 let hostEl = null;
 let query = '';
@@ -107,22 +103,8 @@ let sortKey = null, sortDir = 1;
 let filterOpen = false;
 let docListenersBound = false;
 
-let chatApi = null;
-export function setUserManagementChat(api) { chatApi = api; }
-/* respond() streams the shared reasoning trace before the reply lands, so a
-   mirrored action reads like any other WISEcodeAI turn — never an instant paste. */
-function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); (chatApi.respond || chatApi.addWISEcodeAI)(html); } }
-
-function toast(msg, icon = 'check') {
-  let wrap = document.getElementById('adm-toast-wrap');
-  if (!wrap) { wrap = document.createElement('div'); wrap.id = 'adm-toast-wrap'; document.body.appendChild(wrap); }
-  const t = document.createElement('div');
-  t.className = 'adm-toast';
-  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
-  wrap.appendChild(t);
-  requestAnimationFrame(() => t.classList.add('is-in'));
-  setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
-}
+const { setChat, pushChat } = createChatBridge();
+export const setUserManagementChat = setChat;
 
 /* ==================================================================== */
 function matches(u) {
@@ -250,14 +232,20 @@ function paint() {
 
       <div class="adm-stats" style="margin-bottom:16px">${statsHtml()}</div>
 
-      <div class="adm-toolbar">
-        <div class="adm-search-inline has-filter">
-          <span class="material-symbols-outlined">search</span>
-          <input type="text" class="adm-search" data-adm-search placeholder="Search users…" aria-label="Search users" value="${esc(query)}" />
-          <button type="button" class="adm-search-filter${activeFilterCount() ? ' has-dot' : ''}${filterOpen ? ' is-active' : ''}" data-adm-action="toggle-filters" aria-haspopup="true" aria-expanded="${filterOpen}" title="Filters" aria-label="Filters"><span class="material-symbols-outlined">tune</span></button>
-          ${filterPopHtml()}
-        </div>
-      </div>
+      ${searchToolbarHTML({
+        variant: 'adm',
+        placeholder: 'Search users…',
+        ariaLabel: 'Search users',
+        value: query,
+        inputType: 'text',
+        inputAttrs: 'data-adm-search',
+        filter: {
+          attrs: 'data-adm-action="toggle-filters"',
+          open: filterOpen,
+          active: activeFilterCount() > 0,
+          popHtml: filterPopHtml(),
+        },
+      })}
       <p class="adm-lede" style="margin:-8px 2px 14px;font-size:0.76rem"><span style="color:var(--primary-ink, var(--primary))">*</span> Waiting for beta access &nbsp;&nbsp; <span style="color:var(--primary-ink, var(--primary))">**</span> Beta access granted</p>
 
       <div class="adm-card">
@@ -390,10 +378,11 @@ export function renderUserManagement(mainEl) {
   /* Dismiss the filter popover on any outside click (attached once). */
   if (!docListenersBound) {
     docListenersBound = true;
-    document.addEventListener('click', (e) => {
-      if (filterOpen && !e.target.closest('.adm-search-inline')) setFilterOpen(false);
+    window.WisePopover?.bindFilterPop({
+      isOpen: () => filterOpen,
+      setOpen: setFilterOpen,
+      insideSel: '.wise-search-inline, .adm-search-inline',
     });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setFilterOpen(false); });
   }
 }
 

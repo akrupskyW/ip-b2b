@@ -1,4 +1,7 @@
 import './date-column.js';
+import { esc } from './escape-html.js';
+import { searchToolbarHTML } from './wise-toolbar.js';
+import { openModal, closeModal, modalHTML, modalFoot } from './wise-modal.js';
 
 /**
  * Non-UPF Verification flow module.
@@ -20,15 +23,6 @@ import './date-column.js';
 /* ------------------------------------------------------------------ */
 /* Utilities                                                           */
 /* ------------------------------------------------------------------ */
-
-function esc(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
 
 const money = (n) => `$${Number(n).toFixed(2)}`;
 
@@ -478,13 +472,15 @@ function headerHTML() {
    inline with the headline, not here. The search input keeps id/vf hooks so
    focus + filtering survive. */
 function toolbarHTML() {
-  return `
-    <div class="vf-toolbar">
-      <div class="vf-search-inline">
-        <span class="material-symbols-outlined">search</span>
-        <input id="vf-search" class="vf-search" type="text" placeholder="Search by product name or UPC" value="${esc(state.search)}" data-vf="search" autocomplete="off" aria-label="Search foods" />
-      </div>
-    </div>`;
+  return searchToolbarHTML({
+    variant: 'vf',
+    placeholder: 'Search by product name or UPC',
+    ariaLabel: 'Search foods',
+    value: state.search,
+    inputType: 'text',
+    inputId: 'vf-search',
+    inputAttrs: 'data-vf="search"',
+  });
 }
 
 /* Scorecards sit above the table card, never inside it — same rule as Product
@@ -786,23 +782,23 @@ function paymentStepHTML() {
 /* Confirmation modal                                                  */
 /* ------------------------------------------------------------------ */
 
-function modalHTML() {
+function confirmModalHTML() {
   const n = selectedCount();
-  return `
-    <div class="vf-modal-overlay">
-      <div class="vf-modal" role="dialog" aria-modal="true" aria-labelledby="vf-modal-title">
-        <button class="vf-modal-x" type="button" data-vf="close-confirm" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
-        <h2 class="vf-modal-title" id="vf-modal-title">Proceed to Attestation?</h2>
-        <p class="vf-modal-text">You are about to proceed to the <strong>Review &amp; Attest</strong> step with <strong>${n} selected food${n === 1 ? '' : 's'}</strong>. This is a critical stage where you will review and formally attest to the accuracy of your selected food items.</p>
-        <div class="vf-modal-callout">
-          <strong>Important:</strong> Once you complete the attestation, you will be making a formal declaration about the NON-UPF status of these products.
-        </div>
-        <div class="vf-modal-actions">
-          <button class="wise-btn wise-btn--ghost" type="button" data-vf="close-confirm">Cancel</button>
-          <button class="wise-btn wise-btn--primary" type="button" data-vf="confirm-attest">Yes, Continue</button>
-        </div>
-      </div>
-    </div>`;
+  return modalHTML({
+    title: 'Proceed to Attestation?',
+    titleId: 'vf-modal-title',
+    closeAttrs: 'data-vf="close-confirm" data-wise-modal-close',
+    body: `
+      <p class="wise-modal-sub">You are about to proceed to the <strong>Review &amp; Attest</strong> step with <strong>${n} selected food${n === 1 ? '' : 's'}</strong>. This is a critical stage where you will review and formally attest to the accuracy of your selected food items.</p>
+      <div class="vf-modal-callout">
+        <strong>Important:</strong> Once you complete the attestation, you will be making a formal declaration about the NON-UPF status of these products.
+      </div>`,
+    foot: modalFoot({
+      actions: `
+        <button class="wise-btn wise-btn--ghost" type="button" data-vf="close-confirm">Cancel</button>
+        <button class="wise-btn wise-btn--primary" type="button" data-vf="confirm-attest">Yes, Continue</button>`,
+    }),
+  });
 }
 
 /* ------------------------------------------------------------------ */
@@ -849,31 +845,8 @@ function renderProgress() {
   applyProgressRailLock(show);
 }
 
-function popOfRowMenu(menu) {
-  if (!menu) return null;
-  const inner = menu.querySelector('.pf-rowmenu-pop');
-  if (inner) return inner;
-  return Array.from(document.querySelectorAll('.pf-rowmenu-pop')).find((p) => p.__plHost === menu) || null;
-}
-
-function closeRowMenus(keep) {
-  if (!rootEl) return;
-  rootEl.querySelectorAll('.pf-rowmenu.is-open').forEach((menu) => {
-    if (menu === keep) return;
-    menu.classList.remove('is-open');
-    const btn = menu.querySelector('.pf-rowmenu-btn');
-    if (btn) btn.setAttribute('aria-expanded', 'false');
-    const pop = popOfRowMenu(menu);
-    if (pop) pop.hidden = true;
-  });
-  document.querySelectorAll('body > .pf-rowmenu-pop').forEach((pop) => {
-    const host = pop.__plHost;
-    if (keep && host === keep) return;
-    if (host && host.isConnected && rootEl.contains(host) && host.classList.contains('is-open')) return;
-    pop.hidden = true;
-    if (!host || !host.isConnected) pop.remove();
-  });
-}
+const PF_MENU = { menuSel: '.pf-rowmenu', btnSel: '.pf-rowmenu-btn', popSel: '.pf-rowmenu-pop' };
+function closeRowMenus() { window.WisePopover?.closeAll(rootEl, null, PF_MENU); }
 
 function brandMenuEl() {
   return document.getElementById('vf-brand-menu')
@@ -960,25 +933,14 @@ function goStep(id) {
   rootEl?.closest('.agent-main-scroll')?.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function openModal() {
+function openConfirmModal() {
   if (document.getElementById('vf-modal-host')) return;
-  const host = document.createElement('div');
-  host.id = 'vf-modal-host';
-  host.innerHTML = modalHTML();
-  document.body.appendChild(host);
-  requestAnimationFrame(() => host.querySelector('.vf-modal-overlay')?.classList.add('is-open'));
-  document.addEventListener('keydown', modalEsc);
+  openModal({ id: 'vf-modal-host', html: confirmModalHTML() });
 }
 
-function closeModal() {
-  const host = document.getElementById('vf-modal-host');
-  if (!host) return;
-  host.querySelector('.vf-modal-overlay')?.classList.remove('is-open');
-  document.removeEventListener('keydown', modalEsc);
-  setTimeout(() => host.remove(), 200);
+function closeConfirmModal() {
+  closeModal('vf-modal-host');
 }
-
-function modalEsc(e) { if (e.key === 'Escape') closeModal(); }
 
 function onAction(action, el) {
   switch (action) {
@@ -1000,7 +962,7 @@ function onAction(action, el) {
       if (!f || !canReview(f)) break;
       f.selected = true;
       closeRowMenus(null);
-      if (state.step === 'select') openModal();
+      if (state.step === 'select') openConfirmModal();
       else render();
       break;
     }
@@ -1045,14 +1007,14 @@ function onAction(action, el) {
       break;
     }
     case 'open-confirm':
-      if (selectedCount() > 0) openModal();
+      if (selectedCount() > 0) openConfirmModal();
       else vfToast('Select at least one food to continue.', 'info');
       break;
     case 'close-confirm':
-      closeModal();
+      closeConfirmModal();
       break;
     case 'confirm-attest':
-      closeModal();
+      closeConfirmModal();
       goStep('attest');
       break;
     case 'to-payment':
@@ -1115,6 +1077,7 @@ export function renderVerificationFlow(mainEl) {
      #modules-row (the WISEcodeAI chat docks to the left). Mirrors the account-
      creation setup pane. Created once; updated on every render(). */
   mountProgressPane();
+  window.WisePopover?.bindRowMenus(rootEl, PF_MENU);
   render();
 
   progressEl?.addEventListener('click', (e) => {
@@ -1130,17 +1093,6 @@ export function renderVerificationFlow(mainEl) {
   });
 
   rootEl.addEventListener('click', (e) => {
-    const menuBtn = e.target.closest('.pf-rowmenu-btn');
-    if (menuBtn && rootEl.contains(menuBtn)) {
-      const menu = menuBtn.closest('.pf-rowmenu');
-      const open = !menu.classList.contains('is-open');
-      closeRowMenus(open ? menu : null);
-      menu.classList.toggle('is-open', open);
-      menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      const pop = popOfRowMenu(menu);
-      if (pop) pop.hidden = !open;
-      return;
-    }
     const goto = e.target.closest('[data-goto]');
     if (goto) { goStep(goto.dataset.goto); return; }
     const el = e.target.closest('[data-vf]');
@@ -1168,9 +1120,9 @@ export function renderVerificationFlow(mainEl) {
      explicit [data-vf] control inside the dialog run their action. Clicks on
      inert dialog chrome do nothing. Portalled row menus also live on <body>. */
   document.addEventListener('click', (e) => {
-    const overlay = e.target.closest('#vf-modal-host .vf-modal-overlay');
+    const overlay = e.target.closest('#vf-modal-host');
     if (overlay) {
-      if (e.target === overlay) { closeModal(); return; }
+      if (e.target === overlay) { closeConfirmModal(); return; }
       const el = e.target.closest('[data-vf]');
       if (el && overlay.contains(el)) onAction(el.dataset.vf, el);
       return;

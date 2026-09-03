@@ -1,3 +1,5 @@
+import { esc } from './escape-html.js';
+import { searchToolbarHTML } from './wise-toolbar.js';
 /**
  * Docs module.
  *
@@ -6,15 +8,6 @@
  * drives it — intent chips open the quickstart, the API reference, the SDK guide
  * or the changelog — and each on-page selection narrates back into the chat.
  */
-
-function esc(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
 
 /* Each article carries a small HTML body — enough to read like real docs. */
 const NAV = [
@@ -200,12 +193,13 @@ function paint() {
         </div>
       </div>
 
-      <div class="wmod-toolbar">
-        <div class="wmod-search-inline">
-          <span class="material-symbols-outlined">search</span>
-          <input type="search" class="wmod-search-input" placeholder="Search the documentation" aria-label="Search docs" value="${esc(query)}" data-dc-search />
-        </div>
-      </div>
+      ${searchToolbarHTML({
+        variant: 'wmod',
+        placeholder: 'Search the documentation',
+        ariaLabel: 'Search docs',
+        value: query,
+        inputAttrs: 'data-dc-search',
+      })}
 
       <div class="wmod-stats-wrap">
         <div class="wmod-stats" style="--wmod-cols:${statCols(cards.length)}" role="group" aria-label="Filter docs by section">

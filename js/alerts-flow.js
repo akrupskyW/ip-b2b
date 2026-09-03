@@ -1,4 +1,8 @@
 import './date-column.js';
+import { esc } from './escape-html.js';
+import { createToast } from './toast.js';
+import { searchToolbarHTML } from './wise-toolbar.js';
+const toast = createToast('wmod');
 
 /**
  * Alerts module.
@@ -11,15 +15,6 @@ import './date-column.js';
  * unread, mark everything read, or jump to a category, and each on-page action
  * narrates back into the conversation.
  */
-
-function esc(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
 
 /* The event stream (demo). `ts` orders the stream newest-first; `cat` drives the
    scorecard filters; `href` (optional) makes an event jump to a relevant page. */
@@ -90,17 +85,6 @@ function statCols(n) {
   return 2;
 }
 
-function toast(msg, icon = 'check') {
-  let wrap = document.getElementById('al-toast-wrap');
-  if (!wrap) { wrap = document.createElement('div'); wrap.id = 'al-toast-wrap'; wrap.className = 'wmod-toast-wrap'; document.body.appendChild(wrap); }
-  const t = document.createElement('div');
-  t.className = 'wmod-toast';
-  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
-  wrap.appendChild(t);
-  requestAnimationFrame(() => t.classList.add('is-in'));
-  setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
-}
-
 function paint() {
   if (!hostEl) return;
   const unread = ALERTS.filter((a) => !a.read).length;
@@ -119,12 +103,13 @@ function paint() {
         </div>
       </div>
 
-      <div class="wmod-toolbar">
-        <div class="wmod-search-inline">
-          <span class="material-symbols-outlined">search</span>
-          <input type="search" class="wmod-search-input" placeholder="Search the alert stream" aria-label="Search alerts" value="${esc(query)}" data-al-search />
-        </div>
-      </div>
+      ${searchToolbarHTML({
+        variant: 'wmod',
+        placeholder: 'Search the alert stream',
+        ariaLabel: 'Search alerts',
+        value: query,
+        inputAttrs: 'data-al-search',
+      })}
 
       ${(() => {
         const cats = CATEGORIES.filter((c) => catCount(c.id) > 0 || c.id === 'all' || c.id === 'unread');

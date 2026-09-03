@@ -97,7 +97,7 @@
         'background:var(--card,var(--surface,#0F1830));color:var(--text,#C5CFD7);border:1px solid rgba(255,255,255,0.12);box-shadow:0 18px 44px rgba(0,0,0,0.46);}',
       'html:not(.dark) .wch-info{background:#fff;color:#1F2733;border-color:rgba(0,0,0,0.09);box-shadow:0 18px 44px rgba(20,30,60,0.18);}',
       '.wch-info.is-vis{opacity:1;transform:none;}',
-      '.wch-info-title{font-family:"WISE Digits","Noto Serif",Georgia,serif;font-weight:700;font-size:13.5px;line-height:1.26;letter-spacing:-.01em;margin-bottom:9px;}',
+      '.wch-info-title{font-family:"WISE Digits","Noto Serif",serif;font-weight:700;font-size:13.5px;line-height:1.26;letter-spacing:-.01em;margin-bottom:9px;}',
       '.wch-info-row{display:flex;align-items:center;gap:9px;font-size:12px;line-height:1.5;opacity:.82;}',
       '.wch-info-row + .wch-info-row{margin-top:4px;}',
       '.wch-info-row .material-symbols-outlined{font-size:16px;opacity:.66;flex:0 0 auto;}',
@@ -375,7 +375,7 @@
       '#modules-row .wch-sidebar.wch-docked .wch-head{padding:var(--module-head-pad-t,26px) var(--module-head-ctrl-inset,12px) var(--module-head-pad-b,14px) var(--module-head-pad-l,20px);border-bottom:1px solid var(--border,rgba(0,0,0,0.08));align-items:flex-start;}',
       '#modules-row .wch-sidebar.wch-docked.wch-rail .wch-head{padding:4px 0 !important;border-bottom:0;}',
       '#modules-row .wch-sidebar.wch-docked.wch-rail .wch-controls{margin:0 !important;}',
-      '#modules-row .wch-sidebar.wch-docked .wch-head-title{font-family:"WISE Digits",var(--module-title-family,"Noto Serif",Georgia,serif);font-weight:var(--module-title-weight,800);font-size:var(--module-title-size,1.2rem);letter-spacing:-.01em;line-height:var(--module-title-lh,1.16);align-items:center;}',
+      '#modules-row .wch-sidebar.wch-docked .wch-head-title{font-family:"WISE Digits",var(--module-title-family,"Noto Serif",serif);font-weight:var(--module-title-weight,800);font-size:var(--module-title-size,1.2rem);letter-spacing:-.01em;line-height:var(--module-title-lh,1.16);align-items:center;}',
       '#modules-row .wch-sidebar.wch-docked .wch-head-title .material-symbols-outlined{display:none;}',
       '#modules-row .wch-sidebar.wch-docked .wch-controls{margin-top:0;}',
       /* The chat rides above the docked drawers so they read as tucking behind

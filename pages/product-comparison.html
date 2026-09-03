@@ -4403,23 +4403,32 @@
     #settings-screen .ss-version-card[style],
     #settings-screen .ss-info-card[style] { background: var(--surface-2) !important; border-color: var(--border) !important; }
 
-    /* Welcome */
+    /* Welcome — bottom-anchored like add-product / the shared .sc-welcome so
+       the headline and intent chips sit just above the composer, not vertically
+       centered in the pane. `safe` flips back to the top once the stack is
+       taller than the dock so nothing is clipped. */
     #welcome-screen {
       position: absolute;
-      top: 68px;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      inset: 0;
       z-index: 10;
-      background: var(--bg);
+      /* Transparent so the default Scene helix (on #chat-shell) shows
+         through. The owl orbit is a Style choice, not the load default. */
+      background: transparent;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 2rem;
+      justify-content: safe flex-end;
+      overflow-x: hidden;
+      overflow-y: auto;
+      padding: 1.5rem 1.5rem 0.75rem;
       font-size: var(--fs-ui);
       transition: opacity 0.3s ease, transform 0.3s ease, background-color 0.3s ease;
     }
+    /* Hide the owl constellation unless Orbit is the live style. Helix
+       already hides `.ws-logo-wrap`; this keeps the orbit from painting
+       as the default welcome when the strand has not tagged the host yet. */
+    #welcome-screen .ws-logo-wrap { display: none; }
+    #chat-shell.sc-orbit-live #welcome-screen .ws-logo-wrap { display: flex; }
     /* Dark: top bar matches card surface (no lighter strip). */
     html.dark .chat-topbar {
       background: linear-gradient(135deg, rgba(37, 80, 124, 0.20) 0%, rgba(37, 80, 124, 0.08) 60%, transparent 100%), var(--surface);
@@ -4621,7 +4630,7 @@
       position: relative;
       width: 100%;
       max-width: 864px;
-      margin: 0 auto 2rem;
+      margin: 0 auto 0.35rem;
     }
     .ws-chips-wrap .ws-chips {
       flex-wrap: wrap;
@@ -5201,11 +5210,11 @@
       background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 22%, transparent);
     }
 
-    /* ── Locked intent chips & score cards ────────────────────────────────
-       Locked entry points read as dimmed (a translucent scrim mutes the
-       content) with a crisp lock badge floating above it. The chip/card
-       action itself is inert — only the lock badge is clickable, and clicking
-       it unlocks the chip. Comparison chips ship unlocked. */
+    /* ── Locked score cards ────────────────────────────────────────────────
+       Locked overview cards read as dimmed (a translucent scrim mutes the
+       content) with a crisp lock badge floating above. The card action is
+       inert — only the lock badge is clickable. Welcome intent chips stay
+       live, matching wiseai.html. */
     #chat-shell-wrap .ws-scorecard.is-locked,
     .ws-scorecard.is-locked,
     .ws-intent-chip.is-locked { position: relative; cursor: default; }
@@ -5836,8 +5845,7 @@
         padding: 1rem 1rem;
       }
       #welcome-screen {
-        padding: 1.25rem 2rem;
-        top: 60px;
+        padding: 1.25rem 1.25rem 0.75rem;
       }
       .chat-input-rail {
         padding: 10px 24px !important;
@@ -6624,7 +6632,9 @@
        transparent so the card's navy — and the chat-tint blue wash — show
        through; previously they painted var(--bg) (#05141C) and the whole chat
        read near-black. */
-    html.dark #welcome-screen { background: transparent; }
+    html.dark #welcome-screen,
+    html.chat-tint:not(.dark) #welcome-screen,
+    html.chat-tint.dark #welcome-screen { background: transparent !important; }
     html.dark .chat-input-rail {
       background: transparent !important;
       border-top-color: transparent !important;
@@ -6638,7 +6648,6 @@
     /* Light + chat tint: same 5% brand-blue wash the shared .sc-card /
        .sc-welcome get in wise.css, so the card and welcome overlay match
        overview.html instead of showing the cream var(--bg) page background. */
-    html.chat-tint:not(.dark) #welcome-screen,
     html.chat-tint:not(.dark) #chat-shell {
       background: color-mix(in srgb, var(--primary) 5%, #fff) !important;
     }
@@ -6664,7 +6673,7 @@
        agent-page.css isn't touched on other pages.
        ===================================================================== */
     body.ai-chat-page {
-      --font-serif: 'WISE Digits', 'Noto Serif', 'Noto Serif Fallback', Georgia, 'Times New Roman', serif;
+      --font-serif: 'WISE Digits', 'Noto Serif', serif;
     }
     /* H1 / H2-level headings */
     body.ai-chat-page .ws-heading,
@@ -7131,10 +7140,16 @@
       padding-top: 0 !important;
       padding-bottom: 0 !important;
     }
-    /* 3) Chat + docked WISEcodeAI fill the full module height (undo the shared shorter
-       / offset card so nothing floats with a top/bottom gap). */
+    /* 3) Chat + docked WISEcodeAI + the Compare Foods board fill the full
+       module height (undo the shared 15px top/bottom drawer inset so nothing
+       floats with a gutter). Chat-only keeps other modules contained. */
     html.full-bleed:not(.fb-chat-only) #chat-shell,
-    html.full-bleed:not(.fb-chat-only) #wiseai-dock-panel {
+    html.full-bleed:not(.fb-chat-only) #wiseai-dock-panel,
+    html.full-bleed:not(.fb-chat-only) #modules-row > #compare-panel,
+    html.full-bleed:not(.fb-chat-only) #modules-row > #compare-panel.cp-open,
+    html.full-bleed:not(.fb-chat-only) #modules-row.report-mode > #compare-panel.cp-open,
+    html.full-bleed:not(.fb-chat-only) #modules-row > #workflow-panel,
+    html.full-bleed:not(.fb-chat-only) #modules-row > #verify-flow-panel {
       margin-top: 0 !important;
       margin-bottom: 0 !important;
       height: 100% !important;
@@ -7149,6 +7164,8 @@
     html.full-bleed #chat-shell,
     html.full-bleed #wiseai-dock-panel,
     html.full-bleed:not(.fb-chat-only) #compare-panel .cmp-inner,
+    html.full-bleed:not(.fb-chat-only) #workflow-panel .wf-inner,
+    html.full-bleed:not(.fb-chat-only) #verify-flow-panel .vf-inner,
     html.full-bleed:not(.fb-chat-only) #history-panel .panel-inner,
     html.full-bleed:not(.fb-chat-only) .util-panel .panel-inner,
     html.full-bleed:not(.fb-chat-only) #wiseai-panel .wiseai-inner,
@@ -7738,7 +7755,7 @@
       </button>
       <div class="topbar-profile has-dot" id="topbar-profile" title="Arthur Krupsky · Product Intelligence Lead" data-action="user-menu" role="button" tabindex="0" aria-label="User menu">AK</div>
     </div><!-- /topbar-row -->
-    <div id="modules-row">
+    <div id="modules-row" class="report-mode">
       <div id="panels-row">
     <!-- History (hidden by default; opens from the rail / menu) -->
     <div id="history-panel">
@@ -8241,7 +8258,7 @@
                 </div>
             </div>
             <!-- Heading -->
-            <h1 class="ws-heading">What can WISEcodeAI<span class="ws-tm">™</span> help with?</h1>
+            <h1 class="ws-heading">What do you want to compare?</h1>
             <!-- Portfolio score cards — richer, actionable signals above the intent chips.
                  They scroll horizontally (there are always more than fit on screen), with a
                  prioritisation filter pinned to the far right of the section bar and a
@@ -8359,53 +8376,30 @@
                  below the score cards and never scroll as a carousel. The arrow
                  controls below are suppressed via CSS. -->
             <div class="ws-chips-wrap">
-            <div class="ws-chips" id="ws-chips" role="list" aria-label="Quick actions">
+            <div class="ws-chips" id="ws-chips" role="list" aria-label="Comparison actions">
                 <button class="chip ws-intent-chip" onclick="startComparisonWorkflow()">
-                    <span class="material-symbols-outlined" style="font-size:16px">compare_arrows</span>Compare Against Competitors
+                    <span class="material-symbols-outlined" style="font-size:16px">compare_arrows</span>Compare my brand
                 </button>
-                <button class="chip ws-intent-chip is-locked" onclick="welcomeChipClick('customer_profile','Start New Verification','add')">
-                    <span class="material-symbols-outlined" style="font-size:16px">add</span>Start New Verification
-                    <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-symbols-outlined">lock</span></span>
+                <button class="chip ws-intent-chip" onclick="welcomeCompareAdd()">
+                    <span class="material-symbols-outlined" style="font-size:16px">add</span>Add a competitor
                 </button>
-                <button class="chip ws-intent-chip is-locked" onclick="welcomeChipClick('resume_prompt','Continue Existing','play_circle')">
-                    <span class="material-symbols-outlined" style="font-size:16px">play_circle</span>Continue Existing
-                    <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-symbols-outlined">lock</span></span>
+                <button class="chip ws-intent-chip" onclick="welcomeCompareScenario('pfp_protein')">
+                    <span class="material-symbols-outlined" style="font-size:16px">business</span>vs Annie’s · Protein
                 </button>
-                <button class="chip ws-intent-chip is-locked" onclick="welcomeChipClick('faq_intro','Ask a Question','help_outline')">
-                    <span class="material-symbols-outlined" style="font-size:16px">help_outline</span>Ask a Question
-                    <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-symbols-outlined">lock</span></span>
+                <button class="chip ws-intent-chip" onclick="welcomeCompareScenario('pfp_category')">
+                    <span class="material-symbols-outlined" style="font-size:16px">show_chart</span>vs category average
                 </button>
-                <button class="chip ws-intent-chip is-locked" onclick="openSettings()">
-                    <span class="material-symbols-outlined" style="font-size:16px">smart_toy</span>Choose Agents
-                    <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-symbols-outlined">lock</span></span>
+                <button class="chip ws-intent-chip" onclick="welcomeCompareScenario('pfm_retailer')">
+                    <span class="material-symbols-outlined" style="font-size:16px">store</span>Rank a shelf set
                 </button>
-                <button class="chip ws-intent-chip is-locked" onclick="welcomeChipClick('registry_home','WISE Foods','restaurant_menu')">
-                    <span class="material-symbols-outlined" style="font-size:16px">restaurant_menu</span>WISE Foods
-                    <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-symbols-outlined">lock</span></span>
+                <button class="chip ws-intent-chip" onclick="welcomeCompareScenario('pvp_heart')">
+                    <span class="material-symbols-outlined" style="font-size:16px">favorite</span>Product vs product
                 </button>
-                <button class="chip ws-intent-chip is-locked" onclick="welcomeChipClick('add_food_intro','Add a New Food','add')">
-                    <span class="material-symbols-outlined" style="font-size:16px">add</span>Add a New Food
-                    <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-symbols-outlined">lock</span></span>
+                <button class="chip ws-intent-chip" onclick="welcomeCompareScenario('cat_vs_cat')">
+                    <span class="material-symbols-outlined" style="font-size:16px">category</span>Category vs category
                 </button>
-                <button class="chip ws-intent-chip is-locked" onclick="welcomeChipClick('edit_food_select','Edit an Existing Food','edit_note')">
-                    <span class="material-symbols-outlined" style="font-size:16px">edit_note</span>Edit Existing Food
-                    <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-symbols-outlined">lock</span></span>
-                </button>
-                <button class="chip ws-intent-chip is-locked" onclick="startReformulationWorkflow()">
-                    <span class="material-symbols-outlined" style="font-size:16px">science</span>Build a Reformulation Plan
-                    <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-symbols-outlined">lock</span></span>
-                </button>
-                <button class="chip ws-intent-chip is-locked" onclick="startVerificationWorkflow()">
-                    <span class="material-symbols-outlined" style="font-size:16px">verified</span>Run a Live Verification
-                    <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-symbols-outlined">lock</span></span>
-                </button>
-                <button class="chip ws-intent-chip is-locked" onclick="startLaunchReadinessFlow()">
-                    <span class="material-symbols-outlined" style="font-size:16px">rocket_launch</span>Prep Launch Readiness
-                    <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-symbols-outlined">lock</span></span>
-                </button>
-                <button class="chip ws-intent-chip is-locked" onclick="startDataExploration()">
-                    <span class="material-symbols-outlined" style="font-size:16px">query_stats</span>Explore My Data &amp; Charts
-                    <span class="ws-lock" role="button" tabindex="0" aria-label="Unlock this action"><span class="material-symbols-outlined">lock</span></span>
+                <button class="chip ws-intent-chip" onclick="welcomeCompareScenario('pvm_ingredients')">
+                    <span class="material-symbols-outlined" style="font-size:16px">account_tree</span>Ingredient flags
                 </button>
             </div>
                 <button type="button" class="ws-sc-scroll ws-sc-scroll--prev" id="ws-chips-prev" aria-label="Scroll to previous actions" onclick="scrollChips(-1)" hidden><span class="material-symbols-outlined">chevron_left</span></button>
@@ -9411,12 +9405,12 @@
       </div>
     </aside>
 
-    <!-- Competitive Comparison — the "Compare Foods" board. WISEcodeAI drives the
+    <!-- Competitive Comparison — the "Compare Foods" board. Signed-in as a
+         brand, so this module is open on load with YOUR portfolio already on
+         the board (see loadDefaultBrandCompare). WISEcodeAI drives the
          conversation in the chat with intent chips; every chart, grade bar, and
-         head-to-head comparison renders here on the right. The module supports
-         all four PRD scopes (Product/Portfolio × 1/Many) plus a metric picker,
-         category filter, and category-average benchmark, all live. -->
-    <aside id="compare-panel" aria-label="Competitive Comparison">
+         head-to-head comparison renders here on the right. -->
+    <aside id="compare-panel" class="cp-open" aria-label="Competitive Comparison">
       <div class="panel-inner cmp-inner">
         <div class="side-panel-header flex items-center gap-2 shrink-0 px-3 py-3">
           <div class="panel-header-icon w-[30px] h-[30px] rounded-full flex items-center justify-center shrink-0">
@@ -11289,12 +11283,12 @@
       requestAnimationFrame(updateChipArrows);
     }
 
-    /* ── Locked intent chips / score cards ──────────────────────────────────
-       Every welcome-screen entry point except the Compare ones ships locked:
-       its action is inert and a lock badge floats over the dimmed chip/card.
-       Clicking the lock badge (and only the lock badge) unlocks it. Guards run
-       in the capture phase on each rail so they intercept the click before the
-       chip's own inline onclick can fire. */
+    /* ── Locked score cards ─────────────────────────────────────────────────
+       Welcome intent chips are live (same as wiseai.html). Overview score
+       cards can still ship locked: the card action is inert and a lock badge
+       floats over the dimmed card. Clicking the lock badge unlocks it.
+       Guards run in the capture phase so they intercept the click before the
+       card's own inline onclick can fire. */
     function unlockChip(el) {
       if (!el) return;
       el.classList.remove('is-locked');
@@ -13524,7 +13518,7 @@
       if (M < 3) {
         return '<div class="cmp-radar-wrap"><div class="cmp-radar-note">' +
           '<span class="material-symbols-outlined">radar</span>' +
-          'Add at least 3 metrics from the <strong>Metrics</strong> menu to plot a spider chart.' +
+          'Add at least 3 codes from the <strong>Codes</strong> menu to plot a spider chart.' +
           '</div></div>';
       }
       if (!ents.length) {
@@ -13600,11 +13594,11 @@
       const legend = cmpLegendHTML(ents, showAvg);
 
       return '<div class="cmp-radar-wrap">' +
-        '<div class="cmp-radar-head"><span class="cmp-radar-title">All metrics overlaid</span>' +
-        '<span class="cmp-radar-sub">' + M + ' metrics · ' + ents.length + ' ' + (scope.noun === 'portfolio' ? 'brands' : 'products') + '</span></div>' +
+        '<div class="cmp-radar-head"><span class="cmp-radar-title">All codes overlaid</span>' +
+        '<span class="cmp-radar-sub">' + M + ' codes · ' + ents.length + ' ' + (scope.noun === 'portfolio' ? 'brands' : 'products') + '</span></div>' +
         '<div class="cmp-radar-canvas">' +
           '<div class="cmp-radar-stage">' +
-            `<svg viewBox="0 0 ${size} ${size}" class="cmp-radar-svg" role="img" aria-label="Spider chart overlaying all metrics for each ${scope.noun}">` +
+            `<svg viewBox="0 0 ${size} ${size}" class="cmp-radar-svg" role="img" aria-label="Spider chart overlaying all codes for each ${scope.noun}">` +
               gridEls + axisEls + avgEls + polyEls +
             '</svg>' +
             '<div class="cmp-par-bugs">' + bugEls + '</div>' +
@@ -13624,7 +13618,7 @@
       if (M < 2) {
         return '<div class="cmp-radar-wrap"><div class="cmp-radar-note">' +
           '<span class="material-symbols-outlined">ssid_chart</span>' +
-          'Add at least 2 metrics from the <strong>Metrics</strong> menu to plot parallel coordinates.' +
+          'Add at least 2 codes from the <strong>Codes</strong> menu to plot parallel coordinates.' +
           '</div></div>';
       }
       if (!ents.length) {
@@ -13713,7 +13707,7 @@
 
       return '<div class="cmp-radar-wrap">' +
         '<div class="cmp-radar-head"><span class="cmp-radar-title">Parallel coordinates</span>' +
-        '<span class="cmp-radar-sub">' + M + ' metrics · ' + ents.length + ' ' + (scope.noun === 'portfolio' ? 'brands' : 'products') + '</span></div>' +
+        '<span class="cmp-radar-sub">' + M + ' codes · ' + ents.length + ' ' + (scope.noun === 'portfolio' ? 'brands' : 'products') + '</span></div>' +
         '<div class="cmp-par-plot">' +
           '<div class="cmp-radar-canvas cmp-par-canvas">' +
             `<svg viewBox="0 0 ${W} ${H}" class="cmp-par-svg" role="img" aria-label="Parallel coordinates plot threading every metric for each ${scope.noun}">` +
@@ -13739,7 +13733,7 @@
       if (!M) {
         return '<div class="cmp-radar-wrap"><div class="cmp-radar-note">' +
           '<span class="material-symbols-outlined">sports_score</span>' +
-          'Add at least 1 metric from the <strong>Metrics</strong> menu to line up the race.' +
+          'Add at least 1 code from the <strong>Codes</strong> menu to line up the race.' +
           '</div></div>';
       }
       if (!ents.length) {
@@ -13782,8 +13776,8 @@
       const legend = cmpLegendHTML(ents, showAvg);
 
       return '<div class="cmp-radar-wrap">' +
-        '<div class="cmp-radar-head"><span class="cmp-radar-title">Metric race</span>' +
-        '<span class="cmp-radar-sub">' + M + ' metrics · ' + ents.length + ' ' + (scope.noun === 'portfolio' ? 'brands' : 'products') + '</span></div>' +
+        '<div class="cmp-radar-head"><span class="cmp-radar-title">Code race</span>' +
+        '<span class="cmp-radar-sub">' + M + ' codes · ' + ents.length + ' ' + (scope.noun === 'portfolio' ? 'brands' : 'products') + '</span></div>' +
         rows +
         '<div class="cmp-radar-legend">' + legend + '</div>' +
       '</div>';
@@ -14192,7 +14186,7 @@
       const toolbar =
         '<div class="cmp-toolbar cmp-toolbar--bar">' +
           '<div id="cmp-metric-wrap" class="cmp-tool-item" style="position:relative">' +
-            `<button type="button" class="wise-btn wise-btn--secondary" onclick="cmpToggleMetricMenu()"><span class="material-symbols-outlined">tune</span>Metrics · ${metricCount}</button>` +
+            `<button type="button" class="wise-btn wise-btn--secondary" onclick="cmpToggleMetricMenu()"><span class="material-symbols-outlined">tune</span>Codes · ${metricCount}</button>` +
             (gs ? cmpGsMetricMenu() : metricMenu) +
           '</div>' +
           (gs ? cmpGsAlgoControl() : (scope.categories ? cmpCatControl() : '')) +
@@ -14555,25 +14549,36 @@
        own portfolio first (scores, charts and takeaways all filled) as the
        default single-column board, then make adding a competitor the obvious
        next step — both as a prominent "Add" intent chip in the chat and via the
-       always-visible Add button on the board itself. */
+       always-visible Add button on the board itself. Silent on first paint
+       (welcome + helix stay); startComparisonWorkflow narrates the same board. */
+    function loadDefaultBrandCompare() {
+      openComparePanel();
+      cmpSetScope('portfolio_vs_portfolio');
+      const scope = CMP_SCOPES['portfolio_vs_portfolio'];
+      const prim = scope && (scope.entities.find(e => e.primary) || scope.entities[0]);
+      if (prim) compareState.shown = [prim.id];
+      renderCompare();
+      scrollPanelIntoView('compare-panel');
+    }
     function startComparisonWorkflow() {
       hideWelcomeScreen(() => {
-        compareResetState();
-        openComparePanel();
+        loadDefaultBrandCompare();
         addUserMessage('Compare my food', { lead: true });
         const typing = showWISEcodeAITyping('WISEcodeAI is loading your food');
         setTimeout(() => {
           typing?.remove();
-          cmpSetScope('portfolio_vs_portfolio');   /* populates the scope + metrics */
-          /* Start with only YOUR food on the board — no competitor yet. */
-          const scope = CMP_SCOPES['portfolio_vs_portfolio'];
-          const prim = scope.entities.find(e => e.primary) || scope.entities[0];
-          compareState.shown = [prim.id];
-          renderCompare();
-          scrollPanelIntoView('compare-panel');
           addWISEcodeAIMessage('You’re set up as <strong>Amy’s Kitchen</strong>, so I’ve loaded <strong>your</strong> food on the left — WISEscore, UPF, GRAS, ingredient and protein quality are all populated. When you’re ready, <strong>add a competitor</strong> to build the head-to-head — use the chip below or the <strong>Add</strong> button on the board.', { source: false });
           cmpOfferFollowChips();
         }, 650);
+      });
+    }
+    function welcomeCompareScenario(id) {
+      hideWelcomeScreen(() => { cmpChatScenario(id); });
+    }
+    function welcomeCompareAdd() {
+      hideWelcomeScreen(() => {
+        if (!compareState.scope) loadDefaultBrandCompare();
+        cmpPromptAddKind(cmpLockedKind() || 'portfolio');
       });
     }
 
@@ -14796,7 +14801,7 @@
         }
         if (compareState.shown.length > 2)
           chips.push(`<button type="button" class="chip" onclick="cmpFollow('remove', this)"><span class="material-symbols-outlined">remove_circle</span>Remove an item</button>`);
-        chips.push(`<button type="button" class="chip" onclick="cmpFollow('metrics', this)"><span class="material-symbols-outlined">tune</span>Metrics · ${compareState.metrics.length}</button>`);
+        chips.push(`<button type="button" class="chip" onclick="cmpFollow('metrics', this)"><span class="material-symbols-outlined">tune</span>Codes · ${compareState.metrics.length}</button>`);
         if (scope.categories) {
           const cur = compareState.category === 'all' ? 'All' : compareState.category;
           chips.push(`<button type="button" class="chip" onclick="cmpFollow('category', this)"><span class="material-symbols-outlined">filter_alt</span>Category · ${cur}</button>`);
@@ -14953,8 +14958,8 @@
        Every metric is a live toggle chip; the board updates on each tap. */
     function cmpPromptMetrics() {
       document.getElementById('cmp-metric-chips')?.remove();
-      addUserMessage('Choose which metrics to compare');
-      const typing = showWISEcodeAITyping('WISEcodeAI is loading the metric set');
+      addUserMessage('Choose which codes to compare');
+      const typing = showWISEcodeAITyping('WISEcodeAI is loading the codes');
       setTimeout(() => {
         typing?.remove();
         addWISEcodeAIMessage('Toggle any metric on or off and the board updates live. Tap <strong>Done</strong> when the set looks right.', { source: false });
@@ -14986,7 +14991,7 @@
       btn?.closest('.sc-reply-chips')?.remove();
       document.getElementById('cmp-metric-chips')?.remove();
       const names = compareState.metrics.map(id => cmpMetricShort(CMP_METRIC_BY_ID[id])).filter(Boolean).join(', ');
-      addWISEcodeAIMessage('Metric set updated — now comparing on <strong>' + names + '</strong>.', { source: false });
+      addWISEcodeAIMessage('Codes updated — now comparing on <strong>' + names + '</strong>.', { source: false });
       cmpOfferFollowChips();
     }
 
@@ -17078,9 +17083,9 @@
     /* Pre-fill History with a couple of restorable conversations (inline +
        floating-module styles) so Views/History aren't empty on first load. */
     try { seedSavedViews(); } catch (_) {}
-    /* Welcome + helix first — same as wiseai.html. Compare Foods is a chip
-       (and startComparisonWorkflow); that hides the welcome and blooms the
-       field out. Do not auto-start the transcript or the helix never shows. */
+    /* Brand board first (silent — no transcript, helix + welcome stay), then
+       the welcome heading / chips type in above the composer. */
+    try { if (typeof loadDefaultBrandCompare === 'function') loadDefaultBrandCompare(); } catch (_) {}
     try { if (typeof revealWelcome === 'function') revealWelcome(); } catch (_) {}
     (function initChatTheme() {
       let theme = localStorage.getItem('wise-theme');

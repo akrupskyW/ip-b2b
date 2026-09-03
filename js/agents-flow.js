@@ -1,3 +1,7 @@
+import { esc } from './escape-html.js';
+import { createToast } from './toast.js';
+import { searchToolbarHTML } from './wise-toolbar.js';
+const toast = createToast('wmod');
 /**
  * Agents module.
  *
@@ -12,15 +16,6 @@
  */
 
 import { AGENTS, TOP_LEVEL_AGENT_IDS } from './agent-menu.js';
-
-function esc(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
 
 const AUTONOMY = ['Manual', 'Assisted', 'Autonomous'];
 
@@ -83,17 +78,6 @@ function ensureState() {
   allItems().forEach((it, i) => {
     if (!state[it.id]) state[it.id] = { enabled: true, autonomy: i % 3 === 0 ? 2 : 1 };
   });
-}
-
-function toast(msg, icon = 'check') {
-  let wrap = document.getElementById('ag-toast-wrap');
-  if (!wrap) { wrap = document.createElement('div'); wrap.id = 'ag-toast-wrap'; wrap.className = 'wmod-toast-wrap'; document.body.appendChild(wrap); }
-  const t = document.createElement('div');
-  t.className = 'wmod-toast';
-  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
-  wrap.appendChild(t);
-  requestAnimationFrame(() => t.classList.add('is-in'));
-  setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
 }
 
 function matches(it) {
@@ -162,12 +146,13 @@ function paint() {
         </div>
       </div>
 
-      <div class="wmod-toolbar">
-        <div class="wmod-search-inline">
-          <span class="material-symbols-outlined">search</span>
-          <input type="search" class="wmod-search-input" placeholder="Search agents, databases, rules, and skills" aria-label="Search" value="${esc(query)}" data-ag-search />
-        </div>
-      </div>
+      ${searchToolbarHTML({
+        variant: 'wmod',
+        placeholder: 'Search agents, databases, rules, and skills',
+        ariaLabel: 'Search',
+        value: query,
+        inputAttrs: 'data-ag-search',
+      })}
 
       <div class="wmod-stats-wrap">
         <div class="wmod-stats" style="--wmod-cols:${statCols(CARDS.length)}" role="group" aria-label="Filter by type">

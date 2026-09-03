@@ -49,8 +49,13 @@
     '.pf-rowmenu-pop',
     '.ma-rowmenu-pop',
     '.inv-rowmenu-pop',
+    '.adm-rowmenu-pop',
     '.pf-filter-pop',
     '.ma-filter-pop',
+    '.adm-filter-pop',
+    '.wmod-filter-pop',
+    '.gv-filter-pop',
+    '.wise-filter-pop',
     '.pf-gs-infopop',
     '.pf-add-menu',
     '.pf-brand-menu',
@@ -79,7 +84,7 @@
      flow) but still need the same click-off / Escape dismiss, because their
      own bubble-phase listeners are often eaten by stopPropagation. */
   var DISMISS_EXTRA = [
-    '.adm-rowmenu-pop',
+    '.adm-menu',
   ].join(',');
 
   var floated = new Set();
@@ -359,6 +364,7 @@
       el.hidden = true;
       el.setAttribute('hidden', '');
     }
+    try { el.dispatchEvent(new CustomEvent('wise:popover-dismiss', { bubbles: true })); } catch (err) {}
   }
 
   function markTriggerClosed(el) {
@@ -399,6 +405,136 @@
   document.addEventListener('pointerdown', onDocDismiss, true);
   document.addEventListener('click', onDocDismiss, true);
   document.addEventListener('keydown', onKeyDismiss, true);
+
+  /* ── Open / close state (row menus + filter pops) ───────────────────
+     Portaling and click-off live above. Flows used to copy the same
+     is-open / aria-expanded / hidden / close-siblings toggle; they now
+     call window.WisePopover. */
+
+  var DEFAULT_MENUS = '.adm-rowmenu, .inv-rowmenu, .pf-rowmenu, .ma-rowmenu';
+  var DEFAULT_BTNS = '.adm-rowmenu-btn, .inv-rowmenu-btn, .pf-rowmenu-btn, .ma-rowmenu-btn';
+  var DEFAULT_POPS = '.adm-rowmenu-pop, .inv-rowmenu-pop, .pf-rowmenu-pop, .ma-rowmenu-pop';
+
+  function popOf(menu, popSel) {
+    if (!menu) return null;
+    var sel = popSel || DEFAULT_POPS;
+    var inner = menu.querySelector(sel);
+    if (inner) return inner;
+    var all = document.querySelectorAll(sel);
+    for (var i = 0; i < all.length; i++) {
+      if (all[i].__plHost === menu) return all[i];
+    }
+    return null;
+  }
+
+  function setMenuOpen(menu, open, opts) {
+    if (!menu) return;
+    opts = opts || {};
+    var btn = menu.querySelector(opts.btnSel || DEFAULT_BTNS);
+    var pop = popOf(menu, opts.popSel);
+    menu.classList.toggle('is-open', !!open);
+    if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (pop) {
+      pop.hidden = !open;
+      if (open) pop.removeAttribute('hidden');
+      else {
+        pop.setAttribute('hidden', '');
+        pop.style.cssText = '';
+      }
+    }
+  }
+
+  function closeAllMenus(root, keep, opts) {
+    opts = opts || {};
+    var menuSel = opts.menuSel || DEFAULT_MENUS;
+    var scope = root && root.querySelectorAll ? root : document;
+    scope.querySelectorAll(menuSel + '.is-open').forEach(function (menu) {
+      if (menu === keep) return;
+      setMenuOpen(menu, false, opts);
+    });
+    var popSel = opts.popSel || DEFAULT_POPS;
+    document.querySelectorAll(popSel).forEach(function (pop) {
+      if (pop.parentElement !== document.body) return;
+      var host = pop.__plHost;
+      if (keep && host === keep) return;
+      if (host && host.isConnected && host.classList.contains('is-open')) return;
+      pop.hidden = true;
+      pop.setAttribute('hidden', '');
+      if (!host || !host.isConnected) pop.remove();
+    });
+  }
+
+  function toggleMenu(menu, opts) {
+    if (!menu) return false;
+    var open = !menu.classList.contains('is-open');
+    closeAllMenus(opts && opts.root, open ? menu : null, opts);
+    setMenuOpen(menu, open, opts);
+    return open;
+  }
+
+  function bindRowMenus(root, opts) {
+    if (!root || root.__wiseRowMenusBound) return;
+    root.__wiseRowMenusBound = true;
+    opts = opts || {};
+    var btnSel = opts.btnSel || DEFAULT_BTNS;
+    var menuSel = opts.menuSel || DEFAULT_MENUS;
+    var cfg = { root: root, btnSel: btnSel, menuSel: menuSel, popSel: opts.popSel };
+    root.addEventListener('click', function (e) {
+      var btn = e.target.closest && e.target.closest(btnSel);
+      if (!btn || !root.contains(btn)) return;
+      var menu = btn.closest(menuSel);
+      if (!menu) return;
+      toggleMenu(menu, cfg);
+      e.stopPropagation();
+    });
+    if (root.__wiseRowDismissBound) return;
+    root.__wiseRowDismissBound = true;
+    document.addEventListener('click', function (e) {
+      if (!root.isConnected) return;
+      if (e.target.closest && (e.target.closest(menuSel) || e.target.closest(cfg.popSel || DEFAULT_POPS))) return;
+      closeAllMenus(root, null, cfg);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeAllMenus(root, null, cfg);
+    });
+    window.addEventListener('scroll', function () { closeAllMenus(root, null, cfg); }, { capture: true, passive: true });
+    window.addEventListener('resize', function () { closeAllMenus(root, null, cfg); });
+  }
+
+  var FILTER_BOUND = Object.create(null);
+
+  function bindFilterPop(opts) {
+    if (!opts || typeof opts.setOpen !== 'function') return function () {};
+    var insideSel = opts.insideSel || '.wise-search-inline, .adm-search-inline';
+    var popSel = opts.popSel || '[data-adm-filter-pop], .wise-filter-pop, .adm-filter-pop, .wmod-filter-pop, .ma-filter-pop, .gv-filter-pop';
+    var key = insideSel + '\0' + popSel;
+    if (FILTER_BOUND[key]) return FILTER_BOUND[key];
+    function close() {
+      if (opts.isOpen && opts.isOpen()) opts.setOpen(false);
+    }
+    document.addEventListener('click', function (e) {
+      if (!opts.isOpen || !opts.isOpen()) return;
+      if (e.target.closest && e.target.closest(insideSel)) return;
+      close();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') close();
+    });
+    document.addEventListener('wise:popover-dismiss', function (e) {
+      if (e.target && e.target.closest && e.target.closest(popSel)) close();
+    });
+    FILTER_BOUND[key] = close;
+    return close;
+  }
+
+  window.WisePopover = {
+    popOf: popOf,
+    setOpen: setMenuOpen,
+    closeAll: closeAllMenus,
+    toggle: toggleMenu,
+    bindRowMenus: bindRowMenus,
+    bindFilterPop: bindFilterPop,
+  };
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', start);

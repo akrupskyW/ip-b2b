@@ -1,4 +1,10 @@
 import './date-column.js';
+import { esc, initials } from './escape-html.js';
+import { ARROW_SVG } from './sort-arrow.js';
+import { createToast } from './toast.js';
+import { searchToolbarHTML } from './wise-toolbar.js';
+import { createChatBridge } from './chat-bridge.js';
+const toast = createToast('adm');
 
 /**
  * Team — brand people for the signed-in organization.
@@ -14,12 +20,6 @@ import './date-column.js';
  *
  * Uses the shared, token-driven `adm-*` component set from wise.css.
  */
-
-function esc(s) {
-  return String(s == null ? '' : s)
-    .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
 
 const BRANDS = [
   { name: 'Flax4Life',        color: '#2E7D5B', avatar: null,                                 seats: 10 },
@@ -77,8 +77,6 @@ const MEMBERS_BY_BRAND = {
 
 const ROLES = ['All roles', 'Owner', 'Admin', 'Member', 'Editor', 'Viewer'];
 
-const ARROW_SVG = '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-
 function whenTs(m) {
   const time = String(m.when).split(', ').slice(1).join(' ');
   const ms = Date.parse(`${m.day} ${time}`);
@@ -95,10 +93,6 @@ const COLS = [
   { key: 'when',    label: 'Joined',   sortable: true,  value: (m) => (dc() ? dc().sortValue(memberDates(m), 'team', dateLead) : whenTs(m)), type: 'num' },
 ];
 const GRID_COLS = '72px minmax(220px, 2.4fr) 118px 132px minmax(220px, 1.2fr)';
-
-function initials(name) {
-  return String(name).trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
-}
 
 let hostEl = null;
 let activeStatus = null;
@@ -143,20 +137,8 @@ function memberDates(m) {
   return D ? D.complete(partial, 'team') : partial;
 }
 
-let chatApi = null;
-export function setTeamChat(api) { chatApi = api; }
-function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); (chatApi.respond || chatApi.addWISEcodeAI)(html); } }
-
-function toast(msg, icon = 'check') {
-  let wrap = document.getElementById('adm-toast-wrap');
-  if (!wrap) { wrap = document.createElement('div'); wrap.id = 'adm-toast-wrap'; document.body.appendChild(wrap); }
-  const t = document.createElement('div');
-  t.className = 'adm-toast';
-  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
-  wrap.appendChild(t);
-  requestAnimationFrame(() => t.classList.add('is-in'));
-  setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
-}
+const { setChat, pushChat } = createChatBridge();
+export const setTeamChat = setChat;
 
 function haystack(m) {
   const chip = STATUS_CHIP[m.status];
@@ -500,14 +482,20 @@ function paint() {
 
       <div class="adm-stats" data-tm-stats style="margin-bottom:16px">${statsHtml()}</div>
 
-      <div class="adm-toolbar">
-        <div class="adm-search-inline has-filter">
-          <span class="material-symbols-outlined">search</span>
-          <input type="text" class="adm-search" data-adm-search placeholder="Search name, email, role…" aria-label="Search teammates by name, email, or role" value="${esc(query)}" />
-          <button type="button" class="adm-search-filter${activeFilterCount() ? ' has-dot' : ''}${filterOpen ? ' is-active' : ''}" data-adm-action="toggle-filters" aria-haspopup="true" aria-expanded="${filterOpen}" title="Filters" aria-label="Filters"><span class="material-symbols-outlined">tune</span></button>
-          ${filterPopHtml()}
-        </div>
-      </div>
+      ${searchToolbarHTML({
+        variant: 'adm',
+        placeholder: 'Search name, email, role…',
+        ariaLabel: 'Search teammates by name, email, or role',
+        value: query,
+        inputType: 'text',
+        inputAttrs: 'data-adm-search',
+        filter: {
+          attrs: 'data-adm-action="toggle-filters"',
+          open: filterOpen,
+          active: activeFilterCount() > 0,
+          popHtml: filterPopHtml(),
+        },
+      })}
 
       <div class="adm-card">
         <div class="adm-table-card">
@@ -564,36 +552,8 @@ function clearFilters() {
   applyFilter();
 }
 
-function closeRowMenus(keep) {
-  if (!hostEl) return;
-  hostEl.querySelectorAll('.adm-rowmenu.is-open').forEach((menu) => {
-    if (menu === keep) return;
-    menu.classList.remove('is-open');
-    const btn = menu.querySelector('.adm-rowmenu-btn');
-    if (btn) btn.setAttribute('aria-expanded', 'false');
-    const pop = menu.querySelector('.adm-rowmenu-pop');
-    if (pop) { pop.hidden = true; pop.style.cssText = ''; }
-  });
-}
-
-function placeRowMenu(menuBtn, pop) {
-  const PAD = 8;
-  pop.style.position = 'fixed';
-  pop.style.zIndex = '1000';
-  pop.style.visibility = 'hidden';
-  pop.style.right = 'auto';
-  pop.hidden = false;
-  const btnRect = menuBtn.getBoundingClientRect();
-  const w = pop.offsetWidth, h = pop.offsetHeight;
-  let left = btnRect.right + 4;
-  if (left + w > window.innerWidth - PAD) left = Math.max(PAD, btnRect.left - w - 4);
-  let top = btnRect.top - h - 4;
-  if (top < PAD) top = Math.min(btnRect.top, window.innerHeight - h - PAD);
-  top = Math.max(PAD, top);
-  pop.style.left = `${left}px`;
-  pop.style.top = `${top}px`;
-  pop.style.visibility = '';
-}
+const ADM_MENU = { menuSel: '.adm-rowmenu', btnSel: '.adm-rowmenu-btn', popSel: '.adm-rowmenu-pop' };
+function closeRowMenus() { window.WisePopover?.closeAll(hostEl, null, ADM_MENU); }
 
 function nextRole(current) {
   const cycle = ['Viewer', 'Member', 'Editor', 'Admin'];
@@ -664,22 +624,9 @@ export function renderTeam(mainEl) {
   }
   paint();
   wireBrandSwitcher();
+  window.WisePopover?.bindRowMenus(mainEl, ADM_MENU);
 
   mainEl.addEventListener('click', (e) => {
-    const menuBtn = e.target.closest('.adm-rowmenu-btn');
-    if (menuBtn) {
-      const menu = menuBtn.closest('.adm-rowmenu');
-      const open = !menu.classList.contains('is-open');
-      closeRowMenus(open ? menu : null);
-      menu.classList.toggle('is-open', open);
-      menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      const pop = menu.querySelector('.adm-rowmenu-pop');
-      if (pop) {
-        if (open) placeRowMenu(menuBtn, pop);
-        else { pop.hidden = true; pop.style.cssText = ''; }
-      }
-      return;
-    }
     const sortH = e.target.closest('[data-adm-sort]');
     if (sortH && !e.target.closest('.w-datemenu, .pf-datemenu')) { toggleSort(sortH.dataset.admSort); return; }
     const filter = e.target.closest('button[data-adm-filter]');
@@ -708,19 +655,11 @@ export function renderTeam(mainEl) {
 
   if (!docListenersBound) {
     docListenersBound = true;
-    document.addEventListener('click', (e) => {
-      if (filterOpen && !e.target.closest('.adm-search-inline')) setFilterOpen(false);
-      if (!hostEl) return;
-      if (e.target.closest && e.target.closest('.adm-rowmenu')) return;
-      closeRowMenus(null);
+    window.WisePopover?.bindFilterPop({
+      isOpen: () => filterOpen,
+      setOpen: setFilterOpen,
+      insideSel: '.wise-search-inline, .adm-search-inline',
     });
-    document.addEventListener('keydown', (e) => {
-      if (e.key !== 'Escape') return;
-      setFilterOpen(false);
-      closeRowMenus(null);
-    });
-    window.addEventListener('scroll', () => closeRowMenus(null), { capture: true, passive: true });
-    window.addEventListener('resize', () => closeRowMenus(null));
   }
 }
 

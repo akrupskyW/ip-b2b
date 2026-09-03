@@ -35,6 +35,9 @@ import './welcome-orbit.js';
    profile picture (set on the Organization Profile page) when present, and fall
    back to their initials otherwise. */
 import { userAvatarImg } from './user-avatar.js';
+import { esc } from './escape-html.js';
+import { openModal, closeModal, modalHTML } from './wise-modal.js';
+import { OWL_BUG, OWL_MARK } from './owl-mark.js';
 
 /* Activity strip — the thin landmark rail pinned to the chat's edge. Mounted
    from here so EVERY page that uses this shared chat gets it (styles are
@@ -53,14 +56,7 @@ import {
   stretchTraceHelixToNextAvatar,
   dismissTraceHelix,
 } from './trace-helix.js';
-
-/* WISE-owl "bug" used in the topbar (inherits currentColor). Exported so the
-   WISEcodeAI dock can reuse the exact same mark for its collapsed floating circle. */
-export const OWL_BUG = `<svg viewBox="0 0 193 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/></svg>`;
-
-/* WISE-owl mark used inside the welcome circle (white on primary). Exported so
-   the marketing galaxy can reuse the exact same pulsating owl for its core. */
-export const OWL_MARK = `<svg viewBox="0 0 193 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z" fill="white"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z" fill="white"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z" fill="white"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z" fill="white"/></svg>`;
+export { OWL_BUG, OWL_MARK };
 
 /* Chat module elevation is locked to Little min — the same drop as the
    other module cards. The Admin three-dot picker (Little min / Above high / 3D)
@@ -178,15 +174,6 @@ const CONNECTOR_REFRESH_STEPS = [
   { icon: 'verified_user', title: 'Verify connection',   desc: 'Confirm {brand}\u2019s authorization is still valid.' },
   { icon: 'sync',          title: 'Sync latest catalog', desc: 'Pull the newest {brand} products, pricing & availability.' },
 ];
-
-function esc(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
 
 /* "You" chip: photo from the shared store (or an explicit override), else initials. */
 function youAvatarChipHtml(initials, customAvatar) {
@@ -1573,7 +1560,7 @@ export function injectChatExtras() {
       border-top: 1px solid rgba(20,40,80,0.10); }
     html.dark .wch-ask-group + .wch-ask-group { border-top-color: rgba(255,255,255,0.10); }
     .wch-ask-group-title { display: flex; align-items: center; gap: 8px; padding: 4px 6px 8px;
-      font-family: "WISE Digits", "Noto Serif", Georgia, serif; font-size: 1.12rem; font-weight: 800;
+      font-family: "WISE Digits", "Noto Serif", serif; font-size: 1.12rem; font-weight: 800;
       letter-spacing: -.01em; line-height: 1.2; text-transform: none; color: var(--text); opacity: 1; }
     .wch-ask-group-title .material-symbols-outlined { font-size: 20px; opacity: .9; }
     .wch-ask-cards { display: flex; flex-direction: column; gap: 18px; }
@@ -1644,7 +1631,7 @@ export function injectChatExtras() {
 
     /* "What can I ask?" header — serif title (like the docked module headers),
        and no leading icon in front of it. */
-    .wch-ask-panel .wch-head-title { font-family: "WISE Digits", "Noto Serif", Georgia, serif;
+    .wch-ask-panel .wch-head-title { font-family: "WISE Digits", "Noto Serif", serif;
       font-weight: 800; font-size: 1.2rem; letter-spacing: -.01em; line-height: 1.16; }
     .wch-ask-panel .wch-head-title .material-symbols-outlined { display: none; }
 
@@ -2468,7 +2455,7 @@ export function injectChatExtras() {
     .wch-helix-fact-kicker { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
       color: var(--primary); }
     .wch-helix-card[data-kind="look"] .wch-helix-fact-kicker { color: var(--ter-amber-text, #75360A); }
-    .wch-helix-fact-title { font-family: "WISE Digits", "Noto Serif", Georgia, serif; font-size: 16px;
+    .wch-helix-fact-title { font-family: "WISE Digits", "Noto Serif", serif; font-size: 16px;
       font-weight: 800; line-height: 1.22; letter-spacing: -0.01em; color: var(--text); }
     .wch-helix-fact-body { display: block; font-size: 12.5px; line-height: 1.45; color: var(--text-muted, #5b6578); }
     html.dark .wch-helix-fact-body { color: var(--text-muted, #b7c0d0); }
@@ -3999,52 +3986,43 @@ function helixVerifyEsc(s) {
 }
 
 function closeHelixApplyVerify() {
-  const el = document.getElementById('hx-apply-verify');
-  if (!el) return;
-  el.classList.remove('is-open');
-  const gone = () => { if (el.parentNode) el.parentNode.removeChild(el); };
-  el.addEventListener('transitionend', gone, { once: true });
-  setTimeout(gone, 240);
-  if (closeHelixApplyVerify._onKey) {
-    document.removeEventListener('keydown', closeHelixApplyVerify._onKey);
-    closeHelixApplyVerify._onKey = null;
-  }
+  closeModal('hx-apply-verify');
 }
 
 function openHelixApplyVerify(cfg) {
   if (typeof document === 'undefined') return;
   closeHelixApplyVerify();
-  const scrim = document.createElement('div');
-  scrim.id = 'hx-apply-verify';
-  scrim.className = 'adm-modal-scrim dsc-ready-scrim';
   const title = cfg && cfg.title ? cfg.title : 'Publish this Helix everywhere?';
   const first = cfg && cfg.first ? cfg.first : '';
   const second = cfg && cfg.second ? cfg.second : first;
   const confirmLabel = cfg && cfg.confirmLabel ? cfg.confirmLabel : 'Apply everywhere';
   const onConfirm = cfg && typeof cfg.onConfirm === 'function' ? cfg.onConfirm : null;
 
+  const { scrim } = openModal({
+    id: 'hx-apply-verify',
+    extraScrimClass: 'dsc-ready-scrim',
+    html: '',
+  });
+
   function paint(step) {
     const isFirst = step === 1;
-    scrim.innerHTML =
-      '<div class="adm-modal" role="dialog" aria-modal="true" aria-labelledby="hx-apply-verify-title">'
-      + '<button type="button" class="adm-modal-x" data-hx-verify="close" aria-label="Close">'
-      + '<span class="material-symbols-outlined">close</span></button>'
-      + '<div class="adm-modal-head">'
-      + '<div class="adm-modal-eyebrow">' + (isFirst ? 'Verify · 1 of 2' : 'Verify again · 2 of 2') + '</div>'
-      + '<h2 class="adm-modal-title" id="hx-apply-verify-title">' + helixVerifyEsc(title) + '</h2>'
-      + '<p class="adm-modal-sub">' + helixVerifyEsc(isFirst ? first : second) + '</p>'
-      + '</div>'
-      + '<div class="adm-modal-body">'
-      + '<div class="dsc-ready-verify-steps" aria-hidden="true">'
-      + '<span class="dsc-ready-verify-dot' + (isFirst ? ' is-on' : ' is-done') + '"></span>'
-      + '<span class="dsc-ready-verify-dot' + (isFirst ? '' : ' is-on') + '"></span>'
-      + '</div>'
-      + '<div class="dsc-ready-verify-actions">'
-      + '<button type="button" class="wise-btn wise-btn--ghost" data-hx-verify="close">Cancel</button>'
-      + '<button type="button" class="wise-btn wise-btn--primary" data-hx-verify="' + (isFirst ? 'next' : 'confirm') + '">'
-      + '<span class="material-symbols-outlined">' + (isFirst ? 'arrow_forward' : 'done') + '</span>'
-      + (isFirst ? 'Continue' : helixVerifyEsc(confirmLabel))
-      + '</button></div></div></div>';
+    scrim.innerHTML = modalHTML({
+      eyebrow: isFirst ? 'Verify · 1 of 2' : 'Verify again · 2 of 2',
+      title: helixVerifyEsc(title),
+      titleId: 'hx-apply-verify-title',
+      sub: helixVerifyEsc(isFirst ? first : second),
+      closeAttrs: 'data-hx-verify="close" data-wise-modal-close',
+      body: '<div class="dsc-ready-verify-steps" aria-hidden="true">'
+        + '<span class="dsc-ready-verify-dot' + (isFirst ? ' is-on' : ' is-done') + '"></span>'
+        + '<span class="dsc-ready-verify-dot' + (isFirst ? '' : ' is-on') + '"></span>'
+        + '</div>'
+        + '<div class="dsc-ready-verify-actions">'
+        + '<button type="button" class="wise-btn wise-btn--ghost" data-hx-verify="close">Cancel</button>'
+        + '<button type="button" class="wise-btn wise-btn--primary" data-hx-verify="' + (isFirst ? 'next' : 'confirm') + '">'
+        + '<span class="material-symbols-outlined">' + (isFirst ? 'arrow_forward' : 'done') + '</span>'
+        + (isFirst ? 'Continue' : helixVerifyEsc(confirmLabel))
+        + '</button></div>',
+    });
     const primary = scrim.querySelector('.wise-btn--primary');
     if (primary) {
       primary.style.fontVariationSettings = "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24";
@@ -4052,14 +4030,8 @@ function openHelixApplyVerify(cfg) {
     }
   }
 
-  document.body.appendChild(scrim);
   paint(1);
-  requestAnimationFrame(() => scrim.classList.add('is-open'));
-  const onKey = (e) => { if (e.key === 'Escape') closeHelixApplyVerify(); };
-  closeHelixApplyVerify._onKey = onKey;
-  document.addEventListener('keydown', onKey);
   scrim.addEventListener('click', (e) => {
-    if (e.target === scrim) { closeHelixApplyVerify(); return; }
     const act = e.target.closest('[data-hx-verify]');
     if (!act) return;
     const kind = act.getAttribute('data-hx-verify');
@@ -12616,6 +12588,19 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (opts.helixStudio === true) return;
     if (welcome && !welcome.classList.contains('sc-hidden')) bgAnim.stop();
   });
+  /* Any other pointer on the page blooms it out the same way — chips, the
+     right-hand module, nav. Helix ⋮ / sliders stay exempt so the pose can
+     still be tuned. */
+  if (opts.helixStudio !== true) {
+    const SKIP_SEL = '.topbar-popover, .panel-more-btn, .panel-more-wrap, .sc-helix-float';
+    document.addEventListener('pointerdown', (e) => {
+      if (!welcome || welcome.classList.contains('sc-hidden')) return;
+      const t = e.target;
+      if (!t || !t.closest) return;
+      if (t.closest(SKIP_SEL)) return;
+      bgAnim.stop();
+    }, true);
+  }
 
   /* Keep the caret in the TEXT field whenever the user clicks the input pill.
      The pending attachment chips render before the input, each with a focusable
@@ -13962,13 +13947,22 @@ export function wireStandardChatMenu(cfg = {}) {
   /* Welcome-only, same as mountWISEcodeAIChat: the field paints on the
      welcome, then blooms out the moment the member moves the conversation
      (chip, type, send, database). A hidden welcome or an engage flag
-     keeps it from sitting behind a live transcript. */
+     keeps it from sitting behind a live transcript — unless the host
+     lands already engaged (View Product): then `untilEngage` keeps the
+     Scene helix up until a real click / type / send. */
   let bgEngaged = false;
-  const welcomeVisible = () => {
-    if (!welcomeEl) return !bgEngaged;
+  const welcomeShown = () => {
+    if (!welcomeEl) return false;
     return !welcomeEl.classList.contains('ws-hidden')
       && !welcomeEl.classList.contains('sc-hidden')
       && welcomeEl.style.display !== 'none';
+  };
+  const untilEngage = !!(cfg.bgAnim && (
+    cfg.bgAnim.untilEngage || (welcomeEl && !welcomeShown())
+  ));
+  const welcomeVisible = () => {
+    if (untilEngage || !welcomeEl) return !bgEngaged;
+    return welcomeShown();
   };
   /* One lazily-built engine per family (helix + helix-ten share a canvas;
      orbit is its own), exposed through a small facade so the start/stop below
@@ -14045,8 +14039,8 @@ export function wireStandardChatMenu(cfg = {}) {
   if (welcomeEl) {
     try {
       new MutationObserver(() => {
-        if (welcomeVisible()) restoreBgAnim();
-        else retireBgAnim();
+        if (welcomeShown()) restoreBgAnim();
+        else if (!untilEngage) retireBgAnim();
       }).observe(welcomeEl, { attributes: true, attributeFilter: ['class', 'style'] });
     } catch (_) {}
   }
@@ -14057,24 +14051,19 @@ export function wireStandardChatMenu(cfg = {}) {
   document.addEventListener('wise:cwr-ui', wakeBgAnim);
   document.addEventListener('wise:chat-engage', retireBgAnim);
 
-  /* First chip / keystroke / focus / send / database pick blooms the field
-     out — same moments hideWelcome() and the composer listeners use on the
-     shared mount. Scope to this chat host so a ⋮ or slider does not retire. */
+  /* First real pointer on the page blooms the field out — same as every
+     other chat. ⋮ / Helix sliders stay exempt so the pose can still be
+     tuned without collapsing the strand. */
   if (bgHost && !bgHost.__wiseBgEngageWired) {
     bgHost.__wiseBgEngageWired = true;
-    const ENGAGE_SEL = [
-      '.ws-intent-chip', '.chip-dive', '.ws-scorecard',
-      '.sc-reply-chips .chip', '.sc-inline-chips .chip', '.ws-chips .chip',
-      '.gs-chip', '[data-chip]',
-      '.sc-send', '.chat-input-rail [data-send]',
-      '.fl-db-item',
-    ].join(',');
-    bgHost.addEventListener('click', (e) => {
+    const SKIP_SEL = '.topbar-popover, .panel-more-btn, .panel-more-wrap, .sc-helix-float';
+    document.addEventListener('pointerdown', (e) => {
+      if (bgEngaged || !bgOn) return;
       const t = e.target;
       if (!t || !t.closest) return;
-      if (t.closest('.topbar-popover, .panel-more-btn, .panel-more-wrap, [data-sc]')) return;
-      if (t.closest(ENGAGE_SEL)) retireBgAnim();
-    });
+      if (t.closest(SKIP_SEL)) return;
+      retireBgAnim();
+    }, true);
     const input = bgHost.querySelector('.chat-input-rail textarea.fl-input, .chat-input-rail input.fl-input, textarea.fl-input, #chat-input');
     if (input) {
       input.addEventListener('input', () => {

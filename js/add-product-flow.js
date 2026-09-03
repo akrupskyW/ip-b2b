@@ -22,6 +22,7 @@
   /* ─────────────────────────── helpers ─────────────────────────── */
   const $ = (id) => document.getElementById(id);
   function esc(s) {
+    if (typeof window !== 'undefined' && typeof window.WiseEsc === 'function') return window.WiseEsc(s);
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
       .replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -30,18 +31,10 @@
     try { return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
     catch (_) { return ''; }
   }
-  /* "You" chip — photo from the shared store when set, else initials. */
   function youAvatarSpan() {
-    try {
-      if (window.WiseUserAvatar && typeof window.WiseUserAvatar.span === 'function') {
-        return window.WiseUserAvatar.span('You', 'AK');
-      }
-      const src = localStorage.getItem('wise-user-avatar');
-      if (src) {
-        const safe = esc(src);
-        return `<span class="sc-avatar sc-avatar-you has-avatar-img" role="img" aria-label="You" data-initials="AK"><img class="wise-avatar-img" src="${safe}" alt="You" /></span>`;
-      }
-    } catch (_) { /* storage / global unavailable */ }
+    if (window.WiseUserAvatar && typeof window.WiseUserAvatar.span === 'function') {
+      return window.WiseUserAvatar.span('You', 'AK');
+    }
     return '<span class="sc-avatar sc-avatar-you" role="img" aria-label="You" data-initials="AK">AK</span>';
   }
   /* Per-letter spans for the staggered gold shimmer on "What can I ask?"
@@ -55,7 +48,9 @@
         : `<span class="sc-ask-ch" style="--ch-i:${i}">${esc(ch)}</span>`
     ).join('');
   }
-  const OWL = '<svg viewBox="0 0 193 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.9834 35.6522C10.9834 35.6522 3.30615 47.7494 3.30615 58.0481C3.30615 81.1921 20.324 99.6409 43.3405 99.9915C51.5363 100.052 60.4175 99.9915 67.533 92.6894C41.5052 92.6894 25.589 73.777 25.589 58.0481C25.589 58.0481 25.2144 45.6894 30.832 35.9526L10.9834 35.6522Z"/><path d="M83.8241 14.7368C90.9396 14.7368 94.8008 22.7337 96.3699 29.2111H96.5571C98.1262 22.7337 101.987 14.7368 109.103 14.7368H170.521C175.169 14.7368 175.169 12.8643 175.169 7.32269C175.169 2.80876 178.108 0 182.131 0H189.384V14.7368C189.384 27.7131 182.131 28.5339 174.794 28.5339L160.347 28.583H118.091C113.597 28.583 113.335 29.2111 111.537 33.7051C110.051 37.4206 96.5571 73.0277 96.5571 73.0277H96.3699C96.3699 73.0277 82.8761 37.4206 81.3899 33.7051C79.5923 29.2111 79.3301 28.583 74.8361 28.583H32.5803L18.133 28.5339C10.7965 28.5339 3.54341 27.7131 3.54341 14.7368V0H10.7965C14.5415 0 17.7585 3.37051 17.7585 7.32269C17.7585 12.8643 17.7585 14.7368 22.406 14.7368H83.8241Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M71.8001 35.9523C74.4284 35.9523 74.6161 37.2826 75.1793 38.6953L87.9434 71.5913C82.9358 80.6013 74.4289 85.7609 63.9558 85.7609C48.1132 85.7608 33.2662 72.7999 33.2663 54.6695C33.2664 48.2288 34.5088 40.1469 39.2583 35.9523H71.8001ZM63.486 44.5345C58.3905 44.5345 54.2598 48.6005 54.2598 54.0781C54.2598 59.5557 58.3905 63.6217 63.486 63.6217C68.5814 63.6216 72.7122 59.5556 72.7122 54.0781C72.7122 48.6005 68.5814 44.5346 63.486 44.5345Z"/><path d="M181.756 35.6522C181.756 35.6522 189.433 47.7494 189.433 58.0481C189.433 81.1921 172.416 99.6409 149.399 99.9915C141.203 100.052 132.322 99.9915 125.206 92.6894C151.234 92.6894 167.151 73.777 167.151 58.0481C167.151 58.0481 167.525 45.6894 161.908 35.9526L181.756 35.6522Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M120.94 35.9523C118.311 35.9523 118.124 37.2826 117.56 38.6953L104.796 71.5913C109.804 80.6013 118.311 85.7609 128.784 85.7609C144.626 85.7608 159.473 72.7999 159.473 54.6695C159.473 48.2288 158.231 40.1469 153.481 35.9523H120.94ZM129.254 44.5345C134.349 44.5345 138.48 48.6005 138.48 54.0781C138.48 59.5557 134.349 63.6217 129.254 63.6217C124.158 63.6216 120.027 59.5556 120.027 54.0781C120.027 48.6005 124.158 44.5346 129.254 44.5345Z"/></svg>';
+  function owlBug() {
+    return (typeof window !== 'undefined' && window.WiseOwlBug) || '';
+  }
 
   /* ─────────────────────────── model ─────────────────────────── */
   /* Nutrition rows, in label order. `amt` = amount text (e.g. "12g"),
@@ -139,8 +134,10 @@
        open/closed; Analyze increments `iaTick` so row + score animations replay. */
     iaOpen: { list: true, parsed: false, codes: false, nutrients: false, scout: false },
     iaRan: false,
+    iaRunning: false,     // Analyze / Re-analyze is mid-pass in the module
     iaTick: 0,
     iaConfirm: {},        // node id → true once the user confirms a row
+    iaMap: {},            // ingredient name key → { mapped, cat, sub } after a chat lookup
   };
 
   /* FDA Big 9. Icons are Material Symbols (Google SVG via the sprite shim). */
@@ -271,7 +268,14 @@
     messagesEl.__followPos = messagesEl.scrollTop;
   }
   function hideWelcome() {
-    try { document.dispatchEvent(new CustomEvent('wise:chat-engage')); } catch (_) {}
+    /* Only the first dismiss of a visible welcome is an engage. View Product
+       lands on a pre-filled greeting with the welcome already hidden — that
+       must not bloom the chat helix out before the member has acted. */
+    const first = !!(welcomeEl && !welcomeEl.classList.contains('sc-hidden')
+      && welcomeEl.style.display !== 'none');
+    if (first) {
+      try { document.dispatchEvent(new CustomEvent('wise:chat-engage')); } catch (_) {}
+    }
     if (welcomeEl) welcomeEl.classList.add('sc-hidden');
   }
 
@@ -610,7 +614,7 @@
     /* Insert the line WITHOUT its reply chips, reveal paragraphs, then the
        timestamp, then the chips (left→right) — content, meta, chips, in order. */
     messagesEl.insertAdjacentHTML('beforeend',
-      `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEcodeAI">${OWL}</span><div class="sc-line-body">${html}${footer}</div></div>`);
+      `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEcodeAI">${owlBug()}</span><div class="sc-line-body">${html}${footer}</div></div>`);
     const line = messagesEl.lastElementChild;
     const body = line && line.querySelector('.sc-line-body');
     const metaEl = body && body.querySelector('.sc-line-meta');
@@ -641,11 +645,11 @@
     scrollDown();
     typeInLine(note);
   }
-  function showTyping() {
+  function showTyping(label) {
     hideWelcome();
     const el = document.createElement('div');
     el.className = 'sc-line sc-line-wiseai sc-line-typing';
-    el.innerHTML = `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEcodeAI">${OWL}</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing-spin" aria-hidden="true"></span><span class="sc-typing-label">WISEcodeAI is thinking…</span></span></div>`;
+    el.innerHTML = `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEcodeAI">${owlBug()}</span><div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing-spin" aria-hidden="true"></span><span class="sc-typing-label">${esc(label || 'WISEcodeAI is thinking…')}</span></span></div>`;
     messagesEl.appendChild(el);
     scrollDown();
     return el;
@@ -855,6 +859,32 @@
     header.querySelector('.nfp-header-photo')?.remove();
     const logo = header.querySelector('.nfp-brand-logo');
     if (logo) logo.hidden = false;
+    syncNfpHeaderLogo();
+  }
+  function syncNfpHeaderLogo() {
+    const logo = document.getElementById('nfp-brand-logo');
+    if (!logo) return;
+    const brand = state.brand || 'Brand';
+    const label = state.brandLogo ? 'Replace brand logo' : 'Add brand logo';
+    logo.setAttribute('title', label);
+    logo.setAttribute('aria-label', label);
+    logo.setAttribute('data-nfp', 'upload-brand');
+    const img = logo.querySelector('img');
+    const mono = logo.querySelector('.nfp-brand-logo-mono');
+    if (state.brandLogo) {
+      if (img) {
+        img.src = state.brandLogo;
+        img.style.display = '';
+        img.alt = brand + ' logo';
+      }
+      if (mono) mono.hidden = true;
+    } else {
+      if (img) img.style.display = 'none';
+      if (mono) {
+        mono.hidden = false;
+        mono.textContent = brandMono();
+      }
+    }
   }
   /* One self-contained dropdown (a native <select>, so it escapes the hero's
      overflow:hidden clipping) that replaces the old chip + separate "Change"
@@ -1416,11 +1446,25 @@
         }
       });
     });
-    if (best) {
-      return { raw: clean || raw, mapped: best.mapped, cat: best.cat, sub: best.sub, pl: best.pl, match: best.match, isGroup: false, children: [] };
-    }
-    const mapped = clean.toUpperCase() || String(raw || '').toUpperCase();
-    return { raw: clean || raw, mapped, cat: 'Ingredient', sub: 'Unclassified', pl: 2, match: 'ok', isGroup: false, children: [] };
+    const hit = best
+      ? { raw: clean || raw, mapped: best.mapped, cat: best.cat, sub: best.sub, pl: best.pl, match: best.match, isGroup: false, children: [] }
+      : { raw: clean || raw, mapped: clean.toUpperCase() || String(raw || '').toUpperCase(), cat: 'Ingredient', sub: 'Unclassified', pl: 2, match: 'ok', isGroup: false, children: [] };
+    return applyIaOverride(hit);
+  }
+
+  function iaMapKey(raw) {
+    return String(raw || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  }
+
+  function applyIaOverride(hit) {
+    const over = hit && state.iaMap[iaMapKey(hit.raw)];
+    if (!over) return hit;
+    return Object.assign({}, hit, {
+      mapped: over.mapped || hit.mapped,
+      cat: over.cat || hit.cat,
+      sub: over.sub != null ? over.sub : hit.sub,
+      match: 'ok',
+    });
   }
 
   function parseIngredientNode(token, id) {
@@ -1498,6 +1542,13 @@
     }
     return `<span class="nfp-ia-pill-wrap"><span class="nfp-ia-pill nfp-ia-pill--bad">Unmatched</span>`
       + `<span class="material-symbols-outlined nfp-ia-pill-ico" aria-hidden="true">search</span></span>`;
+  }
+
+  /* Owl to the right of a parsed leaf — opens the same ingredient lookup
+     the Hungry-Man scaffold ran in its drawer, inside THIS chat. */
+  function iaOwlBtn(row) {
+    const name = (row && row.raw) || 'ingredient';
+    return `<button type="button" class="nfp-ia-owl" data-nfp="ia-lookup-row" data-arg="${esc(row.id)}" aria-label="Look up ${esc(name)}" data-tip="Look up ${esc(name)}">${owlBug()}</button>`;
   }
 
   function iaCurrentNf() {
@@ -1580,13 +1631,13 @@
       const match = iaMatchOf(row);
       if (row.isGroup) {
         return `<div class="nfp-ia-row nfp-ia-parsed-row is-group" style="--i:${Math.min(i, 18)};--d:${d}" data-depth="${d}">
-        <div class="nfp-ia-td nfp-ia-td--ing"><span class="nfp-ia-tree">${esc(row.raw)}</span></div>
+        <div class="nfp-ia-td nfp-ia-td--ing"><span class="nfp-ia-tree"><span class="nfp-ia-tree-name">${esc(row.raw)}</span></span></div>
         <div class="nfp-ia-td nfp-ia-td--mapped"></div>
         <div class="nfp-ia-td nfp-ia-td--match"></div>
       </div>`;
       }
       return `<div class="nfp-ia-row nfp-ia-parsed-row" style="--i:${Math.min(i, 18)};--d:${d}" data-depth="${d}" data-ia-id="${esc(row.id)}" data-ia-match="${match}">
-        <div class="nfp-ia-td nfp-ia-td--ing"><span class="nfp-ia-tree">${esc(row.raw)}</span></div>
+        <div class="nfp-ia-td nfp-ia-td--ing"><span class="nfp-ia-tree"><span class="nfp-ia-tree-name">${esc(row.raw)}</span>${iaOwlBtn(row)}</span></div>
         <div class="nfp-ia-td nfp-ia-td--mapped"><span class="nfp-ia-mapped">${esc(row.mapped)}</span></div>
         <div class="nfp-ia-td nfp-ia-td--match">${iaMatchPill(match, row.id)}</div>
       </div>`;
@@ -1647,14 +1698,17 @@
   function ingredientsHTML() {
     const err = state.errors.ingredients;
     const hasList = !!(state.ingredients || '').trim();
+    const running = !!state.iaRunning;
     const listInner = `<div class="nfp-ingred-wrap${hasList ? '' : ' is-empty'}">
       ${hasList ? '' : '<p class="nfp-ingred-lede">Paste the full list from the label — or type it here or in chat — and I\u2019ll map every nested ingredient.</p>'}
       <div class="nfp-ingred-body${err ? ' nfp-block-err' : ''}">
         <textarea class="nfp-ingred-edit" data-field="ingredients" rows="${hasList ? 1 : 5}" placeholder="${hasList ? 'Paste or type the ingredient list' : 'Water, Cane Sugar, Wheat Flour, \u2026'}">${esc(state.ingredients)}</textarea>
         ${err ? `<div class="nfp-field-note"><span class="material-symbols-outlined">error_outline</span>${esc(err)}</div>` : ''}
       </div>
-      <button type="button" class="nfp-ia-analyze" id="nfp-ia-analyze-btn" data-nfp="ia-analyze">
-        <span class="material-symbols-outlined">science</span>Analyze Ingredients
+      <button type="button" class="nfp-ia-analyze${running ? ' is-running' : ''}" id="nfp-ia-analyze-btn" data-nfp="ia-analyze"${running ? ' disabled aria-busy="true"' : ''}>
+        ${running
+          ? '<span class="nfp-ia-spin" aria-hidden="true"></span>Analyzing…'
+          : `<span class="material-symbols-outlined">science</span>${state.iaRan ? 'Re-analyze Ingredients' : 'Analyze Ingredients'}`}
       </button>
     </div>`;
     const tree = parseIngredientTree(state.ingredients);
@@ -1665,7 +1719,7 @@
         + iaAccord('nutrients', 'Nutrients', nutrientsPanelHTML())
         + iaAccord('scout', 'Wise Code AI Engine Flavor Results', scoutPanelHTML(tree))
       : '';
-    return `<div class="nfp-ia" data-ia-tick="${state.iaTick}">
+    return `<div class="nfp-ia${running ? ' is-running' : ''}" data-ia-tick="${state.iaTick}">
       ${listInner}
       ${extras}
     </div>`;
@@ -2172,12 +2226,11 @@
   function revealIngredientList() {
     setIaOpen(true);
     setIngredientListDouble();
-    try { window.WiseStickyModules && window.WiseStickyModules.scan(); } catch (_) {}
     const panel = iaPanelEl();
     if (panel) {
       requestAnimationFrame(() => {
         sizeIngredEdit();
-        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        try { window.WiseStickyModules && window.WiseStickyModules.scan(); } catch (_) {}
       });
     }
   }
@@ -2384,29 +2437,41 @@
       nfpItem.classList.toggle('is-on', open);
       nfpItem.setAttribute('aria-checked', open ? 'true' : 'false');
     }
-    const row = document.getElementById('modules-row');
-    const existing = row && row.querySelector('[data-ia-restore]');
-    if (open) {
-      if (existing) existing.remove();
-      return;
-    }
-    if (!row || existing) return;
-    const tab = document.createElement('button');
-    tab.type = 'button';
-    tab.className = 'wise-progress-restore';
-    tab.setAttribute('data-ia-restore', '1');
-    tab.title = 'Show Ingredient List';
-    tab.setAttribute('aria-label', 'Show Ingredient List');
-    tab.innerHTML = '<span class="material-symbols-outlined">chevron_left</span><span class="wpr-label">Ingredient List</span>';
-    tab.addEventListener('click', (e) => { e.stopPropagation(); setIaOpen(true); });
-    row.appendChild(tab);
+    document.querySelectorAll('[data-ia-restore]').forEach((el) => el.remove());
+  }
+  function settleIaAnim(el) {
+    if (!el || el.classList.contains('is-entered')) return;
+    const mark = () => el.classList.add('is-entered');
+    el.addEventListener('animationend', (e) => { if (e.target === el) mark(); }, { once: true });
+    setTimeout(mark, 800);
+  }
+  function playIaEnter(panel) {
+    /* Restart the shared `.sticky-mod.is-sticky` slide (stickySlideRight).
+       `.is-entered` and a leftover computed animation would otherwise make
+       the drawer pop in at full opacity. */
+    panel.classList.remove('is-entered');
+    panel.hidden = false;
+    panel.style.removeProperty('display');
+    panel.style.setProperty('animation', 'none');
+    void panel.offsetWidth;
+    panel.style.removeProperty('animation');
+    settleIaAnim(panel);
   }
   function setIaOpen(on) {
     const panel = iaPanelEl();
     if (!panel) return;
-    panel.hidden = !on;
-    if (on) panel.style.removeProperty('display');
-    else panel.style.display = 'none';
+    if (on) {
+      const already = !panel.hidden && panel.style.display !== 'none';
+      if (already && panel.classList.contains('is-entered')) {
+        syncIaOpenUi();
+        return;
+      }
+      playIaEnter(panel);
+    } else {
+      panel.hidden = true;
+      panel.style.display = 'none';
+      panel.classList.remove('is-entered');
+    }
     syncIaOpenUi();
   }
   function installIaCloseMenu() {
@@ -3147,6 +3212,7 @@
         promptCategory('What <strong>category</strong> does this product belong to? Pick one below or type your own.');
         break;
       case 'ingredients':
+        revealIngredientList();
         sayStep('Now the <strong>ingredient list</strong>. Paste it as text, upload a label photo and I\'ll read it, or type it in.',
           [
             { label: 'Upload label photo', icon: 'document_scanner', action: 'labelUpload' },
@@ -3224,6 +3290,7 @@
   /* Ask the user to type a value into the chat input for a specific field. */
   function promptFor(field, question) {
     state.awaiting = field;
+    if (field === 'ingredients') revealIngredientList();
     if (question) addWISEcodeAI(question);
     if (inputEl) {
       const hints = {
@@ -3402,65 +3469,74 @@
         : [{ label: 'Type the name', icon: 'edit', action: 'field:productName' }]);
     if (state.productName) maybeAdvanceAfter();
   }
+  function applyBrandLogo(src, name) {
+    if (!src) return;
+    const replacing = !!state.brandLogo;
+    state.brandLogo = src;
+    addUserImage(src, name || 'Brand logo');
+    renderNFP();
+    wiseSay(replacing
+      ? 'Updated the brand logo next to the product name.'
+      : 'Set the brand logo next to the product name.');
+  }
 
   /* ─── Product-photo modal ───────────────────────────────────────────────
      The main "Add a product photo" affordance opens a centered panel (the same
      one the overview hero uses — dash-modal styling from wise.css) that offers
      drag/drop or file upload AND a paste-a-URL field, rather than jumping
      straight to the OS file dialog. On save the choice becomes the primary. */
-  let photoModalEls = null;
-  function ensurePhotoModal() {
-    if (photoModalEls) return photoModalEls;
-    const scrim = document.createElement('div');
-    scrim.className = 'dash-modal-scrim dash-modal-scrim--panel';
-    const modal = document.createElement('div');
-    modal.className = 'dash-modal dash-modal--panel';
-    modal.setAttribute('role', 'dialog');
-    modal.setAttribute('aria-modal', 'true');
-    scrim.appendChild(modal);
-    document.body.appendChild(scrim);
-    scrim.addEventListener('click', (e) => { if (e.target === scrim) closePhotoModal(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePhotoModal(); });
-    photoModalEls = { scrim, modal };
-    return photoModalEls;
-  }
+  let photoModalClose = null;
   function closePhotoModal() {
-    if (photoModalEls) photoModalEls.scrim.classList.remove('is-open');
+    if (photoModalClose) photoModalClose();
   }
-  function openPhotoModal(packIdx) {
-    const { scrim, modal } = ensurePhotoModal();
-    const isPack = packIdx != null && !isNaN(packIdx);
+  function openPhotoModal(target) {
+    const isBrand = target === 'brand';
+    const isPack = !isBrand && target != null && !isNaN(target);
+    const packIdx = isPack ? Number(target) : null;
     const pack = isPack ? state.packs[packIdx] : null;
-    const replacing = isPack ? !!(pack && pack.image) : !!state.image;
-    const title = replacing ? 'Replace product photo' : 'Add a product photo';
-    const alreadyOpen = scrim.classList.contains('is-open');
-    modal.setAttribute('aria-label', title);
+    const replacing = isBrand ? !!state.brandLogo : (isPack ? !!(pack && pack.image) : !!state.image);
+    const title = isBrand
+      ? (replacing ? 'Replace brand logo' : 'Add a brand logo')
+      : (replacing ? 'Replace product photo' : 'Add a product photo');
+    const existing = document.getElementById('ap-photo-modal');
+    const alreadyOpen = !!(existing && existing.classList.contains('is-open'));
     let draft = '';      // data URL (upload) or remote URL (pasted)
     let draftName = '';  // file name carried into the transcript chip
 
     if (!alreadyOpen) {
-      addUser(replacing ? 'Replace the product photo.' : 'Add a product photo.');
-      wiseSay(replacing
-        ? 'Opened the photo editor — drop in a new image, upload a file, or paste a URL, then save. I\u2019ll swap it on the panel as soon as you confirm.'
-        : 'Opened the photo editor — drop in an image, upload a file, or paste a URL, then save. I\u2019ll place it on the panel as soon as you confirm.',
+      addUser(isBrand
+        ? (replacing ? 'Replace the brand logo.' : 'Add a brand logo.')
+        : (replacing ? 'Replace the product photo.' : 'Add a product photo.'));
+      wiseSay(isBrand
+        ? (replacing
+          ? 'Opened the logo editor — drop in a new mark, upload a file, or paste a URL, then save. I\u2019ll swap it next to the product name as soon as you confirm.'
+          : 'Opened the logo editor — drop in a mark, upload a file, or paste a URL, then save. I\u2019ll place it next to the product name as soon as you confirm.')
+        : (replacing
+          ? 'Opened the photo editor — drop in a new image, upload a file, or paste a URL, then save. I\u2019ll swap it on the panel as soon as you confirm.'
+          : 'Opened the photo editor — drop in an image, upload a file, or paste a URL, then save. I\u2019ll place it on the panel as soon as you confirm.'),
         [
           { label: 'Edit the Nutrition Facts', icon: 'edit', action: 'focusNf' },
           { label: 'Save changes', icon: 'save', action: 'goto:save', primary: true },
         ]);
     }
 
-    modal.innerHTML = `
-      <header class="dash-modal-head">
-        <div class="dash-modal-titles">
-          <span class="dash-modal-eyebrow">Product photo</span>
-          <h2 class="dash-modal-title">${esc(title)}</h2>
-        </div>
-        <button class="dash-modal-close" type="button" data-photo-close aria-label="Close"><span class="material-symbols-outlined">close</span></button>
-      </header>
-      <div class="dash-modal-body">
+    const openModal = window.WiseOpenModal;
+    const modalHTML = window.WiseModalHTML;
+    const modalFoot = window.WiseModalFoot;
+    if (!openModal || !modalHTML || !modalFoot) return;
+    const { modal, close } = openModal({
+      id: 'ap-photo-modal',
+      panel: true,
+      persistent: true,
+      html: modalHTML({
+        eyebrow: isBrand ? 'Brand logo' : 'Product photo',
+        title: esc(title),
+        titleId: 'ap-photo-title',
+        closeAttrs: 'data-photo-close data-wise-modal-close',
+        body: `
         <div class="dash-banner-preview dash-banner-preview--photo" id="ap-photo-preview-img-wrap">
           <div class="dash-banner-preview-img" id="ap-photo-preview-img"></div>
-          <span class="dash-banner-preview-empty" id="ap-photo-preview-empty"><span class="material-symbols-outlined">image</span>No photo yet</span>
+          <span class="dash-banner-preview-empty" id="ap-photo-preview-empty"><span class="material-symbols-outlined">${isBrand ? 'storefront' : 'image'}</span>${isBrand ? 'No logo yet' : 'No photo yet'}</span>
         </div>
         <label class="dash-banner-drop" id="ap-photo-drop">
           <input type="file" accept="image/*" id="ap-photo-file" hidden>
@@ -3468,15 +3544,17 @@
           <span class="dash-banner-drop-text"><strong>Upload an image</strong> or drag &amp; drop<br><span class="dash-banner-drop-hint">PNG, JPG or WEBP</span></span>
         </label>
         <div class="dash-banner-or"><span>or paste a URL</span></div>
-        <input type="url" class="dash-banner-url" id="ap-photo-url" placeholder="https://…/product.jpg" autocomplete="off">
-      </div>
-      <footer class="dash-modal-foot">
-        <span></span>
-        <div class="dash-modal-foot-right">
+        <input type="url" class="dash-banner-url" id="ap-photo-url" placeholder="https://…/product.jpg" autocomplete="off">`,
+        foot: modalFoot({
+          left: '<span></span>',
+          actions: `
           <button class="wise-btn wise-btn--ghost" type="button" data-photo-close>Cancel</button>
-          <button class="wise-btn wise-btn--primary" type="button" data-photo-save disabled><span class="material-symbols-outlined">check</span>${replacing ? 'Replace photo' : 'Add photo'}</button>
-        </div>
-      </footer>`;
+          <button class="wise-btn wise-btn--primary" type="button" data-photo-save disabled><span class="material-symbols-outlined">check</span>${isBrand ? (replacing ? 'Replace logo' : 'Add logo') : (replacing ? 'Replace photo' : 'Add photo')}</button>`,
+        }),
+      }),
+    });
+    photoModalClose = close;
+    if (modal) modal.setAttribute('aria-label', title);
 
     const previewImg = modal.querySelector('#ap-photo-preview-img');
     const previewEmpty = modal.querySelector('#ap-photo-preview-empty');
@@ -3500,7 +3578,7 @@
       saveBtn.disabled = !draft;
     };
 
-    urlInput.addEventListener('input', () => setPreview(urlInput.value.trim(), 'Product photo'));
+    urlInput.addEventListener('input', () => setPreview(urlInput.value.trim(), isBrand ? 'Brand logo' : 'Product photo'));
 
     const readFile = (file) => {
       if (!file || !file.type.startsWith('image/')) return;
@@ -3517,22 +3595,25 @@
       if (!draft) return;
       const src = draft, name = draftName;
       closePhotoModal();
-      if (isPack) applyPackPhoto(packIdx, src, name);
+      if (isBrand) applyBrandLogo(src, name);
+      else if (isPack) applyPackPhoto(packIdx, src, name);
       else applyMainPhoto(src, name);
     });
     modal.querySelectorAll('[data-photo-close]').forEach((b) => b.addEventListener('click', closePhotoModal));
 
-    const current = isPack ? ((pack && pack.image) || '') : (state.image || '');
+    const current = isBrand ? (state.brandLogo || '') : (isPack ? ((pack && pack.image) || '') : (state.image || ''));
     if (current) {
       setPreview(current, '');
       saveBtn.disabled = true;
+    } else if (isBrand) {
+      setPreview('', '');
     } else {
       setPreview('', '');
       previewImg.style.backgroundImage = `url('${DEFAULT_PRODUCT_IMAGE.replace(/'/g, '%27')}')`;
       previewImg.style.display = 'block';
       previewEmpty.style.display = 'none';
     }
-    requestAnimationFrame(() => { scrim.classList.add('is-open'); urlInput.focus(); });
+    requestAnimationFrame(() => urlInput.focus());
   }
 
   /* Simulate reading a label photo: fills what it can, flags the rest. */
@@ -3829,6 +3910,7 @@
     if (!action) return;
     if (action.startsWith('field:')) {
       const f = action.slice(6);
+      if (f === 'ingredients') revealIngredientList();
       if (echo) {
         if (f === 'upc') { addUser('Enter the UPC'); promptUpc(); return; }
         if (f === 'allergens') { addUser('I\'ll type it'); promptAllergens(); return; }
@@ -3881,6 +3963,9 @@
       case 'ia-confirm': confirmIaRow(arg, echo); break;
       case 'ia-confirm-all': confirmAllIaRows(echo); break;
       case 'ia-lookup': lookupUnmatchedIa(echo); break;
+      case 'ia-lookup-row': lookupIngredientInChat(arg, echo); break;
+      case 'ia-pick-lookup': pickIaLookup(arg, echo); break;
+      case 'ia-lookup-more': showMoreIaLookup(echo); break;
       case 'ia-test-codes': testIaCodes(echo); break;
       case 'ia-test-scout': testIaScout(echo); break;
       case 'ia-open-parsed': openIaSection('parsed', echo); break;
@@ -3989,6 +4074,7 @@
       { label: 'Review mappings', ask: 'Review mappings', action: 'ia-review' },
       { label: 'Confirm matched ingredients', ask: 'Confirm matched ingredients', action: 'ia-confirm-all' },
       { label: 'Look up unmatched ingredients', ask: 'Look up unmatched ingredients', action: 'ia-lookup' },
+      { label: 'Show more results', ask: 'Show more results', action: 'ia-lookup-more' },
       { label: 'Test code scores', ask: 'Test the code scores', action: 'ia-test-codes' },
       { label: 'Test Wise Code AI', ask: 'Test Wise Code AI results', action: 'ia-test-scout' },
       { label: 'Show nutrients', ask: 'Show the nutrients table', action: 'ia-open-nutrients' },
@@ -4022,7 +4108,17 @@
     if (/review\s+mapping/.test(t)) { reviewIaMappings(false); return; }
     if (/test.+(code|score)|code scores/.test(t)) { testIaCodes(false); return; }
     if (/test.+(wise\s*code|scout|flavor)/.test(t)) { testIaScout(false); return; }
-    if (/(look\s*up|search).*(unmatched|ingredient)/.test(t)) { lookupUnmatchedIa(false); return; }
+    const look = t.match(/look\s*up\s+(.+)/i);
+    if (look) {
+      const q = look[1].replace(/^(the|an?)\s+/i, '').replace(/\s+(mapping|ingredient)s?$/i, '').trim();
+      if (q && !/^unmatched\b/.test(q)) {
+        const row = findParsedLeaf(q);
+        if (row) { lookupIngredientInChat(row.id, false); return; }
+      }
+      lookupUnmatchedIa(false);
+      return;
+    }
+    if (/(search).*(unmatched|ingredient)/.test(t)) { lookupUnmatchedIa(false); return; }
     if (/(help|how|what|stuck|confus)/.test(t)) {
       if (nfpIsExistingProduct() || state.iaRan) { sayWhatCanIAsk(); return; }
       wiseSay('No problem. This flow collects, in order: a <strong>photo</strong>, <strong>category</strong>, a <strong>UPC</strong>, <strong>Nutrition Facts</strong>, <strong>ingredients</strong>, and <strong>allergens</strong>. You can upload a label and I\'ll read most of it at once, edit anything live in <strong>Product Details</strong>, and nothing saves until you press <strong>Save to Portfolio</strong>. Where do you want to start?',
@@ -4085,7 +4181,7 @@
         + '<li><strong>Confirm mappings</strong> — accept matched rows, confirm a fuzzy match, or review anything still pending.</li>'
         + '<li><strong>Test code scores</strong> — open Codes and run the Allergen / UPF / quality scores against this product.</li>'
         + '<li><strong>Test Wise Code AI</strong> — open the engine flavor results (category, sub-category, process level).</li>'
-        + '<li><strong>Look up unmatched</strong> — jump to any ingredient that didn\'t map, then search it in the canon.</li>'
+        + '<li><strong>Look up an ingredient</strong> — tap the owl next to a parsed name. Matches land in this chat; pick one to attest the mapping.</li>'
         + '<li><strong>Edit on the panel</strong> — Nutrition Facts, the ingredient list, allergens, photo, UPC. The chat keeps up.</li>'
         + '<li><strong>Save or claim</strong> — write changes back to the portfolio, or get the Non-UPF Shield when it qualifies.</li>'
         + '</ul>Tap an intent chip or type the same words — they do the same thing.',
@@ -4243,7 +4339,7 @@
     const params = new URLSearchParams(location.search);
     state.image = p.image; state.category = p.category;
     if (p.brand) state.brand = p.brand;
-    if (p.brandLogo != null) state.brandLogo = p.brandLogo;
+    if (p.brandLogo) state.brandLogo = p.brandLogo;
     state.ingredients = p.ingredients; state.contains = p.contains;
     state.allergens = p.allergens.slice(); state.done.allergens = true;
     state.upc = p.upc || '';
@@ -4254,10 +4350,10 @@
     state.description = defaultDescription(state.productName);
     if (upc) { const d = upc.replace(/\D/g, ''); if (d) state.upc = d; }
     if (img) state.image = img;
-    if (nm && nm.trim()) {
-      state.brand = 'Flax4Life';
-      state.brandLogo = '../assets/brand-flax4life-logo.png';
-    }
+    /* Filled view-product is a Flax4Life product. Always use the brand logo
+       next to ⋯ — never the monogram fallback (SAMPLE_PARSE has no artwork). */
+    state.brand = 'Flax4Life';
+    state.brandLogo = '../assets/brand-flax4life-logo.png';
     applyFromParam(params);
     state.brandClaimed = state.fromKey !== 'discovered' || isProductClaimed(state.upc, state.productName);
     if (state.fromKey === 'discovered' && state.brandClaimed) state.saved = true;
@@ -4350,11 +4446,13 @@
       brandClaimed: true, fromDiscovered: false, fromKey: '', lifecyclePeek: null, lifecycleDone: '',
       category: '', ingredients: '', allergens: [], contains: '', upc: '',
       nf: blankNf(), errors: {}, done: {}, skipped: {}, awaiting: null, saved: false,
-      iaRan: false, iaTick: 0, iaConfirm: {},
+      iaRan: false, iaRunning: false, iaTick: 0, iaConfirm: {}, iaMap: {},
       iaOpen: { list: true, parsed: false, codes: false, nutrients: false, scout: false },
       brand: 'Flax4Life', brandLogo: '../assets/brand-flax4life-logo.png',
     });
     iaNudgeTaken = false;
+    iaLookupState = null;
+    if (iaLookupTimer) { clearTimeout(iaLookupTimer); iaLookupTimer = 0; }
     messagesEl.innerHTML = '';
     if (welcomeEl) { welcomeEl.classList.remove('sc-hidden'); welcomeEl.style.display = ''; }
     renderNFP();
@@ -4890,7 +4988,7 @@
      a dropzone, so accept a dragged image file straight onto it. Delegated on
      nfpBody since the hero markup is re-rendered on every state change. */
   function heroDropTarget(el) {
-    return el && el.closest ? el.closest('.nfp-hero, .nfp-rcol, .nfp-rcol-empty, .nfp-header-photo, .nfp-fi-lead-photo, .nfp-fi-thumb--primary, .nfp-panel-header--photo') : null;
+    return el && el.closest ? el.closest('.nfp-hero, .nfp-rcol, .nfp-rcol-empty, .nfp-header-photo, .nfp-fi-lead-photo, .nfp-fi-thumb--primary, .nfp-brand-logo, .nfp-panel-header--photo') : null;
   }
   function dragHasImageFile(dt) {
     if (!dt) return false;
@@ -4937,6 +5035,10 @@
       const reader = new FileReader();
       reader.onload = () => {
         const src = reader.result;
+        if (hero.matches && hero.matches('.nfp-brand-logo, [data-nfp="upload-brand"]')) {
+          applyBrandLogo(src, file.name);
+          return;
+        }
         if (packBtn) {
           const i = Number(packBtn.dataset.arg);
           if (!isNaN(i)) applyPackPhoto(i, src, file.name);
@@ -4951,6 +5053,7 @@
   function handleNfpClick(action, arg) {
     switch (action) {
       case 'upload-main': openPhotoModal(); break;
+      case 'upload-brand': openPhotoModal('brand'); break;
       /* Inline empty-hero photo field: "Upload" opens the picker (offers camera
          on device); the URL box + arrow apply a pasted image URL right away. */
       case 'photo-upload': openPicker('main', { accept: 'image/*' }); break;
@@ -5005,6 +5108,7 @@
       case 'ia-confirm': confirmIaRow(arg); break;
       case 'ia-confirm-all': confirmAllIaRows(); break;
       case 'ia-review': reviewIaMappings(true); break;
+      case 'ia-lookup-row': lookupIngredientInChat(arg); break;
       case 'claim-product': doClaim(); break;
       case 'banner-step': peekBannerStep(arg); break;
       case 'banner-claim-step': peekBannerStep(1); break;
@@ -5053,7 +5157,47 @@
   let iaNudgeTaken = false;
   let iaNudgeWired = false;
   let iaNudgeRo = null;
+  let iaAnalyzeTimer = 0;
+  let iaLookupTimer = 0;
+  let iaLookupState = null;
   const IA_NUDGE_ID = 'nfp-ia-analyze';
+
+  /* Match the chat stream beat so the module's run and the transcript land together. */
+  function iaStreamDelay() {
+    if (prefersReducedMotion) return 0;
+    const stream = (window.__wiseStdMenu && window.__wiseStdMenu.stream)
+      ? window.__wiseStdMenu.stream()
+      : { on: true, level: 'full' };
+    if (!stream.on) return 160;
+    return stream.level === 'final' ? 300 : 560;
+  }
+
+  function paintIaAnalyzeBusy(on) {
+    const host = iaHost();
+    if (!host) return;
+    const root = host.querySelector('.nfp-ia');
+    if (root) root.classList.toggle('is-running', on);
+    const btn = host.querySelector('#nfp-ia-analyze-btn, button.nfp-ia-analyze');
+    if (!btn) return;
+    btn.disabled = !!on;
+    btn.classList.toggle('is-running', on);
+    btn.setAttribute('aria-busy', on ? 'true' : 'false');
+    if (on) {
+      btn.innerHTML = '<span class="nfp-ia-spin" aria-hidden="true"></span>Analyzing…';
+    }
+  }
+
+  function showIaAnalyzeRunning() {
+    paintIaAnalyzeBusy(true);
+    state.iaOpen.parsed = true;
+    const sec = iaHost() && iaHost().querySelector('[data-ia-sec="parsed"]');
+    if (!sec) return;
+    sec.classList.remove('is-collapsed');
+    sec.classList.add('is-rerunning');
+    const head = sec.querySelector('.nfp-ia-head');
+    if (head) head.setAttribute('aria-expanded', 'true');
+    scrollIaRowIntoView(sec, '.nfp-ia-parsed-row');
+  }
 
   function iaNudgeDismissed() {
     const api = window.WiseNudgeToast;
@@ -5236,6 +5380,7 @@
   }
 
   function runIngredientAnalysis(fromUser, echoUser) {
+    if (state.iaRunning) return;
     revealIngredientList();
     flushIngredientsFromPanel();
     if (!state.ingredients) {
@@ -5257,13 +5402,19 @@
     }
     const wasRan = !!state.iaRan;
     if (fromUser) iaNudgeTaken = true;
+    state.iaRunning = true;
     state.iaRan = true;
-    state.iaTick += 1;
-    replaceIaPanel();
+    state.iaOpen.parsed = true;
+    if (fromUser && echoUser !== false) {
+      addUser(wasRan ? 'Re-analyze the ingredients.' : 'Analyze the ingredients.');
+    }
+    requestAnimationFrame(() => {
+      showIaAnalyzeRunning();
+      refreshIaNudgeToast();
+    });
     if (fromUser) {
       const wf = iaWorkflow();
       const stats = wf.stats;
-      if (echoUser !== false) addUser(wasRan ? 'Re-analyze the ingredients.' : 'Analyze the ingredients.');
       const pendingBit = wf.pending
         ? ` <strong>${wf.pending}</strong> mapping${wf.pending === 1 ? '' : 's'} still need a review.`
         : ' Every row matched — confirm them, then test the code scores.';
@@ -5274,10 +5425,19 @@
         + ' Codes, nutrients and Wise Code AI results are in the Ingredients Analyzer.',
         nfpIntentChips({ skip: ['ia-analyze'] }));
     }
+    clearTimeout(iaAnalyzeTimer);
+    iaAnalyzeTimer = setTimeout(() => {
+      state.iaRunning = false;
+      state.iaTick += 1;
+      replaceIaPanel();
+      const sec = expandIaSection('parsed');
+      if (sec) scrollIaRowIntoView(sec, '.nfp-ia-parsed-row');
+    }, iaStreamDelay());
   }
 
   function confirmIaRow(id, echoUser) {
     if (!id) return;
+    revealIngredientList();
     state.iaConfirm[id] = true;
     const row = flattenParsed(parseIngredientTree(state.ingredients)).find((r) => r.id === id);
     const label = (row && (row.mapped || row.raw)) || id;
@@ -5292,6 +5452,7 @@
   }
 
   function confirmAllIaRows(echoUser) {
+    revealIngredientList();
     flattenParsed(parseIngredientTree(state.ingredients)).forEach((r) => {
       if (!r.isGroup && iaMatchOf(r) === 'ok' && r.id) state.iaConfirm[r.id] = true;
     });
@@ -5330,13 +5491,16 @@
   }
 
   function reviewIaMappings(echoUser) {
+    revealIngredientList();
     if (!state.iaRan) {
       state.iaOpen.parsed = true;
       runIngredientAnalysis(true, echoUser);
       return;
     }
     const sec = expandIaSection('parsed');
-    scrollIaRowIntoView(sec, '.nfp-ia-parsed-row[data-ia-match="bad"], .nfp-ia-parsed-row[data-ia-match="part"]');
+    requestAnimationFrame(() => {
+      scrollIaRowIntoView(sec || expandIaSection('parsed'), '.nfp-ia-parsed-row[data-ia-match="bad"], .nfp-ia-parsed-row[data-ia-match="part"]');
+    });
     if (echoUser === false) return;
     const wf = iaWorkflow();
     if (echoUser !== false) addUser(wf.pending ? `Review ${wf.pending} mapping${wf.pending === 1 ? '' : 's'}` : 'Review mappings');
@@ -5347,38 +5511,249 @@
       nfpIntentChips({ skip: ['ia-review'] }));
   }
 
-  function lookupUnmatchedIa(echoUser) {
-    if (!state.iaRan) {
-      state.iaOpen.parsed = true;
-      runIngredientAnalysis(true, echoUser);
-      return;
-    }
-    const sec = expandIaSection('parsed');
-    scrollIaRowIntoView(sec, '.nfp-ia-parsed-row[data-ia-match="bad"]');
-    const wf = iaWorkflow();
-    const names = wf.unmatched.map((r) => r.raw);
-    if (echoUser !== false) {
-      addUser(names.length === 1 ? `Look up ${names[0]}` : 'Look up unmatched ingredients');
-    }
-    if (!names.length) {
-      wiseSay('Nothing unmatched — every parsed ingredient has a mapping. Confirm the matches or test the code scores.',
-        nfpIntentChips({ skip: ['ia-lookup'] }));
-      return;
-    }
-    const listed = names.slice(0, 4).map((n) => `<strong>${esc(n)}</strong>`).join(', ')
-      + (names.length > 4 ? ` and ${names.length - 4} more` : '');
+  function parsedLeaves() {
+    return flattenParsed(parseIngredientTree(state.ingredients)).filter((r) => r && !r.isGroup);
+  }
+
+  function findParsedLeaf(idOrName) {
+    const raw = String(idOrName || '').trim();
+    if (!raw) return null;
+    const key = raw.toLowerCase();
+    const leaves = parsedLeaves();
+    return leaves.find((r) => r.id === raw)
+      || leaves.find((r) => String(r.raw || '').toLowerCase() === key)
+      || leaves.find((r) => String(r.mapped || '').toLowerCase() === key)
+      || leaves.find((r) => {
+        const name = String(r.raw || '').toLowerCase();
+        return name.includes(key) || key.includes(name);
+      });
+  }
+
+  function iaRowSel(id) {
+    return `.nfp-ia-parsed-row[data-ia-id="${String(id == null ? '' : id).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"]`;
+  }
+
+  function markIaLookupRow(id) {
+    const host = iaHost();
+    if (!host) return;
+    host.querySelectorAll('.nfp-ia-parsed-row.is-lookup').forEach((el) => el.classList.remove('is-lookup'));
+    const row = id != null ? host.querySelector(iaRowSel(id)) : null;
+    if (row) row.classList.add('is-lookup');
+  }
+
+  /* Same candidate set the Hungry-Man food-detail lookup used: primary
+     record plus alternate / parent / derived / NOS / extract / synthetic / blend. */
+  function mockIaLookupResults(row) {
+    const n = String((row && (row.mapped || row.raw)) || '').toUpperCase().replace(/[^A-Z0-9\s-]/g, '').trim()
+      || 'INGREDIENT';
+    const first = n.split(/\s+/)[0] || n;
+    const primaryScore = !row ? 70 : row.match === 'ok' ? 97 : row.match === 'part' ? 74 : 41;
+    const primaryDesc = !row || row.match === 'ok'
+      ? 'Primary database record. Verified compound with full nutritional profile.'
+      : row.match === 'part'
+        ? 'Close labeling convention. Same compound under a nearby classification branch.'
+        : 'Best available guess. Confirm only if the label form matches.';
+    const primaryCat = row && row.cat
+      ? (row.sub ? row.cat + ' · ' + row.sub : row.cat)
+      : 'Exact Match';
+    return [
+      { name: (row && row.mapped) || n, category: primaryCat, score: primaryScore, desc: primaryDesc },
+      { name: n + ' (ALT)', category: 'Alternate Form', score: 83, desc: 'Alternate labeling convention. Same compound under a different classification branch.' },
+      { name: first, category: 'Generic Parent', score: 70, desc: 'Broader parent-class entry. Less specific; use only when form cannot be confirmed.' },
+      { name: n + ' DERIVED', category: 'Derived / Processed', score: 58, desc: 'Processed or derived form. May include carriers, processing aids, or co-ingredients.' },
+      { name: n + ' NOS', category: 'Not Otherwise Specified', score: 44, desc: 'Catch-all record when exact form cannot be determined from label text alone.' },
+      { name: n + ' EXTRACT', category: 'Extract / Concentrate', score: 33, desc: 'Concentrated or extracted form. Typically higher potency per unit weight.' },
+      { name: 'SYNTHETIC ' + first, category: 'Synthetic Analog', score: 22, desc: 'Laboratory-synthesized equivalent. Functional parity but different origin declaration.' },
+      { name: n + ' BLEND', category: 'Blend / Mixture', score: 14, desc: 'Multi-component blend in which this ingredient is the primary component.' },
+    ];
+  }
+
+  function iaLookupCardHTML(r, i) {
+    const tone = r.score >= 85 ? 'ok' : r.score >= 60 ? 'part' : 'muted';
+    return `<div class="sc-il-wrap"><button type="button" class="sc-il-card sc-il-card--${tone}" data-action="ia-pick-lookup" data-arg="${i}">`
+      + `<span class="sc-il-card-main">`
+      + `<span class="sc-il-name">${esc(r.name)}</span>`
+      + `<span class="sc-il-cat">${esc(r.category)}</span>`
+      + `<span class="sc-il-desc">${esc(r.desc)}</span>`
+      + `<span class="sc-il-bar"><span class="sc-il-bar-fill" style="--il-w:${r.score}%"></span></span>`
+      + `</span>`
+      + `<span class="sc-il-score" data-countup>${r.score}%</span>`
+      + `</button></div>`;
+  }
+
+  function iaLookupThinkDelay() {
+    if (prefersReducedMotion) return 0;
+    const stream = (window.__wiseStdMenu && window.__wiseStdMenu.stream)
+      ? window.__wiseStdMenu.stream()
+      : { on: true, level: 'full' };
+    if (!stream.on) return 0;
+    return stream.level === 'final' ? 300 : 2200;
+  }
+
+  function iaLookupChips() {
     const chips = nfpIntentChips({ skip: ['ia-lookup'] });
+    if (iaLookupState && iaLookupState.shown < iaLookupState.all.length) {
+      chips.unshift({ label: 'Show more results', icon: 'expand_more', action: 'ia-lookup-more' });
+    }
     chips.splice(Math.min(1, chips.length), 0, {
       label: 'Open Ingredient Browser',
       icon: 'travel_explore',
       action: 'ia-browser',
     });
+    return chips.slice(0, 8);
+  }
+
+  function lastWiseBody() {
+    const lines = messagesEl ? messagesEl.querySelectorAll('.sc-line.sc-line-wiseai:not(.sc-line-typing)') : [];
+    const line = lines.length ? lines[lines.length - 1] : null;
+    return line && line.querySelector('.sc-line-body');
+  }
+
+  function landIaLookupResults() {
+    const st = iaLookupState;
+    if (!st) return;
+    const first = st.all.slice(0, 5);
+    st.shown = first.length;
+    addWISEcodeAI(
+      `<p>Found matches for <strong>${esc(st.name)}</strong>. Select the best mapping:</p>`
+      + first.map((r, i) => iaLookupCardHTML(r, i)).join('')
+      + `<p class="sc-il-hint">Select a match to update the normalized name and attest this mapping.</p>`,
+      iaLookupChips());
+  }
+
+  function lookupIngredientInChat(id, echoUser) {
+    revealIngredientList();
+    if (!state.iaRan) {
+      state.iaOpen.parsed = true;
+      runIngredientAnalysis(true, echoUser);
+      return;
+    }
+    const row = findParsedLeaf(id);
+    if (!row) {
+      lookupUnmatchedIa(echoUser);
+      return;
+    }
+    const sec = expandIaSection('parsed');
+    requestAnimationFrame(() => {
+      scrollIaRowIntoView(sec || expandIaSection('parsed'), iaRowSel(row.id));
+      markIaLookupRow(row.id);
+    });
+    if (echoUser !== false) addUser('Look up ' + row.raw);
+    const results = mockIaLookupResults(row);
+    iaLookupState = { rowId: row.id, name: row.raw, all: results, shown: 0 };
+    if (iaLookupTimer) clearTimeout(iaLookupTimer);
+    const delay = iaLookupThinkDelay();
+    if (!delay) {
+      landIaLookupResults();
+      return;
+    }
+    const t = showTyping('Looking up WISEcode matches for ' + row.raw + '…');
+    const status = [
+      'Tokenizing label text…',
+      'Running NLP normalization…',
+      'Querying compound database…',
+      'Scoring similarity matches…',
+      'Ranking top candidates…',
+    ];
+    let msgIdx = 0;
+    const label = t.querySelector('.sc-typing-label');
+    const ticker = setInterval(() => {
+      if (!t.isConnected) { clearInterval(ticker); return; }
+      if (label && msgIdx < status.length) label.textContent = status[msgIdx++];
+    }, 420);
+    iaLookupTimer = setTimeout(() => {
+      clearInterval(ticker);
+      if (t.isConnected) t.remove();
+      iaLookupTimer = 0;
+      landIaLookupResults();
+    }, delay);
+  }
+
+  function pickIaLookup(idx, echoUser) {
+    const st = iaLookupState;
+    if (!st) return;
+    const r = st.all[Number(idx)];
+    if (!r) return;
+    messagesEl.querySelectorAll('.sc-il-card').forEach((el) => {
+      el.disabled = true;
+      const mine = el.getAttribute('data-arg') === String(idx);
+      el.classList.toggle('is-picked', mine);
+      el.classList.toggle('is-dim', !mine);
+    });
+    const from = st.name;
+    if (echoUser !== false) addUser('Map ' + from + ' to ' + r.name);
+    const catBits = String(r.category || '').split('·').map((s) => s.trim());
+    state.iaMap[iaMapKey(from)] = {
+      mapped: r.name,
+      cat: catBits[0] || 'Ingredient',
+      sub: catBits[1] || '',
+    };
+    if (st.rowId) state.iaConfirm[st.rowId] = true;
+    replaceIaPanel();
+    const sec = expandIaSection('parsed');
+    requestAnimationFrame(() => {
+      scrollIaRowIntoView(sec || expandIaSection('parsed'), iaRowSel(st.rowId));
+      markIaLookupRow(st.rowId);
+      const el = iaHost() && iaHost().querySelector(iaRowSel(st.rowId));
+      if (el) {
+        el.classList.add('is-attested');
+        setTimeout(() => el.classList.remove('is-attested'), 1400);
+      }
+    });
     wiseSay(
-      `Opened the unmatched ${names.length === 1 ? 'ingredient' : 'ingredients'} in <strong>Parsed Ingredients</strong>: ${listed}. Search the canon for a better map, or confirm a close match if it\'s right.`,
-      chips.slice(0, 8));
+      `Mapped <strong>${esc(from)}</strong> to <strong>${esc(r.name)}</strong> (${esc(r.category)}) and attested it.`,
+      nfpIntentChips({ skip: ['ia-lookup'] }));
+  }
+
+  function showMoreIaLookup(echoUser) {
+    const st = iaLookupState;
+    if (!st) return;
+    const next = st.all.slice(st.shown, st.shown + 3);
+    if (!next.length) return;
+    const start = st.shown;
+    st.shown += next.length;
+    const body = lastWiseBody();
+    const hint = body && body.querySelector('.sc-il-hint');
+    const html = next.map((r, i) => iaLookupCardHTML(r, start + i)).join('');
+    const before = hint || (body && body.querySelector('.sc-line-meta'));
+    if (before) before.insertAdjacentHTML('beforebegin', html);
+    else if (body) body.insertAdjacentHTML('beforeend', html);
+    const wraps = body ? Array.from(body.querySelectorAll('.sc-il-wrap')).slice(-next.length) : [];
+    if (!prefersReducedMotion) {
+      wraps.forEach(apPrimeLeft);
+      apRevealStaggered(wraps, 40, 70, scrollDown);
+    } else {
+      scrollDown();
+    }
+    const chipRow = messagesEl && messagesEl.querySelector('.sc-reply-chips:last-of-type');
+    const more = chipRow && chipRow.querySelector('[data-action="ia-lookup-more"]');
+    if (more && st.shown >= st.all.length) more.remove();
+  }
+
+  function lookupUnmatchedIa(echoUser) {
+    revealIngredientList();
+    if (!state.iaRan) {
+      state.iaOpen.parsed = true;
+      runIngredientAnalysis(true, echoUser);
+      return;
+    }
+    const wf = iaWorkflow();
+    const names = wf.unmatched.map((r) => r.raw);
+    if (!names.length) {
+      if (echoUser !== false) addUser('Look up unmatched ingredients');
+      wiseSay('Nothing unmatched — every parsed ingredient has a mapping. Confirm the matches or tap the owl next to any name to search a better map.',
+        nfpIntentChips({ skip: ['ia-lookup'] }));
+      return;
+    }
+    const first = wf.unmatched[0];
+    if (echoUser !== false) {
+      addUser(names.length === 1 ? `Look up ${names[0]}` : 'Look up unmatched ingredients');
+    }
+    lookupIngredientInChat(first.id, false);
   }
 
   function openIaSection(id, echoUser) {
+    revealIngredientList();
     const titles = {
       list: (state.ingredients || '').trim() ? 'Ingredient List' : 'Add your ingredients list',
       parsed: 'Parsed Ingredients',
@@ -5405,6 +5780,7 @@
   }
 
   function testIaCodes(echoUser) {
+    revealIngredientList();
     if (!state.iaRan) {
       state.iaOpen.codes = true;
       runIngredientAnalysis(true, echoUser);
@@ -5428,6 +5804,7 @@
   }
 
   function testIaScout(echoUser) {
+    revealIngredientList();
     if (!state.iaRan) {
       state.iaOpen.scout = true;
       runIngredientAnalysis(true, echoUser);

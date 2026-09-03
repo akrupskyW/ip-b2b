@@ -1,4 +1,11 @@
 import './date-column.js';
+import { esc } from './escape-html.js';
+import { ARROW_SVG } from './sort-arrow.js';
+import { createToast } from './toast.js';
+import { searchToolbarHTML } from './wise-toolbar.js';
+import { openModal, closeModal, modalHTML } from './wise-modal.js';
+import { createChatBridge } from './chat-bridge.js';
+const toast = createToast('adm');
 
 /**
  * Non-UPF Verification Dashboard — WISEcode Admin module.
@@ -9,12 +16,6 @@ import './date-column.js';
  * progress list) over a filterable product table. Uses the shared,
  * token-driven `adm-*` component set from wise.css.
  */
-
-function esc(s) {
-  return String(s == null ? '' : s)
-    .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
 
 /* Token-tracking chart colors (resolved live so they follow light/dark). */
 function cssVar(name, fallback) {
@@ -97,7 +98,6 @@ const COLS = [
   { key: 'status',  label: 'Status',        sortable: true,  value: (p) => PROD_STATUS[p.status].label, type: 'text' },
   { key: 'updated', label: 'Updated Last',  sortable: true,  value: (p) => (dc() ? dc().sortValue(prodDates(p), 'product', dateLead) : (Date.parse(`${p.updated} ${p.time}`) || 0)), type: 'num' },
 ];
-const ARROW_SVG = '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.5V2.5M3 6.5L6 9.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 const FILTERS = {
   brand:  { label: 'Brand',               opts: ['All Brands', 'Nutrient Survival', 'Flax4Life', 'Goodles'] },
@@ -140,22 +140,8 @@ function setViewMode(mode) {
   });
 }
 
-let chatApi = null;
-export function setNonUpfChat(api) { chatApi = api; }
-/* respond() streams the shared reasoning trace before the reply lands, so a
-   mirrored action reads like any other WISEcodeAI turn — never an instant paste. */
-function pushChat(html) { if (chatApi && html) { chatApi.hideWelcome?.(); (chatApi.respond || chatApi.addWISEcodeAI)(html); } }
-
-function toast(msg, icon = 'check') {
-  let wrap = document.getElementById('adm-toast-wrap');
-  if (!wrap) { wrap = document.createElement('div'); wrap.id = 'adm-toast-wrap'; document.body.appendChild(wrap); }
-  const t = document.createElement('div');
-  t.className = 'adm-toast';
-  t.innerHTML = `<span class="material-symbols-outlined">${esc(icon)}</span><span>${esc(msg)}</span>`;
-  wrap.appendChild(t);
-  requestAnimationFrame(() => t.classList.add('is-in'));
-  setTimeout(() => { t.classList.remove('is-in'); setTimeout(() => t.remove(), 260); }, 2600);
-}
+const { setChat, pushChat } = createChatBridge();
+export const setNonUpfChat = setChat;
 
 /* ==================================================================== */
 /* Charts                                                               */
@@ -240,7 +226,7 @@ function donutCard() {
               <g transform="rotate(-90 150 150)">${donutRing(parts, 150, 150, 124, 26, 11)}</g>
             </svg>
             <div class="adm-donut-center">
-              <span class="adm-donut-num" data-count-to="${pct}">0%</span>
+              <span class="adm-donut-num">${pct}%</span>
               <span class="adm-donut-label">Non-UPF</span>
               <span class="adm-donut-sub">${PORTFOLIO.nonUpf} of ${total} products</span>
             </div>
@@ -269,7 +255,7 @@ function barsCard() {
   }).join('');
   return `
     <div class="adm-chart-card">
-      <h3 class="adm-chart-title">WISEcode UPFs <span style="font-family:'WISE Digits', 'Noto Serif',Georgia,serif;color:var(--text-subtle);font-weight:700">${total}</span></h3>
+      <h3 class="adm-chart-title">WISEcode UPFs <span style="font-family:'WISE Digits', 'Noto Serif',serif;color:var(--text-subtle);font-weight:700">${total}</span></h3>
       <div class="adm-chart-body"><div class="adm-bars">${bars}</div></div>
     </div>`;
 }
@@ -308,7 +294,7 @@ function statCardsHtml() {
     const chipCls = STAT_CHIP[c.key == null ? '' : c.key] || 'adm-chip--muted';
     return `
     <div class="adm-vf-stat${c.primary ? ' is-active' : ''}${c.accent ? ' ' + c.accent : ''}" data-adm-vf="${c.key == null ? '' : esc(c.key)}" role="button" tabindex="0">
-      <span class="adm-vf-stat-num" data-count-to="${c.num}">0</span>
+      <span class="adm-vf-stat-num">${c.num}</span>
       <span class="adm-vf-stat-chipwrap"><span class="adm-chip ${chipCls}"><span class="material-symbols-outlined">${esc(c.icon)}</span>${esc(c.label)}</span></span>
       <span class="adm-vf-stat-sub">${esc(c.sub)}</span>
       ${c.action ? `<button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-adm-action="${esc(c.action.toLowerCase())}">${esc(c.action)}</button>` : ''}
@@ -417,14 +403,20 @@ function paint() {
         </div>
       </header>
 
-      <div class="adm-toolbar">
-        <div class="adm-search-inline has-filter">
-          <span class="material-symbols-outlined">search</span>
-          <input type="text" class="adm-search" data-adm-search placeholder="Search products by name or brand" aria-label="Search products" value="${esc(query)}" />
-          <button type="button" class="adm-search-filter${activeFilterCount() ? ' has-dot' : ''}${filterOpen ? ' is-active' : ''}" data-adm-action="toggle-filters" aria-haspopup="true" aria-expanded="${filterOpen}" title="Filters"><span class="material-symbols-outlined">tune</span></button>
-          ${filterPopHtml()}
-        </div>
-      </div>
+      ${searchToolbarHTML({
+        variant: 'adm',
+        placeholder: 'Search products by name or brand',
+        ariaLabel: 'Search products',
+        value: query,
+        inputType: 'text',
+        inputAttrs: 'data-adm-search',
+        filter: {
+          attrs: 'data-adm-action="toggle-filters"',
+          open: filterOpen,
+          active: activeFilterCount() > 0,
+          popHtml: filterPopHtml(),
+        },
+      })}
 
       <div class="adm-chart-grid">
         ${donutCard()}
@@ -482,43 +474,12 @@ function sweepDonut(duration = 1400) {
   requestAnimationFrame(tick);
 }
 
-/* Count a single number element up from 0 to its `data-count-to` target,
-   easing so it lands in sync with the ring sweep / bar fills. `suffix` appends
-   a unit (e.g. '%') to every frame. */
-function countUpEl(el, duration = 1400, suffix = '') {
-  if (!el) return;
-  const to = parseInt(el.dataset.countTo, 10);
-  if (!Number.isFinite(to)) return;
-  if (prefersReducedMotion()) { el.textContent = `${to}${suffix}`; return; }
-  const start = performance.now();
-  const tick = (now) => {
-    const t = easeOutCubic(Math.min(1, (now - start) / duration));
-    el.textContent = `${Math.round(to * t)}${suffix}`;
-    if (t < 1) requestAnimationFrame(tick);
-    else el.textContent = `${to}${suffix}`;
-  };
-  requestAnimationFrame(tick);
-}
-
-/* Count the center percentage up from 0, easing in sync with the ring sweep. */
-function countUpDonut(duration = 1400) {
-  if (!hostEl) return;
-  countUpEl(hostEl.querySelector('.adm-donut-num[data-count-to]'), duration, '%');
-}
-
-/* Count every scorecard's headline number up from 0 to its total. */
-function countUpStats(duration = 1200) {
-  if (!hostEl) return;
-  hostEl.querySelectorAll('.adm-vf-stat-num[data-count-to]').forEach((el) => countUpEl(el, duration));
-}
-
-/* Replay just the chart visuals (donut sweep, bar fills, status bars, donut
-   count). Shared by the entrance animation and the click-to-replay. */
+/* Replay just the chart visuals (donut sweep, bar fills, status bars).
+   Scorecard and donut numerals count up via js/count-up-all.js. */
 function animateChartVisuals() {
   if (!hostEl) return;
   requestAnimationFrame(() => {
     sweepDonut();
-    countUpDonut();
     hostEl.querySelectorAll('.adm-bar-fill[data-h]').forEach((b) => { b.style.height = b.dataset.h + '%'; });
     hostEl.querySelectorAll('.adm-vrow-bar span[data-w]').forEach((s) => { s.style.width = s.dataset.w + '%'; });
   });
@@ -527,7 +488,6 @@ function animateChartVisuals() {
 function animateCharts() {
   if (!hostEl) return;
   animateChartVisuals();
-  countUpStats();
 }
 
 /* Clicking a chart card replays its entrance animation — mirrors the
@@ -537,18 +497,9 @@ function replayCharts() {
   hostEl.querySelectorAll('.adm-donut-arc').forEach((arc) => arc.setAttribute('d', ''));
   hostEl.querySelectorAll('.adm-bar-fill[data-h]').forEach((b) => { b.style.height = '0'; });
   hostEl.querySelectorAll('.adm-vrow-bar span[data-w]').forEach((s) => { s.style.width = '0'; });
-  const num = hostEl.querySelector('.adm-donut-num[data-count-to]');
-  if (num) num.textContent = '0%';
   animateChartVisuals();
 }
 
-/* Clicking a single scorecard replays its counter animation up to the score. */
-function replayStatCard(card) {
-  const el = card?.querySelector('.adm-vf-stat-num[data-count-to]');
-  if (!el) return;
-  el.textContent = '0';
-  countUpEl(el, 900);
-}
 
 function applyProductFilter() {
   if (!hostEl) return;
@@ -743,29 +694,25 @@ function duplicateEditHref(upc) {
 
 /* ---- Duplicate modal (portalled to <body>) -------------------------- */
 let dupModalEl = null;
-function dupKeyHandler(e) { if (e.key === 'Escape') closeDupModal(); }
 function closeDupModal() {
   if (!dupModalEl) return;
   const scrim = dupModalEl;
   dupModalEl = null;
-  scrim.classList.remove('is-open');
-  setTimeout(() => scrim.remove(), 220);
-  document.removeEventListener('keydown', dupKeyHandler);
+  closeModal(scrim);
 }
 function openDupModal(upc) {
   closeDupModal();
   const name = productName(upc);
-  const scrim = document.createElement('div');
-  scrim.className = 'adm-modal-scrim';
-  scrim.innerHTML = `
-    <div class="adm-modal adm-modal--dup" role="dialog" aria-modal="true" aria-labelledby="adm-dup-title">
-      <button type="button" class="adm-modal-x" data-adm-dup="close" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
-      <div class="adm-modal-head">
-        <span class="adm-modal-eyebrow">Duplicate product</span>
-        <h2 class="adm-modal-title" id="adm-dup-title">Duplicate &ldquo;${esc(name)}&rdquo;</h2>
-        <p class="adm-modal-sub">How would you like to duplicate this product?</p>
-      </div>
-      <div class="adm-modal-body">
+  const { scrim } = openModal({
+    id: 'adm-dup-modal',
+    html: modalHTML({
+      eyebrow: 'Duplicate product',
+      title: `Duplicate &ldquo;${esc(name)}&rdquo;`,
+      titleId: 'adm-dup-title',
+      sub: 'How would you like to duplicate this product?',
+      closeAttrs: 'data-adm-dup="close" data-wise-modal-close',
+      modalClass: 'adm-modal--dup',
+      body: `
         <button type="button" class="adm-dup-opt" data-adm-dup="copy" data-adm-upc="${esc(upc)}">
           <span class="adm-dup-opt-ic"><span class="material-symbols-outlined">content_copy</span></span>
           <span class="adm-dup-opt-body">
@@ -781,14 +728,12 @@ function openDupModal(upc) {
             <span class="adm-dup-opt-desc">Start a brand-new product pre-filled with these fields, then change anything before you save.</span>
           </span>
           <span class="material-symbols-outlined adm-dup-opt-arrow">chevron_right</span>
-        </button>
-      </div>
-    </div>`;
-  document.body.appendChild(scrim);
+        </button>`,
+    }),
+    onClose: () => { if (dupModalEl === scrim) dupModalEl = null; },
+  });
   dupModalEl = scrim;
-  requestAnimationFrame(() => scrim.classList.add('is-open'));
   scrim.addEventListener('click', (e) => {
-    if (e.target === scrim) { closeDupModal(); return; }
     const opt = e.target.closest('[data-adm-dup]');
     if (!opt) return;
     const kind = opt.dataset.admDup;
@@ -802,7 +747,6 @@ function openDupModal(upc) {
     }
     if (kind === 'modify') { closeDupModal(); window.location.href = duplicateEditHref(ctx); return; }
   });
-  document.addEventListener('keydown', dupKeyHandler);
 }
 
 function runAction(action, ctx) {
@@ -850,7 +794,7 @@ export function renderNonUpfDashboard(mainEl) {
     const menuBtn = e.target.closest('[data-adm-action="manage-product"]');
     if (menuBtn) { e.preventDefault(); e.stopPropagation(); openRowMenu(menuBtn, menuBtn.dataset.admUpc || ''); return; }
     const vf = e.target.closest('[data-adm-vf]');
-    if (vf && !e.target.closest('[data-adm-action]')) { const k = vf.dataset.admVf || null; const next = (k === filters._active) ? null : k; setNonUpfStatus(next); filters._active = next; replayStatCard(vf); return; }
+    if (vf && !e.target.closest('[data-adm-action]')) { const k = vf.dataset.admVf || null; const next = (k === filters._active) ? null : k; setNonUpfStatus(next); filters._active = next; return; }
     const act = e.target.closest('[data-adm-action]');
     if (act) { e.preventDefault(); runAction(act.dataset.admAction, act.dataset.admUpc || ''); return; }
   });
@@ -859,7 +803,7 @@ export function renderNonUpfDashboard(mainEl) {
     const sortH = e.target.closest('[data-adm-sort]');
     if (sortH) { e.preventDefault(); toggleSort(sortH.dataset.admSort); return; }
     const vf = e.target.closest('[data-adm-vf]');
-    if (vf) { e.preventDefault(); const k = vf.dataset.admVf || null; setNonUpfStatus(k); replayStatCard(vf); }
+    if (vf) { e.preventDefault(); const k = vf.dataset.admVf || null; setNonUpfStatus(k); }
   });
   mainEl.addEventListener('input', (e) => {
     const s = e.target.closest('[data-adm-search]');
@@ -873,11 +817,15 @@ export function renderNonUpfDashboard(mainEl) {
   /* Dismiss the filter popover / row menu on any outside click (attached once). */
   if (!docListenersBound) {
     docListenersBound = true;
+    window.WisePopover?.bindFilterPop({
+      isOpen: () => filterOpen,
+      setOpen: setFilterOpen,
+      insideSel: '.wise-search-inline, .adm-search-inline',
+    });
     document.addEventListener('click', (e) => {
-      if (filterOpen && !e.target.closest('.adm-search-inline')) setFilterOpen(false);
       if (openMenuEl && !e.target.closest('.adm-menu') && !e.target.closest('[data-adm-action="manage-product"]') && !e.target.closest('[data-adm-action="page-options"]')) closeRowMenu();
     });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { setFilterOpen(false); closeRowMenu(); } });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeRowMenu(); });
   }
 }
 

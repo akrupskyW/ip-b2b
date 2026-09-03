@@ -383,6 +383,9 @@
      (nav rail expand/collapse) cannot replay opacity-from keyframes. */
   function settleAnim(el) {
     if (!el || el.classList.contains('is-entered')) return;
+    /* Hidden drawers must not latch `.is-entered` — that would suppress
+       stickySlideRight the first time they are actually shown. */
+    if (el.hidden || (el.style && el.style.display === 'none')) return;
     var mark = function () { el.classList.add('is-entered'); };
     el.addEventListener('animationend', function (e) {
       if (e.target === el) mark();

@@ -407,8 +407,8 @@ export const APP_LOGIC = [
         how: 'The ingredient list, Analyze button, and Parsed / Codes / Nutrients / Scout accordions render in <code>#ia-panel</code>, a nested sticky drawer to the right of Product Details. The drawer starts closed. Verify ingredients (banner, chip, or <code>from=verify</code>) and Analyze open it at double pane width; Product Details\u2019 ⋯ can toggle it. There is no Save to Portfolio footer on the product module \u2014 save lives on the add banner and in chat. The analyzer does not take the fill-width default.',
       },
       {
-        title: 'Category docks with the ⋯, not in the size row',
-        how: 'When <code>useHeaderIdentity()</code> is on, <code>productSizesGroupHTML()</code> puts the category dropdown in the product-name row as <code>.nfp-fi-cat--dock</code> — a 28px pill immediately left of the floated ⋯ and width controls, matching their height. It is not a thumb-row extra.',
+        title: 'Category docks under the barcode as a plain link',
+        how: 'When <code>useHeaderIdentity()</code> is on, <code>productSizesGroupHTML()</code> puts the category dropdown under the barcode as <code>.nfp-fi-cat--dock</code> — a text link with a chevron, no pill fill or border. It is not a thumb-row extra.',
       },
       {
         title: 'One picture hides the tiny preview; the barcode leads the size row',
@@ -615,7 +615,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Surface actions mirror into the thread',
-        how: 'Hosts call <code>set*Chat(api)</code> (<code>setDashChat</code>, <code>setGrasChat</code>, <code>setInvoicesChat</code>, …) and then <code>pushChat()</code>, which adds the user line and calls <code>chatApi.respond()</code> — the streamed path, not a raw paste. Anything that happens in the module beside the chat must read as though the assistant did it.',
+        how: 'Each board gets a chat handle from <code>createChatBridge()</code> and exports it as <code>set*Chat</code> (<code>setDashChat</code>, <code>setGrasChat</code>, <code>setInvoicesChat</code>, …). <code>pushChat()</code> then adds the user line and calls <code>chatApi.respond()</code> — the streamed path, not a raw paste. Anything that happens in the module beside the chat must read as though the assistant did it.',
       },
       {
         title: 'onIntent\u2019s return value decides who narrates',

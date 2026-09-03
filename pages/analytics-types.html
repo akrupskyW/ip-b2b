@@ -41,7 +41,7 @@
        so the shared pages/wise.css rules aren't touched elsewhere.
     ===================================================================== */
     body[data-product-id="dashboard"] {
-      --font-serif: 'WISE Digits', 'Noto Serif', 'Noto Serif Fallback', Georgia, 'Times New Roman', serif;
+      --font-serif: 'WISE Digits', 'Noto Serif', serif;
     }
 
     /* --- H1 / H2 headings --- */
@@ -201,7 +201,7 @@
     }
     html.dark .att-eyebrow { color: var(--primary-bright, var(--primary)); }
     .att-title {
-      font-family: 'WISE Digits', var(--font-serif, Georgia, serif);
+      font-family: 'WISE Digits', var(--font-serif);
       font-size: 21px; font-weight: 700; color: var(--text); letter-spacing: -0.01em;
     }
     .att-intro {
@@ -606,7 +606,7 @@
       color: #fff;
       border: none;
       border-radius: 8px;
-      font-family: 'WISE Digits', var(--font-serif, Georgia, serif);
+      font-family: 'WISE Digits', var(--font-serif);
       font-size: 12px;
       font-weight: 700;
       letter-spacing: 0.02em;
@@ -1221,7 +1221,7 @@
       font-variation-settings: 'FILL' 0, 'wght' 400, 'opsz' 24;
     }
     .pscale-tier {
-      font-family: 'WISE Digits', var(--font-serif, Georgia, serif);
+      font-family: 'WISE Digits', var(--font-serif);
       font-size: 1.0625rem; font-weight: 700; line-height: 1.12; letter-spacing: -0.01em;
     }
     .pscale-cap {
@@ -1371,7 +1371,7 @@
     }
     .att-hero-title {
       margin: 0;
-      font-family: 'WISE Digits', var(--font-serif, Georgia, serif);
+      font-family: 'WISE Digits', var(--font-serif);
       font-size: 2.1rem; font-weight: 800; line-height: 1.05;
       letter-spacing: -0.02em; color: #fff;
     }
@@ -1504,7 +1504,7 @@
     .rpt-hero-logo img { display: block; width: 100%; height: 100%; object-fit: cover; }
     /* Initials fallback when a brand has no logo asset. */
     .rpt-hero-logo-monogram {
-      font-family: 'WISE Digits', var(--font-serif, Georgia, serif);
+      font-family: 'WISE Digits', var(--font-serif);
       font-size: 2.4rem;
       font-weight: 800;
       letter-spacing: 0.02em;
@@ -1519,7 +1519,7 @@
     }
     .rpt-hero-title {
       margin: 0;
-      font-family: 'WISE Digits', var(--font-serif, Georgia, serif);
+      font-family: 'WISE Digits', var(--font-serif);
       font-size: 2.1rem;
       font-weight: 800;
       line-height: 1.05;
@@ -1528,7 +1528,7 @@
     }
     .rpt-hero-tagline {
       margin: 1px 0 0;
-      font-family: 'WISE Digits', var(--font-serif, Georgia, serif);
+      font-family: 'WISE Digits', var(--font-serif);
       font-style: italic;
       font-size: 1.05rem;
       font-weight: 500;
@@ -1854,62 +1854,55 @@
         if (btn) btn.innerHTML = logoInner(url);
       }
 
-      /* Self-contained image editor modal — reuses the shared .dash-modal /
-         .dash-banner-* styles (loaded via dashboard.css) for visual parity with
-         the hero logo + banner editors in aha.html. Parameterised so the same
-         panel serves both the product image and the brand logo. */
-      var imageModalEls = null;
-      function ensureImageModal() {
-        if (imageModalEls) return imageModalEls;
-        var scrim = document.createElement('div');
-        scrim.className = 'dash-modal-scrim';
-        var modal = document.createElement('div');
-        modal.className = 'dash-modal';
-        modal.setAttribute('role', 'dialog');
-        modal.setAttribute('aria-modal', 'true');
-        scrim.appendChild(modal);
-        document.body.appendChild(scrim);
-        scrim.addEventListener('click', function (e) { if (e.target === scrim) closeImageModal(); });
-        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeImageModal(); });
-        imageModalEls = { scrim: scrim, modal: modal };
-        return imageModalEls;
+      /* Image editor — same shared overlay as the Overview banner / logo
+         pickers. Parameterised so the same panel serves the product image
+         and the brand logo. */
+      var imageModalClose = null;
+      function closeImageModal() {
+        if (imageModalClose) imageModalClose();
+        else if (typeof window.WiseCloseModal === 'function') window.WiseCloseModal('att-image-modal');
+        imageModalClose = null;
       }
-      function closeImageModal() { if (imageModalEls) imageModalEls.scrim.classList.remove('is-open'); }
 
       function openImageModal(cfg) {
-        var refs = ensureImageModal();
-        var scrim = refs.scrim, modal = refs.modal;
+        var openModal = window.WiseOpenModal;
+        var modalHTML = window.WiseModalHTML;
+        var modalFoot = window.WiseModalFoot;
+        if (!openModal || !modalHTML || !modalFoot) return;
         var current = cfg.getCurrent();
         var draft = current;
+        var opened = openModal({
+          id: 'att-image-modal',
+          persistent: true,
+          html: modalHTML({
+            eyebrow: escAttr(cfg.eyebrow),
+            title: escAttr(cfg.title),
+            titleId: 'att-image-title',
+            closeAttrs: 'data-img-close data-wise-modal-close',
+            body:
+              '<div class="dash-banner-preview' + (cfg.previewMod ? ' ' + cfg.previewMod : '') + '">' +
+                '<div class="dash-banner-preview-img" id="att-img-preview-img"></div>' +
+                '<span class="dash-banner-preview-empty" id="att-img-preview-empty"><span class="material-symbols-outlined">image</span>' + escAttr(cfg.emptyLabel) + '</span>' +
+              '</div>' +
+              '<label class="dash-banner-drop" id="att-img-drop">' +
+                '<input type="file" accept="image/*" id="att-img-file" hidden>' +
+                '<span class="material-symbols-outlined">cloud_upload</span>' +
+                '<span class="dash-banner-drop-text"><strong>Upload an image</strong> or drag &amp; drop<br><span class="dash-banner-drop-hint">' + escAttr(cfg.dropHint) + '</span></span>' +
+              '</label>' +
+              '<div class="dash-banner-or"><span>or paste a URL</span></div>' +
+              '<input type="url" class="dash-banner-url" id="att-img-url" placeholder="' + escAttr(cfg.urlPlaceholder) + '" autocomplete="off">',
+            foot: modalFoot({
+              left: '<button class="wise-btn wise-btn--ghost" type="button" data-img-remove><span class="material-symbols-outlined">delete</span>Remove</button>',
+              actions:
+                '<button class="wise-btn wise-btn--ghost" type="button" data-img-close>Cancel</button>' +
+                '<button class="wise-btn wise-btn--primary" type="button" data-img-save><span class="material-symbols-outlined">check</span>' + escAttr(cfg.saveLabel) + '</button>',
+            }),
+          }),
+        });
+        var modal = opened.modal;
+        imageModalClose = opened.close;
+        if (!modal) return;
         modal.setAttribute('aria-label', cfg.title);
-        modal.innerHTML =
-          '<header class="dash-modal-head">' +
-            '<div class="dash-modal-titles">' +
-              '<span class="dash-modal-eyebrow">' + escAttr(cfg.eyebrow) + '</span>' +
-              '<h2 class="dash-modal-title">' + escAttr(cfg.title) + '</h2>' +
-            '</div>' +
-            '<button class="dash-modal-close" type="button" data-img-close aria-label="Close"><span class="material-symbols-outlined">close</span></button>' +
-          '</header>' +
-          '<div class="dash-modal-body">' +
-            '<div class="dash-banner-preview' + (cfg.previewMod ? ' ' + cfg.previewMod : '') + '">' +
-              '<div class="dash-banner-preview-img" id="att-img-preview-img"></div>' +
-              '<span class="dash-banner-preview-empty" id="att-img-preview-empty"><span class="material-symbols-outlined">image</span>' + escAttr(cfg.emptyLabel) + '</span>' +
-            '</div>' +
-            '<label class="dash-banner-drop" id="att-img-drop">' +
-              '<input type="file" accept="image/*" id="att-img-file" hidden>' +
-              '<span class="material-symbols-outlined">cloud_upload</span>' +
-              '<span class="dash-banner-drop-text"><strong>Upload an image</strong> or drag &amp; drop<br><span class="dash-banner-drop-hint">' + escAttr(cfg.dropHint) + '</span></span>' +
-            '</label>' +
-            '<div class="dash-banner-or"><span>or paste a URL</span></div>' +
-            '<input type="url" class="dash-banner-url" id="att-img-url" placeholder="' + escAttr(cfg.urlPlaceholder) + '" autocomplete="off">' +
-          '</div>' +
-          '<footer class="dash-modal-foot">' +
-            '<button class="wise-btn wise-btn--ghost" type="button" data-img-remove><span class="material-symbols-outlined">delete</span>Remove</button>' +
-            '<div class="dash-modal-foot-right">' +
-              '<button class="wise-btn wise-btn--ghost" type="button" data-img-close>Cancel</button>' +
-              '<button class="wise-btn wise-btn--primary" type="button" data-img-save><span class="material-symbols-outlined">check</span>' + escAttr(cfg.saveLabel) + '</button>' +
-            '</div>' +
-          '</footer>';
 
         var previewImg = modal.querySelector('#att-img-preview-img');
         var previewEmpty = modal.querySelector('#att-img-preview-empty');
@@ -1951,8 +1944,6 @@
           closeImageModal();
         });
         modal.querySelectorAll('[data-img-close]').forEach(function (b) { b.addEventListener('click', closeImageModal); });
-
-        requestAnimationFrame(function () { scrim.classList.add('is-open'); });
       }
 
       function openProductModal() {
@@ -2254,6 +2245,7 @@
       });
     })();
   </script>
+  <script type="module" src="../js/wise-modal.js"></script>
   <script type="module" src="../js/agent-overview.js"></script>
 
   <script>
@@ -4834,7 +4826,7 @@
     }
     .inf-num {
       display: block;
-      font-family: 'WISE Digits', var(--font-serif, Georgia, serif);
+      font-family: 'WISE Digits', var(--font-serif);
       font-size: 22px;
       font-weight: 700;
       letter-spacing: -0.02em;
@@ -5006,7 +4998,7 @@
       animation-delay: var(--ld, 0.8s);
     }
     .cf-drop-n {
-      font-family: 'WISE Digits', var(--font-serif, Georgia, serif);
+      font-family: 'WISE Digits', var(--font-serif);
       font-variant-numeric: tabular-nums;
     }
     @media (prefers-reduced-motion: reduce) {

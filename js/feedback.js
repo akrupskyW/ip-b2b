@@ -517,7 +517,7 @@
     'border-radius:16px;box-shadow:0 12px 40px rgba(17,24,39,.22);overflow:hidden;}',
     '.wnote-pop-head{display:flex;align-items:center;justify-content:space-between;gap:8px;',
     'padding:12px 14px 8px;}',
-    ".wnote-title{font-family:'WISE Digits','Noto Serif',Georgia,serif;font-weight:800;font-size:1rem;margin:0;}",
+    ".wnote-title{font-family:'WISE Digits','Noto Serif',serif;font-weight:800;font-size:1rem;margin:0;}",
     '.wnote-x{pointer-events:auto;background:none;border:0;color:var(--wnote-muted);cursor:pointer;',
     'font-size:16px;padding:2px;border-radius:50%;display:flex;}',
     '.wnote-x:hover{color:var(--wnote-text);}',

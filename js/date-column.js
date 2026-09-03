@@ -145,6 +145,7 @@
   }
 
   function esc(s) {
+    if (typeof window !== 'undefined' && typeof window.WiseEsc === 'function') return window.WiseEsc(s);
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;')
       .replace(/"/g, '&quot;')
