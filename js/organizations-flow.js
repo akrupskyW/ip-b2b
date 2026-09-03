@@ -239,9 +239,9 @@ function paint() {
             <p class="adm-lede">Create, edit and manage customer organizations.</p>
           </div>
           <div class="adm-head-actions">
-            <button type="button" class="adm-btn adm-btn--ghost" data-adm-action="export"><span class="material-symbols-outlined">download</span>Export CSV</button>
-            <a class="adm-btn adm-btn--ghost" href="quick-invite.html"><span class="material-symbols-outlined">bolt</span>Quick Invite</a>
-            <button type="button" class="adm-btn adm-btn--primary" data-adm-action="add-org"><span class="material-symbols-outlined">add</span>Add Organization</button>
+            <button type="button" class="wise-btn wise-btn--ghost" data-adm-action="export"><span class="material-symbols-outlined">download</span>Export CSV</button>
+            <a class="wise-btn wise-btn--ghost" href="quick-invite.html"><span class="material-symbols-outlined">bolt</span>Quick Invite</a>
+            <button type="button" class="wise-btn wise-btn--primary" data-adm-action="add-org"><span class="material-symbols-outlined">add</span>Add Organization</button>
           </div>
         </div>
       </header>

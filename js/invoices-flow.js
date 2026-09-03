@@ -149,7 +149,7 @@ function actionListFor(inv) {
 /* Inline action chips (always shown in the last column). */
 function actionsFor(inv) {
   return actionListFor(inv).map((a) =>
-    `<button type="button" class="inv-btn inv-btn--${esc(a.variant)}" data-inv-action="${esc(a.action)}" data-inv-id="${esc(inv.id)}"><span class="material-symbols-outlined">${esc(a.icon)}</span>${esc(a.label)}</button>`
+    `<button type="button" class="wise-btn wise-btn--${esc(a.variant)}" data-inv-action="${esc(a.action)}" data-inv-id="${esc(inv.id)}"><span class="material-symbols-outlined">${esc(a.icon)}</span>${esc(a.label)}</button>`
   ).join('');
 }
 
@@ -444,7 +444,7 @@ function paint() {
       <header class="inv-head">
         <div class="inv-head-row">
           <h1 class="inv-title">Invoices</h1>
-          <button type="button" class="inv-btn inv-btn--primary" data-inv-action="download-all"><span class="material-symbols-outlined">download</span>Download all</button>
+          <button type="button" class="wise-btn wise-btn--primary" data-inv-action="download-all"><span class="material-symbols-outlined">download</span>Download all</button>
         </div>
       </header>
 

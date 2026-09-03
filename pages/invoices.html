@@ -55,8 +55,8 @@
     .inv-head { padding: 2px 2px 0; margin-bottom: 16px; }
     .inv-head-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .inv-title { font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', Georgia, serif); font-size: var(--module-title-size, 1.2rem); font-weight: var(--module-title-weight, 800); color: var(--text); margin: 0; letter-spacing: -0.01em; line-height: 1.15; }
-    .inv-head .inv-btn { height: 34px; padding: 0 14px; font-size: 12px; }
-    .inv-head .inv-btn .material-symbols-outlined { font-size: 16px; font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .inv-head .wise-btn { height: 34px; padding: 0 14px; font-size: 12px; }
+    .inv-head .wise-btn .material-symbols-outlined { font-size: 16px; font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 
     /* Brand chip sits in the floated ⋯ cluster, compact like Product Portfolio. */
     body[data-nav-id="invoices"] .panel-controls .inv-brand-trail {
@@ -172,20 +172,7 @@
        all one uniform size. These stay visible as chips in every row; the
        leading ⋮ duplicates the same actions in a menu. */
     .inv-actions { display: flex; align-items: center; flex-flow: row wrap; gap: 6px; }
-    .inv-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; height: 32px; box-sizing: border-box; padding: 0 14px; border-radius: 999px; border: 1px solid transparent; cursor: pointer; font-family: inherit; font-size: 0.75rem; font-weight: 700; line-height: 1; transition: filter 0.15s ease, background 0.15s ease, color 0.15s ease; }
-    .inv-btn .material-symbols-outlined { font-size: 15px; }
-    .inv-btn--primary { background: var(--primary); color: #fff; }
-    .inv-btn--primary .material-symbols-outlined { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-    .inv-btn--primary:hover { filter: brightness(1.08); }
-    .inv-btn--danger { background: transparent; color: var(--sec-red); border-color: var(--sec-red-10); }
-    .inv-btn--danger:hover { background: var(--sec-red-10); }
-    html.dark .inv-btn--danger { color: #FF9E96; }
-    .inv-btn--good { background: transparent; color: var(--sec-green); border-color: var(--sec-green-10); }
-    .inv-btn--good:hover { background: var(--sec-green-10); }
-    html.dark .inv-btn--good { color: #6FE0A0; }
-    .inv-btn--ghost { background: transparent; color: var(--text-muted); border-color: var(--primary); }
-    .inv-btn--ghost:hover { color: var(--text); background: var(--primary-soft); }
-    html.dark .inv-btn--ghost:hover { background: var(--primary-soft); }
+    /* Row chips share .wise-btn in pages/wise.css (.inv-actions / --danger / --good). */
 
     /* Leading ⋮ actions — same shell as .pf-rowmenu / .ma-rowmenu. The
        popover opens to the right of the icon (never directly below). */

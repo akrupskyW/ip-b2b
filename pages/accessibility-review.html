@@ -278,8 +278,8 @@
       justify-content: space-between; gap: 12px; flex: 0 0 auto;
     }
     .ar-scan-note { font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; min-width: 0; }
-    .ar-scan-foot .adm-btn:disabled { opacity: 0.6; cursor: progress; }
-    .ar-scan-foot .adm-btn--primary .material-symbols-outlined {
+    .ar-scan-foot .wise-btn:disabled { opacity: 0.6; cursor: progress; }
+    .ar-scan-foot .wise-btn--primary .material-symbols-outlined {
       font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
     }
 
@@ -659,7 +659,7 @@
           <div class="ar-head-titles">
             <div class="ar-head-title-row">
               <h1 class="ar-head-title">Accessibility Review</h1>
-              <button type="button" class="adm-btn adm-btn--primary ar-reeval-btn" id="reevalBtn" title="Fetch every HTML page and re-read pages/wise.css. Does not run on its own.">
+              <button type="button" class="wise-btn wise-btn--primary ar-reeval-btn" id="reevalBtn" title="Fetch every HTML page and re-read pages/wise.css. Does not run on its own.">
                 <span class="material-symbols-outlined" aria-hidden="true">autorenew</span>
                 <span data-ar-reeval-label>Re-evaluate</span>
               </button>
@@ -1113,7 +1113,7 @@ const SPACING = [4, 8, 12, 14, 18, 28, 32];
 const TARGETS = [
   { name: 'Top-bar rail buttons', size: '40 × 46px', ok: true },
   { name: 'Menu nav items', size: '≥ 42px tall', ok: true },
-  { name: 'Pill buttons (.pf-btn)', size: '~31px tall', ok: true, note: '7px+13px padding on 12px text' },
+  { name: 'Pill buttons (.wise-btn)', size: '~31px tall', ok: true, note: '7px+13px padding on 12px text' },
   { name: 'Chips (.pf-chip)', size: '~27px tall', ok: true, note: '6px+11px padding clears the 24px minimum' },
   { name: 'Icon chevron button', size: '24 × 24px', ok: true, note: 'Raised to the 24×24 SC 2.5.8 minimum' },
   { name: 'Profile avatar', size: '34 × 34px', ok: true },
@@ -2172,7 +2172,7 @@ function openScanModal(opts) {
       <ul class="ar-scan-log" data-scan-log role="log" aria-live="polite" aria-relevant="additions"></ul>
       <div class="ar-scan-foot">
         <span class="ar-scan-note" data-scan-note>Keep this tab open while it runs.</span>
-        <button type="button" class="adm-btn adm-btn--primary" data-scan-done disabled>
+        <button type="button" class="wise-btn wise-btn--primary" data-scan-done disabled>
           <span class="material-symbols-outlined">hourglass_top</span>
           <span data-scan-done-label>Working…</span>
         </button>

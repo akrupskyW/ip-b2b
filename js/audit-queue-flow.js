@@ -174,7 +174,7 @@ function rowHtml(a, i) {
       <span class="adm-td"><span class="adm-notes">${esc(a.notes)}</span></span>
       <span class="adm-td"><span class="w-datecell">${dc() ? dc().cellHtml(auditDates(a), 'audit', dateLead) : `<span class="adm-flagged"><span class="adm-flagged-when">${esc(a.when)}</span><span class="adm-flagged-by">by ${esc(a.by)}</span></span>`}</span></span>
       <span class="adm-td adm-td--end"><span class="adm-actions">
-        <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" data-adm-action="resolve" data-adm-idx="${i}"><span class="material-symbols-outlined">task_alt</span>Resolve</button>
+        <button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-adm-action="resolve" data-adm-idx="${i}"><span class="material-symbols-outlined">task_alt</span>Resolve</button>
       </span></span>
     </div>`;
 }
@@ -226,7 +226,7 @@ function filterPopHtml() {
       <div class="adm-field"><label class="adm-field-label">Flagged Before</label><input type="date" class="adm-input" data-adm-filter-date="before" value="${esc(filters.before)}" aria-label="Flagged before" /></div>
       <div class="adm-filter-pop-foot">
         <button type="button" class="adm-filter-clear" data-adm-action="clear-filters">Clear all</button>
-        <button type="button" class="adm-btn adm-btn--primary adm-btn--sm" data-adm-action="apply-filters">Done</button>
+        <button type="button" class="wise-btn wise-btn--primary wise-btn--sm" data-adm-action="apply-filters">Done</button>
       </div>
     </div>`;
 }
@@ -247,7 +247,7 @@ function paint() {
             <p class="adm-lede">Review and resolve ingredient mappings flagged by brand users.</p>
           </div>
           <div class="adm-head-actions">
-            <button type="button" class="adm-btn adm-btn--primary" data-adm-action="refresh"><span class="material-symbols-outlined">refresh</span>Refresh Queue</button>
+            <button type="button" class="wise-btn wise-btn--primary" data-adm-action="refresh"><span class="material-symbols-outlined">refresh</span>Refresh Queue</button>
           </div>
         </div>
       </header>

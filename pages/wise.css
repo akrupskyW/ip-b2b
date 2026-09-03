@@ -117,8 +117,9 @@
 
 /* Primary (solid brand-blue) buttons always use the filled icon twin.
    The SVG shim reads FILL 1 and swaps in the filled geometry. Ghost /
-   outline / tinted chips stay FILL 0. */
-.btn-primary .material-symbols-outlined,
+   outline / tinted chips stay FILL 0. Pill CTAs share .wise-btn--primary;
+   the rest are one-off solids (chips, send, page-local analyzers). */
+.wise-btn--primary .material-symbols-outlined,
 .adm-btn--primary .material-symbols-outlined,
 .adm-icon-btn--primary .material-symbols-outlined,
 .pf-btn--primary .material-symbols-outlined,
@@ -130,6 +131,7 @@
 .wmod-btn--primary .material-symbols-outlined,
 .cmp-tool-btn--primary .material-symbols-outlined,
 .mkt-btn-primary .material-symbols-outlined,
+.btn-primary .material-symbols-outlined,
 .demo-btn.primary .material-symbols-outlined,
 .chip.chip-primary .material-symbols-outlined,
 .sc-reply-chips .chip.ms-chip.is-selected .material-symbols-outlined,
@@ -243,6 +245,8 @@
   --fs-ui: 0.75rem;
   --fs-label: 0.6875rem;
   --radius-pill: 9999px;
+  /* Auth inputs + matching CTAs. */
+  --field-h: 42px;
   --panel-header-h: 60px;
   --wise-text-scale: 1;
   --wise-icon-scale: var(--wise-text-scale);
@@ -346,6 +350,490 @@ html.dark {
 }
 
 * { box-sizing: border-box; }
+
+/* ===== WISE button — one pill language =================================
+   .wise-btn + --primary / --ghost / --danger / --good / --secondary
+   / --sm / --lg / --block
+
+   Every former family (.adm-btn, .dash-btn, .mkt-btn, .inv-btn, …) is an
+   alias of these rules so leftover markup still paints the same. Size and
+   layout that were never the same language stay as contextual overrides
+   below (dashboard wrap, header trail, marketing display, comparison
+   toolbar, auth field height). */
+.wise-btn,
+.adm-btn,
+.wmod-btn,
+.pf-head-btn,
+.gv-btn,
+.vf-modal-btn,
+.dash-btn,
+.inv-btn,
+.ma-btn,
+.um-btn,
+.cmp-tool-btn,
+.mkt-btn,
+.auth-page .btn,
+.pf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+  height: 40px;
+  box-sizing: border-box;
+  padding: 0 16px;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  transition: filter 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.wise-btn:hover, .wise-btn:focus,
+.adm-btn:hover, .adm-btn:focus,
+.wmod-btn:hover, .wmod-btn:focus,
+.pf-head-btn:hover, .pf-head-btn:focus,
+.mkt-btn:hover, .mkt-btn:focus,
+.auth-page .btn:hover, .auth-page .btn:focus,
+.pf-btn:hover, .pf-btn:focus {
+  text-decoration: none;
+}
+a.wise-btn, a.wise-btn:link, a.wise-btn:visited, a.wise-btn:hover, a.wise-btn:focus,
+a.adm-btn, a.adm-btn:link, a.adm-btn:visited, a.adm-btn:hover, a.adm-btn:focus,
+a.pf-head-btn, a.pf-head-btn:link, a.pf-head-btn:visited, a.pf-head-btn:hover, a.pf-head-btn:focus,
+a.mkt-btn, a.mkt-btn:link, a.mkt-btn:visited, a.mkt-btn:hover, a.mkt-btn:focus,
+a.dash-btn, a.dash-btn:link, a.dash-btn:visited, a.dash-btn:hover, a.dash-btn:focus {
+  text-decoration: none;
+}
+.wise-btn .material-symbols-outlined,
+.adm-btn .material-symbols-outlined,
+.wmod-btn .material-symbols-outlined,
+.pf-head-btn .material-symbols-outlined,
+.gv-btn .material-symbols-outlined,
+.vf-modal-btn .material-symbols-outlined,
+.dash-btn .material-symbols-outlined,
+.inv-btn .material-symbols-outlined,
+.ma-btn .material-symbols-outlined,
+.um-btn .material-symbols-outlined,
+.cmp-tool-btn .material-symbols-outlined,
+.mkt-btn .material-symbols-outlined,
+.auth-page .btn .material-symbols-outlined,
+.pf-btn .material-symbols-outlined {
+  font-size: 16px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.wise-btn:disabled,
+.adm-btn:disabled,
+.wmod-btn:disabled,
+.pf-head-btn:disabled,
+.gv-btn:disabled,
+.vf-modal-btn:disabled,
+.dash-btn:disabled,
+.inv-btn:disabled,
+.ma-btn:disabled,
+.um-btn:disabled,
+.cmp-tool-btn:disabled,
+.mkt-btn:disabled,
+.auth-page .btn:disabled,
+.pf-btn:disabled,
+.pf-brand-chip:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.wise-btn--primary,
+.adm-btn--primary,
+.wmod-btn--primary,
+.pf-head-btn--primary,
+.gv-btn--primary,
+.vf-modal-btn--primary,
+.dash-btn--primary,
+.inv-btn--primary,
+.ma-btn--primary,
+.cmp-tool-btn--primary,
+.mkt-btn-primary,
+.um-btn-primary,
+.auth-page .btn-primary,
+.pf-btn--primary {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.wise-btn--primary:hover,
+.adm-btn--primary:hover,
+.wmod-btn--primary:hover,
+.pf-head-btn--primary:hover,
+.gv-btn--primary:hover,
+.vf-modal-btn--primary:hover,
+.dash-btn--primary:hover,
+.inv-btn--primary:hover,
+.ma-btn--primary:hover,
+.cmp-tool-btn--primary:hover,
+.mkt-btn-primary:hover,
+.um-btn-primary:hover,
+.auth-page .btn-primary:hover,
+.pf-btn--primary:hover {
+  filter: brightness(1.08);
+  color: #fff;
+}
+
+.wise-btn--ghost,
+.adm-btn--ghost,
+.wmod-btn--ghost,
+.pf-head-btn--ghost,
+.gv-btn--ghost,
+.vf-modal-btn--ghost,
+.dash-btn--ghost,
+.inv-btn--ghost,
+.ma-btn--ghost,
+.mkt-btn-ghost,
+.auth-page .btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border-color: var(--primary);
+}
+.wise-btn--ghost:hover,
+.adm-btn--ghost:hover,
+.wmod-btn--ghost:hover:not(:disabled),
+.pf-head-btn--ghost:hover,
+.gv-btn--ghost:hover,
+.vf-modal-btn--ghost:hover,
+.dash-btn--ghost:hover,
+.inv-btn--ghost:hover,
+.ma-btn--ghost:hover,
+.mkt-btn-ghost:hover,
+.auth-page .btn-ghost:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+html.dark .wise-btn--ghost:hover,
+html.dark .adm-btn--ghost:hover,
+html.dark .wmod-btn--ghost:hover:not(:disabled),
+html.dark .pf-head-btn--ghost:hover,
+html.dark .inv-btn--ghost:hover,
+html.dark .ma-btn--ghost:hover,
+html.dark .auth-page .btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.wise-btn--danger,
+.adm-btn--danger,
+.inv-btn--danger {
+  background: transparent;
+  color: var(--sec-red);
+  border-color: var(--sec-red-10);
+}
+.wise-btn--danger:hover,
+.adm-btn--danger:hover,
+.inv-btn--danger:hover {
+  background: var(--sec-red-10);
+}
+html.dark .wise-btn--danger,
+html.dark .adm-btn--danger,
+html.dark .inv-btn--danger {
+  color: #FF9E96;
+}
+
+.wise-btn--good,
+.adm-btn--good,
+.inv-btn--good {
+  background: transparent;
+  color: var(--sec-green);
+  border-color: var(--sec-green-10);
+}
+.wise-btn--good:hover,
+.adm-btn--good:hover,
+.inv-btn--good:hover {
+  background: var(--sec-green-10);
+}
+html.dark .wise-btn--good,
+html.dark .adm-btn--good,
+html.dark .inv-btn--good {
+  color: #6FE0A0;
+}
+
+.wise-btn--secondary,
+.auth-page .btn-secondary,
+.um-btn:not(.wise-btn--primary):not(.um-btn-primary):not([class*="--primary"]),
+.cmp-tool-btn:not(.wise-btn--primary):not(.cmp-tool-btn--primary):not([class*="--primary"]) {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.wise-btn--secondary:hover,
+.auth-page .btn-secondary:hover,
+.um-btn:not(.wise-btn--primary):not(.um-btn-primary):not([class*="--primary"]):hover,
+.cmp-tool-btn:not(.wise-btn--primary):not(.cmp-tool-btn--primary):not([class*="--primary"]):hover {
+  background: var(--surface-3);
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong));
+}
+html.dark .wise-btn--secondary,
+html.dark .auth-page .btn-secondary,
+html.dark .um-btn:not(.wise-btn--primary):not(.um-btn-primary):not([class*="--primary"]),
+html.dark .cmp-tool-btn:not(.wise-btn--primary):not(.cmp-tool-btn--primary):not([class*="--primary"]) {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--primary);
+}
+html.dark .wise-btn--secondary:hover,
+html.dark .auth-page .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.wise-btn--sm,
+.adm-btn--sm,
+.ma-btn--sm,
+.mkt-btn-sm {
+  height: 30px;
+  padding: 0 12px;
+  font-size: 0.72rem;
+}
+.wise-btn--sm .material-symbols-outlined,
+.adm-btn--sm .material-symbols-outlined,
+.ma-btn--sm .material-symbols-outlined {
+  font-size: 14px;
+}
+
+.wise-btn--lg,
+.mkt-btn {
+  font-family: 'WISE Digits', var(--font-serif);
+  font-size: 0.95rem;
+  height: auto;
+  padding: 13px 22px;
+  font-weight: 700;
+}
+.wise-btn--lg.wise-btn--sm,
+.mkt-btn-sm {
+  padding: 9px 16px;
+  font-size: 0.85rem;
+  height: auto;
+}
+.wise-btn--lg:active,
+.mkt-btn:active {
+  transform: translateY(1px);
+}
+.wise-btn--lg.wise-btn--primary:hover,
+.mkt-btn-primary:hover {
+  filter: none;
+  box-shadow: var(--shadow-2);
+  transform: translateY(-1px);
+}
+.wise-btn--lg.wise-btn--ghost:hover,
+.mkt-btn-ghost:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+html.dark .wise-btn--lg.wise-btn--ghost:hover,
+html.dark .mkt-btn-ghost:hover {
+  color: var(--primary-bright);
+  border-color: var(--primary-bright);
+}
+
+.wise-btn--block,
+.auth-page .btn-block {
+  width: 100%;
+}
+
+/* Dashboard cards: labels wrap and sit left — not a second button system. */
+.dash-btn-row .wise-btn,
+.dash-btn {
+  justify-content: flex-start;
+  white-space: normal;
+  height: auto;
+  padding: 9px 15px;
+  font-weight: 600;
+  font-size: 0.78rem;
+  line-height: 1.25;
+  text-align: left;
+  max-width: 100%;
+}
+.dash-btn-row .wise-btn--primary,
+.dash-btn--primary {
+  box-shadow: 0 4px 12px rgba(37, 80, 124, 0.25);
+}
+.dash-btn-row .wise-btn--primary:hover,
+.dash-btn--primary:hover {
+  filter: none;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(37, 80, 124, 0.3);
+}
+.dash-btn-row .wise-btn--ghost,
+.dash-btn--ghost {
+  color: var(--text);
+}
+
+/* Module-header compact (34px) and the 28px trail left of ⋯. */
+.pf-head-btn,
+.pf-head-actions .wise-btn,
+.adm-head .wise-btn,
+.adm-head .adm-btn,
+.inv-head .wise-btn,
+.inv-head .inv-btn,
+.mi-hero-title-row .wise-btn,
+.mi-hero-title-row .adm-btn,
+.ma-btn,
+.ma-actions .wise-btn,
+body[data-nav-id="team"] .adm-head .wise-btn,
+body[data-nav-id="team"] .adm-head .adm-btn {
+  height: 34px;
+  padding: 0 14px;
+  font-size: 12px;
+}
+.pf-head-btn .material-symbols-outlined,
+.pf-head-actions .wise-btn .material-symbols-outlined,
+.adm-head .wise-btn .material-symbols-outlined,
+.inv-head .wise-btn .material-symbols-outlined,
+.mi-hero-title-row .wise-btn .material-symbols-outlined,
+.ma-btn .material-symbols-outlined,
+.ma-actions .wise-btn .material-symbols-outlined {
+  font-size: 16px !important;
+  line-height: 1 !important;
+}
+.pf-head-trail .wise-btn,
+.pf-head-trail .pf-head-btn {
+  height: 28px;
+  padding: 0 11px;
+  font-size: 11px;
+  gap: 5px;
+}
+.pf-head-trail .wise-btn .material-symbols-outlined,
+.pf-head-trail .pf-head-btn .material-symbols-outlined {
+  font-size: 14px !important;
+}
+
+/* Invoices row actions stay a hair tighter than the 40px default. */
+.inv-btn,
+.inv-actions .wise-btn {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 0.75rem;
+}
+.inv-btn .material-symbols-outlined,
+.inv-actions .wise-btn .material-symbols-outlined { font-size: 15px; }
+.inv-actions .wise-btn--ghost:hover {
+  background: var(--primary-soft);
+}
+html.dark .inv-actions .wise-btn--ghost:hover {
+  background: var(--primary-soft);
+}
+.ma-actions .wise-btn--primary { box-shadow: var(--shadow-1); }
+.ma-actions .wise-btn:active { transform: translateY(1px); }
+
+/* Auth CTAs match the pill field height. */
+.auth-page .wise-btn,
+.auth-page .btn {
+  height: var(--field-h);
+  padding: 0 20px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.auth-sso .wise-btn,
+.auth-sso .btn {
+  padding: 0 8px;
+  gap: 7px;
+  font-size: var(--fs-ui);
+  font-weight: 600;
+}
+.auth-actions .wise-btn,
+.auth-actions .btn { flex: 1; }
+.auth-page .wise-btn--primary:hover,
+.auth-page .btn-primary:hover {
+  filter: none;
+  background: color-mix(in srgb, var(--primary) 88%, #000);
+}
+
+/* Comparison toolbar — compact chips, not the 40px module CTA. */
+.cmp-tool-btn,
+.cmp-toolbar .wise-btn,
+.cmp-add-wrap .wise-btn {
+  height: auto;
+  padding: 6px 11px;
+  font-size: var(--fs-label);
+  font-weight: 600;
+}
+.cmp-tool-btn .material-symbols-outlined,
+.cmp-toolbar .wise-btn .material-symbols-outlined,
+.cmp-add-wrap .wise-btn .material-symbols-outlined {
+  font-size: 15px !important;
+}
+.cmp-tool-btn:not(.wise-btn--primary):not(.cmp-tool-btn--primary):hover:not(:disabled),
+.cmp-toolbar .wise-btn:not(.wise-btn--primary):hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary-ink, var(--primary));
+}
+.cmp-add-split .wise-btn,
+.cmp-add-split .cmp-tool-btn {
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+}
+#chat-shell-wrap .cmp-add-split .wise-btn,
+#chat-shell-wrap .cmp-add-split .cmp-tool-btn {
+  border-radius: 0 !important;
+}
+.cmp-add-split .wise-btn:hover:not(:disabled),
+.cmp-add-split .cmp-tool-btn:hover:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+  filter: none;
+  background: #1e4266;
+}
+.cmp-addcol .cmp-add-split .wise-btn,
+.cmp-addcol .cmp-add-split .cmp-tool-btn {
+  font-size: calc(var(--fs-label) + 3px);
+  padding: 11px 20px;
+}
+.cmp-toolbar .wise-btn--secondary {
+  background: var(--surface);
+}
+.cmp-add-wrap > .wise-btn--primary,
+.cmp-toolbar .wise-btn--primary:not(.cmp-add-main):not(.cmp-add-caret) {
+  box-shadow: 0 4px 12px rgba(37, 80, 124, 0.25);
+}
+.cmp-add-wrap > .wise-btn--primary:hover,
+.cmp-toolbar .wise-btn--primary:not(.cmp-add-main):not(.cmp-add-caret):hover {
+  filter: none;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(37, 80, 124, 0.3);
+}
+
+/* Profile save — display size, same tokens. */
+.pf-footer .wise-btn,
+.pf-btn {
+  height: 44px;
+  padding: 0 22px;
+  font-family: 'WISE Digits', var(--font-serif);
+  font-size: 0.85rem;
+}
+.pf-btn:active:not(:disabled),
+.pf-footer .wise-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* Verification modal ghost sits on the dialog surface. */
+.vf-modal-actions .wise-btn--ghost,
+.vf-modal-btn--ghost {
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* Utility panels (profile / prefs / keys) — full-width row actions. */
+.um-row .wise-btn,
+.um-btn {
+  width: 100%;
+  height: auto;
+  padding: 9px 12px;
+  font-size: var(--fs-ui);
+  font-weight: 600;
+}
+.um-row .wise-btn--secondary,
+.um-btn:not(.wise-btn--primary):not(.um-btn-primary):not([class*="--primary"]) {
+  border-color: var(--border);
+}
 
 /* App workspace shell. Marketing pages (`html.mkt` / `body.mkt`) scroll
    normally — they load this sheet for the shared chat + tokens only. */
@@ -5982,7 +6470,7 @@ html.full-bleed:not(.fb-chat-only).fb-rmod-tint #modules-row :is(
 }
 html.full-bleed:not(.fb-chat-only).fb-rmod-tint #modules-row :is(
   .panel-more-btn, .panel-width-toggle-btn, .panel-close-btn, .panel-ctrl-btn,
-  .wa-pane-nav-arrow, .wa-pane-thumb-item, button.adm-btn, .chip
+  .wa-pane-nav-arrow, .wa-pane-thumb-item, button.adm-btn, button.wise-btn, .chip
 ):hover {
   background: color-mix(in srgb, var(--fb-rmod-accent, var(--fb-rmod-fg, #16233B)) 14%, var(--fb-rmod-bg)) !important;
   border-color: color-mix(in srgb, var(--fb-rmod-accent, var(--fb-rmod-fg, #16233B)) 40%, transparent);
@@ -8625,6 +9113,7 @@ body[data-product-id="dashboard"] .agent-main-scroll {
 .dash.is-skeleton .dash-donut-legend-title,
 .dash.is-skeleton .dash-legend-item,
 .dash.is-skeleton .dash-btn,
+.dash.is-skeleton .wise-btn,
 .dash.is-skeleton .dash-text-link,
 .dash.is-skeleton .dash-report-link,
 .dash.is-skeleton .dash-pillars-cta-headline,
@@ -8709,6 +9198,7 @@ body[data-product-id="dashboard"] .agent-main-scroll {
   .dash.is-skeleton .dash-donut-legend-title,
   .dash.is-skeleton .dash-legend-item,
   .dash.is-skeleton .dash-btn,
+  .dash.is-skeleton .wise-btn,
   .dash.is-skeleton .dash-text-link,
   .dash.is-skeleton .dash-report-link,
   .dash.is-skeleton .dash-pillars-cta-headline,
@@ -9332,13 +9822,15 @@ html.dark .dash-stamp-num--photo { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8), 0 
 }
 html.dark .dash-top5-hero-claim .dash-stamp-icon.dash-stamp-num { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); }
 /* Ghost button reads as light-on-dark over the photo. */
-.dash-top5-hero-claim .dash-btn--ghost {
+.dash-top5-hero-claim .dash-btn--ghost,
+.dash-top5-hero-claim .wise-btn--ghost {
   background: rgba(255, 255, 255, 0.14);
   color: #fff;
   border-color: rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(2px);
 }
-.dash-top5-hero-claim .dash-btn--ghost:hover { background: rgba(255, 255, 255, 0.26); }
+.dash-top5-hero-claim .dash-btn--ghost:hover,
+.dash-top5-hero-claim .wise-btn--ghost:hover { background: rgba(255, 255, 255, 0.26); }
 
 /* ---- Claim status card ---- */
 .dash-claim {
@@ -9721,30 +10213,7 @@ html.dark .dash-bignum { color: var(--text); }
 .dash-bignum-cap strong { color: var(--text); font-size: 1.0625rem; font-weight: 700; }
 .dash-btn-row { display: flex; flex-wrap: wrap; gap: 10px; }
 
-.dash-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 7px;
-  padding: 9px 15px;
-  border-radius: var(--radius-pill);
-  font-family: inherit;
-  font-size: 0.78rem;
-  font-weight: 600;
-  line-height: 1.25;
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-  /* UA stylesheet centers <button> text; keep wrapped labels flush left. */
-  text-align: left;
-  white-space: normal;
-  max-width: 100%;
-}
-.dash-btn .material-symbols-outlined { font-size: 16px; flex-shrink: 0; }
-.dash-btn--primary { background: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(37, 80, 124, 0.25); }
-.dash-btn--primary:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(37, 80, 124, 0.3); }
-.dash-btn--ghost { background: transparent; color: var(--text); border-color: var(--primary); }
-.dash-btn--ghost:hover { background: var(--surface-2); }
+/* .dash-btn is a .wise-btn alias — wrap/left/shadow live in the shared block. */
 
 .dash-text-link {
   display: inline-flex;
@@ -11670,6 +12139,8 @@ html.dark .dash-pillar-card-head .dash-stamp-icon:hover {
   color: var(--primary);
   border-color: transparent;
   box-shadow: none;
+  height: auto;
+  white-space: normal;
 }
 .dash-cta-banner-btn:hover {
   background: rgba(255, 255, 255, 0.9);
@@ -12335,33 +12806,7 @@ html.dark .vf-back:hover { background: rgba(255, 255, 255, 0.06); }
 .panel-controls .pf-head-trail {
   flex-wrap: nowrap; margin-right: 4px;
 }
-.pf-head-btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  height: 34px; box-sizing: border-box; padding: 0 14px;
-  border-radius: 999px; border: 1px solid transparent; cursor: pointer;
-  font-family: inherit; font-size: 12px; font-weight: 700; line-height: 1;
-  text-decoration: none; white-space: nowrap;
-  transition: filter 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
-.pf-head-btn .material-symbols-outlined { font-size: 16px !important; line-height: 1 !important; }
-a.pf-head-btn, a.pf-head-btn:link, a.pf-head-btn:visited, a.pf-head-btn:hover, a.pf-head-btn:focus {
-  text-decoration: none;
-}
-.pf-head-btn--primary { background: var(--primary); color: #fff; }
-.pf-head-btn--primary:hover { filter: brightness(1.08); color: #fff; }
-.pf-head-btn--primary .material-symbols-outlined {
-  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-}
-.pf-head-btn--ghost { background: transparent; color: var(--text-muted); border-color: var(--primary); }
-.pf-head-btn--ghost:hover { color: var(--text); background: var(--surface-2); }
-html.dark .pf-head-btn--ghost:hover { background: rgba(255,255,255,0.06); }
-.pf-head-btn:disabled, .pf-brand-chip:disabled {
-  opacity: 0.45; cursor: not-allowed; pointer-events: none;
-}
-.pf-head-trail .pf-head-btn {
-  height: 28px; padding: 0 11px; font-size: 11px; gap: 5px;
-}
-.pf-head-trail .pf-head-btn .material-symbols-outlined { font-size: 14px !important; }
+/* .pf-head-btn is a .wise-btn alias — 34px / 28px trail sizes live in the shared block. */
 /* Compact brand chip when it rides the same trail as Marketing Assets
    (Marketing Assets, Invoices). Portfolio keeps the 34px chip unless the
    trail also carries this tighter padding via the page's own rule. */
@@ -13229,19 +13674,7 @@ html.dark .vf-select-el {
   margin-bottom: 22px;
 }
 .vf-modal-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: auto; }
-.vf-modal-btn {
-  padding: 10px 22px;
-  border-radius: 999px;
-  font-family: inherit;
-  font-size: 0.86rem;
-  font-weight: 600;
-  cursor: pointer;
-  border: 1px solid var(--primary);
-}
-.vf-modal-btn--ghost { background: var(--surface); color: var(--text); }
-.vf-modal-btn--ghost:hover { background: var(--surface-2); }
-.vf-modal-btn--primary { background: var(--primary); border-color: var(--primary); color: #fff; }
-.vf-modal-btn--primary:hover { filter: brightness(1.07); }
+/* .vf-modal-btn is a .wise-btn alias — surface ghost stays in the shared block. */
 
 /* ---------- Toast ---------- */
 #vf-toast-wrap {
@@ -13696,19 +14129,7 @@ html.dark .gv-input { background: rgba(255,255,255,0.05); border-color: rgba(255
 .gv-review-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: var(--text-subtle); }
 .gv-review-val { font-size: 0.82rem; font-weight: 600; color: var(--text); text-align: right; min-width: 0; }
 
-/* ---------- Buttons ---------- */
-.gv-btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  padding: 11px 20px; border-radius: var(--radius-pill, 999px); border: 0;
-  font-family: inherit; font-size: 0.84rem; font-weight: 700; cursor: pointer;
-  transition: filter 0.15s ease, background 0.15s ease, opacity 0.15s ease;
-}
-.gv-btn .material-symbols-outlined { font-size: 17px; }
-.gv-btn--primary { background: var(--primary); color: #fff; box-shadow: var(--shadow-1); }
-.gv-btn--primary:hover { filter: brightness(1.07); }
-.gv-btn--primary:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(0.35); }
-.gv-btn--ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--primary); }
-.gv-btn--ghost:hover { color: var(--text); background: var(--surface-2); }
+/* .gv-btn is a .wise-btn alias. */
 
 /* ---------- Outcome (confirm / result) ---------- */
 .gv-outcome {
@@ -13975,24 +14396,7 @@ html.dark .adm-select { background-color: rgba(255,255,255,0.05); border-color: 
 html.dark .adm-input { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
 .adm-input:focus { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
 
-/* Buttons — same shape/size language as .inv-btn. */
-.adm-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; height: 40px; box-sizing: border-box; padding: 0 16px; border-radius: 999px; border: 1px solid transparent; cursor: pointer; font-family: inherit; font-size: 0.8rem; font-weight: 700; line-height: 1; text-decoration: none; transition: filter 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
-.adm-btn:hover, .adm-btn:focus { text-decoration: none; }
-a.adm-btn, a.adm-btn:link, a.adm-btn:visited, a.adm-btn:hover, a.adm-btn:focus { text-decoration: none; }
-.adm-btn .material-symbols-outlined { font-size: 16px; }
-.adm-btn--primary { background: var(--primary); color: #fff; }
-.adm-btn--primary:hover { filter: brightness(1.08); }
-.adm-btn--ghost { background: transparent; color: var(--text-muted); border-color: var(--primary); }
-.adm-btn--ghost:hover { color: var(--text); background: var(--surface-2); }
-html.dark .adm-btn--ghost:hover { background: rgba(255,255,255,0.06); }
-.adm-btn--danger { background: transparent; color: var(--sec-red); border-color: var(--sec-red-10); }
-.adm-btn--danger:hover { background: var(--sec-red-10); }
-html.dark .adm-btn--danger { color: #FF9E96; }
-.adm-btn--good { background: transparent; color: var(--sec-green); border-color: var(--sec-green-10); }
-.adm-btn--good:hover { background: var(--sec-green-10); }
-html.dark .adm-btn--good { color: #6FE0A0; }
-.adm-btn--sm { height: 30px; padding: 0 12px; font-size: 0.72rem; }
-.adm-btn--sm .material-symbols-outlined { font-size: 14px; }
+/* .adm-btn is a .wise-btn alias. */
 
 /* Round icon-only action button (row actions rail). */
 .adm-icon-btn {
@@ -14061,14 +14465,18 @@ html.dark .adm-stat.is-active { background: color-mix(in srgb, var(--primary) 22
 .adm-trow:last-child { border-bottom: 0; }
 .adm-trow:hover { background: var(--primary-soft); }
 /* In-row actions are ghost (outline) — never a solid primary fill. */
+.adm-trow .wise-btn--primary,
 .adm-trow .adm-btn--primary,
+.wmod-trow .wise-btn--primary,
 .wmod-trow .wmod-btn--primary {
   background: transparent;
   color: var(--text);
   border-color: var(--primary);
   box-shadow: none;
 }
+.adm-trow .wise-btn--primary:hover,
 .adm-trow .adm-btn--primary:hover,
+.wmod-trow .wise-btn--primary:hover,
 .wmod-trow .wmod-btn--primary:hover {
   filter: none;
   color: var(--primary-ink, var(--primary));
@@ -14283,7 +14691,8 @@ html.dark .adm-donut-center::before { background: #14242f; border-color: rgba(25
 .adm-vf-stat-chipwrap { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 42px; }
 /* Push the action button to the card's bottom edge. Cards in a row stretch to
    equal height (grid), so all buttons land on the same axis. */
-.adm-vf-stat .adm-btn { margin-top: auto; }
+.adm-vf-stat .adm-btn,
+.adm-vf-stat .wise-btn { margin-top: auto; }
 .adm-vf-stat:hover { transform: translateY(-1px); box-shadow: var(--shadow-card, var(--shadow-1)); border-color: var(--border-strong); }
 .adm-vf-stat.is-active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, var(--scorecard-fill, var(--surface))); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1); }
 .adm-vf-stat-num { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.7rem; font-weight: 800; line-height: 1; color: var(--score-ink, var(--text)); }
@@ -14295,7 +14704,8 @@ html.dark .adm-donut-center::before { background: #14242f; border-color: rgba(25
 .adm-vf-stat-label .material-symbols-outlined { font-size: 14px; }
 .adm-vf-stat .adm-chip { max-width: 100%; white-space: normal; text-align: center; justify-content: center; line-height: 1.25; }
 .adm-vf-stat-sub { font-size: 0.66rem; color: var(--text-subtle); line-height: 1.3; }
-.adm-vf-stat .adm-btn--ghost { color: var(--text); border-color: var(--primary); }
+.adm-vf-stat .adm-btn--ghost,
+.adm-vf-stat .wise-btn--ghost { color: var(--text); border-color: var(--primary); }
 
 /* Verification-status list (icon + label + mini progress line + count). */
 .adm-vstatus { display: flex; flex-direction: column; gap: 4px; }
@@ -15523,15 +15933,7 @@ html.dark .pf-rowmenu-item:hover { background: rgba(255,255,255,0.06); }
 .wmod-pill--muted { color: var(--text-muted); background: var(--surface-2); border: 1px solid var(--border); }
 html.dark .wmod-pill--muted { background: rgba(255,255,255,0.05); }
 
-/* ── Buttons ── */
-.wmod-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 40px; padding: 0 18px; border-radius: 999px; border: 1px solid transparent; font-family: inherit; font-size: 0.83rem; font-weight: 700; cursor: pointer; transition: filter 0.15s ease, background 0.15s ease, color 0.15s ease; }
-.wmod-btn .material-symbols-outlined { font-size: 18px; }
-.wmod-btn--primary { background: var(--primary); color: #fff; box-shadow: var(--shadow-1); }
-.wmod-btn--primary:hover { filter: brightness(1.08); }
-.wmod-btn--ghost { background: transparent; color: var(--text-muted); border-color: var(--primary); }
-.wmod-btn--ghost:hover:not(:disabled) { color: var(--text); background: var(--surface-2); }
-html.dark .wmod-btn--ghost:hover:not(:disabled) { background: rgba(255,255,255,0.05); }
-.wmod-btn:disabled { opacity: 0.45; cursor: default; }
+/* .wmod-btn is a .wise-btn alias. */
 .wmod-icon-btn { width: 32px; height: 32px; border-radius: 8px; border: 0; background: transparent; color: var(--text-subtle); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; }
 .wmod-icon-btn:hover { background: var(--surface-3, var(--surface-2)); color: var(--text); }
 html.dark .wmod-icon-btn:hover { background: rgba(255,255,255,0.08); }
@@ -16156,29 +16558,8 @@ html.dark .auth-affix-btn:hover { color: var(--primary-bright); }
 }
 .auth-attest input { margin-top: 2px; width: 16px; height: 16px; accent-color: var(--primary); flex-shrink: 0; cursor: pointer; }
 
-/* ── Buttons — pill CTA language (chips / send button) ── */
-.auth-page .btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  height: var(--field-h); padding: 0 20px;
-  font-family: inherit; font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.01em;
-  border-radius: var(--radius-pill); border: 1px solid transparent; cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-.auth-page .btn .material-symbols-outlined { font-size: 18px; }
-.auth-page .btn-block { width: 100%; }
-.auth-page .btn-primary { background: var(--primary); color: #fff; }
-.auth-page .btn-primary .material-symbols-outlined { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-.auth-page .btn-primary:hover { background: color-mix(in srgb, var(--primary) 88%, #000); color: #fff; }
-.auth-page .btn-ghost { background: transparent; color: var(--text); border-color: var(--primary); }
-.auth-page .btn-ghost:hover { background: var(--surface-2); border-color: var(--primary); color: var(--text); }
-html.dark .auth-page .btn-ghost:hover { background: rgba(255,255,255,0.05); }
-.auth-page .btn-secondary { background: var(--surface-2); color: var(--text); border-color: var(--border-strong); }
-.auth-page .btn-secondary:hover { background: var(--surface-3); border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong)); }
-html.dark .auth-page .btn-secondary { background: rgba(255,255,255,0.04); border-color: var(--primary); }
-html.dark .auth-page .btn-secondary:hover { background: rgba(255,255,255,0.07); }
-
+/* Auth pill CTAs are .wise-btn — field height / SSO density live in the shared block. */
 .auth-actions { display: flex; gap: 10px; margin-top: 6px; }
-.auth-actions .btn { flex: 1; }
 
 /* Top-level banners */
 .auth-banner {
@@ -16688,7 +17069,8 @@ html.dark .mi-scan-row[data-state="err"] .material-symbols-outlined { color: #fc
   justify-content: space-between; gap: 12px; flex: 0 0 auto;
 }
 .mi-scan-note { font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; min-width: 0; }
-.mi-scan-foot .adm-btn--primary .material-symbols-outlined {
+.mi-scan-foot .adm-btn--primary .material-symbols-outlined,
+.mi-scan-foot .wise-btn--primary .material-symbols-outlined {
   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
@@ -18415,12 +18797,15 @@ a.dsc-download .material-symbols-outlined { font-size: 18px !important; }
 }
 .dsc-state-col .dash-btn-row { margin: 0; flex-wrap: wrap; }
 /* Forced hover / open for demos (mirrors :hover so all states stay visible). */
-.dsc-demo .dash-btn--primary.is-hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(37, 80, 124, 0.3); }
-.dsc-demo .dash-btn--ghost.is-hover { background: var(--surface-2); }
+.dsc-demo .dash-btn--primary.is-hover,
+.dsc-demo .dash-btn-row .wise-btn--primary.is-hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(37, 80, 124, 0.3); }
+.dsc-demo .dash-btn--ghost.is-hover,
+.dsc-demo .dash-btn-row .wise-btn--ghost.is-hover { background: var(--surface-2); }
 .dsc-demo .dash-text-link.is-hover { color: var(--primary-bright); text-decoration: none; }
 .dsc-demo .dash-text-link.is-hover .material-symbols-outlined { transform: translate(2px, -2px); }
 html.dark .dsc-demo .dash-text-link.is-hover { color: #fff; }
 .dsc-demo .dash-btn[disabled],
+.dsc-demo .wise-btn[disabled],
 .dsc-demo .dash-text-link[disabled],
 .dsc-demo .adm-btn[disabled],
 .dsc-demo .adm-icon-btn[disabled],
@@ -18429,14 +18814,20 @@ html.dark .dsc-demo .dash-text-link.is-hover { color: #fff; }
 .dsc-demo .pf-brand-chip[disabled],
 .dsc-demo .panel-more-btn[disabled] { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
 .dsc-demo .pf-head-trail { flex-wrap: nowrap; }
-.dsc-demo .pf-head-btn--ghost.is-hover { color: var(--text); background: var(--surface-2); }
-html.dark .dsc-demo .pf-head-btn--ghost.is-hover { background: rgba(255,255,255,0.06); }
+.dsc-demo .pf-head-btn--ghost.is-hover,
+.dsc-demo .pf-head-trail .wise-btn--ghost.is-hover { color: var(--text); background: var(--surface-2); }
+html.dark .dsc-demo .pf-head-btn--ghost.is-hover,
+html.dark .dsc-demo .pf-head-trail .wise-btn--ghost.is-hover { background: rgba(255,255,255,0.06); }
 .dsc-demo .pf-brand-chip.is-hover { border-color: var(--primary); background: var(--primary-soft); }
 html.dark .dsc-demo .pf-brand-chip.is-hover { background: rgba(37,80,124,0.28); }
-.dsc-demo .adm-btn--primary.is-hover { filter: brightness(1.08); }
-.dsc-demo .adm-btn--ghost.is-hover { color: var(--text); background: var(--surface-2); }
-.dsc-demo .adm-btn--danger.is-hover { background: var(--sec-red-10); }
-.dsc-demo .adm-btn--good.is-hover { background: var(--sec-green-10); }
+.dsc-demo .adm-btn--primary.is-hover,
+.dsc-demo .wise-btn--primary.is-hover { filter: brightness(1.08); }
+.dsc-demo .adm-btn--ghost.is-hover,
+.dsc-demo .wise-btn--ghost.is-hover { color: var(--text); background: var(--surface-2); }
+.dsc-demo .adm-btn--danger.is-hover,
+.dsc-demo .wise-btn--danger.is-hover { background: var(--sec-red-10); }
+.dsc-demo .adm-btn--good.is-hover,
+.dsc-demo .wise-btn--good.is-hover { background: var(--sec-green-10); }
 .dsc-demo .adm-icon-btn.is-hover { background: var(--surface-2); color: var(--text); }
 .dsc-demo .adm-stat.is-hover { transform: translateY(-1px); box-shadow: var(--shadow-card, var(--shadow-1)); border-color: var(--border-strong); }
 .dsc-demo .adm-vf-stat.is-hover { transform: translateY(-1px); box-shadow: var(--shadow-card, var(--shadow-1)); border-color: var(--border-strong); }
@@ -20981,7 +21372,8 @@ html.dark .dsc-demo .rp-view { color: var(--primary-bright, var(--primary)); }
 .dsc-demo .wa-rpt-foot {
   padding: 10px 14px 12px; border-top: 1px solid var(--border);
 }
-.dsc-demo .wa-rpt-foot .adm-btn { width: 100%; }
+.dsc-demo .wa-rpt-foot .adm-btn,
+.dsc-demo .wa-rpt-foot .wise-btn { width: 100%; }
 
 /* ------------------------------------------------------------------ */
 /* Transcript Architecture — frozen labeled conversation               */

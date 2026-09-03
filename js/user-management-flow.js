@@ -227,7 +227,7 @@ function filterPopHtml() {
       ${selectHtml('waitlist')}
       <div class="adm-filter-pop-foot">
         <button type="button" class="adm-filter-clear" data-adm-action="clear-filters">Clear all</button>
-        <button type="button" class="adm-btn adm-btn--primary adm-btn--sm" data-adm-action="apply-filters">Done</button>
+        <button type="button" class="wise-btn wise-btn--primary wise-btn--sm" data-adm-action="apply-filters">Done</button>
       </div>
     </div>`;
 }
@@ -243,7 +243,7 @@ function paint() {
             <p class="adm-lede" data-adm-count>Showing ${USERS.length} of 40 users · 3 roles</p>
           </div>
           <div class="adm-head-actions">
-            <button type="button" class="adm-btn adm-btn--primary" data-adm-action="new-user"><span class="material-symbols-outlined">person_add</span>New User</button>
+            <button type="button" class="wise-btn wise-btn--primary" data-adm-action="new-user"><span class="material-symbols-outlined">person_add</span>New User</button>
           </div>
         </div>
       </header>

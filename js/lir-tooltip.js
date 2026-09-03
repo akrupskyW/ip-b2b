@@ -44,7 +44,7 @@ const CANDIDATE_SELECTOR =
 const SKIP_SELECTOR =
   '.ws-intent-chip, .sc-reply-chips .chip, .sc-inline-chips .chip, .ws-chips .chip, .chip-dive, ' +
   '.pf-chip, .vf-chip, .gv-chip, .ib-gras, .ib-pl, .pf-claim-btn, .pf-row-act, ' +
-  '.pf-head-btn, .pf-loadmore, ' +
+  '.wise-btn, .pf-loadmore, ' +
   '.pf-rowmenu-btn, .pf-reports-btn, .adm-rowmenu-btn, .inv-rowmenu-btn, .ma-rowmenu-btn, .nud-rowmenu-btn';
 const SKIP_ANCESTOR =
   '[role="menu"], .pf-module-menu-pop, .pf-reports-pop, .pf-rowmenu-pop, .inv-rowmenu-pop, .pf-datemenu-pop, ' +

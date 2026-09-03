@@ -216,14 +216,14 @@ function viewHTML(rec) {
   const eyebrow = fromReform ? 'Generated from Reformulation' : 'Generated from Output';
   return `<section class="dash-report-view" aria-label="${esc(rec.title)}">
     <header class="dash-report-view-head">
-      <button class="dash-btn dash-btn--ghost dash-report-back" type="button" data-rp-gen-back>
+      <button class="wise-btn wise-btn--ghost dash-report-back" type="button" data-rp-gen-back>
         <span class="material-symbols-outlined">arrow_back</span>Back to reports
       </button>
       <div class="dash-report-view-titles">
         <span class="dash-modal-eyebrow">${eyebrow}</span>
         <h2 class="dash-modal-title">${esc(rec.title)}</h2>
       </div>
-      <a class="dash-btn dash-btn--primary" href="${esc(openHref)}">
+      <a class="wise-btn wise-btn--primary" href="${esc(openHref)}">
         <span class="material-symbols-outlined">${openIcon}</span>${openLabel}
       </a>
     </header>

@@ -13,18 +13,14 @@ marketing, add-product, send, and any page-local solid-blue CTA.
 
 ## What counts
 
-- Shared: `.btn-primary`, `.adm-btn--primary`, `.adm-icon-btn--primary`,
-  `.pf-btn--primary`, `.pf-head-btn--primary`, `.dash-btn--primary`,
-  `.mkt-btn-primary`, `.cmp-tool-btn--primary`, `.gv-btn--primary`,
-  `.wmod-btn--primary`, `.vf-modal-btn--primary`, `.demo-btn.primary`
+- Shared: `.wise-btn--primary`, `.adm-icon-btn--primary`, `.demo-btn.primary`
 - Page-local primaries: `.nfp-ia-analyze`, `.nfp-ins-next-btn`,
-  `.rf-ia-btn`, `.rf-save-btn`, `.inv-btn--primary`, `.ma-btn--primary`,
-  `.um-btn-primary`
+  `.rf-ia-btn`, `.rf-save-btn`
 - `.chip.chip-primary`, selected solid-blue chips (`.ms-chip.is-selected`)
 - `.sc-send` (the composer send circle)
 
 Ghost, outline, tinted, and welcome intent chips (`.ws-intent-chip`,
-`.chip-dive`, `.btn-ghost`) stay **outlined** (`FILL` 0).
+`.chip-dive`, `.wise-btn--ghost`) stay **outlined** (`FILL` 0).
 
 ## How to fill
 
@@ -35,19 +31,19 @@ filled sibling (`help` not `help_outline`, `star` not `star_outline`).
 
 ```html
 <!-- ❌ BAD: solid blue button, outline icon -->
-<button class="btn btn-primary">
+<button class="wise-btn wise-btn--primary">
   <span class="material-symbols-outlined">login</span>Sign in
 </button>
 <!-- (default FILL 0, or an *_outline ligature) -->
 
 <!-- ✅ GOOD: same button, filled icon -->
-<button class="btn btn-primary">
+<button class="wise-btn wise-btn--primary">
   <span class="material-symbols-outlined">login</span>Sign in
 </button>
 ```
 
 ```css
-.btn-primary .material-symbols-outlined,
+.wise-btn--primary .material-symbols-outlined,
 .nfp-ia-analyze .material-symbols-outlined,
 .chip.chip-primary .material-symbols-outlined {
   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -61,7 +57,7 @@ filled sibling (`help` not `help_outline`, `star` not `star_outline`).
   `marketing.css` — do not invent a parallel fill system.
 - A new page-local solid-blue CTA (e.g. Analyze Ingredients) must be added
   to that shared hook. Never ship a primary button with FILL 0.
-- When promoting a chip to `chip-primary` (or any `--primary` / `btn-primary`
-  class), do not leave the icon outlined.
+- When promoting a chip to `chip-primary` (or any `--primary` /
+  `wise-btn--primary` class), do not leave the icon outlined.
 - Do not fill icons on ghost, outline, or tinted chips just because they sit
   next to a primary control.

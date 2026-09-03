@@ -230,23 +230,9 @@ body.mkt {
 html.dark .mkt-eyebrow { color: var(--primary-bright); }
 .mkt-lede { color: var(--text-muted); font-size: 1.05rem; max-width: 60ch; }
 
-/* ---------- Buttons ---------- */
-.mkt-btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  font-family: 'WISE Digits', var(--font-serif); font-weight: 700; font-size: 0.95rem;
-  padding: 13px 22px; border-radius: var(--radius-pill);
-  border: 1px solid transparent; cursor: pointer; text-decoration: none;
-  transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, border-color .18s ease, color .18s ease;
-  white-space: nowrap;
-}
-.mkt-btn:active { transform: translateY(1px); }
-.mkt-btn-primary { background: var(--primary); color: #fff; box-shadow: var(--shadow-1); }
-.mkt-btn-primary .material-symbols-outlined { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-.mkt-btn-primary:hover { box-shadow: var(--shadow-2); transform: translateY(-1px); }
-.mkt-btn-ghost { background: transparent; color: var(--text); border-color: var(--primary); }
-.mkt-btn-ghost:hover { background: var(--surface-2); border-color: var(--primary); color: var(--primary); }
-html.dark .mkt-btn-ghost:hover { color: var(--primary-bright); border-color: var(--primary-bright); }
-.mkt-btn-sm { padding: 9px 16px; font-size: 0.85rem; }
+/* ---------- Buttons ----------
+   Chrome lives on .wise-btn in pages/wise.css. .mkt-btn is an alias that
+   also applies the display (--lg) size. Shake + full-width plan CTAs stay here. */
 
 /* ---------- Segmented auth control (Log in | Create account) ----------
    The app is free for everyone; these sign-ins are the brand/retailer portal,
@@ -426,7 +412,8 @@ html.dark .mkt-nav-menu-item.is-active .mkt-nav-menu-title { color: var(--primar
   animation: mkt-cta-caret 1s steps(1, end) infinite;
 }
 @keyframes mkt-cta-caret { 50% { opacity: 0; } }
-.mkt-btn.mkt-cta-shake { animation: mkt-cta-shake .6s cubic-bezier(.36,.07,.19,.97) both; }
+.mkt-btn.mkt-cta-shake,
+.wise-btn.mkt-cta-shake { animation: mkt-cta-shake .6s cubic-bezier(.36,.07,.19,.97) both; }
 @keyframes mkt-cta-shake {
   10%, 90% { transform: translateX(-1px); }
   20%, 80% { transform: translateX(2px); }
@@ -435,7 +422,8 @@ html.dark .mkt-nav-menu-item.is-active .mkt-nav-menu-title { color: var(--primar
 }
 @media (prefers-reduced-motion: reduce) {
   .mkt-cta-app .mkt-cta-typed.is-typing::after { animation: none; }
-  .mkt-btn.mkt-cta-shake { animation: none; }
+  .mkt-btn.mkt-cta-shake,
+  .wise-btn.mkt-cta-shake { animation: none; }
 }
 /* Auth controls (Brand login / Create brand account) live as the segmented
    pill in the actions on desktop, and as that SAME segmented pill inside the
@@ -919,7 +907,8 @@ html.dark .mkt-plan-icon { color: var(--primary-bright); }
 .mkt-plan-features .material-symbols-outlined { color: var(--sec-green); font-size: 20px; flex: 0 0 auto; margin-top: 1px; }
 html.dark .mkt-plan-features .material-symbols-outlined { color: #6FD79E; }
 .mkt-plan-cta { margin-top: auto; }
-.mkt-plan-cta .mkt-btn { width: 100%; }
+.mkt-plan-cta .mkt-btn,
+.mkt-plan-cta .wise-btn { width: 100%; }
 
 /* ---------- Synced pricing rows (WISEcodeAI tiers) ----------
    When the three WISEcodeAI plans sit side by side, align every comparison row

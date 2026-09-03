@@ -170,7 +170,7 @@ export const FEATURE_SIGNALS = [
 /* Named pieces from the component catalog. Presence becomes a batched
    Components sentence (“It uses these components: …”), never a class name. */
 const COMPONENT_MARKERS = [
-  { name: 'Buttons', re: /\bdash-btn\b/ },
+  { name: 'Buttons', re: /\bwise-btn\b|\bdash-btn\b/ },
   { name: 'Stat tiles', re: /\badm-stat\b|\badm-vf-stat\b|\badm-metric\b|\bpf-stat\b/ },
   { name: 'Dashboard scores', re: /\bdash-score-card\b|\bdash-claim\b/ },
   { name: 'Output chips', re: /sc-surface-card|wa-merge-chip/ },

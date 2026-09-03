@@ -177,7 +177,7 @@ function paint() {
               <div class="wmod-row-label">WISEowl walkthrough</div>
               <div class="wmod-row-sub">Replay the grouped tour of the workspace</div>
             </div>
-            <button type="button" class="wmod-btn wmod-btn--ghost" data-prefs-tour>Replay tour</button>
+            <button type="button" class="wise-btn wise-btn--ghost" data-prefs-tour>Replay tour</button>
           </div>
         </div>
       </section>

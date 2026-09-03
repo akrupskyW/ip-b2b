@@ -559,7 +559,7 @@ function renderFilterPop() {
         </div>
       </div>
       <div class="ma-filter-pop-foot">
-        <button type="button" class="ma-btn ma-btn--primary ma-btn--sm" id="ma-filter-done">Done</button>
+        <button type="button" class="wise-btn wise-btn--primary wise-btn--sm" id="ma-filter-done">Done</button>
       </div>
     </div>`;
 }
@@ -802,7 +802,7 @@ function openPreview(node) {
       </div>
       <div class="ma-modal-foot">
         <span class="ma-modal-info">${esc(m.ext.toUpperCase())} · ${esc(fmtBytes(node.bytes))} · updated ${esc(node.updated)}</span>
-        <button type="button" class="ma-btn ma-btn--primary" data-modal-download><span class="material-symbols-outlined">download</span><span>Download</span></button>
+        <button type="button" class="wise-btn wise-btn--primary" data-modal-download><span class="material-symbols-outlined">download</span><span>Download</span></button>
       </div>
     </div>`;
   document.body.appendChild(scrim);

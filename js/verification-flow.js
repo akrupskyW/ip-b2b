@@ -798,8 +798,8 @@ function modalHTML() {
           <strong>Important:</strong> Once you complete the attestation, you will be making a formal declaration about the NON-UPF status of these products.
         </div>
         <div class="vf-modal-actions">
-          <button class="vf-modal-btn vf-modal-btn--ghost" type="button" data-vf="close-confirm">Cancel</button>
-          <button class="vf-modal-btn vf-modal-btn--primary" type="button" data-vf="confirm-attest">Yes, Continue</button>
+          <button class="wise-btn wise-btn--ghost" type="button" data-vf="close-confirm">Cancel</button>
+          <button class="wise-btn wise-btn--primary" type="button" data-vf="confirm-attest">Yes, Continue</button>
         </div>
       </div>
     </div>`;

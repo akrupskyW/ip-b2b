@@ -104,7 +104,7 @@ const NAV_HTML = `
           <a class="mkt-authseg-btn" href="pages/create-account.html">Create brand account</a>
         </div>
       </div>
-      <a class="mkt-btn mkt-btn-primary mkt-btn-sm mkt-cta-app" href="index.html#cta" aria-label="Get the Cool Owl app"><span class="mkt-cta-label">Get the&nbsp;<span class="mkt-cta-typed" data-cta-typed aria-hidden="true"></span>&nbsp;app</span></a>
+      <a class="wise-btn wise-btn--primary wise-btn--sm mkt-cta-app wise-btn--lg" href="index.html#cta" aria-label="Get the Cool Owl app"><span class="mkt-cta-label">Get the&nbsp;<span class="mkt-cta-typed" data-cta-typed aria-hidden="true"></span>&nbsp;app</span></a>
     </div>
     <button class="mkt-nav-icon mkt-nav-theme" type="button" data-mkt-theme title="Toggle theme" aria-label="Toggle color theme">
       <span class="material-symbols-outlined">dark_mode</span>
@@ -745,7 +745,7 @@ function boot() {
   /* CTA-like controls only. Bare <button>s are deliberately excluded so media
      and utility controls (video play/sound/CC, gallery arrows) inside a tagged
      section don't fire a stray chat turn — only real calls-to-action do. */
-  const BODY_SYNC_INTERACTIVE = 'a[href], .mkt-btn, .mkt-do-card, .mkt-pillar, .mkt-choice, .mkt-plan, .mkt-badge, [data-chat]';
+  const BODY_SYNC_INTERACTIVE = 'a[href], .wise-btn, .mkt-do-card, .mkt-pillar, .mkt-choice, .mkt-plan, .mkt-badge, [data-chat]';
   document.addEventListener('click', (e) => {
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     if (!chat) return;
@@ -863,7 +863,7 @@ function typeGetAppCta() {
   typed.dataset.done = '1';
   const word = 'Cool Owl';
   const passes = 2; /* how many times "Cool Owl" is typed in */
-  const btn = typed.closest('.mkt-btn');
+  const btn = typed.closest('.wise-btn');
 
   const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (prefersReduced) { typed.textContent = word; return; }

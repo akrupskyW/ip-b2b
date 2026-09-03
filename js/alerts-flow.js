@@ -115,7 +115,7 @@ function paint() {
           <p class="wmod-desc">A live stream of everything your agents do \u2014 verifications, ingredient flags, reports, trend signals and account activity \u2014 newest first. Filter by category, search the stream, or mark it all read.</p>
         </div>
         <div class="wmod-head-actions">
-          <button type="button" class="wmod-btn wmod-btn--ghost" data-al-action="mark_all"${unread ? '' : ' disabled'}><span class="material-symbols-outlined">done_all</span>Mark all read</button>
+          <button type="button" class="wise-btn wise-btn--ghost" data-al-action="mark_all"${unread ? '' : ' disabled'}><span class="material-symbols-outlined">done_all</span>Mark all read</button>
         </div>
       </div>
 

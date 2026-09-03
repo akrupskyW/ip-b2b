@@ -1232,10 +1232,10 @@ function openImageModal(cfg) {
       <input type="url" class="dash-banner-url" id="dash-banner-url" placeholder="${esc(urlPlaceholder)}" autocomplete="off">
     </div>
     <footer class="dash-modal-foot">
-      <button class="dash-btn dash-btn--ghost" type="button" data-banner-remove><span class="material-symbols-outlined">delete</span>Remove</button>
+      <button class="wise-btn wise-btn--ghost" type="button" data-banner-remove><span class="material-symbols-outlined">delete</span>Remove</button>
       <div class="dash-modal-foot-right">
-        <button class="dash-btn dash-btn--ghost" type="button" data-banner-close>Cancel</button>
-        <button class="dash-btn dash-btn--primary" type="button" data-banner-save><span class="material-symbols-outlined">check</span>${esc(saveLabel)}</button>
+        <button class="wise-btn wise-btn--ghost" type="button" data-banner-close>Cancel</button>
+        <button class="wise-btn wise-btn--primary" type="button" data-banner-save><span class="material-symbols-outlined">check</span>${esc(saveLabel)}</button>
       </div>
     </footer>`;
 
@@ -1450,14 +1450,14 @@ function reportSurfaceHTML(cfg, d, backLabel = 'Back to dashboard') {
   return `
     <section class="dash-report-view" aria-label="${esc(cfg.title)}">
       <header class="dash-report-view-head">
-        <button class="dash-btn dash-btn--ghost dash-report-back" type="button" data-dash-action="report-back">
+        <button class="wise-btn wise-btn--ghost dash-report-back" type="button" data-dash-action="report-back">
           <span class="material-symbols-outlined">arrow_back</span>${esc(backLabel)}
         </button>
         <div class="dash-report-view-titles">
           <span class="dash-modal-eyebrow">${esc(cfg.eyebrow)}</span>
           <h2 class="dash-modal-title">${esc(cfg.title)}</h2>
         </div>
-        <button class="dash-btn dash-btn--primary dash-report-view-export" type="button" data-dash-action="report-export">
+        <button class="wise-btn wise-btn--primary dash-report-view-export" type="button" data-dash-action="report-export">
           <span class="material-symbols-outlined">download</span>Export
         </button>
       </header>
@@ -1695,7 +1695,7 @@ function renderTopPerformers(d) {
             <span class="dash-stamp-icon dash-stamp-num" role="img" aria-label="${rankLabels[i] || `rank ${i + 1}`} — ${esc(it.name)}"><span class="dash-stamp-num-inner"><span class="dash-stamp-hash">#</span>${i + 1}</span></span>
           </div>
           <div class="dash-btn-row">
-            <button class="dash-btn dash-btn--ghost" type="button" data-dash-action="topproduct-report" aria-label="View report for ${esc(it.name)}"><span class="material-symbols-outlined">description</span>View report</button>
+            <button class="wise-btn wise-btn--ghost" type="button" data-dash-action="topproduct-report" aria-label="View report for ${esc(it.name)}"><span class="material-symbols-outlined">description</span>View report</button>
           </div>
         </div>`;
     })
@@ -1733,7 +1733,7 @@ function renderTopPerformersHero(d) {
               <span class="dash-stamp-icon dash-stamp-num" role="img" aria-label="${rankLabels[i] || `rank ${i + 1}`} — ${esc(it.name)}"><span class="dash-stamp-num-inner"><span class="dash-stamp-hash">#</span>${i + 1}</span></span>
             </div>
             <div class="dash-btn-row">
-              <button class="dash-btn dash-btn--ghost" type="button" data-dash-action="topproduct-report" aria-label="View report for ${esc(it.name)}"><span class="material-symbols-outlined">description</span>View report</button>
+              <button class="wise-btn wise-btn--ghost" type="button" data-dash-action="topproduct-report" aria-label="View report for ${esc(it.name)}"><span class="material-symbols-outlined">description</span>View report</button>
             </div>
           </div>
         </div>`;
@@ -1760,7 +1760,7 @@ function renderClaim(d) {
           ${stampIcon('Products Discovered')}
         </div>
         <div class="dash-btn-row">
-          <button class="dash-btn dash-btn--ghost" type="button" data-dash-action="claim-upcs"><span class="material-symbols-outlined">verified_user</span>Claim your products</button>
+          <button class="wise-btn wise-btn--ghost" type="button" data-dash-action="claim-upcs"><span class="material-symbols-outlined">verified_user</span>Claim your products</button>
         </div>
       </div>
       <div class="dash-claim-divider"></div>
@@ -1771,7 +1771,7 @@ function renderClaim(d) {
           ${stampIcon('Products Claimed')}
         </div>
         <div class="dash-btn-row">
-          <button class="dash-btn dash-btn--ghost" type="button" data-dash-action="review-portfolio"><span class="material-symbols-outlined">inventory_2</span>Review your food portfolio</button>
+          <button class="wise-btn wise-btn--ghost" type="button" data-dash-action="review-portfolio"><span class="material-symbols-outlined">inventory_2</span>Review your food portfolio</button>
         </div>
         <button class="dash-text-link dash-text-link--indent" type="button" data-dash-action="add-food"><span class="material-symbols-outlined">add</span>Add food</button>
       </div>
@@ -1793,7 +1793,7 @@ function renderClaim(d) {
           ${stampIcon('Products Qualify')}
         </div>
         <div class="dash-btn-row">
-          <button class="dash-btn dash-btn--primary" type="button" data-dash-action="verify-upf"><span class="material-symbols-outlined">verified</span>Start Non&#8209;UPF Verification</button>
+          <button class="wise-btn wise-btn--primary" type="button" data-dash-action="verify-upf"><span class="material-symbols-outlined">verified</span>Start Non&#8209;UPF Verification</button>
         </div>
         <button class="dash-text-link dash-text-link--indent" type="button" data-dash-action="nonupf-dashboard"><span class="material-symbols-outlined">dashboard</span>Non&#8209;UPF Dashboard</button>
       </div>
@@ -1815,7 +1815,7 @@ function renderClaim(d) {
           ${stampIcon('Products Qualify')}
         </div>
         <div class="dash-btn-row">
-          <button class="dash-btn dash-btn--primary" type="button" data-dash-action="verify-gras"><span class="material-symbols-outlined">verified</span>Start GRAS Verification</button>
+          <button class="wise-btn wise-btn--primary" type="button" data-dash-action="verify-gras"><span class="material-symbols-outlined">verified</span>Start GRAS Verification</button>
         </div>
       </div>
     </section>`;
@@ -2020,7 +2020,7 @@ function renderPillarCards(d) {
           <div class="dash-cta-banner-scrim" aria-hidden="true"></div>
           <div class="dash-pillars-cta-inner">
             <h2 class="dash-pillars-cta-headline">Every metric, distribution &amp; flagged product across all 3 pillars</h2>
-            <button class="dash-btn dash-cta-banner-btn dash-pillars-cta-btn" type="button" data-dash-action="insights-report">
+            <button class="wise-btn dash-cta-banner-btn dash-pillars-cta-btn" type="button" data-dash-action="insights-report">
               <span class="material-symbols-outlined">description</span>
               <span class="dash-pillars-cta-label">View and export the full WISEcode insights report</span>
               <span class="material-symbols-outlined dash-pillars-cta-arrow">arrow_outward</span>

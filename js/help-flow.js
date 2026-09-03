@@ -427,15 +427,15 @@ function paintContactFoot() {
   foot.hidden = false;
   if (mailSent) {
     foot.innerHTML = `
-      <button type="button" class="adm-btn adm-btn--ghost" data-mail-close>Close</button>
-      <button type="button" class="adm-btn adm-btn--primary" data-mail-again>
+      <button type="button" class="wise-btn wise-btn--ghost" data-mail-close>Close</button>
+      <button type="button" class="wise-btn wise-btn--primary" data-mail-again>
         <span class="material-symbols-outlined">edit</span>
         <span>Send another</span>
       </button>`;
     return;
   }
   foot.innerHTML = `
-    <button type="button" class="adm-btn adm-btn--primary" data-mail-send>
+    <button type="button" class="wise-btn wise-btn--primary" data-mail-send>
       <span class="material-symbols-outlined">send</span>
       <span>Send Email</span>
     </button>`;
@@ -698,7 +698,7 @@ function mountContactPane() {
       </div>
       <div class="hc-mail-body" data-mail-body></div>
       <div class="hc-mail-foot" data-mail-foot>
-        <button type="button" class="adm-btn adm-btn--primary" data-mail-send>
+        <button type="button" class="wise-btn wise-btn--primary" data-mail-send>
           <span class="material-symbols-outlined">send</span>
           <span>Send Email</span>
         </button>

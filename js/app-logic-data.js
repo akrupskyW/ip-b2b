@@ -404,7 +404,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Ingredients Analyzer is its own sticky module',
-        how: 'The ingredient list, Analyze button, and Parsed / Codes / Nutrients / Scout accordions render in <code>#ia-panel</code>, a nested sticky drawer to the right of Product Details. <code>renderIA()</code> writes that module; Product Details no longer hosts an ingredients column. The analyzer does not take the fill-width default.',
+        how: 'The ingredient list, Analyze button, and Parsed / Codes / Nutrients / Scout accordions render in <code>#ia-panel</code>, a nested sticky drawer to the right of Product Details. The drawer starts closed. Verify ingredients (banner, chip, or <code>from=verify</code>) and Analyze open it; Product Details\u2019 ⋯ can toggle it. There is no Save to Portfolio footer on the product module \u2014 save lives on the add banner and in chat. The analyzer does not take the fill-width default.',
       },
       {
         title: 'Category docks with the ⋯, not in the size row',
@@ -442,11 +442,11 @@ export const APP_LOGIC = [
       },
       {
         title: 'The next-step banner follows the portfolio action',
-        how: 'Portfolio row actions pass <code>from=</code> so View / Add Product opens on the matching banner: Discovered \u2192 Review &amp; claim, Claimed \u2192 finish a claimed product, Missing data \u2192 Complete details or Verify ingredients, Add a product \u2192 save a new product, ineligible \u2192 why the shield is blocked. Claimed products that already qualify still see Get the Non-UPF Shield. Five small dots mark progress through Discovered \u2192 Claimed \u2192 Data complete \u2192 Ingredients verified \u2192 Non-UPF Verified; there is no labelled stepper. Claiming writes the UPC to <code>wise-portfolio-claimed</code> and drops the row from Discovered on the next visit.',
+        how: 'Portfolio row actions pass <code>from=</code> so View / Add Product opens on the matching banner: Discovered \u2192 Review &amp; claim, Claimed \u2192 finish a claimed product, Missing data \u2192 Complete details or Verify ingredients, Add a product \u2192 save a new product, ineligible \u2192 why the shield is blocked. Verify ingredients opens the Ingredient List sticky to the right of Product Details (and <code>from=verify</code> opens it on arrival). Claimed products that already qualify still see Get the Non-UPF Shield. Five small dots mark progress through Discovered \u2192 Claimed \u2192 Data complete \u2192 Ingredients verified \u2192 Non-UPF Verified; there is no labelled stepper. Claiming writes the UPC to <code>wise-portfolio-claimed</code> and drops the row from Discovered on the next visit.',
       },
       {
         title: 'Ingredients Analyzer is its own sticky module',
-        how: 'Same as Add Product: the ingredient list and Analyze accordions live in <code>#ia-panel</code>, a nested sticky drawer to the right of Product Details, not in a second column inside the facts card.',
+        how: 'Same as Add Product: the ingredient list and Analyze accordions live in <code>#ia-panel</code>, a nested sticky drawer to the right of Product Details. It starts closed; Verify ingredients opens it to the right of the product module.',
       },
       {
         title: 'Intent chips track the NFP analysis workflow',

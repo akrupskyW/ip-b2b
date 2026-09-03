@@ -719,7 +719,7 @@ function openScanModal(opts) {
       <ul class="pg-scan-log" data-scan-log role="log" aria-live="polite" aria-relevant="additions"></ul>
       <div class="pg-scan-foot">
         <span class="pg-scan-note" data-scan-note>Keep this tab open while it runs.</span>
-        <button type="button" class="adm-btn adm-btn--primary" data-scan-done disabled>
+        <button type="button" class="wise-btn wise-btn--primary" data-scan-done disabled>
           <span class="material-symbols-outlined">hourglass_top</span>
           <span data-scan-done-label>Working…</span>
         </button>
@@ -1164,7 +1164,7 @@ function render() {
         <span class="pg-reeval-meta" data-pg-reeval-meta></span>
       </div>
       <div class="pg-bar-actions">
-        <button type="button" class="adm-btn adm-btn--primary pg-reeval-btn" data-pg-reeval title="Scan every HTML page, add any screen that is missing, and remount the live previews so they match the project right now.">
+        <button type="button" class="wise-btn wise-btn--primary pg-reeval-btn" data-pg-reeval title="Scan every HTML page, add any screen that is missing, and remount the live previews so they match the project right now.">
           <span class="material-symbols-outlined" aria-hidden="true">autorenew</span>
           <span data-pg-reeval-label>Re-evaluate</span>
         </button>

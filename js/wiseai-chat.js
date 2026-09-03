@@ -4040,12 +4040,12 @@ function openHelixApplyVerify(cfg) {
       + '<span class="dsc-ready-verify-dot' + (isFirst ? '' : ' is-on') + '"></span>'
       + '</div>'
       + '<div class="dsc-ready-verify-actions">'
-      + '<button type="button" class="adm-btn adm-btn--ghost" data-hx-verify="close">Cancel</button>'
-      + '<button type="button" class="adm-btn adm-btn--primary" data-hx-verify="' + (isFirst ? 'next' : 'confirm') + '">'
+      + '<button type="button" class="wise-btn wise-btn--ghost" data-hx-verify="close">Cancel</button>'
+      + '<button type="button" class="wise-btn wise-btn--primary" data-hx-verify="' + (isFirst ? 'next' : 'confirm') + '">'
       + '<span class="material-symbols-outlined">' + (isFirst ? 'arrow_forward' : 'done') + '</span>'
       + (isFirst ? 'Continue' : helixVerifyEsc(confirmLabel))
       + '</button></div></div></div>';
-    const primary = scrim.querySelector('.adm-btn--primary');
+    const primary = scrim.querySelector('.wise-btn--primary');
     if (primary) {
       primary.style.fontVariationSettings = "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24";
       primary.focus();
@@ -4156,7 +4156,7 @@ function mountHelixStudioBar(root) {
       '<button type="button" class="sc-helix-save" aria-label="Save instance" data-tip="Save this Helix as an instance you can revert to">' +
         '<span class="material-symbols-outlined" aria-hidden="true">bookmark</span>' +
       '</button>' +
-      '<button type="button" class="sc-helix-apply btn btn-primary" disabled aria-disabled="true">' +
+      '<button type="button" class="sc-helix-apply wise-btn wise-btn--primary" disabled aria-disabled="true">' +
         '<span class="material-symbols-outlined" aria-hidden="true">done</span>Apply' +
       '</button>';
     host.appendChild(bar);

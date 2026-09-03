@@ -1648,7 +1648,7 @@
     const err = state.errors.ingredients;
     const hasList = !!(state.ingredients || '').trim();
     const listInner = `<div class="nfp-ingred-wrap${hasList ? '' : ' is-empty'}">
-      ${hasList ? '' : '<p class="nfp-ingred-lede">Paste the full list from the label — or type it — and I\u2019ll map every nested ingredient.</p>'}
+      ${hasList ? '' : '<p class="nfp-ingred-lede">Paste the full list from the label — or type it here or in chat — and I\u2019ll map every nested ingredient.</p>'}
       <div class="nfp-ingred-body${err ? ' nfp-block-err' : ''}">
         <textarea class="nfp-ingred-edit" data-field="ingredients" rows="${hasList ? 1 : 5}" placeholder="${hasList ? 'Paste or type the ingredient list' : 'Water, Cane Sugar, Wheat Flour, \u2026'}">${esc(state.ingredients)}</textarea>
         ${err ? `<div class="nfp-field-note"><span class="material-symbols-outlined">error_outline</span>${esc(err)}</div>` : ''}
@@ -2135,21 +2135,31 @@
       : `Next, verify the ingredients on <strong>${esc(state.productName)}</strong> so it can earn a Non-UPF Shield.`,
       nfpIntentChips());
   }
+  function revealIngredientList() {
+    setIaOpen(true);
+    try { window.WiseStickyModules && window.WiseStickyModules.scan(); } catch (_) {}
+    const panel = iaPanelEl();
+    if (panel) {
+      requestAnimationFrame(() => {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+      });
+    }
+  }
+  function applyIngredientListForArrival() {
+    if (state.fromKey === 'verify') revealIngredientList();
+    else setIaOpen(false);
+  }
   function startVerifyFromBanner() {
     state.lifecyclePeek = null;
+    revealIngredientList();
     if (!state.iaRan) {
       addUser('Verify the ingredients');
       runIngredientAnalysis(true, false);
       return;
     }
-    state.lifecycleDone = 'verify';
-    renderNFP();
     addUser('Verify the ingredients');
-    wiseSay(`Ingredients on <strong>${esc(state.productName)}</strong> are verified. It qualifies for the Non-UPF Shield whenever you are ready.`,
-      [
-        { label: 'Get the Non-UPF Shield', icon: 'gpp_good', action: 'shield' },
-        { label: 'Back to portfolio', icon: 'inventory_2', action: 'exit' },
-      ]);
+    wiseSay(`The ingredient list for <strong>${esc(state.productName)}</strong> is open on the right. Confirm the mappings, then it can earn a Non-UPF Shield.`,
+      nfpIntentChips());
   }
   function nfAmount(key) {
     const v = (state.nf || {})[key];
@@ -2326,6 +2336,74 @@
       }
     } catch (_) {}
   }
+  function iaPanelEl() { return document.getElementById('ia-panel'); }
+  function iaIsOpen() {
+    const panel = iaPanelEl();
+    return !!(panel && !panel.hidden && panel.style.display !== 'none');
+  }
+  function syncIaOpenUi() {
+    const open = iaIsOpen();
+    const nfpItem = document.getElementById('nfp-ia-item');
+    if (nfpItem) {
+      nfpItem.classList.toggle('is-on', open);
+      nfpItem.setAttribute('aria-checked', open ? 'true' : 'false');
+    }
+    const row = document.getElementById('modules-row');
+    const existing = row && row.querySelector('[data-ia-restore]');
+    if (open) {
+      if (existing) existing.remove();
+      return;
+    }
+    if (!row || existing) return;
+    const tab = document.createElement('button');
+    tab.type = 'button';
+    tab.className = 'wise-progress-restore';
+    tab.setAttribute('data-ia-restore', '1');
+    tab.title = 'Show Ingredient List';
+    tab.setAttribute('aria-label', 'Show Ingredient List');
+    tab.innerHTML = '<span class="material-symbols-outlined">chevron_left</span><span class="wpr-label">Ingredient List</span>';
+    tab.addEventListener('click', (e) => { e.stopPropagation(); setIaOpen(true); });
+    row.appendChild(tab);
+  }
+  function setIaOpen(on) {
+    const panel = iaPanelEl();
+    if (!panel) return;
+    panel.hidden = !on;
+    if (on) panel.style.removeProperty('display');
+    else panel.style.display = 'none';
+    syncIaOpenUi();
+  }
+  function installIaCloseMenu() {
+    const panel = iaPanelEl();
+    if (!panel) return;
+    let done = false;
+    function tryInject() {
+      if (done) return true;
+      const pop = document.getElementById('ia-menu')
+        || panel.querySelector('.panel-more-wrap .topbar-popover');
+      if (!pop) return false;
+      if (!pop.querySelector('#ia-close-item')) {
+        pop.insertAdjacentHTML('beforeend',
+          '<div class="topbar-menu-divider"></div>'
+          + '<button type="button" class="topbar-menu-item topbar-menu-item--danger" id="ia-close-item" role="menuitem">'
+          + '<span class="material-symbols-outlined topbar-menu-icon">close</span>'
+          + '<span>Close pane</span>'
+          + '</button>');
+        pop.querySelector('#ia-close-item').addEventListener('click', (e) => {
+          e.stopPropagation();
+          closeNfpMenu(pop);
+          setIaOpen(false);
+        });
+      }
+      done = true;
+      return true;
+    }
+    if (tryInject()) return;
+    const obs = new MutationObserver(() => { if (tryInject()) obs.disconnect(); });
+    obs.observe(panel, { childList: true, subtree: true });
+    let tries = 0;
+    const iv = setInterval(() => { if (tryInject() || ++tries > 60) clearInterval(iv); }, 120);
+  }
   function nfpDeleteCurrentProduct() {
     const name = esc(state.productName || 'this product');
     nfpRememberRemoved();
@@ -2364,6 +2442,22 @@
         });
         sync();
       }
+      if (!pop.querySelector('#nfp-ia-item')) {
+        pop.insertAdjacentHTML('beforeend',
+          '<div class="topbar-menu-divider"></div>'
+          + '<button type="button" class="topbar-menu-item sc-mcp-item" id="nfp-ia-item" role="menuitemcheckbox" aria-checked="true">'
+          + '<span class="material-symbols-outlined topbar-menu-icon">science</span>'
+          + '<span>Ingredient List</span>'
+          + '<span class="sc-switch" aria-hidden="true"></span>'
+          + '</button>');
+        const item = pop.querySelector('#nfp-ia-item');
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          setIaOpen(!iaIsOpen());
+          closeNfpMenu(pop);
+        });
+        syncIaOpenUi();
+      }
       if (nfpIsExistingProduct() && !pop.querySelector('#nfp-delete-item')) {
         pop.insertAdjacentHTML('beforeend',
           '<div class="topbar-menu-divider"></div>'
@@ -2378,8 +2472,9 @@
         });
       }
       const haveCompare = !!pop.querySelector('#nfp-compare-item');
+      const haveIa = !!pop.querySelector('#nfp-ia-item');
       const haveDelete = !nfpIsExistingProduct() || !!pop.querySelector('#nfp-delete-item');
-      if (haveCompare && haveDelete) { done = true; return true; }
+      if (haveCompare && haveIa && haveDelete) { done = true; return true; }
       return false;
     }
     if (tryInject()) return;
@@ -3049,7 +3144,7 @@
           sayStep(`We\'re almost there. Still needed before saving: <strong>${esc(missing.map((m) => m.label).join(', ') || 'fix flagged nutrients')}</strong>.`,
             [{ label: 'Fix the first one', icon: 'build', action: 'goto:' + firstMissingStep() }]);
         } else {
-          sayStep('Everything required is in and nothing\'s flagged. Ready when you are — hit <strong>Save to Portfolio</strong> on the right, or save from here. Until you save, this stays a draft.',
+          sayStep('Everything required is in and nothing\'s flagged. Ready when you are — save from the banner, or save from here. Until you save, this stays a draft.',
             [{ label: 'Save to Portfolio', icon: 'save', action: 'save', primary: true }]);
         }
         break;
@@ -3342,8 +3437,8 @@
       <footer class="dash-modal-foot">
         <span></span>
         <div class="dash-modal-foot-right">
-          <button class="dash-btn dash-btn--ghost" type="button" data-photo-close>Cancel</button>
-          <button class="dash-btn dash-btn--primary" type="button" data-photo-save disabled><span class="material-symbols-outlined">check</span>${replacing ? 'Replace photo' : 'Add photo'}</button>
+          <button class="wise-btn wise-btn--ghost" type="button" data-photo-close>Cancel</button>
+          <button class="wise-btn wise-btn--primary" type="button" data-photo-save disabled><span class="material-symbols-outlined">check</span>${replacing ? 'Replace photo' : 'Add photo'}</button>
         </div>
       </footer>`;
 
@@ -4156,6 +4251,7 @@
     }
     hideWelcome();
     renderNFP();
+    applyIngredientListForArrival();
     // Deep-linked from the portfolio's ⋮ menu → "Add pack formats / sizes":
     // open the product and drop straight into the add-a-pack flow, with the
     // Pack Formats section scrolled into view.
@@ -4640,8 +4736,10 @@
 
     wireNfpModuleMenu();
     installNfpLayoutMenuItems();
+    installIaCloseMenu();
+    applyIngredientListForArrival();
 
-    // Save button
+    // Save button (banner / chat still call doSave; the product-module footer is gone)
     $('nfp-save-btn')?.addEventListener('click', doSave);
 
     // Chat topbar menu
@@ -5127,6 +5225,7 @@
   }
 
   function runIngredientAnalysis(fromUser, echoUser) {
+    revealIngredientList();
     flushIngredientsFromPanel();
     if (!state.ingredients) {
       if (!fromUser) return;

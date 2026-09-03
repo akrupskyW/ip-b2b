@@ -387,28 +387,8 @@
     .ma-row--folder.is-open .ma-chevron { transform: rotate(90deg); color: var(--primary); }
     html.dark .ma-row--folder.is-open .ma-chevron { color: var(--primary-bright, #8B9FAF); }
 
-    /* Action buttons (Preview / Download) */
+    /* Action buttons (Preview / Download) — pills are .wise-btn in pages/wise.css. */
     .ma-actions { display: inline-flex; align-items: center; gap: 8px; }
-    .ma-btn {
-      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-      height: 34px; padding: 0 16px; border-radius: 999px;
-      font-family: inherit; font-size: 0.78rem; font-weight: 700; cursor: pointer;
-      border: 1px solid transparent; transition: filter 0.15s ease, background 0.15s ease, transform 0.1s ease;
-    }
-    .ma-btn .material-symbols-outlined { font-size: 16px; }
-    .ma-btn:active { transform: translateY(1px); }
-    .ma-btn--sm { height: 30px; padding: 0 12px; font-size: 0.72rem; }
-    .ma-btn--primary { background: var(--primary); color: #fff; box-shadow: var(--shadow-1); }
-    .ma-btn--primary .material-symbols-outlined {
-      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-    }
-    .ma-btn--primary:hover { filter: brightness(1.08); }
-    .ma-btn--ghost {
-      background: transparent; color: var(--text-muted);
-      border-color: var(--primary);
-    }
-    .ma-btn--ghost:hover { color: var(--text); background: var(--surface-2); }
-    html.dark .ma-btn--ghost:hover { background: rgba(255,255,255,0.05); }
 
     .ma-row--empty { display: block; padding: 18px 14px; }
     .ma-empty {
@@ -486,8 +466,10 @@
       .ma-head { padding: 20px 20px 0; }
       .ma-body { padding: 16px 20px 48px; }
       .ma-head-title { font-size: var(--module-title-size, 1.2rem); }
-      .ma-actions .ma-btn span:not(.material-symbols-outlined) { display: none; }
-      .ma-actions .ma-btn { padding: 0 12px; }
+      .ma-actions .ma-btn span:not(.material-symbols-outlined),
+      .ma-actions .wise-btn span:not(.material-symbols-outlined) { display: none; }
+      .ma-actions .ma-btn,
+      .ma-actions .wise-btn { padding: 0 12px; }
     }
   </style>
   <script src="../js/cwr-toggle.js"></script>

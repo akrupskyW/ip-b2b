@@ -102,7 +102,7 @@ function paint() {
           <p class="wmod-desc">Keep your secret keys safe — never expose them in client-side code. A key's full value is shown only once, when it's created; after that it's a secret. If you lose one, revoke it and generate a new one.</p>
         </div>
         <div class="wmod-head-actions">
-          <button type="button" class="wmod-btn wmod-btn--primary" data-ak-action="create"><span class="material-symbols-outlined">add</span>Create key</button>
+          <button type="button" class="wise-btn wise-btn--primary" data-ak-action="create"><span class="material-symbols-outlined">add</span>Create key</button>
         </div>
       </div>
 
@@ -194,8 +194,8 @@ function openCreateModal() {
         <div class="wmod-secret"><code data-ak-modal-key>${esc(full)}</code><button type="button" class="wmod-icon-btn" data-ak-action="copy_modal" title="Copy key"><span class="material-symbols-outlined">content_copy</span></button></div>
       </div>
       <div class="wmod-modal-actions">
-        <button type="button" class="wmod-btn wmod-btn--ghost" data-ak-action="copy_modal"><span class="material-symbols-outlined">content_copy</span>Copy</button>
-        <button type="button" class="wmod-btn wmod-btn--primary" data-ak-action="modal_done">Done</button>
+        <button type="button" class="wise-btn wise-btn--ghost" data-ak-action="copy_modal"><span class="material-symbols-outlined">content_copy</span>Copy</button>
+        <button type="button" class="wise-btn wise-btn--primary" data-ak-action="modal_done">Done</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);

@@ -2,7 +2,7 @@
    comp-highlight.js — All Modules “Used in” opens the live page in a new
    tab and briefly paints that component with a pink glow.
 
-   Query: ?wise-hl=.dash-btn,.pf-head-btn&wise-comp=Buttons
+   Query: ?wise-hl=.wise-btn&wise-comp=Buttons
    A hash (if any) is kept so History / Turns / Reformulation Dashboard
    still land on their module.
 

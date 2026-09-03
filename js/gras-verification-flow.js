@@ -835,8 +835,8 @@ function confirmHTML() {
       <h2 class="gv-outcome-title">Submission received</h2>
       <p class="gv-outcome-text">Your GRAS documentation for <strong>${esc(ing ? ing.name : '')}</strong> is in the WISEcode review queue as <strong>${esc(state.lastSubmissionId)}</strong>. Once cleared it will flip <strong>${ing ? ing.products : 0} products</strong> to GRAS automatically.</p>
       <div class="gv-outcome-actions">
-        <button class="gv-btn gv-btn--ghost" type="button" data-gv="go-report">Verify another ingredient</button>
-        <button class="gv-btn gv-btn--primary" type="button" data-gv="go-submissions"><span class="material-symbols-outlined">assignment_turned_in</span>View submissions</button>
+        <button class="wise-btn wise-btn--ghost" type="button" data-gv="go-report">Verify another ingredient</button>
+        <button class="wise-btn wise-btn--primary" type="button" data-gv="go-submissions"><span class="material-symbols-outlined">assignment_turned_in</span>View submissions</button>
       </div>
     </div>`;
 }
@@ -852,7 +852,7 @@ function submissionsHTML() {
         <div class="gv-empty gv-empty--pad">
           <span class="material-symbols-outlined">inbox</span>
           <p>No submissions yet. Verify a flagged ingredient to start a GRAS submission.</p>
-          <button class="gv-btn gv-btn--primary" type="button" data-gv="go-report"><span class="material-symbols-outlined">arrow_back</span>Back to ingredients</button>
+          <button class="wise-btn wise-btn--primary" type="button" data-gv="go-report"><span class="material-symbols-outlined">arrow_back</span>Back to ingredients</button>
         </div>
       </div>`;
   }
@@ -936,8 +936,8 @@ function resultHTML() {
         ${ing.samples.length < ing.products ? `<div class="gv-prod-more">${esc(moreText(ing, 'moved to GRAS'))}</div>` : ''}
       </div>
       <div class="gv-outcome-actions">
-        <button class="gv-btn gv-btn--ghost" type="button" data-gv="go-submissions">Back to submissions</button>
-        <button class="gv-btn gv-btn--primary" type="button" data-gv="go-report"><span class="material-symbols-outlined">verified</span>Verify another ingredient</button>
+        <button class="wise-btn wise-btn--ghost" type="button" data-gv="go-submissions">Back to submissions</button>
+        <button class="wise-btn wise-btn--primary" type="button" data-gv="go-report"><span class="material-symbols-outlined">verified</span>Verify another ingredient</button>
       </div>
     </div>`;
 }

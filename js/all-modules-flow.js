@@ -2221,7 +2221,7 @@ function demoFilterToolbar() {
               </div>
               <div class="adm-filter-pop-foot">
                 <button type="button" class="adm-filter-clear">Clear all</button>
-                <button type="button" class="adm-btn adm-btn--primary adm-btn--sm">Apply</button>
+                <button type="button" class="wise-btn wise-btn--primary wise-btn--sm">Apply</button>
               </div>
             </div>
           </div>
@@ -2420,7 +2420,7 @@ function demoHeadTrail({ hover, open, disabled } = {}) {
   const exp = open ? 'true' : 'false';
   return `
     <div class="pf-head-trail pf-head-trail--compact">
-      <button type="button" class="pf-head-btn pf-head-btn--ghost${hov}"${dis}>
+      <button type="button" class="wise-btn wise-btn--ghost${hov}"${dis}>
         <span class="material-symbols-outlined">photo_library</span>Marketing Assets
       </button>
       <div class="pf-brand">
@@ -2941,7 +2941,7 @@ function demoReportBuilderHTML() {
                   ${row({ n: 3, label: 'Top Kraft categories', on: false, active: false, bars: [22, 48, 36, 74, 41] })}
                 </div>
                 <div class="wa-titledrop-foot">
-                  <button type="button" class="adm-btn adm-btn--primary wa-titledrop-gen" tabindex="-1">Generate Report (2)</button>
+                  <button type="button" class="wise-btn wise-btn--primary wa-titledrop-gen" tabindex="-1">Generate Report (2)</button>
                 </div>
               </div>
             </div>
@@ -2963,7 +2963,7 @@ function demoReportBuilderHTML() {
                   ${item({ title: 'Kraft vs Kraft Heinz', bars: [70, 44, 58, 32, 80], note: '' })}
                 </div>
                 <div class="wa-rpt-foot">
-                  <button type="button" class="adm-btn adm-btn--primary" tabindex="-1">Save or Share Report</button>
+                  <button type="button" class="wise-btn wise-btn--primary" tabindex="-1">Save or Share Report</button>
                 </div>
               </section>
             </div>
@@ -2980,7 +2980,7 @@ const COMPONENTS = [
     name: 'Buttons',
     ai: false,
     wide: true,
-    cls: '.dash-btn --primary / --ghost · .dash-text-link · .pf-head-btn --ghost · .pf-brand-chip · .lir-btn',
+    cls: '.wise-btn --primary / --ghost / --danger / --good / --sm · .dash-text-link · .pf-brand-chip · .lir-btn',
     used: 'Non-UPF Dashboard · Reports · Verification CTAs · Reformulation · Product Portfolio · Marketing Assets · Invoices · Comparison',
     note: 'Every interactive control in this library shows its states side by side. Default is rest; Hover is forced with <code>.is-hover</code> so it stays visible; Disabled uses the native attribute. Text links are the tertiary action — not a button. The <strong>header trail</strong> is the compact 28px pair that sits left of the module ⋯: Marketing Assets (ghost pill) and the brand chip. <strong>Icon-only</strong> is the same state set for a glyph with no label \u2014 Appearance on the portfolio rail, and dock toggles. One icon, four states. The hover card that names the glyph is <em>Tooltip</em>; alerts live on the avatar, and ⋯ is <em>Module \u22ef menu</em>.',
     noteIcon: 'smart_button',
@@ -2989,24 +2989,24 @@ const COMPONENTS = [
         <div class="dsc-state-col">
           <div class="dsc-sub-label">Default</div>
           <div class="dash-btn-row">
-            <button type="button" class="dash-btn dash-btn--primary"><span class="material-symbols-outlined">rocket_launch</span>Primary action</button>
-            <button type="button" class="dash-btn dash-btn--ghost">Ghost action</button>
+            <button type="button" class="wise-btn wise-btn--primary"><span class="material-symbols-outlined">rocket_launch</span>Primary action</button>
+            <button type="button" class="wise-btn wise-btn--ghost">Ghost action</button>
             <button type="button" class="dash-text-link">View full report<span class="material-symbols-outlined">north_east</span></button>
           </div>
         </div>
         <div class="dsc-state-col">
           <div class="dsc-sub-label">Hover</div>
           <div class="dash-btn-row">
-            <button type="button" class="dash-btn dash-btn--primary is-hover"><span class="material-symbols-outlined">rocket_launch</span>Primary action</button>
-            <button type="button" class="dash-btn dash-btn--ghost is-hover">Ghost action</button>
+            <button type="button" class="wise-btn wise-btn--primary is-hover"><span class="material-symbols-outlined">rocket_launch</span>Primary action</button>
+            <button type="button" class="wise-btn wise-btn--ghost is-hover">Ghost action</button>
             <button type="button" class="dash-text-link is-hover">View full report<span class="material-symbols-outlined">north_east</span></button>
           </div>
         </div>
         <div class="dsc-state-col">
           <div class="dsc-sub-label">Disabled</div>
           <div class="dash-btn-row">
-            <button type="button" class="dash-btn dash-btn--primary" disabled><span class="material-symbols-outlined">rocket_launch</span>Primary action</button>
-            <button type="button" class="dash-btn dash-btn--ghost" disabled>Ghost action</button>
+            <button type="button" class="wise-btn wise-btn--primary" disabled><span class="material-symbols-outlined">rocket_launch</span>Primary action</button>
+            <button type="button" class="wise-btn wise-btn--ghost" disabled>Ghost action</button>
             <button type="button" class="dash-text-link" disabled>View full report<span class="material-symbols-outlined">north_east</span></button>
           </div>
         </div>
@@ -3619,8 +3619,8 @@ const COMPONENTS = [
         <footer class="dash-modal-foot">
           <span></span>
           <div class="dash-modal-foot-right">
-            <button class="dash-btn dash-btn--ghost" type="button">Cancel</button>
-            <button class="dash-btn dash-btn--primary" type="button"><span class="material-symbols-outlined">check</span>Replace photo</button>
+            <button class="wise-btn wise-btn--ghost" type="button">Cancel</button>
+            <button class="wise-btn wise-btn--primary" type="button"><span class="material-symbols-outlined">check</span>Replace photo</button>
           </div>
         </footer>
       </div>`,
@@ -4096,13 +4096,13 @@ const COMPONENTS = [
             <span class="adm-vf-stat-num">10</span>
             <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--red"><span class="material-symbols-outlined">warning</span>Action Required</span></span>
             <span class="adm-vf-stat-sub">Missing mandatory data</span>
-            <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm">Edit</button>
+            <button type="button" class="wise-btn wise-btn--ghost wise-btn--sm">Edit</button>
           </div>
           <div class="adm-vf-stat adm-stat--blue" role="button" tabindex="0">
             <span class="adm-vf-stat-num">19</span>
             <span class="adm-vf-stat-chipwrap"><span class="adm-chip adm-chip--blue"><span class="material-symbols-outlined">fact_check</span>Pending Attestation</span></span>
             <span class="adm-vf-stat-sub">Selected products need review and attestation</span>
-            <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm">Attest</button>
+            <button type="button" class="wise-btn wise-btn--ghost wise-btn--sm">Attest</button>
           </div>
           <div class="adm-vf-stat adm-stat--green" role="button" tabindex="0">
             <span class="adm-vf-stat-num">8</span>
@@ -4170,7 +4170,7 @@ const COMPONENTS = [
               <span class="dash-stamp-icon" aria-hidden="true"><span class="material-symbols-outlined">search</span></span>
             </div>
             <div class="dash-btn-row">
-              <button class="dash-btn dash-btn--ghost" type="button"><span class="material-symbols-outlined">verified_user</span>Claim your products</button>
+              <button class="wise-btn wise-btn--ghost" type="button"><span class="material-symbols-outlined">verified_user</span>Claim your products</button>
             </div>
           </div>
           <div class="dash-claim-divider"></div>
@@ -4181,7 +4181,7 @@ const COMPONENTS = [
               <span class="dash-stamp-icon" aria-hidden="true"><span class="material-symbols-outlined">verified</span></span>
             </div>
             <div class="dash-btn-row">
-              <button class="dash-btn dash-btn--primary" type="button"><span class="material-symbols-outlined">verified</span>Start Non&#8209;UPF Verification</button>
+              <button class="wise-btn wise-btn--primary" type="button"><span class="material-symbols-outlined">verified</span>Start Non&#8209;UPF Verification</button>
             </div>
           </div>
         </section>
@@ -4317,43 +4317,43 @@ const COMPONENTS = [
       </div>`,
   },
 
-  /* ---- Admin buttons (parallel button system) -------------------- */
+  /* ---- Admin buttons (same .wise-btn pills + icon-only) ----------- */
   {
     name: 'Admin buttons',
     ai: false,
-    cls: '.adm-btn (+ --primary/--ghost/--danger/--good/--sm) · .adm-icon-btn',
-    used: 'Admin module headers & rows · Invoices (.inv-btn mirror) — the pill button set beside the app .dash-btn',
-    note: 'The admin/list surfaces use this pill button family; content surfaces use <code>.dash-btn</code>. Same tokens, two shapes — pick by surface. States shown: Default, Hover, Disabled.',
+    cls: '.wise-btn (+ --primary/--ghost/--danger/--good/--sm) · .adm-icon-btn',
+    used: 'Admin module headers & rows · Invoices · Preferences — the same pill as every other surface',
+    note: 'One pill language: <code>.wise-btn</code> with <code>--primary</code>, <code>--ghost</code>, <code>--danger</code>, <code>--good</code>, and <code>--sm</code>. The round icon-only control beside them is <code>.adm-icon-btn</code> (not a pill). States shown: Default, Hover, Disabled.',
     noteIcon: 'smart_button',
     demo: `
       <div class="dsc-states" style="width:100%">
         <div class="dsc-state-col">
           <div class="dsc-sub-label">Default</div>
           <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-            <button type="button" class="adm-btn adm-btn--primary"><span class="material-symbols-outlined">add</span>New</button>
-            <button type="button" class="adm-btn adm-btn--ghost">Cancel</button>
-            <button type="button" class="adm-btn adm-btn--good"><span class="material-symbols-outlined">check</span>Approve</button>
-            <button type="button" class="adm-btn adm-btn--danger"><span class="material-symbols-outlined">delete</span>Delete</button>
+            <button type="button" class="wise-btn wise-btn--primary"><span class="material-symbols-outlined">add</span>New</button>
+            <button type="button" class="wise-btn wise-btn--ghost">Cancel</button>
+            <button type="button" class="wise-btn wise-btn--good"><span class="material-symbols-outlined">check</span>Approve</button>
+            <button type="button" class="wise-btn wise-btn--danger"><span class="material-symbols-outlined">delete</span>Delete</button>
             <button type="button" class="adm-icon-btn" aria-label="More"><span class="material-symbols-outlined">more_horiz</span></button>
           </div>
         </div>
         <div class="dsc-state-col">
           <div class="dsc-sub-label">Hover</div>
           <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-            <button type="button" class="adm-btn adm-btn--primary is-hover"><span class="material-symbols-outlined">add</span>New</button>
-            <button type="button" class="adm-btn adm-btn--ghost is-hover">Cancel</button>
-            <button type="button" class="adm-btn adm-btn--good is-hover"><span class="material-symbols-outlined">check</span>Approve</button>
-            <button type="button" class="adm-btn adm-btn--danger is-hover"><span class="material-symbols-outlined">delete</span>Delete</button>
+            <button type="button" class="wise-btn wise-btn--primary is-hover"><span class="material-symbols-outlined">add</span>New</button>
+            <button type="button" class="wise-btn wise-btn--ghost is-hover">Cancel</button>
+            <button type="button" class="wise-btn wise-btn--good is-hover"><span class="material-symbols-outlined">check</span>Approve</button>
+            <button type="button" class="wise-btn wise-btn--danger is-hover"><span class="material-symbols-outlined">delete</span>Delete</button>
             <button type="button" class="adm-icon-btn is-hover" aria-label="More"><span class="material-symbols-outlined">more_horiz</span></button>
           </div>
         </div>
         <div class="dsc-state-col">
           <div class="dsc-sub-label">Disabled</div>
           <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-            <button type="button" class="adm-btn adm-btn--primary" disabled><span class="material-symbols-outlined">add</span>New</button>
-            <button type="button" class="adm-btn adm-btn--ghost" disabled>Cancel</button>
-            <button type="button" class="adm-btn adm-btn--good" disabled><span class="material-symbols-outlined">check</span>Approve</button>
-            <button type="button" class="adm-btn adm-btn--danger" disabled><span class="material-symbols-outlined">delete</span>Delete</button>
+            <button type="button" class="wise-btn wise-btn--primary" disabled><span class="material-symbols-outlined">add</span>New</button>
+            <button type="button" class="wise-btn wise-btn--ghost" disabled>Cancel</button>
+            <button type="button" class="wise-btn wise-btn--good" disabled><span class="material-symbols-outlined">check</span>Approve</button>
+            <button type="button" class="wise-btn wise-btn--danger" disabled><span class="material-symbols-outlined">delete</span>Delete</button>
             <button type="button" class="adm-icon-btn" disabled aria-label="More"><span class="material-symbols-outlined">more_horiz</span></button>
           </div>
         </div>
@@ -4367,7 +4367,7 @@ const COMPONENTS = [
     wide: true,
     cls: '.adm-modal-scrim · .adm-modal · .adm-modal-head / -body · .adm-modal-eyebrow / -title / -sub',
     used: 'Admin CRUD flows — create / edit / duplicate / confirm across Organizations, User Management, Admin Utils',
-    note: 'One centered dialog shell with a scrim, eyebrow + serif title + sub, a body of shared form fields, and a footer of <code>.adm-btn</code>s. Caps at 520px and shrinks to fit small screens.',
+    note: 'One centered dialog shell with a scrim, eyebrow + serif title + sub, a body of shared form fields, and a footer of <code>.wise-btn</code>s. Caps at 520px and shrinks to fit small screens.',
     noteIcon: 'web_asset',
     demo: `
       <div class="adm-modal" data-modal-static style="max-width:420px;width:100%">
@@ -4380,8 +4380,8 @@ const COMPONENTS = [
         <div class="adm-modal-body">
           <div class="adm-field"><span class="adm-field-label">Name</span><input class="adm-input" placeholder="Acme Foods" /></div>
           <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
-            <button type="button" class="adm-btn adm-btn--ghost">Cancel</button>
-            <button type="button" class="adm-btn adm-btn--primary">Create</button>
+            <button type="button" class="wise-btn wise-btn--ghost">Cancel</button>
+            <button type="button" class="wise-btn wise-btn--primary">Create</button>
           </div>
         </div>
       </div>`,
@@ -4444,8 +4444,8 @@ const COMPONENTS = [
         <div class="ag-sheet-body">
           <p class="ag-sheet-lead">Unlock scheduled exports, shareable links, and the full Guiding Stars report.</p>
           <div class="ag-sheet-actions">
-            <button type="button" class="adm-btn adm-btn--primary"><span class="material-symbols-outlined">bolt</span>Upgrade to Pro</button>
-            <button type="button" class="adm-btn adm-btn--ghost">Maybe later</button>
+            <button type="button" class="wise-btn wise-btn--primary"><span class="material-symbols-outlined">bolt</span>Upgrade to Pro</button>
+            <button type="button" class="wise-btn wise-btn--ghost">Maybe later</button>
           </div>
         </div>
       </div>`,
@@ -5397,13 +5397,13 @@ function componentCard(c, readyMap) {
   const dl = c.download;
   const download = dl
     ? `<div class="dsc-download-row">
-        ${dl.source ? `<a class="dash-btn dash-btn--ghost dsc-download" href="${esc(dl.source.href)}">
+        ${dl.source ? `<a class="wise-btn wise-btn--ghost dsc-download" href="${esc(dl.source.href)}">
           <span class="material-symbols-outlined">${esc(dl.source.icon || 'open_in_new')}</span>${esc(dl.source.label)}
         </a>` : ''}
-        ${dl.openLabel ? `<a class="dash-btn dash-btn--ghost dsc-download" href="${esc(dl.href)}">
+        ${dl.openLabel ? `<a class="wise-btn wise-btn--ghost dsc-download" href="${esc(dl.href)}">
           <span class="material-symbols-outlined">description</span>${esc(dl.openLabel)}
         </a>` : ''}
-        <a class="dash-btn dash-btn--ghost dsc-download" href="${esc(dl.href)}"${dl.file ? ` download="${esc(dl.file)}"` : ''}>
+        <a class="wise-btn wise-btn--ghost dsc-download" href="${esc(dl.href)}"${dl.file ? ` download="${esc(dl.file)}"` : ''}>
           <span class="material-symbols-outlined">download</span>${esc(dl.label)}
         </a>
       </div>`
@@ -9418,11 +9418,11 @@ export function renderAllModules(mainEl) {
           <div class="mi-hero-title-row">
             <h1 class="mi-hero-title">All Modules</h1>
             <div class="mi-hero-btns">
-              <button type="button" class="adm-btn adm-btn--primary mi-reeval-btn" data-mi-reeval title="Count every shippable file in the project, then account for each HTML page. Does not run on its own — click when you want a fresh count.">
+              <button type="button" class="wise-btn wise-btn--primary mi-reeval-btn" data-mi-reeval title="Count every shippable file in the project, then account for each HTML page. Does not run on its own — click when you want a fresh count.">
                 <span class="material-symbols-outlined" aria-hidden="true">autorenew</span>
                 <span data-mi-reeval-label>Re-evaluate</span>
               </button>
-              <button type="button" class="adm-btn adm-btn--ghost mi-hard-btn" data-mi-hard-reload title="Bypass the cache and reload this page from disk. Live reload is off on All Modules, so file saves do not keep remounting it.">
+              <button type="button" class="wise-btn wise-btn--ghost mi-hard-btn" data-mi-hard-reload title="Bypass the cache and reload this page from disk. Live reload is off on All Modules, so file saves do not keep remounting it.">
                 <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>
                 <span data-mi-hard-label>Hard reload</span>
               </button>
@@ -11356,7 +11356,7 @@ function openScanModal(opts) {
       <ul class="mi-scan-log" data-scan-log role="log" aria-live="polite" aria-relevant="additions"></ul>
       <div class="mi-scan-foot">
         <span class="mi-scan-note" data-scan-note>Keep this tab open while it runs.</span>
-        <button type="button" class="adm-btn adm-btn--primary" data-scan-done disabled>
+        <button type="button" class="wise-btn wise-btn--primary" data-scan-done disabled>
           <span class="material-symbols-outlined">hourglass_top</span>
           <span data-scan-done-label>Working…</span>
         </button>
@@ -12742,7 +12742,7 @@ function openAnalyticsLightbox(chart) {
       <footer class="dash-modal-foot">
         ${chart.desc ? `<span class="ds-prop-frac">${esc(chart.desc)}</span>` : '<span></span>'}
         <div class="dash-modal-foot-right">
-          <a class="dash-btn dash-btn--ghost" href="${esc(open)}">
+          <a class="wise-btn wise-btn--ghost" href="${esc(open)}">
             <span class="material-symbols-outlined">arrow_outward</span>Open on Analytics Types
           </a>
         </div>
@@ -13656,7 +13656,7 @@ function openTokenApplyModal(sw, opts) {
       <footer class="dash-modal-foot">
         <span class="ds-prop-frac" data-prop-note>Writing ${esc(token)} into every page that loads the design tokens.</span>
         <div class="dash-modal-foot-right">
-          <button type="button" class="dash-btn dash-btn--primary" data-prop-done disabled>Working…</button>
+          <button type="button" class="wise-btn wise-btn--primary" data-prop-done disabled>Working…</button>
         </div>
       </footer>
     </div>`;
@@ -14361,15 +14361,15 @@ function wireDevReady(root) {
               <span class="dsc-ready-verify-dot${first ? '' : ' is-on'}"></span>
             </div>
             <div class="dsc-ready-verify-actions">
-              <button type="button" class="adm-btn adm-btn--ghost" data-ready-verify-act="close">Cancel</button>
-              <button type="button" class="adm-btn adm-btn--primary" data-ready-verify-act="${first ? 'next' : 'confirm'}">
+              <button type="button" class="wise-btn wise-btn--ghost" data-ready-verify-act="close">Cancel</button>
+              <button type="button" class="wise-btn wise-btn--primary" data-ready-verify-act="${first ? 'next' : 'confirm'}">
                 <span class="material-symbols-outlined">${first ? 'arrow_forward' : 'task_alt'}</span>
                 ${first ? 'Continue' : spec.confirmLabel}
               </button>
             </div>
           </div>
         </div>`;
-      scrim.querySelector('.adm-btn--primary')?.focus();
+      scrim.querySelector('.wise-btn--primary')?.focus();
     }
 
     document.body.appendChild(scrim);

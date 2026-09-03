@@ -1102,7 +1102,7 @@
       background: var(--surface);
     }
     html.dark .wa-rpt-foot { border-top-color: rgba(255,255,255,0.08); }
-    .wa-rpt-foot .adm-btn { width: 100%; }
+    .wa-rpt-foot .wise-btn { width: 100%; }
     #wa-report .wa-pane-body { padding-bottom: 16px; }
     #wa-report.wch-host:has(#wa-share-panel.wch-open) .wa-rpt-foot,
     #wa-report.wch-host:has(#wa-share-panel.wch-closing) .wa-rpt-foot { visibility: hidden; }
@@ -2622,26 +2622,7 @@
       padding: 2px 0; border-radius: 0;
       background: transparent; border: none;
     }
-    .cmp-tool-btn {
-      display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
-      padding: 6px 11px; border-radius: 999px; font-size: var(--fs-label); font-weight: 600;
-      border: 1px solid var(--border-strong); background: var(--surface); color: var(--text);
-      transition: all 0.15s ease;
-    }
-    .cmp-tool-btn .material-symbols-outlined { font-size: 15px !important; }
-    .cmp-tool-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary-ink, var(--primary)); }
-    .cmp-tool-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    /* Solid primary CTA — matches .dash-btn--primary in analytics-types.html
-       (navy fill, white text). */
-    .cmp-tool-btn--primary {
-      background: var(--primary); border-color: var(--primary); color: #fff;
-      box-shadow: 0 4px 12px rgba(37, 80, 124, 0.25);
-    }
-    .cmp-tool-btn--primary .material-symbols-outlined { color: #fff !important; font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-    .cmp-tool-btn--primary:hover:not(:disabled) {
-      background: var(--primary); border-color: var(--primary); color: #fff;
-      transform: translateY(-1px); box-shadow: 0 8px 18px rgba(37, 80, 124, 0.3);
-    }
+    /* Toolbar pills are .wise-btn — compact chrome lives in pages/wise.css. */
     .cmp-tool-spacer { flex: 1; }
 
     /* Toolbar relocated into the board's top-left header cell. It behaves as a
@@ -2685,8 +2666,8 @@
       border-radius: 999px; overflow: hidden; background: var(--primary);
       box-shadow: 0 4px 12px rgba(37, 80, 124, 0.25);
     }
-    .cmp-add-split .cmp-tool-btn { border-radius: 0; border: none; box-shadow: none; }
-    .cmp-add-split .cmp-tool-btn:hover:not(:disabled) { transform: none; box-shadow: none; background: #1e4266; }
+    .cmp-add-split .wise-btn { border-radius: 0; border: none; box-shadow: none; }
+    .cmp-add-split .wise-btn:hover:not(:disabled) { transform: none; box-shadow: none; background: #1e4266; }
     .cmp-add-split .cmp-add-caret {
       border-left: 1px solid rgba(255, 255, 255, 0.4);
       padding-left: 9px; padding-right: 9px; gap: 0;
@@ -2747,7 +2728,7 @@
     .cmp-addcol-sub { font-size: calc(var(--fs-label) + 1px); color: var(--text-muted); line-height: 1.45; max-width: 210px; }
     .cmp-addcol-inner .cmp-add-wrap { margin-top: 8px; }
     /* Enlarged Add split control inside the column so the primary CTA stands out. */
-    .cmp-addcol .cmp-add-split .cmp-tool-btn { font-size: calc(var(--fs-label) + 3px); padding: 11px 20px; }
+    .cmp-addcol .cmp-add-split .wise-btn { font-size: calc(var(--fs-label) + 3px); padding: 11px 20px; }
     .cmp-addcol .cmp-add-split .cmp-add-main .material-symbols-outlined { font-size: 22px !important; }
     /* Same enlargement for the solo (locked-kind) Add button. */
     .cmp-addcol .cmp-add-solo { font-size: calc(var(--fs-label) + 3px); padding: 11px 20px; }
@@ -4173,7 +4154,7 @@
         </div>
         <div class="wa-pane-body" id="wa-report-body"></div>
         <div class="wa-rpt-foot">
-          <button type="button" class="adm-btn adm-btn--primary" data-rpt-save>Save or Share Report</button>
+          <button type="button" class="wise-btn wise-btn--primary" data-rpt-save>Save or Share Report</button>
         </div>
       </section>
     </div><!-- /#modules-row -->
@@ -5495,7 +5476,7 @@
       titledropPop.innerHTML =
         `<div class="wa-titledrop-list">${items}</div>` +
         `<div class="wa-titledrop-foot" hidden>` +
-          `<button type="button" class="adm-btn adm-btn--primary wa-titledrop-gen" data-td-report>Generate Report</button>` +
+          `<button type="button" class="wise-btn wise-btn--primary wa-titledrop-gen" data-td-report>Generate Report</button>` +
         `</div>`;
       const pickItem = (it) => {
         setPaneSlide('unified', Number(it.dataset.slide), { animate: true });
@@ -6212,7 +6193,7 @@
             '</div>' +
           '</div>' +
         '</div>' +
-        '<div class="wa-sh-foot"><button type="button" class="adm-btn adm-btn--primary" data-create>Create share link</button></div>';
+        '<div class="wa-sh-foot"><button type="button" class="wise-btn wise-btn--primary" data-create>Create share link</button></div>';
       const q = (s) => sharePanel.querySelector(s);
       shareEls = {
         sub: q('[data-sub]'), form: q('[data-form]'), done: q('[data-done]'),
@@ -12798,7 +12779,7 @@
       const label = (cur && cur !== 'all') ? cur : 'All Categories';
       const avg = compareState.showAvg;
       return '<div id="cmp-cat-wrap" class="cmp-cat-wrap">' +
-        `<button type="button" id="cmp-cat-btn" class="cmp-tool-btn cmp-cat-btn${avg ? ' has-avg' : ''}" onclick="cmpToggleCatMenu(this)" aria-haspopup="menu" aria-expanded="false" aria-label="Category and average">` +
+        `<button type="button" id="cmp-cat-btn" class="wise-btn cmp-cat-btn${avg ? ' has-avg' : ''} wise-btn--secondary" onclick="cmpToggleCatMenu(this)" aria-haspopup="menu" aria-expanded="false" aria-label="Category and average">` +
           '<span class="material-symbols-outlined">filter_alt</span>' +
           `<span class="cmp-cat-btn-label">${label}</span>` +
           (avg ? '<span class="cmp-cat-avg-badge">Avg</span>' : '') +
@@ -12901,7 +12882,7 @@
       const dis = disabled ? ' disabled' : '';
       const label = cmpKindLabel(cmpLockedKind());
       return '<div class="cmp-add-wrap">' +
-        `<button type="button" class="cmp-tool-btn cmp-tool-btn--primary cmp-add-main cmp-add-solo" onclick="cmpPromptAddEntity()"${dis}><span class="material-symbols-outlined">add</span>Add ${label}</button>` +
+        `<button type="button" class="wise-btn wise-btn--primary cmp-add-main cmp-add-solo" onclick="cmpPromptAddEntity()"${dis}><span class="material-symbols-outlined">add</span>Add ${label}</button>` +
       '</div>';
     }
     /* Body-portalled type dropdown for the split Add button — lives on <body>
@@ -14185,7 +14166,7 @@
     function cmpGsAlgoControl() {
       const cur = compareState.gsAlgorithm || 'auto';
       return '<div id="cmp-gsalgo-wrap" class="cmp-tool-item" style="position:relative">' +
-        '<button type="button" class="cmp-tool-btn cmp-cat-btn" onclick="cmpToggleGsAlgoMenu()" aria-haspopup="menu" aria-expanded="' + (!!compareState.gsAlgoMenuOpen) + '" aria-label="Guiding Stars scoring algorithm">' +
+        '<button type="button" class="wise-btn cmp-cat-btn wise-btn--secondary" onclick="cmpToggleGsAlgoMenu()" aria-haspopup="menu" aria-expanded="' + (!!compareState.gsAlgoMenuOpen) + '" aria-label="Guiding Stars scoring algorithm">' +
           '<span class="material-symbols-outlined">calculate</span>' +
           '<span class="cmp-cat-btn-label">' + cmpGsAlgoLabel(cur) + '</span>' +
           '<span class="material-symbols-outlined cmp-cat-caret">expand_more</span>' +
@@ -14334,7 +14315,7 @@
       const toolbar =
         '<div class="cmp-toolbar cmp-toolbar--bar">' +
           '<div id="cmp-metric-wrap" class="cmp-tool-item" style="position:relative">' +
-            `<button type="button" class="cmp-tool-btn" onclick="cmpToggleMetricMenu()"><span class="material-symbols-outlined">tune</span>Metrics · ${metricCount}</button>` +
+            `<button type="button" class="wise-btn wise-btn--secondary" onclick="cmpToggleMetricMenu()"><span class="material-symbols-outlined">tune</span>Metrics · ${metricCount}</button>` +
             (gs ? cmpGsMetricMenu() : metricMenu) +
           '</div>' +
           (gs ? cmpGsAlgoControl() : (scope.categories ? cmpCatControl() : '')) +

@@ -954,22 +954,7 @@
     .um-row-main { flex: 1; min-width: 0; }
     .um-row-title { font-size: var(--fs-ui); font-weight: 600; color: var(--text); }
     .um-row-sub { font-size: var(--fs-ui); color: var(--text-muted); margin-top: 1px; }
-    .um-btn {
-      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-      width: 100%; padding: 9px 12px; border-radius: var(--radius-pill);
-      font-size: var(--fs-ui); font-weight: 600; cursor: pointer;
-      border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
-      transition: background 0.15s, border-color 0.15s, color 0.15s;
-    }
-    .um-btn:hover { background: var(--surface-3); border-color: var(--border-strong); }
-    .um-btn.um-btn-primary {
-      background: var(--primary); border-color: var(--primary); color: #fff;
-    }
-    .um-btn.um-btn-primary .material-symbols-outlined {
-      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-    }
-    .um-btn.um-btn-primary:hover { filter: brightness(1.06); }
-    .um-btn .material-symbols-outlined { font-size: 16px; }
+    /* Utility-row pills are .wise-btn — chrome lives in pages/wise.css. */
     .um-chip {
       display: inline-flex; align-items: center; gap: 4px;
       padding: 2px 9px; border-radius: var(--radius-pill);
@@ -2197,26 +2182,7 @@
       .cmp-toolbar--bar .cmp-tool-spacer { display: none; }
       .cmp-toolbar--bar .cmp-add-wrap { margin-left: 0; }
     }
-    .cmp-tool-btn {
-      display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
-      padding: 6px 11px; border-radius: 999px; font-size: var(--fs-label); font-weight: 600;
-      border: 1px solid var(--border-strong); background: var(--surface); color: var(--text);
-      transition: all 0.15s ease;
-    }
-    .cmp-tool-btn .material-symbols-outlined { font-size: 15px !important; }
-    .cmp-tool-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary-ink, var(--primary)); }
-    .cmp-tool-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    /* Solid primary CTA — matches .dash-btn--primary in analytics-types.html
-       (navy fill, white text). */
-    .cmp-tool-btn--primary {
-      background: var(--primary); border-color: var(--primary); color: #fff;
-      box-shadow: 0 4px 12px rgba(37, 80, 124, 0.25);
-    }
-    .cmp-tool-btn--primary .material-symbols-outlined { color: #fff !important; font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-    .cmp-tool-btn--primary:hover:not(:disabled) {
-      background: var(--primary); border-color: var(--primary); color: #fff;
-      transform: translateY(-1px); box-shadow: 0 8px 18px rgba(37, 80, 124, 0.3);
-    }
+    /* Toolbar pills are .wise-btn — compact chrome lives in pages/wise.css. */
     .cmp-tool-spacer { flex: 1; }
 
     /* Toolbar relocated into the board's top-left header cell. It behaves as a
@@ -2260,15 +2226,15 @@
       border-radius: 999px; overflow: hidden; background: var(--primary);
       box-shadow: 0 4px 12px rgba(37, 80, 124, 0.25);
     }
-    .cmp-add-split .cmp-tool-btn { border-radius: 0; border: none; box-shadow: none; }
-    .cmp-add-split .cmp-tool-btn:hover:not(:disabled) { transform: none; box-shadow: none; background: #1e4266; }
+    .cmp-add-split .wise-btn { border-radius: 0; border: none; box-shadow: none; }
+    .cmp-add-split .wise-btn:hover:not(:disabled) { transform: none; box-shadow: none; background: #1e4266; }
     .cmp-add-split .cmp-add-caret {
       border-left: 1px solid rgba(255, 255, 255, 0.4);
       padding-left: 9px; padding-right: 9px; gap: 0;
     }
     .cmp-add-split .cmp-add-caret .material-symbols-outlined { font-size: 18px !important; }
     #chat-shell-wrap .cmp-add-split { border-radius: 999px !important; }
-    #chat-shell-wrap .cmp-add-split .cmp-tool-btn { border-radius: 0 !important; }
+    #chat-shell-wrap .cmp-add-split .wise-btn { border-radius: 0 !important; }
     .cmp-add-menu-item.is-active { color: var(--primary-ink, var(--primary)); background: color-mix(in srgb, var(--primary) 9%, transparent); }
     .cmp-add-menu-item.is-active .material-symbols-outlined { color: var(--primary-ink, var(--primary)); }
     /* Body-portalled dropdown — fixed + high z-index so it floats above every
@@ -2336,7 +2302,7 @@
     .cmp-addcol-sub { font-size: calc(var(--fs-label) + 1px); color: var(--text-muted); line-height: 1.45; max-width: 210px; }
     .cmp-addcol-inner .cmp-add-wrap { margin-top: 8px; }
     /* Enlarged Add split control inside the column so the primary CTA stands out. */
-    .cmp-addcol .cmp-add-split .cmp-tool-btn { font-size: calc(var(--fs-label) + 3px); padding: 11px 20px; }
+    .cmp-addcol .cmp-add-split .wise-btn { font-size: calc(var(--fs-label) + 3px); padding: 11px 20px; }
     .cmp-addcol .cmp-add-split .cmp-add-main .material-symbols-outlined { font-size: 22px !important; }
     /* Same enlargement for the solo (locked-kind) Add button. */
     .cmp-addcol .cmp-add-solo { font-size: calc(var(--fs-label) + 3px); padding: 11px 20px; }
@@ -6717,7 +6683,7 @@
     }
     /* Primary CTAs / action buttons */
     body.ai-chat-page .btn-primary,
-    body.ai-chat-page .um-btn.um-btn-primary {
+    body.ai-chat-page .um-row .wise-btn--primary {
       font-family: 'WISE Digits', var(--font-serif);
       letter-spacing: 0;
     }
@@ -7799,7 +7765,7 @@
           <button type="button" class="history-tab-btn" id="tab-views" onclick="switchHistoryTab('views')">Views</button>
         </div>
         <div class="px-3 pt-2 pb-1 shrink-0">
-          <button type="button" onclick="restartConversation()" class="btn-primary w-full flex items-center justify-center gap-2 px-3 py-2 text-white text-xs font-medium">
+          <button type="button" onclick="restartConversation()" class="wise-btn wise-btn--primary w-full flex items-center justify-center gap-2 px-3 py-2 text-white text-xs font-medium">
             <span class="material-symbols-outlined">add</span>
             New conversation
           </button>
@@ -8841,7 +8807,7 @@
                 <div class="mt-1"><span class="um-chip"><span class="material-symbols-outlined" style="font-size:13px">verified</span>WISE Foods</span></div>
               </div>
             </div>
-            <button type="button" class="um-btn um-btn-primary"><span class="material-symbols-outlined">edit</span>Edit profile</button>
+            <button type="button" class="wise-btn wise-btn--primary"><span class="material-symbols-outlined">edit</span>Edit profile</button>
             <div>
               <div class="um-section-label">Details</div>
               <div class="um-card" style="padding:4px 10px">
@@ -8886,7 +8852,7 @@
             <div>
               <div class="um-section-label">Appearance</div>
               <div class="um-card" style="padding:4px 10px">
-                <div class="um-row"><span class="um-row-ic"><span class="material-symbols-outlined js-theme-icon">dark_mode</span></span><div class="um-row-main"><div class="um-row-title">Theme</div><div class="um-row-sub js-theme-label">Switch to Dark mode</div></div><button type="button" class="um-btn" style="width:auto;padding:6px 12px" onclick="toggleChatTheme()">Toggle</button></div>
+                <div class="um-row"><span class="um-row-ic"><span class="material-symbols-outlined js-theme-icon">dark_mode</span></span><div class="um-row-main"><div class="um-row-title">Theme</div><div class="um-row-sub js-theme-label">Switch to Dark mode</div></div><button type="button" class="wise-btn wise-btn--secondary" style="width:auto;padding:6px 12px" onclick="toggleChatTheme()">Toggle</button></div>
                 <div class="um-row"><span class="um-row-ic"><span class="material-symbols-outlined">view_column</span></span><div class="um-row-main"><div class="um-row-title">Default layout</div><div class="um-row-sub">Column · Grid · Split · Stack</div></div><span class="um-chip um-chip-muted">Column</span></div>
               </div>
             </div>
@@ -8929,16 +8895,16 @@
             </div>
           </div>
           <div class="flex-1 overflow-y-auto px-3 py-3 side-panel-body space-y-3">
-            <button type="button" class="um-btn um-btn-primary"><span class="material-symbols-outlined">add</span>Create new key</button>
+            <button type="button" class="wise-btn wise-btn--primary"><span class="material-symbols-outlined">add</span>Create new key</button>
             <div class="um-section-label">Active keys</div>
             <div class="um-card space-y-2">
               <div class="flex items-center justify-between"><span class="text-oyster-200 font-semibold text-xs">Production</span><span class="um-chip"><span class="material-symbols-outlined" style="font-size:13px">check</span>Active</span></div>
-              <div class="flex items-center gap-2"><span class="um-key flex-1 truncate">wise_live_sk_••••••••••8f2a</span><button type="button" class="um-btn" style="width:auto;padding:6px 10px" onclick="copyApiKey(this,'wise_live_sk_8f2a')" title="Copy key"><span class="material-symbols-outlined">content_copy</span></button></div>
+              <div class="flex items-center gap-2"><span class="um-key flex-1 truncate">wise_live_sk_••••••••••8f2a</span><button type="button" class="wise-btn wise-btn--secondary" style="width:auto;padding:6px 10px" onclick="copyApiKey(this,'wise_live_sk_8f2a')" title="Copy key"><span class="material-symbols-outlined">content_copy</span></button></div>
               <div class="text-xs text-oyster-600">Created Mar 4, 2026 · Last used 2h ago</div>
             </div>
             <div class="um-card space-y-2">
               <div class="flex items-center justify-between"><span class="text-oyster-200 font-semibold text-xs">Sandbox</span><span class="um-chip um-chip-muted">Test</span></div>
-              <div class="flex items-center gap-2"><span class="um-key flex-1 truncate">wise_test_sk_••••••••••1c90</span><button type="button" class="um-btn" style="width:auto;padding:6px 10px" onclick="copyApiKey(this,'wise_test_sk_1c90')" title="Copy key"><span class="material-symbols-outlined">content_copy</span></button></div>
+              <div class="flex items-center gap-2"><span class="um-key flex-1 truncate">wise_test_sk_••••••••••1c90</span><button type="button" class="wise-btn wise-btn--secondary" style="width:auto;padding:6px 10px" onclick="copyApiKey(this,'wise_test_sk_1c90')" title="Copy key"><span class="material-symbols-outlined">content_copy</span></button></div>
               <div class="text-xs text-oyster-600">Created Jan 18, 2026 · Last used 5d ago</div>
             </div>
             <div class="um-card text-xs text-oyster-500">
@@ -8984,7 +8950,7 @@
             </div>
             <div>
               <div class="um-section-label">Still stuck?</div>
-              <button type="button" class="um-btn um-btn-primary"><span class="material-symbols-outlined">chat_bubble</span>Contact support</button>
+              <button type="button" class="wise-btn wise-btn--primary"><span class="material-symbols-outlined">chat_bubble</span>Contact support</button>
               <p class="text-xs text-oyster-600 mt-2 px-1">Typical response under 2 hours, Mon–Fri.</p>
             </div>
           </div>
@@ -12491,7 +12457,7 @@
       const label = (cur && cur !== 'all') ? cur : 'All Categories';
       const avg = compareState.showAvg;
       return '<div id="cmp-cat-wrap" class="cmp-cat-wrap">' +
-        `<button type="button" id="cmp-cat-btn" class="cmp-tool-btn cmp-cat-btn${avg ? ' has-avg' : ''}" onclick="cmpToggleCatMenu(this)" aria-haspopup="menu" aria-expanded="false" aria-label="Category and average">` +
+        `<button type="button" id="cmp-cat-btn" class="wise-btn cmp-cat-btn${avg ? ' has-avg' : ''} wise-btn--secondary" onclick="cmpToggleCatMenu(this)" aria-haspopup="menu" aria-expanded="false" aria-label="Category and average">` +
           '<span class="material-symbols-outlined">filter_alt</span>' +
           `<span class="cmp-cat-btn-label">${label}</span>` +
           (avg ? '<span class="cmp-cat-avg-badge">Avg</span>' : '') +
@@ -12594,8 +12560,8 @@
       const label = cmpKindLabel(cmpAddKind());
       return '<div class="cmp-add-wrap">' +
         '<div class="cmp-add-split">' +
-          `<button type="button" class="cmp-tool-btn cmp-tool-btn--primary cmp-add-main" onclick="cmpToggleAddPicker(this)" aria-haspopup="menu" aria-expanded="false"${dis}><span class="material-symbols-outlined">add</span>Add ${label}</button>` +
-          `<button type="button" class="cmp-tool-btn cmp-tool-btn--primary cmp-add-caret" onclick="event.stopPropagation();cmpToggleAddMenu(this)" aria-haspopup="menu" aria-expanded="false" aria-label="Change add type"${dis}><span class="material-symbols-outlined">expand_more</span></button>` +
+          `<button type="button" class="wise-btn wise-btn--primary cmp-add-main" onclick="cmpToggleAddPicker(this)" aria-haspopup="menu" aria-expanded="false"${dis}><span class="material-symbols-outlined">add</span>Add ${label}</button>` +
+          `<button type="button" class="wise-btn wise-btn--primary cmp-add-caret" onclick="event.stopPropagation();cmpToggleAddMenu(this)" aria-haspopup="menu" aria-expanded="false" aria-label="Change add type"${dis}><span class="material-symbols-outlined">expand_more</span></button>` +
         '</div>' +
       '</div>';
     }
@@ -14077,7 +14043,7 @@
     function cmpGsAlgoControl() {
       const cur = compareState.gsAlgorithm || 'auto';
       return '<div id="cmp-gsalgo-wrap" class="cmp-tool-item" style="position:relative">' +
-        '<button type="button" class="cmp-tool-btn cmp-cat-btn" onclick="cmpToggleGsAlgoMenu()" aria-haspopup="menu" aria-expanded="' + (!!compareState.gsAlgoMenuOpen) + '" aria-label="Guiding Stars scoring algorithm">' +
+        '<button type="button" class="wise-btn cmp-cat-btn wise-btn--secondary" onclick="cmpToggleGsAlgoMenu()" aria-haspopup="menu" aria-expanded="' + (!!compareState.gsAlgoMenuOpen) + '" aria-label="Guiding Stars scoring algorithm">' +
           '<span class="material-symbols-outlined">calculate</span>' +
           '<span class="cmp-cat-btn-label">' + cmpGsAlgoLabel(cur) + '</span>' +
           '<span class="material-symbols-outlined cmp-cat-caret">expand_more</span>' +
@@ -14226,7 +14192,7 @@
       const toolbar =
         '<div class="cmp-toolbar cmp-toolbar--bar">' +
           '<div id="cmp-metric-wrap" class="cmp-tool-item" style="position:relative">' +
-            `<button type="button" class="cmp-tool-btn" onclick="cmpToggleMetricMenu()"><span class="material-symbols-outlined">tune</span>Metrics · ${metricCount}</button>` +
+            `<button type="button" class="wise-btn wise-btn--secondary" onclick="cmpToggleMetricMenu()"><span class="material-symbols-outlined">tune</span>Metrics · ${metricCount}</button>` +
             (gs ? cmpGsMetricMenu() : metricMenu) +
           '</div>' +
           (gs ? cmpGsAlgoControl() : (scope.categories ? cmpCatControl() : '')) +

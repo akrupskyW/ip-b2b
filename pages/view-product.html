@@ -152,6 +152,7 @@
       border-radius: var(--r-md, 16px);
       box-shadow: var(--shadow-card);
     }
+    #ia-panel[hidden] { display: none !important; }
     html.dark #ia-panel {
       background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
       border-color: rgba(37, 80, 124, 0.18);
@@ -287,7 +288,7 @@
     /* Scrollable body — page cream canvas under Product Details. The facts
        column paints its own white sheet (.nfp-sp-facts). Ingredients Analyzer
        lives in #ia-panel and keeps a transparent body over the card surface. */
-    .nfp-scroll-body { flex: 1 1 0%; overflow-y: auto; min-height: 0; background: var(--bg); padding-bottom: 56px; container-type: size; container-name: nfp-body; }
+    .nfp-scroll-body { flex: 1 1 0%; overflow-y: auto; min-height: 0; background: var(--bg); padding-bottom: 16px; container-type: size; container-name: nfp-body; }
     html.dark .nfp-scroll-body { background: var(--surface); }
 
     /* Right column (flip default): identity + Non-UPF + Nutrition Facts — white
@@ -382,15 +383,14 @@
        stacked in a column it became a tall empty well above the button. Icon
        and copy share a row; the button sits directly underneath. */
     .nfp-sp--flip .nfp-sp-facts .nfp-ins-next {
-      display: grid; grid-template-columns: auto minmax(0, 1fr);
-      gap: 10px 12px; align-items: start; justify-items: stretch;
+      display: grid; grid-template-columns: minmax(0, 1fr);
+      gap: 10px; align-items: start; justify-items: stretch;
       padding: 12px 14px;
     }
-    .nfp-sp--flip .nfp-sp-facts .nfp-ins-next-dots { grid-column: 1 / -1; grid-row: 1; }
-    .nfp-sp--flip .nfp-sp-facts .nfp-ins-next-ic { grid-column: 1; grid-row: 2; }
-    .nfp-sp--flip .nfp-sp-facts .nfp-ins-next-body { grid-column: 2; grid-row: 2; flex: none; }
+    .nfp-sp--flip .nfp-sp-facts .nfp-ins-next-dots { grid-column: 1; grid-row: 1; }
+    .nfp-sp--flip .nfp-sp-facts .nfp-ins-next-body { grid-column: 1; grid-row: 2; flex: none; text-align: center; }
     .nfp-sp--flip .nfp-sp-facts .nfp-ins-next-btn {
-      grid-column: 1 / -1; grid-row: 3;
+      grid-column: 1; grid-row: 3;
       margin: 0; width: 100%; justify-content: center; align-self: stretch;
     }
     .nfp-sp-ingred {
@@ -1503,8 +1503,8 @@
        Copy follows the portfolio action that opened the page. Progress is
        five small dots — no labelled stepper. No boxed backdrop behind the icon. */
     .nfp-ins-next {
-      position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr);
-      gap: 10px 12px; align-items: start; justify-items: stretch;
+      position: relative; display: grid; grid-template-columns: minmax(0, 1fr);
+      gap: 10px; align-items: start; justify-items: stretch;
       padding: 16px 18px; border-radius: 16px;
       background: var(--primary-soft); border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
     }
@@ -1551,9 +1551,9 @@
       font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 48;
     }
     html.dark .nfp-ins-next-ic .material-symbols-outlined { color: var(--primary-bright, var(--primary)); }
-    .nfp-ins-next-body { grid-column: 2; min-width: 0; }
-    .nfp-ins-next-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.15rem; font-weight: 700; color: var(--text); line-height: 1.2; }
-    .nfp-ins-next-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.45; margin-top: 3px; max-width: none; }
+    .nfp-ins-next-body { grid-column: 1; min-width: 0; text-align: center; }
+    .nfp-ins-next-title { font-family: 'WISE Digits', 'Noto Serif', Georgia, serif; font-size: 1.15rem; font-weight: 700; color: var(--text); line-height: 1.2; text-align: center; }
+    .nfp-ins-next-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.45; margin-top: 3px; max-width: none; text-align: center; }
     .nfp-ins-next-btn {
       grid-column: 1 / -1; margin: 0; width: 100%;
       display: inline-flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer;
@@ -2079,14 +2079,11 @@
             </div>
           </div>
           <div class="nfp-scroll-body" id="nfp-body"><!-- rendered by add-product-flow.js --></div>
-          <div class="nfp-foot">
-            <button type="button" class="nfp-save-btn" id="nfp-save-btn" disabled><span class="material-symbols-outlined">save</span>Save to Portfolio</button>
-          </div>
         </div>
       </aside>
 
       <!-- Ingredients Analyzer — nested sticky drawer to the right of Product Details. -->
-      <aside id="ia-panel" class="ia-pane panel-wide" data-no-fill-default data-pr-min="240" aria-label="Ingredient List">
+      <aside id="ia-panel" class="ia-pane panel-wide" data-no-fill-default data-pr-min="240" hidden aria-label="Ingredient List">
         <div class="wch-head ia-panel-header">
           <span class="hc-mail-head-text">
             <span class="wch-head-title">Ingredient List</span>

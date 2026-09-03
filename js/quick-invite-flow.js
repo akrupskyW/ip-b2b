@@ -253,7 +253,7 @@ function filterPopHtml() {
       </div>
       <div class="adm-filter-pop-foot">
         <button type="button" class="adm-filter-clear" data-adm-action="clear-filters">Clear all</button>
-        <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" data-adm-action="export"><span class="material-symbols-outlined">download</span>Export CSV</button>
+        <button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-adm-action="export"><span class="material-symbols-outlined">download</span>Export CSV</button>
       </div>
     </div>`;
 }

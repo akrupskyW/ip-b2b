@@ -258,7 +258,7 @@ function paint() {
           <div class="pf-title-row">
             <h1 class="pf-title">Organization Profile</h1>
             <div class="pf-head-actions">
-              <button type="button" class="pf-btn pf-btn--primary" data-pf-save disabled aria-disabled="true"><span class="material-symbols-outlined">save</span>Save Changes</button>
+              <button type="button" class="wise-btn wise-btn--primary" data-pf-save disabled aria-disabled="true"><span class="material-symbols-outlined">save</span>Save Changes</button>
             </div>
           </div>
           <p class="pf-lede">Edit organization details, contact information, and brands.</p>
@@ -292,7 +292,7 @@ function paint() {
         </div>
 
         <div class="pf-footer">
-          <button type="submit" class="pf-btn pf-btn--primary"><span class="material-symbols-outlined">save</span>Save Changes</button>
+          <button type="submit" class="wise-btn wise-btn--primary"><span class="material-symbols-outlined">save</span>Save Changes</button>
         </div>
       </form>
     </div>`;

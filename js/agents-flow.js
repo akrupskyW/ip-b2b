@@ -157,8 +157,8 @@ function paint() {
           <p class="wmod-desc">Enable, pause and tune the specialized agents that power WISE \u2014 and the resources they run on: the databases they read, the rules they enforce, and the skills they can perform.</p>
         </div>
         <div class="wmod-head-actions">
-          <button type="button" class="wmod-btn wmod-btn--ghost" data-ag-action="pause_all"><span class="material-symbols-outlined">pause_circle</span>Pause all</button>
-          <button type="button" class="wmod-btn wmod-btn--primary" data-ag-action="enable_all"><span class="material-symbols-outlined">play_circle</span>Enable all</button>
+          <button type="button" class="wise-btn wise-btn--ghost" data-ag-action="pause_all"><span class="material-symbols-outlined">pause_circle</span>Pause all</button>
+          <button type="button" class="wise-btn wise-btn--primary" data-ag-action="enable_all"><span class="material-symbols-outlined">play_circle</span>Enable all</button>
         </div>
       </div>
 

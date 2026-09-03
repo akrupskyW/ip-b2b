@@ -311,7 +311,7 @@ function statCardsHtml() {
       <span class="adm-vf-stat-num" data-count-to="${c.num}">0</span>
       <span class="adm-vf-stat-chipwrap"><span class="adm-chip ${chipCls}"><span class="material-symbols-outlined">${esc(c.icon)}</span>${esc(c.label)}</span></span>
       <span class="adm-vf-stat-sub">${esc(c.sub)}</span>
-      ${c.action ? `<button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" data-adm-action="${esc(c.action.toLowerCase())}">${esc(c.action)}</button>` : ''}
+      ${c.action ? `<button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-adm-action="${esc(c.action.toLowerCase())}">${esc(c.action)}</button>` : ''}
     </div>`;
   }).join('');
 }
@@ -397,7 +397,7 @@ function filterPopHtml() {
       ${selectHtml('list')}
       <div class="adm-filter-pop-foot">
         <button type="button" class="adm-filter-clear" data-adm-action="clear-filters">Clear all</button>
-        <button type="button" class="adm-btn adm-btn--primary adm-btn--sm" data-adm-action="apply-filters">Done</button>
+        <button type="button" class="wise-btn wise-btn--primary wise-btn--sm" data-adm-action="apply-filters">Done</button>
       </div>
     </div>`;
 }
