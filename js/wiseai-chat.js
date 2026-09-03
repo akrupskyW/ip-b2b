@@ -1776,8 +1776,8 @@ export function injectChatExtras() {
         color-mix(in srgb, var(--fb-chat-fg, #16233B) calc(var(--sc-bganim-wash, 50) * 0.03%), transparent) 100%) !important;
     }
     .sc-bganim-live .sc-bganim-canvas { opacity: 1; }
-    /* First click / send leaves by blooming out — fade + expand, never a
-       collapse. Origin sits on the strand centre (getCenterY ≈ 0.36). */
+    /* Chip or first keystroke leaves by blooming out — fade + expand, never
+       a collapse. Origin sits on the strand centre (getCenterY ≈ 0.36). */
     .sc-bganim-live.sc-bganim-leaving .sc-bganim-canvas {
       opacity: 0; transform: scale(1.55);
       transition: opacity 1.55s ease, transform 1.45s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -8548,10 +8548,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      run of our real product photos as round thumbnails, with brand-blue backbones +
      base-pair rungs. It rides a tilted axis that drops left→right, its loops crawl
      end-to-end slowly, and the strand expands and contracts as products swap
-     front/back in 3-D. It plays solely on the welcome screen; the moment the member
-     acts (submits a
-     prompt, taps an intent chip or scorecard) the transcript advances via
-     hideWelcome(), which stops it.
+     front/back in 3-D. It plays on the welcome screen and stays until a
+     real turn starts: an intent chip (or scorecard) is tapped, or
+     something is typed in the composer. hideWelcome() / the first
+     keystroke stop it. Clicks on nav, other modules, helix nodes, or
+     focusing the composer do not.
      ON by default; a stored '0' turns it off. The choice is shared APP-WIDE (one
      key, broadcast on wise:chat-bg-anim) so every mounted chat's switch follows. */
   const BGANIM_PREF_KEY = 'wise:chat-bg-anim';
@@ -12636,32 +12637,16 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   input?.addEventListener('input', () => {
     const typed = !!(input.value && input.value.trim());
     const welcomeUp = !!(welcome && !welcome.classList.contains('sc-hidden'));
-    if (typed && opts.helixStudio !== true) bgAnim.stop();
+    if (opts.helixStudio !== true) {
+      if (typed) bgAnim.stop();
+      else if (welcomeUp) bgAnim.start();
+    }
     if (typed && typeof opts.onEngage === 'function') {
       try { opts.onEngage(); } catch (_) { /* host layout hook */ }
     } else if (!typed && welcomeUp && typeof opts.onDisengage === 'function') {
       try { opts.onDisengage(); } catch (_) { /* host layout hook */ }
     }
   });
-  /* First click / focus in the composer also retires the helix — waiting for
-     hideWelcome() let a click collapse the strand with the body reflow. */
-  input?.addEventListener('focus', () => {
-    if (opts.helixStudio === true) return;
-    if (welcome && !welcome.classList.contains('sc-hidden')) bgAnim.stop();
-  });
-  /* Any other pointer on the page blooms it out the same way — chips, the
-     right-hand module, nav. Helix ⋮ / sliders stay exempt so the pose can
-     still be tuned. */
-  if (opts.helixStudio !== true) {
-    const SKIP_SEL = '.topbar-popover, .panel-more-btn, .panel-more-wrap, .sc-helix-float';
-    document.addEventListener('pointerdown', (e) => {
-      if (!welcome || welcome.classList.contains('sc-hidden')) return;
-      const t = e.target;
-      if (!t || !t.closest) return;
-      if (t.closest(SKIP_SEL)) return;
-      bgAnim.stop();
-    }, true);
-  }
 
   /* Keep the caret in the TEXT field whenever the user clicks the input pill.
      The pending attachment chips render before the input, each with a focusable
@@ -12938,7 +12923,6 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const changed = dbId !== currentDbId;
     const prev = dbItemById(currentDbId);
     currentDbId = dbId;
-    if (changed && opts.helixStudio !== true) bgAnim.stop();
     if (changed && conversationStarted()) addDbChangeNote(prev, next);
     const cb = opts.onDbChange || opts.onModelChange;
     if (changed && typeof cb === 'function') cb(dbId);
@@ -14002,11 +13986,11 @@ export function wireStandardChatMenu(cfg = {}) {
   const welcomeEl = cfg.bgAnim && cfg.bgAnim.welcomeEl;
   const bgHost = cfg.bgAnim && cfg.bgAnim.host;
   /* Welcome-only, same as mountWISEcodeAIChat: the field paints on the
-     welcome, then blooms out the moment the member moves the conversation
-     (chip, type, send, database). A hidden welcome or an engage flag
+     welcome and stays until a real turn starts (intent chip / scorecard,
+     or a keystroke in the composer). A hidden welcome or an engage flag
      keeps it from sitting behind a live transcript — unless the host
      lands already engaged (View Product): then `untilEngage` keeps the
-     Scene helix up until a real click / type / send. */
+     Scene helix up until a chip or typed send. */
   let bgEngaged = false;
   const welcomeShown = () => {
     if (!welcomeEl) return false;
@@ -14074,7 +14058,8 @@ export function wireStandardChatMenu(cfg = {}) {
     if (bgOn && !bgEngaged && welcomeVisible()) {
       const e = bgEngine(bgStyle);
       if (!e) return;
-      const liveHelix = cfg.bgAnim.host.classList.contains('sc-bganim-live');
+      const liveHelix = cfg.bgAnim.host.classList.contains('sc-bganim-live')
+        && !cfg.bgAnim.host.classList.contains('sc-bganim-leaving');
       if (liveHelix && isHelixStyle(bgStyle) && e.redraw) {
         e.redraw();
         return;
@@ -14108,25 +14093,22 @@ export function wireStandardChatMenu(cfg = {}) {
   document.addEventListener('wise:cwr-ui', wakeBgAnim);
   document.addEventListener('wise:chat-engage', retireBgAnim);
 
-  /* First real pointer on the page blooms the field out — same as every
-     other chat. ⋮ / Helix sliders stay exempt so the pose can still be
-     tuned without collapsing the strand. */
+  /* Composer keystroke blooms the field out. Focusing the composer, or
+     clicking nav / other modules / helix nodes, does not. A chip or send
+     that hides the welcome (or fires wise:chat-engage) still retires it. */
   if (bgHost && !bgHost.__wiseBgEngageWired) {
     bgHost.__wiseBgEngageWired = true;
-    const SKIP_SEL = '.topbar-popover, .panel-more-btn, .panel-more-wrap, .sc-helix-float';
-    document.addEventListener('pointerdown', (e) => {
-      if (bgEngaged || !bgOn) return;
-      const t = e.target;
-      if (!t || !t.closest) return;
-      if (t.closest(SKIP_SEL)) return;
-      retireBgAnim();
-    }, true);
     const input = bgHost.querySelector('.chat-input-rail textarea.fl-input, .chat-input-rail input.fl-input, textarea.fl-input, #chat-input');
     if (input) {
       input.addEventListener('input', () => {
-        if (input.value && String(input.value).trim()) retireBgAnim();
+        const typed = !!(input.value && String(input.value).trim());
+        if (typed) stopAllBg();
+        else if (!bgEngaged && welcomeVisible()) {
+          const e = bgEngine(bgStyle);
+          if (e) e.start();
+          else maybeRunBgAnim();
+        }
       });
-      input.addEventListener('focus', retireBgAnim);
     }
   }
   const bgItem = q('[data-sc="bg-anim"]');

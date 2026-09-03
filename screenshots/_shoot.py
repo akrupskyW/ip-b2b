@@ -259,7 +259,7 @@ PAGE_AFTER_LOAD = {
     }""",
     "pages/progress-log.html": """async () => {
       await new Promise(r => {
-        const ok = () => document.querySelector('.pl-day') && document.querySelector('#pl-cat-stats .pl-stat');
+        const ok = () => document.querySelector('.pl-day') && document.querySelector('#pl-cat-stats .ws-scorecard');
         if (ok()) return r();
         const obs = new MutationObserver(() => { if (ok()) { obs.disconnect(); r(); } });
         obs.observe(document.body, { childList: true, subtree: true });

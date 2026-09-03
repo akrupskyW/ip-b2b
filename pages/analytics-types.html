@@ -759,7 +759,11 @@
       .dash-pillar-row,
       .att-legend,
       .inf-chart,
-      .cf-chart {
+      .cf-chart,
+      .atx-svg,
+      .atx-donuts,
+      .atx-half,
+      .atx-tbl {
         break-inside: avoid;
         page-break-inside: avoid;
       }
@@ -6311,10 +6315,13 @@
 
     @media (prefers-reduced-motion: reduce) {
       .atx-stage.is-in .atx-bar,
+      .atx-stage.is-in .atx-bar--h,
       .atx-stage.is-in .atx-pop,
       .atx-stage.is-in .atx-fade,
-      .atx-stage.is-in .atx-geo-tile { animation: none; }
+      .atx-stage.is-in .atx-geo-tile,
+      .atx-stage.is-in .atx-mini-fill { animation: none; }
       .atx-pop, .atx-fade, .atx-geo-tile { opacity: 1; }
+      .atx-mini-fill { transform: none; }
     }
 
     /* KPI gauges */
@@ -6344,6 +6351,88 @@
     .atx-geo-v { font-size: 9.5px; font-weight: 700; opacity: .92; margin-top: 2px; font-variant-numeric: tabular-nums; }
 
     .atx-note { margin: 14px 0 0; font-size: 12px; color: var(--text-subtle); line-height: 1.55; }
+
+    /* ---- Variations: horizontal bars, pies / donuts, in-cell tables ---- */
+    .atx-bar--h { transform-origin: left center; }
+    .atx-bar--left { transform-origin: right center; }
+    .atx-stage.is-in .atx-bar--h { animation: atxGrow .72s cubic-bezier(.22, 1, .36, 1) both; }
+    @keyframes atxGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+    .atx-donuts {
+      display: flex; flex-wrap: wrap; gap: 18px 28px; justify-content: center;
+      padding: 8px 0 4px;
+    }
+    .atx-donut {
+      flex: 1 1 140px; max-width: 180px;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+    }
+    .atx-donut svg { width: 100%; height: auto; display: block; overflow: visible; }
+    .atx-donut-lab { font-size: 13px; font-weight: 800; color: var(--text); text-align: center; }
+    .atx-donut-sub { font-size: 11.5px; color: var(--text-subtle); font-weight: 600; }
+
+    .atx-half {
+      display: flex; align-items: center; gap: 32px; flex-wrap: wrap; justify-content: center;
+    }
+    .atx-half-svg { flex: 1 1 280px; max-width: 440px; min-width: 240px; }
+    .atx-half-svg svg { width: 100%; height: auto; display: block; overflow: visible; }
+    .atx-half-leg { display: flex; flex-direction: column; gap: 11px; min-width: 196px; }
+    .atx-half-row {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; font-weight: 700; color: var(--text);
+    }
+    .atx-half-row .att-dot { width: 12px; height: 12px; }
+    .atx-half-num { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 800; }
+
+    .atx-rings-wrap { max-width: 340px; margin: 0 auto; }
+    .atx-rings-wrap svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+    .atx-tbl-wrap { overflow-x: auto; padding-bottom: 2px; }
+    .atx-tbl {
+      width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums;
+      background: var(--surface);
+    }
+    .atx-tbl th {
+      padding: 0 14px 10px 0; border-bottom: 1px solid var(--border-strong);
+      text-align: left; font-size: 11px; font-weight: 800; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--text-muted); white-space: nowrap;
+    }
+    .atx-tbl td {
+      padding: 12px 14px 12px 0; border-bottom: 1px solid var(--border);
+      font-size: 13px; color: var(--text); vertical-align: middle;
+    }
+    .atx-tbl tbody tr:last-child td { border-bottom: none; }
+    .atx-tbl tbody tr { transition: background .12s ease; }
+    .atx-tbl tbody tr:hover { background: var(--primary-soft); }
+    .atx-tbl-name { font-weight: 700; white-space: nowrap; }
+    .atx-tbl-num { font-weight: 800; font-variant-numeric: tabular-nums; }
+    .atx-tbl-delta { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .atx-tbl-delta.is-up { color: var(--sec-green-text, var(--chart-status-excellent)); }
+    .atx-tbl-delta.is-dn { color: var(--sec-red-text, var(--chart-status-poor)); }
+
+    .atx-mini {
+      position: relative; height: 10px; width: 128px; max-width: 18vw;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--border) 70%, var(--surface));
+      overflow: hidden;
+    }
+    html.dark .atx-mini { background: rgba(255, 255, 255, 0.09); }
+    .atx-mini-fill {
+      height: 100%; border-radius: inherit; transform-origin: left center;
+      transform: scaleX(0); width: var(--atx-mini, 0%);
+    }
+    .atx-stage.is-in .atx-mini-fill { animation: atxGrow .72s cubic-bezier(.22, 1, .36, 1) both; }
+
+    .atx-spark { display: block; width: 92px; height: 28px; overflow: visible; }
+
+    .atx-heat th { text-align: center; padding-right: 8px; }
+    .atx-heat th:first-child, .atx-heat td:first-child { text-align: left; padding-right: 18px; }
+    .atx-heat td.atx-heat-cell { text-align: center; padding: 6px 8px; }
+    .atx-heat-swatch {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 44px; height: 32px; padding: 0 8px; border-radius: 8px;
+      color: #fff; font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14);
+    }
   </style>
 
   <script>
@@ -6888,6 +6977,8 @@
       else init();
     })();
   </script>
+
+  <script src="../js/analytics-types-variations.js"></script>
 
   <script src="/livereload.js?snipver=1"></script>
   <!-- App-wide "Sticky module" toggle for every module right of the chat. -->

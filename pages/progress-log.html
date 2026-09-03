@@ -245,32 +245,52 @@
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
     }
 
-    /* ── Scorecards — the canonical clickable stat card (mirrors .rf-stat).
-       Summary cards are read-outs; category cards double as list filters.
-       Brand palette ONLY (navy / green / amber / red) — no invented colours. ── */
-    .pl-stats { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0 4px; }
-    .pl-stats + .pl-stats { margin-top: 10px; }
-    .pl-stat {
-      flex: 1 1 120px; min-width: 108px;
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-      padding: 12px 14px; border-radius: 6px;
-      background: var(--surface); border: 1px solid var(--border);
-      box-shadow: var(--shadow-1);
-      font-family: inherit; text-align: center; cursor: pointer;
-      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
+    /* ── Scorecards — same .ws-scorecard family as wiseai.html / reformulation.
+       Shared paint (tint, 10px radius, left-aligned icon + metric + title)
+       lives in wise.css. This only fits them to the board grid and keeps
+       filter / active / disabled states. No eyebrow. ── */
+    .pl-stats {
+      display: grid;
+      gap: 12px;
+      margin: 14px 0 4px;
+      grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
     }
-    html.dark .pl-stat { background: #1A2339; }
-    .pl-stat:hover { transform: translateY(-1px); box-shadow: var(--shadow-card); border-color: var(--border-strong); }
-    .pl-stat:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
-    .pl-stat.is-active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--surface)); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow-1); }
-    html.dark .pl-stat.is-active { background: color-mix(in srgb, var(--primary) 26%, transparent); }
-    .pl-stat:disabled { cursor: default; }
-    .pl-stat:disabled:hover { transform: none; box-shadow: var(--shadow-1); border-color: var(--border); }
-    .pl-stat-num { display: inline-flex; align-items: center; gap: 1px; font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text); font-variant-numeric: tabular-nums; }
-    .pl-stat-label { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
-    .pl-stat-sub { font-size: 10px; color: var(--text-subtle); margin-top: 1px; }
-    .pl-stat--good .pl-stat-num { color: var(--sec-green); }
-    .pl-stat--alert .pl-stat-num { color: var(--sec-red); }
+    .pl-stats + .pl-stats { margin-top: 10px; }
+    .pl-stats > .ws-scorecard {
+      flex: none;
+      min-width: 0;
+      width: auto;
+      aspect-ratio: auto;
+      scroll-snap-align: unset;
+      height: 100%;
+      border-radius: 10px !important;
+    }
+    .pl-stats .ws-sc-desc { flex: 0 1 auto; }
+    .pl-stats .ws-scorecard.is-active {
+      border-color: color-mix(in srgb, var(--primary) 70%, var(--border-strong));
+      background: color-mix(in srgb, var(--primary) 20%, #fff);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 22%, transparent);
+    }
+    html.dark .pl-stats .ws-scorecard.is-active {
+      background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 22%, transparent);
+    }
+    .pl-stats .ws-scorecard:disabled {
+      cursor: default;
+      opacity: 1;
+      color: inherit;
+      -webkit-text-fill-color: inherit;
+    }
+    .pl-stats .ws-scorecard:disabled:hover {
+      transform: none;
+      box-shadow: none;
+      background: color-mix(in srgb, var(--primary) 10%, #fff);
+      border-color: var(--border-strong);
+    }
+    html.dark .pl-stats .ws-scorecard:disabled:hover {
+      background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent);
+    }
+    .pl-stats .ws-scorecard.pl-stat--good .ws-sc-metric { color: var(--sec-green); }
+    .pl-stats .ws-scorecard.pl-stat--alert .ws-sc-metric { color: var(--sec-red); }
 
     .pl-filter-note { font-size: 11px; color: var(--text-subtle); margin: 14px 0 0; }
 
@@ -519,9 +539,9 @@
               <div class="pl-filter-pop" id="pl-filter-pop" role="dialog" aria-label="Filter the progress log" hidden></div>
             </div>
           </div>
-          <!-- Read-out summary scorecards -->
+          <!-- Read-out summary scorecards — shared .ws-scorecard family -->
           <div class="pl-stats" id="pl-summary" aria-label="Summary"></div>
-          <!-- Category scorecards — double as list filters (single-select, like .rf-stat) -->
+          <!-- Category scorecards — double as list filters (single-select) -->
           <div class="pl-stats" id="pl-cat-stats" role="group" aria-label="Filter by category"></div>
           <div class="pl-filter-note" id="pl-filter-note"></div>
           <div id="pl-timeline"></div>
@@ -2205,14 +2225,36 @@
 
       /* ── Renderers ── */
       let catTotals = {};
-      /* One canonical scorecard (mirrors reformulation's statHtml). A card with a
-         `cat` doubles as a filter; without one it's a read-out (disabled). Tones
-         use ONLY the brand palette via .pl-stat--good / --alert. */
+      /* Cards without a `cat` are read-outs, so they render disabled.
+         Markup matches the shared welcome scorecard (icon / metric / title /
+         desc) so the board and the chat rail read as one family. */
+      const CAT_ICON = {
+        features: 'bolt', components: 'widgets', logic: 'account_tree',
+        ux: 'swipe', ui: 'dashboard', changes: 'sync',
+        improvements: 'trending_up', updates: 'update', deletions: 'delete',
+      };
+      const CAT_DESC = {
+        features: 'What you can now do',
+        components: 'Named pieces on the surface',
+        logic: 'What the surface decides',
+        ux: 'How it behaves while you use it',
+        ui: 'What is on the screen',
+        changes: 'What moved',
+        improvements: 'What got better',
+        updates: 'Notes from the pass',
+        deletions: 'What was taken away',
+      };
       function statHtml(o) {
-        const cls = ['pl-stat', o.tone ? 'pl-stat--' + o.tone : '', o.active ? 'is-active' : ''].filter(Boolean).join(' ');
+        const cls = ['ws-scorecard', o.tone ? 'pl-stat--' + o.tone : '', o.active ? 'is-active' : ''].filter(Boolean).join(' ');
         const attrs = o.cat ? ` data-cat="${o.cat}" aria-pressed="${o.active ? 'true' : 'false'}"` : ' disabled';
-        const sub = o.sub ? `<span class="pl-stat-sub">${o.sub}</span>` : '';
-        return `<button type="button" class="${cls}"${attrs}><span class="pl-stat-num" data-countup>${o.num}</span><span class="pl-stat-label">${o.label}</span>${sub}</button>`;
+        const icon = o.icon || 'insights';
+        const desc = o.desc ? `<div class="ws-sc-desc">${o.desc}</div>` : '';
+        return `<button type="button" class="${cls}"${attrs}>` +
+          `<div class="ws-sc-top"><span class="ws-sc-icon"><span class="material-symbols-outlined">${icon}</span></span></div>` +
+          `<div class="ws-sc-metric">${o.num}</div>` +
+          `<div class="ws-sc-title">${o.label}</div>` +
+          desc +
+          `</button>`;
       }
 
       function computeTotals() {
@@ -2226,10 +2268,10 @@
         const { pages, total } = computeTotals();
         const used = CATS.filter((c) => catTotals[c.id] > 0).length;
         document.getElementById('pl-summary').innerHTML = [
-          statHtml({ num: LOG.length, label: 'Days logged', sub: `${LOG[LOG.length - 1].rel} → ${LOG[0].rel}` }),
-          statHtml({ num: pages, label: 'Surfaces', sub: 'pages &amp; platform' }),
-          statHtml({ num: total, label: 'Entries', sub: `${used} ${used === 1 ? 'category' : 'categories'}` }),
-          statHtml({ num: notes.length, label: 'Your notes', sub: notes.length ? 'saved on this device' : 'tap Add a note' }),
+          statHtml({ num: LOG.length, label: 'Days logged', icon: 'calendar_month', desc: `${LOG[LOG.length - 1].rel} → ${LOG[0].rel}` }),
+          statHtml({ num: pages, label: 'Surfaces', icon: 'web', desc: 'Pages and shared scripts' }),
+          statHtml({ num: total, label: 'Entries', icon: 'notes', desc: `${used} ${used === 1 ? 'category' : 'categories'}` }),
+          statHtml({ num: notes.length, label: 'Your notes', icon: 'edit_note', desc: notes.length ? 'Saved on this device' : 'Tap Add a note' }),
         ].join('');
       }
       /* Brand-only tones: Improvements reads as the brand green, Deletions as the
@@ -2242,6 +2284,7 @@
           .filter((c) => catTotals[c.id] > 0)
           .map((c) => statHtml({
             num: catTotals[c.id], label: c.label, cat: c.id,
+            icon: CAT_ICON[c.id], desc: CAT_DESC[c.id],
             tone: CAT_TONE[c.id], active: catFilter === c.id,
           })).join('');
       }
