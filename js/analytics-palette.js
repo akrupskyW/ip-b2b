@@ -3,9 +3,12 @@
  * gallery on pages/analytics-types.html.
  *
  * One card holds everything that steers the report:
- *   • Chart size — small / medium / large, applied to every proportional
- *     chart stage on the page and replayed so the entrance animation and its
- *     count-ups run again at the new size.
+ *   • Chart size — Mobile / Laptop / Desktop presets, one per screen class,
+ *     applied to every proportional chart stage on the page and replayed so
+ *     the entrance animation and its count-ups run again at the new size. The
+ *     preset matching the current display width is selected on load; a member
+ *     can still switch in-session, but the next load re-derives from the
+ *     screen rather than restoring the last toggle.
  *   • Skinny bars — the slim WISEscore health-bar mode.
  *   • Jump to — every chart and section from the shared catalog, with a
  *     scrollspy that lights up whatever is currently in view.
@@ -21,7 +24,6 @@
 import { ANALYTICS_NAV } from './analytics-types-catalog.js';
 
 const STYLE_ID = 'azp-styles';
-const SIZE_KEY = 'az-chart-size';
 const SKINNY_KEY = 'az-skinny-bars';
 const OPEN_KEY = 'az-palette-open';
 const POS_KEY = 'az-palette-pos';
@@ -37,10 +39,14 @@ const EDGE = 16;
 const RIGHT_LANE = 74;
 const DRAG_THRESHOLD = 4;
 
+/* One preset per screen class, smallest → largest. `minW` is the preset's
+   minimum display width in CSS px; the report opens at the last preset the
+   current screen clears. Keep the ids s/m/l — the applied CSS scale
+   (`body[data-az-chart-size]`) is keyed off them. */
 const SIZES = [
-  { id: 's', label: 'Small' },
-  { id: 'm', label: 'Medium' },
-  { id: 'l', label: 'Large' },
+  { id: 's', label: 'Mobile',  minW: 0,    hint: 'Phones and small screens' },
+  { id: 'm', label: 'Laptop',  minW: 1024, hint: 'Laptop screens (1024px and up)' },
+  { id: 'l', label: 'Desktop', minW: 1920, hint: 'Wide desktop displays (1920px and up)' },
 ];
 
 /* Chart surfaces whose SVG is width:100% / height:auto, so capping the stage
@@ -56,6 +62,15 @@ const scaledSel = (sel) => 'body[data-az-chart-size] ' + sel;
 
 const reduceMotion = () =>
   !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+/* Chart size follows the *display*, not the browser viewport — the same
+   measurement the chat-width default uses, so a given machine always opens
+   the report at the same preset. `js/text-size-fouc.js` publishes the shared
+   measurer; fall back to screen.width, then innerWidth, if it is absent. */
+const screenWidthPx = () =>
+  (typeof window.WISE_CHAT_SCREEN_WIDTH_PX === 'function')
+    ? window.WISE_CHAT_SCREEN_WIDTH_PX()
+    : (((window.screen && +window.screen.width) || window.innerWidth || 0));
 
 const read = (key, fallback) => {
   try { const v = localStorage.getItem(key); return v == null ? fallback : v; }
@@ -204,14 +219,18 @@ function injectCss() {
 
 /* ── Chart size ─────────────────────────────────────────────────────────── */
 
-function readSize() {
-  const v = read(SIZE_KEY, 'l');
-  return SIZES.some((s) => s.id === v) ? v : 'l';
+/* The preset for the current display: the largest one whose minimum width the
+   screen clears. Laptop-class screens (a 14" MacBook is 1512 CSS px) land on
+   Laptop; only a wide desktop reaches Desktop. */
+function defaultSizeForScreen() {
+  const w = screenWidthPx();
+  let id = SIZES[0].id;
+  for (const s of SIZES) { if (w >= s.minW) id = s.id; }
+  return id;
 }
 
 function applySize(size) {
   if (document.body) document.body.setAttribute('data-az-chart-size', size);
-  write(SIZE_KEY, size);
 }
 
 /* A resized chart has to draw itself again, or it keeps the sweep and the
@@ -354,7 +373,7 @@ export function mountAnalyticsPalette() {
   if (!document.body || document.getElementById('az-palette')) return;
   injectCss();
 
-  let size = readSize();
+  let size = defaultSizeForScreen();
   let skinny = read(SKINNY_KEY, '0') === '1';
   let open = read(OPEN_KEY, null);
   open = open == null ? window.innerWidth > WIDE_AT : open === '1';
@@ -392,6 +411,7 @@ export function mountAnalyticsPalette() {
         '<div class="azp-sizes" role="group" aria-labelledby="azp-size-label">' +
           SIZES.map((s) =>
             '<button type="button" class="azp-size" data-azp-size="' + s.id + '"' +
+            ' title="' + s.hint + '"' +
             ' aria-pressed="' + (s.id === size ? 'true' : 'false') + '">' + s.label + '</button>'
           ).join('') +
         '</div>' +

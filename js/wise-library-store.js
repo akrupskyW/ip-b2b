@@ -224,6 +224,59 @@
     return !!(snap.html && snap.count);
   }
 
+  /* Stable key for a reference so re-filing the same paper/source updates its
+     card instead of stacking duplicates on the shelf. */
+  function refKeyOf(ref) {
+    ref = ref || {};
+    return String(ref.url || ref.file || ref.title || '').trim();
+  }
+
+  function findReference(ref) {
+    var key = refKeyOf(ref);
+    if (!key) return null;
+    var items = readItems();
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].type === 'ref' && items[i].refKey === key) return items[i];
+    }
+    return null;
+  }
+
+  /* File a reference (a paper / source card, not a live chat thread) onto the
+     Library shelf and, optionally, into a folder — the same shelf and folders
+     the conversation-library page reads. Mirrors fileCurrent's contract so a
+     ref card and a filed conversation live side by side. */
+  function fileReference(ref, folderId) {
+    ref = ref || {};
+    var key = refKeyOf(ref);
+    var items = readItems();
+    var existing = null;
+    if (key) {
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].type === 'ref' && items[i].refKey === key) { existing = items[i]; break; }
+      }
+    }
+    var rec = {
+      id: existing ? existing.id : ('filed-ref-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)),
+      type: 'ref',
+      title: clip(ref.title || 'Reference', 120),
+      ts: Date.now(),
+      msgCount: 0,
+      previewYou: clip(ref.authors || ref.source || '', 120),
+      previewAi: clip(ref.highlight || ref.abstract || '', 160),
+      url: ref.url || '',
+      file: ref.file || '',
+      refKey: key,
+      source: (global.location && global.location.pathname) || ''
+    };
+    if (existing) items = items.filter(function (it) { return it.id !== existing.id; });
+    items.unshift(rec);
+    if (items.length > MAX_ITEMS) items = items.slice(0, MAX_ITEMS);
+    writeItems(items);
+    if (folderId) addToFolder(rec.id, folderId);
+    else removeFromAllFolders(rec.id);
+    return { ok: true, updated: !!existing, item: rec };
+  }
+
   function findByHistory(historyKey, historyId) {
     var items = readItems();
     var i;
@@ -682,6 +735,8 @@
     CHANGE_EVENT: CHANGE_EVENT,
     FOLDER_COLORS: FOLDER_COLORS,
     fileCurrent: fileCurrent,
+    fileReference: fileReference,
+    findReference: findReference,
     canFile: canFile,
     findByHistory: findByHistory,
     list: list,

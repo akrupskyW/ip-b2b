@@ -1586,10 +1586,15 @@
     /* Footer — citation count left, view-paper link right (like .lib-cfoot). */
     .wa-ref-cfoot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 2px; }
     .wa-ref-cites { display: inline-flex; align-items: center; gap: 3px; font-size: .75rem; font-weight: 600; color: var(--text-subtle); font-variant-numeric: tabular-nums; }
-    .wa-ref-cites .material-symbols-outlined { font-size: 14px; transform: scaleX(-1); }
+    .wa-ref-cites .material-symbols-outlined { font-size: 16px; color: var(--text-muted); font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24; }
     .wa-ref-view { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-decoration: none; transition: color .15s ease; }
     .wa-ref-view:hover { color: var(--text); text-decoration: underline; }
     .wa-ref-view .material-symbols-outlined { font-size: 14px; }
+    .wa-ref-file { cursor: pointer; }
+    .wa-ref-file.is-open, .wa-ref-file[aria-expanded="true"] { color: var(--text); }
+    .wa-ref-file.is-filed { color: var(--primary); }
+    html.dark .wa-ref-file.is-filed { color: var(--primary-bright, #8B9FAF); }
+    .wa-ref-file.is-filed .material-symbols-outlined { font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24; }
     /* Right-hand action cluster — a source link plus the attached file it was
        read from, for reference sets that carry both (see ATLAS_REFS). */
     .wa-ref-acts { display: inline-flex; align-items: center; gap: 12px; min-width: 0; }
@@ -10725,7 +10730,7 @@
             : `<a class="wa-ref-view" href="#" onclick="return false" aria-label="${esc(label)}: ${esc(it.title)}"><span class="material-symbols-outlined">open_in_new</span>${esc(label)}</a>`)
           : '';
         const file = it.file
-          ? `<a class="wa-ref-view" href="#" onclick="return false" data-tip="Stored source: ${esc(it.file)}" aria-label="Stored file for ${esc(it.title)}"><span class="material-symbols-outlined">folder_open</span>File</a>`
+          ? `<a class="wa-ref-view wa-ref-file" href="#" role="button" aria-haspopup="menu" aria-expanded="false" data-ref-file aria-label="File to Library: ${esc(it.title)}"><span class="material-symbols-outlined">folder_open</span><span class="wa-ref-file-label">File</span></a>`
           : '';
         return `
           <article class="wa-ref${cat === 'industry' ? ' wa-ref--industry' : ''}" id="news-ref-${kind}-${i}" data-ref="${i}" data-news-i="${i}" data-refcat="${cat}"${it.group ? ` data-refgroup="${it.group}"` : ''} data-search="${search}">
@@ -10874,7 +10879,6 @@
     ].join('\n');
 
     const INTENTS = [
-      { intent: 'atlas', icon: 'bubble_chart',    label: 'Food Intervention Atlas', ask: ATLAS_ASK },
       { intent: 'topbrands', icon: 'leaderboard',   label: 'Top 3 brands · WISEscore \u2265 50', ask: 'Create a comparison chart of the top three brands with more than 50 UPCs that are in the top half of the WISE score.' },
       { intent: 'kraft',   icon: 'inventory_2',     label: 'Kraft SKUs \u00b7 % UPF', ask: 'How many SKUs does Kraft have and what percent are ultra processed?' },
       { intent: 'sprouts', icon: 'storefront',      label: 'How many foods does Sprouts have?', ask: 'How many foods does the Sprouts retailer have?' },
@@ -13605,6 +13609,65 @@
         b.setAttribute('aria-pressed', on ? 'true' : 'false');
       });
       filterRefset(set);
+    });
+
+    /* ── Reference "File" button → WISE AI Library folder picker ──────────────
+       Files the paper / source onto the same Library shelf (and into the same
+       folders) that conversation-library.html reads, using the shared
+       WiseLibraryStore picker — the identical popover the chat's "File to
+       Library" menu opens. The ref record comes from NEWS_REFSETS so the card
+       markup stays lean. */
+    function confirmRefFiled(btn, msg) {
+      if (!btn) return;
+      const label = btn.querySelector('.wa-ref-file-label');
+      const icon = btn.querySelector('.material-symbols-outlined');
+      if (!label) return;
+      if (btn._refFiledTimer) clearTimeout(btn._refFiledTimer);
+      if (btn._refFiledText == null) btn._refFiledText = label.textContent;
+      label.textContent = msg || 'Filed';
+      btn.classList.add('is-filed');
+      if (icon) icon.textContent = 'folder';
+      btn._refFiledTimer = setTimeout(() => {
+        label.textContent = btn._refFiledText || 'File';
+        btn.classList.remove('is-filed');
+        if (icon) icon.textContent = 'folder_open';
+        btn._refFiledText = null;
+      }, 1600);
+    }
+    document.addEventListener('click', (e) => {
+      const fileBtn = e.target.closest && e.target.closest('.wa-ref-file');
+      if (!fileBtn) return;
+      e.preventDefault();
+      /* Inside a transcript preview clone, tapping the card already re-opens the
+         pane (handled on the chat root) — the real File action lives on the pane
+         copy, so don't also spawn a picker here. */
+      if (fileBtn.closest('.sc-surface-card')) return;
+      const store = window.WiseLibraryStore;
+      if (!store || typeof store.openFolderPicker !== 'function' || typeof store.fileReference !== 'function') return;
+      const set = fileBtn.closest('.wa-refset');
+      const card = fileBtn.closest('.wa-ref');
+      const kind = set && set.getAttribute('data-news-kind');
+      const idx = card ? Number(card.getAttribute('data-news-i')) : -1;
+      const cfg = NEWS_REFSETS[kind];
+      const ref = cfg && cfg.items && cfg.items[idx];
+      if (!ref) return;
+      const existing = typeof store.findReference === 'function' ? store.findReference(ref) : null;
+      const hosted = existing && typeof store.foldersOf === 'function' ? store.foldersOf(existing.id) : [];
+      store.openFolderPicker(fileBtn, {
+        title: 'File to Library',
+        currentIds: hosted.map((f) => f.id),
+        unfiled: true,
+        unfiledLabel: 'Library',
+        unfiledCurrent: !!(existing && !hosted.length),
+        preferAbove: true,
+      }, (folderId) => {
+        const res = store.fileReference(ref, folderId || null);
+        const folder = folderId && typeof store.findFolder === 'function' ? store.findFolder(folderId) : null;
+        const tip = folder
+          ? (res && res.updated ? `Updated in ${folder.name}` : `Filed to ${folder.name}`)
+          : (res && res.updated ? 'Updated in Library' : 'Filed to Library');
+        confirmRefFiled(fileBtn, tip);
+      });
     });
 
     /* ── "What can I ask?" catalog ────────────────────────────────────────────

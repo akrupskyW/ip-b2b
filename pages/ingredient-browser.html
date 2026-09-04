@@ -966,9 +966,13 @@
         return !!(state.q || state.gras || state.cat || state.sub || state.pl || state.proc || state.veg || state.usa || state.eua || state.flags.size);
       }
 
+      /* Rows visible after the last apply() — read by the chat reflection so the
+         two modules always agree on the count. */
+      let currentShown = IB_DATA.length;
+
       function apply() {
         renderRows(sortList(IB_DATA));
-        let shown = 0;
+        currentShown = 0;
         rowsEl.querySelectorAll('.ib-trow').forEach((row) => {
           const d = row.dataset;
           const flags = d.flags ? d.flags.split('|') : [];
@@ -984,13 +988,91 @@
           if (state.eua && d.eua !== state.eua) ok = false;
           for (const f of state.flags) { if (!flags.includes(f)) { ok = false; break; } }
           row.style.display = ok ? '' : 'none';
-          if (ok) shown += 1;
+          if (ok) currentShown += 1;
         });
-        tableEl.classList.toggle('is-empty', shown === 0);
+        tableEl.classList.toggle('is-empty', currentShown === 0);
         filterDot.classList.toggle('has-filters', anyFilterActive());
         footEl.textContent = anyFilterActive()
-          ? `Showing ${shown} of ${TOTAL.toLocaleString()}`
+          ? `Showing ${currentShown} of ${TOTAL.toLocaleString()}`
           : `Showing 1–${IB_DATA.length} of ${TOTAL.toLocaleString()}`;
+        /* Mirror every user-driven change into the docked chat (see below). */
+        if (reflectArmed) scheduleReflection();
+      }
+
+      /* ---- Browser → chat parity ----
+         The chat and this browser are two faces of the SAME action: whatever the
+         user does here (search, pick a score card, choose a filter, toggle a
+         flag, sort) is narrated into the docked WISEcodeAI chat as a short
+         assistant line — "as if the assistant did it" — so the two modules can
+         never disagree about what the registry is showing. It's the mirror of
+         the chat's own intent chips, which drive this browser via __ibIntent.
+
+         Debounced + coalesced so a burst of edits (typing a query, toggling
+         several chips) lands as ONE narration of the RESULTING view, and it
+         stays silent until the chat has actually mounted and the user has
+         engaged (reflectArmed). The chat itself never routes through here — its
+         chips call __ibIntent, which focuses/opens controls but does not fire an
+         apply() — so there is no echo loop. */
+      let reflectArmed = false;
+      let reflectTimer = null;
+      let lastSortReflected = 'name:1';
+
+      function chatApi() {
+        const dock = document.getElementById('wiseai-dock-panel');
+        return (dock && dock.__wiseaiChat) || null;
+      }
+
+      const SORT_LABELS = { name: 'name', cat: 'category', pl: 'processing level', gras: 'GRAS status', usa: 'US allergen', eua: 'EU allergen', flags: 'flags' };
+      function sortPhrase() {
+        return `${SORT_LABELS[sortKey] || sortKey} (${sortDir === 1 ? 'A→Z' : 'Z→A'})`;
+      }
+
+      /* Human phrases for every active filter, in the order they read on the
+         page. Values are already escaped by the caller. */
+      function describeFilters() {
+        const p = [];
+        if (state.q) p.push(`matching \u201C<strong>${esc(state.q)}</strong>\u201D`);
+        if (state.gras) p.push(`with GRAS status <strong>${esc(state.gras)}</strong>`);
+        if (state.pl) p.push(`at processing level <strong>${esc(state.pl)}</strong>`);
+        if (state.cat) p.push(`in category <strong>${esc(state.cat)}</strong>`);
+        if (state.sub) p.push(`in subcategory <strong>${esc(state.sub)}</strong>`);
+        if (state.proc) p.push(`in processed category <strong>${esc(state.proc)}</strong>`);
+        if (state.veg) p.push(`marked <strong>${esc(state.veg)}</strong>`);
+        if (state.usa) p.push(`with US allergen <strong>${esc(state.usa)}</strong>`);
+        if (state.eua) p.push(`with EU allergen <strong>${esc(state.eua)}</strong>`);
+        if (state.flags.size) p.push(`flagged <strong>${esc([...state.flags].join(', '))}</strong>`);
+        return p;
+      }
+      function joinPhrases(list) {
+        if (list.length <= 1) return list.join('');
+        return `${list.slice(0, -1).join(', ')} and ${list[list.length - 1]}`;
+      }
+
+      function scheduleReflection() {
+        clearTimeout(reflectTimer);
+        reflectTimer = setTimeout(flushReflection, 650);
+      }
+      function flushReflection() {
+        const api = chatApi();
+        if (!api || typeof api.addWISEcodeAI !== 'function') return;
+        const phrases = describeFilters();
+        const shown = currentShown;
+        const sortNow = `${sortKey}:${sortDir}`;
+        const sortChanged = sortNow !== lastSortReflected;
+        lastSortReflected = sortNow;
+
+        let html;
+        if (!phrases.length) {
+          html = sortChanged
+            ? `Sorted the full registry by <strong>${sortPhrase()}</strong> \u2014 all <strong>${TOTAL.toLocaleString()}</strong> ingredients.`
+            : `Cleared the filters \u2014 you\u2019re back to all <strong>${TOTAL.toLocaleString()}</strong> ingredients.`;
+        } else if (shown === 0) {
+          html = `No ingredients ${joinPhrases(phrases)} \u2014 try loosening a filter.`;
+        } else {
+          html = `Showing ingredients ${joinPhrases(phrases)} \u2014 <strong>${shown}</strong> of ${TOTAL.toLocaleString()}${sortChanged ? `, sorted by <strong>${sortPhrase()}</strong>` : ''}.`;
+        }
+        if (typeof api.hideWelcome === 'function') api.hideWelcome();
+        api.addWISEcodeAI(html, { source: 'WISEcode ingredient registry' });
       }
 
       /* Column sort — every labeled column is sortable: name / category /
@@ -1132,7 +1214,10 @@
         }
       };
 
+      /* First paint, then arm the chat reflection so the initial render itself
+         doesn't post a line — only the user's own actions do. */
       apply();
+      reflectArmed = true;
     })();
   </script>
 
