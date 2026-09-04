@@ -128,6 +128,10 @@ ok('C distinguishes tested from hypothesised links', /dashed/.test(panels.C) && 
 ok('D compares populations', /atl-pop/.test(panels.D));
 ok('E lists financial & operational consequences', /atl-fin/.test(panels.E));
 ok('F is the frontier', /atl-dom|frontier/i.test(panels.F));
+ok('F is a bubble chart', /atl-bubble/.test(panels.F) && /atl-card--plot/.test(panels.F));
+ok('F has no dashed X markers', !/stroke-dasharray/.test(panels.F));
+ok('F has no on-plot name labels', !/<text class="atl-tick-t"[^>]*>Sodium/.test(panels.F)
+  && !/<text class="atl-tick-t"[^>]*>Sugar/.test(panels.F));
 
 /* ── The closing read is its own output ─────────────────────────────────── */
 const close = run(`atlasView({ only: 'Z' })`);

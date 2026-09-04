@@ -909,6 +909,20 @@
       flex: 1 1 auto; min-width: 0; line-height: 1.25; overflow: hidden;
       display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
     }
+    /* Atlas chart chips on the merged rail match the transcript portrait cards. */
+    .wa-merge-chip--portrait {
+      flex-direction: column; align-items: stretch; gap: 6px;
+      width: 120px; max-width: 120px; padding: 6px 6px 8px;
+      text-align: center; font-size: 11px;
+    }
+    .wa-merge-chip--portrait .wa-merge-chip-thumb {
+      width: 108px; height: 108px;
+    }
+    .wa-merge-chip--portrait .wa-merge-chip-thumb-inner { transform: scale(0.3); }
+    .wa-merge-chip--portrait .wa-merge-chip-label {
+      flex: 0 0 auto; font-size: 10.5px; font-weight: 600; line-height: 1.25;
+      text-align: center; color: var(--text-muted);
+    }
     .wa-merge-chip.is-active {
       background: var(--surface); border-color: var(--primary); color: var(--primary-ink, var(--primary));
       box-shadow: inset 0 0 0 1px var(--primary);
@@ -1059,12 +1073,29 @@
       position: fixed;
       top: auto; right: auto; left: auto; bottom: auto;
       z-index: 400;
+      overflow: visible;
     }
+    /* Invisible hover bridges so the pointer can travel the 8px gap between
+       the ⋯ and a menu hung above or below it without dropping hover. */
+    .wa-rpt-item-pop::before,
+    .wa-rpt-item-pop::after,
+    .wa-rpt-swap-pop::before,
+    .wa-rpt-swap-pop::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 14px;
+    }
+    .wa-rpt-item-pop::before,
+    .wa-rpt-swap-pop::before { bottom: 100%; }
+    .wa-rpt-item-pop::after,
+    .wa-rpt-swap-pop::after { top: 100%; }
     .wa-rpt-swap-pop {
       min-width: 260px; max-width: 320px;
       max-height: min(420px, calc(100vh - 24px));
       display: flex; flex-direction: column;
-      overflow: hidden;
+      overflow: visible;
       padding: 8px 6px 6px;
       background: var(--surface);
       border: 1px solid var(--border-strong); border-radius: 14px;
@@ -1616,6 +1647,15 @@
        a multi-panel artifact into a single pie. */
     .wa-atlas { display: flex; flex-direction: column; gap: 22px; container-type: inline-size; }
     .atl-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 16px 14px; box-shadow: var(--shadow-1); }
+    /* Plot cards follow the same 600px output-chart cap as .wa-chart-card. */
+    .wa-pane-body .atl-card--plot,
+    .wa-pane-body .atl-card:has(> .atl-map-svg) {
+      width: 100%;
+      max-width: var(--wa-chart-max, 600px);
+      margin-inline: auto;
+      border-radius: var(--r-md, 16px);
+      padding: 18px 20px;
+    }
     html.dark .atl-card { background: rgba(255, 255, 255, 0.025); border-color: rgba(255, 255, 255, 0.07); }
     html.chat-tint:not(.dark) .atl-card { background: color-mix(in srgb, var(--primary) 5%, #fff); }
     html.dark.chat-tint .atl-card { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
@@ -1663,9 +1703,10 @@
     @container (min-width: 720px) { .atl-mapwrap { grid-template-columns: minmax(0, 1.55fr) minmax(240px, 1fr); } }
     .atl-map-svg { display: block; width: 100%; overflow: visible; }
     .atl-quad { font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; fill: var(--text-subtle); opacity: .8; }
-    .atl-bubble { cursor: pointer; transition: stroke-width .15s ease; }
+    .atl-bubble { cursor: pointer; transition: stroke-width .15s ease, fill-opacity .15s ease; }
     .atl-bubble:hover { stroke-width: 3; }
     .atl-bubble.is-sel { stroke: var(--text); stroke-width: 3; }
+    .atl-bubble.is-dom { stroke-dasharray: none; }
     .atl-axis-t { font-size: 11px; font-weight: 700; fill: var(--text-muted); }
     .atl-tick-t { font-size: 10.5px; fill: var(--text-subtle); }
     /* Selected-intervention read-out. */
@@ -1779,7 +1820,22 @@
     .wa-pane-body .wa-report-hero > .wa-report-title,
     .wa-pane-body .wa-caption,
     .wa-pane-body .wa-kraft-foot,
-    .wa-pane-body .wa-table-foot { display: none; }
+    .wa-pane-body .wa-table-foot,
+    .wa-pane-body .atl-panel > div:first-child,
+    .wa-pane-body .atl-panel-eyebrow,
+    .wa-pane-body .atl-panel-title,
+    .wa-pane-body .atl-panel > .atl-panel-sub,
+    .wa-pane-body .atl-readout,
+    .sc-surface-thumb .atl-panel > div:first-child,
+    .sc-surface-thumb .atl-panel-eyebrow,
+    .sc-surface-thumb .atl-panel-title,
+    .sc-surface-thumb .atl-panel > .atl-panel-sub,
+    .sc-surface-thumb .atl-readout,
+    .wa-merge-chip-thumb .atl-panel > div:first-child,
+    .wa-merge-chip-thumb .atl-panel-eyebrow,
+    .wa-merge-chip-thumb .atl-panel-title,
+    .wa-merge-chip-thumb .atl-panel > .atl-panel-sub,
+    .wa-merge-chip-thumb .atl-readout { display: none; }
 
     /* ── Report layout ── */
     .wa-report-hero { margin-bottom: 20px; }
@@ -2160,6 +2216,38 @@
       line-height: 1.3; white-space: normal; overflow-wrap: anywhere; word-break: break-word;
       display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
       overflow: hidden;
+    }
+    /* Atlas chart chips: a sideways rail of portrait cards — thumbnail on
+       top, smaller name underneath — so six panels read as a strip instead
+       of a stack of landscape rows. */
+    .sc-surface-rail {
+      display: flex; align-items: stretch; gap: 8px;
+      overflow-x: auto; overflow-y: hidden; scrollbar-width: thin;
+      scroll-snap-type: x proximity; max-width: 100%;
+      padding: 2px 2px 6px; -webkit-overflow-scrolling: touch;
+    }
+    .sc-surface-rail::-webkit-scrollbar { height: 6px; }
+    .sc-surface-rail .sc-surface-slot { flex: 0 0 auto; scroll-snap-align: start; width: auto; max-width: none; }
+    .sc-surface-card--portrait {
+      width: 120px; max-width: 120px; min-width: 120px;
+      padding: 6px 6px 8px; align-items: stretch;
+    }
+    .sc-surface-card--portrait .sc-surface-head {
+      flex-direction: column; align-items: stretch; gap: 6px;
+    }
+    .sc-surface-card--portrait .sc-surface-thumb,
+    .sc-surface-card--portrait .sc-surface-stack .sc-surface-thumb {
+      width: 108px; height: 108px;
+    }
+    .sc-surface-card--portrait .sc-surface-thumb-inner { transform: scale(0.3); }
+    .sc-surface-card--portrait .sc-surface-body { justify-content: flex-start; }
+    .sc-surface-card--portrait .sc-surface-title {
+      font-size: 10.5px; font-weight: 600; line-height: 1.25; text-align: center;
+      color: var(--text-muted);
+    }
+    .sc-surface-card--portrait:has(.sc-surface-stack):hover,
+    .sc-surface-card--portrait:has(.sc-surface-stack).is-hover {
+      width: 120px;
     }
     .sc-surface-stamp { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
     .sc-surface-time {
@@ -5352,7 +5440,8 @@
            result blocks holds <button>/<input> controls — can nest safely; the
            clone is `inert` so nothing inside it is focusable. Same 52px thumb
            + vN badge as the transcript output chip. */
-        return `<div class="wa-merge-chip" data-slide="${i}"${bid ? ` data-block-id="${esc(bid)}"` : ''} role="tab" tabindex="0" aria-selected="false" title="${esc(title)}">
+        const atlasChart = /^intervention-atlas-[a-f]$/i.test(b.dataset.versionKey || '');
+        return `<div class="wa-merge-chip${atlasChart ? ' wa-merge-chip--portrait' : ''}" data-slide="${i}"${bid ? ` data-block-id="${esc(bid)}"` : ''} role="tab" tabindex="0" aria-selected="false" title="${esc(title)}">
           <span class="wa-merge-chip-thumb"><span class="wa-merge-chip-thumb-inner" inert>${thumbSafe(b.innerHTML)}</span>${paneVerTag(b)}</span>
           <span class="wa-merge-chip-label">${esc(label)}</span>
         </div>`;
@@ -5892,10 +5981,21 @@
       pop.style.visibility = '';
       pop.classList.remove('hidden');
     }
+    function bindReportPopHover(pop, btn) {
+      const wrap = btn && btn.closest('.panel-more-wrap');
+      pop.__plHost = wrap || btn;
+      pop.__khBtn = btn;
+      if (btn) {
+        btn.__khPop = pop;
+        if (pop.id) btn.setAttribute('aria-controls', pop.id);
+      }
+    }
     function closeReportItemMenus() {
       document.querySelectorAll('.wa-rpt-more .panel-more-btn').forEach((b) => {
         b.classList.remove('is-open');
         b.setAttribute('aria-expanded', 'false');
+        b.removeAttribute('aria-controls');
+        b.__khPop = null;
       });
       if (rptItemPop) { rptItemPop.remove(); rptItemPop = null; }
       if (rptSwapPop) { rptSwapPop.remove(); rptSwapPop = null; }
@@ -5957,6 +6057,7 @@
       const catalog = reportCatalog();
       rptSwapPop = document.createElement('div');
       rptSwapPop.className = 'wa-rpt-swap-pop';
+      rptSwapPop.id = 'wa-rpt-swap-pop';
       rptSwapPop.setAttribute('role', 'listbox');
       rptSwapPop.setAttribute('aria-label', 'Swap output');
       rptSwapPop.setAttribute('data-popover-static', '');
@@ -5986,6 +6087,7 @@
         closeReportItemMenus();
       });
       document.body.appendChild(rptSwapPop);
+      bindReportPopHover(rptSwapPop, btn);
       placeReportPop(rptSwapPop, btn, fromRect);
     }
     function openReportItemMenu(item, btn) {
@@ -5994,6 +6096,7 @@
       btn.setAttribute('aria-expanded', 'true');
       rptItemPop = document.createElement('div');
       rptItemPop.className = 'topbar-popover wa-rpt-item-pop';
+      rptItemPop.id = 'wa-rpt-item-pop';
       rptItemPop.setAttribute('role', 'menu');
       rptItemPop.setAttribute('data-popover-static', '');
       rptItemPop.innerHTML =
@@ -6010,6 +6113,7 @@
         if (act === 'delete') { closeReportItemMenus(); deleteReportItem(item); }
       });
       document.body.appendChild(rptItemPop);
+      bindReportPopHover(rptItemPop, btn);
       placeReportPop(rptItemPop, btn);
     }
     function wireReportItem(item) {
@@ -9732,9 +9836,10 @@
       pts.forEach((p) => {
         if (p.val > best) { best = p.val; p.front = true; frontier.push(p); } else { p.front = false; }
       });
-      const W = 560, H = 300, padL = 44, padR = 20, padT = 18, padB = 44;
+      const W = 560, H = 280, padL = 48, padR = 22, padT = 22, padB = 42;
       const x = (v) => padL + (v / 100) * (W - padL - padR);
       const y = (v) => padT + (1 - v / 100) * (H - padT - padB);
+      const rf = (iv) => 7 + Math.sqrt(iv.sales) * 3.1;
       let svg = `<svg viewBox="0 0 ${W} ${H}" class="atl-map-svg" role="img" aria-label="Recommendation frontier: greatest weighted benefit available at each level of acceptable commercial risk">`;
       [0, 25, 50, 75, 100].forEach((g) => {
         svg += `<line x1="${padL}" y1="${y(g).toFixed(1)}" x2="${W - padR}" y2="${y(g).toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`;
@@ -9747,31 +9852,37 @@
           d += ` L ${x(frontier[i].risk).toFixed(1)} ${y(frontier[i - 1].val).toFixed(1)}`;
           d += ` L ${x(frontier[i].risk).toFixed(1)} ${y(frontier[i].val).toFixed(1)}`;
         }
-        svg += `<path d="${d}" fill="none" stroke="var(--primary)" stroke-width="2.5" stroke-linejoin="round"/>`;
+        svg += `<path d="${d}" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linejoin="round" opacity="0.4"/>`;
       }
-      pts.forEach((p) => {
+      /* Largest bubbles first so a small one is never buried. No on-plot
+         labels — names live in the tooltip, the way the Analytics Types
+         bubble chart does. */
+      pts.slice().sort((a, b) => b.iv.sales - a.iv.sales).forEach((p) => {
         const cx = x(p.risk), cy = y(p.val);
+        const r = rf(p.iv);
         const ev = ATLAS_EVID[p.iv.evid];
+        const op = p.front ? (0.42 + p.iv.conf * 0.38).toFixed(2) : (0.16 + p.iv.conf * 0.18).toFixed(2);
+        const stroke = p.iv.id === st.sel ? 'var(--text)' : (p.front ? ev.color : 'var(--text-subtle)');
+        const sw = p.iv.id === st.sel ? 3 : (p.front ? 1.6 : 1.2);
         const tip = p.front
-          ? `${p.iv.name} sits ON the frontier: nothing cheaper in commercial risk delivers more weighted benefit. Risk ${p.risk}, benefit ${p.val}.`
-          : `${p.iv.name} is DOMINATED: another intervention delivers more weighted benefit at no more commercial risk. Risk ${p.risk}, benefit ${p.val}.`;
-        svg += p.front
-          ? `<circle class="atl-bubble${p.iv.id === st.sel ? ' is-sel' : ''}" data-atlas-set="sel:${p.iv.id}" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="7" fill="${ev.color}" stroke="var(--surface)" stroke-width="2" role="button" tabindex="0" aria-label="${esc(tip)}"><title>${esc(tip)}</title></circle>`
-          : `<g class="atl-bubble" data-atlas-set="sel:${p.iv.id}" role="button" tabindex="0" aria-label="${esc(tip)}"><title>${esc(tip)}</title><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="6.5" fill="none" stroke="var(--sec-red)" stroke-width="1.6" stroke-dasharray="3 2"/><line x1="${(cx - 3.4).toFixed(1)}" y1="${(cy - 3.4).toFixed(1)}" x2="${(cx + 3.4).toFixed(1)}" y2="${(cy + 3.4).toFixed(1)}" stroke="var(--sec-red)" stroke-width="1.4"/><line x1="${(cx + 3.4).toFixed(1)}" y1="${(cy - 3.4).toFixed(1)}" x2="${(cx - 3.4).toFixed(1)}" y2="${(cy + 3.4).toFixed(1)}" stroke="var(--sec-red)" stroke-width="1.4"/></g>`;
-        svg += `<text class="atl-tick-t" x="${cx.toFixed(1)}" y="${(cy - 12).toFixed(1)}" text-anchor="middle">${esc(p.iv.short)}</text>`;
+          ? `${p.iv.name} sits ON the frontier: nothing cheaper in commercial risk delivers more weighted benefit. Risk ${p.risk}, benefit ${p.val}, $${p.iv.sales.toFixed(1)}B exposed.`
+          : `${p.iv.name} is DOMINATED: another intervention delivers more weighted benefit at no more commercial risk. Risk ${p.risk}, benefit ${p.val}, $${p.iv.sales.toFixed(1)}B exposed.`;
+        svg += `<circle class="atl-bubble${p.iv.id === st.sel ? ' is-sel' : ''}${p.front ? '' : ' is-dom'}" data-atlas-set="sel:${p.iv.id}" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="${ev.color}" fill-opacity="${op}" stroke="${stroke}" stroke-width="${sw}" role="button" tabindex="0" aria-label="${esc(tip)}"><title>${esc(tip)}</title></circle>`;
       });
       svg += `<text class="atl-axis-t" x="${((padL + W - padR) / 2).toFixed(1)}" y="${H - 6}" text-anchor="middle">Acceptable commercial risk \u2192</text>`;
       svg += `<text class="atl-axis-t" x="13" y="${((padT + H - padB) / 2).toFixed(1)}" text-anchor="middle" transform="rotate(-90 13 ${((padT + H - padB) / 2).toFixed(1)})">Weighted benefit \u2192</text>`;
       svg += '</svg>';
       const dominated = pts.filter((p) => !p.front);
-      const domHtml = dominated.length
-        ? `<div class="atl-dom">${dominated.map((p) => `<span class="atl-dom-pill" data-tip="${esc(`Dominated under ${ATLAS_WEIGHTS[st.w].label.toLowerCase()} weighting: less benefit and no less commercial risk than something already on the frontier.`)}"><span class="material-symbols-outlined" style="font-size:14px" aria-hidden="true">close</span>${esc(p.iv.short)}</span>`).join('')}</div>`
-        : '<p class="atl-panel-sub">Under this weighting nothing in the filtered set is dominated \u2014 every option buys something no cheaper option does.</p>';
+      const legend = `<div class="atl-legend">
+        ${Object.keys(ATLAS_EVID).map((k) => `<span class="atl-legend-item"><span class="atl-legend-dot" style="background:${ATLAS_EVID[k].color}"></span>${esc(ATLAS_EVID[k].label)}</span>`).join('')}
+        <span class="atl-legend-item"><span class="atl-legend-dot" style="background:var(--primary);opacity:.85"></span>On the frontier</span>
+        <span class="atl-legend-item atl-dom"><span class="atl-legend-dot" style="background:var(--text-subtle);opacity:.4"></span>${dominated.length ? 'Dominated' : 'Nothing dominated'}</span>
+        <span class="atl-legend-item">Size is annual sales exposure</span>
+      </div>`;
       return `
-        <div class="atl-card">
+        <div class="atl-card atl-card--plot">
           ${svg}
-          <p class="atl-panel-sub" style="margin:12px 0 8px"><strong>Dominated interventions</strong> \u2014 expected to deliver less benefit at no less commercial risk than an option already on the frontier. Switching the weighting changes this list, which is the point of showing it.</p>
-          ${domHtml}
+          ${legend}
         </div>`;
     }
 
@@ -9843,6 +9954,8 @@
           html: atlasView({ ...state, only: p.only }),
           versionKey: `intervention-atlas-${p.only.toLowerCase()}`,
           versionReset: !!reset,
+          rail: 'atlas-visuals',
+          cardLayout: 'portrait',
         });
       });
       surfaceBlock('results', {
@@ -10879,6 +10992,7 @@
     ].join('\n');
 
     const INTENTS = [
+      { intent: 'atlas', icon: 'bubble_chart',    label: 'Food Intervention Atlas', ask: ATLAS_ASK },
       { intent: 'topbrands', icon: 'leaderboard',   label: 'Top 3 brands · WISEscore \u2265 50', ask: 'Create a comparison chart of the top three brands with more than 50 UPCs that are in the top half of the WISE score.' },
       { intent: 'kraft',   icon: 'inventory_2',     label: 'Kraft SKUs \u00b7 % UPF', ask: 'How many SKUs does Kraft have and what percent are ultra processed?' },
       { intent: 'sprouts', icon: 'storefront',      label: 'How many foods does Sprouts have?', ask: 'How many foods does the Sprouts retailer have?' },
@@ -11195,11 +11309,11 @@
       + '</figure>'
       + 'Press play when you\u2019re ready \u2014 scrubbing, volume and full screen are all live, and it waits for you rather than starting on its own.';
     /* "Wise Owl Progression" — one edge-to-edge row of Lottie owls, stills, then
-       theme-aware silent clips (linen in light / deep harbor in dark). Shared
-       component: js/owl-progression-carousel.js. */
-    const OWL_PROGRESSION_REPLY = '<p>Here is the <strong>Wise Owl Progression</strong> \u2014 green (pass), red (fail), and blue (celebrate) \u2014 as motion, stills, and short loops that follow your light or dark theme.</p>'
+       theme-aware silent clips (linen in light / deep harbor in dark). Click
+       plays a Lottie or clip once. Shared component: js/owl-progression-carousel.js. */
+    const OWL_PROGRESSION_REPLY = '<p>Here is the <strong>Wise Owl Progression</strong> \u2014 green (pass), red (fail), and blue (celebrate) \u2014 as motion, stills, and short clips that follow your light or dark theme.</p>'
       + owlProgressionCarouselHtml()
-      + '<p>Scroll the row, or use the arrows. Videos play once with no sound and no controls; Lottie owls keep looping while they\u2019re in view.</p>';
+      + '<p>Scroll the row, or use the arrows. Click a Lottie owl or a clip to play it \u2014 each plays once, with no sound and no controls.</p>';
     const SWEETENERS_REPLY = 'Among the ingredients currently classified as <strong>Artificial Sweetener</strong>, the PL split is:'
         + '<div class="wa-plsplit">'
         + '<span class="wa-plsplit-item"><span class="wa-ib-pill wa-ib-pl-2">PL2</span><b>6</b></span>'
@@ -11691,8 +11805,9 @@
          the turn's meta row below it (see decorateSurfaceMeta). The chip keeps
          only the thumbnail + title; charts no longer expand inline here — use
          the expand icon on the chart in the right sticky module instead. */
+      const portrait = o.cardLayout === 'portrait';
       return `<div class="sc-surface-slot">
-          <div class="sc-surface-card" role="button" tabindex="0" data-surface="${blockId}" data-activity="output"${count > 1 ? ' data-activity-multi' : ''} aria-label="Open “${esc(rawTitle)}” in the ${esc(paneName)} panel — version ${version}${count > 1 ? ` of ${count}` : ''}, ${esc(time)}">
+          <div class="sc-surface-card${portrait ? ' sc-surface-card--portrait' : ''}" role="button" tabindex="0" data-surface="${blockId}" data-activity="output"${count > 1 ? ' data-activity-multi' : ''} aria-label="Open “${esc(rawTitle)}” in the ${esc(paneName)} panel — version ${version}${count > 1 ? ` of ${count}` : ''}, ${esc(time)}">
             <div class="sc-surface-head">
               ${thumb}
               <div class="sc-surface-body">
@@ -12005,7 +12120,16 @@
     }
 
     /* Open (or refresh) a pane block AND mirror it as an inline preview card. */
-    function postSurfaceBlock(which, { icon, title, meta, html, versionKey, versionReset }) {
+    function liveSurfaceRail(railId) {
+      if (!railId || !host) return null;
+      const yours = host.querySelectorAll('.sc-line-you:not(.sc-line-event)');
+      const lastYou = yours.length ? yours[yours.length - 1] : null;
+      const turn = lastYou && lastYou.getAttribute('data-ask-turn');
+      if (!turn) return null;
+      return host.querySelector(`.sc-line-wiseai[data-ask-turn="${CSS.escape(turn)}"] .sc-surface-rail[data-surface-rail="${CSS.escape(railId)}"]`);
+    }
+
+    function postSurfaceBlock(which, { icon, title, meta, html, versionKey, versionReset, rail, cardLayout }) {
       const blockId = 'blk' + (++surfaceSeq);
       /* The compare board is engine-rendered into a fixed #cmp-body; strip those
          ids (and the References cards' #cat-ref-N ids) from the preview clone so
@@ -12039,14 +12163,24 @@
         /* A preview card is posted mid-turn (while WISEcodeAI is still "thinking"),
            so it must NOT trail the intent chips — those belong to the actual
            answer that lands after it, and should animate in there. */
-        const surfLine = chat.addWISEcodeAI(
-          surfaceCardHtml(blockId, which, icon, title, previewHtml, {
-            time,
-            version: count,
-            versions: list.slice(),
-          }),
-          { feedback: true, trailChips: false }
-        );
+        const cardHtml = surfaceCardHtml(blockId, which, icon, title, previewHtml, {
+          time,
+          version: count,
+          versions: list.slice(),
+          cardLayout,
+        });
+        const existingRail = rail ? liveSurfaceRail(rail) : null;
+        if (existingRail) {
+          existingRail.insertAdjacentHTML('beforeend', cardHtml);
+          const added = existingRail.lastElementChild;
+          try { added && added.scrollIntoView({ inline: 'end', block: 'nearest', behavior: 'smooth' }); } catch (_) {}
+          syncSurfaceVersionThumbs(blockId, list[list.length - 1]);
+          return;
+        }
+        const wrap = rail
+          ? `<div class="sc-surface-rail" data-surface-rail="${esc(rail)}" role="region" aria-roledescription="carousel" aria-label="Chart outputs">${cardHtml}</div>`
+          : cardHtml;
+        const surfLine = chat.addWISEcodeAI(wrap, { feedback: true, trailChips: false });
         decorateSurfaceMeta(surfLine, { time, version: count, count, blockId });
         syncSurfaceVersionThumbs(blockId, list[list.length - 1]);
       }

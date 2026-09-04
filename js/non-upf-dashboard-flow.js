@@ -133,11 +133,7 @@ function setViewMode(mode) {
   viewMode = mode === 'cards' ? 'cards' : 'rows';
   try { localStorage.setItem(VIEW_KEY, viewMode); } catch (e) { /* ignore */ }
   hostEl?.querySelector('.adm-table')?.classList.toggle('adm-table--cards', viewMode === 'cards');
-  hostEl?.querySelectorAll('[data-adm-view]').forEach((b) => {
-    const on = b.dataset.admView === viewMode;
-    b.classList.toggle('is-active', on);
-    b.setAttribute('aria-pressed', String(on));
-  });
+  syncPageMenuChecks();
 }
 
 const { setChat, pushChat } = createChatBridge();
@@ -393,14 +389,7 @@ function paint() {
   hostEl.innerHTML = `
     <div class="adm-wrap adm-wrap--wide" data-w-date-root data-nud-board>
       <header class="adm-head">
-        <div class="adm-head-row">
-          <div>
-            <h1 class="adm-title">Your Non-UPF Verification Dashboard</h1>
-          </div>
-          <div class="adm-head-actions">
-            <button type="button" class="adm-icon-btn nud-rowmenu-btn nud-page-menu-btn" data-adm-action="page-options" aria-haspopup="menu" aria-expanded="false" aria-label="Dashboard options" title="More"><span class="material-symbols-outlined">more_vert</span></button>
-          </div>
-        </div>
+        <h1 class="adm-title">Your Non-UPF Verification Dashboard</h1>
       </header>
 
       ${searchToolbarHTML({
@@ -438,6 +427,7 @@ function paint() {
     </div>`;
   applyProductFilter();
   animateCharts();
+  injectPageMenu();
 }
 
 function easeOutCubic(t) { return 1 - (1 - t) ** 3; }
@@ -566,7 +556,6 @@ const MENU_ITEMS = [
 let openMenuEl = null;
 function closeRowMenu() {
   if (openMenuEl) { openMenuEl.remove(); openMenuEl = null; }
-  hostEl?.querySelector('[data-adm-action="page-options"]')?.setAttribute('aria-expanded', 'false');
   document.removeEventListener('scroll', closeRowMenu, true);
   window.removeEventListener('resize', closeRowMenu);
 }
@@ -608,37 +597,62 @@ function openRowMenu(btn, upc) {
   });
 }
 
-/* Page ⋮ menu — invoices + export, then the row / card layout choice as a
-   pair of radio items with a check on the active layout. */
+/* Dashboard-only rows live in the module ⋯ (next to width) — same cluster
+   as verification. A second ⋮ above the search used to duplicate that one. */
 const VIEW_MENU_ITEMS = [
   { view: 'rows',  icon: 'table_rows', label: 'Row view' },
   { view: 'cards', icon: 'grid_view',  label: 'Card view' },
 ];
-function openPageMenu(btn) {
-  closeRowMenu();
-  const menu = document.createElement('div');
-  menu.className = 'adm-menu';
-  menu.setAttribute('role', 'menu');
-  const actions = `
-    <button type="button" role="menuitem" class="adm-menu-item" data-adm-menu-action="view-invoices"><span class="material-symbols-outlined">receipt_long</span>View invoices</button>
-    <button type="button" role="menuitem" class="adm-menu-item" data-adm-menu-action="export"><span class="material-symbols-outlined">download</span>Export</button>
-    <div class="adm-menu-sep nud-view-sep"></div>
+
+function pageMenuItemsHTML() {
+  return `
+    <div class="topbar-menu-divider" data-nud-page-menu></div>
+    <button type="button" class="topbar-menu-item" data-nud-page-menu data-adm-menu-action="view-invoices" role="menuitem">
+      <span class="material-symbols-outlined topbar-menu-icon">receipt_long</span>
+      <span>View invoices</span>
+    </button>
+    <button type="button" class="topbar-menu-item" data-nud-page-menu data-adm-menu-action="export" role="menuitem">
+      <span class="material-symbols-outlined topbar-menu-icon">download</span>
+      <span>Export dashboard</span>
+    </button>
+    <div class="topbar-menu-divider nud-view-sep" data-nud-page-menu></div>
     ${VIEW_MENU_ITEMS.map((it) => {
       const on = viewMode === it.view;
-      return `<button type="button" role="menuitemradio" aria-checked="${on}" class="adm-menu-item nud-view-item${on ? ' is-active' : ''}" data-adm-view-menu="${it.view}"><span class="material-symbols-outlined">${it.icon}</span><span class="nud-view-item-label">${esc(it.label)}</span><span class="material-symbols-outlined nud-view-item-check">${on ? 'check' : ''}</span></button>`;
+      return `<button type="button" role="menuitemradio" aria-checked="${on}" class="topbar-menu-item nud-view-item${on ? ' is-active' : ''}" data-nud-page-menu data-adm-view-menu="${it.view}"><span class="material-symbols-outlined topbar-menu-icon">${it.icon}</span><span class="nud-view-item-label">${esc(it.label)}</span><span class="material-symbols-outlined nud-view-item-check">${on ? 'check' : ''}</span></button>`;
     }).join('')}`;
-  menu.innerHTML = actions;
-  placeMenu(menu, btn);
-  btn.setAttribute('aria-expanded', 'true');
-  menu.addEventListener('click', (e) => {
-    const view = e.target.closest('[data-adm-view-menu]');
-    if (view) { setViewMode(view.dataset.admViewMenu); closeRowMenu(); return; }
-    const item = e.target.closest('[data-adm-menu-action]');
-    if (!item) return;
-    const action = item.dataset.admMenuAction;
-    closeRowMenu();
-    runAction(action, '');
+}
+
+function syncPageMenuChecks() {
+  document.querySelectorAll('#agent-main-more-pop [data-adm-view-menu]').forEach((b) => {
+    const on = b.dataset.admViewMenu === viewMode;
+    b.classList.toggle('is-active', on);
+    b.setAttribute('aria-checked', on ? 'true' : 'false');
+    const check = b.querySelector('.nud-view-item-check');
+    if (check) check.textContent = on ? 'check' : '';
   });
+}
+
+function closeHeaderMenu() {
+  const btn = document.getElementById('agent-main-more-btn');
+  const pop = document.getElementById('agent-main-more-pop');
+  if (pop) pop.classList.add('hidden');
+  if (btn) {
+    btn.classList.remove('is-open');
+    btn.setAttribute('aria-expanded', 'false');
+  }
+}
+
+function injectPageMenu() {
+  const pop = document.getElementById('agent-main-more-pop');
+  if (!pop) {
+    requestAnimationFrame(injectPageMenu);
+    return;
+  }
+  if (pop.querySelector('[data-nud-page-menu]')) {
+    syncPageMenuChecks();
+    return;
+  }
+  pop.insertAdjacentHTML('beforeend', pageMenuItemsHTML());
 }
 
 /* Map a verification stat tile → the product-table status filter. */
@@ -789,8 +803,6 @@ export function renderNonUpfDashboard(mainEl) {
     if (chartCard) { replayCharts(); return; }
     const sortH = e.target.closest('[data-adm-sort]');
     if (sortH && !e.target.closest('.w-datemenu, .pf-datemenu')) { toggleSort(sortH.dataset.admSort); return; }
-    const optBtn = e.target.closest('[data-adm-action="page-options"]');
-    if (optBtn) { e.preventDefault(); e.stopPropagation(); openPageMenu(optBtn); return; }
     const menuBtn = e.target.closest('[data-adm-action="manage-product"]');
     if (menuBtn) { e.preventDefault(); e.stopPropagation(); openRowMenu(menuBtn, menuBtn.dataset.admUpc || ''); return; }
     const vf = e.target.closest('[data-adm-vf]');
@@ -823,7 +835,21 @@ export function renderNonUpfDashboard(mainEl) {
       insideSel: '.wise-search-inline, .adm-search-inline',
     });
     document.addEventListener('click', (e) => {
-      if (openMenuEl && !e.target.closest('.adm-menu') && !e.target.closest('[data-adm-action="manage-product"]') && !e.target.closest('[data-adm-action="page-options"]')) closeRowMenu();
+      const view = e.target.closest('#agent-main-more-pop [data-adm-view-menu], .topbar-popover [data-adm-view-menu]');
+      if (view) {
+        e.preventDefault();
+        setViewMode(view.dataset.admViewMenu);
+        closeHeaderMenu();
+        return;
+      }
+      const pageItem = e.target.closest('#agent-main-more-pop [data-adm-menu-action], .topbar-popover [data-adm-menu-action]');
+      if (pageItem && pageItem.hasAttribute('data-nud-page-menu')) {
+        e.preventDefault();
+        closeHeaderMenu();
+        runAction(pageItem.dataset.admMenuAction, '');
+        return;
+      }
+      if (openMenuEl && !e.target.closest('.adm-menu') && !e.target.closest('[data-adm-action="manage-product"]')) closeRowMenu();
     });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeRowMenu(); });
   }

@@ -398,7 +398,7 @@
               prompts: ['Meet the Owls'],
               tools: [] },
             { title: 'Wise Owl Progression', icon: 'view_carousel',
-              desc: 'An edge-to-edge row of the Wise Owl in green, red, and blue — Lottie motion, stills, then silent theme-aware clips. Nothing opens on the right.',
+              desc: 'An edge-to-edge row of the Wise Owl in green, red, and blue — click a Lottie to play it, stills, then silent theme-aware clips that play when you tap them. Nothing opens on the right.',
               prompts: ['Wise Owl Progression'],
               tools: [] },
           ],

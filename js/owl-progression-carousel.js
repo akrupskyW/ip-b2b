@@ -1,12 +1,13 @@
 /* =============================================================================
    owl-progression-carousel.js — Wise Owl Progression strip for chat.
 
-   Edge-to-edge horizontal strip: Lottie owls, static poses, then theme-aware
-   silent videos (linen / light vs deep-harbor / dark), all in a row with
-   spacing. Background stays the chat surface — no black rail. One shared
-   definition; pages host it via owlProgressionCarouselHtml() + auto-mount.
+   Edge-to-edge horizontal strip: Lottie owls, transparent stills, then
+   theme-aware silent videos (linen / light vs deep-harbor / dark). Background
+   stays the chat surface — no black rail. One shared definition; pages host
+   it via owlProgressionCarouselHtml() + auto-mount.
 
-   Videos play once when they enter view (muted, no controls); Lotties loop.
+   Lottie and video wait for a click (play once, click again to replay).
+   Stills are PNG with a punched-out studio matte so the chat shows through.
    ========================================================================== */
 
 const STYLE_ID = 'wise-owl-progression-styles';
@@ -47,9 +48,9 @@ export function owlProgressionSlides(base) {
     { kind: 'lottie', src: asset(b, 'owl-green-anim.json'), label: 'Green owl · thumbs up', tone: 'green' },
     { kind: 'lottie', src: asset(b, 'owl-red-anim.json'), label: 'Red owl · thumbs down', tone: 'red' },
     { kind: 'lottie', src: asset(b, 'owl-blue-anim.json'), label: 'Blue owl · celebrate', tone: 'blue' },
-    { kind: 'image', src: asset(b, 'owl-green.jpg'), label: 'Green owl · still', tone: 'green' },
-    { kind: 'image', src: asset(b, 'owl-blue.jpg'), label: 'Blue owl · still', tone: 'blue' },
-    { kind: 'image', src: asset(b, 'owl-red.jpg'), label: 'Red owl · still', tone: 'red' },
+    { kind: 'image', src: asset(b, 'owl-green.png'), label: 'Green owl · still', tone: 'green' },
+    { kind: 'image', src: asset(b, 'owl-blue.png'), label: 'Blue owl · still', tone: 'blue' },
+    { kind: 'image', src: asset(b, 'owl-red.png'), label: 'Red owl · still', tone: 'red' },
     {
       kind: 'video',
       lightSrc: asset(b, 'owl-linen.mp4'),
@@ -77,13 +78,13 @@ export function owlProgressionSlides(base) {
 function itemInnerHtml(slide, i) {
   const lab = esc(slide.label);
   if (slide.kind === 'lottie') {
-    return `<div class="sc-owl-prog-media sc-owl-prog-lottie" data-owl-lottie="${esc(slide.src)}" data-owl-i="${i}" role="img" aria-label="${lab}"></div>`;
+    return `<div class="sc-owl-prog-media sc-owl-prog-lottie" data-owl-lottie="${esc(slide.src)}" data-owl-i="${i}" aria-hidden="true"></div>`;
   }
   if (slide.kind === 'image') {
     return `<img class="sc-owl-prog-media sc-owl-prog-img" src="${esc(slide.src)}" alt="${lab}" loading="lazy" decoding="async" draggable="false">`;
   }
   /* Theme sources live on data-*; mount swaps src when the theme flips. */
-  return `<video class="sc-owl-prog-media sc-owl-prog-vid" data-owl-light="${esc(slide.lightSrc)}" data-owl-dark="${esc(slide.darkSrc)}" muted playsinline preload="metadata" disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback" aria-label="${lab}"></video>`;
+  return `<video class="sc-owl-prog-media sc-owl-prog-vid" data-owl-light="${esc(slide.lightSrc)}" data-owl-dark="${esc(slide.darkSrc)}" muted playsinline preload="metadata" disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback" aria-hidden="true"></video>`;
 }
 
 /**
@@ -94,12 +95,18 @@ export function owlProgressionCarouselHtml(opts) {
   const base = (opts && opts.base) || DEFAULT_BASE;
   const id = (opts && opts.id) || `owl-prog-${Math.random().toString(36).slice(2, 9)}`;
   const slides = owlProgressionSlides(base);
-  const items = slides.map((s, i) =>
-    `<div class="sc-owl-prog-item" data-owl-slide="${i}" data-owl-tone="${esc(s.tone || '')}">`
-    + itemInnerHtml(s, i)
-    + `<span class="sc-owl-prog-cap">${esc(s.label)}</span>`
-    + `</div>`
-  ).join('');
+  const items = slides.map((s, i) => {
+    const playable = s.kind === 'lottie' || s.kind === 'video';
+    const playAttrs = playable
+      ? ` tabindex="0" role="button" aria-label="Play ${esc(s.label)}"`
+      : '';
+    return (
+      `<div class="sc-owl-prog-item${playable ? ' is-playable' : ''}" data-owl-slide="${i}" data-owl-kind="${esc(s.kind)}" data-owl-tone="${esc(s.tone || '')}"${playAttrs}>`
+      + itemInnerHtml(s, i)
+      + `<span class="sc-owl-prog-cap">${esc(s.label)}</span>`
+      + `</div>`
+    );
+  }).join('');
   return (
     `<figure class="sc-owl-prog" data-owl-prog="${esc(id)}" role="region" aria-roledescription="carousel" aria-label="Wise Owl Progression">`
     + `<div class="sc-owl-prog-viewport" data-owl-viewport>`
@@ -177,6 +184,16 @@ function injectStyles() {
   position: relative;
   scroll-snap-align: start;
   background: transparent;
+  user-select: none;
+}
+.sc-owl-prog-item.is-playable { cursor: pointer; }
+.sc-owl-prog-item.is-playable:focus {
+  outline: none;
+}
+.sc-owl-prog-item.is-playable:focus-visible {
+  outline: 2px solid var(--primary, #1d4ed8);
+  outline-offset: 4px;
+  border-radius: 14px;
 }
 .sc-owl-prog-media {
   display: block;
@@ -196,7 +213,6 @@ function injectStyles() {
   width: 100% !important;
   height: 100% !important;
 }
-.sc-owl-prog-vid { pointer-events: none; }
 .sc-owl-prog-cap {
   display: block;
   margin-top: 8px;
@@ -287,7 +303,37 @@ function applyVideoTheme(vid) {
       const p = vid.play();
       if (p && typeof p.catch === 'function') p.catch(() => {});
     } catch (_) { /* autoplay may be blocked */ }
+  } else {
+    showVideoPoster(vid);
   }
+}
+
+function lottieStartFrame(anim) {
+  if (!anim) return 0;
+  if (typeof anim.firstFrame === 'number') return anim.firstFrame;
+  return 0;
+}
+
+/* Green/red are 900×900 with margin; blue is 600×600 and fills the box.
+   Pad the smaller canvas to the largest in this strip so the owls match.
+   (A CSS scale cannot win — lottie-web writes an inline transform on the SVG.) */
+function normalizeLottieSizes(nodes) {
+  const sizes = nodes.map((el) => {
+    const data = el.__wiseLottie && el.__wiseLottie.animationData;
+    return data && data.w;
+  }).filter((n) => typeof n === 'number' && n > 0);
+  if (sizes.length < 2) return;
+  const ref = Math.max.apply(null, sizes);
+  nodes.forEach((el) => {
+    const data = el.__wiseLottie && el.__wiseLottie.animationData;
+    const w = data && data.w;
+    const h = data && data.h;
+    const svg = el.querySelector('svg');
+    if (!svg || !w || !h || w >= ref) return;
+    const ox = (ref - w) / 2;
+    const oy = (ref - h) / 2;
+    svg.setAttribute('viewBox', `${-ox} ${-oy} ${ref} ${ref}`);
+  });
 }
 
 function pauseItemMedia(item) {
@@ -297,26 +343,40 @@ function pauseItemMedia(item) {
   });
 }
 
+function showVideoPoster(vid) {
+  if (!vid) return;
+  const pin = () => {
+    try {
+      if (vid.currentTime < 0.05) vid.currentTime = 0.001;
+    } catch (_) { /* */ }
+  };
+  if (vid.readyState >= 1) pin();
+  else vid.addEventListener('loadeddata', pin, { once: true });
+}
+
 function playItemMedia(item) {
   if (!item) return;
   item.querySelectorAll('video').forEach((v) => {
     applyVideoTheme(v);
     try {
-      v.currentTime = 0;
-      /* Plays once — no loop. Restarts only when it re-enters view. */
       v.loop = false;
+      v.currentTime = 0;
       const p = v.play();
       if (p && typeof p.catch === 'function') p.catch(() => {});
     } catch (_) { /* */ }
   });
   item.querySelectorAll('[data-owl-lottie]').forEach((el) => {
     const anim = el.__wiseLottie;
-    if (anim && typeof anim.goToAndPlay === 'function') {
-      try { anim.goToAndPlay(0, true); } catch (_) { /* */ }
-    } else if (anim && typeof anim.play === 'function') {
-      try { anim.play(); } catch (_) { /* */ }
-    }
+    if (!anim) return;
+    try {
+      anim.loop = false;
+      const start = lottieStartFrame(anim);
+      if (typeof anim.goToAndPlay === 'function') anim.goToAndPlay(start, true);
+      else if (typeof anim.play === 'function') anim.play();
+    } catch (_) { /* */ }
   });
+  const strip = item.closest('.sc-owl-prog');
+  if (strip) normalizeLottieSizes(Array.from(strip.querySelectorAll('[data-owl-lottie]')));
 }
 
 function scrollByItem(root, dir) {
@@ -347,19 +407,20 @@ async function mountLotties(root) {
       const anim = lottie.loadAnimation({
         container: el,
         renderer: 'svg',
-        loop: !reduced,
+        loop: false,
         autoplay: false,
         path,
       });
       el.__wiseLottie = anim;
-      anim.addEventListener('DOMLoaded', () => {
-        const item = el.closest('.sc-owl-prog-item');
-        if (!item) return;
-        const r = item.getBoundingClientRect();
-        if (r.width > 0 && r.right > 0 && r.left < (window.innerWidth || 0)) {
-          try { anim.goToAndPlay(0, true); } catch (_) { /* */ }
-        }
-      });
+      const holdFirst = () => {
+        try {
+          const start = lottieStartFrame(anim);
+          if (typeof anim.goToAndStop === 'function') anim.goToAndStop(start, true);
+        } catch (_) { /* */ }
+        normalizeLottieSizes(nodes);
+      };
+      anim.addEventListener('DOMLoaded', holdFirst);
+      if (reduced) holdFirst();
     } catch (_) { /* skip broken JSON */ }
   });
 }
@@ -369,77 +430,50 @@ function mountOne(root) {
   root.dataset.owlMounted = '1';
   injectStyles();
 
-  root.querySelectorAll('video.sc-owl-prog-vid').forEach(applyVideoTheme);
+  root.querySelectorAll('video.sc-owl-prog-vid').forEach((vid) => {
+    applyVideoTheme(vid);
+    showVideoPoster(vid);
+  });
 
   root.addEventListener('click', (e) => {
     const nav = e.target.closest('[data-owl-dir]');
     if (nav && root.contains(nav)) {
       const dir = parseInt(nav.getAttribute('data-owl-dir'), 10) || 0;
       scrollByItem(root, dir);
+      return;
     }
+    const item = e.target.closest('.sc-owl-prog-item.is-playable');
+    if (item && root.contains(item)) playItemMedia(item);
   });
 
   root.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowLeft') { e.preventDefault(); scrollByItem(root, -1); }
     else if (e.key === 'ArrowRight') { e.preventDefault(); scrollByItem(root, 1); }
+    else if (e.key === 'Enter' || e.key === ' ') {
+      const item = e.target.closest('.sc-owl-prog-item.is-playable');
+      if (item && root.contains(item)) {
+        e.preventDefault();
+        playItemMedia(item);
+      }
+    }
   });
   if (!root.hasAttribute('tabindex')) root.setAttribute('tabindex', '0');
 
   const items = Array.from(root.querySelectorAll('.sc-owl-prog-item'));
   const viewport = root.querySelector('[data-owl-viewport]');
 
-  const playVisible = () => {
-    if (root.hidden) return;
-    let n = root.parentElement;
-    while (n) {
-      if (n.hidden) return;
-      try {
-        const st = window.getComputedStyle(n);
-        if (st && (st.display === 'none' || st.visibility === 'hidden' || Number(st.opacity) === 0)) return;
-      } catch (_) { /* */ }
-      n = n.parentElement;
-    }
-    const vr = viewport ? viewport.getBoundingClientRect() : null;
-    items.forEach((item) => {
-      const r = item.getBoundingClientRect();
-      const inView = vr
-        ? r.right > vr.left + 8 && r.left < vr.right - 8 && r.bottom > 0 && r.top < (window.innerHeight || 0)
-        : false;
-      if (inView) playItemMedia(item);
-      else pauseItemMedia(item);
-    });
-  };
-
-  /* The paragraph reveal primes the figure hidden; restart once it really
-     shows so Lottie and video don't fire into a blank slot. */
-  if (typeof MutationObserver !== 'undefined') {
-    const mo = new MutationObserver(() => playVisible());
-    let n = root;
-    while (n && n !== document.documentElement) {
-      mo.observe(n, { attributes: true, attributeFilter: ['hidden', 'style', 'class'] });
-      n = n.parentElement;
-    }
-  }
-
-  if (viewport) {
-    let scrollT = 0;
-    viewport.addEventListener('scroll', () => {
-      window.clearTimeout(scrollT);
-      scrollT = window.setTimeout(playVisible, 80);
-    }, { passive: true });
-  }
-
+  /* Pause clips that leave the strip so they are not decoding off-screen.
+     Do not auto-start — play is click-only. */
   if (typeof IntersectionObserver !== 'undefined') {
     const io = new IntersectionObserver((entries) => {
       entries.forEach((en) => {
-        if (en.isIntersecting && en.intersectionRatio > 0.2) playItemMedia(en.target);
-        else pauseItemMedia(en.target);
+        if (!en.isIntersecting) pauseItemMedia(en.target);
       });
-    }, { root: viewport || null, threshold: [0, 0.2, 0.5] });
+    }, { root: viewport || null, threshold: 0.05 });
     items.forEach((item) => io.observe(item));
   }
 
-  mountLotties(root).then(() => playVisible());
+  mountLotties(root);
 }
 
 /** Mount every unmounted strip under `scope` (default: document). */

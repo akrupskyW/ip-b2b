@@ -8998,18 +8998,31 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      scroll toward the bottom, but never pushes the reader's latest message
      above the top of the viewport — a long answer stops there, so the reader
      keeps reading from where they typed instead of being thrown to the very
-     end. Never scrolls back up, and once the reader has scrolled away from
-     the live edge we leave them alone (pass `force` — a fresh user action —
-     to re-engage). scrollToEnd() keeps the old jump-to-bottom for
-     whole-thread loads (history restore, forks). */
+     end. A long pasted brief is the exception: pinning to its top hid the
+     streaming that starts underneath, so a prompt taller than the pane pins
+     to the bottom of that prompt instead. Never scrolls back up, and once
+     the reader has scrolled away from the live edge we leave them alone
+     (pass `force` — a fresh user action — to re-engage). scrollToEnd()
+     keeps the old jump-to-bottom for whole-thread loads (history restore,
+     forks). */
   const scrollDown = (force) => {
     if (!messages) return;
     const bottom = Math.max(0, messages.scrollHeight - messages.clientHeight);
-    const yours = messages.querySelectorAll('.sc-line-you');
+    const yours = messages.querySelectorAll('.sc-line-you:not(.sc-line-event)');
     const anchor = yours.length ? yours[yours.length - 1] : null;
     let target = bottom;
     if (anchor) {
-      const cap = anchor.getBoundingClientRect().top - messages.getBoundingClientRect().top + messages.scrollTop - 10;
+      const msgBox = messages.getBoundingClientRect();
+      const aBox = anchor.getBoundingClientRect();
+      const topCap = aBox.top - msgBox.top + messages.scrollTop - 10;
+      /* A brief taller than the pane: put the last line near the top of the
+         viewport so the thinking trace that follows is already on screen.
+         Short asks still pin to the top so a long answer is read from the
+         first line. */
+      const longPrompt = anchor.offsetHeight > messages.clientHeight * 0.55;
+      const cap = longPrompt
+        ? (aBox.bottom - msgBox.top + messages.scrollTop - 16)
+        : topCap;
       target = Math.min(bottom, Math.max(0, cap));
     }
     const last = messages.__followPos;
@@ -14077,7 +14090,9 @@ export function wireStandardChatMenu(cfg = {}) {
      or a keystroke in the composer). A hidden welcome or an engage flag
      keeps it from sitting behind a live transcript — unless the host
      lands already engaged (View Product): then `untilEngage` keeps the
-     Scene helix up until a chip or typed send. */
+     Scene helix up. `persist` goes further: the strand stays for the
+     visit (chips, typed send, panel edits) until Background animation
+     is turned off. */
   let bgEngaged = false;
   const welcomeShown = () => {
     if (!welcomeEl) return false;
@@ -14085,8 +14100,9 @@ export function wireStandardChatMenu(cfg = {}) {
       && !welcomeEl.classList.contains('sc-hidden')
       && welcomeEl.style.display !== 'none';
   };
+  const persistBg = !!(cfg.bgAnim && cfg.bgAnim.persist);
   const untilEngage = !!(cfg.bgAnim && (
-    cfg.bgAnim.untilEngage || (welcomeEl && !welcomeShown())
+    cfg.bgAnim.untilEngage || persistBg || (welcomeEl && !welcomeShown())
   ));
   const welcomeVisible = () => {
     if (untilEngage || !welcomeEl) return !bgEngaged;
@@ -14158,6 +14174,7 @@ export function wireStandardChatMenu(cfg = {}) {
     }
   }
   function retireBgAnim() {
+    if (persistBg) return;
     bgEngaged = true;
     stopAllBg();
   }
@@ -14180,17 +14197,19 @@ export function wireStandardChatMenu(cfg = {}) {
   document.addEventListener('wise:cwr-ui', wakeBgAnim);
   document.addEventListener('wise:chat-engage', retireBgAnim);
 
-  /* Composer keystroke blooms the field out. Focusing the composer, or
+  /* Composer keystroke blooms the field out — unless `persist` (View Product
+     keeps the Scene helix for the visit). Focusing the composer, or
      clicking nav / other modules / helix nodes, does not. A chip or send
-     that hides the welcome (or fires wise:chat-engage) still retires it. */
+     that hides the welcome (or fires wise:chat-engage) still retires it
+     on hosts that are not persisted. */
   if (bgHost && !bgHost.__wiseBgEngageWired) {
     bgHost.__wiseBgEngageWired = true;
     const input = bgHost.querySelector('.chat-input-rail textarea.fl-input, .chat-input-rail input.fl-input, textarea.fl-input, #chat-input');
     if (input) {
       input.addEventListener('input', () => {
         const typed = !!(input.value && String(input.value).trim());
-        if (typed) stopAllBg();
-        else if (!bgEngaged && welcomeVisible()) {
+        if (typed && !persistBg) stopAllBg();
+        else if (!typed && !bgEngaged && welcomeVisible()) {
           const e = bgEngine(bgStyle);
           if (e) e.start();
           else maybeRunBgAnim();

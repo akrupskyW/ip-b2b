@@ -6192,6 +6192,13 @@ html.header-float #nfp-panel .nfp-panel-header .panel-controls {
   top: var(--module-head-pad-t);
   right: var(--module-head-ctrl-inset);
 }
+/* Product Portfolio — same headline row as verification (title / Add /
+   verify at --module-head-pad-t). The generic side-panel pin is 8px, which
+   parked ⋯ + width above the serif title instead of beside it. */
+html.header-float #portfolio-panel .side-panel-header .panel-controls {
+  top: var(--module-head-pad-t);
+  right: var(--module-head-ctrl-inset);
+}
 html.header-float #nfp-panel .nfp-fi-group--identity {
   padding-top: var(--module-head-pad-t);
 }
@@ -13328,8 +13335,9 @@ html.dark body[data-nav-id="verification"] {
   --vf-ink: #93C5FD;
 }
 
-/* The generic module header bar is replaced by the flow's own header. */
-body[data-nav-id="verification"] #agent-main-header { display: none; }
+/* The flow supplies its own serif title. Keep #agent-main-header rendered
+   (collapsed via the shared own-head rule) so ⋯ / width / brand float in
+   the module's top-right — never hide the whole header. */
 body[data-nav-id="verification"] .agent-main-scroll { padding: 0; }
 
 /* Match product-portfolio's clean, even module frame. The shared shell adds an
@@ -13360,6 +13368,8 @@ body[data-nav-id="verification"] { padding-left: 12px; }
   flex-wrap: wrap;
   gap: 10px;
   padding: 26px 40px 0;
+  /* Reserve the floated brand + ⋯ + width cluster (header-float). */
+  padding-right: 260px;
   position: relative;
 }
 .vf-head-actions { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
@@ -13406,6 +13416,10 @@ html.dark .vf-back:hover { background: rgba(255, 255, 255, 0.06); }
 }
 .panel-controls .pf-head-trail {
   flex-wrap: nowrap; margin-right: 4px;
+}
+body[data-nav-id="verification"] .panel-controls .vf-brand-trail {
+  display: inline-flex; align-items: center; gap: 6px;
+  flex-shrink: 0; margin-right: 4px;
 }
 /* .pf-head-btn is a .wise-btn alias — 34px / 28px trail sizes live in the shared block. */
 /* Compact brand chip when it rides the same trail as Marketing Assets
@@ -13967,10 +13981,37 @@ html.dark .vf-chip--inelig { background: rgba(255, 255, 255, 0.10); color: var(-
 }
 
 /* ---------- Payment ---------- */
-/* The foods list + summary now live in the right-hand progress module, so the
-   payment step is a single full-width column: just the payment form. */
+/* Payment is a single full-width column: selected foods, then the form. */
 .vf-pay-grid { display: block; }
 .vf-pay-form { width: 100%; }
+.vf-pay-items {
+  margin: 0 0 22px;
+  padding: 12px 14px 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+}
+.vf-pay-items-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px;
+}
+.vf-pay-items-title {
+  font-size: 0.625rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle);
+}
+.vf-pay-items-count { font-size: 0.68rem; font-weight: 600; color: var(--vf-ink); white-space: nowrap; }
+.vf-pay-item {
+  display: flex; align-items: center; gap: 9px; padding: 7px 0;
+  border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+}
+.vf-pay-item:first-of-type { border-top: 0; }
+.vf-pay-item .pf-thumb { width: 30px; height: 30px; }
+.vf-pay-item .pf-thumb .material-symbols-outlined { font-size: 15px; }
+.vf-pay-item-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.vf-pay-item-name {
+  font-size: 0.76rem; font-weight: 600; color: var(--text); line-height: 1.25;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.vf-pay-item-brand { font-size: 0.66rem; color: var(--text-subtle); }
+.vf-pay-item-cost { font-size: 0.78rem; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 .vf-pay-title {
   font-family: 'WISE Digits', 'Noto Serif', serif;
@@ -14238,7 +14279,8 @@ html.dark .vf-select-el {
 .vf-toast .material-symbols-outlined { font-size: 19px; color: var(--sec-green); }
 
 @media (max-width: 767px) {
-  .vf-head, .vf-stepper, .vf-body { padding-left: 20px; padding-right: 20px; }
+  .vf-head { padding-left: 20px; padding-right: 200px; }
+  .vf-stepper, .vf-body { padding-left: 20px; padding-right: 20px; }
   .vf-step { width: 96px; }
   .vf-step-sub { display: none; }
 }
@@ -15271,16 +15313,17 @@ html.dark .adm-icon-btn--danger { color: #FF9E96; }
 body[data-adm-page] #agent-main-header { display: none; }
 body[data-adm-page] .agent-main-scroll { padding: 0; }
 /* All Modules (and the admin dashboards that supply their own head — Non-UPF
-   Dashboard, Marketing Assets, Help) keep the module's ⋯ + width cluster: the
-   header collapses to zero height (title block dropped, like header-float) but
-   stays rendered so the .panel-controls can float pinned to the module's
-   top-right corner. Every right-of-chat module reads the same [⋯][width] this
-   way. */
+   Dashboard, Marketing Assets, Help, Non-UPF Verification) keep the module's
+   ⋯ + width cluster: the header collapses to zero height (title block dropped,
+   like header-float) but stays rendered so the .panel-controls can float
+   pinned to the module's top-right corner. Every right-of-chat module reads
+   the same [brand][⋯][width] this way. */
 body[data-nav-id="all-modules"] #agent-main-header,
 body[data-nav-id="non-upf-dashboard"] #agent-main-header,
 body[data-nav-id="marketing-assets"] #agent-main-header,
 body[data-nav-id="help"] #agent-main-header,
-body[data-nav-id="team"] #agent-main-header {
+body[data-nav-id="team"] #agent-main-header,
+body[data-nav-id="verification"] #agent-main-header {
   display: flex;
   height: 0 !important;
   min-height: 0 !important;
@@ -15295,12 +15338,14 @@ body[data-nav-id="all-modules"] #agent-main-header > *:not(.panel-controls),
 body[data-nav-id="non-upf-dashboard"] #agent-main-header > *:not(.panel-controls),
 body[data-nav-id="marketing-assets"] #agent-main-header > *:not(.panel-controls),
 body[data-nav-id="help"] #agent-main-header > *:not(.panel-controls),
-body[data-nav-id="team"] #agent-main-header > *:not(.panel-controls) { display: none !important; }
+body[data-nav-id="team"] #agent-main-header > *:not(.panel-controls),
+body[data-nav-id="verification"] #agent-main-header > *:not(.panel-controls) { display: none !important; }
 body[data-nav-id="all-modules"] #agent-main-header .panel-controls,
 body[data-nav-id="non-upf-dashboard"] #agent-main-header .panel-controls,
 body[data-nav-id="marketing-assets"] #agent-main-header .panel-controls,
 body[data-nav-id="help"] #agent-main-header .panel-controls,
-body[data-nav-id="team"] #agent-main-header .panel-controls {
+body[data-nav-id="team"] #agent-main-header .panel-controls,
+body[data-nav-id="verification"] #agent-main-header .panel-controls {
   position: absolute;
   top: var(--module-head-pad-t, 26px);
   right: var(--module-head-ctrl-inset, 12px);
@@ -15308,6 +15353,9 @@ body[data-nav-id="team"] #agent-main-header .panel-controls {
   z-index: 51;
   pointer-events: auto;
 }
+/* Room for the floated ⋯ + width so the dashboard title cannot slide
+   under them when the module is narrow. */
+body[data-nav-id="non-upf-dashboard"] .adm-head { padding-right: 72px; }
 
 /* Module header rhythm — titles, the line under them, and the ⋯ / width
    cluster sit on the same horizontal lines across every main module and the

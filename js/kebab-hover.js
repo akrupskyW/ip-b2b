@@ -37,7 +37,7 @@
     '[role="menu"], .topbar-popover, .pf-rowmenu-pop, .adm-rowmenu-pop, ' +
     '.inv-rowmenu-pop, .ma-rowmenu-pop, .pf-datemenu-pop, .w-datemenu-pop, ' +
     '.pf-module-menu-pop, .pf-reports-pop, .dash-kebab-menu, .sc-fb-menu, .wt-more-pop, ' +
-    '.wch-more-pop';
+    '.wch-more-pop, .wa-rpt-item-pop, .wa-rpt-swap-pop, .rf-rpt-item-pop';
 
   var SKIP_ANCESTOR =
     '.dsc-demo, [data-wtp-skip], [data-popover-static], [role="menu"], ' +
@@ -96,6 +96,9 @@
 
   function popFor(btn) {
     if (!btn) return null;
+    /* Dynamically built menus (report ⋯, swap-output) live on <body> and
+       register here so hover can travel from the trigger onto the panel. */
+    if (btn.__khPop && btn.__khPop.isConnected) return btn.__khPop;
     var id = btn.getAttribute('aria-controls');
     if (id) {
       var byId = document.getElementById(id);
@@ -110,6 +113,7 @@
     var pops = document.querySelectorAll(POP_SEL);
     for (var i = 0; i < pops.length; i++) {
       var p = pops[i];
+      if (p.__khBtn === btn) return p;
       if (p.__plHost && (p.__plHost === wrap || (p.__plHost.contains && p.__plHost.contains(btn)))) {
         return p;
       }
@@ -210,6 +214,9 @@
     if (pop && (pop === el || (pop.contains && pop.contains(el)))) return true;
     /* Folder picker opened from a three-dot File action lives on <body>. */
     if (el.closest && el.closest('.lib-pop')) return true;
+    /* Report-item menus are created on <body> (not portaled from the wrap),
+       so popFor can miss them for a frame. Treat the live panel as inside. */
+    if (el.closest && el.closest('.wa-rpt-item-pop, .wa-rpt-swap-pop, .rf-rpt-item-pop')) return true;
     return false;
   }
 

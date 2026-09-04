@@ -2254,10 +2254,11 @@
         host: document.querySelector('.ap-chat'),
         getBody: () => document.querySelector('.ap-chat'),
         welcomeEl: document.getElementById('welcome-screen'),
-        /* View Product never shows the welcome pane — keep the Scene helix
-           on the chat card until the member actually engages, matching
-           Add Product's landing beat. */
+        /* View Product never shows the welcome pane. The Scene helix is
+           the chat card's backdrop for the whole visit — chips, typing,
+           and Product Details edits must not bloom it out. */
         untilEngage: true,
+        persist: true,
         isWide: () => {
           const c = document.querySelector('.ap-chat');
           return !!(c && (c.classList.contains('panel-triple') || c.classList.contains('panel-fill')));

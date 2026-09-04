@@ -476,7 +476,17 @@
     .rf-rpt-plus .material-symbols-outlined { font-size: 20px; }
 
     .rf-rpt-item + .rf-rpt-item { margin-top: 4px; padding-top: 22px; border-top: 1px solid var(--border); }
-    .rf-rpt-item-pop { position: fixed; z-index: 40; }
+    .rf-rpt-item-pop { position: fixed; z-index: 40; overflow: visible; }
+    .rf-rpt-item-pop::before,
+    .rf-rpt-item-pop::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 14px;
+    }
+    .rf-rpt-item-pop::before { bottom: 100%; }
+    .rf-rpt-item-pop::after { top: 100%; }
     .rf-rpt-item-head {
       display: flex; align-items: center; gap: 8px;
       margin: 0 0 10px;
@@ -2541,6 +2551,8 @@
         document.querySelectorAll('.rf-rpt-more .panel-more-btn').forEach((b) => {
           b.classList.remove('is-open');
           b.setAttribute('aria-expanded', 'false');
+          b.removeAttribute('aria-controls');
+          b.__khPop = null;
         });
         if (rptItemPop) { rptItemPop.remove(); rptItemPop = null; }
       }
@@ -2574,7 +2586,9 @@
         btn.setAttribute('aria-expanded', 'true');
         rptItemPop = document.createElement('div');
         rptItemPop.className = 'topbar-popover rf-rpt-item-pop';
+        rptItemPop.id = 'rf-rpt-item-pop';
         rptItemPop.setAttribute('role', 'menu');
+        rptItemPop.setAttribute('data-popover-static', '');
         rptItemPop.innerHTML =
           '<button type="button" class="topbar-menu-item" data-rpt-act="rename"><span class="material-symbols-outlined topbar-menu-icon">edit</span><span>Rename</span></button>' +
           '<div class="topbar-menu-divider"></div>' +
@@ -2587,6 +2601,11 @@
           if (act === 'delete') { closeReportItemMenus(); deleteReportItem(item); }
         });
         document.body.appendChild(rptItemPop);
+        const wrap = btn.closest('.panel-more-wrap');
+        rptItemPop.__plHost = wrap || btn;
+        rptItemPop.__khBtn = btn;
+        btn.__khPop = rptItemPop;
+        btn.setAttribute('aria-controls', rptItemPop.id);
         const r = btn.getBoundingClientRect();
         const pw = rptItemPop.offsetWidth || 200;
         const ph = rptItemPop.offsetHeight || 88;

@@ -588,6 +588,7 @@ export const WISE_APP_NAV = [
 export const WISE_ACCOUNT_NAV = [
   { type: 'item', id: 'profile', label: 'My profile', icon: 'account_circle', slug: 'profile.html' },
   { type: 'item', id: 'invoices', label: 'Invoices', icon: 'receipt_long', slug: 'invoices.html' },
+  { type: 'item', id: 'verification', label: 'Non-UPF Verification', icon: 'verified', slug: 'verification.html' },
   { type: 'item', id: 'agents', label: 'Agents', icon: 'smart_toy', slug: 'agents.html' },
   { type: 'item', id: 'alerts', label: 'Alerts', icon: 'notifications', slug: 'alerts.html' },
   { type: 'item', id: 'preferences', label: 'Preferences', icon: 'tune', slug: 'preferences.html' },

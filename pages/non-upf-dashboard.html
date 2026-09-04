@@ -131,15 +131,8 @@
     [data-nav-id="non-upf-dashboard"] .adm-table--cards .adm-td--num { justify-content: flex-start; text-align: left; }
     [data-nav-id="non-upf-dashboard"] .adm-table--cards .adm-trow .adm-td--end { position: absolute; top: 10px; right: 10px; padding: 0; }
 
-    /* Page ⋮ — invoices, export, and row/card live in the header (see
-       openPageMenu). Reuses .nud-rowmenu-btn (bare 30px circle); it grows a
-       subtle "active" tint while its menu is open. */
-    [data-nav-id="non-upf-dashboard"] .nud-page-menu-btn { flex: 0 0 auto; }
-    [data-nav-id="non-upf-dashboard"] .nud-page-menu-btn[aria-expanded="true"] { background: var(--surface-2); color: var(--text); }
-    html.dark [data-nav-id="non-upf-dashboard"] .nud-page-menu-btn[aria-expanded="true"] { background: rgba(255,255,255,0.06); }
-
-    /* Row / Card items inside the ⋮ menu: label fills the row, a trailing check
-       marks the active layout in the brand colour. */
+    /* Row / Card items inside the module ⋯ menu: label fills the row, a
+       trailing check marks the active layout in the brand colour. */
     .nud-view-item .nud-view-item-label { flex: 1 1 auto; }
     .nud-view-item .nud-view-item-check { font-size: 17px; color: var(--primary); }
     html.dark .nud-view-item .nud-view-item-check { color: var(--primary-bright, #93C5FD); }

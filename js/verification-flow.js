@@ -9,7 +9,9 @@ import { openModal, closeModal, modalHTML, modalFoot } from './wise-modal.js';
  * A self-contained, 3-step wizard rendered into #agent-main-scroll on
  * verification.html (an app-nav shell page). The persistent WISEcodeAI chat docks
  * to the LEFT (via data-default-dock="left"); this module is the "right"
- * surface — the twin of the ai-chat split/dock pattern.
+ * surface — the twin of the ai-chat split/dock pattern. The brand chip lives
+ * in the module header's top-right cluster (⋯ / width), matching Product
+ * Portfolio / Invoices. There is no progress sticky.
  *
  * Steps:
  *   1. Select Foods — choose pre-qualified UPCs to include.
@@ -278,121 +280,6 @@ function visibleFoods(list) {
 /* Markup — shared chrome                                              */
 /* ------------------------------------------------------------------ */
 
-/* ---------- Right-hand progress module ----------
-   A separate pane docked to the right of the flow (mirrors the account-creation
-   "Account setup" pane: sp-/vs-step in wise.css). It replaces the old inline
-   horizontal stepper so progress lives beside the flow, not on top of it. */
-
-/* Whether each macro step counts as complete, in flow order. */
-function stepDone(id) {
-  if (id === 'select') return selectedCount() > 0 && stepIndex(state.step) > 0;
-  if (id === 'attest') return state.attested && stepIndex(state.step) > 1;
-  if (id === 'payment') return state.paid;
-  return false;
-}
-
-/* Per-step field rows shown under a done/active step (label + value). */
-function stepFields(id) {
-  if (id === 'select') {
-    return [{ label: 'Foods selected', val: `${selectedCount()} of ${FOODS.length}`, done: selectedCount() > 0 }];
-  }
-  if (id === 'attest') {
-    return [
-      { label: 'Items reviewed', val: `${selectedCount()}`, done: selectedCount() > 0 },
-      { label: 'Attestation', val: state.attested ? 'Signed' : 'Pending', done: state.attested },
-    ];
-  }
-  const methodLabel = { card: 'Credit card', invoice: 'Invoice', ach: 'ACH' }[state.payMethod] || 'Credit card';
-  return [
-    { label: 'Payment method', val: methodLabel, done: true },
-    { label: 'Agreement (VSA)', val: state.vsa ? 'Accepted' : 'Pending', done: state.vsa },
-    { label: 'Total', val: money(total()), done: state.paid },
-  ];
-}
-
-/* Progress modules default to the minimal (collapsed) view: a compact
-   percentage ring in the header replaces the health bar, and the steps show
-   their numbers + field results. Toggled via the header minimize button. */
-let progressMin = true;
-
-function progressPaneHTML() {
-  const active = stepIndex(state.step);
-  const completed = STEPS.filter((s) => stepDone(s.id)).length;
-  const pct = Math.round((completed / STEPS.length) * 100);
-
-  const stepsHtml = STEPS.map((s, i) => {
-    const done = stepDone(s.id);
-    const isActive = i === active;
-    const cls = done ? 'vfp-step--done' : isActive ? 'vfp-step--active' : '';
-    const num = done ? '<span class="material-symbols-outlined">check</span>' : String(i + 1);
-    let sub = '';
-    if (done) sub = 'Completed';
-    else if (isActive) sub = 'In progress';
-    const nodeAttrs = done ? `role="button" tabindex="0" data-goto="${s.id}" aria-label="Back to ${esc(s.label)}"` : '';
-
-    let fieldsHtml = '';
-    if (done || isActive) {
-      const rows = stepFields(s.id).map((f) => {
-        const icon = f.done ? 'check' : 'radio_button_unchecked';
-        const st = f.done ? 'vfp-field--done' : 'vfp-field--active';
-        return `<div class="vfp-field ${st}"><span class="material-symbols-outlined">${icon}</span><span class="vfp-field-label">${esc(f.label)}</span><span class="vfp-field-val">${esc(f.val)}</span></div>`;
-      }).join('');
-      fieldsHtml = `<div class="vfp-fields">${rows}</div>`;
-    }
-
-    return `
-      <div class="vfp-step ${cls}">
-        <div class="vfp-step-track"><div class="vfp-step-num" ${nodeAttrs}>${num}</div><div class="vfp-step-line"></div></div>
-        <div class="vfp-step-body">
-          <div class="vfp-step-title">${esc(s.label)}</div>
-          ${sub ? `<div class="vfp-step-sub">${esc(sub)}</div>` : ''}
-          ${fieldsHtml}
-        </div>
-      </div>`;
-  }).join('');
-
-  /* On the Payment step the selected foods become billable line items, so they
-     live inside this progress module (not a separate card) — each with its
-     per-SKU cost, above the running total in the footer. */
-  const itemsHtml = state.step === 'payment' && selectedCount()
-    ? `
-      <div class="vfp-items">
-        <div class="vfp-items-head">
-          <span class="vfp-items-title">Foods submitting for verification</span>
-          <span class="vfp-items-count">${selectedCount()} ready</span>
-        </div>
-        ${selectedFoods().map((f) => `
-          <div class="vfp-item">
-            ${thumb(f)}
-            <span class="vfp-item-text"><span class="vfp-item-name">${esc(f.name)}</span><span class="vfp-item-brand">${esc(f.brand)}</span></span>
-            <span class="vfp-item-cost">${money(PRICE_PER_ITEM)}</span>
-          </div>`).join('')}
-      </div>`
-    : '';
-
-  return `
-    <div class="vfp-inner ${progressMin ? 'is-min' : ''}">
-      <div class="vfp-header">
-        <div class="vfp-pct-ring" style="--pct:${pct}"><span>${pct}%</span></div>
-        <div class="vfp-header-text">
-          <div class="vfp-title">Verification progress</div>
-          <div class="vfp-subtitle">Non-UPF · ${STEPS.length} steps</div>
-        </div>
-        <button type="button" class="vfp-min-btn" data-vf="togglemin" aria-label="${progressMin ? 'Expand progress' : 'Collapse progress'}" title="${progressMin ? 'Expand' : 'Collapse'}"><span class="material-symbols-outlined">${progressMin ? 'chevron_left' : 'chevron_right'}</span></button>
-      </div>
-      <div class="vfp-progress">
-        <div class="vfp-progress-head"><span>${completed} of ${STEPS.length} steps</span><span class="vfp-progress-pct">${pct}%</span></div>
-        <div class="vfp-progress-track"><div class="vfp-progress-fill" style="width:${pct}%"></div></div>
-      </div>
-      <div class="vfp-steps">${stepsHtml}</div>
-      ${itemsHtml}
-      <div class="vfp-foot">
-        <div class="vfp-foot-row"><span>Foods selected</span><span>${selectedCount()}</span></div>
-        <div class="vfp-foot-row vfp-foot-total"><span>Estimated total</span><span class="vfp-foot-amt">${money(total())}</span></div>
-      </div>
-    </div>`;
-}
-
 function headCtaHTML() {
   if (state.step === 'select') {
     /* On by default — selection is independent of whether the CTA is enabled. */
@@ -464,8 +351,26 @@ function headerHTML() {
     <header class="vf-head">
       ${back}
       <h1 class="vf-head-title">Non-UPF Verification</h1>
-      <div class="vf-head-actions">${cta}${brandChipHTML()}</div>
+      <div class="vf-head-actions">${cta}</div>
     </header>`;
+}
+
+/* Brand chip sits in #agent-main-header .panel-controls — same top-right
+   cluster as Product Portfolio / Invoices (⋯ + width). */
+function mountBrandSwitcher() {
+  const controls = document.querySelector('#agent-main-header .panel-controls');
+  if (!controls) {
+    requestAnimationFrame(mountBrandSwitcher);
+    return;
+  }
+  let trail = controls.querySelector('#vf-brand-trail');
+  if (!trail) {
+    trail = document.createElement('div');
+    trail.id = 'vf-brand-trail';
+    trail.className = 'pf-head-trail pf-head-trail--compact vf-brand-trail';
+    controls.insertBefore(trail, controls.firstChild);
+  }
+  trail.innerHTML = brandChipHTML();
 }
 
 /* Search bar — a clean search pill that fills the row. The step CTA lives
@@ -696,6 +601,23 @@ function attestStepHTML() {
 /* Step 3 — Payment                                                    */
 /* ------------------------------------------------------------------ */
 
+function paymentItemsHTML() {
+  if (!selectedCount()) return '';
+  return `
+    <div class="vf-pay-items">
+      <div class="vf-pay-items-head">
+        <span class="vf-pay-items-title">Foods submitting for verification</span>
+        <span class="vf-pay-items-count">${selectedCount()} ready · ${money(total())}</span>
+      </div>
+      ${selectedFoods().map((f) => `
+        <div class="vf-pay-item">
+          ${thumb(f)}
+          <span class="vf-pay-item-text"><span class="vf-pay-item-name">${esc(f.name)}</span><span class="vf-pay-item-brand">${esc(f.brand)}</span></span>
+          <span class="vf-pay-item-cost">${money(PRICE_PER_ITEM)}</span>
+        </div>`).join('')}
+    </div>`;
+}
+
 function paymentStepHTML() {
   const methods = [
     { id: 'card', label: 'Credit Card', icon: 'credit_card', enabled: true },
@@ -707,6 +629,7 @@ function paymentStepHTML() {
       <section class="vf-pay-form">
         <h2 class="vf-pay-title">Payment Information</h2>
         <p class="vf-pay-desc">Complete your payment to finalize the verification process. Once confirmed, you will receive your official certification and be granted access to your brand asset pack.</p>
+        ${paymentItemsHTML()}
 
         <label class="vf-field-label">Billing Plan</label>
         <div class="vf-select">
@@ -806,7 +729,6 @@ function confirmModalHTML() {
 /* ------------------------------------------------------------------ */
 
 let rootEl = null;
-let progressEl = null;
 
 function bodyHTML() {
   if (state.step === 'select') return selectStepHTML();
@@ -814,35 +736,8 @@ function bodyHTML() {
   return paymentStepHTML();
 }
 
-/* When minimized the pane becomes a fixed slim icon rail (the .vfp-inner.is-min
-   CSS collapses it to 64px). But pane-resize.js pins an inline width on every
-   resizable module — with a 300px floor — which would out-specify that rail width
-   and leave the content minimized inside a still-full-width column. So while the
-   rail is showing we (a) tag the pane data-pr-lock so pane-resize stands down
-   (mirrors the History module's rail lock) and (b) drop any inline width it may
-   have pinned, letting the CSS rail width win. */
-function applyProgressRailLock(show) {
-  if (!progressEl) return;
-  if (show && progressMin) {
-    progressEl.setAttribute('data-pr-lock', '');
-    progressEl.style.removeProperty('flex');
-    progressEl.style.removeProperty('width');
-    progressEl.style.removeProperty('max-width');
-  } else {
-    progressEl.removeAttribute('data-pr-lock');
-  }
-}
-
-function renderProgress() {
-  if (!progressEl) return;
-  /* The progress module only appears once the user has started a selection;
-     with nothing checked there's no progress to show. */
-  const show = selectedCount() > 0;
-  progressEl.hidden = !show;
-  progressEl.setAttribute('aria-hidden', show ? 'false' : 'true');
-  if (show) progressEl.innerHTML = progressPaneHTML();
-  else progressEl.innerHTML = '';
-  applyProgressRailLock(show);
+function unmountProgressPane() {
+  document.getElementById('vf-progress-pane')?.remove();
 }
 
 const PF_MENU = { menuSel: '.pf-rowmenu', btnSel: '.pf-rowmenu-btn', popSel: '.pf-rowmenu-pop' };
@@ -923,7 +818,7 @@ function render(preserveFocus) {
     const inp = document.getElementById('vf-search');
     if (inp) { inp.focus(); if (caret != null) inp.setSelectionRange(caret, caret); }
   }
-  renderProgress();
+  mountBrandSwitcher();
 }
 
 function goStep(id) {
@@ -1042,24 +937,6 @@ function onAction(action, el) {
   }
 }
 
-/* Create the right-hand progress pane inside #modules-row (once). It sits after
-   #agent-main in the flex row; the left-docked WISEcodeAI chat keeps order:-1, so
-   the row reads chat → flow → progress. */
-function mountProgressPane() {
-  const row = document.getElementById('modules-row');
-  if (!row) return;
-  progressEl = document.getElementById('vf-progress-pane');
-  if (!progressEl) {
-    progressEl = document.createElement('aside');
-    progressEl.id = 'vf-progress-pane';
-    progressEl.className = 'vf-progress-pane';
-    progressEl.setAttribute('aria-label', 'Verification progress');
-    const main = document.getElementById('agent-main');
-    if (main && main.nextSibling) row.insertBefore(progressEl, main.nextSibling);
-    else row.appendChild(progressEl);
-  }
-}
-
 /**
  * Render the Non-UPF verification flow into a host element (#agent-main-scroll).
  * @param {HTMLElement} mainEl
@@ -1073,24 +950,9 @@ export function renderVerificationFlow(mainEl) {
     dc().onLead(rootEl, (lead) => { state.dateLead = lead; render(); });
   }
 
-  /* Progress module — a sibling pane docked to the RIGHT of the flow inside
-     #modules-row (the WISEcodeAI chat docks to the left). Mirrors the account-
-     creation setup pane. Created once; updated on every render(). */
-  mountProgressPane();
+  unmountProgressPane();
   window.WisePopover?.bindRowMenus(rootEl, PF_MENU);
   render();
-
-  progressEl?.addEventListener('click', (e) => {
-    const min = e.target.closest('[data-vf="togglemin"]');
-    if (min) { progressMin = !progressMin; renderProgress(); return; }
-    const goto = e.target.closest('[data-goto]');
-    if (goto) goStep(goto.dataset.goto);
-  });
-  progressEl?.addEventListener('keydown', (e) => {
-    if (e.key !== 'Enter' && e.key !== ' ') return;
-    const goto = e.target.closest('[data-goto]');
-    if (goto) { e.preventDefault(); goStep(goto.dataset.goto); }
-  });
 
   rootEl.addEventListener('click', (e) => {
     const goto = e.target.closest('[data-goto]');
@@ -1127,8 +989,9 @@ export function renderVerificationFlow(mainEl) {
       if (el && overlay.contains(el)) onAction(el.dataset.vf, el);
       return;
     }
-    const brandAct = e.target.closest && e.target.closest('.pf-brand-menu [data-vf]:not([data-vf="brand-search"])');
-    if (brandAct && rootEl && !rootEl.contains(brandAct)) {
+    const brandAct = e.target.closest && e.target.closest('#vf-brand [data-vf], .pf-brand-menu [data-vf]:not([data-vf="brand-search"])');
+    if (brandAct) {
+      if (brandAct.tagName === 'A') e.preventDefault();
       onAction(brandAct.dataset.vf, brandAct);
       return;
     }

@@ -171,6 +171,7 @@ ok(/maxBeats: 140/.test(addUserSrc), 'a long brief is not grouped — every line
 ok(/minGap: 26/.test(addUserSrc) && /budget: 2200/.test(addUserSrc),
   'on a quick cadence, so a seventy-line brief still settles in about two seconds');
 ok(/onReveal: \(\) => scrollDown\(true\)/.test(addUserSrc), 'and it stays scrolled to as it fills in');
+ok(/longPrompt/.test(chatSrc), 'a long brief pins to the bottom of the prompt so the streaming trace starts on screen');
 
 /* A pasted brief: paragraphs, lead-ins, and dozens of bullets. Every one is a
    beat — the structure promptBodyHtml builds is walked to the line. */
