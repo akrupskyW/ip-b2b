@@ -7860,11 +7860,8 @@ html.dark .sc-line-body .sc-inline-tbl td {
   width: 100%;
   aspect-ratio: 16 / 9;
   border-radius: 14px;
-  border: 1px solid var(--border);
+  border: 0;
   background: #000;
-}
-html.dark .sc-line-body .sc-inline-film-media {
-  border-color: color-mix(in srgb, var(--text) 18%, transparent);
 }
 .sc-line-body .sc-inline-film-cap {
   margin-top: 7px;
