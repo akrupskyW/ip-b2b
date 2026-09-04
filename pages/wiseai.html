@@ -1563,6 +1563,9 @@
     .wa-ref-thumb:not(:has(.wa-ref-badge)) { padding-top: 14px; }
     .wa-ref-badge { position: absolute; top: 9px; left: 10px; max-width: calc(100% - 20px); box-sizing: border-box; display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: .625rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: blur(3px); color: var(--text-muted); border: 1px solid var(--border); }
     .wa-ref-badge .material-symbols-outlined { font-size: 12px; flex: 0 0 auto; }
+    /* A source with no highlight has no thumb, so its badge sits in the body. */
+    .wa-ref-badge--inline { position: static; align-self: flex-start; max-width: 100%; background: var(--surface-2); }
+    html.dark .wa-ref-badge--inline { background: rgba(255, 255, 255, 0.05); }
     .wa-ref-badge.is-exp { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); }
     html.dark .wa-ref-badge.is-exp { color: var(--primary-bright, #8B9FAF); }
     .wa-ref-highlight { display: flex; align-items: flex-start; gap: 8px; font-size: 11.5px; line-height: 1.5; color: var(--text); }
@@ -1587,6 +1590,171 @@
     .wa-ref-view { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-decoration: none; transition: color .15s ease; }
     .wa-ref-view:hover { color: var(--text); text-decoration: underline; }
     .wa-ref-view .material-symbols-outlined { font-size: 14px; }
+    /* Right-hand action cluster — a source link plus the attached file it was
+       read from, for reference sets that carry both (see ATLAS_REFS). */
+    .wa-ref-acts { display: inline-flex; align-items: center; gap: 12px; min-width: 0; }
+    /* Group heading inside a reference list ("Industry sources (9)") — the
+       peer-reviewed papers and the curated industry record stay visibly apart
+       so evidence is never read as though it were a vendor claim. */
+    .wa-refset .wa-ref-group { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; margin: 4px 0 -4px; font-size: 11.5px; font-weight: 700; color: var(--text-muted); }
+    .wa-refset .wa-ref-group::after { content: ''; flex: 1 1 auto; height: 1px; background: var(--border); }
+    .wa-ref--industry .wa-ref-thumb { background: var(--primary-soft); }
+    .wa-ref--industry .wa-ref-highlight .material-symbols-outlined { color: var(--primary); }
+    html.dark .wa-ref--industry .wa-ref-highlight .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
+
+    /* ── Intervention Atlas ───────────────────────────────────────────────
+       A coordinated six-panel decision artifact (opportunity map, score
+       matrix, causal pathway, population differences, financial & operational
+       consequences, recommendation frontier) that reads as one instrument
+       rather than six charts stacked up. Its own card class — NOT
+       .wa-chart-card — so the per-chart type switcher never tries to collapse
+       a multi-panel artifact into a single pie. */
+    .wa-atlas { display: flex; flex-direction: column; gap: 22px; container-type: inline-size; }
+    .atl-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 16px 14px; box-shadow: var(--shadow-1); }
+    html.dark .atl-card { background: rgba(255, 255, 255, 0.025); border-color: rgba(255, 255, 255, 0.07); }
+    html.chat-tint:not(.dark) .atl-card { background: color-mix(in srgb, var(--primary) 5%, #fff); }
+    html.dark.chat-tint .atl-card { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
+    /* Provenance banner — every scenario number in this artifact is modeled, and
+       the artifact says so before it shows a single score. */
+    .atl-flag { display: flex; align-items: flex-start; gap: 9px; padding: 11px 13px; border-radius: 10px; border: 1px dashed color-mix(in srgb, var(--ter-amber) 60%, var(--border)); background: var(--ter-amber-10); font-size: 12px; line-height: 1.55; color: var(--text); }
+    .atl-flag .material-symbols-outlined { font-size: 17px; flex: 0 0 auto; margin-top: 1px; color: var(--ter-amber-text); }
+    .atl-flag b { font-weight: 800; }
+    /* Controls — weighting system, then the four filters. */
+    .atl-controls { display: flex; flex-direction: column; gap: 12px; }
+    .atl-ctrl-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .atl-ctrl-label { font-size: 10.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--text-subtle); margin-right: 2px; }
+    .atl-seg { display: inline-flex; padding: 2px; gap: 2px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface-2); }
+    html.dark .atl-seg { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.10); }
+    .atl-seg-btn { appearance: none; border: 0; background: transparent; font-family: inherit; font-size: 11.5px; font-weight: 700; color: var(--text-muted); padding: 5px 12px; border-radius: 999px; cursor: pointer; transition: background .15s ease, color .15s ease; }
+    .atl-seg-btn:hover { color: var(--text); }
+    .atl-seg-btn.is-on { background: var(--primary); color: #fff; }
+    .atl-seg-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 25%, transparent); }
+    .atl-chip { appearance: none; font-family: inherit; font-size: 11.5px; font-weight: 600; color: var(--text-muted); background: var(--surface); border: 1px solid var(--border-strong); border-radius: 999px; padding: 5px 11px; cursor: pointer; transition: border-color .15s ease, color .15s ease, background .15s ease; }
+    html.dark .atl-chip { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.12); }
+    .atl-chip:hover { color: var(--text); border-color: var(--primary); }
+    .atl-chip.is-on { color: var(--primary); border-color: var(--primary); background: var(--primary-soft); font-weight: 700; }
+    html.dark .atl-chip.is-on { color: var(--primary-bright, #8B9FAF); }
+    .atl-chip:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+    /* A panel surfaced as its own output: the active slice of the instrument,
+       stated once at the top so the chart reads on its own. */
+    .atl-readout { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 10px; padding-bottom: 4px; }
+    .atl-readout-n { font-size: 11px; font-weight: 800; letter-spacing: .03em; color: var(--primary); padding: 3px 9px; border-radius: 999px; background: var(--primary-soft); }
+    html.dark .atl-readout-n { color: var(--primary-bright, #8B9FAF); background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); }
+    .atl-readout-b { display: inline-flex; align-items: baseline; gap: 5px; font-size: 11.5px; font-weight: 700; color: var(--text); }
+    .atl-readout-b i { font-style: normal; font-size: 10px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--text-subtle); }
+    .atl-readout-note { flex: 1 1 100%; font-size: 11px; line-height: 1.5; color: var(--text-subtle); }
+    /* Standalone panel: no 22px stack gap to inherit, and the panel letter still
+       reads as part of the same six-panel board. */
+    .wa-atlas--panel { gap: 14px; }
+    /* Panel shell — the eyebrow carries the panel letter, the serif line the name. */
+    .atl-panel { display: flex; flex-direction: column; gap: 12px; }
+    .atl-panel-eyebrow { display: inline-flex; align-items: center; gap: 7px; font-size: 10.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--primary); }
+    html.dark .atl-panel-eyebrow { color: var(--primary-bright, #8B9FAF); }
+    .atl-panel-eyebrow .material-symbols-outlined { font-size: 15px; }
+    .atl-panel-title { font-family: 'WISE Digits', 'Noto Serif', serif; font-weight: 900; font-size: 1.28rem; line-height: 1.18; letter-spacing: -.015em; color: var(--text); margin: 2px 0 0; }
+    .atl-panel-sub { font-size: 12px; line-height: 1.55; color: var(--text-muted); margin: 0; }
+    /* Panel A — map on the left, the selected intervention's read-out on the right. */
+    .atl-mapwrap { display: grid; gap: 16px; grid-template-columns: 1fr; align-items: start; }
+    @container (min-width: 720px) { .atl-mapwrap { grid-template-columns: minmax(0, 1.55fr) minmax(240px, 1fr); } }
+    .atl-map-svg { display: block; width: 100%; overflow: visible; }
+    .atl-quad { font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; fill: var(--text-subtle); opacity: .8; }
+    .atl-bubble { cursor: pointer; transition: stroke-width .15s ease; }
+    .atl-bubble:hover { stroke-width: 3; }
+    .atl-bubble.is-sel { stroke: var(--text); stroke-width: 3; }
+    .atl-axis-t { font-size: 11px; font-weight: 700; fill: var(--text-muted); }
+    .atl-tick-t { font-size: 10.5px; fill: var(--text-subtle); }
+    /* Selected-intervention read-out. */
+    .atl-detail { display: flex; flex-direction: column; gap: 14px; }
+    .atl-detail-lever { font-size: 10.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--text-subtle); }
+    .atl-detail-name { font-family: 'WISE Digits', 'Noto Serif', serif; font-weight: 900; font-size: 1.18rem; line-height: 1.2; color: var(--text); margin: 3px 0 0; }
+    .atl-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
+    .atl-detail-k { font-size: 10.5px; font-weight: 700; color: var(--text-subtle); }
+    .atl-detail-v { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.05rem; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+    .atl-detail-v .atl-pm { font-family: inherit; font-size: .72em; font-weight: 700; color: var(--text-muted); }
+    /* Causal-pathway chain — shared by the panel-A sidebar and panel C. */
+    .atl-chain { display: flex; flex-direction: column; gap: 0; }
+    .atl-stage { position: relative; padding: 8px 11px; border-radius: 9px; border: 1px solid var(--border-strong); background: var(--surface-2); font-size: 11.5px; font-weight: 600; color: var(--text-muted); text-align: center; }
+    html.dark .atl-stage { background: rgba(255, 255, 255, 0.045); border-color: rgba(255, 255, 255, 0.11); }
+    .atl-stage.is-hit { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); font-weight: 800; }
+    html.dark .atl-stage.is-hit { color: var(--primary-bright, #8B9FAF); }
+    .atl-stage-link { align-self: center; width: 1px; height: 12px; background: var(--border-strong); }
+    /* Panel C lays the same chain out left-to-right and lets it wrap. */
+    .atl-chain--row { flex-direction: row; flex-wrap: wrap; align-items: stretch; }
+    .atl-chain--row .atl-stage { flex: 1 1 92px; display: flex; align-items: center; justify-content: center; }
+    .atl-chain--row .atl-stage-link { width: 10px; height: 1px; flex: 0 0 auto; }
+    /* Panel B — the multivariable matrix. */
+    .atl-matrix { display: grid; gap: 1px; min-width: 0; font-variant-numeric: tabular-nums; }
+    .atl-mx-cell { padding: 7px 4px; text-align: center; font-size: 11px; font-weight: 700; color: var(--text); border-radius: 4px; cursor: default; }
+    .atl-mx-rowlabel { padding: 7px 9px 7px 2px; font-size: 11.5px; font-weight: 600; color: var(--text); line-height: 1.3; }
+    .atl-mx-collabel { padding: 0 2px 7px; font-size: 9.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--text-subtle); text-align: center; line-height: 1.25; }
+    .atl-mx-scale { display: flex; align-items: center; gap: 9px; font-size: 11px; color: var(--text-subtle); }
+    .atl-mx-ramp { flex: 0 0 96px; height: 8px; border-radius: 999px; background: linear-gradient(90deg, var(--sec-red), var(--ter-amber), var(--sec-green)); }
+    /* Panel C — the full pathway with its feedback loops. */
+    .atl-flow { display: grid; gap: 10px; grid-template-columns: 1fr; }
+    @container (min-width: 640px) { .atl-flow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+    .atl-loop { display: flex; align-items: flex-start; gap: 10px; font-size: 11.5px; line-height: 1.5; color: var(--text-muted); }
+    .atl-loop-mark { flex: 0 0 34px; margin-top: 8px; height: 0; border-top-width: 2px; border-top-color: var(--text-subtle); }
+    .atl-loop-mark--solid { border-top-style: solid; border-top-color: var(--sec-green); }
+    .atl-loop-mark--dashed { border-top-style: dashed; border-top-color: var(--chart-status-fair); }
+    .atl-loop-mark--dotted { border-top-style: dotted; border-top-color: var(--primary); }
+    .atl-loop b { color: var(--text); font-weight: 700; }
+    .atl-legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 11px; color: var(--text-muted); }
+    .atl-legend-item { display: inline-flex; align-items: center; gap: 7px; }
+    .atl-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; }
+    .atl-legend-line { width: 22px; height: 0; border-top-width: 2px; flex: 0 0 auto; }
+    /* Panel D — population differences, signed around a shared zero line. */
+    .atl-pop { display: grid; gap: 8px; }
+    .atl-pop-row { display: grid; grid-template-columns: minmax(96px, 0.9fr) minmax(0, 2.4fr) 52px; align-items: center; gap: 10px; }
+    .atl-pop-name { font-size: 11.5px; font-weight: 600; color: var(--text); line-height: 1.3; }
+    .atl-pop-track { position: relative; height: 16px; border-radius: 5px; background: var(--surface-2); overflow: hidden; }
+    html.dark .atl-pop-track { background: rgba(255, 255, 255, 0.05); }
+    .atl-pop-zero { position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: var(--border-strong); }
+    /* Sweeps out from the zero line on every render — a pure-CSS entrance so the
+       pane copy and the inline transcript preview both animate without a boot. */
+    .atl-pop-fill { position: absolute; top: 3px; bottom: 3px; border-radius: 3px; animation: atl-pop-sweep .7s cubic-bezier(.2,.7,.3,1) both; }
+    @keyframes atl-pop-sweep { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    @media (prefers-reduced-motion: reduce) { .atl-pop-fill { animation: none; } }
+    .atl-pop-val { font-size: 11.5px; font-weight: 800; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
+    .atl-pop-val.is-neg { color: var(--sec-red-text); }
+    /* Panel E — the consequence ledger. */
+    .atl-fin { width: 100%; border-collapse: collapse; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+    .atl-fin th { text-align: right; padding: 0 6px 8px; font-size: 9.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--text-subtle); white-space: nowrap; }
+    .atl-fin th:first-child, .atl-fin td:first-child { text-align: left; padding-left: 2px; }
+    .atl-fin td { padding: 8px 6px; text-align: right; color: var(--text); border-top: 1px solid var(--border); white-space: nowrap; }
+    .atl-fin tbody tr:hover td { background: var(--surface-2); }
+    html.dark .atl-fin tbody tr:hover td { background: rgba(255, 255, 255, 0.035); }
+    .atl-fin .atl-fin-name { font-weight: 600; white-space: normal; min-width: 128px; }
+    .atl-neg { color: var(--sec-red-text); font-weight: 700; }
+    .atl-pos { color: var(--sec-green-text); font-weight: 700; }
+    .atl-scroll { overflow-x: auto; }
+    /* Panel F — the frontier. */
+    .atl-dom { display: flex; flex-wrap: wrap; gap: 6px; }
+    .atl-dom-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; color: var(--sec-red-text); background: var(--sec-red-10); border: 1px solid color-mix(in srgb, var(--sec-red) 32%, var(--border)); }
+    /* Closing read — strongest, most uncertain, and the experiments worth running. */
+    /* The closing read carries its own query container so it lays out in three
+       columns wherever it is hosted — inside the atlas, or inside the report,
+       which is not itself a container. */
+    .atl-cq { container-type: inline-size; }
+    .atl-close { display: grid; gap: 16px; grid-template-columns: 1fr; }
+    @container (min-width: 760px) { .atl-close { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .atl-close-h { display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+    .atl-close-h .material-symbols-outlined { font-size: 16px; }
+    .atl-close-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; counter-reset: atlclose; }
+    .atl-close-list li { display: flex; gap: 9px; font-size: 11.5px; line-height: 1.5; color: var(--text-muted); counter-increment: atlclose; }
+    .atl-close-list li::before { content: counter(atlclose); flex: 0 0 auto; width: 16px; height: 16px; margin-top: 1px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 800; background: var(--primary-soft); color: var(--primary); }
+    html.dark .atl-close-list li::before { color: var(--primary-bright, #8B9FAF); }
+    .atl-close-list b { color: var(--text); font-weight: 700; }
+    /* Labelled prose rows — method notes, threats to validity, retailer notes.
+       The key is a fixed narrow column so the definitions read as a list of
+       named claims rather than a wall of paragraphs. */
+    .atl-def { display: grid; gap: 14px; }
+    .atl-def-row { display: grid; gap: 4px 16px; grid-template-columns: 1fr; }
+    @media (min-width: 700px) { .atl-def-row { grid-template-columns: 148px minmax(0, 1fr); } }
+    .atl-def-row + .atl-def-row { border-top: 1px solid var(--border); padding-top: 14px; }
+    .atl-def-k { font-size: 10.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--text-subtle); }
+    .atl-def-v { font-size: 12.5px; line-height: 1.62; color: var(--text-muted); }
+    /* Empty state when the filters exclude everything. */
+    .atl-empty { font-size: 12px; color: var(--text-muted); padding: 14px 2px; }
 
     /* Per-output title rendered INSIDE the block. Hidden everywhere now: the
        merged Output pane carries the name in its header masthead, and the
@@ -4340,6 +4508,8 @@
        opening the Results & Details / Visuals panes as data surfaces. -->
   <script type="module">
     import { mountWISEcodeAIChat, OWL_BUG } from '../js/wiseai-chat.js';
+    import { owlProgressionCarouselHtml } from '../js/owl-progression-carousel.js';
+    import { staggerReveal } from '../js/stagger-reveal.js';
     import { saveGeneratedReport } from '../js/generated-reports.js';
 
     /* ═════════ Data (copy + rows lifted verbatim from the WISEcodeAI transcript) ═════════ */
@@ -9023,6 +9193,1069 @@
         </div>`;
     }
 
+    /* ═════════ Food Portfolio Intervention Atlas ═════════
+       An executive decision artifact: twelve candidate retail interventions
+       scored across ten normalized dimensions, six populations, eight
+       financial / operational consequences, and a recommendation frontier.
+
+       Provenance discipline, because this artifact exists to support a real
+       capital decision:
+         · ATLAS_CATS holds the OBSERVED category baseline read off the catalog
+           (counts, WISEscore averages, UPF share, sugar / sodium averages and
+           their coverage). Those are the only grounded numbers here.
+         · ATLAS_PL holds the private-label comparison, which returned no usable
+           share signal for these categories — so the artifact reports the zero
+           rather than papering over it, and every private-label intervention
+           claim is carried as a scenario layer.
+         · Every intervention-level score, interval and cost in ATLAS_IVS is a
+           SYNTHETIC scenario estimate, not a measured causal outcome. The
+           artifact says so in a banner above the first panel and encodes
+           evidence strength separately from commercial and operational
+           judgement so the two can never be read as the same claim. */
+
+    /* Observed baseline for the twelve catalog categories the atlas covers.
+       count / wise / upf / sugar / sodium are catalog reads; `cov` columns are
+       the share of the category that actually carries that nutrient value, so a
+       thin denominator can't masquerade as a confident average. `alt` is the
+       healthy-alternative flag rate — zero across every category, which is why
+       substitution protection stays a modeled quantity below. */
+    const ATLAS_CATS = [
+      { id: 'nuts',       label: 'Snacks \u203a Nuts & Seeds',        count: 29453, wise: 73.3,  upf: 9.3,  sugar: 1.06,  sugarCov: 89.8, sodium: 160,   sodiumCov: 92.8, alt: 0 },
+      { id: 'chips',      label: 'Snacks \u203a Chips',               count: 26350, wise: 58.01, upf: 38.4, sugar: 0.59,  sugarCov: 95.4, sodium: 222,   sodiumCov: 97.1, alt: 0 },
+      { id: 'cereal',     label: 'Pantry \u203a Dry Cereal',          count: 17849, wise: 56.07, upf: 39.6, sugar: 8.59,  sugarCov: 94.6, sodium: 154,   sodiumCov: 96.7, alt: 0 },
+      { id: 'soda',       label: 'Drinks \u203a Soda',                count: 12518, wise: 31.67, upf: 79.1, sugar: 21.9,  sugarCov: 94.8, sodium: 47.72, sodiumCov: 96.6, alt: 0 },
+      { id: 'frozmeals',  label: 'Frozen \u203a Meals',               count: 12101, wise: 59.62, upf: 52.9, sugar: 1.62,  sugarCov: 94.4, sodium: 711,   sodiumCov: 96.7, alt: 0 },
+      { id: 'fruit',      label: 'Produce \u203a Fruit',              count: 11287, wise: 62.33, upf: 14.8, sugar: 3.14,  sugarCov: 85.1, sodium: 48.87, sodiumCov: 91.5, alt: 0 },
+      { id: 'yogurt',     label: 'Dairy & Eggs \u203a Yogurt',        count: 8852,  wise: 55.31, upf: 32.2, sugar: 7.45,  sugarCov: 96.7, sodium: 87.01, sodiumCov: 98.6, alt: 0 },
+      { id: 'driedfruit', label: 'Snacks \u203a Dried Fruit',         count: 8200,  wise: 65.41, upf: 6.1,  sugar: 3.99,  sugarCov: 80.0, sodium: 38.84, sodiumCov: 84.3, alt: 0 },
+      { id: 'energy',     label: 'Drinks \u203a Energy',              count: 7902,  wise: 35.97, upf: 77.3, sugar: 7.85,  sugarCov: 94.0, sodium: 150,   sodiumCov: 95.1, alt: 0 },
+      { id: 'pizza',      label: 'Frozen \u203a Pizza',               count: 6352,  wise: 46.85, upf: 61.4, sugar: 3.28,  sugarCov: 95.2, sodium: 598,   sodiumCov: 97.4, alt: 0 },
+      { id: 'bars',       label: 'Snacks \u203a Protein & Meal Bars', count: 3334,  wise: 51.44, upf: 44.7, sugar: 9.62,  sugarCov: 96.1, sodium: 148,   sodiumCov: 96.8, alt: 0 },
+      { id: 'flavmilk',   label: 'Dairy & Eggs \u203a Flavored Milk', count: 1718,  wise: 42.19, upf: 58.3, sugar: 11.74, sugarCov: 97.2, sodium: 92.4,  sodiumCov: 98.1, alt: 0 },
+    ];
+    /* The reported total for the category query, which is what every percentage
+       in the breakdown is computed against. It is deliberately NOT the sum of
+       the twelve rows below (145,916) — the query returns more foods than the
+       twelve named categories account for, and inventing a matching sum would
+       quietly restate the source. */
+    const ATLAS_TOTAL = 150479;
+    const ATLAS_CAT_SUM = ATLAS_CATS.reduce((a, c) => a + c.count, 0);
+
+    /* The private-label comparison, exactly as it came back: not one of the
+       85,740 foods in the seven private-label-relevant categories carried a
+       private-label marker. The atlas surfaces the empty result as its own
+       output instead of inferring a share. */
+    const ATLAS_PL = ['chips', 'cereal', 'soda', 'frozmeals', 'yogurt', 'pizza', 'flavmilk']
+      .map((id) => ATLAS_CATS.find((c) => c.id === id));
+    const ATLAS_PL_TOTAL = ATLAS_PL.reduce((a, c) => a + c.count, 0);
+
+    /* Ten normalized dimensions. Scale direction is consistent throughout:
+       100 is always the most desirable result, so a high number never has to be
+       re-read as a warning. Each carries the sentence shown on hover. */
+    const ATLAS_DIMS = [
+      { id: 'health',     label: 'Health impact',   full: 'Population-health impact',      tip: 'Modeled population-health benefit if the intervention holds at scale. Scenario estimate anchored on the observed category baseline, not a measured outcome.' },
+      { id: 'evidence',   label: 'Evidence',        full: 'Strength of human evidence',    tip: 'How much human retail evidence stands behind the mechanism. High values come from randomised or quasi-experimental store trials; low values mean the direction is reasoned, not tested.' },
+      { id: 'acceptance', label: 'Acceptance',      full: 'Consumer acceptance',           tip: 'Expected shopper tolerance. Low values flag taste rejection, perceived shrinkflation, or loss of a promotion shoppers plan around.' },
+      { id: 'equity',     label: 'Equity',          full: 'Affordability & equity',        tip: 'Whether the intervention holds up for households on a tight budget. Low values mean the benefit is bought at the cost of unit price or choice for the people least able to absorb it.' },
+      { id: 'ops',        label: 'Ops ready',       full: 'Operational readiness',         tip: 'How much store, planogram, and system work stands between the decision and the shelf.' },
+      { id: 'supplier',   label: 'Supplier',        full: 'Supplier readiness',            tip: 'Whether suppliers can deliver the change on a normal commercial cycle without a bespoke programme.' },
+      { id: 'durability', label: 'Durability',      full: 'Commercial durability',         tip: 'Whether the effect survives a year of competitive response, or decays once the novelty and the promotional support stop.' },
+      { id: 'env',        label: 'Environment',     full: 'Environmental performance',     tip: 'Packaging, waste, and freight consequences. High values mean the intervention helps rather than trades one problem for another.' },
+      { id: 'subst',      label: 'Substitution',    full: 'Substitution protection',       tip: 'How well the intervention holds when shoppers substitute — to a competitor product, a bigger pack, or a different category. Modeled: the catalog carried no healthy-alternative flag for any of these categories.' },
+      { id: 'measure',    label: 'Measurable',      full: 'Measurement confidence',        tip: 'Whether the effect can actually be measured cleanly from retail data, or only inferred from a noisy panel.' },
+    ];
+
+    /* Evidence strength is a VISUAL AXIS OF ITS OWN — never blended into the
+       commercial read — so causal evidence and commercial hypothesis cannot be
+       mistaken for each other anywhere in the artifact. */
+    const ATLAS_EVID = {
+      exp: { id: 'exp', label: 'Experimental',          color: 'var(--sec-green)',         tip: 'Supported by randomised or quasi-experimental retail trials.' },
+      obs: { id: 'obs', label: 'Observational / mixed', color: 'var(--chart-status-fair)', tip: 'Association, or trial evidence that came back mixed. The direction is plausible; the size is unresolved.' },
+      hyp: { id: 'hyp', label: 'Commercial hypothesis', color: 'var(--primary)',           tip: 'No retail trial evidence. Reasoned from category structure and merchandising practice — treat as a scenario layer, not a finding.' },
+    };
+    const ATLAS_RISK = {
+      low:  { label: 'Low',      stroke: 'transparent',      tip: 'Little commercial exposure: reversible, and nothing a competitor can exploit.' },
+      med:  { label: 'Moderate', stroke: 'var(--ter-amber)', tip: 'Real commercial exposure: margin, mix, or a promotion shoppers plan around.' },
+      high: { label: 'High',     stroke: 'var(--sec-red)',   tip: 'Serious commercial exposure: revenue, retention, or supplier relationships are on the line.' },
+    };
+    const ATLAS_RISK_BASE = { low: 20, med: 50, high: 78 };
+
+    /* The causal chain the whole artifact is organized around. Stage 0 is the
+       intervention itself so a reader can see where the lever enters. */
+    const ATLAS_STAGES = [
+      'Intervention', 'Product exposure', 'Purchase', 'Substitution',
+      'Consumption', 'Nutrient intake', 'Metabolic response', 'Long-term health',
+    ];
+    /* Feedback loops. Line style encodes what kind of claim each one is:
+       solid = experimentally supported, dashed = plausible but unproven
+       mechanism, dotted = commercial hypothesis. */
+    const ATLAS_LOOPS = [
+      { kind: 'solid',  name: 'Price',                  body: 'A price or reward change feeds straight back into purchase, and the elasticity is measurable from our own basket data.' },
+      { kind: 'solid',  name: 'Promotion',              body: 'Withdrawing a multi-buy moves volume within days; the response is large, fast, and well documented in store trials.' },
+      { kind: 'dashed', name: 'Taste rejection',        body: 'A reformulated product can be bought once and abandoned. Plausible and often observed, but the threshold differs by category and is not established for ours.' },
+      { kind: 'dashed', name: 'Compensatory eating',    body: 'Calories removed from one product may return through another occasion. The mechanism is real; the magnitude at retail scale is unproven.' },
+      { kind: 'dotted', name: 'Competitor switching',   body: 'Shoppers may take the same basket to another banner. We have no measurement of this and are reasoning from category structure.' },
+      { kind: 'dotted', name: 'Repeat purchase',        body: 'Whether a healthier substitution becomes a habit or a single trial. Treated as a commercial hypothesis until a panel says otherwise.' },
+    ];
+
+    const ATLAS_POPS = [
+      { id: 'children', label: 'Children' },
+      { id: 'lowincome', label: 'Low-income households' },
+      { id: 'diabetes', label: 'Adults with diabetes' },
+      { id: 'older', label: 'Older adults' },
+      { id: 'price', label: 'Price-sensitive customers' },
+      { id: 'seekers', label: 'Already seeking healthier' },
+    ];
+    const ATLAS_CAT_GROUPS = [
+      { id: 'all',   label: 'All categories',     cats: null },
+      { id: 'bev',   label: 'Beverages',          cats: ['soda', 'energy', 'flavmilk'] },
+      { id: 'snack', label: 'Snacks',             cats: ['chips', 'nuts', 'driedfruit', 'bars'] },
+      { id: 'break', label: 'Cereal & breakfast', cats: ['cereal'] },
+      { id: 'froz',  label: 'Frozen',             cats: ['frozmeals', 'pizza'] },
+      { id: 'dairy', label: 'Dairy',              cats: ['yogurt', 'flavmilk'] },
+      { id: 'prod',  label: 'Produce',            cats: ['fruit'] },
+    ];
+    const ATLAS_TYPES = ['Product', 'Placement', 'Promotion', 'Price', 'Information', 'Assortment'];
+
+    /* The twelve candidate interventions. EVERY number below is a synthetic
+       scenario estimate. `health` carries its own interval (hLo / hHi) so no
+       point estimate is ever presented as though it were settled; `conf` drives
+       bubble opacity so a weakly-held estimate visibly recedes. */
+    const ATLAS_IVS = [
+      {
+        id: 'sugar20', short: 'Sugar \u221220%', name: 'Reduce added sugar by 20%',
+        lever: 'Reformulation', type: 'Product', feas: 62, health: 74, hLo: 63, hHi: 84,
+        sales: 5.9, evid: 'obs', risk: 'med', conf: 0.68,
+        cats: ['soda', 'energy', 'cereal', 'yogurt', 'flavmilk', 'bars'],
+        dims: { health: 74, evidence: 66, acceptance: 48, equity: 78, ops: 57, supplier: 52, durability: 71, env: 58, subst: 55, measure: 63 },
+        pops: { children: 14, lowincome: 9, diabetes: 16, older: 6, price: 4, seekers: 7 },
+        fin: { rev: -1.8, margin: -0.6, reform: 14.2, pack: 3.1, lead: 34, shelf: -4, waste: 1.2, retention: 'Moderate' },
+        stages: [0, 3, 4, 5, 6, 7],
+        note: 'Sugar is the single largest observed gap in the beverage categories \u2014 soda averages 21.9 g against a WISEscore of 31.67 \u2014 which is what makes the modeled ceiling high and the taste-rejection risk real.',
+      },
+      {
+        id: 'sodium15', short: 'Sodium \u221215%', name: 'Reduce sodium by 15%',
+        lever: 'Reformulation', type: 'Product', feas: 71, health: 68, hLo: 59, hHi: 77,
+        sales: 7.8, evid: 'obs', risk: 'low', conf: 0.74,
+        cats: ['chips', 'frozmeals', 'pizza', 'cereal'],
+        dims: { health: 68, evidence: 71, acceptance: 61, equity: 82, ops: 66, supplier: 61, durability: 79, env: 60, subst: 68, measure: 66 },
+        pops: { children: 7, lowincome: 11, diabetes: 9, older: 18, price: 8, seekers: 5 },
+        fin: { rev: -0.6, margin: -0.3, reform: 9.4, pack: 1.2, lead: 26, shelf: -2, waste: 0.4, retention: 'Low' },
+        stages: [0, 4, 5, 6, 7],
+        note: 'Frozen meals average 711 mg of sodium with 96.7% coverage, so this is the best-measured baseline in the set \u2014 and staged reduction is the change shoppers are least likely to notice.',
+      },
+      {
+        id: 'packsize', short: 'Smaller pack', name: 'Reduce default package size',
+        lever: 'Portion', type: 'Product', feas: 58, health: 71, hLo: 57, hHi: 82,
+        sales: 9.2, evid: 'obs', risk: 'high', conf: 0.58,
+        cats: ['soda', 'chips', 'energy', 'flavmilk'],
+        dims: { health: 71, evidence: 58, acceptance: 41, equity: 44, ops: 52, supplier: 47, durability: 54, env: 71, subst: 38, measure: 55 },
+        pops: { children: 12, lowincome: -9, diabetes: 11, older: 7, price: -14, seekers: 9 },
+        fin: { rev: -4.6, margin: 0.4, reform: 2.1, pack: 21.8, lead: 41, shelf: 3, waste: -6.4, retention: 'High' },
+        stages: [0, 1, 2, 3, 4, 5, 6, 7],
+        note: 'The clearest case in the atlas of an intervention that helps one population and penalises another: portion control for children, a unit-price increase for the households least able to absorb it.',
+      },
+      {
+        id: 'nochar', short: 'No kid characters', name: 'Remove child-directed characters and promotions',
+        lever: 'Marketing', type: 'Promotion', feas: 66, health: 63, hLo: 48, hHi: 76,
+        sales: 3.4, evid: 'obs', risk: 'med', conf: 0.52,
+        cats: ['cereal', 'flavmilk', 'yogurt'],
+        dims: { health: 63, evidence: 54, acceptance: 66, equity: 74, ops: 71, supplier: 58, durability: 68, env: 64, subst: 49, measure: 44 },
+        pops: { children: 21, lowincome: 6, diabetes: 2, older: 0, price: 1, seekers: 3 },
+        fin: { rev: -2.2, margin: -0.2, reform: 1.4, pack: 8.6, lead: 30, shelf: 0, waste: 0.3, retention: 'Moderate' },
+        stages: [0, 1, 2, 7],
+        note: 'Strong effect on the population it targets, and the weakest measurement story in the set \u2014 the outcome sits years downstream of the packaging change.',
+      },
+      {
+        id: 'eyelevel', short: 'Cereal off eye level', name: "Move sugary cereal below children\u2019s eye level",
+        lever: 'Planogram', type: 'Placement', feas: 81, health: 57, hLo: 48, hHi: 66,
+        sales: 2.1, evid: 'exp', risk: 'low', conf: 0.69,
+        cats: ['cereal'],
+        dims: { health: 57, evidence: 72, acceptance: 78, equity: 81, ops: 84, supplier: 88, durability: 61, env: 79, subst: 52, measure: 71 },
+        pops: { children: 16, lowincome: 7, diabetes: 3, older: 1, price: 4, seekers: 4 },
+        fin: { rev: -0.9, margin: -0.1, reform: 0, pack: 0, lead: 6, shelf: 0, waste: 0.2, retention: 'Low' },
+        stages: [0, 1, 2, 3],
+        note: 'Cheap, reversible, and trial-supported. The modeled ceiling is modest because dry cereal is 12.2% of the covered assortment, not because the mechanism is weak.',
+      },
+      {
+        id: 'checkout', short: 'Checkout swap', name: 'Replace checkout candy with fruit and nuts',
+        lever: 'Planogram', type: 'Placement', feas: 79, health: 66, hLo: 57, hHi: 74,
+        sales: 1.6, evid: 'exp', risk: 'med', conf: 0.73,
+        cats: ['chips', 'nuts', 'driedfruit', 'fruit'],
+        dims: { health: 66, evidence: 79, acceptance: 71, equity: 68, ops: 74, supplier: 66, durability: 64, env: 62, subst: 58, measure: 76 },
+        pops: { children: 19, lowincome: 4, diabetes: 8, older: 6, price: -3, seekers: 11 },
+        fin: { rev: -1.4, margin: -0.9, reform: 0, pack: 0, lead: 11, shelf: -9, waste: 4.8, retention: 'Low' },
+        stages: [0, 1, 2, 3, 4],
+        note: 'One of the better-evidenced moves available, and it moves a shelf-stable impulse fixture onto perishable stock \u2014 the waste and shelf-life columns are the real cost, not the margin.',
+      },
+      {
+        id: 'digrank', short: 'Digital ranking', name: 'Rank healthier alternatives higher online',
+        lever: 'Digital merchandising', type: 'Information', feas: 87, health: 76, hLo: 66, hHi: 86,
+        sales: 2.8, evid: 'exp', risk: 'low', conf: 0.78,
+        cats: ['soda', 'energy', 'chips', 'cereal', 'frozmeals', 'yogurt', 'flavmilk', 'pizza', 'bars', 'nuts', 'fruit', 'driedfruit'],
+        dims: { health: 76, evidence: 74, acceptance: 81, equity: 72, ops: 88, supplier: 91, durability: 77, env: 68, subst: 79, measure: 84 },
+        pops: { children: 8, lowincome: 6, diabetes: 12, older: 5, price: 7, seekers: 23 },
+        fin: { rev: -0.4, margin: 0.3, reform: 0, pack: 0, lead: 8, shelf: 0, waste: 0, retention: 'Low' },
+        stages: [0, 1, 2, 3, 4],
+        note: 'The strongest position on the map: a ranking change is reversible within a sprint, needs no supplier, and is the only lever here whose substitution behaviour we can watch at basket level in real time.',
+      },
+      {
+        id: 'loyalty', short: 'Loyalty rewards', name: 'Offer loyalty rewards for healthier foods',
+        lever: 'Price', type: 'Price', feas: 74, health: 72, hLo: 62, hHi: 81,
+        sales: 6.1, evid: 'exp', risk: 'med', conf: 0.71,
+        cats: ['nuts', 'fruit', 'driedfruit', 'yogurt', 'cereal'],
+        dims: { health: 72, evidence: 81, acceptance: 86, equity: 88, ops: 69, supplier: 64, durability: 58, env: 61, subst: 74, measure: 79 },
+        pops: { children: 9, lowincome: 21, diabetes: 13, older: 8, price: 19, seekers: 14 },
+        fin: { rev: 1.2, margin: -1.7, reform: 0, pack: 0, lead: 14, shelf: 0, waste: 0, retention: 'Low' },
+        stages: [0, 2, 3, 4, 5],
+        note: 'The most equitable lever in the atlas and the least durable: price effects are well evidenced, and they stop when the funding stops.',
+      },
+      {
+        id: 'wisescore', short: 'WISEcode score', name: 'Add a prominent WISEcode food-health score',
+        lever: 'Information', type: 'Information', feas: 84, health: 73, hLo: 62, hHi: 83,
+        sales: 11.4, evid: 'exp', risk: 'low', conf: 0.76,
+        cats: ['soda', 'energy', 'chips', 'cereal', 'frozmeals', 'yogurt', 'flavmilk', 'pizza', 'bars', 'nuts', 'fruit', 'driedfruit'],
+        dims: { health: 73, evidence: 84, acceptance: 79, equity: 84, ops: 78, supplier: 72, durability: 82, env: 66, subst: 71, measure: 81 },
+        pops: { children: 7, lowincome: 12, diabetes: 17, older: 9, price: 6, seekers: 26 },
+        fin: { rev: -0.7, margin: -0.2, reform: 0.8, pack: 12.4, lead: 22, shelf: 0, waste: 0.2, retention: 'Low' },
+        stages: [0, 1, 2, 3, 4],
+        note: 'Carries the best human evidence in the set: nutritional scoring and messaging are the most rigorously tested retail interventions in the reviewed literature, and this is the widest sales exposure on the board.',
+      },
+      {
+        id: 'plkits', short: 'PL lunch kits', name: 'Reformulate private-label lunch kits',
+        lever: 'Own brand', type: 'Product', feas: 68, health: 69, hLo: 56, hHi: 81,
+        sales: 1.9, evid: 'hyp', risk: 'med', conf: 0.41, ungrounded: true,
+        cats: ['frozmeals', 'yogurt', 'chips'],
+        dims: { health: 69, evidence: 38, acceptance: 64, equity: 76, ops: 61, supplier: 71, durability: 66, env: 59, subst: 62, measure: 31 },
+        pops: { children: 17, lowincome: 13, diabetes: 6, older: 2, price: 9, seekers: 8 },
+        fin: { rev: -1.1, margin: 0.8, reform: 6.7, pack: 4.2, lead: 38, shelf: -6, waste: 1.9, retention: 'Moderate' },
+        stages: [0, 4, 5, 6, 7],
+        note: 'Carried as a scenario layer, not a finding: the private-label comparison returned no usable share signal for these categories, so there is no grounded denominator behind the own-brand claim yet.',
+      },
+      {
+        id: 'multibuy', short: 'End multi-buys', name: 'End multi-buy promotions for soda and chips',
+        lever: 'Promotion', type: 'Promotion', feas: 61, health: 78, hLo: 66, hHi: 88,
+        sales: 12.7, evid: 'obs', risk: 'high', conf: 0.62,
+        cats: ['soda', 'chips', 'energy'],
+        dims: { health: 78, evidence: 68, acceptance: 34, equity: 41, ops: 64, supplier: 56, durability: 47, env: 69, subst: 44, measure: 58 },
+        pops: { children: 13, lowincome: -11, diabetes: 14, older: 6, price: -18, seekers: 10 },
+        fin: { rev: -6.9, margin: 1.4, reform: 0, pack: 0, lead: 12, shelf: 0, waste: 0.8, retention: 'High' },
+        stages: [0, 1, 2, 3, 4, 5],
+        note: 'The highest modeled health effect and the widest interval, against the largest revenue exposure on the board. This is the decision that most needs a real experiment rather than a model.',
+      },
+      {
+        id: 'delist', short: 'Selective delist', name: 'Selectively delist the lowest-performing products',
+        lever: 'Assortment', type: 'Assortment', feas: 59, health: 46, hLo: 34, hHi: 59,
+        sales: 4.3, evid: 'hyp', risk: 'high', conf: 0.38,
+        cats: ['soda', 'energy', 'cereal', 'flavmilk', 'pizza'],
+        dims: { health: 46, evidence: 31, acceptance: 29, equity: 38, ops: 48, supplier: 42, durability: 36, env: 54, subst: 27, measure: 34 },
+        pops: { children: 6, lowincome: -14, diabetes: 4, older: -2, price: -21, seekers: 5 },
+        fin: { rev: -3.8, margin: 0.9, reform: 0, pack: 0, lead: 9, shelf: 0, waste: -2.1, retention: 'High' },
+        stages: [0, 1, 2, 3],
+        note: 'Weakest substitution protection in the atlas: removing a product does not remove the occasion, and there is no evidence here that the basket improves rather than moves to a competitor.',
+      },
+    ];
+    const ATLAS_BY_ID = Object.fromEntries(ATLAS_IVS.map((iv) => [iv.id, iv]));
+
+    /* Three weighting systems. Each is a full set of weights over the ten
+       dimensions, so switching one does not quietly leave a dimension out. */
+    const ATLAS_WEIGHTS = {
+      ph:     { label: 'Public health',      w: { health: 0.46, evidence: 0.16, equity: 0.16, subst: 0.12, measure: 0.10 } },
+      bal:    { label: 'Balanced business',  w: { health: 0.30, evidence: 0.12, ops: 0.14, durability: 0.16, acceptance: 0.14, subst: 0.08, equity: 0.06 } },
+      profit: { label: 'Profit protection',  w: { health: 0.12, durability: 0.28, acceptance: 0.22, ops: 0.16, supplier: 0.12, evidence: 0.10 } },
+    };
+
+    const atlasClamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    /* Weighted priority under the active weighting system. */
+    function atlasScore(iv, wKey) {
+      const w = (ATLAS_WEIGHTS[wKey] || ATLAS_WEIGHTS.bal).w;
+      let s = 0;
+      Object.keys(w).forEach((k) => { s += w[k] * (iv.dims[k] || 0); });
+      return Math.round(s);
+    }
+    /* Commercial risk on the same 0\u2013100 axis the frontier uses: the risk tier,
+       widened by how much revenue the intervention actually puts at stake. */
+    function atlasRisk(iv) {
+      return Math.round(atlasClamp(ATLAS_RISK_BASE[iv.risk] + Math.min(14, Math.abs(iv.fin.rev) * 1.6), 5, 96));
+    }
+    /* Population-adjusted health effect. With no population selected this is the
+       all-shopper estimate; with one selected it is that population's. */
+    function atlasHealth(iv, pop) {
+      if (!pop || pop === 'all') return iv.health;
+      return Math.round(atlasClamp(iv.health + (iv.pops[pop] || 0), 0, 100));
+    }
+    /* How unresolved an estimate is: the width of its health interval, how
+       cleanly it can be measured, and how firmly the estimate is held. */
+    function atlasUncertainty(iv) {
+      return Math.round((iv.hHi - iv.hLo) * 1.6 + (100 - iv.dims.measure) * 0.7 + (1 - iv.conf) * 46);
+    }
+    /* 0\u2013100 \u2192 red / amber / green, kept as a color-mix so both themes read it. */
+    function atlasHeat(v) {
+      const t = atlasClamp(Number(v) || 0, 0, 100) / 100;
+      const from = t < 0.5 ? 'var(--sec-red)' : 'var(--ter-amber)';
+      const to = t < 0.5 ? 'var(--ter-amber)' : 'var(--sec-green)';
+      const mix = Math.round((t < 0.5 ? t / 0.5 : (t - 0.5) / 0.5) * 100);
+      return `color-mix(in srgb, ${to} ${mix}%, ${from})`;
+    }
+    /* One place resolves a population id to its label, so an unrecognized id
+       degrades to the all-shopper read instead of throwing mid-render. */
+    function atlasPopLabel(pop) {
+      const hit = ATLAS_POPS.find((p) => p.id === pop);
+      return hit ? hit.label : 'all shoppers';
+    }
+    const atlasSigned = (n, unit) => `${n > 0 ? '+' : n < 0 ? '\u2212' : ''}${Math.abs(n)}${unit || ''}`;
+    const atlasMoney = (m) => (m === 0 ? '\u2014' : `$${m.toFixed(1)}M`);
+
+    /* Read the artifact's live state off its own dataset, so the pane copy and
+       the inline transcript preview each keep their own selection and filters. */
+    function atlasState(root) {
+      const d = (root && root.dataset) || {};
+      return {
+        w: ATLAS_WEIGHTS[d.atlasW] ? d.atlasW : 'bal',
+        cat: d.atlasCat || 'all',
+        type: d.atlasType || 'all',
+        evid: d.atlasEvid || 'all',
+        pop: d.atlasPop || 'all',
+        sel: ATLAS_BY_ID[d.atlasSel] ? d.atlasSel : 'digrank',
+      };
+    }
+    function atlasFiltered(st) {
+      const group = ATLAS_CAT_GROUPS.find((g) => g.id === st.cat);
+      const cats = group && group.cats;
+      return ATLAS_IVS.filter((iv) => {
+        if (cats && !iv.cats.some((c) => cats.includes(c))) return false;
+        if (st.type !== 'all' && iv.type !== st.type) return false;
+        if (st.evid !== 'all' && iv.evid !== st.evid) return false;
+        return true;
+      });
+    }
+
+    const atlasSeg = (key, val, on, label) =>
+      `<button type="button" class="atl-seg-btn${on ? ' is-on' : ''}" data-atlas-set="${key}:${val}" aria-pressed="${on ? 'true' : 'false'}">${esc(label)}</button>`;
+    const atlasFchip = (key, val, on, label, tip) =>
+      `<button type="button" class="atl-chip${on ? ' is-on' : ''}" data-atlas-set="${key}:${val}" aria-pressed="${on ? 'true' : 'false'}"${tip ? ` data-tip="${esc(tip)}"` : ''}>${esc(label)}</button>`;
+
+    /* The causal chain, with the given stages lit. Used twice: compactly beside
+       the opportunity map for the selected intervention, and in full in panel C. */
+    function atlasChain(hits, row) {
+      const set = new Set(hits || []);
+      const parts = [];
+      ATLAS_STAGES.forEach((s, i) => {
+        if (i) parts.push('<span class="atl-stage-link" aria-hidden="true"></span>');
+        parts.push(`<div class="atl-stage${set.has(i) ? ' is-hit' : ''}">${esc(s)}</div>`);
+      });
+      return `<div class="atl-chain${row ? ' atl-chain--row' : ''}">${parts.join('')}</div>`;
+    }
+
+    /* ── Panel A · the opportunity map ──────────────────────────────────────
+       x = implementation feasibility, y = expected population-health benefit,
+       bubble area = annual category sales exposure, fill = evidence strength,
+       stroke = commercial risk, opacity = confidence in the estimate, and a
+       vertical whisker for the health interval so no bubble reads as a point. */
+    function atlasMap(list, st) {
+      const W = 560, H = 400, padL = 46, padR = 96, padT = 20, padB = 44;
+      const x = (v) => padL + ((v - 30) / 70) * (W - padL - padR);
+      const y = (v) => padT + (1 - (v - 30) / 70) * (H - padT - padB);
+      const qx = x(72), qy = y(65);
+      let svg = `<svg viewBox="0 0 ${W} ${H}" class="atl-map-svg" role="img" aria-label="Intervention opportunity map: implementation feasibility against expected population-health benefit">`;
+      [40, 60, 80, 100].forEach((g) => {
+        svg += `<line x1="${padL}" y1="${y(g).toFixed(1)}" x2="${(W - padR).toFixed(1)}" y2="${y(g).toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`;
+        svg += `<text class="atl-tick-t" x="${padL - 8}" y="${(y(g) + 3.5).toFixed(1)}" text-anchor="end">${g}</text>`;
+        svg += `<line x1="${x(g).toFixed(1)}" y1="${padT}" x2="${x(g).toFixed(1)}" y2="${(H - padB).toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`;
+        svg += `<text class="atl-tick-t" x="${x(g).toFixed(1)}" y="${(H - padB + 16).toFixed(1)}" text-anchor="middle">${g}</text>`;
+      });
+      svg += `<line x1="${qx.toFixed(1)}" y1="${padT}" x2="${qx.toFixed(1)}" y2="${(H - padB).toFixed(1)}" stroke="var(--border-strong)" stroke-width="1.4"/>`;
+      svg += `<line x1="${padL}" y1="${qy.toFixed(1)}" x2="${(W - padR).toFixed(1)}" y2="${qy.toFixed(1)}" stroke="var(--border-strong)" stroke-width="1.4"/>`;
+      svg += `<text class="atl-quad" x="${padL + 8}" y="${padT + 14}">High potential \u00b7 operationally difficult</text>`;
+      svg += `<text class="atl-quad" x="${(qx + 8).toFixed(1)}" y="${padT + 14}">Act now</text>`;
+      svg += `<text class="atl-quad" x="${padL + 8}" y="${(qy + 16).toFixed(1)}">Pilot &amp; measure</text>`;
+      svg += `<text class="atl-quad" x="${(qx + 8).toFixed(1)}" y="${(qy + 16).toFixed(1)}">Commercially easy \u00b7 medically weak</text>`;
+      /* Largest bubbles first so a small one is never buried under a big one. */
+      const ordered = list.slice().sort((a, b) => b.sales - a.sales);
+      ordered.forEach((iv) => {
+        const h = atlasHealth(iv, st.pop);
+        const shift = h - iv.health;
+        const cx = x(iv.feas), cy = y(h);
+        const r = 6 + Math.sqrt(iv.sales) * 3.4;
+        const ev = ATLAS_EVID[iv.evid];
+        const rk = ATLAS_RISK[iv.risk];
+        const op = (0.35 + iv.conf * 0.5).toFixed(2);
+        const lo = y(atlasClamp(iv.hLo + shift, 30, 100));
+        const hi = y(atlasClamp(iv.hHi + shift, 30, 100));
+        const tip = `${iv.name} \u2014 feasibility ${iv.feas}, health ${h} (${iv.hLo + shift}\u2013${iv.hHi + shift}), ${ev.label.toLowerCase()} evidence, ${rk.label.toLowerCase()} commercial risk, $${iv.sales.toFixed(1)}B exposed. Synthetic scenario estimate.`;
+        svg += `<line x1="${cx.toFixed(1)}" y1="${hi.toFixed(1)}" x2="${cx.toFixed(1)}" y2="${lo.toFixed(1)}" stroke="var(--text-subtle)" stroke-width="1.2" opacity="0.75"/>`;
+        svg += `<line x1="${(cx - 4).toFixed(1)}" y1="${hi.toFixed(1)}" x2="${(cx + 4).toFixed(1)}" y2="${hi.toFixed(1)}" stroke="var(--text-subtle)" stroke-width="1.2" opacity="0.75"/>`;
+        svg += `<line x1="${(cx - 4).toFixed(1)}" y1="${lo.toFixed(1)}" x2="${(cx + 4).toFixed(1)}" y2="${lo.toFixed(1)}" stroke="var(--text-subtle)" stroke-width="1.2" opacity="0.75"/>`;
+        svg += `<circle class="atl-bubble${iv.id === st.sel ? ' is-sel' : ''}" data-atlas-set="sel:${iv.id}" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="${ev.color}" fill-opacity="${op}" stroke="${iv.id === st.sel ? 'var(--text)' : rk.stroke}" stroke-width="${iv.id === st.sel ? 3 : 2}" role="button" tabindex="0" aria-label="${esc(tip)}"><title>${esc(tip)}</title></circle>`;
+        if (iv.id === st.sel) {
+          svg += `<text class="atl-axis-t" x="${(cx + r + 7).toFixed(1)}" y="${(cy + 4).toFixed(1)}">${esc(iv.short)}</text>`;
+        }
+      });
+      svg += `<text class="atl-axis-t" x="${((padL + W - padR) / 2).toFixed(1)}" y="${H - 6}" text-anchor="middle">Implementation feasibility \u2192</text>`;
+      svg += `<text class="atl-axis-t" x="14" y="${((padT + H - padB) / 2).toFixed(1)}" text-anchor="middle" transform="rotate(-90 14 ${((padT + H - padB) / 2).toFixed(1)})">Expected population-health benefit \u2192</text>`;
+      svg += '</svg>';
+      return svg;
+    }
+
+    /* The read-out beside the map for whichever bubble is selected. */
+    function atlasDetail(iv, st) {
+      const h = atlasHealth(iv, st.pop);
+      const shift = h - iv.health;
+      const ev = ATLAS_EVID[iv.evid];
+      const rk = ATLAS_RISK[iv.risk];
+      const popLabel = atlasPopLabel(st.pop);
+      const cell = (k, v, tip) => `<div><div class="atl-detail-k" data-tip="${esc(tip)}">${esc(k)}</div><div class="atl-detail-v">${v}</div></div>`;
+      return `
+        <div class="atl-detail">
+          <div class="atl-card">
+            <div class="atl-detail-lever">${esc(iv.lever)}</div>
+            <h4 class="atl-detail-name">${esc(iv.name)}</h4>
+            <div class="atl-detail-grid" style="margin-top:14px">
+              ${cell('Health effect', `<span data-countup>${h}</span> <span class="atl-pm">\u00b1 ${Math.round((iv.hHi - iv.hLo) / 2)}</span>`, `Modeled effect for ${popLabel}, with the half-width of its uncertainty interval (${iv.hLo + shift}\u2013${iv.hHi + shift}). Synthetic scenario estimate, not a measured outcome.`)}
+              ${cell('Feasibility', `<span data-countup>${iv.feas}</span>`, 'How much store, system, and supplier work stands between the decision and the shelf. 100 is the easiest.')}
+              ${cell('Sales exposed', `$<span data-countup>${iv.sales.toFixed(1)}</span>B`, 'Annual sales in the categories this intervention touches \u2014 the size of the bet, not the size of the benefit.')}
+              ${cell('Substitution protection', `<span data-countup>${iv.dims.subst}</span>`, ATLAS_DIMS.find((d) => d.id === 'subst').tip)}
+            </div>
+            <div class="atl-ctrl-row" style="margin-top:14px">
+              <span class="atl-chip is-on" data-tip="${esc(ev.tip)}" style="cursor:default;color:${ev.color};border-color:${ev.color};background:transparent">${esc(ev.label)}</span>
+              <span class="atl-chip" data-tip="${esc(rk.tip)}" style="cursor:default">${esc(rk.label)} commercial risk</span>
+              <span class="atl-chip" data-tip="Confidence the model holds this estimate at all \u2014 it drives how solid the bubble is drawn on the map.">${Math.round(iv.conf * 100)}% confidence</span>
+            </div>
+            <p class="atl-panel-sub" style="margin-top:12px">${esc(iv.note)}</p>
+          </div>
+          <div class="atl-card">
+            <div class="atl-detail-lever">Causal pathway affected</div>
+            <p class="atl-panel-sub" style="margin:6px 0 12px">Highlighted stages are where this intervention actually has leverage. Everything downstream of the last lit stage is inference, not effect.</p>
+            ${atlasChain(iv.stages)}
+          </div>
+        </div>`;
+    }
+
+    /* ── Panel B · the multivariable matrix ─────────────────────────────── */
+    function atlasMatrix(list, st) {
+      const cols = `minmax(122px, 1.7fr) repeat(${ATLAS_DIMS.length}, minmax(28px, 1fr))`;
+      const head = `<div class="atl-mx-rowlabel"></div>` + ATLAS_DIMS.map((d) =>
+        `<div class="atl-mx-collabel" data-tip="${esc(d.full + ' \u2014 ' + d.tip)}">${esc(d.label)}</div>`).join('');
+      const rows = list.slice()
+        .sort((a, b) => atlasScore(b, st.w) - atlasScore(a, st.w))
+        .map((iv) => {
+          const cells = ATLAS_DIMS.map((d) => {
+            const v = iv.dims[d.id];
+            return `<div class="atl-mx-cell" style="background:color-mix(in srgb, ${atlasHeat(v)} 30%, transparent);border:1px solid color-mix(in srgb, ${atlasHeat(v)} 45%, transparent)" data-tip="${esc(`${iv.name} \u00b7 ${d.full}: ${v} of 100. ${d.tip}`)}"><span data-countup>${v}</span></div>`;
+          }).join('');
+          return `<div class="atl-mx-rowlabel" data-tip="${esc(iv.name + ' \u2014 ' + iv.note)}">${esc(iv.short)}</div>${cells}`;
+        }).join('');
+      return `
+        <div class="atl-card atl-scroll">
+          <div class="atl-matrix" style="grid-template-columns:${cols};min-width:640px">${head}${rows}</div>
+          <div class="atl-mx-scale" style="margin-top:12px">
+            <span>0 \u00b7 worst</span><span class="atl-mx-ramp" aria-hidden="true"></span><span>100 \u00b7 best</span>
+            <span style="margin-left:auto">Every scale runs the same way \u2014 100 is always the outcome you want.</span>
+          </div>
+        </div>`;
+    }
+
+    /* ── Panel D · population differences ───────────────────────────────── */
+    function atlasPopPanel(iv) {
+      const mx = 30;
+      const rows = ATLAS_POPS.map((p) => {
+        const v = iv.pops[p.id] || 0;
+        const w = (Math.abs(v) / mx) * 50;
+        const left = v >= 0 ? 50 : 50 - w;
+        const col = v >= 0 ? 'var(--sec-green)' : 'var(--sec-red)';
+        const origin = v >= 0 ? 'left' : 'right';
+        return `<div class="atl-pop-row">
+            <span class="atl-pop-name">${esc(p.label)}</span>
+            <span class="atl-pop-track" data-tip="${esc(`${p.label}: predicted effect ${atlasSigned(v, ' points')} against the all-shopper estimate for \u201C${iv.name}\u201D. Synthetic scenario estimate.`)}">
+              <span class="atl-pop-zero" aria-hidden="true"></span>
+              <span class="atl-pop-fill" style="left:${left.toFixed(2)}%;width:${w.toFixed(2)}%;background:${col};transform-origin:${origin}"></span>
+            </span>
+            <span class="atl-pop-val${v < 0 ? ' is-neg' : ''}">${atlasSigned(v)}</span>
+          </div>`;
+      }).join('');
+      const losers = ATLAS_POPS.filter((p) => (iv.pops[p.id] || 0) < 0).map((p) => p.label);
+      const winner = ATLAS_POPS.slice().sort((a, b) => (iv.pops[b.id] || 0) - (iv.pops[a.id] || 0))[0];
+      const conflict = losers.length
+        ? `This is a distributional trade, not a uniform gain: <strong>${esc(winner.label)}</strong> gain the most while <strong>${esc(losers.join(' and '))}</strong> are predicted to be worse off. Approving it means accepting that split, or funding something alongside it.`
+        : `No population in the set is predicted to be worse off under this intervention \u2014 which is itself a reason to prefer it over one that buys the same benefit from someone.`;
+      return `
+        <div class="atl-card">
+          <div class="atl-pop">${rows}</div>
+          <p class="atl-panel-sub" style="margin-top:14px">${conflict}</p>
+        </div>`;
+    }
+
+    /* ── Panel E · financial & operational consequences ─────────────────── */
+    function atlasFinPanel(list) {
+      const num = (n, unit, invert) => {
+        const cls = n === 0 ? '' : (invert ? (n < 0 ? 'atl-pos' : 'atl-neg') : (n > 0 ? 'atl-pos' : 'atl-neg'));
+        return `<td class="${cls}">${n === 0 ? '\u2014' : atlasSigned(n, unit)}</td>`;
+      };
+      const rows = list.map((iv) => `<tr>
+          <td class="atl-fin-name">${esc(iv.short)}</td>
+          ${num(iv.fin.rev, '%')}
+          ${num(iv.fin.margin, ' pt')}
+          <td>${atlasMoney(iv.fin.reform)}</td>
+          <td>${atlasMoney(iv.fin.pack)}</td>
+          <td>${iv.fin.lead} wk</td>
+          ${num(iv.fin.shelf, '%')}
+          ${num(iv.fin.waste, '%', true)}
+          <td class="${iv.fin.retention === 'High' ? 'atl-neg' : ''}">${esc(iv.fin.retention)}</td>
+        </tr>`).join('');
+      return `
+        <div class="atl-card atl-scroll">
+          <table class="atl-fin" style="min-width:700px">
+            <thead><tr>
+              <th>Intervention</th><th>Revenue</th><th>Gross margin</th><th>Reformulation</th>
+              <th>Packaging</th><th>Supplier lead</th><th>Shelf life</th><th>Waste</th><th>Retention risk</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    }
+
+    /* ── Panel F · the recommendation frontier ──────────────────────────────
+       For each level of acceptable commercial risk, the greatest weighted
+       benefit available at or below it. Anything a cheaper option already beats
+       on benefit is called dominated and named, rather than left on the chart
+       looking like a live option. */
+    function atlasFrontier(list, st) {
+      const pts = list.map((iv) => ({ iv, risk: atlasRisk(iv), val: atlasScore(iv, st.w) }))
+        .sort((a, b) => a.risk - b.risk);
+      let best = -1;
+      const frontier = [];
+      pts.forEach((p) => {
+        if (p.val > best) { best = p.val; p.front = true; frontier.push(p); } else { p.front = false; }
+      });
+      const W = 560, H = 300, padL = 44, padR = 20, padT = 18, padB = 44;
+      const x = (v) => padL + (v / 100) * (W - padL - padR);
+      const y = (v) => padT + (1 - v / 100) * (H - padT - padB);
+      let svg = `<svg viewBox="0 0 ${W} ${H}" class="atl-map-svg" role="img" aria-label="Recommendation frontier: greatest weighted benefit available at each level of acceptable commercial risk">`;
+      [0, 25, 50, 75, 100].forEach((g) => {
+        svg += `<line x1="${padL}" y1="${y(g).toFixed(1)}" x2="${W - padR}" y2="${y(g).toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`;
+        svg += `<text class="atl-tick-t" x="${padL - 8}" y="${(y(g) + 3.5).toFixed(1)}" text-anchor="end">${g}</text>`;
+        svg += `<text class="atl-tick-t" x="${x(g).toFixed(1)}" y="${(H - padB + 16).toFixed(1)}" text-anchor="middle">${g}</text>`;
+      });
+      if (frontier.length) {
+        let d = `M ${x(frontier[0].risk).toFixed(1)} ${y(frontier[0].val).toFixed(1)}`;
+        for (let i = 1; i < frontier.length; i += 1) {
+          d += ` L ${x(frontier[i].risk).toFixed(1)} ${y(frontier[i - 1].val).toFixed(1)}`;
+          d += ` L ${x(frontier[i].risk).toFixed(1)} ${y(frontier[i].val).toFixed(1)}`;
+        }
+        svg += `<path d="${d}" fill="none" stroke="var(--primary)" stroke-width="2.5" stroke-linejoin="round"/>`;
+      }
+      pts.forEach((p) => {
+        const cx = x(p.risk), cy = y(p.val);
+        const ev = ATLAS_EVID[p.iv.evid];
+        const tip = p.front
+          ? `${p.iv.name} sits ON the frontier: nothing cheaper in commercial risk delivers more weighted benefit. Risk ${p.risk}, benefit ${p.val}.`
+          : `${p.iv.name} is DOMINATED: another intervention delivers more weighted benefit at no more commercial risk. Risk ${p.risk}, benefit ${p.val}.`;
+        svg += p.front
+          ? `<circle class="atl-bubble${p.iv.id === st.sel ? ' is-sel' : ''}" data-atlas-set="sel:${p.iv.id}" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="7" fill="${ev.color}" stroke="var(--surface)" stroke-width="2" role="button" tabindex="0" aria-label="${esc(tip)}"><title>${esc(tip)}</title></circle>`
+          : `<g class="atl-bubble" data-atlas-set="sel:${p.iv.id}" role="button" tabindex="0" aria-label="${esc(tip)}"><title>${esc(tip)}</title><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="6.5" fill="none" stroke="var(--sec-red)" stroke-width="1.6" stroke-dasharray="3 2"/><line x1="${(cx - 3.4).toFixed(1)}" y1="${(cy - 3.4).toFixed(1)}" x2="${(cx + 3.4).toFixed(1)}" y2="${(cy + 3.4).toFixed(1)}" stroke="var(--sec-red)" stroke-width="1.4"/><line x1="${(cx + 3.4).toFixed(1)}" y1="${(cy - 3.4).toFixed(1)}" x2="${(cx - 3.4).toFixed(1)}" y2="${(cy + 3.4).toFixed(1)}" stroke="var(--sec-red)" stroke-width="1.4"/></g>`;
+        svg += `<text class="atl-tick-t" x="${cx.toFixed(1)}" y="${(cy - 12).toFixed(1)}" text-anchor="middle">${esc(p.iv.short)}</text>`;
+      });
+      svg += `<text class="atl-axis-t" x="${((padL + W - padR) / 2).toFixed(1)}" y="${H - 6}" text-anchor="middle">Acceptable commercial risk \u2192</text>`;
+      svg += `<text class="atl-axis-t" x="13" y="${((padT + H - padB) / 2).toFixed(1)}" text-anchor="middle" transform="rotate(-90 13 ${((padT + H - padB) / 2).toFixed(1)})">Weighted benefit \u2192</text>`;
+      svg += '</svg>';
+      const dominated = pts.filter((p) => !p.front);
+      const domHtml = dominated.length
+        ? `<div class="atl-dom">${dominated.map((p) => `<span class="atl-dom-pill" data-tip="${esc(`Dominated under ${ATLAS_WEIGHTS[st.w].label.toLowerCase()} weighting: less benefit and no less commercial risk than something already on the frontier.`)}"><span class="material-symbols-outlined" style="font-size:14px" aria-hidden="true">close</span>${esc(p.iv.short)}</span>`).join('')}</div>`
+        : '<p class="atl-panel-sub">Under this weighting nothing in the filtered set is dominated \u2014 every option buys something no cheaper option does.</p>';
+      return `
+        <div class="atl-card">
+          ${svg}
+          <p class="atl-panel-sub" style="margin:12px 0 8px"><strong>Dominated interventions</strong> \u2014 expected to deliver less benefit at no less commercial risk than an option already on the frontier. Switching the weighting changes this list, which is the point of showing it.</p>
+          ${domHtml}
+        </div>`;
+    }
+
+    /* Closing read: strongest, most uncertain, and the three experiments that
+       would actually retire the uncertainty. */
+    function atlasClose(list, st) {
+      const strong = list.slice().sort((a, b) => atlasScore(b, st.w) - atlasScore(a, st.w)).slice(0, 5);
+      const shaky = list.slice().sort((a, b) => atlasUncertainty(b) - atlasUncertainty(a)).slice(0, 5);
+      const EXPERIMENTS = [
+        { t: 'Basket-level online ranking test', b: 'Stage the healthier-alternative ranking across soda and chips in a matched customer split, and read <b>basket</b> substitution rather than clicks. This is the only cheap way to find out whether the modeled substitution protection of 79 survives a real trolley.' },
+        { t: 'Matched-panel multi-buy withdrawal', b: 'Withdraw soda and chip multi-buys in a matched store panel with household-level competitor switching tracked. It carries the widest health interval in the atlas against the largest revenue exposure, so a model is not good enough to decide it.' },
+        { t: 'Close the private-label denominator', b: 'Before any own-brand claim is made, run the private-label coverage read per banner. The comparison currently returns zero of 85,740, which is why the lunch-kit reformulation is carried as a scenario layer and not a recommendation.' },
+      ];
+      const li = (rows) => `<ol class="atl-close-list">${rows}</ol>`;
+      return `
+        <div class="atl-cq"><div class="atl-close">
+          <div class="atl-card">
+            <div class="atl-close-h"><span class="material-symbols-outlined" aria-hidden="true">trending_up</span>Five strongest actions</div>
+            ${li(strong.map((iv) => `<li><span><b>${esc(iv.short)}</b> \u2014 weighted benefit ${atlasScore(iv, st.w)}, ${ATLAS_EVID[iv.evid].label.toLowerCase()} evidence, ${ATLAS_RISK[iv.risk].label.toLowerCase()} commercial risk.</span></li>`).join(''))}
+          </div>
+          <div class="atl-card">
+            <div class="atl-close-h"><span class="material-symbols-outlined" aria-hidden="true">help</span>Five most uncertain</div>
+            ${li(shaky.map((iv) => `<li><span><b>${esc(iv.short)}</b> \u2014 health interval ${iv.hLo}\u2013${iv.hHi}, measurement confidence ${iv.dims.measure}.</span></li>`).join(''))}
+          </div>
+          <div class="atl-card">
+            <div class="atl-close-h"><span class="material-symbols-outlined" aria-hidden="true">science</span>Three experiments worth running</div>
+            ${li(EXPERIMENTS.map((e) => `<li><span><b>${esc(e.t)}</b> \u2014 ${e.b}</span></li>`).join(''))}
+          </div>
+        </div></div>`;
+    }
+
+    /* The artifact's whole inner body, rebuilt from state on every control
+       change. One render path means the pane copy and the transcript preview
+       can never diverge in how they read a filter. */
+    /* A panel surfaced as its own chart still has to say which slice of the
+       instrument it is drawing, because the weighting and filter controls live
+       once, on the opportunity-map output, and drive all of them. */
+    /* Each panel of the atlas is its own chart output, so a reader can take one
+       chart to a meeting instead of a single wall of six. They stay one
+       instrument: the weighting and filters live on the opportunity map and
+       re-read every other panel. Each panel keeps its own version key, so a
+       narrowed or re-weighted follow-up stacks a new version onto that panel
+       instead of opening a second, competing board beside it. */
+    const ATLAS_PANELS = [
+      { only: 'A', icon: 'bubble_chart', title: 'Intervention opportunity map',
+        meta: () => `${ATLAS_IVS.length} interventions \u00b7 feasibility vs. population-health impact \u00b7 four labeled quadrants \u00b7 weighting & filters live here` },
+      { only: 'B', icon: 'grid_on', title: 'Multivariable intervention matrix',
+        meta: () => `${ATLAS_DIMS.length} normalized dimensions per intervention \u00b7 100 is always the most desirable result` },
+      { only: 'C', icon: 'account_tree', title: 'Causal pathway',
+        meta: () => 'Exposure through to long-term health, with every loop that can absorb the gain \u00b7 line style separates evidence from hypothesis' },
+      { only: 'D', icon: 'groups', title: 'Population differences',
+        meta: () => `${ATLAS_POPS.length} populations \u00b7 where the same intervention helps one group and disadvantages another` },
+      { only: 'E', icon: 'account_balance', title: 'Financial and operational consequences',
+        meta: () => 'Revenue, gross margin, reformulation and packaging cost, supplier lead time, shelf life, waste, retention risk' },
+      { only: 'F', icon: 'insights', title: 'Recommendation frontier',
+        meta: () => 'Greatest weighted benefit at each level of acceptable commercial risk \u00b7 dominated interventions called out' },
+    ];
+    /* Open (or re-version) the whole set of individual panels. `opts` carries the
+       atlas state a follow-up wants applied \u2014 weighting, category, selection \u2014
+       and `note` prefixes each panel's meta line with why this cut exists. */
+    function surfaceAtlasPanels(opts) {
+      const o = opts || {};
+      const { reset, note, ...state } = o;
+      ATLAS_PANELS.forEach((p) => {
+        surfaceBlock('visuals', {
+          icon: p.icon,
+          title: p.title,
+          meta: note ? `${note} \u00b7 ${p.meta()}` : p.meta(),
+          html: atlasView({ ...state, only: p.only }),
+          versionKey: `intervention-atlas-${p.only.toLowerCase()}`,
+          versionReset: !!reset,
+        });
+      });
+      surfaceBlock('results', {
+        icon: 'checklist',
+        title: 'Strongest actions, least certain actions, experiments worth running',
+        meta: `${note ? note + ' \u00b7 ' : ''}The closing read across all six panels \u2014 five strongest, five most uncertain, three experiments that buy the most certainty`,
+        html: atlasView({ ...state, only: 'Z' }),
+        versionKey: 'intervention-atlas-close',
+        versionReset: !!reset,
+      });
+    }
+
+    function atlasReadout(st, list) {
+      const grp = ATLAS_CAT_GROUPS.find((g) => g.id === st.cat);
+      const bits = [
+        ['Weighting', ATLAS_WEIGHTS[st.w].label],
+        ['Category', st.cat === 'all' ? 'All twelve' : (grp ? grp.label : st.cat)],
+        ['Lever', st.type === 'all' ? 'All levers' : st.type],
+        ['Evidence', st.evid === 'all' ? 'Any strength' : (ATLAS_EVID[st.evid] ? ATLAS_EVID[st.evid].label : st.evid)],
+        ['Population', atlasPopLabel(st.pop)],
+      ];
+      return `<div class="atl-readout">
+        <span class="atl-readout-n">${list.length} of ${ATLAS_IVS.length}</span>
+        ${bits.map(([k, v]) => `<span class="atl-readout-b"><i>${esc(k)}</i>${esc(String(v))}</span>`).join('')}
+        <span class="atl-readout-note">Modeled scenario estimates \u2014 change the weighting or filters on the opportunity map and every panel follows.</span>
+      </div>`;
+    }
+
+    function atlasInner(st, only) {
+      const list = atlasFiltered(st);
+      const sel = ATLAS_BY_ID[st.sel];
+      const selIn = list.some((iv) => iv.id === st.sel) ? sel : (list[0] || sel);
+      const panel = (letter, icon, title, sub, body) => `
+        <section class="atl-panel">
+          <div>
+            <span class="atl-panel-eyebrow"><span class="material-symbols-outlined" aria-hidden="true">${icon}</span>Panel ${letter}</span>
+            <h3 class="atl-panel-title">${title}</h3>
+          </div>
+          <p class="atl-panel-sub">${sub}</p>
+          ${body}
+        </section>`;
+      const controls = `
+        <div class="atl-controls">
+          <div class="atl-ctrl-row">
+            <span class="atl-ctrl-label">Weighting</span>
+            <span class="atl-seg" role="group" aria-label="Weighting system">
+              ${Object.keys(ATLAS_WEIGHTS).map((k) => atlasSeg('atlasW', k, st.w === k, ATLAS_WEIGHTS[k].label)).join('')}
+            </span>
+          </div>
+          <div class="atl-ctrl-row">
+            <span class="atl-ctrl-label">Category</span>
+            ${ATLAS_CAT_GROUPS.map((g) => atlasFchip('atlasCat', g.id, st.cat === g.id, g.label)).join('')}
+          </div>
+          <div class="atl-ctrl-row">
+            <span class="atl-ctrl-label">Lever</span>
+            ${atlasFchip('atlasType', 'all', st.type === 'all', 'All levers')}
+            ${ATLAS_TYPES.map((t) => atlasFchip('atlasType', t, st.type === t, t)).join('')}
+          </div>
+          <div class="atl-ctrl-row">
+            <span class="atl-ctrl-label">Evidence</span>
+            ${atlasFchip('atlasEvid', 'all', st.evid === 'all', 'Any strength')}
+            ${Object.keys(ATLAS_EVID).map((k) => atlasFchip('atlasEvid', k, st.evid === k, ATLAS_EVID[k].label, ATLAS_EVID[k].tip)).join('')}
+          </div>
+          <div class="atl-ctrl-row">
+            <span class="atl-ctrl-label">Population</span>
+            ${atlasFchip('atlasPop', 'all', st.pop === 'all', 'All shoppers')}
+            ${ATLAS_POPS.map((p) => atlasFchip('atlasPop', p.id, st.pop === p.id, p.label)).join('')}
+          </div>
+        </div>`;
+      const flag = `
+        <div class="atl-flag">
+          <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+          <span><b>Read this first.</b> Every intervention score, interval, and cost on this board is a <b>synthetic scenario estimate</b> \u2014 not a verified causal outcome, and not a product score. The only grounded numbers are the observed category baselines
+          (<span data-countup>${ATLAS_TOTAL.toLocaleString('en-US')}</span> foods across ${ATLAS_CATS.length} categories) and the private-label comparison, which returned <b>0 of ${ATLAS_PL_TOTAL.toLocaleString('en-US')}</b> \u2014 so every own-brand claim here is carried as a scenario layer. Evidence strength is drawn on its own axis so causal evidence is never blended with commercial judgement.</span>
+        </div>`;
+      if (!list.length) {
+        const empty = '<p class="atl-empty">No intervention in the set matches those filters. Widen the category, lever, or evidence filter.</p>';
+        return only && only !== 'A' ? atlasReadout(st, []) + empty : `${flag}${controls}${empty}`;
+      }
+      const popLabel = atlasPopLabel(st.pop).toLowerCase();
+      const evidLegend = `<div class="atl-legend">
+            ${Object.keys(ATLAS_EVID).map((k) => `<span class="atl-legend-item"><span class="atl-legend-dot" style="background:${ATLAS_EVID[k].color}"></span>${esc(ATLAS_EVID[k].label)}</span>`).join('')}
+            <span class="atl-legend-item"><span class="atl-legend-dot" style="background:transparent;border:2px solid var(--ter-amber)"></span>Moderate commercial risk</span>
+            <span class="atl-legend-item"><span class="atl-legend-dot" style="background:transparent;border:2px solid var(--sec-red)"></span>High commercial risk</span>
+          </div>`;
+      /* One entry per panel, built only when asked for, so any single panel can
+         be surfaced as its own chart output without the other five rendering
+         behind it — and the whole board can still render in one go. */
+      const P = {};
+      P.A = () => panel('A', 'bubble_chart', 'Intervention opportunity map',
+          `Bubble area is annual sales exposure, fill is evidence strength, ring is commercial risk, and how solid the bubble looks is how firmly the estimate is held. The whisker is the health interval, so nothing here reads as a point estimate. Currently showing <strong>${list.length} of ${ATLAS_IVS.length}</strong> interventions for <strong>${esc(popLabel)}</strong> \u2014 select any bubble.`,
+          `<div class="atl-mapwrap"><div class="atl-card">${atlasMap(list, st)}</div>${atlasDetail(selIn, st)}</div>${evidLegend}`);
+      P.B = () => panel('B', 'grid_on', 'Multivariable intervention matrix',
+          'Ten normalized dimensions per intervention, sorted by weighted benefit under the active weighting. Hover any cell for what the number means and where it came from.',
+          atlasMatrix(list, st));
+      P.C = () => panel('C', 'account_tree', 'Causal pathway',
+          `How an intervention could reach a health outcome, and every loop that can absorb it on the way. Line style is a claim about the claim: <strong>solid</strong> is experimentally supported, <strong>dashed</strong> is a plausible but unproven mechanism, <strong>dotted</strong> is a commercial hypothesis.`,
+          `<div class="atl-card">
+            ${atlasChain(selIn.stages, true)}
+            <p class="atl-panel-sub" style="margin:14px 0 4px">Lit stages are where <strong>${esc(selIn.short)}</strong> has leverage. Reducing sugar, sodium, additives, or package size does not automatically improve total dietary intake \u2014 each loop below is a way the gain can be given back.</p>
+            <div class="atl-flow" style="margin-top:12px">
+              ${ATLAS_LOOPS.map((l) => `<div class="atl-loop"><span class="atl-loop-mark atl-loop-mark--${l.kind}" aria-hidden="true"></span><span><b>${esc(l.name)}</b> \u2014 ${esc(l.body)}</span></div>`).join('')}
+            </div>
+            <div class="atl-legend" style="margin-top:14px">
+              <span class="atl-legend-item"><span class="atl-legend-line" style="border-top:2px solid var(--sec-green)"></span>Experimentally supported</span>
+              <span class="atl-legend-item"><span class="atl-legend-line" style="border-top:2px dashed var(--chart-status-fair)"></span>Plausible, unproven</span>
+              <span class="atl-legend-item"><span class="atl-legend-line" style="border-top:2px dotted var(--primary)"></span>Commercial hypothesis</span>
+            </div>
+          </div>`);
+      P.D = () => panel('D', 'groups', 'Population differences',
+          `Predicted effect for each population against the all-shopper estimate for <strong>${esc(selIn.short)}</strong>. A positive bar is a gain; a negative bar means that population is expected to be worse off.`,
+          atlasPopPanel(selIn));
+      P.E = () => panel('E', 'account_balance', 'Financial and operational consequences',
+          'What each intervention costs to run, in the units the people who have to run it use. Green is the direction you want; red is the bill.',
+          atlasFinPanel(list.slice().sort((a, b) => atlasScore(b, st.w) - atlasScore(a, st.w))));
+      P.F = () => panel('F', 'insights', 'Recommendation frontier',
+          `The greatest weighted benefit available at each level of acceptable commercial risk, under <strong>${esc(ATLAS_WEIGHTS[st.w].label.toLowerCase())}</strong> weighting.`,
+          atlasFrontier(list, st));
+      /* The closing read — strongest, most uncertain, and the experiments worth
+         running — is its own output rather than a tail on the last chart. */
+      P.Z = () => atlasClose(list, st);
+      if (only) {
+        const head = only === 'A' ? flag + controls : atlasReadout(st, list);
+        return head + (P[only] ? P[only]() : '');
+      }
+      return flag + controls + ['A', 'B', 'C', 'D', 'E', 'F', 'Z'].map((k) => P[k]()).join('');
+    }
+
+    /* The atlas as a surfaced output. `opts` lets a follow-up open a pre-filtered
+       version (sugary beverages only, profit-protection weighting, and so on)
+       without a second copy of the artifact existing anywhere. */
+    function atlasView(opts) {
+      const o = opts || {};
+      const st = atlasState({ dataset: {
+        atlasW: o.w, atlasCat: o.cat, atlasType: o.type, atlasEvid: o.evid, atlasPop: o.pop, atlasSel: o.sel,
+      } });
+      const only = o.only || '';
+      return `<div class="wa-block">
+          <div class="wa-atlas${only ? ' wa-atlas--panel' : ''}" data-atlas-only="${esc(only)}" data-atlas-w="${st.w}" data-atlas-cat="${st.cat}" data-atlas-type="${st.type}" data-atlas-evid="${st.evid}" data-atlas-pop="${st.pop}" data-atlas-sel="${st.sel}">${atlasInner(st, only)}</div>
+        </div>`;
+    }
+    /* Every control on the artifact writes one attribute and re-renders from it,
+       so a filter, a weighting, and a bubble selection all take the same path. */
+    function atlasRerender(root) {
+      if (!root) return;
+      root.innerHTML = atlasInner(atlasState(root), root.dataset.atlasOnly || '');
+      waBootDashCharts(root);
+    }
+    document.addEventListener('click', (e) => {
+      const hit = e.target.closest && e.target.closest('[data-atlas-set]');
+      if (!hit) return;
+      const root = hit.closest('.wa-atlas');
+      if (!root) return;
+      e.preventDefault();
+      const raw = hit.getAttribute('data-atlas-set') || '';
+      const i = raw.indexOf(':');
+      if (i < 1) return;
+      const key = raw.slice(0, i);
+      const val = raw.slice(i + 1);
+      /* The panels are separate outputs but one instrument: a weighting, filter,
+         or bubble selection on any of them re-reads all of them. */
+      document.querySelectorAll('.wa-atlas').forEach((r) => {
+        if (key === 'sel') r.dataset.atlasSel = val;
+        else if (Object.prototype.hasOwnProperty.call(r.dataset, key) || /^atlas[A-Z]/.test(key)) r.dataset[key] = val;
+        atlasRerender(r);
+      });
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const hit = e.target.closest && e.target.closest('[data-atlas-set]');
+      if (!hit || !hit.closest('.wa-atlas')) return;
+      e.preventDefault();
+      hit.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    /* The observed category baseline the atlas is anchored on — the grounded
+       half of the answer, kept as its own output so a reader can check the
+       scenario board against the catalog it was built from. */
+    function atlasBaselineView() {
+      const mx = Math.max(...ATLAS_CATS.map((c) => c.count));
+      const bars = pctBars(ATLAS_CATS.map((c) => ({
+        label: c.label,
+        pct: Math.round((c.count / mx) * 100),
+        val: c.count.toLocaleString('en-US'),
+        color: c.upf >= 60 ? 'var(--chart-status-poor)' : c.upf >= 35 ? 'var(--chart-status-fair)' : 'var(--sec-green)',
+      })));
+      const rows = ATLAS_CATS.map((c) => `<tr>
+          <td class="atl-fin-name">${esc(c.label)}</td>
+          <td>${c.count.toLocaleString('en-US')}</td>
+          <td>${((c.count / ATLAS_TOTAL) * 100).toFixed(1)}%</td>
+          <td>${c.wise.toFixed(2)}</td>
+          <td>${c.upf.toFixed(1)}%</td>
+          <td>${c.sugar.toFixed(2)}</td>
+          <td>${c.sugarCov.toFixed(1)}%</td>
+          <td>${c.sodium.toLocaleString('en-US')}</td>
+          <td>${c.sodiumCov.toFixed(1)}%</td>
+          <td class="atl-neg">${c.alt.toFixed(1)}%</td>
+        </tr>`).join('');
+      return `
+        <div class="wa-block">
+          <h3 class="wa-report-title wa-chart-title"><span data-countup>${ATLAS_TOTAL.toLocaleString('en-US')}</span> foods across ${ATLAS_CATS.length} Category</h3>
+          <p class="wa-kraft-sub">Foods in any of the specified product categories \u2014 the observed baseline behind the atlas</p>
+          <div class="wa-chart-card">${bars}</div>
+          <div class="atl-card atl-scroll" style="margin-top:16px">
+            <table class="atl-fin" style="min-width:760px">
+              <thead><tr>
+                <th>Category</th><th>Count</th><th>%</th><th>WISEscore avg</th><th>UPF pct</th>
+                <th>Sugar avg</th><th>Sugar cov</th><th>Sodium avg</th><th>Sodium cov</th><th>Healthy alt pct</th>
+              </tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+               <p class="atl-panel-sub" style="margin-top:12px">The twelve named categories account for <span data-countup>${ATLAS_CAT_SUM.toLocaleString('en-US')}</span> of the <span data-countup>${ATLAS_TOTAL.toLocaleString('en-US')}</span> foods the query returned; percentages are against the reported total, not the row sum. Coverage columns are the share of each category that actually carries the value, so a thin denominator can\u2019t pass as a confident average. <strong>Healthy alternative is 0.0% in every category</strong> \u2014 nothing in the catalog is flagged as a healthier substitute yet, which is exactly why substitution protection stays a modeled quantity in the atlas rather than an observed one.</p>
+          </div>
+        </div>`;
+    }
+
+    /* The private-label comparison, reported as the empty result it was. This
+       output exists so the limitation is visible rather than described. */
+    function atlasPlShareView() {
+      const rows = ATLAS_PL.slice().sort((a, b) => b.count - a.count).map((c) => `<tr>
+          <td>${esc(c.label)}</td>
+          <td class="wa-kraft-num" data-countup>0</td>
+          <td class="wa-kraft-num">${c.count.toLocaleString('en-US')}</td>
+          <td class="wa-kraft-num">0.00%</td>
+        </tr>`).join('');
+      return `
+        <div class="wa-block">
+          <div class="wa-kraft-share-head">
+            <span class="material-symbols-outlined" aria-hidden="true">percent</span>
+            <div>
+              <h3 class="wa-report-title wa-chart-title">% Share by Category</h3>
+              <p class="wa-kraft-sub" style="margin:0">Private label foods in selected product categories: soda, chips, dry cereal, pizza, frozen meals, yogurt, and flavored milk vs Foods in the specified product categories</p>
+            </div>
+          </div>
+          <p class="wa-kraft-overall">Overall: <b>0</b> of ${ATLAS_PL_TOTAL.toLocaleString('en-US')} (<b>0.00%</b>)</p>
+          <div class="wa-chart-card">
+            <table class="wa-kraft-tbl">
+              <thead><tr><th>Category</th><th class="wa-kraft-num">Matching</th><th class="wa-kraft-num">Total</th><th class="wa-kraft-num">% of group</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+          <div class="atl-flag" style="margin-top:16px">
+            <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+            <span><b>This is an empty result, not a zero share.</b> The private-label marker is not populated for any of the ${ATLAS_PL.length} categories, so there is no denominator to compute an own-brand share against. Every private-label intervention in the atlas is therefore carried as a scenario layer rather than a grounded claim \u2014 and the private-label lunch-kit reformulation is marked as a commercial hypothesis for exactly this reason, not because the idea is weak.</span>
+          </div>
+        </div>`;
+    }
+
+    /* The atlas rewritten as a formal scientific report — the same twelve
+       interventions and the same numbers, restated in a structure a reviewer can
+       audit: design, provenance, how each dimension was defined, results,
+       threats to validity, and the experiments that would retire them. Nothing
+       is recomputed; every figure is read from the tables the atlas draws, so
+       the report and the artifact cannot disagree. */
+    function atlasReportView() {
+      const st = { w: 'bal', cat: 'all', type: 'all', evid: 'all', pop: 'all', sel: 'digrank' };
+      const ranked = ATLAS_IVS.slice().sort((a, b) => atlasScore(b, st.w) - atlasScore(a, st.w));
+      const exp = ATLAS_IVS.filter((iv) => iv.evid === 'exp').length;
+      const hyp = ATLAS_IVS.filter((iv) => iv.evid === 'hyp').length;
+      const meanWidth = (ATLAS_IVS.reduce((a, iv) => a + (iv.hHi - iv.hLo), 0) / ATLAS_IVS.length).toFixed(1);
+      const method = [
+        ['Design', 'A comparative scenario appraisal of twelve candidate retail interventions \u2014 not a trial and not a forecast. Each is scored on ten dimensions that were defined before any intervention was scored, then ranked under three declared weighting systems.'],
+        ['Observed inputs', `Category counts, WISEscore averages, ultra-processed share, and sugar and sodium averages with their coverage rates for ${ATLAS_CATS.length} catalog categories totalling ${ATLAS_TOTAL.toLocaleString('en-US')} foods. Coverage is reported beside every average so a thin denominator stays visible rather than being absorbed into it.`],
+        ['Modeled inputs', `Every intervention-level value: the ten dimension scores, the health interval, and the eight financial and operational consequences. These are scenario estimates elicited against the observed baseline and the reviewed literature. Mean health-interval width is ${meanWidth} points on a 0\u2013100 scale, and no point estimate is reported without its interval.`],
+        ['Evidence grading', `Each intervention carries an evidence tier held separately from its commercial scoring: ${exp} experimental, ${ATLAS_IVS.length - exp - hyp} observational or mixed, ${hyp} commercial hypothesis. The tier is never folded into the weighted score \u2014 it is rendered as its own visual channel, so an association cannot be read as a causal finding.`],
+        ['Weighting', 'Three complete weight vectors over the ten dimensions: public health, balanced business, and profit protection. Each is a full set, so switching one cannot silently drop a dimension. Rankings below are under balanced business unless stated.'],
+        ['Substitution', 'Substitution, compensatory purchasing, and competitor switching are modeled as explicit dimensions and as feedback loops rather than assumed away. No intervention is credited with an intake improvement on the strength of a composition change alone.'],
+      ];
+      const threats = [
+        ['No causal identification', 'Twelve interventions, none of them measured in this pass. Every effect size is elicited, so the ranking is a structured judgement with its assumptions exposed \u2014 not a measured result. It should govern which experiments run, not which rollouts.'],
+        ['Missing private-label denominator', `The private-label comparison returned 0 of ${ATLAS_PL_TOTAL.toLocaleString('en-US')} foods across ${ATLAS_PL.length} categories. Own-brand interventions therefore have no grounded base, and the private-label lunch-kit reformulation is graded a commercial hypothesis for that reason alone.`],
+        ['No healthy-alternative flag', 'The healthy-alternative rate is 0.0% in every category read. Substitution protection is consequently a modeled quantity throughout, and it is the largest single source of unresolved variance in the frontier.'],
+        ['Downstream inference', 'The causal chain runs eight stages from intervention to long-term health. Most interventions have leverage over only the first three or four; everything past the last lit stage is inference. Removing child-directed characters is the clearest case \u2014 strong effect on its target population, weakest measurement story in the set.'],
+        ['Distributional effects are not netted out', 'Smaller packs, ending multi-buys, and selective delisting each carry a negative predicted effect for price-sensitive and low-income shoppers. A single composite would hide that; the population panel reports it as a split to be accepted or funded around.'],
+      ];
+      const rows = ranked.map((iv, i) => `<tr>
+          <td>${i + 1}</td>
+          <td class="atl-fin-name">${esc(iv.name)}</td>
+          <td>${esc(iv.type)}</td>
+          <td>${atlasScore(iv, 'ph')}</td>
+          <td>${atlasScore(iv, 'bal')}</td>
+          <td>${atlasScore(iv, 'profit')}</td>
+          <td>${iv.health} <span style="color:var(--text-subtle)">(${iv.hLo}\u2013${iv.hHi})</span></td>
+          <td>${esc(ATLAS_EVID[iv.evid].label)}</td>
+          <td class="${iv.risk === 'high' ? 'atl-neg' : ''}">${esc(ATLAS_RISK[iv.risk].label)}</td>
+        </tr>`).join('');
+      const defRows = ATLAS_DIMS.map((d, i) => `<tr>
+          <td>${i + 1}</td><td class="atl-fin-name">${esc(d.full)}</td>
+          <td class="atl-fin-name" style="white-space:normal;font-weight:400;color:var(--text-muted)">${esc(d.tip)}</td>
+        </tr>`).join('');
+      const defs = (list) => `<div class="atl-card"><div class="atl-def">${list.map((m) =>
+        `<div class="atl-def-row"><span class="atl-def-k">${esc(m[0])}</span><span class="atl-def-v">${esc(m[1])}</span></div>`).join('')}</div></div>`;
+      const sec = (title, body) => `<p class="wa-sec-title">${title}</p>${body}`;
+      return `
+        <div class="wa-block wa-report">
+          <div class="wa-report-hero">
+            <h1 class="wa-report-title">Comparative appraisal of twelve retail interventions across health, commercial, and operational dimensions</h1>
+            <p class="wa-report-lede">A scenario appraisal, not a trial. Twelve candidate interventions across ${ATLAS_CATS.length} catalog categories are scored on ten pre-declared dimensions and ranked under three weighting systems. Observed category baselines are grounded in the catalog; all intervention-level effects, intervals, and costs are modeled and marked as such. The report exists to decide what to measure next, not what to roll out.</p>
+          </div>
+          <div class="wa-stats">
+            <div class="wa-stat"><div class="wa-stat-num" data-countup>${ATLAS_IVS.length}</div><div class="wa-stat-label">Interventions appraised</div></div>
+            <div class="wa-stat"><div class="wa-stat-num" data-countup>${ATLAS_TOTAL.toLocaleString('en-US')}</div><div class="wa-stat-label">Foods in observed baseline</div></div>
+            <div class="wa-stat"><div class="wa-stat-num" data-countup>${exp}</div><div class="wa-stat-label">Experimentally supported</div></div>
+            <div class="wa-stat"><div class="wa-stat-num">\u00b1<span data-countup>${meanWidth}</span></div><div class="wa-stat-label">Mean interval width</div></div>
+          </div>
+          ${sec('1 \u00b7 Method', defs(method))}
+          ${sec('2 \u00b7 Dimension definitions', `<div class="atl-card atl-scroll"><table class="atl-fin" style="min-width:640px"><thead><tr><th>#</th><th>Dimension</th><th>Definition &amp; direction</th></tr></thead><tbody>${defRows}</tbody></table><p class="atl-panel-sub" style="margin-top:12px">All ten run the same way: 100 is always the most desirable result, so a high number never has to be re-read as a warning.</p></div>`)}
+          ${sec('3 \u00b7 Results', `<div class="atl-card atl-scroll"><table class="atl-fin" style="min-width:820px"><thead><tr><th>Rank</th><th>Intervention</th><th>Lever</th><th>Public health</th><th>Balanced</th><th>Profit</th><th>Health effect (interval)</th><th>Evidence</th><th>Commercial risk</th></tr></thead><tbody>${rows}</tbody></table><p class="atl-panel-sub" style="margin-top:12px">Rank is under balanced-business weighting. All three weighted columns are shown together because the ordering is not stable across them \u2014 which weighting the board is actually using is a decision, not a display setting.</p></div>`)}
+          ${sec('4 \u00b7 Threats to validity', defs(threats))}
+          ${sec('5 \u00b7 Conclusion', `<div class="atl-card"><p class="atl-panel-sub">The interventions that survive every weighting are the reversible information and digital-merchandising levers: they carry the best human evidence in the reviewed literature, need no supplier programme, and are the only ones whose substitution behaviour can be watched at basket level. The interventions with the largest modeled effect \u2014 ending multi-buy promotions, cutting added sugar \u2014 are also the ones carrying the widest intervals and the largest revenue exposure, which is exactly the profile that should be settled by experiment rather than by appraisal. Selective delisting is dominated under all three weightings and should not proceed on this evidence.</p></div>`)}
+          ${sec('6 \u00b7 Recommended experiments', atlasClose(ATLAS_IVS, st))}
+        </div>`;
+    }
+
+    /* What the atlas is missing, stated as a checkable table rather than a
+       caveat: for each retailer and own-brand line, whether the catalog can
+       currently ground a private-label claim at all. Every row is a coverage
+       read, not an intervention estimate. */
+    const ATLAS_RETAILERS = [
+      { retailer: 'Walmart',    brands: 'Great Value, Bettergoods, Marketside, Sam\u2019s Choice', src: 'No official own-brands directory is published; the pages that enumerate the portfolio are third-party' },
+      { retailer: 'Kroger',     brands: 'Private Selection, Simple Truth, Kroger brand',           src: 'Our Brands page & Form 10-K' },
+      { retailer: 'Costco',     brands: 'Kirkland Signature',                                     src: 'Kirkland Signature brand page' },
+      { retailer: 'Albertsons', brands: 'O Organics, Signature Select, Lucerne, Open Nature',      src: 'Own Brands page & Form 10-K' },
+      { retailer: 'Ralphs',     brands: 'Kroger-family own brands',                                src: 'Our Brands page (Kroger family)' },
+    ];
+    function atlasPlCoverageView() {
+      const rows = ATLAS_RETAILERS.map((r) => `<tr>
+          <td class="atl-fin-name">${esc(r.retailer)}</td>
+          <td class="atl-fin-name" style="font-weight:400;color:var(--text-muted)">${esc(r.brands)}</td>
+          <td class="atl-neg">Not populated</td>
+          <td class="atl-neg">0</td>
+          <td class="atl-fin-name" style="white-space:normal;font-weight:400;color:var(--text-muted)">${esc(r.src)}</td>
+        </tr>`).join('');
+      const catRows = ATLAS_PL.slice().sort((a, b) => b.count - a.count).map((c) => `<tr>
+          <td class="atl-fin-name">${esc(c.label)}</td>
+          <td>${c.count.toLocaleString('en-US')}</td>
+          <td class="atl-neg">0</td>
+          <td class="atl-neg">0.00%</td>
+          <td>${c.wise.toFixed(2)}</td>
+          <td>${c.upf.toFixed(1)}%</td>
+        </tr>`).join('');
+      return `
+        <div class="wa-block">
+          <div class="wa-stats">
+            <div class="wa-stat"><div class="wa-stat-num" data-countup>${ATLAS_RETAILERS.length}</div><div class="wa-stat-label">Retailers checked</div></div>
+            <div class="wa-stat"><div class="wa-stat-num" data-countup>${ATLAS_PL_TOTAL.toLocaleString('en-US')}</div><div class="wa-stat-label">Foods in scope</div></div>
+            <div class="wa-stat"><div class="wa-stat-num atl-neg" data-countup>0</div><div class="wa-stat-label">Own-brand matches</div></div>
+            <div class="wa-stat"><div class="wa-stat-num atl-neg" data-countup>0</div><div class="wa-stat-label">Groundable claims</div></div>
+          </div>
+          <div class="atl-flag">
+            <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+            <span><b>The grounding is not there yet, and this is the table that says so.</b> The own-brand names below are documented from public retailer sources and the curated industry record \u2014 but none of them resolves to a private-label marker on any food in the ${ATLAS_PL.length} categories the atlas covers. Until a coverage read returns a non-zero denominator for at least one banner, an own-brand reformulation claim has nothing underneath it, so the atlas keeps it as a scenario layer.</span>
+          </div>
+          <p class="wa-sec-title" style="margin-top:20px">Own-brand coverage by retailer</p>
+          <div class="atl-card atl-scroll">
+            <table class="atl-fin" style="min-width:760px">
+              <thead><tr><th>Retailer</th><th>Own-brand lines documented</th><th>Catalog marker</th><th>Foods matched</th><th>Sourced from</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+          <p class="wa-sec-title" style="margin-top:20px">Category denominators available for a future read</p>
+          <div class="atl-card atl-scroll">
+            <table class="atl-fin" style="min-width:660px">
+              <thead><tr><th>Category</th><th>Foods</th><th>Own-brand</th><th>Share</th><th>WISEscore avg</th><th>UPF pct</th></tr></thead>
+              <tbody>${catRows}</tbody>
+            </table>
+            <p class="atl-panel-sub" style="margin-top:12px">The denominators themselves are healthy \u2014 ${ATLAS_PL_TOTAL.toLocaleString('en-US')} foods carrying a WISEscore and an ultra-processed classification on nearly all of them. Only the own-brand attribution is absent, which makes this a solvable gap rather than a structural one: a single per-banner coverage pass would turn the private-label lever from a hypothesis into a scored intervention.</p>
+          </div>
+        </div>`;
+    }
+
+    /* A single-retailer cut. Kroger is the retailer used because it is the one in
+       the source record with both a published own-brands page and a filed 10-K,
+       so the commercial framing has something behind it \u2014 while the own-brand
+       coverage is still missing, and the cut says so rather than quietly
+       inheriting the gap. */
+    function atlasRetailerView() {
+      const notes = [
+        ['Scale', 'Roughly 2,700 supermarkets across three dozen states, under about two dozen banners. Every planogram and placement intervention becomes a multi-banner rollout rather than one decision, which is why operational readiness rather than health effect is the binding constraint at this retailer.'],
+        ['Own brand', 'Private Selection, Simple Truth, and the Kroger brand give a reformulation lever a pure reseller does not have \u2014 in principle. In this pass it stays a scenario layer: no food in the covered categories carries a private-label marker, so there is no baseline to reformulate against.'],
+        ['Digital', 'A mature loyalty programme and digital storefront make ranking and loyalty-reward interventions both the cheapest to run and the only ones measurable at household level. These are the two levers that should move first here.'],
+        ['Exposure', 'Chips, dry cereal, and soda are the three largest categories in the observed baseline, which is where the health opportunity and the revenue risk concentrate together. Ending multi-buy promotions touches all three at once.'],
+        ['Constraint', 'Reformulation and packaging conversion run on supplier cycles measured in tens of weeks. Nothing in the product-change column is available inside a quarter, so the sequencing question is which reversible lever funds the wait.'],
+      ];
+      const seq = [
+        ['Now', 'Rank healthier alternatives higher online', 'Reversible within a sprint, no supplier dependency, and the only lever whose substitution behaviour is observable at basket level. Start measuring here before anything expensive is committed.'],
+        ['Now', 'Add a prominent WISEcode food-health score', 'Best human evidence in the reviewed set and the widest sales exposure. Runs alongside the ranking test rather than after it.'],
+        ['Next', 'Loyalty rewards for healthier foods', 'The most equitable lever available and the least durable \u2014 fund it as a measured programme with a defined end date, not as a permanent price position.'],
+        ['Next', 'Move sugary cereal below children\u2019s eye level', 'Cheap, reversible, trial-supported, single-category. Good candidate for a matched-store panel while the digital tests run.'],
+        ['Gate', 'Reformulate private-label lunch kits', 'Blocked on the own-brand coverage read. Do not scope this until a banner returns a non-zero private-label denominator.'],
+        ['Gate', 'End multi-buy promotions for soda and chips', 'Largest modeled effect, widest interval, largest revenue exposure, and a negative predicted effect for price-sensitive shoppers. Requires a matched-panel experiment with competitor switching tracked before any decision.'],
+        ['No', 'Selectively delist the lowest-performing products', 'Dominated under all three weightings, weakest substitution protection in the set. Removing a product does not remove the occasion.'],
+      ];
+      const seqRows = seq.map((s) => `<tr>
+          <td><span class="atl-chip${s[0] === 'Now' ? ' is-on' : ''}" style="cursor:default">${esc(s[0])}</span></td>
+          <td class="atl-fin-name">${esc(s[1])}</td>
+          <td class="atl-fin-name" style="white-space:normal;font-weight:400;color:var(--text-muted)">${esc(s[2])}</td>
+        </tr>`).join('');
+      return `
+        <div class="wa-block">
+          <div class="atl-flag">
+            <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+            <span><b>Retailer framing is sourced; retailer numbers are not.</b> The banner count, own-brand lines, and digital position below come from the retailer\u2019s own pages and its Form 10-K. Nothing in the atlas has been re-estimated against this retailer\u2019s actual sales, basket, or planogram data \u2014 so the sequencing is a recommendation about <b>where to look first</b>, not a projection of what it will return.</span>
+          </div>
+          <p class="wa-sec-title" style="margin-top:20px">What changes when the atlas is pointed at one retailer</p>
+          <div class="atl-card"><div class="atl-def">${notes.map((n) =>
+            `<div class="atl-def-row"><span class="atl-def-k">${esc(n[0])}</span><span class="atl-def-v">${esc(n[1])}</span></div>`).join('')}</div></div>
+          <p class="wa-sec-title" style="margin-top:20px">Recommended sequencing</p>
+          <div class="atl-card atl-scroll">
+            <table class="atl-fin" style="min-width:700px">
+              <thead><tr><th>Stage</th><th>Intervention</th><th>Why here</th></tr></thead>
+              <tbody>${seqRows}</tbody>
+            </table>
+            <p class="atl-panel-sub" style="margin-top:12px">Two levers move now, two are queued behind them, two are gated on evidence that does not exist yet, and one should not proceed at all. That split is the actual output of the atlas for a single retailer \u2014 not a ranking of all twelve.</p>
+          </div>
+        </div>`;
+    }
+
     /* ── References output (feline nutrition) ────────────────────────────────
        A third OUTPUT type combined into this conversation alongside the reports,
        charts & code-evaluation modules. The same CAT_REFS list feeds three
@@ -9239,11 +10472,178 @@
         url: 'https://www.federalregister.gov/documents/2026/08/11/2026-16296/substances-generally-recognized-as-safe',
       },
     ];
+    /* Sources behind the Intervention Atlas — eight peer-reviewed reviews of
+       retail interventions, then the nine industry records the commercial and
+       private-label side rests on. They are ONE reference set but two labelled
+       groups, so a systematic review and a retailer brand page can never be
+       read as the same class of claim. Items carry the peer-reviewed fields
+       (tag / cites / abstract) alongside the agency fields, and an attached
+       `file` where the source was read from a stored document. */
+    const ATLAS_REFS = [
+      {
+        group: 'paper', cat: 'review', tag: 'Systematic Review', viewLabel: 'View paper',
+        title: 'Point\u2010of\u2010sale nutrition information interventions in food retail stores to promote healthier food purchase and intake: A systematic review',
+        short: 'Point-of-sale nutrition information interventions',
+        authors: 'Jasmine Chan, Emma McMahon, Julie Brimblecombe', source: 'Obesity Reviews', year: '2021',
+        journal: 'Obesity Reviews', cites: 34, url: 'https://doi.org/10.1111/obr.13311',
+        file: 'obesity-reviews-2021-point-of-sale.pdf',
+        highlight: 'Interventions that identify healthier or less healthy products at the point of sale can move customer purchasing \u2014 shelf labels and technology-delivered formats most consistently.',
+        abstract: 'Twenty-six eligible randomized or quasi-experimental trials across 322 stores and 19,002 participants were reviewed. Effects on primary outcomes were positive in 14, promising in 3, mixed in 4, null in 3, negative in 1 and unclear in 1. Shelf-label studies were positive; technology-delivered interventions (mobile applications, podcast, kiosk) were positive or promising in most cases; in-store displays had mixed effectiveness. No pattern was found between the behaviour-change technique used and effectiveness, and study quality was mixed.',
+      },
+      {
+        group: 'paper', cat: 'review', tag: 'Systematic Review', viewLabel: 'View paper',
+        title: 'A Systematic Review of the Effect of Retail Food Environment Interventions on Diet and Health with a Focus on the Enabling Role of Public Policies',
+        short: 'Retail food environment interventions & public policy',
+        authors: 'Catherine L. Mah, Gabriella Luongo, Rebecca Hasdell, et al.', source: 'Current Nutrition Reports', year: '2019',
+        journal: 'Current Nutrition Reports', cites: 134, url: 'https://doi.org/10.1007/s13668-019-00295-z',
+        file: 'curr-nutr-rep-2019-retail-food-environment.pdf',
+        highlight: 'Of 86 articles, 67% showed at least one positive effect on diet. Promotion dominated the strategy mix, and the more recent interventions were multi-component.',
+        abstract: 'A systematic review of population-level interventions in the retail food environment, covering purchasing, dietary intake, diet quality and health including weight. Across the four Ps of marketing, promotion comprised the greatest proportion of intervention strategies, especially before 2008. Few studies combined geographic access interventions with 4P strategies and few used robust dietary intake assessment. The literature has become more robust overall, with clearer evidence of effects on consumer purchasing and dietary intake.',
+      },
+      {
+        group: 'paper', cat: 'review', tag: 'Systematic Review', viewLabel: 'View paper',
+        title: 'A Systematic Review of the Effectiveness of Supermarket-Based Interventions Involving Product, Promotion, or Place on the Healthiness of Consumer Purchases',
+        short: 'Supermarket product, promotion & place interventions',
+        authors: 'Adrian J. Cameron, Emma Charlton, Winsfred W. Ngan, et al.', source: 'Current Nutrition Reports', year: '2016',
+        journal: 'Current Nutrition Reports', url: 'https://doi.org/10.1007/s13668-016-0172-8',
+        file: 'curr-nutr-rep-2016-supermarket-interventions.pdf',
+        highlight: 'Supermarket interventions using product, promotion or placement can improve the healthiness of purchases \u2014 but the review flags that economic outcomes for the retailer are almost never reported.',
+        abstract: 'A review of in-store supermarket interventions and their effect on the healthiness of consumer food purchases. Many interventions, shelf labelling among them, positively affected purchasing behaviour, though the quality of the evidence base varied considerably. The absence of retailer economic outcomes is identified as an important gap.',
+      },
+      {
+        group: 'paper', cat: 'review', tag: 'Systematic Review', viewLabel: 'View paper',
+        title: 'Effect of front-of-package nutrition labeling on food purchases: a systematic review.',
+        short: 'Front-of-package nutrition labeling',
+        authors: 'R. An, Y. Shi, J. Shen, et al.', source: 'Public health', year: '2021',
+        journal: 'Public health', cites: 90, url: 'https://doi.org/10.1016/j.puhe.2020.06.035',
+        file: 'public-health-2021-front-of-package.pdf',
+        highlight: 'Front-of-package nutrition labels show mixed and inconclusive results in nudging consumers towards healthier food purchases.',
+        abstract: 'Fifteen intervention studies met the eligibility criteria. Labels assessed included traffic lights, health star ratings, daily intake guides, health warnings and high-sugar symbols. An effect was found in 5 of 12 traffic-light studies, 1 of 2 health-warning studies and 1 of 1 high-sugar study; no effect was found in the 3 health-star-rating studies or the 1 daily-intake-guide study. Findings on effectiveness remain mixed.',
+      },
+      {
+        group: 'paper', cat: 'review', tag: 'Systematic Review', viewLabel: 'View paper',
+        title: 'Improving Consumption and Purchases of Healthier Foods in Retail Environments: A Systematic Review',
+        short: 'Improving purchases of healthier foods in retail',
+        authors: 'Allison Karpyn, Kathleen McCallops, Henry Wolgast, et al.', source: 'International Journal of Environmental Research and Public Health', year: '2020',
+        journal: 'International Journal of Environmental Research and Public Health', cites: 72, url: 'https://doi.org/10.3390/ijerph17207524',
+        file: 'ijerph-2020-improving-purchases.pdf',
+        highlight: 'Multi-component interventions using promotion, placement, and product in U.S. food retail environments can positively influence healthier food consumption and purchasing.',
+        abstract: 'Sixty-four studies of U.S. food retail environments met the inclusion criteria; 56 had at least one positive effect on healthier consumption or purchasing. Thirty used single-component interventions and 34 were multi-component. Promotion was the most commonly used strategy, and manipulating promotion, placement and product together was the most common multi-component design. Only 14 of the 64 studies were experimental with objective outcome data \u2014 the review calls for rigorous designs, objective outcomes, and work on substitution effects and the sustainability of impacts.',
+      },
+      {
+        group: 'paper', cat: 'meta', tag: 'Meta-Analysis', tagExp: true, viewLabel: 'View paper',
+        title: 'Efficiency of In-Store Interventions to Impact Customers to Purchase Healthier Food and Beverage Products in Real-Life Grocery Stores: A Systematic Review and Meta-Analysis',
+        short: 'In-store interventions \u2014 meta-analysis',
+        authors: 'H. Slap\u00f8, Alexander Schj\u00f8ll, B. Str\u00f8mgren, et al.', source: 'Foods', year: '2021',
+        journal: 'Foods', cites: 36, url: 'https://doi.org/10.3390/foods10050922',
+        file: 'foods-2021-in-store-interventions.pdf',
+        highlight: 'In-store interventions, particularly pricing and promotion, effectively increase sales of healthy food and beverages in grocery stores.',
+        abstract: 'Thirty-six studies were included in the qualitative synthesis and 30 in the meta-analysis, representing 72 combinations of in-store intervention. Interventions overall had a small but significant effect on food purchase behaviour (Cohen\u2019s d = 0.17), with the largest effect for pricing (d = 0.21) and for targeting fruit and vegetables (d = 0.28). Pricing \u2014 alone and combined with promotion and prompting \u2014 effectively changed purchase behaviour. Results should be read with caution given the relatively low overall quality of evidence.',
+      },
+      {
+        group: 'paper', cat: 'review', tag: 'Systematic Review', viewLabel: 'View paper',
+        title: 'What is the effectiveness of obesity related interventions at retail grocery stores and supermarkets? \u2014a systematic review',
+        short: 'Obesity-related interventions at grocery retail',
+        authors: 'Abdulfatah Adam, J. D. Jensen', source: 'BMC Public Health', year: '2016',
+        journal: 'BMC Public Health', cites: 183, url: 'https://doi.org/10.1186/s12889-016-3985-x',
+        file: 'bmc-public-health-2016-grocery-interventions.pdf',
+        highlight: 'Grocery-retail interventions \u2014 mostly in-store promotion, information provision and greater availability of healthier foods \u2014 show promise, but study quality is generally poor.',
+        abstract: 'A systematic review of obesity-related interventions run in retail grocery stores and supermarkets. Most identified interventions focused on in-store promotion of healthier products, information provision and increased availability, with pricing used less often. The review concludes that the interventions are promising but that the quality of the underlying studies limits how much confidence can be placed in the effect sizes.',
+      },
+      {
+        group: 'paper', cat: 'review', tag: 'Systematic Review', viewLabel: 'View paper',
+        title: 'Encouraging Healthier Food and Beverage Purchasing and Consumption: A Review of Interventions within Grocery Retail Settings',
+        short: 'Interventions within grocery retail settings',
+        authors: 'Henry Wolgast, McKenna M. Halverson, Nicole Kennedy, et al.', source: 'International Journal of Environmental Research and Public Health', year: '2022',
+        journal: 'International Journal of Environmental Research and Public Health', cites: 12, url: 'https://doi.org/10.3390/ijerph192316107',
+        file: 'ijerph-2022-grocery-retail-interventions.pdf',
+        highlight: 'Nutritional scoring and messaging are the most effective interventions for promoting healthier food and beverage purchasing and consumption in grocery retail settings.',
+        abstract: 'Seventy-three peer-reviewed articles were included; 33 analysed single-component and 40 multi-component interventions. Nine intervention types were assessed: nutrition scoring, nutritional messaging, non-nutritional messaging, endcaps and secondary placement, point-of-sale interventions, increased stocking, food tasting and demonstrations, nutrition education, and shelf placement. Nutritional scoring and nutritional messaging emerged as the most rigorously tested and effective. Simple interventions outperformed complex ones and minimised shopper burden.',
+      },
+      {
+        group: 'industry', cat: 'industry', tag: 'Industry', viewLabel: 'View source',
+        title: 'Using the latest available 2024\u20132025 results (compiled retailer + private-label reference)',
+        short: 'Compiled retailer + private-label reference',
+        authors: 'Compiled internally', source: 'Compiled internally \u00b7 WISEcode curated knowledge', year: '2026',
+        file: 'compiled-retailer-private-label-2024-2025.md',
+        highlight: 'The seed document. Claims below cite it plus whatever upstream source it named.',
+      },
+      {
+        group: 'industry', cat: 'industry', tag: 'Industry', viewLabel: 'View source',
+        title: 'Walmart food-brand portfolio',
+        short: 'Walmart food-brand portfolio',
+        authors: 'Walmart', source: 'Walmart \u00b7 WISEcode curated knowledge', year: '2026',
+        file: 'walmart-food-brand-portfolio.md',
+        highlight: 'No official Walmart own-brands directory exists: corporate.walmart.com publishes per-brand launch announcements rather than a portfolio page, and the pages that do enumerate the portfolio are third-party. Checked 2026-08-08; left uncited rather than linked to a page that does not support the portfolio claim.',
+      },
+      {
+        group: 'industry', cat: 'industry', tag: 'Industry', viewLabel: 'View source',
+        title: 'WISEcode catalog probe 2026-08-09 (augmentation pass)',
+        short: 'WISEcode catalog probe',
+        authors: 'WISEcode internal', source: 'WISEcode internal \u00b7 WISEcode curated knowledge', year: '2026',
+        file: 'wisecode-catalog-probe-2026-08-09.json',
+        highlight: 'The catalog read behind the observed baseline: counts, WISEscore averages, UPF share, and nutrient coverage for the twelve categories in the atlas \u2014 and the private-label comparison that came back empty.',
+      },
+      {
+        group: 'industry', cat: 'industry', tag: 'Industry', viewLabel: 'View source', hasLink: true,
+        title: 'Kroger Our Brands', short: 'Kroger Our Brands',
+        authors: 'Kroger', source: 'Kroger \u00b7 WISEcode curated knowledge', year: '2026',
+        file: 'kroger-our-brands.html',
+      },
+      {
+        group: 'industry', cat: 'industry', tag: 'Industry', viewLabel: 'View source', hasLink: true,
+        title: 'The Kroger Co. Form 10-K, fiscal year ended 2026-01-31', short: 'Kroger Form 10-K',
+        authors: 'SEC EDGAR', source: 'SEC EDGAR \u00b7 WISEcode curated knowledge', year: '2026',
+        file: 'kroger-10k-fy2026.htm',
+      },
+      {
+        group: 'industry', cat: 'industry', tag: 'Industry', viewLabel: 'View source', hasLink: true,
+        title: 'Our Brands \u2014 Ralphs (Kroger family)', short: 'Ralphs Our Brands',
+        authors: 'Ralphs / The Kroger Co.', source: 'Ralphs / The Kroger Co. \u00b7 WISEcode curated knowledge', year: '2026',
+        file: 'ralphs-our-brands.html',
+      },
+      {
+        group: 'industry', cat: 'industry', tag: 'Industry', viewLabel: 'View source', hasLink: true,
+        title: 'Kirkland Signature', short: 'Kirkland Signature',
+        authors: 'Costco', source: 'Costco \u00b7 WISEcode curated knowledge', year: '2026',
+        file: 'costco-kirkland-signature.html',
+      },
+      {
+        group: 'industry', cat: 'industry', tag: 'Industry', viewLabel: 'View source', hasLink: true,
+        title: 'Albertsons Own Brands', short: 'Albertsons Own Brands',
+        authors: 'Albertsons', source: 'Albertsons \u00b7 WISEcode curated knowledge', year: '2026',
+        file: 'albertsons-own-brands.html',
+      },
+      {
+        group: 'industry', cat: 'industry', tag: 'Industry', viewLabel: 'View source', hasLink: true,
+        title: 'Albertsons Companies, Inc. Form 10-K', short: 'Albertsons Form 10-K',
+        authors: 'SEC EDGAR', source: 'SEC EDGAR \u00b7 WISEcode curated knowledge', year: '2026',
+        file: 'albertsons-10k-fy2026.htm',
+      },
+    ];
+
     const NEWS_REFSETS = {
       gras_announce: { items: GRAS_NEWS,   icon: 'menu_book',     title: 'References \u00b7 GRAS + UPF announcement', meta: '2 HHS press releases \u00b7 agency newsroom',      statLabel: 'Sources', statIcon: 'newspaper' },
       gras_law:      { items: GRAS_LAW,    icon: 'gavel',         title: 'References \u00b7 primary-law basis for GRAS', meta: 'Statute, the 2016 GRAS Final Rule & implementing regs', statLabel: 'Sources', statIcon: 'gavel' },
       fedreg_gras:   { items: FEDREG_GRAS, icon: 'travel_explore', title: 'Federal Register \u00b7 GRAS proposed rule', meta: '91 FR 51834 \u00b7 Doc. 2026\u201316296 \u00b7 comments close Dec 9, 2026', statLabel: 'Notices', statIcon: 'article' },
+      atlas_refs: {
+        items: ATLAS_REFS, icon: 'menu_book',
+        title: 'References \u00b7 intervention atlas',
+        meta: '8 peer-reviewed reviews of retail interventions & 9 industry records \u00b7 evidence kept separate from commercial sourcing',
+        searchPlaceholder: 'Search by title, author, journal, or source\u2026',
+        stats: [
+          { cat: 'all',      icon: 'menu_book',   label: 'All sources' },
+          { cat: 'review',   icon: 'rate_review', label: 'Systematic reviews' },
+          { cat: 'meta',     icon: 'science',     label: 'Meta-analysis' },
+          { cat: 'industry', icon: 'storefront',  label: 'Industry' },
+        ],
+        groups: [
+          { id: 'paper',    label: 'Peer-reviewed evidence' },
+          { id: 'industry', label: 'Industry sources' },
+        ],
+      },
     };
+    const REF_CAT_ICONS = { review: 'rate_review', meta: 'science', industry: 'storefront' };
 
     /* Superscript footnote marker for a news / law / Federal Register source,
        matching catCite. newsCite('gras_announce', 1, 2) → a bracketed [1,2]
@@ -9258,59 +10658,109 @@
 
     /* Compact footnotes trailing a news-sourced answer — same .wa-refs-mini
        pattern as catRefsMini. Each row opens the matching References output. */
-    function newsRefsMini(kind) {
+    function newsRefsMini(kind, group) {
       const cfg = NEWS_REFSETS[kind];
       if (!cfg) return '';
-      const rows = cfg.items.map((it, i) =>
-        `<div class="wa-refs-mini-item" role="button" tabindex="0" data-news-open="${kind}" data-news-i="${i}" aria-label="Open source: ${esc(it.title)}">
-          <span class="wa-refs-mini-n">${i + 1}</span>
-          <span class="wa-refs-mini-t"><b>${esc(it.title)}</b> <span class="wa-refs-mini-src">${esc(it.source)}${it.year ? ` (${esc(it.year)})` : ''}</span></span>
+      /* `group` trails only one side of a mixed set — the peer-reviewed papers
+         under an answer, with the industry record left to the full output.
+         Numbering stays the set's own, so a footnote marker always lands on the
+         same card whichever list it was tapped from. */
+      const rows = cfg.items.map((it, i) => ({ it, i }))
+        .filter((e) => !group || e.it.group === group);
+      const html = rows.map((e) =>
+        `<div class="wa-refs-mini-item" role="button" tabindex="0" data-news-open="${kind}" data-news-i="${e.i}" aria-label="Open source: ${esc(e.it.title)}">
+          <span class="wa-refs-mini-n">${e.i + 1}</span>
+          <span class="wa-refs-mini-t"><b>${esc(e.it.title)}</b> <span class="wa-refs-mini-src">${esc(e.it.journal || e.it.source)}${e.it.year ? ` (${esc(e.it.year)})` : ''}</span></span>
         </div>`).join('');
       return `<div class="wa-refs-mini">
-          <div class="wa-refs-mini-head">References <span style="opacity:.6">(${cfg.items.length})</span></div>
-          <div class="wa-refs-mini-list">${rows}</div>
+          <div class="wa-refs-mini-head">References <span style="opacity:.6">(${rows.length})</span></div>
+          <div class="wa-refs-mini-list">${html}</div>
         </div>`;
     }
 
-    /* Full References OUTPUT for agency / law / Federal Register sources —
-       identical shell to catRefsView (search + scorecards + .wa-ref cards).
-       Title lives only in the pane masthead via surfaceBlock(). */
+    /* Full References OUTPUT for agency / law / Federal Register sources, and
+       for mixed sets that carry peer-reviewed papers beside industry records.
+       Identical shell to catRefsView (search + scorecards + .wa-ref cards).
+       Title lives only in the pane masthead via surfaceBlock().
+
+       An item may carry the paper fields (tag / cites / abstract / journal) and
+       the agency fields at once; anything absent is simply not rendered, so one
+       renderer serves both kinds and neither can drift from the other. Items
+       with no highlight get no thumb — the badge moves inline instead of
+       sitting alone on an empty colour band. */
     function newsRefsView(kind) {
       const cfg = NEWS_REFSETS[kind];
       if (!cfg) return '';
-      const n = cfg.items.length;
-      const stats = [
-        { cat: 'all', icon: 'menu_book', label: 'All sources', n },
-        { cat: 'kind', icon: cfg.statIcon || 'newspaper', label: cfg.statLabel || 'Sources', n },
-      ];
+      const items = cfg.items;
+      const catOf = (it) => it.cat || 'kind';
+      const stats = (cfg.stats || [
+        { cat: 'all', icon: 'menu_book', label: 'All sources' },
+        { cat: 'kind', icon: cfg.statIcon || 'newspaper', label: cfg.statLabel || 'Sources' },
+      ]).map((s) => Object.assign({}, s, {
+        n: s.cat === 'all' ? items.length : items.filter((it) => catOf(it) === s.cat).length,
+      }));
       const statCards = stats.map((s, i) =>
         `<button type="button" class="wa-ref-stat${i === 0 ? ' is-active' : ''}" data-refcat="${s.cat}" aria-pressed="${i === 0}">
           <span class="wa-ref-stat-num">${s.n}</span>
           <span class="wa-ref-stat-label"><span class="material-symbols-outlined">${s.icon}</span>${esc(s.label)}</span>
         </button>`).join('');
-      const cards = cfg.items.map((it, i) => {
-        const search = esc(`${it.title} ${it.source} ${it.year || ''}`.toLowerCase());
+      const card = (it, i) => {
+        const cat = catOf(it);
+        const search = esc(`${it.title} ${it.authors || ''} ${it.source} ${it.journal || ''} ${it.year || ''} ${it.tag || ''}`.toLowerCase());
+        const badge = it.tag
+          ? `<span class="wa-ref-badge${it.highlight ? '' : ' wa-ref-badge--inline'}${it.tagExp ? ' is-exp' : ''}"><span class="material-symbols-outlined">${REF_CAT_ICONS[cat] || 'article'}</span>${esc(it.tag)}</span>`
+          : '';
+        const thumb = it.highlight
+          ? `<div class="wa-ref-thumb">${badge}<div class="wa-ref-highlight"><span class="material-symbols-outlined">lightbulb</span><span class="wa-ref-highlight-t">${esc(it.highlight)}</span></div></div>`
+          : '';
+        const byline = it.authors
+          ? `${esc(it.authors)}<span class="sep">\u00b7</span><span class="wa-ref-year">${esc(it.year || '')}</span>${it.journal ? `<span class="sep">\u00b7</span><span class="wa-ref-journal">${esc(it.journal)}</span>` : ''}`
+          : `${esc(it.source)}${it.year ? `<span class="sep">\u00b7</span><span class="wa-ref-year">${esc(it.year)}</span>` : ''}`;
+        const label = it.viewLabel || 'View source';
+        /* A real URL opens; a curated-knowledge record with no public page gets a
+           non-navigating link rather than an invented one. */
+        const view = (it.url || it.hasLink)
+          ? (it.url
+            ? `<a class="wa-ref-view" href="${esc(it.url)}" target="_blank" rel="noopener" aria-label="${esc(label)}: ${esc(it.title)}"><span class="material-symbols-outlined">open_in_new</span>${esc(label)}</a>`
+            : `<a class="wa-ref-view" href="#" onclick="return false" aria-label="${esc(label)}: ${esc(it.title)}"><span class="material-symbols-outlined">open_in_new</span>${esc(label)}</a>`)
+          : '';
+        const file = it.file
+          ? `<a class="wa-ref-view" href="#" onclick="return false" data-tip="Stored source: ${esc(it.file)}" aria-label="Stored file for ${esc(it.title)}"><span class="material-symbols-outlined">folder_open</span>File</a>`
+          : '';
         return `
-          <article class="wa-ref" id="news-ref-${kind}-${i}" data-ref="${i}" data-news-i="${i}" data-refcat="kind" data-search="${search}">
-            <div class="wa-ref-thumb">
-              <div class="wa-ref-highlight"><span class="material-symbols-outlined">lightbulb</span><span class="wa-ref-highlight-t">${esc(it.highlight)}</span></div>
-            </div>
+          <article class="wa-ref${cat === 'industry' ? ' wa-ref--industry' : ''}" id="news-ref-${kind}-${i}" data-ref="${i}" data-news-i="${i}" data-refcat="${cat}"${it.group ? ` data-refgroup="${it.group}"` : ''} data-search="${search}">
+            ${thumb}
             <div class="wa-ref-cbody">
+              ${it.highlight ? '' : badge}
               <div class="wa-ref-title">${esc(it.title)}</div>
-              <div class="wa-ref-byline">${esc(it.source)}${it.year ? `<span class="sep">\u00b7</span><span class="wa-ref-year">${esc(it.year)}</span>` : ''}</div>
+              <div class="wa-ref-byline">${byline}</div>
+              ${it.abstract ? `<details class="wa-ref-abstract"><summary>Abstract</summary><p class="wa-ref-abstract-body">${esc(it.abstract)}</p></details>` : ''}
               <div class="wa-ref-cfoot">
-                <span></span>
-                <a class="wa-ref-view" href="${esc(it.url)}" target="_blank" rel="noopener" aria-label="View source: ${esc(it.title)}"><span class="material-symbols-outlined">open_in_new</span>View source</a>
+                ${it.cites != null ? `<span class="wa-ref-cites" title="${it.cites} citations"><span class="material-symbols-outlined">format_quote</span>${it.cites}</span>` : '<span></span>'}
+                <span class="wa-ref-acts">${view}${file}</span>
               </div>
             </div>
           </article>`;
-      }).join('');
+      };
+      /* Group headings keep peer-reviewed evidence visibly apart from the
+         industry record; without groups the list is a flat run of cards. */
+      let cards;
+      if (cfg.groups) {
+        cards = cfg.groups.map((g) => {
+          const inGroup = items.map((it, i) => ({ it, i })).filter((e) => e.it.group === g.id);
+          if (!inGroup.length) return '';
+          return `<div class="wa-ref-group" data-refgroup="${g.id}">${esc(g.label)} <span style="opacity:.6">(${inGroup.length})</span></div>`
+            + inGroup.map((e) => card(e.it, e.i)).join('');
+        }).join('');
+      } else {
+        cards = items.map(card).join('');
+      }
       return `
         <div class="wa-block wa-refset" data-news-kind="${kind}">
           <div class="wa-ref-toolbar">
             <div class="wa-ref-search">
               <span class="material-symbols-outlined">search</span>
-              <input type="search" class="wa-ref-search-input" placeholder="Search by title or source\u2026" aria-label="Search references">
+              <input type="search" class="wa-ref-search-input" placeholder="${esc(cfg.searchPlaceholder || 'Search by title or source\u2026')}" aria-label="Search references">
             </div>
           </div>
           <div class="wa-ref-stats" role="group" aria-label="Filter references">${statCards}</div>
@@ -9325,7 +10775,106 @@
     /* ═════════ Scripted transcript (chips → user turn → WISEcodeAI reply → panes) ═════════
        The chat transcript stays verbatim to the source conversation; only the
        surfaced RESULTS move into the panes on the right. */
+    /* The full executive brief behind the "Food Intervention Atlas" chip. The
+       chip face stays a three-word intent; this is the prompt it actually runs,
+       and it is posted verbatim as the user's line so the transcript shows what
+       was asked rather than a summary of it. */
+    const ATLAS_ASK = [
+      'Create an intricate, executive-grade data visualization titled *Food Portfolio Intervention Atlas: Health Impact vs. Commercial and Operational Reality* for the leadership team of a national retailer comparable to Walmart, Kroger, Costco or Albertsons.',
+      '',
+      'It must help executives decide which interventions to test across these categories:',
+      '- Coca-Cola, Pepsi and private-label soda',
+      '- Monster, Red Bull and Celsius',
+      '- Doritos, Cheetos, Takis and private-label chips',
+      '- Lunchables and children\u2019s lunch kits',
+      '- Froot Loops, Frosted Flakes and Cinnamon Toast Crunch',
+      '- Hot Pockets, pizza rolls and frozen pizza',
+      '- Kraft Mac & Cheese, instant noodles and boxed meals',
+      '- Flavored yogurt and chocolate milk',
+      '- Protein bars, meal-replacement drinks and shakes',
+      '- Minimally processed snacks, fruit, nuts and whole grains',
+      '',
+      'Compare these twelve specific interventions:',
+      '- Reduce added sugar by 20%',
+      '- Reduce sodium by 15%',
+      '- Reduce default package size',
+      '- Remove child-directed characters and promotions',
+      '- Move sugary cereal below children\u2019s eye level',
+      '- Replace checkout candy with fruit and nuts',
+      '- Rank minimally processed alternatives higher online',
+      '- Offer loyalty rewards for healthier foods',
+      '- Add a prominent WISEcode food-health score',
+      '- Reformulate private-label lunch kits',
+      '- End multi-buy promotions for soda and chips',
+      '- Selectively delist the lowest-performing products',
+      '',
+      'Build a coordinated, multi-panel decision visualization.',
+      '',
+      '**Panel A \u2014 Intervention opportunity map.** A bubble chart:',
+      '- *X-axis:* implementation feasibility, 0\u2013100',
+      '- *Y-axis:* expected population-health impact, 0\u2013100',
+      '- *Bubble size:* annual category sales exposure',
+      '- *Bubble color:* strength of causal evidence',
+      '- *Bubble border:* commercial risk',
+      '- *Bubble opacity:* confidence in the estimate',
+      '',
+      'Divide the chart into four labeled quadrants: *act now*, *pilot and measure*, *commercially easy but medically weak*, and *high potential but operationally difficult*.',
+      '',
+      '**Panel B \u2014 Multivariable intervention matrix.** For every intervention, display normalized 0\u2013100 scores for:',
+      '- Population-health impact',
+      '- Strength of human evidence',
+      '- Consumer acceptance',
+      '- Affordability and equity',
+      '- Operational readiness',
+      '- Supplier readiness',
+      '- Commercial durability',
+      '- Environmental performance',
+      '- Protection against unhealthy substitution',
+      '- Measurement confidence',
+      '',
+      'Keep every scale direction consistent: 100 must always represent the most desirable result.',
+      '',
+      '**Panel C \u2014 Causal pathway.** Show how each intervention may affect product exposure \u2192 purchase \u2192 substitution \u2192 consumption \u2192 nutrient intake \u2192 metabolic response \u2192 long-term health. Include feedback loops for price, promotion, taste rejection, compensatory eating, competitor switching and repeat purchase. Use *solid* lines for experimentally supported relationships, *dashed* lines for plausible but unproven mechanisms, and *dotted* lines for commercial hypotheses.',
+      '',
+      '**Panel D \u2014 Population differences.** Compare predicted effects for:',
+      '- Children',
+      '- Low-income households',
+      '- Adults with diabetes',
+      '- Older adults',
+      '- Highly price-sensitive customers',
+      '- Customers already seeking healthier products',
+      '',
+      'Show when the same intervention helps one population but disadvantages another.',
+      '',
+      '**Panel E \u2014 Financial and operational consequences.** Show estimated:',
+      '- Revenue change',
+      '- Gross-margin change',
+      '- Reformulation cost',
+      '- Packaging-conversion cost',
+      '- Supplier lead time',
+      '- Shelf-life change',
+      '- Waste change',
+      '- Customer-retention risk',
+      '',
+      '**Panel F \u2014 Recommendation frontier.** Plot the interventions that deliver the greatest estimated health improvement for each level of acceptable commercial risk, and identify *dominated* interventions \u2014 those expected to produce less benefit and more risk than another available intervention.',
+      '',
+      'Analytical requirements:',
+      '- Use uncertainty intervals rather than unsupported point estimates.',
+      '- Clearly mark all synthetic, assumed or simulated data.',
+      '- Do not present product scores as verified facts unless source data are supplied.',
+      '- Distinguish causal evidence from observational association.',
+      '- Model substitution, compensatory purchasing and competitor switching.',
+      '- Do not assume that reducing sugar, sodium, additives or package size automatically improves total dietary intake.',
+      '- Include a toggle between public-health, balanced-business and profit-protection weighting systems.',
+      '- Allow filtering by category, population, intervention type and evidence strength.',
+      '- Include tooltips explaining every score and its source.',
+      '- End with the five strongest actions, the five most uncertain actions and the three experiments most valuable for reducing uncertainty.',
+      '',
+      'The visual style should feel like a premium institutional intelligence platform: restrained, highly legible, information-dense, modern, and credible enough for a boardroom. Avoid playful infographic styling, rainbow colors, decorative illustrations and unsupported precision.',
+    ].join('\n');
+
     const INTENTS = [
+      { intent: 'atlas', icon: 'bubble_chart',    label: 'Food Intervention Atlas', ask: ATLAS_ASK },
       { intent: 'topbrands', icon: 'leaderboard',   label: 'Top 3 brands · WISEscore \u2265 50', ask: 'Create a comparison chart of the top three brands with more than 50 UPCs that are in the top half of the WISE score.' },
       { intent: 'kraft',   icon: 'inventory_2',     label: 'Kraft SKUs \u00b7 % UPF', ask: 'How many SKUs does Kraft have and what percent are ultra processed?' },
       { intent: 'sprouts', icon: 'storefront',      label: 'How many foods does Sprouts have?', ask: 'How many foods does the Sprouts retailer have?' },
@@ -9347,8 +10896,25 @@
       { intent: 'report',  icon: 'summarize',      label: 'Show me a pretty report', carryTopic: true },
       { intent: 'cat',     icon: 'pets',           label: 'If I identified as a cat\u2026', ask: 'If I told you that I identified as a cat, what type of food would you feed me?' },
       { intent: 'catnutrients', icon: 'menu_book', label: 'What nutrients do cats require?' },
-      { intent: 'owls',    icon: 'play_circle',    label: 'Meet the Owls', ask: 'Meet the Owls', nextIntents: ['playful', 'upf', 'gras_upf'] },
+      { intent: 'owls',    icon: 'play_circle',    label: 'Meet the Owls', ask: 'Meet the Owls', nextIntents: ['owl_progression', 'playful', 'upf'] },
+      { intent: 'owl_progression', icon: 'view_carousel', label: 'Wise Owl Progression', ask: 'Wise Owl Progression', nextIntents: ['owls', 'playful', 'upf'] },
     ];
+
+    /* Follow-up chips offered after the Intervention Atlas lands. Each one opens
+       a real next artifact: the formal report, the private-label coverage read
+       that the atlas is currently missing, a narrowed atlas, the observed
+       baseline underneath it, a re-weighted frontier, and a single-retailer cut. */
+    const ATLAS_FOLLOWUPS = [
+      { intent: 'atlas_report',   icon: 'article',     label: 'Rebuild this as a formal scientific report', ask: 'Rebuild this as a formal scientific report' },
+      { intent: 'atlas_pl',       icon: 'fact_check',  label: 'Add retailer-specific private-label coverage grounding', ask: 'Add retailer-specific private-label coverage grounding' },
+      { intent: 'atlas_bev',      icon: 'filter_alt',  label: 'Narrow the atlas to sugary beverages only', ask: 'Narrow the atlas to sugary beverages only' },
+      { intent: 'atlas_baseline', icon: 'bar_chart',   label: 'Show the category baseline breakdown behind the atlas', ask: 'Show the category baseline breakdown behind the atlas' },
+      { intent: 'atlas_profit',   icon: 'tune',        label: 'Re-weight the frontier toward profit protection', ask: 'Re-weight the frontier toward profit protection' },
+      { intent: 'atlas_retailer', icon: 'storefront',  label: 'Make a version for one retailer such as Walmart or Kroger', ask: 'Make a version for one retailer such as Walmart or Kroger' },
+    ];
+    ATLAS_FOLLOWUPS.forEach((c) => {
+      c.nextIntents = ATLAS_FOLLOWUPS.filter((x) => x.intent !== c.intent);
+    });
 
     /* Follow-up chips offered ONLY after the "artificial sweeteners by PL level"
        answer lands — swapped in via chat.setIntents(SWEET_FOLLOWUPS) so they
@@ -9437,6 +11003,7 @@
       const c = INTENTS.find((x) => x && x.intent === id);
       if (c) c.nextIntents = next;
     };
+    attachNext('atlas', ATLAS_FOLLOWUPS);
     attachNext('topbrands', TOPBRANDS_FOLLOWUPS);
     attachNext('kraft', KRAFT_FOLLOWUPS);
     attachNext('sprouts', ['compare', 'report', 'topbrands']);
@@ -9464,6 +11031,7 @@
        Kraft is still about Kraft, not a random other product. */
     const GENERIC_CHIP_COPY = {
       compare: {
+        atlas:        { label: 'Compare the three weightings', ask: 'Compare how the intervention ranking changes across the three weighting systems' },
         kraft:        { label: 'Compare Kraft vs Kraft Heinz', ask: 'Compare Kraft vs Kraft Heinz using the SKU counts we just ran' },
         sprouts:      { label: 'Compare Sprouts products', ask: 'Compare a few Sprouts-carried products side by side' },
         gras:         { label: 'Compare GRAS statuses', ask: 'Compare the GRAS statuses we just counted' },
@@ -9481,6 +11049,7 @@
         myfoods:      { label: 'Compare my UPF split', ask: 'Analyze MY foods by UPF' },
       },
       report: {
+        atlas:        { label: 'Rebuild this as a formal scientific report', ask: 'Rebuild this as a formal scientific report' },
         kraft:        { label: 'Kraft UPF report', ask: 'Turn the Kraft SKU / UPF numbers into a report' },
         sprouts:      { label: 'Sprouts catalog report', ask: 'Turn the Sprouts catalog count into a report' },
         gras:         { label: 'GRAS classification report', ask: 'Turn the GRAS classification counts into a report' },
@@ -9498,6 +11067,7 @@
         myfoods:      { label: 'My foods UPF report', ask: 'Analyze MY foods by UPF' },
       },
       spider: {
+        atlas:        { label: 'Re-weight the frontier toward profit protection', ask: 'Re-weight the frontier toward profit protection' },
         kraft:        { label: 'Spider-chart Kraft categories', ask: 'Spider-chart Kraft\u2019s top categories' },
         sprouts:      { label: 'Spider-chart the Sprouts mix', ask: 'Spider-chart the Sprouts catalog mix' },
         gras:         { label: 'Spider-chart GRAS statuses', ask: 'Spider-chart the GRAS classification split' },
@@ -9519,6 +11089,7 @@
       if (!intent) return null;
       const id = String(intent);
       if (id === 'compare' || id === 'report' || id === 'spider') return null;
+      if (id === 'atlas' || id.indexOf('atlas_') === 0) return 'atlas';
       if (id.indexOf('kraft') === 0) return 'kraft';
       if (id.indexOf('sweet') === 0) return 'sweeteners';
       if (id.indexOf('energy') === 0) return 'energy';
@@ -9619,6 +11190,12 @@
       + '<figcaption class="sc-inline-film-cap">Meet the Owls \u00b7 WISEcode brand film</figcaption>'
       + '</figure>'
       + 'Press play when you\u2019re ready \u2014 scrubbing, volume and full screen are all live, and it waits for you rather than starting on its own.';
+    /* "Wise Owl Progression" — one edge-to-edge row of Lottie owls, stills, then
+       theme-aware silent clips (linen in light / deep harbor in dark). Shared
+       component: js/owl-progression-carousel.js. */
+    const OWL_PROGRESSION_REPLY = '<p>Here is the <strong>Wise Owl Progression</strong> \u2014 green (pass), red (fail), and blue (celebrate) \u2014 as motion, stills, and short loops that follow your light or dark theme.</p>'
+      + owlProgressionCarouselHtml()
+      + '<p>Scroll the row, or use the arrows. Videos play once with no sound and no controls; Lottie owls keep looping while they\u2019re in view.</p>';
     const SWEETENERS_REPLY = 'Among the ingredients currently classified as <strong>Artificial Sweetener</strong>, the PL split is:'
         + '<div class="wa-plsplit">'
         + '<span class="wa-plsplit-item"><span class="wa-ib-pill wa-ib-pl-2">PL2</span><b>6</b></span>'
@@ -9632,6 +11209,44 @@
     const CUPCAKE_REPLY = 'I couldn\u2019t fetch the full food-detail card for that cupcake because the detail lookup failed.<br><br>What I can confirm from the search result is that the worst-ranked cupcake is <strong>Member\u2019s Mark Christmas Gourmet Cupcakes, 8 Ct.</strong> with a WISEscore of <strong>0.06</strong>. Its ingredient list is extremely long and includes a dense mix of refined sugars and syrups, multiple refined oils, emulsifiers and stabilizers, artificial colors, and multiple preservatives.<br><br>That combination is why it surfaced at the very bottom of the ranking rather than just being \u201ca dessert.\u201d';
 
     const INTENT_REPLIES = {
+      atlas: 'Built the atlas.<br><br>'
+        + 'Twelve interventions across the ten category groups you named, scored on ten dimensions that all run the same way. The six panels open in <strong>Visuals</strong> as <strong>six separate charts</strong> \u2014 opportunity map, score matrix, causal pathway, population differences, financial &amp; operational consequences, and the recommendation frontier \u2014 so you can take one to a meeting instead of a wall of six. They stay one instrument: the weighting toggle and the four filters live on the opportunity map and re-read every other panel, and every score has a tooltip. The observed baseline the board is anchored on and the private-label read that came back empty are in <strong>Results &amp; Details</strong>.<br><br>'
+        + '<strong>A few important integrity choices are baked in:</strong>'
+        + '<ul style="margin:8px 0 0;padding-left:20px">'
+        + '<li>Intervention-level scores and intervals are explicitly marked as <strong>synthetic scenario estimates</strong>, not verified causal outcomes. Every health effect carries an interval rather than a point.</li>'
+        + '<li>Observed category baselines are grounded in the actual category distributions and score patterns \u2014 ' + ATLAS_TOTAL.toLocaleString('en-US') + ' foods across ' + ATLAS_CATS.length + ' categories, with nutrient coverage shown beside every average so a thin denominator cannot pass as a confident one.</li>'
+        + '<li>Evidence strength is visually separated from commercial and operational hypotheses, so the artifact does not blur causal evidence with association. Nutritional scoring and messaging carry the strongest human evidence in the reviewed literature' + newsCite('atlas_refs', 8, 6) + ', front-of-package labelling comes back mixed and inconclusive' + newsCite('atlas_refs', 4) + ', and placement and promotion sit somewhere between' + newsCite('atlas_refs', 3, 5) + '. That difference is drawn as its own axis, not described in a footnote.</li>'
+        + '<li>Nothing is credited with an intake improvement on the strength of a composition change alone. Panel C carries the loops \u2014 price, promotion, taste rejection, compensatory eating, competitor switching, repeat purchase \u2014 that can absorb the gain, with the line style saying whether each one is tested, plausible, or a commercial guess.</li>'
+        + '</ul><br>'
+        + 'One limitation I handled conservatively: the private-label comparison path for the selected categories did not return usable private-label share signal in this pass \u2014 <strong>0 of ' + ATLAS_PL_TOTAL.toLocaleString('en-US') + '</strong> \u2014 so the artifact avoids presenting private-label intervention claims as grounded facts and instead treats those as scenario layers unless otherwise anchored.<br><br>'
+        + 'The closing read is its own output in <strong>Results &amp; Details</strong>: five strongest actions, five most uncertain, and the three experiments that would actually retire the uncertainty.'
+        + newsRefsMini('atlas_refs', 'paper'),
+      atlas_report: 'Rebuilt it as a formal report \u2014 same twelve interventions, same numbers, restated so a reviewer can audit them instead of reading a chart.<br><br>'
+        + 'It opens with the <strong>method</strong>: what was observed versus what was modeled, how each of the ten dimensions was defined before anything was scored, and the three complete weight vectors. Results are tabled with all three weighted rankings side by side, because the ordering is <em>not</em> stable across them \u2014 which weighting the board is using is a decision, not a display setting.<br><br>'
+        + '<strong>Threats to validity</strong> is the section that matters most, and it is deliberately unflattering: no causal identification anywhere in the set, a missing private-label denominator, no healthy-alternative flag in the catalog, and distributional effects that a single composite score would have hidden.<br><br>'
+        + 'The conclusion is narrower than the atlas: the reversible information and digital-merchandising levers survive every weighting' + newsCite('atlas_refs', 8) + ', the two largest-effect interventions should be settled by experiment rather than appraisal' + newsCite('atlas_refs', 6) + ', and selective delisting is dominated under all three weightings and should not proceed on this evidence.'
+        + newsRefsMini('atlas_refs', 'paper'),
+      atlas_pl: 'Ran the retailer-level coverage read, and it is worth saying plainly: <strong>it still comes back empty</strong>.<br><br>'
+        + 'Five retailers checked \u2014 Walmart, Kroger, Costco, Albertsons and Ralphs. Their own-brand lines are documented from the retailers\u2019 own pages and filings, but not one of them resolves to a private-label marker on any of the ' + ATLAS_PL_TOTAL.toLocaleString('en-US') + ' foods in the categories the atlas covers. Walmart is the weakest of the five on sourcing as well: there is no official own-brands directory, only per-brand launch announcements, so the portfolio itself is only attested third-party.<br><br>'
+        + 'The useful part of the result is that <strong>the gap is solvable, not structural</strong>. The denominators are healthy \u2014 those foods carry a WISEscore and an ultra-processed classification on nearly all of them. Only the own-brand attribution is absent. One per-banner coverage pass turns the private-label lunch-kit lever from a commercial hypothesis into a scored intervention, and it is the cheapest of the three experiments in the atlas.<br><br>'
+        + 'Until then I have left the private-label intervention exactly where it was: graded a hypothesis, drawn faintly, and excluded from the frontier on merit rather than on optimism.',
+      atlas_bev: 'Narrowed it \u2014 the atlas is now filtered to <strong>beverages</strong>: soda, energy drinks and flavored milk, ' + ATLAS_CATS.filter((c) => ['soda', 'energy', 'flavmilk'].includes(c.id)).reduce((a, c) => a + c.count, 0).toLocaleString('en-US') + ' foods.<br><br>'
+        + 'This is where the observed baseline is worst and where it stops being ambiguous. Soda averages a WISEscore of <strong>31.67</strong> with <strong>79.1%</strong> ultra-processed and 21.9 g of sugar; energy drinks sit at <strong>35.97</strong> with 77.3% ultra-processed. Those are the two lowest-scoring categories in the whole set, and the coverage behind both averages is above 94%, so the read is solid rather than thin.<br><br>'
+        + 'The narrowed board changes the decision. Ending multi-buy promotions carries the highest modeled health effect here <em>and</em> the largest revenue exposure and a negative predicted effect for price-sensitive shoppers \u2014 it does not survive contact with the equity column. Smaller default pack sizes have the same problem in sharper form: portion control for children bought with a unit-price increase for the households least able to absorb it.<br><br>'
+        + 'What is left standing is the pair that needs no supplier and can be reversed in a sprint: online ranking and the food-health score. In beverages specifically, those are the only two interventions on the board whose substitution behaviour you could actually watch at basket level.' + newsCite('atlas_refs', 6, 8),
+      atlas_baseline: 'Here is the grounded half \u2014 the catalog read the whole atlas is anchored on, with nothing modeled in it.<br><br>'
+        + '<strong>' + ATLAS_TOTAL.toLocaleString('en-US') + ' foods across ' + ATLAS_CATS.length + ' categories.</strong> Nuts &amp; seeds is the largest at ' + ATLAS_CATS[0].count.toLocaleString('en-US') + ' and also the healthiest read in the set \u2014 WISEscore 73.3, only 9.3% ultra-processed. At the other end, soda averages 31.67 with 79.1% ultra-processed and energy drinks 35.97 with 77.3%. Frozen meals carry the sodium problem almost alone at 711 mg on 96.7% coverage.<br><br>'
+        + 'Coverage is reported beside every average on purpose, so you can see which numbers are worth trusting. Sugar and sodium coverage sits between 80% and 98.6% depending on the category \u2014 dried fruit is the thinnest at 80.0% sugar coverage, yogurt and flavored milk the strongest.<br><br>'
+        + 'The column that matters most is the one reading <strong>0.0% everywhere</strong>: nothing in the catalog is flagged as a healthier substitute for any of these categories. That is precisely why substitution protection stays a modeled dimension in the atlas rather than an observed one \u2014 and why the interventions that depend on shoppers moving somewhere better are the least certain estimates on the board.',
+      atlas_profit: 'Re-weighted \u2014 the frontier is now running under <strong>profit protection</strong>: commercial durability at 28%, consumer acceptance at 22%, operational readiness at 16%, and population health cut to 12%.<br><br>'
+        + 'The reordering is the interesting part. The information and digital levers <strong>hold their position</strong> \u2014 they were never being carried by the health weight. Online ranking and the food-health score stay on the frontier because they are durable, accepted, and cheap to run, which means the case for them does not depend on which weighting the room agrees to.<br><br>'
+        + 'What collapses is everything bought with shopper tolerance. Ending multi-buy promotions has an acceptance score of 34 and durability of 47; smaller pack sizes score 41 and 54. Under public-health weighting those two lead the board. Under profit protection they fall off it, and the atlas names them as dominated rather than leaving them on the chart looking live.<br><br>'
+        + 'Loyalty rewards move the other way and are worth watching: the most equitable lever in the set, and the least durable, because a price effect stops when the funding stops' + newsCite('atlas_refs', 6) + '. Profit weighting punishes it for exactly the right reason.<br><br>'
+        + 'The read across all three weightings: if an intervention only appears on the frontier under one of them, that is a political result, not an analytical one. Four hold across all three.',
+      atlas_retailer: 'Pointed it at one retailer \u2014 <strong>Kroger</strong>, because it is the only one in the source record with both a published own-brands page and a filed 10-K, so the commercial framing has something behind it rather than being asserted.<br><br>'
+        + 'Being explicit about what this is: the banner count, own-brand lines, and digital position are sourced. <strong>Nothing in the atlas has been re-estimated against this retailer\u2019s actual sales, basket, or planogram data</strong> \u2014 so this is a recommendation about where to look first, not a projection of what it returns.<br><br>'
+        + 'Three things change when the atlas narrows to one operator. Scale turns every placement intervention into a multi-banner rollout across roughly 2,700 stores, which makes operational readiness rather than health effect the binding constraint. The own-brand portfolio adds a reformulation lever a pure reseller does not have \u2014 in principle, since the coverage read is still empty. And a mature loyalty programme makes ranking and rewards both the cheapest levers to run and the only ones measurable at household level.<br><br>'
+        + 'The output is a sequence rather than a ranking: two levers move now, two queue behind them, two are gated on evidence that does not exist yet, and selective delisting should not proceed at all.',
       brisket: 'For a gut-health-maximized brisket, I\u2019d build it around these ingredients:<div class="wa-chiplist" style="margin:10px 0 12px">' + ['Beef brisket', 'Extra virgin olive oil', 'Onion', 'Garlic', 'Sauerkraut', 'Mushrooms', 'Carrots', 'Celery', 'Parsley', 'Thyme', 'Rosemary', 'Apple cider vinegar', 'Lemon juice', 'Tomato paste', 'Cocoa powder', 'Coffee', 'Black pepper', 'Sea salt'].map((n) => '<span class="wa-ce-ing">' + n + '</span>').join('') + '</div>I ran a brisket-style ingredient list through the <strong>Gut Health code evaluation</strong>, and this combination came out with a Gut Health score of <strong>64</strong>, which lands in <strong>Good</strong>.<br><br><strong>Why this works:</strong><ul style="margin:8px 0 0;padding-left:20px"><li><strong>Sauerkraut</strong> adds a fermented-food signal.</li><li>Onion, garlic, mushrooms, carrots, celery, parsley, thyme, rosemary &amp; tomato paste support the code\u2019s plant / polyphenol logic.</li><li>Extra virgin olive oil hits the healthy-oil bonus.</li><li>Cocoa powder &amp; coffee are both favored polyphenol-style ingredients in the code.</li><li>Avoiding nitrates / nitrites and highly processed add-ins helps protect the score.</li></ul><br>One nuance: in the run I tested, the <strong>fermented bonus didn\u2019t fully trigger</strong> because sauerkraut wasn\u2019t among the first few ingredients. To push the score even higher, make sauerkraut a more prominent ingredient in the dish.<br><br>Opened the <strong>code evaluation</strong> &amp; recipe report in Results &amp; Details, and the score-driver charts in Visuals \u2192',
       redochart: 'Redone \u2014 I rebuilt the <strong>Gut Health score-driver chart</strong> twice from the original run.<br><br><strong>v1</strong> was the first pass (score <strong>64</strong>, Good) with sauerkraut sitting last. <strong>v2</strong> promoted sauerkraut into the first four ingredients so the fermented bonus fully triggered (score <strong>78</strong>). This latest <strong>v3</strong> also concentrates the polyphenol groups \u2014 cocoa, coffee &amp; plants \u2014 landing the build at <strong>84</strong> (Excellent).<br><br>The output chip below keeps all three versions stacked \u2014 tap it to open the newest in Visuals, or hover to fan the earlier versions out. \u2192',
       upf: 'Paste the ingredient list and I\u2019ll evaluate it for <strong>WISEcode UPF</strong>. If you have them, include:<ul style="margin:8px 0 0;padding-left:20px"><li>Ingredients</li><li>Calories per serving (optional)</li><li>Added sugars per serving (optional)</li></ul>',
@@ -9645,6 +11260,7 @@
       spider: (text, intent, ctx) => {
         const t = prevTopicOf(ctx);
         const by = {
+          atlas: () => INTENT_REPLIES.atlas_profit,
           kraft: 'Spider-charted Kraft\u2019s category mix off the SKU counts we just ran \u2014 cheese, prepared meals and dressings dominate the spokes. Charted it in Visuals \u2192',
           sprouts: 'Spider-charted the Sprouts catalog we just counted \u2014 brand mix, GRAS coverage and average WISEscore on the same axes. Charted it in Visuals \u2192',
           gras: 'Spider-charted the GRAS split we just counted \u2014 GRAS / Historical / Unclear / Unsafe on the spokes. Charted it in Visuals \u2192',
@@ -9659,7 +11275,10 @@
           upf: 'Spider-charted the main UPF signals \u2014 additives, sweeteners, refined oils \u2014 so you can see which ones drive the classification. Charted it in Visuals \u2192',
           myfoods: 'Charted your workspace UPF split \u2014 80 foods, 65 Super Ultra-Processed. Not the 943k catalog. Charted it in Visuals \u2192',
         };
-        if (t && by[t]) return by[t];
+        if (t && by[t]) {
+          const v = by[t];
+          return typeof v === 'function' ? v() : v;
+        }
         if (t === 'worst' || !t) return SPIDER_REPLY;
         return followOn(ctx, SPIDER_REPLY);
       },
@@ -9672,6 +11291,7 @@
       compare: (text, intent, ctx) => {
         const t = prevTopicOf(ctx);
         const by = {
+          atlas: () => INTENT_REPLIES.atlas_profit,
           kraft: () => INTENT_REPLIES.kraft_heinz,
           sprouts: 'Taking the <strong>20,635 Sprouts</strong> foods we just counted, I lined a few Sprouts-carried products up on the same comparison board \u2014 a clean private-label olive oil against a Sprouts trail mix and a Sprouts sparkling water. Ranked by WISEscore so you can see how the retailer\u2019s own assortment actually splits.<br><br>Opened the comparison in Results &amp; Details \u2192',
           gras: 'Lined the four GRAS statuses we just counted up side by side \u2014 GRAS, Historical, Unclear and Unsafe \u2014 so the 4,829 / 2,247 / 1,501 / 81 split is one glance.<br><br>Charted the comparison in Visuals \u2192',
@@ -9699,6 +11319,7 @@
       report: (text, intent, ctx) => {
         const t = prevTopicOf(ctx);
         const by = {
+          atlas: () => INTENT_REPLIES.atlas_report,
           kraft: 'Turned the Kraft SKU / UPF picture into a short report \u2014 <strong>1,874</strong> SKUs, <strong>46.9%</strong> UPF, concentrated in the middle of the WISEscore range, with prepared meals and dressings carrying most of the UPF load.<br><br>Opened the report in Results &amp; Details and the distribution charts in Visuals \u2192',
           sprouts: 'Turned the Sprouts catalog count into a short report \u2014 <strong>20,635</strong> foods, <strong>1,240</strong> brands, average WISEscore <strong>61</strong>, <strong>96%</strong> GRAS-verified.<br><br>Opened the retailer summary in Results &amp; Details and the mix donuts in Visuals \u2192',
           gras: 'Turned the GRAS classification counts into a short report \u2014 <strong>8,658</strong> ingredients: 4,829 GRAS, 2,247 Historical, 1,501 Unclear, 81 Unsafe.<br><br>Charted the distribution in Visuals \u2192',
@@ -9715,13 +11336,17 @@
           cookie: REPORT_REPLY,
           myfoods: 'Turned your workspace into a short report \u2014 <strong>80</strong> foods in My foods (demo), <strong>65</strong> Super Ultra-Processed, scores read from the workspace not the 943k catalog.<br><br>Opened the breakdown in Visuals \u2192',
         };
-        if (t && by[t]) return by[t];
+        if (t && by[t]) {
+          const v = by[t];
+          return typeof v === 'function' ? v() : v;
+        }
         if (t) return followOn(ctx, REPORT_REPLY);
         return REPORT_REPLY;
       },
       cat: 'Cat food.',
       playful: PLAYFUL_REPLY,
       owls: OWLS_REPLY,
+      owl_progression: OWL_PROGRESSION_REPLY,
       catnutrients: `Cats are <strong>obligate carnivores</strong>, so they need a nutrient profile built around animal-derived protein plus several nutrients they can\u2019t reliably make or get from plant precursors${catCite(1, 3, 5)}. The essentials the literature keeps flagging:`
         + `<ul style="margin:10px 0 4px;padding-left:20px">`
         + `<li><strong>Taurine</strong> \u2014 vital for the retina, heart &amp; reproduction; deficiency is classically tied to retinal degeneration and dilated cardiomyopathy${catCite(7, 8)}.</li>`
@@ -9961,6 +11586,7 @@
       if (/top\s*10\s*brands/.test(t)) return takeReply('topbrands_top10', text, 'topbrands_top10', ctx);
       if (/retailer/.test(t) && /(wisescore|top half|\u2265\s*50|>=\s*50|50 or higher)/.test(t)) return takeReply('topbrands_retail', text, 'topbrands_retail', ctx);
       if (/(top\s*(three|3)\s*brands|more than 50 upc|top half of (the )?wise)/.test(t)) return takeReply('topbrands', text, 'topbrands', ctx);
+      if (/owl\s*progression/.test(t)) return takeReply('owl_progression', text, 'owl_progression', ctx);
       if (/\bowls?\b|food truth/.test(t)) return takeReply('owls', text, 'owls', ctx);
       if (/playful|unwisecode/.test(t)) return takeReply('playful', text, 'playful', ctx);
       if (/cat/.test(t) && /(nutrient|require|taurine|amino|obligate|carnivore)/.test(t)) return takeReply('catnutrients', text, 'catnutrients', ctx);
@@ -10312,7 +11938,14 @@
         const added = insertPaneNodes(which, tagged, { after });
         added.forEach((b) => {
           ensureBlockOutTitle(b, title);
-          waBootDashCharts(b);
+          /* The output does not appear as a finished slab: its heading, each
+             section, and each row of every table land one beat at a time. A
+             chart's own fill animation is started when its row appears, so it
+             is never already over by the time you can see it. */
+          staggerReveal(b, {
+            onReveal: (els) => els.forEach((el) => waBootDashCharts(el)),
+            onDone: () => waBootDashCharts(b),
+          });
         });
         if (isLatest) latestNode = added[0] || null;
         if (!SURFACED[blockId]) {
@@ -10339,8 +11972,36 @@
       return latestNode;
     }
 
+    /* Outputs arrive one at a time, never in a burst. A single ask can surface
+       ten blocks — the atlas alone opens six panels, a closing read, two
+       baselines and a references card — and posting them in one tick dropped ten
+       preview cards into the transcript in the same frame, so the turn read as
+       "everything at once" instead of the assistant building one output after
+       another. Every surfaceBlock call is queued and posted a beat behind the
+       one before it, in call order, alongside the answer streaming paragraph by
+       paragraph. The first lands immediately so nothing feels held back.
+       Reduced motion skips the pacing and posts straight through. */
+    const SURFACE_STEP_MS = 420;
+    const surfaceQueue = [];
+    let surfacePumping = false;
+    function surfaceBlock(which, opts) {
+      const reduce = typeof matchMedia === 'function'
+        && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduce) { postSurfaceBlock(which, opts); return; }
+      surfaceQueue.push([which, opts]);
+      if (surfacePumping) return;
+      surfacePumping = true;
+      const step = () => {
+        const next = surfaceQueue.shift();
+        if (!next) { surfacePumping = false; return; }
+        postSurfaceBlock(next[0], next[1]);
+        setTimeout(step, SURFACE_STEP_MS);
+      };
+      step();
+    }
+
     /* Open (or refresh) a pane block AND mirror it as an inline preview card. */
-    function surfaceBlock(which, { icon, title, meta, html, versionKey, versionReset }) {
+    function postSurfaceBlock(which, { icon, title, meta, html, versionKey, versionReset }) {
       const blockId = 'blk' + (++surfaceSeq);
       /* The compare board is engine-rendered into a fixed #cmp-body; strip those
          ids (and the References cards' #cat-ref-N ids) from the preview clone so
@@ -11061,6 +12722,7 @@
        Generic follow-ups (compare / report / spider) reuse the previous
        topic's artifacts so the pane matches the transcript. */
     const COMPARE_SURFACE = {
+      atlas: 'atlas_profit',
       kraft: 'kraft_heinz', sprouts: 'sprouts', gras: 'gras', gras_upf: 'upf_def',
       energy: 'energy_sugar', proteinbars: 'protein_vs_granola', sweeteners: 'sweet_vs_natural',
       topbrands: 'topbrands_top10', brisket: 'brisket', upf: 'upf',
@@ -11068,6 +12730,7 @@
       myfoods: 'myfoods_upf',
     };
     const REPORT_SURFACE = {
+      atlas: 'atlas_report',
       kraft: 'kraft', sprouts: 'sprouts', gras: 'gras', gras_upf: 'gras_upf',
       energy: 'energy', proteinbars: 'proteinbars', sweeteners: 'sweeteners',
       topbrands: 'topbrands', brisket: 'brisket', upf: 'upf',
@@ -11075,6 +12738,7 @@
       myfoods: 'myfoods_upf',
     };
     const SPIDER_SURFACE = {
+      atlas: 'atlas_profit',
       kraft: 'kraft_cats', sprouts: 'sprouts', gras: 'gras', gras_upf: 'upf_def',
       energy: 'energy_heat', proteinbars: 'protein_brands', sweeteners: 'sweet_vs_natural',
       topbrands: 'topbrands', brisket: 'brisket', upf: 'upf',
@@ -11087,7 +12751,67 @@
       else if (intent === 'report' && topic && topic !== 'cookie' && REPORT_SURFACE[topic]) intent = REPORT_SURFACE[topic];
       else if (intent === 'spider' && topic && topic !== 'worst' && SPIDER_SURFACE[topic]) intent = SPIDER_SURFACE[topic];
       setTimeout(() => {
-        if (intent === 'brisket') {
+        if (intent === 'atlas') {
+          surfaceAtlasPanels({ reset: true });
+          surfaceBlock('results', {
+            icon: 'bar_chart',
+            title: `${ATLAS_TOTAL.toLocaleString('en-US')} foods across ${ATLAS_CATS.length} Category`,
+            meta: 'Foods in any of the specified product categories \u2014 the observed baseline behind the atlas',
+            html: atlasBaselineView(),
+            versionKey: 'atlas-baseline',
+          });
+          surfaceBlock('results', {
+            icon: 'percent',
+            title: '% Share by Category',
+            meta: `Private label foods in the selected product categories vs foods in those categories \u00b7 0 of ${ATLAS_PL_TOTAL.toLocaleString('en-US')}`,
+            html: atlasPlShareView(),
+            versionKey: 'atlas-pl-share',
+          });
+          surfaceNewsRefs('atlas_refs');
+        } else if (intent === 'atlas_report') {
+          surfaceBlock('results', {
+            icon: 'summarize',
+            title: 'Comparative appraisal of twelve retail interventions',
+            meta: 'Formal report \u00b7 method, dimension definitions, results under three weightings, threats to validity & recommended experiments',
+            html: atlasReportView(),
+          });
+        } else if (intent === 'atlas_pl') {
+          surfaceBlock('results', {
+            icon: 'fact_check',
+            title: 'Private-label coverage by retailer',
+            meta: `${ATLAS_RETAILERS.length} retailers \u00b7 ${ATLAS_PL_TOTAL.toLocaleString('en-US')} foods in scope \u00b7 0 own-brand matches returned`,
+            html: atlasPlCoverageView(),
+          });
+        } else if (intent === 'atlas_bev') {
+          surfaceAtlasPanels({
+            cat: 'bev', sel: 'multibuy',
+            note: 'Narrowed to beverages \u2014 soda, energy & flavored milk',
+          });
+        } else if (intent === 'atlas_baseline') {
+          surfaceBlock('results', {
+            icon: 'bar_chart',
+            title: `${ATLAS_TOTAL.toLocaleString('en-US')} foods across ${ATLAS_CATS.length} Category`,
+            meta: 'Foods in any of the specified product categories \u2014 the observed baseline behind the atlas',
+            html: atlasBaselineView(),
+            versionKey: 'atlas-baseline',
+          });
+        } else if (intent === 'atlas_profit') {
+          surfaceAtlasPanels({
+            w: 'profit', sel: 'wisescore',
+            note: 'Re-weighted to profit protection',
+          });
+        } else if (intent === 'atlas_retailer') {
+          surfaceBlock('results', {
+            icon: 'storefront',
+            title: 'Intervention atlas \u00b7 single-retailer cut',
+            meta: 'Kroger \u2014 the one retailer in the source record with a published own-brands page & a filed 10-K',
+            html: atlasRetailerView(),
+          });
+          surfaceAtlasPanels({
+            sel: 'plkits',
+            note: 'Single-retailer cut \u2014 own-brand lever selected, still a scenario layer',
+          });
+        } else if (intent === 'brisket') {
           surfaceBlock('results', {
             icon: 'terminal',
             title: 'Gut Health · code evaluation',
@@ -11641,6 +13365,14 @@
         card.style.display = ok ? '' : 'none';
         if (ok) shown += 1;
       });
+      /* A group heading ("Industry sources") stands down once the filter has
+         emptied its group, so the list never shows a label over nothing. */
+      set.querySelectorAll('.wa-ref-group[data-refgroup]').forEach((head) => {
+        const g = head.getAttribute('data-refgroup');
+        const any = Array.from(set.querySelectorAll(`.wa-ref[data-refgroup="${g}"]`))
+          .some((c) => c.style.display !== 'none');
+        head.style.display = any ? '' : 'none';
+      });
       const empty = set.querySelector('.wa-ref-empty');
       if (empty) empty.hidden = shown !== 0;
     }
@@ -12111,6 +13843,7 @@
         scorecards: {
           label: 'Start a conversation',
           cards: [
+            { variant: 'metric', icon: 'bubble_chart', pill: { tone: 'alert', icon: 'insights', text: 'Modeled' }, metric: '12', title: 'Food Portfolio Intervention Atlas', desc: 'Twelve retail interventions scored on health impact against commercial &amp; operational reality \u2014 a six-panel board for a boardroom.', action: 'Build it', intent: 'atlas', ask: ATLAS_ASK },
             { variant: 'metric', icon: 'leaderboard', pill: { tone: 'up', icon: 'north', text: 'Top 3' }, metric: '22,514', title: 'Top 3 brands, top-half WISEscore', desc: 'Brands with the most foods scoring 50 or higher.', action: 'Compare', intent: 'topbrands', ask: 'Create a comparison chart of the top three brands with more than 50 UPCs that are in the top half of the WISE score.' },
             { variant: 'metric', icon: 'storefront', pill: { tone: 'up', icon: 'storefront', text: 'Retailer' }, metric: '20,635', title: 'How many foods does Sprouts have?', desc: 'Distinct Sprouts-carried products matched against WISEcode.', action: 'Count', intent: 'sprouts', ask: 'How many foods does the Sprouts retailer have?' },
             { variant: 'wiseai', icon: 'auto_awesome', title: 'Is this ultra-processed?', desc: 'Paste an ingredient list for a WISEcode UPF read.', action: 'Ask', intent: 'upf', ask: 'Is this ingredient list ultra-processed?' },

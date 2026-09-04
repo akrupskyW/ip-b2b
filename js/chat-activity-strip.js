@@ -39,7 +39,11 @@
  * Ticks are clickable: a click scrolls the transcript to the landmark and
  * flashes it. When an output has more than one version the tick is drawn as a
  * pair stacked a few pixels apart — two tabs mean "more than one", never three
- * or four. The pane-resize drag handle shares this edge, but because the rail
+ * or four. When a SINGLE prompt produces several outputs, those landmarks do
+ * not each get their own tab (which stacked into a long ladder of ear-marks);
+ * they collapse into ONE ear-mark carrying a tiny count of how many outputs the
+ * turn made — that one mark is what anchors you back to that block of content.
+ * The pane-resize drag handle shares this edge, but because the rail
  * lives at the body level (above the drag overlay — see .wa-activity-strip
  * z-index in wiseai.html) with the rail itself pointer-events:none, only the
  * ticks intercept while the empty vertical space still falls through to the drag
@@ -257,6 +261,27 @@ function ensureActivityStripStyles() {
       right: 0;
     }
     .wa-activity-tick:hover { width: 14px; }
+    /* Counted landmark: one ear-mark standing for several outputs made in the
+       same prompt, with a tiny number centered in the fill. Slightly wider/taller
+       than a lone tick so the digit reads; hover still widens it. */
+    .wa-activity-tick--count {
+      width: 15px;
+      height: 17px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .wa-activity-tick--count:hover { width: 19px; }
+    .wa-activity-tick-count {
+      font-size: 8px;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: 0;
+      font-variant-numeric: tabular-nums;
+      color: #fff;
+      pointer-events: none;
+      user-select: none;
+    }
     /* Multi-version landmark: two identical tabs stacked so close they read as
        one unit. The second peeks ~4px below the first — a binary "more than
        one" flag, never a count of three or four. */
@@ -514,38 +539,87 @@ function refresh(state) {
   const JUMP_RESERVE = 6;
   const EARMARK_SPAN = 100 - EARMARK_INSET * 2 - JUMP_RESERVE;
 
+  /* Absolute center of a landmark within the scroll content (independent of the
+     current scrollTop), as a 0–1 fraction of the full transcript. */
+  const fracOf = (el) => {
+    const r = el.getBoundingClientRect();
+    const center = (r.top - cRect.top) + messages.scrollTop + r.height / 2;
+    let f = center / total;
+    if (!isFinite(f)) f = 0;
+    return Math.max(0, Math.min(1, f));
+  };
+
+  /* Several outputs from the SAME prompt collapse into one counted ear-mark.
+     They are grouped by the ASK they came from (data-ask-turn, stamped on every
+     line by the chat), not by each line's own turn ID: one prompt that surfaces
+     nine outputs posts nine preview lines with nine different IDs, and grouping
+     on those drew a ladder of nine marks instead of one mark reading "9".
+     Chats that predate the stamp fall back to the line's turn ID, so a single
+     output still groups with itself. Every other landmark (source / database)
+     stays its own tick. */
+  const groups = [];
+  const outputByAsk = new Map();
   els.forEach((el) => {
     const type = el.getAttribute('data-activity');
     const meta = ACTIVITY_TYPES[type];
     /* `prompt` is the jump tab, not a mapped landmark. */
     if (!meta || type === 'prompt') return;
-    const r = el.getBoundingClientRect();
-    /* Absolute center of the landmark within the scroll content (independent of
-       the current scrollTop), as a 0–1 fraction of the full transcript. */
-    const center = (r.top - cRect.top) + messages.scrollTop + r.height / 2;
-    let frac = center / total;
-    if (!isFinite(frac)) frac = 0;
-    frac = Math.max(0, Math.min(1, frac));
-
-    const top = `${(EARMARK_INSET + frac * EARMARK_SPAN).toFixed(3)}%`;
     const turnId = turnIdFor(el);
+    const askKey = askTurnFor(el) || turnId;
+    if (type === 'output' && askKey) {
+      let g = outputByAsk.get(askKey);
+      if (!g) { g = { type, turnId, els: [] }; outputByAsk.set(askKey, g); groups.push(g); }
+      g.els.push(el);
+    } else {
+      groups.push({ type, turnId, els: [el] });
+    }
+  });
+
+  /* `turnId` on a group is the FIRST landmark's ID — the one the mark scrolls
+     to — so the label beside a collapsed mark still names where it lands. */
+  groups.forEach(({ type, turnId, els: gEls }) => {
+    const meta = ACTIVITY_TYPES[type];
+    const count = gEls.length;
+    /* A counted mark sits at the mid-point of the block it stands for; a lone
+       landmark sits at its own center. */
+    let frac = 0;
+    gEls.forEach((el) => { frac += fracOf(el); });
+    frac /= count;
+    const top = `${(EARMARK_INSET + frac * EARMARK_SPAN).toFixed(3)}%`;
+
+    /* Clicking anchors you to the START of that block — the first output the
+       turn produced. */
+    const target = gEls[0];
     const onClick = (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
-      scrollToLandmark(messages, el);
+      scrollToLandmark(messages, target);
     };
-    /* More than one version on this output → two stacked tabs, never a count.
-       Flag comes from the chip (`data-activity-multi`) or the stacked thumbs. */
-    const multi = el.hasAttribute('data-activity-multi') || !!el.querySelector('.sc-surface-stack');
-    const host = multi ? document.createElement('span') : makeTickEl(type);
-    if (multi) {
-      host.className = 'wa-activity-tick-stack';
-      host.appendChild(makeTickEl(type));
-      host.appendChild(makeTickEl(type));
-      host.setAttribute('aria-label', `${meta.label}, more than one version`);
+
+    let host;
+    if (count > 1) {
+      /* One ear-mark, tiny count inside — every output this prompt produced. */
+      host = makeCountTick(type, count);
+      host.setAttribute('aria-label', `${meta.label}, ${count} outputs`);
+      host.title = `${meta.label} · ${count} outputs`;
+    } else {
+      /* More than one VERSION on a single output → two stacked tabs (a binary
+         "more than one", not a count). Flag comes from the chip
+         (`data-activity-multi`) or the stacked thumbs. */
+      const multi = target.hasAttribute('data-activity-multi') || !!target.querySelector('.sc-surface-stack');
+      if (multi) {
+        host = document.createElement('span');
+        host.className = 'wa-activity-tick-stack';
+        host.appendChild(makeTickEl(type));
+        host.appendChild(makeTickEl(type));
+        host.setAttribute('aria-label', `${meta.label}, more than one version`);
+        host.title = `${meta.label} · more than one version`;
+      } else {
+        host = makeTickEl(type);
+        host.title = meta.label;
+      }
     }
     host.style.top = top;
-    host.title = multi ? `${meta.label} · more than one version` : meta.label;
     host.addEventListener('click', onClick);
     /* Stamp the landmark's turn ID beside the tick in tiny type (to the right on
        the left rail, mirrored to the left on the right rail — pure CSS off the
@@ -589,6 +663,20 @@ function refresh(state) {
 function makeTickEl(type) {
   const tick = document.createElement('span');
   tick.className = `wa-activity-tick wa-activity-tick--${type}`;
+  return tick;
+}
+
+/* A single ear-mark standing for a whole prompt's worth of outputs, with a tiny
+   count centered in the fill. A hair larger than a lone tick so the number stays
+   legible; hover still widens it like the others. */
+function makeCountTick(type, count) {
+  const tick = makeTickEl(type);
+  tick.classList.add('wa-activity-tick--count');
+  const num = document.createElement('span');
+  num.className = 'wa-activity-tick-count';
+  num.textContent = String(count);
+  num.setAttribute('aria-hidden', 'true');
+  tick.appendChild(num);
   return tick;
 }
 
@@ -639,6 +727,14 @@ function turnIdFor(el) {
   const idEl = line.querySelector('.sc-fb-id');
   if (!idEl) return '';
   return (idEl.textContent || '').trim();
+}
+
+/* The member ask a landmark belongs to. The chat stamps this on every line it
+   adds, so all the outputs one prompt produced share it even though each line
+   carries its own turn ID. */
+function askTurnFor(el) {
+  const line = el.closest && el.closest('.sc-line');
+  return (line && line.dataset && line.dataset.askTurn) || '';
 }
 
 /* Bring a landmark into view (centered in the transcript's scrollport) and

@@ -7768,6 +7768,18 @@ html.dark .chat-messages-area { background: transparent; }
 .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary); }
 html.dark .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary-bright, #8B9FAF); }
 .sc-line-wiseai .sc-line-body { color: var(--text); }
+/* A pasted, multi-paragraph prompt reads as a document inside the member's
+   turn — paragraphs, bullet lists and emphasis — rather than one run-on block.
+   Inherits the turn's colour, so it stays brand blue in the member's line and
+   default ink anywhere else, in both themes. */
+.sc-prompt { display: flex; flex-direction: column; gap: 0.4em; }
+.sc-prompt-p { margin: 0; }
+.sc-prompt-lead { font-weight: 700; }
+.sc-prompt-list { margin: -0.35em 0 0.05em; padding-left: 1.3em; display: grid; gap: 0.12em; }
+.sc-prompt-list li { margin: 0; line-height: 1.4; }
+.sc-prompt-list li::marker { color: var(--text-subtle); }
+.sc-prompt em { font-style: italic; }
+.sc-prompt strong { font-weight: 800; }
 /* Ollama polish must never paint assistant copy in link blue / legacy <font color>. */
 .sc-line-wiseai .sc-line-body font,
 .sc-line-wiseai .sc-line-body [color] { color: inherit; font: inherit; }
@@ -19787,6 +19799,23 @@ html.dark .dsc-demo .sc-activity-wrap:hover .sc-activity-dots {
 .dsc-demo .wa-activity-tick--output { background-color: var(--act-output, var(--warm-400, #946005)); }
 .dsc-demo .wa-activity-tick--source { background-color: #12b76a; }
 .dsc-demo .wa-activity-tick--database { background-color: #f79009; }
+/* Collapsed ear-mark: one mark standing for every output a single ask produced,
+   with the count centered in the fill. Same silhouette as the live rail, a hair
+   wider and taller than a lone tab so the digit reads. */
+.dsc-demo .mi-actstrip .wa-activity-tick--count {
+  width: 15px; height: 17px;
+  display: flex; align-items: center; justify-content: center;
+}
+.dsc-demo .wa-activity-tick-count {
+  font-size: 8px; line-height: 1; font-weight: 700; letter-spacing: 0;
+  font-variant-numeric: tabular-nums; color: #fff; pointer-events: none; user-select: none;
+}
+/* The three ear-mark shapes shown in one rail — lone tab, collapsed count, and
+   the two-tab version flag — pinned so each lines up with its caption. */
+.dsc-demo .mi-actstrip.mi-actstrip--count > .wa-activity-tick--output { top: 18%; }
+.dsc-demo .mi-actstrip.mi-actstrip--count > .wa-activity-tick--count { top: 50%; }
+.dsc-demo .mi-actstrip.mi-actstrip--count > .wa-activity-tick-stack { top: 82%; }
+.dsc-demo .mi-actstrip.mi-actstrip--count > .wa-activity-tick--prompt { top: 90%; }
 .dsc-demo .mi-actstrip .wa-activity-tick--prompt {
   top: 90%;
   width: 13px;

@@ -25,6 +25,9 @@ import './chat-ask.js';
    ask?" catalog) so every WISEcodeAI chat surface shows the SAME rich panel that
    wiseai.html does, unless a mount overrides it with its own askCatalog. */
 import './ask-catalog.js';
+/* Side-effect import: Wise Owl Progression strip — mounts itself whenever a
+   reply drops a .sc-owl-prog figure into any chat transcript. */
+import './owl-progression-carousel.js';
 
 /* Side-effect import: the Orbit style's owl constellation. Chat welcomes only
    paint it when the shared style is Orbit; Helix / Ten keep the Scene strand. */
@@ -54,6 +57,9 @@ import {
   restoreActivityStrip,
   mountActivityStrip,
 } from './chat-activity-strip.js';
+/* One picker decides what counts as a single line of content, so the transcript
+   and the panes break a section into the same beats. */
+import { collectRevealUnits, staggerReveal } from './stagger-reveal.js';
 /* The streaming trace itself lives in one place so the hand-rolled page flows
    (js/add-product-flow.js) stream the identical "Thinking" block rather than
    standing in a bare spinner-and-label beat. */
@@ -8028,6 +8034,21 @@ function isTranscriptTrailer(node) {
 function isTranscriptBlock(node) {
   return !!(node && node.nodeType === 1 && TRANSCRIPT_BLOCK.has(node.tagName));
 }
+/* A block is not one beat — the lines inside it are. A <ul> revealed whole
+   dropped every bullet in at once; a <div> section or a <table> did the same with
+   its rows. So a block is opened up and its own lines become the units: each
+   bullet, each row, each paragraph of a section, landing one after another the
+   way top-level paragraphs do. The box itself stays unprimed so it holds no
+   height while its lines are still hidden.
+   Walking stops at the first thing that reads as one line (see stagger-reveal),
+   so a nested list rides in with the item that owns it and a self-animating card
+   stays a single beat. */
+function transcriptBlockLines(node) {
+  if (!node || node.nodeType !== 1) return [];
+  const lines = collectRevealUnits(node, { maxDepth: 3 });
+  /* One line in is the block itself — no point splitting it. */
+  return lines.length > 1 ? lines : [];
+}
 function runHasCopy(nodes) {
   return nodes.some((n) => {
     if (n.nodeType === 3) return /\S/.test(n.nodeValue);
@@ -8080,7 +8101,19 @@ export function collectTranscriptParas(root) {
       run.push(node);
       return;
     }
-    if (isTranscriptBlock(node)) { flush(node); units.push(node); return; }
+    if (isTranscriptBlock(node)) {
+      flush(node);
+      const lines = transcriptBlockLines(node);
+      if (lines.length) {
+        lines.forEach((line) => {
+          line.dataset.scStreamUnit = line.tagName === 'LI' || line.tagName === 'TR' ? 'row' : 'line';
+          units.push(line);
+        });
+      } else {
+        units.push(node);
+      }
+      return;
+    }
     if (node.nodeType === 3 && !/\S/.test(node.nodeValue) && !run.length) return;
     run.push(node);
   });
@@ -8121,14 +8154,21 @@ export function typeInTranscript(bodyEl, done, hooks) {
   let i = 0;
   const gap = (hooks && hooks.gap) || 300;
   const start = (hooks && hooks.startDelay) != null ? hooks.startDelay : 40;
+  /* A bullet is one line, so it lands on a tighter beat than a full paragraph —
+     a run of them reads as a list filling in rather than a stall between
+     sentences. */
+  const beat = (el) => (el && el.dataset && el.dataset.scStreamUnit === 'row'
+    ? Math.max(110, Math.round(gap * 0.55))
+    : gap);
   const next = () => {
     if (i >= units.length) { scroll(); if (done) done(); return; }
-    showTranscriptPara(units[i]);
+    const shown = units[i];
+    showTranscriptPara(shown);
     i += 1;
     scroll();
     /* Hold the last paragraph until its fade has settled so the thumbs row
        reads as the next beat, not an overlap. */
-    setTimeout(next, i >= units.length ? 340 : gap);
+    setTimeout(next, i >= units.length ? 340 : beat(shown));
   };
   setTimeout(next, start);
 }
@@ -9184,8 +9224,56 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (typeof opts.onAgentToggle === 'function') opts.onAgentToggle(agentId, on, onCount());
   }
 
+  /* Which ask the lines being added belong to. One member ask can produce a
+     whole run of WISEcodeAI lines — a preview card per surfaced output, then the
+     answer itself — and each of those lines gets its own turn ID. Anything that
+     needs to know "these all came from the same prompt" (the activity strip's
+     ear-marks) groups on this, not on the per-line IDs. */
+  let askTurnSeq = 0;
+
+  /* A long prompt a member pastes in is a document, not a sentence: it arrives
+     with paragraph breaks and bullet lines and has to read that way in the
+     transcript instead of collapsing into one run-on block.
+
+     Only multi-line text is shaped. Anything typed in the composer is a single
+     line and is escaped exactly as before, so no ordinary message changes.
+     The markup understood is deliberately small: a blank line starts a new
+     paragraph, a line opening with "- " is a bullet, a line ending in a colon
+     leads the list beneath it, and **bold** / *italic* mark emphasis. */
+  function promptBodyHtml(text) {
+    const raw = String(text == null ? '' : text);
+    if (!/\n/.test(raw)) return esc(raw);
+    const inline = (s) => esc(s)
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/(^|[\s(\u201C"\u2014])\*([^*\n]+)\*(?=$|[\s).,;:!?\u201D"\u2014])/g, '$1<em>$2</em>');
+    const out = [];
+    let items = null;
+    const flush = () => {
+      if (!items) return;
+      out.push(`<ul class="sc-prompt-list">${items.join('')}</ul>`);
+      items = null;
+    };
+    raw.split('\n').forEach((line) => {
+      const t = line.trim();
+      if (!t) { flush(); return; }
+      if (/^[-\u2022]\s+/.test(t)) {
+        items = items || [];
+        items.push(`<li>${inline(t.replace(/^[-\u2022]\s+/, ''))}</li>`);
+        return;
+      }
+      flush();
+      /* A colon-led line introduces the list under it, so it carries the weight
+         — unless it already marks its own emphasis, which would bold it twice. */
+      const lead = /:$/.test(t) && !t.includes('**');
+      out.push(`<p class="sc-prompt-p${lead ? ' sc-prompt-lead' : ''}">${inline(t)}</p>`);
+    });
+    flush();
+    return `<div class="sc-prompt">${out.join('')}</div>`;
+  }
+
   function addUser(text, atts) {
     if (!messages) return;
+    askTurnSeq += 1; /* a new ask — every line that follows belongs to it */
     detachInlineChips(); /* chips reappear after WISEcodeAI's next reply */
     let attHtml = '';
     if (Array.isArray(atts) && atts.length) {
@@ -9197,9 +9285,24 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       }).join('');
       attHtml = `<div class="sc-att-row">${items}</div>`;
     }
-    const bodyText = text ? esc(text) : '';
+    const bodyText = text ? promptBodyHtml(text) : '';
     messages.insertAdjacentHTML('beforeend',
-      `<div class="sc-line sc-line-you">${youChipHtml()}<div class="sc-line-body">${attHtml}${bodyText}<div class="sc-line-meta">${timeStampHtml()}</div></div></div>`);
+      `<div class="sc-line sc-line-you" data-ask-turn="${askTurnSeq}">${youChipHtml()}<div class="sc-line-body">${attHtml}${bodyText}<div class="sc-line-meta">${timeStampHtml()}</div></div></div>`);
+    const line = messages.lastElementChild;
+    /* The member's own turn animates in line by line, exactly like an answer
+       does. A pasted brief is a document — headings, paragraphs, dozens of
+       bullets — and dropping it in as one finished slab was the loudest "loads
+       all at once" left in the transcript. Each line gets its own beat on a
+       quick cadence (the text is already written; this is not thinking), so even
+       a seventy-line brief settles in about two seconds. A one-line message is a
+       single beat and lands immediately. */
+    const body = line && line.querySelector('.sc-line-body');
+    if (body) {
+      staggerReveal(body, {
+        maxBeats: 140, budget: 2200, minGap: 26, maxGap: 90, startDelay: 20,
+        onReveal: () => scrollDown(true),
+      });
+    }
     scrollDown(true); /* fresh user action — always bring their message into view */
     refreshDockedTurns();
   }
@@ -9573,7 +9676,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       src ? `<span class="sc-trust-chip" title="${esc(src)}"><span class="material-symbols-outlined">database</span>${esc(truncSourceName(src))}</span>` : ''
     }${fb ? '' : timeStampHtml(timeMs)}${fb}</div>`;
     messages.insertAdjacentHTML('beforeend',
-      `<div class="sc-line sc-line-wiseai"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body">${html}${footer}</div></div>`);
+      `<div class="sc-line sc-line-wiseai" data-ask-turn="${askTurnSeq}"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body">${html}${footer}</div></div>`);
     const line = messages.lastElementChild; /* capture before chips re-park */
     const body = line && line.querySelector('.sc-line-body');
     refreshDockedTurns();

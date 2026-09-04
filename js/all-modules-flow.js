@@ -2840,17 +2840,21 @@ function demoFbRow({ hoverCopy, upOpen, downOpen, moreOpen, upOn, downOn } = {})
     </div>
   </div>`;
 }
-function demoActTick(type, { stacked, hover, id } = {}) {
+/* One ear-mark on the rail. `stacked` draws the two-tab multi-version flag,
+   `count` draws the collapsed mark that stands for every output one ask made. */
+function demoActTick(type, { stacked, hover, id, count } = {}) {
   const labels = {
     output: 'Output created',
     source: 'Data source added',
     database: 'Database switched',
     prompt: 'Last answered prompt',
   };
-  const label = labels[type] || type;
+  const label = count ? `${labels.output} \u00b7 ${count} outputs` : (labels[type] || type);
   const cap = id ? `<span class="wa-activity-tick-id">#${esc(id)}</span>` : '';
   const tri = type === 'prompt' ? '<span class="wa-activity-tick-tri" aria-hidden="true"></span>' : '';
-  const tick = `<button type="button" class="wa-activity-tick wa-activity-tick--${type}${hover ? ' is-hover' : ''}" title="${esc(label)}" aria-label="${esc(label)}">${tri}${cap}</button>`;
+  const num = count ? `<span class="wa-activity-tick-count" aria-hidden="true">${esc(count)}</span>` : '';
+  const cls = `wa-activity-tick wa-activity-tick--${type}${count ? ' wa-activity-tick--count' : ''}${hover ? ' is-hover' : ''}`;
+  const tick = `<button type="button" class="${cls}" title="${esc(label)}" aria-label="${esc(label)}">${tri}${num}${cap}</button>`;
   if (!stacked) return tick;
   return `<span class="wa-activity-tick-stack${hover ? ' is-hover' : ''}">${tick}${tick}</span>`;
 }
@@ -3645,9 +3649,9 @@ const COMPONENTS = [
     name: 'Activity strip',
     wide: true,
     cat: 'Chat & drawers',
-    cls: '.wa-activity-strip · .wa-activity-rail · .wa-activity-tick (--output / --source / --database / --prompt) · .wa-activity-tick-stack',
+    cls: '.wa-activity-strip · .wa-activity-rail · .wa-activity-tick (--output / --source / --database / --prompt) · .wa-activity-tick--count · .wa-activity-tick-count · .wa-activity-tick-stack',
     used: 'Every chat module — pinned to the transcript edge, toggled from the chat \u22ef menu and Appearance',
-    note: 'A 3px landmark rail on the chat\u2019s <strong>left</strong> edge by default (right is opt-in). Ticks sit at each event as a fraction of the transcript: gold <strong>output</strong>, green <strong>source</strong>, amber <strong>database</strong>. Multi-version outputs draw a stacked pair \u2014 two tabs mean \u201cmore than one\u201d, never a count. A brand-blue <strong>last prompt</strong> tab always sits at the bottom of the rail with a tiny up-triangle; click it to jump to the top of the last answered question. Click a landmark tick to scroll that row into view and flash it. Hover widens the tab and shows the turn ID. Not the token readout under the composer or in the transcript \u22ef \u2014 that is <em>Token readout</em>.',
+    note: 'A 3px landmark rail on the chat\u2019s <strong>left</strong> edge by default (right is opt-in). Each mark on it is an <strong>ear-mark</strong> \u2014 a small tab that sits at its event\u2019s vertical position as a fraction of the whole transcript, so the rail reads top-to-bottom as the conversation\u2019s timeline no matter where you are scrolled. Colour says what happened: gold <strong>output</strong>, green <strong>source</strong>, amber <strong>database switched</strong>.<br><br>An ear-mark takes one of <strong>three shapes</strong>. A <strong>single tab</strong> is one landmark. <strong>Two tabs stacked</strong> a few pixels apart mean that one output has more than one version \u2014 a binary \u201cmore than one\u201d, never a count of three or four. A <strong>slightly wider tab with a number in it</strong> is a collapsed ear-mark: when a single ask produces several outputs, they do <em>not</em> each get a tab, because that stacked into a long ladder down the rail. They collapse into one mark carrying a count of how many outputs that ask made, positioned at the mid-point of the block it stands for, and clicking it takes you to the <em>first</em> output of the block. Grouping is by the ask, not by turn ID \u2014 every line the chat adds is stamped with the ask it belongs to, so nine preview cards with nine different turn IDs still read as one \u201c9\u201d.<br><br>A brand-blue <strong>last prompt</strong> tab always sits in the same slot at the bottom of the rail with a tiny up-triangle; click it to jump to the top of the last answered question. Click any landmark ear-mark to scroll that row into view and flash it. Hover widens the tab and shows the turn ID it lands on. Marks live in the rail\u2019s inner band so they never ride over the header, the composer, or the module\u2019s rounded corners, while the rail itself runs corner to corner. Not the token readout under the composer or in the transcript \u22ef \u2014 that is <em>Token readout</em>.',
     noteIcon: 'timeline',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -3682,6 +3686,21 @@ const COMPONENTS = [
               <span>Output \u00b7 2 versions</span>
               <span>Data source added</span>
               <span>Database switched</span>
+            </div>
+          </div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">One ask, nine outputs \u00b7 collapsed</div>
+          <div class="mi-actstrip mi-actstrip--count" data-side="left">
+            <div class="wa-activity-rail"></div>
+            ${demoActTick('output', { id: '3a1c' })}
+            ${demoActTick('output', { count: 9, id: '8m4w' })}
+            ${demoActTick('output', { stacked: true, id: '6d7a' })}
+            ${demoActTick('prompt')}
+            <div class="mi-actstrip-ghost">
+              <span>One output</span>
+              <span>Nine outputs, one ask</span>
+              <span>One output \u00b7 2 versions</span>
             </div>
           </div>
         </div>
