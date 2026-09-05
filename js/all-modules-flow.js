@@ -61,7 +61,8 @@ import { openModal, closeModal, modalHTML, modalFoot } from './wise-modal.js';
  *      accordion opens, not on first paint.
  *   8. Transcript Architecture — one frozen conversation that shows the
  *      whole stack at once: chats, activity, the landmark strip, turns,
- *      tokens, outputs, and versions, each labeled with an arrow.
+ *      tokens, outputs, versions, the inline table, and the transcript
+ *      carousel, each labeled with an arrow.
  *
  * First paint is the hero, jump tiles, and section headers only. Each
  * accordion body (and the Icon Inventory / App Logic catalogs) is built
@@ -77,6 +78,7 @@ import { DEV_READY_SEED } from './dev-ready-data.js';
 import { AI_READY_SEED } from './ai-ready-data.js';
 import { AVATAR_PRESETS, avatarPresetSrc } from './avatar-presets.js';
 import { JAM_SONGS, eqBarsMarkup, helixVizMarkup, selectJam, toggleJam } from './jam-strip.js';
+import { owlProgressionCarouselHtml, mountOwlProgressionCarousels } from './owl-progression-carousel.js';
 import {
   ANALYTICS_GALLERY,
   ANALYTICS_HREF,
@@ -2117,6 +2119,7 @@ const CAT_BY_NAME = {
   'Chat composer': 'Inputs & forms',
   'Transcript lines': 'Chat & drawers',
   'Inline table': 'Chat & drawers',
+  'Transcript carousel': 'Chat & drawers',
   'Transcript actions': 'Chat & drawers',
   'Activity strip': 'Chat & drawers',
   'Token readout': 'Chat & drawers',
@@ -3605,6 +3608,25 @@ const COMPONENTS = [
           <div class="sc-line sc-line-wiseai" style="max-width:300px">${demoWiseAvatar()}<div class="sc-line-body"><h3 class="sc-inline-h">Real Product Scan Examples</h3>${scInlineTblHtml()}</div></div>
         </div>
       </div>`,
+  },
+  {
+    name: 'Transcript carousel',
+    aliases: ['Wise Owl Progression', 'Owl progression'],
+    wide: true,
+    cat: 'Chat & drawers',
+    cls: '.sc-owl-prog \u00b7 .sc-owl-prog-item \u00b7 js/owl-progression-carousel.js',
+    used: 'WISEcodeAI flagship (wiseai.html) — the Wise Owl Progression reply in What can I ask?',
+    note: 'An edge-to-edge strip inside the answer: Lottie owls, stills, then silent clips that follow light or dark. Scroll the row or use the arrows. Click a Lottie or a clip to play it once. No card and no boxed backdrop — the chat surface shows through the gaps.',
+    noteIcon: 'view_carousel',
+    demoCustom: () => {
+      const stage = () => (
+        `<div class="dsc-owl-prog-stage" data-owl-prog-demo>`
+        + `<div class="sc-line sc-line-wiseai">${demoWiseAvatar()}<div class="sc-line-body">`
+        + `<span class="sc-para">Here is the <strong>Wise Owl Progression</strong> \u2014 green (pass), red (fail), and blue (celebrate) \u2014 as motion, stills, and short clips that follow the theme.</span>`
+        + `</div></div></div>`
+      );
+      return `<div class="dsc-themes dsc-themes--stack">${themePaneHTML('light', stage())}${themePaneHTML('dark', stage())}</div>`;
+    },
   },
   {
     name: 'Transcript actions',
@@ -5615,6 +5637,9 @@ const TARCH_LAYERS = [
   { id: 'inlinetbl', side: 'left', icon: 'table_rows', title: 'Inline table',
     body: 'A comparison that stays in the answer — horizontal rules, no card.',
     jump: 'Inline table' },
+  { id: 'carousel', side: 'left', icon: 'view_carousel', title: 'Transcript carousel',
+    body: 'An edge-to-edge owl strip in the answer — scroll, or tap to play.',
+    jump: 'Transcript carousel' },
   { id: 'strips', side: 'left', icon: 'timeline', title: 'Activity strip',
     body: 'Landmark rail. Gold = output, green = source, amber = database. Blue = last prompt.',
     jump: 'Activity strip' },
@@ -7334,6 +7359,16 @@ function tarchCwrHtml() {
   return `<div class="mi-tarch-cwr" data-tarch-target="cwr" id="mi-tarch-target-cwr">${demoCwrPill(null, 'run')}${tarchPin('right')}</div>`;
 }
 
+function tarchOwlHtml() {
+  return owlProgressionCarouselHtml({ id: 'mi-tarch-owl' })
+    .replace('<figure class="sc-owl-prog"', '<figure class="sc-owl-prog mi-tarch-hit"')
+    .replace(
+      ' role="region"',
+      ' data-tarch-target="carousel" id="mi-tarch-target-carousel" role="region"'
+    )
+    .replace('</figure>', tarchPin('left') + '</figure>');
+}
+
 function tarchSpecimenHtml() {
   return `
     <div class="mi-tarch-specimen dsc-demo" aria-hidden="true">
@@ -7364,6 +7399,7 @@ function tarchSpecimenHtml() {
               ['Oat milk', 'Lightly processed. Watch the gums.', 'The oats have been talked into being milk.'],
               ['Almond milk', 'Lightly processed, check emulsifiers.', 'Three almonds. The rest is confident water.'],
             ]))}
+            ${tarchOwlHtml()}
             ${tarchChip('outputs', 'right', { title: 'Oat milk vs almond milk', versions: [OUTPUT_CHIP_VERS[0]] })}
             ${tarchHit('actions', 'right', demoFbRow())}
             ${tarchHit('chips', 'right', tarchReplyChips([
@@ -7398,7 +7434,7 @@ function tarchSpecimenHtml() {
 function renderTranscriptArch(opts) {
   if (opts && opts.headOnly) {
     return miHeadOnly('mi-tarch', 'Transcript Architecture',
-      'One frozen conversation. Every visible piece is labeled — History, the strip, transcript lines, output chips, the admin <strong>Turns</strong> drawer, Roll · Crawl · Walk · Run — with an arrow to the element and a link to its card in the Component Library.');
+      'One frozen conversation. Every visible piece is labeled — History, the strip, transcript lines, the inline table, the transcript carousel, output chips, the admin <strong>Turns</strong> drawer, Roll · Crawl · Walk · Run — with an arrow to the element and a link to its card in the Component Library.');
   }
   const left = TARCH_LAYERS.filter((l) => l.side === 'left');
   const right = TARCH_LAYERS.filter((l) => l.side === 'right');
@@ -7408,7 +7444,8 @@ function renderTranscriptArch(opts) {
         <div class="mi-module-head-text">
           <h2 class="mi-module-title">Transcript Architecture</h2>
           <p class="mi-module-lede">One frozen conversation. Every visible piece is labeled, with an arrow to that
-            element and a link that opens its card in the Component Library. <strong>Turns</strong> is the admin
+            element and a link that opens its card in the Component Library. The <strong>inline table</strong> and
+            the <strong>transcript carousel</strong> both live in the answer. <strong>Turns</strong> is the admin
             sticky drawer on the right — not a question and answer in the thread.</p>
         </div>
       </header>
@@ -7426,6 +7463,7 @@ function renderTranscriptArch(opts) {
 function wireTranscriptArch(root) {
   const mod = root.querySelector('#mi-tarch');
   if (!mod) return;
+  mountOwlProgressionCarousels(mod);
   const stage = mod.querySelector('#mi-tarch-stage');
   if (!stage) return;
   const svg = stage.querySelector('.mi-tarch-arrows');
@@ -7437,6 +7475,8 @@ function wireTranscriptArch(root) {
     chats: '.wch-item',
     fork: '.sc-fork-banner',
     lines: '.sc-avatar-you, .sc-line-you',
+    inlinetbl: '.sc-inline-tbl',
+    carousel: '.sc-owl-prog-viewport, .sc-owl-prog',
     strips: null,
     activity: '.sc-line-event, .sc-avatar-you',
     composer: '.fl-input-wrap, [data-wise-composer]',
@@ -10959,7 +10999,7 @@ function buildGlobalIndex() {
   TARCH_LAYERS.forEach((l) => add({
     kind: 'tarch', section: 'mi-tarch', group: 'Transcript', icon: l.icon,
     title: l.title, sub: l.body, key: l.id,
-    q: `${l.title} ${l.id} ${l.body} ${l.jump || ''} transcript architecture history turns composer chips outputs versions tokens strip cwr`,
+    q: `${l.title} ${l.id} ${l.body} ${l.jump || ''} transcript architecture history turns composer chips outputs versions tokens strip cwr carousel owl`,
   }));
 
   MOTION_ITEMS.forEach((item) => add({
@@ -14645,6 +14685,27 @@ function wireComponentLibrary(root) {
   };
   grid._bootAskDemoIn = bootAskDemoIn;
 
+  const bootOwlProgIn = (scope) => {
+    if (!compMod || !compMod.isConnected) return;
+    if (compMod.classList.contains('is-collapsed')) return;
+    const host = scope || compMod;
+    const stages = host.querySelectorAll('[data-owl-prog-demo]');
+    if (!stages.length) return;
+    stages.forEach((stage) => {
+      if (stage.dataset.owlProgBooted === '1') {
+        mountOwlProgressionCarousels(stage);
+        return;
+      }
+      const body = stage.querySelector('.sc-line-body');
+      if (body && !body.querySelector('.sc-owl-prog')) {
+        body.insertAdjacentHTML('beforeend', owlProgressionCarouselHtml());
+      }
+      stage.dataset.owlProgBooted = '1';
+      mountOwlProgressionCarousels(stage);
+    });
+  };
+  grid._bootOwlProgIn = bootOwlProgIn;
+
   /* Each component is its own accordion. The title row toggles; Dev Ready
      and links inside the header keep their own actions. */
   const toggleCompCard = (card) => {
@@ -14656,6 +14717,7 @@ function wireComponentLibrary(root) {
       bootChatMenuIn(card);
       bootAppSearchIn(card);
       bootAskDemoIn(card);
+      bootOwlProgIn(card);
       if (card.dataset.compName === 'Charts & graphs') {
         takeAzCompNudge();
         observePreviewFrames(card);
@@ -14955,6 +15017,7 @@ async function jumpToComponent(root, name) {
   if (grid && typeof grid._bootChatMenuIn === 'function') grid._bootChatMenuIn(card);
   if (grid && typeof grid._bootAppSearchIn === 'function') grid._bootAppSearchIn(card);
   if (grid && typeof grid._bootAskDemoIn === 'function') grid._bootAskDemoIn(card);
+  if (grid && typeof grid._bootOwlProgIn === 'function') grid._bootOwlProgIn(card);
   card.classList.remove('is-flash');
   void card.offsetWidth;
   card.classList.add('is-flash');
@@ -15018,7 +15081,7 @@ export const ALL_MODULES_WISEAI = {
     { intent: 'counts', label: 'How many icons are there?', icon: 'tag' },
   ],
   intentReplies: {
-    whatsnew: 'From the <strong>past day</strong>: answers can carry an <strong>Inline table</strong> — a comparison that stays in the transcript, with horizontal rules and no card. It lives in the Component Library under Chat &amp; drawers, with a gold “This is new!” on the card, and it is labeled in Transcript Architecture. <strong>Analytics Types</strong> is a thumbnail gallery of every chart from that catalog; the same gallery is <strong>Charts &amp; graphs</strong> in the Component Library. From <strong>the other day</strong>: <strong>Transcript Architecture</strong> (one frozen conversation, every piece labeled) and the <strong>Report builder</strong> (plus the charts you want, generate, then save or share). Open any of those from the chips below, or the Progress Log for the day-by-day write-up.',
+    whatsnew: 'From the <strong>past day</strong>: answers can carry a <strong>Transcript carousel</strong> — an edge-to-edge owl strip of motion, stills, and short clips that follow light or dark — and an <strong>Inline table</strong>, a comparison that stays in the transcript with horizontal rules and no card. Both live in the Component Library under Chat &amp; drawers, and both are labeled in Transcript Architecture. <strong>Analytics Types</strong> is a thumbnail gallery of every chart from that catalog; the same gallery is <strong>Charts &amp; graphs</strong> in the Component Library. From <strong>the other day</strong>: <strong>Transcript Architecture</strong> (one frozen conversation, every piece labeled) and the <strong>Report builder</strong> (plus the charts you want, generate, then save or share). Open any of those from the chips below, or the Progress Log for the day-by-day write-up.',
     codebase: () => {
       const now = codeState.now || {};
       return `The project on disk is <strong>${fmtScanBytes(now.bytes)}</strong> across <strong>${fmtNum(now.allFiles)} files</strong> — code ${fmtScanBytes(now.codeBytes)}, images ${fmtScanBytes(now.imageBytes)}, video ${fmtScanBytes(now.videoBytes)}. Hand-written code is <strong>${fmtNum(now.total)} lines</strong> in <strong>${fmtNum(now.files)} files</strong> — ${fmtNum(now.html)} HTML, ${fmtNum(now.js)} JavaScript, ${fmtNum(now.css)} CSS and ${fmtNum(now.py)} Python — shipping <strong>${fmtNum(now.pages)} HTML pages</strong>. The Codebase score cards above the directory show both the size and the line-count trend.`;
@@ -15043,7 +15106,7 @@ export const ALL_MODULES_WISEAI = {
     design: 'The <strong>Design System</strong> documents the app’s fonts (families, sizes, usage) and every color, line, elevation and radius token — with live swatches that follow the current theme.',
     components: 'The <strong>Component Library</strong> renders every reusable component in its default state with its real classes, its variations, and the surfaces where it’s used.',
     reportbuilder: 'The <strong>Report builder</strong> is how a conversation becomes a report. In Output, open the title dropdown, plus the charts you want, and tap <strong>Generate Report</strong>. That opens a nested drawer to the right of Output. You can rename the report and each chart, add a note, swap a chart for another output from the same thread, or delete one. <strong>Save or Share</strong> writes it to the Reports shelf — the same store Reformulation uses. Export as PDF prints the drawer. The card below is the live specimen.',
-    tarch: 'The <strong>Transcript Architecture</strong> freezes one thread and labels every visible piece — History, transcript lines, the landmark strip, output chips, intent chips, the composer, the token readout, the admin <strong>Turns</strong> sticky drawer, and Roll · Crawl · Walk · Run. Each card links to that component in the library.',
+    tarch: 'The <strong>Transcript Architecture</strong> freezes one thread and labels every visible piece — History, transcript lines, the inline table, the transcript carousel, the landmark strip, output chips, intent chips, the composer, the token readout, the admin <strong>Turns</strong> sticky drawer, and Roll · Crawl · Walk · Run. Each card links to that component in the library.',
     motion: `The <strong>Motion &amp; Resize</strong> module catalogs all <strong>${MOTION_ITEMS.length} motion systems</strong> — count-up, chart replay, streaming, chip shimmer and fly-in, output chip fan, chat composer sheen, both helixes, accordion open, sticky drawer slide-in, activity-strip ticks, the jam equalizer, plus the module splitter, five width tiers, drag-to-reorder and drag-to-file — each running live.`,
     responsive: () => {
       const screen = respScreenWidth();

@@ -23,15 +23,20 @@
 
   var GRACE_MS = 180;
 
+  /* Named triggers open on hover whatever glyph they carry — the portfolio's
+     reports icon (`description`) and the table specimens' row menus are menu
+     owners that are not literally a ⋮, so glyph sniffing alone would miss
+     them. */
   var KNOWN_BTN =
     '.panel-more-btn, .pf-rowmenu-btn, .pf-reports-btn, .adm-rowmenu-btn, .inv-rowmenu-btn, ' +
     '.ma-rowmenu-btn, .nud-rowmenu-btn, .pf-datemenu-btn, .w-datemenu-btn, ' +
-    '.pf-module-menu-btn, .dash-kebab, .sc-fb-more, .sc-connector-more';
+    '.pf-module-menu-btn, .dash-kebab, .sc-fb-more, .sc-connector-more, ' +
+    '.attb-rowmenu-btn';
 
   var WRAP_SEL =
     '.pf-rowmenu, .pf-reports-wrap, .adm-rowmenu, .inv-rowmenu, .ma-rowmenu, ' +
     '.panel-more-wrap, .dash-kebab-wrap, .pf-datemenu, .w-datemenu, ' +
-    '.pf-module-menu, .sc-fb-more-wrap, .nud-actions';
+    '.pf-module-menu, .sc-fb-more-wrap, .nud-actions, .attb-rowmenu';
 
   var POP_SEL =
     '[role="menu"], .topbar-popover, .pf-rowmenu-pop, .adm-rowmenu-pop, ' +

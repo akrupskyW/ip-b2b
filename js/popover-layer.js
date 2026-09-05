@@ -47,6 +47,9 @@
     '.fl-more-popover',
     '.fl-model-popover',
     '.pf-rowmenu-pop',
+    /* Row menus on the table specimens on analytics-types.html. Their card
+       scrolls horizontally, so an in-flow popover is clipped at the card box. */
+    '.attb-rowmenu-pop',
     '.ma-rowmenu-pop',
     '.inv-rowmenu-pop',
     '.adm-rowmenu-pop',

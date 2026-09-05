@@ -1,0 +1,96 @@
+---
+description: An output arriving never opens a module or resizes the chat — the member taps the output chip, and only then does the output module open
+alwaysApply: true
+---
+
+# Outputs Open When The Member Asks
+
+An output arriving is **not** a request to look at it. A turn can surface ten
+outputs and the surface must not move: no module opens, nothing docks, and the
+chat stays exactly the width it already had. The output chip in the transcript
+is the only thing that opens an output module.
+
+This is app-wide and permanent. It holds for every chat module on every page.
+
+## What this means on the surface
+
+- Ask something that produces charts, tables, boards or a report → the answer
+  reads, the output chips land under it, the closing intent chips trail them.
+  The right-hand module stays shut and the chat keeps the whole row.
+- Tap an output chip → **that** is when the output module opens, and when the
+  chat docks to make room for it.
+- Tap a version thumbnail on a chip → the same module opens on that version.
+- Come back later and tap a chip from three turns ago → it opens then. An
+  output the member never asked to see is never forced on screen.
+- Nothing about the answer's own wording opens a module. "Opened the full
+  ranking in Results & Details →" is narration, not an instruction.
+
+## What still opens a module
+
+Only a member action, because the action *is* the ask:
+
+- An output chip, or a version thumbnail on one.
+- A footnote / citation marker — tapping it is the ask to see References.
+- Expand / full-screen on an output.
+- Generating a report from the member's own selection.
+
+## A control chip is not an output
+
+There are two kinds of chip and they behave differently. A chip that asks a
+**question** ("Compare these cookies", "Build me a report") gets an answer and
+a row of output chips — nothing opens. A chip that names a **control**
+("Claim your products", "Update your brand logo", "Filter my portfolio by
+Guiding Stars") fires that control, because firing it is the whole ask.
+
+A control chip may still let the narration read first and act a beat later —
+that is pacing, and the member already asked. What is banned is a surface the
+member never asked for arriving on screen on its own.
+
+If you cannot tell which kind a chip is, read its label. If the label names a
+thing to look at rather than a thing to do, it is a question chip and its
+results belong behind an output chip.
+
+## How it is wired
+
+`openOutputPane(dest)` in `pages/wiseai.html` is the one door. Every opener
+above goes through it; nothing on the surfacing path calls it.
+
+- `postSurfaceBlock` and `insertAllVersionSlides` write blocks into a **closed**
+  pane. Writing is not opening.
+- `openPane` takes `open: false` by default. Pass `open: true` only from a path
+  the member asked for.
+- There is no `openModuleByDefault` on the mount. The chat's `onOpenModule` hook
+  stays wired, because a transcript restored from history can still carry a
+  visible open-module chip — but only a tap fires it.
+- Blocks written into a closed pane have no box to measure, so their charts,
+  tables and compare boards are booted by `openOutputPane` on the way in, not
+  when they were inserted.
+
+## Resizing
+
+Docking the chat is part of *opening*, not part of surfacing. The chat may
+collapse from the full row to its column at the moment the member opens an
+output — that is the room the output needs. It must never move because an
+output merely arrived, and a turn must never widen or narrow the chat on its
+own. Only the member's width toggle changes the chat's rest width.
+
+## Rules for the agent
+
+- Never open a pane, panel, board or overlay from `onReply`, `onReplyDone`, a
+  surface/queue function, or anything else on the answer's own path.
+- Never re-add a "reveal the first output once the transcript finishes" step.
+  Finishing the transcript is not the member asking.
+- A new surface that produces outputs must post an output chip for each one.
+  An output with no chip is unreachable — that is a bug, not a quiet output.
+- Do not fork this per page. If a host needs it, it wires the same door — see
+  the nothing-page-local rule.
+- Outputs still land in stage order behind the answer (see the
+  turn-stage-order rule). Ordering and opening are separate questions; this
+  rule only says the pane stays shut.
+
+## Verify
+
+`scripts/_output_pacing_check.js` guards the wiring.
+`scripts/_output_open_probe.py` drives a real turn and checks that every pane
+stayed shut and the chat never resized, then taps the output chip and checks
+that the module opens. Run it in both themes after touching any of this.

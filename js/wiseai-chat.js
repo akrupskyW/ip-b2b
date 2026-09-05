@@ -9244,6 +9244,59 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      ear-marks) groups on this, not on the per-line IDs. */
   let askTurnSeq = 0;
 
+  /* ── A turn is a sequence, not a pile ──────────────────────────────────────
+     One ask plays out in stages, and a stage never starts before the stage
+     before it has finished:
+
+       1. the member's prompt reveals, line by line;
+       2. WISEcodeAI starts thinking — the status line and its trace;
+       3. the answer lands, paragraph by paragraph, ending on its references;
+       4. whatever the answer produced arrives — output cards, the carousel,
+          the panes on the right.
+
+     A long pasted brief made the old behaviour impossible to miss: seventy
+     lines were still fading in while the owl was already several globs into
+     thinking about them, and the output carousel started building underneath
+     an answer that was only half typed. The stages now hold each other back.
+
+     Each gate runs its callback IMMEDIATELY when nothing is in flight, so a
+     one-line message, or a direct post with no prompt at all, waits for
+     nothing. Each also carries a ceiling, so a reveal that never reports
+     itself finished can never strand the rest of the turn. */
+  function makeStageGate(ceilingMs) {
+    let held = false;
+    let queued = [];
+    let timer = 0;
+    const release = () => {
+      if (timer) { clearTimeout(timer); timer = 0; }
+      held = false;
+      const run = queued;
+      queued = [];
+      run.forEach((fn) => { try { fn(); } catch (_) { /* stage hook */ } });
+    };
+    return {
+      hold() {
+        held = true;
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(release, ceilingMs);
+      },
+      release() { if (held) release(); },
+      after(fn) {
+        if (typeof fn !== 'function') return;
+        if (!held) { fn(); return; }
+        queued.push(fn);
+      },
+    };
+  }
+  /* Held while the member's prompt is still revealing. */
+  const promptStage = makeStageGate(9000);
+  /* Held from the moment an answer is posted until it has finished landing. */
+  const answerStage = makeStageGate(30000);
+  /* Held by a host while the outputs an answer produced are still arriving, so
+     the turn's closing intent chips park underneath the finished set instead of
+     flying in and being shoved down by the first output card. */
+  const outputStage = makeStageGate(30000);
+
   /* A long prompt a member pastes in is a document, not a sentence: it arrives
      with paragraph breaks and bullet lines and has to read that way in the
      transcript instead of collapsing into one run-on block.
@@ -9308,12 +9361,25 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        all at once" left in the transcript. Each line gets its own beat on a
        quick cadence (the text is already written; this is not thinking), so even
        a seventy-line brief settles in about two seconds. A one-line message is a
-       single beat and lands immediately. */
+       single beat and lands immediately.
+
+       Nothing WISEcodeAI does may start on top of that reveal — the prompt goes
+       in first and finishes first. A brief that actually animates gets a short
+       tail after its last line so the line has time to arrive before the
+       thinking status appears beneath it. */
     const body = line && line.querySelector('.sc-line-body');
     if (body) {
-      staggerReveal(body, {
+      let beats = 0;
+      promptStage.hold();
+      beats = staggerReveal(body, {
         maxBeats: 140, budget: 2200, minGap: 26, maxGap: 90, startDelay: 20,
         onReveal: () => scrollDown(true),
+        onDone: () => {
+          /* Zero beats is a one-line message that was never animated — release
+             on the spot. Anything that did animate gets the tail. */
+          if (beats > 0) setTimeout(() => promptStage.release(), 300);
+          else promptStage.release();
+        },
       });
     }
     scrollDown(true); /* fresh user action — always bring their message into view */
@@ -9440,8 +9506,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (!el) return false;
     /* Only self-animating / interactive cards pop in whole — their own logic
        drives the reveal and must not be torn apart. Everything else types in;
-       embedded charts / tables are left intact as their own paragraph unit. */
-    return !el.querySelector('.sc-connect-flow, [data-cf-step], .sc-surface-card');
+       embedded charts / tables are left intact as their own paragraph unit.
+       A lead sentence above an output carousel still types; the rail is the
+       next beat. */
+    if (el.querySelector('.sc-connect-flow, [data-cf-step]')) return false;
+    if (el.querySelector('.sc-surface-rail-lead') && el.querySelector('.sc-surface-rail')) return true;
+    return !el.querySelector('.sc-surface-card');
   }
   function typeInLine(bodyEl, done) {
     typeInTranscript(bodyEl, done, { scroll: scrollDown, reduced: prefersReducedMotion });
@@ -9538,18 +9608,26 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     primeTranscriptPara(metaEl);
   }
   /* After the paragraphs: the thumbs-up/thumbs-down row as a single beat,
-     then — if this line should trail them — the intent chips (left→right). */
-  function revealMetaThenChips(metaEl, trailChips, whenDone) {
+     then — if this line should trail them — the intent chips (left→right).
+
+     `whenLanded` fires the instant the answer itself is complete (text + thumbs
+     row), which is the moment the outputs it produced are allowed to start
+     arriving. The chips then wait for those outputs, so the turn ends on them
+     rather than having them fly in and immediately get pushed down a rail. */
+  function revealMetaThenChips(metaEl, trailChips, whenDone, whenLanded) {
     const finish = () => { scrollDown(); if (typeof whenDone === 'function') whenDone(); };
     const showChips = () => {
+      if (typeof whenLanded === 'function') whenLanded();
       if (trailChips) {
-        parkInlineChips();
-        /* Intent chips fly in from the RIGHT here too — the exact same
-           animation the welcome uses — so chips read identically whether
-           they're on the welcome or trailing a turn in the transcript. */
-        const chips = ichipsEl ? Array.from(ichipsEl.children) : [];
-        chips.forEach(primeRevealFromRight);
-        revealStaggered(chips, 110, 55, finish);
+        outputStage.after(() => {
+          parkInlineChips();
+          /* Intent chips fly in from the RIGHT here too — the exact same
+             animation the welcome uses — so chips read identically whether
+             they're on the welcome or trailing a turn in the transcript. */
+          const chips = ichipsEl ? Array.from(ichipsEl.children) : [];
+          chips.forEach(primeRevealFromRight);
+          revealStaggered(chips, 110, 55, finish);
+        });
       } else {
         finish();
       }
@@ -9717,7 +9795,15 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       const marker = body && body.querySelector('[data-open-module]');
       if (marker) openModuleFor(marker.getAttribute('data-open-module'), marker);
     };
-    const done = () => { autoOpenModule(); if (typeof meta.onDone === 'function') meta.onDone(); };
+    /* The answer's own text and thumbs row are complete — the outputs it
+       produced may start arriving now. A preview card (trailChips:false) is one
+       of those outputs, so it must never re-hold the gate it is waiting on. */
+    const answerLanded = () => { if (trailChips) answerStage.release(); };
+    const done = () => {
+      answerLanded();
+      autoOpenModule();
+      if (typeof meta.onDone === 'function') meta.onDone();
+    };
     if (prefersReducedMotion) {
       if (trailChips) parkInlineChips();
       scrollDown();
@@ -9727,11 +9813,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     primeMeta(metaEl);
     scrollDown();
     if (meta.typewriter !== false && canTypeIn(body)) {
-      typeInLine(body, () => revealMetaThenChips(metaEl, trailChips, done));
+      typeInLine(body, () => revealMetaThenChips(metaEl, trailChips, done, answerLanded));
     } else {
       /* Card / non-typed line: it's already visible; just animate the meta
          (and chips) in so nothing reads as pre-loaded. */
-      revealMetaThenChips(metaEl, trailChips, done);
+      revealMetaThenChips(metaEl, trailChips, done, answerLanded);
     }
     return line;
   }
@@ -9913,6 +9999,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       } else {
         applyTopicFollowups(meta.intent, out, routeText);
       }
+      /* Hold the next stage BEFORE the host queues anything off onTraceDone:
+         the outputs an answer produces belong after that answer, not under it
+         while it is still typing. addWISEcodeAI lets the gate go once the line
+         has finished landing. */
+      answerStage.hold();
       if (typeof meta.onTraceDone === 'function') { try { meta.onTraceDone(); } catch (_) { /* host hook */ } }
       addWISEcodeAI(out, lineMeta);
     };
@@ -9921,7 +10012,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       const left = Math.max(10000, budget - (Date.now() - polishStarted));
       withTimeout(polishP, left, { html, chips: [], source: '' }).then(paintAnswer);
     };
-    runReasoningTrace(milestones, done, assemblyMilestoneFor(html), sourceLineFor(sourceName));
+    /* The local-model pass above is already running in the background; only the
+       visible part of the turn waits for the member's prompt to finish. */
+    promptStage.after(() => {
+      runReasoningTrace(milestones, done, assemblyMilestoneFor(html), sourceLineFor(sourceName));
+    });
   }
 
   function pageHintForChat() {
@@ -13873,7 +13968,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      trace as a chip-driven turn before posting the given reply, so hosts that
      post their own answers (bridged engines, board mirrors) never skip the
      thinking stream the way a raw addWISEcodeAI would. */
-  return { addUser, addWISEcodeAI, respond: respondWithTrace, showTyping, primeChips, revealChips, messages, ask, sendIntent, reset, openAgents, closeAgents, openConnectors, closeConnectors, openAskHelp, closeAskHelp, setAskDocked, isAskDocked: () => !!(askHelpApi && askHelpApi.isDocked && askHelpApi.isDocked()), openTurns, closeTurns, toggleTurns, setTurnsDocked, isTurnsDocked: () => turnsDocked, hideWelcome, setIntents, announceRoute, setWidth: syncWidthUI, getDbId: () => currentDbId, selectDb, root: rootEl };
+  /* The turn's stage gates (see makeStageGate). `afterPrompt` / `afterAnswer`
+     queue work behind the member's prompt finishing or the answer finishing, and
+     run it straight away when neither is in flight. `holdOutputs` /
+     `releaseOutputs` are the other half: a host that surfaces a run of output
+     cards brackets that run so the turn's closing chips wait for the last one. */
+  return { addUser, addWISEcodeAI, respond: respondWithTrace, afterPrompt: promptStage.after, afterAnswer: answerStage.after, holdOutputs: outputStage.hold, releaseOutputs: outputStage.release, showTyping, primeChips, revealChips, messages, ask, sendIntent, reset, openAgents, closeAgents, openConnectors, closeConnectors, openAskHelp, closeAskHelp, setAskDocked, isAskDocked: () => !!(askHelpApi && askHelpApi.isDocked && askHelpApi.isDocked()), openTurns, closeTurns, toggleTurns, setTurnsDocked, isTurnsDocked: () => turnsDocked, hideWelcome, setIntents, announceRoute, setWidth: syncWidthUI, getDbId: () => currentDbId, selectDb, root: rootEl };
 }
 
 /* ------------------------------------------------------------------ */
@@ -14086,13 +14186,12 @@ export function wireStandardChatMenu(cfg = {}) {
   const welcomeEl = cfg.bgAnim && cfg.bgAnim.welcomeEl;
   const bgHost = cfg.bgAnim && cfg.bgAnim.host;
   /* Welcome-only, same as mountWISEcodeAIChat: the field paints on the
-     welcome and stays until a real turn starts (intent chip / scorecard,
-     or a keystroke in the composer). A hidden welcome or an engage flag
-     keeps it from sitting behind a live transcript — unless the host
-     lands already engaged (View Product): then `untilEngage` keeps the
-     Scene helix up. `persist` goes further: the strand stays for the
-     visit (chips, typed send, panel edits) until Background animation
-     is turned off. */
+     welcome and blooms out on the first real touch — a chip, a keystroke,
+     a click in the chat, or a click on a pane to the right of the chat.
+     View Product lands with the welcome already hidden; `untilEngage`
+     keeps the Scene helix up until that first touch (it must not sit
+     behind a live transcript after the member has acted). `persist` is
+     helix-studio only. */
   let bgEngaged = false;
   const welcomeShown = () => {
     if (!welcomeEl) return false;
@@ -14197,24 +14296,43 @@ export function wireStandardChatMenu(cfg = {}) {
   document.addEventListener('wise:cwr-ui', wakeBgAnim);
   document.addEventListener('wise:chat-engage', retireBgAnim);
 
-  /* Composer keystroke blooms the field out — unless `persist` (View Product
-     keeps the Scene helix for the visit). Focusing the composer, or
-     clicking nav / other modules / helix nodes, does not. A chip or send
-     that hides the welcome (or fires wise:chat-engage) still retires it
-     on hosts that are not persisted. */
+  /* First pointer in the chat module, or in any pane to the right of it
+     (Product Details, Catalog, progress, …), blooms the field out. Nav,
+     History on the left, and CWR stay inert. Composer keystrokes do the
+     same so a typed send cannot leave the strand running. */
   if (bgHost && !bgHost.__wiseBgEngageWired) {
     bgHost.__wiseBgEngageWired = true;
     const input = bgHost.querySelector('.chat-input-rail textarea.fl-input, .chat-input-rail input.fl-input, textarea.fl-input, #chat-input');
     if (input) {
       input.addEventListener('input', () => {
         const typed = !!(input.value && String(input.value).trim());
-        if (typed && !persistBg) stopAllBg();
+        if (typed && !persistBg) retireBgAnim();
         else if (!typed && !bgEngaged && welcomeVisible()) {
           const e = bgEngine(bgStyle);
           if (e) e.start();
           else maybeRunBgAnim();
         }
       });
+    }
+    if (!persistBg) {
+      const onInteract = (e) => {
+        if (bgEngaged) return;
+        const t = e.target;
+        if (!(t instanceof Node)) return;
+        if (bgHost.contains(t)) { retireBgAnim(); return; }
+        const row = document.getElementById('modules-row');
+        if (!row || !row.contains(t)) return;
+        const hostLeft = bgHost.getBoundingClientRect().left;
+        let el = t instanceof Element ? t : t.parentElement;
+        while (el && el !== row) {
+          if (el.parentElement === row) {
+            if (el.getBoundingClientRect().left >= hostLeft - 2) retireBgAnim();
+            return;
+          }
+          el = el.parentElement;
+        }
+      };
+      document.addEventListener('pointerdown', onInteract, true);
     }
   }
   const bgItem = q('[data-sc="bg-anim"]');

@@ -33,9 +33,8 @@ def _ws_connect(url):
     return s
 
 
-def _ws_send(s, data):
-    payload = data.encode()
-    hdr = bytearray([0x81])
+def _ws_frame(s, opcode, payload=b""):
+    hdr = bytearray([0x80 | opcode])
     n = len(payload)
     mask = os.urandom(4)
     if n < 126:
@@ -50,7 +49,19 @@ def _ws_send(s, data):
     s.sendall(bytes(hdr) + bytes(b ^ mask[i % 4] for i, b in enumerate(payload)))
 
 
+def _ws_send(s, data):
+    _ws_frame(s, 0x1, data.encode())
+
+
 def _ws_recv(s):
+    """One application message, control frames handled on the way.
+
+    A long watch (a probe that drives a whole chat turn) idles far longer than
+    Chrome's keepalive. An unanswered ping is a closed socket a moment later, so
+    ping is ponged here rather than read as if it were a message. Big payloads
+    also arrive fragmented, so continuation frames are joined instead of
+    desyncing the stream.
+    """
     def rd(n):
         b = b""
         while len(b) < n:
@@ -59,18 +70,46 @@ def _ws_recv(s):
                 raise IOError("closed")
             b += c
         return b
-    _b0, b1 = rd(2)
-    ln = b1 & 0x7F
-    if ln == 126:
-        ln = struct.unpack(">H", rd(2))[0]
-    elif ln == 127:
-        ln = struct.unpack(">Q", rd(8))[0]
-    return rd(ln).decode("utf-8", "replace")
+    buf = b""
+    while True:
+        b0, b1 = rd(2)
+        fin = b0 & 0x80
+        opcode = b0 & 0x0F
+        ln = b1 & 0x7F
+        if ln == 126:
+            ln = struct.unpack(">H", rd(2))[0]
+        elif ln == 127:
+            ln = struct.unpack(">Q", rd(8))[0]
+        payload = rd(ln) if ln else b""
+        if opcode == 0x9:       # ping
+            _ws_frame(s, 0xA, payload)
+            continue
+        if opcode == 0xA:       # pong
+            continue
+        if opcode == 0x8:       # close
+            raise IOError("closed")
+        buf += payload
+        if fin:
+            return buf.decode("utf-8", "replace")
+
+
+def _page_target(port, tries=80):
+    for _ in range(tries):
+        try:
+            data = json.load(urllib.request.urlopen("http://127.0.0.1:%d/json" % port))
+            pages = [t for t in data if t.get("type") == "page"]
+            if pages:
+                return pages[0]
+        except Exception:
+            pass
+        time.sleep(0.2)
+    return None
 
 
 class Browser(object):
     def __init__(self, port=9340, width=1440, height=900, out="/tmp/wise-shots"):
         self.out = out
+        self.port = port
         os.makedirs(out, exist_ok=True)
         self._profile = tempfile.mkdtemp(prefix="wise-cdp-")
         self._proc = subprocess.Popen(
@@ -78,17 +117,7 @@ class Browser(object):
              "--window-size=%d,%d" % (width, height), "--user-data-dir=" + self._profile,
              "--remote-debugging-port=%d" % port, "about:blank"],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        target = None
-        for _ in range(80):
-            try:
-                data = json.load(urllib.request.urlopen("http://127.0.0.1:%d/json" % port))
-                pages = [t for t in data if t.get("type") == "page"]
-                if pages:
-                    target = pages[0]
-                    break
-            except Exception:
-                pass
-            time.sleep(0.2)
+        target = _page_target(port)
         if not target:
             self.close()
             raise RuntimeError("no devtools target on port %d" % port)
@@ -98,14 +127,38 @@ class Browser(object):
         self.cmd("Page.enable")
         self.cmd("Runtime.enable")
 
-    def cmd(self, method, params=None):
-        self._n += 1
-        mid = self._n
-        _ws_send(self._ws, json.dumps({"id": mid, "method": method, "params": params or {}}))
-        while True:
-            msg = json.loads(_ws_recv(self._ws))
-            if msg.get("id") == mid:
-                return msg
+    def _reconnect(self):
+        """Re-attach to the same page after Chrome drops the devtools socket.
+
+        A probe that watches a long, chatty run outlives the connection often
+        enough that losing it must not lose the run: the tab is still there and
+        still holds the page's state, so pick it up again and carry on.
+        """
+        try:
+            self._ws.close()
+        except Exception:
+            pass
+        target = _page_target(self.port, tries=25)
+        if not target:
+            raise IOError("devtools target gone on port %d" % self.port)
+        self._ws = _ws_connect(target["webSocketDebuggerUrl"])
+        self._n = 0
+
+    def cmd(self, method, params=None, _retry=True):
+        try:
+            self._n += 1
+            mid = self._n
+            _ws_send(self._ws, json.dumps({"id": mid, "method": method,
+                                           "params": params or {}}))
+            while True:
+                msg = json.loads(_ws_recv(self._ws))
+                if msg.get("id") == mid:
+                    return msg
+        except (IOError, OSError, ValueError):
+            if not _retry:
+                raise
+            self._reconnect()
+            return self.cmd(method, params, _retry=False)
 
     def js(self, expr):
         r = self.cmd("Runtime.evaluate", {"expression": expr, "returnByValue": True,

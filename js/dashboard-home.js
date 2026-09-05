@@ -4,6 +4,7 @@ import { createToast } from './toast.js';
 import { openModal, modalHTML, modalFoot } from './wise-modal.js';
 import { createChatBridge } from './chat-bridge.js';
 import { OWL_BUG } from './owl-mark.js';
+import { roundedSector } from './chart-arcs.js';
 
 /**
  * Brand Intelligence dashboard home.
@@ -986,34 +987,6 @@ function legend(parts) {
    drawn dash is centered within its slice so the gaps stay perfectly even.
    `gapPx` is the visual gap left between slices. Data attributes drive the
    hover popover (label / value / share / color). */
-function polarPt(cx, cy, r, deg) {
-  const a = (deg * Math.PI) / 180;
-  return `${(cx + r * Math.cos(a)).toFixed(2)} ${(cy + r * Math.sin(a)).toFixed(2)}`;
-}
-
-/* Annular-sector path with gently rounded corners — a softer end than a fully
-   round stroke cap (which is a half-circle of radius sw/2). `cr` is the corner
-   radius, clamped so it never exceeds the slice's radial or angular room. */
-function roundedSector(cx, cy, ri, ro, a0, a1, cr) {
-  const spanRad = ((a1 - a0) * Math.PI) / 180;
-  const r = Math.max(0, Math.min(cr, (ro - ri) / 2, (ri * spanRad) / 2));
-  const offO = (r / ro) * (180 / Math.PI);
-  const offI = (r / ri) * (180 / Math.PI);
-  const big = a1 - offO - (a0 + offO) > 180 ? 1 : 0;
-  const P = (rad, deg) => polarPt(cx, cy, rad, deg);
-  return [
-    `M ${P(ro, a0 + offO)}`,
-    `A ${ro} ${ro} 0 ${big} 1 ${P(ro, a1 - offO)}`,
-    `A ${r} ${r} 0 0 1 ${P(ro - r, a1)}`,
-    `L ${P(ri + r, a1)}`,
-    `A ${r} ${r} 0 0 1 ${P(ri, a1 - offI)}`,
-    `A ${ri} ${ri} 0 ${big} 0 ${P(ri, a0 + offI)}`,
-    `A ${r} ${r} 0 0 1 ${P(ri + r, a0)}`,
-    `L ${P(ro - r, a0)}`,
-    `A ${r} ${r} 0 0 1 ${P(ro, a0 + offO)}`,
-    'Z',
-  ].join(' ');
-}
 
 function donutRing(parts, ring, cx, cy, r, sw, gapPx) {
   const circ = 2 * Math.PI * r;

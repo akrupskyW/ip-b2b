@@ -521,6 +521,8 @@
         host: document.querySelector('.ap-chat'),
         getBody: () => document.querySelector('.ap-chat'),
         welcomeEl: document.getElementById('welcome-screen'),
+        /* Bloom out on the first chip, keystroke, or Catalog-pane click
+           — same as Add Product / View Product. */
         isWide: () => {
           const c = document.querySelector('.ap-chat');
           return !!(c && (c.classList.contains('panel-triple') || c.classList.contains('panel-fill')));

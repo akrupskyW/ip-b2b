@@ -1,0 +1,61 @@
+---
+description: A chat turn plays in stages — prompt, thinking, answer, outputs, chips — and none may start before the one before it has finished
+alwaysApply: true
+---
+
+# One Turn, One Stage At A Time
+
+A turn is a sequence, not a pile. Every chat module plays it in this order, and
+a stage **never** starts before the stage before it has finished:
+
+1. **The member's prompt** reveals, line by line.
+2. **WISEcodeAI starts thinking** — the status line and its reasoning trace.
+3. **The answer** lands, paragraph by paragraph, ending on its references.
+4. **The outputs** the answer produced arrive — preview cards and the carousel
+   in the thread, blocks written into the panes on the right.
+5. **The closing intent chips** trail the finished set, last in the thread.
+
+Arriving is not opening: the panes stay shut and the chat keeps its width until
+the member taps an output chip (see the outputs-open-on-request rule). This rule
+governs the *order* the stages play in, not what opens.
+
+A long pasted brief is where this is impossible to miss: seventy lines were
+still fading in while the owl was already several globs into thinking about
+them, and the output carousel started building underneath an answer that was
+only half typed. Length is not a special case — it is the case that exposes a
+turn that was never sequenced.
+
+## How it is wired
+
+`makeStageGate` in `js/wiseai-chat.js` builds the gates; `promptStage`,
+`answerStage` and `outputStage` are the three.
+
+- `addUser` holds the prompt stage while the member's line reveals;
+  `respondWithTrace` starts the reasoning trace through `promptStage.after`.
+- `respondWithTrace` holds the answer stage before the host queues anything;
+  `addWISEcodeAI` releases it the moment the answer line has landed.
+- A host that surfaces a run of outputs brackets that run with `holdOutputs()`
+  / `releaseOutputs()` (see the queue in `pages/wiseai.html`), and the closing
+  chips wait on it.
+
+Each gate **runs its callback immediately when nothing is in flight**, so a
+one-line message, or a direct post with no prompt at all, waits for nothing.
+Each also carries a ceiling, so a stage that never reports itself finished
+cannot strand the rest of the turn.
+
+## Rules for the agent
+
+- Never start a turn's next stage on a timer guessed against the one before it.
+  Wait for the stage to report finished.
+- Never post an output card, carousel, or pane while the answer is still
+  typing. An output belongs to the answer it came out of, and lands after it.
+- A host that queues outputs must give the output stage back on **every** path,
+  including the path where it queued nothing at all.
+- Do not fork the gates per page. If a surface needs the ordering, it wires the
+  shared gates — see the nothing-page-local rule.
+
+## Verify
+
+`scripts/_output_pacing_check.js` guards the wiring.
+`scripts/_turn_order_probe.py` drives a real turn and prints the stamped
+timeline for each stage; run it after touching any of this.

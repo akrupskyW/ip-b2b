@@ -22,8 +22,12 @@ function asset(base, name) {
   return `${String(base || DEFAULT_BASE).replace(/\/$/, '')}/${name}`;
 }
 
-function isDarkTheme() {
+function isDarkTheme(el) {
   try {
+    if (el && el.closest) {
+      if (el.closest('.dsc-theme-dark')) return true;
+      if (el.closest('.dsc-theme-light')) return false;
+    }
     return !!(document.documentElement && document.documentElement.classList.contains('dark'));
   } catch (_) {
     return false;
@@ -138,16 +142,22 @@ function injectStyles() {
   style.textContent = `
 /* Edge-to-edge of the chat MODULE: cancel the avatar column and the
    messages-area padding using the sc-chat-body container inline size.
-   Background stays transparent so the chat surface shows through the gaps. */
+   Background stays transparent so the chat surface shows through the gaps.
+
+   Both edges are margins rather than a width, and the inset's FLOOR is read
+   from --sc-msg-pad-min (see .chat-messages-area in wise.css) instead of being
+   restated — a hard-coded 3rem left the strip 28px adrift once compact spacing
+   tightened the transcript to 20px. Keep this formula identical to the one the
+   messages area pads by. */
 .sc-line-body > .sc-owl-prog {
-  --sc-owl-pad: max(3rem, calc((100cqi - var(--sc-transcript-max, 860px)) / 2));
+  --sc-owl-pad: max(var(--sc-msg-pad-min, 3rem), calc((100cqi - var(--sc-transcript-max, 860px)) / 2));
   --sc-owl-media-h: ${OWL_PROG_MEDIA_H}px;
   --sc-owl-gap: 14px;
   box-sizing: border-box;
-  width: 100cqi;
-  max-width: 100cqi;
+  max-width: none;
   margin: 0.85em 0 0.35em;
   margin-left: calc(-1 * (var(--sc-avatar-size, 30px) + 12px + var(--sc-owl-pad)));
+  margin-right: calc(-1 * var(--sc-owl-pad));
   padding: 0;
   border: 0;
   background: transparent;
@@ -285,7 +295,7 @@ function loadLottie() {
 
 function applyVideoTheme(vid) {
   if (!vid) return;
-  const dark = isDarkTheme();
+  const dark = isDarkTheme(vid);
   const next = dark ? (vid.dataset.owlDark || '') : (vid.dataset.owlLight || '');
   if (!next) return;
   const abs = (() => {

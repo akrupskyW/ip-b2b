@@ -104,7 +104,6 @@
        but keep the shared two-column grid so the "Where to focus" scatter stays
        in column one (the hidden side card leaves column two empty). */
     .dash-scatter-side { display: none !important; }
-    .dash-scatter-row[data-att-orient="v"] .dash-scatter-side { display: flex !important; }
 
     /* "Where to focus" header: stack the description beneath the headline instead
        of letting it wrap to the right of it (the shared topbar lead is a flex row). */
@@ -426,6 +425,14 @@
     html.dark .att-more { color: var(--primary-bright, var(--primary)); }
     .att-more:hover { text-decoration: underline; }
     .att-more .material-symbols-outlined { font-size: 16px; }
+    /* Three columns leave the expander a sliver in a phone-width card, which
+       broke "See 4 more" over three lines and pushed a tier out of the legend.
+       Stack them instead: expander first, then the full tier row. */
+    @container dash (max-width: 560px) {
+      .att-legend { grid-template-columns: 1fr; justify-items: start; gap: 12px; }
+      .att-legend-dots { grid-column: 1; justify-content: flex-start; gap: 10px 14px; }
+      .att-more { grid-column: 1; }
+    }
 
     /* =====================================================================
        Matrix responsiveness — keyed to the dashboard column width via the
@@ -442,23 +449,38 @@
       }
       .pmx-avatar { width: 28px; height: 28px; }
     }
+    /* Below here the axis stops fitting side by side. Two things change: the
+       15 metric codes stand on end so each one owns its own column instead of
+       smearing into its neighbours, and the grid keeps a floor width so it
+       scrolls inside .att-scroll rather than crushing the product name down to
+       "St…". A dense 15-column matrix on a phone is a thing you scroll. */
     @container dash (max-width: 560px) {
       .pmx {
-        grid-template-columns: 28px 1px minmax(82px, 1fr) repeat(15, minmax(18px, 1fr));
-        min-width: 0; gap: 3px;
+        grid-template-columns: 28px 1px minmax(120px, 1.2fr) repeat(15, minmax(22px, 1fr));
+        min-width: 520px; gap: 3px;
       }
       .pmx-cell { min-height: 26px; border-radius: 4px; }
       .pmx-avatar { width: 24px; height: 24px; border-radius: 6px; }
       .pmx-rowmeta { padding-left: 6px; gap: 6px; }
       .pmx-fix-toast { display: none; }
+      .pmx-xlabel { align-items: flex-start; }
+      .pmx-xlabel span {
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        font-size: 10px;
+        max-height: 82px;
+        overflow: hidden;
+        white-space: nowrap;
+      }
     }
     @container dash (max-width: 440px) {
       .pmx {
-        grid-template-columns: 24px 1px minmax(66px, 1fr) repeat(15, minmax(13px, 1fr));
-        gap: 2px;
+        grid-template-columns: 24px 1px minmax(112px, 1.2fr) repeat(15, minmax(20px, 1fr));
+        min-width: 484px; gap: 2px;
       }
       .pmx-cell { min-height: 22px; border-radius: 3px; }
       .pmx-xlabel { padding-top: 5px; }
+      .pmx-xlabel span { font-size: 9px; max-height: 72px; }
       .pmx-avatar { width: 20px; height: 20px; border-radius: 5px; }
     }
 
@@ -946,6 +968,10 @@
     html.dark .upf-pill--primary { color: var(--primary-bright, var(--primary)); }
     .upf-pill--warn { background: color-mix(in srgb, var(--ter-amber) 24%, transparent); color: var(--ter-amber-text); }
     .upf-pill--alert { background: color-mix(in srgb, var(--sec-red) 16%, transparent); color: var(--sec-red-text); }
+    /* Neutral state — a label that reports a setting rather than a verdict
+       (a key's scope, a member with no roles, an inactive org). */
+    .upf-pill--muted { background: var(--surface-3); color: var(--text-muted); }
+    html.dark .upf-pill--muted { background: rgba(255, 255, 255, .08); }
 
     /* --- Card view --- */
     .upf-cards {
@@ -1412,7 +1438,7 @@
   </style>
   <script src="../js/cwr-toggle.js"></script>
 </head>
-<body data-product-id="dashboard" data-default-pivot="0" data-default-header="1" data-hide-nav="1" data-hide-wiseai="1">
+<body data-product-id="dashboard" data-default-pivot="0" data-default-header="1" data-hide-nav="1" data-hide-wiseai="1" data-hide-overview-actions="1">
   <!-- Page header — WISEcode brand lock-up (left) + report meta / export (right).
        Mirrors the shared navigation brand mark; rendered inline so it shows with
        the nav rail + top bar suppressed on this page. -->
@@ -1537,8 +1563,13 @@
            "INTELLIGENCE" tagline (and the nav labels) are authored at
            deliberate sub-12px sizes; bumping them to 12px blows out the logo
            (why it looked wrong here but correct on product-portfolio.html,
-           which runs no floor). The floor is only for injected content. */
-        if (el.closest && (el.closest('#menu-panel') || el.closest('#topbar-row'))) {
+           which runs no floor). The floor is only for injected content.
+
+           The chart palette is chrome for the same reason: its size presets
+           carry a deliberately tiny width caption under each label, which a
+           12px floor would widen past its pill. */
+        if (el.closest && (el.closest('#menu-panel') || el.closest('#topbar-row') ||
+            el.closest('#az-palette') || el.closest('#az-palette-launch'))) {
           el.dataset.wiseMinFs = '1';
           return;
         }
@@ -4174,60 +4205,15 @@
       margin: 0 0 10px;
     }
     .dash-card-topbar .att-orient,
-    .att-head .att-orient,
-    .dash-section-head .att-orient,
-    .dash-pillars-heading .att-orient,
-    .dash-top5-section .att-orient {
+    .att-head .att-orient {
       margin-left: auto;
-    }
-    .dash-section-head:has(.att-orient),
-    .dash-pillars-heading:has(.att-orient),
-    .dash-top5-section:has(.att-orient) > .dash-section-title {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
     }
     .att-card:has(.att-orient) .upf-controls { display: none; }
 
-    /* ---- Orientation flips (analytics-types.html only) ---- */
-    .pscale[data-att-orient="v"] {
-      grid-template-columns: 1fr;
-    }
-    .pscale[data-att-orient="v"] .pscale-col + .pscale-col {
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18);
-    }
-    .dash-claim[data-att-orient="v"],
-    .dash-claim.dash-top5-claim[data-att-orient="v"],
-    .dash-claim.dash-top5-hero-claim[data-att-orient="v"] {
-      grid-template-columns: 1fr !important;
-      row-gap: 22px;
-    }
-    .dash-claim[data-att-orient="v"] > .dash-claim-divider {
-      width: 100%;
-      height: 1px;
-      min-height: 1px;
-    }
-    .dash-pillars-section[data-att-orient="v"] .dash-pillars {
-      grid-template-columns: 1fr !important;
-      gap: 22px;
-    }
-    .dash-pillars-section[data-att-orient="v"] .dash-pillars > .dash-claim-divider {
-      width: 100%;
-      height: 1px;
-    }
-    .dash-pillars-breakdown[data-att-orient="v"] .dash-breakdown-grid {
-      grid-template-columns: 1fr !important;
-      gap: 28px;
-    }
-    .dash-donut-card[data-att-orient="v"] .dash-donut-row {
-      grid-template-columns: 1fr;
-      justify-items: center;
-    }
-
-    /* Horizontal ranked bars → vertical columns */
-    .dash-gras-bar-card[data-att-orient="v"] .dash-gras-bars,
+    /* ---- Table orientation (analytics-types.html only) ----
+       Only tables carry the pill, so these are the only hosts that can ever
+       be set to "v". Do not add a donut, funnel, spectrum, or bar chart back
+       into this block. */
     .dash-ingredients-card[data-att-orient="v"] .dash-ing-table,
     .dash-flag-card[data-att-orient="v"] .dash-ing-table {
       flex-direction: row;
@@ -4236,7 +4222,6 @@
       gap: 12px;
       padding-bottom: 6px;
     }
-    .dash-gras-bar-card[data-att-orient="v"] .dash-gras-bar-item,
     .dash-ingredients-card[data-att-orient="v"] .dash-ing-row,
     .dash-flag-card[data-att-orient="v"] .dash-ing-row {
       flex: 1 1 0;
@@ -4250,7 +4235,6 @@
       align-items: center;
     }
     .dash-ingredients-card[data-att-orient="v"] .dash-ing-report { display: none; }
-    .dash-gras-bar-card[data-att-orient="v"] .dash-gras-bar-head,
     .dash-ingredients-card[data-att-orient="v"] .dash-ing-bar-head,
     .dash-flag-card[data-att-orient="v"] .dash-ing-bar-head {
       order: 2;
@@ -4260,13 +4244,11 @@
       margin-top: 8px;
       width: 100%;
     }
-    .dash-gras-bar-card[data-att-orient="v"] .dash-ws-health-bar,
     .dash-ingredients-card[data-att-orient="v"] .dash-ws-health-bar,
     .dash-flag-card[data-att-orient="v"] .dash-ws-health-bar {
       width: 28px;
       align-self: center;
     }
-    .dash-gras-bar-card[data-att-orient="v"] .dash-ws-health-track,
     .dash-ingredients-card[data-att-orient="v"] .dash-ws-health-track,
     .dash-flag-card[data-att-orient="v"] .dash-ws-health-track {
       width: 28px;
@@ -4274,7 +4256,6 @@
       display: flex;
       flex-direction: column-reverse;
     }
-    .dash-gras-bar-card[data-att-orient="v"] .dash-ws-health-fill,
     .dash-ingredients-card[data-att-orient="v"] .dash-ws-health-fill,
     .dash-flag-card[data-att-orient="v"] .dash-ws-health-fill {
       width: 100% !important;
@@ -4283,41 +4264,6 @@
       min-height: 1.4rem;
       padding: 4px 0;
       justify-content: center;
-    }
-
-    /* Segmented bars stand up */
-    .dash-seg-section[data-att-orient="v"] .dash-seg-row,
-    .dash-mrow-section[data-att-orient="v"] .dash-seg-row {
-      align-items: flex-end;
-    }
-    .dash-seg-section[data-att-orient="v"] .dash-seg-track,
-    .dash-mrow-section[data-att-orient="v"] .dash-seg-track {
-      flex-direction: column;
-      height: 240px;
-      width: 52px;
-    }
-    .dash-seg-section[data-att-orient="v"] .dash-seg-legend,
-    .dash-mrow-section[data-att-orient="v"] .dash-seg-legend {
-      flex-direction: column;
-      height: 240px;
-      margin-left: 10px;
-    }
-    .dash-seg-section[data-att-orient="v"] .dash-seg-bars,
-    .dash-mrow-section[data-att-orient="v"] .dash-seg-bars {
-      display: flex;
-      flex-direction: row;
-      align-items: stretch;
-    }
-    .dash-seg-section[data-att-orient="v"] .dash-seg-leg-line,
-    .dash-mrow-section[data-att-orient="v"] .dash-seg-leg-line {
-      width: 14px;
-      height: 2px;
-      margin-top: 0;
-      margin-left: -1px;
-    }
-    .dash-seg-section[data-att-orient="v"] .dash-charts-pending .dash-seg-track:not(.is-seg-ready),
-    .dash-mrow-section[data-att-orient="v"] .dash-charts-pending .dash-seg-track:not(.is-seg-ready) {
-      clip-path: inset(100% 0 0 0);
     }
 
     /* Polar → metric bars */
@@ -4349,6 +4295,23 @@
       min-width: 0;
     }
     .pmx.is-transposed .pmx-xlabel span { writing-mode: horizontal-tb; }
+    /* Transposed is the reading a phone-width report opens on, so it has to
+       hold six product names as column headers. Laid flat they overlap exactly
+       the way the metric codes did, so they keep the stood-up treatment — and
+       being names rather than codes, they get more room to run. Six narrow
+       columns plus one label column fit without scrolling.
+
+       These sit after the rule above on purpose: same specificity, so source
+       order is what lets them take the writing mode back. */
+    @container dash (max-width: 560px) {
+      .pmx.is-transposed {
+        grid-template-columns: minmax(92px, 1.3fr) repeat(var(--pmx-cols, 6), minmax(24px, 1fr));
+      }
+      .pmx.is-transposed .pmx-xlabel span {
+        writing-mode: vertical-rl;
+        max-height: 116px;
+      }
+    }
 
     .inf-chart {
       position: relative;
@@ -4426,6 +4389,10 @@
       line-height: 1.25;
       max-width: 42%;
       opacity: 0;
+      /* --inf-ink is set inline per stage by the renderer, so it cannot be
+         overridden by inheritance. --inf-ink-flowed is the slot a layout that
+         lifts the labels off the drawing sets on the container instead. */
+      color: var(--inf-ink-flowed, var(--inf-ink, var(--text)));
     }
     .inf-label--callout {
       transform: translate(0, -50%);
@@ -4534,12 +4501,61 @@
       .inf-chart.is-ready .inf-label { animation: none; opacity: 1; }
       .inf-orient-btn { transition: none; }
     }
+    /* The funnel geometry is a fixed viewBox, so it scales with the column
+       while the labels sit on top of it at a fixed type size. Past a point the
+       labels are simply larger than the gaps between the stages they name and
+       they collide. Bring the type down in step with the drawing so each stage
+       keeps its own room. */
     @container dash (max-width: 640px) {
       .inf-num { font-size: 18px; }
       .inf-label--group .inf-num,
       .inf-label--group-side .inf-num { font-size: 14px; }
       .inf-cap { font-size: 11px; }
       .inf-label--bar-title { white-space: normal; max-width: 90%; }
+    }
+    /* Past here shrinking the type stops being the answer — the stages are
+       drawn closer together than any legible label is tall, so the neck of the
+       funnel can never hold three of them. Take the labels off the drawing and
+       let them flow underneath it as one row per stage: the funnel keeps being
+       the picture, and the numbers become a list you can actually read. The
+       inline left/top the renderer sets go inert the moment these are static,
+       so this needs no second layout pass in JS. */
+    @container dash (max-width: 520px) {
+      .inf-labels {
+        position: static;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        margin-top: 14px;
+        /* Off the funnel, on the card: the band inks no longer apply and the
+           white stage label that sat on the dark neck would vanish. */
+        --inf-ink-flowed: var(--text);
+      }
+      .inf-label,
+      .inf-label--callout,
+      .inf-label--callout-below,
+      .inf-label--group,
+      .inf-label--group-side,
+      .inf-label--bar-title,
+      .inf-label--bar-title-side {
+        position: static;
+        transform: none;
+        max-width: none;
+        text-align: left;
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        white-space: normal;
+      }
+      .inf-num { font-size: 16px; flex: none; }
+      .inf-label--group .inf-num,
+      .inf-label--group-side .inf-num,
+      .inf-label--bar-title,
+      .inf-label--bar-title .inf-num { font-size: 13px; }
+      .inf-cap { margin-top: 0; font-size: 11px; }
+      /* The leader line pointed at a callout that no longer sits beside the
+         funnel. */
+      .inf-leader { display: none; }
     }
 
     /* ---- GRAS conversion funnel: stacked trapezoids, not the organic pour ---- */
@@ -5268,7 +5284,12 @@
           el.className = 'inf-label' + (st.callout
             ? (axis === 'v' ? ' inf-label--callout' : ' inf-label--callout-below')
             : '');
-          el.style.color = inside ? st.ink : 'var(--text)';
+          /* A stage label that sits on the funnel is inked to read against the
+             band it covers — white, on the dark neck. Publish that as a
+             property rather than a hard colour so a layout that takes the
+             label off the drawing can ask for the card's own text colour back
+             (see the narrow-column rules for .inf-labels). */
+          el.style.setProperty('--inf-ink', inside ? st.ink : 'var(--text)');
           el.style.setProperty('--ld', (0.28 + i * 0.22) + 's');
           el.innerHTML = `${numSpan(st.value)}<span class="inf-cap">${esc(st.cap)}</span>`;
           if (st.callout && axis === 'v') {
@@ -5768,10 +5789,15 @@
 
   <script>
     /* =====================================================================
-       Chart orientation (analytics-types.html only). Every chart gets the
-       same Vertical / Horizontal pill. Default keeps the existing layout;
-       the other value flips the primary axis (or, for tables / polar /
-       scatter / the matrix, the already-built alternate reading).
+       Table orientation (analytics-types.html only).
+
+       ONLY tables get the Vertical / Horizontal pill. A donut, funnel,
+       gauge, spectrum, or ranked-bar chart has exactly one honest reading —
+       putting the pill on all of them was wrong and is not to come back.
+       A table is the thing that genuinely transposes: rows and columns, or
+       one card per row when the columns stop fitting.
+
+       Horizontal keeps the table; Vertical is the stacked card reading.
     ===================================================================== */
     (function () {
       const KEY = 'az-chart-orient';
@@ -5795,32 +5821,44 @@
         };
       }
 
-      const CHARTS = [
-        { id: 'pscale',     sel: ':scope > .pscale, .pscale', def: 'h', place: 'before' },
-        { id: 'claim',      sel: ':scope > .dash-claim:not(.att-overview-claim)', def: 'h', place: 'before' },
-        { id: 'overview',   sel: '.att-overview-claim', def: 'h', place: 'before' },
-        { id: 'top5',       sel: '.dash-top5-section:not(.dash-top5-hero-section)', def: 'h', place: 'head' },
-        { id: 'top5hero',   sel: '.dash-top5-hero-section', def: 'h', place: 'head' },
-        { id: 'upf-donut',  sel: '#dash-charts .dash-donut-card:first-child', def: 'h', place: 'topbar' },
-        { id: 'gras-donut', sel: '#dash-charts .dash-donut-card:last-child', def: 'h', place: 'topbar' },
-        { id: 'pillars',    sel: '.dash-pillars-section', def: 'h', place: 'head' },
-        { id: 'breakdown',  sel: '.dash-pillars-breakdown', def: 'h', place: 'head' },
-        { id: 'polar',      sel: '.dash-radar-card', def: 'h', place: 'topbar',
-          onChange: function (_h, o) { if (window.__attPolarSetOrient) window.__attPolarSetOrient(o); } },
-        { id: 'grasbars',   sel: '.dash-gras-bar-card', def: 'h', place: 'topbar' },
+      /* Below this the wide table and matrix readings stop fitting and their
+         stacked twin is the honest default, so any chart carrying `narrow`
+         opens on that value instead of `def`.
+
+         Measured on the report container, never the viewport: the Chart size
+         presets in js/analytics-palette.js narrow that container to preview a
+         phone, and a real phone is narrow the same way. A viewport media query
+         sees neither (it reads the whole window), which is why the tables kept
+         opening as a full table inside a 380px frame. */
+      const NARROW_AT = 700;
+      const dashEl = () => document.querySelector('#agent-main-scroll .dash');
+      function isNarrow() {
+        const d = dashEl();
+        return !!d && d.clientWidth > 0 && d.clientWidth <= NARROW_AT;
+      }
+      function defaultFor(spec) {
+        const saved = store()[spec.id];
+        if (saved === 'v' || saved === 'h') return saved;
+        return spec.narrow && isNarrow() ? spec.narrow : spec.def;
+      }
+
+      const TABLES = [
+        /* Ingredient and flag tables — each is a real column table with a
+           per-row card twin. */
         { id: 'hotspots',   sel: '.dash-ingredients-section .dash-ingredients-card', def: 'h', place: 'topbar' },
         { id: 'antiinf',    sel: '.dash-products-section .dash-ingredients-card', def: 'h', place: 'topbar' },
-        { id: 'mhc',        sel: '.dash-mrow-section', def: 'h', place: 'before-inner' },
         { id: 'unsafe',     sel: '.dash-flag-card:first-child', def: 'h', place: 'topbar' },
         { id: 'unknown',    sel: '.dash-flag-card:last-child', def: 'h', place: 'topbar' },
-        { id: 'seg',        sel: '.dash-seg-section', def: 'h', place: 'head' },
-        { id: 'scatter',    sel: '.dash-scatter-section', def: 'h', place: 'topbar' },
-        { id: 'matrix',     sel: '#att-tree-card', def: 'h', place: 'before',
+        /* The performance matrix is products against metric codes — the pill
+           transposes which of the two is the row. */
+        { id: 'matrix',     sel: '#att-tree-card', def: 'h', narrow: 'v', place: 'before',
           onChange: function (_h, o) { if (window.__attPmxSetOrient) window.__attPmxSetOrient(o); } },
-        { id: 'upf-table',  sel: '#upf-class-card', def: 'h', place: 'head', onChange: tableFlip('upf-view-toggle') },
-        { id: 'gras-table', sel: '#gras-class-card', def: 'h', place: 'head', onChange: tableFlip('gras-view-toggle') },
-        { id: 'proc-table', sel: '#proc-class-card', def: 'h', place: 'head', onChange: tableFlip('proc-view-toggle') },
-        { id: 'gras-prod',  sel: '#gras-prod-card', def: 'h', place: 'head', onChange: tableFlip('gras-prod-view-toggle') },
+        /* A five-column table cannot be read in a phone-width frame, so these
+           four open on their card reading there. */
+        { id: 'upf-table',  sel: '#upf-class-card', def: 'h', narrow: 'v', place: 'head', onChange: tableFlip('upf-view-toggle') },
+        { id: 'gras-table', sel: '#gras-class-card', def: 'h', narrow: 'v', place: 'head', onChange: tableFlip('gras-view-toggle') },
+        { id: 'proc-table', sel: '#proc-class-card', def: 'h', narrow: 'v', place: 'head', onChange: tableFlip('proc-view-toggle') },
+        { id: 'gras-prod',  sel: '#gras-prod-card', def: 'h', narrow: 'v', place: 'head', onChange: tableFlip('gras-prod-view-toggle') },
       ];
 
       function syncFills(host) {
@@ -5838,14 +5876,6 @@
 
       function apply(host, spec, orient) {
         host.dataset.attOrient = orient;
-        if (spec.id === 'scatter') {
-          const row = host.closest('.dash-scatter-row');
-          if (row) row.dataset.attOrient = orient;
-        }
-        if (spec.id === 'top5' || spec.id === 'top5hero') {
-          const claim = host.querySelector('.dash-claim');
-          if (claim) claim.dataset.attOrient = orient;
-        }
         syncFills(host);
         if (spec.onChange) spec.onChange(host, orient);
         toggleRoot(host).querySelectorAll('.att-orient-btn').forEach((b) => {
@@ -5882,14 +5912,6 @@
           host.parentNode.insertBefore(bar, host);
           return;
         }
-        if (place === 'before-inner') {
-          if (host.querySelector(':scope > .att-orient-bar')) return;
-          const bar = document.createElement('div');
-          bar.className = 'att-orient-bar';
-          bar.appendChild(toggle);
-          host.insertBefore(bar, host.firstChild);
-          return;
-        }
         if (place === 'topbar') {
           const topbar = host.querySelector('.dash-card-topbar');
           if (topbar) {
@@ -5900,9 +5922,9 @@
           }
         }
         if (place === 'head') {
-          const head = host.querySelector('.att-head, .dash-breakdown-title, .dash-pillars-heading, .dash-seg-head, .dash-section-head:not(.dash-mrow-head)');
+          const head = host.querySelector('.att-head, .dash-section-head');
           if (head) { head.appendChild(toggle); return; }
-          const title = host.querySelector('.dash-top5-title, .att-title');
+          const title = host.querySelector('.att-title');
           if (title) {
             const bar = document.createElement('div');
             bar.className = 'att-orient-bar';
@@ -5917,32 +5939,69 @@
         host.insertBefore(bar, host.firstChild);
       }
 
+      const bound = [];
+
       function attach(spec) {
-        const root = document.querySelector('#agent-main-scroll .dash') || document;
+        const root = dashEl() || document;
         const host = root.querySelector(spec.sel);
         if (!host || host.dataset.attOrientBound === '1') return !!host;
         if (toggleRoot(host).querySelector('.att-orient')) {
           host.dataset.attOrientBound = '1';
           return true;
         }
-        const saved = store()[spec.id];
-        const orient = saved === 'v' || saved === 'h' ? saved : spec.def;
+        const orient = defaultFor(spec);
         const toggle = buildToggle(host, spec, orient);
         placeToggle(host, toggle, spec.place);
         host.dataset.attOrientBound = '1';
+        bound.push({ spec, host });
         apply(host, spec, orient);
         return true;
       }
 
       function scan() {
         let all = true;
-        CHARTS.forEach((spec) => { if (!attach(spec)) all = false; });
+        TABLES.forEach((spec) => { if (!attach(spec)) all = false; });
         return all;
       }
 
+      /* Reframing the report (or moving to a narrower screen) changes which
+         reading fits, so re-derive. A member's own pick is stored and wins
+         forever after — this only ever moves a chart still on its default. */
+      function rederive() {
+        bound.forEach(({ spec, host }) => {
+          if (!spec.narrow) return;
+          const saved = store()[spec.id];
+          if (saved === 'v' || saved === 'h') return;
+          const want = defaultFor(spec);
+          if (host.dataset.attOrient !== want) apply(host, spec, want);
+        });
+      }
+
+      /* Fires on the crossing, not on every pixel, so a drag-resize cannot
+         thrash the tables (or loop the observer against its own reflow). The
+         report container arrives with the report, so this waits for it. */
+      let watching = false;
+      function watchWidth() {
+        if (watching || typeof ResizeObserver !== 'function') return;
+        const d = dashEl();
+        if (!d) return;
+        watching = true;
+        let was = isNarrow();
+        new ResizeObserver(() => {
+          const now = isNarrow();
+          if (now === was) return;
+          was = now;
+          rederive();
+        }).observe(d);
+      }
+
       function init() {
+        watchWidth();
         if (scan()) return;
-        const obs = new MutationObserver(() => { if (scan()) obs.disconnect(); });
+        const obs = new MutationObserver(() => {
+          watchWidth();
+          if (scan()) obs.disconnect();
+        });
         obs.observe(document.getElementById('agent-main-scroll') || document.body, { childList: true, subtree: true });
         setTimeout(() => obs.disconnect(), 14000);
       }
@@ -6020,12 +6079,30 @@
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,.14);
       transition: transform .12s ease, box-shadow .12s ease;
+      /* A grid item will not shrink below its own text by default, so eleven
+         columns of "WA / 78" held the map wider than a phone-width card and
+         the eastern seaboard fell off the right edge. */
+      min-width: 0;
     }
     .atx-stage.is-in .atx-geo-tile { animation: atxPopH .48s cubic-bezier(.22,1,.36,1) both; }
     @keyframes atxPopH { from { opacity: 0; transform: scale(.3); } to { opacity: 1; transform: scale(1); } }
     .atx-geo-tile:hover { transform: scale(1.12); box-shadow: var(--shadow-2); z-index: 2; }
     .atx-geo-ab { font-size: 11px; font-weight: 800; line-height: 1; }
     .atx-geo-v { font-size: 9.5px; font-weight: 700; opacity: .92; margin-top: 2px; font-variant-numeric: tabular-nums; }
+    /* All fifty states have to stay on one map, so the tiles and their type
+       come down with the column rather than the grid breaking up. */
+    @container dash (max-width: 560px) {
+      .atx-geo { gap: 4px; }
+      .atx-geo-tile { border-radius: 6px; }
+      .atx-geo-ab { font-size: 9px; }
+      .atx-geo-v { font-size: 8px; margin-top: 1px; }
+    }
+    @container dash (max-width: 440px) {
+      .atx-geo { gap: 2.5px; }
+      .atx-geo-tile { border-radius: 4px; }
+      .atx-geo-ab { font-size: 7.5px; }
+      .atx-geo-v { font-size: 6.5px; margin-top: 0; }
+    }
 
     .atx-note { margin: 14px 0 0; font-size: 12px; color: var(--text-subtle); line-height: 1.55; }
 
@@ -6094,6 +6171,9 @@
     }
     html.dark .atx-mini { background: rgba(255, 255, 255, 0.09); }
     .atx-mini-fill {
+      /* Explicitly a block: width/height are ignored on an inline box, so an
+         inline host element would render the fill at zero size. */
+      display: block;
       height: 100%; border-radius: inherit; transform-origin: left center;
       transform: scaleX(0); width: var(--atx-mini, 0%);
     }
@@ -6110,6 +6190,273 @@
       color: #fff; font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums;
       box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14);
     }
+
+    /* =====================================================================
+       Table specimens (js/analytics-types-tables.js)
+
+       One card per data table in the app, so the size palette can be pointed
+       at the whole catalog and not just the charts. The cells reuse the
+       page's own `.upf-pill` / `.atx-mini` / `.atx-tbl` vocabulary; only the
+       shapes those don't already cover are declared here.
+
+       Sizing, in three bands:
+         • Desktop / Laptop — the table lays out naturally.
+         • Tablet — `--attb-minw` holds each table at a legible floor and the
+           card's own scroller takes over. Crushing a 7-column grid into 770px
+           is what produced "St…" for a product name.
+         • Mobile — js/responsive-tables.js measures the wrapper and stacks
+           rows into labelled cards below 560px. Nothing here re-implements
+           that; these rules only stop the specimen's own inline bits (the
+           thumb, the button row, the tree indent) from fighting it.
+    ===================================================================== */
+    .attb-tbl { min-width: var(--attb-minw, 0); }
+    .attb-wrap { padding-bottom: 6px; }
+    .attb-card .atx-stage { cursor: default; }
+
+    .attb-tbl th.attb-th--num,
+    .attb-tbl td.attb-td--num { text-align: right; }
+    .attb-tbl th.attb-th--c,
+    .attb-tbl td.attb-td--c { text-align: center; }
+    .attb-tbl td.attb-td--act { white-space: nowrap; }
+    /* Control columns sit tight to their glyph so the data columns get the room. */
+    .attb-tbl th.attb-th--c, .attb-tbl td.attb-td--c { padding-right: 6px; width: 1%; }
+
+    /* ---- identity cell: photo or initials + two lines of text ---- */
+    .attb-id { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+    .attb-thumb {
+      flex: none; width: 34px; height: 34px; border-radius: 8px; overflow: hidden;
+      background: var(--surface-3); display: inline-flex; align-items: center;
+      justify-content: center; font-size: 11px; font-weight: 800; color: var(--text-muted);
+    }
+    html.dark .attb-thumb { background: rgba(255, 255, 255, .08); }
+    .attb-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .attb-thumb.is-fallback { letter-spacing: .02em; }
+    /* Initials avatars are circles — never a rounded square. */
+    .attb-avatar {
+      flex: none; width: 32px; height: 32px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--primary-soft); color: var(--primary);
+      font-size: 11px; font-weight: 800; letter-spacing: .02em;
+    }
+    html.dark .attb-avatar { color: var(--primary-bright, var(--primary)); }
+
+    .attb-stack { display: inline-flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .attb-stack-t { font-weight: 700; color: var(--text); line-height: 1.35; }
+    .attb-stack-sub { font-size: 11.5px; color: var(--text-subtle); line-height: 1.35; }
+    .attb-strong { font-weight: 700; }
+    .attb-muted { color: var(--text-subtle); }
+    .attb-na { color: var(--text-subtle); }
+    .attb-prose { color: var(--text); line-height: 1.5; }
+    .attb-note { color: var(--text-subtle); line-height: 1.45; display: block; max-width: 34ch; }
+    .attb-org { font-weight: 600; }
+    .attb-rank { color: var(--text-subtle); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .attb-num { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .attb-score { color: var(--primary); }
+    html.dark .attb-score { color: var(--primary-bright, var(--primary)); }
+    .attb-amount { font-weight: 800; font-size: 15px; font-variant-numeric: tabular-nums; }
+    .attb-unmapped { font-style: italic; color: var(--text-subtle); }
+    .attb-mapped { font-style: italic; color: var(--text-muted); }
+    .attb-plnum {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 22px; padding: 2px 6px; border-radius: 999px;
+      background: var(--surface-3); color: var(--text-muted);
+      font-size: 12px; font-weight: 800;
+    }
+    html.dark .attb-plnum { background: rgba(255, 255, 255, .08); }
+
+    /* ---- date pair (mirrors the app-wide stacked date column) ---- */
+    .attb-dates { display: inline-flex; flex-direction: column; gap: 2px; }
+    .attb-date { display: inline-flex; gap: 6px; align-items: baseline; white-space: nowrap; }
+    .attb-date-k {
+      font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+      color: var(--text-subtle);
+    }
+    .attb-date-v { font-size: 12.5px; color: var(--text); font-variant-numeric: tabular-nums; }
+    .attb-date--sub .attb-date-v { color: var(--text-subtle); }
+
+    /* ---- tag pills ---- */
+    .attb-tags { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+    .attb-tag {
+      padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border);
+      font-size: 11px; font-weight: 700; color: var(--text-muted); white-space: nowrap;
+    }
+
+    /* ---- stars ---- */
+    .attb-starcell { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .attb-stars { display: inline-flex; gap: 1px; }
+    .attb-star {
+      font-size: 17px; color: var(--border-strong);
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .attb-star.is-on {
+      color: var(--ter-amber-text, #b45309);
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    /* Screen-reader text for the star count — the glyphs are decorative. */
+    .attb-sr {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+    }
+
+    /* ---- buttons ---- */
+    .attb-btnrow { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+    .attb-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 12px; border-radius: 999px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text);
+      font: inherit; font-size: 12px; font-weight: 700; white-space: nowrap;
+      cursor: default;
+    }
+    .attb-btn .material-symbols-outlined { font-size: 15px; }
+    .attb-btn--primary {
+      background: var(--primary); border-color: var(--primary); color: #fff;
+    }
+    /* A primary (solid brand-blue) control always takes the filled icon twin. */
+    .attb-btn--primary .material-symbols-outlined {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .attb-btn--link {
+      border-color: transparent; background: transparent; padding: 5px 0;
+      color: var(--primary); text-decoration: underline; text-underline-offset: 2px;
+    }
+    html.dark .attb-btn--link { color: var(--primary-bright, var(--primary)); }
+
+    .attb-check { font-size: 20px; color: var(--text-subtle); }
+
+    /* ---- budget / score bar in a cell ---- */
+    .attb-barcell { display: inline-flex; align-items: center; gap: 8px; }
+    .attb-barcell .atx-mini { width: 84px; max-width: none; }
+    .attb-barnum { font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .attb-barnum::after { content: '%'; }
+    .attb-impactcell { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+    .attb-grade { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; }
+    .attb-grade .atx-mini { width: 64px; max-width: none; }
+    .attb-gradeltr {
+      min-width: 30px; text-align: right; font-weight: 800; font-size: 13px; color: var(--text-muted);
+    }
+
+    /* ---- reformulation impact badge ---- */
+    .attb-impact {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 30px; height: 24px; padding: 0 7px; border-radius: 999px;
+      font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums;
+    }
+    .attb-impact .material-symbols-outlined { font-size: 16px; }
+    .attb-impact--dq {
+      background: color-mix(in srgb, var(--sec-red) 16%, transparent); color: var(--sec-red-text);
+    }
+    .attb-impact--credit {
+      background: color-mix(in srgb, var(--sec-green) 15%, transparent); color: var(--sec-green-text);
+    }
+
+    /* ---- guiding-stars recommended move (prose over an outcome) ---- */
+    .attb-move { display: inline-flex; flex-direction: column; gap: 5px; }
+    .attb-move-out {
+      font-size: 11.5px; font-weight: 700; color: var(--primary);
+    }
+    html.dark .attb-move-out { color: var(--primary-bright, var(--primary)); }
+
+    /* ---- invoices: status is coloured text with an icon, not a pill ---- */
+    .attb-invcell { display: inline-flex; flex-direction: column; gap: 3px; }
+    .attb-invno { font-size: 11.5px; color: var(--text-subtle); font-variant-numeric: tabular-nums; }
+    .attb-invstatus {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 12px; font-weight: 800;
+    }
+    .attb-invstatus .material-symbols-outlined { font-size: 15px; }
+    .attb-invstatus--good { color: var(--sec-green-text); }
+    .attb-invstatus--primary { color: var(--primary); }
+    html.dark .attb-invstatus--primary { color: var(--primary-bright, var(--primary)); }
+    .attb-invstatus--warn { color: var(--ter-amber-text); }
+    .attb-invstatus--alert { color: var(--sec-red-text); }
+
+    /* ---- api key ---- */
+    .attb-code {
+      font-family: 'DM Mono', ui-monospace, monospace; font-size: 12px;
+      color: var(--text-muted); white-space: nowrap;
+    }
+
+    /* ---- marketing-assets tree ---- */
+    .attb-tree {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding-left: calc(var(--attb-depth, 0) * 22px);
+    }
+    .attb-fileic { font-size: 19px; color: var(--text-subtle); }
+    .attb-chev {
+      font-size: 19px; color: var(--text-subtle);
+      transition: transform .14s ease;
+    }
+    .attb-chev.is-open { transform: rotate(90deg); }
+    .attb-count {
+      font-size: 11px; font-weight: 700; color: var(--text-subtle);
+      padding: 2px 8px; border-radius: 999px; background: var(--surface-3);
+      white-space: nowrap;
+    }
+    html.dark .attb-count { background: rgba(255, 255, 255, .08); }
+
+    /* ---- row ⋮ and its menu ----
+       Opens on hover (js/kebab-hover.js) and is floated clear of the card's
+       scroller by js/popover-layer.js. Anchored to the RIGHT of the glyph,
+       never below it. */
+    .attb-rowmenu { position: relative; display: inline-flex; }
+    .attb-rowmenu-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 30px; height: 30px; border-radius: 50%; border: 0;
+      background: transparent; color: var(--text-subtle); cursor: pointer;
+    }
+    .attb-rowmenu-btn:hover { background: var(--surface-3); color: var(--text); }
+    html.dark .attb-rowmenu-btn:hover { background: rgba(255, 255, 255, .08); }
+    .attb-rowmenu-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .attb-rowmenu-btn .material-symbols-outlined { font-size: 20px; }
+    .attb-rowmenu-pop {
+      position: absolute; left: calc(100% + 6px); top: 50%; transform: translateY(-50%);
+      z-index: 40; min-width: 178px; padding: 6px;
+      display: flex; flex-direction: column; gap: 1px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; box-shadow: var(--shadow-3, 0 12px 32px rgba(0, 0, 0, .18));
+    }
+    .attb-rowmenu-pop[hidden] { display: none; }
+    .attb-menu-item {
+      padding: 7px 10px; border-radius: 8px; font-size: 13px; color: var(--text);
+      white-space: nowrap;
+    }
+    .attb-menu-item:hover { background: var(--primary-soft); }
+    .attb-menu-title {
+      padding: 4px 10px 6px; font-size: 10px; font-weight: 800; letter-spacing: .07em;
+      text-transform: uppercase; color: var(--text-subtle);
+    }
+
+    /* ---- where the real one lives ---- */
+    .attb-src { color: var(--primary); font-weight: 700; }
+    html.dark .attb-src { color: var(--primary-bright, var(--primary)); }
+
+    /* ---- Tablet and below: give long cells permission to wrap ----
+       At the tablet frame the table is already at its `--attb-minw` floor and
+       scrolling. Prose and notes are the cells that can give width back. */
+    @container dash (max-width: 900px) {
+      .attb-note { max-width: 26ch; }
+      .attb-prose { min-width: 15ch; }
+      .attb-barcell .atx-mini { width: 64px; }
+    }
+
+    /* ---- Mobile: rows are cards (js/responsive-tables.js) ----
+       The shared card layout puts LABEL left, value right. These rules only
+       keep the specimen's own inline pieces from breaking that: the floor is
+       dropped and wide cells stop being nowrap. The row menu needs nothing —
+       js/popover-layer.js pins it on screen at a phone width, the same way it
+       does for every other row menu in the app. */
+    .attb-tbl.rtbl-cards { --attb-minw: 0; }
+    .attb-tbl.rtbl-cards td.attb-td--act,
+    .attb-tbl.rtbl-cards .attb-num,
+    .attb-tbl.rtbl-cards .attb-date { white-space: normal; }
+    .attb-tbl.rtbl-cards .attb-note,
+    .attb-tbl.rtbl-cards .attb-prose { max-width: none; }
+    .attb-tbl.rtbl-cards .attb-tree { padding-left: 0; }
+    .attb-tbl.rtbl-cards .attb-dates { align-items: flex-end; }
+    .attb-tbl.rtbl-cards .attb-btnrow { justify-content: flex-start; }
+    /* A card is a block, so the identity cell can use the whole width. */
+    .attb-tbl.rtbl-cards .attb-id { display: flex; }
+    .attb-tbl.rtbl-cards .attb-id .attb-stack { flex: 1 1 auto; }
   </style>
 
   <script>
@@ -6663,7 +7010,11 @@
     })();
   </script>
 
-  <script src="../js/analytics-types-variations.js"></script>
+  <script type="module" src="../js/analytics-types-variations.js"></script>
+
+  <!-- One card per data table in the app, so the size palette covers the whole
+       catalog and not only the charts. Mounts after the variations. -->
+  <script type="module" src="../js/analytics-types-tables.js"></script>
 
   <!-- Draggable chart palette: chart size, skinny bars, and the jump list.
        Loads after the variation charts so its first build already sees them. -->

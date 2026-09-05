@@ -578,30 +578,35 @@ export function pageAppearanceDefault(dataKey) {
   } catch { return null; }
 }
 
-/* Header float — module/panel header strips are permanently removed app-wide.
-   The `header-float` class on <html> drops every header strip entirely (no space
-   kept) and pins its right-floated icons/actions (.panel-controls) absolutely
-   over the top-right of the module content. There is no longer a user toggle for
-   this: the class is always applied. The functions below are kept (as no-ops that
-   force the class on) so existing callers/imports keep working. */
+/* Header float — drop every module/panel header strip (no space kept) and pin
+   its right-floated icons/actions (.panel-controls) over the top-right of the
+   module content. Admin-only Appearance ▸ Layout row. Off by default. Driven
+   by `header-float` on <html>; persisted so a stored-on choice survives
+   navigation. Keep the FOUC twin in js/text-size-fouc.js in sync. */
+const HEADER_FLOAT_KEY = 'wise-header-float';
 
-/** Header-float is permanently on — module headers are always hidden. */
+/** True when header-float is on. Defaults OFF (only an explicit '1' turns it on). */
 export function isHeaderFloatOn() {
-  return true;
+  try { return localStorage.getItem(HEADER_FLOAT_KEY) === '1'; } catch { return false; }
 }
 
-/** Force the header-float class on <html>. The `on` argument is ignored:
-    headers are permanently removed app-wide. */
-export function applyHeaderFloat(_on) {
-  document.documentElement.classList.add('header-float');
+/** Toggle the header-float class on <html> and persist it.
+    @param {boolean} on
+    @param {boolean} [persist=true]  Restore must not write, or a first visit
+      would lock the default off into storage. */
+export function applyHeaderFloat(on, persist = true) {
+  document.documentElement.classList.toggle('header-float', !!on);
+  if (persist) {
+    try { localStorage.setItem(HEADER_FLOAT_KEY, on ? '1' : '0'); } catch {}
+  }
   try {
-    document.dispatchEvent(new CustomEvent('wise:header-float', { detail: { on: true } }));
+    document.dispatchEvent(new CustomEvent('wise:header-float', { detail: { on: !!on } }));
   } catch {}
 }
 
-/** Apply the (always-on) header-float state onto the document. */
+/** Restore the persisted (or default-off) header-float state without writing. */
 export function restoreHeaderFloat() {
-  applyHeaderFloat();
+  applyHeaderFloat(isHeaderFloatOn(), false);
 }
 
 /* Full bleed — open EVERY module top-to-bottom (drop its top/bottom borders,

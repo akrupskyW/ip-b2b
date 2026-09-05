@@ -6,12 +6,17 @@
  * of ten preview cards appearing in the same frame. The queue in wiseai.html is
  * lifted out and run against a stub so the ordering and the spacing are checked
  * without a browser.
+ *
+ * The queue is also one link in a longer chain — prompt, thinking, answer,
+ * outputs, chips, each waiting for the one before it (see the turn-stage-order
+ * rule). The gates that hold that chain together are checked here too.
  */
 const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const page = fs.readFileSync(path.join(ROOT, 'pages/wiseai.html'), 'utf8');
+const chat = fs.readFileSync(path.join(ROOT, 'js/wiseai-chat.js'), 'utf8');
 let fails = 0;
 const ok = (cond, msg) => {
   if (cond) console.log(`  ok   ${msg}`);
@@ -36,6 +41,73 @@ ok(!/\n\s*postSurfaceBlock\('(visuals|results|unified)'/.test(page), 'no feature
 const panels = page.slice(page.indexOf('function surfaceAtlasPanels'), page.indexOf('function atlasReadout'));
 ok(/surfaceBlock\('visuals'/.test(panels) && /surfaceBlock\('results'/.test(panels),
   'the atlas panels surface through the queue');
+ok(/railLead:/.test(panels) && /\$\{n\} outputs/.test(panels),
+  'the first atlas rail is introduced by a count line');
+ok(/inTranscript: false/.test(panels),
+  'the atlas closing read stays out of the transcript');
+
+console.log('\nTurn stages — one waits for the one before it');
+
+/* The gates themselves. */
+ok(/function makeStageGate\(ceilingMs\)/.test(chat), 'one gate builder serves every stage');
+ok(/const promptStage = makeStageGate\(/.test(chat)
+  && /const answerStage = makeStageGate\(/.test(chat)
+  && /const outputStage = makeStageGate\(/.test(chat),
+  'prompt, answer and output each have their own gate');
+ok(/timer = setTimeout\(release, ceilingMs\)/.test(chat),
+  'each gate carries a ceiling, so a stage that never reports finished cannot strand the turn');
+ok(/if \(!held\) \{ fn\(\); return; \}/.test(chat),
+  'and runs straight through when nothing is in flight — a short message waits for nothing');
+
+/* Stage 1 → 2: the member's prompt finishes before WISEcodeAI starts thinking. */
+const addUserSrc = chat.slice(chat.indexOf('function addUser(text, atts)'),
+  chat.indexOf('/* Actions row appended beneath a WISEcodeAI answer.'));
+ok(/promptStage\.hold\(\)/.test(addUserSrc), 'posting a member line holds the prompt stage');
+ok(/promptStage\.release\(\)/.test(addUserSrc), 'and the reveal finishing lets it go');
+ok(/promptStage\.after\(\(\) => \{\s*runReasoningTrace\(/.test(chat),
+  'the reasoning trace waits for the prompt — no thinking on top of a brief still fading in');
+
+/* Stage 3 → 4: the outputs an answer produced wait for that answer. */
+ok(/answerStage\.hold\(\);/.test(chat), 'the answer stage is held before the host queues its outputs');
+ok(/const answerLanded = \(\) => \{ if \(trailChips\) answerStage\.release\(\); \}/.test(chat),
+  'and released the moment the answer line has landed');
+ok(/function afterAnswerSettles\(fn\)/.test(page) && /afterAnswerSettles\(step\);/.test(page),
+  'the output queue starts pumping through that gate, not on its own');
+
+/* Stage 4 → 5: the chips that close the turn wait for the last output. */
+ok(/outputStage\.after\(\(\) => \{\s*parkInlineChips\(\);/.test(chat),
+  'the closing intent chips wait for the outputs, so a rail cannot shove them down');
+ok(/const hold = chatStage\('holdOutputs'\);/.test(page), 'the host claims the output stage as the turn starts surfacing');
+ok(/if \(!next\) \{ surfacePumping = false; releaseOutputStage\(\); return; \}/.test(page),
+  'and gives it back when the queue runs dry');
+ok(/if \(!surfacePumping\) releaseOutputStage\(\);/.test(page),
+  'a turn that surfaced nothing gives it back immediately rather than leaving the chips waiting');
+
+console.log('\nOutputs wait to be opened');
+
+/* An output arriving is not a request to look at it: the turn writes its blocks
+   into a pane that stays shut, and only the member's tap opens it. */
+ok(/function openOutputPane\(dest\)/.test(page), 'one door opens an output pane');
+ok(!/openModuleByDefault: true/.test(page),
+  'no answer opens a module on its own the moment it lands');
+
+/* Nothing on the surfacing path may reach the opener. */
+const surfacePath = [
+  ['postSurfaceBlock', page.indexOf('function postSurfaceBlock(which, {')],
+  ['insertAllVersionSlides', page.indexOf('function insertAllVersionSlides(')],
+].filter(([, i]) => i > -1);
+surfacePath.forEach(([name, start]) => {
+  const body = page.slice(start, page.indexOf('\n    }', start));
+  ok(!/openOutputPane\(|ensurePaneOpen\(/.test(body),
+    `${name} writes the output without opening the pane`);
+});
+
+/* Every opener is a member action: the output card, a version thumbnail, a
+   footnote, expand. `openPane` only opens when a caller asks for it. */
+ok(/function openPane\(which, \{ html, title, meta, open = false \} = \{\}\)/.test(page),
+  'openPane leaves the pane shut unless the caller passes open');
+const openers = (page.match(/openOutputPane\(/g) || []).length;
+ok(openers >= 6, `the member-driven openers all route through it (got ${openers})`);
 
 console.log('\nOutput pacing — behaviour');
 

@@ -19,6 +19,13 @@
  * whole document when `doc` is true). `focus` is the iframe-isolate
  * selector All Modules uses — omit it when `sel` already works with
  * document.querySelector (no `:scope`).
+ *
+ * `keywords` is optional and exists for the palette's filter: the words a
+ * member would type that the label and blurb do not already contain. A table
+ * specimen called "Invoices" is a *table* and lives under *account* — neither
+ * word appears anywhere else in its entry, so neither would ever find it.
+ * Only add terms the entry is genuinely missing; the label and `desc` are
+ * already searched.
  */
 
 export const ANALYTICS_HREF = 'analytics-types.html';
@@ -387,6 +394,178 @@ export const ANALYTICS_TYPES = [
     label: 'Heat Table',
     icon: 'grid_on',
     desc: 'Product-by-metric table, each cell coloured by status.',
+  },
+
+  /* Table specimens — one per data table in the app (js/analytics-types-tables.js).
+     They sit on this page so the size palette can be pointed at every table,
+     not only the charts. Each names and links the page the real one lives on. */
+  {
+    id: 'tbl-pf-claimed',
+    sel: '#attb-pf-claimed',
+    label: 'Portfolio · Claimed',
+    icon: 'inventory_2',
+    desc: 'Claimed SKUs with data completeness and shield status.',
+    keywords: 'table products upf',
+  },
+  {
+    id: 'tbl-pf-discovered',
+    sel: '#attb-pf-discovered',
+    label: 'Portfolio · Discovered',
+    icon: 'travel_explore',
+    desc: 'Auto-discovered UPCs waiting to be claimed.',
+    keywords: 'table products upf',
+  },
+  {
+    id: 'tbl-pf-needsinfo',
+    sel: '#attb-pf-needsinfo',
+    label: 'Portfolio · Needs info',
+    icon: 'help',
+    desc: 'Products missing data before they can be verified.',
+    keywords: 'table products upf',
+  },
+  {
+    id: 'tbl-comparison',
+    sel: '#attb-cmp',
+    label: 'Product Comparison',
+    icon: 'compare',
+    desc: 'Side-by-side attribute matrix for two products.',
+    keywords: 'table compare',
+  },
+  {
+    id: 'tbl-ai-users',
+    sel: '#attb-aid-users',
+    label: 'AI Dashboard · Users',
+    icon: 'group',
+    desc: 'Per-member AI activity, budget and spend.',
+    keywords: 'table studio seats usage',
+  },
+  {
+    id: 'tbl-ingredients',
+    sel: '#attb-ib',
+    label: 'Ingredient Browser',
+    icon: 'science',
+    desc: 'The ingredient registry with GRAS status and allergens.',
+    keywords: 'table ingredients',
+  },
+  {
+    id: 'tbl-chat',
+    sel: '#attb-wa-tbl',
+    label: 'Chat · Ingredient table',
+    icon: 'forum',
+    desc: 'The sortable table rendered inside a chat answer.',
+    keywords: 'ingredients wiseai',
+  },
+  {
+    id: 'tbl-rf-picks',
+    sel: '#attb-rf-picks',
+    label: 'Reformulation · Picks',
+    icon: 'auto_fix_high',
+    desc: 'Products you can pick to reformulate, with blockers.',
+    keywords: 'table',
+  },
+  {
+    id: 'tbl-rf-moves',
+    sel: '#attb-rf-moves',
+    label: 'Reformulation · Moves',
+    icon: 'route',
+    desc: 'Recommended ingredient moves with impact and effort.',
+    keywords: 'table',
+  },
+  {
+    id: 'tbl-guiding-stars',
+    sel: '#attb-gs',
+    label: 'Guiding Stars',
+    icon: 'star',
+    desc: 'The action plan, segmented from quick wins to deeper work.',
+    keywords: 'table report',
+  },
+  {
+    id: 'tbl-verify-select',
+    sel: '#attb-vf-select',
+    label: 'Non-UPF · Select',
+    icon: 'verified',
+    desc: 'Qualifying SKUs to run through Non-UPF verification.',
+    keywords: 'table verification',
+  },
+  {
+    id: 'tbl-gras-ing',
+    sel: '#attb-gv',
+    label: 'GRAS · Ingredients',
+    icon: 'shield',
+    desc: 'Ingredient-level GRAS documentation and portfolio impact.',
+    keywords: 'table verification',
+  },
+  {
+    id: 'tbl-team',
+    sel: '#attb-team',
+    label: 'Team',
+    icon: 'group',
+    desc: 'People on the signed-in brand — seats, invites and roles.',
+    keywords: 'table admin members',
+  },
+  {
+    id: 'tbl-orgs',
+    sel: '#attb-orgs',
+    label: 'Organizations',
+    icon: 'apartment',
+    desc: 'Customer org directory with member and product counts.',
+    keywords: 'table admin',
+  },
+  {
+    id: 'tbl-users',
+    sel: '#attb-users',
+    label: 'User Management',
+    icon: 'manage_accounts',
+    desc: 'Users and roles across the workspace.',
+    keywords: 'table admin members',
+  },
+  {
+    id: 'tbl-audit',
+    sel: '#attb-audit',
+    label: 'Audit Queue',
+    icon: 'fact_check',
+    desc: 'Ingredient audit review queue, with the brand’s notes.',
+    keywords: 'table admin',
+  },
+  {
+    id: 'tbl-nud',
+    sel: '#attb-nud',
+    label: 'Non-UPF Dashboard',
+    icon: 'dashboard',
+    desc: 'Verification verdict and workflow state per SKU.',
+    keywords: 'table admin verification',
+  },
+  {
+    id: 'tbl-quick-invite',
+    sel: '#attb-qi',
+    label: 'Quick Invite · History',
+    icon: 'bolt',
+    desc: 'Recent one-step organization invitations.',
+    keywords: 'table admin members',
+  },
+  {
+    id: 'tbl-invoices',
+    sel: '#attb-inv',
+    label: 'Invoices',
+    icon: 'receipt_long',
+    desc: 'Billing board of every invoice and its status.',
+    keywords: 'table account billing',
+  },
+  {
+    id: 'tbl-marketing-assets',
+    sel: '#attb-ma',
+    label: 'Marketing Assets tree',
+    icon: 'photo_library',
+    desc: 'Nested file tree of the co-branding toolkit.',
+    keywords: 'table account downloads',
+  },
+  {
+    id: 'tbl-api-keys',
+    sel: '#attb-ak',
+    label: 'API Keys',
+    icon: 'key',
+    desc: 'Created keys with scope, usage and revoke.',
+    keywords: 'table account developer',
   },
 ];
 

@@ -9,11 +9,15 @@
  *
  * Mounts after #atx-box-card so the original ten extra charts stay first.
  */
+
+import { roundedSector } from './chart-arcs.js';
+import {
+  escq, NUM, card, makePlay, wire, tierVar, statusPill, dotsHTML, TIER_LEGEND,
+  EX, GD, OK, FR, PR, PRI,
+} from './analytics-card-kit.js';
+
 (function () {
   const NS = 'http://www.w3.org/2000/svg';
-  const reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  const escq = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const NUM = (n) => Math.round(n).toLocaleString('en-US');
 
   function m(tag, attrs, txt) {
     const e = document.createElementNS(NS, tag);
@@ -22,105 +26,6 @@
     return e;
   }
   const add = (parent, child) => (parent.appendChild(child), child);
-
-  function countUp(node, to, dur, fmtFn) {
-    const F = fmtFn || NUM;
-    if (reduced || !node) { if (node) node.textContent = F(to); return; }
-    const st = performance.now();
-    (function tick(now) {
-      const p = Math.min(1, (now - st) / dur);
-      node.textContent = F(to * (1 - Math.pow(1 - p, 3)));
-      if (p < 1) requestAnimationFrame(tick);
-    })(st);
-  }
-
-  function tierVar(v) {
-    return v >= 80 ? 'var(--chart-status-excellent)'
-      : v >= 60 ? 'var(--chart-status-good)'
-      : v >= 40 ? 'var(--chart-status-okay)'
-      : v >= 20 ? 'var(--chart-status-fair)'
-      : 'var(--chart-status-poor)';
-  }
-  const TIER_LEGEND = [
-    ['var(--chart-status-excellent)', 'Excellent'],
-    ['var(--chart-status-good)', 'Good'],
-    ['var(--chart-status-okay)', 'OK'],
-    ['var(--chart-status-fair)', 'Fair'],
-    ['var(--chart-status-poor)', 'Poor'],
-  ];
-  const EX = 'var(--chart-status-excellent)';
-  const GD = 'var(--chart-status-good)';
-  const OK = 'var(--chart-status-okay)';
-  const FR = 'var(--chart-status-fair)';
-  const PR = 'var(--chart-status-poor)';
-  const PRI = 'var(--primary)';
-
-  const dotsHTML = (pairs) => pairs.map((p) =>
-    `<span><span class="att-dot" style="background:${p[0]}"></span>${escq(p[1])}</span>`).join('');
-
-  function card(opts) {
-    const wrap = document.createElement('div');
-    wrap.className = 'att-block';
-    if (opts.eyebrow) {
-      const type = document.createElement('h2');
-      type.className = 'att-type-title';
-      type.textContent = opts.eyebrow;
-      wrap.appendChild(type);
-    }
-    const s = document.createElement('section');
-    s.className = 'att-card atx-card';
-    s.id = opts.id;
-    s.innerHTML =
-      `<div class="att-head">` +
-      `<span class="att-title">${escq(opts.title)}</span></div>` +
-      `<p class="att-intro">${escq(opts.intro)}</p>` +
-      `<div class="atx-stage" tabindex="0" role="img" aria-label="${escq(opts.title)}"></div>` +
-      (opts.legend ? `<div class="att-legend atx-legend"><div class="att-legend-dots">${opts.legend}</div></div>` : '') +
-      (opts.note ? `<p class="atx-note">${escq(opts.note)}</p>` : '');
-    wrap.appendChild(s);
-    return wrap;
-  }
-
-  function makePlay(stage, cfg) {
-    cfg = cfg || {};
-    const draws = cfg.draws || [], wipes = cfg.wipes || [], gauges = cfg.gauges || [], nums = cfg.nums || [];
-    return function play(snap) {
-      if (snap || reduced) {
-        stage.classList.add('is-in');
-        draws.forEach((d) => { d.node.style.transition = 'none'; d.node.style.strokeDasharray = d.len; d.node.style.strokeDashoffset = '0'; });
-        wipes.forEach((w) => { w.style.transition = 'none'; w.style.clipPath = 'none'; });
-        gauges.forEach((g) => { g.node.style.transition = 'none'; g.node.style.strokeDashoffset = String(100 - g.value); });
-        nums.forEach((n) => { n.node.textContent = (n.fmt || NUM)(n.to); });
-        return;
-      }
-      stage.classList.remove('is-in');
-      draws.forEach((d) => { d.node.style.transition = 'none'; d.node.style.strokeDasharray = d.len; d.node.style.strokeDashoffset = d.len; });
-      wipes.forEach((w) => { w.style.transition = 'none'; w.style.clipPath = 'inset(0 100% 0 0)'; });
-      gauges.forEach((g) => { g.node.style.transition = 'none'; g.node.style.strokeDashoffset = '100'; });
-      nums.forEach((n) => { n.node.textContent = (n.fmt || NUM)(0); });
-      void stage.offsetWidth;
-      stage.classList.add('is-in');
-      draws.forEach((d) => { d.node.style.transition = 'stroke-dashoffset 1.15s cubic-bezier(.22,1,.36,1)'; d.node.style.transitionDelay = (d.delay || 0) + 'ms'; d.node.style.strokeDashoffset = '0'; });
-      wipes.forEach((w) => { w.style.transition = 'clip-path 1.15s cubic-bezier(.22,1,.36,1)'; w.style.transitionDelay = (w._delay || 0) + 'ms'; w.style.clipPath = 'inset(0 0 0 0)'; });
-      gauges.forEach((g) => { g.node.style.transition = 'stroke-dashoffset 1.2s cubic-bezier(.22,1,.36,1)'; g.node.style.strokeDashoffset = String(100 - g.value); });
-      nums.forEach((n) => { setTimeout(() => countUp(n.node, n.to, n.dur || 1300, n.fmt), n.delay || 0); });
-    };
-  }
-
-  function wire(cardEl, play) {
-    const stage = cardEl.querySelector('.atx-stage');
-    stage.addEventListener('click', () => play());
-    stage.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); play(); } });
-    const finalize = () => play(true);
-    window.addEventListener('wise:finalize-charts', finalize);
-    window.addEventListener('beforeprint', finalize);
-    if (window.IntersectionObserver) {
-      const io = new IntersectionObserver((entries) => {
-        entries.forEach((en) => { if (en.isIntersecting) { play(); io.disconnect(); } });
-      }, { threshold: 0.18 });
-      io.observe(cardEl);
-    } else { play(); }
-  }
 
   const polyLen = (pts) => { let L = 0; for (let i = 1; i < pts.length; i++) L += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); return L; };
   const ptsStr = (pts) => pts.map((p) => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
@@ -152,20 +57,16 @@
     return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
   }
 
-  function donutSlice(cx, cy, ri, ro, a0, a1) {
-    const sweep = ((a1 - a0) % 360 + 360) % 360;
-    if (sweep < 0.2) return '';
-    const large = sweep > 180 ? 1 : 0;
-    const o0 = polar(cx, cy, ro, a0);
-    const o1 = polar(cx, cy, ro, a1);
-    const f = (p) => p[0].toFixed(2) + ' ' + p[1].toFixed(2);
-    if (ri <= 0) {
-      return `M ${cx} ${cy} L ${f(o0)} A ${ro} ${ro} 0 ${large} 1 ${f(o1)} Z`;
-    }
-    const i1 = polar(cx, cy, ri, a1);
-    const i0 = polar(cx, cy, ri, a0);
-    return `M ${f(o0)} A ${ro} ${ro} 0 ${large} 1 ${f(o1)} L ${f(i1)} A ${ri} ${ri} 0 ${large} 0 ${f(i0)} Z`;
-  }
+  /* Slice corner radius. The pie and the half donut are the same family of
+     shape as the UPF / GRAS donuts, so they round their corners the same way
+     — through the shared sector geometry, at a radius that reads on a stage
+     this size. `polar` here puts 0° at 12 o'clock; the shared helper measures
+     from 3 o'clock, so every angle handed to it is shifted by 90°. */
+  const SLICE_CR = 10;
+  const sliceD = (cx, cy, ri, ro, a0, a1) =>
+    (((a1 - a0) % 360 + 360) % 360) < 0.2
+      ? ''
+      : roundedSector(cx, cy, ri, ro, a0 - 90, a1 - 90, SLICE_CR);
 
   function ringPath(cx, cy, r) {
     return `M ${cx - r} ${cy} A ${r} ${r} 0 1 1 ${cx + r} ${cy} A ${r} ${r} 0 1 1 ${cx - r} ${cy}`;
@@ -197,12 +98,6 @@
     { n: 'Sea-Salt Chips', score: 47, d: -3, spark: [52, 51, 50, 50, 49, 48, 48, 47], heat: [50, 46, 38, 44, 42, 36] },
   ];
   const HEAT_COLS = ['Nutrient', 'Ingredient', 'Process', 'Additives', 'Fortify', 'Sugar'];
-
-  function statusPill(score) {
-    const label = score >= 80 ? 'Excellent' : score >= 60 ? 'Good' : score >= 40 ? 'OK' : score >= 20 ? 'Fair' : 'Poor';
-    const tone = score >= 80 ? 'good' : score >= 60 ? 'primary' : score >= 40 ? 'warn' : 'alert';
-    return `<span class="upf-pill upf-pill--${tone}">${label}</span>`;
-  }
 
   /* ================= Grouped columns ================================= */
   function buildGroupedColumns() {
@@ -540,7 +435,7 @@
       const mid = (a + a1) / 2;
       const explode = i === 0 ? 14 : 0;
       const [sx, sy] = polar(cx, cy, explode, mid);
-      const d = donutSlice(sx, sy, 0, ro, a, a1);
+      const d = sliceD(sx, sy, 0, ro, a, a1);
       const p = add(svg, m('path', { class: 'atx-pop', d, fill: s.color, stroke: 'var(--surface)', 'stroke-width': 2 }));
       p.style.animationDelay = (i * 110) + 'ms';
       const [lx, ly] = polar(sx, sy, ro * 0.62, mid);
@@ -579,7 +474,7 @@
     let a = 270;
     slices.forEach((s, i) => {
       const sweep = s.v * 1.8;
-      const d = donutSlice(cx, cy, ri, ro, a, a + sweep);
+      const d = sliceD(cx, cy, ri, ro, a, a + sweep);
       const p = add(svg, m('path', { class: 'atx-pop', d, fill: s.color, stroke: 'var(--surface)', 'stroke-width': 2 }));
       p.style.animationDelay = (i * 120) + 'ms';
       a += sweep;

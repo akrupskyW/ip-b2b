@@ -99,49 +99,29 @@
       font-size: 0.86rem; font-weight: 700; color: var(--text); line-height: 1.3;
     }
 
-    /* ── Product table: rows by default, cards only on mobile ─────────────
+    /* ── Product table stays in rows ─────────────────────────────────────
        The shared adm table collapses to stacked cards at a 720px container
        width, which fires too eagerly when this dashboard is docked beside the
-       chat. Here we keep the row layout and let it scroll horizontally when the
-       container is too narrow for every column; the card layout is opt-in via
-       the toolbar toggle (.adm-table--cards), or forced on true mobile. All
-       rules are scoped to this page so the other admin tables are untouched. */
+       chat. Keep the row layout and scroll horizontally when the container is
+       too narrow. True mobile still stacks. */
     [data-nav-id="non-upf-dashboard"] .adm-table-card { overflow-x: auto; }
     /* 88 + 220 + 150 + 190 + 160 columns + 4×12 gaps + 24 row padding = 880px:
        the row's intrinsic minimum, so columns stay aligned as it scrolls. */
     [data-nav-id="non-upf-dashboard"] .adm-table { min-width: 880px; }
-    [data-nav-id="non-upf-dashboard"] .adm-table--cards { min-width: 0; }
 
     /* Neutralise the global 720px auto-collapse on this page — the attribute
        prefix raises specificity so these win over the shared container query.
-       Gated above mobile so the true-mobile block below can still force cards. */
+       Gated above mobile so the true-mobile block below can still stack. */
     @media (min-width: 641px) {
       @container adm (max-width: 720px) {
-        [data-nav-id="non-upf-dashboard"] .adm-table:not(.adm-table--cards) .adm-thead { display: grid; }
-        [data-nav-id="non-upf-dashboard"] .adm-table:not(.adm-table--cards) .adm-trow { grid-template-columns: var(--adm-cols) !important; gap: 12px; padding: 12px 12px; position: static; }
-        [data-nav-id="non-upf-dashboard"] .adm-table:not(.adm-table--cards) .adm-td--num { justify-content: center; text-align: center; }
-        [data-nav-id="non-upf-dashboard"] .adm-table:not(.adm-table--cards) .adm-trow .adm-td--end { position: static; top: auto; right: auto; padding: 0; }
+        [data-nav-id="non-upf-dashboard"] .adm-table .adm-thead { display: grid; }
+        [data-nav-id="non-upf-dashboard"] .adm-table .adm-trow { grid-template-columns: var(--adm-cols) !important; gap: 12px; padding: 12px 12px; position: static; }
+        [data-nav-id="non-upf-dashboard"] .adm-table .adm-td--num { justify-content: center; text-align: center; }
+        [data-nav-id="non-upf-dashboard"] .adm-table .adm-trow .adm-td--end { position: static; top: auto; right: auto; padding: 0; }
       }
     }
 
-    /* Cards view (manual toggle). */
-    [data-nav-id="non-upf-dashboard"] .adm-table--cards .adm-thead { display: none; }
-    [data-nav-id="non-upf-dashboard"] .adm-table--cards .adm-trow { grid-template-columns: 1fr !important; gap: 6px; position: relative; padding: 14px 12px; }
-    [data-nav-id="non-upf-dashboard"] .adm-table--cards .adm-actions { justify-content: flex-start; }
-    [data-nav-id="non-upf-dashboard"] .adm-table--cards .adm-td--num { justify-content: flex-start; text-align: left; }
-    [data-nav-id="non-upf-dashboard"] .adm-table--cards .adm-trow .adm-td--end { position: absolute; top: 10px; right: 10px; padding: 0; }
-
-    /* Row / Card items inside the module ⋯ menu: label fills the row, a
-       trailing check marks the active layout in the brand colour. */
-    .nud-view-item .nud-view-item-label { flex: 1 1 auto; }
-    .nud-view-item .nud-view-item-check { font-size: 17px; color: var(--primary); }
-    html.dark .nud-view-item .nud-view-item-check { color: var(--primary-bright, #93C5FD); }
-    .nud-view-item.is-active { color: var(--primary); }
-    html.dark .nud-view-item.is-active { color: var(--primary-bright, #93C5FD); }
-    .nud-view-item.is-active .material-symbols-outlined { color: inherit; }
-
-    /* True mobile — cards are the only sensible layout, so force them and hide
-       the row/card items in the page menu. Invoices and export stay. */
+    /* True mobile — stacked cards are the only sensible layout. */
     @media (max-width: 640px) {
       [data-nav-id="non-upf-dashboard"] .adm-table { min-width: 0; }
       [data-nav-id="non-upf-dashboard"] .adm-thead { display: none; }
@@ -149,7 +129,6 @@
       [data-nav-id="non-upf-dashboard"] .adm-actions { justify-content: flex-start; }
       [data-nav-id="non-upf-dashboard"] .adm-td--num { justify-content: flex-start; text-align: left; }
       [data-nav-id="non-upf-dashboard"] .adm-trow .adm-td--end { position: absolute; top: 10px; right: 10px; padding: 0; }
-      .nud-view-item, .nud-view-sep { display: none; }
     }
   </style>
   <script src="../js/cwr-toggle.js"></script>

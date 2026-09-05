@@ -81,15 +81,15 @@ export const APP_LOGIC = [
       },
       {
         title: 'FOUC guard applies chrome pre-paint',
-        how: '<code>js/text-size-fouc.js</code> runs in <code>&lt;head&gt;</code> and applies theme, text scale, Minimal UI, full-bleed mode, nav-hamburger, serif headlines, Guides, flush sticky modules and the chat width default <em>before</em> first paint, so the shell never flashes the wrong state. It is a deliberate twin of the runtime logic in <code>topbar.js</code> — change one, change the other.',
+        how: '<code>js/text-size-fouc.js</code> runs in <code>&lt;head&gt;</code> and applies theme, text scale, Minimal UI, full-bleed mode, nav-hamburger, serif headlines, Guides, Header float, flush sticky modules and the chat width default <em>before</em> first paint, so the shell never flashes the wrong state. It is a deliberate twin of the runtime logic in <code>topbar.js</code> — change one, change the other.',
       },
       {
         title: 'One Appearance popover for the whole app',
-        how: '<code>buildAppearanceBody()</code> in <code>appearance-menu.js</code> is the single source of that markup; shells pass only <code>showPivot</code>, <code>isPivoted</code>, <code>isDark</code> plus callbacks. Rows are addressed by stable hooks (<code>data-minimal</code>, <code>data-fullbleed</code>, <code>data-fz</code>, <code>data-serif</code>, <code>data-cbtype</code>), and Admin-badged rows hide when <code>wise-admin-ui</code> is <code>&#39;0&#39;</code>.',
+        how: '<code>buildAppearanceBody()</code> in <code>appearance-menu.js</code> is the single source of that markup; shells pass only <code>showPivot</code>, <code>isPivoted</code>, <code>isDark</code> plus callbacks. Rows are addressed by stable hooks (<code>data-minimal</code>, <code>data-header</code>, <code>data-fullbleed</code>, <code>data-fz</code>, <code>data-serif</code>, <code>data-cbtype</code>), and Admin-badged rows hide when <code>wise-admin-ui</code> is <code>&#39;0&#39;</code>.',
       },
       {
         title: 'Appearance defaults that are ON',
-        how: 'Unset means on for <strong>Minimal UI</strong> (<code>wise-minimal-ui-v2</code>), the <strong>icon nav rail</strong> (<code>wise-menu-rail</code>), <strong>Nav &amp; History icons</strong> (<code>wise-nav-modules-v2</code>), <strong>chat tint</strong> (<code>wise-chat-tint</code>), the <strong>activity strip</strong> (<code>wise-activity-strip</code>) and <strong>serif headlines</strong> (<code>wise-serif-headlines</code>). <strong>History in navigation</strong> stays off. <strong>Guides</strong> stays off. <strong>Flush sticky modules</strong> stays off. <strong>Header float</strong> is unconditional — <code>isHeaderFloatOn()</code> always returns true, so module header strips are gone app-wide and <code>.panel-controls</code> float over the content.',
+        how: 'Unset means on for <strong>Minimal UI</strong> (<code>wise-minimal-ui-v2</code>), the <strong>icon nav rail</strong> (<code>wise-menu-rail</code>), <strong>Nav &amp; History icons</strong> (<code>wise-nav-modules-v2</code>), <strong>chat tint</strong> (<code>wise-chat-tint</code>), the <strong>activity strip</strong> (<code>wise-activity-strip</code>) and <strong>serif headlines</strong> (<code>wise-serif-headlines</code>). <strong>History in navigation</strong> stays off. <strong>Guides</strong> stays off. <strong>Header float</strong> stays off (Admin) — only <code>wise-header-float=1</code> adds <code>header-float</code> on <code>&lt;html&gt;</code> so module header strips drop and <code>.panel-controls</code> float over the content. <strong>Flush sticky modules</strong> stays off.',
       },
       {
         title: 'Text size is a scale, not a font size',
@@ -404,7 +404,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Ingredients Analyzer is its own sticky module',
-        how: 'The ingredient list, Analyze button, and Parsed / Codes / Nutrients / Scout accordions render in <code>#ia-panel</code>, a nested sticky drawer to the right of Product Details. The drawer starts closed. Verify ingredients (banner, chip, or <code>from=verify</code>) and Analyze open it at double pane width; Product Details\u2019 ⋯ can toggle it. There is no Save to Portfolio footer on the product module \u2014 save lives on the add banner and in chat. The analyzer does not take the fill-width default.',
+        how: 'The ingredient list, Analyze button, and Parsed / Codes / Nutrients / Scout accordions render in <code>#ia-panel</code>, a nested sticky drawer to the right of Product Details. The drawer starts closed. Verify ingredients (banner, chip, or <code>from=verify</code>), Analyze, and Product Details\u2019 ⋯ open it at fill width (leftover row space), not double or triple. There is no Save to Portfolio footer on the product module \u2014 save lives on the add banner and in chat.',
       },
       {
         title: 'Category docks under the barcode as a plain link',

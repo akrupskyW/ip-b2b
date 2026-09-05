@@ -18,7 +18,7 @@ import {
   setMenuPivot,
 } from './agent-menu.js';
 import { initLirTooltip } from './lir-tooltip.js';
-import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, applyHeaderFloat, isHeaderFloatOn, restoreFullBleed, applyColorblind, isColorblindOn, pageAppearanceDefault } from './topbar.js';
+import { mountTopbar, isMenuFooterAnchor, positionPopoverInMenuPanel, positionPopoverForTopbar, applyMinimalUi, isMinimalUiOn, restoreMinimalUi, restoreFullBleed, applyColorblind, isColorblindOn, pageAppearanceDefault } from './topbar.js';
 import { isJamStripOn, applyJamStrip } from './jam-strip.js';
 import { buildAppearanceBody, wireAppearancePopover, buildUserMenuBody, performSignOut } from './appearance-menu.js';
 import { mountNotificationsPanel } from './notifications-panel.js';
@@ -475,8 +475,9 @@ function applyBodyAppearanceDefaults() {
      `data-default-full-bleed` used to call applyFullBleed() which persisted
      globally and turned the chat stretch off after visiting Overview. */
   restoreFullBleed();
-  const header = pageAppearanceDefault('defaultHeader');
-  if (header !== null) applyHeaderFloat(header);
+  /* Header float is a stored admin preference (off by default). Page-level
+     `data-default-header` used to call applyHeaderFloat() which persisted
+     globally and hid headers after visiting Overview. */
   /* Pages can open with the nav collapsed to its icon rail by default via
      `<body data-default-nav-collapsed>` — forced on every load so the nav
      always starts collapsed here. */
@@ -1343,6 +1344,14 @@ function setDarkMode(on) {
 }
 
 function renderMorePopover() {
+  /* A page can opt its main panel out of the overview actions with
+     `<body data-hide-overview-actions>`, the same way it opts out of the nav
+     rail or the WISEcodeAI dock. The chart gallery on analytics-types.html does:
+     it hosts the dashboard body as raw material for its chart specimens, so the
+     hero view switches here re-render the dashboard straight over the whole
+     gallery, and its report header already owns Export / Share. That page's own
+     module fills this menu instead. */
+  if (document.body.dataset.hideOverviewActions) return '';
   const isDashboard = document.body.dataset.productId === 'dashboard';
   const bannerItem = isDashboard
     ? `
@@ -1610,6 +1619,12 @@ function setupMainPanelControls() {
     });
     document.addEventListener('click', (e) => {
       if (morePop.classList.contains('hidden')) return;
+      /* The popover is portaled out of its wrap the moment it opens (the module
+         header clips), leaving the wrap holding only the ⋯ button — so asking
+         the wrap alone whether the click was "outside" answered yes for every
+         row in the menu, and a toggle row could not be flipped without
+         dismissing itself. Ask the popover where it now lives. */
+      if (morePop.contains(e.target)) return;
       if (moreWrap && moreWrap.contains(e.target)) return;
       closePop();
     });

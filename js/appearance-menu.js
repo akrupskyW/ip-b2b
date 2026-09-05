@@ -20,7 +20,7 @@
  * Everything else renders the same on every page.
  *
  * Click handling stays in each shell: every row keys off a stable data-*
- * attribute (data-pivot / data-minimal / data-navhistory / data-navmodules / data-stickyflush / data-fullbleed /
+ * attribute (data-pivot / data-minimal / data-navhistory / data-navmodules / data-stickyflush / data-header / data-fullbleed /
  * data-fbchatonly / data-jam / data-appsearch / data-navhamburger / data-colorblind / data-serif / data-guides / data-fz /
  * data-pop-action), so the existing per-shell listeners keep working unchanged.
  */
@@ -61,6 +61,8 @@ import {
   applyModuleGap,
   isStickyFlushOn,
   applyStickyFlush,
+  isHeaderFloatOn,
+  applyHeaderFloat,
   isCwrUiOn,
   applyCwrUi,
   isGuidesOn,
@@ -744,6 +746,7 @@ export function buildAppearanceBody({
         ${adminOnly(adminToggle('data-navhistory="1"', isNavHistoryOn(), 'History in navigation', 'History inside the nav', 'Merge the History module into an expandable section of the primary navigation — search, projects, and All conversations stay fully usable', false, false, 'history'))}
         ${adminOnly(adminToggle('data-navmodules="1"', isNavModulesOn(), 'Nav &amp; History icons', 'Logo, menu, History, new chat', 'Menu opens the labelled navigation; the History icon opens History, and history off closes it. While either is open, the extra icons hide and History closes back to the four-icon rail. New chat is a circle and starts a conversation', false, false, 'view_sidebar'))}
         ${adminOnly(adminToggle('data-stickyflush="1"', isStickyFlushOn(), 'Flush sticky modules', 'Match the primary drawer', 'Make the secondary sticky module the same height as the primary one it tucks behind', false, false, 'height'))}
+        ${adminOnly(adminToggle('data-header="1"', isHeaderFloatOn(), 'Header float', 'Hide module headers', 'Hide module header strips and float their controls over the content', false, false, 'web_asset'))}
         ${adminOnly(helixStudioSection())}
       `);
   const experience = apGroup('Experience', `
@@ -957,7 +960,7 @@ if (typeof document !== 'undefined') {
  * calls wireAppearancePopover() and gets identical behaviour.
  *
  * The universal on/off toggles (Minimal UI, Icons only, History in navigation,
- * Nav & History icons, Full bleed, Jam strip, Search, Menu icon, Colorblind, Serif headlines) and the Text-size buttons are
+ * Nav & History icons, Header float, Full bleed, Jam strip, Search, Menu icon, Colorblind, Serif headlines) and the Text-size buttons are
  * handled here directly via the
  * shared modules, so a page CANNOT forget to wire them. The genuinely
  * shell-specific bits are passed as callbacks:
@@ -1071,6 +1074,7 @@ export function wireAppearancePopover(pop, ctx = {}) {
       return;
     }
     if (within('[data-stickyflush]')) { ev.stopPropagation(); applyStickyFlush(!isStickyFlushOn()); render(); return; }
+    if (within('[data-header]'))      { ev.stopPropagation(); applyHeaderFloat(!isHeaderFloatOn()); render(); return; }
     if (within('[data-fullbleed]'))   { ev.stopPropagation(); if (isAppSearchOn()) return; applyFullBleedMode(isFullBleedEverythingOn() ? '' : 'all'); render(); return; }
     if (within('[data-fbchatonly]'))  { ev.stopPropagation(); if (isAppSearchOn()) return; applyFullBleedMode(isChatOnlyFullBleedOn() ? '' : 'chat'); render(); return; }
     if (within('[data-jam]'))         { ev.stopPropagation(); applyJamStrip(!isJamStripOn());      render(); return; }

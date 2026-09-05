@@ -121,21 +121,6 @@ function prodDates(p) {
   return D ? D.complete({ updated: p.updated, edited: p.edited }, 'product') : { updated: p.updated };
 }
 
-/* Product-table layout: 'rows' (default) or 'cards'. Persisted so the choice
-   survives navigation. True mobile forces cards via CSS regardless. */
-const VIEW_KEY = 'nonupf-table-view';
-let viewMode = 'rows';
-function loadViewMode() {
-  try { return localStorage.getItem(VIEW_KEY) === 'cards' ? 'cards' : 'rows'; }
-  catch (e) { return 'rows'; }
-}
-function setViewMode(mode) {
-  viewMode = mode === 'cards' ? 'cards' : 'rows';
-  try { localStorage.setItem(VIEW_KEY, viewMode); } catch (e) { /* ignore */ }
-  hostEl?.querySelector('.adm-table')?.classList.toggle('adm-table--cards', viewMode === 'cards');
-  syncPageMenuChecks();
-}
-
 const { setChat, pushChat } = createChatBridge();
 export const setNonUpfChat = setChat;
 
@@ -389,7 +374,13 @@ function paint() {
   hostEl.innerHTML = `
     <div class="adm-wrap adm-wrap--wide" data-w-date-root data-nud-board>
       <header class="adm-head">
-        <h1 class="adm-title">Your Non-UPF Verification Dashboard</h1>
+        <div class="adm-head-row">
+          <h1 class="adm-title">Your Non-UPF Verification Dashboard</h1>
+          <div class="adm-head-actions">
+            <button type="button" class="wise-btn wise-btn--primary" data-adm-action="view-invoices"><span class="material-symbols-outlined">receipt_long</span>View invoices</button>
+            <button type="button" class="wise-btn wise-btn--ghost" data-adm-action="export"><span class="material-symbols-outlined">download</span>Export</button>
+          </div>
+        </div>
       </header>
 
       ${searchToolbarHTML({
@@ -417,7 +408,7 @@ function paint() {
 
       <div class="adm-card" style="margin-top:16px">
         <div class="adm-table-card">
-          <div class="adm-table${viewMode === 'cards' ? ' adm-table--cards' : ''}" style="--adm-cols:${GRID_COLS}">
+          <div class="adm-table" style="--adm-cols:${GRID_COLS}">
             <div class="adm-thead">${theadHtml()}</div>
             <div data-adm-rows>${orderedProducts().map(productRow).join('')}</div>
             <div class="adm-table-foot"><span data-adm-foot></span></div>
@@ -427,7 +418,6 @@ function paint() {
     </div>`;
   applyProductFilter();
   animateCharts();
-  injectPageMenu();
 }
 
 function easeOutCubic(t) { return 1 - (1 - t) ** 3; }
@@ -597,64 +587,6 @@ function openRowMenu(btn, upc) {
   });
 }
 
-/* Dashboard-only rows live in the module ⋯ (next to width) — same cluster
-   as verification. A second ⋮ above the search used to duplicate that one. */
-const VIEW_MENU_ITEMS = [
-  { view: 'rows',  icon: 'table_rows', label: 'Row view' },
-  { view: 'cards', icon: 'grid_view',  label: 'Card view' },
-];
-
-function pageMenuItemsHTML() {
-  return `
-    <div class="topbar-menu-divider" data-nud-page-menu></div>
-    <button type="button" class="topbar-menu-item" data-nud-page-menu data-adm-menu-action="view-invoices" role="menuitem">
-      <span class="material-symbols-outlined topbar-menu-icon">receipt_long</span>
-      <span>View invoices</span>
-    </button>
-    <button type="button" class="topbar-menu-item" data-nud-page-menu data-adm-menu-action="export" role="menuitem">
-      <span class="material-symbols-outlined topbar-menu-icon">download</span>
-      <span>Export dashboard</span>
-    </button>
-    <div class="topbar-menu-divider nud-view-sep" data-nud-page-menu></div>
-    ${VIEW_MENU_ITEMS.map((it) => {
-      const on = viewMode === it.view;
-      return `<button type="button" role="menuitemradio" aria-checked="${on}" class="topbar-menu-item nud-view-item${on ? ' is-active' : ''}" data-nud-page-menu data-adm-view-menu="${it.view}"><span class="material-symbols-outlined topbar-menu-icon">${it.icon}</span><span class="nud-view-item-label">${esc(it.label)}</span><span class="material-symbols-outlined nud-view-item-check">${on ? 'check' : ''}</span></button>`;
-    }).join('')}`;
-}
-
-function syncPageMenuChecks() {
-  document.querySelectorAll('#agent-main-more-pop [data-adm-view-menu]').forEach((b) => {
-    const on = b.dataset.admViewMenu === viewMode;
-    b.classList.toggle('is-active', on);
-    b.setAttribute('aria-checked', on ? 'true' : 'false');
-    const check = b.querySelector('.nud-view-item-check');
-    if (check) check.textContent = on ? 'check' : '';
-  });
-}
-
-function closeHeaderMenu() {
-  const btn = document.getElementById('agent-main-more-btn');
-  const pop = document.getElementById('agent-main-more-pop');
-  if (pop) pop.classList.add('hidden');
-  if (btn) {
-    btn.classList.remove('is-open');
-    btn.setAttribute('aria-expanded', 'false');
-  }
-}
-
-function injectPageMenu() {
-  const pop = document.getElementById('agent-main-more-pop');
-  if (!pop) {
-    requestAnimationFrame(injectPageMenu);
-    return;
-  }
-  if (pop.querySelector('[data-nud-page-menu]')) {
-    syncPageMenuChecks();
-    return;
-  }
-  pop.insertAdjacentHTML('beforeend', pageMenuItemsHTML());
-}
-
 /* Map a verification stat tile → the product-table status filter. */
 export function setNonUpfStatus(statusKey) {
   const map = { action: 'Action Required', ineligible: 'Ineligible', verified: 'Verified', pending_att: 'Pending Attestation' };
@@ -786,7 +718,6 @@ function runAction(action, ctx) {
 export function renderNonUpfDashboard(mainEl) {
   hostEl = mainEl;
   query = ''; filters = { ...FILTER_DEFAULTS }; sortKey = null; sortDir = 1; filterOpen = false;
-  viewMode = loadViewMode();
   if (!dateLeadBound && dc()) {
     dateLeadBound = true;
     dc().onLead(hostEl, (lead, root) => {
@@ -835,20 +766,6 @@ export function renderNonUpfDashboard(mainEl) {
       insideSel: '.wise-search-inline, .adm-search-inline',
     });
     document.addEventListener('click', (e) => {
-      const view = e.target.closest('#agent-main-more-pop [data-adm-view-menu], .topbar-popover [data-adm-view-menu]');
-      if (view) {
-        e.preventDefault();
-        setViewMode(view.dataset.admViewMenu);
-        closeHeaderMenu();
-        return;
-      }
-      const pageItem = e.target.closest('#agent-main-more-pop [data-adm-menu-action], .topbar-popover [data-adm-menu-action]');
-      if (pageItem && pageItem.hasAttribute('data-nud-page-menu')) {
-        e.preventDefault();
-        closeHeaderMenu();
-        runAction(pageItem.dataset.admMenuAction, '');
-        return;
-      }
       if (openMenuEl && !e.target.closest('.adm-menu') && !e.target.closest('[data-adm-action="manage-product"]')) closeRowMenu();
     });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeRowMenu(); });

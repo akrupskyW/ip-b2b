@@ -2354,7 +2354,7 @@
     #modules-row.output-fs > .wa-pane.pane-fs .wa-pane-name { font-size: 1.7rem; }
     /* Expand control sits in a toolbar above the plot/table — top-right of
        the output block, never inside the table. */
-    .wa-pane-body .wa-block:has(.wa-chart-card) { position: relative; }
+    .wa-pane-body .wa-block:has(> .wa-chart-toolbar) { position: relative; }
     .wa-chart-toolbar {
       display: flex; justify-content: flex-start; align-items: center;
       gap: 8px; min-height: 30px; margin: 0 0 10px;
@@ -2389,11 +2389,15 @@
       overflow: visible;
       text-overflow: unset;
     }
-    .wa-pane-body .wa-block:not(:has(.wa-sprouts-donuts)) > .wa-chart-toolbar {
+    /* The toolbar tracks the width of what it sits above: the 600px cap for a
+       chart card, but the full block for an atlas panel, whose eyebrow, title
+       and intro all run edge to edge above a centred plot. */
+    .wa-pane-body .wa-block:not(:has(.wa-sprouts-donuts)):not(:has(.wa-atlas)) > .wa-chart-toolbar {
       width: 100%;
       max-width: var(--wa-chart-max, 600px);
       margin-inline: auto;
     }
+    .wa-pane-body .wa-block:has(.wa-atlas) > .wa-chart-toolbar { width: 100%; }
     .wa-ctype-group + .wa-ctype-group { margin-top: 14px; }
     .wa-ctype-group-lbl {
       font-size: var(--fs-label); font-weight: 700; color: var(--text-muted);
@@ -2421,7 +2425,7 @@
       cursor: pointer; transition: color .15s ease, background .15s ease, border-color .15s ease, opacity .15s ease;
       opacity: .72;
     }
-    .wa-pane-body .wa-block:has(.wa-chart-card):hover .wa-chart-expand-btn,
+    .wa-pane-body .wa-block:hover > .wa-chart-toolbar .wa-chart-expand-btn,
     .wa-chart-expand-btn:focus-visible { opacity: 1; }
     html.dark .wa-chart-expand-btn { background: #1A2339; border-color: rgba(37,80,124,0.32); box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
     .wa-chart-expand-btn:hover { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); background: color-mix(in srgb, var(--primary) 10%, var(--surface)); }
@@ -5020,47 +5024,36 @@
         if (typeof recomputeSoloPaneWidth === 'function') recomputeSoloPaneWidth();
       }, DOCK_ANIM_MS + 40);
     }
-    /* First output of a conversation is parked in the closed pane and only
-       revealed once the transcript has finished typing (onReplyDone). A
-       re-clamp / reduced-motion race can settle the answer before surface()
-       inserts, so replySettled lets that late insert open immediately. */
-    let pendingPaneOpen = null;
-    let replySettled = false;
-    function holdFirstOutput(el, dest) {
-      if (!el || el.classList.contains('is-open')) return false;
-      if (anyOtherPaneOpen(el)) return false;
-      if (replySettled) return false;
-      pendingPaneOpen = dest;
-      return true;
+    /* ── Only the member opens an output ────────────────────────────────────
+       An output arriving is not a request to look at it. A turn writes its
+       blocks into the pane while the pane stays shut and the chat keeps the
+       width it already had; the output card in the transcript is the only
+       thing that opens the module. openOutputPane is that one door — the output
+       card, a version thumbnail, a footnote and expand all go through it, and
+       nothing in the turn itself calls it.
+
+       Blocks written into a closed pane have no box to measure, so their
+       charts, tables and compare boards are booted here, on the way in. */
+    function bootPaneContent(dest) {
+      const body = paneBody[dest];
+      if (!body) return;
+      requestAnimationFrame(() => {
+        waBootDashCharts(body);
+        body.querySelectorAll('.wa-tbl:not([data-ready])').forEach((tbl) => initTable(tbl));
+        body.querySelectorAll('.cmp-host:not([data-ready])').forEach((h) => bootCompareEngine(h));
+      });
     }
-    function revealPendingOutput() {
-      replySettled = true;
-      const dest = pendingPaneOpen;
-      pendingPaneOpen = null;
-      if (!dest) return;
+    function openOutputPane(dest) {
       const el = paneEl[dest];
-      if (!el || el.classList.contains('is-open')) return;
+      if (!el || el.classList.contains('is-open')) return false;
       hideOutputSkeleton(dest);
       ensurePaneOpen(el);
-      /* Charts/tables were inserted while the pane was display:none — boot
-         them now that it has a real box. */
-      const body = paneBody[dest];
-      if (body) {
-        requestAnimationFrame(() => {
-          waBootDashCharts(body);
-          body.querySelectorAll('.wa-tbl:not([data-ready])').forEach((tbl) => initTable(tbl));
-          body.querySelectorAll('.cmp-host:not([data-ready])').forEach((h) => bootCompareEngine(h));
-        });
-      }
-    }
-    function openPaneIfReady(el, dest) {
-      if (!el || el.classList.contains('is-open')) return;
-      if (holdFirstOutput(el, dest)) return;
-      ensurePaneOpen(el);
+      bootPaneContent(dest);
+      return true;
     }
     /* Placeholder shown only when Output is already open and a later turn
-       has not dropped a .wa-block yet. First-load never uses this — the
-       pane stays closed until the transcript concludes. */
+       has not dropped a .wa-block yet. A closed pane never uses this — there
+       is nothing to hold a place for until the member opens it. */
     function outputSkelMarkup() {
       const cell = '<div class="cmp-cell cmp-cell--entity is-pending"><span class="cmp-ghost cmp-ghost--bar"></span></div>';
       const tile = '<div class="cmp-cell cmp-cell--entity is-pending wa-pane-skel-tile"><span class="cmp-ghost cmp-ghost--bar"></span></div>';
@@ -5123,8 +5116,11 @@
        The surfaced output's title/meta are promoted into the pane's header
        masthead (like every other module's header area); setPaneSlide keeps
        that masthead in sync as the carousel switches outputs.
-       Returns the first appended block so we can reveal it. */
-    function openPane(which, { html, title, meta } = {}) {
+       Returns the first appended block so we can reveal it.
+       Writing a block does NOT open the pane. Pass `open: true` only on a path
+       the member asked for (re-opening an output card whose block is no longer
+       in the pane) — see openOutputPane. */
+    function openPane(which, { html, title, meta, open = false } = {}) {
       /* While merged, results/visuals blocks flow into the single unified body
          (tagged with their origin group so the rail can group + un-merge them). */
       const routed = mergedMode && (which === 'results' || which === 'visuals');
@@ -5166,9 +5162,7 @@
       /* Boot the ported product-comparison engine into any compare host that
          just landed (seeds the scope + renders the full interactive board). */
       paneBody[dest].querySelectorAll('.cmp-host:not([data-ready])').forEach((h) => bootCompareEngine(h));
-      if (!el.classList.contains('is-open')) {
-        openPaneIfReady(el, dest);
-      }
+      if (open) openOutputPane(dest);
       /* Rebuild the thumbnail rail; make the just-surfaced block the active slide
          once the pane holds 2+ outputs. */
       if (dest === 'unified') refreshUnifiedCarousel({ activate: firstAdded });
@@ -9946,7 +9940,8 @@
     function surfaceAtlasPanels(opts) {
       const o = opts || {};
       const { reset, note, ...state } = o;
-      ATLAS_PANELS.forEach((p) => {
+      const n = ATLAS_PANELS.length;
+      ATLAS_PANELS.forEach((p, i) => {
         surfaceBlock('visuals', {
           icon: p.icon,
           title: p.title,
@@ -9956,8 +9951,13 @@
           versionReset: !!reset,
           rail: 'atlas-visuals',
           cardLayout: 'portrait',
+          railLead: i === 0
+            ? `Here are <strong>${n} outputs</strong> for you to review.`
+            : undefined,
         });
       });
+      /* Closing read still opens in Results — it is not a second transcript chip
+         under the carousel. */
       surfaceBlock('results', {
         icon: 'checklist',
         title: 'Strongest actions, least certain actions, experiments worth running',
@@ -9965,6 +9965,7 @@
         html: atlasView({ ...state, only: 'Z' }),
         versionKey: 'intervention-atlas-close',
         versionReset: !!reset,
+        inTranscript: false,
       });
     }
 
@@ -12079,7 +12080,8 @@
 
       body.querySelectorAll('.wa-tbl:not([data-ready])').forEach((tbl) => initTable(tbl));
       body.querySelectorAll('.cmp-host:not([data-ready])').forEach((h) => bootCompareEngine(h));
-      if (!el.classList.contains('is-open')) openPaneIfReady(el, dest);
+      /* The slides land in a pane that stays shut. The turn announces them with
+         its output cards; tapping one is what opens the module. */
       if (dest === 'unified') refreshUnifiedCarousel({ activate: latestNode });
       else refreshPaneCarousel(which, { activate: latestNode });
       if (paneBlocks(dest).length > tallyBefore) bumpPaneTally(dest);
@@ -12097,12 +12099,34 @@
        preview cards into the transcript in the same frame, so the turn read as
        "everything at once" instead of the assistant building one output after
        another. Every surfaceBlock call is queued and posted a beat behind the
-       one before it, in call order, alongside the answer streaming paragraph by
-       paragraph. The first lands immediately so nothing feels held back.
+       one before it, in call order.
+
+       The queue also waits for the ANSWER. An output belongs after the reply it
+       came out of: the reply reads to its end, references and all, and only then
+       does the carousel start building. Starting the cards while the answer was
+       still typing put a rail of charts under half a sentence. The chat's
+       afterAnswer gate releases the moment the answer line has landed, and calls
+       straight through when no answer is in flight — a control, or a re-surface
+       from a footnote — so nothing outside a turn is held up.
        Reduced motion skips the pacing and posts straight through. */
     const SURFACE_STEP_MS = 420;
     const surfaceQueue = [];
     let surfacePumping = false;
+    function chatStage(name) {
+      return (typeof chat !== 'undefined' && chat && chat[name]) || null;
+    }
+    function afterAnswerSettles(fn) {
+      const gate = chatStage('afterAnswer');
+      if (gate) gate(fn); else fn();
+    }
+    /* Bracket a run of outputs so the turn's closing intent chips land under the
+       finished set. Held from the moment the turn starts surfacing (onReply) and
+       let go when the queue runs dry — or immediately, when the turn surfaced
+       nothing at all. */
+    function releaseOutputStage() {
+      const gate = chatStage('releaseOutputs');
+      if (gate) gate();
+    }
     function surfaceBlock(which, opts) {
       const reduce = typeof matchMedia === 'function'
         && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -12112,11 +12136,11 @@
       surfacePumping = true;
       const step = () => {
         const next = surfaceQueue.shift();
-        if (!next) { surfacePumping = false; return; }
+        if (!next) { surfacePumping = false; releaseOutputStage(); return; }
         postSurfaceBlock(next[0], next[1]);
         setTimeout(step, SURFACE_STEP_MS);
       };
-      step();
+      afterAnswerSettles(step);
     }
 
     /* Open (or refresh) a pane block AND mirror it as an inline preview card. */
@@ -12129,7 +12153,7 @@
       return host.querySelector(`.sc-line-wiseai[data-ask-turn="${CSS.escape(turn)}"] .sc-surface-rail[data-surface-rail="${CSS.escape(railId)}"]`);
     }
 
-    function postSurfaceBlock(which, { icon, title, meta, html, versionKey, versionReset, rail, cardLayout }) {
+    function postSurfaceBlock(which, { icon, title, meta, html, versionKey, versionReset, rail, cardLayout, railLead, inTranscript }) {
       const blockId = 'blk' + (++surfaceSeq);
       /* The compare board is engine-rendered into a fixed #cmp-body; strip those
          ids (and the References cards' #cat-ref-N ids) from the preview clone so
@@ -12159,6 +12183,10 @@
       });
       SURFACED[blockId] = { which, title, meta, icon, html: tagged, versionKey: key };
       addManifestOutput({ blockId, which, icon, title });
+      /* Pane-only outputs (atlas closing read, baselines, references) still
+         open on the right; they must not drop a second landscape chip under
+         the carousel. */
+      if (inTranscript === false) return;
       if (chat && typeof chat.addWISEcodeAI === 'function') {
         /* A preview card is posted mid-turn (while WISEcodeAI is still "thinking"),
            so it must NOT trail the intent chips — those belong to the actual
@@ -12177,8 +12205,11 @@
           syncSurfaceVersionThumbs(blockId, list[list.length - 1]);
           return;
         }
+        const lead = railLead
+          ? `<p class="sc-surface-rail-lead">${railLead}</p>`
+          : '';
         const wrap = rail
-          ? `<div class="sc-surface-rail" data-surface-rail="${esc(rail)}" role="region" aria-roledescription="carousel" aria-label="Chart outputs">${cardHtml}</div>`
+          ? `${lead}<div class="sc-surface-rail sc-surface-rail--bleed" data-surface-rail="${esc(rail)}" role="region" aria-roledescription="carousel" aria-label="Chart outputs">${cardHtml}</div>`
           : cardHtml;
         const surfLine = chat.addWISEcodeAI(wrap, { feedback: true, trailChips: false });
         decorateSurfaceMeta(surfLine, { time, version: count, count, blockId });
@@ -12193,13 +12224,12 @@
       if (!e) return;
       /* While merged, every block lives in the unified pane — look for it there. */
       const dest = mergedMode ? 'unified' : e.which;
-      const pane = paneEl[dest];
       const present = paneBody[dest] && (
         paneBody[dest].querySelector(`[data-block-id="${blockId}"]`)
         || (e.versionKey && familyBlocks(dest, e.versionKey).slice(-1)[0])
       );
       if (present) {
-        if (pane && !pane.classList.contains('is-open')) ensurePaneOpen(pane);
+        openOutputPane(dest);
         if (paneBody[dest].classList.contains('is-carousel')) {
           const idx = Number(present.dataset.slideIndex);
           setPaneSlide(dest, Number.isNaN(idx) ? 0 : idx, { animate: true, scrollNav: true });
@@ -12207,7 +12237,7 @@
           requestAnimationFrame(() => present.scrollIntoView({ block: 'start', behavior: 'smooth' }));
         }
       } else {
-        openPane(e.which, { title: e.title, meta: e.meta, html: e.html });
+        openPane(e.which, { title: e.title, meta: e.meta, html: e.html, open: true });
       }
       return dest;
     }
@@ -12253,7 +12283,7 @@
       const dest = which === 'report' ? 'report' : (mergedMode ? 'unified' : which);
       const el = paneEl[dest];
       if (!el) return;
-      if (!el.classList.contains('is-open')) ensurePaneOpen(el);
+      openOutputPane(dest);
       applyPaneFs(el, !paneIsFs(el));
     }
 
@@ -12780,7 +12810,15 @@
 
     /* Top-right open_in_full control for each chart output — parked in a
        toolbar on the block, above the card/table, never inside the table.
-       Chart-type switcher sits on the far left of the same toolbar. */
+       Chart-type switcher sits on the far left of the same toolbar.
+
+       Expand is not a property of the card class. The atlas keeps its own
+       .atl-card so the type switcher can never flatten a six-panel artifact
+       into a single pie, but every one of its panels still gets the toolbar
+       and its expand control — waChartEnsureTypeToggle stands itself down
+       when the block holds no switchable chart card. */
+    const WA_PLOT_BLOCK_SEL = '.wa-chart-card, .wa-atlas';
+
     function ensureChartExpandBtns(root) {
       if (!root) return;
       root.querySelectorAll('.wa-chart-card').forEach((card) => {
@@ -12788,12 +12826,12 @@
         card.querySelectorAll(':scope > .wa-chart-toolbar, :scope > .wa-chart-expand-btn').forEach((n) => n.remove());
       });
       root.querySelectorAll('.wa-block').forEach((block) => {
-        if (!block.querySelector('.wa-chart-card')) return;
+        if (!block.querySelector(WA_PLOT_BLOCK_SEL)) return;
         let bar = block.querySelector(':scope > .wa-chart-toolbar');
         if (!bar) {
           bar = document.createElement('div');
           bar.className = 'wa-chart-toolbar';
-          const card = block.querySelector('.wa-chart-card');
+          const card = block.querySelector(WA_PLOT_BLOCK_SEL);
           const overall = block.querySelector(':scope > .wa-kraft-overall');
           const mix = block.querySelector(':scope > .wa-sprouts-mix');
           let insertBefore = overall || mix || card;
@@ -12848,8 +12886,7 @@
         target = findVersionBlock(dest, e.versionKey, entry.version);
       }
       if (!target) { reopenSurface(blockId); return; }
-      const pane = paneEl[dest];
-      if (pane && !pane.classList.contains('is-open')) ensurePaneOpen(pane);
+      openOutputPane(dest);
       if (dest === 'unified') refreshUnifiedCarousel({ activate: target });
       else refreshPaneCarousel(e.which, { activate: target });
       updatePaneVer(dest);
@@ -12897,6 +12934,7 @@
             meta: 'Foods in any of the specified product categories \u2014 the observed baseline behind the atlas',
             html: atlasBaselineView(),
             versionKey: 'atlas-baseline',
+            inTranscript: false,
           });
           surfaceBlock('results', {
             icon: 'percent',
@@ -12904,8 +12942,9 @@
             meta: `Private label foods in the selected product categories vs foods in those categories \u00b7 0 of ${ATLAS_PL_TOTAL.toLocaleString('en-US')}`,
             html: atlasPlShareView(),
             versionKey: 'atlas-pl-share',
+            inTranscript: false,
           });
-          surfaceNewsRefs('atlas_refs');
+          surfaceNewsRefs('atlas_refs', { inTranscript: false });
         } else if (intent === 'atlas_report') {
           surfaceBlock('results', {
             icon: 'summarize',
@@ -13382,6 +13421,10 @@
             html: myfoodsFatqDonutChart(),
           });
         }
+        /* Most turns are just an answer. When nothing queued, give the output
+           stage straight back so the closing chips are not left waiting on a
+           run of outputs that is never coming. */
+        if (!surfacePumping) releaseOutputStage();
       }, 660);
     }
 
@@ -13433,12 +13476,15 @@
         .find((el) => !el.closest('.sc-surface-card'));
       return (set && set.closest('[data-block-id]')) || null;
     }
-    function surfaceNewsRefs(kind) {
+    function surfaceNewsRefs(kind, opts) {
       const cfg = NEWS_REFSETS[kind];
       if (!cfg) return;
       const existing = paneNewsRefsetBlock(kind);
       if (existing) { reopenSurface(existing.getAttribute('data-block-id')); return; }
-      surfaceBlock('results', { icon: cfg.icon, title: cfg.title, meta: cfg.meta, html: newsRefsView(kind) });
+      surfaceBlock('results', {
+        icon: cfg.icon, title: cfg.title, meta: cfg.meta, html: newsRefsView(kind),
+        inTranscript: opts && opts.inTranscript,
+      });
     }
     function openNewsRefs(kind, i) {
       const focus = () => {
@@ -13451,9 +13497,16 @@
         card.classList.add('is-flash');
         setTimeout(() => card.classList.remove('is-flash'), 1400);
       };
+      /* Tapping a footnote IS the ask to see the References output, so this
+         path opens the pane — surfacing it alone would leave it shut. */
+      const open = (blk) => {
+        if (!blk) return;
+        reopenSurface(blk.getAttribute('data-block-id'));
+        setTimeout(focus, 360);
+      };
       const existing = paneNewsRefsetBlock(kind);
-      if (existing) { reopenSurface(existing.getAttribute('data-block-id')); setTimeout(focus, 360); }
-      else { surfaceNewsRefs(kind); setTimeout(focus, 900); }
+      if (existing) open(existing);
+      else { surfaceNewsRefs(kind); setTimeout(() => open(paneNewsRefsetBlock(kind)), 900); }
     }
 
     /* Open the References output and flash a specific paper — fired from the
@@ -13474,13 +13527,18 @@
         card.classList.add('is-flash');
         setTimeout(() => card.classList.remove('is-flash'), 1400);
       };
-      const existingBlk = paneRefsetBlock();
-      if (existingBlk) {
-        reopenSurface(existingBlk.getAttribute('data-block-id'));
+      /* Tapping a footnote IS the ask to see the References output, so this
+         path opens the pane — surfacing it alone would leave it shut. */
+      const open = (blk) => {
+        if (!blk) return;
+        reopenSurface(blk.getAttribute('data-block-id'));
         setTimeout(focus, 360);
-      } else {
+      };
+      const existingBlk = paneRefsetBlock();
+      if (existingBlk) open(existingBlk);
+      else {
         surface('catnutrients');
-        setTimeout(focus, 1100);
+        setTimeout(() => open(paneRefsetBlock()), 1100);
       }
     }
 
@@ -14072,43 +14130,47 @@
         /* Fired once the reasoning trace completes, right as the answer lands.
            This is where the large output surfaces (result/visual panes + their
            inline transcript cards) so nothing renders until the glob is done.
-           The pane itself stays closed on first load until onReplyDone. */
+           Nothing actually posts here — the queue waits for the answer to finish
+           reading — but the output stage is claimed now, before the chips that
+           close the turn start looking for it.
+           The pane stays shut throughout: the turn's output cards are what open
+           it, and only when the member taps one. */
         onReply(intent, text, ctx) {
-          replySettled = false;
+          const hold = chatStage('holdOutputs');
+          if (hold) hold();
           surface(intent, ctx);
         },
-        /* First type / chip / send leaves the welcome. The Output pane does
-           not open here — a chart waits until the transcript has finished. */
+        /* First type / chip / send leaves the welcome. The Output pane does not
+           open here either — the chat keeps the row until an output is asked for. */
         onEngage() { engageConversationLayout(); },
         onDisengage() { disengageConversationLayout(); },
-        onReplyDone() { revealPendingOutput(); },
         onReset() {
-          pendingPaneOpen = null;
-          replySettled = false;
           resetMyfoodsState();
           resetConversationLayout();
         },
         onDbChange(dbId) { activeDbId = dbId || MYFOODS_LIVE; },
-        /* An answer's "Opened … in Results & Details / Visuals →" narration
-           renders as a clickable chip; tapping it re-opens that pane's most
-           recent output, and the module also opens by default the moment the
-           answer lands. */
-        openModuleByDefault: true,
+        /* An answer's "Opened … in Results & Details / Visuals →" narration is
+           stripped to a hidden marker; a transcript restored from history can
+           still carry a visible chip. Tapping that chip re-opens the pane's most
+           recent output. Nothing opens the module on its own — no
+           `openModuleByDefault` here, by rule. */
         onOpenModule(name) {
           const which = /visual/i.test(String(name || '')) ? 'visuals' : 'results';
           let target = null;
           for (const id in SURFACED) { if (SURFACED[id].which === which) target = id; }
           if (target) { reopenSurface(target); return true; }
           const dest = mergedMode ? 'unified' : which;
-          const pane = paneEl[dest];
-          if (pane && paneBody[dest] && paneBody[dest].children.length) { ensurePaneOpen(pane); return true; }
+          if (paneEl[dest] && paneBody[dest] && paneBody[dest].children.length) {
+            openOutputPane(dest);
+            return true;
+          }
           return false;
         },
       });
 
-      /* The chat keeps its SINGLE width by default when a pane opens — only the
-         user's own width toggle widens it. The observer still tracks pane
-         open/close so the lone-pane width tier reflects onto the row. */
+      /* The chat keeps the width it had when a pane opens — only the user's own
+         width toggle changes it. The observer still tracks pane open/close so the
+         lone-pane width tier reflects onto the row. */
       const paneOpenWatch = new MutationObserver(() => {
         recomputeSoloPaneWidth();
       });

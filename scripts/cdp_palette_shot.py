@@ -2,14 +2,15 @@
 
 Loads pages/analytics-types.html, waits real wall-clock time so the dashboard
 body, the variation charts, and every count-up settle, then exercises the
-palette: launcher toggle, the three chart sizes, drag, and the skinny-bar
-switch. Shoots light and dark. No dependencies.
+palette: launcher toggle, every chart size, drag, and the skinny-bar switch.
+Shoots light and dark. No dependencies.
 
 Usage:  python3 scripts/cdp_palette_shot.py [light|dark] [fresh|restore]
 
-`restore` seeds a saved seat, a saved Small size, and a collapsed palette before
-the first paint, to prove the stored state lands before the charts first draw
-rather than resizing them after.
+`restore` seeds a saved seat, skinny bars, and a collapsed palette before the
+first paint, to prove the stored state lands before the charts first draw
+rather than resizing them after. Chart size is deliberately not in that set —
+it is re-derived from the display on every load, never restored.
 """
 import json, socket, base64, struct, os, subprocess, time, urllib.request, sys
 
@@ -23,13 +24,11 @@ OUT = "/tmp/palette_" + THEME + ("" if MODE == "fresh" else "_" + MODE)
 SEED_FRESH = """
   localStorage.removeItem('az-palette-pos');
   localStorage.removeItem('az-palette-open');
-  localStorage.removeItem('az-chart-size');
   localStorage.setItem('az-skinny-bars','0');
 """
 SEED_RESTORE = """
   localStorage.setItem('az-palette-pos', JSON.stringify({left:120,top:90}));
   localStorage.setItem('az-palette-open','0');
-  localStorage.setItem('az-chart-size','s');
   localStorage.setItem('az-skinny-bars','1');
 """
 
@@ -156,9 +155,9 @@ if MODE == "restore":
     print("collapsed (want True):", js("document.getElementById('az-palette').hidden"))
     print("launcher_shown (want True):", js("!document.getElementById('az-palette-launch').hidden"))
     print("skinny (want True):", js("document.body.classList.contains('az-skinny-bars')"))
-    print("stage width (want ~0.58x):",
-          js("(function(){var s=document.querySelector('#atx-line-card .atx-stage');"
-             "return s?Math.round(s.getBoundingClientRect().width):-1;})()"))
+    print("report frame (want 430):",
+          js("(function(){var d=document.querySelector('#agent-main-scroll .dash');"
+             "return d?Math.round(d.getBoundingClientRect().width):-1;})()"))
     shot("10_restored_collapsed")
     js("document.getElementById('az-palette-launch').click()")
     time.sleep(0.8)
@@ -192,13 +191,44 @@ time.sleep(2.0)
 print("active_item:", js("(document.querySelector('.azp-item.is-active')||{}).textContent"))
 shot("02_jumped")
 
-for sid, label in (("s", "03_small"), ("m", "04_medium"), ("l", "05_large")):
+print("screen.width:", js("window.screen.width"))
+print("pane width:", js("Math.round(document.getElementById('agent-main-scroll')"
+                        ".getBoundingClientRect().width)"))
+
+# Each preset frames the whole report container, so measure .dash (not one SVG)
+# and check nothing inside it spills past the frame.
+for sid, label in (("s", "03_small"), ("t", "03b_tablet"), ("m", "04_medium"), ("l", "05_large")):
     js("document.querySelector('.azp-size[data-azp-size=\"%s\"]').click()" % sid)
     time.sleep(2.2)   # transition + the 300ms replay + the entrance sweep
-    w = js("(function(){var s=document.querySelector('#atx-line-card .atx-stage');"
-           "return s?Math.round(s.getBoundingClientRect().width):-1;})()")
-    print("size %s -> stage width %s, attr %s" % (sid, w, js("document.body.getAttribute('data-az-chart-size')")))
+    print("size %s -> attr %s, frame %s, dash width %s, overflow %s" % (
+        sid,
+        js("document.body.getAttribute('data-az-chart-size')"),
+        js("getComputedStyle(document.body).getPropertyValue('--az-frame').trim()") or "(none)",
+        js("(function(){var d=document.querySelector('#agent-main-scroll .dash');"
+           "return d?Math.round(d.getBoundingClientRect().width):-1;})()"),
+        js("(function(){var d=document.querySelector('#agent-main-scroll .dash');"
+           "if(!d)return'no-dash';var r=d.getBoundingClientRect(),bad=[];"
+           "d.querySelectorAll('*').forEach(function(el){"
+           "  if(!el.offsetParent&&el.offsetWidth===0)return;"
+           "  var q=el.getBoundingClientRect();"
+           "  if(q.width&&q.right>r.right+2)bad.push((el.id||el.className||el.tagName)"
+           "    .toString().split(' ')[0]+'+'+Math.round(q.right-r.right));});"
+           "return bad.length?bad.slice(0,8).join(' '):'none';})()"),
+    ))
     shot(label)
+
+# The phone-width frame is the one that can break a layout, so walk the
+# sections that are authored widest and shoot each at Mobile.
+js("document.querySelector('.azp-size[data-azp-size=\"s\"]').click()")
+time.sleep(2.2)
+for i, name in enumerate(("UPF & GRAS Status", "Performance Matrix", "Pillar Metrics",
+                          "Heat Table", "Leaderboard Table", "Headline KPIs")):
+    js("(function(){var b=Array.from(document.querySelectorAll('.azp-item'))"
+       ".find(e=>e.textContent.indexOf(%r)>=0);if(b)b.click();})()" % name)
+    time.sleep(1.8)
+    shot("08_mobile_%d_%s" % (i, name.split()[0].lower().strip("&")))
+js("document.querySelector('.azp-size[data-azp-size=\"l\"]').click()")
+time.sleep(1.5)
 
 # Skinny bars
 js("document.querySelector('.azp-switch').click()")

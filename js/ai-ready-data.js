@@ -56,6 +56,7 @@ export const AI_READY_SEED = {
   "ds:type:Section title": true,
   "ds:type:Stat numeral": true,
   "ds:type:UI base": true,
+  "mi-analytics": true,
   "mi-design": true,
   "mi-icons": true,
   "mi-logic": true,

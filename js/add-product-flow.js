@@ -2099,9 +2099,15 @@
   function isClaimPending() {
     return state.fromKey === 'discovered' && !state.brandClaimed && !state.saved;
   }
+  /* View Product (and any existing SKU) locks this card on Verify
+     ingredients — the dots are not a stepper, and no other CTA is live. */
+  function bannerLockedToVerify() {
+    return !isFreshAdd();
+  }
   /* Real attention step (0–4). Peeking a dot only changes what the banner
      shows — it does not rewrite this. */
   function lifecycleStep() {
+    if (bannerLockedToVerify()) return 3;
     if (isClaimPending()) return 1;
     if (state.fromKey === 'ineligible') return 4;
     if (state.fromKey === 'verify') {
@@ -2133,6 +2139,7 @@
     return 'shield';
   }
   function nextStepKind() {
+    if (bannerLockedToVerify()) return 'verify';
     if (state.lifecyclePeek != null) return kindForStep(state.lifecyclePeek);
     if (state.fromKey === 'ineligible') return 'ineligible';
     if (isClaimPending()) return 'claim';
@@ -2140,14 +2147,21 @@
     return kindForStep(lifecycleStep());
   }
   function lifecycleDotsHTML() {
-    const current = state.lifecyclePeek != null ? state.lifecyclePeek : lifecycleStep();
+    const locked = bannerLockedToVerify();
+    const current = locked ? 3 : (state.lifecyclePeek != null ? state.lifecyclePeek : lifecycleStep());
     const dots = LIFECYCLE_STEPS.map((s, i) => {
       const cls = i < current ? ' is-done' : i === current ? ' is-current' : '';
       const stateLabel = i < current ? ', complete' : i === current ? ', current' : '';
       const ariaCurrent = i === current ? ' aria-current="step"' : '';
+      if (locked) {
+        return `<span class="nfp-ins-dot${cls} is-locked" aria-hidden="true"></span>`;
+      }
       return `<button type="button" class="nfp-ins-dot${cls}" data-nfp="banner-step" data-arg="${i}" aria-label="${esc(s.label)}${stateLabel}"${ariaCurrent}></button>`;
     }).join('');
-    return `<div class="nfp-ins-next-dots" role="navigation" aria-label="Product progress">${dots}</div>`;
+    const nav = locked
+      ? ' role="img" aria-label="Product progress, verify ingredients"'
+      : ' role="navigation" aria-label="Product progress"';
+    return `<div class="nfp-ins-next-dots"${nav}>${dots}</div>`;
   }
   function bannerShell(kind, title, desc, actionHTML) {
     return `<div class="nfp-ins-next nfp-ins-next--${esc(kind)}">
@@ -2239,6 +2253,7 @@
     return bannerHTMLForKind(nextStepKind());
   }
   function peekBannerStep(i) {
+    if (bannerLockedToVerify()) return;
     const n = Number(i);
     if (!Number.isFinite(n) || n < 0 || n >= LIFECYCLE_STEPS.length) return;
     const real = lifecycleStep();
@@ -2270,8 +2285,9 @@
       : `Next, verify the ingredients on <strong>${esc(state.productName)}</strong> so it can earn a Non-UPF Shield.`,
       nfpIntentChips());
   }
-  const IA_DOUBLE_TIER = 1;
-  let iaWidthTier = IA_DOUBLE_TIER;
+  /* Fill leftover row space — not a double (520) or triple (680) pane. */
+  const IA_FIT_TIER = 3;
+  let iaWidthTier = IA_FIT_TIER;
 
   function applyIaWidth() {
     const panel = document.getElementById('ia-panel');
@@ -2298,15 +2314,15 @@
       btn.title = ['Width (single) — tap to widen', 'Width (double) — tap to widen', 'Width (triple) — tap to widen', 'Width (fill) — tap to widen', 'Width (custom) — drag to any size'][iaWidthTier];
     }
   }
-  function setIngredientListDouble() {
-    iaWidthTier = IA_DOUBLE_TIER;
+  function setIngredientListFit() {
+    iaWidthTier = IA_FIT_TIER;
     applyIaWidth();
     const panel = document.getElementById('ia-panel');
-    try { window.WPaneWidth && window.WPaneWidth.saveTier(panel, IA_DOUBLE_TIER); } catch (_) {}
+    try { window.WPaneWidth && window.WPaneWidth.saveTier(panel, IA_FIT_TIER); } catch (_) {}
   }
   function revealIngredientList() {
     setIaOpen(true);
-    setIngredientListDouble();
+    setIngredientListFit();
     const panel = iaPanelEl();
     if (panel) {
       requestAnimationFrame(() => {
@@ -2548,6 +2564,7 @@
         return;
       }
       playIaEnter(panel);
+      setIngredientListFit();
     } else {
       panel.hidden = true;
       panel.style.display = 'none';
@@ -4910,19 +4927,19 @@
     });
     applyNfpWidth();
 
-    /* Ingredient List width — double is the load default (and the size
-       Verify ingredients always opens at). Fill / custom still persist. */
-    const iaPanelNode = $('ia-panel');
-    const savedIaTier = (window.WPaneWidth && iaPanelNode)
-      ? window.WPaneWidth.readSavedTier(iaPanelNode)
-      : null;
-    iaWidthTier = (savedIaTier == null || savedIaTier === 0) ? IA_DOUBLE_TIER : savedIaTier;
+    /* Ingredient List always opens at fill (leftover row). A saved double /
+       triple / custom must not pin the next open to a pane width. */
+    iaWidthTier = IA_FIT_TIER;
     $('ia-width')?.addEventListener('click', () => {
       const W = window.WPaneWidth;
       iaWidthTier = W ? W.next(iaWidthTier) : (iaWidthTier + 1) % 5;
       applyIaWidth();
     });
     applyIaWidth();
+    try {
+      const iaPanelNode = $('ia-panel');
+      if (iaPanelNode && window.WPaneWidth) window.WPaneWidth.saveTier(iaPanelNode, IA_FIT_TIER);
+    } catch (_) {}
 
     wireNfpModuleMenu();
     installNfpLayoutMenuItems();

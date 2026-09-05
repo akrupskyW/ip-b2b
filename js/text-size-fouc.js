@@ -567,6 +567,19 @@
   else stop();
 })();
 
+/** FOUC guard — Header float is off by default. Keep in sync with
+    isHeaderFloatOn() / applyHeaderFloat() in js/topbar.js so a stored-on
+    preference paints `header-float` before module headers can flash. */
+(function () {
+  try {
+    if (localStorage.getItem('wise-header-float') === '1') {
+      document.documentElement.classList.add('header-float');
+    } else {
+      document.documentElement.classList.remove('header-float');
+    }
+  } catch (_) {}
+})();
+
 /** FOUC guard — Guides are off by default. Keep in sync with isGuidesOn()
     / applyGuides() in js/topbar.js so a stored-on preference paints
     `guides-on` before the first toast can flash hidden. */
