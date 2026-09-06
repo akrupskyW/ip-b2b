@@ -288,8 +288,21 @@ export function initLirTooltip() {
         tip.style.left = `${Math.round(r.right + 10)}px`;
       }
     } else {
-      tip.style.top = `${Math.round(r.bottom + 8)}px`;
-      tip.style.left = `${Math.round(r.left + r.width / 2)}px`;
+      /* Shift inward at the edges so the card never hangs off the window — a
+         label long enough to wrap is 380px wide, and centering that under a
+         control near either edge would put half of it out of reach. */
+      const half = tip.offsetWidth / 2;
+      const cx = Math.round(r.left + r.width / 2);
+      tip.style.left = `${Math.round(Math.max(half + 8, Math.min(cx, window.innerWidth - half - 8)))}px`;
+      /* A wrapped card is several lines tall. If it would fall off the bottom,
+         put it above the control rather than half out of view. */
+      if (r.bottom + 8 + tip.offsetHeight > window.innerHeight - 8 &&
+          r.top > tip.offsetHeight + 16) {
+        tip.classList.add('lir-tip-above');
+        tip.style.top = `${Math.round(r.top - 8)}px`;
+      } else {
+        tip.style.top = `${Math.round(r.bottom + 8)}px`;
+      }
     }
     /* reflow so the enter transition always plays */
     tip.offsetWidth;

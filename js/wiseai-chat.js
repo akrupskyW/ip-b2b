@@ -12975,13 +12975,43 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        Show more stays on row 2 (expanded stays fully open). */
     requestAnimationFrame(() => clampWelcomeChips());
   };
+  /* The control must move the module EVERY time it is tapped.
+
+     A host may let the chat free-grow to fill its row until the member picks a
+     width — wiseai's welcome chat is the whole row — so the width classes can
+     read "single" or "double" while the module is fifteen hundred pixels wide.
+     Advancing from that stale tier spends the first tap, and on a screen whose
+     default is double the second one too, without anything moving: single →
+     double → fill all resolve to "the whole row" while the module is still
+     growing. That is the dead control.
+
+     So the first tap enters the cycle at its first preset instead of advancing
+     from a tier the module is not actually at. The test is a measurement of
+     flex-grow, because only the host's CSS knows what a tier is worth in
+     pixels; fill and custom are excluded because those two are honest at any
+     width. And it applies only until the member has chosen once — after that
+     the classes and the module agree, so the cycle advances normally even on a
+     host whose CSS still lets the chat grow. */
+  let widthUserPicked = false;
+  const widthIsUnclaimed = (tier) => {
+    if (widthUserPicked || tier >= 3) return false;
+    try { return parseFloat(getComputedStyle(rootEl).flexGrow) > 0; }
+    catch (_) { return false; }
+  };
   rootEl.addEventListener('click', (e) => {
     const widthToggle = e.target.closest('.panel-width-toggle-btn');
     if (!widthToggle || !rootEl.contains(widthToggle)) return;
     e.stopPropagation();
     const W = window.WPaneWidth;
     const cur = W ? W.tierOfEl(rootEl) : (rootEl.classList.contains('panel-custom') ? 4 : rootEl.classList.contains('panel-fill') ? 3 : rootEl.classList.contains('panel-triple') ? 2 : rootEl.classList.contains('panel-wide') ? 1 : 0);
-    const next = W ? W.next(cur) : (cur + 1) % 5;
+    const first = W ? W.CYCLE[0] : 0;
+    const next = widthIsUnclaimed(cur) ? first : (W ? W.next(cur) : (cur + 1) % 5);
+    /* Mark the pick before applying it: hosts that only size the chat once the
+       member owns its width key off these two (see .wa-chat[data-width-user-set]
+       on wiseai.html), and the display-change re-apply must not stomp it. */
+    widthUserPicked = true;
+    if (W && W.markModuleUserSet) W.markModuleUserSet(rootEl);
+    if (W && W.markUserSet) W.markUserSet();
     syncWidthUI(next);
     if (typeof opts.onToggleWidth === 'function') opts.onToggleWidth(next);
   });

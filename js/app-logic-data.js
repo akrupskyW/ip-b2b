@@ -174,6 +174,10 @@ export const APP_LOGIC = [
         how: 'Every module uses the same <code>window.WPaneWidth</code> ladder — <strong>single → double → fill → custom</strong> (tiers 0, 1, 3, 4) — expressed as <code>panel-wide</code>, <code>panel-fill</code>, <code>panel-custom</code> and cycled by <code>.panel-width-toggle-btn</code>. Triple is gone. Each module persists its own rest state; changing or resizing a neighbour does not write it. Custom keeps the current width until you drag; that dragged size is what it then maintains. Do not invent a parallel width system for a new module.',
       },
       {
+        title: 'The width control always changes the width',
+        how: 'A tap on <code>.panel-width-toggle-btn</code> must move the module <strong>every time</strong>, with or without a neighbour on the row. Two things make that true. A host may only size the module once the member owns its width — <code>.wa-chat[data-width-user-set]</code> on <code>pages/wiseai.html</code> — so the welcome chat can still fill the row on load while the tiers apply the moment the control is used; a rule that sizes the chat <em>only</em> behind <code>:has(.wa-pane.is-open)</code> is the dead control. And a module that is still free-growing under a fixed preset is not at the tier its classes claim, so the first tap enters the cycle at <strong>single</strong> instead of advancing from that stale tier — otherwise single, double and fill all resolve to "the whole row" and the first tap or two moves nothing.',
+      },
+      {
         title: 'Chat width default is viewport-based',
         how: '<code>WPaneWidth.defaultChatTier()</code> returns tier <strong>1 (double)</strong> above <strong>1512 CSS px</strong> and tier <strong>0 (single)</strong> at or below it — the 14″ MacBook Pro class. The measurement is <code>window.screen.width</code>, the <strong>display</strong>, not <code>innerWidth</code>: resizing or un-maximising the browser window must never change the tier. <code>mountWISEcodeAIDock()</code> re-applies that default on every load rather than restoring the last toggle, and the FOUC twin adds <code>html.chat-default-double</code> pre-paint. Cycling back to single drops that class.',
       },
@@ -232,7 +236,15 @@ export const APP_LOGIC = [
       },
       {
         title: 'Narrow tables become cards',
-        how: '<code>responsive-tables.js</code> watches container width with a ResizeObserver and, below <strong>560px</strong>, adds <code>.rtbl-cards</code>; each visible cell becomes a <code>.rtbl-fld</code> carrying its header in <code>data-rlabel</code>. It is container width, not viewport width, so a table in the narrow column beside the chat cards up correctly.',
+        how: '<code>responsive-tables.js</code> watches container width with a ResizeObserver and, below <strong>560px</strong>, adds <code>.rtbl-cards</code>; each visible cell becomes a <code>.rtbl-fld</code> carrying its header in <code>data-rlabel</code>. It is the table\u2019s own box, not the window \u2014 a grid in a docked Output module cards up on a wide display the moment that module is phone-narrow.',
+      },
+      {
+        title: 'Card mode releases the width floor',
+        how: 'A wide table often declares an inline <code>min-width</code> so its columns stay legible while it scrolls sideways. Once <code>.rtbl-cards</code> is on, <code>pages/wise.css</code> sets <code>min-width: 0 !important</code> on the table, the grid, and each field \u2014 including those inline floors \u2014 so a 700px ledger can sit in a 365px Output module. Outside card mode every floor still holds. A heat matrix that cannot be read as one column keeps its floor and scrolls inside its own card.',
+      },
+      {
+        title: 'Faux-tables must wear the discovery tokens',
+        how: '<code>responsive-tables.js</code> finds a CSS-grid list by a head whose class ends in <code>-thead</code> or <code>-tbl-head</code> and rows ending in <code>-trow</code>. A list that uses <code>-head</code> / <code>-row</code> is invisible to it and keeps its floor forever \u2014 that was the chat ingredient browser and the My Foods / Energy / Protein lists. Those now carry the tokens. Admin (<code>.adm-*</code>) and invoices (<code>.inv-*</code>) keep their own collapse.',
       },
     ],
   },
@@ -644,6 +656,10 @@ export const APP_LOGIC = [
       {
         title: 'All versions appear as chips in the Output module',
         how: '<code>insertAllVersionSlides()</code> writes each version as its own pane slide. A redo that seeded v1/v2 then surfaced v3 still lands all three in the rail. Tapping a stacked thumb activates that slide rather than swapping content in place, so the transcript stack and the Output chips stay in lock-step.',
+      },
+      {
+        title: 'Output contents follow the module, not the window',
+        how: 'A docked Output module can be phone-narrow on a wide display. Tables and faux-tables card when the <em>module</em> is at or under 560px (see Tables). KPI rows use <code>repeat(auto-fit, minmax(190px, 1fr))</code> so the count follows the block. Definition lists and other two-column reads use <code>@container</code> on the block, never a viewport <code>@media</code>. Asking the screen how wide it is is what left three KPI columns and a 700px ledger clipped inside a 365px pane.',
       },
     ],
   },

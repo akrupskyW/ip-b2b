@@ -208,13 +208,21 @@
     .inv-toast .material-symbols-outlined { font-size: 17px; }
 
     /* Narrow container (e.g. docked beside chat): stack date / amount / chips
-       in the second column; the leading ⋮ stays in column one. Chips stay
-       visible — they are not swapped out for the menu. */
+       into one column, with the ⋮ closing that first line on the right and the
+       action chips centred at the foot — the shape every stacked row in the app
+       takes. Chips stay visible — they are not swapped out for the menu. */
     @container inv (max-width: 820px) {
       .inv-thead { display: none; }
-      .inv-trow { grid-template-columns: 34px 1fr; gap: 4px 12px; }
-      .inv-td--menu { align-self: start; padding-top: 4px; }
-      .inv-td:not(.inv-td--menu) { grid-column: 2; }
+      .inv-trow { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; }
+      .inv-td--menu {
+        grid-column: 2; grid-row: 1; justify-self: end;
+        align-self: start; padding-top: 4px;
+      }
+      .inv-td:not(.inv-td--menu) { grid-column: 1; }
+      /* The chips are the card's foot, so they measure themselves against the
+         whole card — not against the column the ⋮ left them. */
+      .inv-trow > .inv-td:last-child { grid-column: 1 / -1; }
+      .inv-actions { justify-content: center; padding-top: 4px; }
     }
 
     @media (max-width: 640px) {

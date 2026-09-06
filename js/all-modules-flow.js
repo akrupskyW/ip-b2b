@@ -929,7 +929,7 @@ function tablePane(t) {
 function renderTableGallery(opts) {
   if (opts && opts.headOnly) {
     return miHeadOnly('mi-tables', 'Table Gallery',
-      'Every data table in the app — portfolio grids, verification and analytics tables, admin boards, the ingredient registry and more — rendered live and lined up in one carousel. Each pane isolates the real table from its page; open the preview or the <strong>Used on</strong> link to jump to where it lives.',
+      'Every data table in the app — portfolio grids, verification and analytics tables, admin boards, the ingredient registry and more — rendered live and lined up in one carousel. Each pane isolates the real table from its page; open the preview or the <strong>Used on</strong> link to jump to where it lives. Output-module ledgers, the chat ingredient browser, and My Foods live in the Component Library under <em>Output pane contents</em>, because they only paint after a turn.',
       moduleReadyToggleHTML('mi-tables', 'Table Gallery', { ai: false }) + moduleControlsHTML('mi-tables'));
   }
   const total = TABLE_CATALOG.length;
@@ -941,7 +941,8 @@ function renderTableGallery(opts) {
           <p class="mi-module-lede">Every data table in the app — portfolio grids, verification and analytics tables,
             admin boards, the ingredient registry and more — rendered live and lined up in one carousel. Each pane
             isolates the real table from its page; open the preview or the <strong>Used on</strong> link to jump to
-            where it lives.</p>
+            where it lives. Output-module ledgers, the chat ingredient browser, and My Foods live in the Component
+            Library under <em>Output pane contents</em>, because they only paint after a turn.</p>
         </div>
         ${moduleReadyToggleHTML('mi-tables', 'Table Gallery', { ai: false })}
         ${moduleControlsHTML('mi-tables')}
@@ -2145,6 +2146,7 @@ const CAT_BY_NAME = {
   'Owl walkthrough': 'Chat & drawers',
   'Form fields': 'Inputs & forms',
   'Data table': 'Tables & data',
+  'Output pane contents': 'Tables & data',
   'Charts & graphs': 'Charts & graphs',
   'Dashboard card': 'Tables & data',
   'Pagination footer': 'Tables & data',
@@ -2228,23 +2230,31 @@ function idStripDemoHTML({ single }) {
     </div>
   </div>`;
 }
+/* A version is a whole card, never a bare thumbnail — one card per version,
+   cascaded with the newest in front, each wearing its own vN tag. Mirrors
+   surfaceCardHtml on wiseai.html. */
 function outputChipHTML({ title, versions, hover, activeVer }) {
-  const vtag = (n) => `<span class="sc-surface-vtag">v${n}</span>`;
-  const thumbs = versions.map((v, i) => {
+  const stacked = versions.length > 1;
+  const cards = versions.map((v, i) => {
     const latest = i === versions.length - 1;
     const active = activeVer != null && Number(activeVer) === Number(v.ver);
-    const cls = ['sc-surface-thumb', latest ? 'is-latest' : 'is-old', active ? 'is-active' : ''].filter(Boolean).join(' ');
-    const role = versions.length > 1 ? ' role="button" tabindex="0"' : '';
-    return `<div class="${cls}"${role}><div class="sc-surface-thumb-inner">${v.inner}</div>${vtag(v.ver)}</div>`;
-  }).join('');
-  const thumbWrap = versions.length > 1 ? `<div class="sc-surface-stack">${thumbs}</div>` : thumbs;
-  return `<div class="sc-surface-slot">
-    <div class="sc-surface-card${hover ? ' is-hover' : ''}" role="button" tabindex="0">
+    const cls = ['sc-surface-card', latest ? 'is-latest' : 'is-old',
+      active ? 'is-active' : '', !stacked && hover ? 'is-hover' : ''].filter(Boolean).join(' ');
+    return `<div class="${cls}" role="button" tabindex="0">
       <div class="sc-surface-head">
-        ${thumbWrap}
+        <div class="sc-surface-thumb"><div class="sc-surface-thumb-inner">${v.inner}</div></div>
         <div class="sc-surface-body"><div class="sc-surface-title">${esc(title)}</div></div>
       </div>
-    </div>
+      <span class="sc-surface-vtag">v${v.ver}</span>
+    </div>`;
+  }).join('');
+  if (stacked) {
+    return `<div class="sc-surface-slot sc-surface-slot--stack">
+    <div class="sc-surface-stack${hover ? ' is-hover' : ''}">${cards}</div>
+  </div>`;
+  }
+  return `<div class="sc-surface-slot">
+    ${cards}
   </div>`;
 }
 function outputRailChipHTML({ title, inner, ver, active }) {
@@ -2461,6 +2471,204 @@ function demoDataTable() {
           <button type="button" class="wtp-more">Load more<span class="material-symbols-outlined">expand_more</span></button>
         </div>
       </div>`;
+}
+
+/* Output module contents — the four layouts a docked pane actually ships,
+   pinned to phone / tablet / laptop module widths so the catalog shows the
+   same collapse live Output uses. Tables use the shared rtbl tokens so
+   js/responsive-tables.js cards them; KPI / definition / heat-matrix twins
+   demonstrate the container rules without copying page-local atlas classes. */
+const OUT_PANE_WIDTHS = [
+  { w: 380, label: 'Phone', sub: '380 · docked single' },
+  { w: 700, label: 'Tablet', sub: '700 · mid pane' },
+  { w: 1000, label: 'Laptop', sub: '1000 · fill' },
+];
+
+function demoOutputLedger() {
+  return `
+    <table class="dsc-out-ledger" data-wtp-skip data-no-paginate data-no-sort style="min-width:700px">
+      <thead>
+        <tr>
+          <th>Intervention</th>
+          <th>Revenue</th>
+          <th>Gross margin</th>
+          <th>Reformulation</th>
+          <th>Packaging</th>
+          <th>Supplier lead</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Digital ranking</td>
+          <td>\u22120.4%</td>
+          <td>+0.3 pt</td>
+          <td>\u2014</td>
+          <td>\u2014</td>
+          <td>8 wk</td>
+        </tr>
+        <tr>
+          <td>WISEcode score</td>
+          <td>\u22120.7%</td>
+          <td>\u22120.2 pt</td>
+          <td>$0.8M</td>
+          <td>$12.4M</td>
+          <td>22 wk</td>
+        </tr>
+        <tr>
+          <td>Loyalty rewards</td>
+          <td>+1.2%</td>
+          <td>\u22121.7 pt</td>
+          <td>\u2014</td>
+          <td>\u2014</td>
+          <td>14 wk</td>
+        </tr>
+      </tbody>
+    </table>`;
+}
+
+function demoOutputGrid() {
+  return `
+    <div class="dsc-out-ib">
+      <div class="dsc-out-ib-head dsc-out-thead">
+        <span>Ingredient</span>
+        <span>Category</span>
+        <span>PL</span>
+        <span>GRAS</span>
+        <span>Use</span>
+        <span>Notes</span>
+      </div>
+      <div class="dsc-out-ib-row dsc-out-trow">
+        <span>Sucralose</span>
+        <span>Sweetener</span>
+        <span>4</span>
+        <span>Listed</span>
+        <span>Diet cola</span>
+        <span>High-intensity; pairs with ace-K</span>
+      </div>
+      <div class="dsc-out-ib-row dsc-out-trow">
+        <span>Acesulfame potassium</span>
+        <span>Sweetener</span>
+        <span>4</span>
+        <span>Listed</span>
+        <span>Energy drink</span>
+        <span>Often blended; bitter aftertaste</span>
+      </div>
+      <div class="dsc-out-ib-row dsc-out-trow">
+        <span>Stevia leaf extract</span>
+        <span>Sweetener</span>
+        <span>2</span>
+        <span>Listed</span>
+        <span>Protein bar</span>
+        <span>Plant-derived; heat-stable</span>
+      </div>
+    </div>`;
+}
+
+function demoOutputKpis() {
+  return `
+    <div class="dsc-out-kpis">
+      <div class="dsc-out-kpi">
+        <span class="dsc-out-kpi-val no-countup" data-no-countup>1,508</span>
+        <span class="dsc-out-kpi-lbl">Great Value</span>
+        <span class="dsc-out-kpi-foot">41.2% of the top three</span>
+      </div>
+      <div class="dsc-out-kpi">
+        <span class="dsc-out-kpi-val no-countup" data-no-countup>1,204</span>
+        <span class="dsc-out-kpi-lbl">Kirkland</span>
+        <span class="dsc-out-kpi-foot">32.9% of the top three</span>
+      </div>
+      <div class="dsc-out-kpi">
+        <span class="dsc-out-kpi-val no-countup" data-no-countup>948</span>
+        <span class="dsc-out-kpi-lbl">Member\u2019s Mark</span>
+        <span class="dsc-out-kpi-foot">25.9% of the top three</span>
+      </div>
+    </div>`;
+}
+
+function demoOutputDefs() {
+  return `
+    <div class="dsc-out-def">
+      <div class="dsc-out-def-row">
+        <span class="dsc-out-def-k">Health impact</span>
+        <span class="dsc-out-def-v">Expected change in population diet quality. 100 is the largest improvement.</span>
+      </div>
+      <div class="dsc-out-def-row">
+        <span class="dsc-out-def-k">Evidence</span>
+        <span class="dsc-out-def-v">Strength of the causal claim behind the intervention. 100 is a settled finding.</span>
+      </div>
+      <div class="dsc-out-def-row">
+        <span class="dsc-out-def-k">Acceptance</span>
+        <span class="dsc-out-def-v">How readily shoppers and operators take the change. 100 is frictionless.</span>
+      </div>
+    </div>`;
+}
+
+function demoOutputMatrix() {
+  const cols = ['Health', 'Evidence', 'Equity', 'Acceptance', 'Cost', 'Speed', 'Reach', 'Risk'];
+  const rows = [
+    { name: 'Digital ranking', vals: [86, 72, 64, 91, 78, 88, 70, 54] },
+    { name: 'WISEcode score', vals: [92, 81, 77, 68, 61, 74, 83, 59] },
+    { name: 'Sodium \u221215%', vals: [74, 88, 71, 55, 49, 62, 66, 73] },
+  ];
+  const head = `<span class="dsc-out-mx-corner"></span>`
+    + cols.map((c) => `<span class="dsc-out-mx-col">${esc(c)}</span>`).join('');
+  const body = rows.map((r) => {
+    const cells = r.vals.map((n) =>
+      `<span class="dsc-out-mx-cell" style="--n:${n}">${n}</span>`).join('');
+    return `<span class="dsc-out-mx-row">${esc(r.name)}</span>${cells}`;
+  }).join('');
+  return `
+    <div class="dsc-out-scroll">
+      <div class="dsc-out-matrix" style="grid-template-columns:minmax(112px,1.2fr) repeat(8, minmax(52px,1fr))">${head}${body}</div>
+    </div>
+    <p class="dsc-out-mx-cap">A heat grid stays a heat grid. Narrower than 640px it scrolls sideways \u2014 there is no one-column reading of eight dimensions.</p>`;
+}
+
+function demoOutputPaneStage() {
+  return `
+    <div class="dsc-out-stage" data-out-w="380" style="width:380px">
+      <section class="dsc-out-block">
+        <h3 class="dsc-out-title">Financial ledger</h3>
+        <p class="dsc-out-sub">A real table with a 700px floor. Below 560px the floor releases and each row becomes a labelled card.</p>
+        <div class="dsc-out-card">${demoOutputLedger()}</div>
+      </section>
+      <section class="dsc-out-block">
+        <h3 class="dsc-out-title">Ingredient query</h3>
+        <p class="dsc-out-sub">A CSS-grid faux-table wearing <code>-thead</code> / <code>-trow</code> so the shared card collapse can find it.</p>
+        <div class="dsc-out-card">${demoOutputGrid()}</div>
+      </section>
+      <section class="dsc-out-block">
+        <h3 class="dsc-out-title">KPI row</h3>
+        <p class="dsc-out-sub">Three across while this block has room for three. <code>auto-fit</code> measures the module, not the window.</p>
+        ${demoOutputKpis()}
+      </section>
+      <section class="dsc-out-block">
+        <h3 class="dsc-out-title">Dimension definitions</h3>
+        <p class="dsc-out-sub">A key column when the list itself is 560px or wider \u2014 a container query, not a viewport one.</p>
+        <div class="dsc-out-card">${demoOutputDefs()}</div>
+      </section>
+      <section class="dsc-out-block">
+        <h3 class="dsc-out-title">Heat matrix</h3>
+        <p class="dsc-out-sub">The deliberate exception. The floor stays 640px and the card scrolls.</p>
+        <div class="dsc-out-card">${demoOutputMatrix()}</div>
+      </section>
+    </div>`;
+}
+
+function demoOutputPaneHTML() {
+  const chips = OUT_PANE_WIDTHS.map((s, i) => `
+    <button type="button" class="dsc-out-wbtn${i === 0 ? ' is-active' : ''}" data-out-set="${s.w}" aria-pressed="${i === 0 ? 'true' : 'false'}">
+      <span class="dsc-out-wbtn-title">${esc(s.label)}</span>
+      <span class="dsc-out-wbtn-sub">${esc(s.sub)}</span>
+    </button>`).join('');
+  return `
+    <div class="dsc-out-catalog" data-out-widths>
+      <div class="dsc-out-widths" role="group" aria-label="Output module width">
+        ${chips}
+      </div>
+      <p class="dsc-out-wcap">The stage is the Output module. Phone is a docked single; tablet is a mid pane; laptop is fill. Tables, tiles, and lists follow <em>this</em> width.</p>
+      ${themedDemoHTML(demoOutputPaneStage(), { stack: true })}
+    </div>`;
 }
 
 /* Filter funnel popover — one specimen of every control type used in a
@@ -3459,7 +3667,7 @@ const COMPONENTS = [
     wide: true,
     cls: '.sc-surface-card · .sc-surface-stack · .sc-surface-vtag · .wa-merge-chip',
     used: 'WISEcodeAI Studio Chat · WISEcodeAI dock · sticky Output rail',
-    note: 'When a turn opens Results or Visuals, a chip lands in the transcript: a <strong>52px</strong> preview on the left, the output name on the right, gold stroke. Every chip is versioned — a compact <code>vN</code> badge rides the thumb, even on the first pass. Redo the same output and the chip stacks every version at that same 52px (oldest first, newest raised). <strong>Hover fans the stack</strong> (tight −28px overlap → −4px peek); the gold stroke brightens. The version currently open on the right wears a stronger ring. Tapping a thumb opens <em>that</em> version in the sticky Output module — and the rail on the right shows <strong>one chip per version</strong>, same size, same badge, so the stack and the pane never disagree. Live fan + Replay live in <em>Motion &amp; Resize → Output chip fan</em>.',
+    note: 'When a turn opens Results or Visuals, a chip lands in the transcript: a <strong>52px</strong> preview on the left, the output name on the right, gold stroke. Every chip is versioned — a compact <code>vN</code> badge rides the <strong>card\u2019s</strong> top-right corner, even on the first pass. Redo the same output and the slot holds <strong>one whole card per version</strong> — same preview, name and stroke — cascaded oldest first with the newest in front. A version is never a bare thumbnail. <strong>Hover fans the cascade</strong> (an 18px edge opens to a 60px peek), lifts the card under the pointer, and slides each earlier card\u2019s tag to its left edge so every version stays labelled. The version currently open on the right wears a stronger ring. Tapping a card opens <em>that</em> version in the sticky Output module — and the rail on the right shows <strong>one chip per version</strong>, same badge, so the cascade and the pane never disagree. Live fan + Replay live in <em>Motion &amp; Resize → Output chip fan</em>.',
     noteIcon: 'layers',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -4442,7 +4650,7 @@ const COMPONENTS = [
     wide: true,
     cls: '.adm-table · .adm-thead / .adm-trow · .adm-th(--sortable/--num) · .adm-td(--actions/--num) · .adm-idcell · .adm-avatar · .adm-chip · .adm-rowmenu · .wtp-foot',
     used: 'Organizations · User Management · Audit Queue · Non-UPF Dashboard · Quick Invite · Invoices · Portfolio · Ingredient Browser · Guiding Stars · Reformulation — every admin & module list',
-    note: 'One CSS-grid pattern (no <code>&lt;table&gt;</code>) driven by <code>--adm-cols</code>. Cell types, left to right: <strong>bare kebab</strong> (no circled chip), <strong>identity</strong> (avatar + name + sub), <strong>status chip</strong>, <strong>stacked dates</strong> (two lines, header ⋮ picks created / joined / last active / last edited), <strong>numeric</strong> (hot vs zero), <strong>score</strong> (serif numeral), <strong>Guiding Stars</strong>, <strong>currency</strong>. Sort + paging attach app-wide. Full width keeps every column in one row. At the width of a docked module — these Light / Dark panes already are — rows become stacked cards and the header hides, the same container-query collapse live admin lists use. The status chip and dates share <strong>one row</strong> (chip left, dates right) until the card is too tight. Count-like cells (numeric, score, stars, amount) stay on <strong>one strip</strong> that fits one, two, or three across and wraps. The demo is marked <code>data-wtp-skip</code> so the shared pager does not inject a second footer.',
+    note: 'One CSS-grid pattern (no <code>&lt;table&gt;</code>) driven by <code>--adm-cols</code>. Cell types, left to right: <strong>bare kebab</strong> (no circled chip), <strong>identity</strong> (avatar + name + sub), <strong>status chip</strong>, <strong>stacked dates</strong> (two lines, header ⋮ picks created / joined / last active / last edited), <strong>numeric</strong> (hot vs zero), <strong>score</strong> (serif numeral), <strong>Guiding Stars</strong>, <strong>currency</strong>. Sort + paging attach app-wide. Full width keeps every column in one row. At the width of a docked module — these Light / Dark panes already are — rows become stacked cards and the header hides, the same container-query collapse live admin lists use. The status chip and dates share <strong>one row</strong> (chip left, dates right) until the card is too tight. Count-like cells (numeric, score, stars, amount) stay on <strong>one strip</strong> that fits one, two, or three across and wraps. Real <code>&lt;table&gt;</code> ledgers and chat faux-tables in Output follow the same card collapse — see <em>Output pane contents</em>. The demo is marked <code>data-wtp-skip</code> so the shared pager does not inject a second footer.',
     noteIcon: 'table_rows',
     demo: demoDataTable(),
     demoCustom() {
@@ -4454,6 +4662,19 @@ const COMPONENTS = [
           ${themedDemoHTML(`<div class="dsc-adm-stage dsc-adm-stage--narrow">${demoDataTable()}</div>`)}
         </div>`;
     },
+  },
+
+  /* ---- Output pane contents — module-width states, not viewport ---- */
+  {
+    name: 'Output pane contents',
+    aliases: ['Output module contents', 'Output tables', 'Narrow output', 'Atlas ledger'],
+    wide: true,
+    cat: 'Tables & data',
+    cls: 'table.rtbl / .rtbl-cards / .rtbl-grid \u00b7 js/responsive-tables.js \u00b7 @container',
+    used: 'WISEcodeAI Output — Intervention Atlas ledger, ingredient browser, My Foods / Energy / Protein, KPI overview, scientific report',
+    note: 'Everything inside Output follows the <strong>module</strong>, not the window. Pin the stage to phone (380), tablet (700), or laptop (1000) \u2014 the same widths a drag or a width-tier leaves the pane at. <strong>Ledger</strong> is a real table with a 700px floor; below 560px card mode releases that floor so labels and values share the card. <strong>Ingredient query</strong> is a CSS-grid faux-table that must wear <code>-thead</code> / <code>-trow</code> or the collapse never finds it. <strong>KPI row</strong> uses <code>repeat(auto-fit, minmax(190px, 1fr))</code> so three tiles become one when the block cannot fit three. <strong>Definitions</strong> grow a key column via a container query at 560px. <strong>Heat matrix</strong> is the exception: it keeps a 640px floor and scrolls, because eight dimensions have no one-column reading.',
+    noteIcon: 'view_sidebar',
+    demoCustom: () => demoOutputPaneHTML(),
   },
 
   /* ---- Filter toolbar — search pill + funnel + popover ------------ */
@@ -4878,7 +5099,7 @@ const COMPONENTS = [
     wide: true,
     cls: '#lir-tooltip / .lir-tip-visible (js/lir-tooltip.js) · .dash-status-tip · chip explainer .ct-card (js/chip-tooltip.js)',
     used: 'Every icon-only control (Appearance, width toggle, panel docks) · dashboard score terms · data chips app-wide',
-    note: 'One tooltip for every icon-only control. It sits below the icon by default and shifts inward at the left or right edge of its container so the card never clips. Appearance and studio tools sit above; if there is no room they flip to the right. Data chips open a richer explainer on click. The button states themselves live on <em>Buttons</em>.',
+    note: 'One tooltip for every icon-only control. It sits below the icon by default and shifts inward at the left or right edge of its container so the card never clips. Appearance and studio tools sit above; if there is no room they flip to the right. A short label stays on one line at its natural width; a whole sentence — the kind a chart cell carries — wraps at 380px rather than stretching off the window, and flips above the control if it would fall off the bottom. Data chips open a richer explainer on click. The button states themselves live on <em>Buttons</em>.',
     noteIcon: 'chat_bubble',
     demo: `
       <div class="dsc-tip-stage" aria-label="Tooltip landing at container edges">
@@ -4903,6 +5124,10 @@ const COMPONENTS = [
             <span class="dsc-tip">Help</span>
           </div>
         </div>
+      </div>
+      <div class="dsc-tip-pin dsc-tip-pin--left">
+        <div class="dsc-sub-label">Long label</div>
+        <span class="dsc-tip dsc-tip--wrap">Reformulate private-label lunch kits \u00b7 Affordability &amp; equity: 76 of 100. Whether the intervention holds up for households on a tight budget.</span>
       </div>`,
   },
 
@@ -5275,6 +5500,7 @@ const USED_HREF_RULES = [
   { re: /\binvoices\b/, hrefs: ['invoices.html'] },
   { re: /\bcomparison\b/, hrefs: ['product-comparison.html'] },
   { re: /\boverview\b/, hrefs: ['overview.html'] },
+  { re: /wisecodeai output|intervention atlas|output pane contents/, hrefs: ['wiseai.html'] },
   { re: /report builder|wiseai\.html#report/, hrefs: ['wiseai.html#report'] },
   { re: /reports\.html|\breports\b/, hrefs: ['reports.html'] },
   { re: /\bverification\b/, hrefs: ['verification.html', 'gras-verification.html'] },
@@ -5869,7 +6095,7 @@ const CONVENTIONS = [
   {
     icon: 'devices',
     title: 'Responsive by default',
-    body: 'Nothing is fixed-width. Layouts flow with fluid grids (<code>repeat(auto-fit, minmax())</code>), and surfaces that sit in a narrow column beside the chat dock use <strong>container queries</strong> (<code>container-type: inline-size</code>) so each module responds to its OWN width, not the viewport. Test every component at dock, split, and full width.',
+    body: 'Nothing is fixed-width. Layouts flow with fluid grids (<code>repeat(auto-fit, minmax())</code>), and surfaces that sit in a narrow column beside the chat dock use <strong>container queries</strong> (<code>container-type: inline-size</code>) so each module responds to its OWN width, not the viewport. A docked Output module on a wide laptop is still phone-narrow \u2014 its tables, KPI rows, and definition lists must follow that module, not the display. Test every component at dock, split, and full width.',
   },
   {
     icon: 'palette',
@@ -5884,7 +6110,7 @@ const CONVENTIONS = [
   {
     icon: 'table_rows',
     title: 'One table pattern',
-    body: 'Every list is the same CSS-grid faux-table (<code>*-thead / *-trow / *-th / *-td</code>) driven by a single columns variable. Sorting and "load more" paging attach app-wide via <code>js/sortable-tables.js</code> and <code>js/table-pagination.js</code>. Clicking a product row opens that product; icons and other controls on the row keep their own actions (<code>js/product-row-click.js</code>).',
+    body: 'Every list is the same CSS-grid faux-table (<code>*-thead / *-trow / *-th / *-td</code>) driven by a single columns variable \u2014 real <code>&lt;table class="rtbl"&gt;</code> markup is the other half of the same pattern. Both watch their own box via <code>js/responsive-tables.js</code> and become labelled cards below 560px. Card mode releases any inline <code>min-width</code> floor so a 700px ledger can sit in a 365px module; a heat grid that cannot be read as one column keeps its floor and scrolls. Sorting and "load more" paging attach app-wide. Clicking a product row opens that product; icons and other controls on the row keep their own actions.',
   },
   {
     icon: 'filter_alt',
@@ -7292,13 +7518,12 @@ function tarchChip(id, side, opts) {
   const html = outputChipHTML(opts);
   if ((opts.versions || []).length > 1) {
     return html
-      .replace('<div class="sc-surface-stack">', `<div class="sc-surface-stack mi-tarch-hit"${hitAttr}>`)
-      .replace('</div>\n        <div class="sc-surface-body">', pin + '</div>\n        <div class="sc-surface-body">');
+      .replace('<div class="sc-surface-stack', `<div${hitAttr} class="mi-tarch-hit sc-surface-stack`)
+      .replace('</div>\n  </div>', pin + '</div>\n  </div>');
   }
   return html
-    .replace('<div class="sc-surface-card', `<div class="sc-surface-card mi-tarch-hit`)
-    .replace(' role="button"', hitAttr + ' role="button"')
-    .replace('</div>\n    </div>\n  </div>', '</div>\n    ' + pin + '</div>\n  </div>');
+    .replace('<div class="sc-surface-card', `<div${hitAttr} class="mi-tarch-hit sc-surface-card`)
+    .replace('</span>\n    </div>', '</span>' + pin + '\n    </div>');
 }
 
 function tarchTick(type, opts) {
@@ -7469,7 +7694,7 @@ function wireTranscriptArch(root) {
   const svg = stage.querySelector('.mi-tarch-arrows');
   const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* Prefer the real control inside the hit — version thumbs, the chip,
+  /* Prefer the real control inside the hit — version cards, the chip,
      the three dots, the rail — never the full-width row that wraps it. */
   const TARCH_AIM = {
     chats: '.wch-item',
@@ -7484,7 +7709,7 @@ function wireTranscriptArch(root) {
     outputs: '.sc-surface-thumb, .sc-surface-card',
     actions: '.sc-fb, .sc-fb-wrap',
     chips: '.sc-reply-chips, .chip',
-    versions: '.sc-surface-thumb.is-active, .sc-surface-stack, .sc-surface-thumb',
+    versions: '.sc-surface-card.is-active, .sc-surface-stack, .sc-surface-card',
     tokens: '.sc-activity-dots, .mi-tarch-tokens',
     turns: '.wt-turn, .mi-tarch-turns-head',
     cwr: '.mi-cwr, .cwr-btn',
@@ -7831,7 +8056,7 @@ const MOTION_ITEMS = [
     id: 'outfan', group: 'anim', icon: 'layers', title: 'Output chip fan',
     src: '.sc-surface-card · .sc-surface-stack',
     used: 'WISEcodeAI transcript — versioned Results / Visuals chips',
-    lede: 'When an output has been redone, its chip stacks every version at 52px (oldest first, newest raised). Hover fans the cascade — tight −28px overlap opens to −4px so earlier versions peek — and the gold stroke brightens. Replay runs the fan once; leave the chip to rest, or hover it live. Reduced motion snaps to the open pose.',
+    lede: 'When an output has been redone, its slot holds one whole card per version — same preview, name and gold stroke — cascaded oldest first with the newest in front. Hover fans the cascade: an 18px edge opens to a 60px peek, the earlier cards lift, and their version tags slide to the left edge. Replay runs the fan once; leave the stack to rest, or hover it live. Reduced motion snaps to the open pose.',
     demo: `
       <div class="mi-motion-outfan" data-motion-outfan>
         <div class="mi-motion-outfan-row">
@@ -8127,7 +8352,7 @@ const MOTION_ITEMS = [
     id: 'width', group: 'drag', icon: 'width_wide', title: 'Width tiers',
     src: 'js/pane-width.js · .panel-width-toggle-btn',
     used: 'Every module ⋯ / width button except Navigation and the minimized History rail',
-    lede: 'One control, four rest states: <strong>single → double → fill → custom</strong>, then back. Fill absorbs leftover row space. Custom keeps the current width so you can drag it to any size — that is what puts the row on the <strong>carousel rail</strong> (next card). Each module remembers its own rest state; changing or resizing a neighbour does not write it. Drag-resize on a preset is only a preview — release snaps to the closest of the three named sizes.',
+    lede: 'One control, four rest states: <strong>single → double → fill → custom</strong>, then back. Fill absorbs leftover row space. Custom keeps the current width so you can drag it to any size — that is what puts the row on the <strong>carousel rail</strong> (next card). Each module remembers its own rest state; changing or resizing a neighbour does not write it. Drag-resize on a preset is only a preview — release snaps to the closest of the three named sizes. <strong>Every tap moves the module</strong>, whatever else is on the row: a chat that is filling the row on its own because nothing has docked beside it yet still narrows to single on the first tap, rather than spending a tap or two catching up to a tier it was never actually at. Custom is the one stop that holds the width you arrived with — by design, until you drag it.',
     demo: `
       <div class="mi-motion-width" data-motion-width>
         <div class="mi-motion-width-row">
@@ -9354,7 +9579,7 @@ function wireMotion(root) {
   toastHost?.querySelector('[data-toast-run]')?.addEventListener('click', runToast);
 
   /* ---- Output chip fan ---- */
-  const outfanLive = mod.querySelector('[data-motion-outfan] .sc-surface-card:not(.is-hover)');
+  const outfanLive = mod.querySelector('[data-motion-outfan] .sc-surface-stack:not(.is-hover)');
   let outfanTimer = 0;
   const runOutfan = () => {
     if (!outfanLive) return;
@@ -9497,12 +9722,22 @@ const RESPONSIVE_SURFACES = [
   {
     id: 'tables', icon: 'table_rows', title: 'Tables',
     src: 'js/responsive-tables.js',
-    used: 'Portfolio, verification, analytics, admin, ingredient registry',
+    used: 'Portfolio, verification, analytics, admin, ingredient registry, Output ledgers',
     changes: ['mobile'],
-    lede: 'A table watches its own container, not the window. Below 560px each visible cell becomes a labelled field on a card, so a grid beside the chat cards up even when the page itself is still desktop-wide.',
-    mobile: 'Rows become cards. Each field carries its column name. Sort and load-more still work.',
-    laptop: 'Full grid. Columns stay columns.',
+    lede: 'A table watches its own container, not the window. Below 560px each visible cell becomes a labelled field on a card, so a grid beside the chat \u2014 or inside a docked Output module \u2014 cards up even when the page itself is still desktop-wide. Card mode also releases any inline <code>min-width</code> floor; a CSS-grid list must wear <code>-thead</code> / <code>-trow</code> or the collapse never finds it.',
+    mobile: 'Rows become cards. Each field carries its column name. A 700px floor drops to zero so values sit on the card, not off the right edge. Sort and load-more still work.',
+    laptop: 'Full grid. Columns stay columns. A floor wider than the module scrolls inside its card.',
     larger: 'Full grid. Extra width is more of each column, not a new layout.',
+  },
+  {
+    id: 'output', icon: 'output', title: 'Output module contents',
+    src: 'js/responsive-tables.js · pages/wiseai.html',
+    used: 'WISEcodeAI Output — Atlas, ingredient browser, My Foods, KPI overview, scientific report',
+    changes: ['mobile'],
+    lede: 'The Output module can be phone-narrow on a wide laptop. Everything inside it \u2014 tables, KPI tiles, definition lists \u2014 follows <em>that</em> width, not the display. A viewport <code>@media</code> is the bug that kept three KPI columns and a 700px ledger clipped inside a 365px pane. Live specimen: <em>Output pane contents</em> in the Component Library.',
+    mobile: 'Module around 380px (docked single, or a stacked phone). Tables and faux-tables become labelled cards. KPI tiles go one-across. Definition keys stack above their copy. A heat matrix keeps 640px and scrolls sideways.',
+    laptop: 'Module at fill on a 14-inch display. Columns stay columns. KPI tiles sit three-across while the block has room. Definition lists grow a key column once the list itself is 560px.',
+    larger: 'Same layouts. Extra width is more of each column or more air between tiles \u2014 not a fourth reading.',
   },
   {
     id: 'fill', icon: 'width_full', title: 'Right-of-chat fill',
@@ -9539,9 +9774,9 @@ const RESPONSIVE_SURFACES = [
     src: 'pages/wise.css',
     used: 'Overview, Non-UPF Dashboard, Admin, Reformulation',
     changes: ['mobile'],
-    lede: 'Dashboard tiles follow the card they sit in, not the window. Inside a narrow pane — or on a phone — a two- or three-across row drops to a single column so the numbers stay readable.',
-    mobile: 'Tiles stack. Hero numbers stay large; supporting rows go one-across.',
-    laptop: 'The designed grid — two, three, or four across, matching the page.',
+    lede: 'Dashboard tiles follow the card they sit in, not the window. KPI rows in Output use <code>repeat(auto-fit, minmax(190px, 1fr))</code> so the count follows the module \u2014 a viewport breakpoint kept all three columns in a docked 365px pane because the screen was wide.',
+    mobile: 'Tiles stack. Hero numbers stay large; supporting rows go one-across. Output KPIs drop to a single column the moment the block cannot fit 190px tiles.',
+    laptop: 'The designed grid — two, three, or four across, matching the page. Output KPIs sit three-across while the module has room.',
     larger: 'Same grid. Extra width is more air, not a fourth layout.',
   },
   {
@@ -9692,7 +9927,7 @@ const RESP_CHAT_META = {
 function renderResponsive(opts) {
   if (opts && opts.headOnly) {
     return miHeadOnly('mi-responsive', 'Responsiveness',
-      'How every surface on the platform adapts — phone, 14-inch laptop, and everything larger. Nav, chat width, the modules row, tables, marketing, dashboards, and forms, each named at the three sizes the app actually codes for.',
+      'How every surface on the platform adapts — phone, 14-inch laptop, and everything larger. Nav, chat width, the modules row, tables, Output contents, marketing, dashboards, and forms, each named at the three sizes the app actually codes for.',
       moduleReadyToggleHTML('mi-responsive', 'Responsiveness', { kind: 'ai' }) + moduleControlsHTML('mi-responsive'));
   }
   const mobileN = RESPONSIVE_SURFACES.filter((i) => (i.changes || []).includes('mobile')).length;
@@ -9705,8 +9940,9 @@ function renderResponsive(opts) {
           <h2 class="mi-module-title">Responsiveness</h2>
           <p class="mi-module-lede">How every surface on the platform adapts — phone, 14-inch laptop, and everything
             larger. The live stage restyles a schematic shell. The catalog names what the nav, chat, modules row,
-            tables, marketing site, dashboards, and forms actually do at each size. Laptop and larger share the
-            desktop shell; the one load default that flips is chat width.</p>
+            tables, Output contents, marketing site, dashboards, and forms actually do at each size. Laptop and larger share the
+            desktop shell; the one load default that flips is chat width. Tables and Output follow the
+            <em>module</em>, not the window.</p>
         </div>
         ${moduleReadyToggleHTML('mi-responsive', 'Responsiveness', { kind: 'ai' })}
         ${moduleControlsHTML('mi-responsive')}
@@ -9717,7 +9953,7 @@ function renderResponsive(opts) {
           <span class="material-symbols-outlined">devices</span>
           <div>
             <div class="dsc-conv-title">Three sizes, two kinds of measurement</div>
-            <div class="dsc-conv-sub">Phone layout follows the <strong>window</strong>. Chat width follows the <strong>display</strong>. Shrinking a laptop browser is not the same as being on a phone.</div>
+            <div class="dsc-conv-sub">Phone layout follows the <strong>window</strong>. Chat width follows the <strong>display</strong>. Tables and Output contents follow the <strong>module</strong>. Shrinking a laptop browser is not the same as being on a phone \u2014 and a docked Output module on a wide laptop is still phone-narrow.</div>
           </div>
         </div>
         <div class="dsc-conv-grid">
@@ -9725,7 +9961,7 @@ function renderResponsive(opts) {
             <span class="material-symbols-outlined" aria-hidden="true">smartphone</span>
             <div class="dsc-conv-body">
               <div class="dsc-conv-item-title">Mobile is the window</div>
-              <p class="dsc-conv-item-desc">At 768px the nav becomes an owl drawer. At 560px the modules row stacks and tables become cards. Those are viewport rules — they fire when the browser is that narrow, on any machine.</p>
+              <p class="dsc-conv-item-desc">At 768px the nav becomes an owl drawer. At 560px the modules row stacks. Those are viewport rules \u2014 they fire when the browser is that narrow, on any machine. Tables becoming cards is <em>not</em> one of them: that watches the table\u2019s own box.</p>
             </div>
           </div>
           <div class="dsc-conv-item">
@@ -9746,7 +9982,7 @@ function renderResponsive(opts) {
             <span class="material-symbols-outlined" aria-hidden="true">view_week</span>
             <div class="dsc-conv-body">
               <div class="dsc-conv-item-title">Narrowing is a carousel, not a squeeze</div>
-              <p class="dsc-conv-item-desc">Above 560px, pinned modules keep their width and overflow sideways. The row never crushes to fit. Stacking is the phone rule only.</p>
+              <p class="dsc-conv-item-desc">Above 560px, pinned modules keep their width and overflow sideways. The row never crushes to fit. Stacking is the phone rule only. What is <em>inside</em> a narrowed Output module still recards, reflows, and reseats to that module\u2019s width.</p>
             </div>
           </div>
         </div>
@@ -14525,6 +14761,30 @@ function wireAskOpenAll(card) {
   });
 }
 
+function wireOutputPaneDemo(host) {
+  if (!host || host.dataset.outWired === '1') return;
+  host.dataset.outWired = '1';
+  const setW = (w) => {
+    const n = Number(w) || 380;
+    host.querySelectorAll('[data-out-w]').forEach((stage) => {
+      stage.style.width = n + 'px';
+      stage.dataset.outW = String(n);
+    });
+    host.querySelectorAll('[data-out-set]').forEach((b) => {
+      const on = Number(b.getAttribute('data-out-set')) === n;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  };
+  host.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-out-set]');
+    if (!btn || !host.contains(btn)) return;
+    setW(btn.getAttribute('data-out-set'));
+  });
+  const current = host.querySelector('[data-out-set].is-active');
+  setW(current ? current.getAttribute('data-out-set') : 380);
+}
+
 function wireComponentLibrary(root) {
   patchLibraryThemeSheets();
   const grid = root.querySelector('#dsc-grid');
@@ -14706,6 +14966,14 @@ function wireComponentLibrary(root) {
   };
   grid._bootOwlProgIn = bootOwlProgIn;
 
+  const bootOutputPaneIn = (scope) => {
+    if (!compMod || !compMod.isConnected) return;
+    if (compMod.classList.contains('is-collapsed')) return;
+    const host = scope || compMod;
+    host.querySelectorAll('[data-out-widths]').forEach((el) => wireOutputPaneDemo(el));
+  };
+  grid._bootOutputPaneIn = bootOutputPaneIn;
+
   /* Each component is its own accordion. The title row toggles; Dev Ready
      and links inside the header keep their own actions. */
   const toggleCompCard = (card) => {
@@ -14718,6 +14986,7 @@ function wireComponentLibrary(root) {
       bootAppSearchIn(card);
       bootAskDemoIn(card);
       bootOwlProgIn(card);
+      bootOutputPaneIn(card);
       if (card.dataset.compName === 'Charts & graphs') {
         takeAzCompNudge();
         observePreviewFrames(card);
@@ -15018,6 +15287,7 @@ async function jumpToComponent(root, name) {
   if (grid && typeof grid._bootAppSearchIn === 'function') grid._bootAppSearchIn(card);
   if (grid && typeof grid._bootAskDemoIn === 'function') grid._bootAskDemoIn(card);
   if (grid && typeof grid._bootOwlProgIn === 'function') grid._bootOwlProgIn(card);
+  if (grid && typeof grid._bootOutputPaneIn === 'function') grid._bootOutputPaneIn(card);
   card.classList.remove('is-flash');
   void card.offsetWidth;
   card.classList.add('is-flash');
@@ -15087,7 +15357,7 @@ export const ALL_MODULES_WISEAI = {
       return `The project on disk is <strong>${fmtScanBytes(now.bytes)}</strong> across <strong>${fmtNum(now.allFiles)} files</strong> — code ${fmtScanBytes(now.codeBytes)}, images ${fmtScanBytes(now.imageBytes)}, video ${fmtScanBytes(now.videoBytes)}. Hand-written code is <strong>${fmtNum(now.total)} lines</strong> in <strong>${fmtNum(now.files)} files</strong> — ${fmtNum(now.html)} HTML, ${fmtNum(now.js)} JavaScript, ${fmtNum(now.css)} CSS and ${fmtNum(now.py)} Python — shipping <strong>${fmtNum(now.pages)} HTML pages</strong>. The Codebase score cards above the directory show both the size and the line-count trend.`;
     },
     directory: 'The <strong>Module Directory</strong> lists every workspace, account, chat, report, product, auth and marketing screen in the app.',
-    tables: `The <strong>Table Gallery</strong> collects all <strong>${TABLE_CATALOG.length} data tables</strong> in the app — portfolio grids, verification and analytics tables, admin boards, the ingredient registry and more — rendered live in one carousel, each isolated from its page.`,
+    tables: `The <strong>Table Gallery</strong> collects all <strong>${TABLE_CATALOG.length} data tables</strong> in the app — portfolio grids, verification and analytics tables, admin boards, the ingredient registry and more — rendered live in one carousel, each isolated from its page. Output-module ledgers and the chat ingredient browser live under <strong>Output pane contents</strong> in the Component Library, with phone, tablet, and laptop widths you can pin.`,
     logic: () => {
       if (!APP_LOGIC.length) {
         ensureAppLogic();
@@ -15104,7 +15374,7 @@ export const ALL_MODULES_WISEAI = {
     },
     icons: 'The <strong>Icon Inventory</strong> catalogs every Material Symbols glyph used in the live app (this page excluded), grouped by surface — chat module, primary nav, top bar and so on — with label and exact placements. The expectation is the <strong>light (rounded) SVG at weight 400</strong>, with a few per-glyph exceptions; preview outlined, filled, or light, and flip <strong>Font/SVG</strong> to compare the live webfont against Google\u2019s SVG export \u2014 the vectors are generated locally by <code>scripts/gen_icon_svgs.py</code>, so SVG mode needs no network at all.',
     design: 'The <strong>Design System</strong> documents the app’s fonts (families, sizes, usage) and every color, line, elevation and radius token — with live swatches that follow the current theme.',
-    components: 'The <strong>Component Library</strong> renders every reusable component in its default state with its real classes, its variations, and the surfaces where it’s used.',
+    components: 'The <strong>Component Library</strong> renders every reusable component in its default state with its real classes, its variations, and the surfaces where it’s used. <strong>Output pane contents</strong> pins the Output module to phone, tablet, and laptop widths so you can see tables become cards, KPI tiles drop to one column, and the heat matrix scroll.',
     reportbuilder: 'The <strong>Report builder</strong> is how a conversation becomes a report. In Output, open the title dropdown, plus the charts you want, and tap <strong>Generate Report</strong>. That opens a nested drawer to the right of Output. You can rename the report and each chart, add a note, swap a chart for another output from the same thread, or delete one. <strong>Save or Share</strong> writes it to the Reports shelf — the same store Reformulation uses. Export as PDF prints the drawer. The card below is the live specimen.',
     tarch: 'The <strong>Transcript Architecture</strong> freezes one thread and labels every visible piece — History, transcript lines, the inline table, the transcript carousel, the landmark strip, output chips, intent chips, the composer, the token readout, the admin <strong>Turns</strong> sticky drawer, and Roll · Crawl · Walk · Run. Each card links to that component in the library.',
     motion: `The <strong>Motion &amp; Resize</strong> module catalogs all <strong>${MOTION_ITEMS.length} motion systems</strong> — count-up, chart replay, streaming, chip shimmer and fly-in, output chip fan, chat composer sheen, both helixes, accordion open, sticky drawer slide-in, activity-strip ticks, the jam equalizer, plus the module splitter, five width tiers, drag-to-reorder and drag-to-file — each running live.`,
@@ -15112,7 +15382,7 @@ export const ALL_MODULES_WISEAI = {
       const screen = respScreenWidth();
       const chat = screen > RESP_CHAT_SINGLE_MAX ? 'double' : 'single';
       const display = screen > RESP_CHAT_SINGLE_MAX ? 'larger than a 14-inch laptop' : 'a 14-inch laptop class display';
-      return `The platform codes for three sizes. On a <strong>phone</strong> the nav becomes an owl drawer, the modules stack, and tables become cards. On a <strong>14-inch laptop</strong> you get the desktop shell and chat opens single. On anything <strong>larger</strong> the shell stays the same and chat opens double. This display is ${screen}&nbsp;px — ${display} — so chat loads <strong>${chat}</strong>. The <strong>Responsiveness</strong> catalog names what each surface does at each size.`;
+      return `The platform codes for three sizes. On a <strong>phone</strong> the nav becomes an owl drawer and the modules stack. Tables become cards when <em>their own module</em> is under 560px \u2014 including a docked Output pane on a wide laptop. On a <strong>14-inch laptop</strong> you get the desktop shell and chat opens single. On anything <strong>larger</strong> the shell stays the same and chat opens double. This display is ${screen}&nbsp;px — ${display} — so chat loads <strong>${chat}</strong>. The <strong>Responsiveness</strong> catalog names what each surface does at each size; <em>Output pane contents</em> in the Component Library pins the live layouts to phone, tablet, and laptop module widths.`;
     },
     counts: () => {
       const n = ICON_INVENTORY && ICON_INVENTORY.totalUniqueIcons;

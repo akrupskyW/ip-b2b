@@ -104,7 +104,11 @@
     .rf-studio.panel-triple { flex-basis: 600px; width: 600px; }
     .rf-topbar-tag { font-size: 11px; font-weight: 600; color: var(--text-subtle); white-space: nowrap; }
     .rf-chat-body { position: relative; flex: 1 1 auto; min-height: 0; display: flex; overflow: hidden; }
-    .chat-messages-area { flex: 1; overflow-y: auto; padding: 20px 20px 12px; display: flex; flex-direction: column; }
+    /* Chat gutter — the transcript and the composer share this one inset (see
+       the shared chat gutter in wise.css), so the composer is exactly as wide
+       as the conversation above it. */
+    .rf-chat { --sc-msg-pad-min: 20px; }
+    .chat-messages-area { flex: 1; overflow-y: auto; padding-block: 20px 12px; display: flex; flex-direction: column; }
     .chat-messages-area::before { content: ""; flex: 1 1 auto; min-height: 0; }
     .rf-lead { display: block; font-family: 'WISE Digits', 'Noto Serif', serif; font-weight: 800; font-size: 1.2rem; line-height: 1.22; letter-spacing: -.01em; color: var(--text); margin: 0 0 8px; }
     .rf-lead--lg { font-size: 1.5rem; line-height: 1.18; margin-bottom: 10px; }

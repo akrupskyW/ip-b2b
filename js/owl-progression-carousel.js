@@ -145,12 +145,12 @@ function injectStyles() {
    Background stays transparent so the chat surface shows through the gaps.
 
    Both edges are margins rather than a width, and the inset's FLOOR is read
-   from --sc-msg-pad-min (see .chat-messages-area in wise.css) instead of being
+   from --sc-pad-floor (the shared chat gutter in wise.css) instead of being
    restated — a hard-coded 3rem left the strip 28px adrift once compact spacing
    tightened the transcript to 20px. Keep this formula identical to the one the
    messages area pads by. */
 .sc-line-body > .sc-owl-prog {
-  --sc-owl-pad: max(var(--sc-msg-pad-min, 3rem), calc((100cqi - var(--sc-transcript-max, 860px)) / 2));
+  --sc-owl-pad: var(--sc-gutter, max(var(--sc-pad-floor, 3rem), calc((100cqi - var(--sc-transcript-max, 860px)) / 2)));
   --sc-owl-media-h: ${OWL_PROG_MEDIA_H}px;
   --sc-owl-gap: 14px;
   box-sizing: border-box;

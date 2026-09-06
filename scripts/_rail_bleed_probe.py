@@ -26,6 +26,8 @@ MEASURE = r"""
   var a = area.getBoundingClientRect();
   var cs = getComputedStyle(area);
   var cards = rail.querySelectorAll('.sc-surface-slot, .sc-surface-card');
+  var lineBody = rail.closest('.sc-line-body');
+  var lb = lineBody.getBoundingClientRect();
   var first = cards[0] && cards[0].getBoundingClientRect();
   var last = cards[cards.length - 1] && cards[cards.length - 1].getBoundingClientRect();
   var round = function(n){ return Math.round(n * 100) / 100; };
@@ -44,6 +46,9 @@ MEASURE = r"""
     lineOverflowsRight: round(line.getBoundingClientRect().right - b.right),
     areaHasHScroll: area.scrollWidth - area.clientWidth,
     firstCardLeftGap: first ? round(first.left - b.left) : null,
+    /* The one that matters: 0 means the first card starts under the answer's
+       own first character rather than out at the module edge. */
+    firstCardVsText: first ? round(first.left - lb.left) : null,
     lastCardRightGap: last ? round(b.right - last.right) : null,
     railScrolledTo: rail.scrollLeft,
     railMaxScroll: rail.scrollWidth - rail.clientWidth,
@@ -75,9 +80,10 @@ try:
 
     def report(tag):
         m = b.js(MEASURE) or {}
-        print("%-22s bodyW=%-6s pad=%-6s gapL=%-7s gapR=%-7s card0=%-5s hscroll=%s %s" % (
+        print("%-22s bodyW=%-6s pad=%-6s gapL=%-7s gapR=%-7s card0=%-5s vsText=%-5s hscroll=%s %s" % (
             tag, m.get("bodyW"), m.get("areaPadL"), m.get("gapLeft"), m.get("gapRight"),
-            m.get("firstCardLeftGap"), m.get("areaHasHScroll"), m.get("overflowers")))
+            m.get("firstCardLeftGap"), m.get("firstCardVsText"),
+            m.get("areaHasHScroll"), m.get("overflowers")))
 
     report("compact on / single")
     b.js("document.documentElement.classList.remove('chat-compact')")

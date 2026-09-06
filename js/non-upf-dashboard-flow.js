@@ -315,7 +315,7 @@ function productRow(p) {
   const st = PROD_STATUS[p.status];
   return `
     <div class="adm-trow" data-adm-prow="${esc(p.upc)}" data-adm-pstatus="${esc(p.status)}" data-adm-pupf="${esc(p.upf)}">
-      <span class="adm-td"><span class="adm-actions nud-actions"><button type="button" class="adm-icon-btn nud-rowmenu-btn" title="Manage product" aria-haspopup="menu" data-adm-action="manage-product" data-adm-upc="${esc(p.upc)}"><span class="material-symbols-outlined">more_vert</span></button></span></span>
+      <span class="adm-td adm-td--actions"><span class="adm-actions nud-actions"><button type="button" class="adm-icon-btn nud-rowmenu-btn" title="Manage product" aria-haspopup="menu" data-adm-action="manage-product" data-adm-upc="${esc(p.upc)}"><span class="material-symbols-outlined">more_vert</span></button></span></span>
       <span class="adm-td"><span class="adm-idcell">${thumbHtml(p)}<span class="adm-idcell-body"><span class="adm-idcell-name"><a href="#" data-adm-action="open-product" data-adm-upc="${esc(p.upc)}">${esc(p.name)}</a></span><span class="adm-idcell-sub" style="font-family:var(--font-mono)">UPC · ${esc(p.upc)}</span></span></span></span>
       <span class="adm-td"><span class="adm-chip ${upf.cls}">${esc(upf.label)}</span></span>
       <span class="adm-td"><span class="adm-chip ${st.cls}"><span class="material-symbols-outlined">${esc(st.icon)}</span>${esc(st.label)}</span></span>

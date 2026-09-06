@@ -2306,7 +2306,16 @@ html.full-bleed.fb-chat-only:not(.brand-inset) #chat-shell-wrap.menu-brand-integ
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.01em;
-  white-space: nowrap;
+  /* An icon label is a couple of words; a chart cell's label is a whole
+     sentence. Past 380px the card wraps instead of stretching off the window.
+     `max-content` is what keeps a short label on one line: the card is fixed,
+     so shrink-to-fit would otherwise size it to whatever space is left to the
+     right of the control and wrap a two-word label near the edge. */
+  width: max-content;
+  max-width: 380px;
+  white-space: normal;
+  overflow-wrap: break-word;
+  line-height: 1.35;
   padding: 5px 10px;
   border-radius: 8px;
   pointer-events: none;
@@ -7760,25 +7769,8 @@ html:not(.dark) .sc-topbar-titles .topbar-title { color: var(--text); }
      (that would trap position:fixed popovers). */
   container-type: inline-size; container-name: sc-chat-body; }
 .chat-messages-area {
-  /* Transcript width cap (single · double · triple): however wide the chat
-     MODULE grows — up to the full width of the browser when it's the only pane
-     on screen — the conversation itself is centered in a fixed reading column
-     and never stretches edge-to-edge past three panes. The symmetric inline
-     padding does the capping: it stays 3rem while the module is single/double,
-     then grows to keep the transcript at --sc-transcript-max once the module is
-     wider. The card/module can still be any size; only the copy is constrained.
-     Override --sc-transcript-max per surface for a different triple width.
-
-     The FLOOR is a variable because a bleeding output rail has to cancel this
-     exact inset to reach the module edge (see .sc-surface-rail--bleed), and the
-     floor is the only part that ever varies per surface — compact spacing drops
-     it to 20px. The rail reads this variable rather than restating the number,
-     which is what previously left it 28px adrift under compact spacing.
-     A surface that wants a different inset sets --sc-msg-pad-min; it must not
-     hard-code a different floor into the padding on its own. */
-  --sc-msg-pad-min: 3rem;
   flex: 1 1 0%; overflow-y: auto;
-  padding: 1.5rem max(var(--sc-msg-pad-min), calc((100% - var(--sc-transcript-max, 860px)) / 2));
+  padding-block: 1.5rem;
   background: var(--bg); color: var(--text-muted);
   font-size: var(--fs-ui); line-height: var(--chat-line-height);
   /* Bottom-anchor the transcript so it reads like a normal chat: messages sit
@@ -7791,6 +7783,36 @@ html:not(.dark) .sc-topbar-titles .topbar-title { color: var(--text); }
 .chat-messages-area > :first-child { margin-top: auto; }
 html.dark .chat-messages-area { background: transparent; }
 .chat-messages-area .material-symbols-outlined { vertical-align: middle; }
+
+/* ===== The chat gutter — ONE inline inset, worn by the transcript AND the
+   composer. The composer is exactly as wide as the conversation above it, and
+   its left and right edges land on the same pixels as the copy. Only the block
+   padding is each element's own business; the sides are settled here, once.
+
+   Two things shape it:
+
+   FLOOR (--sc-msg-pad-min) — the resting inset. A surface that wants a
+   different one sets that variable on its chat host; it must not hard-code a
+   different number into a padding of its own, or the transcript and the
+   composer part ways again. Compact spacing clamps the floor through
+   --sc-pad-clamp, so a surface that asked for a roomier inset still tightens
+   when the member turns Compact on.
+
+   CAP (--sc-transcript-max) — however wide the chat MODULE grows, up to the
+   whole browser when it is the only pane on screen, the reading column stays
+   centered at this width and never stretches edge to edge. Past the cap the
+   inset grows to hold the column in the middle.
+
+   A bleeding output rail cancels this exact inset to reach the module edge
+   (see .sc-surface-rail--bleed and the owl progression strip), which is why the
+   floor is a variable those read rather than a number they restate.
+
+   --sc-gutter is the escape hatch: set it on a host to pin both sides outright. */
+.chat-messages-area,
+.chat-input-rail {
+  --sc-pad-floor: min(var(--sc-msg-pad-min, 3rem), var(--sc-pad-clamp, 100vw));
+  padding-inline: var(--sc-gutter, max(var(--sc-pad-floor), calc((100% - var(--sc-transcript-max, 860px)) / 2)));
+}
 
 /* Plain message lines (mirrors ai-chat.html — not bubbles). Each line is an
    avatar column (the WISE-owl bug, same as the header) + the message body. The
@@ -7818,9 +7840,12 @@ html.dark .chat-messages-area { background: transparent; }
 .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary); }
 html.dark .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary-bright, #8B9FAF); }
 .sc-line-wiseai .sc-line-body { color: var(--text); }
-/* Atlas (and any) output carousel: the lead line stays in the reading column;
-   the rail drops a beat below the avatar and cancels the avatar column plus
-   the messages-area padding so the cards run the chat MODULE edge to edge.
+/* Atlas (and any) output carousel: the SCROLL BOX runs the chat MODULE edge to
+   edge — cards travel the full width of the module as you scroll — while the
+   first card RESTS under the first character of the answer above it. Where the
+   row starts and how wide it is are two different things: the box is opened up
+   by the negative margins, and the resting position is a leading content inset
+   (padding) inside it, the same trick a phone carousel uses.
 
    Both edges are margins, and NEITHER is a width. A fixed width guessed at the
    module edge from the wrong side of the scrollbar and left the rail short on
@@ -7828,24 +7853,30 @@ html.dark .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary-
    edge to the padding box it is actually cancelling. The left cancels the
    avatar column plus the inset, the right cancels the inset alone.
 
-   The inset repeats the transcript's own formula because a percentage would
+   The inset repeats the shared chat gutter because a percentage would
    re-resolve against this element's box instead of the module's — cqi against
    .sc-body is the same number the messages area lands on. Only the FLOOR is
-   allowed to vary, and it is read from --sc-msg-pad-min rather than restated,
+   allowed to vary, and it is read from --sc-pad-floor rather than restated,
    so compact spacing cannot move one and not the other. Keep the two formulas
-   identical apart from the length unit. */
+   identical apart from the length unit.
+
+   scroll-padding matches the lead-in so scrolling back to the start returns to
+   that same first view, and the trailing 6px is breathing room for the cards'
+   hover lift and focus ring inside the scroll box. */
 .sc-surface-rail-lead { margin: 0; }
 .sc-line-body > .sc-surface-rail.sc-surface-rail--bleed {
-  --sc-rail-pad: max(var(--sc-msg-pad-min, 3rem), calc((100cqi - var(--sc-transcript-max, 860px)) / 2));
+  --sc-rail-pad: var(--sc-gutter, max(var(--sc-pad-floor, 3rem), calc((100cqi - var(--sc-transcript-max, 860px)) / 2)));
+  --sc-rail-lead-in: calc(var(--sc-avatar-size, 30px) + 12px + var(--sc-rail-pad));
   box-sizing: border-box;
   max-width: none;
   margin-top: 1em;
   margin-bottom: 0.15em;
-  margin-left: calc(-1 * (var(--sc-avatar-size, 30px) + 12px + var(--sc-rail-pad)));
+  margin-left: calc(-1 * var(--sc-rail-lead-in));
   margin-right: calc(-1 * var(--sc-rail-pad));
-  /* Cards start at the module edge — do not re-apply the reading-column pad. */
-  padding-inline: 6px;
-  scroll-padding-inline: 6px;
+  padding-inline-start: var(--sc-rail-lead-in);
+  padding-inline-end: 6px;
+  scroll-padding-inline-start: var(--sc-rail-lead-in);
+  scroll-padding-inline-end: 6px;
 }
 /* A pasted, multi-paragraph prompt reads as a document inside the member's
    turn — paragraphs, bullet lists and emphasis — rather than one run-on block.
@@ -8490,7 +8521,9 @@ html.dark .ws-intent-chip { background: color-mix(in srgb, var(--primary-bright,
    refined input bar: 40px pill, 40px send, 13px text, no chunky label). ===== */
 .chat-input-rail {
   border-top: none; background: var(--bg);
-  padding: 12px 32px; flex-shrink: 0;
+  /* Sides come from the shared chat gutter above, so the composer is the width
+     of the transcript and lines up with it. */
+  padding-block: 12px; flex-shrink: 0;
   --sc-rail-pad-b: 12px;
   transition: background-color 0.3s ease, border-color 0.3s ease, padding-bottom 0.38s cubic-bezier(0.22, 1, 0.36, 1);
   /* Empty-welcome lift — extra space under the whole rail (composer +
@@ -9062,16 +9095,16 @@ html.dark.chat-tint .sc-card .ws-chips-wrap::after { background: linear-gradient
    so every mounted chat module tightens up at once. The transcript's horizontal
    inset and the topbar padding are kept equal (20px) so the transcript avatars
    stay lined up under the header owl, exactly as they do at the default 48px. */
+/* Only the FLOOR of the chat gutter moves, and it moves as a ceiling on that
+   floor — a surface that asked for a roomier inset of its own still tightens to
+   20px here, and one that already sits tighter keeps its own. The transcript,
+   the composer and any bleeding output rail all read it, so they cannot move
+   apart. */
+html.chat-compact { --sc-pad-clamp: 20px; }
 html.chat-compact .chat-topbar { padding-left: 20px; padding-right: 20px; }
-html.chat-compact .chat-messages-area {
-  /* Only the floor moves. A bleeding output rail reads the same variable, so it
-     cancels the 20px the transcript is actually inset by rather than the 48px
-     the default would have been. */
-  --sc-msg-pad-min: 20px;
-  padding: 0.85rem max(var(--sc-msg-pad-min), calc((100% - var(--sc-transcript-max, 860px)) / 2));
-}
+html.chat-compact .chat-messages-area { padding-block: 0.85rem; }
 html.chat-compact .sc-line { margin-bottom: 0.7rem; }
-html.chat-compact .chat-input-rail { padding: 8px 14px; --sc-rail-pad-b: 8px; --sc-welcome-raise: clamp(5rem, 14vh, 9.5rem); }
+html.chat-compact .chat-input-rail { padding-block: 8px; --sc-rail-pad-b: 8px; --sc-welcome-raise: clamp(5rem, 14vh, 9.5rem); }
 html.chat-compact .sc-welcome { padding: 1.25rem; }
 html.chat-compact .sc-welcome--cards { padding-top: 1.25rem; }
 html.chat-compact .sc-settings .ss-body { padding: 12px; }
@@ -15937,11 +15970,26 @@ html.dark .dash-stars-cat-panel { background: transparent; border: none; }
     min-width: 0;
   }
   .adm-actions { justify-content: flex-start; }
+  /* Row furniture — the ⋮ and icon-only controls — rides the card's first line
+     hard against its right edge. */
   .adm-trow .adm-td--end, .adm-trow .adm-td--actions {
     position: absolute; top: 10px; right: 10px; padding: 0;
     flex: 0 0 auto; width: auto;
   }
   .adm-trow .adm-td--actions .adm-rowmenu-pop { left: auto; right: 0; }
+  /* …and the identity it shares that line with gives up the gutter it needs,
+     so a long company or product name runs out of room rather than under the
+     control. Pinning something over the row is not sharing a row with it. */
+  .adm-trow:has(> .adm-td--end, > .adm-td--actions) > .adm-td:has(.adm-idcell) {
+    padding-right: 38px;
+  }
+  /* A control that says what it does in words is the card's action, not its
+     furniture: it belongs at the foot, centred, where a thumb reaches it. */
+  .adm-trow > .adm-td--end:has(.wise-btn) {
+    position: static; order: 90; flex: 1 1 100%; width: auto;
+    display: flex; justify-content: center; padding: 2px 0 0;
+  }
+  .adm-trow > .adm-td--end:has(.wise-btn) .adm-actions { justify-content: center; }
 }
 @container adm (max-width: 300px) {
   .adm-trow > .adm-td:not(.adm-td--num):not(.adm-td--metric):has(.adm-chip):not(:has(.adm-idcell)),
@@ -15968,18 +16016,52 @@ html.dark .dash-stars-cat-panel { background: transparent; border: none; }
                              is toggled off. Card styles only ever touch .rtbl-fld.
      • data-rlabel         → the cell's column header, shown as a small label
                              beside the value. Action / menu / icon-only columns
-                             carry none and render as a full-width block.
+                             carry none; the script reads what is inside them
+                             instead and tags each with the place it belongs:
+     • .rtbl-lead          → the row's identity (product / person / company).
+                             Leads the card and takes the free width.
+     • .rtbl-ctl           → an icon-only control, riding the identity's row on
+                             the right. .rtbl-ctl--menu (the ⋮) always ends that
+                             row, hard against the card's edge.
+     • .rtbl-act           → a control that says what it does in words. Sits at
+                             the foot, centred. .rtbl-act--link carries an arrow
+                             — it leaves for somewhere else — and trails the
+                             foot on the right instead.
+     • .rtbl-dupe          → a value's own key ("Updated") when the field label
+                             above it already says that word.
 
    Admin (.adm-*) and invoices (.inv-*) grids keep their own breakpoints and are
-   never tagged here.
+   never tagged here — they answer the same three questions in their own blocks.
    ========================================================================= */
+
+/* ---- Releasing the width floor ----------------------------------------- *
+   A wide table declares a floor so its columns stay legible while it scrolls
+   sideways (`min-width: 700px` on the atlas ledger, 720px on the ingredient
+   query, the columns on a grid row). A card has one column, so the floor is
+   the one thing that must not survive the collapse — and it was surviving:
+   a table asking for 700px inside a 365px module kept its 700px, so the card
+   labels read down the left while every value sat off the right edge behind a
+   horizontal scrollbar. That is what "the module is narrow but the table is
+   not" looks like.
+   These override with !important because the floor is frequently INLINE
+   (`style="min-width:700px"`, `style="grid-template-columns:…"`), which no
+   amount of specificity can beat. It is scoped to card mode only: outside
+   .rtbl-cards every floor still holds. */
+table.rtbl.rtbl-cards,
+.rtbl-grid.rtbl-cards,
+.rtbl-grid.rtbl-cards .rtbl-grow,
+.rtbl-grid.rtbl-cards .rtbl-ghead { min-width: 0 !important; }
+.rtbl-grid.rtbl-cards .rtbl-grow { grid-template-columns: none !important; }
+/* A column's own floor ("Intervention" is never narrower than 128px) is the
+   same bug one level down: it would stretch the card it sits in. */
+table.rtbl.rtbl-cards tbody > tr > td.rtbl-fld,
+.rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-fld { min-width: 0 !important; }
 
 /* ---- Real <table> → stacked cards -------------------------------------- */
 table.rtbl.rtbl-cards { display: block; width: 100%; min-width: 0; border-collapse: collapse; }
 table.rtbl.rtbl-cards > thead, table.rtbl.rtbl-cards > tbody, table.rtbl.rtbl-cards > tfoot { display: block; width: 100%; }
 table.rtbl.rtbl-cards thead { display: none; }
 table.rtbl.rtbl-cards tbody > tr {
-  display: block;
   margin: 0 0 10px;
   padding: 10px 14px;
   background: var(--surface);
@@ -15993,7 +16075,6 @@ table.rtbl.rtbl-cards tbody > tr:last-child { margin-bottom: 0; }
 .rtbl-grid.rtbl-cards { display: block; min-width: 0; }
 .rtbl-grid.rtbl-cards .rtbl-ghead { display: none; }
 .rtbl-grid.rtbl-cards .rtbl-grow {
-  display: block;
   grid-template-columns: none;
   min-width: 0;
   margin: 0 0 10px;
@@ -16005,24 +16086,40 @@ table.rtbl.rtbl-cards tbody > tr:last-child { margin-bottom: 0; }
 }
 .rtbl-grid.rtbl-cards .rtbl-grow:last-child { margin-bottom: 0; }
 
+/* The card itself is one wrapping flex line-per-field, which is what lets the
+   identity and the row's icon controls share the top line while every labelled
+   field still gets a line of its own (they are all flex-basis 100%). Order,
+   not source order, decides what goes where. */
+table.rtbl.rtbl-cards tbody > tr,
+.rtbl-grid.rtbl-cards .rtbl-grow {
+  display: flex;
+  flex-wrap: wrap;
+  /* Top, not centre: a two-line product name would otherwise carry the ⋮ down
+     to its middle, so the control would sit at a different height on every card
+     in the same table. It belongs in the corner. */
+  align-items: flex-start;
+  column-gap: 0;                      /* dividers butt into one line */
+}
+
 /* ---- Shared field layout inside a card --------------------------------- *
    Labelled fields read as a row: LABEL on the left, value on the right, wrapping
-   underneath when long. Identity / action cells (no data-rlabel) sit full-width.
+   underneath when long.
    Only .rtbl-fld (visible) cells are affected — hidden columns keep their state. */
 table.rtbl.rtbl-cards tbody > tr > td.rtbl-fld,
 .rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-fld {
+  flex: 1 1 100%;
   width: auto;
   max-width: none;
   min-width: 0;
   margin: 0;
   border: 0;
+  order: 4;
   padding: 5px 0;
   text-align: left;
   white-space: normal;
-}
-table.rtbl.rtbl-cards tbody > tr > td.rtbl-fld:not(:last-child),
-.rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-fld:not(:last-child) {
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  /* Divider above rather than below, so the run of fields reads as one stack
+     no matter which cell happens to come last in source order. */
+  border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
 }
 table.rtbl.rtbl-cards tbody > tr > td.rtbl-fld[data-rlabel],
 .rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-fld[data-rlabel] {
@@ -16031,7 +16128,6 @@ table.rtbl.rtbl-cards tbody > tr > td.rtbl-fld[data-rlabel],
   gap: 10px 16px;
   flex-wrap: wrap;
   justify-content: flex-start;
-  justify-self: stretch;
 }
 table.rtbl.rtbl-cards tbody > tr > td.rtbl-fld[data-rlabel]::before,
 .rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-fld[data-rlabel]::before {
@@ -16045,12 +16141,81 @@ table.rtbl.rtbl-cards tbody > tr > td.rtbl-fld[data-rlabel]::before,
   color: var(--text-subtle);
   white-space: nowrap;
 }
-/* Unlabelled cells (product identity, action buttons, checkboxes) span full width. */
-table.rtbl.rtbl-cards tbody > tr > td.rtbl-fld:not([data-rlabel]),
-.rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-fld:not([data-rlabel]) {
+/* Unlabelled cells the script did not place stay a plain full-width block. The
+   :not() chain keeps this rule off the placed ones rather than out-specifying
+   them — a control cell has to be able to lay itself out. */
+table.rtbl.rtbl-cards tbody > tr > td.rtbl-fld:not([data-rlabel]):not(.rtbl-ctl):not(.rtbl-act),
+.rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-fld:not([data-rlabel]):not(.rtbl-ctl):not(.rtbl-act) {
   display: block;
-  justify-self: stretch;
 }
+
+/* ---- The identity line: what the row is, then its icon controls -------- *
+   The identity takes the free width, so the controls are carried to the card's
+   right edge and can never sit on top of the name they belong to. */
+table.rtbl.rtbl-cards tbody > tr > td.rtbl-lead,
+.rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-lead {
+  /* Basis 0, not auto: a card breaks its flex lines on the items' natural
+     widths, so an identity asking for its full content width would bump the
+     controls onto a line of their own — exactly the wasted row this replaces.
+     From zero it simply grows into whatever the controls leave. */
+  flex: 1 1 0;
+  order: 1;
+  padding-right: 8px;
+  border-top: 0;
+}
+table.rtbl.rtbl-cards tbody > tr > td.rtbl-ctl,
+.rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-ctl {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  order: 2;
+  padding: 5px 0 5px 4px;
+  border-top: 0;
+}
+/* Selecting the row leads it; the ⋮ closes it. Nothing sits to the right of
+   the ⋮ — it is the same control in the same corner on every card. */
+table.rtbl.rtbl-cards tbody > tr > td.rtbl-ctl--check,
+.rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-ctl--check { order: 0; padding: 5px 6px 5px 0; }
+table.rtbl.rtbl-cards tbody > tr > td.rtbl-ctl--menu,
+.rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-ctl--menu { order: 3; }
+/* No identity to carry them over — the first control takes the free space. */
+table.rtbl.rtbl-cards tbody > tr > td.rtbl-ctl--lead,
+.rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-ctl--lead { margin-left: auto; }
+
+/* ---- The foot: what you can do with the row ---------------------------- */
+table.rtbl.rtbl-cards tbody > tr > td.rtbl-act,
+.rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-act {
+  display: flex;
+  align-items: center;
+  justify-content: center;            /* a button sits centre stage */
+  flex: 1 1 100%;
+  order: 8;
+  padding: 9px 0 2px;
+}
+table.rtbl.rtbl-cards tbody > tr > td.rtbl-act--link,
+.rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-act--link {
+  justify-content: flex-end;          /* an arrow leaves, so it trails right */
+  order: 9;
+}
+/* A cell that gathers its controls into a row of their own centres that row too
+   — an invoice card carries four chips over two lines. */
+table.rtbl.rtbl-cards tbody > tr > td.rtbl-act > *,
+.rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-act > * { justify-content: center; }
+table.rtbl.rtbl-cards tbody > tr > td.rtbl-act--link > *,
+.rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-act--link > * { justify-content: flex-end; }
+/* One divider over the whole foot, not one per control. */
+table.rtbl.rtbl-cards tbody > tr > td.rtbl-act ~ .rtbl-act,
+.rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-act ~ .rtbl-act { border-top: 0; padding-top: 4px; }
+
+/* A card that opens straight onto a labelled field has nothing above its first
+   divider, so that one comes off. */
+table.rtbl.rtbl-cards tbody > tr:not(:has(.rtbl-lead, .rtbl-ctl)) > td.rtbl-fld:not(.rtbl-fld ~ .rtbl-fld),
+.rtbl-grid.rtbl-cards .rtbl-grow:not(:has(.rtbl-lead, .rtbl-ctl)) > .rtbl-fld:not(.rtbl-fld ~ .rtbl-fld) {
+  border-top: 0;
+}
+
+/* A value's own key, when the field label above it already says that word. */
+.rtbl-cards .rtbl-dupe { display: none; }
 
 /* ══════════════════════════════════════════════════════════════════════════
    MOBILE PRIMARY NAVIGATION (≤ 768px)
@@ -19118,6 +19283,121 @@ html.dark .dsc-ready--ai.is-partial .dash-brand-toggle:not(.is-on):not([aria-che
   container-type: inline-size; container-name: adm;
   max-width: 400px;
 }
+
+/* ---- Output pane contents — catalog stage ---------------------------- *
+   Pins a faux Output module to phone / tablet / laptop so the live
+   collapse matches a docked pane. Tables use the shared .rtbl-cards
+   rules; KPI / definition / heat-matrix twins demonstrate the container
+   rules without copying page-local atlas classes. */
+.dsc-out-catalog { display: flex; flex-direction: column; gap: 12px; width: 100%; padding: 0 12px 4px; min-width: 0; }
+.dsc-out-catalog > .dsc-themes { padding: 0; }
+.dsc-out-widths { display: flex; flex-wrap: wrap; gap: 8px; }
+.dsc-out-wbtn {
+  display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px;
+  padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); cursor: pointer;
+  font: inherit; text-align: left; line-height: 1.15;
+}
+.dsc-out-wbtn-title { font-size: 0.78rem; font-weight: 800; letter-spacing: -0.01em; }
+.dsc-out-wbtn-sub { font-size: 0.68rem; font-weight: 600; color: var(--text-subtle); }
+.dsc-out-wbtn:hover { border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); }
+.dsc-out-wbtn:focus-visible { outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent); outline-offset: 2px; }
+.dsc-out-wbtn.is-active {
+  background: var(--primary); border-color: var(--primary); color: #fff;
+}
+.dsc-out-wbtn.is-active .dsc-out-wbtn-sub { color: color-mix(in srgb, #fff 78%, transparent); }
+.dsc-out-wcap { margin: 0; font-size: 0.78rem; line-height: 1.45; color: var(--text-muted); }
+.dsc-out-catalog .dsc-theme,
+.dsc-out-catalog .dsc-demo { overflow-x: auto; scrollbar-width: thin; }
+.dsc-out-stage {
+  box-sizing: border-box; min-width: 0;
+  display: flex; flex-direction: column; gap: 18px;
+  padding: 14px 12px 16px; border-radius: 12px;
+  background: var(--surface-2); border: 1px solid var(--border);
+}
+.dsc-theme-dark .dsc-out-stage { background: rgba(255,255,255,0.03); }
+.dsc-out-block { min-width: 0; }
+.dsc-out-title {
+  font-family: var(--module-title-family), 'Noto Serif', serif;
+  font-size: 1.05rem; font-weight: 800; letter-spacing: -0.015em;
+  color: var(--text); margin: 0 0 4px; line-height: 1.2;
+}
+.dsc-out-sub { margin: 0 0 10px; font-size: 0.75rem; line-height: 1.45; color: var(--text-muted); }
+.dsc-out-sub code { font-size: 0.7rem; }
+.dsc-out-card {
+  min-width: 0; overflow-x: auto; scrollbar-width: thin;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+}
+.dsc-theme-dark .dsc-out-card { background: #1A2339; }
+
+/* Real ledger — wide columns until card mode releases the 700px floor. */
+.dsc-out-ledger { width: 100%; border-collapse: collapse; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.dsc-out-ledger th {
+  text-align: right; padding: 10px 8px 8px; font-size: 9.5px; font-weight: 800;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--text-subtle); white-space: nowrap;
+}
+.dsc-out-ledger th:first-child, .dsc-out-ledger td:first-child { text-align: left; padding-left: 12px; }
+.dsc-out-ledger td { padding: 9px 8px; text-align: right; color: var(--text); border-top: 1px solid var(--border); }
+.dsc-out-ledger td:first-child { font-weight: 600; white-space: nowrap; }
+.dsc-out-ledger tbody tr:hover td { background: var(--surface-2); }
+.dsc-theme-dark .dsc-out-ledger tbody tr:hover td { background: rgba(255,255,255,0.035); }
+
+/* Ingredient faux-table — 720px floor, -thead / -trow for discovery. */
+.dsc-out-ib { overflow-x: auto; scrollbar-width: thin; }
+.dsc-out-ib-head, .dsc-out-ib-row {
+  display: grid; align-items: center; gap: 10px; padding: 10px 14px; min-width: 720px;
+  grid-template-columns: minmax(140px,1.6fr) minmax(90px,1fr) 40px 64px minmax(100px,1fr) minmax(140px,1.8fr);
+}
+.dsc-out-ib-head {
+  border-bottom: 1px solid var(--border);
+  font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-subtle);
+}
+.dsc-out-ib-row { border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-muted); }
+.dsc-out-ib-row:last-child { border-bottom: 0; }
+.dsc-out-ib-row > span:first-child { font-weight: 600; color: var(--text); }
+
+/* KPI row — auto-fit follows the stage, not the window. */
+.dsc-out-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.dsc-out-kpi {
+  display: flex; flex-direction: column; gap: 4px; min-width: 0;
+  padding: 14px 14px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+}
+.dsc-theme-dark .dsc-out-kpi { background: #1A2339; }
+.dsc-out-kpi-val {
+  font-family: var(--module-title-family), 'Noto Serif', serif;
+  font-size: 1.45rem; font-weight: 800; line-height: 1.15; letter-spacing: -.02em;
+  color: var(--text); font-variant-numeric: tabular-nums;
+}
+.dsc-out-kpi-lbl { font-size: 11px; font-weight: 600; color: var(--text-muted); }
+.dsc-out-kpi-foot { font-size: 11.5px; color: var(--text-subtle); line-height: 1.35; }
+
+/* Definition list — key column when THIS list is 560px, not the screen. */
+.dsc-out-def { display: grid; gap: 14px; padding: 12px 14px; container-type: inline-size; }
+.dsc-out-def-row { display: grid; gap: 4px 16px; grid-template-columns: 1fr; }
+@container (min-width: 560px) { .dsc-out-def-row { grid-template-columns: 132px minmax(0, 1fr); } }
+.dsc-out-def-row + .dsc-out-def-row { border-top: 1px solid var(--border); padding-top: 14px; }
+.dsc-out-def-k { font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--text-subtle); }
+.dsc-out-def-v { font-size: 12.5px; line-height: 1.45; color: var(--text); }
+
+/* Heat matrix — floor stays; the card scrolls. */
+.dsc-out-scroll { overflow-x: auto; scrollbar-width: thin; padding: 10px 12px 8px; }
+.dsc-out-matrix { display: grid; gap: 1px; min-width: 640px; font-variant-numeric: tabular-nums; }
+.dsc-out-mx-corner { min-height: 28px; }
+.dsc-out-mx-col {
+  padding: 0 2px 7px; font-size: 9.5px; font-weight: 800; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--text-subtle); text-align: center; line-height: 1.25;
+}
+.dsc-out-mx-row { padding: 7px 9px 7px 2px; font-size: 11.5px; font-weight: 600; color: var(--text); line-height: 1.3; }
+.dsc-out-mx-cell {
+  padding: 7px 4px; text-align: center; font-size: 11px; font-weight: 700; border-radius: 4px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--sec-green) calc(var(--n, 50) * 0.7%), var(--sec-red));
+}
+.dsc-theme-dark .dsc-out-mx-cell {
+  background: color-mix(in srgb, var(--sec-green) calc(var(--n, 50) * 0.55%), color-mix(in srgb, var(--sec-red) 70%, #1A2339));
+  color: var(--text);
+}
+.dsc-out-mx-cap { margin: 8px 12px 10px; font-size: 11px; line-height: 1.45; color: var(--text-subtle); }
 .dsc-theme {
   display: flex; flex-direction: column; gap: 8px; min-width: 0;
   padding: 8px 8px 10px; border-radius: 12px;
@@ -19592,12 +19872,6 @@ html.dark #mi-motion .sc-surface-card,
   border-color: var(--out-stroke, #946005);
   box-shadow: 0 4px 12px color-mix(in srgb, var(--out-stroke, #946005) 20%, transparent);
 }
-.dsc-demo .sc-surface-card:has(.sc-surface-stack):hover,
-.dsc-demo .sc-surface-card:has(.sc-surface-stack).is-hover,
-#mi-motion .sc-surface-card:has(.sc-surface-stack):hover,
-#mi-motion .sc-surface-card:has(.sc-surface-stack).is-hover {
-  width: min(288px, 100%);
-}
 .dsc-demo .sc-surface-thumb,
 .dsc-demo .wa-merge-chip-thumb,
 #mi-motion .sc-surface-thumb,
@@ -19628,58 +19902,75 @@ html.dark #mi-motion .sc-surface-card,
   line-height: 1.3; overflow: hidden;
   display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
 }
+/* A version is a whole card, never a bare thumbnail: one full card per
+   version, cascaded with the newest in front, each wearing its own vN tag.
+   Hover fans the cascade so an earlier version can be read and opened. */
+.dsc-demo .sc-surface-slot--stack,
+#mi-motion .sc-surface-slot--stack { max-width: none; }
 .dsc-demo .sc-surface-stack,
-#mi-motion .sc-surface-stack { display: inline-flex; align-items: center; flex: 0 0 auto; padding-left: 4px; }
-.dsc-demo .sc-surface-stack .sc-surface-thumb,
-#mi-motion .sc-surface-stack .sc-surface-thumb {
-  margin-left: -28px; z-index: 1;
-  box-shadow: -3px 2px 8px rgba(0,0,0,0.16); background: var(--surface-2);
-  transition: transform .22s cubic-bezier(0.22, 1, 0.36, 1), margin .22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow .22s ease;
+#mi-motion .sc-surface-stack { display: flex; align-items: flex-start; min-width: 0; }
+.dsc-demo .sc-surface-stack > .sc-surface-card,
+#mi-motion .sc-surface-stack > .sc-surface-card {
+  flex: 0 0 auto; margin-left: -222px;
+  box-shadow: -4px 3px 12px rgba(0,0,0,0.16);
+  transition: margin-left .22s cubic-bezier(0.22, 1, 0.36, 1), transform .22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow .22s ease, border-color .15s ease, opacity .22s ease, filter .22s ease;
 }
-.dsc-demo .sc-surface-stack .sc-surface-thumb:first-child,
-#mi-motion .sc-surface-stack .sc-surface-thumb:first-child { margin-left: 0; }
-.dsc-demo .sc-surface-stack .sc-surface-thumb.is-old,
-#mi-motion .sc-surface-stack .sc-surface-thumb.is-old { filter: saturate(.85) brightness(.98); opacity: .9; }
-.dsc-demo .sc-surface-stack .sc-surface-thumb.is-latest,
-#mi-motion .sc-surface-stack .sc-surface-thumb.is-latest {
-  z-index: 2;
-  border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));
-  box-shadow: -3px 2px 10px rgba(37,80,124,0.28), 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent);
+html.dark .dsc-demo .sc-surface-stack > .sc-surface-card,
+html.dark #mi-motion .sc-surface-stack > .sc-surface-card { box-shadow: -4px 3px 14px rgba(0,0,0,0.45); }
+.dsc-demo .sc-surface-stack > .sc-surface-card:first-child,
+#mi-motion .sc-surface-stack > .sc-surface-card:first-child { margin-left: 0; }
+.dsc-demo .sc-surface-stack > .sc-surface-card.is-old,
+#mi-motion .sc-surface-stack > .sc-surface-card.is-old { filter: saturate(.85) brightness(.99); opacity: .92; }
+.dsc-demo .sc-surface-stack > .sc-surface-card.is-old.is-active,
+#mi-motion .sc-surface-stack > .sc-surface-card.is-old.is-active {
+  transform: translateY(-4px); opacity: 1; filter: none;
+  border-color: var(--primary);
+  box-shadow: -4px 3px 14px rgba(37,80,124,0.32), 0 0 0 2px color-mix(in srgb, var(--primary) 45%, transparent);
 }
-.dsc-demo .sc-surface-stack .sc-surface-thumb.is-active,
-#mi-motion .sc-surface-stack .sc-surface-thumb.is-active {
-  z-index: 3;
-  border-color: color-mix(in srgb, var(--primary) 70%, var(--border-strong));
-  box-shadow: -3px 2px 12px rgba(37,80,124,0.34), 0 0 0 2px color-mix(in srgb, var(--primary) 45%, transparent);
-}
-.dsc-demo .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb,
-.dsc-demo .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb,
-#mi-motion .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb,
-#mi-motion .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb { margin-left: -4px; }
-.dsc-demo .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb:first-child,
-.dsc-demo .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb:first-child,
-#mi-motion .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb:first-child,
-#mi-motion .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb:first-child { margin-left: 0; }
-.dsc-demo .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb.is-old,
-.dsc-demo .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb.is-old,
-#mi-motion .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb.is-old,
-#mi-motion .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb.is-old {
+.dsc-demo .sc-surface-stack:hover > .sc-surface-card,
+.dsc-demo .sc-surface-stack.is-hover > .sc-surface-card,
+#mi-motion .sc-surface-stack:hover > .sc-surface-card,
+#mi-motion .sc-surface-stack.is-hover > .sc-surface-card { margin-left: -180px; }
+.dsc-demo .sc-surface-stack:hover > .sc-surface-card:first-child,
+.dsc-demo .sc-surface-stack.is-hover > .sc-surface-card:first-child,
+#mi-motion .sc-surface-stack:hover > .sc-surface-card:first-child,
+#mi-motion .sc-surface-stack.is-hover > .sc-surface-card:first-child { margin-left: 0; }
+.dsc-demo .sc-surface-stack:hover > .sc-surface-card.is-old,
+.dsc-demo .sc-surface-stack.is-hover > .sc-surface-card.is-old,
+#mi-motion .sc-surface-stack:hover > .sc-surface-card.is-old,
+#mi-motion .sc-surface-stack.is-hover > .sc-surface-card.is-old {
   transform: translateY(-2px); opacity: 1; filter: none;
+}
+.dsc-demo .sc-surface-stack:hover > .sc-surface-card.is-old > .sc-surface-vtag,
+.dsc-demo .sc-surface-stack.is-hover > .sc-surface-card.is-old > .sc-surface-vtag,
+#mi-motion .sc-surface-stack:hover > .sc-surface-card.is-old > .sc-surface-vtag,
+#mi-motion .sc-surface-stack.is-hover > .sc-surface-card.is-old > .sc-surface-vtag { right: auto; left: 5px; }
+.dsc-demo .sc-surface-stack > .sc-surface-card:hover,
+#mi-motion .sc-surface-stack > .sc-surface-card:hover {
+  z-index: 4; transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--primary) 70%, var(--border-strong));
+  box-shadow: -4px 5px 16px rgba(37,80,124,0.32), 0 0 0 1px color-mix(in srgb, var(--primary) 40%, transparent);
 }
 .dsc-demo .sc-surface-vtag,
 #mi-motion .sc-surface-vtag {
   position: absolute; right: 1px; bottom: 1px; z-index: 2;
-  padding: 0 3px; border-radius: 5px; min-width: 12px; text-align: center;
-  font-size: 8px; font-weight: 800; line-height: 13px; letter-spacing: 0;
-  color: var(--text-muted); background: color-mix(in srgb, var(--surface) 88%, transparent);
+  padding: 0 4px; border-radius: 6px; min-width: 14px; text-align: center;
+  font-size: 8.5px; font-weight: 800; line-height: 14px; letter-spacing: 0;
+  color: var(--text-muted); background: color-mix(in srgb, var(--surface) 92%, transparent);
   border: 1px solid var(--border); font-variant-numeric: tabular-nums;
 }
-.dsc-demo .sc-surface-thumb.is-latest .sc-surface-vtag,
+.dsc-demo .sc-surface-card > .sc-surface-vtag,
+#mi-motion .sc-surface-card > .sc-surface-vtag { right: 5px; top: 5px; bottom: auto; }
+html.dark .dsc-demo .sc-surface-vtag,
+html.dark #mi-motion .sc-surface-vtag { background: color-mix(in srgb, #1A2339 92%, transparent); }
+.dsc-demo .sc-surface-card.is-latest > .sc-surface-vtag,
 .dsc-demo .wa-merge-chip.is-active .sc-surface-vtag,
-#mi-motion .sc-surface-thumb.is-latest .sc-surface-vtag,
+#mi-motion .sc-surface-card.is-latest > .sc-surface-vtag,
 #mi-motion .wa-merge-chip.is-active .sc-surface-vtag {
   color: #fff; background: var(--primary); border-color: var(--primary);
 }
+.dsc-demo .sc-surface-card:not(.sc-surface-card--portrait) .sc-surface-title,
+#mi-motion .sc-surface-card:not(.sc-surface-card--portrait) .sc-surface-title { padding-right: 22px; }
 .dsc-demo .wa-merge-chips,
 #mi-motion .wa-merge-chips {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -20674,6 +20965,12 @@ html.dark .dsc-demo .wtp-more { color: var(--primary-bright, #93C5FD); }
   background: var(--surface); color: var(--text); font-size: 0.6875rem; font-weight: 600;
   box-shadow: var(--shadow-card, var(--shadow-2)); border: 1px solid var(--border); white-space: nowrap;
 }
+/* A whole sentence — what a chart cell hands the card — wraps at the same cap
+   the live card uses instead of running off the window. */
+.dsc-tip--wrap {
+  display: block; width: max-content; max-width: 380px;
+  white-space: normal; overflow-wrap: break-word; line-height: 1.35;
+}
 
 /* ---- Section quick-nav (scorecards at the very top) ---- */
 .dsc-jump {
@@ -21409,7 +21706,12 @@ html.dark .mi-motion-stage { background: rgba(255,255,255,0.03); }
 .mi-motion-fly { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; width: 100%; }
 .mi-motion-outfan { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; width: 100%; }
 .mi-motion-outfan-row { display: flex; flex-wrap: wrap; gap: 18px 28px; align-items: flex-start; width: 100%; }
-.mi-motion-outfan-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+/* A fanned cascade of three whole cards runs to 360px — wider than this
+   specimen's tile — so the column scrolls rather than clipping the last card. */
+.mi-motion-outfan-col {
+  display: flex; flex-direction: column; gap: 8px; min-width: 0;
+  overflow-x: auto; scrollbar-width: thin; padding: 3px 3px 8px;
+}
 /* Same row as the chat welcome (.ws-chips): wrap, 10px gap, chips hug
    their label. Do not use .sc-reply-chips here — that row is the
    in-conversation indent and stretches pills in this stage. */
@@ -22367,7 +22669,14 @@ html.dark .mi-tarch-thread { background: transparent; }
 .mi-tarch-thread .sc-fb-wrap { margin: 6px 0 2px; }
 .mi-tarch-thread .sc-surface-slot { margin: 6px 0 2px; }
 #mi-tarch .sc-surface-card { width: min(188px, 100%); padding: 6px 8px 6px 6px; border-radius: 10px; }
-#mi-tarch .sc-surface-stack.mi-tarch-hit { position: relative; display: inline-flex; }
+#mi-tarch .sc-surface-stack.mi-tarch-hit { position: relative; }
+/* The specimen's cards are 188px, so its cascade overlaps by that much less. */
+#mi-tarch .sc-surface-stack > .sc-surface-card { margin-left: -170px; }
+#mi-tarch .sc-surface-stack > .sc-surface-card:first-child { margin-left: 0; }
+#mi-tarch .sc-surface-stack:hover > .sc-surface-card,
+#mi-tarch .sc-surface-stack.is-hover > .sc-surface-card { margin-left: -132px; }
+#mi-tarch .sc-surface-stack:hover > .sc-surface-card:first-child,
+#mi-tarch .sc-surface-stack.is-hover > .sc-surface-card:first-child { margin-left: 0; }
 #mi-tarch .sc-surface-title { font-size: 0.72rem; }
 #mi-tarch .sc-surface-thumb,
 #mi-tarch .wa-merge-chip-thumb { width: 40px; height: 40px; border-radius: 8px; }
@@ -22426,7 +22735,10 @@ html.dark .mi-tarch-turn {
 }
 #mi-tarch .mi-tarch-chat .chat-input-rail {
   display: block !important;
-  padding: 8px 10px 10px; border-top: 1px solid var(--border);
+  /* Same sides as .mi-tarch-thread above (the specimen's transcript), so the
+     composer is the width of the conversation and both leave the same room for
+     the left-hand annotation labels. */
+  padding: 8px 12px 10px 22px; border-top: 1px solid var(--border);
   background: var(--surface-2);
 }
 html.dark .mi-tarch-chat .chat-input-rail { background: transparent; border-top-color: rgba(255,255,255,0.06); }

@@ -118,10 +118,24 @@
       width: var(--chat-pane-w, 380px);
     }
     /* Chat width toggle — the canonical app-wide tiers (single 380 / double 580 /
-       triple 760; the fourth "fill" tier grows via the shared .panel-fill rule).
-       Only meaningful while a pane is open and the chat is docked. */
+       triple 760; the fourth "fill" tier grows via the shared .panel-fill rule). */
     #modules-row:has(.wa-pane.is-open) .wa-chat.panel-wide { flex-basis: 580px; width: 580px; }
     #modules-row:has(.wa-pane.is-open) .wa-chat.panel-triple { flex-basis: 760px; width: 760px; }
+    /* The same tiers with NO pane open. The welcome chat fills the row, so the
+       toggle used to be a dead control here: the classes advanced, the icon and
+       the caption advanced, and the module stayed the full width of the row
+       because every rule that could size it was behind `:has(.wa-pane.is-open)`.
+       The control changes the width whether or not an output is open.
+
+       Load is unchanged — the gate is the member having used the control
+       (js/wiseai-chat.js marks it), not the tier, so a fresh page still opens
+       with the welcome chat filling the row at its screen default. */
+    #modules-row .wa-chat[data-width-user-set] {
+      flex: 0 0 var(--chat-pane-w, 380px);
+      width: var(--chat-pane-w, 380px);
+    }
+    #modules-row .wa-chat[data-width-user-set].panel-wide { flex-basis: 580px; width: 580px; }
+    #modules-row .wa-chat[data-width-user-set].panel-triple { flex-basis: 760px; width: 760px; }
     /* Output-pane width control. When a SINGLE output pane is open it is the only
        flexible element in the row, so cycling its flex-grow tier alone can't make
        it visibly wider — it already fills the leftover space. Widening the lone
@@ -817,24 +831,6 @@
     }
     .wa-pane-thumb-item.is-active .wa-pane-thumb-label { color: var(--primary-ink, var(--primary)); }
 
-    /* ── Minimized (intent-chip) mode ──
-       The minimize control collapses the thumbnail cards into compact intent-
-       style chips: a small circular preview image + the output's label. */
-    .wa-pane-nav-track.is-min { align-items: center; padding-top: 6px; padding-bottom: 8px; }
-    .wa-pane-nav-track.is-min .wa-pane-thumb-item {
-      flex-direction: row; align-items: center; gap: 8px;
-      width: auto; max-width: 190px; padding: 4px 12px 4px 4px; border-radius: 9999px;
-    }
-    .wa-pane-nav-track.is-min .wa-pane-thumb-num { display: none; }
-    .wa-pane-nav-track.is-min .wa-pane-thumb-preview {
-      width: 38px; height: 38px; flex: 0 0 auto; border-radius: 50%;
-    }
-    .wa-pane-nav-track.is-min .wa-pane-thumb-inner { transform: scale(0.1056); } /* 38 / 360 */
-    .wa-pane-nav-track.is-min .wa-pane-thumb-label {
-      display: block; -webkit-line-clamp: none; line-clamp: none;
-      font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;
-    }
-
     /* ── Unified (merged) rail: ONE combined chip carousel ──
        When Results & Visuals are merged into one module, the rail is a single
        horizontally-scrolling strip of small intent-style chips (matching the
@@ -1340,6 +1336,12 @@
     html.dark .wa-ffui-edit { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
     .wa-ffui-cap { padding: 0 14px 10px; font-size: 11.5px; font-style: italic; color: var(--text-subtle); }
     .wa-ffui-tbl { display: block; }
+    /* Five columns, every one of them flexible — so in a narrow module nothing
+       overflows, it just squeezes until "House Blend Chocolate Chip" reads
+       "Hous…" and the two heading words sit on top of each other. The head and
+       the rows carry the shared -thead / -trow tokens js/responsive-tables.js
+       looks for, so below the app's phone width they collapse into the same
+       stacked cards as every other row list. */
     .wa-ffui-hrow, .wa-ffui-row { display: grid; align-items: center; gap: 12px; padding: 11px 14px; }
     .wa-ffui-hrow { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
     .wa-ffui-th { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-subtle); white-space: nowrap; }
@@ -1467,6 +1469,12 @@
     .wa-ib-count .material-symbols-outlined { font-size: 16px; }
     .wa-ib { border: 1px solid var(--border); border-radius: 12px; background: var(--wa-tbl-bg, #fff); overflow-x: auto; }
     html.dark .wa-ib { --wa-tbl-bg: #1A2339; }
+    /* Six columns with a 720px floor: wide enough to read, and it scrolls
+       sideways inside .wa-ib when there is less room than that. Below the app's
+       phone width the floor is the wrong answer, so the head and the rows also
+       carry the shared -thead / -trow tokens js/responsive-tables.js looks for
+       — the same collapse-to-cards every other row list in the app gets, rather
+       than a 720px table wedged into a 365px module. */
     .wa-ib-head, .wa-ib-row { display: grid; align-items: center; gap: 10px; padding: 10px 14px; min-width: 720px; grid-template-columns: minmax(150px,1.7fr) minmax(90px,1fr) 56px 92px minmax(120px,1.1fr) minmax(140px,1.9fr); }
     .wa-ib-head { border-bottom: 1px solid var(--border); }
     .wa-ib-th { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-subtle); white-space: nowrap; background: none; border: 0; padding: 0; margin: 0; font-family: inherit; text-align: left; }
@@ -1728,8 +1736,13 @@
     .atl-chain--row { flex-direction: row; flex-wrap: wrap; align-items: stretch; }
     .atl-chain--row .atl-stage { flex: 1 1 92px; display: flex; align-items: center; justify-content: center; }
     .atl-chain--row .atl-stage-link { width: 10px; height: 1px; flex: 0 0 auto; }
-    /* Panel B — the multivariable matrix. */
-    .atl-matrix { display: grid; gap: 1px; min-width: 0; font-variant-numeric: tabular-nums; }
+    /* Panel B — the multivariable matrix. A heat grid stays a heat grid at every
+       width (there is no one-column reading of ten dimensions), so in a module
+       narrower than this it scrolls sideways inside its .atl-scroll card. The
+       floor is the width its column headings need — squeeze the columns to
+       their 28px track minimum and "HEALTH IMPACT" lands on top of "EVIDENCE".
+       It lives here rather than inline so card mode can still release it. */
+    .atl-matrix { display: grid; gap: 1px; min-width: 640px; font-variant-numeric: tabular-nums; }
     .atl-mx-cell { padding: 7px 4px; text-align: center; font-size: 11px; font-weight: 700; color: var(--text); border-radius: 4px; cursor: default; }
     .atl-mx-rowlabel { padding: 7px 9px 7px 2px; font-size: 11.5px; font-weight: 600; color: var(--text); line-height: 1.3; }
     .atl-mx-collabel { padding: 0 2px 7px; font-size: 9.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--text-subtle); text-align: center; line-height: 1.25; }
@@ -1792,10 +1805,14 @@
     .atl-close-list b { color: var(--text); font-weight: 700; }
     /* Labelled prose rows — method notes, threats to validity, retailer notes.
        The key is a fixed narrow column so the definitions read as a list of
-       named claims rather than a wall of paragraphs. */
-    .atl-def { display: grid; gap: 14px; }
+       named claims rather than a wall of paragraphs. That column is a comfort,
+       not a requirement, and whether there is room for it is a question about
+       the list — not about the screen. As a viewport query it put two columns
+       inside a 365px module whenever the display was wide, so the list carries
+       its own container. */
+    .atl-def { display: grid; gap: 14px; container-type: inline-size; }
     .atl-def-row { display: grid; gap: 4px 16px; grid-template-columns: 1fr; }
-    @media (min-width: 700px) { .atl-def-row { grid-template-columns: 148px minmax(0, 1fr); } }
+    @container (min-width: 560px) { .atl-def-row { grid-template-columns: 148px minmax(0, 1fr); } }
     .atl-def-row + .atl-def-row { border-top: 1px solid var(--border); padding-top: 14px; }
     .atl-def-k { font-size: 10.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--text-subtle); }
     .atl-def-v { font-size: 12.5px; line-height: 1.62; color: var(--text-muted); }
@@ -2022,7 +2039,11 @@
     html.dark.chat-tint .wa-pane-body > .wa-block.wa-ov,
     html.dark.chat-tint #wa-report .wa-rpt-item-body > .wa-block.wa-ov { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 8%, #1A2339); }
     .wa-ov-lede { font-size: 13px; line-height: 1.45; color: var(--text-muted); margin: 0 0 18px; }
-    .wa-ov-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    /* Three across while the BLOCK has room for three, one across when it does
+       not. auto-fit measures the grid's own box, so the count follows the
+       output module's width — a viewport breakpoint kept all three columns in a
+       docked 365px module because the screen was wide. */
+    .wa-ov-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
     .wa-ov-kpi {
       display: flex; flex-direction: column; gap: 4px;
       padding: 14px 14px 12px; background: var(--surface);
@@ -2053,9 +2074,6 @@
       font-size: 13px; font-weight: 800; color: var(--text); margin: 0 0 4px;
     }
     .wa-bottomline p { font-size: 12.5px; line-height: 1.45; color: var(--text-muted); margin: 0; }
-    @media (max-width: 720px) {
-      .wa-ov-kpis { grid-template-columns: 1fr; }
-    }
 
     .wa-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
     .wa-bars { display: flex; flex-direction: column; gap: 9px; }
@@ -2217,9 +2235,9 @@
       display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
       overflow: hidden;
     }
-    /* Atlas chart chips: a sideways rail of portrait cards — thumbnail on
-       top, smaller name underneath — so six panels read as a strip instead
-       of a stack of landscape rows. */
+    /* Atlas output chips: a sideways rail of portrait cards — thumbnail on
+       top, smaller name underneath — so the ten outputs read as a strip
+       instead of a stack of landscape rows. */
     .sc-surface-rail {
       display: flex; align-items: stretch; gap: 8px;
       overflow-x: auto; overflow-y: hidden; scrollbar-width: thin;
@@ -2235,8 +2253,7 @@
     .sc-surface-card--portrait .sc-surface-head {
       flex-direction: column; align-items: stretch; gap: 6px;
     }
-    .sc-surface-card--portrait .sc-surface-thumb,
-    .sc-surface-card--portrait .sc-surface-stack .sc-surface-thumb {
+    .sc-surface-card--portrait .sc-surface-thumb {
       width: 108px; height: 108px;
     }
     .sc-surface-card--portrait .sc-surface-thumb-inner { transform: scale(0.3); }
@@ -2244,10 +2261,6 @@
     .sc-surface-card--portrait .sc-surface-title {
       font-size: 10.5px; font-weight: 600; line-height: 1.25; text-align: center;
       color: var(--text-muted);
-    }
-    .sc-surface-card--portrait:has(.sc-surface-stack):hover,
-    .sc-surface-card--portrait:has(.sc-surface-stack).is-hover {
-      width: 120px;
     }
     .sc-surface-stamp { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
     .sc-surface-time {
@@ -2435,66 +2448,82 @@
     .wa-chart-expand-btn.is-on { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); opacity: 1; }
     html.dark .wa-chart-expand-btn.is-on { color: var(--primary-bright, #8B9FAF); }
 
-    /* ═══════════ Versioned output — stacked thumbnails ═══════════
-       When an output has been redone, its chip shows every version as a
-       horizontal cascade: the previous version(s) first, the newest last and
-       fully raised. Each mini-thumb is the same 52px as a single-version
-       chip and wears the same vN tag. */
-    .sc-surface-stack { display: inline-flex; align-items: center; flex: 0 0 auto; padding-left: 4px; }
-    .sc-surface-stack .sc-surface-thumb {
-      margin-left: -28px; z-index: 1;
-      box-shadow: -3px 2px 8px rgba(0,0,0,0.16); background: var(--surface-2);
-      transition: transform .22s cubic-bezier(0.22, 1, 0.36, 1), margin .22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow .22s ease;
+    /* ═══════════ Versioned output — a cascade of whole cards ═══════════
+       A version is a card, not a bare thumbnail. When an output has been redone
+       its slot holds one full card per version — same preview, title and gilded
+       outline as a single-version chip — cascaded with the previous version(s)
+       behind and the newest in front. Each card wears its own vN tag. Hover fans
+       the cascade so an earlier version can be read and opened. */
+    .sc-surface-slot--stack { max-width: none; }
+    .sc-surface-stack { display: flex; align-items: flex-start; min-width: 0; }
+    .sc-surface-stack > .sc-surface-card {
+      flex: 0 0 auto; margin: 4px 0 0 -222px;
+      box-shadow: -4px 3px 12px rgba(0,0,0,0.16);
+      transition: margin-left .22s cubic-bezier(0.22, 1, 0.36, 1), transform .22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow .22s ease, border-color .15s ease, opacity .22s ease, filter .22s ease;
     }
-    html.dark .sc-surface-stack .sc-surface-thumb { box-shadow: -3px 2px 10px rgba(0,0,0,0.45); }
-    .sc-surface-stack .sc-surface-thumb:first-child { margin-left: 0; }
-    /* Newest version is emphasized: full opacity + brand ring, the rest recede. */
-    .sc-surface-stack .sc-surface-thumb.is-old { filter: saturate(.85) brightness(.98); opacity: .9; }
-    .sc-surface-stack .sc-surface-thumb.is-latest { z-index: 2; border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: -3px 2px 10px rgba(37,80,124,0.28), 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent); }
-    /* The version currently mirrored into the pane gets a stronger ring so the
-       stack and the pane agree. */
-    .sc-surface-stack .sc-surface-thumb.is-active { z-index: 3; border-color: color-mix(in srgb, var(--primary) 70%, var(--border-strong)); box-shadow: -3px 2px 12px rgba(37,80,124,0.34), 0 0 0 2px color-mix(in srgb, var(--primary) 45%, transparent); }
-    /* Hover fans the cascade — rest is tightly overlapped (−28px); open spreads
-       to −4px so earlier versions clearly peek. .is-hover locks the same pose
+    html.dark .sc-surface-stack > .sc-surface-card { box-shadow: -4px 3px 14px rgba(0,0,0,0.45); }
+    .sc-surface-stack > .sc-surface-card:first-child { margin-left: 0; }
+    /* Newest version sits in front at full strength; the rest recede. Every
+       card keeps the Gilded Grain output stroke — the version tag, not the
+       outline, says which one is newest. */
+    .sc-surface-stack > .sc-surface-card.is-old { filter: saturate(.85) brightness(.99); opacity: .92; }
+    /* An EARLIER version mirrored into the pane is lifted and ringed, so the
+       cascade and the pane agree even while it sits behind a newer card. The
+       newest needs no mark — it is what the pane shows by default. */
+    .sc-surface-stack > .sc-surface-card.is-old.is-active {
+      transform: translateY(-4px); opacity: 1; filter: none;
+      border-color: var(--primary);
+      box-shadow: -4px 3px 14px rgba(37,80,124,0.32), 0 0 0 2px color-mix(in srgb, var(--primary) 45%, transparent);
+    }
+    /* Hover fans the cascade — rest overlaps down to an 18px edge; open spreads
+       to 60px so earlier versions clearly peek. .is-hover locks the same pose
        for demos / Motion & Resize. */
-    .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb,
-    .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb { margin-left: -4px; }
-    .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb:first-child,
-    .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb:first-child { margin-left: 0; }
-    .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb.is-old,
-    .sc-surface-card.is-hover .sc-surface-stack .sc-surface-thumb.is-old {
+    .sc-surface-stack:hover > .sc-surface-card,
+    .sc-surface-stack.is-hover > .sc-surface-card { margin-left: -180px; }
+    .sc-surface-stack:hover > .sc-surface-card:first-child,
+    .sc-surface-stack.is-hover > .sc-surface-card:first-child { margin-left: 0; }
+    .sc-surface-stack:hover > .sc-surface-card.is-old,
+    .sc-surface-stack.is-hover > .sc-surface-card.is-old {
       transform: translateY(-2px); opacity: 1; filter: none;
     }
-    /* Give a stacked chip room to fan without crushing the title. */
-    .sc-surface-card:has(.sc-surface-stack) {
-      transition: border-color .15s ease, box-shadow .15s ease, transform .05s ease, width .22s cubic-bezier(0.22, 1, 0.36, 1), max-width .22s cubic-bezier(0.22, 1, 0.36, 1);
+    /* Fanned open, an earlier card only shows its left edge — move its tag over
+       there so every version in the cascade is labelled while it's readable. */
+    .sc-surface-stack:hover > .sc-surface-card.is-old > .sc-surface-vtag,
+    .sc-surface-stack.is-hover > .sc-surface-card.is-old > .sc-surface-vtag {
+      right: auto; left: 5px;
     }
-    .sc-surface-card:has(.sc-surface-stack):hover,
-    .sc-surface-card:has(.sc-surface-stack).is-hover {
-      width: min(288px, 100%);
-    }
-    /* Each stacked version thumb is its own click target — tapping it opens that
-       exact version on the right. Give it a clear hover/focus affordance so it
-       reads as individually clickable, not just part of the card. */
-    .sc-surface-stack .sc-surface-thumb[data-surface-ver] { cursor: pointer; }
-    .sc-surface-card:hover .sc-surface-stack .sc-surface-thumb[data-surface-ver]:hover {
-      transform: translateY(-3px); z-index: 3;
+    /* Portrait rail cards are 120px wide, so their cascade is tighter. */
+    .sc-surface-stack > .sc-surface-card--portrait { margin-left: -102px; }
+    .sc-surface-stack:hover > .sc-surface-card--portrait,
+    .sc-surface-stack.is-hover > .sc-surface-card--portrait { margin-left: -64px; }
+    .sc-surface-stack:hover > .sc-surface-card--portrait:first-child,
+    .sc-surface-stack.is-hover > .sc-surface-card--portrait:first-child { margin-left: 0; }
+    /* Each version card is its own click target — tapping it opens that exact
+       version on the right. Raise whichever one the pointer is on. */
+    .sc-surface-stack > .sc-surface-card:hover,
+    .sc-surface-stack > .sc-surface-card:focus-visible { z-index: 4; }
+    .sc-surface-stack > .sc-surface-card:hover {
+      transform: translateY(-3px);
       border-color: color-mix(in srgb, var(--primary) 70%, var(--border-strong));
-      box-shadow: -3px 4px 12px rgba(37,80,124,0.32), 0 0 0 1px color-mix(in srgb, var(--primary) 40%, transparent);
+      box-shadow: -4px 5px 16px rgba(37,80,124,0.32), 0 0 0 1px color-mix(in srgb, var(--primary) 40%, transparent);
     }
-    .sc-surface-stack .sc-surface-thumb[data-surface-ver]:focus-visible {
-      outline: 2px solid var(--primary); outline-offset: 2px; z-index: 3;
-    }
-    /* vN tag riding the bottom-right of each stacked thumb. */
+    /* vN tag. On a transcript card it rides the card's own top-right corner —
+       the whole card wears the version, not the snapshot inside it. On the
+       Output rail's small chips it still tucks into the thumbnail corner. */
     .sc-surface-vtag {
       position: absolute; right: 1px; bottom: 1px; z-index: 2;
-      padding: 0 3px; border-radius: 5px; min-width: 12px; text-align: center;
-      font-size: 8px; font-weight: 800; line-height: 13px; letter-spacing: 0;
-      color: var(--text-muted); background: color-mix(in srgb, var(--surface) 88%, transparent);
+      padding: 0 4px; border-radius: 6px; min-width: 14px; text-align: center;
+      font-size: 8.5px; font-weight: 800; line-height: 14px; letter-spacing: 0;
+      color: var(--text-muted); background: color-mix(in srgb, var(--surface) 92%, transparent);
       border: 1px solid var(--border);
       font-variant-numeric: tabular-nums;
     }
-    .sc-surface-thumb.is-latest .sc-surface-vtag { color: #fff; background: var(--primary); border-color: var(--primary); }
+    .sc-surface-card > .sc-surface-vtag { right: 5px; top: 5px; bottom: auto; }
+    html.dark .sc-surface-vtag { background: color-mix(in srgb, #1A2339 92%, transparent); }
+    .sc-surface-card.is-latest > .sc-surface-vtag { color: #fff; background: var(--primary); border-color: var(--primary); }
+    /* Landscape cards run the title beside the thumbnail, so keep it clear of
+       the tag in the corner. */
+    .sc-surface-card:not(.sc-surface-card--portrait) .sc-surface-title { padding-right: 22px; }
     /* Brief highlight when a merged-rail chip jumps the transcript here, so the
        eye lands on the right turn. */
     .sc-surface-card.is-flash {
@@ -4337,8 +4366,6 @@
               <div class="topbar-popover hidden" role="menu">
                   <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle" data-pane-act="gs" role="menuitemcheckbox" aria-checked="false" hidden><span class="material-symbols-outlined topbar-menu-icon">star_outline</span><span>Guiding Stars</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
                   <div class="topbar-menu-divider" data-pane-gs-div hidden></div>
-                  <button type="button" class="topbar-menu-item" data-pane-act="min" hidden><span class="material-symbols-outlined topbar-menu-icon">close_fullscreen</span><span class="pane-min-label">Minimize to chips</span></button>
-                  <div class="topbar-menu-divider" data-pane-min-div hidden></div>
                 <button type="button" class="topbar-menu-item" data-pane-act="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export</span></button>
                 <button type="button" class="topbar-menu-item" data-pane-act="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
                 <div class="topbar-menu-divider"></div>
@@ -4370,8 +4397,6 @@
               <div class="topbar-popover hidden" role="menu">
                   <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle" data-pane-act="gs" role="menuitemcheckbox" aria-checked="false" hidden><span class="material-symbols-outlined topbar-menu-icon">star_outline</span><span>Guiding Stars</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
                   <div class="topbar-menu-divider" data-pane-gs-div hidden></div>
-                  <button type="button" class="topbar-menu-item" data-pane-act="min" hidden><span class="material-symbols-outlined topbar-menu-icon">close_fullscreen</span><span class="pane-min-label">Minimize to chips</span></button>
-                  <div class="topbar-menu-divider" data-pane-min-div hidden></div>
                 <button type="button" class="topbar-menu-item" data-pane-act="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export</span></button>
                 <button type="button" class="topbar-menu-item" data-pane-act="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
                 <div class="topbar-menu-divider"></div>
@@ -4415,8 +4440,6 @@
                   <div class="topbar-menu-divider" data-pane-gs-div hidden></div>
                   <button type="button" class="topbar-menu-item topbar-menu-item--admin topbar-menu-item--toggle is-on" data-pane-act="titledrop" role="menuitemcheckbox" aria-checked="true"><span class="material-symbols-outlined topbar-menu-icon">arrow_drop_down_circle</span><span>Outputs dropdown</span><span class="topbar-menu-badge">Admin</span><span class="topbar-menu-switch"><span class="topbar-menu-switch-thumb"></span></span></button>
                   <div class="topbar-menu-divider"></div>
-                  <button type="button" class="topbar-menu-item" data-pane-act="min" hidden><span class="material-symbols-outlined topbar-menu-icon">close_fullscreen</span><span class="pane-min-label">Minimize to chips</span></button>
-                  <div class="topbar-menu-divider" data-pane-min-div hidden></div>
                   <button type="button" class="topbar-menu-item" data-pane-act="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export</span></button>
                   <button type="button" class="topbar-menu-item" data-pane-act="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
                   <div class="topbar-menu-divider"></div>
@@ -4847,8 +4870,6 @@
     const paneCount = { results: document.getElementById('wa-results-count'), visuals: document.getElementById('wa-visuals-count'), unified: document.getElementById('wa-unified-count') };
     const paneNavBtns = { results: document.getElementById('wa-results-navbtns'), visuals: document.getElementById('wa-visuals-navbtns'), unified: document.getElementById('wa-unified-navbtns') };
     const paneTrack = { results: document.getElementById('wa-results-track'), visuals: document.getElementById('wa-visuals-track'), unified: document.getElementById('wa-unified-track') };
-    const paneMin = { results: false, visuals: false, unified: false };  /* rail minimized to intent chips */
-
     /* Bounce the header tally when a NEW output lands. The separate panes carry
        it in the top-right counter ("Result N / M"); the merged pane's tally IS
        the count under the "Output" eyebrow ("N / M"), which doubles as the
@@ -5238,31 +5259,6 @@
       if (nameEl) nameEl.textContent = paneSlideLabel(active, active.dataset.origin || 'results', idx);
     }
 
-    /* Sync the minimize/expand toggle (now a three-dot menu item) with the rail's
-       current mode: swap its icon + label between minimize and expand. */
-    function updateMinBtn(which) {
-      const item = paneEl[which] && paneEl[which].querySelector('[data-pane-act="min"]');
-      if (!item) return;
-      const min = !!paneMin[which];
-      const ic = item.querySelector('.material-symbols-outlined');
-      const lbl = item.querySelector('.pane-min-label');
-      const txt = min ? 'Expand output cards' : 'Minimize to chips';
-      if (ic) ic.textContent = min ? 'open_in_full' : 'close_fullscreen';
-      if (lbl) lbl.textContent = txt;
-      item.setAttribute('aria-label', txt);
-    }
-
-    /* Show/hide the minimize menu item (and its divider) — it's only meaningful
-       while the pane is in carousel mode (2+ outputs to collapse into chips). */
-    function setPaneMinItemVisible(which, on) {
-      const root = paneEl[which];
-      if (!root) return;
-      const item = root.querySelector('[data-pane-act="min"]');
-      const div = root.querySelector('[data-pane-min-div]');
-      if (item) item.hidden = !on;
-      if (div) div.hidden = !on;
-    }
-
     function setPaneSlide(which, idx, { animate = true, scrollNav = false } = {}) {
       const blocks = paneBlocks(which);
       const track = paneTrack[which];
@@ -5322,11 +5318,10 @@
          you always land "on the first one". Only a truly empty pane resets. */
       if (blocks.length < 1) {
         body.classList.remove('is-carousel');
-        track.classList.remove('is-on', 'is-min');
+        track.classList.remove('is-on');
         track.innerHTML = '';
         btns.innerHTML = '';
         if (count) count.innerHTML = '';
-        setPaneMinItemVisible(which, false);
         blocks.forEach((b) => b.classList.remove('is-active'));
         return;
       }
@@ -5355,11 +5350,6 @@
       btns.innerHTML =
         `<button type="button" class="wa-pane-nav-arrow" data-nav="prev" aria-label="Previous output"><span class="material-symbols-outlined">chevron_left</span></button>
          <button type="button" class="wa-pane-nav-arrow" data-nav="next" aria-label="Next output"><span class="material-symbols-outlined">chevron_right</span></button>`;
-      track.classList.toggle('is-min', !!paneMin[which]);
-      /* The minimize toggle now lives in the three-dot menu — reveal it (and its
-         divider) only while the pane is in carousel mode, and sync its label. */
-      setPaneMinItemVisible(which, true);
-      updateMinBtn(which);
       setPaneSlide(which, activeIdx, { animate: false, scrollNav: true });
     }
 
@@ -5390,11 +5380,10 @@
 
       if (blocks.length < 2) {
         body.classList.remove('is-carousel');
-        track.classList.remove('is-on', 'is-min', 'is-grouped', 'is-stacked');
+        track.classList.remove('is-on', 'is-grouped', 'is-stacked');
         track.innerHTML = '';
         btns.innerHTML = '';
         if (count) count.innerHTML = '';
-        setPaneMinItemVisible(which, false);
         blocks.forEach((b) => b.classList.remove('is-active'));
         if (blocks.length === 1) {
           blocks[0].classList.add('is-active');
@@ -5410,7 +5399,7 @@
          combined), matching the chat transcript's chips — not the big preview
          thumbnails the single-pane rails use, and no per-group eyebrow/icon. */
       track.classList.add('is-on', 'is-merged');
-      track.classList.remove('is-min', 'is-grouped', 'is-stacked');
+      track.classList.remove('is-grouped', 'is-stacked');
       blocks.forEach((b, i) => { b.dataset.slideIndex = i; });
 
       let activeIdx = blocks.findIndex((b) => b.classList.contains('is-active'));
@@ -5434,8 +5423,8 @@
            result blocks holds <button>/<input> controls — can nest safely; the
            clone is `inert` so nothing inside it is focusable. Same 52px thumb
            + vN badge as the transcript output chip. */
-        const atlasChart = /^intervention-atlas-[a-f]$/i.test(b.dataset.versionKey || '');
-        return `<div class="wa-merge-chip${atlasChart ? ' wa-merge-chip--portrait' : ''}" data-slide="${i}"${bid ? ` data-block-id="${esc(bid)}"` : ''} role="tab" tabindex="0" aria-selected="false" title="${esc(title)}">
+        const atlasChip = /^(intervention-atlas-|atlas-)/i.test(b.dataset.versionKey || '');
+        return `<div class="wa-merge-chip${atlasChip ? ' wa-merge-chip--portrait' : ''}" data-slide="${i}"${bid ? ` data-block-id="${esc(bid)}"` : ''} role="tab" tabindex="0" aria-selected="false" title="${esc(title)}">
           <span class="wa-merge-chip-thumb"><span class="wa-merge-chip-thumb-inner" inert>${thumbSafe(b.innerHTML)}</span>${paneVerTag(b)}</span>
           <span class="wa-merge-chip-label">${esc(label)}</span>
         </div>`;
@@ -5444,15 +5433,11 @@
       btns.innerHTML =
         `<button type="button" class="wa-pane-nav-arrow" data-nav="prev" aria-label="Previous output"><span class="material-symbols-outlined">chevron_left</span></button>
          <button type="button" class="wa-pane-nav-arrow" data-nav="next" aria-label="Next output"><span class="material-symbols-outlined">chevron_right</span></button>`;
-      /* The chip rail IS the compact form, so the "minimize to chips" item is
-         meaningless here — keep it hidden while merged. */
-      setPaneMinItemVisible(which, false);
       setPaneSlide(which, activeIdx, { animate: false, scrollNav: true });
     }
 
     /* Carousel controls live in two spots: the prev/next group up in the top bar
-       (paneNavBtns) and the thumbnail strip below (paneTrack). The minimize
-       toggle now lives in the three-dot menu (see the [data-pane-act] handler).
+       (paneNavBtns) and the thumbnail strip below (paneTrack).
        Delegate both off the pane section so a single handler covers each. */
     Object.keys(paneEl).forEach((which) => {
       const el = paneEl[which];
@@ -5521,12 +5506,9 @@
           paneBody[which].classList.remove('is-carousel', 'is-loading');
         }
         if (el) el.removeAttribute('aria-busy');
-        if (paneTrack[which]) { paneTrack[which].innerHTML = ''; paneTrack[which].classList.remove('is-on', 'is-min', 'is-grouped', 'is-stacked'); }
+        if (paneTrack[which]) { paneTrack[which].innerHTML = ''; paneTrack[which].classList.remove('is-on', 'is-grouped', 'is-stacked'); }
         if (paneNavBtns[which]) paneNavBtns[which].innerHTML = '';
         if (paneCount[which]) paneCount[which].innerHTML = '';
-        paneMin[which] = false;
-        setPaneMinItemVisible(which, false);
-        updateMinBtn(which);
       const wb = document.querySelector(`[data-pane-width="${which}"]`);
       if (wb) syncPaneWidthBtn(wb, 0);
       /* Drop any drag-pinned widths so the remaining modules reflow to fill the
@@ -6342,15 +6324,7 @@
           return;
         }
         pop.classList.add('hidden'); btn.classList.remove('is-open');
-        if (act === 'min') {
-          paneMin[which] = !paneMin[which];
-          paneTrack[which]?.classList.toggle('is-min', paneMin[which]);
-          updateMinBtn(which);
-          /* Re-scroll the active chip/card into view after the layout change. */
-          const idx = Number(paneTrack[which]?.querySelector('.wa-pane-thumb-item.is-active')?.dataset.slide || 0);
-          setPaneSlide(which, idx, { animate: false, scrollNav: true });
-        }
-        else if (act === 'close') closePane(which);
+        if (act === 'close') closePane(which);
         else if (act === 'export') {
           if (which === 'report') exportReportPdf();
           else {
@@ -7801,7 +7775,7 @@
         const scoreHtml = score === '' || score == null
           ? `<span class="wa-ffui-cell wa-ffui-end" style="color:var(--text-subtle)">\u2014</span>`
           : `<span class="wa-ffui-cell wa-ffui-end"><span class="wa-ffui-score">${Number.isInteger(score) ? String(score) : Number(score).toFixed(1)}</span></span>`;
-        return `<div class="wa-ffui-row" style="grid-template-columns:${MYFOODS_COLS}">
+        return `<div class="wa-ffui-row wa-ffui-trow" style="grid-template-columns:${MYFOODS_COLS}">
             <span class="wa-ffui-food" title="${esc(food)}">${esc(food)}</span>
             <span class="wa-ffui-brand" title="${esc(brand)}">${esc(brand)}</span>
             ${scoreHtml}
@@ -7811,7 +7785,7 @@
       }).join('');
     }
     function myfoodsFfuiTable({ rows, count, total, caption, extraHead, extraCls }) {
-      const head = `<div class="wa-ffui-hrow" style="grid-template-columns:${MYFOODS_COLS}">
+      const head = `<div class="wa-ffui-hrow wa-ffui-thead" style="grid-template-columns:${MYFOODS_COLS}">
           <span class="wa-ffui-th">Food</span>
           <span class="wa-ffui-th">Source</span>
           <span class="wa-ffui-th wa-ffui-end">WISEscore</span>
@@ -7984,7 +7958,7 @@
     function sweetRow(d) {
       const flags = d.flags.map((f) => `<span class="wa-ib-tag">${esc(f)}</span>`).join('');
       const search = `${d.name} ${d.cat} ${d.gras} ${d.usa} pl${d.pl} ${d.flags.join(' ')}`.toLowerCase();
-      return `<div class="wa-ib-row" data-search="${esc(search)}" data-name="${esc(d.name.toLowerCase())}" data-cat="${esc(d.cat)}" data-pl="${d.pl}" data-gras="${esc(d.gras)}" data-usa="${esc(d.usa)}" data-kind="${esc(d.kind)}" data-flags="${esc(d.flags.join('|').toLowerCase())}">
+      return `<div class="wa-ib-row wa-ib-trow" data-search="${esc(search)}" data-name="${esc(d.name.toLowerCase())}" data-cat="${esc(d.cat)}" data-pl="${d.pl}" data-gras="${esc(d.gras)}" data-usa="${esc(d.usa)}" data-kind="${esc(d.kind)}" data-flags="${esc(d.flags.join('|').toLowerCase())}">
           <span class="wa-ib-td"><span class="wa-ib-name">${esc(d.name)}</span></span>
           <span class="wa-ib-td wa-ib-cat">${esc(d.cat)}</span>
           <span class="wa-ib-td">${sweetPill(d.pl)}</span>
@@ -8055,7 +8029,7 @@
               </div>
             </div>
             <div class="wa-ib" data-sort-col="name" data-sort-dir="asc">
-              <div class="wa-ib-head">
+              <div class="wa-ib-head wa-ib-thead">
                 ${ibTh('name', 'Name', 'name')}
                 ${ibTh('cat', 'Category')}
                 ${ibTh('pl', 'PL')}
@@ -8438,7 +8412,7 @@
         const [food, brand, score, upf, sw] = r;
         const tone = upfTone(upf);
         const swCls = /present/i.test(sw) ? 'wa-ffui-flag--present' : 'wa-ffui-flag--none';
-        return `<div class="wa-ffui-row" style="grid-template-columns:${ENERGY_COLS}">
+        return `<div class="wa-ffui-row wa-ffui-trow" style="grid-template-columns:${ENERGY_COLS}">
             <span class="wa-ffui-food" title="${esc(food)}">${esc(food)}</span>
             <span class="wa-ffui-brand" title="${esc(brand)}">${esc(brand)}</span>
             <span class="wa-ffui-cell wa-ffui-end"><span class="wa-ffui-score">${ffuiScore(score)}</span></span>
@@ -8451,7 +8425,7 @@
       const edit = editKey
         ? `<button type="button" class="wa-ffui-edit" data-ffui-edit="${editKey}"><span class="material-symbols-outlined">tune</span>Edit in Food Filter UI</button>`
         : '';
-      const head = `<div class="wa-ffui-hrow" style="grid-template-columns:${ENERGY_COLS}">
+      const head = `<div class="wa-ffui-hrow wa-ffui-thead" style="grid-template-columns:${ENERGY_COLS}">
           <span class="wa-ffui-th">Food</span>
           <span class="wa-ffui-th">Brand</span>
           <span class="wa-ffui-th wa-ffui-end">WISEscore</span>
@@ -8618,7 +8592,7 @@
         const [food, brand, score, upf, sw] = r;
         const tone = upfTone(upf);
         const swCls = /present/i.test(sw) ? 'wa-ffui-flag--present' : 'wa-ffui-flag--none';
-        return `<div class="wa-ffui-row" style="grid-template-columns:${PROTEIN_COLS}">
+        return `<div class="wa-ffui-row wa-ffui-trow" style="grid-template-columns:${PROTEIN_COLS}">
             <span class="wa-ffui-food" title="${esc(food)}">${esc(food)}</span>
             <span class="wa-ffui-brand" title="${esc(brand)}">${esc(brand)}</span>
             <span class="wa-ffui-cell wa-ffui-end"><span class="wa-ffui-score">${ffuiScore(score)}</span></span>
@@ -8631,7 +8605,7 @@
       const edit = editKey
         ? `<button type="button" class="wa-ffui-edit" data-ffui-edit="${editKey}"><span class="material-symbols-outlined">tune</span>Edit in Food Filter UI</button>`
         : '';
-      const head = `<div class="wa-ffui-hrow" style="grid-template-columns:${PROTEIN_COLS}">
+      const head = `<div class="wa-ffui-hrow wa-ffui-thead" style="grid-template-columns:${PROTEIN_COLS}">
           <span class="wa-ffui-th">Food</span>
           <span class="wa-ffui-th">Brand</span>
           <span class="wa-ffui-th wa-ffui-end">WISEscore</span>
@@ -9750,7 +9724,7 @@
         }).join('');
       return `
         <div class="atl-card atl-scroll">
-          <div class="atl-matrix" style="grid-template-columns:${cols};min-width:640px">${head}${rows}</div>
+          <div class="atl-matrix" style="grid-template-columns:${cols}">${head}${rows}</div>
           <div class="atl-mx-scale" style="margin-top:12px">
             <span>0 \u00b7 worst</span><span class="atl-mx-ramp" aria-hidden="true"></span><span>100 \u00b7 best</span>
             <span style="margin-left:auto">Every scale runs the same way \u2014 100 is always the outcome you want.</span>
@@ -9919,7 +9893,11 @@
        instrument: the weighting and filters live on the opportunity map and
        re-read every other panel. Each panel keeps its own version key, so a
        narrowed or re-weighted follow-up stacks a new version onto that panel
-       instead of opening a second, competing board beside it. */
+       instead of opening a second, competing board beside it.
+
+       The first atlas turn is ten outputs, not six: the six charts, the
+       closing read, the two observed baselines, and the references. A
+       follow-up re-cut re-versions the six charts and the closing read. */
     const ATLAS_PANELS = [
       { only: 'A', icon: 'bubble_chart', title: 'Intervention opportunity map',
         meta: () => `${ATLAS_IVS.length} interventions \u00b7 feasibility vs. population-health impact \u00b7 four labeled quadrants \u00b7 weighting & filters live here` },
@@ -9936,11 +9914,14 @@
     ];
     /* Open (or re-version) the whole set of individual panels. `opts` carries the
        atlas state a follow-up wants applied \u2014 weighting, category, selection \u2014
-       and `note` prefixes each panel's meta line with why this cut exists. */
+       and `note` prefixes each panel's meta line with why this cut exists.
+       `fullTurn` adds the three Results outputs that complete the first atlas
+       ask, so the rail lead can say ten rather than six. */
     function surfaceAtlasPanels(opts) {
       const o = opts || {};
-      const { reset, note, ...state } = o;
-      const n = ATLAS_PANELS.length;
+      const { reset, note, fullTurn, ...state } = o;
+      const atlasChip = { rail: 'atlas-visuals', cardLayout: 'portrait' };
+      const n = ATLAS_PANELS.length + 1 + (fullTurn ? 3 : 0);
       ATLAS_PANELS.forEach((p, i) => {
         surfaceBlock('visuals', {
           icon: p.icon,
@@ -9949,15 +9930,12 @@
           html: atlasView({ ...state, only: p.only }),
           versionKey: `intervention-atlas-${p.only.toLowerCase()}`,
           versionReset: !!reset,
-          rail: 'atlas-visuals',
-          cardLayout: 'portrait',
+          ...atlasChip,
           railLead: i === 0
             ? `Here are <strong>${n} outputs</strong> for you to review.`
             : undefined,
         });
       });
-      /* Closing read still opens in Results — it is not a second transcript chip
-         under the carousel. */
       surfaceBlock('results', {
         icon: 'checklist',
         title: 'Strongest actions, least certain actions, experiments worth running',
@@ -9965,7 +9943,30 @@
         html: atlasView({ ...state, only: 'Z' }),
         versionKey: 'intervention-atlas-close',
         versionReset: !!reset,
-        inTranscript: false,
+        ...atlasChip,
+      });
+      if (!fullTurn) return;
+      surfaceBlock('results', {
+        icon: 'bar_chart',
+        title: `${ATLAS_TOTAL.toLocaleString('en-US')} foods across ${ATLAS_CATS.length} Category`,
+        meta: 'Foods in any of the specified product categories \u2014 the observed baseline behind the atlas',
+        html: atlasBaselineView(),
+        versionKey: 'atlas-baseline',
+        versionReset: !!reset,
+        ...atlasChip,
+      });
+      surfaceBlock('results', {
+        icon: 'percent',
+        title: '% Share by Category',
+        meta: `Private label foods in the selected product categories vs foods in those categories \u00b7 0 of ${ATLAS_PL_TOTAL.toLocaleString('en-US')}`,
+        html: atlasPlShareView(),
+        versionKey: 'atlas-pl-share',
+        versionReset: !!reset,
+        ...atlasChip,
+      });
+      surfaceNewsRefs('atlas_refs', {
+        ...atlasChip,
+        versionKey: 'atlas-refs',
       });
     }
 
@@ -11329,7 +11330,7 @@
 
     const INTENT_REPLIES = {
       atlas: 'Built the atlas.<br><br>'
-        + 'Twelve interventions across the ten category groups you named, scored on ten dimensions that all run the same way. The six panels open in <strong>Visuals</strong> as <strong>six separate charts</strong> \u2014 opportunity map, score matrix, causal pathway, population differences, financial &amp; operational consequences, and the recommendation frontier \u2014 so you can take one to a meeting instead of a wall of six. They stay one instrument: the weighting toggle and the four filters live on the opportunity map and re-read every other panel, and every score has a tooltip. The observed baseline the board is anchored on and the private-label read that came back empty are in <strong>Results &amp; Details</strong>.<br><br>'
+        + 'Twelve interventions across the ten category groups you named, scored on ten dimensions that all run the same way. That is <strong>ten outputs</strong> \u2014 six charts in <strong>Visuals</strong> (opportunity map, score matrix, causal pathway, population differences, financial &amp; operational consequences, and the recommendation frontier) so you can take one to a meeting instead of a wall of six, plus the closing read, the observed baseline, the private-label share, and the references in <strong>Results &amp; Details</strong>. The six charts stay one instrument: the weighting toggle and the four filters live on the opportunity map and re-read every other panel, and every score has a tooltip.<br><br>'
         + '<strong>A few important integrity choices are baked in:</strong>'
         + '<ul style="margin:8px 0 0;padding-left:20px">'
         + '<li>Intervention-level scores and intervals are explicitly marked as <strong>synthetic scenario estimates</strong>, not verified causal outcomes. Every health effect carries an interval rather than a point.</li>'
@@ -11771,8 +11772,12 @@
          time     — wall-clock stamp for this version
          version  — the current version number (1-based)
          versions — optional history [{ previewHtml, version, time }]; when it
-                    has more than one entry the chip renders a horizontal stack
-                    of thumbnails (previous versions first, newest last). */
+                    has more than one entry the slot renders a cascade of whole
+                    cards (previous versions first, newest last).
+
+       A version is a CARD, never a bare thumbnail: each one carries the same
+       preview, title and outline as a single-version chip, and wears its own
+       vN tag on the card. */
     function surfaceCardHtml(blockId, which, icon, title, previewHtml, opts) {
       const paneName = which === 'visuals' ? 'Visuals' : 'Results & Details';
       const o = opts || {};
@@ -11784,39 +11789,46 @@
       /* Let the title fill the chip and wrap naturally (up to two lines). A
          middot is a wrap hint, not a forced line break. */
       const titleHtml = esc(rawTitle);
-
-      let thumb;
-      const vtag = (n) => `<span class="sc-surface-vtag">v${n}</span>`;
-      if (versions && versions.length > 1) {
-        /* Stacked cascade — oldest → newest, newest raised + tagged. Every
-           thumb is the same 52px as a single-version chip. */
-        thumb = `<div class="sc-surface-stack">` + versions.map((entry, i) => {
-          const isLatest = i === versions.length - 1;
-          const vn = entry.version || (i + 1);
-          return `<div class="sc-surface-thumb ${isLatest ? 'is-latest' : 'is-old'}" role="button" tabindex="0" data-surface-ver="${blockId}" data-ver="${vn}" aria-label="Open version ${vn} of “${esc(rawTitle)}” in the ${esc(paneName)} panel" title="Open v${vn} in the ${esc(paneName)} panel">
-              <div class="sc-surface-thumb-inner">${entry.previewHtml}</div>
-              ${vtag(vn)}
-        </div>`;
-        }).join('') + `</div>`;
-      } else {
-        thumb = `<div class="sc-surface-thumb is-latest"><div class="sc-surface-thumb-inner">${previewHtml}</div>${vtag(version)}</div>`;
-      }
+      const portrait = o.cardLayout === 'portrait';
 
       /* The timestamp + version no longer live inside the chip — they render in
-         the turn's meta row below it (see decorateSurfaceMeta). The chip keeps
-         only the thumbnail + title; charts no longer expand inline here — use
-         the expand icon on the chart in the right sticky module instead. */
-      const portrait = o.cardLayout === 'portrait';
-      return `<div class="sc-surface-slot">
-          <div class="sc-surface-card${portrait ? ' sc-surface-card--portrait' : ''}" role="button" tabindex="0" data-surface="${blockId}" data-activity="output"${count > 1 ? ' data-activity-multi' : ''} aria-label="Open “${esc(rawTitle)}” in the ${esc(paneName)} panel — version ${version}${count > 1 ? ` of ${count}` : ''}, ${esc(time)}">
+         the turn's meta row below it (see decorateSurfaceMeta). The card keeps
+         the thumbnail, the title and its version tag; charts no longer expand
+         inline here — use the expand icon on the chart in the right sticky
+         module instead. */
+      const card = (inner, vn, isLatest) => {
+        /* Only the newest card carries the output's identity — it is the one
+           the activity rail ear-marks and the manifest jumps to. Older cards
+           are version doors and nothing else. Single-version cards keep the
+           plain re-open path they have always had. */
+        const ident = isLatest
+          ? ` data-surface="${blockId}" data-activity="output"${count > 1 ? ' data-activity-multi' : ''}`
+          : '';
+        const verAttrs = count > 1 ? ` data-surface-ver="${blockId}" data-ver="${vn}"` : '';
+        const label = count > 1
+          ? `Open version ${vn} of “${esc(rawTitle)}” in the ${esc(paneName)} panel — ${vn} of ${count}`
+          : `Open “${esc(rawTitle)}” in the ${esc(paneName)} panel — version ${version}, ${esc(time)}`;
+        return `<div class="sc-surface-card${portrait ? ' sc-surface-card--portrait' : ''} ${isLatest ? 'is-latest' : 'is-old'}" role="button" tabindex="0"${ident}${verAttrs} aria-label="${label}">
             <div class="sc-surface-head">
-              ${thumb}
+              <div class="sc-surface-thumb"><div class="sc-surface-thumb-inner">${inner}</div></div>
               <div class="sc-surface-body">
                 <div class="sc-surface-title">${titleHtml}</div>
               </div>
             </div>
-          </div>
+            <span class="sc-surface-vtag">v${vn}</span>
+          </div>`;
+      };
+
+      if (versions && versions.length > 1) {
+        /* Cascade — oldest → newest, newest in front. */
+        const deck = versions.map((entry, i) => card(
+          entry.previewHtml, entry.version || (i + 1), i === versions.length - 1,
+        )).join('');
+        return `<div class="sc-surface-slot sc-surface-slot--stack">
+          <div class="sc-surface-stack">${deck}</div>
         </div>`;
+      }
+      return `<div class="sc-surface-slot">${card(previewHtml, version, true)}</div>`;
     }
 
     /* Render the surface output's version as a proper, patch-style version
@@ -12183,9 +12195,9 @@
       });
       SURFACED[blockId] = { which, title, meta, icon, html: tagged, versionKey: key };
       addManifestOutput({ blockId, which, icon, title });
-      /* Pane-only outputs (atlas closing read, baselines, references) still
-         open on the right; they must not drop a second landscape chip under
-         the carousel. */
+      /* A host can keep a block out of the transcript (no chip) while still
+         writing it into its pane. Atlas no longer uses this: all ten of its
+         outputs are chips on the same portrait rail. */
       if (inTranscript === false) return;
       if (chat && typeof chat.addWISEcodeAI === 'function') {
         /* A preview card is posted mid-turn (while WISEcodeAI is still "thinking"),
@@ -12855,16 +12867,16 @@
       syncChartExpandBtns(root);
     }
 
-    /* Flag the active version thumbnail in the stack so the chip and pane agree. */
+    /* Flag the active version card in the cascade so the chip and pane agree. */
     function syncSurfaceVersionThumbs(blockId, entry) {
       if (!entry) return;
-      document.querySelectorAll(`.sc-surface-thumb[data-surface-ver="${blockId}"]`).forEach((t) => {
+      document.querySelectorAll(`[data-surface-ver="${blockId}"]`).forEach((t) => {
         t.classList.toggle('is-active', Number(t.getAttribute('data-ver')) === entry.version);
       });
     }
 
     /* Open a SPECIFIC version of a surfaced output in its pane (tapping one of
-       the stacked version thumbnails on the transcript card). Each version is
+       the cascaded version cards in the transcript slot). Each version is
        its own slide in the sticky Output module — we activate that slide rather
        than swapping content in place — so the mini-card stack and the rail on
        the right always agree on which version you're looking at. */
@@ -12927,24 +12939,7 @@
       else if (intent === 'spider' && topic && topic !== 'worst' && SPIDER_SURFACE[topic]) intent = SPIDER_SURFACE[topic];
       setTimeout(() => {
         if (intent === 'atlas') {
-          surfaceAtlasPanels({ reset: true });
-          surfaceBlock('results', {
-            icon: 'bar_chart',
-            title: `${ATLAS_TOTAL.toLocaleString('en-US')} foods across ${ATLAS_CATS.length} Category`,
-            meta: 'Foods in any of the specified product categories \u2014 the observed baseline behind the atlas',
-            html: atlasBaselineView(),
-            versionKey: 'atlas-baseline',
-            inTranscript: false,
-          });
-          surfaceBlock('results', {
-            icon: 'percent',
-            title: '% Share by Category',
-            meta: `Private label foods in the selected product categories vs foods in those categories \u00b7 0 of ${ATLAS_PL_TOTAL.toLocaleString('en-US')}`,
-            html: atlasPlShareView(),
-            versionKey: 'atlas-pl-share',
-            inTranscript: false,
-          });
-          surfaceNewsRefs('atlas_refs', { inTranscript: false });
+          surfaceAtlasPanels({ reset: true, fullTurn: true });
         } else if (intent === 'atlas_report') {
           surfaceBlock('results', {
             icon: 'summarize',
@@ -13481,9 +13476,13 @@
       if (!cfg) return;
       const existing = paneNewsRefsetBlock(kind);
       if (existing) { reopenSurface(existing.getAttribute('data-block-id')); return; }
+      const o = opts || {};
       surfaceBlock('results', {
         icon: cfg.icon, title: cfg.title, meta: cfg.meta, html: newsRefsView(kind),
-        inTranscript: opts && opts.inTranscript,
+        inTranscript: o.inTranscript,
+        rail: o.rail,
+        cardLayout: o.cardLayout,
+        versionKey: o.versionKey,
       });
     }
     function openNewsRefs(kind, i) {
@@ -14098,7 +14097,7 @@
         scorecards: {
           label: 'Start a conversation',
           cards: [
-            { variant: 'metric', icon: 'bubble_chart', pill: { tone: 'alert', icon: 'insights', text: 'Modeled' }, metric: '12', title: 'Food Portfolio Intervention Atlas', desc: 'Twelve retail interventions scored on health impact against commercial &amp; operational reality \u2014 a six-panel board for a boardroom.', action: 'Build it', intent: 'atlas', ask: ATLAS_ASK },
+            { variant: 'metric', icon: 'bubble_chart', pill: { tone: 'alert', icon: 'insights', text: 'Modeled' }, metric: '12', title: 'Food Portfolio Intervention Atlas', desc: 'Twelve retail interventions scored on health impact against commercial &amp; operational reality \u2014 ten outputs for a boardroom.', action: 'Build it', intent: 'atlas', ask: ATLAS_ASK },
             { variant: 'metric', icon: 'leaderboard', pill: { tone: 'up', icon: 'north', text: 'Top 3' }, metric: '22,514', title: 'Top 3 brands, top-half WISEscore', desc: 'Brands with the most foods scoring 50 or higher.', action: 'Compare', intent: 'topbrands', ask: 'Create a comparison chart of the top three brands with more than 50 UPCs that are in the top half of the WISE score.' },
             { variant: 'metric', icon: 'storefront', pill: { tone: 'up', icon: 'storefront', text: 'Retailer' }, metric: '20,635', title: 'How many foods does Sprouts have?', desc: 'Distinct Sprouts-carried products matched against WISEcode.', action: 'Count', intent: 'sprouts', ask: 'How many foods does the Sprouts retailer have?' },
             { variant: 'wiseai', icon: 'auto_awesome', title: 'Is this ultra-processed?', desc: 'Paste an ingredient list for a WISEcode UPF read.', action: 'Ask', intent: 'upf', ask: 'Is this ingredient list ultra-processed?' },
@@ -14209,13 +14208,13 @@
         if (cite) { e.preventDefault(); openCatRef(Number(cite.getAttribute('data-cat-ref'))); return; }
         const news = e.target.closest('[data-news-open]');
         if (news) { e.preventDefault(); openNewsRefs(news.getAttribute('data-news-open'), Number(news.getAttribute('data-news-i'))); return; }
-        /* A specific version thumbnail in the stack opens THAT version on the
+        /* A specific version card in the cascade opens THAT version on the
            right (checked before the whole-card handler so tapping a version
            doesn't just reopen the latest). */
-        const verThumb = e.target.closest('.sc-surface-thumb[data-surface-ver]');
-        if (verThumb) {
+        const verCard = e.target.closest('[data-surface-ver]');
+        if (verCard) {
           e.preventDefault();
-          openSurfaceVersion(verThumb.getAttribute('data-surface-ver'), Number(verThumb.getAttribute('data-ver')));
+          openSurfaceVersion(verCard.getAttribute('data-surface-ver'), Number(verCard.getAttribute('data-ver')));
           return;
         }
         const card = e.target.closest('.sc-surface-card[data-surface]');
@@ -14228,10 +14227,10 @@
         if (cite) { e.preventDefault(); openCatRef(Number(cite.getAttribute('data-cat-ref'))); return; }
         const news = e.target.closest('[data-news-open]');
         if (news) { e.preventDefault(); openNewsRefs(news.getAttribute('data-news-open'), Number(news.getAttribute('data-news-i'))); return; }
-        const verThumb = e.target.closest('.sc-surface-thumb[data-surface-ver]');
-        if (verThumb) {
+        const verCard = e.target.closest('[data-surface-ver]');
+        if (verCard) {
           e.preventDefault();
-          openSurfaceVersion(verThumb.getAttribute('data-surface-ver'), Number(verThumb.getAttribute('data-ver')));
+          openSurfaceVersion(verCard.getAttribute('data-surface-ver'), Number(verCard.getAttribute('data-ver')));
           return;
         }
         const card = e.target.closest('.sc-surface-card[data-surface]');

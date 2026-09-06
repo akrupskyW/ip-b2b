@@ -605,8 +605,9 @@ function refresh(state) {
     } else {
       /* More than one VERSION on a single output → two stacked tabs (a binary
          "more than one", not a count). Flag comes from the chip
-         (`data-activity-multi`) or the stacked thumbs. */
-      const multi = target.hasAttribute('data-activity-multi') || !!target.querySelector('.sc-surface-stack');
+         (`data-activity-multi`) or the cascade of version cards. */
+      const multi = target.hasAttribute('data-activity-multi')
+        || !!(target.closest('.sc-surface-slot') || target).querySelector('.sc-surface-stack');
       if (multi) {
         host = document.createElement('span');
         host.className = 'wa-activity-tick-stack';

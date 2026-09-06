@@ -74,9 +74,13 @@
       box-shadow: var(--shadow-card);
       overflow: hidden;
     }
+    /* Chat gutter — the transcript and the composer share this one inset
+       (see the shared chat gutter in wise.css), so the composer is exactly as
+       wide as the conversation above it. */
+    .ap-chat { --sc-msg-pad-min: 26px; }
     .ap-topbar-tag { font-size: 11px; font-weight: 600; color: var(--text-subtle); white-space: nowrap; }
     .ap-chat-body { position: relative; flex: 1 1 auto; min-height: 0; display: flex; overflow: hidden; }
-    .chat-messages-area { flex: 1; overflow-y: auto; padding: 22px 26px 8px; }
+    .chat-messages-area { flex: 1; overflow-y: auto; padding-block: 22px 8px; }
 
     #welcome-screen.sc-welcome { justify-content: safe flex-end; overflow-y: auto; padding: 2.5rem 1.75rem 1.5rem; }
     /* Owl constellation is Orbit-only. Helix is the load default. */
@@ -90,7 +94,7 @@
     }
     #welcome-screen .ws-sub { max-width: 52ch; }
     #welcome-screen .ws-chips { margin-bottom: 1rem; }
-    .chat-input-rail { padding: 14px 26px 18px; }
+    .chat-input-rail { padding-block: 14px 18px; }
 
     /* In-chat reply / intent chips row (shared with the other WISE chat pages). */
     .sc-reply-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: -2px 0 14px 42px; }

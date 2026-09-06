@@ -299,6 +299,16 @@ ok(vm.runInContext('topicOf("atlas") === "atlas" && topicOf("atlas_bev") === "at
 });
 ok(html.includes("intent: 'atlas', ask: ATLAS_ASK"), 'welcome scorecard runs the same brief');
 ok(html.includes("if (intent === 'atlas') {"), 'surface() has an atlas branch');
+ok(html.includes("surfaceAtlasPanels({ reset: true, fullTurn: true })"),
+  'the atlas turn surfaces the full set of ten outputs');
+const sap = html.slice(html.indexOf('function surfaceAtlasPanels'), html.indexOf('function atlasReadout'));
+ok((sap.match(/surfaceBlock\(/g) || []).length === 4,
+  'six charts (one call) + closing read + two baselines are queued');
+ok(/surfaceNewsRefs\('atlas_refs'/.test(sap), 'and the references card is the tenth');
+ok(/fullTurn \? 3 : 0/.test(sap), 'the rail lead counts ten on the first turn');
+ok(!/inTranscript:\s*false/.test(sap), 'none of the ten stay off the transcript');
+ok(vm.runInContext('INTENT_REPLIES.atlas.includes("ten outputs")', ctx),
+  'the reply names the ten outputs');
 ['atlas_report', 'atlas_pl', 'atlas_bev', 'atlas_baseline', 'atlas_profit', 'atlas_retailer']
   .forEach((id) => ok(html.includes(`intent === '${id}'`), 'surface() branch for ' + id));
 

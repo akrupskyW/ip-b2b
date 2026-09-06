@@ -117,7 +117,9 @@
         [data-nav-id="non-upf-dashboard"] .adm-table .adm-thead { display: grid; }
         [data-nav-id="non-upf-dashboard"] .adm-table .adm-trow { grid-template-columns: var(--adm-cols) !important; gap: 12px; padding: 12px 12px; position: static; }
         [data-nav-id="non-upf-dashboard"] .adm-table .adm-td--num { justify-content: center; text-align: center; }
-        [data-nav-id="non-upf-dashboard"] .adm-table .adm-trow .adm-td--end { position: static; top: auto; right: auto; padding: 0; }
+        [data-nav-id="non-upf-dashboard"] .adm-table .adm-trow .adm-td--end,
+        [data-nav-id="non-upf-dashboard"] .adm-table .adm-trow .adm-td--actions { position: static; top: auto; right: auto; padding: 0; }
+        [data-nav-id="non-upf-dashboard"] .adm-table .adm-trow > .adm-td:has(.adm-idcell) { padding-right: 0; }
       }
     }
 
@@ -128,7 +130,8 @@
       [data-nav-id="non-upf-dashboard"] .adm-trow { grid-template-columns: 1fr !important; gap: 6px; position: relative; padding: 14px 12px; }
       [data-nav-id="non-upf-dashboard"] .adm-actions { justify-content: flex-start; }
       [data-nav-id="non-upf-dashboard"] .adm-td--num { justify-content: flex-start; text-align: left; }
-      [data-nav-id="non-upf-dashboard"] .adm-trow .adm-td--end { position: absolute; top: 10px; right: 10px; padding: 0; }
+      [data-nav-id="non-upf-dashboard"] .adm-trow .adm-td--end,
+      [data-nav-id="non-upf-dashboard"] .adm-trow .adm-td--actions { position: absolute; top: 10px; right: 10px; padding: 0; }
     }
   </style>
   <script src="../js/cwr-toggle.js"></script>

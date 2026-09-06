@@ -26,6 +26,19 @@ Source of truth: `WPaneWidth.defaultChatTier()` in `js/pane-width.js` (FOUC twin
 
 Moving the window to a different monitor is the only thing that can legitimately change the tier. `js/text-size-fouc.js` watches for it and re-applies — but skips when `html[data-chat-width-user-set="1"]` is set, so a manual in-session toggle is never stomped. `js/pane-width.js` sets that flag from one delegated capture-phase click listener covering every module's width control; individual toggle handlers do not need to set it.
 
+## The control always changes the width
+
+Tapping the width button **must move the module every time**, whether or not anything is docked beside it. On `wiseai.html` it did not: the welcome chat fills the row, and every rule that could size it sat behind `#modules-row:has(.wa-pane.is-open)`, so with no output open the classes, the icon and the caption all advanced while the module stayed the full width of the row.
+
+Two pieces keep it live, and a new host needs both:
+
+- **The host sizes the module once the member owns its width.** `.wa-chat[data-width-user-set]` carries the same tier widths as the docked rules, so load is untouched — a fresh page still opens with the chat filling the row at its screen default — and the first tap pins it for real. `js/wiseai-chat.js` sets that attribute (via `WPaneWidth.markModuleUserSet`) rather than relying on the capture listener, which only fires for trusted clicks.
+- **A free-growing module is not at the tier its classes claim.** The chat's toggle measures `flex-grow` and, on the first tap only, enters the cycle at its first preset instead of advancing. Without this, single → double → fill all resolve to "the whole row" and the member taps once or twice before anything moves.
+
+Custom is the one stop that keeps the width you arrived with. That is its documented behaviour app-wide, not a dead tap.
+
+`scripts/_chat_width_probe.py` drives the whole cycle with and without an output pane open, at both screen defaults, and prints the measured width after every tap.
+
 ## Rules for the agent
 
 - Never hard-reset a chat to `wide: 0` / `widthTier = 0` on load. Use `defaultChatTier()`. A `: 0` fallback on the end of a `wiseDefaultChatTier` check is the same bug — it silently pins the chat to single on any page where load order puts the module first.
@@ -33,4 +46,4 @@ Moving the window to a different monitor is the only thing that can legitimately
 - When the user cycles back to single, drop `html.chat-default-double` so the FOUC class cannot pin the chat wide.
 - Right-of-chat modules still default to **fill** (`js/default-fill.js`). That rule is unchanged.
 - **Chat still does not restore a session choice.** `#agent-main` and every other non-chat module persist their own rest state per page (`wise-module-width-tiers-v1`), keyed by the module, so changing or resizing a neighbour cannot write this one. Do not revive the old shared keys (`wise-main-width` / `wise-all-modules-width`) that pinned every page to one width.
-- On `wiseai.html`, the welcome chat still fills the row; `panel-wide` only sizes the docked column once a result pane is open.
+- On `wiseai.html`, the welcome chat still fills the row **on load**. Never gate the tier widths on a pane being open — see "The control always changes the width" above.

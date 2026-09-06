@@ -127,12 +127,21 @@ try {
 cmd("Page.navigate", {"url": URL})
 time.sleep(8.0)
 
-js("document.getElementById('az-palette-launch') && document.getElementById('az-palette-launch').click()")
-time.sleep(0.5)
-js("document.querySelector('.azp-size[data-azp-size=\"%s\"]').click()" % SIZE)
-time.sleep(2.5)
-js("document.querySelector('.azp-close').click()")
-time.sleep(0.8)
+# The palette is the only way to frame the report, so keep asking until the
+# preset actually lands — a shot at the wrong width proves nothing.
+for _ in range(10):
+    js("(function(){var b=document.getElementById('az-palette-launch');"
+       "if(b&&!b.hidden)b.click();})()")
+    time.sleep(0.6)
+    js("(function(){var b=document.querySelector('.azp-size[data-azp-size=\"%s\"]');"
+       "if(b)b.click();})()" % SIZE)
+    time.sleep(1.6)
+    if js("document.body.getAttribute('data-az-chart-size')") == SIZE:
+        break
+else:
+    print("!! could not frame the report to preset", SIZE)
+js("(function(){var b=document.querySelector('.azp-close');if(b)b.click();})()")
+time.sleep(1.2)
 
 print("theme_dark:", js("document.documentElement.classList.contains('dark')"),
       "preset:", SIZE, "specimens:", js("document.querySelectorAll('.attb-card').length"))

@@ -43,8 +43,12 @@ ok(/surfaceBlock\('visuals'/.test(panels) && /surfaceBlock\('results'/.test(pane
   'the atlas panels surface through the queue');
 ok(/railLead:/.test(panels) && /\$\{n\} outputs/.test(panels),
   'the first atlas rail is introduced by a count line');
-ok(/inTranscript: false/.test(panels),
-  'the atlas closing read stays out of the transcript');
+ok(/fullTurn/.test(panels) && /ATLAS_PANELS\.length \+ 1/.test(panels),
+  'the first atlas turn counts six charts, the closing read, and three Results outputs');
+ok(!/inTranscript:\s*false/.test(panels),
+  'every atlas output is a transcript chip — none stay pane-only');
+ok(/surfaceNewsRefs\('atlas_refs'/.test(panels),
+  'the tenth output is the references card');
 
 console.log('\nTurn stages — one waits for the one before it');
 

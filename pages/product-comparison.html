@@ -642,6 +642,14 @@
       color: var(--text);
     }
 
+    /* Chat gutter — this chat lives in a NARROW side module (not the full-width
+       WISEcodeAI page), so the canonical 3rem inset plus the avatar column
+       squeezed the readable transcript into a column that wrapped far too
+       early. One tighter inset, worn by the transcript AND the composer (see
+       the shared chat gutter in wise.css), so the composer is exactly as wide
+       as the conversation above it. */
+    #chat-shell { --sc-msg-pad-min: 1.25rem; }
+
     .chat-messages-area {
       flex: 1 1 0%;
       overflow-y: auto;
@@ -652,12 +660,7 @@
          once the transcript outgrows the pane. */
       display: flex;
       flex-direction: column;
-      /* This chat lives in a NARROW side module (not the full-width WISEcodeAI
-         page), so the canonical 3rem side padding — plus the avatar column and
-         gap — squeezed the readable transcript into a tight column that wrapped
-         far too early. Pulled the inline padding in so the transcript uses the
-         module's full width; block padding stays generous. */
-      padding: 1.5rem 1.25rem;
+      padding-block: 1.5rem;
       background: var(--bg);
       color: var(--text-muted);
       font-size: var(--fs-ui);
@@ -1486,28 +1489,8 @@
       pointer-events: none;
     }
     .lir-btn.has-dot.is-read::after { display: none; }
-    #lir-tooltip {
-      position: fixed;
-      z-index: 2147483646;
-      background: var(--surface);
-      color: var(--text);
-      font-size: var(--fs-ui);
-      font-weight: 600;
-      white-space: nowrap;
-      padding: 5px 10px;
-      border-radius: var(--radius-pill);
-      pointer-events: none;
-      border: 1px solid var(--border-strong);
-      box-shadow: var(--shadow-2);
-      font-family: inherit;
-      opacity: 0;
-      transform: translateX(-50%) translateY(-4px);
-      transition: opacity 0.13s ease, transform 0.13s ease;
-    }
-    #lir-tooltip.lir-tip-visible {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
+    /* The hover card itself lives in pages/wise.css (#lir-tooltip) — it is one
+       shared card for the whole app, including how a long label wraps. */
     .lir-btn .lir-dot { display: none !important; }
     .lir-divider {
       height: 20px;
@@ -5841,14 +5824,15 @@
         padding: 10px 28px !important;
         min-height: 56px;
       }
+      #chat-shell { --sc-msg-pad-min: 1rem; }
       .chat-messages-area {
-        padding: 1rem 1rem;
+        padding-block: 1rem;
       }
       #welcome-screen {
         padding: 1.25rem 1.25rem 0.75rem;
       }
       .chat-input-rail {
-        padding: 10px 24px !important;
+        padding-block: 10px !important;
       }
     }
 
@@ -6351,13 +6335,6 @@
     .lir-pop-item .material-symbols-outlined { color: var(--text-subtle); }
     .lir-pop-item:hover .material-symbols-outlined { color: var(--text); }
     .lir-pop-divider { background: var(--border); }
-    #lir-tooltip {
-      background: var(--surface);
-      color: var(--text);
-      border: 1px solid var(--border-strong);
-      font-weight: 500;
-      box-shadow: var(--shadow-2);
-    }
 
     /* History / WISEcodeAI / UPF panels — same card surface as chat.
        Per-agent panels (TIER / SHIELD / LENS / VAULT) ride the same tokens so
@@ -6579,9 +6556,10 @@
        send button cleanly aligned and sized to match.
        ===================================================================== */
     .chat-input-rail {
-      /* Matches the canonical WISEcodeAI module input rail
-         (wise.css `.chat-input-rail`): 12px block, 32px inline. */
-      padding: 12px 32px !important;
+      /* Block padding matches the canonical WISEcodeAI module input rail
+         (wise.css `.chat-input-rail`). The sides come from the shared chat
+         gutter, so the composer is the width of the transcript. */
+      padding-block: 12px !important;
       background: var(--bg) !important;
       border-top: none !important;
     }
@@ -8720,7 +8698,7 @@
         </div><!-- /#settings-screen -->
       </div>
 
-      <div id="chat-input-bar" class="chat-input-rail shrink-0 px-6 py-5 md:px-10" data-wise-composer>
+      <div id="chat-input-bar" class="chat-input-rail shrink-0" data-wise-composer>
         <div class="sc-input-row">
           <div class="fl-input-wrap fl-input-wrap--lead fl-input-wrap--stacked">
             <div class="fl-more-wrap" id="fl-more-wrap">
