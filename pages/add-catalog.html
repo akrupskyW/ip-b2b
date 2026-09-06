@@ -431,7 +431,7 @@
         <div class="ap-chat-body">
           <div id="chat-messages" class="chat-messages-area" aria-live="polite"></div>
 
-          <div id="welcome-screen" class="sc-welcome">
+          <div id="welcome-screen" class="sc-welcome ws-in">
             <div class="ws-logo-wrap">
               <span class="ws-pulse-ring" aria-hidden="true"></span>
               <span class="ws-pulse-ring" aria-hidden="true"></span>
@@ -442,7 +442,13 @@
             </div>
             <h1 class="ws-heading">Let's upload your catalog.</h1>
             <p class="ws-sub">Send a CSV of up to 500 products. I match its columns to our fields, import everything that validates, and list any rows to fix — then verify the whole catalog's ingredients in one pass. Nothing imports until you say go.</p>
-            <div class="ws-chips" id="ws-chips-start"></div>
+            <div class="ws-chips" id="ws-chips-start">
+              <button type="button" class="chip ws-intent-chip" data-action="upload"><span class="material-symbols-outlined">upload_file</span>Upload a CSV</button>
+              <button type="button" class="chip ws-intent-chip" data-action="template"><span class="material-symbols-outlined">download</span>Download CSV template</button>
+              <button type="button" class="chip ws-intent-chip" data-action="example"><span class="material-symbols-outlined">table_view</span>View an example CSV</button>
+              <button type="button" class="chip ws-intent-chip" data-action="instructions"><span class="material-symbols-outlined">menu_book</span>Read upload instructions</button>
+              <button type="button" class="chip ws-intent-chip" data-action="single"><span class="material-symbols-outlined">inventory_2</span>I only have one product</button>
+            </div>
           </div>
         </div>
 

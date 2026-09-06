@@ -41,8 +41,8 @@ import { esc } from './escape-html.js';
 import { openModal, closeModal, modalHTML } from './wise-modal.js';
 import { OWL_BUG, OWL_MARK } from './owl-mark.js';
 import {
-  refineReply, withTimeout, toggleOllamaOn, probeOllama,
-  enrichReply,
+  refineReply, withTimeout, toggleOllamaOn, probeOllama, probeOllamaWhenIdle,
+  enrichReply, rememberChatTurn, forgetChatTurns,
   ensureOllamaMenuRow, syncOllamaMenu, ollamaRowHtml,
 } from './ollama-chat.js';
 
@@ -64,6 +64,9 @@ import { collectRevealUnits, staggerReveal } from './stagger-reveal.js';
    (js/add-product-flow.js) stream the identical "Thinking" block rather than
    standing in a bare spinner-and-label beat. */
 import { runTraceStream } from './trace-stream.js';
+import {
+  wireStoryVoiceover, injectVoiceoverMenuItem, syncVoiceoverMenuItem,
+} from './story-voiceover.js';
 export { OWL_BUG, OWL_MARK };
 
 /* Chat module elevation is locked to Little min — the same drop as the
@@ -1143,12 +1146,9 @@ function openWiseImageModal(src, name) {
 export function injectChatExtras() {
   wireTranscriptTimes();
   wireAnswerTips();
+  wireStoryVoiceover();
   if (typeof document === 'undefined' || document.getElementById('wiseai-chat-extras')) return;
   const css = `
-    .sc-welcome:not(.ws-in) > .ws-heading,
-    .sc-welcome:not(.ws-in) > .ws-sub,
-    .sc-welcome:not(.ws-in) .ws-chips .chip,
-    .sc-welcome:not(.ws-in) .ws-scorecard { opacity: 0; }
     .ws-scorecard--locked { cursor: default; opacity: .7; }
     .ws-scorecard--locked:hover { background: color-mix(in srgb, var(--primary) 10%, #fff); border-color: var(--border-strong); box-shadow: none; transform: none; }
     html.dark .ws-scorecard--locked:hover { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); }
@@ -6762,7 +6762,7 @@ const CHAT_MENU_GROUP_TITLE = {
   more: 'More', danger: '',
 };
 const CHAT_MENU_GROUP_OF = {
-  history: 'conversation', new: 'conversation', export: 'conversation', share: 'conversation', 'file-library': 'conversation', 'add-member': 'conversation',
+  history: 'conversation', new: 'conversation', export: 'conversation', share: 'conversation', 'file-library': 'conversation', voiceover: 'conversation', 'add-member': 'conversation',
   turns: 'data', outputs: 'data', connect: 'data', 'mcp-toggle': 'data', sticky: 'data',
   'toggle-cards': 'display', 'toggle-intent-chips': 'display', compact: 'display', brandtext: 'display', sheen: 'display',
   'bg-anim': 'helix', 'bg-anim-snap': 'helix', 'bg-anim-snap-save': 'helix',
@@ -8174,6 +8174,35 @@ export function typeInTranscript(bodyEl, done, hooks) {
 }
 if (typeof window !== 'undefined') window.WiseTypeInTranscript = typeInTranscript;
 
+/* Paint a welcome headline + chips immediately. The welcome used to stay at
+   opacity 0 until a staggered fly-in (and page-local hosts typed the heading
+   first). That left the headline or some chips invisible when JS was late,
+   the clamp re-primed leftover opacity:0 chips, or type-in set hidden on
+   the <h1>. Welcome copy and chips must be on screen the instant the
+   markup exists. Transcript follow-up chips still fly in after the answer. */
+export function paintWelcomeNow(welcomeEl) {
+  if (!welcomeEl) return;
+  if (welcomeEl.classList.contains('sc-hidden') || welcomeEl.classList.contains('ws-hidden')) return;
+  if (welcomeEl.style.display === 'none') return;
+  welcomeEl.classList.add('ws-in');
+  const heading = welcomeEl.querySelector('.ws-heading');
+  const sub = welcomeEl.querySelector('.ws-sub');
+  [heading, sub].forEach((el) => {
+    if (!el) return;
+    el.hidden = false;
+    el.style.opacity = '';
+    el.style.transform = '';
+    el.style.transition = '';
+  });
+  welcomeEl.querySelectorAll('.ws-chips .chip, .ws-scorecard').forEach((el) => {
+    if (el.hidden) return;
+    el.style.opacity = '';
+    el.style.transform = '';
+    el.style.transition = '';
+  });
+}
+if (typeof window !== 'undefined') window.WisePaintWelcome = paintWelcomeNow;
+
 /**
  * Mount the shared WISEcodeAI chat into `rootEl`.
  * @param {HTMLElement} rootEl
@@ -8835,6 +8864,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           <button type="button" class="topbar-menu-item" data-sc="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export conversation</span></button>
           <button type="button" class="topbar-menu-item" data-sc="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
           <button type="button" class="topbar-menu-item" data-sc="file-library"><span class="material-symbols-outlined topbar-menu-icon">auto_stories</span><span>File to Library</span></button>
+          <button type="button" class="topbar-menu-item" data-sc="voiceover" role="menuitem" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined topbar-menu-icon">record_voice_over</span><span class="topbar-menu-copy"><span class="topbar-menu-title">Play voiceover</span><span class="topbar-menu-desc" data-voice-label>Samuel L. Jackson</span></span></button>
           ${showTurns ? `<div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="turns" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">alt_route</span><span>Turns</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           ${opts.outputsToggle === true ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="outputs" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dashboard_customize</span><span>Hide outputs &amp; sources</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
@@ -8914,7 +8944,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
 
     <div class="sc-body">
       <div class="chat-messages-area" id="${id}-messages" aria-live="polite" aria-atomic="false"></div>
-      <div class="sc-welcome${scorecardsHtml ? ' sc-welcome--cards' : ''}" id="${id}-welcome">
+      <div class="sc-welcome ws-in${scorecardsHtml ? ' sc-welcome--cards' : ''}" id="${id}-welcome">
         <div class="ws-logo-wrap">
           <span class="ws-pulse-ring" aria-hidden="true"></span>
           <span class="ws-pulse-ring" aria-hidden="true"></span>
@@ -9565,42 +9595,23 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     el.style.transform = '';
     el.style.transition = '';
   }
-  /* Welcome-screen reveal. Heading, then the sub, fade up; the intent chips
-     (and any visible overview cards) fly in from the right right after, so
-     the copy always leads and the chips do not sit idle waiting on type-in.
-     Honors reduced-motion. Safe to re-run on reset(). */
+  /* Welcome-screen paint. Headline, sub, and intent chips are on screen the
+     instant the markup exists — no fade, no type-in, no stagger. A delayed
+     reveal left the heading or some chips invisible when the clamp re-primed
+     leftover opacity:0 chips or the host typed the <h1>. Safe to re-run on
+     reset(). Transcript follow-up chips still fly in after the answer. */
   function revealWelcome() {
     if (!welcome || welcome.classList.contains('sc-hidden')) return;
     bgAnim.start();
-    const heading = welcome.querySelector('.ws-heading');
-    const subEl = welcome.querySelector('.ws-sub');
+    welcomeChipsRevealing = false;
+    paintWelcomeNow(welcome);
     clampWelcomeChips();
-    const scWrap = welcome.querySelector(`#${id}-scorecards`) || welcome.querySelector('.ws-scorecards');
-    const cardsOn = !!(scWrap && !rootEl.classList.contains('sc-cards-hidden'));
-    const visibleCards = () => cardsOn
-      ? Array.from(scWrap.querySelectorAll('.ws-scorecard')).filter((c) => !c.hidden)
-      : [];
-    const chipsWrap = welcome.querySelector(`#${id}-chips`) || welcome.querySelector('.ws-chips');
-    const visibleChips = () => chipsWrap
-      ? Array.from(chipsWrap.querySelectorAll('.chip')).filter((c) => !c.hidden)
-      : [];
-    const text = [heading, subEl].filter(Boolean);
-    const flyNow = visibleCards().concat(visibleChips());
-    if (prefersReducedMotion) {
-      text.concat(flyNow).forEach(clearReveal);
-      welcome.classList.add('ws-in');
-      return;
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => {
+        if (welcomeChipsExpanding || welcome.classList.contains('sc-hidden')) return;
+        clampWelcomeChips();
+      }).catch(() => {});
     }
-    text.forEach(primeRevealUp);
-    flyNow.forEach(primeRevealFromRight);
-    welcome.classList.add('ws-in');
-    welcomeChipsRevealing = true;
-    revealStaggered(text, 40, 110, () => {
-      clampWelcomeChips();
-      const fly = visibleCards().concat(visibleChips());
-      fly.forEach(primeRevealFromRight);
-      revealStaggered(fly, 30, 28, () => { welcomeChipsRevealing = false; });
-    });
   }
   /* Hide the thumbs / meta row up-front so it lands as one unit after the
      last paragraph — never icon-by-icon, and never before the copy. */
@@ -9766,8 +9777,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const footer = `<div class="sc-line-meta">${
       src ? `<span class="sc-trust-chip" title="${esc(src)}"><span class="material-symbols-outlined">database</span>${esc(truncSourceName(src))}</span>` : ''
     }${fb ? '' : timeStampHtml(timeMs)}${fb}</div>`;
+    const voiceover = meta.voiceover || (meta.intent === 'playful' ? 'playful' : '');
+    const voiceAttr = voiceover ? ` data-voiceover="${esc(voiceover)}"` : '';
     messages.insertAdjacentHTML('beforeend',
-      `<div class="sc-line sc-line-wiseai" data-ask-turn="${askTurnSeq}"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body">${html}${footer}</div></div>`);
+      `<div class="sc-line sc-line-wiseai" data-ask-turn="${askTurnSeq}"${voiceAttr}><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body">${html}${footer}</div></div>`);
     const line = messages.lastElementChild; /* capture before chips re-park */
     const body = line && line.querySelector('.sc-line-body');
     refreshDockedTurns();
@@ -9963,6 +9976,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       ? meta.milestones
       : reasoningTraceFor(routeText, meta.intent);
     const lineMeta = { ...meta, source: sourceLockedOff ? false : givenSource };
+    if (meta.intent === 'playful' || meta.voiceover === 'playful' || /UNWISEcode/i.test(String(html || ''))) {
+      lineMeta.voiceover = 'playful';
+    }
     delete lineMeta.traceText; delete lineMeta.milestones; delete lineMeta.intent; delete lineMeta.onTraceDone;
     const hostOnDone = lineMeta.onDone;
     lineMeta.onDone = () => {
@@ -9984,6 +10000,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
         intent: meta.intent,
         html,
         pageHint: pageHintForChat(),
+        /* This chat's own memory. Two chats on one page must not read each
+           other's turns as their own. */
+        threadKey: id,
       });
     const paintAnswer = (finalHtml) => {
       const pack = (finalHtml && typeof finalHtml === 'object')
@@ -11611,7 +11630,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   document.addEventListener('wise:chat-ollama-on', () => {
     syncOllamaMenu(document);
   });
-  probeOllama().then(() => syncOllamaMenu(document));
+  probeOllamaWhenIdle().then(() => syncOllamaMenu(document));
   /* Sync the "Activity strip" switch + its Left/Right side segment to the
      shared state. Called on mount and whenever anything changes either (this
      menu, another chat's menu, or the Appearance popover — all via the
@@ -11844,7 +11863,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     welcome?.classList.remove('sc-hidden', 'ws-in');
     if (welcome) welcome.style.display = '';
     rootEl.classList.remove('sc-conversing');
-    /* Re-play the welcome reveal (heading + sub fade up, then chips fly in). */
+    /* Re-paint the welcome instantly (headline + chips, no stagger). */
     revealWelcome();
     /* Clear the live-activity meter so a fresh conversation starts from zero. */
     if (activityEl) {
@@ -11994,6 +12013,23 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       }).filter(Boolean);
     } catch (_) { return []; }
   }
+  /* Hand a restored transcript to the local model as the conversation it now
+     finds itself in. Without this the first rewrite after a restore opens as
+     though nothing had been said, on a screen full of what was said. */
+  function seedModelMemory(html) {
+    forgetChatTurns(id);
+    try {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html || '';
+      Array.from(tmp.querySelectorAll('.sc-line-you, .sc-line-wiseai')).forEach((n) => {
+        const body = n.querySelector('.sc-line-body') || n;
+        const clone = body.cloneNode(true);
+        clone.querySelectorAll('.sc-line-meta, .sc-fb, .sc-inline-chips, .sc-line-trace').forEach((m) => m.remove());
+        const who = n.classList.contains('sc-line-you') ? 'you' : 'wisecodeai';
+        rememberChatTurn(who, clone.textContent || '', id);
+      });
+    } catch (_) { /* restored markup */ }
+  }
   function chipByIntentId(id) {
     if (!id) return null;
     return intentCatalog.get(id) || sessionIntents.find((c) => c && c.intent === id)
@@ -12004,6 +12040,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   }
   function clearThread() {
     thread = { intent: null, topic: null, userText: '', html: '' };
+    /* A new conversation is a new conversation for the local model too —
+       otherwise the first rewrite opens by following on from a thread the
+       member can no longer see. */
+    forgetChatTurns(id);
   }
   /* Generic follow-ups (compare / report / spider) keep talking about the
      previous subject instead of becoming a new topic of their own. */
@@ -12263,6 +12303,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       userText: lastUser.length ? lastUser[lastUser.length - 1] : (item.title || ''),
       html,
     };
+    seedModelMemory(html);
     applyTopicFollowups(null, html, item.title || '', item);
     parkInlineChips(true);
     if (ichipsEl && !prefersReducedMotion) {
@@ -12899,7 +12940,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        intent toggles) already exists and is bucketed. Moves the existing
        nodes, so all wiring keeps working; idempotent, so subsequent opens
        are a no-op. */
-    if (open) groupifyChatMenu(morePop);
+    if (open) {
+      injectVoiceoverMenuItem(morePop);
+      syncVoiceoverMenuItem(morePop.querySelector('[data-sc="voiceover"]'));
+      groupifyChatMenu(morePop);
+    }
     morePop.classList.toggle('hidden', !open);
     moreBtn.classList.toggle('is-open', open);
     moreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
@@ -13645,12 +13690,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     let moreBtn = wrap.querySelector('[data-chip-more]');
     if (moreBtn) moreBtn.hidden = true;
     const chips = Array.from(wrap.querySelectorAll('.ws-intent-chip:not([data-chip-more])'));
-    /* The last chip before Show more sits on the two-row cutoff. Un-hiding
-       it at full opacity while the rest are still primed (opacity 0) is why
-       that boundary chip "showed up first". Keep every chip invisible when
-       the welcome is mid-reveal, or when any sibling is already held back. */
-    const holdPrime = welcomeChipsRevealing || chips.some((c) => c.style.opacity === '0')
-      || (moreBtn && moreBtn.style.opacity === '0');
+    /* Only hold a fly-in prime while the welcome is mid-reveal. Leftover
+       opacity:0 on hidden overflow chips used to re-prime the visible row
+       after a resize / font load — those chips then stayed invisible. */
+    const holdPrime = welcomeChipsRevealing;
     chips.forEach((c) => {
       c.hidden = false;
       if (holdPrime) primeRevealFromRight(c);
@@ -13916,7 +13959,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     try { ro.observe(scroll); } catch (_) {}
   })();
 
-  /* Play the welcome in: heading + sub fade up, then the intent chips fly in. */
+  /* Welcome headline + chips paint immediately. */
   revealWelcome();
   /* Roll / Crawl hide this chat on pages that default to them. When the
      member walks or runs — or turns CWR off — restart the field so a
@@ -14792,7 +14835,7 @@ export function wireStandardChatMenu(cfg = {}) {
     });
   }
   document.addEventListener('wise:chat-ollama-on', () => syncOllamaMenu(document));
-  probeOllama().then(() => syncOllamaMenu(document));
+  probeOllamaWhenIdle().then(() => syncOllamaMenu(document));
   syncOllamaMenu(document);
 
   const api = {
@@ -14940,6 +14983,11 @@ export function wireStandardChatMenu(cfg = {}) {
       });
     });
   }
+
+  /* Play voiceover — character picker for the playful story. Injected
+     before grouping so it lands in Conversation with File to Library. */
+  const voiceItem = injectVoiceoverMenuItem(pop);
+  if (voiceItem) syncVoiceoverMenuItem(voiceItem);
 
   /* Reflow the (now fully assembled, incl. injected Style + Angle + History
      rows) flat menu into the shared group cards — run last so every

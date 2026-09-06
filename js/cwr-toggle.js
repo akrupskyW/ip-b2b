@@ -540,6 +540,8 @@
        sit behind their left neighbour). Beat any leftover un-tuck. */
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #help-contact,',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #help-contact.sticky-mod.is-sticky,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #dash-brand-images,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #dash-brand-images.sticky-mod.is-sticky,',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row .vf-progress-pane,',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row .vf-progress-pane.sticky-mod.is-sticky,',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row .gv-progress-pane,',
@@ -571,6 +573,7 @@
     '  padding-left: var(--sticky-nested-pad, 30px) !important;',
     '}',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #help-contact,',
+    'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #dash-brand-images,',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #ia-panel,',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #ia-panel.sticky-mod.is-sticky,',
     'html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) #modules-row #wa-report,',

@@ -239,6 +239,7 @@ export const SCRIPT_PURPOSES = {
   'text-size.js': 'the app-wide text and icon size setting',
   'wiseai-chat.js': 'the one shared WISEcodeAI chat — welcome screen, question chips, streaming answers — that every page mounts',
   'owl-progression-carousel.js': 'an edge-to-edge owl strip inside an answer — motion, stills, and short clips that follow light or dark',
+  'story-voiceover.js': 'the playful story can be read aloud from the chat three-dot menu, in a voice you pick from a short list of icons and creators',
   'ollama-chat.js': 'answers on this Mac can be rewritten in a warmer voice, or answered as asked with a food-and-nutrition follow-through when you type something off-script',
   'web-food-lookup.js': 'when a brand, product, or fact is needed, the chat looks it up and cites the source in the same references list as a written answer',
   'agent-menu.js': 'the app’s shared primary navigation',

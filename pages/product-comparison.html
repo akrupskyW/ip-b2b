@@ -5697,7 +5697,6 @@
         display: contents !important;
       }
       /* Closed panels remain hidden (don't take a row in the stack). */
-      #menu-panel:not(.mp-open),
       #history-panel:not(.open),
       #wiseai-panel:not(.sp-open),
       #upf-panel:not(.up-open),
@@ -5711,10 +5710,13 @@
       #compare-panel:not(.cp-open) {
         display: none !important;
       }
-      /* Every visible module — full-width row card. Reset the desktop
-         sticky-pin behaviour of #menu-panel and the fixed/overlay rules
-         that used to apply below 768px. */
-      #menu-panel.mp-open,
+      /* Every visible module — full-width row card. Resets the fixed/overlay
+         rules that used to apply below 768px.
+         The primary navigation is deliberately NOT in this list: it is not one
+         of these stacked panels. It stays the left-side icon rail the shared
+         responsive nav block in pages/wise.css gives every page at every
+         width — stacking it here made it a full-width band above the content,
+         which is the top navigation the nav must never become. */
       #history-panel.open,
       #wiseai-panel.sp-open,
       #upf-panel.up-open,
@@ -5747,7 +5749,6 @@
         order: 0 !important;
       }
       /* Inner cards stretch to fill the parent module width. */
-      #menu-panel .menu-inner,
       #history-panel .panel-inner,
       #wiseai-panel .wiseai-inner,
       #upf-panel .upf-inner,
@@ -5770,8 +5771,8 @@
         border-radius: var(--r-md);
       }
       /* Panels get a generous-but-bounded height so they remain
-         scannable without dominating the page. */
-      #menu-panel.mp-open,
+         scannable without dominating the page. The nav is excluded for the
+         same reason as above — its rail runs the full height of the shell. */
       #history-panel.open,
       #wiseai-panel.sp-open,
       #upf-panel.up-open,
@@ -8219,7 +8220,7 @@
       <div class="flex flex-1 overflow-hidden relative">
         <div id="chat-messages" class="chat-messages-area" aria-live="polite" aria-atomic="false"></div>
 
-        <div id="welcome-screen" class="sc-cards-hidden">
+        <div id="welcome-screen" class="sc-cards-hidden ws-in">
             <!-- WISE logo + soft expanding rings -->
             <div class="ws-logo-wrap">
                 <span class="ws-pulse-ring" aria-hidden="true"></span>
@@ -10559,9 +10560,17 @@
       box.__followPos = box.scrollTop;
     }
 
+    /* Which conversation this page's chat is, as far as the local model's
+       memory is concerned (js/ollama-chat.js). Every chat keeps its own, so two
+       on one screen never read each other's turns as their own. */
+    const CMP_THREAD_KEY = 'product-comparison';
+
     function addUserMessage(text, opts = {}) {
       const box = document.getElementById('chat-messages');
       if (!box) return;
+      /* Tell the local model what was just asked, so the rewrite of the answer
+         picks up this thread rather than reading as a first line. */
+      window.WiseOllama?.rememberChatTurn('you', text, CMP_THREAD_KEY);
       const safe = String(text).replace(/</g, '&lt;');
       const leadCls = opts.lead ? ' sc-line-lead' : '';
       box.insertAdjacentHTML(
@@ -10680,34 +10689,26 @@
       }).observe(box, { childList: true });
     }
 
-    /* Welcome-screen reveal. Type the heading WORD-BY-WORD (exactly like every
-       WISEcodeAI answer), and only once the copy has landed do the score cards and
-       intent chips fly in from the right in a single top-to-bottom cascade —
-       so the chips animate identically to the words that precede them. Honors
-       reduced-motion (everything just shows). Safe to re-run whenever the
-       welcome is shown again. */
-    let wiseaiWelcomeHeadingText = null;
+    /* Welcome headline + chips paint immediately. Typing the heading hid the
+       <h1> and primed chips to opacity 0, so the title or some chips
+       sometimes never appeared. */
     function revealWelcome() {
       const ws = document.getElementById('welcome-screen');
       if (!ws || ws.classList.contains('ws-hidden') || ws.style.display === 'none') return;
-      const heading = ws.querySelector('.ws-heading');
-      const cards = Array.from(ws.querySelectorAll('#ws-scorecards .ws-scorecard'));
-      const chips = Array.from(ws.querySelectorAll('#ws-chips .chip')).filter((c) => !c.hidden);
-      const all = cards.concat(chips);
-      if (WISEAI_REDUCED_MOTION) {
-        all.forEach((c) => { c.style.opacity = ''; c.style.transform = ''; c.style.transition = ''; });
-        return;
+      if (typeof window.WisePaintWelcome === 'function') window.WisePaintWelcome(ws);
+      else {
+        ws.classList.add('ws-in');
+        const heading = ws.querySelector('.ws-heading');
+        const cards = Array.from(ws.querySelectorAll('#ws-scorecards .ws-scorecard'));
+        const chips = Array.from(ws.querySelectorAll('#ws-chips .chip')).filter((c) => !c.hidden);
+        [heading].concat(cards, chips).forEach((el) => {
+          if (!el) return;
+          el.hidden = false;
+          el.style.opacity = '';
+          el.style.transform = '';
+          el.style.transition = '';
+        });
       }
-      /* Remember the heading's plain text so a re-run starts clean (the typed
-         reveal wraps each word in a span, which would otherwise compound). */
-      if (heading) {
-        if (wiseaiWelcomeHeadingText == null) wiseaiWelcomeHeadingText = heading.innerHTML;
-        else heading.innerHTML = wiseaiWelcomeHeadingText;
-      }
-      /* Hold every card + chip back (invisible, nudged right) until the text lands. */
-      all.forEach(wiseaiPrimeRight);
-      const typeText = (el, next) => { if (el) wiseaiTypeInLine(el, next); else next(); };
-      typeText(heading, () => { wiseaiRevealStaggered(all, 90, 60, null); });
     }
 
     /* Drop a WISEcodeAI reply with a grounding caption + timestamp. Pass
@@ -10716,7 +10717,7 @@
       if (opts.polish !== false && opts.instant !== true && window.WiseOllama && typeof window.WiseOllama.polishThen === 'function') {
         window.WiseOllama.polishThen(html, function (out) {
           addWISEcodeAIMessagePaint(out, opts);
-        });
+        }, { threadKey: CMP_THREAD_KEY });
         return null;
       }
       return addWISEcodeAIMessagePaint(html, opts);

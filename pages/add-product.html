@@ -2095,7 +2095,7 @@
         <div class="ap-chat-body">
           <div id="chat-messages" class="chat-messages-area" aria-live="polite"></div>
 
-          <div id="welcome-screen" class="sc-welcome">
+          <div id="welcome-screen" class="sc-welcome ws-in">
             <div class="ws-logo-wrap">
               <span class="ws-pulse-ring" aria-hidden="true"></span>
               <span class="ws-pulse-ring" aria-hidden="true"></span>
@@ -2106,7 +2106,14 @@
             </div>
             <h1 class="ws-heading">Let's add a product.</h1>
             <p class="ws-sub">I'll walk you through building this product — photo, category, ingredients, the Nutrition Facts panel, allergens and the UPC. Start any way you like: upload a label, paste a URL, or type it in. Everything shows up live in <b>Product Details</b> on the right. It stays a draft until you hit <b>Save to Portfolio</b>.</p>
-            <div class="ws-chips" id="ws-chips-start"></div>
+            <div class="ws-chips" id="ws-chips-start">
+              <button type="button" class="chip ws-intent-chip" data-action="labelUpload"><span class="material-symbols-outlined">document_scanner</span>Upload a label photo</button>
+              <button type="button" class="chip ws-intent-chip" data-action="url"><span class="material-symbols-outlined">link</span>Paste a product URL</button>
+              <button type="button" class="chip ws-intent-chip" data-action="manual"><span class="material-symbols-outlined">edit_note</span>Enter details manually</button>
+              <button type="button" class="chip ws-intent-chip" data-action="field:upc"><span class="material-symbols-outlined">qr_code_2</span>I have a barcode / UPC</button>
+              <button type="button" class="chip ws-intent-chip" data-action="addPack"><span class="material-symbols-outlined">inventory_2</span>This comes in multiple sizes / packs</button>
+              <button type="button" class="chip ws-intent-chip" data-action="sample"><span class="material-symbols-outlined">auto_awesome</span>Show me an example</button>
+            </div>
           </div>
         </div>
 

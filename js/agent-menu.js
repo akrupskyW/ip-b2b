@@ -3,6 +3,7 @@ import { initLirTooltip } from './lir-tooltip.js';
 import { parkNavHistory, refreshNavHistory } from './nav-history.js';
 import { isNavHamburgerActive } from './nav-hamburger.js';
 import { isNavModulesOn, applyNavModules, syncNavModulesChrome } from './nav-modules.js';
+import { navCanPivot } from './nav-responsive.js';
 /* Side-effect: overlay the streaming helix on assembling boards. No Appearance
    toggle — the overlay boots on every page that renders the WISE nav. */
 import './load-anim.js';
@@ -1410,16 +1411,22 @@ export function isMenuPivoted() {
   return !!panel && panel.classList.contains('mp-pivot');
 }
 
-/** Toggle the nav module between the vertical panel and the horizontal bar.
- *  Turning pivot ON always brings Minimal UI with it (logo, Appearance, and
- *  you in the top bar). Nav & History icons stands Minimal UI down, so it
- *  has to drop too or the four-icon chrome would hide that strip. Off stays
- *  independent — the chevron can still expand the bar without leaving pivot. */
-export function setMenuPivot(on) {
+/** Read the stored Pivot Navigation preference. */
+function menuPivotStored() {
+  try { return localStorage.getItem(MENU_PIVOT_STORE_KEY) === '1'; } catch (_) { return false; }
+}
+
+/** Put the nav module into (or out of) the horizontal bar, without touching
+ *  the stored preference. A phone or tablet never pivots, so a narrow viewport
+ *  resolves to the vertical panel whatever was asked for — and the nav lands
+ *  back on its icon rail rather than the Minimal UI strip the bar would keep.
+ *  See js/nav-responsive.js. */
+function paintMenuPivot(on) {
   const panel = document.getElementById('menu-panel');
   if (!panel) return;
-  panel.classList.toggle('mp-pivot', on);
-  shellWrapEl()?.classList.toggle('menu-pivoted', on);
+  const pivoted = !!on && navCanPivot();
+  panel.classList.toggle('mp-pivot', pivoted);
+  shellWrapEl()?.classList.toggle('menu-pivoted', pivoted);
 
   /* The pivot bar mirrors the vertical nav: only OPEN groups expose their
      children. Collapsed groups stay non-interactive so the row shows the
@@ -1427,28 +1434,48 @@ export function setMenuPivot(on) {
      or duplicate report icons). */
   syncGroupChildrenInert(panel);
 
-  if (on) {
+  if (pivoted) {
     try { applyMinimalUi(true); } catch (_) { /* panel already painted */ }
     try { applyNavModules(false); } catch (_) { /* chrome already down */ }
+  } else if (on) {
+    /* Asked for, held back: leave the strip down so the rail is what shows. */
+    try { applyMinimalUi(false, false); } catch (_) { /* panel already painted */ }
   }
 
-  try { localStorage.setItem(MENU_PIVOT_STORE_KEY, on ? '1' : '0'); } catch (_) {}
   try {
-    document.dispatchEvent(new CustomEvent('wise:menu-pivot', { detail: { on: !!on } }));
+    document.dispatchEvent(new CustomEvent('wise:menu-pivot', { detail: { on: pivoted } }));
   } catch (_) {}
+}
+
+/** Toggle the nav module between the vertical panel and the horizontal bar.
+ *  Turning pivot ON always brings Minimal UI with it (logo, Appearance, and
+ *  you in the top bar). Nav & History icons stands Minimal UI down, so it
+ *  has to drop too or the four-icon chrome would hide that strip. Off stays
+ *  independent — the chevron can still expand the bar without leaving pivot.
+ *
+ *  The choice is always remembered, even on a screen too narrow to honor it,
+ *  so it takes effect as soon as the window is wide enough. */
+export function setMenuPivot(on) {
+  if (!document.getElementById('menu-panel')) return;
+  try { localStorage.setItem(MENU_PIVOT_STORE_KEY, on ? '1' : '0'); } catch (_) {}
+  paintMenuPivot(on);
 }
 
 export function toggleMenuPivot() {
   setMenuPivot(!isMenuPivoted());
 }
 
-/** Apply the persisted pivot preference on mount. */
+/** Apply the persisted pivot preference on mount, and again whenever the
+ *  viewport crosses the narrow-nav breakpoint — dragging a window onto a
+ *  smaller display stands the top bar down, dragging it back brings it up. */
 function setupMenuPivot(navEl) {
   const panel = navEl.closest('#menu-panel');
   if (!panel) return;
-  let pivoted = false;
-  try { pivoted = localStorage.getItem(MENU_PIVOT_STORE_KEY) === '1'; } catch (_) {}
-  if (pivoted) setMenuPivot(true);
+  if (menuPivotStored()) paintMenuPivot(true);
+  if (!document.documentElement.dataset.navTierBound) {
+    document.documentElement.dataset.navTierBound = '1';
+    document.addEventListener('wise:nav-tier', () => paintMenuPivot(menuPivotStored()));
+  }
 }
 
 /** Returns descendants in DFS order with their depth (1-based) under the root. */

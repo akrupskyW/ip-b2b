@@ -18,10 +18,12 @@
 
 /* Jam player lives in Appearance ▸ Sound, never the primary nav. */
 
-/* Mobile primary navigation (≤768px): collapses the nav to an owl + expand
-   rail and opens the full nav / History as full-screen pop-overs. Side-effect
-   import so it runs on every page that mounts the shared shell. */
-import './mobile-nav.js';
+/* Responsive primary navigation: the nav stays a left-side vertical rail at
+   every screen size and never pivots to a top bar on a phone or tablet.
+   Imported here so the tier watcher runs on every page that mounts the shared
+   shell, and read below so a narrow viewport can't be pinned to Minimal UI by
+   a pivot preference it isn't allowed to apply. */
+import { navCanPivot } from './nav-responsive.js';
 
 /* Shared user-avatar store — lets the nav chips render the member's uploaded
    profile picture (set on the Organization Profile page) instead of initials. */
@@ -460,8 +462,11 @@ export function applyMinimalUi(on, persist = true) {
 export function restoreMinimalUi() {
   try {
     /* Pivot Navigation always comes on with Minimal UI — don't let
-       Nav & History icons stand the strip down while the top bar is on. */
-    if (localStorage.getItem('wise-menu-pivot') === '1') {
+       Nav & History icons stand the strip down while the top bar is on.
+       A phone or tablet is never allowed to pivot, so there is no top bar to
+       keep the strip for: the preference is held back and the nav resolves to
+       its icon rail like any other narrow screen. */
+    if (navCanPivot() && localStorage.getItem('wise-menu-pivot') === '1') {
       applyMinimalUi(true, false);
       return;
     }

@@ -1,7 +1,6 @@
 import { isNudgeDismissed } from './nudge-toast-dismiss.js';
 import { esc } from './escape-html.js';
 import { createToast } from './toast.js';
-import { openModal, modalHTML, modalFoot } from './wise-modal.js';
 import { createChatBridge } from './chat-bridge.js';
 import { OWL_BUG } from './owl-mark.js';
 import { roundedSector } from './chart-arcs.js';
@@ -1110,129 +1109,307 @@ function cardMenu(key, label, opts = {}) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Brand image editor — a centered modal panel reused for the hero      */
-/* banner and the brand logo. Lets you upload a file (stored as a data  */
-/* URL) or paste an image URL, preview it, then save or remove it.      */
+/* Brand image editor — a sticky module to the right of Overview. The  */
+/* same drawer edits the hero banner and the brand logo: upload a file */
+/* (stored as a data URL) or paste an image URL, preview it, then save */
+/* or remove it. The 3-dot, the intent chip, and the hero logo all     */
+/* open this module — never a full-screen overlay.                     */
 /* ------------------------------------------------------------------ */
 
-let imageModalClose = null;
+const BI_ID = 'dash-brand-images';
+let biEl = null;
+let biWired = false;
+const biDraft = { banner: '', logo: '' };
 
-function closeImageModal() {
-  if (imageModalClose) imageModalClose();
-}
-
-/* Generic image picker. `cfg` carries the copy + the current/save hooks so the
-   same panel serves both the hero banner and the brand logo. */
-function openImageModal(cfg) {
-  const {
-    eyebrow = 'Brand image',
-    title = 'Update image',
-    emptyLabel = 'Nothing yet',
-    dropHint = 'PNG, JPG or WEBP',
-    urlPlaceholder = 'https://…/image.jpg',
-    saveLabel = 'Save',
-    previewMod = '',
-    getCurrent,
-    onSave,
-  } = cfg;
-  const current = getCurrent();
-  let draft = current;
-
-  const { modal, close } = openModal({
-    id: 'dash-image-modal',
-    persistent: true,
-    html: modalHTML({
-      eyebrow: esc(eyebrow),
-      title: esc(title),
-      titleId: 'dash-image-title',
-      closeAttrs: 'data-banner-close data-wise-modal-close',
-      body: `
-      <div class="dash-banner-preview${previewMod ? ` ${previewMod}` : ''}">
-        <div class="dash-banner-preview-img" id="dash-banner-preview-img"></div>
-        <span class="dash-banner-preview-empty" id="dash-banner-preview-empty"><span class="material-symbols-outlined">image</span>${esc(emptyLabel)}</span>
+function pickerHTML(kind, cfg) {
+  return `
+    <section class="dash-bi-section" data-bi-section="${kind}">
+      <h3 class="dash-bi-section-title">${esc(cfg.title)}</h3>
+      <p class="dash-bi-section-hint">${esc(cfg.hint)}</p>
+      <div class="dash-banner-preview${cfg.previewMod ? ` ${cfg.previewMod}` : ''}">
+        <div class="dash-banner-preview-img" data-bi-preview></div>
+        <span class="dash-banner-preview-empty" data-bi-empty><span class="material-symbols-outlined">${esc(cfg.emptyIcon)}</span>${esc(cfg.emptyLabel)}</span>
       </div>
-      <label class="dash-banner-drop" id="dash-banner-drop">
-        <input type="file" accept="image/*" id="dash-banner-file" hidden>
+      <label class="dash-banner-drop" data-bi-drop>
+        <input type="file" accept="image/*" data-bi-file hidden>
         <span class="material-symbols-outlined">cloud_upload</span>
-        <span class="dash-banner-drop-text"><strong>Upload an image</strong> or drag &amp; drop<br><span class="dash-banner-drop-hint">${esc(dropHint)}</span></span>
+        <span class="dash-banner-drop-text"><strong>Upload an image</strong> or drag &amp; drop<br><span class="dash-banner-drop-hint">${esc(cfg.dropHint)}</span></span>
       </label>
       <div class="dash-banner-or"><span>or paste a URL</span></div>
-      <input type="url" class="dash-banner-url" id="dash-banner-url" placeholder="${esc(urlPlaceholder)}" autocomplete="off">`,
-      foot: modalFoot({
-        left: `<button class="wise-btn wise-btn--ghost" type="button" data-banner-remove><span class="material-symbols-outlined">delete</span>Remove</button>`,
-        actions: `
-        <button class="wise-btn wise-btn--ghost" type="button" data-banner-close>Cancel</button>
-        <button class="wise-btn wise-btn--primary" type="button" data-banner-save><span class="material-symbols-outlined">check</span>${esc(saveLabel)}</button>`,
-      }),
-    }),
-  });
-  imageModalClose = close;
-  if (modal) modal.setAttribute('aria-label', title);
+      <input type="url" class="dash-banner-url" data-bi-url placeholder="${esc(cfg.urlPlaceholder)}" autocomplete="off">
+      <button class="wise-btn wise-btn--ghost dash-bi-remove" type="button" data-bi-remove="${kind}">
+        <span class="material-symbols-outlined">delete</span>Remove
+      </button>
+    </section>`;
+}
 
-  const previewImg = modal.querySelector('#dash-banner-preview-img');
-  const previewEmpty = modal.querySelector('#dash-banner-preview-empty');
-  const urlInput = modal.querySelector('#dash-banner-url');
-  const fileInput = modal.querySelector('#dash-banner-file');
-  const drop = modal.querySelector('#dash-banner-drop');
+function setBiPreview(section, val) {
+  if (!section) return;
+  const kind = section.getAttribute('data-bi-section');
+  if (kind) biDraft[kind] = val || '';
+  const previewImg = section.querySelector('[data-bi-preview]');
+  const previewEmpty = section.querySelector('[data-bi-empty]');
+  if (!previewImg || !previewEmpty) return;
+  if (val) {
+    previewImg.style.backgroundImage = cssUrl(val);
+    previewImg.style.display = 'block';
+    previewEmpty.style.display = 'none';
+  } else {
+    previewImg.style.backgroundImage = '';
+    previewImg.style.display = 'none';
+    previewEmpty.style.display = '';
+  }
+}
 
-  const setPreview = (val) => {
-    draft = val || '';
-    if (draft) {
-      previewImg.style.backgroundImage = cssUrl(draft);
-      previewImg.style.display = 'block';
-      previewEmpty.style.display = 'none';
-    } else {
-      previewImg.style.backgroundImage = '';
-      previewImg.style.display = 'none';
-      previewEmpty.style.display = '';
-    }
-  };
-  setPreview(current);
-  if (current && /^https?:/i.test(current)) urlInput.value = current;
+function loadBiSection(kind, current) {
+  const section = biEl && biEl.querySelector(`[data-bi-section="${kind}"]`);
+  if (!section) return;
+  const urlInput = section.querySelector('[data-bi-url]');
+  setBiPreview(section, current);
+  if (urlInput) urlInput.value = current && /^https?:/i.test(current) ? current : '';
+}
 
-  urlInput.addEventListener('input', () => setPreview(urlInput.value.trim()));
+function wireBiSection(kind) {
+  const section = biEl && biEl.querySelector(`[data-bi-section="${kind}"]`);
+  if (!section || section.dataset.biWired) return;
+  section.dataset.biWired = '1';
+  const urlInput = section.querySelector('[data-bi-url]');
+  const fileInput = section.querySelector('[data-bi-file]');
+  const drop = section.querySelector('[data-bi-drop]');
 
   const readFile = (file) => {
     if (!file || !file.type.startsWith('image/')) return;
     const reader = new FileReader();
-    reader.onload = () => { urlInput.value = ''; setPreview(reader.result); };
+    reader.onload = () => {
+      if (urlInput) urlInput.value = '';
+      setBiPreview(section, reader.result);
+    };
     reader.readAsDataURL(file);
   };
-  fileInput.addEventListener('change', () => readFile(fileInput.files[0]));
-  ['dragover', 'dragenter'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('is-drag'); }));
-  ['dragleave', 'dragend'].forEach((ev) => drop.addEventListener(ev, () => drop.classList.remove('is-drag')));
-  drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('is-drag'); readFile(e.dataTransfer.files[0]); });
 
-  modal.querySelector('[data-banner-remove]').addEventListener('click', () => { urlInput.value = ''; setPreview(''); });
-  modal.querySelector('[data-banner-save]').addEventListener('click', () => {
-    if (typeof onSave === 'function') onSave(draft);
-    closeImageModal();
-  });
-  modal.querySelectorAll('[data-banner-close]').forEach((b) => b.addEventListener('click', closeImageModal));
-
-  /* openModal already fades the scrim in. */
+  if (urlInput) {
+    urlInput.addEventListener('input', () => setBiPreview(section, urlInput.value.trim()));
+  }
+  if (fileInput) {
+    fileInput.addEventListener('change', () => readFile(fileInput.files[0]));
+  }
+  if (drop) {
+    ['dragover', 'dragenter'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('is-drag'); }));
+    ['dragleave', 'dragend'].forEach((ev) => drop.addEventListener(ev, () => drop.classList.remove('is-drag')));
+    drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('is-drag'); readFile(e.dataTransfer.files[0]); });
+  }
 }
 
-/* Public entry point for the brand-banner editor, invoked from the main
-   panel's far-right "More" menu (agent-overview.js). Opens the modal and
-   applies the chosen image straight to the hero banner. */
-export function editBrandBanner() {
-  openImageModal({
-    eyebrow: 'Brand banner',
-    title: 'Update brand image',
-    emptyLabel: 'No banner yet',
-    dropHint: 'PNG, JPG or WEBP — wide images look best',
-    urlPlaceholder: 'https://…/banner.jpg',
-    saveLabel: 'Save banner',
-    getCurrent: getBrandBanner,
-    onSave(url) {
-      setBrandBanner(url);
-      const bg = document.getElementById('dash-hero-bg');
-      const hero = document.getElementById('dash-hero');
-      if (bg) bg.style.backgroundImage = url ? cssUrl(url) : '';
-      if (hero) hero.classList.toggle('has-image', !!url);
-    },
+function applyBrandBanner(url) {
+  const bg = document.getElementById('dash-hero-bg');
+  const hero = document.getElementById('dash-hero');
+  if (bg) bg.style.backgroundImage = url ? cssUrl(url) : '';
+  if (hero) hero.classList.toggle('has-image', !!url);
+}
+
+function readBiWidth() {
+  const W = window.WPaneWidth;
+  if (W && W.readSavedTier && biEl) {
+    const saved = W.readSavedTier(biEl);
+    if (saved != null) return W.clamp(saved);
+  }
+  return 0;
+}
+
+function applyBiWidth(tier) {
+  const W = window.WPaneWidth;
+  if (!biEl || !W) return;
+  W.applyClasses(biEl, tier, 'panel');
+  W.syncButton(biEl.querySelector('.panel-width-toggle-btn'), tier);
+}
+
+function cycleBiWidth() {
+  const W = window.WPaneWidth;
+  const next = W ? W.next(readBiWidth()) : 0;
+  if (W && W.saveTier && biEl) W.saveTier(biEl, next);
+  applyBiWidth(next);
+}
+
+function focusBiSection(kind) {
+  if (!biEl) return;
+  biEl.querySelectorAll('.dash-bi-section').forEach((el) => {
+    el.classList.toggle('is-focus', el.getAttribute('data-bi-section') === kind);
   });
+  const section = biEl.querySelector(`[data-bi-section="${kind}"]`);
+  if (!section) return;
+  try { section.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) {}
+  window.setTimeout(() => { section.classList.remove('is-focus'); }, 1800);
+  const input = section.querySelector('[data-bi-url]');
+  if (input && typeof input.focus === 'function') {
+    window.setTimeout(() => {
+      try { input.focus({ preventScroll: true }); } catch (_) {
+        try { input.focus(); } catch (_) {}
+      }
+    }, 40);
+  }
+}
+
+function closeBiMenu() {
+  if (!biEl) return;
+  const wrap = biEl.querySelector('.panel-more-wrap');
+  const btn = wrap && wrap.querySelector('.panel-more-btn');
+  let pop = wrap && wrap.querySelector('.topbar-popover');
+  if (!pop) {
+    document.querySelectorAll('.topbar-popover').forEach((cand) => {
+      if (cand.__plHost === wrap) pop = cand;
+    });
+  }
+  if (pop) pop.classList.add('hidden');
+  if (btn) {
+    btn.classList.remove('is-open');
+    btn.setAttribute('aria-expanded', 'false');
+  }
+}
+
+function closeBrandImagesModule() {
+  if (!biEl) return;
+  closeBiMenu();
+  biEl.hidden = true;
+  biEl.setAttribute('aria-hidden', 'true');
+  biEl.style.display = 'none';
+  biEl.classList.remove('is-entered');
+  biEl.querySelectorAll('.dash-bi-section.is-focus').forEach((el) => el.classList.remove('is-focus'));
+}
+
+function saveBrandImages() {
+  setBrandBanner(biDraft.banner);
+  applyBrandBanner(biDraft.banner);
+  setBrandLogo(biDraft.logo);
+  applyBrandLogo(biDraft.logo);
+  closeBrandImagesModule();
+}
+
+function onBiClick(e) {
+  if (!biEl || !biEl.contains(e.target)) return;
+  const remove = e.target.closest('[data-bi-remove]');
+  if (remove) {
+    const kind = remove.getAttribute('data-bi-remove');
+    const section = biEl.querySelector(`[data-bi-section="${kind}"]`);
+    const urlInput = section && section.querySelector('[data-bi-url]');
+    if (urlInput) urlInput.value = '';
+    setBiPreview(section, '');
+    return;
+  }
+  if (e.target.closest('[data-bi-save]')) { saveBrandImages(); return; }
+  if (e.target.closest('[data-bi-close]')) { e.preventDefault(); closeBrandImagesModule(); return; }
+  if (e.target.closest('.panel-width-toggle-btn')) { e.stopPropagation(); cycleBiWidth(); }
+}
+
+function onBiKey(e) {
+  if (e.key === 'Escape' && biEl && !biEl.hidden) closeBrandImagesModule();
+}
+
+function mountBrandImagesModule() {
+  const row = document.getElementById('modules-row');
+  if (!row) return;
+  biEl = document.getElementById(BI_ID);
+  if (!biEl) {
+    biEl = document.createElement('aside');
+    biEl.id = BI_ID;
+    biEl.className = 'dash-bi';
+    biEl.setAttribute('aria-label', 'Update banner and logo');
+    biEl.setAttribute('data-no-fill-default', '');
+    biEl.hidden = true;
+    biEl.setAttribute('aria-hidden', 'true');
+    const main = document.getElementById('agent-main');
+    if (main && main.nextSibling) row.insertBefore(biEl, main.nextSibling);
+    else row.appendChild(biEl);
+  }
+  biEl.innerHTML = `
+    <div class="wch-head">
+      <span class="dash-bi-head-text">
+        <span class="wch-head-title">Update banner and logo</span>
+      </span>
+      <div class="wch-controls panel-controls">
+        <div class="panel-more-wrap" data-sticky-menu>
+          <button type="button" class="panel-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>
+          <div class="topbar-popover hidden" role="menu">
+            <div class="topbar-menu-divider"></div>
+            <button type="button" class="topbar-menu-item topbar-menu-item--danger" data-bi-close role="menuitem">
+              <span class="material-symbols-outlined topbar-menu-icon">close</span>
+              <span>Close pane</span>
+            </button>
+          </div>
+        </div>
+        <button type="button" class="panel-width-toggle-btn" data-panel="${BI_ID}" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Update banner and logo module width"><span class="material-symbols-outlined">width_normal</span></button>
+      </div>
+    </div>
+    <div class="dash-bi-body">
+      ${pickerHTML('banner', {
+        title: 'Banner',
+        hint: 'Wide images look best across the welcome hero.',
+        emptyIcon: 'image',
+        emptyLabel: 'No banner yet',
+        dropHint: 'PNG, JPG or WEBP — wide images look best',
+        urlPlaceholder: 'https://\u2026/banner.jpg',
+      })}
+      ${pickerHTML('logo', {
+        title: 'Logo',
+        hint: 'Square marks with transparent edges look best.',
+        previewMod: 'dash-banner-preview--logo',
+        emptyIcon: 'add_photo_alternate',
+        emptyLabel: 'No logo yet',
+        dropHint: 'PNG or SVG with transparent edges',
+        urlPlaceholder: 'https://\u2026/logo.png',
+      })}
+    </div>
+    <div class="dash-bi-foot">
+      <button class="wise-btn wise-btn--ghost" type="button" data-bi-close>Close</button>
+      <button class="wise-btn wise-btn--primary" type="button" data-bi-save>
+        <span class="material-symbols-outlined">check</span>Save
+      </button>
+    </div>`;
+  wireBiSection('banner');
+  wireBiSection('logo');
+  applyBiWidth(readBiWidth());
+  if (!window.WPaneWidth) {
+    const retry = () => {
+      if (window.WPaneWidth) applyBiWidth(readBiWidth());
+      else requestAnimationFrame(retry);
+    };
+    requestAnimationFrame(retry);
+  }
+  if (!biWired) {
+    biWired = true;
+    row.addEventListener('click', onBiClick);
+    /* The ⋮ popover is portaled onto <body>, so Close pane would miss a
+       listener that only lives on the modules row. */
+    document.addEventListener('click', (e) => {
+      const closeBtn = e.target.closest('[data-bi-close]');
+      if (!closeBtn) return;
+      if (!biEl || biEl.hidden) return;
+      e.preventDefault();
+      closeBrandImagesModule();
+    });
+    document.addEventListener('keydown', onBiKey);
+  }
+}
+
+function showBrandImagesModule(kind) {
+  if (_altBrandActive) return;
+  if (!biEl) mountBrandImagesModule();
+  if (!biEl) return;
+  const wasHidden = biEl.hidden || biEl.getAttribute('aria-hidden') === 'true' || biEl.style.display === 'none';
+  biEl.hidden = false;
+  biEl.removeAttribute('aria-hidden');
+  biEl.style.removeProperty('display');
+  if (wasHidden) {
+    loadBiSection('banner', getBrandBanner());
+    loadBiSection('logo', getBrandLogo());
+  }
+  applyBiWidth(readBiWidth());
+  focusBiSection(kind === 'logo' ? 'logo' : 'banner');
+}
+
+/* Public entry point for the brand-image editor, invoked from the main
+   panel's far-right "More" menu (agent-overview.js) and the logo intent. */
+export function editBrandBanner() {
+  showBrandImagesModule('banner');
 }
 
 /* Markup for the hero's circular logo badge — a button so it's clickable
@@ -1254,22 +1431,9 @@ function applyBrandLogo(url) {
   el.innerHTML = heroLogoInner(url, DATA.brand.name);
 }
 
-/* Logo editor — same panel as the banner, scoped to the round brand badge. */
+/* Logo editor — same sticky module as the banner, focused on the logo. */
 function editBrandLogo() {
-  openImageModal({
-    eyebrow: 'Brand logo',
-    title: 'Update brand logo',
-    emptyLabel: 'No logo yet',
-    dropHint: 'PNG or SVG with transparent edges — square images look best',
-    urlPlaceholder: 'https://…/logo.png',
-    saveLabel: 'Save logo',
-    previewMod: 'dash-banner-preview--logo',
-    getCurrent: getBrandLogo,
-    onSave(url) {
-      setBrandLogo(url);
-      applyBrandLogo(url);
-    },
-  });
+  showBrandImagesModule('logo');
 }
 
 /* ------------------------------------------------------------------ */
@@ -2827,6 +2991,7 @@ export function renderDashboardHome(host) {
   /* Re-render replaces the hero markup, so drop any open "Learn more" popover
      (it's portaled to <body> and would otherwise be orphaned). */
   closeHeroLearnPopover();
+  if (_altBrandActive) closeBrandImagesModule();
   _dashboardHost = host;
   const d = getActiveData();
   const isAlt = _altBrandActive;

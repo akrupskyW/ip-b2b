@@ -263,6 +263,17 @@
     inset 0 -1px 0 color-mix(in srgb, #05141C 14%, #000000);
 
   --modules-bottom-pad: 12px;
+
+  /* Primary navigation, collapsed to its icon rail. Tokens (not literals) so
+     the responsive block near the bottom of this file can tighten the rail on
+     phones and tablets without restating the rail's rules.
+       --nav-rail-w      the rail's own width
+       --nav-rail-pad-x  its interior left/right padding, icons → rail edge
+       --nav-rail-gap    the outer gap it keeps on both sides (page edge and
+                         the first module) once the shell cancels body padding */
+  --nav-rail-w: 54px;
+  --nav-rail-pad-x: 5px;
+  --nav-rail-gap: 2px;
   --fs-ui: 0.75rem;
   --fs-label: 0.6875rem;
   --radius-pill: 9999px;
@@ -1851,8 +1862,8 @@ html.app-search-on .menu-brand-integrated #menu-panel.mp-rail:not(.mp-pivot) .me
 }
 
 /* Search on + Menu icon: collapsed nav becomes a hamburger to the left of
-   the unchanged wordmark (no 54px icon rail). Desktop only — phones keep
-   the floating owl + drawer from the mobile-nav block. */
+   the unchanged wordmark (no 54px icon rail). Desktop only — phones keep the
+   left icon rail from the responsive nav block at the bottom of this file. */
 @media (min-width: 769px) {
   html.app-search-on.nav-hamburger {
     --nav-hamburger-w: 32px;
@@ -1938,6 +1949,7 @@ html.app-search-on #modules-row #agent-main.sticky-mod.is-sticky,
 html.app-search-on #modules-row .vf-progress-pane.sticky-mod.is-sticky,
 html.app-search-on #modules-row .gv-progress-pane.sticky-mod.is-sticky,
 html.app-search-on #modules-row #help-contact.sticky-mod.is-sticky,
+html.app-search-on #modules-row #dash-brand-images.sticky-mod.is-sticky,
 html.app-search-on #modules-row #nfp-panel.sticky-mod.is-sticky,
 html.app-search-on #modules-row #ia-panel.sticky-mod.is-sticky,
 html.app-search-on #modules-row #ap-progress.vf-progress-pane.sticky-mod.is-sticky,
@@ -1976,6 +1988,7 @@ html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row #gv-p
 html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row .vf-progress-pane,
 html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row .gv-progress-pane,
 html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row #help-contact,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row #dash-brand-images,
 html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row .rf-studio,
 html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row .rf-dash,
 html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row #rf-report,
@@ -3505,6 +3518,7 @@ html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > #ia
 html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > #nfp-panel,
 html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > #agent-main,
 html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > #help-contact,
+html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > #dash-brand-images,
 html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > #wa-report,
 html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > #rf-report,
 html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > #pf-report-panel,
@@ -3696,6 +3710,7 @@ html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > .wc
 #modules-row #ap-progress.sticky-mod.is-sticky,
 #modules-row #ia-panel.sticky-mod.is-sticky,
 #modules-row #help-contact.sticky-mod.is-sticky,
+#modules-row #dash-brand-images.sticky-mod.is-sticky,
 #modules-row #wa-report.wa-pane.is-open.is-sticky,
 #modules-row #rf-report.sticky-mod.is-sticky,
 #modules-row #pf-report-panel.sticky-mod.is-sticky,
@@ -3713,6 +3728,7 @@ html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > .wc
    through the covering module's 16px radius. Tuck an extra radius deep so
    that face color, not the page, is what sits in the corner. */
 #modules-row #help-contact.sticky-mod.is-sticky,
+#modules-row #dash-brand-images.sticky-mod.is-sticky,
 #modules-row #ia-panel.sticky-mod.is-sticky,
 #modules-row #wa-report.wa-pane.is-open.is-sticky,
 #modules-row #rf-report.sticky-mod.is-sticky,
@@ -3731,6 +3747,9 @@ html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > .wc
 #modules-row #help-contact.sticky-mod.is-sticky > .wch-head,
 #modules-row #help-contact.sticky-mod.is-sticky > .hc-mail-body,
 #modules-row #help-contact.sticky-mod.is-sticky > .hc-mail-foot,
+#modules-row #dash-brand-images.sticky-mod.is-sticky > .wch-head,
+#modules-row #dash-brand-images.sticky-mod.is-sticky > .dash-bi-body,
+#modules-row #dash-brand-images.sticky-mod.is-sticky > .dash-bi-foot,
 #modules-row #ia-panel.sticky-mod.is-sticky > .wch-head,
 #modules-row #ia-panel.sticky-mod.is-sticky > #ia-body,
 #modules-row:not(.is-picking) .rf-dash.sticky-mod.is-sticky > .rf-head,
@@ -3749,6 +3768,7 @@ html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > .wc
    paper surface, no left seam, square chat-facing corners. Page-level
    `#help-contact` card rules must not win and turn it back into a peer module. */
 #modules-row #help-contact.sticky-mod.is-sticky,
+#modules-row #dash-brand-images.sticky-mod.is-sticky,
 #modules-row #ia-panel.sticky-mod.is-sticky {
   margin-left: calc(-1 * var(--sticky-nested-tuck) - var(--r-md, 16px) - var(--modules-gap, 8px)) !important;
   padding-left: calc(var(--sticky-nested-face-pad) + var(--r-md, 16px)) !important;
@@ -3763,7 +3783,9 @@ html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > .wc
    square the parent card. Matches with or without `.sticky-mod` so a late
    class attach cannot leave Help at Output's z 2. */
 #modules-row:has(#help-contact) #agent-main,
-#modules-row:has(#help-contact) #agent-main.sticky-mod.is-sticky {
+#modules-row:has(#help-contact) #agent-main.sticky-mod.is-sticky,
+#modules-row:has(#dash-brand-images) #agent-main,
+#modules-row:has(#dash-brand-images) #agent-main.sticky-mod.is-sticky {
   z-index: 1;
 }
 /* Nested drawers stay under their parent when the ⋮ is open. The menu is
@@ -3777,6 +3799,8 @@ html:not(.app-search-on):is(:not(.full-bleed), .fb-chat-only) #modules-row > .wc
 #modules-row .gv-progress-pane.sticky-mod.is-sticky:has(.topbar-popover:not(.hidden)),
 #modules-row #help-contact.sticky-mod.is-sticky:has(.panel-more-btn.is-open),
 #modules-row #help-contact.sticky-mod.is-sticky:has(.topbar-popover:not(.hidden)),
+#modules-row #dash-brand-images.sticky-mod.is-sticky:has(.panel-more-btn.is-open),
+#modules-row #dash-brand-images.sticky-mod.is-sticky:has(.topbar-popover:not(.hidden)),
 #modules-row #ia-panel.sticky-mod.is-sticky:has(.panel-more-btn.is-open),
 #modules-row #ia-panel.sticky-mod.is-sticky:has(.topbar-popover:not(.hidden)) {
   z-index: 0;
@@ -4187,7 +4211,7 @@ html.dark .menu-footer .menu-nav-item:hover .menu-footer-avatar {
 }
 .menu-footer-profile.has-dot.is-read .menu-nav-icon::after { display: none; }
 #menu-panel.mp-rail .menu-footer {
-  padding: 10px 5px;
+  padding: 10px var(--nav-rail-pad-x, 5px);
 }
 #menu-panel.mp-rail .menu-footer-actions {
   gap: 0;
@@ -5378,12 +5402,15 @@ html.dark .menu-nav .menu-nav-group[data-open="true"] > .menu-nav-product .menu-
 }
 
 #menu-panel.mp-rail:not(.mp-pivot).mp-open {
-  width: 54px;
-  min-width: 54px;
-  max-width: 54px;
+  width: var(--nav-rail-w, 54px);
+  min-width: var(--nav-rail-w, 54px);
+  max-width: var(--nav-rail-w, 54px);
   overflow-x: hidden;
 }
-#menu-panel.mp-rail:not(.mp-pivot) .menu-inner { width: 54px; max-width: 54px; }
+#menu-panel.mp-rail:not(.mp-pivot) .menu-inner {
+  width: var(--nav-rail-w, 54px);
+  max-width: var(--nav-rail-w, 54px);
+}
 
 /* "Icons only" (Appearance) doesn't just drop the labels — per the Appearance
    model it strips the nav module's background CONTAINER too, so the icon rail
@@ -5609,10 +5636,6 @@ html.nav-modules #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) .menu-panel
   display: none !important;
 }
 
-@media (max-width: 768px) {
-  .menu-modules-btn { display: none !important; }
-}
-
 /* This mode wins over Search + Menu icon, which otherwise pin the collapsed
    nav to the search-band row and hide the four-icon stack. */
 @media (min-width: 769px) {
@@ -5630,9 +5653,9 @@ html.nav-modules #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) .menu-panel
   }
   html.nav-modules.app-search-on.nav-hamburger #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui).mp-open,
   html.nav-modules.app-search-on.nav-hamburger #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) .menu-inner {
-    width: 54px !important;
-    min-width: 54px !important;
-    max-width: 54px !important;
+    width: var(--nav-rail-w, 54px) !important;
+    min-width: var(--nav-rail-w, 54px) !important;
+    max-width: var(--nav-rail-w, 54px) !important;
     height: 100% !important;
     min-height: 100% !important;
     max-height: none !important;
@@ -5649,7 +5672,7 @@ html.nav-modules #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) .menu-panel
 .menu-brand-integrated #menu-panel.mp-rail .menu-panel-body {
   /* 32px keeps the first icon clear of the toggle floated below the logo;
      the extra top air + the bottom air are trimmed to tighten the rail. */
-  padding: calc(3px + 32px) 5px 6px;
+  padding: calc(3px + 32px) var(--nav-rail-pad-x, 5px) 6px;
 }
 /* Collapsed rail: never reserve a scrollbar gutter. A classic-OS gutter (or
    `scrollbar-gutter: stable`) eats space on the RIGHT only — or, in a grid
@@ -6189,6 +6212,7 @@ html.header-float .ss-header,
 html.header-float .alerts-panel-header,
 html.header-float .notif-panel-header,
 html.header-float .vs-header,
+html.header-float .rf-head,
 html.header-float .chat-topbar {
   height: 0 !important;
   min-height: 0 !important;
@@ -6208,7 +6232,8 @@ html.header-float .nfp-panel-header > *:not(.panel-controls),
 html.header-float .ac-panel-header > *:not(.panel-controls),
 html.header-float .ss-header > *:not(.panel-controls),
 html.header-float .alerts-panel-header > *:not(.panel-controls),
-html.header-float .notif-panel-header > *:not(.panel-controls) {
+html.header-float .notif-panel-header > *:not(.panel-controls),
+html.header-float .rf-head > *:not(.panel-controls) {
   display: none !important;
 }
 /* Pin the kept controls over the top-right of the (now header-less) module. */
@@ -6220,7 +6245,8 @@ html.header-float .nfp-panel-header .panel-controls,
 html.header-float .ac-panel-header .panel-controls,
 html.header-float .ss-header .panel-controls,
 html.header-float .alerts-panel-header .panel-controls,
-html.header-float .notif-panel-header .panel-controls {
+html.header-float .notif-panel-header .panel-controls,
+html.header-float .rf-head .panel-controls {
   position: absolute;
   top: 8px;
   right: 8px;
@@ -6239,6 +6265,10 @@ html.header-float #nfp-panel .nfp-panel-header .panel-controls {
    verify at --module-head-pad-t). The generic side-panel pin is 8px, which
    parked ⋯ + width above the serif title instead of beside it. */
 html.header-float #portfolio-panel .side-panel-header .panel-controls {
+  top: var(--module-head-pad-t);
+  right: var(--module-head-ctrl-inset);
+}
+html.header-float .rf-head .panel-controls {
   top: var(--module-head-pad-t);
   right: var(--module-head-ctrl-inset);
 }
@@ -8230,10 +8260,6 @@ html.dark .ws-logo-wrap .ws-pulse-ring { --ws-track: rgba(174, 200, 237, 0.55); 
 @keyframes wsTrackSpin { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .ws-logo-wrap .ws-pulse-ring { animation: none; } }
 .ws-heading { font-family: 'WISE Digits', var(--module-title-family, var(--font-serif, 'Noto Serif', serif)); font-size: clamp(1.5rem, 1rem + 1.6vw, 2rem); font-weight: 700; letter-spacing: -0.02em; color: var(--text); text-align: center; margin: 0 0 0.5rem; }
-.sc-welcome:not(.ws-in) > .ws-heading,
-.sc-welcome:not(.ws-in) > .ws-sub,
-.sc-welcome:not(.ws-in) .ws-chips .chip,
-.sc-welcome:not(.ws-in) .ws-scorecard { opacity: 0; }
 /* Trademark mark in the welcome heading: dropped a size and nudged up so it
    reads as a superscript ™ rather than a full-height glyph. */
 .ws-heading .ws-tm { font-size: 0.55em; vertical-align: 0.42em; font-weight: 600; letter-spacing: 0; }
@@ -13332,6 +13358,98 @@ html.dark .dash-pillar-card-head .dash-stamp-icon:hover {
 html.dark .dash-banner-url { background: rgba(255, 255, 255, 0.03); }
 
 /* =============================================================
+   Brand banner + logo editor — sticky drawer off Overview
+   The picker pieces above (.dash-banner-*) also live in the
+   product-photo modal. This block is the Overview module itself.
+============================================================= */
+#dash-brand-images {
+  flex: 0 0 372px;
+  width: 372px;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-card);
+  font-size: var(--fs-ui);
+}
+#dash-brand-images[hidden] { display: none !important; }
+html.dark #dash-brand-images {
+  background: var(--surface);
+  border-color: rgba(37, 80, 124, 0.18);
+}
+#dash-brand-images.panel-wide { flex-basis: 520px; width: 520px; }
+#dash-brand-images.panel-wide.panel-triple { flex-basis: 680px; width: 680px; }
+#dash-brand-images .wch-head {
+  align-items: flex-start;
+}
+#dash-brand-images .wch-head .panel-controls,
+#dash-brand-images .wch-controls {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--module-head-ctrl-gap, 2px);
+  flex-shrink: 0;
+}
+.dash-bi-head-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.dash-bi-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 16px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.dash-bi-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 2px;
+  border-radius: var(--r-md);
+}
+.dash-bi-section.is-focus {
+  outline: 2px solid color-mix(in srgb, var(--primary) 35%, transparent);
+  outline-offset: 4px;
+}
+.dash-bi-section-title {
+  margin: 0;
+  font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', serif);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--text);
+}
+.dash-bi-section-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--text-subtle);
+}
+.dash-bi-remove {
+  align-self: flex-start;
+}
+.dash-bi-foot {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px 14px;
+  border-top: 1px solid var(--border);
+}
+html.dark .dash-bi-foot { border-top-color: rgba(255, 255, 255, 0.08); }
+
+/* =============================================================
    Full report modal — UPF / GRAS "View full report"
 ============================================================= */
 .dash-modal--report { max-width: none; }
@@ -15542,7 +15660,7 @@ body[data-nav-id="non-upf-dashboard"] #agent-main-header .panel-more-wrap { disp
   padding-right: var(--module-head-ctrl-inset);
   padding-bottom: var(--module-head-pad-b);
 }
-#modules-row :is(.wch-head, .wa-pane-top, .vfp-header, .gvp-header) {
+#modules-row :is(.wch-head, .wa-pane-top, .vfp-header, .gvp-header, .rf-head) {
   padding-left: var(--module-head-pad-l);
 }
 #modules-row :is(
@@ -16218,199 +16336,53 @@ table.rtbl.rtbl-cards tbody > tr:not(:has(.rtbl-lead, .rtbl-ctl)) > td.rtbl-fld:
 .rtbl-cards .rtbl-dupe { display: none; }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   MOBILE PRIMARY NAVIGATION (≤ 768px)
+   RESPONSIVE PRIMARY NAVIGATION
 
-   Responsive model:
-     • The primary navigation floats as its own compact container pinned to the
-       TOP-LEFT — just the owl bug + an "expand" icon. It sits ABOVE the content
-       (out of the shell grid) so the chat module stays primary and centred.
-     • Tapping "expand" slides the FULL navigation in from the left as its own
-       drawer pane (`.wise-mnav-open`) over a dimming scrim.
-     • The History module is left in its collapsed state (untouched here).
-   Driven by js/mobile-nav.js (toggles `.wise-mnav-open` on #menu-panel).
+   The primary navigation is ONE module at every screen size: a vertical rail
+   in the LEFT column of the shell grid, collapsed to its icons, which expands
+   in place when the member taps a control inside it. A phone and a tablet get
+   the same module a desktop gets — only tighter, through the `--nav-rail-*`
+   tokens at the top of this file. There is no phone-only drawer, no floating
+   chip, and no width at which the navigation becomes a top bar.
+
+   Pivot Navigation stays a preference, never a layout a narrow viewport can
+   force. Below the tablet breakpoint js/nav-responsive.js keeps `.mp-pivot` off
+   the panel outright; the rule below is the paint-time guard behind it, so a
+   stored top bar cannot restack the shell before that runs. Growing the window
+   past the breakpoint restores whatever the member chose.
    ══════════════════════════════════════════════════════════════════════════ */
-@media (max-width: 768px) {
-  /* Neutralise the pivot (horizontal top-bar) layout on phones. */
+@media (max-width: 1024px) {
+  /* Pivot stands down: the shell keeps its nav column beside the modules
+     rather than restacking to a nav row on top. */
   #agent-shell-wrap.menu-brand-integrated.menu-pivoted,
   #chat-shell-wrap.menu-brand-integrated.menu-pivoted {
-    grid-template-columns: auto 1fr !important;
-    grid-template-rows: 1fr !important;
-    grid-template-areas: "menu modules" !important;
-    row-gap: 0 !important;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: 1fr;
+    grid-template-areas: "menu modules";
+    row-gap: 0;
   }
 
-  /* ── Collapsed: floating owl + expand container, top-left ──────────────── */
-  #menu-panel.mp-open:not(.wise-mnav-open) {
-    position: fixed !important;
-    top: 10px !important;
-    left: 10px !important;
-    right: auto !important;
-    bottom: auto !important;
-    width: auto !important;
-    min-width: 0 !important;
-    max-width: none !important;
-    height: auto !important;
-    max-height: none !important;
-    z-index: 200 !important;
-    display: flex !important;
+  /* Tighter rail: the icons sit closer to the page edge and to the first
+     module than they do on a desktop, so a narrow screen spends its width on
+     content instead of gutters. */
+  :root {
+    --nav-rail-w: 48px;
+    --nav-rail-pad-x: 3px;
+    --nav-rail-gap: 1px;
   }
-  #menu-panel:not(.wise-mnav-open) .menu-inner {
-    width: auto !important;
-    min-width: 0 !important;
-    max-width: none !important;
-    height: auto !important;
-    min-height: 0 !important;
-    align-items: center;
-    /* Its own floating container background. */
-    background: linear-gradient(165deg, var(--surface) 0%, var(--surface-2) 100%) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 16px !important;
-    box-shadow: var(--shadow-card, 0 8px 24px rgba(4, 8, 18, 0.18)) !important;
-    padding: 8px 6px !important;
-    overflow: visible !important;
-    animation: none !important;
-  }
-  html.dark #menu-panel:not(.wise-mnav-open) .menu-inner {
-    background: linear-gradient(155deg, #1A2339 0%, #1A2339 100%) !important;
-    border-color: rgba(37, 80, 124, 0.28) !important;
-  }
-  /* Hide the full nav list + footer while floating. */
-  #menu-panel:not(.wise-mnav-open) .menu-panel-body,
-  #menu-panel:not(.wise-mnav-open) .menu-footer {
-    display: none !important;
-  }
+}
 
-  /* Brand strip → vertical stack (owl on top, expand beneath). */
-  #menu-panel:not(.wise-mnav-open) .menu-brand-bar {
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 6px !important;
-    width: auto !important;
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    overflow: visible !important;
-    background: transparent !important;
+/* Phones: the narrowest the rail goes. Same module and the same behaviour —
+   the icons simply sit tighter against both of their edges. */
+@media (max-width: 768px) {
+  :root {
+    --nav-rail-w: 44px;
+    --nav-rail-pad-x: 2px;
+    --nav-rail-gap: 0px;
   }
-  #menu-panel:not(.wise-mnav-open) .menu-brand-logo {
-    width: auto !important;
-    justify-content: center !important;
-    height: auto !important;
-  }
-  #menu-panel:not(.wise-mnav-open) .menu-brand-logo a {
-    align-items: center !important;
-    margin: 0 !important;
-  }
-  #menu-panel:not(.wise-mnav-open) .menu-brand-logo svg.tl-full,
-  #menu-panel:not(.wise-mnav-open) .menu-brand-logo .topbar-tagline {
-    display: none !important;
-  }
-  #menu-panel:not(.wise-mnav-open) .menu-brand-logo svg.tl-bug {
-    display: block !important;
-    width: 30px !important;
-    height: auto !important;
-    margin: 0 auto !important;
-    transform: none !important;
-  }
-  #menu-panel:not(.wise-mnav-open) .menu-brand-bar .topbar-menu-toggle {
-    position: relative !important;
-    top: auto !important;
-    left: auto !important;
-    transform: none !important;
-    margin: 0 auto !important;
-    width: 36px !important;
-    min-height: 32px !important;
-    padding: 0 !important;
-    flex-direction: row !important;
-    justify-content: center !important;
-  }
-  #menu-panel .menu-brand-bar .topbar-menu-toggle .lir-label { display: none !important; }
+}
 
-  /* ── Dimming scrim behind the open drawer ──────────────────────────────── */
-  #mnav-scrim {
-    position: fixed;
-    inset: 0;
-    z-index: 3999;
-    background: rgba(4, 8, 18, 0.48);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.28s ease;
-  }
-  #mnav-scrim.is-open {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  /* ── Expanded drawer: the nav slides in from the left as its own pane ───── */
-  #menu-panel.wise-mnav-open {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    bottom: 0 !important;
-    right: auto !important;
-    width: min(320px, 86vw) !important;
-    min-width: min(320px, 86vw) !important;
-    max-width: 86vw !important;
-    height: 100dvh !important;
-    max-height: 100dvh !important;
-    z-index: 4000 !important;
-    display: flex !important;
-    padding: 0 !important;
-  }
-  #menu-panel.wise-mnav-open .menu-inner {
-    width: 100% !important;
-    min-width: 100% !important;
-    max-width: 100% !important;
-    height: 100dvh !important;
-    min-height: 100dvh !important;
-    border: 0 !important;
-    border-radius: 0 16px 16px 0 !important;
-    box-shadow: 16px 0 44px rgba(4, 8, 18, 0.34) !important;
-    background: linear-gradient(165deg, var(--surface) 0%, var(--surface-2) 100%) !important;
-    animation: wiseMnavDrawerIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
-  }
-  html.dark #menu-panel.wise-mnav-open .menu-inner {
-    background: linear-gradient(155deg, #1A2339 0%, #1A2339 100%) !important;
-  }
-  #menu-panel.wise-mnav-open .menu-brand-bar {
-    flex-direction: row !important;
-    align-items: center !important;
-    height: auto !important;
-    min-height: var(--shell-topbar-h) !important;
-    padding: 0 10px 0 20px !important;
-  }
-  #menu-panel.wise-mnav-open .menu-brand-logo svg.tl-full { display: block !important; }
-  #menu-panel.wise-mnav-open .menu-brand-logo svg.tl-bug { display: none !important; }
-  #menu-panel.wise-mnav-open .menu-brand-bar .topbar-menu-toggle {
-    position: relative !important;
-    margin-left: auto !important;
-    width: 40px !important;
-  }
-  #menu-panel.wise-mnav-open .menu-panel-body {
-    display: block !important;
-    flex: 1 1 auto !important;
-    overflow-y: auto !important;
-    padding: 9px 8px 12px !important;
-  }
-  #menu-panel.wise-mnav-open .menu-footer { display: block !important; }
-  /* Fully-expanded nav (labels visible) regardless of any persisted collapse. */
-  #menu-panel.wise-mnav-open .menu-nav-label,
-  #menu-panel.wise-mnav-open .menu-nav-chevron-btn,
-  #menu-panel.wise-mnav-open .menu-nav-section-label { display: revert !important; }
-  #menu-panel.wise-mnav-open .menu-nav-item,
-  #menu-panel.wise-mnav-open .menu-nav-subitem {
-    justify-content: flex-start !important;
-    gap: 10px !important;
-  }
-
-  @keyframes wiseMnavDrawerIn {
-    from { transform: translateX(-100%); }
-    to   { transform: translateX(0); }
-  }
-
+@media (max-width: 768px) {
   /* ── Chat is primary; right-of-chat modules fold into the floating
         Outputs / Sources component ──────────────────────────────────────────
      On phones the chat module takes center stage. Any module docked to the
@@ -16426,6 +16398,20 @@ table.rtbl.rtbl-cards tbody > tr:not(:has(.rtbl-lead, .rtbl-ctl)) > td.rtbl-fld:
      output. Hidden only while genuinely empty. */
   .wa-manifest.is-off:not(.is-empty) {
     display: grid !important;
+  }
+
+  /* The chat module carries a 380px floor so that several broken-out modules
+     push the row into a horizontal scroll instead of squeezing the chat to
+     nothing. On a phone those neighbours are already folded away just above,
+     so the floor has nothing left to protect — and with the nav rail back in
+     the row taking its own width, 380px is wider than the room that remains,
+     which pushed the card's right edge (send button, chips) off screen. Let
+     the chat fit what is actually left. `!important` because each host page
+     sets this floor in its own stylesheet, which loads after this one. */
+  #modules-row > .wa-chat,
+  #modules-row > #chat-shell,
+  #modules-row > #agent-main {
+    min-width: 0 !important;
   }
 }
 

@@ -21,6 +21,10 @@
 
   /* ─────────────────────────── helpers ─────────────────────────── */
   const $ = (id) => document.getElementById(id);
+  /* Which conversation this flow's chat is, as far as the local model's memory
+     is concerned (js/ollama-chat.js). Every chat keeps its own, so two on one
+     screen never read each other's turns as their own. */
+  const AP_THREAD_KEY = 'add-product';
   function esc(s) {
     if (typeof window !== 'undefined' && typeof window.WiseEsc === 'function') return window.WiseEsc(s);
     return String(s == null ? '' : s)
@@ -304,6 +308,9 @@
 
   function addUser(text) {
     hideWelcome();
+    /* Tell the local model what was just asked, so the rewrite of the answer
+       picks up this thread rather than reading as a first line. */
+    window.WiseOllama?.rememberChatTurn('you', text, AP_THREAD_KEY);
     messagesEl.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-you">${youAvatarSpan()}<div class="sc-line-body">${esc(text)}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div></div></div>`);
     scrollDown(true); /* fresh user action — always bring their message into view */
@@ -363,24 +370,26 @@
     };
     setTimeout(showNext, startDelay);
   }
-  /* Welcome-screen reveal: type the heading, then the sub, WORD-BY-WORD (just
-     like every WISEcodeAI answer), then fly the intent chips in from the right so
-     they land AFTER all the copy — never sitting there before it. Honors
-     reduced-motion (everything just shows). */
+  /* Welcome headline + chips paint immediately. Typing the heading hid the
+     <h1> (and CSS kept it at opacity 0 until .ws-in), so the title or chips
+     sometimes never appeared. */
   function revealWelcome() {
-    if (!welcomeEl) return;
+    if (!welcomeEl || welcomeEl.classList.contains('sc-hidden')) return;
+    if (typeof window.WisePaintWelcome === 'function') {
+      window.WisePaintWelcome(welcomeEl);
+      return;
+    }
+    welcomeEl.classList.add('ws-in');
     const heading = welcomeEl.querySelector('.ws-heading');
     const subEl = welcomeEl.querySelector('.ws-sub');
     const chips = chipsStartEl ? Array.from(chipsStartEl.querySelectorAll('.chip')) : [];
-    if (prefersReducedMotion) {
-      chips.forEach((c) => { c.style.opacity = ''; c.style.transform = ''; c.style.transition = ''; });
-      return;
-    }
-    chips.forEach(apPrimeRight);
-    const typeText = (el, next) => { if (el) typeInLine(el, next); else next(); };
-    typeText(heading, () => typeText(subEl, () => {
-      apRevealStaggered(chips, 90, 60, null);
-    }));
+    [heading, subEl].concat(chips).forEach((el) => {
+      if (!el) return;
+      el.hidden = false;
+      el.style.opacity = '';
+      el.style.transform = '';
+      el.style.transition = '';
+    });
   }
   /* Live NFP ingredient-analysis snapshot — drives which intent chips are
      possible right now (analyze → review/confirm → test codes / Wise Code AI). */
@@ -647,7 +656,7 @@
   function addWISEcodeAI(html, chips) {
     const api = window.WiseOllama;
     if (api && typeof api.polishThen === 'function') {
-      api.polishThen(html, function (out) { paintWISEcodeAI(out, chips); });
+      api.polishThen(html, function (out) { paintWISEcodeAI(out, chips); }, { threadKey: AP_THREAD_KEY });
       return;
     }
     paintWISEcodeAI(html, chips);
@@ -720,7 +729,7 @@
       setTimeout(() => { if (t) t.remove(); paintWISEcodeAI(out, chips); }, left);
     };
     if (window.WiseOllama && typeof window.WiseOllama.polishThen === 'function') {
-      window.WiseOllama.polishThen(html, paint);
+      window.WiseOllama.polishThen(html, paint, { threadKey: AP_THREAD_KEY });
       return;
     }
     paint(html);
@@ -4663,15 +4672,13 @@
     fileInput = $('ap-file');
     if (!messagesEl || !nfpBody) return;
 
-    // Welcome chips. The gold "What can I ask?" chip is hidden for now; the
-    // below-input gold link still opens the catalog panel.
-    if (chipsStartEl) {
+    // Welcome chips live in the HTML so they paint with the headline. Fill
+    // only when the rail is still empty (view-product starts hidden).
+    if (chipsStartEl && !chipsStartEl.querySelector('.chip')) {
       chipsStartEl.innerHTML = WELCOME_CHIPS.map((c) =>
         `<button type="button" class="chip ws-intent-chip" data-action="${esc(c.action)}"${c.arg != null ? ` data-arg="${esc(c.arg)}"` : ''}><span class="material-symbols-outlined">${esc(c.icon)}</span>${esc(c.label)}</button>`).join('');
     }
 
-    // Play the welcome in: heading + sub fade in as paragraphs, then the intent
-    // chips fly in from the right and land — so the chips always trail the copy.
     revealWelcome();
 
     applyFromParam();

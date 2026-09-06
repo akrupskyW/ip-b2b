@@ -163,11 +163,18 @@
     .rf-chip-thumb .material-symbols-outlined { font-size: 13px !important; }
 
     /* ── Module headers ──
-       Mirrors the product-portfolio board header (.pf-head): a serif headline
-       with a small meta line, sitting on the card surface with the same inset
-       as the body below it — no boxed icon, no shaded topbar strip. */
-    .rf-head { position: relative; isolation: isolate; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: var(--module-head-pad-t) var(--module-head-ctrl-inset) var(--module-head-pad-b) 26px; flex-shrink: 0; }
-    .rf-head-titles { min-width: 0; }
+       Same mast as the other right-of-chat panes (wiseai .wa-pane-top,
+       verification .vfp-header): serif title + meta on the left, ⋯ and
+       width changer in document flow on the right. Shared tokens in
+       wise.css own the padding; this only adds the pane face. */
+    .rf-head {
+      position: relative; isolation: isolate;
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .rf-head-titles { flex: 1 1 auto; min-width: 0; }
     .rf-head-title { font-family: 'WISE Digits', var(--module-title-family, 'Noto Serif', serif); font-weight: var(--module-title-weight, 800); font-size: var(--module-title-size, 1.2rem); color: var(--text); margin: 0; letter-spacing: -.01em; line-height: var(--module-title-lh, 1.16); }
     .rf-head-meta { font-size: var(--module-sub-size, 0.78125rem); color: var(--text-muted); margin: var(--module-sub-gap, 3px) 0 0; line-height: var(--module-sub-lh, 1.35); }
 
@@ -215,15 +222,18 @@
     .rf-head-badge .material-symbols-outlined { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 28px; color: var(--primary-ink, var(--primary)); }
 
     /* ── Module header controls ──
-       The studio and dashboard now carry the same chrome the chat does: a width
-       changer + a three-dot menu, pinned to the header's top-right. They reuse
-       the shared .panel-* / .topbar-popover classes so they match every other
-       module. The product badge sits on the far left, so the control cluster
-       stays on the far right; on the brand banner the icons go light against
-       the scrim. */
-    .rf-head-controls { position: absolute; top: var(--module-head-pad-t); right: var(--module-head-ctrl-inset); z-index: 3; display: inline-flex; align-items: center; gap: var(--module-head-ctrl-gap, 2px); }
-    .rf-head-titles { padding-right: 74px; }
+       In-flow cluster (same .panel-controls as Product Details / Output),
+       not absolutely pinned — that was parking the width changer in the
+       corner while the title sat lower. The product badge still floats
+       left once a food is loaded; on the brand banner the icons go light. */
+    .rf-head-controls {
+      position: static;
+      margin-left: auto;
+      z-index: 3;
+    }
+    .rf-head--badged { min-height: 88px; align-items: center; }
     .rf-head--badged .rf-head-titles { padding-left: 78px; }
+    .rf-head--brand { border-bottom-color: rgba(255,255,255,.14); background: transparent; }
     .rf-head-controls .panel-more-wrap { position: relative; }
     .rf-head--brand .rf-head-controls .panel-more-btn,
     .rf-head--brand .rf-head-controls .panel-width-toggle-btn { color: #fff; }
@@ -508,15 +518,6 @@
     .rf-rpt-item-body .rf-sec { margin-bottom: 0; }
     .rf-rpt-item-body .rf-sec-title { display: none; }
     .rf-rpt-item-body .rf-stat { cursor: default; }
-    .rf-rpt-item-body .rf-stat:hover {
-      transform: none;
-      box-shadow: none;
-      background: color-mix(in srgb, var(--primary) 10%, #fff);
-      border-color: var(--border-strong);
-    }
-    html.dark .rf-rpt-item-body .rf-stat:hover {
-      background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent);
-    }
     .rf-rpt-note { margin-top: 10px; }
     .rf-rpt-note-input {
       width: 100%; box-sizing: border-box;
@@ -906,14 +907,16 @@
     #modules-row:not(.is-picking) #rf-dash-pick { display: none; }
     /* No food chosen yet → the Reformulation Studio module isn't there at all. */
     #modules-row.is-picking > .rf-studio { display: none; }
-    /* Change product lives in the dashboard three-dot — only after a food is
-       loaded. The picker overview has nothing else in that menu. */
-    #modules-row.is-picking #rf-dash-menu-wrap { display: none; }
+    /* Change product only after a food is loaded. The picker menu keeps the
+       catalog filters so the ⋯ is always present, matching every other
+       right-of-chat module. */
+    #modules-row.is-picking [data-rf-menu="change"] { display: none; }
+    #modules-row:not(.is-picking) [data-rf-menu^="pick-"] { display: none; }
 
     /* ═══════════ Dashboard board chrome ═══════════
        The dashboard wears the Product Portfolio board's chrome for search +
-       table, and the shared welcome scorecards (.ws-scorecard in wise.css) for
-       the at-a-glance metrics — same tint, type, icon, and hover as wiseai. */
+       table, and the shared filter tiles (.wmod-stat in wise.css) for the
+       at-a-glance metrics — same tiles as Alerts, Help, Docs, and Portfolio. */
     /* The branded header ends in a hard banner edge, so the toolbar needs real
        card surface beneath it — the header's own bottom padding sits inside the
        artwork and reads as part of the banner, not as a gap. */
@@ -946,49 +949,15 @@
     html.dark .rf-search-clear:hover { background: rgba(255,255,255,0.08); }
     .rf-search-clear .material-symbols-outlined { font-size: 17px; }
 
-    /* ── Score cards — same .ws-scorecard family as wiseai.html / the chat rail.
-       The shared paint (tint, 10px radius, left-aligned icon + metric + title)
-       lives in wise.css; this only fits them to the board grid and keeps the
-       picker's filter / active / disabled states. No eyebrow. ── */
+    /* ── Score cards — shared .wmod-stat tiles (wise.css). This only fits
+       the row to the pane: the right-of-chat module is narrower than the
+       viewport, so wrap is a container query, not a window media query. ── */
     .rf-sec[data-rpt="stats"],
     .rf-rpt-item-body { container-type: inline-size; }
     .rf-stats {
       display: grid;
-      gap: 12px;
-      grid-template-columns: repeat(var(--rf-stat-cols, 4), minmax(0, 1fr));
-    }
-    .rf-stats > .ws-scorecard {
-      flex: none;
-      min-width: 0;
-      width: auto;
-      aspect-ratio: auto;
-      scroll-snap-align: unset;
-      height: 100%;
-      border-radius: 10px !important;
-    }
-    .rf-stats .ws-sc-desc { flex: 0 1 auto; }
-    .rf-stats .ws-scorecard.is-active {
-      border-color: color-mix(in srgb, var(--primary) 70%, var(--border-strong));
-      background: color-mix(in srgb, var(--primary) 20%, #fff);
-      box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 22%, transparent);
-    }
-    html.dark .rf-stats .ws-scorecard.is-active {
-      background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 22%, transparent);
-    }
-    .rf-stats .ws-scorecard:disabled {
-      cursor: default;
-      opacity: 1;
-      color: inherit;
-      -webkit-text-fill-color: inherit;
-    }
-    .rf-stats .ws-scorecard:disabled:hover {
-      transform: none;
-      box-shadow: none;
-      background: color-mix(in srgb, var(--primary) 10%, #fff);
-      border-color: var(--border-strong);
-    }
-    html.dark .rf-stats .ws-scorecard:disabled:hover {
-      background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent);
+      gap: 10px;
+      grid-template-columns: repeat(var(--wmod-cols, 4), minmax(0, 1fr));
     }
     @container (max-width: 860px) {
       .rf-stats[data-cols="5"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -1173,7 +1142,10 @@
       <!-- ═══════════ 2 · Reformulation Studio (calculator) ═══════════ -->
       <section class="rf-card rf-studio" id="rf-studio" data-no-fill-default>
         <header class="rf-head">
-          <div class="rf-head-controls">
+          <div class="rf-head-titles">
+            <h2 class="rf-head-title">Reformulation Studio</h2>
+          </div>
+          <div class="rf-head-controls panel-controls">
             <div class="panel-more-wrap" id="rf-studio-menu-wrap">
               <button type="button" id="rf-studio-menu-btn" class="panel-more-btn" onclick="rfToggleModuleMenu(event, 'rf-studio-menu')" title="Module options" aria-haspopup="menu" aria-expanded="false" aria-controls="rf-studio-menu" aria-label="Module options"><span class="material-symbols-outlined">more_vert</span></button>
               <div id="rf-studio-menu" class="topbar-popover hidden" role="menu">
@@ -1181,9 +1153,6 @@
               </div>
             </div>
             <button type="button" class="panel-width-toggle-btn" id="rf-studio-width" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Studio width"><span class="material-symbols-outlined">width_normal</span></button>
-          </div>
-          <div class="rf-head-titles">
-            <h2 class="rf-head-title">Reformulation Studio</h2>
           </div>
         </header>
         <div class="rf-body">
@@ -1304,18 +1273,21 @@
           <div class="rf-head-bg" id="rf-dash-head-bg" aria-hidden="true"></div>
           <div class="rf-head-scrim" aria-hidden="true"></div>
           <span class="rf-head-badge" id="rf-dash-badge" aria-hidden="true"></span>
-          <div class="rf-head-controls">
-            <div class="panel-more-wrap" id="rf-dash-menu-wrap">
-              <button type="button" id="rf-dash-menu-btn" class="panel-more-btn" onclick="rfToggleModuleMenu(event, 'rf-dash-menu')" title="Module options" aria-haspopup="menu" aria-expanded="false" aria-controls="rf-dash-menu" aria-label="Module options"><span class="material-symbols-outlined">more_vert</span></button>
-              <div id="rf-dash-menu" class="topbar-popover hidden" role="menu">
-                <button type="button" class="topbar-menu-item" role="menuitem" onclick="rfShowPicker(); rfCloseModuleMenus()"><span class="material-symbols-outlined topbar-menu-icon">swap_horiz</span><span>Change product</span></button>
-              </div>
-            </div>
-            <button type="button" class="panel-width-toggle-btn is-on is-width-fill" id="rf-dash-width" aria-pressed="true" title="Width (fill) — tap to reset" aria-label="Dashboard width"><span class="material-symbols-outlined">width_full</span></button>
-          </div>
           <div class="rf-head-titles">
             <h2 class="rf-head-title" id="rf-dash-title">Reformulation Overview</h2>
             <p class="rf-head-meta"><span class="rf-head-brand" id="rf-dash-brand"></span><span id="rf-dash-meta">Choose a product to reformulate</span></p>
+          </div>
+          <div class="rf-head-controls panel-controls">
+            <div class="panel-more-wrap" id="rf-dash-menu-wrap">
+              <button type="button" id="rf-dash-menu-btn" class="panel-more-btn" onclick="rfToggleModuleMenu(event, 'rf-dash-menu')" title="Module options" aria-haspopup="menu" aria-expanded="false" aria-controls="rf-dash-menu" aria-label="Module options"><span class="material-symbols-outlined">more_vert</span></button>
+              <div id="rf-dash-menu" class="topbar-popover hidden" role="menu">
+                <button type="button" class="topbar-menu-item" role="menuitem" data-rf-menu="pick-all" onclick="rfApplyCatalogLens('all'); rfCloseModuleMenus()"><span class="material-symbols-outlined topbar-menu-icon">inventory_2</span><span>Show all products</span></button>
+                <button type="button" class="topbar-menu-item" role="menuitem" data-rf-menu="pick-dq" onclick="rfApplyCatalogLens('dq'); rfCloseModuleMenus()"><span class="material-symbols-outlined topbar-menu-icon">block</span><span>Show disqualified</span></button>
+                <button type="button" class="topbar-menu-item" role="menuitem" data-rf-menu="pick-ok" onclick="rfApplyCatalogLens('ok'); rfCloseModuleMenus()"><span class="material-symbols-outlined topbar-menu-icon">verified</span><span>Show qualifying</span></button>
+                <button type="button" class="topbar-menu-item" role="menuitem" data-rf-menu="change" onclick="rfShowPicker(); rfCloseModuleMenus()"><span class="material-symbols-outlined topbar-menu-icon">swap_horiz</span><span>Change product</span></button>
+              </div>
+            </div>
+            <button type="button" class="panel-width-toggle-btn is-on is-width-fill" id="rf-dash-width" aria-pressed="true" title="Width (fill) — tap to reset" aria-label="Dashboard width"><span class="material-symbols-outlined">width_full</span></button>
           </div>
         </header>
         <div class="rf-dash-main wch-host">
@@ -1332,13 +1304,13 @@
 
           <!-- Score cards · no section title / eyebrow; rebuilt by renderPickStats / renderLoadedStats -->
           <div class="rf-sec rf-sec--stats" data-rpt="stats" data-rpt-label="Score cards">
-            <div class="rf-stats" id="rf-stats"></div>
+            <div class="wmod-stats rf-stats" id="rf-stats" role="group" aria-label="Filter the catalog"></div>
           </div>
 
           <!-- Step 0 · pick a food -->
           <div id="rf-dash-pick">
             <div class="rf-sec" data-rpt="catalog" data-rpt-label="Products">
-              <div class="rf-table">
+              <div class="rf-table" data-no-paginate>
               <!-- Head row is rendered by renderPickHead() so it can carry sort state -->
               <div class="rf-thead" id="rf-thead"></div>
               <div id="rf-pick-list" role="group" aria-label="Products to reformulate"></div>
@@ -1416,7 +1388,11 @@
       <!-- ═══════════ 4 · Report builder (tertiary sticky, same as wiseai) ═══════════ -->
       <section class="rf-card rf-report" id="rf-report" aria-label="Report" data-no-fill-default>
         <header class="rf-head">
-          <div class="rf-head-controls">
+          <div class="rf-head-titles">
+            <p class="rf-head-eyebrow dash-eyebrow">Report</p>
+            <h2 class="rf-head-title" id="rf-report-title" contenteditable="true" spellcheck="false" role="textbox" aria-label="Report name"></h2>
+          </div>
+          <div class="rf-head-controls panel-controls">
             <div class="panel-more-wrap" id="rf-report-menu-wrap">
               <button type="button" id="rf-report-menu-btn" class="panel-more-btn" onclick="rfToggleModuleMenu(event, 'rf-report-menu')" title="Module options" aria-haspopup="menu" aria-expanded="false" aria-controls="rf-report-menu" aria-label="Module options"><span class="material-symbols-outlined">more_vert</span></button>
               <div id="rf-report-menu" class="topbar-popover hidden" role="menu">
@@ -1427,10 +1403,6 @@
               </div>
             </div>
             <button type="button" class="panel-width-toggle-btn" id="rf-report-width" aria-pressed="false" title="Width (single) — tap to widen" aria-label="Report pane width"><span class="material-symbols-outlined">width_normal</span></button>
-          </div>
-          <div class="rf-head-titles">
-            <p class="rf-head-eyebrow dash-eyebrow">Report</p>
-            <h2 class="rf-head-title" id="rf-report-title" contenteditable="true" spellcheck="false" role="textbox" aria-label="Report name"></h2>
           </div>
         </header>
         <div class="rf-body" id="rf-report-body"></div>
@@ -1615,6 +1587,48 @@
         { id: 'chocolate-granola', name: 'Chunky Chocolate Granola', short: 'Chunky Chocolate Granola', brand: 'Flax4Life', upc: '8 57287 00427 2', img: '../assets/portfolio/granola.jpg', icon: 'grain',
           ingredients: 'Ground Flaxseed, Whole Grain Oats, Cane Sugar, Chocolate Chips (Cane Sugar, Unsweetened Chocolate, Cocoa Butter), Coconut, Cocoa, Sea Salt, Natural Flavor.',
           baseline: { calories: 200, grams: 45, sodium: 80, addedSugar: 9, satFat: 2, transFat: 0, fiber: 6, additives: 0, vitamins: 1, wholeGrain: true, algo: 'G' } },
+        { id: 'apple-cinnamon-muffins', name: 'Apple Cinnamon Muffins-4 ct', short: 'Apple Cinnamon Muffins', brand: 'Flax4Life', upc: '0 65776 63517 7', img: '../assets/portfolio/apple_cinnamon_muffins.png', icon: 'bakery_dining',
+          ingredients: 'Ground Flaxseed, Cane Sugar, Egg Whites, Water, Apples, Non-GMO Canola Oil, Cinnamon, Baking Soda, Baking Powder, Sea Salt, Xanthan Gum, Natural Flavor.',
+          baseline: { calories: 250, grams: 62, sodium: 280, addedSugar: 16, satFat: 3, transFat: 0, fiber: 2, additives: 3, vitamins: 0, wholeGrain: false, algo: 'G' } },
+        { id: 'carrot-raisin-muffins', name: 'Carrot Raisin Muffins-4 ct', short: 'Carrot Raisin Muffins', brand: 'Flax4Life', upc: '0 65776 63151 3', img: '../assets/portfolio/carrot_raisin_muffins.png', icon: 'bakery_dining',
+          ingredients: 'Ground Flaxseed, Carrots, Raisins, Cane Sugar, Egg Whites, Water, Non-GMO Canola Oil, Cinnamon, Baking Soda, Sea Salt, Natural Flavor.',
+          baseline: { calories: 220, grams: 58, sodium: 200, addedSugar: 10, satFat: 3, transFat: 0, fiber: 1, additives: 0, vitamins: 0, wholeGrain: false, algo: 'G' } },
+        { id: 'chocolate-brownies', name: 'Chocolate Brownies-12 ct', short: 'Chocolate Brownies', brand: 'Flax4Life', upc: '0 65776 63550 4', img: '../assets/portfolio/chocolate_brownies.png', icon: 'bakery_dining',
+          ingredients: 'Ground Flaxseed, Cane Sugar, Egg Whites, Water, Chocolate Chips (Cane Sugar, Unsweetened Chocolate, Cocoa Butter), Cocoa, Baking Soda, Sea Salt, Soy Lecithin, Natural Flavor.',
+          baseline: { calories: 200, grams: 50, sodium: 160, addedSugar: 22, satFat: 5, transFat: 0, fiber: 1, additives: 1, vitamins: 0, wholeGrain: false, algo: 'G' } },
+        { id: 'dark-cherry-brownies', name: 'Dark Cherry Brownies-12 ct', short: 'Dark Cherry Brownies', brand: 'Flax4Life', upc: '8 57287 00419 8', img: '../assets/portfolio/dark_cherry_brownies.png', icon: 'bakery_dining',
+          ingredients: 'Ground Flaxseed, Cane Sugar, Egg Whites, Water, Dark Cherries, Chocolate Chips, Cocoa, Baking Soda, Sea Salt, Xanthan Gum, Guar Gum, Citric Acid, Natural Flavor, Potassium Sorbate.',
+          baseline: { calories: 230, grams: 56, sodium: 180, addedSugar: 25, satFat: 4, transFat: 0, fiber: 2, additives: 5, vitamins: 1, wholeGrain: false, algo: 'G' } },
+        { id: 'vegan-chocolate-brownies', name: 'Vegan Chocolate Brownies', short: 'Vegan Chocolate Brownies', brand: 'Flax4Life', upc: '8 57287 00483 8', img: '../assets/portfolio/vegan_chocolate_brownies.png', icon: 'bakery_dining',
+          ingredients: 'Ground Flaxseed, Cane Sugar, Water, Cocoa, Chocolate Chips, Non-GMO Canola Oil, Baking Soda, Sea Salt, Xanthan Gum, Natural Flavor.',
+          baseline: { calories: 190, grams: 48, sodium: 140, addedSugar: 14, satFat: 2.5, transFat: 0, fiber: 3, additives: 2, vitamins: 0, wholeGrain: false, algo: 'G' } },
+        { id: 'vegan-blueberry-mini', name: 'Blueberry Mini-Muffins-6 ct', short: 'Vegan Blueberry Minis', brand: 'Flax4Life', upc: '8 57287 00468 5', img: '../assets/portfolio/vegan_blueberry_mini.png', icon: 'cake',
+          ingredients: 'Ground Flaxseed, Blueberries, Cane Sugar, Water, Non-GMO Canola Oil, Baking Soda, Sea Salt, Natural Flavor.',
+          baseline: { calories: 180, grams: 42, sodium: 90, addedSugar: 6, satFat: 1.5, transFat: 0, fiber: 3, additives: 0, vitamins: 1, wholeGrain: false, algo: 'G' } },
+        { id: 'vegan-carrot-raisin-mini', name: 'Vegan Carrot Raisin Mini-Muffins-6 ct', short: 'Vegan Carrot Raisin Minis', brand: 'Flax4Life', upc: '8 57287 00482 1', img: '../assets/portfolio/vegan_carrot_raisin_mini.png', icon: 'cake',
+          ingredients: 'Ground Flaxseed, Whole Grain Oats, Carrots, Raisins, Cane Sugar, Water, Cinnamon, Baking Soda, Sea Salt, Natural Flavor.',
+          baseline: { calories: 170, grams: 40, sodium: 250, addedSugar: 5, satFat: 1, transFat: 0, fiber: 3, additives: 0, vitamins: 1, wholeGrain: true, algo: 'G' } },
+        { id: 'nsa-carrot-raisin', name: 'Carrot Raisin No Sugar Added Mini Flax Muffins', short: 'No-Sugar-Added Carrot Minis', brand: 'Flax4Life', upc: '8 57287 00474 6', img: '../assets/portfolio/nsa_carrot_raisin_mini.png', icon: 'cake',
+          ingredients: 'Ground Flaxseed, Whole Grain Oats, Carrots, Raisins, Egg Whites, Water, Cinnamon, Baking Soda, Sea Salt, Natural Flavor.',
+          baseline: { calories: 160, grams: 38, sodium: 70, addedSugar: 0, satFat: 0.8, transFat: 0, fiber: 8, additives: 0, vitamins: 3, wholeGrain: true, algo: 'G' } },
+        { id: 'date-almond-bites', name: 'Date & Almond Bites-8 ct', short: 'Date & Almond Bites', brand: 'Flax4Life', upc: '8 57287 00502 6', img: '../assets/portfolio/pf_date_bites.png', icon: 'cookie',
+          ingredients: 'Dates, Almonds, Ground Flaxseed, Whole Grain Oats, Sea Salt, Natural Flavor.',
+          baseline: { calories: 150, grams: 32, sodium: 35, addedSugar: 1, satFat: 1, transFat: 0, fiber: 5, additives: 0, vitamins: 1, wholeGrain: true, algo: 'G' } },
+        { id: 'flax-crackers', name: 'Everything Flax Crackers-6 oz', short: 'Everything Flax Crackers', brand: 'Flax4Life', upc: '8 57287 00511 8', img: '../assets/portfolio/pf_crackers.png', icon: 'cookie',
+          ingredients: 'Ground Flaxseed, Whole Grain Oats, Sesame Seeds, Poppy Seeds, Dried Onion, Dried Garlic, Sea Salt, Olive Oil.',
+          baseline: { calories: 140, grams: 30, sodium: 380, addedSugar: 0, satFat: 1.5, transFat: 0, fiber: 4, additives: 0, vitamins: 0, wholeGrain: true, algo: 'G' } },
+        { id: 'flax-cereal', name: 'Flax Granola Cereal, Original', short: 'Flax Granola Cereal', brand: 'Flax4Life', upc: '8 57287 00520 0', img: '../assets/portfolio/pf_cereal.png', icon: 'breakfast_dining',
+          ingredients: 'Ground Flaxseed, Whole Grain Oats, Cane Sugar, Coconut, Sea Salt, Natural Flavor.',
+          baseline: { calories: 200, grams: 48, sodium: 80, addedSugar: 6, satFat: 1.5, transFat: 0, fiber: 7, additives: 0, vitamins: 2, wholeGrain: true, algo: 'G' } },
+        { id: 'protein-bar-choc', name: 'Flax Protein Bar, Chocolate Sea Salt', short: 'Chocolate Sea Salt Bar', brand: 'Flax4Life', upc: '8 57287 00531 6', img: '../assets/portfolio/pf_protein_bar.png', icon: 'nutrition',
+          ingredients: 'Ground Flaxseed, Whole Grain Oats, Cane Sugar, Cocoa, Sea Salt, Soy Lecithin, Natural Flavor.',
+          baseline: { calories: 210, grams: 50, sodium: 180, addedSugar: 8, satFat: 3.5, transFat: 0, fiber: 5, additives: 1, vitamins: 2, wholeGrain: true, algo: 'G' } },
+        { id: 'protein-bar-pb', name: 'Flax Protein Bar, Peanut Butter', short: 'Peanut Butter Protein Bar', brand: 'Flax4Life', upc: '8 57287 00532 3', img: '../assets/portfolio/pf_protein_bar.png', icon: 'nutrition',
+          ingredients: 'Peanuts, Ground Flaxseed, Dates, Sea Salt, Natural Flavor.',
+          baseline: { calories: 220, grams: 52, sodium: 200, addedSugar: 7, satFat: 4, transFat: 0, fiber: 7, additives: 0, vitamins: 3, wholeGrain: false, algo: 'M' } },
+        { id: 'flax-popcorn', name: 'Sea Salt Popcorn, Flax-Dusted', short: 'Flax-Dusted Popcorn', brand: 'Flax4Life', upc: '8 57287 00551 4', img: '../assets/portfolio/pf_popcorn.png', icon: 'local_dining',
+          ingredients: 'Popcorn, Ground Flaxseed, Olive Oil, Sea Salt.',
+          baseline: { calories: 120, grams: 28, sodium: 90, addedSugar: 0, satFat: 0.5, transFat: 0, fiber: 6, additives: 0, vitamins: 3, wholeGrain: true, algo: 'G' } },
       ];
       /* Brand → header artwork. The banners are deliberately textural with no
          lettering: a card header crops to roughly 7:1, which would slice a
@@ -1789,6 +1803,15 @@
         { keys: ['whole grain oats', 'oats'], usda: 'Cereals, oats, regular and quick, not fortified, dry', n: n100(379, 13.2, 6.52, 1.11, 10.6, 2) },
         { keys: ['raisins'], usda: 'Raisins, seedless', n: n100(299, 3.07, 0.46, 0.06, 3.7, 11) },
         { keys: ['cinnamon'], usda: 'Spices, cinnamon, ground', n: n100(247, 3.99, 1.24, 0.35, 53.1, 10) },
+        { keys: ['apples', 'apple'], usda: 'Apples, raw, with skin', n: n100(52, 0.26, 0.17, 0.03, 2.4, 1) },
+        { keys: ['carrots', 'carrot'], usda: 'Carrots, raw', n: n100(41, 0.93, 0.24, 0.04, 2.8, 69) },
+        { keys: ['dates'], usda: 'Dates, medjool', n: n100(277, 1.81, 0.15, 0, 6.7, 1) },
+        { keys: ['almonds'], usda: 'Nuts, almonds', n: n100(579, 21.2, 50, 3.8, 12.5, 1) },
+        { keys: ['peanuts'], usda: 'Peanuts, all types, dry-roasted', n: n100(587, 24.4, 49.7, 6.89, 8.4, 6) },
+        { keys: ['popcorn'], usda: 'Snacks, popcorn, air-popped', n: n100(387, 12.9, 4.54, 0.63, 15.1, 8) },
+        { keys: ['sesame seeds'], usda: 'Seeds, sesame seeds, whole, dried', n: n100(573, 17.7, 49.7, 6.96, 11.8, 11) },
+        { keys: ['olive oil'], usda: 'Oil, olive, extra virgin', n: n100(884, 0, 100, 13.8, 0, 2) },
+        { keys: ['dark cherries', 'cherries'], usda: 'Cherries, sweet, raw', n: n100(63, 1.06, 0.2, 0.04, 2.1, 0) },
       ];
       const IA_PREAMBLE = /^(contains less than \d+% of(?: the following)?:?\s*|contains \d+% or less of:?\s*)/i;
       function splitIngTokens(text) {
@@ -2361,23 +2384,215 @@
         const reps = {};
         recs.forEach((r) => {
           const key = 'move:' + r.id;
-          ints.push({ intent: key, label: moveChipLabel(r, c), icon: r.icon });
+          ints.push({
+            intent: key,
+            label: moveChipLabel(r, c),
+            icon: r.icon,
+            ask: r.title,
+          });
           reps[key] = () => applyReplyFor(r.id);
         });
+        if (!ints.length) {
+          ints.push({
+            intent: 'lens:all',
+            label: 'Back to the catalog',
+            icon: 'inventory_2',
+            ask: 'Show me the full reformulation catalog',
+          });
+          reps['lens:all'] = () => lensReply('all');
+        }
         return { ints, reps };
       }
       /* Swap the chat's chips to the current reformulation moves. When nothing is
-         left to do we clear them so the "fully optimized" state reads clean. */
+         left to do we offer a path back to the catalog. */
       function setMoveChips() {
         if (!chat || !product) return;
         const { ints, reps } = moveIntentsAndReplies();
         chat.setIntents(ints, reps);
       }
-      /* Step-0 chips: one per product in the portfolio, so a food can be chosen
-         straight from the chat welcome (mirrors the picker rows in the dashboard). */
-      function productIntents() {
-        return PRODUCTS.map((p) => ({ intent: 'pick:' + p.id, label: p.short, icon: p.icon }));
+
+      /* ── Catalog lenses (scorecards + opportunities) ──
+         While picking, chips are the scorecard filters and the catalog-wide
+         reformulation opportunities — not one chip per food. Tapping a lens
+         filters the overview and shifts the chips to the foods in that bucket. */
+      const LENS_COPY = {
+        all: { title: 'the full catalog', detail: 'Every food on the reformulation board.' },
+        dq: { title: 'disqualified foods', detail: 'These fail a Guiding Stars hard stop — added sugar over 40% of calories, or two or more additives to limit.' },
+        ok: { title: 'qualifying foods', detail: 'These already clear the hard stops and can earn stars.' },
+        blockers: { title: 'foods with blockers still on the label', detail: 'Each one still has at least one hard stop to clear.' },
+        'stars-3': { title: '3-star foods', detail: 'These already earn the full Guiding Stars rating.' },
+        'stars-2': { title: '2-star foods', detail: 'Two stars — close to the top rating, with a debit or a missing credit still in play.' },
+        'stars-1': { title: '1-star foods', detail: 'One star — they qualify, but the net is still thin.' },
+        'stars-0': { title: 'zero-star foods that still qualify', detail: 'No hard stop, but the net is not yet high enough to earn a star.' },
+        'dq-sugar': { title: 'foods over the added-sugar cap', detail: 'Added sugar is more than 40% of calories — the first reformulation move is to cut it.' },
+        'dq-additives': { title: 'foods blocked by additives', detail: 'Two or more additives to limit disqualify the recipe.' },
+      };
+      function rowMatchesFilter(r, filter) {
+        const c = r && r.c;
+        if (!c) return false;
+        if (!filter || filter === 'all') return true;
+        if (filter === 'dq' || filter === 'blockers') return !!c.disqualified;
+        if (filter === 'ok') return !c.disqualified;
+        if (filter.indexOf('stars-') === 0) {
+          const n = Number(filter.slice(6));
+          return !c.disqualified && c.stars === n;
+        }
+        if (filter === 'dq-sugar') return !!(c.dq && c.dq.some((d) => d.id === 'dq-sugar'));
+        if (filter === 'dq-additives') return !!(c.dq && c.dq.some((d) => d.id === 'dq-additives'));
+        return true;
       }
+      function filteredRated(filter) {
+        return ratedProducts().filter((r) => rowMatchesFilter(r, filter));
+      }
+      function productChip(p) {
+        return {
+          intent: 'pick:' + p.id,
+          label: p.short,
+          icon: p.icon,
+          ask: 'Reformulate ' + p.short,
+        };
+      }
+      function applyPickFilter(next) {
+        pickFilter = next || 'all';
+        if (typeof renderPickStats === 'function') renderPickStats();
+        if (typeof applyDashFilter === 'function') applyDashFilter();
+      }
+      function worstRated() {
+        return ratedProducts().slice().sort((a, b) => {
+          const aq = a.c.disqualified ? 0 : 1;
+          const bq = b.c.disqualified ? 0 : 1;
+          if (aq !== bq) return aq - bq;
+          if (a.c.stars !== b.c.stars) return a.c.stars - b.c.stars;
+          return a.c.net - b.c.net;
+        })[0] || null;
+      }
+      function catalogLensChips() {
+        const rated = ratedProducts();
+        const dq = rated.filter((r) => r.c.disqualified);
+        const ok = rated.filter((r) => !r.c.disqualified);
+        const byStar = [0, 1, 2, 3].map((n) => ok.filter((r) => r.c.stars === n));
+        const sugar = rated.filter((r) => r.c.dq.some((d) => d.id === 'dq-sugar'));
+        const adds = rated.filter((r) => r.c.dq.some((d) => d.id === 'dq-additives'));
+        const ints = [];
+        const reps = {};
+        const addLens = (id, label, icon, ask) => {
+          ints.push({ intent: 'lens:' + id, label, icon, ask });
+          reps['lens:' + id] = () => lensReply(id);
+        };
+        if (dq.length) addLens('dq', 'Show disqualified', 'block', 'Which foods are disqualified?');
+        if (ok.length) addLens('ok', 'Show qualifying', 'verified', 'Which foods already qualify?');
+        if (byStar[3].length) addLens('stars-3', 'Show 3-star foods', 'star', 'Which foods earn three Guiding Stars?');
+        if (byStar[2].length) addLens('stars-2', 'Show 2-star foods', 'star', 'Which foods earn two Guiding Stars?');
+        if (byStar[1].length) addLens('stars-1', 'Show 1-star foods', 'star', 'Which foods earn one Guiding Star?');
+        if (byStar[0].length) addLens('stars-0', 'Show zero-star foods', 'star_border', 'Which qualifying foods still have zero stars?');
+        if (sugar.length) {
+          ints.push({
+            intent: 'opp:sugar',
+            label: 'Cut added sugar first',
+            icon: 'icecream',
+            ask: 'Which foods fail the added-sugar cap?',
+          });
+          reps['opp:sugar'] = () => lensReply('dq-sugar');
+        }
+        if (adds.length) {
+          ints.push({
+            intent: 'opp:additives',
+            label: 'Clear additive blockers',
+            icon: 'science',
+            ask: 'Which foods are blocked by additives?',
+          });
+          reps['opp:additives'] = () => lensReply('dq-additives');
+        }
+        const worst = worstRated();
+        if (worst) {
+          ints.push({
+            intent: 'opp:worst',
+            label: 'Reformulate the lowest score',
+            icon: 'tune',
+            ask: 'Reformulate the lowest-scoring food',
+          });
+          reps['opp:worst'] = () => worstReply();
+        }
+        return { ints, reps };
+      }
+      function filteredProductChips(filter) {
+        const rows = filteredRated(filter);
+        const ints = rows.slice(0, 6).map((r) => productChip(r.p));
+        const reps = {};
+        if (filter && filter !== 'all') {
+          ints.push({
+            intent: 'lens:all',
+            label: 'Show the full catalog',
+            icon: 'inventory_2',
+            ask: 'Show me the full reformulation catalog',
+          });
+          reps['lens:all'] = () => lensReply('all');
+        }
+        const extra = catalogLensChips();
+        extra.ints.forEach((c) => {
+          const id = String(c.intent || '');
+          const lens = id.indexOf('lens:') === 0 ? id.slice(5) : '';
+          if (lens && lens === filter) return;
+          if (ints.some((x) => x.intent === c.intent)) return;
+          if (ints.length >= 8) return;
+          if (id.indexOf('opp:') === 0 || (lens && lens !== filter)) ints.push(c);
+        });
+        Object.assign(reps, extra.reps);
+        return { ints, reps };
+      }
+      function setCatalogChips() {
+        if (!chat) return;
+        const { ints, reps } = catalogLensChips();
+        chat.setIntents(ints, reps);
+      }
+      function setFilteredChips(filter) {
+        if (!chat) return;
+        const { ints, reps } = filteredProductChips(filter);
+        chat.setIntents(ints, reps);
+      }
+      function syncPickerChips() {
+        if (!chat || (modulesRow && !modulesRow.classList.contains('is-picking'))) return;
+        if (!pickFilter || pickFilter === 'all') setCatalogChips();
+        else setFilteredChips(pickFilter);
+      }
+      function lensReply(filter) {
+        if (modulesRow && !modulesRow.classList.contains('is-picking')) {
+          showPickerBoard();
+        }
+        applyPickFilter(filter);
+        const rows = filteredRated(filter);
+        const copy = LENS_COPY[filter] || LENS_COPY.all;
+        setTimeout(() => {
+          if (filter === 'all') setCatalogChips();
+          else setFilteredChips(filter);
+        }, 30);
+        const names = rows.slice(0, 4).map((r) => r.p.short);
+        const more = rows.length > names.length ? ` and ${rows.length - names.length} more` : '';
+        const list = names.length ? ` ${names.join(', ')}${more}.` : '';
+        return `I filtered the overview to <b>${copy.title}</b> — <b>${rows.length}</b> food${rows.length === 1 ? '' : 's'}.${list} ${copy.detail} Tap a food below to load it into the studio.`;
+      }
+      function worstReply() {
+        const worst = worstRated();
+        if (!worst) return 'The catalog is empty.';
+        const p = selectProductState(worst.p.id);
+        if (!p) return 'I could not load that food.';
+        setTimeout(() => { if (chat) chat.hideWelcome(); seed(); }, 0);
+        return '';
+      }
+      window.rfApplyCatalogLens = function (filter) {
+        if (modulesRow && !modulesRow.classList.contains('is-picking')) {
+          showPickerBoard();
+        }
+        const html = lensReply(filter);
+        if (chat) {
+          chat.hideWelcome();
+          addWISEcodeAI(html, { chips: false });
+          setTimeout(() => {
+            if (filter === 'all') setCatalogChips();
+            else setFilteredChips(filter);
+          }, 30);
+        }
+      };
 
       /* ═══════════ Chat — delegates to the shared WISEcodeAI module ═══════════
          The module owns the transcript, avatars, timestamps, typing indicator
@@ -3036,8 +3251,31 @@
          The module posts the you-line + typing indicator; we return WISEcodeAI's
          answer for the current board state. ── */
       function rfReply(text) {
-        if (!product) return 'Pick a food from the list in the dashboard first — then I can model it against the Guiding Stars algorithm.';
         const t = String(text || '').toLowerCase();
+        if (!product) {
+          if (/3[-\s]?star|three star|★★★/.test(t)) return lensReply('stars-3');
+          if (/2[-\s]?star|two star|★★/.test(t)) return lensReply('stars-2');
+          if (/1[-\s]?star|one star|single star/.test(t)) return lensReply('stars-1');
+          if (/zero star|0[-\s]?star|no star/.test(t)) return lensReply('stars-0');
+          if (/disqualif|dq|blocked|hard stop/.test(t)) return lensReply('dq');
+          if (/qualif|already earn|clears? the/.test(t)) return lensReply('ok');
+          if (/sugar|sweet/.test(t)) return lensReply('dq-sugar');
+          if (/additive|preservative|color|dye/.test(t)) return lensReply('dq-additives');
+          if (/worst|lowest|hardest|first to fix/.test(t)) {
+            const worst = worstRated();
+            if (!worst) return 'The catalog is empty.';
+            setTimeout(() => { selectProduct(worst.p.id); }, 0);
+            return `The lowest score on the board is <b>${esc(worst.p.short)}</b> — loading it into the studio.`;
+          }
+          if (/all|catalog|every food|full (list|board)/.test(t)) return lensReply('all');
+          const hit = PRODUCTS.find((p) => t.indexOf(String(p.short || '').toLowerCase()) >= 0
+            || t.indexOf(String(p.name || '').toLowerCase()) >= 0);
+          if (hit) {
+            setTimeout(() => { selectProduct(hit.id); }, 0);
+            return `Loading <b>${esc(hit.short)}</b> into the studio.`;
+          }
+          return 'I can filter the catalog by disqualified, qualifying, or Guiding Stars — or load any food into the studio. Tap a chip below, or name a product.';
+        }
         const c = compute();
         if (/star|rating|score|how many|point/.test(t)) {
           return `${scoreSentence(c)} ${pathToNextStar(c).msg}`;
@@ -3320,23 +3558,21 @@
       let pickFilter = 'all';   // all · dq · ok
 
       /* Cards without a `filter` are read-outs, so they render disabled.
-         Markup matches the shared welcome scorecard (icon / metric / title /
-         desc) so the board and the chat rail read as one family. */
+         Markup is the shared filter tile used on Portfolio / Alerts / Help:
+         numeral + icon-and-label. No eyebrow, no description. */
       function statHtml(o) {
-        const cls = ['ws-scorecard', 'rf-stat', o.active ? 'is-active' : ''].filter(Boolean).join(' ');
+        const tone = o.tone ? ` wmod-stat--${o.tone}` : '';
+        const cls = `wmod-stat rf-stat${tone}${o.active ? ' is-active' : ''}`;
         const attrs = o.filter ? ` data-filter="${o.filter}" aria-pressed="${o.active ? 'true' : 'false'}"` : ' disabled';
         const icon = o.icon || 'insights';
-        const desc = o.desc ? `<div class="ws-sc-desc">${o.desc}</div>` : '';
         return `<button type="button" class="${cls}"${attrs}>` +
-          `<div class="ws-sc-top"><span class="ws-sc-icon"><span class="material-symbols-outlined">${icon}</span></span></div>` +
-          `<div class="ws-sc-metric">${o.num}</div>` +
-          `<div class="ws-sc-title">${o.label}</div>` +
-          desc +
+          `<span class="wmod-stat-num rf-stat-num">${o.num}</span>` +
+          `<span class="wmod-stat-label"><span class="material-symbols-outlined">${icon}</span>${o.label}</span>` +
           `</button>`;
       }
       function paintStats(cards) {
         statsEl.dataset.cols = String(cards.length);
-        statsEl.style.setProperty('--rf-stat-cols', String(cards.length));
+        statsEl.style.setProperty('--wmod-cols', String(cards.length));
         statsEl.innerHTML = cards.join('');
       }
       function starsGlyph(n) {
@@ -3350,10 +3586,10 @@
         const dqCount = rated.filter((c) => c.disqualified).length;
         const blockers = rated.reduce((n, c) => n + c.dq.length, 0);
         paintStats([
-          statHtml({ num: PRODUCTS.length, label: 'Products', icon: 'inventory_2', desc: 'In this reformulation catalog', filter: 'all', active: pickFilter === 'all' }),
-          statHtml({ num: dqCount, label: 'Disqualified', icon: 'block', desc: 'Fail a Guiding Stars hard stop', filter: 'dq', active: pickFilter === 'dq' }),
-          statHtml({ num: rated.length - dqCount, label: 'Qualifying', icon: 'verified', desc: 'Clear of disqualifiers', filter: 'ok', active: pickFilter === 'ok' }),
-          statHtml({ num: blockers, label: 'Blockers to clear', icon: 'warning', desc: 'Hard stops still on a label' }),
+          statHtml({ num: PRODUCTS.length, label: 'Products', icon: 'inventory_2', filter: 'all', active: pickFilter === 'all' }),
+          statHtml({ num: dqCount, label: 'Disqualified', icon: 'block', tone: 'alert', filter: 'dq', active: pickFilter === 'dq' }),
+          statHtml({ num: rated.length - dqCount, label: 'Qualifying', icon: 'verified', tone: 'good', filter: 'ok', active: pickFilter === 'ok' }),
+          statHtml({ num: blockers, label: 'Blockers to clear', icon: 'warning', tone: 'warn', filter: 'blockers', active: pickFilter === 'blockers' }),
         ]);
       }
 
@@ -3365,17 +3601,17 @@
                 num: c.disqualified ? 0 : c.stars,
                 label: 'Guiding Stars',
                 icon: c.disqualified ? 'block' : 'star',
-                desc: c.disqualified ? 'Disqualified — no stars' : 'Earned on this recipe',
+                tone: c.disqualified ? 'alert' : 'verified',
               }),
-              statHtml({ num: signed, label: 'Net points', icon: 'query_stats', desc: 'Credits minus debits' }),
+              statHtml({ num: signed, label: 'Net points', icon: 'query_stats' }),
             ]
           : [
-              statHtml({ num: signed, label: 'Nutrition score', icon: 'query_stats', desc: 'Credits minus debits' }),
+              statHtml({ num: signed, label: 'Nutrition score', icon: 'query_stats' }),
             ];
         cards.push(
-          statHtml({ num: c.debitSum, label: 'Debits', icon: 'trending_down', desc: 'Nutrients that cost points' }),
-          statHtml({ num: '+' + c.creditSum, label: 'Credits', icon: 'trending_up', desc: 'Nutrients that add points' }),
-          statHtml({ num: c.dq.length, label: GS ? 'Blockers' : 'Flags', icon: 'warning', desc: c.dq.length ? 'Hard stops still in play' : 'No hard stops on this label' })
+          statHtml({ num: c.debitSum, label: 'Debits', icon: 'trending_down', tone: 'warn' }),
+          statHtml({ num: '+' + c.creditSum, label: 'Credits', icon: 'trending_up', tone: 'good' }),
+          statHtml({ num: c.dq.length, label: GS ? 'Blockers' : 'Flags', icon: 'warning', tone: c.dq.length ? 'warn' : '' })
         );
         paintStats(cards);
       }
@@ -3388,16 +3624,20 @@
         pickFilter = (f !== 'all' && pickFilter === f) ? 'all' : f;
         renderPickStats();
         applyDashFilter();
+        syncPickerChips();
       });
 
       function applyDashFilter() {
         const q = dashQuery.trim().toLowerCase();
         if (modulesRow.classList.contains('is-picking')) {
+          const rated = ratedProducts();
+          const byId = new Map(rated.map((r) => [r.p.id, r]));
           const rows = pickList.querySelectorAll('.rf-trow');
           let shown = 0;
           rows.forEach((row) => {
+            const r = byId.get(row.dataset.pick);
             const hit = (!q || row.dataset.search.indexOf(q) !== -1)
-              && (pickFilter === 'all' || pickFilter === row.dataset.seg);
+              && rowMatchesFilter(r, pickFilter);
             row.classList.toggle('rf-row-hidden', !hit);
             if (hit) shown++;
           });
@@ -3550,11 +3790,24 @@
       });
 
       /* Chat's step-0 prompt (the picking turn also lives in the chat module). */
-      /* Step-0: show the shared chat's welcome with a product chip for each food. */
+      /* Step-0: welcome chips are the scorecard lenses + catalog opportunities. */
       function seedPickPrompt() {
         if (!chat) return;
-        chat.setIntents(productIntents());
+        setCatalogChips();
         chat.reset();
+      }
+      function showPickerBoard() {
+        product = null;
+        ORIGINAL = null;
+        state = null;
+        modulesRow.classList.add('is-picking');
+        setDashMode(true);
+        dressDashHead(null);
+        renderPickHead();
+        renderPickList();
+        renderPickStats();
+        applyDashFilter();
+        document.getElementById('rf-dash-meta').textContent = 'Choose a product to reformulate';
       }
 
       /* Dress the dashboard header in the loaded food's brand banner and photo,
@@ -3586,14 +3839,7 @@
       }
 
       window.rfShowPicker = function () {
-        modulesRow.classList.add('is-picking');
-        setDashMode(true);
-        dressDashHead(null);
-        renderPickHead();
-        renderPickList();
-        renderPickStats();
-        applyDashFilter();
-        document.getElementById('rf-dash-meta').textContent = 'Choose a product to reformulate';
+        showPickerBoard();
         seedPickPrompt();
       };
 
@@ -3678,7 +3924,8 @@
           stickyModules: true,
           stickyModulesDefault: true,
           stickyModulesMenu: false,
-          intents: productIntents(),
+          intents: catalogLensChips().ints,
+          intentReplies: catalogLensChips().reps,
           reply: (text) => rfReply(text),
           onIntent: (intent) => {
             /* Product picker chip → load it onto the boards. Let the module post
@@ -3686,6 +3933,24 @@
             if (intent && intent.indexOf('pick:') === 0) {
               const p = selectProductState(intent.slice(5));
               if (p) setTimeout(() => { if (chat) chat.hideWelcome(); seed(); }, 0);
+              return true;
+            }
+            if (intent === 'opp:worst') {
+              const worst = worstRated();
+              if (!worst) return false;
+              const p = selectProductState(worst.p.id);
+              if (p) setTimeout(() => { if (chat) chat.hideWelcome(); seed(); }, 0);
+              return true;
+            }
+            if (intent && (intent.indexOf('lens:') === 0 || intent.indexOf('opp:') === 0)) {
+              const filter = intent === 'opp:sugar' ? 'dq-sugar'
+                : intent === 'opp:additives' ? 'dq-additives'
+                : intent.slice(5);
+              setTimeout(() => {
+                if (chat) chat.hideWelcome();
+                const html = lensReply(filter);
+                if (html) addWISEcodeAI(html, { chips: false });
+              }, 0);
               return true;
             }
             /* Move chips resolve through intentReplies → applyReplyFor. */

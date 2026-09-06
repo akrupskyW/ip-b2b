@@ -72,7 +72,7 @@
   /* Nested drawers (progress + this list) use --sticky-nested-tuck in wise.css.
      Chat-adjacent drawers (Output, NFP, studio, Turns) stay on --sticky-tuck.
      Do not mix the two. */
-  var NESTED_DRAWER_SEL = '#help-contact,#wa-report,#rf-report,#pf-report-panel,#workflow-panel,.rf-dash,#ia-panel';
+  var NESTED_DRAWER_SEL = '#help-contact,#dash-brand-images,#wa-report,#rf-report,#pf-report-panel,#workflow-panel,.rf-dash,#ia-panel';
   var REMOVE_TOGGLE_ATTR = 'data-progress-remove';
 
   function isProgressPane(el) { return !!(el && el.matches && el.matches(PROGRESS_SEL)); }

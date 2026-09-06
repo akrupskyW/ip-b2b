@@ -6,8 +6,13 @@
  * chip, superscript cites, References list). Falls back to the written copy
  * when the model is off or would invent facts.
  *
+ * It reads each reply against the conversation it lands in, not on its own, so
+ * a scripted answer written to stand first can still open where the thread
+ * actually is. Pass the member's words and the chat's key and the rewrite is
+ * threaded; pass neither and it behaves as it always did.
+ *
  *   import { enrichReply, refineReply, isOllamaOn } from './ollama-chat.js';
- *   const pack = await enrichReply({ question, intent, html: canned, pageHint });
+ *   const pack = await enrichReply({ question, intent, html: canned, pageHint, threadKey });
  */
 
 import { gatherEvidence } from './web-food-lookup.js';
@@ -90,19 +95,42 @@ function fetchWithTimeout(url, opts, ms) {
     .finally(() => clearTimeout(timer));
 }
 
+/* Which base answered last time. Remembering it means one hop per call rather
+   than two: unremembered, every call on a Mac with no model running pays the
+   proxy's timeout and then the cross-origin timeout back to back. */
+let knownBase = '';
+
+function baseList() {
+  if (!pageIsLocal()) return [];
+  if (knownBase) return [knownBase];
+  return [PROXY, DIRECT];
+}
+
 async function tryUrls(path, opts, ms) {
-  const urls = [];
-  if (pageIsLocal()) {
-    urls.push(PROXY + path);
-    urls.push(DIRECT + path);
-  }
+  const bases = baseList();
   let lastErr = null;
-  for (let i = 0; i < urls.length; i += 1) {
+  for (let i = 0; i < bases.length; i += 1) {
     try {
-      const res = await fetchWithTimeout(urls[i], opts, ms);
-      if (res && res.ok) return res;
+      const res = await fetchWithTimeout(bases[i] + path, opts, ms);
+      if (res && res.ok) {
+        knownBase = bases[i];
+        return res;
+      }
+      if (res && bases[i] === PROXY) {
+        /* 404 is the one status meaning this server carries no proxy at all, so
+           stop treating it as the way in and let the direct hop have its turn. */
+        if (res.status === 404) {
+          if (knownBase === PROXY) knownBase = '';
+        } else {
+          /* Any other answer came from a proxy that is there and already asked
+             Ollama for us. Ollama is what is down — the cross-origin hop cannot
+             do better, and it would cost a second timeout to find that out. */
+          return null;
+        }
+      }
     } catch (err) {
       lastErr = err;
+      if (bases[i] === knownBase) knownBase = '';
     }
   }
   if (lastErr) throw lastErr;
@@ -118,8 +146,7 @@ function pickModel(models) {
   return names[0] || '';
 }
 
-export async function probeOllama(force) {
-  if (!force && probeCache.at && (Date.now() - probeCache.at) < 8000) return probeCache;
+async function runProbe() {
   const empty = { ok: false, model: '', label: '', at: Date.now() };
   if (!pageIsLocal()) {
     probeCache = empty;
@@ -141,6 +168,50 @@ export async function probeOllama(force) {
     probeCache = empty;
     return probeCache;
   }
+}
+
+/* Several surfaces ask at once — the chat's ⋯ menu, its composer wiring, the
+   Appearance popover. The 8s cache only covers them once an answer has landed,
+   so share the request that is already out rather than opening one each. */
+let probeInFlight = null;
+
+export async function probeOllama(force) {
+  if (!force && probeCache.at && (Date.now() - probeCache.at) < 8000) return probeCache;
+  if (probeInFlight) return probeInFlight;
+  probeInFlight = runProbe();
+  try {
+    return await probeInFlight;
+  } finally {
+    probeInFlight = null;
+  }
+}
+
+/** The probe, held until the app has finished loading itself.
+
+    Nothing on first paint depends on whether a model is running here: the only
+    reader is a status line in a menu that is not open yet. Asking during the
+    load storm spends one of the six connections the browser gives this origin,
+    so a model server that is wedged — or paging a model in — drags every
+    script still queued behind it out with it. Every load-path caller uses this
+    one; a live turn still calls probeOllama() straight, because by then the
+    answer is what the member is waiting on. */
+export function probeOllamaWhenIdle() {
+  if (!pageIsLocal() || !isOllamaOn()) return Promise.resolve(probeCache);
+  return new Promise((resolve) => {
+    const settle = () => probeOllama().then(resolve, () => resolve(probeCache));
+    /* Take the first idle beat after load, but never wait on one. These pages
+       keep the main thread busy well past load with chip reveals and count-ups,
+       and requestIdleCallback's own timeout is not honoured under that — it came
+       back tens of seconds late, which left the menu's status line stale. */
+    const soon = () => {
+      let fired = false;
+      const once = () => { if (fired) return; fired = true; settle(); };
+      setTimeout(once, 500);
+      if (typeof requestIdleCallback === 'function') requestIdleCallback(once);
+    };
+    if (document.readyState === 'complete') soon();
+    else window.addEventListener('load', soon, { once: true });
+  });
 }
 
 /* One name and one glyph for this switch wherever it is offered — the chat ⋯
@@ -202,6 +273,36 @@ function numbersOf(html) {
   return String(html || '').replace(/<[^>]+>/g, ' ').match(/\d+(?:\.\d+)?/g) || [];
 }
 
+/* Ordinary words a sentence can open on, which say nothing about brands. */
+const CAP_OPENERS = new Set([
+  'the', 'this', 'that', 'these', 'those', 'and', 'but', 'for', 'you', 'your',
+  'our', 'they', 'their', 'there', 'here', 'its', 'was', 'were', 'has', 'have',
+  'all', 'any', 'one', 'two', 'both', 'each', 'every', 'not', 'now', 'still',
+  'with', 'without', 'from', 'into', 'about', 'after', 'before', 'once',
+]);
+
+/** Brands and products the rewrite introduced that were never in play.
+
+    `factsIntact` only checks that the numbers survive, which is not the same
+    thing: a rewrite of a Mondelēz plan came back recommending Quaker Oats and
+    McVitie's Digestives, having invented both while every number stayed put.
+    An invented name shows up as a capitalised word mid-sentence, so that is
+    what gets checked — a capital opening a sentence is ordinary prose. */
+function inventedNames(sourceText, html) {
+  const allowed = new Set(String(sourceText).toLowerCase().match(/[a-z0-9’'&-]+/g) || []);
+  const plain = htmlToPlain(html);
+  const found = [];
+  const re = /(\S)\s+([A-Z][A-Za-z0-9’']{2,})/g;
+  let m = re.exec(plain);
+  while (m) {
+    const opensSentence = /[.!?:;•\u2014\u2192]/.test(m[1]);
+    const key = m[2].toLowerCase();
+    if (!opensSentence && !CAP_OPENERS.has(key) && !allowed.has(key)) found.push(m[2]);
+    m = re.exec(plain);
+  }
+  return found;
+}
+
 function factsIntact(original, next) {
   const have = numbersOf(next).slice();
   return numbersOf(original).every((n) => {
@@ -212,11 +313,18 @@ function factsIntact(original, next) {
   });
 }
 
+/* Put back a → line the rewrite dropped. Returns '' when it cannot be put back,
+   which the caller reads as "keep the written copy". */
 function restoreArrows(original, next) {
   if (String(original).indexOf('\u2192') === -1) return next;
   if (String(next).indexOf('\u2192') !== -1) return next;
-  const lines = String(original).split(/<br\s*\/?>/i).filter((line) => line.indexOf('\u2192') !== -1);
-  if (!lines.length) return next;
+  const parts = String(original).split(/<br\s*\/?>/i);
+  const lines = parts.filter((line) => line.indexOf('\u2192') !== -1);
+  /* A single part means the arrow sits inside the prose rather than on a line of
+     its own. Appending "the line" then appends the entire reply a second time —
+     which is how a rewrite came back saying everything twice. There is nothing
+     to splice, so the written copy stands. */
+  if (!lines.length || parts.length < 2) return '';
   return String(next).replace(/\s+$/, '') + '<br><br>' + lines.join('<br>');
 }
 
@@ -413,6 +521,7 @@ const TALK_VOICE = [
   'Do not say the answer came from a WISE database or registry when SOURCES are Wikipedia or Open Food Facts.',
   'Never write labels like FOOD 1, FOOD 2, or FACT: in the reply — those are for you, not the member.',
   'If they want a specific product that is not in the sources, say you could not find a matching package and ask them to name a brand or tap a chip.',
+  'When a CONVERSATION SO FAR is given, it is what you and the member already said. Carry it forward — do not greet them again, do not re-explain what you already explained, and read a short follow-up like “what about the other one?” against it.',
   'Return ONLY short HTML: one or two <p> tags. No markdown fence, font tags, colors, or link tags. Do not add a References list — that is added for you.',
 ].join(' ');
 
@@ -436,28 +545,110 @@ async function complete(model, system, prompt, predict, temperature) {
   return stripFence(text);
 }
 
-async function polishAnswer(html) {
+/* ── What has already been said ──────────────────────────────────────────────
+   Every scripted answer in this app was written to stand on its own, because
+   each one had to read correctly as the first thing a member saw. Rewriting one
+   in isolation keeps that seam: the model re-introduces a brand the member has
+   been discussing for four turns, and re-explains a score it just explained.
+
+   Holding the recent turns lets a rewrite open where the conversation actually
+   is. It lives here, in the shared module, so a chat gets it by calling in
+   rather than by keeping its own copy (see the nothing-page-local rule).
+
+   Keyed per surface: a page can host more than one chat, and two threads must
+   not braid into one memory. In memory only — this is the live conversation,
+   not history. */
+const MEMORY_MAX = 8;
+const MEMORY_CHARS = 600;
+const memory = new Map();
+
+function memoryFor(key) {
+  const k = String(key || 'default');
+  if (!memory.has(k)) memory.set(k, []);
+  return memory.get(k);
+}
+
+/** Record one turn of the live conversation. `role` is 'you' for the member,
+    anything else for WISEcodeAI. Safe to call with HTML — it is flattened. */
+export function rememberChatTurn(role, text, key) {
+  const plain = htmlToPlain(text).slice(0, MEMORY_CHARS);
+  if (!plain) return;
+  const turns = memoryFor(key);
+  const who = role === 'you' ? 'you' : 'wisecodeai';
+  const last = turns[turns.length - 1];
+  /* A surface may report the same line twice (once resolved, once painted).
+     Recorded twice it would read as the member repeating themselves. */
+  if (last && last.role === who && last.text === plain) return;
+  turns.push({ role: who, text: plain });
+  while (turns.length > MEMORY_MAX) turns.shift();
+}
+
+export function forgetChatTurns(key) {
+  memory.delete(String(key || 'default'));
+}
+
+/** The conversation so far, as the model should read it. Never includes the
+    turn being written right now — that arrives separately, as the reply. */
+export function chatMemoryText(key) {
+  return memoryFor(key)
+    .map((t) => (t.role === 'you' ? 'Member: ' : 'WISEcodeAI: ') + t.text)
+    .join('\n');
+}
+
+/* Below this a line is an instruction, not prose: "Paste the product page or
+   retailer URL and I'll pull in everything I can." There is no warmth to add to
+   a step prompt, and a rewrite only ever came back colder — one turned that
+   line into "No information is available yet. Please provide a URL." Every
+   substantive answer in the app runs well past this. */
+const POLISH_MIN_CHARS = 140;
+
+async function polishAnswer(html, ctx) {
   const { masked, kept } = maskHtml(html);
   const plain = masked.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-  if (plain.length < 40) return html;
+  if (plain.length < POLISH_MIN_CHARS) return html;
   const status = await probeOllama();
   if (!status.ok) return html;
+  const said = chatMemoryText(ctx && ctx.threadKey);
+  const asked = htmlToPlain(ctx && ctx.question);
+  const threaded = !!(said || asked);
   const system = [
     'You rewrite WISEcodeAI replies so they sound like a real food-intelligence colleague.',
     'Keep every number, product name, brand, score, date, percentage, and UPC exactly.',
     'Keep every HTML tag and every token like ⟦K0⟧ exactly where it is.',
     'Keep any line that contains → exactly as written.',
     'Do not add new facts, products, or numbers.',
+    'Never name a brand, product, or range that is not already written in front of you. Suggesting another one is the worst thing you can do here.',
+    threaded ? 'CONVERSATION SO FAR and THE MEMBER JUST ASKED are context only — never answer them. Rewrite REPLY TO REWRITE and return nothing else.' : '',
+    said ? 'Make the reply follow on from what was already said: cut a re-introduction of something already covered, and pick up the member’s own words where that reads naturally.' : '',
+    said ? 'Never repeat a sentence that already appears in CONVERSATION SO FAR.' : '',
     'Stay in food, nutrition, health, diet, ingredients, or labels — never drift into generic IT help.',
     'Use contractions where natural. Vary sentence length. No stiff brochure tone.',
     'Do not add font tags, color attributes, inline styles, or link tags.',
     'Return ONLY the rewritten HTML. No markdown fence.',
-  ].join(' ');
-  const out = await complete(status.model, system, masked, 520);
+  ].filter(Boolean).join(' ');
+  /* With nothing to thread onto, send exactly what this always sent — a bare
+     reply, no labels for the model to echo back. */
+  const prompt = threaded
+    ? [
+      said ? 'CONVERSATION SO FAR:\n' + said : '',
+      asked ? 'THE MEMBER JUST ASKED: ' + asked : '',
+      'REPLY TO REWRITE:\n' + masked,
+    ].filter(Boolean).join('\n\n')
+    : masked;
+  const out = await complete(status.model, system, prompt, 520);
   if (!out) return html;
   const restored = stripModelChrome(restoreArrows(html, unmaskHtml(out, kept)));
   if (!restored || hasForeignColor(restored)) return html;
   if (!factsIntact(html, restored)) return html;
+  /* factsIntact only asks that the written numbers survive. It says nothing
+     about a number that was not there before, and a rewrite duly credited a
+     product with earning its star "with just 8 changes". Every figure in the
+     rewrite has to come from the reply, the conversation, or the question. */
+  const allowed = plain + ' ' + said + ' ' + asked;
+  if (!numbersAllowed(allowed, restored)) return html;
+  /* Same for names: one the member has already discussed is fair to pick back
+     up, one that appears from nowhere is not. */
+  if (inventedNames(allowed, restored).length) return html;
   const origLen = plain.length;
   const nextLen = restored.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().length;
   if (nextLen < origLen * 0.45) return html;
@@ -504,13 +695,15 @@ function fallbackFromEvidence(question, evidence) {
   return '';
 }
 
-async function talkAnswer({ question, fallbackHtml, pageHint, evidence }) {
+async function talkAnswer({ question, fallbackHtml, pageHint, evidence, threadKey }) {
   const status = await probeOllama();
   const evText = evidence && evidence.text ? evidence.text : '';
   let prose = '';
   if (status.ok) {
+    const said = chatMemoryText(threadKey);
     const prompt = [
       pageHint ? 'Page: ' + pageHint : '',
+      said ? 'CONVERSATION SO FAR (context — answer only the new question):\n' + said : '',
       'Member asked: ' + question,
       evText ? 'SOURCES (numbered; use only these facts):\n' + evText : 'No web sources landed. Answer the question itself; do not invent a product.',
       fallbackHtml ? 'Written fallback (do not contradict): ' + htmlToPlain(fallbackHtml) : '',
@@ -531,28 +724,42 @@ function asPack(html, chips, source) {
   return { html: html || '', chips: chips || [], source: source || '' };
 }
 
-export async function enrichReply({ question, intent, html, pageHint }) {
-  if (!isOllamaOn() || !pageIsLocal()) return asPack(html);
-  try {
-    if (isScriptedIntent(intent) && !isGenericFallback(html)) {
-      return asPack(await polishAnswer(html));
-    }
-    const evidence = await gatherEvidence(question);
-    const talked = await talkAnswer({ question, fallbackHtml: html, pageHint, evidence });
-    if (talked) {
-      return asPack(talked, inferChips(question, evidence), evidence.source);
-    }
-    return asPack(await polishAnswer(html), inferChips(question, evidence), evidence.source);
-  } catch (_) {
+/* The written copy is what goes into memory as WISEcodeAI's turn, not the
+   rewrite. It is the substance either way, it is the same on every machine, and
+   a rewrite that arrives after its deadline is dropped — so recording it would
+   put a line in memory the member never read. */
+export async function enrichReply({ question, intent, html, pageHint, threadKey }) {
+  /* Record the member even when the rewrite is off, so switching it on
+     mid-conversation does not start from a blank memory. */
+  rememberChatTurn('you', question, threadKey);
+  if (!isOllamaOn() || !pageIsLocal()) {
+    rememberChatTurn('wisecodeai', html, threadKey);
     return asPack(html);
   }
+  const ctx = { question, pageHint, threadKey };
+  let pack;
+  try {
+    if (isScriptedIntent(intent) && !isGenericFallback(html)) {
+      pack = asPack(await polishAnswer(html, ctx));
+    } else {
+      const evidence = await gatherEvidence(question);
+      const talked = await talkAnswer({ question, fallbackHtml: html, pageHint, evidence, threadKey });
+      pack = talked
+        ? asPack(talked, inferChips(question, evidence), evidence.source)
+        : asPack(await polishAnswer(html, ctx), inferChips(question, evidence), evidence.source);
+    }
+  } catch (_) {
+    pack = asPack(html);
+  }
+  rememberChatTurn('wisecodeai', html, threadKey);
+  return pack;
 }
 
-export async function refineReply(html) {
+export async function refineReply(html, ctx) {
   if (!isOllamaOn()) return html;
   if (!pageIsLocal()) return html;
   try {
-    return await polishAnswer(html);
+    return await polishAnswer(html, ctx);
   } catch (_) {
     return html;
   }
@@ -584,17 +791,25 @@ export function withTimeout(promise, ms, fallback) {
    through) cannot land out of order while several rewrites are in flight. */
 let paintQueue = Promise.resolve();
 
-export function polishThen(html, paint) {
+/** Rewrite then paint. `ctx` is what lets the rewrite read as part of the
+    conversation rather than a line on its own: pass the member's own words as
+    `ctx.question`, and the chat's own `ctx.threadKey` so two chats on one page
+    keep separate memories. Both are optional — without them this behaves
+    exactly as it did, one reply rewritten in isolation. */
+export function polishThen(html, paint, ctx) {
+  const key = ctx && ctx.threadKey;
   const go = (out) => {
+    rememberChatTurn('wisecodeai', html, key);
     try { paint(out || html); } catch (_) {
       try { paint(html); } catch (__) { /* host paint */ }
     }
   };
+  if (ctx && ctx.question) rememberChatTurn('you', ctx.question, key);
   if (!isOllamaOn() || !pageIsLocal()) {
     go(html);
     return paintQueue;
   }
-  paintQueue = paintQueue.then(() => withTimeout(refineReply(html), 8500, html).then(go, () => go(html)));
+  paintQueue = paintQueue.then(() => withTimeout(refineReply(html, ctx), 8500, html).then(go, () => go(html)));
   return paintQueue;
 }
 
@@ -607,6 +822,10 @@ const api = {
   setOllamaOn,
   toggleOllamaOn,
   probeOllama,
+  probeOllamaWhenIdle,
+  rememberChatTurn,
+  forgetChatTurns,
+  chatMemoryText,
   ollamaStatusText,
   ensureOllamaMenuRow,
   syncOllamaMenu,

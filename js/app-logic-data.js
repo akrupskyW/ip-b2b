@@ -126,7 +126,7 @@ export const APP_LOGIC = [
     label: 'Navigation shell',
     icon: 'menu',
     area: 'shared',
-    src: ['js/agent-menu.js', 'js/topbar.js', 'js/mobile-nav.js', 'js/nav-history.js', 'js/nav-modules.js', 'js/app-search.js'],
+    src: ['js/agent-menu.js', 'js/topbar.js', 'js/nav-responsive.js', 'js/nav-history.js', 'js/nav-modules.js', 'js/app-search.js'],
     rules: [
       {
         title: 'wiseai.html is the canonical shell',
@@ -134,7 +134,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'One import boots the subsystems',
-        how: 'Importing <code>agent-menu.js</code> side-loads <code>lir-tooltip</code>, <code>pane-width</code>, <code>pane-resize</code>, <code>default-fill</code>, <code>popover-layer</code>, <code>chip-tooltip</code> and <code>owl-walkthrough</code>; <code>topbar.js</code> adds <code>mobile-nav</code>. Each is guarded by an idempotent flag such as <code>window.__wisePaneWidthLoaded</code>, so a page never double-boots them.',
+        how: 'Importing <code>agent-menu.js</code> side-loads <code>lir-tooltip</code>, <code>pane-width</code>, <code>pane-resize</code>, <code>default-fill</code>, <code>popover-layer</code>, <code>chip-tooltip</code> and <code>owl-walkthrough</code>; <code>topbar.js</code> adds <code>nav-responsive</code>. Each is guarded by an idempotent flag such as <code>window.__wisePaneWidthLoaded</code>, so a page never double-boots them.',
       },
       {
         title: 'Pages opt into the nav by data attribute',
@@ -145,8 +145,8 @@ export const APP_LOGIC = [
         how: '<code>agent-menu.js</code> keeps an <code>EXISTING_PAGES</code> set; a nav entry whose slug is not in it renders with <code>.menu-nav-locked</code> instead of a dead link. Adding the page is what unlocks the item.',
       },
       {
-        title: 'Mobile collapses the nav into a drawer',
-        how: 'Below <code>768px</code>, <code>mobile-nav.js</code> shows only the owl bug until <code>#menu-panel.wise-mnav-open</code> opens the full drawer over an <code>#mnav-scrim</code>, locking scroll with <code>html.wise-mnav-locked</code>. Leaving the breakpoint closes the drawer automatically.',
+        title: 'One navigation at every screen size',
+        how: 'The nav is a left-side vertical rail on a phone, a tablet and a desktop alike — collapsed to its icons, expanding in place when a control inside it is tapped. Only the rail\u2019s own measurements change, through the <code>--nav-rail-*</code> tokens in <code>pages/wise.css</code> at <code>1024px</code> and <code>768px</code>. It never becomes a top bar: <code>nav-responsive.js</code> holds the Pivot Navigation preference back below <code>1024px</code> (without forgetting it) and re-applies it on <code>wise:nav-tier</code> when the window grows past that width.',
       },
       {
         title: 'Page-level nav overrides are forced, not stored',

@@ -1120,6 +1120,11 @@
         return `<div class="gs-chips-inline"><div class="gs-chips">${inner}</div></div>`;
       }
 
+      /* Which conversation this report's chat is, as far as the local model's
+         memory is concerned (js/ollama-chat.js). Every chat keeps its own, so
+         two on one screen never read each other's turns as their own. */
+      const GS_THREAD_KEY = 'report-guiding-stars';
+
       function youAvatarSpan() {
         try {
           if (window.WiseUserAvatar && typeof window.WiseUserAvatar.span === 'function') {
@@ -1135,6 +1140,9 @@
       }
       function addUser(text) {
         stripChips();
+        /* Tell the local model what was just asked, so the rewrite of the answer
+           picks up this thread rather than reading as a first line. */
+        window.WiseOllama?.rememberChatTurn('you', text, GS_THREAD_KEY);
         box.insertAdjacentHTML('beforeend', '<div class="mb-3 sc-line sc-line-you">' + youAvatarSpan() + '<div class="sc-line-body">' + esc(text) + metaRow() + '</div></div>');
         gsFollowChat(true); /* fresh user action — always bring their message into view */
       }
@@ -1219,7 +1227,7 @@
           setTimeout(() => { if (t) t.remove(); addWISEcodeAI(out, { chips: true }); }, left);
         };
         if (window.WiseOllama && typeof window.WiseOllama.polishThen === 'function') {
-          window.WiseOllama.polishThen(html, paint);
+          window.WiseOllama.polishThen(html, paint, { threadKey: GS_THREAD_KEY });
           return;
         }
         paint(html);
@@ -1298,13 +1306,22 @@
          with the same headline the report leads with. */
       const EXEC_MSG = 'Good morning, Arthur. Here\'s the <b>executive summary</b> of your <b>Guiding Stars Action Plan</b> for Mondelēz:<br><br><b>78% of the portfolio (491 SKUs) earns no star today</b>, but the gap is thinner than it looks. <b>113 products are one reformulation away</b> from their first star — most just need added sugar under the 40%-of-calories cap or one debit trimmed. Clear those and star-earning products jump <b>137 → 250 (+82%)</b>. A further <b>26 near-misses</b> reach a star with two light moves. The heaviest concentration of zero-star SKUs sits in <b>Cookies &amp; Crackers</b> — also where you trail the category leader most.';
 
+      const GS_OPENER = 'That\'s the whole plan in one table below — filter it with the scorecards, or ask me anything. Where should we start?';
+
       function openConversation() {
         box.innerHTML = '';
         /* This opener pre-loads the entire conversation at once, so it lands
            instantly (no typewriter / chip fly-in). Only the replies to
            subsequent chip clicks animate in. */
         addWISEcodeAI(EXEC_MSG, { instant: true });
-        addWISEcodeAI('That\'s the whole plan in one table below — filter it with the scorecards, or ask me anything. Where should we start?', { chips: true, instant: true });
+        addWISEcodeAI(GS_OPENER, { chips: true, instant: true });
+        /* The opener stays exactly as written — it is what the reader lands on,
+           so it must not wait on a model. It still goes into memory, so the
+           first real answer follows on from the summary instead of restating
+           the numbers the reader has just read. */
+        window.WiseOllama?.forgetChatTurns(GS_THREAD_KEY);
+        window.WiseOllama?.rememberChatTurn('wisecodeai', EXEC_MSG, GS_THREAD_KEY);
+        window.WiseOllama?.rememberChatTurn('wisecodeai', GS_OPENER, GS_THREAD_KEY);
       }
       openConversation();
 

@@ -18,6 +18,10 @@
 
   /* ─────────────────────────── helpers ─────────────────────────── */
   const $ = (id) => document.getElementById(id);
+  /* Which conversation this flow's chat is, as far as the local model's memory
+     is concerned (js/ollama-chat.js). Every chat keeps its own, so two on one
+     screen never read each other's turns as their own. */
+  const AC_THREAD_KEY = 'add-catalog';
   function esc(s) {
     if (typeof window !== 'undefined' && typeof window.WiseEsc === 'function') return window.WiseEsc(s);
     return String(s == null ? '' : s)
@@ -227,6 +231,9 @@
 
   function addUser(text) {
     hideWelcome();
+    /* Tell the local model what was just asked, so the rewrite of the answer
+       picks up this thread rather than reading as a first line. */
+    window.WiseOllama?.rememberChatTurn('you', text, AC_THREAD_KEY);
     messagesEl.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-you">${youAvatarSpan()}<div class="sc-line-body">${esc(text)}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div></div></div>`);
     scrollDown(true);
@@ -277,19 +284,24 @@
     setTimeout(showNext, startDelay);
   }
   function revealWelcome() {
-    if (!welcomeEl) return;
+    if (!welcomeEl || welcomeEl.classList.contains('sc-hidden')) return;
+    if (typeof window.WisePaintWelcome === 'function') {
+      window.WisePaintWelcome(welcomeEl);
+      return;
+    }
+    welcomeEl.classList.add('ws-in');
     const heading = welcomeEl.querySelector('.ws-heading');
     const subEl = welcomeEl.querySelector('.ws-sub');
     const chips = chipsStartEl ? Array.from(chipsStartEl.querySelectorAll('.chip')) : [];
-    if (prefersReducedMotion) {
-      chips.forEach((c) => { c.style.opacity = ''; c.style.transform = ''; c.style.transition = ''; });
-      return;
-    }
-    chips.forEach(apPrimeRight);
-    const typeText = (el, next) => { if (el) typeInLine(el, next); else next(); };
-    typeText(heading, () => typeText(subEl, () => { apRevealStaggered(chips, 90, 60, null); }));
+    [heading, subEl].concat(chips).forEach((el) => {
+      if (!el) return;
+      el.hidden = false;
+      el.style.opacity = '';
+      el.style.transform = '';
+      el.style.transition = '';
+    });
   }
-  function addWISEcodeAI(html, chips) {
+  function paintWISEcodeAI(html, chips) {
     hideWelcome();
     const footer = `<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div>`;
     messagesEl.insertAdjacentHTML('beforeend',
@@ -314,6 +326,18 @@
         apRevealStaggered(chipBtns, 110, 55, scrollDown);
       });
     });
+  }
+  /* Catalog import was the one chat left reading purely as written copy. It
+     goes through the same local-model pass as every other chat now, and reads
+     each line against the import conversation so far, so a run of steps stops
+     re-introducing the file it has been discussing since the upload. */
+  function addWISEcodeAI(html, chips) {
+    const api = window.WiseOllama;
+    if (api && typeof api.polishThen === 'function') {
+      api.polishThen(html, function (out) { paintWISEcodeAI(out, chips); }, { threadKey: AC_THREAD_KEY });
+      return;
+    }
+    paintWISEcodeAI(html, chips);
   }
   function addSysNote(text, icon) {
     messagesEl.insertAdjacentHTML('beforeend',
@@ -747,7 +771,7 @@
     fileInput = $('ap-file');
     if (!messagesEl || !catBody || !progressEl) return;
 
-    if (chipsStartEl) {
+    if (chipsStartEl && !chipsStartEl.querySelector('.chip')) {
       chipsStartEl.innerHTML = WELCOME_CHIPS.map((c) =>
         `<button type="button" class="chip ws-intent-chip" data-action="${esc(c.action)}"><span class="material-symbols-outlined">${esc(c.icon)}</span>${esc(c.label)}</button>`).join('');
     }

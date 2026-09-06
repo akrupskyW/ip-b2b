@@ -6,29 +6,29 @@
  * Regenerate with: python3 scripts/scan_code_stats.py
  */
 window.WISE_PROJECT_INVENTORY = {
-  "generatedAt": "2026-09-02",
-  "bytes": 148113825,
-  "files": 437,
+  "generatedAt": "2026-09-05",
+  "bytes": 175893504,
+  "files": 495,
   "kinds": {
     "code": {
-      "bytes": 13891888,
-      "files": 177
+      "bytes": 14717235,
+      "files": 223
     },
     "image": {
-      "bytes": 73206917,
-      "files": 237
+      "bytes": 75169921,
+      "files": 240
     },
     "video": {
-      "bytes": 60326232,
-      "files": 4
+      "bytes": 83340142,
+      "files": 10
     },
     "font": {
       "bytes": 0,
       "files": 0
     },
     "other": {
-      "bytes": 688788,
-      "files": 19
+      "bytes": 2666206,
+      "files": 22
     }
   },
   "list": [
@@ -909,12 +909,12 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "assets/icons/wise-icons.meta.json",
-      "bytes": 9851,
+      "bytes": 10361,
       "kind": "other"
     },
     {
       "path": "assets/icons/wise-icons.svg",
-      "bytes": 480475,
+      "bytes": 499784,
       "kind": "image"
     },
     {
@@ -1086,6 +1086,66 @@ window.WISE_PROJECT_INVENTORY = {
       "path": "assets/marketing/videos/README.txt",
       "bytes": 660,
       "kind": "other"
+    },
+    {
+      "path": "assets/owl-progression/owl-blue-anim.json",
+      "bytes": 476346,
+      "kind": "other"
+    },
+    {
+      "path": "assets/owl-progression/owl-blue.png",
+      "bytes": 649263,
+      "kind": "image"
+    },
+    {
+      "path": "assets/owl-progression/owl-deep-harbor.mp4",
+      "bytes": 5140472,
+      "kind": "video"
+    },
+    {
+      "path": "assets/owl-progression/owl-green-anim.json",
+      "bytes": 692247,
+      "kind": "other"
+    },
+    {
+      "path": "assets/owl-progression/owl-green.png",
+      "bytes": 631886,
+      "kind": "image"
+    },
+    {
+      "path": "assets/owl-progression/owl-linen.mp4",
+      "bytes": 5169166,
+      "kind": "video"
+    },
+    {
+      "path": "assets/owl-progression/owl-red-anim.json",
+      "bytes": 807876,
+      "kind": "other"
+    },
+    {
+      "path": "assets/owl-progression/owl-red-deep-harbor.mp4",
+      "bytes": 4089747,
+      "kind": "video"
+    },
+    {
+      "path": "assets/owl-progression/owl-red-linen.mp4",
+      "bytes": 4128699,
+      "kind": "video"
+    },
+    {
+      "path": "assets/owl-progression/owl-red.png",
+      "bytes": 662546,
+      "kind": "image"
+    },
+    {
+      "path": "assets/owl-progression/owl-scan-green-dark.mp4",
+      "bytes": 2287780,
+      "kind": "video"
+    },
+    {
+      "path": "assets/owl-progression/owl-scan-green-light.mp4",
+      "bytes": 2198046,
+      "kind": "video"
     },
     {
       "path": "assets/portfolio/apple_cinnamon_muffins.png",
@@ -1269,7 +1329,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "dev_server.py",
-      "bytes": 4123,
+      "bytes": 8793,
       "kind": "code"
     },
     {
@@ -1279,7 +1339,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "index.html",
-      "bytes": 33681,
+      "bytes": 33670,
       "kind": "code"
     },
     {
@@ -1289,7 +1349,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/add-product-flow.js",
-      "bytes": 272476,
+      "bytes": 290194,
       "kind": "code"
     },
     {
@@ -1299,47 +1359,67 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/agent-menu.js",
-      "bytes": 62618,
+      "bytes": 64093,
       "kind": "code"
     },
     {
       "path": "js/agent-overview.js",
-      "bytes": 91290,
+      "bytes": 92407,
       "kind": "code"
     },
     {
       "path": "js/agents-flow.js",
-      "bytes": 14871,
+      "bytes": 14805,
       "kind": "code"
     },
     {
       "path": "js/ai-ready-data.js",
-      "bytes": 2520,
+      "bytes": 2544,
       "kind": "code"
     },
     {
       "path": "js/alerts-flow.js",
-      "bytes": 13731,
+      "bytes": 13665,
       "kind": "code"
     },
     {
       "path": "js/all-modules-flow.js",
-      "bytes": 756538,
+      "bytes": 797904,
+      "kind": "code"
+    },
+    {
+      "path": "js/analytics-card-kit.js",
+      "bytes": 6596,
+      "kind": "code"
+    },
+    {
+      "path": "js/analytics-palette.js",
+      "bytes": 39113,
       "kind": "code"
     },
     {
       "path": "js/analytics-types-catalog.js",
-      "bytes": 6759,
+      "bytes": 16256,
+      "kind": "code"
+    },
+    {
+      "path": "js/analytics-types-tables.js",
+      "bytes": 44443,
+      "kind": "code"
+    },
+    {
+      "path": "js/analytics-types-variations.js",
+      "bytes": 36123,
       "kind": "code"
     },
     {
       "path": "js/api-keys-flow.js",
-      "bytes": 17061,
+      "bytes": 16192,
       "kind": "code"
     },
     {
       "path": "js/app-logic-data.js",
-      "bytes": 98820,
+      "bytes": 102304,
       "kind": "code"
     },
     {
@@ -1349,17 +1429,17 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/appearance-menu.js",
-      "bytes": 59491,
+      "bytes": 62600,
       "kind": "code"
     },
     {
       "path": "js/ask-catalog.js",
-      "bytes": 46458,
+      "bytes": 47783,
       "kind": "code"
     },
     {
       "path": "js/audit-queue-flow.js",
-      "bytes": 26452,
+      "bytes": 26280,
       "kind": "code"
     },
     {
@@ -1388,13 +1468,18 @@ window.WISE_PROJECT_INVENTORY = {
       "kind": "code"
     },
     {
+      "path": "js/chart-arcs.js",
+      "bytes": 2542,
+      "kind": "code"
+    },
+    {
       "path": "js/chat-activity-strip.js",
-      "bytes": 29835,
+      "bytes": 33768,
       "kind": "code"
     },
     {
       "path": "js/chat-ask.js",
-      "bytes": 36948,
+      "bytes": 36932,
       "kind": "code"
     },
     {
@@ -1404,7 +1489,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/chat-history.js",
-      "bytes": 135949,
+      "bytes": 135967,
       "kind": "code"
     },
     {
@@ -1434,12 +1519,12 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/cwr-toggle.js",
-      "bytes": 54193,
+      "bytes": 54184,
       "kind": "code"
     },
     {
       "path": "js/dashboard-home.js",
-      "bytes": 185851,
+      "bytes": 183915,
       "kind": "code"
     },
     {
@@ -1454,12 +1539,12 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/dev-ready-data.js",
-      "bytes": 2803,
+      "bytes": 3873,
       "kind": "code"
     },
     {
       "path": "js/docs-flow.js",
-      "bytes": 16379,
+      "bytes": 16313,
       "kind": "code"
     },
     {
@@ -1474,7 +1559,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/feedback.js",
-      "bytes": 56918,
+      "bytes": 56910,
       "kind": "code"
     },
     {
@@ -1484,7 +1569,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/gras-verification-flow.js",
-      "bytes": 66764,
+      "bytes": 66486,
       "kind": "code"
     },
     {
@@ -1494,7 +1579,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/help-flow.js",
-      "bytes": 35253,
+      "bytes": 35187,
       "kind": "code"
     },
     {
@@ -1524,12 +1609,12 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/kebab-hover.js",
-      "bytes": 9576,
+      "bytes": 10441,
       "kind": "code"
     },
     {
       "path": "js/lir-tooltip.js",
-      "bytes": 14197,
+      "bytes": 14961,
       "kind": "code"
     },
     {
@@ -1553,11 +1638,6 @@ window.WISE_PROJECT_INVENTORY = {
       "kind": "code"
     },
     {
-      "path": "js/mobile-nav.js",
-      "bytes": 5694,
-      "kind": "code"
-    },
-    {
       "path": "js/module-directory-data.js",
       "bytes": 8135,
       "kind": "code"
@@ -1574,12 +1654,17 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/nav-modules.js",
-      "bytes": 15979,
+      "bytes": 16116,
+      "kind": "code"
+    },
+    {
+      "path": "js/nav-responsive.js",
+      "bytes": 3019,
       "kind": "code"
     },
     {
       "path": "js/non-upf-dashboard-flow.js",
-      "bytes": 46203,
+      "bytes": 42480,
       "kind": "code"
     },
     {
@@ -1593,13 +1678,23 @@ window.WISE_PROJECT_INVENTORY = {
       "kind": "code"
     },
     {
+      "path": "js/ollama-chat.js",
+      "bytes": 23045,
+      "kind": "code"
+    },
+    {
       "path": "js/organizations-flow.js",
-      "bytes": 24716,
+      "bytes": 24564,
       "kind": "code"
     },
     {
       "path": "js/owl-mark.js",
       "bytes": 5181,
+      "kind": "code"
+    },
+    {
+      "path": "js/owl-progression-carousel.js",
+      "bytes": 18989,
       "kind": "code"
     },
     {
@@ -1624,7 +1719,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/popover-layer.js",
-      "bytes": 21917,
+      "bytes": 22163,
       "kind": "code"
     },
     {
@@ -1644,7 +1739,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/progress-log-eval.js",
-      "bytes": 48895,
+      "bytes": 50568,
       "kind": "code"
     },
     {
@@ -1659,12 +1754,12 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/project-inventory-data.js",
-      "bytes": 47264,
+      "bytes": 47703,
       "kind": "code"
     },
     {
       "path": "js/quick-invite-flow.js",
-      "bytes": 21974,
+      "bytes": 21802,
       "kind": "code"
     },
     {
@@ -1674,7 +1769,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/responsive-tables.js",
-      "bytes": 9824,
+      "bytes": 16785,
       "kind": "code"
     },
     {
@@ -1685,6 +1780,11 @@ window.WISE_PROJECT_INVENTORY = {
     {
       "path": "js/sortable-tables.js",
       "bytes": 17384,
+      "kind": "code"
+    },
+    {
+      "path": "js/stagger-reveal.js",
+      "bytes": 7099,
       "kind": "code"
     },
     {
@@ -1704,12 +1804,12 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/teams-flow.js",
-      "bytes": 33606,
+      "bytes": 33434,
       "kind": "code"
     },
     {
       "path": "js/text-size-fouc.js",
-      "bytes": 24211,
+      "bytes": 25548,
       "kind": "code"
     },
     {
@@ -1724,12 +1824,17 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/topbar.js",
-      "bytes": 96738,
+      "bytes": 97411,
       "kind": "code"
     },
     {
       "path": "js/trace-helix.js",
       "bytes": 16567,
+      "kind": "code"
+    },
+    {
+      "path": "js/trace-stream.js",
+      "bytes": 12397,
       "kind": "code"
     },
     {
@@ -1739,27 +1844,42 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/user-management-flow.js",
-      "bytes": 22788,
+      "bytes": 22616,
       "kind": "code"
     },
     {
       "path": "js/verification-flow.js",
-      "bytes": 58377,
+      "bytes": 50923,
+      "kind": "code"
+    },
+    {
+      "path": "js/web-food-lookup.js",
+      "bytes": 10943,
       "kind": "code"
     },
     {
       "path": "js/welcome-orbit.js",
-      "bytes": 23982,
+      "bytes": 24854,
       "kind": "code"
     },
     {
       "path": "js/wise-library-store.js",
-      "bytes": 28319,
+      "bytes": 30401,
+      "kind": "code"
+    },
+    {
+      "path": "js/wise-modal.js",
+      "bytes": 5244,
+      "kind": "code"
+    },
+    {
+      "path": "js/wise-toolbar.js",
+      "bytes": 3304,
       "kind": "code"
     },
     {
       "path": "js/wiseai-chat.js",
-      "bytes": 755292,
+      "bytes": 769197,
       "kind": "code"
     },
     {
@@ -1814,12 +1934,12 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "marketing-wiseai.html",
-      "bytes": 4191,
+      "bytes": 4180,
       "kind": "code"
     },
     {
       "path": "marketing.css",
-      "bytes": 102147,
+      "bytes": 101936,
       "kind": "code"
     },
     {
@@ -1834,22 +1954,22 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "pages/accessibility-review.html",
-      "bytes": 131252,
+      "bytes": 131171,
       "kind": "code"
     },
     {
       "path": "pages/add-catalog.html",
-      "bytes": 51638,
+      "bytes": 52180,
       "kind": "code"
     },
     {
       "path": "pages/add-product.html",
-      "bytes": 152645,
+      "bytes": 156106,
       "kind": "code"
     },
     {
       "path": "pages/admin-utils.html",
-      "bytes": 12507,
+      "bytes": 12480,
       "kind": "code"
     },
     {
@@ -1859,7 +1979,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "pages/ai-dashboard.html",
-      "bytes": 75860,
+      "bytes": 75815,
       "kind": "code"
     },
     {
@@ -1869,12 +1989,12 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "pages/all-modules.html",
-      "bytes": 17211,
+      "bytes": 17193,
       "kind": "code"
     },
     {
       "path": "pages/analytics-types.html",
-      "bytes": 304573,
+      "bytes": 354088,
       "kind": "code"
     },
     {
@@ -1894,7 +2014,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "pages/conversation-library.html",
-      "bytes": 158868,
+      "bytes": 158813,
       "kind": "code"
     },
     {
@@ -1904,7 +2024,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "pages/docs.html",
-      "bytes": 8186,
+      "bytes": 8159,
       "kind": "code"
     },
     {
@@ -1919,17 +2039,17 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "pages/helix.html",
-      "bytes": 27934,
+      "bytes": 27916,
       "kind": "code"
     },
     {
       "path": "pages/ingredient-browser.html",
-      "bytes": 67068,
+      "bytes": 71693,
       "kind": "code"
     },
     {
       "path": "pages/invoices.html",
-      "bytes": 18671,
+      "bytes": 19116,
       "kind": "code"
     },
     {
@@ -1939,12 +2059,12 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "pages/marketing-assets.html",
-      "bytes": 27543,
+      "bytes": 27525,
       "kind": "code"
     },
     {
       "path": "pages/non-upf-dashboard.html",
-      "bytes": 11121,
+      "bytes": 9144,
       "kind": "code"
     },
     {
@@ -1954,12 +2074,12 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "pages/overview.html",
-      "bytes": 9970,
+      "bytes": 9976,
       "kind": "code"
     },
     {
       "path": "pages/page-gallery.html",
-      "bytes": 20350,
+      "bytes": 20296,
       "kind": "code"
     },
     {
@@ -1969,22 +2089,22 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "pages/product-comparison.html",
-      "bytes": 957955,
+      "bytes": 956093,
       "kind": "code"
     },
     {
       "path": "pages/product-portfolio.html",
-      "bytes": 1338941,
+      "bytes": 1335681,
       "kind": "code"
     },
     {
       "path": "pages/profile.html",
-      "bytes": 15658,
+      "bytes": 15631,
       "kind": "code"
     },
     {
       "path": "pages/progress-log.html",
-      "bytes": 244538,
+      "bytes": 247070,
       "kind": "code"
     },
     {
@@ -1994,27 +2114,27 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "pages/reformulation.html",
-      "bytes": 211475,
+      "bytes": 212271,
       "kind": "code"
     },
     {
       "path": "pages/report-guiding-stars.html",
-      "bytes": 93666,
+      "bytes": 94212,
       "kind": "code"
     },
     {
       "path": "pages/reports.html",
-      "bytes": 54246,
+      "bytes": 54200,
       "kind": "code"
     },
     {
       "path": "pages/studio-ai.html",
-      "bytes": 38274,
+      "bytes": 38480,
       "kind": "code"
     },
     {
       "path": "pages/support.html",
-      "bytes": 16206,
+      "bytes": 16179,
       "kind": "code"
     },
     {
@@ -2034,17 +2154,17 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "pages/view-product.html",
-      "bytes": 152187,
+      "bytes": 156106,
       "kind": "code"
     },
     {
       "path": "pages/wise.css",
-      "bytes": 980287,
+      "bytes": 1020156,
       "kind": "code"
     },
     {
       "path": "pages/wiseai.html",
-      "bytes": 980713,
+      "bytes": 1156427,
       "kind": "code"
     },
     {
@@ -2053,8 +2173,63 @@ window.WISE_PROJECT_INVENTORY = {
       "kind": "other"
     },
     {
+      "path": "scripts/_allmod_outpane_shot.py",
+      "bytes": 4467,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_atlas_check.js",
+      "bytes": 18998,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_atlas_panels_check.js",
+      "bytes": 9677,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_atlas_ten_probe.py",
+      "bytes": 5872,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_attb_menu_check.py",
+      "bytes": 7533,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_attb_probe.py",
+      "bytes": 7768,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_attb_shot.py",
+      "bytes": 6933,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_azp_filter_check.py",
+      "bytes": 8610,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_azp_menu_probe.py",
+      "bytes": 3873,
+      "kind": "code"
+    },
+    {
       "path": "scripts/_cdp.py",
-      "bytes": 6190,
+      "bytes": 8060,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_chat_width_probe.py",
+      "bytes": 4269,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_composer_gutter_probe.py",
+      "bytes": 4905,
       "kind": "code"
     },
     {
@@ -2063,9 +2238,69 @@ window.WISE_PROJECT_INVENTORY = {
       "kind": "code"
     },
     {
+      "path": "scripts/_earmark_check.js",
+      "bytes": 9241,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_mobile_card_audit.py",
+      "bytes": 6889,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_mobile_rowmenu_shot.py",
+      "bytes": 3456,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_nav_responsive_probe.py",
+      "bytes": 6295,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_output_open_probe.py",
+      "bytes": 5564,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_output_pacing_check.js",
+      "bytes": 9282,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_pane_menu_probe.py",
+      "bytes": 3016,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_pane_narrow_probe.py",
+      "bytes": 6580,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_pane_narrow_shot.py",
+      "bytes": 7253,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_panel_menu_shot.py",
+      "bytes": 2193,
+      "kind": "code"
+    },
+    {
       "path": "scripts/_probe_wiseai.png",
       "bytes": 199309,
       "kind": "image"
+    },
+    {
+      "path": "scripts/_prompt_format_check.js",
+      "bytes": 6045,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_rail_bleed_probe.py",
+      "bytes": 4769,
+      "kind": "code"
     },
     {
       "path": "scripts/_repro_chatpop.png",
@@ -2073,8 +2308,43 @@ window.WISE_PROJECT_INVENTORY = {
       "kind": "image"
     },
     {
+      "path": "scripts/_shot_row_lookup.py",
+      "bytes": 6240,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_shot_row_lookup_add.py",
+      "bytes": 3821,
+      "kind": "code"
+    },
+    {
       "path": "scripts/_sticky_corner_repro.py",
       "bytes": 7699,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_stream_units_check.js",
+      "bytes": 12674,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_tip_wrap_probe.py",
+      "bytes": 8663,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_turn_order_probe.py",
+      "bytes": 4563,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_turn_smoke.py",
+      "bytes": 2381,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_ver_stack_probe.py",
+      "bytes": 6641,
       "kind": "code"
     },
     {
@@ -2108,8 +2378,28 @@ window.WISE_PROJECT_INVENTORY = {
       "kind": "code"
     },
     {
+      "path": "scripts/cdp_mobile_frame_audit.py",
+      "bytes": 11747,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/cdp_palette_shot.py",
+      "bytes": 11787,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/cdp_report_double.py",
+      "bytes": 7527,
+      "kind": "code"
+    },
+    {
       "path": "scripts/cdp_shot.py",
       "bytes": 5224,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/cdp_trace_steps_shot.py",
+      "bytes": 9018,
       "kind": "code"
     },
     {
@@ -2164,7 +2454,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "scripts/project-inventory.json",
-      "bytes": 46834,
+      "bytes": 47273,
       "kind": "other"
     },
     {

@@ -117,7 +117,7 @@ import {
   isOllamaOn,
   toggleOllamaOn,
   ollamaStatusText,
-  probeOllama,
+  probeOllamaWhenIdle,
   OLLAMA_LABEL,
   OLLAMA_ICON,
   OLLAMA_TIP,
@@ -535,8 +535,10 @@ function commentsSection() {
 
 /* The status line under the local-model row is only true once we have asked
    Ollama whether it is running, and that answer arrives after the popover has
-   already painted. probeOllama() caches for 8s, so rebuilding the menu costs
-   one request; when the answer lands we re-render any open Appearance popover
+   already painted. The probe caches for 8s and shares whatever request is
+   already out, so rebuilding the menu costs at most one; and it waits for the
+   page to finish loading first, so it can never slow the app's own scripts
+   down. When the answer lands we re-render any open Appearance popover
    so the hint settles in place. Re-rendering runs this again, so we only
    re-render when the text actually changed — otherwise the pair would loop. */
 let ollamaProbeInFlight = false;
@@ -553,7 +555,7 @@ function kickOllamaProbe() {
       try { p.__apRender?.(); } catch (_) { /* shell owns the render */ }
     });
   };
-  try { probeOllama().then(done, done); } catch (_) { ollamaProbeInFlight = false; }
+  try { probeOllamaWhenIdle().then(done, done); } catch (_) { ollamaProbeInFlight = false; }
 }
 
 /** Local-model row — Admin-badged. The SAME switch the chat ⋯ menu owns, so it

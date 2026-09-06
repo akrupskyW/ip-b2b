@@ -20,8 +20,12 @@
     try {
       /* Pivot Navigation always comes on with Minimal UI. If the top bar
          is persisted, paint the strip even when Nav & History icons is on
-         so the four-icon rail cannot flash first. */
-      if (localStorage.getItem('wise-menu-pivot') === '1') return true;
+         so the four-icon rail cannot flash first.
+         A phone or tablet never pivots, so there is no bar to keep the strip
+         for and the nav resolves to its icon rail instead. Keep the width in
+         sync with NAV_NARROW_MAX_PX in js/nav-responsive.js. */
+      if (!window.matchMedia('(max-width: 1024px)').matches
+          && localStorage.getItem('wise-menu-pivot') === '1') return true;
       /* Nav & History icons owns the collapsed chrome (default ON); don't
          paint Minimal UI over that four-icon rail. Keep in sync with
          isNavModulesOn() in js/nav-modules.js. */

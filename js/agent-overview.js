@@ -743,7 +743,7 @@ export function bootstrapAgentPage() {
    can do on the page is also one tap away from WISEcodeAI. Each chip maps 1:1 to an
    on-page control via DASHBOARD_WISEAI_ACTIONS below — clicking a chip triggers
    that exact control, so the chip does precisely what the button does (navigate,
-   open a report, compare brands, or edit the logo). Laid out as a plain wrapped
+   open a report, compare brands, or edit the banner and logo). Laid out as a plain wrapped
    grid (no carousel) so every chip is always visible. */
 const DASHBOARD_WISEAI_INTENTS = [
   { intent: 'claim_products',       label: 'Claim your products',         icon: 'verified_user' },
@@ -754,7 +754,7 @@ const DASHBOARD_WISEAI_INTENTS = [
   /* The "Open the … report" chips live on the Reports page dock (see
      REPORTS_WISEAI_INTENTS) — the report intents themselves stay wired here
      because the welcome cards and on-page controls still open them inline. */
-  { intent: 'update_logo',          label: 'Update your brand logo',      icon: 'image' },
+  { intent: 'update_logo',          label: 'Update your banner and logo', icon: 'image' },
 ];
 
 /* Chip intent → the `data-dash-action` of the matching control rendered by
@@ -777,15 +777,15 @@ const DASHBOARD_WISEAI_ACTIONS = {
    in the thread before it acts. Report chips get their narration from
    dashReportChatReply (state-aware); the rest describe the on-page control the
    chip is about to fire (navigate to the portfolio, start a verification flow,
-   or open the logo editor) so the chat reads the same whether you tapped the
-   chip or the matching button on the brand overview to the right. */
+   or open the banner and logo editor) so the chat reads the same whether you
+   tapped the chip or the matching button on the brand overview to the right. */
 const DASHBOARD_WISEAI_REPLIES = {
   claim_products:   'Let\u2019s claim your products. I\u2019m opening your <strong>Product Portfolio</strong>, where you can take ownership of every discovered UPC \u2014 claiming is what unlocks Non-UPF / GRAS verification and your brand reports. Taking you there now\u2026',
   review_portfolio: 'Opening your <strong>Product Portfolio</strong> \u2014 every SKU\u2019s claim status, compliance and ingredient health in one view, so you can see exactly where each product stands. Taking you there now\u2026',
   add_food:         'Let\u2019s add a food. I\u2019m opening your <strong>Product Portfolio</strong> with the add-a-product flow ready, so you can bring a new SKU in to classify and verify. Taking you there now\u2026',
   verify_upf:       'Starting <strong>Non-UPF verification</strong>. I\u2019m opening the verification flow so you can run the checks across your qualifying SKUs and earn the Non-UPF Verified\u2122 shield. Taking you there now\u2026',
   verify_gras:      'Starting <strong>GRAS verification</strong>. I\u2019m opening the GRAS documentation flow so you can verify your qualifying ingredients and SKUs. Taking you there now\u2026',
-  update_logo:      'Let\u2019s update your <strong>brand logo</strong>. I\u2019m opening the logo editor on your dashboard \u2014 drop in a PNG or SVG (square, transparent edges look best) and save. It\u2019s coming up now\u2026',
+  update_logo:      'Let\u2019s update your <strong>banner and logo</strong>. I\u2019m opening the editor beside your overview \u2014 drop in a wide banner, a square mark, or both, then save. It\u2019s coming up now\u2026',
 };
 
 /* Report chips are handled separately from the on-page controls: they open the
@@ -1198,7 +1198,7 @@ async function setupWISEcodeAIDock() {
          companion to the answer, so it should be there as the reply arrives.
          Every OTHER chip returns false here so the dock posts the "you" line +
          the narration, then defers its real on-page control (navigate to the
-         portfolio, start a verification flow, or open the logo editor) to
+         portfolio, start a verification flow, or open the banner and logo editor) to
          onReply — so the transcript is always written before the chip acts. */
       onIntent: (intent) => {
         const reportCard = DASHBOARD_WISEAI_REPORTS[intent];
@@ -1357,7 +1357,7 @@ function renderMorePopover() {
     ? `
     <button type="button" class="topbar-menu-item" data-action="update-banner">
       <span class="material-symbols-outlined topbar-menu-icon">image</span>
-      <span>Update brand banner</span>
+      <span>Update banner and logo</span>
     </button>
     <div class="topbar-menu-divider"></div>`
     : '';

@@ -1176,24 +1176,104 @@ function syncCodeStateFromStore() {
   }
 }
 
-/* All-time sparkline of total LOC — one point per daily git snapshot.
-   Hover (or keyboard arrows) snaps to the nearest snapshot and names it. */
+/* Daily git snapshots, plus today's live count when Re-evaluate has a
+   newer working-tree total. The 7 / 30 / all toggle slices this series
+   so the chart, caption, and growth pills describe the same window. */
 const SPARK_W = 100;
 const SPARK_H = 32;
 const SPARK_PAD = 2;
+const CODE_DEFAULT_WIN = '7';
+
+function codeScanDay() {
+  return codeState.scannedAt || localDayIso();
+}
+
+function codeCutIso(win, scannedAt) {
+  if (win === 'all') return null;
+  const day = scannedAt || codeScanDay();
+  const parts = String(day).split('-').map(Number);
+  const d = new Date(parts[0], (parts[1] || 1) - 1, parts[2] || 1);
+  d.setDate(d.getDate() - Number(win));
+  return localDayIso(d);
+}
+
+function codeSeriesWithNow(series, now, scannedAt) {
+  const src = Array.isArray(series) ? series : [];
+  if (!now || now.total == null) return src.slice();
+  const day = scannedAt || codeScanDay();
+  const point = {
+    date: day,
+    total: now.total,
+    html: now.html,
+    js: now.js,
+    css: now.css,
+    py: now.py,
+    pages: now.pages,
+  };
+  const out = src.slice();
+  const last = out[out.length - 1];
+  if (last && last.date === day) out[out.length - 1] = Object.assign({}, last, point);
+  else if (!last || last.date < day) out.push(point);
+  return out;
+}
+
+function codeBaselineFor(series, win, scannedAt) {
+  if (!series.length) return null;
+  if (win === 'all') return series[0];
+  const iso = codeCutIso(win, scannedAt);
+  let base = series[0];
+  for (const e of series) {
+    if (e.date <= iso) base = e;
+    else break;
+  }
+  return base;
+}
+
+function codeSeriesForWindow(series, win, scannedAt) {
+  if (!series.length) return [];
+  const base = codeBaselineFor(series, win, scannedAt);
+  if (!base || win === 'all') return series.slice();
+  const i = series.indexOf(base);
+  return series.slice(i < 0 ? 0 : i);
+}
+
+function codeSparkPrev(fullSeries, entry) {
+  if (!entry || !fullSeries || !fullSeries.length) return null;
+  let prev = null;
+  for (const e of fullSeries) {
+    if (e.date < entry.date) prev = e;
+    else break;
+  }
+  return prev;
+}
 
 function codeSparkGeom(series) {
   const vals = series.map((e) => Number(e.total) || 0);
-  if (vals.length < 2) return null;
+  if (!vals.length) return null;
   const min = Math.min(...vals);
-  const span = Math.max(1, Math.max(...vals) - min);
+  const max = Math.max(...vals);
+  const span = max - min;
+  const yFor = (v) => (span === 0
+    ? SPARK_H / 2
+    : SPARK_PAD + (1 - (v - min) / span) * (SPARK_H - SPARK_PAD * 2));
+  if (vals.length === 1) {
+    const y = yFor(vals[0]);
+    return {
+      min,
+      span: 1,
+      pts: [
+        { x: 0, y, entry: series[0], i: 0 },
+        { x: SPARK_W, y, entry: series[0], i: 0 },
+      ],
+    };
+  }
   const last = vals.length - 1;
   return {
     min,
-    span,
+    span: Math.max(1, span),
     pts: vals.map((v, i) => ({
       x: (i / last) * SPARK_W,
-      y: SPARK_PAD + (1 - (v - min) / span) * (SPARK_H - SPARK_PAD * 2),
+      y: yFor(v),
       entry: series[i],
       i,
     })),
@@ -1226,6 +1306,20 @@ function codeSparkline(series) {
     </div>`;
 }
 
+function codeChartHTML(series, now, scannedAt) {
+  const first = series[0];
+  const last = series[series.length - 1];
+  const endDate = scannedAt || (last && last.date) || '';
+  const endVal = (now && now.total != null) ? now.total : (last ? last.total : 0);
+  return `
+    ${codeSparkline(series)}
+    ${first ? `<div class="mi-code-spark-cap">
+      <span data-code-spark-start>${esc(first.date)}</span>
+      <span data-code-spark-now>${fmtNum(first.total)} → ${fmtNum(endVal)} lines</span>
+      <span data-code-spark-end>${esc(endDate)}</span>
+    </div>` : ''}`;
+}
+
 function codeSparkTipHTML(entry, prev) {
   const delta = prev ? (Number(entry.total) || 0) - (Number(prev.total) || 0) : 0;
   const tone = !prev ? 'is-flat' : delta > 0 ? 'is-up' : delta < 0 ? 'is-down' : 'is-flat';
@@ -1249,10 +1343,15 @@ function codeSparkTipHTML(entry, prev) {
     </div>`;
 }
 
-function wireCodeSparkHover(mod, series) {
+function wireCodeSparkHover(mod, series, fullSeries) {
+  if (typeof mod._sparkHoverCleanup === 'function') {
+    mod._sparkHoverCleanup();
+    mod._sparkHoverCleanup = null;
+  }
   const wrap = mod.querySelector('.mi-code-spark-wrap');
   const geom = codeSparkGeom(series);
   if (!wrap || !geom) return;
+  const hist = fullSeries && fullSeries.length ? fullSeries : series;
 
   let tip = document.getElementById('mi-code-spark-tip');
   if (!tip) {
@@ -1300,7 +1399,7 @@ function wireCodeSparkHover(mod, series) {
     if (!pt) return;
     if (idx !== lastIdx) {
       lastIdx = idx;
-      const prev = idx > 0 ? series[idx - 1] : null;
+      const prev = codeSparkPrev(hist, pt.entry);
       tip.innerHTML = codeSparkTipHTML(pt.entry, prev);
       if (live) live.textContent = `${pt.entry.date}: ${fmtNum(pt.entry.total)} lines`;
       if (cursor) {
@@ -1322,17 +1421,9 @@ function wireCodeSparkHover(mod, series) {
     return Math.round(t * (geom.pts.length - 1));
   };
 
-  wrap.addEventListener('pointerenter', (e) => {
-    showAt(idxFromClientX(e.clientX), e.clientX, e.clientY);
-  });
-  wrap.addEventListener('pointermove', (e) => {
-    showAt(idxFromClientX(e.clientX), e.clientX, e.clientY);
-  });
-  wrap.addEventListener('pointerleave', hide);
-  wrap.addEventListener('pointercancel', hide);
-  wrap.addEventListener('blur', hide);
-  window.addEventListener('scroll', hide, true);
-  wrap.addEventListener('keydown', (e) => {
+  const onEnter = (e) => showAt(idxFromClientX(e.clientX), e.clientX, e.clientY);
+  const onMove = (e) => showAt(idxFromClientX(e.clientX), e.clientX, e.clientY);
+  const onKey = (e) => {
     const max = geom.pts.length - 1;
     let next = lastIdx < 0 ? max : lastIdx;
     if (e.key === 'ArrowLeft' || e.key === 'Home') {
@@ -1352,7 +1443,25 @@ function wireCodeSparkHover(mod, series) {
     const x = rect.left + (pt.x / SPARK_W) * rect.width;
     const y = rect.top + (pt.y / SPARK_H) * rect.height;
     showAt(next, x, y);
-  });
+  };
+
+  wrap.addEventListener('pointerenter', onEnter);
+  wrap.addEventListener('pointermove', onMove);
+  wrap.addEventListener('pointerleave', hide);
+  wrap.addEventListener('pointercancel', hide);
+  wrap.addEventListener('blur', hide);
+  wrap.addEventListener('keydown', onKey);
+  window.addEventListener('scroll', hide, true);
+  mod._sparkHoverCleanup = () => {
+    hide();
+    wrap.removeEventListener('pointerenter', onEnter);
+    wrap.removeEventListener('pointermove', onMove);
+    wrap.removeEventListener('pointerleave', hide);
+    wrap.removeEventListener('pointercancel', hide);
+    wrap.removeEventListener('blur', hide);
+    wrap.removeEventListener('keydown', onKey);
+    window.removeEventListener('scroll', hide, true);
+  };
 }
 
 function renderCodebase(opts) {
@@ -1363,8 +1472,8 @@ function renderCodebase(opts) {
   }
   const now = codeState.now || { total: 0, files: 0, pages: 0 };
   const scannedAt = codeState.scannedAt || '—';
-  const series = (CODE_STATS && CODE_STATS.series) || [];
-  const first = series[0];
+  const full = codeSeriesWithNow((CODE_STATS && CODE_STATS.series) || [], now, codeState.scannedAt);
+  const series = codeSeriesForWindow(full, CODE_DEFAULT_WIN, codeState.scannedAt);
   const cards = CODE_METRICS.map((m) => `
     <article class="mi-code-card" data-code-metric="${esc(m.key)}">
       <div class="mi-code-top">
@@ -1409,12 +1518,7 @@ function renderCodebase(opts) {
             <div class="mi-code-sub" data-code-hero-sub>HTML · JavaScript · CSS · Python across ${fmtNum(now.files)} files</div>
           </div>
           <div class="mi-code-hero-chart">
-            ${codeSparkline(series)}
-            ${first ? `<div class="mi-code-spark-cap">
-              <span>${esc(first.date)}</span>
-              <span data-code-spark-now>${fmtNum(first.total)} → ${fmtNum(now.total)} lines</span>
-              <span data-code-spark-end>${esc(scannedAt)}</span>
-            </div>` : ''}
+            ${codeChartHTML(series, now, codeState.scannedAt)}
           </div>
         </article>
         <article class="mi-code-card mi-code-hero" data-code-metric="bytes">
@@ -1441,29 +1545,15 @@ function renderCodebase(opts) {
 function wireCodebase(root) {
   const mod = root.querySelector('#mi-code');
   if (!mod) return;
-  const series = (CODE_STATS && CODE_STATS.series) || [];
-  let currentWin = '7';
-
-  /* The newest snapshot at or before (scan day − window days); the earliest
-     snapshot when the history is shorter than the window (or for "all"). */
-  const baselineFor = (win) => {
-    if (!series.length) return null;
-    if (win === 'all') return series[0];
-    const cut = new Date((codeState.scannedAt || new Date().toISOString().slice(0, 10)) + 'T00:00:00Z');
-    cut.setUTCDate(cut.getUTCDate() - Number(win));
-    const iso = cut.toISOString().slice(0, 10);
-    let base = series[0];
-    for (const e of series) {
-      if (e.date <= iso) base = e;
-      else break;
-    }
-    return base;
-  };
+  let currentWin = CODE_DEFAULT_WIN;
 
   const applyWindow = (win) => {
     currentWin = win;
     const now = codeState.now || {};
-    const base = baselineFor(win);
+    const scannedAt = codeState.scannedAt || '';
+    const full = codeSeriesWithNow((CODE_STATS && CODE_STATS.series) || [], now, scannedAt);
+    const view = codeSeriesForWindow(full, win, scannedAt);
+    const base = codeBaselineFor(full, win, scannedAt);
     mod.querySelectorAll('[data-code-pill]').forEach((pill) => {
       const key = pill.getAttribute('data-code-pill');
       if (!base || base[key] == null) { pill.hidden = true; return; }
@@ -1481,6 +1571,11 @@ function wireCodebase(root) {
       b.classList.toggle('is-active', on);
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
+    const chart = mod.querySelector('.mi-code-hero-chart');
+    if (chart) {
+      chart.innerHTML = codeChartHTML(view, now, scannedAt);
+      wireCodeSparkHover(mod, view, full);
+    }
   };
 
   mod.addEventListener('click', (e) => {
@@ -1488,15 +1583,12 @@ function wireCodebase(root) {
     if (btn) applyWindow(btn.getAttribute('data-code-win'));
   });
   mod._applyCodeWindow = () => applyWindow(currentWin);
-  applyWindow('7');
-  wireCodeSparkHover(mod, series);
+  applyWindow(CODE_DEFAULT_WIN);
 }
 
 function applyLiveCodeScan(root, now, scannedAt) {
   codeState.now = Object.assign({}, now);
   codeState.scannedAt = scannedAt;
-  const series = (CODE_STATS && CODE_STATS.series) || [];
-  const first = series[0];
   const mod = root.querySelector('#mi-code');
   if (mod) {
     mod.querySelectorAll('[data-code-num]').forEach((el) => {
@@ -1525,10 +1617,6 @@ function applyLiveCodeScan(root, now, scannedAt) {
     } catch (_) { /* load meter is optional */ }
     const heroSub = mod.querySelector('[data-code-hero-sub]');
     if (heroSub) heroSub.textContent = `HTML · JavaScript · CSS · Python across ${fmtNum(now.files)} files`;
-    const sparkNow = mod.querySelector('[data-code-spark-now]');
-    if (sparkNow && first) sparkNow.textContent = `${fmtNum(first.total)} → ${fmtNum(now.total)} lines`;
-    const sparkEnd = mod.querySelector('[data-code-spark-end]');
-    if (sparkEnd) sparkEnd.textContent = scannedAt;
     if (typeof mod._applyCodeWindow === 'function') mod._applyCodeWindow();
   }
   const jump = root.querySelector('.dsc-jump-tile[data-jump="mi-code"]');
@@ -3174,6 +3262,10 @@ function demoChatMenuPop() {
     ${row('export', 'download', 'Export conversation')}
     ${row('share', 'share', 'Share')}
     ${row('file-library', 'auto_stories', 'File to Library')}
+    <button type="button" class="topbar-menu-item" data-sc="voiceover" role="menuitem">
+      <span class="material-symbols-outlined topbar-menu-icon">record_voice_over</span>
+      <span class="topbar-menu-copy"><span class="topbar-menu-title">Play voiceover</span><span class="topbar-menu-desc">Samuel L. Jackson</span></span>
+    </button>
     <div class="topbar-menu-divider"></div>
     ${sw({ sc: 'turns', icon: 'alt_route', label: 'Turns', on: false, admin: true })}
     ${sw({ sc: 'outputs', icon: 'dashboard_customize', label: 'Hide outputs &amp; sources', on: true, admin: true })}
@@ -4012,8 +4104,8 @@ const COMPONENTS = [
     wide: true,
     cat: 'Chat & drawers',
     cls: '.panel-more-btn \u00b7 .topbar-popover.sc-menu-grouped \u00b7 .sc-menu-group \u00b7 .sc-mcp-item \u00b7 .sc-switch \u00b7 .sc-menu-admin-btn',
-    used: 'The three-dot on every chat module \u2014 Conversation, Helix play/pause, streaming, Close. Admin-badged rows stay off this specimen',
-    note: 'Same <code>.topbar-popover</code> shell, grouped the way the live chat does \u2014 one column hung from the kebab. This card is the <strong>member-facing</strong> menu: History, new, Export, Share, File to Library, Helix play/pause, Response streaming, and Close. The nested Internal admins kebab is not part of this menu. Admin-badged rows (Turns, Hide outputs, Connect a data source, Overview cards, Intent chips, Compact spacing, Brand AI text, Input glow, Animation, Activity strip) appear on the live chat when <em>Internal admins</em> is on in Appearance, and the full Helix studio then sits in a second column beside the stack.',
+    used: 'The three-dot on every chat module \u2014 Conversation, Play voiceover, Helix play/pause, streaming, Close. Admin-badged rows stay off this specimen',
+    note: 'Same <code>.topbar-popover</code> shell, grouped the way the live chat does \u2014 one column hung from the kebab. This card is the <strong>member-facing</strong> menu: History, new, Export, Share, File to Library, Play voiceover, Helix play/pause, Response streaming, and Close. The nested Internal admins kebab is not part of this menu. Admin-badged rows (Turns, Hide outputs, Connect a data source, Overview cards, Intent chips, Compact spacing, Brand AI text, Input glow, Animation, Activity strip) appear on the live chat when <em>Internal admins</em> is on in Appearance, and the full Helix studio then sits in a second column beside the stack.',
     noteIcon: 'more_vert',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -6258,7 +6350,7 @@ const INTENT_AUDIT = [
       { i: 'add_food',         label: 'Add a food',                   t: true, l: true, does: 'After the transcript lands, opens Add Product.' },
       { i: 'verify_upf',       label: 'Verify your Non-UPF products', t: true, l: true, does: 'After the transcript lands, starts Non-UPF verification.' },
       { i: 'verify_gras',      label: 'Verify your GRAS products',    t: true, l: true, does: 'After the transcript lands, starts GRAS verification.' },
-      { i: 'update_logo',      label: 'Update your brand logo',       t: true, l: true, does: 'After the transcript lands, opens the brand logo editor on the dashboard.' },
+      { i: 'update_logo',      label: 'Update your banner and logo',  t: true, l: true, does: 'After the transcript lands, opens the banner and logo editor beside the overview.' },
     ],
   },
   {
@@ -8024,8 +8116,8 @@ const MOTION_ITEMS = [
   {
     id: 'flyin', group: 'anim', icon: 'keyboard_double_arrow_left', title: 'Chip fly-in',
     src: 'js/wiseai-chat.js · primeRevealFromRight',
-    used: 'WISEcodeAI welcome chips — they land after the heading types in',
-    lede: 'Intent chips fly in from the right and land, left-to-right, after the welcome copy has typed. Replay to watch the stagger.',
+    used: 'WISEcodeAI follow-up chips after an answer, and Show more on the welcome',
+    lede: 'Welcome headline and chips paint immediately. This stagger is the motion used when chips trail an answer, or when Show more opens the rest of the welcome row. Replay to watch it.',
     demo: `
       <div class="mi-motion-fly" data-motion-fly>
         <div class="ws-chips mi-motion-fly-row" role="list" aria-label="Quick actions">
@@ -9628,7 +9720,7 @@ function wireMotion(root) {
 /* Responsiveness — phone, 14-inch laptop, and everything larger       */
 /*                                                                     */
 /* Three device classes the platform actually codes for:               */
-/*   • Mobile  — viewport ≤768 (nav drawer) and ≤560 (stack / cards)   */
+/*   • Mobile  — viewport ≤768 (tightest nav rail) and ≤560 (stack)    */
 /*   • Laptop  — display ≤1512 CSS px (14" MacBook Pro). Chat single.  */
 /*   • Larger  — display >1512. Same desktop shell. Chat opens double. */
 /* A live stage restyles a schematic shell; the catalog names what     */
@@ -9636,7 +9728,7 @@ function wireMotion(root) {
 /* ------------------------------------------------------------------ */
 
 const RESP_CHAT_SINGLE_MAX = 1512;
-const RESP_MOBILE_NAV = 768;
+const RESP_PHONE = 768;
 const RESP_STACK = 560;
 
 function respScreenWidth() {
@@ -9661,7 +9753,7 @@ function respDisplayClass() {
 function respLayoutClass() {
   const view = respViewportWidth();
   if (view <= RESP_STACK) return 'mobile';
-  if (view <= RESP_MOBILE_NAV) return 'mobile';
+  if (view <= RESP_PHONE) return 'mobile';
   return respDisplayClass();
 }
 
@@ -9674,20 +9766,20 @@ function respHereHTML() {
     : '14-inch laptop class';
   let layout = 'desktop';
   if (view <= RESP_STACK) layout = 'stacked phone';
-  else if (view <= RESP_MOBILE_NAV) layout = 'phone nav';
+  else if (view <= RESP_PHONE) layout = 'phone';
   return `This window is <strong>${view}&nbsp;px</strong> wide (${layout}). The display is <strong>${screen}&nbsp;px</strong> — ${display} — so chat loads <strong>${chat}</strong>.`;
 }
 
 const RESPONSIVE_SURFACES = [
   {
     id: 'nav', icon: 'menu', title: 'Primary navigation',
-    src: 'js/mobile-nav.js',
+    src: 'js/nav-responsive.js',
     used: 'Every signed-in page',
     changes: ['mobile'],
-    lede: 'On a phone the labelled rail stands down. A floating owl and an expand icon sit top-left so the chat stays the centre of the screen. Tap expand and the full menu slides in over a dimming scrim; leave phone width and the drawer closes on its own.',
-    mobile: 'Owl + expand, pinned top-left. The full menu is a left drawer over a scrim. Scroll locks while it is open.',
-    laptop: 'Left rail or labelled nav — the same desktop shell as every other signed-in page. Pivot and Minimal UI still apply.',
-    larger: 'Same desktop nav. Extra width goes to the modules, not the rail.',
+    lede: 'One navigation at every size: a vertical rail down the left of the shell, collapsed to its icons, that expands in place when you tap a control inside it. A phone and a tablet get the same module a desktop gets — the rail just sits tighter against both of its edges. It never becomes a top bar, so Pivot Navigation is held back below tablet width and applies again as soon as the window is wide enough.',
+    mobile: 'The same left icon rail, at its narrowest. Tap the menu icon and it expands in place; tap again and it collapses. No drawer, no floating chip, and no top bar.',
+    laptop: 'The same left rail, with a little more air around the icons. Pivot and Minimal UI are free to apply here.',
+    larger: 'Same nav again. Extra width goes to the modules, not the rail.',
   },
   {
     id: 'brand', icon: 'cruelty_free', title: 'Brand wordmark',

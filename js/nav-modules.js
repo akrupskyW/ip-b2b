@@ -25,6 +25,7 @@
  */
 
 import { applyMinimalUi, applyIconRail } from './topbar.js';
+import { navCanPivot } from './nav-responsive.js';
 
 const LS_KEY = 'wise-nav-modules-v2';
 const HTML_CLASS = 'nav-modules';
@@ -56,7 +57,12 @@ export function applyNavModules(on, persist = true) {
        only is the load default for this mode — paint the rail even on
        restore so a leftover expanded preference cannot hide it. */
     let pivoted = false;
-    try { pivoted = localStorage.getItem('wise-menu-pivot') === '1'; } catch (_) {}
+    try {
+      /* A phone or tablet never pivots, so a stored top bar has no claim on
+         Minimal UI there — the four icons show like any other narrow screen.
+         See js/nav-responsive.js. */
+      pivoted = navCanPivot() && localStorage.getItem('wise-menu-pivot') === '1';
+    } catch (_) {}
     /* Restore must not fight a persisted pivot (that mode owns Minimal
        UI). An explicit in-session ON still stands the strip down. */
     if (!(pivoted && !persist)) {
@@ -293,10 +299,6 @@ function startNewConversation() {
   try { api && api.startNew && api.startNew(); } catch (_) { /* no-op */ }
 }
 
-function isDesktop() {
-  try { return !window.matchMedia('(max-width: 768px)').matches; } catch (_) { return true; }
-}
-
 /** Mark when History is fully open so CSS can drop the repeated History
  *  toggle and new-chat on the nav rail (History has its own of both). */
 function syncOpenChrome() {
@@ -348,7 +350,7 @@ function onMenuRail() {
 }
 
 function onChevronClick(e) {
-  if (!isNavModulesOn() || !isDesktop()) return;
+  if (!isNavModulesOn()) return;
   const toggle = e.target?.closest?.('#topbar-menu-toggle');
   if (!toggle) return;
   const panel = panelEl();
