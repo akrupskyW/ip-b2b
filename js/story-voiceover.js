@@ -326,19 +326,41 @@ function closeChatMenuFrom(item) {
   }
 }
 
+function isAdminUiOn() {
+  try { return localStorage.getItem('wise-admin-ui') !== '0'; } catch (_) { return true; }
+}
+
 function voiceoverMenuHtml() {
   return '<span class="material-symbols-outlined topbar-menu-icon">record_voice_over</span>'
     + '<span class="topbar-menu-copy">'
     + '<span class="topbar-menu-title">Play voiceover</span>'
     + '<span class="topbar-menu-desc" data-voice-label></span>'
-    + '</span>';
+    + '</span>'
+    + '<span class="topbar-menu-badge">Admin</span>';
+}
+
+function dressVoiceoverAdmin(item) {
+  if (!item || !item.classList) return item;
+  item.classList.add('topbar-menu-item--admin');
+  if (!item.querySelector('.topbar-menu-badge')) {
+    const badge = document.createElement('span');
+    badge.className = 'topbar-menu-badge';
+    badge.textContent = 'Admin';
+    item.appendChild(badge);
+  }
+  return item;
 }
 
 export function injectVoiceoverMenuItem(pop) {
-  if (!pop || pop.querySelector('[data-sc="voiceover"]')) return pop ? pop.querySelector('[data-sc="voiceover"]') : null;
+  if (!pop) return null;
+  const existing = pop.querySelector('[data-sc="voiceover"]');
+  if (existing) {
+    dressVoiceoverAdmin(existing);
+    return existing;
+  }
   const btn = document.createElement('button');
   btn.type = 'button';
-  btn.className = 'topbar-menu-item';
+  btn.className = 'topbar-menu-item topbar-menu-item--admin';
   btn.setAttribute('data-sc', 'voiceover');
   btn.setAttribute('role', 'menuitem');
   btn.setAttribute('aria-haspopup', 'menu');
@@ -360,6 +382,7 @@ export function injectVoiceoverMenuItem(pop) {
 
 export function syncVoiceoverMenuItem(item) {
   if (!item) return;
+  dressVoiceoverAdmin(item);
   const voice = voiceById(readStoryVoiceId());
   const title = item.querySelector('.topbar-menu-title');
   const desc = item.querySelector('[data-voice-label]');
@@ -544,6 +567,7 @@ export function closeVoiceoverPicker() {
 }
 
 export function openVoiceoverPicker(item) {
+  if (!isAdminUiOn()) return;
   const anchor = findKebab(item) || item;
   const root = chatRootFrom(item);
   pickerRoot = root;
@@ -618,6 +642,7 @@ export function wireStoryVoiceover() {
     if (item) {
       /* Specimens in All Modules stay inert. */
       if (item.closest('[data-popover-static], [data-chat-menu-demo]')) return;
+      if (!isAdminUiOn()) return;
       e.preventDefault();
       toggleStoryVoiceoverFromMenu(item);
       return;
@@ -640,6 +665,12 @@ export function wireStoryVoiceover() {
   window.addEventListener('scroll', refresh, true);
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) stopStoryVoiceover();
+  });
+  document.addEventListener('wise:admin-ui', (e) => {
+    if (e && e.detail && e.detail.on === false) {
+      closeVoiceoverPicker();
+      stopStoryVoiceover();
+    }
   });
   onStoryVoiceoverChange(() => {
     syncPickerChrome();

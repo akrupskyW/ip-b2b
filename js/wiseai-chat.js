@@ -7105,6 +7105,7 @@ const CHAT_ADMIN_DESC = {
   sheen: 'Glow around the input',
   'bg-anim': 'DNA behind welcome',
   'activity-strip': 'Live strip on chat',
+  voiceover: 'Read the story aloud',
 };
 function adminDescKey(el) {
   if (!el || !el.classList) return '';
@@ -8864,7 +8865,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           <button type="button" class="topbar-menu-item" data-sc="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export conversation</span></button>
           <button type="button" class="topbar-menu-item" data-sc="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
           <button type="button" class="topbar-menu-item" data-sc="file-library"><span class="material-symbols-outlined topbar-menu-icon">auto_stories</span><span>File to Library</span></button>
-          <button type="button" class="topbar-menu-item" data-sc="voiceover" role="menuitem" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined topbar-menu-icon">record_voice_over</span><span class="topbar-menu-copy"><span class="topbar-menu-title">Play voiceover</span><span class="topbar-menu-desc" data-voice-label>Samuel L. Jackson</span></span></button>
+          <button type="button" class="topbar-menu-item topbar-menu-item--admin" data-sc="voiceover" role="menuitem" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined topbar-menu-icon">record_voice_over</span><span class="topbar-menu-copy"><span class="topbar-menu-title">Play voiceover</span><span class="topbar-menu-desc" data-voice-label>Samuel L. Jackson</span></span><span class="topbar-menu-badge">Admin</span></button>
           ${showTurns ? `<div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="turns" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">alt_route</span><span>Turns</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           ${opts.outputsToggle === true ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="outputs" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dashboard_customize</span><span>Hide outputs &amp; sources</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}

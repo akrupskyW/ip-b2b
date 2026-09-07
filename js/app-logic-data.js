@@ -964,7 +964,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Only the diff from the seed is stored',
-        how: 'WIP Ready and AI Ready each have their own baseline seed. The AI switch reads <strong>Not for AI</strong> when off (the default, pink) and <strong>AI Ready</strong> in green when on. When more than one part is ready but not all, Not for AI turns a lighter orange. localStorage holds just the overrides that differ from that seed. On the local livereload origin a toggle writes the matching seed file so the next commit / Ubuntu pull ships the same flags. Module Directory and Table Gallery have WIP Ready only. Chrome catalog cards (toasts, switches, dialogs, nav items, and the other <code>ai: false</code> entries) keep WIP Ready and are left out of the AI count. Only the Component Library AI switch shows a k/n count.',
+        how: 'WIP Ready and AI Ready each have their own baseline seed. The AI switch always reads <strong>AI Ready</strong> — pink when off, green when on, and a lighter orange when more than one part is ready but not all. localStorage holds just the overrides that differ from that seed. On the local livereload origin a toggle writes the matching seed file so the next commit / Ubuntu pull ships the same flags. Module Directory and Table Gallery have WIP Ready only. Chrome catalog cards (toasts, switches, dialogs, nav items, and the other <code>ai: false</code> entries) keep WIP Ready and are left out of the AI count. Only the Component Library AI switch shows a k/n count.',
       },
       {
         title: 'Re-evaluate crawls once a day',

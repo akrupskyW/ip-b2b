@@ -529,6 +529,15 @@
     #chat-shell.panel-wide.panel-triple {
       --chat-w: min(760px, 96vw);
     }
+    /* Fill — take the rest of the row once the member asks (e.g. Browse
+       products here closes the board). Shared .panel-fill already grows;
+       lift the single-tier 380px lock so the grow can actually show. */
+    #chat-shell.panel-fill {
+      flex: 1 1 auto;
+      width: auto;
+      min-width: 380px;
+      max-width: none;
+    }
 
     /* ── Report mode ────────────────────────────────────────────────────
        When an intent chip opens a full report board (Compare Foods,
@@ -9295,7 +9304,7 @@
         </div>
       </div>
 
-      <div class="flex flex-1 overflow-hidden relative">
+      <div class="sc-body flex flex-1 overflow-hidden relative">
         <div id="chat-messages" class="chat-messages-area" aria-live="polite" aria-atomic="false"></div>
 
         <div id="welcome-screen" class="sc-cards-hidden ws-in">
@@ -9427,6 +9436,9 @@
                  arrow controls below are suppressed via CSS. -->
             <div class="ws-chips-wrap">
             <div class="ws-chips" id="ws-chips" role="list" aria-label="Quick actions">
+                <button class="chip ws-intent-chip" onclick="startBrowseProducts()">
+                    <span class="material-symbols-outlined" style="font-size:16px">view_carousel</span>Browse products here
+                </button>
                 <button class="chip ws-intent-chip" onclick="startReviewDiscovered()">
                     <span class="material-symbols-outlined" style="font-size:16px">travel_explore</span>Review Discovered (47)
                 </button>
@@ -13461,6 +13473,7 @@
        so "add a catalog" does not fall through to Add a product, and
        "download the shield" does not fall through to Search. */
     const PF_CHAT_INTENTS = [
+      { id: 'browse', test: /(browse products|products here|show (my )?products in (the )?chat|review products here|products in (the )?chat)/, fn: 'startBrowseProducts' },
       { id: 'catalogTpl', test: /(csv template|catalog template|download (the )?(csv|template))/, fn: 'startDownloadCatalogTemplate' },
       { id: 'onesheet', test: /(one-?sheet)/, fn: 'startDownloadOnesheet' },
       { id: 'shieldPack', test: /(shield pack|download.{0,24}shield|get the (non-?upf )?shield)/, fn: 'startDownloadShieldPack' },
@@ -13501,6 +13514,7 @@
       const q = String(text || '').toLowerCase();
       if (/(marketing assets?|one-?sheet|shield pack|brand standards)/.test(q)) return ['Opening your marketing library'];
       if (/(add (a |an )?(new )?catalog|upload (a )?(csv|catalog)|csv template)/.test(q)) return ['Opening the catalog importer'];
+      if (/(browse products|products here|products in (the )?chat)/.test(q)) return ['Closing the board', 'Lining up your products'];
       if (/(portfolio|catalog|inventory|claimed|discover|needs info|missing data)/.test(q)) return ['Opening your portfolio', 'Gathering the details'];
       if (/(dashboard|chart|graph|trend|score|analy|metric|\bdata\b|insight|report|breakdown)/.test(q)) return ['Building your dashboard', 'Crunching the numbers'];
       if (/(compar|versus|\bvs\b|benchmark|side by side)/.test(q)) return ['Assembling the comparison', 'Lining up the numbers'];
@@ -15394,42 +15408,64 @@
       }
       if (glyph) glyph.textContent = on ? 'check_box' : 'check_box_outline_blank';
     }
-    function pfSyncTableHead(table) {
-      const head = table.querySelector('.vf-check--head[data-pf="toggle-all"]');
+    function pfSelectAllControl(scope) {
+      if (!scope) return null;
+      const railId = scope.getAttribute('data-surface-rail');
+      if (railId) {
+        return document.querySelector('[data-pf="toggle-all"][data-pf-rail="' + CSS.escape(railId) + '"]');
+      }
+      return scope.querySelector('.vf-check--head[data-pf="toggle-all"]');
+    }
+    function pfSyncTableHead(scope) {
+      const head = pfSelectAllControl(scope);
       if (!head) return;
-      const rows = pfVisibleRows(table);
+      const rows = pfVisibleRows(scope);
       const selected = rows.filter((r) => r.classList.contains('is-selected'));
       const all = rows.length > 0 && selected.length === rows.length;
       const none = selected.length === 0;
       const glyph = head.querySelector('.material-symbols-outlined');
+      const label = all ? 'Deselect all' : 'Select all';
+      const named = (scope.getAttribute('aria-label') || 'products').trim();
       head.setAttribute('aria-checked', all ? 'true' : none ? 'false' : 'mixed');
-      head.setAttribute('aria-label', all ? 'Deselect all products' : 'Select all products');
-      if (glyph) {
+      head.setAttribute('aria-pressed', all ? 'true' : 'false');
+      head.setAttribute('aria-label', label + ' · ' + named);
+      const text = head.querySelector('.pf-select-all-label');
+      if (text) text.textContent = label;
+      if (glyph && head.classList.contains('vf-check')) {
         glyph.textContent = all ? 'check_box' : none ? 'check_box_outline_blank' : 'indeterminate_check_box';
       }
     }
     function pfSyncAllHeads() {
       document.querySelectorAll('#portfolio-panel .pf-table').forEach(pfSyncTableHead);
+      document.querySelectorAll('.sc-surface-rail[data-surface-rail]').forEach(pfSyncTableHead);
     }
     function pfToggleRow(row) {
       if (!row) return;
       pfSetRowSelected(row, !row.classList.contains('is-selected'));
       const table = row.closest('.pf-table');
       if (table) pfSyncTableHead(table);
+      const rail = row.closest('.sc-surface-rail');
+      if (rail) pfSyncTableHead(rail);
     }
-    function pfToggleAll(table) {
-      if (!table) return;
-      const rows = pfVisibleRows(table);
+    function pfToggleAll(scope) {
+      if (!scope) return;
+      const rows = pfVisibleRows(scope);
       const allOn = rows.length > 0 && rows.every((r) => r.classList.contains('is-selected'));
       rows.forEach((row) => pfSetRowSelected(row, !allOn));
-      pfSyncTableHead(table);
+      pfSyncTableHead(scope);
     }
-    document.getElementById('portfolio-panel')?.addEventListener('click', (e) => {
-      const allBtn = e.target.closest('.vf-check[data-pf="toggle-all"]');
+    function pfSelectAllScope(btn) {
+      if (!btn) return null;
+      const railId = btn.getAttribute('data-pf-rail');
+      if (railId) return document.querySelector('.sc-surface-rail[data-surface-rail="' + CSS.escape(railId) + '"]');
+      return btn.closest('.pf-table');
+    }
+    document.addEventListener('click', (e) => {
+      const allBtn = e.target.closest('[data-pf="toggle-all"]');
       if (allBtn) {
         e.preventDefault();
         e.stopPropagation();
-        pfToggleAll(allBtn.closest('.pf-table'));
+        pfToggleAll(pfSelectAllScope(allBtn));
         return;
       }
       const rowBtn = e.target.closest('.vf-check[data-pf="toggle-row"]');
@@ -15481,6 +15517,12 @@
        and Finish and Claim each land on their own step. */
     function pfRowFrom(row) {
       if (!row) return '';
+      const seg = row.getAttribute('data-pf-seg');
+      if (seg === 'discovered') return 'discovered';
+      if (seg === 'needsinfo') {
+        if (row.querySelector('.pf-row-act--verify, .pf-chip--verify')) return 'verify';
+        return 'complete';
+      }
       if (row.closest('#pf-view-discovered') || row.closest('.pf-table--discovered-cta') || row.closest('.pf-table--discovered')) {
         return 'discovered';
       }
@@ -15605,7 +15647,8 @@
     function pfRemoveProduct(row, name) {
       if (!row) return;
       const table = row.closest('.pf-table');
-      const claimed = !!row.closest('#pf-view-claimed') && !row.closest('.pf-table--discovered-cta');
+      const claimed = row.getAttribute('data-pf-seg') === 'claimed' ||
+        (!!row.closest('#pf-view-claimed') && !row.closest('.pf-table--discovered-cta'));
       pfMarkRemoved(row);
       row.remove();
       const foot = table && table.querySelector('.pf-table-foot span');
@@ -17142,7 +17185,9 @@
     /* In-chat intent chips offered after the board opens — every next step the
        three portfolio surfaces support is one tap away. */
     const PF_CHIPS = {
+      browse:     { fn: 'startBrowseProducts',    icon: 'view_carousel',   label: 'Browse products here' },
       verify:     { fn: 'startVerifyIngredients', icon: 'fact_check',      label: 'Verify ingredients' },
+      verifyGo:   { fn: 'startContinueVerification', icon: 'verified',     label: 'Continue Non-UPF Verification' },
       shields:    { fn: 'startActivateShields',   icon: 'verified_user',   label: 'Activate Non-UPF Shields' },
       discovered: { fn: 'startReviewDiscovered',  icon: 'travel_explore',  label: 'Review discovered (47)' },
       needsinfo:  { fn: 'startCompleteNeedsInfo', icon: 'pending_actions', label: 'Complete Missing Data (18)' },
@@ -17188,17 +17233,189 @@
     function startVerifyIngredients() {
       window.location.href = pfFirstVerifyHref();
     }
-    /* Activate Non-UPF Shields → opens the SHIELD (Non-UPF) agent panel and
-       frames the attestation in chat. */
+    function startContinueVerification() {
+      window.location.href = 'verification.html';
+    }
+    window.startContinueVerification = startContinueVerification;
+    /* Activate Non-UPF Shields lives on the portfolio board (Pre-qualified /
+       Pending attestation chips). Do not open the leftover SHIELD agent pane. */
     function startActivateShields() {
-      hideWelcomeScreen(() => {
-        revealPanel('shield');
-        addUserMessage('Activate the Non-UPF Shields I’m eligible for');
-        wiseaiTraceThen('Opening the Non-UPF Shield workspace…', () => {
-          addWISEcodeAIMessage('<strong>9</strong> claimed products are eligible for a <strong>Non-UPF Shield</strong> and pending payment; <strong>1</strong> (Vegan Blueberry Mini Muffins) is ineligible for now. I’ve opened the <strong>SHIELD</strong> panel on the right — attest and pay and the shields switch on across all nine.', { source: false });
+      if (typeof togglePanel === 'function') togglePanel('shield', false);
+      const route = PF_ROUTES.shields;
+      openPortfolioModule(route.tab,
+        'Activate the Non-UPF Shields I’m eligible for',
+        route.reply,
+        route.chips,
+        () => {
+          pfScrollToSeg('claimed');
+          const row = document.querySelector('#pf-view-claimed .pf-chip--prequal, #pf-view-claimed .pf-chip--attest');
+          row?.closest('.pf-trow')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         });
+    }
+    window.startActivateShields = startActivateShields;
+    /* Close the right-hand board and put each section's products into the
+       transcript as a stacked carousel of the same mobile row cards the
+       tables already use. Header actions (Add product / catalog, shields,
+       marketing) stay as intent chips — they are not products. */
+    const PF_BROWSE_SECTIONS = [
+      { seg: 'claimed', view: '#pf-view-claimed', table: '.pf-table--claimed', title: 'Claimed' },
+      { seg: 'discovered', view: '#pf-view-discovered', table: '.pf-table--discovered', title: 'Discovered' },
+      { seg: 'needsinfo', view: '#pf-view-needsinfo', table: '.pf-table--needsinfo', title: 'Missing data' },
+    ];
+    function pfFillEmptyCardFields(row) {
+      row.querySelectorAll('.pf-td').forEach((cell) => {
+        if (cell.classList.contains('rtbl-ctl') || cell.classList.contains('rtbl-act') ||
+            cell.classList.contains('rtbl-lead') || cell.classList.contains('pf-col-product') ||
+            cell.classList.contains('pf-col-check') || cell.classList.contains('pf-col-menu') ||
+            cell.classList.contains('pf-col-reports') || cell.classList.contains('pf-col-action')) return;
+        if (cell.querySelector('img, button, a, input, .pf-chip, .pf-thumb, .pf-date, .pf-date-val')) return;
+        if ((cell.textContent || '').replace(/\s+/g, '')) return;
+        cell.textContent = '\u2014';
       });
     }
+    function pfCloneSectionRail(spec) {
+      const table = document.querySelector(spec.view + ' ' + spec.table);
+      if (!table) return null;
+      const rows = Array.from(table.querySelectorAll('.pf-trow')).filter((row) =>
+        row.querySelector('.pf-pname') &&
+        !row.classList.contains('pf-row-collapsing')
+      );
+      const lead = document.createElement('div');
+      lead.className = 'sc-surface-rail-lead sc-card-stack-head';
+      const title = document.createElement('h3');
+      title.className = 'sc-card-stack-title';
+      title.textContent = spec.title + ' · ' + rows.length;
+      const select = document.createElement('button');
+      select.type = 'button';
+      select.className = 'wise-btn wise-btn--ghost wise-btn--sm';
+      select.setAttribute('data-pf', 'toggle-all');
+      select.setAttribute('data-pf-rail', spec.seg);
+      select.setAttribute('aria-pressed', 'false');
+      select.setAttribute('aria-label', 'Select all · ' + spec.title);
+      select.innerHTML = '<span class="material-symbols-outlined">library_add_check</span><span class="pf-select-all-label">Select all</span>';
+      lead.appendChild(title);
+      lead.appendChild(select);
+      const rail = document.createElement('div');
+      rail.className = 'sc-surface-rail sc-surface-rail--bleed';
+      rail.setAttribute('data-surface-rail', spec.seg);
+      rail.setAttribute('role', 'region');
+      rail.setAttribute('aria-roledescription', 'carousel');
+      rail.setAttribute('aria-label', spec.title);
+      const head = table.querySelector('.pf-thead');
+      rows.forEach((row) => {
+        const slot = document.createElement('div');
+        slot.className = 'sc-surface-slot';
+        const mini = document.createElement('div');
+        mini.className = 'pf-table ' + spec.table.replace(/^\./, '') +
+          ' rtbl-grid rtbl-cards';
+        mini.setAttribute('data-force-cards', '');
+        mini.setAttribute('data-no-paginate', '');
+        mini.setAttribute('data-no-sort', '');
+        if (head) {
+          const cloneHead = head.cloneNode(true);
+          cloneHead.classList.add('rtbl-ghead');
+          mini.appendChild(cloneHead);
+        }
+        const clone = row.cloneNode(true);
+        clone.classList.remove('wtp-clip', 'pf-row-hidden', 'is-selected');
+        clone.setAttribute('data-pf-seg', spec.seg);
+        clone.querySelectorAll('.vf-check[data-pf="toggle-row"]').forEach((btn) => {
+          btn.setAttribute('aria-pressed', 'false');
+          const glyph = btn.querySelector('.material-symbols-outlined');
+          if (glyph) glyph.textContent = 'check_box_outline_blank';
+        });
+        pfFillEmptyCardFields(clone);
+        mini.appendChild(clone);
+        slot.appendChild(mini);
+        rail.appendChild(slot);
+      });
+      return { lead, rail, count: rows.length };
+    }
+    function pfPrimeRailEntrance(lead, rail, index) {
+      const reduce = (() => {
+        try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+        catch (_) { return false; }
+      })();
+      const leadDelay = index * 180;
+      const railDelay = leadDelay + 80;
+      [lead, rail].forEach((el, i) => {
+        el.style.setProperty('--rail-in-delay', (i ? railDelay : leadDelay) + 'ms');
+        el.classList.add('is-rail-in');
+        if (reduce) return;
+        const clear = () => {
+          el.classList.remove('is-rail-in');
+          el.style.removeProperty('--rail-in-delay');
+        };
+        el.addEventListener('animationend', function onEnd(ev) {
+          if (ev.target !== el || ev.animationName !== 'sc-from-right') return;
+          el.removeEventListener('animationend', onEnd);
+          clear();
+        });
+        window.setTimeout(clear, (i ? railDelay : leadDelay) + 900);
+      });
+    }
+    function pfInsertProductCarousels() {
+      const box = document.getElementById('chat-messages');
+      if (!box) return;
+      const lines = box.querySelectorAll('.sc-line-wiseai');
+      const body = lines.length ? lines[lines.length - 1].querySelector('.sc-line-body') : null;
+      if (!body) return;
+      body.querySelectorAll(':scope > .sc-card-stack, :scope > .sc-surface-rail, :scope > .sc-surface-rail-lead').forEach((el) => el.remove());
+      const frag = document.createDocumentFragment();
+      const incoming = [];
+      PF_BROWSE_SECTIONS.forEach((spec) => {
+        const built = pfCloneSectionRail(spec);
+        if (!built) return;
+        frag.appendChild(built.lead);
+        frag.appendChild(built.rail);
+        incoming.push(built);
+      });
+      if (!frag.childNodes.length) return;
+      incoming.forEach((built, i) => pfPrimeRailEntrance(built.lead, built.rail, i));
+      const meta = body.querySelector('.sc-line-meta');
+      if (meta) body.insertBefore(frag, meta);
+      else body.appendChild(frag);
+      wiseaiFollowChat(box);
+    }
+    function expandChatToFit() {
+      if (typeof applyWISEcodeAIWide === 'function') applyWISEcodeAIWide(3);
+      const W = window.WPaneWidth;
+      const shell = document.getElementById('chat-shell');
+      if (W && W.markUserSet) W.markUserSet();
+      if (W && W.markModuleUserSet && shell) W.markModuleUserSet(shell);
+    }
+    function pfExpandChatForBrowse(done) {
+      const pane = document.getElementById('portfolio-panel');
+      const chat = document.getElementById('chat-shell');
+      const W = window.WPaneWidth;
+      const after = typeof done === 'function' ? done : function () {};
+      const fromPx = chat ? chat.getBoundingClientRect().width : 0;
+      if (pane && pane.classList.contains('pf-open')) closePortfolioModule();
+      if (W && typeof W.animateToFill === 'function') {
+        W.animateToFill(chat, { fromPx: fromPx, onFill: expandChatToFit, onDone: after });
+        return;
+      }
+      expandChatToFit();
+      after();
+    }
+    let pfBrowseTurnLive = false;
+    function startBrowseProducts(skipUser) {
+      if (pfBrowseTurnLive && !skipUser) return;
+      pfBrowseTurnLive = true;
+      pfExpandChatForBrowse();
+      hideWelcomeScreen(() => {
+        if (!skipUser) addUserMessage('Browse products here');
+        wiseaiTraceThen('Closing the board', () => {
+          addWISEcodeAIMessage('I closed the board so we can walk your products here — <strong>Claimed</strong>, <strong>Discovered</strong>, and <strong>Missing data</strong>, as the same cards you see on a phone. Swipe a rail to move through a section. Add a product, import a catalog, or pick another next step from the chips below.', { source: false });
+          (wiseaiReplyDone || Promise.resolve()).then(() => {
+            pfInsertProductCarousels();
+            pfOfferChips(['add', 'catalog', 'verifyGo', 'assets']);
+            pfBrowseTurnLive = false;
+          });
+        }, ['Closing the board', 'Lining up your products']);
+      });
+    }
+    window.startBrowseProducts = startBrowseProducts;
     function startReviewDiscovered() {
       openPortfolioModule('discovered', 'Review the products you discovered for me',
         'I found <strong>47 products</strong> in public retail data that match the Flax4Life brand. They’re on the right under <strong>Discovered</strong> — <strong>Review &amp; claim</strong> the ones that are yours to pull them into your portfolio, and dismiss the rest. Reports unlock as each product’s data is completed.',
@@ -17382,6 +17599,7 @@
         addUserMessage('What can I ask you here?');
         wiseaiTraceThen('WISEcodeAI is gathering what you can ask', () => {
           const rows = [
+            ['Browse products here', 'Browse products here'],
             ['Review discovered matches', 'Review the products you discovered for me'],
             ['Verify ingredients', 'Open a claimed product and verify its ingredients'],
             ['Activate Non-UPF Shields', 'Activate the Non-UPF Shields I\u2019m eligible for'],

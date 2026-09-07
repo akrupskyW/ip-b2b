@@ -986,6 +986,8 @@ function analyticsThumbPane(t, opts) {
   const ready = opts.hideReady
     ? ''
     : readyToggleHTML(analyticsReadyId(t), t.label, { level: 'item', parent: 'mi-analytics', ai: false });
+  const src = previewSrc(path);
+  const title = t.label + ' chart preview';
   return `
     <div class="mi-pane mi-az-thumb" data-pane data-az-thumb data-az-id="${esc(t.id)}" data-href="${esc(path)}" data-search="${esc(search)}">
       <div class="mi-az-thumb-bar">
@@ -994,8 +996,11 @@ function analyticsThumbPane(t, opts) {
         </button>
         ${ready}
       </div>
-      <div class="mi-pane-viewport">
-        ${frameMarkup(previewSrc(path), t.label + ' chart preview', (focus ? `data-focus="${esc(focus)}" ` : '') + 'data-focus-mode="chart" data-az-lazy="1"')}
+      <div class="mi-pane-viewport" data-az-lazy-host
+           data-az-src="${esc(src)}"
+           data-az-title="${esc(title)}"
+           ${focus ? `data-focus="${esc(focus)}" ` : ''}
+           data-focus-mode="chart">
         <button type="button" class="mi-pane-hit" data-az-open="${esc(t.id)}" aria-label="Open ${esc(t.label)} full size"></button>
         <span class="mi-pane-open material-symbols-outlined" aria-hidden="true">open_in_full</span>
       </div>
@@ -2259,8 +2264,75 @@ const CAT_BY_NAME = {
 
 function catOf(c) { return c.cat || CAT_BY_NAME[c.name] || 'Actions'; }
 
-/* Live Output-chip demos — same 52px thumbs + vN badges as wiseai.html.
-   Inners are full-size product photos scaled by the shared thumb transform. */
+/* One-liner under each Component Library title. Classes stay in `cls` for
+   search; they do not render on the row. */
+const COMP_LEDES = {
+  'Buttons': 'Primary, ghost, text, and icon-only actions — one pill language everywhere.',
+  'Intent chips': 'Compact suggestion chips for welcome, replies, and module shortcuts.',
+  'Output chips': 'In-thread previews that open an output — landscape, or the taller carousel size.',
+  'Large intent cards': 'The large-format tap card, sibling to the compact intent chip.',
+  'Chat composer': 'The unlocked chat input: text, attachments, database, and send.',
+  'Transcript lines': 'You, WISEcodeAI, and event lines — never a speech bubble.',
+  'Inline table': 'A small comparison that stays in the answer, not a Results board.',
+  'Transcript carousel': 'An edge-to-edge strip of motion, stills, and clips inside the answer.',
+  'Transcript actions': 'Copy, Accurate, Not accurate, and more — under every answer.',
+  'Activity strip': 'Landmark ear-marks on the chat edge for outputs, sources, and switches.',
+  'Token readout': 'This-turn and conversation tokens under the composer and in the answer menu.',
+  'Chat \u22ef menu': 'The member chat menu: history, export, voiceover, Helix, streaming, close.',
+  'Module \u22ef menu': 'Share, copy, export, and Remove panel on drawers beside the chat.',
+  'Sticky modules': 'Drawers that tuck behind the chat like a utility belt.',
+  'What can I ask?': 'The in-chat overlay of prompts, search, and topics.',
+  'Turns module': 'Every turn in the thread, with fork, jump, and the same turn ID.',
+  'Database roster': 'Searchable database picker in the composer, or docked beside the chat.',
+  'Attachments': 'Image chips on a composed message — pending in the input, then on your line.',
+  'Image lightbox': 'Full-size look at a product photo or a chat attachment.',
+  'Segmented control': 'A connected pill track for picking exactly one of a few named options.',
+  'Switch': 'On/off toggle used in menus and settings — the track is the state.',
+  'Width toggle': 'Cycles a module from single to double to fill to custom.',
+  'Empty states': 'Quiet centred copy when a list, search, or new surface has nothing yet.',
+  'Nutrition Facts': 'The FDA-style facts label, hero, and barcode beside Add / View Product.',
+  'Ingredients Analyzer': 'Parse, code, and scout a pasted ingredient list in its own drawer.',
+  'Product identity strip': 'Name, sizes, price, barcode, and category on the product header.',
+  'Progress tracker': 'Step-by-step progress for a job running beside the chat.',
+  'Jam strip': 'The Appearance sound player — equalizer bars or a helix, off by default.',
+  'App search': 'Global search across transcripts, outputs, and reports.',
+  'Roll \u00b7 Crawl \u00b7 Walk \u00b7 Run': 'Four rollout modes for how much of the app a page shows.',
+  'Owl walkthrough': 'A guided first-visit tour that docks beside the chat.',
+  'Toast': 'A short confirmation that rises from the bottom centre of the screen.',
+  'Left-nav item': 'One row in the primary navigation rail.',
+  'Dashboard card': 'A titled widget card for dashboard content.',
+  'Data table': 'The shared list grid — sorts, pages, and becomes cards when narrow.',
+  'Output pane contents': 'Tables, KPIs, and matrices that follow the Output module’s width.',
+  'Filter toolbar': 'Search pill, funnel, and the filter popover used on every list.',
+  'Stat tiles': 'Click-to-filter metric tiles above a list.',
+  'Dashboard scores': 'Big KPI numerals — a card, or a multi-column claim band.',
+  'Charts & graphs': 'Every chart type as a thumbnail — tap to open it full size.',
+  'Menu popover': 'The settings and profile card of full-width rows.',
+  'Row action menu': 'The per-row menu that holds view, edit, and remove.',
+  'Status chips': 'Verified, pending, at-risk, and the rest of the status family.',
+  'Form fields': 'Pill-shaped inputs and selects shared by sign-in and admin forms.',
+  'Admin buttons': 'The same pill buttons, plus the round icon-only control.',
+  'Modal dialog': 'One overlay language for every dialog.',
+  'Pagination footer': 'Count plus Load more at the foot of every long list.',
+  'Notification rows': 'The alerts feed from the top-bar bell.',
+  'Bottom sheet': 'A drawer that rises from the bottom for a focused task.',
+  'Tooltip': 'The hover card that names an icon-only control.',
+  'Avatars': 'One circle for initials or a photo — nav, tables, and chat.',
+  'History': 'Folder projects and conversation rows in the chat history rail.',
+  'Library cards': 'Shelf cards for saved reports, dashboards, and chats.',
+  'Library folders': 'Folders you file Library cards into.',
+  'Report builder': 'Pick outputs, generate a report, then save or share.',
+  'Report posters': 'The Reports shelf of cinematic poster cards.',
+};
+
+function ledeOf(c) {
+  if (c && c.lede) return String(c.lede);
+  return COMP_LEDES[c && c.name] || '';
+}
+
+/* Live Output-chip demos — 52px landscape thumbs and the 120px portrait
+   carousel size, same vN badges as wiseai.html. Inners are full-size product
+   photos scaled by the shared thumb transform. */
 function outputDemoInner(src) {
   return `<div class="mi-out-thumb-fill"><img src="../assets/portfolio/${src}" alt="" width="360" height="360" loading="lazy"></div>`;
 }
@@ -2321,12 +2393,13 @@ function idStripDemoHTML({ single }) {
 /* A version is a whole card, never a bare thumbnail — one card per version,
    cascaded with the newest in front, each wearing its own vN tag. Mirrors
    surfaceCardHtml on wiseai.html. */
-function outputChipHTML({ title, versions, hover, activeVer }) {
+function outputChipHTML({ title, versions, hover, activeVer, portrait }) {
   const stacked = versions.length > 1;
   const cards = versions.map((v, i) => {
     const latest = i === versions.length - 1;
     const active = activeVer != null && Number(activeVer) === Number(v.ver);
-    const cls = ['sc-surface-card', latest ? 'is-latest' : 'is-old',
+    const cls = ['sc-surface-card', portrait ? 'sc-surface-card--portrait' : '',
+      latest ? 'is-latest' : 'is-old',
       active ? 'is-active' : '', !stacked && hover ? 'is-hover' : ''].filter(Boolean).join(' ');
     return `<div class="${cls}" role="button" tabindex="0">
       <div class="sc-surface-head">
@@ -2345,8 +2418,8 @@ function outputChipHTML({ title, versions, hover, activeVer }) {
     ${cards}
   </div>`;
 }
-function outputRailChipHTML({ title, inner, ver, active }) {
-  return `<div class="wa-merge-chip${active ? ' is-active' : ''}" role="tab" tabindex="0" aria-selected="${active ? 'true' : 'false'}" title="${esc(title)} (v${ver})">
+function outputRailChipHTML({ title, inner, ver, active, portrait }) {
+  return `<div class="wa-merge-chip${portrait ? ' wa-merge-chip--portrait' : ''}${active ? ' is-active' : ''}" role="tab" tabindex="0" aria-selected="${active ? 'true' : 'false'}" title="${esc(title)} (v${ver})">
     <span class="wa-merge-chip-thumb"><span class="wa-merge-chip-thumb-inner">${inner}</span><span class="sc-surface-vtag">v${ver}</span></span>
     <span class="wa-merge-chip-label">${esc(title)}</span>
   </div>`;
@@ -3262,9 +3335,10 @@ function demoChatMenuPop() {
     ${row('export', 'download', 'Export conversation')}
     ${row('share', 'share', 'Share')}
     ${row('file-library', 'auto_stories', 'File to Library')}
-    <button type="button" class="topbar-menu-item" data-sc="voiceover" role="menuitem">
+    <button type="button" class="topbar-menu-item topbar-menu-item--admin" data-sc="voiceover" role="menuitem">
       <span class="material-symbols-outlined topbar-menu-icon">record_voice_over</span>
       <span class="topbar-menu-copy"><span class="topbar-menu-title">Play voiceover</span><span class="topbar-menu-desc">Samuel L. Jackson</span></span>
+      <span class="topbar-menu-badge">Admin</span>
     </button>
     <div class="topbar-menu-divider"></div>
     ${sw({ sc: 'turns', icon: 'alt_route', label: 'Turns', on: false, admin: true })}
@@ -3639,7 +3713,7 @@ function scInlineTblHtml(rows) {
 
 const COMPONENTS = [
   /* `ai: false` — chrome / chrome-adjacent cards. They keep WIP Ready but
-     have no Not for AI / AI Ready switch and do not count toward the
+     have no AI Ready switch and do not count toward the
      Component Library AI k/n. */
   {
     name: 'Buttons',
@@ -3757,9 +3831,9 @@ const COMPONENTS = [
   {
     name: 'Output chips',
     wide: true,
-    cls: '.sc-surface-card · .sc-surface-stack · .sc-surface-vtag · .wa-merge-chip',
-    used: 'WISEcodeAI Studio Chat · WISEcodeAI dock · sticky Output rail',
-    note: 'When a turn opens Results or Visuals, a chip lands in the transcript: a <strong>52px</strong> preview on the left, the output name on the right, gold stroke. Every chip is versioned — a compact <code>vN</code> badge rides the <strong>card\u2019s</strong> top-right corner, even on the first pass. Redo the same output and the slot holds <strong>one whole card per version</strong> — same preview, name and stroke — cascaded oldest first with the newest in front. A version is never a bare thumbnail. <strong>Hover fans the cascade</strong> (an 18px edge opens to a 60px peek), lifts the card under the pointer, and slides each earlier card\u2019s tag to its left edge so every version stays labelled. The version currently open on the right wears a stronger ring. Tapping a card opens <em>that</em> version in the sticky Output module — and the rail on the right shows <strong>one chip per version</strong>, same badge, so the cascade and the pane never disagree. Live fan + Replay live in <em>Motion &amp; Resize → Output chip fan</em>.',
+    cls: '.sc-surface-card · .sc-surface-card--portrait · .sc-surface-stack · .sc-surface-rail · .sc-surface-vtag · .wa-merge-chip · .wa-merge-chip--portrait',
+    used: 'WISEcodeAI Studio Chat · WISEcodeAI dock · sticky Output rail · Intervention Atlas carousel',
+    note: 'When a turn opens Results or Visuals, a chip lands in the transcript: a <strong>52px</strong> preview on the left, the output name on the right, gold stroke. Charts from the Intervention Atlas use a taller <strong>portrait</strong> size \u2014 120px wide with a 108px preview on top \u2014 so a row of them reads as a carousel strip instead of a stack of landscape rows. Every chip is versioned — a compact <code>vN</code> badge rides the <strong>card\u2019s</strong> top-right corner, even on the first pass. Redo the same output and the slot holds <strong>one whole card per version</strong> — same preview, name and stroke — cascaded oldest first with the newest in front. A version is never a bare thumbnail. <strong>Hover fans the cascade</strong> (an 18px edge opens to a 60px peek), lifts the card under the pointer, and slides each earlier card\u2019s tag to its left edge so every version stays labelled. The version currently open on the right wears a stronger ring. Tapping a card opens <em>that</em> version in the sticky Output module — and the rail on the right shows <strong>one chip per version</strong>, same badge, so the cascade and the pane never disagree. Live fan + Replay live in <em>Motion &amp; Resize → Output chip fan</em>.',
     noteIcon: 'layers',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -3791,6 +3865,40 @@ const COMPONENTS = [
             ${outputRailChipHTML({ title: OUTPUT_CHIP_TITLE, inner: OUTPUT_CHIP_VERS[0].inner, ver: 1 })}
             ${outputRailChipHTML({ title: OUTPUT_CHIP_TITLE, inner: OUTPUT_CHIP_VERS[1].inner, ver: 2, active: true })}
             ${outputRailChipHTML({ title: OUTPUT_CHIP_TITLE, inner: OUTPUT_CHIP_VERS[2].inner, ver: 3 })}
+          </div>
+        </div>
+      </div>
+      <div class="dsc-states" style="width:100%;margin-top:18px">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Carousel \u00b7 portrait \u00b7 single</div>
+          ${outputChipHTML({ title: 'Health impact', versions: [OUTPUT_CHIP_VERS[0]], portrait: true })}
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Carousel \u00b7 portrait \u00b7 stack</div>
+          ${outputChipHTML({ title: 'Health impact', versions: OUTPUT_CHIP_VERS, portrait: true })}
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Carousel \u00b7 portrait \u00b7 hover (fan)</div>
+          ${outputChipHTML({ title: 'Health impact', versions: OUTPUT_CHIP_VERS, hover: true, portrait: true })}
+        </div>
+      </div>
+      <div class="dsc-states" style="width:100%;margin-top:18px">
+        <div class="dsc-state-col" style="flex:1 1 100%">
+          <div class="dsc-sub-label">Carousel rail \u2014 the Atlas strip</div>
+          <div class="sc-surface-rail">
+            ${outputChipHTML({ title: 'Health impact', versions: [OUTPUT_CHIP_VERS[0]], portrait: true })}
+            ${outputChipHTML({ title: 'Evidence', versions: [OUTPUT_CHIP_VERS[1]], portrait: true })}
+            ${outputChipHTML({ title: 'Acceptance', versions: [OUTPUT_CHIP_VERS[2]], portrait: true })}
+          </div>
+        </div>
+      </div>
+      <div class="dsc-states" style="width:100%;margin-top:18px">
+        <div class="dsc-state-col" style="flex:1 1 100%">
+          <div class="dsc-sub-label">Sticky Output rail \u2014 portrait chips</div>
+          <div class="wa-merge-chips mi-out-rail">
+            ${outputRailChipHTML({ title: 'Health impact', inner: OUTPUT_CHIP_VERS[0].inner, ver: 1, portrait: true })}
+            ${outputRailChipHTML({ title: 'Evidence', inner: OUTPUT_CHIP_VERS[1].inner, ver: 2, active: true, portrait: true })}
+            ${outputRailChipHTML({ title: 'Acceptance', inner: OUTPUT_CHIP_VERS[2].inner, ver: 3, portrait: true })}
           </div>
         </div>
       </div>`,
@@ -3891,6 +3999,7 @@ const COMPONENTS = [
   },
   {
     name: 'Inline table',
+    added: '2026-09-03',
     wide: true,
     cat: 'Chat & drawers',
     cls: '.sc-inline-tbl · .sc-inline-tbl-row · .sc-inline-h',
@@ -3911,6 +4020,7 @@ const COMPONENTS = [
   },
   {
     name: 'Transcript carousel',
+    added: '2026-09-04',
     aliases: ['Wise Owl Progression', 'Owl progression'],
     wide: true,
     cat: 'Chat & drawers',
@@ -4104,8 +4214,8 @@ const COMPONENTS = [
     wide: true,
     cat: 'Chat & drawers',
     cls: '.panel-more-btn \u00b7 .topbar-popover.sc-menu-grouped \u00b7 .sc-menu-group \u00b7 .sc-mcp-item \u00b7 .sc-switch \u00b7 .sc-menu-admin-btn',
-    used: 'The three-dot on every chat module \u2014 Conversation, Play voiceover, Helix play/pause, streaming, Close. Admin-badged rows stay off this specimen',
-    note: 'Same <code>.topbar-popover</code> shell, grouped the way the live chat does \u2014 one column hung from the kebab. This card is the <strong>member-facing</strong> menu: History, new, Export, Share, File to Library, Play voiceover, Helix play/pause, Response streaming, and Close. The nested Internal admins kebab is not part of this menu. Admin-badged rows (Turns, Hide outputs, Connect a data source, Overview cards, Intent chips, Compact spacing, Brand AI text, Input glow, Animation, Activity strip) appear on the live chat when <em>Internal admins</em> is on in Appearance, and the full Helix studio then sits in a second column beside the stack.',
+    used: 'The three-dot on every chat module \u2014 Conversation, Helix play/pause, streaming, Close. Admin-badged rows stay off this specimen',
+    note: 'Same <code>.topbar-popover</code> shell, grouped the way the live chat does \u2014 one column hung from the kebab. This card is the <strong>member-facing</strong> menu: History, new, Export, Share, File to Library, Helix play/pause, Response streaming, and Close. The nested Internal admins kebab is not part of this menu. Admin-badged rows (Turns, Hide outputs, Connect a data source, Overview cards, Intent chips, Compact spacing, Brand AI text, Input glow, Animation, Activity strip, Play voiceover) appear on the live chat when <em>Internal admins</em> is on in Appearance, and the full Helix studio then sits in a second column beside the stack.',
     noteIcon: 'more_vert',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -4759,6 +4869,7 @@ const COMPONENTS = [
   /* ---- Output pane contents — module-width states, not viewport ---- */
   {
     name: 'Output pane contents',
+    added: '2026-09-05',
     aliases: ['Output module contents', 'Output tables', 'Narrow output', 'Atlas ledger'],
     wide: true,
     cat: 'Tables & data',
@@ -5730,7 +5841,6 @@ const READY_KIND = {
     exportName: 'AI_READY_SEED',
     file: 'js/ai-ready-data.js',
     label: 'AI Ready',
-    labelOff: 'Not for AI',
     titleOn: 'AI Ready',
     markOne: (name) => `Mark ${name} ready for AI`,
     markAll: (name) => `Mark every part in ${name} as AI Ready`,
@@ -5749,12 +5859,10 @@ function readySpec(kind) {
   return READY_KIND[kind] || READY_KIND.dev;
 }
 
-/* Visible switch caption. AI flips between "Not for AI" (off, the default)
-   and "AI Ready" (on). WIP Ready keeps one label in both states. */
+/* Visible switch caption. AI Ready keeps one label in every paint — off,
+   partial (yellow), and on — the same way WIP Ready does. Colour is the state. */
 function readySwitchText(kind, on) {
-  const spec = readySpec(kind);
-  if (kind === 'ai') return on ? spec.label : (spec.labelOff || 'Not for AI');
-  return spec.label;
+  return readySpec(kind).label;
 }
 
 function readReadyOverrides(kind) {
@@ -6134,7 +6242,8 @@ function componentCard(c, readyMap) {
   const cat = catOf(c);
   const parts = partsOf(c.name);
   const shelved = c.status === 'not-now';
-  const search = `${c.name} ${(c.aliases || []).join(' ')} ${c.cls} ${c.used} ${c.note || ''} ${cat} ${parts.map((p) => p.name).join(' ')}${shelved ? ' not now locked' : ''}`.toLowerCase();
+  const lede = ledeOf(c);
+  const search = `${c.name} ${(c.aliases || []).join(' ')} ${lede} ${c.cls} ${c.used} ${c.note || ''} ${cat} ${parts.map((p) => p.name).join(' ')}${shelved ? ' not now locked' : ''}`.toLowerCase();
   const cardCls = `dsc-card dsc-card--acc is-collapsed${c.wide ? ' dsc-card--wide' : ''}${shelved ? ' is-locked' : ''}`;
   const bodyId = 'acc-body-' + compDomId(c.name);
   const note = c.note
@@ -6163,7 +6272,7 @@ function componentCard(c, readyMap) {
         <span class="mi-acc-chevron material-symbols-outlined" aria-hidden="true">expand_more</span>
         <div class="dsc-head">
           <span class="dsc-name">${esc(c.name)}</span>
-          <code class="dsc-class">${esc(c.cls)}</code>
+          ${lede ? `<p class="dsc-lede">${esc(lede)}</p>` : ''}
         </div>
         ${shelved ? notNowStatusHTML() : readyToggleHTML(c.name, c.name, { level: 'item', parent: 'mi-components', ai: c.ai !== false })}
       </div>
@@ -6277,7 +6386,7 @@ function renderComponentLibrary(opts) {
       <div class="mi-toolbar">
         <div class="mi-search-inline">
           <span class="material-symbols-outlined">search</span>
-          <input type="search" id="dsc-search" class="mi-search" placeholder="Filter components by name, class, or usage…" aria-label="Search components" autocomplete="off" />
+          <input type="search" id="dsc-search" class="mi-search" placeholder="Filter components by name, description, or usage…" aria-label="Search components" autocomplete="off" />
         </div>
       </div>
 
@@ -10249,8 +10358,7 @@ export function renderAllModules(mainEl) {
   safeWire('azNudge', () => wireAzNudge(mainEl));
   safeWire('compsNudge', () => wireCompsNudge(mainEl));
   safeWire('rptNudge', () => wireRptNudge(mainEl));
-  safeWire('azCompNudge', () => wireAzCompNudge(mainEl));
-  safeWire('inlineTblNudge', () => wireInlineTblNudge(mainEl));
+  safeWire('recentCompNudges', () => wireRecentCompNudges(mainEl));
   safeWire('azLightbox', () => wireAnalyticsLightbox(mainEl));
   safeWire('globalSearch', () => wireGlobalSearch(mainEl));
   safeWire('devReady', () => wireDevReady(mainEl));
@@ -10370,8 +10478,7 @@ function refreshAllModuleNudges() {
   refreshAzNudge();
   refreshCompsNudge();
   refreshRptNudge();
-  refreshAzCompNudge();
-  refreshInlineTblNudge();
+  refreshRecentCompNudges();
 }
 
 function scheduleModuleNudgeRefresh() {
@@ -10409,6 +10516,8 @@ function setSectionCollapsed(root, sec, collapsed) {
       observePreviewFrames(sec);
       scheduleModuleNudgeRefresh();
     });
+  } else if (sec.id === 'mi-analytics') {
+    unloadAzHosts(sec);
   }
 }
 
@@ -10583,7 +10692,7 @@ function ensureTarchNudgeToast() {
   if (toast) return toast;
   toast = document.createElement('div');
   toast.id = 'mi-tarch-nudge';
-  toast.className = 'dash-score-toast dash-score-toast--gold is-portaled';
+  toast.className = 'dash-score-toast dash-score-toast--gold dash-score-toast--mi is-portaled';
   toast.setAttribute('data-nudge-id', TARCH_NUDGE_ID);
   toast.setAttribute('role', 'status');
   toast.hidden = true;
@@ -10743,7 +10852,7 @@ function ensureCompsNudgeToast() {
   if (toast) return toast;
   toast = document.createElement('div');
   toast.id = 'mi-comps-nudge';
-  toast.className = 'dash-score-toast dash-score-toast--gold is-portaled';
+  toast.className = 'dash-score-toast dash-score-toast--gold dash-score-toast--mi is-portaled';
   toast.setAttribute('data-nudge-id', COMPS_NUDGE_ID);
   toast.setAttribute('role', 'status');
   toast.hidden = true;
@@ -10852,7 +10961,7 @@ function ensureRptNudgeToast() {
   if (toast) return toast;
   toast = document.createElement('div');
   toast.id = 'mi-rpt-nudge';
-  toast.className = 'dash-score-toast dash-score-toast--gold is-portaled';
+  toast.className = 'dash-score-toast dash-score-toast--gold dash-score-toast--mi is-portaled';
   toast.setAttribute('data-nudge-id', RPT_NUDGE_ID);
   toast.setAttribute('role', 'status');
   toast.hidden = true;
@@ -10958,7 +11067,7 @@ function ensureAzNudgeToast() {
   if (toast) return toast;
   toast = document.createElement('div');
   toast.id = 'mi-az-nudge';
-  toast.className = 'dash-score-toast dash-score-toast--gold is-portaled';
+  toast.className = 'dash-score-toast dash-score-toast--gold dash-score-toast--mi is-portaled';
   toast.setAttribute('data-nudge-id', AZ_NUDGE_ID);
   toast.setAttribute('role', 'status');
   toast.hidden = true;
@@ -11065,7 +11174,7 @@ function ensureAzCompNudgeToast() {
   if (toast) return toast;
   toast = document.createElement('div');
   toast.id = 'mi-az-comp-nudge';
-  toast.className = 'dash-score-toast dash-score-toast--gold is-portaled';
+  toast.className = 'dash-score-toast dash-score-toast--gold dash-score-toast--mi is-portaled';
   toast.setAttribute('data-nudge-id', AZ_COMP_NUDGE_ID);
   toast.setAttribute('role', 'status');
   toast.hidden = true;
@@ -11170,7 +11279,7 @@ function ensureInlineTblNudgeToast() {
   if (toast) return toast;
   toast = document.createElement('div');
   toast.id = 'mi-inline-tbl-nudge';
-  toast.className = 'dash-score-toast dash-score-toast--gold is-portaled';
+  toast.className = 'dash-score-toast dash-score-toast--gold dash-score-toast--mi is-portaled';
   toast.setAttribute('data-nudge-id', INLINE_TBL_NUDGE_ID);
   toast.setAttribute('role', 'status');
   toast.hidden = true;
@@ -11240,6 +11349,147 @@ function wireInlineTblNudge(root) {
   refreshInlineTblNudge();
   setTimeout(refreshInlineTblNudge, 200);
   setTimeout(refreshInlineTblNudge, 700);
+}
+
+/* Gold “This is new!” on Component Library cards added in the last 3 days.
+   Reuses the same portaled toast as the section nudges. Inline table keeps
+   its existing dismiss key so a prior close still holds. */
+const COMP_NEW_DAYS = 3;
+const RECENT_NUDGE_IDS = {
+  'Inline table': 'mi-inline-tbl-new',
+};
+const recentNudgeTaken = new Set();
+const recentNudgeRo = new Map();
+let recentNudgeWired = false;
+
+function parseAddedDay(iso) {
+  const t = Date.parse(String(iso || '') + 'T12:00:00');
+  return Number.isFinite(t) ? t : NaN;
+}
+
+function isRecentlyAdded(iso) {
+  const t = parseAddedDay(iso);
+  if (!Number.isFinite(t)) return false;
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - COMP_NEW_DAYS);
+  return t >= start.getTime();
+}
+
+function recentCatalogComps() {
+  return COMPONENTS.filter((c) => isRecentlyAdded(c.added));
+}
+
+function recentNudgeId(c) {
+  return RECENT_NUDGE_IDS[c.name] || ('mi-new-' + compDomId(c.name).replace(/^dsc-comp-/, ''));
+}
+
+function recentNudgeDismissed(c) {
+  const id = recentNudgeId(c);
+  return !!(isNudgeDismissed(id) ||
+    (window.WiseNudgeToast && typeof window.WiseNudgeToast.isDismissed === 'function'
+      && window.WiseNudgeToast.isDismissed(id)));
+}
+
+function findLiveCompCard(root, name) {
+  return Array.from((root || hostEl || document).querySelectorAll('[data-ds-comp]'))
+    .find((el) => el.dataset.compName === name && !el.hidden) || null;
+}
+
+function recentNudgeAnchor(root, c) {
+  const card = findLiveCompCard(root, c.name);
+  if (!card) return null;
+  return card.querySelector(':scope > .dsc-card-head .dsc-name');
+}
+
+function ensureRecentNudgeToast(c) {
+  const id = recentNudgeId(c);
+  const elId = id + '-toast';
+  let toast = document.getElementById(elId);
+  if (toast) return toast;
+  const lede = ledeOf(c);
+  toast = document.createElement('div');
+  toast.id = elId;
+  toast.className = 'dash-score-toast dash-score-toast--gold dash-score-toast--mi is-portaled';
+  toast.setAttribute('data-nudge-id', id);
+  toast.setAttribute('role', 'status');
+  toast.hidden = true;
+  toast.innerHTML =
+    '<span class="dash-score-toast-icon"><span class="material-symbols-outlined">new_releases</span></span>' +
+    '<div class="dash-score-toast-body">' +
+      '<div class="dash-score-toast-title">This is new!</div>' +
+      '<p class="dash-score-toast-text">' + esc(lede) + '</p>' +
+      '<button type="button" class="dash-score-toast-link" data-recent-nudge-go="' + esc(c.name) + '">Open ' + esc(c.name) + '<span class="material-symbols-outlined dash-score-toast-link-arrow">arrow_outward</span></button>' +
+    '</div>' +
+    '<button class="dash-score-toast-close" type="button" aria-label="Dismiss" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined">close</span></button>';
+  document.body.appendChild(toast);
+  toast.addEventListener('click', (e) => {
+    const go = e.target.closest('[data-recent-nudge-go]');
+    if (!go) return;
+    e.preventDefault();
+    e.stopPropagation();
+    jumpToComponent(hostEl || document, go.getAttribute('data-recent-nudge-go'));
+    refreshRecentCompNudges();
+  });
+  return toast;
+}
+
+function refreshRecentCompNudges() {
+  const root = hostEl || document;
+  recentCatalogComps().forEach((c) => {
+    const toast = ensureRecentNudgeToast(c);
+    const label = recentNudgeAnchor(root, c);
+    const dismissed = recentNudgeTaken.has(c.name) || recentNudgeDismissed(c);
+    const labelLive = !!(label && !label.hidden && label.getClientRects().length);
+    const show = !dismissed && labelLive;
+    const key = c.name;
+    if (!show) {
+      toast.hidden = true;
+      toast.setAttribute('hidden', '');
+      toast.style.visibility = '';
+      toast.style.pointerEvents = '';
+      const ro = recentNudgeRo.get(key);
+      if (ro) {
+        ro.disconnect();
+        recentNudgeRo.delete(key);
+      }
+      return;
+    }
+    toast.hidden = false;
+    toast.removeAttribute('hidden');
+    const prev = recentNudgeRo.get(key);
+    if (prev) {
+      prev.disconnect();
+      recentNudgeRo.delete(key);
+    }
+    if (typeof ResizeObserver !== 'undefined' && label) {
+      const ro = new ResizeObserver(() => placeTarchNudgeToast(toast, label));
+      ro.observe(label);
+      recentNudgeRo.set(key, ro);
+    }
+    placeTarchNudgeToast(toast, label);
+    requestAnimationFrame(() => placeTarchNudgeToast(toast, label));
+  });
+}
+
+function wireRecentCompNudges(root) {
+  if (recentNudgeWired) {
+    refreshRecentCompNudges();
+    return;
+  }
+  recentNudgeWired = true;
+  recentCatalogComps().forEach((c) => ensureRecentNudgeToast(c));
+  const place = () => refreshRecentCompNudges();
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-nudge-dismiss]')) setTimeout(place, 0);
+  });
+  window.addEventListener('resize', place);
+  window.addEventListener('scroll', place, { passive: true, capture: true });
+  root.querySelector('.agent-main-scroll')?.addEventListener('scroll', place, { passive: true });
+  document.getElementById('agent-main-scroll')?.addEventListener('scroll', place, { passive: true });
+  refreshRecentCompNudges();
+  setTimeout(refreshRecentCompNudges, 200);
+  setTimeout(refreshRecentCompNudges, 700);
 }
 
 /* ------------------------------------------------------------------ */
@@ -11376,8 +11626,8 @@ function buildGlobalIndex() {
 
   COMPONENTS.forEach((c) => add({
     kind: 'component', section: 'mi-components', group: 'Components', icon: c.noteIcon || 'widgets',
-    title: c.name, sub: c.cls, key: c.name, searchSel: '#dsc-search',
-    q: `${c.name} ${(c.aliases || []).join(' ')} ${c.cls} ${c.used} ${stripSearchText(c.note)} ${catOf(c)}`,
+    title: c.name, sub: ledeOf(c) || c.cls, key: c.name, searchSel: '#dsc-search',
+    q: `${c.name} ${(c.aliases || []).join(' ')} ${ledeOf(c)} ${c.cls} ${c.used} ${stripSearchText(c.note)} ${catOf(c)}`,
   }));
 
   CODE_METRICS.forEach((m) => add({
@@ -11487,12 +11737,7 @@ function filterScorecards(root, hits) {
   if (!hits) {
     nav.classList.remove('is-filtered');
     nav.querySelectorAll('[data-jump]').forEach((t) => { t.hidden = false; });
-    refreshTarchNudge();
-    refreshAzNudge();
-    refreshCompsNudge();
-    refreshRptNudge();
-    refreshAzCompNudge();
-    refreshInlineTblNudge();
+    refreshAllModuleNudges();
     return;
   }
   const sections = new Set(hits.map((h) => h.section));
@@ -11500,12 +11745,7 @@ function filterScorecards(root, hits) {
   nav.querySelectorAll('[data-jump]').forEach((t) => {
     t.hidden = !sections.has(t.dataset.jump);
   });
-  refreshTarchNudge();
-  refreshAzNudge();
-  refreshCompsNudge();
-  refreshRptNudge();
-  refreshAzCompNudge();
-  refreshInlineTblNudge();
+  refreshAllModuleNudges();
 }
 
 function groupedGlobalHits(matches) {
@@ -13382,7 +13622,13 @@ function hydrateFrame(frame) {
 }
 
 let frameObserver = null;
-let azFrameObserver = null;
+let azThumbObserver = null;
+let azThumbObserverRoot = undefined;
+const AZ_LIVE_LIMIT = 3;
+const AZ_LOAD_MS = 15000;
+const azLiveQueue = [];
+const azUnloadTimers = new WeakMap();
+let azLiveInflight = 0;
 
 function ensureFrameObserver() {
   if (frameObserver) return frameObserver;
@@ -13396,33 +13642,172 @@ function ensureFrameObserver() {
   return frameObserver;
 }
 
-/* Chart thumbs only boot when they actually enter the module scroller —
-   opening the accordion must not fetch every analytics-types.html at once. */
-function ensureAzFrameObserver() {
-  if (azFrameObserver) return azFrameObserver;
-  const root = document.getElementById('agent-main-scroll') || null;
-  azFrameObserver = new IntersectionObserver((entries) => {
+function azScrollRoot() {
+  return document.getElementById('agent-main-scroll') || null;
+}
+
+function azHostEligible(host) {
+  if (!host || !host.isConnected) return false;
+  const pane = host.closest('.mi-az-thumb');
+  if (pane && pane.hidden) return false;
+  return frameIsEligible(host);
+}
+
+/* Chart thumbs start as empty viewports. Opening Analytics Types (or
+   Charts & graphs) must not boot every analytics-types.html at once —
+   only cards that enter the module scroller, at most three at a time. */
+function ensureAzThumbObserver() {
+  const root = azScrollRoot();
+  if (azThumbObserver && azThumbObserverRoot === root) return azThumbObserver;
+  if (azThumbObserver) azThumbObserver.disconnect();
+  azThumbObserverRoot = root;
+  azThumbObserver = new IntersectionObserver((entries) => {
     entries.forEach((en) => {
-      if (!en.isIntersecting) return;
-      hydrateFrame(en.target);
-      azFrameObserver.unobserve(en.target);
+      const host = en.target;
+      const pending = azUnloadTimers.get(host);
+      if (pending) {
+        clearTimeout(pending);
+        azUnloadTimers.delete(host);
+      }
+      if (en.isIntersecting) enqueueAzLive(host);
+      else {
+        const wait = setTimeout(() => {
+          azUnloadTimers.delete(host);
+          if (host.isConnected) unloadAzLive(host);
+        }, 2800);
+        azUnloadTimers.set(host, wait);
+      }
     });
-  }, { root, rootMargin: '80px 0px', threshold: 0.12 });
-  return azFrameObserver;
+  }, { root, rootMargin: '160px 0px', threshold: 0.01 });
+  return azThumbObserver;
+}
+
+function enqueueAzLive(host) {
+  if (!host || host.dataset.azQueued === '1' || host.dataset.azLive === '1') return;
+  if (!host.getAttribute('data-az-src')) return;
+  if (!azHostEligible(host)) return;
+  host.dataset.azQueued = '1';
+  azLiveQueue.push(host);
+  pumpAzLive();
+}
+
+function pumpAzLive() {
+  while (azLiveInflight < AZ_LIVE_LIMIT && azLiveQueue.length) {
+    const host = azLiveQueue.shift();
+    if (!host || !host.isConnected || host.dataset.azLive === '1') continue;
+    if (!azHostEligible(host)) {
+      delete host.dataset.azQueued;
+      continue;
+    }
+    startAzLive(host);
+  }
+}
+
+function releaseAzSlot(host) {
+  if (!host || host.dataset.azSlot !== '1') return;
+  host.dataset.azSlot = '';
+  azLiveInflight = Math.max(0, azLiveInflight - 1);
+  pumpAzLive();
+}
+
+function startAzLive(host) {
+  const src = host.getAttribute('data-az-src');
+  if (!src) {
+    delete host.dataset.azQueued;
+    return;
+  }
+  azLiveInflight += 1;
+  host.dataset.azSlot = '1';
+  host.dataset.azLive = '1';
+  let frame = host.querySelector(':scope > .mi-pane-frame');
+  if (!frame) {
+    frame = document.createElement('iframe');
+    frame.className = 'mi-pane-frame';
+    frame.title = host.getAttribute('data-az-title') || '';
+    frame.tabIndex = -1;
+    frame.setAttribute('aria-hidden', 'true');
+    const focus = host.getAttribute('data-focus');
+    if (focus) frame.dataset.focus = focus;
+    frame.dataset.focusMode = host.getAttribute('data-focus-mode') || 'chart';
+    host.insertBefore(frame, host.firstChild);
+  }
+  let settled = false;
+  const finish = (ok) => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(timer);
+    frame.removeEventListener('load', onOk);
+    frame.removeEventListener('error', onFail);
+    if (!ok) {
+      host.dataset.azLive = '';
+      delete host.dataset.azQueued;
+    }
+    releaseAzSlot(host);
+  };
+  const onOk = () => finish(true);
+  const onFail = () => finish(false);
+  const timer = setTimeout(() => finish(true), AZ_LOAD_MS);
+  frame.addEventListener('load', onOk);
+  frame.addEventListener('error', onFail);
+  frame.src = src;
+  attachRailFrame(frame);
+}
+
+function unloadAzLive(host) {
+  if (!host) return;
+  const idx = azLiveQueue.indexOf(host);
+  if (idx >= 0) azLiveQueue.splice(idx, 1);
+  const pending = azUnloadTimers.get(host);
+  if (pending) {
+    clearTimeout(pending);
+    azUnloadTimers.delete(host);
+  }
+  releaseAzSlot(host);
+  const frame = host.querySelector(':scope > .mi-pane-frame');
+  if (frame) {
+    frame.removeAttribute('src');
+    frame.remove();
+  }
+  host.dataset.azLive = '';
+  delete host.dataset.azQueued;
+  const pane = host.closest('.mi-az-thumb');
+  if (pane) pane.classList.remove('is-focused', 'is-unfocused');
+}
+
+function unloadAzHosts(scope) {
+  if (!scope || !scope.querySelectorAll) return;
+  scope.querySelectorAll('[data-az-lazy-host]').forEach((host) => {
+    if (azThumbObserver) azThumbObserver.unobserve(host);
+    unloadAzLive(host);
+  });
+}
+
+function observeAnalyticsThumbs(scope) {
+  const root = scope || document;
+  if (!root || !root.querySelectorAll) return;
+  const obs = ensureAzThumbObserver();
+  root.querySelectorAll('[data-az-lazy-host]').forEach((host) => {
+    if (azHostEligible(host)) obs.observe(host);
+    else {
+      obs.unobserve(host);
+      unloadAzLive(host);
+    }
+  });
 }
 
 function observePreviewFrames(scope) {
   const root = scope || document;
   if (!root || !root.querySelectorAll) return;
+  observeAnalyticsThumbs(root);
   const railObs = ensureFrameObserver();
   root.querySelectorAll('.mi-pane-frame[data-src]').forEach((f) => {
-    const obs = f.dataset.azLazy ? ensureAzFrameObserver() : railObs;
+    if (f.closest('[data-az-lazy-host]') || f.dataset.azLazy) return;
     if (f.getAttribute('src')) {
-      obs.unobserve(f);
+      railObs.unobserve(f);
       return;
     }
-    if (frameIsEligible(f)) obs.observe(f);
-    else obs.unobserve(f);
+    if (frameIsEligible(f)) railObs.observe(f);
+    else railObs.unobserve(f);
   });
 }
 
@@ -13586,9 +13971,14 @@ function wireAnalyticsTypes(root) {
       const vis = !q || (p.dataset.search || '').indexOf(q) !== -1;
       p.hidden = !vis;
       if (vis) shown++;
+      else {
+        const host = p.querySelector('[data-az-lazy-host]');
+        if (host) unloadAzLive(host);
+      }
     });
     if (emptyEl) emptyEl.hidden = shown !== 0;
     if (shownEl) shownEl.textContent = String(shown);
+    observeAnalyticsThumbs(grid);
   };
 
   if (searchInput) searchInput.addEventListener('input', apply);
@@ -14899,8 +15289,7 @@ function wireComponentLibrary(root) {
     });
     if (emptyEl) emptyEl.hidden = shown !== 0;
     refreshRptNudge();
-    refreshAzCompNudge();
-    refreshInlineTblNudge();
+    refreshRecentCompNudges();
   };
 
   dscRevealAll = () => {
@@ -14916,8 +15305,7 @@ function wireComponentLibrary(root) {
     }
     apply();
     refreshRptNudge();
-    refreshAzCompNudge();
-    refreshInlineTblNudge();
+    refreshRecentCompNudges();
   };
 
   if (searchInput) {
@@ -15091,10 +15479,11 @@ function wireComponentLibrary(root) {
         const br = body.getBoundingClientRect();
         if (br.top > sr.bottom - 96) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
+    } else if (card.dataset.compName === 'Charts & graphs') {
+      unloadAzHosts(card);
     }
     if (card.dataset.compName === 'Report builder') refreshRptNudge();
-    if (card.dataset.compName === 'Charts & graphs') refreshAzCompNudge();
-    if (card.dataset.compName === 'Inline table') refreshInlineTblNudge();
+    refreshRecentCompNudges();
   };
   grid.addEventListener('click', (e) => {
     if (e.target.closest('.dsc-ready, .dsc-ready-row, a, button, input, textarea, select')) return;
@@ -15367,12 +15756,8 @@ async function jumpToComponent(root, name) {
   }
   setCompCardCollapsed(card, false);
   if (name === 'Report builder') refreshRptNudge();
-  if (name === 'Charts & graphs') {
-    takeAzCompNudge();
-    observePreviewFrames(card);
-    refreshAzCompNudge();
-  }
-  if (name === 'Inline table') refreshInlineTblNudge();
+  if (name === 'Charts & graphs') observePreviewFrames(card);
+  refreshRecentCompNudges();
   const grid = root.querySelector('#dsc-grid');
   if (grid && typeof grid._bootComposersIn === 'function') grid._bootComposersIn(card);
   if (grid && typeof grid._bootChatMenuIn === 'function') grid._bootChatMenuIn(card);

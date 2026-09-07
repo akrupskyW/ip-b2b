@@ -18,7 +18,7 @@ try {
     v: 1, completed: true, dismissed: true, doneSteps: ['*'],
     skippedGroups: [], screensSeen: {'*': true}, cursor: ''
   }));
-  localStorage.setItem('wise-admin-ui', '0');
+  localStorage.setItem('wise-admin-ui', '1');
 } catch (e) {}
 """
 
@@ -47,10 +47,15 @@ def run(page, theme):
     voice.wait_for(state="visible", timeout=4000)
     labels = page.evaluate("""() => {
       const item = document.querySelector('[data-sc="voiceover"]');
-      return item ? {
+      if (!item) return null;
+      const cs = getComputedStyle(item);
+      return {
         text: (item.innerText || '').replace(/\\s+/g, ' ').trim(),
+        admin: item.classList.contains('topbar-menu-item--admin'),
+        badge: !!(item.querySelector('.topbar-menu-badge')),
+        hidden: cs.display === 'none' || cs.visibility === 'hidden',
         inConversation: !!(item.closest('.sc-menu-group--conversation'))
-      } : null;
+      };
     }""")
     print("menu_item", theme, labels)
 
@@ -70,6 +75,16 @@ def run(page, theme):
     }""")
     print("picker", theme, json.dumps(info, indent=2))
     page.screenshot(path=os.path.join(OUT, "voiceover-picker__%s.png" % theme), full_page=False)
+
+    hidden = page.evaluate("""() => {
+      localStorage.setItem('wise-admin-ui', '0');
+      document.dispatchEvent(new CustomEvent('wise:admin-ui', { detail: { on: false } }));
+      const item = document.querySelector('[data-sc="voiceover"]');
+      if (!item) return { missing: true };
+      const cs = getComputedStyle(item);
+      return { hidden: cs.display === 'none' || cs.visibility === 'hidden' || item.offsetParent === null };
+    }""")
+    print("admin_off", theme, hidden)
 
     # Transcript path: the playful story still prints the same parody.
     page.evaluate("""() => {

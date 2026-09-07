@@ -17,6 +17,7 @@ export const AI_READY_SEED = {
   "Filter toolbar": true,
   "Form fields": true,
   "History": true,
+  "Inline table": true,
   "Intent chips": true,
   "Jam strip": true,
   "Large intent cards": true,

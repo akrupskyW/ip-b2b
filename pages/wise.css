@@ -7908,6 +7908,72 @@ html.dark .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary-
   scroll-padding-inline-start: var(--sc-rail-lead-in);
   scroll-padding-inline-end: 6px;
 }
+.sc-surface-rail .sc-surface-slot {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  width: auto;
+  max-width: none;
+}
+.sc-line-body > .sc-surface-rail + .sc-surface-rail-lead { margin-top: 1.1em; }
+
+/* Product rails arriving in the transcript: slide from the right into the
+   space the chat just opened. Sections stagger via --rail-in-delay. */
+@keyframes sc-from-right {
+  from { opacity: 0; transform: translateX(32%); }
+  to { opacity: 1; transform: none; }
+}
+.sc-line-body > .sc-surface-rail-lead.is-rail-in,
+.sc-line-body > .sc-surface-rail.is-rail-in {
+  animation: sc-from-right 0.64s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--rail-in-delay, 0ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sc-line-body > .sc-surface-rail-lead.is-rail-in,
+  .sc-line-body > .sc-surface-rail.is-rail-in {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Module close → chat fill. `--dock-w` is a registered length so the chat
+   can ease from its column to fill after the neighbour has already left.
+   Same row class as wiseai.html `#modules-row.is-dock-animating`. */
+@property --dock-w {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+#modules-row.is-dock-animating { overflow-x: hidden; }
+#modules-row.is-dock-animating #chat-shell {
+  flex: 0 0 var(--dock-w) !important;
+  width: var(--dock-w) !important;
+  min-width: var(--dock-w) !important;
+  max-width: var(--dock-w) !important;
+  transition: --dock-w 0.72s cubic-bezier(0.16, 1, 0.3, 1);
+}
+#modules-row.is-dock-animating .wa-chat,
+#modules-row.is-dock-animating #portfolio-panel.pf-open,
+#modules-row.is-dock-animating .wa-pane.is-open {
+  transition:
+    flex-basis 0.58s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.58s cubic-bezier(0.22, 1, 0.36, 1),
+    min-width 0.58s cubic-bezier(0.22, 1, 0.36, 1),
+    max-width 0.58s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+#modules-row.is-dock-animating #portfolio-panel.pf-open .pf-inner,
+#modules-row.is-dock-animating .wa-pane.is-open {
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  #modules-row.is-dock-animating #chat-shell,
+  #modules-row.is-dock-animating .wa-chat,
+  #modules-row.is-dock-animating #portfolio-panel.pf-open,
+  #modules-row.is-dock-animating .wa-pane.is-open {
+    transition: none !important;
+  }
+}
 /* A pasted, multi-paragraph prompt reads as a document inside the member's
    turn — paragraphs, bullet lists and emphasis — rather than one run-on block.
    Inherits the turn's colour, so it stays brand blue in the member's line and
@@ -10938,6 +11004,12 @@ html.dark .dash-score-toast--gold::after { background: var(--ter-amber, #FFC434)
 .dash-score-toast--gold.is-portaled .dash-score-toast-link:focus {
   color: #3D2208;
 }
+/* All Modules gold floaties — same toast, a bit smaller type. */
+.dash-score-toast--mi .dash-score-toast-title { font-size: 0.75rem; }
+.dash-score-toast--mi .dash-score-toast-text,
+.dash-score-toast--mi .dash-score-toast-link { font-size: 0.68rem; }
+.dash-score-toast--mi .dash-score-toast-icon .material-symbols-outlined { font-size: 16px; }
+.dash-score-toast--mi .dash-score-toast-link .material-symbols-outlined { font-size: 13px; }
 @keyframes dash-score-toast-float-gold {
   0%, 100% {
     transform: translateY(0);
@@ -16335,6 +16407,119 @@ table.rtbl.rtbl-cards tbody > tr:not(:has(.rtbl-lead, .rtbl-ctl)) > td.rtbl-fld:
 /* A value's own key, when the field label above it already says that word. */
 .rtbl-cards .rtbl-dupe { display: none; }
 
+/* ── Phone table cards riding the shared output carousel ─────────────────
+   The rail itself is `.sc-surface-rail.sc-surface-rail--bleed` — one component,
+   edge to edge. These rules only size and paint the mobile row cards that
+   sit in its slots. `data-force-cards` keeps the phone layout in a wide chat. */
+.sc-card-stack-title {
+  font-family: 'WISE Digits', var(--module-title-family, var(--font-serif, 'Noto Serif', serif));
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+.sc-card-stack-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+}
+.sc-card-stack-head .sc-card-stack-title { margin: 0; }
+.sc-surface-rail {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scroll-snap-type: x proximity;
+  max-width: 100%;
+  padding: 2px 2px 6px;
+  -webkit-overflow-scrolling: touch;
+}
+.sc-surface-rail::-webkit-scrollbar { height: 6px; }
+.sc-surface-rail .rtbl-ghead,
+.sc-surface-rail .pf-thead,
+.sc-surface-rail .pf-table-foot,
+.sc-surface-rail .wtp-foot { display: none !important; }
+.sc-surface-rail .rtbl-grid.rtbl-cards .rtbl-grow,
+.sc-surface-rail .rtbl-cards .rtbl-grow {
+  width: 280px;
+  min-width: 280px !important;
+  max-width: 280px;
+  margin-bottom: 0;
+  background: #fff;
+}
+html.dark .sc-surface-rail .rtbl-grid.rtbl-cards .rtbl-grow,
+html.dark .sc-surface-rail .rtbl-cards .rtbl-grow {
+  background: #1A2339;
+}
+.sc-surface-rail .rtbl-cards .rtbl-grow:hover,
+.sc-surface-rail .rtbl-cards .rtbl-grow.is-selected {
+  background: color-mix(in srgb, var(--primary) 6%, #fff);
+}
+html.dark .sc-surface-rail .rtbl-cards .rtbl-grow:hover,
+html.dark .sc-surface-rail .rtbl-cards .rtbl-grow.is-selected {
+  background: color-mix(in srgb, var(--primary) 12%, #1A2339);
+}
+.sc-surface-rail .rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-lead,
+.sc-surface-rail .rtbl-cards .rtbl-grow > .rtbl-lead {
+  flex: 1 1 100%;
+  order: 4;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 10px;
+  padding-right: 0;
+  border-top: 0;
+}
+.sc-surface-rail .rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-lead::before,
+.sc-surface-rail .rtbl-cards .rtbl-grow > .rtbl-lead::before {
+  display: none;
+  content: none;
+}
+.sc-surface-rail .rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-ctl--check,
+.sc-surface-rail .rtbl-cards .rtbl-grow > .pf-col-check {
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  width: auto;
+  max-width: none;
+  margin-right: auto;
+}
+.sc-surface-rail .rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-ctl--menu,
+.sc-surface-rail .rtbl-cards .rtbl-grow > .pf-col-menu {
+  flex: 0 0 auto;
+  order: 3;
+  margin-left: 0;
+}
+.sc-surface-rail .rtbl-cards .rtbl-fld[data-rlabel]:not(.rtbl-lead):empty::after {
+  content: "\2014";
+  color: var(--text-subtle);
+}
+.sc-card-stack-head .wise-btn {
+  height: 30px;
+  padding: 0 12px;
+  font-size: 0.72rem;
+}
+.sc-card-stack-head .wise-btn .material-symbols-outlined {
+  font-size: 14px;
+}
+.sc-surface-rail .rtbl-cards .rtbl-lead .pf-thumb {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+}
+.sc-surface-rail .rtbl-cards .rtbl-lead .pf-pcell-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.sc-surface-rail .rtbl-grid.rtbl-cards .rtbl-grow > .rtbl-fld[data-rlabel]:not(.rtbl-lead),
+.sc-surface-rail .rtbl-cards .rtbl-grow > .rtbl-fld[data-rlabel]:not(.rtbl-lead) {
+  order: 5;
+}
+
 /* ══════════════════════════════════════════════════════════════════════════
    RESPONSIVE PRIMARY NAVIGATION
 
@@ -19092,7 +19277,7 @@ html.dark .ds-prop-row[data-state="ok"] .material-symbols-outlined { color: #4AD
 .dsc-card.is-locked .dsc-card-head { cursor: default; }
 .dsc-ready--not-now .dash-brand-toggle { cursor: default; pointer-events: none; }
 .dsc-card-head {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: flex-start; gap: 10px;
   padding: 12px 14px; cursor: pointer; user-select: none;
 }
 .dsc-card-head:hover .mi-acc-chevron { color: var(--primary); }
@@ -19164,7 +19349,7 @@ html.dark .ds-prop-row[data-state="ok"] .material-symbols-outlined { color: #4AD
 .dsc-ready .dash-brand-toggle[aria-checked="true"] .dash-brand-toggle-thumb {
   background: #fff;
 }
-/* Not for AI (off, the default) keeps the pink brand pill. AI Ready (on)
+/* AI Ready off (the default) keeps the pink brand pill. AI Ready on
    is a darker green so it reads apart from WIP Ready. */
 .dsc-ready--ai {
   --dsc-ai-ready: color-mix(in srgb, var(--sec-green, #32A966) 68%, #0a1c10);
@@ -19194,8 +19379,8 @@ html.dark .dsc-ready--ai {
 .dsc-ready--ai .dash-brand-toggle[aria-checked="true"] .dash-brand-toggle-thumb {
   background: #fff;
 }
-/* More than one part ready for AI, not all — Not for AI shifts from pink
-   to a lighter orange. Counters stay unchanged. WIP Ready stays pink. */
+/* More than one part ready for AI, not all — the off AI Ready pill shifts
+   from pink to a lighter orange. Counters stay unchanged. WIP Ready stays pink. */
 .dsc-ready--ai.is-partial {
   --dsc-ai-partial: #E59A3C;
 }
@@ -19242,10 +19427,18 @@ html.dark .dsc-ready--ai.is-partial .dash-brand-toggle:not(.is-on):not([aria-che
   width: 100%;
   justify-content: flex-start;
 }
-.dsc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 10px 16px 10px; flex-wrap: wrap; }
+.dsc-head { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 3px; padding: 10px 16px 10px; }
 .dsc-name {
   font-family: 'WISE Digits', 'Noto Serif', serif;
   font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text);
+}
+.dsc-lede {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--text-muted);
+  max-width: 72ch;
 }
 .dsc-class { font-size: 0.625rem; color: var(--text-muted); word-break: break-word; }
 /* Light + Dark are first-class versions — each card stages both, using
@@ -19983,6 +20176,68 @@ html.dark #mi-motion .wa-merge-chip,
 .dsc-demo .wa-merge-chip-label {
   flex: 1 1 auto; min-width: 0; line-height: 1.25; overflow: hidden;
   display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
+}
+/* Atlas / carousel portrait — 120px card, 108px thumb on top. Same numbers
+   as wiseai.html so the catalog cannot drift from the live strip. */
+.dsc-demo .sc-surface-card--portrait,
+#mi-motion .sc-surface-card--portrait {
+  width: 120px; max-width: 120px; min-width: 120px;
+  padding: 6px 6px 8px; align-items: stretch;
+}
+.dsc-demo .sc-surface-card--portrait .sc-surface-head,
+#mi-motion .sc-surface-card--portrait .sc-surface-head {
+  flex-direction: column; align-items: stretch; gap: 6px;
+}
+.dsc-demo .sc-surface-card--portrait .sc-surface-thumb,
+#mi-motion .sc-surface-card--portrait .sc-surface-thumb {
+  width: 108px; height: 108px;
+}
+.dsc-demo .sc-surface-card--portrait .sc-surface-thumb-inner,
+#mi-motion .sc-surface-card--portrait .sc-surface-thumb-inner { transform: scale(0.3); }
+.dsc-demo .sc-surface-card--portrait .sc-surface-body,
+#mi-motion .sc-surface-card--portrait .sc-surface-body { justify-content: flex-start; }
+.dsc-demo .sc-surface-card--portrait .sc-surface-title,
+#mi-motion .sc-surface-card--portrait .sc-surface-title {
+  font-size: 10.5px; font-weight: 600; line-height: 1.25; text-align: center;
+  color: var(--text-muted); padding-right: 0;
+}
+.dsc-demo .sc-surface-stack > .sc-surface-card--portrait,
+#mi-motion .sc-surface-stack > .sc-surface-card--portrait { margin-left: -102px; }
+.dsc-demo .sc-surface-stack > .sc-surface-card--portrait:first-child,
+#mi-motion .sc-surface-stack > .sc-surface-card--portrait:first-child { margin-left: 0; }
+.dsc-demo .sc-surface-stack:hover > .sc-surface-card--portrait,
+.dsc-demo .sc-surface-stack.is-hover > .sc-surface-card--portrait,
+#mi-motion .sc-surface-stack:hover > .sc-surface-card--portrait,
+#mi-motion .sc-surface-stack.is-hover > .sc-surface-card--portrait { margin-left: -64px; }
+.dsc-demo .sc-surface-stack:hover > .sc-surface-card--portrait:first-child,
+.dsc-demo .sc-surface-stack.is-hover > .sc-surface-card--portrait:first-child,
+#mi-motion .sc-surface-stack:hover > .sc-surface-card--portrait:first-child,
+#mi-motion .sc-surface-stack.is-hover > .sc-surface-card--portrait:first-child { margin-left: 0; }
+.dsc-demo .sc-surface-rail {
+  display: flex; align-items: stretch; gap: 8px;
+  overflow-x: auto; overflow-y: hidden; scrollbar-width: thin;
+  scroll-snap-type: x proximity; max-width: 100%;
+  padding: 2px 2px 6px; -webkit-overflow-scrolling: touch;
+}
+.dsc-demo .sc-surface-rail .sc-surface-slot {
+  flex: 0 0 auto; scroll-snap-align: start; width: auto; max-width: none;
+}
+.dsc-demo .wa-merge-chip--portrait,
+#mi-motion .wa-merge-chip--portrait {
+  flex-direction: column; align-items: stretch; gap: 6px;
+  width: 120px; max-width: 120px; padding: 6px 6px 8px;
+  text-align: center; font-size: 11px;
+}
+.dsc-demo .wa-merge-chip--portrait .wa-merge-chip-thumb,
+#mi-motion .wa-merge-chip--portrait .wa-merge-chip-thumb {
+  width: 108px; height: 108px;
+}
+.dsc-demo .wa-merge-chip--portrait .wa-merge-chip-thumb-inner,
+#mi-motion .wa-merge-chip--portrait .wa-merge-chip-thumb-inner { transform: scale(0.3); }
+.dsc-demo .wa-merge-chip--portrait .wa-merge-chip-label,
+#mi-motion .wa-merge-chip--portrait .wa-merge-chip-label {
+  flex: 0 0 auto; font-size: 10.5px; font-weight: 600; line-height: 1.25;
+  text-align: center; color: var(--text-muted);
 }
 
 /* ---- Chat & drawers catalog demos (scoped specimens on All Modules) ---- */

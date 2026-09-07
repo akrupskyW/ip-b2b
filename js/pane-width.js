@@ -155,6 +155,198 @@
     el.style.removeProperty('max-width');
   }
 
+  /* Same tween as wiseai.html `animateChatExpand`: pin both ends in pixels,
+     shrink the closing pane to 0, grow the chat into the room it leaves.
+     `onFill` runs on the last frame while the chat is still pinned, so the
+     fill class cannot snap the width mid-tween. `onClose` runs when the pane
+     has finished leaving so the host can drop its open class. */
+  var DOCK_ANIM_MS = 580;
+  function dockReduceMotion() {
+    try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+    catch (e) { return false; }
+  }
+  var DOCK_EASE = '0.58s cubic-bezier(0.22, 1, 0.36, 1)';
+  function pinPx(el, px) {
+    if (!el || !el.style) return;
+    var v = Math.max(0, Math.round(px)) + 'px';
+    /* Longhands only — the `flex` shorthand does not interpolate, so a pin
+       written that way snaps instead of tweening. */
+    el.style.setProperty('flex-grow', '0', 'important');
+    el.style.setProperty('flex-shrink', '0', 'important');
+    el.style.setProperty('flex-basis', v, 'important');
+    el.style.setProperty('width', v, 'important');
+    el.style.setProperty('min-width', v, 'important');
+    el.style.setProperty('max-width', v, 'important');
+  }
+  function pinDockTransition(el) {
+    if (!el || !el.style) return;
+    el.style.setProperty('transition',
+      'flex-basis ' + DOCK_EASE +
+      ', width ' + DOCK_EASE +
+      ', min-width ' + DOCK_EASE +
+      ', max-width ' + DOCK_EASE +
+      ', opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1)',
+      'important');
+  }
+  function clearDockPin(el) {
+    if (!el || !el.style) return;
+    el.style.removeProperty('flex');
+    el.style.removeProperty('flex-grow');
+    el.style.removeProperty('flex-shrink');
+    el.style.removeProperty('flex-basis');
+    el.style.removeProperty('width');
+    el.style.removeProperty('min-width');
+    el.style.removeProperty('max-width');
+    el.style.removeProperty('opacity');
+    el.style.removeProperty('transition');
+  }
+  function rowGapPx(row) {
+    if (!row) return 8;
+    try {
+      var g = getComputedStyle(row).columnGap || getComputedStyle(row).gap;
+      var n = parseFloat(g);
+      return Number.isFinite(n) ? n : 8;
+    } catch (e) { return 8; }
+  }
+  function tweenPinnedWidth(el, fromPx, toPx) {
+    fromPx = Math.max(0, Math.round(fromPx));
+    toPx = Math.max(0, Math.round(toPx));
+    pinPx(el, fromPx);
+    if (!el || !el.animate || dockReduceMotion() || fromPx === toPx) {
+      pinPx(el, toPx);
+      return null;
+    }
+    var keys = {
+      width: toPx + 'px',
+      flexBasis: toPx + 'px',
+      minWidth: toPx + 'px',
+      maxWidth: toPx + 'px'
+    };
+    var start = {
+      width: fromPx + 'px',
+      flexBasis: fromPx + 'px',
+      minWidth: fromPx + 'px',
+      maxWidth: fromPx + 'px'
+    };
+    try {
+      var anim = el.animate([start, keys], {
+        duration: DOCK_ANIM_MS,
+        easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+        fill: 'forwards'
+      });
+      if (anim.play) anim.play();
+      anim.onfinish = function () { pinPx(el, toPx); };
+      return anim;
+    } catch (e) {
+      pinPx(el, toPx);
+      return null;
+    }
+  }
+  var dockLock = false;
+  function animateCloseThenFill(chat, pane, opts) {
+    opts = opts || {};
+    var row = document.getElementById('modules-row');
+    function applyFill() {
+      if (typeof opts.onFill === 'function') opts.onFill();
+    }
+    function finish() {
+      dockLock = false;
+      if (chat && chat.getAnimations) chat.getAnimations().forEach(function (a) { try { a.cancel(); } catch (e) {} });
+      if (pane && pane.getAnimations) pane.getAnimations().forEach(function (a) { try { a.cancel(); } catch (e) {} });
+      applyFill();
+      if (typeof opts.onClose === 'function') opts.onClose();
+      clearDockPin(chat);
+      clearDockPin(pane);
+      if (row) row.classList.remove('is-dock-animating');
+      if (typeof opts.onDone === 'function') opts.onDone();
+    }
+    if (dockLock) return;
+    if (!chat || !pane || !row || dockReduceMotion() || !pane.offsetParent) {
+      applyFill();
+      if (typeof opts.onClose === 'function') opts.onClose();
+      clearDockPin(chat);
+      clearDockPin(pane);
+      if (row) row.classList.remove('is-dock-animating');
+      if (typeof opts.onDone === 'function') opts.onDone();
+      return;
+    }
+    dockLock = true;
+    var startChat = chat.getBoundingClientRect().width;
+    var startPane = pane.getBoundingClientRect().width;
+    var fullW = startChat + startPane + rowGapPx(row);
+    pinPx(chat, startChat);
+    pinPx(pane, startPane);
+    pane.style.opacity = '1';
+    row.classList.add('is-dock-animating');
+    tweenPinnedWidth(chat, startChat, fullW);
+    tweenPinnedWidth(pane, startPane, 0);
+    if (pane.animate && !dockReduceMotion()) {
+      try {
+        pane.animate(
+          [{ opacity: 1 }, { opacity: 0 }],
+          { duration: 420, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'forwards' }
+        );
+      } catch (e) { pane.style.opacity = '0'; }
+    } else {
+      pane.style.opacity = '0';
+    }
+    setTimeout(finish, DOCK_ANIM_MS + 40);
+  }
+
+  /* Grow a lone chat from its current pixel width to the rest of the row.
+     Used when the neighbour is already closed, so there is no pane to shrink.
+     Width rides `--dock-w` (registered in wise.css) so the 380px column lock
+     cannot freeze the tween. */
+  var FILL_ANIM_MS = 720;
+  function setDockW(el, px) {
+    if (!el || !el.style) return;
+    el.style.setProperty('--dock-w', Math.max(0, Math.round(px)) + 'px');
+  }
+  function animateToFill(chat, opts) {
+    opts = opts || {};
+    var row = document.getElementById('modules-row');
+    function applyFill() {
+      if (typeof opts.onFill === 'function') opts.onFill();
+    }
+    function finish() {
+      applyFill();
+      clearDockPin(chat);
+      requestAnimationFrame(function () {
+        if (chat && chat.style) chat.style.removeProperty('--dock-w');
+        if (row) row.classList.remove('is-dock-animating');
+        if (typeof opts.onDone === 'function') opts.onDone();
+      });
+    }
+    if (!chat || !row || dockReduceMotion()) {
+      applyFill();
+      if (typeof opts.onDone === 'function') opts.onDone();
+      return;
+    }
+    var startChat = opts.fromPx != null ? +opts.fromPx : chat.getBoundingClientRect().width;
+    var others = 0;
+    var siblings = 0;
+    for (var c = row.firstElementChild; c; c = c.nextElementSibling) {
+      if (c === chat) continue;
+      if (!c.offsetParent || c.getClientRects().length === 0) continue;
+      others += c.getBoundingClientRect().width;
+      siblings += 1;
+    }
+    var fullW = Math.max(startChat, row.clientWidth - others - (siblings ? siblings * rowGapPx(row) : 0));
+    if (fullW - startChat < 20) {
+      applyFill();
+      if (typeof opts.onDone === 'function') opts.onDone();
+      return;
+    }
+    setDockW(chat, startChat);
+    void chat.offsetWidth;
+    row.classList.add('is-dock-animating');
+    void chat.offsetWidth;
+    requestAnimationFrame(function () {
+      setDockW(chat, fullW);
+    });
+    setTimeout(finish, FILL_ANIM_MS + 40);
+  }
+
   /* Mark the modules row as a carousel rail whenever a first-class module
      (a direct child of the row, or a panel inside #panels-row / #panels-row-right)
      is in custom, so the row scrolls the width of the content. Nested demos
@@ -457,6 +649,9 @@
     syncButton: syncButton,
     pinToCurrent: pinToCurrent,
     clearPin: clearPin,
+    animateCloseThenFill: animateCloseThenFill,
+    animateToFill: animateToFill,
+    DOCK_ANIM_MS: DOCK_ANIM_MS,
     isCustom: hasCustomClass,
     syncCarousel: syncCarousel,
     measure: measure,

@@ -5,7 +5,8 @@
  * One card holds everything that steers the report:
  *   • Filter — narrows the jump list to whatever the member types. The list is
  *     the entire catalog, so it is long enough that scanning it is slower than
- *     typing; the field is pinned under the head so it never scrolls away.
+ *     typing; the field and the chart-size presets sit above the scrolling
+ *     list so they never scroll away.
  *   • Chart size — Mobile / Tablet / Laptop / Desktop presets, one per screen
  *     class, each captioned with the display widths it stands for.
  *     Each one narrows the whole report container to that device's width, so
@@ -163,8 +164,8 @@ function injectCss() {
     '.azp-close:hover{opacity:1;color:var(--text);background:var(--surface-3);}',
     'html.dark .azp-close:hover{background:rgba(255,255,255,.08);}',
 
-    /* Filter — outside the scrolling body on purpose, so it stays put while
-       the member is deep in the list it filters. */
+    /* Filter + chart size — outside the scrolling body on purpose, so both
+       stay put while the member is deep in the list they steer. */
     '.azp-search{flex:0 0 auto;position:relative;padding:9px 10px;',
       'border-bottom:1px solid var(--border);background:var(--surface-2);}',
     'html.dark .azp-search{background:#112633;border-bottom-color:rgba(255,255,255,.1);}',
@@ -204,7 +205,10 @@ function injectCss() {
     '.azp-count{flex:0 0 auto;font-weight:600;letter-spacing:.02em;text-transform:none;',
       'opacity:.85;font-variant-numeric:tabular-nums;}',
 
-    /* Size segmented control */
+    /* Size segmented control — pinned with the filter, not in the list. */
+    '.azp-sizes-row{flex:0 0 auto;padding:8px 10px 10px;',
+      'border-bottom:1px solid var(--border);background:var(--surface-2);}',
+    'html.dark .azp-sizes-row{background:#112633;border-bottom-color:rgba(255,255,255,.1);}',
     '.azp-sizes{display:flex;gap:3px;padding:3px;border-radius:999px;',
       'background:var(--surface-3);}',
     'html.dark .azp-sizes{background:rgba(255,255,255,.06);}',
@@ -541,23 +545,21 @@ export function mountAnalyticsPalette() {
         '<span class="material-symbols-outlined" aria-hidden="true">close</span>' +
       '</button>' +
     '</div>' +
+    '<div class="azp-sizes-row">' +
+      '<div class="azp-sizes" role="group" aria-label="Chart size">' +
+        SIZES.map((s) =>
+          '<button type="button" class="azp-size" data-azp-size="' + s.id + '"' +
+          ' title="' + s.hint + '"' +
+          ' aria-label="' + s.label + ', ' + spokenRange(s) + '"' +
+          ' aria-pressed="' + (s.id === size ? 'true' : 'false') + '">' +
+            '<span class="azp-size-label">' + s.label + '</span>' +
+            '<span class="azp-size-range" aria-hidden="true">' + s.range + '</span>' +
+          '</button>'
+        ).join('') +
+      '</div>' +
+    '</div>' +
     '<div class="azp-body">' +
       '<div class="azp-group">' +
-        '<span class="azp-group-head" id="azp-size-label">Chart size</span>' +
-        '<div class="azp-sizes" role="group" aria-labelledby="azp-size-label">' +
-          SIZES.map((s) =>
-            '<button type="button" class="azp-size" data-azp-size="' + s.id + '"' +
-            ' title="' + s.hint + '"' +
-            ' aria-label="' + s.label + ', ' + spokenRange(s) + '"' +
-            ' aria-pressed="' + (s.id === size ? 'true' : 'false') + '">' +
-              '<span class="azp-size-label">' + s.label + '</span>' +
-              '<span class="azp-size-range" aria-hidden="true">' + s.range + '</span>' +
-            '</button>'
-          ).join('') +
-        '</div>' +
-      '</div>' +
-      '<div class="azp-group">' +
-        '<span class="azp-group-head">Display</span>' +
         '<button type="button" class="azp-switch" role="switch" aria-checked="' + (skinny ? 'true' : 'false') + '">' +
           '<span class="azp-switch-label">Skinny bars</span>' +
           '<span class="azp-track" aria-hidden="true"><span class="azp-dot"></span></span>' +

@@ -43,7 +43,9 @@
    Skipped: admin (.adm-*) and invoices (.inv-*) grids keep their own bespoke
    breakpoints; the analytics UPF tables ship a table/card toggle; the
    marketing-assets file tree and typography demo aren't row lists. Any
-   table/grid can opt out with  data-no-cards .
+   table/grid can opt out with  data-no-cards . A host that wants the card
+   layout at any width (the in-chat product carousel) opts in with
+   data-force-cards .
    ───────────────────────────────────────────────────────────────────────── */
 (function () {
   'use strict';
@@ -279,9 +281,13 @@
   }
 
   function measureAndToggle(entry) {
+    /* data-force-cards keeps the mobile card layout even when the host is
+       wider than the phone breakpoint — used by the in-chat product carousel,
+       which is a rail of phone-width cards inside a desktop transcript. */
+    var force = entry.root.hasAttribute('data-force-cards');
     var w = entry.wrapper.getBoundingClientRect().width;
-    if (!w) return;                      /* not laid out / detached */
-    var on = w <= BREAK;
+    if (!w && !force) return;            /* not laid out / detached */
+    var on = force || w <= BREAK;
     if (on === entry.on) return;
     entry.on = on;
     entry.root.classList.toggle('rtbl-cards', on);
