@@ -6780,6 +6780,7 @@ function chatMenuGroupKey(el) {
   try {
     if (el.matches('.topbar-menu-item--danger, [data-ap="close"], [data-sc="close"]')) return 'danger';
     if (el.matches('[data-ap="restart"], [data-ap="export"], [data-ap="share"]')) return 'conversation';
+    if (el.matches('#wiseai-cards-item, #wiseai-chips-item')) return 'display';
     if (el.matches('.sc-actstrip-item, [id*="actstrip"], [onclick*="ActivityStrip"], [onclick*="activityStrip"]')) return 'motion';
   } catch (_) {}
   return null;
@@ -7098,7 +7099,6 @@ const CHAT_ADMIN_DESC = {
   outputs: 'Hide result panels',
   connect: 'Link product data feeds',
   'mcp-toggle': 'Talk to an MCP server',
-  'toggle-cards': 'Welcome scorecard shortcuts',
   'toggle-intent-chips': 'Suggested next-step chips',
   compact: 'Tighten chat padding',
   brandtext: 'Blue assistant replies',
@@ -7111,7 +7111,6 @@ function adminDescKey(el) {
   if (!el || !el.classList) return '';
   const sc = el.getAttribute('data-sc');
   if (sc && CHAT_ADMIN_DESC[sc]) return sc;
-  if (el.id === 'wiseai-cards-item') return 'toggle-cards';
   if (el.id === 'wiseai-chips-item') return 'toggle-intent-chips';
   if (el.classList.contains('sc-compact-item')) return 'compact';
   if (el.classList.contains('sc-brandtext-item')) return 'brandtext';
@@ -7959,18 +7958,21 @@ function buildAgentsPanelHtml(agents, id) {
 /* Build the welcome "at a glance" score-card rail from a scorecards config.
  * Opt-in: callers pass { label, cards: [...] } and the same rail used on
  * ai-chat.html renders inside the shared dock. Each card descriptor:
- *   { variant: 'metric'|'intro'|'wiseai', icon, iconTone, pill:{tone,icon,text},
+ *   { variant: 'metric'|'intro'|'wiseai'|'welcome', icon, iconTone, pill:{tone,icon,text},
  *     metric, metricUnit, title, desc, action, intent, ask }
+ * 'welcome' is the hero card — it reads its title/desc like an intro card but
+ * wears the sign-in hero art, so its copy is white over the photo.
  * Cards drive a chat turn on click (handled in mountWISEcodeAIChat) via {intent, ask}.
  */
 function buildScorecardsHtml(sc, id) {
   if (!sc || !Array.isArray(sc.cards) || !sc.cards.length) return '';
   const label = sc.label || 'Your portfolio at a glance';
   const cardHtml = (c, i) => {
-    const isIntro = c.variant === 'intro' || c.variant === 'wiseai';
+    const isIntro = c.variant === 'intro' || c.variant === 'wiseai' || c.variant === 'welcome';
     const locked = c.locked === true;
     const variantClass = (c.variant === 'wiseai'
       ? ' ws-scorecard--intro ws-scorecard--wiseai'
+      : c.variant === 'welcome' ? ' ws-scorecard--hero'
       : c.variant === 'intro' ? ' ws-scorecard--intro' : '') + (locked ? ' ws-scorecard--locked' : '');
     const iconTone = c.iconTone ? `ws-sc-icon--${esc(c.iconTone)}` : 'ws-sc-icon--brand';
     /* A locked card swaps its pill for a lock badge so the "coming soon" state
@@ -8873,7 +8875,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           <button type="button" class="topbar-menu-item topbar-menu-item--admin" data-sc="connect"><span class="material-symbols-outlined topbar-menu-icon">hub</span><span>Connect a data source</span><span class="topbar-menu-badge">Admin</span></button>` : ''}
           ${opts.mcpToggle === true ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="mcp-toggle" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dns</span><span>MCP server</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           <div class="topbar-menu-divider"></div>
-          ${scorecardsHtml ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="toggle-cards" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dashboard</span><span>Overview cards</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>` : ''}
+          ${scorecardsHtml ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="toggle-cards" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dashboard</span><span>Overview cards</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           ${intents.length ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="toggle-intent-chips" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">label</span><span>Intent chips</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>` : ''}
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-compact-item" data-sc="compact" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">density_small</span><span>Compact spacing</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-brandtext-item" data-sc="brandtext" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">format_color_text</span><span>Brand AI text</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>

@@ -137,16 +137,22 @@
 
     /* The dashboard is the flexible filler and scrolls internally. It's also its
        own container so the grids below reflow by the card width, not the page.
-       Its surface is the page --bg (not --surface) so the score/resource cards
-       inside — which ARE --surface — read as raised cards, exactly like the
-       analytics-types dashboard sits its cards on the app background. */
+       Its surface is the --surface from .aid-module — the same paper every other
+       module in the app is on. The score/resource cards inside read as raised by
+       their own border + shadow, exactly like .att-card on analytics-types. */
     .aid-dash-card {
-      flex: 1 1 auto; min-width: 320px; overflow-y: auto; background: var(--bg);
+      flex: 1 1 auto; min-width: 320px; overflow-y: auto;
       container: aidpane / inline-size;
       /* Same ring-thickness token the dashboard health bars use for track height.
          Without it, .dash-ws-health-track height is invalid and the bars vanish. */
       --dash-donut-ring-h: calc(252px * 26 / 300);
     }
+    /* Width rails for the module's own width control. Gated on the member owning
+       the width so load is untouched — js/default-fill.js still takes every
+       right-of-chat module to fill. Fill and custom ride the shared
+       .panel-fill / .panel-custom rules from js/pane-width.js. */
+    .aid-dash-card[data-width-user-set] { flex: 0 0 640px; width: 640px; }
+    .aid-dash-card[data-width-user-set].panel-wide { flex-basis: 900px; width: 900px; }
 
     /* Module entrance — same staggered bounce every other WISE module uses. */
     .aid-chat { transform-origin: left center; animation: panelBounceLeft 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s both; }
@@ -155,7 +161,14 @@
       .aid-chat, .aid-dash-card { animation: none !important; }
     }
 
-    .aid-shell { max-width: 1320px; margin: 0 auto; padding: 22px 26px 40px; }
+    /* width: 100% is load-bearing. The card is a SCROLLING column flex box, so
+       the flex line is free to grow past it and `stretch` sizes the shell to its
+       own max-content — ~850px, set by the usage-by-user table's nowrap names,
+       pills and figures. Narrow the module and the shell kept that width, so the
+       grids and the header (with its controls) hung outside the visible card.
+       Pinning the shell to the card's width lets the table scroll on its own
+       (.aid-table-wrap) and keeps the container queries honest. */
+    .aid-shell { width: 100%; max-width: 1320px; min-width: 0; margin: 0 auto; padding: 22px 26px 40px; }
 
     /* ── Top bar ── */
     .aid-top {
@@ -172,6 +185,10 @@
     .aid-brand-badge .material-symbols-outlined { font-size: 30px; }
     .aid-title { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.1; margin: 2px 0 0; }
     .aid-top-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    /* js/sticky-modules.js appends the module ⋯ into this cluster, so order the
+       pair the way every other module header reads it: ⋯ then the width toggle. */
+    .aid-top-actions .panel-more-wrap { order: 1; margin-left: 0; }
+    .aid-top-actions .panel-width-toggle-btn { order: 2; }
 
     .aid-seg { display: inline-flex; gap: 2px; padding: 3px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; }
     html.dark .aid-seg { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
@@ -420,7 +437,10 @@
       <main class="aid-module aid-chat" id="aid-chat"></main>
 
       <!-- ═══════════ 2 · AI Operations Dashboard ═══════════ -->
-      <section class="aid-module aid-dash-card" id="aid-dash-card">
+      <!-- Rests at fill, like every module right of the chat. It ships in the
+           markup (same as #rf-dash) because js/default-fill.js measures
+           left-of-chat and this module is sticky-tucked back over the chat. -->
+      <section class="aid-module aid-dash-card panel-fill" id="aid-dash-card">
       <div class="aid-shell">
     <!-- ══ Top bar ══ -->
     <header class="aid-top">
@@ -435,6 +455,7 @@
           <button class="aid-seg-btn" data-range="90d">90d</button>
         </div>
         <button class="aid-btn"><span class="material-symbols-outlined">download</span><span>Export</span></button>
+        <button type="button" class="panel-width-toggle-btn is-on is-width-fill" id="aid-dash-width" aria-pressed="true" title="Width (fill) — tap to widen" aria-label="Dashboard width"><span class="material-symbols-outlined">width_full</span></button>
       </div>
     </header>
 
@@ -1419,6 +1440,21 @@
       btn.classList.add('is-active');
       RANGE = btn.dataset.range;
       renderAll();
+    });
+
+    /* ── Module width control ──
+       Cycles the one canonical four-tier model (single → double → fill →
+       custom) straight off window.WPaneWidth, so this module resizes exactly
+       like every other one. WPaneWidth arrives with js/agent-menu.js (a module
+       script, so after this one) — read it inside the handler, not now. The
+       shared capture listener in pane-width.js persists the rest state and
+       stamps data-width-user-set on a real tap. */
+    $('#aid-dash-width').addEventListener('click', function () {
+      var W = window.WPaneWidth;
+      if (!W) return;
+      var tier = W.next(W.tierOfEl($('#aid-dash-card')));
+      W.applyClasses($('#aid-dash-card'), tier, 'panel');
+      W.syncButton(this, tier);
     });
 
     /* Expose so the shared appearance/theme popover in the nav can re-tint the

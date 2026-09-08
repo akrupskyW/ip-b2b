@@ -1479,6 +1479,9 @@
     html.dark .wa-ib-gras--gras { background: rgba(96,165,250,0.16); color: #93C5FD; }
     .wa-ib-gras--unsafe { background: rgba(200,42,42,0.12); color: var(--sec-red); }
     html.dark .wa-ib-gras--unsafe { background: rgba(255,158,150,0.16); color: #FF9E96; }
+    /* Status never established — not a clearance, so it must not read as one. */
+    .wa-ib-gras--unknown { background: rgba(185,130,43,0.16); color: #8a6400; }
+    html.dark .wa-ib-gras--unknown { background: rgba(255,217,138,0.16); color: #FFD98A; }
 
     /* ── Ingredient-query table (WISEcode ingredient-browser artifact) ───── */
     .wa-ib-wrap { position: relative; }
@@ -7478,7 +7481,10 @@
           </div>
         </div>`;
     }
-    function kraftDonutBlock({ title, colLabel, rows, total, aria, centerLabel, centerSub, numClass, sub }) {
+    /* `total` is the denominator the % column divides by; `num` overrides what
+       the donut's center reads when the headline figure is a slice of that
+       total rather than the total itself. */
+    function kraftDonutBlock({ title, colLabel, rows, total, num, aria, centerLabel, centerSub, numClass, sub }) {
       const cols = '16px minmax(0,1fr) 72px 56px';
       const head = `<div style="display:grid;grid-template-columns:${cols};gap:10px;padding:0 2px 7px;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-subtle)">
           <span></span><span>${esc(colLabel)}</span><span style="text-align:right">Count</span><span style="text-align:right">%</span>
@@ -7495,7 +7501,7 @@
           <p class="wa-kraft-sub">${esc(sub || 'Foods where brand equals Kraft')}</p>
           <div class="wa-chart-card">
             <div class="dash-donut-row">
-              ${waDashDonut({ rows, num: total.toLocaleString('en-US'), label: centerLabel || 'foods', sub: centerSub || 'Kraft', aria, ringName: colLabel, numClass })}
+              ${waDashDonut({ rows, num: num != null ? num : total.toLocaleString('en-US'), label: centerLabel || 'foods', sub: centerSub || 'Kraft', aria, ringName: colLabel, numClass })}
               ${waDonutLegend(colLabel, rows)}
             </div>
             <div style="margin-top:18px">${head}${body}</div>
@@ -9108,6 +9114,351 @@
 
     function reportVisualsView() {
       return distributionChart() + scoreCurveChart() + trendSlopeChart();
+    }
+
+    /* ── Brand overview ("Welcome!") ────────────────────────────────────────
+       The member's own portfolio, not the 943k catalog. Every figure below is
+       the Brand Intelligence dashboard's own read of Date Better Snacks (the
+       DATA object in js/dashboard-home.js) on that dashboard's own status
+       scale, so the chat and the dashboard can never disagree about the
+       member's brand. Eight outputs: the glance, the portfolio table, four
+       charts, the ingredient flags, and the closing "what to do about it". */
+    const BRAND = {
+      name: 'Date Better Snacks',
+      analyzed: 24, discovered: 47, claimed: 3, unclaimed: 44, claimedPct: 6,
+      wisescore: 79, ingredients: 61, nonUpf: 22, upf: 2, nonUpfPct: 92, gras: 21, grasPct: 88,
+    };
+    const BRAND_IMGS = [
+      'top5-ginger-turmeric-bar.png', 'top5-almond-coconut-crisp.png', 'top5-pistachio-rose-bar.png',
+      'top5-matcha-cashew-bites.png', 'top5-walnut-brownie-bar.png', 'date-better-cashew-lime-crisp.png',
+    ];
+    /* The dashboard's STATUS_TIERS thresholds, not a second scale invented here. */
+    const BRAND_BANDS = [
+      { min: 80, label: 'Excellent', color: 'var(--chart-status-excellent)' },
+      { min: 60, label: 'Good',      color: 'var(--chart-status-good)' },
+      { min: 40, label: 'Okay',      color: 'var(--chart-status-okay)' },
+      { min: 20, label: 'Fair',      color: 'var(--chart-status-fair)' },
+      { min: 0,  label: 'Poor',      color: 'var(--chart-status-poor)' },
+    ];
+    const brandBand = (score) => BRAND_BANDS.find((b) => score >= b.min) || BRAND_BANDS[BRAND_BANDS.length - 1];
+
+    /* Per-SKU Anti-Inflammatory score — the one metric the dashboard carries for
+       every product in the portfolio, so it's the only honest per-row column. */
+    const BRAND_PRODUCTS = [
+      ['Ginger Turmeric Bar', 91], ['Almond Coconut Crisp', 89], ['Pistachio Rose Bar', 87],
+      ['Matcha Cashew Bites', 85], ['Walnut Brownie Bar', 84], ['Cherry Almond Crisp', 82],
+      ['Macadamia Coconut Crisp', 81], ['Cashew Lime Crisp', 80], ['Pecan Maple Bar', 78],
+      ['Banana Walnut Bites', 76], ['Blueberry Lemon Crisp', 74], ['Lemon Tahini Crisp', 73],
+      ['Hazelnut Cacao Bites', 71], ['Peanut Butter Date Bites', 70], ['Dark Chocolate Date Bar', 69],
+      ['Espresso Date Energy Ball', 67], ['Cinnamon Apple Crisp', 65], ['Vanilla Bean Date Bar', 63],
+      ['Pumpkin Spice Date Bar', 61], ['Tropical Mango Date Bar', 57], ['Strawberry Vanilla Bar', 54],
+      ['Chocolate Peanut Crisp', 47], ['Protein Boost Bar \u2014 Chocolate', 34],
+      ['Protein Boost Bar \u2014 Vanilla', 28],
+    ].map(([name, score]) => [name, BRAND.name, score]);
+
+    /* The three WISEscore pillars, each metric ordered strongest → weakest so the
+       bar that needs attention is always the bottom one. */
+    const BRAND_PILLARS = [
+      { name: 'Ingredient Quality', score: 89, metrics: [
+        ['Banned / Unsafe Ingredients', 96], ['Clean Label', 93], ['Ultra-Processed Food', 91],
+        ['Emulsifiers of Concern', 82], ['Seed Oils of Concern', 64],
+      ] },
+      { name: 'Nutrient Quality', score: 75, metrics: [
+        ['Protein Density', 83], ['Fat Quality', 79], ['Fiber Density', 74],
+        ['Carbohydrate Quality', 71], ['Sugar Density', 68],
+      ] },
+      { name: 'Health Outcomes', score: 72, metrics: [
+        ['Muscle Health', 80], ['Heart Health', 76], ['Gut Health', 71],
+        ['Diabetes Friendly', 69], ['Anti-Inflammatory', 66],
+      ] },
+    ];
+
+    const BRAND_UPF_TIERS = [
+      { label: 'Minimally Processed',   count: 14, pct: 58.3, color: 'var(--chart-status-excellent)' },
+      { label: 'Lightly Processed',     count: 8,  pct: 33.3, color: 'var(--chart-status-good)' },
+      { label: 'Moderately Processed',  count: 0,  pct: 0,    color: 'var(--chart-status-okay)' },
+      { label: 'Ultra-Processed',       count: 1,  pct: 4.2,  color: 'var(--chart-status-fair)' },
+      { label: 'Super Ultra-Processed', count: 1,  pct: 4.2,  color: 'var(--chart-status-poor)' },
+    ];
+    const BRAND_GRAS_TIERS = [
+      { label: 'GRAS',             count: 15, pct: 62.5, color: 'var(--chart-status-excellent)' },
+      { label: 'Historical',       count: 6,  pct: 25.0, color: 'var(--chart-status-good)' },
+      { label: 'Unclear',          count: 1,  pct: 4.2,  color: 'var(--chart-status-okay)' },
+      { label: 'Unknown Flavors',  count: 1,  pct: 4.2,  color: 'var(--chart-status-fair)' },
+      { label: 'Unsafe',           count: 1,  pct: 4.2,  color: 'var(--chart-status-poor)' },
+    ];
+    /* `pct` = share of the 24 products carrying the ingredient; `level` = its
+       processing tier. PL4 first, then PL3, each by descending share. */
+    const BRAND_INGREDIENTS = [
+      { name: 'Citric Acid', pct: 83, level: 4 }, { name: 'Natural Flavors', pct: 42, level: 4 },
+      { name: 'Sunflower Lecithin', pct: 33, level: 4 }, { name: 'Tapioca Syrup', pct: 25, level: 4 },
+      { name: 'Dark Chocolate', pct: 75, level: 3 }, { name: 'Cane Sugar', pct: 67, level: 3 },
+      { name: 'Cocoa Powder', pct: 54, level: 3 }, { name: 'Pea Protein', pct: 38, level: 3 },
+      { name: 'Rice Flour', pct: 29, level: 3 }, { name: 'Coconut Oil', pct: 21, level: 3 },
+    ];
+    const BRAND_FLAGS = [
+      { name: 'Titanium Dioxide', pct: 8,  status: 'Unsafe' },
+      { name: 'Red 40',           pct: 4,  status: 'Unsafe' },
+      { name: 'Natural Flavors',  pct: 42, status: 'Unknown' },
+      { name: 'Lime Oil',         pct: 33, status: 'Unknown' },
+      { name: 'Citrus Extract',   pct: 21, status: 'Unknown' },
+      { name: 'Vanilla Extract',  pct: 17, status: 'Unknown' },
+      { name: 'Sunflower Extract', pct: 12, status: 'Unknown' },
+    ];
+    const BRAND_ANTIINF = [
+      { label: 'Excellent', count: 8,  pct: 33, color: 'var(--chart-status-excellent)' },
+      { label: 'Good',      count: 11, pct: 46, color: 'var(--chart-status-good)' },
+      { label: 'OK',        count: 3,  pct: 13, color: 'var(--chart-status-okay)' },
+      { label: 'Fair',      count: 2,  pct: 8,  color: 'var(--chart-status-fair)' },
+      { label: 'Poor',      count: 0,  pct: 0,  color: 'var(--chart-status-poor)' },
+    ];
+    /* Gut Health spotlight — five-tier share (Excellent → Poor), best & worst SKU. */
+    const BRAND_GUT = { score: 71, dist: [21, 42, 25, 8, 4], top: ['Turmeric Oatmeal', 91], low: ['Frosted Granola', 39] };
+
+    /* One pctBars row per score, colored and rated on the shared band scale. */
+    function brandScoreBars(rows) {
+      return pctBars(rows.map(([label, score]) => {
+        const band = brandBand(score);
+        return { label, pct: score, val: String(score), color: band.color, rating: band.label };
+      }));
+    }
+
+    /* Output 1 — the executive read: four KPIs, the three pillars, and the one
+       thing about this portfolio that is actually a problem. */
+    function brandGlanceView() {
+      const pillars = brandScoreBars(BRAND_PILLARS.map((p) => [p.name, p.score]));
+      return `
+        <div class="wa-block wa-resultset">
+          ${scoreCards([
+            { num: '79', label: 'Avg WISEscore', tone: 'good' },
+            { num: '92<span class="u">%</span>', label: 'Non-UPF', tone: 'good' },
+            { num: '88<span class="u">%</span>', label: 'GRAS-cleared' },
+            { num: '24', label: 'Analyzed SKUs' },
+          ])}
+          <p class="wa-sec-title">The three pillars</p>
+          <div class="wa-chart-card">${pillars}</div>
+          <p class="wa-detail-sub" style="margin-top:16px">What is holding the score down</p>
+          <div class="wa-chiplist">
+            <span class="wa-ing-chip"><span class="material-symbols-outlined" style="font-size:13px">close</span>Seed Oils of Concern \u2014 64, the weakest metric in the portfolio</span>
+            <span class="wa-ing-chip"><span class="material-symbols-outlined" style="font-size:13px">close</span>Anti-Inflammatory \u2014 66, the weakest health outcome</span>
+            <span class="wa-ing-chip"><span class="material-symbols-outlined" style="font-size:13px">close</span>Sugar Density \u2014 68, on a date-based line</span>
+          </div>
+          <div class="wa-notice" style="margin-top:16px"><span class="material-symbols-outlined">error_outline</span><span>The bigger gap is coverage, not quality: <b>${BRAND.discovered}</b> of your products are discovered in the catalog but only <b>${BRAND.claimed}</b> are claimed (<b>${BRAND.claimedPct}%</b>). The ${BRAND.analyzed} scored here are the claimed-and-analyzed set \u2014 <b>${BRAND.unclaimed}</b> products are being scored without your input.</span></div>
+        </div>`;
+    }
+
+    /* Output 2 — every analyzed SKU, sortable and searchable. */
+    function brandPortfolioView() {
+      return `
+        <div class="wa-block wa-resultset">
+          ${scoreCards([
+            { num: '24', label: 'Analyzed SKUs', filter: { kind: 'all' } },
+            { num: '91', label: 'Best score', tone: 'good', sort: { col: 'score', dir: 'desc' } },
+            { num: '28', label: 'Lowest score', tone: 'alert', sort: { col: 'score', dir: 'asc' } },
+            { num: 'A\u2013Z', label: 'Product name', sort: { col: 'name', dir: 'asc' } },
+          ])}
+          ${searchToolbar('Search your products\u2026')}
+          ${sortTable(BRAND_PRODUCTS, { images: BRAND_IMGS, fallbackIcon: 'nutrition', tone: 'good', sortCol: 'score', sortDir: 'desc', pageSize: 8 })}
+          <div class="wa-table-foot"><span class="material-symbols-outlined">favorite</span>Scored on <b>Anti-Inflammatory</b> \u2014 the Health Outcomes metric carried for every product. The two Protein Boost bars are the only SKUs below the Okay band, and they are the same two products driving the ultra-processed count.</div>
+        </div>`;
+    }
+
+    /* Output 3 — processing mix. */
+    function brandUpfChart() {
+      return kraftDonutBlock({
+        title: `<span data-countup>92</span>% Non-UPF across ${BRAND.analyzed} products`,
+        colLabel: 'WISEcode processing level',
+        rows: BRAND_UPF_TIERS,
+        total: BRAND.analyzed,
+        num: String(BRAND.nonUpf),
+        aria: 'Date Better Snacks products by WISEcode processing level',
+        centerLabel: 'Non-UPF',
+        centerSub: `of ${BRAND.analyzed} products`,
+        numClass: 'is-teal',
+        sub: `Products where brand equals ${BRAND.name}`,
+      });
+    }
+
+    /* Output 4 — GRAS coverage. The tiers classify each PRODUCT by the worst
+       GRAS status among its ingredients; the 61 unique ingredients are the
+       pool those statuses are read from, not the denominator. */
+    function brandGrasChart() {
+      return kraftDonutBlock({
+        title: `<span data-countup>88</span>% GRAS-cleared across ${BRAND.analyzed} products`,
+        colLabel: 'GRAS status',
+        rows: BRAND_GRAS_TIERS,
+        total: BRAND.analyzed,
+        num: String(BRAND.gras),
+        aria: 'Date Better Snacks products by GRAS status',
+        centerLabel: 'GRAS-cleared',
+        centerSub: `of ${BRAND.analyzed} products`,
+        sub: `Products where brand equals ${BRAND.name} \u00b7 ${BRAND.ingredients} unique ingredients in the line`,
+      });
+    }
+
+    /* Output 5 — the 15 metrics underneath the three pillar scores. */
+    function brandPillarsChart() {
+      const sections = BRAND_PILLARS.map((p, i) => {
+        const band = brandBand(p.score);
+        return `<p class="wa-sec-title" style="display:flex;align-items:center;gap:8px;margin-top:${i ? '28px' : '0'}">
+            ${esc(p.name)}
+            <span class="wa-ib-pill" style="background:color-mix(in srgb, ${band.color} 16%, transparent);color:${band.color}">${p.score} \u00b7 ${esc(band.label)}</span>
+          </p>
+          ${brandScoreBars(p.metrics)}`;
+      }).join('');
+      return `
+        <div class="wa-block">
+          <h3 class="wa-report-title wa-chart-title">WISEscore <span data-countup>79</span> \u00b7 15 metrics behind it</h3>
+          <p class="wa-kraft-sub">Every metric the three pillars are built from, strongest first</p>
+          <div class="wa-chart-card">${sections}</div>
+          <p class="wa-caption" style="margin:10px 0 0">Ingredient Quality is carrying the brand at <b>89</b> \u2014 you are clean on banned ingredients and clean label. Health Outcomes is the drag at <b>72</b>, and inside it Anti-Inflammatory (66) is the single lowest metric of the fifteen. Seed Oils of Concern (64) is the one weak spot inside an otherwise strong pillar, which makes it the cheapest thing on this chart to fix.</p>
+        </div>`;
+    }
+
+    /* Output 6 — what is actually driving the processing level, plus the GRAS
+       ingredients that are flagged or unresolved. */
+    function brandIngredientsChart() {
+      const bars = pctBars(BRAND_INGREDIENTS.map((g) => ({
+        label: g.name,
+        pct: g.pct,
+        val: g.pct + '%',
+        color: g.level === 4 ? 'var(--sec-red)' : 'var(--ter-amber)',
+        rating: 'PL' + g.level,
+      })));
+      const cols = 'minmax(0,1fr) 92px 78px';
+      const flagHead = `<div style="display:grid;grid-template-columns:${cols};gap:10px;padding:0 2px 7px;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-subtle)">
+          <span>Ingredient</span><span style="text-align:right">GRAS status</span><span style="text-align:right">% of SKUs</span>
+        </div>`;
+      const flagRows = BRAND_FLAGS.map((f) => `<div style="display:grid;grid-template-columns:${cols};align-items:center;gap:10px;padding:9px 2px;border-top:1px solid var(--border)">
+            <span style="font-size:13px;color:var(--text);font-weight:600">${esc(f.name)}</span>
+            <span style="text-align:right"><span class="wa-ib-pill wa-ib-gras--${f.status === 'Unsafe' ? 'unsafe' : 'unknown'}">${esc(f.status)}</span></span>
+            <span style="font-size:13px;color:var(--text);text-align:right;font-variant-numeric:tabular-nums" data-countup>${f.pct}%</span>
+          </div>`).join('');
+      return `
+        <div class="wa-block">
+          <h3 class="wa-report-title wa-chart-title">What is driving your processing level</h3>
+          <p class="wa-kraft-sub">Top processing-driving ingredients by share of the ${BRAND.analyzed} analyzed products</p>
+          <div class="wa-chart-card">${bars}</div>
+          <p class="wa-caption" style="margin:10px 0 12px">Citric acid alone appears in <b>83%</b> of the line and is a PL4 ingredient, which makes it the highest-leverage single swap in the portfolio. Dark chocolate and cane sugar are more common still but only PL3, so they cost you less.</p>
+          <p class="wa-sec-title">Flagged &amp; unresolved ingredients</p>
+          <div class="wa-chart-card">${flagHead}${flagRows}</div>
+          <div class="wa-notice" style="margin-top:14px"><span class="material-symbols-outlined">error_outline</span><span><b>Titanium dioxide</b> and <b>Red 40</b> are classified unsafe and sit in 8% and 4% of your SKUs \u2014 those are the two that carry regulatory risk. The five \u201cUnknown\u201d rows are not findings, they are missing evidence: their GRAS status has never been established, and \u201cNatural Flavors\u201d covers 42% of the line.</span></div>
+        </div>`;
+    }
+
+    /* Output 7 — how the health outcomes are actually spread, rather than averaged. */
+    function brandOutcomesChart() {
+      /* The count rides in the rating slot rather than inside the fill, so the
+         Poor tier still reads "0 products" with nothing drawn. */
+      const tiers = pctBars(BRAND_ANTIINF.map((t) => ({
+        label: t.label,
+        pct: t.pct,
+        val: t.pct + '%',
+        color: t.color,
+        rating: `${t.count} product${t.count === 1 ? '' : 's'}`,
+      })));
+      const gutLabels = ['Excellent', 'Good', 'OK', 'Fair', 'Poor'];
+      const gut = pctBars(BRAND_GUT.dist.map((pct, i) => ({
+        label: gutLabels[i],
+        pct,
+        val: pct + '%',
+        color: BRAND_BANDS[i].color,
+      })));
+      return `
+        <div class="wa-block">
+          <h3 class="wa-report-title wa-chart-title">Health outcomes, spread rather than averaged</h3>
+          <p class="wa-kraft-sub">Anti-Inflammatory across all ${BRAND.analyzed} products \u2014 the pillar\u2019s weakest metric</p>
+          <div class="wa-chart-card">${tiers}</div>
+          <p class="wa-caption" style="margin:10px 0 14px">An average of 66 hides a genuinely good portfolio: <b>79%</b> of the line is Good or Excellent and nothing is Poor. The average is being pulled down by the two products at the bottom, not by the line as a whole.</p>
+          <p class="wa-sec-title">Gut Health spotlight</p>
+          <div class="wa-chart-card">
+            <div class="wa-ce-head">
+              ${ceGauge(BRAND_GUT.score, 'Good', 'var(--chart-status-good)')}
+              <div>
+                <div class="wa-ce-sum-concept">Gut Health \u00b7 portfolio average</div>
+                <div class="wa-ce-sum-main">Score ${BRAND_GUT.score} \u2014 Good</div>
+                <div class="wa-ce-sum-sub">Best: <b>${esc(BRAND_GUT.top[0])}</b> (${BRAND_GUT.top[1]})<span class="sep">\u00b7</span>Weakest: <b>${esc(BRAND_GUT.low[0])}</b> (${BRAND_GUT.low[1]})</div>
+              </div>
+            </div>
+            <div style="margin-top:16px">${gut}</div>
+          </div>
+          <p class="wa-caption" style="margin:10px 0 0">Prebiotic fiber and fermentable carbohydrate are the strength a date-based line should have, and it shows \u2014 63% of the portfolio is Good or better on gut health. The 12% in Fair and Poor is where the granola and protein formats sit.</p>
+        </div>`;
+    }
+
+    /* Output 8 — the closing read: the three moves worth making, ranked by what
+       they cost against what they return. */
+    function brandActionsView() {
+      const actions = [
+        ['Claim the other 44 products', 'Only 3 of 47 discovered products are claimed. Everything else is being scored, ranked and shown to retailers without your ingredient data. This is the cheapest and highest-leverage move on the list, and it is the only one that changes every other number here.', 'Coverage'],
+        ['Replace titanium dioxide and Red 40', 'Two ingredients, 8% and 4% of your SKUs, both classified unsafe. They carry regulatory and retailer-delisting risk out of proportion to how little of the line they touch.', 'Risk'],
+        ['Take citric acid out of the top of the line', 'A PL4 ingredient in 83% of your products \u2014 the single largest contributor to your processing level. Swapping it is what moves Ultra-Processed Food (91) and Seed Oils of Concern (64) at the same time.', 'Score'],
+      ];
+      return `
+        <div class="wa-block wa-report">
+          <div class="wa-report-hero">
+            <h1 class="wa-report-title">${esc(BRAND.name)} \u2014 where the brand stands and what to do about it</h1>
+            <p class="wa-report-lede">A strong portfolio with a coverage problem. On the ${BRAND.analyzed} products you have claimed and analyzed, the brand averages a WISEscore of ${BRAND.wisescore} (Good), is ${BRAND.nonUpfPct}% Non-UPF, and clears GRAS outright on ${BRAND.gras} of them (${BRAND.grasPct}%), read across the ${BRAND.ingredients} unique ingredients the line uses \u2014 numbers most date-and-nut lines do not hit. The exposure is not quality, it is that ${BRAND.unclaimed} more of your products exist in the catalog unclaimed.</p>
+          </div>
+          <div class="wa-stats">
+            <div class="wa-stat"><div class="wa-stat-num">47</div><div class="wa-stat-label">Discovered</div></div>
+            <div class="wa-stat"><div class="wa-stat-num">3</div><div class="wa-stat-label">Claimed</div></div>
+            <div class="wa-stat"><div class="wa-stat-num">44</div><div class="wa-stat-label">Unclaimed</div></div>
+            <div class="wa-stat"><div class="wa-stat-num">6<span class="u">%</span></div><div class="wa-stat-label">Claimed share</div></div>
+          </div>
+          <p class="wa-sec-title">The three moves worth making</p>
+          <div class="wa-shortlist">
+            ${actions.map((a, i) => `<div class="wa-cand">
+                <span class="wa-cand-rank">${i + 1}</span>
+                <div class="wa-cand-body">
+                  <div class="wa-cand-name">${esc(a[0])}<span class="wa-ib-pill wa-ib-gras--gras" style="margin-left:8px">${esc(a[2])}</span></div>
+                  <div class="wa-cand-note">${esc(a[1])}</div>
+                </div>
+              </div>`).join('')}
+          </div>
+          <div class="wa-table-foot" style="margin-top:18px"><span class="material-symbols-outlined">insights</span>Nothing here is modeled \u2014 every figure is your own portfolio read. The charts behind it are in Visuals \u2192</div>
+        </div>`;
+    }
+
+    /* Open the whole brand overview as one carousel of eight output chips. The
+       pane stays shut: tapping a chip is what opens it. */
+    function surfaceBrandOverview() {
+      const chip = { rail: 'brand-overview', cardLayout: 'portrait' };
+      const panels = [
+        ['results', 'insights', `${BRAND.name} \u00b7 brand at a glance`,
+          `WISEscore ${BRAND.wisescore} (Good) \u00b7 ${BRAND.nonUpfPct}% Non-UPF \u00b7 ${BRAND.grasPct}% GRAS-cleared \u00b7 ${BRAND.analyzed} analyzed products`,
+          brandGlanceView, 'brand-glance'],
+        ['results', 'inventory_2', 'Your portfolio \u00b7 24 analyzed products',
+          'Every claimed & analyzed SKU, scored on Anti-Inflammatory \u2014 sortable & searchable',
+          brandPortfolioView, 'brand-portfolio'],
+        ['visuals', 'donut_small', 'Processing mix \u00b7 92% Non-UPF',
+          `${BRAND.nonUpf} of ${BRAND.analyzed} products Non-UPF, across the five WISEcode processing levels`,
+          brandUpfChart, 'brand-upf'],
+        ['visuals', 'verified', 'GRAS coverage \u00b7 88% cleared',
+          `${BRAND.gras} of ${BRAND.analyzed} products clear GRAS \u00b7 read across ${BRAND.ingredients} unique ingredients \u00b7 one classified unsafe`,
+          brandGrasChart, 'brand-gras'],
+        ['visuals', 'stacked_bar_chart', 'WISEscore pillars \u00b7 15 metrics',
+          'Nutrient Quality 75 \u00b7 Ingredient Quality 89 \u00b7 Health Outcomes 72, broken down metric by metric',
+          brandPillarsChart, 'brand-pillars'],
+        ['visuals', 'science', 'Processing-driving ingredients',
+          'Top 10 ingredients by share of the line, with their processing level \u2014 plus the flagged & unresolved GRAS rows',
+          brandIngredientsChart, 'brand-ingredients'],
+        ['visuals', 'favorite', 'Health outcomes spread',
+          'Anti-Inflammatory across all 24 products, and the Gut Health spotlight underneath it',
+          brandOutcomesChart, 'brand-outcomes'],
+        ['results', 'checklist', 'Where the brand stands & what to do about it',
+          'The closing read \u2014 the coverage gap, the two unsafe ingredients, and the three moves worth making',
+          brandActionsView, 'brand-actions'],
+      ];
+      panels.forEach(([which, icon, title, meta, view, versionKey], i) => {
+        surfaceBlock(which, {
+          icon, title, meta, html: view(), versionKey,
+          ...chip,
+          railLead: i === 0
+            ? `Here are <strong>${panels.length} outputs</strong> for you to review.`
+            : undefined,
+        });
+      });
     }
 
     /* ── Code Evaluation module (brisket · Gut Health) ───────────────────────
@@ -11012,6 +11363,7 @@
     ].join('\n');
 
     const INTENTS = [
+      { intent: 'brandwelcome', icon: 'waving_hand', label: 'Welcome!', ask: 'Welcome! Give me an overview of my entire brand.' },
       { intent: 'atlas', icon: 'bubble_chart',    label: 'Food Intervention Atlas', ask: ATLAS_ASK },
       { intent: 'topbrands', icon: 'leaderboard',   label: 'Top 3 brands · WISEscore \u2265 50', ask: 'Create a comparison chart of the top three brands with more than 50 UPCs that are in the top half of the WISE score.' },
       { intent: 'kraft',   icon: 'inventory_2',     label: 'Kraft SKUs \u00b7 % UPF', ask: 'How many SKUs does Kraft have and what percent are ultra processed?' },
@@ -11037,6 +11389,19 @@
       { intent: 'owls',    icon: 'play_circle',    label: 'Meet the Owls', ask: 'Meet the Owls', nextIntents: ['owl_progression', 'playful', 'upf'] },
       { intent: 'owl_progression', icon: 'view_carousel', label: 'Wise Owl Progression', ask: 'Wise Owl Progression', nextIntents: ['owls', 'playful', 'upf'] },
     ];
+
+    /* Follow-up chips offered after the brand overview lands. Each one opens a
+       real next artifact the overview pointed at — the coverage gap, the two
+       unsafe ingredients, the weakest metric, and the portfolio itself. */
+    const BRANDWELCOME_FOLLOWUPS = [
+      { intent: 'brand_claim',    icon: 'verified_user',     label: 'Why does the coverage gap matter?', ask: 'Why does the 44 unclaimed products gap matter?' },
+      { intent: 'brand_unsafe',   icon: 'error_outline',     label: 'Walk me through the flagged ingredients', ask: 'Walk me through my flagged and unresolved ingredients' },
+      { intent: 'brand_pillars',  icon: 'stacked_bar_chart', label: 'Break down the 15 pillar metrics', ask: 'Break down the 15 metrics behind my WISEscore' },
+      { intent: 'brand_outcomes', icon: 'favorite',          label: 'Why is Anti-Inflammatory my weakest metric?', ask: 'Why is Anti-Inflammatory my weakest metric?' },
+    ];
+    BRANDWELCOME_FOLLOWUPS.forEach((c) => {
+      c.nextIntents = BRANDWELCOME_FOLLOWUPS.filter((x) => x.intent !== c.intent);
+    });
 
     /* Follow-up chips offered after the Intervention Atlas lands. Each one opens
        a real next artifact: the formal report, the private-label coverage read
@@ -11141,6 +11506,7 @@
       const c = INTENTS.find((x) => x && x.intent === id);
       if (c) c.nextIntents = next;
     };
+    attachNext('brandwelcome', BRANDWELCOME_FOLLOWUPS);
     attachNext('atlas', ATLAS_FOLLOWUPS);
     attachNext('topbrands', TOPBRANDS_FOLLOWUPS);
     attachNext('kraft', KRAFT_FOLLOWUPS);
@@ -11227,6 +11593,7 @@
       if (!intent) return null;
       const id = String(intent);
       if (id === 'compare' || id === 'report' || id === 'spider') return null;
+      if (id === 'brandwelcome' || id.indexOf('brand_') === 0) return 'brandwelcome';
       if (id === 'atlas' || id.indexOf('atlas_') === 0) return 'atlas';
       if (id.indexOf('kraft') === 0) return 'kraft';
       if (id.indexOf('sweet') === 0) return 'sweeteners';
@@ -11347,6 +11714,32 @@
     const CUPCAKE_REPLY = 'I couldn\u2019t fetch the full food-detail card for that cupcake because the detail lookup failed.<br><br>What I can confirm from the search result is that the worst-ranked cupcake is <strong>Member\u2019s Mark Christmas Gourmet Cupcakes, 8 Ct.</strong> with a WISEscore of <strong>0.06</strong>. Its ingredient list is extremely long and includes a dense mix of refined sugars and syrups, multiple refined oils, emulsifiers and stabilizers, artificial colors, and multiple preservatives.<br><br>That combination is why it surfaced at the very bottom of the ranking rather than just being \u201ca dessert.\u201d';
 
     const INTENT_REPLIES = {
+      brandwelcome: 'Welcome back \u2014 here is your whole brand in one read.<br><br>'
+        + '<strong>' + BRAND.name + '</strong> is in good shape. Across the <strong>' + BRAND.analyzed + ' products</strong> you have claimed and analyzed, the brand averages a WISEscore of <strong>' + BRAND.wisescore + '</strong>, which lands in <strong>Good</strong>. You are <strong>' + BRAND.nonUpfPct + '% Non-UPF</strong> \u2014 ' + BRAND.nonUpf + ' of ' + BRAND.analyzed + ' products \u2014 and <strong>' + BRAND.gras + ' of those ' + BRAND.analyzed + '</strong> clear GRAS outright (' + BRAND.grasPct + '%), read across the ' + BRAND.ingredients + ' unique ingredients your line uses. For a date-and-nut portfolio that is a genuinely strong position, and it is not an accident: <strong>Ingredient Quality is your best pillar at 89</strong>, carried by banned-ingredient avoidance (96) and clean label (93).<br><br>'
+        + '<strong>Where it thins out.</strong> Health Outcomes is the drag at <strong>72</strong>, and inside it <strong>Anti-Inflammatory (66)</strong> is the single lowest of the fifteen metrics. Nutrient Quality sits at 75, held back by Sugar Density (68) \u2014 which is close to structural on a date-based line. The one weak spot inside an otherwise strong pillar is <strong>Seed Oils of Concern (64)</strong>, and that is the cheapest number on the board to move.<br><br>'
+        + 'Two ingredients are worth naming outright, because they are the only real regulatory exposure in the portfolio: <strong>titanium dioxide</strong> (8% of your SKUs) and <strong>Red 40</strong> (4%) are both classified unsafe. Separately, <strong>citric acid appears in 83% of the line</strong> and is PL4 \u2014 the largest single contributor to your processing level.<br><br>'
+        + '<strong>But the real gap is not quality, it is coverage.</strong> WISEcode has discovered <strong>' + BRAND.discovered + '</strong> of your products and only <strong>' + BRAND.claimed + '</strong> are claimed \u2014 <strong>' + BRAND.claimedPct + '%</strong>. The other <strong>' + BRAND.unclaimed + '</strong> are being scored, ranked and shown to retailers without your ingredient data behind them. Everything above describes the ' + BRAND.analyzed + ' products you control the story on; it says nothing about the ' + BRAND.unclaimed + ' you do not.<br><br>'
+        + 'I have put <strong>eight outputs</strong> below \u2014 the glance, your full portfolio table, four charts (processing mix, GRAS coverage, all fifteen pillar metrics, and how your health outcomes are spread rather than averaged), the processing-driving and flagged ingredients, and a closing read with the three moves worth making. Tap any chip to open it.',
+      brand_claim: 'Because a score you did not supply the data for still gets used.<br><br>'
+        + 'WISEcode has found <strong>' + BRAND.discovered + '</strong> ' + BRAND.name + ' products in the catalog. <strong>' + BRAND.claimed + '</strong> are claimed \u2014 ' + BRAND.claimedPct + '%. The remaining <strong>' + BRAND.unclaimed + '</strong> are scored from whatever label data was scraped: whatever the retailer listing happened to say, in whatever order, with whatever was missing. They appear in category rankings, in retailer-facing comparisons, and in buyer searches with those numbers attached.<br><br>'
+        + 'The ' + BRAND.analyzed + ' analyzed products average <strong>' + BRAND.wisescore + '</strong>. There is no reason to think the unclaimed ' + BRAND.unclaimed + ' are worse products \u2014 but there is every reason to think they are <em>scored</em> worse, because an unparsed or partial ingredient list cannot earn credit it never presented. Claiming is the one action here that changes every other number on this board rather than one of them.<br><br>'
+        + 'Opened the closing read in <strong>Results &amp; Details</strong> \u2192',
+      brand_unsafe: 'Two of them are findings. Five of them are missing evidence, and the difference matters.<br><br>'
+        + '<strong>Classified unsafe:</strong> titanium dioxide, in <strong>8%</strong> of your SKUs, and Red 40, in <strong>4%</strong>. Both are colorants \u2014 neither is doing nutritional work in a date bar, which is what makes them unusually cheap to remove for the amount of risk they carry. This is the pair that shows up in a retailer compliance review.<br><br>'
+        + '<strong>GRAS status never established:</strong> Natural Flavors (42% of the line), Lime Oil (33%), Citrus Extract (21%), Vanilla Extract (17%) and Sunflower Extract (12%). These are <em>not</em> a safety result. They are the rows where WISEcode has no determination to report, and \u201cNatural Flavors\u201d is doing most of that work because the term legally conceals its own contents. Resolving them is a supplier-documentation task, not a reformulation.<br><br>'
+        + 'Separately, and not a safety question at all: <strong>citric acid is in 83% of your products</strong> at PL4. It is the largest single driver of your processing level, and swapping it moves Ultra-Processed Food (91) and Seed Oils of Concern (64) together.<br><br>'
+        + 'Opened the ingredient chart in <strong>Visuals</strong> \u2192',
+      brand_pillars: 'Here are all fifteen, strongest to weakest inside each pillar.<br><br>'
+        + '<strong>Ingredient Quality \u2014 89.</strong> Banned / Unsafe Ingredients 96, Clean Label 93, Ultra-Processed Food 91, Emulsifiers of Concern 82, Seed Oils of Concern 64. Four of these five are excellent; the fifth is the outlier that is dragging an otherwise 90-plus pillar down.<br><br>'
+        + '<strong>Nutrient Quality \u2014 75.</strong> Protein Density 83, Fat Quality 79, Fiber Density 74, Carbohydrate Quality 71, Sugar Density 68. The shape here is what a date-based line should look like: real protein and fat quality, with sugar density as the honest cost of using dates as the sweetener.<br><br>'
+        + '<strong>Health Outcomes \u2014 72.</strong> Muscle Health 80, Heart Health 76, Gut Health 71, Diabetes Friendly 69, Anti-Inflammatory 66. This is the pillar with the most room, and Anti-Inflammatory is the lowest metric in the whole portfolio.<br><br>'
+        + 'The read across all three: your ingredients are better than your outcomes. That gap is normally a formulation-detail problem rather than a philosophy problem \u2014 you are choosing good inputs and losing some of the benefit in the processing and the fat profile.<br><br>'
+        + 'Charted all fifteen in <strong>Visuals</strong> \u2192',
+      brand_outcomes: 'Because <strong>66</strong> is an average, and the average is not what is happening.<br><br>'
+        + 'Spread across your ' + BRAND.analyzed + ' products, Anti-Inflammatory reads: <strong>8 Excellent (33%)</strong>, <strong>11 Good (46%)</strong>, 3 OK, 2 Fair, and <strong>nothing Poor</strong>. So <strong>79% of the line is Good or better</strong> \u2014 that is not a weak portfolio, it is a strong portfolio with a short tail. The two products in Fair are pulling the mean down, and they are the same two SKUs that account for your only ultra-processed classifications.<br><br>'
+        + 'Mechanically, the metric rewards omega-3 presence, polyphenol density, low seed-oil exposure, and the absence of pro-inflammatory additives. Three of those four are where you already score well \u2014 which points at the fourth. <strong>Seed Oils of Concern (64)</strong> is your lowest ingredient metric, and it is the input this outcome is most sensitive to. The two colorants do not help either.<br><br>'
+        + 'Gut Health, next door at <strong>71</strong>, backs this up: 63% of the portfolio is Good or better, led by Turmeric Oatmeal at 91, with Frosted Granola at 39 as the floor. The pattern is consistent \u2014 your date-and-nut formats perform, and your granola and protein formats are the ones costing you.<br><br>'
+        + 'Opened the outcome spread in <strong>Visuals</strong> \u2192',
       atlas: 'Built the atlas.<br><br>'
         + 'Twelve interventions across the ten category groups you named, scored on ten dimensions that all run the same way. That is <strong>ten outputs</strong> \u2014 six charts in <strong>Visuals</strong> (opportunity map, score matrix, causal pathway, population differences, financial &amp; operational consequences, and the recommendation frontier) so you can take one to a meeting instead of a wall of six, plus the closing read, the observed baseline, the private-label share, and the references in <strong>Results &amp; Details</strong>. The six charts stay one instrument: the weighting toggle and the four filters live on the opportunity map and re-read every other panel, and every score has a tooltip.<br><br>'
         + '<strong>A few important integrity choices are baked in:</strong>'
@@ -12956,7 +13349,41 @@
       else if (intent === 'report' && topic && topic !== 'cookie' && REPORT_SURFACE[topic]) intent = REPORT_SURFACE[topic];
       else if (intent === 'spider' && topic && topic !== 'worst' && SPIDER_SURFACE[topic]) intent = SPIDER_SURFACE[topic];
       setTimeout(() => {
-        if (intent === 'atlas') {
+        if (intent === 'brandwelcome') {
+          surfaceBrandOverview();
+        } else if (intent === 'brand_claim') {
+          surfaceBlock('results', {
+            icon: 'checklist',
+            title: 'Where the brand stands & what to do about it',
+            meta: `${BRAND.claimed} of ${BRAND.discovered} products claimed \u00b7 ${BRAND.unclaimed} scored without your ingredient data`,
+            html: brandActionsView(),
+            versionKey: 'brand-actions',
+          });
+        } else if (intent === 'brand_unsafe') {
+          surfaceBlock('visuals', {
+            icon: 'science',
+            title: 'Processing-driving ingredients',
+            meta: '2 ingredients classified unsafe \u00b7 5 with GRAS status never established \u00b7 citric acid in 83% of the line',
+            html: brandIngredientsChart(),
+            versionKey: 'brand-ingredients',
+          });
+        } else if (intent === 'brand_pillars') {
+          surfaceBlock('visuals', {
+            icon: 'stacked_bar_chart',
+            title: 'WISEscore pillars \u00b7 15 metrics',
+            meta: 'Nutrient Quality 75 \u00b7 Ingredient Quality 89 \u00b7 Health Outcomes 72, broken down metric by metric',
+            html: brandPillarsChart(),
+            versionKey: 'brand-pillars',
+          });
+        } else if (intent === 'brand_outcomes') {
+          surfaceBlock('visuals', {
+            icon: 'favorite',
+            title: 'Health outcomes spread',
+            meta: `Anti-Inflammatory across all ${BRAND.analyzed} products \u00b7 79% Good or better, nothing Poor`,
+            html: brandOutcomesChart(),
+            versionKey: 'brand-outcomes',
+          });
+        } else if (intent === 'atlas') {
           surfaceAtlasPanels({ reset: true, fullTurn: true });
         } else if (intent === 'atlas_report') {
           surfaceBlock('results', {
@@ -14115,16 +14542,18 @@
         scorecards: {
           label: 'Start a conversation',
           cards: [
-            { variant: 'metric', icon: 'bubble_chart', pill: { tone: 'alert', icon: 'insights', text: 'Modeled' }, metric: '12', title: 'Food Portfolio Intervention Atlas', desc: 'Twelve retail interventions scored on health impact against commercial &amp; operational reality \u2014 ten outputs for a boardroom.', action: 'Build it', intent: 'atlas', ask: ATLAS_ASK },
+            { variant: 'welcome', icon: 'insights', title: 'Smarter decisions start here.', desc: 'Your whole brand in one read \u2014 WISEscore, coverage, flagged ingredients, and what to fix first.', action: 'Show me', intent: 'brandwelcome', ask: 'Welcome! Give me an overview of my entire brand.' },
             { variant: 'metric', icon: 'leaderboard', pill: { tone: 'up', icon: 'north', text: 'Top 3' }, metric: '22,514', title: 'Top 3 brands, top-half WISEscore', desc: 'Brands with the most foods scoring 50 or higher.', action: 'Compare', intent: 'topbrands', ask: 'Create a comparison chart of the top three brands with more than 50 UPCs that are in the top half of the WISE score.' },
+            { variant: 'metric', icon: 'inventory_2', pill: { tone: 'alert', icon: 'science', text: '46.9% UPF' }, metric: '1,874', title: 'Kraft SKUs and their UPF share', desc: 'Every Kraft product in the catalog, split by the WISEcode UPF verification.', action: 'Break it down', intent: 'kraft', ask: 'How many SKUs does Kraft have and what percent are ultra processed?' },
+            { variant: 'metric', icon: 'verified', pill: { tone: 'alert', icon: 'warning', text: '81 unsafe' }, metric: '8,658', title: 'Ingredients with a GRAS status', desc: 'GRAS, Historical and Unclear \u2014 and the handful that came back Unsafe.', action: 'Count', intent: 'gras', ask: 'How many ingredients do we have some GRAS classification for?' },
             { variant: 'metric', icon: 'storefront', pill: { tone: 'up', icon: 'storefront', text: 'Retailer' }, metric: '20,635', title: 'How many foods does Sprouts have?', desc: 'Distinct Sprouts-carried products matched against WISEcode.', action: 'Count', intent: 'sprouts', ask: 'How many foods does the Sprouts retailer have?' },
             { variant: 'wiseai', icon: 'auto_awesome', title: 'Is this ultra-processed?', desc: 'Paste an ingredient list for a WISEcode UPF read.', action: 'Ask', intent: 'upf', ask: 'Is this ingredient list ultra-processed?' },
             { variant: 'metric', icon: 'trending_down', pill: { tone: 'alert', icon: 'south', text: 'Lowest' }, metric: '0.06', title: 'Worst food in the database', desc: 'The bottom of the WISEscore ranking across 943,428 foods.', action: 'Show ranking', intent: 'worst', ask: 'What\u2019s the worst food in our database?' },
             { variant: 'wiseai', icon: 'radar', title: 'Spider-chart the 10 worst foods', desc: 'Compare the bottom of the ranking by gut & immune health.', action: 'Chart it', intent: 'spider', ask: 'Spider-chart the 10 worst foods by gut & immune health' },
             { variant: 'wiseai', icon: 'cake', title: 'Worst-ranked cupcake', desc: 'Dig into the single lowest-scoring cupcake and why it landed there.', action: 'Explain', intent: 'cupcake', ask: 'Tell me more about the worst-ranked cupcake' },
             { variant: 'metric', icon: 'cookie', pill: { tone: 'up', icon: 'north', text: 'Highest' }, metric: '3,010', title: 'Best chocolate chip cookie', desc: 'Highest-WISEscore cookies with the least chocolate.', action: 'Find it', intent: 'cookie', ask: 'Best chocolate chip cookie with the least chocolate' },
-            { variant: 'metric', icon: 'bolt', pill: { tone: 'alert', icon: 'insights', text: '7,701' }, metric: '74.2%', title: 'Energy drinks: sweeteners vs UPF tier', desc: 'Top &amp; bottom 10 by WISEscore \u2014 how artificial sweetener use tracks the WISEcode UPF tier.', action: 'Correlate', intent: 'energy', ask: 'Top 10 and bottom 10 energy drinks: artificial sweetener use vs UPF-tier correlation' },
-            { variant: 'metric', icon: 'inventory_2', pill: { tone: 'up', icon: 'inventory_2', text: 'SKUs' }, metric: '3,334', title: 'How many protein-bar SKUs?', desc: 'Count the Snacks \u203a Protein &amp; Meal Bars category and break it down.', action: 'Count', intent: 'proteinbars', ask: 'How many SKUs of protein bars do we have in the database?' },
+            { variant: 'metric', icon: 'bolt', pill: { tone: 'alert', icon: 'insights', text: '7,701' }, metric: '74.2%', title: 'Energy drinks: sweeteners vs UPF tier', desc: 'Top & bottom 10 by WISEscore \u2014 how artificial sweetener use tracks the WISEcode UPF tier.', action: 'Correlate', intent: 'energy', ask: 'Top 10 and bottom 10 energy drinks: artificial sweetener use vs UPF-tier correlation' },
+            { variant: 'metric', icon: 'inventory_2', pill: { tone: 'up', icon: 'inventory_2', text: 'SKUs' }, metric: '3,334', title: 'How many protein-bar SKUs?', desc: 'Count the Snacks \u203a Protein & Meal Bars category and break it down.', action: 'Count', intent: 'proteinbars', ask: 'How many SKUs of protein bars do we have in the database?' },
             { variant: 'metric', icon: 'kitchen', pill: { tone: 'alert', icon: 'warning', text: 'Mine' }, metric: '65', title: 'Which of my foods are Super Ultra-Processed?', desc: 'Reads workspace scores for your 80 foods — not the 943k catalog.', action: 'Ask', intent: 'myfoods_sup', ask: 'Which of my foods are Super Ultra-Processed?' },
             { variant: 'wiseai', icon: 'compare_arrows', title: 'Compare a few products', desc: 'Grab a few products and put them head-to-head on the comparison board.', action: 'Compare', intent: 'compare', ask: 'Compare a few products side by side' },
             { variant: 'intro', icon: 'summarize', title: 'Build me a report', desc: 'Turn the cookie ranking into a full visual report with charts & trends.', action: 'Generate', intent: 'report', ask: 'Show me a pretty report — all the charts & trends' },

@@ -3349,7 +3349,7 @@ function demoChatMenuPop() {
       <span class="topbar-menu-badge">Admin</span>
     </button>
     <div class="topbar-menu-divider"></div>
-    ${sw({ sc: 'toggle-cards', icon: 'dashboard', label: 'Overview cards', on: false, admin: true, pink: true })}
+    ${sw({ sc: 'toggle-cards', icon: 'dashboard', label: 'Overview cards', on: false })}
     ${sw({ sc: 'toggle-intent-chips', icon: 'label', label: 'Intent chips', on: true, admin: true, pink: true })}
     ${sw({ sc: 'compact', icon: 'density_small', label: 'Compact spacing', on: true, admin: true, pink: true, cls: 'sc-compact-item' })}
     ${sw({ sc: 'brandtext', icon: 'format_color_text', label: 'Brand AI text', on: false, admin: true, pink: true, cls: 'sc-brandtext-item' })}
@@ -3907,12 +3907,20 @@ const COMPONENTS = [
     name: 'Large intent cards',
     cat: 'Chips & badges',
     wide: true,
-    cls: '.ws-scorecard · .ws-sc-action (+ --intro, --wiseai, locked)',
+    cls: '.ws-scorecard · .ws-sc-action (+ --intro, --wiseai, --hero, locked)',
     used: 'WISEcodeAI welcome rail · Product Portfolio · Comparison — the large-format sibling of the 28px intent chips',
-    note: 'The large-format intent chip, not a scorecard: the whole card is one tap and the footer (<code>.ws-sc-action</code>) is the visible affordance. Same family as the 28px <code>.chip</code> above — one carries an eyebrow/metric and a CTA, the other is the in-conversation pill. Click-to-filter and dashboard numbers live on <em>Stat tiles</em> and <em>Dashboard scores</em>.',
+    note: 'The large-format intent chip, not a scorecard: the whole card is one tap and the footer (<code>.ws-sc-action</code>) is the visible affordance. Same family as the 28px <code>.chip</code> above — one carries an eyebrow/metric and a CTA, the other is the in-conversation pill. <strong>Hero</strong> (<code>--hero</code>) is the one-per-rail opener: it wears the sign-in art and sets its copy in white over it. Click-to-filter and dashboard numbers live on <em>Stat tiles</em> and <em>Dashboard scores</em>.',
     noteIcon: 'bolt',
     demo: `
       <div class="ws-scorecards" style="overflow:visible;padding:0;width:100%">
+        <button type="button" class="ws-scorecard ws-scorecard--hero" role="listitem">
+          <div class="ws-sc-top">
+            <span class="ws-sc-icon"><span class="material-symbols-outlined">insights</span></span>
+          </div>
+          <div class="ws-sc-intro-title">Smarter decisions start here.</div>
+          <div class="ws-sc-desc">Your whole brand in one read — WISEscore, coverage, flagged ingredients, and what to fix first.</div>
+          <div class="ws-sc-action">Show me<span class="material-symbols-outlined">arrow_outward</span></div>
+        </button>
         <button type="button" class="ws-scorecard" role="listitem">
           <div class="ws-sc-top">
             <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-symbols-outlined">fact_check</span></span>
@@ -4215,7 +4223,7 @@ const COMPONENTS = [
     cat: 'Chat & drawers',
     cls: '.panel-more-btn \u00b7 .topbar-popover.sc-menu-grouped \u00b7 .sc-menu-group \u00b7 .sc-mcp-item \u00b7 .sc-switch \u00b7 .sc-menu-admin-btn',
     used: 'The three-dot on every chat module \u2014 Conversation, Helix play/pause, streaming, Close. Admin-badged rows stay off this specimen',
-    note: 'Same <code>.topbar-popover</code> shell, grouped the way the live chat does \u2014 one column hung from the kebab. This card is the <strong>member-facing</strong> menu: History, new, Export, Share, File to Library, Helix play/pause, Response streaming, and Close. The nested Internal admins kebab is not part of this menu. Admin-badged rows (Turns, Hide outputs, Connect a data source, Overview cards, Intent chips, Compact spacing, Brand AI text, Input glow, Animation, Activity strip, Play voiceover) appear on the live chat when <em>Internal admins</em> is on in Appearance, and the full Helix studio then sits in a second column beside the stack.',
+    note: 'Same <code>.topbar-popover</code> shell, grouped the way the live chat does \u2014 one column hung from the kebab. This card is the <strong>member-facing</strong> menu: History, new, Export, Share, File to Library, Overview cards, Helix play/pause, Response streaming, and Close. The nested Internal admins kebab is not part of this menu. Admin-badged rows (Turns, Hide outputs, Connect a data source, Intent chips, Compact spacing, Brand AI text, Input glow, Animation, Activity strip, Play voiceover) appear on the live chat when <em>Internal admins</em> is on in Appearance, and the full Helix studio then sits in a second column beside the stack.',
     noteIcon: 'more_vert',
     demo: `
       <div class="dsc-states" style="width:100%">

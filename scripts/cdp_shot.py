@@ -102,8 +102,9 @@ def js(expr):
     return r.get("result", {}).get("result", {}).get("value")
 
 # Trigger the compare board via the real path: click the "Compare" scorecard.
-# cards order: 0 upf,1 worst,2 spider,3 cupcake,4 cookie,5 compare -> data-card="5"
-clicked = js("(function(){var b=document.querySelector('[data-card=\"5\"]');"
+# Found by its copy, not its index — the rail is reordered whenever cards change.
+clicked = js("(function(){var b=Array.from(document.querySelectorAll('.ws-scorecard[data-card]'))"
+             ".find(function(c){return /compare a few products/i.test(c.textContent)});"
              "if(!b){return 'no-card';}b.click();return 'clicked';})()")
 print("compare_click:", clicked)
 time.sleep(4.0)  # let surface(660ms) + openPane + engine render + count-up settle

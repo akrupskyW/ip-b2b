@@ -945,8 +945,8 @@ function arrivedByNavigation() {
                           flanking drawers tuck in behind the chat card.
 
    Page cfg is spread AFTER these, so any page can still override a default. The
-   "Overview cards" and "Intent chips" Admin switches appear
-   automatically whenever a page passes scorecards / intents, and "History &
+   "Overview cards" switch (member-facing) and the "Intent chips" Admin switch
+   appear automatically whenever a page passes scorecards / intents, and "History &
    Projects" is injected into the menu post-mount (injectWISEcodeAIHistoryMenuItem). */
 const WISEAI_DOCK_PARITY = {
   activity: true,

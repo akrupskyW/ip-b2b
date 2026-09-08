@@ -8108,14 +8108,14 @@
               <span class="sc-switch" aria-hidden="true"></span>
             </button>
             <div class="topbar-menu-divider"></div>
-            <!-- Overview cards / Intent chips — Admin switch rows (ON = shown),
-                 same badges + pink switches as the shared module's menu.
+            <!-- Overview cards / Intent chips — switch rows (ON = shown), same
+                 markup as the shared module's menu. Overview cards is member-
+                 facing; Intent chips stays Admin-badged with a pink switch.
                  Keeps the menu open so the switch state reads back. -->
-            <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" id="wiseai-cards-item" role="menuitemcheckbox" aria-checked="false" onclick="toggleOverviewCards()">
+            <button type="button" class="topbar-menu-item sc-mcp-item" id="wiseai-cards-item" role="menuitemcheckbox" aria-checked="false" onclick="toggleOverviewCards()">
               <span class="material-symbols-outlined topbar-menu-icon">dashboard</span>
               <span>Overview cards</span>
-              <span class="topbar-menu-badge">Admin</span>
-              <span class="sc-switch sc-switch--pink" aria-hidden="true"></span>
+              <span class="sc-switch" aria-hidden="true"></span>
             </button>
             <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" id="wiseai-chips-item" role="menuitemcheckbox" aria-checked="false" onclick="toggleIntentChips()">
               <span class="material-symbols-outlined topbar-menu-icon">label</span>

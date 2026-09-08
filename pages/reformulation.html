@@ -110,8 +110,10 @@
     /* Left chat column — four-tier rail (single 380 / double 580 / triple 760 /
        fill via shared .panel-fill). The flex shorthand keeps grow/shrink at 0
        so a widened chat can drag back to single the same way every other
-       module does. min-width stays 0; pane-resize.js owns the 300px floor. */
-    .rf-chat { flex: 0 0 var(--chat-pane-w, 380px); width: var(--chat-pane-w, 380px); min-width: 0; background: var(--bg); }
+       module does. min-width stays 0; pane-resize.js owns the 300px floor.
+       Sizing only — the card's face is the shared .sc-card surface, so the chat
+       is the same module colour as the studio and dashboard beside it. */
+    .rf-chat { flex: 0 0 var(--chat-pane-w, 380px); width: var(--chat-pane-w, 380px); min-width: 0; }
     .rf-chat.panel-wide { flex: 0 0 580px; width: 580px; min-width: 0; }
     .rf-chat.panel-triple { flex: 0 0 760px; width: 760px; min-width: 0; }
     /* Studio + dashboard each get the same 3-step widen from their own header

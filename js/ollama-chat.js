@@ -231,14 +231,18 @@ export function ollamaStatusText() {
   return 'Uses the model on this Mac for food-aware answers';
 }
 
+/* Admin-badged, so the chat ⋯ row is gated by the same Internal-admins switch
+   that already hides the Appearance ▸ Admin twin. Both surfaces move one
+   setting; neither is offered to a member. */
 export function ollamaRowHtml() {
   return ''
-    + '<button type="button" class="topbar-menu-item sc-mcp-item sc-ollama-item" data-sc="ollama-toggle" role="menuitemcheckbox" aria-checked="true">'
+    + '<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-ollama-item" data-sc="ollama-toggle" role="menuitemcheckbox" aria-checked="true">'
     + '<span class="material-symbols-outlined topbar-menu-icon">' + OLLAMA_ICON + '</span>'
     + '<span class="topbar-menu-copy">'
     + '<span class="topbar-menu-title">' + OLLAMA_LABEL + '</span>'
     + '<span class="topbar-menu-desc" data-ollama-status>Food-aware answers on this Mac</span>'
     + '</span>'
+    + '<span class="topbar-menu-badge">Admin</span>'
     + '<span class="sc-switch" aria-hidden="true"></span>'
     + '</button>';
 }

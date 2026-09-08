@@ -6229,7 +6229,6 @@ html.header-float .ss-header,
 html.header-float .alerts-panel-header,
 html.header-float .notif-panel-header,
 html.header-float .vs-header,
-html.header-float .rf-head,
 html.header-float .chat-topbar {
   height: 0 !important;
   min-height: 0 !important;
@@ -6249,8 +6248,7 @@ html.header-float .nfp-panel-header > *:not(.panel-controls),
 html.header-float .ac-panel-header > *:not(.panel-controls),
 html.header-float .ss-header > *:not(.panel-controls),
 html.header-float .alerts-panel-header > *:not(.panel-controls),
-html.header-float .notif-panel-header > *:not(.panel-controls),
-html.header-float .rf-head > *:not(.panel-controls) {
+html.header-float .notif-panel-header > *:not(.panel-controls) {
   display: none !important;
 }
 /* Pin the kept controls over the top-right of the (now header-less) module. */
@@ -6262,8 +6260,7 @@ html.header-float .nfp-panel-header .panel-controls,
 html.header-float .ac-panel-header .panel-controls,
 html.header-float .ss-header .panel-controls,
 html.header-float .alerts-panel-header .panel-controls,
-html.header-float .notif-panel-header .panel-controls,
-html.header-float .rf-head .panel-controls {
+html.header-float .notif-panel-header .panel-controls {
   position: absolute;
   top: 8px;
   right: 8px;
@@ -6285,9 +6282,34 @@ html.header-float #portfolio-panel .side-panel-header .panel-controls {
   top: var(--module-head-pad-t);
   right: var(--module-head-ctrl-inset);
 }
-html.header-float .rf-head .panel-controls {
-  top: var(--module-head-pad-t);
-  right: var(--module-head-ctrl-inset);
+/* Reformulation (studio / overview / report) — these are #modules-row pane
+   headers like the Output pane and the verification masthead, and those keep
+   their serif headline in headerless mode. Only the header's chrome comes off:
+   the rule under it, the surface fill, and the dashboard's brand banner with
+   its scrim and product circle. The title, its meta line, and the in-flow
+   ⋯ / width cluster stay exactly where they sit with the header on. */
+html.header-float .rf-head {
+  border-bottom: 0 !important;
+  background: transparent !important;
+  min-height: 0;
+}
+html.header-float .rf-head-bg,
+html.header-float .rf-head-scrim,
+html.header-float .rf-head-badge {
+  display: none !important;
+}
+html.header-float .rf-head--badged .rf-head-titles { padding-left: 0; }
+html.header-float .rf-head--brand .rf-head-title { color: var(--text); }
+html.header-float .rf-head--brand .rf-head-meta,
+html.header-float .rf-head--brand .rf-head-brand { color: var(--text-muted); }
+html.header-float .rf-head--brand .rf-head-controls .panel-more-btn,
+html.header-float .rf-head--brand .rf-head-controls .panel-width-toggle-btn {
+  color: var(--text-muted);
+}
+html.header-float .rf-head--brand .rf-head-controls .panel-more-btn:hover,
+html.header-float .rf-head--brand .rf-head-controls .panel-width-toggle-btn:hover {
+  color: var(--text);
+  background: var(--surface-3);
 }
 html.header-float #nfp-panel .nfp-fi-group--identity {
   padding-top: var(--module-head-pad-t);
@@ -8571,6 +8593,39 @@ html.dark .sc-card .ws-scorecards-wrap::after { background: linear-gradient(to l
 .ws-sc-intro-title { font-size: 1rem; font-weight: 800; line-height: 1.2; letter-spacing: -0.01em; color: var(--text); margin-top: 6px; }
 .ws-scorecard--intro .ws-sc-intro-title,
 .ws-scorecard--wiseai .ws-sc-intro-title { color: var(--primary-ink, var(--primary)); }
+
+/* Hero variant — the welcome card wears the sign-in art (assets/auth-hero.png),
+   framed on the lower part of the photo where the food fades into the deep-blue
+   constellation the auth screens read against. The gradient over it is what
+   keeps the white copy legible, so it is the same in both themes: pairing it
+   with the dark-mode .ws-scorecard tint would wash the art out. */
+.ws-scorecard--hero,
+html.dark .ws-scorecard--hero {
+  border-color: rgba(37, 80, 124, 0.5);
+  background:
+    linear-gradient(180deg, rgba(13, 22, 44, 0.28) 0%, rgba(13, 22, 44, 0.5) 40%, rgba(13, 22, 44, 0.74) 100%),
+    url('../assets/auth-hero.png') 50% 66% / cover no-repeat;
+}
+.ws-scorecard--hero:hover,
+html.dark .ws-scorecard--hero:hover {
+  border-color: rgba(37, 80, 124, 0.85);
+  box-shadow: 0 6px 18px rgba(13, 22, 44, 0.35);
+  background:
+    linear-gradient(180deg, rgba(13, 22, 44, 0.2) 0%, rgba(13, 22, 44, 0.42) 40%, rgba(13, 22, 44, 0.68) 100%),
+    url('../assets/auth-hero.png') 50% 66% / cover no-repeat;
+}
+/* The one card title that reads as a headline, so it takes the brand serif —
+   the same treatment as the sign-in hero's caption. */
+.ws-scorecard--hero .ws-sc-intro-title {
+  font-family: 'WISE Digits', var(--font-serif);
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
+}
+.ws-scorecard--hero .ws-sc-desc { color: rgba(255, 255, 255, 0.88); text-shadow: 0 1px 10px rgba(0, 0, 0, 0.3); }
+.ws-scorecard--hero .ws-sc-action { color: #fff; }
+.ws-scorecard--hero .ws-sc-icon { color: #fff; }
+.ws-scorecard--hero .ws-sc-pill { background: rgba(255, 255, 255, 0.22); color: #fff; }
 
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
