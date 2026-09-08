@@ -14,6 +14,24 @@
        assets/icons/wise-icons.svg (Rounded 300). The font links above stay as the
        fallback for any glyph the sprite does not carry. See js/icon-svg-shim.js. -->
   <script defer src="../js/icon-svg-shim.js"></script>
+  <!-- Tailwind — same CDN + config on every app page (see also index.html and
+       the marketing-*.html set). preflight is off: these pages carry their own
+       styling, so Tailwind supplies utilities only and resets nothing. -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      corePlugins: { preflight: false },
+      theme: {
+        extend: {
+          fontFamily: { sans: ['"DM Sans"', 'system-ui', '-apple-system', 'sans-serif'] },
+          colors: {
+            oyster: { 100: '#E2EEF7', 300: '#C5CFD7', 400: '#C5CFD7', 500: '#C5CFD7', 600: '#C5CFD7', 700: '#1A2339', 800: '#1A2339' },
+          },
+        },
+      },
+    };
+  </script>
   <style>
 /* ── App-wide mono numerals ──────────────────────────────────────────────
    'WISE Digits' is a synthetic digit-only family (unicode-range U+0030-39)

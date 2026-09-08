@@ -410,7 +410,9 @@
     }
 
     function disablePriorChips() {
-      messages.querySelectorAll('.sc-reply-chips:not(.is-done)').forEach(function (el) { el.classList.add('is-done'); });
+      /* The forward-only chip rule is shared (js/chip-lock.js) — this step is
+         behind the member now, so hand it every row the thread is holding. */
+      if (window.WiseChipLock) window.WiseChipLock.lockPrior(messages);
     }
     function currentUserInitials() {
       return initialsFrom(flow.answers.name || flow.answers.email) || 'ME';
@@ -1152,7 +1154,12 @@
       if (action === 'resend') {
         disablePriorChips();
         addUser('Resend code');
-        wiseaiSay('Sent — a fresh 6-digit code is on its way. Enter it whenever you have it.', null, function () { setInputEnabled(true, '6-digit code'); });
+        /* The member is still on the verification step, so it keeps its own
+           control: the fresh line carries a live Resend chip of its own. */
+        var oq = currentQuestion();
+        wiseaiSay('Sent — a fresh 6-digit code is on its way. Enter it whenever you have it.',
+          oq ? optionChips(oq) : null,
+          function () { setInputEnabled(true, '6-digit code'); });
         return;
       }
     });

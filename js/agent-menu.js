@@ -104,6 +104,21 @@ import './load-anim.js';
   } catch (_) {}
 })();
 
+/* Load the forward-only chip rule (js/chip-lock.js). A row of intent chips the
+   member has moved past goes disabled, so a transcript can never be replayed
+   from a point it has already left. Injected here so it covers every page with
+   the WISE nav; the file self-guards and observes the document. */
+(function loadChipLock() {
+  try {
+    if (typeof document === 'undefined' || window.__wiseChipLockLoaded) return;
+    window.__wiseChipLockLoaded = true;
+    var s = document.createElement('script');
+    s.src = new URL('./chip-lock.js', import.meta.url).href;
+    s.defer = true;
+    (document.head || document.documentElement).appendChild(s);
+  } catch (_) {}
+})();
+
 /* Load the data-chip explainer tooltip (js/chip-tooltip.js) on every page that
    renders the WISE nav. It gives every Shield / GRAS status chip an instant
    hover tooltip explaining what the chip means, with the same thumbs up/down +

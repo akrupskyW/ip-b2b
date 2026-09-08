@@ -387,6 +387,23 @@ html.dark {
 
 * { box-sizing: border-box; }
 
+/* Form controls take the page's own type instead of the browser's.
+   Left to itself a bare <button> renders in Arial at the UA's own size, which
+   is what Product Comparison's several hundred unclassed buttons were doing
+   until Tailwind's reset happened to be loaded on that one page. Tailwind now
+   ships utilities only on every page, so the part of that reset which was
+   doing real work lives here — once, for every page. */
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: inherit;
+  font-size: 100%;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
 /* ===== WISE button — one pill language =================================
    .wise-btn + --primary / --ghost / --danger / --good / --secondary
    / --sm / --lg / --block
@@ -8608,6 +8625,49 @@ html.dark .ws-intent-chip > .material-symbols-outlined { color: var(--primary-br
    white-bordered pills on the navy chrome. */
 html.dark .chip { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); border-color: var(--primary); }
 html.dark .ws-intent-chip { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); border-color: var(--primary); }
+
+/* A transcript only moves forward. js/chip-lock.js stamps `data-chips-spent`
+   on a chip row the member has moved past, and every chip inside it reads as
+   disabled so the thread cannot be replayed from a point it has already left.
+   `.is-done` is the same state under the signup chat's older name, and
+   `.ws-intent-chip.is-used` is a single intent that has already had its turn. */
+[data-chips-spent] .chip,
+[data-chips-spent] .gs-chip,
+.sc-reply-chips.is-done .chip,
+.ws-intent-chip.is-used {
+  background: color-mix(in srgb, var(--text-muted) 9%, transparent) !important;
+  border-color: color-mix(in srgb, var(--text-muted) 22%, transparent) !important;
+  color: var(--text-muted) !important;
+  font-weight: 500 !important;
+  /* Important: a row can be locked while its own fly-in is still setting an
+     inline opacity on the last chips, and that would otherwise leave half the
+     spent row at full strength. */
+  opacity: 0.52 !important;
+  cursor: default;
+  pointer-events: none;
+  box-shadow: none !important;
+}
+[data-chips-spent] .chip .material-symbols-outlined,
+[data-chips-spent] .gs-chip .material-symbols-outlined,
+.sc-reply-chips.is-done .chip .material-symbols-outlined,
+.ws-intent-chip.is-used > .material-symbols-outlined {
+  color: var(--text-muted) !important;
+}
+html.dark [data-chips-spent] .chip,
+html.dark [data-chips-spent] .gs-chip,
+html.dark .sc-reply-chips.is-done .chip,
+html.dark .ws-intent-chip.is-used {
+  background: color-mix(in srgb, var(--text-muted) 20%, transparent) !important;
+  border-color: color-mix(in srgb, var(--text-muted) 40%, transparent) !important;
+  color: var(--text-muted) !important;
+}
+/* The gold "What can I ask?" letters stop shimmering once the row is spent. */
+[data-chips-spent] .sc-ask-ch,
+.ws-intent-chip.is-used .sc-ask-ch {
+  animation: none !important;
+  color: var(--text-muted) !important;
+  opacity: 1;
+}
 
 /* ===== Input rail — compact single-line bar (verbatim from ai-chat.html's
    refined input bar: 40px pill, 40px send, 13px text, no chunky label). ===== */
@@ -17740,6 +17800,22 @@ html.dark .ac-route-ico { color: var(--primary-bright); }
 .ac-route-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .ac-route-title { font-weight: 700; color: var(--text); font-size: var(--fs-ui); line-height: 1.25; }
 .ac-route-desc { font-size: var(--fs-label); color: var(--text-muted); line-height: 1.4; }
+/* A goal already chosen is behind the member (js/chip-lock.js) — the cards
+   read as spent and take no click, same as any other past chip row. */
+[data-chips-spent] .ac-route {
+  background: color-mix(in srgb, var(--text-muted) 9%, transparent);
+  border-color: color-mix(in srgb, var(--text-muted) 22%, transparent);
+  opacity: 0.52 !important;
+  cursor: default;
+  pointer-events: none;
+  transform: none;
+}
+html.dark [data-chips-spent] .ac-route {
+  background: color-mix(in srgb, var(--text-muted) 20%, transparent);
+  border-color: color-mix(in srgb, var(--text-muted) 40%, transparent);
+}
+[data-chips-spent] .ac-route-ico,
+[data-chips-spent] .ac-route-title { color: var(--text-muted); }
 
 @media (max-width: 980px) {
   .auth-setup-pane { flex-basis: auto; width: auto; }

@@ -1,0 +1,55 @@
+---
+description: A chip row the member has moved past goes disabled — a transcript only moves forward
+alwaysApply: true
+---
+
+# Intent Chips Only Move Forward
+
+A transcript is a path, not a menu. Once the member has moved past a row of
+intent chips, that row is **history**: every chip in it goes disabled and
+takes no click. Only the newest row — the one that carries the conversation
+forward — is live. This is app-wide and permanent.
+
+## What this means on the surface
+
+- Tap a chip → the turn plays, and the row you tapped is now dimmed and inert.
+- Scroll back three turns → those chips read as disabled. Hovering does
+  nothing, tapping does nothing, Tab skips them.
+- The row trailing the newest answer is the only one you can act on.
+- One step can own several rows. The signup multi-select posts its
+  suggestions and its Continue / Skip controls as two rows, and the portfolio
+  posts its report scopes as three — a run of **adjacent sibling** rows is one
+  step and stays live together.
+
+## What is never locked
+
+- **Output chips**, preview cards, version thumbnails, citation markers, and
+  anything else that opens a module. An output the member never opened must
+  still open three turns later — see the outputs-open-on-request rule.
+- **`.sc-inline-chips`**, the shared row the chat re-parks at the end of the
+  thread after every reply. It is a single element that moves, so it is the
+  live row by construction.
+- Welcome chips and the persistent rail. They are not in the transcript.
+
+## How it is wired
+
+Shared module: `js/chip-lock.js`, injected from `js/agent-menu.js` on every
+page that renders the WISE nav, and loaded directly by `create-account.html`
+(no nav). It watches every transcript (`.chat-messages-area` / `#chat-messages`)
+and stamps `data-chips-spent` on each spent row; `pages/wise.css` gives that
+attribute the disabled look in both themes. Locking is sticky — transcripts
+only grow, and a thread saved to history restores in the state it was saved in.
+
+A row is spent when the member has said something beneath it (a `.sc-line-you`
+landed below) or a newer chip row has arrived beneath it.
+
+## Rules for the agent
+
+- Never re-enable a past chip row, and never add a "replay this step" path.
+- Do not fork this per page. A host that knows it has just left every open
+  step calls `WiseChipLock.lockPrior(messagesEl)`; everything else is handled
+  by the observer — see the nothing-page-local rule.
+- A new chip-row class must be added to `ROW_SEL` in `js/chip-lock.js`, not
+  handled with a page-local disabler.
+- If a new control genuinely must stay tappable forever, add it to `KEEP_SEL`
+  — do not opt the whole row out.

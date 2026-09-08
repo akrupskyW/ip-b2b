@@ -24,7 +24,8 @@
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   } catch (e) {}
 
-  var DURATION = 1400; /* ms — matches the count-up feel used across the app */
+  var DURATION = 1400; /* ms — default for large / hero numerals */
+  var DURATION_CARD = 520; /* scorecard chips (portfolio, etc.) — settle, don't crawl */
 
   /* Numeral class  ->  clickable "card" ancestor that replays it on click. */
   var ENTRIES = [
@@ -135,10 +136,11 @@
     if (reduceMotion) { render(el, node, meta, meta.value); return; }
 
     var target = meta.value;
+    var ms = el.classList.contains('pf-stat-num') ? DURATION_CARD : DURATION;
     var start = performance.now();
     render(el, node, meta, 0);
     var tick = function (now) {
-      var t = Math.min(1, (now - start) / DURATION);
+      var t = Math.min(1, (now - start) / ms);
       render(el, node, meta, target * easeOutCubic(t));
       if (t < 1) el.__cuRaf = requestAnimationFrame(tick);
       else { el.__cuRaf = 0; render(el, node, meta, target); }
@@ -187,7 +189,9 @@
         if (!el.__cuSeen || el.__cuRaf) return;
         var n = findNumberNode(el);
         if (!n || n.nodeValue === el.__cuExpected) return; /* our own write */
-        if (!parse(n)) return;
+        var parsed = parse(n);
+        if (!parsed) return;
+        if (el.__cuMeta && parsed.value === el.__cuMeta.value) return;
         animate(el);
       });
       mo.observe(el, { childList: true, characterData: true, subtree: true });

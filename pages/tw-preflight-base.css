@@ -1,0 +1,61 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   tw-preflight-base.css — the base styles the two forked boards were built on.
+
+   Product Portfolio and Product Comparison were cloned out of an older app that
+   loaded the Tailwind Play CDN with its reset (preflight) switched on, so their
+   layouts were tuned against that reset. The other forty app pages were built
+   against wise.css and the browser's own defaults, and look correct there.
+
+   Tailwind now loads on every page with `corePlugins: { preflight: false }` so
+   the CDN set is identical app-wide and no page gets a surprise global reset.
+   This file carries the handful of reset rules those two boards actually depend
+   on — every one of them measured with scripts/_preflight_delta.py, not guessed
+   — and is linked only from those two pages.
+
+   Do not link this from a page that was not built against the reset: it changes
+   base leading and icon alignment, which is exactly what the other pages do not
+   want. New pages should follow pages/wiseai.html instead.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Base leading. These boards' vertical rhythm assumes 1.5, not the browser's
+   ~1.2 — it cascades into every unstyled run of text on the page. */
+html {
+  line-height: 1.5;
+}
+
+/* Media sits on the text's centre rather than its baseline. With the icon shim
+   swapping every Material Symbol for an inline <svg>, this is what keeps icons
+   optically centred against their labels on these two pages. */
+img,
+svg,
+video,
+canvas,
+audio,
+iframe,
+embed,
+object {
+  vertical-align: middle;
+}
+
+/* Images never overflow their column. */
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* A border needs only its width to show up, matching how these pages declare
+   them. Width stays 0 so nothing gains an edge it did not ask for. */
+*,
+::before,
+::after {
+  border-width: 0;
+  border-style: solid;
+  border-color: var(--border, rgba(37, 80, 124, 0.16));
+}
+
+/* Rules take the surrounding ink instead of the browser's grey. */
+hr {
+  color: inherit;
+  border-top-width: 1px;
+}
