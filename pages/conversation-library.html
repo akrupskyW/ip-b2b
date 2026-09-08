@@ -820,16 +820,18 @@
        right. The shared shell (js/agent-overview.js) drops the WISEcodeAI dock
        into #modules-row; here we just re-order the row (page-scoped) so the
        chat is the centre column and the Library is the module on the right.
+
+       Placement only — the dock's WIDTH belongs to the shared tier rules
+       (.wiseai-dock-open / .panel-wide / .panel-fill in wise.css +
+       js/pane-width.js), which read the screen default. Restating a single-tier
+       width here pinned the chat at 380px on every display and made the width
+       control a dead tap.
     =================================================================== */
     #modules-row #wiseai-dock-panel.wiseai-dock-open {
       order: -1;
       position: relative !important;
       left: auto !important;
       right: auto !important;
-      flex: 0 0 var(--chat-pane-w, 380px) !important;
-      width: var(--chat-pane-w, 380px) !important;
-      min-width: var(--chat-pane-w, 380px) !important;
-      max-width: var(--chat-pane-w, 380px) !important;
     }
     #modules-row #agent-main {
       order: 0;
