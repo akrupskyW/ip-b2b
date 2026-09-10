@@ -1,7 +1,8 @@
-"""Close-up of a spent chip row sitting above the live one.
+"""Close-up of a thread the member has moved on from.
 
-Drives view-product far enough to leave two rows behind, then clips the shot
-to the transcript so the disabled look can be read in both themes.
+Drives view-product far enough to leave two rows behind, then clips the shot to
+the transcript so it can be read in both themes that the spent rows came off it
+and only the live row is left.
 
   python3 scripts/_chip_lock_shot.py [light|dark]
 """

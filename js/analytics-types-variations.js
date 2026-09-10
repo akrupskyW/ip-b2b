@@ -531,7 +531,10 @@ import {
       gauges.push({ node: val, value: r.v });
     });
     const numT = add(svg, m('text', { class: 'atx-gauge-num', 'text-anchor': 'middle', x: cx, y: cy + 2 }, '0'));
-    add(svg, m('text', { class: 'atx-alabel', 'text-anchor': 'middle', x: cx, y: cy + 22 }, 'overall'));
+    /* The number above this is 27px, so its line reaches ~9px past its own
+       baseline. Sit the caption clear of that rather than against it — a
+       larger text scale grows both and closes any gap this one does not have. */
+    add(svg, m('text', { class: 'atx-alabel', 'text-anchor': 'middle', x: cx, y: cy + 27 }, 'overall'));
     nums.push({ node: numT, to: 71, dur: 1300 });
     wire(el, makePlay(stage, { gauges, nums }));
     return el;

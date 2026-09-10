@@ -3788,6 +3788,60 @@
         return lines;
       }
 
+      /* Place (or re-place) one axis label `out` units outside the label ring.
+         Anchor and baseline follow from the axis angle alone, so this can be
+         called again later to move a label that needs more room without
+         rebuilding it. */
+      const LH = 12;
+      function placeLabel(t, ang, out) {
+        const [x, y] = P(ang, LABEL_R + (out || 0));
+        const cos = Math.cos(rad(ang)), sin = Math.sin(rad(ang));
+        let anchor = 'middle';
+        if (cos > 0.25) anchor = 'start'; else if (cos < -0.25) anchor = 'end';
+        let dy = 4;
+        if (sin < -0.5) dy = -1; else if (sin > 0.5) dy = 11;
+        const lines = [...t.children];
+        const startDy = dy - ((Math.max(1, lines.length) - 1) * LH) / 2;
+        t.setAttribute('x', f(x));
+        t.setAttribute('y', f(y));
+        t.setAttribute('text-anchor', anchor);
+        lines.forEach((ts, li) => {
+          ts.setAttribute('x', f(x));
+          ts.setAttribute('dy', f(li === 0 ? startDy : LH));
+        });
+        t.dataset.paAng = ang;
+        t.dataset.paOut = out || 0;
+      }
+
+      /* Two neighbouring metric names can still share pixels once they wrap:
+         with fifteen axes the spokes are 24° apart, which at the foot of the
+         web put "Clean Label" on top of "Emulsifiers of Concern". Push the
+         wordier of any overlapping pair a little further out along its own
+         axis, and keep measuring until they clear. */
+      function spreadLabels(svg) {
+        const labels = [...svg.querySelectorAll('.pa-axis-label')];
+        if (labels.length < 2) return;
+        const boxOf = (t) => { try { const b = t.getBBox(); return b && b.width ? b : null; } catch (_) { return null; } };
+        const overlap = (a, b) => !!a && !!b
+          && Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x) > 0.5
+          && Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y) > 0.5;
+        for (let pass = 0; pass < 8; pass++) {
+          const boxes = labels.map(boxOf);
+          let moved = false;
+          for (let i = 0; i < labels.length; i++) {
+            for (let j = i + 1; j < labels.length; j++) {
+              if (!overlap(boxes[i], boxes[j])) continue;
+              const pick = labels[j].childElementCount >= labels[i].childElementCount ? j : i;
+              const t = labels[pick];
+              placeLabel(t, parseFloat(t.dataset.paAng), (parseFloat(t.dataset.paOut) || 0) + 5);
+              boxes[pick] = boxOf(t);
+              moved = true;
+            }
+          }
+          if (!moved) return;
+        }
+      }
+
       /* Pull each metric off the rendered radar. Dots and axis labels are
          emitted in the same axis order, so they pair by index. */
       function readAxes(radar) {
@@ -3883,23 +3937,16 @@
         /* Axis labels — the FULL metric name (e.g. "Anti-Inflammatory",
            "Gut Health"), wrapped to <= 2 lines, anchored by quadrant and
            vertically centred on the axis so they ring the chart cleanly. */
-        const LH = 12;
         axes.forEach((a, i) => {
           const center = -90 + span * i;
-          const [x, y] = P(center, LABEL_R);
-          const cos = Math.cos(rad(center)), sin = Math.sin(rad(center));
-          let anchor = 'middle';
-          if (cos > 0.25) anchor = 'start'; else if (cos < -0.25) anchor = 'end';
-          let dy = 4;
-          if (sin < -0.5) dy = -1; else if (sin > 0.5) dy = 11;
           const lines = wrapLabel(a.full || a.short, 15);
-          const t = mk('text', { class: 'pa-axis-label', x: f(x), y: f(y), 'text-anchor': anchor });
-          const startDy = dy - ((lines.length - 1) * LH) / 2;
-          lines.forEach((ln, li) => {
-            const ts = mk('tspan', { x: f(x), dy: f(li === 0 ? startDy : LH) });
+          const t = mk('text', { class: 'pa-axis-label' });
+          lines.forEach((ln) => {
+            const ts = mk('tspan', {});
             ts.textContent = ln;
             t.appendChild(ts);
           });
+          placeLabel(t, center, 0);
           add(t);
         });
 
@@ -3952,6 +3999,63 @@
         return wrap;
       }
 
+      /* Grow the box to whatever the labels actually measure.
+
+         The rosette is laid out in a fixed square, but its labels ring the
+         outside of it and the longest ones ("Ultra-Processed", "Carbohydrate
+         Quality") reach past that square — so at the phone frame they painted
+         over the edge of the card. The text is already on the page by the time
+         this runs, so ask it how wide it is rather than estimating, and widen
+         the viewBox until it holds every label. The chart scales as a whole,
+         so the labels shrink with the rosette instead of overrunning it.
+
+         Returns false when the chart is not being painted yet (a hidden card
+         measures nothing), so the caller can ask again later. */
+      function fitViewBox(svg) {
+        const labels = [...svg.querySelectorAll('.pa-axis-label')];
+        if (!labels.length) return true;
+        let minX = 0, minY = 0, maxX = SIZE, maxY = SIZE, measured = false;
+        labels.forEach((t) => {
+          let b;
+          try { b = t.getBBox(); } catch (_) { return; }
+          if (!b || !b.width) return;
+          measured = true;
+          minX = Math.min(minX, b.x);
+          maxX = Math.max(maxX, b.x + b.width);
+          minY = Math.min(minY, b.y);
+          maxY = Math.max(maxY, b.y + b.height);
+        });
+        if (!measured) return false;
+        spreadLabels(svg);
+        labels.forEach((t) => {
+          let b;
+          try { b = t.getBBox(); } catch (_) { return; }
+          if (!b || !b.width) return;
+          minX = Math.min(minX, b.x);
+          maxX = Math.max(maxX, b.x + b.width);
+          minY = Math.min(minY, b.y);
+          maxY = Math.max(maxY, b.y + b.height);
+        });
+        const pad = 3;
+        svg.setAttribute('viewBox', [
+          f(minX - pad), f(minY - pad),
+          f(maxX - minX + pad * 2), f(maxY - minY + pad * 2),
+        ].join(' '));
+        return true;
+      }
+
+      /* Lay the labels back on their ring and measure the whole thing again.
+         Every push is re-derived from scratch, so repeated calls settle on the
+         same answer instead of walking the labels further out each time. */
+      function refit(radar) {
+        const svg = radar && radar._paSvg;
+        if (!svg) return false;
+        svg.querySelectorAll('.pa-axis-label').forEach((t) => {
+          placeLabel(t, parseFloat(t.dataset.paAng), 0);
+        });
+        return fitViewBox(svg);
+      }
+
       function convert(radar) {
         if (!radar || radar.dataset.polar === '1') return false;
         const axes = readAxes(radar);
@@ -3960,13 +4064,27 @@
         const { svg, wedges } = buildSvg(axes);
         radar.innerHTML = '';
         radar.appendChild(svg);
+        radar._paSvg = svg;
+        radar._paFitted = refit(radar);
+        /* The first measurement can land before the brand webfont does, and
+           every one of these boxes is a text measurement — so measure again
+           once the real font is in. */
+        if (document.fonts && document.fonts.ready) {
+          document.fonts.ready.then(() => { radar._paFitted = refit(radar); });
+        }
         radar.appendChild(buildBars(axes));
         radar._paWedges = wedges;
         radar._paAxes = axes;
         recolorLegend(radar);
         if (window.IntersectionObserver) {
           const io = new IntersectionObserver((entries) => {
-            entries.forEach((en) => { if (en.isIntersecting) { animate(wedges, 1200); io.disconnect(); } });
+            entries.forEach((en) => {
+              if (!en.isIntersecting) return;
+              /* Now it is on screen, so it can be measured. */
+              if (!radar._paFitted) radar._paFitted = refit(radar);
+              animate(wedges, 1200);
+              io.disconnect();
+            });
           }, { threshold: 0.35 });
           io.observe(radar);
         } else {
@@ -6255,8 +6373,12 @@
       display: inline-flex; align-items: center; justify-content: center;
       background: var(--primary-soft); color: var(--primary);
       font-size: 11px; font-weight: 800; letter-spacing: .02em;
+      overflow: hidden;
     }
     html.dark .attb-avatar { color: var(--primary-bright, var(--primary)); }
+    .attb-avatar--logo { background: #fff; border: 1px solid var(--border); }
+    .attb-avatar--logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .attb-brand { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
 
     .attb-stack { display: inline-flex; flex-direction: column; gap: 1px; min-width: 0; }
     .attb-stack-t { font-weight: 700; color: var(--text); line-height: 1.35; }

@@ -254,13 +254,10 @@
     #wa-chat .fl-input::placeholder { color: var(--primary); opacity: 1; }
     html.dark #wa-chat .fl-input::placeholder { color: var(--primary-bright, #8B9FAF); }
 
-    /* Center the large welcome cards (and intent chips). The shared rule gives
-       these blocks width:100%, so on the full-width WISEcodeAI surface they stretch
-       edge-to-edge and the cards left-float. Let the card cluster shrink to its
-       content and center it (the welcome column is already align-items:center);
-       the max-width fits the full set on wide screens. Welcome chips clamp to
-       two wrapping rows with a trailing "Show more" chip for the rest. */
-    #wa-chat .sc-welcome > .ws-scorecards-section,
+    /* Center the small intent chips. The large overview cards are a full-bleed
+       carousel (shared .sc-welcome > .ws-scorecards-section) — do not pin them
+       to this column. Welcome chips clamp to two wrapping rows with a trailing
+       "Show more" chip for the rest. */
     #wa-chat .sc-welcome > .ws-chips-wrap,
     #wa-chat .sc-welcome > .ws-chips {
       width: auto;
@@ -6182,6 +6179,14 @@
         conversation: snap.conversation,
       });
       if (rec) el.dataset.rptId = rec.id;
+      /* The report the member just composed belongs on the Library shelf with
+         everything else it came from, not only in the report picker. */
+      fileOutputToLibrary('report', (rec && rec.id) || snap.title, {
+        icon: 'description',
+        title: snap.title,
+        meta: snap.items.length + (snap.items.length === 1 ? ' output' : ' outputs'),
+        html: paneBody.report.innerHTML,
+      });
     }
     function openReportPane(blocks) {
       const el = paneEl.report;
@@ -6439,6 +6444,31 @@
     }
 
     /* Best-effort conversation title from the first thing you asked. */
+    /* Every output a turn produced files itself onto the WISEcodeAI Library
+       shelf, alongside the conversation that produced it, so the Library holds
+       the whole of the work and not just the threads. Re-surfacing an output
+       (a redo, a renamed report) updates that output's own card rather than
+       stacking a second one, because the version key is its identity.
+
+       The artifact's own markup travels with the card, so opening it from the
+       Library shows the real chart or table rather than a stand-in. */
+    function fileOutputToLibrary(kind, key, out) {
+      const store = window.WiseLibraryStore;
+      if (!store || typeof store.fileOutput !== 'function') return;
+      try {
+        store.fileOutput({
+          kind,
+          key,
+          icon: out.icon,
+          title: out.title,
+          meta: out.meta,
+          html: out.html,
+          previewHtml: out.html,
+          conversation: conversationTitle(),
+        });
+      } catch (_) { /* the shelf is never worth breaking a turn over */ }
+    }
+
     function conversationTitle() {
       const firstYou = host && host.querySelector('.sc-line-you .sc-line-body');
       if (firstYou) {
@@ -8258,16 +8288,42 @@
       const fs = plan.fs;
       const raw = String(label || '');
       const tip = `<title>${esc(raw)}</title>`;
+      const key = ` data-axis-label="${esc(raw)}"`;
       if (plan.mode === 'wrap') {
         const pair = waChartWrapPair(raw, slotW, fs);
         if (pair) {
-          return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="var(--text-muted)">${tip}<tspan x="${x.toFixed(1)}" dy="0">${esc(pair.a)}</tspan><tspan x="${x.toFixed(1)}" dy="${fs + 2}">${esc(pair.b)}</tspan></text>`;
+          return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="var(--text-muted)"${key}>${tip}<tspan x="${x.toFixed(1)}" dy="0">${esc(pair.a)}</tspan><tspan x="${x.toFixed(1)}" dy="${fs + 2}">${esc(pair.b)}</tspan></text>`;
         }
       }
       if (plan.mode === 'tilt') {
-        return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="end" font-size="${fs}" font-weight="700" fill="var(--text-muted)" transform="rotate(${plan.angle} ${x.toFixed(1)} ${y.toFixed(1)})">${tip}${esc(raw)}</text>`;
+        return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="end" font-size="${fs}" font-weight="700" fill="var(--text-muted)" transform="rotate(${plan.angle} ${x.toFixed(1)} ${y.toFixed(1)})"${key}>${tip}${esc(raw)}</text>`;
       }
-      return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="var(--text-muted)">${tip}${esc(raw)}</text>`;
+      return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="var(--text-muted)"${key}>${tip}${esc(raw)}</text>`;
+    }
+
+    /* Read an axis label back off a rendered chart.
+       An axis <text> holds its own tooltip and, when it wrapped, a line per
+       tspan — so `textContent` reads the label two or three times over
+       ("Minimally ProcessedMinimallyProcessed"), and that doubled string was
+       what the chart-type switcher replotted from. The label is stamped on the
+       node for exactly this, and this is the only way to ask for it. */
+    function waChartLabelText(el) {
+      if (!el) return '';
+      const stamped = el.getAttribute && el.getAttribute('data-axis-label');
+      if (stamped != null) return stamped.trim();
+      const tip = el.querySelector && el.querySelector('title');
+      if (tip) return (tip.textContent || '').trim();
+      return (el.textContent || '').trim();
+    }
+    /* How wide a label actually paints under a given plan. A wrapped label is
+       only as wide as its widest line, not as its whole string. */
+    function waChartLabelW(label, plan, slotW) {
+      const raw = String(label || '');
+      if (plan.mode === 'wrap') {
+        const pair = waChartWrapPair(raw, slotW, plan.fs);
+        if (pair) return pair.max;
+      }
+      return waChartEstTextW(raw, plan.fs);
     }
     function waChartValueLabel(text, x, y, slotW, fs) {
       const raw = String(text);
@@ -8275,18 +8331,89 @@
       while (size > 9 && waChartEstTextW(raw, size) > slotW - 2) size -= 1;
       return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" font-size="${size}" font-weight="800" fill="var(--text)" data-countup>${esc(raw)}</text>`;
     }
-    function waChartRadarLabel(label, x, y, anchor) {
-      const raw = String(label || '');
-      const words = raw.trim().split(/\s+/);
-      const xx = Number(x).toFixed(1);
-      const yy = Number(y).toFixed(1);
-      if (words.length >= 2 && raw.length > 14) {
-        const mid = Math.ceil(words.length / 2);
-        const a = words.slice(0, mid).join(' ');
-        const b = words.slice(mid).join(' ');
-        return `<text x="${xx}" y="${yy}" text-anchor="${anchor}" class="cmp-radar-label"><title>${esc(raw)}</title><tspan x="${xx}" dy="0">${esc(a)}</tspan><tspan x="${xx}" dy="13">${esc(b)}</tspan></text>`;
-      }
-      return `<text x="${xx}" y="${yy}" text-anchor="${anchor}" class="cmp-radar-label"><title>${esc(raw)}</title>${esc(raw)}</text>`;
+    /* ── Spider geometry ────────────────────────────────────────────────────
+       A spider hangs its labels outside its outermost ring, so the box has to
+       be sized to the labels and not to the web. On a fixed 300-unit square
+       "Super Ultra-Processed" ran a couple of hundred pixels past the card and
+       out over the chat, because the anchor sat at 1.2 radii and the text just
+       kept going.
+
+       So lay the labels out first: wrap each one to two lines where a single
+       line is wider than the web, measure the room it needs on its own side of
+       the anchor, and hand back a viewBox grown to hold every one of them with
+       the web still full size in the middle. Nothing is clipped and nothing
+       paints outside its own chart, at any width the card is given — the box
+       scales as a whole, so the labels shrink with the web rather than
+       overrunning it.
+
+       Both spiders on this page lay out through here. */
+    const WA_RADAR_RING = 1.16;          /* label anchor, in web radii */
+
+    function waRadarLayout(labels, opts) {
+      const o = opts || {};
+      const R = o.R || 92;
+      const fs = o.fs || 10;
+      const lh = fs + 3;
+      const list = (labels || []).map((l) => String(l == null ? '' : l).trim());
+      const M = Math.max(1, list.length);
+      const ang = (i) => (Math.PI * 2 * i) / M - Math.PI / 2;
+      /* The web's own diameter is as much width as one label may ask for. */
+      const maxW = R * 1.5;
+      const laid = list.map((raw, i) => {
+        let lines = [raw];
+        if (waChartEstTextW(raw, fs) > maxW) {
+          const pair = waChartWrapPair(raw, maxW + 2, fs);
+          if (pair) lines = [pair.a, pair.b];
+        }
+        const n = lines.length;
+        const w = lines.reduce((m, l) => Math.max(m, waChartEstTextW(l, fs)), 0);
+        const c = Math.cos(ang(i));
+        const s = Math.sin(ang(i));
+        const anchor = Math.abs(c) < 0.2 ? 'middle' : (c > 0 ? 'start' : 'end');
+        const ax = R * WA_RADAR_RING * c;
+        const ay = R * WA_RADAR_RING * s;
+        /* A label above the web hangs its last line on the anchor, one below
+           drops from it, one beside it straddles it. */
+        const base = s < -0.2 ? ay - 3 - (n - 1) * lh
+          : s > 0.2 ? ay + 3 + fs * 0.8
+          : ay + fs * 0.36 - ((n - 1) * lh) / 2;
+        const left = anchor === 'middle' ? ax - w / 2 : (anchor === 'start' ? ax : ax - w);
+        return {
+          raw, lines, anchor, ax, base,
+          left, right: left + w,
+          top: base - fs * 0.8, bottom: base + (n - 1) * lh + fs * 0.25,
+        };
+      });
+      const pad = 3;
+      const minX = Math.min(-R, ...laid.map((l) => l.left)) - pad;
+      const maxX = Math.max(R, ...laid.map((l) => l.right)) + pad;
+      const minY = Math.min(-R, ...laid.map((l) => l.top)) - pad;
+      const maxY = Math.max(R, ...laid.map((l) => l.bottom)) + pad;
+      const cx = -minX;
+      const cy = -minY;
+      return {
+        R, fs, lh, cx, cy,
+        W: maxX - minX,
+        H: maxY - minY,
+        ang,
+        pt: (i, t) => [cx + R * t * Math.cos(ang(i)), cy + R * t * Math.sin(ang(i))],
+        labels: laid.map((l) => ({ ...l, x: cx + l.ax, y: cy + l.base })),
+      };
+    }
+
+    function waRadarLabelsSvg(layout) {
+      return layout.labels.map((l) => {
+        const x = l.x.toFixed(1);
+        const body = l.lines.length > 1
+          ? l.lines.map((t, i) => `<tspan x="${x}" dy="${i ? layout.lh : 0}">${esc(t)}</tspan>`).join('')
+          : esc(l.lines[0]);
+        /* No <title> here: the label is drawn whole, wrapped rather than
+           trimmed, so a tooltip would only repeat what is already on screen —
+           and a <title> inside a <text> reads back as a second copy of the
+           label to anything that asks the node for its text. */
+        return `<text x="${x}" y="${l.y.toFixed(1)}" text-anchor="${l.anchor}" class="cmp-radar-label"`
+          + ` font-size="${layout.fs}" data-axis-label="${esc(l.raw)}">${body}</text>`;
+      }).join('');
     }
 
     /* Single-series vertical count columns (y-axis in food counts). */
@@ -8930,10 +9057,6 @@
 
     /* ── Charts ── */
     function radarChart() {
-      // Square viewBox with generous margin so the outer labels (left/right)
-      // never clip. R is kept well inside the box; labels sit just outside the
-      // outer ring. Modeled on the product-comparison spider chart.
-      const size = 300, cx = size / 2, cy = size / 2, R = size / 2 - 62;
       // Five metrics laid out evenly. Only WISEscore returned values for this
       // set; the rest came back empty, so their spokes are drawn dashed.
       const axes = [
@@ -8943,12 +9066,14 @@
         { label: 'Additive Load', data: false },
         { label: 'Excellent Source', data: false },
       ];
-      const M = axes.length;
-      const ang = (i) => (Math.PI * 2 * i) / M - Math.PI / 2;
-      const pt = (i, t) => [cx + R * t * Math.cos(ang(i)), cy + R * t * Math.sin(ang(i))];
+      // The box is sized to the labels by the shared spider layout, so
+      // "Excellent Source" cannot run off the side of the card.
+      const L = waRadarLayout(axes.map((a) => a.label), { R: 88 });
+      const cx = L.cx, cy = L.cy, pt = L.pt;
+      const svgW = Math.round(L.W);
       const ptsAt = (t) => axes.map((_, i) => pt(i, t).map((v) => v.toFixed(1)).join(',')).join(' ');
 
-      let svg = `<svg viewBox="0 0 ${size} ${size}" width="100%" class="wa-radar-svg" style="max-width:300px;display:block;margin:0 auto" role="img" aria-label="Spider chart of the 10 worst foods across five health metrics">`;
+      let svg = `<svg viewBox="0 0 ${L.W.toFixed(1)} ${L.H.toFixed(1)}" width="100%" class="wa-radar-svg" style="max-width:${svgW}px;display:block;margin:0 auto" role="img" aria-label="Spider chart of the 10 worst foods across five health metrics">`;
       // rings
       [0.25, 0.5, 0.75, 1].forEach((t) => {
         svg += `<polygon points="${ptsAt(t)}" fill="none" stroke="var(--border-strong)" stroke-width="1" opacity="0.7"/>`;
@@ -8956,7 +9081,7 @@
       // spokes
       axes.forEach((a, i) => {
         const [x, y] = pt(i, 1);
-        svg += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--border-strong)" stroke-width="1" ${a.data ? '' : 'stroke-dasharray="4 4"'} opacity="0.8"/>`;
+        svg += `<line x1="${cx.toFixed(1)}" y1="${cy.toFixed(1)}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--border-strong)" stroke-width="1" ${a.data ? '' : 'stroke-dasharray="4 4"'} opacity="0.8"/>`;
       });
       // spread of the 10 normalized WISEscores along the data axis
       const scores = WORST_FOODS.slice(0, 10).map((r) => r[2]);
@@ -8971,12 +9096,7 @@
         const [x, y] = pt(0, norm(s));
         svg += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.2" fill="var(--primary)"/>`;
       });
-      // axis labels
-      axes.forEach((a, i) => {
-        const [x, y] = pt(i, 1.2);
-        const anchor = Math.abs(x - cx) < 6 ? 'middle' : x > cx ? 'start' : 'end';
-        svg += waChartRadarLabel(a.label, x, y + 4, anchor);
-      });
+      svg += waRadarLabelsSvg(L);
       svg += `</svg>`;
 
       const scoreBars = pctBars(WORST_FOODS.slice(0, 10).map((r) => ({
@@ -8989,7 +9109,7 @@
         <div class="wa-block">
           <div class="wa-chart-card">
             <div class="wa-radar-wrap">
-              <div style="align-self:center;width:100%;max-width:300px">${svg}</div>
+              <div style="align-self:center;width:100%;max-width:${svgW}px">${svg}</div>
               <div class="wa-radar-scores">
                 <div style="margin-bottom:8px"><span class="wa-nd-tag">No data</span> <span style="font-size:11px;color:var(--text-muted)">Gut Health, Immune Support, Additive Load &amp; Excellent Source came back empty across the set.</span></div>
                 ${scoreBars}
@@ -12606,6 +12726,11 @@
       });
       SURFACED[blockId] = { which, title, meta, icon, html: tagged, versionKey: key };
       addManifestOutput({ blockId, which, icon, title });
+      /* An output that reads as a written report files as one; charts, tables
+         and boards file as dashboards. The icon the turn chose is the tell. */
+      const filedKind = /^(summarize|description|article|lab_profile)$/.test(icon || '')
+        ? 'report' : 'dashboard';
+      fileOutputToLibrary(filedKind, key, { icon, title, meta, html: previewHtml });
       /* A host can keep a block out of the transcript (no chip) while still
          writing it into its pane. Atlas no longer uses this: all ten of its
          outputs are chips on the same portrait rail. */
@@ -12852,7 +12977,7 @@
         const labelFloor = vbH * 0.8;
         const groupLabels = texts.filter((t) => {
           const y = parseFloat(t.getAttribute('y') || '0');
-          return y > labelFloor && /[A-Za-z]/.test(t.textContent || '');
+          return y > labelFloor && /[A-Za-z]/.test(waChartLabelText(t));
         });
         if (legendKeys.length >= 2 && groupLabels.length >= 2) {
           const series = legendKeys.map((k) => ({
@@ -12868,7 +12993,7 @@
               const fromText = nxt && nxt.tagName === 'text' ? waChartNum(nxt.textContent) : NaN;
               vals.push(!isNaN(fromText) ? fromText : (r ? parseFloat(r.getAttribute('height')) || 0 : 0));
             }
-            return { label: lab.textContent.trim(), vals };
+            return { label: waChartLabelText(lab), vals };
           });
           if (groups.length >= 2) return { kind: 'grouped', native: 'columns', series, groups };
         }
@@ -12877,7 +13002,7 @@
             const nxt = r.nextElementSibling;
             const display = (nxt && nxt.tagName === 'text') ? nxt.textContent.trim() : '';
             return {
-              label: groupLabels[i].textContent.trim(),
+              label: waChartLabelText(groupLabels[i]),
               value: waChartNum(display),
               display,
               color: r.getAttribute('fill') || '',
@@ -12964,22 +13089,19 @@
     }
 
     function waChartSpider(axes, seriesList) {
-      const size = 300, cx = size / 2, cy = size / 2, R = size / 2 - 58;
       const M = axes.length;
-      const ang = (i) => (Math.PI * 2 * i) / M - Math.PI / 2;
-      const pt = (i, t) => [cx + R * t * Math.cos(ang(i)), cy + R * t * Math.sin(ang(i))];
+      const L = waRadarLayout(axes.map((a) => a.label), { R: 92, fs: M >= 7 ? 9 : 10 });
+      const cx = L.cx, cy = L.cy, pt = L.pt;
       const ptsAt = (t) => axes.map((_, i) => pt(i, t).map((v) => v.toFixed(1)).join(',')).join(' ');
-      let svg = `<svg viewBox="0 0 ${size} ${size}" width="100%" class="cmp-radar-svg" style="max-width:320px;display:block;margin:0 auto" role="img" aria-label="Spider chart">`;
+      let svg = `<svg viewBox="0 0 ${L.W.toFixed(1)} ${L.H.toFixed(1)}" width="100%" class="cmp-radar-svg" style="max-width:${Math.round(L.W)}px;display:block;margin:0 auto" role="img" aria-label="Spider chart">`;
       [0.25, 0.5, 0.75, 1].forEach((t) => {
         svg += `<polygon points="${ptsAt(t)}" class="cmp-radar-ring" fill="none"/>`;
       });
       axes.forEach((a, i) => {
         const [x, y] = pt(i, 1);
-        svg += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" class="cmp-radar-spoke"/>`;
-        const [lx, ly] = pt(i, 1.22);
-        const anchor = Math.abs(lx - cx) < 8 ? 'middle' : lx > cx ? 'start' : 'end';
-        svg += waChartRadarLabel(a.label, lx, ly + 4, anchor);
+        svg += `<line x1="${cx.toFixed(1)}" y1="${cy.toFixed(1)}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" class="cmp-radar-spoke"/>`;
       });
+      svg += waRadarLabelsSvg(L);
       const allVals = seriesList.flatMap((s) => s.vals);
       const max = Math.max(1, ...allVals);
       seriesList.forEach((s, si) => {
@@ -12995,11 +13117,37 @@
     }
 
     function waChartParallel(axes, seriesList) {
-      const W = 560, padL = 28, padR = 28, padT = 16;
+      const W = 560, padT = 16;
       const plotH = 168;
       const n = axes.length;
-      const slotW = n <= 1 ? W - padL - padR : (W - padL - padR) / Math.max(1, n - 1);
-      const axis = waChartAxisPlan(axes.map((a) => a.label), slotW);
+      const labels = axes.map((a) => a.label);
+      /* Unlike a column chart, whose labels sit under a column with half a
+         slot of room either side, a parallel plot centres its label on the
+         axis line itself — and the first and last axes stand on the edge of
+         the plot. So the gutters have to hold half of those two labels, or
+         they paint outside the card. The gutters and the label plan size
+         against each other, which settles in a pass or two. */
+      let padL = 28, padR = 28, slotW = 0, axis = null;
+      for (let pass = 0; pass < 4; pass++) {
+        slotW = n <= 1 ? W - padL - padR : (W - padL - padR) / Math.max(1, n - 1);
+        axis = waChartAxisPlan(labels, slotW);
+        const room = (label, side) => {
+          const w = waChartLabelW(label, axis, slotW);
+          /* A tilted label runs down and to the left of its axis, so only the
+             left gutter has to hold it. */
+          if (axis.mode === 'tilt') {
+            return side < 0
+              ? Math.ceil(w * Math.cos(Math.abs(axis.angle) * Math.PI / 180)) + 4
+              : 28;
+          }
+          return Math.ceil(w / 2) + 4;
+        };
+        const l = Math.max(28, room(labels[0], -1));
+        const r = Math.max(28, room(labels[n - 1], 1));
+        if (l === padL && r === padR) break;
+        padL = l;
+        padR = r;
+      }
       const padB = axis.pad;
       const H = padT + plotH + padB;
       const x = (i) => padL + (n === 1 ? 0 : i * (W - padL - padR) / (n - 1));
@@ -14328,7 +14476,7 @@
         chipsFlow: 'wrap',
         inlineChips: true,
         persistChips: false,
-        cardsHiddenDefault: true,
+        cardsHiddenDefault: false,
         sourceLabel: '',
         statusLabel: 'WISEcodeAI is searching',
         /* Small animated "thinking" dots docked under the input that pulse while
@@ -14542,7 +14690,10 @@
         scorecards: {
           label: 'Start a conversation',
           cards: [
+            { variant: 'gold', large: true, icon: 'explore', pill: { tone: 'gold', icon: 'auto_stories', text: 'Walkthrough' }, title: 'Want a guide through the UI?', desc: 'A walkthrough of the product \u2014 and What can I ask? parked beside it, so you can steal prompts as you go.', action: 'Open the guide', intent: 'walkthrough' },
             { variant: 'welcome', icon: 'insights', title: 'Smarter decisions start here.', desc: 'Your whole brand in one read \u2014 WISEscore, coverage, flagged ingredients, and what to fix first.', action: 'Show me', intent: 'brandwelcome', ask: 'Welcome! Give me an overview of my entire brand.' },
+            { variant: 'welcome', chart: 'upf', icon: 'donut_large', pill: { tone: 'up', icon: 'verified', text: '92% Non-UPF' }, title: 'Your brand UPF', desc: 'The same Non-UPF read as Overview \u2014 22 of 24 analyzed products.', action: 'Open the overview', intent: 'brandwelcome', ask: 'Show me my brand UPF overview.' },
+            { variant: 'welcome', chart: 'pillars', icon: 'stacked_bar_chart', pill: { tone: 'up', icon: 'leaderboard', text: '79 Good' }, title: 'The three WISEscore pillars', desc: 'Nutrient quality, ingredient quality, and health outcomes \u2014 scored the way Overview does.', action: 'See the breakdown', intent: 'brand_pillars', ask: 'Break down my WISEscore pillars.' },
             { variant: 'metric', icon: 'leaderboard', pill: { tone: 'up', icon: 'north', text: 'Top 3' }, metric: '22,514', title: 'Top 3 brands, top-half WISEscore', desc: 'Brands with the most foods scoring 50 or higher.', action: 'Compare', intent: 'topbrands', ask: 'Create a comparison chart of the top three brands with more than 50 UPCs that are in the top half of the WISE score.' },
             { variant: 'metric', icon: 'inventory_2', pill: { tone: 'alert', icon: 'science', text: '46.9% UPF' }, metric: '1,874', title: 'Kraft SKUs and their UPF share', desc: 'Every Kraft product in the catalog, split by the WISEcode UPF verification.', action: 'Break it down', intent: 'kraft', ask: 'How many SKUs does Kraft have and what percent are ultra processed?' },
             { variant: 'metric', icon: 'verified', pill: { tone: 'alert', icon: 'warning', text: '81 unsafe' }, metric: '8,658', title: 'Ingredients with a GRAS status', desc: 'GRAS, Historical and Unclear \u2014 and the handful that came back Unsafe.', action: 'Count', intent: 'gras', ask: 'How many ingredients do we have some GRAS classification for?' },
@@ -14560,7 +14711,6 @@
             { variant: 'wiseai', icon: 'hub', title: 'Connect a data source', desc: 'Link Kroger, Instacart, USDA FoodData Central & more so WISEcodeAI can pull verified product data.', action: 'Connect', intent: 'connect_source' },
             { variant: 'metric', icon: 'outdoor_grill', pill: { tone: 'up', icon: 'north', text: 'Good' }, metric: '64', title: 'Build a gut-healthy brisket', desc: 'Run a brisket ingredient list through the WISEcode Gut Health code evaluation.', action: 'Build it', intent: 'brisket', ask: 'If I was to make a brisket, what ingredients would give the best gut-health score?' },
             { variant: 'wiseai', icon: 'pets', title: 'If I identified as a cat\u2026', desc: 'A quick, science-backed detour into feline nutrition \u2014 with proper footnotes & a peer-reviewed reference output.', action: 'Ask', intent: 'cat', ask: 'If I told you that I identified as a cat, what type of food would you feed me?' },
-            { variant: 'wiseai', icon: 'explore', title: 'Take a tour', desc: 'A quick guided walkthrough of WISEcodeAI — the panes, prompts & reports.', locked: true },
           ],
         },
         /* Do NOT surface anything on click — return false so the scripted reply

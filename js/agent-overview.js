@@ -1240,6 +1240,9 @@ async function setupWISEcodeAIDock() {
   let wiseai = null;
   try {
     wiseai = dockMod.mountWISEcodeAIDock(dock, { ...WISEAI_DOCK_PARITY, ...cfg });
+    /* The page hosting the dock can talk to it — the Library opens an archived
+       thread in this chat, and asks it about an artifact. */
+    window.__wiseaiDock = wiseai;
     injectWISEcodeAIHistoryMenuItem(dock);
     if (flowSpec && flowSpec.setChat && navFlowMod) flowSpec.setChat(navFlowMod)(wiseai);
     if (isDashboard && dashApi) dashApi.setDashChat(wiseai);

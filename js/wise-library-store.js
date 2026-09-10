@@ -1,12 +1,14 @@
 /**
  * WISEcodeAI Library store — the shelf on conversation-library.html.
  *
- * History already keeps every thread. File to Library copies the live
- * conversation onto the shared Library shelf so it shows up with reports,
- * dashboards, and the rest of the WISEcodeAI library — not only in the
- * History drawer.
+ * Everything a member produces lands here on its own: every finished
+ * conversation, every output a turn surfaced, and every report the builder
+ * composed. File to Library is still there for filing a thread into a chosen
+ * folder by hand, but nothing depends on the member remembering to press it.
  *
  *   WiseLibraryStore.fileCurrent({ chatHistory, messagesEl, historyKey, folderId })
+ *   WiseLibraryStore.autoFileCurrent({ chatHistory, messagesEl, historyKey })
+ *   WiseLibraryStore.fileOutput({ kind, key, title, meta, previewHtml, html })
  *   WiseLibraryStore.openFolderPicker(anchor, opts, onPick)
  *   WiseLibraryStore.list()
  *   WiseLibraryStore.get(id)
@@ -22,6 +24,13 @@
   var ITEMS_KEY = 'wise-lib-filed';
   var FOLDERS_KEY = 'wise-lib-folders';
   var MAX_ITEMS = 80;
+  /* An output's own markup is kept so the Library can show the real artifact
+     rather than a stand-in. Both halves are capped: the miniature that paints
+     the card thumb is small, the full copy the viewer opens is generous but
+     still bounded, and a shelf that outgrows its storage sheds the oldest
+     full copies before it sheds an item. */
+  var MAX_PREVIEW_CHARS = 4000;
+  var MAX_ART_CHARS = 24000;
   var CHANGE_EVENT = 'wise:library-change';
   /* Same palette History projects and the Library folder tiles cycle through. */
   var FOLDER_COLORS = ['#2F6DF6', '#12B981', '#F59E0B', '#EC4899', '#8B5CF6', '#06B6D4', '#EF4444', '#84CC16'];
@@ -37,11 +46,68 @@
     }
   }
 
+  /* Write the shelf, shedding weight rather than dropping the write. On a
+     full store the oldest artifacts give up their full copy first (the card
+     and its miniature survive, so the shelf still reads correctly); only if
+     that is not enough do the oldest items go. */
   function writeItems(items) {
-    try { global.localStorage.setItem(ITEMS_KEY, JSON.stringify(items)); } catch (_) {}
+    var attempt = items;
+    for (var pass = 0; pass < 4; pass++) {
+      try {
+        global.localStorage.setItem(ITEMS_KEY, JSON.stringify(attempt));
+        items = attempt;
+        break;
+      } catch (_) {
+        attempt = attempt.map(function (it, i) {
+          if (i < attempt.length / 2 || !it.html) return it;
+          var lite = {};
+          for (var k in it) { if (Object.prototype.hasOwnProperty.call(it, k)) lite[k] = it[k]; }
+          delete lite.html;
+          return lite;
+        });
+        if (pass >= 1) attempt = attempt.slice(0, Math.max(8, Math.floor(attempt.length / 2)));
+      }
+    }
     try {
       global.document.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: { items: items } }));
     } catch (_) {}
+  }
+
+  /* Close whatever a cut left hanging. Trimming to the last complete tag is
+     not enough on its own: the cut can still land inside an open element, and
+     an unclosed <svg> in particular drags the markup that follows it into
+     foreign content — which is how a capped chart ended up throwing a card's
+     own title and date out of the card. Re-serializing through the parser
+     closes every element the cut left open. */
+  function seal(html) {
+    var s = String(html == null ? '' : html);
+    if (!s) return s;
+    try {
+      var box = global.document.createElement('div');
+      box.innerHTML = s;
+      return box.innerHTML;
+    } catch (_) { return s; }
+  }
+
+  /* Trim back to the last closed tag, so a capped artifact is never cut
+     through the middle of one. */
+  function cap(html, n) {
+    var s = String(html == null ? '' : html);
+    if (s.length <= n) return s;
+    s = s.slice(0, n);
+    var lastClose = s.lastIndexOf('>');
+    var lastOpen = s.lastIndexOf('<');
+    return seal(lastOpen > lastClose ? s.slice(0, lastOpen) : s);
+  }
+
+  /* Some outputs are hosts that an engine fills in after the fact — a compare
+     board is an empty div until its engine renders into it. Keeping that shell
+     would give the shelf a card that opens onto nothing, so an artifact with no
+     readable substance is treated as no artifact at all: the card falls back to
+     its typed thumbnail and says plainly what it was. */
+  function hasSubstance(html) {
+    var text = String(html || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    return text.length >= 24;
   }
 
   function esc(s) {
@@ -163,14 +229,19 @@
       ? previewFromHtml(saved.html)
       : previewFromMessages(opts.messagesEl);
 
-    var paneTitle = detectTitle();
-    var title = clip(paneTitle || preview.you || priorTitle || (saved && saved.title) || 'Conversation', 90);
+    /* Name the card after what the member asked, not after whichever output
+       drawer happens to be open behind it. */
+    var title = clip(preview.you || priorTitle || (saved && saved.title) || detectTitle() || 'Conversation', 90);
     var historyKey = opts.historyKey || '';
     if (!historyKey && hist && typeof hist.storageKey === 'function') {
       try { historyKey = hist.storageKey() || ''; } catch (_) {}
     }
     var historyId = saved && saved.id ? saved.id : '';
-    var type = detectType();
+    /* A conversation files as a conversation. Which output pane happens to be
+       open while it files says nothing about the thread — the outputs file
+       themselves, as their own cards. A thread that reached for the MCP
+       server is the one exception, because that is a property of the thread. */
+    var type = opts.typeHint || (saved && saved.mcp ? 'mcp' : 'chat');
     var rec = {
       id: '',
       type: type,
@@ -179,7 +250,7 @@
       msgCount: snap.count,
       previewYou: preview.you,
       previewAi: preview.ai,
-      html: snap.html,
+      html: cap(snap.html, MAX_ART_CHARS),
       historyKey: historyKey,
       historyId: historyId,
       mcp: !!(saved && saved.mcp),
@@ -211,6 +282,78 @@
     writeItems(items);
     applyFolderChoice(rec.id, opts);
     return { ok: true, updated: false, item: rec };
+  }
+
+  /* Every finished conversation files itself. The member does not have to
+     remember to press anything — the Library is the record of the work, so a
+     thread that produced something must be findable there afterwards.
+
+     Re-filing the same thread updates its card in place (fileCurrent matches
+     on the history id), so a long conversation ends up as one growing card
+     rather than one card per turn. Identical content is skipped outright so
+     an unchanged thread cannot churn storage. */
+  var autoSigs = {};
+
+  function autoFileCurrent(opts) {
+    opts = opts || {};
+    var hist = opts.chatHistory || global.__wiseChatHistory || null;
+    var snap = snapshotMessages(opts.messagesEl);
+    if (!snap.html || snap.count < 2) return { empty: true };
+    var key = String(opts.historyKey || (hist && typeof hist.storageKey === 'function' ? hist.storageKey() : '') || 'chat');
+    var sig = snap.count + ':' + snap.html.length;
+    if (autoSigs[key] === sig) return { skipped: true };
+    autoSigs[key] = sig;
+    return fileCurrent({
+      chatHistory: hist,
+      messagesEl: opts.messagesEl,
+      historyKey: opts.historyKey,
+      typeHint: opts.typeHint
+    });
+  }
+
+  /* File an output — a chart, a table, a compare board, a composed report —
+     as its own card, with the real markup kept so the Library can open the
+     artifact itself rather than a picture of one.
+
+       kind        'dashboard' | 'report' | 'mcp' | 'ref'
+       key         stable identity; re-surfacing the same output (a redo, a
+                   renamed report) updates its card instead of stacking a new one
+       previewHtml the miniature the card thumb paints
+       html        the artifact the viewer opens */
+  function fileOutput(out) {
+    out = out || {};
+    var kind = out.kind || 'dashboard';
+    var key = String(out.key || out.title || '').trim();
+    if (!key) return { empty: true };
+    var outKey = kind + ':' + key;
+    var items = readItems();
+    var existing = null;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].outKey === outKey) { existing = items[i]; break; }
+    }
+    var full = out.html || out.previewHtml || '';
+    var mini = out.previewHtml || out.html || '';
+    var art = hasSubstance(full) ? cap(full, MAX_ART_CHARS) : '';
+    var thumb = hasSubstance(mini) ? cap(mini, MAX_PREVIEW_CHARS) : '';
+    var rec = {
+      id: existing ? existing.id : ('filed-out-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)),
+      type: kind,
+      outKey: outKey,
+      title: clip(out.title || 'Output', 120),
+      ts: Date.now(),
+      msgCount: 0,
+      meta: clip(out.meta || '', 90),
+      icon: out.icon || '',
+      conversation: clip(out.conversation || '', 90),
+      previewHtml: thumb,
+      html: art,
+      source: (global.location && global.location.pathname) || ''
+    };
+    if (existing) items = items.filter(function (it) { return it.id !== existing.id; });
+    items.unshift(rec);
+    if (items.length > MAX_ITEMS) items = items.slice(0, MAX_ITEMS);
+    writeItems(items);
+    return { ok: true, updated: !!existing, item: rec };
   }
 
   function applyFolderChoice(cardId, opts) {
@@ -293,23 +436,88 @@
     return null;
   }
 
-  function barsHtml() {
-    return '<div class="lib-bars"><i class="g" style="height:38%"></i><i class="g" style="height:64%"></i><i class="b" style="height:88%"></i><i class="g" style="height:52%"></i><i class="b" style="height:30%"></i><i class="g" style="height:70%"></i></div>';
+  /* A card's thumb has to look like the thing it opens, so two dashboards
+     filed minutes apart cannot read as the same card. Where the artifact's own
+     markup was kept, the thumb IS that artifact, shrunk. Where it was not, the
+     shape is drawn from the title, so it is at least stable and distinct. */
+  function hashOf(s) {
+    var h = 0;
+    s = String(s || '');
+    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+    return Math.abs(h);
   }
+
+  function barsHtml(seed) {
+    var h = hashOf(seed) || 7;
+    var out = '';
+    for (var i = 0; i < 6; i++) {
+      var pct = 26 + ((h >> (i * 3)) % 9) * 8;
+      out += '<i class="' + (i % 3 === 2 ? 'b' : 'g') + '" style="height:' + pct + '%"></i>';
+    }
+    return '<div class="lib-bars">' + out + '</div>';
+  }
+
+  function docHtml(seed) {
+    var h = hashOf(seed) || 3;
+    var rows = '';
+    for (var i = 0; i < 4; i++) rows += '<i style="width:' + (52 + ((h >> (i * 4)) % 6) * 8) + '%"></i>';
+    return '<div class="lib-doc"><b></b>' + rows + '<div class="lib-doc-strip">' + barsHtml(seed + 'x') + '</div></div>';
+  }
+
+  function mcpHtml(item) {
+    var tool = esc(clip(item.meta || item.title || 'wisecode.search', 34));
+    return '<div class="lib-mcpprev">' +
+      '<div class="lib-mcp-call"><span class="material-symbols-outlined">bolt</span>' + tool + '</div>' +
+      '<div class="lib-mcp-rows"><i></i><i></i><i></i><i></i></div>' +
+    '</div>';
+  }
+
+  function refHtml(item) {
+    return '<div class="lib-refprev">' +
+      '<div class="lib-ref-title">' + esc(clip(item.title || 'Reference', 70)) + '</div>' +
+      '<div class="lib-ref-by">' + esc(clip(item.previewYou || 'Source', 60)) + '</div>' +
+    '</div>';
+  }
+
+  /* The card is a link, so the miniature painted inside it must not carry a
+     link, button or field of its own. A nested <a> ends the card's anchor
+     where it appears, and everything after it — the title, the count, the
+     date — is parsed out of the card entirely. Flattening those to spans
+     keeps the picture and drops the illegal nesting. */
+  function inertHtml(html) {
+    return seal(String(html || '')
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<input\b[^>]*>/gi, '')
+      .replace(/<(a|button|select|textarea|form|label)\b/gi, '<span data-was="$1"')
+      .replace(/<\/(a|button|select|textarea|form|label)>/gi, '</span>'));
+  }
+
+  function liveHtml(html) {
+    return '<div class="lib-thumb-live"><div class="lib-thumb-live-in">' + inertHtml(html) + '</div></div>';
+  }
+
+  function badgeHtml(icon, label) {
+    return '<span class="lib-thumb-badge"><span class="material-symbols-outlined">' + icon + '</span>' + label + '</span>';
+  }
+
+  var TYPE_BADGE = {
+    dashboard: ['bar_chart', 'Dashboard'],
+    report: ['description', 'Report'],
+    mcp: ['dns', 'MCP'],
+    ref: ['bookmark', 'Reference']
+  };
 
   function thumbHtml(item) {
     var type = item.type || 'chat';
-    if (type === 'dashboard') {
-      return '<span class="lib-thumb-badge"><span class="material-symbols-outlined">bar_chart</span>Dashboard</span>' + barsHtml();
-    }
-    if (type === 'report') {
-      return '<span class="lib-thumb-badge"><span class="material-symbols-outlined">description</span>Report</span>' + barsHtml();
-    }
-    if (type === 'mcp') {
-      return '<span class="lib-thumb-badge"><span class="material-symbols-outlined">extension</span>MCP</span>' + barsHtml();
-    }
-    if (type === 'ref') {
-      return '<span class="lib-thumb-badge"><span class="material-symbols-outlined">bookmark</span>Reference</span>' + barsHtml();
+    var badge = TYPE_BADGE[type];
+    if (badge) {
+      var body = item.previewHtml
+        ? liveHtml(item.previewHtml)
+        : (type === 'report' ? docHtml(item.title)
+          : type === 'mcp' ? mcpHtml(item)
+          : type === 'ref' ? refHtml(item)
+          : barsHtml(item.title));
+      return badgeHtml(badge[0], badge[1]) + body;
     }
     var you = esc(item.previewYou || item.title || 'Conversation');
     var ai = esc(item.previewAi || 'Filed from WISEcodeAI.');
@@ -325,10 +533,14 @@
     var counts = count
       ? '<span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">chat_bubble</span>' + count + '</span></span>'
       : '';
-    return '<a class="lib-card" href="#" data-filed="1" data-lib-id="' + esc(item.id) + '">' +
+    var from = item.conversation
+      ? '<div class="lib-shared lib-from">From “' + esc(item.conversation) + '”</div>'
+      : '';
+    return '<a class="lib-card" href="#" data-filed="1" data-lib-type="' + esc(item.type || 'chat') +
+        '" data-lib-id="' + esc(item.id) + '">' +
       '<div class="lib-thumb pad">' + thumbHtml(item) + '</div>' +
       '<div class="lib-cbody">' +
-        '<div class="lib-cname">' + esc(item.title || 'Conversation') + '</div>' +
+        '<div class="lib-cname">' + esc(item.title || 'Conversation') + '</div>' + from +
         '<div class="lib-cfoot">' + counts + '<span class="lib-date">' + esc(date) + '</span></div>' +
       '</div>' +
     '</a>';
@@ -735,8 +947,11 @@
     CHANGE_EVENT: CHANGE_EVENT,
     FOLDER_COLORS: FOLDER_COLORS,
     fileCurrent: fileCurrent,
+    autoFileCurrent: autoFileCurrent,
+    fileOutput: fileOutput,
     fileReference: fileReference,
     findReference: findReference,
+    thumbHtml: thumbHtml,
     canFile: canFile,
     findByHistory: findByHistory,
     list: list,

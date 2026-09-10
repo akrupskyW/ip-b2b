@@ -30,6 +30,7 @@
   /* Numeral class  ->  clickable "card" ancestor that replays it on click. */
   var ENTRIES = [
     ['.ws-sc-metric', '.ws-scorecard'],
+    ['.ws-sc-chart-num', '.ws-scorecard'],
     ['.adm-stat-num', '.adm-stat'],
     ['.adm-vf-stat-num', '.adm-vf-stat'],
     ['.adm-donut-num', '.adm-chart-card'],

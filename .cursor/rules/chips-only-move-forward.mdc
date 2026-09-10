@@ -1,31 +1,33 @@
 ---
-description: A chip row the member has moved past goes disabled — a transcript only moves forward
+description: A chip row the member has moved past comes off the thread — a transcript only moves forward
 alwaysApply: true
 ---
 
 # Intent Chips Only Move Forward
 
 A transcript is a path, not a menu. Once the member has moved past a row of
-intent chips, that row is **history**: every chip in it goes disabled and
-takes no click. Only the newest row — the one that carries the conversation
-forward — is live. This is app-wide and permanent.
+intent chips, that row is **history** and it leaves the thread: it fades,
+collapses, and is removed. Only the newest row — the one that carries the
+conversation forward — is on screen at all. This is app-wide and permanent.
 
 ## What this means on the surface
 
-- Tap a chip → the turn plays, and the row you tapped is now dimmed and inert.
-- Scroll back three turns → those chips read as disabled. Hovering does
-  nothing, tapping does nothing, Tab skips them.
-- The row trailing the newest answer is the only one you can act on.
+- Tap a chip → the turn plays, and the row you tapped fades out and is gone.
+- Scroll back three turns → the answers are all still there, and so is every
+  output they produced. The chip rows that led between them are not.
+- The row trailing the newest answer is the only one there is.
 - One step can own several rows. The signup multi-select posts its
   suggestions and its Continue / Skip controls as two rows, and the portfolio
   posts its report scopes as three — a run of **adjacent sibling** rows is one
-  step and stays live together.
+  step, and the whole run stays until the member leaves the step.
 
-## What is never locked
+## What is never removed
 
 - **Output chips**, preview cards, version thumbnails, citation markers, and
   anything else that opens a module. An output the member never opened must
-  still open three turns later — see the outputs-open-on-request rule.
+  still open three turns later — see the outputs-open-on-request rule. A row
+  holding one of these **stays on the thread**, dimmed, with only its intents
+  dead; it is the one case where the old disabled look is still what you see.
 - **`.sc-inline-chips`**, the shared row the chat re-parks at the end of the
   thread after every reply. It is a single element that moves, so it is the
   live row by construction.
@@ -36,20 +38,37 @@ forward — is live. This is app-wide and permanent.
 Shared module: `js/chip-lock.js`, injected from `js/agent-menu.js` on every
 page that renders the WISE nav, and loaded directly by `create-account.html`
 (no nav). It watches every transcript (`.chat-messages-area` / `#chat-messages`)
-and stamps `data-chips-spent` on each spent row; `pages/wise.css` gives that
-attribute the disabled look in both themes. Locking is sticky — transcripts
-only grow, and a thread saved to history restores in the state it was saved in.
+and stamps `data-chips-spent` on each spent row, then hands the row to
+`retire()`, which stamps `data-chips-gone` and drops it once the fade and
+collapse in `pages/wise.css` have run. A row matching `KEEP_SEL` is never
+retired, and keeps the disabled look instead. Under
+`prefers-reduced-motion: reduce` the row goes at once, unanimated.
+
+The height a row collapses from is measured in JS and written inline — CSS
+cannot know it. A removal timer backs the transition up so a transition that
+never reports finished cannot strand a dead row on the thread.
 
 A row is spent when the member has said something beneath it (a `.sc-line-you`
-landed below) or a newer chip row has arrived beneath it.
+landed below) or a newer chip row has arrived beneath it. This is one-way:
+transcripts only grow, and a thread saved to history restores in the state it
+was saved in.
 
 ## Rules for the agent
 
-- Never re-enable a past chip row, and never add a "replay this step" path.
+- Never bring a past chip row back, and never add a "replay this step" path.
 - Do not fork this per page. A host that knows it has just left every open
   step calls `WiseChipLock.lockPrior(messagesEl)`; everything else is handled
   by the observer — see the nothing-page-local rule.
 - A new chip-row class must be added to `ROW_SEL` in `js/chip-lock.js`, not
   handled with a page-local disabler.
-- If a new control genuinely must stay tappable forever, add it to `KEEP_SEL`
-  — do not opt the whole row out.
+- If a new control genuinely must stay tappable forever, add it to `KEEP_SEL`.
+  That also keeps its row on the thread — do not opt the whole row out.
+- A host must not hold a reference to a chip row across turns. Query for the
+  last matching row when you need it; the earlier ones are gone.
+
+## Verify
+
+`scripts/_chip_lock_probe.py` drives two real turns and checks that every row
+the member tapped through is off the thread, that the newest row is live, and
+that the outputs the turns surfaced are all still openable.
+`scripts/_chip_lock_shot.py` clips the thread in either theme.

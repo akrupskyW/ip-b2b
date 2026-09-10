@@ -942,6 +942,11 @@
       };
       applyMeta(item);
       pendingProjectId = null;
+      /* The live thread *is* this item from here on. Without claiming it, every
+         later save of the same conversation writes another entry, and one
+         thread that saves itself each turn becomes a column of duplicates in
+         both the history rail and the Library. markNew() clears the claim. */
+      activeId = item.id;
       items.unshift(item);
       if (items.length > MAX_ITEMS) items = items.slice(0, MAX_ITEMS);
       writeStore();

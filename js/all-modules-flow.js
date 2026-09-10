@@ -825,7 +825,7 @@ const TABLE_CATALOG = [
   /* Portfolio */
   { label: 'Portfolio · Claimed', href: 'product-portfolio.html', hash: 'pf-view-claimed', selector: '.pf-table--claimed', icon: 'inventory_2', area: 'portfolio', areaTitle: 'Portfolio', desc: 'Claimed SKUs with compliance and ingredient health.' },
   { label: 'Portfolio · Discovered', href: 'product-portfolio.html', hash: 'pf-view-discovered', selector: '.pf-table--discovered', icon: 'travel_explore', area: 'portfolio', areaTitle: 'Portfolio', desc: 'Auto-discovered UPCs waiting to be claimed.' },
-  { label: 'Portfolio · Needs info', href: 'product-portfolio.html', hash: 'pf-view-needsinfo', selector: '.pf-table--needsinfo', icon: 'help', area: 'portfolio', areaTitle: 'Portfolio', desc: 'Products missing data before they can be verified.' },
+  { label: 'Portfolio · In Progress', href: 'product-portfolio.html', hash: 'pf-view-needsinfo', selector: '.pf-table--needsinfo', icon: 'help', area: 'portfolio', areaTitle: 'Portfolio', desc: 'Products still in progress before they can be verified.' },
   { label: 'Product Comparison', href: 'product-comparison.html', page: 'Product Comparison', selector: '.cmp-grid', icon: 'compare', area: 'portfolio', areaTitle: 'Portfolio', desc: 'Side-by-side attribute matrix for two products.' },
 
   /* WISEcodeAI Studio */

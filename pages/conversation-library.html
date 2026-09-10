@@ -345,7 +345,7 @@
     .lib-clip { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
     .lib-thumb-badge {
-      position: absolute; top: 9px; left: 10px;
+      position: absolute; top: 9px; left: 10px; z-index: 2;
       display: inline-flex; align-items: center; gap: 4px;
       padding: 2px 8px; border-radius: 999px;
       font-size: 0.625rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
@@ -373,6 +373,201 @@
       font-size: 0.75rem; font-weight: 600; color: var(--text-subtle);
     }
     .lib-count .material-symbols-outlined { font-size: 14px !important; }
+    /* Which conversation an output came out of. */
+    .lib-from { font-style: italic; }
+
+    /* ---- Live thumb — an output that kept its own markup is previewed as
+       itself, shrunk, rather than as a stand-in drawing of a chart. ---- */
+    .lib-thumb-live { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+    .lib-thumb-live-in {
+      width: 280%; padding: 14px;
+      transform: scale(0.357); transform-origin: top left;
+    }
+    .lib-thumb-live-in .wa-block-head,
+    .lib-thumb-live-in .wa-block-ver,
+    .lib-thumb-live-in .wa-block-tools { display: none; }
+
+    /* ---- Report thumb — a page of prose over a strip of chart. The top
+       inset clears the type badge, which sits over the same corner. ---- */
+    .lib-doc { display: flex; flex-direction: column; gap: 6px; height: 100%; padding-top: 20px; }
+    .lib-doc > b { display: block; height: 7px; width: 62%; border-radius: 3px; background: color-mix(in srgb, var(--text) 42%, transparent); }
+    .lib-doc > i { display: block; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--text) 15%, transparent); }
+    .lib-doc-strip { flex: 1; min-height: 0; margin-top: 2px; }
+    .lib-doc-strip .lib-bars { gap: 5px; }
+
+    /* ---- MCP thumb — the tool that ran, over the rows it came back with ---- */
+    .lib-mcpprev { display: flex; flex-direction: column; gap: 8px; height: 100%; padding-top: 20px; }
+    .lib-mcp-call {
+      display: inline-flex; align-items: center; gap: 5px; align-self: flex-start;
+      max-width: 100%; padding: 3px 9px; border-radius: 999px;
+      font-family: 'DM Mono', ui-monospace, monospace; font-size: 0.625rem; font-weight: 500;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      color: var(--ter-amber-text); background: color-mix(in srgb, var(--ter-amber) 22%, transparent);
+      border: 1px solid color-mix(in srgb, var(--ter-amber) 45%, transparent);
+    }
+    .lib-mcp-call .material-symbols-outlined { font-size: 12px !important; }
+    .lib-mcp-rows { display: flex; flex-direction: column; gap: 6px; }
+    .lib-mcp-rows i { display: block; height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--text) 14%, transparent); }
+    .lib-mcp-rows i:nth-child(1) { width: 92%; }
+    .lib-mcp-rows i:nth-child(2) { width: 74%; }
+    .lib-mcp-rows i:nth-child(3) { width: 84%; }
+    .lib-mcp-rows i:nth-child(4) { width: 58%; }
+
+    /* ---- Reference thumb — the paper itself ---- */
+    .lib-refprev {
+      display: flex; flex-direction: column; gap: 7px; justify-content: center; height: 100%;
+      padding: 20px 0 0 10px; border-left: 3px solid color-mix(in srgb, var(--sec-red) 60%, transparent);
+    }
+    .lib-ref-title {
+      font-family: 'WISE Digits', 'Noto Serif', serif;
+      font-size: 0.75rem; font-weight: 700; line-height: 1.3; color: var(--text);
+      display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .lib-ref-by { font-size: 0.625rem; color: var(--text-subtle); line-height: 1.3;
+      display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+    /* ===================================================================
+       Item viewer — tapping a card opens the artifact that card is a picture
+       of. Chats go to the chat module (that is where a conversation lives);
+       everything else opens here, full size, with the actions that belong to
+       it. This is the member asking to see the output, so opening is right.
+    =================================================================== */
+    .lib-viewer { position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .lib-viewer[hidden] { display: none; }
+    .lib-viewer-scrim { position: absolute; inset: 0; background: rgba(16, 24, 44, 0.42); backdrop-filter: blur(2px); animation: libViewFade .18s ease; }
+    html.dark .lib-viewer-scrim { background: rgba(4, 8, 20, 0.62); }
+    @keyframes libViewFade { from { opacity: 0 } to { opacity: 1 } }
+    @keyframes libViewRise { from { opacity: 0; transform: translateY(10px) scale(.985) } to { opacity: 1; transform: none } }
+    .lib-viewer-sheet {
+      position: relative; display: flex; flex-direction: column;
+      width: min(920px, 100%); max-height: 100%;
+      background: var(--surface); color: var(--text);
+      border: 1px solid var(--border); border-radius: 18px;
+      box-shadow: 0 28px 70px rgba(16, 24, 44, 0.30); overflow: hidden;
+      animation: libViewRise .22s cubic-bezier(.2,.7,.3,1);
+    }
+    html.dark .lib-viewer-sheet { background: #1A2339; box-shadow: 0 28px 70px rgba(0,0,0,0.55); }
+    @media (prefers-reduced-motion: reduce) {
+      .lib-viewer-scrim, .lib-viewer-sheet { animation: none; }
+    }
+    .lib-viewer-head {
+      display: grid; grid-template-columns: 1fr auto; gap: 10px 16px; align-items: start;
+      padding: 18px 20px 14px; border-bottom: 1px solid var(--border);
+    }
+    .lib-viewer-eyebrow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+    .lib-viewer-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 9px; border-radius: 999px;
+      font-size: 0.625rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--text-muted); background: var(--surface-2); border: 1px solid var(--border);
+    }
+    .lib-viewer-badge .material-symbols-outlined { font-size: 12px !important; }
+    .lib-viewer-when { font-size: 0.75rem; color: var(--text-subtle); }
+    .lib-viewer-title {
+      margin: 0; font-family: 'WISE Digits', 'Noto Serif', serif;
+      font-size: 1.25rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.2; color: var(--text);
+    }
+    .lib-viewer-sub { margin: 6px 0 0; font-size: 0.8125rem; color: var(--text-muted); }
+    .lib-viewer-acts { display: flex; align-items: center; gap: 8px; }
+    .lib-viewer-close {
+      width: 32px; height: 32px; flex: 0 0 auto; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid var(--border); background: var(--surface-2);
+      color: var(--text-muted); cursor: pointer;
+    }
+    .lib-viewer-close:hover { background: var(--surface-3); color: var(--text); }
+    html.dark .lib-viewer-close { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
+    html.dark .lib-viewer-close:hover { background: rgba(255,255,255,0.10); }
+    .lib-viewer-close .material-symbols-outlined { font-size: 18px !important; }
+    .lib-viewer-body { padding: 20px; overflow-y: auto; }
+    .lib-viewer-foot {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      padding: 12px 20px 16px; border-top: 1px solid var(--border);
+    }
+    .lib-viewer-foot .lib-vbtn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border-radius: 999px; cursor: pointer;
+      font-family: inherit; font-size: 0.8125rem; font-weight: 700;
+      border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text-muted);
+    }
+    .lib-viewer-foot .lib-vbtn:hover { color: var(--text); border-color: var(--primary); }
+    html.dark .lib-viewer-foot .lib-vbtn { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
+    .lib-viewer-foot .lib-vbtn .material-symbols-outlined { font-size: 17px !important; }
+    .lib-viewer-foot .lib-vbtn--primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .lib-viewer-foot .lib-vbtn--primary:hover { color: #fff; filter: brightness(1.06); }
+    /* Primary controls carry the filled twin of their icon. */
+    .lib-viewer-foot .lib-vbtn--primary .material-symbols-outlined {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    /* ---- Artifact canvas — the output rendered at full size. Baseline type
+       for artifact markup that came from another surface, so a table or a
+       heading still reads correctly here. ---- */
+    .lib-art { display: flex; flex-direction: column; gap: 18px; }
+    .lib-art-lede { margin: 0; font-size: 0.9375rem; line-height: 1.6; color: var(--text-muted); }
+    .lib-art-lede strong { color: var(--text); font-weight: 700; }
+    .lib-art h3 {
+      margin: 0 0 10px; font-family: 'WISE Digits', 'Noto Serif', serif;
+      font-size: 0.9375rem; font-weight: 800; color: var(--text);
+    }
+    .lib-art-panel { padding: 16px 18px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-2); }
+    html.dark .lib-art-panel { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.10); }
+    .lib-art table, .lib-art .lib-tbl { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+    .lib-art th, .lib-art td { padding: 9px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+    .lib-art th {
+      font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--text-subtle);
+    }
+    .lib-art td { color: var(--text); }
+    .lib-art tr:last-child td { border-bottom: 0; }
+    .lib-art td.num, .lib-art th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .lib-art-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
+    .lib-art-kpi { padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); }
+    html.dark .lib-art-kpi { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.10); }
+    .lib-art-kpi b { display: block; font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.5rem; font-weight: 800; line-height: 1.1; color: var(--text); }
+    .lib-art-kpi span { display: block; margin-top: 4px; font-size: 0.75rem; color: var(--text-subtle); }
+    /* Full-size chart — the same bars the thumb showed, read at length. */
+    /* Columns stretch to the chart's own height — a bar sized in percent has
+       nothing to measure against inside a column that shrank to its labels. */
+    .lib-art-chart { display: flex; align-items: stretch; gap: 14px; height: 200px; padding-top: 6px; }
+    .lib-art-col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 7px; min-width: 0; }
+    .lib-art-col .bar { display: block; border-radius: 5px 5px 0 0; background: color-mix(in srgb, var(--sec-green) 78%, transparent); }
+    .lib-art-col.warn .bar { background: color-mix(in srgb, var(--ter-amber) 85%, transparent); }
+    .lib-art-col.brand .bar { background: color-mix(in srgb, var(--primary) 70%, transparent); }
+    .lib-art-col em {
+      font-style: normal; font-size: 0.6875rem; font-weight: 700; color: var(--text-subtle);
+      text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .lib-art-col i { font-style: normal; font-size: 0.6875rem; font-weight: 800; color: var(--text); text-align: center; }
+    .lib-art-code {
+      margin: 0; padding: 14px 16px; border-radius: 12px; overflow-x: auto;
+      font-family: 'DM Mono', ui-monospace, monospace; font-size: 0.75rem; line-height: 1.6;
+      color: var(--text); background: var(--surface-2); border: 1px solid var(--border);
+    }
+    html.dark .lib-art-code { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.10); }
+    .lib-art-code .k { color: var(--primary); font-weight: 600; }
+    html.dark .lib-art-code .k { color: var(--primary-bright); }
+    .lib-art-code .s { color: var(--sec-green); }
+    .lib-art-list { margin: 0; padding-left: 20px; font-size: 0.875rem; line-height: 1.7; color: var(--text-muted); }
+    .lib-art-list strong { color: var(--text); }
+    .lib-art-quote {
+      margin: 0; padding: 14px 18px; border-left: 3px solid color-mix(in srgb, var(--sec-red) 65%, transparent);
+      font-size: 0.875rem; line-height: 1.65; color: var(--text-muted); font-style: italic;
+    }
+    .lib-art-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .lib-art-tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 11px; border-radius: 999px;
+      font-size: 0.6875rem; font-weight: 700; color: var(--text-muted);
+      background: var(--surface-2); border: 1px solid var(--border);
+    }
+    html.dark .lib-art-tag { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
+    .lib-art-tag .material-symbols-outlined { font-size: 13px !important; }
+
+    @media (max-width: 640px) {
+      .lib-viewer { padding: 0; }
+      .lib-viewer-sheet { width: 100%; height: 100%; max-height: 100%; border-radius: 0; border: 0; }
+    }
 
     /* ===================================================================
        Folders — "special" score cards that sit in their own row below the
@@ -1015,11 +1210,11 @@
                      state as the funnel popover + the chat intent chips. -->
                 <div class="lib-stats-row lib-row-type" role="group" aria-label="Filter library by type">
                   <button type="button" class="lib-stat is-active" data-stat="type" data-val="all" aria-pressed="true">
-                    <span class="lib-stat-num">13</span>
+                    <span class="lib-stat-num">23</span>
                     <span class="lib-stat-label">All</span>
                   </button>
                   <button type="button" class="lib-stat t-report" data-stat="type" data-val="report" aria-pressed="false">
-                    <span class="lib-stat-num">0</span>
+                    <span class="lib-stat-num">4</span>
                     <span class="lib-stat-label"><span class="material-symbols-outlined">description</span>Reports</span>
                   </button>
                   <button type="button" class="lib-stat t-dashboard" data-stat="type" data-val="dashboard" aria-pressed="false">
@@ -1031,11 +1226,11 @@
                     <span class="lib-stat-label"><span class="material-symbols-outlined">forum</span>Chats</span>
                   </button>
                   <button type="button" class="lib-stat t-mcp" data-stat="type" data-val="mcp" aria-pressed="false">
-                    <span class="lib-stat-num">0</span>
-                    <span class="lib-stat-label"><span class="material-symbols-outlined">extension</span>MCP</span>
+                    <span class="lib-stat-num">3</span>
+                    <span class="lib-stat-label"><span class="material-symbols-outlined">dns</span>MCP</span>
                   </button>
                   <button type="button" class="lib-stat t-ref" data-stat="type" data-val="ref" aria-pressed="false">
-                    <span class="lib-stat-num">0</span>
+                    <span class="lib-stat-num">3</span>
                     <span class="lib-stat-label"><span class="material-symbols-outlined">bookmark</span>References</span>
                   </button>
                 </div>
@@ -1045,19 +1240,19 @@
                      so the grid always matches the count on the card clicked. -->
                 <div class="lib-stats-row lib-row-scope" role="group" aria-label="Filter library by scope and folder status">
                   <button type="button" class="lib-stat" data-stat="shared" data-val="with" aria-pressed="false">
-                    <span class="lib-stat-num">5</span>
+                    <span class="lib-stat-num">7</span>
                     <span class="lib-stat-label"><span class="material-symbols-outlined">group</span>Shared with me</span>
                   </button>
                   <button type="button" class="lib-stat" data-stat="shared" data-val="by" aria-pressed="false">
-                    <span class="lib-stat-num">0</span>
+                    <span class="lib-stat-num">3</span>
                     <span class="lib-stat-label"><span class="material-symbols-outlined">send</span>Shared by me</span>
                   </button>
                   <button type="button" class="lib-stat" data-stat="folder" data-val="filed" aria-pressed="false">
-                    <span class="lib-stat-num">0</span>
+                    <span class="lib-stat-num">9</span>
                     <span class="lib-stat-label"><span class="material-symbols-outlined">folder</span>Filed</span>
                   </button>
                   <button type="button" class="lib-stat" data-stat="folder" data-val="unfiled" aria-pressed="false">
-                    <span class="lib-stat-num">13</span>
+                    <span class="lib-stat-num">14</span>
                     <span class="lib-stat-label"><span class="material-symbols-outlined">folder_open</span>Unfiled</span>
                   </button>
                 </div>
@@ -1311,6 +1506,195 @@
                       </div>
                     </a>
 
+                    <!-- ==========================================================
+                         Reports, MCP results and references. Appended rather than
+                         interleaved: a card's id is its position in this shelf, and
+                         folders already filed by id would follow the wrong card if
+                         these landed in the middle. The grid sorts by date anyway.
+                    =========================================================== -->
+
+                    <!-- 14 · Report -->
+                    <a class="lib-card" href="#">
+                      <div class="lib-thumb pad">
+                        <span class="lib-thumb-badge"><span class="material-symbols-outlined">description</span>Report</span>
+                        <div class="lib-doc">
+                          <b></b><i style="width:90%"></i><i style="width:74%"></i><i style="width:83%"></i>
+                          <div class="lib-doc-strip"><div class="lib-bars"><i class="b" style="height:74%"></i><i class="g" style="height:46%"></i><i class="g" style="height:60%"></i><i class="b" style="height:88%"></i><i class="g" style="height:38%"></i></div></div>
+                        </div>
+                      </div>
+                      <div class="lib-cbody">
+                        <div class="lib-cname">Q3 ultra-processed exposure across the private label</div>
+                        <div class="lib-cfoot">
+                          <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">description</span>6</span></span>
+                          <span class="lib-date">Aug 12, 2026</span>
+                        </div>
+                      </div>
+                    </a>
+
+                    <!-- 15 · Report (shared by me) -->
+                    <a class="lib-card" href="#" data-shared="by">
+                      <div class="lib-thumb pad">
+                        <span class="lib-thumb-badge"><span class="material-symbols-outlined">description</span>Report</span>
+                        <div class="lib-doc">
+                          <b></b><i style="width:84%"></i><i style="width:92%"></i><i style="width:66%"></i>
+                          <div class="lib-doc-strip"><div class="lib-bars"><i class="g" style="height:52%"></i><i class="g" style="height:70%"></i><i class="b" style="height:34%"></i><i class="g" style="height:86%"></i><i class="g" style="height:58%"></i></div></div>
+                        </div>
+                      </div>
+                      <div class="lib-cbody">
+                        <div class="lib-cname">42 SKUs one reformulation away from non-UPF</div>
+                        <div class="lib-shared">Shared with the Reformulation team</div>
+                        <div class="lib-cfoot">
+                          <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">description</span>4</span></span>
+                          <span class="lib-date">Aug 9, 2026</span>
+                        </div>
+                      </div>
+                    </a>
+
+                    <!-- 16 · Report -->
+                    <a class="lib-card" href="#">
+                      <div class="lib-thumb pad">
+                        <span class="lib-thumb-badge"><span class="material-symbols-outlined">description</span>Report</span>
+                        <div class="lib-doc">
+                          <b></b><i style="width:78%"></i><i style="width:88%"></i><i style="width:70%"></i>
+                          <div class="lib-doc-strip"><div class="lib-bars"><i class="b" style="height:62%"></i><i class="b" style="height:80%"></i><i class="g" style="height:42%"></i><i class="g" style="height:54%"></i><i class="b" style="height:72%"></i></div></div>
+                        </div>
+                      </div>
+                      <div class="lib-cbody">
+                        <div class="lib-cname">Where Guiding Stars and WISEcode UPF disagree</div>
+                        <div class="lib-cfoot">
+                          <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">description</span>5</span></span>
+                          <span class="lib-date">Aug 7, 2026</span>
+                        </div>
+                      </div>
+                    </a>
+
+                    <!-- 17 · Report (shared with me) -->
+                    <a class="lib-card" href="#">
+                      <div class="lib-thumb pad">
+                        <span class="lib-thumb-badge"><span class="material-symbols-outlined">description</span>Report</span>
+                        <div class="lib-doc">
+                          <b></b><i style="width:92%"></i><i style="width:68%"></i><i style="width:80%"></i>
+                          <div class="lib-doc-strip"><div class="lib-bars"><i class="g" style="height:36%"></i><i class="g" style="height:64%"></i><i class="b" style="height:90%"></i><i class="g" style="height:48%"></i><i class="b" style="height:56%"></i></div></div>
+                        </div>
+                      </div>
+                      <div class="lib-cbody">
+                        <div class="lib-cname">Cookie category teardown: 18 brands, 6 formats</div>
+                        <div class="lib-shared">Shared by Tolga Erdogus</div>
+                        <div class="lib-cfoot">
+                          <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">description</span>7</span></span>
+                          <span class="lib-date">Jul 31, 2026</span>
+                        </div>
+                      </div>
+                    </a>
+
+                    <!-- 18 · MCP -->
+                    <a class="lib-card" href="#">
+                      <div class="lib-thumb pad">
+                        <span class="lib-thumb-badge"><span class="material-symbols-outlined">dns</span>MCP</span>
+                        <div class="lib-mcpprev">
+                          <span class="lib-mcp-call"><span class="material-symbols-outlined">bolt</span>wisecode.searchFoods</span>
+                          <div class="lib-mcp-rows"><i></i><i></i><i></i><i></i></div>
+                        </div>
+                      </div>
+                      <div class="lib-cbody">
+                        <div class="lib-cname">Strict token match for “natto” across 412K foods</div>
+                        <div class="lib-cfoot">
+                          <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">dns</span>1</span></span>
+                          <span class="lib-date">Aug 8, 2026</span>
+                        </div>
+                      </div>
+                    </a>
+
+                    <!-- 19 · MCP -->
+                    <a class="lib-card" href="#">
+                      <div class="lib-thumb pad">
+                        <span class="lib-thumb-badge"><span class="material-symbols-outlined">dns</span>MCP</span>
+                        <div class="lib-mcpprev">
+                          <span class="lib-mcp-call"><span class="material-symbols-outlined">bolt</span>wisecode.scoreIngredients</span>
+                          <div class="lib-mcp-rows"><i></i><i></i><i></i><i></i></div>
+                        </div>
+                      </div>
+                      <div class="lib-cbody">
+                        <div class="lib-cname">Scored 1,204 ingredient strings in one batch</div>
+                        <div class="lib-cfoot">
+                          <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">dns</span>3</span></span>
+                          <span class="lib-date">Aug 6, 2026</span>
+                        </div>
+                      </div>
+                    </a>
+
+                    <!-- 20 · MCP (shared by me) -->
+                    <a class="lib-card" href="#" data-shared="by">
+                      <div class="lib-thumb pad">
+                        <span class="lib-thumb-badge"><span class="material-symbols-outlined">dns</span>MCP</span>
+                        <div class="lib-mcpprev">
+                          <span class="lib-mcp-call"><span class="material-symbols-outlined">bolt</span>usda.fdcLookup</span>
+                          <div class="lib-mcp-rows"><i></i><i></i><i></i><i></i></div>
+                        </div>
+                      </div>
+                      <div class="lib-cbody">
+                        <div class="lib-cname">38 UPCs that USDA could not match</div>
+                        <div class="lib-shared">Shared with ereyes@wisecode.ai</div>
+                        <div class="lib-cfoot">
+                          <span class="lib-counts"><span class="lib-count"><span class="material-symbols-outlined">dns</span>2</span></span>
+                          <span class="lib-date">Jul 30, 2026</span>
+                        </div>
+                      </div>
+                    </a>
+
+                    <!-- 21 · Reference -->
+                    <a class="lib-card" href="#">
+                      <div class="lib-thumb pad">
+                        <span class="lib-thumb-badge"><span class="material-symbols-outlined">bookmark</span>Reference</span>
+                        <div class="lib-refprev">
+                          <div class="lib-ref-title">Ultra-processed foods and cardiometabolic health: an umbrella review</div>
+                          <div class="lib-ref-by">Lane MM, et al. · The BMJ · 2024</div>
+                        </div>
+                      </div>
+                      <div class="lib-cbody">
+                        <div class="lib-cname">Ultra-processed foods and cardiometabolic health: an umbrella review</div>
+                        <div class="lib-cfoot">
+                          <span class="lib-date">Aug 11, 2026</span>
+                        </div>
+                      </div>
+                    </a>
+
+                    <!-- 22 · Reference (shared by me) -->
+                    <a class="lib-card" href="#" data-shared="by">
+                      <div class="lib-thumb pad">
+                        <span class="lib-thumb-badge"><span class="material-symbols-outlined">bookmark</span>Reference</span>
+                        <div class="lib-refprev">
+                          <div class="lib-ref-title">NOVA classification: how reproducible is it between coders?</div>
+                          <div class="lib-ref-by">Braesco V, et al. · Eur J Clin Nutr · 2022</div>
+                        </div>
+                      </div>
+                      <div class="lib-cbody">
+                        <div class="lib-cname">NOVA classification: how reproducible is it between coders?</div>
+                        <div class="lib-shared">Shared with the Standards group</div>
+                        <div class="lib-cfoot">
+                          <span class="lib-date">Aug 2, 2026</span>
+                        </div>
+                      </div>
+                    </a>
+
+                    <!-- 23 · Reference (shared with me) -->
+                    <a class="lib-card" href="#">
+                      <div class="lib-thumb pad">
+                        <span class="lib-thumb-badge"><span class="material-symbols-outlined">bookmark</span>Reference</span>
+                        <div class="lib-refprev">
+                          <div class="lib-ref-title">Front-of-pack labelling and purchase intent: a meta-analysis</div>
+                          <div class="lib-ref-by">Song J, et al. · Lancet Planet Health · 2021</div>
+                        </div>
+                      </div>
+                      <div class="lib-cbody">
+                        <div class="lib-cname">Front-of-pack labelling and purchase intent: a meta-analysis</div>
+                        <div class="lib-shared">Shared by ereyes@wisecode.ai</div>
+                        <div class="lib-cfoot">
+                          <span class="lib-date">Jul 27, 2026</span>
+                        </div>
+                      </div>
+                    </a>
+
                   </div>
                 </section>
                 </div>
@@ -1359,7 +1743,9 @@
           else if (badgeTxt.includes('mcp')) type = 'mcp';
           else if (badgeTxt.includes('reference')) type = 'ref';
         }
-        const shared = el.querySelector('.lib-shared') ? 'with' : 'none';
+        /* Shared *by* me is the card's own claim (data-shared); anything else
+           carrying a sharing line was shared *with* me. */
+        const shared = el.dataset.shared || (el.querySelector('.lib-shared') ? 'with' : 'none');
         const titleTxt = (el.querySelector('.lib-cname')?.textContent || '').trim();
         const sharedLabel = (el.querySelector('.lib-shared')?.textContent || '').trim();
         const name = titleTxt.toLowerCase();
@@ -1534,7 +1920,7 @@
       };
       cards.forEach((c) => {
         if (counts.type[c.type] != null) counts.type[c.type]++;
-        if (c.shared === 'with') counts.shared.with++;
+        if (counts.shared[c.shared] != null) counts.shared[c.shared]++;
       });
 
       /* Filed / Unfiled come from live folder membership (they change as cards
@@ -1604,10 +1990,7 @@
           let ok = true;
           if (openF && !openF.items.includes(c.id)) ok = false;
           if (ok && state.type !== 'all' && c.type !== state.type) ok = false;
-          if (ok && state.shared !== 'all') {
-            if (state.shared === 'with' && c.shared !== 'with') ok = false;
-            if (state.shared === 'by') ok = false; // demo data has none shared by me
-          }
+          if (ok && state.shared !== 'all' && c.shared !== state.shared) ok = false;
           if (ok && state.folder !== 'all' && (folds.length ? 'filed' : 'unfiled') !== state.folder) ok = false;
           if (ok && state.q) {
             const hay = c.name + ' ' + c.sharedTxt + ' ' + c.type + ' ' +
@@ -1643,6 +2026,13 @@
       document.addEventListener('click', () => setPop(false));
       document.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape') return;
+        /* The viewer is the frontmost thing on screen, so it takes Escape
+           first — and taking it must not also walk the folder tree. */
+        if (viewerEl && !viewerEl.hidden && !document.querySelector('.lib-pop')) {
+          e.stopPropagation();
+          closeViewer();
+          return;
+        }
         const hadPop = !!document.querySelector('.lib-pop');
         const filterWasOpen = filterPop && !filterPop.hidden;
         setPop(false);
@@ -1773,7 +2163,7 @@
         counts.shared = { with: 0, by: 0 };
         cards.forEach((c) => {
           if (counts.type[c.type] != null) counts.type[c.type]++;
-          if (c.shared === 'with') counts.shared.with++;
+          if (counts.shared[c.shared] != null) counts.shared[c.shared]++;
         });
         paintTypeCounts();
         refreshFolderCounts();
@@ -1792,26 +2182,604 @@
       }
       cards.forEach((c) => ensureCardMenu(c.el));
 
+      /* =================================================================
+         Opening an item.
+
+         Every card on the shelf is a picture of something real, and tapping it
+         opens that thing — never a dead "#". A conversation opens in the chat
+         module, because that is where a conversation lives. Everything else —
+         a dashboard, a report, an MCP result, a paper — opens in the item
+         viewer at full size, with the actions that belong to it.
+
+         Nothing here opens on its own: the member's tap is the ask.
+         ================================================================= */
+
+      /* A thread only enters History once, however many times its card is
+         tapped, so re-opening an item never stacks duplicate threads. */
+      const openedThreads = {};
+
+      function restoreThread(key, data) {
+        const hist = window.__wiseChatHistory;
+        if (!hist || !hist.add || !hist.restore) return false;
+        const known = openedThreads[key];
+        if (known) { hist.restore(known); return true; }
+        const added = hist.add(data);
+        if (!added || !added.id) return false;
+        openedThreads[key] = added.id;
+        hist.restore(added.id);
+        return true;
+      }
+
+      function whenChatReady(run) {
+        document.addEventListener('wise:chat-history-ready', function onceReady() {
+          document.removeEventListener('wise:chat-history-ready', onceReady);
+          run();
+        });
+      }
+
       function openFiledConversation(id) {
         const store = window.WiseLibraryStore;
         const item = store && store.get ? store.get(id) : null;
         if (!item || !item.html) return false;
-        const hist = window.__wiseChatHistory;
-        if (hist && hist.add && hist.restore) {
-          const added = hist.add({
-            title: item.title || 'Conversation',
-            html: item.html,
-            count: item.msgCount || 0,
-            mcp: item.mcp === true
-          });
-          if (added && added.id) hist.restore(added.id);
-          return true;
-        }
-        document.addEventListener('wise:chat-history-ready', function onceReady() {
-          document.removeEventListener('wise:chat-history-ready', onceReady);
-          openFiledConversation(id);
-        });
+        if (restoreThread(id, {
+          title: item.title || 'Conversation',
+          html: item.html,
+          count: item.msgCount || 0,
+          mcp: item.mcp === true
+        })) return true;
+        whenChatReady(() => openFiledConversation(id));
         return false;
+      }
+
+      /* ---- Artifact builders. Small pieces so a card's contents read as
+         the real output rather than a screenshot of one. ---- */
+      function artChart(cols) {
+        return '<div class="lib-art-chart">' + cols.map((c) =>
+          '<div class="lib-art-col ' + (c.tone || '') + '">' +
+            '<i>' + escHtml(c.v) + '</i>' +
+            '<span class="bar" style="height:' + c.h + '%"></span>' +
+            '<em>' + escHtml(c.label) + '</em>' +
+          '</div>').join('') + '</div>';
+      }
+      function artKpis(list) {
+        return '<div class="lib-art-kpis">' + list.map((k) =>
+          '<div class="lib-art-kpi"><b>' + escHtml(k.v) + '</b><span>' + escHtml(k.label) + '</span></div>'
+        ).join('') + '</div>';
+      }
+      function artTable(cols, rows) {
+        const head = cols.map((c) => '<th' + (c.num ? ' class="num"' : '') + '>' + escHtml(c.label) + '</th>').join('');
+        const body = rows.map((r) => '<tr>' + r.map((cell, i) =>
+          '<td' + (cols[i] && cols[i].num ? ' class="num"' : '') + '>' + escHtml(cell) + '</td>').join('') + '</tr>').join('');
+        return '<table><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>';
+      }
+      function artPanel(heading, inner) {
+        return '<section class="lib-art-panel"><h3>' + escHtml(heading) + '</h3>' + inner + '</section>';
+      }
+      function artLede(html) { return '<p class="lib-art-lede">' + html + '</p>'; }
+      function artList(items) {
+        return '<ul class="lib-art-list">' + items.map((t) => '<li>' + t + '</li>').join('') + '</ul>';
+      }
+      function artTags(tags) {
+        return '<div class="lib-art-tags">' + tags.map((t) =>
+          '<span class="lib-art-tag"><span class="material-symbols-outlined">label</span>' + escHtml(t) + '</span>').join('') + '</div>';
+      }
+      function artCall(tool, args, timing) {
+        const lines = Object.keys(args).map((k) =>
+          '  <span class="k">' + escHtml(k) + '</span>: <span class="s">' + escHtml(JSON.stringify(args[k])) + '</span>').join(',\n');
+        return '<pre class="lib-art-code">' + escHtml(tool) + '({\n' + lines + '\n})' +
+          (timing ? '\n\n<span class="k">→</span> ' + escHtml(timing) : '') + '</pre>';
+      }
+      function artWrap(parts) { return '<div class="lib-art">' + parts.join('') + '</div>'; }
+
+      /* ---- What each card on the shelf actually holds. Keyed by the card's
+         own id, which is its position in the shelf markup. ---- */
+      const LIB_ART = {
+        /* --- Dashboards --- */
+        'item-0': {
+          sub: 'Formulation sandbox · 24 stacks tested',
+          build: () => artWrap([
+            artLede('A B-vitamin-optimized stack held its <strong>WISEcode UPF</strong> score through a simulated supply shock that pushed every other formulation up at least two points. Stack <strong>B-7</strong> is the one to take forward.'),
+            artKpis([
+              { v: '78%', label: 'Shock absorbed' }, { v: '24', label: 'Stacks tested' },
+              { v: 'B-7', label: 'Winning stack' }, { v: '+1.2¢', label: 'Cost per unit' },
+            ]),
+            artPanel('Resilience by stack', artChart([
+              { label: 'B-1', v: '41', h: 38 }, { label: 'B-3', v: '58', h: 56 },
+              { label: 'B-5', v: '63', h: 62 }, { label: 'B-7', v: '78', h: 88, tone: 'brand' },
+              { label: 'B-9', v: '44', h: 42 }, { label: 'Base', v: '31', h: 30, tone: 'warn' },
+            ])),
+            artPanel('What each stack swapped', artTable(
+              [{ label: 'Stack' }, { label: 'Swap' }, { label: 'UPF Δ', num: true }, { label: 'Cost Δ', num: true }],
+              [
+                ['B-7', 'Riboflavin blend → whole-grain carrier', '0', '+1.2¢'],
+                ['B-5', 'Synthetic folate → lentil flour', '+1', '+0.8¢'],
+                ['B-3', 'Niacinamide → yeast extract', '+2', '−0.3¢'],
+                ['Base', 'No change', '+4', '—'],
+              ])),
+          ]),
+        },
+        'item-1': {
+          sub: '1,842 foods · WISEcode UPF raw score 6',
+          build: () => artWrap([
+            artLede('These foods sit at raw score <strong>6</strong> — one point below moderately processed. Most of them cross the line on a single marker, which is what makes the list worth working.'),
+            artKpis([
+              { v: '1,842', label: 'Foods at score 6' }, { v: '61%', label: 'Own brand' },
+              { v: '1', label: 'Median swaps needed' }, { v: '312', label: 'Already in review' },
+            ]),
+            artPanel('Where they sit by category', artChart([
+              { label: 'Bakery', v: '486', h: 88, tone: 'warn' }, { label: 'Snacks', v: '371', h: 68 },
+              { label: 'Dairy', v: '288', h: 53 }, { label: 'Frozen', v: '244', h: 45 },
+              { label: 'Sauces', v: '241', h: 44 }, { label: 'Cereal', v: '212', h: 39 },
+            ])),
+            artPanel('The single marker holding each one back', artTable(
+              [{ label: 'Food' }, { label: 'Brand' }, { label: 'Marker' }, { label: 'Score', num: true }],
+              [
+                ['Honey oat bar', 'Nature Path', 'Invert sugar syrup', '6'],
+                ['Sourdough loaf', 'Boulange', 'Dough conditioner', '6'],
+                ['Greek yogurt, vanilla', 'Sunfield', 'Modified starch', '6'],
+                ['Marinara, garlic', 'Tavola', 'Natural flavor', '6'],
+              ])),
+          ]),
+        },
+        'item-5': {
+          sub: 'Single label · 4 markers found',
+          build: () => artWrap([
+            artLede('Yes — this list reads as <strong>ultra-processed</strong>. Four NOVA-4 markers are present, and two of them are cosmetic rather than functional, which usually means they can come out.'),
+            artKpis([
+              { v: '4', label: 'UPF markers' }, { v: '96%', label: 'Confidence' },
+              { v: '11', label: 'Raw score' }, { v: '2', label: 'Removable' },
+            ]),
+            artPanel('Markers in this list', artTable(
+              [{ label: 'Ingredient' }, { label: 'Marker class' }, { label: 'Role' }, { label: 'Removable' }],
+              [
+                ['Maltodextrin', 'Refined carbohydrate', 'Bulking', 'Hard'],
+                ['Soy lecithin', 'Emulsifier', 'Texture', 'Hard'],
+                ['Caramel color', 'Cosmetic additive', 'Appearance', 'Yes'],
+                ['Natural flavor', 'Flavor compound', 'Taste', 'Yes'],
+              ])),
+            artPanel('If the two cosmetic markers came out', artChart([
+              { label: 'Today', v: '11', h: 88, tone: 'warn' },
+              { label: 'No color', v: '9', h: 72, tone: 'warn' },
+              { label: 'No flavor', v: '7', h: 56 },
+              { label: 'Both out', v: '5', h: 40, tone: 'brand' },
+            ])),
+          ]),
+        },
+        'item-10': {
+          sub: 'Seven months · portfolio trend',
+          build: () => artWrap([
+            artLede('Ultra-processed share of the portfolio has fallen for five straight months. The gap between <strong>declared</strong> and <strong>verified</strong> is closing, which is the line that actually matters.'),
+            artKpis([
+              { v: '−9.4pt', label: 'UPF share, 7 months' }, { v: '31%', label: 'UPF today' },
+              { v: '88%', label: 'Verified' }, { v: '5', label: 'Months improving' },
+            ]),
+            artPanel('UPF share over time', artChart([
+              { label: 'Jan', v: '40', h: 82, tone: 'warn' }, { label: 'Feb', v: '39', h: 80, tone: 'warn' },
+              { label: 'Mar', v: '37', h: 75 }, { label: 'Apr', v: '35', h: 71 },
+              { label: 'May', v: '34', h: 68 }, { label: 'Jun', v: '32', h: 64 },
+              { label: 'Jul', v: '31', h: 62, tone: 'brand' },
+            ])),
+          ]),
+        },
+
+        /* --- Reports --- */
+        'item-13': {
+          sub: '6 outputs · built from “How much of our private label is ultra-processed?”',
+          build: () => artWrap([
+            artLede('Just under a third of the private label reads as ultra-processed once every declared ingredient is scored. The concentration is narrow: <strong>four categories carry 71%</strong> of it, so this is a workable problem rather than a portfolio-wide one.'),
+            artKpis([
+              { v: '31.4%', label: 'UPF share' }, { v: '1,208', label: 'UPF SKUs' },
+              { v: '4', label: 'Categories driving it' }, { v: '−2.1pt', label: 'Quarter over quarter' },
+            ]),
+            artPanel('UPF share by category', artChart([
+              { label: 'Bakery', v: '58%', h: 90, tone: 'warn' }, { label: 'Snacks', v: '47%', h: 74, tone: 'warn' },
+              { label: 'Frozen', v: '39%', h: 61 }, { label: 'Dairy', v: '28%', h: 44 },
+              { label: 'Produce', v: '4%', h: 8, tone: 'brand' },
+            ])),
+            artPanel('What the report concluded', artList([
+              'Bakery alone accounts for <strong>34%</strong> of every UPF SKU in the private label.',
+              'Dough conditioners and invert syrups are the two most common single markers — both have accepted substitutes.',
+              '<strong>42 SKUs</strong> are one ingredient away from clearing the line entirely.',
+              'Produce and fresh meat are effectively clean and need no work this quarter.',
+            ])),
+          ]),
+        },
+        'item-14': {
+          sub: '4 outputs · shared with the Reformulation team',
+          build: () => artWrap([
+            artLede('Forty-two products sit one ingredient away from clearing ultra-processed. Every one of them fails on a marker with an accepted substitute already used elsewhere in the portfolio, so none of this needs new science.'),
+            artKpis([
+              { v: '42', label: 'SKUs in reach' }, { v: '$1.9M', label: 'Revenue covered' },
+              { v: '1', label: 'Swaps per SKU' }, { v: '11 wks', label: 'Median time to shelf' },
+            ]),
+            artPanel('The swap each one needs', artTable(
+              [{ label: 'Product' }, { label: 'Failing marker' }, { label: 'Substitute' }, { label: 'SKUs', num: true }],
+              [
+                ['Sandwich breads', 'Dough conditioner', 'Vital wheat gluten', '14'],
+                ['Granola bars', 'Invert sugar syrup', 'Date paste', '11'],
+                ['Yogurt, flavored', 'Modified starch', 'Pectin', '9'],
+                ['Pasta sauces', 'Natural flavor', 'Roasted vegetable base', '8'],
+              ])),
+            artPanel('Ranked by revenue at stake', artChart([
+              { label: 'Breads', v: '$740K', h: 88, tone: 'brand' }, { label: 'Bars', v: '$520K', h: 62 },
+              { label: 'Yogurt', v: '$390K', h: 46 }, { label: 'Sauces', v: '$250K', h: 30 },
+            ])),
+          ]),
+        },
+        'item-15': {
+          sub: '5 outputs · scoring-method comparison',
+          build: () => artWrap([
+            artLede('The two systems agree on <strong>82%</strong> of the catalog. Where they part company, it is almost always the same argument: Guiding Stars rewards nutrient density, WISEcode UPF penalizes processing, and a fortified processed food can score well on one and badly on the other.'),
+            artKpis([
+              { v: '82%', label: 'Agreement' }, { v: '7,412', label: 'Foods compared' },
+              { v: '1,334', label: 'In conflict' }, { v: '61%', label: 'Fortified, of those' },
+            ]),
+            artPanel('Where the two systems land', artTable(
+              [{ label: 'Pattern' }, { label: 'Guiding Stars' }, { label: 'WISEcode UPF' }, { label: 'Foods', num: true }],
+              [
+                ['Fortified cereal', '2–3 stars', 'Ultra-processed', '498'],
+                ['Plant milk, sweetened', '2 stars', 'Ultra-processed', '311'],
+                ['Canned beans, no salt', '3 stars', 'Minimally processed', '286'],
+                ['Frozen vegetables', '3 stars', 'Minimally processed', '239'],
+              ])),
+            artPanel('Conflicts by category', artChart([
+              { label: 'Cereal', v: '498', h: 90, tone: 'warn' }, { label: 'Plant milk', v: '311', h: 56 },
+              { label: 'Bars', v: '242', h: 44 }, { label: 'Yogurt', v: '183', h: 33 },
+              { label: 'Soup', v: '100', h: 18 },
+            ])),
+          ]),
+        },
+        'item-16': {
+          sub: '7 outputs · shared by Tolga Erdogus',
+          build: () => artWrap([
+            artLede('Eighteen cookie brands across six formats, scored on the same basis. Format turns out to predict the score better than brand does: <strong>every refrigerated dough</strong> in the set is ultra-processed, and every bakery-fresh one is not.'),
+            artKpis([
+              { v: '18', label: 'Brands' }, { v: '6', label: 'Formats' },
+              { v: '9.2', label: 'Median raw score' }, { v: '3', label: 'Non-UPF brands' },
+            ]),
+            artPanel('Median score by format', artChart([
+              { label: 'Refrig.', v: '13.1', h: 92, tone: 'warn' }, { label: 'Packaged', v: '11.4', h: 80, tone: 'warn' },
+              { label: 'Sandwich', v: '10.2', h: 71 }, { label: 'Wafer', v: '8.8', h: 62 },
+              { label: 'Biscotti', v: '6.1', h: 43 }, { label: 'Bakery', v: '3.4', h: 24, tone: 'brand' },
+            ])),
+            artPanel('The three that clear the line', artTable(
+              [{ label: 'Brand' }, { label: 'Format' }, { label: 'Raw score', num: true }, { label: 'Markers', num: true }],
+              [
+                ['Rustic Table', 'Bakery fresh', '2', '0'],
+                ['Mill & Leaven', 'Bakery fresh', '3', '0'],
+                ['Nonna Rosa', 'Biscotti', '5', '1'],
+              ])),
+          ]),
+        },
+
+        /* --- MCP results --- */
+        'item-17': {
+          sub: 'wisecode.searchFoods · 1 result',
+          build: () => artWrap([
+            artLede('Raw text search was returning <strong>annatto</strong> and <strong>natamycin</strong> as matches for “natto”. Tightening to a word-boundary token match on the parsed ingredient list left exactly one true positive.'),
+            artCall('wisecode.searchFoods', {
+              ingredient: 'natto', match: 'token', boundary: true, limit: 50,
+            }, '1 match · 412,884 foods scanned · 240ms'),
+            artPanel('What the loose search had been returning', artTable(
+              [{ label: 'Term matched' }, { label: 'Kind' }, { label: 'Foods', num: true }],
+              [
+                ['natto', 'True positive', '1'],
+                ['annatto', 'False positive', '2,914'],
+                ['natamycin', 'False positive', '186'],
+              ])),
+            artPanel('The one real match', artTable(
+              [{ label: 'Food' }, { label: 'Brand' }, { label: 'UPC' }],
+              [['Natto, fermented soybeans', 'Megumi', '0 71429 00812 6']])),
+          ]),
+        },
+        'item-18': {
+          sub: 'wisecode.scoreIngredients · 1,204 strings',
+          build: () => artWrap([
+            artLede('A single batch call scored every distinct ingredient string in the upload. <strong>96.8%</strong> resolved cleanly; the rest were spelling variants and vendor shorthand that the parser now has aliases for.'),
+            artCall('wisecode.scoreIngredients', {
+              strings: 1204, resolve_aliases: true, return_markers: true,
+            }, '1,204 scored · 39 unresolved · 1.8s'),
+            artPanel('How the batch resolved', artChart([
+              { label: 'Clean', v: '1,041', h: 90, tone: 'brand' }, { label: 'Aliased', v: '124', h: 30 },
+              { label: 'Unresolved', v: '39', h: 12, tone: 'warn' },
+            ])),
+            artPanel('Unresolved, by reason', artTable(
+              [{ label: 'Reason' }, { label: 'Example' }, { label: 'Count', num: true }],
+              [
+                ['Vendor shorthand', 'VEG OIL BLND', '17'],
+                ['Spelling variant', 'ribofalvin', '12'],
+                ['Compound string', 'sugar/dextrose/salt', '10'],
+              ])),
+          ]),
+        },
+        'item-19': {
+          sub: 'usda.fdcLookup · 38 unmatched',
+          build: () => artWrap([
+            artLede('Thirty-eight UPCs came back with no FoodData Central record. All but four are private-label items that were never submitted, which means the gap is ours to fill rather than USDA’s.'),
+            artCall('usda.fdcLookup', {
+              upcs: 512, dataset: 'branded', on_miss: 'report',
+            }, '474 matched · 38 unmatched · 3.1s'),
+            artPanel('Why each one missed', artTable(
+              [{ label: 'Reason' }, { label: 'What to do' }, { label: 'UPCs', num: true }],
+              [
+                ['Never submitted', 'Submit to FDC', '26'],
+                ['Delisted product', 'Archive the SKU', '8'],
+                ['UPC typo at source', 'Fix in the catalog', '4'],
+              ])),
+          ]),
+        },
+
+        /* --- References --- */
+        'item-20': {
+          sub: 'Lane MM, Gamage E, Du S, et al. · The BMJ · 2024',
+          build: () => artWrap([
+            artLede('An umbrella review of 45 meta-analyses covering nearly <strong>10 million participants</strong>. Cited in the UPF scoring rationale as the strongest available synthesis of exposure and health outcome.'),
+            '<blockquote class="lib-art-quote">Greater exposure to ultra-processed food was associated with a higher risk of adverse health outcomes, most consistently for cardiometabolic, common mental disorder, and mortality outcomes.</blockquote>',
+            artPanel('What we take from it', artList([
+              'Supports treating processing as an exposure in its own right, not a proxy for nutrients.',
+              'Convincing-grade evidence for <strong>cardiovascular mortality</strong> and <strong>type 2 diabetes</strong>.',
+              'Evidence grade is weaker for cancer outcomes — we do not claim those.',
+            ])),
+            artTags(['UPF', 'Umbrella review', 'Scoring rationale', 'Cited in 4 reports']),
+          ]),
+        },
+        'item-21': {
+          sub: 'Braesco V, Souchon I, Sauvant P, et al. · Eur J Clin Nutr · 2022',
+          build: () => artWrap([
+            artLede('Tests how consistently different coders assign the same food to the same NOVA group. The answer — <strong>they often do not</strong> — is the reason WISEcode scores from the parsed ingredient list rather than from a human category call.'),
+            '<blockquote class="lib-art-quote">Classification of the same food items differed substantially between assessors, with agreement falling sharply for foods whose ingredient lists were incomplete.</blockquote>',
+            artPanel('What we take from it', artList([
+              'A human NOVA call is not reproducible enough to be a scoring input.',
+              'Agreement collapses exactly where labels are incomplete — the case we handle most.',
+              'Justifies publishing the <strong>marker list</strong> alongside every score, not just the group.',
+            ])),
+            artTags(['NOVA', 'Method', 'Reproducibility', 'Cited in 2 reports']),
+          ]),
+        },
+        'item-22': {
+          sub: 'Song J, Brown MK, Tan M, et al. · Lancet Planet Health · 2021',
+          build: () => artWrap([
+            artLede('A meta-analysis of front-of-pack label formats and what they do to purchase intent. Warning labels move behaviour further than summary scores do — the finding behind how the WISEcode badge is worded.'),
+            '<blockquote class="lib-art-quote">Warning labels were the most effective format at reducing selection of less healthy products, followed by traffic light labelling and summary indicator systems.</blockquote>',
+            artPanel('What we take from it', artList([
+              'A plain-language warning outperforms a numeric score at the shelf.',
+              'Summary indicators still help when the shopper is already comparing two items.',
+              'Supports leading with <strong>what is in it</strong> rather than with a grade.',
+            ])),
+            artTags(['Labelling', 'Meta-analysis', 'Badge copy', 'Cited in 1 report']),
+          ]),
+        },
+
+        /* --- Conversations. Turns are rebuilt in the chat's own line markup
+           by the shared chat module, so an opened thread is indistinguishable
+           from one the member had live. --- */
+        'item-2': { kind: 'chat', turns: [
+          { role: 'you', text: 'Show me all the foods that are just one point away from being moderately processed?' },
+          { role: 'wiseai', html: 'These are the foods scoring <strong>WISEcode UPF raw score = 6</strong>, which is <strong>one point below</strong> the moderately processed threshold.<br><br>There are <strong>1,842</strong> of them. <strong>61%</strong> are own brand, and the median food needs exactly <strong>one</strong> ingredient swap to cross.' },
+          { role: 'you', text: 'Which categories are the worst?' },
+          { role: 'wiseai', html: 'Bakery carries the most by a wide margin — <strong>486 foods</strong>, mostly on dough conditioners. Snacks follow at <strong>371</strong>, then dairy at <strong>288</strong>.<br><br>Produce and fresh meat barely register, which is what you would expect.' },
+          { role: 'you', text: 'Put the bakery ones in a report' },
+          { role: 'wiseai', html: 'Built it. The report groups the 486 bakery foods by failing marker and names the substitute already used elsewhere in your portfolio for each one.' },
+        ] },
+        'item-3': { kind: 'chat', turns: [
+          { role: 'you', text: 'I want to test your ability to come up with codes and test them on your own — make one up for mitochondria' },
+          { role: 'wiseai', html: 'Here is a first-pass <strong>mitochondria code</strong> concept. Since WISEcode does not carry a mitochondrial-function axis today, I built one from what we do have: B-vitamin density, CoQ10 precursors, and the processing penalty.' },
+          { role: 'you', text: 'Now test it against real foods' },
+          { role: 'wiseai', html: 'Ran it over <strong>4,200 foods</strong>. It separates cleanly at the extremes — organ meats and leafy greens at the top, refined snacks at the bottom — but the middle is noisy, which tells me the B-vitamin term is doing too much of the work.' },
+        ] },
+        'item-4': { kind: 'chat', turns: [
+          { role: 'you', text: 'can you remember things between conversations?' },
+          { role: 'wiseai', html: 'Not really — I can use context within the current chat, but I do not reliably carry your personal history across separate conversations unless you file it.<br><br>What does persist: anything you save to <strong>History</strong>, and anything filed to your <strong>Library</strong>.' },
+          { role: 'you', text: 'so how do I keep something?' },
+          { role: 'wiseai', html: 'File it. Every finished conversation lands in your Library on its own, and so does every output a turn produced — so the work is kept whether or not you remember to press anything.' },
+        ] },
+        'item-6': { kind: 'chat', turns: [
+          { role: 'you', text: 'find foods whose ingredient list include the word natto' },
+          { role: 'wiseai', html: 'The raw text search mostly matched <strong>annatto</strong> and <strong>natamycin</strong> false positives. I tightened it to a word-boundary token match on the parsed ingredient list.' },
+          { role: 'you', text: 'what did that leave?' },
+          { role: 'wiseai', html: 'Exactly <strong>one</strong> true match across 412,884 foods: <strong>Natto, fermented soybeans</strong> (Megumi). The loose search had been returning 3,100 foods that do not contain natto at all.' },
+        ] },
+        'item-7': { kind: 'chat', mcp: true, turns: [
+          { role: 'you', text: 'how many foods have full nfp15?' },
+          { role: 'wiseai', html: '<strong>207,988 foods</strong> have all <strong>NFP15</strong> nutrients present from source.' },
+          { role: 'you', text: 'What percentage of all foods is that?' },
+          { role: 'wiseai', html: '<strong>50.4%</strong> — just over half of the 412,884 foods in the database.' },
+        ] },
+        'item-8': { kind: 'chat', turns: [
+          { role: 'you', text: 'how many foods have full nfp15?' },
+          { role: 'wiseai', html: '<strong>207,988 foods</strong> have all <strong>NFP15</strong> nutrients declared.' },
+        ] },
+        'item-9': { kind: 'chat', turns: [
+          { role: 'you', text: 'Is this ingredient list ultra-processed?' },
+          { role: 'wiseai', html: 'Paste the ingredient list, and I will evaluate it for <strong>UPF classification</strong>. If you have them, include the ingredient list in declared order, the pack size, and the brand — the last two only matter for matching it back to a real SKU.' },
+        ] },
+        'item-11': { kind: 'chat', turns: [
+          { role: 'you', text: 'Is this ingredient list ultra-processed?' },
+          { role: 'wiseai', html: 'Paste the ingredient list and I will evaluate it for <strong>WISEcode UPF</strong>.' },
+          { role: 'you', text: 'Enriched flour, sugar, palm oil, cocoa, invert sugar, soy lecithin, natural flavor, caramel color' },
+          { role: 'wiseai', html: 'Yes — <strong>ultra-processed</strong>, raw score <strong>11</strong>, four markers.<br><br>Two of them are cosmetic rather than functional: <strong>caramel color</strong> and <strong>natural flavor</strong>. Taking both out would land this at score 5, which is minimally processed.' },
+        ] },
+        'item-12': { kind: 'chat', turns: [
+          { role: 'you', text: 'hello' },
+          { role: 'wiseai', html: 'Hi — I can help you search foods, analyze ingredients, check UPF classification, and build dashboards and reports from any of it.<br><br>Everything we do here files itself into your Library, so you will not lose it.' },
+        ] },
+      };
+
+      /* =================================================================
+         The item viewer — an output opened at full size, because the member
+         asked for it by tapping its card.
+         ================================================================= */
+      let viewerEl = null;
+      let viewerAsk = '';
+      let viewerReturn = null;
+
+      function ensureViewer() {
+        if (viewerEl) return viewerEl;
+        viewerEl = document.createElement('div');
+        viewerEl.className = 'lib-viewer';
+        viewerEl.hidden = true;
+        viewerEl.innerHTML =
+          '<div class="lib-viewer-scrim" data-lib-vclose></div>' +
+          '<div class="lib-viewer-sheet" role="dialog" aria-modal="true" aria-labelledby="lib-viewer-title" tabindex="-1">' +
+            '<header class="lib-viewer-head">' +
+              '<div>' +
+                '<div class="lib-viewer-eyebrow">' +
+                  '<span class="lib-viewer-badge" data-lib-vbadge></span>' +
+                  '<span class="lib-viewer-when" data-lib-vwhen></span>' +
+                '</div>' +
+                '<h2 class="lib-viewer-title" id="lib-viewer-title" data-lib-vtitle></h2>' +
+                '<p class="lib-viewer-sub" data-lib-vsub></p>' +
+              '</div>' +
+              '<div class="lib-viewer-acts">' +
+                '<button type="button" class="lib-viewer-close" data-lib-vclose title="Close" aria-label="Close">' +
+                  '<span class="material-symbols-outlined">close</span></button>' +
+              '</div>' +
+            '</header>' +
+            '<div class="lib-viewer-body" data-lib-vbody></div>' +
+            '<div class="lib-viewer-foot">' +
+              '<button type="button" class="lib-vbtn lib-vbtn--primary" data-lib-vact="ask">' +
+                '<span class="material-symbols-outlined">forum</span>Ask about this</button>' +
+              '<button type="button" class="lib-vbtn" data-lib-vact="file">' +
+                '<span class="material-symbols-outlined">folder</span>File to folder…</button>' +
+            '</div>' +
+          '</div>';
+        document.body.appendChild(viewerEl);
+        viewerEl.addEventListener('click', (e) => {
+          if (e.target.closest('[data-lib-vclose]')) { closeViewer(); return; }
+          const act = e.target.closest('[data-lib-vact]');
+          if (!act) return;
+          if (act.dataset.libVact === 'ask') askAboutItem();
+          else if (act.dataset.libVact === 'file') fileViewerItem(act);
+        });
+        return viewerEl;
+      }
+
+      function openViewer(spec) {
+        const el = ensureViewer();
+        const meta = TYPE_META[spec.type] || TYPE_META.chat;
+        el.querySelector('[data-lib-vbadge]').innerHTML =
+          '<span class="material-symbols-outlined">' + meta.icon + '</span>' + escHtml(meta.label);
+        el.querySelector('[data-lib-vwhen]').textContent = spec.when || '';
+        el.querySelector('[data-lib-vtitle]').textContent = spec.title || 'Untitled';
+        const subEl = el.querySelector('[data-lib-vsub]');
+        subEl.textContent = spec.sub || '';
+        subEl.hidden = !spec.sub;
+        el.querySelector('[data-lib-vbody]').innerHTML = spec.html || '';
+        el.dataset.libVid = spec.id || '';
+        viewerAsk = spec.askSeed || spec.title || '';
+        viewerReturn = document.activeElement;
+        el.hidden = false;
+        document.body.style.overflow = 'hidden';
+        try { el.querySelector('.lib-viewer-sheet').focus(); } catch (_) {}
+      }
+
+      function closeViewer() {
+        if (!viewerEl || viewerEl.hidden) return;
+        viewerEl.hidden = true;
+        document.body.style.overflow = '';
+        if (viewerReturn && viewerReturn.focus) { try { viewerReturn.focus(); } catch (_) {} }
+        viewerReturn = null;
+      }
+
+      function askAboutItem() {
+        const seed = viewerAsk;
+        closeViewer();
+        const dock = window.__wiseaiDock;
+        if (dock && typeof dock.ask === 'function' && seed) dock.ask('Tell me more about “' + seed + '”');
+      }
+
+      function fileViewerItem(anchor) {
+        const id = viewerEl && viewerEl.dataset.libVid;
+        if (!id) return;
+        const hosted = foldersOf(id);
+        openFolderPicker(anchor, 'File to folder', {
+          currentIds: hosted.map((f) => f.id),
+          removeLabel: hosted.length ? 'Remove from folder' : null,
+          onRemove: () => unfileCard(id),
+          onNew: () => fileCardIntoNew(id, 'move'),
+        }, (destId) => addToFolder(id, destId));
+      }
+
+      /* An output that was drawn live by an engine (a compare board is the
+         clearest case) has no markup that survives being filed. Rather than
+         open onto an empty sheet, the card says what the output was and offers
+         the way back to it. */
+      function filedArtifactHtml(filed) {
+        const art = filed.html || filed.previewHtml || '';
+        if (art) return artWrap([art]);
+        const meta = TYPE_META[filed.type] || TYPE_META.chat;
+        return artWrap([
+          artLede('This ' + escHtml(meta.label.toLowerCase()) + ' was drawn live in the conversation it came out of, so the Library keeps its record rather than a copy of the drawing.'),
+          artPanel('What was filed', artTable(
+            [{ label: 'Field' }, { label: 'Value' }],
+            [
+              ['Output', filed.title || 'Untitled'],
+              ['Kind', meta.label],
+              ['Detail', filed.meta || '—'],
+              ['Conversation', filed.conversation || '—'],
+              ['Filed', filedDate(filed)],
+            ])),
+          artLede('Ask about it below and WISEcodeAI will rebuild it in the chat.'),
+        ]);
+      }
+      function filedDate(filed) {
+        const store = window.WiseLibraryStore;
+        return (store && store.formatDate ? store.formatDate(filed.ts) : '') || '—';
+      }
+
+      /* ---- The one door every card goes through ---- */
+      function openLibraryItem(id) {
+        const card = cardById(id);
+        if (!card) return;
+        const store = window.WiseLibraryStore;
+        const filed = store && store.get ? store.get(id) : null;
+
+        /* Something filed from a live chat: a conversation returns to the chat,
+           an output opens as the artifact it is. */
+        if (filed) {
+          if ((filed.type === 'chat' || filed.type === 'mcp') && filed.html && filed.historyId) {
+            if (openFiledConversation(id)) return;
+          }
+          openViewer({
+            id, type: filed.type, title: filed.title, when: card.dateTxt,
+            sub: filed.conversation ? 'From “' + filed.conversation + '”' : (filed.meta || ''),
+            html: filedArtifactHtml(filed),
+            askSeed: filed.title,
+          });
+          return;
+        }
+
+        const spec = LIB_ART[card.copyOf || id];
+        if (spec && spec.kind === 'chat') { openDemoConversation(card, spec); return; }
+        openViewer({
+          id, type: card.type, title: card.titleTxt, when: card.dateTxt,
+          sub: (spec && spec.sub) || card.sharedLabel || '',
+          /* A card with no authored contents still opens as itself rather than
+             as nothing — its own preview, at size. */
+          html: spec ? spec.build() : '<div class="lib-art">' +
+            (card.el.querySelector('.lib-thumb') || {}).innerHTML + '</div>',
+          askSeed: card.titleTxt,
+        });
+      }
+
+      function openDemoConversation(card, spec) {
+        const dock = window.__wiseaiDock;
+        if (dock && typeof dock.buildTranscript === 'function') {
+          const html = dock.buildTranscript(spec.turns, card.time || Date.now());
+          if (restoreThread(card.id, {
+            title: card.titleTxt, html, count: spec.turns.length, mcp: spec.mcp === true,
+          })) return;
+        }
+        /* No chat on this screen — the conversation is still readable here
+           rather than the card doing nothing. */
+        openViewer({
+          id: card.id, type: 'chat', title: card.titleTxt, when: card.dateTxt,
+          sub: card.sharedLabel || (spec.turns.length + ' messages'),
+          html: '<div class="lib-art">' + spec.turns.map((t) =>
+            '<div class="lib-bubble ' + (t.role === 'you' ? 'me' : 'ai') + '" style="max-width:78%;font-size:.875rem;padding:10px 14px">' +
+            (t.html || escHtml(t.text || '')) + '</div>').join('') + '</div>',
+          askSeed: card.titleTxt,
+        });
       }
 
       document.addEventListener('wise:library-change', () => {
@@ -2805,11 +3773,13 @@
           if (card && card.dataset.libId) openCardMenu(card.dataset.libId, menuBtn);
           return;
         }
-        if (suppressClick && e.target.closest('.lib-card')) e.preventDefault();
-        const filedCard = e.target.closest('.lib-card[data-filed]');
-        if (filedCard && !e.target.closest('.lib-card-menu')) {
+        if (suppressClick && e.target.closest('.lib-card')) { e.preventDefault(); return; }
+        /* Every card opens what it is a picture of — none of them is a dead
+           link. Chats go back to the chat module, outputs open in the viewer. */
+        const card = e.target.closest('.lib-card[data-lib-id]');
+        if (card) {
           e.preventDefault();
-          openFiledConversation(filedCard.dataset.libId);
+          openLibraryItem(card.dataset.libId);
         }
       });
       grid.addEventListener('keydown', (e) => {

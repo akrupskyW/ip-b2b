@@ -5017,19 +5017,10 @@
     html.dark .sc-line-time { color: color-mix(in srgb, var(--text-subtle) 70%, transparent); }
     html.dark .sc-line-time:hover { color: var(--text); }
     .sc-line-time:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-    .sc-trust-chip {
-      display: inline-flex; align-items: center; gap: 4px;
-      font-size: 0.625rem; font-weight: 600; letter-spacing: 0.01em;
-      /* Same muted grey as the copy / thumbs / more icons on the left of this row. */
-      color: color-mix(in srgb, var(--text-subtle) 62%, transparent);
-    }
-    .sc-trust-chip .material-symbols-outlined { font-size: 12px !important; }
-    html.dark .sc-trust-chip { color: color-mix(in srgb, var(--text-subtle) 70%, transparent); }
-    /* WISEcodeAI answer meta — the action icons (copy / thumbs / more) hug the
-       far LEFT of the row while the grounding source chip floats to the far RIGHT. */
+    /* The grounding source chip (.sc-trust-chip) and its placement at the far
+       right of the meta row belong to pages/wise.css. */
     .sc-line-wiseai .sc-line-meta > .sc-fb-wrap,
     .sc-line-wiseai .sc-line-meta > .sc-line-time { order: 1; }
-    .sc-line-wiseai .sc-line-meta > .sc-trust-chip { order: 2; margin-left: auto; }
 
     /* ── Answer feedback (thumbs up/down) ─────────────────────────────────
        Shown under compare-board chat replies. Thumbs-down opens a small

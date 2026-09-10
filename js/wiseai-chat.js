@@ -40,6 +40,7 @@ import { userAvatarImg } from './user-avatar.js';
 import { esc } from './escape-html.js';
 import { openModal, closeModal, modalHTML } from './wise-modal.js';
 import { OWL_BUG, OWL_MARK } from './owl-mark.js';
+import { overviewCardChartHtml, playOverviewCardCharts } from './welcome-overview-cards.js';
 import {
   refineReply, withTimeout, toggleOllamaOn, probeOllama, probeOllamaWhenIdle,
   enrichReply, rememberChatTurn, forgetChatTurns,
@@ -7958,22 +7959,30 @@ function buildAgentsPanelHtml(agents, id) {
 /* Build the welcome "at a glance" score-card rail from a scorecards config.
  * Opt-in: callers pass { label, cards: [...] } and the same rail used on
  * ai-chat.html renders inside the shared dock. Each card descriptor:
- *   { variant: 'metric'|'intro'|'wiseai'|'welcome', icon, iconTone, pill:{tone,icon,text},
- *     metric, metricUnit, title, desc, action, intent, ask }
+ *   { variant: 'metric'|'intro'|'wiseai'|'welcome'|'gold', icon, iconTone, pill:{tone,icon,text},
+ *     metric, metricUnit, title, desc, action, intent, ask, large,
+ *     chart: 'upf'|'pillars' }
  * 'welcome' is the hero card — it reads its title/desc like an intro card but
  * wears the sign-in hero art, so its copy is white over the photo.
+ * 'gold' is the same intro layout in Gilded Grain (the dark gold), not brand blue.
+ * `chart` embeds the shared Overview donut / pillar bars (js/welcome-overview-cards.js).
  * Cards drive a chat turn on click (handled in mountWISEcodeAIChat) via {intent, ask}.
  */
 function buildScorecardsHtml(sc, id) {
   if (!sc || !Array.isArray(sc.cards) || !sc.cards.length) return '';
   const label = sc.label || 'Your portfolio at a glance';
   const cardHtml = (c, i) => {
-    const isIntro = c.variant === 'intro' || c.variant === 'wiseai' || c.variant === 'welcome';
+    const chart = c.chart === 'upf' || c.chart === 'pillars' ? c.chart : '';
+    const isIntro = c.variant === 'intro' || c.variant === 'wiseai' || c.variant === 'welcome' || c.variant === 'gold' || !!chart;
     const locked = c.locked === true;
     const variantClass = (c.variant === 'wiseai'
       ? ' ws-scorecard--intro ws-scorecard--wiseai'
-      : c.variant === 'welcome' ? ' ws-scorecard--hero'
-      : c.variant === 'intro' ? ' ws-scorecard--intro' : '') + (locked ? ' ws-scorecard--locked' : '');
+      : c.variant === 'gold' ? ' ws-scorecard--intro ws-scorecard--gold'
+      : (c.variant === 'welcome' || chart) ? ' ws-scorecard--hero'
+      : c.variant === 'intro' ? ' ws-scorecard--intro' : '')
+      + (c.large ? ' ws-scorecard--lg' : '')
+      + (chart ? ` ws-scorecard--chart ws-scorecard--chart-${chart}` : '')
+      + (locked ? ' ws-scorecard--locked' : '');
     const iconTone = c.iconTone ? `ws-sc-icon--${esc(c.iconTone)}` : 'ws-sc-icon--brand';
     /* A locked card swaps its pill for a lock badge so the "coming soon" state
        reads instantly. */
@@ -7985,20 +7994,26 @@ function buildScorecardsHtml(sc, id) {
     const lead = isIntro
       ? `<div class="ws-sc-intro-title">${esc(c.title || '')}</div>`
       : `${c.metric != null ? `<div class="ws-sc-metric">${esc(c.metric)}${c.metricUnit ? `<span class="ws-sc-metric-unit">${esc(c.metricUnit)}</span>` : ''}</div>` : ''}<div class="ws-sc-title">${esc(c.title || '')}</div>`;
+    const chartHtml = chart ? overviewCardChartHtml(chart) : '';
     const action = locked
       ? `<div class="ws-sc-action ws-sc-action--locked">Coming soon</div>`
       : (c.action
         ? `<div class="ws-sc-action">${esc(c.action)}<span class="material-symbols-outlined">arrow_outward</span></div>`
         : '');
-    return `
-      <button type="button" class="ws-scorecard${variantClass}" role="listitem" data-card="${i}"${locked ? ' aria-disabled="true" data-locked="1"' : ''}>
-        <div class="ws-sc-top">
+    /* Chart cards are the chart only — no title, legend, or description above
+       it. The card title stays on aria-label so the control still names itself. */
+    const body = chart
+      ? chartHtml
+      : `<div class="ws-sc-top">
           <span class="ws-sc-icon ${iconTone}"><span class="material-symbols-outlined">${esc(c.icon || 'insights')}</span></span>
           ${topRight}
         </div>
         ${lead}
         <div class="ws-sc-desc">${esc(c.desc || '')}</div>
-        ${action}
+        ${action}`;
+    return `
+      <button type="button" class="ws-scorecard${variantClass}" role="listitem" data-card="${i}" aria-label="${esc(c.title || c.action || 'Overview card')}"${locked ? ' aria-disabled="true" data-locked="1"' : ''}>
+        ${body}
       </button>`;
   };
   return `
@@ -8257,6 +8272,12 @@ if (typeof window !== 'undefined') window.WisePaintWelcome = paintWelcomeNow;
  *                          transcript settles open it here.
  *   ollama       {false}   pass false to skip the local-model rewrite on this
  *                          mount (Clearer reading stays available on others)
+ *   autoFileLibrary {bool} default true — a finished turn files its thread onto
+ *                          the WISEcodeAI Library shelf, so the Library records
+ *                          the work rather than what someone remembered to file
+ *   buildTranscript {fn}   (turns, ts) => html — exposed on the returned api so
+ *                          a host can rebuild an archived thread in the chat's
+ *                          own line markup instead of forking it
  *   onAddMember  {fn}      () => void — "Add team member to chat" popover item
  *   onHistory    {fn}      () => void — "History & Projects" popover item
  *   onToggleWidth{fn}      (isWide) => void — fired when the width toggle flips
@@ -8382,8 +8403,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     } catch (_) { /* non-browser host */ }
     /* Control chips open panels rather than answering questions, so they don't
        belong in a "what can I ask" listing. */
-    const CONTROL = new Set([ASK_HELP_INTENT, 'choose_agents', 'connect_source']);
-    const rows = intents.filter((c) => c && c.label && !CONTROL.has(c.intent));
+    const rows = intents.filter((c) => c && c.label && !isControlIntent(c.intent));
     const items = rows.map((c) => {
       const q = c.ask && c.ask !== c.label ? ` — <em>\u201C${esc(c.ask)}\u201D</em>` : '';
       return `<li><strong>${esc(c.label)}</strong>${q}</li>`;
@@ -8426,6 +8446,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      Temporarily hidden — flip ASK_HELP_CHIP_ON to restore it on every mount
      and setIntents swap. The below-input gold link is unaffected. */
   const ASK_HELP_INTENT = 'ask_help';
+  const WALKTHROUGH_INTENT = 'walkthrough';
+  const isControlIntent = (intent) => intent === ASK_HELP_INTENT
+    || intent === WALKTHROUGH_INTENT
+    || intent === 'choose_agents'
+    || intent === 'connect_source';
   const ASK_HELP_CHIP_ON = false;
   const withAskHelpChip = (list) => {
     if (!askHelpOn || !ASK_HELP_CHIP_ON) return list;
@@ -9950,6 +9975,25 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       + `<span class="sc-out-source-txt">Source: <strong>${name}</strong></span></div>`;
   }
 
+  /* A finished turn files its thread onto the WISEcodeAI Library shelf, so the
+     Library is a true record of the work instead of a record of what someone
+     remembered to file. Filing updates the thread's own card, so a long
+     conversation stays one card. Hosts opt out with `autoFileLibrary: false`;
+     "File to Library" in the Conversation menu still exists for choosing a
+     folder by hand. */
+  function fileThreadToLibrary() {
+    if (opts.autoFileLibrary === false) return;
+    const store = typeof window !== 'undefined' ? window.WiseLibraryStore : null;
+    if (!store || typeof store.autoFileCurrent !== 'function') return;
+    try {
+      store.autoFileCurrent({
+        chatHistory,
+        messagesEl: messages,
+        historyKey: opts.historyKey,
+      });
+    } catch (_) { /* the shelf is never worth breaking a turn over */ }
+  }
+
   /* The ONE streamed-turn path: stream the reasoning trace for an already-
      resolved reply, then post it. Every WISEcodeAI answer — chip-routed
      (wiseaiRespond), fixed (respondFixed), or host-posted via the mount's
@@ -9991,6 +10035,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       if (typeof opts.onReplyDone === 'function') {
         try { opts.onReplyDone(meta.intent); } catch (_) { /* host hook */ }
       }
+      fileThreadToLibrary();
     };
     /* Start the local-model pass while the reasoning trace plays. Simple
        off-script questions become short food/nutrition answers; scripted
@@ -10315,12 +10360,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      twice. Control cards (open a panel, not a chat turn) and locked "coming
      soon" cards are dropped. Returns an ordered list of { title, groups:[{...}] }. */
   function askSuggestions() {
-    const CONTROL = new Set([ASK_HELP_INTENT, 'choose_agents', 'connect_source']);
     const seen = new Set();
     const groups = [];
 
     const scCards = (scorecards && Array.isArray(scorecards.cards) ? scorecards.cards : [])
-      .filter((c) => c && !c.locked && c.intent !== 'connect_source' && (c.ask || c.title))
+      .filter((c) => c && !c.locked && !isControlIntent(c.intent) && (c.ask || c.title))
       .map((c) => {
         if (c.intent) seen.add(c.intent);
         return { icon: c.icon || 'auto_awesome', title: c.title || c.ask, desc: c.desc || '',
@@ -10386,6 +10430,37 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   function closeAskHelp() { askHelpApi?.close(); }
   function setAskDocked(on) { ensureAskPanel()?.setDocked(!!on); }
   function dismissAskOverlay() { askHelpApi?.dismissOverlay?.(); }
+
+  /* Guide card — two separate sticky modules to the right of chat.
+     Walkthrough opens first (z 2, in front). What can I ask docks as the
+     layer below (z 1). The welcome stays up: this is a control, not a turn. */
+  function stackGuideModules() {
+    const row = document.getElementById('modules-row');
+    if (!row) return;
+    const chat = rootEl.closest('#modules-row > *') || rootEl;
+    const owl = row.querySelector('.owt-mod');
+    const ask = row.querySelector('.wch-ask-panel.wch-docked:not(.owt-mod)');
+    if (owl && chat && chat.parentElement === row && chat.nextElementSibling !== owl) {
+      chat.after(owl);
+    }
+    if (owl && ask && ask.parentElement === row) owl.after(ask);
+    row.classList.add('modules-sticky');
+  }
+  function openGuideModules() {
+    const openOwl = () => {
+      try { window.WiseWalkthrough?.open({ force: true }); } catch (_) { /* not ready */ }
+    };
+    if (window.WiseWalkthrough && typeof window.WiseWalkthrough.open === 'function') openOwl();
+    else document.addEventListener('wise:walkthrough-ready', openOwl, { once: true });
+    stackGuideModules();
+    const ask = ensureAskPanel();
+    if (ask) {
+      ask.setDocked(true);
+      ask.open();
+    }
+    stackGuideModules();
+    requestAnimationFrame(stackGuideModules);
+  }
 
   /* ── Turns Module — a "Fork from here" side panel ────────────────────────
      A right-docked overlay (same shell + open/close animation as History) that
@@ -11949,6 +12024,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   function sendIntent(intent, label) {
     if (!intent) return;
     if (intent === 'choose_agents') { openAgents(); return; }
+    if (intent === WALKTHROUGH_INTENT) { openGuideModules(); return; }
     if (intent === ASK_HELP_INTENT) openAskHelp();
     const found = intents.find((c) => c && c.intent === intent);
     const text = (label != null ? label : (found ? (found.ask || found.label) : '')) || String(intent);
@@ -11989,7 +12065,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      stays hidden) AND offer the next possible intents for THAT chat — not the
      welcome's full chip set. Spent chips from the thread stay dimmed; leftover
      related prompts trail the last turn as inline chips. */
-  const HISTORY_CONTROL = new Set([ASK_HELP_INTENT, 'choose_agents', 'connect_source']);
+  const HISTORY_CONTROL = new Set([ASK_HELP_INTENT, WALKTHROUGH_INTENT, 'choose_agents', 'connect_source']);
   const HISTORY_STOP = new Set(['the','and','for','with','this','that','from','what','whats','how','you','your','our','was','would','about','into','then','than','just','more','tell','show','make','made','best','least']);
   const HISTORY_WEAK = new Set(['food','foods','list','database','recipe','chart','report']);
   function historyTokens(s) {
@@ -12133,7 +12209,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   function matchIntentFromText(text) {
     const raw = String(text || '').replace(/\s+/g, ' ').trim().toLowerCase();
     if (!raw) return null;
-    const CONTROL = new Set([ASK_HELP_INTENT, 'choose_agents', 'connect_source']);
+    const CONTROL = new Set([ASK_HELP_INTENT, WALKTHROUGH_INTENT, 'choose_agents', 'connect_source']);
     const STOP = new Set([
       'the', 'and', 'for', 'with', 'this', 'that', 'from', 'what', 'whats', 'how',
       'you', 'your', 'our', 'was', 'would', 'about', 'into', 'then', 'than', 'just',
@@ -12421,6 +12497,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (def.locked || card.hasAttribute('data-locked')) return;
     /* Control cards open a panel instead of starting a chat turn. */
     if (def.intent === 'connect_source') { openConnectors(); return; }
+    if (def.intent === WALKTHROUGH_INTENT) { openGuideModules(); return; }
+    if (applyKeepWelcomeChip(def, def.ask || def.title || '')) return;
     const label = def.ask || def.title || '';
     const handled = opts.onIntent ? opts.onIntent(def.intent, label) : false;
     hideWelcome();
@@ -12822,6 +12900,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
 
   /* Score-card rail — horizontal scroll with floating controls + edge fades. */
   if (scorecards) {
+    playOverviewCardCharts(rootEl);
     const rail = rootEl.querySelector(`#${id}-scorecards`);
     const wrap = rail?.closest('.ws-scorecards-wrap');
     if (rail && wrap) {
@@ -14049,7 +14128,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      run it straight away when neither is in flight. `holdOutputs` /
      `releaseOutputs` are the other half: a host that surfaces a run of output
      cards brackets that run so the turn's closing chips wait for the last one. */
-  return { addUser, addWISEcodeAI, respond: respondWithTrace, afterPrompt: promptStage.after, afterAnswer: answerStage.after, holdOutputs: outputStage.hold, releaseOutputs: outputStage.release, showTyping, primeChips, revealChips, messages, ask, sendIntent, reset, openAgents, closeAgents, openConnectors, closeConnectors, openAskHelp, closeAskHelp, setAskDocked, isAskDocked: () => !!(askHelpApi && askHelpApi.isDocked && askHelpApi.isDocked()), openTurns, closeTurns, toggleTurns, setTurnsDocked, isTurnsDocked: () => turnsDocked, hideWelcome, setIntents, announceRoute, setWidth: syncWidthUI, getDbId: () => currentDbId, selectDb, root: rootEl };
+  return { addUser, addWISEcodeAI, respond: respondWithTrace, afterPrompt: promptStage.after, afterAnswer: answerStage.after, holdOutputs: outputStage.hold, releaseOutputs: outputStage.release, showTyping, primeChips, revealChips, messages, ask, sendIntent, reset, buildTranscript: buildSeedTranscript, openAgents, closeAgents, openConnectors, closeConnectors, openAskHelp, closeAskHelp, setAskDocked, isAskDocked: () => !!(askHelpApi && askHelpApi.isDocked && askHelpApi.isDocked()), openGuideModules, openTurns, closeTurns, toggleTurns, setTurnsDocked, isTurnsDocked: () => turnsDocked, hideWelcome, setIntents, announceRoute, setWidth: syncWidthUI, getDbId: () => currentDbId, selectDb, root: rootEl };
 }
 
 /* ------------------------------------------------------------------ */

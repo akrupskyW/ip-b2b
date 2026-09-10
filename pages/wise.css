@@ -6924,8 +6924,8 @@ html.full-bleed.dark.fb-chat-tint .chip {
   border-color: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 28%, transparent);
   color: var(--fb-chat-fg, #16233B);
 }
-html.full-bleed.fb-chat-tint .ws-scorecard,
-html.full-bleed.dark.fb-chat-tint .ws-scorecard {
+html.full-bleed.fb-chat-tint .ws-scorecard:not(.ws-scorecard--hero):not(.ws-scorecard--gold),
+html.full-bleed.dark.fb-chat-tint .ws-scorecard:not(.ws-scorecard--hero):not(.ws-scorecard--gold) {
   background: color-mix(in srgb, var(--fb-chat-fg, #16233B) 10%, var(--fb-chat-bg)) !important;
   border-color: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 28%, transparent);
   color: var(--fb-chat-fg, #16233B);
@@ -6951,8 +6951,8 @@ html.full-bleed.fb-chat-tint .ws-intent-chip.is-used:hover {
   background: color-mix(in srgb, var(--fb-chat-fg, #16233B) 8%, var(--fb-chat-bg)) !important;
   border-color: color-mix(in srgb, var(--fb-chat-fg, #16233B) 18%, transparent) !important;
 }
-html.full-bleed.fb-chat-tint .ws-scorecard:hover,
-html.full-bleed.fb-chat-tint .ws-scorecard--intro:hover,
+html.full-bleed.fb-chat-tint .ws-scorecard:not(.ws-scorecard--hero):not(.ws-scorecard--gold):hover,
+html.full-bleed.fb-chat-tint .ws-scorecard--intro:not(.ws-scorecard--gold):hover,
 html.full-bleed.fb-chat-tint .ws-scorecard--wiseai:hover {
   background: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 14%, var(--fb-chat-bg)) !important;
   border-color: color-mix(in srgb, var(--fb-chat-accent, var(--fb-chat-fg, #16233B)) 50%, transparent) !important;
@@ -8272,6 +8272,7 @@ html.dark .sc-avatar-wiseai { background: #fff; color: #141414; }
 
 /* ===== Welcome screen ===== */
 .sc-welcome {
+  --ws-welcome-pad: 2rem;
   position: absolute; inset: 0; z-index: 10; background: transparent;
   display: flex; flex-direction: column; align-items: center;
   /* Bottom-anchored so the welcome (owl → heading → chips) sits just above the
@@ -8281,7 +8282,7 @@ html.dark .sc-avatar-wiseai { background: #fff; color: #141414; }
      chip layout is driven by a container query on `.sc-body` (the chat pane
      width), not this overlay. Applies to every WISEcodeAI surface. */
   justify-content: safe flex-end; overflow-x: hidden; overflow-y: auto;
-  padding: 2rem; font-size: var(--fs-ui);
+  padding: var(--ws-welcome-pad); font-size: var(--fs-ui);
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 html.dark .sc-welcome { background: transparent; }
@@ -8289,8 +8290,20 @@ html.dark .sc-welcome { background: transparent; }
 /* Owl, copy, and large cards stay put. Small intent chips wrap in place on a
    full-size chat; in the single-pane (narrow) dock they cap at three rows. */
 .sc-welcome > .ws-heading,
-.sc-welcome > .ws-sub,
-.sc-welcome > .ws-scorecards-section { flex-shrink: 0; }
+.sc-welcome > .ws-sub { flex-shrink: 0; }
+/* Overview rail — same edge-to-edge trick as .sc-surface-rail--bleed. The
+   scroll box runs the chat MODULE edge to edge (the negative margins cancel
+   the welcome pad); the first card rests on that same inset, so it still
+   lines up under the heading while the rest of the row peeks off the right. */
+.sc-welcome > .ws-scorecards-section {
+  flex-shrink: 0;
+  align-self: stretch;
+  box-sizing: border-box;
+  width: auto;
+  max-width: none;
+  margin-left: calc(-1 * var(--ws-welcome-pad, 2rem));
+  margin-right: calc(-1 * var(--ws-welcome-pad, 2rem));
+}
 
 .ws-logo-wrap { position: relative; width: 72px; height: 72px; margin-bottom: 1.75rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
 /* Owl constellation is the Orbit style only. Helix / Ten hide it so the
@@ -8517,6 +8530,14 @@ html.dark .sc-open-chip-ic { color: var(--primary-bright, #8B9FAF); }
   scroll-snap-type: x mandatory; scroll-behavior: smooth;
   scrollbar-width: none; -ms-overflow-style: none; padding: 6px 2px 14px;
 }
+/* Welcome rail: lead-in matches the cancelled welcome pad so the first card
+   rests under the heading; trailing 6px is hover-lift / focus-ring room. */
+.sc-welcome .ws-scorecards {
+  padding-inline-start: var(--ws-welcome-pad, 2rem);
+  padding-inline-end: 6px;
+  scroll-padding-inline-start: var(--ws-welcome-pad, 2rem);
+  scroll-padding-inline-end: 6px;
+}
 .ws-scorecards::-webkit-scrollbar { height: 0; width: 0; display: none; }
 .ws-scorecard {
   display: flex; flex-direction: column; align-items: stretch; gap: 6px; text-align: left;
@@ -8527,6 +8548,11 @@ html.dark .sc-open-chip-ic { color: var(--primary-bright, #8B9FAF); }
   background: color-mix(in srgb, var(--primary) 10%, #fff); border: 1px solid var(--border-strong);
   border-radius: 10px !important; cursor: pointer; font-family: inherit;
   transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.ws-scorecard--lg {
+  flex: 0 0 268px;
+  min-width: 268px;
+  aspect-ratio: 4 / 3;
 }
 .ws-scorecard:hover { background: color-mix(in srgb, var(--primary) 16%, #fff); border-color: color-mix(in srgb, var(--primary) 45%, var(--border-strong)); box-shadow: 0 6px 18px rgba(37, 80, 124, 0.12); transform: translateY(-2px); }
 html.dark .ws-scorecard { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); }
@@ -8546,10 +8572,16 @@ html.dark .ws-scorecard:hover { background: color-mix(in srgb, var(--primary-bri
 .ws-sc-scroll .material-symbols-outlined { font-size: 22px !important; }
 .ws-sc-scroll--next { right: -16px; }
 .ws-sc-scroll--prev { left: -16px; }
+/* Full-bleed welcome rail — chevrons sit on the module edges, not outside a
+   centered cluster. */
+.sc-welcome .ws-sc-scroll--next { right: 10px; }
+.sc-welcome .ws-sc-scroll--prev { left: 10px; }
 .ws-sc-scroll[hidden] { display: none; }
 .ws-scorecards-wrap::before, .ws-scorecards-wrap::after {
   content: ''; position: absolute; top: 0; bottom: 0; width: 24px; pointer-events: none; z-index: 4; opacity: 0; transition: opacity 0.15s ease;
 }
+.sc-welcome .ws-scorecards-wrap::before,
+.sc-welcome .ws-scorecards-wrap::after { width: 48px; }
 .ws-scorecards-wrap::before { left: 0; background: linear-gradient(to right, var(--bg) 0%, transparent 100%); }
 .ws-scorecards-wrap::after { right: 0; background: linear-gradient(to left, var(--bg) 0%, transparent 100%); }
 html.dark .ws-scorecards-wrap::before { background: linear-gradient(to right, var(--surface) 0%, transparent 100%); }
@@ -8593,6 +8625,49 @@ html.dark .sc-card .ws-scorecards-wrap::after { background: linear-gradient(to l
 .ws-sc-intro-title { font-size: 1rem; font-weight: 800; line-height: 1.2; letter-spacing: -0.01em; color: var(--text); margin-top: 6px; }
 .ws-scorecard--intro .ws-sc-intro-title,
 .ws-scorecard--wiseai .ws-sc-intro-title { color: var(--primary-ink, var(--primary)); }
+/* Walkthrough / gold intro — pale gold paper, Gilded Grain stroke.
+   Same light-card recipe as the blue intros; the fill is the lightest gold
+   wash (--warm-300), the border stays the dark gold. */
+.ws-scorecard--gold {
+  background: color-mix(in srgb, var(--warm-300, #B69252) 10%, #fff);
+  border-color: var(--warm-400, #946005);
+}
+.ws-scorecard--gold:hover {
+  background: color-mix(in srgb, var(--warm-300, #B69252) 16%, #fff);
+  border-color: var(--warm-400, #946005);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--warm-400, #946005) 16%, transparent);
+}
+html.dark .ws-scorecard--gold {
+  background: color-mix(in srgb, var(--warm-300, #B69252) 14%, transparent);
+  border-color: var(--warm-400, #946005);
+}
+html.dark .ws-scorecard--gold:hover {
+  background: color-mix(in srgb, var(--warm-300, #B69252) 22%, transparent);
+  border-color: var(--warm-400, #946005);
+}
+.ws-scorecard--gold .ws-sc-icon,
+.ws-sc-icon--gold,
+.ws-scorecard--gold .ws-sc-intro-title,
+.ws-scorecard--gold .ws-sc-action {
+  color: var(--warm-400, #946005);
+}
+.ws-sc-pill--gold,
+.ws-scorecard--gold .ws-sc-pill {
+  background: color-mix(in srgb, var(--warm-300, #B69252) 16%, transparent);
+  color: var(--warm-400, #946005);
+}
+html.dark .ws-scorecard--gold .ws-sc-icon,
+html.dark .ws-sc-icon--gold,
+html.dark .ws-scorecard--gold .ws-sc-intro-title,
+html.dark .ws-scorecard--gold .ws-sc-action,
+html.dark .ws-sc-pill--gold,
+html.dark .ws-scorecard--gold .ws-sc-pill {
+  color: color-mix(in srgb, var(--warm-400, #946005) 42%, var(--ter-amber, #FFC434));
+}
+html.dark .ws-sc-pill--gold,
+html.dark .ws-scorecard--gold .ws-sc-pill {
+  background: color-mix(in srgb, var(--warm-300, #B69252) 18%, transparent);
+}
 
 /* Hero variant — the welcome card wears the sign-in art (assets/auth-hero.png),
    framed on the lower part of the photo where the food fades into the deep-blue
@@ -8606,6 +8681,11 @@ html.dark .ws-scorecard--hero {
     linear-gradient(180deg, rgba(13, 22, 44, 0.28) 0%, rgba(13, 22, 44, 0.5) 40%, rgba(13, 22, 44, 0.74) 100%),
     url('../assets/auth-hero.png') 50% 66% / cover no-repeat;
 }
+.ws-scorecard--hero:not(.ws-scorecard--chart) {
+  flex: 0 0 268px;
+  min-width: 268px;
+  aspect-ratio: 4 / 3;
+}
 .ws-scorecard--hero:hover,
 html.dark .ws-scorecard--hero:hover {
   border-color: rgba(37, 80, 124, 0.85);
@@ -8616,9 +8696,13 @@ html.dark .ws-scorecard--hero:hover {
 }
 /* The one card title that reads as a headline, so it takes the brand serif —
    the same treatment as the sign-in hero's caption. */
-.ws-scorecard--hero .ws-sc-intro-title {
+.ws-scorecard--hero .ws-sc-intro-title,
+.ws-scorecard--lg .ws-sc-intro-title {
   font-family: 'WISE Digits', var(--font-serif);
   font-weight: 700;
+  font-size: 1rem;
+}
+.ws-scorecard--hero .ws-sc-intro-title {
   color: #fff;
   text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
 }
@@ -8626,6 +8710,189 @@ html.dark .ws-scorecard--hero:hover {
 .ws-scorecard--hero .ws-sc-action { color: #fff; }
 .ws-scorecard--hero .ws-sc-icon { color: #fff; }
 .ws-scorecard--hero .ws-sc-pill { background: rgba(255, 255, 255, 0.22); color: #fff; }
+
+/* Chart welcome cards — own stills, sized to hold the Overview donut
+   or the three WISEscore pillar bars. */
+.ws-scorecard--chart {
+  flex: 0 0 268px;
+  min-width: 268px;
+  aspect-ratio: 4 / 3;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 4px 6px;
+}
+.ws-scorecard--chart-upf,
+html.dark .ws-scorecard--chart-upf {
+  background:
+    linear-gradient(180deg, rgba(13, 22, 44, 0.28) 0%, rgba(13, 22, 44, 0.5) 40%, rgba(13, 22, 44, 0.74) 100%),
+    url('../assets/welcome-card-upf.png') 50% 28% / cover no-repeat;
+}
+.ws-scorecard--chart-upf:hover,
+html.dark .ws-scorecard--chart-upf:hover {
+  background:
+    linear-gradient(180deg, rgba(13, 22, 44, 0.2) 0%, rgba(13, 22, 44, 0.42) 40%, rgba(13, 22, 44, 0.68) 100%),
+    url('../assets/welcome-card-upf.png') 50% 28% / cover no-repeat;
+}
+.ws-scorecard--chart-pillars,
+html.dark .ws-scorecard--chart-pillars {
+  background:
+    linear-gradient(180deg, rgba(13, 22, 44, 0.28) 0%, rgba(13, 22, 44, 0.5) 40%, rgba(13, 22, 44, 0.74) 100%),
+    url('../assets/welcome-card-pillars.png') 50% 28% / cover no-repeat;
+}
+.ws-scorecard--chart-pillars:hover,
+html.dark .ws-scorecard--chart-pillars:hover {
+  background:
+    linear-gradient(180deg, rgba(13, 22, 44, 0.2) 0%, rgba(13, 22, 44, 0.42) 40%, rgba(13, 22, 44, 0.68) 100%),
+    url('../assets/welcome-card-pillars.png') 50% 28% / cover no-repeat;
+}
+.ws-sc-chart {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin: 0;
+  min-height: 0;
+  width: 100%;
+}
+.ws-sc-chart--upf { flex-wrap: nowrap; }
+.ws-sc-chart--pillars {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  max-width: none;
+  width: 100%;
+  padding: 2px 4px 0;
+}
+.ws-scorecard--chart .ws-sc-donut.dash-donut,
+.ws-scorecard--chart .dash-donut {
+  width: 196px;
+  height: 196px;
+  margin: 0 auto;
+}
+.ws-scorecard--hero .dash-donut-center::before {
+  width: 104px;
+  height: 104px;
+  background: rgba(13, 22, 44, 0.72);
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+.ws-scorecard--hero .dash-donut-single .dash-donut-center::before,
+.ws-scorecard--hero .dash-donut-double .dash-donut-center::before {
+  width: 104px;
+  height: 104px;
+}
+.ws-scorecard--hero .dash-donut-center > * { max-width: 100px; }
+.ws-scorecard--hero .dash-donut-num {
+  font-size: 1.7rem;
+  color: #fff;
+}
+.ws-scorecard--hero .dash-pct {
+  color: #fff;
+  font-size: 0.7rem;
+}
+.ws-scorecard--hero .dash-donut-label {
+  font-size: 0.62rem;
+  color: #fff;
+  margin-top: 1px;
+}
+.ws-scorecard--hero .dash-donut-sub {
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.78);
+}
+.ws-sc-dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.ws-sc-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--dot, #fff);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18);
+}
+.ws-sc-ws-head {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  color: #fff;
+}
+.ws-sc-ws-label {
+  font-family: 'WISE Digits', var(--font-serif);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: #fff;
+}
+.ws-sc-ws-num {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  color: #fff;
+}
+.ws-sc-ws-num .ws-sc-chart-num {
+  font-size: 1.65rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.ws-sc-ws-unit {
+  font-size: 0.78rem;
+  font-weight: 600;
+  opacity: 0.72;
+}
+.ws-sc-ws-rating {
+  margin-left: auto;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.86;
+}
+.ws-sc-pillars { display: flex; flex-direction: column; gap: 5px; }
+.ws-sc-pillar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px 28px;
+  align-items: center;
+  gap: 8px;
+}
+.ws-sc-pillar-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ws-sc-pillar-name .material-symbols-outlined { font-size: 14px !important; flex-shrink: 0; }
+.ws-sc-pillar-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+}
+.ws-sc-pillar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.ws-sc-pillar-score {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #fff;
+  text-align: right;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ws-sc-pillar-fill { transition: none; }
+}
 
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
@@ -8716,6 +8983,22 @@ html.dark .ws-intent-chip.is-used {
   border-color: color-mix(in srgb, var(--text-muted) 40%, transparent) !important;
   color: var(--text-muted) !important;
 }
+/* A spent row does not linger. js/chip-lock.js stamps `data-chips-gone` on the
+   way out, and the row fades and collapses before it is taken off the thread.
+   The height it collapses from is measured in JS — CSS cannot know it. */
+[data-chips-gone] {
+  overflow: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  margin-block: 0 !important;
+  padding-block: 0 !important;
+  transition: opacity .16s ease, max-height .26s ease .02s,
+              margin-block .26s ease .02s, padding-block .26s ease .02s;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-chips-gone] { transition: none; }
+}
+
 /* The gold "What can I ask?" letters stop shimmering once the row is spent. */
 [data-chips-spent] .sc-ask-ch,
 .ws-intent-chip.is-used .sc-ask-ch {
@@ -9312,7 +9595,7 @@ html.chat-compact .chat-topbar { padding-left: 20px; padding-right: 20px; }
 html.chat-compact .chat-messages-area { padding-block: 0.85rem; }
 html.chat-compact .sc-line { margin-bottom: 0.7rem; }
 html.chat-compact .chat-input-rail { padding-block: 8px; --sc-rail-pad-b: 8px; --sc-welcome-raise: clamp(5rem, 14vh, 9.5rem); }
-html.chat-compact .sc-welcome { padding: 1.25rem; }
+html.chat-compact .sc-welcome { --ws-welcome-pad: 1.25rem; padding: var(--ws-welcome-pad); }
 html.chat-compact .sc-welcome--cards { padding-top: 1.25rem; }
 html.chat-compact .sc-settings .ss-body { padding: 12px; }
 
@@ -9481,7 +9764,9 @@ html.dark .sc-line-time:hover { color: var(--text); }
 .sc-line-time:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .sc-trust-chip {
   display: inline-flex; align-items: center; gap: 4px;
-  font-size: 0.625rem; font-weight: 600; letter-spacing: 0.01em;
+  /* Reads at the same size and weight as the timestamp on the other end of the
+     row — it names where the answer came from, it is not an emphasis. */
+  font-size: 0.625rem; font-weight: 500; letter-spacing: 0.02em;
   /* Same muted grey as the copy / thumbs / more icons on the left of this row. */
   color: color-mix(in srgb, var(--text-subtle) 62%, transparent);
 }
@@ -12899,7 +13184,10 @@ html.dark .dash-ing-eyebrow--unknown { color: #e08840; }
   grid-template-rows: 1fr 9px var(--dash-donut-ring-h);
   align-items: center;
   justify-items: center;
-  width: 64px;
+  /* Its own label sets the floor. "View report" does not fit 64px, so a fixed
+     width hung the last three pixels of it past the edge of the card — and a
+     larger text scale would hang more. */
+  min-width: 64px;
   padding: 0;
   background: none;
   border: none;
@@ -16856,6 +17144,19 @@ html.dark .wmod-stat--verified .wmod-stat-label .material-symbols-outlined { col
 .pf-trow.is-selected { background: var(--primary-soft); }
 .pf-td { font-size: 12px; color: var(--text-muted); min-width: 0; }
 .pf-col-product { display: flex; align-items: center; gap: 10px; }
+.pf-col-upc { font-variant-numeric: tabular-nums; }
+.pf-col-brand {
+  display: inline-flex; align-items: center; gap: 8px;
+  min-width: 0; color: var(--text); font-weight: 600;
+}
+.pf-col-brand .pf-brand-avatar {
+  width: 22px; height: 22px; flex: 0 0 22px; font-size: 10px;
+}
+.pf-col-brand .pf-brand-avatar:has(img) {
+  background: #fff;
+  border: 1px solid var(--border);
+}
+.pf-brand-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pf-col-check { display: flex; align-items: center; justify-content: center; }
 .pf-col-menu { display: flex; align-items: center; justify-content: center; }
 .pf-col-action { display: flex; align-items: center; justify-content: flex-start; min-width: 0; }
@@ -17037,6 +17338,40 @@ html.dark .wmod-secret { background: rgba(0,0,0,0.25); }
 html.dark #modules-row:has(.wa-pane.is-open) .wch-sidebar.wch-docked.wch-right,
 html.dark #modules-row.modules-sticky:has(.wa-pane.is-open) .wch-sidebar.wch-docked.wch-right:not(.wch-unsticky) {
   border-left-color: rgba(255, 255, 255, 0.22) !important;
+}
+
+/* Guide pair — two separate sticky modules. Walkthrough opens first and
+   sits on the parent layer (z 2, surface-2, tucked under chat). What can
+   I ask is the layer below (z 1, paper surface, nested tuck). The owl
+   keeps its open (right) corners rounded — the catalog tucks under that
+   radius, it does not square the parent card. */
+#modules-row.modules-sticky .owt-mod.wch-sidebar.wch-docked:not(.wch-unsticky) {
+  z-index: 2;
+  background: var(--surface-2, var(--surface));
+  --wch-tree-bg: var(--surface-2, var(--surface));
+}
+#modules-row.modules-sticky .owt-mod.wch-sidebar.wch-docked:not(.wch-unsticky) .wch-head,
+#modules-row.modules-sticky .owt-mod.wch-sidebar.wch-docked:not(.wch-unsticky) .owt-nav,
+#modules-row.modules-sticky .owt-mod.wch-sidebar.wch-docked:not(.wch-unsticky) .owt-body {
+  background: var(--surface-2, var(--surface));
+}
+#modules-row.modules-sticky .owt-mod + .wch-ask-panel.wch-sidebar.wch-docked:not(.wch-unsticky) {
+  z-index: 1;
+  background: var(--surface) !important;
+  --wch-tree-bg: var(--surface);
+  margin-left: calc(-1 * var(--sticky-nested-tuck) - var(--r-md, 16px) - var(--modules-gap, 8px)) !important;
+  padding-left: calc(var(--sticky-nested-face-pad) + var(--r-md, 16px)) !important;
+  border-left: 0 !important;
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  box-shadow: none !important;
+  height: calc(100% - 30px);
+  max-height: calc(100% - 30px);
+  align-self: center;
+}
+#modules-row.modules-sticky .owt-mod + .wch-ask-panel.wch-sidebar.wch-docked:not(.wch-unsticky) .wch-head,
+#modules-row.modules-sticky .owt-mod + .wch-ask-panel.wch-sidebar.wch-docked:not(.wch-unsticky) .wch-ask-scroll {
+  background: var(--surface) !important;
 }
 
 /* WISEowl walkthrough — docked module on the real page

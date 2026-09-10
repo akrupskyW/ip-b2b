@@ -2,9 +2,13 @@
    chip-lock.js — a transcript only moves forward.
 
    App-wide rule: once the member has moved past a row of intent chips, that
-   row is history. Every chip in it goes disabled, so a thread can never be
-   replayed from a point it has already left. Only the newest row — the one
-   that carries the conversation forward — takes a click.
+   row is history and comes off the thread. It fades, collapses and is removed,
+   so a thread can never be replayed from a point it has already left and the
+   transcript only ever offers the step it is on. Only the newest row — the one
+   that carries the conversation forward — is on screen at all.
+
+   A row that holds an opener is the exception: it stays, with its intents dead,
+   because an output the member never opened must still open three turns later.
 
    A row is spent when either the member has said something beneath it (a
    `you` line landed below) or a newer chip row has arrived beneath it.
@@ -47,6 +51,33 @@
     '[data-open-module], [data-web-ref], [data-chip-more]';
   var SKIP_SEL = '[data-chip-lock-skip]';
 
+  var REDUCED = !!(window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  /* Long enough for the fade and collapse in wise.css to finish, short enough
+     that a transition which never reports back cannot strand a dead row. */
+  var CLEAR_MS = 460;
+
+  /* A step the member has left comes off the transcript — the thread shows the
+     step it is on, not every step it has been through. The row fades, collapses
+     and goes.
+
+     A row holding something that must stay reachable for the life of the thread
+     — an output chip, a surface card — is kept instead, and only its intents go
+     dead. An output the member never opened must still open three turns later
+     (see the outputs-open-on-request rule). */
+  function retire(row) {
+    if (row.matches(KEEP_SEL) || row.querySelector(KEEP_SEL)) return;
+    if (REDUCED) { row.remove(); return; }
+    /* The height it collapses from has to be measured — CSS cannot know it. */
+    row.style.maxHeight = row.getBoundingClientRect().height + 'px';
+    /* Commit that start value before the transition is switched on, or there is
+       nothing to animate away from. */
+    void row.offsetHeight;
+    row.setAttribute('data-chips-gone', '1');
+    row.style.maxHeight = '0px';
+    setTimeout(function () { row.remove(); }, CLEAR_MS);
+  }
+
   function deaden(chip) {
     if (chip.closest(KEEP_SEL)) return;
     chip.setAttribute('aria-disabled', 'true');
@@ -61,6 +92,7 @@
     row.setAttribute('data-chips-spent', '1');
     row.classList.add('is-done');
     Array.prototype.forEach.call(row.querySelectorAll(CHIP_SEL), deaden);
+    retire(row);
   }
 
   /* A chip that lands in a row after the lock still reads the lock — the

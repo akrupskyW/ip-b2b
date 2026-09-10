@@ -4029,19 +4029,10 @@
     html.dark .sc-line-time { color: color-mix(in srgb, var(--text-subtle) 70%, transparent); }
     html.dark .sc-line-time:hover { color: var(--text); }
     .sc-line-time:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-    .sc-trust-chip {
-      display: inline-flex; align-items: center; gap: 4px;
-      font-size: 0.625rem; font-weight: 600; letter-spacing: 0.01em;
-      /* Same muted grey as the copy / thumbs / more icons on the left of this row. */
-      color: color-mix(in srgb, var(--text-subtle) 62%, transparent);
-    }
-    .sc-trust-chip .material-symbols-outlined { font-size: 12px !important; }
-    html.dark .sc-trust-chip { color: color-mix(in srgb, var(--text-subtle) 70%, transparent); }
-    /* WISEcodeAI answer meta — the action icons (copy / thumbs / more) hug the
-       far LEFT of the row while the grounding source chip floats to the far RIGHT. */
+    /* The grounding source chip (.sc-trust-chip) and its placement at the far
+       right of the meta row belong to pages/wise.css. */
     .sc-line-wiseai .sc-line-meta > .sc-fb-wrap,
     .sc-line-wiseai .sc-line-meta > .sc-line-time { order: 1; }
-    .sc-line-wiseai .sc-line-meta > .sc-trust-chip { order: 2; margin-left: auto; }
 
     /* ── Answer feedback (thumbs up/down) ─────────────────────────────────
        Shown under compare-board chat replies. Thumbs-down opens a small
@@ -6304,6 +6295,7 @@
       font-weight: 800; font-size: 10px; color: #fff; letter-spacing: -0.01em;
       background: var(--primary); overflow: hidden;
     }
+    .pf-brand-avatar:has(img) { background: #fff; border: 1px solid var(--border); }
     .pf-brand-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .pf-brand-name {
       font-size: 11px; font-weight: 700; color: var(--text); line-height: 1;
@@ -6423,19 +6415,25 @@
     .pf-col-gs { display: none; }
     #portfolio-panel.pf-stars-on .pf-col-gs { display: flex; align-items: center; }
     /* Widen the row grid to hold every column, and let the table scroll
-       sideways. Order: select · ⋮ · reports · product · serving · category ·
+       sideways.        Order: select · ⋮ · reports · product · serving · category ·
        rating (stars + score) · standardized (std★ + std score) · next star ·
-       issues & ease · reformulate · data · shield · updated. */
+       issues & ease · reformulate · brand · state · updated — Discovered runs
+       the same set with brand and without state. */
     #portfolio-panel.pf-stars-on .pf-table--discovered .pf-thead,
-    #portfolio-panel.pf-stars-on .pf-table--discovered .pf-trow,
+    #portfolio-panel.pf-stars-on .pf-table--discovered .pf-trow {
+      grid-template-columns: 34px 34px 168px 210px 74px 140px 92px 108px 132px 190px 150px 120px 168px;
+      width: max-content; min-width: 100%;
+    }
     #portfolio-panel.pf-stars-on .pf-table--needsinfo .pf-thead,
     #portfolio-panel.pf-stars-on .pf-table--needsinfo .pf-trow {
-      grid-template-columns: 34px 34px 168px 210px 74px 140px 92px 108px 132px 190px 150px 130px 160px 168px;
+      grid-template-columns: 34px 34px 128px 210px 74px 140px 92px 108px 132px 190px 150px 120px 140px 168px;
       width: max-content; min-width: 100%;
     }
     #portfolio-panel.pf-stars-on .pf-table--claimed .pf-thead,
-    #portfolio-panel.pf-stars-on .pf-table--claimed .pf-trow {
-      grid-template-columns: 34px 34px 34px 210px 74px 140px 92px 108px 132px 190px 150px 130px 160px 168px;
+    #portfolio-panel.pf-stars-on .pf-table--claimed .pf-trow,
+    #portfolio-panel.pf-stars-on .pf-table--removed .pf-thead,
+    #portfolio-panel.pf-stars-on .pf-table--removed .pf-trow {
+      grid-template-columns: 34px 34px 34px 210px 74px 140px 92px 108px 132px 190px 150px 120px 160px 168px;
       width: max-content; min-width: 100%;
     }
     #portfolio-panel.pf-stars-on .pf-table-card { overflow-x: auto; overflow-y: visible; }
@@ -6698,6 +6696,15 @@
     html.dark .pf-stat--verified .pf-stat-num { color: #93C5FD; }
     .pf-stat--verified .pf-stat-label .material-symbols-outlined { color: var(--primary); }
     html.dark .pf-stat--verified .pf-stat-label .material-symbols-outlined { color: #93C5FD; }
+    .pf-stat-admin {
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-top: 2px; padding: 0 4px; border-radius: 3px;
+      background: rgb(219, 39, 119); color: #fff;
+      font-size: 7px; font-weight: 700; letter-spacing: 0.04em; line-height: 1.25;
+    }
+    .pf-stat[hidden],
+    #pf-seg-removed[hidden],
+    #pf-view-removed[hidden] { display: none !important; }
     .pf-stat-star { color: var(--pf-gold); font-size: 16px !important; vertical-align: -2px; }
     .pf-stat:disabled { cursor: default; }
     .pf-stat:disabled:hover { transform: none; box-shadow: var(--shadow-1); border-color: var(--border); }
@@ -6845,19 +6852,41 @@
       border-radius: 16px; box-shadow: var(--shadow-1);
     }
     .pf-table { width: 100%; }
+    /* Selection bar — the multi-select counterpart to the row ⋮. It only exists
+       while rows are ticked, so Remove can be fired once for a whole set
+       instead of one row at a time. It pins above the column header (which
+       carries the select-all box) and pushes that header down by its own
+       measured height, so Remove stays reachable however far the list has
+       scrolled. */
+    .pf-selbar {
+      display: flex; align-items: center; gap: 12px;
+      padding: 8px 12px; border-radius: 10px;
+      /* Opaque under the tint — it pins over the rows it acts on. */
+      background-color: var(--surface);
+      background-image: linear-gradient(var(--primary-soft), var(--primary-soft));
+      position: sticky; top: var(--pf-sticky-3, 0px); z-index: 6;
+    }
+    .pf-selbar[hidden] { display: none; }
+    .pf-table-card.has-selbar .pf-thead {
+      top: calc(var(--pf-sticky-3, 0px) + var(--pf-selbar-h, 46px));
+    }
+    .pf-selbar-count { font-size: 12px; font-weight: 700; color: var(--text); }
+    .pf-selbar-acts { display: flex; align-items: center; gap: 8px; margin-left: auto; }
     .pf-thead,
     .pf-trow { display: grid; align-items: center; gap: 10px; padding: 10px 12px; }
     /* Unified columns across every list: select · ⋮ · reports · product
-       (name + UPC) · data · Non-UPF Shield · updated. Missing data and
-       Discovered share a wide reports track for their action buttons.
-       Claimed only has a reports icon, so that track stays icon-sized
-       and the product sits next to it. */
+       (name + UPC + pack formats) · brand · state · updated. In Progress
+       keeps UPC under the product name (same as Claimed / Discovered) and
+       carries Brand + Data State. Discovered has Brand but no State.
+       Claimed only has a reports icon, so that track stays icon-sized. */
     .pf-table--discovered .pf-thead,
-    .pf-table--discovered .pf-trow,
+    .pf-table--discovered .pf-trow { grid-template-columns: 34px 34px minmax(158px,0.95fr) minmax(0,2.6fr) minmax(110px,0.9fr) minmax(150px,1.5fr); }
     .pf-table--needsinfo .pf-thead,
-    .pf-table--needsinfo .pf-trow { grid-template-columns: 34px 34px minmax(158px,0.95fr) minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) minmax(150px,1.5fr); }
+    .pf-table--needsinfo .pf-trow { grid-template-columns: 34px 34px minmax(118px,0.8fr) minmax(0,2fr) minmax(110px,0.9fr) minmax(128px,1fr) minmax(140px,1.2fr); }
     .pf-table--claimed .pf-thead,
-    .pf-table--claimed .pf-trow { grid-template-columns: 34px 34px 34px minmax(150px,1.2fr) minmax(0,2.4fr) minmax(0,1fr) minmax(0,1fr) minmax(150px,1.5fr); }
+    .pf-table--claimed .pf-trow,
+    .pf-table--removed .pf-thead,
+    .pf-table--removed .pf-trow { grid-template-columns: 34px 34px 34px minmax(0,2.4fr) minmax(120px,0.95fr) minmax(0,1.1fr) minmax(150px,1.5fr); }
     .pf-col-claim { display: flex; align-items: center; }
     .pf-table-block { margin-bottom: 16px; }
     .pf-table-block:last-child { margin-bottom: 0; }
@@ -6894,9 +6923,24 @@
     .pf-date--secondary .pf-date-val { font-size: 10px; }
 
     /* Pack sizes — the actual sizes / counts a product is sold in, shown as a
-       row of bar-separated links beneath the UPC. Only rendered for products
-       that come in more than one size (about half the portfolio); single-size
-       products show nothing here. */
+       row of bar-separated links beneath the product name (under the UPC when
+       that still lives in the product cell). Only rendered for products that
+       come in more than one size; single-size products show nothing here. */
+    .pf-col-upc { font-variant-numeric: tabular-nums; }
+    .pf-col-upc .pf-upc { display: block; }
+    .pf-col-brand {
+      display: inline-flex; align-items: center; gap: 8px;
+      min-width: 0; color: var(--text); font-weight: 600;
+    }
+    .pf-col-brand .pf-brand-avatar {
+      width: 22px; height: 22px; flex: 0 0 22px;
+      font-size: 10px;
+    }
+    .pf-col-brand .pf-brand-avatar:has(img) {
+      background: #fff;
+      border: 1px solid var(--border);
+    }
+    .pf-brand-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .pf-sizes { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 3px; }
     .pf-size-link {
       font-size: 10.5px; font-weight: 700; color: var(--primary);
@@ -6985,13 +7029,14 @@
     html.dark .pf-name-badge { color: #93C5FD; }
     .pf-upc { font-size: 11px; color: var(--text-subtle); font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
 
-    /* Leading ⋮ actions menu column — buries edit / view (or claim) actions
+    /* Leading ⋮ actions menu column — buries edit / open / reports / remove
        plus the updated / last-edited dates behind a single dot menu. The next
-       column is the row's primary action: reports on Claimed, Complete details
-       / Verify ingredients on Missing data, Review & Claim on Discovered. */
+       column is the row's primary action: reports on Claimed, Finish Data on
+       In Progress, Review & Claim on Discovered. */
     .pf-col-menu { display: flex; align-items: center; justify-content: center; }
-    /* Claimed-only action track — the ghost "Finish and Claim" button that sits
-       between the reports icon and the product cell, jumping to view-product. */
+    /* Worded row action — Review & Claim / Finish Data. Claimed no longer
+       carries a Finish-and-Claim track; its actions live in the ⋮ and the
+       multi-select bar. */
     .pf-col-action { display: flex; align-items: center; justify-content: flex-start; min-width: 0; }
     .pf-col-action .pf-claim-btn { max-width: 100%; }
     .pf-col-reports { display: flex; align-items: center; justify-content: flex-start; min-width: 0; }
@@ -7131,6 +7176,18 @@
     .pf-chip--incomplete { background: var(--surface-3); color: var(--text-subtle); padding: 2px 9px; cursor: default; }
     html.dark .pf-chip--muted,
     html.dark .pf-chip--incomplete { background: rgba(255,255,255,0.08); }
+    /* Missing-data Data State — informational only; never a tap target. */
+    .pf-chip--dstate { cursor: default; padding: 2px 9px; }
+    .pf-chip--dstate:hover { filter: none; }
+    .pf-chip--dstate-incomplete { background: var(--surface-3); color: var(--text-subtle); }
+    html.dark .pf-chip--dstate-incomplete { background: rgba(255,255,255,0.08); }
+    .pf-chip--dstate-verify { background: var(--sec-red-10); color: var(--sec-red-text); }
+    html.dark .pf-chip--dstate-verify { color: #FF9E96; }
+    .pf-chip--dstate-nfp { background: var(--ter-amber-10); color: var(--ter-amber-text); }
+    html.dark .pf-chip--dstate-nfp { color: #FFD98A; }
+    .pf-chip--dstate-pending { background: var(--ter-cyan-10); color: var(--ter-cyan-text); }
+    html.dark .pf-chip--dstate-pending { color: #C5CFD7; }
+    .pf-stats--needs { margin: 0 0 2px; }
 
     /* Row action buttons — compact circular icon buttons (≤44px). overflow is
        clipped and the glyph is size-locked so an icon can never balloon. */
@@ -7619,7 +7676,7 @@
                             </div>
                             <div class="ws-sc-metric">5<span class="ws-sc-metric-unit"> to verify</span></div>
                             <div class="ws-sc-title">Verify ingredients</div>
-                            <div class="ws-sc-desc">5 products in Missing data still need ingredients verified before their reports unlock.</div>
+                            <div class="ws-sc-desc">5 products in In Progress still need ingredients verified before their reports unlock.</div>
                             <div class="ws-sc-action">Verify ingredients<span class="material-symbols-outlined">arrow_outward</span></div>
                         </button>
                         <button class="ws-scorecard" role="listitem" data-order="1" data-urgent="5" data-impact="5" data-recent="4" onclick="startActivateShields()">
@@ -7648,8 +7705,8 @@
                                 <span class="ws-sc-pill ws-sc-pill--up"><span class="material-symbols-outlined">rule</span>Complete</span>
                             </div>
                             <div class="ws-sc-metric">18<span class="ws-sc-metric-unit"> to finish</span></div>
-                            <div class="ws-sc-title">Complete products missing data</div>
-                            <div class="ws-sc-desc">18 products are missing details — add them and they move into your portfolio.</div>
+                            <div class="ws-sc-title">Complete products in progress</div>
+                            <div class="ws-sc-desc">18 products are still in progress — add the missing details and they move into your portfolio.</div>
                             <div class="ws-sc-action">Add missing info<span class="material-symbols-outlined">arrow_outward</span></div>
                         </button>
                         <button class="ws-scorecard ws-scorecard--intro" role="listitem" data-order="4" data-urgent="0" data-impact="0" data-recent="0" onclick="portfolioTour()">
@@ -7658,7 +7715,7 @@
                                 <span class="ws-sc-pill ws-sc-pill--intro"><span class="material-symbols-outlined">auto_awesome</span>Start here</span>
                             </div>
                             <div class="ws-sc-intro-title">Your whole portfolio, decoded</div>
-                            <div class="ws-sc-desc">Missing data, Discovered, and Claimed — every product, one view.</div>
+                            <div class="ws-sc-desc">In Progress, Discovered, and Claimed — every product, one view.</div>
                             <div class="ws-sc-action">Take the tour<span class="material-symbols-outlined">arrow_outward</span></div>
                         </button>
                         <button class="ws-scorecard ws-scorecard--intro ws-scorecard--wiseai" role="listitem" data-order="5" data-urgent="0" data-impact="0" data-recent="0" onclick="askWiseAiPortfolio()">
@@ -8043,7 +8100,7 @@
           </div>
           <div class="flex-1 min-w-0">
             <div class="text-xs font-bold text-oyster-100">Product Portfolio</div>
-            <p class="text-xs text-oyster-600 mt-0.5" id="pf-subtitle">Flax4Life · Claimed, Discovered &amp; Missing data</p>
+            <p class="text-xs text-oyster-600 mt-0.5" id="pf-subtitle">Flax4Life · Claimed, In Progress &amp; Discovered</p>
           </div>
           <div class="panel-controls">
             <!-- Marketing Assets + brand switcher float with the ⋯ / width
@@ -8128,7 +8185,7 @@
           <div class="pf-toolbar">
             <div class="pf-search-inline">
               <span class="material-symbols-outlined">search</span>
-              <input type="text" class="pf-search" placeholder="Search by product name or UPC" aria-label="Search portfolio" />
+              <input type="text" class="pf-search" placeholder="Search by product name, brand, or UPC" aria-label="Search portfolio" />
               <!-- Filter funnel floated to the right edge of the search field.
                    Opens a popover to filter the tables by Data verification
                    status, Non-UPF Shield status, and the Guiding Stars fields
@@ -8141,14 +8198,6 @@
                 <div class="pf-filter-pop-head">
                   <span class="pf-filter-pop-title">Filter products</span>
                   <button type="button" class="pf-filter-clear" onclick="pfClearFilters()">Clear all</button>
-                </div>
-                <div class="pf-filter-group">
-                  <div class="pf-filter-label">Data</div>
-                  <div class="pf-filter-chips" id="pf-filter-data">
-                    <button type="button" class="pf-fchip is-on" data-data="all">All</button>
-                    <button type="button" class="pf-fchip" data-data="verify">To verify</button>
-                    <button type="button" class="pf-fchip" data-data="complete">Complete</button>
-                  </div>
                 </div>
                 <div class="pf-filter-group">
                   <div class="pf-filter-label">Non-UPF Shield</div>
@@ -8196,8 +8245,8 @@
 
           <!-- At-a-glance + tables — ONE component. Segment score cards jump
                to a list and stay highlighted for the table in view as you
-               scroll. Status cards (To verify / Shields pending / Ineligible)
-               filter the rows within the Claimed list. -->
+               scroll. Status cards (Non-UPF verification states) filter the
+               rows within the Claimed list. -->
           <div class="pf-board">
             <div class="pf-stats pf-stats--seg" role="group" aria-label="Jump to a portfolio list">
               <button type="button" class="pf-stat is-active" id="pf-seg-all" data-seg="all" aria-pressed="true" onclick="pfFilterClick('all', null)">
@@ -8208,13 +8257,18 @@
                 <span class="pf-stat-num">5</span>
                 <span class="pf-stat-label">Claimed</span>
               </button>
+              <button type="button" class="pf-stat pf-stat--warn" id="pf-seg-needsinfo" data-seg="needsinfo" aria-pressed="false" onclick="pfFilterClick('needsinfo', null)">
+                <span class="pf-stat-num">18</span>
+                <span class="pf-stat-label">In Progress</span>
+              </button>
               <button type="button" class="pf-stat" id="pf-seg-discovered" data-seg="discovered" aria-pressed="false" onclick="pfFilterClick('discovered', null)">
                 <span class="pf-stat-num">47</span>
                 <span class="pf-stat-label">Discovered</span>
               </button>
-              <button type="button" class="pf-stat pf-stat--warn" id="pf-seg-needsinfo" data-seg="needsinfo" aria-pressed="false" onclick="pfFilterClick('needsinfo', null)">
-                <span class="pf-stat-num">18</span>
-                <span class="pf-stat-label">Missing data</span>
+              <button type="button" class="pf-stat pf-stat--muted" id="pf-seg-removed" data-seg="removed" hidden aria-pressed="false" onclick="pfFilterClick('removed', null)">
+                <span class="pf-stat-num">0</span>
+                <span class="pf-stat-label">Removed</span>
+                <span class="pf-stat-admin">Admin</span>
               </button>
             </div>
             <div class="pf-board-views">
@@ -8224,16 +8278,12 @@
             <div class="pf-table-block">
               <h3 class="pf-card-title">Claimed products</h3>
               <div class="pf-block-stats">
-                <div class="pf-stats pf-stats--status" role="group" aria-label="Filter claimed products by status">
+                <div class="pf-stats pf-stats--status" role="group" aria-label="Filter claimed products by Non-UPF verification state">
               <!-- Below: status cards filter the rows within the Claimed list. -->
               
-              <button type="button" class="pf-stat pf-stat--alert" data-status="verify" hidden aria-pressed="false" onclick="pfFilterClick('claimed', 'verify')">
-                <span class="pf-stat-num">0</span>
-                <span class="pf-stat-label">To verify</span>
-              </button>
-              <button type="button" class="pf-stat pf-stat--good" data-status="complete" aria-pressed="false" onclick="pfFilterClick('claimed', 'complete')">
-                <span class="pf-stat-num">5</span>
-                <span class="pf-stat-label">Complete</span>
+              <button type="button" class="pf-stat pf-stat--verified" data-status="verified" aria-pressed="false" onclick="pfFilterClick('claimed', 'verified')">
+                <span class="pf-stat-num">4</span>
+                <span class="pf-stat-label"><span class="material-symbols-outlined">gpp_good</span>Verified</span>
               </button>
               <button type="button" class="pf-stat pf-stat--warn" id="pf-stat-prequal" data-status="prequal" aria-pressed="false" onclick="pfFilterClick('claimed', 'prequal')">
                 <span class="pf-stat-num">1</span>
@@ -8243,15 +8293,15 @@
                 <span class="pf-stat-num">0</span>
                 <span class="pf-stat-label">Pending attestation</span>
               </button>
-              <button type="button" class="pf-stat pf-stat--verified" data-status="verified" aria-pressed="false" onclick="pfFilterClick('claimed', 'verified')">
-                <span class="pf-stat-num">4</span>
-                <span class="pf-stat-label"><span class="material-symbols-outlined">gpp_good</span>Verified</span>
+              <button type="button" class="pf-stat pf-stat--warn" data-status="pending" hidden aria-pressed="false" onclick="pfFilterClick('claimed', 'pending')">
+                <span class="pf-stat-num">0</span>
+                <span class="pf-stat-label">Pending payment</span>
               </button>
               <button type="button" class="pf-stat pf-stat--muted" data-status="ineligible" hidden aria-pressed="false" onclick="pfFilterClick('claimed', 'ineligible')">
                 <span class="pf-stat-num">0</span>
                 <span class="pf-stat-label">Ineligible</span>
               </button>
-              <button type="button" class="pf-stat pf-stat--info" id="pf-stat-sizes" data-status="sizes" aria-pressed="false" onclick="pfFilterClick('claimed', 'sizes')">
+              <button type="button" class="pf-stat pf-stat--info" id="pf-stat-sizes" data-status="sizes" hidden aria-pressed="false" onclick="pfFilterClick('claimed', 'sizes')">
                 <span class="pf-stat-num">0</span>
                 <span class="pf-stat-label"><span class="material-symbols-outlined">straighten</span>Multiple sizes</span>
               </button>
@@ -8263,20 +8313,73 @@
             </div>
               </div>
               <div class="pf-table-card">
+                <div class="pf-selbar" id="pf-selbar-claimed" hidden>
+                  <span class="pf-selbar-count" id="pf-selbar-count-claimed">0 selected</span>
+                  <div class="pf-selbar-acts">
+                    <button type="button" class="wise-btn wise-btn--danger wise-btn--sm" data-pf="remove-selected"><span class="material-symbols-outlined">delete</span>Remove</button>
+                    <button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-pf="reports-selected"><span class="material-symbols-outlined">description</span>Reports</button>
+                    <button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-pf="open-selected"><span class="material-symbols-outlined">visibility</span>Open Product</button>
+                    <button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-pf="edit-selected"><span class="material-symbols-outlined">edit</span>Edit</button>
+                    <button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-pf="clear-selected">Clear</button>
+                  </div>
+                </div>
                 <div class="pf-table pf-table--claimed">
                 <div class="pf-thead">
                   <span class="pf-th pf-col-check" data-no-sort><button class="vf-check vf-check--head" type="button" data-pf="toggle-all" aria-label="Select all products" aria-checked="false"><span class="material-symbols-outlined">check_box_outline_blank</span></button></span>
                   <span class="pf-th pf-col-menu"></span>
                   <span class="pf-th pf-col-reports" data-no-sort></span>
-                  <span class="pf-th pf-col-action" data-no-sort></span>
                   <span class="pf-th pf-col-product">Product</span>
-                  <span class="pf-th pf-col-data">Data</span>
-                  <span class="pf-th pf-col-shield">Non-UPF Shield</span>
+                  <span class="pf-th pf-col-brand">Brand</span>
+                  <span class="pf-th pf-col-shield">State</span>
                   <span class="pf-th pf-col-updated"><span class="pf-updated-label">Updated</span><span class="pf-datemenu"><button type="button" class="pf-datemenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Choose which date to show and sort by" title="Choose date type" data-tip="Choose date type" onclick="pfToggleDateMenu(event)"><span class="material-symbols-outlined">more_vert</span></button><span class="pf-datemenu-pop" role="menu" hidden><button type="button" class="pf-datemenu-item is-active" role="menuitemradio" aria-checked="true" data-datetype="updated" onclick="pfSetDateType('updated', event)"><span class="material-symbols-outlined">update</span>Updated date</button><button type="button" class="pf-datemenu-item" role="menuitemradio" aria-checked="false" data-datetype="edited" onclick="pfSetDateType('edited', event)"><span class="material-symbols-outlined">edit_calendar</span>Last edited date</button></span></span></span>
                 </div>
                 <div class="pf-table-foot"></div>
               </div>
             </div>
+            </div>
+          </section>
+
+          <section class="pf-view" id="pf-view-needsinfo" role="tabpanel" aria-labelledby="pf-seg-needsinfo">
+            <div class="pf-note pf-note--warn">
+              <h3 class="pf-card-title">Products in progress</h3>
+              <p class="pf-card-sub">We've identified these products but do not have all the information needed yet. Review and add the missing details; once complete the products will move into your portfolio.</p>
+              <p class="pf-note-flag">Products in progress aren't included in any reports or stats until they're complete.</p>
+            </div>
+
+            <div class="pf-block-stats">
+              <div class="pf-stats pf-stats--needs" role="group" aria-label="Filter products by data state">
+                <button type="button" class="pf-stat pf-stat--muted" data-needs-state="incomplete" aria-pressed="false" onclick="pfNeedsStateClick('incomplete')">
+                  <span class="pf-stat-num">0</span>
+                  <span class="pf-stat-label">Incomplete Data</span>
+                </button>
+                <button type="button" class="pf-stat pf-stat--alert" data-needs-state="verify" aria-pressed="false" onclick="pfNeedsStateClick('verify')">
+                  <span class="pf-stat-num">0</span>
+                  <span class="pf-stat-label">Verify Ingredients</span>
+                </button>
+                <button type="button" class="pf-stat pf-stat--warn" data-needs-state="nfp" aria-pressed="false" onclick="pfNeedsStateClick('nfp')">
+                  <span class="pf-stat-num">0</span>
+                  <span class="pf-stat-label">NFP Issue</span>
+                </button>
+                <button type="button" class="pf-stat pf-stat--info" data-needs-state="pending" aria-pressed="false" onclick="pfNeedsStateClick('pending')">
+                  <span class="pf-stat-num">0</span>
+                  <span class="pf-stat-label">Pending Review</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="pf-table-card">
+              <div class="pf-table pf-table--needsinfo">
+                <div class="pf-thead">
+                  <span class="pf-th pf-col-check" data-no-sort><button class="vf-check vf-check--head" type="button" data-pf="toggle-all" aria-label="Select all products" aria-checked="false"><span class="material-symbols-outlined">check_box_outline_blank</span></button></span>
+                  <span class="pf-th pf-col-menu"></span>
+                  <span class="pf-th pf-col-reports" data-no-sort></span>
+                  <span class="pf-th pf-col-product">Product Name</span>
+                  <span class="pf-th pf-col-brand">Brand</span>
+                  <span class="pf-th pf-col-data">Data State</span>
+                  <span class="pf-th pf-col-updated"><span class="pf-updated-label">Updated</span><span class="pf-datemenu"><button type="button" class="pf-datemenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Choose which date to show and sort by" title="Choose date type" data-tip="Choose date type" onclick="pfToggleDateMenu(event)"><span class="material-symbols-outlined">more_vert</span></button><span class="pf-datemenu-pop" role="menu" hidden><button type="button" class="pf-datemenu-item is-active" role="menuitemradio" aria-checked="true" data-datetype="updated" onclick="pfSetDateType('updated', event)"><span class="material-symbols-outlined">update</span>Updated date</button><button type="button" class="pf-datemenu-item" role="menuitemradio" aria-checked="false" data-datetype="edited" onclick="pfSetDateType('edited', event)"><span class="material-symbols-outlined">edit_calendar</span>Last edited date</button></span></span></span>
+                </div>
+                <div class="pf-table-foot"></div>
+              </div>
             </div>
           </section>
 
@@ -8287,14 +8390,20 @@
             </div>
 
             <div class="pf-table-card">
+              <div class="pf-selbar" id="pf-selbar-discovered" hidden>
+                <span class="pf-selbar-count" id="pf-selbar-count-discovered">0 selected</span>
+                <div class="pf-selbar-acts">
+                  <button type="button" class="wise-btn wise-btn--danger wise-btn--sm" data-pf="remove-selected"><span class="material-symbols-outlined">delete</span>Remove product</button>
+                  <button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-pf="clear-selected">Clear</button>
+                </div>
+              </div>
               <div class="pf-table pf-table--discovered">
                 <div class="pf-thead">
                   <span class="pf-th pf-col-check" data-no-sort><button class="vf-check vf-check--head" type="button" data-pf="toggle-all" aria-label="Select all products" aria-checked="false"><span class="material-symbols-outlined">check_box_outline_blank</span></button></span>
                   <span class="pf-th pf-col-menu"></span>
                   <span class="pf-th pf-col-reports" data-no-sort></span>
                   <span class="pf-th pf-col-product">Product</span>
-                  <span class="pf-th pf-col-data">Data</span>
-                  <span class="pf-th pf-col-shield">Non-UPF Shield</span>
+                  <span class="pf-th pf-col-brand">Brand</span>
                   <span class="pf-th pf-col-updated"><span class="pf-updated-label">Updated</span><span class="pf-datemenu"><button type="button" class="pf-datemenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Choose which date to show and sort by" title="Choose date type" data-tip="Choose date type" onclick="pfToggleDateMenu(event)"><span class="material-symbols-outlined">more_vert</span></button><span class="pf-datemenu-pop" role="menu" hidden><button type="button" class="pf-datemenu-item is-active" role="menuitemradio" aria-checked="true" data-datetype="updated" onclick="pfSetDateType('updated', event)"><span class="material-symbols-outlined">update</span>Updated date</button><button type="button" class="pf-datemenu-item" role="menuitemradio" aria-checked="false" data-datetype="edited" onclick="pfSetDateType('edited', event)"><span class="material-symbols-outlined">edit_calendar</span>Last edited date</button></span></span></span>
                 </div>
                 <div class="pf-table-foot"></div>
@@ -8302,22 +8411,20 @@
             </div>
           </section>
 
-          <section class="pf-view" id="pf-view-needsinfo" role="tabpanel" aria-labelledby="pf-seg-needsinfo">
-            <div class="pf-note pf-note--warn">
-              <h3 class="pf-card-title">Products with missing data</h3>
-              <p class="pf-card-sub">We've identified these products but do not have all the information needed yet. Review and add the missing details, once complete the products will move into your portfolio.</p>
-              <p class="pf-note-flag">Products with missing data aren't included in any reports or stats until they're complete.</p>
+          <section class="pf-view" id="pf-view-removed" role="tabpanel" aria-labelledby="pf-seg-removed" hidden>
+            <div class="pf-note">
+              <h3 class="pf-card-title">Removed products</h3>
+              <p class="pf-card-sub">Products taken out of this portfolio. Visible to internal admins only — they do not appear in All, Claimed, In Progress, or Discovered.</p>
             </div>
-
             <div class="pf-table-card">
-              <div class="pf-table pf-table--needsinfo">
+              <div class="pf-table pf-table--removed">
                 <div class="pf-thead">
                   <span class="pf-th pf-col-check" data-no-sort><button class="vf-check vf-check--head" type="button" data-pf="toggle-all" aria-label="Select all products" aria-checked="false"><span class="material-symbols-outlined">check_box_outline_blank</span></button></span>
                   <span class="pf-th pf-col-menu"></span>
                   <span class="pf-th pf-col-reports" data-no-sort></span>
                   <span class="pf-th pf-col-product">Product</span>
-                  <span class="pf-th pf-col-data">Data</span>
-                  <span class="pf-th pf-col-shield">Non-UPF Shield</span>
+                  <span class="pf-th pf-col-brand">Brand</span>
+                  <span class="pf-th pf-col-shield">State</span>
                   <span class="pf-th pf-col-updated"><span class="pf-updated-label">Updated</span><span class="pf-datemenu"><button type="button" class="pf-datemenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Choose which date to show and sort by" title="Choose date type" data-tip="Choose date type" onclick="pfToggleDateMenu(event)"><span class="material-symbols-outlined">more_vert</span></button><span class="pf-datemenu-pop" role="menu" hidden><button type="button" class="pf-datemenu-item is-active" role="menuitemradio" aria-checked="true" data-datetype="updated" onclick="pfSetDateType('updated', event)"><span class="material-symbols-outlined">update</span>Updated date</button><button type="button" class="pf-datemenu-item" role="menuitemradio" aria-checked="false" data-datetype="edited" onclick="pfSetDateType('edited', event)"><span class="material-symbols-outlined">edit_calendar</span>Last edited date</button></span></span></span>
                 </div>
                 <div class="pf-table-foot"></div>
@@ -10328,7 +10435,7 @@
       verify: {
         test: /(verif|ingredient|confirm.*label|check.*label|label.*(check|verif))/,
         tab: 'needsinfo',
-        reply: '<strong>5 products</strong> still need their ingredients verified — that’s the last step before each report unlocks. I’ve opened <strong>Missing data</strong> on the right; tap <strong>Verify Ingredients</strong> on any of those rows to open that product. Ingredient verification lives on the product page, not here.',
+        reply: '<strong>5 products</strong> still need their ingredients verified — that’s the last step before each report unlocks. I’ve opened <strong>In Progress</strong> on the right; tap <strong>Verify Ingredients</strong> on any of those rows to open that product. Ingredient verification lives on the product page, not here.',
         chips: ['shields', 'claimed', 'discovered'],
       },
       discovered: {
@@ -10340,13 +10447,13 @@
       needsinfo: {
         test: /(needs?\s*info|missing (info|detail|data|field)|incomplete|\bcomplete\b|\b18\b)/,
         tab: 'needsinfo',
-        reply: '<strong>18 products</strong> need more detail before they can join your portfolio — they won’t appear in any report or stat until they’re complete. Open <strong>Missing data</strong> on the right to add what’s missing; five of them still need <strong>Verify Ingredients</strong>.',
+        reply: '<strong>18 products</strong> need more detail before they can join your portfolio — they won’t appear in any report or stat until they’re complete. Open <strong>In Progress</strong> on the right to add what’s missing; five of them still need <strong>Verify Ingredients</strong>.',
         chips: ['discovered', 'claimed', 'add'],
       },
       claim: {
         test: /\bclaim(?!ed)/,
         tab: 'discovered',
-        reply: 'Claiming is free and unlimited. I’ve opened <strong>Discovered</strong> — pick any product that’s yours and hit <strong>Review &amp; claim</strong> to move it into your portfolio. If it’s missing key data it’ll land in <strong>Missing data</strong> until you complete it.',
+        reply: 'Claiming is free and unlimited. I’ve opened <strong>Discovered</strong> — pick any product that’s yours and hit <strong>Review &amp; claim</strong> to move it into your portfolio. If it’s missing key data it’ll land in <strong>In Progress</strong> until you complete it.',
         chips: ['discovered', 'needsinfo', 'claimed'],
       },
       add: {
@@ -10358,19 +10465,19 @@
       search: {
         test: /(search|find|look\s*up|where\s*is|filter by|locate)/,
         tab: 'claimed',
-        reply: 'Every view has a search box — filter by product name or UPC across <strong>Missing data</strong>, <strong>Discovered</strong>, and <strong>Claimed</strong>. Tell me what you’re looking for and I’ll jump you straight to it.',
+        reply: 'Every view has a search box — filter by product name, brand, or UPC across <strong>In Progress</strong>, <strong>Discovered</strong>, and <strong>Claimed</strong>. Tell me what you’re looking for and I’ll jump you straight to it.',
         chips: ['claimed', 'discovered', 'needsinfo'],
       },
       claimed: {
         test: /(claimed|my portfolio|my products|all (my )?products|portfolio overview|5 product)/,
         tab: 'claimed',
-        reply: 'Here’s your <strong>Claimed</strong> portfolio — <strong>5 products</strong> with complete data, <strong>4</strong> Non-UPF Verified and <strong>1</strong> pre-qualified. Products that still need ingredient verification live in <strong>Missing data</strong>. Where do you want to start?',
+        reply: 'Here’s your <strong>Claimed</strong> portfolio — <strong>5 products</strong> with complete data, <strong>4</strong> Non-UPF Verified and <strong>1</strong> pre-qualified. Products that still need ingredient verification live in <strong>In Progress</strong>. Where do you want to start?',
         chips: ['shields', 'ineligible', 'discovered'],
       },
       tour: {
         test: /(tour|get\s*started|walk\s*through|overview|guide me|show me around|how does|how do i|what can you)/,
         tab: 'claimed',
-        reply: 'Welcome to your <strong>Product Portfolio</strong>. It has three surfaces: <strong>Claimed</strong> (5 complete products), <strong>Discovered</strong> (47 public matches to review &amp; claim), and <strong>Missing data</strong> (18 products missing details, including 5 waiting on ingredient verification). Switch tabs on the right anytime — where would you like to begin?',
+        reply: 'Welcome to your <strong>Product Portfolio</strong>. It has three surfaces: <strong>Claimed</strong> (5 complete products), <strong>Discovered</strong> (47 public matches to review &amp; claim), and <strong>In Progress</strong> (18 products missing details, including 5 waiting on ingredient verification). Switch tabs on the right anytime — where would you like to begin?',
         chips: ['claimed', 'discovered', 'needsinfo'],
       },
     };
@@ -10477,7 +10584,7 @@
          local-model rewrite behind the trace, so no Ollama pause shows between
          chats. */
       const finish = function () {
-        addWISEcodeAIMessage('I’m your portfolio copilot. Right now you have <strong>5 claimed products</strong>, <strong>47 discovered matches</strong> to review &amp; claim, and <strong>18 products missing data</strong> (5 of those still need ingredient verification). Tell me what you’d like to do, or pick a task below.');
+        addWISEcodeAIMessage('I’m your portfolio copilot. Right now you have <strong>5 claimed products</strong>, <strong>47 discovered matches</strong> to review &amp; claim, and <strong>18 products in progress</strong> (5 of those still need ingredient verification). Tell me what you’d like to do, or pick a task below.');
         pfOfferChips(['claimed', 'discovered', 'needsinfo', 'shields']);
       };
       const steps = statusStepsFor(text, intent);
@@ -11741,24 +11848,72 @@
     }
     window.openPortfolioReport = openPortfolioReport;
     window.closePortfolioReport = closePortfolioReport;
-    const PF_TABS = ['claimed', 'discovered', 'needsinfo'];
+    const PF_TABS = ['claimed', 'needsinfo', 'discovered', 'removed'];
     /* Every list is stacked on one board now, so the segment cards scroll
        to a list and stay highlighted for whichever table is in view.
        'all' is the top-of-board resting state. */
-    const PF_SEGS = ['all', 'claimed', 'discovered', 'needsinfo'];
+    const PF_SEGS = ['all', 'claimed', 'needsinfo', 'discovered', 'removed'];
+    let pfSearchQ = '';
     /* Board state: which segment (list) is showing and, within Claimed, which
        status filter (if any) is active. The score cards drive both. */
     let pfSeg = 'all';
     let pfStatus = null;
+    let pfNeedsState = null;
+    const PF_NEEDS_STATES = {
+      incomplete: { label: 'Incomplete Data', chip: 'pf-chip--dstate-incomplete' },
+      verify:     { label: 'Verify Ingredients', chip: 'pf-chip--dstate-verify' },
+      nfp:        { label: 'NFP Issue', chip: 'pf-chip--dstate-nfp' },
+      pending:    { label: 'Pending Review', chip: 'pf-chip--dstate-pending' },
+    };
+    const PF_NEEDS_STATE_KEYS = Object.keys(PF_NEEDS_STATES);
+    function pfNeedsDataState(p, i) {
+      if (PF_NEEDS_STATE_KEYS.indexOf(p[4]) !== -1) return p[4];
+      if (PF_NEEDS_STATE_KEYS.indexOf(p[3]) !== -1) return p[3];
+      return PF_NEEDS_STATE_KEYS[(i || 0) % PF_NEEDS_STATE_KEYS.length];
+    }
+    function pfProductBrand(name) {
+      const n = String(name || '');
+      if (/^Dell Alpe\b/i.test(n)) return 'Dell Alpe';
+      if (/^Mezzetta\b/i.test(n)) return 'Mezzetta';
+      if (/^Sunridge Farms\b/i.test(n)) return 'Sunridge Farms';
+      const brand = PF_BRANDS[pfCurrentBrand];
+      return (brand && brand.name) || 'Flax4Life';
+    }
+    const PF_BRAND_EXTRAS = {
+      'Dell Alpe': { color: '#8B5E34', avatar: null },
+      'Mezzetta': { color: '#B91C1C', avatar: null },
+      'Sunridge Farms': { color: '#A16207', avatar: null },
+    };
+    function pfBrandMeta(name) {
+      const n = String(name || '').trim();
+      const listed = PF_BRANDS.find((b) => b.name.toLowerCase() === n.toLowerCase());
+      if (listed) return { name: listed.name, color: listed.color || '#25507C', avatar: listed.avatar || null };
+      const extra = PF_BRAND_EXTRAS[n];
+      if (extra) return { name: n, color: extra.color, avatar: extra.avatar || null };
+      const current = PF_BRANDS[pfCurrentBrand];
+      return {
+        name: n || (current && current.name) || 'Flax4Life',
+        color: (current && current.color) || '#25507C',
+        avatar: (current && current.avatar) || null
+      };
+    }
+    function pfBrandCellHtml(name) {
+      const meta = pfBrandMeta(name);
+      const letter = pfEsc((meta.name || '?').charAt(0));
+      const inner = meta.avatar
+        ? '<img src="' + pfEsc(meta.avatar) + '" alt="" onerror="this.parentNode.textContent=\'' + letter + '\'">'
+        : letter;
+      const bg = meta.avatar ? '#fff' : (meta.color || '#25507C');
+      return '<span class="pf-td pf-col-brand">' +
+        '<span class="pf-brand-avatar" style="background:' + bg + '">' + inner + '</span>' +
+        '<span class="pf-brand-label">' + pfEsc(meta.name) + '</span></span>';
+    }
 
     /* A claimed row's status tags are read off the chips it renders, so the
        filters need no per-row bookkeeping. */
     function pfRowTags(row) {
       const tags = [];
-      /* Data column. */
-      if (row.querySelector('.pf-chip--verify, .pf-row-act--verify')) tags.push('verify');
-      if (row.querySelector('.pf-chip--complete')) tags.push('complete');
-      /* Non-UPF Shield column — full lifecycle. */
+      /* Non-UPF verification state — full lifecycle. */
       if (row.querySelector('.pf-chip--prequal')) tags.push('prequal');
       if (row.querySelector('.pf-chip--attest')) tags.push('attest');
       if (row.querySelector('.pf-chip--verified')) tags.push('verified');
@@ -11768,6 +11923,27 @@
       if (row.querySelector('.pf-sizes')) tags.push('sizes');
       return tags;
     }
+    function pfRowBrand(row) {
+      if (!row) return '';
+      const stamped = row.getAttribute('data-brand');
+      if (stamped) return stamped;
+      const label = row.querySelector('.pf-brand-label');
+      if (label) return (label.textContent || '').replace(/\s+/g, ' ').trim();
+      const cell = row.querySelector('.pf-col-brand');
+      return cell ? (cell.textContent || '').replace(/\s+/g, ' ').trim() : '';
+    }
+    function pfRowMatchesSearch(row) {
+      if (!pfSearchQ) return true;
+      const q = pfSearchQ;
+      const qDigits = q.replace(/\D/g, '');
+      const name = ((row.querySelector('.pf-pname') || {}).textContent || '').toLowerCase();
+      const upc = ((row.querySelector('.pf-upc') || {}).textContent || '').toLowerCase();
+      const brand = pfRowBrand(row).toLowerCase();
+      if (name.indexOf(q) !== -1 || brand.indexOf(q) !== -1) return true;
+      if (upc.indexOf(q) !== -1) return true;
+      if (qDigits && upc.replace(/\D/g, '').indexOf(qDigits) !== -1) return true;
+      return false;
+    }
 
     /* Filter state, driven by the search-field filter popover. Covers the
        always-present columns (Data verification + Non-UPF Shield status) as
@@ -11775,7 +11951,7 @@
        matched against the status chips each row renders (see pfRowTags). */
     const pfFilters = { data: new Set(), shield: new Set(), stars: null, ease: null, nearMiss: false, categories: new Set() };
     function pfFiltersActive() {
-      return pfFilters.data.size > 0 || pfFilters.shield.size > 0 ||
+      return !!pfSearchQ || pfFilters.data.size > 0 || pfFilters.shield.size > 0 ||
              pfFilters.stars !== null || pfFilters.ease !== null || pfFilters.nearMiss || pfFilters.categories.size > 0;
     }
     /* Does a row pass the Data / Non-UPF Shield status filters? Within a group
@@ -11927,20 +12103,22 @@
         view.querySelectorAll('.pf-table').forEach((table) => {
           const isCta = table.classList.contains('pf-table--discovered-cta');
           const statusActive = seg === 'claimed' && !!pfStatus && !isCta;
+          const needsActive = seg === 'needsinfo' && !!pfNeedsState && !isCta;
           let shown = 0, total = 0;
           table.querySelectorAll('.pf-trow').forEach((row) => {
             total++;
             if (isCta) {
-              const match = pfRowMatchesGS(row);
+              const match = pfRowMatchesGS(row) && pfRowMatchesSearch(row);
               pfSetRowFiltered(row, !match);
               if (match) shown++;
               return;
             }
             const statusOk = seg !== 'claimed' || !pfStatus || pfRowTags(row).indexOf(pfStatus) !== -1;
-            /* Data / Non-UPF Shield chips only exist on Claimed, so those filters
-               only narrow that list — they never blank out Discovered / Missing data. */
+            /* Non-UPF Shield chips only exist on Claimed, so those filters
+               only narrow that list — they never blank out Discovered / In Progress. */
             const statusFilterOk = seg !== 'claimed' || pfRowMatchesStatus(row);
-            const match = statusOk && statusFilterOk && pfRowMatchesGS(row);
+            const needsOk = seg !== 'needsinfo' || !pfNeedsState || row.getAttribute('data-data-state') === pfNeedsState;
+            const match = statusOk && statusFilterOk && needsOk && pfRowMatchesGS(row) && pfRowMatchesSearch(row);
             pfSetRowFiltered(row, !match);
             if (match) shown++;
           });
@@ -11949,7 +12127,7 @@
           const foot = table.querySelector('.pf-table-foot span');
           if (foot) {
             if (foot.dataset.foot === undefined) foot.dataset.foot = foot.textContent;
-            foot.textContent = (statusActive || pfFiltersActive())
+            foot.textContent = (statusActive || needsActive || pfFiltersActive() || !!pfSearchQ)
               ? 'Showing ' + shown + ' of ' + total + ' products'
               : foot.dataset.foot;
           }
@@ -11969,11 +12147,14 @@
         if (view) { view.classList.remove('is-hidden', 'is-focus'); }
       });
       document.querySelectorAll('.pf-stat').forEach((b) => {
+        const needs = b.dataset.needsState;
         const status = b.dataset.status;
         const seg = b.dataset.seg;
-        const active = status
-          ? (!!pfStatus && pfStatus === status)
-          : (pfSeg === seg);
+        const active = needs
+          ? (!!pfNeedsState && pfNeedsState === needs)
+          : status
+            ? (!!pfStatus && pfStatus === status)
+            : (pfSeg === seg);
         b.classList.toggle('is-active', active);
         b.setAttribute('aria-pressed', active ? 'true' : 'false');
       });
@@ -11985,6 +12166,7 @@
       if (PF_SEGS.indexOf(tab) === -1) tab = 'all';
       pfSeg = tab;
       pfStatus = null;
+      pfNeedsState = null;
       pfRender();
       pfScrollToSeg(tab);
     }
@@ -12056,7 +12238,7 @@
     function pfVisibleSeg() {
       const body = document.getElementById('pf-body');
       if (!body) return pfSeg;
-      const ids = ['claimed', 'discovered', 'needsinfo'];
+      const ids = ['claimed', 'needsinfo', 'discovered', 'removed'];
       const bodyRect = body.getBoundingClientRect();
       const spyY = bodyRect.top + pfStickyHeight();
       const first = document.getElementById('pf-view-claimed');
@@ -12064,7 +12246,8 @@
       let current = 'claimed';
       ids.forEach((id) => {
         const el = document.getElementById('pf-view-' + id);
-        if (el && el.getBoundingClientRect().top <= spyY + 28) current = id;
+        if (!el || el.hidden) return;
+        if (el.getBoundingClientRect().top <= spyY + 28) current = id;
       });
       return current;
     }
@@ -12128,15 +12311,28 @@
            Clicking the active one clears the filter. */
         pfSeg = 'claimed';
         pfStatus = (pfStatus === status) ? null : status;
+        pfNeedsState = null;
       } else {
         /* Segment cards toggle: clicking the active one falls back to All. */
-        pfSeg = (pfSeg === seg && !pfStatus) ? 'all' : seg;
+        pfSeg = (pfSeg === seg && !pfStatus && !pfNeedsState) ? 'all' : seg;
         pfStatus = null;
+        pfNeedsState = null;
       }
       pfRender();
       pfScrollToSeg(pfStatus ? 'claimed' : pfSeg);
     }
     window.pfFilterClick = pfFilterClick;
+
+    /* Data-state cards live above the Missing data table. They stay on that
+       list and toggle a row filter; tapping the active card clears it. */
+    function pfNeedsStateClick(state) {
+      pfSeg = 'needsinfo';
+      pfStatus = null;
+      pfNeedsState = (pfNeedsState === state) ? null : state;
+      pfRender();
+      pfScrollToSeg('needsinfo');
+    }
+    window.pfNeedsStateClick = pfNeedsStateClick;
 
 
     /* Which date the Updated column leads with (and sorts by). The header ⋮
@@ -12159,6 +12355,8 @@
       '065776631520': ['4 ct', '6 ct', '12 ct'],    /* Chocolate Chip Muffins */
       '065776635504': ['12 ct', '4 ct'],            /* Chocolate Brownies */
       '857287004272': ['11 oz', '20 oz'],           /* Chunky Chocolate Granola */
+      '857287004265': ['11 oz', '20 oz'],           /* Apple Cinnamon Granola */
+      '746988973348': ['11 oz', '20 oz'],           /* Hawaiian Granola */
       '857287004562': ['5 ct', '10 ct'],            /* Oatmeal Raisin Cookies */
     };
     function pfUpcDigits(row) {
@@ -12189,13 +12387,17 @@
       return ordered;
     }
 
-    /* Render the pack-size chip row beneath a product's UPC, but only for
-       products sold in more than one size. Idempotent — an existing size line
-       is replaced, and single-size / unknown products have theirs removed. */
+    /* Render the pack-size chip row beneath the product name (or beneath the
+       UPC when that still lives in the product cell). Only for products sold
+       in more than one size. Idempotent — an existing size line is replaced,
+       and single-size / unknown products have theirs removed. */
     function pfPopulateSizes(row) {
       const cellText = row.querySelector('.pf-pcell-text');
-      const upc = row.querySelector('.pf-upc');
-      if (!cellText || !upc) return;
+      if (!cellText) return;
+      const name = cellText.querySelector('.pf-pname');
+      const upcInCell = cellText.querySelector('.pf-upc');
+      const anchor = upcInCell || name;
+      if (!anchor) return;
       const existing = cellText.querySelector('.pf-sizes');
       const sizes = pfSizesFor(row);
       if (!sizes || sizes.length < 2) { if (existing) existing.remove(); return; }
@@ -12207,7 +12409,7 @@
       if (!line) {
         line = document.createElement('span');
         line.className = 'pf-sizes';
-        upc.after(line);
+        anchor.after(line);
       }
       line.innerHTML = html;
     }
@@ -12355,6 +12557,24 @@
       if (glyph && head.classList.contains('vf-check')) {
         glyph.textContent = all ? 'check_box' : none ? 'check_box_outline_blank' : 'indeterminate_check_box';
       }
+      pfSyncSelectionBar(scope, selected.length);
+    }
+    /* The selection bar lives beside its table in the card and only exists
+       while rows are ticked. */
+    function pfSyncSelectionBar(scope, count) {
+      const card = scope.closest && scope.closest('.pf-table-card');
+      const bar = card && card.querySelector('.pf-selbar');
+      if (!bar) return;
+      bar.hidden = count === 0;
+      const label = bar.querySelector('.pf-selbar-count');
+      if (label) label.textContent = count + ' selected';
+      card.classList.toggle('has-selbar', count > 0);
+      if (count > 0) {
+        const h = Math.round(bar.getBoundingClientRect().height);
+        if (h) card.style.setProperty('--pf-selbar-h', h + 'px');
+      } else {
+        card.style.removeProperty('--pf-selbar-h');
+      }
     }
     function pfSyncAllHeads() {
       document.querySelectorAll('#portfolio-panel .pf-table').forEach(pfSyncTableHead);
@@ -12381,12 +12601,54 @@
       if (railId) return document.querySelector('.sc-surface-rail[data-surface-rail="' + CSS.escape(railId) + '"]');
       return btn.closest('.pf-table');
     }
+    function pfSelbarScope(btn) {
+      const card = btn.closest('.pf-table-card');
+      return card ? card.querySelector('.pf-table') : null;
+    }
     document.addEventListener('click', (e) => {
       const allBtn = e.target.closest('[data-pf="toggle-all"]');
       if (allBtn) {
         e.preventDefault();
         e.stopPropagation();
         pfToggleAll(pfSelectAllScope(allBtn));
+        return;
+      }
+      const removeBtn = e.target.closest('[data-pf="remove-selected"]');
+      if (removeBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        pfRemoveSelected(pfSelbarScope(removeBtn));
+        return;
+      }
+      const reportsSel = e.target.closest('[data-pf="reports-selected"]');
+      if (reportsSel) {
+        e.preventDefault();
+        e.stopPropagation();
+        const rows = pfVisibleRows(pfSelbarScope(reportsSel) || document.createElement('div')).filter((r) => r.classList.contains('is-selected'));
+        if (rows[0]) pfOpenRowReports(rows[0]);
+        return;
+      }
+      const openSel = e.target.closest('[data-pf="open-selected"]');
+      if (openSel) {
+        e.preventDefault();
+        e.stopPropagation();
+        const rows = pfVisibleRows(pfSelbarScope(openSel) || document.createElement('div')).filter((r) => r.classList.contains('is-selected'));
+        if (rows[0]) window.location.href = pfViewHref(rows[0]);
+        return;
+      }
+      const editSel = e.target.closest('[data-pf="edit-selected"]');
+      if (editSel) {
+        e.preventDefault();
+        e.stopPropagation();
+        const rows = pfVisibleRows(pfSelbarScope(editSel) || document.createElement('div')).filter((r) => r.classList.contains('is-selected'));
+        if (rows[0]) window.location.href = pfEditHref(rows[0]);
+        return;
+      }
+      const clearBtn = e.target.closest('[data-pf="clear-selected"]');
+      if (clearBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        pfClearSelection(pfSelbarScope(clearBtn));
         return;
       }
       const rowBtn = e.target.closest('.vf-check[data-pf="toggle-row"]');
@@ -12434,21 +12696,17 @@
        travel over in the URL, exactly like the Reformulate link). Pass `size`
        to open a specific pack count (the 4 ct / 12 ct links under the UPC). */
     /* Which portfolio action opened this row — the product page banner
-       follows this `from=` so Review & Claim, Complete details, Verify,
-       and Finish and Claim each land on their own step. */
+       follows this `from=` so Review & Claim, Finish Data, and Finish and
+       Claim each land on their own step. */
     function pfRowFrom(row) {
       if (!row) return '';
       const seg = row.getAttribute('data-pf-seg');
       if (seg === 'discovered') return 'discovered';
-      if (seg === 'needsinfo') {
-        if (row.querySelector('.pf-row-act--verify, .pf-chip--verify')) return 'verify';
-        return 'complete';
-      }
+      if (seg === 'needsinfo') return 'complete';
       if (row.closest('#pf-view-discovered') || row.closest('.pf-table--discovered-cta') || row.closest('.pf-table--discovered')) {
         return 'discovered';
       }
       if (row.closest('#pf-view-needsinfo') || row.closest('.pf-table--needsinfo')) {
-        if (row.querySelector('.pf-row-act--verify, .pf-chip--verify')) return 'verify';
         return 'complete';
       }
       return '';
@@ -12475,8 +12733,9 @@
     /* First claimed SKU still waiting on ingredient verification — that's the
        product page (add / view), not a second verification board on this page. */
     function pfFirstVerifyHref() {
+      const marked = document.querySelector('#portfolio-panel .pf-trow[data-data-state="verify"]');
       const chip = document.querySelector('#portfolio-panel .pf-trow .pf-chip--verify, #portfolio-panel .pf-trow .pf-row-act--verify');
-      return pfViewHref(chip ? chip.closest('.pf-trow') : null);
+      return pfViewHref(marked || (chip && chip.closest('.pf-trow')) || null, null, 'verify');
     }
     /* Ineligible shield row (Vegan Blueberry Mini Muffins in the sample set). */
     function pfIneligibleHref() {
@@ -12532,17 +12791,81 @@
         return !!(x.name && id.name && x.name === id.name);
       });
     }
+    function pfIsAdmin() {
+      try { return localStorage.getItem('wise-admin-ui') !== '0'; } catch (_) { return true; }
+    }
     function pfMarkRemoved(row) {
       const id = pfRowIdentity(row);
       if (!id.name && !id.upc) return;
       const list = pfRemovedList();
       if (pfIsRemovedId(id)) return;
-      list.push({ name: id.name, upc: id.upc });
+      const raw = (row.querySelector('.pf-upc') || {}).textContent || '';
+      list.push({
+        name: id.name,
+        upc: id.upc,
+        upcLabel: raw.replace(/^\s*UPC\s*·?\s*/i, '').trim(),
+        brand: pfRowBrand(row) || pfProductBrand(id.name),
+        img: (row.querySelector('.pf-thumb-img') && row.querySelector('.pf-thumb-img').getAttribute('src')) || '',
+        seg: pfRowSegment(row),
+      });
       try { localStorage.setItem(PF_REMOVED_KEY, JSON.stringify(list)); } catch (_) {}
     }
     function pfApplyRemoved() {
       document.querySelectorAll('#portfolio-panel .pf-trow').forEach((row) => {
+        if (row.closest('#pf-view-removed')) return;
         if (pfIsRemovedId(pfRowIdentity(row))) row.remove();
+      });
+    }
+    function pfRemovedRecTuple(rec) {
+      return [rec.name, rec.upcLabel || rec.upc || '', rec.img || null, null, 'removed', rec.brand || ''];
+    }
+    function pfFillRemovedTable() {
+      const list = pfRemovedList();
+      pfSetNum('#pf-seg-removed', list.length);
+      pfFillTable('removed', list.map(pfRemovedRecTuple));
+      pfSyncAdminUi();
+    }
+    function pfSyncAdminUi() {
+      const on = pfIsAdmin();
+      const n = pfRemovedList().length;
+      const btn = document.getElementById('pf-seg-removed');
+      const view = document.getElementById('pf-view-removed');
+      if (btn) btn.hidden = !on || n === 0;
+      if (view) view.hidden = !on || n === 0;
+      if ((!on || n === 0) && pfSeg === 'removed') pfSwitchTab('all');
+    }
+    function pfSyncEmptyFilters() {
+      document.querySelectorAll('.pf-stats--seg .pf-stat[data-seg]').forEach((btn) => {
+        if (btn.dataset.seg === 'all') { btn.hidden = false; return; }
+        if (btn.dataset.seg === 'removed') return;
+        const n = parseInt((btn.querySelector('.pf-stat-num') || {}).textContent, 10);
+        btn.hidden = !n;
+      });
+      document.querySelectorAll('.pf-stats--status .pf-stat[data-status], .pf-stats--needs .pf-stat[data-needs-state]').forEach((btn) => {
+        const n = parseInt((btn.querySelector('.pf-stat-num') || {}).textContent, 10);
+        btn.hidden = !n;
+      });
+      if (pfStatus) {
+        const active = document.querySelector('.pf-stats--status .pf-stat[data-status="' + pfStatus + '"]');
+        if (active && active.hidden) { pfStatus = null; }
+      }
+      if (pfNeedsState) {
+        const active = document.querySelector('.pf-stats--needs .pf-stat[data-needs-state="' + pfNeedsState + '"]');
+        if (active && active.hidden) { pfNeedsState = null; }
+      }
+      if (pfSeg && pfSeg !== 'all') {
+        const segBtn = document.querySelector('.pf-stats--seg .pf-stat[data-seg="' + pfSeg + '"]');
+        if (segBtn && segBtn.hidden) pfSeg = 'all';
+      }
+      pfSyncAdminUi();
+    }
+    function pfInitSearch() {
+      const input = document.querySelector('#portfolio-panel .pf-search');
+      if (!input || input.dataset.wired) return;
+      input.dataset.wired = '1';
+      input.addEventListener('input', () => {
+        pfSearchQ = (input.value || '').trim().toLowerCase();
+        pfApplyRowFilter();
       });
     }
     /* Products claimed from view-product.html drop out of Discovered so they
@@ -12565,32 +12888,89 @@
         if (match(row)) row.remove();
       });
     }
+    function pfSyncTableFoot(table) {
+      const foot = table && table.querySelector('.pf-table-foot span');
+      if (!foot) return;
+      const total = table.querySelectorAll('.pf-trow').length;
+      const shown = table.querySelectorAll('.pf-trow:not(.pf-row-hidden)').length;
+      const txt = 'Showing ' + shown + ' of ' + total + ' products';
+      foot.textContent = txt;
+      foot.dataset.foot = txt;
+    }
+    /* Which segment score card a row counts against, so removing it takes the
+       count down with it. */
+    function pfRowSegment(row) {
+      const seg = row.getAttribute('data-pf-seg');
+      if (seg) return seg;
+      if (row.closest('.pf-table--discovered-cta')) return 'discovered';
+      if (row.closest('#pf-view-discovered') || row.closest('.pf-table--discovered')) return 'discovered';
+      if (row.closest('#pf-view-needsinfo') || row.closest('.pf-table--needsinfo')) return 'needsinfo';
+      if (row.closest('#pf-view-removed') || row.closest('.pf-table--removed')) return 'removed';
+      if (row.closest('#pf-view-claimed')) return 'claimed';
+      return '';
+    }
+    function pfDropFromSegCount(seg, n) {
+      if (!seg || !n) return;
+      ['#pf-seg-' + seg, '#pf-seg-all'].forEach((sel) => {
+        const num = document.querySelector(sel + ' .pf-stat-num');
+        const cur = parseInt(num && num.textContent, 10);
+        if (num && isFinite(cur)) num.textContent = String(Math.max(0, cur - n));
+      });
+    }
     function pfRemoveProduct(row, name) {
       if (!row) return;
       const table = row.closest('.pf-table');
-      const claimed = row.getAttribute('data-pf-seg') === 'claimed' ||
-        (!!row.closest('#pf-view-claimed') && !row.closest('.pf-table--discovered-cta'));
+      const seg = pfRowSegment(row);
       pfMarkRemoved(row);
       row.remove();
-      const foot = table && table.querySelector('.pf-table-foot span');
-      if (foot) {
-        const total = table.querySelectorAll('.pf-trow').length;
-        const shown = table.querySelectorAll('.pf-trow:not(.pf-row-hidden)').length;
-        const txt = 'Showing ' + shown + ' of ' + total + ' products';
-        foot.textContent = txt;
-        foot.dataset.foot = txt;
-      }
-      if (claimed) {
-        const num = document.querySelector('#pf-seg-claimed .pf-stat-num');
-        const n = parseInt(num && num.textContent, 10);
-        if (num && isFinite(n) && n > 0) num.textContent = String(n - 1);
-      }
+      pfSyncTableFoot(table);
+      pfDropFromSegCount(seg, 1);
+      pfFillRemovedTable();
+      pfPopulateDates();
+      pfSyncEmptyFilters();
+      pfSyncAllHeads();
       if (typeof addUserMessage === 'function') addUserMessage('Remove ' + name);
       wiseaiTraceThen('WISEcodeAI', () => {
-        if (typeof addWISEcodeAIMessage === 'function') {
-          addWISEcodeAIMessage('Removed <strong>' + name + '</strong> from your portfolio. You can also delete a product from its edit view.');
-        }
+        if (typeof addWISEcodeAIMessage !== 'function') return;
+        addWISEcodeAIMessage(seg === 'discovered'
+          ? 'Removed <strong>' + name + '</strong> from your discovered matches. It won\u2019t resurface — if it turns out to be yours, add it by UPC and I\u2019ll pull its data in.'
+          : 'Removed <strong>' + name + '</strong> from your portfolio. You can also delete a product from its edit view.');
       });
+    }
+    /* Multi-select remove — the same Remove as the row ⋮, fired once for every
+       ticked row in that table. */
+    function pfRemoveSelected(scope) {
+      if (!scope) return;
+      const rows = pfVisibleRows(scope).filter((r) => r.classList.contains('is-selected'));
+      if (!rows.length) return;
+      const table = rows[0].closest('.pf-table') || scope;
+      const seg = pfRowSegment(rows[0]);
+      const names = rows.map((row) => (row.querySelector('.pf-pname')?.textContent || '').trim()).filter(Boolean);
+      rows.forEach((row) => { pfMarkRemoved(row); row.remove(); });
+      pfSyncTableFoot(table);
+      pfDropFromSegCount(seg, rows.length);
+      pfFillRemovedTable();
+      pfPopulateDates();
+      pfSyncEmptyFilters();
+      pfSyncAllHeads();
+      const many = names.length > 1;
+      const label = many ? names.length + ' products' : (names[0] || 'that product');
+      if (typeof addUserMessage === 'function') addUserMessage('Remove ' + label);
+      wiseaiTraceThen('WISEcodeAI', () => {
+        if (typeof addWISEcodeAIMessage !== 'function') return;
+        const listed = names.slice(0, 4).map((n) => '<strong>' + n + '</strong>').join(', ');
+        const rest = names.length > 4 ? ' and ' + (names.length - 4) + ' more' : '';
+        addWISEcodeAIMessage('Removed ' + listed + rest +
+          (seg === 'discovered'
+            ? ' from your discovered matches. ' + (many ? 'They won\u2019t' : 'It won\u2019t') +
+              ' resurface — if one turns out to be yours, add it by UPC and I\u2019ll pull its data in.'
+            : ' from your portfolio.'));
+      });
+    }
+    function pfClearSelection(scope) {
+      if (!scope) return;
+      pfVisibleRows(scope).forEach((row) => pfSetRowSelected(row, false));
+      pfSyncTableHead(scope);
     }
     /* Inject an "Add pack formats / sizes" action into a claimed product's ⋮
        menu (rows that carry an Edit action — discovered/unclaimed rows don't get
@@ -12613,42 +12993,18 @@
       else if (ref) pop.appendChild(item);
       else pop.insertBefore(item, pop.firstChild);
     }
-    /* Claimed-row extras: Finish data (opens the product in edit mode to
-       complete or update its record) and Remove product (drops it from the
-       portfolio). Same remove is available as Delete product in the edit
-       view's ⋯ menu. Only claimed menus that already have Edit get these. */
+    /* Claimed-row extras used to inject Finish data. That action is gone —
+       Remove / Reports / Open Product / Edit are authored on the menu itself. */
     function pfInjectClaimedExtras(pop) {
-      if (!pop || pop.querySelector('.pf-rowmenu-item--finishdata')) return;
-      const items = Array.from(pop.querySelectorAll('.pf-rowmenu-item'));
-      const hasEdit = items.some((b) => {
-        const clone = b.cloneNode(true);
-        clone.querySelectorAll('.material-symbols-outlined').forEach((n) => n.remove());
-        return /^\s*edit\s*$/i.test(clone.textContent || '');
-      });
-      if (!hasEdit) return;
-      const finish = document.createElement('button');
-      finish.type = 'button';
-      finish.className = 'pf-rowmenu-item pf-rowmenu-item--finishdata';
-      finish.setAttribute('role', 'menuitem');
-      finish.innerHTML = '<span class="material-symbols-outlined">edit_note</span>Finish data';
-      const remove = document.createElement('button');
-      remove.type = 'button';
-      remove.className = 'pf-rowmenu-item pf-rowmenu-item--danger pf-rowmenu-item--remove';
-      remove.setAttribute('role', 'menuitem');
-      remove.innerHTML = '<span class="material-symbols-outlined">close</span>Remove product';
-      const sep = pop.querySelector('.pf-rowmenu-sep');
-      if (sep) {
-        pop.insertBefore(finish, sep);
-        pop.insertBefore(remove, sep);
-      } else {
-        pop.appendChild(finish);
-        pop.appendChild(remove);
-      }
+      return pop;
     }
     function pfInjectReformulate(pop) {
       if (!pop || pop.querySelector('.pf-rowmenu-item--reformulate')) return;
       const row = pop.closest('.pf-trow');
       if (!row) return;
+      /* A discovered match isn't yours yet — Review & Claim it first. Its menu
+         carries Remove and nothing else. */
+      if (pfRowSegment(row) === 'discovered') return;
       const item = document.createElement('button');
       item.type = 'button';
       item.className = 'pf-rowmenu-item pf-rowmenu-item--reformulate is-locked';
@@ -12925,7 +13281,7 @@
        narrow to that rating, "Near-miss" to ★★→★★★ products, and "Easy fixes"
        to the high-ease opportunities. They share state with the funnel filter
        popover so the two never disagree. */
-    const PF_SEG_LABELS = { all: 'All products', claimed: 'Claimed', discovered: 'Discovered', needsinfo: 'Missing data' };
+    const PF_SEG_LABELS = { all: 'All products', claimed: 'Claimed', discovered: 'Discovered', needsinfo: 'In Progress', removed: 'Removed' };
     function pfCountStars(view) {
       const c = { 0: 0, 1: 0, 2: 0, 3: 0, near: 0, easy: 0, total: 0, sum: 0 };
       view.querySelectorAll('.pf-trow').forEach((row) => {
@@ -12962,7 +13318,7 @@
         { key: 'near', cls: 'pf-stat--info', num: c.near, label: 'Near-miss', act: pfFilters.nearMiss },
         { key: 'easy', cls: 'pf-stat--good', num: c.easy, label: 'Easy fixes', act: pfFilters.ease === 'High' },
       ];
-      host.innerHTML = cards.map((k) =>
+      host.innerHTML = cards.filter((k) => k.noclick || parseInt(k.num, 10) > 0).map((k) =>
         '<button type="button" class="pf-stat ' + k.cls + (k.act ? ' is-active' : '') + '"' +
         (k.noclick ? ' disabled aria-disabled="true"' : ' data-gsstat="' + k.key + '" aria-pressed="' + (k.act ? 'true' : 'false') + '"') + '>' +
         '<span class="pf-stat-num">' + k.num + '</span>' +
@@ -13282,11 +13638,12 @@
     /* Each product is a compact tuple:
          claimed:            [name, upc, imgKey, data, shield]
          discovered:         [name, upc, imgKey, iconOverride?]
-         needsinfo:          [name, upc, imgKey, iconOverride?, data?, shield?]
-       Verify-ingredient SKUs live in needsinfo (data === 'verify'), not claimed.
+         needsinfo:          [name, upc, imgKey, iconOverride?, dataState?]
+       dataState is incomplete | verify | nfp | pending. Verify-ingredient
+       SKUs live in needsinfo (dataState === 'verify'), not claimed.
        imgKey is a key of PF_IMG (or null → icon-only thumb). */
     const PF_BRANDS = [
-      { name: 'Flax4Life', color: '#2E7D5B', avatar: null,
+      { name: 'Flax4Life', color: '#2E7D5B', avatar: '../assets/brand-flax4life-logo.png',
         claimed: [
           ["Toasted Coconut Brownies-12 ct", "8 57287 00420 3", "coconut_brownies", "complete", "verified"],
           ["Chocolate Chip Muffins-4 ct", "0 65776 63152 0", "chocolate_chip_muffins", "complete", "verified"],
@@ -13344,24 +13701,24 @@
           ["Wild Blueberry Frosted Toaster Pastries", "8 57287 00494 4", "frosted_toaster_pastries"],
         ],
         needsinfo: [
-          ["Vegan Carrot Raisin Mini Muffins", "8 57287 00482 1", "vegan_carrot_raisin_mini", null, "verify", "attest"],
-          ["Chunky Chocolate Granola", "8 57287 00427 2", "granola", null, "verify", "attest"],
-          ["Vegan Blueberry Mini Muffins", "8 57287 00481 4", "vegan_blueberry_mini", null, "verify", "inelig"],
-          ["Vegan Chocolate Brownies", "8 57287 00483 8", "vegan_chocolate_brownies", null, "verify", "inelig"],
-          ["Apple Cinnamon Granola", "8 57287 00426 5", "granola", null, "verify", "prequal"],
-          ["Dell Alpe Italian Style Sweet Red Peppers, 24 Oz (Pack Of 12)", "7 10051 49796 3", null, "lunch_dining"],
-          ["Flax4life Carrot Raisin No Sugar Added Mini Flax Muffins 6 Pack", "8 57287 00474 6", "nsa_carrot_raisin_mini"],
-          ["Flax4life Fz Chocolate Chip Muffin, 14 Ounce (Pack Of 6)", "4 61272 47591 8", "chocolate_chip_muffins"],
-          ["Flax4life Gluten Free Flax Chunky Chocolate Snacking Granola, 11 Oz, (Pack Of 6)", "0 30650 84678 9", "granola"],
-          ["Flax4life Gran Hawaiian ( 6 X 11 Oz )", "7 46988 97334 8", "granola"],
-          ["Flax4life Granola Chnky Choc 11 Oz – Pack Of 6", "7 59425 53184 1", "granola"],
-          ["Flax4life Mini Dark Cherry Brownie Flax Muffins, 14 Oz (Pack Of 6)", "7 10051 50976 5", "dark_cherry_brownies"],
-          ["Flax4life Muffins, Carrot Raisin, 14 Ounce (Pack Of 6)", "7 10051 50970 3", "carrot_raisin_muffins"],
-          ["Mezzetta Delicate California Extra Virgin Olive Oil, 16.9 Fo (Pack Of 6)", "7 10051 54839 9", null, "water_drop"],
-          ["Mint Chocolate Brownie Flax Mini Muffins, Mint Chocolate Brownie", "8 57287 00448 7", "chocolate_brownies"],
-          ["Flax4life Mini Muffins Variety Pack, 24 Count", "7 10051 50981 9", "chocolate_chip_muffins"],
-          ["Flax4life Toasted Coconut Brownie Bites, 12 Oz (Pack Of 6)", "7 10051 50982 6", "coconut_brownies"],
-          ["Sunridge Farms Organic Golden Flax Seed, 16 Oz (Pack Of 8)", "7 10051 54912 9", null, "lunch_dining"],
+          ["Vegan Carrot Raisin Mini Muffins", "8 57287 00482 1", "vegan_carrot_raisin_mini", null, "verify"],
+          ["Chunky Chocolate Granola", "8 57287 00427 2", "granola", null, "verify"],
+          ["Vegan Blueberry Mini Muffins", "8 57287 00481 4", "vegan_blueberry_mini", null, "verify"],
+          ["Vegan Chocolate Brownies", "8 57287 00483 8", "vegan_chocolate_brownies", null, "verify"],
+          ["Apple Cinnamon Granola", "8 57287 00426 5", "granola", null, "verify"],
+          ["Dell Alpe Italian Style Sweet Red Peppers, 24 Oz (Pack Of 12)", "7 10051 49796 3", null, "lunch_dining", "pending"],
+          ["Flax4life Carrot Raisin No Sugar Added Mini Flax Muffins 6 Pack", "8 57287 00474 6", "nsa_carrot_raisin_mini", null, "incomplete"],
+          ["Flax4life Fz Chocolate Chip Muffin, 14 Ounce (Pack Of 6)", "4 61272 47591 8", "chocolate_chip_muffins", null, "incomplete"],
+          ["Flax4life Gluten Free Flax Chunky Chocolate Snacking Granola, 11 Oz, (Pack Of 6)", "0 30650 84678 9", "granola", null, "incomplete"],
+          ["Flax4life Gran Hawaiian ( 6 X 11 Oz )", "7 46988 97334 8", "granola", null, "incomplete"],
+          ["Flax4life Granola Chnky Choc 11 Oz – Pack Of 6", "7 59425 53184 1", "granola", null, "nfp"],
+          ["Flax4life Mini Dark Cherry Brownie Flax Muffins, 14 Oz (Pack Of 6)", "7 10051 50976 5", "dark_cherry_brownies", null, "nfp"],
+          ["Flax4life Muffins, Carrot Raisin, 14 Ounce (Pack Of 6)", "7 10051 50970 3", "carrot_raisin_muffins", null, "nfp"],
+          ["Mezzetta Delicate California Extra Virgin Olive Oil, 16.9 Fo (Pack Of 6)", "7 10051 54839 9", null, "water_drop", "pending"],
+          ["Mint Chocolate Brownie Flax Mini Muffins, Mint Chocolate Brownie", "8 57287 00448 7", "chocolate_brownies", null, "pending"],
+          ["Flax4life Mini Muffins Variety Pack, 24 Count", "7 10051 50981 9", "chocolate_chip_muffins", null, "incomplete"],
+          ["Flax4life Toasted Coconut Brownie Bites, 12 Oz (Pack Of 6)", "7 10051 50982 6", "coconut_brownies", null, "nfp"],
+          ["Sunridge Farms Organic Golden Flax Seed, 16 Oz (Pack Of 8)", "7 10051 54912 9", null, "lunch_dining", "pending"],
         ] },
       { name: 'Simple Truth', color: '#4E7D5A', avatar: '../assets/compare/simpletruth.png',
         claimed: [
@@ -13513,14 +13870,18 @@
     function pfRowMenuHtml(seg, up, ed) {
       let items;
       if (seg === 'claimed') {
-        items = '<button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">edit</span>Edit</button>' +
-          '<button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">visibility</span>View</button>';
+        items = '<button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">visibility</span>Open Product</button>' +
+          '<button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">edit</span>Edit</button>' +
+          '<button type="button" class="pf-rowmenu-item pf-rowmenu-item--reports" role="menuitem"><span class="material-symbols-outlined">description</span>Reports</button>' +
+          '<button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger pf-rowmenu-item--remove" role="menuitem"><span class="material-symbols-outlined">delete</span>Remove</button>';
+      } else if (seg === 'removed') {
+        items = '<button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">visibility</span>Open Product</button>';
       } else if (seg === 'discovered') {
-        items = '<button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">bookmark_add</span>Review &amp; claim</button>' +
-          '<button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">visibility</span>Preview</button>' +
-          '<button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-symbols-outlined">close</span>Not mine</button>';
+        /* Review & Claim is the row's own button, so the menu carries the one
+           other thing you can do to a match that isn't yours: remove it. */
+        items = '<button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-symbols-outlined">delete</span>Remove product</button>';
       } else {
-        items = '<button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">edit_note</span>Complete details</button>' +
+        items = '<button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">edit_note</span>Finish Data</button>' +
           '<button type="button" class="pf-rowmenu-item" role="menuitem"><span class="material-symbols-outlined">visibility</span>Preview</button>' +
           '<button type="button" class="pf-rowmenu-item pf-rowmenu-item--danger" role="menuitem"><span class="material-symbols-outlined">close</span>Not mine</button>';
       }
@@ -13532,8 +13893,10 @@
         '</div></div></span>';
     }
     function pfDataChip(seg, data, href) {
-      if (seg === 'discovered') return '';
-      if (seg === 'needsinfo') return '<span class="pf-chip pf-chip--incomplete">Incomplete</span>';
+      if (seg === 'needsinfo') {
+        const meta = PF_NEEDS_STATES[data] || PF_NEEDS_STATES.incomplete;
+        return '<span class="pf-chip pf-chip--dstate ' + meta.chip + '">' + meta.label + '</span>';
+      }
       if (data === 'complete') return '<span class="pf-chip pf-chip--complete">Complete</span>';
       if (data === 'verify') return '<span class="pf-chip pf-chip--incomplete">Incomplete</span>';
       return '<span class="pf-chip pf-chip--complete">Complete</span>';
@@ -13550,17 +13913,13 @@
       }
     }
     function pfActionHtml(seg, data, href) {
-      if (seg === 'claimed') return pfReportsHtml();
+      if (seg === 'claimed' || seg === 'removed') return pfReportsHtml();
       if (seg === 'discovered') {
         return '<span class="pf-td pf-col-reports"><a class="pf-claim-btn pf-row-act pf-row-act--claim" href="' +
           pfEsc(href || 'view-product.html') + '">Review &amp; Claim</a></span>';
       }
-      if (data === 'verify') {
-        return '<span class="pf-td pf-col-reports"><a class="pf-claim-btn pf-claim-btn--verify pf-row-act pf-row-act--verify" href="' +
-          pfEsc(pfWithFrom(href, 'verify')) + '">Verify ingredients</a></span>';
-      }
-      return '<span class="pf-td pf-col-reports"><a class="pf-claim-btn pf-row-act pf-row-act--complete" href="' +
-        pfEsc(pfWithFrom(href, 'complete', { mode: 'edit' })) + '">Complete details</a></span>';
+      return '<span class="pf-td pf-col-reports"><a class="pf-claim-btn pf-row-act pf-row-act--finish" href="' +
+        pfEsc(pfWithFrom(href, 'complete', { mode: 'edit' })) + '">Finish Data</a></span>';
     }
     function pfClaimedActionHtml(name, upc, img) {
       const params = new URLSearchParams();
@@ -13573,13 +13932,16 @@
       return '<span class="pf-td pf-col-action"><a class="pf-claim-btn" href="' + pfEsc(href) + '">Finish and Claim</a></span>';
     }
     function pfShieldChip(seg, shield) {
-      if (seg === 'discovered') return '';
+      if (seg === 'removed' || shield === 'removed') return '<span class="pf-chip pf-chip--muted">Removed</span>';
       if (seg === 'needsinfo' && !shield) return '<span class="pf-chip pf-chip--muted">Locked</span>';
       switch (shield) {
         case 'verified': return '<span class="pf-chip pf-chip--verified"><span class="material-symbols-outlined">gpp_good</span>Verified</span>';
         case 'attest': return '<button type="button" class="pf-chip pf-chip--attest">Pending Attestation <span class="material-symbols-outlined">arrow_outward</span></button>';
         case 'prequal': return '<button type="button" class="pf-chip pf-chip--prequal">Pre-qualified <span class="material-symbols-outlined">arrow_outward</span></button>';
-        case 'inelig': return '<span class="pf-chip pf-chip--inelig">Ineligible</span>';
+        case 'pending':
+        case 'pay': return '<button type="button" class="pf-chip pf-chip--pay">Pending Payment <span class="material-symbols-outlined">arrow_outward</span></button>';
+        case 'inelig':
+        case 'ineligible': return '<span class="pf-chip pf-chip--inelig">Ineligible</span>';
         default: return seg === 'needsinfo' ? '<span class="pf-chip pf-chip--muted">Locked</span>' : '<span class="pf-chip pf-chip--inelig">Ineligible</span>';
       }
     }
@@ -13591,34 +13953,51 @@
         '<button type="button" class="pf-reports-btn" aria-haspopup="true" aria-expanded="false" aria-label="Reports for this product">' +
         '<span class="material-symbols-outlined">description</span></button></div></span>';
     }
+    function pfOpenRowReports(row) {
+      const btn = row && row.querySelector('.pf-reports-btn');
+      if (btn) btn.click();
+    }
     function pfBrandRow(p, seg, i) {
       const dates = PF_DATES[i % PF_DATES.length];
       const name = p[0];
       let iconOverride = null;
       let data = p[3];
       let shield = p[4];
-      if (seg === 'claimed') {
+      const brandName = (typeof p[5] === 'string' && p[5]) ? p[5] : pfProductBrand(name);
+      if (seg === 'claimed' || seg === 'removed') {
         iconOverride = null;
       } else if (seg === 'needsinfo') {
         const maybeIcon = p[3];
-        if (maybeIcon && maybeIcon !== 'verify' && maybeIcon !== 'complete') iconOverride = maybeIcon;
-        data = p[4] || (maybeIcon === 'verify' ? 'verify' : undefined);
-        shield = p[5];
+        if (maybeIcon && PF_NEEDS_STATE_KEYS.indexOf(maybeIcon) === -1) iconOverride = maybeIcon;
+        data = pfNeedsDataState(p, i);
+        shield = undefined;
       } else {
         iconOverride = p[3];
         data = undefined;
         shield = undefined;
       }
-      const img = (p[2] && PF_IMG[p[2]]) ? PF_IMG[p[2]] : '';
+      const imgKey = (p[2] && PF_IMG[p[2]]) ? p[2] : '';
+      const img = imgKey ? PF_IMG[imgKey] : (typeof p[2] === 'string' && /\.(png|jpe?g|webp|svg)(\?|$)/i.test(p[2]) ? p[2] : '');
       const href = pfClaimHref(name, p[1], img);
-      const product = '<span class="pf-td pf-col-product">' + pfThumb(p[2], iconOverride, name) +
+      const product = '<span class="pf-td pf-col-product">' +
+        (imgKey ? pfThumb(imgKey, iconOverride, name) :
+          (img ? '<span class="pf-thumb"><img class="pf-thumb-img" src="' + pfEsc(img) + '" alt="' + pfEsc(name) + '" loading="lazy"></span>' : pfThumb(null, iconOverride, name))) +
         '<span class="pf-pcell-text"><span class="pf-pname">' + pfEsc(name) + '</span>' +
         '<span class="pf-upc">UPC · ' + pfEsc(p[1]) + '</span></span></span>';
-      return '<div class="pf-trow">' + pfCheckHtml(name) + pfRowMenuHtml(seg, dates[0], dates[1]) +
-        pfActionHtml(seg, data, href) +
-        (seg === 'claimed' ? pfClaimedActionHtml(name, p[1], img) : '') + product +
-        '<span class="pf-td pf-col-data">' + pfDataChip(seg, data, href) + '</span>' +
-        '<span class="pf-td pf-col-shield">' + pfShieldChip(seg, shield) + '</span></div>';
+      /* Every list: Product (name + UPC + sizes) · Brand (logo + name).
+         In Progress adds Data State. Claimed / Removed add State.
+         Dates land later. */
+      let state = pfBrandCellHtml(brandName);
+      if (seg === 'needsinfo') {
+        state += '<span class="pf-td pf-col-data">' + pfDataChip(seg, data, href) + '</span>';
+      } else if (seg === 'claimed' || seg === 'removed') {
+        state += '<span class="pf-td pf-col-shield">' + pfShieldChip(seg, shield) + '</span>';
+      }
+      const stateAttr = seg === 'needsinfo' ? ' data-data-state="' + pfEsc(data) + '"' : '';
+      return '<div class="pf-trow" data-brand="' + pfEsc(brandName) + '"' + stateAttr + '>' +
+        pfCheckHtml(name) + pfRowMenuHtml(seg, dates[0], dates[1]) +
+        pfActionHtml(seg, data, href) + product +
+        state + '</div>';
     }
     function pfClaimHref(name, upc, img) {
       const params = new URLSearchParams();
@@ -13633,12 +14012,13 @@
       const name = p[0];
       const upc = p[1];
       const img = (p[2] && PF_IMG[p[2]]) ? PF_IMG[p[2]] : '';
+      const brandName = pfProductBrand(name);
       const check = '<span class="pf-td pf-col-check"><button class="vf-check" type="button" data-pf="toggle-row" aria-label="Select ' + pfEsc(name) + '" aria-pressed="false"><span class="material-symbols-outlined">check_box_outline_blank</span></button></span>';
       const btn = '<span class="pf-td pf-col-claim"><a class="pf-claim-btn" href="' + pfEsc(pfClaimHref(name, upc, img)) + '">Review &amp; Claim</a></span>';
       const product = '<span class="pf-td pf-col-product">' + pfThumb(p[2], p[3], name) +
         '<span class="pf-pcell-text"><span class="pf-pname">' + pfEsc(name) + '</span>' +
         '<span class="pf-upc">UPC · ' + pfEsc(upc) + '</span></span></span>';
-      return '<div class="pf-trow">' + check + btn + product + '</div>';
+      return '<div class="pf-trow" data-brand="' + pfEsc(brandName) + '">' + check + btn + product + pfBrandCellHtml(brandName) + '</div>';
     }
     function pfFillTable(seg, list) {
       const tables = Array.from(document.querySelectorAll('#portfolio-panel .pf-table--' + seg));
@@ -13685,24 +14065,28 @@
       pfFillTable('claimed', brand.claimed);
       pfFillTable('discovered', brand.discovered);
       pfFillTable('needsinfo', brand.needsinfo);
+      pfFillRemovedTable();
       /* Score cards — segment totals + the claimed-list status breakdown. */
       pfSetNum('#pf-seg-all', brand.claimed.length + brand.discovered.length + brand.needsinfo.length);
       pfSetNum('#pf-seg-claimed', brand.claimed.length);
       pfSetNum('#pf-seg-discovered', brand.discovered.length);
       pfSetNum('#pf-seg-needsinfo', brand.needsinfo.length);
-      const c = { verify: 0, complete: 0, prequal: 0, attest: 0, verified: 0, ineligible: 0 };
+      const ns = { incomplete: 0, verify: 0, nfp: 0, pending: 0 };
+      brand.needsinfo.forEach((p, i) => {
+        const k = pfNeedsDataState(p, i);
+        if (ns[k] !== undefined) ns[k]++;
+      });
+      Object.keys(ns).forEach((k) => pfSetNum('.pf-stat[data-needs-state="' + k + '"]', ns[k]));
+      const c = { prequal: 0, attest: 0, verified: 0, pending: 0, ineligible: 0 };
       brand.claimed.forEach((p) => {
-        if (p[3] === 'complete') c.complete++; else c.verify++;
         if (p[4] === 'verified') c.verified++;
         else if (p[4] === 'attest') c.attest++;
         else if (p[4] === 'prequal') c.prequal++;
-        else c.ineligible++;
+        else if (p[4] === 'pending' || p[4] === 'pay') c.pending++;
+        else if (p[4] === 'inelig' || p[4] === 'ineligible') c.ineligible++;
       });
-      Object.keys(c).forEach((k) => {
-        pfSetNum('.pf-stat[data-status="' + k + '"]', c[k]);
-        const btn = document.querySelector('.pf-stat[data-status="' + k + '"]');
-        if (btn && (k === 'verify' || k === 'attest' || k === 'ineligible')) btn.hidden = c[k] === 0;
-      });
+      Object.keys(c).forEach((k) => pfSetNum('.pf-stat[data-status="' + k + '"]', c[k]));
+      pfSyncEmptyFilters();
       /* Notes + meta strip. */
       const note = document.querySelector('#pf-view-discovered .pf-note .pf-card-title');
       if (note) note.textContent = 'We found ' + brand.discovered.length + ' products that look like ' + brand.name + '\u2019s';
@@ -13720,7 +14104,7 @@
           : pfEsc(brand.name.charAt(0));
       }
       const sub = document.getElementById('pf-subtitle');
-      if (sub) sub.textContent = brand.name + ' · Missing data, Discovered & Claimed';
+      if (sub) sub.textContent = brand.name + ' · Claimed, In Progress & Discovered';
       document.querySelectorAll('#pf-brand-opts .pf-brand-opt').forEach((o) => {
         const i = Number(o.getAttribute('data-brand'));
         o.classList.toggle('is-active', i === pfCurrentBrand);
@@ -13734,7 +14118,7 @@
       pfApplyBrandData(brand);
       pfObserveNudgeAnchors();
       pfUpdateBrandHeader(brand);
-      pfSeg = 'claimed'; pfStatus = null;
+      pfSeg = 'claimed'; pfStatus = null; pfNeedsState = null;
       const panel = document.getElementById('portfolio-panel');
       if (panel && panel.classList.contains('pf-stars-on')) pfBuildStarColumns();
       pfPopulateDates();
@@ -14009,6 +14393,12 @@
       pfBuildBrandMenu();
       pfInitStickyChrome();
       pfInitVerifyToast();
+      pfInitSearch();
+      pfSyncAdminUi();
+      document.addEventListener('wise:admin-ui', pfSyncAdminUi);
+      window.addEventListener('storage', (e) => {
+        if (e && e.key === 'wise-admin-ui') pfSyncAdminUi();
+      });
       pfRenderBrand(0);
     }
     if (document.readyState === 'loading') {
@@ -14109,7 +14499,7 @@
 
     /* Each row menu item drives a contextual WISEcodeAI action for that product.
        The (icon-stripped) label picks the intent; the product name is read
-       from the row, so Edit / View / Finish data / Remove product /
+       from the row, so Edit / View / Finish data / Remove / Remove product /
        Review & claim / Preview / Complete details / Not mine all do something real. */
     function pfRowItemAction(item) {
       if (!item || item.classList.contains('is-locked') || item.getAttribute('aria-disabled') === 'true') return;
@@ -14124,14 +14514,15 @@
       /* View opens the product's own page — a fully filled-in, editable Product
          Details (NFP) module — rather than narrating in chat. Edit opens the
          very same page in edit mode (chat greets you asking what to change). */
-      if (label === 'view' || label === 'preview') { window.location.href = pfViewHref(row); return; }
+      if (label === 'view' || label === 'preview' || label === 'open product') { window.location.href = pfViewHref(row); return; }
       if (label === 'review & claim') { window.location.href = pfViewHref(row); return; }
       if (label === 'edit' || label === 'finish data' || label === 'complete details') { window.location.href = pfEditHref(row); return; }
-      if (label === 'remove product') { pfRemoveProduct(row, name); return; }
+      if (label === 'reports') { pfOpenRowReports(row); return; }
+      if (label === 'remove product' || label === 'remove') { pfRemoveProduct(row, name); return; }
       const M = {
         'edit':           ['Edit ' + name, 'Opening <strong>' + name + '</strong> to edit. Update its ingredients, packaging, or details and I’ll re-run verification the moment you save.'],
         'view':           ['View ' + name, 'Here’s <strong>' + name + '</strong>. Its full report unlocks once ingredients are verified — want me to start verification now?'],
-        'review & claim': ['Review & claim ' + name, 'Let’s claim <strong>' + name + '</strong>. I’ll pull it into your portfolio; if any required data is missing it’ll wait in <strong>Missing data</strong> until it’s complete.'],
+        'review & claim': ['Review & claim ' + name, 'Let’s claim <strong>' + name + '</strong>. I’ll pull it into your portfolio; if any required data is missing it’ll wait in <strong>In Progress</strong> until it’s complete.'],
         'preview':        ['Preview ' + name, 'Previewing <strong>' + name + '</strong> — this is the public listing we matched. Claim it to manage its data and Non-UPF Shield.'],
         'complete details': ['Complete details for ' + name, '<strong>' + name + '</strong> is missing key fields. I’ll walk you through exactly what’s needed so it can move into your portfolio.'],
         'not mine':       ['That’s not my product: ' + name, 'Got it — I’ll remove <strong>' + name + '</strong> from your list so it won’t resurface.'],
@@ -14156,7 +14547,7 @@
       return !!el && !!(el.closest('#portfolio-panel') || el.closest('.pf-trow[data-pf-seg]'));
     }
     document.addEventListener('click', (e) => {
-      const act = e.target.closest('.pf-row-act--verify, .pf-row-act--complete, .pf-chip--add');
+      const act = e.target.closest('.pf-row-act--verify, .pf-row-act--complete, .pf-row-act--finish, .pf-chip--add');
       if (act && pfRowControlScope(act)) {
         const row = act.closest('.pf-trow');
         if (!row) return;
@@ -14166,7 +14557,7 @@
           : pfEditHref(row);
         return;
       }
-      const chip = e.target.closest('.pf-chip--verify, .pf-chip--attest, .pf-chip--prequal');
+      const chip = e.target.closest('.pf-chip--verify, .pf-chip--attest, .pf-chip--prequal, .pf-chip--pay');
       if (!chip || !pfRowControlScope(chip)) return;
       const row = chip.closest('.pf-trow');
       if (!row) return;
@@ -14214,7 +14605,7 @@
       verifyGo:   { fn: 'startContinueVerification', icon: 'verified',     label: 'Continue Non-UPF Verification' },
       shields:    { fn: 'startActivateShields',   icon: 'verified_user',   label: 'Activate Non-UPF Shields' },
       discovered: { fn: 'startReviewDiscovered',  icon: 'travel_explore',  label: 'Review discovered (47)' },
-      needsinfo:  { fn: 'startCompleteNeedsInfo', icon: 'pending_actions', label: 'Complete Missing Data (18)' },
+      needsinfo:  { fn: 'startCompleteNeedsInfo', icon: 'pending_actions', label: 'Complete in-progress (18)' },
       claimed:    { fn: 'startViewClaimed',       icon: 'inventory_2',     label: 'View claimed portfolio' },
       claim:      { fn: 'startClaimProducts',     icon: 'bookmark_add',    label: 'Claim a product' },
       ineligible: { fn: 'startResolveIneligible', icon: 'gpp_maybe',       label: 'Resolve ineligible' },
@@ -14284,7 +14675,7 @@
     const PF_BROWSE_SECTIONS = [
       { seg: 'claimed', view: '#pf-view-claimed', table: '.pf-table--claimed', title: 'Claimed' },
       { seg: 'discovered', view: '#pf-view-discovered', table: '.pf-table--discovered', title: 'Discovered' },
-      { seg: 'needsinfo', view: '#pf-view-needsinfo', table: '.pf-table--needsinfo', title: 'Missing data' },
+      { seg: 'needsinfo', view: '#pf-view-needsinfo', table: '.pf-table--needsinfo', title: 'In Progress' },
     ];
     function pfFillEmptyCardFields(row) {
       row.querySelectorAll('.pf-td').forEach((cell) => {
@@ -14430,7 +14821,7 @@
       hideWelcomeScreen(() => {
         if (!skipUser) addUserMessage('Browse products here');
         wiseaiTraceThen('Closing the board', () => {
-          addWISEcodeAIMessage('I closed the board so we can walk your products here — <strong>Claimed</strong>, <strong>Discovered</strong>, and <strong>Missing data</strong>, as the same cards you see on a phone. Swipe a rail to move through a section. Add a product, import a catalog, or pick another next step from the chips below.', { source: false });
+          addWISEcodeAIMessage('I closed the board so we can walk your products here — <strong>Claimed</strong>, <strong>Discovered</strong>, and <strong>In Progress</strong>, as the same cards you see on a phone. Swipe a rail to move through a section. Add a product, import a catalog, or pick another next step from the chips below.', { source: false });
           (wiseaiReplyDone || Promise.resolve()).then(() => {
             pfInsertProductCarousels();
             pfOfferChips(['add', 'catalog', 'verifyGo', 'assets']);
@@ -14446,18 +14837,18 @@
         ['claim', 'needsinfo', 'claimed']);
     }
     function startCompleteNeedsInfo() {
-      openPortfolioModule('needsinfo', 'Help me complete my products missing data',
-        '<strong>18 products</strong> need more detail before they can join your portfolio — they won’t appear in any report or stat until they’re complete. Open <strong>Missing data</strong> on the right to add what’s missing; five of them still need <strong>Verify Ingredients</strong>.',
+      openPortfolioModule('needsinfo', 'Help me complete my products in progress',
+        '<strong>18 products</strong> need more detail before they can join your portfolio — they won’t appear in any report or stat until they’re complete. Open <strong>In Progress</strong> on the right to add what’s missing; five of them still need <strong>Verify Ingredients</strong>.',
         ['discovered', 'claimed', 'add']);
     }
     function startViewClaimed() {
       openPortfolioModule('claimed', 'Show me my claimed portfolio',
-        'Here’s your <strong>Claimed</strong> portfolio — <strong>5 products</strong> with complete data, <strong>4</strong> Non-UPF Verified and <strong>1</strong> pre-qualified. Products that still need ingredient verification live in <strong>Missing data</strong>. Where do you want to start?',
+        'Here’s your <strong>Claimed</strong> portfolio — <strong>5 products</strong> with complete data, <strong>4</strong> Non-UPF Verified and <strong>1</strong> pre-qualified. Products that still need ingredient verification live in <strong>In Progress</strong>. Where do you want to start?',
         ['shields', 'ineligible', 'discovered']);
     }
     function startClaimProducts() {
       openPortfolioModule('discovered', 'I want to claim a product',
-        'Claiming is free and unlimited. I’ve opened <strong>Discovered</strong> — pick any product that’s yours and hit <strong>Review &amp; claim</strong> to move it into your portfolio. If it’s missing key data it’ll land in <strong>Missing data</strong> until you complete it.',
+        'Claiming is free and unlimited. I’ve opened <strong>Discovered</strong> — pick any product that’s yours and hit <strong>Review &amp; claim</strong> to move it into your portfolio. If it’s missing key data it’ll land in <strong>In Progress</strong> until you complete it.',
         ['discovered', 'needsinfo', 'claimed']);
     }
     /* Resolve Ineligible → open that product so the existing add / view
@@ -14567,7 +14958,7 @@
     window.startDownloadShieldPack = startDownloadShieldPack;
     function startSearchPortfolio() {
       openPortfolioModule('claimed', 'Search my portfolio',
-        'Every view has a search box — filter by product name or UPC across <strong>Missing data</strong>, <strong>Discovered</strong>, and <strong>Claimed</strong>. Tell me what you’re looking for and I’ll jump you straight to it.',
+        'Every view has a search box — filter by product name, brand, or UPC across <strong>In Progress</strong>, <strong>Discovered</strong>, and <strong>Claimed</strong>. Tell me what you’re looking for and I’ll jump you straight to it.',
         ['claimed', 'discovered', 'needsinfo']);
     }
     /* Filter intent — opens the board and pops the Guiding Stars filter so the
@@ -14575,7 +14966,7 @@
        right from the chat. */
     function startFilterPortfolio() {
       openPortfolioModule('claimed', 'Filter my portfolio by Guiding Stars',
-        'You can slice every view by <strong>Guiding Stars</strong> — rating, category, ease of reformulation, and near-miss opportunities (★★ → ★★★). I’ve opened the filter for you; pick the criteria that matter and I’ll trim Missing data, Discovered, and Claimed to match.',
+        'You can slice every view by <strong>Guiding Stars</strong> — rating, category, ease of reformulation, and near-miss opportunities (★★ → ★★★). I’ve opened the filter for you; pick the criteria that matter and I’ll trim In Progress, Discovered, and Claimed to match.',
         ['claimed', 'discovered', 'needsinfo'],
         () => {
           const pop = document.getElementById('pf-filter-pop');
@@ -14605,7 +14996,7 @@
     window.startEasyWins = startEasyWins;
     function portfolioTour() {
       openPortfolioModule('claimed', 'Give me a quick tour of my portfolio',
-        'Welcome to your <strong>Product Portfolio</strong>. It has three surfaces: <strong>Claimed</strong> (5 complete products), <strong>Discovered</strong> (47 public matches to review &amp; claim), and <strong>Missing data</strong> (18 products missing details, including 5 waiting on ingredient verification). Switch tabs on the right anytime — where would you like to begin?',
+        'Welcome to your <strong>Product Portfolio</strong>. It has three surfaces: <strong>Claimed</strong> (5 complete products), <strong>Discovered</strong> (47 public matches to review &amp; claim), and <strong>In Progress</strong> (18 products missing details, including 5 waiting on ingredient verification). Switch tabs on the right anytime — where would you like to begin?',
         ['claimed', 'discovered', 'catalog', 'assets']);
     }
     function askWiseAiPortfolio() {
@@ -14627,7 +15018,7 @@
             ['Review discovered matches', 'Review the products you discovered for me'],
             ['Verify ingredients', 'Open a claimed product and verify its ingredients'],
             ['Activate Non-UPF Shields', 'Activate the Non-UPF Shields I\u2019m eligible for'],
-            ['Complete products missing data', 'Help me complete my products missing data'],
+            ['Complete products in progress', 'Help me complete my products in progress'],
             ['View claimed portfolio', 'Show me my claimed portfolio'],
             ['Claim a product', 'I want to claim a product'],
             ['Resolve ineligible product', 'Why can\u2019t this product earn a Non-UPF Shield yet?'],

@@ -1,8 +1,9 @@
 """A transcript only moves forward.
 
-Drives a real chat far enough to leave a chip row behind, then checks that
-every row above the newest one is disabled and that clicking backwards into
-one does nothing. Shoots the thread in the theme it was asked for.
+Drives a real chat far enough to leave a chip row behind, then checks that the
+row came off the thread — only the newest row survives, and there is nothing
+left above it to click backwards into. A row holding an opener is the one that
+stays, with its intents dead. Shoots the thread in the theme it was asked for.
 
   python3 scripts/_chip_lock_probe.py [page] [light|dark]
 """
@@ -19,14 +20,19 @@ URL = "http://127.0.0.1:8099/pages/%s.html" % PAGE
 
 ROW_SEL = ".sc-reply-chips, .sc-inline-chips, .gs-chips-inline, .rf-chips-inline"
 
+KEEP_SEL = ('.sc-surface-card, .sc-open-chip, .wa-merge-chip, '
+            '[data-open-module], [data-web-ref], [data-chip-more]')
+
 ROWS = """(function(){
+  var KEEP = '{keep}';
   var t = document.querySelector('.chat-messages-area, #chat-messages');
   if (!t) return JSON.stringify([]);
-  return JSON.stringify([].slice.call(t.querySelectorAll('%s')).map(function(r){
+  return JSON.stringify([].slice.call(t.querySelectorAll('{rows}')).map(function(r){
     var chips = [].slice.call(r.querySelectorAll('.chip, .ws-intent-chip, .gs-chip'));
     return {
       cls: r.className,
       spent: r.hasAttribute('data-chips-spent'),
+      keeps: !!(r.querySelector(KEEP) || r.matches(KEEP)),
       chips: chips.length,
       dead: chips.filter(function(c){
         return c.disabled || c.getAttribute('aria-disabled') === 'true';
@@ -34,7 +40,7 @@ ROWS = """(function(){
       pointer: chips.length ? getComputedStyle(chips[0]).pointerEvents : ''
     };
   }));
-})()""" % ROW_SEL
+})()""".replace("{keep}", KEEP_SEL).replace("{rows}", ROW_SEL)
 
 TAP_LIVE = """(function(){
   var t = document.querySelector('.chat-messages-area, #chat-messages');
@@ -49,6 +55,8 @@ TAP_LIVE = """(function(){
     : document.querySelector('.ws-chips .ws-intent-chip:not([aria-disabled="true"]):not(.ws-intent-chip--askhelp), .sc-welcome .chip:not([aria-disabled="true"])');
   if (!chip) return 'no live chip';
   var label = chip.textContent.replace(/\\s+/g, ' ').trim();
+  /* Mark the row being left so the probe can prove it came off the thread. */
+  if (row) row.setAttribute('data-probe-tapped', '1');
   chip.click();
   return label;
 })()""" % ROW_SEL
@@ -100,23 +108,48 @@ try:
     rows = json.loads(b.js(ROWS))
     print("")
     for i, r in enumerate(rows):
-        print("  row %d  %-24s spent=%-5s chips=%-2s dead=%-2s pointer=%s"
-              % (i, r["cls"], r["spent"], r["chips"], r["dead"], r["pointer"]))
+        print("  row %d  %-24s spent=%-5s keeps=%-5s chips=%-2s dead=%-2s pointer=%s"
+              % (i, r["cls"], r["spent"], r["keeps"], r["chips"], r["dead"],
+                 r["pointer"]))
     print("")
+    left_behind = json.loads(b.js(
+        "(function(){var KEEP='%s';"
+        "return JSON.stringify([].slice.call("
+        "document.querySelectorAll('[data-probe-tapped]')).map(function(r){"
+        "return !!(r.querySelector(KEEP)||r.matches(KEEP))}))})()" % KEEP_SEL))
+    ok(all(left_behind),
+       "every row the member tapped through is off the thread (%d left, all "
+       "holding an opener)" % len(left_behind))
+
     spent = [r for r in rows if r["spent"]]
     live = [r for r in rows if not r["spent"]]
-    ok(len(rows) >= 2, "the thread left more than one chip row behind")
-    ok(len(spent) >= 1, "a row the member moved past is marked spent")
+    ok(all(r["keeps"] for r in spent),
+       "the only spent rows still on the thread are the ones holding an opener")
     ok(all(r["dead"] == r["chips"] and r["pointer"] == "none" for r in spent),
-       "every chip in a spent row is disabled and takes no pointer")
+       "every chip in a kept-but-spent row is disabled and takes no pointer")
     ok(len(live) >= 1, "the newest row is still live")
     ok(all(r["dead"] == 0 for r in live), "no chip in the live row is disabled")
 
+    # Outputs are not intent chips: whatever this turn surfaced must still be
+    # on the thread and still openable.
+    opens = b.js("document.querySelectorAll("
+                 "'.sc-surface-card, .sc-open-chip, .wa-merge-chip').length")
+    dead_opens = b.js("[].slice.call(document.querySelectorAll("
+                      "'.sc-surface-card, .sc-open-chip, .wa-merge-chip'))"
+                      ".filter(function(c){return c.disabled ||"
+                      " c.getAttribute('aria-disabled') === 'true'}).length")
+    ok(dead_opens == 0,
+       "every output the turn surfaced (%d) is still openable" % opens)
+
     before = b.js("document.querySelectorAll('.sc-line').length")
-    print("  backwards tap: %s" % b.js(TAP_SPENT))
-    time.sleep(3)
-    ok(b.js("document.querySelectorAll('.sc-line').length") == before,
-       "clicking backwards into a spent row started nothing")
+    tapped = b.js(TAP_SPENT)
+    print("  backwards tap: %s" % tapped)
+    if tapped == "no spent row":
+        ok(True, "there is nothing behind the member left to tap")
+    else:
+        time.sleep(3)
+        ok(b.js("document.querySelectorAll('.sc-line').length") == before,
+           "tapping backwards into a kept-but-spent row started nothing")
 
     b.js("var t=document.querySelector('.chat-messages-area, #chat-messages');"
          "if(t)t.scrollTop=t.scrollHeight")

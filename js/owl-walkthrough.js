@@ -552,7 +552,7 @@
   function ensure() {
     if (els && els.root && els.root.isConnected) return els;
     var aside = document.createElement('aside');
-    aside.className = 'wch-sidebar wch-docked wch-right wch-ask-panel wch-unsticky owt-mod';
+    aside.className = 'wch-sidebar wch-docked wch-right wch-ask-panel owt-mod';
     aside.setAttribute('role', 'dialog');
     aside.setAttribute('aria-labelledby', 'owt-title');
     aside.innerHTML =
@@ -806,6 +806,14 @@
     paint();
     els.root.hidden = false;
     els.root.classList.remove('wch-docked-hidden');
+    var row = hostRow();
+    if (row) row.classList.add('modules-sticky');
+    els.root.classList.remove('wch-dock-conceal');
+    void els.root.offsetWidth;
+    els.root.classList.add('wch-dock-reveal');
+    setTimeout(function () {
+      if (els && els.root) els.root.classList.remove('wch-dock-reveal');
+    }, 480);
     markScreenSeen();
   }
 

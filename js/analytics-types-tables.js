@@ -45,6 +45,8 @@ import {
     'Owner': 'primary', 'Admin': 'primary', 'Good': 'primary', 'Invoice Sent': 'primary',
     /* warn */
     'Pending Attestation': 'warn', 'Pending': 'warn', 'Incomplete': 'warn',
+    'Incomplete Data': 'warn', 'NFP Issue': 'warn', 'Pending Review': 'primary',
+    'Verify Ingredients': 'alert',
     'Action Required': 'warn', 'Rotate soon': 'warn', 'Near-miss': 'warn',
     'Unclear': 'warn', 'Historical': 'warn', 'Suggest New Canon': 'warn',
     'Not Sure': 'warn', 'Close': 'warn', 'OK': 'warn', 'Locked': 'warn',
@@ -74,6 +76,21 @@ import {
 
   const avatar = (name) =>
     `<span class="attb-avatar" aria-hidden="true">${escq(initials(name))}</span>`;
+
+  const BRAND_LOGO = {
+    'Flax4Life': '../assets/brand-flax4life-logo.png',
+    'Simple Truth': '../assets/compare/simpletruth.png',
+    'Purely Elizabeth': '../assets/compare/sug_purely.jpg',
+    'Siete': '../assets/compare/sug_siete.jpg',
+    'KIND': '../assets/compare/kind.jpg',
+  };
+  const brandCell = (name) => {
+    const logo = BRAND_LOGO[name];
+    const mark = logo
+      ? `<span class="attb-avatar attb-avatar--logo"><img src="${escq(logo)}" alt="" /></span>`
+      : avatar(name);
+    return `<span class="attb-brand">${mark}<span class="attb-strong">${escq(name)}</span></span>`;
+  };
 
   const pill = (label) =>
     `<span class="upf-pill upf-pill--${tone(label)}">${escq(label)}</span>`;
@@ -155,33 +172,32 @@ import {
     S.push({
       id: 'attb-pf-claimed', eyebrow: 'Portfolio grid',
       title: 'Claimed products',
-      intro: 'The portfolio’s working grid: three icon columns and a text action ahead of the product, then data completeness, shield status and the date pair. Eight columns is the widest table in the app, which is why it is the first one to scroll and the first one to stack.',
+      intro: 'The portfolio’s claimed grid: three icon columns ahead of the product (name, UPC, and pack formats when there are more than one), then brand, Non-UPF state, and the date pair. Finish-and-Claim and the old Data column are gone — row actions live on the ⋮ and the multi-select bar.',
       page: 'Product Portfolio', href: 'product-portfolio.html#pf-view-claimed',
       note: 'Sample data: five Flax4Life SKUs, as the claimed view paints them.',
-      minw: 940,
-      cols: [['', 'c'], ['', 'c'], ['', 'c'], ['', 'act'], ['Product', 'id'], ['Data', ''], ['Non-UPF Shield', ''], ['Updated', 'dates']],
+      minw: 880,
+      cols: [['', 'c'], ['', 'c'], ['', 'c'], ['Product', 'id'], ['Brand', ''], ['State', ''], ['Updated', 'dates']],
       rows: [
-        ['Toasted Coconut Brownies-12 ct', '8 57287 00420 3', 'Complete', 'Verified', 'Apr 20, 2026', 'Apr 14, 2026'],
-        ['Chocolate Chip Muffins-4 ct', '0 65776 63152 0', 'Complete', 'Verified', 'Apr 18, 2026', 'Apr 11, 2026'],
-        ['Carrot Raisin Muffins- 4 ct', '0 65776 63151 3', 'Complete', 'Verified', 'Apr 16, 2026', 'Apr 09, 2026'],
-        ['Chocolate Brownies-12 ct', '0 65776 63550 4', 'Complete', 'Verified', 'Apr 15, 2026', 'Apr 07, 2026'],
-        ['Oatmeal Raisin Cookies-5 ct', '8 57287 00456 2', 'Complete', 'Pre-qualified', 'Apr 12, 2026', 'Apr 03, 2026'],
+        ['Toasted Coconut Brownies-12 ct', '8 57287 00420 3', 'Flax4Life', 'Verified', 'Apr 20, 2026', 'Apr 14, 2026'],
+        ['Chocolate Chip Muffins-4 ct', '0 65776 63152 0', 'Flax4Life', 'Verified', 'Apr 18, 2026', 'Apr 11, 2026'],
+        ['Carrot Raisin Muffins- 4 ct', '0 65776 63151 3', 'Flax4Life', 'Verified', 'Apr 16, 2026', 'Apr 09, 2026'],
+        ['Chocolate Brownies-12 ct', '0 65776 63550 4', 'Flax4Life', 'Verified', 'Apr 15, 2026', 'Apr 07, 2026'],
+        ['Oatmeal Raisin Cookies-5 ct', '8 57287 00456 2', 'Flax4Life', 'Pre-qualified', 'Apr 12, 2026', 'Apr 03, 2026'],
       ].map((r) => [
-        check(), rowmenu(['Edit', 'View']), reportsIcon(),
-        btn('Finish and Claim', '', 'link'),
+        check(), rowmenu(['Open Product', 'Edit', 'Reports', 'Remove']), reportsIcon(),
         idCell(r[0], 'UPC · ' + r[1], r[1]),
-        pill(r[2]), pill(r[3]), dates('Updated', r[4], 'Last edited', r[5]),
+        brandCell(r[2]), pill(r[3]), dates('Updated', r[4], 'Last edited', r[5]),
       ]),
     });
 
     S.push({
       id: 'attb-pf-discovered', eyebrow: 'Discovery grid',
       title: 'Discovered products, waiting to be claimed',
-      intro: 'The same grid with one column fewer and two columns deliberately empty: a discovered UPC has no data completeness and no shield until somebody claims it. An em dash is the honest answer, not a zero.',
+      intro: 'The discovery grid keeps UPC under the product name and shows Brand with its logo circle, then the date pair. A discovered UPC has no verification state until somebody claims it.',
       page: 'Product Portfolio', href: 'product-portfolio.html#pf-view-discovered',
       note: 'Sample data: four auto-discovered Flax4Life UPCs.',
       minw: 860,
-      cols: [['', 'c'], ['', 'c'], ['', 'act'], ['Product', 'id'], ['Data', ''], ['Non-UPF Shield', ''], ['Updated', 'dates']],
+      cols: [['', 'c'], ['', 'c'], ['', 'act'], ['Product', 'id'], ['Brand', ''], ['Updated', 'dates']],
       rows: [
         ['Apple Cinnamon Muffins-4 ct', '0 65776 63517 7', 'Apr 20, 2026', 'Apr 13, 2026'],
         ['Banana Coconut Granola', '8 57287 00425 8', 'Apr 19, 2026', 'Apr 12, 2026'],
@@ -191,28 +207,30 @@ import {
         check(), rowmenu(['Review & claim', 'Preview', 'Not mine']),
         btn('Review & Claim', '', 'link'),
         idCell(r[0], 'UPC · ' + r[1], r[1]),
-        NA, NA, dates('Updated', r[2], 'Last edited', r[3]),
+        brandCell('Flax4Life'), dates('Updated', r[2], 'Last edited', r[3]),
       ]),
     });
 
     S.push({
       id: 'attb-pf-needsinfo', eyebrow: 'Needs-info grid',
-      title: 'Products missing data before they can be verified',
-      intro: 'Same shape again, with the action column carrying the specific next step per row — verify the ingredients, or go back and complete the details. The shield column tells you which of the two it is.',
+      title: 'Products in progress before they can be verified',
+      intro: 'One Finish Data action on every row, then Product Name with UPC (and multipack sizes) grouped under it, Brand with its logo circle, Data State, and Updated. Data-state chips are informational — filter from the cards above the table, not by tapping the chip.',
       page: 'Product Portfolio', href: 'product-portfolio.html#pf-view-needsinfo',
-      note: 'Sample data: four Flax4Life SKUs short of verification.',
-      minw: 880,
-      cols: [['', 'c'], ['', 'c'], ['', 'act'], ['Product', 'id'], ['Data', ''], ['Non-UPF Shield', ''], ['Updated', 'dates']],
+      note: 'Sample data: four Flax4Life SKUs short of a complete record.',
+      minw: 960,
+      cols: [['', 'c'], ['', 'c'], ['', 'act'], ['Product Name', 'id'], ['Brand', ''], ['Data State', ''], ['Updated', 'dates']],
       rows: [
-        ['Vegan Carrot Raisin Mini Muffins', '8 57287 00482 1', 'Pending Attestation', 'Verify ingredients', 'Apr 20, 2026', 'Apr 13, 2026'],
-        ['Chunky Chocolate Granola', '8 57287 00427 2', 'Pending Attestation', 'Verify ingredients', 'Apr 18, 2026', 'Apr 11, 2026'],
-        ['Vegan Blueberry Mini Muffins', '8 57287 00481 4', 'Ineligible', 'Complete details', 'Apr 17, 2026', 'Apr 09, 2026'],
-        ['Vegan Chocolate Brownies', '8 57287 00483 8', 'Ineligible', 'Complete details', 'Apr 15, 2026', 'Apr 06, 2026'],
+        ['Vegan Carrot Raisin Mini Muffins', '8 57287 00482 1', 'Flax4Life', 'Verify Ingredients', 'Apr 20, 2026', 'Apr 13, 2026', ''],
+        ['Chunky Chocolate Granola', '8 57287 00427 2', 'Flax4Life', 'Verify Ingredients', 'Apr 18, 2026', 'Apr 11, 2026', '11 oz | 20 oz'],
+        ['Vegan Blueberry Mini Muffins', '8 57287 00481 4', 'Flax4Life', 'NFP Issue', 'Apr 17, 2026', 'Apr 09, 2026', ''],
+        ['Vegan Chocolate Brownies', '8 57287 00483 8', 'Flax4Life', 'Pending Review', 'Apr 15, 2026', 'Apr 06, 2026', ''],
       ].map((r) => [
-        check(), rowmenu([r[3], 'Preview', 'Not mine']),
-        btn(r[3], '', 'link'),
-        idCell(r[0], 'UPC · ' + r[1], r[1]),
-        pill('Incomplete'), pill(r[2]), dates('Updated', r[4], 'Last edited', r[5]),
+        check(), rowmenu(['Finish Data', 'Preview', 'Not mine']),
+        btn('Finish Data', '', 'link'),
+        idCell(r[0], (r[6] ? r[6] + ' · ' : '') + 'UPC · ' + r[1], r[1]),
+        brandCell(r[2]),
+        pill(r[3]),
+        dates('Updated', r[4], 'Last edited', r[5]),
       ]),
     });
 
