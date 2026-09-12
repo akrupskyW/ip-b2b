@@ -1,15 +1,17 @@
 /**
  * Add Catalog flow — the bulk-upload builder that powers pages/add-catalog.html.
  *
- * Same three-module frame as Add Product, re-used verbatim:
+ * A two-module frame, re-using Add Product's shell:
  *   • Chat (left)      — WISEcodeAI walks you through the CSV upload with intent
  *                        chips (upload, download the template / example, read the
  *                        field guide) — no long chit-chat, just the next action.
+ *                        The chat also carries progress: each answer says where
+ *                        the upload stands and the next-step chips move it on, so
+ *                        there is no separate right-hand progress rail.
  *   • Catalog (middle) — a live module that mirrors those same actions in a
  *                        minimal UI: dropzone → column mapping → import results
  *                        (imported vs. rows to fix) → whole-catalog ingredient
  *                        verification. Built from the app's existing surfaces.
- *   • Progress (right) — the shared vfp-* progress module tracking every step.
  *
  * Nothing is imported until "Import to Portfolio" is pressed.
  */
@@ -178,22 +180,11 @@
     verified: false,
     result: null,        // SAMPLE_RESULT once imported
     analyzePct: 0,
-    step: 'upload',
     awaiting: null,
   };
 
-  /* ─────────────────────────── steps ─────────────────────────── */
-  const STEPS = [
-    { id: 'upload', label: 'Upload file', icon: 'upload_file' },
-    { id: 'map', label: 'Match columns', icon: 'table_view' },
-    { id: 'import', label: 'Import products', icon: 'inventory_2' },
-    { id: 'analyze', label: 'Analyze ingredients', icon: 'science' },
-    { id: 'verify', label: 'Verify catalog', icon: 'verified' },
-  ];
-
   /* ─────────────────────────── DOM refs ─────────────────────────── */
-  let messagesEl, welcomeEl, chipsStartEl, inputEl, catBody, progressEl, fileInput;
-  let progressMin = true;
+  let messagesEl, welcomeEl, chipsStartEl, inputEl, catBody, fileInput;
 
   /* ─────────────────────────── chat primitives (shared pattern) ─────────────────────────── */
   function scrollDown(force) {
@@ -516,100 +507,9 @@
     }
   }
 
-  /* ─────────────────────────── progress render ─────────────────────────── */
-  function stepFilled(id) {
-    switch (id) {
-      case 'upload': return !!state.file;
-      case 'map': return state.mapped;
-      case 'import': return state.imported;
-      case 'analyze': return state.imported && state.analyzePct >= 100;
-      case 'verify': return state.verified;
-      default: return false;
-    }
-  }
-  function stepHasError(id) {
-    if (id === 'import') return !!(state.result && state.result.fix.length);
-    return false;
-  }
-  function stepFields(id) {
-    const r = state.result || SAMPLE_RESULT;
-    switch (id) {
-      case 'upload': return [{ label: 'Catalog file', val: state.file || 'None', done: !!state.file }];
-      case 'map': return [{ label: 'Columns', val: state.mapped ? 'Matched' : 'Pending', done: state.mapped }];
-      case 'import': return state.imported
-        ? [
-            { label: 'Imported', val: String(r.imported), done: true },
-            { label: 'Rows to fix', val: String(r.fix.length), done: r.fix.length === 0, err: r.fix.length > 0 },
-          ]
-        : [{ label: 'Products', val: 'Pending', done: false }];
-      case 'analyze': return [{ label: 'Ingredients', val: state.imported ? (state.analyzePct >= 100 ? 'Analyzed' : state.analyzePct + '%') : 'Pending', done: state.imported && state.analyzePct >= 100 }];
-      case 'verify': return [{ label: 'Verification', val: state.verified ? 'Complete' : 'Pending', done: state.verified }];
-      default: return [];
-    }
-  }
-  function completedCount() { return STEPS.filter((s) => stepFilled(s.id) && !stepHasError(s.id)).length; }
-
-  function renderProgress() {
-    if (!progressEl) return;
-    const activeIdx = STEPS.findIndex((s) => s.id === state.step);
-    const completed = completedCount();
-    const pct = Math.round((completed / STEPS.length) * 100);
-
-    const stepsHtml = STEPS.map((s, i) => {
-      const filled = stepFilled(s.id);
-      const err = stepHasError(s.id);
-      const isActive = i === activeIdx;
-      let cls = '';
-      if (err) cls = 'vfp-step--err';
-      else if (filled) cls = 'vfp-step--done';
-      else if (isActive) cls = 'vfp-step--active';
-      const num = err ? '<span class="material-symbols-outlined">priority_high</span>'
-        : filled ? '<span class="material-symbols-outlined">check</span>' : String(i + 1);
-      let sub = '';
-      if (err) sub = 'Needs attention';
-      else if (filled) sub = 'Completed';
-      else if (isActive) sub = 'In progress';
-      let fieldsHtml = '';
-      if (filled || isActive || err) {
-        const rows = stepFields(s.id).map((f) => {
-          const icon = f.err ? 'error_outline' : f.done ? 'check' : 'radio_button_unchecked';
-          const st = f.err ? 'vfp-field--err' : f.done ? 'vfp-field--done' : 'vfp-field--active';
-          return `<div class="vfp-field ${st}"><span class="material-symbols-outlined">${icon}</span><span class="vfp-field-label">${esc(f.label)}</span><span class="vfp-field-val">${esc(f.val)}</span></div>`;
-        }).join('');
-        fieldsHtml = `<div class="vfp-fields">${rows}</div>`;
-      }
-      return `<div class="vfp-step ${cls}">
-        <div class="vfp-step-track"><div class="vfp-step-num">${num}</div><div class="vfp-step-line"></div></div>
-        <div class="vfp-step-body">
-          <div class="vfp-step-title">${esc(s.label)}</div>
-          ${sub ? `<div class="vfp-step-sub">${esc(sub)}</div>` : ''}
-          ${fieldsHtml}
-        </div>
-      </div>`;
-    }).join('');
-
-    progressEl.innerHTML = `<div class="vfp-inner ${progressMin ? 'is-min' : ''}">
-      <div class="vfp-header">
-        <div class="vfp-pct-ring" style="--pct:${pct}"><span>${pct}%</span></div>
-        <div class="vfp-header-text">
-          <div class="vfp-title">Add catalog progress</div>
-          <div class="vfp-subtitle">${esc(state.brand)} · ${STEPS.length} steps</div>
-        </div>
-        <button type="button" class="vfp-min-btn" data-ap-min aria-label="${progressMin ? 'Expand progress' : 'Collapse progress'}" title="${progressMin ? 'Expand' : 'Collapse'}"><span class="material-symbols-outlined">${progressMin ? 'chevron_left' : 'chevron_right'}</span></button>
-      </div>
-      <div class="vfp-progress">
-        <div class="vfp-progress-head"><span>${completed} of ${STEPS.length} steps</span><span class="vfp-progress-pct">${pct}%</span></div>
-        <div class="vfp-progress-track"><div class="vfp-progress-fill" style="width:${pct}%"></div></div>
-      </div>
-      <div class="vfp-steps">${stepsHtml}</div>
-      <div class="vfp-foot">
-        <div class="vfp-foot-row"><span>Products imported</span><span>${state.imported ? (state.result || SAMPLE_RESULT).imported : 0}</span></div>
-        <div class="vfp-foot-row vfp-foot-total"><span>Catalog verified</span><span class="vfp-foot-amt">${state.verified ? 'Yes' : 'No'}</span></div>
-      </div>
-    </div>`;
-  }
-
-  function render() { renderCatalog(); renderProgress(); }
+  /* Progress lives in the chat, not a right-hand rail: each answer states where
+     the upload stands and the next-step intent chips carry it forward. */
+  function render() { renderCatalog(); }
 
   /* ─────────────────────────── flow actions ─────────────────────────── */
   function openPicker() {
@@ -621,7 +521,6 @@
     if (!file) return;
     addUserFile(file.name);
     state.file = file.name;
-    state.step = 'map';
     render();
     const t = showTyping();
     setTimeout(() => {
@@ -641,7 +540,6 @@
     if (state.imported) { onVerify(); return; }
     if (!state.mapped) { openPicker(); return; }
     addUser('Import everything that validates');
-    state.step = 'import';
     render();
     const t = showTyping();
     setTimeout(() => {
@@ -649,7 +547,6 @@
       state.stage = 'imported';
       state.imported = true;
       state.result = SAMPLE_RESULT;
-      state.step = 'analyze';
       render();
       runAnalyze();
       addWISEcodeAI(`Imported <strong>${SAMPLE_RESULT.imported}</strong> of ${SAMPLE_RESULT.total} products into your <strong>${esc(state.brand)}</strong> portfolio. <strong>${SAMPLE_RESULT.fix.length} rows</strong> didn't validate — they're listed with the reason in <strong>Catalog</strong>. I'm analyzing every ingredient statement in the background now.`,
@@ -664,7 +561,7 @@
     state.analyzePct = 0;
     const tick = () => {
       state.analyzePct = Math.min(100, state.analyzePct + 20);
-      if (state.stage === 'imported') { renderCatalog(); renderProgress(); }
+      if (state.stage === 'imported') { renderCatalog(); }
       if (state.analyzePct < 100) setTimeout(tick, 420);
     };
     setTimeout(tick, 420);
@@ -674,7 +571,6 @@
     addUser('Verify the whole catalog');
     state.analyzePct = 100;
     state.verified = true;
-    state.step = 'verify';
     render();
     wiseSay(`Done — I verified all <strong>${(state.result || SAMPLE_RESULT).imported}</strong> imported products' ingredients in one pass. They're in <strong>Claimed</strong> now. Fix the ${(state.result || SAMPLE_RESULT).fix.length} flagged rows and upload again anytime, or head back to the portfolio.`,
       [
@@ -719,7 +615,7 @@
   function restart() {
     Object.assign(state, {
       stage: 'start', file: null, mapped: false, imported: false, verified: false,
-      result: null, analyzePct: 0, step: 'upload', awaiting: null,
+      result: null, analyzePct: 0, awaiting: null,
     });
     if (messagesEl) messagesEl.innerHTML = '';
     if (welcomeEl) { welcomeEl.classList.remove('sc-hidden'); welcomeEl.style.display = ''; }
@@ -767,9 +663,8 @@
     chipsStartEl = $('ws-chips-start');
     inputEl = $('chat-input');
     catBody = $('cat-body');
-    progressEl = $('ap-progress');
     fileInput = $('ap-file');
-    if (!messagesEl || !catBody || !progressEl) return;
+    if (!messagesEl || !catBody) return;
 
     if (chipsStartEl && !chipsStartEl.querySelector('.chip')) {
       chipsStartEl.innerHTML = WELCOME_CHIPS.map((c) =>
@@ -789,9 +684,6 @@
       // Catalog module affordances
       const acBtn = e.target.closest('[data-ac]');
       if (acBtn && catBody.contains(acBtn)) { dispatch(acBtn.dataset.ac); return; }
-      // Progress module minimize toggle
-      const minBtn = e.target.closest('[data-ap-min]');
-      if (minBtn && progressEl.contains(minBtn)) { progressMin = !progressMin; renderProgress(); return; }
     });
     // Dropzone keyboard + drag/drop
     catBody.addEventListener('keydown', (e) => {

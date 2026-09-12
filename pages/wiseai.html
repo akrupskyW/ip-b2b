@@ -4647,6 +4647,10 @@
   <script type="module">
     import { mountWISEcodeAIChat, OWL_BUG } from '../js/wiseai-chat.js';
     import { owlProgressionCarouselHtml } from '../js/owl-progression-carousel.js';
+    import {
+      clanCampaignReply, clanMeetReply, clanDocReply, clanLookReply, clanChamberReply,
+      clanRosterView, clanDocView, clanLookView,
+    } from '../js/wise-clan-campaign.js';
     import { staggerReveal } from '../js/stagger-reveal.js';
     import { saveGeneratedReport } from '../js/generated-reports.js';
 
@@ -8244,11 +8248,39 @@
     }
 
     /* Axis / value labels that stay readable as the slot shrinks: fit flat,
-       wrap to two lines, then tilt. One plan per chart so every tick matches. */
+       then always break to two lines, shrinking the font as far as needed and
+       clipping each line with an ellipsis only as a last resort. Labels never
+       tilt off the bottom of the card — a long product name reads on two lines
+       and the whole label stays in the tooltip / data-axis-label stamp. One
+       plan per chart so every tick matches.
+
+       Font ladder for wrapping. Flat stays at 12/11/10; the two-line pass may
+       drop to 9/8 before it gives up and clips, so a run of 80-character
+       product names fits under the columns instead of running past them. */
+    const WA_AXIS_FLAT_SIZES = [12, 11, 10];
+    const WA_AXIS_WRAP_SIZES = [12, 11, 10, 9, 8];
     function waChartEstTextW(text, fs) {
       return String(text || '').length * fs * 0.56;
     }
+    /* Bottom room a two-line wrap at this font needs: the 14px baseline drop
+       under the plot, two line-heights of (fs + 2), a descender and a margin. */
+    function waChartWrapPad(fs) {
+      return Math.round(14 + 2 * (fs + 2) + 0.35 * fs + 8);
+    }
+    /* Split a label into the two-line pair whose wider line is narrowest.
+       Returns null when there is nothing to split on (a single word, no
+       hyphen) or when even the best split will not fit the slot at this size. */
     function waChartWrapPair(label, slotW, fs) {
+      const best = waChartBalancedSplit(label, fs);
+      return best && best.max <= slotW - 2 ? best : null;
+    }
+    /* The same balanced split with no fit requirement — used once the font can
+       shrink no further, so the label still breaks to two lines and each line
+       is clipped to the slot rather than the whole thing tilting away. */
+    function waChartForceWrap(label, fs) {
+      return waChartBalancedSplit(label, fs);
+    }
+    function waChartBalancedSplit(label, fs) {
       const raw = String(label || '').trim();
       let words = raw.split(/\s+/);
       if (words.length < 2 && raw.includes('-')) {
@@ -8263,42 +8295,58 @@
         const max = Math.max(waChartEstTextW(a, fs), waChartEstTextW(b, fs));
         if (!best || max < best.max) best = { a, b, max };
       }
-      return best && best.max <= slotW - 2 ? best : null;
+      return best;
+    }
+    /* Trim a line to the slot, ending on an ellipsis. The full label is still
+       carried in the tooltip and the data-axis-label stamp. */
+    function waChartClip(text, slotW, fs) {
+      const raw = String(text || '');
+      if (waChartEstTextW(raw, fs) <= slotW - 2) return raw;
+      let s = raw;
+      while (s.length > 1 && waChartEstTextW(s + '\u2026', fs) > slotW - 2) s = s.slice(0, -1);
+      return s.replace(/\s+$/, '') + '\u2026';
     }
     function waChartAxisPlan(labels, slotW) {
       const list = (labels || []).map((l) => String(l || ''));
-      const sizes = [12, 11, 10];
-      for (const fs of sizes) {
+      for (const fs of WA_AXIS_FLAT_SIZES) {
         if (list.every((l) => waChartEstTextW(l, fs) <= slotW - 4)) {
           return { mode: 'flat', angle: 0, fs, pad: 36 };
         }
       }
-      for (const fs of sizes) {
+      for (const fs of WA_AXIS_WRAP_SIZES) {
         if (list.every((l) => waChartEstTextW(l, fs) <= slotW - 4 || waChartWrapPair(l, slotW, fs))) {
-          return { mode: 'wrap', angle: 0, fs, pad: 54 };
+          return { mode: 'wrap', angle: 0, fs, pad: waChartWrapPad(fs) };
         }
       }
-      const fs = list.length >= 8 ? 11 : 12;
-      const longest = list.reduce((m, l) => Math.max(m, waChartEstTextW(l, fs)), 0);
-      const angle = list.length >= 8 ? -52 : -42;
-      const rise = Math.ceil(longest * Math.sin(Math.abs(angle) * Math.PI / 180)) + 16;
-      return { mode: 'tilt', angle, fs, pad: Math.min(128, Math.max(68, rise)) };
+      /* Still too long even wrapped at the smallest size: keep two lines at
+         that size and clip each line — never tilt. */
+      const fs = WA_AXIS_WRAP_SIZES[WA_AXIS_WRAP_SIZES.length - 1];
+      return { mode: 'wrap', angle: 0, fs, pad: waChartWrapPad(fs), clip: true };
     }
     function waChartAxisLabel(label, x, y, plan, slotW) {
       const fs = plan.fs;
       const raw = String(label || '');
       const tip = `<title>${esc(raw)}</title>`;
       const key = ` data-axis-label="${esc(raw)}"`;
+      const xs = x.toFixed(1);
+      const flat = (text) => `<text x="${xs}" y="${y.toFixed(1)}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="var(--text-muted)"${key}>${tip}${esc(text)}</text>`;
       if (plan.mode === 'wrap') {
-        const pair = waChartWrapPair(raw, slotW, fs);
+        /* A label that comfortably fits one line stays on one line even inside
+           a wrapping chart. */
+        if (waChartEstTextW(raw, fs) <= slotW - 4 && !plan.clip) return flat(raw);
+        const pair = waChartWrapPair(raw, slotW, fs) || waChartForceWrap(raw, fs);
         if (pair) {
-          return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="var(--text-muted)"${key}>${tip}<tspan x="${x.toFixed(1)}" dy="0">${esc(pair.a)}</tspan><tspan x="${x.toFixed(1)}" dy="${fs + 2}">${esc(pair.b)}</tspan></text>`;
+          const a = plan.clip ? waChartClip(pair.a, slotW, fs) : pair.a;
+          const b = plan.clip ? waChartClip(pair.b, slotW, fs) : pair.b;
+          return `<text x="${xs}" y="${y.toFixed(1)}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="var(--text-muted)"${key}>${tip}<tspan x="${xs}" dy="0">${esc(a)}</tspan><tspan x="${xs}" dy="${fs + 2}">${esc(b)}</tspan></text>`;
         }
+        /* An unsplittable single long token — one clipped line, still smaller. */
+        return flat(waChartClip(raw, slotW, fs));
       }
       if (plan.mode === 'tilt') {
-        return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="end" font-size="${fs}" font-weight="700" fill="var(--text-muted)" transform="rotate(${plan.angle} ${x.toFixed(1)} ${y.toFixed(1)})"${key}>${tip}${esc(raw)}</text>`;
+        return `<text x="${xs}" y="${y.toFixed(1)}" text-anchor="end" font-size="${fs}" font-weight="700" fill="var(--text-muted)" transform="rotate(${plan.angle} ${xs} ${y.toFixed(1)})"${key}>${tip}${esc(raw)}</text>`;
       }
-      return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="var(--text-muted)"${key}>${tip}${esc(raw)}</text>`;
+      return flat(raw);
     }
 
     /* Read an axis label back off a rendered chart.
@@ -8322,6 +8370,8 @@
       if (plan.mode === 'wrap') {
         const pair = waChartWrapPair(raw, slotW, plan.fs);
         if (pair) return pair.max;
+        /* Forced-wrap or clipped labels never paint wider than the slot. */
+        return Math.min(slotW - 2, waChartEstTextW(raw, plan.fs));
       }
       return waChartEstTextW(raw, plan.fs);
     }
@@ -11484,7 +11534,9 @@
 
     const INTENTS = [
       { intent: 'brandwelcome', icon: 'waving_hand', label: 'Welcome!', ask: 'Welcome! Give me an overview of my entire brand.' },
+      { intent: 'inline_nfp', icon: 'view_column', label: 'Inline NFP', ask: 'Open the Nutrition Facts, ingredient list and score modules inline in the transcript.', nextIntents: ['brandwelcome', 'myfoods_sup', 'gras'] },
       { intent: 'atlas', icon: 'bubble_chart',    label: 'Food Intervention Atlas', ask: ATLAS_ASK },
+      { intent: 'campaign', icon: 'campaign',      label: 'Generate a marketing campaign', ask: 'Generate a marketing campaign' },
       { intent: 'topbrands', icon: 'leaderboard',   label: 'Top 3 brands · WISEscore \u2265 50', ask: 'Create a comparison chart of the top three brands with more than 50 UPCs that are in the top half of the WISE score.' },
       { intent: 'kraft',   icon: 'inventory_2',     label: 'Kraft SKUs \u00b7 % UPF', ask: 'How many SKUs does Kraft have and what percent are ultra processed?' },
       { intent: 'sprouts', icon: 'storefront',      label: 'How many foods does Sprouts have?', ask: 'How many foods does the Sprouts retailer have?' },
@@ -11572,6 +11624,20 @@
       { intent: 'fedreg_search', icon: 'travel_explore',      label: 'Federal Register notice on GRAS',      ask: 'Search for the Federal Register notice on the GRAS proposal' },
     ];
 
+    /* Follow-up chips after the Protect Ya Plate / WISEcode Clan campaign. */
+    const CAMPAIGN_FOLLOWUPS = [
+      { intent: 'campaign_clan',  icon: 'groups',      label: 'Meet the Clan', ask: 'Meet the WISEcode Clan' },
+      { intent: 'campaign_doc',   icon: 'movie',       label: 'Play the documentary', ask: 'Play the Four Chambers documentary' },
+      { intent: 'campaign_look',  icon: 'checkroom',   label: 'Show the clothing line', ask: 'Show the Chamber Collection clothing line' },
+      { intent: 'campaign_great', icon: 'eco',         label: 'The Great chamber', ask: 'Show the Great chamber' },
+      { intent: 'campaign_bad',   icon: 'error',       label: 'The Bad chamber', ask: 'Show the Bad chamber' },
+      { intent: 'campaign_upf',   icon: 'science',     label: 'The Ultra-Processed chamber', ask: 'Show the Ultra-Processed chamber' },
+      { intent: 'campaign_sad',   icon: 'nights_stay', label: 'The Sad chamber', ask: 'Show the Sad chamber' },
+    ];
+    CAMPAIGN_FOLLOWUPS.forEach((c) => {
+      c.nextIntents = CAMPAIGN_FOLLOWUPS.filter((x) => x.intent !== c.intent);
+    });
+
     /* Follow-up chips offered after the protein-bar SKU-count answer lands. */
     const PROTEIN_FOLLOWUPS = [
       { intent: 'protein_brands',     icon: 'storefront',     label: 'Top brands in protein bars', ask: 'Show me the top brands in protein bars' },
@@ -11626,6 +11692,8 @@
       const c = INTENTS.find((x) => x && x.intent === id);
       if (c) c.nextIntents = next;
     };
+    attachNext('campaign', CAMPAIGN_FOLLOWUPS);
+    CAMPAIGN_FOLLOWUPS.forEach((c) => attachNext(c.intent, CAMPAIGN_FOLLOWUPS.filter((x) => x.intent !== c.intent)));
     attachNext('brandwelcome', BRANDWELCOME_FOLLOWUPS);
     attachNext('atlas', ATLAS_FOLLOWUPS);
     attachNext('topbrands', TOPBRANDS_FOLLOWUPS);
@@ -11671,6 +11739,7 @@
         cookie:       { label: 'Compare the top cookies', ask: 'Compare the top chocolate-chip cookies side by side' },
         cat:          { label: 'Compare wet vs dry cat food', ask: 'Compare wet vs dry cat food against those feline nutrient needs' },
         myfoods:      { label: 'Compare my UPF split', ask: 'Analyze MY foods by UPF' },
+        campaign:     { label: 'Compare the four chambers', ask: 'Compare the Great, Bad, Ultra-Processed and Sad chambers' },
       },
       report: {
         atlas:        { label: 'Rebuild this as a formal scientific report', ask: 'Rebuild this as a formal scientific report' },
@@ -11689,6 +11758,7 @@
         cookie:       { label: 'Cookie ranking report', ask: 'Show me a pretty report \u2014 all the charts & trends' },
         cat:          { label: 'Feline nutrition report', ask: 'Turn the feline nutrient list into a short report' },
         myfoods:      { label: 'My foods UPF report', ask: 'Analyze MY foods by UPF' },
+        campaign:     { label: 'Four Chambers report', ask: 'Turn the Protect Ya Plate campaign into a short report' },
       },
       spider: {
         atlas:        { label: 'Re-weight the frontier toward profit protection', ask: 'Re-weight the frontier toward profit protection' },
@@ -11707,6 +11777,7 @@
         cookie:       { label: 'Spider-chart the top cookies', ask: 'Spider-chart the top cookies on WISEscore vs chocolate load' },
         cat:          { label: 'Spider-chart feline nutrients', ask: 'Spider-chart the essential feline nutrients' },
         myfoods:      { label: 'Chart my UPF split', ask: 'Analyze MY foods by UPF' },
+        campaign:     { label: 'Chart the four chambers', ask: 'Chart the Great, Bad, Ultra-Processed and Sad chambers' },
       },
     };
     function topicOf(intent) {
@@ -11729,6 +11800,7 @@
       if (id === 'worst' || id === 'cupcake' || id === 'cookie' || id === 'cat') return id;
       if (id === 'catnutrients') return 'cat';
       if (id === 'playful') return 'playful';
+      if (id.indexOf('campaign') === 0) return 'campaign';
       return id;
     }
     function contextualizeChip(chip, thread) {
@@ -11817,10 +11889,10 @@
       + 'Press play when you\u2019re ready \u2014 scrubbing, volume and full screen are all live, and it waits for you rather than starting on its own.';
     /* "Wise Owl Progression" — one edge-to-edge row of Lottie owls, stills, then
        theme-aware silent clips (linen in light / deep harbor in dark). Click
-       plays a Lottie or clip once. Shared component: js/owl-progression-carousel.js. */
+       any owl to open it larger. Shared component: js/owl-progression-carousel.js. */
     const OWL_PROGRESSION_REPLY = '<p>Here is the <strong>Wise Owl Progression</strong> \u2014 green (pass), red (fail), and blue (celebrate) \u2014 as motion, stills, and short clips that follow your light or dark theme.</p>'
       + owlProgressionCarouselHtml()
-      + '<p>Scroll the row, or use the arrows. Click a Lottie owl or a clip to play it \u2014 each plays once, with no sound and no controls.</p>';
+      + '<p>Scroll the row, or use the arrows. Click any owl to see it larger \u2014 motion plays once in the panel, with no sound and no controls.</p>';
     const SWEETENERS_REPLY = 'Among the ingredients currently classified as <strong>Artificial Sweetener</strong>, the PL split is:'
         + '<div class="wa-plsplit">'
         + '<span class="wa-plsplit-item"><span class="wa-ib-pill wa-ib-pl-2">PL2</span><b>6</b></span>'
@@ -11834,6 +11906,8 @@
     const CUPCAKE_REPLY = 'I couldn\u2019t fetch the full food-detail card for that cupcake because the detail lookup failed.<br><br>What I can confirm from the search result is that the worst-ranked cupcake is <strong>Member\u2019s Mark Christmas Gourmet Cupcakes, 8 Ct.</strong> with a WISEscore of <strong>0.06</strong>. Its ingredient list is extremely long and includes a dense mix of refined sugars and syrups, multiple refined oils, emulsifiers and stabilizers, artificial colors, and multiple preservatives.<br><br>That combination is why it surfaced at the very bottom of the ranking rather than just being \u201ca dessert.\u201d';
 
     const INTENT_REPLIES = {
+      inline_nfp: 'Here they are \u2014 inline. Instead of docking on the right, I have dropped the live modules straight into the thread: the <strong>Nutrition Facts</strong> panel, the <strong>ingredient list</strong>, and your <strong>WISEscore breakdown</strong>, side by side in one rail.<br><br>'
+        + 'It is a carousel of real components you can size. <strong>Drag the grip at the foot</strong> of the rail up or down to grow or shrink every module at once \u2014 there is a max height, so it stays inside the answer. <strong>Pull a module\u2019s right edge</strong>, or tap its width control, to widen or narrow just that one, and swipe sideways to move between them. Everything stays in the transcript \u2014 nothing opens on the right, and the chat keeps its width.',
       brandwelcome: 'Welcome back \u2014 here is your whole brand in one read.<br><br>'
         + '<strong>' + BRAND.name + '</strong> is in good shape. Across the <strong>' + BRAND.analyzed + ' products</strong> you have claimed and analyzed, the brand averages a WISEscore of <strong>' + BRAND.wisescore + '</strong>, which lands in <strong>Good</strong>. You are <strong>' + BRAND.nonUpfPct + '% Non-UPF</strong> \u2014 ' + BRAND.nonUpf + ' of ' + BRAND.analyzed + ' products \u2014 and <strong>' + BRAND.gras + ' of those ' + BRAND.analyzed + '</strong> clear GRAS outright (' + BRAND.grasPct + '%), read across the ' + BRAND.ingredients + ' unique ingredients your line uses. For a date-and-nut portfolio that is a genuinely strong position, and it is not an accident: <strong>Ingredient Quality is your best pillar at 89</strong>, carried by banned-ingredient avoidance (96) and clean label (93).<br><br>'
         + '<strong>Where it thins out.</strong> Health Outcomes is the drag at <strong>72</strong>, and inside it <strong>Anti-Inflammatory (66)</strong> is the single lowest of the fifteen metrics. Nutrient Quality sits at 75, held back by Sugar Density (68) \u2014 which is close to structural on a date-based line. The one weak spot inside an otherwise strong pillar is <strong>Seed Oils of Concern (64)</strong>, and that is the cheapest number on the board to move.<br><br>'
@@ -11923,6 +11997,7 @@
           cookie: 'Spider-charted the top chocolate-chip cookies on WISEscore vs where chocolate sits in the ingredient list. Charted it in Visuals \u2192',
           cupcake: 'Spider-charted that cupcake against nearby bakery desserts \u2014 it still sits at the origin on every spoke we have data for. Charted it in Visuals \u2192',
           cat: 'Spider-charted the essential feline nutrients \u2014 taurine, animal protein, preformed vitamin A, arachidonic acid, niacin. Charted it in Visuals \u2192',
+          campaign: () => clanDocReply(),
           upf: 'Spider-charted the main UPF signals \u2014 additives, sweeteners, refined oils \u2014 so you can see which ones drive the classification. Charted it in Visuals \u2192',
           myfoods: 'Charted your workspace UPF split \u2014 80 foods, 65 Super Ultra-Processed. Not the 943k catalog. Charted it in Visuals \u2192',
         };
@@ -11957,6 +12032,7 @@
           cupcake: 'Compared that cupcake with a couple of nearby bakery desserts on the same board. It still sits at the bottom: longer ingredient list, more synthetic colors, more emulsifiers.<br><br>Opened the comparison in Results &amp; Details \u2192',
           cookie: 'Took the cookie ranking we just ran and put the three strongest \u201cleast chocolate\u201d candidates head-to-head \u2014 Paleo Vegan Chocolate Chip, Emmy\u2019s Organics Coconut, and Get Back To Human Grain-Free.<br><br>Opened the comparison in Results &amp; Details \u2192',
           cat: 'Compared wet vs dry cat food against the feline nutrient needs we just walked through. Wet wins on moisture and typically on taurine density; dry wins on calorie density and shelf life \u2014 neither is a human WISEscore food.<br><br>Opened the comparison in Results &amp; Details \u2192',
+          campaign: () => clanDocReply(),
           myfoods: () => takeReply('myfoods_upf', text, 'myfoods_upf', ctx),
         };
         if (t && by[t]) {
@@ -11984,6 +12060,7 @@
           worst: 'Turned the worst-foods ranking into a short report \u2014 the tail is decorated cakes and dessert kits, not one weird outlier, with Member\u2019s Mark Christmas Gourmet Cupcakes at <strong>0.06</strong>.<br><br>Opened the ranking in Results &amp; Details \u2192',
           cupcake: 'Turned that cupcake detail into a short report \u2014 the lookup failed on the full card, but the search result is enough to see why it sits at <strong>0.06</strong>.<br><br>Opened the detail in Results &amp; Details \u2192',
           cat: 'Turned the feline nutrient list into a short report \u2014 obligate carnivore, taurine, animal protein, preformed vitamin A, arachidonic acid, niacin, with the peer-reviewed sources attached.<br><br>Opened the references in Results &amp; Details \u2192',
+          campaign: () => clanDocReply(),
           cookie: REPORT_REPLY,
           myfoods: 'Turned your workspace into a short report \u2014 <strong>80</strong> foods in My foods (demo), <strong>65</strong> Super Ultra-Processed, scores read from the workspace not the 943k catalog.<br><br>Opened the breakdown in Visuals \u2192',
         };
@@ -11998,6 +12075,14 @@
       playful: PLAYFUL_REPLY,
       owls: OWLS_REPLY,
       owl_progression: OWL_PROGRESSION_REPLY,
+      campaign: () => clanCampaignReply(),
+      campaign_clan: () => clanMeetReply(),
+      campaign_doc: () => clanDocReply(),
+      campaign_look: () => clanLookReply(),
+      campaign_great: () => clanChamberReply('great'),
+      campaign_bad: () => clanChamberReply('bad'),
+      campaign_upf: () => clanChamberReply('upf'),
+      campaign_sad: () => clanChamberReply('sad'),
       catnutrients: `Cats are <strong>obligate carnivores</strong>, so they need a nutrient profile built around animal-derived protein plus several nutrients they can\u2019t reliably make or get from plant precursors${catCite(1, 3, 5)}. The essentials the literature keeps flagging:`
         + `<ul style="margin:10px 0 4px;padding-left:20px">`
         + `<li><strong>Taurine</strong> \u2014 vital for the retina, heart &amp; reproduction; deficiency is classically tied to retinal degeneration and dilated cardiomyopathy${catCite(7, 8)}.</li>`
@@ -12240,6 +12325,14 @@
       if (/owl\s*progression/.test(t)) return takeReply('owl_progression', text, 'owl_progression', ctx);
       if (/\bowls?\b|food truth/.test(t)) return takeReply('owls', text, 'owls', ctx);
       if (/playful|unwisecode/.test(t)) return takeReply('playful', text, 'playful', ctx);
+      if (/meet the (wise.?code )?clan/.test(t)) return takeReply('campaign_clan', text, 'campaign_clan', ctx);
+      if (/four chambers|documentary/.test(t)) return takeReply('campaign_doc', text, 'campaign_doc', ctx);
+      if (/clothing line|chamber collection|lookbook/.test(t)) return takeReply('campaign_look', text, 'campaign_look', ctx);
+      if (/great chamber/.test(t)) return takeReply('campaign_great', text, 'campaign_great', ctx);
+      if (/bad chamber/.test(t)) return takeReply('campaign_bad', text, 'campaign_bad', ctx);
+      if (/(ultra[- ]?processed|upf) chamber/.test(t)) return takeReply('campaign_upf', text, 'campaign_upf', ctx);
+      if (/sad chamber/.test(t)) return takeReply('campaign_sad', text, 'campaign_sad', ctx);
+      if (/marketing campaign|protect ya plate|wise.?code clan/.test(t)) return takeReply('campaign', text, 'campaign', ctx);
       if (/cat/.test(t) && /(nutrient|require|taurine|amino|obligate|carnivore)/.test(t)) return takeReply('catnutrients', text, 'catnutrients', ctx);
       if (/identif.*cat|cat.*(food|feed)|feed me|as a cat/.test(t)) return takeReply('cat', text, 'cat', ctx);
       if (/(redo|re-?do|regenerate|rebuild|update)/.test(t) && /(chart|graph|visual|driver)/.test(t)) return takeReply('redochart', text, 'redochart', ctx);
@@ -12670,20 +12763,49 @@
       const gate = chatStage('releaseOutputs');
       if (gate) gate();
     }
-    function surfaceBlock(which, opts) {
-      const reduce = typeof matchMedia === 'function'
-        && matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (reduce) { postSurfaceBlock(which, opts); return; }
-      surfaceQueue.push([which, opts]);
+    /* Sentinel first element for a queued INLINE rail — the member asked for
+       modules in the thread, not on the right, so it drains through the same
+       pump (answer first, one beat apart, output stage released at the end) but
+       posts the rail inline instead of writing a pane block + preview card. */
+    const INLINE_RAIL = '__inline_rail__';
+    function startSurfacePump() {
       if (surfacePumping) return;
       surfacePumping = true;
       const step = () => {
         const next = surfaceQueue.shift();
         if (!next) { surfacePumping = false; releaseOutputStage(); return; }
-        postSurfaceBlock(next[0], next[1]);
+        if (next[0] === INLINE_RAIL) postInlineRail(next[1]);
+        else postSurfaceBlock(next[0], next[1]);
         setTimeout(step, SURFACE_STEP_MS);
       };
       afterAnswerSettles(step);
+    }
+    function surfaceBlock(which, opts) {
+      const reduce = typeof matchMedia === 'function'
+        && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduce) { postSurfaceBlock(which, opts); return; }
+      surfaceQueue.push([which, opts]);
+      startSurfacePump();
+    }
+    /* Surface a rail of full modules INLINE in the transcript (see
+       js/inline-module-rail.js). Nothing opens on the right; the chat keeps its
+       width. Routed through the shared pump so it still lands after the answer. */
+    function surfaceInline(opts) {
+      const reduce = typeof matchMedia === 'function'
+        && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduce) { postInlineRail(opts); return; }
+      surfaceQueue.push([INLINE_RAIL, opts]);
+      startSurfacePump();
+    }
+    function postInlineRail(opts) {
+      const IR = window.WiseInlineRail;
+      if (!IR || !chat || typeof chat.addWISEcodeAI !== 'function') return;
+      const o = opts || {};
+      const wrap = IR.buildRail(o.modules || [], {
+        lead: o.lead, label: o.label, height: o.height,
+      });
+      const line = chat.addWISEcodeAI(wrap, { feedback: true, trailChips: false });
+      if (typeof IR.activate === 'function') IR.activate(line);
     }
 
     /* Open (or refresh) a pane block AND mirror it as an inline preview card. */
@@ -13472,8 +13594,8 @@
       kraft: 'kraft_heinz', sprouts: 'sprouts', gras: 'gras', gras_upf: 'upf_def',
       energy: 'energy_sugar', proteinbars: 'protein_vs_granola', sweeteners: 'sweet_vs_natural',
       topbrands: 'topbrands_top10', brisket: 'brisket', upf: 'upf',
-      worst: 'worst', cupcake: 'cupcake', cookie: 'cookie', cat: 'cat',
-      myfoods: 'myfoods_upf',
+      worst: 'worst',       cupcake: 'cupcake', cookie: 'cookie', cat: 'cat',
+      myfoods: 'myfoods_upf', campaign: 'campaign_doc',
     };
     const REPORT_SURFACE = {
       atlas: 'atlas_report',
@@ -13481,7 +13603,7 @@
       energy: 'energy', proteinbars: 'proteinbars', sweeteners: 'sweeteners',
       topbrands: 'topbrands', brisket: 'brisket', upf: 'upf',
       worst: 'worst', cupcake: 'cupcake', cat: 'catnutrients',
-      myfoods: 'myfoods_upf',
+      myfoods: 'myfoods_upf', campaign: 'campaign_doc',
     };
     const SPIDER_SURFACE = {
       atlas: 'atlas_profit',
@@ -13489,7 +13611,7 @@
       energy: 'energy_heat', proteinbars: 'protein_brands', sweeteners: 'sweet_vs_natural',
       topbrands: 'topbrands', brisket: 'brisket', upf: 'upf',
       cupcake: 'cupcake', cookie: 'cookie', cat: 'catnutrients',
-      myfoods: 'myfoods_upf',
+      myfoods: 'myfoods_upf', campaign: 'campaign_doc',
     };
     function surface(intent, ctx) {
       const topic = ctx && ctx.topic;
@@ -13499,6 +13621,13 @@
       setTimeout(() => {
         if (intent === 'brandwelcome') {
           surfaceBrandOverview();
+        } else if (intent === 'inline_nfp') {
+          const IR = window.WiseInlineRail;
+          surfaceInline({
+            modules: IR ? IR.sampleModules() : [],
+            label: 'Nutrition modules, inline',
+            height: 380,
+          });
         } else if (intent === 'brand_claim') {
           surfaceBlock('results', {
             icon: 'checklist',
@@ -13575,6 +13704,54 @@
           surfaceAtlasPanels({
             sel: 'plkits',
             note: 'Single-retailer cut \u2014 own-brand lever selected, still a scenario layer',
+          });
+        } else if (intent === 'campaign') {
+          surfaceBlock('results', {
+            icon: 'groups',
+            title: 'The WISEcode Clan',
+            meta: 'Nine members \u00b7 headshots & bios \u00b7 Protect Ya Plate',
+            html: clanRosterView(),
+            versionKey: 'wise-clan-roster',
+          });
+          surfaceBlock('visuals', {
+            icon: 'movie',
+            title: 'Four Chambers',
+            meta: 'A WISEcode Clan film \u00b7 Great, Bad, Ultra-Processed, Sad',
+            html: clanDocView(),
+            versionKey: 'wise-clan-doc',
+          });
+          surfaceBlock('results', {
+            icon: 'checkroom',
+            title: 'The Chamber Collection',
+            meta: 'Protect Ya Plate \u00b7 hoodie, chamber tees, cap, varsity',
+            html: clanLookView(),
+            versionKey: 'wise-clan-look',
+          });
+        } else if (intent === 'campaign_clan') {
+          surfaceBlock('results', {
+            icon: 'groups',
+            title: 'The WISEcode Clan',
+            meta: 'Nine members \u00b7 headshots & bios \u00b7 Protect Ya Plate',
+            html: clanRosterView(),
+            versionKey: 'wise-clan-roster',
+          });
+        } else if (intent === 'campaign_doc' || intent === 'campaign_great' || intent === 'campaign_bad' || intent === 'campaign_upf' || intent === 'campaign_sad') {
+          const chapter = intent === 'campaign_doc' ? 'great'
+            : intent.replace('campaign_', '');
+          surfaceBlock('visuals', {
+            icon: 'movie',
+            title: 'Four Chambers',
+            meta: 'A WISEcode Clan film \u00b7 Great, Bad, Ultra-Processed, Sad',
+            html: clanDocView({ chapter }),
+            versionKey: 'wise-clan-doc',
+          });
+        } else if (intent === 'campaign_look') {
+          surfaceBlock('results', {
+            icon: 'checkroom',
+            title: 'The Chamber Collection',
+            meta: 'Protect Ya Plate \u00b7 hoodie, chamber tees, cap, varsity',
+            html: clanLookView(),
+            versionKey: 'wise-clan-look',
           });
         } else if (intent === 'brisket') {
           surfaceBlock('results', {
@@ -14690,12 +14867,13 @@
         scorecards: {
           label: 'Start a conversation',
           cards: [
-            { variant: 'gold', large: true, icon: 'explore', pill: { tone: 'gold', icon: 'auto_stories', text: 'Walkthrough' }, title: 'Want a guide through the UI?', desc: 'A walkthrough of the product \u2014 and What can I ask? parked beside it, so you can steal prompts as you go.', action: 'Open the guide', intent: 'walkthrough' },
+            { variant: 'gold', large: true, icon: 'explore', pill: { tone: 'gold', icon: 'auto_stories', text: 'Walkthrough' }, title: 'Learn the platform', desc: 'A walkthrough of the product \u2014 and What can I ask? parked beside it, so you can steal prompts as you go.', action: 'Show me around', intent: 'walkthrough' },
             { variant: 'welcome', icon: 'insights', title: 'Smarter decisions start here.', desc: 'Your whole brand in one read \u2014 WISEscore, coverage, flagged ingredients, and what to fix first.', action: 'Show me', intent: 'brandwelcome', ask: 'Welcome! Give me an overview of my entire brand.' },
             { variant: 'welcome', chart: 'upf', icon: 'donut_large', pill: { tone: 'up', icon: 'verified', text: '92% Non-UPF' }, title: 'Your brand UPF', desc: 'The same Non-UPF read as Overview \u2014 22 of 24 analyzed products.', action: 'Open the overview', intent: 'brandwelcome', ask: 'Show me my brand UPF overview.' },
             { variant: 'welcome', chart: 'pillars', icon: 'stacked_bar_chart', pill: { tone: 'up', icon: 'leaderboard', text: '79 Good' }, title: 'The three WISEscore pillars', desc: 'Nutrient quality, ingredient quality, and health outcomes \u2014 scored the way Overview does.', action: 'See the breakdown', intent: 'brand_pillars', ask: 'Break down my WISEscore pillars.' },
             { variant: 'metric', icon: 'leaderboard', pill: { tone: 'up', icon: 'north', text: 'Top 3' }, metric: '22,514', title: 'Top 3 brands, top-half WISEscore', desc: 'Brands with the most foods scoring 50 or higher.', action: 'Compare', intent: 'topbrands', ask: 'Create a comparison chart of the top three brands with more than 50 UPCs that are in the top half of the WISE score.' },
             { variant: 'metric', icon: 'inventory_2', pill: { tone: 'alert', icon: 'science', text: '46.9% UPF' }, metric: '1,874', title: 'Kraft SKUs and their UPF share', desc: 'Every Kraft product in the catalog, split by the WISEcode UPF verification.', action: 'Break it down', intent: 'kraft', ask: 'How many SKUs does Kraft have and what percent are ultra processed?' },
+            { variant: 'gold', large: true, icon: 'campaign', pill: { tone: 'gold', icon: 'movie', text: 'Campaign' }, title: 'Generate a marketing campaign', desc: 'A WISEcode clothing line and a food-truth documentary \u2014 nine characters, four chambers: Great, Bad, Ultra-Processed, Sad.', action: 'Generate', intent: 'campaign', ask: 'Generate a marketing campaign' },
             { variant: 'metric', icon: 'verified', pill: { tone: 'alert', icon: 'warning', text: '81 unsafe' }, metric: '8,658', title: 'Ingredients with a GRAS status', desc: 'GRAS, Historical and Unclear \u2014 and the handful that came back Unsafe.', action: 'Count', intent: 'gras', ask: 'How many ingredients do we have some GRAS classification for?' },
             { variant: 'metric', icon: 'storefront', pill: { tone: 'up', icon: 'storefront', text: 'Retailer' }, metric: '20,635', title: 'How many foods does Sprouts have?', desc: 'Distinct Sprouts-carried products matched against WISEcode.', action: 'Count', intent: 'sprouts', ask: 'How many foods does the Sprouts retailer have?' },
             { variant: 'wiseai', icon: 'auto_awesome', title: 'Is this ultra-processed?', desc: 'Paste an ingredient list for a WISEcode UPF read.', action: 'Ask', intent: 'upf', ask: 'Is this ingredient list ultra-processed?' },
@@ -14792,6 +14970,33 @@
         primeChips: (row) => { if (chat.primeChips) chat.primeChips(row); },
         revealChips: (row) => { if (chat.revealChips) chat.revealChips(row); },
       };
+
+      /* Deep-link launch — the nav-rail slogan (js/topbar.js) links here with
+         ?intent=<id>&ask=<question>. Play that intent's full transcript as if
+         the member had clicked its chip, showing the slogan as the asked line.
+         Member-initiated (they tapped the slogan), so this is not autoplay: the
+         turn runs the normal pipeline and the output panes still stay shut
+         until an output chip is tapped. Guarded to a known intent, once. */
+      (function launchFromQuery() {
+        let intent = '', ask = '';
+        try {
+          const q = new URLSearchParams(location.search);
+          intent = (q.get('intent') || '').trim();
+          ask = (q.get('ask') || '').trim();
+        } catch (_) { return; }
+        if (!intent) return;
+        if (!INTENTS.some((c) => c && c.intent === intent)) return;
+        /* Scrub the query so a reload / back doesn't replay the turn. */
+        try {
+          const clean = location.pathname + location.hash;
+          history.replaceState(history.state, '', clean);
+        } catch (_) { /* ignore */ }
+        /* Let the mount finish wiring (welcome, chips, stage gates) before the
+           turn takes over the surface. */
+        setTimeout(() => {
+          try { chat.sendIntent(intent, ask || undefined); } catch (_) { /* no-op */ }
+        }, 120);
+      })();
 
       /* Activity strip — the thin landmark rail on the chat's edge is mounted
          by the shared chat module itself (js/wiseai-chat.js), so it needs no

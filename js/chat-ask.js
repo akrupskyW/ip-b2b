@@ -442,11 +442,13 @@
             askPanel.style.setProperty('flex', '1000 1 auto', 'important');
             askPanel.style.setProperty('width', 'auto', 'important');
             askPanel.style.setProperty('max-width', 'none', 'important');
+            askPanel.style.removeProperty('min-width');
           } else {
             var w = tiers[widthTier] || baseW;
             askPanel.style.setProperty('flex', '0 0 ' + w + 'px', 'important');
             askPanel.style.setProperty('width', w + 'px', 'important');
             askPanel.style.setProperty('max-width', 'none', 'important');
+            askPanel.style.removeProperty('min-width');
           }
         } else {
           askPanel.style.removeProperty('flex');
@@ -504,11 +506,21 @@
       }
     }
 
-    function setDocked(on) {
+    function setWidthTier(n) {
+      widthTier = Math.max(0, Math.min(4, n | 0));
+      if (askPanel.classList.contains('wch-docked-hidden') || askPanel.style.width === '0px') {
+        syncWidthBtn();
+        return;
+      }
+      applyWidth();
+    }
+
+    function setDocked(on, extra) {
       askDocked = !!on;
+      extra = extra || {};
       clearTimeout(askCloseTimer);
       if (askDocked) {
-        askPanel.classList.remove('wch-open', 'wch-closing', 'wch-docked-hidden');
+        askPanel.classList.remove('wch-open', 'wch-closing');
         askScrim.classList.remove('wch-open', 'wch-closing');
         document.removeEventListener('keydown', onKey);
         var container = resolve(opts.container);
@@ -516,7 +528,16 @@
         if (!container && anchor) container = anchor.parentElement;
         if (container) placeDocked(container, anchor);
         askPanel.classList.add('wch-docked');
-        applyWidth();
+        if (extra.hidden) {
+          askPanel.classList.add('wch-docked-hidden', 'wch-anim');
+          askPanel.style.setProperty('flex', '0 0 0px', 'important');
+          askPanel.style.setProperty('width', '0px', 'important');
+          askPanel.style.setProperty('min-width', '0px', 'important');
+          syncWidthBtn();
+        } else {
+          askPanel.classList.remove('wch-docked-hidden');
+          applyWidth();
+        }
         setSticky(askSticky);
         renderList();
         updateBreakBtn();
@@ -535,9 +556,17 @@
 
     function revealDocked() {
       clearTimeout(askRevealTimer);
+      askPanel.classList.add('wch-anim');
+      var wasHidden = askPanel.classList.contains('wch-docked-hidden') || askPanel.style.width === '0px';
+      if (wasHidden) {
+        askPanel.style.setProperty('flex', '0 0 0px', 'important');
+        askPanel.style.setProperty('width', '0px', 'important');
+        askPanel.style.setProperty('min-width', '0px', 'important');
+      }
       askPanel.classList.remove('wch-docked-hidden', 'wch-dock-conceal', 'wch-dock-reveal');
       void askPanel.offsetWidth;
       askPanel.classList.add('wch-dock-reveal');
+      applyWidth();
       askRevealTimer = setTimeout(function () { if (askPanel) askPanel.classList.remove('wch-dock-reveal'); }, 480);
     }
     function concealDocked() {
@@ -708,6 +737,7 @@
       open: open,
       close: close,
       setDocked: setDocked,
+      setWidthTier: setWidthTier,
       isDocked: function () { return askDocked; },
       dismissOverlay: dismissOverlay,
       refresh: renderList,

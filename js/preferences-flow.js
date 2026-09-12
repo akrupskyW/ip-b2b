@@ -63,7 +63,13 @@ function setTextSize(pct) {
   const v = Math.max(85, Math.min(130, pct));
   try { localStorage.setItem('wise-text-size', String(v)); } catch (_) {}
   document.documentElement.style.setProperty('--text-scale', (v / 100).toFixed(3));
-  try { document.documentElement.style.fontSize = (v / 100 * 16).toFixed(1) + 'px'; } catch (_) {}
+  try {
+    /* Keep in sync with PHONE_MAX_PX / --wise-phone-type-scale: an inline
+       root size must not undo the shared phone type cut. */
+    const phone = window.matchMedia('(max-width: 768px)').matches;
+    const base = phone ? 16 * 0.85 : 16;
+    document.documentElement.style.fontSize = (v / 100 * base).toFixed(1) + 'px';
+  } catch (_) {}
   return v;
 }
 

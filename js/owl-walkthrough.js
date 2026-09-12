@@ -476,6 +476,7 @@
   var screenIntro = false;
   var lastFocus = null;
   var widthTier = 0;
+  var revealTimer = 0;
   var WIDTH_ICONS = ['width_normal', 'width_wide', 'width_wide', 'width_full', 'fit_width'];
   var WIDTH_TITLES = [
     'Width (single) — tap to widen',
@@ -505,15 +506,18 @@
     }
     if (widthTier === 4) {
       /* Custom — applyClasses already pinned the current (default) width. */
+      aside.style.removeProperty('min-width');
     } else if (widthTier === 3) {
       aside.style.setProperty('flex', '1000 1 auto', 'important');
       aside.style.setProperty('width', 'auto', 'important');
       aside.style.setProperty('max-width', 'none', 'important');
+      aside.style.removeProperty('min-width');
     } else {
       var w = tiers[widthTier] || base;
       aside.style.setProperty('flex', '0 0 ' + w + 'px', 'important');
       aside.style.setProperty('width', w + 'px', 'important');
       aside.style.setProperty('max-width', 'none', 'important');
+      aside.style.removeProperty('min-width');
     }
     var btn = els.widthBtn;
     if (btn && !window.WPaneWidth) {
@@ -555,6 +559,8 @@
     aside.className = 'wch-sidebar wch-docked wch-right wch-ask-panel owt-mod';
     aside.setAttribute('role', 'dialog');
     aside.setAttribute('aria-labelledby', 'owt-title');
+    aside.setAttribute('data-no-fill-default', '');
+    aside.dataset.fillDefaulted = '1';
     aside.innerHTML =
       '<div class="wch-head">' +
         '<div class="owt-mast">' +
@@ -562,6 +568,12 @@
           '<p class="owt-kicker" id="owt-kicker"></p>' +
         '</div>' +
         '<div class="wch-controls">' +
+          '<button type="button" class="owt-nav-chev" data-owt="back" aria-label="Back">' +
+            '<span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>' +
+          '</button>' +
+          '<button type="button" class="owt-nav-chev" data-owt="next" aria-label="Next">' +
+            '<span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>' +
+          '</button>' +
           '<div class="panel-more-wrap owt-more-wrap">' +
             '<button type="button" class="panel-more-btn owt-more-btn" title="More options" aria-haspopup="menu" aria-expanded="false" aria-label="More options">' +
               '<span class="material-symbols-outlined">more_vert</span>' +
@@ -580,13 +592,14 @@
       '</div>' +
       '<nav class="owt-nav" aria-label="Walkthrough steps">' +
         '<div class="owt-nav-skips">' +
-          '<button type="button" class="owt-nav-link" data-owt="skip-group">Skip this group</button>' +
-          '<span class="owt-nav-sep" aria-hidden="true">\u00b7</span>' +
-          '<button type="button" class="owt-nav-link" data-owt="skip-rest">Skip remaining</button>' +
-        '</div>' +
-        '<div class="owt-nav-move">' +
-          '<button type="button" class="owt-nav-link" data-owt="back">Back</button>' +
-          '<button type="button" class="owt-nav-link owt-nav-link--next" data-owt="next">Next</button>' +
+          '<button type="button" class="chip ws-intent-chip" data-owt="skip-group">' +
+            '<span class="material-symbols-outlined" aria-hidden="true">skip_next</span>' +
+            '<span class="owt-skip-label">Skip this group</span>' +
+          '</button>' +
+          '<button type="button" class="wise-btn wise-btn--primary wise-btn--sm" data-owt="skip-rest">' +
+            '<span class="material-symbols-outlined" aria-hidden="true">last_page</span>' +
+            'Skip remaining' +
+          '</button>' +
         '</div>' +
       '</nav>' +
       '<div class="owt-body" data-owt="body"></div>';
@@ -601,6 +614,7 @@
       back: aside.querySelector('[data-owt="back"]'),
       next: aside.querySelector('[data-owt="next"]'),
       skipGroup: aside.querySelector('[data-owt="skip-group"]'),
+      skipLabel: aside.querySelector('.owt-skip-label'),
       moreWrap: aside.querySelector('.owt-more-wrap'),
       moreBtn: aside.querySelector('.owt-more-btn'),
       morePop: aside.querySelector('.owt-more-pop'),
@@ -695,9 +709,50 @@
       '<div class="owt-chips ws-chips" role="navigation" aria-label="Walkthrough groups">' + chips + '</div>';
 
     e.back.disabled = isFirst;
-    e.next.textContent = isLast ? 'Finish' : 'Next';
-    e.skipGroup.textContent = gs.skipped ? 'Group skipped' : 'Skip this group';
+    var nextIcon = e.next.querySelector('.material-symbols-outlined');
+    if (nextIcon) nextIcon.textContent = isLast ? 'check' : 'chevron_right';
+    e.next.setAttribute('aria-label', isLast ? 'Finish' : 'Next');
+    if (e.skipLabel) e.skipLabel.textContent = gs.skipped ? 'Group skipped' : 'Skip this group';
     e.skipGroup.disabled = gs.skipped;
+  }
+
+  function collapseWidth() {
+    var aside = els && els.root;
+    if (!aside) return;
+    aside.classList.add('wch-anim');
+    aside.style.setProperty('flex', '0 0 0px', 'important');
+    aside.style.setProperty('width', '0px', 'important');
+    aside.style.setProperty('min-width', '0px', 'important');
+  }
+
+  function reveal() {
+    if (!els || !els.root) return;
+    var aside = els.root;
+    aside.hidden = false;
+    var row = hostRow();
+    if (row) row.classList.add('modules-sticky');
+    aside.classList.add('wch-anim');
+    clearTimeout(revealTimer);
+    var wasHidden = aside.classList.contains('wch-docked-hidden') || aside.style.width === '0px';
+    if (wasHidden) collapseWidth();
+    aside.classList.remove('wch-docked-hidden', 'wch-dock-conceal');
+    void aside.offsetWidth;
+    aside.classList.add('wch-dock-reveal');
+    applyWidth();
+    revealTimer = setTimeout(function () {
+      if (els && els.root) els.root.classList.remove('wch-dock-reveal');
+    }, 480);
+  }
+
+  function setWidthTier(n) {
+    widthTier = Math.max(0, Math.min(4, n | 0));
+    if (!els || !els.root) return;
+    if (els.root.classList.contains('wch-docked-hidden') || els.root.style.width === '0px') {
+      var btn = els.widthBtn;
+      if (window.WPaneWidth && btn) window.WPaneWidth.syncButton(btn, widthTier);
+      return;
+    }
+    applyWidth();
   }
 
   function goToPage(id) {
@@ -804,16 +859,18 @@
     lastFocus = document.activeElement;
     ensure();
     paint();
-    els.root.hidden = false;
-    els.root.classList.remove('wch-docked-hidden');
     var row = hostRow();
     if (row) row.classList.add('modules-sticky');
-    els.root.classList.remove('wch-dock-conceal');
-    void els.root.offsetWidth;
-    els.root.classList.add('wch-dock-reveal');
-    setTimeout(function () {
-      if (els && els.root) els.root.classList.remove('wch-dock-reveal');
-    }, 480);
+    if (opts.reveal === false) {
+      els.root.hidden = false;
+      els.root.classList.add('wch-docked-hidden');
+      collapseWidth();
+      markScreenSeen();
+      return;
+    }
+    els.root.classList.add('wch-docked-hidden');
+    collapseWidth();
+    reveal();
     markScreenSeen();
   }
 
@@ -888,9 +945,12 @@
           reset: !!opts.reset,
           group: opts.group,
           step: opts.step,
-          screenIntro: !!opts.screenIntro
+          screenIntro: !!opts.screenIntro,
+          reveal: opts.reveal
         });
       },
+      reveal: reveal,
+      setWidthTier: setWidthTier,
       close: function () { snooze(false); },
       reset: reset,
       isOpen: isOpen,

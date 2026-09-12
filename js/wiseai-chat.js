@@ -41,6 +41,10 @@ import { esc } from './escape-html.js';
 import { openModal, closeModal, modalHTML } from './wise-modal.js';
 import { OWL_BUG, OWL_MARK } from './owl-mark.js';
 import { overviewCardChartHtml, playOverviewCardCharts } from './welcome-overview-cards.js';
+/* Mobile view — read at load by the defaults that differ on a phone (the
+   overview cards, the Helix pose). One shared measurement, so the chat and
+   the shell agree on where the phone tier starts. */
+import { isPhoneViewport } from './nav-responsive.js';
 import {
   refineReply, withTimeout, toggleOllamaOn, probeOllama, probeOllamaWhenIdle,
   enrichReply, rememberChatTurn, forgetChatTurns,
@@ -866,6 +870,47 @@ export function wireComposerGrow(input) {
   sync();
 }
 
+/* Send stays inactive until the composer actually has something to send —
+   text in the field or a pending attachment chip. Shared by the canonical
+   mount and wireChatComposer so every composer (the live chats and the
+   all-modules demos) behaves identically. Idempotent per composer wrap.
+   A placeholder-locked composer is left untouched — its send is permanently
+   disabled (see .sc-send--locked). Returns the sync fn so a host that fills
+   the field programmatically can re-check readiness. */
+export function wireSendReady(el) {
+  if (!el) return null;
+  const wrap = el.classList?.contains('fl-input-wrap') ? el : el.querySelector?.('.fl-input-wrap');
+  if (!wrap || wrap.dataset.sendReadyWired === '1') return null;
+  const btn = wrap.querySelector('.sc-send');
+  const input = wrap.querySelector('textarea.fl-input, .fl-input');
+  if (!btn || !input) return null;
+  /* Locked composers keep their permanent-disabled treatment; don't fight it. */
+  if (btn.classList.contains('sc-send--locked')) return null;
+  wrap.dataset.sendReadyWired = '1';
+  const attachEl = wrap.querySelector('.fl-attachments');
+  const sync = () => {
+    const hasText = !!(input.value && input.value.trim());
+    const hasAtt = !!(attachEl && attachEl.querySelector('.fl-attach-chip'));
+    const ready = hasText || hasAtt;
+    btn.disabled = !ready;
+    btn.setAttribute('aria-disabled', ready ? 'false' : 'true');
+    btn.classList.toggle('sc-send--idle', !ready);
+  };
+  input.addEventListener('input', sync);
+  input.addEventListener('change', sync);
+  input.addEventListener('focus', sync);
+  /* Attachments land / clear as chips in the pending row — no 'input' fires. */
+  if (attachEl && typeof MutationObserver !== 'undefined') {
+    new MutationObserver(sync).observe(attachEl, { childList: true });
+  }
+  /* Sends clear the field programmatically (no 'input' event) — re-check after
+     the click / Enter handlers have run so the button falls back to idle. */
+  btn.addEventListener('click', () => setTimeout(sync, 0));
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') setTimeout(sync, 0); });
+  sync();
+  return sync;
+}
+
 /* Line the "What can I ask?" link up under the composer's placeholder text.
    That inset is not a constant — it moves with the "+" button, the field's own
    left padding and the composer variant — so measure the textarea's real text
@@ -924,6 +969,9 @@ export function wireChatComposer(railEl, opts = {}) {
 
   /* Auto-grow behaviour for the text field (composer-v2 only; see helper). */
   wireComposerGrow(railEl.querySelector('textarea.fl-input'));
+
+  /* Keep Send inactive until the field has text or a pending attachment. */
+  wireSendReady(railEl);
 
   /* Line the "What can I ask?" link up under this composer (shared measurement
      — see alignAskHelp). Walk out to the nearest ancestor that owns the link so
@@ -1106,8 +1154,54 @@ function buildActivityHtml(id, title) {
           </div>`;
 }
 
+/* Render an uploaded file's name for an attachment chip: the whole name rides
+   the mono font (see .sc-att-name / .fl-attach-name), and the extension — the
+   final dotted segment — is emphasised in bold. A name with no extension, or a
+   leading-dot dotfile, keeps its whole label in the base weight. */
+export function attachNameHtml(name) {
+  const raw = String(name == null ? '' : name);
+  const dot = raw.lastIndexOf('.');
+  if (dot <= 0 || dot === raw.length - 1) {
+    return `<span class="sc-att-base">${esc(raw)}</span>`;
+  }
+  /* Base name truncates with an ellipsis; the extension is pinned so it stays
+     visible and bold even on a long filename (see .sc-att-name in wise.css). */
+  return `<span class="sc-att-base">${esc(raw.slice(0, dot))}</span>`
+    + `<b class="sc-att-ext">${esc(raw.slice(dot))}</b>`;
+}
+
+/* Pull the image URL off a pending or sent attachment chip. New chips stash
+   it on data-src; older saved threads (and catalog specimens) only have it
+   in the thumb's background-image. Icon-only chips have no photo to open. */
+function srcFromBgImage(el) {
+  if (!el) return '';
+  const raw = (el.style && el.style.backgroundImage) || '';
+  const m = String(raw).match(/^url\(\s*(['"]?)([\s\S]*?)\1\s*\)$/);
+  return m ? m[2] : '';
+}
+function previewSrcFromAttach(el) {
+  if (!el || !el.closest) return '';
+  const chip = el.closest('.sc-att-chip, .fl-attach-chip') || el;
+  const thumb = (chip.querySelector && chip.querySelector('.sc-att-thumb, .fl-attach-thumb')) || null;
+  if (thumb && (thumb.classList.contains('sc-att-thumb--icon') || thumb.classList.contains('fl-attach-thumb--icon'))) {
+    return '';
+  }
+  const fromData = (chip.getAttribute && chip.getAttribute('data-src'))
+    || (thumb && thumb.getAttribute && thumb.getAttribute('data-src'))
+    || '';
+  return fromData || srcFromBgImage(thumb);
+}
+function attachPreviewName(el) {
+  const chip = el && el.closest && el.closest('.sc-att-chip, .fl-attach-chip');
+  if (!chip) return 'Image';
+  const named = chip.querySelector && chip.querySelector('.sc-att-name, .fl-attach-name');
+  const text = named && named.textContent ? named.textContent.replace(/\s+/g, ' ').trim() : '';
+  return text || chip.getAttribute('title') || chip.getAttribute('aria-label') || 'Image';
+}
+
 /* Full-size image preview lightbox — opened when an attachment thumbnail is
-   clicked. Self-contained scrim appended to <body>; closes on backdrop click,
+   clicked, in the composer or on a finished / restored transcript line.
+   Self-contained scrim appended to <body>; closes on backdrop click,
    the close button, or Escape. Styles live in injectChatExtras(). */
 function openWiseImageModal(src, name) {
   if (typeof document === 'undefined' || !src) return;
@@ -1139,6 +1233,39 @@ function openWiseImageModal(src, name) {
   requestAnimationFrame(() => scrim.classList.add('is-open'));
 }
 
+/* Sent chips (and catalog specimens) must open the same lightbox the
+   pending composer thumbs do — including chips restored from History.
+   One document listener covers every host; pending remove stays local. */
+export function wireAttachmentPreviews() {
+  if (typeof document === 'undefined' || document.documentElement.dataset.scAttPreviewWired === '1') return;
+  document.documentElement.dataset.scAttPreviewWired = '1';
+  const openFrom = (el) => {
+    const src = previewSrcFromAttach(el);
+    if (!src) return false;
+    openWiseImageModal(src, attachPreviewName(el));
+    return true;
+  };
+  document.addEventListener('click', (e) => {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.fl-attach-x')) return;
+    const sent = e.target.closest('.sc-att-chip');
+    if (sent) {
+      if (openFrom(sent)) e.preventDefault();
+      return;
+    }
+    const thumb = e.target.closest('.fl-attach-thumb');
+    if (thumb && !thumb.classList.contains('fl-attach-thumb--icon')) {
+      if (openFrom(thumb)) e.preventDefault();
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const sent = e.target && e.target.closest && e.target.closest('.sc-att-chip');
+    if (!sent) return;
+    if (openFrom(sent)) e.preventDefault();
+  });
+}
+
 /* One-time style injection for the bits the shared chat adds on top of the
    base stylesheet: the locked scorecard state, the three-dot MCP toggle switch,
    and the "Connect a data source" side panel rows (which reuse the .wch-sidebar
@@ -1148,6 +1275,7 @@ export function injectChatExtras() {
   wireTranscriptTimes();
   wireAnswerTips();
   wireStoryVoiceover();
+  wireAttachmentPreviews();
   if (typeof document === 'undefined' || document.getElementById('wiseai-chat-extras')) return;
   const css = `
     .ws-scorecard--locked { cursor: default; opacity: .7; }
@@ -1808,6 +1936,8 @@ export function injectChatExtras() {
 
     /* Clickable attachment thumbnails + the full-size image lightbox they open. */
     .fl-attach-thumb { cursor: zoom-in; }
+    .sc-att-thumb:not(.sc-att-thumb--icon) { cursor: zoom-in; }
+    button.sc-att-chip { cursor: zoom-in; font: inherit; }
     .wai-img-scrim { position: fixed; inset: 0; z-index: 4000; display: flex; align-items: stretch; justify-content: stretch;
       padding: 0; background: rgba(10,15,25,0.72); backdrop-filter: blur(3px);
       opacity: 0; transition: opacity .18s ease; }
@@ -1885,6 +2015,36 @@ export function injectChatExtras() {
         transition: none; transform: none; }
     }
     .sc-bganim-live.sc-bganim-panning { cursor: grabbing; user-select: none; }
+
+    /* "Video" style — the one-shot marketing hero film. A clipping wrapper fills
+       the card (so the film cannot spill onto the page or the three-dot popover),
+       and the <video> inside is anchored to the LEFT edge, oversized, and pushed
+       left so it bleeds off that edge. It only shows while its field is live; the
+       wrapper's opacity is driven inline by the shared Opacity slider, so the
+       fade-in transition still reads on the way in. Takes no pointer input. */
+    .sc-bganim-video-wrap { position: absolute; inset: 0; overflow: hidden;
+      z-index: 1; pointer-events: none; border-radius: inherit;
+      opacity: 0; transition: opacity .55s ease; }
+    .sc-video-live { position: relative; }
+    .sc-video-live .sc-bganim-video-wrap { opacity: 1; }
+    .sc-bganim-video { position: absolute; top: 50%; left: 0;
+      height: 112%; width: auto; max-width: none;
+      transform: translate(-32%, -50%);
+      object-fit: cover; display: block; pointer-events: none; }
+    /* Same welcome-transparency boost helix gets, so the film reads behind the
+       welcome copy instead of an opaque sheet (light + dark, all shells). */
+    .sc-video-live.sc-video-live.sc-video-live .sc-welcome,
+    .sc-video-live.sc-video-live.sc-video-live #welcome-screen,
+    .sc-video-live.sc-video-live.sc-video-live .chat-messages-area,
+    .sc-video-live.sc-video-live.sc-video-live .chat-input-rail,
+    html.full-bleed.fb-chat-tint .sc-video-live .sc-welcome,
+    html.full-bleed.fb-chat-tint .sc-video-live #welcome-screen,
+    html.full-bleed.fb-chat-tint .sc-video-live .chat-messages-area,
+    html.full-bleed.fb-chat-tint .sc-video-live .chat-input-rail,
+    html.full-bleed.fb-chat-tint.chat-tint .sc-video-live #welcome-screen { background: transparent !important; }
+    .sc-video-live > .sc-body,
+    .sc-video-live > .ap-chat-body,
+    .sc-video-live > .chat-input-rail { position: relative; z-index: 2; }
     /* The class is repeated to out-rank page-level skin rules such as
        html.chat-tint:not(.dark) #welcome-screen (product portfolio/comparison,
        an opaque 5%-blue wash with !important) — both rules carry !important,
@@ -2631,6 +2791,25 @@ export const BGANIM_PUBLISH_POSE = Object.freeze({
   on: true,
   paused: false,
 });
+/* Mobile view's one departure from the published pose — dimmer, and still.
+   A phone shows the same strand through a fraction of the glass: at Scene
+   strength the wash competes with the type sitting on top of it, and a twist
+   that reads as ambient on a desktop is motion in the corner of the eye on a
+   screen held in one hand. Every other field is Scene, so this stays a
+   complete pose rather than a patch, and a member's own Helix controls still
+   win over it — this is only where a fresh phone load starts.
+
+   Read it through bgAnimLoadPose(), never directly, so nothing has to know
+   which tier it is on. */
+export const BGANIM_PHONE_POSE = Object.freeze(Object.assign({}, BGANIM_PUBLISH_POSE, {
+  opacity: 35,
+  paused: true,
+}));
+
+/* The pose a fresh load starts from, before any stored preference. */
+function bgAnimLoadPose() {
+  return isPhoneViewport() ? BGANIM_PHONE_POSE : BGANIM_PUBLISH_POSE;
+}
 /* Helix studio (pages/helix.html) — slider writes stay in a draft map so
    messing around does not publish to every other chat until Apply. Named
    snapshots still hit real storage; they are saved looks, not the live pose. */
@@ -3638,7 +3817,7 @@ const BGANIM_SNAP_WASH_KEY = 'wise:chat-bg-anim-wash';
 const BGANIM_SNAP_ANGLE_KEY = 'wise:chat-bg-anim-angle';
 const BGANIM_SNAP_PAUSED_KEY = 'wise:chat-bg-anim-paused';
 const BGANIM_SNAP_STYLE_KEY = 'wise:chat-bg-anim-style';
-const BGANIM_SNAP_STYLES = ['helix', 'helix-ten', 'orbit'];
+const BGANIM_SNAP_STYLES = ['helix', 'helix-ten', 'orbit', 'video'];
 
 export function readBgAnimStyle() {
   try {
@@ -3670,7 +3849,7 @@ export function readBgAnimOpacityPct() {
     const n = parseInt(bgAnimGet(BGANIM_SNAP_OPACITY_KEY), 10);
     if (!isNaN(n)) return Math.max(10, Math.min(100, n));
   } catch (_) {}
-  return BGANIM_PUBLISH_POSE.opacity;
+  return bgAnimLoadPose().opacity;
 }
 
 export function clampBgAnimWash(n) {
@@ -3864,8 +4043,14 @@ function captureBgAnimSnapshot() {
   const angle = readBgAnimAngle();
   let on = true;
   try { if (bgAnimGet(BGANIM_SNAP_ON_KEY) === '0') on = false; } catch (_) {}
-  let paused = false;
-  try { if (bgAnimGet(BGANIM_SNAP_PAUSED_KEY) === '1') paused = true; } catch (_) {}
+  /* Mobile view rests paused, so a stored '0' has to be read as an explicit
+     "play" rather than left to fall through to the default. */
+  let paused = bgAnimLoadPose().paused;
+  try {
+    const p = bgAnimGet(BGANIM_SNAP_PAUSED_KEY);
+    if (p === '1') paused = true;
+    else if (p === '0') paused = false;
+  } catch (_) {}
   let style = 'helix';
   try {
     const st = bgAnimGet(BGANIM_SNAP_STYLE_KEY);
@@ -6729,6 +6914,106 @@ export function createOrbitBgAnim(cfg) {
   return { start, stop, pause, resume, redraw() {} };
 }
 
+/* Fourth ambient style: a one-shot VIDEO backdrop. The marketing hero film
+   (the very first hero clip on the marketing home page) bleeds off the LEFT
+   edge of the chat module, large, and plays through ONCE — then holds its last
+   frame ("plays once, and that's it"). Unlike helix/orbit it paints no canvas:
+   it mounts a clipped <video> lazily behind the welcome content (which goes
+   transparent while a field is live) and tags the host with `sc-video-live`.
+   Opacity follows the shared slider through getOpacity(); reduced-motion shows a
+   still first frame instead of autoplaying. The video is muted + inline so it
+   can autoplay on every browser, takes no pointer input, and is hidden from
+   assistive tech (purely decorative). */
+export function createVideoBgAnim(cfg) {
+  const host = cfg.host;
+  const isOn = typeof cfg.isOn === 'function' ? cfg.isOn : () => true;
+  const isPaused = typeof cfg.isPaused === 'function' ? cfg.isPaused : () => false;
+  const getOpacity = typeof cfg.getOpacity === 'function' ? cfg.getOpacity : () => 1;
+  const reduced = !!cfg.reducedMotion;
+  let wrap = null, video = null;
+  let ended = false, live = false;
+
+  /* Resolve the marketing asset relative to THIS module so the clip loads no
+     matter how deep the host page sits; falls back to the project convention. */
+  function srcUrl() {
+    try { return new URL('../assets/marketing/hero-bg.mp4', import.meta.url).href; } catch (_) {}
+    return '../assets/marketing/hero-bg.mp4';
+  }
+  function ensureVideo() {
+    if (wrap || typeof document === 'undefined') return;
+    wrap = document.createElement('div');
+    wrap.className = 'sc-bganim-video-wrap';
+    wrap.setAttribute('aria-hidden', 'true');
+    video = document.createElement('video');
+    video.className = 'sc-bganim-video';
+    video.muted = true;
+    video.defaultMuted = true;
+    video.loop = false;            // plays through once, then holds the last frame
+    video.playsInline = true;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
+    video.setAttribute('tabindex', '-1');
+    video.preload = 'auto';
+    const source = document.createElement('source');
+    source.src = srcUrl();
+    source.type = 'video/mp4';
+    video.appendChild(source);
+    video.addEventListener('ended', () => { ended = true; });
+    wrap.appendChild(video);
+    host.appendChild(wrap);
+  }
+  function applyOpacity() {
+    /* Inline opacity is only for the live field. Leaving it set after stop()
+       outranked the CSS fade-to-zero and left the last frame sitting on top of
+       Helix / Orbit / Ten when the member switched styles. */
+    if (!wrap) return;
+    if (live) wrap.style.opacity = String(getOpacity());
+    else wrap.style.opacity = '0';
+  }
+  function playFromStart() {
+    if (!video) return;
+    ended = false;
+    try { video.currentTime = 0; } catch (_) {}
+    const p = video.play();
+    if (p && typeof p.catch === 'function') p.catch(() => {});
+  }
+  function start() {
+    if (!isOn() || typeof document === 'undefined') return;
+    ensureVideo();
+    const wasLive = live;
+    live = true;
+    host.classList.add('sc-video-live');
+    if (wrap) wrap.hidden = false;
+    applyOpacity();
+    if (reduced) { try { video.pause(); video.currentTime = 0; } catch (_) {} return; }
+    if (isPaused()) { try { video.pause(); } catch (_) {} return; }
+    /* A fresh entry onto the welcome replays the clip from the top; a redundant
+       start() while already live must not restart it (so an opacity tweak or a
+       reduced-motion repaint does not loop the film). */
+    if (!wasLive) playFromStart();
+    else if (!ended) { const p = video.play(); if (p && p.catch) p.catch(() => {}); }
+  }
+  function stop() {
+    live = false;
+    host.classList.remove('sc-video-live');
+    if (video) { try { video.pause(); } catch (_) {} }
+    /* Force the wrap off: clear the live opacity and hide the node so Helix /
+       Orbit / Ten never share the screen with a leftover film. */
+    if (wrap) {
+      wrap.style.opacity = '0';
+      wrap.hidden = true;
+    }
+  }
+  function pause() { if (video) { try { video.pause(); } catch (_) {} } }
+  function resume() {
+    if (!video || reduced || ended) return;
+    const p = video.play();
+    if (p && typeof p.catch === 'function') p.catch(() => {});
+  }
+  function redraw() { applyOpacity(); }
+  return { start, stop, pause, resume, redraw };
+}
+
 /* ------------------------------------------------------------------ */
 /* Grouped chat three-dot menu (shared)                                */
 /* ------------------------------------------------------------------ */
@@ -8688,8 +8973,15 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      big cards are opt-in via the three-dot "Overview cards" switch. A host
      can force them open on first load by passing `cardsHiddenDefault: false`;
      a stored preference (from the toggle) always wins so the user's own choice
-     sticks across reloads. */
-  let cardsHidden = opts.cardsHiddenDefault !== false;
+     sticks across reloads.
+
+     In MOBILE VIEW no host may force them open. The cards are a wide
+     side-by-side rail; on a phone they run past the screen edge and push the
+     headline, the intent chips and the composer down behind a screenful of
+     chrome. So a phone starts collapsed whatever the host asked for. The
+     three-dot switch still turns them on — this only picks where a fresh
+     load starts, and a stored choice still wins below. */
+  let cardsHidden = opts.cardsHiddenDefault !== false || isPhoneViewport();
   try {
     const stored = localStorage.getItem(CHIPS_PREF_KEY);
     if (stored === '1') cardsHidden = true;
@@ -8789,9 +9081,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   let bgAnimSpinDir = readBgAnimSpinDir();
   let bgAnimLook = readBgAnimLook();
   const bgAnimMats = readBgAnimMats();
-  /* Default background-animation opacity: Scene publish pose until user-set. */
+  /* Default background-animation opacity: the load pose until user-set —
+     Scene, or its dimmer mobile-view reading. Resolved on every read, so
+     moving between a phone and a wider window re-tunes a running field on
+     its next frame. */
   function paneDefaultBgAnimOpacity() {
-    return BGANIM_PUBLISH_POSE.opacity / 100;
+    return bgAnimLoadPose().opacity / 100;
   }
   /* The opacity actually applied: the member's explicit slider choice when set,
      otherwise the pane-count default (recomputed live so a width change re-tunes
@@ -8802,17 +9097,24 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   /* Playback state of the background animation — whether the running field is
      frozen (paused) on its current frame. Shared APP-WIDE (one key, broadcast
      on wise:chat-bg-anim-paused) so every mounted chat's Play/Pause follows the
-     one shared setting; plays by default, a stored '1' restores the paused state. */
+     one shared setting. It plays by default on a desktop and rests STILL in
+     mobile view (see BGANIM_PHONE_POSE); either way a stored value is the
+     member's own Play / Pause and wins, which is why '0' is read explicitly
+     rather than left to fall through to the default. */
   const BGANIM_PAUSED_KEY = 'wise:chat-bg-anim-paused';
-  let bgAnimPaused = false;
-  try { if (bgAnimGet(BGANIM_PAUSED_KEY) === '1') bgAnimPaused = true; } catch (_) {}
+  let bgAnimPaused = bgAnimLoadPose().paused;
+  try {
+    const p = bgAnimGet(BGANIM_PAUSED_KEY);
+    if (p === '1') bgAnimPaused = true;
+    else if (p === '0') bgAnimPaused = false;
+  } catch (_) {}
   /* Which background-animation STYLE runs — the food-DNA 'helix' (default),
      the same helix with about ten products ('helix-ten'), or the owl 'orbit'.
      Shared APP-WIDE (one key, broadcast on wise:chat-bg-anim-style) so every
      mounted chat's segment + live field follow the one shared choice. A leftover
      'stamp' preference (removed) falls back to helix. */
   const BGANIM_STYLE_KEY = 'wise:chat-bg-anim-style';
-  const BGANIM_STYLES = ['helix', 'helix-ten', 'orbit'];
+  const BGANIM_STYLES = ['helix', 'helix-ten', 'orbit', 'video'];
   const isHelixStyle = (s) => s === 'helix' || s === 'helix-ten';
   let bgAnimStyle = readBgAnimStyle();
   applyBgAnimStyleAttr(bgAnimStyle);
@@ -8941,6 +9243,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
               <button type="button" class="sc-stream-seg-btn is-on" data-sc="bg-anim-style" data-style="helix" role="radio" aria-checked="true" title="Food DNA helix" aria-label="Food DNA helix">Helix</button>
               <button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="helix-ten" role="radio" aria-checked="false" title="Food DNA helix — about ten products" aria-label="Food DNA helix — about ten products">Ten</button>
               <button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="orbit" role="radio" aria-checked="false" title="Owl orbit constellation" aria-label="Owl orbit constellation">Orbit</button>
+              <button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="video" role="radio" aria-checked="false" title="Marketing hero film" aria-label="Marketing hero film">Video</button>
             </div>
           </div>
           ${opts.activityStrip !== false ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-actstrip-item" data-sc="activity-strip" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">timeline</span><span>Activity strip</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
@@ -9402,10 +9705,14 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     let attHtml = '';
     if (Array.isArray(atts) && atts.length) {
       const items = atts.map((a) => {
-        const thumb = a.src
-          ? `<span class="sc-att-thumb" style="background-image:url('${String(a.src).replace(/'/g, '%27')}')"></span>`
-          : `<span class="sc-att-thumb sc-att-thumb--icon"><span class="material-symbols-outlined">image</span></span>`;
-        return `<span class="sc-att-chip" title="${esc(a.name)}">${thumb}<span class="sc-att-name">${esc(a.name)}</span></span>`;
+        const nameHtml = attachNameHtml(a.name);
+        /* Photo chips keep their thumbnail and stay openable after send (and
+           after History restore) — same lightbox as the pending composer thumb.
+           A non-image file drops the leading icon entirely: the mono filename,
+           extension bold, is the whole chip. */
+        return a.src
+          ? `<button type="button" class="sc-att-chip" data-src="${esc(a.src)}" aria-label="Preview ${esc(a.name)}" title="${esc(a.name)}"><span class="sc-att-thumb" style="background-image:url('${String(a.src).replace(/'/g, '%27')}')"></span><span class="sc-att-name">${nameHtml}</span></button>`
+          : `<span class="sc-att-chip sc-att-chip--file" title="${esc(a.name)}"><span class="sc-att-name">${nameHtml}</span></span>`;
       }).join('');
       attHtml = `<div class="sc-att-row">${items}</div>`;
     }
@@ -10447,18 +10754,30 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     row.classList.add('modules-sticky');
   }
   function openGuideModules() {
+    const ask = ensureAskPanel();
     const openOwl = () => {
-      try { window.WiseWalkthrough?.open({ force: true }); } catch (_) { /* not ready */ }
+      try {
+        const api = window.WiseWalkthrough;
+        if (!api || typeof api.open !== 'function') return;
+        api.open({ force: true, reveal: false });
+        if (typeof api.setWidthTier === 'function') api.setWidthTier(0);
+        stackGuideModules();
+        if (typeof api.reveal === 'function') api.reveal();
+      } catch (_) { /* not ready */ }
     };
     if (window.WiseWalkthrough && typeof window.WiseWalkthrough.open === 'function') openOwl();
     else document.addEventListener('wise:walkthrough-ready', openOwl, { once: true });
-    stackGuideModules();
-    const ask = ensureAskPanel();
     if (ask) {
-      ask.setDocked(true);
-      ask.open();
+      ask.setDocked(true, { hidden: true });
+      if (typeof ask.setWidthTier === 'function') ask.setWidthTier(0);
+      stackGuideModules();
+      window.setTimeout(() => {
+        ask.open();
+        stackGuideModules();
+      }, 180);
+    } else {
+      stackGuideModules();
     }
-    stackGuideModules();
     requestAnimationFrame(stackGuideModules);
   }
 
@@ -10656,6 +10975,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       const item = chatHistory.add({ title: sourceTitle, html: forkHtml, count, fork: { from: sourceTitle } });
       chatHistory.restore(item.id);
     } else if (messages) {
+      revokeTranscriptAttachBlobs(messages);
       messages.innerHTML = forkHtml;
       hideWelcome();
       scrollToEnd();
@@ -11283,12 +11603,14 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     getDensity: () => (bgAnimStyle === 'helix-ten' ? 'ten' : 'full'),
   };
   const bgAnimEngines = {};
-  const bgAnimEngineKey = (style) => (style === 'orbit' ? 'orbit' : 'helix');
+  const bgAnimEngineKey = (style) => (style === 'orbit' ? 'orbit' : style === 'video' ? 'video' : 'helix');
   const bgAnimEngine = (style) => {
     const key = bgAnimEngineKey(style);
     if (!bgAnimEngines[key]) {
       bgAnimEngines[key] = key === 'orbit'
           ? createOrbitBgAnim(bgAnimCommon)
+          : key === 'video'
+          ? createVideoBgAnim(bgAnimCommon)
           : createHelixBgAnim(bgAnimCommon);
     }
     return bgAnimEngines[key];
@@ -11306,7 +11628,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     setStyle(style) {
       if (!BGANIM_STYLES.includes(style) || style === bgAnimStyle) return;
       const live = rootEl.classList.contains('sc-bganim-live')
-        || rootEl.classList.contains('sc-orbit-live');
+        || rootEl.classList.contains('sc-orbit-live')
+        || rootEl.classList.contains('sc-video-live');
       const sameHelix = isHelixStyle(style) && isHelixStyle(bgAnimStyle);
       bgAnimStyle = style;
       if (sameHelix && live && bgAnimOn) {
@@ -11415,6 +11738,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       const val = menuSel('.sc-bganim-opacity-val');
       if (val) val.textContent = pct + '%';
       if (prefersReducedMotion && bgAnimOn) bgAnim.start();
+      else if (bgAnimStyle === 'video' && bgAnimOn) bgAnim.redraw();
     });
   }
   document.addEventListener('wise:chat-bg-anim-opacity', (e) => {
@@ -11424,6 +11748,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     bgAnimOpacityUserSet = true;                    // mirror the sibling chat's explicit choice
     syncBgAnimMenu();
     if (prefersReducedMotion && bgAnimOn) bgAnim.start();
+    else if (bgAnimStyle === 'video' && bgAnimOn) bgAnim.redraw();
   });
   /* Wash slider — how strongly the helix fades behind composer text. The
      canvas mask and the composer field gradient both follow this one value. */
@@ -11754,8 +12079,6 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   const attachEl = rootEl.querySelector(`#${id}-fl-attach`);
   let attachments = [];
   let attachSeq = 0;
-  const IMAGE_ICON =
-    '<span class="material-symbols-outlined">image</span>';
   /* Reflect the pending count onto the wrap so the CSS can space the chip row
      that sits beneath the text field (see .fl-input-wrap.has-attachments). */
   function syncAttachState() {
@@ -11764,15 +12087,18 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     wrap?.classList.toggle('has-attachments', has);
   }
   function renderAttachChip(att) {
+    /* An image keeps its thumbnail; a non-image file drops the leading icon so
+       the chip is just the mono filename with a bold extension. */
     const thumb = att.src
       ? `<span class="fl-attach-thumb" style="background-image:url('${String(att.src).replace(/'/g, "%27")}')"></span>`
-      : `<span class="fl-attach-thumb fl-attach-thumb--icon">${IMAGE_ICON}</span>`;
+      : '';
     const chip = document.createElement('span');
-    chip.className = 'fl-attach-chip';
+    chip.className = att.src ? 'fl-attach-chip' : 'fl-attach-chip fl-attach-chip--file';
     chip.dataset.attachId = att.id;
+    if (att.src) chip.dataset.src = att.src;
     chip.title = att.name;
     chip.innerHTML = `<button type="button" class="fl-attach-x" aria-label="Remove ${esc(att.name)}"><span class="material-symbols-outlined">close</span></button>` +
-      `<span class="fl-attach-name">${esc(att.name)}</span>${thumb}`;
+      `<span class="fl-attach-name">${attachNameHtml(att.name)}</span>${thumb}`;
     attachEl?.appendChild(chip);
   }
   function addAttachment(att) {
@@ -11791,27 +12117,22 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     attachEl?.querySelector(`[data-attach-id="${attId}"]`)?.remove();
     syncAttachState();
   }
-  function clearAttachments() {
-    attachments.forEach((a) => { if (a.revoke) { try { URL.revokeObjectURL(a.src); } catch (_) {} } });
+  function clearAttachments({ revoke = true } = {}) {
+    if (revoke) {
+      attachments.forEach((a) => { if (a.revoke) { try { URL.revokeObjectURL(a.src); } catch (_) {} } });
+    }
     attachments = [];
     if (attachEl) attachEl.innerHTML = '';
     syncAttachState();
   }
-  /* Remove-button clicks (and thumbnail clicks → full-size preview) on the
-     pending chips. */
+  /* Remove-button clicks on the pending chips. Thumbnail clicks open the
+     shared lightbox via wireAttachmentPreviews (same as a sent chip). */
   attachEl?.addEventListener('click', (e) => {
     const x = e.target.closest('.fl-attach-x');
     if (x) {
       const chip = x.closest('.fl-attach-chip');
       if (chip) removeAttachment(chip.dataset.attachId);
       input?.focus();
-      return;
-    }
-    const thumb = e.target.closest('.fl-attach-thumb');
-    if (thumb) {
-      const chip = thumb.closest('.fl-attach-chip');
-      const rec = attachments.find((a) => a.id === chip?.dataset.attachId);
-      if (rec && rec.src) openWiseImageModal(rec.src, rec.name);
     }
   });
 
@@ -11890,7 +12211,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const restore = () => { recognizing = false; flBtn?.classList.remove('sc-recording'); input?.setAttribute('placeholder', prev || ''); };
     recognition.onresult = (ev) => {
       const text = Array.from(ev.results).map((r) => r[0].transcript).join('');
-      if (input) input.value = text;
+      if (input) { input.value = text; input.dispatchEvent(new Event('input', { bubbles: true })); }
     };
     recognition.onend = () => { restore(); input?.focus(); };
     recognition.onerror = restore;
@@ -11922,7 +12243,14 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       try { opts.onEngage(); } catch (_) { /* host layout hook */ }
     }
   }
+  function revokeTranscriptAttachBlobs(root) {
+    if (!root || !root.querySelectorAll) return;
+    root.querySelectorAll('[data-src^="blob:"]').forEach((el) => {
+      try { URL.revokeObjectURL(el.getAttribute('data-src')); } catch (_) {}
+    });
+  }
   function reset() {
+    revokeTranscriptAttachBlobs(messages);
     if (messages) messages.innerHTML = '';
     clearAttachments();
     closeAgents();
@@ -11962,7 +12290,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const atts = attachments.slice();
     if (!v && !atts.length) return;
     input.value = '';
-    clearAttachments();
+    /* Keep object URLs alive — they now live on the sent chips so the
+       member can still open the photo after the turn lands. */
+    clearAttachments({ revoke: false });
     /* Typing any distinctive word from an intent chip plays that chip's
        transcript — same routing (reply, reasoning trace, host onReply/onIntent)
        as clicking the chip. Attachments skip the shortcut so a file drop still
@@ -12466,6 +12796,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       }),
       stripSelectors: ['.sc-inline-chips', '.sc-line-typing', '.sc-line-trace'],
       setHTML: (html) => {
+        revokeTranscriptAttachBlobs(messages);
         messages.innerHTML = html || '';
         hoistFeedbackTimes(messages);
         /* Retire the welcome-only DNA/RNA helix field the same way hideWelcome()
@@ -12965,6 +13296,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   rootEl.querySelector(`#${id}-send`)?.addEventListener('click', submit);
   input?.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } });
   wireComposerGrow(input);
+  /* Keep Send inactive until the field has text or a pending attachment.
+     (No-op on a placeholder-locked composer — its send stays disabled.) */
+  wireSendReady(rootEl.querySelector(`#${id}-input`)?.closest('.fl-input-wrap'));
   /* First keystroke leaves the full-width welcome; clearing the field while
      the welcome is still up restores it. Hosts (wiseai.html) use these to
      collapse / expand the chat to its single column. Idempotent on the host. */
@@ -13096,7 +13430,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        and repaint any reduced-motion still frame (the live rAF loop self-updates). */
     if (!bgAnimOpacityUserSet) {
       syncBgAnimMenu();
-      if (prefersReducedMotion && bgAnimOn && (rootEl.classList.contains('sc-bganim-live') || rootEl.classList.contains('sc-orbit-live'))) bgAnim.start();
+      if (prefersReducedMotion && bgAnimOn && (rootEl.classList.contains('sc-bganim-live') || rootEl.classList.contains('sc-orbit-live') || rootEl.classList.contains('sc-video-live'))) bgAnim.start();
     }
     /* Pane width changes the chip grid's measure — re-clamp while collapsed so
        Show more stays on row 2 (expanded stays fully open). */
@@ -14270,7 +14604,7 @@ export function wireStandardChatMenu(cfg = {}) {
      same key/event as the mounted module so every surface swaps in lockstep. A
      leftover 'stamp' preference (removed) falls back to helix. */
   const BGANIM_STYLE_KEY = 'wise:chat-bg-anim-style';
-  const BGANIM_STYLES = ['helix', 'helix-ten', 'orbit'];
+  const BGANIM_STYLES = ['helix', 'helix-ten', 'orbit', 'video'];
   const isHelixStyle = (s) => s === 'helix' || s === 'helix-ten';
   let bgStyle = readBgAnimStyle();
   applyBgAnimStyleAttr(bgStyle);
@@ -14280,7 +14614,8 @@ export function wireStandardChatMenu(cfg = {}) {
   const bgStyleSegHtml = ''
     + '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="helix" role="radio" aria-checked="false" title="Food DNA helix" aria-label="Food DNA helix">Helix</button>'
     + '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="helix-ten" role="radio" aria-checked="false" title="Food DNA helix — about ten products" aria-label="Food DNA helix — about ten products">Ten</button>'
-    + '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="orbit" role="radio" aria-checked="false" title="Owl orbit constellation" aria-label="Owl orbit constellation">Orbit</button>';
+    + '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="orbit" role="radio" aria-checked="false" title="Owl orbit constellation" aria-label="Owl orbit constellation">Orbit</button>'
+    + '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="video" role="radio" aria-checked="false" title="Marketing hero film" aria-label="Marketing hero film">Video</button>';
   const existingStyleRow = q('.sc-bganim-style');
   if (!existingStyleRow) {
     const playbackRow = q('.sc-bganim-playback');
@@ -14309,6 +14644,11 @@ export function wireStandardChatMenu(cfg = {}) {
       const seg = existingStyleRow.querySelector('.sc-stream-seg');
       if (seg) seg.insertAdjacentHTML('beforeend',
         '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="orbit" role="radio" aria-checked="false" title="Owl orbit constellation" aria-label="Owl orbit constellation">Orbit</button>');
+    }
+    if (!existingStyleRow.querySelector('[data-style="video"]')) {
+      const seg = existingStyleRow.querySelector('.sc-stream-seg');
+      if (seg) seg.insertAdjacentHTML('beforeend',
+        '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="video" role="radio" aria-checked="false" title="Marketing hero film" aria-label="Marketing hero film">Video</button>');
     }
   }
   /* Inline chats copied the menu markup before the Angle / Scale / shape rows
@@ -14366,7 +14706,7 @@ export function wireStandardChatMenu(cfg = {}) {
      orbit is its own), exposed through a small facade so the start/stop below
      stay style-agnostic (mirrors the mounted module). */
   const bgEngines = {};
-  const bgEngineKey = (style) => (style === 'orbit' ? 'orbit' : 'helix');
+  const bgEngineKey = (style) => (style === 'orbit' ? 'orbit' : style === 'video' ? 'video' : 'helix');
   const bgEngine = (style) => {
     if (!cfg.bgAnim || !cfg.bgAnim.host) return null;
     const key = bgEngineKey(style);
@@ -14405,6 +14745,8 @@ export function wireStandardChatMenu(cfg = {}) {
       };
       bgEngines[key] = key === 'orbit'
           ? createOrbitBgAnim(common)
+          : key === 'video'
+          ? createVideoBgAnim(common)
           : createHelixBgAnim(common);
     }
     return bgEngines[key];
@@ -14575,6 +14917,7 @@ export function wireStandardChatMenu(cfg = {}) {
     const val = q('.sc-bganim-opacity-val');
     if (val) val.textContent = pct + '%';
     if (reducedMotion && bgOn) maybeRunBgAnim();
+    else if (bgStyle === 'video' && bgOn) repaintBg();
   });
   document.addEventListener('wise:chat-bg-anim-opacity', (e) => {
     const v = e && e.detail && e.detail.opacity;
@@ -14583,6 +14926,7 @@ export function wireStandardChatMenu(cfg = {}) {
     bgUserSet = true;
     syncBg();
     if (reducedMotion && bgOn) maybeRunBgAnim();
+    else if (bgStyle === 'video' && bgOn) repaintBg();
   });
   const bgWashRange = q('.sc-bganim-wash-range');
   if (bgWashRange) bgWashRange.addEventListener('input', () => {

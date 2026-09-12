@@ -274,8 +274,18 @@
   --nav-rail-w: 54px;
   --nav-rail-pad-x: 5px;
   --nav-rail-gap: 2px;
+
+  /* The page frame's RIGHT inset, and the modules row's right shadow gutter.
+     Tokens (not literals) so the phone block near the bottom of this file can
+     run the chat module out to the screen edge without restating the rules
+     that own those paddings. */
+  --page-pad-r: var(--modules-bottom-pad, 12px);
+  --modules-gutter-r: 10px;
   --fs-ui: 0.75rem;
   --fs-label: 0.6875rem;
+  /* Phone type is this factor of the desktop scale. Applied as the root rem
+     in the `max-width: 768px` block (keep in sync with PHONE_MAX_PX). */
+  --wise-phone-type-scale: 0.85;
   --radius-pill: 9999px;
   /* Auth inputs + matching CTAs. */
   --field-h: 42px;
@@ -1384,6 +1394,7 @@ body:not(.mkt) {
    shell keep the legacy top/bottom-only padding above. */
 body:not(.mkt):has(.menu-brand-integrated) {
   padding: var(--modules-bottom-pad, 12px);
+  padding-right: var(--page-pad-r, var(--modules-bottom-pad, 12px));
 }
 
 /* ===== APP SEARCH (Appearance ▸ Admin ▸ Search) =====
@@ -5704,6 +5715,159 @@ html.nav-modules #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) .menu-panel
 #menu-panel.mp-rail .menu-nav-label,
 #menu-panel.mp-rail .menu-nav-chevron-btn,
 #menu-panel.mp-rail .menu-nav-section-label { display: none; }
+
+/* ===== COLLAPSED-RAIL SLOGAN =====
+   A sideways ghost button that fills the empty middle of the collapsed nav
+   rail with a clever line about knowing the health of your food, and opens the
+   WISEcodeAI chat when tapped. It is injected once into .menu-inner (topbar.js
+   mountNavSlogan) but hidden everywhere by default. It only shows in a rail
+   whose middle is genuinely empty: the "Nav & History icons" rail — which hides
+   .menu-panel-body and stacks the four icons in the brand bar — or a plain icon
+   rail on a page whose nav tree is empty. Never in the expanded nav, the pivot
+   top bar, minimal UI, or while Search floats the footer out of the panel.
+   Admin-only Appearance toggle gates the whole thing via html.nav-slogan-on. */
+.menu-slogan {
+  display: none;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  margin: 8px 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-decoration: none;
+  overflow: hidden;
+}
+.menu-slogan-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg); /* read bottom-to-top, like a book spine */
+  white-space: nowrap;
+  max-height: 100%;
+  box-sizing: border-box;
+  padding: 16px 7px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill, 999px);
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  color: var(--text-muted);
+  background: transparent;
+  transition: color 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+}
+.menu-slogan:hover .menu-slogan-text,
+.menu-slogan:focus-visible .menu-slogan-text {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+html.dark .menu-slogan-text { border-color: rgba(255, 255, 255, 0.14); }
+
+/* Load-in for the rail slogan — the same trippy "unlock" the composer plays
+   when Roll·Crawl·Walk·Run flips to Run (cwrUnlockDrop / cwrUnlockChroma in
+   js/cwr-toggle.js), re-aimed along the rail's vertical axis. Runs whenever
+   the collapsed rail reveals the slogan, so a fresh load plays it. */
+.menu-slogan {
+  animation: navSloganUnlockDrop 0.92s cubic-bezier(0.22, 1.25, 0.36, 1) both;
+  transform-origin: center top;
+}
+.menu-slogan .menu-slogan-text {
+  animation: navSloganUnlockChroma 0.92s ease both;
+}
+@keyframes navSloganUnlockDrop {
+  0%   { transform: translate3d(0, -46%, 0) scale(1.12, 0.84); filter: hue-rotate(260deg) saturate(2.4) contrast(1.3) blur(2px); opacity: 0; }
+  22%  { transform: translate3d(0, -8%, 0) scale(0.93, 1.07); filter: hue-rotate(-70deg) saturate(2.1); opacity: 1; }
+  40%  { transform: translate3d(0, 16%, 0) scale(1.07, 0.95); filter: hue-rotate(130deg) saturate(1.8); }
+  58%  { transform: translate3d(0, 3%, 0) scale(0.97, 1.03); filter: hue-rotate(-16deg) saturate(1.35); }
+  76%  { transform: translate3d(0, -2%, 0); filter: hue-rotate(18deg) saturate(1.12); }
+  100% { transform: none; filter: none; opacity: 1; }
+}
+@keyframes navSloganUnlockChroma {
+  0%, 100% { box-shadow: none; }
+  24% { box-shadow: 0 -8px 0 -3px #ff2bd6, 0 8px 0 -3px #18f0ff, 0 0 28px color-mix(in srgb, var(--primary) 50%, transparent); }
+  52% { box-shadow: 0 6px 0 -3px #ff2bd6, 0 -6px 0 -3px #18f0ff, 0 14px 36px color-mix(in srgb, var(--primary) 36%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-slogan,
+  .menu-slogan .menu-slogan-text { animation: none !important; filter: none !important; }
+}
+
+/* Hover / focus (desktop only) — the rail is too narrow to read the spine, so
+   the label swings out to the right and flattens from the 90° spine to a
+   horizontal, wrapping card you can actually read. The rail and the anchor both
+   clip their children, so both open their overflow only while the slogan is
+   hovered or keyboard-focused. Setting `animation` here cancels the load-in
+   chroma keyframe so the card's own shadow shows. Hidden entirely on mobile
+   (see the max-width rule below). */
+@media (hover: hover) and (min-width: 769px) {
+  /* Both the panel and its inner box clip; open them (and lift the panel above
+     the modules to its right) only while the slogan is hovered / focused. */
+  #menu-panel.mp-rail:has(.menu-slogan:hover),
+  #menu-panel.mp-rail:has(.menu-slogan:focus-within) { overflow: visible; z-index: 200; }
+  #menu-panel.mp-rail .menu-inner:has(.menu-slogan:hover),
+  #menu-panel.mp-rail .menu-inner:has(.menu-slogan:focus-within) { overflow: visible; }
+  .menu-slogan { position: relative; }
+  .menu-slogan:hover,
+  .menu-slogan:focus-within { overflow: visible; z-index: 60; }
+  .menu-slogan:hover .menu-slogan-text,
+  .menu-slogan:focus-visible .menu-slogan-text {
+    position: absolute;
+    left: calc(100% - 2px);
+    top: 50%;
+    z-index: 60;
+    writing-mode: horizontal-tb;
+    transform-origin: left center;
+    white-space: normal;
+    width: max-content;
+    max-width: 232px;
+    max-height: none;
+    padding: 10px 14px;
+    line-height: 1.32;
+    letter-spacing: 0.005em;
+    text-align: left;
+    color: var(--primary);
+    border-color: var(--primary);
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+    animation: navSloganFlatten 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  html.dark .menu-slogan:hover .menu-slogan-text,
+  html.dark .menu-slogan:focus-visible .menu-slogan-text {
+    background: var(--surface-2, #1A2339);
+    border-color: var(--primary);
+  }
+  @keyframes navSloganFlatten {
+    0%   { opacity: 0; transform: translateY(-50%) rotate(-90deg) scale(0.92); }
+    60%  { opacity: 1; }
+    100% { opacity: 1; transform: translateY(-50%) rotate(0deg) scale(1); }
+  }
+}
+
+/* Desktop-only feature — the rail slogan is never present on mobile. */
+@media (max-width: 768px) {
+  .menu-slogan { display: none !important; }
+}
+
+/* Hidden for now — the rail slogan (rotation, load-in, hover-flatten, and the
+   ?intent= deep-link launch in wiseai.html) is all still wired; this single
+   override just keeps it off the surface. Remove this block to bring it back. */
+.menu-slogan { display: none !important; }
+
+/* Reveal only in a truly empty collapsed rail. */
+html.nav-slogan-on.nav-modules:not(.app-search-on) #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) .menu-slogan {
+  display: flex;
+}
+html.nav-slogan-on:not(.app-search-on) #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) .menu-inner:has(.menu-panel-body > .menu-nav:empty) .menu-slogan {
+  display: flex;
+}
+html.nav-slogan-on:not(.app-search-on) #menu-panel.mp-rail:not(.mp-pivot):not(.minimal-ui) .menu-inner:has(.menu-panel-body > .menu-nav:empty) .menu-panel-body {
+  flex: 0 0 auto;
+}
 /* History rail rows are 32×32 with 1px margins. Drop the labelled-row
    4px pad / 36px min-height so the icon-only rail matches. */
 #menu-panel.mp-rail .menu-nav {
@@ -7720,7 +7884,7 @@ html.full-bleed.fb-chat-only:not(.brand-inset) #chat-shell-wrap.menu-brand-integ
 html.full-bleed.fb-chat-only:not(.brand-inset) #agent-shell-wrap.menu-brand-integrated #modules-row {
   padding-bottom: var(--chat-elev-gutter, 48px);
   padding-left: 10px;
-  padding-right: 10px;
+  padding-right: var(--modules-gutter-r, 10px);
   margin-bottom: calc(-1 * var(--chat-elev-gutter, 48px));
   /* Base #modules-row { max-height: 100% } caps the border box to the grid
      cell, which ate the negative-margin expansion and left the gutter inside
@@ -7908,6 +8072,30 @@ html.dark .chat-messages-area { background: transparent; }
 /* Member asks in brand blue; WISEcodeAI answers in the default ink. */
 .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary); }
 html.dark .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary-bright, #8B9FAF); }
+/* Sent ask — a light wash of that same ink, chat MODULE edge to edge.
+   The line's own box (avatar, copy, gutter) does not move; a ::before
+   cancels the transcript inset with the same formula the output rails
+   use (cqi against .sc-body, not 100% on this line). Isolation keeps
+   the wash above the thread surface and under the type. Database-switch
+   event rows are not asks and stay bare. The composer is a different
+   surface — do not restyle it to match. */
+.sc-line-you:not(.sc-line-event) {
+  --sc-you-bleed: var(--sc-gutter, max(var(--sc-pad-floor, 3rem), calc((100cqi - var(--sc-transcript-max, 860px)) / 2)));
+  position: relative;
+  isolation: isolate;
+}
+.sc-line-you:not(.sc-line-event)::before {
+  content: "";
+  position: absolute;
+  inset-block: -0.4rem;
+  inset-inline: calc(-1 * var(--sc-you-bleed));
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  pointer-events: none;
+  z-index: -1;
+}
+html.dark .sc-line-you:not(.sc-line-event)::before {
+  background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 12%, transparent);
+}
 .sc-line-wiseai .sc-line-body { color: var(--text); }
 /* Atlas (and any) output carousel: the SCROLL BOX runs the chat MODULE edge to
    edge — cards travel the full width of the module as you scroll — while the
@@ -9041,14 +9229,14 @@ html.dark .chat-input-rail { background: transparent; border-top-color: transpar
      chat-tint container wash (5%) so the composer reads as its own blue
      surface inside the tinted card. Stroke is a light brand wash (not
      --border-strong) so the pill stays airy against the welcome surface. */
-  position: relative; flex: 1; background: color-mix(in srgb, var(--primary) 10%, #fff); border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
+  position: relative; flex: 1; background: color-mix(in srgb, var(--primary) 10%, #fff); border: 1px solid color-mix(in srgb, var(--primary) 34%, transparent);
   border-radius: var(--radius-pill); padding: 0 6px 0 14px; min-height: 40px;
   display: flex; align-items: center; gap: 4px;
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 /* Dark mode: a brightened brand-blue tint (not the neutral white overlay) so
    the composer stands out as a blue surface against the navy card. */
-html.dark .fl-input-wrap { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); border-color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 22%, transparent); }
+html.dark .fl-input-wrap { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); border-color: color-mix(in srgb, var(--primary-bright, #8B9FAF) 36%, transparent); }
 .fl-input-wrap:focus-within { border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
 
 /* ===== Living sheen stroke — a shiny brand-blue gradient that travels around
@@ -9071,15 +9259,15 @@ html.dark .fl-input-wrap { background: color-mix(in srgb, var(--primary-bright, 
   /* Broad, gently-graduated sweep: a low brand tint all the way round so it
      melts into the base stroke, with a specular highlight that travels. */
   background: conic-gradient(from var(--wise-sheen-angle),
-    color-mix(in srgb, var(--primary) 14%, transparent) 0deg,
-    color-mix(in srgb, var(--primary) 24%, transparent) 45deg,
-    color-mix(in srgb, var(--primary) 45%, transparent) 95deg,
-    color-mix(in srgb, var(--primary) 78%, #eaf3ff) 150deg,
+    color-mix(in srgb, var(--primary) 32%, transparent) 0deg,
+    color-mix(in srgb, var(--primary) 44%, transparent) 45deg,
+    color-mix(in srgb, var(--primary) 62%, transparent) 95deg,
+    color-mix(in srgb, var(--primary) 82%, #eaf3ff) 150deg,
     #f2f8ff 182deg,
-    color-mix(in srgb, var(--primary) 78%, #eaf3ff) 214deg,
-    color-mix(in srgb, var(--primary) 45%, transparent) 268deg,
-    color-mix(in srgb, var(--primary) 24%, transparent) 318deg,
-    color-mix(in srgb, var(--primary) 14%, transparent) 360deg);
+    color-mix(in srgb, var(--primary) 82%, #eaf3ff) 214deg,
+    color-mix(in srgb, var(--primary) 62%, transparent) 268deg,
+    color-mix(in srgb, var(--primary) 44%, transparent) 318deg,
+    color-mix(in srgb, var(--primary) 32%, transparent) 360deg);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
           mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
@@ -9088,15 +9276,15 @@ html.dark .fl-input-wrap { background: color-mix(in srgb, var(--primary-bright, 
 }
 html.dark .fl-input-wrap::before {
   background: conic-gradient(from var(--wise-sheen-angle),
-    color-mix(in srgb, var(--primary-bright, #8B9FAF) 18%, transparent) 0deg,
-    color-mix(in srgb, var(--primary-bright, #8B9FAF) 30%, transparent) 45deg,
-    color-mix(in srgb, var(--primary-bright, #8B9FAF) 52%, transparent) 95deg,
-    color-mix(in srgb, var(--primary-bright, #8B9FAF) 82%, #eef6ff) 150deg,
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 34%, transparent) 0deg,
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 46%, transparent) 45deg,
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 64%, transparent) 95deg,
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 86%, #eef6ff) 150deg,
     #ffffff 182deg,
-    color-mix(in srgb, var(--primary-bright, #8B9FAF) 82%, #eef6ff) 214deg,
-    color-mix(in srgb, var(--primary-bright, #8B9FAF) 52%, transparent) 268deg,
-    color-mix(in srgb, var(--primary-bright, #8B9FAF) 30%, transparent) 318deg,
-    color-mix(in srgb, var(--primary-bright, #8B9FAF) 18%, transparent) 360deg);
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 86%, #eef6ff) 214deg,
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 64%, transparent) 268deg,
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 46%, transparent) 318deg,
+    color-mix(in srgb, var(--primary-bright, #8B9FAF) 34%, transparent) 360deg);
 }
 @keyframes wise-sheen-rotate {
   to { --wise-sheen-angle: 360deg; }
@@ -9173,6 +9361,13 @@ html.dark .fl-attach-chip { background: rgba(255,255,255,0.06); border-color: rg
   font-size: 10.5px; font-weight: 500; color: var(--text); line-height: 1;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
 }
+/* Chat composer attachments ride the mono font and the same base/ext split as
+   the sent transcript chip. The support-email attach list reuses .fl-attachments
+   too (js/help-flow.js), so exclude it — that form is not the chat module. */
+.fl-attachments:not([data-mail-attach-list]) .fl-attach-name {
+  font-family: var(--font-mono);
+  display: inline-flex; align-items: baseline; text-overflow: clip;
+}
 .fl-attach-x {
   display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
   width: 14px; height: 14px; padding: 0; border: 0; border-radius: 50%;
@@ -9192,6 +9387,11 @@ html.dark .fl-attach-chip { background: rgba(255,255,255,0.06); border-color: rg
   padding: 1px 8px 1px 2px; border-radius: 999px;
   background: var(--surface-3, var(--surface)); border: 1px solid var(--border-strong);
 }
+button.sc-att-chip {
+  appearance: none; font: inherit; color: inherit; text-align: left;
+}
+.sc-att-chip:has(.sc-att-thumb:not(.sc-att-thumb--icon)) { cursor: zoom-in; }
+.sc-att-thumb:not(.sc-att-thumb--icon) { cursor: zoom-in; }
 html.dark .sc-att-chip { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.14); }
 .sc-att-thumb {
   width: 16px; height: 16px; flex-shrink: 0; border-radius: 50%;
@@ -9203,8 +9403,19 @@ html.dark .sc-att-chip { background: rgba(255,255,255,0.06); border-color: rgba(
 .sc-att-thumb--icon .material-symbols-outlined { font-size: 11px !important; }
 .sc-att-name {
   font-size: 10.5px; font-weight: 500; color: var(--text); line-height: 1;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+  min-width: 0; font-family: var(--font-mono);
+  display: inline-flex; align-items: baseline; overflow: hidden;
 }
+/* Uploaded file names split into a truncating base + a pinned, bold extension
+   (see attachNameHtml in js/wiseai-chat.js) so the extension stays visible even
+   when a long name ellipsises. */
+.sc-att-base, .fl-attach-name .sc-att-base {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.sc-att-ext { flex: 0 0 auto; font-weight: 700; white-space: nowrap; }
+/* A non-image file drops its leading icon, so the chip is just the mono name —
+   give it even padding now that no thumb rides its left edge. */
+.sc-att-chip--file { padding: 1px 8px; }
 
 /* ===== In-input controls — a "+" attach button floated to the far LEFT
    (before the placeholder) and a "tune" model selector floated to the far
@@ -9460,6 +9671,25 @@ html.dark .fl-db-module .fl-db-top { background: transparent; }
   transition: background 0.15s ease;
 }
 .sc-send:hover { background: color-mix(in srgb, var(--primary) 86%, black); color: #fff; }
+/* Idle send — the composer has nothing to send yet (no text, no pending
+   attachment). Muted and non-interactive until content lands; wired by
+   wireSendReady in js/wiseai-chat.js. The locked-composer look is separate
+   (.sc-send--locked, above). */
+.sc-send:disabled:not(.sc-send--locked),
+.sc-send--idle {
+  background: color-mix(in srgb, var(--primary) 26%, var(--surface));
+  color: color-mix(in srgb, #fff 78%, transparent);
+  cursor: default;
+}
+.sc-send:disabled:not(.sc-send--locked):hover,
+.sc-send--idle:hover {
+  background: color-mix(in srgb, var(--primary) 26%, var(--surface));
+  color: color-mix(in srgb, #fff 78%, transparent);
+}
+html.dark .sc-send:disabled:not(.sc-send--locked),
+html.dark .sc-send--idle {
+  background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 24%, transparent);
+}
 .sc-send .material-symbols-outlined {
   font-size: 18px !important; line-height: 1;
   width: 18px; height: 18px;
@@ -16960,13 +17190,52 @@ html.dark .sc-surface-rail .rtbl-cards .rtbl-grow.is-selected {
   }
 }
 
-/* Phones: the narrowest the rail goes. Same module and the same behaviour —
-   the icons simply sit tighter against both of their edges. */
+/* Phones: the narrowest the rail goes, and the one width where the expanded
+   nav lifts OVER the page instead of pushing it aside. */
 @media (max-width: 768px) {
   :root {
     --nav-rail-w: 44px;
     --nav-rail-pad-x: 2px;
     --nav-rail-gap: 0px;
+    /* The chat runs to the screen edge on the right: the rail already hugs
+       the left edge (--nav-rail-gap: 0), and on a phone the page's frame and
+       the row's shadow gutter only cost the one module in the row its width.
+       The card sits flush, so there is no shadow out there to make room for. */
+    --page-pad-r: 0px;
+    --modules-gutter-r: 0px;
+    /* ~15% smaller type than desktop. Shrinking the root rem scales every
+       rem-authored size (UI tokens, chat copy, headlines, marketing type)
+       without touching px chrome (icons, 28px chips). Appearance S/M/L/XL
+       still zooms on top. Keep in sync with PHONE_MAX_PX. */
+    font-size: calc(100% * var(--wise-phone-type-scale));
+  }
+
+  /* ── Expanded, the nav floats above the body content ─────────────────────
+     Collapsed, the rail stays in the shell's left column and the content sits
+     beside it — that is the rest state and it does not move. Expanded, there
+     isn't room to do both: pushing the content aside on a 390px screen left
+     the chat about 106px wide, wrapping to a letter per line. So the panel
+     leaves the grid and lifts over the page, which keeps the content at its
+     full width underneath and lets it be readable the moment the rail comes
+     back. The nav's own control is still the only thing that opens or closes
+     it, and this is a phone-only departure: tablets up have the room to push.
+     Out of flow, the `auto` nav column measures zero, so the column gap is the
+     only thing left holding the content off the left edge — drop it too. */
+  #agent-shell-wrap.menu-brand-integrated:has(#menu-panel.mp-open:not(.mp-rail)),
+  #chat-shell-wrap.menu-brand-integrated:has(#menu-panel.mp-open:not(.mp-rail)) {
+    column-gap: 0;
+  }
+  .menu-brand-integrated #menu-panel.mp-open:not(.mp-rail):not(.mp-pivot) {
+    position: fixed;
+    top: var(--modules-bottom-pad, 12px);
+    bottom: var(--modules-bottom-pad, 12px);
+    left: var(--modules-bottom-pad, 12px);
+    right: auto;
+    height: auto;
+    max-height: none;
+    /* Above the modules (which top out in the 60s) and the floating chat
+       furniture, well below the popover/tooltip layer. */
+    z-index: 200;
   }
 }
 
@@ -16977,9 +17246,53 @@ html.dark .sc-surface-rail .rtbl-cards .rtbl-grow.is-selected {
      RIGHT of the chat (e.g. the "Turns" sidebar) is lifted out of the row so
      the chat isn't crowded; its produced content stays reachable through the
      floating Outputs / Sources manifest pinned to the chat's top-right, which
-     we force ON here (the History module, docked LEFT, is left collapsed). */
+     we force ON here. History, docked LEFT, keeps its place — it rests
+     collapsed and pops over the page when opened (see below). */
   #modules-row .wch-sidebar.wch-docked.wch-right {
     display: none !important;
+  }
+
+  /* ── Opened, History pops OVER the page as a complete module ─────────────
+     Docked, History is a drawer: it tucks under the chat's left edge, which
+     costs it its right border and the two corners facing the chat, and the
+     chat pushes across to make room for it. Neither half of that survives a
+     phone. The row stacks into a column under 560px, so the drawer landed
+     ABOVE the chat as a 240px block, clipped mid-list, with the chat shoved
+     down past the fold — and even unstacked there is no width to give away.
+
+     So it leaves the flow and lifts over the page the way the nav does:
+     pinned to the frame top and bottom, flush against the rail, dressed back
+     as the whole card — its own right edge, all four corners, the card paper
+     and the card shadow — with the chat full width underneath it. The rail
+     stays where it is, so the icon that opened History is still the icon that
+     closes it. Phone only; a tablet up has the room to keep tucking.
+
+     The extra :not()s clear the sticky tuck, which is written at the same
+     weight here and again in each host page's own copy of these rules. */
+  #modules-row .wch-sidebar.wch-docked:not(.wch-right):not(.wch-rail):not(.wch-docked-hidden):not(.wch-in-nav) {
+    position: fixed;
+    top: var(--modules-bottom-pad, 12px);
+    bottom: var(--modules-bottom-pad, 12px);
+    left: var(--nav-rail-w, 44px);
+    /* Over-constrained against the inline width the module sets for tiers
+       single → triple, so it is ignored there and only bounds the fill tier,
+       which asks for `width: auto` and would otherwise shrink to its text. */
+    right: var(--modules-bottom-pad, 12px);
+    /* Beats the drawer's `height: calc(100% - 30px) !important` so top and
+       bottom above are what set the height. */
+    height: auto !important;
+    max-height: none !important;
+    /* Out from under the chat: drop the overlap and the interior clearance
+       that kept content off it, and take back the edge it was hiding. */
+    margin-right: 0;
+    padding-right: 0;
+    border-right: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+    /* Above the chat (3) and its floating furniture; below the expanded nav,
+       which stays the top layer for as long as it is open. */
+    z-index: 180;
   }
   /* Turn the floating Outputs / Sources component ON (overrides the chat's
      "Hide outputs & sources" default) so it's the access point for right-side
@@ -17400,9 +17713,11 @@ body > .owt-mod.wch-sidebar.wch-docked {
   flex-direction: column;
 }
 .owt-mod .wch-controls .panel-more-wrap { margin-left: 0; }
+.owt-mod .wch-controls { gap: 2px; }
+#modules-row .owt-mod.wch-sidebar.wch-docked .wch-head-title,
 .owt-mod .wch-head-title {
   display: block;
-  font-family: 'WISE Digits', 'Noto Serif', serif;
+  font-family: var(--module-title-family);
   font-size: 1.28rem;
   font-weight: 800;
   letter-spacing: -0.01em;
@@ -17419,7 +17734,7 @@ body > .owt-mod.wch-sidebar.wch-docked {
 }
 .owt-mod .owt-kicker {
   margin: 0;
-  font-family: 'WISE Digits', 'Noto Serif', serif;
+  font-family: inherit;
   font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -17429,7 +17744,7 @@ body > .owt-mod.wch-sidebar.wch-docked {
 .owt-mod .owt-nav {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 10px;
   flex-shrink: 0;
   flex-wrap: wrap;
@@ -17444,37 +17759,30 @@ html.dark .owt-mod .owt-nav { border-bottom-color: rgba(255, 255, 255, 0.08); }
   gap: 8px;
   min-width: 0;
 }
-.owt-mod .owt-nav-sep {
-  color: var(--text-muted);
-  font-size: 11.5px;
-  font-weight: 600;
-  opacity: 0.7;
-}
-.owt-mod .owt-nav-link {
-  display: inline;
-  width: auto;
-  height: auto;
-  min-width: 0;
-  min-height: 0;
-  border: 0;
-  border-radius: 0;
-  background: none !important;
-  box-shadow: none;
-  outline: none;
+.owt-mod .owt-nav-skips .chip { flex: 0 0 auto; }
+.owt-mod .owt-nav-skips .chip:disabled { opacity: 0.46; cursor: default; }
+.owt-mod .owt-nav-skips .wise-btn { flex: 0 0 auto; }
+.owt-mod .owt-nav-chev {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
   padding: 0;
-  margin: 0;
-  font-family: inherit;
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  color: var(--text-muted) !important;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--primary);
   cursor: pointer;
-  white-space: nowrap;
 }
-.owt-mod .owt-nav-link:hover { color: var(--text) !important; }
-.owt-mod .owt-nav-link:disabled { opacity: 0.38; cursor: default; }
-.owt-mod .owt-nav-link--next { color: var(--text) !important; font-weight: 800; }
-.owt-mod .owt-nav-link:focus-visible { text-decoration: underline; }
+html.dark .owt-mod .owt-nav-chev { color: var(--primary-bright, var(--primary)); }
+.owt-mod .owt-nav-chev:hover { background: color-mix(in srgb, var(--primary) 12%, transparent); }
+.owt-mod .owt-nav-chev:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.owt-mod .owt-nav-chev:disabled { opacity: 0.38; cursor: default; background: transparent; }
+.owt-mod .owt-nav-chev .material-symbols-outlined {
+  font-size: 22px;
+  color: inherit;
+}
 .owt-mod .owt-body {
   flex: 1;
   min-height: 0;
@@ -20720,6 +21028,38 @@ html.dark #mi-motion .wa-merge-chip,
 .dsc-demo .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary); }
 .dsc-theme-dark .dsc-demo .sc-line-you:not(.sc-line-event) .sc-line-body,
 html.dark .dsc-demo .sc-line-you:not(.sc-line-event) .sc-line-body { color: var(--primary-bright, #8B9FAF); }
+.dsc-theme-dark .dsc-demo .sc-line-you:not(.sc-line-event)::before,
+html.dark .dsc-demo .sc-line-you:not(.sc-line-event)::before {
+  background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 12%, transparent);
+}
+/* Sent-ask specimen — a slice of the chat body so the shared edge-to-edge
+   wash can cancel a real transcript gutter. The slice is the module; the
+   type stays on that gutter. Event / assistant columns stay bare. */
+.dsc-demo .dsc-states--lines { align-items: stretch; }
+.dsc-demo .dsc-state-col--ask { flex: 1 1 100%; width: 100%; }
+.dsc-demo .dsc-ask-thread.sc-body {
+  flex: 0 0 auto;
+  min-height: 0;
+  width: calc(100% + 32px);
+  max-width: none;
+  margin-inline: -16px;
+  display: block;
+  overflow: hidden;
+  background: var(--bg);
+}
+.dsc-demo .dsc-ask-thread .chat-messages-area {
+  flex: none;
+  overflow: hidden;
+  width: 100%;
+  padding-block: 0.75rem;
+  --sc-msg-pad-min: 1.25rem;
+  background: transparent;
+}
+/* Beat the light-page chat-tint wash (`html.chat-tint .chat-messages-area`
+   mixes onto #fff) so the dark specimen keeps its own --bg. */
+html.chat-tint .dsc-demo .dsc-ask-thread .chat-messages-area {
+  background: transparent;
+}
 .dsc-demo .sc-line-wiseai .sc-line-body { color: var(--text); }
 .dsc-demo .sc-line-body > .sc-para { display: block; }
 .dsc-demo .sc-line-meta {
@@ -21582,19 +21922,20 @@ html.dark .dsc-demo .nfp-fi-cat--dock .nfp-cat-select-caret {
   background: var(--surface); border: 1px solid var(--border); text-align: left;
 }
 .dsc-demo .mi-owt .wch-head-title {
-  font-family: var(--module-title-family), 'Noto Serif', serif;
+  font-family: var(--module-title-family);
   font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em;
 }
 .dsc-demo .owt-kicker { margin: 4px 0 0; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); }
 .dsc-demo .owt-copy { margin: 12px 0; font-size: 0.82rem; line-height: 1.5; color: var(--text); }
-.dsc-demo .owt-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-.dsc-demo .owt-nav-move { display: flex; justify-content: space-between; }
-.dsc-demo .owt-nav-link {
-  border: 0; background: none; font: inherit; font-size: 0.78rem; font-weight: 700;
-  color: var(--text-muted); cursor: default;
+.dsc-demo .owt-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.dsc-demo .owt-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.dsc-demo .owt-nav-skips, .dsc-demo .owt-nav-move { display: inline-flex; align-items: center; gap: 8px; }
+.dsc-demo .owt-nav-chev {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%;
+  background: transparent; color: var(--primary); cursor: default;
 }
-.dsc-demo .owt-nav-link--next { color: var(--primary-ink, var(--primary)); }
-.dsc-demo .owt-nav-link:disabled { opacity: .4; }
+.dsc-demo .owt-nav-chev:disabled { opacity: .38; }
 
 .dsc-card[data-comp-name="Transcript lines"] .dsc-demo,
 .dsc-card[data-comp-name="Transcript actions"] .dsc-demo,
@@ -22491,6 +22832,25 @@ html.dark .mi-motion-helix-stage { background: color-mix(in srgb, var(--primary)
   background: var(--primary); color: #fff;
 }
 
+/* Loading-helix specimen: a real empty output pane the shared loader
+   (js/load-anim.js) overlays its twisting rope onto — no page-local rope. */
+.mi-motion-loadhelix { width: 100%; }
+.mi-motion-loadhelix-pane {
+  border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+  background: var(--surface);
+}
+.mi-motion-loadhelix-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  color: var(--text-muted); font-size: 12.5px; font-weight: 600;
+}
+.mi-motion-loadhelix-head .material-symbols-outlined { font-size: 18px; color: var(--text-subtle); }
+.mi-motion-loadhelix-host {
+  min-height: 240px;
+  background: color-mix(in srgb, var(--primary) 6%, var(--surface));
+}
+html.dark .mi-motion-loadhelix-host { background: color-mix(in srgb, var(--primary) 14%, var(--surface)); }
+
 .mi-motion-acc {
   width: 100%; border: 1px solid var(--border); border-radius: 12px; background: var(--surface);
 }
@@ -23335,6 +23695,10 @@ html.dark .mi-tarch-turns-admin { color: var(--primary-bright, #93C5FD); }
   display: flex; flex-direction: column; gap: 2px;
   padding: 10px 12px 10px 22px;
   background: var(--bg);
+  /* Same token the sent-ask wash reads, so the band reaches this
+     specimen's module edges (left pad is the activity-strip column). */
+  --sc-gutter: 22px;
+  --sc-pad-floor: 22px;
 }
 html.dark .mi-tarch-thread { background: transparent; }
 .mi-tarch-thread .sc-line { --sc-avatar-size: 22px; margin-bottom: 0.35rem; min-width: 0; }
@@ -23795,3 +24159,160 @@ html.dark .mi-resp-col { background: rgba(255,255,255,0.03); }
 @media (prefers-reduced-motion: reduce) {
   .mi-resp-frame { transition: none; }
 }
+
+/* ── Size / count picker beside the product price (view-product / add-product).
+   Reuses the docked category-select styling, but drops the leading icon and
+   pulls the chevron in tight against the label. Defined once here so both
+   hosts share it. ── */
+.nfp-fi-cat--dock .nfp-size-select .nfp-cat-native {
+  padding: 2px 15px 2px 2px;
+  /* Size the control to the *selected* value, not the widest option, so the
+     chevron tucks in right after the label instead of floating to the right
+     edge of a box wide enough for "Variety pack". */
+  field-sizing: content;
+  min-width: 0; width: auto; max-width: 100%;
+}
+.nfp-fi-cat--dock .nfp-size-select .nfp-cat-select-caret {
+  right: 0; font-size: 15px !important;
+}
+/* A pack's Nutrition Facts in the single-pane identity view reads exactly like
+   the base label — no separating rule appears when you switch to another size.
+   (The border-top only belongs to the stacked per-pack section in the wide
+   double-pane layout.) */
+.nfp-sp--flip .nfp-pack-nf { border-top: 0; padding-top: 0; }
+
+/* ── Brand identity eyebrow above the product name ───────────────────────────
+   The round brand-logo badge with the brand name beside it, sitting directly
+   above the product title in the body. Shared by view-product / add-product. ── */
+.nfp-fi-brand { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.nfp-fi-brand .nfp-brand-logo {
+  width: 30px; height: 30px; flex: 0 0 auto;
+  border-radius: 50%; overflow: hidden; padding: 0; border: 0; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #fff; box-shadow: 0 0 0 1px var(--border);
+}
+.nfp-fi-brand .nfp-brand-logo:hover,
+.nfp-fi-brand .nfp-brand-logo:focus-visible,
+.nfp-fi-brand .nfp-brand-logo.nfp-hero-drag { box-shadow: 0 0 0 2px var(--primary); }
+.nfp-fi-brand .nfp-brand-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.nfp-fi-brand .nfp-brand-logo-mono {
+  font-weight: 800; font-size: 0.62rem; letter-spacing: -0.02em; color: var(--primary);
+}
+.nfp-fi-brand-name { font-weight: 700; font-size: 0.9rem; color: var(--text); letter-spacing: 0.01em; }
+
+/* Reports control in the Product Details header — same chrome as the ⋮, sits
+   to its left and opens a proper menu popover (a .topbar-popover). */
+.nfp-panel-header .nfp-reports-btn .material-symbols-outlined { font-size: 18px !important; }
+
+/* Small section label at the top of a topbar menu popover (e.g. "Reports"). */
+.topbar-menu-title {
+  padding: 6px 12px 4px; font-size: 0.6rem; font-weight: 800;
+  letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-subtle);
+}
+/* Locked (upsell) menu rows — muted, no hover lift, a trailing lock glyph. */
+.topbar-menu-item.is-locked {
+  color: var(--text-subtle); cursor: default; position: relative;
+}
+.topbar-menu-item.is-locked:hover { background: none; color: var(--text-subtle); }
+html.dark .topbar-menu-item.is-locked:hover { background: none; color: var(--text-subtle); }
+.topbar-menu-item.is-locked .topbar-menu-icon { color: var(--text-subtle) !important; }
+.topbar-menu-lock { margin-left: auto; font-size: 15px !important; color: var(--text-subtle); }
+/* The shared pink "Admin" badge reads a touch larger in this bigger menu than
+   in the compact Appearance rows it was sized for. */
+.topbar-menu-item .wise-popover-badge {
+  font-size: 8.5px; padding: 1.5px 5px; border-radius: 999px;
+}
+
+/* ── Status shields after the product name (view-product / add-product) ──────
+   Filled shield glyphs that flow inline right after the last word of the
+   name — Verified and Brand Claimed, both brand blue. Labels surface through
+   the shared hover tooltip; the shields themselves are non-interactive. ── */
+.nfp-status-badges {
+  display: inline-flex; align-items: center; gap: 5px;
+  vertical-align: -3px; margin-left: 7px; white-space: nowrap;
+}
+/* The editable name flows inline so the shields sit right after it (rather
+   than the name filling the row and pushing them to the far right). */
+.nfp-fi-group--identity .nfp-fi-title .nfp-edit,
+.nfp-sp--flip .nfp-fi-group--identity .nfp-fi-title .nfp-edit {
+  display: inline; width: auto;
+}
+.nfp-status-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; padding: 0; background: none;
+  flex: 0 0 auto; line-height: 1; cursor: default;
+}
+.nfp-status-badge .material-symbols-outlined {
+  font-size: 20px !important; line-height: 1 !important;
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+}
+.nfp-status-badge--verified,
+.nfp-status-badge--claimed { color: var(--primary); }
+html.dark .nfp-status-badge--verified,
+html.dark .nfp-status-badge--claimed { color: var(--primary-bright, #60A5FA); }
+
+/* A click on a Nutrition Facts row, serving line, or allergen is a real
+   selection — the chat picks it up and the ingredient list marks the
+   matching items. Shared so add-product and view-product stay identical. */
+.nfp-nf-row[data-nfp="nf-inspect"],
+.nfp-nf-cal-band[data-nfp="nf-inspect"],
+.nfp-nf-ss-row[data-nfp="nf-inspect"],
+.nfp-nf-spc-row[data-nfp="nf-inspect"] { cursor: pointer; }
+.nfp-nf-row.is-nf-sel,
+.nfp-nf-cal-band.is-nf-sel,
+.nfp-nf-ss-row.is-nf-sel,
+.nfp-nf-spc-row.is-nf-sel {
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+}
+html.dark .nfp-nf-row.is-nf-sel,
+html.dark .nfp-nf-cal-band.is-nf-sel,
+html.dark .nfp-nf-ss-row.is-nf-sel,
+html.dark .nfp-nf-spc-row.is-nf-sel {
+  background: color-mix(in srgb, var(--primary-bright, var(--primary)) 22%, transparent);
+}
+.nfp-allergen-tag[data-nfp="inspect-allergen"] { cursor: pointer; }
+.nfp-fi-thumb-frame[data-nfp="upload-main"],
+.nfp-fi-thumb-frame[data-nfp="upload-pack"] { cursor: pointer; }
+.nfp-allergen-tag.is-nf-sel {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+html.dark .nfp-allergen-tag.is-nf-sel { outline-color: var(--primary-bright, var(--primary)); }
+.nfp-ia-parsed-row.is-nf-hit,
+.nfp-ia-nut-row.is-nf-hit,
+.nfp-ia-scout-row.is-nf-hit {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--primary) 40%, transparent);
+  outline-offset: -1px;
+}
+html.dark .nfp-ia-parsed-row.is-nf-hit,
+html.dark .nfp-ia-nut-row.is-nf-hit,
+html.dark .nfp-ia-scout-row.is-nf-hit {
+  background: color-mix(in srgb, var(--primary-bright, var(--primary)) 16%, transparent);
+}
+
+/* ── Next-step card: eyebrow header + navigable dots ─────────────────────────
+   The stepper section carries an eyebrow ("Steps to Complete"). Six regular
+   dots, the last one Reports. Shared by view-product / add-product. ── */
+.nfp-ins-next-head {
+  grid-column: 1 / -1;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  width: 100%;
+}
+.nfp-sp--flip .nfp-sp-facts .nfp-ins-next-head { grid-row: 1; grid-column: 1; }
+.nfp-ins-next-eyebrow {
+  font-size: 0.62rem; font-weight: 800; letter-spacing: 0.11em;
+  text-transform: uppercase; color: var(--text-subtle); line-height: 1;
+}
+/* Reports card stacks its download buttons where a single CTA normally sits. */
+.nfp-ins-next-actions {
+  grid-column: 1 / -1;
+  display: flex; flex-direction: column; gap: 8px; width: 100%;
+}
+.nfp-sp--flip .nfp-sp-facts .nfp-ins-next-actions { grid-row: 3; grid-column: 1; }
+.nfp-ins-next-btn--soft {
+  background: var(--primary-soft) !important;
+  color: var(--primary-ink, var(--primary)) !important;
+}
+.nfp-ins-next-btn--soft:hover { filter: none; background: color-mix(in srgb, var(--primary) 16%, var(--surface)) !important; }
+html.dark .nfp-ins-next-btn--soft { color: var(--primary-bright, var(--primary)) !important; }

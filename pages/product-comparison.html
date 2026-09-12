@@ -6593,11 +6593,11 @@
     html.composer-v2 #send-btn { align-self: flex-end; }
     /* The shell-wide pill overrides near the top of this stylesheet
        (#chat-shell-wrap .fl-input-wrap / textarea → --radius-pill !important)
-       would lock composer v2 into a pill — outrank them so it keeps the
-       module-cornered rectangle from the shared wise.css. */
+       would lock the composer into a pill — outrank them so the fill can
+       run the module edge to edge (shared wise.css). */
     html.composer-v2 #chat-shell-wrap .fl-input-wrap,
     html.composer-v2 #chat-shell-wrap .fl-input-wrap textarea.fl-input {
-      border-radius: var(--r-md, 16px) !important;
+      border-radius: 0 !important;
     }
     /* Chat tint (Appearance ▸ "Blue chat surface"): the rail rule above pins
        background: var(--bg) !important, so the tint needs its own !important. */

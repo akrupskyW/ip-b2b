@@ -7,21 +7,21 @@
  *   python3 scripts/scan_code_stats.py
  */
 export const CODE_STATS = {
-  "generatedAt": "2026-09-05",
+  "generatedAt": "2026-09-09",
   "now": {
-    "total": 230730,
-    "html": 98173,
-    "js": 97424,
-    "css": 25073,
-    "py": 10060,
+    "total": 239663,
+    "html": 98437,
+    "js": 100240,
+    "css": 26105,
+    "py": 14881,
     "pages": 53,
-    "files": 222,
-    "bytes": 175893504,
-    "allFiles": 495,
-    "codeBytes": 14717235,
-    "imageBytes": 75169921,
+    "files": 262,
+    "bytes": 176746282,
+    "allFiles": 537,
+    "codeBytes": 14982966,
+    "imageBytes": 75750485,
     "videoBytes": 83340142,
-    "otherBytes": 2666206
+    "otherBytes": 2672689
   },
   "series": [
     {
@@ -575,11 +575,47 @@ export const CODE_STATS = {
     },
     {
       "date": "2026-09-05",
-      "total": 230730,
-      "html": 98173,
-      "js": 97424,
-      "css": 25073,
-      "py": 10060,
+      "total": 231102,
+      "html": 98171,
+      "js": 97477,
+      "css": 25195,
+      "py": 10259,
+      "pages": 53
+    },
+    {
+      "date": "2026-09-06",
+      "total": 233286,
+      "html": 98461,
+      "js": 98634,
+      "css": 25181,
+      "py": 11010,
+      "pages": 53
+    },
+    {
+      "date": "2026-09-07",
+      "total": 234028,
+      "html": 96340,
+      "js": 99431,
+      "css": 25573,
+      "py": 12684,
+      "pages": 53
+    },
+    {
+      "date": "2026-09-08",
+      "total": 235119,
+      "html": 96813,
+      "js": 99445,
+      "css": 25628,
+      "py": 13233,
+      "pages": 53
+    },
+    {
+      "date": "2026-09-09",
+      "total": 239663,
+      "html": 98437,
+      "js": 100240,
+      "css": 26105,
+      "py": 14881,
       "pages": 53
     }
   ]

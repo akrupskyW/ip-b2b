@@ -1,4 +1,5 @@
 import { esc } from './escape-html.js';
+import { attachNameHtml } from './wiseai-chat.js';
 import { ARROW_SVG } from './sort-arrow.js';
 import { OWL_BUG } from './owl-mark.js';
 import { openModal, closeModal, modalHTML, modalFoot } from './wise-modal.js';
@@ -2214,6 +2215,7 @@ const CAT_BY_NAME = {
   'Transcript lines': 'Chat & drawers',
   'Inline table': 'Chat & drawers',
   'Transcript carousel': 'Chat & drawers',
+  'Inline module rail': 'Chat & drawers',
   'Transcript actions': 'Chat & drawers',
   'Activity strip': 'Chat & drawers',
   'Token readout': 'Chat & drawers',
@@ -2272,9 +2274,10 @@ const COMP_LEDES = {
   'Output chips': 'In-thread previews that open an output — landscape, or the taller carousel size.',
   'Large intent cards': 'The large-format tap card, sibling to the compact intent chip.',
   'Chat composer': 'The unlocked chat input: text, attachments, database, and send.',
-  'Transcript lines': 'You, WISEcodeAI, and event lines — never a speech bubble.',
+  'Transcript lines': 'You, WISEcodeAI, and event lines — never a speech bubble. A sent ask carries an edge-to-edge wash.',
   'Inline table': 'A small comparison that stays in the answer, not a Results board.',
   'Transcript carousel': 'An edge-to-edge strip of motion, stills, and clips inside the answer.',
+  'Inline module rail': 'Full modules dropped into the answer as a height-capped, drag-resizable carousel.',
   'Transcript actions': 'Copy, Accurate, Not accurate, and more — under every answer.',
   'Activity strip': 'Landmark ear-marks on the chat edge for outputs, sources, and switches.',
   'Token readout': 'This-turn and conversation tokens under the composer and in the answer menu.',
@@ -3389,11 +3392,15 @@ function demoChatMenuPop() {
    expect. Leave `.fl-model-row` empty so wireChatComposer injects the live
    database selector (never embed a data-popover-static Databases stub here —
    that leaked into the default state). */
-function demoComposerAttachChip({ name, src, icon }) {
+function demoComposerAttachChip({ name, src }) {
+  /* Mirror the live composer chip (js/wiseai-chat.js · renderAttachChip): an
+     image keeps its thumbnail; a non-image file drops the leading icon and is
+     just the mono filename with a bold extension. */
   const thumb = src
     ? `<span class="fl-attach-thumb" style="background-image:url('${esc(src)}')"></span>`
-    : `<span class="fl-attach-thumb fl-attach-thumb--icon"><span class="material-symbols-outlined">${esc(icon || 'image')}</span></span>`;
-  return `<span class="fl-attach-chip" title="${esc(name)}"><button type="button" class="fl-attach-x" aria-label="Remove ${esc(name)}"><span class="material-symbols-outlined">close</span></button><span class="fl-attach-name">${esc(name)}</span>${thumb}</span>`;
+    : '';
+  const cls = src ? 'fl-attach-chip' : 'fl-attach-chip fl-attach-chip--file';
+  return `<span class="${cls}" title="${esc(name)}"><button type="button" class="fl-attach-x" aria-label="Remove ${esc(name)}"><span class="material-symbols-outlined">close</span></button><span class="fl-attach-name">${attachNameHtml(name)}</span>${thumb}</span>`;
 }
 function demoComposerHtml({ value = '', attachments = [] } = {}) {
   const hasAtt = attachments.length > 0;
@@ -3983,13 +3990,17 @@ const COMPONENTS = [
     cat: 'Chat & drawers',
     cls: '.sc-line · .sc-line-you / .sc-line-wiseai / .sc-line-event · .sc-avatar · .sc-line-time',
     used: 'WISEcodeAI dock (every page) · Studio Chat — every turn in the thread',
-    note: 'Three line types, never a speech bubble. <strong>You</strong> uses the member avatar (initials or photo). <strong>WISEcodeAI</strong> uses the owl on a black chip (white chip in dark). <strong>Event</strong> is a mid-thread action the member took — a database switch or a data source — stamped <code>data-activity</code> so the activity strip can tick it. The timestamp toggles clock \u2194 relative on click. Forked threads open with a lineage banner.',
+    note: 'Three line types, never a speech bubble. <strong>You</strong> uses the member avatar (initials or photo). Once sent, that ask sits on a light wash of the member\u2019s own ink that runs the chat module <strong>edge to edge</strong> \u2014 the type, avatar, and gutter do not move. The composer is a different surface and stays the inset pill. <strong>WISEcodeAI</strong> uses the owl on a black chip (white chip in dark) and has no matching band. <strong>Event</strong> is a mid-thread action the member took — a database switch or a data source — stamped <code>data-activity</code> so the activity strip can tick it; it is not an ask and stays bare. The timestamp toggles clock \u2194 relative on click. Forked threads open with a lineage banner.',
     noteIcon: 'forum',
     demo: `
-      <div class="dsc-states" style="width:100%">
-        <div class="dsc-state-col" style="flex:1 1 280px">
-          <div class="dsc-sub-label">You</div>
-          <div class="sc-line sc-line-you">${demoYouAvatar()}<div class="sc-line-body">Compare oat milk vs almond milk on processing.<div class="sc-line-meta"><span class="sc-line-time" role="button" tabindex="0">5 min ago</span></div></div></div>
+      <div class="dsc-states dsc-states--lines" style="width:100%">
+        <div class="dsc-state-col dsc-state-col--ask">
+          <div class="dsc-sub-label">You · wash to the module edges</div>
+          <div class="sc-body dsc-ask-thread">
+            <div class="chat-messages-area">
+              <div class="sc-line sc-line-you">${demoYouAvatar()}<div class="sc-line-body">Compare oat milk vs almond milk on processing.<div class="sc-line-meta"><span class="sc-line-time" role="button" tabindex="0">5 min ago</span></div></div></div>
+            </div>
+          </div>
         </div>
         <div class="dsc-state-col" style="flex:1 1 280px">
           <div class="dsc-sub-label">WISEcodeAI</div>
@@ -4027,6 +4038,24 @@ const COMPONENTS = [
       </div>`,
   },
   {
+    name: 'Inline module rail',
+    added: '2026-09-10',
+    wide: true,
+    cat: 'Chat & drawers',
+    cls: '.sc-inline-rail \u00b7 .sc-inline-mod \u00b7 .sc-inline-rail-seam \u00b7 js/inline-module-rail.js',
+    used: 'WISEcodeAI (wiseai.html) \u2014 the Inline NFP chip drops the modules into the answer instead of docking them on the right',
+    note: 'The opposite of the output pane: an <strong>Inline</strong> chip drops full modules \u2014 the Nutrition Facts panel, the ingredient list, a WISEscore breakdown \u2014 straight into the transcript as a horizontal rail of live components. Nothing opens on the right and the chat never resizes. The rail has a <strong>capped height</strong>: drag the grip at its foot up or down to grow or shrink every module at once, between a floor and a ceiling. Each module has its own <strong>width</strong> \u2014 pull its right edge, or tap the width control, to cycle narrow \u2192 medium \u2192 wide \u2014 and the row scrolls sideways between them.',
+    noteIcon: 'view_column',
+    demoCustom: () => {
+      const IR = window.WiseInlineRail;
+      if (!IR || typeof IR.buildRail !== 'function') {
+        return '<div class="dsc-empty" style="padding:24px;text-align:center;color:var(--text-muted)">The inline module rail loads with the chat shell.</div>';
+      }
+      const rail = IR.buildRail(IR.sampleModules(), { label: 'Nutrition modules, inline', height: 340 });
+      return `<div class="dsc-imr-demo" style="width:100%;max-width:820px">${rail}</div>`;
+    },
+  },
+  {
     name: 'Transcript carousel',
     added: '2026-09-04',
     aliases: ['Wise Owl Progression', 'Owl progression'],
@@ -4034,7 +4063,7 @@ const COMPONENTS = [
     cat: 'Chat & drawers',
     cls: '.sc-owl-prog \u00b7 .sc-owl-prog-item \u00b7 js/owl-progression-carousel.js',
     used: 'WISEcodeAI flagship (wiseai.html) — the Wise Owl Progression reply in What can I ask?',
-    note: 'An edge-to-edge strip inside the answer: Lottie owls, stills, then silent clips that follow light or dark. Scroll the row or use the arrows. Click a Lottie or a clip to play it once. No card and no boxed backdrop — the chat surface shows through the gaps.',
+    note: 'An edge-to-edge strip inside the answer: Lottie owls, stills, then silent clips that follow light or dark. Scroll the row or use the arrows. Click any owl to open it larger in a panel — motion plays once there. No card and no boxed backdrop — the chat surface shows through the gaps.',
     noteIcon: 'view_carousel',
     demoCustom: () => {
       const stage = () => (
@@ -4404,22 +4433,22 @@ const COMPONENTS = [
     cat: 'Chat & drawers',
     cls: '.fl-attach-chip \u00b7 .sc-att-chip \u00b7 .sc-att-thumb',
     used: 'Chat composer pending row \u00b7 in-transcript previews on the member\u2019s line',
-    note: 'Pending chips sit in the composer (thumb + name + remove). Once sent they ride the You line as the same thumb + name, without the remove. Tapping a photo thumb opens <em>Image lightbox</em>.',
+    note: 'Every chip name rides the mono font with its extension in bold. A photo keeps its thumbnail; a non-image file drops the leading icon entirely. Pending chips sit in the composer (name + remove); once sent they ride the You line without the remove. Tapping a photo thumb opens <em>Image lightbox</em>.',
     noteIcon: 'attach_file',
     demo: `
       <div class="dsc-states" style="width:100%">
         <div class="dsc-state-col">
           <div class="dsc-sub-label">Pending in composer</div>
           <div class="fl-attachments">
-            <span class="fl-attach-chip"><span class="fl-attach-thumb" style="background-image:url('../assets/portfolio/blueberry_muffins.png')"></span><span class="fl-attach-name">muffin-front.png</span><button type="button" class="fl-attach-x" aria-label="Remove"><span class="material-symbols-outlined">close</span></button></span>
-            <span class="fl-attach-chip"><span class="fl-attach-thumb fl-attach-thumb--icon"><span class="material-symbols-outlined">description</span></span><span class="fl-attach-name">spec.pdf</span><button type="button" class="fl-attach-x" aria-label="Remove"><span class="material-symbols-outlined">close</span></button></span>
+            <span class="fl-attach-chip"><span class="fl-attach-thumb" style="background-image:url('../assets/portfolio/blueberry_muffins.png')"></span><span class="fl-attach-name">${attachNameHtml('muffin-front.png')}</span><button type="button" class="fl-attach-x" aria-label="Remove"><span class="material-symbols-outlined">close</span></button></span>
+            <span class="fl-attach-chip fl-attach-chip--file"><span class="fl-attach-name">${attachNameHtml('spec.pdf')}</span><button type="button" class="fl-attach-x" aria-label="Remove"><span class="material-symbols-outlined">close</span></button></span>
           </div>
         </div>
         <div class="dsc-state-col">
           <div class="dsc-sub-label">In the transcript</div>
           <div class="sc-att-row">
-            <span class="sc-att-chip" title="muffin-front.png"><span class="sc-att-thumb" style="background-image:url('../assets/portfolio/blueberry_muffins.png')"></span><span class="sc-att-name">muffin-front.png</span></span>
-            <span class="sc-att-chip" title="spec.pdf"><span class="sc-att-thumb sc-att-thumb--icon"><span class="material-symbols-outlined">image</span></span><span class="sc-att-name">spec.pdf</span></span>
+            <button type="button" class="sc-att-chip" data-src="../assets/portfolio/blueberry_muffins.png" aria-label="Preview muffin-front.png" title="muffin-front.png"><span class="sc-att-thumb" style="background-image:url('../assets/portfolio/blueberry_muffins.png')"></span><span class="sc-att-name">${attachNameHtml('muffin-front.png')}</span></button>
+            <span class="sc-att-chip sc-att-chip--file" title="spec.pdf"><span class="sc-att-name">${attachNameHtml('spec.pdf')}</span></span>
           </div>
         </div>
       </div>`,
@@ -4768,9 +4797,9 @@ const COMPONENTS = [
     ai: false,
     wide: true,
     cat: 'Chat & drawers',
-    cls: '.owt-mod \u00b7 .owt-copy \u00b7 .owt-nav-link \u00b7 .owt-chips',
+    cls: '.owt-mod \u00b7 .owt-copy \u00b7 .owt-nav-chev \u00b7 .owt-chips',
     used: 'First login and first visit to a chapter \u2014 docks as a sticky module; replay from Help or Preferences',
-    note: 'Same docked-module shell as What can I ask?. Next opens the real page, not a mockup. Skip a group or the rest; progress is remembered. Headline is serif.',
+    note: 'Same docked-module shell as What can I ask?. Next opens the real page, not a mockup. Skip a group or the rest; progress is remembered. Headline follows the Serif headlines switch.',
     noteIcon: 'auto_awesome',
     demo: `
       <div class="mi-owt">
@@ -4779,16 +4808,22 @@ const COMPONENTS = [
             <span class="wch-head-title">WISEowl walkthrough</span>
             <p class="owt-kicker">Meet WISEowl \u00b7 1 of 3</p>
           </div>
+          <div class="wch-controls">
+            <button type="button" class="owt-nav-chev" disabled aria-label="Back"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></button>
+            <button type="button" class="owt-nav-chev" aria-label="Next"><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>
+          </div>
         </div>
         <p class="owt-copy">WISEcode is where brands keep the truth about their products \u2014 and where you ask me anything about food. This walkthrough is the map.</p>
+        <div class="owt-nav" aria-label="Walkthrough steps">
+          <div class="owt-nav-skips">
+            <button type="button" class="chip ws-intent-chip"><span class="material-symbols-outlined" aria-hidden="true">skip_next</span>Skip this group</button>
+            <button type="button" class="wise-btn wise-btn--primary wise-btn--sm"><span class="material-symbols-outlined" aria-hidden="true">last_page</span>Skip remaining</button>
+          </div>
+        </div>
         <div class="owt-chips" role="navigation" aria-label="Walkthrough groups">
           <button type="button" class="chip is-selected">Meet WISEowl</button>
           <button type="button" class="chip">Talk to me</button>
           <button type="button" class="chip">Your portfolio</button>
-        </div>
-        <div class="owt-nav-move">
-          <button type="button" class="owt-nav-link" disabled>Back</button>
-          <button type="button" class="owt-nav-link owt-nav-link--next">Next</button>
         </div>
       </div>`,
   },
@@ -6066,7 +6101,7 @@ const TARCH_LAYERS = [
     body: 'This chat branched from another thread.',
     jump: 'Transcript lines' },
   { id: 'lines', side: 'left', icon: 'forum', title: 'Transcript lines',
-    body: 'You, WISEcodeAI, or an event — never a bubble.',
+    body: 'You, WISEcodeAI, or an event — never a bubble. A sent ask carries an edge-to-edge wash.',
     jump: 'Transcript lines' },
   { id: 'inlinetbl', side: 'left', icon: 'table_rows', title: 'Inline table',
     body: 'A comparison that stays in the answer — horizontal rules, no card.',
@@ -8144,8 +8179,8 @@ function wireTranscriptArch(root) {
 /*                                                                     */
 /* A live catalog of how things move in the app: count-ups, chart      */
 /* replay, paragraph streaming, gold chip shimmer, chip fly-in,        */
-/* output chip fan, chat composer sheen, the welcome helix, the        */
-/* thinking helix, and accordion open — plus the drag/resize systems   */
+/* output chip fan, chat composer sheen, the welcome / thinking /      */
+/* loading helixes, and accordion open — plus the drag/resize systems  */
 /* (module splitter, width tiers, carousel rail, reorder,              */
 /* drag-to-file). Each card explains the rule and runs real behaviour  */
 /* (or a faithful mini of it) so you can try it here.                  */
@@ -8456,6 +8491,20 @@ const MOTION_ITEMS = [
       <p class="mi-motion-hint">Jumps to the live helix + haiku glob demo and replays it.</p>`,
   },
   {
+    id: 'loadhelix', group: 'anim', icon: 'sync', title: 'Loading helix', wide: true,
+    src: 'js/load-anim.js · js/trace-helix.js',
+    used: 'Output module (wiseai.html) · every Compare Foods board — while a result assembles',
+    lede: 'The rope that plays inside a sticky module once it has been handed a result but is still building it — trying to load, nothing there yet. Larger than the thinking rail and centered top to bottom so it reads as the loading pose, and it turns the <em>opposite</em> way to the thinking helix so the two ropes never look like one. On by default; switch the loading style to stripes in Appearance and the same slot shows the striped skeleton instead. Honors <code>prefers-reduced-motion</code>. The board below is a real empty output pane — the shared loader overlays the live rope onto it.',
+    demo: `
+      <div class="mi-motion-loadhelix">
+        <div class="mi-motion-loadhelix-pane">
+          <div class="mi-motion-loadhelix-head"><span class="material-symbols-outlined" aria-hidden="true">bar_chart</span><span>Output · building…</span></div>
+          <div class="cmp-empty mi-motion-loadhelix-host" role="status" aria-live="polite" aria-label="Loading output"></div>
+        </div>
+        <p class="mi-motion-hint">A real loading board — the shared loader overlays the twisting rope live. Turn the loading style to stripes in Appearance to see the striped skeleton this replaces.</p>
+      </div>`,
+  },
+  {
     id: 'accordion', group: 'anim', icon: 'expand_more', title: 'Accordion &amp; panel open',
     src: '.mi-acc · panelBounceLeft / Right',
     used: 'This page’s sections · side panels (History, NFP, Compare, Settings)',
@@ -8737,7 +8786,7 @@ function motionCard(item) {
 function renderMotion(opts) {
   if (opts && opts.headOnly) {
     return miHeadOnly('mi-motion', 'Motion &amp; Resize',
-      'Every animation and every drag/resize interaction in the app — explained and running live. Count-ups, chart replay, streaming, chip shimmer and fly-in, both helixes, accordion open, the module splitter, the five width tiers, drag-to-reorder and drag-to-file. All of it honors <code>prefers-reduced-motion</code>.',
+      'Every animation and every drag/resize interaction in the app — explained and running live. Count-ups, chart replay, streaming, chip shimmer and fly-in, all three helixes, accordion open, the module splitter, the five width tiers, drag-to-reorder and drag-to-file. All of it honors <code>prefers-reduced-motion</code>.',
       moduleReadyToggleHTML('mi-motion', 'Motion & Resize') + moduleControlsHTML('mi-motion'));
   }
   const animN = MOTION_ITEMS.filter((i) => i.group === 'anim').length;
@@ -8748,7 +8797,7 @@ function renderMotion(opts) {
         <div class="mi-module-head-text">
           <h2 class="mi-module-title">Motion &amp; Resize</h2>
           <p class="mi-module-lede">Every animation and every drag/resize interaction in the app — explained and
-            running live. Count-ups, chart replay, streaming, chip shimmer and fly-in, output chip fan, chat composer sheen, both helixes, accordion
+            running live. Count-ups, chart replay, streaming, chip shimmer and fly-in, output chip fan, chat composer sheen, all three helixes, accordion
             open, sticky drawer slide-in, activity-strip ticks, and the jam equalizer sit next to the module splitter, the five width tiers, the carousel rail, drag-to-reorder,
             drag-to-file, and drag-to-found-a-folder (Library card-on-card).
             All of it honors <code>prefers-reduced-motion</code>.</p>
@@ -9893,8 +9942,8 @@ const RESPONSIVE_SURFACES = [
     src: 'js/nav-responsive.js',
     used: 'Every signed-in page',
     changes: ['mobile'],
-    lede: 'One navigation at every size: a vertical rail down the left of the shell, collapsed to its icons, that expands in place when you tap a control inside it. A phone and a tablet get the same module a desktop gets — the rail just sits tighter against both of its edges. It never becomes a top bar, so Pivot Navigation is held back below tablet width and applies again as soon as the window is wide enough.',
-    mobile: 'The same left icon rail, at its narrowest. Tap the menu icon and it expands in place; tap again and it collapses. No drawer, no floating chip, and no top bar.',
+    lede: 'One navigation at every size: a vertical rail down the left of the shell, collapsed to its icons, that expands when you tap a control inside it. A phone and a tablet get the same module a desktop gets — the rail just sits tighter against both of its edges. It never becomes a top bar, so Pivot Navigation is held back below tablet width and applies again as soon as the window is wide enough. The one difference on a phone is where the expanded panel goes: there is no room to push the content aside, so it floats above it instead.',
+    mobile: 'The same left icon rail, at its narrowest, and the content beside it runs to the right edge of the screen. Tap the menu icon and the full nav floats over the page rather than squeezing it; tap again and it collapses back to the rail. No drawer, no floating chip, and no top bar.',
     laptop: 'The same left rail, with a little more air around the icons. Pivot and Minimal UI are free to apply here.',
     larger: 'Same nav again. Extra width goes to the modules, not the rail.',
   },
@@ -9914,9 +9963,19 @@ const RESPONSIVE_SURFACES = [
     used: 'Every chat module — WISEcodeAI, Add Product, Reformulation, Studio',
     changes: ['laptop', 'larger'],
     lede: 'Chat opens at a width that belongs to the <em>display</em>, not the browser window. A 14-inch MacBook Pro class stays single. Anything wider opens double. Resize or un-maximise the window and the default does not flip. You can still cycle single → double → fill → custom in the session; the next load puts it back.',
-    mobile: 'The chat is the page — full width, no neighbour beside it once the row stacks. The load default is still single, because the display is a phone.',
+    mobile: 'The chat is the page — full width, no neighbour beside it once the row stacks, and flush to the right edge of the screen (the page frame and the card\u2019s shadow gutter both stand down on that side). The load default is still single, because the display is a phone.',
     laptop: 'Opens single (the 380px pane). The module to its right fills the rest of the row.',
     larger: 'Opens double. Same four-tier control; the extra default width is the only load difference from a laptop.',
+  },
+  {
+    id: 'welcome', icon: 'auto_awesome', title: 'Welcome screen defaults',
+    src: 'js/wiseai-chat.js',
+    used: 'Every chat module’s welcome state',
+    changes: ['mobile'],
+    lede: 'Two things the welcome opens with are decided by the size of the window rather than the page: the large “at a glance” overview cards, and the Helix behind everything. Both are still switches you can flip in the three-dot menu, and a choice you have already made always beats the default — this only decides where a fresh load starts.',
+    mobile: 'The big overview cards start collapsed, even on a page that asks for them open: they are a wide side-by-side rail, and on a phone they push the headline, the chips and the composer down behind a screenful of chrome. The Helix opens dimmer, at 35%, and holds still instead of turning — at full strength it competes with the type on top of it, and a constant twist is distracting on a screen held in one hand.',
+    laptop: 'Cards open wherever the page asks for them. The Helix runs the published Scene pose: 50% opacity, turning.',
+    larger: 'Same as a laptop. A bigger display does not change either default.',
   },
   {
     id: 'row', icon: 'view_column', title: 'Modules row',
@@ -9924,9 +9983,19 @@ const RESPONSIVE_SURFACES = [
     used: 'Every workspace page with a modules row',
     changes: ['mobile'],
     lede: 'Above phone width the row is a horizontal belt: chat in the middle, History tucked left, Output and the rest tucked right. Narrow the browser and pinned widths overflow sideways as a carousel — they never squeeze. Only at 560px does the row stack into a single column.',
-    mobile: 'At 560px the row becomes a vertical stack. Chat is full width; History, Output, and the rest sit above or below. Fill defaults stand down.',
+    mobile: 'At 560px the row becomes a vertical stack. Chat is full width; Output and the rest sit above or below. Fill defaults stand down. History is the exception — it leaves the row entirely and floats over the page (see the History module).',
     laptop: 'Side-by-side belt. Chat single, neighbour fill. Shortening the window shortens the work surface inside each card — widths stay put.',
     larger: 'Same belt. Chat opens double, so the neighbour has less leftover, but the row does not restack.',
+  },
+  {
+    id: 'history', icon: 'history', title: 'History module',
+    src: 'pages/wise.css · js/chat-history.js',
+    used: 'Every chat module — the conversation list left of the chat',
+    changes: ['mobile'],
+    lede: 'History is normally a drawer: it sits left of the chat and tucks in behind it, which is why the edge facing the chat has no border and no corners, and why the chat slides across to make room when you open it. On a phone it stops being a drawer and becomes a whole module that lifts over the page, the same way the primary navigation does.',
+    mobile: 'Opening History floats it above the page as a complete card — its own right edge, all four corners, the card shadow, and the page frame on its top, bottom and right — pinned against the nav rail, with the chat left full width underneath. Nothing is pushed aside and nothing is stacked above the chat. The nav’s History icon still opens and closes it.',
+    laptop: 'The tucked drawer: flush against the chat’s left edge, sliding a few pixels under it, and the chat moves over to make room.',
+    larger: 'Same drawer, same tuck. The wider chat simply has more room to give.',
   },
   {
     id: 'tables', icon: 'table_rows', title: 'Tables',
@@ -10003,8 +10072,8 @@ const RESPONSIVE_SURFACES = [
     src: 'js/sticky-modules.js',
     used: 'Output, Nutrition Facts, Turns, Help, Verify, Compare',
     changes: ['mobile'],
-    lede: 'On a laptop the flanking modules tuck behind the chat as a utility belt. On a phone there is no belt — a focused task rises as a full-width sheet or stacked card instead of a crushed side drawer.',
-    mobile: 'No side tuck. A task is a stacked card or a bottom sheet with a grab handle, a scrollable body, and an action row.',
+    lede: 'On a laptop the flanking modules tuck behind the chat as a utility belt. On a phone there is no belt — a focused task rises as a full-width sheet, a stacked card, or a module floating over the page, instead of a crushed side drawer.',
+    mobile: 'No side tuck. A task is a stacked card, a bottom sheet with a grab handle, a scrollable body and an action row, or — for History and the expanded nav — a complete module lifted over the page.',
     laptop: 'Sticky belt: History left of chat, Output under the chat, peers to the right, nested drawers shorter still.',
     larger: 'Same belt. The wider chat is still the buckle; drawers do not grow over it.',
   },
@@ -15862,7 +15931,7 @@ export const ALL_MODULES_WISEAI = {
     components: 'The <strong>Component Library</strong> renders every reusable component in its default state with its real classes, its variations, and the surfaces where it’s used. <strong>Output pane contents</strong> pins the Output module to phone, tablet, and laptop widths so you can see tables become cards, KPI tiles drop to one column, and the heat matrix scroll.',
     reportbuilder: 'The <strong>Report builder</strong> is how a conversation becomes a report. In Output, open the title dropdown, plus the charts you want, and tap <strong>Generate Report</strong>. That opens a nested drawer to the right of Output. You can rename the report and each chart, add a note, swap a chart for another output from the same thread, or delete one. <strong>Save or Share</strong> writes it to the Reports shelf — the same store Reformulation uses. Export as PDF prints the drawer. The card below is the live specimen.',
     tarch: 'The <strong>Transcript Architecture</strong> freezes one thread and labels every visible piece — History, transcript lines, the inline table, the transcript carousel, the landmark strip, output chips, intent chips, the composer, the token readout, the admin <strong>Turns</strong> sticky drawer, and Roll · Crawl · Walk · Run. Each card links to that component in the library.',
-    motion: `The <strong>Motion &amp; Resize</strong> module catalogs all <strong>${MOTION_ITEMS.length} motion systems</strong> — count-up, chart replay, streaming, chip shimmer and fly-in, output chip fan, chat composer sheen, both helixes, accordion open, sticky drawer slide-in, activity-strip ticks, the jam equalizer, plus the module splitter, five width tiers, drag-to-reorder and drag-to-file — each running live.`,
+    motion: `The <strong>Motion &amp; Resize</strong> module catalogs all <strong>${MOTION_ITEMS.length} motion systems</strong> — count-up, chart replay, streaming, chip shimmer and fly-in, output chip fan, chat composer sheen, all three helixes, accordion open, sticky drawer slide-in, activity-strip ticks, the jam equalizer, plus the module splitter, five width tiers, drag-to-reorder and drag-to-file — each running live.`,
     responsive: () => {
       const screen = respScreenWidth();
       const chat = screen > RESP_CHAT_SINGLE_MAX ? 'double' : 'single';

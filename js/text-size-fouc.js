@@ -606,6 +606,20 @@
   } catch (_) {}
 })();
 
+/** FOUC guard — Nav slogan (the sideways rail line) is on by default. Keep in
+    sync with isNavSloganOn() / applyNavSlogan() in js/topbar.js so the
+    collapsed rail never flashes blank before Appearance restores. Only a
+    stored off (`0`) skips the class. */
+(function () {
+  try {
+    if (localStorage.getItem('wise-nav-slogan') !== '0') {
+      document.documentElement.classList.add('nav-slogan-on');
+    }
+  } catch (_) {
+    document.documentElement.classList.add('nav-slogan-on');
+  }
+})();
+
 /** FOUC guard — Blue chat surface (wise-chat-tint) is on by default. Keep
     in sync with isChatTintOn() / applyChatTint() in js/topbar.js so the
     brand-blue wash is on the first paint of every page, not only after

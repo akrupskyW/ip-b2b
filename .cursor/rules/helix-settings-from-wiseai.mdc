@@ -14,10 +14,21 @@ The published load default lives in `BGANIM_PUBLISH_POSE` in
 change on wiseai writes the shared `wise:chat-bg-anim-*` keys and every
 other chat helix follows.
 
+## Mobile view is the one sanctioned departure
+
+Below 768px a fresh load starts from `BGANIM_PHONE_POSE` — the same Scene
+pose at **35% opacity and paused**. It is app-wide (every chat module, not
+one page), it lives beside the published pose rather than in a caller, and
+everything reads it through `bgAnimLoadPose()`. It is a *default*: a stored
+opacity or an explicit Play / Pause still wins at any width.
+
+This is not a per-page fallback and must not be "corrected" back to Scene.
+
 ## What this means on the surface
 
 - Open any chat with Helix → it matches the wiseai helix, not a local look.
 - Fresh load (no saved preference) → Scene: on, 3D, ~50% opacity.
+- Fresh load in mobile view → the same pose, dimmed to 35% and held still.
 - Change a slider on wiseai → the same values land on every other helix.
 
 ## Rules for the agent
@@ -25,8 +36,12 @@ other chat helix follows.
 - Never invent a per-page Helix default (no `20%` / `10°` / `30%` fallbacks).
 - If wiseai and another page disagree, wiseai wins — bring the other page
   into line, not the reverse.
-- Read `BGANIM_PUBLISH_POSE` / `readBgAnimOpacityPct()` / `readBgAnimAngle()`
-  (and the other `readBgAnim*` helpers). Do not hardcode pose numbers.
+- Read `bgAnimLoadPose()` for a load default, and `readBgAnimOpacityPct()` /
+  `readBgAnimAngle()` (and the other `readBgAnim*` helpers) for live values.
+  Do not hardcode pose numbers, and do not read `BGANIM_PUBLISH_POSE`
+  directly where a load default is what you want — that skips mobile view.
+- A new tier pose goes next to `BGANIM_PUBLISH_POSE` as a named frozen
+  override of it, never as a literal inside a caller.
 - Decorative still-frame helices (e.g. the paused product-photo strip on
   Add / View Product) are not the chat helix. Do not retune them to Scene.
 

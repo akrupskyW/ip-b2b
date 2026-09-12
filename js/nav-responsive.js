@@ -1,5 +1,10 @@
 /**
- * Responsive primary navigation — the viewport tier the nav layout reads.
+ * Responsive shell — the viewport tiers the app's layout and defaults read.
+ *
+ * Two tiers, matching the two breakpoints in pages/wise.css: `phone`
+ * (`isPhoneViewport`) and `phone or tablet` (`isNavNarrow`). They live here
+ * rather than in each caller so one measurement answers for the nav, the
+ * chat's load defaults, and anything added later.
  *
  * The primary navigation is ONE module at every screen size: a vertical rail
  * in the left column of the shell, collapsed to its icons, which expands in
@@ -17,8 +22,8 @@
  *
  * Callers read `navCanPivot()` before applying pivot and listen for
  * `wise:nav-tier` to re-resolve when the tier flips. Deliberately imports
- * nothing: js/topbar.js and js/agent-menu.js both depend on it, and a shared
- * leaf keeps that out of an import cycle.
+ * nothing: js/topbar.js, js/agent-menu.js and js/wiseai-chat.js all depend on
+ * it, and a shared leaf keeps that out of an import cycle.
  */
 
 /** Widest viewport still treated as "phone or tablet" for the navigation.
@@ -26,7 +31,14 @@
     Minimal UI FOUC guard in js/text-size-fouc.js. */
 export const NAV_NARROW_MAX_PX = 1024;
 
+/** Widest viewport treated as a phone — "mobile view". Keep in sync with the
+    `max-width: 768px` blocks in pages/wise.css, which narrow the nav rail,
+    run the chat out to the screen edge, pop History over the page, and
+    shrink type by `--wise-phone-type-scale`. */
+export const PHONE_MAX_PX = 768;
+
 const NARROW_QUERY = `(max-width: ${NAV_NARROW_MAX_PX}px)`;
+const PHONE_QUERY = `(max-width: ${PHONE_MAX_PX}px)`;
 
 /** True when the viewport is a phone or a tablet — narrow enough that the
     navigation must stay a left-side vertical rail. */
@@ -38,6 +50,13 @@ export function isNavNarrow() {
     A narrow viewport keeps the nav vertical whatever the preference says. */
 export function navCanPivot() {
   return !isNavNarrow();
+}
+
+/** True in mobile view. Read at load by surfaces whose *default* differs on a
+    phone — the chat's Helix and its overview cards. A stored preference still
+    wins over the tier, so this only decides where a fresh load starts. */
+export function isPhoneViewport() {
+  try { return window.matchMedia(PHONE_QUERY).matches; } catch (_) { return false; }
 }
 
 /* ── Announce tier flips ───────────────────────────────────────────────────

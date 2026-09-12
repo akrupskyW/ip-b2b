@@ -67,6 +67,8 @@ import {
   applyCwrUi,
   isGuidesOn,
   applyGuides,
+  isNavSloganOn,
+  applyNavSlogan,
   getBrandStyle,
   applyBrandStyle,
   isAdminControlsOn,
@@ -749,6 +751,7 @@ export function buildAppearanceBody({
         ${adminOnly(adminToggle('data-navmodules="1"', isNavModulesOn(), 'Nav &amp; History icons', 'Logo, menu, History, new chat', 'Menu opens the labelled navigation; the History icon opens History, and history off closes it. While either is open, the extra icons hide and History closes back to the four-icon rail. New chat is a circle and starts a conversation', false, false, 'view_sidebar'))}
         ${adminOnly(adminToggle('data-stickyflush="1"', isStickyFlushOn(), 'Flush sticky modules', 'Match the primary drawer', 'Make the secondary sticky module the same height as the primary one it tucks behind', false, false, 'height'))}
         ${adminOnly(adminToggle('data-header="1"', isHeaderFloatOn(), 'Header float', 'Hide module headers', 'Hide module header strips and float their controls over the content', false, false, 'web_asset'))}
+        ${adminOnly(adminToggle('data-navslogan="1"', isNavSloganOn(), 'Nav slogan', 'Sideways line in the rail', 'Fill the empty middle of the collapsed navigation rail with a sideways slogan about knowing the health of your food', false, false, 'format_quote'))}
         ${adminOnly(helixStudioSection())}
       `);
   const experience = apGroup('Experience', `
@@ -1089,6 +1092,7 @@ export function wireAppearancePopover(pop, ctx = {}) {
     if (within('[data-activitystrip]')) { ev.stopPropagation(); applyActivityStrip(!isActivityStripOn()); render(); return; }
     if (within('[data-cwrui]'))       { ev.stopPropagation(); applyCwrUi(!isCwrUiOn());          render(); return; }
     if (within('[data-guides]'))      { ev.stopPropagation(); applyGuides(!isGuidesOn());        render(); return; }
+    if (within('[data-navslogan]'))   { ev.stopPropagation(); applyNavSlogan(!isNavSloganOn());   render(); return; }
     if (within('[data-tour]')) {
       ev.stopPropagation();
       const flip = () => {

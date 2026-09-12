@@ -119,6 +119,23 @@ import './load-anim.js';
   } catch (_) {}
 })();
 
+/* Load the inline module rail (js/inline-module-rail.js). An "Inline" chip can
+   drop full modules — Nutrition Facts, the ingredient list, a score breakdown —
+   straight into the transcript as a height-capped, drag-resizable rail instead
+   of docking them on the right. Injected here so every chat host shares one
+   definition; the file self-guards, injects its own CSS, and drives resize
+   through document-level pointer delegation so a rail built after load works. */
+(function loadInlineModuleRail() {
+  try {
+    if (typeof document === 'undefined' || window.__wiseInlineRailLoaded) return;
+    window.__wiseInlineRailLoaded = true;
+    var s = document.createElement('script');
+    s.src = new URL('./inline-module-rail.js', import.meta.url).href;
+    s.defer = true;
+    (document.head || document.documentElement).appendChild(s);
+  } catch (_) {}
+})();
+
 /* Load the data-chip explainer tooltip (js/chip-tooltip.js) on every page that
    renders the WISE nav. It gives every Shield / GRAS status chip an instant
    hover tooltip explaining what the chip means, with the same thumbs up/down +

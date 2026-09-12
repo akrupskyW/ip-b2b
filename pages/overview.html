@@ -156,12 +156,23 @@
 
   <script>
     /* Minimum font-size floor (this page only): no rendered text ever drops
-       below 12px. Content here is injected dynamically by agent-overview.js and
-       the chart modules, so a MutationObserver re-applies the floor as nodes
-       arrive. Decorative em-based glyphs (e.g. the superscript % on a large
-       numeral) compute well above 12px and are left untouched. */
+       below the UI base (12px on desktop, 15% smaller on a phone so this
+       floor cannot undo --wise-phone-type-scale). Content here is injected
+       dynamically by agent-overview.js and the chart modules, so a
+       MutationObserver re-applies the floor as nodes arrive. Decorative
+       em-based glyphs (e.g. the superscript % on a large numeral) compute
+       well above the floor and are left untouched. */
     (function () {
-      var MIN = 12;
+      function floorPx() {
+        try {
+          if (window.matchMedia('(max-width: 768px)').matches) {
+            var s = parseFloat(getComputedStyle(document.documentElement)
+              .getPropertyValue('--wise-phone-type-scale'));
+            return 12 * (s > 0 ? s : 0.85);
+          }
+        } catch (_) {}
+        return 12;
+      }
       function clamp(el) {
         if (el.nodeType !== 1 || el.dataset.wiseMinFs === '1') return;
         /* Never touch the navigation chrome — the brand wordmark + its 7px
@@ -174,8 +185,9 @@
           return;
         }
         var fs = parseFloat(window.getComputedStyle(el).fontSize);
-        if (fs && fs < MIN) {
-          el.style.setProperty('font-size', MIN + 'px', 'important');
+        var min = floorPx();
+        if (fs && fs < min) {
+          el.style.setProperty('font-size', min + 'px', 'important');
         }
         el.dataset.wiseMinFs = '1';
       }

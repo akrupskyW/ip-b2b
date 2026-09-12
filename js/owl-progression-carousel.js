@@ -6,12 +6,16 @@
    stays the chat surface — no black rail. One shared definition; pages host
    it via owlProgressionCarouselHtml() + auto-mount.
 
-   Lottie and video wait for a click (play once, click again to replay).
-   Stills are PNG with a punched-out studio matte so the chat shows through.
+   Every owl is tappable and opens the shared modal panel at a larger size.
+   Motion owls play once in that panel (click again to replay). Stills are
+   PNG with a punched-out studio matte so the chat shows through.
    ========================================================================== */
+
+import { openModal, modalHTML } from './wise-modal.js';
 
 const STYLE_ID = 'wise-owl-progression-styles';
 const LOTTIE_CDN = 'https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie_light.min.js';
+const DETAIL_ID = 'owl-prog-detail';
 
 const DEFAULT_BASE = '../assets/owl-progression';
 
@@ -76,6 +80,13 @@ export function owlProgressionSlides(base) {
       label: 'Green owl · scan',
       tone: 'green',
     },
+    {
+      kind: 'video',
+      lightSrc: asset(b, 'owl-wisecode-2.mp4'),
+      darkSrc: asset(b, 'owl-wisecode-2.mp4'),
+      label: 'WISEcode owl · wings',
+      tone: 'clay',
+    },
   ];
 }
 
@@ -101,11 +112,8 @@ export function owlProgressionCarouselHtml(opts) {
   const slides = owlProgressionSlides(base);
   const items = slides.map((s, i) => {
     const playable = s.kind === 'lottie' || s.kind === 'video';
-    const playAttrs = playable
-      ? ` tabindex="0" role="button" aria-label="Play ${esc(s.label)}"`
-      : '';
     return (
-      `<div class="sc-owl-prog-item${playable ? ' is-playable' : ''}" data-owl-slide="${i}" data-owl-kind="${esc(s.kind)}" data-owl-tone="${esc(s.tone || '')}"${playAttrs}>`
+      `<div class="sc-owl-prog-item is-openable${playable ? ' is-playable' : ''}" data-owl-slide="${i}" data-owl-kind="${esc(s.kind)}" data-owl-tone="${esc(s.tone || '')}" tabindex="0" role="button" aria-label="View ${esc(s.label)}">`
       + itemInnerHtml(s, i)
       + `<span class="sc-owl-prog-cap">${esc(s.label)}</span>`
       + `</div>`
@@ -196,11 +204,34 @@ function injectStyles() {
   background: transparent;
   user-select: none;
 }
-.sc-owl-prog-item.is-playable { cursor: pointer; }
-.sc-owl-prog-item.is-playable:focus {
+.sc-owl-prog-item.is-openable { cursor: pointer; }
+.sc-owl-prog-item.is-openable:focus {
   outline: none;
 }
-.sc-owl-prog-item.is-playable:focus-visible {
+.sc-owl-prog-item.is-openable:focus-visible {
+  outline: 2px solid var(--primary, #1d4ed8);
+  outline-offset: 4px;
+  border-radius: 14px;
+}
+.wise-modal-scrim--panel.sc-owl-prog-scrim .wise-modal.sc-owl-prog-modal {
+  width: min(720px, calc(100vw - 48px));
+  max-width: min(720px, calc(100vw - 48px));
+}
+.sc-owl-prog-modal-body {
+  align-items: center;
+}
+.sc-owl-prog-detail {
+  --sc-owl-media-h: min(560px, calc(100vw - 96px), calc(100vh - 220px));
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sc-owl-prog-detail.is-playable { cursor: pointer; }
+.sc-owl-prog-detail.is-playable:focus {
+  outline: none;
+}
+.sc-owl-prog-detail.is-playable:focus-visible {
   outline: 2px solid var(--primary, #1d4ed8);
   outline-offset: 4px;
   border-radius: 14px;
@@ -398,6 +429,129 @@ function scrollByItem(root, dir) {
   viewport.scrollBy({ left: dir * step, behavior: 'smooth' });
 }
 
+function slideFromItem(item) {
+  if (!item) return null;
+  const kind = item.getAttribute('data-owl-kind') || '';
+  const tone = item.getAttribute('data-owl-tone') || '';
+  const cap = item.querySelector('.sc-owl-prog-cap');
+  const label = cap && cap.textContent ? cap.textContent.trim() : 'Owl';
+  if (kind === 'lottie') {
+    const el = item.querySelector('[data-owl-lottie]');
+    const src = el && el.getAttribute('data-owl-lottie');
+    if (!src) return null;
+    return { kind, src, label, tone };
+  }
+  if (kind === 'image') {
+    const img = item.querySelector('img.sc-owl-prog-img, img');
+    const src = img && img.getAttribute('src');
+    if (!src) return null;
+    return { kind, src, label, tone };
+  }
+  if (kind === 'video') {
+    const vid = item.querySelector('video.sc-owl-prog-vid, video');
+    if (!vid) return null;
+    return {
+      kind,
+      lightSrc: vid.dataset.owlLight || '',
+      darkSrc: vid.dataset.owlDark || '',
+      label,
+      tone,
+    };
+  }
+  return null;
+}
+
+function destroyDetailMedia(root) {
+  if (!root) return;
+  root.querySelectorAll('[data-owl-lottie]').forEach((el) => {
+    const anim = el.__wiseLottie;
+    if (!anim) return;
+    try { if (typeof anim.destroy === 'function') anim.destroy(); } catch (_) { /* */ }
+    el.__wiseLottie = null;
+  });
+  root.querySelectorAll('video').forEach((v) => {
+    try { v.pause(); } catch (_) { /* */ }
+  });
+}
+
+function whenLottieReady(el) {
+  const anim = el && el.__wiseLottie;
+  if (!anim) return Promise.resolve();
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = () => {
+      if (settled) return;
+      settled = true;
+      resolve(anim);
+    };
+    try {
+      if (anim.isLoaded) { done(); return; }
+    } catch (_) { /* */ }
+    try { anim.addEventListener('DOMLoaded', done); } catch (_) { done(); return; }
+    setTimeout(done, 2500);
+  });
+}
+
+/**
+ * Open the shared panel with this owl at a larger size.
+ * Motion plays once in the panel; click the large owl to replay.
+ */
+export function openOwlDetail(item) {
+  const slide = slideFromItem(item);
+  if (!slide) return null;
+  const playable = slide.kind === 'lottie' || slide.kind === 'video';
+  pauseItemMedia(item);
+
+  let detailEl = null;
+  const opened = openModal({
+    id: DETAIL_ID,
+    panel: true,
+    extraScrimClass: 'sc-owl-prog-scrim',
+    html: modalHTML({
+      eyebrow: 'Wise Owl Progression',
+      title: esc(slide.label),
+      titleId: 'owl-prog-detail-title',
+      modalClass: 'sc-owl-prog-modal',
+      bodyClass: 'sc-owl-prog-modal-body',
+      body:
+        `<div class="sc-owl-prog-detail${playable ? ' is-playable' : ''}" data-owl-kind="${esc(slide.kind)}"`
+        + (playable ? ` tabindex="0" role="button" aria-label="Play ${esc(slide.label)}"` : '')
+        + `>${itemInnerHtml(slide, 0)}</div>`,
+    }),
+    onOpen(scrim) {
+      detailEl = scrim.querySelector('.sc-owl-prog-detail');
+      const closeBtn = scrim.querySelector('.wise-modal-close');
+      if (closeBtn) closeBtn.focus();
+      if (!detailEl) return;
+      const boot = async () => {
+        if (slide.kind === 'lottie') {
+          await mountLotties(detailEl);
+          await whenLottieReady(detailEl.querySelector('[data-owl-lottie]'));
+          await new Promise((r) => requestAnimationFrame(() => r()));
+        }
+        if (slide.kind === 'video') applyVideoTheme(detailEl.querySelector('video'));
+        if (playable) playItemMedia(detailEl);
+      };
+      boot();
+      if (playable) {
+        const replay = () => playItemMedia(detailEl);
+        detailEl.addEventListener('click', replay);
+        detailEl.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            replay();
+          }
+        });
+      }
+    },
+    onClose() {
+      destroyDetailMedia(detailEl);
+      detailEl = null;
+    },
+  });
+  return opened;
+}
+
 async function mountLotties(root) {
   const nodes = Array.from(root.querySelectorAll('[data-owl-lottie]'));
   if (!nodes.length) return;
@@ -452,18 +606,18 @@ function mountOne(root) {
       scrollByItem(root, dir);
       return;
     }
-    const item = e.target.closest('.sc-owl-prog-item.is-playable');
-    if (item && root.contains(item)) playItemMedia(item);
+    const item = e.target.closest('.sc-owl-prog-item.is-openable');
+    if (item && root.contains(item)) openOwlDetail(item);
   });
 
   root.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowLeft') { e.preventDefault(); scrollByItem(root, -1); }
     else if (e.key === 'ArrowRight') { e.preventDefault(); scrollByItem(root, 1); }
     else if (e.key === 'Enter' || e.key === ' ') {
-      const item = e.target.closest('.sc-owl-prog-item.is-playable');
+      const item = e.target.closest('.sc-owl-prog-item.is-openable');
       if (item && root.contains(item)) {
         e.preventDefault();
-        playItemMedia(item);
+        openOwlDetail(item);
       }
     }
   });
@@ -473,7 +627,7 @@ function mountOne(root) {
   const viewport = root.querySelector('[data-owl-viewport]');
 
   /* Pause clips that leave the strip so they are not decoding off-screen.
-     Do not auto-start — play is click-only. */
+     Do not auto-start — a tap opens the detail panel. */
   if (typeof IntersectionObserver !== 'undefined') {
     const io = new IntersectionObserver((entries) => {
       entries.forEach((en) => {
@@ -540,6 +694,7 @@ if (typeof window !== 'undefined') {
     mount: mountOwlProgressionCarousels,
     observe: observeOwlProgression,
     slides: owlProgressionSlides,
+    openDetail: openOwlDetail,
   };
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => observeOwlProgression(document), { once: true });

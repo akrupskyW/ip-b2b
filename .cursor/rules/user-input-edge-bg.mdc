@@ -1,0 +1,46 @@
+---
+description: Sent user lines in the transcript get an edge-to-edge wash in a light tint of the member's ink — the composer and the rest of the thread do not move
+alwaysApply: true
+---
+
+# User Ask Lines Are Edge To Edge
+
+Once the member has sent a chat, **that ask in the transcript** has a
+background that runs **chat-module edge to edge**. The fill is a lighter
+shade of the member's own text color — brand blue in light, the
+brightened member ink in dark.
+
+This is the **sent line**, not the composer. The typing rail stays the
+inset pill it already is. The rest of the transcript does not change:
+same gutter, same type, same assistant lines, same ask copy sitting on
+the same pixels. Only the wash behind the member's line reaches the
+module edges.
+
+This is app-wide and permanent.
+
+## What this means on the surface
+
+- Send an ask → the line lands in the thread with a full-width tint
+  behind it, from one side of the chat module to the other.
+- The avatar, the copy, and the timestamp stay on the shared gutter.
+  They do not shift, re-wrap, or grow.
+- Assistant answers have no matching band. Database-switch notes are
+  not asks and stay bare.
+- The composer at the bottom does not become a full-bleed bar. Do not
+  "make the input edge to edge" to satisfy this rule.
+
+## How it is wired
+
+Shared CSS in `pages/wise.css` on `.sc-line-you:not(.sc-line-event)`.
+A `::before` cancels the transcript inset with the same cqi formula
+the output rails use, so a percentage cannot re-resolve against the
+line. Isolation keeps the wash under the type.
+
+## Rules for the agent
+
+- Never restyle the composer to match this wash.
+- Never move the ask's type, avatar, or gutter to "make the background
+  full width." The fill bleeds; the line stays.
+- Do not paint assistant lines, event rows, or the whole transcript.
+- Do not fork this per page. A new chat host inherits it from the
+  shared line — see the nothing-page-local rule.

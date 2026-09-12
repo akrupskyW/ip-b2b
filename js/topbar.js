@@ -256,9 +256,72 @@ export function mountMenuFooter({
       ${profileHtml}
     </div>`;
 
+  mountNavSlogan(inner);
   wireMenuFooter();
   syncSearchFloatedFooter();
   return footer;
+}
+
+/*
+ * The sideways "ghost" slogan that fills the empty middle of the collapsed
+ * navigation rail. It only shows while the panel is a rail with nothing in its
+ * middle (see .menu-slogan rules in wise.css, gated on html.nav-slogan-on and
+ * #menu-panel.mp-rail), so the expanded nav — and any rail that still lists
+ * agent icons — is untouched. It is a real ghost button: tapping it opens the
+ * WISEcodeAI chat, where you actually figure out the health of your food.
+ * Lives as a direct child of .menu-inner (between the panel body and the
+ * footer) because the "Nav & History icons" rail hides .menu-panel-body
+ * entirely. Injected here so every shell that mounts the nav gets the identical
+ * control (nothing page-local).
+ */
+/* The rail slogan rotates through a set of real WISEcodeAI asks so a fresh
+   load shows a different question each time. Every entry names a live intent
+   on wiseai.html — tapping the slogan lands on WISEcodeAI and plays that
+   intent's full transcript (charts, tables, references, closing chips) with
+   the question as the asked line (see the ?intent= launch in wiseai.html).
+   Kept here (not page-local) so every shell that mounts the nav draws from the
+   identical set. */
+const NAV_SLOGANS = [
+  { text: 'How healthy is your food, really?', intent: 'brandwelcome' },
+  { text: 'What\u2019s actually in your ingredients?', intent: 'gras' },
+  { text: 'Which snacks score above 70?', intent: 'topbrands' },
+  { text: 'How ultra-processed is your cart?', intent: 'kraft' },
+  { text: 'Compare two foods side by side?', intent: 'compare' },
+  { text: 'Which brands clean up their labels?', intent: 'sweeteners' },
+  { text: 'Is that label telling the whole truth?', intent: 'energy' },
+  { text: 'What can WISEcodeAI find for you?', intent: 'atlas' },
+];
+
+/** Pick a rail slogan at random so each page load rotates the question. */
+function pickNavSlogan() {
+  const list = NAV_SLOGANS;
+  if (!list.length) return { text: 'How healthy is your food, really?', intent: 'brandwelcome' };
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+function mountNavSlogan(inner) {
+  if (!inner || inner.querySelector('.menu-slogan')) return;
+  let href = 'wiseai.html';
+  try {
+    if (location.pathname.indexOf('/pages/') === -1) href = 'pages/wiseai.html';
+  } catch (_) { /* non-browser — keep the bare filename */ }
+  const pick = pickNavSlogan();
+  const text = pick.text;
+  /* Carry the intent + the exact question so wiseai plays the matching
+     transcript and shows this slogan as the asked line. */
+  const params = new URLSearchParams({ intent: pick.intent, ask: text });
+  const slogan = document.createElement('a');
+  slogan.className = 'menu-slogan';
+  slogan.href = href + '?' + params.toString();
+  slogan.setAttribute('data-nav-slogan', '');
+  slogan.setAttribute('aria-label', 'Ask WISEcodeAI: ' + text);
+  const span = document.createElement('span');
+  span.className = 'menu-slogan-text';
+  span.textContent = text;
+  slogan.appendChild(span);
+  const footer = inner.querySelector('.menu-footer');
+  if (footer && footer.parentElement === inner) inner.insertBefore(slogan, footer);
+  else inner.appendChild(slogan);
 }
 
 /* Search on: park Appearance + avatar on the search band, at the far
@@ -1178,6 +1241,34 @@ export function applyGuides(on) {
 /** Restore the persisted guides state onto the document. */
 export function restoreGuides() {
   applyGuides(isGuidesOn());
+}
+
+/* Nav slogan — the sideways "ghost" line that fills the empty middle of the
+   collapsed primary-navigation rail with a clever bit of copy about figuring
+   out the health of your food. Only ever shows while the nav is collapsed to
+   its icon rail (see .menu-slogan CSS in wise.css); the empty space is its
+   whole reason to exist. Admin-only Appearance toggle writes `wise-nav-slogan`
+   and toggles `nav-slogan-on` on <html>. Defaults ON so the rail is never a
+   blank column. Keep in sync with the FOUC twin in js/text-size-fouc.js. */
+const NAV_SLOGAN_KEY = 'wise-nav-slogan';
+
+/** True when the sideways nav slogan is shown in the collapsed rail. Defaults ON. */
+export function isNavSloganOn() {
+  try { return localStorage.getItem(NAV_SLOGAN_KEY) !== '0'; } catch { return true; }
+}
+
+/** Toggle the nav-slogan-on class on <html> and persist it. */
+export function applyNavSlogan(on) {
+  document.documentElement.classList.toggle('nav-slogan-on', !!on);
+  try { localStorage.setItem(NAV_SLOGAN_KEY, on ? '1' : '0'); } catch {}
+  try {
+    document.dispatchEvent(new CustomEvent('wise:nav-slogan', { detail: { on: !!on } }));
+  } catch {}
+}
+
+/** Restore the persisted nav-slogan state onto the document. */
+export function restoreNavSlogan() {
+  applyNavSlogan(isNavSloganOn());
 }
 
 /* Module spacing — admin-only control for the horizontal gap BETWEEN the modules

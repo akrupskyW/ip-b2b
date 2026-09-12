@@ -404,7 +404,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Panel edits narrate into the chat',
-        how: 'Editing a field on the Nutrition Facts panel calls <code>commitField(..., { fromPanel: true })</code>, which fires <code>announcePanelEdit()</code> — a user line plus an assistant reply — so the transcript reads the same whether you typed the value or set it on the panel. In-place fixes pass <code>{ inPlace: true }</code> to keep focus.',
+        how: 'Anything on the Nutrition Facts panel is a chat turn. A click on a nutrient, size, or allergen calls <code>inspectNfKey</code> / <code>selectProductItem</code> / <code>inspectAllergen</code> and lands a user line plus an instant reply. Editing a field still goes through <code>commitField(..., { fromPanel: true })</code> → <code>announcePanelEdit()</code>. The ingredient list follows the selected item: a size with its own list swaps in, and a nutrient click marks the ingredients that drive that row. In-place fixes pass <code>{ inPlace: true }</code> to keep focus.',
       },
       {
         title: 'UPC input is validated, not trusted',
@@ -454,7 +454,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'The next-step banner follows the portfolio action',
-        how: 'Portfolio row actions pass <code>from=</code> so View / Add Product opens on the matching banner: Discovered \u2192 Review &amp; claim, Claimed \u2192 finish a claimed product, Missing data \u2192 Complete details or Verify ingredients, Add a product \u2192 save a new product, ineligible \u2192 why the shield is blocked. Verify ingredients opens the Ingredient List sticky to the right of Product Details (and <code>from=verify</code> opens it on arrival). Claimed products that already qualify still see Get the Non-UPF Shield. Five small dots mark progress through Discovered \u2192 Claimed \u2192 Data complete \u2192 Ingredients verified \u2192 Non-UPF Verified; there is no labelled stepper. Claiming writes the UPC to <code>wise-portfolio-claimed</code> and drops the row from Discovered on the next visit.',
+        how: 'Portfolio row actions pass <code>from=</code> so View / Add Product opens on the matching banner: Discovered \u2192 Review &amp; claim, Claimed \u2192 finish a claimed product, Missing data \u2192 Complete details or Verify ingredients, Add a product \u2192 save a new product, ineligible \u2192 why the shield is blocked. Verify ingredients opens the Ingredient List sticky to the right of Product Details (and <code>from=verify</code> opens it on arrival). Claimed products that already qualify still see Get the Non-UPF Shield. Six small dots mark progress through Discovered \u2192 Claimed \u2192 Data complete \u2192 Ingredients verified \u2192 Non-UPF Verified \u2192 Reports; there is no labelled stepper. The last dot is a regular step whose card downloads every product report. Claiming writes the UPC to <code>wise-portfolio-claimed</code> and drops the row from Discovered on the next visit.',
       },
       {
         title: 'Ingredients Analyzer is its own sticky module',
@@ -614,8 +614,16 @@ export const APP_LOGIC = [
         how: 'There is no lock icon and no readonly input unless a host explicitly passes <code>placeholderLock: true</code>. Typing is live, Enter submits, and the first keystroke fires <code>onEngage()</code> to dismiss the welcome.',
       },
       {
-        title: 'Helix background on at 20%',
+        title: 'Helix background on at the published Scene pose',
         how: 'The welcome background animation defaults ON (<code>wise:chat-bg-anim</code>) to the published <strong>Scene</strong> pose (<code>BGANIM_PUBLISH_POSE</code>: 3D look, 50% opacity, reverse spin, pulse beads). Styles are <code>helix</code>, <code>helix-ten</code> and <code>orbit</code>. The chat ⋯ menu’s Thick slider is strand weight; Depth is 3-D pop (near loops forward, far loops fading). This is separate from the per-turn trace helix, which always runs.',
+      },
+      {
+        title: 'Mobile view opens the Helix dim and still',
+        how: 'Below <code>768px</code> a fresh load starts from <code>BGANIM_PHONE_POSE</code> instead — the same Scene pose at <strong>35% opacity and paused</strong>, so the strand is a backdrop rather than something competing with the type on top of it or turning in the corner of the eye. Everything reads it through <code>bgAnimLoadPose()</code>, never the tier directly, and it is only a <em>default</em>: a stored opacity or an explicit Play / Pause is the member\u2019s own choice and still wins at any width.',
+      },
+      {
+        title: 'Mobile view collapses the overview cards',
+        how: 'The large “at a glance” cards are opt-in everywhere, and below <code>768px</code> no host may force them open — <code>cardsHiddenDefault: false</code> is ignored on a phone, because a wide side-by-side card rail pushes the headline, the intent chips and the composer down behind a screenful of chrome. The three-dot <em>Overview cards</em> switch still turns them on, and a stored choice still wins.',
       },
       {
         title: 'File to Library puts the live thread on the Library shelf',
@@ -624,6 +632,10 @@ export const APP_LOGIC = [
       {
         title: 'History and Turns are docked drawers',
         how: 'The three-dot <em>History &amp; Projects</em> switch reveals the History module as a sticky drawer on the chat\u2019s <strong>left</strong>; <em>Turns</em> docks on the <strong>right</strong>. History starts visible only on <code>pages/wiseai.html</code> (<code>historyBreakoutHidden: false</code>), collapsed to the icon rail; every other surface tucks it on load. Turns always starts tucked. Neither is an in-chat overlay. History persists per surface under <code>wise-chat-history:{surface}</code>, capped at 60 threads.',
+      },
+      {
+        title: 'In mobile view History pops over the page',
+        how: 'Below <code>768px</code> the drawer stops being a drawer: <code>pages/wise.css</code> lifts the opened History out of the row (<code>position: fixed</code> against the nav rail, pinned to the page frame top and bottom) and dresses it back as a complete card — right border, all four corners, card paper and card shadow — so the chat keeps its full width underneath instead of being pushed aside or, below <code>560px</code> where the row stacks, shoved down under a clipped block. Turns, docked right, folds away entirely at that width and its output stays reachable through the floating Outputs / Sources manifest.',
       },
       {
         title: 'Surface actions mirror into the thread',

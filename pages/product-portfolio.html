@@ -5189,11 +5189,11 @@
     html.composer-v2 #send-btn { align-self: flex-end; }
     /* The shell-wide pill overrides near the top of this stylesheet
        (#chat-shell-wrap .fl-input-wrap / textarea → --radius-pill !important)
-       would lock composer v2 into a pill — outrank them so it keeps the
-       module-cornered rectangle from the shared wise.css. */
+       would lock the composer into a pill — outrank them so the fill can
+       run the module edge to edge (shared wise.css). */
     html.composer-v2 #chat-shell-wrap .fl-input-wrap,
     html.composer-v2 #chat-shell-wrap .fl-input-wrap textarea.fl-input {
-      border-radius: var(--r-md, 16px) !important;
+      border-radius: 0 !important;
     }
     /* Chat tint (Appearance ▸ "Blue chat surface"): the rail rule above pins
        background: var(--bg) !important, so the tint needs its own !important. */
@@ -6858,20 +6858,28 @@
        carries the select-all box) and pushes that header down by its own
        measured height, so Remove stays reachable however far the list has
        scrolled. */
+    /* The select-all header cell anchors the multi-select popover, so it stays
+       pinned to the checkbox as the sticky <thead> travels down a scrolling
+       list. */
+    #portfolio-panel .pf-th.pf-col-check { position: relative; }
     .pf-selbar {
-      display: flex; align-items: center; gap: 12px;
-      padding: 8px 12px; border-radius: 10px;
-      /* Opaque under the tint — it pins over the rows it acts on. */
-      background-color: var(--surface);
-      background-image: linear-gradient(var(--primary-soft), var(--primary-soft));
-      position: sticky; top: var(--pf-sticky-3, 0px); z-index: 6;
+      /* Multi-select actions live in a popover that drops from the right side
+         of the select-all checkbox, its left edge aligned with the row ⋮
+         column below it — instead of a full-width bar pinned above the header.
+         It floats over the top of the list; nothing is reserved in flow. */
+      position: absolute; top: -6px; left: calc(100% + 12px); z-index: 45;
+      display: flex; flex-direction: column; align-items: stretch; gap: 10px;
+      min-width: 196px; padding: 12px; border-radius: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      box-shadow: var(--shadow-2, 0 12px 32px rgba(0,0,0,0.18));
+      text-align: left; cursor: default;
+      /* Sits inside the header cell, so undo the <thead>'s label typography. */
+      text-transform: none; letter-spacing: normal; font-weight: 400;
     }
     .pf-selbar[hidden] { display: none; }
-    .pf-table-card.has-selbar .pf-thead {
-      top: calc(var(--pf-sticky-3, 0px) + var(--pf-selbar-h, 46px));
-    }
     .pf-selbar-count { font-size: 12px; font-weight: 700; color: var(--text); }
-    .pf-selbar-acts { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+    .pf-selbar-acts { display: flex; flex-direction: column; align-items: stretch; gap: 6px; }
+    .pf-selbar-acts .wise-btn { width: 100%; justify-content: flex-start; }
     .pf-thead,
     .pf-trow { display: grid; align-items: center; gap: 10px; padding: 10px 12px; }
     /* Unified columns across every list: select · ⋮ · reports · product
@@ -8313,19 +8321,9 @@
             </div>
               </div>
               <div class="pf-table-card">
-                <div class="pf-selbar" id="pf-selbar-claimed" hidden>
-                  <span class="pf-selbar-count" id="pf-selbar-count-claimed">0 selected</span>
-                  <div class="pf-selbar-acts">
-                    <button type="button" class="wise-btn wise-btn--danger wise-btn--sm" data-pf="remove-selected"><span class="material-symbols-outlined">delete</span>Remove</button>
-                    <button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-pf="reports-selected"><span class="material-symbols-outlined">description</span>Reports</button>
-                    <button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-pf="open-selected"><span class="material-symbols-outlined">visibility</span>Open Product</button>
-                    <button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-pf="edit-selected"><span class="material-symbols-outlined">edit</span>Edit</button>
-                    <button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-pf="clear-selected">Clear</button>
-                  </div>
-                </div>
                 <div class="pf-table pf-table--claimed">
                 <div class="pf-thead">
-                  <span class="pf-th pf-col-check" data-no-sort><button class="vf-check vf-check--head" type="button" data-pf="toggle-all" aria-label="Select all products" aria-checked="false"><span class="material-symbols-outlined">check_box_outline_blank</span></button></span>
+                  <span class="pf-th pf-col-check" data-no-sort><button class="vf-check vf-check--head" type="button" data-pf="toggle-all" aria-label="Select all products" aria-checked="false"><span class="material-symbols-outlined">check_box_outline_blank</span></button><div class="pf-selbar" id="pf-selbar-claimed" role="group" aria-label="Actions for selected products" hidden><span class="pf-selbar-count" id="pf-selbar-count-claimed">0 selected</span><div class="pf-selbar-acts"><button type="button" class="wise-btn wise-btn--danger wise-btn--sm" data-pf="remove-selected"><span class="material-symbols-outlined">delete</span>Remove</button><button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-pf="reports-selected"><span class="material-symbols-outlined">description</span>Reports</button><button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-pf="open-selected"><span class="material-symbols-outlined">visibility</span>Open Product</button><button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-pf="edit-selected"><span class="material-symbols-outlined">edit</span>Edit</button><button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-pf="clear-selected">Clear</button></div></div></span>
                   <span class="pf-th pf-col-menu"></span>
                   <span class="pf-th pf-col-reports" data-no-sort></span>
                   <span class="pf-th pf-col-product">Product</span>
@@ -8390,16 +8388,9 @@
             </div>
 
             <div class="pf-table-card">
-              <div class="pf-selbar" id="pf-selbar-discovered" hidden>
-                <span class="pf-selbar-count" id="pf-selbar-count-discovered">0 selected</span>
-                <div class="pf-selbar-acts">
-                  <button type="button" class="wise-btn wise-btn--danger wise-btn--sm" data-pf="remove-selected"><span class="material-symbols-outlined">delete</span>Remove product</button>
-                  <button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-pf="clear-selected">Clear</button>
-                </div>
-              </div>
               <div class="pf-table pf-table--discovered">
                 <div class="pf-thead">
-                  <span class="pf-th pf-col-check" data-no-sort><button class="vf-check vf-check--head" type="button" data-pf="toggle-all" aria-label="Select all products" aria-checked="false"><span class="material-symbols-outlined">check_box_outline_blank</span></button></span>
+                  <span class="pf-th pf-col-check" data-no-sort><button class="vf-check vf-check--head" type="button" data-pf="toggle-all" aria-label="Select all products" aria-checked="false"><span class="material-symbols-outlined">check_box_outline_blank</span></button><div class="pf-selbar" id="pf-selbar-discovered" role="group" aria-label="Actions for selected products" hidden><span class="pf-selbar-count" id="pf-selbar-count-discovered">0 selected</span><div class="pf-selbar-acts"><button type="button" class="wise-btn wise-btn--danger wise-btn--sm" data-pf="remove-selected"><span class="material-symbols-outlined">delete</span>Remove product</button><button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-pf="clear-selected">Clear</button></div></div></span>
                   <span class="pf-th pf-col-menu"></span>
                   <span class="pf-th pf-col-reports" data-no-sort></span>
                   <span class="pf-th pf-col-product">Product</span>

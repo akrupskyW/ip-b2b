@@ -1569,7 +1569,7 @@
 
     /* NEXT STEP banner — a soft primary-tinted panel (not the dark hero).
        Copy follows the portfolio action that opened the page. Progress is
-       five small dots — no labelled stepper. No boxed backdrop behind the icon. */
+       six small dots — no labelled stepper. No boxed backdrop behind the icon. */
     .nfp-ins-next {
       position: relative; display: grid; grid-template-columns: minmax(0, 1fr);
       gap: 10px; align-items: start; justify-items: stretch;
@@ -1965,6 +1965,12 @@
     .ap-chat.panel-wide { flex-basis: 560px; width: 560px; }
     .ap-chat.panel-triple { flex-basis: 720px; width: 720px; }
 
+    /* "Close the pane" (Product Details ⋯ menu) — hide the pane + its Ingredient
+       List sibling and let the chat take the full row. Reopen from the chat. */
+    #modules-row.nfp-pane-closed #nfp-panel,
+    #modules-row.nfp-pane-closed #ia-panel { display: none !important; }
+    #modules-row.nfp-pane-closed .ap-chat { flex: 1 1 auto; width: auto; }
+
     /* Below this the chat has to give ground too, or Product Details is left
        too narrow to read the label in. */
     @media (max-width: 1100px) {
@@ -2218,10 +2224,19 @@
             </div>
             <div class="nfp-banner-titles">
               <div class="nfp-banner-title">Product Details</div>
-              <div class="nfp-banner-sub"><span id="nfp-brand-name">Flax4Life</span> · click any field to edit</div>
+              <div class="nfp-banner-sub">Click any field to edit</div>
             </div>
             <div class="panel-controls">
-              <button type="button" class="nfp-brand-logo" id="nfp-brand-logo" data-nfp="upload-brand" title="Replace brand logo" aria-label="Replace brand logo"><img src="../assets/brand-flax4life-logo.png" alt="" onerror="this.style.display='none';this.nextElementSibling.hidden=false"><span class="nfp-brand-logo-mono" hidden>F4L</span></button>
+              <div class="panel-more-wrap nfp-reports-wrap" id="nfp-reports-wrap">
+                <button type="button" class="panel-more-btn nfp-reports-btn" id="nfp-reports-btn" title="Reports" aria-haspopup="menu" aria-expanded="false" aria-controls="nfp-reports-menu" aria-label="Reports"><span class="material-symbols-outlined">description</span></button>
+                <div class="topbar-popover hidden" id="nfp-reports-menu" role="menu" aria-label="Reports">
+                  <div class="topbar-menu-title">Reports</div>
+                  <button type="button" class="topbar-menu-item" id="nfp-report-details" role="menuitem"><span class="material-symbols-outlined topbar-menu-icon">receipt_long</span><span>Product Details Report</span></button>
+                  <button type="button" class="topbar-menu-item" id="nfp-report-upf" role="menuitem"><span class="material-symbols-outlined topbar-menu-icon">description</span><span>Product UPF</span></button>
+                  <button type="button" class="topbar-menu-item is-locked" role="menuitem" aria-disabled="true"><span class="material-symbols-outlined topbar-menu-icon">verified_user</span><span>Product GRAS</span><span class="material-symbols-outlined topbar-menu-lock">lock</span></button>
+                  <button type="button" class="topbar-menu-item is-locked" role="menuitem" aria-disabled="true"><span class="material-symbols-outlined topbar-menu-icon">insights</span><span>Product Insights</span><span class="material-symbols-outlined topbar-menu-lock">lock</span></button>
+                </div>
+              </div>
               <div class="panel-more-wrap" id="nfp-menu-wrap" data-sticky-menu="1">
                 <button type="button" class="panel-more-btn" id="nfp-menu-btn" title="Module options" aria-haspopup="menu" aria-expanded="false" aria-controls="nfp-menu" aria-label="Module options"><span class="material-symbols-outlined">more_vert</span></button>
                 <div class="topbar-popover hidden" id="nfp-menu" role="menu"></div>

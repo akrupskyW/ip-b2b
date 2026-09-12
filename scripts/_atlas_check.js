@@ -21,6 +21,14 @@ const IMPORT_STUBS = `
   const mountWISEcodeAIChat = () => ({ addWISEcodeAI: () => null, addUser: () => null, setIntents: () => null });
   const OWL_BUG = '<span class="owl-bug"></span>';
   const owlProgressionCarouselHtml = () => '<div class="owl-carousel"></div>';
+  const clanCampaignReply = () => '';
+  const clanMeetReply = () => '';
+  const clanDocReply = () => '';
+  const clanLookReply = () => '';
+  const clanChamberReply = () => '';
+  const clanRosterView = () => '';
+  const clanDocView = () => '';
+  const clanLookView = () => '';
   const saveGeneratedReport = () => null;
 `;
 const body = IMPORT_STUBS + blocks.reduce((a, b) => (b.length > a.length ? b : a), '')
