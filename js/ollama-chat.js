@@ -23,10 +23,20 @@ const ON_KEY = 'wise:chat-ollama-on';
 const MODEL_KEY = 'wise:chat-ollama-model';
 const EVENT = 'wise:chat-ollama-on';
 const DEFAULT_MODEL = 'llama3.2:latest';
+/* Whole components, masked as units. A rewrite is free to reword the prose
+   around one, but the component itself has to come back byte for byte: it is a
+   gallery, a film or a rail with its own mounting, and a model that restructures
+   the markup around its images leaves an answer whose artwork is simply gone. */
 const KEEP_SEL = [
   '.sc-surface-card',
+  '.sc-surface-rail',
   '.sc-connect-flow',
   '.sc-inline-chips',
+  '.sc-mgrid',
+  '.sc-inline-film',
+  '.sc-inline-rail',
+  '.wcb',
+  '.sc-owl-prog',
   '.wa-chiplist',
   '.wa-plsplit',
   '.wa-brandtoken',

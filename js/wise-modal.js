@@ -77,9 +77,13 @@ export function openModal(opts = {}) {
     onOpen,
   } = opts;
 
+  /* Reopening the same dialog takes the old one out at once rather than fading
+     it. A fade would leave two elements carrying this id for the length of the
+     transition, so anything looking the dialog up by id — including the dialog
+     reading its own contents back — would find the one on its way out. */
   if (id && !persistent) {
     const existing = document.getElementById(id);
-    if (existing) closeModal(existing, { remove: true });
+    if (existing) closeModal(existing, { remove: true, immediate: true });
   }
 
   let scrim = (persistent && id) ? document.getElementById(id) : null;
@@ -133,10 +137,10 @@ export function openModal(opts = {}) {
 
 /**
  * Fade out a scrim. Persistent pickers stay in the DOM; one-shot dialogs
- * are removed after the transition.
+ * are removed after the transition, or in the same frame with `immediate`.
  */
 export function closeModal(idOrEl, opts = {}) {
-  const { remove = true, onClose } = opts;
+  const { remove = true, onClose, immediate = false } = opts;
   const scrim = scrimOf(idOrEl);
   if (!scrim) return;
   const rec = HANDLERS.get(scrim);
@@ -149,7 +153,8 @@ export function closeModal(idOrEl, opts = {}) {
     }
     if (typeof onClose === 'function') onClose();
   };
-  setTimeout(finish, 200);
+  if (immediate) finish();
+  else setTimeout(finish, 200);
 }
 
 if (typeof window !== 'undefined') {

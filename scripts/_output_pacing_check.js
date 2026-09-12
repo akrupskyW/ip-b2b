@@ -43,7 +43,8 @@ ok(/surfaceBlock\('visuals'/.test(panels) && /surfaceBlock\('results'/.test(pane
   'the atlas panels surface through the queue');
 ok(/railLead:/.test(panels) && /\$\{n\} outputs/.test(panels),
   'the first atlas rail is introduced by a count line');
-ok(/fullTurn/.test(panels) && /ATLAS_PANELS\.length \+ 1/.test(panels),
+ok(/fullTurn/.test(panels) && /atlasOutputCount\(fullTurn\)/.test(panels)
+  && /function atlasOutputCount\(fullTurn\)[\s\S]{0,160}ATLAS_PANELS\.length \+ 1/.test(page),
   'the first atlas turn counts six charts, the closing read, and three Results outputs');
 ok(!/inTranscript:\s*false/.test(panels),
   'every atlas output is a transcript chip — none stay pane-only');

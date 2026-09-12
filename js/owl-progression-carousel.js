@@ -53,31 +53,35 @@ function esc(s) {
 export function owlProgressionSlides(base) {
   const b = base || DEFAULT_BASE;
   return [
-    { kind: 'lottie', src: asset(b, 'owl-green-anim.json'), label: 'Green owl · thumbs up', tone: 'green' },
-    { kind: 'lottie', src: asset(b, 'owl-red-anim.json'), label: 'Red owl · thumbs down', tone: 'red' },
-    { kind: 'lottie', src: asset(b, 'owl-blue-anim.json'), label: 'Blue owl · celebrate', tone: 'blue' },
-    { kind: 'image', src: asset(b, 'owl-green.png'), label: 'Green owl · still', tone: 'green' },
-    { kind: 'image', src: asset(b, 'owl-blue.png'), label: 'Blue owl · still', tone: 'blue' },
-    { kind: 'image', src: asset(b, 'owl-red.png'), label: 'Red owl · still', tone: 'red' },
+    /* The three owls have names now — Rue is the red one, Ollie the blue, Sage
+       the green, set by the Think Wise campaign (js/think-wise-campaign.js).
+       Call them by name here too; the colour still rides along as `tone`. */
+    { kind: 'lottie', src: asset(b, 'owl-green-anim.json'), label: 'Sage · thumbs up', tone: 'green' },
+    { kind: 'lottie', src: asset(b, 'owl-red-anim.json'), label: 'Rue · thumbs down', tone: 'red' },
+    { kind: 'lottie', src: asset(b, 'owl-blue-anim.json'), label: 'Ollie · celebrate', tone: 'blue' },
+    { kind: 'image', src: asset(b, 'owl-green-stop.png'), label: 'Sage · stop', tone: 'green' },
+    { kind: 'image', src: asset(b, 'owl-green.png'), label: 'Sage · still', tone: 'green' },
+    { kind: 'image', src: asset(b, 'owl-blue.png'), label: 'Ollie · still', tone: 'blue' },
+    { kind: 'image', src: asset(b, 'owl-red.png'), label: 'Rue · still', tone: 'red' },
     {
       kind: 'video',
       lightSrc: asset(b, 'owl-linen.mp4'),
       darkSrc: asset(b, 'owl-deep-harbor.mp4'),
-      label: 'Blue owl · motion',
+      label: 'Ollie · motion',
       tone: 'blue',
     },
     {
       kind: 'video',
       lightSrc: asset(b, 'owl-red-linen.mp4'),
       darkSrc: asset(b, 'owl-red-deep-harbor.mp4'),
-      label: 'Red owl · motion',
+      label: 'Rue · motion',
       tone: 'red',
     },
     {
       kind: 'video',
       lightSrc: asset(b, 'owl-scan-green-light.mp4'),
       darkSrc: asset(b, 'owl-scan-green-dark.mp4'),
-      label: 'Green owl · scan',
+      label: 'Sage · scan',
       tone: 'green',
     },
     {

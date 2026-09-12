@@ -21,14 +21,21 @@ const IMPORT_STUBS = `
   const mountWISEcodeAIChat = () => ({ addWISEcodeAI: () => null, addUser: () => null, setIntents: () => null });
   const OWL_BUG = '<span class="owl-bug"></span>';
   const owlProgressionCarouselHtml = () => '<div class="owl-carousel"></div>';
-  const clanCampaignReply = () => '';
-  const clanMeetReply = () => '';
-  const clanDocReply = () => '';
-  const clanLookReply = () => '';
-  const clanChamberReply = () => '';
-  const clanRosterView = () => '';
-  const clanDocView = () => '';
-  const clanLookView = () => '';
+  const campaignReply = () => '';
+  const campaignCastReply = () => '';
+  const campaignOohReply = () => '';
+  const campaignPrintReply = () => '';
+  const campaignLookbookReply = () => '';
+  const campaignCardsReply = () => '';
+  const campaignTeaserReply = () => '';
+  const WISE_CAMPAIGN_BRIEF = 'Generate a marketing campaign';
+  const thinkWiseReply = () => '';
+  const thinkWiseCastReply = () => '';
+  const thinkWiseBillboardsReply = () => '';
+  const thinkWiseMoldsReply = () => '';
+  const thinkWiseWalkReply = () => '';
+  const thinkWiseFilmReply = () => '';
+  const THINK_WISE_BRIEF = 'The Wise Walk campaign';
   const saveGeneratedReport = () => null;
 `;
 const body = IMPORT_STUBS + blocks.reduce((a, b) => (b.length > a.length ? b : a), '')
@@ -313,7 +320,8 @@ const sap = html.slice(html.indexOf('function surfaceAtlasPanels'), html.indexOf
 ok((sap.match(/surfaceBlock\(/g) || []).length === 4,
   'six charts (one call) + closing read + two baselines are queued');
 ok(/surfaceNewsRefs\('atlas_refs'/.test(sap), 'and the references card is the tenth');
-ok(/fullTurn \? 3 : 0/.test(sap), 'the rail lead counts ten on the first turn');
+ok(/atlasOutputCount\(fullTurn\)/.test(sap) && /fullTurn \? 3 : 0/.test(html),
+  'the rail lead counts ten on the first turn');
 ok(!/inTranscript:\s*false/.test(sap), 'none of the ten stay off the transcript');
 ok(vm.runInContext('INTENT_REPLIES.atlas.includes("ten outputs")', ctx),
   'the reply names the ten outputs');

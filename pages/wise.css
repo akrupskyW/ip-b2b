@@ -8899,6 +8899,44 @@ html.dark .ws-scorecard--hero:hover {
 .ws-scorecard--hero .ws-sc-icon { color: #fff; }
 .ws-scorecard--hero .ws-sc-pill { background: rgba(255, 255, 255, 0.22); color: #fff; }
 
+/* A card carrying its OWN photograph (descriptor `art`) instead of the shared
+   sign-in hero. The scrim is what keeps the white copy legible, so it stays the
+   same in both themes — pairing it with the dark-mode card tint would wash the
+   picture out. Declared after the hero rules so the custom property wins. */
+.ws-scorecard--art,
+html.dark .ws-scorecard--art {
+  border-color: rgba(37, 80, 124, 0.5);
+  background:
+    linear-gradient(180deg, rgba(8, 12, 24, 0.08) 0%, rgba(8, 12, 24, 0.3) 52%, rgba(8, 12, 24, 0.82) 100%),
+    var(--ws-sc-art) 50% 50% / cover no-repeat;
+}
+.ws-scorecard--art:hover,
+html.dark .ws-scorecard--art:hover {
+  border-color: rgba(37, 80, 124, 0.85);
+  box-shadow: 0 6px 18px rgba(13, 22, 44, 0.35);
+  background:
+    linear-gradient(180deg, rgba(8, 12, 24, 0.02) 0%, rgba(8, 12, 24, 0.22) 52%, rgba(8, 12, 24, 0.74) 100%),
+    var(--ws-sc-art) 50% 50% / cover no-repeat;
+}
+/* Double-width: two regular cards plus the rail's own gutter (244 + 12 + 244),
+   so a hero shot gets a cinematic band instead of a portrait box. The rail is a
+   flex row — height still comes from the tallest card, so this cannot make the
+   welcome taller. In a single-width chat the card gives way to the module
+   (84cqi of the chat body) rather than hanging off the rail.
+   The compound selector outranks `.ws-scorecard--hero:not(.ws-scorecard--chart)`
+   above, which would otherwise pin it back to 268px. */
+.ws-scorecard--xl,
+.ws-scorecard--hero.ws-scorecard--xl {
+  flex: 0 0 min(500px, 84cqi);
+  min-width: min(500px, 84cqi);
+  aspect-ratio: auto;
+}
+/* Art-only: no icon, headline, or description — the picture is the message, and
+   the pill and the call to action sit at opposite ends of it. */
+.ws-scorecard--artonly { justify-content: space-between; }
+.ws-scorecard--artonly .ws-sc-top { align-items: flex-start; }
+.ws-scorecard--artonly .ws-sc-action { margin-top: 0; }
+
 /* Chart welcome cards — own stills, sized to hold the Overview donut
    or the three WISEscore pillar bars. */
 .ws-scorecard--chart {
@@ -8934,6 +8972,18 @@ html.dark .ws-scorecard--chart-pillars:hover {
   background:
     linear-gradient(180deg, rgba(13, 22, 44, 0.2) 0%, rgba(13, 22, 44, 0.42) 40%, rgba(13, 22, 44, 0.68) 100%),
     url('../assets/welcome-card-pillars.png') 50% 28% / cover no-repeat;
+}
+.ws-scorecard--chart-race,
+html.dark .ws-scorecard--chart-race {
+  background:
+    linear-gradient(180deg, rgba(13, 22, 44, 0.34) 0%, rgba(13, 22, 44, 0.56) 40%, rgba(13, 22, 44, 0.78) 100%),
+    url('../assets/auth-hero.png') 50% 80% / cover no-repeat;
+}
+.ws-scorecard--chart-race:hover,
+html.dark .ws-scorecard--chart-race:hover {
+  background:
+    linear-gradient(180deg, rgba(13, 22, 44, 0.26) 0%, rgba(13, 22, 44, 0.48) 40%, rgba(13, 22, 44, 0.72) 100%),
+    url('../assets/auth-hero.png') 50% 80% / cover no-repeat;
 }
 .ws-sc-chart {
   display: flex;
@@ -9078,8 +9128,138 @@ html.dark .ws-scorecard--chart-pillars:hover {
   color: #fff;
   text-align: right;
 }
+
+/* Code race — one 0–100 track per code, each product a circular brand bug
+   that runs out from the start line to its score. Card-sized twin of the
+   comparison board's race chart. */
+.ws-sc-chart--race {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  padding: 2px 4px 0;
+}
+.ws-sc-race-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: #fff;
+}
+.ws-sc-race-label {
+  font-family: 'WISE Digits', var(--font-serif);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: #fff;
+}
+.ws-sc-race-sub {
+  margin-left: auto;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.82;
+}
+.ws-sc-races { display: flex; flex-direction: column; gap: 10px; }
+.ws-sc-race-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  font-size: 0.64rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ws-sc-race-metric .material-symbols-outlined { font-size: 13px !important; flex-shrink: 0; }
+/* The bugs straddle the ends of the track, so the lane is inset far enough
+   that a 0 and a 100 both stay inside the card. */
+.ws-sc-race-track {
+  position: relative;
+  display: block;
+  height: 30px;
+  margin: 1px 14px 0;
+}
+.ws-sc-race-lane {
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.28);
+}
+/* Start line — the mark every runner left. */
+.ws-sc-race-lane::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: -6px;
+  width: 1.5px;
+  height: 14px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.42);
+}
+.ws-sc-race-runner {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+  transition: left 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--delay, 0ms);
+}
+.ws-sc-race-runner.is-primary { z-index: 6; }
+.ws-sc-race-bug {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--rc, var(--primary));
+  color: #fff;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  /* The product photo fills the bug, so the brand colour reads as its ring —
+     that is what tells three overlapping runners apart. */
+  box-shadow: 0 0 0 1.5px var(--rc, var(--primary)), 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.ws-sc-race-bug img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  background: var(--rc, var(--primary));
+}
+.ws-sc-race-num {
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  transform: translateX(-50%);
+  z-index: 3;
+  padding: 0 4px;
+  min-width: 17px;
+  border-radius: 999px;
+  background: #16202e;
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  font-size: 8.5px;
+  font-weight: 800;
+  line-height: 1.45;
+  text-align: center;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
 @media (prefers-reduced-motion: reduce) {
-  .ws-sc-pillar-fill { transition: none; }
+  .ws-sc-pillar-fill,
+  .ws-sc-race-runner { transition: none; }
 }
 
 .chip {
@@ -9121,6 +9301,19 @@ html.dark .chip.chip-primary { background: var(--primary); border-color: var(--p
 .chip.chip-primary.ws-intent-chip--more .material-symbols-outlined {
   color: #fff !important; font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
+/* Deep-dive chip — the open-ended "take this as far as it goes" ask. Outlined
+   in brand blue so it reads as heavier than a neutral chip without claiming the
+   solid-blue primary slot. It is the one intent chip style whose ask is
+   unscoped by definition, so it is the style that routes through Ask
+   pre-flight before anything runs. */
+.chip.chip-dive {
+  background: transparent; border-color: var(--primary); color: var(--primary); font-weight: 600;
+}
+.chip.chip-dive .material-symbols-outlined { color: var(--primary) !important; }
+.chip.chip-dive:hover { background: color-mix(in srgb, var(--primary) 12%, transparent); border-color: var(--primary); color: var(--primary); }
+html.dark .chip.chip-dive { border-color: var(--primary-bright, #8B9FAF); color: var(--primary-bright, #8B9FAF); }
+html.dark .chip.chip-dive .material-symbols-outlined { color: var(--primary-bright, #8B9FAF) !important; }
+html.dark .chip.chip-dive:hover { background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, transparent); color: var(--primary-bright, #8B9FAF); }
 /* Welcome / shortcut intent chips share the same 28px .chip size. Brand-blue
    leading glyph; the trailing .ws-lock badge keeps its own colours. */
 .ws-intent-chip { background: color-mix(in srgb, var(--primary) 10%, #fff); border-color: var(--border-strong); color: var(--text-muted); font-weight: 500; }
@@ -9554,6 +9747,202 @@ html.dark .fl-db-trigger[aria-expanded="true"] { background: color-mix(in srgb, 
 .sc-line-event .sc-event-label { color: var(--primary-ink, var(--primary)); font-weight: 600; }
 .sc-line-event .sc-line-body strong { color: var(--text); font-weight: 700; }
 
+/* ===== More than two in the room ==========================================
+   A conversation can hold a teammate as well as the member and WISEcodeAI
+   (TEAM_DIRECTORY in js/wiseai-chat.js). Three things follow from that: a third
+   kind of transcript line, a way to name who is being spoken to, and the picker
+   that puts someone in the room. All of it lives here, never per page. ===== */
+
+/* Five tones so three voices in one thread are told apart at a glance. Carried
+   by both the avatar and the line, so a teammate's name matches their face. */
+.sc-avatar-mate[data-tone="1"], .sc-line-mate[data-tone="1"] { --mate-tone: #2F7D6B; }
+.sc-avatar-mate[data-tone="2"], .sc-line-mate[data-tone="2"] { --mate-tone: #7A4FA8; }
+.sc-avatar-mate[data-tone="3"], .sc-line-mate[data-tone="3"] { --mate-tone: #B25F2C; }
+.sc-avatar-mate[data-tone="4"], .sc-line-mate[data-tone="4"] { --mate-tone: #33648F; }
+.sc-avatar-mate[data-tone="5"], .sc-line-mate[data-tone="5"] { --mate-tone: #A63A5E; }
+/* The same five hues lifted for the navy card, so initials and names stay
+   legible in dark mode instead of sinking into the surface. */
+html.dark .sc-avatar-mate[data-tone="1"], html.dark .sc-line-mate[data-tone="1"] { --mate-tone: #5FC7AD; }
+html.dark .sc-avatar-mate[data-tone="2"], html.dark .sc-line-mate[data-tone="2"] { --mate-tone: #C29BEA; }
+html.dark .sc-avatar-mate[data-tone="3"], html.dark .sc-line-mate[data-tone="3"] { --mate-tone: #F0A472; }
+html.dark .sc-avatar-mate[data-tone="4"], html.dark .sc-line-mate[data-tone="4"] { --mate-tone: #8FBEE8; }
+html.dark .sc-avatar-mate[data-tone="5"], html.dark .sc-line-mate[data-tone="5"] { --mate-tone: #F08AA8; }
+/* A circle, like every other avatar — see the no-icon-background-squares rule. */
+.sc-avatar-mate {
+  background: color-mix(in srgb, var(--mate-tone, var(--primary)) 15%, transparent);
+  color: var(--mate-tone, var(--primary));
+  border: 1.5px solid color-mix(in srgb, var(--mate-tone, var(--primary)) 45%, transparent);
+}
+
+/* A teammate's line. The member's ask carries the edge-to-edge wash and
+   WISEcodeAI's answer carries the grounding chip; a colleague's line gets
+   neither, because it is just a person talking. What it does get is their
+   name — in a room with three voices an avatar alone is not enough. */
+.sc-line-mate .sc-line-body { color: var(--text); }
+.sc-line-name {
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 3px; letter-spacing: -0.01em;
+  font-size: 12px; font-weight: 700; color: var(--mate-tone, var(--text));
+}
+.sc-line-name-role { font-size: 10.5px; font-weight: 600; color: var(--text-subtle); }
+/* Two lines in a row from the same person: one person still talking. */
+.sc-line-mate--cont { margin-top: -0.5rem; }
+.sc-line-mate--cont .sc-avatar { visibility: hidden; }
+/* "Maya is typing…" — a person, so the plain dots, never the thinking ring. */
+.sc-line-mate-typing .sc-line-body { padding-top: max(0px, calc((var(--sc-avatar-size, 30px) - 1lh) / 2)); }
+
+/* "Maya Chen joined the conversation" — a membership change belongs in the
+   record, so it lands in the thread instead of quietly changing a header. It is
+   an event row, so it takes no ask wash (see the user-input-edge-bg rule). */
+.sc-line-join { align-items: center; margin-bottom: 0.6rem; }
+.sc-join-mark {
+  flex-shrink: 0; width: var(--sc-avatar-size, 30px);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--primary-ink, var(--primary)); font-size: 18px !important;
+}
+.sc-line-join .sc-line-body { padding-top: 0; font-size: 12.5px; color: var(--text-muted); }
+.sc-join-role { color: var(--text-subtle); }
+.sc-join-role::before { content: " · "; }
+
+/* "@Maya" — who a line is addressed to, painted the same wherever it appears:
+   the member's ask, a teammate's line, or an answer. WISEcodeAI's own mention
+   rides the brand gold, the same accent that marks it everywhere else. */
+.sc-mention {
+  border-radius: 5px; padding: 0 3px; font-weight: 700;
+  color: var(--primary-ink, var(--primary));
+  background: color-mix(in srgb, var(--primary) 13%, transparent);
+}
+html.dark .sc-mention {
+  color: var(--primary-bright, #8B9FAF);
+  background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 18%, transparent);
+}
+.sc-mention--ai {
+  color: var(--warm-400, #946005);
+  background: color-mix(in srgb, var(--warm-300, #B69252) 22%, transparent);
+}
+html.dark .sc-mention--ai {
+  color: var(--warm-300, #B69252);
+  background: color-mix(in srgb, var(--warm-300, #B69252) 20%, transparent);
+}
+
+/* Typing "@" offers the room, right above the composer. In flow inside the
+   input pill (which is the positioned ancestor) rather than portaled — it is
+   anchored to the field's own left edge and never leaves the card. */
+.sc-mention-pop {
+  position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 620;
+  box-sizing: border-box; width: min(340px, 100%);
+  display: flex; flex-direction: column; gap: 2px; padding: 6px;
+  max-height: 300px; overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--border-strong);
+  border-radius: 14px; box-shadow: var(--shadow-3, var(--sc-shadow-pop));
+}
+html.dark .sc-mention-pop {
+  background: linear-gradient(155deg, #1A2339 0%, #1A2339 60%, #1A2339 100%);
+  border-color: rgba(37, 80, 124, 0.22);
+}
+.sc-mention-pop[hidden] { display: none; }
+.sc-mention-item, .sc-person-row {
+  display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box;
+  padding: 7px 8px; border: 0; border-radius: 10px; background: transparent;
+  color: var(--text); font-family: inherit; text-align: left; cursor: pointer;
+  transition: background 0.12s ease;
+}
+.sc-mention-item:hover, .sc-mention-item.is-active, .sc-person-row:hover { background: var(--surface-2); }
+html.dark .sc-mention-item:hover,
+html.dark .sc-mention-item.is-active,
+html.dark .sc-person-row:hover { background: rgba(255, 255, 255, 0.08); }
+.sc-mention-copy, .sc-person-copy { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
+.sc-mention-name, .sc-person-name {
+  font-size: var(--fs-ui); font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sc-mention-role, .sc-person-role {
+  font-size: 10.5px; font-weight: 500; color: var(--text-subtle);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sc-mention-state, .sc-person-state {
+  flex: 0 0 auto; font-size: 9.5px; font-weight: 700;
+  letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-subtle);
+}
+.sc-person-state .material-symbols-outlined { font-size: 18px !important; }
+
+/* The people picker — search, pick, add. A `.fl-more-popover` variant, so it
+   inherits the shared portal / click-off / Escape layer the composer's other
+   menus already use. The list is a fixed height on purpose: a popover pinned
+   to the viewport cannot change height under the member while they filter it. */
+.sc-people-pop {
+  width: min(340px, calc(100vw - 32px)); min-width: min(340px, calc(100vw - 32px));
+  padding: 0; gap: 0; overflow: hidden;
+}
+.sc-people-top {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 12px 12px 10px; border-bottom: 1px solid var(--border);
+}
+.sc-people-title {
+  margin: 0; font-family: 'WISE Digits', var(--font-serif, 'Noto Serif', serif);
+  font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text);
+}
+.sc-people-sub { margin: 0; font-size: 11px; line-height: 1.45; color: var(--text-subtle); }
+.sc-people-search {
+  width: 100%; box-sizing: border-box; padding: 7px 12px;
+  border-radius: var(--radius-pill, 9999px); border: 1px solid var(--border-strong);
+  background: var(--surface-2); color: var(--text);
+  font-family: inherit; font-size: var(--fs-ui); outline: none;
+}
+html.dark .sc-people-search { background: rgba(255, 255, 255, 0.06); }
+.sc-people-search:focus {
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 16%, transparent);
+}
+.sc-people-tokens { display: flex; flex-wrap: wrap; gap: 4px; }
+.sc-people-tokens:empty { display: none; }
+.sc-person-token {
+  display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px 2px 2px;
+  border-radius: 9999px; background: var(--surface-3, var(--surface-2));
+  border: 1px solid var(--border-strong);
+}
+html.dark .sc-person-token { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.14); }
+.sc-person-token .sc-avatar { --sc-avatar-size: 18px; font-size: 9px; }
+.sc-person-token-name { font-size: 11px; font-weight: 600; color: var(--text); }
+.sc-person-token-x {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 15px; height: 15px; padding: 0; border: 0; border-radius: 50%;
+  background: transparent; color: var(--text-subtle); cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.sc-person-token-x:hover {
+  background: color-mix(in srgb, var(--sec-red, #DC3038) 16%, transparent);
+  color: var(--sec-red, #DC3038);
+}
+.sc-person-token-x .material-symbols-outlined { font-size: 11px !important; }
+.sc-people-list {
+  height: 210px; overflow-y: auto; padding: 6px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.sc-person-row.is-picked { background: color-mix(in srgb, var(--primary) 11%, transparent); }
+.sc-person-row.is-picked .sc-person-state { color: var(--primary-ink, var(--primary)); }
+.sc-person-row.is-in { cursor: default; opacity: 0.6; }
+.sc-people-empty { margin: 12px 8px; font-size: var(--fs-ui); color: var(--text-subtle); }
+.sc-people-foot { padding: 10px 12px; border-top: 1px solid var(--border); }
+.sc-people-add { width: 100%; justify-content: center; }
+
+/* Who is in this conversation, in the module header. Hidden while it is just
+   the member and WISEcodeAI, because that is every chat. */
+.sc-roster {
+  display: inline-flex; align-items: center; padding: 3px;
+  border: 0; border-radius: 9999px; background: transparent; cursor: pointer;
+  transition: background 0.15s ease;
+}
+.sc-roster[hidden] { display: none; }
+.sc-roster:hover { background: var(--surface-2); }
+html.dark .sc-roster:hover { background: rgba(255, 255, 255, 0.08); }
+.sc-roster .sc-avatar {
+  --sc-avatar-size: 22px; font-size: 9px;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.sc-roster .sc-avatar + .sc-avatar { margin-left: -7px; }
+.sc-roster-more { margin-left: 4px; font-size: 10px; font-weight: 700; color: var(--text-subtle); }
+
 /* ===== Database selector popover — grouped, searchable, filterable ===== */
 .fl-db-popover { padding: 0; min-width: 340px; max-width: 380px; gap: 0; overflow: hidden; }
 /* Sticky search + filter header at the very top of the popover. */
@@ -9956,6 +10345,148 @@ html.dark .sc-cf-head .material-symbols-outlined { color: var(--primary-bright, 
 .sc-cf-spin { animation: scCfSpin 0.9s linear infinite; color: var(--primary-ink, var(--primary)) !important; }
 @keyframes scCfSpin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .sc-cf-spin { animation: none; } }
+
+/* ===== Ask pre-flight — the buffer card that lands between the member's ask
+   and the answer whenever the ask cannot be run as written: it is unclear how
+   wide to look, what WISEcodeAI is allowed to read, how far to take it, and
+   therefore what it costs. Two beats: a drafting skeleton while the questions
+   are written, then the questions with Edit / Approve. Nothing runs until
+   Approve, and the approved card stays in the thread as the record of what was
+   agreed. Resolved cards have no controls left. */
+.sc-preflight {
+  margin-top: 4px; border: 1px solid var(--border-strong); border-radius: 14px;
+  background: var(--surface-2); overflow: hidden; max-width: 480px;
+}
+html.dark .sc-preflight { background: rgba(255,255,255,0.04); }
+.sc-pf-head { display: flex; align-items: center; gap: 8px; padding: 11px 12px 8px 14px; }
+.sc-pf-head .material-symbols-outlined { font-size: 18px !important; color: var(--primary); }
+html.dark .sc-pf-head .material-symbols-outlined { color: var(--primary-bright, #8B9FAF); }
+.sc-pf-title {
+  flex: 1 1 auto; min-width: 0; margin: 0;
+  font-family: 'WISE Digits', var(--font-serif);
+  font-size: 0.9375rem; font-weight: 700; letter-spacing: -0.01em;
+  line-height: 1.25; color: var(--text);
+}
+.sc-pf-x {
+  flex: 0 0 auto; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 50%;
+  background: transparent; color: var(--text-subtle); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.sc-pf-x:hover { background: var(--surface-3); color: var(--text); }
+.sc-pf-x .material-symbols-outlined { font-size: 17px !important; color: inherit !important; }
+.sc-pf-why { margin: 0; padding: 0 14px 10px; font-size: 0.6875rem; line-height: 1.5; color: var(--text-muted); }
+
+/* What it will cost — the one row the Approve button is actually approving.
+   Numerals count up on arrival and re-count whenever a choice changes them. */
+.sc-pf-est {
+  display: flex; margin: 0 14px 11px; overflow: hidden;
+  border: 1px solid var(--border); border-radius: 10px; background: var(--surface-3);
+}
+html.dark .sc-pf-est { background: rgba(255,255,255,0.05); }
+.sc-pf-est-item { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 1px; padding: 7px 11px; }
+.sc-pf-est-item + .sc-pf-est-item { border-left: 1px solid var(--border); }
+.sc-pf-est-num {
+  font-family: 'WISE Digits', var(--font-serif);
+  font-size: 0.9375rem; font-weight: 700; line-height: 1.15;
+  color: var(--text); white-space: nowrap;
+}
+.sc-pf-est-lab {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--text-subtle); white-space: nowrap;
+}
+
+/* The questions. Two columns where there is room, one in a single-width chat. */
+.sc-pf-qs {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(176px, 1fr));
+  gap: 11px 14px; padding: 0 14px 12px;
+}
+.sc-pf-q { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.sc-pf-q-lab {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--text-subtle);
+}
+.sc-pf-q-lab .material-symbols-outlined { font-size: 13px !important; color: inherit !important; }
+.sc-pf-opts { display: flex; flex-wrap: wrap; gap: 4px; }
+.sc-pf-opt {
+  display: inline-flex; align-items: center; gap: 3px; height: 26px; padding: 0 9px;
+  border: 1px solid var(--border-strong); border-radius: 999px;
+  background: var(--surface); color: var(--text-muted);
+  font-family: inherit; font-size: 0.6875rem; font-weight: 600; line-height: 1;
+  white-space: nowrap; cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+/* Scoped off the selected state on purpose: `html.dark .sc-pf-opt` outweighs
+   `.sc-pf-opt.is-on`, so an unscoped dark background made every chosen option
+   read as unchosen. */
+html.dark .sc-pf-opt:not(.is-on) { background: transparent; }
+.sc-pf-opt:hover { border-color: var(--primary); color: var(--text); }
+html.dark .sc-pf-opt:hover { border-color: var(--primary-bright, #8B9FAF); }
+/* Selected reads as a solid brand chip, so its check is a FILLED icon. */
+.sc-pf-opt.is-on { background: var(--primary); border-color: var(--primary); color: #fff; }
+.sc-pf-opt.is-on .material-symbols-outlined {
+  color: #fff !important;
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+.sc-pf-opt .material-symbols-outlined { font-size: 14px !important; color: inherit !important; }
+/* An unchecked multi-select keeps the tick's space so the row cannot jitter. */
+.sc-pf-opt:not(.is-on) .material-symbols-outlined { opacity: 0.35; }
+
+.sc-pf-foot {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  padding: 10px 14px; border-top: 1px solid var(--border);
+}
+.sc-pf-note { flex: 1 1 140px; min-width: 0; font-size: 0.625rem; line-height: 1.4; color: var(--text-subtle); }
+.sc-pf-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  height: 30px; padding: 0 13px; border-radius: 999px;
+  font-family: inherit; font-size: 0.75rem; font-weight: 700; line-height: 1;
+  cursor: pointer; transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, filter 0.15s ease;
+}
+.sc-pf-btn .material-symbols-outlined { font-size: 16px !important; }
+.sc-pf-btn:disabled { opacity: 0.45; cursor: default; }
+.sc-pf-edit { border: 1px solid var(--border-strong); background: transparent; color: var(--text); }
+.sc-pf-edit:not(:disabled):hover { border-color: var(--primary); color: var(--primary-ink, var(--primary)); }
+html.dark .sc-pf-edit:not(:disabled):hover { border-color: var(--primary-bright, #8B9FAF); color: var(--primary-bright, #8B9FAF); }
+/* Approve is a primary control — solid brand blue, filled icon. */
+.sc-pf-go { border: 1px solid var(--primary); background: var(--primary); color: #fff; }
+.sc-pf-go .material-symbols-outlined {
+  color: #fff !important;
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+.sc-pf-go:not(:disabled):hover { filter: brightness(0.93); }
+
+/* Drafting beat — mirrors the finished card's geometry so nothing jumps when
+   the real questions replace it. */
+.sc-pf-skel { display: flex; flex-direction: column; gap: 10px; padding: 0 14px 12px; }
+.sc-pf-skel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(176px, 1fr)); gap: 7px 14px; }
+.sc-pf-skel-bar, .sc-pf-skel-pill {
+  position: relative; overflow: hidden; display: block;
+  background: var(--surface-3);
+}
+html.dark .sc-pf-skel-bar, html.dark .sc-pf-skel-pill { background: rgba(255,255,255,0.07); }
+.sc-pf-skel-bar { height: 32px; border-radius: 10px; }
+.sc-pf-skel-pill { height: 20px; border-radius: 999px; }
+.sc-pf-skel-bar::after, .sc-pf-skel-pill::after {
+  content: ''; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--text) 8%, transparent), transparent);
+  animation: scPfSheen 1.3s ease-in-out infinite;
+}
+@keyframes scPfSheen { to { transform: translateX(100%); } }
+.sc-pf-spin { animation: scCfSpin 0.9s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .sc-pf-skel-bar::after, .sc-pf-skel-pill::after, .sc-pf-spin { animation: none; }
+}
+
+/* Resolved — a record, not a control. */
+.sc-preflight.is-resolved .sc-pf-head { padding-bottom: 8px; }
+.sc-preflight.is-approved { border-color: color-mix(in srgb, var(--sec-green, #32A966) 50%, var(--border-strong)); }
+.sc-preflight.is-approved .sc-pf-title { color: var(--sec-green-text, #1F7A48); }
+.sc-pf-check { color: var(--sec-green, #32A966) !important; }
+.sc-preflight.is-stood-down { opacity: 0.72; }
+.sc-pf-done { margin: 0; padding: 0 14px 12px; font-size: 0.6875rem; line-height: 1.55; color: var(--text-muted); }
+.sc-pf-done strong { font-weight: 700; color: var(--text); }
 
 /* =============================================================
    Microcopy & trust
@@ -20784,12 +21315,6 @@ html.dark .dsc-theme-light .dash-stamp-icon:not(.dash-stamp-num) .material-symbo
   background: color-mix(in srgb, var(--primary) 10%, transparent);
 }
 .dsc-demo .sc-reply-chips .chip--match .material-symbols-outlined { color: var(--primary-ink, var(--primary)) !important; }
-.dsc-demo .chip.chip-dive {
-  background: transparent; border-color: var(--primary); color: var(--primary); font-weight: 600;
-}
-.dsc-demo .chip.chip-dive .material-symbols-outlined { color: var(--primary) !important; }
-html.dark .dsc-demo .chip.chip-dive { border-color: var(--primary-bright, #8B9FAF); color: var(--primary-bright, #8B9FAF); }
-html.dark .dsc-demo .chip.chip-dive .material-symbols-outlined { color: var(--primary-bright, #8B9FAF) !important; }
 .dsc-demo .sc-reply-chips .chip.ms-chip.is-selected {
   background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600;
 }
@@ -20992,6 +21517,12 @@ html.dark #mi-motion .wa-merge-chip,
   overflow-x: auto; overflow-y: hidden; scrollbar-width: thin;
   scroll-snap-type: x proximity; max-width: 100%;
   padding: 2px 2px 6px; -webkit-overflow-scrolling: touch;
+}
+/* The line that counts the outputs above the rail. Set in chat type here so
+   the specimen reads the way it does in a transcript, where it inherits the
+   message body. */
+.dsc-demo .sc-surface-rail-lead {
+  margin: 0 0 8px; font-size: var(--fs-chat, 0.875rem); line-height: 1.6; color: var(--text);
 }
 .dsc-demo .sc-surface-rail .sc-surface-slot {
   flex: 0 0 auto; scroll-snap-align: start; width: auto; max-width: none;

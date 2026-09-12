@@ -9579,10 +9579,15 @@
       /* Tell the local model what was just asked, so the rewrite of the answer
          picks up this thread rather than reading as a first line. */
       window.WiseOllama?.rememberChatTurn('you', text, PF_THREAD_KEY);
-      const safe = String(text).replace(/</g, '&lt;');
+      /* A brief runs to paragraphs and bullets and has to read that way — the
+         shared shaping the chat module gives a member line, not a copy of it. */
+      const safe = typeof window.WisePromptBody === 'function'
+        ? window.WisePromptBody(text)
+        : String(text).replace(/</g, '&lt;');
       /* The member's very first line reads as a large serif headline; any
-         later lines stay in the normal chat size. */
-      const isFirst = !box.querySelector('.sc-line-you');
+         later lines stay in the normal chat size. A brief is never given that
+         treatment — a document set in headline serif is unreadable. */
+      const isFirst = !box.querySelector('.sc-line-you') && !/\n/.test(String(text));
       box.insertAdjacentHTML(
         'beforeend',
         `<div class="mb-3 sc-line sc-line-you${isFirst ? ' sc-line-you--first' : ''}">${wiseaiYouAvatarSpan()}<div class="sc-line-body"><span class="sc-you-text">${safe}</span>${wiseaiMetaRow(false)}</div></div>`
@@ -10611,10 +10616,26 @@
     function welcomeChipClick(nextStage, label) {
       applyIntentSummary(nextStage);
       hideWelcomeScreen(() => {
-        addUserMessage(label);
+        askUserMessage(label, nextStage);
         /* Continue the conversation on the chip's own intent, not its label. */
         wiseaiRespond(label, nextStage);
       });
+    }
+
+    /* A chip on this surface sends its whole ask, exactly as every intent chip
+       in the app does — one shared expander (js/intent-prompt.js) builds the
+       brief from the chip's own label, and the chip's face never changes. The
+       page's mechanical lines (a removal, an attachment, a typed message, a
+       scripted walkthrough step) keep going through addUserMessage: they are
+       answers and controls, not asks. */
+    function askUserMessage(text, key, opts) {
+      const expand = window.WiseIntentPrompt && window.WiseIntentPrompt.expandText;
+      let full = text;
+      if (typeof expand === 'function') {
+        try { full = expand(text, { surface: 'Product Portfolio' }, key || text) || text; }
+        catch (_) { full = text; }
+      }
+      addUserMessage(full, opts);
     }
 
     /* ── Welcome score cards: horizontal scroll + prioritisation filter ──── */
@@ -10982,7 +11003,7 @@
       hideWelcomeScreen(() => {
         dataVisited = new Set();
         dataStarted = true;
-        addUserMessage('Explore My Data & Charts');
+        askUserMessage('Explore My Data & Charts', 'explore-data');
         wiseaiTraceThen('WISEcodeAI is pulling your portfolio data', () => {
           addWISEcodeAIMessage('Let’s dig into your data. I’ll answer right here in the chat — every stat and chart renders <strong>inline</strong>, so we can keep building on the thread without leaving the conversation. What should we look at first?', { source: false });
           dataOfferChips(DATA_STARTERS);
@@ -11110,7 +11131,7 @@
       hideWelcomeScreen(() => {
         wfResetModule();
         openWorkflowPanel();
-        addUserMessage('Build a Reformulation Plan');
+        askUserMessage('Build a Reformulation Plan', 'reformulation-plan');
         wiseaiTraceThen(null, () => {
           addWISEcodeAIMessage('Let’s build a <strong>Reformulation Plan</strong> together. I’ve opened a plan board on the right — it’s empty for now and we’ll fill it in one step at a time. First, which product are we reformulating?', { source: false });
           wfOfferStep(0);
@@ -14579,7 +14600,7 @@
       hideWelcomeScreen(() => {
         openPortfolioPanel();
         pfSwitchTab(tab);
-        if (userMsg) addUserMessage(userMsg);
+        if (userMsg) askUserMessage(userMsg, 'pf-open-' + tab);
         wiseaiTraceThen('WISEcodeAI is opening your portfolio', () => {
           addWISEcodeAIMessage(wiseaiMsg);
           pfOfferChips(chips);
@@ -14810,7 +14831,7 @@
       pfBrowseTurnLive = true;
       pfExpandChatForBrowse();
       hideWelcomeScreen(() => {
-        if (!skipUser) addUserMessage('Browse products here');
+        if (!skipUser) askUserMessage('Browse products here', 'pf-browse');
         wiseaiTraceThen('Closing the board', () => {
           addWISEcodeAIMessage('I closed the board so we can walk your products here — <strong>Claimed</strong>, <strong>Discovered</strong>, and <strong>In Progress</strong>, as the same cards you see on a phone. Swipe a rail to move through a section. Add a product, import a catalog, or pick another next step from the chips below.', { source: false });
           (wiseaiReplyDone || Promise.resolve()).then(() => {
@@ -14893,7 +14914,7 @@
     }
     function playChatIntent(userMsg, replyHtml, chips, status, onReply) {
       hideWelcomeScreen(() => {
-        if (userMsg) addUserMessage(userMsg);
+        if (userMsg) askUserMessage(userMsg, 'pf-intent');
         wiseaiTraceThen(status || 'Gathering the details', () => {
           addWISEcodeAIMessage(replyHtml, { source: false });
           if (typeof onReply === 'function') onReply();
@@ -15002,7 +15023,7 @@
     function startWhatCanIAsk() {
       try { window.__wiseChatAsk?.open(); } catch (_) {}
       hideWelcomeScreen(() => {
-        addUserMessage('What can I ask you here?');
+        askUserMessage('What can I ask you here?', 'ask-help');
         wiseaiTraceThen('WISEcodeAI is gathering what you can ask', () => {
           const rows = [
             ['Browse products here', 'Browse products here'],
@@ -16589,7 +16610,7 @@
       hideWelcomeScreen(() => {
         compareResetState();
         openComparePanel();
-        addUserMessage('Compare my food');
+        askUserMessage('Compare my food', 'cmp-start');
         wiseaiTraceThen('WISEcodeAI is loading your food', () => {
           cmpSetScope('portfolio_vs_portfolio');   /* populates the scope + metrics */
           /* Start with only YOUR food on the board — no competitor yet. */
@@ -16706,7 +16727,7 @@
       document.getElementById('cmp-scope-chips')?.remove();
       btn?.closest('#cmp-scope-chips')?.remove();
       compareState.followDone = {};
-      addUserMessage(s.userMsg);
+      askUserMessage(s.userMsg, 'cmp-scenario-' + s.id);
       wiseaiTraceThen('WISEcodeAI is assembling the comparison', () => {
         addWISEcodeAIMessage(s.wiseaiReply);
         cmpApplyScenario(s);
@@ -16720,7 +16741,7 @@
       document.getElementById('cmp-scope-chips')?.remove();
       btn?.closest('.sc-reply-chips')?.remove();
       compareState.followDone = {};
-      addUserMessage(scope.userMsg);
+      askUserMessage(scope.userMsg, 'cmp-scope-' + (scope.id || scope.noun || ''));
       wiseaiTraceThen('WISEcodeAI is assembling the comparison', () => {
         addWISEcodeAIMessage(scope.wiseaiReply);
         cmpSetScope(key);
@@ -16849,7 +16870,7 @@
         return;
       }
       if (action === 'rank') {
-        addUserMessage('Rank the shelf set for me.');
+        askUserMessage('Rank the shelf set for me.', 'cmp-rank');
         wiseaiTraceThen(null, () => {
           const live = cmpEntitiesShown().map(e => cmpResolveEntity(scope, e)).filter(e => !e.na).sort((a, b) => cmpScoreFor(b, 'wisescore') - cmpScoreFor(a, 'wisescore'));
           addWISEcodeAIMessage('Ranked by composite WISEscore: ' + live.map((e, i) => (i + 1) + '. <strong>' + e.name + '</strong> (' + Math.round(cmpScoreFor(e, 'wisescore')) + ')').join(' · ') + '.', { source: false });
@@ -16994,7 +17015,7 @@
       if (!m) return;
       const label = cmpMetricShort(m);
       document.getElementById('cmp-follow-chips')?.remove();
-      addUserMessage('Tell me more about ' + label + '.');
+      askUserMessage('Tell me more about ' + label + '.', 'cmp-metric');
       wiseaiTraceThen('WISEcodeAI is pulling the ' + label + ' definition', () => {
         addWISEcodeAIMessage(cmpMetricLong(id), { source: false, feedback: true });
         if (compareState.scope) cmpOfferFollowChips();
@@ -17198,7 +17219,7 @@
       const ent = cmpResolveEntity(scope, base);
       const score = Math.round(cmpScoreFor(ent, meta.metric));
       document.getElementById('cmp-follow-chips')?.remove();
-      addUserMessage('Why is ' + ent.name + ' the ' + meta.topic + '?');
+      askUserMessage('Why is ' + ent.name + ' the ' + meta.topic + '?', 'cmp-why');
       wiseaiTraceThen('WISEcodeAI is breaking down ' + ent.name, () => {
         addWISEcodeAIMessage(cmpTakeawayWhy(key, ent, score) +
           ' Want me to show the ingredients behind it, compare it against another product, or flag where it still has room to improve?', { source: false, feedback: true });
@@ -17216,7 +17237,7 @@
       const metrics = compareState.metrics.map(id => CMP_METRIC_BY_ID[id]).filter(Boolean);
       const ordered = ents;
       document.getElementById('cmp-follow-chips')?.remove();
-      addUserMessage('What’s the overall read on this comparison?');
+      askUserMessage('What’s the overall read on this comparison?', 'cmp-read');
       wiseaiTraceThen('WISEcodeAI is summarizing the board', () => {
         addWISEcodeAIMessage(cmpOverallInsight(scope, metrics, ordered, pendingSet) +
           ' Want me to break down what’s driving the leader, swap in another ' + (scope.noun || 'product') + ', or focus on a specific metric?', { source: false, feedback: true });
@@ -17233,7 +17254,7 @@
       if (!base) return;
       const ent = cmpResolveEntity(scope, base);
       document.getElementById('cmp-follow-chips')?.remove();
-      addUserMessage('Let’s talk about ' + ent.name + '.');
+      askUserMessage('Let’s talk about ' + ent.name + '.', 'cmp-entity');
       wiseaiTraceThen('WISEcodeAI is pulling up ' + ent.name, () => {
         const lead = ent.insight ? ' ' + ent.insight : '';
         addWISEcodeAIMessage('Happy to dig into <strong>' + ent.name + '</strong>.' + lead +
@@ -17711,7 +17732,7 @@
       hideWelcomeScreen(() => {
         lrResetModules();
         lrOpenClaimsPanel();
-        addUserMessage('Prep Launch Readiness');
+        askUserMessage('Prep Launch Readiness', 'launch-readiness');
         wiseaiTraceThen('Setting up launch boards…', () => {
           addWISEcodeAIMessage('Let\'s get <strong>Chipotle Chicken Empanadas</strong> launch-ready. I\'ve opened <strong>Claims Review</strong> on the right — we\'ll fill it step by step. If label copy diverges from the claims, I\'ll open <strong>Packaging Checks</strong> beneath it, then pull in <strong>NFP+</strong>, <strong>SHIELD</strong>, and <strong>TIER</strong> from the top bar as the review deepens.', { source: false });
           lrOfferStep(0);

@@ -5,10 +5,18 @@
  * dashboard (js/dashboard-home.js DATA.upf / DATA.wisescore) — a card-sized
  * double donut and the three WISEscore pillar bars, so the welcome rail
  * shows the values before anyone opens a module.
+ *
+ * The third card is a card-sized code race: the same granola shelf set and
+ * the same scores the comparison board opens on, so the rail previews the
+ * board it leads to.
  */
 
 import { roundedSector } from './chart-arcs.js';
 import { esc } from './escape-html.js';
+
+function assetsBase() {
+  try { return new URL('../assets/', import.meta.url).href; } catch (_) { return '../assets/'; }
+}
 
 const C = {
   green: 'var(--sec-green)',
@@ -146,9 +154,64 @@ function pillarsChartHtml() {
     </div>`;
 }
 
+/* Mirrors the comparison board's product_vs_many shelf set and its default
+   metric rail (CMP_SCOPES.product_vs_many / CMP_DEFAULT_METRICS), trimmed to
+   the three codes that fit a card. */
+const RACE = {
+  caption: '3 codes · 3 granolas',
+  metrics: [
+    { id: 'upf', label: 'UPF Risk', icon: 'science', color: '#2AA866' },
+    { id: 'ing_overall', label: 'Ingredient Integrity', icon: 'eco', color: '#2F74C7' },
+    { id: 'nutrient_overall', label: 'Nutrient Density', icon: 'restaurant', color: '#8A5CC4' },
+  ],
+  runners: [
+    { abbr: 'BM', name: 'Brekky Mix Granola', color: '#4E7D5A', img: 'compare/brekky.jpg',
+      primary: true, scores: { upf: 92, ing_overall: 91, nutrient_overall: 80 } },
+    { abbr: 'CF', name: 'Cascadian Farm Vanilla Almond', color: '#6B5B95', img: 'compare/cascadian.jpg',
+      scores: { upf: 76, ing_overall: 80, nutrient_overall: 70 } },
+    { abbr: 'NP', name: 'Nature’s Path Heritage Flakes', color: '#2E5A87', img: 'compare/naturespath.jpg',
+      scores: { upf: 61, ing_overall: 64, nutrient_overall: 60 } },
+  ],
+};
+
+/* One 0–100 track per code, each product a circular brand bug with its score
+   tucked on the edge. The bugs start on the line and are run out to their
+   scores by playOverviewCardCharts, so the card reads as a race. */
+function raceChartHtml() {
+  const base = assetsBase();
+  const rows = RACE.metrics.map((m) => {
+    const runners = RACE.runners.map((r, i) => {
+      const v = Math.max(0, Math.min(100, r.scores[m.id]));
+      const art = r.img ? `<img src="${esc(base + r.img)}" alt="" loading="lazy">` : '';
+      return `
+        <span class="ws-sc-race-runner${r.primary ? ' is-primary' : ''}"
+              style="--rc:${esc(r.color)};--delay:${i * 110}ms;z-index:${r.primary ? 6 : i + 1}"
+              data-target-left="${v}%">
+          <span class="ws-sc-race-bug">${esc(r.abbr)}${art}</span>
+          <span class="ws-sc-race-num ws-sc-chart-num" data-countup>${v}</span>
+        </span>`;
+    }).join('');
+    return `
+      <div class="ws-sc-race-row">
+        <span class="ws-sc-race-metric"><span class="material-symbols-outlined" style="color:${esc(m.color)}">${esc(m.icon)}</span>${esc(m.label)}</span>
+        <span class="ws-sc-race-track"><span class="ws-sc-race-lane"></span>${runners}</span>
+      </div>`;
+  }).join('');
+  const aria = `Code race across ${RACE.metrics.length} codes for ${RACE.runners.map((r) => r.name).join(', ')}`;
+  return `
+    <div class="ws-sc-chart ws-sc-chart--race" data-ws-chart="race" role="img" aria-label="${esc(aria)}">
+      <div class="ws-sc-race-head">
+        <span class="ws-sc-race-label">Code race</span>
+        <span class="ws-sc-race-sub">${esc(RACE.caption)}</span>
+      </div>
+      <div class="ws-sc-races">${rows}</div>
+    </div>`;
+}
+
 export function overviewCardChartHtml(kind) {
   if (kind === 'upf') return upfChartHtml();
   if (kind === 'pillars') return pillarsChartHtml();
+  if (kind === 'race') return raceChartHtml();
   return '';
 }
 
@@ -202,10 +265,15 @@ function playFills(root) {
     const target = fill.getAttribute('data-target-width');
     if (target) fill.style.width = target;
   });
+  root.querySelectorAll('.ws-sc-race-runner[data-target-left]').forEach((runner) => {
+    const target = runner.getAttribute('data-target-left');
+    if (target) runner.style.left = target;
+  });
 }
 
-/* Sweep the welcome-card donuts and grow the pillar bars. Safe to call more
-   than once — a finished donut is left alone. */
+/* Sweep the welcome-card donuts, grow the pillar bars, and run the race bugs
+   out to their scores. Safe to call more than once — a finished donut is left
+   alone. */
 export function playOverviewCardCharts(root) {
   if (!root) return;
   const apply = () => {

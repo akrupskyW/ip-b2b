@@ -398,12 +398,28 @@
               prompts: ['Meet the Owls'],
               tools: [] },
             { title: 'Wise Owl Progression', icon: 'view_carousel',
-              desc: 'An edge-to-edge row of the Wise Owl in green, red, and blue — tap any owl to see it larger. Motion, stills, then silent theme-aware clips. Nothing opens on the right.',
+              desc: 'An edge-to-edge row of the Wise Owl — Sage in green, Rue in red and Ollie in blue — tap any owl to see it larger. Motion, stills, then silent theme-aware clips. Nothing opens on the right.',
               prompts: ['Wise Owl Progression'],
               tools: [] },
             { title: 'Generate a marketing campaign', icon: 'campaign',
-              desc: 'A WISEcode clothing line and a food-truth documentary — the WISEcode Clan, nine headshots and bios, and Four Chambers: Great, Bad, Ultra-Processed, and Sad. The roster, the film, and the lookbook land as output chips; tap one to open it.',
-              prompts: ['Generate a marketing campaign'],
+              desc: 'A cast of food characters and the finished campaign they front — billboard, bus and van wraps, shelter posters, social cover, magazine page, banners, merch and two priced lookbooks — laid out edge to edge in the answer as a masonry grid you can open full size, with the twelve-card Food Truth Wins collector set on its own carousel below it and the eight-second teaser it was cut for. Nothing opens on the right.',
+              /* The full brief lives with the campaign it asks for
+                 (js/wise-campaign.js) and is read at render time, so a
+                 surface without that module still offers the short ask. */
+              get prompts() {
+                var camp = global.WiseCampaign;
+                return [(camp && camp.brief) || 'Generate a marketing campaign'];
+              },
+              tools: [] },
+            { title: 'The Wise Walk campaign', icon: 'park',
+              desc: 'The brand campaign built on the three WISEcode owls, named here for the first time \u2014 Rue doubts the claim, Ollie reads the code, Sage gives the verdict, one third of the line each. Their three character plates ride their own carousel, then the finished work lands edge to edge as a masonry grid you can open full size: three billboards, the model sheet, the owls built nine feet tall and installed in a plaza by day and lit at night, the park walk and its map, and a tower spectacular. The launch film, cut from the campaign\u2019s own artwork, plays last on its own controls. Nothing opens on the right.',
+              /* The full brief lives with the campaign it asks for
+                 (js/think-wise-campaign.js) and is read at render time, so a
+                 surface without that module still offers the short ask. */
+              get prompts() {
+                var tw = global.WiseThinkWise;
+                return [(tw && tw.brief) || 'The Wise Walk campaign'];
+              },
               tools: [] },
           ],
         },

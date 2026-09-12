@@ -2271,7 +2271,7 @@ function catOf(c) { return c.cat || CAT_BY_NAME[c.name] || 'Actions'; }
 const COMP_LEDES = {
   'Buttons': 'Primary, ghost, text, and icon-only actions — one pill language everywhere.',
   'Intent chips': 'Compact suggestion chips for welcome, replies, and module shortcuts.',
-  'Output chips': 'In-thread previews that open an output — landscape, or the taller carousel size.',
+  'Output chips': 'In-thread previews that open an output — one is a landscape chip, several are portrait cards.',
   'Large intent cards': 'The large-format tap card, sibling to the compact intent chip.',
   'Chat composer': 'The unlocked chat input: text, attachments, database, and send.',
   'Transcript lines': 'You, WISEcodeAI, and event lines — never a speech bubble. A sent ask carries an edge-to-edge wash.',
@@ -3338,6 +3338,7 @@ function demoChatMenuPop() {
     ${row('export', 'download', 'Export conversation')}
     ${row('share', 'share', 'Share')}
     ${row('file-library', 'auto_stories', 'File to Library')}
+    ${sw({ sc: 'preflight', icon: 'rule', label: 'Ask pre-flight', on: true, admin: true, pink: true, cls: 'sc-preflight-item' })}
     <button type="button" class="topbar-menu-item topbar-menu-item--admin" data-sc="voiceover" role="menuitem">
       <span class="material-symbols-outlined topbar-menu-icon">record_voice_over</span>
       <span class="topbar-menu-copy"><span class="topbar-menu-title">Play voiceover</span><span class="topbar-menu-desc">Samuel L. Jackson</span></span>
@@ -3805,7 +3806,7 @@ const COMPONENTS = [
     wide: true,
     cls: '.chip · .ws-intent-chip · .sc-reply-chips .chip (+ .chip-primary, .chip-dive, .chip--match, .ms-chip.is-selected)',
     used: 'WISEcodeAI dock & Studio welcome, module shortcuts, Auth signup, Comparison, in-conversation reply chips',
-    note: 'The compact 28px chip. Welcome shortcuts, module intents, and reply chips all share <code>.chip</code> at <code>height: 28px</code> with <code>--fs-label</code> type. States: Default, Hover, Open/selected (<code>.is-selected</code> / match). <strong>Primary rule:</strong> a solid blue <code>.chip-primary</code> always uses a <strong>filled</strong> icon (<code>FILL 1</code>), never outlined — ghost / tinted / welcome chips stay outlined. Not the same as <em>Output chips</em> — those are the in-transcript previews that open the sticky Output module. Its large-format sibling — <em>Large intent cards</em> — sits beside it.',
+    note: 'The compact 28px chip. Welcome shortcuts, module intents, and reply chips all share <code>.chip</code> at <code>height: 28px</code> with <code>--fs-label</code> type. States: Default, Hover, Open/selected (<code>.is-selected</code> / match). <strong>Primary rule:</strong> a solid blue <code>.chip-primary</code> always uses a <strong>filled</strong> icon (<code>FILL 1</code>), never outlined — ghost / tinted / welcome chips stay outlined. Not the same as <em>Output chips</em> — those are the in-transcript previews that open the sticky Output module. Its large-format sibling — <em>Large intent cards</em> — sits beside it. <strong>Pre-flight rule:</strong> <code>.chip-dive</code> is the deep-dive chip — outlined in brand blue, and the one style whose ask carries no scope, so it always routes through <em>Ask pre-flight</em> before anything runs. Every other style is curated with a known scope and goes straight to its answer.',
     noteIcon: 'straighten',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -3836,76 +3837,112 @@ const COMPONENTS = [
       </div>`,
   },
   {
+    name: 'Ask pre-flight',
+    added: '2026-09-11',
+    wide: true,
+    cat: 'Chat & drawers',
+    cls: '.sc-preflight · .sc-pf-est · .sc-pf-qs · .sc-pf-opt · .sc-pf-foot · js/wiseai-chat.js',
+    used: 'Every chat module. Fires on a typed ask whose wording leaves the result open — and always on a deep-dive chip. Switched from the chat ⋯ ▸ Ask pre-flight (Admin, pink).',
+    note: 'The buffer between an ask and its answer. Some asks cannot be run as written: “compare everything in my portfolio and write it up” is four different jobs depending on how wide you look, what WISEcodeAI may read, and how far it takes the answer — and that is the difference between a few hundred tokens and a few hundred thousand. So the turn stops and asks. <strong>How much to cover</strong>, <strong>what to read</strong> and <strong>how far to take it</strong> are the three questions that actually change the result; the row above them prices the answer they add up to, and re-prices it on every tap. Nothing runs until <em>Approve</em>. <em>Edit</em> hands the ask back to the composer; the × spends nothing. The card opens on WISEcodeAI’s own reading of the wording rather than a blank form, and the approved card stays in the thread as the record of what was agreed. It is a mid-turn card, so the turn’s closing intent chips still trail the real answer — and its options are <code>.sc-pf-opt</code> controls, not a chip row, so nothing retires them mid-decision. The intent chip style that routes through it is <em>Intent chips</em> ▸ <code>.chip-dive</code>.',
+    noteIcon: 'rule',
+    demoCustom: () => {
+      const PF = window.WiseAskPreflight;
+      if (!PF || typeof PF.cardHtml !== 'function') {
+        return '<div class="dsc-empty" style="padding:24px;text-align:center;color:var(--text-muted)">Ask pre-flight loads with the chat shell.</div>';
+      }
+      const spec = PF.sample();
+      const col = (label, html) => `<div class="dsc-state-col" style="flex:1 1 300px;max-width:480px">
+          <div class="dsc-sub-label">${label}</div>
+          ${html}
+        </div>`;
+      return `<div class="dsc-states" style="width:100%">
+          ${col('Drafting', PF.skeletonHtml())}
+          ${col('Asking', PF.cardHtml(spec, 'ask'))}
+          ${col('Approved', PF.cardHtml(spec, 'approved'))}
+          ${col('Stood down', PF.cardHtml(spec, 'cancel'))}
+        </div>`;
+    },
+  },
+  {
     name: 'Output chips',
     wide: true,
     cls: '.sc-surface-card · .sc-surface-card--portrait · .sc-surface-stack · .sc-surface-rail · .sc-surface-vtag · .wa-merge-chip · .wa-merge-chip--portrait',
     used: 'WISEcodeAI Studio Chat · WISEcodeAI dock · sticky Output rail · Intervention Atlas carousel',
-    note: 'When a turn opens Results or Visuals, a chip lands in the transcript: a <strong>52px</strong> preview on the left, the output name on the right, gold stroke. Charts from the Intervention Atlas use a taller <strong>portrait</strong> size \u2014 120px wide with a 108px preview on top \u2014 so a row of them reads as a carousel strip instead of a stack of landscape rows. Every chip is versioned — a compact <code>vN</code> badge rides the <strong>card\u2019s</strong> top-right corner, even on the first pass. Redo the same output and the slot holds <strong>one whole card per version</strong> — same preview, name and stroke — cascaded oldest first with the newest in front. A version is never a bare thumbnail. <strong>Hover fans the cascade</strong> (an 18px edge opens to a 60px peek), lifts the card under the pointer, and slides each earlier card\u2019s tag to its left edge so every version stays labelled. The version currently open on the right wears a stronger ring. Tapping a card opens <em>that</em> version in the sticky Output module — and the rail on the right shows <strong>one chip per version</strong>, same badge, so the cascade and the pane never disagree. Live fan + Replay live in <em>Motion &amp; Resize → Output chip fan</em>.',
+    note: '<strong>The count decides the shape.</strong> When a turn opens <em>one</em> output on Results or Visuals, it lands as the <strong>landscape chip</strong>: a <strong>52px</strong> preview on the left, the output name beside it, gold stroke, the full width of the reading column. When the same turn produces <em>more than one</em>, they land as <strong>portrait cards</strong> on a scrolling rail \u2014 120px wide with a 108px preview on top and the name small underneath \u2014 led by a line that says how many arrived (\u201cHere are <strong>10 outputs</strong> for you to review.\u201d). A lone output is never a portrait card, and a run of them is never a stack of landscape rows. <strong>Versions are not a count:</strong> redoing an output is still one output, so it stays a landscape chip holding a cascade of landscape cards. Every chip is versioned — a compact <code>vN</code> badge rides the <strong>card\u2019s</strong> top-right corner, even on the first pass. Redo the same output and the slot holds <strong>one whole card per version</strong> — same preview, name and stroke — cascaded oldest first with the newest in front. A version is never a bare thumbnail. <strong>Hover fans the cascade</strong> (an 18px edge opens to a 60px peek), lifts the card under the pointer, and slides each earlier card\u2019s tag to its left edge so every version stays labelled. The version currently open on the right wears a stronger ring. Tapping a card opens <em>that</em> version in the sticky Output module — and the rail on the right shows <strong>one chip per version</strong>, same badge, so the cascade and the pane never disagree. Live fan + Replay live in <em>Motion &amp; Resize → Output chip fan</em>.',
     noteIcon: 'layers',
     demo: `
-      <div class="dsc-states" style="width:100%">
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Single · v1</div>
-          ${outputChipHTML({ title: OUTPUT_CHIP_TITLE, versions: [OUTPUT_CHIP_VERS[0]] })}
-        </div>
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Single · hover</div>
-          ${outputChipHTML({ title: OUTPUT_CHIP_TITLE, versions: [OUTPUT_CHIP_VERS[0]], hover: true })}
-        </div>
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Stack of 3 · default</div>
-          ${outputChipHTML({ title: OUTPUT_CHIP_TITLE, versions: OUTPUT_CHIP_VERS })}
-        </div>
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Stack of 3 · hover (fan)</div>
-          ${outputChipHTML({ title: OUTPUT_CHIP_TITLE, versions: OUTPUT_CHIP_VERS, hover: true })}
-        </div>
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Stack · v2 open in Output</div>
-          ${outputChipHTML({ title: OUTPUT_CHIP_TITLE, versions: OUTPUT_CHIP_VERS, activeVer: 2 })}
-        </div>
-      </div>
-      <div class="dsc-states" style="width:100%;margin-top:18px">
-        <div class="dsc-state-col" style="flex:1 1 100%">
-          <div class="dsc-sub-label">Sticky Output rail — every version is its own chip</div>
-          <div class="wa-merge-chips mi-out-rail">
-            ${outputRailChipHTML({ title: OUTPUT_CHIP_TITLE, inner: OUTPUT_CHIP_VERS[0].inner, ver: 1 })}
-            ${outputRailChipHTML({ title: OUTPUT_CHIP_TITLE, inner: OUTPUT_CHIP_VERS[1].inner, ver: 2, active: true })}
-            ${outputRailChipHTML({ title: OUTPUT_CHIP_TITLE, inner: OUTPUT_CHIP_VERS[2].inner, ver: 3 })}
+      <div class="dsc-sub" style="width:100%">
+        <div class="dsc-sub-label">One output \u2014 the landscape chip</div>
+        <div class="dsc-states" style="width:100%">
+          <div class="dsc-state-col">
+            <div class="dsc-sub-label">v1</div>
+            ${outputChipHTML({ title: OUTPUT_CHIP_TITLE, versions: [OUTPUT_CHIP_VERS[0]] })}
+          </div>
+          <div class="dsc-state-col">
+            <div class="dsc-sub-label">Hover</div>
+            ${outputChipHTML({ title: OUTPUT_CHIP_TITLE, versions: [OUTPUT_CHIP_VERS[0]], hover: true })}
+          </div>
+          <div class="dsc-state-col">
+            <div class="dsc-sub-label">Redone 3\u00d7 \u2014 still one output</div>
+            ${outputChipHTML({ title: OUTPUT_CHIP_TITLE, versions: OUTPUT_CHIP_VERS })}
+          </div>
+          <div class="dsc-state-col">
+            <div class="dsc-sub-label">Redone 3\u00d7 \u00b7 hover (fan)</div>
+            ${outputChipHTML({ title: OUTPUT_CHIP_TITLE, versions: OUTPUT_CHIP_VERS, hover: true })}
+          </div>
+          <div class="dsc-state-col">
+            <div class="dsc-sub-label">Redone 3\u00d7 \u00b7 v2 open in Output</div>
+            ${outputChipHTML({ title: OUTPUT_CHIP_TITLE, versions: OUTPUT_CHIP_VERS, activeVer: 2 })}
           </div>
         </div>
       </div>
-      <div class="dsc-states" style="width:100%;margin-top:18px">
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Carousel \u00b7 portrait \u00b7 single</div>
-          ${outputChipHTML({ title: 'Health impact', versions: [OUTPUT_CHIP_VERS[0]], portrait: true })}
+      <div class="dsc-sub" style="width:100%;margin-top:18px">
+        <div class="dsc-sub-label">More than one output \u2014 portrait cards on the rail</div>
+        <div class="dsc-states" style="width:100%">
+          <div class="dsc-state-col" style="flex:1 1 100%">
+            <p class="sc-surface-rail-lead">Here are <strong>3 outputs</strong> for you to review.</p>
+            <div class="sc-surface-rail">
+              ${outputChipHTML({ title: 'Health impact', versions: [OUTPUT_CHIP_VERS[0]], portrait: true })}
+              ${outputChipHTML({ title: 'Evidence', versions: [OUTPUT_CHIP_VERS[1]], portrait: true })}
+              ${outputChipHTML({ title: 'Acceptance', versions: [OUTPUT_CHIP_VERS[2]], portrait: true })}
+            </div>
+          </div>
         </div>
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Carousel \u00b7 portrait \u00b7 stack</div>
-          ${outputChipHTML({ title: 'Health impact', versions: OUTPUT_CHIP_VERS, portrait: true })}
-        </div>
-        <div class="dsc-state-col">
-          <div class="dsc-sub-label">Carousel \u00b7 portrait \u00b7 hover (fan)</div>
-          ${outputChipHTML({ title: 'Health impact', versions: OUTPUT_CHIP_VERS, hover: true, portrait: true })}
-        </div>
-      </div>
-      <div class="dsc-states" style="width:100%;margin-top:18px">
-        <div class="dsc-state-col" style="flex:1 1 100%">
-          <div class="dsc-sub-label">Carousel rail \u2014 the Atlas strip</div>
-          <div class="sc-surface-rail">
+        <div class="dsc-states" style="width:100%;margin-top:14px">
+          <div class="dsc-state-col">
+            <div class="dsc-sub-label">One card \u00b7 v1</div>
             ${outputChipHTML({ title: 'Health impact', versions: [OUTPUT_CHIP_VERS[0]], portrait: true })}
-            ${outputChipHTML({ title: 'Evidence', versions: [OUTPUT_CHIP_VERS[1]], portrait: true })}
-            ${outputChipHTML({ title: 'Acceptance', versions: [OUTPUT_CHIP_VERS[2]], portrait: true })}
+          </div>
+          <div class="dsc-state-col">
+            <div class="dsc-sub-label">One card \u00b7 redone 3\u00d7</div>
+            ${outputChipHTML({ title: 'Health impact', versions: OUTPUT_CHIP_VERS, portrait: true })}
+          </div>
+          <div class="dsc-state-col">
+            <div class="dsc-sub-label">One card \u00b7 hover (fan)</div>
+            ${outputChipHTML({ title: 'Health impact', versions: OUTPUT_CHIP_VERS, hover: true, portrait: true })}
           </div>
         </div>
       </div>
-      <div class="dsc-states" style="width:100%;margin-top:18px">
-        <div class="dsc-state-col" style="flex:1 1 100%">
-          <div class="dsc-sub-label">Sticky Output rail \u2014 portrait chips</div>
-          <div class="wa-merge-chips mi-out-rail">
-            ${outputRailChipHTML({ title: 'Health impact', inner: OUTPUT_CHIP_VERS[0].inner, ver: 1, portrait: true })}
-            ${outputRailChipHTML({ title: 'Evidence', inner: OUTPUT_CHIP_VERS[1].inner, ver: 2, active: true, portrait: true })}
-            ${outputRailChipHTML({ title: 'Acceptance', inner: OUTPUT_CHIP_VERS[2].inner, ver: 3, portrait: true })}
+      <div class="dsc-sub" style="width:100%;margin-top:18px">
+        <div class="dsc-sub-label">Sticky Output rail \u2014 every version is its own chip</div>
+        <div class="dsc-states" style="width:100%">
+          <div class="dsc-state-col" style="flex:1 1 100%">
+            <div class="dsc-sub-label">One output, three versions</div>
+            <div class="wa-merge-chips mi-out-rail">
+              ${outputRailChipHTML({ title: OUTPUT_CHIP_TITLE, inner: OUTPUT_CHIP_VERS[0].inner, ver: 1 })}
+              ${outputRailChipHTML({ title: OUTPUT_CHIP_TITLE, inner: OUTPUT_CHIP_VERS[1].inner, ver: 2, active: true })}
+              ${outputRailChipHTML({ title: OUTPUT_CHIP_TITLE, inner: OUTPUT_CHIP_VERS[2].inner, ver: 3 })}
+            </div>
+          </div>
+        </div>
+        <div class="dsc-states" style="width:100%;margin-top:14px">
+          <div class="dsc-state-col" style="flex:1 1 100%">
+            <div class="dsc-sub-label">Three outputs \u2014 portrait chips</div>
+            <div class="wa-merge-chips mi-out-rail">
+              ${outputRailChipHTML({ title: 'Health impact', inner: OUTPUT_CHIP_VERS[0].inner, ver: 1, portrait: true })}
+              ${outputRailChipHTML({ title: 'Evidence', inner: OUTPUT_CHIP_VERS[1].inner, ver: 2, active: true, portrait: true })}
+              ${outputRailChipHTML({ title: 'Acceptance', inner: OUTPUT_CHIP_VERS[2].inner, ver: 3, portrait: true })}
+            </div>
           </div>
         </div>
       </div>`,
@@ -6122,7 +6159,7 @@ const TARCH_LAYERS = [
     body: 'The ⋮ on the chat. Turns is an Admin row in here.',
     jump: 'Chat \u22ef menu' },
   { id: 'outputs', side: 'right', icon: 'dashboard_customize', title: 'Output chips',
-    body: 'A Results / Visuals chip that opens the pane.',
+    body: 'One output is this chip. Several are portrait cards on a rail.',
     jump: 'Output chips' },
   { id: 'actions', side: 'right', icon: 'thumbs_up_down', title: 'Transcript actions',
     body: 'Copy, accurate / not, and the answer ⋮.',
@@ -6131,7 +6168,7 @@ const TARCH_LAYERS = [
     body: 'Reply chips that open the next transcript.',
     jump: 'Intent chips' },
   { id: 'versions', side: 'right', icon: 'layers', title: 'Versions',
-    body: 'Redo stacks every version at 52px. Hover fans the stack.',
+    body: 'A redo is still one output — its versions stack. Hover fans them.',
     jump: 'Output chips' },
   { id: 'tokens', side: 'right', icon: 'more_horiz', title: 'Token readout',
     body: 'Three dots under the composer — this-turn cost.',

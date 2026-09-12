@@ -1,0 +1,76 @@
+---
+description: One output surfaces as the landscape chip; more than one surfaces as portrait cards on the carousel rail — the count decides, never the caller
+alwaysApply: true
+---
+
+# One Output Is A Chip, Many Outputs Are Cards
+
+How many outputs a turn produced decides how they are drawn. This is not a
+per-surface taste call and it is not something a caller opts into — it is the
+count, and nothing else.
+
+- **Exactly one output** → the **landscape chip**. A full-width card in the
+  reading column: 52px preview on the left, the output name beside it at 14px,
+  the gold Gilded Grain stroke, the `vN` badge on the top-right corner. It
+  reads as a line of the answer, because that is what it is.
+- **More than one output** → the **portrait cards**, side by side on the
+  carousel rail. 120px wide, a 108px preview on top, the name small and
+  centered underneath. The rail bleeds to the chat module's edges and scrolls,
+  and a lead line above it says how many landed: *"Here are **10 outputs** for
+  you to review."*
+
+A single output is never a portrait card, and a run of outputs is never a
+stack of landscape rows. Those were the two bugs this rule exists to stop: one
+chart alone in a 120px card with a name too small to read, and ten landscape
+rows laddering down the thread.
+
+## The count is the turn's, not the slot's
+
+Read the count across everything the **turn** surfaced, before the first one
+is drawn. Three charts and a report is four outputs — cards. One report on its
+own is one output — a chip, even when the answer above it is long.
+
+**Versions are not a count.** Redoing the same output stacks versions into one
+slot; that slot is still one output. A single output redone three times is a
+landscape chip holding a cascade of three landscape cards, never a portrait
+strip. The portrait card exists inside a multi-output rail, and a card there
+can itself carry one version or a fanned cascade of several.
+
+## How it is wired
+
+`surfaceSet(items, { rail })` in `pages/wiseai.html` is the door. A turn hands
+it the whole set and it applies the rule: one item goes straight to
+`surfaceBlock` untouched, several get the rail, `cardLayout: 'portrait'` and
+the count line on the first. A turn that builds its own run — the atlas, the
+brand overview — does the same thing inline against a count it derives
+(`atlasOutputCount()`), never a literal.
+
+Below that, `surfaceCardHtml()` draws the slot (`cardLayout: 'portrait'` picks
+the card, its absence picks the chip) and `postSurfaceBlock()` puts the cards
+on a shared `.sc-surface-rail.sc-surface-rail--bleed`, writing `railLead`
+above the first. The shared classes are `.sc-surface-card`,
+`.sc-surface-card--portrait`, `.sc-surface-rail` and `.sc-surface-rail-lead`
+in `pages/wise.css`.
+
+Outputs still arrive after the answer has finished (see the turn-stage-order
+rule) and the pane stays shut until the member taps a chip or a card (see the
+outputs-open-on-request rule). This rule only decides what the member is
+looking at.
+
+## Rules for the agent
+
+- Never hand-pick a layout. A turn that can surface more than one output hands
+  the whole set to `surfaceSet` and lets the count choose. Calling
+  `surfaceBlock` two or three times in a row is the bug this rule names.
+- Never write the count as a literal. Derive it from the set, so adding an
+  output cannot leave the lead saying the old number.
+- Do not fork the two looks per page or invent a third size — see the
+  nothing-page-local rule. A new host renders the same two classes.
+- The catalog states this rule on the **Output chips** card in
+  `pages/all-modules.html`. If you change the behavior, change the card.
+
+## Verify
+
+`scripts/_output_count_shape_probe.py` drives a one-output turn and a
+multi-output turn and checks the shape each one landed in. Run it in both
+themes after touching any of this.

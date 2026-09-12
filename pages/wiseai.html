@@ -4648,9 +4648,15 @@
     import { mountWISEcodeAIChat, OWL_BUG } from '../js/wiseai-chat.js';
     import { owlProgressionCarouselHtml } from '../js/owl-progression-carousel.js';
     import {
-      clanCampaignReply, clanMeetReply, clanDocReply, clanLookReply, clanChamberReply,
-      clanRosterView, clanDocView, clanLookView,
-    } from '../js/wise-clan-campaign.js';
+      campaignReply, campaignCastReply, campaignOohReply, campaignPrintReply,
+      campaignLookbookReply, campaignCardsReply, campaignTeaserReply,
+      WISE_CAMPAIGN_BRIEF,
+    } from '../js/wise-campaign.js';
+    import {
+      thinkWiseReply, thinkWiseBillboardsReply, thinkWiseMoldsReply,
+      thinkWiseWalkReply, thinkWiseCastReply, thinkWiseFilmReply,
+      THINK_WISE_BRIEF,
+    } from '../js/think-wise-campaign.js';
     import { staggerReveal } from '../js/stagger-reveal.js';
     import { saveGeneratedReport } from '../js/generated-reports.js';
 
@@ -10456,11 +10462,18 @@
        and `note` prefixes each panel's meta line with why this cut exists.
        `fullTurn` adds the three Results outputs that complete the first atlas
        ask, so the rail lead can say ten rather than six. */
+    /* How many outputs a call to surfaceAtlasPanels posts: the six panels, the
+       closing read, and — on the opening ask — the baseline, the private-label
+       share and the references. The rail lead counts with this rather than with
+       a literal, so adding a panel cannot leave the count behind. */
+    function atlasOutputCount(fullTurn) {
+      return ATLAS_PANELS.length + 1 + (fullTurn ? 3 : 0);
+    }
     function surfaceAtlasPanels(opts) {
       const o = opts || {};
       const { reset, note, fullTurn, ...state } = o;
       const atlasChip = { rail: 'atlas-visuals', cardLayout: 'portrait' };
-      const n = ATLAS_PANELS.length + 1 + (fullTurn ? 3 : 0);
+      const n = atlasOutputCount(fullTurn);
       ATLAS_PANELS.forEach((p, i) => {
         surfaceBlock('visuals', {
           icon: p.icon,
@@ -11536,7 +11549,8 @@
       { intent: 'brandwelcome', icon: 'waving_hand', label: 'Welcome!', ask: 'Welcome! Give me an overview of my entire brand.' },
       { intent: 'inline_nfp', icon: 'view_column', label: 'Inline NFP', ask: 'Open the Nutrition Facts, ingredient list and score modules inline in the transcript.', nextIntents: ['brandwelcome', 'myfoods_sup', 'gras'] },
       { intent: 'atlas', icon: 'bubble_chart',    label: 'Food Intervention Atlas', ask: ATLAS_ASK },
-      { intent: 'campaign', icon: 'campaign',      label: 'Generate a marketing campaign', ask: 'Generate a marketing campaign' },
+      { intent: 'campaign', icon: 'campaign',      label: 'Generate a marketing campaign', ask: WISE_CAMPAIGN_BRIEF },
+      { intent: 'thinkwise', icon: 'park',         label: 'The Wise Walk campaign', ask: THINK_WISE_BRIEF },
       { intent: 'topbrands', icon: 'leaderboard',   label: 'Top 3 brands · WISEscore \u2265 50', ask: 'Create a comparison chart of the top three brands with more than 50 UPCs that are in the top half of the WISE score.' },
       { intent: 'kraft',   icon: 'inventory_2',     label: 'Kraft SKUs \u00b7 % UPF', ask: 'How many SKUs does Kraft have and what percent are ultra processed?' },
       { intent: 'sprouts', icon: 'storefront',      label: 'How many foods does Sprouts have?', ask: 'How many foods does the Sprouts retailer have?' },
@@ -11624,18 +11638,35 @@
       { intent: 'fedreg_search', icon: 'travel_explore',      label: 'Federal Register notice on GRAS',      ask: 'Search for the Federal Register notice on the GRAS proposal' },
     ];
 
-    /* Follow-up chips after the Protect Ya Plate / WISEcode Clan campaign. */
+    /* Follow-up chips after the "your food has character" campaign. Each one
+       re-cuts the finished work the answer already shipped — the cast, the
+       out-of-home buy, print & digital, the WISEWear lookbooks, the collector
+       set and its teaser. */
     const CAMPAIGN_FOLLOWUPS = [
-      { intent: 'campaign_clan',  icon: 'groups',      label: 'Meet the Clan', ask: 'Meet the WISEcode Clan' },
-      { intent: 'campaign_doc',   icon: 'movie',       label: 'Play the documentary', ask: 'Play the Four Chambers documentary' },
-      { intent: 'campaign_look',  icon: 'checkroom',   label: 'Show the clothing line', ask: 'Show the Chamber Collection clothing line' },
-      { intent: 'campaign_great', icon: 'eco',         label: 'The Great chamber', ask: 'Show the Great chamber' },
-      { intent: 'campaign_bad',   icon: 'error',       label: 'The Bad chamber', ask: 'Show the Bad chamber' },
-      { intent: 'campaign_upf',   icon: 'science',     label: 'The Ultra-Processed chamber', ask: 'Show the Ultra-Processed chamber' },
-      { intent: 'campaign_sad',   icon: 'nights_stay', label: 'The Sad chamber', ask: 'Show the Sad chamber' },
+      { intent: 'campaign_cast',   icon: 'groups',     label: 'Meet the cast', ask: 'Meet the campaign cast' },
+      { intent: 'campaign_ooh',    icon: 'signpost',   label: 'The out-of-home buy', ask: 'Show the out-of-home buy' },
+      { intent: 'campaign_print',  icon: 'ad_units',   label: 'Print & digital', ask: 'Show the print and digital buy' },
+      { intent: 'campaign_look',   icon: 'checkroom',  label: 'The WISEWear lookbooks', ask: 'Show the WISEWear lookbooks' },
+      { intent: 'campaign_cards',  icon: 'style',      label: 'The collector set', ask: 'Walk me through the Food Truth Wins collector set' },
+      { intent: 'campaign_teaser', icon: 'movie',      label: 'Play the teaser', ask: 'Play the Food Truth Wins teaser' },
     ];
     CAMPAIGN_FOLLOWUPS.forEach((c) => {
       c.nextIntents = CAMPAIGN_FOLLOWUPS.filter((x) => x.intent !== c.intent);
+    });
+
+    /* Follow-up chips after the "Think Wise. Code Wise. Live Wise." campaign.
+       Each one re-cuts the finished work the answer already shipped — the paid
+       outdoor buy, the nine-foot sculptures, the park walk they are installed
+       on, the three characters themselves, and the launch film. */
+    const THINKWISE_FOLLOWUPS = [
+      { intent: 'thinkwise_molds', icon: 'temple_buddhist', label: 'The nine-foot sculptures', ask: 'Show me the Think Wise sculptures' },
+      { intent: 'thinkwise_walk',  icon: 'park',            label: 'The Wise Walk installation', ask: 'Show me The Wise Walk installation' },
+      { intent: 'thinkwise_cast',  icon: 'menu_book',       label: 'Meet Rue, Ollie & Sage', ask: 'Meet Rue, Ollie and Sage' },
+      { intent: 'thinkwise_bb',    icon: 'signpost',        label: 'The billboards', ask: 'Show me the Think Wise billboards' },
+      { intent: 'thinkwise_film',  icon: 'movie',           label: 'Play the launch film', ask: 'Play The Wise Walk launch film' },
+    ];
+    THINKWISE_FOLLOWUPS.forEach((c) => {
+      c.nextIntents = THINKWISE_FOLLOWUPS.filter((x) => x.intent !== c.intent);
     });
 
     /* Follow-up chips offered after the protein-bar SKU-count answer lands. */
@@ -11694,6 +11725,8 @@
     };
     attachNext('campaign', CAMPAIGN_FOLLOWUPS);
     CAMPAIGN_FOLLOWUPS.forEach((c) => attachNext(c.intent, CAMPAIGN_FOLLOWUPS.filter((x) => x.intent !== c.intent)));
+    attachNext('thinkwise', THINKWISE_FOLLOWUPS);
+    THINKWISE_FOLLOWUPS.forEach((c) => attachNext(c.intent, THINKWISE_FOLLOWUPS.filter((x) => x.intent !== c.intent)));
     attachNext('brandwelcome', BRANDWELCOME_FOLLOWUPS);
     attachNext('atlas', ATLAS_FOLLOWUPS);
     attachNext('topbrands', TOPBRANDS_FOLLOWUPS);
@@ -11739,7 +11772,7 @@
         cookie:       { label: 'Compare the top cookies', ask: 'Compare the top chocolate-chip cookies side by side' },
         cat:          { label: 'Compare wet vs dry cat food', ask: 'Compare wet vs dry cat food against those feline nutrient needs' },
         myfoods:      { label: 'Compare my UPF split', ask: 'Analyze MY foods by UPF' },
-        campaign:     { label: 'Compare the four chambers', ask: 'Compare the Great, Bad, Ultra-Processed and Sad chambers' },
+        campaign:     { label: 'Compare the heroes & villains', ask: 'Compare the Food Truth Wins heroes against the villains they beat' },
       },
       report: {
         atlas:        { label: 'Rebuild this as a formal scientific report', ask: 'Rebuild this as a formal scientific report' },
@@ -11758,7 +11791,7 @@
         cookie:       { label: 'Cookie ranking report', ask: 'Show me a pretty report \u2014 all the charts & trends' },
         cat:          { label: 'Feline nutrition report', ask: 'Turn the feline nutrient list into a short report' },
         myfoods:      { label: 'My foods UPF report', ask: 'Analyze MY foods by UPF' },
-        campaign:     { label: 'Four Chambers report', ask: 'Turn the Protect Ya Plate campaign into a short report' },
+        campaign:     { label: 'Collector-set report', ask: 'Walk me through the Food Truth Wins collector set' },
       },
       spider: {
         atlas:        { label: 'Re-weight the frontier toward profit protection', ask: 'Re-weight the frontier toward profit protection' },
@@ -11777,7 +11810,7 @@
         cookie:       { label: 'Spider-chart the top cookies', ask: 'Spider-chart the top cookies on WISEscore vs chocolate load' },
         cat:          { label: 'Spider-chart feline nutrients', ask: 'Spider-chart the essential feline nutrients' },
         myfoods:      { label: 'Chart my UPF split', ask: 'Analyze MY foods by UPF' },
-        campaign:     { label: 'Chart the four chambers', ask: 'Chart the Great, Bad, Ultra-Processed and Sad chambers' },
+        campaign:     { label: 'Show the out-of-home buy', ask: 'Show the out-of-home buy' },
       },
     };
     function topicOf(intent) {
@@ -11801,6 +11834,7 @@
       if (id === 'catnutrients') return 'cat';
       if (id === 'playful') return 'playful';
       if (id.indexOf('campaign') === 0) return 'campaign';
+      if (id.indexOf('thinkwise') === 0) return 'thinkwise';
       return id;
     }
     function contextualizeChip(chip, thread) {
@@ -11997,7 +12031,7 @@
           cookie: 'Spider-charted the top chocolate-chip cookies on WISEscore vs where chocolate sits in the ingredient list. Charted it in Visuals \u2192',
           cupcake: 'Spider-charted that cupcake against nearby bakery desserts \u2014 it still sits at the origin on every spoke we have data for. Charted it in Visuals \u2192',
           cat: 'Spider-charted the essential feline nutrients \u2014 taurine, animal protein, preformed vitamin A, arachidonic acid, niacin. Charted it in Visuals \u2192',
-          campaign: () => clanDocReply(),
+          campaign: () => campaignOohReply(),
           upf: 'Spider-charted the main UPF signals \u2014 additives, sweeteners, refined oils \u2014 so you can see which ones drive the classification. Charted it in Visuals \u2192',
           myfoods: 'Charted your workspace UPF split \u2014 80 foods, 65 Super Ultra-Processed. Not the 943k catalog. Charted it in Visuals \u2192',
         };
@@ -12032,7 +12066,7 @@
           cupcake: 'Compared that cupcake with a couple of nearby bakery desserts on the same board. It still sits at the bottom: longer ingredient list, more synthetic colors, more emulsifiers.<br><br>Opened the comparison in Results &amp; Details \u2192',
           cookie: 'Took the cookie ranking we just ran and put the three strongest \u201cleast chocolate\u201d candidates head-to-head \u2014 Paleo Vegan Chocolate Chip, Emmy\u2019s Organics Coconut, and Get Back To Human Grain-Free.<br><br>Opened the comparison in Results &amp; Details \u2192',
           cat: 'Compared wet vs dry cat food against the feline nutrient needs we just walked through. Wet wins on moisture and typically on taurine density; dry wins on calorie density and shelf life \u2014 neither is a human WISEscore food.<br><br>Opened the comparison in Results &amp; Details \u2192',
-          campaign: () => clanDocReply(),
+          campaign: () => campaignCardsReply(),
           myfoods: () => takeReply('myfoods_upf', text, 'myfoods_upf', ctx),
         };
         if (t && by[t]) {
@@ -12060,7 +12094,7 @@
           worst: 'Turned the worst-foods ranking into a short report \u2014 the tail is decorated cakes and dessert kits, not one weird outlier, with Member\u2019s Mark Christmas Gourmet Cupcakes at <strong>0.06</strong>.<br><br>Opened the ranking in Results &amp; Details \u2192',
           cupcake: 'Turned that cupcake detail into a short report \u2014 the lookup failed on the full card, but the search result is enough to see why it sits at <strong>0.06</strong>.<br><br>Opened the detail in Results &amp; Details \u2192',
           cat: 'Turned the feline nutrient list into a short report \u2014 obligate carnivore, taurine, animal protein, preformed vitamin A, arachidonic acid, niacin, with the peer-reviewed sources attached.<br><br>Opened the references in Results &amp; Details \u2192',
-          campaign: () => clanDocReply(),
+          campaign: () => campaignCardsReply(),
           cookie: REPORT_REPLY,
           myfoods: 'Turned your workspace into a short report \u2014 <strong>80</strong> foods in My foods (demo), <strong>65</strong> Super Ultra-Processed, scores read from the workspace not the 943k catalog.<br><br>Opened the breakdown in Visuals \u2192',
         };
@@ -12075,14 +12109,19 @@
       playful: PLAYFUL_REPLY,
       owls: OWLS_REPLY,
       owl_progression: OWL_PROGRESSION_REPLY,
-      campaign: () => clanCampaignReply(),
-      campaign_clan: () => clanMeetReply(),
-      campaign_doc: () => clanDocReply(),
-      campaign_look: () => clanLookReply(),
-      campaign_great: () => clanChamberReply('great'),
-      campaign_bad: () => clanChamberReply('bad'),
-      campaign_upf: () => clanChamberReply('upf'),
-      campaign_sad: () => clanChamberReply('sad'),
+      campaign: () => campaignReply(),
+      campaign_cast: () => campaignCastReply(),
+      campaign_ooh: () => campaignOohReply(),
+      campaign_print: () => campaignPrintReply(),
+      campaign_look: () => campaignLookbookReply(),
+      campaign_cards: () => campaignCardsReply(),
+      campaign_teaser: () => campaignTeaserReply(),
+      thinkwise: () => thinkWiseReply(),
+      thinkwise_bb: () => thinkWiseBillboardsReply(),
+      thinkwise_molds: () => thinkWiseMoldsReply(),
+      thinkwise_walk: () => thinkWiseWalkReply(),
+      thinkwise_cast: () => thinkWiseCastReply(),
+      thinkwise_film: () => thinkWiseFilmReply(),
       catnutrients: `Cats are <strong>obligate carnivores</strong>, so they need a nutrient profile built around animal-derived protein plus several nutrients they can\u2019t reliably make or get from plant precursors${catCite(1, 3, 5)}. The essentials the literature keeps flagging:`
         + `<ul style="margin:10px 0 4px;padding-left:20px">`
         + `<li><strong>Taurine</strong> \u2014 vital for the retina, heart &amp; reproduction; deficiency is classically tied to retinal degeneration and dilated cardiomyopathy${catCite(7, 8)}.</li>`
@@ -12322,17 +12361,43 @@
       if (/top\s*10\s*brands/.test(t)) return takeReply('topbrands_top10', text, 'topbrands_top10', ctx);
       if (/retailer/.test(t) && /(wisescore|top half|\u2265\s*50|>=\s*50|50 or higher)/.test(t)) return takeReply('topbrands_retail', text, 'topbrands_retail', ctx);
       if (/(top\s*(three|3)\s*brands|more than 50 upc|top half of (the )?wise)/.test(t)) return takeReply('topbrands', text, 'topbrands', ctx);
+      /* The Wise Walk campaign, matched ahead of the owl film and the first
+         campaign because both of those own broader words — "owls",
+         "billboard" — that would otherwise swallow an ask naming this one.
+         The whole brief goes first: it mentions every piece it wants back, so
+         a per-piece test would answer the brief with one cut of the buy. */
+      if (/second\s+(wise\s*code\s+)?campaign|wise walk campaign/.test(t)) return takeReply('thinkwise', text, 'thinkwise', ctx);
+      if (/think wise|code wise|live wise|wise walk|\brue\b|\bollie\b|\bsage\b|sculptur|moulded|molded|plinth|nameplate/.test(t)) {
+        if (/\bfilm\b/.test(t)) return takeReply('thinkwise_film', text, 'thinkwise_film', ctx);
+        if (/sculptur|\bmoulds?\b|\bmolds?\b|plinth|nameplate|statue/.test(t)) return takeReply('thinkwise_molds', text, 'thinkwise_molds', ctx);
+        if (/\brue\b|\bollie\b|\bsage\b|character bible|model sheet/.test(t)) return takeReply('thinkwise_cast', text, 'thinkwise_cast', ctx);
+        if (/billboard|spectacular/.test(t)) return takeReply('thinkwise_bb', text, 'thinkwise_bb', ctx);
+        if (/wise walk|installation|\bpark\b|site map/.test(t)) return takeReply('thinkwise_walk', text, 'thinkwise_walk', ctx);
+        return takeReply('thinkwise', text, 'thinkwise', ctx);
+      }
       if (/owl\s*progression/.test(t)) return takeReply('owl_progression', text, 'owl_progression', ctx);
-      if (/\bowls?\b|food truth/.test(t)) return takeReply('owls', text, 'owls', ctx);
+      /* The Think Wise campaign owns the three named owls, so its asks sit
+         above the owl-film and "food has character" matchers — a Think Wise
+         ask legitimately says "owl" and "billboard". */
+      if (/brand campaign around our three owls/.test(t)) return takeReply('thinkwise', text, 'thinkwise', ctx);
+      if (/launch film/.test(t)) return takeReply('thinkwise_film', text, 'thinkwise_film', ctx);
+      if (/\bollie\b|\brue\b/.test(t)) return takeReply('thinkwise_cast', text, 'thinkwise_cast', ctx);
+      if (/\bsage\b/.test(t) && /owl|character|cast|\bmeet\b|wise/.test(t)) return takeReply('thinkwise_cast', text, 'thinkwise_cast', ctx);
+      if (/sculpture|\bmolds?\b|nine.foot/.test(t)) return takeReply('thinkwise_molds', text, 'thinkwise_molds', ctx);
+      if (/wise walk/.test(t)) return takeReply('thinkwise_walk', text, 'thinkwise_walk', ctx);
+      if (/think wise|code wise|live wise/.test(t) && /billboard|spectacular|out.of.home/.test(t)) return takeReply('thinkwise_bb', text, 'thinkwise_bb', ctx);
+      if (/think wise|code wise|live wise|food for truth|information is easy/.test(t)) return takeReply('thinkwise', text, 'thinkwise', ctx);
+      /* "Food Truth Wins" is the collector set, not the owl film — the tagline
+         match has to stand down for it. */
+      if (/\bowls?\b|food truth(?! wins)/.test(t)) return takeReply('owls', text, 'owls', ctx);
       if (/playful|unwisecode/.test(t)) return takeReply('playful', text, 'playful', ctx);
-      if (/meet the (wise.?code )?clan/.test(t)) return takeReply('campaign_clan', text, 'campaign_clan', ctx);
-      if (/four chambers|documentary/.test(t)) return takeReply('campaign_doc', text, 'campaign_doc', ctx);
-      if (/clothing line|chamber collection|lookbook/.test(t)) return takeReply('campaign_look', text, 'campaign_look', ctx);
-      if (/great chamber/.test(t)) return takeReply('campaign_great', text, 'campaign_great', ctx);
-      if (/bad chamber/.test(t)) return takeReply('campaign_bad', text, 'campaign_bad', ctx);
-      if (/(ultra[- ]?processed|upf) chamber/.test(t)) return takeReply('campaign_upf', text, 'campaign_upf', ctx);
-      if (/sad chamber/.test(t)) return takeReply('campaign_sad', text, 'campaign_sad', ctx);
-      if (/marketing campaign|protect ya plate|wise.?code clan/.test(t)) return takeReply('campaign', text, 'campaign', ctx);
+      if (/(campaign )?cast|food.headed|extended cast/.test(t)) return takeReply('campaign_cast', text, 'campaign_cast', ctx);
+      if (/out.of.home|billboard|bus wrap|van wrap|shelter/.test(t)) return takeReply('campaign_ooh', text, 'campaign_ooh', ctx);
+      if (/print and digital|print & digital|magazine page|leaderboard|display ad/.test(t)) return takeReply('campaign_print', text, 'campaign_print', ctx);
+      if (/wisewear|lookbook|clothing line|merch/.test(t)) return takeReply('campaign_look', text, 'campaign_look', ctx);
+      if (/collector set|collector card|heroes|villain/.test(t)) return takeReply('campaign_cards', text, 'campaign_cards', ctx);
+      if (/teaser/.test(t)) return takeReply('campaign_teaser', text, 'campaign_teaser', ctx);
+      if (/marketing campaign|food has character/.test(t)) return takeReply('campaign', text, 'campaign', ctx);
       if (/cat/.test(t) && /(nutrient|require|taurine|amino|obligate|carnivore)/.test(t)) return takeReply('catnutrients', text, 'catnutrients', ctx);
       if (/identif.*cat|cat.*(food|feed)|feed me|as a cat/.test(t)) return takeReply('cat', text, 'cat', ctx);
       if (/(redo|re-?do|regenerate|rebuild|update)/.test(t) && /(chart|graph|visual|driver)/.test(t)) return takeReply('redochart', text, 'redochart', ctx);
@@ -12787,6 +12852,29 @@
       surfaceQueue.push([which, opts]);
       startSurfacePump();
     }
+    /* Surface everything ONE turn produced, and let the count pick the shape.
+       A single output is the landscape chip it has always been; two or more
+       become portrait cards sharing one rail, under a line that says how many
+       landed. Callers hand over the whole set rather than posting block by
+       block, because the count is a property of the turn and cannot be known
+       from inside one block. `rail` names the strip so a follow-up re-cut
+       re-versions into the same one. */
+    function surfaceSet(items, opts) {
+      const list = (items || []).filter(Boolean);
+      if (!list.length) return;
+      if (list.length === 1) { surfaceBlock(list[0][0], list[0][1]); return; }
+      const o = opts || {};
+      const lead = `Here are <strong>${list.length} outputs</strong> for you to review.`;
+      list.forEach(([which, block], i) => {
+        surfaceBlock(which, {
+          ...block,
+          rail: o.rail,
+          cardLayout: 'portrait',
+          railLead: i === 0 ? lead : undefined,
+        });
+      });
+    }
+
     /* Surface a rail of full modules INLINE in the transcript (see
        js/inline-module-rail.js). Nothing opens on the right; the chat keeps its
        width. Routed through the shared pump so it still lands after the answer. */
@@ -13595,7 +13683,7 @@
       energy: 'energy_sugar', proteinbars: 'protein_vs_granola', sweeteners: 'sweet_vs_natural',
       topbrands: 'topbrands_top10', brisket: 'brisket', upf: 'upf',
       worst: 'worst',       cupcake: 'cupcake', cookie: 'cookie', cat: 'cat',
-      myfoods: 'myfoods_upf', campaign: 'campaign_doc',
+      myfoods: 'myfoods_upf',
     };
     const REPORT_SURFACE = {
       atlas: 'atlas_report',
@@ -13603,7 +13691,7 @@
       energy: 'energy', proteinbars: 'proteinbars', sweeteners: 'sweeteners',
       topbrands: 'topbrands', brisket: 'brisket', upf: 'upf',
       worst: 'worst', cupcake: 'cupcake', cat: 'catnutrients',
-      myfoods: 'myfoods_upf', campaign: 'campaign_doc',
+      myfoods: 'myfoods_upf',
     };
     const SPIDER_SURFACE = {
       atlas: 'atlas_profit',
@@ -13611,7 +13699,7 @@
       energy: 'energy_heat', proteinbars: 'protein_brands', sweeteners: 'sweet_vs_natural',
       topbrands: 'topbrands', brisket: 'brisket', upf: 'upf',
       cupcake: 'cupcake', cookie: 'cookie', cat: 'catnutrients',
-      myfoods: 'myfoods_upf', campaign: 'campaign_doc',
+      myfoods: 'myfoods_upf',
     };
     function surface(intent, ctx) {
       const topic = ctx && ctx.topic;
@@ -13695,85 +13783,45 @@
             note: 'Re-weighted to profit protection',
           });
         } else if (intent === 'atlas_retailer') {
+          /* The retailer cut is one of this turn's outputs, not a row above
+             them — it takes the first card on the atlas rail and carries the
+             lead for the whole set. */
           surfaceBlock('results', {
             icon: 'storefront',
             title: 'Intervention atlas \u00b7 single-retailer cut',
             meta: 'Kroger \u2014 the one retailer in the source record with a published own-brands page & a filed 10-K',
             html: atlasRetailerView(),
+            rail: 'atlas-visuals',
+            cardLayout: 'portrait',
+            railLead: `Here are <strong>${atlasOutputCount(false) + 1} outputs</strong> for you to review.`,
           });
           surfaceAtlasPanels({
             sel: 'plkits',
             note: 'Single-retailer cut \u2014 own-brand lever selected, still a scenario layer',
           });
-        } else if (intent === 'campaign') {
-          surfaceBlock('results', {
-            icon: 'groups',
-            title: 'The WISEcode Clan',
-            meta: 'Nine members \u00b7 headshots & bios \u00b7 Protect Ya Plate',
-            html: clanRosterView(),
-            versionKey: 'wise-clan-roster',
-          });
-          surfaceBlock('visuals', {
-            icon: 'movie',
-            title: 'Four Chambers',
-            meta: 'A WISEcode Clan film \u00b7 Great, Bad, Ultra-Processed, Sad',
-            html: clanDocView(),
-            versionKey: 'wise-clan-doc',
-          });
-          surfaceBlock('results', {
-            icon: 'checkroom',
-            title: 'The Chamber Collection',
-            meta: 'Protect Ya Plate \u00b7 hoodie, chamber tees, cap, varsity',
-            html: clanLookView(),
-            versionKey: 'wise-clan-look',
-          });
-        } else if (intent === 'campaign_clan') {
-          surfaceBlock('results', {
-            icon: 'groups',
-            title: 'The WISEcode Clan',
-            meta: 'Nine members \u00b7 headshots & bios \u00b7 Protect Ya Plate',
-            html: clanRosterView(),
-            versionKey: 'wise-clan-roster',
-          });
-        } else if (intent === 'campaign_doc' || intent === 'campaign_great' || intent === 'campaign_bad' || intent === 'campaign_upf' || intent === 'campaign_sad') {
-          const chapter = intent === 'campaign_doc' ? 'great'
-            : intent.replace('campaign_', '');
-          surfaceBlock('visuals', {
-            icon: 'movie',
-            title: 'Four Chambers',
-            meta: 'A WISEcode Clan film \u00b7 Great, Bad, Ultra-Processed, Sad',
-            html: clanDocView({ chapter }),
-            versionKey: 'wise-clan-doc',
-          });
-        } else if (intent === 'campaign_look') {
-          surfaceBlock('results', {
-            icon: 'checkroom',
-            title: 'The Chamber Collection',
-            meta: 'Protect Ya Plate \u00b7 hoodie, chamber tees, cap, varsity',
-            html: clanLookView(),
-            versionKey: 'wise-clan-look',
-          });
         } else if (intent === 'brisket') {
-          surfaceBlock('results', {
-            icon: 'terminal',
-            title: 'Gut Health · code evaluation',
-            meta: 'WISEcode run · 18 ingredients parsed · score 64 (Good) · 38 steps',
-            html: brisketCodeEvalView(),
-          });
-          surfaceBlock('visuals', {
-            icon: 'stacked_bar_chart',
-            title: 'Gut Health score drivers · brisket',
-            meta: 'Modeled contribution of each ingredient group to the returned Gut Health score',
-            html: brisketChartView(1),
-            versionKey: 'gut-drivers',
-            versionReset: true,
-          });
-          surfaceBlock('results', {
-            icon: 'summarize',
-            title: 'The gut-health-optimized brisket',
-            meta: 'WISEcodeAI report · ingredient roles, score bands & optimization',
-            html: brisketReportView(),
-          });
+          surfaceSet([
+            ['results', {
+              icon: 'terminal',
+              title: 'Gut Health · code evaluation',
+              meta: 'WISEcode run · 18 ingredients parsed · score 64 (Good) · 38 steps',
+              html: brisketCodeEvalView(),
+            }],
+            ['visuals', {
+              icon: 'stacked_bar_chart',
+              title: 'Gut Health score drivers · brisket',
+              meta: 'Modeled contribution of each ingredient group to the returned Gut Health score',
+              html: brisketChartView(1),
+              versionKey: 'gut-drivers',
+              versionReset: true,
+            }],
+            ['results', {
+              icon: 'summarize',
+              title: 'The gut-health-optimized brisket',
+              meta: 'WISEcodeAI report · ingredient roles, score bands & optimization',
+              html: brisketReportView(),
+            }],
+          ], { rail: 'brisket-run' });
         } else if (intent === 'redochart') {
           /* "Redo the chart" — the score-driver chart is rebuilt. We seed the two
              prior versions (original run + sauerkraut-promoted) so the redo's
@@ -13799,18 +13847,20 @@
             html: worstFoodsView(),
           });
         } else if (intent === 'spider') {
-          surfaceBlock('results', {
-            icon: 'format_list_numbered',
-            title: '10 worst foods · gut & immune request',
-            meta: '10 of 943,428 matches — sorted by WISEscore ascending · Gut Health & Excellent Source requested',
-            html: tenWorstView(),
-          });
-          surfaceBlock('visuals', {
-            icon: 'radar',
-            title: 'Spider chart · 10 worst foods',
-            meta: 'Requested sort: gut health & immune-system support. Only WISEscore returned data.',
-            html: radarChart(),
-          });
+          surfaceSet([
+            ['results', {
+              icon: 'format_list_numbered',
+              title: '10 worst foods · gut & immune request',
+              meta: '10 of 943,428 matches — sorted by WISEscore ascending · Gut Health & Excellent Source requested',
+              html: tenWorstView(),
+            }],
+            ['visuals', {
+              icon: 'radar',
+              title: 'Spider chart · 10 worst foods',
+              meta: 'Requested sort: gut health & immune-system support. Only WISEscore returned data.',
+              html: radarChart(),
+            }],
+          ], { rail: 'worst-spider' });
         } else if (intent === 'cupcake') {
           surfaceBlock('results', {
             icon: 'cake',
@@ -13842,18 +13892,20 @@
             html: compareProductsView(),
           });
         } else if (intent === 'report') {
-          surfaceBlock('results', {
-            icon: 'summarize',
-            title: 'Finding the best chocolate chip cookie',
-            meta: 'WISEcodeAI report · ranked views, candidate shortlist & trend-style slopes',
-            html: reportView(),
-          });
-          surfaceBlock('visuals', {
-            icon: 'insights',
-            title: 'Report visuals · cookie ranking',
-            meta: 'Distribution, score curve & trend-style slopes built from the current data',
-            html: reportVisualsView(),
-          });
+          surfaceSet([
+            ['results', {
+              icon: 'summarize',
+              title: 'Finding the best chocolate chip cookie',
+              meta: 'WISEcodeAI report · ranked views, candidate shortlist & trend-style slopes',
+              html: reportView(),
+            }],
+            ['visuals', {
+              icon: 'insights',
+              title: 'Report visuals · cookie ranking',
+              meta: 'Distribution, score curve & trend-style slopes built from the current data',
+              html: reportVisualsView(),
+            }],
+          ], { rail: 'cookie-report' });
         } else if (intent === 'catnutrients') {
           /* One live References block — if it's already surfaced, re-open it
              instead of spawning a duplicate set of #cat-ref-* ids. */
@@ -13883,18 +13935,20 @@
             html: catFoodView(),
           });
         } else if (intent === 'kraft') {
-          surfaceBlock('visuals', {
-            icon: 'pie_chart',
-            title: '1,874 foods across 2 WISEcode UPF Verification',
-            meta: 'Foods where brand equals Kraft',
-            html: kraftUpfDonutChart(),
-          });
-          surfaceBlock('visuals', {
-            icon: 'percent',
-            title: '% Share by WISEcode UPF Verification',
-            meta: 'Foods where brand equals Kraft and WISEcode UPF verification is UPF vs Foods where brand equals Kraft',
-            html: kraftUpfShareChart(),
-          });
+          surfaceSet([
+            ['visuals', {
+              icon: 'pie_chart',
+              title: '1,874 foods across 2 WISEcode UPF Verification',
+              meta: 'Foods where brand equals Kraft',
+              html: kraftUpfDonutChart(),
+            }],
+            ['visuals', {
+              icon: 'percent',
+              title: '% Share by WISEcode UPF Verification',
+              meta: 'Foods where brand equals Kraft and WISEcode UPF verification is UPF vs Foods where brand equals Kraft',
+              html: kraftUpfShareChart(),
+            }],
+          ], { rail: 'kraft-upf' });
         } else if (intent === 'kraft_wisescore') {
           surfaceBlock('visuals', {
             icon: 'donut_small',
@@ -13931,18 +13985,20 @@
             html: kraftCatsChart(),
           });
         } else if (intent === 'sprouts') {
-          surfaceBlock('results', {
-            icon: 'storefront',
-            title: 'Sprouts Farmers Market \u00b7 catalog',
-            meta: '20,635 foods matched against WISEcode \u00b7 retailer summary',
-            html: sproutsView(),
-          });
-          surfaceBlock('visuals', {
-            icon: 'donut_small',
-            title: 'Sprouts catalog \u00b7 mix',
-            meta: '1,240 brands \u00b7 61 avg WISEscore \u00b7 18 categories \u00b7 96% GRAS-verified',
-            html: sproutsDonutCharts(),
-          });
+          surfaceSet([
+            ['results', {
+              icon: 'storefront',
+              title: 'Sprouts Farmers Market \u00b7 catalog',
+              meta: '20,635 foods matched against WISEcode \u00b7 retailer summary',
+              html: sproutsView(),
+            }],
+            ['visuals', {
+              icon: 'donut_small',
+              title: 'Sprouts catalog \u00b7 mix',
+              meta: '1,240 brands \u00b7 61 avg WISEscore \u00b7 18 categories \u00b7 96% GRAS-verified',
+              html: sproutsDonutCharts(),
+            }],
+          ], { rail: 'sprouts-catalog' });
         } else if (intent === 'gras') {
           surfaceBlock('visuals', {
             icon: 'verified',
@@ -14089,18 +14145,20 @@
             versionReset: true,
           });
         } else if (intent === 'topbrands') {
-          surfaceBlock('results', {
-            icon: 'leaderboard',
-            title: 'Top three brands \u00b7 WISEscore top half',
-            meta: 'Brands with the most foods scoring 50 or higher',
-            html: topBrandsOverviewView(),
-          });
-          surfaceBlock('visuals', {
-            icon: 'bar_chart',
-            title: 'Foods with WISEscore 50 or higher, by brand',
-            meta: 'Top three qualifying brands by food count',
-            html: topBrandsChartView(),
-          });
+          surfaceSet([
+            ['results', {
+              icon: 'leaderboard',
+              title: 'Top three brands \u00b7 WISEscore top half',
+              meta: 'Brands with the most foods scoring 50 or higher',
+              html: topBrandsOverviewView(),
+            }],
+            ['visuals', {
+              icon: 'bar_chart',
+              title: 'Foods with WISEscore 50 or higher, by brand',
+              meta: 'Top three qualifying brands by food count',
+              html: topBrandsChartView(),
+            }],
+          ], { rail: 'topbrands' });
         } else if (intent === 'topbrands_counts') {
           surfaceBlock('results', {
             icon: 'pin',
@@ -14868,12 +14926,17 @@
           label: 'Start a conversation',
           cards: [
             { variant: 'gold', large: true, icon: 'explore', pill: { tone: 'gold', icon: 'auto_stories', text: 'Walkthrough' }, title: 'Learn the platform', desc: 'A walkthrough of the product \u2014 and What can I ask? parked beside it, so you can steal prompts as you go.', action: 'Show me around', intent: 'walkthrough' },
+            /* Double-width campaign card: the billboard is the whole card, so it
+               carries no headline of its own \u2014 just the pill and the CTA. */
+            { variant: 'welcome', xl: true, artOnly: true, art: '../assets/wise-campaign/card-hero-billboard.jpg', pill: { tone: 'gold', icon: 'campaign', text: 'Campaign' }, title: 'Good taste. Great characters.', action: 'Generate a campaign', intent: 'campaign', ask: WISE_CAMPAIGN_BRIEF },
+            { variant: 'welcome', art: '../assets/think-wise/thumbs/mold-trio-plaza.jpg', pill: { tone: 'gold', icon: 'park', text: 'Campaign' }, title: 'The owls leave the screen.', desc: 'Rue, Ollie and Sage \u2014 named, moulded nine feet tall, and installed in a park. Billboards, sculptures, the walk and the film.', action: 'Show me the work', intent: 'thinkwise', ask: THINK_WISE_BRIEF },
             { variant: 'welcome', icon: 'insights', title: 'Smarter decisions start here.', desc: 'Your whole brand in one read \u2014 WISEscore, coverage, flagged ingredients, and what to fix first.', action: 'Show me', intent: 'brandwelcome', ask: 'Welcome! Give me an overview of my entire brand.' },
             { variant: 'welcome', chart: 'upf', icon: 'donut_large', pill: { tone: 'up', icon: 'verified', text: '92% Non-UPF' }, title: 'Your brand UPF', desc: 'The same Non-UPF read as Overview \u2014 22 of 24 analyzed products.', action: 'Open the overview', intent: 'brandwelcome', ask: 'Show me my brand UPF overview.' },
             { variant: 'welcome', chart: 'pillars', icon: 'stacked_bar_chart', pill: { tone: 'up', icon: 'leaderboard', text: '79 Good' }, title: 'The three WISEscore pillars', desc: 'Nutrient quality, ingredient quality, and health outcomes \u2014 scored the way Overview does.', action: 'See the breakdown', intent: 'brand_pillars', ask: 'Break down my WISEscore pillars.' },
+            { variant: 'welcome', chart: 'race', icon: 'sports_score', pill: { tone: 'up', icon: 'north', text: 'Leads 3 of 3' }, title: 'Race my granola against the shelf', desc: 'Three codes, three products \u2014 the opening read of the comparison board.', action: 'Run the race', intent: 'compare', ask: 'Compare a few products side by side' },
             { variant: 'metric', icon: 'leaderboard', pill: { tone: 'up', icon: 'north', text: 'Top 3' }, metric: '22,514', title: 'Top 3 brands, top-half WISEscore', desc: 'Brands with the most foods scoring 50 or higher.', action: 'Compare', intent: 'topbrands', ask: 'Create a comparison chart of the top three brands with more than 50 UPCs that are in the top half of the WISE score.' },
             { variant: 'metric', icon: 'inventory_2', pill: { tone: 'alert', icon: 'science', text: '46.9% UPF' }, metric: '1,874', title: 'Kraft SKUs and their UPF share', desc: 'Every Kraft product in the catalog, split by the WISEcode UPF verification.', action: 'Break it down', intent: 'kraft', ask: 'How many SKUs does Kraft have and what percent are ultra processed?' },
-            { variant: 'gold', large: true, icon: 'campaign', pill: { tone: 'gold', icon: 'movie', text: 'Campaign' }, title: 'Generate a marketing campaign', desc: 'A WISEcode clothing line and a food-truth documentary \u2014 nine characters, four chambers: Great, Bad, Ultra-Processed, Sad.', action: 'Generate', intent: 'campaign', ask: 'Generate a marketing campaign' },
+            { variant: 'gold', large: true, icon: 'campaign', pill: { tone: 'gold', icon: 'movie', text: 'Campaign' }, title: 'Generate a marketing campaign', desc: 'The catalog cast as food characters, and the sixteen finished pieces they front \u2014 billboards, wraps, posters, merch and two priced lookbooks \u2014 plus a twelve-card collector set and the teaser cut for it.', action: 'Generate', intent: 'campaign', ask: WISE_CAMPAIGN_BRIEF },
             { variant: 'metric', icon: 'verified', pill: { tone: 'alert', icon: 'warning', text: '81 unsafe' }, metric: '8,658', title: 'Ingredients with a GRAS status', desc: 'GRAS, Historical and Unclear \u2014 and the handful that came back Unsafe.', action: 'Count', intent: 'gras', ask: 'How many ingredients do we have some GRAS classification for?' },
             { variant: 'metric', icon: 'storefront', pill: { tone: 'up', icon: 'storefront', text: 'Retailer' }, metric: '20,635', title: 'How many foods does Sprouts have?', desc: 'Distinct Sprouts-carried products matched against WISEcode.', action: 'Count', intent: 'sprouts', ask: 'How many foods does the Sprouts retailer have?' },
             { variant: 'wiseai', icon: 'auto_awesome', title: 'Is this ultra-processed?', desc: 'Paste an ingredient list for a WISEcode UPF read.', action: 'Ask', intent: 'upf', ask: 'Is this ingredient list ultra-processed?' },

@@ -24,12 +24,33 @@ opacity or an explicit Play / Pause still wins at any width.
 
 This is not a per-page fallback and must not be "corrected" back to Scene.
 
+## Films carry their own opacity and speed
+
+Two of the five fields are films rather than canvas helices — Video (the
+marketing hero) and Wheat (a golden DNA strand twisted out of wheat stalks,
+covering the whole module). A film has no angle, camera, scale or strand, so
+it answers the Opacity question with its own pair of rows: while a film is the
+chosen field, the Film cluster's **Opacity** and **Speed** stand in for the
+canvas field's Opacity and Wash, which hide.
+
+Those two numbers are stored **per clip** (`BGANIM_VIDEO_CLIPS` in
+`js/wiseai-chat.js`, keys `wise:chat-bg-anim-film-<part>-<clip>`), so the hero
+and the wheat strand cannot overwrite each other and neither can drag the
+Scene pose off 50%. Wheat's published default is **35% opacity at 40% speed** —
+faint and slowed on purpose, so it reads as a backdrop rather than a video
+that is playing. Video stays at the Scene strength and its own rate.
+
+Do not fold film opacity back onto the shared `wise:chat-bg-anim-opacity`
+key, and do not raise Wheat's default to match Scene.
+
 ## What this means on the surface
 
 - Open any chat with Helix → it matches the wiseai helix, not a local look.
 - Fresh load (no saved preference) → Scene: on, 3D, ~50% opacity.
 - Fresh load in mobile view → the same pose, dimmed to 35% and held still.
 - Change a slider on wiseai → the same values land on every other helix.
+- Pick Wheat in the Field segment → the golden strand fills the whole chat
+  module at 35%, looping slowly, and the Film rows appear to tune it.
 
 ## Rules for the agent
 

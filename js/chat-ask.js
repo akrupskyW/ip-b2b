@@ -81,6 +81,10 @@
       '.wch-ask-insert .material-symbols-outlined,.wch-ask-prompt-btn .material-symbols-outlined{font-variation-settings:"FILL" 1;}',
       '.wch-ask-cap{border:0;background:none;border-radius:0;padding:2px 6px 0;cursor:pointer;}',
       '.wch-ask-prompt{position:relative;display:flex;align-items:center;gap:8px;width:100%;padding:7px 9px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);border-radius:9px;cursor:pointer;text-align:left;color:inherit;font-family:inherit;}',
+      /* A prompt can be a full brief (the campaign one runs to a page). Show the
+         opening lines; the whole thing still goes to the chat, and the row's
+         title attribute carries it for hover. */
+      '.wch-ask-prompt-text{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;min-width:0;}',
       '.wch-sidebar.wch-ask-panel.wch-docked .wch-ask-list{padding-bottom:18px;}'
     ].join('');
     var style = document.createElement('style');

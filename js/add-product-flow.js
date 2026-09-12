@@ -316,9 +316,28 @@
     /* Tell the local model what was just asked, so the rewrite of the answer
        picks up this thread rather than reading as a first line. */
     window.WiseOllama?.rememberChatTurn('you', text, AP_THREAD_KEY);
+    /* A brief runs to paragraphs and bullets and has to read that way — same
+       shaping the shared chat module gives a member line, not a copy of it. */
+    const body = typeof window.WisePromptBody === 'function'
+      ? window.WisePromptBody(text) : esc(text);
     messagesEl.insertAdjacentHTML('beforeend',
-      `<div class="sc-line sc-line-you">${youAvatarSpan()}<div class="sc-line-body">${esc(text)}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div></div></div>`);
+      `<div class="sc-line sc-line-you">${youAvatarSpan()}<div class="sc-line-body">${body}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div></div></div>`);
     scrollDown(true); /* fresh user action — always bring their message into view */
+  }
+  /* A chip that asks something sends the whole ask, the same as every intent
+     chip elsewhere in the app (js/intent-prompt.js). The wizard's mechanical
+     step controls — "Scan the barcode", "No allergens", "Done with allergens" —
+     keep going through addUser: those are answers to a question WISEcodeAI just
+     asked, not asks of their own, and a brief on top of one would be nonsense.
+     `key` keeps a given chip's phrasing stable between taps. */
+  function addUserAsk(text, key) {
+    const expand = window.WiseIntentPrompt && window.WiseIntentPrompt.expandText;
+    let full = text;
+    if (typeof expand === 'function') {
+      try { full = expand(text, { surface: 'Add Product' }, key || text) || text; }
+      catch (_) { full = text; }
+    }
+    addUser(full);
   }
   function addUserImage(src, name) {
     hideWelcome();
@@ -2618,11 +2637,11 @@
     state.lifecyclePeek = null;
     revealIngredientList();
     if (!state.iaRan) {
-      addUser('Verify the ingredients');
+      addUserAsk('Verify the ingredients', 'verify-ingredients');
       runIngredientAnalysis(true, false);
       return;
     }
-    addUser('Verify the ingredients');
+    addUserAsk('Verify the ingredients', 'verify-ingredients');
     wiseSay(`The ingredient list for <strong>${esc(state.productName)}</strong> is open on the right. Confirm the mappings, then it can earn a Non-UPF Shield.`,
       nfpIntentChips());
   }
@@ -3185,11 +3204,11 @@
   function openNfpReport(kind) {
     const name = esc(state.productName || 'this product');
     if (kind === 'upf') {
-      addUser('Open the Product UPF report');
+      addUserAsk('Open the Product UPF report', 'report-upf');
       wiseSay(`Here's the <strong>Product UPF</strong> breakdown for <strong>${name}</strong> — how processed it is and whether it qualifies for the Non-UPF Shield.`,
         nfpIntentChips());
     } else {
-      addUser('Open the Product Details Report');
+      addUserAsk('Open the Product Details Report', 'report-details');
       wiseSay(`Pulling together the <strong>Product Details Report</strong> for <strong>${name}</strong> — identity, sizes, Nutrition Facts, ingredients, and codes in one export.`,
         nfpIntentChips());
     }
@@ -3624,7 +3643,7 @@
     state.step = 'save';
     state.done.save = true;
     renderNFP();
-    addUser('Everything looks right, claim this product');
+    addUserAsk('Everything looks right, claim this product', 'claim-product');
     wiseSay(`Claimed — <strong>${esc(state.productName)}</strong> is now in your <strong>${esc(state.brand)}</strong> portfolio. It qualifies for the Non-UPF Shield whenever you are ready to verify it.`,
       [
         { label: 'Get the Non-UPF Shield', icon: 'gpp_good', action: 'shield' },
@@ -3644,7 +3663,7 @@
     state.step = 'save';
     state.done.save = true;
     renderNFP();
-    addUser('Save it to my portfolio');
+    addUserAsk('Save it to my portfolio', 'save-portfolio');
     wiseSay(`Done — <strong>${esc(state.productName)}</strong> is saved to your <strong>${esc(state.brand)}</strong> portfolio. It'll show under <strong>Claimed → Needs Info</strong> until ingredients are verified. Want to verify them now, add another, or head back?`,
       [
         { label: 'Verify ingredients', icon: 'fact_check', action: 'verify-ingredients' },
@@ -5118,7 +5137,7 @@
     state.price = '3.99';
   }
   function loadSample() {
-    addUser('Show me an example');
+    addUserAsk('Show me an example', 'sample-product');
     const p = SAMPLE_PARSE;
     state.image = p.image; state.productName = p.productName; state.category = p.category;
     if (p.brand) state.brand = p.brand;
@@ -6293,7 +6312,7 @@
           ta.focus();
           sizeIngredEdit(ta);
         }
-        if (echoUser !== false) addUser('Analyze the ingredients.');
+        if (echoUser !== false) addUserAsk('Analyze the ingredients.', 'ia-analyze');
         wiseSay('Add your ingredients list first — paste it from the label or type it in, then hit Analyze. A label photo works too.');
       });
       return;
@@ -6355,7 +6374,7 @@
       if (!r.isGroup && iaMatchOf(r) === 'ok' && r.id) state.iaConfirm[r.id] = true;
     });
     replaceIaPanel();
-    if (echoUser !== false) addUser('Confirm matched ingredients.');
+    if (echoUser !== false) addUserAsk('Confirm matched ingredients.', 'ia-confirm-all');
     const wf = iaWorkflow();
     const next = wf.pending
       ? ` ${wf.pending} mapping${wf.pending === 1 ? '' : 's'} still need a review — confirm the fuzzy ones or look up anything unmatched.`
@@ -6696,7 +6715,7 @@
     const wf = iaWorkflow();
     const names = wf.unmatched.map((r) => r.raw);
     if (!names.length) {
-      if (echoUser !== false) addUser('Look up unmatched ingredients');
+      if (echoUser !== false) addUserAsk('Look up unmatched ingredients', 'ia-lookup');
       wiseSay('Nothing unmatched — every parsed ingredient has a mapping. Confirm the matches or tap the owl next to any name to search a better map.',
         nfpIntentChips({ skip: ['ia-lookup'] }));
       return;
@@ -6753,7 +6772,7 @@
       ? flagged.slice(0, 3).map((r) => `<strong>${esc(r.code)}</strong> ${esc(r.interp)} (${r.score}/100)`).join('; ')
         + '.'
       : 'no flags.';
-    if (echoUser !== false) addUser('Test the code scores');
+    if (echoUser !== false) addUserAsk('Test the code scores', 'ia-test-codes');
     wiseSay(
       `Tested the code scores against this product — opened <strong>Codes</strong> in the Ingredients Analyzer. ${flagged.length ? 'Needs a look: ' + flagBit : 'Clean read — ' + flagBit} Next you can test Wise Code AI results or confirm any leftover mappings.`,
       nfpIntentChips({ skip: ['ia-test-codes'] }));
@@ -6773,7 +6792,7 @@
     if (sec) sec.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'nearest' });
     const wf = iaWorkflow();
     const pl2 = wf.analyzed ? wf.stats.leaves.filter((r) => r.pl >= 2).length : 0;
-    if (echoUser !== false) addUser('Test Wise Code AI results');
+    if (echoUser !== false) addUserAsk('Test Wise Code AI results', 'ia-test-scout');
     wiseSay(
       `Opened <strong>Wise Code AI Engine Flavor Results</strong> — category, sub-category and process level for every parsed ingredient. ${pl2 ? `<strong>${pl2}</strong> sit at process level 2 or higher.` : 'Process levels are in.'}`,
       nfpIntentChips({ skip: ['ia-test-scout'] }));

@@ -1161,8 +1161,23 @@
         /* Tell the local model what was just asked, so the rewrite of the answer
            picks up this thread rather than reading as a first line. */
         window.WiseOllama?.rememberChatTurn('you', text, GS_THREAD_KEY);
-        box.insertAdjacentHTML('beforeend', '<div class="mb-3 sc-line sc-line-you">' + youAvatarSpan() + '<div class="sc-line-body">' + esc(text) + metaRow() + '</div></div>');
+        /* A brief runs to paragraphs and bullets and has to read that way — the
+           shared shaping the chat module gives a member line, not a copy of it. */
+        const bodyHtml = typeof window.WisePromptBody === 'function'
+          ? window.WisePromptBody(text) : esc(text);
+        box.insertAdjacentHTML('beforeend', '<div class="mb-3 sc-line sc-line-you">' + youAvatarSpan() + '<div class="sc-line-body">' + bodyHtml + metaRow() + '</div></div>');
         gsFollowChat(true); /* fresh user action — always bring their message into view */
+      }
+      /* A chip sends its whole ask, the same as every intent chip in the app
+         (js/intent-prompt.js). What the member types stays exactly as typed. */
+      function addUserAsk(text, key) {
+        const expand = window.WiseIntentPrompt && window.WiseIntentPrompt.expandText;
+        let full = text;
+        if (typeof expand === 'function') {
+          try { full = expand(text, { surface: 'Guiding Stars' }, key || text) || text; }
+          catch (_) { full = text; }
+        }
+        addUser(full);
       }
       /* Same paragraph-by-paragraph reveal as the shared chat module. */
       const GS_REDUCED_MOTION = (() => {
@@ -1257,7 +1272,7 @@
         if (!btn) return;
         const chip = CHIPS.find((c) => c.id === btn.dataset.chip);
         if (!chip) return;
-        addUser(chip.label);
+        addUserAsk(chip.label, chip.id);
         if (chip.filter) setFilter(chip.filter, true);
         else if (chip.goto) gotoSection(chip.goto);
         respond(chip.reply);

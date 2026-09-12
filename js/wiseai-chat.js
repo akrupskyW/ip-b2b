@@ -37,6 +37,10 @@ import './welcome-orbit.js';
    profile picture (set on the Organization Profile page) when present, and fall
    back to their initials otherwise. */
 import { userAvatarImg } from './user-avatar.js';
+/* A chip's face is its label; the ask it sends is the full brief. One shared
+   expander builds that brief from the chip itself, so every chip on every
+   surface asks in full without any chip's wording or size changing. */
+import { expandIntentPrompt } from './intent-prompt.js';
 import { esc } from './escape-html.js';
 import { openModal, closeModal, modalHTML } from './wise-modal.js';
 import { OWL_BUG, OWL_MARK } from './owl-mark.js';
@@ -73,6 +77,53 @@ import {
   wireStoryVoiceover, injectVoiceoverMenuItem, syncVoiceoverMenuItem,
 } from './story-voiceover.js';
 export { OWL_BUG, OWL_MARK };
+
+/* An ask that runs to more than one line is a document, not a sentence: it
+   arrives with paragraph breaks and bullet lines and has to read that way in
+   the transcript instead of collapsing into one run-on block. That is true of
+   a brief a member pastes in and of the brief every intent chip now sends, so
+   it lives at module scope and is exported — the hand-rolled page flows shape
+   their member lines with the same one function rather than a copy of it.
+
+   Only multi-line text is shaped. A single line is escaped exactly as before,
+   so no ordinary message changes. The markup understood is deliberately small:
+   a blank line starts a new paragraph, a line opening with "- " is a bullet, a
+   line ending in a colon leads the list beneath it, and **bold** / *italic*
+   mark emphasis. */
+export function promptBodyHtml(text) {
+  const raw = String(text == null ? '' : text);
+  if (!/\n/.test(raw)) return esc(raw);
+  const inline = (s) => esc(s)
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[\s(\u201C"\u2014])\*([^*\n]+)\*(?=$|[\s).,;:!?\u201D"\u2014])/g, '$1<em>$2</em>');
+  const out = [];
+  let items = null;
+  const flush = () => {
+    if (!items) return;
+    out.push(`<ul class="sc-prompt-list">${items.join('')}</ul>`);
+    items = null;
+  };
+  raw.split('\n').forEach((line) => {
+    const t = line.trim();
+    if (!t) { flush(); return; }
+    if (/^[-\u2022]\s+/.test(t)) {
+      items = items || [];
+      items.push(`<li>${inline(t.replace(/^[-\u2022]\s+/, ''))}</li>`);
+      return;
+    }
+    flush();
+    /* A colon-led line introduces the list under it, so it carries the weight
+       — unless it already marks its own emphasis, which would bold it twice. */
+    const lead = /:$/.test(t) && !t.includes('**');
+    out.push(`<p class="sc-prompt-p${lead ? ' sc-prompt-lead' : ''}">${inline(t)}</p>`);
+  });
+  flush();
+  return `<div class="sc-prompt">${out.join('')}</div>`;
+}
+/* The hand-rolled page flows (add-product, add-catalog) are classic scripts and
+   cannot import — they read the same function off the window rather than
+   keeping a second copy of it. */
+try { window.WisePromptBody = promptBodyHtml; } catch (_) { /* no window */ }
 
 /* Chat module elevation is locked to Little min — the same drop as the
    other module cards. The Admin three-dot picker (Little min / Above high / 3D)
@@ -197,6 +248,277 @@ function youAvatarChipHtml(initials, customAvatar) {
   const img = custom || userAvatarImg('You');
   const init = initials || 'AK';
   return `<span class="sc-avatar sc-avatar-you${img ? ' has-avatar-img' : ''}" role="img" aria-label="You" data-initials="${esc(init)}">${img || esc(init)}</span>`;
+}
+
+/* ── More than two voices in the room ─────────────────────────────────────
+   A conversation starts as the member and the assistant. From the composer's
+   "+" the member can pull a teammate into it: pick the person, they join on a
+   system line, and from that point the thread carries three voices. "@" names
+   who is being spoken to, and WISEcodeAI is still in the room either way — it
+   answers alongside the teammate instead of standing down for them.
+
+   The people a member can invite. Each carries the voice it answers in, so an
+   invited teammate reads like a colleague rather than a second assistant:
+   `takes` are what they say about the subject they own, `say` is their general
+   reply, and `asks` are the chips the thread offers once they are in the room.
+   Each take also carries `ai` — the number WISEcodeAI puts behind what the
+   colleague just said, so the third voice in the room answers the room instead
+   of falling through to "try one of the suggested prompts".
+   Copy is authored as HTML, exactly like an intent reply. */
+const TEAM_DIRECTORY = [
+  {
+    id: 'maya', name: 'Maya Chen', first: 'Maya', initials: 'MC', tone: 1,
+    role: 'Regulatory Lead', email: 'maya.chen@wisecode.ai',
+    opener: 'Thanks for the pull-in — I have the label files open, so ask away.',
+    takes: [
+      {
+        on: /allergen|label|claim|fda|complian|regulat/i,
+        say: 'Label side we are mostly clean: the allergen block matches the formula sheet and both claims we carry are substantiated. The one I would not ship as written is <strong>“lightly sweetened”</strong> — that needs added sugar under 5&nbsp;g and we are at 7&nbsp;g.',
+        ai: 'Maya’s read matches the filed version — the allergen block is consistent across all 14 SKUs in this line. On the sweetness claim she is right to stop it: added sugar is <strong>7&nbsp;g</strong> against a 5&nbsp;g ceiling. Two SKUs in the same line already clear it, so there is a version of that claim you can run today.',
+      },
+      {
+        on: /ingredient|additive|gras|upf|process|emulsifi/i,
+        say: 'Two of those additives are the ones auditors always open with. Neither is a problem on paper, but I want the supplier letters on file before this goes anywhere near a retailer deck.',
+        ai: 'Both are cleared for use, and both are what put this SKU in the bottom quartile on processing. Dropping either one moves it out of that quartile — the compliance question and the score question have the same answer here.',
+      },
+      {
+        on: /sugar|sodium|fat|calorie|nutrition|nfp/i,
+        say: 'If the panel moves, the claims move with it — so whatever we land on, send me the final numbers before packaging goes to print.',
+        ai: 'Current panel, per serving: <strong>7&nbsp;g</strong> added sugar, <strong>220&nbsp;mg</strong> sodium, <strong>3&nbsp;g</strong> fiber. Sugar is the only line that fails a claim, so it is the only one Maya needs to re-clear.',
+      },
+    ],
+    say: 'Happy to take that one. Send me the SKU list and I will check it against what we actually filed.',
+    aiSay: 'I have the filed version and the current one side by side, so whatever Maya needs from the label I can pull the difference.',
+    asks: [{ label: 'Ask Maya about the allergen flags', ask: '@Maya can you check the allergen flags on this one?' }],
+  },
+  {
+    id: 'priya', name: 'Priya Natarajan', first: 'Priya', initials: 'PN', tone: 2,
+    role: 'R&D — Formulation', email: 'priya.n@wisecode.ai',
+    opener: 'In. I have the last three bench trials in front of me if you need numbers.',
+    takes: [
+      {
+        on: /sugar|sweet|reformulat|reduce|swap/i,
+        say: 'We can pull about 30% of the added sugar with the allulose blend before texture starts to argue with us. Past that the crumb goes short and you can taste the difference.',
+        ai: 'A 30% cut lands added sugar at <strong>4.9&nbsp;g</strong> — just under the ceiling the “lightly sweetened” claim needs. That is the one version of this that fixes the claim and the score in the same pass.',
+      },
+      {
+        on: /fiber|protein|whole ?grain|nutrient|score/i,
+        say: 'The cheapest score we have left is fiber — the oat blend adds 3&nbsp;g a serving and barely touches cost or mouthfeel. I would do that before anything structural.',
+        ai: 'Agreed on the ranking: <strong>3&nbsp;g</strong> of fiber moves this SKU about a third of a star on the shelf ratings two of your largest accounts screen on, for roughly a third of what the sugar swap costs.',
+      },
+      {
+        on: /ingredient|additive|upf|process|emulsifi/i,
+        say: 'Two of those are only in there for shelf life. Give me a shorter distribution window and I can take them out entirely.',
+        ai: 'Both are shelf-life additives, so Priya is right that this is a distribution question before it is a formula one — which makes it Tom’s call as much as hers.',
+      },
+    ],
+    say: 'I can bench that. Give me the target and I will come back with what it does to texture and cost.',
+    aiSay: 'I can score any version Priya benches against the rest of your portfolio before it goes near a trial.',
+    asks: [{ label: 'Ask Priya what we can reformulate', ask: '@Priya what can we reformulate here without hurting texture?' }],
+  },
+  {
+    id: 'diego', name: 'Diego Ruiz', first: 'Diego', initials: 'DR', tone: 3,
+    role: 'Brand Manager', email: 'diego.ruiz@wisecode.ai',
+    opener: 'Here. Flagging up front that packaging art locks Friday, so decisions today are cheap and decisions next week are not.',
+    takes: [
+      {
+        on: /packag|label|front|claim|design|art|brand/i,
+        say: 'Front of pack can carry one number, not three. If we are putting anything there I want it to be the one shoppers already look for — everything else goes on the back.',
+        ai: 'If it is one number, the fiber gain is the one to use: it is what moves the shelf rating your accounts screen on, and it is the only change here that needs no new substantiation.',
+      },
+      {
+        on: /campaign|launch|market|story|position|shopper/i,
+        say: 'The story works if the product backs it. I am not running “smarter snacking” on a SKU that scores in the bottom half — that comes back at us.',
+        ai: 'Diego’s caution is the data’s position too: this SKU sits in the <strong>bottom 43%</strong> of its category today. The reformulated version does not — which makes the print date the real deadline, not the campaign.',
+      },
+      {
+        on: /sugar|reformulat|nutrition|score/i,
+        say: 'If the reformulation lands before Friday I can put the improvement on pack. After Friday it waits for the next print run.',
+        ai: 'The reformulated panel clears the claim ceiling, so there is something real to put on pack — but it has to be the filed number, not the bench number, before art goes out.',
+      },
+    ],
+    say: 'Works for me — just tell me what changes on pack and when, and I will keep the launch calendar honest.',
+    aiSay: 'Whatever lands on pack, I can check the claim against the filed panel before art goes out, so nothing on it needs a caveat.',
+    asks: [{ label: 'Ask Diego what we can say on pack', ask: '@Diego what can we actually claim on the front of pack?' }],
+  },
+  {
+    id: 'tom', name: 'Tom Okafor', first: 'Tom', initials: 'TO', tone: 4,
+    role: 'Supply Chain', email: 'tom.okafor@wisecode.ai',
+    opener: 'Reading in. Anything that changes an ingredient changes a lead time, so loop me before it is final.',
+    takes: [
+      {
+        on: /cost|price|margin|supplier|source|sourcing|lead ?time|volume/i,
+        say: 'Cost lands where you would expect: the swap runs about 4&nbsp;cents a unit against us, and I can hold that if we commit volume for two quarters. Single supplier on the fiber blend though, which I do not love.',
+        ai: 'Four cents across this SKU’s volume is about <strong>$46k a year</strong>. The fiber route runs roughly a third of that and moves the score further, so on cost per point it is the better of the two.',
+      },
+      {
+        on: /ingredient|additive|reformulat|swap/i,
+        say: 'I can get the replacement in eight weeks, not four — it is a qualified-supplier problem, not a stock problem.',
+        ai: 'Eight weeks puts this past the packaging print date, so Tom’s lead time is the binding constraint here rather than the cost.',
+      },
+    ],
+    say: 'Send me the version you land on and I will price it and tell you what it does to lead times.',
+    aiSay: 'Once Tom has a supplier against it I can price the version you land on off the current bill of materials.',
+    asks: [{ label: 'Ask Tom what the swap costs', ask: '@Tom what does that swap cost us per unit?' }],
+  },
+  {
+    id: 'sarah', name: 'Sarah Whitfield', first: 'Sarah', initials: 'SW', tone: 5,
+    role: 'Retail Accounts', email: 'sarah.w@wisecode.ai',
+    opener: 'Joining. I have a buyer review on Thursday, so this is good timing.',
+    takes: [
+      {
+        on: /retail|buyer|shelf|guiding ?stars|rating|distribut|account|listing/i,
+        say: 'Two of my accounts screen on their own shelf rating before they will even take the meeting. A one-star move is the difference between a promo slot and a shelf tag nobody sees.',
+        ai: 'Both of those accounts screen at the band directly above where this SKU sits, so Sarah is describing a one-band gap — and the fiber change is enough to close it on its own.',
+      },
+      {
+        on: /reformulat|sugar|score|improve/i,
+        say: 'If that improvement is real I want it in writing before Thursday — buyers will take a substantiated number over a story every time.',
+        ai: 'It is substantiable: the reformulated panel clears the claim ceiling, and every number on it traces to your verified WISE Foods record rather than a bench sheet.',
+      },
+    ],
+    say: 'Useful. Whatever we settle on, I need a one-pager I can put in front of a buyer.',
+    aiSay: 'I can build that one-pager straight off the verified panel, so nothing Sarah puts in front of a buyer needs a caveat.',
+    asks: [{ label: 'Ask Sarah how buyers will read this', ask: '@Sarah how will buyers read this on shelf?' }],
+  },
+];
+
+/* The assistant is a participant, so it can be named like anyone else. */
+const TEAM_AI = { id: 'wiseai', name: 'WISEcodeAI', first: 'WISEcodeAI', ai: true };
+const TEAM_AI_ALIASES = ['WISEcodeAI', 'WISEcode', 'wiseai', 'wise'];
+
+function teamPersonById(pid) {
+  return TEAM_DIRECTORY.find((p) => p.id === pid) || null;
+}
+function teamAliases(p) {
+  return p && p.ai ? TEAM_AI_ALIASES : [p.name, p.first, p.id];
+}
+const reEscape = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/* Every way a participant can be named, longest alias first so "@Maya Chen"
+   wins over "@Maya". The trailing guard rejects a match that runs on into a
+   word or an address, so "maya.chen@wisecode.ai" can never read as a mention
+   of WISEcodeAI. */
+function mentionPattern(people) {
+  const alts = [];
+  (people || []).forEach((p) => teamAliases(p).forEach((a) => { if (a) alts.push(reEscape(a)); }));
+  if (!alts.length) return null;
+  alts.sort((a, b) => b.length - a.length);
+  return new RegExp(`@(${alts.join('|')})(?![\\w.\\-])`, 'gi');
+}
+function mentionLookup(people) {
+  const map = new Map();
+  (people || []).forEach((p) => teamAliases(p).forEach((a) => { if (a) map.set(String(a).toLowerCase(), p); }));
+  return map;
+}
+
+/* Who a line names, in the order it names them. */
+function parseMentions(text, people) {
+  const re = mentionPattern(people);
+  if (!re) return [];
+  const map = mentionLookup(people);
+  const out = [];
+  let m = re.exec(String(text || ''));
+  while (m) {
+    const p = map.get(String(m[1]).toLowerCase());
+    if (p && out.indexOf(p) === -1) out.push(p);
+    m = re.exec(String(text || ''));
+  }
+  return out;
+}
+
+/* Turn "@Maya" into the pill the transcript shows. Safe on escaped member copy
+   and on authored HTML alike — the pattern cannot match inside a tag or an
+   address — but run it once per body, or a pill's own text gets wrapped twice. */
+function linkifyMentions(html, people) {
+  const re = mentionPattern(people);
+  if (!re) return html;
+  const map = mentionLookup(people);
+  return String(html == null ? '' : html).replace(re, (full, name) => {
+    const p = map.get(String(name).toLowerCase());
+    if (!p) return full;
+    return `<span class="sc-mention${p.ai ? ' sc-mention--ai' : ''}" data-mention="${esc(p.id)}">@${esc(p.ai ? p.name : p.first)}</span>`;
+  });
+}
+
+/* Strip the mentions back out, so keyword routing reads the actual ask and not
+   the names it was addressed to. */
+function stripMentions(text, people) {
+  const re = mentionPattern(people);
+  const bare = re ? String(text || '').replace(re, ' ') : String(text || '');
+  return bare.replace(/\s+/g, ' ').replace(/^[\s,;:—-]+/, '').trim();
+}
+
+/* A teammate's avatar: their initials on their own tone, so three voices in one
+   thread are told apart at a glance. A circle, never a square. */
+function teamAvatarHtml(p) {
+  return `<span class="sc-avatar sc-avatar-mate" data-tone="${esc(String(p.tone || 1))}" role="img" aria-label="${esc(p.name)}">${esc(p.initials)}</span>`;
+}
+
+/* What a teammate says back. The subject they own wins; otherwise their general
+   reply, so they always sound like themselves and never like the assistant. */
+function teamSay(p, text) {
+  const t = String(text || '');
+  const hit = (p.takes || []).find((k) => k.on && k.on.test(t));
+  return (hit && hit.say) || p.say || 'On it.';
+}
+
+/* What WISEcodeAI adds once a colleague has answered — the number behind what
+   they said, addressed to the room. Used only where the surface has no scripted
+   answer of its own for the ask: a third voice in the room must never be the
+   generic "try one of the suggested prompts". */
+function teamAiSay(p, text) {
+  const t = String(text || '');
+  const hit = (p.takes || []).find((k) => k.on && k.on.test(t));
+  return (hit && hit.ai) || p.aiSay
+    || `That lines up with what I have on file. Want me to pull the numbers behind ${esc(p.first)}’s read?`;
+}
+
+/* A chip that puts one named person in the room. Offered by the invite turn
+   and trailed behind a team answer, so there is always a way to add one more. */
+function teamInviteChipFor(p) {
+  return {
+    intent: `team_invite_${p.id}`, icon: 'person_add',
+    label: `Add ${p.name}`, ask: `Add ${p.name} to this conversation`,
+  };
+}
+
+/* One row of the picker: avatar, name, what they do, and their address — the
+   same shape the rest of the app uses for a person. Someone already in the
+   room reads as "In this chat" and cannot be picked twice. */
+function teamPersonRowHtml(p, opts2 = {}) {
+  const inRoom = opts2.inRoom === true;
+  const picked = opts2.picked === true;
+  return `<button type="button" class="sc-person-row${picked ? ' is-picked' : ''}${inRoom ? ' is-in' : ''}" data-person="${esc(p.id)}" role="option" aria-selected="${picked ? 'true' : 'false'}"${inRoom ? ' aria-disabled="true"' : ''}>
+    ${teamAvatarHtml(p)}
+    <span class="sc-person-copy">
+      <span class="sc-person-name">${esc(p.name)}</span>
+      <span class="sc-person-role">${esc(p.role)} · ${esc(p.email)}</span>
+    </span>
+    <span class="sc-person-state" aria-hidden="true">${
+  inRoom ? 'In this chat' : `<span class="material-symbols-outlined">${picked ? 'check_circle' : 'add'}</span>`
+}</span>
+  </button>`;
+}
+
+/* The people picker — Slack's shape: a search field, the teammates you can
+   pick, the ones you have picked as removable tokens, and one primary button
+   that puts them in the room. Built as a `.fl-more-popover` variant so it
+   inherits the shared portal / click-off / Escape layer (js/popover-layer.js)
+   the composer's other menus already use. */
+function buildPeoplePickerHtml(id) {
+  return `<div class="fl-more-popover fl-more-popover--left sc-people-pop" id="${id}-people-pop" role="dialog" aria-label="Add people to this conversation" aria-modal="false">
+    <div class="sc-people-top">
+      <h2 class="sc-people-title">Add people</h2>
+      <p class="sc-people-sub">They join this conversation and can talk to you and to WISEcodeAI in it.</p>
+      <input type="text" class="sc-people-search" id="${id}-people-q" placeholder="Search by name or role" aria-label="Search teammates" autocomplete="off">
+      <div class="sc-people-tokens" id="${id}-people-tokens" aria-live="polite"></div>
+    </div>
+    <div class="sc-people-list" id="${id}-people-list" role="listbox" aria-label="Teammates"></div>
+    <div class="sc-people-foot">
+      <button type="button" class="wise-btn wise-btn--primary sc-people-add" id="${id}-people-add" data-sc="people-add" disabled><span class="material-symbols-outlined">group_add</span><span class="sc-people-add-label">Add to conversation</span></button>
+    </div>
+  </div>`;
 }
 
 /* Split a label into per-letter spans so CSS can run a staggered, text-clipped
@@ -2031,6 +2353,11 @@ export function injectChatExtras() {
       height: 112%; width: auto; max-width: none;
       transform: translate(-32%, -50%);
       object-fit: cover; display: block; pointer-events: none; }
+    /* The Wheat film is the one that COVERS: it fills the module edge to edge
+       and crops to the box, so the golden strand sits behind the whole
+       conversation instead of bleeding off one side. */
+    .sc-bganim-video--fill { top: 0; left: 0; width: 100%; height: 100%;
+      transform: none; }
     /* Same welcome-transparency boost helix gets, so the film reads behind the
        welcome copy instead of an opaque sheet (light + dark, all shells). */
     .sc-video-live.sc-video-live.sc-video-live .sc-welcome,
@@ -2407,6 +2734,11 @@ export function injectChatExtras() {
     .sc-menu-group--helix .sc-bganim-dots-reset { font-size: 9px; }
     .sc-menu-group--helix .sc-bganim-dots-actions { gap: 6px; }
     .sc-menu-group--helix .sc-stream-seg-btn { font-size: 9.5px; padding: 0 5px; height: 22px; }
+    /* The Field segment carries five choices — Helix, Ten, Orbit and the two
+       films — so its labels run tighter and clip with an ellipsis instead of
+       pushing the segment past the studio column on a narrow menu. */
+    .sc-menu-group--helix .sc-bganim-style .sc-stream-seg-btn {
+      padding: 0 3px; overflow: hidden; text-overflow: ellipsis; }
     .sc-menu-group--helix .sc-bganim-pp { padding: 2px 8px; font-size: 10px; }
     .sc-menu-group--helix .sc-bganim-pp .material-symbols-outlined { font-size: 14px; }
     .sc-menu-group--helix .sc-bganim-dots-color-input { width: 24px; height: 16px; }
@@ -3051,8 +3383,8 @@ function bgAnimKnobById(id) {
   return k ? bgAnimKnobRowHtml(k) : '';
 }
 
-function bgAnimSubheadHtml(label, helixOnly) {
-  return `<div class="sc-bganim-subhead"${helixOnly ? ' data-helix-only="1"' : ''}>${label}</div>`;
+function bgAnimSubheadHtml(label, helixOnly, videoOnly) {
+  return `<div class="sc-bganim-subhead"${helixOnly ? ' data-helix-only="1"' : ''}${videoOnly ? ' data-video-only="1"' : ''}>${label}</div>`;
 }
 
 function bgAnimKnobRowsHtml() {
@@ -3817,7 +4149,86 @@ const BGANIM_SNAP_WASH_KEY = 'wise:chat-bg-anim-wash';
 const BGANIM_SNAP_ANGLE_KEY = 'wise:chat-bg-anim-angle';
 const BGANIM_SNAP_PAUSED_KEY = 'wise:chat-bg-anim-paused';
 const BGANIM_SNAP_STYLE_KEY = 'wise:chat-bg-anim-style';
-const BGANIM_SNAP_STYLES = ['helix', 'helix-ten', 'orbit', 'video'];
+const BGANIM_SNAP_STYLES = ['helix', 'helix-ten', 'orbit', 'video', 'wheat'];
+
+/* The two FILM styles and the clip each one plays.
+
+   `fill` decides how the film sits in the module: the marketing hero bleeds
+   off the left edge oversized, while the wheat helix covers the whole module
+   edge to edge. Opacity and Speed are per clip — the hero opens at the
+   published Scene strength and its own rate; the wheat strand opens faint and
+   slowed, so it reads as a backdrop rather than a video that is playing. */
+export const BGANIM_VIDEO_CLIPS = Object.freeze({
+  video: Object.freeze({
+    file: 'marketing/hero-bg.mp4', fill: false, loop: false,
+    opacity: BGANIM_PUBLISH_POSE.opacity, speed: 100,
+  }),
+  wheat: Object.freeze({
+    file: 'chat-bg/wheat-helix.mp4', fill: true, loop: true,
+    opacity: 35, speed: 40,
+  }),
+});
+const BGANIM_VIDEO_STYLES = Object.keys(BGANIM_VIDEO_CLIPS);
+
+export function isBgAnimVideoStyle(style) {
+  return BGANIM_VIDEO_STYLES.indexOf(style) !== -1;
+}
+
+/* Which clip the Film rows are talking about. Off a film style they still read
+   back the hero's numbers, but the rows are hidden then anyway. */
+function bgAnimFilmClipKey(style) {
+  return isBgAnimVideoStyle(style) ? style : BGANIM_VIDEO_STYLES[0];
+}
+
+export const BGANIM_FILM_OPACITY_MIN = 5;
+export const BGANIM_FILM_OPACITY_MAX = 100;
+export const BGANIM_FILM_SPEED_MIN = 10;
+export const BGANIM_FILM_SPEED_MAX = 200;
+
+function bgAnimFilmKey(clip, part) {
+  return 'wise:chat-bg-anim-film-' + part + '-' + clip;
+}
+
+function readBgAnimFilmPart(clip, part, min, max) {
+  const def = BGANIM_VIDEO_CLIPS[clip][part];
+  try {
+    const n = parseInt(bgAnimGet(bgAnimFilmKey(clip, part)), 10);
+    if (!isNaN(n)) return Math.max(min, Math.min(max, n));
+  } catch (_) {}
+  return def;
+}
+
+export function clampBgAnimFilmPart(part, n) {
+  const min = part === 'speed' ? BGANIM_FILM_SPEED_MIN : BGANIM_FILM_OPACITY_MIN;
+  const max = part === 'speed' ? BGANIM_FILM_SPEED_MAX : BGANIM_FILM_OPACITY_MAX;
+  const v = Math.round(Number(n));
+  return Number.isFinite(v) ? Math.max(min, Math.min(max, v)) : min;
+}
+
+/* Every film's opacity + speed, read once per host and kept in step app-wide
+   through the wise:chat-bg-anim-film broadcast. */
+export function readBgAnimFilms() {
+  const out = {};
+  BGANIM_VIDEO_STYLES.forEach((clip) => {
+    out[clip] = {
+      opacity: readBgAnimFilmPart(clip, 'opacity', BGANIM_FILM_OPACITY_MIN, BGANIM_FILM_OPACITY_MAX),
+      speed: readBgAnimFilmPart(clip, 'speed', BGANIM_FILM_SPEED_MIN, BGANIM_FILM_SPEED_MAX),
+    };
+  });
+  return out;
+}
+
+function persistBgAnimFilm(clip, part, pct) {
+  try { bgAnimSet(bgAnimFilmKey(clip, part), String(pct)); } catch (_) {}
+}
+
+function broadcastBgAnimFilm(clip, part, pct) {
+  try {
+    document.dispatchEvent(new CustomEvent('wise:chat-bg-anim-film', {
+      detail: { clip, part, pct },
+    }));
+  } catch (_) {}
+}
 
 export function readBgAnimStyle() {
   try {
@@ -4925,6 +5336,37 @@ function bgAnimShiftRowHtml() {
           </div>`;
 }
 
+/* Film rows — the two controls a film has that a canvas field does not: how
+   faint it sits, and how fast it plays. They replace the Opacity / Wash pair
+   while a film is the chosen field, and carry the values of whichever clip is
+   running (see syncBgAnimFilmRows). */
+function bgAnimFilmRowsHtml() {
+  const def = BGANIM_VIDEO_CLIPS[BGANIM_VIDEO_STYLES[0]];
+  return bgAnimSubheadHtml('Film', false, true)
+    + `<div class="sc-bganim-detail sc-bganim-film-opacity" data-video-only="1">
+            <span class="sc-bganim-detail-label">Opacity</span>
+            <input type="range" class="sc-bganim-film-opacity-range" min="${BGANIM_FILM_OPACITY_MIN}" max="${BGANIM_FILM_OPACITY_MAX}" step="1" value="${def.opacity}" aria-label="Film opacity" title="How faint the film sits behind the conversation">
+            <span class="sc-bganim-film-opacity-val">${def.opacity}%</span>
+          </div>
+          <div class="sc-bganim-detail sc-bganim-film-speed" data-video-only="1">
+            <span class="sc-bganim-detail-label">Speed</span>
+            <input type="range" class="sc-bganim-film-speed-range" min="${BGANIM_FILM_SPEED_MIN}" max="${BGANIM_FILM_SPEED_MAX}" step="5" value="${def.speed}" aria-label="Film speed" title="How fast the film plays — 100% is the clip's own rate">
+            <span class="sc-bganim-film-speed-val">${def.speed}%</span>
+          </div>`;
+}
+
+/* Hand-rolled chat popovers copied the menu markup before the films existed —
+   inject the Film rows (just under the Style segment) so every surface gains
+   the same two controls. Idempotent. */
+function ensureBgAnimFilmRows(pop) {
+  if (!pop || pop.querySelector('.sc-bganim-film-opacity')) return;
+  const html = bgAnimFilmRowsHtml();
+  const style = pop.querySelector('.sc-bganim-style');
+  if (style) { style.insertAdjacentHTML('afterend', html); return; }
+  const playback = pop.querySelector('.sc-bganim-playback');
+  if (playback) playback.insertAdjacentHTML('beforebegin', html);
+}
+
 function ensureBgAnimSubheads(pop) {
   if (!pop || pop.querySelector('.sc-bganim-subhead')) return;
   const opacity = pop.querySelector('.sc-bganim-opacity');
@@ -4985,10 +5427,18 @@ function ensureBgAnimCameraRow(pop) {
 
 /* Angle, Camera, Pitch, Dots, Length, Rungs, Bar, Thick and Depth describe the
    STRAND, so they hide while Orbit is the chosen style. Scale (all four rows)
-   and Nodes apply to both fields. */
-function syncBgAnimHelixOnlyRows(root, isHelix) {
+   and Nodes apply to both fields. A film has none of them: it swaps the
+   Opacity / Wash pair for its own Film rows and hides the rest. */
+function syncBgAnimHelixOnlyRows(root, isHelix, isVideo) {
   root = liveBgAnimRoot(root);
   if (!root) return;
+  /* Film rows and the canvas field's own Opacity / Wash are two answers to the
+     same question, so exactly one pair shows at a time. */
+  root.querySelectorAll('[data-video-only="1"]').forEach((el) => { el.hidden = !isVideo; });
+  const fieldOpacity = root.querySelector('.sc-bganim-detail:has(.sc-bganim-opacity)');
+  if (fieldOpacity) fieldOpacity.hidden = !!isVideo;
+  const wash = root.querySelector('.sc-bganim-wash');
+  if (wash) wash.hidden = !!isVideo;
   const angle = root.querySelector('.sc-bganim-angle');
   if (angle) angle.hidden = !isHelix;
   const camera = root.querySelector('.sc-bganim-camera');
@@ -5023,6 +5473,21 @@ function syncBgAnimHelixOnlyRows(root, isHelix) {
     if (el.dataset.helixOnly === '1') el.hidden = !isHelix;
   });
   root.querySelectorAll('.sc-bganim-scale').forEach((el) => { el.hidden = false; });
+}
+
+/* Read the Film rows back from whichever clip is running, so switching between
+   the hero and the wheat strand shows that clip's own numbers. */
+function syncBgAnimFilmRows(root, films, style) {
+  root = liveBgAnimRoot(root);
+  if (!root || !films) return;
+  const film = films[bgAnimFilmClipKey(style)];
+  if (!film) return;
+  [['opacity', film.opacity], ['speed', film.speed]].forEach(([part, pct]) => {
+    const range = root.querySelector('.sc-bganim-film-' + part + '-range');
+    if (range && document.activeElement !== range) range.value = String(pct);
+    const val = root.querySelector('.sc-bganim-film-' + part + '-val');
+    if (val) val.textContent = pct + '%';
+  });
 }
 
 function broadcastBgAnimScale(axes, axis) {
@@ -6914,30 +7379,42 @@ export function createOrbitBgAnim(cfg) {
   return { start, stop, pause, resume, redraw() {} };
 }
 
-/* Fourth ambient style: a one-shot VIDEO backdrop. The marketing hero film
-   (the very first hero clip on the marketing home page) bleeds off the LEFT
-   edge of the chat module, large, and plays through ONCE — then holds its last
-   frame ("plays once, and that's it"). Unlike helix/orbit it paints no canvas:
-   it mounts a clipped <video> lazily behind the welcome content (which goes
-   transparent while a field is live) and tags the host with `sc-video-live`.
-   Opacity follows the shared slider through getOpacity(); reduced-motion shows a
-   still first frame instead of autoplaying. The video is muted + inline so it
-   can autoplay on every browser, takes no pointer input, and is hidden from
-   assistive tech (purely decorative). */
+/* Fourth ambient style: a FILM backdrop. Two clips ship (see
+   BGANIM_VIDEO_CLIPS), and each engine instance plays exactly one of them:
+
+     • Video — the marketing hero film (the very first hero clip on the
+       marketing home page). It bleeds off the LEFT edge of the chat module,
+       large, and plays through ONCE, then holds its last frame.
+     • Wheat — a golden DNA double helix twisted out of wheat stalks. It COVERS
+       the module edge to edge and loops, faint and slowed, so it reads as a
+       backdrop behind the whole conversation.
+
+   Unlike helix/orbit it paints no canvas: it mounts a clipped <video> lazily
+   behind the welcome content (which goes transparent while a field is live) and
+   tags the host with `sc-video-live`. Opacity and playback rate follow that
+   clip's own Film rows through getFilmOpacity() / getFilmSpeed(); reduced-motion
+   shows a still first frame instead of autoplaying. The video is muted + inline
+   so it can autoplay on every browser, takes no pointer input, and is hidden
+   from assistive tech (purely decorative). */
 export function createVideoBgAnim(cfg) {
   const host = cfg.host;
+  const clip = BGANIM_VIDEO_CLIPS[cfg.clip] || BGANIM_VIDEO_CLIPS[BGANIM_VIDEO_STYLES[0]];
   const isOn = typeof cfg.isOn === 'function' ? cfg.isOn : () => true;
   const isPaused = typeof cfg.isPaused === 'function' ? cfg.isPaused : () => false;
-  const getOpacity = typeof cfg.getOpacity === 'function' ? cfg.getOpacity : () => 1;
+  const getOpacity = typeof cfg.getFilmOpacity === 'function'
+    ? cfg.getFilmOpacity
+    : (typeof cfg.getOpacity === 'function' ? cfg.getOpacity : () => 1);
+  const getSpeed = typeof cfg.getFilmSpeed === 'function' ? cfg.getFilmSpeed : () => 1;
   const reduced = !!cfg.reducedMotion;
   let wrap = null, video = null;
   let ended = false, live = false;
 
-  /* Resolve the marketing asset relative to THIS module so the clip loads no
-     matter how deep the host page sits; falls back to the project convention. */
+  /* Resolve the asset relative to THIS module so the clip loads no matter how
+     deep the host page sits; falls back to the project convention. */
   function srcUrl() {
-    try { return new URL('../assets/marketing/hero-bg.mp4', import.meta.url).href; } catch (_) {}
-    return '../assets/marketing/hero-bg.mp4';
+    const rel = '../assets/' + clip.file;
+    try { return new URL(rel, import.meta.url).href; } catch (_) {}
+    return rel;
   }
   function ensureVideo() {
     if (wrap || typeof document === 'undefined') return;
@@ -6945,10 +7422,12 @@ export function createVideoBgAnim(cfg) {
     wrap.className = 'sc-bganim-video-wrap';
     wrap.setAttribute('aria-hidden', 'true');
     video = document.createElement('video');
-    video.className = 'sc-bganim-video';
+    video.className = 'sc-bganim-video' + (clip.fill ? ' sc-bganim-video--fill' : '');
     video.muted = true;
     video.defaultMuted = true;
-    video.loop = false;            // plays through once, then holds the last frame
+    /* The hero plays through once and holds its last frame; a covering backdrop
+       loops, so slowing it down cannot end in a frozen picture. */
+    video.loop = !!clip.loop;
     video.playsInline = true;
     video.setAttribute('playsinline', '');
     video.setAttribute('webkit-playsinline', '');
@@ -6959,6 +7438,8 @@ export function createVideoBgAnim(cfg) {
     source.type = 'video/mp4';
     video.appendChild(source);
     video.addEventListener('ended', () => { ended = true; });
+    /* A rate set before the clip has metadata does not always stick. */
+    video.addEventListener('loadedmetadata', applyRate);
     wrap.appendChild(video);
     host.appendChild(wrap);
   }
@@ -6969,6 +7450,14 @@ export function createVideoBgAnim(cfg) {
     if (!wrap) return;
     if (live) wrap.style.opacity = String(getOpacity());
     else wrap.style.opacity = '0';
+  }
+  /* Playback rate follows the Film Speed row. Browsers mute audio outside
+     0.25–4× and refuse rates at or below zero, so clamp to what they honour —
+     the clip is silent anyway. */
+  function applyRate() {
+    if (!video) return;
+    const r = Number(getSpeed());
+    try { video.playbackRate = Math.max(0.0625, Math.min(4, Number.isFinite(r) && r > 0 ? r : 1)); } catch (_) {}
   }
   function playFromStart() {
     if (!video) return;
@@ -6985,6 +7474,7 @@ export function createVideoBgAnim(cfg) {
     host.classList.add('sc-video-live');
     if (wrap) wrap.hidden = false;
     applyOpacity();
+    applyRate();
     if (reduced) { try { video.pause(); video.currentTime = 0; } catch (_) {} return; }
     if (isPaused()) { try { video.pause(); } catch (_) {} return; }
     /* A fresh entry onto the welcome replays the clip from the top; a redundant
@@ -7010,8 +7500,282 @@ export function createVideoBgAnim(cfg) {
     const p = video.play();
     if (p && typeof p.catch === 'function') p.catch(() => {});
   }
-  function redraw() { applyOpacity(); }
+  function redraw() { applyOpacity(); applyRate(); }
   return { start, stop, pause, resume, redraw };
+}
+
+/* ------------------------------------------------------------------ */
+/* Ask pre-flight (shared)                                             */
+/* ------------------------------------------------------------------ */
+/* Some asks cannot be run as written. "Compare everything in my portfolio and
+   write it up" is four different jobs depending on how wide you look, what
+   WISEcodeAI is allowed to read, and how far it takes the answer — and those
+   choices are the difference between a few hundred tokens and a few hundred
+   thousand. Guessing wastes the member's allowance on an answer they did not
+   want.
+
+   So the turn buffers. Between the member's prompt and the thinking, a card
+   lands that asks the three questions that actually change the result and shows
+   the spend they imply. Nothing runs until Approve. Edit hands the ask back to
+   the composer; the × cancels it outright and spends nothing.
+
+   The card is a mid-turn status card in the transcript (trailChips: false), so
+   the turn's closing intent chips still trail the real answer. Its own option
+   buttons are `.sc-pf-opt`, deliberately NOT `.chip` in a `.sc-reply-chips`
+   row — they are controls inside one card, not a chip row, so chip-lock leaves
+   them alone and the tooltip layer never sees them.
+
+   Which chip style gets it: `.chip.chip-dive`. An intent def with `dive: true`
+   renders as the deep-dive chip and always buffers, because an unscoped "take
+   this as far as it goes" ask is exactly the case pre-flight exists for. Every
+   other chip style is curated with a known scope and runs straight through. */
+
+const PREFLIGHT_PREF_KEY = 'wise:chat-preflight';
+function isChatPreflightOn() {
+  try { return localStorage.getItem(PREFLIGHT_PREF_KEY) !== '0'; } catch (_) { return true; }
+}
+
+/* The three questions, in the order they change the answer. `weight` is that
+   option's multiplier on the spend estimate, so the numbers on the card move
+   for the same reason the work does. */
+const PREFLIGHT_QUESTIONS = [
+  {
+    key: 'scope', icon: 'zoom_out_map', label: 'How much to cover', pick: 'product',
+    options: [
+      { id: 'product', label: 'This product', weight: 1 },
+      { id: 'brand', label: 'This brand', weight: 3.4 },
+      { id: 'portfolio', label: 'Whole portfolio', weight: 9.5 },
+    ],
+  },
+  {
+    key: 'knowledge', icon: 'menu_book', label: 'What to read', multi: true, pick: ['catalog'],
+    options: [
+      { id: 'catalog', label: 'Your catalog', weight: 1 },
+      { id: 'registry', label: 'WISE Foods registry', weight: 0.55 },
+      { id: 'web', label: 'Public literature', weight: 0.8 },
+    ],
+  },
+  {
+    key: 'depth', icon: 'straighten', label: 'How far to take it', pick: 'answer',
+    options: [
+      { id: 'answer', label: 'Straight answer', weight: 1 },
+      { id: 'analysis', label: 'Full analysis', weight: 2.1 },
+      { id: 'report', label: 'Written report', weight: 3.4 },
+    ],
+  },
+];
+
+/* What in the wording made this ask unrunnable. Each signal also pre-answers the
+   question it raises, so the card opens on WISEcodeAI's best reading of the ask
+   rather than on a blank form the member has to fill in.
+
+   Order matters: a later signal's answer wins, so the vaguer readings come
+   first and an explicit one overrides them. "Compare every product in my
+   portfolio" is a ranking AND a portfolio-wide ask, and portfolio is the more
+   specific of the two. */
+const PREFLIGHT_SIGNALS = [
+  {
+    re: /\b(compare|comparison|versus|vs\.?|rank|ranking|best|worst|cheapest|healthiest|top \d+)\b/i,
+    why: 'a ranking needs to know what it is ranking against',
+    pick: { scope: 'brand' },
+  },
+  {
+    re: /\b(all|every|each|entire|whole|across|portfolio|catalogue|catalog|company-?wide|our (?:range|line|products)|my (?:range|line|products))\b/i,
+    why: 'this reads like it spans more than one product',
+    pick: { scope: 'portfolio' },
+  },
+  {
+    re: /\b(report|deep ?dive|dive|audit|benchmark|comprehensive|thorough|write ?-?up|full (?:analysis|picture|breakdown)|breakdown)\b/i,
+    why: 'a written write-up costs several times what a straight answer does',
+    pick: { depth: 'report' },
+  },
+  {
+    re: /\b(research|literature|stud(?:y|ies)|evidence|cite|citations?|sources?|regulat(?:ion|ory)|fda|competitors?|market|trends?)\b/i,
+    why: 'the answer changes depending on what I am allowed to read',
+    pick: { knowledge: ['catalog', 'registry', 'web'] },
+  },
+];
+/* A brief this long has more than one reasonable reading no matter what it says,
+   which is exactly the case that used to be answered on a guess. */
+const PREFLIGHT_LONG_CHARS = 420;
+
+/* Does this ask need settling first? Returns the spec the card is built from, or
+   null when the ask is already runnable as written. */
+function preflightNeedFor(text, o) {
+  const ask = String(text || '').trim();
+  if (!ask) return null;
+  const opt = o || {};
+  const hits = PREFLIGHT_SIGNALS.filter((s) => s.re.test(ask));
+  const long = ask.length >= PREFLIGHT_LONG_CHARS;
+  if (!hits.length && !long && !opt.force) return null;
+  const picks = {};
+  PREFLIGHT_QUESTIONS.forEach((q) => {
+    picks[q.key] = Array.isArray(q.pick) ? q.pick.slice() : q.pick;
+  });
+  hits.forEach((s) => {
+    Object.keys(s.pick).forEach((k) => {
+      const v = s.pick[k];
+      picks[k] = Array.isArray(v) ? v.slice() : v;
+    });
+  });
+  if (long) picks.depth = 'report';
+  const reasons = hits.map((s) => s.why);
+  if (long) reasons.push('it is a long brief, so there is more than one way to read it');
+  if (!reasons.length) reasons.push('this one is open-ended by design, so the shape of it is yours to set');
+  return { ask, picks, reasons };
+}
+
+function preflightWhy(reasons) {
+  const list = (reasons || []).slice(0, 2);
+  if (!list.length) return 'A few things change the answer here. Set them and I\u2019ll run exactly that.';
+  const joined = list.length > 1 ? `${list[0]}, and ${list[1]}` : list[0];
+  return `Worth settling first \u2014 ${joined}. Set these and I\u2019ll run exactly that, nothing more.`;
+}
+
+/* Spend estimate. Base is a plain single-product answer off your own catalog;
+   every choice on the card multiplies it. */
+const PREFLIGHT_BASE_TOKENS = 3800;
+const PREFLIGHT_RATE_PER_1K = 0.011;
+function preflightWeight(key, id) {
+  const q = PREFLIGHT_QUESTIONS.find((x) => x.key === key);
+  const o = q && q.options.find((x) => x.id === id);
+  return o ? o.weight : 1;
+}
+function preflightLabel(key, id) {
+  const q = PREFLIGHT_QUESTIONS.find((x) => x.key === key);
+  const o = q && q.options.find((x) => x.id === id);
+  return o ? o.label : String(id || '');
+}
+function preflightEstimate(picks) {
+  const p = picks || {};
+  const know = (p.knowledge || []).reduce((n, id) => n + preflightWeight('knowledge', id), 0) || 1;
+  const raw = PREFLIGHT_BASE_TOKENS * preflightWeight('scope', p.scope) * preflightWeight('depth', p.depth) * know;
+  const tokens = Math.max(500, Math.round(raw / 100) * 100);
+  return {
+    tokens,
+    cost: (tokens / 1000) * PREFLIGHT_RATE_PER_1K,
+    secs: Math.max(3, Math.round(tokens / 950)),
+  };
+}
+function preflightFmtTokens(n) { return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n); }
+function preflightFmtCost(c) { return `$${c.toFixed(2)}`; }
+function preflightFmtTime(s) { return s < 60 ? `${s}s` : `${(s / 60).toFixed(1)} min`; }
+function preflightSummary(picks) {
+  const p = picks || {};
+  const know = (p.knowledge || []).map((id) => preflightLabel('knowledge', id));
+  return {
+    scope: preflightLabel('scope', p.scope),
+    depth: preflightLabel('depth', p.depth),
+    knowledge: know.length ? know.join(' + ') : 'nothing beyond the ask',
+  };
+}
+
+/* `live` marks the numerals as count-up targets. A resolved card re-renders with
+   the same numbers already settled, so it must not re-animate them. */
+function preflightEstHtml(est, live) {
+  const cu = live ? ' data-countup' : '';
+  const cell = (key, val, lab) =>
+    `<span class="sc-pf-est-item"><span class="sc-pf-est-num" data-pf-est="${key}"${cu}>${esc(val)}</span><span class="sc-pf-est-lab">${esc(lab)}</span></span>`;
+  return `<div class="sc-pf-est" role="group" aria-label="What this ask will spend">
+      ${cell('tokens', preflightFmtTokens(est.tokens), 'Tokens')}
+      ${cell('cost', preflightFmtCost(est.cost), 'Cost')}
+      ${cell('secs', preflightFmtTime(est.secs), 'Time')}
+    </div>`;
+}
+
+/* The drafting beat: the card's own geometry, greyed, while the questions are
+   written. Same head and footer, so the swap to the real card does not jump. */
+function preflightSkeletonHtml() {
+  const pill = '<span class="sc-pf-skel-pill"></span>';
+  return `<div class="sc-preflight is-drafting" role="group" aria-label="Writing pre-flight questions" aria-busy="true">
+      <div class="sc-pf-head">
+        <span class="material-symbols-outlined sc-pf-spin">sync</span>
+        <h3 class="sc-pf-title">Reading your ask\u2026</h3>
+        <button type="button" class="sc-pf-x" data-pf="close" aria-label="Cancel this ask" title="Cancel this ask"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="sc-pf-skel" aria-hidden="true">
+        <span class="sc-pf-skel-bar"></span>
+        <div class="sc-pf-skel-grid">${pill.repeat(6)}</div>
+      </div>
+      <div class="sc-pf-foot">
+        <span class="sc-pf-note">Nothing runs until you approve.</span>
+        <button type="button" class="sc-pf-btn sc-pf-edit" disabled><span class="material-symbols-outlined">edit</span>Edit</button>
+        <button type="button" class="sc-pf-btn sc-pf-go" disabled><span class="material-symbols-outlined">check_circle</span>Approve</button>
+      </div>
+    </div>`;
+}
+
+/* `state`: 'ask' (the live card), 'approved', 'edit', or 'cancel'. The three
+   resolved states keep the card in the thread as the record of what was agreed —
+   with no controls left on it. */
+function preflightCardHtml(spec, state) {
+  const st = state || 'ask';
+  const picks = spec.picks;
+  if (st === 'ask') {
+    const qs = PREFLIGHT_QUESTIONS.map((q) => {
+      const sel = picks[q.key];
+      const opts = q.options.map((o) => {
+        const on = q.multi ? (sel || []).indexOf(o.id) !== -1 : sel === o.id;
+        const tick = q.multi ? '<span class="material-symbols-outlined">check</span>' : '';
+        return `<button type="button" class="sc-pf-opt${on ? ' is-on' : ''}" data-pf-q="${esc(q.key)}" data-pf-o="${esc(o.id)}" role="${q.multi ? 'checkbox' : 'radio'}" aria-checked="${on ? 'true' : 'false'}">${tick}${esc(o.label)}</button>`;
+      }).join('');
+      return `<div class="sc-pf-q">
+          <span class="sc-pf-q-lab"><span class="material-symbols-outlined">${esc(q.icon)}</span>${esc(q.label)}</span>
+          <div class="sc-pf-opts" role="${q.multi ? 'group' : 'radiogroup'}" aria-label="${esc(q.label)}">${opts}</div>
+        </div>`;
+    }).join('');
+    return `<div class="sc-preflight" role="group" aria-label="Before I run this">
+        <div class="sc-pf-head">
+          <span class="material-symbols-outlined">rule</span>
+          <h3 class="sc-pf-title">Before I run this</h3>
+          <button type="button" class="sc-pf-x" data-pf="close" aria-label="Cancel this ask" title="Cancel this ask"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <p class="sc-pf-why">${esc(preflightWhy(spec.reasons))}</p>
+        ${preflightEstHtml(preflightEstimate(picks), true)}
+        <div class="sc-pf-qs">${qs}</div>
+        <div class="sc-pf-foot">
+          <span class="sc-pf-note">Nothing runs until you approve.</span>
+          <button type="button" class="sc-pf-btn sc-pf-edit" data-pf="edit"><span class="material-symbols-outlined">edit</span>Edit</button>
+          <button type="button" class="sc-pf-btn sc-pf-go" data-pf="go"><span class="material-symbols-outlined">check_circle</span>Approve</button>
+        </div>
+      </div>`;
+  }
+  const approved = st === 'approved';
+  const s = preflightSummary(picks);
+  const title = approved
+    ? 'Approved \u2014 running this now'
+    : (st === 'edit' ? 'Back to you to edit' : 'Cancelled \u2014 nothing ran');
+  const icon = approved ? 'check_circle' : (st === 'edit' ? 'edit' : 'do_not_disturb_on');
+  const done = approved
+    ? `<strong>${esc(s.scope)}</strong> \u00b7 <strong>${esc(s.depth)}</strong> \u00b7 reading ${esc(s.knowledge)}.`
+    : (st === 'edit'
+      ? 'Your ask is back in the composer \u2014 change it and send it again.'
+      : 'Nothing was run, and nothing was spent.');
+  return `<div class="sc-preflight is-resolved${approved ? ' is-approved' : ' is-stood-down'}" role="group" aria-label="${esc(title)}">
+      <div class="sc-pf-head">
+        <span class="material-symbols-outlined${approved ? ' sc-pf-check' : ''}">${icon}</span>
+        <h3 class="sc-pf-title">${esc(title)}</h3>
+      </div>
+      ${approved ? preflightEstHtml(preflightEstimate(picks), false) : ''}
+      <p class="sc-pf-done">${done}</p>
+    </div>`;
+}
+
+/* Let the component library render the real thing rather than a mock-up. */
+if (typeof window !== 'undefined') {
+  window.WiseAskPreflight = {
+    needFor: preflightNeedFor,
+    skeletonHtml: preflightSkeletonHtml,
+    cardHtml: preflightCardHtml,
+    estimate: preflightEstimate,
+    questions: PREFLIGHT_QUESTIONS,
+    prefKey: PREFLIGHT_PREF_KEY,
+    isOn: isChatPreflightOn,
+    sample: (ask) => preflightNeedFor(
+      ask || 'Compare every product in my portfolio and write me a full report with sources',
+      { force: true },
+    ),
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -7048,7 +7812,7 @@ const CHAT_MENU_GROUP_TITLE = {
   more: 'More', danger: '',
 };
 const CHAT_MENU_GROUP_OF = {
-  history: 'conversation', new: 'conversation', export: 'conversation', share: 'conversation', 'file-library': 'conversation', voiceover: 'conversation', 'add-member': 'conversation',
+  history: 'conversation', new: 'conversation', export: 'conversation', share: 'conversation', 'file-library': 'conversation', preflight: 'conversation', voiceover: 'conversation', 'add-member': 'conversation',
   turns: 'data', outputs: 'data', connect: 'data', 'mcp-toggle': 'data', sticky: 'data',
   'toggle-cards': 'display', 'toggle-intent-chips': 'display', compact: 'display', brandtext: 'display', sheen: 'display',
   'bg-anim': 'helix', 'bg-anim-snap': 'helix', 'bg-anim-snap-save': 'helix',
@@ -7442,6 +8206,8 @@ function decorateChatMenuAdminDescs(pop) {
 /* Tiny 2–4 word hint under every Helix slider / segment. Idempotent. */
 const HELIX_HINTS = [
   ['.sc-bganim-detail:has(.sc-bganim-opacity)', 'How faint it sits'],
+  ['.sc-bganim-film-opacity', 'How faint it sits'],
+  ['.sc-bganim-film-speed', 'How fast it plays'],
   ['.sc-bganim-wash', 'Behind the composer'],
   ['.sc-bganim-angle', 'Tilt of the coil'],
   ['.sc-bganim-camera', 'Above or below'],
@@ -7476,7 +8242,7 @@ const HELIX_HINTS = [
   ['.sc-bganim-mat-coat', 'Glossy lacquer'],
   ['.sc-bganim-mat-sheen', 'Edge glow'],
   ['.sc-bganim-mat-fuzz', 'Downy bump'],
-  ['.sc-bganim-style', 'Helix, Ten, or Orbit'],
+  ['.sc-bganim-style', 'Which field runs'],
   ['.sc-bganim-playback', 'Pause or play'],
 ];
 function decorateMenuRowIcons(pop) {
@@ -7528,7 +8294,8 @@ function decorateHelixHints(root) {
    everything after a subhead until the next one. Idempotent. */
 function helixClusterIsSpan(label) {
   return label === 'load' || label === 'snapshots' || label === 'look'
-    || label === 'finish' || label === 'field' || label === 'view';
+    || label === 'finish' || label === 'field' || label === 'view'
+    || label === 'film';
 }
 
 function tagHelixClusterSpan(section) {
@@ -7577,6 +8344,7 @@ function clusterifyHelixGroup(section) {
       const label = (el.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
       if (helixClusterIsSpan(label)) cluster.classList.add('sc-bganim-cluster--span');
       if (el.dataset.helixOnly === '1') cluster.dataset.helixOnly = '1';
+      if (el.dataset.videoOnly === '1') cluster.dataset.videoOnly = '1';
       el.before(cluster);
       cluster.appendChild(el);
       return;
@@ -8245,19 +9013,24 @@ function buildAgentsPanelHtml(agents, id) {
  * Opt-in: callers pass { label, cards: [...] } and the same rail used on
  * ai-chat.html renders inside the shared dock. Each card descriptor:
  *   { variant: 'metric'|'intro'|'wiseai'|'welcome'|'gold', icon, iconTone, pill:{tone,icon,text},
- *     metric, metricUnit, title, desc, action, intent, ask, large,
- *     chart: 'upf'|'pillars' }
+ *     metric, metricUnit, title, desc, action, intent, ask, large, xl,
+ *     art, artOnly, chart: 'upf'|'pillars'|'race' }
  * 'welcome' is the hero card — it reads its title/desc like an intro card but
  * wears the sign-in hero art, so its copy is white over the photo.
  * 'gold' is the same intro layout in Gilded Grain (the dark gold), not brand blue.
- * `chart` embeds the shared Overview donut / pillar bars (js/welcome-overview-cards.js).
+ * `chart` embeds a shared Overview chart — the donut, the pillar bars, or the
+ * code race (js/welcome-overview-cards.js owns which kinds exist).
+ * `art` swaps that shared photo for the card's own; `xl` makes the card twice
+ * the width of a regular one, and `artOnly` drops the copy so the photograph
+ * carries the card — just the pill and the call to action ride on top.
  * Cards drive a chat turn on click (handled in mountWISEcodeAIChat) via {intent, ask}.
  */
 function buildScorecardsHtml(sc, id) {
   if (!sc || !Array.isArray(sc.cards) || !sc.cards.length) return '';
   const label = sc.label || 'Your portfolio at a glance';
   const cardHtml = (c, i) => {
-    const chart = c.chart === 'upf' || c.chart === 'pillars' ? c.chart : '';
+    const chartHtml = overviewCardChartHtml(c.chart);
+    const chart = chartHtml ? c.chart : '';
     const isIntro = c.variant === 'intro' || c.variant === 'wiseai' || c.variant === 'welcome' || c.variant === 'gold' || !!chart;
     const locked = c.locked === true;
     const variantClass = (c.variant === 'wiseai'
@@ -8266,8 +9039,14 @@ function buildScorecardsHtml(sc, id) {
       : (c.variant === 'welcome' || chart) ? ' ws-scorecard--hero'
       : c.variant === 'intro' ? ' ws-scorecard--intro' : '')
       + (c.large ? ' ws-scorecard--lg' : '')
+      + (c.xl ? ' ws-scorecard--xl' : '')
+      + (c.art ? ' ws-scorecard--art' : '')
+      + (c.art && c.artOnly ? ' ws-scorecard--artonly' : '')
       + (chart ? ` ws-scorecard--chart ws-scorecard--chart-${chart}` : '')
       + (locked ? ' ws-scorecard--locked' : '');
+    /* A card's own photograph rides on a custom property so the shared hero
+       rules keep owning the scrim, the copy color, and the hover state. */
+    const artStyle = c.art ? ` style="--ws-sc-art: url('${esc(c.art)}')"` : '';
     const iconTone = c.iconTone ? `ws-sc-icon--${esc(c.iconTone)}` : 'ws-sc-icon--brand';
     /* A locked card swaps its pill for a lock badge so the "coming soon" state
        reads instantly. */
@@ -8279,25 +9058,29 @@ function buildScorecardsHtml(sc, id) {
     const lead = isIntro
       ? `<div class="ws-sc-intro-title">${esc(c.title || '')}</div>`
       : `${c.metric != null ? `<div class="ws-sc-metric">${esc(c.metric)}${c.metricUnit ? `<span class="ws-sc-metric-unit">${esc(c.metricUnit)}</span>` : ''}</div>` : ''}<div class="ws-sc-title">${esc(c.title || '')}</div>`;
-    const chartHtml = chart ? overviewCardChartHtml(chart) : '';
     const action = locked
       ? `<div class="ws-sc-action ws-sc-action--locked">Coming soon</div>`
       : (c.action
         ? `<div class="ws-sc-action">${esc(c.action)}<span class="material-symbols-outlined">arrow_outward</span></div>`
         : '');
     /* Chart cards are the chart only — no title, legend, or description above
-       it. The card title stays on aria-label so the control still names itself. */
+       it. An art-only card is the same idea with a photograph: the piece speaks
+       for itself, so only the pill and the call to action ride on top. Either
+       way the card title stays on aria-label so the control names itself. */
     const body = chart
       ? chartHtml
-      : `<div class="ws-sc-top">
+      : (c.art && c.artOnly
+        ? `<div class="ws-sc-top">${topRight}</div>
+        ${action}`
+        : `<div class="ws-sc-top">
           <span class="ws-sc-icon ${iconTone}"><span class="material-symbols-outlined">${esc(c.icon || 'insights')}</span></span>
           ${topRight}
         </div>
         ${lead}
         <div class="ws-sc-desc">${esc(c.desc || '')}</div>
-        ${action}`;
+        ${action}`);
     return `
-      <button type="button" class="ws-scorecard${variantClass}" role="listitem" data-card="${i}" aria-label="${esc(c.title || c.action || 'Overview card')}"${locked ? ' aria-disabled="true" data-locked="1"' : ''}>
+      <button type="button" class="ws-scorecard${variantClass}" role="listitem" data-card="${i}"${artStyle} aria-label="${esc(c.title || c.action || 'Overview card')}"${locked ? ' aria-disabled="true" data-locked="1"' : ''}>
         ${body}
       </button>`;
   };
@@ -8563,7 +9346,15 @@ if (typeof window !== 'undefined') window.WisePaintWelcome = paintWelcomeNow;
  *   buildTranscript {fn}   (turns, ts) => html — exposed on the returned api so
  *                          a host can rebuild an archived thread in the chat's
  *                          own line markup instead of forking it
- *   onAddMember  {fn}      () => void — "Add team member to chat" popover item
+ *   team         {bool} default true — the conversation can hold more than the
+ *                          member and WISEcodeAI: "Add people" in the composer's
+ *                          "+", the "Invite a team member" chip, "@" mentions,
+ *                          and teammate lines in the thread. Pass false only
+ *                          where there is no team yet (the signup chat).
+ *   onAddMember  {fn}      (person) => void — fired when a teammate joins this
+ *                          conversation; the shared module owns the picker and
+ *                          the join lines, so this is a notification, not a
+ *                          replacement for them
  *   onHistory    {fn}      () => void — "History & Projects" popover item
  *   onToggleWidth{fn}      (isWide) => void — fired when the width toggle flips
  *   onEngage     {fn}      () => void — first leave of the welcome (type, chip,
@@ -8646,6 +9437,20 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      opts.userAvatar (string or getter) wins, else the shared avatar store, else
      the member's initials. */
   const youChipHtml = () => youAvatarChipHtml(userInitials, opts.userAvatar);
+  /* Who else is in the room. Empty until the member invites someone, and the
+     whole feature stands down on a surface that passes `team: false` (the
+     signup chat, where there is no team yet). */
+  const teamOn = opts.team !== false;
+  const roster = [];
+  const rosterHas = (pid) => roster.some((p) => p.id === pid);
+  /* Everyone who can be named in this room: the assistant, whoever has joined,
+     and the rest of the directory — naming someone who is not here yet is how
+     you invite them, exactly as it is in Slack. */
+  const namedPeople = () => (teamOn ? [TEAM_AI].concat(roster, TEAM_DIRECTORY.filter((p) => !rosterHas(p.id))) : []);
+  /* Only the people actually in the room — what a finished line is painted
+     against, so a name that was never invited stays plain text. */
+  const roomPeople = () => (teamOn ? [TEAM_AI].concat(roster) : []);
+  const paintMentions = (html) => (teamOn ? linkifyMentions(html, roomPeople()) : html);
   /* Optional per-intent reply map for this surface; an intent-id hit here means
      a clicked chip always continues with an on-feature answer. Mutable so
      setIntents() can extend it alongside a new chip set. */
@@ -8742,7 +9547,25 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (list.some((c) => c && c.intent === ASK_HELP_INTENT)) return list;
     return list.concat({ intent: ASK_HELP_INTENT, label: askHelpLabel, icon: 'help', ask: askHelpLabel });
   };
-  intents = withAskHelpChip(intents);
+  /* Inviting a teammate is a standing offer on every chat surface, so the chip
+     is appended here rather than left to each host's own intent list — see the
+     nothing-page-local rule. It names a control, so tapping it opens the people
+     picker (the outputs-open-on-request rule: firing the control IS the ask). */
+  const TEAM_INVITE_INTENT = 'invite_team';
+  const TEAM_EVERYONE_INTENT = 'team_everyone';
+  const TEAM_INVITE_CHIP = {
+    intent: TEAM_INVITE_INTENT, icon: 'group_add', label: 'Invite a team member',
+    ask: 'Invite a team member into this conversation',
+    /* The picker is the main way in; these are the shortcut, so the invite turn
+       still ends on chips that do something rather than on a dead end. */
+    nextIntents: TEAM_DIRECTORY.slice(0, 3).map(teamInviteChipFor),
+  };
+  const withTeamChip = (list) => {
+    if (!teamOn) return list;
+    if (list.some((c) => c && c.intent === TEAM_INVITE_INTENT)) return list;
+    return list.concat(TEAM_INVITE_CHIP);
+  };
+  intents = withTeamChip(withAskHelpChip(intents));
   /* The chip set the welcome (and a brand-new conversation) should return to.
      History restore may swap `intents` to a follow-up subset for that thread;
      Start-new / setIntents keep this session catalog separate so a restored
@@ -8949,7 +9772,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       ? `<span class="sc-ask-shimmer" aria-hidden="true">${shimmerLetters(c.label)}</span>`
       : esc(c.label);
     const aria = isAsk ? ` aria-label="${esc(c.label)}"` : '';
-    return `<button type="button" class="chip ws-intent-chip${gold}${spent ? ' is-used' : ''}" data-intent="${i}"${aria}${spent ? ' aria-disabled="true" tabindex="-1"' : ''}><span class="material-symbols-outlined">${esc(c.icon || 'bolt')}</span>${labelHtml}</button>`;
+    /* `dive: true` is the deep-dive chip — outlined in brand blue, and the one
+       chip style that always routes through Ask pre-flight, because "take this as
+       far as it goes" has no scope on it until the member sets one. */
+    const dive = c && c.dive === true ? ' chip-dive' : '';
+    return `<button type="button" class="chip ws-intent-chip${gold}${dive}${spent ? ' is-used' : ''}" data-intent="${i}"${aria}${spent ? ' aria-disabled="true" tabindex="-1"' : ''}><span class="material-symbols-outlined">${esc(c.icon || 'bolt')}</span>${labelHtml}</button>`;
   }).join('');
   let chipsHtml = buildChipsHtml();
 
@@ -9020,6 +9847,14 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (localStorage.getItem(BRANDTEXT_PREF_KEY) === '1') brandtextDefaultOn = true;
   } catch (_) {}
   document.documentElement.classList.toggle('chat-brandtext', brandtextDefaultOn);
+  /* "Ask pre-flight" (three-dot ▸ Admin, pink) — buffer an ask that cannot be
+     run as written behind a card that settles scope, sources and depth first,
+     and shows the spend they imply. Like Compact spacing it flips one global
+     class on <html> (chat-preflight) so every mounted chat module buffers at
+     once; the shared preference is persisted and re-applied on mount.
+     ON by default — it only ever intercepts an ask whose wording says the
+     answer would otherwise be a guess. A stored '0' always wins. */
+  document.documentElement.classList.toggle('chat-preflight', isChatPreflightOn());
   /* "Input glow" (three-dot ▸ Admin, pink) — the living sheen stroke that travels
      around the composer's border. It's ON everywhere by default; turning it OFF
      flips a single global `chat-sheen-off` class on <html> that suppresses the
@@ -9114,10 +9949,15 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      mounted chat's segment + live field follow the one shared choice. A leftover
      'stamp' preference (removed) falls back to helix. */
   const BGANIM_STYLE_KEY = 'wise:chat-bg-anim-style';
-  const BGANIM_STYLES = ['helix', 'helix-ten', 'orbit', 'video'];
+  const BGANIM_STYLES = ['helix', 'helix-ten', 'orbit', 'video', 'wheat'];
   const isHelixStyle = (s) => s === 'helix' || s === 'helix-ten';
   let bgAnimStyle = readBgAnimStyle();
   applyBgAnimStyleAttr(bgAnimStyle);
+  /* Each film's own opacity + speed, so the marketing hero keeps its look and
+     the wheat strand keeps its faint, slowed one. Shared app-wide like every
+     other field control (broadcast on wise:chat-bg-anim-film). */
+  const bgAnimFilms = readBgAnimFilms();
+  const bgAnimFilmClip = () => bgAnimFilmClipKey(bgAnimStyle);
   /* "Response streaming" (three-dot menu) — how much of WISEcodeAI's thinking is
      shown before an answer lands. A three-way choice, shared APP-WIDE (one key,
      broadcast on the wise:chat-stream-level event) so every mounted chat module
@@ -9186,14 +10026,17 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
         </div>
       </div>`}
       <div class="sc-topbar-controls">
+        ${teamOn ? `<button type="button" class="sc-roster" id="${id}-roster" data-sc="roster" title="People in this conversation" aria-label="People in this conversation" hidden></button>` : ''}
         <div class="panel-more-wrap">
         <button type="button" class="panel-more-btn" id="${id}-more" aria-haspopup="menu" aria-expanded="false" aria-controls="${id}-more-pop" title="More options"><span class="material-symbols-outlined">more_vert</span></button>
         <div class="topbar-popover hidden" id="${id}-more-pop" role="menu">
           ${menuLinksHtml}
           <button type="button" class="topbar-menu-item" data-sc="new"><span class="material-symbols-outlined topbar-menu-icon">add</span><span>Start new conversation</span></button>
+          ${teamOn ? `<button type="button" class="topbar-menu-item" data-sc="add-member"><span class="material-symbols-outlined topbar-menu-icon">person_add</span><span>Add people to this conversation</span></button>` : ''}
           <button type="button" class="topbar-menu-item" data-sc="export"><span class="material-symbols-outlined topbar-menu-icon">download</span><span>Export conversation</span></button>
           <button type="button" class="topbar-menu-item" data-sc="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
           <button type="button" class="topbar-menu-item" data-sc="file-library"><span class="material-symbols-outlined topbar-menu-icon">auto_stories</span><span>File to Library</span></button>
+          <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-preflight-item" data-sc="preflight" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">rule</span><span>Ask pre-flight</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin" data-sc="voiceover" role="menuitem" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined topbar-menu-icon">record_voice_over</span><span class="topbar-menu-copy"><span class="topbar-menu-title">Play voiceover</span><span class="topbar-menu-desc" data-voice-label>Samuel L. Jackson</span></span><span class="topbar-menu-badge">Admin</span></button>
           ${showTurns ? `<div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="turns" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">alt_route</span><span>Turns</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
@@ -9244,8 +10087,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
               <button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="helix-ten" role="radio" aria-checked="false" title="Food DNA helix — about ten products" aria-label="Food DNA helix — about ten products">Ten</button>
               <button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="orbit" role="radio" aria-checked="false" title="Owl orbit constellation" aria-label="Owl orbit constellation">Orbit</button>
               <button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="video" role="radio" aria-checked="false" title="Marketing hero film" aria-label="Marketing hero film">Video</button>
+              <button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="wheat" role="radio" aria-checked="false" title="Golden wheat DNA film — fills the module" aria-label="Golden wheat DNA film — fills the module">Wheat</button>
             </div>
           </div>
+          ${bgAnimFilmRowsHtml()}
           ${opts.activityStrip !== false ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-actstrip-item" data-sc="activity-strip" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">timeline</span><span>Activity strip</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
           <div class="sc-stream-detail sc-actside-detail" data-admin-item="1">
             <span class="sc-stream-detail-label">Strip side</span>
@@ -9301,10 +10146,14 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
               <button type="button" class="fl-more-item" data-sc="attach"><span class="material-symbols-outlined">attach_file</span><span>Attach</span></button>
               <button type="button" class="fl-more-item" data-sc="camera"><span class="material-symbols-outlined">photo_camera</span><span>Camera</span></button>
               <button type="button" class="fl-more-item" data-sc="voice"><span class="material-symbols-outlined">mic</span><span>Voice</span></button>
+              ${teamOn ? `<div class="fl-more-divider" role="separator"></div>
+              <button type="button" class="fl-more-item" data-sc="add-people"><span class="material-symbols-outlined">person_add</span><span>Add people</span></button>` : ''}
               <div class="fl-more-divider" role="separator"></div>
               <button type="button" class="fl-more-item" data-sc="attach-example"><span class="material-symbols-outlined">burst_mode</span><span>Load 3 example images</span></button>
             </div>
+            ${teamOn ? buildPeoplePickerHtml(id) : ''}
           </div>
+          ${teamOn ? `<div class="sc-mention-pop" id="${id}-mpop" role="listbox" aria-label="People you can mention" hidden></div>` : ''}
           <div class="fl-input-col">
             <div class="fl-model-row">
               ${buildModelSelectorHtml(id)}
@@ -9658,46 +10507,6 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      flying in and being shoved down by the first output card. */
   const outputStage = makeStageGate(30000);
 
-  /* A long prompt a member pastes in is a document, not a sentence: it arrives
-     with paragraph breaks and bullet lines and has to read that way in the
-     transcript instead of collapsing into one run-on block.
-
-     Only multi-line text is shaped. Anything typed in the composer is a single
-     line and is escaped exactly as before, so no ordinary message changes.
-     The markup understood is deliberately small: a blank line starts a new
-     paragraph, a line opening with "- " is a bullet, a line ending in a colon
-     leads the list beneath it, and **bold** / *italic* mark emphasis. */
-  function promptBodyHtml(text) {
-    const raw = String(text == null ? '' : text);
-    if (!/\n/.test(raw)) return esc(raw);
-    const inline = (s) => esc(s)
-      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-      .replace(/(^|[\s(\u201C"\u2014])\*([^*\n]+)\*(?=$|[\s).,;:!?\u201D"\u2014])/g, '$1<em>$2</em>');
-    const out = [];
-    let items = null;
-    const flush = () => {
-      if (!items) return;
-      out.push(`<ul class="sc-prompt-list">${items.join('')}</ul>`);
-      items = null;
-    };
-    raw.split('\n').forEach((line) => {
-      const t = line.trim();
-      if (!t) { flush(); return; }
-      if (/^[-\u2022]\s+/.test(t)) {
-        items = items || [];
-        items.push(`<li>${inline(t.replace(/^[-\u2022]\s+/, ''))}</li>`);
-        return;
-      }
-      flush();
-      /* A colon-led line introduces the list under it, so it carries the weight
-         — unless it already marks its own emphasis, which would bold it twice. */
-      const lead = /:$/.test(t) && !t.includes('**');
-      out.push(`<p class="sc-prompt-p${lead ? ' sc-prompt-lead' : ''}">${inline(t)}</p>`);
-    });
-    flush();
-    return `<div class="sc-prompt">${out.join('')}</div>`;
-  }
-
   function addUser(text, atts) {
     if (!messages) return;
     askTurnSeq += 1; /* a new ask — every line that follows belongs to it */
@@ -9716,7 +10525,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       }).join('');
       attHtml = `<div class="sc-att-row">${items}</div>`;
     }
-    const bodyText = text ? promptBodyHtml(text) : '';
+    const bodyText = text ? paintMentions(promptBodyHtml(text)) : '';
     messages.insertAdjacentHTML('beforeend',
       `<div class="sc-line sc-line-you" data-ask-turn="${askTurnSeq}">${youChipHtml()}<div class="sc-line-body">${attHtml}${bodyText}<div class="sc-line-meta">${timeStampHtml()}</div></div></div>`);
     const line = messages.lastElementChild;
@@ -9874,7 +10683,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        embedded charts / tables are left intact as their own paragraph unit.
        A lead sentence above an output carousel still types; the rail is the
        next beat. */
-    if (el.querySelector('.sc-connect-flow, [data-cf-step]')) return false;
+    if (el.querySelector('.sc-connect-flow, [data-cf-step], .sc-preflight')) return false;
     if (el.querySelector('.sc-surface-rail-lead') && el.querySelector('.sc-surface-rail')) return true;
     return !el.querySelector('.sc-surface-card');
   }
@@ -10099,7 +10908,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      `typewriter:false` forces the line to appear whole (no paragraph reveal). */
   function addWISEcodeAI(html, meta = {}) {
     if (!messages) return null;
-    html = transformOpenChips(html, meta);
+    html = paintMentions(transformOpenChips(html, meta));
     /* Every WISEcodeAI turn names where it's grounded. When the caller doesn't
        specify a source (or leaves it blank), fall back to a connected data
        source so the trust chip is ALWAYS present — the transcript never shows an
@@ -10316,7 +11125,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
                     answer posts (host side-effects like opening output panes);
        source     — the turn's grounding ('' / undefined picks a connected
                     source; false drops the trust chip AND the trace's closing
-                    grounding line, so the two always agree). */
+                    grounding line, so the two always agree);
+       chips      — the chips this answer should trail, when the caller knows
+                    them better than the scorer does (a membership change ends
+                    on what to do with the room, not on the page's own topics). */
   function respondWithTrace(html, meta = {}) {
     const routeText = meta.traceText != null
       ? meta.traceText
@@ -10334,6 +11146,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       lineMeta.voiceover = 'playful';
     }
     delete lineMeta.traceText; delete lineMeta.milestones; delete lineMeta.intent; delete lineMeta.onTraceDone;
+    delete lineMeta.chips;
+    /* Routing text and the model's question are two different strings on a chip
+       turn (see chipPrompt) — neither belongs on the answer line. */
+    delete lineMeta.enrichQuestion;
     const hostOnDone = lineMeta.onDone;
     lineMeta.onDone = () => {
       if (typeof hostOnDone === 'function') { try { hostOnDone(); } catch (_) { /* host hook */ } }
@@ -10368,8 +11184,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       if (lineMeta.source !== false) {
         lineMeta.source = pack.source || givenSource || pickSourceName();
       }
-      if (Array.isArray(pack.chips) && pack.chips.length) {
-        applyTopicFollowups(meta.intent, out, routeText, { nextIntents: pack.chips });
+      const chipPack = (Array.isArray(pack.chips) && pack.chips.length)
+        ? pack.chips
+        : ((Array.isArray(meta.chips) && meta.chips.length) ? meta.chips : null);
+      if (chipPack) {
+        applyTopicFollowups(meta.intent, out, routeText, { nextIntents: chipPack });
       } else {
         applyTopicFollowups(meta.intent, out, routeText);
       }
@@ -10405,7 +11224,160 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     }
   }
 
-  function wiseaiRespond(text, intent) {
+  /* ── Ask pre-flight ──────────────────────────────────────────────────────
+     The buffer between the member's prompt and the answer. See the shared
+     component notes above `PREFLIGHT_QUESTIONS`. Holds one live card at a time;
+     `standDownPreflight` is how a later ask abandons an unanswered one. */
+  let standDownPreflight = null;
+  function preflightArmed() {
+    return document.documentElement.classList.contains('chat-preflight');
+  }
+  /* A deep-dive chip (`dive: true`, rendered `.chip-dive`) always buffers — its
+     whole point is an ask with no scope on it. */
+  function isDiveIntent(intent) {
+    if (!intent) return false;
+    const def = intents.find((c) => c && c.intent === intent)
+      || sessionIntents.find((c) => c && c.intent === intent)
+      || intentCatalog.get(intent);
+    return !!(def && def.dive === true);
+  }
+  function runPreflight(spec, approve, standDown) {
+    const picks = spec.picks;
+    const line = addWISEcodeAI(preflightSkeletonHtml(), { source: '', feedback: false, trailChips: false });
+    let card = line ? line.querySelector('.sc-preflight') : null;
+    /* No card means no buffer — never strand the ask. */
+    if (!card) { approve(picks); return; }
+
+    const swap = (state) => {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = preflightCardHtml(spec, state);
+      const next = tmp.firstElementChild;
+      if (!next) return;
+      card.replaceWith(next);
+      card = next;
+      scrollDown();
+    };
+    const resolve = (kind) => {
+      if (!standDownPreflight) return;
+      standDownPreflight = null;
+      swap(kind === 'go' ? 'approved' : kind);
+      if (kind === 'go') { approve(picks); return; }
+      if (kind === 'edit' && input) {
+        input.value = spec.ask;
+        /* The composer's own floating-label / autosize handlers listen for input,
+           so tell them the field is filled rather than leaving a stale label. */
+        try { input.dispatchEvent(new Event('input', { bubbles: true })); } catch (_) {}
+        try { input.focus(); input.setSelectionRange(spec.ask.length, spec.ask.length); } catch (_) {}
+      }
+      /* No answer is coming, so the thread still has to end on somewhere to go.
+         Score the chips against the ask that was NOT run — otherwise the whole
+         welcome rail parks itself on the thread as if nothing had happened. */
+      applyTopicFollowups(null, '', spec.ask);
+      parkInlineChips();
+      standDown(kind);
+    };
+    standDownPreflight = resolve;
+
+    /* Re-read every option's on/off state from `picks` and re-price the ask. The
+       numerals are the same nodes, so count-up re-runs them on each change. */
+    const refresh = () => {
+      card.querySelectorAll('.sc-pf-opt').forEach((b) => {
+        const sel = picks[b.dataset.pfQ];
+        const on = Array.isArray(sel) ? sel.indexOf(b.dataset.pfO) !== -1 : sel === b.dataset.pfO;
+        b.classList.toggle('is-on', on);
+        b.setAttribute('aria-checked', on ? 'true' : 'false');
+      });
+      const est = preflightEstimate(picks);
+      const put = (key, val) => {
+        const el = card.querySelector(`[data-pf-est="${key}"]`);
+        if (el && el.textContent !== val) el.textContent = val;
+      };
+      put('tokens', preflightFmtTokens(est.tokens));
+      put('cost', preflightFmtCost(est.cost));
+      put('secs', preflightFmtTime(est.secs));
+    };
+
+    line.addEventListener('click', (e) => {
+      const t = e.target.closest ? e.target.closest('[data-pf], [data-pf-q]') : null;
+      if (!t || !line.contains(t)) return;
+      const act = t.getAttribute('data-pf');
+      if (act === 'go') { resolve('go'); return; }
+      if (act === 'edit') { resolve('edit'); return; }
+      if (act === 'close') { resolve('close'); return; }
+      const q = PREFLIGHT_QUESTIONS.find((x) => x.key === t.dataset.pfQ);
+      if (!q) return;
+      if (!q.multi) { picks[q.key] = t.dataset.pfO; refresh(); return; }
+      const cur = (picks[q.key] || []).slice();
+      const at = cur.indexOf(t.dataset.pfO);
+      /* Reading nothing at all is not an option, so the last source stays on. */
+      if (at === -1) cur.push(t.dataset.pfO);
+      else if (cur.length > 1) cur.splice(at, 1);
+      picks[q.key] = cur;
+      refresh();
+    });
+
+    /* The drafting beat, then the questions. */
+    setTimeout(() => {
+      if (standDownPreflight !== resolve) return;
+      swap('ask');
+    }, prefersReducedMotion ? 0 : 900);
+  }
+
+  /* `ctl.typed`  — the member typed this ask themselves, so nobody has scoped it.
+     `ctl.cleared` — this is the re-entry after Approve; the buffer is done. */
+  function wiseaiRespond(text, intent, extraMeta, ctl) {
+    const cleared = !!(ctl && ctl.cleared);
+    const typedAsk = !!(ctl && ctl.typed);
+    /* The one place a turn is routed, so it is also the one place that has to
+       know the room can hold more than two. Every path into an answer — the
+       composer, a chip, ask(), sendIntent(), a host bridge — arrives here.
+         · the invite chip opens the picker, because it names a control;
+         · an ask that names a teammate is answered by that teammate first and
+           by WISEcodeAI after (see respondAsTeam);
+         · an ask that names only WISEcodeAI is a normal turn, routed on what
+           was actually asked rather than on the name it was addressed to. */
+    if (teamOn) {
+      if (intent === TEAM_INVITE_INTENT) { inviteTeamTurn(); return; }
+      if (typeof intent === 'string' && intent.indexOf('team_invite_') === 0) {
+        addPeople([intent.slice('team_invite_'.length)]);
+        return;
+      }
+      const named = parseMentions(text, namedPeople());
+      if (named.some((p) => !p.ai)) { respondAsTeam(text, named, intent); return; }
+      if (named.length) {
+        const bare = stripMentions(text, namedPeople());
+        if (bare) text = bare;
+      }
+    }
+    /* A second ask abandons an unanswered pre-flight — the member moved on, and
+       a dead card must not be left holding the thread. */
+    if (!cleared && standDownPreflight) standDownPreflight('close');
+    /* An ask that cannot be run as written stops here and waits for Approve.
+       On approval it comes back through this same door with `cleared` set, so
+       from that point the turn is an ordinary turn. */
+    if (!cleared && preflightArmed()) {
+      /* Tapping a curated chip is not an ask that needs scoping — the chip's
+         label IS its scope, and buffering "Top 3 brands · WISEscore ≥ 50" would
+         ask the member to settle something already settled. What buffers is an
+         ask nobody scoped: one the member typed, or a deep-dive chip, whose
+         whole premise is that the shape is still open.
+         This turns on the ROUTE, not on whether the typed words happened to
+         match a chip — the matcher takes a single shared word, so almost every
+         typed ask resolves to some intent, and reading that as "curated" is how
+         the buffer ends up never firing on the one case it exists for. */
+      const dive = isDiveIntent(intent);
+      if (dive || typedAsk) {
+        const need = preflightNeedFor(text, { force: dive });
+        if (need) {
+          /* Stage order: the card is the beat AFTER the member's prompt has
+             finished revealing, never on top of it. */
+          promptStage.after(() => {
+            runPreflight(need, () => wiseaiRespond(text, intent, extraMeta, { cleared: true }), () => {});
+          });
+          return;
+        }
+      }
+    }
     /* Resolve the answer up front so the trace can narrate assembling the exact
        pieces it will contain — and so nothing (chart/table/report cards, source
        chips, suggested actions, or host-surfaced output panes) renders until the
@@ -10419,12 +11391,403 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       traceText: text,
       intent,
       enrichQuestion: text,
+      ...(extraMeta || {}),
       onTraceDone: () => {
         if (typeof opts.onReply === 'function') {
           try { opts.onReply(intent, text, { intent, topic: thread.topic, prev }); }
           catch (_) { /* host hook */ }
         }
       },
+    });
+  }
+
+  /* ── The room can hold more than two ─────────────────────────────────────
+     Everything about a third voice lives here: the picker the composer's "+"
+     opens, the join lines, a teammate's own line, and the ordering that keeps
+     one turn playing one stage at a time when more than one person answers it.
+
+     Shared, not page-local: every chat module in the app mounts this, so a
+     conversation on any surface can be opened up to a colleague without the
+     host knowing anything about it. */
+  const peoplePop = teamOn ? rootEl.querySelector(`#${id}-people-pop`) : null;
+  const peopleListEl = teamOn ? rootEl.querySelector(`#${id}-people-list`) : null;
+  const peopleTokensEl = teamOn ? rootEl.querySelector(`#${id}-people-tokens`) : null;
+  const peopleSearchEl = teamOn ? rootEl.querySelector(`#${id}-people-q`) : null;
+  const peopleAddBtn = teamOn ? rootEl.querySelector(`#${id}-people-add`) : null;
+  const rosterBtn = teamOn ? rootEl.querySelector(`#${id}-roster`) : null;
+  const mentionPop = teamOn ? rootEl.querySelector(`#${id}-mpop`) : null;
+  /* Who is ticked in the picker but not yet added. */
+  const picked = new Set();
+  /* Whether this surface has a written answer for an ask, as opposed to falling
+     through to the keyword resolver's generic reply. */
+  const hasScriptedReply = (intent) => !!(intent && intentReplies && intentReplies[intent] != null);
+
+  /* The face pile in the module header — who is in this conversation. Hidden
+     while it is just the member and WISEcodeAI, because that is every chat. */
+  function renderRosterPile() {
+    if (!rosterBtn) return;
+    if (!roster.length) {
+      rosterBtn.hidden = true;
+      rosterBtn.innerHTML = '';
+      return;
+    }
+    rosterBtn.hidden = false;
+    rosterBtn.innerHTML = roster.slice(0, 3).map(teamAvatarHtml).join('')
+      + (roster.length > 3 ? `<span class="sc-roster-more">+${roster.length - 3}</span>` : '');
+    rosterBtn.setAttribute('aria-label',
+      `People in this conversation: you, ${title}, ${roster.map((p) => p.name).join(', ')}`);
+  }
+
+  function peopleMatching(q) {
+    const s = String(q || '').trim().toLowerCase();
+    if (!s) return TEAM_DIRECTORY;
+    return TEAM_DIRECTORY.filter((p) => `${p.name} ${p.role} ${p.email}`.toLowerCase().includes(s));
+  }
+  function renderPeopleList() {
+    if (!peopleListEl) return;
+    const rows = peopleMatching(peopleSearchEl && peopleSearchEl.value);
+    peopleListEl.innerHTML = rows.length
+      ? rows.map((p) => teamPersonRowHtml(p, { inRoom: rosterHas(p.id), picked: picked.has(p.id) })).join('')
+      : '<p class="sc-people-empty">Nobody on your team by that name.</p>';
+  }
+  function renderPeopleTokens() {
+    const chosen = Array.from(picked).map(teamPersonById).filter(Boolean);
+    if (peopleTokensEl) {
+      peopleTokensEl.innerHTML = chosen.map((p) =>
+        `<span class="sc-person-token">${teamAvatarHtml(p)}<span class="sc-person-token-name">${esc(p.first)}</span>`
+        + `<button type="button" class="sc-person-token-x" data-unpick="${esc(p.id)}" aria-label="Remove ${esc(p.name)}"><span class="material-symbols-outlined">close</span></button></span>`
+      ).join('');
+    }
+    if (peopleAddBtn) {
+      peopleAddBtn.disabled = !chosen.length;
+      const label = peopleAddBtn.querySelector('.sc-people-add-label');
+      if (label) {
+        label.textContent = chosen.length > 1
+          ? `Add ${chosen.length} people`
+          : (chosen.length === 1 ? `Add ${chosen[0].first}` : 'Add to conversation');
+      }
+    }
+  }
+  function openPeoplePicker() {
+    if (!peoplePop) return;
+    /* One menu at a time: the "+" list and the picker share an anchor. */
+    document.getElementById(`${id}-fl-pop`)?.classList.remove('open');
+    rootEl.querySelector(`#${id}-fl-more`)?.setAttribute('aria-expanded', 'false');
+    picked.clear();
+    if (peopleSearchEl) peopleSearchEl.value = '';
+    renderPeopleList();
+    renderPeopleTokens();
+    peoplePop.classList.add('open');
+    setTimeout(() => { try { peopleSearchEl?.focus(); } catch (_) { /* focus is best-effort */ } }, 40);
+  }
+  function closePeoplePicker() { peoplePop?.classList.remove('open'); }
+
+  /* A membership change is part of the record, so it lands in the thread the
+     way a channel announces it — not as a silent state change in a header. */
+  function postJoinLine(p) {
+    if (!messages) return;
+    messages.insertAdjacentHTML('beforeend',
+      `<div class="sc-line sc-line-event sc-line-join" data-activity="members" role="note" aria-label="${esc(`${p.name} joined the conversation`)}">`
+      + '<span class="sc-join-mark material-symbols-outlined" aria-hidden="true">person_add</span>'
+      + `<div class="sc-line-body"><span class="sc-event-label">${esc(p.name)}</span> joined the conversation`
+      + `<span class="sc-join-role">${esc(p.role)}</span>`
+      + `<div class="sc-line-meta">${timeStampHtml()}</div></div></div>`);
+    scrollDown(true);
+  }
+  function joinPerson(p) {
+    if (!p || p.ai || rosterHas(p.id)) return false;
+    roster.push(p);
+    rootEl.dataset.room = 'team';
+    renderRosterPile();
+    renderPeopleList();
+    postJoinLine(p);
+    if (typeof opts.onAddMember === 'function') {
+      try { opts.onAddMember(p); } catch (_) { /* host hook */ }
+    }
+    return true;
+  }
+
+  /* A teammate's line. Same shape as any other — avatar, body, timestamp — and
+     it reveals line by line like the rest of the thread. What it does not get
+     is a reasoning trace or a grounding chip: a colleague is not an assistant,
+     and dressing one up as the other is the whole thing to avoid here. The name
+     rides the line because in a room with three voices an avatar is not enough. */
+  function addTeammate(p, html, meta = {}) {
+    if (!messages) return null;
+    detachInlineChips();
+    /* Two lines in a row from the same person is one person still talking, so
+       the second does not repeat their name — the way any thread reads. */
+    const prev = messages.lastElementChild;
+    const cont = !!(prev && prev.classList && prev.classList.contains('sc-line-mate')
+      && prev.dataset.person === p.id);
+    messages.insertAdjacentHTML('beforeend',
+      `<div class="sc-line sc-line-mate${cont ? ' sc-line-mate--cont' : ''}" data-ask-turn="${askTurnSeq}" data-person="${esc(p.id)}" data-tone="${esc(String(p.tone || 1))}">`
+      + teamAvatarHtml(p)
+      + `<div class="sc-line-body">${cont ? '' : `<span class="sc-line-name">${esc(p.name)}<span class="sc-line-name-role">${esc(p.role)}</span></span>`}`
+      + `<div class="sc-mate-say">${paintMentions(html)}</div>`
+      + `<div class="sc-line-meta">${timeStampHtml()}</div></div></div>`);
+    const line = messages.lastElementChild;
+    refreshDockedTurns();
+    const done = () => { if (typeof meta.onDone === 'function') meta.onDone(); };
+    const body = line && line.querySelector('.sc-line-body');
+    if (body) {
+      staggerReveal(body, {
+        maxBeats: 40, budget: 900, minGap: 40, maxGap: 130, startDelay: 20,
+        onReveal: () => scrollDown(true),
+        onDone: done,
+      });
+    } else {
+      done();
+    }
+    scrollDown(true);
+    return line;
+  }
+  /* "Maya is typing…" — a person, not a machine, so it is the plain dots and
+     never the thinking ring or a reasoning trace. */
+  function showMateTyping(p) {
+    if (!messages) return null;
+    detachInlineChips();
+    const el = document.createElement('div');
+    el.className = 'sc-line sc-line-typing sc-line-mate-typing';
+    el.innerHTML = teamAvatarHtml(p)
+      + '<div class="sc-line-body"><span class="sc-typing-status">'
+      + '<span class="sc-typing" aria-hidden="true"><span></span><span></span><span></span></span>'
+      + `<span class="sc-typing-label">${esc(p.first)} is typing…</span></span></div>`;
+    messages.appendChild(el);
+    scrollDown();
+    return el;
+  }
+
+  /* What the thread offers once there are more than two in it: a question for
+     each person in their own lane, one that puts it to the whole room, and a
+     way to bring in one more. */
+  function teamChips() {
+    const out = [];
+    roster.slice(-2).forEach((p) => {
+      (p.asks || []).forEach((a) => out.push({
+        intent: `team_ask_${p.id}`, icon: 'alternate_email', label: a.label, ask: a.ask,
+      }));
+    });
+    if (roster.length) {
+      out.push({
+        intent: TEAM_EVERYONE_INTENT, icon: 'groups', label: 'Ask everyone in the room',
+        ask: `${roster.map((p) => `@${p.first}`).join(' ')} @WISEcodeAI where do we land on this one?`,
+      });
+    }
+    const left = TEAM_DIRECTORY.find((p) => !rosterHas(p.id));
+    if (left) out.push(teamInviteChipFor(left));
+    return out;
+  }
+
+  /* Put people in the room: each joins on its own line, says hello in their own
+     voice, and then WISEcodeAI frames what changed — because from the member's
+     side the assistant is the one who did it. */
+  function addPeople(ids) {
+    if (!teamOn) return;
+    const people = (ids || []).map(teamPersonById).filter((p) => p && !rosterHas(p.id));
+    if (!people.length) { closePeoplePicker(); return; }
+    closePeoplePicker();
+    picked.clear();
+    hideWelcome();
+    promptStage.after(() => {
+      people.forEach(joinPerson);
+      const say = (i) => {
+        if (i >= people.length) { frameRoom(people); return; }
+        const p = people[i];
+        const typing = showMateTyping(p);
+        setTimeout(() => {
+          if (typing) typing.remove();
+          addTeammate(p, p.opener, { onDone: () => setTimeout(() => say(i + 1), 200) });
+        }, 820 + Math.round(Math.random() * 520));
+      };
+      say(0);
+    });
+  }
+  function frameRoom(people) {
+    const names = people.map((p) => `<strong>${esc(p.name)}</strong>`).join(' and ');
+    const plural = people.length > 1;
+    respondWithTrace(
+      `${names} ${plural ? 'are' : 'is'} in the room and can read this thread from here on. `
+      + `Put something to ${plural ? 'one of them' : 'them'} by name — <strong>@${esc(people[0].first)}</strong> — and I will `
+      + 'answer alongside them, so nobody here is working off a screenshot of the numbers.',
+      { intent: TEAM_INVITE_INTENT, source: false, chips: teamChips() },
+    );
+  }
+
+  /* The invite chip names a control, so tapping it fires that control: the
+     narration reads first and the picker opens a beat later. */
+  function inviteTeamTurn() {
+    respondWithTrace(
+      'I can bring anyone on your team into this conversation. They see the thread from the moment they join, '
+      + 'you reach them here with <strong>@</strong>, and I stay in the room either way — so nobody is working '
+      + 'off a screenshot of the answer.<br><br>Pick who you want in.',
+      {
+        intent: TEAM_INVITE_INTENT,
+        source: false,
+        onDone: () => setTimeout(openPeoplePicker, 300),
+      },
+    );
+  }
+
+  /* One ask, more than one voice — and still one stage at a time. The member's
+     line finishes revealing first; then everyone named answers in turn, each
+     joining the room first if this is the ask that invited them; then
+     WISEcodeAI answers last, because a colleague's read is not a substitute for
+     the data and the member asked for both. */
+  function respondAsTeam(text, named, intent) {
+    const humans = named.filter((p) => p && !p.ai);
+    const bare = stripMentions(text, namedPeople()) || text;
+    promptStage.after(() => {
+      humans.forEach(joinPerson);
+      let i = 0;
+      const step = () => {
+        if (i >= humans.length) {
+          if (hasScriptedReply(intent)) {
+            /* The surface has a real answer for this ask, and a colleague being
+               in the room does not replace it. Mentions are stripped, so this
+               routes on what was asked and cannot recurse back into here. */
+            wiseaiRespond(bare, intent, { chips: teamChips() });
+          } else {
+            /* Off script in a room of three: answer the colleague with the
+               number behind what they said, rather than falling through to the
+               generic "try a suggested prompt" that reads like nobody listened. */
+            respondWithTrace(teamAiSay(humans[0], bare), {
+              intent, traceText: bare, chips: teamChips(),
+            });
+          }
+          return;
+        }
+        const p = humans[i];
+        i += 1;
+        const typing = showMateTyping(p);
+        setTimeout(() => {
+          if (typing) typing.remove();
+          addTeammate(p, teamSay(p, bare), { onDone: () => setTimeout(step, 220) });
+        }, 900 + Math.round(Math.random() * 700));
+      };
+      step();
+    });
+  }
+
+  /* ── "@" offers the room ─────────────────────────────────────────────────
+     Typing "@" lists who can be reached: WISEcodeAI and whoever has joined
+     first, then the rest of the team — picking one of those invites them,
+     because naming someone IS the invitation. */
+  let mentionList = [];
+  let mentionActive = -1;
+  function mentionQuery() {
+    if (!input) return null;
+    const caret = input.selectionStart == null ? input.value.length : input.selectionStart;
+    const before = input.value.slice(0, caret);
+    const m = before.match(/(?:^|\s)@([\w][\w.\-]*|)$/);
+    if (!m) return null;
+    return { q: m[1] || '', start: caret - m[1].length - 1, end: caret };
+  }
+  function paintMentionPop() {
+    if (!mentionPop) return;
+    mentionPop.innerHTML = mentionList.map((p, i) => {
+      const here = p.ai || rosterHas(p.id);
+      const face = p.ai
+        ? `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-hidden="true">${OWL_BUG}</span>`
+        : teamAvatarHtml(p);
+      return `<button type="button" class="sc-mention-item${i === mentionActive ? ' is-active' : ''}" data-mention-pick="${esc(p.id)}" role="option" aria-selected="${i === mentionActive ? 'true' : 'false'}">`
+        + face
+        + `<span class="sc-mention-copy"><span class="sc-mention-name">${esc(p.name)}</span>`
+        + `<span class="sc-mention-role">${esc(p.ai ? 'Always in the room' : p.role)}</span></span>`
+        + `<span class="sc-mention-state">${here ? 'In this chat' : 'Invite'}</span></button>`;
+    }).join('');
+    mentionPop.hidden = false;
+  }
+  function syncMentionPop() {
+    if (!mentionPop) return;
+    const m = mentionQuery();
+    if (!m) { closeMentionPop(); return; }
+    const s = m.q.toLowerCase();
+    const all = [TEAM_AI].concat(roster, TEAM_DIRECTORY.filter((p) => !rosterHas(p.id)));
+    mentionList = all
+      .filter((p) => !s || `${p.name} ${p.first} ${p.role || ''}`.toLowerCase().includes(s))
+      .slice(0, 6);
+    if (!mentionList.length) { closeMentionPop(); return; }
+    if (mentionActive < 0 || mentionActive >= mentionList.length) mentionActive = 0;
+    paintMentionPop();
+  }
+  function closeMentionPop() {
+    if (mentionPop) { mentionPop.hidden = true; mentionPop.innerHTML = ''; }
+    mentionList = [];
+    mentionActive = -1;
+  }
+  function acceptMention(p) {
+    const m = mentionQuery();
+    if (!p || !m || !input) return;
+    const token = `@${p.ai ? p.name : p.first} `;
+    input.value = input.value.slice(0, m.start) + token + input.value.slice(m.end);
+    const caret = m.start + token.length;
+    try { input.setSelectionRange(caret, caret); } catch (_) { /* caret is best-effort */ }
+    closeMentionPop();
+    input.focus();
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  function onMentionKey(e) {
+    if (!mentionPop || mentionPop.hidden || !mentionList.length) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const dir = e.key === 'ArrowDown' ? 1 : -1;
+      mentionActive = (mentionActive + dir + mentionList.length) % mentionList.length;
+      paintMentionPop();
+      return;
+    }
+    if (e.key === 'Enter' || e.key === 'Tab') {
+      /* Enter completes the mention instead of sending — the send handler is
+         on this same field, so the event has to stop here. */
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      acceptMention(mentionList[mentionActive]);
+      return;
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      closeMentionPop();
+    }
+  }
+  if (teamOn) {
+    input?.addEventListener('input', syncMentionPop);
+    input?.addEventListener('click', syncMentionPop);
+    input?.addEventListener('blur', () => setTimeout(closeMentionPop, 140));
+    mentionPop?.addEventListener('mousedown', (e) => {
+      const hit = e.target.closest('[data-mention-pick]');
+      if (!hit) return;
+      /* mousedown, not click: blur would close the list first. */
+      e.preventDefault();
+      const pid = hit.getAttribute('data-mention-pick');
+      acceptMention(pid === TEAM_AI.id ? TEAM_AI : teamPersonById(pid));
+    });
+    peopleSearchEl?.addEventListener('input', renderPeopleList);
+    peoplePop?.addEventListener('click', (e) => {
+      const un = e.target.closest('[data-unpick]');
+      if (un) {
+        picked.delete(un.getAttribute('data-unpick'));
+        renderPeopleList();
+        renderPeopleTokens();
+        return;
+      }
+      const row = e.target.closest('.sc-person-row');
+      if (!row || row.getAttribute('aria-disabled') === 'true') return;
+      const pid = row.dataset.person;
+      if (picked.has(pid)) picked.delete(pid);
+      else picked.add(pid);
+      renderPeopleList();
+      renderPeopleTokens();
+    });
+    peopleSearchEl?.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      const first = peopleMatching(peopleSearchEl.value).find((p) => !rosterHas(p.id));
+      if (!first) return;
+      picked.add(first.id);
+      peopleSearchEl.value = '';
+      renderPeopleList();
+      renderPeopleTokens();
     });
   }
   /* Post a user line followed by a FIXED WISEcodeAI reply (bypasses the reply
@@ -10722,13 +12085,16 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
         try { input.setSelectionRange(text.length, text.length); } catch (_) {}
         input.dispatchEvent(new Event('input', { bubbles: true }));
       },
+      /* A catalog card is a chip with a longer face — it sends the same full
+         brief, opening on the ask the card showed. */
       onAsk: (text, intent) => {
         if (applyKeepWelcomeChip(intent, text)) return;
+        const brief = chipPrompt({ intent: intent || text, ask: text }, text);
         const handled = opts.onIntent ? opts.onIntent(intent, text) : false;
         if (intent) markIntentUsed(intent);
         hideWelcome();
-        addUser(text);
-        if (!handled) wiseaiRespond(text, intent);
+        addUser(brief);
+        if (!handled) wiseaiRespond(text, intent, { enrichQuestion: brief });
       },
     });
     return askHelpApi;
@@ -11536,6 +12902,16 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     item.setAttribute('aria-checked', on ? 'true' : 'false');
   }
   document.addEventListener('wise:chat-brandtext', syncBrandtextMenu);
+  /* Sync the "Ask pre-flight" switch to the shared <html>.chat-preflight state,
+     so every open chat's switch reflects the one shared setting. */
+  function syncPreflightMenu() {
+    const item = menuSel('[data-sc="preflight"]');
+    if (!item) return;
+    const on = document.documentElement.classList.contains('chat-preflight');
+    item.classList.toggle('is-on', on);
+    item.setAttribute('aria-checked', on ? 'true' : 'false');
+  }
+  document.addEventListener('wise:chat-preflight', syncPreflightMenu);
   /* Sync the "Input glow" switch to the shared <html>.chat-sheen-off state (ON =
      class absent). Called on mount and whenever any module flips it (via the
      wise:chat-sheen event) so every open chat's switch reflects the one setting. */
@@ -11603,14 +12979,20 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     getDensity: () => (bgAnimStyle === 'helix-ten' ? 'ten' : 'full'),
   };
   const bgAnimEngines = {};
-  const bgAnimEngineKey = (style) => (style === 'orbit' ? 'orbit' : style === 'video' ? 'video' : 'helix');
+  /* One engine per family — orbit, helix (Helix + Ten share a canvas), and one
+     per film clip, since each film carries its own source, fit and rate. */
+  const bgAnimEngineKey = (style) => (style === 'orbit' ? 'orbit' : isBgAnimVideoStyle(style) ? style : 'helix');
   const bgAnimEngine = (style) => {
     const key = bgAnimEngineKey(style);
     if (!bgAnimEngines[key]) {
       bgAnimEngines[key] = key === 'orbit'
           ? createOrbitBgAnim(bgAnimCommon)
-          : key === 'video'
-          ? createVideoBgAnim(bgAnimCommon)
+          : isBgAnimVideoStyle(key)
+          ? createVideoBgAnim(Object.assign({}, bgAnimCommon, {
+              clip: key,
+              getFilmOpacity: () => bgAnimFilms[key].opacity / 100,
+              getFilmSpeed: () => bgAnimFilms[key].speed / 100,
+            }))
           : createHelixBgAnim(bgAnimCommon);
     }
     return bgAnimEngines[key];
@@ -11669,8 +13051,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       btn.setAttribute('aria-checked', on ? 'true' : 'false');
     });
     /* Angle, Camera, Pitch, Dots, Length, Thick and Depth describe the strand, so they only
-       apply to the DNA helix (Helix / Ten). Scale and Nodes drive Orbit too. */
-    syncBgAnimHelixOnlyRows(bgAnimSyncRoot(), isHelixStyle(bgAnimStyle));
+       apply to the DNA helix (Helix / Ten). Scale and Nodes drive Orbit too.
+       A film swaps the field's Opacity / Wash for its own Film rows. */
+    syncBgAnimHelixOnlyRows(bgAnimSyncRoot(), isHelixStyle(bgAnimStyle), isBgAnimVideoStyle(bgAnimStyle));
+    syncBgAnimFilmRows(bgAnimSyncRoot(), bgAnimFilms, bgAnimStyle);
     const pct = Math.round(effectiveBgAnimOpacity() * 100);
     const range = menuSel('.sc-bganim-opacity');
     if (range && document.activeElement !== range) range.value = String(pct);
@@ -11738,7 +13122,6 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       const val = menuSel('.sc-bganim-opacity-val');
       if (val) val.textContent = pct + '%';
       if (prefersReducedMotion && bgAnimOn) bgAnim.start();
-      else if (bgAnimStyle === 'video' && bgAnimOn) bgAnim.redraw();
     });
   }
   document.addEventListener('wise:chat-bg-anim-opacity', (e) => {
@@ -11748,7 +13131,30 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     bgAnimOpacityUserSet = true;                    // mirror the sibling chat's explicit choice
     syncBgAnimMenu();
     if (prefersReducedMotion && bgAnimOn) bgAnim.start();
-    else if (bgAnimStyle === 'video' && bgAnimOn) bgAnim.redraw();
+  });
+  /* Film rows — a film's own opacity and playback rate, stored per clip so the
+     hero and the wheat strand never overwrite each other. Persist + broadcast
+     so every mounted chat follows, and redraw the live film at once. */
+  ['opacity', 'speed'].forEach((part) => {
+    const range = rootEl.querySelector('.sc-bganim-film-' + part + '-range');
+    if (!range) return;
+    range.addEventListener('input', () => {
+      const clip = bgAnimFilmClip();
+      const pct = clampBgAnimFilmPart(part, range.value);
+      bgAnimFilms[clip][part] = pct;
+      persistBgAnimFilm(clip, part, pct);
+      broadcastBgAnimFilm(clip, part, pct);
+      const val = menuSel('.sc-bganim-film-' + part + '-val');
+      if (val) val.textContent = pct + '%';
+      if (bgAnimOn && isBgAnimVideoStyle(bgAnimStyle)) bgAnim.redraw();
+    });
+  });
+  document.addEventListener('wise:chat-bg-anim-film', (e) => {
+    const d = (e && e.detail) || {};
+    if (!bgAnimFilms[d.clip] || (d.part !== 'opacity' && d.part !== 'speed')) return;
+    bgAnimFilms[d.clip][d.part] = clampBgAnimFilmPart(d.part, d.pct);
+    syncBgAnimMenu();
+    if (bgAnimOn && bgAnimFilmClip() === d.clip) bgAnim.redraw();
   });
   /* Wash slider — how strongly the helix fades behind composer text. The
      canvas mask and the composer field gradient both follow this one value. */
@@ -12259,6 +13665,16 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        follow-up subset a restored History thread may have swapped in. */
     intents = sessionIntents.slice();
     usedIntents.clear();
+    /* A new conversation is a new room — it starts as the member and the
+       assistant again, whoever was in the last one. */
+    if (teamOn) {
+      roster.length = 0;
+      picked.clear();
+      delete rootEl.dataset.room;
+      renderRosterPile();
+      closePeoplePicker();
+      closeMentionPop();
+    }
     skipAutoFollowups = false;
     clearThread();
     welcomeChipsExpanded = false;
@@ -12298,8 +13714,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        as clicking the chip. Attachments skip the shortcut so a file drop still
        goes through the generic review path. */
     const matched = v ? matchIntentFromText(v) : null;
+    /* Everything below is an ask the member wrote, so it is eligible for the
+       pre-flight buffer — including one that resolved to a chip's transcript. */
+    const typed = { typed: true };
     if (matched && !atts.length) {
-      sendIntent(matched, v);
+      sendIntent(matched, v, typed);
       return;
     }
     hideWelcome();
@@ -12310,23 +13729,45 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       const handled = opts.onIntent ? opts.onIntent(matched, prompt) : false;
       markIntentUsed(matched);
       closeAgents();
-      if (!handled) wiseaiRespond(prompt, matched);
+      if (!handled) wiseaiRespond(prompt, matched, undefined, typed);
       return;
     }
     closeAgents();
-    wiseaiRespond(prompt);
+    wiseaiRespond(prompt, undefined, undefined, typed);
   }
   /* Programmatically post a user message + WISEcodeAI reply (used by host modules
      to route a contextual question into the shared chat). */
   function ask(text) {
     const v = String(text || '').trim();
     if (!v) return;
+    /* A host handed us a sentence it wrote — post it as written. */
     const matched = matchIntentFromText(v);
-    if (matched) { sendIntent(matched, v); return; }
+    if (matched) { sendIntent(matched, v, { verbatim: true }); return; }
     closeAgents();
     hideWelcome();
     addUser(v);
     wiseaiRespond(v);
+  }
+
+  /* ── A chip asks in full ─────────────────────────────────────────────────
+     Two strings come out of one chip and they are not interchangeable.
+
+     The BRIEF is what the member sends: the whole ask, spelled out — what the
+     answer has to contain, how it has to be grounded, what to do where the data
+     stops. It is what lands in the transcript and what the model is given.
+
+     The SHORT ASK is what routes the turn. Hosts pick their reply by keyword,
+     and a page of text matches half of their keywords, so routing stays on the
+     chip's own few words. Nothing about the chip's face changes either way.
+
+     Every chip path in this module goes through here — welcome chips, inline
+     chips, persistent chips, score cards, the ask panel and sendIntent. */
+  function chipPrompt(def, shortText) {
+    const short = shortText != null ? shortText : ((def && (def.ask || def.label || def.title)) || '');
+    if (!def) return short;
+    try {
+      return expandIntentPrompt(def, { surface: pageHintForChat() }) || short;
+    } catch (_) { return short; }
   }
 
   /* A keepWelcome chip changes the surface (Helix pose, a control) and
@@ -12350,8 +13791,13 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      CTA into the chat so the two stay in sync: run onIntent for side-effects
      (open the scanner, navigate…), then post the user line + intent-routed reply
      unless the host handled it. `label` overrides the surfaced user message;
-     it falls back to the current chip set's label, then the intent id. */
-  function sendIntent(intent, label) {
+     it falls back to the current chip set's label, then the intent id.
+
+     The line the member sees is the chip's full brief, except on the two paths
+     where the words are already somebody's own: an ask the member typed
+     (`ctl.typed`) and a host routing a sentence it wrote itself
+     (`ctl.verbatim`). Those post exactly as written. */
+  function sendIntent(intent, label, ctl) {
     if (!intent) return;
     if (intent === 'choose_agents') { openAgents(); return; }
     if (intent === WALKTHROUGH_INTENT) { openGuideModules(); return; }
@@ -12359,12 +13805,14 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const found = intents.find((c) => c && c.intent === intent);
     const text = (label != null ? label : (found ? (found.ask || found.label) : '')) || String(intent);
     if (applyKeepWelcomeChip(found || intent, text)) return;
+    const ownWords = !!(ctl && (ctl.typed || ctl.verbatim));
+    const brief = ownWords ? text : chipPrompt(found || { intent, ask: text }, text);
     const handled = opts.onIntent ? opts.onIntent(intent, text) : false;
     markIntentUsed(intent);
     closeAgents();
     hideWelcome();
-    if (text) addUser(text);
-    if (!handled && text) wiseaiRespond(text, intent);
+    if (brief) addUser(brief);
+    if (!handled && text) wiseaiRespond(text, intent, { enrichQuestion: brief }, ctl);
   }
 
   /* Build an authentic transcript HTML string from a compact list of turns —
@@ -12831,10 +14279,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (def.intent === WALKTHROUGH_INTENT) { openGuideModules(); return; }
     if (applyKeepWelcomeChip(def, def.ask || def.title || '')) return;
     const label = def.ask || def.title || '';
+    const brief = chipPrompt(def, label);
     const handled = opts.onIntent ? opts.onIntent(def.intent, label) : false;
     hideWelcome();
-    if (label) addUser(label);
-    if (!handled && label) wiseaiRespond(label, def.intent);
+    if (brief) addUser(brief);
+    if (!handled && label) wiseaiRespond(label, def.intent, { enrichQuestion: brief });
   });
 
   /* Intent chips */
@@ -12853,10 +14302,11 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (chip.classList.contains('is-used')) return;
     const def = intents[Number(chip.dataset.intent)];
     if (!def) return;
-    /* A chip can carry an `ask` — the full question posted as the user's line —
-       while its face keeps the shorter label (same contract as scorecards). */
+    /* The chip's face keeps its short label; what it sends is the full brief
+       (see chipPrompt) and what routes the turn is the short ask. */
     const text = def.ask || def.label;
     if (applyKeepWelcomeChip(def, text)) return;
+    const brief = chipPrompt(def, text);
     const handled = opts.onIntent ? opts.onIntent(def.intent, text) : false;
     /* "Choose Agents" opens the in-chat settings panel rather than starting a
        chat turn — it's a control, not a question. */
@@ -12864,10 +14314,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (def.intent === ASK_HELP_INTENT) openAskHelp();
     markIntentUsed(def.intent);
     hideWelcome();
-    addUser(text);
+    addUser(brief);
     /* Route the reply by the chip's intent id (not just its label) so the
        conversation always continues on the feature the chip represents. */
-    if (!handled) wiseaiRespond(text, def.intent);
+    if (!handled) wiseaiRespond(text, def.intent, { enrichQuestion: brief });
   });
 
   /* Inline intent chips — same routing as the welcome chips, but the block
@@ -12884,11 +14334,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (def.intent === ASK_HELP_INTENT) openAskHelp();
     const text = def.ask || def.label;
     if (applyKeepWelcomeChip(def, text)) return;
+    const brief = chipPrompt(def, text);
     const handled = opts.onIntent ? opts.onIntent(def.intent, text) : false;
     markIntentUsed(def.intent);
     hideWelcome();
-    addUser(text);
-    if (!handled) wiseaiRespond(text, def.intent);
+    addUser(brief);
+    if (!handled) wiseaiRespond(text, def.intent, { enrichQuestion: brief });
   });
 
   /* Legacy "open module" chips — new replies no longer render these (the
@@ -13222,11 +14673,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (def.intent === ASK_HELP_INTENT) openAskHelp();
     const text = def.ask || def.label;
     if (applyKeepWelcomeChip(def, text)) return;
+    const brief = chipPrompt(def, text);
     const handled = opts.onIntent ? opts.onIntent(def.intent, text) : false;
     markIntentUsed(def.intent);
     hideWelcome();
-    addUser(text);
-    if (!handled) wiseaiRespond(text, def.intent);
+    addUser(brief);
+    if (!handled) wiseaiRespond(text, def.intent, { enrichQuestion: brief });
   });
 
   /* Score-card rail — horizontal scroll with floating controls + edge fades. */
@@ -13294,6 +14746,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   /* Send. Enter submits; Shift+Enter makes a newline (the field is a textarea
      so the composer-v2 design can grow it — see wireComposerGrow). */
   rootEl.querySelector(`#${id}-send`)?.addEventListener('click', submit);
+  /* Registered BEFORE the send handler on the same field: while the "@" list is
+     up, Enter completes the mention and stops there. */
+  if (teamOn) input?.addEventListener('keydown', onMentionKey);
   input?.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } });
   wireComposerGrow(input);
   /* Keep Send inactive until the field has text or a pending attachment.
@@ -13775,13 +15230,16 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (!item) return;
     const flPopEl = document.getElementById(`${id}-fl-pop`);
     const helixFloat = helixFloatForPop(morePop);
-    const ours = rootEl.contains(item) || morePop?.contains(item) || flPopEl?.contains(item) || helixFloat?.contains(item);
+    const ours = rootEl.contains(item) || morePop?.contains(item) || flPopEl?.contains(item)
+      || peoplePop?.contains(item) || helixFloat?.contains(item);
     if (!ours) return;
     const action = item.dataset.sc;
-    if (action === 'add-member') {
+    if (action === 'add-member' || action === 'add-people' || action === 'roster') {
       closeMore();
-      if (typeof opts.onAddMember === 'function') opts.onAddMember();
-      else addWISEcodeAI('Team collaboration is coming to this workspace — you’ll be able to invite teammates straight into this WISEcodeAI™ conversation.');
+      openPeoplePicker();
+    }
+    else if (action === 'people-add') {
+      addPeople(Array.from(picked));
     }
     else if (action === 'history') {
       /* When the entry is styled as an on/off switch (sc-mcp-item) keep the menu
@@ -13840,6 +15298,17 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       try { localStorage.setItem(COMPACT_PREF_KEY, on ? '1' : '0'); } catch (_) {}
       try { document.dispatchEvent(new CustomEvent('wise:chat-compact', { detail: { on } })); } catch (_) {}
       syncCompactMenu();
+    }
+    else if (action === 'preflight') {
+      /* App-wide ask pre-flight: flip the shared <html>.chat-preflight class so
+         every mounted chat module buffers unrunnable asks at once. Keep the menu
+         open so the switch state reads back; persist + broadcast so any sibling
+         chat modules' switches follow. */
+      const on = !document.documentElement.classList.contains('chat-preflight');
+      document.documentElement.classList.toggle('chat-preflight', on);
+      try { localStorage.setItem(PREFLIGHT_PREF_KEY, on ? '1' : '0'); } catch (_) {}
+      try { document.dispatchEvent(new CustomEvent('wise:chat-preflight', { detail: { on } })); } catch (_) {}
+      syncPreflightMenu();
     }
     else if (action === 'brandtext') {
       /* App-wide brand AI text: flip the shared <html>.chat-brandtext class so
@@ -14318,14 +15787,19 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   function markIntentUsed(intentId) {
     /* "What can I ask?" is a standing affordance (it must always accompany the
        gold link), so it never dims out as spent. */
-    if (!intentId || intentId === ASK_HELP_INTENT || usedIntents.has(intentId)) return;
+    /* Inviting people is a standing affordance too — there is always one more
+       teammate who could be in the room, so the chip never dims out. */
+    if (!intentId || intentId === ASK_HELP_INTENT || intentId === TEAM_INVITE_INTENT
+      || usedIntents.has(intentId)) return;
     usedIntents.add(intentId);
     renderChips();
   }
   function setIntents(newIntents, newReplies) {
-    /* Re-append the "What can I ask?" chip so it survives contextual swaps. */
+    /* Re-append the shared chips ("What can I ask?", Invite a team member) so
+       they survive a contextual swap — a host handing us its own chip set is
+       replacing its prompts, not standing down an app-wide offer. */
     if (Array.isArray(newIntents)) {
-      intents = withAskHelpChip(newIntents.slice());
+      intents = withTeamChip(withAskHelpChip(newIntents.slice()));
       sessionIntents = intents.slice();
       catalogize(intents);
     }
@@ -14401,6 +15875,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   syncTurnsMenu();
   syncCompactMenu();
   syncBrandtextMenu();
+  syncPreflightMenu();
   syncSheenMenu();
   syncBgAnimMenu();
   syncStreamMenu();
@@ -14462,7 +15937,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
      run it straight away when neither is in flight. `holdOutputs` /
      `releaseOutputs` are the other half: a host that surfaces a run of output
      cards brackets that run so the turn's closing chips wait for the last one. */
-  return { addUser, addWISEcodeAI, respond: respondWithTrace, afterPrompt: promptStage.after, afterAnswer: answerStage.after, holdOutputs: outputStage.hold, releaseOutputs: outputStage.release, showTyping, primeChips, revealChips, messages, ask, sendIntent, reset, buildTranscript: buildSeedTranscript, openAgents, closeAgents, openConnectors, closeConnectors, openAskHelp, closeAskHelp, setAskDocked, isAskDocked: () => !!(askHelpApi && askHelpApi.isDocked && askHelpApi.isDocked()), openGuideModules, openTurns, closeTurns, toggleTurns, setTurnsDocked, isTurnsDocked: () => turnsDocked, hideWelcome, setIntents, announceRoute, setWidth: syncWidthUI, getDbId: () => currentDbId, selectDb, root: rootEl };
+  return { addUser, addWISEcodeAI, respond: respondWithTrace, afterPrompt: promptStage.after, afterAnswer: answerStage.after, holdOutputs: outputStage.hold, releaseOutputs: outputStage.release, showTyping, primeChips, revealChips, messages, ask, sendIntent, reset, buildTranscript: buildSeedTranscript, openAgents, closeAgents, openConnectors, closeConnectors, openAskHelp, closeAskHelp, setAskDocked, isAskDocked: () => !!(askHelpApi && askHelpApi.isDocked && askHelpApi.isDocked()), openGuideModules, openTurns, closeTurns, toggleTurns, setTurnsDocked, isTurnsDocked: () => turnsDocked, hideWelcome, setIntents, announceRoute, openPeople: openPeoplePicker, addPeople, people: () => roster.slice(), setWidth: syncWidthUI, getDbId: () => currentDbId, selectDb, root: rootEl };
 }
 
 /* ------------------------------------------------------------------ */
@@ -14604,10 +16079,12 @@ export function wireStandardChatMenu(cfg = {}) {
      same key/event as the mounted module so every surface swaps in lockstep. A
      leftover 'stamp' preference (removed) falls back to helix. */
   const BGANIM_STYLE_KEY = 'wise:chat-bg-anim-style';
-  const BGANIM_STYLES = ['helix', 'helix-ten', 'orbit', 'video'];
+  const BGANIM_STYLES = ['helix', 'helix-ten', 'orbit', 'video', 'wheat'];
   const isHelixStyle = (s) => s === 'helix' || s === 'helix-ten';
   let bgStyle = readBgAnimStyle();
   applyBgAnimStyleAttr(bgStyle);
+  const bgFilms = readBgAnimFilms();
+  const bgFilmClip = () => bgAnimFilmClipKey(bgStyle);
   /* Inline chats copied the menu markup before the Style row existed; inject it
      (before the playback row) so every hand-rolled surface gains the segment too,
      keeping the whole app's chat menus identical. Helix, Ten, and orbit ship here. */
@@ -14615,7 +16092,8 @@ export function wireStandardChatMenu(cfg = {}) {
     + '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="helix" role="radio" aria-checked="false" title="Food DNA helix" aria-label="Food DNA helix">Helix</button>'
     + '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="helix-ten" role="radio" aria-checked="false" title="Food DNA helix — about ten products" aria-label="Food DNA helix — about ten products">Ten</button>'
     + '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="orbit" role="radio" aria-checked="false" title="Owl orbit constellation" aria-label="Owl orbit constellation">Orbit</button>'
-    + '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="video" role="radio" aria-checked="false" title="Marketing hero film" aria-label="Marketing hero film">Video</button>';
+    + '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="video" role="radio" aria-checked="false" title="Marketing hero film" aria-label="Marketing hero film">Video</button>'
+    + '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="wheat" role="radio" aria-checked="false" title="Golden wheat DNA film — fills the module" aria-label="Golden wheat DNA film — fills the module">Wheat</button>';
   const existingStyleRow = q('.sc-bganim-style');
   if (!existingStyleRow) {
     const playbackRow = q('.sc-bganim-playback');
@@ -14650,6 +16128,11 @@ export function wireStandardChatMenu(cfg = {}) {
       if (seg) seg.insertAdjacentHTML('beforeend',
         '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="video" role="radio" aria-checked="false" title="Marketing hero film" aria-label="Marketing hero film">Video</button>');
     }
+    if (!existingStyleRow.querySelector('[data-style="wheat"]')) {
+      const seg = existingStyleRow.querySelector('.sc-stream-seg');
+      if (seg) seg.insertAdjacentHTML('beforeend',
+        '<button type="button" class="sc-stream-seg-btn" data-sc="bg-anim-style" data-style="wheat" role="radio" aria-checked="false" title="Golden wheat DNA film — fills the module" aria-label="Golden wheat DNA film — fills the module">Wheat</button>');
+    }
   }
   /* Inline chats copied the menu markup before the Angle / Scale / shape rows
      existed; inject them (right after Opacity) so every hand-rolled surface
@@ -14678,6 +16161,9 @@ export function wireStandardChatMenu(cfg = {}) {
   ensureBgAnimMatRows(pop);
   ensureBgAnimSnapshotsChrome(pop);
   ensureBgAnimSubheads(pop);
+  /* After the subheads, so the Film cluster's own title cannot make
+     ensureBgAnimSubheads think the menu was already titled. */
+  ensureBgAnimFilmRows(pop);
   const welcomeEl = cfg.bgAnim && cfg.bgAnim.welcomeEl;
   const bgHost = cfg.bgAnim && cfg.bgAnim.host;
   /* Welcome-only, same as mountWISEcodeAIChat: the field paints on the
@@ -14706,7 +16192,7 @@ export function wireStandardChatMenu(cfg = {}) {
      orbit is its own), exposed through a small facade so the start/stop below
      stay style-agnostic (mirrors the mounted module). */
   const bgEngines = {};
-  const bgEngineKey = (style) => (style === 'orbit' ? 'orbit' : style === 'video' ? 'video' : 'helix');
+  const bgEngineKey = (style) => (style === 'orbit' ? 'orbit' : isBgAnimVideoStyle(style) ? style : 'helix');
   const bgEngine = (style) => {
     if (!cfg.bgAnim || !cfg.bgAnim.host) return null;
     const key = bgEngineKey(style);
@@ -14745,8 +16231,12 @@ export function wireStandardChatMenu(cfg = {}) {
       };
       bgEngines[key] = key === 'orbit'
           ? createOrbitBgAnim(common)
-          : key === 'video'
-          ? createVideoBgAnim(common)
+          : isBgAnimVideoStyle(key)
+          ? createVideoBgAnim(Object.assign({}, common, {
+              clip: key,
+              getFilmOpacity: () => bgFilms[key].opacity / 100,
+              getFilmSpeed: () => bgFilms[key].speed / 100,
+            }))
           : createHelixBgAnim(common);
     }
     return bgEngines[key];
@@ -14873,7 +16363,8 @@ export function wireStandardChatMenu(cfg = {}) {
     syncBgAnimLookChrome(bgRoot(), bgLook);
     syncBgAnimMatRows(bgRoot(), bgMats, bgLook);
     syncBgAnimSnapshots(bgRoot());
-    syncBgAnimHelixOnlyRows(bgRoot(), isHelixStyle(bgStyle));
+    syncBgAnimHelixOnlyRows(bgRoot(), isHelixStyle(bgStyle), isBgAnimVideoStyle(bgStyle));
+    syncBgAnimFilmRows(bgRoot(), bgFilms, bgStyle);
     const styleRow = q('.sc-bganim-style');
     if (styleRow) styleRow.classList.remove('is-disabled');
     queryChatMenuAll(pop, '[data-sc="bg-anim-style"]').forEach((btn) => {
@@ -14917,7 +16408,6 @@ export function wireStandardChatMenu(cfg = {}) {
     const val = q('.sc-bganim-opacity-val');
     if (val) val.textContent = pct + '%';
     if (reducedMotion && bgOn) maybeRunBgAnim();
-    else if (bgStyle === 'video' && bgOn) repaintBg();
   });
   document.addEventListener('wise:chat-bg-anim-opacity', (e) => {
     const v = e && e.detail && e.detail.opacity;
@@ -14926,7 +16416,29 @@ export function wireStandardChatMenu(cfg = {}) {
     bgUserSet = true;
     syncBg();
     if (reducedMotion && bgOn) maybeRunBgAnim();
-    else if (bgStyle === 'video' && bgOn) repaintBg();
+  });
+  /* Film rows — see the mounted module: per-clip opacity + playback rate,
+     shared app-wide on wise:chat-bg-anim-film. */
+  ['opacity', 'speed'].forEach((part) => {
+    const range = q('.sc-bganim-film-' + part + '-range');
+    if (!range) return;
+    range.addEventListener('input', () => {
+      const clip = bgFilmClip();
+      const pct = clampBgAnimFilmPart(part, range.value);
+      bgFilms[clip][part] = pct;
+      persistBgAnimFilm(clip, part, pct);
+      broadcastBgAnimFilm(clip, part, pct);
+      const val = q('.sc-bganim-film-' + part + '-val');
+      if (val) val.textContent = pct + '%';
+      if (bgOn && isBgAnimVideoStyle(bgStyle)) repaintBg();
+    });
+  });
+  document.addEventListener('wise:chat-bg-anim-film', (e) => {
+    const d = (e && e.detail) || {};
+    if (!bgFilms[d.clip] || (d.part !== 'opacity' && d.part !== 'speed')) return;
+    bgFilms[d.clip][d.part] = clampBgAnimFilmPart(d.part, d.pct);
+    syncBg();
+    if (bgOn && bgFilmClip() === d.clip) repaintBg();
   });
   const bgWashRange = q('.sc-bganim-wash-range');
   if (bgWashRange) bgWashRange.addEventListener('input', () => {

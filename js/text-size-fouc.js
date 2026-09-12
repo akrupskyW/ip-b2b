@@ -651,7 +651,8 @@
 (function () {
   try {
     var s = localStorage.getItem('wise:chat-bg-anim-style');
-    if (s === 'stamp' || (s !== 'helix' && s !== 'helix-ten' && s !== 'orbit')) s = 'helix';
+    var known = ['helix', 'helix-ten', 'orbit', 'video', 'wheat'];
+    if (s === 'stamp' || known.indexOf(s) === -1) s = 'helix';
     document.documentElement.setAttribute('data-chat-bg-style', s || 'helix');
   } catch (_) {
     document.documentElement.setAttribute('data-chat-bg-style', 'helix');

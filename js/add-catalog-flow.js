@@ -225,9 +225,25 @@
     /* Tell the local model what was just asked, so the rewrite of the answer
        picks up this thread rather than reading as a first line. */
     window.WiseOllama?.rememberChatTurn('you', text, AC_THREAD_KEY);
+    /* A brief runs to paragraphs and bullets and has to read that way — same
+       shaping the shared chat module gives a member line, not a copy of it. */
+    const body = typeof window.WisePromptBody === 'function'
+      ? window.WisePromptBody(text) : esc(text);
     messagesEl.insertAdjacentHTML('beforeend',
-      `<div class="sc-line sc-line-you">${youAvatarSpan()}<div class="sc-line-body">${esc(text)}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div></div></div>`);
+      `<div class="sc-line sc-line-you">${youAvatarSpan()}<div class="sc-line-body">${body}<div class="sc-line-meta"><span class="sc-line-time">${esc(nowLabel())}</span></div></div></div>`);
     scrollDown(true);
+  }
+  /* A chip that asks something sends the whole ask (js/intent-prompt.js). The
+     wizard's step controls stay on addUser — "Use the net serving for both" is
+     an answer to a question, not an ask of its own. */
+  function addUserAsk(text, key) {
+    const expand = window.WiseIntentPrompt && window.WiseIntentPrompt.expandText;
+    let full = text;
+    if (typeof expand === 'function') {
+      try { full = expand(text, { surface: 'Add Catalog' }, key || text) || text; }
+      catch (_) { full = text; }
+    }
+    addUser(full);
   }
   function fileIconFor(name) {
     const k = (name || '').toLowerCase();
@@ -539,7 +555,7 @@
   function doImport() {
     if (state.imported) { onVerify(); return; }
     if (!state.mapped) { openPicker(); return; }
-    addUser('Import everything that validates');
+    addUserAsk('Import everything that validates', 'cat-import');
     render();
     const t = showTyping();
     setTimeout(() => {
@@ -568,7 +584,7 @@
   }
   function onVerify() {
     if (state.verified) return;
-    addUser('Verify the whole catalog');
+    addUserAsk('Verify the whole catalog', 'cat-verify');
     state.analyzePct = 100;
     state.verified = true;
     render();
@@ -579,7 +595,7 @@
       ]);
   }
   function showInstructions() {
-    addUser('Read the upload instructions');
+    addUserAsk('Read the upload instructions', 'cat-instructions');
     wiseSay(`Here's the field-by-field guide. Each row is one product, keyed by <strong>UPC</strong>:
       <br>• <strong>Identity</strong> — UPC, product name, brand (all required), category (optional).
       <br>• <strong>Ingredients</strong> — the full statement as printed, plus optional allergens and a Contains line.
@@ -603,7 +619,7 @@
       case 'instructions': showInstructions(); break;
       case 'confirmMap': addUser('Use the net serving for both'); addSysNote('Serving size (household) confirmed.', 'check'); wiseSay('Confirmed. Ready to import whenever you are.', [{ label: 'Import everything valid', icon: 'cloud_upload', action: 'import', primary: true }]); break;
       case 'import': doImport(); break;
-      case 'showFix': addUser('Show me the rows to fix'); wiseSay(`The ${SAMPLE_RESULT.fix.length} rows that didn't validate are listed in <strong>Catalog</strong> with each reason. Fix them in your file and upload again — I match on UPC, so nothing duplicates.`, [{ label: 'Fix & re-upload', icon: 'upload_file', action: 'upload' }, { label: 'Verify the imported ones', icon: 'verified', action: 'verify', primary: true }]); break;
+      case 'showFix': addUserAsk('Show me the rows to fix', 'cat-showfix'); wiseSay(`The ${SAMPLE_RESULT.fix.length} rows that didn't validate are listed in <strong>Catalog</strong> with each reason. Fix them in your file and upload again — I match on UPC, so nothing duplicates.`, [{ label: 'Fix & re-upload', icon: 'upload_file', action: 'upload' }, { label: 'Verify the imported ones', icon: 'verified', action: 'verify', primary: true }]); break;
       case 'verify': onVerify(); break;
       case 'single': window.location.href = 'add-product.html'; break;
       case 'restart': restart(); break;

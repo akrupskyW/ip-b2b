@@ -10569,8 +10569,13 @@
       /* Tell the local model what was just asked, so the rewrite of the answer
          picks up this thread rather than reading as a first line. */
       window.WiseOllama?.rememberChatTurn('you', text, CMP_THREAD_KEY);
-      const safe = String(text).replace(/</g, '&lt;');
-      const leadCls = opts.lead ? ' sc-line-lead' : '';
+      /* A brief runs to paragraphs and bullets and has to read that way — the
+         shared shaping the chat module gives a member line, not a copy of it. */
+      const safe = typeof window.WisePromptBody === 'function'
+        ? window.WisePromptBody(text)
+        : String(text).replace(/</g, '&lt;');
+      /* The lead treatment is a headline; a brief is a document and never gets it. */
+      const leadCls = (opts.lead && !/\n/.test(String(text))) ? ' sc-line-lead' : '';
       box.insertAdjacentHTML(
         'beforeend',
         `<div class="mb-3 sc-line sc-line-you${leadCls}">${wiseaiYouAvatarSpan()}<div class="sc-line-body">${safe}${wiseaiMetaRow(false)}</div></div>`
@@ -11152,10 +11157,26 @@
     function welcomeChipClick(nextStage, label) {
       applyIntentSummary(nextStage);
       hideWelcomeScreen(() => {
-        addUserMessage(label);
+        askUserMessage(label, nextStage);
         /* Continue the conversation on the chip's own intent, not its label. */
         wiseaiRespond(label, nextStage);
       });
+    }
+
+    /* A chip on this surface sends its whole ask, exactly as every intent chip
+       in the app does — one shared expander (js/intent-prompt.js) builds the
+       brief from the chip's own label, and the chip's face never changes. The
+       page's mechanical lines (a removal, an attachment, a typed message, a
+       scripted walkthrough step) keep going through addUserMessage: they are
+       answers and controls, not asks. */
+    function askUserMessage(text, key, opts) {
+      const expand = window.WiseIntentPrompt && window.WiseIntentPrompt.expandText;
+      let full = text;
+      if (typeof expand === 'function') {
+        try { full = expand(text, { surface: 'Product Comparison' }, key || text) || text; }
+        catch (_) { full = text; }
+      }
+      addUserMessage(full, opts);
     }
 
     /* ── Welcome score cards: horizontal scroll + prioritisation filter ──── */
@@ -11521,7 +11542,7 @@
       hideWelcomeScreen(() => {
         dataVisited = new Set();
         dataStarted = true;
-        addUserMessage('Explore My Data & Charts');
+        askUserMessage('Explore My Data & Charts', 'explore-data');
         const typing = showWISEcodeAITyping('WISEcodeAI is pulling your portfolio data');
         setTimeout(() => {
           typing?.remove();
@@ -11653,7 +11674,7 @@
       hideWelcomeScreen(() => {
         wfResetModule();
         openWorkflowPanel();
-        addUserMessage('Build a Reformulation Plan');
+        askUserMessage('Build a Reformulation Plan', 'reformulation-plan');
         const typing = showWISEcodeAITyping();
         setTimeout(() => {
           typing?.remove();
@@ -14549,7 +14570,7 @@
     function startComparisonWorkflow() {
       hideWelcomeScreen(() => {
         loadDefaultBrandCompare();
-        addUserMessage('Compare my food', { lead: true });
+        askUserMessage('Compare my food', 'cmp-start', { lead: true });
         const typing = showWISEcodeAITyping('WISEcodeAI is loading your food');
         setTimeout(() => {
           typing?.remove();
@@ -14670,7 +14691,7 @@
       document.getElementById('cmp-scope-chips')?.remove();
       btn?.closest('#cmp-scope-chips')?.remove();
       compareState.followDone = {};
-      addUserMessage(s.userMsg);
+      askUserMessage(s.userMsg, 'cmp-scenario-' + s.id);
       const typing = showWISEcodeAITyping('WISEcodeAI is assembling the comparison');
       setTimeout(() => {
         typing?.remove();
@@ -14686,7 +14707,7 @@
       document.getElementById('cmp-scope-chips')?.remove();
       btn?.closest('.sc-reply-chips')?.remove();
       compareState.followDone = {};
-      addUserMessage(scope.userMsg);
+      askUserMessage(scope.userMsg, 'cmp-scope-' + (scope.id || scope.noun || ''));
       const typing = showWISEcodeAITyping('WISEcodeAI is assembling the comparison');
       setTimeout(() => {
         typing?.remove();
@@ -14833,7 +14854,7 @@
         return;
       }
       if (action === 'gs_explain') {
-        addUserMessage('How are the Guiding Stars scored?');
+        askUserMessage('How are the Guiding Stars scored?', 'gs-scored');
         const typing = showWISEcodeAITyping();
         setTimeout(() => {
           typing?.remove();
@@ -14843,7 +14864,7 @@
         return;
       }
       if (action === 'gs_dq') {
-        addUserMessage('Why is a product disqualified?');
+        askUserMessage('Why is a product disqualified?', 'gs-disqualified');
         const typing = showWISEcodeAITyping();
         setTimeout(() => {
           typing?.remove();
@@ -14872,7 +14893,7 @@
         return;
       }
       if (action === 'rank') {
-        addUserMessage('Rank the shelf set for me.');
+        askUserMessage('Rank the shelf set for me.', 'cmp-rank');
         const typing = showWISEcodeAITyping();
         setTimeout(() => {
           typing?.remove();
@@ -15031,7 +15052,7 @@
       if (!m) return;
       const label = cmpMetricShort(m);
       document.getElementById('cmp-follow-chips')?.remove();
-      addUserMessage('Tell me more about ' + label + '.');
+      askUserMessage('Tell me more about ' + label + '.', 'cmp-metric');
       const typing = showWISEcodeAITyping('WISEcodeAI is pulling the ' + label + ' definition');
       setTimeout(() => {
         typing?.remove();
@@ -15289,7 +15310,7 @@
       const ent = cmpResolveEntity(scope, base);
       const score = Math.round(cmpScoreFor(ent, meta.metric));
       document.getElementById('cmp-follow-chips')?.remove();
-      addUserMessage('Why is ' + ent.name + ' the ' + meta.topic + '?');
+      askUserMessage('Why is ' + ent.name + ' the ' + meta.topic + '?', 'cmp-why');
       const typing = showWISEcodeAITyping('WISEcodeAI is breaking down ' + ent.name);
       setTimeout(() => {
         typing?.remove();
@@ -15309,7 +15330,7 @@
       const metrics = compareState.metrics.map(id => CMP_METRIC_BY_ID[id]).filter(Boolean);
       const ordered = ents;
       document.getElementById('cmp-follow-chips')?.remove();
-      addUserMessage('What’s the overall read on this comparison?');
+      askUserMessage('What’s the overall read on this comparison?', 'cmp-read');
       const typing = showWISEcodeAITyping('WISEcodeAI is summarizing the board');
       setTimeout(() => {
         typing?.remove();
@@ -15328,7 +15349,7 @@
       if (!base) return;
       const ent = cmpResolveEntity(scope, base);
       document.getElementById('cmp-follow-chips')?.remove();
-      addUserMessage('Let’s talk about ' + ent.name + '.');
+      askUserMessage('Let’s talk about ' + ent.name + '.', 'cmp-entity');
       const typing = showWISEcodeAITyping('WISEcodeAI is pulling up ' + ent.name);
       setTimeout(() => {
         typing?.remove();
@@ -15434,7 +15455,7 @@
       hideWelcomeScreen(() => {
         vfResetModule();
         openVerificationPanel();
-        addUserMessage('Run a Live Verification');
+        askUserMessage('Run a Live Verification', 'live-verification');
         const typing = showWISEcodeAITyping('Spinning up the verification workspace…');
         setTimeout(() => {
           typing?.remove();
@@ -15827,7 +15848,7 @@
       hideWelcomeScreen(() => {
         lrResetModules();
         lrOpenClaimsPanel();
-        addUserMessage('Prep Launch Readiness');
+        askUserMessage('Prep Launch Readiness', 'launch-readiness');
         const typing = showWISEcodeAITyping('Setting up launch boards…');
         setTimeout(() => {
           typing?.remove();
