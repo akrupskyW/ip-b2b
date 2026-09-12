@@ -128,13 +128,21 @@ def escape(b):
             return
 
 
-def wait_for(b, done, wait_s, note=""):
-    """Poll the page state until `done(state)` holds, then let it settle."""
+def wait_for(b, done, wait_s, note="", resettle=True):
+    """Poll the page state until `done(state)` holds, then let it settle.
+
+    `resettle=False` returns the very state that satisfied the wait instead of
+    re-reading. The closing chip row is one shared element the chat re-parks at
+    the end of the thread, so it is momentarily empty while it moves — a second
+    read can legitimately catch it at zero after a first read saw it full.
+    """
     t0 = time.time()
     last = None
     while time.time() - t0 < wait_s:
         st = b.js(STATE) or {}
         if done(st):
+            if not resettle:
+                return st
             time.sleep(1.2)
             return b.js(STATE) or {}
         brief = (st.get("rail"), st.get("tiles"), st.get("plates"),
@@ -236,7 +244,8 @@ def main():
         # The closing row trails the finished set, and the set ends on a film
         # whose metadata still has to load — so this is the slowest stage of the
         # turn and needs a real window, not a few seconds.
-        chips = wait_for(b, lambda s: (s.get("chips") or 0) > 0, 120, "chips")
+        chips = wait_for(b, lambda s: (s.get("chips") or 0) > 0, 120, "chips",
+                         resettle=False)
         ok((chips.get("chips") or 0) > 0,
            "the turn closes on intent chips (%s)" % chips.get("chips"))
 
