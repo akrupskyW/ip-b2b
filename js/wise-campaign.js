@@ -2,7 +2,7 @@
  * wise-campaign.js — "Your food has character" / the WISEcode campaign.
  *
  * One shared campaign: the catalog cast as food-headed figures, the sixteen
- * finished pieces they front, a twelve-card collector set called Food Truth
+ * finished pieces they front, a two-series collector set called Food Truth
  * Wins, and the eight-second teaser cut for it. Pages host it through the
  * reply builders; the artwork rides the shared transcript masonry.
  */
@@ -37,7 +37,11 @@ export const WISE_CAMPAIGN_BRIEF = [
   '',
   'Lay the finished pieces out inside the answer, edge to edge, packed at their own shapes instead of in a scrolling row, and let me open any one of them full size.',
   '',
-  'Then turn the cast into a playable set called Food Truth Wins: twelve collector cards, six heroes and six villains, each one numbered, with a faction, a role, the thing it stands for, a superpower, the villain it beats or the hero that beats it, and three game stats. Give the heroes the tools \u2014 ingredient vision, processing reveal, score sight, side-by-side comparison, personal fit, food literacy \u2014 and give the villains the tricks those tools defeat: label camouflage, the health halo, a cherry-picked number, a twisted metric, one-size-fits-all advice, jargon. Add two key visuals for the set, one spy thriller and one superhero. Every card is the same shape, so run the twelve in their own carousel rather than in the packed grid.',
+  'Then turn the cast into a playable set called Food Truth Wins: twelve collector cards, six heroes and six villains, each one numbered, with a faction, a role, the thing it stands for, a superpower, the villain it beats or the hero that beats it, and three game stats. Give the heroes the tools \u2014 ingredient vision, processing reveal, score sight, side-by-side comparison, personal fit, food literacy \u2014 and give the villains the tricks those tools defeat: label camouflage, the health halo, a cherry-picked number, a twisted metric, one-size-fits-all advice, jargon. Add two key visuals for the set, one spy thriller and one superhero.',
+  '',
+  'Then deal a second series of twelve, and cast it from the campaign\u2019s own characters rather than inventing new ones. The avocado, the broccoli, the quinoa bowl, the salmon, the grapes and the coffee are the heroes; the burger, the pizza, the donut, the soda and one more newcomer off the same street are the villains; and the taco goes last as the only wildcard, because a taco plays whichever side it was built for. Keep every one of them in the wardrobe the buy already gave them. Give this series its own six tools \u2014 rescaling a serving, ranking an ingredient by weight, resolving every alias to one total, reading heart health, splitting added sugar from the sugar that was already there, and pulling the filing behind a substance \u2014 and give its villains the tricks those tools answer: a shrunken serving, a whole-grain whitewash, a swarm of sugar names, a zero that hides a sweetener, a proprietary blend. Number it on its own and mark it series 02.',
+  '',
+  'Every card is the same shape, so run both series together on one carousel rather than in the packed grid.',
   '',
   'Cut the set a teaser as well: eight seconds, the camera planted in the dirt with the lens inches off the ground, and the cast rushing past it. Play it inside the answer with its own controls and sound, and do not start it on its own.',
 ].join('\n');
@@ -83,12 +87,12 @@ export const WISE_CAMPAIGN_MEDIA = [
 ];
 
 /**
- * Food Truth Wins — the collector set. Twelve cards, six heroes and six
+ * Food Truth Wins, series 01 — the game's own cast. Six heroes and six
  * villains, every one the same 2:3 shape: they ride a carousel rather than the
  * packed grid. Each hero's tool answers one villain's trick, which is the
  * whole argument of the campaign turned into a game.
  */
-export const WISE_CAMPAIGN_CARDS = [
+export const WISE_CAMPAIGN_CARDS_S1 = [
   { file: 'agent-apple', name: 'Agent Apple',
     faction: 'Hero', role: 'Spy', power: 'Ingredient Vision' },
   { file: 'captain-carrot', name: 'Captain Carrot',
@@ -114,6 +118,58 @@ export const WISE_CAMPAIGN_CARDS = [
   { file: 'count-cookie', name: 'Count Cookie',
     faction: 'Villain', role: 'Decoy master', power: 'Jargon Vault' },
 ];
+
+/**
+ * Series 02 — the campaign's own cast, dealt into the same game. These are the
+ * characters off the billboard and the bus wrap rather than invented for the
+ * deck, so they keep the wardrobe the buy dressed them in: the whole foods
+ * tailored, the processed ones in stained hoodies on the litter-strewn street.
+ *
+ * The pairing carries over too. Every hero's tool is something WISEcode
+ * actually does — rescaling a serving, ranking an ingredient by weight,
+ * resolving aliases to one total, reading Heart Health, splitting added sugar
+ * from intrinsic, pulling a GRAS filing — and each one answers the label trick
+ * on the villain across from it. The Taco closes the set as the only wildcard:
+ * it plays whichever side the way it was built earns it.
+ */
+export const WISE_CAMPAIGN_CARDS_S2 = [
+  { file: 'cast-avocado', name: 'The Avocado',
+    faction: 'Hero', role: 'Captain', power: 'True Portion' },
+  { file: 'cast-broccoli', name: 'The Broccoli',
+    faction: 'Hero', role: 'Field agent', power: 'Ingredient Rank' },
+  { file: 'cast-quinoa', name: 'The Quinoa Bowl',
+    faction: 'Hero', role: 'Codebreaker', power: 'Alias Decode' },
+  { file: 'cast-salmon', name: 'The Salmon',
+    faction: 'Hero', role: 'Medic', power: 'Heart Health Read' },
+  { file: 'cast-grapes', name: 'The Grapes',
+    faction: 'Hero', role: 'Scout', power: 'Added-Sugar Split' },
+  { file: 'cast-coffee', name: 'The Coffee',
+    faction: 'Hero', role: 'Scholar', power: 'GRAS Dossier' },
+  { file: 'cast-burger', name: 'The Burger',
+    faction: 'Villain', role: 'Heavy', power: 'Serving-Size Shrink' },
+  { file: 'cast-pizza', name: 'The Pizza',
+    faction: 'Villain', role: 'Con artist', power: 'Whole-Grain Whitewash' },
+  { file: 'cast-donut', name: 'The Donut',
+    faction: 'Villain', role: 'Smuggler', power: 'Sugar Alias Swarm' },
+  { file: 'cast-soda', name: 'The Soda',
+    faction: 'Villain', role: 'Hypnotist', power: 'Zero Mirage' },
+  { file: 'cast-energy-drink', name: 'The Energy Drink',
+    faction: 'Villain', role: 'Alchemist', power: 'Proprietary Blend' },
+  { file: 'cast-taco', name: 'The Taco',
+    faction: 'Wildcard', role: 'Turncoat', power: 'Both Ways' },
+];
+
+/** The whole deck, in dealing order: series 01, then series 02 behind it. */
+export const WISE_CAMPAIGN_CARDS = [...WISE_CAMPAIGN_CARDS_S1, ...WISE_CAMPAIGN_CARDS_S2];
+
+/** How the deck splits, counted rather than stated, so adding a card can't
+    leave the caption claiming the old numbers. */
+function cardFactions() {
+  const of = (f) => WISE_CAMPAIGN_CARDS.filter((c) => c.faction === f).length;
+  const wild = of('Wildcard');
+  return `${of('Hero')} heroes, ${of('Villain')} villains`
+    + (wild ? ` and ${wild === 1 ? 'a wildcard' : `${wild} wildcards`}` : '');
+}
 
 /**
  * The teaser the card set was cut for. It plays inside the answer on the
@@ -192,14 +248,15 @@ export function campaignMediaHtml(base) {
 
 /**
  * The collector set as its own carousel. Same viewer as the grid — the cards
- * only leave it because twelve identical shapes read as a deck, not a mosaic.
+ * only leave it because a run of identical shapes reads as a deck, not a
+ * mosaic. Both series ride the one rail, series 02 dealt in behind series 01.
  */
 export function campaignCardsHtml(base) {
   const b = `${String(base || CAMPAIGN_BASE).replace(/\/$/, '')}/cards`;
   return cardRailHtml({
     id: 'wise-campaign-cards',
     label: 'Food Truth Wins \u00b7 the collector set',
-    caption: `${WISE_CAMPAIGN_CARDS.length} cards \u00b7 six heroes, six villains \u00b7 tap one to open it full size`,
+    caption: `${WISE_CAMPAIGN_CARDS.length} cards \u00b7 ${cardFactions()} \u00b7 tap one to open it full size`,
     aspect: 2 / 3,
     items: WISE_CAMPAIGN_CARDS.map((c) => ({
       src: `${b}/${c.file}.jpg`,
@@ -218,7 +275,8 @@ export function campaignReply() {
     + '<p>The cast is the catalog. <strong>The Avocado</strong> in the forest tracksuit, <strong>the Broccoli</strong>, <strong>the Quinoa Bowl</strong>, <strong>the Salmon</strong>, <strong>the Grapes</strong>, <strong>the Coffee</strong>, <strong>the Taco</strong> — tailored, unhurried, sunglasses on, shot like people who have nothing to hide. Then <strong>the Burger</strong>, <strong>the Pizza</strong>, <strong>the Donut</strong> and <strong>the Soda</strong>, in stained hoodies and ripped denim on a litter-strewn street, and no line of copy has to explain the difference. The sign-off is <em>Know your Food Truth</em>.</p>'
     + `<p>${WISE_CAMPAIGN_MEDIA.length} pieces came out of it — the highway billboard, the bus wrap, the van, the shelter posters, the vertical social cover, the magazine page, the web banners, the merch table, the character build-out sheet, the two <strong>WISEWear</strong> lookbooks with every look priced, and the two key visuals for the card set. They are laid out below, edge to edge. Tap any one to open it full size.</p>`
     + campaignMediaHtml()
-    + `<p>The cast also plays. <strong>Food Truth Wins</strong> is the collector set — ${WISE_CAMPAIGN_CARDS.length} cards, six heroes and six villains, and every hero&rsquo;s tool answers a villain&rsquo;s trick. <strong>Agent Apple</strong> reads what <strong>Baron Bonbon</strong> hides behind friendly words. <strong>Dr. Blueberry</strong> restores the context <strong>Doctor Frosting</strong> cherry-picks away. <strong>Kiwi Key</strong> undoes <strong>Lord Licorice</strong>&rsquo;s one-size-fits-all advice. They are all the same shape, so they ride their own carousel rather than the grid above.</p>`
+    + `<p>The cast also plays. <strong>Food Truth Wins</strong> is the collector set — ${WISE_CAMPAIGN_CARDS.length} cards across two series, and every hero&rsquo;s tool answers a villain&rsquo;s trick. <strong>Series 01</strong> is the game&rsquo;s own cast: <strong>Agent Apple</strong> reads what <strong>Baron Bonbon</strong> hides behind friendly words, <strong>Dr. Blueberry</strong> restores the context <strong>Doctor Frosting</strong> cherry-picks away, and <strong>Kiwi Key</strong> undoes <strong>Lord Licorice</strong>&rsquo;s one-size-fits-all advice.</p>`
+    + `<p><strong>Series 02</strong> deals in the characters you have just been looking at — the ones off the billboard and the bus wrap, still in the wardrobe the buy gave them. <strong>The Avocado</strong> rescales the serving <strong>the Burger</strong> shrank. <strong>The Grapes</strong> split the sugar <strong>the Soda</strong> swore was zero. <strong>The Coffee</strong> pulls the filing <strong>the Energy Drink</strong> hid inside a proprietary blend. And <strong>the Taco</strong> closes the deck as the only wildcard, playing whichever side the way it was built has earned it. They are all the same shape, so the whole set rides one carousel rather than the grid above.</p>`
     + campaignCardsHtml()
     + '<p>And the set moves. The teaser puts the camera in the dirt, lens inches off the ground, and lets the cast come past it at a sprint: <strong>Captain Carrot</strong> lands in the crater, <strong>Lentil Legend</strong> launches out of it, <strong>Pretzel Plot</strong> comes straight down the barrel of the lens, and <strong>the Avocado</strong> dives past in the forest tracksuit before the dust closes over everything. Eight seconds, with sound. Press play when you want it; it waits for you.</p>'
     + campaignFilmHtml()
@@ -283,9 +341,11 @@ export function campaignLookbookReply() {
 
 export function campaignCardsReply() {
   return (
-    `<p><strong>Food Truth Wins</strong> turns the cast into a playable set — ${WISE_CAMPAIGN_CARDS.length} numbered cards, six heroes and six villains, each with a faction, a role, a superpower and three game stats.</p>`
-    + '<p>The heroes carry the tools WISEcode actually gives you. <strong>Agent Apple</strong> has Ingredient Vision, <strong>Captain Carrot</strong> has Processing Reveal, <strong>Dr. Blueberry</strong> has Score Sight, <strong>Lentil Legend</strong> has the Side-by-Side Shield, <strong>Kiwi Key</strong> has Personal Fit, and <strong>Professor Pear</strong> has the Knowledge Link.</p>'
-    + '<p>Every villain is a trick one of those tools defeats. <strong>Baron Bonbon</strong> runs Label Camouflage, <strong>Madam Marshmallow</strong> the Health Halo, <strong>Doctor Frosting</strong> the Cherry-Pick Ray, <strong>Pretzel Plot</strong> the Metric Twist, <strong>Lord Licorice</strong> the One-Size Snare, and <strong>Count Cookie</strong> the Jargon Vault. That pairing is the whole argument of the campaign turned into a game.</p>'
+    `<p><strong>Food Truth Wins</strong> turns the cast into a playable set — ${WISE_CAMPAIGN_CARDS.length} numbered cards in two series, ${cardFactions()}, each with a faction, a role, a superpower and three game stats.</p>`
+    + `<p><strong>Series 01</strong> is ${WISE_CAMPAIGN_CARDS_S1.length} cards of the game&rsquo;s own cast, and its heroes carry the tools WISEcode actually gives you. <strong>Agent Apple</strong> has Ingredient Vision, <strong>Captain Carrot</strong> has Processing Reveal, <strong>Dr. Blueberry</strong> has Score Sight, <strong>Lentil Legend</strong> has the Side-by-Side Shield, <strong>Kiwi Key</strong> has Personal Fit, and <strong>Professor Pear</strong> has the Knowledge Link.</p>`
+    + '<p>Every villain opposite them is a trick one of those tools defeats. <strong>Baron Bonbon</strong> runs Label Camouflage, <strong>Madam Marshmallow</strong> the Health Halo, <strong>Doctor Frosting</strong> the Cherry-Pick Ray, <strong>Pretzel Plot</strong> the Metric Twist, <strong>Lord Licorice</strong> the One-Size Snare, and <strong>Count Cookie</strong> the Jargon Vault. That pairing is the whole argument of the campaign turned into a game.</p>'
+    + `<p><strong>Series 02</strong> deals the campaign&rsquo;s own characters into it, ${WISE_CAMPAIGN_CARDS_S2.length} more cards in the wardrobe the buy gave them. <strong>The Avocado</strong> rescales every label to one serving, <strong>the Broccoli</strong> shows where an ingredient really lands by weight, <strong>the Quinoa Bowl</strong> resolves a swarm of aliases back to a single total, <strong>the Salmon</strong> reads Heart Health, <strong>the Grapes</strong> separate added sugar from the sugar that was already there, and <strong>the Coffee</strong> pulls the GRAS filing behind a substance.</p>`
+    + '<p>Their villains are the label tricks those six answer: <strong>the Burger</strong>&rsquo;s Serving-Size Shrink, <strong>the Pizza</strong>&rsquo;s Whole-Grain Whitewash, <strong>the Donut</strong>&rsquo;s Sugar Alias Swarm, <strong>the Soda</strong>&rsquo;s Zero Mirage, and <strong>the Energy Drink</strong>&rsquo;s Proprietary Blend. <strong>The Taco</strong> is the one card that belongs to neither side — the wildcard closes the deck, and plays whichever side the way it was built has earned it.</p>'
     + campaignCardsHtml()
     + '<p>The set has two key visuals — one shot as a spy thriller, one as a superhero picture — so it can be sold as a world and not just a deck.</p>'
     + gridHtml({

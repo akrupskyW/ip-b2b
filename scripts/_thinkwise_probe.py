@@ -155,6 +155,18 @@ def wait_for(b, done, wait_s, note="", resettle=True):
     return b.js(STATE) or {}
 
 
+def poll_js(b, expr, pred, wait_s, every=0.5):
+    """Read one expression until it satisfies `pred`, then hand it back."""
+    t0 = time.time()
+    last = None
+    while time.time() - t0 < wait_s:
+        last = b.js(expr)
+        if pred(last):
+            return last
+        time.sleep(every)
+    return last
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     b = Browser(width=1512, height=980, out=OUT)
@@ -266,23 +278,40 @@ def main():
         ) or {}
         ok(bool(viewer.get("loaded")), "a piece opens full size (%s)" % viewer.get("title"))
         print("  shot", b.shot("thinkwise__viewer__%s" % THEME))
-        b.js("(function(){var n=document.querySelector('[data-mgrid-step=\"1\"]');"
-             "if(n)n.click()})()")
-        time.sleep(1.0)
-        nxt = b.js("(function(){var s=document.getElementById('wise-masonry-detail');"
-                   "return s?(s.querySelector('.wise-modal-title')||{}).textContent:''})()")
+        TITLE = ("(function(){var s=document.getElementById('wise-masonry-detail');"
+                 "return s?(s.querySelector('.wise-modal-title')||{}).textContent:''})()")
+        STEP = ("(function(){var n=document.querySelector('[data-mgrid-step=\"1\"]');"
+                "if(n)n.click();return !!n})()")
+        # The next piece has to decode before the viewer relabels, so give the
+        # step a real window rather than a single beat.
+        nxt = viewer.get("title")
+        for _ in range(3):
+            b.js(STEP)
+            nxt = poll_js(b, TITLE, lambda t: t and t != viewer.get("title"), 12)
+            if nxt and nxt != viewer.get("title"):
+                break
         ok(bool(nxt) and nxt != viewer.get("title"),
            "and the arrows step through the set (%r → %r)" % (viewer.get("title"), nxt))
         escape(b)
 
-        # The cast chip is what posts the bible page.
-        b.js("(function(){var h=document.querySelector('[id$=\"-messages\"]');"
-             "var rows=Array.from(h.querySelectorAll('.sc-inline-chips .chip,"
-             ".sc-reply-chips .chip'));"
-             "var c=rows.find(function(x){return /rue|sage|cast/i.test(x.textContent||'')});"
-             "if(c){c.scrollIntoView({block:'center'});c.click();}})()")
-        time.sleep(1.0)
-        bib = wait_for(b, lambda s: s.get("plates") == 3, 120, "bible")
+        # The cast chip is what posts the bible page. The closing row is a live
+        # element the chat re-parks, so the chip can be mid-move when we look —
+        # find it again and tap again rather than calling one miss a failure.
+        TAP_CAST = ("(function(){var h=document.querySelector('[id$=\"-messages\"]');"
+                    "var rows=Array.from(h.querySelectorAll('.sc-inline-chips .chip,"
+                    ".sc-reply-chips .chip'));"
+                    "var c=rows.find(function(x){"
+                    "return /rue|sage|cast/i.test(x.textContent||'')});"
+                    "if(c){c.scrollIntoView({block:'center'});c.click();}"
+                    "return !!c})()")
+        bib = {}
+        for _ in range(4):
+            tapped = b.js(TAP_CAST)
+            bib = wait_for(b, lambda s: s.get("plates") == 3, 45, "bible")
+            if bib.get("plates") == 3:
+                break
+            if not tapped:
+                time.sleep(2.0)
         print("  bible", {k: bib.get(k) for k in
                           ("plates", "names", "lines", "accents", "facts")})
         ok(bib.get("plates") == 3, "the character bible has a plate each (got %s)"

@@ -402,7 +402,7 @@
               prompts: ['Wise Owl Progression'],
               tools: [] },
             { title: 'Generate a marketing campaign', icon: 'campaign',
-              desc: 'A cast of food characters and the finished campaign they front — billboard, bus and van wraps, shelter posters, social cover, magazine page, banners, merch and two priced lookbooks — laid out edge to edge in the answer as a masonry grid you can open full size, with the twelve-card Food Truth Wins collector set on its own carousel below it and the eight-second teaser it was cut for. Nothing opens on the right.',
+              desc: 'A cast of food characters and the finished campaign they front — billboard, bus and van wraps, shelter posters, social cover, magazine page, banners, merch and two priced lookbooks — laid out edge to edge in the answer as a masonry grid you can open full size, with the two-series Food Truth Wins collector set on its own carousel below it and the eight-second teaser it was cut for. Nothing opens on the right.',
               /* The full brief lives with the campaign it asks for
                  (js/wise-campaign.js) and is read at render time, so a
                  surface without that module still offers the short ask. */

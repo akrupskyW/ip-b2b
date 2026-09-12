@@ -239,7 +239,7 @@ export const SCRIPT_PURPOSES = {
   'text-size.js': 'the app-wide text and icon size setting',
   'wiseai-chat.js': 'the one shared WISEcodeAI chat — welcome screen, question chips, streaming answers — that every page mounts',
   'owl-progression-carousel.js': 'an edge-to-edge owl strip inside an answer — motion, stills, and short clips that follow light or dark, and a larger look when you tap one',
-  'wise-campaign.js': 'a marketing campaign you can ask for — the catalog cast as food characters, the sixteen finished pieces they front, a twelve-card collector set and the eight-second teaser cut for it',
+  'wise-campaign.js': 'a marketing campaign you can ask for — the catalog cast as food characters, the sixteen finished pieces they front, a two-series collector set and the eight-second teaser cut for it',
   'think-wise-campaign.js': 'a second campaign you can ask for, built on the three WISEcode owls now that they have names — Rue doubts the claim, Ollie reads the code, Sage gives the verdict — with the twelve finished pieces they front, a character bible, and the launch film cut from the campaign\u2019s own artwork',
   'character-bible.js': 'a cast introduced properly inside an answer — one plate per character with the artwork above and the facts under it, so a campaign can say who its characters are rather than only showing their faces',
   'transcript-masonry.js': 'galleries inside an answer that run from edge to edge — a packed grid when the pieces are all different shapes, a scrolling row when they are all the same one, and tapping any of them opens it full size with arrows to the rest',

@@ -209,7 +209,8 @@ def main():
         ok(after.get("bleedL") is not None and abs(after["bleedL"]) <= 2
            and abs(after.get("bleedR") or 99) <= 2,
            "it runs edge to edge (%s / %s)" % (after.get("bleedL"), after.get("bleedR")))
-        ok(after.get("rail") == 12, "twelve cards on their own rail (got %s)" % after.get("rail"))
+        ok(after.get("rail") == 24,
+           "both card series on their own rail (got %s)" % after.get("rail"))
         ok(after.get("railShapes") == 1,
            "the deck is one shape, so it does not pack (got %s heights)" % after.get("railShapes"))
         ok((after.get("railOver") or 0) > 0,
