@@ -36,6 +36,14 @@ const IMPORT_STUBS = `
   const thinkWiseWalkReply = () => '';
   const thinkWiseFilmReply = () => '';
   const THINK_WISE_BRIEF = 'The Wise Walk campaign';
+  const clothingReply = () => '';
+  const clothingKidsReply = () => '';
+  const clothingAccessoriesReply = () => '';
+  const clothingGraphicReply = () => '';
+  const clothingSwimReply = () => '';
+  const clothingEverydayReply = () => '';
+  const clothingFormalReply = () => '';
+  const FOOD_TRUTH_LINE_BRIEF = 'Create a clothing line';
   const saveGeneratedReport = () => null;
 `;
 const body = IMPORT_STUBS + blocks.reduce((a, b) => (b.length > a.length ? b : a), '')

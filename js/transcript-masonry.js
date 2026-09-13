@@ -1,18 +1,21 @@
 /* =============================================================================
    transcript-masonry.js — edge-to-edge galleries inside a chat transcript.
 
-   Two layouts, one component. The masonry grid puts every piece on screen at
-   once, packed at its own aspect ratio; the card rail is one scrolling row for
-   a set that is all the same shape, where packing would only add ragged edges.
-   Both run from one edge of the chat module to the other, and both open the
-   same viewer: tap a tile and that piece fills the shared modal, with the rest
-   of the set on the arrows either side of it.
+   Three layouts, one component. The masonry grid puts every piece on screen at
+   once, packed at its own aspect ratio; the card deck is a plain wrapping grid
+   for a set that is all the same shape, where every row is equal already and
+   packing would do nothing; the card rail is that same set as one scrolling
+   row, for a host with no room to show it whole. All three run from one edge
+   of their container to the other, and all three open the same viewer: tap a
+   tile and that piece fills the shared modal, with the rest of the set on the
+   arrows either side of it.
 
    One shared definition. A host supplies items and drops the markup into a
    reply; auto-mount wires the packing, the scrolling and the viewer.
 
-     masonryGridHtml({ id, label, caption, items })
-     cardRailHtml({ id, label, caption, items, aspect })
+     masonryGridHtml({ id, label, items })
+     cardGridHtml({ id, label, items, aspect })
+     cardRailHtml({ id, label, items, aspect })
      items: [{ src, thumb, w, h, title, meta }]
    ========================================================================== */
 
@@ -27,9 +30,9 @@ const DETAIL_ID = 'wise-masonry-detail';
 const ROW_PX = 6;
 const GAP_PX = 10;
 
-/* One tile, shared by both layouts. The rail leaves the caption off: a set of
-   cards carries its own names in the artwork, and a line of prose under every
-   one of twelve identical shapes is noise. */
+/* One tile, shared by all three layouts. A deck leaves the per-tile caption
+   off: those cards carry their own names in the artwork, and a line of prose
+   under every one of two dozen identical shapes is noise. */
 function tileHtml(it, i, label, ar, withCap) {
   const alt = it.title ? `${it.title}${it.meta ? ` — ${it.meta}` : ''}` : label;
   return (
@@ -66,14 +69,34 @@ export function masonryGridHtml(opts) {
   return (
     `<figure class="sc-mgrid" data-mgrid="${esc(id)}" data-mgrid-label="${esc(label)}" role="region" aria-label="${esc(label)}">`
     + `<div class="sc-mgrid-grid" data-mgrid-grid>${tiles}</div>`
-    + (o.caption ? `<figcaption class="sc-mgrid-figcap">${esc(o.caption)}</figcaption>` : '')
+    + `</figure>`
+  );
+}
+
+/**
+ * Markup for one deck: every tile the same shape, laid out as a plain grid
+ * that wraps. Nothing is packed and nothing scrolls sideways — a set of
+ * identical cards has no ragged edges to pack and reads better all at once
+ * than one row at a time. `aspect` is the shape they share (default 2:3).
+ */
+export function cardGridHtml(opts) {
+  const o = opts || {};
+  const id = o.id || `mdeck-${Math.random().toString(36).slice(2, 9)}`;
+  const label = o.label || 'Gallery';
+  const items = Array.isArray(o.items) ? o.items : [];
+  const ar = typeof o.aspect === 'number' && o.aspect > 0 ? o.aspect : (2 / 3);
+  const tiles = items.map((it, i) => tileHtml(it, i, label, ar, false)).join('');
+  return (
+    `<figure class="sc-mgrid sc-mgrid--deck" data-mgrid="${esc(id)}" data-mgrid-label="${esc(label)}"`
+    + ` role="region" aria-label="${esc(label)}">`
+    + `<div class="sc-mgrid-deckgrid" data-mgrid-deck>${tiles}</div>`
     + `</figure>`
   );
 }
 
 /**
  * Markup for one rail: a scrolling row of same-shape tiles with a chevron
- * either side of the caption. `aspect` is the shape they all share (default
+ * either side of it. `aspect` is the shape they all share (default
  * 2:3); a set with mixed shapes belongs in the grid instead.
  */
 export function cardRailHtml(opts) {
@@ -96,7 +119,6 @@ export function cardRailHtml(opts) {
     + `</div>`
     + `<div class="sc-mgrid-chrome">`
     + nav(-1, 'chevron_left', 'Scroll previous')
-    + (o.caption ? `<figcaption class="sc-mgrid-figcap">${esc(o.caption)}</figcaption>` : '')
     + nav(1, 'chevron_right', 'Scroll next')
     + `</div>`
     + `</figure>`
@@ -116,7 +138,13 @@ function injectStyles() {
    area's own padding. Same formula the sent-ask wash and the output rails read,
    with the FLOOR taken from --sc-pad-floor rather than restated, so compact
    spacing cannot move one and not the other. */
-.sc-line-body > .sc-mgrid {
+/* Two ways a gallery reaches a transcript: an answer writes it directly, or an
+   output is drawn in the thread rather than as a chip (js/output-mode.js). The
+   second sits a wrapper deeper, which is why the descendant form is here too —
+   the math below is in cqi and fixed lengths precisely so nesting cannot
+   re-resolve it. */
+.sc-line-body > .sc-mgrid,
+.sc-line-body .sc-out--inline .sc-mgrid {
   --mgrid-pad: var(--sc-gutter, max(var(--sc-pad-floor, 3rem), calc((100cqi - var(--sc-transcript-max, 860px)) / 2)));
   box-sizing: border-box;
   max-width: none;
@@ -141,6 +169,33 @@ function injectStyles() {
   gap: ${GAP_PX}px;
   align-items: start;
 }
+/* Same bleed on the other surface a gallery lands on. An output pane has no
+   avatar column to cancel, only its own inline padding, and the tiles start at
+   that edge rather than on a prose column.
+
+   An inline output borrows the pane's block styling while sitting in a
+   transcript, so it is excluded here by name: it has already been given the
+   transcript's bleed above, and it is not in a pane. */
+.wa-pane-body:not(.sc-out--inline) > .wa-block > .sc-mgrid {
+  --mgrid-pad: var(--wa-pane-pad-x, 24px);
+  box-sizing: border-box;
+  max-width: none;
+  margin-inline: calc(-1 * var(--mgrid-pad));
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+/* A deck is every tile at one shape, so its rows are already equal and there
+   is nothing to pack: a plain auto-fill grid, columns floored at a length or a
+   share of the width, whichever is smaller, so a narrow pane still gets three
+   cards across instead of one giant one. */
+.sc-mgrid-deckgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(150px, 31%), 1fr));
+  gap: ${GAP_PX}px;
+  align-items: start;
+}
+.sc-mgrid-deckgrid > .sc-mgrid-item { grid-row-end: auto; }
 /* The rail scrolls edge to edge, but the row it holds starts on the prose
    column — same inline padding the owl strip uses, so a carousel reads as
    anchored to the text and still runs off both sides of the module. */
@@ -175,7 +230,6 @@ function injectStyles() {
   gap: 10px;
   padding: 10px 12px 0;
 }
-.sc-mgrid-chrome .sc-mgrid-figcap { margin: 0; text-align: center; }
 .sc-mgrid-step {
   display: inline-flex;
   align-items: center;
@@ -256,26 +310,14 @@ function injectStyles() {
   line-height: 1.35;
   color: var(--text-muted);
 }
-/* The pictures bleed; the caption is prose, so it lines up with the paragraph
-   above it rather than starting at the module edge. */
-.sc-mgrid-figcap {
-  margin: 12px 2px 0;
-  font-size: 0.78em;
-  line-height: 1.45;
-  color: var(--text-muted);
-}
-.sc-line-body > .sc-mgrid > .sc-mgrid-figcap {
-  margin-left: calc(var(--sc-avatar-size, 30px) + 12px + var(--mgrid-pad));
-}
-
 /* ── The viewer: one piece at full size, the set on the arrows ── */
 .wise-modal-scrim--panel.sc-mgrid-scrim .wise-modal.sc-mgrid-modal {
   width: min(1120px, calc(100vw - 40px));
   max-width: min(1120px, calc(100vw - 40px));
 }
 /* A deck of portraits does not need a landscape frame around it. Only a rail
-   gets this: every tile there is the same shape, so the panel cannot end up
-   the wrong size for the next piece on the arrows. */
+   or a deck gets this: every tile there is the same shape, so the panel cannot
+   end up the wrong size for the next piece on the arrows. */
 .wise-modal-scrim--panel.sc-mgrid-scrim--tall .wise-modal.sc-mgrid-modal {
   width: min(660px, calc(100vw - 40px));
   max-width: min(660px, calc(100vw - 40px));
@@ -411,7 +453,8 @@ export function openMasonryItem(tile) {
   let ar = 0;
   try { ar = parseFloat(getComputedStyle(tile).getPropertyValue('--mgrid-ar')) || 0; }
   catch (_) { /* fall back to the wide panel */ }
-  const tall = ar > 0 && ar < 0.85 && root.classList.contains('sc-mgrid--rail');
+  const tall = ar > 0 && ar < 0.85
+    && (root.classList.contains('sc-mgrid--rail') || root.classList.contains('sc-mgrid--deck'));
 
   const opened = openModal({
     id: DETAIL_ID,
@@ -521,10 +564,13 @@ function mountOne(root) {
     mountRail(root);
     return;
   }
+  /* A deck's rows are equal by construction, so there is nothing to measure,
+     repack or observe — the tiles are already wired to the viewer above. */
+  if (root.querySelector('[data-mgrid-deck]')) return;
 
   /* Repack when the chat changes width (module width toggle, pane docking,
-     window resize) and once each image has decoded, in case a caption wrapped
-     differently than the first measurement. */
+     window resize) and once each image has decoded, in case one measured
+     differently than the first pass. */
   packRoot(root);
   requestAnimationFrame(() => packRoot(root));
   root.querySelectorAll('.sc-mgrid-img').forEach((img) => {
@@ -536,11 +582,18 @@ function mountOne(root) {
     /* Width only: writing the spans changes the grid's HEIGHT, and repacking on
        that would feed the observer its own result. */
     let lastW = 0;
+    let queued = false;
     const ro = new ResizeObserver(() => {
       const w = Math.round(grid.getBoundingClientRect().width);
       if (w === lastW) return;
       lastW = w;
-      packGrid(grid);
+      /* Pack on the next frame, not inside the callback. Writing the spans
+         from here resizes the box the observer is watching, and the browser
+         reports that as an undelivered-notifications loop — most visibly while
+         the chat is mid-dock, when the width changes on every frame. */
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => { queued = false; packGrid(grid); });
     });
     ro.observe(grid);
   } else if (typeof window !== 'undefined') {
@@ -580,6 +633,7 @@ if (typeof window !== 'undefined') {
   window.WiseTranscriptMasonry = {
     html: masonryGridHtml,
     railHtml: cardRailHtml,
+    deckHtml: cardGridHtml,
     mount: mountMasonryGrids,
     observe: observeMasonryGrids,
     pack: packRoot,

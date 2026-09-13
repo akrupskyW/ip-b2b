@@ -26,7 +26,11 @@ from _cdp import Browser  # noqa: E402
 URL = "http://127.0.0.1:8099/pages/wiseai.html"
 OUT = "/Users/aeykay/Desktop/_WISE/WISE_ip3/screenshots/_diag"
 THEME = sys.argv[1] if len(sys.argv) > 1 else "light"
-WAIT_S = float(sys.argv[2]) if len(sys.argv) > 2 else 200.0
+# The turn is a long pasted brief, a reasoning trace, an answer, and then
+# eighteen pieces of artwork decoding into a packed grid. It is genuinely
+# minutes long — a window sized for a short answer will time out on a turn
+# that was going to land fine.
+WAIT_S = float(sys.argv[2]) if len(sys.argv) > 2 else 420.0
 MODEL_ON = len(sys.argv) > 3 and sys.argv[3] == "model-on"
 
 STATE = r"""
@@ -213,32 +217,45 @@ def main():
              "return /leave the screen/i.test(x.getAttribute('aria-label')||'')});"
              "if(c)c.click();})()")
 
-        st = wait_for(b, lambda s: s.get("tiles") == 12 and s.get("rail") == 3
-                      and s.get("film"), WAIT_S, "turn")
+        # How many pieces the campaign actually shipped, read off the campaign
+        # module rather than typed in here — adding a piece must not fail a
+        # probe that is only meant to prove they all arrived.
+        pieces = b.js("(window.WiseThinkWise && window.WiseThinkWise.media || []).length") or 0
+        ok(pieces > 0, "the campaign module is loaded (%s pieces)" % pieces)
+
+        st = wait_for(b, lambda s: s.get("tiles") == pieces and s.get("film"),
+                      WAIT_S, "turn")
         print("  state", {k: st.get(k) for k in
-                          ("rail", "railShapes", "railTitles", "tiles", "spans",
+                          ("rail", "railTitles", "tiles", "spans",
                            "cols", "chips", "open", "chatW")})
 
-        ok(st.get("rail") == 3, "the three owls ride their own carousel (%s plates)"
+        # The opening turn must NOT run a plate rail. The same three portraits
+        # carry the character bible on the cast follow-up, so a rail here made
+        # the member meet the cast twice before seeing a single piece of work.
+        ok((st.get("rail") or 0) == 0,
+           "the opening turn does not repeat the cast as a rail (%s plates)"
            % st.get("rail"))
-        ok(st.get("railShapes") == 1, "every plate the same shape (%s heights)"
-           % st.get("railShapes"))
-        ok(st.get("railTitles") == ["Rue", "Ollie", "Sage"],
-           "named Rue, Ollie and Sage, in the order of the line (%s)"
-           % st.get("railTitles"))
-        ok(all(st.get("railArt") or [False]), "every plate's art decoded")
-        ok((st.get("railBleedL") or 99) <= 2 and (st.get("railBleedR") or 99) <= 2,
-           "the rail bleeds to the module edges (L %s / R %s)"
-           % (st.get("railBleedL"), st.get("railBleedR")))
 
-        ok(st.get("tiles") == 12, "all 12 finished pieces landed (got %s)" % st.get("tiles"))
+        ok(st.get("tiles") == pieces,
+           "all %s finished pieces landed (got %s)" % (pieces, st.get("tiles")))
         ok((st.get("spans") or 0) > 1,
            "the buy packs at mixed shapes rather than a uniform row (%s spans)"
            % st.get("spans"))
         ok((st.get("bleedL") or 99) <= 2 and (st.get("bleedR") or 99) <= 2,
            "and runs edge to edge too (L %s / R %s)"
            % (st.get("bleedL"), st.get("bleedR")))
-        ok(st.get("railBeforeGrid"), "the plates read before the buy")
+        # The member's own boards ship as pieces, not just as a style reference.
+        boards = b.js(
+            "(function(){var m=(window.WiseThinkWise&&window.WiseThinkWise.media)||[];"
+            "return m.filter(function(x){return /^board-/.test(x.file)}).length})()") or 0
+        ok(boards == 5, "the five approved boards are in the buy (%s)" % boards)
+        painted = b.js(
+            "(function(){var h=document.querySelector('[id$=\"-messages\"]');"
+            "if(!h)return 0;return Array.from(h.querySelectorAll('.sc-mgrid-item img'))"
+            # Anchored on the slash: "billboard-" also contains "board-".
+            ".filter(function(i){return /\\/board-/.test(i.currentSrc||i.src||'')})"
+            ".length})()") or 0
+        ok(painted == 5, "and all five are on the gallery (%s)" % painted)
 
         ok(st.get("film"), "the launch film is in the answer")
         ok("film-the-wise-walk" in (st.get("filmSrc") or ""),
@@ -269,13 +286,14 @@ def main():
 
         b.js("(function(){var h=document.querySelector('[id$=\"-messages\"]');"
              "var t=h&&h.querySelector('.sc-mgrid-grid .sc-mgrid-item');if(t)t.click()})()")
-        time.sleep(1.4)
-        viewer = b.js(
-            "(function(){var s=document.getElementById('wise-masonry-detail');"
-            "if(!s)return null;var i=s.querySelector('.sc-mgrid-full');"
-            "return {title:(s.querySelector('.wise-modal-title')||{}).textContent,"
-            "loaded:i?i.naturalWidth>0:false};})()"
-        ) or {}
+        # The viewer has to mount and then decode a full-size piece, so poll
+        # for it rather than reading once after a guessed beat — a single
+        # sleep reports "it never opened" for a viewer that opened late.
+        VIEWER = ("(function(){var s=document.getElementById('wise-masonry-detail');"
+                  "if(!s)return null;var i=s.querySelector('.sc-mgrid-full');"
+                  "return {title:(s.querySelector('.wise-modal-title')||{}).textContent,"
+                  "loaded:i?i.naturalWidth>0:false};})()")
+        viewer = poll_js(b, VIEWER, lambda v: bool(v and v.get("loaded")), 20) or {}
         ok(bool(viewer.get("loaded")), "a piece opens full size (%s)" % viewer.get("title"))
         print("  shot", b.shot("thinkwise__viewer__%s" % THEME))
         TITLE = ("(function(){var s=document.getElementById('wise-masonry-detail');"
@@ -301,7 +319,10 @@ def main():
                     "var rows=Array.from(h.querySelectorAll('.sc-inline-chips .chip,"
                     ".sc-reply-chips .chip'));"
                     "var c=rows.find(function(x){"
-                    "return /rue|sage|cast/i.test(x.textContent||'')});"
+                    # Match all three names, not /cast/i — the first campaign
+                    # has an "extended cast" chip, and tapping that one posts
+                    # that campaign's gallery instead.
+                    "return /rue.*ollie.*sage/i.test(x.textContent||'')});"
                     "if(c){c.scrollIntoView({block:'center'});c.click();}"
                     "return !!c})()")
         bib = {}

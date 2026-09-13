@@ -11,6 +11,19 @@
   } catch (_) {}
 })();
 
+/** FOUC guard — where outputs are drawn. Keep in sync with js/output-mode.js:
+    the attribute has to be on <html> before the first output paints, or a
+    restored thread flashes both readings of every output it holds. */
+(function () {
+  try {
+    var m = localStorage.getItem('wise:output-mode');
+    document.documentElement.setAttribute(
+      'data-output-mode', (m === 'inline' || m === 'cards') ? m : 'inline');
+  } catch (_) {
+    document.documentElement.setAttribute('data-output-mode', 'inline');
+  }
+})();
+
 /** FOUC guard — Minimal UI is on by default. Keep in sync with
     isMinimalUiOn() in js/topbar.js so the first paint already has
     `minimal-ui` on #menu-panel instead of flashing the full nav. */

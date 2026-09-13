@@ -664,7 +664,9 @@
       #modules-row .wch-sidebar.wch-docked.wch-dock-conceal { animation: none !important; }
     }
 
-    .wa-pane-body { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; padding: 20px 24px 28px; }
+    /* The inline padding is a variable because content that bleeds to the pane
+       edges (a masonry gallery, a card deck) has to cancel exactly it. */
+    .wa-pane-body { --wa-pane-pad-x: 24px; flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; padding: 20px var(--wa-pane-pad-x) 28px; }
     .wa-pane-body > .wa-block { animation: waBlockIn .34s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
     @keyframes waBlockIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
@@ -4650,13 +4652,19 @@
     import {
       campaignReply, campaignCastReply, campaignOohReply, campaignPrintReply,
       campaignLookbookReply, campaignCardsReply, campaignTeaserReply,
+      campaignOutputs, campaignFollowupOutputs,
       WISE_CAMPAIGN_BRIEF,
     } from '../js/wise-campaign.js';
     import {
-      thinkWiseReply, thinkWiseBillboardsReply, thinkWiseMoldsReply,
+      thinkWiseReply, thinkWiseBillboardsReply, thinkWiseMuralsReply, thinkWiseMoldsReply,
       thinkWiseWalkReply, thinkWiseCastReply, thinkWiseFilmReply,
       THINK_WISE_BRIEF,
     } from '../js/think-wise-campaign.js';
+    import {
+      clothingReply, clothingKidsReply, clothingAccessoriesReply, clothingGraphicReply,
+      clothingSwimReply, clothingEverydayReply, clothingFormalReply,
+      FOOD_TRUTH_LINE_BRIEF,
+    } from '../js/food-truth-line.js';
     import { staggerReveal } from '../js/stagger-reveal.js';
     import { saveGeneratedReport } from '../js/generated-reports.js';
 
@@ -5090,6 +5098,10 @@
         waBootDashCharts(body);
         body.querySelectorAll('.wa-tbl:not([data-ready])').forEach((tbl) => initTable(tbl));
         body.querySelectorAll('.cmp-host:not([data-ready])').forEach((h) => bootCompareEngine(h));
+        /* A gallery written into a closed pane packed against a zero-width box.
+           Now that it has one, measure it again. */
+        const TM = window.WiseTranscriptMasonry;
+        if (TM && TM.pack) body.querySelectorAll('.sc-mgrid').forEach((g) => TM.pack(g));
       });
     }
     function openOutputPane(dest) {
@@ -11551,6 +11563,7 @@
       { intent: 'atlas', icon: 'bubble_chart',    label: 'Food Intervention Atlas', ask: ATLAS_ASK },
       { intent: 'campaign', icon: 'campaign',      label: 'Generate a marketing campaign', ask: WISE_CAMPAIGN_BRIEF },
       { intent: 'thinkwise', icon: 'park',         label: 'The Wise Walk campaign', ask: THINK_WISE_BRIEF },
+      { intent: 'clothing', icon: 'checkroom',     label: 'Create a clothing line', ask: FOOD_TRUTH_LINE_BRIEF },
       { intent: 'topbrands', icon: 'leaderboard',   label: 'Top 3 brands · WISEscore \u2265 50', ask: 'Create a comparison chart of the top three brands with more than 50 UPCs that are in the top half of the WISE score.' },
       { intent: 'kraft',   icon: 'inventory_2',     label: 'Kraft SKUs \u00b7 % UPF', ask: 'How many SKUs does Kraft have and what percent are ultra processed?' },
       { intent: 'sprouts', icon: 'storefront',      label: 'How many foods does Sprouts have?', ask: 'How many foods does the Sprouts retailer have?' },
@@ -11648,7 +11661,7 @@
       { intent: 'campaign_print',  icon: 'ad_units',   label: 'Print & digital', ask: 'Show the print and digital buy' },
       { intent: 'campaign_look',   icon: 'checkroom',  label: 'The WISEWear lookbooks', ask: 'Show the WISEWear lookbooks' },
       { intent: 'campaign_cards',  icon: 'style',      label: 'The collector set', ask: 'Walk me through the Food Truth Wins collector set' },
-      { intent: 'campaign_teaser', icon: 'movie',      label: 'Play the teaser', ask: 'Play the Food Truth Wins teaser' },
+      { intent: 'campaign_teaser', icon: 'movie',      label: 'Play the two spots', ask: 'Play the Food Truth Wins teaser and the face-off' },
     ];
     CAMPAIGN_FOLLOWUPS.forEach((c) => {
       c.nextIntents = CAMPAIGN_FOLLOWUPS.filter((x) => x.intent !== c.intent);
@@ -11659,14 +11672,36 @@
        outdoor buy, the nine-foot sculptures, the park walk they are installed
        on, the three characters themselves, and the launch film. */
     const THINKWISE_FOLLOWUPS = [
-      { intent: 'thinkwise_molds', icon: 'temple_buddhist', label: 'The nine-foot sculptures', ask: 'Show me the Think Wise sculptures' },
-      { intent: 'thinkwise_walk',  icon: 'park',            label: 'The Wise Walk installation', ask: 'Show me The Wise Walk installation' },
+      { intent: 'thinkwise_molds', icon: 'temple_buddhist', label: 'The sculptures, nine feet and up', ask: 'Show me the Think Wise sculptures' },
+      { intent: 'thinkwise_walk',  icon: 'park',            label: 'The walk through Golden Gate Park', ask: 'Show me The Wise Walk installation' },
       { intent: 'thinkwise_cast',  icon: 'menu_book',       label: 'Meet Rue, Ollie & Sage', ask: 'Meet Rue, Ollie and Sage' },
       { intent: 'thinkwise_bb',    icon: 'signpost',        label: 'The billboards', ask: 'Show me the Think Wise billboards' },
+      { intent: 'thinkwise_murals', icon: 'format_paint',   label: 'The painted work', ask: 'Show me the Think Wise murals' },
       { intent: 'thinkwise_film',  icon: 'movie',           label: 'Play the launch film', ask: 'Play The Wise Walk launch film' },
     ];
     THINKWISE_FOLLOWUPS.forEach((c) => {
       c.nextIntents = THINKWISE_FOLLOWUPS.filter((x) => x.intent !== c.intent);
+    });
+
+    /* Follow-up chips after the FOODTRUTH clothing line. Each one re-cuts the
+       lookbook the answer already shipped — kids, accessories, graphics, swim,
+       everyday, and black-tie. */
+    const CLOTHING_FOLLOWUPS = [
+      { intent: 'clothing_kids',         icon: 'child_care',  label: 'The kids collection',
+        ask: 'Show me the FOODTRUTH kids collection.\n\nThe knits, the smart set and the street set — the clothes, packed in the answer.' },
+      { intent: 'clothing_accessories',  icon: 'shopping_bag', label: 'The accessories',
+        ask: 'Show me the FOODTRUTH accessories.\n\nThe cream set and the color set — hats, bags, belts, socks and the rest.' },
+      { intent: 'clothing_graphic',      icon: 'styler',      label: 'The graphic tees',
+        ask: 'Show me the FOODTRUTH graphic tees.\n\nThe three kids pairs and the two adult long-sleeves.' },
+      { intent: 'clothing_swim',         icon: 'beach_access', label: 'Beach and swim',
+        ask: 'Show me the FOODTRUTH beach and swim.\n\nThe kids prints, the blue owl set, and the lockup at the beach.' },
+      { intent: 'clothing_everyday',     icon: 'checkroom',   label: 'The everyday lockup',
+        ask: 'Show me the everyday WISEcode lockup.\n\nThe tees, tank, hoodie, tote and the family in matching shirts.' },
+      { intent: 'clothing_formal',       icon: 'dry_cleaning', label: 'Black-tie and evening',
+        ask: 'Show me the black-tie and evening looks.\n\nThe paisley dress, the evening gown, the navy house suit and the tuxedo.' },
+    ];
+    CLOTHING_FOLLOWUPS.forEach((c) => {
+      c.nextIntents = CLOTHING_FOLLOWUPS.filter((x) => x.intent !== c.intent);
     });
 
     /* Follow-up chips offered after the protein-bar SKU-count answer lands. */
@@ -11727,6 +11762,8 @@
     CAMPAIGN_FOLLOWUPS.forEach((c) => attachNext(c.intent, CAMPAIGN_FOLLOWUPS.filter((x) => x.intent !== c.intent)));
     attachNext('thinkwise', THINKWISE_FOLLOWUPS);
     THINKWISE_FOLLOWUPS.forEach((c) => attachNext(c.intent, THINKWISE_FOLLOWUPS.filter((x) => x.intent !== c.intent)));
+    attachNext('clothing', CLOTHING_FOLLOWUPS);
+    CLOTHING_FOLLOWUPS.forEach((c) => attachNext(c.intent, CLOTHING_FOLLOWUPS.filter((x) => x.intent !== c.intent)));
     attachNext('brandwelcome', BRANDWELCOME_FOLLOWUPS);
     attachNext('atlas', ATLAS_FOLLOWUPS);
     attachNext('topbrands', TOPBRANDS_FOLLOWUPS);
@@ -11835,6 +11872,7 @@
       if (id === 'playful') return 'playful';
       if (id.indexOf('campaign') === 0) return 'campaign';
       if (id.indexOf('thinkwise') === 0) return 'thinkwise';
+      if (id.indexOf('clothing') === 0) return 'clothing';
       return id;
     }
     function contextualizeChip(chip, thread) {
@@ -11918,7 +11956,6 @@
       + '<source src="../assets/marketing/food-truth.mp4" type="video/mp4">'
       + 'Your browser can\u2019t play this film.'
       + '</video>'
-      + '<figcaption class="sc-inline-film-cap">Meet the Owls \u00b7 WISEcode brand film</figcaption>'
       + '</figure>'
       + 'Press play when you\u2019re ready \u2014 scrubbing, volume and full screen are all live, and it waits for you rather than starting on its own.';
     /* "Wise Owl Progression" — one edge-to-edge row of Lottie owls, stills, then
@@ -12118,10 +12155,18 @@
       campaign_teaser: () => campaignTeaserReply(),
       thinkwise: () => thinkWiseReply(),
       thinkwise_bb: () => thinkWiseBillboardsReply(),
+      thinkwise_murals: () => thinkWiseMuralsReply(),
       thinkwise_molds: () => thinkWiseMoldsReply(),
       thinkwise_walk: () => thinkWiseWalkReply(),
       thinkwise_cast: () => thinkWiseCastReply(),
       thinkwise_film: () => thinkWiseFilmReply(),
+      clothing: () => clothingReply(),
+      clothing_kids: () => clothingKidsReply(),
+      clothing_accessories: () => clothingAccessoriesReply(),
+      clothing_graphic: () => clothingGraphicReply(),
+      clothing_swim: () => clothingSwimReply(),
+      clothing_everyday: () => clothingEverydayReply(),
+      clothing_formal: () => clothingFormalReply(),
       catnutrients: `Cats are <strong>obligate carnivores</strong>, so they need a nutrient profile built around animal-derived protein plus several nutrients they can\u2019t reliably make or get from plant precursors${catCite(1, 3, 5)}. The essentials the literature keeps flagging:`
         + `<ul style="margin:10px 0 4px;padding-left:20px">`
         + `<li><strong>Taurine</strong> \u2014 vital for the retina, heart &amp; reproduction; deficiency is classically tied to retinal degeneration and dilated cardiomyopathy${catCite(7, 8)}.</li>`
@@ -12361,32 +12406,41 @@
       if (/top\s*10\s*brands/.test(t)) return takeReply('topbrands_top10', text, 'topbrands_top10', ctx);
       if (/retailer/.test(t) && /(wisescore|top half|\u2265\s*50|>=\s*50|50 or higher)/.test(t)) return takeReply('topbrands_retail', text, 'topbrands_retail', ctx);
       if (/(top\s*(three|3)\s*brands|more than 50 upc|top half of (the )?wise)/.test(t)) return takeReply('topbrands', text, 'topbrands', ctx);
+      /* FOODTRUTH, the clothing line — matched ahead of Think Wise and the
+         first campaign. The brief names "Think Wise" graphic tees and a
+         lookbook, and those words already belong to the other two intents.
+         The opening sentence of the brief is the whole-line ask; a per-piece
+         test after that would otherwise answer that brief with one cut. */
+      if (/create a (complete )?(clothing|apparel) line/.test(t)) {
+        return takeReply('clothing', text, 'clothing', ctx);
+      }
+      if (/foodtruth|food truth line|everyday wisecode lockup|black-tie and evening/.test(t)) {
+        if (/accessor/.test(t)) return takeReply('clothing_accessories', text, 'clothing_accessories', ctx);
+        if (/swim|beach/.test(t)) return takeReply('clothing_swim', text, 'clothing_swim', ctx);
+        if (/graphic|tee|be kindly|stay wise/.test(t)) return takeReply('clothing_graphic', text, 'clothing_graphic', ctx);
+        if (/formal|black.?tie|evening|tuxedo|gown|house suit|paisley/.test(t)) return takeReply('clothing_formal', text, 'clothing_formal', ctx);
+        if (/everyday|lockup/.test(t)) return takeReply('clothing_everyday', text, 'clothing_everyday', ctx);
+        if (/\bkids\b/.test(t)) return takeReply('clothing_kids', text, 'clothing_kids', ctx);
+        return takeReply('clothing', text, 'clothing', ctx);
+      }
       /* The Wise Walk campaign, matched ahead of the owl film and the first
          campaign because both of those own broader words — "owls",
          "billboard" — that would otherwise swallow an ask naming this one.
          The whole brief goes first: it mentions every piece it wants back, so
          a per-piece test would answer the brief with one cut of the buy. */
       if (/second\s+(wise\s*code\s+)?campaign|wise walk campaign/.test(t)) return takeReply('thinkwise', text, 'thinkwise', ctx);
-      if (/think wise|code wise|live wise|wise walk|\brue\b|\bollie\b|\bsage\b|sculptur|moulded|molded|plinth|nameplate/.test(t)) {
+      if (/think wise|code wise|live wise|wise walk|golden gate|\brue\b|\bollie\b|\bsage\b|sculptur|moulded|molded|plinth|nameplate|food for truth|information is easy|launch film|nine.foot|three owls|mural|street furniture|utility box/.test(t)) {
         if (/\bfilm\b/.test(t)) return takeReply('thinkwise_film', text, 'thinkwise_film', ctx);
-        if (/sculptur|\bmoulds?\b|\bmolds?\b|plinth|nameplate|statue/.test(t)) return takeReply('thinkwise_molds', text, 'thinkwise_molds', ctx);
+        if (/sculptur|\bmoulds?\b|\bmolds?\b|plinth|nameplate|statue|nine.foot/.test(t)) return takeReply('thinkwise_molds', text, 'thinkwise_molds', ctx);
         if (/\brue\b|\bollie\b|\bsage\b|character bible|model sheet/.test(t)) return takeReply('thinkwise_cast', text, 'thinkwise_cast', ctx);
-        if (/billboard|spectacular/.test(t)) return takeReply('thinkwise_bb', text, 'thinkwise_bb', ctx);
-        if (/wise walk|installation|\bpark\b|site map/.test(t)) return takeReply('thinkwise_walk', text, 'thinkwise_walk', ctx);
+        /* Painted work is matched ahead of the billboards: a mural ask often
+           says "out of home" too, and the wall is the more specific answer. */
+        if (/mural|painted|utility box|street furniture|pole banner|shelter panel|city wall/.test(t)) return takeReply('thinkwise_murals', text, 'thinkwise_murals', ctx);
+        if (/billboard|spectacular|out.of.home/.test(t)) return takeReply('thinkwise_bb', text, 'thinkwise_bb', ctx);
+        if (/wise walk|installation|\bpark\b|golden gate|site map/.test(t)) return takeReply('thinkwise_walk', text, 'thinkwise_walk', ctx);
         return takeReply('thinkwise', text, 'thinkwise', ctx);
       }
       if (/owl\s*progression/.test(t)) return takeReply('owl_progression', text, 'owl_progression', ctx);
-      /* The Think Wise campaign owns the three named owls, so its asks sit
-         above the owl-film and "food has character" matchers — a Think Wise
-         ask legitimately says "owl" and "billboard". */
-      if (/brand campaign around our three owls/.test(t)) return takeReply('thinkwise', text, 'thinkwise', ctx);
-      if (/launch film/.test(t)) return takeReply('thinkwise_film', text, 'thinkwise_film', ctx);
-      if (/\bollie\b|\brue\b/.test(t)) return takeReply('thinkwise_cast', text, 'thinkwise_cast', ctx);
-      if (/\bsage\b/.test(t) && /owl|character|cast|\bmeet\b|wise/.test(t)) return takeReply('thinkwise_cast', text, 'thinkwise_cast', ctx);
-      if (/sculpture|\bmolds?\b|nine.foot/.test(t)) return takeReply('thinkwise_molds', text, 'thinkwise_molds', ctx);
-      if (/wise walk/.test(t)) return takeReply('thinkwise_walk', text, 'thinkwise_walk', ctx);
-      if (/think wise|code wise|live wise/.test(t) && /billboard|spectacular|out.of.home/.test(t)) return takeReply('thinkwise_bb', text, 'thinkwise_bb', ctx);
-      if (/think wise|code wise|live wise|food for truth|information is easy/.test(t)) return takeReply('thinkwise', text, 'thinkwise', ctx);
       /* "Food Truth Wins" is the collector set, not the owl film — the tagline
          match has to stand down for it. */
       if (/\bowls?\b|food truth(?! wins)/.test(t)) return takeReply('owls', text, 'owls', ctx);
@@ -12394,9 +12448,9 @@
       if (/(campaign )?cast|food.headed|extended cast/.test(t)) return takeReply('campaign_cast', text, 'campaign_cast', ctx);
       if (/out.of.home|billboard|bus wrap|van wrap|shelter/.test(t)) return takeReply('campaign_ooh', text, 'campaign_ooh', ctx);
       if (/print and digital|print & digital|magazine page|leaderboard|display ad/.test(t)) return takeReply('campaign_print', text, 'campaign_print', ctx);
-      if (/wisewear|lookbook|clothing line|merch/.test(t)) return takeReply('campaign_look', text, 'campaign_look', ctx);
+      if (/wisewear|lookbook|merch/.test(t)) return takeReply('campaign_look', text, 'campaign_look', ctx);
       if (/collector set|collector card|heroes|villain/.test(t)) return takeReply('campaign_cards', text, 'campaign_cards', ctx);
-      if (/teaser/.test(t)) return takeReply('campaign_teaser', text, 'campaign_teaser', ctx);
+      if (/teaser|face.off/.test(t)) return takeReply('campaign_teaser', text, 'campaign_teaser', ctx);
       if (/marketing campaign|food has character/.test(t)) return takeReply('campaign', text, 'campaign', ctx);
       if (/cat/.test(t) && /(nutrient|require|taurine|amino|obligate|carnivore)/.test(t)) return takeReply('catnutrients', text, 'catnutrients', ctx);
       if (/identif.*cat|cat.*(food|feed)|feed me|as a cat/.test(t)) return takeReply('cat', text, 'cat', ctx);
@@ -12906,7 +12960,7 @@
       return host.querySelector(`.sc-line-wiseai[data-ask-turn="${CSS.escape(turn)}"] .sc-surface-rail[data-surface-rail="${CSS.escape(railId)}"]`);
     }
 
-    function postSurfaceBlock(which, { icon, title, meta, html, versionKey, versionReset, rail, cardLayout, railLead, inTranscript }) {
+    function postSurfaceBlock(which, { icon, title, meta, html, say, versionKey, versionReset, rail, cardLayout, railLead, inTranscript }) {
       const blockId = 'blk' + (++surfaceSeq);
       /* The compare board is engine-rendered into a fixed #cmp-body; strip those
          ids (and the References cards' #cat-ref-N ids) from the preview clone so
@@ -12946,6 +13000,19 @@
          outputs are chips on the same portrait rail. */
       if (inTranscript === false) return;
       if (chat && typeof chat.addWISEcodeAI === 'function') {
+        /* The turn writes BOTH readings of its output — the full-size one in
+           the thread and the chip that opens the pane — and the member's
+           preference decides which is on screen (js/output-mode.js). Writing
+           both is what makes the three-dot switch instant and retroactive:
+           nothing is regenerated, and a turn from earlier in the thread
+           re-reads with it.
+
+           An output drawn in the thread is introduced the way WISEcodeAI
+           introduces anything else — a line of its own saying what it just
+           did. The card reading does not repeat it: there the chip's title is
+           the same sentence in two words. */
+        const inlineHtml = (say ? `<p class="sc-out sc-out--inline">${say}</p>` : '')
+          + `<div class="sc-out sc-out--inline wa-pane-body" data-activity="output"${count > 1 ? ' data-activity-multi' : ''}>${previewHtml}</div>`;
         /* A preview card is posted mid-turn (while WISEcodeAI is still "thinking"),
            so it must NOT trail the intent chips — those belong to the actual
            answer that lands after it, and should animate in there. */
@@ -12960,19 +13027,65 @@
           existingRail.insertAdjacentHTML('beforeend', cardHtml);
           const added = existingRail.lastElementChild;
           try { added && added.scrollIntoView({ inline: 'end', block: 'nearest', behavior: 'smooth' }); } catch (_) {}
+          /* A line of its own in the thread is a new combo: the intro and the
+             artwork sit in a fresh WISEcodeAI chat, so they read as the next
+             thing said rather than a caption jammed under the piece above.
+             The card still joins the shared rail — that reading stays one
+             carousel. A say-less follow-up (the atlas) has no intro to
+             separate, so it keeps appending into the line it already has. */
+          if (say) {
+            const surfLine = chat.addWISEcodeAI(inlineHtml, { feedback: true, trailChips: false });
+            if (surfLine) surfLine.classList.add('sc-line-out-inline');
+            bootInlineOutput(surfLine && surfLine.querySelector('.sc-out--inline.wa-pane-body'));
+            decorateSurfaceMeta(surfLine, { time, version: count, count, blockId });
+            syncSurfaceVersionThumbs(blockId, list[list.length - 1]);
+            return;
+          }
+          const body = existingRail.closest('.sc-line-body');
+          const prior = body && body.querySelectorAll('.sc-out--inline.wa-pane-body');
+          const lastInline = prior && prior.length ? prior[prior.length - 1] : null;
+          if (lastInline) {
+            lastInline.insertAdjacentHTML('afterend', inlineHtml);
+            const now = body.querySelectorAll('.sc-out--inline.wa-pane-body');
+            bootInlineOutput(now[now.length - 1]);
+          }
           syncSurfaceVersionThumbs(blockId, list[list.length - 1]);
           return;
         }
         const lead = railLead
-          ? `<p class="sc-surface-rail-lead">${railLead}</p>`
+          ? `<p class="sc-surface-rail-lead sc-out sc-out--card">${railLead}</p>`
           : '';
-        const wrap = rail
-          ? `${lead}<div class="sc-surface-rail sc-surface-rail--bleed" data-surface-rail="${esc(rail)}" role="region" aria-roledescription="carousel" aria-label="Chart outputs">${cardHtml}</div>`
-          : cardHtml;
-        const surfLine = chat.addWISEcodeAI(wrap, { feedback: true, trailChips: false });
+        const cards = rail
+          ? `${lead}<div class="sc-surface-rail sc-surface-rail--bleed sc-out sc-out--card" data-surface-rail="${esc(rail)}" role="region" aria-roledescription="carousel" aria-label="Chart outputs">${cardHtml}</div>`
+          : markAsCard(cardHtml);
+        const surfLine = chat.addWISEcodeAI(inlineHtml + cards, { feedback: true, trailChips: false });
+        bootInlineOutput(surfLine && surfLine.querySelector('.sc-out--inline.wa-pane-body'));
         decorateSurfaceMeta(surfLine, { time, version: count, count, blockId });
         syncSurfaceVersionThumbs(blockId, list[list.length - 1]);
       }
+    }
+    /* The card reading is stamped in place rather than wrapped: every
+       transcript rule that styles a chip or a rail is written as a direct
+       child of the line body, and a wrapper element would silently stop all
+       of them matching. */
+    function markAsCard(html) {
+      const t = document.createElement('template');
+      t.innerHTML = html;
+      Array.from(t.content.children).forEach((el) => el.classList.add('sc-out', 'sc-out--card'));
+      return t.innerHTML;
+    }
+    /* An output drawn in the thread needs the same start its pane copy gets —
+       charts sized, tables wired, compare boards seeded, galleries packed. */
+    function bootInlineOutput(el) {
+      if (!el) return;
+      requestAnimationFrame(() => {
+        waBootDashCharts(el);
+        el.querySelectorAll('.wa-tbl:not([data-ready])').forEach((tbl) => initTable(tbl));
+        el.querySelectorAll('.cmp-host:not([data-ready])').forEach((h) => bootCompareEngine(h));
+        const TM = window.WiseTranscriptMasonry;
+        if (TM && TM.mount) TM.mount(el);
+        if (TM && TM.pack) el.querySelectorAll('.sc-mgrid').forEach((g) => TM.pack(g));
+      });
     }
 
     /* Re-open a surfaced block from its inline preview. If the block is still in
@@ -14243,6 +14356,16 @@
             meta: 'Run 1 \u00b7 80 foods \u00b7 no duplicate scoring brackets',
             html: myfoodsFatqDonutChart(),
           });
+        /* The campaign's artwork is output like any chart: the answer reads,
+           then the finished pieces, the deck and the spots arrive. They share
+           one rail in the card reading; in the thread each intro is its own
+           WISEcodeAI chat so the sections stay separate. Each follow-up
+           re-cuts the same buy, so a re-cut re-versions into the slot it
+           already has. */
+        } else if (intent === 'campaign') {
+          surfaceSet(campaignOutputs(), { rail: 'wise-campaign' });
+        } else if (intent.indexOf('campaign_') === 0) {
+          surfaceSet(campaignFollowupOutputs(intent), { rail: 'wise-campaign' });
         }
         /* Most turns are just an answer. When nothing queued, give the output
            stage straight back so the closing chips are not left waiting on a
@@ -14929,14 +15052,15 @@
             /* Double-width campaign card: the billboard is the whole card, so it
                carries no headline of its own \u2014 just the pill and the CTA. */
             { variant: 'welcome', xl: true, artOnly: true, art: '../assets/wise-campaign/card-hero-billboard.jpg', pill: { tone: 'gold', icon: 'campaign', text: 'Campaign' }, title: 'Good taste. Great characters.', action: 'Generate a campaign', intent: 'campaign', ask: WISE_CAMPAIGN_BRIEF },
-            { variant: 'welcome', art: '../assets/think-wise/thumbs/mold-trio-plaza.jpg', pill: { tone: 'gold', icon: 'park', text: 'Campaign' }, title: 'The owls leave the screen.', desc: 'Rue, Ollie and Sage \u2014 named, moulded nine feet tall, and installed in a park. Billboards, sculptures, the walk and the film.', action: 'Show me the work', intent: 'thinkwise', ask: THINK_WISE_BRIEF },
+            { variant: 'welcome', art: '../assets/think-wise/thumbs/park-concourse-trio.jpg', pill: { tone: 'gold', icon: 'park', text: 'Campaign' }, title: 'The owls leave the screen.', desc: 'Your own three WISEOWLS \u2014 named Rue, Ollie and Sage, built as sculpture, and installed the length of Golden Gate Park. Billboards, the walk and the film.', action: 'Show me the work', intent: 'thinkwise', ask: THINK_WISE_BRIEF },
+            { variant: 'welcome', art: '../assets/food-truth-line/thumbs/adult-everyday.jpg', icon: 'checkroom', pill: { tone: 'gold', icon: 'checkroom', text: 'Apparel' }, title: 'Wear the truth.', desc: 'FOODTRUTH \u2014 kids through adults, black-tie to the beach, and the accessories that go with them. The finished lookbook, packed in the answer.', action: 'Create the line', intent: 'clothing', ask: FOOD_TRUTH_LINE_BRIEF },
             { variant: 'welcome', icon: 'insights', title: 'Smarter decisions start here.', desc: 'Your whole brand in one read \u2014 WISEscore, coverage, flagged ingredients, and what to fix first.', action: 'Show me', intent: 'brandwelcome', ask: 'Welcome! Give me an overview of my entire brand.' },
             { variant: 'welcome', chart: 'upf', icon: 'donut_large', pill: { tone: 'up', icon: 'verified', text: '92% Non-UPF' }, title: 'Your brand UPF', desc: 'The same Non-UPF read as Overview \u2014 22 of 24 analyzed products.', action: 'Open the overview', intent: 'brandwelcome', ask: 'Show me my brand UPF overview.' },
             { variant: 'welcome', chart: 'pillars', icon: 'stacked_bar_chart', pill: { tone: 'up', icon: 'leaderboard', text: '79 Good' }, title: 'The three WISEscore pillars', desc: 'Nutrient quality, ingredient quality, and health outcomes \u2014 scored the way Overview does.', action: 'See the breakdown', intent: 'brand_pillars', ask: 'Break down my WISEscore pillars.' },
             { variant: 'welcome', chart: 'race', icon: 'sports_score', pill: { tone: 'up', icon: 'north', text: 'Leads 3 of 3' }, title: 'Race my granola against the shelf', desc: 'Three codes, three products \u2014 the opening read of the comparison board.', action: 'Run the race', intent: 'compare', ask: 'Compare a few products side by side' },
             { variant: 'metric', icon: 'leaderboard', pill: { tone: 'up', icon: 'north', text: 'Top 3' }, metric: '22,514', title: 'Top 3 brands, top-half WISEscore', desc: 'Brands with the most foods scoring 50 or higher.', action: 'Compare', intent: 'topbrands', ask: 'Create a comparison chart of the top three brands with more than 50 UPCs that are in the top half of the WISE score.' },
             { variant: 'metric', icon: 'inventory_2', pill: { tone: 'alert', icon: 'science', text: '46.9% UPF' }, metric: '1,874', title: 'Kraft SKUs and their UPF share', desc: 'Every Kraft product in the catalog, split by the WISEcode UPF verification.', action: 'Break it down', intent: 'kraft', ask: 'How many SKUs does Kraft have and what percent are ultra processed?' },
-            { variant: 'gold', large: true, icon: 'campaign', pill: { tone: 'gold', icon: 'movie', text: 'Campaign' }, title: 'Generate a marketing campaign', desc: 'The catalog cast as food characters, and the sixteen finished pieces they front \u2014 billboards, wraps, posters, merch and two priced lookbooks \u2014 plus a two-series collector set and the teaser cut for it.', action: 'Generate', intent: 'campaign', ask: WISE_CAMPAIGN_BRIEF },
+            { variant: 'gold', large: true, icon: 'campaign', pill: { tone: 'gold', icon: 'movie', text: 'Campaign' }, title: 'Generate a marketing campaign', desc: 'The catalog cast as food characters, and the sixteen finished pieces they front \u2014 billboards, wraps, posters, merch and two priced lookbooks \u2014 plus the Food Truth Wins collector set and the two spots cut for it.', action: 'Generate', intent: 'campaign', ask: WISE_CAMPAIGN_BRIEF },
             { variant: 'metric', icon: 'verified', pill: { tone: 'alert', icon: 'warning', text: '81 unsafe' }, metric: '8,658', title: 'Ingredients with a GRAS status', desc: 'GRAS, Historical and Unclear \u2014 and the handful that came back Unsafe.', action: 'Count', intent: 'gras', ask: 'How many ingredients do we have some GRAS classification for?' },
             { variant: 'metric', icon: 'storefront', pill: { tone: 'up', icon: 'storefront', text: 'Retailer' }, metric: '20,635', title: 'How many foods does Sprouts have?', desc: 'Distinct Sprouts-carried products matched against WISEcode.', action: 'Count', intent: 'sprouts', ask: 'How many foods does the Sprouts retailer have?' },
             { variant: 'wiseai', icon: 'auto_awesome', title: 'Is this ultra-processed?', desc: 'Paste an ingredient list for a WISEcode UPF read.', action: 'Ask', intent: 'upf', ask: 'Is this ingredient list ultra-processed?' },

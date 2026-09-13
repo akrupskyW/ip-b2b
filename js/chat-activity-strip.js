@@ -39,10 +39,11 @@
  * Ticks are clickable: a click scrolls the transcript to the landmark and
  * flashes it. When an output has more than one version the tick is drawn as a
  * pair stacked a few pixels apart — two tabs mean "more than one", never three
- * or four. When a SINGLE prompt produces several outputs, those landmarks do
- * not each get their own tab (which stacked into a long ladder of ear-marks);
- * they collapse into ONE ear-mark carrying a tiny count of how many outputs the
- * turn made — that one mark is what anchors you back to that block of content.
+ * or four. Outputs that share one chat line (one combo — a rail of chips, or
+ * several galleries stacked in the same bubble) collapse into ONE ear-mark
+ * carrying a tiny count, so nine preview cards do not ladder into nine tabs.
+ * Outputs that land as separate chats each get their own ear-mark, even when
+ * they came from the same ask — each combo is its own landmark.
  * The pane-resize drag handle shares this edge, but because the rail
  * lives at the body level (above the drag overlay — see .wa-activity-strip
  * z-index in wiseai.html) with the rail itself pointer-events:none, only the
@@ -171,7 +172,7 @@ export function mountActivityStrip({
 
   ensureActivityStripStyles();
   if (_mounted) teardownStrip(_mounted);
-  const state = { chat, messages, strip: null, mo: null, ro: null, raf: 0, onResize: null, onScroll: null, onAnim: null };
+  const state = { chat, messages, strip: null, mo: null, ro: null, raf: 0, onResize: null, onScroll: null, onMode: null, onAnim: null };
   _mounted = state;
   if (isActivityStripOn()) buildStrip(state);
   return state;
@@ -428,6 +429,10 @@ function buildStrip(state) {
     attributes: true,
     attributeFilter: ['data-activity', 'data-activity-multi'],
   });
+  /* Switching the thread/cards reading swaps which stamps are live, so the
+     rail has to re-count. The attribute lives on <html>, not in the transcript. */
+  state.onMode = schedule;
+  document.addEventListener('wise:output-mode', state.onMode);
   /* Reflow (module resized/docked, width toggle) shifts every position. */
   if (typeof ResizeObserver === 'function') {
     state.ro = new ResizeObserver(schedule);
@@ -465,6 +470,7 @@ function teardownStrip(state) {
   if (state.ro) { state.ro.disconnect(); state.ro = null; }
   if (state.onResize) { window.removeEventListener('resize', state.onResize); state.onResize = null; }
   if (state.onScroll) { window.removeEventListener('scroll', state.onScroll, true); state.onScroll = null; }
+  if (state.onMode) { document.removeEventListener('wise:output-mode', state.onMode); state.onMode = null; }
   if (state.onAnim) {
     document.removeEventListener('transitionend', state.onAnim, true);
     document.removeEventListener('animationend', state.onAnim, true);
@@ -484,7 +490,7 @@ function refresh(state) {
      fully hidden rather than drawing an empty line down the module. It appears
      the moment the first landmark lands, or as soon as a prompt has been
      answered (the jump tab needs a home). The MutationObserver re-runs this. */
-  const els = messages.querySelectorAll('[data-activity]');
+  const els = messages.querySelectorAll(activityLandmarkSelector());
   const promptEl = lastAnsweredPrompt(messages);
   if (!els.length && !promptEl) {
     strip.style.display = 'none';
@@ -549,26 +555,24 @@ function refresh(state) {
     return Math.max(0, Math.min(1, f));
   };
 
-  /* Several outputs from the SAME prompt collapse into one counted ear-mark.
-     They are grouped by the ASK they came from (data-ask-turn, stamped on every
-     line by the chat), not by each line's own turn ID: one prompt that surfaces
-     nine outputs posts nine preview lines with nine different IDs, and grouping
-     on those drew a ladder of nine marks instead of one mark reading "9".
-     Chats that predate the stamp fall back to the line's turn ID, so a single
-     output still groups with itself. Every other landmark (source / database)
-     stays its own tick. */
+  /* Several outputs that share one chat line collapse into one counted
+     ear-mark. That line is the combo — a rail of chips, or a few galleries
+     stacked in the same bubble — so nine preview cards in one line still
+     read as one mark of "9". Outputs that land as separate chats each get
+     their own ear-mark, even when they came from the same ask. Every other
+     landmark (source / database) stays its own tick. */
   const groups = [];
-  const outputByAsk = new Map();
+  const outputByLine = new Map();
   els.forEach((el) => {
     const type = el.getAttribute('data-activity');
     const meta = ACTIVITY_TYPES[type];
     /* `prompt` is the jump tab, not a mapped landmark. */
     if (!meta || type === 'prompt') return;
     const turnId = turnIdFor(el);
-    const askKey = askTurnFor(el) || turnId;
-    if (type === 'output' && askKey) {
-      let g = outputByAsk.get(askKey);
-      if (!g) { g = { type, turnId, els: [] }; outputByAsk.set(askKey, g); groups.push(g); }
+    const line = lineFor(el);
+    if (type === 'output' && line) {
+      let g = outputByLine.get(line);
+      if (!g) { g = { type, turnId, els: [] }; outputByLine.set(line, g); groups.push(g); }
       g.els.push(el);
     } else {
       groups.push({ type, turnId, els: [el] });
@@ -723,19 +727,29 @@ function lastAnsweredPrompt(messages) {
    user sees on the answer (and now on database-switch event lines, which stamp
    their own `.sc-fb-id`). Lines without an ID return '' and get no label. */
 function turnIdFor(el) {
-  const line = el.closest && el.closest('.sc-line');
+  const line = lineFor(el);
   if (!line) return '';
   const idEl = line.querySelector('.sc-fb-id');
   if (!idEl) return '';
   return (idEl.textContent || '').trim();
 }
 
-/* The member ask a landmark belongs to. The chat stamps this on every line it
-   adds, so all the outputs one prompt produced share it even though each line
-   carries its own turn ID. */
-function askTurnFor(el) {
-  const line = el.closest && el.closest('.sc-line');
-  return (line && line.dataset && line.dataset.askTurn) || '';
+/* The chat line a landmark sits in — that line is the combo the ear-mark
+   stands for. */
+function lineFor(el) {
+  return (el && el.closest && el.closest('.sc-line')) || null;
+}
+
+/* Which output stamps are live for the reading on screen. Both twins are
+   written; only the visible one should tick, or a rail of chips and the
+   separate chats they pair with would double-count. */
+function activityLandmarkSelector() {
+  const mode = (typeof document !== 'undefined'
+    && document.documentElement.getAttribute('data-output-mode')) || 'inline';
+  const outputs = mode === 'cards'
+    ? '.sc-surface-card[data-activity="output"]'
+    : '.sc-out--inline[data-activity="output"]';
+  return `${outputs}, [data-activity="source"], [data-activity="database"]`;
 }
 
 /* Bring a landmark into view (centered in the transcript's scrollport) and

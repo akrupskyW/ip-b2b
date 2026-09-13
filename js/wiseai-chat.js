@@ -42,6 +42,9 @@ import { userAvatarImg } from './user-avatar.js';
    surface asks in full without any chip's wording or size changing. */
 import { expandIntentPrompt } from './intent-prompt.js';
 import { esc } from './escape-html.js';
+import {
+  getOutputMode, setOutputMode, onOutputModeChange, OUTPUT_MODE_LABELS,
+} from './output-mode.js';
 import { openModal, closeModal, modalHTML } from './wise-modal.js';
 import { OWL_BUG, OWL_MARK } from './owl-mark.js';
 import { overviewCardChartHtml, playOverviewCardCharts } from './welcome-overview-cards.js';
@@ -1749,6 +1752,23 @@ export function injectChatExtras() {
       color: var(--text-subtle); font-variant-numeric: tabular-nums;
     }
     html.dark .sc-fb-menu-ver { border-right-color: rgba(255,255,255,0.10); }
+    /* Where-outputs-go. Two full-width rows rather than icons, because the
+       choice needs its words: the icon alone cannot say "in the thread". */
+    .sc-fb-menu-outs { display: flex; flex-direction: column; gap: 1px; width: 100%; }
+    .sc-fb-outmode { display: flex; align-items: center; gap: 8px; width: 100%;
+      padding: 6px 7px; border: 0; border-radius: 7px; background: transparent;
+      font: inherit; font-size: 12px; line-height: 1.3; color: var(--text);
+      text-align: left; cursor: pointer; }
+    .sc-fb-outmode:hover { background: color-mix(in srgb, var(--text) 7%, transparent); }
+    .sc-fb-outmode:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+    .sc-fb-outmode-i { font-size: 17px !important; color: var(--text-subtle); flex-shrink: 0; }
+    .sc-fb-outmode-l { flex: 1 1 auto; }
+    .sc-fb-outmode-k { font-size: 16px !important; color: var(--primary); opacity: 0; flex-shrink: 0; }
+    .sc-fb-outmode.is-on { font-weight: 650; }
+    .sc-fb-outmode.is-on .sc-fb-outmode-i { color: var(--primary); }
+    .sc-fb-outmode.is-on .sc-fb-outmode-k { opacity: 1; }
+    html.dark .sc-fb-outmode-k { color: #7fb0ff; }
+    html.dark .sc-fb-outmode.is-on .sc-fb-outmode-i { color: #7fb0ff; }
     .sc-fb-menu-div { display: block; height: 1px; margin: 6px 0 5px;
       background: var(--border, rgba(20,40,80,0.12)); }
     html.dark .sc-fb-menu-div { background: rgba(255,255,255,0.10); }
@@ -10449,9 +10469,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
 
   /* Which ask the lines being added belong to. One member ask can produce a
      whole run of WISEcodeAI lines — a preview card per surfaced output, then the
-     answer itself — and each of those lines gets its own turn ID. Anything that
-     needs to know "these all came from the same prompt" (the activity strip's
-     ear-marks) groups on this, not on the per-line IDs. */
+     answer itself — and each of those lines gets its own turn ID. The stamp is
+     how a follow-up re-cut finds the rail it already has. Ear-marks group on
+     the chat line (the combo), not on this. */
   let askTurnSeq = 0;
 
   /* ── A turn is a sequence, not a pile ──────────────────────────────────────
@@ -10579,6 +10599,48 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
               </div>
             </div>`;
   }
+  /* Where this turn's outputs are drawn. Both representations are already in
+     the thread (see js/output-mode.js) — these two rows only choose which one
+     is on screen, so the answer above them never moves and nothing is rebuilt.
+     The preference is app-wide, which is why the row reads the same on every
+     turn's menu rather than tracking the one it sits under. */
+  function outModeRowHtml() {
+    const cur = getOutputMode();
+    const row = (mode, icon) => (
+      `<button type="button" class="sc-fb-outmode${cur === mode ? ' is-on' : ''}"`
+      + ` data-out-mode="${mode}" role="menuitemradio" aria-checked="${cur === mode}">`
+      + `<span class="material-symbols-outlined sc-fb-outmode-i" aria-hidden="true">${icon}</span>`
+      + `<span class="sc-fb-outmode-l">${esc(OUTPUT_MODE_LABELS[mode])}</span>`
+      + `<span class="material-symbols-outlined sc-fb-outmode-k" aria-hidden="true">check</span>`
+      + `</button>`
+    );
+    return `<span class="sc-fb-menu-div" aria-hidden="true"></span>`
+      + `<span class="sc-fb-menu-outs" role="group" aria-label="Where outputs are shown">`
+      + row('inline', 'view_day')
+      + row('cards', 'grid_view')
+      + `</span>`;
+  }
+  /* Older rows in a restored thread predate the option; give them one too, so
+     the menu reads identically wherever the member opens it. */
+  function ensureOutModeRow(fb) {
+    const menu = fb && fb.querySelector && fb.querySelector('.sc-fb-menu');
+    if (!menu || menu.querySelector('.sc-fb-menu-outs')) return;
+    const tokens = menu.querySelector('.sc-fb-menu-tokens');
+    const div = tokens && tokens.previousElementSibling;
+    const html = outModeRowHtml();
+    if (div && div.classList.contains('sc-fb-menu-div')) div.insertAdjacentHTML('beforebegin', html);
+    else menu.insertAdjacentHTML('beforeend', html);
+  }
+  /* One preference, many menus: re-read every row from the stored mode rather
+     than from whichever button was pressed. */
+  function syncOutModeRows(mode) {
+    const m = mode || getOutputMode();
+    document.querySelectorAll('.sc-fb-outmode').forEach((btn) => {
+      const on = btn.getAttribute('data-out-mode') === m;
+      btn.classList.toggle('is-on', on);
+      btn.setAttribute('aria-checked', String(on));
+    });
+  }
   function feedbackRowHtml(timeMs) {
     const tid = makeTurnId();
     const upPop = reasonsPopoverHtml('up', accurateReasons, 'What was accurate?', 'What worked? (optional)');
@@ -10613,6 +10675,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
                 <button type="button" class="sc-fb-btn" data-fb="file" data-tip="File to folder" aria-label="File this conversation to a folder" aria-haspopup="true"><span class="material-symbols-outlined">drive_file_move</span></button>
                 <span class="sc-fb-id" data-tip="Turn ID" tabindex="0">#${esc(tid)}</span>
               </span>
+              ${outModeRowHtml()}
               ${tokenRowHtml(tokens)}
             </div>
           </span>
@@ -10660,6 +10723,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       }
       ensureFileMenuBtn(fb);
       ensureTokenRow(fb);
+      ensureOutModeRow(fb);
       const menu = fb.querySelector('.sc-fb-menu');
       const actions = menu && menu.querySelector('.sc-fb-menu-actions');
       const ver = menu && menu.querySelector(':scope > .sc-fb-menu-ver');
@@ -10685,6 +10749,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        next beat. */
     if (el.querySelector('.sc-connect-flow, [data-cf-step], .sc-preflight')) return false;
     if (el.querySelector('.sc-surface-rail-lead') && el.querySelector('.sc-surface-rail')) return true;
+    /* The card-mode twin rides along in the same line so the three-dot
+       switch is free. It must not block typing the intro that belongs
+       to the thread reading. */
+    if (el.querySelector('.sc-out--inline')) return true;
     return !el.querySelector('.sc-surface-card');
   }
   function typeInLine(bodyEl, done) {
@@ -14618,6 +14686,16 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (portaled && messages && !messages.contains(portaled) && isThisChatFb(e.target)) {
       onFbClick(e);
     }
+    /* Where outputs are drawn. The menu stays open on purpose: the thread
+       behind it re-reads on the spot, so the member can see what they picked
+       and flip back without hunting for the control again. */
+    const outBtn = e.target.closest('.sc-fb-outmode[data-out-mode]');
+    if (outBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      setOutputMode(outBtn.getAttribute('data-out-mode'));
+      return;
+    }
     if (!e.target.closest('.sc-fb-down-wrap, .sc-fb-up-wrap, .sc-fb-reasons')) closeReasonPopovers();
     /* Leave the menu open while interacting inside it (copy turn ID, etc.); a
        click that lands on the trigger is handled by its own toggle above. */
@@ -14652,6 +14730,10 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { closeReasonPopovers(); closeMoreMenus(); }
+  });
+  onOutputModeChange((mode) => {
+    syncOutModeRows(mode);
+    scrollDown();
   });
 
   /* Answer-action hover labels are the shared #lir-tooltip. wireAnswerTips()

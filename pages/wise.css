@@ -8308,12 +8308,6 @@ html.dark .sc-line-body .sc-inline-tbl td {
   border: 0;
   background: #000;
 }
-.sc-line-body .sc-inline-film-cap {
-  margin-top: 7px;
-  font-size: 0.78em;
-  line-height: 1.45;
-  color: var(--text-muted);
-}
 /* Ingredient lookup cards — WISEcode match results, in the shared chat. Each
    candidate is a full-width INTENT CHIP: the same tinted surface, strong
    border, brand-blue leading glyph and hover as the output intent chips
@@ -8894,7 +8888,13 @@ html.dark .ws-scorecard--hero:hover {
   color: #fff;
   text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
 }
-.ws-scorecard--hero .ws-sc-desc { color: rgba(255, 255, 255, 0.88); text-shadow: 0 1px 10px rgba(0, 0, 0, 0.3); }
+/* One notch heavier than the copy on a plain card: this line is white over a
+   photograph rather than ink on a surface, and 400 reads thin against it. */
+.ws-scorecard--hero .ws-sc-desc {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.88);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.3);
+}
 .ws-scorecard--hero .ws-sc-action { color: #fff; }
 .ws-scorecard--hero .ws-sc-icon { color: #fff; }
 .ws-scorecard--hero .ws-sc-pill { background: rgba(255, 255, 255, 0.22); color: #fff; }

@@ -3,7 +3,11 @@
 The film is not separate footage: every shot is one of the finished pieces in
 assets/think-wise, pushed into slowly, cut against title cards that carry the
 three-part line. That is deliberate — the campaign owns the billboards and the
-molds, so the film is those objects rather than a parallel set of renders.
+sculptures, so the film is those objects rather than a parallel set of renders.
+
+It is also why the owls in it are the app's own red, blue and green owls: the
+artwork was generated against those files, and the film only ever re-frames
+the artwork, so there is nowhere for a new owl to enter.
 
 There is no ffmpeg on this machine, so frames are rendered here and handed to
 scripts/_stills_to_mp4.swift, which encodes them through AVFoundation.
@@ -59,12 +63,15 @@ def ease(t):
 
 
 def lockup():
-    """The white WISEcode lockup, lifted off the park map.
+    """The white WISEcode lockup, lifted off the park map, as RGBA.
 
-    The map renders it flat and unforeshortened on the same navy the cards use,
-    so it composites onto an end card without a seam. Finding it by its own
-    pixels rather than by hardcoded coordinates keeps this honest if the map is
-    ever regenerated.
+    The map renders it flat and unforeshortened, but on its own footer navy,
+    which is not the navy the title cards use — pasting the crop opaque leaves
+    a rectangle around it. So the mark's own brightness becomes its alpha: the
+    ground falls away, the white stays, and the antialiased edges survive.
+
+    Finding it by its own pixels rather than by hardcoded coordinates keeps
+    this honest if the map is ever regenerated.
     """
     if "__lockup" in _art_cache:
         return _art_cache["__lockup"]
@@ -84,7 +91,13 @@ def lockup():
     pad = 8
     box = (max(0, min(xs) - pad), max(0, min(ys) - pad),
            min(quad.width, max(xs) + pad + 1), min(quad.height, max(ys) + pad + 1))
-    _art_cache["__lockup"] = quad.crop(box)
+    crop = quad.crop(box)
+    lo, hi = 70, 230
+    alpha = crop.convert("L").point(
+        lambda v: 0 if v <= lo else 255 if v >= hi else int((v - lo) * 255 / (hi - lo)))
+    mark = Image.new("RGBA", crop.size, CREAM + (0,))
+    mark.putalpha(alpha)
+    _art_cache["__lockup"] = mark
     return _art_cache["__lockup"]
 
 
@@ -147,7 +160,7 @@ def endcard(dur):
         target_w = int(ow * (0.30 + 0.012 * ease(t / dur if dur else 1.0)))
         scale = target_w / float(mark.width)
         mark_r = mark.resize((target_w, max(1, int(mark.height * scale))), Image.LANCZOS)
-        im.paste(mark_r, ((ow - mark_r.width) // 2, int(oh * 0.34) - mark_r.height // 2))
+        im.paste(mark_r, ((ow - mark_r.width) // 2, int(oh * 0.34) - mark_r.height // 2), mark_r)
         d = ImageDraw.Draw(im)
         line = "FOOD FOR TRUTH"
         f = font(84)
@@ -158,7 +171,10 @@ def endcard(dur):
 
 
 # The cut. Rue doubts it, Ollie scans it, Sage gives the verdict — the same
-# order as the line, so the film teaches the line without explaining it.
+# order as the line, so the film teaches the line without explaining it. Then
+# the park, played as a run of sizes rather than a run of places: nine inches
+# in the Tea Garden, eighteen feet at the Conservatory, the hillside at Stow
+# Lake, and the concourse lit after dark.
 TIMELINE = [
     card("INFORMATION IS EASY.", CREAM, 2.0),
     card("TRUTH IS NOT.", GOLD, 1.8),
@@ -169,8 +185,12 @@ TIMELINE = [
     push("mold-ollie-code-wise", 2.3, 1.12, 1.26, (0.52, 0.30)),
     card("LIVE WISE.", GREEN, 1.3),
     push("mold-sage-live-wise", 2.3, 1.12, 1.26, (0.50, 0.32)),
-    push("park-approach-lane", 2.8, 1.00, 1.22, (0.55, 0.46)),
-    push("mold-night-lit", 3.0, 1.04, 1.18, (0.50, 0.46)),
+    card("GOLDEN GATE PARK.", CREAM, 1.6),
+    push("park-approach-lane", 2.6, 1.00, 1.20, (0.50, 0.50)),
+    push("park-tea-garden-small", 2.2, 1.10, 1.30, (0.30, 0.62)),
+    push("park-conservatory-giants", 2.6, 1.00, 1.18, (0.50, 0.48)),
+    push("park-stow-lake-flock", 2.4, 1.00, 1.16, (0.55, 0.44)),
+    push("park-concourse-night", 2.8, 1.04, 1.18, (0.50, 0.50)),
     endcard(2.6),
 ]
 

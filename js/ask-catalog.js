@@ -402,7 +402,7 @@
               prompts: ['Wise Owl Progression'],
               tools: [] },
             { title: 'Generate a marketing campaign', icon: 'campaign',
-              desc: 'A cast of food characters and the finished campaign they front — billboard, bus and van wraps, shelter posters, social cover, magazine page, banners, merch and two priced lookbooks — laid out edge to edge in the answer as a masonry grid you can open full size, with the two-series Food Truth Wins collector set on its own carousel below it and the eight-second teaser it was cut for. Nothing opens on the right.',
+              desc: 'A cast of food characters and the finished campaign they front. The answer reads first, then four outputs land as chips beneath it: the sixteen finished pieces as an edge-to-edge masonry gallery, the Food Truth Wins deck as a fixed grid of equal cards, and the two eight-second spots cut for it — the ground-level teaser and the drawn heroes-against-villains face-off. Nothing opens until you tap a chip; then it fills the Output pane, and any piece opens full size from there.',
               /* The full brief lives with the campaign it asks for
                  (js/wise-campaign.js) and is read at render time, so a
                  surface without that module still offers the short ask. */
@@ -412,13 +412,23 @@
               },
               tools: [] },
             { title: 'The Wise Walk campaign', icon: 'park',
-              desc: 'The brand campaign built on the three WISEcode owls, named here for the first time \u2014 Rue doubts the claim, Ollie reads the code, Sage gives the verdict, one third of the line each. Their three character plates ride their own carousel, then the finished work lands edge to edge as a masonry grid you can open full size: three billboards, the model sheet, the owls built nine feet tall and installed in a plaza by day and lit at night, the park walk and its map, and a tower spectacular. The launch film, cut from the campaign\u2019s own artwork, plays last on its own controls. Nothing opens on the right.',
+              desc: 'The brand campaign built on the WISEcode owls you already have \u2014 no new characters, just names and jobs for the red, blue and green ones: Rue doubts the claim, Ollie reads the code, Sage gives the verdict, one third of the line each. Their three character plates ride their own carousel, then the finished work lands edge to edge as a masonry grid you can open full size: three billboards, a tower spectacular, the model sheet, and the same three owls built as sculpture and installed the length of Golden Gate Park \u2014 dozens of them, nine inches to eighteen feet, at ten stops with their own map. The launch film, cut from the campaign\u2019s own artwork, plays last on its own controls. Nothing opens on the right.',
               /* The full brief lives with the campaign it asks for
                  (js/think-wise-campaign.js) and is read at render time, so a
                  surface without that module still offers the short ask. */
               get prompts() {
                 var tw = global.WiseThinkWise;
                 return [(tw && tw.brief) || 'The Wise Walk campaign'];
+              },
+              tools: [] },
+            { title: 'Create a clothing line', icon: 'checkroom',
+              desc: 'A full FOODTRUTH apparel line on the owls and the lockup you already have \u2014 kids through adults, black-tie to the beach, and the accessories. Nineteen finished lookbook pages land edge to edge in the answer as a masonry grid you can open full size. Nothing opens on the right.',
+              /* The full brief lives with the line it asks for
+                 (js/food-truth-line.js) and is read at render time, so a
+                 surface without that module still offers the short ask. */
+              get prompts() {
+                var line = global.WiseFoodTruth;
+                return [(line && line.brief) || 'Create a clothing line'];
               },
               tools: [] },
           ],

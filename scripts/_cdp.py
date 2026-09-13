@@ -106,10 +106,32 @@ def _page_target(port, tries=80):
     return None
 
 
+def _free_port(preferred=9340):
+    """Give back a port nothing is listening on.
+
+    Every probe used to launch on 9340. Two probes at once meant the second
+    Chrome could not bind it, so the harness discovered the *first* probe's
+    target instead and both drove the same page — each one reading the other's
+    transcript and failing on findings that were never its own. Taking a free
+    port keeps concurrent probes in their own browsers.
+    """
+    for cand in (preferred, 0):
+        s = socket.socket()
+        try:
+            s.bind(("127.0.0.1", cand))
+            got = s.getsockname()[1]
+            return got
+        except OSError:
+            continue
+        finally:
+            s.close()
+    return preferred
+
+
 class Browser(object):
-    def __init__(self, port=9340, width=1440, height=900, out="/tmp/wise-shots"):
+    def __init__(self, port=None, width=1440, height=900, out="/tmp/wise-shots"):
         self.out = out
-        self.port = port
+        self.port = port = _free_port() if port is None else port
         os.makedirs(out, exist_ok=True)
         self._profile = tempfile.mkdtemp(prefix="wise-cdp-")
         self._proc = subprocess.Popen(

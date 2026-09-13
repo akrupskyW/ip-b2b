@@ -50,18 +50,18 @@ export const THINK_WISE_BRIEF = [
   '',
   'Lay the finished pieces out inside the answer, edge to edge, packed at their own shapes instead of in a scrolling row, and let me open any one of them full size. Run the three character plates in their own carousel, since they are all the same shape.',
   '',
-  'Then cut the launch film out of the campaign\u2019s own artwork rather than shooting a parallel set of renders: push slowly into the billboards and the molds, cut against title cards carrying the line, and close on the lockup and the sign-off. Play it inside the answer with its own controls, and do not start it on its own.',
+  'Then cut the launch film out of the campaign\u2019s own artwork rather than shooting a parallel set of renders: push slowly into the billboards and the sculptures, walk the park from the smallest owls to the biggest, cut against title cards carrying the line, and close on the lockup and the sign-off. Play it inside the answer with its own controls, and do not start it on its own.',
 ].join('\n');
 
 /**
  * The three owls — the app's own red, blue and green owls, given names and
- * jobs. `art` is the plate generated from that owl's file in
- * assets/owl-progression, which is the only place a new owl could have crept
- * in; there is no fourth character and no restyled twin.
+ * jobs. `file` is the character plate, and each plate was generated from that
+ * owl's own file in assets/owl-progression: there is no fourth character and
+ * no restyled twin.
  *
  * Same 3:4 plate as each other, so they ride the card rail rather than the
  * packed grid — and the rail is where a member meets them. `facts` is the
- * bible page; the rail caption uses `line` and `role`.
+ * bible page; each tile's own label uses `line` and `role`.
  */
 export const THINK_WISE_CHARACTERS = [
   {
@@ -145,7 +145,7 @@ function walkRoute() {
 
 /**
  * A meta line for a photograph of one stop, numbered off the route rather
- * than typed in — a stop that moves takes its caption with it.
+ * than typed in — a stop that moves takes its number with it.
  */
 function stopMeta(art, tail) {
   const i = WISE_WALK_STOPS.findIndex((s) => (s.art || []).includes(art));
@@ -165,6 +165,19 @@ export const THINK_WISE_MEDIA = [
     title: 'Think Wise. Code Wise. Live Wise.', meta: 'Highway billboard \u00b7 the whole line, all three owls' },
   { file: 'billboard-food-for-truth', w: 1280, h: 720,
     title: 'Food for Truth.', meta: 'Highway billboard \u00b7 the sign-off, with Ollie' },
+  /* The painted work, from the member's own boards. Each of these is a sheet
+     of several sites rather than a single execution, which is why they are
+     wider files than the billboards and carry a site count on their label. */
+  { file: 'board-store-murals', w: 1800, h: 1200,
+    title: 'Painted onto the grocery.', meta: 'Store exterior murals \u00b7 three sites \u00b7 all three owls, and the line' },
+  { file: 'board-city-walls', w: 1800, h: 1200,
+    title: 'City walls.', meta: 'Urban murals \u00b7 three sites \u00b7 Code. Create. Change.' },
+  { file: 'board-neighbourhood-murals', w: 1800, h: 1200,
+    title: 'Ollie, on his own.', meta: 'Neighbourhood murals \u00b7 three sites \u00b7 one owl carrying the whole line' },
+  { file: 'board-park-and-street', w: 1800, h: 1200,
+    title: 'Down at pavement level.', meta: 'Park mural & street furniture \u00b7 utility-box wraps, shelters, bins' },
+  { file: 'board-park-installation', w: 1800, h: 1200,
+    title: 'The park, seen all at once.', meta: 'Installation board \u00b7 the flock across the lawns, at every size' },
   { file: 'bible-model-sheet', w: 1152, h: 864,
     title: 'The character bible.', meta: 'Model sheet \u00b7 three views & two expressions each, with palettes' },
   { file: 'mold-rue-think-wise', w: 864, h: 1152,
@@ -212,7 +225,7 @@ export const THINK_WISE_MEDIA = [
 export const THINK_WISE_FILM = Object.freeze({
   file: 'film-the-wise-walk.mp4',
   title: 'The Wise Walk \u00b7 the launch film',
-  meta: 'Cut from the campaign\u2019s own artwork \u00b7 22 seconds \u00b7 silent',
+  meta: 'Cut from the campaign\u2019s own artwork \u00b7 30 seconds \u00b7 silent',
 });
 
 /**
@@ -227,6 +240,8 @@ const MEDIA_CUTS = {
     'park-concourse-trio', 'park-concourse-night', 'park-conservatory-giants', 'park-bison-paddock'],
   walk: ['park-map-installation', 'park-approach-lane']
     .concat(WISE_WALK_STOPS.reduce((all, s) => all.concat(s.art || []), [])),
+  murals: ['board-store-murals', 'board-city-walls', 'board-neighbourhood-murals',
+    'board-park-and-street', 'board-park-installation'],
   bible: ['bible-model-sheet'],
 };
 
@@ -243,7 +258,6 @@ function gridHtml(opts) {
   return masonryGridHtml({
     id: o.id,
     label: o.label,
-    caption: o.caption,
     items: items.map((m) => ({
       src: `${b}/${m.file}.jpg`,
       thumb: `${b}/thumbs/${m.file}.jpg`,
@@ -264,7 +278,6 @@ export function thinkWiseMediaHtml(base) {
     base,
     id: 'think-wise-media',
     label: 'Think Wise \u00b7 the campaign',
-    caption: `${THINK_WISE_MEDIA.length} finished pieces \u00b7 tap one to open it full size`,
     items: THINK_WISE_MEDIA,
   });
 }
@@ -278,7 +291,6 @@ export function thinkWiseCharactersHtml(base) {
   return cardRailHtml({
     id: 'think-wise-characters',
     label: 'The three owls \u00b7 character plates',
-    caption: `${THINK_WISE_CHARACTERS.length} characters \u00b7 Rue, Ollie & Sage \u00b7 tap one to open it full size`,
     aspect: 3 / 4,
     items: THINK_WISE_CHARACTERS.map((c) => ({
       src: `${b}/${c.file}.jpg`,
@@ -296,7 +308,6 @@ export function thinkWiseBibleHtml(base) {
   return characterBibleHtml({
     id: 'think-wise-bible',
     label: 'Rue, Ollie & Sage \u00b7 the character bible',
-    caption: 'One plate per owl \u00b7 the job, the tell, the palette, and what each one carries in the film.',
     base: `${String(base || THINK_WISE_BASE).replace(/\/$/, '')}/plates`,
     cast: THINK_WISE_CHARACTERS.map((c) => ({
       name: c.name,
@@ -319,7 +330,6 @@ export function thinkWiseFilmHtml(base) {
     + `<source src="${esc(`${b}/${THINK_WISE_FILM.file}`)}" type="video/mp4">`
     + 'Your browser can\u2019t play this film.'
     + '</video>'
-    + `<figcaption class="sc-inline-film-cap">${esc(THINK_WISE_FILM.title)} \u00b7 ${esc(THINK_WISE_FILM.meta)}</figcaption>`
     + '</figure>'
   );
 }
@@ -328,8 +338,10 @@ export function thinkWiseReply() {
   return (
     '<p>Here is the campaign, finished. It rests on one sentence — <strong>information is easy, truth is not</strong> — and on three owls who split that problem three ways.</p>'
     + '<p>They are the owls you already have. Nobody was designed for this: the red one, the blue one and the green one from the progression are the cast, and every piece below was made against those three files, so the owl on the billboard is the owl in the carousel. What they did not have was names. <strong>Rue</strong> is the doubt, in red, thumb down at the claim on the front of the box. <strong>Ollie</strong> is the read, in blue, both thumbs up because he has already found the thing in the ingredient list you were not meant to finish. <strong>Sage</strong> is the verdict, in green, thumb up at the shelf. That is the line — <strong>Think Wise. Code Wise. Live Wise.</strong> — and the sign-off is <em>Food for Truth</em>.</p>'
-    + thinkWiseCharactersHtml()
-    + `<p>${THINK_WISE_MEDIA.length} pieces came out of it — the three billboards and the tower spectacular, the character bible with every palette, and the installation: the same three owls built as real sculpture and put up across <strong>Golden Gate Park</strong>. They are laid out below, edge to edge. Tap any one to open it full size.</p>`
+    /* No plate rail here. The same three portraits carry the character bible on
+       the cast follow-up, and the gallery below is full of them — so running a
+       rail of plates first meant meeting the cast twice before seeing any work. */
+    + `<p>${THINK_WISE_MEDIA.length} pieces came out of it — the three billboards and the tower spectacular, the painted work across ${mediaCut('murals').length} boards of murals and street furniture, the character bible with every palette, and the installation: the same three owls built as real sculpture and put up across <strong>Golden Gate Park</strong>. They are laid out below, edge to edge. Tap any one to open it full size.</p>`
     + thinkWiseMediaHtml()
     + `<p>The park is where the campaign stops being advertising. <strong>The Wise Walk</strong> runs the length of Golden Gate Park — ${WISE_WALK_OWL_COUNT} owls at ${WISE_WALK_STOPS.length} stops, from nine inches on a garden path to eighteen feet outside the Conservatory of Flowers. Same three characters, over and over, at whatever size the place can take.</p>`
     + '<p>And the film is cut from the campaign itself. No parallel renders: it pushes slowly into the billboards and the sculptures, cuts against title cards carrying the line, and closes on the lockup under the sign-off. Cut silent so far. Press play when you want it; it waits for you.</p>'
@@ -342,13 +354,12 @@ export function thinkWiseCastReply() {
      repeat them in a second structured list — it says why there are three. */
   return (
     '<p>Three owls, one argument split three ways. They are not a mascot family: each one owns a different part of the problem, which is why the line has three parts and not one.</p>'
-    + '<p>The order is load-bearing. <strong>Rue</strong> doubts the claim, and he goes first because nothing else works until you stop believing the front of the box. <strong>Ollie</strong> reads what is actually in there, and he goes second because doubt on its own is just cynicism. <strong>Sage</strong> gives the verdict, and he goes last because it is the only part you can act on at the shelf.</p>'
+    + '<p>All three were already yours before the campaign started — this gave them names and jobs and nothing else. <strong>Rue</strong> doubts the claim, and he goes first because nothing else works until you stop believing the front of the box. <strong>Ollie</strong> reads what is actually in there, and he goes second because doubt on its own is just cynicism. <strong>Sage</strong> gives the verdict, and he goes last because it is the only part you can act on at the shelf. The thumb each one is already holding is the job: down, both up, one up.</p>'
     + thinkWiseBibleHtml()
-    + '<p>The model sheet is what makes them buildable rather than drawable: three views and two expressions each, on registration marks, with the palette chips beside them. The knitted texture is specified as real surface rather than a filter, which is what lets the same character survive being made nine feet tall.</p>'
+    + '<p>The model sheet is what makes them buildable rather than drawable: three views and two expressions each, on registration marks, with the palette chips beside them. It is also the guard rail — the sheet is drawn from the owls as they exist, so anybody fabricating one is matching the character rather than interpreting it, which is what lets the same owl survive being made eighteen feet tall.</p>'
     + gridHtml({
       id: 'think-wise-modelsheet',
       label: 'The character bible \u00b7 model sheet',
-      caption: 'The model sheet \u00b7 tap it to open it full size',
       items: mediaCut('bible'),
     })
   );
@@ -357,26 +368,37 @@ export function thinkWiseCastReply() {
 export function thinkWiseBillboardsReply() {
   return (
     '<p>The billboards have to land in about two seconds, so each site carries exactly one of the three jobs rather than the whole argument.</p>'
-    + '<p><strong>Rue</strong> takes the opening on his own: <em>Information is easy. Truth is not.</em> — cream over gold, arms still crossed. <strong>Ollie</strong> takes the sign-off, <em>Food for Truth</em>, thumb up against a daylight sky. The third site runs the whole line with all three owls in a row, which only works once the other two have taught you who they are.</p>'
+    + '<p><strong>Rue</strong> takes the opening on his own: <em>Information is easy. Truth is not.</em> — cream over gold, thumb still down. <strong>Ollie</strong> takes the sign-off, <em>Food for Truth</em>, both thumbs up against a daylight sky. The third site runs the whole line with all three owls in a row, which only works once the other two have taught you who they are.</p>'
     + '<p>The tower spectacular is the vertical cut: the three of them stacked with Sage at the top, lit against a night skyline, the line running full width above them.</p>'
     + gridHtml({
       id: 'think-wise-billboards',
       label: 'Out-of-home \u00b7 billboards & spectacular',
-      caption: `${mediaCut('billboards').length} pieces \u00b7 the outdoor buy \u00b7 tap one to open it full size`,
       items: mediaCut('billboards'),
+    })
+  );
+}
+
+export function thinkWiseMuralsReply() {
+  return (
+    '<p>The painted work is the cheapest thing in the campaign and the part that stays up longest. A billboard is rented; a wall is given, and it is still there in two years with the neighbourhood used to it.</p>'
+    + '<p>The grocery frontage is the site that matters most, because it is the last surface before the shelf. All three owls run the length of the wall beside the doors with <em>Food for Truth</em> at reading height, and the smaller stores take a single owl and a single line. On city walls the palette comes off the leash entirely — <em>Code. Create. Change.</em> against sprayed colour, which is the one place the campaign is allowed to look like it came from the street rather than from a brand.</p>'
+    + '<p>Then it drops to pavement level: utility-box wraps, shelter panels, bin surrounds, pole banners. Each one is only ever one owl and one line, because a person walking past has about a stride and a half to read it.</p>'
+    + gridHtml({
+      id: 'think-wise-murals',
+      label: 'The painted work \u00b7 murals & street furniture',
+      items: mediaCut('murals'),
     })
   );
 }
 
 export function thinkWiseMoldsReply() {
   return (
-    '<p>The sculptures are where the owls stop being artwork. Nine feet tall, the knit rendered as real surface, each one on a plinth with a plate on the front.</p>'
-    + '<p>Every owl gets a portrait of its own — <strong>Rue</strong> at Think Wise, <strong>Ollie</strong> at Code Wise, <strong>Sage</strong> at Live Wise — and then the three of them together in the plaza, at a scale you can read against the people photographing them.</p>'
-    + '<p>The night shot is the one that sells the installation. Lit from below, the wool texture catches every strand, and the plaza becomes somewhere you would take somebody rather than somewhere you would walk past.</p>'
+    '<p>The sculptures are where the owls stop being artwork. Painted fibreglass with every feather scale cut as real relief, so the character you know off a screen holds up from ten feet away in flat daylight.</p>'
+    + '<p>Each one gets a portrait of its own on its plinth — <strong>Rue</strong> at Think Wise, <strong>Ollie</strong> at Code Wise, <strong>Sage</strong> at Live Wise — and then the three of them together on the Music Concourse, at a scale you can read against the people photographing them.</p>'
+    + '<p>Nine feet is only the middle of the range. Rue stands at twelve in the Bison Paddock, taller than the herd; Rue and Sage flank the Conservatory of Flowers at eighteen, over the roofline of the glasshouse. The night shot is the one that sells it: uplit through the fog on the concourse, the relief catches every edge, and the park becomes somewhere you would take somebody after dark.</p>'
     + gridHtml({
       id: 'think-wise-molds',
-      label: 'The sculptures \u00b7 nine feet, day and night',
-      caption: `${mediaCut('molds').length} pieces \u00b7 day and night \u00b7 tap one to open it full size`,
+      label: 'The sculptures \u00b7 nine to eighteen feet, day and night',
       items: mediaCut('molds'),
     })
   );
@@ -384,13 +406,13 @@ export function thinkWiseMoldsReply() {
 
 export function thinkWiseWalkReply() {
   return (
-    '<p><strong>The Wise Walk</strong> is the campaign as a route rather than a placement. Three stops, one question, and the walk itself does the teaching.</p>'
-    + '<p>You arrive down a banner lane with the line on an A-board, and the three owls are already visible at the end of it. Then you take them in order: <strong>1 · Rue · Think Wise</strong>, <strong>2 · Ollie · Code Wise</strong>, <strong>3 · Sage · Live Wise</strong>. Doubt, read, verdict — you have walked the argument before anybody has explained it to you.</p>'
-    + '<p>The map is real wayfinding rather than a diagram of an idea: the stops are numbered on the paths people actually use, with the playground and the lake where they really are.</p>'
+    `<p><strong>The Wise Walk</strong> is the campaign as a route rather than a placement. It runs the whole length of <strong>Golden Gate Park</strong> in San Francisco: ${WISE_WALK_OWL_COUNT} owls at ${WISE_WALK_STOPS.length} stops, three miles from the city end to the ocean.</p>`
+    + `<p>You arrive down the banner lane on the JFK Promenade with the line on an A-board and three owls already visible at the end of it. Then the park takes over: ${walkRoute()}.</p>`
+    + '<p>Scale is the whole idea. There are nine-inch owls set into the moss between the stepping stones in the Japanese Tea Garden, knee-high ones loose in the grass on Hippie Hill where people sit down next to them, the nine-foot trio on plinths on the Music Concourse, one alone at twelve feet in the Bison Paddock with the bison walking around it, and two at eighteen feet outside the Conservatory of Flowers that you can see before you can see the glasshouse. Same three owls every time. You meet Rue at your ankle in the morning and again over your head in the afternoon, and that repetition is what makes the line stick.</p>'
+    + '<p>The map is real wayfinding rather than a diagram of an idea: the stops sit on the paths people actually use, with the lakes, the windmill and the paddock where they really are.</p>'
     + gridHtml({
       id: 'think-wise-walk',
-      label: 'The Wise Walk \u00b7 park installation',
-      caption: `${mediaCut('walk').length} pieces \u00b7 the route and its map \u00b7 tap one to open it full size`,
+      label: 'The Wise Walk \u00b7 Golden Gate Park',
       items: mediaCut('walk'),
     })
   );
@@ -398,9 +420,9 @@ export function thinkWiseWalkReply() {
 
 export function thinkWiseFilmReply() {
   return (
-    '<p>The launch film is cut entirely out of the campaign\u2019s own artwork. That was the constraint, and it is why it reads as one piece of work rather than an ad about an ad: no parallel renders, only the billboards and the molds the campaign already owns, pushed into slowly.</p>'
-    + '<p>It opens on the argument — <em>Information is easy.</em> then <em>Truth is not.</em> — and into Rue\u2019s billboard. Then the line, one card and one owl at a time: Think Wise into Rue\u2019s sculpture, Code Wise into Ollie\u2019s, Live Wise into Sage\u2019s. It walks the park approach, holds on the plaza lit after dark, and closes on the lockup under <em>Food for Truth</em>.</p>'
-    + '<p>Twenty-two seconds, real controls, and nothing starts on its own. There is no score on it yet \u2014 the picture is finished, the sound is not.</p>'
+    '<p>The launch film is cut entirely out of the campaign\u2019s own artwork. That was the constraint, and it is why it reads as one piece of work rather than an ad about an ad: no parallel renders, only the billboards and the sculptures the campaign already owns, pushed into slowly. It is also why the owls in it are unmistakably the owls you already had — the film never draws one, it only re-frames a photograph of one.</p>'
+    + '<p>It opens on the argument — <em>Information is easy.</em> then <em>Truth is not.</em> — and into Rue\u2019s billboard. Then the line, one card and one owl at a time: Think Wise into Rue\u2019s sculpture, Code Wise into Ollie\u2019s, Live Wise into Sage\u2019s. Then the park, played as a run of sizes rather than a run of places: down the banner lane, into the nine-inch owls in the Tea Garden, up to the eighteen-foot pair at the Conservatory, across the hillside at Stow Lake, and holding on the concourse lit after dark before it closes on the lockup under <em>Food for Truth</em>.</p>'
+    + '<p>Thirty seconds, real controls, and nothing starts on its own. There is no score on it yet \u2014 the picture is finished, the sound is not.</p>'
     + thinkWiseFilmHtml()
   );
 }
@@ -408,6 +430,8 @@ export function thinkWiseFilmReply() {
 if (typeof window !== 'undefined') {
   window.WiseThinkWise = {
     characters: THINK_WISE_CHARACTERS,
+    walkStops: WISE_WALK_STOPS,
+    walkOwlCount: WISE_WALK_OWL_COUNT,
     charactersHtml: thinkWiseCharactersHtml,
     bibleHtml: thinkWiseBibleHtml,
     media: THINK_WISE_MEDIA,
@@ -418,6 +442,7 @@ if (typeof window !== 'undefined') {
     campaignReply: thinkWiseReply,
     castReply: thinkWiseCastReply,
     billboardsReply: thinkWiseBillboardsReply,
+    muralsReply: thinkWiseMuralsReply,
     moldsReply: thinkWiseMoldsReply,
     walkReply: thinkWiseWalkReply,
     filmReply: thinkWiseFilmReply,
