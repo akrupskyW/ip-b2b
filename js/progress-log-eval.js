@@ -244,7 +244,6 @@ export const SCRIPT_PURPOSES = {
   'food-truth-line.js': 'a clothing line you can ask for — FOODTRUTH, kids through adults, black-tie to the beach, and the accessories — nineteen lookbook pages packed into the answer',
   'character-bible.js': 'a cast introduced properly inside an answer — one plate per character with the artwork above and the facts under it, so a campaign can say who its characters are rather than only showing their faces',
   'transcript-masonry.js': 'galleries inside an answer that run from edge to edge — a packed grid when the pieces are all different shapes, a scrolling row when they are all the same one, and tapping any of them opens it full size with arrows to the rest',
-  'story-voiceover.js': 'the playful story can be read aloud from the chat three-dot menu, in a voice you pick from a short list of icons and creators',
   'ollama-chat.js': 'answers on this Mac can be rewritten in a warmer voice, or answered as asked with a food-and-nutrition follow-through when you type something off-script',
   'web-food-lookup.js': 'when a brand, product, or fact is needed, the chat looks it up and cites the source in the same references list as a written answer',
   'agent-menu.js': 'the app’s shared primary navigation',

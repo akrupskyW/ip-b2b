@@ -6,29 +6,29 @@
  * Regenerate with: python3 scripts/scan_code_stats.py
  */
 window.WISE_PROJECT_INVENTORY = {
-  "generatedAt": "2026-09-09",
-  "bytes": 176746282,
-  "files": 537,
+  "generatedAt": "2026-09-13",
+  "bytes": 276021070,
+  "files": 748,
   "kinds": {
     "code": {
-      "bytes": 14982966,
-      "files": 263
+      "bytes": 15593932,
+      "files": 298
     },
     "image": {
-      "bytes": 75750485,
-      "files": 242
+      "bytes": 114258177,
+      "files": 412
     },
     "video": {
-      "bytes": 83340142,
-      "files": 10
+      "bytes": 143460998,
+      "files": 15
     },
     "font": {
       "bytes": 0,
       "files": 0
     },
     "other": {
-      "bytes": 2672689,
-      "files": 22
+      "bytes": 2707963,
+      "files": 23
     }
   },
   "list": [
@@ -91,6 +91,11 @@ window.WISE_PROJECT_INVENTORY = {
       "path": "assets/chart-and-report-design.md",
       "bytes": 10442,
       "kind": "other"
+    },
+    {
+      "path": "assets/chat-bg/wheat-helix.mp4",
+      "bytes": 9108195,
+      "kind": "video"
     },
     {
       "path": "assets/compare/alpen.jpg",
@@ -295,6 +300,196 @@ window.WISE_PROJECT_INVENTORY = {
     {
       "path": "assets/food-pattern-bg.png",
       "bytes": 1005019,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/adult-everyday.jpg",
+      "bytes": 425421,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/adult-graphic-be-wise.jpg",
+      "bytes": 316543,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/adult-graphic-owl-face.jpg",
+      "bytes": 237926,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/beach-lockup.jpg",
+      "bytes": 421552,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/dress-owl-paisley.jpg",
+      "bytes": 546318,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/family-lockup.jpg",
+      "bytes": 338869,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/gown-evening.jpg",
+      "bytes": 273495,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/kids-accessories-color.jpg",
+      "bytes": 392309,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/kids-accessories-cream.jpg",
+      "bytes": 379002,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/kids-beach-adventures.jpg",
+      "bytes": 560699,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/kids-graphic-be-kindly.jpg",
+      "bytes": 344010,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/kids-graphic-stay-wise.jpg",
+      "bytes": 299887,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/kids-graphic-think-wise.jpg",
+      "bytes": 313228,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/kids-knits.jpg",
+      "bytes": 335900,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/kids-smart.jpg",
+      "bytes": 358400,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/kids-street.jpg",
+      "bytes": 371685,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/kids-swim-prints.jpg",
+      "bytes": 506006,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/suit-navy-house.jpg",
+      "bytes": 228432,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/thumbs/adult-everyday.jpg",
+      "bytes": 91275,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/thumbs/adult-graphic-be-wise.jpg",
+      "bytes": 65024,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/thumbs/adult-graphic-owl-face.jpg",
+      "bytes": 47689,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/thumbs/beach-lockup.jpg",
+      "bytes": 94170,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/thumbs/dress-owl-paisley.jpg",
+      "bytes": 108010,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/thumbs/family-lockup.jpg",
+      "bytes": 78848,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/thumbs/gown-evening.jpg",
+      "bytes": 59527,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/thumbs/kids-accessories-color.jpg",
+      "bytes": 86401,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/thumbs/kids-accessories-cream.jpg",
+      "bytes": 81281,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/thumbs/kids-beach-adventures.jpg",
+      "bytes": 118401,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/thumbs/kids-graphic-be-kindly.jpg",
+      "bytes": 73640,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/thumbs/kids-graphic-stay-wise.jpg",
+      "bytes": 66798,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/thumbs/kids-graphic-think-wise.jpg",
+      "bytes": 67401,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/thumbs/kids-knits.jpg",
+      "bytes": 77231,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/thumbs/kids-smart.jpg",
+      "bytes": 84923,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/thumbs/kids-street.jpg",
+      "bytes": 82919,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/thumbs/kids-swim-prints.jpg",
+      "bytes": 108873,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/thumbs/suit-navy-house.jpg",
+      "bytes": 45861,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/thumbs/tuxedo-owl-jacquard.jpg",
+      "bytes": 57615,
+      "kind": "image"
+    },
+    {
+      "path": "assets/food-truth-line/tuxedo-owl-jacquard.jpg",
+      "bytes": 338990,
       "kind": "image"
     },
     {
@@ -1108,6 +1303,11 @@ window.WISE_PROJECT_INVENTORY = {
       "kind": "other"
     },
     {
+      "path": "assets/owl-progression/owl-green-stop.png",
+      "bytes": 27685,
+      "kind": "image"
+    },
+    {
       "path": "assets/owl-progression/owl-green.png",
       "bytes": 631886,
       "kind": "image"
@@ -1145,6 +1345,11 @@ window.WISE_PROJECT_INVENTORY = {
     {
       "path": "assets/owl-progression/owl-scan-green-light.mp4",
       "bytes": 2198046,
+      "kind": "video"
+    },
+    {
+      "path": "assets/owl-progression/owl-wisecode-2.mp4",
+      "bytes": 15603131,
       "kind": "video"
     },
     {
@@ -1263,6 +1468,271 @@ window.WISE_PROJECT_INVENTORY = {
       "kind": "image"
     },
     {
+      "path": "assets/think-wise/bible-model-sheet.jpg",
+      "bytes": 368138,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/billboard-food-for-truth.jpg",
+      "bytes": 246829,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/billboard-think-code-live.jpg",
+      "bytes": 333663,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/billboard-truth-is-not.jpg",
+      "bytes": 297205,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/board-city-walls.jpg",
+      "bytes": 606202,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/board-neighbourhood-murals.jpg",
+      "bytes": 511439,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/board-park-and-street.jpg",
+      "bytes": 689272,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/board-park-installation.jpg",
+      "bytes": 710171,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/board-store-murals.jpg",
+      "bytes": 533147,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/film-the-wise-walk.mp4",
+      "bytes": 17580349,
+      "kind": "video"
+    },
+    {
+      "path": "assets/think-wise/mold-ollie-code-wise.jpg",
+      "bytes": 432268,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/mold-rue-think-wise.jpg",
+      "bytes": 395693,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/mold-sage-live-wise.jpg",
+      "bytes": 433851,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/park-approach-lane.jpg",
+      "bytes": 502619,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/park-bison-paddock.jpg",
+      "bytes": 384586,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/park-concourse-night.jpg",
+      "bytes": 402803,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/park-concourse-trio.jpg",
+      "bytes": 493901,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/park-conservatory-giants.jpg",
+      "bytes": 449269,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/park-map-installation.jpg",
+      "bytes": 241672,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/park-meadow-scatter.jpg",
+      "bytes": 555333,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/park-stow-lake-flock.jpg",
+      "bytes": 503570,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/park-tea-garden-small.jpg",
+      "bytes": 367507,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/park-windmill-dusk.jpg",
+      "bytes": 388625,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/plates/plate-ollie.jpg",
+      "bytes": 268537,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/plates/plate-rue.jpg",
+      "bytes": 261017,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/plates/plate-sage.jpg",
+      "bytes": 241176,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/plates/thumbs/plate-ollie.jpg",
+      "bytes": 73940,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/plates/thumbs/plate-rue.jpg",
+      "bytes": 73502,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/plates/thumbs/plate-sage.jpg",
+      "bytes": 69527,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/spectacular-vertical-night.jpg",
+      "bytes": 377209,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/thumbs/bible-model-sheet.jpg",
+      "bytes": 102086,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/thumbs/billboard-food-for-truth.jpg",
+      "bytes": 63416,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/thumbs/billboard-think-code-live.jpg",
+      "bytes": 88306,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/thumbs/billboard-truth-is-not.jpg",
+      "bytes": 76972,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/thumbs/board-city-walls.jpg",
+      "bytes": 156185,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/thumbs/board-neighbourhood-murals.jpg",
+      "bytes": 123652,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/thumbs/board-park-and-street.jpg",
+      "bytes": 176986,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/thumbs/board-park-installation.jpg",
+      "bytes": 189744,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/thumbs/board-store-murals.jpg",
+      "bytes": 131201,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/thumbs/mold-ollie-code-wise.jpg",
+      "bytes": 118678,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/thumbs/mold-rue-think-wise.jpg",
+      "bytes": 108482,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/thumbs/mold-sage-live-wise.jpg",
+      "bytes": 121287,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/thumbs/park-approach-lane.jpg",
+      "bytes": 129024,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/thumbs/park-bison-paddock.jpg",
+      "bytes": 100742,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/thumbs/park-concourse-night.jpg",
+      "bytes": 101104,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/thumbs/park-concourse-trio.jpg",
+      "bytes": 127471,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/thumbs/park-conservatory-giants.jpg",
+      "bytes": 118090,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/thumbs/park-map-installation.jpg",
+      "bytes": 68056,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/thumbs/park-meadow-scatter.jpg",
+      "bytes": 145468,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/thumbs/park-stow-lake-flock.jpg",
+      "bytes": 126208,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/thumbs/park-tea-garden-small.jpg",
+      "bytes": 104124,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/thumbs/park-windmill-dusk.jpg",
+      "bytes": 95398,
+      "kind": "image"
+    },
+    {
+      "path": "assets/think-wise/thumbs/spectacular-vertical-night.jpg",
+      "bytes": 93349,
+      "kind": "image"
+    },
+    {
       "path": "assets/top5-almond-coconut-crisp.png",
       "bytes": 2345402,
       "kind": "image"
@@ -1338,6 +1808,411 @@ window.WISE_PROJECT_INVENTORY = {
       "kind": "image"
     },
     {
+      "path": "assets/wise-campaign/banner-food-has-character.jpg",
+      "bytes": 137540,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/billboard-good-taste.jpg",
+      "bytes": 265363,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/bus-wrap-big-personalities.jpg",
+      "bytes": 322031,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/card-hero-billboard.jpg",
+      "bytes": 173500,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/agent-apple.jpg",
+      "bytes": 332051,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/agent-avocado.jpg",
+      "bytes": 345489,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/baron-bonbon.jpg",
+      "bytes": 353916,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/broccoli-beacon.jpg",
+      "bytes": 388128,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/burger-bluff.jpg",
+      "bytes": 375967,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/captain-carrot.jpg",
+      "bytes": 428652,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/coffee-cipher.jpg",
+      "bytes": 380547,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/count-cookie.jpg",
+      "bytes": 351728,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/doctor-frosting.jpg",
+      "bytes": 356834,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/donut-detour.jpg",
+      "bytes": 363585,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/dr-blueberry.jpg",
+      "bytes": 356000,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/grape-guardian.jpg",
+      "bytes": 369615,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/kiwi-key.jpg",
+      "bytes": 323355,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/lentil-legend.jpg",
+      "bytes": 385314,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/lord-licorice.jpg",
+      "bytes": 353921,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/madam-marshmallow.jpg",
+      "bytes": 337936,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/pizza-phantom.jpg",
+      "bytes": 370810,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/pretzel-plot.jpg",
+      "bytes": 363878,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/professor-pear.jpg",
+      "bytes": 397598,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/professor-puff.jpg",
+      "bytes": 375527,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/quinoa-quest.jpg",
+      "bytes": 367687,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/soda-spin.jpg",
+      "bytes": 369902,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/taco-tactic.jpg",
+      "bytes": 370915,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/thumbs/agent-apple.jpg",
+      "bytes": 79432,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/thumbs/agent-avocado.jpg",
+      "bytes": 79088,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/thumbs/baron-bonbon.jpg",
+      "bytes": 86523,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/thumbs/broccoli-beacon.jpg",
+      "bytes": 86537,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/thumbs/burger-bluff.jpg",
+      "bytes": 89109,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/thumbs/captain-carrot.jpg",
+      "bytes": 94978,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/thumbs/coffee-cipher.jpg",
+      "bytes": 90500,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/thumbs/count-cookie.jpg",
+      "bytes": 82493,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/thumbs/doctor-frosting.jpg",
+      "bytes": 85445,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/thumbs/donut-detour.jpg",
+      "bytes": 87369,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/thumbs/dr-blueberry.jpg",
+      "bytes": 84249,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/thumbs/grape-guardian.jpg",
+      "bytes": 88399,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/thumbs/kiwi-key.jpg",
+      "bytes": 78829,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/thumbs/lentil-legend.jpg",
+      "bytes": 87827,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/thumbs/lord-licorice.jpg",
+      "bytes": 82855,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/thumbs/madam-marshmallow.jpg",
+      "bytes": 80692,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/thumbs/pizza-phantom.jpg",
+      "bytes": 89409,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/thumbs/pretzel-plot.jpg",
+      "bytes": 85300,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/thumbs/professor-pear.jpg",
+      "bytes": 93168,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/thumbs/professor-puff.jpg",
+      "bytes": 89942,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/thumbs/quinoa-quest.jpg",
+      "bytes": 83094,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/thumbs/soda-spin.jpg",
+      "bytes": 86294,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/cards/thumbs/taco-tactic.jpg",
+      "bytes": 89167,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/character-sheet-extended-cast.jpg",
+      "bytes": 265158,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/display-food-intelligence.jpg",
+      "bytes": 218075,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/faceoff-food-truth-wins.mp4",
+      "bytes": 6696472,
+      "kind": "video"
+    },
+    {
+      "path": "assets/wise-campaign/keyvisual-clarity-saves-the-day.jpg",
+      "bytes": 344941,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/keyvisual-truth-undercover.jpg",
+      "bytes": 288233,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/lookbook-smart-food-smart-style.jpg",
+      "bytes": 155650,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/lookbook-wear-your-wisdom.jpg",
+      "bytes": 151923,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/merch-tote-excellent-taste.jpg",
+      "bytes": 242780,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/poster-next-meal-cast.jpg",
+      "bytes": 228950,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/print-looks-arent-the-whole-story.jpg",
+      "bytes": 270742,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/shelter-daily-plot-twist.jpg",
+      "bytes": 280689,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/shelter-pair-not-all-calories.jpg",
+      "bytes": 152395,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/social-crew-selfie.jpg",
+      "bytes": 277931,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/teaser-food-truth-wins.mp4",
+      "bytes": 11132709,
+      "kind": "video"
+    },
+    {
+      "path": "assets/wise-campaign/thumbs/banner-food-has-character.jpg",
+      "bytes": 42685,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/thumbs/billboard-good-taste.jpg",
+      "bytes": 81989,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/thumbs/bus-wrap-big-personalities.jpg",
+      "bytes": 95769,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/thumbs/character-sheet-extended-cast.jpg",
+      "bytes": 89783,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/thumbs/display-food-intelligence.jpg",
+      "bytes": 68482,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/thumbs/keyvisual-clarity-saves-the-day.jpg",
+      "bytes": 104732,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/thumbs/keyvisual-truth-undercover.jpg",
+      "bytes": 90294,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/thumbs/lookbook-smart-food-smart-style.jpg",
+      "bytes": 86855,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/thumbs/lookbook-wear-your-wisdom.jpg",
+      "bytes": 83357,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/thumbs/merch-tote-excellent-taste.jpg",
+      "bytes": 94329,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/thumbs/poster-next-meal-cast.jpg",
+      "bytes": 159240,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/thumbs/print-looks-arent-the-whole-story.jpg",
+      "bytes": 134577,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/thumbs/shelter-daily-plot-twist.jpg",
+      "bytes": 171746,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/thumbs/shelter-pair-not-all-calories.jpg",
+      "bytes": 83267,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/thumbs/social-crew-selfie.jpg",
+      "bytes": 194211,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/thumbs/van-wrap-on-the-move.jpg",
+      "bytes": 82925,
+      "kind": "image"
+    },
+    {
+      "path": "assets/wise-campaign/van-wrap-on-the-move.jpg",
+      "bytes": 276552,
+      "kind": "image"
+    },
+    {
       "path": "dev_server.py",
       "bytes": 8793,
       "kind": "code"
@@ -1354,12 +2229,12 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/add-catalog-flow.js",
-      "bytes": 51581,
+      "bytes": 46743,
       "kind": "code"
     },
     {
       "path": "js/add-product-flow.js",
-      "bytes": 290536,
+      "bytes": 329448,
       "kind": "code"
     },
     {
@@ -1369,7 +2244,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/agent-menu.js",
-      "bytes": 64769,
+      "bytes": 65626,
       "kind": "code"
     },
     {
@@ -1394,7 +2269,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/all-modules-flow.js",
-      "bytes": 822869,
+      "bytes": 829874,
       "kind": "code"
     },
     {
@@ -1429,7 +2304,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/app-logic-data.js",
-      "bytes": 104083,
+      "bytes": 104462,
       "kind": "code"
     },
     {
@@ -1439,12 +2314,12 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/appearance-menu.js",
-      "bytes": 62761,
+      "bytes": 63179,
       "kind": "code"
     },
     {
       "path": "js/ask-catalog.js",
-      "bytes": 47783,
+      "bytes": 50792,
       "kind": "code"
     },
     {
@@ -1478,18 +2353,23 @@ window.WISE_PROJECT_INVENTORY = {
       "kind": "code"
     },
     {
+      "path": "js/character-bible.js",
+      "bytes": 6036,
+      "kind": "code"
+    },
+    {
       "path": "js/chart-arcs.js",
       "bytes": 2542,
       "kind": "code"
     },
     {
       "path": "js/chat-activity-strip.js",
-      "bytes": 33768,
+      "bytes": 34448,
       "kind": "code"
     },
     {
       "path": "js/chat-ask.js",
-      "bytes": 38161,
+      "bytes": 38500,
       "kind": "code"
     },
     {
@@ -1519,7 +2399,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/code-stats-data.js",
-      "bytes": 10629,
+      "bytes": 11763,
       "kind": "code"
     },
     {
@@ -1578,6 +2458,11 @@ window.WISE_PROJECT_INVENTORY = {
       "kind": "code"
     },
     {
+      "path": "js/food-truth-line.js",
+      "bytes": 13151,
+      "kind": "code"
+    },
+    {
       "path": "js/generated-reports.js",
       "bytes": 13190,
       "kind": "code"
@@ -1610,6 +2495,16 @@ window.WISE_PROJECT_INVENTORY = {
     {
       "path": "js/icon-svg-shim.js",
       "bytes": 16592,
+      "kind": "code"
+    },
+    {
+      "path": "js/inline-module-rail.js",
+      "bytes": 24977,
+      "kind": "code"
+    },
+    {
+      "path": "js/intent-prompt.js",
+      "bytes": 34989,
       "kind": "code"
     },
     {
@@ -1674,7 +2569,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/nav-responsive.js",
-      "bytes": 3992,
+      "bytes": 4038,
       "kind": "code"
     },
     {
@@ -1694,12 +2589,17 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/ollama-chat.js",
-      "bytes": 34541,
+      "bytes": 34968,
       "kind": "code"
     },
     {
       "path": "js/organizations-flow.js",
       "bytes": 24564,
+      "kind": "code"
+    },
+    {
+      "path": "js/output-mode.js",
+      "bytes": 8449,
       "kind": "code"
     },
     {
@@ -1709,7 +2609,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/owl-progression-carousel.js",
-      "bytes": 18989,
+      "bytes": 24167,
       "kind": "code"
     },
     {
@@ -1739,7 +2639,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/preferences-flow.js",
-      "bytes": 13817,
+      "bytes": 14069,
       "kind": "code"
     },
     {
@@ -1754,7 +2654,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/progress-log-eval.js",
-      "bytes": 50721,
+      "bytes": 51929,
       "kind": "code"
     },
     {
@@ -1769,7 +2669,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/project-inventory-data.js",
-      "bytes": 53703,
+      "bytes": 83247,
       "kind": "code"
     },
     {
@@ -1813,11 +2713,6 @@ window.WISE_PROJECT_INVENTORY = {
       "kind": "code"
     },
     {
-      "path": "js/story-voiceover.js",
-      "bytes": 27199,
-      "kind": "code"
-    },
-    {
       "path": "js/table-pagination.js",
       "bytes": 12207,
       "kind": "code"
@@ -1829,12 +2724,17 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/text-size-fouc.js",
-      "bytes": 25548,
+      "bytes": 26616,
       "kind": "code"
     },
     {
       "path": "js/text-size.js",
       "bytes": 1485,
+      "kind": "code"
+    },
+    {
+      "path": "js/think-wise-campaign.js",
+      "bytes": 27940,
       "kind": "code"
     },
     {
@@ -1844,7 +2744,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/topbar.js",
-      "bytes": 97411,
+      "bytes": 101913,
       "kind": "code"
     },
     {
@@ -1855,6 +2755,11 @@ window.WISE_PROJECT_INVENTORY = {
     {
       "path": "js/trace-stream.js",
       "bytes": 12397,
+      "kind": "code"
+    },
+    {
+      "path": "js/transcript-masonry.js",
+      "bytes": 24925,
       "kind": "code"
     },
     {
@@ -1884,7 +2789,12 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/welcome-overview-cards.js",
-      "bytes": 8042,
+      "bytes": 11409,
+      "kind": "code"
+    },
+    {
+      "path": "js/wise-campaign.js",
+      "bytes": 28520,
       "kind": "code"
     },
     {
@@ -1894,7 +2804,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/wise-modal.js",
-      "bytes": 5244,
+      "bytes": 5670,
       "kind": "code"
     },
     {
@@ -1904,7 +2814,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "js/wiseai-chat.js",
-      "bytes": 778801,
+      "bytes": 877090,
       "kind": "code"
     },
     {
@@ -1964,7 +2874,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "marketing.css",
-      "bytes": 101936,
+      "bytes": 102086,
       "kind": "code"
     },
     {
@@ -1979,17 +2889,17 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "pages/accessibility-review.html",
-      "bytes": 131871,
+      "bytes": 131936,
       "kind": "code"
     },
     {
       "path": "pages/add-catalog.html",
-      "bytes": 53789,
+      "bytes": 52363,
       "kind": "code"
     },
     {
       "path": "pages/add-product.html",
-      "bytes": 157904,
+      "bytes": 159464,
       "kind": "code"
     },
     {
@@ -2019,7 +2929,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "pages/analytics-types.html",
-      "bytes": 360267,
+      "bytes": 360741,
       "kind": "code"
     },
     {
@@ -2099,7 +3009,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "pages/overview.html",
-      "bytes": 10935,
+      "bytes": 11409,
       "kind": "code"
     },
     {
@@ -2114,12 +3024,12 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "pages/product-comparison.html",
-      "bytes": 955719,
+      "bytes": 957169,
       "kind": "code"
     },
     {
       "path": "pages/product-portfolio.html",
-      "bytes": 1070810,
+      "bytes": 1072763,
       "kind": "code"
     },
     {
@@ -2144,7 +3054,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "pages/report-guiding-stars.html",
-      "bytes": 96008,
+      "bytes": 96829,
       "kind": "code"
     },
     {
@@ -2184,17 +3094,17 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "pages/view-product.html",
-      "bytes": 156829,
+      "bytes": 158389,
       "kind": "code"
     },
     {
       "path": "pages/wise.css",
-      "bytes": 1057693,
+      "bytes": 1100521,
       "kind": "code"
     },
     {
       "path": "pages/wiseai.html",
-      "bytes": 1200434,
+      "bytes": 1234532,
       "kind": "code"
     },
     {
@@ -2224,12 +3134,12 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "scripts/_atlas_check.js",
-      "bytes": 18998,
+      "bytes": 20003,
       "kind": "code"
     },
     {
       "path": "scripts/_atlas_panels_check.js",
-      "bytes": 9677,
+      "bytes": 10474,
       "kind": "code"
     },
     {
@@ -2273,8 +3183,28 @@ window.WISE_PROJECT_INVENTORY = {
       "kind": "code"
     },
     {
+      "path": "scripts/_campaign_card_import.py",
+      "bytes": 3142,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_campaign_card_trim.py",
+      "bytes": 2979,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_campaign_combo_probe.py",
+      "bytes": 6010,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_campaign_probe.py",
+      "bytes": 24583,
+      "kind": "code"
+    },
+    {
       "path": "scripts/_cdp.py",
-      "bytes": 8060,
+      "bytes": 8838,
       "kind": "code"
     },
     {
@@ -2313,6 +3243,16 @@ window.WISE_PROJECT_INVENTORY = {
       "kind": "code"
     },
     {
+      "path": "scripts/_close_pane_probe.py",
+      "bytes": 2634,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_clothing_probe.py",
+      "bytes": 8992,
+      "kind": "code"
+    },
+    {
       "path": "scripts/_composer_gutter_probe.py",
       "bytes": 4905,
       "kind": "code"
@@ -2329,12 +3269,32 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "scripts/_earmark_check.js",
-      "bytes": 9241,
+      "bytes": 9770,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_food_truth_line_import.py",
+      "bytes": 2435,
       "kind": "code"
     },
     {
       "path": "scripts/_history_overlay_probe.py",
-      "bytes": 5100,
+      "bytes": 5331,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_inline_output_fit_probe.py",
+      "bytes": 15259,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_inline_rail_shot.py",
+      "bytes": 3376,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_intent_prompt_probe.py",
+      "bytes": 7745,
       "kind": "code"
     },
     {
@@ -2363,8 +3323,28 @@ window.WISE_PROJECT_INVENTORY = {
       "kind": "code"
     },
     {
+      "path": "scripts/_nav_reformulation_probe.py",
+      "bytes": 4455,
+      "kind": "code"
+    },
+    {
       "path": "scripts/_nav_responsive_probe.py",
       "bytes": 6295,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_nfp_chat_congruence_probe.py",
+      "bytes": 4790,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_nfp_chat_shot.py",
+      "bytes": 2520,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_nfp_photo_click_probe.py",
+      "bytes": 2797,
       "kind": "code"
     },
     {
@@ -2383,13 +3363,33 @@ window.WISE_PROJECT_INVENTORY = {
       "kind": "code"
     },
     {
+      "path": "scripts/_output_count_shape_probe.py",
+      "bytes": 6637,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_output_mode_probe.py",
+      "bytes": 11476,
+      "kind": "code"
+    },
+    {
       "path": "scripts/_output_open_probe.py",
       "bytes": 5564,
       "kind": "code"
     },
     {
       "path": "scripts/_output_pacing_check.js",
-      "bytes": 9282,
+      "bytes": 9379,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_owl_prog_new_shot.py",
+      "bytes": 2466,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_owl_prog_stop_shot.py",
+      "bytes": 2495,
       "kind": "code"
     },
     {
@@ -2458,6 +3458,11 @@ window.WISE_PROJECT_INVENTORY = {
       "kind": "code"
     },
     {
+      "path": "scripts/_preflight_probe.py",
+      "bytes": 10029,
+      "kind": "code"
+    },
+    {
       "path": "scripts/_probe_wiseai.png",
       "bytes": 199309,
       "kind": "image"
@@ -2468,8 +3473,23 @@ window.WISE_PROJECT_INVENTORY = {
       "kind": "code"
     },
     {
+      "path": "scripts/_race_card_probe.py",
+      "bytes": 5051,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_race_card_shot.py",
+      "bytes": 3697,
+      "kind": "code"
+    },
+    {
       "path": "scripts/_rail_bleed_probe.py",
       "bytes": 4769,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_reports_dot_probe.py",
+      "bytes": 5799,
       "kind": "code"
     },
     {
@@ -2503,8 +3523,43 @@ window.WISE_PROJECT_INVENTORY = {
       "kind": "code"
     },
     {
+      "path": "scripts/_stills_to_mp4.swift",
+      "bytes": 4596,
+      "kind": "other"
+    },
+    {
       "path": "scripts/_stream_units_check.js",
       "bytes": 12674,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_team_room_probe.py",
+      "bytes": 12299,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_thinkwise_boards.py",
+      "bytes": 1937,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_thinkwise_chips_diag.py",
+      "bytes": 3064,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_thinkwise_film.py",
+      "bytes": 9583,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_thinkwise_murals_shot.py",
+      "bytes": 5373,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/_thinkwise_probe.py",
+      "bytes": 17629,
       "kind": "code"
     },
     {
@@ -2548,13 +3603,13 @@ window.WISE_PROJECT_INVENTORY = {
       "kind": "code"
     },
     {
-      "path": "scripts/_voiceover_verify.py",
-      "bytes": 5098,
+      "path": "scripts/_welcome_instant_probe.py",
+      "bytes": 3995,
       "kind": "code"
     },
     {
-      "path": "scripts/_welcome_instant_probe.py",
-      "bytes": 3995,
+      "path": "scripts/_wheat_film_probe.py",
+      "bytes": 5378,
       "kind": "code"
     },
     {
@@ -2614,7 +3669,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "scripts/code-stats.json",
-      "bytes": 10133,
+      "bytes": 11267,
       "kind": "other"
     },
     {
@@ -2664,7 +3719,7 @@ window.WISE_PROJECT_INVENTORY = {
     },
     {
       "path": "scripts/project-inventory.json",
-      "bytes": 53273,
+      "bytes": 82817,
       "kind": "other"
     },
     {

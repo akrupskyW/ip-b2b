@@ -64,15 +64,72 @@ html[data-output-mode="cards"] .sc-line-out-inline { display: none; }
 /* The inline copy borrows the pane's own block styling — it is the same
    output, only parked in the thread — so every chart, table and board reads
    there without a second set of rules. What it does not borrow is the pane's
-   box: no growing, no scroller of its own, and no inline padding, so the
-   output still sits on the transcript's column. */
+   box: no growing and no scroller of its own.
+
+   It keeps a small version of the pane's frame. The whole block reaches the
+   module edges (below), but an output's own WORDS — a report's lede, a section
+   title, the label on a control row — must not start on the module's border,
+   so they sit on this inset. It is deliberately a fraction of the pane's 24px:
+   enough that nothing touches the edge, small enough that it never reads as a
+   second reading column. The wide content cancels it exactly, which is the same
+   mechanism the pane already documents for a gallery. */
 .sc-out--inline.wa-pane-body {
-  --wa-pane-pad-x: 0px;
+  --wa-pane-pad-x: 16px;
   flex: none;
   min-height: 0;
   overflow: visible;
-  padding: 0;
+  padding: 0 var(--wa-pane-pad-x);
   margin: 1em 0 0.35em;
+}
+/* An output is not prose, so it does not sit on the prose column. A table
+   wants its columns, a matrix wants its labels, a board wants its cells — and
+   held to the reading column they were all being squeezed while a few hundred
+   pixels of module sat empty either side. So an output drawn in the thread
+   cancels the avatar gutter and the transcript inset and takes the chat
+   MODULE's whole width.
+
+   It can never take more. The width resolves from these two negative margins
+   against the module's own box, so "edge to edge" and "never wider than the
+   transcript" are one statement rather than a rule and a cap that could drift
+   apart. The formula is in cqi against .sc-body for the same reason the output
+   rails and the sent-ask wash are — a percentage would re-resolve against this
+   element instead of the module — and the FLOOR is read from --sc-pad-floor
+   rather than restated, so compact spacing cannot move one and not the other.
+
+   The line that introduces the output is prose and stays on the column. */
+.sc-line-body > .sc-out--inline.wa-pane-body {
+  --sc-out-bleed: var(--sc-gutter, max(var(--sc-pad-floor, 3rem), calc((100cqi - var(--sc-transcript-max, 860px)) / 2)));
+  box-sizing: border-box;
+  max-width: none;
+  margin-left: calc(-1 * (var(--sc-avatar-size, 30px) + 12px + var(--sc-out-bleed)));
+  margin-right: calc(-1 * var(--sc-out-bleed));
+}
+/* …and the content that the width was for takes it back. A chart, a table, a
+   compare board, an atlas panel and a gallery all reach the module edges; the
+   prose and the control labels around them keep the inset above.
+
+   Each of these is the OUTERMOST box of its own component, so cancelling it
+   moves the whole thing and nothing inside has to be touched — a board's cells
+   and a panel's cards follow their container. It is scoped to the inline
+   reading because the pane keeps its full frame: same output, same markup, one
+   variable's worth of difference between the two surfaces. */
+.sc-out--inline > .wa-block > .wa-chart-card,
+.sc-out--inline > .wa-block > table,
+.sc-out--inline > .wa-block.cmp-host > .cmp-body,
+.sc-out--inline > .wa-block > .atl-card,
+.sc-out--inline .atl-panel > .atl-card,
+.sc-out--inline .atl-panel > .atl-mapwrap,
+.sc-out--inline .wa-atlas > .atl-cq,
+.sc-out--inline .wa-atlas > .atl-flag {
+  /* All three lines are needed, and a negative margin alone is the trap: these
+     boxes are already sized to 100% of the padded content box and capped at it,
+     so on its own the margin SHIFTED the card 16px left and left the same 16px
+     open on the right. Restating the width as the content box plus the inset it
+     is cancelling — and lifting the cap that would clamp it back — is what
+     actually widens it to the module edges. */
+  margin-inline: calc(-1 * var(--wa-pane-pad-x, 0px));
+  width: calc(100% + 2 * var(--wa-pane-pad-x, 0px));
+  max-width: none;
 }
 .sc-out--inline:empty { display: none; }
 .sc-out--inline > .wa-block + .wa-block { margin-top: 18px; }

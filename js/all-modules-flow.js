@@ -2281,7 +2281,7 @@ const COMP_LEDES = {
   'Transcript actions': 'Copy, Accurate, Not accurate, and more — under every answer.',
   'Activity strip': 'Landmark ear-marks on the chat edge for outputs, sources, and switches.',
   'Token readout': 'This-turn and conversation tokens under the composer and in the answer menu.',
-  'Chat \u22ef menu': 'The member chat menu: history, export, voiceover, Helix, streaming, close.',
+  'Chat \u22ef menu': 'The member chat menu: history, export, share, Helix, streaming, close.',
   'Module \u22ef menu': 'Share, copy, export, and Remove panel on drawers beside the chat.',
   'Sticky modules': 'Drawers that tuck behind the chat like a utility belt.',
   'What can I ask?': 'The in-chat overlay of prompts, search, and topics.',
@@ -3339,11 +3339,6 @@ function demoChatMenuPop() {
     ${row('share', 'share', 'Share')}
     ${row('file-library', 'auto_stories', 'File to Library')}
     ${sw({ sc: 'preflight', icon: 'rule', label: 'Ask pre-flight', on: true, admin: true, pink: true, cls: 'sc-preflight-item' })}
-    <button type="button" class="topbar-menu-item topbar-menu-item--admin" data-sc="voiceover" role="menuitem">
-      <span class="material-symbols-outlined topbar-menu-icon">record_voice_over</span>
-      <span class="topbar-menu-copy"><span class="topbar-menu-title">Play voiceover</span><span class="topbar-menu-desc">Samuel L. Jackson</span></span>
-      <span class="topbar-menu-badge">Admin</span>
-    </button>
     <div class="topbar-menu-divider"></div>
     ${sw({ sc: 'turns', icon: 'alt_route', label: 'Turns', on: false, admin: true })}
     ${sw({ sc: 'outputs', icon: 'dashboard_customize', label: 'Hide outputs &amp; sources', on: true, admin: true })}
@@ -4289,7 +4284,7 @@ const COMPONENTS = [
     cat: 'Chat & drawers',
     cls: '.panel-more-btn \u00b7 .topbar-popover.sc-menu-grouped \u00b7 .sc-menu-group \u00b7 .sc-mcp-item \u00b7 .sc-switch \u00b7 .sc-menu-admin-btn',
     used: 'The three-dot on every chat module \u2014 Conversation, Helix play/pause, streaming, Close. Admin-badged rows stay off this specimen',
-    note: 'Same <code>.topbar-popover</code> shell, grouped the way the live chat does \u2014 one column hung from the kebab. This card is the <strong>member-facing</strong> menu: History, new, Export, Share, File to Library, Overview cards, Helix play/pause, Response streaming, and Close. The nested Internal admins kebab is not part of this menu. Admin-badged rows (Turns, Hide outputs, Connect a data source, Intent chips, Compact spacing, Brand AI text, Input glow, Animation, Activity strip, Play voiceover) appear on the live chat when <em>Internal admins</em> is on in Appearance, and the full Helix studio then sits in a second column beside the stack.',
+    note: 'Same <code>.topbar-popover</code> shell, grouped the way the live chat does \u2014 one column hung from the kebab. This card is the <strong>member-facing</strong> menu: History, new, Export, Share, File to Library, Overview cards, Helix play/pause, Response streaming, and Close. The nested Internal admins kebab is not part of this menu. Admin-badged rows (Turns, Hide outputs, Connect a data source, Intent chips, Compact spacing, Brand AI text, Input glow, Animation, Activity strip) appear on the live chat when <em>Internal admins</em> is on in Appearance, and the full Helix studio then sits in a second column beside the stack.',
     noteIcon: 'more_vert',
     demo: `
       <div class="dsc-states" style="width:100%">

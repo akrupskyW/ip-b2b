@@ -1675,11 +1675,11 @@
        a multi-panel artifact into a single pie. */
     .wa-atlas { display: flex; flex-direction: column; gap: 22px; container-type: inline-size; }
     .atl-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 16px 14px; box-shadow: var(--shadow-1); }
-    /* Plot cards follow the same 600px output-chart cap as .wa-chart-card. */
+    /* Plot cards follow the same output-chart cap as .wa-chart-card. */
     .wa-pane-body .atl-card--plot,
     .wa-pane-body .atl-card:has(> .atl-map-svg) {
       width: 100%;
-      max-width: var(--wa-chart-max, 600px);
+      max-width: var(--wa-chart-max, 100%);
       margin-inline: auto;
       border-radius: var(--r-md, 16px);
       padding: 18px 20px;
@@ -1901,12 +1901,20 @@
     /* ── Charts (SVG + div bars, app tokens only) ──
        Headline, lede, and caption sit on the pane. Only the plot itself is a
        white (surface) card — matching dash-card chrome, not a full-bleed wrap.
-       Every chart type (table, bars, columns, donut, spider, parallel) caps
-       at 600px regardless of how wide the output module is, so the plot and
-       its legend stay a readable pair instead of stretching across the pane. */
+
+       Every chart type (table, bars, columns, donut, spider, parallel) takes
+       the full width it is given, wherever it is drawn: the output module and
+       the transcript both. It used to stop at 600px, which read as a plot
+       marooned in the middle of a wide module with its labels squeezed and a
+       few hundred pixels of nothing either side.
+
+       100% is the cap, not a licence — a chart is never wider than the
+       surface holding it, so it cannot outgrow the transcript. This one
+       variable also drives the atlas plot cards, the chart toolbar and the
+       full-screen chart card, so the cap is stated once. */
     .wa-pane-body {
       --dash-donut-ring-h: calc(252px * 26 / 300);
-      --wa-chart-max: 600px;
+      --wa-chart-max: 100%;
     }
     .wa-pane-body .wa-chart-card {
       position: relative;
@@ -2361,7 +2369,7 @@
     }
     #modules-row.output-fs > .wa-pane.pane-fs .wa-chart-card {
       padding: 28px 36px 32px;
-      max-width: var(--wa-chart-max, 600px);
+      max-width: var(--wa-chart-max, 100%);
       margin-inline: auto;
     }
     #modules-row.output-fs > .wa-pane.pane-fs .wa-chart-card svg {
@@ -2408,9 +2416,26 @@
       .wa-chart-toolbar .cmp-chart-btn { width: auto; gap: 5px; padding: 0 10px; }
     }
     .wa-chart-plot { min-width: 0; width: 100%; max-width: 100%; }
+    /* A plot never outgrows its card — and, once it has been measured, never
+       outgrows the size it was drawn at either. waCapScaledPlots writes
+       --wa-plot-w from the viewBox; with it unset this stays the plain "fit
+       the card" it has always been. Both halves are needed: the card runs
+       edge to edge so a table gets its columns back, while a viewBox plot
+       scales rather than reflows and would otherwise read as a poster. */
     .wa-pane-body .wa-chart-card svg {
-      max-width: 100% !important;
+      max-width: min(100%, var(--wa-plot-w, 100%)) !important;
       width: 100%;
+    }
+    /* A capped plot in a card that runs edge to edge has room either side of
+       it, so it sits in the MIDDLE of that room rather than in the left corner
+       with the whole gap stacked on one side. `display: block` is what makes
+       the auto margins mean anything — an SVG is inline by default, which is
+       why the column chart stayed left while the slope chart beside it was
+       already centring. */
+    .wa-pane-body svg[data-plot-capped] {
+      max-width: min(100%, var(--wa-plot-w, 100%));
+      display: block;
+      margin-inline: auto;
     }
     .wa-pane-body .wa-col-svg { overflow: visible; }
     .wa-pane-body .dash-breakdown-bar-name {
@@ -2427,7 +2452,7 @@
        and intro all run edge to edge above a centred plot. */
     .wa-pane-body .wa-block:not(:has(.wa-sprouts-donuts)):not(:has(.wa-atlas)) > .wa-chart-toolbar {
       width: 100%;
-      max-width: var(--wa-chart-max, 600px);
+      max-width: var(--wa-chart-max, 100%);
       margin-inline: auto;
     }
     .wa-pane-body .wa-block:has(.wa-atlas) > .wa-chart-toolbar { width: 100%; }
@@ -4817,8 +4842,45 @@
       card.classList.remove('is-chart-animating');
       waPlayDonut(card);
     }
+    /* Outputs run edge to edge, and there are two kinds of content in them.
+       Anything that REFLOWS — a table, a matrix, a compare board, a gallery —
+       genuinely wants the extra width: that is where the squeezed column names
+       and clipped labels go back to being readable.
+
+       A plot drawn in viewBox units does not reflow, it scales like a picture.
+       Give it the module's full width and the bars, the axis title and every
+       tick label grow together, so a bar chart reads as a poster with 30px
+       numbers on it. So a plot takes the width it is given only up to the size
+       it was drawn at: the type stays the size it was designed to be and the
+       plot sits centred in the rest of the card.
+
+       Donuts and gauges are sized by their own CSS rather than by the box, so
+       neither is listed here. Every plot in a chart card is, by position, so a
+       new one cannot be drawn without a ceiling. */
+    const WA_SCALED_PLOT_SEL = [
+      '.wa-col-svg', '.atl-map-svg', '.cmp-par-svg', '.wa-radar-svg', '.cmp-radar-svg',
+      '.wa-chart-card > svg[viewBox]',
+    ].join(', ');
+    function waCapScaledPlots(root) {
+      if (!root) return;
+      root.querySelectorAll(WA_SCALED_PLOT_SEL).forEach((svg) => {
+        if (svg.dataset.plotCapped) return;
+        svg.dataset.plotCapped = '1';
+        const w = parseFloat((svg.getAttribute('viewBox') || '').trim().split(/[\s,]+/)[2]);
+        if (!(w > 0)) return;
+        /* A plot that shipped a PERCENTAGE cap was still scaling — 70% of a
+           wide module is well past the size the plot was drawn at. The real
+           ceiling replaces it. An absolute one already says this. */
+        if (/%/.test(svg.style.maxWidth || '')) svg.style.maxWidth = '';
+        /* A property rather than max-width outright: the chart card's own
+           "fit the card" rule is !important, and this has to read as a
+           ceiling inside it rather than a fight with it. */
+        svg.style.setProperty('--wa-plot-w', Math.round(w) + 'px');
+      });
+    }
     function waBootDashCharts(root) {
       if (!root) return;
+      waCapScaledPlots(root);
       const apply = () => {
         root.querySelectorAll('.dash-donut').forEach(waPlayDonut);
         root.querySelectorAll('.dash-ws-health-fill[data-target-width], .wa-ov-kpi-fill[data-target-width]').forEach((fill) => {
@@ -5098,6 +5160,9 @@
         waBootDashCharts(body);
         body.querySelectorAll('.wa-tbl:not([data-ready])').forEach((tbl) => initTable(tbl));
         body.querySelectorAll('.cmp-host:not([data-ready])').forEach((h) => bootCompareEngine(h));
+        /* The pane is now the copy of the board on screen, so the engine's one
+           live instance moves here. */
+        homeLiveCompareBoard();
         /* A gallery written into a closed pane packed against a zero-width box.
            Now that it has one, measure it again. */
         const TM = window.WiseTranscriptMasonry;
@@ -5563,6 +5628,9 @@
           paneEl.report,
         ]);
         recomputeSoloPaneWidth();
+        /* Emptying the pane took the board's copy with it. Hand the engine's one
+           live instance back to the copy drawn in the thread. */
+        homeLiveCompareBoard();
       };
       const wasLast = !!(el && el.classList.contains('is-open') && !anyOtherPaneOpen(el));
       if (!instant && wasLast) {
@@ -9099,13 +9167,17 @@
        engine ported verbatim into this page (see the "PORTED COMPARE ENGINE"
        scripts). This view just returns the host container the engine paints
        into (#cmp-body); bootCompareEngine() seeds the scope + renders once the
-       host lands in a pane. */
+       host lands in a pane.
+
+       The host ships WITHOUT those ids: homeLiveCompareBoard is the one place
+       that hands them out, so two copies of the board can never both claim
+       them. */
     let compareEngineSeeded = false;
     function compareProductsView() {
       return `
         <div class="wa-block cmp-host">
-          <span id="cmp-subtitle" hidden></span>
-          <div class="cmp-body" id="cmp-body"></div>
+          <span class="cmp-subtitle" hidden></span>
+          <div class="cmp-body"></div>
         </div>`;
     }
     function bootCompareEngine(hostEl) {
@@ -9121,6 +9193,49 @@
       } else {
         window.renderCompare();
       }
+    }
+    /* The ported engine paints ONE board and finds it by id. A surfaced output
+       now carries two readings written at the same time — the copy drawn in the
+       thread and the copy in its pane (js/output-mode.js) — so a fixed id left
+       whichever reading the member was actually looking at as an empty box.
+       That was the board arriving blank in the transcript, and the blank
+       thumbnail on its chip.
+
+       So the id travels to the copy on screen. A pane the member opened wins,
+       because opening it was the ask; otherwise the reading in force wins.
+       Only a real pane's body and an inline output are candidates, so a 52px
+       chip thumbnail, a report clone or a filed Library preview can never
+       become the live board. */
+    function homeLiveCompareBoard() {
+      const hosts = Array.from(document.querySelectorAll(
+        '.wa-pane > .wa-pane-body > .cmp-host, .sc-out--inline > .cmp-host',
+      )).filter((h) => h.getClientRects().length);
+      if (!hosts.length) return null;
+      const inThread = (h) => !!h.closest('.sc-out--inline');
+      const cards = document.documentElement.getAttribute('data-output-mode') === 'cards';
+      const live = hosts.find((h) => h.closest('.wa-pane.is-open'))
+        || hosts.find((h) => inThread(h) !== cards)
+        || hosts[0];
+      const body = live.querySelector('.cmp-body');
+      if (!body) return null;
+      if (body.id !== 'cmp-body') {
+        document.querySelectorAll('#cmp-body, #cmp-subtitle').forEach((el) => el.removeAttribute('id'));
+        body.id = 'cmp-body';
+        const sub = live.querySelector('.cmp-subtitle');
+        if (sub) sub.id = 'cmp-subtitle';
+      }
+      /* Re-render even when the id had not moved: the copy that just came on
+         screen can be the one that was never painted. */
+      if (typeof window.cmpSetScope === 'function' && !compareEngineSeeded) {
+        compareEngineSeeded = true;
+        window.cmpSetScope('product_vs_many');
+      } else if (typeof window.renderCompare === 'function') {
+        window.renderCompare();
+      }
+      /* The engine paints its own spider and parallel plots, so they need the
+         same ceiling every other plot gets. */
+      waCapScaledPlots(live);
+      return live;
     }
 
     /* ── Charts ── */
@@ -9206,7 +9321,7 @@
         <div class="wa-block">
           <h3 class="wa-report-title wa-chart-title">Where the cookie shell gets its score</h3>
           <div class="wa-chart-card">
-            <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="WISEscore across the ranked chocolate chip cookies">
+            <svg viewBox="0 0 ${W} ${H}" width="100%" class="wa-col-svg" role="img" aria-label="WISEscore across the ranked chocolate chip cookies">
               ${grid}
               <polygon points="${area}" fill="var(--primary)" fill-opacity="0.12"/>
               <polyline points="${line}" fill="none" stroke="var(--primary)" stroke-width="2.5" stroke-linejoin="round"/>
@@ -13082,6 +13197,7 @@
         waBootDashCharts(el);
         el.querySelectorAll('.wa-tbl:not([data-ready])').forEach((tbl) => initTable(tbl));
         el.querySelectorAll('.cmp-host:not([data-ready])').forEach((h) => bootCompareEngine(h));
+        homeLiveCompareBoard();
         const TM = window.WiseTranscriptMasonry;
         if (TM && TM.mount) TM.mount(el);
         if (TM && TM.pack) el.querySelectorAll('.sc-mgrid').forEach((g) => TM.pack(g));
@@ -13990,10 +14106,12 @@
           });
         } else if (intent === 'compare') {
           /* The compare board is a single live engine instance — if it's
-             already surfaced, re-open it instead of spawning a duplicate
-             #cmp-body (which would break the engine's getElementById lookup). */
-          const existingCmp = document.getElementById('cmp-body');
-          const existingBlk = existingCmp && existingCmp.closest('[data-block-id]');
+             already surfaced, re-open it instead of spawning a second one.
+             Ask the pane's own tagged block rather than #cmp-body: that id is
+             handed out at render time to whichever copy is on screen (see
+             homeLiveCompareBoard), so it is not where the board lives. */
+          const existingBlk = document.querySelector(
+            '.wa-pane > .wa-pane-body > .cmp-host[data-block-id]');
           if (existingBlk) {
             reopenSurface(existingBlk.getAttribute('data-block-id'));
             return;
@@ -15184,6 +15302,12 @@
           try { chat.sendIntent(intent, ask || undefined); } catch (_) { /* no-op */ }
         }, 120);
       })();
+
+      /* Switching where outputs are drawn switches which copy of the compare
+         board is on screen, and only one can be the engine's live instance. */
+      window.WiseOutputMode?.onChange?.(() => {
+        requestAnimationFrame(() => homeLiveCompareBoard());
+      });
 
       /* Activity strip — the thin landmark rail on the chat's edge is mounted
          by the shared chat module itself (js/wiseai-chat.js), so it needs no

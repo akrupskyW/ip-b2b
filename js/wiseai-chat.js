@@ -76,9 +76,6 @@ import { collectRevealUnits, staggerReveal } from './stagger-reveal.js';
    (js/add-product-flow.js) stream the identical "Thinking" block rather than
    standing in a bare spinner-and-label beat. */
 import { runTraceStream } from './trace-stream.js';
-import {
-  wireStoryVoiceover, injectVoiceoverMenuItem, syncVoiceoverMenuItem,
-} from './story-voiceover.js';
 export { OWL_BUG, OWL_MARK };
 
 /* An ask that runs to more than one line is a document, not a sentence: it
@@ -1599,7 +1596,6 @@ export function wireAttachmentPreviews() {
 export function injectChatExtras() {
   wireTranscriptTimes();
   wireAnswerTips();
-  wireStoryVoiceover();
   wireAttachmentPreviews();
   if (typeof document === 'undefined' || document.getElementById('wiseai-chat-extras')) return;
   const css = `
@@ -7832,7 +7828,7 @@ const CHAT_MENU_GROUP_TITLE = {
   more: 'More', danger: '',
 };
 const CHAT_MENU_GROUP_OF = {
-  history: 'conversation', new: 'conversation', export: 'conversation', share: 'conversation', 'file-library': 'conversation', preflight: 'conversation', voiceover: 'conversation', 'add-member': 'conversation',
+  history: 'conversation', new: 'conversation', export: 'conversation', share: 'conversation', 'file-library': 'conversation', preflight: 'conversation', 'add-member': 'conversation',
   turns: 'data', outputs: 'data', connect: 'data', 'mcp-toggle': 'data', sticky: 'data',
   'toggle-cards': 'display', 'toggle-intent-chips': 'display', compact: 'display', brandtext: 'display', sheen: 'display',
   'bg-anim': 'helix', 'bg-anim-snap': 'helix', 'bg-anim-snap-save': 'helix',
@@ -8175,7 +8171,6 @@ const CHAT_ADMIN_DESC = {
   sheen: 'Glow around the input',
   'bg-anim': 'DNA behind welcome',
   'activity-strip': 'Live strip on chat',
-  voiceover: 'Read the story aloud',
 };
 function adminDescKey(el) {
   if (!el || !el.classList) return '';
@@ -10057,7 +10052,6 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           <button type="button" class="topbar-menu-item" data-sc="share"><span class="material-symbols-outlined topbar-menu-icon">share</span><span>Share</span></button>
           <button type="button" class="topbar-menu-item" data-sc="file-library"><span class="material-symbols-outlined topbar-menu-icon">auto_stories</span><span>File to Library</span></button>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-preflight-item" data-sc="preflight" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">rule</span><span>Ask pre-flight</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
-          <button type="button" class="topbar-menu-item topbar-menu-item--admin" data-sc="voiceover" role="menuitem" aria-haspopup="menu" aria-expanded="false"><span class="material-symbols-outlined topbar-menu-icon">record_voice_over</span><span class="topbar-menu-copy"><span class="topbar-menu-title">Play voiceover</span><span class="topbar-menu-desc" data-voice-label>Samuel L. Jackson</span></span><span class="topbar-menu-badge">Admin</span></button>
           ${showTurns ? `<div class="topbar-menu-divider"></div>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="turns" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">alt_route</span><span>Turns</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           ${opts.outputsToggle === true ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="outputs" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dashboard_customize</span><span>Hide outputs &amp; sources</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
@@ -10989,10 +10983,8 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const footer = `<div class="sc-line-meta">${
       src ? `<span class="sc-trust-chip" title="${esc(src)}"><span class="material-symbols-outlined">database</span>${esc(truncSourceName(src))}</span>` : ''
     }${fb ? '' : timeStampHtml(timeMs)}${fb}</div>`;
-    const voiceover = meta.voiceover || (meta.intent === 'playful' ? 'playful' : '');
-    const voiceAttr = voiceover ? ` data-voiceover="${esc(voiceover)}"` : '';
     messages.insertAdjacentHTML('beforeend',
-      `<div class="sc-line sc-line-wiseai" data-ask-turn="${askTurnSeq}"${voiceAttr}><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body">${html}${footer}</div></div>`);
+      `<div class="sc-line sc-line-wiseai" data-ask-turn="${askTurnSeq}"><span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="${esc(title)}">${OWL_BUG}</span><div class="sc-line-body">${html}${footer}</div></div>`);
     const line = messages.lastElementChild; /* capture before chips re-park */
     const body = line && line.querySelector('.sc-line-body');
     refreshDockedTurns();
@@ -11210,9 +11202,6 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       ? meta.milestones
       : reasoningTraceFor(routeText, meta.intent);
     const lineMeta = { ...meta, source: sourceLockedOff ? false : givenSource };
-    if (meta.intent === 'playful' || meta.voiceover === 'playful' || /UNWISEcode/i.test(String(html || ''))) {
-      lineMeta.voiceover = 'playful';
-    }
     delete lineMeta.traceText; delete lineMeta.milestones; delete lineMeta.intent; delete lineMeta.onTraceDone;
     delete lineMeta.chips;
     /* Routing text and the model's question are two different strings on a chip
@@ -14894,8 +14883,6 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
        nodes, so all wiring keeps working; idempotent, so subsequent opens
        are a no-op. */
     if (open) {
-      injectVoiceoverMenuItem(morePop);
-      syncVoiceoverMenuItem(morePop.querySelector('[data-sc="voiceover"]'));
       groupifyChatMenu(morePop);
     }
     morePop.classList.toggle('hidden', !open);
@@ -17003,11 +16990,6 @@ export function wireStandardChatMenu(cfg = {}) {
       });
     });
   }
-
-  /* Play voiceover — character picker for the playful story. Injected
-     before grouping so it lands in Conversation with File to Library. */
-  const voiceItem = injectVoiceoverMenuItem(pop);
-  if (voiceItem) syncVoiceoverMenuItem(voiceItem);
 
   /* Reflow the (now fully assembled, incl. injected Style + Angle + History
      rows) flat menu into the shared group cards — run last so every

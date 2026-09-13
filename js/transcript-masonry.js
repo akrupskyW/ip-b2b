@@ -138,13 +138,12 @@ function injectStyles() {
    area's own padding. Same formula the sent-ask wash and the output rails read,
    with the FLOOR taken from --sc-pad-floor rather than restated, so compact
    spacing cannot move one and not the other. */
-/* Two ways a gallery reaches a transcript: an answer writes it directly, or an
-   output is drawn in the thread rather than as a chip (js/output-mode.js). The
-   second sits a wrapper deeper, which is why the descendant form is here too —
-   the math below is in cqi and fixed lengths precisely so nesting cannot
-   re-resolve it. */
-.sc-line-body > .sc-mgrid,
-.sc-line-body .sc-out--inline .sc-mgrid {
+/* This is the gallery an ANSWER writes into the thread itself, which is the
+   one case where the grid has to open up the prose column on its own. An
+   output drawn in the thread is handled below: that whole block already
+   reaches the module edges (js/output-mode.js), so its gallery only has the
+   block's own padding to cancel and must not bleed a second time. */
+.sc-line-body > .sc-mgrid {
   --mgrid-pad: var(--sc-gutter, max(var(--sc-pad-floor, 3rem), calc((100cqi - var(--sc-transcript-max, 860px)) / 2)));
   box-sizing: border-box;
   max-width: none;
@@ -169,14 +168,14 @@ function injectStyles() {
   gap: ${GAP_PX}px;
   align-items: start;
 }
-/* Same bleed on the other surface a gallery lands on. An output pane has no
-   avatar column to cancel, only its own inline padding, and the tiles start at
-   that edge rather than on a prose column.
+/* Same bleed on the other surface a gallery lands on: an output. There is no
+   avatar column to cancel here, only the output's own inline padding, and the
+   tiles start at that edge rather than on a prose column.
 
-   An inline output borrows the pane's block styling while sitting in a
-   transcript, so it is excluded here by name: it has already been given the
-   transcript's bleed above, and it is not in a pane. */
-.wa-pane-body:not(.sc-out--inline) > .wa-block > .sc-mgrid {
+   One rule covers both readings of an output because the padding it cancels is
+   the variable, not a number — 24px in a pane, and 0 for an output drawn in
+   the thread, which has already reached the module edges as a whole block. */
+.wa-pane-body > .wa-block > .sc-mgrid {
   --mgrid-pad: var(--wa-pane-pad-x, 24px);
   box-sizing: border-box;
   max-width: none;
