@@ -3349,6 +3349,7 @@ function demoChatMenuPop() {
     </button>
     <div class="topbar-menu-divider"></div>
     ${sw({ sc: 'toggle-cards', icon: 'dashboard', label: 'Overview cards', on: false })}
+    ${sw({ sc: 'toggle-admin-cards', icon: 'campaign', label: 'Promo cards', on: true, admin: true, pink: true })}
     ${sw({ sc: 'toggle-intent-chips', icon: 'label', label: 'Intent chips', on: true, admin: true, pink: true })}
     ${sw({ sc: 'compact', icon: 'density_small', label: 'Compact spacing', on: true, admin: true, pink: true, cls: 'sc-compact-item' })}
     ${sw({ sc: 'brandtext', icon: 'format_color_text', label: 'Brand AI text', on: false, admin: true, pink: true, cls: 'sc-brandtext-item' })}

@@ -7830,7 +7830,7 @@ const CHAT_MENU_GROUP_TITLE = {
 const CHAT_MENU_GROUP_OF = {
   history: 'conversation', new: 'conversation', export: 'conversation', share: 'conversation', 'file-library': 'conversation', preflight: 'conversation', 'add-member': 'conversation',
   turns: 'data', outputs: 'data', connect: 'data', 'mcp-toggle': 'data', sticky: 'data',
-  'toggle-cards': 'display', 'toggle-intent-chips': 'display', compact: 'display', brandtext: 'display', sheen: 'display',
+  'toggle-cards': 'display', 'toggle-admin-cards': 'display', 'toggle-intent-chips': 'display', compact: 'display', brandtext: 'display', sheen: 'display',
   'bg-anim': 'helix', 'bg-anim-snap': 'helix', 'bg-anim-snap-save': 'helix',
   'activity-strip': 'motion', 'stream-toggle': 'motion', 'ollama-toggle': 'motion',
   close: 'danger',
@@ -9039,6 +9039,10 @@ function buildAgentsPanelHtml(agents, id) {
  * the width of a regular one, and `artOnly` drops the copy so the photograph
  * carries the card — just the pill and the call to action ride on top.
  * Cards drive a chat turn on click (handled in mountWISEcodeAIChat) via {intent, ask}.
+ *
+ * A card marked `admin: true` is an extra card on the same rail, shown only to
+ * an internal admin: Internal admins off drops it from the rail (and from the
+ * ask panel's suggestions), leaving the rest of the run exactly as it was.
  */
 function buildScorecardsHtml(sc, id) {
   if (!sc || !Array.isArray(sc.cards) || !sc.cards.length) return '';
@@ -9058,7 +9062,8 @@ function buildScorecardsHtml(sc, id) {
       + (c.art ? ' ws-scorecard--art' : '')
       + (c.art && c.artOnly ? ' ws-scorecard--artonly' : '')
       + (chart ? ` ws-scorecard--chart ws-scorecard--chart-${chart}` : '')
-      + (locked ? ' ws-scorecard--locked' : '');
+      + (locked ? ' ws-scorecard--locked' : '')
+      + (c.admin ? ' ws-scorecard--admin' : '');
     /* A card's own photograph rides on a custom property so the shared hero
        rules keep owning the scrim, the copy color, and the hover state. */
     const artStyle = c.art ? ` style="--ws-sc-art: url('${esc(c.art)}')"` : '';
@@ -9631,6 +9636,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     ? opts.scorecards
     : null;
   const scorecardsHtml = scorecards ? buildScorecardsHtml(scorecards, id) : '';
+  /* Admin-only extras on that rail earn their own switch in the three-dot
+     menu, right under Overview cards. A surface with none never shows it. */
+  const hasAdminCards = !!(scorecards && scorecards.cards.some((c) => c && c.admin));
 
   /* Optional brand-connector rail (opt-in) — a horizontally scrolling row of
      data-source connectors docked right beneath the input, e.g. retailer &
@@ -9829,6 +9837,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     if (stored === '1') cardsHidden = true;
     else if (stored === '0') cardsHidden = false;
   } catch (_) {}
+  /* The Admin-only extras on that same rail carry their own remembered
+     preference, so an admin can drop the promo work without losing the rest
+     of the rail. They start shown; Internal admins off hides them either way. */
+  const ADMIN_CARDS_PREF_KEY = `${opts.historyKey || 'wise-wiseai-chat'}-admin-cards-hidden`;
+  let adminCardsHidden = false;
+  try { adminCardsHidden = localStorage.getItem(ADMIN_CARDS_PREF_KEY) === '1'; } catch (_) {}
   /* Welcome INTENT CHIPS (the small suggested-action chips right below the
      overview cards) are ALWAYS ON by default: every load starts with them
      shown, unlike the large overview cards whose hidden state persists. The
@@ -10060,6 +10074,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
           ${opts.mcpToggle === true ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="mcp-toggle" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dns</span><span>MCP server</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
           <div class="topbar-menu-divider"></div>
           ${scorecardsHtml ? `<button type="button" class="topbar-menu-item sc-mcp-item" data-sc="toggle-cards" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">dashboard</span><span>Overview cards</span><span class="sc-switch" aria-hidden="true"></span></button>` : ''}
+          ${scorecardsHtml && hasAdminCards ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="toggle-admin-cards" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">campaign</span><span>Promo cards</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>` : ''}
           ${intents.length ? `<button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item" data-sc="toggle-intent-chips" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">label</span><span>Intent chips</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>` : ''}
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-compact-item" data-sc="compact" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">density_small</span><span>Compact spacing</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
           <button type="button" class="topbar-menu-item topbar-menu-item--admin sc-mcp-item sc-brandtext-item" data-sc="brandtext" role="menuitemcheckbox" aria-checked="false"><span class="material-symbols-outlined topbar-menu-icon">format_color_text</span><span>Brand AI text</span><span class="topbar-menu-badge">Admin</span><span class="sc-switch sc-switch--pink" aria-hidden="true"></span></button>
@@ -10431,6 +10446,27 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       item.setAttribute('aria-checked', cardsHidden ? 'false' : 'true');
     }
   }
+
+  /* Some overview cards are Admin-only extras on the same rail. Two things
+     can drop them, and the rest of the rail is untouched either way: the
+     master Internal-admins switch (Appearance ▸ Admin, or the chat ⋯ Admin
+     popover), and the chat ⋯ "Promo cards" switch sitting under Overview
+     cards. The row itself is Admin-badged, so it is only offered to an admin. */
+  let refreshCardRail = () => {};
+  function syncAdminCards() {
+    const off = adminCardsHidden || !isChatAdminUiOn();
+    rootEl.classList.toggle('sc-admin-cards-off', off);
+    const item = menuSel('[data-sc="toggle-admin-cards"]');
+    if (item) {
+      item.classList.toggle('is-on', !adminCardsHidden);
+      item.setAttribute('aria-checked', adminCardsHidden ? 'false' : 'true');
+    }
+    refreshCardRail();
+  }
+  document.addEventListener('wise:admin-ui', syncAdminCards);
+  window.addEventListener('storage', (e) => {
+    if (e && e.key === CHAT_ADMIN_UI_KEY) syncAdminCards();
+  });
 
   /* Reflect the intent-chips preference: a root class hides the welcome intent
      chips (the small suggested-action chips right below the overview cards).
@@ -12090,8 +12126,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     const seen = new Set();
     const groups = [];
 
+    /* An Admin-only card that is off the rail must not reach the ask panel
+       either — whichever of the two switches took it off. */
+    const adminCardsOn = !adminCardsHidden && isChatAdminUiOn();
     const scCards = (scorecards && Array.isArray(scorecards.cards) ? scorecards.cards : [])
       .filter((c) => c && !c.locked && !isControlIntent(c.intent) && (c.ask || c.title))
+      .filter((c) => adminCardsOn || !c.admin)
       .map((c) => {
         if (c.intent) seen.add(c.intent);
         return { icon: c.icon || 'auto_awesome', title: c.title || c.ask, desc: c.desc || '',
@@ -14779,6 +14819,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       rail.addEventListener('scroll', updateArrows, { passive: true });
       window.addEventListener('resize', updateArrows);
       requestAnimationFrame(updateArrows);
+      /* Showing or hiding the Admin cards changes how far the rail runs, so
+         the chevrons have to be re-measured when that switch moves. */
+      refreshCardRail = updateArrows;
     }
   }
 
@@ -15494,6 +15537,12 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
       try { localStorage.setItem(CHIPS_PREF_KEY, cardsHidden ? '1' : '0'); } catch (_) {}
       syncCards();
     }
+    else if (action === 'toggle-admin-cards') {
+      /* Switch row — keep the menu open so the flipped state reads back. */
+      adminCardsHidden = !adminCardsHidden;
+      try { localStorage.setItem(ADMIN_CARDS_PREF_KEY, adminCardsHidden ? '1' : '0'); } catch (_) {}
+      syncAdminCards();
+    }
     else if (action === 'toggle-intent-chips') {
       /* Switch row — keep the menu open so the flipped state reads back.
          Session-only: the chips come back ON at the next load by design. */
@@ -15900,6 +15949,7 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
 
   /* Apply the remembered overview-cards + intent-chips preferences now the DOM exists. */
   syncCards();
+  syncAdminCards();
   syncChips();
 
   /* Re-clamp welcome chips when the grid's width changes (window resize, dock

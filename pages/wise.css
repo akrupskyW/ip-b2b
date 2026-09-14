@@ -8698,6 +8698,11 @@ html.dark .sc-open-chip-ic { color: var(--primary-bright, #8B9FAF); }
 /* Overview cards hidden (three-dot menu → "Overview cards" switch off) — drop
    the large "at a glance" card rail from the welcome; everything else stays. */
 .sc-cards-hidden .ws-scorecards-section { display: none; }
+/* Admin-only overview cards — the campaign and apparel work rides the same
+   rail as everything else. The chat ⋯ "Promo cards" switch (right under
+   Overview cards), or Internal admins off, drops just those cards out of the
+   run; the rail closes up around them. */
+.sc-admin-cards-off .ws-scorecard--admin { display: none; }
 /* Intent chips hidden (three-dot menu → "Intent chips" switch off) — drop the small
    suggested-action chips right below the overview cards on the welcome; the
    overview cards and everything else stay. */
