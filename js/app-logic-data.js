@@ -228,7 +228,7 @@ export const APP_LOGIC = [
       },
       {
         title: 'Load-more paging, ten at a time',
-        how: '<code>table-pagination.js</code> appends a <code>.wtp-foot</code> reading &ldquo;Showing <em>n</em> of <em>total</em>&rdquo; with a Load more button that reveals 10 further rows; overflow rows are hidden with <code>.wtp-clip</code>. Opt out with <code>[data-wtp-skip]</code> or <code>[data-no-paginate]</code>.',
+        how: '<code>table-pagination.js</code> appends a <code>.wtp-foot</code> reading &ldquo;Showing <em>n</em> of <em>total</em>&rdquo; with a Load more button that reveals 10 further rows (20 on Product Portfolio via <code>data-wtp-step</code>); overflow rows are hidden with <code>.wtp-clip</code>. Opt out with <code>[data-wtp-skip]</code> or <code>[data-no-paginate]</code>.',
       },
       {
         title: 'A product row opens the product',

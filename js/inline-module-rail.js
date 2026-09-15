@@ -68,9 +68,11 @@
     margin: 0.9em 0 0.3em;
     isolation: isolate;
   }
-  /* Bleed the rail chat-module edge to edge, the same lead-in / gutter math the
-     output rails use, so the modules run wide inside the answer. */
-  .sc-line-body > .sc-inline-rail {
+  /* A carousel is allowed to leave the reading column. Bleed the rail
+     chat-module edge to edge, the same lead-in / gutter math the output
+     rails use. A descendant match covers a rail the answer wrote itself
+     and one parked inside an inline output. */
+  .sc-line-body .sc-inline-rail {
     --sc-rail-pad: var(--sc-gutter, max(var(--sc-pad-floor, 3rem), calc((100cqi - var(--sc-transcript-max, 860px)) / 2)));
     --sc-rail-lead-in: calc(var(--sc-avatar-size, 30px) + 12px + var(--sc-rail-pad));
     max-width: none;
@@ -91,7 +93,7 @@
     padding-bottom: 2px;
     scrollbar-width: thin;
   }
-  .sc-line-body > .sc-inline-rail > .sc-inline-rail-track {
+  .sc-line-body .sc-inline-rail > .sc-inline-rail-track {
     padding-inline-start: var(--sc-rail-lead-in);
     padding-inline-end: 6px;
     scroll-padding-inline-start: var(--sc-rail-lead-in);

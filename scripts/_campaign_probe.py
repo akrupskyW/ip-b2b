@@ -313,7 +313,7 @@ def main():
             "(function(){"
             "var s=document.getElementById('wise-masonry-detail');"
             "return {scrim:!!s,title:s?(s.querySelector('.wise-modal-title')||{}).textContent:'',"
-            "eyebrow:s?(s.querySelector('.wise-modal-eyebrow')||{}).textContent:'',"
+            "count:s?(s.querySelector('[data-mgrid-count]')||{}).textContent:'',"
             "src:s?((s.querySelector('.sc-mgrid-full')||{}).getAttribute?"
             "s.querySelector('.sc-mgrid-full').getAttribute('src'):''):''};"
             "})()"
@@ -321,8 +321,8 @@ def main():
         print("  viewer", opened)
         ok(opened.get("scrim"), "tapping a piece opens it full size")
         ok("thumbs/" not in (opened.get("src") or ""), "the viewer shows the full-size file")
-        ok(" of 16" in (opened.get("eyebrow") or ""),
-           "and says where it sits in the set (%r)" % opened.get("eyebrow"))
+        ok(" of 16" in (opened.get("count") or ""),
+           "and says where it sits in the set (%r)" % opened.get("count"))
         time.sleep(0.8)
         print("  shot", b.shot("campaign__masonry-open__%s" % THEME))
         b.js("document.dispatchEvent(new KeyboardEvent('keydown',"
@@ -330,9 +330,9 @@ def main():
         time.sleep(0.6)
         stepped = b.js(
             "(function(){var s=document.getElementById('wise-masonry-detail');"
-            "return s?(s.querySelector('.wise-modal-eyebrow')||{}).textContent:'';})()"
+            "return s?(s.querySelector('[data-mgrid-count]')||{}).textContent:'';})()"
         )
-        ok(stepped and stepped != opened.get("eyebrow"),
+        ok(stepped and stepped != opened.get("count"),
            "the right arrow moves to the next piece (%r)" % stepped)
         escape(b)
         ok(not b.js("!!document.getElementById('wise-masonry-detail')"), "Escape closes it")
@@ -363,15 +363,15 @@ def main():
             "var s=document.getElementById('wise-masonry-detail');"
             "return {scrim:!!s,title:s?(s.querySelector('.wise-modal-title')||{}).textContent:'',"
             "sub:s?(s.querySelector('.wise-modal-sub')||{}).textContent:'',"
-            "eyebrow:s?(s.querySelector('.wise-modal-eyebrow')||{}).textContent:'',"
+            "count:s?(s.querySelector('[data-mgrid-count]')||{}).textContent:'',"
             "src:s?((s.querySelector('.sc-mgrid-full')||{}).getAttribute?"
             "s.querySelector('.sc-mgrid-full').getAttribute('src'):''):''};"
             "})()"
         ) or {}
         print("  card viewer", card)
         ok(card.get("scrim"), "tapping a card opens it full size")
-        ok(" of 23" in (card.get("eyebrow") or ""),
-           "the deck is its own set, not the gallery's (%r)" % card.get("eyebrow"))
+        ok(" of 23" in (card.get("count") or ""),
+           "the deck is its own set, not the gallery's (%r)" % card.get("count"))
         ok("/cards/" in (card.get("src") or "")
            and "thumbs/" not in (card.get("src") or ""),
            "and shows the full-size card (%r)" % card.get("src"))

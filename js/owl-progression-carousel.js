@@ -7,8 +7,10 @@
    it via owlProgressionCarouselHtml() + auto-mount.
 
    Every owl is tappable and opens the shared modal panel at a larger size.
-   Motion owls play once in that panel (click again to replay). Stills are
-   PNG with a punched-out studio matte so the chat shows through.
+   The strip and the panel both carry the same foot: previous / next and a
+   live "n of N" count. Motion owls play once in that panel (click again to
+   replay). Stills are PNG with a punched-out studio matte so the chat shows
+   through.
    ========================================================================== */
 
 import { openModal, modalHTML } from './wise-modal.js';
@@ -44,6 +46,62 @@ function esc(s) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+function countLabel(at, total) {
+  return `${at + 1} of ${total}`;
+}
+
+/* Previous / count / next — the same foot on the strip and in the panel. */
+function chromeHtml(opts) {
+  const o = opts || {};
+  const total = o.total || 0;
+  const at = o.at || 0;
+  const attr = o.stepAttr || 'data-owl-dir';
+  const prev = o.prevLabel || 'Previous';
+  const next = o.nextLabel || 'Next';
+  const multi = total > 1;
+  const btn = (dir, icon, lab) => (
+    `<button type="button" class="sc-owl-prog-nav" ${attr}="${dir}" aria-label="${esc(lab)}">`
+    + `<span class="material-symbols-outlined" aria-hidden="true">${icon}</span>`
+    + `</button>`
+  );
+  return (
+    `<div class="sc-owl-prog-chrome">`
+    + (multi ? btn(-1, 'chevron_left', prev) : '')
+    + `<span class="sc-owl-prog-figcap" data-owl-count aria-live="polite">${esc(countLabel(at, total))}</span>`
+    + (multi ? btn(1, 'chevron_right', next) : '')
+    + `</div>`
+  );
+}
+
+function leadingIndex(viewport, items) {
+  if (!viewport || !items.length) return 0;
+  let pad = 0;
+  try {
+    const cs = getComputedStyle(viewport);
+    pad = parseFloat(cs.paddingInlineStart) || parseFloat(cs.paddingLeft) || 0;
+  } catch (_) { /* treat as flush */ }
+  const left = viewport.getBoundingClientRect().left + pad;
+  let best = 0;
+  let bestDist = Infinity;
+  items.forEach((el, i) => {
+    const d = Math.abs(el.getBoundingClientRect().left - left);
+    if (d < bestDist) {
+      bestDist = d;
+      best = i;
+    }
+  });
+  return best;
+}
+
+function syncStripCount(root) {
+  if (!root) return;
+  const count = root.querySelector('[data-owl-count]');
+  const viewport = root.querySelector('[data-owl-viewport]');
+  const items = Array.from(root.querySelectorAll('.sc-owl-prog-item'));
+  if (!count || !items.length) return;
+  count.textContent = countLabel(leadingIndex(viewport, items), items.length);
 }
 
 /**
@@ -91,6 +149,13 @@ export function owlProgressionSlides(base) {
       label: 'WISEcode owl · wings',
       tone: 'clay',
     },
+    {
+      kind: 'video',
+      lightSrc: asset(b, 'owl-rendering.mp4'),
+      darkSrc: asset(b, 'owl-rendering.mp4'),
+      label: 'Ollie · render',
+      tone: 'blue',
+    },
   ];
 }
 
@@ -128,15 +193,13 @@ export function owlProgressionCarouselHtml(opts) {
     + `<div class="sc-owl-prog-viewport" data-owl-viewport>`
     + `<div class="sc-owl-prog-track" data-owl-track>${items}</div>`
     + `</div>`
-    + `<div class="sc-owl-prog-chrome">`
-    + `<button type="button" class="sc-owl-prog-nav sc-owl-prog-prev" data-owl-dir="-1" aria-label="Scroll previous">`
-    + `<span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>`
-    + `</button>`
-    + `<figcaption class="sc-owl-prog-figcap">Wise Owl Progression</figcaption>`
-    + `<button type="button" class="sc-owl-prog-nav sc-owl-prog-next" data-owl-dir="1" aria-label="Scroll next">`
-    + `<span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>`
-    + `</button>`
-    + `</div>`
+    + chromeHtml({
+      at: 0,
+      total: slides.length,
+      stepAttr: 'data-owl-dir',
+      prevLabel: 'Scroll previous',
+      nextLabel: 'Scroll next',
+    })
     + `</figure>`
   );
 }
@@ -152,16 +215,18 @@ function injectStyles() {
   style.id = STYLE_ID;
   document.head.appendChild(style);
   style.textContent = `
-/* Edge-to-edge of the chat MODULE: cancel the avatar column and the
-   messages-area padding using the sc-chat-body container inline size.
-   Background stays transparent so the chat surface shows through the gaps.
+/* A carousel is allowed to leave the reading column. Cancel the avatar
+   column and the messages-area padding using the sc-chat-body container
+   inline size. A descendant match covers a strip the answer wrote itself
+   and one parked inside an inline output. Background stays transparent so
+   the chat surface shows through the gaps.
 
    Both edges are margins rather than a width, and the inset's FLOOR is read
    from --sc-pad-floor (the shared chat gutter in wise.css) instead of being
    restated — a hard-coded 3rem left the strip 28px adrift once compact spacing
    tightened the transcript to 20px. Keep this formula identical to the one the
    messages area pads by. */
-.sc-line-body > .sc-owl-prog {
+.sc-line-body .sc-owl-prog {
   --sc-owl-pad: var(--sc-gutter, max(var(--sc-pad-floor, 3rem), calc((100cqi - var(--sc-transcript-max, 860px)) / 2)));
   --sc-owl-media-h: ${OWL_PROG_MEDIA_H}px;
   --sc-owl-gap: 14px;
@@ -224,8 +289,14 @@ function injectStyles() {
 .sc-owl-prog-modal-body {
   align-items: center;
 }
+.sc-owl-prog-stage {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 .sc-owl-prog-detail {
-  --sc-owl-media-h: min(560px, calc(100vw - 96px), calc(100vh - 220px));
+  --sc-owl-media-h: min(560px, calc(100vw - 96px), calc(100vh - 270px));
   width: 100%;
   display: flex;
   align-items: center;
@@ -302,7 +373,12 @@ function injectStyles() {
   line-height: 1.45;
   color: var(--text-muted);
   text-align: center;
-  min-width: 10em;
+  min-width: 4.5em;
+  font-variant-numeric: tabular-nums;
+}
+.sc-owl-prog-modal-body .sc-owl-prog-chrome {
+  width: 100%;
+  padding: 8px 0 0;
 }
 @media (prefers-reduced-motion: reduce) {
   .sc-owl-prog-viewport { scroll-behavior: auto; }
@@ -496,61 +572,152 @@ function whenLottieReady(el) {
   });
 }
 
+function slidesFromItem(item) {
+  const root = item && item.closest && item.closest('.sc-owl-prog');
+  if (!root) {
+    const one = slideFromItem(item);
+    return { slides: one ? [one] : [], at: 0 };
+  }
+  const nodes = Array.from(root.querySelectorAll('.sc-owl-prog-item'));
+  const slides = nodes.map(slideFromItem);
+  let at = nodes.indexOf(item);
+  if (at < 0) at = 0;
+  return { slides, at };
+}
+
+function markDetailPlayable(detailEl, slide) {
+  if (!detailEl || !slide) return;
+  const playable = slide.kind === 'lottie' || slide.kind === 'video';
+  detailEl.classList.toggle('is-playable', playable);
+  detailEl.setAttribute('data-owl-kind', slide.kind);
+  if (playable) {
+    detailEl.setAttribute('tabindex', '0');
+    detailEl.setAttribute('role', 'button');
+    detailEl.setAttribute('aria-label', `Play ${slide.label}`);
+  } else {
+    detailEl.removeAttribute('tabindex');
+    detailEl.removeAttribute('role');
+    detailEl.removeAttribute('aria-label');
+  }
+}
+
 /**
- * Open the shared panel with this owl at a larger size.
- * Motion plays once in the panel; click the large owl to replay.
+ * Open the shared panel with this owl at a larger size. The rest of that
+ * strip rides along — arrows and a count at the foot, left / right keys —
+ * so the member can step through without reopening. Motion plays once;
+ * click the large owl to replay.
  */
 export function openOwlDetail(item) {
-  const slide = slideFromItem(item);
-  if (!slide) return null;
-  const playable = slide.kind === 'lottie' || slide.kind === 'video';
+  const set = slidesFromItem(item);
+  if (!set.slides.length || !set.slides[set.at]) return null;
   pauseItemMedia(item);
 
+  let at = set.at;
+  const slides = set.slides;
   let detailEl = null;
+  let scrimEl = null;
+  let gen = 0;
+
+  const paint = async () => {
+    const token = ++gen;
+    const slide = slides[at];
+    if (!slide || !scrimEl || !detailEl) return;
+    const title = scrimEl.querySelector('.wise-modal-title');
+    const count = scrimEl.querySelector('[data-owl-count]');
+    if (title) title.textContent = slide.label;
+    if (count) count.textContent = countLabel(at, slides.length);
+    destroyDetailMedia(detailEl);
+    markDetailPlayable(detailEl, slide);
+    detailEl.innerHTML = itemInnerHtml(slide, at);
+    const playable = slide.kind === 'lottie' || slide.kind === 'video';
+    if (slide.kind === 'lottie') {
+      await mountLotties(detailEl);
+      if (token !== gen) return;
+      await whenLottieReady(detailEl.querySelector('[data-owl-lottie]'));
+      if (token !== gen) return;
+      await new Promise((r) => requestAnimationFrame(() => r()));
+    }
+    if (token !== gen) return;
+    if (slide.kind === 'video') applyVideoTheme(detailEl.querySelector('video'));
+    if (playable) playItemMedia(detailEl);
+  };
+
+  const step = (dir) => {
+    if (slides.length < 2) return;
+    at = (at + dir + slides.length) % slides.length;
+    paint();
+  };
+
+  const first = slides[at];
+  const playable = first.kind === 'lottie' || first.kind === 'video';
+  const onKey = (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    e.stopPropagation();
+    step(e.key === 'ArrowLeft' ? -1 : 1);
+  };
+
   const opened = openModal({
     id: DETAIL_ID,
     panel: true,
     extraScrimClass: 'sc-owl-prog-scrim',
     html: modalHTML({
       eyebrow: 'Wise Owl Progression',
-      title: esc(slide.label),
+      title: esc(first.label),
       titleId: 'owl-prog-detail-title',
       modalClass: 'sc-owl-prog-modal',
       bodyClass: 'sc-owl-prog-modal-body',
       body:
-        `<div class="sc-owl-prog-detail${playable ? ' is-playable' : ''}" data-owl-kind="${esc(slide.kind)}"`
-        + (playable ? ` tabindex="0" role="button" aria-label="Play ${esc(slide.label)}"` : '')
-        + `>${itemInnerHtml(slide, 0)}</div>`,
+        `<div class="sc-owl-prog-stage">`
+        + `<div class="sc-owl-prog-detail${playable ? ' is-playable' : ''}" data-owl-kind="${esc(first.kind)}"`
+        + (playable ? ` tabindex="0" role="button" aria-label="Play ${esc(first.label)}"` : '')
+        + `>${itemInnerHtml(first, at)}</div>`
+        + chromeHtml({
+          at,
+          total: slides.length,
+          stepAttr: 'data-owl-step',
+          prevLabel: 'Previous owl',
+          nextLabel: 'Next owl',
+        })
+        + `</div>`,
     }),
     onOpen(scrim) {
+      scrimEl = scrim;
       detailEl = scrim.querySelector('.sc-owl-prog-detail');
       const closeBtn = scrim.querySelector('.wise-modal-close');
       if (closeBtn) closeBtn.focus();
       if (!detailEl) return;
       const boot = async () => {
-        if (slide.kind === 'lottie') {
+        if (first.kind === 'lottie') {
           await mountLotties(detailEl);
           await whenLottieReady(detailEl.querySelector('[data-owl-lottie]'));
           await new Promise((r) => requestAnimationFrame(() => r()));
         }
-        if (slide.kind === 'video') applyVideoTheme(detailEl.querySelector('video'));
+        if (first.kind === 'video') applyVideoTheme(detailEl.querySelector('video'));
         if (playable) playItemMedia(detailEl);
       };
       boot();
-      if (playable) {
-        const replay = () => playItemMedia(detailEl);
-        detailEl.addEventListener('click', replay);
-        detailEl.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            replay();
-          }
-        });
-      }
+      const replay = () => playItemMedia(detailEl);
+      detailEl.addEventListener('click', replay);
+      detailEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          replay();
+        }
+      });
+      scrim.addEventListener('click', (e) => {
+        const nav = e.target.closest && e.target.closest('[data-owl-step]');
+        if (!nav) return;
+        e.preventDefault();
+        step(parseInt(nav.getAttribute('data-owl-step'), 10) || 1);
+      });
+      document.addEventListener('keydown', onKey, true);
     },
     onClose() {
+      document.removeEventListener('keydown', onKey, true);
       destroyDetailMedia(detailEl);
       detailEl = null;
+      scrimEl = null;
     },
   });
   return opened;
@@ -629,6 +796,10 @@ function mountOne(root) {
 
   const items = Array.from(root.querySelectorAll('.sc-owl-prog-item'));
   const viewport = root.querySelector('[data-owl-viewport]');
+  if (viewport) {
+    viewport.addEventListener('scroll', () => syncStripCount(root), { passive: true });
+  }
+  syncStripCount(root);
 
   /* Pause clips that leave the strip so they are not decoding off-screen.
      Do not auto-start — a tap opens the detail panel. */

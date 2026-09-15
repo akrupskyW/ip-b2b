@@ -174,7 +174,7 @@ import {
       title: 'Claimed products',
       intro: 'The portfolio’s claimed grid: three icon columns ahead of the product (name, UPC, and pack formats when there are more than one), then brand, Non-UPF state, and the date pair. Finish-and-Claim and the old Data column are gone — row actions live on the ⋮ and the multi-select bar.',
       page: 'Product Portfolio', href: 'product-portfolio.html#pf-view-claimed',
-      note: 'Sample data: five Flax4Life SKUs, as the claimed view paints them.',
+      note: 'Sample data: the claimed view as it paints Flax4Life SKUs.',
       minw: 880,
       cols: [['', 'c'], ['', 'c'], ['', 'c'], ['Product', 'id'], ['Brand', ''], ['State', ''], ['Updated', 'dates']],
       rows: [

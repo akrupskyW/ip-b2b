@@ -1,18 +1,20 @@
-"""Outputs drawn in the thread fill the module, and never outgrow it.
+"""Outputs drawn in the thread sit on the reading column — except galleries.
 
 Drives real turns with `data-output-mode="inline"` in force and checks the
-three things that make an output readable in the transcript:
+things that make an output readable in the transcript:
 
   1. It RENDERS. The compare board is the case that did not: its host is
      found by id, both readings of the output are written at once, and the
      copy in the thread was left an empty box (see homeLiveCompareBoard).
-  2. It runs the chat MODULE edge to edge rather than sitting on the prose
-     column, so a table gets its columns and a matrix gets its labels.
-  3. It is never WIDER than the module — at every tier of the width cycle,
-     not just the ends, since the single width is where content that cannot
-     shrink shows up and the middle is where a bad formula hides — and a
-     plot drawn in viewBox units is never scaled past its drawn size,
-     nor parked in the left corner of the room the cap left it.
+  2. Charts, graphs, scorecards, tables and boards sit on the READING
+     COLUMN with the answer — the same width as the words above them —
+     rather than stretching the chat module edge to edge.
+  3. Only a carousel or an image grid cancels that column and reaches the
+     module edges.
+  4. Nothing is WIDER than the module — at every tier of the width cycle,
+     not just the ends — and a plot drawn in viewBox units is never scaled
+     past its drawn size, nor parked in the left corner of the room the
+     cap left it.
 
 Then flips to the card reading and checks the chip's thumbnail is not blank,
 which is the same bug seen from the other side.
@@ -37,6 +39,7 @@ THEME = sys.argv[1] if len(sys.argv) > 1 else "dark"
 TURNS = [
     ("compare", 1),
     ("energy", 1),
+    ("proteinbars", 1),
     ("topbrands", 2),
     ("report", 2),
     ("atlas", 10),
@@ -103,46 +106,48 @@ STATE = r"""
   });
   spill.sort(function(a,b){ return b.past - a.past; });
 
-  /* The block reaching the module edges is not the whole promise: its PROSE
-     sits on a small inset, and the wide content is supposed to cancel that
-     inset and reach the edges anyway. Measure both halves, so a missing
-     cancel shows up as a chart that stops short rather than as nothing. */
-  var WIDE = '.wa-chart-card, table, .rtbl, .cmp-body, .atl-card, .atl-mapwrap, .sc-mgrid';
-  var wide = [], prose = [];
+  /* Charts, graphs and scorecards stay on the reading column. Only a
+     carousel or an image grid is allowed to cancel that column and reach
+     the module edges. Measure both so a leftover bleed on a scorecard
+     (or a gallery that forgot to bleed) shows up as itself. */
+  var BLEED = '.sc-mgrid, .sc-owl-prog, .sc-inline-rail, .sc-surface-rail--bleed';
+  var COLUMN = '.wa-chart-card, .wa-stats, .wa-dhero, .wa-resultset, table, .rtbl, .cmp-body, .atl-card, .atl-mapwrap';
+  var bleed = [], column = [];
+  function outermost(el, sel, root){
+    return !(el.parentElement && el.parentElement.closest(sel)
+             && root.contains(el.parentElement.closest(sel)));
+  }
   blocks.forEach(function(b, i){
-    /* No `clipped` test here: that one exists to excuse a rect the thread's
-       own scroller is hiding, and the scroller is an ancestor of everything,
-       so it would excuse every box in the block. */
-    b.querySelectorAll(WIDE).forEach(function(el){
-      if (!vis(el)) return;
-      /* Only the OUTERMOST wide box on its branch. A table inside a card sits
-         on that card's own padding, which is the frame the output is supposed
-         to keep — demanding it reach the module edges too would be asking for
-         a table printed on the card's border. */
-      if (el.parentElement && el.parentElement.closest(WIDE)
-          && b.contains(el.parentElement.closest(WIDE))) return;
+    b.querySelectorAll(BLEED).forEach(function(el){
+      if (!vis(el) || !outermost(el, BLEED, b)) return;
       var r = el.getBoundingClientRect();
-      /* Only boxes that actually want the full width — a stat tile or a half
-         card is meant to stop short. */
-      if (r.width < mb.width - 60) return;
-      wide.push({ b:i, cls:(el.className||'-').toString().slice(0,28),
-                  offL: Math.round(r.left - mb.left),
-                  offR: Math.round(mb.right - r.right) });
+      bleed.push({ b:i, cls:(el.className||'-').toString().slice(0,28),
+                   offL: Math.round(r.left - mb.left),
+                   offR: Math.round(mb.right - r.right) });
     });
-    b.querySelectorAll('.wa-sec-title, .wa-report-lede, .atl-ctrl-label, .wa-ref-group')
-      .forEach(function(el){
-        if (!vis(el)) return;
-        var r = el.getBoundingClientRect();
-        prose.push({ b:i, cls:(el.className||'-').toString().slice(0,26),
-                     offL: Math.round(r.left - mb.left) });
-      });
+    b.querySelectorAll(COLUMN).forEach(function(el){
+      if (!vis(el) || !outermost(el, COLUMN, b)) return;
+      var r = el.getBoundingClientRect();
+      var body = el.closest('.sc-line-body') || b;
+      var br = body.getBoundingClientRect();
+      column.push({ b:i, cls:(el.className||'-').toString().slice(0,28),
+                    offL: Math.round(r.left - mb.left),
+                    offR: Math.round(mb.right - r.right),
+                    colL: Math.round(r.left - br.left),
+                    colR: Math.round(br.right - r.right),
+                    w: Math.round(r.width) });
+    });
   });
 
   var rects = blocks.map(function(b){
     var r = b.getBoundingClientRect();
+    var body = b.closest('.sc-line-body') || b;
+    var br = body.getBoundingClientRect();
     return { w: Math.round(r.width), h: Math.round(r.height),
              offL: Math.round(r.left - mb.left),
-             offR: Math.round(mb.right - r.right) };
+             offR: Math.round(mb.right - r.right),
+             colL: Math.round(r.left - br.left),
+             colR: Math.round(br.right - r.right) };
   });
 
   /* The chip's thumbnail in the card reading — a blank one is the same bug. */
@@ -161,10 +166,11 @@ STATE = r"""
       return Math.abs(p.gapL - p.gapR) > 6 && Math.max(p.gapL, p.gapR) > 12;
     }),
     spillN: spill.length, spill: spill.slice(0, 6),
-    wideN: wide.length,
-    wideShort: wide.filter(function(w){ return w.offL > 2 || w.offR > 2; }).slice(0, 6),
-    proseN: prose.length,
-    proseOnEdge: prose.filter(function(p){ return p.offL < 6; }).slice(0, 6),
+    bleedN: bleed.length,
+    bleedShort: bleed.filter(function(w){ return w.offL > 2 || w.offR > 2; }).slice(0, 6),
+    columnN: column.length,
+    columnBleed: column.filter(function(w){ return w.offL <= 2 || w.offR <= 2; }).slice(0, 6),
+    columnPast: column.filter(function(w){ return w.colL < -2 || w.colR < -2; }).slice(0, 6),
     cards: host.querySelectorAll('.sc-surface-card[data-surface]').length,
     thumbs: thumbs,
     blankThumbs: thumbs.filter(function(t){ return !t.kids; }).length,
@@ -242,18 +248,28 @@ def main():
             ok(rects and all(r["h"] > 120 for r in rects),
                "every one of them actually rendered (heights %s)"
                % [r["h"] for r in rects])
-            ok(rects and all(abs(r["offL"]) <= 2 and abs(r["offR"]) <= 2 for r in rects),
-               "and reaches both module edges (%s)"
-               % [(r["offL"], r["offR"]) for r in rects])
+            ok(rects and all(abs(r.get("colL") or 0) <= 2 and abs(r.get("colR") or 0) <= 2
+                            for r in rects),
+               "and sits on the reading column (%s)"
+               % [(r.get("colL"), r.get("colR")) for r in rects])
+            ok(rects and all((r.get("offL") or 0) > 2 and (r.get("offR") or 0) > 2
+                            for r in rects),
+               "without stretching the module edges (%s)"
+               % [(r.get("offL"), r.get("offR")) for r in rects])
             ok(st.get("spillN") == 0,
                "nothing paints past the module (%s)" % json.dumps(st.get("spill") or []))
-            ok(not st.get("wideShort"),
-               "its wide content cancels the inset and reaches the edges (%s of %s short%s)"
-               % (len(st.get("wideShort") or []), st.get("wideN"),
-                  "" if not st.get("wideShort") else ": " + json.dumps(st["wideShort"])))
-            ok(not st.get("proseOnEdge"),
-               "and its own words keep the inset (%s of %s on the edge)"
-               % (len(st.get("proseOnEdge") or []), st.get("proseN")))
+            if st.get("bleedN"):
+                ok(not st.get("bleedShort"),
+                   "its carousels and image grids still reach the edges (%s of %s short%s)"
+                   % (len(st.get("bleedShort") or []), st.get("bleedN"),
+                      "" if not st.get("bleedShort") else ": " + json.dumps(st["bleedShort"])))
+            ok(not st.get("columnBleed"),
+               "charts and scorecards stay on the column (%s of %s at the edge%s)"
+               % (len(st.get("columnBleed") or []), st.get("columnN"),
+                  "" if not st.get("columnBleed") else ": " + json.dumps(st["columnBleed"])))
+            ok(not st.get("columnPast"),
+               "and none of them outgrow the column (%s)"
+               % json.dumps(st.get("columnPast") or []))
             ok(not st.get("badPlots"),
                "no plot is scaled past the size it was drawn at (%s)"
                % json.dumps(st.get("badPlots") or []))
@@ -289,9 +305,14 @@ def main():
                 w = tst.get("modW") or 0
                 seen.append(w)
                 trects = tst.get("rects") or []
-                ok(trects and all(abs(r["offL"]) <= 2 and abs(r["offR"]) <= 2 for r in trects),
-                   "at %spx the outputs still reach both edges (%s)"
-                   % (w, [(r["offL"], r["offR"]) for r in trects]))
+                ok(trects and all(abs(r.get("colL") or 0) <= 2
+                                 and abs(r.get("colR") or 0) <= 2 for r in trects),
+                   "at %spx the outputs still sit on the reading column (%s)"
+                   % (w, [(r.get("colL"), r.get("colR")) for r in trects]))
+                ok(trects and all((r.get("offL") or 0) > 2 and (r.get("offR") or 0) > 2
+                                 for r in trects),
+                   "at %spx they still stay inside the module edges (%s)"
+                   % (w, [(r.get("offL"), r.get("offR")) for r in trects]))
                 ok(tst.get("spillN") == 0,
                    "at %spx nothing is wider than the transcript (%s)"
                    % (w, json.dumps(tst.get("spill") or [])))

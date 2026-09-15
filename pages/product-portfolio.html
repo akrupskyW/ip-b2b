@@ -461,13 +461,10 @@
     #chat-shell-wrap button:not(.topbar-menu-toggle):not([class*="-stat"]):not(.ws-scorecard),
     #chat-shell-wrap input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
     #chat-shell-wrap select,
-    #chat-shell-wrap textarea,
+    #chat-shell-wrap textarea:not(.fl-input),
     #topbar-overlay-close,
     #add-member-modal .amm-dialog button,
     #add-member-modal .amm-search {
-      border-radius: var(--radius-pill) !important;
-    }
-    #chat-shell-wrap .fl-input-wrap {
       border-radius: var(--radius-pill) !important;
     }
     /* Minimum icon size: 24x24 everywhere. Overrides any inline or
@@ -4146,7 +4143,7 @@
       gap: 6px;
       box-sizing: border-box;
       height: 28px;
-      padding: 0 11px;
+      padding: 0 7px;
       /* One size app-wide: the 28px in-conversation reply chip. Same blue tint
          as the composer so chips and the input share one surface color. */
       background: color-mix(in srgb, var(--primary) 10%, #fff);
@@ -5187,14 +5184,6 @@
     /* Composer v2 (Appearance ▸ "New chat input"): send holds the bottom line
        while the text field grows — outranks the #send-btn align-self above. */
     html.composer-v2 #send-btn { align-self: flex-end; }
-    /* The shell-wide pill overrides near the top of this stylesheet
-       (#chat-shell-wrap .fl-input-wrap / textarea → --radius-pill !important)
-       would lock the composer into a pill — outrank them so the fill can
-       run the module edge to edge (shared wise.css). */
-    html.composer-v2 #chat-shell-wrap .fl-input-wrap,
-    html.composer-v2 #chat-shell-wrap .fl-input-wrap textarea.fl-input {
-      border-radius: 0 !important;
-    }
     /* Chat tint (Appearance ▸ "Blue chat surface"): the rail rule above pins
        background: var(--bg) !important, so the tint needs its own !important. */
     html.chat-tint:not(.dark) .chat-input-rail {
@@ -6600,7 +6589,7 @@
        table headers inside this scroller so they cannot stack above the
        module's floated ⋯ + width controls (those live on the height-0
        .side-panel-header, outside this body). */
-    .pf-body { padding: 0 var(--module-head-pad-x, 40px) 16px; display: flex; flex-direction: column; gap: 14px; position: relative; z-index: 0; flex: 1 1 0%; min-height: 0; overflow-y: auto; }
+    .pf-body { padding: 0 var(--module-head-pad-x, 40px) 16px; padding-left: var(--module-head-pad-x, 40px) !important; padding-right: var(--module-head-pad-x, 40px) !important; display: flex; flex-direction: column; gap: 14px; position: relative; z-index: 0; flex: 1 1 0%; min-height: 0; overflow-y: auto; }
     .pf-body > *:not(.pf-empty) { flex-shrink: 0; }
     .pf-view { display: flex; flex-direction: column; gap: 14px; }
     .pf-view.is-hidden { display: none; }
@@ -6702,9 +6691,7 @@
       background: rgb(219, 39, 119); color: #fff;
       font-size: 7px; font-weight: 700; letter-spacing: 0.04em; line-height: 1.25;
     }
-    .pf-stat[hidden],
-    #pf-seg-removed[hidden],
-    #pf-view-removed[hidden] { display: none !important; }
+    .pf-stat[hidden] { display: none !important; }
     .pf-stat-star { color: var(--pf-gold); font-size: 16px !important; vertical-align: -2px; }
     .pf-stat:disabled { cursor: default; }
     .pf-stat:disabled:hover { transform: none; box-shadow: var(--shadow-1); border-color: var(--border); }
@@ -6751,8 +6738,8 @@
     }
     /* The three lists are stacked on one board — Claimed, Discovered,
        Missing data — so they need air between them rather than a tab swap. */
-    .pf-board-views { margin-top: 14px; display: flex; flex-direction: column; gap: 64px; }
-    .pf-view { position: relative; border-radius: 14px; padding-top: 12px; }
+    .pf-board-views { margin-top: 0; display: flex; flex-direction: column; gap: 64px; position: relative; z-index: 0; }
+    .pf-view { position: relative; z-index: 0; border-radius: 14px; padding-top: 12px; }
     /* Status cards moved inside the Claimed block — they only ever filtered
        that list, so they now sit with it instead of above every list. */
     .pf-block-stats { margin: 0 0 10px; }
@@ -6760,30 +6747,40 @@
     .pf-stats--seg .pf-stat { flex: 1 1 130px; }
 
     /* ── Pinned board chrome ────────────────────────────────────────────
-       The board header, the search / settings toolbar and the segment score
-       cards pin to the top of the scrolling #pf-body so the title, the search
-       field and the "jump to a list" cards stay reachable while the tables
-       scroll under them. Each layer parks flush beneath the one above it:
-       pfSyncStickyOffsets() measures the three and publishes the running
-       totals as --pf-sticky-1/2/3, which is also what the tables' own sticky
-       <thead> uses to clear the whole band. Backgrounds are opaque (matching
-       the top of the panel's gradient) so rows can't show through. */
+       Title, search, and the jump-to-list score cards are one sticky pin —
+       not three stacked stickies with a flex gap between them. The gap was
+       an empty hole the tables scrolled through, and transparent fill let
+       row type show through the title and search. The pin is always opaque
+       (matching the top of the panel) and bleeds into the body's side
+       padding so rows cannot peek in the gutters either. Tables stay in a
+       z-index 0 stacking context underneath. pfSyncStickyOffsets() publishes
+       the pin's height as --pf-sticky-pin / --pf-sticky-3 so the tables'
+       own sticky <thead> parks flush under the band. */
+    .pf-pin {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      isolation: isolate;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      box-sizing: border-box;
+      background: var(--surface);
+      margin: 0 calc(-1 * var(--module-head-pad-x, 40px));
+      padding: 0 var(--module-head-pad-x, 40px) 10px;
+    }
+    html.dark .pf-pin { background: #1A2339; }
+    #portfolio-panel.pf-scrolled .pf-pin { box-shadow: 0 1px 0 var(--border); }
     .pf-head,
     .pf-toolbar,
-    .pf-stats--seg { position: sticky; background: transparent; }
-    /* The opaque fill only appears once rows are actually running underneath,
-       so the resting board keeps the panel's own gradient. */
-    #portfolio-panel.pf-scrolled .pf-head,
-    #portfolio-panel.pf-scrolled .pf-toolbar,
-    #portfolio-panel.pf-scrolled .pf-stats--seg { background: var(--surface); }
-    html.dark #portfolio-panel.pf-scrolled .pf-head,
-    html.dark #portfolio-panel.pf-scrolled .pf-toolbar,
-    html.dark #portfolio-panel.pf-scrolled .pf-stats--seg { background: #1A2339; }
+    .pf-stats--seg { position: relative; background: transparent; }
+    .pf-board { position: relative; z-index: 0; }
     /* Right padding keeps the title / Add / verify CTAs clear of the floated
        Marketing Assets + brand + ⋯ + width cluster in the top-right corner. */
-    .pf-head { top: 0; z-index: 32; padding: var(--module-head-pad-t, 26px) 300px 8px 0; }
-    .pf-toolbar { top: var(--pf-sticky-1, 56px); z-index: 31; padding: 6px 0; }
-    .pf-stats--seg { top: var(--pf-sticky-2, 108px); z-index: 30; padding: 4px 0 12px; }
+    .pf-head { padding: var(--module-head-pad-t, 26px) 300px 8px 0; }
+    .pf-toolbar { padding: 6px 0; }
+    .pf-stats--seg { padding: 4px 0 4px; }
 
     .pf-card-title { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 16px; font-weight: 700; color: var(--text); margin: 0; }
     .pf-card-sub { font-size: 13.5px; color: var(--text-muted); margin: 7px 0 0; line-height: 1.55; }
@@ -6999,7 +6996,8 @@
     .pf-datemenu-item.is-active .material-symbols-outlined { color: var(--primary); }
     /* Sticky header — pins to the top of the scrolling #pf-body so columns stay
        labelled while the portfolio list scrolls. */
-    .pf-thead { border-bottom: 1px solid var(--border); position: sticky; top: var(--pf-sticky-3, 0px); z-index: 5; background: var(--surface); }
+    .pf-thead { border-bottom: 1px solid var(--border); position: sticky; top: var(--pf-sticky-pin, var(--pf-sticky-3, 0px)); z-index: 4; background: var(--surface); }
+    html.dark .pf-thead { background: #1A2339; }
     .pf-th { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); }
     .pf-trow { border-bottom: 1px solid var(--border); transition: background 0.15s ease; }
     .pf-trow:last-child { border-bottom: none; }
@@ -7021,6 +7019,10 @@
     .pf-thumb-img {
       width: 100%; height: 100%; object-fit: cover; display: block; border-radius: var(--w-prod-thumb-r, 8px);
     }
+    /* Product photos start as data-src only. Hide the empty <img> until a src
+       is assigned so the fallback glyph shows and the browser does not fetch
+       every row's file on load. */
+    .pf-thumb-img:not([src]) { display: none; }
     .pf-thumb .material-symbols-outlined { font-size: 20px; }
     /* Product cell — thumbnail + a name/UPC stack (UPC sits directly under the
        name). */
@@ -7122,8 +7124,8 @@
     .pf-rowmenu-item:hover .material-symbols-outlined { color: var(--primary-ink, var(--primary)); }
     .pf-rowmenu-item--danger:hover { background: var(--sec-red-10); color: var(--sec-red); }
     .pf-rowmenu-item--danger:hover .material-symbols-outlined { color: var(--sec-red); }
-    /* Locked row action (Reformulate) — visible but inert, with a trailing
-       lock glyph. Doesn't highlight on hover and can't be actioned. */
+    /* Locked row action — visible but inert, with a trailing lock glyph.
+       Doesn't highlight on hover and can't be actioned. */
     .pf-rowmenu-item.is-locked {
       color: var(--text-subtle);
       cursor: default;
@@ -7697,24 +7699,24 @@
                             <div class="ws-sc-desc">9 claimed products are eligible and pending payment — attest and switch their shields on.</div>
                             <div class="ws-sc-action">Activate shields<span class="material-symbols-outlined">arrow_outward</span></div>
                         </button>
-                        <button class="ws-scorecard" role="listitem" data-order="2" data-urgent="4" data-impact="5" data-recent="5" onclick="startReviewDiscovered()">
+                        <button class="ws-scorecard" role="listitem" data-order="2" data-urgent="4" data-impact="5" data-recent="5" data-pf-welcome="discovered" onclick="startReviewDiscovered()">
                             <div class="ws-sc-top">
                                 <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-symbols-outlined">travel_explore</span></span>
                                 <span class="ws-sc-pill ws-sc-pill--up"><span class="material-symbols-outlined">bookmark_add</span>Claim</span>
                             </div>
-                            <div class="ws-sc-metric">47<span class="ws-sc-metric-unit"> found</span></div>
+                            <div class="ws-sc-metric">87<span class="ws-sc-metric-unit"> found</span></div>
                             <div class="ws-sc-title">Review discovered matches</div>
-                            <div class="ws-sc-desc">47 products from public retail data look like Flax4Life's — claim yours, remove the rest.</div>
+                            <div class="ws-sc-desc">87 products from public retail data look like Flax4Life's — claim yours, remove the rest.</div>
                             <div class="ws-sc-action">Review &amp; claim<span class="material-symbols-outlined">arrow_outward</span></div>
                         </button>
-                        <button class="ws-scorecard" role="listitem" data-order="3" data-urgent="4" data-impact="4" data-recent="4" onclick="startCompleteNeedsInfo()">
+                        <button class="ws-scorecard" role="listitem" data-order="3" data-urgent="4" data-impact="4" data-recent="4" data-pf-welcome="needsinfo" onclick="startCompleteNeedsInfo()">
                             <div class="ws-sc-top">
                                 <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-symbols-outlined">pending_actions</span></span>
                                 <span class="ws-sc-pill ws-sc-pill--up"><span class="material-symbols-outlined">rule</span>Complete</span>
                             </div>
-                            <div class="ws-sc-metric">18<span class="ws-sc-metric-unit"> to finish</span></div>
+                            <div class="ws-sc-metric">58<span class="ws-sc-metric-unit"> to finish</span></div>
                             <div class="ws-sc-title">Complete products in progress</div>
-                            <div class="ws-sc-desc">18 products are still in progress — add the missing details and they move into your portfolio.</div>
+                            <div class="ws-sc-desc">58 products are still in progress — add the missing details and they move into your portfolio.</div>
                             <div class="ws-sc-action">Add missing info<span class="material-symbols-outlined">arrow_outward</span></div>
                         </button>
                         <button class="ws-scorecard ws-scorecard--intro" role="listitem" data-order="4" data-urgent="0" data-impact="0" data-recent="0" onclick="portfolioTour()">
@@ -7745,12 +7747,12 @@
                             <div class="ws-sc-desc">Vegan Blueberry Mini Muffins can't earn a Non-UPF Shield yet — see why and fix it.</div>
                             <div class="ws-sc-action">Review product<span class="material-symbols-outlined">arrow_outward</span></div>
                         </button>
-                        <button class="ws-scorecard" role="listitem" data-order="7" data-urgent="2" data-impact="3" data-recent="2" onclick="startAddProduct()">
+                        <button class="ws-scorecard" role="listitem" data-order="7" data-urgent="2" data-impact="3" data-recent="2" data-pf-welcome="add" onclick="startAddProduct()">
                             <div class="ws-sc-top">
                                 <span class="ws-sc-icon ws-sc-icon--brand"><span class="material-symbols-outlined">add_box</span></span>
                                 <span class="ws-sc-pill ws-sc-pill--up"><span class="material-symbols-outlined">add</span>Add</span>
                             </div>
-                            <div class="ws-sc-metric">70<span class="ws-sc-metric-unit"> total</span></div>
+                            <div class="ws-sc-metric">190<span class="ws-sc-metric-unit"> total</span></div>
                             <div class="ws-sc-title">Add a product manually</div>
                             <div class="ws-sc-desc">Missing a UPC we didn't discover? Add it by hand and WISEcodeAI will build out its data.</div>
                             <div class="ws-sc-action">Add product<span class="material-symbols-outlined">arrow_outward</span></div>
@@ -7768,8 +7770,8 @@
                 <button class="chip ws-intent-chip" onclick="startBrowseProducts()">
                     <span class="material-symbols-outlined" style="font-size:16px">view_carousel</span>Browse products here
                 </button>
-                <button class="chip ws-intent-chip" onclick="startReviewDiscovered()">
-                    <span class="material-symbols-outlined" style="font-size:16px">travel_explore</span>Review Discovered (47)
+                <button class="chip ws-intent-chip" data-pf-welcome-chip="discovered" onclick="startReviewDiscovered()">
+                    <span class="material-symbols-outlined" style="font-size:16px">travel_explore</span>Review Discovered (87)
                 </button>
                 <button class="chip ws-intent-chip" onclick="startVerifyIngredients()">
                     <span class="material-symbols-outlined" style="font-size:16px">fact_check</span>Verify Ingredients
@@ -7777,8 +7779,8 @@
                 <button class="chip ws-intent-chip" onclick="startActivateShields()">
                     <span class="material-symbols-outlined" style="font-size:16px">verified_user</span>Activate Non-UPF Shields
                 </button>
-                <button class="chip ws-intent-chip" onclick="startCompleteNeedsInfo()">
-                    <span class="material-symbols-outlined" style="font-size:16px">pending_actions</span>Complete Missing Data (18)
+                <button class="chip ws-intent-chip" data-pf-welcome-chip="needsinfo" onclick="startCompleteNeedsInfo()">
+                    <span class="material-symbols-outlined" style="font-size:16px">pending_actions</span>Complete Missing Data (58)
                 </button>
                 <button class="chip ws-intent-chip" onclick="startViewClaimed()">
                     <span class="material-symbols-outlined" style="font-size:16px">inventory_2</span>View Claimed Portfolio
@@ -8143,6 +8145,7 @@
 
         <div class="flex-1 overflow-y-auto side-panel-body pf-body" id="pf-body">
 
+          <div class="pf-pin">
           <!-- Board header — serif title + a few details, mirroring the
                Compare module's .cmp-board-title / .cmp-board-meta. -->
           <header class="pf-head">
@@ -8251,34 +8254,28 @@
             </div>
           </div>
 
-          <!-- At-a-glance + tables — ONE component. Segment score cards jump
-               to a list and stay highlighted for the table in view as you
-               scroll. Status cards (Non-UPF verification states) filter the
-               rows within the Claimed list. -->
-          <div class="pf-board">
+          <!-- Jump-to-list score cards pin with the title and search. -->
             <div class="pf-stats pf-stats--seg" role="group" aria-label="Jump to a portfolio list">
               <button type="button" class="pf-stat is-active" id="pf-seg-all" data-seg="all" aria-pressed="true" onclick="pfFilterClick('all', null)">
-                <span class="pf-stat-num">70</span>
+                <span class="pf-stat-num">190</span>
                 <span class="pf-stat-label">All</span>
               </button>
               <button type="button" class="pf-stat" id="pf-seg-claimed" data-seg="claimed" aria-pressed="false" onclick="pfFilterClick('claimed', null)">
-                <span class="pf-stat-num">5</span>
+                <span class="pf-stat-num">45</span>
                 <span class="pf-stat-label">Claimed</span>
               </button>
               <button type="button" class="pf-stat pf-stat--warn" id="pf-seg-needsinfo" data-seg="needsinfo" aria-pressed="false" onclick="pfFilterClick('needsinfo', null)">
-                <span class="pf-stat-num">18</span>
+                <span class="pf-stat-num">58</span>
                 <span class="pf-stat-label">In Progress</span>
               </button>
               <button type="button" class="pf-stat" id="pf-seg-discovered" data-seg="discovered" aria-pressed="false" onclick="pfFilterClick('discovered', null)">
-                <span class="pf-stat-num">47</span>
+                <span class="pf-stat-num">87</span>
                 <span class="pf-stat-label">Discovered</span>
               </button>
-              <button type="button" class="pf-stat pf-stat--muted" id="pf-seg-removed" data-seg="removed" hidden aria-pressed="false" onclick="pfFilterClick('removed', null)">
-                <span class="pf-stat-num">0</span>
-                <span class="pf-stat-label">Removed</span>
-                <span class="pf-stat-admin">Admin</span>
-              </button>
             </div>
+          </div><!-- /pf-pin -->
+
+          <div class="pf-board">
             <div class="pf-board-views">
 
           <section class="pf-view" id="pf-view-claimed" role="tabpanel" aria-labelledby="pf-seg-claimed">
@@ -8321,7 +8318,7 @@
             </div>
               </div>
               <div class="pf-table-card">
-                <div class="pf-table pf-table--claimed">
+                <div class="pf-table pf-table--claimed" data-wtp-step="20" data-wtp-more="Show more">
                 <div class="pf-thead">
                   <span class="pf-th pf-col-check" data-no-sort><button class="vf-check vf-check--head" type="button" data-pf="toggle-all" aria-label="Select all products" aria-checked="false"><span class="material-symbols-outlined">check_box_outline_blank</span></button><div class="pf-selbar" id="pf-selbar-claimed" role="group" aria-label="Actions for selected products" hidden><span class="pf-selbar-count" id="pf-selbar-count-claimed">0 selected</span><div class="pf-selbar-acts"><button type="button" class="wise-btn wise-btn--danger wise-btn--sm" data-pf="remove-selected"><span class="material-symbols-outlined">delete</span>Remove</button><button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-pf="reports-selected"><span class="material-symbols-outlined">description</span>Reports</button><button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-pf="open-selected"><span class="material-symbols-outlined">visibility</span>Open Product</button><button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-pf="edit-selected"><span class="material-symbols-outlined">edit</span>Edit</button><button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-pf="clear-selected">Clear</button></div></div></span>
                   <span class="pf-th pf-col-menu"></span>
@@ -8366,7 +8363,7 @@
             </div>
 
             <div class="pf-table-card">
-              <div class="pf-table pf-table--needsinfo">
+              <div class="pf-table pf-table--needsinfo" data-wtp-step="20" data-wtp-more="Show more">
                 <div class="pf-thead">
                   <span class="pf-th pf-col-check" data-no-sort><button class="vf-check vf-check--head" type="button" data-pf="toggle-all" aria-label="Select all products" aria-checked="false"><span class="material-symbols-outlined">check_box_outline_blank</span></button></span>
                   <span class="pf-th pf-col-menu"></span>
@@ -8383,12 +8380,12 @@
 
           <section class="pf-view" id="pf-view-discovered" role="tabpanel" aria-labelledby="pf-seg-discovered">
             <div class="pf-note">
-              <h3 class="pf-card-title">We found 47 products that look like Flax4Life's</h3>
+              <h3 class="pf-card-title">We found 87 products that look like Flax4Life's</h3>
               <p class="pf-card-sub">Pulled from public retail data and matched by brand name. Review each product's details to claim it into your portfolio, and remove the ones that are not yours. Claiming is free and unlimited; reports unlock as each product's data is completed.</p>
             </div>
 
             <div class="pf-table-card">
-              <div class="pf-table pf-table--discovered">
+              <div class="pf-table pf-table--discovered" data-wtp-step="20" data-wtp-more="Show more">
                 <div class="pf-thead">
                   <span class="pf-th pf-col-check" data-no-sort><button class="vf-check vf-check--head" type="button" data-pf="toggle-all" aria-label="Select all products" aria-checked="false"><span class="material-symbols-outlined">check_box_outline_blank</span></button><div class="pf-selbar" id="pf-selbar-discovered" role="group" aria-label="Actions for selected products" hidden><span class="pf-selbar-count" id="pf-selbar-count-discovered">0 selected</span><div class="pf-selbar-acts"><button type="button" class="wise-btn wise-btn--danger wise-btn--sm" data-pf="remove-selected"><span class="material-symbols-outlined">delete</span>Remove product</button><button type="button" class="wise-btn wise-btn--ghost wise-btn--sm" data-pf="clear-selected">Clear</button></div></div></span>
                   <span class="pf-th pf-col-menu"></span>
@@ -8401,28 +8398,6 @@
               </div>
             </div>
           </section>
-
-          <section class="pf-view" id="pf-view-removed" role="tabpanel" aria-labelledby="pf-seg-removed" hidden>
-            <div class="pf-note">
-              <h3 class="pf-card-title">Removed products</h3>
-              <p class="pf-card-sub">Products taken out of this portfolio. Visible to internal admins only — they do not appear in All, Claimed, In Progress, or Discovered.</p>
-            </div>
-            <div class="pf-table-card">
-              <div class="pf-table pf-table--removed">
-                <div class="pf-thead">
-                  <span class="pf-th pf-col-check" data-no-sort><button class="vf-check vf-check--head" type="button" data-pf="toggle-all" aria-label="Select all products" aria-checked="false"><span class="material-symbols-outlined">check_box_outline_blank</span></button></span>
-                  <span class="pf-th pf-col-menu"></span>
-                  <span class="pf-th pf-col-reports" data-no-sort></span>
-                  <span class="pf-th pf-col-product">Product</span>
-                  <span class="pf-th pf-col-brand">Brand</span>
-                  <span class="pf-th pf-col-shield">State</span>
-                  <span class="pf-th pf-col-updated"><span class="pf-updated-label">Updated</span><span class="pf-datemenu"><button type="button" class="pf-datemenu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Choose which date to show and sort by" title="Choose date type" data-tip="Choose date type" onclick="pfToggleDateMenu(event)"><span class="material-symbols-outlined">more_vert</span></button><span class="pf-datemenu-pop" role="menu" hidden><button type="button" class="pf-datemenu-item is-active" role="menuitemradio" aria-checked="true" data-datetype="updated" onclick="pfSetDateType('updated', event)"><span class="material-symbols-outlined">update</span>Updated date</button><button type="button" class="pf-datemenu-item" role="menuitemradio" aria-checked="false" data-datetype="edited" onclick="pfSetDateType('edited', event)"><span class="material-symbols-outlined">edit_calendar</span>Last edited date</button></span></span></span>
-                </div>
-                <div class="pf-table-foot"></div>
-              </div>
-            </div>
-          </section>
-
 
             </div><!-- /pf-board-views -->
           </div><!-- /pf-board -->
@@ -10431,19 +10406,28 @@
       verify: {
         test: /(verif|ingredient|confirm.*label|check.*label|label.*(check|verif))/,
         tab: 'needsinfo',
-        reply: '<strong>5 products</strong> still need their ingredients verified — that’s the last step before each report unlocks. I’ve opened <strong>In Progress</strong> on the right; tap <strong>Verify Ingredients</strong> on any of those rows to open that product. Ingredient verification lives on the product page, not here.',
+        reply: function () {
+          const c = pfBoardCounts();
+          return '<strong>' + c.verify + ' products</strong> still need their ingredients verified — that’s the last step before each report unlocks. I’ve opened <strong>In Progress</strong> on the right; tap <strong>Verify Ingredients</strong> on any of those rows to open that product. Ingredient verification lives on the product page, not here.';
+        },
         chips: ['shields', 'claimed', 'discovered'],
       },
       discovered: {
-        test: /(discover|public retail|retail data|matches|found.*(product|match)|\b47\b)/,
+        test: /(discover|public retail|retail data|matches|found.*(product|match))/,
         tab: 'discovered',
-        reply: 'I found <strong>47 products</strong> in public retail data that match the Flax4Life brand. They’re on the right under <strong>Discovered</strong> — <strong>Review &amp; claim</strong> the ones that are yours to pull them into your portfolio, and dismiss the rest. Reports unlock as each product’s data is completed.',
+        reply: function () {
+          const c = pfBoardCounts();
+          return 'I found <strong>' + c.discovered + ' products</strong> in public retail data that match the ' + c.name + ' brand. They’re on the right under <strong>Discovered</strong> — <strong>Review &amp; claim</strong> the ones that are yours to pull them into your portfolio, and dismiss the rest. Reports unlock as each product’s data is completed.';
+        },
         chips: ['claim', 'needsinfo', 'claimed'],
       },
       needsinfo: {
-        test: /(needs?\s*info|missing (info|detail|data|field)|incomplete|\bcomplete\b|\b18\b)/,
+        test: /(needs?\s*info|missing (info|detail|data|field)|incomplete|\bcomplete\b)/,
         tab: 'needsinfo',
-        reply: '<strong>18 products</strong> need more detail before they can join your portfolio — they won’t appear in any report or stat until they’re complete. Open <strong>In Progress</strong> on the right to add what’s missing; five of them still need <strong>Verify Ingredients</strong>.',
+        reply: function () {
+          const c = pfBoardCounts();
+          return '<strong>' + c.needsinfo + ' products</strong> need more detail before they can join your portfolio — they won’t appear in any report or stat until they’re complete. Open <strong>In Progress</strong> on the right to add what’s missing; ' + c.verify + ' of them still need <strong>Verify Ingredients</strong>.';
+        },
         chips: ['discovered', 'claimed', 'add'],
       },
       claim: {
@@ -10465,15 +10449,21 @@
         chips: ['claimed', 'discovered', 'needsinfo'],
       },
       claimed: {
-        test: /(claimed|my portfolio|my products|all (my )?products|portfolio overview|5 product)/,
+        test: /(claimed|my portfolio|my products|all (my )?products|portfolio overview)/,
         tab: 'claimed',
-        reply: 'Here’s your <strong>Claimed</strong> portfolio — <strong>5 products</strong> with complete data, <strong>4</strong> Non-UPF Verified and <strong>1</strong> pre-qualified. Products that still need ingredient verification live in <strong>In Progress</strong>. Where do you want to start?',
+        reply: function () {
+          const c = pfBoardCounts();
+          return 'Here’s your <strong>Claimed</strong> portfolio — <strong>' + c.claimed + ' products</strong> with complete data, <strong>' + c.verified + '</strong> Non-UPF Verified and <strong>' + c.prequal + '</strong> pre-qualified. Products that still need ingredient verification live in <strong>In Progress</strong>. Where do you want to start?';
+        },
         chips: ['shields', 'ineligible', 'discovered'],
       },
       tour: {
         test: /(tour|get\s*started|walk\s*through|overview|guide me|show me around|how does|how do i|what can you)/,
         tab: 'claimed',
-        reply: 'Welcome to your <strong>Product Portfolio</strong>. It has three surfaces: <strong>Claimed</strong> (5 complete products), <strong>Discovered</strong> (47 public matches to review &amp; claim), and <strong>In Progress</strong> (18 products missing details, including 5 waiting on ingredient verification). Switch tabs on the right anytime — where would you like to begin?',
+        reply: function () {
+          const c = pfBoardCounts();
+          return 'Welcome to your <strong>Product Portfolio</strong>. It has three surfaces: <strong>Claimed</strong> (' + c.claimed + ' complete products), <strong>Discovered</strong> (' + c.discovered + ' public matches to review &amp; claim), and <strong>In Progress</strong> (' + c.needsinfo + ' products missing details, including ' + c.verify + ' waiting on ingredient verification). Switch tabs on the right anytime — where would you like to begin?';
+        },
         chips: ['claimed', 'discovered', 'needsinfo'],
       },
     };
@@ -10580,7 +10570,8 @@
          local-model rewrite behind the trace, so no Ollama pause shows between
          chats. */
       const finish = function () {
-        addWISEcodeAIMessage('I’m your portfolio copilot. Right now you have <strong>5 claimed products</strong>, <strong>47 discovered matches</strong> to review &amp; claim, and <strong>18 products in progress</strong> (5 of those still need ingredient verification). Tell me what you’d like to do, or pick a task below.');
+        const c = pfBoardCounts();
+        addWISEcodeAIMessage('I’m your portfolio copilot. Right now you have <strong>' + c.claimed + ' claimed products</strong>, <strong>' + c.discovered + ' discovered matches</strong> to review &amp; claim, and <strong>' + c.needsinfo + ' products in progress</strong> (' + c.verify + ' of those still need ingredient verification). Tell me what you’d like to do, or pick a task below.');
         pfOfferChips(['claimed', 'discovered', 'needsinfo', 'shields']);
       };
       const steps = statusStepsFor(text, intent);
@@ -11860,11 +11851,11 @@
     }
     window.openPortfolioReport = openPortfolioReport;
     window.closePortfolioReport = closePortfolioReport;
-    const PF_TABS = ['claimed', 'needsinfo', 'discovered', 'removed'];
+    const PF_TABS = ['claimed', 'needsinfo', 'discovered'];
     /* Every list is stacked on one board now, so the segment cards scroll
        to a list and stay highlighted for whichever table is in view.
        'all' is the top-of-board resting state. */
-    const PF_SEGS = ['all', 'claimed', 'needsinfo', 'discovered', 'removed'];
+    const PF_SEGS = ['all', 'claimed', 'needsinfo', 'discovered'];
     let pfSearchQ = '';
     /* Board state: which segment (list) is showing and, within Claimed, which
        status filter (if any) is active. The score cards drive both. */
@@ -11888,6 +11879,12 @@
       if (/^Dell Alpe\b/i.test(n)) return 'Dell Alpe';
       if (/^Mezzetta\b/i.test(n)) return 'Mezzetta';
       if (/^Sunridge Farms\b/i.test(n)) return 'Sunridge Farms';
+      if (/^Kirkland\b/i.test(n)) return 'Kirkland';
+      if (/^Chobani\b/i.test(n)) return 'Chobani';
+      if (/^Oatly\b/i.test(n)) return 'Oatly';
+      if (/^Nature Valley\b/i.test(n)) return 'Nature Valley';
+      if (/^Quaker\b/i.test(n)) return 'Quaker';
+      if (/^Nairn/i.test(n)) return 'Nairn\'s';
       const brand = PF_BRANDS[pfCurrentBrand];
       return (brand && brand.name) || 'Flax4Life';
     }
@@ -11895,6 +11892,12 @@
       'Dell Alpe': { color: '#8B5E34', avatar: null },
       'Mezzetta': { color: '#B91C1C', avatar: null },
       'Sunridge Farms': { color: '#A16207', avatar: null },
+      'Kirkland': { color: '#1F4E79', avatar: null },
+      'Chobani': { color: '#1B6B4A', avatar: null },
+      'Oatly': { color: '#1A1A1A', avatar: null },
+      'Nature Valley': { color: '#C05621', avatar: null },
+      'Quaker': { color: '#C53030', avatar: null },
+      'Nairn\'s': { color: '#2F855A', avatar: null },
     };
     function pfBrandMeta(name) {
       const n = String(name || '').trim();
@@ -11913,7 +11916,7 @@
       const meta = pfBrandMeta(name);
       const letter = pfEsc((meta.name || '?').charAt(0));
       const inner = meta.avatar
-        ? '<img src="' + pfEsc(meta.avatar) + '" alt="" onerror="this.parentNode.textContent=\'' + letter + '\'">'
+        ? '<img class="pf-lazy-img" data-src="' + pfEsc(meta.avatar) + '" alt="" width="22" height="22" decoding="async" loading="lazy" onerror="this.parentNode.textContent=\'' + letter + '\'">'
         : letter;
       const bg = meta.avatar ? '#fff' : (meta.color || '#25507C');
       return '<span class="pf-td pf-col-brand">' +
@@ -12109,6 +12112,11 @@
        apply to every list. Each table's footer keeps its original text and
        only shows a live count while a filter is narrowing that list. */
     function pfApplyRowFilter() {
+      const narrowing = !!(pfStatus || pfNeedsState || (typeof pfFiltersActive === 'function' && pfFiltersActive()) || pfSearchQ);
+      if (narrowing) {
+        pfFlushPendingFills();
+        pfMaterializeAll();
+      }
       PF_TABS.forEach((seg) => {
         const view = document.getElementById('pf-view-' + seg);
         if (!view) return;
@@ -12184,25 +12192,25 @@
     }
 
     /* ── Pinned board chrome ──────────────────────────────────────────
-       Measures the three pinned layers (header → toolbar → segment cards) and
-       publishes the running totals so each parks flush under the one above,
-       and so the tables' sticky <thead> (and pfScrollToSeg) clear the band. */
+       Measures the sticky pin (title + search + jump-to-list cards) so the
+       tables' sticky <thead> and pfScrollToSeg clear the whole band. */
     function pfSyncStickyOffsets() {
       const panel = document.getElementById('portfolio-panel');
       if (!panel) return 0;
+      const pin = panel.querySelector('.pf-pin');
+      const hPin = pin ? pin.offsetHeight : 0;
       const h = (sel) => { const el = panel.querySelector(sel); return el ? el.offsetHeight : 0; };
-      const h1 = h('.pf-head');
-      const h2 = h('.pf-toolbar');
-      const h3 = h('.pf-stats--seg');
-      panel.style.setProperty('--pf-sticky-1', Math.round(h1) + 'px');
-      panel.style.setProperty('--pf-sticky-2', Math.round(h1 + h2) + 'px');
-      panel.style.setProperty('--pf-sticky-3', Math.round(h1 + h2 + h3) + 'px');
-      return h1 + h2 + h3;
+      const fallback = h('.pf-head') + h('.pf-toolbar') + h('.pf-stats--seg');
+      const band = hPin || fallback;
+      panel.style.setProperty('--pf-sticky-pin', Math.round(band) + 'px');
+      panel.style.setProperty('--pf-sticky-3', Math.round(band) + 'px');
+      return band;
     }
     function pfStickyHeight() {
       const panel = document.getElementById('portfolio-panel');
       if (!panel) return 0;
-      const v = parseFloat(panel.style.getPropertyValue('--pf-sticky-3'));
+      const v = parseFloat(panel.style.getPropertyValue('--pf-sticky-pin'))
+        || parseFloat(panel.style.getPropertyValue('--pf-sticky-3'));
       return Number.isFinite(v) ? v : pfSyncStickyOffsets();
     }
     function pfInitStickyChrome() {
@@ -12216,12 +12224,10 @@
       window.addEventListener('resize', sync);
       if (typeof ResizeObserver !== 'undefined') {
         const ro = new ResizeObserver(sync);
-        ['.pf-head', '.pf-toolbar', '.pf-stats--seg'].forEach((sel) => {
-          const el = panel.querySelector(sel);
-          if (el) ro.observe(el);
-        });
+        const pin = panel.querySelector('.pf-pin');
+        if (pin) ro.observe(pin);
       }
-      /* Only show the band's hairline once content has actually gone under it.
+      /* Hairline on the pin once content has actually gone under it.
          The same scroll also drives which segment score card is lit. */
       const onScroll = () => {
         panel.classList.toggle('pf-scrolled', body.scrollTop > 2);
@@ -12250,7 +12256,8 @@
     function pfVisibleSeg() {
       const body = document.getElementById('pf-body');
       if (!body) return pfSeg;
-      const ids = ['claimed', 'needsinfo', 'discovered', 'removed'];
+      if (body.scrollTop <= 8) return 'all';
+      const ids = ['claimed', 'needsinfo', 'discovered'];
       const bodyRect = body.getBoundingClientRect();
       const spyY = bodyRect.top + pfStickyHeight();
       const first = document.getElementById('pf-view-claimed');
@@ -12259,6 +12266,7 @@
       ids.forEach((id) => {
         const el = document.getElementById('pf-view-' + id);
         if (!el || el.hidden) return;
+        if (!el.querySelector('.pf-trow')) return;
         if (el.getBoundingClientRect().top <= spyY + 28) current = id;
       });
       return current;
@@ -12282,6 +12290,7 @@
       const target = (seg && seg !== 'all')
         ? document.getElementById('pf-view-' + seg)
         : document.querySelector('.pf-board');
+      if (seg && seg !== 'all') pfFlushFill(seg);
       pfSpyLocked = true;
       const unlock = () => {
         if (!pfSpyLocked) return;
@@ -12318,6 +12327,7 @@
        switch the visible list; status cards (verify / pending / ineligible)
        jump to Claimed and toggle a row filter on and off. */
     function pfFilterClick(seg, status) {
+      if (seg === 'removed') seg = 'all';
       if (status) {
         /* Status cards live inside the Claimed block and only filter its rows.
            Clicking the active one clears the filter. */
@@ -12370,6 +12380,11 @@
       '857287004265': ['11 oz', '20 oz'],           /* Apple Cinnamon Granola */
       '746988973348': ['11 oz', '20 oz'],           /* Hawaiian Granola */
       '857287004562': ['5 ct', '10 ct'],            /* Oatmeal Raisin Cookies */
+      '857287010001': ['4 ct', '6 ct', '12 ct'],    /* Banana Walnut Muffins */
+      '857287010008': ['12 ct', '4 ct'],            /* Espresso Chip Brownies */
+      '857287010019': ['11 oz', '20 oz'],           /* Maple Walnut Granola */
+      '857287010028': ['1.4 oz', '5 ct'],           /* Flax Protein Bar, Vanilla Almond */
+      '857287010031': ['6 oz', '12 oz'],            /* Sea Salt Flax Crackers */
     };
     function pfUpcDigits(row) {
       return ((row.querySelector('.pf-upc') || {}).textContent || '').replace(/\D/g, '');
@@ -12684,9 +12699,9 @@
     pfSyncAllHeads();
 
     /* ── Reformulate entry point ──────────────────────────────────────────
-       Each product row's ⋮ menu gets a locked "Reformulate" action — visible
-       with a trailing lock glyph, but inert (coming soon). The Guiding Stars
-       view still has its own inline Reformulate button for low-star rows.
+       Each product row's ⋮ menu gets a Reformulate action that opens the
+       Reformulation studio on that product. The Guiding Stars view still has
+       its own inline Reformulate button for low-star rows.
        This also wires the row menus to actually open. */
     /* Build the deep-link into the Reformulation studio for a given table row —
        the product's name / UPC / thumbnail travel over in the URL. Shared by the
@@ -12695,7 +12710,7 @@
       if (!row) return 'reformulation.html';
       const name = (row.querySelector('.pf-pname')?.textContent || '').trim();
       const upc = (row.querySelector('.pf-upc')?.textContent || '').replace(/^\s*UPC\s*·?\s*/i, '').trim();
-      const img = row.querySelector('.pf-thumb-img')?.getAttribute('src') || '';
+      const img = pfThumbSrc(row.querySelector('.pf-thumb-img'));
       const params = new URLSearchParams();
       params.set('product', upc || name);
       if (name) params.set('name', name);
@@ -12727,7 +12742,7 @@
       if (!row) return 'view-product.html';
       const name = (row.querySelector('.pf-pname')?.textContent || '').trim();
       const upc = (row.querySelector('.pf-upc')?.textContent || '').replace(/^\s*UPC\s*·?\s*/i, '').trim();
-      const img = row.querySelector('.pf-thumb-img')?.getAttribute('src') || '';
+      const img = pfThumbSrc(row.querySelector('.pf-thumb-img'));
       const params = new URLSearchParams();
       if (name) params.set('name', name);
       if (upc) params.set('upc', upc);
@@ -12771,7 +12786,7 @@
       if (row) {
         const name = (row.querySelector('.pf-pname')?.textContent || '').trim();
         const upc = (row.querySelector('.pf-upc')?.textContent || '').replace(/^\s*UPC\s*·?\s*/i, '').trim();
-        const img = row.querySelector('.pf-thumb-img')?.getAttribute('src') || '';
+        const img = pfThumbSrc(row.querySelector('.pf-thumb-img'));
         if (name) params.set('name', name);
         if (upc) params.set('upc', upc);
         if (img) params.set('img', img);
@@ -12817,7 +12832,7 @@
         upc: id.upc,
         upcLabel: raw.replace(/^\s*UPC\s*·?\s*/i, '').trim(),
         brand: pfRowBrand(row) || pfProductBrand(id.name),
-        img: (row.querySelector('.pf-thumb-img') && row.querySelector('.pf-thumb-img').getAttribute('src')) || '',
+        img: pfThumbSrc(row.querySelector('.pf-thumb-img')),
         seg: pfRowSegment(row),
       });
       try { localStorage.setItem(PF_REMOVED_KEY, JSON.stringify(list)); } catch (_) {}
@@ -12831,20 +12846,38 @@
     function pfRemovedRecTuple(rec) {
       return [rec.name, rec.upcLabel || rec.upc || '', rec.img || null, null, 'removed', rec.brand || ''];
     }
+    function pfRemovedSeedRec(p, brandName) {
+      const imgKey = p[2];
+      const img = (imgKey && PF_IMG[imgKey]) ? PF_IMG[imgKey]
+        : (typeof imgKey === 'string' && /\.(png|jpe?g|webp|svg)(\?|$)/i.test(imgKey) ? imgKey : '');
+      return {
+        name: p[0],
+        upc: pfNormUpc(p[1]),
+        upcLabel: p[1],
+        img: img,
+        brand: p[5] || brandName || pfProductBrand(p[0]),
+        seg: 'claimed',
+      };
+    }
+    function pfRemovedDisplayList() {
+      const brand = PF_BRANDS[pfCurrentBrand] || PF_BRANDS[0];
+      const user = pfRemovedList().slice();
+      const keys = new Set(user.map((x) => (pfNormUpc(x.upc) || '') + '\0' + (x.name || '')));
+      (brand.removed || []).forEach((p) => {
+        const rec = pfRemovedSeedRec(p, brand.name);
+        const k = (rec.upc || '') + '\0' + (rec.name || '');
+        if (!keys.has(k)) {
+          keys.add(k);
+          user.push(rec);
+        }
+      });
+      return user;
+    }
     function pfFillRemovedTable() {
-      const list = pfRemovedList();
-      pfSetNum('#pf-seg-removed', list.length);
-      pfFillTable('removed', list.map(pfRemovedRecTuple));
       pfSyncAdminUi();
     }
     function pfSyncAdminUi() {
-      const on = pfIsAdmin();
-      const n = pfRemovedList().length;
-      const btn = document.getElementById('pf-seg-removed');
-      const view = document.getElementById('pf-view-removed');
-      if (btn) btn.hidden = !on || n === 0;
-      if (view) view.hidden = !on || n === 0;
-      if ((!on || n === 0) && pfSeg === 'removed') pfSwitchTab('all');
+      if (pfSeg === 'removed') pfSwitchTab('all');
     }
     function pfSyncEmptyFilters() {
       document.querySelectorAll('.pf-stats--seg .pf-stat[data-seg]').forEach((btn) => {
@@ -13017,13 +13050,12 @@
       /* A discovered match isn't yours yet — Review & Claim it first. Its menu
          carries Remove and nothing else. */
       if (pfRowSegment(row) === 'discovered') return;
-      const item = document.createElement('button');
-      item.type = 'button';
-      item.className = 'pf-rowmenu-item pf-rowmenu-item--reformulate is-locked';
+      const item = document.createElement('a');
+      item.className = 'pf-rowmenu-item pf-rowmenu-item--reformulate';
       item.setAttribute('role', 'menuitem');
-      item.setAttribute('aria-disabled', 'true');
-      item.title = 'Coming soon';
-      item.innerHTML = '<span class="material-symbols-outlined">auto_fix_high</span>Reformulate<span class="pf-rowmenu-lock material-symbols-outlined" aria-hidden="true">lock</span>';
+      item.href = pfReformulateHref(row);
+      item.style.textDecoration = 'none';
+      item.innerHTML = '<span class="material-symbols-outlined">auto_fix_high</span>Reformulate';
       pop.insertBefore(item, pop.firstChild);
     }
     /* Inline Reformulate button (Guiding Stars view, low-star rows). */
@@ -13597,15 +13629,15 @@
     }
     const PF_IMG = {
       granola: '../assets/portfolio/granola.jpg',
-      cereal: '../assets/portfolio/pf_cereal.png',
+      cereal: '../assets/helix/lidl-special-flakes-original.jpg',
       cookies: '../assets/portfolio/oatmeal_raisin_cookies.png',
       brownies: '../assets/portfolio/chocolate_brownies.png',
-      bar: '../assets/portfolio/pf_protein_bar.png',
-      mix: '../assets/portfolio/pf_trail_mix.png',
-      crackers: '../assets/portfolio/pf_crackers.png',
-      chips: '../assets/portfolio/pf_tortilla_chips.png',
-      popcorn: '../assets/portfolio/pf_popcorn.png',
-      bites: '../assets/portfolio/pf_date_bites.png',
+      bar: '../assets/helix/orgain-vanilla-bean-organic-protein-50-superfoods.jpg',
+      mix: '../assets/helix/kirkland-fancy-whole-cashews-with-sea-salt.jpg',
+      crackers: '../assets/helix/nabisco-ritz.jpg',
+      chips: '../assets/helix/maretti-bruschette-chips-spinach-cheese.jpg',
+      popcorn: '../assets/helix/pepperidge-farm-goldfish.jpg',
+      bites: '../assets/helix/nature-s-bakery-fig-bar-blueberry.jpg',
       "apple_cinnamon_muffins": "../assets/portfolio/apple_cinnamon_muffins.png",
       "blueberry_muffins": "../assets/portfolio/blueberry_muffins.png",
       "carrot_raisin_muffins": "../assets/portfolio/carrot_raisin_muffins.png",
@@ -13616,16 +13648,64 @@
       "frosted_toaster_pastries": "../assets/portfolio/frosted_toaster_pastries.png",
       "nsa_carrot_raisin_mini": "../assets/portfolio/nsa_carrot_raisin_mini.png",
       "oatmeal_raisin_cookies": "../assets/portfolio/oatmeal_raisin_cookies.png",
-      "pf_cereal": "../assets/portfolio/pf_cereal.png",
-      "pf_crackers": "../assets/portfolio/pf_crackers.png",
-      "pf_date_bites": "../assets/portfolio/pf_date_bites.png",
-      "pf_popcorn": "../assets/portfolio/pf_popcorn.png",
-      "pf_protein_bar": "../assets/portfolio/pf_protein_bar.png",
-      "pf_tortilla_chips": "../assets/portfolio/pf_tortilla_chips.png",
-      "pf_trail_mix": "../assets/portfolio/pf_trail_mix.png",
+      "pf_cereal": "../assets/helix/lidl-special-flakes-original.jpg",
+      "pf_crackers": "../assets/helix/nabisco-ritz.jpg",
+      "pf_date_bites": "../assets/helix/nature-s-bakery-fig-bar-blueberry.jpg",
+      "pf_popcorn": "../assets/helix/pepperidge-farm-goldfish.jpg",
+      "pf_protein_bar": "../assets/helix/orgain-vanilla-bean-organic-protein-50-superfoods.jpg",
+      "pf_tortilla_chips": "../assets/helix/maretti-bruschette-chips-spinach-cheese.jpg",
+      "pf_trail_mix": "../assets/helix/kirkland-fancy-whole-cashews-with-sea-salt.jpg",
       "vegan_blueberry_mini": "../assets/portfolio/vegan_blueberry_mini.png",
       "vegan_carrot_raisin_mini": "../assets/portfolio/vegan_carrot_raisin_mini.png",
       "vegan_chocolate_brownies": "../assets/portfolio/vegan_chocolate_brownies.png",
+      muffin_en: "../assets/helix/thomas-thomas-original-english-muffins.jpg",
+      muffin_oven: "../assets/helix/sheldon-s-lancashire-oven-bottom-muffins.jpg",
+      granola_nv: "../assets/helix/nature-valley-nature-valley-crunchy-oats-n-honey.jpg",
+      granola_np: "../assets/helix/nature-s-path-organic-kirkland-ancient-grains-probiotic-gran.jpg",
+      granola_keto: "../assets/helix/nutrail-keto-nut-granola.jpg",
+      bar_nv: "../assets/helix/nature-valley-nature-valley-crunchy-oats-n-honey-granola-bar.jpg",
+      bar_fig: "../assets/helix/nature-s-bakery-fig-bar-blueberry.jpg",
+      bar_orgain: "../assets/helix/orgain-vanilla-bean-organic-protein-50-superfoods.jpg",
+      cookie_belvita: "../assets/helix/belvita-nabisco-belvita-cookies-cinnamon-brown-sugar-1x1-76-.jpg",
+      cookie_ginger: "../assets/helix/nairn-s-stem-ginger-oat-biscuits.jpg",
+      oatcakes: "../assets/helix/nairn-s-fruit-seed-oatcakes.jpg",
+      shortbread: "../assets/helix/oluf-lorentzen-as-shortbread-pure-butter-150g-walkers.jpg",
+      crackers_honey: "../assets/helix/honey-maid-graham-crackers.jpg",
+      crackers_ritz: "../assets/helix/nabisco-ritz.jpg",
+      crackers_sour: "../assets/helix/peter-s-yard-peter-s-yard-original-sourdough-crackers.jpg",
+      chips_nacho: "../assets/helix/doritos-doritos-nachos-cheese-flavoured-100g.jpg",
+      chips_brusch: "../assets/helix/maretti-bruschette-chips-spinach-cheese.jpg",
+      goldfish: "../assets/helix/pepperidge-farm-goldfish.jpg",
+      cereal_cheerios: "../assets/helix/general-mills-cheerios.jpg",
+      cereal_honey: "../assets/helix/general-mills-honey-nut-cheerios-imp.jpg",
+      cereal_grape: "../assets/helix/post-grape-nuts.jpg",
+      cereal_coco: "../assets/helix/kellogg-s-coco-pops.jpg",
+      cereal_flakes: "../assets/helix/lidl-special-flakes-original.jpg",
+      cereal_bran: "../assets/helix/morrisons-all-bran-flakes.jpg",
+      oats_quaker: "../assets/helix/quaker-old-fashioned-oats-imp.jpg",
+      oats_quick: "../assets/helix/quaker-oats-quick-1-minute-oats-imp.jpg",
+      porridge: "../assets/helix/weetabix-super-smooth-porridge.jpg",
+      rice_cakes: "../assets/helix/quaker-lightly-salted-rice-cakes.jpg",
+      cashews: "../assets/helix/kirkland-fancy-whole-cashews-with-sea-salt.jpg",
+      bread_ezekiel: "../assets/helix/food-for-life-ezekiel-4-9-sprouted-grain-bread.jpg",
+      bread_daves: "../assets/helix/dave-s-killer-bread-21-whole-grains-and-seeds.jpg",
+      bread_wheat: "../assets/helix/nature-s-own-100-whole-wheat-bread.jpg",
+      bread_multigrain: "../assets/helix/sara-lee-healthy-multi-grain-bread.jpg",
+      olive_oil: "../assets/helix/terra-delyssa-extra-virgin-olive-oil.jpg",
+      olive_oil_org: "../assets/helix/terra-delyssa-organic-extra-virgin-olive-oil.jpg",
+      olives: "../assets/helix/crespo-pitted-ripe-olives.jpg",
+      pb_justin: "../assets/helix/justin-s-classic-peanut-butter-jars.jpg",
+      pb_jif: "../assets/helix/jif-peanut-butter-creamy.jpg",
+      pb_skippy: "../assets/helix/skippy-skippy-smooth-peanut-butter.jpg",
+      almond_butter: "../assets/helix/kirkland-signature-creamy-almond-butter.jpg",
+      choc_toblerone: "../assets/helix/toblerone-milk-chocolate-large-bar.jpg",
+      choc_dark: "../assets/helix/toblerone-toblerone-dark-chocolate-bar.jpg",
+      choc_green: "../assets/helix/green-black-s-black-s-organic-cooking-dark-chocolate-bar.jpg",
+      choc_ginger: "../assets/helix/chocolove-ginger-crystallized-in-dark-chocolate.jpg",
+      yogurt: "../assets/helix/chobani-nonfat-greek-yogurt.jpg",
+      yogurt_light: "../assets/helix/chobani-natural-light-greek-yogurt.jpg",
+      oatmilk: "../assets/helix/oatly-oatmilk.jpg",
+      protein_shake: "../assets/helix/fairlife-chocolate-protien-shake.jpg",
     };
     const PF_ICON = {
       granola: 'grain', cereal: 'grain', cookies: 'cookie', brownies: 'bakery_dining',
@@ -13640,6 +13720,22 @@
       nsa_carrot_raisin_mini: 'cake', pf_cereal: 'grain', pf_crackers: 'bakery_dining',
       pf_date_bites: 'cookie', pf_popcorn: 'grain', pf_protein_bar: 'nutrition',
       pf_tortilla_chips: 'restaurant', pf_trail_mix: 'nutrition',
+      muffin_en: 'bakery_dining', muffin_oven: 'bakery_dining',
+      granola_nv: 'grain', granola_np: 'grain', granola_keto: 'grain',
+      bar_nv: 'nutrition', bar_fig: 'nutrition', bar_orgain: 'nutrition',
+      cookie_belvita: 'cookie', cookie_ginger: 'cookie', oatcakes: 'bakery_dining',
+      shortbread: 'cookie', crackers_honey: 'bakery_dining', crackers_ritz: 'bakery_dining',
+      crackers_sour: 'bakery_dining', chips_nacho: 'restaurant', chips_brusch: 'restaurant',
+      goldfish: 'restaurant', cereal_cheerios: 'grain', cereal_honey: 'grain',
+      cereal_grape: 'grain', cereal_coco: 'grain', cereal_flakes: 'grain', cereal_bran: 'grain',
+      oats_quaker: 'grain', oats_quick: 'grain', porridge: 'grain', rice_cakes: 'bakery_dining',
+      cashews: 'nutrition', bread_ezekiel: 'bakery_dining', bread_daves: 'bakery_dining',
+      bread_wheat: 'bakery_dining', bread_multigrain: 'bakery_dining',
+      olive_oil: 'water_drop', olive_oil_org: 'water_drop', olives: 'lunch_dining',
+      pb_justin: 'water_drop', pb_jif: 'water_drop', pb_skippy: 'water_drop',
+      almond_butter: 'water_drop', choc_toblerone: 'cookie', choc_dark: 'cookie',
+      choc_green: 'cookie', choc_ginger: 'cookie', yogurt: 'water_drop',
+      yogurt_light: 'water_drop', oatmilk: 'water_drop', protein_shake: 'nutrition',
     };
     const PF_DATES = [
       ['Apr 20, 2026', 'Apr 16, 2026'], ['May 27, 2026', 'May 23, 2026'],
@@ -13866,17 +13962,423 @@
         ] },
     ];
 
+    function pfUpc12(n) {
+      const s = String(n).padStart(12, '0');
+      return s[0] + ' ' + s.slice(1, 6) + ' ' + s.slice(6, 11) + ' ' + s[11];
+    }
+    function pfPadRows(pairs, upc0, rest) {
+      return pairs.map((pair, i) => {
+        const extra = typeof rest === 'function' ? rest(i, pair) : (rest || []);
+        return [pair[0], pfUpc12(upc0 + i), pair[1]].concat(extra);
+      });
+    }
+    function pfClaimedRest(i) {
+      if (i === 38 || i === 39) return ['complete', 'inelig'];
+      const shield = i % 10 === 7 ? 'prequal' : i % 10 === 8 ? 'attest' : i % 10 === 9 ? 'pending' : 'verified';
+      return ['complete', shield];
+    }
+    function pfNeedsRest(i) {
+      return [null, PF_NEEDS_STATE_KEYS[i % PF_NEEDS_STATE_KEYS.length]];
+    }
+    const PF_MORE_FLAX_CLAIMED = [
+      ['Banana Walnut Muffins-4 ct', 'muffin_en'],
+      ['Lemon Poppy Seed Muffins-4 ct', 'blueberry_muffins'],
+      ['Double Chocolate Muffins-4 ct', 'chocolate_chip_muffins'],
+      ['Raspberry White Chocolate Muffins-4 ct', 'muffin_oven'],
+      ['Gingerbread Spice Muffins-4 ct', 'apple_cinnamon_muffins'],
+      ['Zucchini Walnut Muffins-4 ct', 'carrot_raisin_muffins'],
+      ['Maple Pecan Muffins-4 ct', 'muffin_en'],
+      ['Espresso Chip Brownies-12 ct', 'chocolate_brownies'],
+      ['Salted Caramel Brownies-12 ct', 'dark_cherry_brownies'],
+      ['Peanut Butter Swirl Brownies-12 ct', 'vegan_chocolate_brownies'],
+      ['Walnut Fudge Brownies-12 ct', 'chocolate_brownies'],
+      ['Raspberry Swirl Brownies-12 ct', 'dark_cherry_brownies'],
+      ['Mocha Coconut Brownies-12 ct', 'coconut_brownies'],
+      ['Cinnamon Raisin Cookies-5 ct', 'oatmeal_raisin_cookies'],
+      ['Chocolate Chunk Cookies-5 ct', 'cookie_belvita'],
+      ['Peanut Butter Cookies-5 ct', 'cookie_ginger'],
+      ['Snickerdoodle Cookies-5 ct', 'shortbread'],
+      ['Ginger Molasses Cookies-5 ct', 'cookie_ginger'],
+      ['Maple Walnut Granola', 'granola_nv'],
+      ['Blueberry Flax Granola', 'granola_np'],
+      ['Vanilla Almond Granola', 'granola_keto'],
+      ['Pumpkin Flax Granola', 'granola'],
+      ['Cranberry Orange Granola', 'granola_nv'],
+      ['Dark Chocolate Sea Salt Granola', 'granola_keto'],
+      ['Original Flax Cereal', 'pf_cereal'],
+      ['Honey Flax Cereal', 'cereal_honey'],
+      ['Cinnamon Flax Cereal', 'cereal_flakes'],
+      ['Flax Protein Bar, Vanilla Almond', 'bar_nv'],
+      ['Flax Protein Bar, Mocha Chip', 'bar_orgain'],
+      ['Flax Protein Bar, Mixed Berry', 'bar_fig'],
+      ['Sea Salt Flax Crackers-6 oz', 'pf_crackers'],
+      ['Rosemary Flax Crackers-6 oz', 'crackers_sour'],
+      ['Cheddar Flax Crackers-6 oz', 'crackers_ritz'],
+      ['Lime Flax Tortilla Chips', 'chips_nacho'],
+      ['Chili Lime Flax Chips', 'chips_brusch'],
+      ['Butter Flax Popcorn', 'pf_popcorn'],
+      ['Date & Cashew Bites-8 ct', 'cashews'],
+      ['Fig & Flax Bites-8 ct', 'bar_fig'],
+      ['Strawberry Frosted Toaster Pastries-6 ct', 'frosted_toaster_pastries'],
+      ['Apple Cinnamon Frosted Toaster Pastries-6 ct', 'frosted_toaster_pastries'],
+    ];
+    const PF_MORE_FLAX_DISCOVERED = [
+      ['Almond Poppy Mini-Muffins-6 ct', 'muffin_en'],
+      ['Apricot Walnut Muffins-4 ct', 'muffin_oven'],
+      ['Banana Chocolate Chip Muffins-4 ct', 'chocolate_chip_muffins'],
+      ['Blackberry Crumble Muffins-4 ct', 'blueberry_muffins'],
+      ['Carrot Cake Brownies-12 ct', 'carrot_raisin_muffins'],
+      ['Chai Spice Granola', 'granola_np'],
+      ['Cherry Almond Granola', 'granola_nv'],
+      ['Chocolate Hazelnut Brownies-12 ct', 'chocolate_brownies'],
+      ['Cinnamon Sugar Flax Crackers-6 oz', 'crackers_honey'],
+      ['Cocoa Flax Cereal', 'cereal_coco'],
+      ['Coconut Macaroon Cookies-5 ct', 'shortbread'],
+      ['Cranberry Pecan Granola', 'granola_keto'],
+      ['Dark Chocolate Mint Brownies-12 ct', 'dark_cherry_brownies'],
+      ['Espresso Flax Protein Bar', 'bar_orgain'],
+      ['Fig Walnut Bites-8 ct', 'bar_fig'],
+      ['Flax Bran Flakes', 'cereal_bran'],
+      ['Flax Grape-Nut Style Cereal', 'cereal_grape'],
+      ['Flax Oatcakes-8 oz', 'oatcakes'],
+      ['Flax Rice Cakes, Sea Salt', 'rice_cakes'],
+      ['Ginger Snap Cookies-5 ct', 'cookie_ginger'],
+      ['Honey Nut Flax Cereal', 'cereal_honey'],
+      ['Lemon Chia Granola', 'granola'],
+      ['Maple Pecan Protein Bar', 'bar_nv'],
+      ['Matcha Coconut Granola', 'granola_keto'],
+      ['Orange Cranberry Muffins-4 ct', 'carrot_raisin_muffins'],
+      ['Peach Cobbler Muffins-4 ct', 'apple_cinnamon_muffins'],
+      ['Pecan Pie Brownies-12 ct', 'coconut_brownies'],
+      ['Pistachio Dark Chocolate Bar', 'choc_green'],
+      ['Pumpkin Seed Crackers-6 oz', 'crackers_sour'],
+      ['Quinoa Flax Cereal', 'cereal_cheerios'],
+      ['Raspberry Linzer Cookies-5 ct', 'cookie_belvita'],
+      ['Sea Salt Almond Butter Bites', 'almond_butter'],
+      ['Sesame Flax Crackers-6 oz', 'oatcakes'],
+      ['Sourdough Flax Crackers-6 oz', 'crackers_sour'],
+      ['Spiced Apple Granola', 'granola_nv'],
+      ['Sunflower Seed Butter Cups-6 ct', 'pb_justin'],
+      ['Toasted Almond Granola Clusters', 'granola_np'],
+      ['Vanilla Bean Overnight Oats', 'oats_quaker'],
+      ['White Chocolate Macadamia Cookies-5 ct', 'shortbread'],
+      ['Wild Blueberry Granola', 'granola'],
+    ];
+    const PF_MORE_FLAX_NEEDS = [
+      ['Flax4life Banana Bread Mini Muffins, 14 Oz (Pack Of 6)', 'muffin_oven'],
+      ['Flax4life Lemon Poppy Loaf, 12 Oz (Pack Of 6)', 'muffin_en'],
+      ['Flax4life Maple Pecan Granola, 11 Oz (Pack Of 6)', 'granola_nv'],
+      ['Flax4life Vanilla Overnight Oats, 6 Cup', 'oats_quaker'],
+      ['Flax4life Cocoa Puffed Cereal, 12 Oz', 'cereal_coco'],
+      ['Flax4life Fig Bars, 6 Ct (Pack Of 8)', 'bar_fig'],
+      ['Flax4life Ginger Oat Biscuits, 8 Oz', 'cookie_ginger'],
+      ['Flax4life Seeded Oatcakes, 10 Oz', 'oatcakes'],
+      ['Flax4life Honey Grahams, 14 Oz', 'crackers_honey'],
+      ['Flax4life Original Sourdough Crackers, 6 Oz', 'crackers_sour'],
+      ['Flax4life Nacho Flax Chips, 5 Oz', 'chips_nacho'],
+      ['Flax4life Spinach Bruschette, 5 Oz', 'chips_brusch'],
+      ['Flax4life Cheddar Goldfish-Style Crackers', 'goldfish'],
+      ['Flax4life Quick Oats, 18 Oz', 'oats_quick'],
+      ['Flax4life Super Smooth Porridge, 10 Oz', 'porridge'],
+      ['Flax4life Sprouted Grain Loaf', 'bread_ezekiel'],
+      ['Flax4life 21 Grain Sandwich Bread', 'bread_daves'],
+      ['Flax4life Whole Wheat Loaf', 'bread_wheat'],
+      ['Flax4life Multi-Grain Sandwich Bread', 'bread_multigrain'],
+      ['Flax4life Dark Chocolate Bar, 3.2 Oz', 'choc_dark'],
+      ['Flax4life Milk Chocolate Bar, 3.5 Oz', 'choc_toblerone'],
+      ['Flax4life Ginger Dark Chocolate, 3 Oz', 'choc_ginger'],
+      ['Flax4life Vanilla Protein Shake, 11.5 Oz', 'protein_shake'],
+      ['Flax4life Chocolate Protein Shake, 11.5 Oz', 'protein_shake'],
+      ['Dell Alpe Castelvetrano Olives, 12 Oz (Pack Of 6)', 'olives'],
+      ['Dell Alpe Extra Virgin Olive Oil, 16.9 Fo (Pack Of 6)', 'olive_oil'],
+      ['Mezzetta Organic Extra Virgin Olive Oil, 16.9 Fo', 'olive_oil_org'],
+      ['Mezzetta Roasted Red Peppers, 16 Oz (Pack Of 6)', 'olives'],
+      ['Sunridge Farms Creamy Almond Butter, 16 Oz (Pack Of 6)', 'almond_butter'],
+      ['Sunridge Farms Classic Peanut Butter, 16 Oz', 'pb_justin'],
+      ['Sunridge Farms Fancy Cashews, 10 Oz (Pack Of 8)', 'cashews'],
+      ['Kirkland Signature Creamy Peanut Butter, 28 Oz', 'pb_jif'],
+      ['Kirkland Organic Peanut Butter, 28 Oz', 'pb_skippy'],
+      ['Chobani Nonfat Greek Yogurt, 32 Oz', 'yogurt'],
+      ['Chobani Light Greek Yogurt, Vanilla, 32 Oz', 'yogurt_light'],
+      ['Oatly Oatmilk, Original, 64 Oz', 'oatmilk'],
+      ['Nature Valley Oats & Honey Granola, 17 Oz', 'granola_nv'],
+      ['Nature Valley Crunchy Granola Bars, 12 Ct', 'bar_nv'],
+      ['Quaker Old Fashioned Oats, 42 Oz', 'oats_quaker'],
+      ['Nairn\'s Stem Ginger Oat Biscuits, 8 Oz', 'cookie_ginger'],
+    ];
+    const PF_MORE_KIND = [
+      ['Almond Butter Dark Chocolate Bar', 'bar'],
+      ['Cashew & Ginger Bar', 'bar_fig'],
+      ['Cherry Dark Chocolate Bar', 'choc_green'],
+      ['Coconut Almond Bar', 'bar_nv'],
+      ['Cranberry Almond Bar', 'bar'],
+      ['Dark Chocolate Mocha Bar', 'choc_dark'],
+      ['Honey Mustard Nut Mix', 'cashews'],
+      ['Maple Pumpkin Seed Bar', 'bar_orgain'],
+      ['Peanut Butter Crunch Bar', 'pb_justin'],
+      ['Pistachio Dark Chocolate Bar', 'choc_ginger'],
+      ['Roasted Jalapeño Nut Mix', 'mix'],
+      ['Salted Caramel Nut Bar', 'bar'],
+      ['Sesame Honey Bar', 'bar_nv'],
+      ['Toasted Coconut Clusters', 'granola_keto'],
+      ['Vanilla Blueberry Bar', 'bar_fig'],
+      ['Apple Cinnamon Nut Bar', 'bar'],
+      ['Banana Dark Chocolate Bar', 'choc_toblerone'],
+      ['Cacao Nib Granola', 'granola_nv'],
+      ['Chili Lime Nut Mix', 'cashews'],
+      ['Cinnamon Pecan Bar', 'bar_nv'],
+      ['Dark Chocolate Raspberry Bar', 'choc_green'],
+      ['Espresso Bean Bar', 'bar_orgain'],
+      ['Fig & Walnut Bar', 'bar_fig'],
+      ['Ginger Turmeric Bar', 'cookie_ginger'],
+      ['Hazelnut Dark Chocolate Bar', 'choc_dark'],
+      ['Honey Almond Clusters', 'granola_np'],
+      ['Lemon Cashew Bar', 'bar'],
+      ['Mint Cacao Bar', 'choc_ginger'],
+      ['Orange Dark Chocolate Bar', 'choc_toblerone'],
+      ['Peach Pecan Mix', 'mix'],
+      ['Pomegranate Pistachio Bar', 'bar_fig'],
+      ['Pumpkin Spice Nut Mix', 'cashews'],
+      ['Roasted Sea Salt Almonds', 'cashews'],
+      ['Smoked Almond Mix', 'mix'],
+      ['Strawberry Cashew Bar', 'bar'],
+      ['Toffee Dark Chocolate Bar', 'choc_dark'],
+      ['Vanilla Chai Bar', 'bar_orgain'],
+      ['Walnut Maple Bar', 'bar_nv'],
+      ['Wild Blueberry Nut Mix', 'mix'],
+      ['Yuzu Sesame Bar', 'bar_fig'],
+    ];
+    const PF_MORE_SIETE = [
+      ['Avocado Oil Potato Chips', 'chips_nacho'],
+      ['Chipotle Honey Chips', 'chips_brusch'],
+      ['Dill Pickle Grain-Free Chips', 'chips_nacho'],
+      ['Everything Bagel Crackers', 'crackers_sour'],
+      ['Fajita Grain-Free Chips', 'chips_nacho'],
+      ['Garlic Herb Crackers', 'crackers_ritz'],
+      ['Habanero Grain-Free Chips', 'chips_nacho'],
+      ['Horchata Grain-Free Cookies', 'cookie_belvita'],
+      ['Lime Chili Popcorn', 'popcorn'],
+      ['Mexican Street Corn Chips', 'chips_brusch'],
+      ['No Salt Grain-Free Chips', 'chips'],
+      ['Olive Oil Crackers', 'crackers_sour'],
+      ['Pico de Gallo Chips', 'chips_nacho'],
+      ['Sea Salt Cassava Straws', 'goldfish'],
+      ['Smoky BBQ Chips', 'chips_nacho'],
+      ['Sweet Potato Grain-Free Chips', 'chips'],
+      ['Taco Seasoned Popcorn', 'popcorn'],
+      ['Verde Salsa Chips', 'chips_brusch'],
+      ['White Cheddar Crackers', 'crackers_ritz'],
+      ['Churro Bites-8 ct', 'shortbread'],
+      ['Cinnamon Sugar Chips', 'chips'],
+      ['Coconut Grain-Free Cookies', 'cookie_ginger'],
+      ['Dulce de Leche Popcorn', 'popcorn'],
+      ['Elote Crackers', 'crackers_honey'],
+      ['Guacamole Grain-Free Chips', 'chips_nacho'],
+      ['Hatch Chile Crackers', 'crackers_sour'],
+      ['Horchata Popcorn', 'popcorn'],
+      ['Jalapeño Cheddar Popcorn', 'popcorn'],
+      ['Lime Crema Chips', 'chips_brusch'],
+      ['Mango Habanero Chips', 'chips_nacho'],
+      ['Mole Dark Chocolate Cookies', 'cookie_belvita'],
+      ['Nacho Cheese Straws', 'goldfish'],
+      ['Poblano Ranch Chips', 'chips'],
+      ['Queso Fundido Crackers', 'crackers_ritz'],
+      ['Salsa Roja Chips', 'chips_nacho'],
+      ['Sea Salt & Lime Popcorn', 'popcorn'],
+      ['Spicy Nacho Grain-Free Chips', 'chips_nacho'],
+      ['Tamarind Chile Chips', 'chips_brusch'],
+      ['Vanilla Bean Grain-Free Cookies', 'shortbread'],
+      ['Za\'atar Grain-Free Crackers', 'oatcakes'],
+    ];
+    const PF_MORE_PURELY = [
+      ['Apple Ginger Ancient Grain Granola', 'granola_np'],
+      ['Blueberry Lemon Superfood Cereal', 'cereal_honey'],
+      ['Cacao Coconut Granola', 'granola_keto'],
+      ['Cardamom Rose Granola', 'granola_nv'],
+      ['Chai Spice Oatmeal Cup', 'porridge'],
+      ['Cherry Almond Superfood Bar', 'bar_fig'],
+      ['Cinnamon Pecan Clusters', 'granola'],
+      ['Cocoa Nib Grain-Free Cereal', 'cereal_coco'],
+      ['Coconut Sugar Cookies', 'cookie_belvita'],
+      ['Date & Walnut Superfood Bar', 'bar_orgain'],
+      ['Fig Honey Granola', 'granola_np'],
+      ['Golden Turmeric Oatmeal', 'oats_quaker'],
+      ['Hazelnut Mocha Granola', 'granola_keto'],
+      ['Hemp Heart Cereal', 'cereal_cheerios'],
+      ['Honeycrisp Apple Granola', 'granola_nv'],
+      ['Lavender Honey Granola', 'granola'],
+      ['Lemon Blueberry Bar', 'bar_fig'],
+      ['Maple Pecan Oatmeal Cup', 'porridge'],
+      ['Matcha Vanilla Cereal', 'cereal_flakes'],
+      ['Orange Clove Granola', 'granola_np'],
+      ['Peach Ginger Oatmeal', 'oats_quick'],
+      ['Pecan Pie Superfood Bar', 'bar_nv'],
+      ['Pistachio Rose Clusters', 'cashews'],
+      ['Pumpkin Seed Granola', 'granola_keto'],
+      ['Raspberry Cacao Bar', 'choc_green'],
+      ['Sesame Honey Cereal', 'cereal_bran'],
+      ['Strawberry Coconut Granola', 'granola'],
+      ['Toasted Coconut Oatmeal Cup', 'porridge'],
+      ['Vanilla Bean Superfood Cereal', 'cereal_honey'],
+      ['Walnut Date Granola', 'granola_nv'],
+      ['Ancient Grain Porridge, Original', 'porridge'],
+      ['Blueberry Acai Bar', 'bar_fig'],
+      ['Cashew Butter Superfood Bar', 'almond_butter'],
+      ['Cinnamon Toast Clusters', 'cereal_cheerios'],
+      ['Dark Chocolate Cherry Granola', 'granola_keto'],
+      ['Ginger Snap Superfood Cookies', 'cookie_ginger'],
+      ['Honey Almond Oatcakes', 'oatcakes'],
+      ['Mocha Chip Superfood Bar', 'bar_orgain'],
+      ['Salted Honey Granola', 'granola_np'],
+      ['Vanilla Chai Superfood Cereal', 'cereal_flakes'],
+    ];
+    const PF_MORE_TRUTH = [
+      ['Organic Apple Cinnamon Instant Oats', 'oats_quaker'],
+      ['Organic Banana Nut Granola', 'granola_nv'],
+      ['Organic Blueberry Fig Bars', 'bar_fig'],
+      ['Organic Brown Rice Cakes', 'rice_cakes'],
+      ['Organic Cashew Clusters', 'cashews'],
+      ['Organic Cheddar Lentil Chips', 'chips_nacho'],
+      ['Organic Chocolate Chip Granola', 'granola_keto'],
+      ['Organic Cinnamon Grahams', 'crackers_honey'],
+      ['Organic Cocoa Crisps Cereal', 'cereal_coco'],
+      ['Organic Coconut Clusters', 'granola'],
+      ['Organic Dark Chocolate Bar', 'choc_green'],
+      ['Organic Everything Crackers', 'crackers_sour'],
+      ['Organic Fig & Olive Crackers', 'oatcakes'],
+      ['Organic Ginger Snaps', 'cookie_ginger'],
+      ['Organic Honey Nut O\'s', 'cereal_honey'],
+      ['Organic Lemon Shortbread', 'shortbread'],
+      ['Organic Maple Bran Flakes', 'cereal_bran'],
+      ['Organic Multigrain Loaf', 'bread_multigrain'],
+      ['Organic Nacho Cauliflower Chips', 'chips_brusch'],
+      ['Organic Oat Milk, Original', 'oatmilk'],
+      ['Organic Peanut Butter Cups', 'pb_justin'],
+      ['Organic Pistachio Butter, 12 oz', 'almond_butter'],
+      ['Organic Pumpkin Seed Mix', 'mix'],
+      ['Organic Quinoa Puffs Cereal', 'cereal_cheerios'],
+      ['Organic Raspberry Thumbprints', 'cookie_belvita'],
+      ['Organic Sea Salt Popcorn', 'popcorn'],
+      ['Organic Sesame Rice Cakes', 'rice_cakes'],
+      ['Organic Sprouted Grain Bread', 'bread_ezekiel'],
+      ['Organic Strawberry Fruit Bars', 'bar_fig'],
+      ['Organic Toasted Oat Cereal', 'cereal_flakes'],
+      ['Organic Vanilla Almond Butter', 'almond_butter'],
+      ['Organic Walnut Date Mix', 'mix'],
+      ['Organic Whole Wheat Bread', 'bread_wheat'],
+      ['Organic 21 Grain Bread', 'bread_daves'],
+      ['Organic Greek Yogurt, Plain', 'yogurt'],
+      ['Organic Light Greek Yogurt', 'yogurt_light'],
+      ['Organic Chocolate Protein Shake', 'protein_shake'],
+      ['Organic Creamy Peanut Butter', 'pb_jif'],
+      ['Organic Extra Virgin Olive Oil', 'olive_oil_org'],
+      ['Organic Pitted Olives, 12 oz', 'olives'],
+    ];
+
+    PF_BRANDS[0].claimed = PF_BRANDS[0].claimed.concat(pfPadRows(PF_MORE_FLAX_CLAIMED, 857287010001, pfClaimedRest));
+    PF_BRANDS[0].discovered = PF_BRANDS[0].discovered.concat(pfPadRows(PF_MORE_FLAX_DISCOVERED, 857287020001));
+    PF_BRANDS[0].needsinfo = PF_BRANDS[0].needsinfo.concat(pfPadRows(PF_MORE_FLAX_NEEDS, 857287030001, pfNeedsRest));
+    PF_BRANDS[0].removed = [];
+
+    const PF_OTHER_PAD = [
+      { i: 1, claimed: PF_MORE_TRUTH, discovered: PF_MORE_PURELY, needs: PF_MORE_SIETE, c0: 11110890001, d0: 11110891001, n0: 11110892001 },
+      { i: 2, claimed: PF_MORE_PURELY, discovered: PF_MORE_TRUTH, needs: PF_MORE_KIND, c0: 85911210001, d0: 85911211001, n0: 85911212001 },
+      { i: 3, claimed: PF_MORE_SIETE, discovered: PF_MORE_KIND, needs: PF_MORE_TRUTH, c0: 74992910001, d0: 74992911001, n0: 74992912001 },
+      { i: 4, claimed: PF_MORE_KIND, discovered: PF_MORE_SIETE, needs: PF_MORE_PURELY, c0: 60265210001, d0: 60265211001, n0: 60265212001 },
+    ];
+    PF_OTHER_PAD.forEach((pad) => {
+      const b = PF_BRANDS[pad.i];
+      if (!b) return;
+      b.claimed = b.claimed.concat(pfPadRows(pad.claimed, pad.c0, pfClaimedRest));
+      b.discovered = b.discovered.concat(pfPadRows(pad.discovered, pad.d0));
+      b.needsinfo = b.needsinfo.concat(pfPadRows(pad.needs, pad.n0, pfNeedsRest));
+      b.removed = [];
+    });
+
     let pfCurrentBrand = 0;
 
+    function pfThumbSrc(img) {
+      if (!img) return '';
+      return img.getAttribute('src') || img.getAttribute('data-src') || '';
+    }
+    window.pfThumbSrc = pfThumbSrc;
+    function pfHydrateLazyImg(img) {
+      if (!img || img.getAttribute('src')) return;
+      const src = img.getAttribute('data-src');
+      if (!src) return;
+      img.src = src;
+    }
+    function pfLazyThumbTarget(img) {
+      return (img && img.closest && img.closest('.pf-trow')) || img;
+    }
+    function pfHydrateLazyFrom(el) {
+      if (!el) return;
+      if (el.tagName === 'IMG') { pfHydrateLazyImg(el); return; }
+      el.querySelectorAll('img.pf-lazy-img[data-src]:not([src])').forEach(pfHydrateLazyImg);
+    }
+    let pfThumbIO = null;
+    function pfInitLazyThumbs() {
+      if (pfThumbIO || pfInitLazyThumbs._done) return;
+      pfInitLazyThumbs._done = true;
+      const body = document.getElementById('pf-body');
+      if (body && typeof IntersectionObserver !== 'undefined') {
+        pfThumbIO = new IntersectionObserver((entries) => {
+          entries.forEach((en) => {
+            if (!en.isIntersecting) return;
+            pfHydrateLazyFrom(en.target);
+            pfThumbIO.unobserve(en.target);
+          });
+        }, { root: body, rootMargin: '180px 0px', threshold: 0.01 });
+      }
+      document.addEventListener('wtp:sync', (e) => {
+        const t = e.target;
+        if (t && t.closest && t.closest('#portfolio-panel')) pfObserveLazyThumbs();
+      });
+      document.addEventListener('wtp:more', (e) => {
+        const table = e.target;
+        if (!table || !table.closest || !table.closest('#portfolio-panel')) return;
+        pfAppendRows(table, (e.detail && e.detail.revealed) || 0);
+      });
+    }
+    function pfObserveLazyThumbs() {
+      const run = () => {
+        const imgs = document.querySelectorAll('#portfolio-panel img.pf-lazy-img[data-src]:not([src])');
+        if (!imgs.length) return;
+        const body = document.getElementById('pf-body');
+        const br = body ? body.getBoundingClientRect() : null;
+        imgs.forEach((img) => {
+          const row = img.closest('.pf-trow');
+          if (row && (row.classList.contains('wtp-clip') || row.classList.contains('pf-row-hidden'))) return;
+          if (!pfThumbIO) { pfHydrateLazyImg(img); return; }
+          const target = pfLazyThumbTarget(img);
+          if (row && br) {
+            const rr = row.getBoundingClientRect();
+            if (rr.height > 0 && rr.top < br.bottom + 180 && rr.bottom > br.top - 180) {
+              pfHydrateLazyImg(img);
+              return;
+            }
+          }
+          pfThumbIO.observe(target);
+        });
+      };
+      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+      else run();
+    }
+    window.pfThumbSrc = pfThumbSrc;
+    window.pfObserveLazyThumbs = pfObserveLazyThumbs;
+    function pfThumbImgHtml(src, name, icon) {
+      const glyph = icon || 'nutrition';
+      return '<span class="pf-thumb"><img class="pf-thumb-img pf-lazy-img" data-src="' + pfEsc(src) +
+        '" alt="' + pfEsc(name || '') + '" width="40" height="40" decoding="async" loading="lazy"' +
+        ' onload="this.nextElementSibling.style.display=\'none\'"' +
+        ' onerror="this.style.display=\'none\'">' +
+        '<span class="material-symbols-outlined">' + glyph + '</span></span>';
+    }
     function pfThumb(imgKey, iconOverride, name) {
       /* When there's a product image the fallback icon comes from PF_ICON;
          the icon override only applies to icon-only (image-less) rows. */
       const icon = (imgKey ? PF_ICON[imgKey] : iconOverride) || 'nutrition';
-      if (imgKey && PF_IMG[imgKey]) {
-        return '<span class="pf-thumb"><img class="pf-thumb-img" src="' + PF_IMG[imgKey] +
-          '" alt="' + pfEsc(name) + '" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'inline-flex\'">' +
-          '<span class="material-symbols-outlined" style="display:none">' + icon + '</span></span>';
-      }
+      if (imgKey && PF_IMG[imgKey]) return pfThumbImgHtml(PF_IMG[imgKey], name, icon);
       return '<span class="pf-thumb"><span class="material-symbols-outlined">' + icon + '</span></span>';
     }
     function pfRowMenuHtml(seg, up, ed) {
@@ -13993,7 +14495,7 @@
       const href = pfClaimHref(name, p[1], img);
       const product = '<span class="pf-td pf-col-product">' +
         (imgKey ? pfThumb(imgKey, iconOverride, name) :
-          (img ? '<span class="pf-thumb"><img class="pf-thumb-img" src="' + pfEsc(img) + '" alt="' + pfEsc(name) + '" loading="lazy"></span>' : pfThumb(null, iconOverride, name))) +
+          (img ? pfThumbImgHtml(img, name, iconOverride) : pfThumb(null, iconOverride, name))) +
         '<span class="pf-pcell-text"><span class="pf-pname">' + pfEsc(name) + '</span>' +
         '<span class="pf-upc">UPC · ' + pfEsc(p[1]) + '</span></span></span>';
       /* Every list: Product (name + UPC + sizes) · Brand (logo + name).
@@ -14032,7 +14534,74 @@
         '<span class="pf-upc">UPC · ' + pfEsc(upc) + '</span></span></span>';
       return '<div class="pf-trow" data-brand="' + pfEsc(brandName) + '">' + check + btn + product + pfBrandCellHtml(brandName) + '</div>';
     }
+    function pfRowHtml(p, seg, i, cta) {
+      return cta ? pfCtaRow(p) : pfBrandRow(p, seg, i);
+    }
+    function pfInsertRows(table, items, startIndex, seg, cta) {
+      if (!table || !items || !items.length) return;
+      const foot = table.querySelector('.pf-table-foot');
+      const html = items.map((p, i) => pfRowHtml(p, seg, startIndex + i, cta)).join('');
+      if (foot) foot.insertAdjacentHTML('beforebegin', html);
+      else table.insertAdjacentHTML('beforeend', html);
+    }
+    function pfAppendRows(table, revealed) {
+      const list = table && table._pfQueue;
+      if (!list) return;
+      const have = table.querySelectorAll('.pf-trow').length;
+      if (have >= revealed || have >= list.length) return;
+      pfInsertRows(table, list.slice(have, Math.min(revealed, list.length)), have, table._pfSeg, table._pfCta);
+      pfObserveLazyThumbs();
+    }
+    function pfMaterializeTable(table) {
+      const list = table && table._pfQueue;
+      if (!list) return;
+      pfAppendRows(table, list.length);
+    }
+    function pfMaterializeAll() {
+      document.querySelectorAll('#portfolio-panel .pf-table').forEach(pfMaterializeTable);
+    }
+    const pfPendingFill = Object.create(null);
+    let pfFillIO = null;
+    function pfFlushFill(seg) {
+      if (!Object.prototype.hasOwnProperty.call(pfPendingFill, seg)) return;
+      const list = pfPendingFill[seg];
+      delete pfPendingFill[seg];
+      pfFillTable(seg, list);
+    }
+    function pfFlushPendingFills() {
+      Object.keys(pfPendingFill).forEach(pfFlushFill);
+    }
+    function pfScheduleFill(seg, list) {
+      pfPendingFill[seg] = list || [];
+      const view = document.getElementById('pf-view-' + seg);
+      if (!view) { pfFlushFill(seg); return; }
+      const body = document.getElementById('pf-body');
+      if (body) {
+        const br = body.getBoundingClientRect();
+        const vr = view.getBoundingClientRect();
+        if (vr.height > 0 && vr.top < br.bottom && vr.bottom > br.top) {
+          pfFlushFill(seg);
+          return;
+        }
+      }
+      if (typeof IntersectionObserver === 'undefined') { pfFlushFill(seg); return; }
+      if (!pfFillIO) {
+        pfFillIO = new IntersectionObserver((ents) => {
+          ents.forEach((en) => {
+            if (!en.isIntersecting) return;
+            const id = en.target.id || '';
+            const next = id.replace(/^pf-view-/, '');
+            if (pfPendingFill[next]) {
+              pfFillIO.unobserve(en.target);
+              pfFlushFill(next);
+            }
+          });
+        }, { root: body, rootMargin: '160px 0px' });
+      }
+      pfFillIO.observe(view);
+    }
     function pfFillTable(seg, list) {
+      list = list || [];
       const tables = Array.from(document.querySelectorAll('#portfolio-panel .pf-table--' + seg));
       if (seg === 'discovered') {
         const cta = document.querySelector('#portfolio-panel .pf-table--discovered-cta');
@@ -14041,15 +14610,16 @@
       tables.forEach((table) => {
         if (!table) return;
         table.querySelectorAll('.pf-trow').forEach((r) => r.remove());
-        const foot = table.querySelector('.pf-table-foot');
         const cta = table.classList.contains('pf-table--discovered-cta');
-        const rows = list.map((p, i) => cta ? pfCtaRow(p) : pfBrandRow(p, seg, i)).join('');
-        if (foot) foot.insertAdjacentHTML('beforebegin', rows);
-        else table.insertAdjacentHTML('beforeend', rows);
-        if (foot) {
-          foot.innerHTML = '<span>Showing ' + list.length + ' of ' + list.length + ' products</span>';
-        }
+        table._pfSeg = seg;
+        table._pfCta = cta;
+        table._pfQueue = list;
+        const step = parseInt(table.getAttribute('data-wtp-step'), 10);
+        const windowSize = (Number.isFinite(step) && step > 0) ? step : 20;
+        table.setAttribute('data-wtp-total', String(list.length));
+        pfInsertRows(table, list.slice(0, windowSize), 0, seg, cta);
       });
+      pfObserveLazyThumbs();
     }
     function pfSetNum(sel, n) {
       const el = document.querySelector(sel + ' .pf-stat-num');
@@ -14072,11 +14642,65 @@
         needsinfo: extra.concat(brand.needsinfo || []),
       });
     }
+    function pfBoardCounts(brand) {
+      brand = pfPartitionVerify(brand || PF_BRANDS[pfCurrentBrand] || PF_BRANDS[0]);
+      let verify = 0;
+      (brand.needsinfo || []).forEach((p, i) => {
+        if (pfNeedsDataState(p, i) === 'verify') verify++;
+      });
+      let verified = 0, prequal = 0;
+      (brand.claimed || []).forEach((p) => {
+        if (p[4] === 'verified') verified++;
+        else if (p[4] === 'prequal') prequal++;
+      });
+      return {
+        name: brand.name,
+        claimed: (brand.claimed || []).length,
+        discovered: (brand.discovered || []).length,
+        needsinfo: (brand.needsinfo || []).length,
+        verify: verify,
+        verified: verified,
+        prequal: prequal,
+        all: (brand.claimed || []).length + (brand.discovered || []).length + (brand.needsinfo || []).length,
+      };
+    }
+    function pfPaintWelcomeCounts(c) {
+      const setCard = (key, n, desc) => {
+        const card = document.querySelector('[data-pf-welcome="' + key + '"]');
+        if (!card) return;
+        const metric = card.querySelector('.ws-sc-metric');
+        if (metric) {
+          const unit = metric.querySelector('.ws-sc-metric-unit');
+          metric.innerHTML = n + (unit ? unit.outerHTML : '');
+        }
+        const d = card.querySelector('.ws-sc-desc');
+        if (d && desc) d.textContent = desc;
+      };
+      setCard('discovered', c.discovered,
+        c.discovered + ' products from public retail data look like ' + c.name + '\'s — claim yours, remove the rest.');
+      setCard('needsinfo', c.needsinfo,
+        c.needsinfo + ' products are still in progress — add the missing details and they move into your portfolio.');
+      setCard('add', c.all, null);
+      const chipDisc = document.querySelector('[data-pf-welcome-chip="discovered"]');
+      if (chipDisc) {
+        const icon = chipDisc.querySelector('.material-symbols-outlined');
+        chipDisc.textContent = '';
+        if (icon) chipDisc.appendChild(icon);
+        chipDisc.appendChild(document.createTextNode('Review Discovered (' + c.discovered + ')'));
+      }
+      const chipNeed = document.querySelector('[data-pf-welcome-chip="needsinfo"]');
+      if (chipNeed) {
+        const icon = chipNeed.querySelector('.material-symbols-outlined');
+        chipNeed.textContent = '';
+        if (icon) chipNeed.appendChild(icon);
+        chipNeed.appendChild(document.createTextNode('Complete Missing Data (' + c.needsinfo + ')'));
+      }
+    }
     function pfApplyBrandData(brand) {
       brand = pfPartitionVerify(brand);
       pfFillTable('claimed', brand.claimed);
-      pfFillTable('discovered', brand.discovered);
-      pfFillTable('needsinfo', brand.needsinfo);
+      pfScheduleFill('needsinfo', brand.needsinfo);
+      pfScheduleFill('discovered', brand.discovered);
       pfFillRemovedTable();
       /* Score cards — segment totals + the claimed-list status breakdown. */
       pfSetNum('#pf-seg-all', brand.claimed.length + brand.discovered.length + brand.needsinfo.length);
@@ -14102,6 +14726,7 @@
       /* Notes + meta strip. */
       const note = document.querySelector('#pf-view-discovered .pf-note .pf-card-title');
       if (note) note.textContent = 'We found ' + brand.discovered.length + ' products that look like ' + brand.name + '\u2019s';
+      pfPaintWelcomeCounts(pfBoardCounts(brand));
     }
     function pfUpdateBrandHeader(brand) {
       const nameEl = document.getElementById('pf-brand-name');
@@ -14403,7 +15028,13 @@
     function pfInitBrands() {
       if (!document.querySelector('#portfolio-panel .pf-board')) return;
       pfBuildBrandMenu();
+      pfInitLazyThumbs();
       pfInitStickyChrome();
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest || !e.target.closest('#portfolio-panel .pf-thead .srt-sortable')) return;
+        pfFlushPendingFills();
+        pfMaterializeAll();
+      }, true);
       pfInitVerifyToast();
       pfInitSearch();
       pfSyncAdminUi();
@@ -14530,6 +15161,7 @@
       if (label === 'review & claim') { window.location.href = pfViewHref(row); return; }
       if (label === 'edit' || label === 'finish data' || label === 'complete details') { window.location.href = pfEditHref(row); return; }
       if (label === 'reports') { pfOpenRowReports(row); return; }
+      if (label === 'reformulate') { window.location.href = pfReformulateHref(row); return; }
       if (label === 'remove product' || label === 'remove') { pfRemoveProduct(row, name); return; }
       const M = {
         'edit':           ['Edit ' + name, 'Opening <strong>' + name + '</strong> to edit. Update its ingredients, packaging, or details and I’ll re-run verification the moment you save.'],
@@ -14602,7 +15234,7 @@
         pfSwitchTab(tab);
         if (userMsg) askUserMessage(userMsg, 'pf-open-' + tab);
         wiseaiTraceThen('WISEcodeAI is opening your portfolio', () => {
-          addWISEcodeAIMessage(wiseaiMsg);
+          addWISEcodeAIMessage(typeof wiseaiMsg === 'function' ? wiseaiMsg() : wiseaiMsg);
           pfOfferChips(chips);
           if (typeof onReady === 'function') onReady();
         });
@@ -14616,8 +15248,8 @@
       verify:     { fn: 'startVerifyIngredients', icon: 'fact_check',      label: 'Verify ingredients' },
       verifyGo:   { fn: 'startContinueVerification', icon: 'verified',     label: 'Continue Non-UPF Verification' },
       shields:    { fn: 'startActivateShields',   icon: 'verified_user',   label: 'Activate Non-UPF Shields' },
-      discovered: { fn: 'startReviewDiscovered',  icon: 'travel_explore',  label: 'Review discovered (47)' },
-      needsinfo:  { fn: 'startCompleteNeedsInfo', icon: 'pending_actions', label: 'Complete in-progress (18)' },
+      discovered: { fn: 'startReviewDiscovered',  icon: 'travel_explore',  label: function () { return 'Review discovered (' + pfBoardCounts().discovered + ')'; } },
+      needsinfo:  { fn: 'startCompleteNeedsInfo', icon: 'pending_actions', label: function () { return 'Complete in-progress (' + pfBoardCounts().needsinfo + ')'; } },
       claimed:    { fn: 'startViewClaimed',       icon: 'inventory_2',     label: 'View claimed portfolio' },
       claim:      { fn: 'startClaimProducts',     icon: 'bookmark_add',    label: 'Claim a product' },
       ineligible: { fn: 'startResolveIneligible', icon: 'gpp_maybe',       label: 'Resolve ineligible' },
@@ -14642,8 +15274,10 @@
       if (!list.length) return;
       const row = document.createElement('div');
       row.className = 'sc-reply-chips';
-      row.innerHTML = list.map((c) =>
-        `<button type="button" class="chip" onclick="pfChipGo(this,'${c.fn}')"><span class="material-symbols-outlined">${c.icon}</span>${c.label}</button>`).join('');
+      row.innerHTML = list.map((c) => {
+        const label = typeof c.label === 'function' ? c.label() : c.label;
+        return `<button type="button" class="chip" onclick="pfChipGo(this,'${c.fn}')"><span class="material-symbols-outlined">${c.icon}</span>${label}</button>`;
+      }).join('');
       box.appendChild(row);
       wiseaiFollowChat(box);
     }
@@ -14844,19 +15478,16 @@
     }
     window.startBrowseProducts = startBrowseProducts;
     function startReviewDiscovered() {
-      openPortfolioModule('discovered', 'Review the products you discovered for me',
-        'I found <strong>47 products</strong> in public retail data that match the Flax4Life brand. They’re on the right under <strong>Discovered</strong> — <strong>Review &amp; claim</strong> the ones that are yours to pull them into your portfolio, and dismiss the rest. Reports unlock as each product’s data is completed.',
-        ['claim', 'needsinfo', 'claimed']);
+      const route = PF_ROUTES.discovered;
+      openPortfolioModule(route.tab, 'Review the products you discovered for me', route.reply, route.chips);
     }
     function startCompleteNeedsInfo() {
-      openPortfolioModule('needsinfo', 'Help me complete my products in progress',
-        '<strong>18 products</strong> need more detail before they can join your portfolio — they won’t appear in any report or stat until they’re complete. Open <strong>In Progress</strong> on the right to add what’s missing; five of them still need <strong>Verify Ingredients</strong>.',
-        ['discovered', 'claimed', 'add']);
+      const route = PF_ROUTES.needsinfo;
+      openPortfolioModule(route.tab, 'Help me complete my products in progress', route.reply, route.chips);
     }
     function startViewClaimed() {
-      openPortfolioModule('claimed', 'Show me my claimed portfolio',
-        'Here’s your <strong>Claimed</strong> portfolio — <strong>5 products</strong> with complete data, <strong>4</strong> Non-UPF Verified and <strong>1</strong> pre-qualified. Products that still need ingredient verification live in <strong>In Progress</strong>. Where do you want to start?',
-        ['shields', 'ineligible', 'discovered']);
+      const route = PF_ROUTES.claimed;
+      openPortfolioModule(route.tab, 'Show me my claimed portfolio', route.reply, route.chips);
     }
     function startClaimProducts() {
       openPortfolioModule('discovered', 'I want to claim a product',
@@ -15007,9 +15638,8 @@
     window.startNearMiss = startNearMiss;
     window.startEasyWins = startEasyWins;
     function portfolioTour() {
-      openPortfolioModule('claimed', 'Give me a quick tour of my portfolio',
-        'Welcome to your <strong>Product Portfolio</strong>. It has three surfaces: <strong>Claimed</strong> (5 complete products), <strong>Discovered</strong> (47 public matches to review &amp; claim), and <strong>In Progress</strong> (18 products missing details, including 5 waiting on ingredient verification). Switch tabs on the right anytime — where would you like to begin?',
-        ['claimed', 'discovered', 'catalog', 'assets']);
+      const route = PF_ROUTES.tour;
+      openPortfolioModule(route.tab, 'Give me a quick tour of my portfolio', route.reply, ['claimed', 'discovered', 'catalog', 'assets']);
     }
     function askWiseAiPortfolio() {
       openPortfolioModule('claimed', 'How can WISEcodeAI help me work through my portfolio?',
@@ -19042,7 +19672,7 @@
             wrap._product = row ? {
               name: ((row.querySelector('.pf-pname') || {}).textContent || '').trim(),
               upc: ((row.querySelector('.pf-upc') || {}).textContent || '').replace(/^\s*UPC\s*·\s*/i, '').trim(),
-              img: (row.querySelector('.pf-thumb-img') && row.querySelector('.pf-thumb-img').getAttribute('src')) || '',
+              img: pfThumbSrc(row.querySelector('.pf-thumb-img')),
             } : null;
             const pop = wrap.querySelector('.pf-reports-pop') || document.getElementById('pf-shared-reports-pop');
             if (pop) {

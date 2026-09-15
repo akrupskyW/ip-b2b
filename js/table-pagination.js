@@ -5,7 +5,7 @@
    consistent sortable header, this file gives every table a consistent
    pagination footer:
 
-       Showing 10 of 47 products              Load more ⌄
+       Showing 20 of 87 products              Show more ⌄
 
    It is intentionally generic and self-initialising:
      • Runs on DOMContentLoaded and re-scans on DOM changes (a MutationObserver)
@@ -15,6 +15,14 @@
        sort/filter/search code (which reorders or re-renders rows freely).
      • Injects its own CSS, so no per-page stylesheet edits are needed and the
        footer looks identical on every page and in both themes.
+
+   Optional per-table attributes:
+     • data-wtp-step="20"  — rows shown initially and per click (default 10)
+     • data-wtp-more="Show more" — button label (default "Load more")
+     • data-wtp-total="87" — true row count when the host has not yet put
+       every row in the DOM (Product Portfolio only paints the first window,
+       then appends on Show more). The foot uses this number; a `wtp:more`
+       event fires on the table before each reveal so the host can append.
 
    Supported table paradigms (each mapped to its rows + existing footer):
      • Real  <table>            → tbody > tr        (incl. .upf-table)
@@ -31,7 +39,7 @@
 (function () {
   'use strict';
 
-  var STEP = 10;                 /* rows revealed initially and per "Load more" */
+  var STEP = 10;                 /* default rows revealed initially and per click */
   var MAP = new WeakMap();       /* table element → pagination state            */
 
   var EXPAND_ICON =
@@ -72,6 +80,24 @@
 
   /* ── Helpers ──────────────────────────────────────────────────────────── */
   function norm(s) { return (s || '').replace(/\s+/g, ' ').trim(); }
+
+  /* Per-table page size. Product Portfolio sets data-wtp-step="20"; everything
+     else keeps the app-wide default of 10. */
+  function stepOf(el) {
+    var n = parseInt(el && el.getAttribute && el.getAttribute('data-wtp-step'), 10);
+    return (Number.isFinite(n) && n > 0) ? n : STEP;
+  }
+
+  function moreLabelOf(el) {
+    var label = el && el.getAttribute && el.getAttribute('data-wtp-more');
+    return (label && String(label).trim()) || 'Load more';
+  }
+
+  /* Host-declared total when remaining rows are still in JS, not in the DOM. */
+  function declaredTotal(el) {
+    var n = parseInt(el && el.getAttribute && el.getAttribute('data-wtp-total'), 10);
+    return (Number.isFinite(n) && n > 0) ? n : 0;
+  }
 
   function escHtml(s) {
     return String(s == null ? '' : s)
@@ -147,6 +173,7 @@
     if (probe && probe.classList && probe.classList.contains('wtp-foot')) {
       st.footEl = probe;
       probe._wtpOwner = el;
+      paintMoreLabel(el, probe);
       return;
     }
 
@@ -154,8 +181,9 @@
     foot.className = 'wtp-foot';
     foot.innerHTML =
       '<span class="wtp-count"></span>' +
-      '<button type="button" class="wtp-more" data-wtp-more hidden>Load more ' + EXPAND_ICON + '</button>';
+      '<button type="button" class="wtp-more" data-wtp-more hidden></button>';
     foot._wtpOwner = el;
+    paintMoreLabel(el, foot);
 
     if (desc.foot) {
       desc.foot.classList.add('wtp-hidden-foot');
@@ -166,6 +194,15 @@
       el.appendChild(foot);
     }
     st.footEl = foot;
+  }
+
+  function paintMoreLabel(el, foot) {
+    var more = foot && foot.querySelector('.wtp-more');
+    if (!more) return;
+    var label = moreLabelOf(el);
+    if (more.getAttribute('data-wtp-label') === label) return;
+    more.setAttribute('data-wtp-label', label);
+    more.innerHTML = escHtml(label) + ' ' + EXPAND_ICON;
   }
 
   function updateFoot(foot, shown, total, noun) {
@@ -199,23 +236,30 @@
     for (var i = 0; i < rows.length; i++) rows[i].classList.remove('wtp-clip');
 
     var eligible = rows.filter(function (r) { return !isFilteredOut(r); });
-    var total = eligible.length;
+    var inDom = eligible.length;
+    var declared = declaredTotal(el);
+    var total = declared > inDom ? declared : inDom;
 
+    var step = stepOf(el);
     /* Reset to the first window whenever the row set changes (filter/search). */
-    if (st.lastSig !== null && st.lastSig !== total) st.revealed = STEP;
+    if (st.lastSig !== null && st.lastSig !== total) st.revealed = step;
     st.lastSig = total;
-    if (st.revealed < STEP) st.revealed = STEP;
+    if (st.revealed < step) st.revealed = step;
+    paintMoreLabel(el, st.footEl);
 
     var shown = Math.min(st.revealed, total);
     for (var j = shown; j < eligible.length; j++) eligible[j].classList.add('wtp-clip');
 
     updateFoot(st.footEl, shown, total, deriveNoun(st, desc));
+    try {
+      el.dispatchEvent(new CustomEvent('wtp:sync', { bubbles: true }));
+    } catch (_) {}
   }
 
   function ensure(el) {
     if (!resolve(el)) return;
     var st = MAP.get(el);
-    if (!st) { st = { revealed: STEP, lastSig: null, noun: null, nounFixed: false, footEl: null }; MAP.set(el, st); }
+    if (!st) { st = { revealed: stepOf(el), lastSig: null, noun: null, nounFixed: false, footEl: null }; MAP.set(el, st); }
     sync(el, st);
   }
 
@@ -228,7 +272,13 @@
     if (!owner) return;
     var st = MAP.get(owner);
     if (!st) return;
-    st.revealed += STEP;
+    st.revealed += stepOf(owner);
+    try {
+      owner.dispatchEvent(new CustomEvent('wtp:more', {
+        bubbles: true,
+        detail: { revealed: st.revealed, step: stepOf(owner) }
+      }));
+    } catch (_) {}
     sync(owner, st);
   });
 

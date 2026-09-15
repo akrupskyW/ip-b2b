@@ -8036,9 +8036,10 @@ html.dark .chat-messages-area { background: transparent; }
    centered at this width and never stretches edge to edge. Past the cap the
    inset grows to hold the column in the middle.
 
-   A bleeding output rail cancels this exact inset to reach the module edge
-   (see .sc-surface-rail--bleed and the owl progression strip), which is why the
-   floor is a variable those read rather than a number they restate.
+   A carousel or an image grid cancels this exact inset to reach the module
+   edge (see .sc-surface-rail--bleed, the owl progression strip, and .sc-mgrid).
+   Charts, graphs and scorecards stay on the column — they must not. The floor
+   is a variable those rails read rather than a number they restate.
 
    --sc-gutter is the escape hatch: set it on a host to pin both sides outright. */
 .chat-messages-area,
@@ -8121,7 +8122,7 @@ html.dark .sc-line-you:not(.sc-line-event)::before {
    that same first view, and the trailing 6px is breathing room for the cards'
    hover lift and focus ring inside the scroll box. */
 .sc-surface-rail-lead { margin: 0; }
-.sc-line-body > .sc-surface-rail.sc-surface-rail--bleed {
+.sc-line-body .sc-surface-rail.sc-surface-rail--bleed {
   --sc-rail-pad: var(--sc-gutter, max(var(--sc-pad-floor, 3rem), calc((100cqi - var(--sc-transcript-max, 860px)) / 2)));
   --sc-rail-lead-in: calc(var(--sc-avatar-size, 30px) + 12px + var(--sc-rail-pad));
   box-sizing: border-box;
@@ -8581,8 +8582,11 @@ html.dark .ws-logo-wrap .ws-pulse-ring { --ws-track: rgba(174, 200, 237, 0.55); 
   min-width: 0;
   width: 100%;
   max-width: 100%;
-  margin: 0 auto;
-  padding: 4px 2px;
+  margin: 0;
+  /* No extra side pad — the welcome column already frames the chips —
+     but leave room on the right for the collapsed History icon rail
+     (66px) so a wrapping chip cannot land under it. */
+  padding: 4px 66px 4px 0;
   overflow-x: hidden;
   overflow-y: visible;
 }
@@ -9269,7 +9273,7 @@ html.dark .ws-scorecard--chart-race:hover {
 
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
-  box-sizing: border-box; height: 28px; padding: 0 11px;
+  box-sizing: border-box; height: 28px; padding: 0 7px;
   /* One size app-wide: the 28px in-conversation reply chip. Same blue tint as
      the composer (.fl-input-wrap, 10% primary) so chips and the input share
      one surface color, light and dark. */
@@ -23307,7 +23311,7 @@ html.dark .mi-motion-stage { background: rgba(255,255,255,0.03); }
 .mi-motion-fly .chip {
   display: inline-flex; align-items: center; gap: 6px;
   box-sizing: border-box; width: max-content; max-width: 100%; flex: 0 0 auto;
-  height: 28px; padding: 0 11px;
+  height: 28px; padding: 0 7px;
 }
 
 .mi-motion-helix { position: relative; width: 100%; border-radius: 12px; overflow: hidden; }

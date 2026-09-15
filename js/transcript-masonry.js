@@ -7,8 +7,8 @@
    packing would do nothing; the card rail is that same set as one scrolling
    row, for a host with no room to show it whole. All three run from one edge
    of their container to the other, and all three open the same viewer: tap a
-   tile and that piece fills the shared modal, with the rest of the set on the
-   arrows either side of it.
+   tile and that piece fills the shared modal, with previous / next and a live
+   "n of N" count at the foot. The card rail carries that same foot.
 
    One shared definition. A host supplies items and drops the markup into a
    reply; auto-mount wires the packing, the scrolling and the viewer.
@@ -94,9 +94,65 @@ export function cardGridHtml(opts) {
   );
 }
 
+function countLabel(at, total) {
+  return `${at + 1} of ${total}`;
+}
+
+/* Previous / count / next — the same foot on the rail and in the viewer. */
+function chromeHtml(opts) {
+  const o = opts || {};
+  const total = o.total || 0;
+  const at = o.at || 0;
+  const attr = o.stepAttr || 'data-mgrid-scroll';
+  const prev = o.prevLabel || 'Scroll previous';
+  const next = o.nextLabel || 'Scroll next';
+  const multi = total > 1;
+  const btn = (dir, icon, lab) => (
+    `<button type="button" class="sc-mgrid-step" ${attr}="${dir}" aria-label="${esc(lab)}">`
+    + `<span class="material-symbols-outlined" aria-hidden="true">${icon}</span>`
+    + `</button>`
+  );
+  return (
+    `<div class="sc-mgrid-chrome">`
+    + (multi ? btn(-1, 'chevron_left', prev) : '')
+    + `<span class="sc-mgrid-count" data-mgrid-count aria-live="polite">${esc(countLabel(at, total))}</span>`
+    + (multi ? btn(1, 'chevron_right', next) : '')
+    + `</div>`
+  );
+}
+
+function leadingIndex(viewport, items) {
+  if (!viewport || !items.length) return 0;
+  let pad = 0;
+  try {
+    const cs = getComputedStyle(viewport);
+    pad = parseFloat(cs.paddingInlineStart) || parseFloat(cs.paddingLeft) || 0;
+  } catch (_) { /* treat as flush */ }
+  const left = viewport.getBoundingClientRect().left + pad;
+  let best = 0;
+  let bestDist = Infinity;
+  items.forEach((el, i) => {
+    const d = Math.abs(el.getBoundingClientRect().left - left);
+    if (d < bestDist) {
+      bestDist = d;
+      best = i;
+    }
+  });
+  return best;
+}
+
+function syncRailCount(root) {
+  if (!root) return;
+  const count = root.querySelector('[data-mgrid-count]');
+  const vp = root.querySelector('[data-mgrid-railvp]');
+  const tiles = Array.from(root.querySelectorAll('.sc-mgrid-rail > .sc-mgrid-item'));
+  if (!count || !tiles.length) return;
+  count.textContent = countLabel(leadingIndex(vp, tiles), tiles.length);
+}
+
 /**
- * Markup for one rail: a scrolling row of same-shape tiles with a chevron
- * either side of it. `aspect` is the shape they all share (default
+ * Markup for one rail: a scrolling row of same-shape tiles with previous /
+ * next and a count at the foot. `aspect` is the shape they all share (default
  * 2:3); a set with mixed shapes belongs in the grid instead.
  */
 export function cardRailHtml(opts) {
@@ -106,21 +162,19 @@ export function cardRailHtml(opts) {
   const items = Array.isArray(o.items) ? o.items : [];
   const ar = typeof o.aspect === 'number' && o.aspect > 0 ? o.aspect : (2 / 3);
   const tiles = items.map((it, i) => tileHtml(it, i, label, ar, false)).join('');
-  const nav = (dir, icon, lab) => (
-    `<button type="button" class="sc-mgrid-step" data-mgrid-scroll="${dir}" aria-label="${lab}">`
-    + `<span class="material-symbols-outlined" aria-hidden="true">${icon}</span>`
-    + `</button>`
-  );
   return (
     `<figure class="sc-mgrid sc-mgrid--rail" data-mgrid="${esc(id)}" data-mgrid-label="${esc(label)}"`
     + ` role="region" aria-roledescription="carousel" aria-label="${esc(label)}">`
     + `<div class="sc-mgrid-railvp" data-mgrid-railvp>`
     + `<div class="sc-mgrid-rail" data-mgrid-rail>${tiles}</div>`
     + `</div>`
-    + `<div class="sc-mgrid-chrome">`
-    + nav(-1, 'chevron_left', 'Scroll previous')
-    + nav(1, 'chevron_right', 'Scroll next')
-    + `</div>`
+    + chromeHtml({
+      at: 0,
+      total: items.length,
+      stepAttr: 'data-mgrid-scroll',
+      prevLabel: 'Scroll previous',
+      nextLabel: 'Scroll next',
+    })
     + `</figure>`
   );
 }
@@ -138,12 +192,11 @@ function injectStyles() {
    area's own padding. Same formula the sent-ask wash and the output rails read,
    with the FLOOR taken from --sc-pad-floor rather than restated, so compact
    spacing cannot move one and not the other. */
-/* This is the gallery an ANSWER writes into the thread itself, which is the
-   one case where the grid has to open up the prose column on its own. An
-   output drawn in the thread is handled below: that whole block already
-   reaches the module edges (js/output-mode.js), so its gallery only has the
-   block's own padding to cancel and must not bleed a second time. */
-.sc-line-body > .sc-mgrid {
+/* Image grids are one of the two things allowed to leave the reading column
+   (carousels are the other). A descendant match covers both a gallery the
+   answer wrote itself and one parked inside an inline output — that output
+   stays on the column, so the grid has to open the column on its own. */
+.sc-line-body .sc-mgrid {
   --mgrid-pad: var(--sc-gutter, max(var(--sc-pad-floor, 3rem), calc((100cqi - var(--sc-transcript-max, 860px)) / 2)));
   box-sizing: border-box;
   max-width: none;
@@ -168,14 +221,12 @@ function injectStyles() {
   gap: ${GAP_PX}px;
   align-items: start;
 }
-/* Same bleed on the other surface a gallery lands on: an output. There is no
-   avatar column to cancel here, only the output's own inline padding, and the
-   tiles start at that edge rather than on a prose column.
-
-   One rule covers both readings of an output because the padding it cancels is
-   the variable, not a number — 24px in a pane, and 0 for an output drawn in
-   the thread, which has already reached the module edges as a whole block. */
-.wa-pane-body > .wa-block > .sc-mgrid {
+/* Same bleed on the other surface a gallery lands on: the Output pane. There
+   is no avatar column to cancel here, only the pane's own frame, and the
+   tiles start at that edge rather than on a prose column. Scoped to the
+   pane itself so an inline output (which also wears .wa-pane-body) cannot
+   pick this up and bleed a second time. */
+.wa-pane > .wa-pane-body .sc-mgrid {
   --mgrid-pad: var(--wa-pane-pad-x, 24px);
   box-sizing: border-box;
   max-width: none;
@@ -247,6 +298,16 @@ function injectStyles() {
   background: color-mix(in srgb, var(--text) 8%, transparent);
 }
 .sc-mgrid-step .material-symbols-outlined { font-size: 22px !important; }
+.sc-mgrid-count {
+  margin: 0;
+  font-size: 0.78em;
+  line-height: 1.45;
+  color: var(--text-muted);
+  text-align: center;
+  min-width: 4.5em;
+  font-variant-numeric: tabular-nums;
+}
+.sc-mgrid-modal .sc-mgrid-chrome { padding: 10px 0 0; }
 .sc-mgrid-item {
   /* Plausible height before the packing pass measures — a tile that paints at
      one row tall would stack the set on top of itself for a frame. */
@@ -309,7 +370,7 @@ function injectStyles() {
   line-height: 1.35;
   color: var(--text-muted);
 }
-/* ── The viewer: one piece at full size, the set on the arrows ── */
+/* ── The viewer: one piece at full size, the set on the foot ── */
 .wise-modal-scrim--panel.sc-mgrid-scrim .wise-modal.sc-mgrid-modal {
   width: min(1120px, calc(100vw - 40px));
   max-width: min(1120px, calc(100vw - 40px));
@@ -322,8 +383,8 @@ function injectStyles() {
   max-width: min(660px, calc(100vw - 40px));
 }
 .sc-mgrid-stage {
-  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   width: 100%;
@@ -337,28 +398,6 @@ function injectStyles() {
   border-radius: 12px;
   background: color-mix(in srgb, var(--text) 8%, transparent);
 }
-.sc-mgrid-nav {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: rgba(12, 16, 28, 0.55);
-  color: #fff;
-  cursor: pointer;
-  backdrop-filter: blur(6px);
-}
-.sc-mgrid-nav:hover { background: rgba(12, 16, 28, 0.78); }
-.sc-mgrid-nav:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
-.sc-mgrid-nav .material-symbols-outlined { font-size: 24px !important; }
-.sc-mgrid-nav--prev { left: 10px; }
-.sc-mgrid-nav--next { right: 10px; }
 @media (prefers-reduced-motion: reduce) {
   .sc-mgrid-img { transition: none; }
   .sc-mgrid-item:hover .sc-mgrid-img { transform: none; }
@@ -402,8 +441,8 @@ function itemsOf(root) {
 
 /**
  * Open one tile full size. The rest of that gallery rides along — grid or
- * rail — so the arrows and the left / right keys move through the set
- * without reopening.
+ * rail — so the arrows, the count at the foot, and the left / right keys
+ * move through the set without reopening.
  */
 export function openMasonryItem(tile) {
   if (!tile) return null;
@@ -419,13 +458,13 @@ export function openMasonryItem(tile) {
   const paint = () => {
     if (!scrimEl) return;
     const it = set[at];
-    const eyebrow = scrimEl.querySelector('.wise-modal-eyebrow');
     const title = scrimEl.querySelector('.wise-modal-title');
     const sub = scrimEl.querySelector('.wise-modal-sub');
     const img = scrimEl.querySelector('.sc-mgrid-full');
-    if (eyebrow) eyebrow.textContent = `${label} · ${at + 1} of ${set.length}`;
+    const count = scrimEl.querySelector('[data-mgrid-count]');
     if (title) title.textContent = it.title;
     if (sub) sub.textContent = it.meta;
+    if (count) count.textContent = countLabel(at, set.length);
     if (img) {
       img.src = it.full;
       img.alt = it.meta ? `${it.title} — ${it.meta}` : it.title;
@@ -438,7 +477,6 @@ export function openMasonryItem(tile) {
   };
 
   const first = set[at];
-  const multi = set.length > 1;
   /* Capture phase, and the event stops here: a rail behind the viewer listens
      for the same keys, and both acting on one press would scroll the thread
      under the piece the member is looking at. */
@@ -460,22 +498,21 @@ export function openMasonryItem(tile) {
     panel: true,
     extraScrimClass: `sc-mgrid-scrim${tall ? ' sc-mgrid-scrim--tall' : ''}`,
     html: modalHTML({
-      eyebrow: `${esc(label)} · ${at + 1} of ${set.length}`,
+      eyebrow: esc(label),
       title: esc(first.title),
       titleId: 'wise-masonry-detail-title',
       sub: esc(first.meta),
       modalClass: 'sc-mgrid-modal',
       body:
         '<div class="sc-mgrid-stage">'
-        + (multi
-          ? '<button type="button" class="sc-mgrid-nav sc-mgrid-nav--prev" data-mgrid-step="-1" aria-label="Previous piece">'
-            + '<span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></button>'
-          : '')
         + `<img class="sc-mgrid-full" src="${esc(first.full)}" alt="${esc(first.meta ? `${first.title} — ${first.meta}` : first.title)}">`
-        + (multi
-          ? '<button type="button" class="sc-mgrid-nav sc-mgrid-nav--next" data-mgrid-step="1" aria-label="Next piece">'
-            + '<span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>'
-          : '')
+        + chromeHtml({
+          at,
+          total: set.length,
+          stepAttr: 'data-mgrid-step',
+          prevLabel: 'Previous piece',
+          nextLabel: 'Next piece',
+        })
         + '</div>',
     }),
     onOpen(scrim) {
@@ -547,6 +584,9 @@ function mountRail(root) {
     else if (e.key === 'ArrowRight') { e.preventDefault(); scrollRail(root, 1); }
   });
   if (!root.hasAttribute('tabindex')) root.setAttribute('tabindex', '0');
+  const vp = root.querySelector('[data-mgrid-railvp]');
+  if (vp) vp.addEventListener('scroll', () => syncRailCount(root), { passive: true });
+  syncRailCount(root);
 }
 
 function mountOne(root) {

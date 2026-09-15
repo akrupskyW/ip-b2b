@@ -457,13 +457,10 @@
     #chat-shell-wrap button:not([class*="-stat"]):not(.ws-scorecard),
     #chat-shell-wrap input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
     #chat-shell-wrap select,
-    #chat-shell-wrap textarea,
+    #chat-shell-wrap textarea:not(.fl-input),
     #topbar-overlay-close,
     #add-member-modal .amm-dialog button,
     #add-member-modal .amm-search {
-      border-radius: var(--radius-pill) !important;
-    }
-    #chat-shell-wrap .fl-input-wrap {
       border-radius: var(--radius-pill) !important;
     }
     /* Minimum icon size: 24x24 everywhere. Overrides any inline or
@@ -5131,7 +5128,7 @@
       gap: 6px;
       box-sizing: border-box;
       height: 28px;
-      padding: 0 11px;
+      padding: 0 7px;
       /* One size app-wide: the 28px in-conversation reply chip. Same blue tint
          as the composer so chips and the input share one surface color. */
       background: color-mix(in srgb, var(--primary) 10%, #fff);
@@ -6591,14 +6588,6 @@
     /* Composer v2 (Appearance ▸ "New chat input"): send holds the bottom line
        while the text field grows — outranks the #send-btn align-self above. */
     html.composer-v2 #send-btn { align-self: flex-end; }
-    /* The shell-wide pill overrides near the top of this stylesheet
-       (#chat-shell-wrap .fl-input-wrap / textarea → --radius-pill !important)
-       would lock the composer into a pill — outrank them so the fill can
-       run the module edge to edge (shared wise.css). */
-    html.composer-v2 #chat-shell-wrap .fl-input-wrap,
-    html.composer-v2 #chat-shell-wrap .fl-input-wrap textarea.fl-input {
-      border-radius: 0 !important;
-    }
     /* Chat tint (Appearance ▸ "Blue chat surface"): the rail rule above pins
        background: var(--bg) !important, so the tint needs its own !important. */
     html.chat-tint:not(.dark) .chat-input-rail {

@@ -5902,7 +5902,18 @@ export function createHelixBgAnim(cfg) {
     { img: 'helix/lidl-special-flakes-original.jpg', name: 'Special flakes original', brand: 'Lidl', upc: '4056489479413' },
     { img: 'helix/nabisco-ritz.jpg', name: 'Ritz', brand: 'Nabisco', upc: '0 44000 03111 4' },
     /* @helix-roster-end */
-  ];
+  ].filter((p) => {
+    const img = p.img || '';
+    /* Decorative strand photos have to stay small. Verification PNGs, campaign
+       stills, and the pf_* portfolio shots are several megabytes each — fetching
+       them on every chat stall first paint. Those products still exist on their
+       own pages; the strand just does not ride them. */
+    if (img.indexOf('verification/') === 0) return false;
+    if (img.indexOf('top5-') === 0) return false;
+    if (img.indexOf('date-better-') === 0) return false;
+    if (img.indexOf('portfolio/pf_') === 0) return false;
+    return true;
+  });
   /* One shuffle per page load: the strand consumes the pool front-to-back, so
      shuffling varies which foods appear (and where) between sessions while staying
      stable within one — every re-render must land on an identical roster. */
@@ -5924,8 +5935,8 @@ export function createHelixBgAnim(cfg) {
         body: 'Flax4Life is a flax-forward bakery — muffins, brownies, granola. The seed is the idea; binders and sweeteners still decide Non-UPF.' },
       { kind: 'brand', kicker: 'Brand insight', title: 'Twins already in the catalog',
         body: 'Vegan and no-sugar-added muffins sit beside the original SKUs. That is a reformulation path, not a new brand to invent.' },
-      { kind: 'brand', kicker: 'Brand insight', title: '47 lookalikes on the shelf',
-        body: 'Public retail data shows 47 products that look like Flax4Life\'s. Claiming the real ones is how the portfolio score stays honest.' },
+      { kind: 'brand', kicker: 'Brand insight', title: 'Lookalikes on the shelf',
+        body: 'Public retail data shows dozens of products that look like Flax4Life\'s. Claiming the real ones is how the portfolio score stays honest.' },
       { kind: 'brand', kicker: 'Brand insight', title: 'Bakery is where risk concentrates',
         body: 'Flax itself is a whole food. On this line, Non-UPF risk lives in gums, syrups, and flavor systems — not in the flax.' },
       { kind: 'brand', kicker: 'Brand insight', title: 'One seed, two formats',
@@ -6197,19 +6208,52 @@ export function createHelixBgAnim(cfg) {
   function loadImages() {
     if (images) return;
     images = {};
-    const base = assetBase();
-    PRODUCTS.forEach((p) => {
-      const im = new Image();
-      im.decoding = 'async';
-      im.src = base + p.img;
-      images[p.img] = im;
-    });
-    /* The WISEcodeAI owl mark itself — the same logo that sits at the chat's centre —
-       rides the strand as a recurring node. Sized explicitly so the SVG data URL has
-       an intrinsic width for drawImage. */
+    /* Product photos are fetched in imageFor() the first time a node is
+       actually painted. Preloading the whole roster (verification PNGs of
+       several megabytes, plus every helix still) was stalling first paint
+       on every chat. */
     owlImg = new Image();
     owlImg.decoding = 'async';
     owlImg.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(OWL_MARK.replace('<svg ', '<svg width="193" height="100" '));
+  }
+
+  /* A handful of strand photos at a time — never a burst of every visible
+     node — so the page's own thumbs and CSS are not starved. */
+  const HELIX_IMG_MAX_INFLIGHT = 3;
+  const HELIX_IMG_PER_FRAME = 4;
+  let helixImgInflight = 0;
+  const helixImgWait = [];
+  let helixImgFrameBudget = 0;
+
+  function helixStartSrc(im, src) {
+    const go = () => {
+      helixImgInflight++;
+      const done = () => {
+        helixImgInflight = Math.max(0, helixImgInflight - 1);
+        const next = helixImgWait.shift();
+        if (next) next();
+      };
+      im.addEventListener('load', done, { once: true });
+      im.addEventListener('error', done, { once: true });
+      im.src = src;
+    };
+    if (helixImgInflight < HELIX_IMG_MAX_INFLIGHT) go();
+    else helixImgWait.push(go);
+  }
+
+  function imageFor(p) {
+    if (!p || !p.img) return null;
+    if (!images) loadImages();
+    let im = images[p.img];
+    if (im) return im;
+    if (helixImgFrameBudget <= 0) return null;
+    helixImgFrameBudget--;
+    im = new Image();
+    im.decoding = 'async';
+    try { im.fetchPriority = 'low'; } catch (_) {}
+    images[p.img] = im;
+    helixStartSrc(im, assetBase() + p.img);
+    return im;
   }
 
   /* Draw the owl as a brand-blue disc with the white owl mark centred, ringed to match
@@ -7129,6 +7173,7 @@ export function createHelixBgAnim(cfg) {
       }
     }
     hitNodes = [];
+    helixImgFrameBudget = HELIX_IMG_PER_FRAME;
     for (const n of hideProducts ? [] : nodes) {
       if (n.alpha <= 0.02) continue;
       const d = shade(n.z);                                    // 0 (far) → 1 (near)
@@ -7143,7 +7188,9 @@ export function createHelixBgAnim(cfg) {
         continue;
       }
       if (!n.prod) continue;
-      const im = images && images[n.prod.img];
+      if (n.alpha < 0.14) continue;
+      if (n.x < -48 || n.x > w + 48 || n.y < -48 || n.y > h + 48) continue;
+      const im = imageFor(n.prod);
       if (!im || !im.complete || !im.naturalWidth) {
         /* Photo still loading — stand in with the owl bug so a Ten-density
            slot never goes empty for a frame. The product paints on the next
@@ -7223,7 +7270,9 @@ export function createHelixBgAnim(cfg) {
       t0 = 0; draw(3);
       /* Photos/owl may still be loading — repaint once they arrive so the still frame fills in. */
       if (!hideProducts) {
-        const pending = images ? PRODUCTS.map((p) => images[p.img]).concat(owlImg ? [owlImg] : []) : [];
+        const pending = [];
+        if (images) Object.keys(images).forEach((k) => { pending.push(images[k]); });
+        if (owlImg) pending.push(owlImg);
         pending.forEach((im) => { if (im && !im.complete) im.addEventListener('load', () => { if (!running) draw(3); }, { once: true }); });
       }
       return;
@@ -7234,7 +7283,9 @@ export function createHelixBgAnim(cfg) {
       if (raf) { cancelAnimationFrame(raf); raf = 0; }
       running = true; paused = true; t0 = 0; lastT = 3; draw(3);
       if (!hideProducts) {
-        const pending = images ? PRODUCTS.map((p) => images[p.img]).concat(owlImg ? [owlImg] : []) : [];
+        const pending = [];
+        if (images) Object.keys(images).forEach((k) => { pending.push(images[k]); });
+        if (owlImg) pending.push(owlImg);
         pending.forEach((im) => { if (im && !im.complete) im.addEventListener('load', () => { if (paused) draw(lastT); }, { once: true }); });
       }
       return;

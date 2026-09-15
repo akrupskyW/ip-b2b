@@ -254,25 +254,6 @@
     #wa-chat .fl-input::placeholder { color: var(--primary); opacity: 1; }
     html.dark #wa-chat .fl-input::placeholder { color: var(--primary-bright, #8B9FAF); }
 
-    /* Center the small intent chips. The large overview cards are a full-bleed
-       carousel (shared .sc-welcome > .ws-scorecards-section) — do not pin them
-       to this column. Welcome chips clamp to two wrapping rows with a trailing
-       "Show more" chip for the rest. */
-    #wa-chat .sc-welcome > .ws-chips-wrap,
-    #wa-chat .sc-welcome > .ws-chips {
-      width: auto;
-      max-width: min(100%, 1040px);
-      margin-left: auto;
-      margin-right: auto;
-    }
-    #wa-chat .sc-welcome > .ws-chips-scroll {
-      width: 100%;
-      min-width: 0;
-      max-width: min(100%, 1040px);
-      margin-left: auto;
-      margin-right: auto;
-    }
-
     /* ═══════════ Right result panes ═══════════
        Two carded modules that open on demand. Both share .wa-pane; each keeps its
        own header controls (three-dot menu + 3-step width toggle). Hidden until the
@@ -1373,6 +1354,8 @@
     .wa-ffui-end { text-align: right; justify-self: end; }
     .wa-ffui-score { font-family: 'WISE Digits', 'Noto Serif', serif; font-weight: 800; font-size: 13.5px; color: var(--text); font-variant-numeric: tabular-nums; }
     .wa-ffui-upf--min { color: var(--sec-green-text); font-weight: 600; }
+    .wa-ffui-upf--light { color: var(--chart-status-good); font-weight: 600; }
+    html.dark .wa-ffui-upf--light { color: var(--chart-status-good); }
     .wa-ffui-upf--proc { color: color-mix(in srgb, var(--ter-amber) 60%, #7a5200); font-weight: 600; }
     html.dark .wa-ffui-upf--proc { color: var(--ter-amber); }
     .wa-ffui-upf--ultra { color: #C4681F; font-weight: 600; }
@@ -8323,11 +8306,14 @@
       const t = String(tier || '').toLowerCase();
       if (/super\s*ultra/.test(t)) return 'sup';
       if (/ultra/.test(t)) return 'ultra';
+      if (/moderate/.test(t)) return 'proc';
+      if (/light/.test(t)) return 'light';
       if (/^processed|(?:^|\s)processed/.test(t)) return 'proc';
       return 'min';
     }
     function toneColor(tone) {
       return tone === 'min' ? 'var(--sec-green)'
+        : tone === 'light' ? 'var(--chart-status-good)'
         : tone === 'proc' ? 'var(--ter-amber)'
         : tone === 'ultra' ? '#D27326'
         : 'var(--sec-red)';
@@ -8597,7 +8583,13 @@
       const padB = axis.pad;
       const H = padT + plotH + padB;
       const y = (v) => padT + (1 - v / maxV) * plotH;
-      const bw = Math.min(30, gw / (n + 1.4));
+      /* Five processing levels × three brands leaves less room per cluster
+         than the older four-bucket chart — open the series gap and drop the
+         value-label font so 14% / 16% / 12% do not sit on top of each other. */
+      const tight = groups.length >= 5;
+      const gap = tight ? 8 : 2;
+      const bw = Math.min(tight ? 22 : 30, (gw * 0.86 - gap * (n - 1)) / n);
+      const labelFs = tight ? 10 : 12;
       const step = maxV <= 10 ? 2 : maxV <= 50 ? 10 : 20;
       let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" class="wa-col-svg" role="img" aria-label="${esc(series.join(' vs '))}">`;
       for (let g = 0; g <= maxV; g += step) {
@@ -8607,12 +8599,12 @@
       }
       groups.forEach((grp, i) => {
         const cx = padL + gw * i + gw / 2;
-        const totalW = bw * n + 2 * (n - 1);
+        const totalW = bw * n + gap * (n - 1);
         const x0 = cx - totalW / 2;
         grp.vals.forEach((v, s) => {
-          const x = x0 + s * (bw + 2);
+          const x = x0 + s * (bw + gap);
           svg += `<rect x="${x.toFixed(1)}" y="${y(v).toFixed(1)}" width="${bw.toFixed(1)}" height="${(plotH * v / maxV).toFixed(1)}" rx="3" fill="${colors[s]}"/>`;
-          if (v) svg += waChartValueLabel(`${v}${suffix}`, x + bw / 2, y(v) - 4, bw + 4, 12);
+          if (v) svg += waChartValueLabel(`${v}${suffix}`, x + bw / 2, y(v) - 4, bw + gap, labelFs);
         });
         svg += waChartAxisLabel(grp.label, cx, H - padB + 14, axis, gw);
       });
@@ -8649,7 +8641,8 @@
     const ENERGY_TOTAL = 7701;
     const ENERGY_TIERS = [
       { tier: 'Minimally Processed', tone: 'min', swPct: 0.4, n: 812 },
-      { tier: 'Processed', tone: 'proc', swPct: 11.8, n: 1043 },
+      { tier: 'Lightly Processed', tone: 'light', swPct: 6.8, n: 628 },
+      { tier: 'Moderately Processed', tone: 'proc', swPct: 19.4, n: 415 },
       { tier: 'Ultra-Processed', tone: 'ultra', swPct: 37.6, n: 2461 },
       { tier: 'Super Ultra-Processed', tone: 'sup', swPct: 74.2, n: 3385 },
     ];
@@ -8798,7 +8791,7 @@
     /* Sweeteners vs added sugar follow-up (grouped columns by tier). */
     function energySugarChart() {
       const { svg, legend } = groupedColumns({
-        groups: ENERGY_TIERS.map((t, i) => ({ label: t.tier.replace('Processed', 'Proc.'), vals: [t.swPct, [3.1, 58.4, 71.2, 63.5][i]] })),
+        groups: ENERGY_TIERS.map((t, i) => ({ label: t.tier.replace('Processed', 'Proc.'), vals: [t.swPct, [3.1, 28.6, 58.4, 71.2, 63.5][i]] })),
         series: ['Artificial sweeteners', 'Added sugar'],
         colors: ['var(--primary)', 'var(--ter-amber)'],
         maxV: 100, suffix: '%',
@@ -8841,7 +8834,8 @@
     /* Emulsifier use vs UPF tier follow-up. */
     const ENERGY_EMUL = [
       { tier: 'Minimally Processed', tone: 'min', pct: 0.2 },
-      { tier: 'Processed', tone: 'proc', pct: 6.4 },
+      { tier: 'Lightly Processed', tone: 'light', pct: 3.1 },
+      { tier: 'Moderately Processed', tone: 'proc', pct: 11.8 },
       { tier: 'Ultra-Processed', tone: 'ultra', pct: 24.1 },
       { tier: 'Super Ultra-Processed', tone: 'sup', pct: 52.7 },
     ];
@@ -8865,9 +8859,9 @@
       ['Allmax Hexapro, Protein Bar, Chocolate Fudge Brownie, 12 Bars, 1.9 Oz', 'Allmax', 100, 'Minimally Processed', 'None'],
       ['Aloha Organic Protein Bar, Chocolate Chip Cookie Dough', 'Aloha', 96, 'Minimally Processed', 'None'],
       ['GoMacro MacroBar, Peanut Butter Chocolate Chip', 'GoMacro', 93, 'Minimally Processed', 'None'],
-      ['RXBAR Chocolate Sea Salt Protein Bar', 'RXBAR', 91, 'Processed', 'None'],
-      ['Kize Bar, Almond Butter Dark Chocolate', 'Kize', 88, 'Processed', 'None'],
-      ['Perfect Bar, Peanut Butter', 'Perfect Bar', 84, 'Processed', 'None'],
+      ['RXBAR Chocolate Sea Salt Protein Bar', 'RXBAR', 91, 'Lightly Processed', 'None'],
+      ['Kize Bar, Almond Butter Dark Chocolate', 'Kize', 88, 'Lightly Processed', 'None'],
+      ['Perfect Bar, Peanut Butter', 'Perfect Bar', 84, 'Lightly Processed', 'None'],
       ['IQBAR Brain & Body, Chocolate Sea Salt', 'IQBAR', 82, 'Ultra-Processed', 'Present'],
       ['No Cow Protein Bar, Chocolate Fudge Brownie', 'No Cow', 79, 'Ultra-Processed', 'Present'],
       ['Quest Protein Bar, Chocolate Chip Cookie Dough', 'Quest', 71, 'Super Ultra-Processed', 'Present'],
@@ -9028,7 +9022,8 @@
     ];
     const TOPBRANDS_UPF = [
       { label: 'Minimally Processed', lv: [62, 58, 71] },
-      { label: 'Processed', lv: [22, 24, 18] },
+      { label: 'Lightly Processed', lv: [14, 16, 12] },
+      { label: 'Moderately Processed', lv: [8, 8, 6] },
       { label: 'Ultra-Processed', lv: [12, 13, 8] },
       { label: 'Super Ultra-Processed', lv: [4, 5, 3] },
     ];

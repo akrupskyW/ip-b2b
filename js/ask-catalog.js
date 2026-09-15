@@ -398,7 +398,7 @@
               prompts: ['Meet the Owls'],
               tools: [] },
             { title: 'Wise Owl Progression', icon: 'view_carousel',
-              desc: 'An edge-to-edge row of the Wise Owl — Sage in green, Rue in red and Ollie in blue — tap any owl to see it larger. Motion, stills, then silent theme-aware clips. Nothing opens on the right.',
+              desc: 'An edge-to-edge row of the Wise Owl — Sage in green, Rue in red and Ollie in blue — with arrows and a count at the foot. Tap any owl to see it larger, then step through the rest. Motion, stills, then silent theme-aware clips. Nothing opens on the right.',
               prompts: ['Wise Owl Progression'],
               tools: [] },
             { title: 'Generate a marketing campaign', icon: 'campaign',
