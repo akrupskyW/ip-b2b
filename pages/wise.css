@@ -8297,18 +8297,30 @@ html.dark .sc-line-body .sc-inline-tbl th,
 html.dark .sc-line-body .sc-inline-tbl td {
   border-bottom-color: color-mix(in srgb, var(--text) 14%, transparent);
 }
-/* A film that plays inside the answer, with the browser's own controls. The
-   paragraph reveal already treats a <figure> / <video> as one block, so it
-   fades in as its own beat between the prose. */
-.sc-line-body .sc-inline-film { margin: 0.7em 0 0.15em; }
-.sc-line-body .sc-inline-film-media {
+/* A film with the browser's own controls. In an answer, the paragraph reveal
+   treats the <figure> / <video> as one block, so it fades in as its own beat
+   between the prose; as an output, the same component is written into the
+   Output pane instead.
+
+   It sizes itself in both places rather than borrowing the transcript's box.
+   A <video> is the one output that carries an intrinsic size — these films are
+   1280x720 — so without a width of its own it draws at that size and spills
+   out of whatever it was written into, and the UA's 40px figure margin pushes
+   it off-centre besides. */
+.sc-inline-film { margin: 0.7em 0 0.15em; }
+.sc-inline-film-media {
   display: block;
   width: 100%;
+  max-width: 100%;
+  height: auto;
   aspect-ratio: 16 / 9;
   border-radius: 14px;
   border: 0;
   background: #000;
 }
+/* On its own in a pane the film is the whole block, so it sits flush with the
+   pane's padding instead of carrying the gap it needs between paragraphs. */
+.wa-block > .sc-inline-film { margin: 0; }
 /* Ingredient lookup cards — WISEcode match results, in the shared chat. Each
    candidate is a full-width INTENT CHIP: the same tinted surface, strong
    border, brand-blue leading glyph and hover as the output intent chips
@@ -22068,6 +22080,27 @@ html.cwr-ui-on:is(.cwr-roll,.cwr-crawl) .dsc-ask-live .wch-sidebar {
 }
 .dsc-theme-light .dsc-ask-live .wch-ask-prompt-text { color: inherit; }
 .dsc-theme-light .dsc-ask-live .wch-ask-group + .wch-ask-group { border-top-color: rgba(20,40,80,0.10); }
+
+/* The catalog stands a light and a dark specimen side by side, so a rule that
+   hardcodes its dark value against `html.dark` paints BOTH panes dark once the
+   page itself is dark. `.dsc-theme-light` / `.dsc-theme-dark` already restate
+   the tokens, so only hardcoded pairs need a twin here. The answer ⋯ menu
+   (Outputs in the thread, Transcript actions) and the teammate avatar tones
+   (People in chat) are those pairs. */
+html.dark .dsc-theme-light .sc-fb-menu {
+  background: var(--surface); border-color: var(--border-strong);
+}
+html.dark .dsc-theme-light .sc-fb-menu::after { border-top-color: var(--surface); }
+html.dark .dsc-theme-light .sc-avatar-mate[data-tone="1"],
+html.dark .dsc-theme-light .sc-line-mate[data-tone="1"] { --mate-tone: #2F7D6B; }
+html.dark .dsc-theme-light .sc-avatar-mate[data-tone="2"],
+html.dark .dsc-theme-light .sc-line-mate[data-tone="2"] { --mate-tone: #7A4FA8; }
+html.dark .dsc-theme-light .sc-avatar-mate[data-tone="3"],
+html.dark .dsc-theme-light .sc-line-mate[data-tone="3"] { --mate-tone: #B25F2C; }
+html.dark .dsc-theme-light .sc-avatar-mate[data-tone="4"],
+html.dark .dsc-theme-light .sc-line-mate[data-tone="4"] { --mate-tone: #33648F; }
+html.dark .dsc-theme-light .sc-avatar-mate[data-tone="5"],
+html.dark .dsc-theme-light .sc-line-mate[data-tone="5"] { --mate-tone: #A63A5E; }
 .dsc-theme-dark .dsc-ask-live .wch-sidebar {
   background: var(--surface); color: var(--text); border-color: rgba(255,255,255,0.10); --wch-tree-bg: var(--surface);
 }
@@ -24270,7 +24303,6 @@ html.dark .mi-tarch-thread { background: transparent; }
   max-width: 100cqi;
   pointer-events: auto;
 }
-#mi-tarch .sc-owl-prog-cap { font-size: 9px; margin-top: 4px; }
 #mi-tarch .sc-owl-prog-chrome { padding: 6px 8px 0; }
 #mi-tarch .sc-owl-prog-nav { width: 24px; height: 24px; }
 #mi-tarch .sc-owl-prog-nav .material-symbols-outlined { font-size: 18px; }
@@ -24833,7 +24865,102 @@ html.dark .nfp-ia-scout-row.is-nf-hit {
 
 /* ── Next-step card: eyebrow header + navigable dots ─────────────────────────
    The stepper section carries an eyebrow ("Steps to Complete"). Six regular
-   dots, the last one Reports. Shared by view-product / add-product. ── */
+   dots, the last one Reports. Shared by view-product / add-product, and
+   catalogued as "Product lifecycle banner" in the Component Library. ── */
+.nfp-ins-next {
+  position: relative; display: grid; grid-template-columns: minmax(0, 1fr);
+  gap: 10px; align-items: start; justify-items: stretch;
+  width: 100%; max-width: 500px; margin-left: auto; margin-right: auto;
+  box-sizing: border-box;
+  padding: 16px 18px; border-radius: 16px;
+  background: var(--primary-soft); border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
+}
+.nfp-ins-next-dots {
+  grid-column: 1 / -1; display: flex; align-items: center; justify-content: center;
+  gap: 7px; padding: 0 0 2px; margin: 0;
+}
+.nfp-ins-dot {
+  width: 7px; height: 7px; padding: 0; border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--primary) 38%, var(--border));
+  background: transparent; box-shadow: none;
+  cursor: pointer; appearance: none; -webkit-appearance: none;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, width 0.15s ease, height 0.15s ease;
+}
+.nfp-ins-dot.is-done {
+  background: color-mix(in srgb, var(--primary) 55%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 55%, transparent);
+}
+.nfp-ins-dot.is-current {
+  width: 9px; height: 9px;
+  background: var(--primary); border-color: var(--primary);
+}
+.nfp-ins-dot:hover { transform: scale(1.2); }
+.nfp-ins-dot:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+html.dark .nfp-ins-dot {
+  border-color: color-mix(in srgb, var(--primary-bright, var(--primary)) 45%, var(--border));
+}
+html.dark .nfp-ins-dot.is-done {
+  background: color-mix(in srgb, var(--primary-bright, var(--primary)) 50%, transparent);
+  border-color: color-mix(in srgb, var(--primary-bright, var(--primary)) 50%, transparent);
+}
+html.dark .nfp-ins-dot.is-current {
+  background: var(--primary-bright, var(--primary));
+  border-color: var(--primary-bright, var(--primary));
+}
+.nfp-ins-next-ic {
+  grid-column: 1; align-self: flex-start; flex-shrink: 0; padding-top: 2px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: none; box-shadow: none;
+}
+.nfp-ins-next-shield { display: block; width: 52px; height: auto; }
+.nfp-ins-next-ic .material-symbols-outlined {
+  font-size: 40px !important; line-height: 1; color: var(--primary-ink, var(--primary));
+  font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 48;
+}
+html.dark .nfp-ins-next-ic .material-symbols-outlined { color: var(--primary-bright, var(--primary)); }
+.nfp-ins-next-body { grid-column: 1; min-width: 0; text-align: center; }
+.nfp-ins-next-title { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.15rem; font-weight: 700; color: var(--text); line-height: 1.2; text-align: center; }
+.nfp-ins-next-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.45; margin-top: 3px; max-width: none; text-align: center; }
+.nfp-ins-next-btn {
+  grid-column: 1 / -1; margin: 0; width: 100%;
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer;
+  border: none; border-radius: 999px; padding: 10px 18px;
+  font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 0.82rem; font-weight: 700;
+  background: var(--primary); color: #fff; text-decoration: none; transition: filter 0.15s;
+  appearance: none; -webkit-appearance: none;
+  white-space: normal; text-align: center; line-height: 1.25;
+  height: auto; min-height: 40px;
+}
+.nfp-ins-next-btn:hover { filter: brightness(1.07); text-decoration: none; }
+.nfp-ins-next-btn .material-symbols-outlined {
+  font-size: 18px !important;
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+/* Shield CTA under the product photo — stack in the narrower media column
+   so title, copy and button all fit, and never grow into the leftover
+   column height (that read as a gap under the image). */
+.nfp-sp-media .nfp-ins-next {
+  flex: 0 0 auto; width: auto; box-sizing: border-box;
+  margin: 10px var(--nfp-media-inline) 12px; padding: 12px 14px;
+  border-radius: 0;
+}
+.nfp-sp-media .nfp-ins-next-btn { width: 100%; justify-content: center; }
+/* Shield CTA hugs its copy. The default body flex-basis is a WIDTH (240px);
+   stacked in a column it became a tall empty well above the button. Icon
+   and copy share a row; the button sits directly underneath. */
+.nfp-sp--flip .nfp-sp-facts .nfp-ins-next {
+  display: grid; grid-template-columns: minmax(0, 1fr);
+  gap: 10px; align-items: start; justify-items: stretch;
+  width: 100%; max-width: 500px; margin-left: auto; margin-right: auto;
+  box-sizing: border-box;
+  padding: 12px 14px;
+}
+.nfp-sp--flip .nfp-sp-facts .nfp-ins-next-dots { grid-column: 1; grid-row: 1; }
+.nfp-sp--flip .nfp-sp-facts .nfp-ins-next-body { grid-column: 1; grid-row: 2; flex: none; text-align: center; }
+.nfp-sp--flip .nfp-sp-facts .nfp-ins-next-btn {
+  grid-column: 1; grid-row: 3;
+  margin: 0; width: 100%; justify-content: center; align-self: stretch;
+}
 .nfp-ins-next-head {
   grid-column: 1 / -1;
   display: flex; flex-direction: column; align-items: center; gap: 6px;

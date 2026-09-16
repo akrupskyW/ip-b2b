@@ -983,7 +983,7 @@ function analyticsThumbPane(t, opts) {
   const path = ANALYTICS_HREF;
   const open = analyticsOpenHref(t);
   const focus = analyticsFocusSel(t);
-  const search = `${t.label} ${path} ${t.desc || ''} ${t.id} chart graph`.toLowerCase();
+  const search = `${t.label} ${t.type || ''} ${path} ${t.desc || ''} ${t.id} chart graph`.toLowerCase();
   const ready = opts.hideReady
     ? ''
     : readyToggleHTML(analyticsReadyId(t), t.label, { level: 'item', parent: 'mi-analytics', ai: false });
@@ -2272,12 +2272,20 @@ const COMP_LEDES = {
   'Buttons': 'Primary, ghost, text, and icon-only actions — one pill language everywhere.',
   'Intent chips': 'Compact suggestion chips for welcome, replies, and module shortcuts.',
   'Output chips': 'In-thread previews that open an output — one is a landscape chip, several are portrait cards.',
+  'Ask pre-flight': 'The card that pauses an open-ended ask to agree its scope before anything runs.',
   'Large intent cards': 'The large-format tap card, sibling to the compact intent chip.',
   'Chat composer': 'The unlocked chat input: text, attachments, database, and send.',
-  'Transcript lines': 'You, WISEcodeAI, and event lines — never a speech bubble. A sent ask carries an edge-to-edge wash.',
+  'Transcript lines': 'You, WISEcodeAI, teammate, and event lines — never a speech bubble. A sent ask carries an edge-to-edge wash.',
   'Inline table': 'A small comparison that stays in the answer, not a Results board.',
   'Transcript carousel': 'An edge-to-edge strip of motion, stills, and clips inside the answer — carousels and image grids are the only things that leave the reading column.',
   'Inline module rail': 'Full modules dropped into the answer as a height-capped, drag-resizable carousel.',
+  'Transcript gallery': 'Artwork inside the answer — a packed grid, an even deck, or a scrolling rail, each opening full size.',
+  'Character bible': 'A cast told as plates: the art above, the facts under it, in the reading column.',
+  'Inline film': 'A clip inside the answer with its own controls — and it never starts on its own.',
+  'People in chat': 'Teammates in the thread: a roster, named lines, join events, and @-mentions.',
+  'Outputs in the thread': 'Whether a turn draws its outputs under the answer or posts them as chips.',
+  'Spent chip rows': 'A chip row the member has moved past fades off the thread — unless it still holds an output.',
+  'Product lifecycle banner': 'Dots and a next step that carry a product from discovered to its reports.',
   'Transcript actions': 'Copy, Accurate, Not accurate, and more — under every answer.',
   'Activity strip': 'Landmark ear-marks on the chat edge for outputs, sources, and switches.',
   'Token readout': 'This-turn and conversation tokens under the composer and in the answer menu.',
@@ -2443,6 +2451,18 @@ function demoYouAvatar() {
 }
 function demoWiseAvatar() {
   return `<span class="sc-avatar sc-avatar-wiseai" role="img" aria-label="WISEcodeAI">${DEMO_OWL_BUG}</span>`;
+}
+
+/* The transcript galleries, the character bible, and the campaign films are
+   drawn from the campaign packs themselves rather than from a copied media
+   list, so a specimen here cannot drift from what the chat actually shows.
+   Those packs carry their artwork manifests, so they load the first time one
+   of these cards opens — the same deal the Icon Inventory and App Logic
+   catalogs get — and a visit that never opens them never downloads them. */
+function galleryDemoHost(kind, waiting) {
+  return `<div class="dsc-gallery-demo" data-gallery-demo="${esc(kind)}">
+    <div class="dsc-empty" style="padding:24px;text-align:center;color:var(--text-muted)">${esc(waiting)}</div>
+  </div>`;
 }
 
 /* Live avatar (account) popover from js/appearance-menu.js buildUserMenuBody,
@@ -3802,7 +3822,7 @@ const COMPONENTS = [
     wide: true,
     cls: '.chip · .ws-intent-chip · .sc-reply-chips .chip (+ .chip-primary, .chip-dive, .chip--match, .ms-chip.is-selected)',
     used: 'WISEcodeAI dock & Studio welcome, module shortcuts, Auth signup, Comparison, in-conversation reply chips',
-    note: 'The compact 28px chip. Welcome shortcuts, module intents, and reply chips all share <code>.chip</code> at <code>height: 28px</code> with <code>--fs-label</code> type. States: Default, Hover, Open/selected (<code>.is-selected</code> / match). <strong>Primary rule:</strong> a solid blue <code>.chip-primary</code> always uses a <strong>filled</strong> icon (<code>FILL 1</code>), never outlined — ghost / tinted / welcome chips stay outlined. Not the same as <em>Output chips</em> — those are the in-transcript previews that open the sticky Output module. Its large-format sibling — <em>Large intent cards</em> — sits beside it. <strong>Pre-flight rule:</strong> <code>.chip-dive</code> is the deep-dive chip — outlined in brand blue, and the one style whose ask carries no scope, so it always routes through <em>Ask pre-flight</em> before anything runs. Every other style is curated with a known scope and goes straight to its answer.',
+    note: 'The compact 28px chip. Welcome shortcuts, module intents, and reply chips all share <code>.chip</code> at <code>height: 28px</code> with <code>--fs-label</code> type. States: Default, Hover, Open/selected (<code>.is-selected</code> / match). <strong>Primary rule:</strong> a solid blue <code>.chip-primary</code> always uses a <strong>filled</strong> icon (<code>FILL 1</code>), never outlined — ghost / tinted / welcome chips stay outlined. Not the same as <em>Output chips</em> — those are the in-transcript previews that open the sticky Output module. Its large-format sibling — <em>Large intent cards</em> — sits beside it. <strong>Pre-flight rule:</strong> <code>.chip-dive</code> is the deep-dive chip — outlined in brand blue, and the one style whose ask carries no scope, so it always routes through <em>Ask pre-flight</em> before anything runs. Every other style is curated with a known scope and goes straight to its answer. <strong>A chip row only moves forward:</strong> once the member has stepped past it, the row leaves the thread \u2014 see <em>Spent chip rows</em>.',
     noteIcon: 'straighten',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -3828,6 +3848,50 @@ const COMPONENTS = [
             <button type="button" class="chip chip--match"><span class="material-symbols-outlined">check_circle</span>Best match</button>
             <button type="button" class="chip ms-chip is-selected">High sugar</button>
             <button type="button" class="chip chip-primary"><span class="material-symbols-outlined">check</span>Confirm</button>
+          </div>
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Spent chip rows',
+    added: '2026-09-09',
+    aliases: ['Chip lock', 'Retired chips', 'Used chips'],
+    wide: true,
+    cat: 'Chips & badges',
+    cls: '[data-chips-spent] \u00b7 [data-chips-gone] \u00b7 .sc-reply-chips.is-done \u00b7 .ws-intent-chip.is-used \u00b7 js/chip-lock.js',
+    used: 'Every transcript in the app \u2014 injected with the WISE nav, and loaded directly by Create account, which has no nav',
+    note: 'A transcript is a path, not a menu. <strong>Once the member has moved past a row of intent chips, that row is history and it leaves the thread</strong> \u2014 it fades, collapses, and is removed, so only the newest row is on screen at all. A row is spent when the member has said something beneath it or a newer chip row has arrived under it, and that is one-way: scroll back three turns and the answers are all still there, but the chips that led between them are not. <strong>The one row that stays is a row still holding an output</strong> \u2014 an output chip, a version thumbnail, or a citation marker must still open three turns later, so that row keeps its place on the thread, dimmed, with only its intents dead. That dimmed look is the only place the old disabled state is still what you see. A run of <em>adjacent</em> chip rows is one step and goes together, so a multi-select and its Continue / Skip controls do not half-vanish. The height a row collapses from is measured in JS \u2014 CSS cannot know it \u2014 and under reduced motion the row goes at once, unanimated.',
+    noteIcon: 'history_toggle_off',
+    demo: `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Live \u2014 the newest row</div>
+          <div class="sc-reply-chips" style="margin:0">
+            <button type="button" class="chip"><span class="material-symbols-outlined">auto_awesome</span>Suggest a reformulation</button>
+            <button type="button" class="chip"><span class="material-symbols-outlined">inventory_2</span>Open portfolio</button>
+          </div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">Spent \u00b7 mid-retire, before it is removed</div>
+          <div class="sc-reply-chips" data-chips-spent="1" style="margin:0">
+            <button type="button" class="chip"><span class="material-symbols-outlined">auto_awesome</span>Suggest a reformulation</button>
+            <button type="button" class="chip"><span class="material-symbols-outlined">inventory_2</span>Open portfolio</button>
+          </div>
+        </div>
+        <div class="dsc-state-col" style="flex:1 1 320px;min-width:0">
+          <div class="dsc-sub-label">Kept \u2014 the row still holds an output</div>
+          <div class="sc-reply-chips" data-chips-spent="1" style="margin:0;display:block">
+            ${outputChipHTML({ title: OUTPUT_CHIP_TITLE, versions: [OUTPUT_CHIP_VERS[0]] })}
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+              <button type="button" class="chip"><span class="material-symbols-outlined">bolt</span>Compare these two</button>
+            </div>
+          </div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">One intent already taken</div>
+          <div class="sc-reply-chips" style="margin:0">
+            <button type="button" class="chip ws-intent-chip is-used"><span class="material-symbols-outlined">inventory_2</span>Open portfolio</button>
+            <button type="button" class="chip ws-intent-chip"><span class="material-symbols-outlined">bolt</span>Build me a report</button>
           </div>
         </div>
       </div>`,
@@ -3864,7 +3928,7 @@ const COMPONENTS = [
     wide: true,
     cls: '.sc-surface-card · .sc-surface-card--portrait · .sc-surface-stack · .sc-surface-rail · .sc-surface-vtag · .wa-merge-chip · .wa-merge-chip--portrait',
     used: 'WISEcodeAI Studio Chat · WISEcodeAI dock · sticky Output rail · Intervention Atlas carousel',
-    note: '<strong>The count decides the shape.</strong> When a turn opens <em>one</em> output on Results or Visuals, it lands as the <strong>landscape chip</strong>: a <strong>52px</strong> preview on the left, the output name beside it, gold stroke, the full width of the reading column. When the same turn produces <em>more than one</em>, they land as <strong>portrait cards</strong> on a scrolling rail \u2014 120px wide with a 108px preview on top and the name small underneath \u2014 led by a line that says how many arrived (\u201cHere are <strong>10 outputs</strong> for you to review.\u201d). A lone output is never a portrait card, and a run of them is never a stack of landscape rows. <strong>Versions are not a count:</strong> redoing an output is still one output, so it stays a landscape chip holding a cascade of landscape cards. Every chip is versioned — a compact <code>vN</code> badge rides the <strong>card\u2019s</strong> top-right corner, even on the first pass. Redo the same output and the slot holds <strong>one whole card per version</strong> — same preview, name and stroke — cascaded oldest first with the newest in front. A version is never a bare thumbnail. <strong>Hover fans the cascade</strong> (an 18px edge opens to a 60px peek), lifts the card under the pointer, and slides each earlier card\u2019s tag to its left edge so every version stays labelled. The version currently open on the right wears a stronger ring. Tapping a card opens <em>that</em> version in the sticky Output module — and the rail on the right shows <strong>one chip per version</strong>, same badge, so the cascade and the pane never disagree. Drawn in the thread, a chart, graph, or scorecard stays on that same reading column; only a carousel or an image grid runs the chat module edge to edge. Live fan + Replay live in <em>Motion &amp; Resize → Output chip fan</em>.',
+    note: '<strong>The count decides the shape.</strong> When a turn opens <em>one</em> output on Results or Visuals, it lands as the <strong>landscape chip</strong>: a <strong>52px</strong> preview on the left, the output name beside it, gold stroke, the full width of the reading column. When the same turn produces <em>more than one</em>, they land as <strong>portrait cards</strong> on a scrolling rail \u2014 120px wide with a 108px preview on top and the name small underneath \u2014 led by a line that says how many arrived (\u201cHere are <strong>10 outputs</strong> for you to review.\u201d). A lone output is never a portrait card, and a run of them is never a stack of landscape rows. <strong>Versions are not a count:</strong> redoing an output is still one output, so it stays a landscape chip holding a cascade of landscape cards. Every chip is versioned — a compact <code>vN</code> badge rides the <strong>card\u2019s</strong> top-right corner, even on the first pass. Redo the same output and the slot holds <strong>one whole card per version</strong> — same preview, name and stroke — cascaded oldest first with the newest in front. A version is never a bare thumbnail. <strong>Hover fans the cascade</strong> (an 18px edge opens to a 60px peek), lifts the card under the pointer, and slides each earlier card\u2019s tag to its left edge so every version stays labelled. The version currently open on the right wears a stronger ring. Tapping a card opens <em>that</em> version in the sticky Output module — and the rail on the right shows <strong>one chip per version</strong>, same badge, so the cascade and the pane never disagree. Drawn in the thread, a chart, graph, or scorecard stays on that same reading column; only a carousel or an image grid runs the chat module edge to edge. Whether a turn posts these chips at all, or draws the outputs themselves under the answer, is the member\u2019s setting \u2014 see <em>Outputs in the thread</em>. Live fan + Replay live in <em>Motion &amp; Resize → Output chip fan</em>.',
     noteIcon: 'layers',
     demo: `
       <div class="dsc-sub" style="width:100%">
@@ -3944,12 +4008,72 @@ const COMPONENTS = [
       </div>`,
   },
   {
+    name: 'Outputs in the thread',
+    added: '2026-09-12',
+    aliases: ['Output mode', 'As cards', 'In thread'],
+    wide: true,
+    cat: 'Chat & drawers',
+    cls: '.sc-fb-outmode \u00b7 .sc-fb-menu-outs \u00b7 .sc-out--inline \u00b7 .sc-out--card \u00b7 .sc-line-out-inline \u00b7 js/output-mode.js',
+    used: 'Every chat module \u2014 the two rows at the foot of any answer\u2019s \u22ef menu; the setting is app-wide, not per answer',
+    note: 'Where a turn\u2019s outputs are drawn. <strong>Outputs in the thread</strong> (the default) puts galleries, decks, and films under the answer at full size, so the work is on the page you are already reading. <strong>Outputs as cards</strong> is the compact read: the same outputs post <em>Output chips</em> instead, and the thread stays short. <strong>Switching is instant because both representations are already written</strong> \u2014 the turn draws each output twice, and the mode only decides which one is displayed, so flipping it never re-runs a turn or loses an output that has already arrived. The choice is remembered and applies to every chat and every past turn in the thread. Neither mode opens the Output module on its own \u2014 that is still the member\u2019s tap.',
+    noteIcon: 'view_agenda',
+    demo: `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">In the thread \u00b7 the default</div>
+          <div class="sc-fb-menu" data-popover-static style="position:relative;bottom:auto;right:auto;display:block;min-width:250px">
+            <span class="sc-fb-menu-outs" role="group" aria-label="Where outputs are shown">
+              <button type="button" class="sc-fb-outmode is-on" data-out-mode="inline">
+                <span class="material-symbols-outlined sc-fb-outmode-i" aria-hidden="true">view_agenda</span>
+                <span class="sc-fb-outmode-l">Outputs in the thread</span>
+                <span class="material-symbols-outlined sc-fb-outmode-k" aria-hidden="true">check</span>
+              </button>
+              <button type="button" class="sc-fb-outmode" data-out-mode="cards">
+                <span class="material-symbols-outlined sc-fb-outmode-i" aria-hidden="true">dashboard_customize</span>
+                <span class="sc-fb-outmode-l">Outputs as cards</span>
+                <span class="material-symbols-outlined sc-fb-outmode-k" aria-hidden="true">check</span>
+              </button>
+            </span>
+          </div>
+        </div>
+        <div class="dsc-state-col">
+          <div class="dsc-sub-label">As cards</div>
+          <div class="sc-fb-menu" data-popover-static style="position:relative;bottom:auto;right:auto;display:block;min-width:250px">
+            <span class="sc-fb-menu-outs" role="group" aria-label="Where outputs are shown">
+              <button type="button" class="sc-fb-outmode" data-out-mode="inline">
+                <span class="material-symbols-outlined sc-fb-outmode-i" aria-hidden="true">view_agenda</span>
+                <span class="sc-fb-outmode-l">Outputs in the thread</span>
+                <span class="material-symbols-outlined sc-fb-outmode-k" aria-hidden="true">check</span>
+              </button>
+              <button type="button" class="sc-fb-outmode is-on" data-out-mode="cards">
+                <span class="material-symbols-outlined sc-fb-outmode-i" aria-hidden="true">dashboard_customize</span>
+                <span class="sc-fb-outmode-l">Outputs as cards</span>
+                <span class="material-symbols-outlined sc-fb-outmode-k" aria-hidden="true">check</span>
+              </button>
+            </span>
+          </div>
+        </div>
+        <div class="dsc-state-col" style="flex:1 1 300px;min-width:0">
+          <div class="dsc-sub-label">What each one draws under the same answer</div>
+          <div class="sc-line sc-line-wiseai">${demoWiseAvatar()}<div class="sc-line-body">
+            <span class="sc-para">Here is the campaign, cut the four ways you asked for.</span>
+            <p class="sc-surface-rail-lead" style="margin-top:12px">As cards \u2014 <strong>3 outputs</strong> for you to review.</p>
+            <div class="sc-surface-rail">
+              ${outputChipHTML({ title: 'The campaign', versions: [OUTPUT_CHIP_VERS[0]], portrait: true })}
+              ${outputChipHTML({ title: 'Collector set', versions: [OUTPUT_CHIP_VERS[1]], portrait: true })}
+              ${outputChipHTML({ title: 'The teaser', versions: [OUTPUT_CHIP_VERS[2]], portrait: true })}
+            </div>
+          </div></div>
+        </div>
+      </div>`,
+  },
+  {
     name: 'Large intent cards',
     cat: 'Chips & badges',
     wide: true,
-    cls: '.ws-scorecard · .ws-sc-action (+ --intro, --wiseai, --hero, locked)',
+    cls: '.ws-scorecard · .ws-sc-action (+ --intro, --wiseai, --hero, --gold, --art, --artonly, --lg, --xl, --chart-upf / --chart-pillars / --chart-race, --admin, locked) · .ws-sc-pillar* · .ws-sc-race* · js/welcome-overview-cards.js',
     used: 'WISEcodeAI welcome rail · Product Portfolio · Comparison — the large-format sibling of the 28px intent chips',
-    note: 'The large-format intent chip, not a scorecard: the whole card is one tap and the footer (<code>.ws-sc-action</code>) is the visible affordance. Same family as the 28px <code>.chip</code> above — one carries an eyebrow/metric and a CTA, the other is the in-conversation pill. <strong>Hero</strong> (<code>--hero</code>) is the one-per-rail opener: it wears the sign-in art and sets its copy in white over it. Click-to-filter and dashboard numbers live on <em>Stat tiles</em> and <em>Dashboard scores</em>.',
+    note: 'The large-format intent chip, not a scorecard: the whole card is one tap and the footer (<code>.ws-sc-action</code>) is the visible affordance. Same family as the 28px <code>.chip</code> above — one carries an eyebrow/metric and a CTA, the other is the in-conversation pill. <strong>Hero</strong> (<code>--hero</code>) is the one-per-rail opener: it wears the sign-in art and sets its copy in white over it. <strong>Three card faces</strong> sit beside the plain metric one: <code>--gold</code> is the Gilded Grain wash, <code>--art</code> puts the card\u2019s own photo behind the copy under a scrim, and <code>--artonly</code> drops the copy so the photo carries it with just the pill and the CTA on top. <code>--lg</code> and <code>--xl</code> are the taller and the cinematic widths. <strong>A card can also hold a live chart</strong> (<code>--chart-upf</code>, <code>--chart-pillars</code>, <code>--chart-race</code>): the same UPF donut, WISEscore pillar bars, and code race the Brand Intelligence dashboard draws, animating in place on the rail rather than a picture of them. <code>--admin</code> cards are dropped from the rail when Internal admins or the Promo cards switch is off. Click-to-filter and dashboard numbers live on <em>Stat tiles</em> and <em>Dashboard scores</em>.',
     noteIcon: 'bolt',
     demo: `
       <div class="ws-scorecards" style="overflow:visible;padding:0;width:100%">
@@ -4021,9 +4145,9 @@ const COMPONENTS = [
     name: 'Transcript lines',
     wide: true,
     cat: 'Chat & drawers',
-    cls: '.sc-line · .sc-line-you / .sc-line-wiseai / .sc-line-event · .sc-avatar · .sc-line-time',
+    cls: '.sc-line · .sc-line-you / .sc-line-wiseai / .sc-line-event / .sc-line-mate · .sc-avatar · .sc-line-time',
     used: 'WISEcodeAI dock (every page) · Studio Chat — every turn in the thread',
-    note: 'Three line types, never a speech bubble. <strong>You</strong> uses the member avatar (initials or photo). Once sent, that ask sits on a light wash of the member\u2019s own ink that runs the chat module <strong>edge to edge</strong> \u2014 the type, avatar, and gutter do not move. The composer is a different surface and stays the inset pill. <strong>WISEcodeAI</strong> uses the owl on a black chip (white chip in dark) and has no matching band. <strong>Event</strong> is a mid-thread action the member took — a database switch or a data source — stamped <code>data-activity</code> so the activity strip can tick it; it is not an ask and stays bare. The timestamp toggles clock \u2194 relative on click. Forked threads open with a lineage banner.',
+    note: 'Never a speech bubble. <strong>You</strong> uses the member avatar (initials or photo). Once sent, that ask sits on a light wash of the member\u2019s own ink that runs the chat module <strong>edge to edge</strong> \u2014 the type, avatar, and gutter do not move. The composer is a different surface and stays the inset pill. <strong>WISEcodeAI</strong> uses the owl on a black chip (white chip in dark) and has no matching band. <strong>Event</strong> is a mid-thread action the member took — a database switch or a data source — stamped <code>data-activity</code> so the activity strip can tick it; it is not an ask and stays bare. A fourth type joins them once a colleague is invited: a <strong>teammate</strong> line carrying its own name, role, and avatar tone \u2014 see <em>People in chat</em>. The timestamp toggles clock \u2194 relative on click. Forked threads open with a lineage banner.',
     noteIcon: 'forum',
     demo: `
       <div class="dsc-states dsc-states--lines" style="width:100%">
@@ -4107,6 +4231,103 @@ const COMPONENTS = [
       );
       return `<div class="dsc-themes dsc-themes--stack">${themePaneHTML('light', stage())}${themePaneHTML('dark', stage())}</div>`;
     },
+  },
+  {
+    name: 'Transcript gallery',
+    added: '2026-09-11',
+    aliases: ['Masonry grid', 'Card deck', 'Card rail', 'Lookbook', 'Campaign gallery', 'Collector cards'],
+    wide: true,
+    cat: 'Chat & drawers',
+    cls: '.sc-mgrid \u00b7 .sc-mgrid--deck \u00b7 .sc-mgrid--rail \u00b7 .sc-mgrid-item \u00b7 .sc-mgrid-chrome \u00b7 js/transcript-masonry.js',
+    used: 'WISEcodeAI (wiseai.html) \u2014 the campaign, Think Wise, and the FOODTRUTH lookbook answers; the same grids re-open as blocks in the Output module',
+    note: 'Artwork inside an answer, in <strong>three layouts that one rule picks between</strong>. Pieces of <em>different</em> shapes go in the <strong>packed grid</strong> \u2014 each tile keeps its own aspect and the rows dovetail, with the title and a meta line under it. A set that is all <em>one</em> shape has nothing to pack, so it goes in the <strong>deck</strong> (an even grid that wraps \u2014 the whole collector set at once) or, when the set is short and reads as a cast, the <strong>rail</strong> (a scrolling row with previous / <em>n</em> of <em>N</em> / next at its foot). Tap any tile to open the full-size file in the shared viewer, and step through the rest with the arrows or the keyboard. <strong>A gallery is one of the two things that leaves the reading column</strong> \u2014 it runs the chat module edge to edge (see <em>Transcript carousel</em> for the other). Charts, graphs, and scorecards stay on the prose column with the answer.',
+    noteIcon: 'grid_view',
+    demoCustom: () => galleryDemoHost('gallery', 'The campaign artwork loads with this card.'),
+  },
+  {
+    name: 'Character bible',
+    added: '2026-09-11',
+    wide: true,
+    cat: 'Chat & drawers',
+    cls: '.wcb \u00b7 .wcb-card[data-accent] \u00b7 .wcb-frame \u00b7 .wcb-facts \u00b7 js/character-bible.js',
+    used: 'WISEcodeAI (wiseai.html) \u2014 the Think Wise cast follow-up',
+    note: 'A gallery shows a face; it cannot say who that is. This is the reference page beside it \u2014 one plate per character, the art above and the facts under it as a definition list. Unlike a gallery it stays in the <strong>reading column</strong>, because it is something to read rather than something to look at. Each card names an <strong>accent</strong> (<code>red</code> / <code>blue</code> / <code>green</code>) instead of passing a colour, so every value has a dark-mode twin by construction; a name that is not one of the three simply inherits the body ink and stays legible either way.',
+    noteIcon: 'menu_book',
+    demoCustom: () => galleryDemoHost('bible', 'The character plates load with this card.'),
+  },
+  {
+    name: 'Inline film',
+    wide: true,
+    cat: 'Chat & drawers',
+    cls: '.sc-inline-film \u00b7 .sc-inline-film-media',
+    used: 'WISEcodeAI (wiseai.html) \u2014 the campaign teaser and face-off, and the Think Wise launch film',
+    note: 'A film inside the answer, as a bare <code>&lt;figure&gt;</code> with no card and no border around the still \u2014 the chat surface shows through, the same as a gallery tile. It carries its <strong>own controls</strong> and it <strong>never starts on its own</strong>: <code>preload="metadata"</code> fetches the poster frame and nothing more, so a thread with three spots in it does not quietly pull three videos. Sound is the clip\u2019s own \u2014 the campaign spots play with it, the Think Wise launch film is silent by design.',
+    noteIcon: 'movie',
+    demoCustom: () => galleryDemoHost('film', 'The campaign teaser loads with this card.'),
+  },
+  {
+    name: 'People in chat',
+    added: '2026-09-11',
+    aliases: ['Teammates', 'Roster', 'Mentions', 'Invite a team member'],
+    wide: true,
+    cat: 'Chat & drawers',
+    cls: '.sc-roster \u00b7 .sc-line-mate \u00b7 .sc-line-join \u00b7 .sc-mention \u00b7 .sc-mention-pop \u00b7 .sc-people-pop \u00b7 .sc-avatar-mate',
+    used: 'Every full chat module \u2014 the roster pile sits in the chat header, the picker opens from the composer\u2019s + menu',
+    note: 'A conversation is not always two voices. Invite a colleague and they join the thread as a <strong>third kind of line</strong>: their initials on their own tone (five tones, never a square), their name and role above the body, and a continuation line that drops the name when the same person speaks twice in a row. The join is announced in the thread the way a channel announces it \u2014 an event row, not a silent change in the header \u2014 and the header grows an overlapping <strong>roster pile</strong> that stays hidden while it is still just you and WISEcodeAI. Typing <code>@</code> in the composer opens the mention list above the input; everyone in the room is there, and so is everyone who is not, because <strong>naming someone who has not joined is how you invite them</strong>. A finished line only paints mentions for people actually in the room, so a name that was never invited stays plain text. <code>@WISEcodeAI</code> is gold; teammates are brand blue.',
+    noteIcon: 'group',
+    demo: `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col" style="flex:2 1 420px;min-width:0">
+          <div class="dsc-sub-label">Join event, teammate line, continuation</div>
+          <div class="sc-line sc-line-event sc-line-join" data-activity="members" role="note">
+            <span class="sc-join-mark material-symbols-outlined" aria-hidden="true">person_add</span>
+            <div class="sc-line-body"><span class="sc-event-label">Maya Chen</span> joined the conversation<span class="sc-join-role">Regulatory Lead</span><div class="sc-line-meta"><span class="sc-line-time" role="button" tabindex="0">6 min ago</span></div></div>
+          </div>
+          <div class="sc-line sc-line-mate" data-person="maya" data-tone="1">
+            <span class="sc-avatar sc-avatar-mate" data-tone="1" role="img" aria-label="Maya Chen">MC</span>
+            <div class="sc-line-body"><span class="sc-line-name">Maya Chen<span class="sc-line-name-role">Regulatory Lead</span></span>
+              <div class="sc-mate-say">Thanks for the pull-in \u2014 I have the label files open, so ask away.</div>
+              <div class="sc-line-meta"><span class="sc-line-time" role="button" tabindex="0">5 min ago</span></div></div>
+          </div>
+          <div class="sc-line sc-line-mate sc-line-mate--cont" data-person="maya" data-tone="1">
+            <span class="sc-avatar sc-avatar-mate" data-tone="1" role="img" aria-label="Maya Chen">MC</span>
+            <div class="sc-line-body">
+              <div class="sc-mate-say"><span class="sc-mention sc-mention--ai" data-mention="wiseai">@WISEcodeAI</span> can you pull the allergen statement while I check the panel?</div>
+              <div class="sc-line-meta"><span class="sc-line-time" role="button" tabindex="0">5 min ago</span></div></div>
+          </div>
+          <div class="sc-line sc-line-typing sc-line-mate-typing">
+            <span class="sc-avatar sc-avatar-mate" data-tone="3" role="img" aria-label="Dev Rao">DR</span>
+            <div class="sc-line-body"><span class="sc-typing-status"><span class="sc-typing" aria-hidden="true"><span></span><span></span><span></span></span><span class="sc-typing-label">Dev is typing\u2026</span></span></div>
+          </div>
+        </div>
+        <div class="dsc-state-col" style="flex:1 1 260px;min-width:0">
+          <div class="dsc-sub-label">Roster pile \u00b7 chat header</div>
+          <button type="button" class="sc-roster" title="People in this conversation" aria-label="People in this conversation">
+            <span class="sc-avatar sc-avatar-mate" data-tone="1" role="img" aria-label="Maya Chen">MC</span>
+            <span class="sc-avatar sc-avatar-mate" data-tone="3" role="img" aria-label="Dev Rao">DR</span>
+            <span class="sc-avatar sc-avatar-mate" data-tone="4" role="img" aria-label="Lena Ortiz">LO</span>
+            <span class="sc-roster-more">+2</span>
+          </button>
+          <div class="dsc-sub-label" style="margin-top:14px">Mention list \u00b7 typing @</div>
+          <div class="sc-mention-pop" style="position:static;display:block">
+            <button type="button" class="sc-mention-item is-active" role="option" aria-selected="true">
+              <span class="sc-avatar sc-avatar-wiseai" role="img" aria-hidden="true">${DEMO_OWL_BUG}</span>
+              <span class="sc-mention-copy"><span class="sc-mention-name">WISEcodeAI</span><span class="sc-mention-role">Always in the room</span></span>
+              <span class="sc-mention-state">In this chat</span>
+            </button>
+            <button type="button" class="sc-mention-item" role="option" aria-selected="false">
+              <span class="sc-avatar sc-avatar-mate" data-tone="1" role="img" aria-label="Maya Chen">MC</span>
+              <span class="sc-mention-copy"><span class="sc-mention-name">Maya Chen</span><span class="sc-mention-role">Regulatory Lead</span></span>
+              <span class="sc-mention-state">In this chat</span>
+            </button>
+            <button type="button" class="sc-mention-item" role="option" aria-selected="false">
+              <span class="sc-avatar sc-avatar-mate" data-tone="5" role="img" aria-label="Priya Nair">PN</span>
+              <span class="sc-mention-copy"><span class="sc-mention-name">Priya Nair</span><span class="sc-mention-role">Brand Manager</span></span>
+              <span class="sc-mention-state">Invite</span>
+            </button>
+          </div>
+        </div>
+      </div>`,
   },
   {
     name: 'Transcript actions',
@@ -4709,9 +4930,9 @@ const COMPONENTS = [
     ai: false,
     wide: true,
     cat: 'Chat & drawers',
-    cls: '.nfp-fi-group--identity \u00b7 .nfp-fi-cat--dock \u00b7 .nfp-fi-upc \u00b7 .nfp-fi-thumbs',
+    cls: '.nfp-fi-group--identity \u00b7 .nfp-fi-cat--dock \u00b7 .nfp-fi-upc \u00b7 .nfp-fi-thumbs \u00b7 .nfp-fi-brand \u00b7 .nfp-status-badge (--verified / --claimed)',
     used: 'Add Product \u00b7 View Product \u2014 the top of the Product Details drawer',
-    note: 'The module opens with the product name, then the description. Size photos share one row: the selected size is a bit larger with a blue border and the pencil; the others sit beside it, smaller. Price, quantity, and the barcode below follow whichever size is selected.',
+    note: 'The module opens with a <strong>brand eyebrow</strong> \u2014 the brand\u2019s own logo and name above the title, so a product is never read without knowing whose it is \u2014 then the product name, then the description. Where the product has earned them, small <strong>status badges</strong> ride the name line: verified, and brand-claimed. Size photos share one row: the selected size is a bit larger with a blue border and the pencil; the others sit beside it, smaller. Price, quantity, and the barcode below follow whichever size is selected.',
     noteIcon: 'id_card',
     demo: `
       <div class="dsc-states" style="width:100%">
@@ -4722,6 +4943,65 @@ const COMPONENTS = [
         <div class="dsc-state-col" style="flex:1 1 100%">
           <div class="dsc-sub-label">One picture</div>
           ${idStripDemoHTML({ single: true })}
+        </div>
+      </div>`,
+  },
+  {
+    name: 'Product lifecycle banner',
+    added: '2026-09-11',
+    ai: false,
+    aliases: ['Steps to Complete', 'Next step banner'],
+    wide: true,
+    cat: 'Chat & drawers',
+    cls: '.nfp-ins-next (+ --discovered / --claim / --claimed / --verify / --complete / --reports) \u00b7 .nfp-ins-next-dots \u00b7 .nfp-ins-dot \u00b7 .nfp-ins-next-btn (+ --soft)',
+    used: 'Add Product \u00b7 View Product \u2014 pinned above the Insights drawer',
+    note: 'One banner that always answers \u201cwhat do I do with this product next?\u201d. The eyebrow reads <strong>Steps to Complete</strong>, and under it a row of <strong>dots</strong> tracks the product through its life \u2014 discovered, claimed, verified, complete, reports \u2014 with the steps behind it filled and the current one marked. The body under the dots changes with the step: its own title, its own sentence, and the buttons that actually move it along. <strong>Every dot is tappable</strong>, so a member can look ahead at a step they have not reached and see what it will ask for, without the banner losing where the product really is. On the last dot the banner becomes the download shelf \u2014 the eyebrow reads <strong>Reports</strong> and one button per product report, the first solid and the rest <code>--soft</code>.',
+    noteIcon: 'conversion_path',
+    demo: `
+      <div class="dsc-states" style="width:100%">
+        <div class="dsc-state-col" style="flex:1 1 320px;min-width:0">
+          <div class="dsc-sub-label">Mid-life \u00b7 Steps to Complete</div>
+          <div class="nfp-ins-next nfp-ins-next--verify">
+            <div class="nfp-ins-next-head">
+              <div class="nfp-ins-next-eyebrow">Steps to Complete</div>
+              <div class="nfp-ins-next-dots" role="navigation" aria-label="Product progress">
+                <button type="button" class="nfp-ins-dot is-done" aria-label="Discovered, complete"></button>
+                <button type="button" class="nfp-ins-dot is-done" aria-label="Claimed, complete"></button>
+                <button type="button" class="nfp-ins-dot is-current" aria-current="step" aria-label="Verify ingredients, current"></button>
+                <button type="button" class="nfp-ins-dot" aria-label="Complete"></button>
+                <button type="button" class="nfp-ins-dot" aria-label="Reports"></button>
+              </div>
+            </div>
+            <div class="nfp-ins-next-body">
+              <div class="nfp-ins-next-title">Verify ingredients</div>
+              <div class="nfp-ins-next-desc">The ingredient list is claimed but not yet verified \u2014 verify it to unlock this product\u2019s reports.</div>
+            </div>
+            <button type="button" class="nfp-ins-next-btn"><span class="material-symbols-outlined">fact_check</span>Verify ingredients</button>
+          </div>
+        </div>
+        <div class="dsc-state-col" style="flex:1 1 320px;min-width:0">
+          <div class="dsc-sub-label">Last dot \u00b7 Reports</div>
+          <div class="nfp-ins-next nfp-ins-next--reports">
+            <div class="nfp-ins-next-head">
+              <div class="nfp-ins-next-eyebrow">Reports</div>
+              <div class="nfp-ins-next-dots" role="navigation" aria-label="Product progress">
+                <button type="button" class="nfp-ins-dot is-done" aria-label="Discovered, complete"></button>
+                <button type="button" class="nfp-ins-dot is-done" aria-label="Claimed, complete"></button>
+                <button type="button" class="nfp-ins-dot is-done" aria-label="Verified, complete"></button>
+                <button type="button" class="nfp-ins-dot is-done" aria-label="Complete"></button>
+                <button type="button" class="nfp-ins-dot is-current" aria-current="step" aria-label="Reports, current"></button>
+              </div>
+            </div>
+            <div class="nfp-ins-next-body">
+              <div class="nfp-ins-next-title">Download reports</div>
+              <div class="nfp-ins-next-desc">One file per report \u2014 identity, Nutrition Facts, ingredients, classification, GRAS, and insights.</div>
+            </div>
+            <div class="nfp-ins-next-actions">
+              <button type="button" class="nfp-ins-next-btn"><span class="material-symbols-outlined">download</span>Identity</button>
+              <button type="button" class="nfp-ins-next-btn nfp-ins-next-btn--soft"><span class="material-symbols-outlined">download</span>Nutrition Facts</button>
+              <button type="button" class="nfp-ins-next-btn nfp-ins-next-btn--soft"><span class="material-symbols-outlined">download</span>Ingredients</button>
+            </div>
+          </div>
         </div>
       </div>`,
   },
@@ -15564,6 +15844,60 @@ function wireComponentLibrary(root) {
   };
   grid._bootOutputPaneIn = bootOutputPaneIn;
 
+  /* The gallery, bible and film specimens are built out of the campaign packs
+     themselves, so they cannot drift from what the chat shows. Those packs
+     carry their artwork manifests, so they are pulled in the first time one of
+     those cards opens rather than on first paint, and a grid can only pack
+     once the accordion has a measurable box. */
+  const galleryDemoHtml = (kind, tm, camp, tw) => {
+    const sub = (label, body) => `<div class="dsc-sub" style="width:100%"><div class="dsc-sub-label">${label}</div>${body}</div>`;
+    if (kind === 'bible') return tw.thinkWiseBibleHtml();
+    if (kind === 'film') return camp.campaignFilmHtml('teaser');
+    const mediaItems = camp.WISE_CAMPAIGN_MEDIA.slice(0, 8).map((m) => ({
+      src: `../assets/wise-campaign/${m.file}.jpg`,
+      thumb: `../assets/wise-campaign/thumbs/${m.file}.jpg`,
+      w: m.w, h: m.h, title: m.title, meta: m.meta,
+    }));
+    const deckItems = camp.WISE_CAMPAIGN_CARDS.slice(0, 6).map((c) => ({
+      src: `../assets/wise-campaign/cards/${c.file}.jpg`,
+      thumb: `../assets/wise-campaign/cards/thumbs/${c.file}.jpg`,
+      w: 1024, h: 1536, title: c.name, meta: `${c.faction} \u00b7 ${c.role}`,
+    }));
+    return sub('Packed grid \u2014 pieces of different shapes',
+      tm.masonryGridHtml({ id: 'dsc-mgrid-grid', label: 'Your food has character \u00b7 the campaign', items: mediaItems }))
+      + sub('Deck \u2014 one shape, all at once',
+        tm.cardGridHtml({ id: 'dsc-mgrid-deck', label: 'Food Truth Wins \u00b7 the collector set', aspect: 2 / 3, items: deckItems }))
+      + sub('Rail \u2014 a short cast, with previous / count / next',
+        tw.thinkWiseCharactersHtml());
+  };
+
+  const bootGalleryIn = (scope) => {
+    if (!compMod || !compMod.isConnected) return;
+    if (compMod.classList.contains('is-collapsed')) return;
+    const host = scope || compMod;
+    const stages = Array.from(host.querySelectorAll('[data-gallery-demo]'))
+      .filter((el) => el.dataset.galleryBooted !== '1');
+    if (!stages.length) return;
+    stages.forEach((el) => { el.dataset.galleryBooted = '1'; });
+    const hydrate = () => {
+      Promise.all([
+        import('./transcript-masonry.js'),
+        import('./wise-campaign.js'),
+        import('./think-wise-campaign.js'),
+      ]).then(([tm, camp, tw]) => {
+        stages.forEach((el) => {
+          el.innerHTML = galleryDemoHtml(el.dataset.galleryDemo, tm, camp, tw);
+          tm.mountMasonryGrids(el);
+        });
+      }).catch((err) => {
+        console.error('[all-modules] gallery demo failed', err);
+        stages.forEach((el) => { delete el.dataset.galleryBooted; });
+      });
+    };
+    requestAnimationFrame(() => { requestAnimationFrame(hydrate); });
+  };
+  grid._bootGalleryIn = bootGalleryIn;
+
   /* Each component is its own accordion. The title row toggles; Dev Ready
      and links inside the header keep their own actions. */
   const toggleCompCard = (card) => {
@@ -15577,6 +15911,7 @@ function wireComponentLibrary(root) {
       bootAskDemoIn(card);
       bootOwlProgIn(card);
       bootOutputPaneIn(card);
+      bootGalleryIn(card);
       if (card.dataset.compName === 'Charts & graphs') {
         takeAzCompNudge();
         observePreviewFrames(card);
@@ -15875,6 +16210,7 @@ async function jumpToComponent(root, name) {
   if (grid && typeof grid._bootAskDemoIn === 'function') grid._bootAskDemoIn(card);
   if (grid && typeof grid._bootOwlProgIn === 'function') grid._bootOwlProgIn(card);
   if (grid && typeof grid._bootOutputPaneIn === 'function') grid._bootOutputPaneIn(card);
+  if (grid && typeof grid._bootGalleryIn === 'function') grid._bootGalleryIn(card);
   card.classList.remove('is-flash');
   void card.offsetWidth;
   card.classList.add('is-flash');

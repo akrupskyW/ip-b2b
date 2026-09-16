@@ -2475,6 +2475,46 @@
     html.dark .wa-chart-expand-btn:hover { color: var(--primary-bright, #8B9FAF); background: color-mix(in srgb, var(--primary-bright, #8B9FAF) 14%, #1A2339); }
     .wa-chart-expand-btn.is-on { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); opacity: 1; }
     html.dark .wa-chart-expand-btn.is-on { color: var(--primary-bright, #8B9FAF); }
+    /* In the thread the same control is a thumbs-row icon: 16px, no chrome,
+       parked top-right above the plot. Tables, galleries, films, and the
+       output cards never get one. Pane expand keeps the 28px circle above. */
+    .sc-out--inline.wa-pane-body > .wa-block:has(> .wa-chart-toolbar) { position: relative; }
+    .sc-out--inline.wa-pane-body > .wa-block > .wa-chart-toolbar {
+      justify-content: flex-end;
+      min-height: 16px;
+      margin: 0 0 8px;
+    }
+    .sc-out--inline.wa-pane-body .wa-chart-expand-btn.sc-fb-btn {
+      width: 16px; height: 16px; padding: 0;
+      border: 0; border-radius: 50%;
+      background: transparent; box-shadow: none;
+      color: color-mix(in srgb, var(--text-subtle) 62%, transparent);
+      opacity: 1;
+    }
+    .sc-out--inline.wa-pane-body .wa-chart-expand-btn.sc-fb-btn .material-symbols-outlined {
+      font-size: 12px !important;
+      font-variation-settings: 'FILL' 0;
+    }
+    html.dark .sc-out--inline.wa-pane-body .wa-chart-expand-btn.sc-fb-btn {
+      background: transparent; border: 0; box-shadow: none;
+      color: color-mix(in srgb, var(--text-subtle) 70%, transparent);
+    }
+    .sc-out--inline.wa-pane-body .wa-chart-expand-btn.sc-fb-btn:hover {
+      background: var(--surface-3); color: var(--text); border: 0;
+    }
+    html.dark .sc-out--inline.wa-pane-body .wa-chart-expand-btn.sc-fb-btn:hover {
+      background: rgba(255,255,255,0.07); color: var(--text);
+    }
+    .sc-out--inline.wa-pane-body .wa-chart-expand-btn.sc-fb-btn.is-on {
+      color: var(--primary-ink, var(--primary));
+      background: transparent; border: 0;
+    }
+    .sc-out--inline.wa-pane-body .wa-chart-expand-btn.sc-fb-btn.is-on .material-symbols-outlined {
+      font-variation-settings: 'FILL' 1;
+    }
+    html.dark .sc-out--inline.wa-pane-body .wa-chart-expand-btn.sc-fb-btn.is-on {
+      color: var(--primary-bright, #8B9FAF);
+    }
 
     /* ═══════════ Versioned output — a cascade of whole cards ═══════════
        A version is a card, not a bare thumbnail. When an output has been redone
@@ -12630,7 +12670,9 @@
 
        A version is a CARD, never a bare thumbnail: each one carries the same
        preview, title and outline as a single-version chip, and wears its own
-       vN tag on the card. */
+       vN tag on the card. Charts no longer expand on the card — the expand
+       icon sits above the plot in the thread (inline reading) and in the
+       sticky Output module. */
     function surfaceCardHtml(blockId, which, icon, title, previewHtml, opts) {
       const paneName = which === 'visuals' ? 'Visuals' : 'Results & Details';
       const o = opts || {};
@@ -12646,9 +12688,7 @@
 
       /* The timestamp + version no longer live inside the chip — they render in
          the turn's meta row below it (see decorateSurfaceMeta). The card keeps
-         the thumbnail, the title and its version tag; charts no longer expand
-         inline here — use the expand icon on the chart in the right sticky
-         module instead. */
+         the thumbnail, the title and its version tag. */
       const card = (inner, vn, isLatest) => {
         /* Only the newest card carries the output's identity — it is the one
            the activity rail ear-marks and the manifest jumps to. Older cards
@@ -13120,9 +13160,12 @@
            An output drawn in the thread is introduced the way WISEcodeAI
            introduces anything else — a line of its own saying what it just
            did. The card reading does not repeat it: there the chip's title is
-           the same sentence in two words. */
+           the same sentence in two words.
+
+           data-surface on the inline copy lets the thumbs-style expand icon
+           above a plot open THIS output. Cards never get that icon. */
         const inlineHtml = (say ? `<p class="sc-out sc-out--inline">${say}</p>` : '')
-          + `<div class="sc-out sc-out--inline wa-pane-body" data-activity="output"${count > 1 ? ' data-activity-multi' : ''}>${previewHtml}</div>`;
+          + `<div class="sc-out sc-out--inline wa-pane-body" data-activity="output" data-surface="${esc(blockId)}" data-surface-which="${esc(which)}"${count > 1 ? ' data-activity-multi' : ''}>${previewHtml}</div>`;
         /* A preview card is posted mid-turn (while WISEcodeAI is still "thinking"),
            so it must NOT trail the intent chips — those belong to the actual
            answer that lands after it, and should animate in there. */
@@ -13196,6 +13239,9 @@
         const TM = window.WiseTranscriptMasonry;
         if (TM && TM.mount) TM.mount(el);
         if (TM && TM.pack) el.querySelectorAll('.sc-mgrid').forEach((g) => TM.pack(g));
+        /* Charts/graphs in the thread get the expand icon; tables, galleries,
+           and the hidden card reading do not. */
+        ensureChartExpandBtns(el);
       });
     }
 
@@ -13237,16 +13283,34 @@
     function paneIsFs(el) {
       return !!(el && el.classList.contains('pane-fs'));
     }
+    function chartExpandDest(btn) {
+      const pane = btn && btn.closest('.wa-pane');
+      const fromPane = paneWhichFromEl(pane);
+      if (fromPane) return fromPane;
+      const inlineHost = btn && btn.closest('.sc-out--inline');
+      if (!inlineHost) return null;
+      const blockId = inlineHost.getAttribute('data-surface');
+      const e = blockId ? SURFACED[blockId] : null;
+      if (e) return mergedMode ? 'unified' : e.which;
+      const which = inlineHost.getAttribute('data-surface-which');
+      return which ? (mergedMode ? 'unified' : which) : null;
+    }
     function syncChartExpandBtns(root) {
       const scope = root || document;
       scope.querySelectorAll('.wa-chart-expand-btn').forEach((btn) => {
-        const pane = btn.closest('.wa-pane');
-        const on = paneIsFs(pane);
+        const dest = chartExpandDest(btn);
+        const on = dest ? paneIsFs(paneEl[dest]) : paneIsFs(btn.closest('.wa-pane'));
         btn.classList.toggle('is-on', on);
         const ic = btn.querySelector('.material-symbols-outlined');
         if (ic) ic.textContent = on ? 'close_fullscreen' : 'open_in_full';
-        btn.title = on ? 'Restore module' : 'Expand module to full screen';
-        btn.setAttribute('aria-label', on ? 'Restore module' : 'Expand output module to full screen');
+        const label = on ? 'Restore module' : 'Expand output module to full screen';
+        btn.setAttribute('aria-label', label);
+        if (btn.classList.contains('sc-fb-btn')) {
+          btn.removeAttribute('title');
+          btn.setAttribute('data-tip', on ? 'Restore' : 'Expand');
+        } else {
+          btn.title = on ? 'Restore module' : 'Expand module to full screen';
+        }
       });
     }
     function setOutputFsOn(on) {
@@ -13813,9 +13877,13 @@
       });
     }
 
-    /* Top-right open_in_full control for each chart output — parked in a
-       toolbar on the block, above the card/table, never inside the table.
-       Chart-type switcher sits on the far left of the same toolbar.
+    /* Top-right open_in_full control for each chart / graph — parked in a
+       toolbar on the block, above the plot, never inside a table and never
+       on an output card.
+
+       In the thread the control is a thumbs-row icon (sc-fb-btn). In the
+       pane it stays the 28px circle, and the chart-type switcher sits on
+       the far left of the same toolbar.
 
        Expand is not a property of the card class. The atlas keeps its own
        .atl-card so the type switcher can never flatten a six-panel artifact
@@ -13827,11 +13895,17 @@
     function ensureChartExpandBtns(root) {
       if (!root) return;
       root.querySelectorAll('.wa-chart-card').forEach((card) => {
+        if (card.closest('.sc-surface-card, .sc-out--card')) return;
         card.setAttribute('data-cu-card', '1');
         card.querySelectorAll(':scope > .wa-chart-toolbar, :scope > .wa-chart-expand-btn').forEach((n) => n.remove());
       });
       root.querySelectorAll('.wa-block').forEach((block) => {
+        /* Output chips clone the plot as a thumbnail; they must not grow a
+           toolbar. Tables, galleries, films, and scorecards without a plot
+           also stand down — charts and graphs only. */
+        if (block.closest('.sc-surface-card, .sc-out--card')) return;
         if (!block.querySelector(WA_PLOT_BLOCK_SEL)) return;
+        const inThread = !!block.closest('.sc-out--inline');
         let bar = block.querySelector(':scope > .wa-chart-toolbar');
         if (!bar) {
           bar = document.createElement('div');
@@ -13845,14 +13919,18 @@
           }
           block.insertBefore(bar, insertBefore || block.firstElementChild);
         }
-        waChartEnsureTypeToggle(block, bar);
+        if (!inThread) waChartEnsureTypeToggle(block, bar);
         if (!bar.querySelector('.wa-chart-expand-btn')) {
           const btn = document.createElement('button');
           btn.type = 'button';
-          btn.className = 'wa-chart-expand-btn';
+          btn.className = inThread ? 'sc-fb-btn wa-chart-expand-btn' : 'wa-chart-expand-btn';
           btn.setAttribute('data-chart-expand', '');
           btn.setAttribute('aria-label', 'Expand output module to full screen');
-          btn.title = 'Expand module to full screen';
+          if (inThread) {
+            btn.setAttribute('data-tip', 'Expand');
+          } else {
+            btn.title = 'Expand module to full screen';
+          }
           btn.innerHTML = '<span class="material-symbols-outlined">open_in_full</span>';
           bar.appendChild(btn);
         }
@@ -15349,8 +15427,9 @@
         reopenSurface(card.getAttribute('data-surface'));
       });
 
-      /* Chart expand icons + "Edit in Food Filter UI" live in the right sticky
-         panes (not the transcript). */
+      /* Chart expand icons live on chart/graph blocks — in the thread when
+         outputs are drawn there, and in the right sticky panes. Output cards
+         never get one. */
       document.getElementById('modules-row')?.addEventListener('click', (e) => {
         const editBtn = e.target.closest('[data-ffui-edit]');
         if (editBtn) {
@@ -15365,6 +15444,13 @@
         if (!btn) return;
         e.preventDefault();
         e.stopPropagation();
+        const inlineHost = btn.closest('.sc-out--inline');
+        if (inlineHost) {
+          const blockId = inlineHost.getAttribute('data-surface');
+          const dest = blockId ? reopenSurface(blockId) : chartExpandDest(btn);
+          if (dest && paneEl[dest]) applyPaneFs(paneEl[dest], !paneIsFs(paneEl[dest]));
+          return;
+        }
         const pane = btn.closest('.wa-pane');
         const which = paneWhichFromEl(pane) || (mergedMode ? 'unified' : 'visuals');
         togglePaneFs(which);

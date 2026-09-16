@@ -18,7 +18,8 @@
  *     the screen rather than restoring the last toggle.
  *   • Skinny bars — the slim WISEscore health-bar mode.
  *   • Jump to — every chart and section from the shared catalog, with a
- *     scrollspy that lights up whatever is currently in view.
+ *     chart-type column beside each name and a scrollspy that lights up
+ *     whatever is currently in view.
  *
  * It drags by its head the same way the Helix card does (grabber pill, drag
  * handle, clamped to the viewport, seat remembered), and collapses to a single
@@ -130,7 +131,7 @@ function injectCss() {
     /* Card */
     '.azp{position:fixed;z-index:9000;box-sizing:border-box;',
       'display:flex;flex-direction:column;',
-      'width:300px;max-width:calc(100vw - 32px);max-height:min(82vh,calc(100vh - 32px));',
+      'width:340px;max-width:calc(100vw - 32px);max-height:min(82vh,calc(100vh - 32px));',
       'background:var(--surface-2);border:1px solid var(--border-strong);',
       'border-radius:14px;box-shadow:var(--shadow-card);',
       'overflow:hidden;}',
@@ -258,14 +259,21 @@ function injectCss() {
     '.azp-item-icon{flex:0 0 auto;color:var(--text-subtle);}',
     '.azp-item .material-symbols-outlined{font-size:17px!important;line-height:1!important;}',
     '.azp-item-label{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
+    /* Second column: the chart / surface kind from the catalog (`type`). Fixed
+       width so names and types line up as two columns while the list scrolls. */
+    '.azp-item-type{flex:0 0 96px;width:96px;overflow:hidden;text-overflow:ellipsis;',
+      'white-space:nowrap;text-align:right;font-size:10.5px;font-weight:700;',
+      'letter-spacing:.02em;color:var(--text-subtle);}',
     '.azp-tick{flex:0 0 auto;width:3px;height:14px;border-radius:2px;background:transparent;',
       'transition:background .14s ease;}',
     '.azp-item:hover,.azp-item:focus-visible{outline:none;color:var(--text);',
       'background:color-mix(in srgb,var(--primary) 10%,transparent);}',
     '.azp-item:hover .azp-item-icon,.azp-item:focus-visible .azp-item-icon{color:var(--text);}',
+    '.azp-item:hover .azp-item-type,.azp-item:focus-visible .azp-item-type{color:var(--text-muted);}',
     '.azp-item.is-active{color:var(--text);font-weight:800;}',
     '.azp-item.is-active .azp-item-icon{color:var(--primary);}',
     'html.dark .azp-item.is-active .azp-item-icon{color:var(--primary-bright,var(--primary));}',
+    '.azp-item.is-active .azp-item-type{color:var(--text-muted);}',
     '.azp-item.is-active .azp-tick{background:var(--primary);}',
     'html.dark .azp-item.is-active .azp-tick{background:var(--primary-bright,var(--primary));}',
 
@@ -656,10 +664,10 @@ export function mountAnalyticsPalette() {
 
   /* ---- filter ----
      Every whitespace-separated term has to land, and each is matched against
-     the label, the catalog blurb and the catalog's search keywords — so
-     "donut" reaches the pie variations, "table" reaches all of the table
-     specimens, and "upf table" finds the same row whichever order the two
-     words arrive in. */
+     the label, the chart-type column, the catalog blurb and the catalog's
+     search keywords — so "donut" reaches the pie variations, "table" reaches
+     all of the table specimens, and "upf table" finds the same row whichever
+     order the two words arrive in. */
   let query = '';
 
   const firstHit = () => entries.find((e) => !e.btn.hidden);
@@ -760,6 +768,7 @@ export function mountAnalyticsPalette() {
       if (el && !found.some((f) => f.el === el)) {
         found.push({
           el, label: s.label, icon: s.icon || 'chevron_right',
+          type: s.type || '',
           doc: !!s.doc, desc: s.desc || '', keywords: s.keywords || '',
         });
       }
@@ -782,16 +791,20 @@ export function mountAnalyticsPalette() {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'azp-item';
-      btn.title = f.label;   /* the longest names ellipsize at this width */
+      /* Name and type both ellipsize at this width — put both in the title. */
+      btn.title = f.type ? (f.label + ' · ' + f.type) : f.label;
       btn.innerHTML =
         '<span class="azp-item-icon material-symbols-outlined" aria-hidden="true">' + f.icon + '</span>' +
         '<span class="azp-item-label">' + f.label + '</span>' +
+        (f.type
+          ? '<span class="azp-item-type">' + f.type + '</span>'
+          : '<span class="azp-item-type" aria-hidden="true"></span>') +
         '<span class="azp-tick" aria-hidden="true"></span>';
       btn.addEventListener('click', () => { setActive(f.el); scrollToSection(f.el, f.doc); });
       list.appendChild(btn);
       return {
         el: f.el, btn, doc: f.doc,
-        hay: (f.label + ' ' + f.desc + ' ' + f.keywords).toLowerCase(),
+        hay: (f.label + ' ' + f.type + ' ' + f.desc + ' ' + f.keywords).toLowerCase(),
       };
     });
 

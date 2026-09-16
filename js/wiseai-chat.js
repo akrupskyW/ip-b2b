@@ -14611,6 +14611,9 @@ export function mountWISEcodeAIChat(rootEl, opts = {}) {
     }
     const fbBtn = e.target.closest('.sc-fb-btn');
     if (fbBtn) {
+      /* Chart expand in the thread reuses this glyph style; it is not a
+         verdict control. Leave it for the expand listener. */
+      if (fbBtn.hasAttribute('data-chart-expand')) return;
       const wrap = fbWrapOf(fbBtn);
       const line = fbLineOf(fbBtn);
       if (!wrap || !line) return;

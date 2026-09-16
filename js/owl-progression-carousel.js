@@ -329,16 +329,18 @@ function injectStyles() {
   width: 100% !important;
   height: 100% !important;
 }
+/* The name stays in the DOM for the detail title and assistive tech, off screen. */
 .sc-owl-prog-cap {
-  display: block;
-  margin-top: 8px;
-  width: 100%;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .02em;
-  line-height: 1.3;
-  color: var(--text-muted);
-  text-align: center;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
   pointer-events: none;
 }
 .sc-owl-prog-chrome {

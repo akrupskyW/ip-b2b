@@ -108,6 +108,7 @@ import {
     const gap = 3, inner = band * 0.72, bw = (inner - gap * (UPF_SEGS.length - 1)) / UPF_SEGS.length;
     const el = card({
       id: 'atx-group-card', eyebrow: 'Clustered', title: 'Products analyzed, side by side',
+      chartType: 'Grouped column chart',
       intro: 'The same quarterly mix as the stacked columns, unstacked. Each class stands on its own so you can compare Non-UPF growth against the shrinking UPF bar. Click to replay.',
       legend: dotsHTML(UPF_SEGS.map((s) => [s.color, s.key])),
       note: 'Sample data: eight quarters of intake — the stacked-column numbers, drawn as a cluster.',
@@ -138,6 +139,7 @@ import {
     const n = QUARTERS.length, band = (A.x1 - A.x0) / n, bw = band * 0.56;
     const el = card({
       id: 'atx-pctcol-card', eyebrow: 'Share', title: 'Quarterly mix as a share of 100%',
+      chartType: '100% stacked column chart',
       intro: 'Same quarters, same three classes — but each column is forced to 100% so the story is the mix, not the volume. Watch Non-UPF take the column. Click to replay.',
       legend: dotsHTML(UPF_SEGS.map((s) => [s.color, s.key])),
       note: 'Sample data: each quarter’s intake restated as a share of that quarter.',
@@ -171,6 +173,7 @@ import {
     const n = CATS.length, band = (A.x1 - A.x0) / n, bw = Math.min(52, band * 0.42);
     const el = card({
       id: 'atx-range-card', eyebrow: 'Range', title: 'Score range by category',
+      chartType: 'Floating column chart',
       intro: 'A column that does not sit on zero. Each bar floats between the 25th and 75th percentile, with a tick for the median. The cousin of the box plot, drawn as columns. Click to replay.',
       legend: dotsHTML([[PRI, 'Middle 50%'], [EX, 'Median']]),
       note: 'Sample data: interquartile range of WISEscores in six categories.',
@@ -204,6 +207,7 @@ import {
     const xf = (v) => A.x0 + (A.x1 - A.x0) * v / 100;
     const el = card({
       id: 'atx-hbar-card', eyebrow: 'Ranking', title: 'Category scores, ranked',
+      chartType: 'Horizontal bar chart',
       intro: 'The column chart laid on its side — easier when the labels are words. Capsule bars, coloured by status tier, with the score counting up at the end. Click to replay.',
       legend: dotsHTML(TIER_LEGEND),
       note: 'Sample data: average WISEscore by category, highest first.',
@@ -236,6 +240,7 @@ import {
     const xf = (v) => A.x0 + (A.x1 - A.x0) * v / vmax;
     const el = card({
       id: 'atx-ghbar-card', eyebrow: 'Side by side', title: 'Volume this year vs. last',
+      chartType: 'Grouped bar chart',
       intro: 'Two horizontal bars per category: this year’s analysed volume against last year’s. Read across for the change, down the list for the ranking. Click to replay.',
       legend: dotsHTML([[PRI, 'This year'], [OK, 'Last year']]),
       note: 'Sample data: products analysed by category, two calendar years.',
@@ -273,6 +278,7 @@ import {
     const xf = (v) => A.x0 + (A.x1 - A.x0) * v / 100;
     const el = card({
       id: 'atx-lollipop-card', eyebrow: 'Before / after', title: 'Score last year → this year',
+      chartType: 'Dumbbell chart',
       intro: 'A dumbbell for each category: the open dot is last year’s average, the filled dot is this year’s, and the line is the move. Click to replay.',
       legend: dotsHTML([[OK, 'Last year'], [PRI, 'This year']]),
       note: 'Sample data: category averages, two consecutive years.',
@@ -322,6 +328,7 @@ import {
     const xf = (v) => A.x0 + (A.x1 - A.x0) * v / 100;
     const el = card({
       id: 'atx-bullet-card', eyebrow: 'Vs. target', title: 'Headline metrics on a qualitative range',
+      chartType: 'Bullet chart',
       intro: 'A bullet chart for each KPI: the grey bands are poor / okay / good, the solid bar is where we are, and the tick is the target. Denser than a gauge, same story. Click to replay.',
       legend: dotsHTML([
         ['color-mix(in srgb, var(--text-subtle) 28%, transparent)', 'Poor'],
@@ -370,6 +377,7 @@ import {
     const xf = (v) => mid + (A.x1 - mid) * v / maxAbs;
     const el = card({
       id: 'atx-div-card', eyebrow: 'Change', title: 'Quarterly score change by category',
+      chartType: 'Diverging bar chart',
       intro: 'Plus and minus from the center line. Green to the right is a lift this quarter; red to the left is a slide. The ranking is the change, not the score. Click to replay.',
       legend: dotsHTML([[EX, 'Improved'], [PR, 'Declined']]),
       note: 'Sample data: point change in category average versus last quarter.',
@@ -420,6 +428,7 @@ import {
     ];
     const el = card({
       id: 'atx-pie-card', eyebrow: 'Share', title: 'Portfolio mix as a pie',
+      chartType: 'Pie chart',
       intro: 'The donut’s filled twin — same three UPF classes, no hole. The Non-UPF slice is nudged out so the majority class reads first. Click to replay.',
       legend: dotsHTML(slices.map((s) => [s.color, s.key])),
       note: 'Sample data: current catalog share by UPF class (sums to 100%).',
@@ -458,6 +467,7 @@ import {
     ];
     const el = card({
       id: 'atx-half-card', eyebrow: 'Composition', title: 'Claim status, as a half donut',
+      chartType: 'Half donut chart',
       intro: 'A semicircle composition — the gauge’s cousin, but segmented. Read the bands for the mix; the number in the well is how much of the catalog is already claimed. Click to replay.',
       note: 'Sample data: share of SKUs by claim-workflow stage.',
     });
@@ -506,6 +516,7 @@ import {
     ];
     const el = card({
       id: 'atx-rings-card', eyebrow: 'Nested', title: 'Three pillars on concentric rings',
+      chartType: 'Concentric ring chart',
       intro: 'One well, three rings. Each ring is a pillar filling toward 100 — a nested reading of the same scores the polar chart fans out. Click to replay.',
       legend: dotsHTML(rings.map((r) => [r.color, r.key])),
       note: 'Sample data: current portfolio averages for the three scoring pillars.',
@@ -550,6 +561,7 @@ import {
     ];
     const el = card({
       id: 'atx-dstrip-card', eyebrow: 'Snapshot', title: 'Four headline rates, as donuts',
+      chartType: 'Donut strip',
       intro: 'A strip of small progress donuts — one rate each. The hole holds the number; the ring is how far that rate has filled. Click to replay.',
       note: 'Sample data: current portfolio headline rates.',
     });
@@ -594,6 +606,7 @@ import {
   function buildSparkTable() {
     const el = card({
       id: 'atx-spark-card', eyebrow: 'Leaderboard', title: 'Top products, with a spark in every row',
+      chartType: 'Leaderboard table',
       intro: 'A table that carries two charts in each row: a capsule bar for the score against 100, and a six-month sparkline for the trend. Status and change sit beside. Click to replay.',
       note: 'Sample data: eight products, ranked by current WISEscore.',
     });
@@ -639,6 +652,7 @@ import {
   function buildHeatTable() {
     const el = card({
       id: 'atx-heat-card', eyebrow: 'Heat table', title: 'Product × pillar, coloured by status',
+      chartType: 'Heat table',
       intro: 'A table first, a heatmap second. Each cell is a score, and the colour is the same five-tier scale every other chart uses — so a column scan is a status scan. Click to replay.',
       legend: dotsHTML(TIER_LEGEND),
       note: 'Sample data: eight products across six scoring pillars.',
@@ -666,11 +680,712 @@ import {
     return el;
   }
 
+  /* ================= Ingredients wheel =============================== */
+  /* ── helpers ──────────────────────────────────────────────────────── */
+  const f1 = v => v.toFixed(1);
+
+  function buildIngredientsWheel() {
+    /* ── layout constants ─────────────────────────────────── */
+    const W = 720, H = 720, CX = 360, CY = 360;
+    const R0 = 62;   /* center hole */
+    const R1 = 148;  /* inner  → middle ring boundary */
+    const R2 = 212;  /* middle → outer  ring boundary */
+    const R3 = 270;  /* outer edge of outermost ring */
+    const TAU = Math.PI * 2, START = -Math.PI / 2, DEG = 180 / Math.PI;
+    /* Corner radii per ring — outer ring gets the most visible rounding */
+    const CR0 = 2, CR1 = 2, CR2 = 5;
+    /* Radial gaps between segments (radians) */
+    const IGAP = 0.025, MGAP = 0.015, OGAP = 0.010;
+    /* Minimum arc-length (px) to show an inside label */
+    const MIN_INNER = 22, MIN_MID = 36;
+
+    /* Convert radians to degrees for roundedSector (which uses degrees from 3 o'clock) */
+    const r2d = r => r * DEG;
+
+    /* ── portfolio ingredient data ─────────────────────────────────────
+       8 top-level categories that sum to 100 %.
+       Each category has subcategories that sum to the category pct.
+       Each subcategory has items that sum to the subcategory pct.
+    ──────────────────────────────────────────────────────────────────── */
+    const CATS = [
+      {
+        name: 'Additives', color: '#4f84c4', pct: 38, subs: [
+          { name: 'Functional Additives', pct: 22, items: [
+            { name: 'Citric Acid', pct: 3.8 },
+            { name: 'Natural Flavor', pct: 3.4 },
+            { name: 'Vitamin B-3', pct: 2.3 },
+            { name: 'Vitamin B-1', pct: 2.0 },
+            { name: 'Soy Lecithin', pct: 1.9 },
+            { name: 'Vitamin B-9', pct: 1.5 },
+            { name: 'Vitamin B-2', pct: 1.4 },
+            { name: 'Sea Salt', pct: 1.3 },
+            { name: 'Iron', pct: 1.2 },
+            { name: 'Other', pct: 3.2 },
+          ] },
+          { name: 'Spices', pct: 9, items: [
+            { name: 'Paprika', pct: 2.4 },
+            { name: 'Black Pepper', pct: 2.1 },
+            { name: 'Cumin', pct: 1.6 },
+            { name: 'Turmeric', pct: 1.3 },
+            { name: 'Other', pct: 1.6 },
+          ] },
+          { name: 'Herbs', pct: 4, items: [
+            { name: 'Parsley', pct: 1.4 },
+            { name: 'Oregano', pct: 1.1 },
+            { name: 'Thyme', pct: 0.9 },
+            { name: 'Basil', pct: 0.6 },
+          ] },
+          { name: 'Other Additives', pct: 3, items: [
+            { name: 'Sugar', pct: 1.7 },
+            { name: 'Salt', pct: 1.3 },
+          ] },
+        ],
+      },
+      {
+        name: 'Vegetable', color: '#b5534a', pct: 17, subs: [
+          { name: 'Allium Veg.', pct: 7, items: [
+            { name: 'Garlic', pct: 2.4 },
+            { name: 'Onion', pct: 2.1 },
+            { name: 'Onion Powder', pct: 1.5 },
+            { name: 'Garlic Powder', pct: 1.0 },
+          ] },
+          { name: 'Nightshades', pct: 5, items: [
+            { name: 'Tomato', pct: 2.2 },
+            { name: 'Bell Pepper', pct: 1.5 },
+            { name: 'Chili Pepper', pct: 1.3 },
+          ] },
+          { name: 'Root Vegetables', pct: 3, items: [
+            { name: 'Carrot', pct: 1.5 },
+            { name: 'Potato', pct: 1.0 },
+            { name: 'Beet', pct: 0.5 },
+          ] },
+          { name: 'Other Veg.', pct: 2, items: [
+            { name: 'Celery', pct: 0.8 },
+            { name: 'Broccoli', pct: 0.6 },
+            { name: 'Corn', pct: 0.6 },
+          ] },
+        ],
+      },
+      {
+        name: 'Fats & Oils', color: '#4a8c4a', pct: 11, subs: [
+          { name: 'Plant Based Oils', pct: 8, items: [
+            { name: 'Canola Oil', pct: 2.8 },
+            { name: 'Sunflower Oil', pct: 2.2 },
+            { name: 'Soybean Oil', pct: 1.9 },
+            { name: 'Palm Oil', pct: 1.1 },
+          ] },
+          { name: 'Other Fats', pct: 3, items: [
+            { name: 'Cocoa Butter', pct: 1.4 },
+            { name: 'Coconut Oil', pct: 1.0 },
+            { name: 'Butter', pct: 0.6 },
+          ] },
+        ],
+      },
+      {
+        name: 'Protein', color: '#d4954a', pct: 10, subs: [
+          { name: 'Animal Proteins', pct: 4, items: [
+            { name: 'Egg', pct: 1.6 },
+            { name: 'Whey', pct: 1.4 },
+            { name: 'Albumin', pct: 1.0 },
+          ] },
+          { name: 'Nut & Seed', pct: 4, items: [
+            { name: 'Almond', pct: 1.6 },
+            { name: 'Peanut', pct: 1.3 },
+            { name: 'Sunflower Seed', pct: 0.7 },
+            { name: 'Cashew', pct: 0.4 },
+          ] },
+          { name: 'Legumes', pct: 2, items: [
+            { name: 'Soy Protein', pct: 1.1 },
+            { name: 'Pea Protein', pct: 0.9 },
+          ] },
+        ],
+      },
+      {
+        name: 'Dairy', color: '#6888c4', pct: 9, subs: [
+          { name: 'Milks', pct: 9, items: [
+            { name: 'Skim Milk', pct: 2.8 },
+            { name: 'Whole Milk', pct: 2.3 },
+            { name: 'Cream', pct: 1.8 },
+            { name: 'Buttermilk', pct: 1.3 },
+            { name: 'Nonfat Milk', pct: 0.8 },
+          ] },
+        ],
+      },
+      {
+        name: 'Grain', color: '#8896b0', pct: 8, subs: [
+          { name: 'Wheat Flour', pct: 5, items: [
+            { name: 'Enriched Flour', pct: 1.8 },
+            { name: 'Whole Wheat', pct: 1.6 },
+            { name: 'Wheat Flour', pct: 1.2 },
+            { name: 'Barley Flour', pct: 0.4 },
+          ] },
+          { name: 'Other Grains', pct: 3, items: [
+            { name: 'Rolled Oats', pct: 1.1 },
+            { name: 'Brown Rice', pct: 0.9 },
+            { name: 'Corn Meal', pct: 0.7 },
+            { name: 'Barley', pct: 0.3 },
+          ] },
+        ],
+      },
+      {
+        name: 'Fruit', color: '#8264b0', pct: 5, subs: [
+          { name: 'Citrus', pct: 2, items: [
+            { name: 'Lemon Juice', pct: 0.9 },
+            { name: 'Orange Zest', pct: 0.7 },
+            { name: 'Lime', pct: 0.4 },
+          ] },
+          { name: 'Berry', pct: 2, items: [
+            { name: 'Blueberry', pct: 0.9 },
+            { name: 'Strawberry', pct: 0.7 },
+            { name: 'Cranberry', pct: 0.4 },
+          ] },
+          { name: 'Other Fruit', pct: 1, items: [
+            { name: 'Apple', pct: 0.5 },
+            { name: 'Raisin', pct: 0.5 },
+          ] },
+        ],
+      },
+      {
+        name: 'Water', color: '#6aaed6', pct: 2, subs: [
+          { name: 'Water', pct: 2, items: [
+            { name: 'Water', pct: 1.4 },
+            { name: 'Yeast', pct: 0.6 },
+          ] },
+        ],
+      },
+    ];
+
+    const el = card({
+      id: 'atx-wheel-card',
+      eyebrow: 'Composition',
+      chartType: 'Ingredients wheel',
+      title: 'Portfolio ingredient breakdown',
+      intro: 'All ingredients across the portfolio mapped onto three concentric rings. Innermost: broad ingredient category. Middle: subcategory. Outermost: every individual ingredient — arc width proportional to the share of products containing it. Use the filter chips to isolate any category; click the chart to replay the clockwise reveal.',
+      note: 'Sample data — 847 products, 8 categories, 21 subcategories, 72 individual ingredients.',
+    });
+
+    const stage = el.querySelector('.atx-stage');
+
+    /* ── filter chips ──────────────────────────────────────── */
+    const filtersDiv = document.createElement('div');
+    filtersDiv.className = 'atx-wheel-filters';
+    CATS.forEach((cat, ci) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'atx-wfbtn atx-wfbtn--on';
+      btn.dataset.wcat = String(ci);
+      const dot = document.createElement('span');
+      dot.className = 'atx-wfbtn-dot';
+      dot.style.background = cat.color;
+      btn.appendChild(dot);
+      btn.appendChild(document.createTextNode(cat.name));
+      filtersDiv.appendChild(btn);
+    });
+    stage.before(filtersDiv);
+
+    /* ── SVG canvas ────────────────────────────────────────── */
+    const svg = add(stage, m('svg', {
+      class: 'atx-svg atx-wheel-svg',
+      viewBox: `0 0 ${W} ${H}`,
+      style: 'overflow:visible',
+    }));
+    const defs = add(svg, m('defs', {}));
+
+    /* Drop-shadow makes white inner labels legible on any arc colour */
+    const flt = add(defs, m('filter', {
+      id: 'atx-whl-shd', x: '-30%', y: '-30%', width: '160%', height: '160%',
+    }));
+    add(flt, m('feDropShadow', {
+      dx: '0', dy: '0', stdDeviation: '2',
+      'flood-color': 'rgba(0,0,0,0.65)', 'flood-opacity': '1',
+    }));
+
+    /* Clip path for clock-sweep animation — starts as a zero-area point.
+       The clipPath is applied to the <g transform="translate(CX,CY)"> element,
+       so all coordinates here are in g-local space (origin = wheel centre = 0,0). */
+    const cpEl = add(defs, m('clipPath', { id: 'atx-whl-clip' }));
+    const clipShape = add(cpEl, m('path', { d: 'M0,0 Z' }));
+
+    /* All geometry lives in a group centred at (CX, CY) */
+    const g = add(svg, m('g', {
+      transform: `translate(${CX},${CY})`,
+      'clip-path': 'url(#atx-whl-clip)',
+    }));
+
+    /* ── helper: white label rotated radially inside an arc ── */
+    function innerLabel(midA, midR, name, fontSize) {
+      const lx = midR * Math.cos(midA), ly = midR * Math.sin(midA);
+      let rot = midA * DEG;
+      if (midA > Math.PI / 2 && midA < 3 * Math.PI / 2) rot += 180;
+      const words = name.split(' ');
+      const half = Math.ceil(words.length / 2);
+      const t = m('text', {
+        'text-anchor': 'middle',
+        fill: 'rgba(255,255,255,0.95)',
+        filter: 'url(#atx-whl-shd)',
+        transform: `translate(${f1(lx)},${f1(ly)}) rotate(${rot.toFixed(1)})`,
+      });
+      if (fontSize) t.style.fontSize = fontSize;
+      const ts1 = m('tspan', { x: '0', dy: words.length > 1 ? '-0.55em' : '0.35em' });
+      ts1.textContent = words.slice(0, half).join(' ');
+      t.appendChild(ts1);
+      if (words.length > 1) {
+        const ts2 = m('tspan', { x: '0', dy: '1.2em' });
+        ts2.textContent = words.slice(half).join(' ');
+        t.appendChild(ts2);
+      }
+      return t;
+    }
+
+    /* ── draw three concentric rings ───────────────────────── */
+    let catA = START;
+    CATS.forEach((cat, ci) => {
+      const catSpan = TAU * cat.pct / 100;
+      const ia1 = catA + IGAP / 2, ia2 = catA + catSpan - IGAP / 2;
+      catA += catSpan;
+      if (ia2 <= ia1) return;
+
+      /* Inner ring: top-level category */
+      const innerP = m('path', {
+        d: roundedSector(0, 0, R0, R1, r2d(ia1), r2d(ia2), CR0),
+        fill: cat.color, class: `atx-wcat-${ci}`,
+        'data-wlevel': 'cat', 'data-wname': cat.name,
+        'data-wpct': String(cat.pct), 'data-wcolor': cat.color,
+        style: 'cursor:pointer',
+      });
+      add(g, innerP);
+
+      if (catSpan * (R0 + R1) / 2 > MIN_INNER) {
+        const lbl = innerLabel((ia1 + ia2) / 2, (R0 + R1) / 2, cat.name, '10.5px');
+        lbl.classList.add('atx-wheel-lbl', `atx-wcat-${ci}`);
+        add(g, lbl);
+      }
+
+      /* Middle + outer rings: loop through subcategories */
+      let subA = ia1;
+      cat.subs.forEach((sub) => {
+        const subSpan = (ia2 - ia1) * sub.pct / cat.pct;
+        const sa1 = subA + MGAP / 2, sa2 = subA + subSpan - MGAP / 2;
+        subA += subSpan;
+        if (sa2 <= sa1) return;
+        const midSA = (sa1 + sa2) / 2;
+
+        /* Middle ring: subcategory */
+        const midP = m('path', {
+          d: roundedSector(0, 0, R1 + 3, R2, r2d(sa1), r2d(sa2), CR1),
+          fill: cat.color, 'fill-opacity': '0.72',
+          class: `atx-wcat-${ci}`,
+          'data-wlevel': 'sub', 'data-wname': sub.name,
+          'data-wpct': String(sub.pct), 'data-wcolor': cat.color,
+          'data-wparent': cat.name,
+          style: 'cursor:pointer',
+        });
+        add(g, midP);
+
+        if (subSpan * (R1 + R2) / 2 > MIN_MID) {
+          const mlbl = innerLabel(midSA, (R1 + R2) / 2, sub.name, '9.5px');
+          mlbl.classList.add('atx-wheel-lbl', `atx-wcat-${ci}`);
+          add(g, mlbl);
+        }
+
+        /* Outer ring: individual ingredients with rounded outer corners */
+        let ingA = sa1;
+        sub.items.forEach((ing) => {
+          const ingSpan = (sa2 - sa1) * ing.pct / sub.pct;
+          const oa1 = ingA + OGAP / 2, oa2 = ingA + ingSpan - OGAP / 2;
+          ingA += ingSpan;
+          if (oa2 <= oa1 + 0.001) return;
+          const midOA = (oa1 + oa2) / 2;
+
+          const outerP = m('path', {
+            d: roundedSector(0, 0, R2 + 3, R3, r2d(oa1), r2d(oa2), CR2),
+            fill: cat.color, 'fill-opacity': '0.5',
+            class: `atx-wcat-${ci}`,
+            'data-wlevel': 'ing', 'data-wname': ing.name,
+            'data-wpct': f1(ing.pct), 'data-wcolor': cat.color,
+            'data-wparent': sub.name,
+            style: 'cursor:pointer',
+          });
+          add(g, outerP);
+
+          /* Radial spoke label beyond the outer ring */
+          if (oa2 - oa1 > 0.004) {
+            const lx = (R3 + 11) * Math.cos(midOA);
+            const ly = (R3 + 11) * Math.sin(midOA);
+            const inLeft = midOA > Math.PI / 2 && midOA < 3 * Math.PI / 2;
+            let rot = midOA * DEG;
+            if (inLeft) rot += 180;
+            const lbl = m('text', {
+              class: 'atx-wheel-ing',
+              'text-anchor': inLeft ? 'end' : 'start',
+              'dominant-baseline': 'middle',
+              fill: cat.color,
+              transform: `translate(${f1(lx)},${f1(ly)}) rotate(${rot.toFixed(1)})`,
+            });
+            lbl.textContent = ing.name;
+            add(g, lbl);
+          }
+        });
+      });
+    });
+
+    /* Center circle + "Portfolio / Ingredients" label */
+    add(g, m('circle', {
+      cx: '0', cy: '0', r: String(R0 - 2),
+      fill: 'var(--surface)', stroke: 'var(--border)', 'stroke-width': '1.5',
+    }));
+    const ct = m('text', {
+      class: 'atx-wheel-center-lbl', 'text-anchor': 'middle', fill: 'var(--text)',
+    });
+    const cts1 = m('tspan', { x: '0', dy: '-0.55em' }); cts1.textContent = 'Portfolio';
+    const cts2 = m('tspan', { x: '0', dy: '1.25em' }); cts2.textContent = 'Ingredients';
+    ct.appendChild(cts1); ct.appendChild(cts2);
+    add(g, ct);
+
+    /* ── filter chip toggle ────────────────────────────────── */
+    filtersDiv.addEventListener('click', (e) => {
+      const btn = e.target.closest('.atx-wfbtn');
+      if (!btn) return;
+      const ci = +btn.dataset.wcat;
+      const on = btn.classList.toggle('atx-wfbtn--on');
+      svg.querySelectorAll(`.atx-wcat-${ci}`).forEach((el) => {
+        el.style.opacity = on ? '' : '0.07';
+      });
+    });
+
+    /* ── clockwise sweep animation ─────────────────────────── */
+    let raf = null;
+    function sweepD(endA) {
+      /* Full reveal: a rectangle that covers the entire wheel in g-local space
+         (wheel centre = 0,0; arcs span ±R3 in every direction). */
+      const PAD = R3 + 80;
+      if (endA >= START + TAU - 0.001) return `M${-PAD},${-PAD} h${PAD * 2} v${PAD * 2} h${-PAD * 2} Z`;
+      const R = R3 + 60, lg = endA - START > Math.PI ? 1 : 0;
+      const fx = v => v.toFixed(3);
+      /* Wedge centred at g-local origin (0,0) = wheel centre */
+      return `M0,0 L${fx(R * Math.cos(START))},${fx(R * Math.sin(START))} A${R},${R},0,${lg},1,${fx(R * Math.cos(endA))},${fx(R * Math.sin(endA))} Z`;
+    }
+
+    function play(snap) {
+      if (raf) { cancelAnimationFrame(raf); raf = null; }
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (snap || reduced) { clipShape.setAttribute('d', sweepD(START + TAU)); return; }
+      clipShape.setAttribute('d', 'M0,0 Z');
+      const dur = 1500, t0 = performance.now();
+      (function frame(now) {
+        const t = Math.min((now - t0) / dur, 1);
+        const ease = 1 - Math.pow(1 - t, 3); /* ease-out cubic */
+        clipShape.setAttribute('d', sweepD(START + TAU * ease));
+        if (t < 1) raf = requestAnimationFrame(frame);
+      }(t0));
+    }
+
+    /* ── hover / tap tooltip ──────────────────────────────── */
+    const TOTAL_PROD = 847;
+    let wTipEl = null;
+    function getWTip() {
+      if (!wTipEl) {
+        wTipEl = document.getElementById('atx-wheel-tip');
+        if (!wTipEl) {
+          wTipEl = document.createElement('div');
+          wTipEl.id = 'atx-wheel-tip';
+          wTipEl.setAttribute('role', 'tooltip');
+          document.body.appendChild(wTipEl);
+        }
+      }
+      return wTipEl;
+    }
+    function posWTip(tip, cx, cy) {
+      const PAD = 14, TW = 220, TH = 96;
+      const vw = window.innerWidth, vh = window.innerHeight;
+      let x = cx + PAD, y = cy - TH / 2;
+      if (x + TW > vw - PAD) x = cx - TW - PAD;
+      if (y < PAD) y = PAD;
+      if (y + TH > vh - PAD) y = vh - TH - PAD;
+      tip.style.left = x + 'px';
+      tip.style.top  = y + 'px';
+    }
+    function showWTip(e, arc) {
+      const tip = getWTip();
+      const pct  = +arc.dataset.wpct;
+      const count = Math.max(1, Math.round(TOTAL_PROD * pct / 100));
+      const levelMap = { cat: 'Category', sub: 'Subcategory', ing: 'Ingredient' };
+      const level  = levelMap[arc.dataset.wlevel] || arc.dataset.wlevel;
+      const name   = arc.dataset.wname;
+      const parent = arc.dataset.wparent || '';
+      tip.style.background = arc.dataset.wcolor;
+      tip.style.color = '#fff';
+      tip.innerHTML =
+        `<div class="whl-tip-level">${level}${parent ? ' · ' + parent : ''}</div>` +
+        `<div class="whl-tip-name">${name}</div>` +
+        `<div class="whl-tip-row">${pct.toFixed(1)}% of portfolio</div>` +
+        `<div class="whl-tip-row">~${count.toLocaleString()} of ${TOTAL_PROD.toLocaleString()} products</div>`;
+      posWTip(tip, e.clientX, e.clientY);
+      tip.classList.add('is-visible');
+    }
+    function hideWTip() {
+      if (wTipEl) wTipEl.classList.remove('is-visible');
+    }
+
+    /* Mouse: follow cursor inside SVG, hide on leave */
+    svg.addEventListener('pointermove', (e) => {
+      if (e.pointerType === 'touch') return;
+      const arc = e.target.closest('[data-wlevel]');
+      if (arc) showWTip(e, arc);
+      else hideWTip();
+    });
+    svg.addEventListener('pointerleave', (e) => {
+      if (e.pointerType !== 'touch') hideWTip();
+    });
+
+    /* Touch: tap to show, tap same arc or outside to dismiss */
+    let lastTapArc = null;
+    svg.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'touch') return;
+      const arc = e.target.closest('[data-wlevel]');
+      if (!arc) { hideWTip(); lastTapArc = null; return; }
+      if (arc === lastTapArc) { hideWTip(); lastTapArc = null; }
+      else { showWTip(e, arc); lastTapArc = arc; }
+    });
+    document.addEventListener('pointerdown', (e) => {
+      if (lastTapArc && !svg.contains(e.target)) { hideWTip(); lastTapArc = null; }
+    }, { capture: true });
+
+    wire(el, play);
+    return el;
+  }
+
+  /* ================= Treemap ======================================= */
+  function buildTreemap() {
+    const GAP = 2;
+
+    /* Two-level portfolio food categories, sized by distinct-product count */
+    const TMAP = [
+      { name: 'Pantry',      color: '#4a8854', pct: 22, items: [
+        { name: 'Spices & Seasoning', pct: 5.5 },
+        { name: 'Sauces',             pct: 4.0 },
+        { name: 'Bagged Tea',         pct: 2.5 },
+        { name: 'Baking',             pct: 2.5 },
+        { name: 'Canned Veggies',     pct: 2.0 },
+        { name: 'Pasta',              pct: 1.5 },
+        { name: 'Soup',               pct: 1.5 },
+        { name: 'Other',              pct: 2.5 },
+      ] },
+      { name: 'Snacks',      color: '#c4844a', pct: 20, items: [
+        { name: 'Nuts & Seeds', pct: 4.5 },
+        { name: 'Cookies',      pct: 4.0 },
+        { name: 'Chips',        pct: 3.5 },
+        { name: 'Crackers',     pct: 3.0 },
+        { name: 'Bars',         pct: 2.5 },
+        { name: 'Dried Fruit',  pct: 1.5 },
+        { name: 'Other',        pct: 1.0 },
+      ] },
+      { name: 'Candy',       color: '#b55c8a', pct: 14, items: [
+        { name: 'Chocolate',  pct: 5.0 },
+        { name: 'Gummy',      pct: 3.5 },
+        { name: 'Fruity',     pct: 2.5 },
+        { name: 'Hard Candy', pct: 1.5 },
+        { name: 'Other',      pct: 1.5 },
+      ] },
+      { name: 'Dairy & Eggs', color: '#6888c4', pct: 12, items: [
+        { name: 'Cheese',  pct: 3.5 },
+        { name: 'Yogurt',  pct: 3.0 },
+        { name: 'Milk',    pct: 2.5 },
+        { name: 'Eggs',    pct: 1.5 },
+        { name: 'Other',   pct: 1.5 },
+      ] },
+      { name: 'Drinks',      color: '#4f84c4', pct: 10, items: [
+        { name: 'Juice',  pct: 3.0 },
+        { name: 'Tea',    pct: 2.5 },
+        { name: 'Energy', pct: 2.0 },
+        { name: 'Soda',   pct: 1.5 },
+        { name: 'Other',  pct: 1.0 },
+      ] },
+      { name: 'Bakery',      color: '#c47a3a', pct: 8, items: [
+        { name: 'Bread',    pct: 2.8 },
+        { name: 'Desserts', pct: 2.4 },
+        { name: 'Rolls',    pct: 1.6 },
+        { name: 'Other',    pct: 1.2 },
+      ] },
+      { name: 'Frozen',      color: '#5a9cb5', pct: 7, items: [
+        { name: 'Ice Cream', pct: 2.5 },
+        { name: 'Pizza',     pct: 2.0 },
+        { name: 'Meals',     pct: 1.5 },
+        { name: 'Other',     pct: 1.0 },
+      ] },
+      { name: 'Meat & Fish', color: '#9c5a4a', pct: 4, items: [
+        { name: 'Beef',    pct: 1.3 },
+        { name: 'Poultry', pct: 1.1 },
+        { name: 'Sausage', pct: 0.8 },
+        { name: 'Fish',    pct: 0.8 },
+      ] },
+      { name: 'Produce',     color: '#5ca050', pct: 2, items: [
+        { name: 'Vegetables', pct: 1.2 },
+        { name: 'Fruit',      pct: 0.8 },
+      ] },
+      { name: 'Prepared',    color: '#a08060', pct: 1, items: [
+        { name: 'Ready Meals', pct: 0.5 },
+        { name: 'Deli',        pct: 0.5 },
+      ] },
+    ];
+
+    const el = card({
+      id: 'atx-tmap-card',
+      eyebrow: 'Assortment',
+      chartType: 'Treemap',
+      title: 'Portfolio categories',
+      intro: 'Food categories two levels deep, sized by distinct products in the current portfolio scope. Each outer rectangle is a top-level category; inner tiles are its subcategories. Click to replay.',
+      note: 'Sample data — 847 products across 10 top-level food categories.',
+    });
+
+    const stage = el.querySelector('.atx-stage');
+
+    /* ── responsive render ─────────────────────────────────────────────
+       The viewBox always matches the stage's pixel width so every label
+       renders at its designed pt size regardless of screen width.
+       Narrow (<= 520 px): 3-row layout — bigger cells, legible text.
+       Wide:               2-row layout — current desktop split.
+    ─────────────────────────────────────────────────────────────────── */
+    function renderAt(W) {
+      const old = stage.querySelector('svg');
+      if (old) old.remove();
+
+      const mobile = W <= 520;
+
+      /* Row groupings ------------------------------------------------ */
+      const rows = mobile
+        ? [TMAP.slice(0, 2), TMAP.slice(2, 5), TMAP.slice(5)]   /* 2 + 3 + 5 */
+        : [TMAP.slice(0, 4), TMAP.slice(4)];                     /* 4 + 6 */
+
+      /* Height proportional to content: 380/720 ratio on desktop,
+         taller on mobile to give each row enough room              */
+      const H = mobile ? Math.round(W * 1.38) : Math.round(W * 380 / 720);
+
+      const svg = add(stage, m('svg', { class: 'atx-svg', viewBox: `0 0 ${W} ${H}` }));
+      let delay = 0, yOff = 0;
+
+      rows.forEach((row) => {
+        const rowPct = row.reduce((s, c) => s + c.pct, 0);
+        const rowH   = H * rowPct / 100;
+        let xOff = 0;
+
+        row.forEach((cat) => {
+          const catW  = W * cat.pct / rowPct;
+          const headH = Math.min(20, rowH * 0.16);
+          const bx    = xOff + GAP, by = yOff + GAP;
+          const bw    = catW - GAP * 2, bh = rowH - GAP * 2;
+
+          /* Background tint */
+          const bg = m('rect', {
+            class: 'atx-fade', x: f1(bx), y: f1(by),
+            width: f1(bw), height: f1(bh), rx: '3',
+            fill: cat.color, 'fill-opacity': '0.14',
+          });
+          bg.style.animationDelay = `${delay}ms`;
+          add(svg, bg);
+
+          /* Header strip */
+          const hd = m('rect', {
+            class: 'atx-fade', x: f1(bx), y: f1(by),
+            width: f1(bw), height: f1(headH), rx: '2',
+            fill: cat.color,
+          });
+          hd.style.animationDelay = `${delay + 25}ms`;
+          add(svg, hd);
+
+          /* Category label */
+          if (bw > 38) {
+            const catLbl = m('text', {
+              class: 'atx-tmap-cat-lbl atx-fade',
+              x: f1(bx + 5), y: f1(by + headH / 2 + 4),
+              fill: '#fff',
+            });
+            catLbl.style.animationDelay = `${delay + 45}ms`;
+            catLbl.textContent = cat.name;
+            add(svg, catLbl);
+          }
+
+          /* Subcategory items */
+          const bodyY  = by + headH + 2;
+          const bodyH  = bh - headH - 2;
+          const ncols  = bw > 110 ? 2 : 1;
+          const nrows2 = Math.ceil(cat.items.length / ncols);
+          const cellW  = bw / ncols;
+          const cellH  = bodyH / nrows2;
+
+          cat.items.forEach((item, ii) => {
+            const col = ii % ncols, ri2 = Math.floor(ii / ncols);
+            const ix  = bx + col * cellW;
+            const iy  = bodyY + ri2 * cellH;
+            const iw  = cellW - 1, ih = cellH - 1;
+            if (iw < 8 || ih < 8) return;
+
+            const ir = m('rect', {
+              class: 'atx-fade', x: f1(ix), y: f1(iy),
+              width: f1(iw), height: f1(ih), rx: '2',
+              fill: cat.color, 'fill-opacity': '0.22',
+            });
+            ir.style.animationDelay = `${delay + 70 + ii * 18}ms`;
+            add(svg, ir);
+
+            if (iw > 28 && ih > 12) {
+              const ilbl = m('text', {
+                class: 'atx-tmap-item-lbl atx-fade',
+                x: f1(ix + 5), y: f1(iy + ih / 2 + 3.5),
+                fill: cat.color,
+              });
+              ilbl.style.animationDelay = `${delay + 90 + ii * 18}ms`;
+              ilbl.textContent = item.name;
+              add(svg, ilbl);
+            }
+          });
+
+          xOff  += catW;
+          delay += 55;
+        });
+
+        yOff += rowH;
+      });
+    }
+
+    /* Replay helper — re-renders then triggers CSS enter animation */
+    function playNow(snap) {
+      const w = stage.getBoundingClientRect().width || stage.offsetWidth || 720;
+      renderAt(Math.round(w));
+      if (snap) {
+        stage.classList.add('is-in');
+      } else {
+        stage.classList.remove('is-in');
+        void stage.offsetWidth;
+        stage.classList.add('is-in');
+      }
+    }
+
+    /* ResizeObserver: re-render when the stage width changes by > 10 px
+       so the viewBox always matches the real container width           */
+    let lastW = 0;
+    if (window.ResizeObserver) {
+      const ro = new ResizeObserver((entries) => {
+        const w = Math.round(entries[0].contentRect.width);
+        if (Math.abs(w - lastW) < 10) return;
+        lastW = w;
+        renderAt(w);
+        stage.classList.remove('is-in');
+        void stage.offsetWidth;
+        stage.classList.add('is-in');
+      });
+      ro.observe(stage);
+    }
+
+    wire(el, playNow);
+    return el;
+  }
+
   const BUILDERS = [
     buildGroupedColumns, buildPctColumns, buildRangeColumns,
     buildHBars, buildGroupedHBars, buildLollipop, buildBullet, buildDiverging,
     buildPie, buildHalfDonut, buildRings, buildDonutStrip,
-    buildSparkTable, buildHeatTable,
+    buildSparkTable, buildHeatTable, buildIngredientsWheel, buildTreemap,
   ];
 
   function mount() {

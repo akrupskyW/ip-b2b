@@ -155,6 +155,31 @@ STATE = r"""
     return { kids: t.childElementCount, h: Math.round(t.getBoundingClientRect().height) };
   });
 
+  /* Expand icon: thumbs-style, top-right ABOVE charts/graphs only.
+     Tables, films, galleries, and the hidden card reading never get one. */
+  var plotBlocks = [];
+  var tableBlocks = [];
+  blocks.forEach(function(b, i){
+    Array.from(b.querySelectorAll('.wa-block')).forEach(function(blk){
+      if (blk.closest('.sc-surface-card, .sc-out--card')) return;
+      var hasPlot = !!blk.querySelector('.wa-chart-card, .wa-atlas');
+      var btn = blk.querySelector(':scope > .wa-chart-toolbar .wa-chart-expand-btn');
+      var rec = { b:i, plot: hasPlot, expand: !!btn,
+                  fb: !!(btn && btn.classList.contains('sc-fb-btn')) };
+      if (btn && hasPlot) {
+        var plot = blk.querySelector('.wa-chart-card, .wa-atlas');
+        var br = btn.getBoundingClientRect();
+        var pr = plot.getBoundingClientRect();
+        rec.above = Math.round(pr.top - br.bottom);
+        rec.rightGap = Math.round(pr.right - br.right);
+        rec.w = Math.round(br.width);
+        rec.h = Math.round(br.height);
+      }
+      (hasPlot ? plotBlocks : tableBlocks).push(rec);
+    });
+  });
+  var cardExpand = host.querySelectorAll('.sc-out--card .wa-chart-expand-btn, .sc-surface-card .wa-chart-expand-btn').length;
+
   return {
     mode: document.documentElement.getAttribute('data-output-mode'),
     modW: Math.round(mb.width),
@@ -174,6 +199,9 @@ STATE = r"""
     cards: host.querySelectorAll('.sc-surface-card[data-surface]').length,
     thumbs: thumbs,
     blankThumbs: thumbs.filter(function(t){ return !t.kids; }).length,
+    plotBlocks: plotBlocks,
+    tableBlocks: tableBlocks,
+    cardExpand: cardExpand,
     errs: (window.__errs||[]).slice(0, 4)
   };
 })()
@@ -276,6 +304,24 @@ def main():
             ok(not st.get("lopsided"),
                "and each one is centred in the room the cap left it (%s)"
                % json.dumps(st.get("lopsided") or []))
+            plots = st.get("plotBlocks") or []
+            tables = st.get("tableBlocks") or []
+            if plots:
+                ok(all(p.get("expand") and p.get("fb") for p in plots),
+                   "every chart/graph in the thread has a thumbs-style expand icon (%s)"
+                   % json.dumps(plots))
+                ok(all((p.get("above") or 0) >= 0 for p in plots),
+                   "parked above the plot (%s)" % json.dumps(plots))
+                ok(all(abs(p.get("rightGap") or 0) <= 24 for p in plots),
+                   "and on the top-right of it (%s)" % json.dumps(plots))
+                ok(all(p.get("w") <= 20 and p.get("h") <= 20 for p in plots),
+                   "at thumbs-row size (%s)" % [(p.get("w"), p.get("h")) for p in plots])
+            if tables:
+                ok(all(not t.get("expand") for t in tables),
+                   "tables and other non-plots have no expand icon (%s)"
+                   % json.dumps(tables))
+            ok((st.get("cardExpand") or 0) == 0,
+               "output cards never get the icon (%s)" % st.get("cardExpand"))
             print("   plots", json.dumps(st.get("plots") or []))
             ok(not st.get("errs"), "no page errors (%s)" % (st.get("errs") or "none"))
 

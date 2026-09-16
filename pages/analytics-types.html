@@ -229,6 +229,16 @@
       font-family: 'WISE Digits', var(--font-serif);
       font-size: 21px; font-weight: 700; color: var(--text); letter-spacing: -0.01em;
     }
+    .att-chart-type {
+      display: block;
+      flex-basis: 100%;
+      margin-top: -2px;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
     .att-intro {
       font-size: 13px; color: var(--text-subtle); line-height: 1.65;
       max-width: 760px; margin: 10px 0 18px;
@@ -6339,6 +6349,65 @@
       box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14);
     }
 
+    /* Ingredients wheel */
+    .atx-wheel-svg { overflow: visible; max-width: 720px; display: block; margin: 0 auto; }
+
+    #atx-wheel-tip {
+      position: fixed; z-index: 10002; pointer-events: none;
+      padding: 9px 13px 11px; border-radius: 10px;
+      max-width: 216px; min-width: 140px;
+      opacity: 0; transform: translateY(5px);
+      transition: opacity .1s ease, transform .1s ease;
+      box-shadow: 0 8px 24px rgba(0,0,0,.28);
+    }
+    #atx-wheel-tip.is-visible { opacity: 1; transform: translateY(0); }
+    .whl-tip-level {
+      font-size: 10px; font-weight: 600; letter-spacing: .09em;
+      text-transform: uppercase; opacity: .75; margin-bottom: 4px;
+    }
+    .whl-tip-name { font-size: 14px; font-weight: 600; line-height: 1.25; margin-bottom: 6px; }
+    .whl-tip-row  { font-size: 12px; opacity: .88; line-height: 1.5; }
+    @media print { #atx-wheel-tip { display: none; } }
+    .atx-wheel-lbl {
+      font-size: 10.5px; font-weight: 400; letter-spacing: .03em;
+      pointer-events: none;
+    }
+    .atx-wheel-ing {
+      font-size: 9px; font-weight: 400; letter-spacing: .015em;
+      pointer-events: none;
+    }
+    .atx-wheel-center-lbl {
+      font-family: 'WISE Digits', var(--font-serif);
+      font-size: 10.5px; font-weight: 400; letter-spacing: -.01em;
+    }
+
+    /* Filter chips row above the wheel */
+    .atx-wheel-filters {
+      display: flex; flex-wrap: wrap; gap: 5px 6px;
+      margin-bottom: 18px; justify-content: center;
+    }
+    .atx-wfbtn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 11px 4px 7px; border-radius: 20px;
+      border: 1.5px solid var(--border); background: var(--surface);
+      font-size: 11.5px; font-weight: 700; cursor: pointer;
+      color: var(--text); transition: opacity .18s, border-color .18s;
+      line-height: 1;
+    }
+    .atx-wfbtn:hover { border-color: var(--border-strong); }
+    .atx-wfbtn:not(.atx-wfbtn--on) { opacity: 0.38; }
+    .atx-wfbtn-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* Treemap */
+    .atx-tmap-cat-lbl {
+      font-size: 11px; font-weight: 800; letter-spacing: .01em;
+      dominant-baseline: middle;
+    }
+    .atx-tmap-item-lbl {
+      font-size: 9.5px; font-weight: 700;
+      dominant-baseline: middle;
+    }
+
     /* =====================================================================
        Table specimens (js/analytics-types-tables.js)
 
@@ -6674,7 +6743,9 @@
         s.id = opts.id;
         s.innerHTML =
           `<div class="att-head">` +
-          `<span class="att-title">${escq(opts.title)}</span></div>` +
+          `<span class="att-title">${escq(opts.title)}</span>` +
+          (opts.chartType ? `<span class="att-chart-type">${escq(opts.chartType)}</span>` : '') +
+          `</div>` +
           `<p class="att-intro">${escq(opts.intro)}</p>` +
           `<div class="atx-stage" tabindex="0" role="img" aria-label="${escq(opts.title)}"></div>` +
           (opts.legend ? `<div class="att-legend atx-legend"><div class="att-legend-dots">${opts.legend}</div></div>` : '') +
@@ -6759,6 +6830,7 @@
         ];
         const el = card({
           id: 'atx-line-card', eyebrow: 'Trend', title: 'Portfolio WISEscore over time',
+          chartType: 'Line chart',
           intro: 'Average WISEscore across the whole portfolio, month by month, split by the three scoring pillars. The most-requested view of all: are we trending up? Click to replay.',
           legend: dotsHTML(series.map((s) => [s.color, s.name])),
           note: 'Sample data: 24 months of blended portfolio averages.',
@@ -6795,6 +6867,7 @@
         const n = cats.length, band = (A.x1 - A.x0) / n, bw = band * 0.56;
         const el = card({
           id: 'atx-col-card', eyebrow: 'Comparison', title: 'Products analyzed each quarter',
+          chartType: 'Stacked column chart',
           intro: 'Volume analyzed per quarter, stacked by UPF classification. Read the full height for throughput, each band for the mix. Click to replay.',
           legend: dotsHTML(segs.map((s) => [s.color, s.key])),
           note: 'Sample data: eight quarters of intake, split three ways.',
@@ -6833,6 +6906,7 @@
         ];
         const el = card({
           id: 'atx-area-card', eyebrow: 'Composition', title: 'Portfolio composition over time',
+          chartType: '100% stacked area chart',
           intro: 'The share of the catalog in each UPF class, as a 100% stacked area. Watch the Non-UPF band widen as the portfolio cleans up. Click to replay.',
           legend: dotsHTML(bands.map((b) => [b.color, b.key])),
           note: 'Sample data: monthly composition over 24 months (shares sum to 100%).',
@@ -6866,6 +6940,7 @@
         const n = bins.length, band = (A.x1 - A.x0) / n, bw = band * 0.82;
         const el = card({
           id: 'atx-hist-card', eyebrow: 'Distribution', title: 'WISEscore distribution',
+          chartType: 'Histogram',
           intro: 'How the catalog\u2019s WISEscores are distributed, binned in tens. Bars are coloured by the status tier the bin falls in. Click to replay.',
           legend: dotsHTML(TIER_LEGEND),
           note: 'Sample data: 761 analyzed products across ten score bins.',
@@ -6896,6 +6971,7 @@
         ];
         const el = card({
           id: 'atx-gauge-card', eyebrow: 'KPIs', title: 'Headline metrics vs. target',
+          chartType: 'Gauge chart',
           intro: 'Three portfolio KPIs on speedometer dials. Each arc fills to the current value and is coloured by its status tier; the notch marks the goal. Click to replay.',
           note: 'Sample data: current portfolio KPIs against internal targets.',
         });
@@ -6939,6 +7015,7 @@
         const xC = (i) => A.x0 + band * i + band / 2;
         const el = card({
           id: 'atx-combo-card', eyebrow: 'Dual axis', title: 'Volume vs. average score',
+          chartType: 'Combo chart',
           intro: 'Monthly products analyzed (bars, left axis) against the average WISEscore they earned (line, right axis). Two scales, one story. Click to replay.',
           legend: dotsHTML([['var(--primary)', 'Products analyzed'], ['var(--chart-status-excellent)', 'Avg WISEscore']]),
           note: 'Sample data: 12 months of intake volume and mean score.',
@@ -6986,6 +7063,7 @@
         const UP = 'var(--chart-status-excellent)', DOWN = 'var(--chart-status-poor)', TOT = 'var(--primary)';
         const el = card({
           id: 'atx-waterfall-card', eyebrow: 'Bridge', title: 'How the average WISEscore is built',
+          chartType: 'Waterfall chart',
           intro: 'Start from a baseline, then add what each factor contributes and subtract what drags it down, landing on the final average. Green lifts, red cuts. Click to replay.',
           legend: dotsHTML([[UP, 'Adds to score'], [DOWN, 'Reduces score'], [TOT, 'Baseline / total']]),
           note: 'Sample data: pillar-level contributions to a 60-point portfolio average.',
@@ -7039,6 +7117,7 @@
         const rf = (v) => 7 + Math.sqrt(v) / 7;
         const el = card({
           id: 'atx-bubble-card', eyebrow: 'Correlation', title: 'Score vs. processing, sized by volume',
+          chartType: 'Bubble chart',
           intro: 'Every product placed by processing level (x) and WISEscore (y), with bubble size showing sales volume and colour showing category. Three dimensions in one plot. Click to replay.',
           legend: dotsHTML(Object.keys(CAT).map((k) => [CAT[k], k])),
           note: 'Sample data: 14 products; bubble area is proportional to units sold.',
@@ -7074,6 +7153,7 @@
         ];
         const el = card({
           id: 'atx-geo-card', eyebrow: 'Geographic', title: 'Average WISEscore by state',
+          chartType: 'Choropleth map',
           intro: 'A tile-grid choropleth of the U.S. \u2014 each state is a square coloured by the average WISEscore of products sold there. Darker green is a stronger regional portfolio. Click to replay.',
           legend: dotsHTML(TIER_LEGEND),
           note: 'Sample data: mean WISEscore per state across 50 states + DC.',
@@ -7114,6 +7194,7 @@
         const xC = (i) => A.x0 + band * i + band / 2;
         const el = card({
           id: 'atx-box-card', eyebrow: 'Spread', title: 'WISEscore spread by category',
+          chartType: 'Box-and-whisker chart',
           intro: 'For each category: the box spans the middle 50% of scores, the line inside is the median, the whiskers reach the range, and dots are outliers. Click to replay.',
           legend: dotsHTML([['var(--primary)', 'Interquartile range'], ['var(--chart-status-excellent)', 'Median'], ['var(--chart-status-poor)', 'Outlier']]),
           note: 'Sample data: score distribution across six product categories.',

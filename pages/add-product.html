@@ -423,22 +423,6 @@
     .nfp-sp--flip .nfp-fi-upc .nfp-upc-entry {
       flex: 0 1 232px; width: auto; min-width: 0; max-width: 100%;
     }
-    /* Shield CTA hugs its copy. The default body flex-basis is a WIDTH (240px);
-       stacked in a column it became a tall empty well above the button. Icon
-       and copy share a row; the button sits directly underneath. */
-    .nfp-sp--flip .nfp-sp-facts .nfp-ins-next {
-      display: grid; grid-template-columns: minmax(0, 1fr);
-      gap: 10px; align-items: start; justify-items: stretch;
-      width: 100%; max-width: 500px; margin-left: auto; margin-right: auto;
-      box-sizing: border-box;
-      padding: 12px 14px;
-    }
-    .nfp-sp--flip .nfp-sp-facts .nfp-ins-next-dots { grid-column: 1; grid-row: 1; }
-    .nfp-sp--flip .nfp-sp-facts .nfp-ins-next-body { grid-column: 1; grid-row: 2; flex: none; text-align: center; }
-    .nfp-sp--flip .nfp-sp-facts .nfp-ins-next-btn {
-      grid-column: 1; grid-row: 3;
-      margin: 0; width: 100%; justify-content: center; align-self: stretch;
-    }
     .nfp-sp-ingred {
       padding: 4px 0 12px;
       overflow-x: hidden;
@@ -1570,84 +1554,6 @@
     /* NEXT STEP banner — a soft primary-tinted panel (not the dark hero).
        Copy follows the portfolio action that opened the page. Progress is
        six small dots — no labelled stepper. No boxed backdrop behind the icon. */
-    .nfp-ins-next {
-      position: relative; display: grid; grid-template-columns: minmax(0, 1fr);
-      gap: 10px; align-items: start; justify-items: stretch;
-      width: 100%; max-width: 500px; margin-left: auto; margin-right: auto;
-      box-sizing: border-box;
-      padding: 16px 18px; border-radius: 16px;
-      background: var(--primary-soft); border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
-    }
-    .nfp-ins-next-dots {
-      grid-column: 1 / -1; display: flex; align-items: center; justify-content: center;
-      gap: 7px; padding: 0 0 2px; margin: 0;
-    }
-    .nfp-ins-dot {
-      width: 7px; height: 7px; padding: 0; border-radius: 50%;
-      border: 1.5px solid color-mix(in srgb, var(--primary) 38%, var(--border));
-      background: transparent; box-shadow: none;
-      cursor: pointer; appearance: none; -webkit-appearance: none;
-      transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, width 0.15s ease, height 0.15s ease;
-    }
-    .nfp-ins-dot.is-done {
-      background: color-mix(in srgb, var(--primary) 55%, transparent);
-      border-color: color-mix(in srgb, var(--primary) 55%, transparent);
-    }
-    .nfp-ins-dot.is-current {
-      width: 9px; height: 9px;
-      background: var(--primary); border-color: var(--primary);
-    }
-    .nfp-ins-dot:hover { transform: scale(1.2); }
-    .nfp-ins-dot:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
-    html.dark .nfp-ins-dot {
-      border-color: color-mix(in srgb, var(--primary-bright, var(--primary)) 45%, var(--border));
-    }
-    html.dark .nfp-ins-dot.is-done {
-      background: color-mix(in srgb, var(--primary-bright, var(--primary)) 50%, transparent);
-      border-color: color-mix(in srgb, var(--primary-bright, var(--primary)) 50%, transparent);
-    }
-    html.dark .nfp-ins-dot.is-current {
-      background: var(--primary-bright, var(--primary));
-      border-color: var(--primary-bright, var(--primary));
-    }
-    .nfp-ins-next-ic {
-      grid-column: 1; align-self: flex-start; flex-shrink: 0; padding-top: 2px;
-      display: inline-flex; align-items: center; justify-content: center;
-      background: none; box-shadow: none;
-    }
-    .nfp-ins-next-shield { display: block; width: 52px; height: auto; }
-    .nfp-ins-next-ic .material-symbols-outlined {
-      font-size: 40px !important; line-height: 1; color: var(--primary-ink, var(--primary));
-      font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 48;
-    }
-    html.dark .nfp-ins-next-ic .material-symbols-outlined { color: var(--primary-bright, var(--primary)); }
-    .nfp-ins-next-body { grid-column: 1; min-width: 0; text-align: center; }
-    .nfp-ins-next-title { font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 1.15rem; font-weight: 700; color: var(--text); line-height: 1.2; text-align: center; }
-    .nfp-ins-next-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.45; margin-top: 3px; max-width: none; text-align: center; }
-    .nfp-ins-next-btn {
-      grid-column: 1 / -1; margin: 0; width: 100%;
-      display: inline-flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer;
-      border: none; border-radius: 999px; padding: 10px 18px;
-      font-family: 'WISE Digits', 'Noto Serif', serif; font-size: 0.82rem; font-weight: 700;
-      background: var(--primary); color: #fff; text-decoration: none; transition: filter 0.15s;
-      appearance: none; -webkit-appearance: none;
-      white-space: normal; text-align: center; line-height: 1.25;
-      height: auto; min-height: 40px;
-    }
-    .nfp-ins-next-btn:hover { filter: brightness(1.07); text-decoration: none; }
-    .nfp-ins-next-btn .material-symbols-outlined {
-      font-size: 18px !important;
-      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-    }
-    /* Shield CTA under the product photo — stack in the narrower media column
-       so title, copy and button all fit, and never grow into the leftover
-       column height (that read as a gap under the image). */
-    .nfp-sp-media .nfp-ins-next {
-      flex: 0 0 auto; width: auto; box-sizing: border-box;
-      margin: 10px var(--nfp-media-inline) 12px; padding: 12px 14px;
-      border-radius: 0;
-    }
-    .nfp-sp-media .nfp-ins-next-btn { width: 100%; justify-content: center; }
 
     /* Score row — same .dash-claim band as overview's top scorecards. */
     .nfp-ins .dash-claim {

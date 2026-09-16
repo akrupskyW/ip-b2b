@@ -81,7 +81,9 @@ export function card(opts) {
   s.id = opts.id;
   s.innerHTML =
     `<div class="att-head">` +
-    `<span class="att-title">${escq(opts.title)}</span></div>` +
+    `<span class="att-title">${escq(opts.title)}</span>` +
+    (opts.chartType ? `<span class="att-chart-type">${escq(opts.chartType)}</span>` : '') +
+    `</div>` +
     `<p class="att-intro">${escq(opts.intro)}</p>` +
     `<div class="atx-stage" tabindex="0" role="img" aria-label="${escq(opts.title)}"></div>` +
     (opts.legend ? `<div class="att-legend atx-legend"><div class="att-legend-dots">${opts.legend}</div></div>` : '') +
